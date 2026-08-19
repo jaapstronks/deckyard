@@ -8,12 +8,12 @@ Scope is per-user: presentations where the user is `ownerEmail` or `createdBy`. 
 
 Endpoints use the regular session auth (not API keys) and are not part of the public OpenAPI spec.
 
-| Method | Path | Purpose |
-|--------|------|---------|
-| POST | `/api/bulk-export` | Start an export job |
-| GET | `/api/bulk-export/status` | Active job or last completed export for this user |
-| GET | `/api/jobs/:id` | Poll job state/progress (shared job infra) |
-| GET | `/api/jobs/:id/download` | Stream the finished ZIP |
+| Method | Path                      | Purpose                                           |
+| ------ | ------------------------- | ------------------------------------------------- |
+| POST   | `/api/bulk-export`        | Start an export job                               |
+| GET    | `/api/bulk-export/status` | Active job or last completed export for this user |
+| GET    | `/api/jobs/:id`           | Poll job state/progress (shared job infra)        |
+| GET    | `/api/jobs/:id/download`  | Stream the finished ZIP                           |
 
 **POST `/api/bulk-export`** — JSON body of booleans (all default false; presentations are always included): `includeVersions`, `includeImageLibrary`, `includeSlideLibrary`, `includeThemes`.
 
@@ -65,11 +65,11 @@ Image collection walks slide content (fields like `bgImage`, `image`, `src`, `ur
 
 ## Files involved
 
-| File | Role |
-|------|------|
-| `server/routes/api/bulk-export.js` | POST/start + status endpoints, sync fallback, per-user rate limit |
-| `server/export/bulk-export.js` | Export engine: collects data, resolves images, builds the ZIP |
+| File                                              | Role                                                                                  |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `server/routes/api/bulk-export.js`                | POST/start + status endpoints, sync fallback, per-user rate limit                     |
+| `server/export/bulk-export.js`                    | Export engine: collects data, resolves images, builds the ZIP                         |
 | `server/jobs/queue/workers/bulk-export-worker.js` | Heavy-queue worker, result store + TTL cleanup, active-export tracking, notifications |
-| `server/routes/api/jobs.js` | Shared job status + download endpoints (streams heavy-queue results from disk) |
-| `server/integrations/email/senders-export.js` | "Export ready" email |
-| `client/views/settings/tabs/export-tab.js` | Settings → Data Export tab (options, progress, download) |
+| `server/routes/api/jobs.js`                       | Shared job status + download endpoints (streams heavy-queue results from disk)        |
+| `server/integrations/email/senders-export.js`     | "Export ready" email                                                                  |
+| `client/views/settings/tabs/export-tab.js`        | Settings → Data Export tab (options, progress, download)                              |

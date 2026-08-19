@@ -63,7 +63,11 @@ describe('buildInAppNotificationInputs', () => {
     const [n] = buildInAppNotificationInputs({
       presentation: PRES,
       comment: { ...COMMENT, slideId: null, parentId: 'c-1' },
-      parentComment: { id: 'c-1', authorEmail: 'author@example.com', slideId: 'slide-3' },
+      parentComment: {
+        id: 'c-1',
+        authorEmail: 'author@example.com',
+        slideId: 'slide-3',
+      },
       actor: { email: 'colleague@example.com' },
     });
     assert.strictEqual(n.actionUrl, '/app/pres-1?slideId=slide-3');
@@ -99,11 +103,17 @@ describe('buildInAppNotificationInputs', () => {
 
     assert.strictEqual(inputs.length, 2);
     const byEmail = Object.fromEntries(inputs.map((n) => [n.userEmail, n]));
-    assert.strictEqual(byEmail['owner@example.com'].notificationType, 'comment_created');
-    assert.strictEqual(byEmail['author@example.com'].notificationType, 'comment_reply');
+    assert.strictEqual(
+      byEmail['owner@example.com'].notificationType,
+      'comment_created',
+    );
+    assert.strictEqual(
+      byEmail['author@example.com'].notificationType,
+      'comment_reply',
+    );
     assert.strictEqual(
       byEmail['author@example.com'].title,
-      'Chris replied to your comment'
+      'Chris replied to your comment',
     );
   });
 

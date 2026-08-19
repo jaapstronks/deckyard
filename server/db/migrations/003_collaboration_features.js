@@ -13,15 +13,17 @@ export const up = async (db) => {
     .createTable('presentation_locks')
     .ifNotExists()
     .addColumn('presentation_id', 'uuid', (col) =>
-      col.primaryKey().references('presentations.id').onDelete('cascade')
+      col.primaryKey().references('presentations.id').onDelete('cascade'),
     )
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade')
+      col.references('organizations.id').onDelete('cascade'),
     )
     .addColumn('holder_email', 'varchar(320)', (col) => col.notNull())
     .addColumn('holder_name', 'varchar(255)')
     .addColumn('acquired_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
-    .addColumn('refreshed_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
+    .addColumn('refreshed_at', 'timestamptz', (col) =>
+      col.defaultTo(sql`now()`),
+    )
     .addColumn('expires_at', 'timestamptz', (col) => col.notNull())
     .execute();
 
@@ -37,13 +39,13 @@ export const up = async (db) => {
     .createTable('lock_requests')
     .ifNotExists()
     .addColumn('id', 'uuid', (col) =>
-      col.primaryKey().defaultTo(sql`gen_random_uuid()`)
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
     )
     .addColumn('presentation_id', 'uuid', (col) =>
-      col.references('presentations.id').onDelete('cascade')
+      col.references('presentations.id').onDelete('cascade'),
     )
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade')
+      col.references('organizations.id').onDelete('cascade'),
     )
     .addColumn('requester_email', 'varchar(320)', (col) => col.notNull())
     .addColumn('requester_name', 'varchar(255)')
@@ -96,9 +98,18 @@ export const up = async (db) => {
 export const down = async (db) => {
   // Drop indexes first
   await db.schema.dropIndex('idx_comments_slide').ifExists().execute();
-  await db.schema.dropIndex('idx_comments_presentation_status').ifExists().execute();
-  await db.schema.dropIndex('idx_lock_requests_presentation_status').ifExists().execute();
-  await db.schema.dropIndex('idx_presentation_locks_expires').ifExists().execute();
+  await db.schema
+    .dropIndex('idx_comments_presentation_status')
+    .ifExists()
+    .execute();
+  await db.schema
+    .dropIndex('idx_lock_requests_presentation_status')
+    .ifExists()
+    .execute();
+  await db.schema
+    .dropIndex('idx_presentation_locks_expires')
+    .ifExists()
+    .execute();
 
   // Drop tables in reverse order (respecting foreign keys)
   await db.schema.dropTable('presentation_comments').ifExists().execute();

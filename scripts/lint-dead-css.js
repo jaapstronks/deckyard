@@ -31,7 +31,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const REPO_ROOT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 
 const CLASS_TOKEN = /^-?[_a-zA-Z][_a-zA-Z0-9-]*$/;
 
@@ -52,7 +55,8 @@ export const isSourceFile = (file) =>
  * @param {string} file - Repo-relative path
  * @returns {boolean}
  */
-export const isCssFile = (file) => file.startsWith('client/styles/') && file.endsWith('.css');
+export const isCssFile = (file) =>
+  file.startsWith('client/styles/') && file.endsWith('.css');
 
 /**
  * List every tracked file, repo-relative. Uses `git ls-files` so the scan sees
@@ -89,10 +93,13 @@ export function trackedFiles(cwd = REPO_ROOT) {
  * @param {{used: Set<string>, prefixes: Set<string>}} acc - Accumulator to fill
  * @returns {{used: Set<string>, prefixes: Set<string>}}
  */
-export function harvestSource(text, acc = { used: new Set(), prefixes: new Set() }) {
+export function harvestSource(
+  text,
+  acc = { used: new Set(), prefixes: new Set() },
+) {
   // Quoted strings: 'x', "x". Group 2 is the (unescaped-enough) content.
   const quoted = /(['"])((?:\\.|(?!\1)[^\\\n])*)\1/g;
-  for (let m; (m = quoted.exec(text)); ) {
+  for (let m; (m = quoted.exec(text));) {
     addTokens(m[2], acc.used);
   }
 
@@ -103,7 +110,7 @@ export function harvestSource(text, acc = { used: new Set(), prefixes: new Set()
   // consume the attribute's, so `json-key` reads as unreferenced. This pass is
   // immune to that, and class attributes are how most markup here names classes.
   const classAttr = /class\s*=\s*(['"])([^'"]*)\1/g;
-  for (let m; (m = classAttr.exec(text)); ) {
+  for (let m; (m = classAttr.exec(text));) {
     addTokens(m[2], acc.used);
   }
 
@@ -112,7 +119,7 @@ export function harvestSource(text, acc = { used: new Set(), prefixes: new Set()
   // advisory harvest, and any miss only risks a false "alive", never a false
   // "dead".
   const template = /`((?:\\.|[^`\\])*)`/g;
-  for (let m; (m = template.exec(text)); ) {
+  for (let m; (m = template.exec(text));) {
     const body = m[1];
     // Static chunks are the parts between ${...} holes.
     const chunks = body.split(/\$\{[^}]*\}/g);
@@ -176,7 +183,7 @@ export function extractCssClasses(text, file) {
   let preludeStart = 0; // start of the text preceding the next `{`
   const inSelectorContext = () => stack.every((isDecl) => isDecl === false);
 
-  for (let i = 0; i < text.length; ) {
+  for (let i = 0; i < text.length;) {
     const ch = text[i];
     if (ch === '\n') {
       line++;
@@ -288,7 +295,12 @@ export function scan({ sourceFiles, cssFiles, read = defaultRead }) {
   for (const [name, rec] of byName) {
     if (!isAlive(name, evidence)) dead.push(rec);
   }
-  dead.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line || a.name.localeCompare(b.name));
+  dead.sort(
+    (a, b) =>
+      a.file.localeCompare(b.file) ||
+      a.line - b.line ||
+      a.name.localeCompare(b.name),
+  );
   return { dead, totalClasses: byName.size, evidence };
 }
 
@@ -304,7 +316,7 @@ function main() {
   if (dead.length === 0) {
     console.log(
       `lint:deadcss — no unreferenced selectors across ${totalClasses} classes ` +
-        `in ${cssFiles.length} CSS files. ✅`
+        `in ${cssFiles.length} CSS files. ✅`,
     );
     return;
   }
@@ -314,14 +326,19 @@ function main() {
       `unreferenced by ${sourceFiles.length} source files.\n` +
       `Composed names (\`slide-bg-\${id}\`, \`is-\${state}\`) are treated as alive; a\n` +
       `listed selector appears nowhere as a literal or a composition prefix. Verify\n` +
-      `before deleting — this is a hint, not a verdict.\n`
+      `before deleting — this is a hint, not a verdict.\n`,
   );
   for (const rec of dead) {
     console.log(`  ${rec.file}:${rec.line}  .${rec.name}`);
   }
-  console.log(`\n${dead.length} unreferenced selector(s). Report-only; exit 0.`);
+  console.log(
+    `\n${dead.length} unreferenced selector(s). Report-only; exit 0.`,
+  );
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (
+  process.argv[1] &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+) {
   main();
 }

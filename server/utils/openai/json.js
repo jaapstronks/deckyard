@@ -20,4 +20,3 @@ export function extractJsonObject(text) {
   }
   return null;
 }
-

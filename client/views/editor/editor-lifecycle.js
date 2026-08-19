@@ -61,7 +61,10 @@ export function attachEditorLifecycle({
       beaconSentForCurrentHide = false;
       if (visibilityDebounceTimer) clearTimeout(visibilityDebounceTimer);
       visibilityDebounceTimer = setTimeout(() => {
-        if (document.visibilityState === 'hidden' && !beaconSentForCurrentHide) {
+        if (
+          document.visibilityState === 'hidden' &&
+          !beaconSentForCurrentHide
+        ) {
           sendSessionEndBeacon();
           beaconSentForCurrentHide = true;
         }

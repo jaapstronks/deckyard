@@ -48,7 +48,14 @@ export async function createAnalyticsReport(scope, data) {
   const endDate = norm(data?.endDate);
   const createdBy = norm(data?.createdBy)?.toLowerCase();
 
-  if (!presentationId || !title || !reportType || !startDate || !endDate || !createdBy) {
+  if (
+    !presentationId ||
+    !title ||
+    !reportType ||
+    !startDate ||
+    !endDate ||
+    !createdBy
+  ) {
     return { ok: false, reason: 'invalid' };
   }
 
@@ -130,7 +137,10 @@ function constantTimeTokenCompare(a, b) {
     return false;
   }
   try {
-    return crypto.timingSafeEqual(Buffer.from(a, 'utf8'), Buffer.from(b, 'utf8'));
+    return crypto.timingSafeEqual(
+      Buffer.from(a, 'utf8'),
+      Buffer.from(b, 'utf8'),
+    );
   } catch {
     return false;
   }
@@ -205,10 +215,7 @@ export async function listAnalyticsReports(scope, presentationId, opts = {}) {
     const limit = Math.min(opts?.limit || 20, 50);
     const offset = opts?.offset || 0;
 
-    query = query
-      .orderBy('created_at', 'desc')
-      .limit(limit)
-      .offset(offset);
+    query = query.orderBy('created_at', 'desc').limit(limit).offset(offset);
 
     const rows = await query.execute();
 
@@ -260,7 +267,9 @@ export async function updateAnalyticsReport(scope, reportId, updates) {
         updateData.share_expires_at = null;
       } else {
         const expirationDate = new Date();
-        expirationDate.setDate(expirationDate.getDate() + updates.expiresInDays);
+        expirationDate.setDate(
+          expirationDate.getDate() + updates.expiresInDays,
+        );
         updateData.share_expires_at = expirationDate.toISOString();
       }
     }

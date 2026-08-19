@@ -19,25 +19,25 @@
  */
 
 export const ai = {
-    category: 'content',
-    resolveInPhase1: false,
-    description: `
+  category: 'content',
+  resolveInPhase1: false,
+  description: `
       Circular process for recurring workflows.
       3-6 stages arranged in circle with arrows.
       Optional centerLabel in the middle.
     `,
-    bestFor: [
-      'PDCA (Plan-Do-Check-Act) cycles',
-      'Agile/Scrum sprint cycles',
-      'Continuous improvement processes',
-      'Feedback loops',
-      'Any process that repeats indefinitely',
-    ],
-    notFor: [
-      'Linear one-time processes (use process-slide)',
-      'Timelines with dates (use timeline-slide)',
-      'Narrowing funnels (use funnel-slide)',
-    ],
+  bestFor: [
+    'PDCA (Plan-Do-Check-Act) cycles',
+    'Agile/Scrum sprint cycles',
+    'Continuous improvement processes',
+    'Feedback loops',
+    'Any process that repeats indefinitely',
+  ],
+  notFor: [
+    'Linear one-time processes (use process-slide)',
+    'Timelines with dates (use timeline-slide)',
+    'Narrowing funnels (use funnel-slide)',
+  ],
 };
 
 /**

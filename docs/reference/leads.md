@@ -27,7 +27,7 @@ the public submit path deliberately looks the deck up across organizations.
 - `server/storage/leads.js` (433) — storage: create/read/export plus the four
   anonymizers (single lead, by e-mail, retention-expired, old IPs).
 - `server/jobs/analytics-cleanup.js` — the retention sweep. Leads have no job
-  of their own: the *analytics* cleanup job also anonymizes expired leads and
+  of their own: the _analytics_ cleanup job also anonymizes expired leads and
   old lead IPs, on the analytics schedule.
 - `server/utils/webhooks.js` — `maybeFireLeadWebhook` (`lead.submitted`);
   `server/integrations/email/senders-leads.js` — the owner-notification
@@ -52,12 +52,12 @@ survives for counting; the person is gone from it.
 
 **Public** (no session; mounted before the auth gate):
 
-| Method | Path | Gate | Does |
-|---|---|---|---|
-| POST | `/api/leads` | consent + valid e-mail | Submit a lead. Rate-limited per IP and globally (`LEAD_RATE_LIMITS`), deck must exist. Fires the webhook and the owner e-mail best-effort. |
-| POST | `/api/leads/my-data/request` | none (mails a token) | Mint a GDPR verification token for an e-mail address and mail the link. Rate-limited per IP + per-target-email + globally (`GDPR_RATE_LIMITS`). |
-| GET | `/api/leads/my-data` | token | Export every non-anonymized lead for that e-mail. Rate-limited per IP (`AUTH_RATE_LIMITS.expensive`). |
-| DELETE | `/api/leads/my-data` | token | Anonymize every lead for that e-mail; the delete burns the token. Rate-limited per IP (`AUTH_RATE_LIMITS.expensive`). |
+| Method | Path                         | Gate                   | Does                                                                                                                                            |
+| ------ | ---------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| POST   | `/api/leads`                 | consent + valid e-mail | Submit a lead. Rate-limited per IP and globally (`LEAD_RATE_LIMITS`), deck must exist. Fires the webhook and the owner e-mail best-effort.      |
+| POST   | `/api/leads/my-data/request` | none (mails a token)   | Mint a GDPR verification token for an e-mail address and mail the link. Rate-limited per IP + per-target-email + globally (`GDPR_RATE_LIMITS`). |
+| GET    | `/api/leads/my-data`         | token                  | Export every non-anonymized lead for that e-mail. Rate-limited per IP (`AUTH_RATE_LIMITS.expensive`).                                           |
+| DELETE | `/api/leads/my-data`         | token                  | Anonymize every lead for that e-mail; the delete burns the token. Rate-limited per IP (`AUTH_RATE_LIMITS.expensive`).                           |
 
 The three `my-data` routes are **public** because the data subject is an
 anonymous visitor with no account — the emailed `crypto.randomBytes(32)` token,
@@ -69,12 +69,12 @@ hazard is now structurally gone, no ordering discipline needed.
 
 **Authenticated** (session required):
 
-| Method | Path | Permission | Does |
-|---|---|---|---|
-| GET | `/api/presentations/:id/leads` | deck **read** | List (paginated, optional `slideId` filter). |
-| GET | `/api/presentations/:id/leads/count` | deck **read** | Count. |
-| GET | `/api/presentations/:id/leads/export` | deck **write** | CSV download — export is more sensitive than reading on screen. |
-| DELETE | `/api/leads/:id` | deck **write** | Anonymize one lead. |
+| Method | Path                                  | Permission     | Does                                                            |
+| ------ | ------------------------------------- | -------------- | --------------------------------------------------------------- |
+| GET    | `/api/presentations/:id/leads`        | deck **read**  | List (paginated, optional `slideId` filter).                    |
+| GET    | `/api/presentations/:id/leads/count`  | deck **read**  | Count.                                                          |
+| GET    | `/api/presentations/:id/leads/export` | deck **write** | CSV download — export is more sensitive than reading on screen. |
+| DELETE | `/api/leads/:id`                      | deck **write** | Anonymize one lead.                                             |
 
 ## Where the data leaves the instance
 
@@ -93,7 +93,7 @@ Two outbound paths fire on every submit, both best-effort:
   normalized to 1–730).
 - The sweep lives in the **analytics** cleanup job: `anonymizeExpiredLeads()`
   anonymizes rows past their retention date, and lead IP addresses are
-  additionally nulled after the *analytics* `ipAnonymizationDays` window —
+  additionally nulled after the _analytics_ `ipAnonymizationDays` window —
   the same policy as view sessions, on the same schedule.
 - Self-service (GDPR art. 15/17), **public and token-gated**:
   `POST /api/leads/my-data/request` mints a `crypto.randomBytes(32)` token for
@@ -101,8 +101,8 @@ Two outbound paths fire on every submit, both best-effort:
   (`gdpr_verification_tokens`, one active token per address; migration 075 —
   see `server/storage/gdpr-tokens.js`). The e-mailed link lands on the friendly
   HTML page at `/my-data` (`client/my-data.html`), not the raw API. `GET`/`DELETE
-  /api/leads/my-data` verify e-mail + token with a constant-time compare; the
-  `GET` deliberately does *not* consume the token (a subject views, then erases
+/api/leads/my-data` verify e-mail + token with a constant-time compare; the
+  `GET` deliberately does _not_ consume the token (a subject views, then erases
   with the same token), the `DELETE` anonymizes everything for that address and
   burns the token.
 

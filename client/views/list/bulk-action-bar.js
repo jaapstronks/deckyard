@@ -123,14 +123,17 @@ export function createBulkActionBar({
       const confirmMsg = t(
         'list.bulk.deleteConfirm',
         'Move {count} presentation(s) to trash?',
-        { count: state.count }
+        { count: state.count },
       );
-      if (!(await confirmModal(h, document.body, {
-        title: t('list.bulk.delete', 'Move to trash'),
-        message: confirmMsg,
-        confirmLabel: t('list.bulk.delete', 'Move to trash'),
-        danger: true,
-      }))) return;
+      if (
+        !(await confirmModal(h, document.body, {
+          title: t('list.bulk.delete', 'Move to trash'),
+          message: confirmMsg,
+          confirmLabel: t('list.bulk.delete', 'Move to trash'),
+          danger: true,
+        }))
+      )
+        return;
 
       normalDeleteBtn.disabled = true;
 
@@ -149,14 +152,22 @@ export function createBulkActionBar({
 
         if (successCount > 0) {
           toast.success(
-            t('list.bulk.delete.done', '{count} presentation(s) moved to trash.', { count: successCount }),
-            { id: 'bulk-delete', durationMs: 2500 }
+            t(
+              'list.bulk.delete.done',
+              '{count} presentation(s) moved to trash.',
+              { count: successCount },
+            ),
+            { id: 'bulk-delete', durationMs: 2500 },
           );
         }
         if (failCount > 0) {
           toast.error(
-            t('list.bulk.delete.failed', 'Failed to delete {count} presentation(s).', { count: failCount }),
-            { id: 'bulk-delete-error', durationMs: 3000 }
+            t(
+              'list.bulk.delete.failed',
+              'Failed to delete {count} presentation(s).',
+              { count: failCount },
+            ),
+            { id: 'bulk-delete-error', durationMs: 3000 },
           );
         }
 
@@ -195,14 +206,20 @@ export function createBulkActionBar({
 
         if (successCount > 0) {
           toast.success(
-            t('list.bulk.restore.done', '{count} presentation(s) restored.', { count: successCount }),
-            { id: 'bulk-restore', durationMs: 2500 }
+            t('list.bulk.restore.done', '{count} presentation(s) restored.', {
+              count: successCount,
+            }),
+            { id: 'bulk-restore', durationMs: 2500 },
           );
         }
         if (failCount > 0) {
           toast.error(
-            t('list.bulk.restore.failed', 'Failed to restore {count} presentation(s).', { count: failCount }),
-            { id: 'bulk-restore-error', durationMs: 3000 }
+            t(
+              'list.bulk.restore.failed',
+              'Failed to restore {count} presentation(s).',
+              { count: failCount },
+            ),
+            { id: 'bulk-restore-error', durationMs: 3000 },
           );
         }
 
@@ -227,14 +244,17 @@ export function createBulkActionBar({
       const confirmMsg = t(
         'list.bulk.deletePermanentlyConfirm',
         'Permanently delete {count} presentation(s)? This cannot be undone.',
-        { count: state.count }
+        { count: state.count },
       );
-      if (!(await confirmModal(h, document.body, {
-        title: t('list.bulk.deletePermanently', 'Delete permanently'),
-        message: confirmMsg,
-        confirmLabel: t('list.bulk.deletePermanently', 'Delete permanently'),
-        danger: true,
-      }))) return;
+      if (
+        !(await confirmModal(h, document.body, {
+          title: t('list.bulk.deletePermanently', 'Delete permanently'),
+          message: confirmMsg,
+          confirmLabel: t('list.bulk.deletePermanently', 'Delete permanently'),
+          danger: true,
+        }))
+      )
+        return;
 
       trashDeleteBtn.disabled = true;
       restoreBtn.disabled = true;
@@ -245,7 +265,9 @@ export function createBulkActionBar({
 
         for (const id of state.ids) {
           try {
-            await api(`/api/presentations/${id}/permanent`, { method: 'DELETE' });
+            await api(`/api/presentations/${id}/permanent`, {
+              method: 'DELETE',
+            });
             successCount++;
           } catch {
             failCount++;
@@ -254,14 +276,22 @@ export function createBulkActionBar({
 
         if (successCount > 0) {
           toast.success(
-            t('list.bulk.deletePermanently.done', '{count} presentation(s) permanently deleted.', { count: successCount }),
-            { id: 'bulk-permanent-delete', durationMs: 2500 }
+            t(
+              'list.bulk.deletePermanently.done',
+              '{count} presentation(s) permanently deleted.',
+              { count: successCount },
+            ),
+            { id: 'bulk-permanent-delete', durationMs: 2500 },
           );
         }
         if (failCount > 0) {
           toast.error(
-            t('list.bulk.deletePermanently.failed', 'Failed to delete {count} presentation(s).', { count: failCount }),
-            { id: 'bulk-permanent-delete-error', durationMs: 3000 }
+            t(
+              'list.bulk.deletePermanently.failed',
+              'Failed to delete {count} presentation(s).',
+              { count: failCount },
+            ),
+            { id: 'bulk-permanent-delete-error', durationMs: 3000 },
           );
         }
 
@@ -275,18 +305,20 @@ export function createBulkActionBar({
   });
 
   // Normal view actions
-  const normalActions = h('div', { class: 'bulk-action-actions bulk-action-normal' }, [
-    cancelBtn.cloneNode(true),
-    normalDeleteBtn,
-  ]);
-  normalActions.querySelector('.bulk-action-cancel').onclick = () => selectionState.clear();
+  const normalActions = h(
+    'div',
+    { class: 'bulk-action-actions bulk-action-normal' },
+    [cancelBtn.cloneNode(true), normalDeleteBtn],
+  );
+  normalActions.querySelector('.bulk-action-cancel').onclick = () =>
+    selectionState.clear();
 
   // Trash view actions
-  const trashActions = h('div', { class: 'bulk-action-actions bulk-action-trash' }, [
-    cancelBtn,
-    restoreBtn,
-    trashDeleteBtn,
-  ]);
+  const trashActions = h(
+    'div',
+    { class: 'bulk-action-actions bulk-action-trash' },
+    [cancelBtn, restoreBtn, trashDeleteBtn],
+  );
 
   bar.append(countLabel, normalActions, trashActions);
 
@@ -295,7 +327,9 @@ export function createBulkActionBar({
     const inTrash = isTrashView();
     bar.classList.toggle('is-visible', state.isActive && state.count > 0);
     bar.classList.toggle('is-trash-view', inTrash);
-    countLabel.textContent = t('list.bulk.selected', '{count} selected', { count: state.count });
+    countLabel.textContent = t('list.bulk.selected', '{count} selected', {
+      count: state.count,
+    });
 
     // Show/hide appropriate action set
     normalActions.style.display = inTrash ? 'none' : 'flex';

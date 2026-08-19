@@ -13,7 +13,14 @@
  * POST /api/themes/custom/clear-default - Clear org default (admin only)
  */
 
-import { serveJson, badRequest, notFound, requireJsonBody, forbidden, withErrorHandler } from '../../utils/http.js';
+import {
+  serveJson,
+  badRequest,
+  notFound,
+  requireJsonBody,
+  forbidden,
+  withErrorHandler,
+} from '../../utils/http.js';
 import {
   listThemeIds,
   listCoreThemeIds,
@@ -31,11 +38,17 @@ import {
   deleteTheme,
   setDefaultTheme,
 } from '../../storage/themes.js';
-import { CURATED_FONTS, getFontsByCategory } from '../../../shared/theme-fonts.js';
+import {
+  CURATED_FONTS,
+  getFontsByCategory,
+} from '../../../shared/theme-fonts.js';
 import { buildThemeConfig } from '../../utils/theme-builder.js';
 import { listAllFontFamiliesWithVariants } from '../../storage/font-families.js';
 import { getAppSettings, getDefaultThemeId } from '../../storage/settings.js';
-import { getOptionalString, getOptionalObject } from '../../utils/request-validators.js';
+import {
+  getOptionalString,
+  getOptionalObject,
+} from '../../utils/request-validators.js';
 
 /**
  * Check if user can manage themes.
@@ -54,7 +67,6 @@ function canManageThemes(authedUser) {
 
 // GET /api/themes - List all themes (system + custom)
 async function handleThemeList({ repoRoot, storageScope, res, authedUser }) {
-
   // Load system themes from filesystem. Sandbox is a public, neutral
   // playground, so it lists only the built-in core themes (never filesystem
   // custom/branded ones under custom/themes) — and, when present, narrows to
@@ -66,7 +78,9 @@ async function handleThemeList({ repoRoot, storageScope, res, authedUser }) {
     : await listThemeIds(repoRoot);
   let filteredSystemIds = systemThemeIds;
   if (sandboxEnabled()) {
-    const curated = systemThemeIds.filter((id) => String(id).startsWith('sandbox-'));
+    const curated = systemThemeIds.filter((id) =>
+      String(id).startsWith('sandbox-'),
+    );
     filteredSystemIds = curated.length ? curated : systemThemeIds;
   }
 
@@ -149,7 +163,12 @@ function handleThemeFonts({ res }) {
 // been saved yet. Deriving the tokens client-side would be a second copy of
 // the colour maths, which is exactly the drift #118 removed — so the draft is
 // built through the same `buildThemeConfig` production uses.
-async function handleThemePreviewConfig({ storageScope, req, res, authedUser }) {
+async function handleThemePreviewConfig({
+  storageScope,
+  req,
+  res,
+  authedUser,
+}) {
   if (!canManageThemes(authedUser)) {
     return forbidden(res, 'Admin access required');
   }
@@ -166,9 +185,7 @@ async function handleThemePreviewConfig({ storageScope, req, res, authedUser }) 
   const fonts = getOptionalObject(draft, 'fonts') || {};
   if (fonts.headingFamilyId || fonts.bodyFamilyId) {
     try {
-      managedFonts = await listAllFontFamiliesWithVariants(
-        storageScope
-      );
+      managedFonts = await listAllFontFamiliesWithVariants(storageScope);
     } catch {
       // Fall back to no managed fonts
     }
@@ -187,7 +204,7 @@ async function handleThemePreviewConfig({ storageScope, req, res, authedUser }) 
       fonts,
       config: draft.config,
     },
-    { managedFonts }
+    { managedFonts },
   );
 
   serveJson(res, 200, { theme });
@@ -229,7 +246,11 @@ async function handleCustomThemeCreate({ storageScope, req, res, authedUser }) {
 }
 
 // POST /api/themes/custom/clear-default - Clear org default
-async function handleCustomThemeClearDefault({ storageScope, res, authedUser }) {
+async function handleCustomThemeClearDefault({
+  storageScope,
+  res,
+  authedUser,
+}) {
   if (!canManageThemes(authedUser)) {
     return forbidden(res, 'Admin access required');
   }
@@ -245,7 +266,10 @@ async function handleCustomThemeClearDefault({ storageScope, res, authedUser }) 
 }
 
 // GET /api/themes/custom/:id - Get a custom theme
-async function handleCustomThemeGet({ storageScope, res, authedUser }, themeId) {
+async function handleCustomThemeGet(
+  { storageScope, res, authedUser },
+  themeId,
+) {
   const theme = await getThemeRecord(storageScope, themeId);
   if (!theme) {
     return notFound(res, 'Theme not found');
@@ -255,7 +279,10 @@ async function handleCustomThemeGet({ storageScope, res, authedUser }, themeId) 
 }
 
 // PUT /api/themes/custom/:id - Update a custom theme (admin only)
-async function handleCustomThemeUpdate({ storageScope, req, res, authedUser }, themeId) {
+async function handleCustomThemeUpdate(
+  { storageScope, req, res, authedUser },
+  themeId,
+) {
   if (!canManageThemes(authedUser)) {
     return forbidden(res, 'Admin access required');
   }
@@ -285,7 +312,10 @@ async function handleCustomThemeUpdate({ storageScope, req, res, authedUser }, t
 }
 
 // DELETE /api/themes/custom/:id - Delete a custom theme (admin only)
-async function handleCustomThemeDelete({ storageScope, res, authedUser }, themeId) {
+async function handleCustomThemeDelete(
+  { storageScope, res, authedUser },
+  themeId,
+) {
   if (!canManageThemes(authedUser)) {
     return forbidden(res, 'Admin access required');
   }
@@ -305,7 +335,10 @@ async function handleCustomThemeDelete({ storageScope, res, authedUser }, themeI
 }
 
 // POST /api/themes/custom/:id/set-default - Set as org default (admin only)
-async function handleCustomThemeSetDefault({ storageScope, res, authedUser }, themeId) {
+async function handleCustomThemeSetDefault(
+  { storageScope, res, authedUser },
+  themeId,
+) {
   if (!canManageThemes(authedUser)) {
     return forbidden(res, 'Admin access required');
   }
@@ -324,8 +357,10 @@ async function handleCustomThemeSetDefault({ storageScope, res, authedUser }, th
 }
 
 // GET /api/themes/custom/:id/config - Get theme config for rendering
-async function handleCustomThemeConfig({ storageScope, res, authedUser }, themeId) {
-
+async function handleCustomThemeConfig(
+  { storageScope, res, authedUser },
+  themeId,
+) {
   const theme = await getThemeRecord(storageScope, themeId);
   if (!theme) {
     return notFound(res, 'Theme not found');
@@ -360,15 +395,51 @@ async function handleCustomThemeConfig({ storageScope, res, authedUser }, themeI
 export const ROUTES = [
   { method: 'GET', pattern: '/api/themes', handler: handleThemeList },
   { method: 'GET', pattern: '/api/themes/fonts', handler: handleThemeFonts },
-  { method: 'POST', pattern: '/api/themes/custom/preview-config', handler: handleThemePreviewConfig },
-  { method: 'GET', pattern: '/api/themes/custom', handler: handleCustomThemeList },
-  { method: 'POST', pattern: '/api/themes/custom', handler: handleCustomThemeCreate },
-  { method: 'POST', pattern: '/api/themes/custom/clear-default', handler: handleCustomThemeClearDefault },
-  { method: 'GET', pattern: /^\/api\/themes\/custom\/([a-f0-9-]+)$/, handler: handleCustomThemeGet },
-  { method: 'PUT', pattern: /^\/api\/themes\/custom\/([a-f0-9-]+)$/, handler: handleCustomThemeUpdate },
-  { method: 'DELETE', pattern: /^\/api\/themes\/custom\/([a-f0-9-]+)$/, handler: handleCustomThemeDelete },
-  { method: 'POST', pattern: /^\/api\/themes\/custom\/([a-f0-9-]+)\/set-default$/, handler: handleCustomThemeSetDefault },
-  { method: 'GET', pattern: /^\/api\/themes\/custom\/([a-f0-9-]+)\/config$/, handler: handleCustomThemeConfig },
+  {
+    method: 'POST',
+    pattern: '/api/themes/custom/preview-config',
+    handler: handleThemePreviewConfig,
+  },
+  {
+    method: 'GET',
+    pattern: '/api/themes/custom',
+    handler: handleCustomThemeList,
+  },
+  {
+    method: 'POST',
+    pattern: '/api/themes/custom',
+    handler: handleCustomThemeCreate,
+  },
+  {
+    method: 'POST',
+    pattern: '/api/themes/custom/clear-default',
+    handler: handleCustomThemeClearDefault,
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/themes\/custom\/([a-f0-9-]+)$/,
+    handler: handleCustomThemeGet,
+  },
+  {
+    method: 'PUT',
+    pattern: /^\/api\/themes\/custom\/([a-f0-9-]+)$/,
+    handler: handleCustomThemeUpdate,
+  },
+  {
+    method: 'DELETE',
+    pattern: /^\/api\/themes\/custom\/([a-f0-9-]+)$/,
+    handler: handleCustomThemeDelete,
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/themes\/custom\/([a-f0-9-]+)\/set-default$/,
+    handler: handleCustomThemeSetDefault,
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/themes\/custom\/([a-f0-9-]+)\/config$/,
+    handler: handleCustomThemeConfig,
+  },
 ];
 
 /**

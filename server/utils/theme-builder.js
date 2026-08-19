@@ -52,7 +52,10 @@ function hexToRgb(hex) {
  * @returns {string} - Hex color
  */
 function rgbToHex(r, g, b) {
-  const toHex = (n) => Math.round(Math.max(0, Math.min(255, n))).toString(16).padStart(2, '0');
+  const toHex = (n) =>
+    Math.round(Math.max(0, Math.min(255, n)))
+      .toString(16)
+      .padStart(2, '0');
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
@@ -205,14 +208,19 @@ export function deriveThemeTokens({
       managedFontMap[mf.id] = mf;
     }
   }
-  const headingManaged = headingFamilyId ? managedFontMap[headingFamilyId] : null;
+  const headingManaged = headingFamilyId
+    ? managedFontMap[headingFamilyId]
+    : null;
   const bodyManaged = bodyFamilyId ? managedFontMap[bodyFamilyId] : null;
 
   // Derive color palette from primary
   const brandColors = deriveColorPalette(primary);
 
   // Determine text color based on background
-  const textColor = pickTextColorForBg(background, { light: textLight, dark: textDark });
+  const textColor = pickTextColorForBg(background, {
+    light: textLight,
+    dark: textDark,
+  });
   const textMuted = rgba(textColor, 0.7) || 'rgba(31, 41, 55, 0.7)';
 
   // Generate mist/accent background (lighter version of primary)
@@ -301,17 +309,29 @@ export function buildThemeConfig(dbTheme, { managedFonts } = {}) {
   const colors = dbTheme.colors || {};
   const fonts = dbTheme.fonts || {};
 
-  const { cssVars, brandColors, textLight, textDark, headingManaged, bodyManaged } =
-    deriveThemeTokens({
-      colors,
-      fonts,
-      managedFonts,
-      logoUrl: dbTheme.logoUrl,
-    });
+  const {
+    cssVars,
+    brandColors,
+    textLight,
+    textDark,
+    headingManaged,
+    bodyManaged,
+  } = deriveThemeTokens({
+    colors,
+    fonts,
+    managedFonts,
+    logoUrl: dbTheme.logoUrl,
+  });
 
   // Build embed fonts array and external font links
-  const embedFonts = buildEmbedFontsArray(fonts, { headingManaged, bodyManaged });
-  const externalFontLinks = buildExternalFontLinks({ headingManaged, bodyManaged });
+  const embedFonts = buildEmbedFontsArray(fonts, {
+    headingManaged,
+    bodyManaged,
+  });
+  const externalFontLinks = buildExternalFontLinks({
+    headingManaged,
+    bodyManaged,
+  });
 
   // Determine logos - title slide can have a separate smaller logo
   const mainLogo = dbTheme.logoUrl || '/assets/images/deckyard-mark.svg';
@@ -383,17 +403,20 @@ function applyThemeConfig(theme, rawConfig) {
     cssVars['--t-heading-weight'] = config.typography.headingWeight;
   if (config.typography?.letterSpacing)
     cssVars['--t-heading-letter-spacing'] = config.typography.letterSpacing;
-  if (config.typography?.mono) cssVars['--t-font-mono'] = config.typography.mono;
+  if (config.typography?.mono)
+    cssVars['--t-font-mono'] = config.typography.mono;
 
   // Named background variants: the documented DB/file gap. normalizeTheme turns
   // these into `--t-slide-bg-<id>*` vars and the generated `.slide-bg-<id>` CSS,
   // exactly as it does for a file theme.
   if (config.backgroundLabels) theme.backgroundLabels = config.backgroundLabels;
   if (config.slideBackgrounds) theme.slideBackgrounds = config.slideBackgrounds;
-  if (config.backgroundPresets) theme.backgroundPresets = config.backgroundPresets;
+  if (config.backgroundPresets)
+    theme.backgroundPresets = config.backgroundPresets;
   if (config.gradient) theme.gradient = config.gradient;
   if (config.slideTypes) theme.slideTypes = config.slideTypes;
-  if (config.defaultTitleSlide) theme.defaultTitleSlide = config.defaultTitleSlide;
+  if (config.defaultTitleSlide)
+    theme.defaultTitleSlide = config.defaultTitleSlide;
   if (config.locks) theme.locks = config.locks;
 
   // Dark/light logo variants sit alongside the existing large/small pair; the
@@ -481,22 +504,33 @@ function buildExternalFontLinks({ headingManaged, bodyManaged } = {}) {
     switch (managed.source) {
       case 'adobe':
         if (config.projectId) {
-          links.push({ type: 'css', url: `https://use.typekit.net/${config.projectId}.css` });
+          links.push({
+            type: 'css',
+            url: `https://use.typekit.net/${config.projectId}.css`,
+          });
         }
         break;
       case 'monotype':
         if (config.projectId) {
-          links.push({ type: 'js', url: `https://fast.fonts.net/jsapi/${config.projectId}.js` });
+          links.push({
+            type: 'js',
+            url: `https://fast.fonts.net/jsapi/${config.projectId}.js`,
+          });
         }
         break;
       case 'google': {
         const spec = config.spec || managed.name;
         // Parse spec: "Open Sans:400,700" → family "Open Sans", weights [400,700]
         const colonIdx = spec.indexOf(':');
-        const familyName = colonIdx > 0 ? spec.slice(0, colonIdx).trim() : spec.trim();
+        const familyName =
+          colonIdx > 0 ? spec.slice(0, colonIdx).trim() : spec.trim();
         const weightsStr = colonIdx > 0 ? spec.slice(colonIdx + 1).trim() : '';
         const weights = weightsStr
-          ? weightsStr.split(',').map((w) => w.trim()).filter(Boolean).join(';')
+          ? weightsStr
+              .split(',')
+              .map((w) => w.trim())
+              .filter(Boolean)
+              .join(';')
           : '400;600;700';
         const encodedFamily = encodeURIComponent(familyName);
         links.push({
@@ -522,7 +556,8 @@ function buildExternalFontLinks({ headingManaged, bodyManaged } = {}) {
  */
 function getManagedFontCSS(managed, family) {
   if (managed) {
-    const fallback = managed.cssFallback || getCategoryFallback(managed.category);
+    const fallback =
+      managed.cssFallback || getCategoryFallback(managed.category);
     return `'${managed.name}', ${fallback}`;
   }
   return getFontFamilyCSS(family);
@@ -600,7 +635,9 @@ export function generateFontFaceCSS(fonts, { managedFonts } = {}) {
   };
 
   // Heading font
-  const headingManaged = fonts.headingFamilyId ? managedFontMap[fonts.headingFamilyId] : null;
+  const headingManaged = fonts.headingFamilyId
+    ? managedFontMap[fonts.headingFamilyId]
+    : null;
   if (headingManaged && headingManaged.source === 'upload') {
     addManagedFont(headingManaged);
   } else if (fonts.heading) {
@@ -608,7 +645,9 @@ export function generateFontFaceCSS(fonts, { managedFonts } = {}) {
   }
 
   // Body font
-  const bodyManaged = fonts.bodyFamilyId ? managedFontMap[fonts.bodyFamilyId] : null;
+  const bodyManaged = fonts.bodyFamilyId
+    ? managedFontMap[fonts.bodyFamilyId]
+    : null;
   if (bodyManaged && bodyManaged.source === 'upload') {
     addManagedFont(bodyManaged);
   } else if (fonts.body) {

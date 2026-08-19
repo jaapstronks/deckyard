@@ -55,18 +55,16 @@ const OTHER_ORG = '00000000-0000-0000-0000-0000000000bb';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } = await import(
-  '../server/storage/lifecycle.js'
-);
+const { initializeStorage, __resetStorageForTests } =
+  await import('../server/storage/lifecycle.js');
 const { createStorageScope } = await import('../server/utils/context.js');
-const { invalidatePermission } = await import(
-  '../server/storage/cache/permission-cache.js'
-);
+const { invalidatePermission } =
+  await import('../server/storage/cache/permission-cache.js');
 const { resetRateLimitBuckets } = await import('../server/utils/rate-limit.js');
-const { LEAD_RATE_LIMITS, GDPR_RATE_LIMITS, AUTH_RATE_LIMITS } = await import(
-  '../server/config/rate-limits.js'
-);
-const { handleLeads, handleLeadsPublic } = await import('../server/routes/api/leads.js');
+const { LEAD_RATE_LIMITS, GDPR_RATE_LIMITS, AUTH_RATE_LIMITS } =
+  await import('../server/config/rate-limits.js');
+const { handleLeads, handleLeadsPublic } =
+  await import('../server/routes/api/leads.js');
 const { handleNotion } = await import('../server/routes/api/notion.js');
 
 // ---------------------------------------------------------------------------
@@ -79,7 +77,11 @@ const ACTORS = {
   owner: { email: 'owner@example.com', name: 'Olive', organizationId: ORG },
   viewer: { email: 'viewer@example.com', name: 'Vera', organizationId: ORG },
   stranger: { email: 'stranger@example.com', name: 'Sam', organizationId: ORG },
-  outsider: { email: 'outsider@other.example', name: 'Otto', organizationId: OTHER_ORG },
+  outsider: {
+    email: 'outsider@other.example',
+    name: 'Otto',
+    organizationId: OTHER_ORG,
+  },
 };
 
 const DECKS = ['deck-owned', 'deck-foreign'];
@@ -88,7 +90,11 @@ const DECKS = ['deck-owned', 'deck-foreign'];
 let db;
 
 test.before(async () => {
-  __setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+  __setTestDb(
+    createFakeDb({
+      organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+    }),
+  );
   await initializeStorage();
 });
 
@@ -207,7 +213,11 @@ async function seed() {
     ],
     lead_submissions: [
       leadRow({ id: 'lead-1' }),
-      leadRow({ id: 'lead-2', email: 'second@example.com', slide_id: 'slide-2' }),
+      leadRow({
+        id: 'lead-2',
+        email: 'second@example.com',
+        slide_id: 'slide-2',
+      }),
     ],
     app_settings: [{ id: 'singleton', settings: {} }],
   });
@@ -268,7 +278,12 @@ function makeRes() {
  * @param {string} [options.ip] - Client IP (for the per-IP rate limit).
  * @returns {Promise<{handled: *, res: Object}>}
  */
-async function call(handle, method, pathAndQuery, { as = null, body, ip = '203.0.113.9' } = {}) {
+async function call(
+  handle,
+  method,
+  pathAndQuery,
+  { as = null, body, ip = '203.0.113.9' } = {},
+) {
   const payload = body === undefined ? '' : JSON.stringify(body);
   const req = {
     method,
@@ -314,14 +329,20 @@ function captureBody(overrides = {}) {
 test('a valid lead submission is stored and returns ok', async () => {
   await seed();
   const before = leadsTable().length;
-  const { res } = await call(handleLeadsPublic, 'POST', '/api/leads', { body: captureBody() });
+  const { res } = await call(handleLeadsPublic, 'POST', '/api/leads', {
+    body: captureBody(),
+  });
 
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.body, { ok: true });
   assert.equal(leadsTable().length, before + 1, 'the lead landed in storage');
   assert.ok(
-    leadsTable().some((l) => l.email === 'new.lead@example.com' && l.presentation_id === 'deck-owned'),
-    'with the submitted email and deck'
+    leadsTable().some(
+      (l) =>
+        l.email === 'new.lead@example.com' &&
+        l.presentation_id === 'deck-owned',
+    ),
+    'with the submitted email and deck',
   );
 });
 
@@ -383,14 +404,22 @@ test('capture is rate-limited per IP once the burst is spent', async () => {
       body: { presentationId: '', slideId: '' }, // passes the limiter, then 400s
       ip: '198.51.100.20',
     });
-    assert.equal(res.statusCode, 400, `call ${i + 1} within the burst passes the limiter`);
+    assert.equal(
+      res.statusCode,
+      400,
+      `call ${i + 1} within the burst passes the limiter`,
+    );
   }
 
   const { res } = await call(handleLeadsPublic, 'POST', '/api/leads', {
     body: captureBody(),
     ip: '198.51.100.20',
   });
-  assert.equal(res.statusCode, 429, 'the call past the burst is refused before the body');
+  assert.equal(
+    res.statusCode,
+    429,
+    'the call past the burst is refused before the body',
+  );
   assert.equal(res.body.error, 'rate_limited');
 });
 
@@ -400,17 +429,30 @@ test('capture is rate-limited per IP once the burst is spent', async () => {
 
 test('the authed lead routes fall through (not 401) for an anonymous caller', async () => {
   await seed();
-  const { handled, res } = await call(handleLeads, 'GET', '/api/presentations/deck-owned/leads');
+  const { handled, res } = await call(
+    handleLeads,
+    'GET',
+    '/api/presentations/deck-owned/leads',
+  );
 
-  assert.equal(handled, false, 'the module defers the auth decision to the outer gate');
+  assert.equal(
+    handled,
+    false,
+    'the module defers the auth decision to the outer gate',
+  );
   assert.equal(res.statusCode, null, 'and writes nothing itself');
 });
 
 test('listing a deck’s leads returns them for a reader', async () => {
   await seed();
-  const { res } = await call(handleLeads, 'GET', '/api/presentations/deck-owned/leads', {
-    as: ACTORS.owner,
-  });
+  const { res } = await call(
+    handleLeads,
+    'GET',
+    '/api/presentations/deck-owned/leads',
+    {
+      as: ACTORS.owner,
+    },
+  );
 
   assert.equal(res.statusCode, 200);
   assert.equal(res.body.total, 2);
@@ -419,9 +461,14 @@ test('listing a deck’s leads returns them for a reader', async () => {
 
 test('listing a deck’s leads is a 401 for a same-org non-collaborator', async () => {
   await seed();
-  const { res } = await call(handleLeads, 'GET', '/api/presentations/deck-owned/leads', {
-    as: ACTORS.stranger,
-  });
+  const { res } = await call(
+    handleLeads,
+    'GET',
+    '/api/presentations/deck-owned/leads',
+    {
+      as: ACTORS.stranger,
+    },
+  );
 
   assert.equal(res.statusCode, 401);
   assert.equal(res.body.error, 'unauthorized');
@@ -429,34 +476,58 @@ test('listing a deck’s leads is a 401 for a same-org non-collaborator', async 
 
 test('a view-only collaborator may read the leads', async () => {
   await seed();
-  const { res } = await call(handleLeads, 'GET', '/api/presentations/deck-owned/leads', {
-    as: ACTORS.viewer,
-  });
+  const { res } = await call(
+    handleLeads,
+    'GET',
+    '/api/presentations/deck-owned/leads',
+    {
+      as: ACTORS.viewer,
+    },
+  );
 
   assert.equal(res.statusCode, 200, 'view access is enough to read');
 });
 
 test('the lead count is readable, and refused for a non-collaborator', async () => {
   await seed();
-  const okRes = await call(handleLeads, 'GET', '/api/presentations/deck-owned/leads/count', {
-    as: ACTORS.owner,
-  });
+  const okRes = await call(
+    handleLeads,
+    'GET',
+    '/api/presentations/deck-owned/leads/count',
+    {
+      as: ACTORS.owner,
+    },
+  );
   assert.equal(okRes.res.statusCode, 200);
   assert.equal(okRes.res.body.count, 2);
 
-  const denied = await call(handleLeads, 'GET', '/api/presentations/deck-owned/leads/count', {
-    as: ACTORS.stranger,
-  });
+  const denied = await call(
+    handleLeads,
+    'GET',
+    '/api/presentations/deck-owned/leads/count',
+    {
+      as: ACTORS.stranger,
+    },
+  );
   assert.equal(denied.res.statusCode, 401);
 });
 
 test('another organization’s deck does not resolve for its leads', async () => {
   await seed();
-  const { res } = await call(handleLeads, 'GET', '/api/presentations/deck-foreign/leads', {
-    as: ACTORS.owner,
-  });
+  const { res } = await call(
+    handleLeads,
+    'GET',
+    '/api/presentations/deck-foreign/leads',
+    {
+      as: ACTORS.owner,
+    },
+  );
 
-  assert.equal(res.statusCode, 404, 'a deck in another organization is not found in this scope');
+  assert.equal(
+    res.statusCode,
+    404,
+    'a deck in another organization is not found in this scope',
+  );
 });
 
 // ===========================================================================
@@ -465,36 +536,58 @@ test('another organization’s deck does not resolve for its leads', async () =>
 
 test('exporting the CSV needs write access, which a view-only collaborator lacks', async () => {
   await seed();
-  const { res } = await call(handleLeads, 'GET', '/api/presentations/deck-owned/leads/export', {
-    as: ACTORS.viewer,
-  });
+  const { res } = await call(
+    handleLeads,
+    'GET',
+    '/api/presentations/deck-owned/leads/export',
+    {
+      as: ACTORS.viewer,
+    },
+  );
 
   assert.equal(res.statusCode, 401, 'export is a write-level operation');
 });
 
 test('exporting the CSV returns text/csv for a writer', async () => {
   await seed();
-  const { res } = await call(handleLeads, 'GET', '/api/presentations/deck-owned/leads/export', {
-    as: ACTORS.owner,
-  });
+  const { res } = await call(
+    handleLeads,
+    'GET',
+    '/api/presentations/deck-owned/leads/export',
+    {
+      as: ACTORS.owner,
+    },
+  );
 
   assert.equal(res.statusCode, 200);
   assert.match(res.headers['Content-Type'], /text\/csv/);
   assert.match(res.headers['Content-Disposition'], /attachment; filename=/);
-  assert.match(res.rawBody, /lead@example\.com/, 'the CSV carries the seeded lead');
+  assert.match(
+    res.rawBody,
+    /lead@example\.com/,
+    'the CSV carries the seeded lead',
+  );
 });
 
 test('deleting a lead needs write access', async () => {
   await seed();
-  const { res } = await call(handleLeads, 'DELETE', '/api/leads/lead-1', { as: ACTORS.viewer });
+  const { res } = await call(handleLeads, 'DELETE', '/api/leads/lead-1', {
+    as: ACTORS.viewer,
+  });
 
   assert.equal(res.statusCode, 401);
-  assert.equal(leadById('lead-1').anonymized_at, null, 'the lead survives a refused delete');
+  assert.equal(
+    leadById('lead-1').anonymized_at,
+    null,
+    'the lead survives a refused delete',
+  );
 });
 
 test('deleting a lead anonymizes it for a writer', async () => {
   await seed();
-  const { res } = await call(handleLeads, 'DELETE', '/api/leads/lead-1', { as: ACTORS.owner });
+  const { res } = await call(handleLeads, 'DELETE', '/api/leads/lead-1', {
+    as: ACTORS.owner,
+  });
 
   assert.equal(res.statusCode, 200);
   assert.equal(res.body.ok, true);
@@ -504,7 +597,9 @@ test('deleting a lead anonymizes it for a writer', async () => {
 
 test('deleting an unknown lead is a 404', async () => {
   await seed();
-  const { res } = await call(handleLeads, 'DELETE', '/api/leads/no-such-lead', { as: ACTORS.owner });
+  const { res } = await call(handleLeads, 'DELETE', '/api/leads/no-such-lead', {
+    as: ACTORS.owner,
+  });
 
   assert.equal(res.statusCode, 404);
 });
@@ -521,9 +616,14 @@ test('deleting an unknown lead is a 404', async () => {
 
 test('my-data request rejects a malformed email with a 400 (anonymous)', async () => {
   await seed();
-  const { res } = await call(handleLeadsPublic, 'POST', '/api/leads/my-data/request', {
-    body: { email: 'nope' },
-  });
+  const { res } = await call(
+    handleLeadsPublic,
+    'POST',
+    '/api/leads/my-data/request',
+    {
+      body: { email: 'nope' },
+    },
+  );
 
   assert.equal(res.statusCode, 400);
   assert.match(res.body.message, /Valid email required/);
@@ -531,15 +631,27 @@ test('my-data request rejects a malformed email with a 400 (anonymous)', async (
 
 test('my-data read refuses a missing or wrong token (anonymous)', async () => {
   await seed();
-  const noToken = await call(handleLeadsPublic, 'GET', '/api/leads/my-data?email=lead@example.com');
-  assert.equal(noToken.res.statusCode, 400, 'email and token are both required');
+  const noToken = await call(
+    handleLeadsPublic,
+    'GET',
+    '/api/leads/my-data?email=lead@example.com',
+  );
+  assert.equal(
+    noToken.res.statusCode,
+    400,
+    'email and token are both required',
+  );
 
   const wrongToken = await call(
     handleLeadsPublic,
     'GET',
-    '/api/leads/my-data?email=lead@example.com&token=deadbeef'
+    '/api/leads/my-data?email=lead@example.com&token=deadbeef',
   );
-  assert.equal(wrongToken.res.statusCode, 401, 'a token that was never issued is refused');
+  assert.equal(
+    wrongToken.res.statusCode,
+    401,
+    'a token that was never issued is refused',
+  );
   assert.equal(wrongToken.res.body.error, 'unauthorized');
 });
 
@@ -548,15 +660,23 @@ test('an unknown token refuses identically for a seeded and an unseeded email (n
   const onFile = await call(
     handleLeadsPublic,
     'GET',
-    '/api/leads/my-data?email=lead@example.com&token=deadbeef'
+    '/api/leads/my-data?email=lead@example.com&token=deadbeef',
   );
   const notOnFile = await call(
     handleLeadsPublic,
     'GET',
-    '/api/leads/my-data?email=ghost@nowhere.example&token=deadbeef'
+    '/api/leads/my-data?email=ghost@nowhere.example&token=deadbeef',
   );
-  assert.equal(onFile.res.statusCode, notOnFile.res.statusCode, 'same status either way');
-  assert.deepEqual(onFile.res.body, notOnFile.res.body, 'and a byte-identical body — a wrong token cannot probe existence');
+  assert.equal(
+    onFile.res.statusCode,
+    notOnFile.res.statusCode,
+    'same status either way',
+  );
+  assert.deepEqual(
+    onFile.res.body,
+    notOnFile.res.body,
+    'and a byte-identical body — a wrong token cannot probe existence',
+  );
 });
 
 test('my-data request is an honest 501 when outgoing email is not configured (anonymous)', async () => {
@@ -566,13 +686,25 @@ test('my-data request is an honest 501 when outgoing email is not configured (an
   const previousKey = process.env.BREVO_API_KEY;
   delete process.env.BREVO_API_KEY; // no mail provider on this install
   try {
-    const { res } = await call(handleLeadsPublic, 'POST', '/api/leads/my-data/request', {
-      body: { email: 'lead@example.com' },
-    });
+    const { res } = await call(
+      handleLeadsPublic,
+      'POST',
+      '/api/leads/my-data/request',
+      {
+        body: { email: 'lead@example.com' },
+      },
+    );
 
-    assert.equal(res.statusCode, 501, 'production without mail cannot deliver the token, so it must not pretend');
+    assert.equal(
+      res.statusCode,
+      501,
+      'production without mail cannot deliver the token, so it must not pretend',
+    );
     assert.equal(res.body.error, 'email_not_configured');
-    assert.ok(!res.body.devToken, 'the token is never echoed outside development');
+    assert.ok(
+      !res.body.devToken,
+      'the token is never echoed outside development',
+    );
   } finally {
     if (previousEnv === undefined) delete process.env.NODE_ENV;
     else process.env.NODE_ENV = previousEnv;
@@ -585,29 +717,46 @@ test('the GDPR self-service round-trip is anonymous: request → read → erase'
   await seed();
   process.env.NODE_ENV = 'development'; // the dev branch echoes the verification token
   try {
-    const request = await call(handleLeadsPublic, 'POST', '/api/leads/my-data/request', {
-      body: { email: 'lead@example.com' },
-    });
-    assert.equal(request.res.statusCode, 200, 'a logged-out subject can request their token');
+    const request = await call(
+      handleLeadsPublic,
+      'POST',
+      '/api/leads/my-data/request',
+      {
+        body: { email: 'lead@example.com' },
+      },
+    );
+    assert.equal(
+      request.res.statusCode,
+      200,
+      'a logged-out subject can request their token',
+    );
     const token = request.res.body.devToken;
     assert.ok(token, 'a verification token is issued in development');
 
     const read = await call(
       handleLeadsPublic,
       'GET',
-      `/api/leads/my-data?email=lead@example.com&token=${token}`
+      `/api/leads/my-data?email=lead@example.com&token=${token}`,
     );
     assert.equal(read.res.statusCode, 200);
-    assert.equal(read.res.body.leadCount, 1, 'the one lead for this email is returned');
+    assert.equal(
+      read.res.body.leadCount,
+      1,
+      'the one lead for this email is returned',
+    );
 
     // The GET deliberately does NOT consume the token — erase still needs it.
     const erase = await call(
       handleLeadsPublic,
       'DELETE',
-      `/api/leads/my-data?email=lead@example.com&token=${token}`
+      `/api/leads/my-data?email=lead@example.com&token=${token}`,
     );
     assert.equal(erase.res.statusCode, 200);
-    assert.equal(erase.res.body.anonymized, 1, 'the lead is anonymized by email');
+    assert.equal(
+      erase.res.body.anonymized,
+      1,
+      'the lead is anonymized by email',
+    );
     assert.equal(leadById('lead-1').email, '[deleted]');
   } finally {
     delete process.env.NODE_ENV;
@@ -618,15 +767,20 @@ test('the erase burns the token: a second use of the same link is refused', asyn
   await seed();
   process.env.NODE_ENV = 'development';
   try {
-    const request = await call(handleLeadsPublic, 'POST', '/api/leads/my-data/request', {
-      body: { email: 'lead@example.com' },
-    });
+    const request = await call(
+      handleLeadsPublic,
+      'POST',
+      '/api/leads/my-data/request',
+      {
+        body: { email: 'lead@example.com' },
+      },
+    );
     const token = request.res.body.devToken;
 
     const firstErase = await call(
       handleLeadsPublic,
       'DELETE',
-      `/api/leads/my-data?email=lead@example.com&token=${token}`
+      `/api/leads/my-data?email=lead@example.com&token=${token}`,
     );
     assert.equal(firstErase.res.statusCode, 200, 'the first erase succeeds');
 
@@ -634,14 +788,18 @@ test('the erase burns the token: a second use of the same link is refused', asyn
     const reread = await call(
       handleLeadsPublic,
       'GET',
-      `/api/leads/my-data?email=lead@example.com&token=${token}`
+      `/api/leads/my-data?email=lead@example.com&token=${token}`,
     );
-    assert.equal(reread.res.statusCode, 401, 'the burned token no longer reads');
+    assert.equal(
+      reread.res.statusCode,
+      401,
+      'the burned token no longer reads',
+    );
 
     const reErase = await call(
       handleLeadsPublic,
       'DELETE',
-      `/api/leads/my-data?email=lead@example.com&token=${token}`
+      `/api/leads/my-data?email=lead@example.com&token=${token}`,
     );
     assert.equal(reErase.res.statusCode, 401, 'and it no longer erases');
   } finally {
@@ -653,14 +811,24 @@ test('a fresh request replaces the previous token for the same address', async (
   await seed();
   process.env.NODE_ENV = 'development';
   try {
-    const first = await call(handleLeadsPublic, 'POST', '/api/leads/my-data/request', {
-      body: { email: 'lead@example.com' },
-    });
+    const first = await call(
+      handleLeadsPublic,
+      'POST',
+      '/api/leads/my-data/request',
+      {
+        body: { email: 'lead@example.com' },
+      },
+    );
     const oldToken = first.res.body.devToken;
 
-    const second = await call(handleLeadsPublic, 'POST', '/api/leads/my-data/request', {
-      body: { email: 'lead@example.com' },
-    });
+    const second = await call(
+      handleLeadsPublic,
+      'POST',
+      '/api/leads/my-data/request',
+      {
+        body: { email: 'lead@example.com' },
+      },
+    );
     const newToken = second.res.body.devToken;
     assert.notEqual(oldToken, newToken, 'each request mints a distinct token');
 
@@ -669,14 +837,14 @@ test('a fresh request replaces the previous token for the same address', async (
     const stale = await call(
       handleLeadsPublic,
       'GET',
-      `/api/leads/my-data?email=lead@example.com&token=${oldToken}`
+      `/api/leads/my-data?email=lead@example.com&token=${oldToken}`,
     );
     assert.equal(stale.res.statusCode, 401, 'the superseded token is dead');
 
     const current = await call(
       handleLeadsPublic,
       'GET',
-      `/api/leads/my-data?email=lead@example.com&token=${newToken}`
+      `/api/leads/my-data?email=lead@example.com&token=${newToken}`,
     );
     assert.equal(current.res.statusCode, 200, 'the latest token still reads');
   } finally {
@@ -694,17 +862,35 @@ test('the request route is capped per target-email, and a 429 does not reveal ex
     // Fix the target email, vary the IP so the per-IP bucket never trips first:
     // the per-target-email bucket is the one under test.
     for (let i = 0; i < cap; i++) {
-      const { res } = await call(handleLeadsPublic, 'POST', '/api/leads/my-data/request', {
-        body: { email: 'victim@example.com' },
-        ip: `198.51.100.${i + 1}`,
-      });
-      assert.equal(res.statusCode, 200, `request ${i + 1} within the per-email burst is served`);
+      const { res } = await call(
+        handleLeadsPublic,
+        'POST',
+        '/api/leads/my-data/request',
+        {
+          body: { email: 'victim@example.com' },
+          ip: `198.51.100.${i + 1}`,
+        },
+      );
+      assert.equal(
+        res.statusCode,
+        200,
+        `request ${i + 1} within the per-email burst is served`,
+      );
     }
-    const blocked = await call(handleLeadsPublic, 'POST', '/api/leads/my-data/request', {
-      body: { email: 'victim@example.com' },
-      ip: '198.51.100.250',
-    });
-    assert.equal(blocked.res.statusCode, 429, 'the request past the per-email burst is refused');
+    const blocked = await call(
+      handleLeadsPublic,
+      'POST',
+      '/api/leads/my-data/request',
+      {
+        body: { email: 'victim@example.com' },
+        ip: '198.51.100.250',
+      },
+    );
+    assert.equal(
+      blocked.res.statusCode,
+      429,
+      'the request past the per-email burst is refused',
+    );
     assert.equal(blocked.res.body.error, 'rate_limited');
 
     // The same target-email bucket caps a NON-existent address identically, so
@@ -715,12 +901,25 @@ test('the request route is capped per target-email, and a 429 does not reveal ex
         ip: `203.0.113.${i + 1}`,
       });
     }
-    const ghostBlocked = await call(handleLeadsPublic, 'POST', '/api/leads/my-data/request', {
-      body: { email: 'ghost@nowhere.example' },
-      ip: '203.0.113.250',
-    });
-    assert.equal(ghostBlocked.res.statusCode, blocked.res.statusCode, 'same 429 for an unseeded address');
-    assert.deepEqual(ghostBlocked.res.body, blocked.res.body, 'and a byte-identical body');
+    const ghostBlocked = await call(
+      handleLeadsPublic,
+      'POST',
+      '/api/leads/my-data/request',
+      {
+        body: { email: 'ghost@nowhere.example' },
+        ip: '203.0.113.250',
+      },
+    );
+    assert.equal(
+      ghostBlocked.res.statusCode,
+      blocked.res.statusCode,
+      'same 429 for an unseeded address',
+    );
+    assert.deepEqual(
+      ghostBlocked.res.body,
+      blocked.res.body,
+      'and a byte-identical body',
+    );
   } finally {
     delete process.env.NODE_ENV;
   }
@@ -734,17 +933,35 @@ test('the request route is capped per IP across different targets', async () => 
     // Fix the IP, vary the email so each per-email bucket stays fresh: now the
     // per-IP bucket is the limiting factor.
     for (let i = 0; i < cap; i++) {
-      const { res } = await call(handleLeadsPublic, 'POST', '/api/leads/my-data/request', {
-        body: { email: `subject-${i}@example.com` },
-        ip: '198.51.100.77',
-      });
-      assert.equal(res.statusCode, 200, `request ${i + 1} within the per-IP burst is served`);
+      const { res } = await call(
+        handleLeadsPublic,
+        'POST',
+        '/api/leads/my-data/request',
+        {
+          body: { email: `subject-${i}@example.com` },
+          ip: '198.51.100.77',
+        },
+      );
+      assert.equal(
+        res.statusCode,
+        200,
+        `request ${i + 1} within the per-IP burst is served`,
+      );
     }
-    const { res } = await call(handleLeadsPublic, 'POST', '/api/leads/my-data/request', {
-      body: { email: 'subject-last@example.com' },
-      ip: '198.51.100.77',
-    });
-    assert.equal(res.statusCode, 429, 'the request past the per-IP burst is refused before the body matters');
+    const { res } = await call(
+      handleLeadsPublic,
+      'POST',
+      '/api/leads/my-data/request',
+      {
+        body: { email: 'subject-last@example.com' },
+        ip: '198.51.100.77',
+      },
+    );
+    assert.equal(
+      res.statusCode,
+      429,
+      'the request past the per-IP burst is refused before the body matters',
+    );
     assert.equal(res.body.error, 'rate_limited');
   } finally {
     delete process.env.NODE_ENV;
@@ -760,12 +977,20 @@ test('the my-data read is rate-limited per IP with the expensive tier', async ()
     const { res } = await call(handleLeadsPublic, 'GET', '/api/leads/my-data', {
       ip: '198.51.100.88',
     });
-    assert.equal(res.statusCode, 400, `read ${i + 1} within the burst reaches the missing-token check`);
+    assert.equal(
+      res.statusCode,
+      400,
+      `read ${i + 1} within the burst reaches the missing-token check`,
+    );
   }
   const { res } = await call(handleLeadsPublic, 'GET', '/api/leads/my-data', {
     ip: '198.51.100.88',
   });
-  assert.equal(res.statusCode, 429, 'the read past the burst is refused before the token check');
+  assert.equal(
+    res.statusCode,
+    429,
+    'the read past the burst is refused before the token check',
+  );
   assert.equal(res.body.error, 'rate_limited');
 });
 
@@ -773,11 +998,27 @@ test('the my-data read is rate-limited per IP with the expensive tier', async ()
 
 test('DELETE /api/leads/:id is NOT reachable through the public mount', async () => {
   await seed();
-  const { handled, res } = await call(handleLeadsPublic, 'DELETE', '/api/leads/lead-1');
+  const { handled, res } = await call(
+    handleLeadsPublic,
+    'DELETE',
+    '/api/leads/lead-1',
+  );
 
-  assert.equal(handled, false, 'only the literal my-data delete is public; :id falls through to the gate');
-  assert.equal(res.statusCode, null, 'the public table writes nothing for a bare lead id');
-  assert.equal(leadById('lead-1').anonymized_at, null, 'and the lead is untouched');
+  assert.equal(
+    handled,
+    false,
+    'only the literal my-data delete is public; :id falls through to the gate',
+  );
+  assert.equal(
+    res.statusCode,
+    null,
+    'the public table writes nothing for a bare lead id',
+  );
+  assert.equal(
+    leadById('lead-1').anonymized_at,
+    null,
+    'and the lead is untouched',
+  );
 });
 
 test('the authed my-data routes no longer dispatch through the authed mount', async () => {
@@ -785,10 +1026,19 @@ test('the authed my-data routes no longer dispatch through the authed mount', as
   // The routes moved to PUBLIC_ROUTES, so the authed table must not answer them
   // anymore — even for a logged-in caller. (It never should have; the token is
   // the gate.) A fall-through here proves the move, not a second accepted shape.
-  const { handled, res } = await call(handleLeads, 'GET', '/api/leads/my-data?email=lead@example.com', {
-    as: ACTORS.owner,
-  });
-  assert.equal(handled, false, 'the authed table no longer carries the my-data routes');
+  const { handled, res } = await call(
+    handleLeads,
+    'GET',
+    '/api/leads/my-data?email=lead@example.com',
+    {
+      as: ACTORS.owner,
+    },
+  );
+  assert.equal(
+    handled,
+    false,
+    'the authed table no longer carries the my-data routes',
+  );
   assert.equal(res.statusCode, null, 'and writes nothing');
 });
 
@@ -829,11 +1079,20 @@ test('a gated notion route (compose) is unreachable while the feature flag is of
   await seed();
   process.env.NOTION_SECRET = 'secret_test_value';
   try {
-    const { handled, res } = await call(handleNotion, 'POST', '/api/notion/compose', {
-      body: { keyword: 'strategy' },
-    });
+    const { handled, res } = await call(
+      handleNotion,
+      'POST',
+      '/api/notion/compose',
+      {
+        body: { keyword: 'strategy' },
+      },
+    );
 
-    assert.equal(handled, false, 'the gated table is not dispatched without NOTION_FEATURE');
+    assert.equal(
+      handled,
+      false,
+      'the gated table is not dispatched without NOTION_FEATURE',
+    );
     assert.equal(res.statusCode, null);
   } finally {
     delete process.env.NOTION_SECRET;
@@ -847,7 +1106,9 @@ test('with a secret, notion fetch validates the url before calling Notion', asyn
   await seed();
   process.env.NOTION_SECRET = 'secret_test_value';
   try {
-    const missing = await call(handleNotion, 'POST', '/api/notion/fetch', { body: {} });
+    const missing = await call(handleNotion, 'POST', '/api/notion/fetch', {
+      body: {},
+    });
     assert.equal(missing.res.statusCode, 400);
     assert.match(missing.res.body.message, /Expected \{ url \}/);
 
@@ -903,7 +1164,9 @@ test('with the feature flag and a secret on, a gated route validates before the 
   try {
     // compose with neither a pageId nor a usable keyword is a 400, reached only
     // because the gated table is now dispatched.
-    const { res } = await call(handleNotion, 'POST', '/api/notion/compose', { body: {} });
+    const { res } = await call(handleNotion, 'POST', '/api/notion/compose', {
+      body: {},
+    });
 
     assert.equal(res.statusCode, 400);
     assert.match(res.body.message, /Expected \{ pageId \} or \{ keyword \}/);

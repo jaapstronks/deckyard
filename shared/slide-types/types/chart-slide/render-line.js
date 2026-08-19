@@ -18,7 +18,7 @@ export function renderLineSvg(
     showLegend = false, // kept for API parity even though legend is HTML (rendered above)
     xAxisLabel = '',
     yAxisLabel = '',
-  } = {}
+  } = {},
 ) {
   void showLegend;
   void series1Label;
@@ -63,8 +63,7 @@ export function renderLineSvg(
   const n = Math.max(2, (x || []).length);
   const step = pw / (n - 1);
   const toX = (i) => margin.l + i * step;
-  const toY = (v) =>
-    margin.t + ((yMax - v) / (yMax - yMin || range)) * ph;
+  const toY = (v) => margin.t + ((yMax - v) / (yMax - yMin || range)) * ph;
   const axisY = toY(0);
 
   // Step-by-step friendly: render per-point fragments (segments + markers + tick label).
@@ -94,11 +93,11 @@ export function renderLineSvg(
       const p = prevValidIndex(y1, i);
       if (p >= 0) {
         frag += `<path class="chart-line chart-line-1" d="M ${toX(
-          p
+          p,
         )} ${toY(y1[p])} L ${toX(i)} ${toY(v1)}" fill="none"></path>`;
       }
       frag += `<circle class="chart-point chart-point-1" cx="${toX(
-        i
+        i,
       )}" cy="${toY(v1)}" r="6"></circle>`;
       if (showValues && (i % valueStride === 0 || i === (x || []).length - 1)) {
         frag += svgText(toX(i), toY(v1) - 14, String(v1), {
@@ -113,11 +112,11 @@ export function renderLineSvg(
       const p = prevValidIndex(y2, i);
       if (p >= 0) {
         frag += `<path class="chart-line chart-line-2" d="M ${toX(
-          p
+          p,
         )} ${toY(y2[p])} L ${toX(i)} ${toY(v2)}" fill="none"></path>`;
       }
       frag += `<circle class="chart-point chart-point-2" cx="${toX(
-        i
+        i,
       )}" cy="${toY(v2)}" r="6"></circle>`;
       if (showValues && (i % valueStride === 0 || i === (x || []).length - 1)) {
         frag += svgText(toX(i), toY(v2) + 26, String(v2), {

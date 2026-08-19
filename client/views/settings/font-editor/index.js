@@ -16,17 +16,37 @@ import { createGooglePanel } from './google-panel.js';
 // Labels carry an i18n key + English fallback; resolved via t() at render time
 // (the dictionary is not loaded yet at import time).
 const SOURCES = [
-  { key: 'upload', labelKey: 'fonts.source.upload', label: 'Upload Custom Font' },
-  { key: 'adobe', labelKey: 'fonts.source.adobe', label: 'Adobe Fonts (Typekit)' },
-  { key: 'monotype', labelKey: 'fonts.source.monotype', label: 'fonts.com (Monotype)' },
+  {
+    key: 'upload',
+    labelKey: 'fonts.source.upload',
+    label: 'Upload Custom Font',
+  },
+  {
+    key: 'adobe',
+    labelKey: 'fonts.source.adobe',
+    label: 'Adobe Fonts (Typekit)',
+  },
+  {
+    key: 'monotype',
+    labelKey: 'fonts.source.monotype',
+    label: 'fonts.com (Monotype)',
+  },
   { key: 'google', labelKey: 'fonts.source.google', label: 'Google Fonts' },
 ];
 
 const CATEGORIES = [
-  { value: 'sans-serif', labelKey: 'fonts.category.sansSerif', label: 'Sans-serif' },
+  {
+    value: 'sans-serif',
+    labelKey: 'fonts.category.sansSerif',
+    label: 'Sans-serif',
+  },
   { value: 'serif', labelKey: 'fonts.category.serif', label: 'Serif' },
   { value: 'display', labelKey: 'fonts.category.display', label: 'Display' },
-  { value: 'monospace', labelKey: 'fonts.category.monospace', label: 'Monospace' },
+  {
+    value: 'monospace',
+    labelKey: 'fonts.category.monospace',
+    label: 'Monospace',
+  },
 ];
 
 /**
@@ -94,19 +114,28 @@ export function createFontEditor({ fontFamily, onSave, onCancel, onDelete }) {
       onclick: async () => {
         const confirmed = await confirmModal(h, document.body, {
           title: t('common.delete', 'Delete'),
-          message: t('fonts.confirmDelete', 'Delete "{name}" and all its variants?', {
-            name: fontFamily.name,
-          }),
+          message: t(
+            'fonts.confirmDelete',
+            'Delete "{name}" and all its variants?',
+            {
+              name: fontFamily.name,
+            },
+          ),
           confirmLabel: t('common.delete', 'Delete'),
           danger: true,
         });
         if (!confirmed) return;
         try {
-          await api(`/api/font-families/${fontFamily.id}`, { method: 'DELETE' });
+          await api(`/api/font-families/${fontFamily.id}`, {
+            method: 'DELETE',
+          });
           toast.success(t('fonts.deleted', 'Font family deleted.'));
           if (onDelete) onDelete();
         } catch (err) {
-          toast.error(err.message || t('fonts.deleteError', 'Failed to delete font family.'));
+          toast.error(
+            err.message ||
+              t('fonts.deleteError', 'Failed to delete font family.'),
+          );
         }
       },
     });
@@ -120,7 +149,10 @@ export function createFontEditor({ fontFamily, onSave, onCancel, onDelete }) {
   if (!isEditing) {
     sourceSelector = h('div', { class: 'editor-card stack' });
     sourceSelector.append(
-      h('div', { class: 'field-label', text: t('fonts.source', 'Font Source') })
+      h('div', {
+        class: 'field-label',
+        text: t('fonts.source', 'Font Source'),
+      }),
     );
 
     const sourceGroup = h('div', { class: 'font-source-selector' });
@@ -139,7 +171,10 @@ export function createFontEditor({ fontFamily, onSave, onCancel, onDelete }) {
         state.source = src.key;
         // Update selected state
         for (const opt of sourceGroup.querySelectorAll('.font-source-option')) {
-          opt.classList.toggle('is-selected', opt.querySelector('input').value === src.key);
+          opt.classList.toggle(
+            'is-selected',
+            opt.querySelector('input').value === src.key,
+          );
         }
         updateSourcePanels();
       });
@@ -158,7 +193,12 @@ export function createFontEditor({ fontFamily, onSave, onCancel, onDelete }) {
 
   // Name
   const nameField = h('div', { class: 'stack' });
-  nameField.append(h('label', { class: 'field-label', text: t('fonts.familyName', 'Family Name') }));
+  nameField.append(
+    h('label', {
+      class: 'field-label',
+      text: t('fonts.familyName', 'Family Name'),
+    }),
+  );
   const nameInput = h('input', {
     class: 'input',
     type: 'text',
@@ -174,7 +214,7 @@ export function createFontEditor({ fontFamily, onSave, onCancel, onDelete }) {
   // Category
   const categoryField = h('div', { class: 'stack' });
   categoryField.append(
-    h('label', { class: 'field-label', text: t('fonts.category', 'Category') })
+    h('label', { class: 'field-label', text: t('fonts.category', 'Category') }),
   );
   const categorySelect = h('select', {
     class: 'select',
@@ -183,7 +223,10 @@ export function createFontEditor({ fontFamily, onSave, onCancel, onDelete }) {
     },
   });
   for (const cat of CATEGORIES) {
-    const opt = h('option', { value: cat.value, text: t(cat.labelKey, cat.label) });
+    const opt = h('option', {
+      value: cat.value,
+      text: t(cat.labelKey, cat.label),
+    });
     if (cat.value === state.category) opt.selected = true;
     categorySelect.append(opt);
   }
@@ -214,9 +257,9 @@ export function createFontEditor({ fontFamily, onSave, onCancel, onDelete }) {
         class: 'help',
         text: t(
           'fonts.uploadAfterCreate',
-          'Save the font family first, then upload font files for each weight and style.'
+          'Save the font family first, then upload font files for each weight and style.',
         ),
-      })
+      }),
     );
     panels.upload = { el: uploadPlaceholder };
   }
@@ -263,7 +306,9 @@ export function createFontEditor({ fontFamily, onSave, onCancel, onDelete }) {
   // ─── Save Handler ─────────────────────────────────────────
   saveBtn.addEventListener('click', async () => {
     if (!state.name.trim()) {
-      toast.error(t('fonts.errorNameRequired', 'Font family name is required.'));
+      toast.error(
+        t('fonts.errorNameRequired', 'Font family name is required.'),
+      );
       nameInput.focus();
       return;
     }
@@ -272,7 +317,10 @@ export function createFontEditor({ fontFamily, onSave, onCancel, onDelete }) {
     // This save is for upload, monotype, and google sources
     if (!isEditing && state.source === 'adobe') {
       toast.error(
-        t('fonts.adobeUseImport', 'Use the "Discover Fonts" button above to import Adobe fonts.')
+        t(
+          'fonts.adobeUseImport',
+          'Use the "Discover Fonts" button above to import Adobe fonts.',
+        ),
       );
       return;
     }
@@ -312,11 +360,13 @@ export function createFontEditor({ fontFamily, onSave, onCancel, onDelete }) {
       toast.success(
         isEditing
           ? t('fonts.updated', 'Font family updated.')
-          : t('fonts.created', 'Font family created.')
+          : t('fonts.created', 'Font family created.'),
       );
       if (onSave) onSave(result);
     } catch (err) {
-      toast.error(err.message || t('fonts.saveError', 'Failed to save font family.'));
+      toast.error(
+        err.message || t('fonts.saveError', 'Failed to save font family.'),
+      );
     } finally {
       saveBtn.disabled = false;
       cancelBtn.disabled = false;

@@ -38,7 +38,12 @@ import path from 'node:path';
 import { loadDotEnv } from '../server/config/env.js';
 import { repoRoot } from '../server/config/paths.js';
 import { dataDir } from '../server/config/storage-paths.js';
-import { initializeDatabase, getDb, isDatabaseAvailable, closeDatabase } from '../server/db/client.js';
+import {
+  initializeDatabase,
+  getDb,
+  isDatabaseAvailable,
+  closeDatabase,
+} from '../server/db/client.js';
 
 /** The known-migrated fossils, relative to dataDir(). Nothing else is touched. */
 const PRUNE_PATHS = [
@@ -89,7 +94,7 @@ async function main() {
   if (!isDatabaseAvailable()) {
     console.error(
       'PostgreSQL is not reachable, so there is no way to verify the import.\n' +
-        'Refusing to touch anything. Fix the database connection and retry.'
+        'Refusing to touch anything. Fix the database connection and retry.',
     );
     process.exitCode = 1;
     return;
@@ -108,7 +113,7 @@ async function main() {
       `The database holds no presentations while ${diskDecks} deck JSON ` +
         `file${diskDecks === 1 ? '' : 's'} still sit under ${path.join(base, 'presentations')}.\n` +
         'That data has NOT been imported. Refusing to touch anything.\n' +
-        'Run first:  npm run db:migrate && npm run db:import'
+        'Run first:  npm run db:migrate && npm run db:import',
     );
     process.exitCode = 1;
     return;
@@ -124,7 +129,9 @@ async function main() {
 
   console.log(`Data directory: ${base}`);
   console.log(`Database decks: ${dbDecks}; deck JSON on disk: ${diskDecks}`);
-  console.log('Kept, always: deck-thumbs/ (live cache) and the uploads directory.\n');
+  console.log(
+    'Kept, always: deck-thumbs/ (live cache) and the uploads directory.\n',
+  );
 
   if (found.length === 0) {
     console.log('Nothing to prune — no legacy paths present.');
@@ -132,15 +139,20 @@ async function main() {
   }
 
   for (const f of found) {
-    const size = f.kind === 'dir' ? `${f.count} entr${f.count === 1 ? 'y' : 'ies'}` : 'file';
-    console.log(`  ${doDelete ? 'removing' : 'would remove'}  ${f.rel}  (${size})`);
+    const size =
+      f.kind === 'dir'
+        ? `${f.count} entr${f.count === 1 ? 'y' : 'ies'}`
+        : 'file';
+    console.log(
+      `  ${doDelete ? 'removing' : 'would remove'}  ${f.rel}  (${size})`,
+    );
   }
 
   if (!doDelete) {
     console.log(
       '\nDry run (default) — nothing was removed.\n' +
         'Back up first (tar czf server-data-preclean-$(date +%F).tgz server/data),\n' +
-        'then re-run with --delete to remove the paths listed above.'
+        'then re-run with --delete to remove the paths listed above.',
     );
     return;
   }
@@ -148,7 +160,9 @@ async function main() {
   for (const f of found) {
     await fs.rm(f.p, { recursive: true, force: true });
   }
-  console.log(`\nRemoved ${found.length} legacy path${found.length === 1 ? '' : 's'}.`);
+  console.log(
+    `\nRemoved ${found.length} legacy path${found.length === 1 ? '' : 's'}.`,
+  );
 }
 
 main()

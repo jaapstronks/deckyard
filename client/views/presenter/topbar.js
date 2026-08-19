@@ -61,7 +61,7 @@ export function buildPresenterTopbar({
       text: t('presenter.projector.open', 'Second screen'),
       title: t(
         'presenter.projector.openTitle',
-        'Open the clean deck in a second window for the projector, and keep the console on this screen'
+        'Open the clean deck in a second window for the projector, and keep the console on this screen',
       ),
       onclick: () => onOpenProjector(),
     }),
@@ -79,7 +79,7 @@ export function buildPresenterTopbar({
     h('div', {
       class: 'presenter-help',
       text: t('presenter.help', '←/→ move · F fullscreen · ? shortcuts'),
-    })
+    }),
   );
 
   top.append(
@@ -87,7 +87,7 @@ export function buildPresenterTopbar({
       class: 'presenter-title',
       text: pres.title,
     }),
-    actions
+    actions,
   );
 
   return { top };

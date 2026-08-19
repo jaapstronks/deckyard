@@ -38,7 +38,12 @@ import path from 'node:path';
 
 import { loadCases, readReferenceDeck, readSourceText } from '../lib/cases.js';
 import { CostTracker } from '../lib/cost.js';
-import { DEFAULT_VENDOR, GENERATION_VENDORS, MODEL, SUITE_ROOT } from '../lib/config.js';
+import {
+  DEFAULT_VENDOR,
+  GENERATION_VENDORS,
+  MODEL,
+  SUITE_ROOT,
+} from '../lib/config.js';
 import { computePromptVersion } from '../lib/prompt-version.js';
 import { judgeDeck, meanScore } from '../eval/judge.js';
 import {
@@ -67,9 +72,14 @@ function parseArgs(argv) {
     const arg = argv[i];
     const next = () => argv[(i += 1)];
     if (arg === '--stage') options.stage = next();
-    else if (arg === '--cases') options.cases = next().split(',').map((s) => s.trim()).filter(Boolean);
+    else if (arg === '--cases')
+      options.cases = next()
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
     else if (arg === '--from') options.from = next();
-    else if (arg === '--groups') options.groups = Math.max(1, Number(next()) || 1);
+    else if (arg === '--groups')
+      options.groups = Math.max(1, Number(next()) || 1);
     else if (arg === '--vendor') options.vendor = next();
     else if (arg === '--refresh') options.refresh = true;
     else if (arg === '--revise') options.revise = true;
@@ -90,7 +100,11 @@ function parseArgs(argv) {
 }
 
 function makeRunId(stage) {
-  const stamp = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, 19);
+  const stamp = new Date()
+    .toISOString()
+    .replace(/[:.]/g, '-')
+    .replace('T', '_')
+    .slice(0, 19);
   return `${stage}-${stamp}`;
 }
 
@@ -98,9 +112,11 @@ async function main() {
   const options = parseArgs(process.argv.slice(2));
 
   const generation = GENERATION_VENDORS[options.vendor];
-  for (const envVar of generation.envVars) process.env[envVar] = generation.model;
+  for (const envVar of generation.envVars)
+    process.env[envVar] = generation.model;
   process.env.LLM_VENDOR = options.vendor;
-  process.env.AI_VALIDATION_LOGGING = process.env.AI_VALIDATION_LOGGING || 'false';
+  process.env.AI_VALIDATION_LOGGING =
+    process.env.AI_VALIDATION_LOGGING || 'false';
   if (!process.env.CLAUDE_API && process.env.ANTHROPIC_API_KEY) {
     process.env.CLAUDE_API = process.env.ANTHROPIC_API_KEY;
   }
@@ -112,8 +128,12 @@ async function main() {
   const cost = new CostTracker().attachToAppLlm();
 
   console.log(`\nStage run ${runId}`);
-  console.log(`  stage=${options.stage} generation=${options.vendor}/${generation.model}`);
-  console.log(`  prompts=${promptVersion.hash} cases=${cases.map((c) => c.id).join(', ')}`);
+  console.log(
+    `  stage=${options.stage} generation=${options.vendor}/${generation.model}`,
+  );
+  console.log(
+    `  prompts=${promptVersion.hash} cases=${cases.map((c) => c.id).join(', ')}`,
+  );
   if (options.groups) console.log(`  groups=first ${options.groups}`);
   if (options.revise) console.log('  revision pass=on');
   console.log('');
@@ -126,9 +146,13 @@ async function main() {
     await fs.mkdir(caseDir, { recursive: true });
 
     if (options.stage === 'outline') {
-      results.push(await doOutline({ testCase, sourceText, caseDir, options, cost }));
+      results.push(
+        await doOutline({ testCase, sourceText, caseDir, options, cost }),
+      );
     } else {
-      results.push(await doRefine({ testCase, sourceText, caseDir, options, cost }));
+      results.push(
+        await doRefine({ testCase, sourceText, caseDir, options, cost }),
+      );
     }
   }
 
@@ -147,12 +171,17 @@ async function main() {
     cost: cost.summary(),
     results,
   };
-  await fs.writeFile(path.join(runDir, 'stage.json'), JSON.stringify(summary, null, 2));
+  await fs.writeFile(
+    path.join(runDir, 'stage.json'),
+    JSON.stringify(summary, null, 2),
+  );
 
   printSummary(summary);
   console.log(`\nArtifacts: ${runDir}`);
   if (options.stage === 'outline') {
-    console.log(`Refine from these outlines with:\n  npm run ai-suite:stage -- --stage refine --from ${runId} --groups 1`);
+    console.log(
+      `Refine from these outlines with:\n  npm run ai-suite:stage -- --stage refine --from ${runId} --groups 1`,
+    );
   }
 }
 
@@ -166,7 +195,10 @@ async function doOutline({ testCase, sourceText, caseDir, options, cost }) {
   });
   const durationMs = Date.now() - started;
 
-  await fs.writeFile(path.join(caseDir, 'outline.json'), JSON.stringify(outline, null, 2));
+  await fs.writeFile(
+    path.join(caseDir, 'outline.json'),
+    JSON.stringify(outline, null, 2),
+  );
 
   const metrics = outlineMetrics(outline);
   const { structuralSlides, contentGroups } = splitOutline(outline);
@@ -183,16 +215,18 @@ async function doOutline({ testCase, sourceText, caseDir, options, cost }) {
   if (rev) {
     console.log(
       `    revision: ${rev.applied.length}/${rev.proposed} applied` +
-        (rev.rejected.length ? `, ${rev.rejected.length} rejected` : '')
+        (rev.rejected.length ? `, ${rev.rejected.length} rejected` : ''),
     );
   }
   console.log(
     `[${testCase.id}] ${metrics.plannedSlides} planned slides, ${metrics.sectionCount} sections ` +
       `(${metrics.slidesPerSection.min}-${metrics.slidesPerSection.max} each) in ${Math.round(durationMs / 1000)}s` +
-      `${cached ? ' [judge cached]' : ''}`
+      `${cached ? ' [judge cached]' : ''}`,
   );
   for (const dimension of OUTLINE_DIMENSIONS) {
-    console.log(`    ${OUTLINE_DIMENSION_LABELS[dimension].padEnd(18)} ${verdict.scores[dimension].score}/5`);
+    console.log(
+      `    ${OUTLINE_DIMENSION_LABELS[dimension].padEnd(18)} ${verdict.scores[dimension].score}/5`,
+    );
   }
   console.log(`    weakest stretch: ${verdict.worstSection}`);
 
@@ -211,12 +245,19 @@ async function doOutline({ testCase, sourceText, caseDir, options, cost }) {
 
 /** Phase 2 only, from a frozen outline. */
 async function doRefine({ testCase, sourceText, caseDir, options, cost }) {
-  const outlinePath = path.join(STAGES_DIR, options.from, testCase.id, 'outline.json');
+  const outlinePath = path.join(
+    STAGES_DIR,
+    options.from,
+    testCase.id,
+    'outline.json',
+  );
   let outline;
   try {
     outline = JSON.parse(await fs.readFile(outlinePath, 'utf8'));
   } catch {
-    throw new Error(`No stored outline for "${testCase.id}" in run ${options.from} (${outlinePath})`);
+    throw new Error(
+      `No stored outline for "${testCase.id}" in run ${options.from} (${outlinePath})`,
+    );
   }
 
   const started = Date.now();
@@ -226,7 +267,10 @@ async function doRefine({ testCase, sourceText, caseDir, options, cost }) {
   });
   const durationMs = Date.now() - started;
 
-  await fs.writeFile(path.join(caseDir, 'deck.json'), JSON.stringify(deck, null, 2));
+  await fs.writeFile(
+    path.join(caseDir, 'deck.json'),
+    JSON.stringify(deck, null, 2),
+  );
 
   const metrics = deckMetrics(deck);
   const fidelity = numberFidelity(deck, sourceText);
@@ -247,17 +291,17 @@ async function doRefine({ testCase, sourceText, caseDir, options, cost }) {
 
   console.log(
     `[${testCase.id}] refined ${refinedCount} slides from ${options.groups ? `first ${options.groups} of ` : ''}` +
-      `${groupCount} sections in ${Math.round(durationMs / 1000)}s${cached ? ' [judge cached]' : ''}`
+      `${groupCount} sections in ${Math.round(durationMs / 1000)}s${cached ? ' [judge cached]' : ''}`,
   );
   console.log(
     `    slides=${metrics.slideCount} words/slide=${metrics.wordsPerSlide.mean} ` +
       `walls=${metrics.wallOfTextSlides} repeats=${metrics.repetition.consecutiveRepeats} ` +
-      `types=${Object.keys(metrics.slideTypeDistribution).length}`
+      `types=${Object.keys(metrics.slideTypeDistribution).length}`,
   );
   console.log(
     `    economy=${verdict.scores.slideEconomy.score}/5 ` +
       `faithful=${verdict.scores.faithfulness.score}/5 ` +
-      `presentable=${verdict.scores.presentability.score}/5`
+      `presentable=${verdict.scores.presentability.score}/5`,
   );
 
   return {
@@ -278,8 +322,12 @@ function printSummary(summary) {
   console.log('\n--- summary ---');
   if (summary.stage === 'outline') {
     for (const dimension of OUTLINE_DIMENSIONS) {
-      const mean = meanOf(summary.results.map((r) => r.verdict.scores[dimension].score));
-      console.log(`  ${OUTLINE_DIMENSION_LABELS[dimension].padEnd(18)} ${mean.toFixed(2)}`);
+      const mean = meanOf(
+        summary.results.map((r) => r.verdict.scores[dimension].score),
+      );
+      console.log(
+        `  ${OUTLINE_DIMENSION_LABELS[dimension].padEnd(18)} ${mean.toFixed(2)}`,
+      );
     }
   } else {
     // On a partial run the deck is a leading fragment, so coverage and
@@ -288,12 +336,22 @@ function printSummary(summary) {
     const partial = summary.results.some((r) => r.partial);
     const dimensions = partial
       ? ['slideEconomy', 'faithfulness', 'presentability']
-      : ['slideEconomy', 'faithfulness', 'presentability', 'structure', 'coverage'];
+      : [
+          'slideEconomy',
+          'faithfulness',
+          'presentability',
+          'structure',
+          'coverage',
+        ];
     if (partial) {
-      console.log('  (partial run — coverage and structure omitted: the deck is a fragment)');
+      console.log(
+        '  (partial run — coverage and structure omitted: the deck is a fragment)',
+      );
     }
     for (const dimension of dimensions) {
-      const mean = meanOf(summary.results.map((r) => r.verdict.scores[dimension].score));
+      const mean = meanOf(
+        summary.results.map((r) => r.verdict.scores[dimension].score),
+      );
       console.log(`  ${dimension.padEnd(18)} ${mean.toFixed(2)}`);
     }
   }

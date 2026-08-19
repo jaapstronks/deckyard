@@ -70,75 +70,103 @@ function getPreviousPeriodDateRange(period) {
  * @param {string} opts.period - '7d' | '30d' | '90d' | '12m'
  * @returns {Promise<Object>}
  */
-export async function getDashboardSummary(userEmail, organizationId, opts = {}) {
+export async function getDashboardSummary(
+  userEmail,
+  organizationId,
+  opts = {},
+) {
   const period = opts.period || '30d';
   const dateRange = getPeriodDateRange(period);
   const previousRange = getPreviousPeriodDateRange(period);
 
-  return withDbGuard({
-    summary: { totalViews: 0, uniqueViewers: 0, avgDurationSeconds: 0, completionRate: 0 },
-    trend: { percentChange: 0, direction: 'flat' },
-  }, async (db) => {
-    // Get user's presentations (owned + shared with edit/admin access)
-    const userPresentations = await getUserPresentationIds(db, userEmail, organizationId);
-    if (!userPresentations.length) {
-      return {
-        summary: { totalViews: 0, uniqueViewers: 0, avgDurationSeconds: 0, completionRate: 0 },
-        trend: { percentChange: 0, direction: 'flat' },
-      };
-    }
-
-    // Build base query for current period
-    let currentQuery = db
-      .selectFrom('view_sessions')
-      .select([
-        (eb) => eb.fn.count('id').as('total_views'),
-        sql`COUNT(DISTINCT COALESCE(device_id, id::text))`.as('unique_viewers'),
-        (eb) => eb.fn.avg('duration_seconds').as('avg_duration'),
-      ])
-      .where('presentation_id', 'in', userPresentations);
-
-    // Apply date filters
-    currentQuery = applyDateFilters(currentQuery, dateRange);
-
-    const currentResult = await currentQuery.executeTakeFirst();
-
-    // Get previous period for comparison
-    let previousQuery = db
-      .selectFrom('view_sessions')
-      .select((eb) => eb.fn.count('id').as('total_views'))
-      .where('presentation_id', 'in', userPresentations);
-
-    previousQuery = applyDateFilters(previousQuery, previousRange);
-
-    const previousResult = await previousQuery.executeTakeFirst();
-
-    const currentViews = Number(currentResult?.total_views) || 0;
-    const previousViews = Number(previousResult?.total_views) || 0;
-
-    let percentChange = 0;
-    let direction = 'flat';
-    if (previousViews > 0) {
-      percentChange = Math.round(((currentViews - previousViews) / previousViews) * 100);
-      direction = percentChange > 0 ? 'up' : percentChange < 0 ? 'down' : 'flat';
-    } else if (currentViews > 0) {
-      percentChange = 100;
-      direction = 'up';
-    }
-
-    return {
+  return withDbGuard(
+    {
       summary: {
-        totalViews: currentViews,
-        uniqueViewers: Number(currentResult?.unique_viewers) || 0,
-        avgDurationSeconds: Math.round(Number(currentResult?.avg_duration) || 0),
-        completionRate: 0, // TODO: Calculate from slide views
+        totalViews: 0,
+        uniqueViewers: 0,
+        avgDurationSeconds: 0,
+        completionRate: 0,
       },
-      trend: {
-        percentChange: Math.abs(percentChange),
-        direction,
-      },
-    };
-  });
+      trend: { percentChange: 0, direction: 'flat' },
+    },
+    async (db) => {
+      // Get user's presentations (owned + shared with edit/admin access)
+      const userPresentations = await getUserPresentationIds(
+        db,
+        userEmail,
+        organizationId,
+      );
+      if (!userPresentations.length) {
+        return {
+          summary: {
+            totalViews: 0,
+            uniqueViewers: 0,
+            avgDurationSeconds: 0,
+            completionRate: 0,
+          },
+          trend: { percentChange: 0, direction: 'flat' },
+        };
+      }
+
+      // Build base query for current period
+      let currentQuery = db
+        .selectFrom('view_sessions')
+        .select([
+          (eb) => eb.fn.count('id').as('total_views'),
+          sql`COUNT(DISTINCT COALESCE(device_id, id::text))`.as(
+            'unique_viewers',
+          ),
+          (eb) => eb.fn.avg('duration_seconds').as('avg_duration'),
+        ])
+        .where('presentation_id', 'in', userPresentations);
+
+      // Apply date filters
+      currentQuery = applyDateFilters(currentQuery, dateRange);
+
+      const currentResult = await currentQuery.executeTakeFirst();
+
+      // Get previous period for comparison
+      let previousQuery = db
+        .selectFrom('view_sessions')
+        .select((eb) => eb.fn.count('id').as('total_views'))
+        .where('presentation_id', 'in', userPresentations);
+
+      previousQuery = applyDateFilters(previousQuery, previousRange);
+
+      const previousResult = await previousQuery.executeTakeFirst();
+
+      const currentViews = Number(currentResult?.total_views) || 0;
+      const previousViews = Number(previousResult?.total_views) || 0;
+
+      let percentChange = 0;
+      let direction = 'flat';
+      if (previousViews > 0) {
+        percentChange = Math.round(
+          ((currentViews - previousViews) / previousViews) * 100,
+        );
+        direction =
+          percentChange > 0 ? 'up' : percentChange < 0 ? 'down' : 'flat';
+      } else if (currentViews > 0) {
+        percentChange = 100;
+        direction = 'up';
+      }
+
+      return {
+        summary: {
+          totalViews: currentViews,
+          uniqueViewers: Number(currentResult?.unique_viewers) || 0,
+          avgDurationSeconds: Math.round(
+            Number(currentResult?.avg_duration) || 0,
+          ),
+          completionRate: 0, // TODO: Calculate from slide views
+        },
+        trend: {
+          percentChange: Math.abs(percentChange),
+          direction,
+        },
+      };
+    },
+  );
 }
 
 /**
@@ -148,12 +176,20 @@ export async function getDashboardSummary(userEmail, organizationId, opts = {}) 
  * @param {Object} opts - Query options
  * @returns {Promise<Array<{date: string, views: number, uniqueViewers: number}>>}
  */
-export async function getDashboardTimeline(userEmail, organizationId, opts = {}) {
+export async function getDashboardTimeline(
+  userEmail,
+  organizationId,
+  opts = {},
+) {
   const period = opts.period || '30d';
   const dateRange = getPeriodDateRange(period);
 
   return withDbGuard([], async (db) => {
-    const userPresentations = await getUserPresentationIds(db, userEmail, organizationId);
+    const userPresentations = await getUserPresentationIds(
+      db,
+      userEmail,
+      organizationId,
+    );
     if (!userPresentations.length) return [];
 
     let query = db
@@ -186,23 +222,37 @@ export async function getDashboardTimeline(userEmail, organizationId, opts = {})
  * @param {Object} opts - Query options
  * @returns {Promise<Array>}
  */
-export async function getTopPresentations(userEmail, organizationId, opts = {}) {
+export async function getTopPresentations(
+  userEmail,
+  organizationId,
+  opts = {},
+) {
   const period = opts.period || '30d';
   const limit = opts.limit || 10;
   const dateRange = getPeriodDateRange(period);
 
   return withDbGuard([], async (db) => {
-    const userPresentations = await getUserPresentationIds(db, userEmail, organizationId);
+    const userPresentations = await getUserPresentationIds(
+      db,
+      userEmail,
+      organizationId,
+    );
     if (!userPresentations.length) return [];
 
     let query = db
       .selectFrom('view_sessions')
-      .innerJoin('presentations', 'presentations.id', 'view_sessions.presentation_id')
+      .innerJoin(
+        'presentations',
+        'presentations.id',
+        'view_sessions.presentation_id',
+      )
       .select([
         'presentations.id',
         'presentations.title',
         (eb) => eb.fn.count('view_sessions.id').as('views'),
-        sql`COUNT(DISTINCT COALESCE(view_sessions.device_id, view_sessions.id::text))`.as('unique_viewers'),
+        sql`COUNT(DISTINCT COALESCE(view_sessions.device_id, view_sessions.id::text))`.as(
+          'unique_viewers',
+        ),
         (eb) => eb.fn.avg('view_sessions.duration_seconds').as('avg_duration'),
       ])
       .where('view_sessions.presentation_id', 'in', userPresentations)
@@ -236,59 +286,63 @@ export async function getSourceBreakdown(userEmail, organizationId, opts = {}) {
   const period = opts.period || '30d';
   const dateRange = getPeriodDateRange(period);
 
-  return withDbGuard({
-    shareLink: 0,
-    published: 0,
-    follow: 0,
-    embed: 0,
-  }, async (db) => {
-    const userPresentations = await getUserPresentationIds(db, userEmail, organizationId);
-    if (!userPresentations.length) {
-      return { shareLink: 0, published: 0, follow: 0, embed: 0 };
-    }
-
-    let query = db
-      .selectFrom('view_sessions')
-      .select([
-        'source_type',
-        (eb) => eb.fn.count('id').as('count'),
-      ])
-      .where('presentation_id', 'in', userPresentations)
-      .groupBy('source_type');
-
-    query = applyDateFilters(query, dateRange);
-
-    const rows = await query.execute();
-
-    const breakdown = {
+  return withDbGuard(
+    {
       shareLink: 0,
       published: 0,
       follow: 0,
       embed: 0,
-    };
-
-    for (const row of rows) {
-      const sourceType = row.source_type;
-      const count = Number(row.count) || 0;
-
-      switch (sourceType) {
-        case 'share_link':
-          breakdown.shareLink = count;
-          break;
-        case 'published':
-          breakdown.published = count;
-          break;
-        case 'follow':
-          breakdown.follow = count;
-          break;
-        case 'embed':
-          breakdown.embed = count;
-          break;
+    },
+    async (db) => {
+      const userPresentations = await getUserPresentationIds(
+        db,
+        userEmail,
+        organizationId,
+      );
+      if (!userPresentations.length) {
+        return { shareLink: 0, published: 0, follow: 0, embed: 0 };
       }
-    }
 
-    return breakdown;
-  });
+      let query = db
+        .selectFrom('view_sessions')
+        .select(['source_type', (eb) => eb.fn.count('id').as('count')])
+        .where('presentation_id', 'in', userPresentations)
+        .groupBy('source_type');
+
+      query = applyDateFilters(query, dateRange);
+
+      const rows = await query.execute();
+
+      const breakdown = {
+        shareLink: 0,
+        published: 0,
+        follow: 0,
+        embed: 0,
+      };
+
+      for (const row of rows) {
+        const sourceType = row.source_type;
+        const count = Number(row.count) || 0;
+
+        switch (sourceType) {
+          case 'share_link':
+            breakdown.shareLink = count;
+            break;
+          case 'published':
+            breakdown.published = count;
+            break;
+          case 'follow':
+            breakdown.follow = count;
+            break;
+          case 'embed':
+            breakdown.embed = count;
+            break;
+        }
+      }
+
+      return breakdown;
+    },
+  );
 }
 
 /**
@@ -298,7 +352,11 @@ export async function getSourceBreakdown(userEmail, organizationId, opts = {}) {
  * @param {Object} opts - Query options
  * @returns {Promise<Array>}
  */
-export async function getPresentationsWithAnalytics(userEmail, organizationId, opts = {}) {
+export async function getPresentationsWithAnalytics(
+  userEmail,
+  organizationId,
+  opts = {},
+) {
   const period = opts.period || '30d';
   const sort = opts.sort || 'views';
   const limit = opts.limit || 20;
@@ -306,7 +364,11 @@ export async function getPresentationsWithAnalytics(userEmail, organizationId, o
   const dateRange = getPeriodDateRange(period);
 
   return withDbGuard({ presentations: [], total: 0 }, async (db) => {
-    const userPresentations = await getUserPresentationIds(db, userEmail, organizationId);
+    const userPresentations = await getUserPresentationIds(
+      db,
+      userEmail,
+      organizationId,
+    );
     if (!userPresentations.length) {
       return { presentations: [], total: 0 };
     }
@@ -327,18 +389,24 @@ export async function getPresentationsWithAnalytics(userEmail, organizationId, o
         join
           .onRef('view_sessions.presentation_id', '=', 'presentations.id')
           .on('view_sessions.started_at', '>=', dateRange.since)
-          .on('view_sessions.started_at', '<=', dateRange.until)
+          .on('view_sessions.started_at', '<=', dateRange.until),
       )
       .select([
         'presentations.id',
         'presentations.title',
         'presentations.updated_at',
         (eb) => eb.fn.count('view_sessions.id').as('views'),
-        sql`COUNT(DISTINCT COALESCE(view_sessions.device_id, view_sessions.id::text))`.as('unique_viewers'),
+        sql`COUNT(DISTINCT COALESCE(view_sessions.device_id, view_sessions.id::text))`.as(
+          'unique_viewers',
+        ),
         (eb) => eb.fn.avg('view_sessions.duration_seconds').as('avg_duration'),
       ])
       .where('presentations.id', 'in', userPresentations)
-      .groupBy(['presentations.id', 'presentations.title', 'presentations.updated_at']);
+      .groupBy([
+        'presentations.id',
+        'presentations.title',
+        'presentations.updated_at',
+      ]);
 
     // Apply sorting
     switch (sort) {
@@ -346,7 +414,10 @@ export async function getPresentationsWithAnalytics(userEmail, organizationId, o
         query = query.orderBy((eb) => eb.fn.count('view_sessions.id'), 'desc');
         break;
       case 'duration':
-        query = query.orderBy((eb) => eb.fn.avg('view_sessions.duration_seconds'), 'desc');
+        query = query.orderBy(
+          (eb) => eb.fn.avg('view_sessions.duration_seconds'),
+          'desc',
+        );
         break;
       case 'recent':
         query = query.orderBy('presentations.updated_at', 'desc');
@@ -397,9 +468,17 @@ async function getUserPresentationIds(db, userEmail, organizationId) {
   // Get presentations shared with user (edit or admin access)
   const sharedQuery = db
     .selectFrom('presentation_collaborators')
-    .innerJoin('presentations', 'presentations.id', 'presentation_collaborators.presentation_id')
+    .innerJoin(
+      'presentations',
+      'presentations.id',
+      'presentation_collaborators.presentation_id',
+    )
     .select('presentations.id')
-    .where('presentation_collaborators.user_email', '=', userEmail.toLowerCase())
+    .where(
+      'presentation_collaborators.user_email',
+      '=',
+      userEmail.toLowerCase(),
+    )
     .where('presentation_collaborators.permission', 'in', ['edit', 'admin']);
 
   const [ownedRows, sharedRows] = await Promise.all([

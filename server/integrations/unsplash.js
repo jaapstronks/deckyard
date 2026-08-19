@@ -51,9 +51,13 @@ export async function searchUnsplash({ query, page = 1, perPage = 20 }) {
     per_page: String(Math.min(perPage, 30)),
   });
 
-  const resp = await apiFetch(`${UNSPLASH_API_BASE}/search/photos?${params}`, 'Unsplash', {
-    headers: getHeaders(),
-  });
+  const resp = await apiFetch(
+    `${UNSPLASH_API_BASE}/search/photos?${params}`,
+    'Unsplash',
+    {
+      headers: getHeaders(),
+    },
+  );
   const data = await resp.json();
 
   return {

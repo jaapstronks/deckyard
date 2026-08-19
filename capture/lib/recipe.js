@@ -53,7 +53,10 @@ export const DEFAULT_RECIPE_SCOPE = 'capture';
  * @returns {string}
  */
 export function resolveNavigate(recipe, ctx) {
-  const nav = typeof recipe.navigate === 'function' ? recipe.navigate(ctx) : recipe.navigate;
+  const nav =
+    typeof recipe.navigate === 'function'
+      ? recipe.navigate(ctx)
+      : recipe.navigate;
   if (!nav || typeof nav !== 'string') {
     throw new Error(`Recipe "${recipe.id}" produced an empty navigate target`);
   }
@@ -74,7 +77,7 @@ export function validateRecipe(recipe) {
   if (!recipe.navigate) problems.push('missing "navigate"');
   if (recipe.output && !recipe.registryPath?.endsWith(recipe.output)) {
     problems.push(
-      `"output" (${recipe.output}) is not the basename of "registryPath" (${recipe.registryPath})`
+      `"output" (${recipe.output}) is not the basename of "registryPath" (${recipe.registryPath})`,
     );
   }
   if (recipe.clip && recipe.fullPage) {
@@ -103,7 +106,8 @@ export function validateRecipe(recipe) {
 function resolveImport(specifier, fromDir) {
   if (!specifier.startsWith('.') && !specifier.startsWith('/')) return null;
   const candidate = path.resolve(fromDir, specifier);
-  if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) return candidate;
+  if (fs.existsSync(candidate) && fs.statSync(candidate).isFile())
+    return candidate;
   return null;
 }
 
@@ -169,7 +173,10 @@ function isInside(fsPath, dir) {
  * @param {{ scope?: string }} [opts] `scope` is repo-relative, default `capture`
  * @returns {Promise<string>} short hex hash, 16 chars (same format as before)
  */
-export async function hashRecipeGraph(moduleFsPath, { scope = DEFAULT_RECIPE_SCOPE } = {}) {
+export async function hashRecipeGraph(
+  moduleFsPath,
+  { scope = DEFAULT_RECIPE_SCOPE } = {},
+) {
   const scopeDir = path.resolve(REPO_ROOT, scope);
   const files = await collectGraph(moduleFsPath, scopeDir);
   // Sort by repo-relative path so the hash is independent of traversal order.

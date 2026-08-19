@@ -25,9 +25,10 @@ export function newPresentation({
 } = {}) {
   const now = new Date().toISOString();
   // Use the provided default title slide, falling back to 'title-slide' if invalid.
-  const titleSlideType = typeof defaultTitleSlide === 'string' && defaultTitleSlide.trim()
-    ? defaultTitleSlide.trim()
-    : 'title-slide';
+  const titleSlideType =
+    typeof defaultTitleSlide === 'string' && defaultTitleSlide.trim()
+      ? defaultTitleSlide.trim()
+      : 'title-slide';
   return {
     id: cryptoUuid(),
     // Durable schema version of this deck's envelope. Reads migrate older decks
@@ -56,7 +57,7 @@ export function newPresentation({
       liveVideo: {
         enabled: false,
         streamUrl: '',
-        provider: '',            // auto-detected from streamUrl
+        provider: '', // auto-detected from streamUrl
         defaultPosition: 'pip-top-right',
         mobilePosition: 'bottom', // 'bottom' | 'top' | 'hidden' | 'pip'
       },
@@ -122,7 +123,9 @@ function clampPercent(value, fallback) {
 
 // Keep only characters safe inside a CSS url('...') / HTML attribute context.
 function sanitizeBgUrl(url) {
-  return String(url).replace(/["'()\\<>\n\r]/g, '').trim();
+  return String(url)
+    .replace(/["'()\\<>\n\r]/g, '')
+    .trim();
 }
 
 // Resolve which text-contrast class (if any) to apply for a background image.
@@ -179,7 +182,9 @@ function resolveBgOverlayVariant(content, textClass) {
 // child, so the feature is available everywhere without per-type changes.
 function injectSlideBackground(html, content) {
   const raw =
-    typeof content?.slideBgImage === 'string' ? content.slideBgImage.trim() : '';
+    typeof content?.slideBgImage === 'string'
+      ? content.slideBgImage.trim()
+      : '';
   if (!raw) return html;
   const url = sanitizeBgUrl(raw);
   if (!url) return html;
@@ -202,7 +207,7 @@ function injectSlideBackground(html, content) {
     (_m, pre, classes, post) => {
       injected = true;
       return `<div${pre}class="${classes} ${cls}"${post}>${layer}`;
-    }
+    },
   );
   return injected ? out : html;
 }
@@ -212,10 +217,9 @@ function injectSlideBackground(html, content) {
 // elsewhere in the theme. Works on any slide type's rendered output.
 function injectSlideLogo(html, content, ctx) {
   if (content?.slideLogo !== 'top-right') return html;
-  const theme =
-    ctx?.theme && typeof ctx.theme === 'object' ? ctx.theme : null;
+  const theme = ctx?.theme && typeof ctx.theme === 'object' ? ctx.theme : null;
   const src = sanitizeBgUrl(
-    String(theme?.assets?.logo || '/assets/images/logo.svg')
+    String(theme?.assets?.logo || '/assets/images/logo.svg'),
   );
   if (!src) return html;
   const alt = escapeHtml(String(theme?.assets?.logoAlt || 'Logo'));
@@ -228,7 +232,7 @@ function injectSlideLogo(html, content, ctx) {
     (_m, pre, classes, post) => {
       injected = true;
       return `<div${pre}class="${classes} has-slide-logo"${post}>${node}`;
-    }
+    },
   );
   return injected ? out : html;
 }
@@ -317,9 +321,10 @@ export function computeHeadingShifts(slides, { isSectionOpener } = {}) {
 export function renderSlideHtml(slide, ctx = {}) {
   // Allow callers to provide their own slide types (e.g., client using server-fetched types).
   // This is essential for custom slide types that aren't bundled in the client build.
-  const slideTypes = ctx?.slideTypes && typeof ctx.slideTypes === 'object'
-    ? ctx.slideTypes
-    : SLIDE_TYPES;
+  const slideTypes =
+    ctx?.slideTypes && typeof ctx.slideTypes === 'object'
+      ? ctx.slideTypes
+      : SLIDE_TYPES;
   const def = slideTypes[slide?.type];
   if (!def || typeof def.renderHtml !== 'function') {
     // A deck outlives the code that rendered it. An unresolvable type gets the
@@ -355,7 +360,8 @@ export function renderSlideHtml(slide, ctx = {}) {
   // further level. Runs last so it covers the type's title AND its markdown
   // subheadings alike — driven by ctx, not per-type hardcoding. Callers that
   // don't set headingShift (editor/presenter) keep the slide's authored levels.
-  if (ctx?.headingShift != null) out = shiftHeadingLevels(out, ctx.headingShift);
+  if (ctx?.headingShift != null)
+    out = shiftHeadingLevels(out, ctx.headingShift);
   return out;
 }
 
@@ -372,16 +378,12 @@ export function validatePresentation(pres, opts = {}) {
       ok: false,
       errors: ['Presentation must be an object'],
     };
-  if (!isUuid(pres.id))
-    errors.push('Presentation.id must be a UUID');
+  if (!isUuid(pres.id)) errors.push('Presentation.id must be a UUID');
   if (!isNonEmptyString(pres.title))
     errors.push('Presentation.title is required');
   if (pres.description != null && typeof pres.description !== 'string')
     errors.push('Presentation.description must be a string');
-  if (
-    typeof pres.description === 'string' &&
-    pres.description.length > 600
-  )
+  if (typeof pres.description === 'string' && pres.description.length > 600)
     errors.push('Presentation.description exceeds max length (600)');
   if (!isIsoString(pres.created))
     errors.push('Presentation.created must be ISO-8601');
@@ -395,20 +397,14 @@ export function validatePresentation(pres, opts = {}) {
       errors.push('Presentation.schemaVersion must be a non-negative integer');
     else if (sv > CURRENT_SCHEMA_VERSION)
       errors.push(
-        `Presentation.schemaVersion ${sv} is newer than this build supports (max ${CURRENT_SCHEMA_VERSION})`
+        `Presentation.schemaVersion ${sv} is newer than this build supports (max ${CURRENT_SCHEMA_VERSION})`,
       );
   }
-  if (
-    pres.lang != null &&
-    pres.lang !== 'nl' &&
-    pres.lang !== 'en-GB'
-  )
+  if (pres.lang != null && pres.lang !== 'nl' && pres.lang !== 'en-GB')
     errors.push('Presentation.lang must be "nl" or "en-GB"');
   if (pres.theme && !allowedThemes.includes(pres.theme))
     errors.push(
-      `Presentation.theme must be one of: ${allowedThemes.join(
-        ', '
-      )}`
+      `Presentation.theme must be one of: ${allowedThemes.join(', ')}`,
     );
   if (!Array.isArray(pres.slides))
     errors.push('Presentation.slides must be an array');
@@ -423,31 +419,20 @@ export function validatePresentation(pres, opts = {}) {
 
 export function validateSlide(slide) {
   const errors = [];
-  if (!slide || typeof slide !== 'object')
-    return ['Slide must be an object'];
-  if (!isUuid(slide.id))
-    errors.push('Slide.id must be a UUID');
-  if (
-    !isNonEmptyString(slide.type) ||
-    !getSlideType(slide.type)
-  )
+  if (!slide || typeof slide !== 'object') return ['Slide must be an object'];
+  if (!isUuid(slide.id)) errors.push('Slide.id must be a UUID');
+  if (!isNonEmptyString(slide.type) || !getSlideType(slide.type))
     errors.push(
       `Slide.type must be a known slide type (got: ${JSON.stringify(
-        slide?.type
-      )}, slideId: ${JSON.stringify(slide?.id)})`
+        slide?.type,
+      )}, slideId: ${JSON.stringify(slide?.id)})`,
     );
   if (!slide.content || typeof slide.content !== 'object')
     errors.push('Slide.content must be an object');
-  if (
-    slide.notes != null &&
-    typeof slide.notes !== 'string'
-  )
+  if (slide.notes != null && typeof slide.notes !== 'string')
     errors.push('Slide.notes must be a string');
   // parentId validation: must be null or a valid UUID
-  if (
-    slide.parentId != null &&
-    !isUuid(slide.parentId)
-  )
+  if (slide.parentId != null && !isUuid(slide.parentId))
     errors.push('Slide.parentId must be null or a valid UUID');
   // Per-slide duration override validation
   if (slide.duration != null) {

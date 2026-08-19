@@ -115,11 +115,22 @@ function emptyConfig() {
  * @returns {Promise<Object>} Email templates configuration
  */
 export async function getEmailTemplates(scope) {
-  toStorageContext(scope, 'getEmailTemplates', {}, { allowCrossOrganization: true });
+  toStorageContext(
+    scope,
+    'getEmailTemplates',
+    {},
+    { allowCrossOrganization: true },
+  );
   return withDbGuard(emptyConfig(), async (db) => {
     const [rows, settings] = await Promise.all([
-      db.selectFrom('email_templates').select(['type', 'locale', 'fields']).execute(),
-      db.selectFrom('email_template_settings').select('default_locale').executeTakeFirst(),
+      db
+        .selectFrom('email_templates')
+        .select(['type', 'locale', 'fields'])
+        .execute(),
+      db
+        .selectFrom('email_template_settings')
+        .select('default_locale')
+        .executeTakeFirst(),
     ]);
 
     const templates = {};
@@ -183,12 +194,17 @@ export async function writeEmailTemplate(scope, type, locale, fields) {
     if (Object.keys(normalized).length > 0) {
       await db
         .insertInto('email_templates')
-        .values({ type, locale, fields: JSON.stringify(normalized), updated_at: sql`now()` })
+        .values({
+          type,
+          locale,
+          fields: JSON.stringify(normalized),
+          updated_at: sql`now()`,
+        })
         .onConflict((oc) =>
           oc.columns(['type', 'locale']).doUpdateSet({
             fields: JSON.stringify(normalized),
             updated_at: sql`now()`,
-          })
+          }),
         )
         .execute();
     } else {
@@ -248,7 +264,9 @@ export async function updateDefaultLocale(scope, locale) {
       .insertInto('email_template_settings')
       .values({ id: true, default_locale: locale, updated_at: sql`now()` })
       .onConflict((oc) =>
-        oc.column('id').doUpdateSet({ default_locale: locale, updated_at: sql`now()` })
+        oc
+          .column('id')
+          .doUpdateSet({ default_locale: locale, updated_at: sql`now()` }),
       )
       .execute();
     return getEmailTemplates(scope);
@@ -263,7 +281,12 @@ export async function updateDefaultLocale(scope, locale) {
  * @returns {Promise<Object|null>} Template override or null if not set
  */
 export async function getEmailTemplateOverride(scope, type, locale) {
-  toStorageContext(scope, 'getEmailTemplateOverride', {}, { allowCrossOrganization: true });
+  toStorageContext(
+    scope,
+    'getEmailTemplateOverride',
+    {},
+    { allowCrossOrganization: true },
+  );
   return withDbGuard(null, async (db) => {
     const row = await db
       .selectFrom('email_templates')
@@ -282,7 +305,12 @@ export async function getEmailTemplateOverride(scope, type, locale) {
  * @returns {Promise<string>} Default locale code
  */
 export async function getEmailDefaultLocale(scope) {
-  toStorageContext(scope, 'getEmailDefaultLocale', {}, { allowCrossOrganization: true });
+  toStorageContext(
+    scope,
+    'getEmailDefaultLocale',
+    {},
+    { allowCrossOrganization: true },
+  );
   return withDbGuard(DEFAULT_LOCALE, async (db) => {
     const row = await db
       .selectFrom('email_template_settings')

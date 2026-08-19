@@ -12,4 +12,3 @@ export function requireEnv(name) {
 export function optionalEnv(name) {
   return envStr(name) || null;
 }
-

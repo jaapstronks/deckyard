@@ -10,16 +10,11 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 
-const {
-  serializeCsv,
-  parseCsvToGrid,
-  detectHeaderRow,
-  parseChartData,
-} = await import('../shared/slide-types/types/chart-slide/parse.js');
+const { serializeCsv, parseCsvToGrid, detectHeaderRow, parseChartData } =
+  await import('../shared/slide-types/types/chart-slide/parse.js');
 
-const { applyHeaderPaste } = await import(
-  '../client/views/editor/fields/csv-grid.js'
-);
+const { applyHeaderPaste } =
+  await import('../client/views/editor/fields/csv-grid.js');
 
 const BAR_MODEL = { min: 2, max: 2, defaultHeaders: ['Label', 'Value'] };
 
@@ -30,15 +25,12 @@ describe('serializeCsv', () => {
         ['Label', 'Value'],
         ['A', '10'],
       ]),
-      'Label,Value\nA,10'
+      'Label,Value\nA,10',
     );
   });
 
   it('quotes cells containing comma, quote or newline (RFC 4180)', () => {
-    assert.equal(
-      serializeCsv([['a,b', 'c"d', 'e\nf']]),
-      '"a,b","c""d","e\nf"'
-    );
+    assert.equal(serializeCsv([['a,b', 'c"d', 'e\nf']]), '"a,b","c""d","e\nf"');
   });
 
   it('coerces null/number cells to strings', () => {
@@ -79,7 +71,7 @@ describe('detectHeaderRow', () => {
         ['Label', 'Value'],
         ['A', '10'],
       ]),
-      true
+      true,
     );
   });
 
@@ -89,7 +81,7 @@ describe('detectHeaderRow', () => {
         ['A', '10'],
         ['B', '25'],
       ]),
-      false
+      false,
     );
   });
 
@@ -99,7 +91,7 @@ describe('detectHeaderRow', () => {
         ['X', 'Revenue', 'Cost'],
         ['Jan', '12', '8'],
       ]),
-      true
+      true,
     );
   });
 });

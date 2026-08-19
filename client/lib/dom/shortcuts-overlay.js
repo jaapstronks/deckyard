@@ -41,15 +41,18 @@ function renderShortcutGroups(groups = []) {
               i === 0
                 ? [h('kbd', { text: key })]
                 : [
-                    h('span', { class: 'shortcuts-or', text: t('shortcuts.or', 'or') }),
+                    h('span', {
+                      class: 'shortcuts-or',
+                      text: t('shortcuts.or', 'or'),
+                    }),
                     h('kbd', { text: key }),
-                  ]
-            )
+                  ],
+            ),
           ),
           h('dd', { class: 'shortcuts-desc', text: row.desc }),
-        ])
+        ]),
       ),
-    ])
+    ]),
   );
 }
 
@@ -74,6 +77,8 @@ export function openShortcutsOverlay({
     modalClass,
     onClose: () => onClose?.(),
   });
-  modalApi.append(h('div', { class: 'shortcuts' }, renderShortcutGroups(groups)));
+  modalApi.append(
+    h('div', { class: 'shortcuts' }, renderShortcutGroups(groups)),
+  );
   return { close: () => modalApi.close() };
 }

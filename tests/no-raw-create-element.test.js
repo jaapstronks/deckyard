@@ -80,7 +80,11 @@ function createSites(file) {
     // Comment-only lines may mention the API in documentation.
     if (trimmed.startsWith('//') || trimmed.startsWith('*')) return;
     for (const m of line.matchAll(CREATE_RE)) {
-      sites.push({ line: i + 1, tag: m[1] ?? m[2] ?? null, text: trimmed.trim() });
+      sites.push({
+        line: i + 1,
+        tag: m[1] ?? m[2] ?? null,
+        text: trimmed.trim(),
+      });
     }
   });
   return sites;
@@ -99,7 +103,7 @@ test('UI nodes in client/ are built with h(), not document.createElement', () =>
       if (sites.length !== entry.count) {
         violations.push(
           `${rel}: ${sites.length} raw createElement sites, allowlist pins ` +
-            `${entry.count} — use h() for new code, or re-pin with a reason`
+            `${entry.count} — use h() for new code, or re-pin with a reason`,
         );
       }
       continue;
@@ -116,7 +120,7 @@ test('UI nodes in client/ are built with h(), not document.createElement', () =>
     'Build UI nodes with h() from client/lib/dom.js instead of raw ' +
       'document.createElement (see CLAUDE.md § Frontend patterns). Non-UI ' +
       'tags (script/link/style/meta/canvas) are allowed with a literal tag; ' +
-      `anything else needs an allowlist entry with a reason in this test:\n  ${violations.join('\n  ')}`
+      `anything else needs an allowlist entry with a reason in this test:\n  ${violations.join('\n  ')}`,
   );
 });
 
@@ -124,7 +128,7 @@ test('the allowlist only names files that still exist', () => {
   for (const { file } of ALLOWLIST) {
     assert.ok(
       fs.existsSync(path.join(repoRoot, file)),
-      `Stale allowlist entry: ${file} no longer exists — remove it.`
+      `Stale allowlist entry: ${file} no longer exists — remove it.`,
     );
   }
 });

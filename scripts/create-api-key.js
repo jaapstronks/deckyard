@@ -12,7 +12,10 @@
 
 import { loadDotEnv } from '../server/config/env.js';
 import { repoRoot } from '../server/config/paths.js';
-import { initializeStorage, closeStorage } from '../server/storage/lifecycle.js';
+import {
+  initializeStorage,
+  closeStorage,
+} from '../server/storage/lifecycle.js';
 import { createApiKey } from '../server/storage/api-keys.js';
 import { singleOrganizationScope } from '../server/storage/scope.js';
 
@@ -28,10 +31,12 @@ async function main() {
   const email = getArg('email');
   const name = getArg('name') || 'MCP Key';
   const permissionsStr = getArg('permissions') || 'read,write,ai';
-  const permissions = permissionsStr.split(',').map(s => s.trim());
+  const permissions = permissionsStr.split(',').map((s) => s.trim());
 
   if (!email) {
-    console.error('Usage: node scripts/create-api-key.js --email you@example.com [--name "Key name"] [--permissions read,write,ai]');
+    console.error(
+      'Usage: node scripts/create-api-key.js --email you@example.com [--name "Key name"] [--permissions read,write,ai]',
+    );
     process.exit(1);
   }
 
@@ -41,7 +46,11 @@ async function main() {
   const scope = singleOrganizationScope(repoRoot, 'scripts/create-api-key.js', {
     actorEmail: email,
   });
-  const result = await createApiKey(scope, { name, ownerEmail: email, permissions });
+  const result = await createApiKey(scope, {
+    name,
+    ownerEmail: email,
+    permissions,
+  });
 
   if (!result.ok) {
     console.error('Failed to create API key:', result.reason);
@@ -64,12 +73,14 @@ async function main() {
   console.log(`    curl -X POST http://localhost:4177/mcp \\`);
   console.log(`      -H "Authorization: Bearer ${result.key}" \\`);
   console.log(`      -H "Content-Type: application/json" \\`);
-  console.log(`      -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}'`);
+  console.log(
+    `      -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}'`,
+  );
 
   await closeStorage();
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error('Error:', err.message);
   process.exit(1);
 });

@@ -67,7 +67,7 @@ export function envList(name) {
       envStr(name)
         .split(/[\s,]+/)
         .map((s) => s.trim().toLowerCase())
-        .filter(Boolean)
+        .filter(Boolean),
     ),
   ];
 }

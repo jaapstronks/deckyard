@@ -19,10 +19,13 @@ import {
 
 test('allowRequest always returns a Promise (so `!allowRequest(...)` never gates)', () => {
   resetRateLimitBuckets();
-  const result = allowRequest('await-contract:x', { capacity: 1, refillPerSec: 1000 });
+  const result = allowRequest('await-contract:x', {
+    capacity: 1,
+    refillPerSec: 1000,
+  });
   assert.ok(
     result && typeof result.then === 'function',
-    'allowRequest must return a Promise regardless of Redis config'
+    'allowRequest must return a Promise regardless of Redis config',
   );
   // This is the exact footgun the fix removes: the unawaited value is a Promise,
   // which is truthy, so the old `if (!allowRequest(...))` guard was dead code.
@@ -39,7 +42,7 @@ test('awaited limiter trips once the bucket is exhausted', async () => {
   assert.equal(
     await allowRequest('await-trip:ip', opts),
     false,
-    'third request must be blocked once the two tokens are spent'
+    'third request must be blocked once the two tokens are spent',
   );
   resetRateLimitBuckets();
 });

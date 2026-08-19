@@ -101,7 +101,10 @@ export function ensureIconCards(content) {
   // trim trailing blanks so we don't seed invisible empty slots. When there is
   // genuinely nothing, leave an empty array — the "+ Add card" affordance
   // provides the first card.
-  const count = Math.max(1, Math.min(MAX_CARDS, Number(content.cardCount || MAX_CARDS) || MAX_CARDS));
+  const count = Math.max(
+    1,
+    Math.min(MAX_CARDS, Number(content.cardCount || MAX_CARDS) || MAX_CARDS),
+  );
   const resolved = resolveCards(content, count);
   content.items = resolved.slice(0, filledItemCount(resolved));
   return content;

@@ -29,7 +29,12 @@ export default {
       label: 'Fork note',
       placeholder: 'A note only this fork ships',
     },
-    { key: 'forkTone', type: 'enum', label: 'Fork tone', options: ['plain', 'loud'] },
+    {
+      key: 'forkTone',
+      type: 'enum',
+      label: 'Fork tone',
+      options: ['plain', 'loud'],
+    },
   ],
   defaults: { forkNote: '', forkTone: 'plain' },
 };

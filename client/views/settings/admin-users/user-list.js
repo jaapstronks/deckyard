@@ -28,7 +28,10 @@ function renderUserCard(u, currentUser, onEdit, onRefresh) {
   const emailText = h('span', { class: 'admin-user-email', text: u.email });
   const roleBadge = h('span', {
     class: `admin-user-role-badge ${u.role === 'admin' ? 'is-admin' : ''}`,
-    text: u.role === 'admin' ? t('admin.users.roleAdmin', 'Admin') : t('admin.users.roleUser', 'User'),
+    text:
+      u.role === 'admin'
+        ? t('admin.users.roleAdmin', 'Admin')
+        : t('admin.users.roleUser', 'User'),
   });
   emailRow.append(emailText, roleBadge);
 
@@ -95,7 +98,10 @@ function renderUserCard(u, currentUser, onEdit, onRefresh) {
     const inviteIndicator = h('span', {
       class: 'admin-user-status-item',
       title: isExpired
-        ? t('admin.users.status.invitationExpired', 'Invitation expired - resend required')
+        ? t(
+            'admin.users.status.invitationExpired',
+            'Invitation expired - resend required',
+          )
         : t('admin.users.status.invitationPending', 'Awaiting activation'),
     });
     const inviteDot = h('span', {
@@ -144,7 +150,9 @@ function renderUserCard(u, currentUser, onEdit, onRefresh) {
       type: 'button',
       title: t('admin.users.resendInvitation', 'Resend invitation'),
     });
-    resendBtn.append(h('span', { text: t('admin.users.resendInvitation', 'Resend') }));
+    resendBtn.append(
+      h('span', { text: t('admin.users.resendInvitation', 'Resend') }),
+    );
     resendBtn.onclick = () => resendInvitation(u, resendBtn);
     actionsWrap.append(resendBtn);
   }
@@ -175,14 +183,22 @@ function renderUserCard(u, currentUser, onEdit, onRefresh) {
  * @param {Function} onEdit - Callback when edit is clicked
  * @param {Function} onRefresh - Callback to refresh the list
  */
-export function renderUsersList(container, users, currentUser, onEdit, onRefresh) {
+export function renderUsersList(
+  container,
+  users,
+  currentUser,
+  onEdit,
+  onRefresh,
+) {
   container.innerHTML = '';
 
   if (users.length === 0) {
-    container.append(h('div', {
-      class: 'help',
-      text: t('admin.users.noUsers', 'No users found.'),
-    }));
+    container.append(
+      h('div', {
+        class: 'help',
+        text: t('admin.users.noUsers', 'No users found.'),
+      }),
+    );
     return;
   }
 

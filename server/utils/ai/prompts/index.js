@@ -39,7 +39,9 @@ export function resolvePrompts(baseBuilders, overrides = {}) {
 /** The set of builder names a fork is allowed to override. */
 export const BASE_PROMPT_NAMES = Object.freeze(Object.keys(base));
 
-const overrides = await loadCustomPromptOverrides({ knownBuilders: new Set(BASE_PROMPT_NAMES) });
+const overrides = await loadCustomPromptOverrides({
+  knownBuilders: new Set(BASE_PROMPT_NAMES),
+});
 
 /**
  * Resolved prompt builders: base copy overlaid with any fork overrides.

@@ -216,7 +216,7 @@ export async function getPublishedById(storageScope, publishId) {
  */
 export async function upsertPublishedEntry(
   storageScope,
-  { publishId, presentationId, title, ogImageUrl }
+  { publishId, presentationId, title, ogImageUrl },
 ) {
   const ctx = resolveScope(storageScope, 'upsertPublishedEntry');
   const id = String(publishId || '').trim();
@@ -225,13 +225,16 @@ export async function upsertPublishedEntry(
   if (!pid) throw new Error('presentationId is required');
 
   const slug = safeSlug(title || 'presentation');
-  const result = await upsertPublishedRow({
-    id,
-    presentationId: pid,
-    title: String(title || ''),
-    slug,
-    ogImageUrl: typeof ogImageUrl === 'string' ? ogImageUrl : '',
-  }, ctx);
+  const result = await upsertPublishedRow(
+    {
+      id,
+      presentationId: pid,
+      title: String(title || ''),
+      slug,
+      ogImageUrl: typeof ogImageUrl === 'string' ? ogImageUrl : '',
+    },
+    ctx,
+  );
   return {
     publishId: result.id,
     presentationId: result.presentationId,
@@ -275,10 +278,13 @@ export async function updatePublishedSlug(storageScope, publishId, nextSlug) {
   if (!existing) throw new Error('Published entry not found');
 
   const slug = safeSlug(nextSlug);
-  const result = await upsertPublishedRow({
-    ...existing,
-    slug,
-  }, ctx);
+  const result = await upsertPublishedRow(
+    {
+      ...existing,
+      slug,
+    },
+    ctx,
+  );
   return {
     publishId: result.id,
     presentationId: result.presentationId,
@@ -323,8 +329,11 @@ export async function listPublishedForFeed(storageScope, opts = {}) {
     if (enriched.length >= limit) break;
     try {
       const pres = await getPresentation(
-        crossOrganizationScope(repoRoot, 'public feed: entries are addressed by publish id'),
-        entry.presentationId
+        crossOrganizationScope(
+          repoRoot,
+          'public feed: entries are addressed by publish id',
+        ),
+        entry.presentationId,
       );
       if (!pres) continue;
 
@@ -334,7 +343,8 @@ export async function listPublishedForFeed(storageScope, opts = {}) {
 
       enriched.push({
         title: pres.title || entry.title || 'Untitled',
-        description: typeof pres.description === 'string' ? pres.description : '',
+        description:
+          typeof pres.description === 'string' ? pres.description : '',
         // Public feed: expose only a display handle (email local-part), never
         // the raw address, so the RSS <author> can't be harvested. Full
         // identity decoupling: docs/plans/briefs/identity-decoupling.md.

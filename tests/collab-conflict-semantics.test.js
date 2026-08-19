@@ -123,7 +123,7 @@ function assertConverged(a, b) {
   assert.deepEqual(
     codec.projectDocToPresentation(a.doc),
     codec.projectDocToPresentation(b.doc),
-    'both docs project to the same deck'
+    'both docs project to the same deck',
   );
   assert.deepEqual(a.pres.slides, b.pres.slides, 'both pres converge');
 }
@@ -144,9 +144,12 @@ test('delete vs edit of the same slide: the delete wins', () => {
   assert.equal(
     a.pres.slides.some((s) => s.id === 's2'),
     false,
-    'the deleted slide stays deleted; the concurrent edit disappears with it'
+    'the deleted slide stays deleted; the concurrent edit disappears with it',
   );
-  assert.deepEqual(a.pres.slides.map((s) => s.id), ['s1', 's3']);
+  assert.deepEqual(
+    a.pres.slides.map((s) => s.id),
+    ['s1', 's3'],
+  );
 });
 
 test('move vs delete of the same slide: the move wins (clone survives)', () => {
@@ -168,12 +171,12 @@ test('move vs delete of the same slide: the move wins (clone survives)', () => {
   assert.deepEqual(
     ids,
     ['s3', 's1', 's2'],
-    'the moved slide survives the concurrent delete, exactly once, at its new position'
+    'the moved slide survives the concurrent delete, exactly once, at its new position',
   );
   assert.equal(
     a.pres.slides[0].content.title,
     'Derde',
-    'the surviving clone carries the full content'
+    'the surviving clone carries the full content',
   );
 });
 
@@ -189,7 +192,7 @@ test('move vs concurrent edit inside the moved slide: the edit is lost', () => {
   const bs2 = b.pres.slides.find((s) => s.id === 's2');
   bs2.content.title = 'Lijstje bewerkt';
   bs2.content.items = bs2.content.items.map((it, i) =>
-    i === 0 ? { ...it, text: 'eerste bewerkt' } : it
+    i === 0 ? { ...it, text: 'eerste bewerkt' } : it,
   );
   b.binder.syncLocal();
 
@@ -200,7 +203,11 @@ test('move vs concurrent edit inside the moved slide: the edit is lost', () => {
   // The accepted cost of clone-based moves: B's edits landed in the
   // original slide map, which A's move deleted. The clone predates them.
   assert.equal(merged.content.title, 'Lijstje', 'title edit lost to the move');
-  assert.equal(merged.content.items[0].text, 'eerste', 'item edit lost to the move');
+  assert.equal(
+    merged.content.items[0].text,
+    'eerste',
+    'item edit lost to the move',
+  );
 });
 
 test('same field, two discrete edits: character-level merge', () => {
@@ -241,7 +248,7 @@ test('same field while focused: next keystroke is field-level LWW', () => {
   assert.equal(
     a.pres.slides[0].content.title,
     'Eerste rechts!',
-    "the focused user's value wins; the other user's characters are gone"
+    "the focused user's value wins; the other user's characters are gone",
   );
 });
 
@@ -258,14 +265,21 @@ test('adding a language version concurrent with content edits: both survive', ()
 
   exchange(a, b);
   assertConverged(a, b);
-  assert.ok(codec.getDocLangs(a.doc).includes('en-GB'), 'language version added');
-  assert.equal(a.pres.slides[0].content.title, 'Eerste (bewerkt)', 'NL edit survives');
+  assert.ok(
+    codec.getDocLangs(a.doc).includes('en-GB'),
+    'language version added',
+  );
+  assert.equal(
+    a.pres.slides[0].content.title,
+    'Eerste (bewerkt)',
+    'NL edit survives',
+  );
   const en = a.binder.projectLanguage('en-GB');
   assert.equal(en.title, 'Conflict deck EN');
   assert.deepEqual(
     en.slides.map((s) => s.id),
     a.pres.slides.map((s) => s.id),
-    'the new version shares the (edited) structure'
+    'the new version shares the (edited) structure',
   );
 });
 
@@ -286,8 +300,10 @@ test('server translate (three-way apply) vs concurrent client edit: both survive
   // three-way diff against the base.
   const next = structuredClone(base);
   next.i18n.versions['en-GB'].slides = structuredClone(next.slides).map((s) => {
-    if (typeof s?.content?.title === 'string') s.content.title = `EN ${s.content.title}`;
-    if (typeof s?.content?.body === 'string') s.content.body = `EN ${s.content.body}`;
+    if (typeof s?.content?.title === 'string')
+      s.content.title = `EN ${s.content.title}`;
+    if (typeof s?.content?.body === 'string')
+      s.content.body = `EN ${s.content.body}`;
     return s;
   });
   const { warnings } = codec.applyPresentationToDoc(next, a.doc, { base });
@@ -298,10 +314,14 @@ test('server translate (three-way apply) vs concurrent client edit: both survive
   assert.equal(
     a.pres.slides[0].content.body,
     'body een (bewerkt door B)',
-    "B's concurrent NL edit survives the translate"
+    "B's concurrent NL edit survives the translate",
   );
   const en = b.binder.projectLanguage('en-GB');
-  assert.equal(en.slides[0].content.title, 'EN Eerste', 'the translation landed');
+  assert.equal(
+    en.slides[0].content.title,
+    'EN Eerste',
+    'the translation landed',
+  );
   // The translate was based on the pre-edit body — the EN buffer holds the
   // translation of the base text, not of B's concurrent edit (the next
   // translate run picks that up). Pin that too.

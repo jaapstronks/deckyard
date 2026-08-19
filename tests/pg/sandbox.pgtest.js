@@ -46,7 +46,13 @@ const ctx = { organizationId: getDefaultOrganizationId() };
  */
 async function insertDeck(
   db,
-  { ownerEmail = null, visibility = 'private', agedHours = 0, slides = [], title = 'Deck' } = {}
+  {
+    ownerEmail = null,
+    visibility = 'private',
+    agedHours = 0,
+    slides = [],
+    title = 'Deck',
+  } = {},
 ) {
   const id = crypto.randomUUID();
   const createdAt = new Date(Date.now() - agedHours * HOUR).toISOString();
@@ -98,16 +104,22 @@ pgDescribe('sandbox TTL sweep + quota (real PostgreSQL)', () => {
   });
 
   afterEach(() => {
-    if (prevMaxDecks === undefined) delete process.env.SANDBOX_MAX_DECKS_PER_GUEST;
+    if (prevMaxDecks === undefined)
+      delete process.env.SANDBOX_MAX_DECKS_PER_GUEST;
     else process.env.SANDBOX_MAX_DECKS_PER_GUEST = prevMaxDecks;
-    if (prevMaxBytes === undefined) delete process.env.SANDBOX_MAX_BYTES_PER_GUEST;
+    if (prevMaxBytes === undefined)
+      delete process.env.SANDBOX_MAX_BYTES_PER_GUEST;
     else process.env.SANDBOX_MAX_BYTES_PER_GUEST = prevMaxBytes;
   });
 
   it('deletes expired ephemeral decks, spares fresh and organization decks', async () => {
     const expired = await insertDeck(db, { agedHours: 48, title: 'expired' });
     const fresh = await insertDeck(db, { agedHours: 1, title: 'fresh' });
-    const curated = await insertDeck(db, { agedHours: 72, visibility: 'organization', title: 'seed' });
+    const curated = await insertDeck(db, {
+      agedHours: 72,
+      visibility: 'organization',
+      title: 'seed',
+    });
 
     const deleted = await sweepExpiredSandboxDecks();
     assert.equal(deleted, 1);
@@ -160,9 +172,17 @@ pgDescribe('sandbox TTL sweep + quota (real PostgreSQL)', () => {
   });
 
   it('counts a guest’s decks and bytes, scoped to the org and case-insensitive', async () => {
-    const bigSlides = [{ id: 's1', type: 'text', content: { body: 'x'.repeat(5000) } }];
-    await insertDeck(db, { ownerEmail: 'alice@example.com', slides: bigSlides });
-    await insertDeck(db, { ownerEmail: 'ALICE@example.com', slides: bigSlides });
+    const bigSlides = [
+      { id: 's1', type: 'text', content: { body: 'x'.repeat(5000) } },
+    ];
+    await insertDeck(db, {
+      ownerEmail: 'alice@example.com',
+      slides: bigSlides,
+    });
+    await insertDeck(db, {
+      ownerEmail: 'ALICE@example.com',
+      slides: bigSlides,
+    });
     await insertDeck(db, { ownerEmail: 'bob@example.com' });
 
     const alice = await getSandboxUsageForOwner(ctx, 'alice@example.com');
@@ -173,7 +193,10 @@ pgDescribe('sandbox TTL sweep + quota (real PostgreSQL)', () => {
     assert.equal(bob.deckCount, 1);
 
     const total = await getSandboxTotalBytes(ctx);
-    assert.ok(total >= alice.totalBytes + bob.totalBytes - 1, 'global total sums all decks');
+    assert.ok(
+      total >= alice.totalBytes + bob.totalBytes - 1,
+      'global total sums all decks',
+    );
   });
 
   it('refuses a mint past the per-guest deck-count cap with a typed 429', async () => {
@@ -194,7 +217,7 @@ pgDescribe('sandbox TTL sweep + quota (real PostgreSQL)', () => {
         assert.equal(err.code, 'sandbox_quota_exceeded');
         assert.equal(err.details?.limit, 2);
         return true;
-      }
+      },
     );
   });
 
@@ -212,7 +235,7 @@ pgDescribe('sandbox TTL sweep + quota (real PostgreSQL)', () => {
         assert.equal(err.code, 'sandbox_quota_exceeded');
         assert.ok('limitBytes' in (err.details || {}));
         return true;
-      }
+      },
     );
   });
 

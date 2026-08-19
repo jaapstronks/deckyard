@@ -2,7 +2,12 @@ function isTypingTarget(t) {
   const el = t && t.nodeType === 1 ? t : null;
   if (!el) return false;
   const tag = (el.tagName || '').toLowerCase();
-  if (tag === 'input' || tag === 'textarea' || tag === 'select' || tag === 'button')
+  if (
+    tag === 'input' ||
+    tag === 'textarea' ||
+    tag === 'select' ||
+    tag === 'button'
+  )
     return true;
   if (el.isContentEditable) return true;
   return false;

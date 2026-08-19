@@ -124,15 +124,18 @@ export async function extractUsedKeys(clientDir) {
   };
   for await (const file of walkJs(clientDir)) {
     const src = await fs.readFile(file, 'utf8');
-    for (const m of src.matchAll(T_CALL)) record(m[2], m[3] ?? m[4] ?? null, file);
-    for (const m of src.matchAll(DESCRIPTOR_PAIR)) record(m[3], m[4] ?? m[5] ?? null, file);
+    for (const m of src.matchAll(T_CALL))
+      record(m[2], m[3] ?? m[4] ?? null, file);
+    for (const m of src.matchAll(DESCRIPTOR_PAIR))
+      record(m[3], m[4] ?? m[5] ?? null, file);
   }
   return used;
 }
 
 // The pre-B94 spelling of the same pair: <x>Key: '<key>', <x>Default: '…'.
 // Kept only as a needle — a match means the second spelling is growing back.
-const LEGACY_DESCRIPTOR_PAIR = /\b(\w+)Key:\s*(['"])([\w.-]+)\2\s*,\s*\1Default:/g;
+const LEGACY_DESCRIPTOR_PAIR =
+  /\b(\w+)Key:\s*(['"])([\w.-]+)\2\s*,\s*\1Default:/g;
 
 /**
  * Find descriptor pairs still written in the retired `<x>Key` / `<x>Default`

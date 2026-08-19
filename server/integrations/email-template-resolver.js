@@ -21,7 +21,10 @@ import { crossOrganizationScope } from '../storage/scope.js';
  * without a session.
  */
 function templateScope(repoRoot) {
-  return crossOrganizationScope(repoRoot ?? null, 'email template resolve: instance-level template config');
+  return crossOrganizationScope(
+    repoRoot ?? null,
+    'email template resolve: instance-level template config',
+  );
 }
 
 // ============================================================
@@ -89,65 +92,137 @@ const TEMPLATE_I18N_MAP = {
   userInvitation: {
     subject: ['email.userInvitation.subject', "You've been invited to join"],
     greeting: ['email.common.greeting', 'Hi {name},'],
-    body: ['email.userInvitation.body', '{inviter} has invited you to join. Click the button below to set up your account:'],
+    body: [
+      'email.userInvitation.body',
+      '{inviter} has invited you to join. Click the button below to set up your account:',
+    ],
     buttonLabel: ['email.userInvitation.button', 'Set Up Your Account'],
-    footer: ['email.userInvitation.expiry', 'This invitation expires in 7 days.'],
+    footer: [
+      'email.userInvitation.expiry',
+      'This invitation expires in 7 days.',
+    ],
   },
   activationReminder: {
-    subject: ['email.activationReminder.subject', 'Reminder: Complete your account setup'],
+    subject: [
+      'email.activationReminder.subject',
+      'Reminder: Complete your account setup',
+    ],
     greeting: ['email.common.greeting', 'Hi {name},'],
-    body: ['email.activationReminder.body', "We noticed you haven't completed your account setup yet. {inviter} invited you to join — click the button below to get started:"],
+    body: [
+      'email.activationReminder.body',
+      "We noticed you haven't completed your account setup yet. {inviter} invited you to join — click the button below to get started:",
+    ],
     buttonLabel: ['email.activationReminder.button', 'Complete Setup'],
-    footer: ['email.activationReminder.expiry', 'This invitation link is still valid.'],
+    footer: [
+      'email.activationReminder.expiry',
+      'This invitation link is still valid.',
+    ],
   },
   collaboratorInvite: {
-    subject: ['email.collaboratorInvite.subject', '{inviter} shared "{presTitle}" with you'],
+    subject: [
+      'email.collaboratorInvite.subject',
+      '{inviter} shared "{presTitle}" with you',
+    ],
     greeting: ['email.common.greeting', 'Hi {name},'],
-    body: ['email.collaboratorInvite.body', '<strong>{inviter}</strong> has invited you to {permission} <strong>{presTitle}</strong>.'],
+    body: [
+      'email.collaboratorInvite.body',
+      '<strong>{inviter}</strong> has invited you to {permission} <strong>{presTitle}</strong>.',
+    ],
     buttonLabel: ['email.collaboratorInvite.button', 'Open Presentation'],
-    footer: ['email.collaboratorInvite.access', 'You now have {accessLevel} to this presentation.'],
+    footer: [
+      'email.collaboratorInvite.access',
+      'You now have {accessLevel} to this presentation.',
+    ],
   },
   guestInvitation: {
-    subject: ['email.guestInvitation.subject', '{inviter} invited you to view "{presTitle}"'],
+    subject: [
+      'email.guestInvitation.subject',
+      '{inviter} invited you to view "{presTitle}"',
+    ],
     greeting: ['email.common.greeting', 'Hi {name},'],
-    body: ['email.guestInvitation.body', '<strong>{inviter}</strong> has invited you to view and comment on their presentation <strong>{presTitle}</strong>.'],
+    body: [
+      'email.guestInvitation.body',
+      '<strong>{inviter}</strong> has invited you to view and comment on their presentation <strong>{presTitle}</strong>.',
+    ],
     buttonLabel: ['email.guestInvitation.button', 'View Presentation'],
-    footer: ['email.guestInvitation.footer', "You'll be asked to verify your email address when you access the presentation."],
+    footer: [
+      'email.guestInvitation.footer',
+      "You'll be asked to verify your email address when you access the presentation.",
+    ],
   },
   passwordReset: {
     subject: ['email.passwordReset.subject', 'Reset your password'],
     greeting: ['email.common.greeting', 'Hi {name},'],
-    body: ['email.passwordReset.body', 'We received a request to reset your password. Click the button below to choose a new password:'],
+    body: [
+      'email.passwordReset.body',
+      'We received a request to reset your password. Click the button below to choose a new password:',
+    ],
     buttonLabel: ['email.passwordReset.button', 'Reset Password'],
-    footer: ['email.passwordReset.expiry', "This link expires in 1 hour. If you didn't request a password reset, you can safely ignore this email."],
+    footer: [
+      'email.passwordReset.expiry',
+      "This link expires in 1 hour. If you didn't request a password reset, you can safely ignore this email.",
+    ],
   },
   magicLink: {
     subject: ['email.magicLink.subject', 'Your sign-in link'],
     greeting: ['email.common.greetingAnonymous', 'Hi there,'],
-    body: ['email.magicLink.body', 'Click the button below to sign in. No password needed!'],
+    body: [
+      'email.magicLink.body',
+      'Click the button below to sign in. No password needed!',
+    ],
     buttonLabel: ['email.magicLink.button', 'Sign in now'],
-    footer: ['email.magicLink.expiry', 'This link expires in 15 minutes and can only be used once.'],
+    footer: [
+      'email.magicLink.expiry',
+      'This link expires in 15 minutes and can only be used once.',
+    ],
   },
   commentNotification: {
-    subject: ['email.commentNotification.subject.new', 'New comment on "{presTitle}"'],
+    subject: [
+      'email.commentNotification.subject.new',
+      'New comment on "{presTitle}"',
+    ],
     greeting: ['email.common.greetingAnonymous', 'Hi there,'],
-    body: ['email.commentNotification.body.new', 'commented on your presentation'],
+    body: [
+      'email.commentNotification.body.new',
+      'commented on your presentation',
+    ],
     buttonLabel: ['email.commentNotification.action.new', 'View and reply'],
-    footer: ['email.commentNotification.footer.owner', 'This notification was sent because you own this presentation.'],
+    footer: [
+      'email.commentNotification.footer.owner',
+      'This notification was sent because you own this presentation.',
+    ],
   },
   guestVerification: {
-    subject: ['email.guestVerification.subject', 'Verify your email to comment on "{presTitle}"'],
+    subject: [
+      'email.guestVerification.subject',
+      'Verify your email to comment on "{presTitle}"',
+    ],
     greeting: ['email.common.greeting', 'Hi {name},'],
-    body: ['email.guestVerification.body', 'Click the link below to verify your email and join the discussion on <strong>{presTitle}</strong>:'],
-    buttonLabel: ['email.guestVerification.button', 'Verify Email & Join Discussion'],
-    footer: ['email.guestVerification.expiry', 'This link expires in 24 hours.'],
+    body: [
+      'email.guestVerification.body',
+      'Click the link below to verify your email and join the discussion on <strong>{presTitle}</strong>:',
+    ],
+    buttonLabel: [
+      'email.guestVerification.button',
+      'Verify Email & Join Discussion',
+    ],
+    footer: [
+      'email.guestVerification.expiry',
+      'This link expires in 24 hours.',
+    ],
   },
   leadNotification: {
     subject: ['email.leadNotification.subject', 'New lead from "{presTitle}"'],
     greeting: ['email.common.greetingAnonymous', 'Hi there,'],
-    body: ['email.leadNotification.body', 'A new lead was captured from your presentation <strong>{presTitle}</strong>:'],
+    body: [
+      'email.leadNotification.body',
+      'A new lead was captured from your presentation <strong>{presTitle}</strong>:',
+    ],
     buttonLabel: ['email.leadNotification.button', 'View All Leads'],
-    footer: ['email.leadNotification.footer', 'You received this notification because you have lead email notifications enabled.'],
+    footer: [
+      'email.leadNotification.footer',
+      'You received this notification because you have lead email notifications enabled.',
+    ],
   },
 };
 
@@ -194,7 +269,11 @@ function getCodeDefault(type, field, locale) {
  */
 async function resolveTemplateField(repoRoot, type, field, locale) {
   // Try custom override for requested locale
-  const override = await getEmailTemplateOverride(templateScope(repoRoot), type, locale);
+  const override = await getEmailTemplateOverride(
+    templateScope(repoRoot),
+    type,
+    locale,
+  );
   if (override && override[field]) {
     return override[field];
   }
@@ -225,7 +304,9 @@ export async function resolveTemplate(repoRoot, type, locale) {
     throw new Error(`Invalid template type: ${type}`);
   }
 
-  const normalizedLocale = SUPPORTED_LOCALES.includes(locale) ? locale : DEFAULT_LOCALE;
+  const normalizedLocale = SUPPORTED_LOCALES.includes(locale)
+    ? locale
+    : DEFAULT_LOCALE;
   const fields = TEMPLATE_METADATA[type].fields;
   const result = {
     type,
@@ -235,14 +316,23 @@ export async function resolveTemplate(repoRoot, type, locale) {
   };
 
   // Get override to check if any custom values exist
-  const override = await getEmailTemplateOverride(templateScope(repoRoot), type, normalizedLocale);
+  const override = await getEmailTemplateOverride(
+    templateScope(repoRoot),
+    type,
+    normalizedLocale,
+  );
   if (override && Object.keys(override).length > 0) {
     result.isCustom = true;
   }
 
   // Resolve each field
   for (const field of fields) {
-    result.fields[field] = await resolveTemplateField(repoRoot, type, field, normalizedLocale);
+    result.fields[field] = await resolveTemplateField(
+      repoRoot,
+      type,
+      field,
+      normalizedLocale,
+    );
   }
 
   return result;
@@ -297,7 +387,12 @@ export async function getAllTemplates(repoRoot) {
  * @param {Object.<TemplateField, string>|null} customFields - Optional custom fields to preview (not yet saved)
  * @returns {Promise<TemplatePreview>} Preview with interpolated subject and body
  */
-export async function generatePreview(repoRoot, type, locale, customFields = null) {
+export async function generatePreview(
+  repoRoot,
+  type,
+  locale,
+  customFields = null,
+) {
   if (!TEMPLATE_METADATA[type]) {
     throw new Error(`Invalid template type: ${type}`);
   }
@@ -331,7 +426,8 @@ export async function generatePreview(repoRoot, type, locale, customFields = nul
     commentNotification: {
       commenterName: 'Jordan Smith',
       presTitle: 'Q4 Marketing Strategy',
-      commentBody: 'This looks great! Can we add more data on the competitor analysis?',
+      commentBody:
+        'This looks great! Can we add more data on the competitor analysis?',
     },
     guestVerification: {
       name: 'Alex',

@@ -13,7 +13,8 @@ export function sandboxAppSeoHeadHtml(req, { path = '/' } = {}) {
   const ogImage = new URL('/og/sandbox.png', origin).href;
 
   // Index the root landing; keep internal SPA routes out of search results.
-  const isRoot = String(path || '/') === '/' || String(path || '/') === '/index.html';
+  const isRoot =
+    String(path || '/') === '/' || String(path || '/') === '/index.html';
   const robots = isRoot ? 'index,follow' : 'noindex,nofollow';
 
   return `

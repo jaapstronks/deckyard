@@ -15,24 +15,24 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } = await import(
-  '../server/storage/lifecycle.js'
-);
-const { maybeAttachCollab, shutdownCollab } = await import(
-  '../server/collab/mount.js'
-);
-const { createPresentation } = await import(
-  '../server/storage/presentations/index.js'
-);
-const { createPresenceSession } = await import(
-  '../client/lib/collab/presence-session.js'
-);
+const { initializeStorage, __resetStorageForTests } =
+  await import('../server/storage/lifecycle.js');
+const { maybeAttachCollab, shutdownCollab } =
+  await import('../server/collab/mount.js');
+const { createPresentation } =
+  await import('../server/storage/presentations/index.js');
+const { createPresenceSession } =
+  await import('../client/lib/collab/presence-session.js');
 
 // The mount still takes a `repoRoot`; storage ignores it now that PostgreSQL
 // is the only backend.
 const REPO_ROOT = process.cwd();
 
-__setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+__setTestDb(
+  createFakeDb({
+    organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+  }),
+);
 await initializeStorage();
 
 // `closeStorage()` would call `db.destroy()`, which the in-memory double does
@@ -90,7 +90,7 @@ test('presence: two clients on the same deck see each other', async (t) => {
 
   // Both sides converge on seeing exactly one peer.
   await waitFor(
-    () => alice.getPeers().length === 1 && bob.getPeers().length === 1
+    () => alice.getPeers().length === 1 && bob.getPeers().length === 1,
   );
   assert.equal(alice.getPeers()[0].user.email, 'bob@example.com');
   assert.equal(bob.getPeers()[0].user.name, 'Alice');
@@ -101,9 +101,7 @@ test('presence: two clients on the same deck see each other', async (t) => {
   await waitFor(() => bob.getPeers()[0]?.view?.slideId === 'slide-123');
 
   alice.setFocusField('slide-123', 'items.0.title');
-  await waitFor(
-    () => bob.getPeers()[0]?.focus?.fieldPath === 'items.0.title'
-  );
+  await waitFor(() => bob.getPeers()[0]?.focus?.fieldPath === 'items.0.title');
 
   // Disconnect cleans up presence for the remaining peer (no stale entries).
   bob.destroy();
@@ -137,7 +135,7 @@ test('presence: unknown document is rejected', async (t) => {
   assert.equal(
     becameConnected && session._provider.isAuthenticated === true,
     false,
-    'unauthorized document must not authenticate'
+    'unauthorized document must not authenticate',
   );
 });
 

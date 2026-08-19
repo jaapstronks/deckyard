@@ -30,11 +30,20 @@ test('a human name becomes a css-class-safe id', () => {
 });
 
 test('slugify never produces an id the normalizer would reject', () => {
-  const names = ['Calm', 'Soft Sage', '  spaced  ', 'Ünïcødé', 'a'.repeat(80), '2024'];
+  const names = [
+    'Calm',
+    'Soft Sage',
+    '  spaced  ',
+    'Ünïcødé',
+    'a'.repeat(80),
+    '2024',
+  ];
   for (const name of names) {
     const id = slugifyVariantId(name);
     if (!id) continue;
-    const kept = normalizeSlideBackgrounds([{ id, label: name, value: '#e8f0ee' }]);
+    const kept = normalizeSlideBackgrounds([
+      { id, label: name, value: '#e8f0ee' },
+    ]);
     assert.equal(kept.length, 1, `normalizer dropped "${id}" (from "${name}")`);
   }
 });
@@ -44,7 +53,10 @@ test('a name with nothing usable in it is rejected, not silently dropped', () =>
     const id = slugifyVariantId(name);
     assert.ok(variantIdProblem(id, []), `"${name}" should be rejected`);
     // And the normalizer would indeed have dropped it.
-    assert.deepEqual(normalizeSlideBackgrounds([{ id, label: name, value: '#fff' }]), []);
+    assert.deepEqual(
+      normalizeSlideBackgrounds([{ id, label: name, value: '#fff' }]),
+      [],
+    );
   }
 });
 
@@ -52,10 +64,13 @@ test('every reserved id is rejected by the form', () => {
   for (const id of RESERVED_SLIDE_BG_IDS) {
     assert.ok(
       variantIdProblem(id, []),
-      `${id} is reserved but the form would have accepted it`
+      `${id} is reserved but the form would have accepted it`,
     );
     // The normalizer drops it, which is what the form is protecting you from.
-    assert.deepEqual(normalizeSlideBackgrounds([{ id, label: id, value: '#fff' }]), []);
+    assert.deepEqual(
+      normalizeSlideBackgrounds([{ id, label: id, value: '#fff' }]),
+      [],
+    );
   }
 });
 

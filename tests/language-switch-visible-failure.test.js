@@ -33,10 +33,10 @@ globalThis.CustomEvent = dom.window.CustomEvent;
 globalThis.getComputedStyle = dom.window.getComputedStyle;
 
 const { h } = await import('../client/lib/dom.js');
-const { normalizeLang, otherLang } = await import('../client/lib/format/i18n.js');
-const { createLanguageMode } = await import(
-  '../client/views/editor/topbar/language-mode.js'
-);
+const { normalizeLang, otherLang } =
+  await import('../client/lib/format/i18n.js');
+const { createLanguageMode } =
+  await import('../client/views/editor/topbar/language-mode.js');
 
 const flush = () => new Promise((r) => setTimeout(r, 0));
 
@@ -82,7 +82,14 @@ function mount({ api, pres = makePres() }) {
   });
   document.body.replaceChildren(controller.el);
   const [btnNl, btnEn] = controller.el.querySelectorAll('.sb-segmented-btn');
-  return { controller, pres, toasts, btnNl, btnEn, seg: controller.el.querySelector('.sb-segmented') };
+  return {
+    controller,
+    pres,
+    toasts,
+    btnNl,
+    btnEn,
+    seg: controller.el.querySelector('.sb-segmented'),
+  };
 }
 
 test('a rejection without a message still surfaces a toast', async () => {
@@ -99,7 +106,11 @@ test('a rejection without a message still surfaces a toast', async () => {
 
   assert.equal(toasts.length, 1, 'exactly one toast');
   assert.equal(toasts[0].level, 'error', 'reported as an error, not as info');
-  assert.equal(toasts[0].msg, 'Unknown error', 'falls back to a readable message');
+  assert.equal(
+    toasts[0].msg,
+    'Unknown error',
+    'falls back to a readable message',
+  );
 });
 
 test('a throw past the inner catch is caught by switchLanguageMode', async () => {
@@ -107,7 +118,12 @@ test('a throw past the inner catch is caught by switchLanguageMode', async () =>
   // into - a TypeError outside loadLanguageIntoView's try. Before the wrapping
   // catch this vanished as an unhandled rejection and left a dead button.
   const { toasts, btnEn } = mount({
-    api: async () => ({ i18n: { versions: {} }, title: 'Deck', slides: [], theme: null }),
+    api: async () => ({
+      i18n: { versions: {} },
+      title: 'Deck',
+      slides: [],
+      theme: null,
+    }),
   });
 
   btnEn.click();
@@ -142,11 +158,15 @@ test('language buttons are disabled with a reason while translating', async () =
   release({ presentation: { revision: 2 } });
   await running;
 
-  assert.equal(btnEn.disabled, false, 'released again when the translation ends');
+  assert.equal(
+    btnEn.disabled,
+    false,
+    'released again when the translation ends',
+  );
   assert.equal(seg.getAttribute('aria-busy'), 'false');
   assert.equal(seg.title, idleTitle, 'idle title restored');
   assert.ok(
     toasts.some((x) => x.level === 'success'),
-    'and the result is reported'
+    'and the result is reported',
   );
 });

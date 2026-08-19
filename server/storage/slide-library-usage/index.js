@@ -53,8 +53,12 @@ function normalizeUsageItems(input) {
  * @returns {Promise<{ items: Array<object> }>}
  */
 export async function listSlideLibraryUsage(storageScope, userEmail) {
-  const email = String(userEmail || '').trim().toLowerCase();
-  const ctx = toStorageContext(storageScope, 'listSlideLibraryUsage', { userEmail: email });
+  const email = String(userEmail || '')
+    .trim()
+    .toLowerCase();
+  const ctx = toStorageContext(storageScope, 'listSlideLibraryUsage', {
+    userEmail: email,
+  });
   if (!email) return { items: [] };
 
   const db = getDb();
@@ -62,7 +66,13 @@ export async function listSlideLibraryUsage(storageScope, userEmail) {
 
   const rows = await db
     .selectFrom('slide_library_usage')
-    .select(['item_type', 'item_id', 'first_used_at', 'use_count', 'updated_at'])
+    .select([
+      'item_type',
+      'item_id',
+      'first_used_at',
+      'use_count',
+      'updated_at',
+    ])
     .where('organization_id', '=', orgId)
     .where('user_email', '=', email)
     .execute();
@@ -86,9 +96,13 @@ export async function listSlideLibraryUsage(storageScope, userEmail) {
  * @returns {Promise<{ ok: boolean, recorded: number }>}
  */
 export async function recordSlideLibraryUsage(storageScope, userEmail, items) {
-  const email = String(userEmail || '').trim().toLowerCase();
+  const email = String(userEmail || '')
+    .trim()
+    .toLowerCase();
   if (!email) return { ok: true, recorded: 0 };
-  const ctx = toStorageContext(storageScope, 'recordSlideLibraryUsage', { userEmail: email });
+  const ctx = toStorageContext(storageScope, 'recordSlideLibraryUsage', {
+    userEmail: email,
+  });
 
   const refs = normalizeUsageItems(items);
   if (!refs.length) return { ok: true, recorded: 0 };
@@ -115,7 +129,7 @@ export async function recordSlideLibraryUsage(storageScope, userEmail, items) {
           .doUpdateSet({
             use_count: sql`slide_library_usage.use_count + 1`,
             updated_at: ts,
-          })
+          }),
       )
       .execute();
   }

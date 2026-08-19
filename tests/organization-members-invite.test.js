@@ -77,7 +77,11 @@ let nextResponse = null;
 globalThis.fetch = async (input, init = {}) => {
   const path = String(input);
   const method = init?.method || 'GET';
-  requested.push({ method, path, body: init?.body ? JSON.parse(init.body) : null });
+  requested.push({
+    method,
+    path,
+    body: init?.body ? JSON.parse(init.body) : null,
+  });
 
   if (nextResponse) {
     const { status, body } = nextResponse;
@@ -88,27 +92,28 @@ globalThis.fetch = async (input, init = {}) => {
     });
   }
 
-  return new Response(JSON.stringify({ ok: true, members: ALL, total: ALL.length }), {
-    status: 200,
-    headers: { 'content-type': 'application/json' },
-  });
+  return new Response(
+    JSON.stringify({ ok: true, members: ALL, total: ALL.length }),
+    {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    },
+  );
 };
 
 const { setFeatures } = await import('../client/lib/state/features.js');
-const { canInvite, invitableRoles } = await import(
-  '../client/views/settings/organization-members/permissions.js'
-);
-const { inviteMember } = await import('../client/views/settings/organization-members/actions.js');
-const { showInviteModal } = await import(
-  '../client/views/settings/organization-members/invite-modal.js'
-);
-const { renderOrganizationMembersPanel } = await import(
-  '../client/views/settings/organization-members/panel.js'
-);
-const { isOrganizationAdmin, canSeeMemberList, isOrganizationMember } = await import(
-  '../client/lib/user/organization-role.js'
-);
-const { createSettingsSidebar } = await import('../client/views/settings/settings-sidebar.js');
+const { canInvite, invitableRoles } =
+  await import('../client/views/settings/organization-members/permissions.js');
+const { inviteMember } =
+  await import('../client/views/settings/organization-members/actions.js');
+const { showInviteModal } =
+  await import('../client/views/settings/organization-members/invite-modal.js');
+const { renderOrganizationMembersPanel } =
+  await import('../client/views/settings/organization-members/panel.js');
+const { isOrganizationAdmin, canSeeMemberList, isOrganizationMember } =
+  await import('../client/lib/user/organization-role.js');
+const { createSettingsSidebar } =
+  await import('../client/views/settings/settings-sidebar.js');
 
 setFeatures({ multiOrganization: true });
 
@@ -150,13 +155,13 @@ test('an admin may only hand out `member`, so they get no choice to make', () =>
   assert.deepEqual(
     invitableRoles(viewer(ADMIN, 'admin')),
     ['member'],
-    'the server refuses anything else from an admin'
+    'the server refuses anything else from an admin',
   );
   assert.deepEqual(invitableRoles(viewer(MEMBER, 'member')), []);
   assert.equal(
     invitableRoles(viewer(OWNER, 'owner')).includes('owner'),
     false,
-    'handing the organization over is the transfer path, not the invite path'
+    'handing the organization over is the transfer path, not the invite path',
   );
 });
 
@@ -172,7 +177,7 @@ test('the panel offers the button only to those who may use it', async () => {
     });
     await panel.ready;
     const button = Array.from(panel.el.querySelectorAll('button')).find(
-      (b) => b.textContent === 'Invite'
+      (b) => b.textContent === 'Invite',
     );
     assert.equal(Boolean(button), expected, `${role} invite button`);
   }
@@ -212,7 +217,11 @@ test('a successful invite reloads the page the reader is on', async () => {
   requested = [];
   await onInvited();
   assert.equal(requested.length, 1, 'the list is re-read');
-  assert.match(requested[0].path, /offset=0/, 'and stays on the page it was showing');
+  assert.match(
+    requested[0].path,
+    /offset=0/,
+    'and stays on the page it was showing',
+  );
 });
 
 // ---------------------------------------------------------------------------
@@ -225,8 +234,9 @@ test('a new account is invited; an existing one is added and told nothing', asyn
     body: { ok: true, member: { isNewUser: true, invitationSent: true } },
   };
   assert.equal(
-    (await inviteMember({ organizationId: ORG, email: 'new@example.com' })).outcome,
-    'invited'
+    (await inviteMember({ organizationId: ORG, email: 'new@example.com' }))
+      .outcome,
+    'invited',
   );
 
   nextResponse = {
@@ -234,9 +244,10 @@ test('a new account is invited; an existing one is added and told nothing', asyn
     body: { ok: true, member: { isNewUser: false, invitationSent: false } },
   };
   assert.equal(
-    (await inviteMember({ organizationId: ORG, email: 'known@example.com' })).outcome,
+    (await inviteMember({ organizationId: ORG, email: 'known@example.com' }))
+      .outcome,
     'added',
-    'someone who already had an account here gets no mail'
+    'someone who already had an account here gets no mail',
   );
 
   // The third state is not reachable through this dialog (it never asks for
@@ -247,8 +258,9 @@ test('a new account is invited; an existing one is added and told nothing', asyn
     body: { ok: true, member: { isNewUser: true, invitationSent: false } },
   };
   assert.equal(
-    (await inviteMember({ organizationId: ORG, email: 'quiet@example.com' })).outcome,
-    'created'
+    (await inviteMember({ organizationId: ORG, email: 'quiet@example.com' }))
+      .outcome,
+    'created',
   );
 });
 
@@ -267,7 +279,11 @@ test('the invite goes to the organization on screen, with the chosen role', asyn
   const [call] = requested;
   assert.equal(call.method, 'POST');
   assert.equal(call.path, `/api/organizations/${ORG}/members`);
-  assert.deepEqual(call.body, { email: ' New@Example.com ', name: 'Nina New', role: 'admin' });
+  assert.deepEqual(call.body, {
+    email: ' New@Example.com ',
+    name: 'Nina New',
+    role: 'admin',
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -284,13 +300,17 @@ function openDialog(user, { invite, onInvited } = {}) {
   });
   return {
     modal,
-    email: document.querySelector('.organization-invite-modal input[type="email"]'),
-    name: document.querySelector('.organization-invite-modal input[type="text"]'),
+    email: document.querySelector(
+      '.organization-invite-modal input[type="email"]',
+    ),
+    name: document.querySelector(
+      '.organization-invite-modal input[type="text"]',
+    ),
     role: document.querySelector('.organization-invite-modal select'),
     status: document.querySelector('.organization-invite-modal .modal-status'),
-    submit: Array.from(document.querySelectorAll('.organization-invite-modal button')).find(
-      (b) => b.textContent === 'Send invitation'
-    ),
+    submit: Array.from(
+      document.querySelectorAll('.organization-invite-modal button'),
+    ).find((b) => b.textContent === 'Send invitation'),
   };
 }
 
@@ -299,7 +319,7 @@ test('an owner picks a role; an admin is told which one they get', () => {
   assert.ok(asOwner.role, 'the owner chooses');
   assert.deepEqual(
     Array.from(asOwner.role.options).map((o) => o.value),
-    ['member', 'admin']
+    ['member', 'admin'],
   );
   asOwner.modal.close();
   document.body.innerHTML = '';
@@ -309,7 +329,7 @@ test('an owner picks a role; an admin is told which one they get', () => {
   assert.match(
     document.querySelector('.organization-invite-modal').textContent,
     /join as a member/,
-    'so the rule is stated instead'
+    'so the rule is stated instead',
   );
 });
 
@@ -322,13 +342,18 @@ test('an address without an @ never reaches the server', async () => {
   await settle();
 
   assert.match(dialog.status.textContent, /valid email/i);
-  assert.ok(document.querySelector('.organization-invite-modal'), 'and the dialog stays open');
+  assert.ok(
+    document.querySelector('.organization-invite-modal'),
+    'and the dialog stays open',
+  );
 });
 
 test('a refusal stays in the dialog, next to the field that caused it', async () => {
   const dialog = openDialog(viewer(OWNER, 'owner'), {
     invite: async () => {
-      const err = new Error('This user is already a member of the organization');
+      const err = new Error(
+        'This user is already a member of the organization',
+      );
       err.statusCode = 400;
       throw err;
     },
@@ -338,14 +363,23 @@ test('a refusal stays in the dialog, next to the field that caused it', async ()
   await settle();
 
   assert.match(dialog.status.textContent, /already a member/i);
-  assert.ok(document.querySelector('.organization-invite-modal'), 'the dialog stays open');
-  assert.equal(dialog.submit.disabled, false, 'and can be tried again after an edit');
+  assert.ok(
+    document.querySelector('.organization-invite-modal'),
+    'the dialog stays open',
+  );
+  assert.equal(
+    dialog.submit.disabled,
+    false,
+    'and can be tried again after an edit',
+  );
 });
 
 test("a role refusal shows the server's own sentence, not a guess", async () => {
   const dialog = openDialog(viewer(ADMIN, 'admin'), {
     invite: async () => {
-      const err = new Error('Admins can only invite members (not admins or owners)');
+      const err = new Error(
+        'Admins can only invite members (not admins or owners)',
+      );
       err.statusCode = 403;
       throw err;
     },
@@ -369,7 +403,11 @@ test('a success closes the dialog and reports what happened', async () => {
   dialog.submit.click();
   await settle();
 
-  assert.equal(document.querySelector('.organization-invite-modal'), null, 'dialog closed');
+  assert.equal(
+    document.querySelector('.organization-invite-modal'),
+    null,
+    'dialog closed',
+  );
   assert.equal(invited?.outcome, 'added');
   // The one sentence that has to survive: nobody mailed them.
   assert.match(document.body.textContent, /not emailed/i);
@@ -388,7 +426,9 @@ function visibleTabKeys(user) {
     activeTab: 'account',
     onTabChange: () => {},
   });
-  return Array.from(sidebar.el.querySelectorAll('[data-tab]')).map((b) => b.dataset.tab);
+  return Array.from(sidebar.el.querySelectorAll('[data-tab]')).map(
+    (b) => b.dataset.tab,
+  );
 }
 
 test('single-organization is untouched: the tab is the admin tab it always was', () => {
@@ -405,20 +445,38 @@ test('single-organization is untouched: the tab is the admin tab it always was',
 test('multi-organization: a plain member reaches the member list, and nothing else', () => {
   const member = viewer(MEMBER, 'member');
 
-  assert.equal(isOrganizationAdmin(member), false, 'still not an admin anywhere on this page');
+  assert.equal(
+    isOrganizationAdmin(member),
+    false,
+    'still not an admin anywhere on this page',
+  );
   assert.equal(canSeeMemberList(member), true);
 
   const tabs = visibleTabKeys(member);
   assert.ok(tabs.includes('users'), 'the screen with their own Leave button');
-  for (const adminTab of ['admin', 'api-keys', 'email', 'integrations', 'analytics']) {
-    assert.equal(tabs.includes(adminTab), false, `${adminTab} stays behind the admin gate`);
+  for (const adminTab of [
+    'admin',
+    'api-keys',
+    'email',
+    'integrations',
+    'analytics',
+  ]) {
+    assert.equal(
+      tabs.includes(adminTab),
+      false,
+      `${adminTab} stays behind the admin gate`,
+    );
   }
 });
 
 test('an organization owner who is not an instance admin gets it too', () => {
   // The members route checks the membership and nothing else, so this person
   // may genuinely manage the list — slice 2's gate hid it from them entirely.
-  const orgOwner = { email: OWNER.user.email, isAdmin: false, organizationRole: 'owner' };
+  const orgOwner = {
+    email: OWNER.user.email,
+    isAdmin: false,
+    organizationRole: 'owner',
+  };
   assert.equal(canSeeMemberList(orgOwner), true);
   assert.ok(visibleTabKeys(orgOwner).includes('users'));
   assert.equal(canInvite(orgOwner), true);

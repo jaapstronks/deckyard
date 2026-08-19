@@ -25,9 +25,15 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildSlidesPdfHtml } from '../server/export/pdf-slides.js';
-import { embedImgSrcDataUrls, embedLocalCssUrls } from '../server/utils/html-utils.js';
+import {
+  embedImgSrcDataUrls,
+  embedLocalCssUrls,
+} from '../server/utils/html-utils.js';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 
 test('an icon-card-grid slide carries its icons as data URLs in the PDF export', async () => {
   const pres = {
@@ -53,11 +59,11 @@ test('an icon-card-grid slide carries its icons as data URLs in the PDF export',
 
   assert.ok(
     !/url\(\s*['"]?\/client\//.test(html),
-    'no icon may still point at a path that headless Chrome cannot resolve'
+    'no icon may still point at a path that headless Chrome cannot resolve',
   );
   assert.ok(
     html.includes('data:image/svg+xml;base64,'),
-    'the icon SVGs must be inlined as data URLs'
+    'the icon SVGs must be inlined as data URLs',
   );
 });
 
@@ -80,10 +86,14 @@ test('/client/ urls only inline when the caller asks for them', async () => {
   // references; PDF and PNG have no base URL and pass includeClient.
   const html = `<span style="--icg-icon-url:url(/client/vendor/lucide-icons/activity.svg)"></span>`;
 
-  const withoutClient = await embedLocalCssUrls(repoRoot, html, { includeClient: false });
+  const withoutClient = await embedLocalCssUrls(repoRoot, html, {
+    includeClient: false,
+  });
   assert.equal(withoutClient, html);
 
-  const withClient = await embedLocalCssUrls(repoRoot, html, { includeClient: true });
+  const withClient = await embedLocalCssUrls(repoRoot, html, {
+    includeClient: true,
+  });
   assert.ok(withClient.includes('data:image/svg+xml;base64,'));
 });
 
@@ -99,7 +109,10 @@ test('a remote image that cannot be fetched becomes a blank pixel, not a dead sr
   assert.ok(!out.includes('169.254.169.254'), 'the dead URL must not survive');
   assert.ok(
     !/src=""/.test(out),
-    'an empty src resolves to the document and draws a broken-image glyph'
+    'an empty src resolves to the document and draws a broken-image glyph',
   );
-  assert.ok(out.includes('data:image/png;base64,'), 'it becomes a transparent pixel');
+  assert.ok(
+    out.includes('data:image/png;base64,'),
+    'it becomes a transparent pixel',
+  );
 });

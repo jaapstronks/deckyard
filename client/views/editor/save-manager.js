@@ -147,7 +147,8 @@ export function createSaveManager({
     return fields
       .filter(
         (f) =>
-          f && (f.type === 'string' || f.type === 'markdown' || f.type === 'csv')
+          f &&
+          (f.type === 'string' || f.type === 'markdown' || f.type === 'csv'),
       )
       .map((f) => String(f.key || '').trim())
       .filter(Boolean);
@@ -211,21 +212,14 @@ export function createSaveManager({
     const tgtSlidesExisting = pres.i18n.versions[to].slides;
     const tgtById = new Map(
       tgtSlidesExisting
-        .filter(
-          (s) =>
-            s &&
-            typeof s === 'object' &&
-            typeof s.id === 'string'
-        )
-        .map((s) => [s.id, s])
+        .filter((s) => s && typeof s === 'object' && typeof s.id === 'string')
+        .map((s) => [s.id, s]),
     );
 
     const nextTgtSlides = srcSlides.map((srcSlide) => {
       const sid = String(srcSlide?.id || '');
       const existing = sid ? tgtById.get(sid) : null;
-      const translatable = new Set(
-        translatableKeysForType(srcSlide?.type)
-      );
+      const translatable = new Set(translatableKeysForType(srcSlide?.type));
       const base =
         existing && typeof existing === 'object'
           ? structuredClone(existing)
@@ -241,9 +235,7 @@ export function createSaveManager({
       base.type = srcSlide?.type;
       base.notes = typeof base.notes === 'string' ? base.notes : '';
       base.content =
-        base.content && typeof base.content === 'object'
-          ? base.content
-          : {};
+        base.content && typeof base.content === 'object' ? base.content : {};
 
       // Copy non-translatable parts from source for consistent visuals.
       const srcContent =
@@ -301,8 +293,10 @@ export function createSaveManager({
     if (typeof updated.revision === 'number') pres.revision = updated.revision;
     else if (typeof updated.revision === 'string' && updated.revision.trim())
       pres.revision = Number(updated.revision) || pres.revision;
-    if (typeof updated.updatedBy === 'string') pres.updatedBy = updated.updatedBy;
-    if (typeof updated.visibility === 'string') pres.visibility = updated.visibility;
+    if (typeof updated.updatedBy === 'string')
+      pres.updatedBy = updated.updatedBy;
+    if (typeof updated.visibility === 'string')
+      pres.visibility = updated.visibility;
   };
 
   /**
@@ -329,7 +323,7 @@ export function createSaveManager({
     const localById = new Map(
       localSlides
         .filter((s) => s && typeof s.id === 'string' && s.id)
-        .map((s) => [s.id, s])
+        .map((s) => [s.id, s]),
     );
     // Slides with pending local edits keep their local version.
     const keepLocal = new Set(modifiedSlideIds.keys());
@@ -380,9 +374,9 @@ export function createSaveManager({
       toast.info(
         t('editor.save.autosaveEnabled', 'Changes are saved automatically…'),
         {
-        id: 'save-status',
-        durationMs: 60000,
-        }
+          id: 'save-status',
+          durationMs: 60000,
+        },
       );
       dirtyToastShown = true;
     }
@@ -545,7 +539,7 @@ export function createSaveManager({
         blockedByConflict = true;
         lastError = t(
           'editor.save.conflict',
-          'Conflict: this presentation was changed elsewhere. Reload to continue.'
+          'Conflict: this presentation was changed elsewhere. Reload to continue.',
         );
         toast.error(lastError, { id: 'save-status', durationMs: 12000 });
         try {
@@ -559,18 +553,25 @@ export function createSaveManager({
         // revision conflict — the next edit reschedules autosave as usual.
         const name = e?.details?.holderName || e?.details?.holderEmail || '';
         lastError = name
-          ? t('editor.save.slideLockedBy', 'Not saved: a slide you changed is being edited by {name}.', { name })
-          : t('editor.save.slideLocked', 'Not saved: a slide you changed is locked by the author.');
+          ? t(
+              'editor.save.slideLockedBy',
+              'Not saved: a slide you changed is being edited by {name}.',
+              { name },
+            )
+          : t(
+              'editor.save.slideLocked',
+              'Not saved: a slide you changed is locked by the author.',
+            );
         toast.error(lastError, { id: 'save-status', durationMs: 12000 });
       } else {
-      lastError = String(e.message || e);
-      toast.error(
-        t('editor.save.failed', 'Save failed: {error}', { error: lastError }),
-        {
-        id: 'save-status',
-        durationMs: 8000,
-        }
-      );
+        lastError = String(e.message || e);
+        toast.error(
+          t('editor.save.failed', 'Save failed: {error}', { error: lastError }),
+          {
+            id: 'save-status',
+            durationMs: 8000,
+          },
+        );
       }
     } finally {
       saveInFlight = null;
@@ -610,7 +611,8 @@ export function createSaveManager({
    */
   const getSessionEndBeacon = () => {
     // Only send beacon if there were recent edits (within the session idle timeout)
-    const recentEdit = lastEditTime && (Date.now() - lastEditTime < SESSION_IDLE_TIMEOUT_MS);
+    const recentEdit =
+      lastEditTime && Date.now() - lastEditTime < SESSION_IDLE_TIMEOUT_MS;
     if (!recentEdit && !dirty) return null;
     return {
       url: `/api/presentations/${id}/session-end`,
@@ -637,6 +639,7 @@ export function createSaveManager({
      * Used by editor-lifecycle.js to determine if session-end beacon should be sent.
      * @returns {boolean} True if an edit occurred within SESSION_IDLE_TIMEOUT_MS
      */
-    hadRecentEdit: () => lastEditTime && (Date.now() - lastEditTime < SESSION_IDLE_TIMEOUT_MS),
+    hadRecentEdit: () =>
+      lastEditTime && Date.now() - lastEditTime < SESSION_IDLE_TIMEOUT_MS,
   };
 }

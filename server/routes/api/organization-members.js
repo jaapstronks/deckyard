@@ -3,7 +3,15 @@
  * All routes are guarded by the MULTI_ORG_ENABLED feature flag.
  */
 
-import { serveJson, badRequest, unauthorized, forbidden, notFound, requireJsonBody, withErrorHandler } from '../../utils/http.js';
+import {
+  serveJson,
+  badRequest,
+  unauthorized,
+  forbidden,
+  notFound,
+  requireJsonBody,
+  withErrorHandler,
+} from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { isMultiOrgEnabled } from '../../config/features.js';
 import { normalizeEmail } from '../../utils/normalize.js';
@@ -40,7 +48,8 @@ const log = createLogger('organization-members');
  */
 function buildSetupUrl(req, token) {
   const host = req.headers?.host || 'localhost:3000';
-  const protocol = req.headers?.['x-forwarded-proto'] === 'https' ? 'https' : 'http';
+  const protocol =
+    req.headers?.['x-forwarded-proto'] === 'https' ? 'https' : 'http';
   return `${protocol}://${host}/reset-password?token=${encodeURIComponent(token)}`;
 }
 
@@ -92,7 +101,10 @@ async function handleMemberList({ res, url }, organizationId) {
   const limit = parseInt(url.searchParams.get('limit') || '50', 10);
   const offset = parseInt(url.searchParams.get('offset') || '0', 10);
 
-  const members = await listOrganizationMembers(organizationId, { limit, offset });
+  const members = await listOrganizationMembers(organizationId, {
+    limit,
+    offset,
+  });
   const total = await countOrganizationMembers(organizationId);
 
   serveJson(res, 200, {
@@ -105,7 +117,11 @@ async function handleMemberList({ res, url }, organizationId) {
 }
 
 // POST /api/organizations/:id/members - Invite/add a member
-async function handleMemberInvite({ repoRoot, storageScope, req, res, authedUser }, organizationId, { user, userId, actorMembership }) {
+async function handleMemberInvite(
+  { repoRoot, storageScope, req, res, authedUser },
+  organizationId,
+  { user, userId, actorMembership },
+) {
   // Only admins and owners can invite members
   if (!hasOrganizationRole(actorMembership.role, 'admin')) {
     return forbidden(res, 'Admin or owner access required to invite members');
@@ -128,7 +144,10 @@ async function handleMemberInvite({ repoRoot, storageScope, req, res, authedUser
   }
 
   if (actorMembership.role === 'admin' && role !== 'member') {
-    return forbidden(res, 'Admins can only invite members (not admins or owners)');
+    return forbidden(
+      res,
+      'Admins can only invite members (not admins or owners)',
+    );
   }
 
   // Check if user is already a member
@@ -209,7 +228,7 @@ async function handleMemberInvite({ repoRoot, storageScope, req, res, authedUser
       log.warn(
         '[organization-members] Invitation email not sent to %s: %s',
         email,
-        sendResult?.error || 'unknown error'
+        sendResult?.error || 'unknown error',
       );
     }
   }
@@ -227,7 +246,12 @@ async function handleMemberInvite({ repoRoot, storageScope, req, res, authedUser
 }
 
 // PATCH /api/organizations/:id/members/:membershipId - Update member role
-async function handleMemberRoleUpdate({ req, res }, organizationId, memberIdOrUserId, { userId, actorMembership }) {
+async function handleMemberRoleUpdate(
+  { req, res },
+  organizationId,
+  memberIdOrUserId,
+  { userId, actorMembership },
+) {
   // Only admins and owners can update roles
   if (!hasOrganizationRole(actorMembership.role, 'admin')) {
     return forbidden(res, 'Admin or owner access required');
@@ -244,7 +268,10 @@ async function handleMemberRoleUpdate({ req, res }, organizationId, memberIdOrUs
 
   // Get the target membership. `memberIdOrUserId` can be either a
   // membership ID or a user ID, and the lookup accepts both.
-  const targetMembership = await getOrganizationMember(organizationId, memberIdOrUserId);
+  const targetMembership = await getOrganizationMember(
+    organizationId,
+    memberIdOrUserId,
+  );
 
   if (!targetMembership) {
     return notFound(res);
@@ -282,7 +309,7 @@ async function handleMemberRoleUpdate({ req, res }, organizationId, memberIdOrUs
     const transferResult = await transferOwnership(
       organizationId,
       userId,
-      targetMembership.user.id
+      targetMembership.user.id,
     );
 
     if (!transferResult.ok) {
@@ -301,14 +328,20 @@ async function handleMemberRoleUpdate({ req, res }, organizationId, memberIdOrUs
       return notFound(res);
     }
     if (result.reason === 'last_owner') {
-      return badRequest(res, 'Transfer ownership before changing the owner’s role');
+      return badRequest(
+        res,
+        'Transfer ownership before changing the owner’s role',
+      );
     }
     return badRequest(res, 'Failed to update role');
   }
 
   // Update designer flag if provided
   if ('isDesigner' in body) {
-    await updateMemberDesigner(targetMembership.membershipId, Boolean(body.isDesigner));
+    await updateMemberDesigner(
+      targetMembership.membershipId,
+      Boolean(body.isDesigner),
+    );
   }
 
   serveJson(res, 200, { ok: true, membership: result.membership });
@@ -316,9 +349,17 @@ async function handleMemberRoleUpdate({ req, res }, organizationId, memberIdOrUs
 }
 
 // DELETE /api/organizations/:id/members/:membershipId - Remove member
-async function handleMemberRemove({ res }, organizationId, memberIdOrUserId, { userId, actorMembership }) {
+async function handleMemberRemove(
+  { res },
+  organizationId,
+  memberIdOrUserId,
+  { userId, actorMembership },
+) {
   // Get the target membership (membership ID or user ID, either works).
-  const targetMembership = await getOrganizationMember(organizationId, memberIdOrUserId);
+  const targetMembership = await getOrganizationMember(
+    organizationId,
+    memberIdOrUserId,
+  );
 
   if (!targetMembership) {
     return notFound(res);
@@ -340,7 +381,10 @@ async function handleMemberRemove({ res }, organizationId, memberIdOrUserId, { u
     }
 
     // Admins cannot remove admins or owners
-    if (actorMembership.role === 'admin' && targetMembership.role !== 'member') {
+    if (
+      actorMembership.role === 'admin' &&
+      targetMembership.role !== 'member'
+    ) {
       return forbidden(res, 'Admins cannot remove other admins or owners');
     }
 
@@ -374,7 +418,8 @@ async function handleMembersCollection(ctx, organizationId) {
   const actor = await resolveMembersActor(ctx, organizationId);
   if (!actor.ok) return true;
   if (ctx.req.method === 'GET') return handleMemberList(ctx, organizationId);
-  if (ctx.req.method === 'POST') return handleMemberInvite(ctx, organizationId, actor);
+  if (ctx.req.method === 'POST')
+    return handleMemberInvite(ctx, organizationId, actor);
   return false;
 }
 
@@ -383,8 +428,10 @@ async function handleMembersCollection(ctx, organizationId) {
 async function handleMemberItem(ctx, organizationId, memberIdOrUserId) {
   const actor = await resolveMembersActor(ctx, organizationId);
   if (!actor.ok) return true;
-  if (ctx.req.method === 'PATCH') return handleMemberRoleUpdate(ctx, organizationId, memberIdOrUserId, actor);
-  if (ctx.req.method === 'DELETE') return handleMemberRemove(ctx, organizationId, memberIdOrUserId, actor);
+  if (ctx.req.method === 'PATCH')
+    return handleMemberRoleUpdate(ctx, organizationId, memberIdOrUserId, actor);
+  if (ctx.req.method === 'DELETE')
+    return handleMemberRemove(ctx, organizationId, memberIdOrUserId, actor);
   return false;
 }
 
@@ -397,8 +444,14 @@ async function handleMemberItem(ctx, organizationId, memberIdOrUserId) {
  * @type {import('../../utils/router.js').Route[]}
  */
 export const ROUTES = [
-  { pattern: /^\/api\/organizations\/([^/]+)\/members$/, handler: handleMembersCollection },
-  { pattern: /^\/api\/organizations\/([^/]+)\/members\/([^/]+)$/, handler: handleMemberItem },
+  {
+    pattern: /^\/api\/organizations\/([^/]+)\/members$/,
+    handler: handleMembersCollection,
+  },
+  {
+    pattern: /^\/api\/organizations\/([^/]+)\/members\/([^/]+)$/,
+    handler: handleMemberItem,
+  },
 ];
 
 /**
@@ -410,7 +463,10 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
-export const handleOrganizationMembers = withErrorHandler('organization-members', (ctx) => {
-  if (!ctx.url.pathname.startsWith('/api/organizations/')) return false;
-  return dispatchRoutes(ROUTES, ctx);
-});
+export const handleOrganizationMembers = withErrorHandler(
+  'organization-members',
+  (ctx) => {
+    if (!ctx.url.pathname.startsWith('/api/organizations/')) return false;
+    return dispatchRoutes(ROUTES, ctx);
+  },
+);

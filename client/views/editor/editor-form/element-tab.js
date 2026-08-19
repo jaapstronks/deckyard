@@ -54,7 +54,8 @@ export function elementAppliesToSlide(slide, sel) {
 
 /** Label for the element tab, by selected element kind. */
 export function elementTabLabel(sel) {
-  if (sel?.kind === 'image') return t('editor.inspector.tab.image', 'This image');
+  if (sel?.kind === 'image')
+    return t('editor.inspector.tab.image', 'This image');
   if (sel?.kind === 'card') return t('editor.inspector.tab.card', 'This card');
   if (sel?.kind === 'text') return t('editor.inspector.tab.text', 'This text');
   return t('editor.inspector.tab.element', 'This element');

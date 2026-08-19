@@ -24,7 +24,11 @@ import { markThreadsRead } from '../server/storage/presentations/comments.js';
 
 const ME = 'me@example.com';
 
-function thread({ author = 'other@example.com', status = 'open', replies = [] } = {}) {
+function thread({
+  author = 'other@example.com',
+  status = 'open',
+  replies = [],
+} = {}) {
   return {
     id: 't-1',
     authorEmail: author,
@@ -64,7 +68,10 @@ describe('lastMessageAuthor', () => {
   });
 
   it('normalizes casing', () => {
-    assert.strictEqual(lastMessageAuthor(thread({ author: 'Other@Example.COM' })), 'other@example.com');
+    assert.strictEqual(
+      lastMessageAuthor(thread({ author: 'Other@Example.COM' })),
+      'other@example.com',
+    );
   });
 });
 
@@ -79,11 +86,17 @@ describe('threadWaitsFor', () => {
   });
 
   it('resolved threads wait for nobody', () => {
-    assert.strictEqual(threadWaitsFor(thread({ status: 'resolved' }), ME), false);
+    assert.strictEqual(
+      threadWaitsFor(thread({ status: 'resolved' }), ME),
+      false,
+    );
   });
 
   it('dismissed threads wait for nobody', () => {
-    assert.strictEqual(threadWaitsFor(thread({ status: 'dismissed' }), ME), false);
+    assert.strictEqual(
+      threadWaitsFor(thread({ status: 'dismissed' }), ME),
+      false,
+    );
   });
 
   it('is false without a user email (guests)', () => {
@@ -92,7 +105,9 @@ describe('threadWaitsFor', () => {
   });
 
   it('matches user email case-insensitively', () => {
-    const t = thread({ replies: [reply('ME@Example.com', '2026-07-17T12:00:00Z')] });
+    const t = thread({
+      replies: [reply('ME@Example.com', '2026-07-17T12:00:00Z')],
+    });
     assert.strictEqual(threadWaitsFor(t, ME), false);
   });
 });
@@ -110,7 +125,10 @@ describe('collectUnreadThreadIds', () => {
 
   it('tolerates junk input', () => {
     assert.deepStrictEqual(collectUnreadThreadIds(null), []);
-    assert.deepStrictEqual(collectUnreadThreadIds([{ unreadForUser: true }]), []);
+    assert.deepStrictEqual(
+      collectUnreadThreadIds([{ unreadForUser: true }]),
+      [],
+    );
   });
 });
 
@@ -122,29 +140,34 @@ describe('markThreadsRead (no-DB contract)', () => {
   const GUEST = { organizationId: CTX.organizationId };
 
   it('requires a presentation id', async () => {
-    const r = await markThreadsRead(CTX, '', ['11111111-1111-1111-1111-111111111111']);
+    const r = await markThreadsRead(CTX, '', [
+      '11111111-1111-1111-1111-111111111111',
+    ]);
     assert.deepStrictEqual(r, { ok: false, reason: 'invalid_presentation' });
   });
 
   it('is a cheap no-op without an acting user (guests)', async () => {
-    const r = await markThreadsRead(GUEST, 'pres-1', ['11111111-1111-1111-1111-111111111111']);
+    const r = await markThreadsRead(GUEST, 'pres-1', [
+      '11111111-1111-1111-1111-111111111111',
+    ]);
     assert.deepStrictEqual(r, { ok: true, marked: 0 });
   });
 
   it('is a no-op for an empty or non-uuid id list', async () => {
-    assert.deepStrictEqual(await markThreadsRead(CTX, 'pres-1', []), { ok: true, marked: 0 });
+    assert.deepStrictEqual(await markThreadsRead(CTX, 'pres-1', []), {
+      ok: true,
+      marked: 0,
+    });
     assert.deepStrictEqual(
       await markThreadsRead(CTX, 'pres-1', ['not-a-uuid', 123, null]),
-      { ok: true, marked: 0 }
+      { ok: true, marked: 0 },
     );
   });
 
   it('reports unavailable without a database', async () => {
-    const r = await markThreadsRead(
-      CTX,
-      'pres-1',
-      ['11111111-1111-1111-1111-111111111111']
-    );
+    const r = await markThreadsRead(CTX, 'pres-1', [
+      '11111111-1111-1111-1111-111111111111',
+    ]);
     assert.deepStrictEqual(r, { ok: false, reason: 'unavailable' });
   });
 });

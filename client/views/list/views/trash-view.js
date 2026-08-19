@@ -11,11 +11,26 @@ import { t } from '../../../lib/ui-i18n.js';
  */
 export function createTrashView({ h, api, renderCard }) {
   const trashView = h('div', { class: 'sidebar-view', 'data-view': 'trash' });
-  const trashTitle = h('h2', { class: 'presentation-grid-title', text: t('list.trash.title', 'Trash') });
-  const trashHint = h('p', { class: 'help', text: t('list.trash.hint', 'Items in trash will be permanently deleted after 30 days. You can restore them before then.') });
+  const trashTitle = h('h2', {
+    class: 'presentation-grid-title',
+    text: t('list.trash.title', 'Trash'),
+  });
+  const trashHint = h('p', {
+    class: 'help',
+    text: t(
+      'list.trash.hint',
+      'Items in trash will be permanently deleted after 30 days. You can restore them before then.',
+    ),
+  });
   const trashList = h('div', { class: 'list presentation-grid' });
-  const trashEmpty = h('div', { class: 'help', text: t('list.trash.empty', 'Trash is empty.') });
-  const trashLoading = h('div', { class: 'help', text: t('list.trash.loading', 'Loading...') });
+  const trashEmpty = h('div', {
+    class: 'help',
+    text: t('list.trash.empty', 'Trash is empty.'),
+  });
+  const trashLoading = h('div', {
+    class: 'help',
+    text: t('list.trash.loading', 'Loading...'),
+  });
 
   let loaded = false;
 
@@ -35,10 +50,12 @@ export function createTrashView({ h, api, renderCard }) {
         trashView.append(trashEmpty);
       } else {
         for (const p of items) {
-          trashList.append(renderCard(p, {
-            isOrganization: p.visibility === 'organization',
-            isTrashView: true,
-          }));
+          trashList.append(
+            renderCard(p, {
+              isOrganization: p.visibility === 'organization',
+              isTrashView: true,
+            }),
+          );
         }
         trashView.append(trashList);
       }
@@ -48,7 +65,10 @@ export function createTrashView({ h, api, renderCard }) {
       trashView.append(
         trashTitle,
         trashHint,
-        h('div', { class: 'help is-error', text: t('list.trash.loadError', 'Failed to load trash.') })
+        h('div', {
+          class: 'help is-error',
+          text: t('list.trash.loadError', 'Failed to load trash.'),
+        }),
       );
     }
   }

@@ -22,11 +22,20 @@ import { DEFAULT_ADVANCE_INTERVAL_SECONDS } from '../../../../shared/slide-timin
  * @param {() => void} [ctx.requestSave]
  * @returns {HTMLElement|null}
  */
-export function buildSlideDurationControl({ h, pres, slide, contentOnly, markDirty, requestSave }) {
+export function buildSlideDurationControl({
+  h,
+  pres,
+  slide,
+  contentOnly,
+  markDirty,
+  requestSave,
+}) {
   const timingEnabled = !contentOnly && !!pres?.settings?.autoAdvance?.enabled;
   if (!timingEnabled) return null;
 
-  const deckDefault = pres.settings.autoAdvance.intervalSeconds || DEFAULT_ADVANCE_INTERVAL_SECONDS;
+  const deckDefault =
+    pres.settings.autoAdvance.intervalSeconds ||
+    DEFAULT_ADVANCE_INTERVAL_SECONDS;
   const durationWrap = h('div', { class: 'editor-slide-duration' });
   const durationLabel = h('div', {
     class: 'help',
@@ -45,7 +54,7 @@ export function buildSlideDurationControl({ h, pres, slide, contentOnly, markDir
     text: t(
       'editor.slide.duration.help',
       'Leave empty to use the deck default ({default}s). Override for this slide only.',
-      { default: String(deckDefault) }
+      { default: String(deckDefault) },
     ),
   });
   durationInput.addEventListener('input', () => {

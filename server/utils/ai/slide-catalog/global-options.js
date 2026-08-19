@@ -42,7 +42,14 @@ export const GLOBAL_SLIDE_OPTIONS = {
     },
     slideBgOverlay: {
       type: 'enum',
-      options: ['auto', 'none', 'light', 'dark', 'gradient-top', 'gradient-bottom'],
+      options: [
+        'auto',
+        'none',
+        'light',
+        'dark',
+        'gradient-top',
+        'gradient-bottom',
+      ],
       default: 'auto',
       description:
         'Overlay over the background image to improve text legibility. "auto" (recommended) adds a subtle scrim only when the image is too busy for readable text; "none" disables it; "light"/"dark" are flat scrims; "gradient-top"/"gradient-bottom" darken one edge behind the text. Only relevant with slideBgImage.',
@@ -59,7 +66,7 @@ export const GLOBAL_SLIDE_OPTIONS = {
       options: ['none', 'top-right'],
       default: 'none',
       description:
-        "Set to \"top-right\" to show the active theme's logo in the corner of this slide. Uses the theme logo; no URL needed.",
+        'Set to "top-right" to show the active theme\'s logo in the corner of this slide. Uses the theme logo; no URL needed.',
     },
   },
 };
@@ -83,12 +90,13 @@ export function buildGlobalOptionsPromptSection() {
     } else {
       meta.push(spec.type);
     }
-    if (spec.default !== undefined) meta.push(`default ${JSON.stringify(spec.default)}`);
+    if (spec.default !== undefined)
+      meta.push(`default ${JSON.stringify(spec.default)}`);
     lines.push(`- ${key} (${meta.join(', ')}): ${spec.description}`);
   }
   lines.push('');
   lines.push(
-    'These are all optional. Do NOT add them to every slide; only include the ones the user actually asks for.'
+    'These are all optional. Do NOT add them to every slide; only include the ones the user actually asks for.',
   );
   return lines.join('\n');
 }

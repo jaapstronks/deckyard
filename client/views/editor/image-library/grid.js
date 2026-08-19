@@ -15,7 +15,10 @@ export function createImageLibraryGrid({
   hideTagFilters = false,
   onToggleFavorite = null,
 } = {}) {
-  const filtersRow = h('div', { class: 'image-lib-filters', hidden: hideTagFilters });
+  const filtersRow = h('div', {
+    class: 'image-lib-filters',
+    hidden: hideTagFilters,
+  });
   const grid = h('div', {
     class: 'row is-wrap is-start is-gap-lg image-library-grid',
   });
@@ -24,12 +27,14 @@ export function createImageLibraryGrid({
     class: 'form-input',
     placeholder: t(
       'imageLibrary.search.placeholder',
-      'Search description, tags, photographer, alt text…'
+      'Search description, tags, photographer, alt text…',
     ),
   });
 
   // Search field wrapper (no label - placeholder is sufficient)
-  const searchField = h('div', { class: 'media-lib-search-input-wrap' }, [qInput]);
+  const searchField = h('div', { class: 'media-lib-search-input-wrap' }, [
+    qInput,
+  ]);
 
   const renderTagFilters = () => {
     filtersRow.innerHTML = '';
@@ -55,7 +60,7 @@ export function createImageLibraryGrid({
 
     filtersRow.append(
       mkChip(t('imageLibrary.tags.all', 'All'), ''),
-      ...allTags.map((tg) => mkChip(`#${tg}`, tg))
+      ...allTags.map((tg) => mkChip(`#${tg}`, tg)),
     );
   };
 
@@ -72,7 +77,7 @@ export function createImageLibraryGrid({
           text: q.trim()
             ? t('imageLibrary.noResults', 'No results.')
             : t('imageLibrary.empty', 'No items in the library yet.'),
-        })
+        }),
       );
       return;
     }
@@ -91,9 +96,11 @@ export function createImageLibraryGrid({
           ? h(
               'div',
               { class: 'image-lib-tags' },
-              tags.slice(0, 6).map((tg) =>
-                h('span', { class: 'image-lib-tag', text: `#${tg}` })
-              )
+              tags
+                .slice(0, 6)
+                .map((tg) =>
+                  h('span', { class: 'image-lib-tag', text: `#${tg}` }),
+                ),
             )
           : null;
 
@@ -129,7 +136,8 @@ export function createImageLibraryGrid({
         h('div', { class: 'image-lib-meta' }, [
           h('div', {
             class: 'image-lib-title',
-            text: it.description || t('imageLibrary.untitled', '(No description)'),
+            text:
+              it.description || t('imageLibrary.untitled', '(No description)'),
             title: it.description || '',
           }),
           h('div', {
@@ -141,7 +149,7 @@ export function createImageLibraryGrid({
               : t('imageLibrary.photographerEmpty', 'Photographer: —'),
           }),
           tagsEl,
-        ])
+        ]),
       );
 
       card.append(btn);

@@ -28,7 +28,6 @@ export function makeTicks({
   const start = forceMinZero ? 0 : Math.floor(mn / step) * step;
   const end = Math.ceil(mx / step) * step;
   const ticks = [];
-  for (let v = start; v <= end + step * 0.5; v += step)
-    ticks.push(v);
+  for (let v = start; v <= end + step * 0.5; v += step) ticks.push(v);
   return ticks;
 }

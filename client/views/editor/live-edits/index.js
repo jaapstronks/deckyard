@@ -69,7 +69,8 @@ export function initEditorLiveEdits({
 } = {}) {
   const provider = session?._provider;
   const doc = provider?.document;
-  if (!doc) throw new Error('initEditorLiveEdits: session with provider is required');
+  if (!doc)
+    throw new Error('initEditorLiveEdits: session with provider is required');
 
   let destroyed = false;
   let ready = false;
@@ -89,10 +90,17 @@ export function initEditorLiveEdits({
 
   let renderTimer = null;
   let editorRerenderPending = false;
-  const pendingRender = { slideIds: new Set(), structure: false, title: false, meta: false };
+  const pendingRender = {
+    slideIds: new Set(),
+    structure: false,
+    title: false,
+    meta: false,
+  };
 
   const formHasFocus = () =>
-    !!editorMount && !!document.activeElement && editorMount.contains(document.activeElement);
+    !!editorMount &&
+    !!document.activeElement &&
+    editorMount.contains(document.activeElement);
 
   const requestEditorRerender = () => {
     if (formHasFocus()) {
@@ -128,7 +136,9 @@ export function initEditorLiveEdits({
   let notesRefreshPending = false;
   const refreshNotesTa = () => {
     if (!previewNotesTa) return;
-    const slide = (pres.slides || []).find((s) => s?.id === getSelectedSlideId?.());
+    const slide = (pres.slides || []).find(
+      (s) => s?.id === getSelectedSlideId?.(),
+    );
     if (!slide) return;
     const next = typeof slide.notes === 'string' ? slide.notes : '';
     if (notesComposing) {
@@ -173,10 +183,12 @@ export function initEditorLiveEdits({
     if (p.title) onTitleChanged?.(String(pres.title ?? ''));
 
     const touchesOthers = [...p.slideIds].some((id) => id !== selectedId);
-    if (p.structure || selectionGone || touchesOthers) tryCall(rerenderSlideList);
+    if (p.structure || selectionGone || touchesOthers)
+      tryCall(rerenderSlideList);
     else if (p.slideIds.has(selectedId)) tryCall(updateSelectedSlideListItem);
 
-    const selectedTouched = selectionGone || (!!selectedId && p.slideIds.has(selectedId));
+    const selectedTouched =
+      selectionGone || (!!selectedId && p.slideIds.has(selectedId));
     // Meta-only changes (e.g. a remote theme switch) still repaint the
     // preview — parity with the flag-off SSE path, which re-renders on
     // every remote update. rerenderPreview guards active inline edits.
@@ -187,7 +199,12 @@ export function initEditorLiveEdits({
     }
   }
 
-  function queueRemoteRender({ changedSlideIds, structureChanged, titleChanged, metaChanged }) {
+  function queueRemoteRender({
+    changedSlideIds,
+    structureChanged,
+    titleChanged,
+    metaChanged,
+  }) {
     for (const id of changedSlideIds || []) pendingRender.slideIds.add(id);
     pendingRender.structure = pendingRender.structure || !!structureChanged;
     pendingRender.title = pendingRender.title || !!titleChanged;
@@ -197,7 +214,10 @@ export function initEditorLiveEdits({
     // would write the textarea's stale whole value back over the remote
     // characters that already landed in `pres`.
     const selectedId = getSelectedSlideId?.();
-    if (structureChanged || (selectedId && pendingRender.slideIds.has(selectedId))) {
+    if (
+      structureChanged ||
+      (selectedId && pendingRender.slideIds.has(selectedId))
+    ) {
       refreshNotesTa();
     }
     if (!renderTimer) renderTimer = setTimeout(flushRender, 120);
@@ -319,8 +339,14 @@ export function initEditorLiveEdits({
       }
       offConnection?.();
       editorMount?.removeEventListener('focusout', onFormFocusOut);
-      previewNotesTa?.removeEventListener('compositionstart', onNotesCompositionStart);
-      previewNotesTa?.removeEventListener('compositionend', onNotesCompositionEnd);
+      previewNotesTa?.removeEventListener(
+        'compositionstart',
+        onNotesCompositionStart,
+      );
+      previewNotesTa?.removeEventListener(
+        'compositionend',
+        onNotesCompositionEnd,
+      );
       binder.destroy();
     },
   };

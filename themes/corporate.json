@@ -21,12 +21,7 @@
       "nl": "Lucht"
     }
   },
-  "brandColors": [
-    "#1e3a8a",
-    "#1d4ed8",
-    "#3b82f6",
-    "#60a5fa"
-  ],
+  "brandColors": ["#1e3a8a", "#1d4ed8", "#3b82f6", "#60a5fa"],
   "gradient": {
     "enabled": false
   },

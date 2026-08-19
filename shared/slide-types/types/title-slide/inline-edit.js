@@ -11,12 +11,18 @@
 
 /** @type {Object} InlineDescriptor for title-slide. */
 export const inlineEdit = {
-    ghosts: [
-      { field: 'subheading', anchors: [{ sel: '.title', pos: 'after', chip: 'below-start' }] },
-      { field: 'meta', anchors: [{ sel: '.tsu-content', pos: 'append', chip: 'bottom-start' }] },
-    ],
-    formText: ['title', 'subheading', 'meta'],
-  };
+  ghosts: [
+    {
+      field: 'subheading',
+      anchors: [{ sel: '.title', pos: 'after', chip: 'below-start' }],
+    },
+    {
+      field: 'meta',
+      anchors: [{ sel: '.tsu-content', pos: 'append', chip: 'bottom-start' }],
+    },
+  ],
+  formText: ['title', 'subheading', 'meta'],
+};
 
 /**
  * Fields the inspector keeps rendering even though the inline layer covers the

@@ -22,7 +22,12 @@ export async function handleSandboxOg({ repoRoot, req, res, url }) {
     return true;
   } catch (e) {
     // Fall back to the existing generic preview image.
-    const fsPath = path.join(repoRoot, 'assets', 'images', 'slides-previewimage.png');
+    const fsPath = path.join(
+      repoRoot,
+      'assets',
+      'images',
+      'slides-previewimage.png',
+    );
     serveFile(res, fsPath);
     return true;
   }

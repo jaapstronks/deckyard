@@ -28,7 +28,9 @@ import assert from 'node:assert/strict';
 
 // Assembled rather than written as one literal so secret scanners do not flag
 // it; authConfigError() only requires MIN_AUTH_SECRET_LENGTH characters.
-process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
+process.env.AUTH_SECRET = ['deckyard', 'test', 'auth']
+  .join('-')
+  .padEnd(40, '0');
 delete process.env.AUTH_ENABLED;
 delete process.env.AUTH_DEV_BYPASS;
 delete process.env.MULTI_ORG_ENABLED;
@@ -48,18 +50,19 @@ const {
   canCommentOnPresentation,
   getEffectivePermission,
 } = await import('../server/utils/presentation-authz/presentations.js');
-const { checkActorAccess } = await import(
-  '../server/utils/presentation-authz/actor-access.js'
-);
-const { __store } = await import(
-  '../server/storage/presentations/index.js'
-);
+const { checkActorAccess } =
+  await import('../server/utils/presentation-authz/actor-access.js');
+const { __store } = await import('../server/storage/presentations/index.js');
 
 let passwordHash;
 
 test.before(async () => {
   passwordHash = await hashPassword('correct horse battery');
-  assert.equal(isMultiOrgEnabled(), false, 'single-organization mode for this file');
+  assert.equal(
+    isMultiOrgEnabled(),
+    false,
+    'single-organization mode for this file',
+  );
 });
 
 /** One organization, one person, one organization deck and one private deck. */
@@ -92,8 +95,16 @@ function seedDb() {
       },
     ],
     presentations: [
-      deckRow({ id: 'deck-organization', visibility: 'organization', owner: 'bob@example.com' }),
-      deckRow({ id: 'deck-private', visibility: 'private', owner: 'bob@example.com' }),
+      deckRow({
+        id: 'deck-organization',
+        visibility: 'organization',
+        owner: 'bob@example.com',
+      }),
+      deckRow({
+        id: 'deck-private',
+        visibility: 'private',
+        owner: 'bob@example.com',
+      }),
     ],
   });
   __setTestDb(db);
@@ -132,15 +143,21 @@ function requestWithSession(user) {
     },
   };
   auth.setSessionCookie(req, res, user);
-  return { headers: { cookie: String(res.headers['Set-Cookie']).split(';')[0] } };
+  return {
+    headers: { cookie: String(res.headers['Set-Cookie']).split(';')[0] },
+  };
 }
 
 /** Log in as Alice and hand back the user a route handler would receive. */
 async function sessionUser() {
-  const login = await auth.verifyLoginAsync('alice@example.com', 'correct horse battery', {
-    organizationId: DEFAULT_ORG,
-    actorEmail: 'alice@example.com',
-  });
+  const login = await auth.verifyLoginAsync(
+    'alice@example.com',
+    'correct horse battery',
+    {
+      organizationId: DEFAULT_ORG,
+      actorEmail: 'alice@example.com',
+    },
+  );
   return auth.getUserFromRequestAsync(requestWithSession(login), {});
 }
 
@@ -215,7 +232,11 @@ test('a presentation without an organization is still an organization deck', () 
   // The file backend has no organization dimension (multi-organization is refused
   // on it at boot, server/server.js), so its decks arrive without one. In
   // single-organization mode that must not cost anyone access.
-  const pres = { id: 'deck-file', visibility: 'organization', ownerEmail: 'bob@example.com' };
+  const pres = {
+    id: 'deck-file',
+    visibility: 'organization',
+    ownerEmail: 'bob@example.com',
+  };
   const user = { email: 'alice@example.com' };
 
   assert.equal(canReadPresentation({ user, pres }), true);
@@ -224,7 +245,11 @@ test('a presentation without an organization is still an organization deck', () 
 });
 
 test('a user without an organization keeps organization access', () => {
-  const pres = { id: 'deck-1', visibility: 'organization', organizationId: DEFAULT_ORG };
+  const pres = {
+    id: 'deck-1',
+    visibility: 'organization',
+    organizationId: DEFAULT_ORG,
+  };
 
   assert.equal(isSameOrganization({ email: 'alice@example.com' }, pres), true);
 });
@@ -255,7 +280,7 @@ test('reading a deck still costs exactly one presentations query', async () => {
   assert.deepEqual(
     db.__queryLog,
     [{ op: 'select', table: 'presentations' }],
-    'the organization comes off the row already being read, not a second lookup'
+    'the organization comes off the row already being read, not a second lookup',
   );
 });
 
@@ -266,6 +291,6 @@ test('the mapper exposes the owning organization', async () => {
   assert.equal(
     pres.organizationId,
     DEFAULT_ORG,
-    'mapPresentationRow used to drop organization_id'
+    'mapPresentationRow used to drop organization_id',
   );
 });

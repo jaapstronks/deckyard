@@ -37,7 +37,10 @@ export function createLogoUploader({ value, onChange }) {
   dropzoneIcon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`;
   const dropzoneText = h('div', {
     class: 'theme-logo-dropzone-text',
-    text: t('settings.themes.dropLogoHere', 'Drop logo here or click to upload'),
+    text: t(
+      'settings.themes.dropLogoHere',
+      'Drop logo here or click to upload',
+    ),
   });
   const dropzoneHint = h('div', {
     class: 'theme-logo-dropzone-hint help',
@@ -78,7 +81,10 @@ export function createLogoUploader({ value, onChange }) {
   const urlInput = h('input', {
     class: 'input',
     type: 'text',
-    placeholder: t('settings.themes.logoUrlPlaceholder', 'https://example.com/logo.svg'),
+    placeholder: t(
+      'settings.themes.logoUrlPlaceholder',
+      'https://example.com/logo.svg',
+    ),
   });
   const urlApplyBtn = h('button', {
     class: 'btn btn-secondary btn-sm',
@@ -152,7 +158,9 @@ export function createLogoUploader({ value, onChange }) {
       currentUrl = result.url;
       onChange?.(result.url);
     } catch (err) {
-      status.textContent = String(err?.message || t('settings.themes.logo.uploadFailed', 'Upload failed'));
+      status.textContent = String(
+        err?.message || t('settings.themes.logo.uploadFailed', 'Upload failed'),
+      );
     } finally {
       uploading = false;
       renderState();
@@ -180,14 +188,24 @@ export function createLogoUploader({ value, onChange }) {
     e.preventDefault();
     dropzone.classList.remove('is-dragover');
     const file = e.dataTransfer?.files?.[0];
-    if (file && (file.type.startsWith('image/') || file.name.endsWith('.svg'))) {
+    if (
+      file &&
+      (file.type.startsWith('image/') || file.name.endsWith('.svg'))
+    ) {
       handleFile(file);
     }
   });
 
   // Assemble
   previewArea.append(preview, dropzone);
-  container.append(fileInput, previewArea, status, actions, urlToggle, urlSection);
+  container.append(
+    fileInput,
+    previewArea,
+    status,
+    actions,
+    urlToggle,
+    urlSection,
+  );
 
   // Initial render
   renderState();

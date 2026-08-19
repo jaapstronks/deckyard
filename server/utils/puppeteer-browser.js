@@ -81,7 +81,7 @@ export async function getPuppeteerBrowser({ featureName = 'Export' } = {}) {
       puppeteer = await import('puppeteer-core');
     } catch {
       const err = new Error(
-        `${featureName} requires puppeteer-core. Install it with: npm i puppeteer-core`
+        `${featureName} requires puppeteer-core. Install it with: npm i puppeteer-core`,
       );
       err.code = 'PUPPETEER_MISSING';
       throw err;
@@ -90,7 +90,7 @@ export async function getPuppeteerBrowser({ featureName = 'Export' } = {}) {
     const executablePath = await resolveChromeExecutablePath();
     if (!executablePath) {
       const err = new Error(
-        `${featureName} needs a Chrome/Chromium executable. Install Chrome (locally) or Chromium (in Docker), or set PUPPETEER_EXECUTABLE_PATH to the browser binary.`
+        `${featureName} needs a Chrome/Chromium executable. Install Chrome (locally) or Chromium (in Docker), or set PUPPETEER_EXECUTABLE_PATH to the browser binary.`,
       );
       err.code = 'CHROME_MISSING';
       throw err;

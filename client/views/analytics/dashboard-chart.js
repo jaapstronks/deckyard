@@ -24,12 +24,18 @@ const formatDateShort = (dateStr) =>
  */
 export function createDashboardChart({ timeline, period }) {
   const card = h('div', { class: 'dashboard-card dashboard-chart-card' }, [
-    h('h3', { class: 'dashboard-card-title', text: t('dashboard.chart.title', 'Views Over Time') }),
+    h('h3', {
+      class: 'dashboard-card-title',
+      text: t('dashboard.chart.title', 'Views Over Time'),
+    }),
   ]);
 
   if (!timeline || !timeline.length) {
     card.append(
-      h('div', { class: 'dashboard-chart-empty', text: t('dashboard.chart.empty', 'No view data for this period') })
+      h('div', {
+        class: 'dashboard-chart-empty',
+        text: t('dashboard.chart.empty', 'No view data for this period'),
+      }),
     );
     return card;
   }
@@ -38,8 +44,18 @@ export function createDashboardChart({ timeline, period }) {
   const maxViews = Math.max(...timeline.map((d) => d.views), 1);
 
   // Create chart with accessibility support
-  const chartWrap = h('div', { class: 'dashboard-chart-wrap', role: 'img', 'aria-label': t('dashboard.chart.ariaLabel', 'Bar chart showing views over time') });
-  const barsWrap = h('div', { class: 'dashboard-chart-bars', 'aria-hidden': 'true' });
+  const chartWrap = h('div', {
+    class: 'dashboard-chart-wrap',
+    role: 'img',
+    'aria-label': t(
+      'dashboard.chart.ariaLabel',
+      'Bar chart showing views over time',
+    ),
+  });
+  const barsWrap = h('div', {
+    class: 'dashboard-chart-bars',
+    'aria-hidden': 'true',
+  });
 
   for (const day of timeline) {
     const heightPercent = Math.max((day.views / maxViews) * 100, 2); // Min 2% height for visibility
@@ -59,9 +75,13 @@ export function createDashboardChart({ timeline, period }) {
     labels.append(h('span', { text: formatDateShort(timeline[0].date) }));
     if (timeline.length > 2) {
       const midIndex = Math.floor(timeline.length / 2);
-      labels.append(h('span', { text: formatDateShort(timeline[midIndex].date) }));
+      labels.append(
+        h('span', { text: formatDateShort(timeline[midIndex].date) }),
+      );
     }
-    labels.append(h('span', { text: formatDateShort(timeline[timeline.length - 1].date) }));
+    labels.append(
+      h('span', { text: formatDateShort(timeline[timeline.length - 1].date) }),
+    );
   }
 
   chartWrap.append(barsWrap, labels);

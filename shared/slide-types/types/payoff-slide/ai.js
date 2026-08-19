@@ -19,12 +19,16 @@
  */
 
 export const ai = {
-    category: 'structural',
-    resolveInPhase1: true,
-    description: `
+  category: 'structural',
+  resolveInPhase1: true,
+  description: `
       A clean closing/brand payoff slide. Usually the last slide.
       Contains minimal content - just a closing message or brand tagline.
     `,
-    bestFor: ['Final slide of a presentation', 'Brand reinforcement'],
-    notFor: ['Content that needs explanation', 'Anything mid-deck', 'Slides that need contact details (use end-slide)'],
+  bestFor: ['Final slide of a presentation', 'Brand reinforcement'],
+  notFor: [
+    'Content that needs explanation',
+    'Anything mid-deck',
+    'Slides that need contact details (use end-slide)',
+  ],
 };

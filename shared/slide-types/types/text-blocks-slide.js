@@ -114,9 +114,8 @@ function generateBlockFields(rowNum) {
 }
 
 function generateDefaultRows(lang) {
-  const blockLabels = lang === 'nl'
-    ? ['Blok', 'Tekst hier']
-    : ['Block', 'Text here'];
+  const blockLabels =
+    lang === 'nl' ? ['Blok', 'Tekst hier'] : ['Block', 'Text here'];
   return [
     {
       title: '',
@@ -215,8 +214,20 @@ export default {
           maxLength: 120,
           defaultAlign: 'center',
         },
-        { key: 'color', label: 'Color', type: 'enum', required: false, options: ['yellow', 'black'] },
-        { key: 'arrow', label: 'Arrow after row', type: 'enum', required: false, options: ['none', 'down', 'up'] },
+        {
+          key: 'color',
+          label: 'Color',
+          type: 'enum',
+          required: false,
+          options: ['yellow', 'black'],
+        },
+        {
+          key: 'arrow',
+          label: 'Arrow after row',
+          type: 'enum',
+          required: false,
+          options: ['none', 'down', 'up'],
+        },
         {
           key: 'blocks',
           label: 'Blocks',
@@ -229,8 +240,20 @@ export default {
             nl: { title: 'Blok', body: 'Tekst hier' },
           },
           itemFields: [
-            { key: 'title', label: 'Title', type: 'string', required: false, maxLength: 80 },
-            { key: 'body', label: 'Body', type: 'markdown', required: false, maxLength: 500 },
+            {
+              key: 'title',
+              label: 'Title',
+              type: 'string',
+              required: false,
+              maxLength: 80,
+            },
+            {
+              key: 'body',
+              label: 'Body',
+              type: 'markdown',
+              required: false,
+              maxLength: 500,
+            },
           ],
         },
       ],
@@ -436,7 +459,9 @@ export default {
 
       let rowTitleHtml = '';
       if (rowIdx > 0 && row.title) {
-        const rowTitlePath = useRows ? `rows.${rowIdx}.title` : `row${rowIdx + 1}Title`;
+        const rowTitlePath = useRows
+          ? `rows.${rowIdx}.title`
+          : `row${rowIdx + 1}Title`;
         rowTitleHtml = `<h3 class="text-blocks-row-title text-blocks-step" data-inline-field="${rowTitlePath}" dir="auto">${escapeHtml(row.title)}</h3>`;
       }
 
@@ -456,7 +481,9 @@ export default {
           : '';
         // Item indexes only in array mode: the inline editor's card add/remove
         // writes to rows[], so legacy numbered decks must not grow affordances.
-        const blockItemAttr = useRows ? ` data-inline-item-index="${bIdx}"` : '';
+        const blockItemAttr = useRows
+          ? ` data-inline-item-index="${bIdx}"`
+          : '';
         return `
           <div class="text-block text-blocks-step ${colorClass}"${blockItemAttr}>
             ${titleHtml}

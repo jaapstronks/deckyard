@@ -2,18 +2,22 @@ import { renderSlideHtml } from '../utils/render-slide.js';
 import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { resolveDeckLang } from '../../shared/i18n-utils.js';
+import { escapeHtml, embedImgSrcDataUrls } from '../utils/html-utils.js';
 import {
-  escapeHtml,
-  embedImgSrcDataUrls,
-} from '../utils/html-utils.js';
-import { buildPrismKatexCdnTags, buildPrismKatexInitScript } from '../utils/prism-katex.js';
+  buildPrismKatexCdnTags,
+  buildPrismKatexInitScript,
+} from '../utils/prism-katex.js';
 import { renderVideoSlidePngHtml } from '../utils/video-slide-html.js';
-import { loadExportCssBundle, buildExportStyleContent, embedSlideImages } from './css-bundle.js';
+import {
+  loadExportCssBundle,
+  buildExportStyleContent,
+  embedSlideImages,
+} from './css-bundle.js';
 
 export async function buildSlidesPngExportHtml(
   repoRoot,
   pres,
-  { theme = null, watermark = null, slideTypes = null } = {}
+  { theme = null, watermark = null, slideTypes = null } = {},
 ) {
   pres = stripLiveOnlySlidesFromPresentation(pres);
   const docLang = resolveDocLangFromPresentation(pres);
@@ -25,7 +29,9 @@ export async function buildSlidesPngExportHtml(
   // Embed uploads referenced as field values (shared cache dedupes the same
   // source across this pass and the rendered-HTML pass below).
   const embedCache = new Map();
-  const slides = await embedSlideImages(repoRoot, pres.slides, { cache: embedCache });
+  const slides = await embedSlideImages(repoRoot, pres.slides, {
+    cache: embedCache,
+  });
 
   let slidesHtml = (
     await Promise.all(
@@ -33,7 +39,12 @@ export async function buildSlidesPngExportHtml(
         const slideHtml =
           s?.type === 'video-slide'
             ? await renderVideoSlidePngHtml(s)
-            : renderSlideHtml(s, { theme, slideTypes, stripEditorAttrs: true, lang: resolveDeckLang(pres) });
+            : renderSlideHtml(s, {
+                theme,
+                slideTypes,
+                stripEditorAttrs: true,
+                lang: resolveDeckLang(pres),
+              });
         return `<div class="png-item" data-idx="${idx}">
         <div class="png-thumb ps-theme">${css.wmHtml}${slideHtml}</div>
         <div class="png-actions">
@@ -41,7 +52,7 @@ export async function buildSlidesPngExportHtml(
           <span class="png-status" aria-live="polite"></span>
         </div>
       </div>`;
-      })
+      }),
     )
   ).join('\n');
 

@@ -27,9 +27,13 @@ export function errorText(obj, fallback = '') {
 
 export async function api(path, opts = {}) {
   // Auto-stringify body if it's an object (not FormData, Blob, etc.)
-  const body = opts.body && typeof opts.body === 'object' && !(opts.body instanceof FormData) && !(opts.body instanceof Blob)
-    ? JSON.stringify(opts.body)
-    : opts.body;
+  const body =
+    opts.body &&
+    typeof opts.body === 'object' &&
+    !(opts.body instanceof FormData) &&
+    !(opts.body instanceof Blob)
+      ? JSON.stringify(opts.body)
+      : opts.body;
 
   const res = await fetch(path, {
     credentials: 'include',
@@ -61,7 +65,7 @@ export async function api(path, opts = {}) {
     }
     const body = await res.text();
     const err = new Error(
-      (body && body.trim()) || `Request failed (${res.status})`
+      (body && body.trim()) || `Request failed (${res.status})`,
     );
     err.statusCode = res.status;
     throw err;

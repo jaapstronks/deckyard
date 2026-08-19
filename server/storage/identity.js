@@ -83,12 +83,17 @@ export async function getUserByEmailGlobal(email) {
  */
 export async function resolveActiveMembership(userId, requestedOrganizationId) {
   if (!isMultiOrgEnabled())
-    return { organizationId: getDefaultOrganizationId(), role: null, isDesigner: null };
+    return {
+      organizationId: getDefaultOrganizationId(),
+      role: null,
+      isDesigner: null,
+    };
   if (!userId) return { organizationId: null, role: null, isDesigner: null };
 
   // Ordered by joined_at ascending, so the fallback is deterministic.
   const memberships = await listUserOrganizations(userId);
-  if (!memberships.length) return { organizationId: null, role: null, isDesigner: null };
+  if (!memberships.length)
+    return { organizationId: null, role: null, isDesigner: null };
 
   const requested =
     requestedOrganizationId &&
@@ -113,7 +118,13 @@ export async function resolveActiveMembership(userId, requestedOrganizationId) {
  * @returns {Promise<string|null>} - Organization to act in, or null when the
  *   person holds no membership at all (the caller must refuse the request)
  */
-export async function resolveActiveOrganization(userId, requestedOrganizationId) {
-  const { organizationId } = await resolveActiveMembership(userId, requestedOrganizationId);
+export async function resolveActiveOrganization(
+  userId,
+  requestedOrganizationId,
+) {
+  const { organizationId } = await resolveActiveMembership(
+    userId,
+    requestedOrganizationId,
+  );
   return organizationId;
 }

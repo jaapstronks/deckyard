@@ -3,7 +3,12 @@
 The internal `/api/*` routes return errors in one canonical envelope:
 
 ```json
-{ "ok": false, "error": "<machine_code>", "message": "<human text>", "details": { } }
+{
+  "ok": false,
+  "error": "<machine_code>",
+  "message": "<human text>",
+  "details": {}
+}
 ```
 
 - **`ok: false`** — mirrors the `{ ok: true, … }` shape success responses use, so a
@@ -26,16 +31,16 @@ routes that echoed a storage `reason`).
 
 Always go through the shared surface — do not hand-roll `serveJson(res, status, { error })`:
 
-| Helper (`server/utils/http.js`) | Status | Code |
-| --- | --- | --- |
-| `badRequest(res, msg)` | 400 | `bad_request` |
-| `unauthorized(res, msg)` | 401 | `unauthorized` |
-| `forbidden(res, msg)` | 403 | `forbidden` |
-| `notFound(res, msg)` | 404 | `not_found` |
-| `payloadTooLarge(res, msg)` | 413 | `payload_too_large` |
-| `rateLimited(res, retryAfter, msg)` | 429 | `rate_limited` (sets `Retry-After`) |
-| `serverError(res, msg)` | 500 | `internal_error` |
-| `methodNotAllowed(res, allowed)` | 405 | `method_not_allowed` (sets `Allow`) |
+| Helper (`server/utils/http.js`)     | Status | Code                                |
+| ----------------------------------- | ------ | ----------------------------------- |
+| `badRequest(res, msg)`              | 400    | `bad_request`                       |
+| `unauthorized(res, msg)`            | 401    | `unauthorized`                      |
+| `forbidden(res, msg)`               | 403    | `forbidden`                         |
+| `notFound(res, msg)`                | 404    | `not_found`                         |
+| `payloadTooLarge(res, msg)`         | 413    | `payload_too_large`                 |
+| `rateLimited(res, retryAfter, msg)` | 429    | `rate_limited` (sets `Retry-After`) |
+| `serverError(res, msg)`             | 500    | `internal_error`                    |
+| `methodNotAllowed(res, allowed)`    | 405    | `method_not_allowed` (sets `Allow`) |
 
 For a storage `reason` code, use `jsonError(res, getErrorStatus(reason), reason, message?)`.
 Thrown `AppError`s serialize via `toJSON()` into the same envelope (the code
@@ -89,7 +94,7 @@ here. That upgrade is additive; it never renames a field a client reads.
 
 - The public **`/api/v1/*`** surface keeps its own openapi-documented error schema
   (`{ error, message?, details? }`, see `docs/openapi.yaml`) and is **not** part of
-  this envelope. It carries the *same* snake_case machine-code vocabulary in
+  this envelope. It carries the _same_ snake_case machine-code vocabulary in
   `error`, minus this envelope's `ok:false` discriminator (the HTTP status is the
   public surface's discriminator). Produced through `sendV1Error`/`apiError` and
   the `withV1ErrorHandler` wrap in

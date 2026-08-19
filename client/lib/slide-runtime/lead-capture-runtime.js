@@ -16,7 +16,9 @@ import { t } from '../ui-i18n.js';
 export function initLeadCaptureSlides(rootEl, { interactive = true } = {}) {
   if (!rootEl) return () => {};
 
-  const slides = rootEl.querySelectorAll('.slide-lead-capture[data-interaction="lead-capture"]');
+  const slides = rootEl.querySelectorAll(
+    '.slide-lead-capture[data-interaction="lead-capture"]',
+  );
   if (!slides.length) return () => {};
 
   const controllers = [];
@@ -52,11 +54,16 @@ function initLeadCaptureSlide(slideEl, { interactive }) {
 
   // Read i18n error messages from data attributes (with fallbacks)
   const i18n = {
-    acceptCookies: slideEl.dataset.errorAcceptCookies || 'Please accept marketing cookies to submit this form.',
+    acceptCookies:
+      slideEl.dataset.errorAcceptCookies ||
+      'Please accept marketing cookies to submit this form.',
     enterName: slideEl.dataset.errorEnterName || 'Please enter your name.',
-    validEmail: slideEl.dataset.errorValidEmail || 'Please enter a valid email address.',
-    acceptTerms: slideEl.dataset.errorAcceptTerms || 'Please accept the privacy terms.',
-    generic: slideEl.dataset.errorGeneric || 'Something went wrong. Please try again.',
+    validEmail:
+      slideEl.dataset.errorValidEmail || 'Please enter a valid email address.',
+    acceptTerms:
+      slideEl.dataset.errorAcceptTerms || 'Please accept the privacy terms.',
+    generic:
+      slideEl.dataset.errorGeneric || 'Something went wrong. Please try again.',
   };
 
   // Check if already submitted (from localStorage)
@@ -102,7 +109,10 @@ function initLeadCaptureSlide(slideEl, { interactive }) {
     return {
       cleanup: () => {
         window.removeEventListener('storage', handleStorageChange);
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        document.removeEventListener(
+          'visibilitychange',
+          handleVisibilityChange,
+        );
       },
     };
   }
@@ -146,7 +156,10 @@ function initLeadCaptureSlide(slideEl, { interactive }) {
       const presentationId = getPresentationId();
       if (!presentationId) {
         throw new Error(
-          t('leadCapture.error.noPresentationId', 'Could not determine presentation ID')
+          t(
+            'leadCapture.error.noPresentationId',
+            'Could not determine presentation ID',
+          ),
         );
       }
 
@@ -167,7 +180,8 @@ function initLeadCaptureSlide(slideEl, { interactive }) {
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
         throw new Error(
-          data.message || t('leadCapture.error.submitFailed', 'Submission failed')
+          data.message ||
+            t('leadCapture.error.submitFailed', 'Submission failed'),
         );
       }
 
@@ -223,7 +237,8 @@ function isValidEmail(email) {
  */
 function getPresentationId() {
   // Check data attribute on body or root element
-  const rootAttr = document.body.dataset.presentationId ||
+  const rootAttr =
+    document.body.dataset.presentationId ||
     document.querySelector('[data-presentation-id]')?.dataset.presentationId;
   if (rootAttr) return rootAttr;
 

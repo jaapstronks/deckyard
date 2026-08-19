@@ -20,8 +20,14 @@
 import { sql } from 'kysely';
 
 export const up = async (db) => {
-  await db.schema.dropIndex('idx_notification_queue_recipient').ifExists().execute();
-  await db.schema.dropIndex('idx_notification_queue_pending').ifExists().execute();
+  await db.schema
+    .dropIndex('idx_notification_queue_recipient')
+    .ifExists()
+    .execute();
+  await db.schema
+    .dropIndex('idx_notification_queue_pending')
+    .ifExists()
+    .execute();
   await db.schema.dropTable('notification_queue').ifExists().execute();
 };
 
@@ -32,14 +38,14 @@ export const down = async (db) => {
     .createTable('notification_queue')
     .ifNotExists()
     .addColumn('id', 'uuid', (col) =>
-      col.primaryKey().defaultTo(sql`gen_random_uuid()`)
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
     )
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade')
+      col.references('organizations.id').onDelete('cascade'),
     )
     .addColumn('recipient_email', 'varchar(320)', (col) => col.notNull())
     .addColumn('event_id', 'uuid', (col) =>
-      col.references('activity_events.id').onDelete('cascade')
+      col.references('activity_events.id').onDelete('cascade'),
     )
     .addColumn('channel', 'varchar(20)', (col) => col.notNull())
     .addColumn('status', 'varchar(20)', (col) => col.defaultTo('pending'))

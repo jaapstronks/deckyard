@@ -36,11 +36,23 @@ import {
 } from './i18n-keys.js';
 import { SLIDE_TYPE_AUTHORING } from '../shared/slide-types/authoring.js';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 const clientDir = path.join(repoRoot, 'client');
-const slideTypesTypesDir = path.join(repoRoot, 'shared', 'slide-types', 'types');
+const slideTypesTypesDir = path.join(
+  repoRoot,
+  'shared',
+  'slide-types',
+  'types',
+);
 const i18nDir = path.join(clientDir, 'i18n');
-const ALLOWLIST_PATH = path.join(repoRoot, 'scripts', 'i18n-audit-allowlist.json');
+const ALLOWLIST_PATH = path.join(
+  repoRoot,
+  'scripts',
+  'i18n-audit-allowlist.json',
+);
 
 /** Directories under client/ that never contain app copy. */
 const IGNORE_DIRS = new Set(['vendor', 'styles', 'i18n']);
@@ -73,7 +85,7 @@ const COPY_PROPS = [
 // CodeQL's js/incomplete-sanitization flagged.
 const PROP_RE = new RegExp(
   `[{,]\\s*['"]?(${COPY_PROPS.join('|')})['"]?\\s*:\\s*(['"])((?:[^'"\\\\\\n]|\\\\.)*)\\2`,
-  'g'
+  'g',
 );
 const TOAST_RE = /\btoast(?:\.\w+)?\(\s*(['"])((?:[^'"\\\n]|\\.)*)\1/g;
 
@@ -191,7 +203,9 @@ export async function findOrphanKeys(locale) {
   const used = await extractUsedKeys(clientDir);
   // Slide-type definitions and server-rendered chrome carry keys too.
   const refs = await collectKeyLiteralRefs(
-    ['client', 'shared', 'server', 'custom', 'themes'].map((d) => path.join(repoRoot, d))
+    ['client', 'shared', 'server', 'custom', 'themes'].map((d) =>
+      path.join(repoRoot, d),
+    ),
   );
   const dict = await loadLocale(i18nDir, locale);
   return Object.keys(dict)
@@ -217,7 +231,8 @@ export function hardcodedId(hit) {
 function collectStrings(value, out) {
   if (typeof value === 'string') out.add(value);
   else if (Array.isArray(value)) for (const v of value) collectStrings(v, out);
-  else if (value && typeof value === 'object') for (const v of Object.values(value)) collectStrings(v, out);
+  else if (value && typeof value === 'object')
+    for (const v of Object.values(value)) collectStrings(v, out);
   return out;
 }
 
@@ -232,7 +247,8 @@ function sampleStringsForType(type) {
   return sampleStringCache.get(type);
 }
 
-const AUTHORING_TYPE_RE = /(?:^|\/)shared\/slide-types\/types\/([^/]+)\/authoring\.js$/;
+const AUTHORING_TYPE_RE =
+  /(?:^|\/)shared\/slide-types\/types\/([^/]+)\/authoring\.js$/;
 
 /**
  * True when a hit is a slide type's sample content — the deck-language copy a
@@ -284,26 +300,38 @@ async function main() {
   const allowedOrphans = allow.orphans || {};
   const hits = await collectHardcodedHits();
   const unexpected = hits.filter(
-    (h) => !(hardcodedId(h) in allowed) && !isSampleContentException(h)
+    (h) => !(hardcodedId(h) in allowed) && !isSampleContentException(h),
   );
   const orphans = await findOrphanKeys('en');
   const newOrphans = orphans.filter((k) => !(k in allowedOrphans));
   const failed = unexpected.length || newOrphans.length;
 
   if (asJson) {
-    console.log(JSON.stringify({ hardcoded: hits, unexpected, orphans, newOrphans }, null, 2));
+    console.log(
+      JSON.stringify(
+        { hardcoded: hits, unexpected, orphans, newOrphans },
+        null,
+        2,
+      ),
+    );
     return failed ? 1 : 0;
   }
 
-  console.log(`i18n audit — ${hits.length} hardcoded literal(s), ${Object.keys(allowed).length} allowlisted`);
+  console.log(
+    `i18n audit — ${hits.length} hardcoded literal(s), ${Object.keys(allowed).length} allowlisted`,
+  );
   if (unexpected.length) {
-    console.log(`\n✗ ${unexpected.length} NEW hardcoded user-facing string(s):\n`);
+    console.log(
+      `\n✗ ${unexpected.length} NEW hardcoded user-facing string(s):\n`,
+    );
     for (const h of unexpected) {
-      console.log(`  ${h.file}:${h.line}  [${h.prop}] ${JSON.stringify(h.value)}`);
+      console.log(
+        `  ${h.file}:${h.line}  [${h.prop}] ${JSON.stringify(h.value)}`,
+      );
     }
     console.log(
       '\nRoute each through t(key, fallback) — or, if it is a brand name, a language\n' +
-        `name or a technical placeholder, add it to ${path.relative(repoRoot, ALLOWLIST_PATH)} with a reason.`
+        `name or a technical placeholder, add it to ${path.relative(repoRoot, ALLOWLIST_PATH)} with a reason.`,
     );
   } else {
     console.log('✓ no new hardcoded user-facing strings');
@@ -311,12 +339,14 @@ async function main() {
 
   console.log(`\nOrphan keys in en/: ${orphans.length}`);
   if (newOrphans.length) {
-    console.log(`\n✗ ${newOrphans.length} orphan key(s) — present in en/, referenced nowhere:\n`);
+    console.log(
+      `\n✗ ${newOrphans.length} orphan key(s) — present in en/, referenced nowhere:\n`,
+    );
     for (const k of newOrphans) console.log(`  ${k}`);
     console.log(
       '\nDelete each from all 12 locales under client/i18n/ — or, if the key must\n' +
         `survive without a visible call site, add it to ${path.relative(repoRoot, ALLOWLIST_PATH)}\n` +
-        'under "orphans" with a reason.'
+        'under "orphans" with a reason.',
     );
   } else if (showOrphans) {
     for (const k of orphans) console.log(`  ${k}`);
@@ -327,6 +357,9 @@ async function main() {
 
 // pathToFileURL, not a template literal: the repo path may contain spaces,
 // which import.meta.url percent-encodes and a raw `file://${argv[1]}` does not.
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
   process.exitCode = await main();
 }

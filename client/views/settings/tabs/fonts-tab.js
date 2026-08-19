@@ -85,7 +85,9 @@ export function createFontsTab({ user } = {}) {
     listSection.innerHTML = '';
 
     // Header
-    const header = h('div', { class: 'row is-between is-center themes-list-header' });
+    const header = h('div', {
+      class: 'row is-between is-center themes-list-header',
+    });
     header.append(
       h('div', { class: 'stack' }, [
         h('h2', { text: t('fonts.title', 'Fonts') }),
@@ -93,10 +95,10 @@ export function createFontsTab({ user } = {}) {
           class: 'help',
           text: t(
             'fonts.description',
-            'Manage custom font families for use in themes. Upload font files, connect Adobe Fonts, fonts.com, or add Google Fonts.'
+            'Manage custom font families for use in themes. Upload font files, connect Adobe Fonts, fonts.com, or add Google Fonts.',
           ),
         }),
-      ])
+      ]),
     );
 
     const addBtn = h('button', {
@@ -116,9 +118,9 @@ export function createFontsTab({ user } = {}) {
           class: 'help',
           text: t(
             'fonts.emptyDescription',
-            'Add custom font families to use them in your themes.'
+            'Add custom font families to use them in your themes.',
           ),
-        })
+        }),
       );
       listSection.append(empty);
       return;
@@ -134,7 +136,9 @@ export function createFontsTab({ user } = {}) {
       const cardHeader = h('div', { class: 'font-family-card-header' });
 
       const cardInfo = h('div', { class: 'font-family-card-info' });
-      cardInfo.append(h('h3', { class: 'font-family-card-name', text: family.name }));
+      cardInfo.append(
+        h('h3', { class: 'font-family-card-name', text: family.name }),
+      );
 
       const meta = h('div', { class: 'font-family-card-meta' });
       const badge = h('span', {
@@ -145,7 +149,9 @@ export function createFontsTab({ user } = {}) {
       meta.append(badge);
 
       const variantCount = family.variants?.length || family.variantCount || 0;
-      const variantText = t('fonts.variantCount', '{count} variant(s)', { count: variantCount });
+      const variantText = t('fonts.variantCount', '{count} variant(s)', {
+        count: variantCount,
+      });
       meta.append(h('span', { text: variantText }));
       meta.append(h('span', { text: family.category }));
 
@@ -154,7 +160,10 @@ export function createFontsTab({ user } = {}) {
 
       // Preview text
       const preview = h('div', { class: 'font-preview-text' });
-      preview.textContent = t('fonts.pangram', 'The quick brown fox jumps over the lazy dog');
+      preview.textContent = t(
+        'fonts.pangram',
+        'The quick brown fox jumps over the lazy dog',
+      );
       loadFontPreview(family, preview);
 
       // Actions
@@ -196,7 +205,7 @@ export function createFontsTab({ user } = {}) {
   font-weight: ${v.weight || 400};
   font-style: ${v.style || 'normal'};
   font-display: swap;
-}`
+}`,
             )
             .join('\n');
           if (rules) {
@@ -254,7 +263,9 @@ export function createFontsTab({ user } = {}) {
       const family = await api(`/api/font-families/${familyId}`);
       showEditor(family);
     } catch (err) {
-      toast.error(err.message || t('fonts.loadError', 'Failed to load font family.'));
+      toast.error(
+        err.message || t('fonts.loadError', 'Failed to load font family.'),
+      );
     }
   }
 
@@ -262,9 +273,13 @@ export function createFontsTab({ user } = {}) {
   async function handleDelete(family) {
     const confirmed = await confirmModal(h, document.body, {
       title: t('common.delete', 'Delete'),
-      message: t('fonts.confirmDelete', 'Delete "{name}" and all its variants?', {
-        name: family.name,
-      }),
+      message: t(
+        'fonts.confirmDelete',
+        'Delete "{name}" and all its variants?',
+        {
+          name: family.name,
+        },
+      ),
       confirmLabel: t('common.delete', 'Delete'),
       danger: true,
     });
@@ -274,7 +289,9 @@ export function createFontsTab({ user } = {}) {
       toast.success(t('fonts.deleted', 'Font family deleted.'));
       await loadFamilies();
     } catch (err) {
-      toast.error(err.message || t('fonts.deleteError', 'Failed to delete font family.'));
+      toast.error(
+        err.message || t('fonts.deleteError', 'Failed to delete font family.'),
+      );
     }
   }
 

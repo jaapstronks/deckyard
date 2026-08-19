@@ -25,10 +25,16 @@ export async function openTranslateSlideModal({
   const targetLang = normalizeLang?.(pres?.i18n?.active) || 'nl';
   const sourceLang = otherLang?.(targetLang);
   if (!sourceLang) {
-    toast?.info(t('editor.translate.disabled', 'Translation is disabled (only one language enabled).'), {
-      id: 'slide-translate',
-      durationMs: 2400,
-    });
+    toast?.info(
+      t(
+        'editor.translate.disabled',
+        'Translation is disabled (only one language enabled).',
+      ),
+      {
+        id: 'slide-translate',
+        durationMs: 2400,
+      },
+    );
     return;
   }
   const slide = (pres?.slides || []).find((s) => s?.id === sid);
@@ -42,7 +48,7 @@ export async function openTranslateSlideModal({
       sourceLang === 'nl'
         ? 'Bronversie (NL) ontbreekt voor deze slide. Gebruik “Vertalen” om die te maken.'
         : 'Source version (EN) is missing for this slide. Use “Vertalen” to create it.',
-      { id: 'slide-translate', durationMs: 2600 }
+      { id: 'slide-translate', durationMs: 2600 },
     );
     return;
   }
@@ -58,28 +64,31 @@ export async function openTranslateSlideModal({
     if (typeof v === 'string' && v.trim()) fields[k] = v;
   }
   if (Object.keys(fields).length === 0) {
-    toast?.info(t('editor.translate.noSourceText', 'No source text found to translate on this slide.'), {
-      id: 'slide-translate',
-      durationMs: 2200,
-    });
+    toast?.info(
+      t(
+        'editor.translate.noSourceText',
+        'No source text found to translate on this slide.',
+      ),
+      {
+        id: 'slide-translate',
+        durationMs: 2200,
+      },
+    );
     return;
   }
 
   let translations = {};
   try {
     const vendor = readPreferredLlmVendor?.() || null;
-    const resp = await api?.(
-      `/api/presentations/${id}/translate/fields`,
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          from: sourceLang,
-          to: targetLang,
-          fields,
-          ...(vendor ? { vendor } : {}),
-        }),
-      }
-    );
+    const resp = await api?.(`/api/presentations/${id}/translate/fields`, {
+      method: 'POST',
+      body: JSON.stringify({
+        from: sourceLang,
+        to: targetLang,
+        fields,
+        ...(vendor ? { vendor } : {}),
+      }),
+    });
     translations =
       resp?.translations && typeof resp.translations === 'object'
         ? resp.translations
@@ -118,14 +127,20 @@ export async function openTranslateSlideModal({
     h('h2', {
       text:
         targetLang === 'nl'
-          ? t('editor.slide.fillTranslationToNl', 'Fill slide (translation) → NL')
-          : t('editor.slide.fillTranslationToEn', 'Fill slide (translation) → EN'),
+          ? t(
+              'editor.slide.fillTranslationToNl',
+              'Fill slide (translation) → NL',
+            )
+          : t(
+              'editor.slide.fillTranslationToEn',
+              'Fill slide (translation) → EN',
+            ),
     }),
     h('button', {
       class: 'btn btn-secondary',
       text: t('common.close', 'Close'),
       onclick: () => close(),
-    })
+    }),
   );
 
   const hint = h('div', {
@@ -134,11 +149,11 @@ export async function openTranslateSlideModal({
       targetLang === 'nl'
         ? t(
             'editor.translate.previewNl',
-            'Preview of the translation. Click “Apply” to fill this (NL) slide from the other language.'
+            'Preview of the translation. Click “Apply” to fill this (NL) slide from the other language.',
           )
         : t(
             'editor.translate.previewEn',
-            'Preview of the translation. Click “Apply” to fill this (EN) slide from the other language.'
+            'Preview of the translation. Click “Apply” to fill this (EN) slide from the other language.',
           ),
   });
 
@@ -156,8 +171,7 @@ export async function openTranslateSlideModal({
   for (const k of keys) {
     if (!(k in fields)) continue;
     const fromText = String(fields[k] || '');
-    const toText =
-      typeof translations?.[k] === 'string' ? translations[k] : '';
+    const toText = typeof translations?.[k] === 'string' ? translations[k] : '';
     list.append(
       h(
         'div',
@@ -191,8 +205,8 @@ export async function openTranslateSlideModal({
             class: 'is-pre-wrap',
             text: toText || t('common.emDash', '—'),
           }),
-        ]
-      )
+        ],
+      ),
     );
   }
 

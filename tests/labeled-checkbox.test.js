@@ -21,7 +21,8 @@ globalThis.Node = dom.window.Node;
 globalThis.Element = dom.window.Element;
 globalThis.SVGElement = dom.window.SVGElement;
 
-const { labeledCheckbox } = await import('../client/lib/dom/labeled-checkbox.js');
+const { labeledCheckbox } =
+  await import('../client/lib/dom/labeled-checkbox.js');
 
 test('default builds label.admin-checkbox-item > input[type=checkbox] + span', () => {
   const { element, input } = labeledCheckbox({ text: 'Enable X' });
@@ -42,7 +43,10 @@ test('checked sets the property, not just the attribute', () => {
 });
 
 test('className keeps each surface visual (the class is a parameter)', () => {
-  const { element } = labeledCheckbox({ text: 'Designer', className: 'form-checkbox-row' });
+  const { element } = labeledCheckbox({
+    text: 'Designer',
+    className: 'form-checkbox-row',
+  });
   assert.equal(element.className, 'form-checkbox-row');
 });
 
@@ -73,7 +77,10 @@ test('inputAttrs and labelAttrs pass through (id/for/value/data-*)', () => {
 
 test('onChange fires with the current checked state', () => {
   const seen = [];
-  const { input } = labeledCheckbox({ text: 'Toggle', onChange: (v) => seen.push(v) });
+  const { input } = labeledCheckbox({
+    text: 'Toggle',
+    onChange: (v) => seen.push(v),
+  });
   input.checked = true;
   input.dispatchEvent(new dom.window.Event('change'));
   input.checked = false;

@@ -47,7 +47,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const REPO_ROOT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 
 // Trees whose exports we hold accountable. An export living here that nothing
 // imports is a candidate. (Importers may live anywhere — see USAGE_TREES.)
@@ -57,7 +60,9 @@ const SCAN_PREFIXES = ['client/', 'server/', 'shared/', 'scripts/'];
 // vendored or fork-local — those are not ours to audit and their imports are
 // noise. `custom/` is the fork overlay; `client/vendor/` is bundled deps.
 const EXCLUDE = (file) =>
-  file.startsWith('client/vendor/') || file.startsWith('custom/') || file.includes('/vendor/');
+  file.startsWith('client/vendor/') ||
+  file.startsWith('custom/') ||
+  file.includes('/vendor/');
 
 const JS_EXT = /\.(js|mjs|cjs)$/;
 
@@ -103,7 +108,10 @@ function braceNames(body) {
     const part = raw.trim();
     if (!part) continue;
     // `a as b` -> source name is `a`; type-only markers are stripped.
-    const name = part.replace(/^type\s+/, '').split(/\s+as\s+/)[0].trim();
+    const name = part
+      .replace(/^type\s+/, '')
+      .split(/\s+as\s+/)[0]
+      .trim();
     if (/^[A-Za-z_$][\w$]*$/.test(name) || name === 'default') names.push(name);
   }
   return names;
@@ -147,13 +155,18 @@ export function extractExports(text) {
     for (const raw of m[1].split(',')) {
       const part = raw.trim();
       if (!part) continue;
-      const exported = part.split(/\s+as\s+/).pop().trim();
+      const exported = part
+        .split(/\s+as\s+/)
+        .pop()
+        .trim();
       if (/^[A-Za-z_$][\w$]*$/.test(exported)) add(exported, m.index);
     }
   }
 
   // export * as ns from '…' — a single named export `ns`.
-  for (const m of text.matchAll(/export[ \t]*\*[ \t]*as[ \t]+([A-Za-z_$][\w$]*)[ \t]+from\b/g)) {
+  for (const m of text.matchAll(
+    /export[ \t]*\*[ \t]*as[ \t]+([A-Za-z_$][\w$]*)[ \t]+from\b/g,
+  )) {
     add(m[1], m.index);
   }
 
@@ -166,7 +179,10 @@ export function extractExports(text) {
     for (const raw of m[1].split(',')) {
       const part = raw.trim();
       if (!part) continue;
-      const exported = part.split(/\s+as\s+/).pop().trim();
+      const exported = part
+        .split(/\s+as\s+/)
+        .pop()
+        .trim();
       if (/^[A-Za-z_$][\w$]*$/.test(exported)) add(exported, m.index);
     }
   }
@@ -202,16 +218,24 @@ export function harvestUsage(text) {
     const brace = clause.match(/\{([\s\S]*)\}/);
     if (brace) for (const n of braceNames(brace[1])) edge(spec, n);
     // A leading identifier before `{` or `,` (and not `{`/`*`) is a default import.
-    if (/^[ \t]*[A-Za-z_$][\w$]*[ \t]*(,|$)/.test(clause.replace(/\{[\s\S]*\}/, ''))) {
+    if (
+      /^[ \t]*[A-Za-z_$][\w$]*[ \t]*(,|$)/.test(
+        clause.replace(/\{[\s\S]*\}/, ''),
+      )
+    ) {
       edge(spec, 'default');
     }
   }
 
   // Re-export edges: export { a } from '<spec>'  and  export * [as x] from '<spec>'.
-  for (const m of text.matchAll(/export[ \t]*\{([^}]*)\}[ \t]*from[ \t]*['"]([^'"]+)['"]/g)) {
+  for (const m of text.matchAll(
+    /export[ \t]*\{([^}]*)\}[ \t]*from[ \t]*['"]([^'"]+)['"]/g,
+  )) {
     for (const n of braceNames(m[1])) edge(m[2], n);
   }
-  for (const m of text.matchAll(/export[ \t]*\*(?:[ \t]*as[ \t]+[A-Za-z_$][\w$]*)?[ \t]*from[ \t]*['"]([^'"]+)['"]/g)) {
+  for (const m of text.matchAll(
+    /export[ \t]*\*(?:[ \t]*as[ \t]+[A-Za-z_$][\w$]*)?[ \t]*from[ \t]*['"]([^'"]+)['"]/g,
+  )) {
     edge(m[1], '*');
   }
 
@@ -273,7 +297,9 @@ export function resolveSpecifier(spec, importer, tracked) {
 export function scan(opts = {}) {
   const cwd = opts.cwd ?? REPO_ROOT;
   const read = opts.read ?? ((f) => fs.readFileSync(path.join(cwd, f), 'utf8'));
-  const all = (opts.files ?? trackedFiles(cwd)).filter((f) => JS_EXT.test(f) && !EXCLUDE(f));
+  const all = (opts.files ?? trackedFiles(cwd)).filter(
+    (f) => JS_EXT.test(f) && !EXCLUDE(f),
+  );
   const tracked = new Set(all);
 
   // Pass 1: harvest every usage edge from every tracked module, resolved to the
@@ -294,7 +320,9 @@ export function scan(opts = {}) {
   }
 
   // Pass 2: for each scanned file, report exports that nothing imports.
-  const scanFiles = all.filter((f) => SCAN_PREFIXES.some((p) => f.startsWith(p)));
+  const scanFiles = all.filter((f) =>
+    SCAN_PREFIXES.some((p) => f.startsWith(p)),
+  );
   const candidates = [];
   let exportsScanned = 0;
   for (const file of scanFiles) {

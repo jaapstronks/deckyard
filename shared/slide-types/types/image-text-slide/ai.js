@@ -19,9 +19,9 @@
  */
 
 export const ai = {
-    category: 'content',
-    resolveInPhase1: false,
-    description: `
+  category: 'content',
+  resolveInPhase1: false,
+  description: `
       Split layout with an image on one side and text (bullets) on the other.
       Great for visual breaks and when there's a relevant image.
       Keep body concise (3-6 bullets).
@@ -41,19 +41,19 @@ export const ai = {
       One image: images with a single item. The legacy flat "image" field
       still works for a single image.
     `,
-    bestFor: [
-      'Content where a photo/image adds value',
-      'Product or feature showcases',
-      'Person introductions with photo',
-      'Location or event context',
-      'A small set of 2-3 related images with one shared story (rows/duo)',
-    ],
-    notFor: [
-      'Content without a meaningful image to pair',
-      'Heavy text content (use content-slide or split into multiple)',
-      'Long bodies on the "wide" or "corner" layouts (little text room)',
-      'Many images without text (use gallery-slide)',
-    ],
+  bestFor: [
+    'Content where a photo/image adds value',
+    'Product or feature showcases',
+    'Person introductions with photo',
+    'Location or event context',
+    'A small set of 2-3 related images with one shared story (rows/duo)',
+  ],
+  notFor: [
+    'Content without a meaningful image to pair',
+    'Heavy text content (use content-slide or split into multiple)',
+    'Long bodies on the "wide" or "corner" layouts (little text room)',
+    'Many images without text (use gallery-slide)',
+  ],
 };
 
 /**

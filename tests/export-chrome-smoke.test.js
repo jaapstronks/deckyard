@@ -49,7 +49,10 @@ import { renderSandboxOgImagePng } from '../server/utils/sandbox-og-image.js';
 import { parsePdf } from '../server/utils/convert-file/pdf-parser.js';
 import { loadThemeAssets } from '../server/utils/themes.js';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 
 const chromePath = await resolveChromeExecutablePath();
 const isCi = /^(1|true|yes)$/i.test(String(process.env.CI || '').trim());
@@ -114,27 +117,34 @@ after(async () => {
   await closePuppeteerBrowser();
 });
 
-test('a Chrome/Chromium binary is available to the export chain', { skip }, () => {
-  assert.ok(
-    chromePath,
-    'export needs a browser and puppeteer-core does not bundle one — CI must ' +
-      'provision Chrome (see .github/workflows/ci.yml) or set PUPPETEER_EXECUTABLE_PATH'
-  );
-});
+test(
+  'a Chrome/Chromium binary is available to the export chain',
+  { skip },
+  () => {
+    assert.ok(
+      chromePath,
+      'export needs a browser and puppeteer-core does not bundle one — CI must ' +
+        'provision Chrome (see .github/workflows/ci.yml) or set PUPPETEER_EXECUTABLE_PATH',
+    );
+  },
+);
 
 test('PDF export produces a real, non-blank PDF', { skip }, async () => {
   const theme = await loadThemeAssets(repoRoot, 'default');
   const buf = await renderSlidesToPdfBuffer(repoRoot, smokeDeck(), { theme });
 
-  assert.ok(Buffer.isBuffer(buf), 'export should return a Node Buffer, not a bare Uint8Array');
+  assert.ok(
+    Buffer.isBuffer(buf),
+    'export should return a Node Buffer, not a bare Uint8Array',
+  );
   assert.equal(
     buf.subarray(0, 5).toString('latin1'),
     '%PDF-',
-    'output must carry the PDF magic header'
+    'output must carry the PDF magic header',
   );
   assert.ok(
     buf.length > 4096,
-    `a rendered slide should be more than a stub PDF (got ${buf.length} bytes)`
+    `a rendered slide should be more than a stub PDF (got ${buf.length} bytes)`,
   );
 
   // Text extraction is the non-blank check: a PDF whose page never painted
@@ -147,34 +157,55 @@ test('PDF export produces a real, non-blank PDF', { skip }, async () => {
   // place than a Mac does. The assertion is "this text rendered", not "it
   // rendered on one line".
   const text = flattenSpace(parsed.slides[0]?.textContent || '');
-  assert.ok(text.includes(TITLE), `page text should contain the slide title, got: ${text}`);
+  assert.ok(
+    text.includes(TITLE),
+    `page text should contain the slide title, got: ${text}`,
+  );
   assert.ok(
     text.includes(flattenSpace(SUBHEADING)),
-    `page text should contain the subheading, got: ${text}`
+    `page text should contain the subheading, got: ${text}`,
   );
 });
 
-test('PNG export produces a correctly sized, non-blank image', { skip }, async () => {
-  const theme = await loadThemeAssets(repoRoot, 'default');
-  const buf = await renderSlideToPngBuffer(repoRoot, smokeSlide(), { scale: 2, theme });
+test(
+  'PNG export produces a correctly sized, non-blank image',
+  { skip },
+  async () => {
+    const theme = await loadThemeAssets(repoRoot, 'default');
+    const buf = await renderSlideToPngBuffer(repoRoot, smokeSlide(), {
+      scale: 2,
+      theme,
+    });
 
-  assert.ok(Buffer.isBuffer(buf), 'export should return a Node Buffer, not a bare Uint8Array');
-  const meta = await sharp(buf).metadata();
-  assert.equal(meta.format, 'png');
-  // 1600×900 at deviceScaleFactor 2 — also asserts the scale option is honored.
-  assert.equal(meta.width, 3200, 'PNG width should be the 16:9 frame at scale 2');
-  assert.equal(meta.height, 1800, 'PNG height should be the 16:9 frame at scale 2');
+    assert.ok(
+      Buffer.isBuffer(buf),
+      'export should return a Node Buffer, not a bare Uint8Array',
+    );
+    const meta = await sharp(buf).metadata();
+    assert.equal(meta.format, 'png');
+    // 1600×900 at deviceScaleFactor 2 — also asserts the scale option is honored.
+    assert.equal(
+      meta.width,
+      3200,
+      'PNG width should be the 16:9 frame at scale 2',
+    );
+    assert.equal(
+      meta.height,
+      1800,
+      'PNG height should be the 16:9 frame at scale 2',
+    );
 
-  const { unique, dominantShare } = await colorProfile(buf);
-  assert.ok(
-    unique >= 64,
-    `a blank frame has one colour; a rendered slide has hundreds (got ${unique})`
-  );
-  assert.ok(
-    dominantShare < 0.98,
-    `no single colour should cover the frame (most common colour: ${(dominantShare * 100).toFixed(2)}%)`
-  );
-});
+    const { unique, dominantShare } = await colorProfile(buf);
+    assert.ok(
+      unique >= 64,
+      `a blank frame has one colour; a rendered slide has hundreds (got ${unique})`,
+    );
+    assert.ok(
+      dominantShare < 0.98,
+      `no single colour should cover the frame (most common colour: ${(dominantShare * 100).toFixed(2)}%)`,
+    );
+  },
+);
 
 /**
  * Order matters here, and not by accident: the PDF test above runs pdf-parse
@@ -183,51 +214,73 @@ test('PNG export produces a correctly sized, non-blank image', { skip }, async (
  * the render — used to produce garbage. Running PPTX after PDF in the same
  * process keeps that regression covered.
  */
-test('PPTX export embeds the Chrome-rendered slide image', { skip }, async () => {
-  const theme = await loadThemeAssets(repoRoot, 'default');
-  const { buffer } = await buildPptxBuffer(repoRoot, smokeDeck(), { scale: 1, theme });
+test(
+  'PPTX export embeds the Chrome-rendered slide image',
+  { skip },
+  async () => {
+    const theme = await loadThemeAssets(repoRoot, 'default');
+    const { buffer } = await buildPptxBuffer(repoRoot, smokeDeck(), {
+      scale: 1,
+      theme,
+    });
 
-  // Explicit bytes rather than a string literal: a .pptx starts with the
-  // local-file-header magic PK\x03\x04.
-  assert.ok(
-    Buffer.from(buffer).subarray(0, 4).equals(Buffer.from([0x50, 0x4b, 0x03, 0x04])),
-    'a .pptx should be a zip container'
-  );
+    // Explicit bytes rather than a string literal: a .pptx starts with the
+    // local-file-header magic PK\x03\x04.
+    assert.ok(
+      Buffer.from(buffer)
+        .subarray(0, 4)
+        .equals(Buffer.from([0x50, 0x4b, 0x03, 0x04])),
+      'a .pptx should be a zip container',
+    );
 
-  const zip = await JSZip.loadAsync(Buffer.from(buffer));
-  assert.ok(zip.file('ppt/slides/slide1.xml'), 'the deck should contain one slide part');
+    const zip = await JSZip.loadAsync(Buffer.from(buffer));
+    assert.ok(
+      zip.file('ppt/slides/slide1.xml'),
+      'the deck should contain one slide part',
+    );
 
-  // Directory entries share the prefix; only real files carry the render.
-  const media = Object.keys(zip.files).filter(
-    (name) => name.startsWith('ppt/media/') && !zip.files[name].dir
-  );
-  assert.ok(media.length >= 1, 'the slide image should be embedded as a media part');
-  const imageBytes = await zip.file(media[0]).async('nodebuffer');
-  assert.ok(
-    imageBytes.length > 4096,
-    `the embedded render should not be an empty image (got ${imageBytes.length} bytes)`
-  );
-  // Same non-blank check as the PNG case: a .pptx full of white rectangles is
-  // structurally valid and useless.
-  const { unique } = await colorProfile(imageBytes);
-  assert.ok(
-    unique >= 64,
-    `the embedded slide image should not be blank (got ${unique} colours)`
-  );
-});
+    // Directory entries share the prefix; only real files carry the render.
+    const media = Object.keys(zip.files).filter(
+      (name) => name.startsWith('ppt/media/') && !zip.files[name].dir,
+    );
+    assert.ok(
+      media.length >= 1,
+      'the slide image should be embedded as a media part',
+    );
+    const imageBytes = await zip.file(media[0]).async('nodebuffer');
+    assert.ok(
+      imageBytes.length > 4096,
+      `the embedded render should not be an empty image (got ${imageBytes.length} bytes)`,
+    );
+    // Same non-blank check as the PNG case: a .pptx full of white rectangles is
+    // structurally valid and useless.
+    const { unique } = await colorProfile(imageBytes);
+    assert.ok(
+      unique >= 64,
+      `the embedded slide image should not be blank (got ${unique} colours)`,
+    );
+  },
+);
 
-test('the sandbox OG image renders at its social-card size', { skip }, async () => {
-  const buf = await renderSandboxOgImagePng();
+test(
+  'the sandbox OG image renders at its social-card size',
+  { skip },
+  async () => {
+    const buf = await renderSandboxOgImagePng();
 
-  const meta = await sharp(buf).metadata();
-  assert.equal(meta.format, 'png');
-  assert.equal(meta.width, 1200);
-  assert.equal(meta.height, 630);
+    const meta = await sharp(buf).metadata();
+    assert.equal(meta.format, 'png');
+    assert.equal(meta.width, 1200);
+    assert.equal(meta.height, 630);
 
-  const { unique, dominantShare } = await colorProfile(buf);
-  assert.ok(unique >= 64, `OG image should not be a flat fill (got ${unique} colours)`);
-  assert.ok(
-    dominantShare < 0.98,
-    `OG image should not be a single colour (most common: ${(dominantShare * 100).toFixed(2)}%)`
-  );
-});
+    const { unique, dominantShare } = await colorProfile(buf);
+    assert.ok(
+      unique >= 64,
+      `OG image should not be a flat fill (got ${unique} colours)`,
+    );
+    assert.ok(
+      dominantShare < 0.98,
+      `OG image should not be a single colour (most common: ${(dominantShare * 100).toFixed(2)}%)`,
+    );
+  },
+);

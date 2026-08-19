@@ -12,7 +12,7 @@ export function filterPresentationsByTags(presentations, selectedTags) {
   if (!selectedTags || selectedTags.length === 0) return presentations;
   return (presentations || []).filter((p) => {
     const pTags = (p.tags || []).map((tag) =>
-      (typeof tag === 'string' ? tag : tag.name).toLowerCase()
+      (typeof tag === 'string' ? tag : tag.name).toLowerCase(),
     );
     return selectedTags.some((tag) => pTags.includes(tag.toLowerCase()));
   });
@@ -75,9 +75,13 @@ export function createTagFilter({ api, onFilterChange }) {
       filterBtn.textContent = t('tags.filter.button', 'Filter by tag');
       filterBtn.classList.remove('has-selection');
     } else {
-      filterBtn.textContent = t('tags.filter.buttonActive', '{count} tag(s) selected', {
-        count: String(count),
-      });
+      filterBtn.textContent = t(
+        'tags.filter.buttonActive',
+        '{count} tag(s) selected',
+        {
+          count: String(count),
+        },
+      );
       filterBtn.classList.add('has-selection');
     }
   }
@@ -87,7 +91,7 @@ export function createTagFilter({ api, onFilterChange }) {
     tagList.innerHTML = '';
     const lowerFilter = filter.toLowerCase();
     const filtered = allTags.filter((tag) =>
-      tag.name.toLowerCase().includes(lowerFilter)
+      tag.name.toLowerCase().includes(lowerFilter),
     );
 
     if (filtered.length === 0) {
@@ -95,31 +99,38 @@ export function createTagFilter({ api, onFilterChange }) {
         h('div', {
           class: 'tag-filter-empty',
           text: t('tags.filter.empty', 'No tags found'),
-        })
+        }),
       );
       return;
     }
 
     for (const tag of filtered) {
       const isSelected = selectedTags.has(tag.name);
-      const item = h('label', { class: `tag-filter-item${isSelected ? ' is-selected' : ''}` }, [
-        h('input', {
-          type: 'checkbox',
-          checked: isSelected,
-          onchange: () => {
-            if (selectedTags.has(tag.name)) {
-              selectedTags.delete(tag.name);
-            } else {
-              selectedTags.add(tag.name);
-            }
-            renderTags(searchInput.value);
-            updateButtonText();
-            onFilterChange?.(Array.from(selectedTags));
-          },
-        }),
-        h('span', { class: 'tag-filter-item-name', text: tag.name }),
-        h('span', { class: 'tag-filter-item-count', text: String(tag.count) }),
-      ]);
+      const item = h(
+        'label',
+        { class: `tag-filter-item${isSelected ? ' is-selected' : ''}` },
+        [
+          h('input', {
+            type: 'checkbox',
+            checked: isSelected,
+            onchange: () => {
+              if (selectedTags.has(tag.name)) {
+                selectedTags.delete(tag.name);
+              } else {
+                selectedTags.add(tag.name);
+              }
+              renderTags(searchInput.value);
+              updateButtonText();
+              onFilterChange?.(Array.from(selectedTags));
+            },
+          }),
+          h('span', { class: 'tag-filter-item-name', text: tag.name }),
+          h('span', {
+            class: 'tag-filter-item-count',
+            text: String(tag.count),
+          }),
+        ],
+      );
       tagList.append(item);
     }
   }

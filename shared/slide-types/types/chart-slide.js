@@ -228,10 +228,10 @@ export default {
       showLegendRaw === 'yes'
         ? true
         : showLegendRaw === 'no'
-        ? false
-        : chartType === 'line'
-        ? !!parsed?.dataset?.y2
-        : chartType === 'pie';
+          ? false
+          : chartType === 'line'
+            ? !!parsed?.dataset?.y2
+            : chartType === 'pie';
 
     let svg = '';
     let legendHtml = '';
@@ -250,15 +250,14 @@ export default {
       const s2 = String(content?.series2Label || '').trim();
       const series1Name = s1 || ds.series1Label || 'Series 1';
       const series2Name = s2 || ds.series2Label || 'Series 2';
-      const hasY2 =
-        Array.isArray(ds?.y2) && ds.y2.some((v) => v != null);
+      const hasY2 = Array.isArray(ds?.y2) && ds.y2.some((v) => v != null);
       if (showLegend) {
         legendHtml = `
           <div class="chart-legend-block" aria-label="${escapeHtml(copy.chartLegendLabel)}">
             <div class="chart-legend-item">
               <span class="chart-legend-swatch chart-swatch-1" aria-hidden="true"></span>
               <span class="chart-legend-name" dir="auto">${escapeHtml(
-                series1Name
+                series1Name,
               )}</span>
             </div>
             ${
@@ -267,7 +266,7 @@ export default {
               <div class="chart-legend-item">
                 <span class="chart-legend-swatch chart-swatch-2" aria-hidden="true"></span>
                 <span class="chart-legend-name" dir="auto">${escapeHtml(
-                  series2Name
+                  series2Name,
                 )}</span>
               </div>
             `
@@ -282,7 +281,7 @@ export default {
           series1Label: series1Name,
           series2Label: series2Name,
         },
-        { showLegend, showValues, xAxisLabel, yAxisLabel }
+        { showLegend, showValues, xAxisLabel, yAxisLabel },
       );
     } else if (parsed.kind === 'pie') {
       const pieLabelModeRaw = String(content?.pieLabelMode || '').trim();
@@ -292,7 +291,7 @@ export default {
       // The "Pie labels" control drives this directly (its own "none" option is
       // the off switch), so it is not gated behind "Show values". Default to %.
       const pieLabelMode = ['none', 'value', '%', 'both'].includes(
-        pieLabelModeNormalized
+        pieLabelModeNormalized,
       )
         ? pieLabelModeNormalized
         : '%';
@@ -322,15 +321,15 @@ export default {
                 ${
                   legendStat(e)
                     ? `<span class="chart-legend-stat">${escapeHtml(
-                        legendStat(e)
+                        legendStat(e),
                       )}</span>`
                     : ''
                 }
                 <span class="chart-legend-name" dir="auto">${escapeHtml(
-                  truncateLabel(e.label, 40)
+                  truncateLabel(e.label, 40),
                 )}</span>
               </div>
-            `
+            `,
           )
           .join('');
         legendHtml = `
@@ -350,7 +349,7 @@ export default {
     const alignClass = groupAlignClass(HEADER_BLOCK.group, content);
     return `
       <div class="slide slide-chart ${bg}${hasBottom ? ' has-bottom-subheading' : ''}${alignClass ? ` ${alignClass}` : ''}" data-chart-type="${escapeHtml(
-        chartType
+        chartType,
       )}">
         <div class="slide-inner">
           <div class="chart-header">

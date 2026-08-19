@@ -6,12 +6,7 @@ if (typeof window !== 'undefined' && window.DOMPurify) {
   globalThis.DOMPurify = window.DOMPurify;
 }
 
-import {
-  route,
-  nav,
-  setRenderer,
-  startRouter,
-} from './lib/state/router.js';
+import { route, nav, setRenderer, startRouter } from './lib/state/router.js';
 import { meWithMeta } from './lib/user/auth.js';
 import { setFeatures } from './lib/state/features.js';
 import { syncSandboxBanner } from './views/shared/sandbox-banner.js';
@@ -59,8 +54,7 @@ let renderGen = 0;
 async function getMeCached() {
   const now = Date.now();
   // Avoid spamming /me on every rerender; 10s is plenty.
-  if (cachedMe && now - cachedMeAt < 10_000)
-    return cachedMe;
+  if (cachedMe && now - cachedMeAt < 10_000) return cachedMe;
   const { user, features } = await meWithMeta();
   setFeatures(features);
   syncSandboxBanner();
@@ -72,9 +66,7 @@ async function getMeCached() {
 function renderFatal(root, err) {
   const msgRaw = String(err?.message || err);
   const stackRaw =
-    typeof err?.stack === 'string' && err.stack.trim()
-      ? err.stack
-      : '';
+    typeof err?.stack === 'string' && err.stack.trim() ? err.stack : '';
   const details = escapeHtml(stackRaw || msgRaw);
   try {
     // eslint-disable-next-line no-console
@@ -90,8 +82,8 @@ function renderFatal(root, err) {
           ${escapeHtml(
             t(
               'app.fatal.help',
-              'The app hit an error while loading. If you just enabled authentication, verify your server `.env` has `AUTH_SECRET` and `AUTH_ADMIN_EMAIL` set.'
-            )
+              'The app hit an error while loading. If you just enabled authentication, verify your server `.env` has `AUTH_SECRET` and `AUTH_ADMIN_EMAIL` set.',
+            ),
           )}
         </div>
         <pre style="white-space:pre-wrap; overflow:auto; padding:12px; border-radius:12px; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.12);">${details}</pre>
@@ -207,7 +199,9 @@ async function render() {
     // screen. `getMeCached()` still runs, because Q&A moderation shows extra
     // affordances to an admin — it just answers null for a visitor here.
     if (r.name === 'notes') {
-      await mount(renderNotes(root, r.sessionId, { nav, user: await getMeCached() }));
+      await mount(
+        renderNotes(root, r.sessionId, { nav, user: await getMeCached() }),
+      );
       return;
     }
 
@@ -218,12 +212,8 @@ async function render() {
 
     const user = await getMeCached();
     if (!user) {
-      const returnTo = `${location.pathname}${
-        location.search || ''
-      }`;
-      return nav(
-        `/login?returnTo=${encodeURIComponent(returnTo)}`
-      );
+      const returnTo = `${location.pathname}${location.search || ''}`;
+      return nav(`/login?returnTo=${encodeURIComponent(returnTo)}`);
     }
 
     // Re-apply the baseline title now that branding config has loaded, so
@@ -269,7 +259,7 @@ async function render() {
           nav,
           user,
           openSlideLibrary: { shelf: r.shelf, slideId: r.slideId },
-        })
+        }),
       );
       return;
     }

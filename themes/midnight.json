@@ -21,12 +21,7 @@
       "nl": "Antraciet"
     }
   },
-  "brandColors": [
-    "#38bdf8",
-    "#818cf8",
-    "#f472b6",
-    "#fbbf24"
-  ],
+  "brandColors": ["#38bdf8", "#818cf8", "#f472b6", "#fbbf24"],
   "gradient": {
     "enabled": true
   },

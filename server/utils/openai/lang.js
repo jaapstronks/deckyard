@@ -1,4 +1,7 @@
-import { normalizeLang, normalizeTranslationLang } from '../../../shared/i18n-utils.js';
+import {
+  normalizeLang,
+  normalizeTranslationLang,
+} from '../../../shared/i18n-utils.js';
 
 export { normalizeLang, normalizeTranslationLang };
 
@@ -7,19 +10,19 @@ export { normalizeLang, normalizeTranslationLang };
  * Uses full language names for clarity in AI prompts.
  */
 const LANG_LABELS = {
-  'nl': 'DUTCH',
+  nl: 'DUTCH',
   'en-GB': 'BRITISH ENGLISH',
-  'en': 'BRITISH ENGLISH',
-  'de': 'GERMAN',
-  'fr': 'FRENCH',
-  'es': 'SPANISH',
-  'pt': 'PORTUGUESE',
-  'it': 'ITALIAN',
-  'pl': 'POLISH',
-  'fi': 'FINNISH',
-  'da': 'DANISH',
-  'sv': 'SWEDISH',
-  'no': 'NORWEGIAN',
+  en: 'BRITISH ENGLISH',
+  de: 'GERMAN',
+  fr: 'FRENCH',
+  es: 'SPANISH',
+  pt: 'PORTUGUESE',
+  it: 'ITALIAN',
+  pl: 'POLISH',
+  fi: 'FINNISH',
+  da: 'DANISH',
+  sv: 'SWEDISH',
+  no: 'NORWEGIAN',
 };
 
 export function labelForLang(v) {
@@ -77,10 +80,7 @@ export function detectDeckLanguage(rawContent) {
   const countHits = (phrases) => {
     let c = 0;
     for (const p of phrases) {
-      const re = new RegExp(
-        `\\b${p.replace(/\s+/g, '\\s+')}\\b`,
-        'g'
-      );
+      const re = new RegExp(`\\b${p.replace(/\s+/g, '\\s+')}\\b`, 'g');
       const m = s.match(re);
       if (m) c += m.length;
     }

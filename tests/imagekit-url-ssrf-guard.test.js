@@ -36,7 +36,11 @@ test('SSRF: a private-range image URL is refused before fetch and the original U
   const result = await uploadImageKitUrl(METADATA_URL, 'notion-x.jpg');
 
   assert.equal(fetched, false, 'the blocked URL is never fetched');
-  assert.equal(result, METADATA_URL, 'falls back to the original URL when blocked');
+  assert.equal(
+    result,
+    METADATA_URL,
+    'falls back to the original URL when blocked',
+  );
 });
 
 test('the image fetch goes through the hardened helper: no redirects, with a timeout', async () => {
@@ -48,18 +52,27 @@ test('the image fetch goes through the hardened helper: no redirects, with a tim
     if (imageFetchOpts === undefined) imageFetchOpts = opts;
     return {
       ok: true,
-      headers: { get: (h) => (h.toLowerCase() === 'content-type' ? 'image/png' : null) },
+      headers: {
+        get: (h) => (h.toLowerCase() === 'content-type' ? 'image/png' : null),
+      },
       arrayBuffer: async () => new ArrayBuffer(4),
     };
   };
 
   await uploadImageKitUrl(
     'https://prod-files-secure.s3.us-west-2.amazonaws.com/abc/img.png',
-    'notion-z.png'
+    'notion-z.png',
   );
 
-  assert.equal(imageFetchOpts?.redirect, 'error', 'the image fetch must refuse redirects');
-  assert.ok(imageFetchOpts?.signal, 'the image fetch must carry a timeout signal');
+  assert.equal(
+    imageFetchOpts?.redirect,
+    'error',
+    'the image fetch must refuse redirects',
+  );
+  assert.ok(
+    imageFetchOpts?.signal,
+    'the image fetch must carry a timeout signal',
+  );
 });
 
 test('SSRF: a loopback URL is refused too', async () => {

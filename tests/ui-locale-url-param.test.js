@@ -64,7 +64,10 @@ test('returns null for a missing param', () => {
 test('rejects malformed / unsafe values (no path traversal, no junk)', () => {
   // Same conservative subset normalizeUiLocale enforces.
   assert.equal(readUiLocaleParam('?lang=../../etc/passwd'), null);
-  assert.equal(readUiLocaleParam('?lang=' + encodeURIComponent('en/../../x')), null);
+  assert.equal(
+    readUiLocaleParam('?lang=' + encodeURIComponent('en/../../x')),
+    null,
+  );
   assert.equal(readUiLocaleParam('?lang=123'), null);
   assert.equal(readUiLocaleParam('?lang='), null);
 });

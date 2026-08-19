@@ -22,16 +22,21 @@ import { fileURLToPath } from 'node:url';
 import { getFontByFamily } from '../shared/theme-fonts.js';
 import { curatedEmbedFonts } from '../server/utils/curated-font-embed.js';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 const themesDir = path.join(repoRoot, 'themes');
 
-const themeFiles = (await fs.readdir(themesDir)).filter((f) => f.endsWith('.json')).sort();
+const themeFiles = (await fs.readdir(themesDir))
+  .filter((f) => f.endsWith('.json'))
+  .sort();
 
 const themes = await Promise.all(
   themeFiles.map(async (file) => [
     file,
     JSON.parse(await fs.readFile(path.join(themesDir, file), 'utf8')),
-  ])
+  ]),
 );
 
 test('there are built-in themes to check', () => {
@@ -46,7 +51,7 @@ test("every theme's curated embedFonts match curatedEmbedFonts()", () => {
     // Families in the order the theme declares them; non-curated (uploaded /
     // custom) families are the theme's own business and are left alone.
     const families = [...new Set(entries.map((e) => e.family))].filter((f) =>
-      getFontByFamily(f)
+      getFontByFamily(f),
     );
 
     for (const family of families) {
@@ -58,7 +63,7 @@ test("every theme's curated embedFonts match curatedEmbedFonts()", () => {
         drift.push(
           `${file} — ${family}\n` +
             `      committed: ${actual.map((e) => `${e.weight}/${e.path.split('-').pop()}`).join(', ')}\n` +
-            `      expected:  ${expected.map((e) => `${e.weight}/${e.path.split('-').pop()}`).join(', ')}`
+            `      expected:  ${expected.map((e) => `${e.weight}/${e.path.split('-').pop()}`).join(', ')}`,
         );
       }
     }
@@ -67,7 +72,7 @@ test("every theme's curated embedFonts match curatedEmbedFonts()", () => {
   assert.deepEqual(
     drift,
     [],
-    `theme embedFonts drifted from the curated font set:\n${drift.join('\n')}`
+    `theme embedFonts drifted from the curated font set:\n${drift.join('\n')}`,
   );
 });
 
@@ -82,7 +87,8 @@ test('a theme embeds every family its heading and body fonts name', () => {
       const stack = String(theme.cssVars?.[varName] || '');
       const family = stack.split(',')[0].replace(/['"]/g, '').trim();
       if (!family || !getFontByFamily(family)) continue;
-      if (!families.has(family)) missing.push(`${file}: ${varName} is ${family}, not embedded`);
+      if (!families.has(family))
+        missing.push(`${file}: ${varName} is ${family}, not embedded`);
     }
   }
 
@@ -94,7 +100,10 @@ test('no curated embedFonts entry names a file the lock does not pin', async () 
   // checks the *pin*, not the disk: every path a theme names must be one the
   // lockfile knows about.
   const lock = JSON.parse(
-    await fs.readFile(path.join(repoRoot, 'scripts', 'google-fonts.lock.json'), 'utf8')
+    await fs.readFile(
+      path.join(repoRoot, 'scripts', 'google-fonts.lock.json'),
+      'utf8',
+    ),
   );
   const pinnedPaths = new Set();
   for (const [, entry] of Object.entries(lock.fonts)) {

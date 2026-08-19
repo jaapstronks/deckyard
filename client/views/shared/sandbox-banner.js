@@ -27,10 +27,10 @@ function buildBanner() {
         class: 'sandbox-banner-text',
         text: t(
           'sandbox.banner.text',
-          'Temporary Deckyard sandbox - your work is deleted after 24 hours.'
+          'Temporary Deckyard sandbox - your work is deleted after 24 hours.',
         ),
       }),
-    ]
+    ],
   );
 }
 
@@ -51,7 +51,7 @@ export function syncSandboxBanner() {
     if (textEl) {
       textEl.textContent = t(
         'sandbox.banner.text',
-        'Temporary Deckyard sandbox - your work is deleted after 24 hours.'
+        'Temporary Deckyard sandbox - your work is deleted after 24 hours.',
       );
     }
   } else if (!active && bannerEl) {

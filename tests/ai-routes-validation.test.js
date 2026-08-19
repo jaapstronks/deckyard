@@ -43,11 +43,16 @@ import assert from 'node:assert/strict';
 
 const { handleAiVendors } = await import('../server/routes/api/ai/vendors.js');
 const { handleAiWizard } = await import('../server/routes/api/ai/wizard.js');
-const { handleAiWizardV2Stream } = await import('../server/routes/api/ai/wizard-v2-stream.js');
-const { handleAiAppendSlides } = await import('../server/routes/api/ai/append-slides.js');
-const { handleAiRefineSection } = await import('../server/routes/api/ai/refine-section.js');
-const { handleAiConvertSlide } = await import('../server/routes/api/ai/convert-slide.js');
-const { handleAiCompressDeck } = await import('../server/routes/api/ai/compress-deck.js');
+const { handleAiWizardV2Stream } =
+  await import('../server/routes/api/ai/wizard-v2-stream.js');
+const { handleAiAppendSlides } =
+  await import('../server/routes/api/ai/append-slides.js');
+const { handleAiRefineSection } =
+  await import('../server/routes/api/ai/refine-section.js');
+const { handleAiConvertSlide } =
+  await import('../server/routes/api/ai/convert-slide.js');
+const { handleAiCompressDeck } =
+  await import('../server/routes/api/ai/compress-deck.js');
 const { handleAiIterate } = await import('../server/routes/api/ai/iterate.js');
 
 // ---------------------------------------------------------------------------
@@ -88,7 +93,12 @@ function makeRes() {
  * @returns {Promise<{handled: *, res: Object}>}
  */
 async function call(handler, { body, rawBody } = {}) {
-  const payload = rawBody !== undefined ? rawBody : body === undefined ? '' : JSON.stringify(body);
+  const payload =
+    rawBody !== undefined
+      ? rawBody
+      : body === undefined
+        ? ''
+        : JSON.stringify(body);
   const req = {
     method: 'POST',
     headers: { host: 'decks.example.test', 'content-type': 'application/json' },
@@ -139,7 +149,11 @@ test('every POST handler rejects a body that is not JSON with a 400', async () =
 
   for (const handler of handlers) {
     const { res } = await call(handler, { rawBody: '{ this is not json' });
-    assert.equal(res.statusCode, 400, `${handler.name} must 400 on malformed JSON`);
+    assert.equal(
+      res.statusCode,
+      400,
+      `${handler.name} must 400 on malformed JSON`,
+    );
   }
 });
 
@@ -154,7 +168,11 @@ test('wizard requires non-empty raw input', async () => {
 
 test('wizard-v2 stream refuses empty raw before opening the SSE stream', async () => {
   const { res } = await call(handleAiWizardV2Stream, { body: { raw: '' } });
-  assert.equal(res.statusCode, 400, 'the guard runs before openSseStream, so this stays an HTTP 400');
+  assert.equal(
+    res.statusCode,
+    400,
+    'the guard runs before openSseStream, so this stays an HTTP 400',
+  );
 });
 
 test('append-slides requires non-empty raw input', async () => {
@@ -167,10 +185,14 @@ test('append-slides requires non-empty raw input', async () => {
 // ===========================================================================
 
 test('convert-slide requires both a slide and a target type', async () => {
-  const noSlide = await call(handleAiConvertSlide, { body: { toType: 'content-slide' } });
+  const noSlide = await call(handleAiConvertSlide, {
+    body: { toType: 'content-slide' },
+  });
   assert.equal(noSlide.res.statusCode, 400, 'a missing slide is a 400');
 
-  const noType = await call(handleAiConvertSlide, { body: { slide: { id: 's1', type: 'content-slide' } } });
+  const noType = await call(handleAiConvertSlide, {
+    body: { slide: { id: 's1', type: 'content-slide' } },
+  });
   assert.equal(noType.res.statusCode, 400, 'a missing toType is a 400');
 });
 
@@ -178,12 +200,16 @@ test('compress-deck requires a presentation with a slides array', async () => {
   const missing = await call(handleAiCompressDeck, { body: {} });
   assert.equal(missing.res.statusCode, 400);
 
-  const notArray = await call(handleAiCompressDeck, { body: { presentation: { slides: 'nope' } } });
+  const notArray = await call(handleAiCompressDeck, {
+    body: { presentation: { slides: 'nope' } },
+  });
   assert.equal(notArray.res.statusCode, 400);
 });
 
 test('iterate requires a presentation and a command', async () => {
-  const noPres = await call(handleAiIterate, { body: { command: 'punch it up' } });
+  const noPres = await call(handleAiIterate, {
+    body: { command: 'punch it up' },
+  });
   assert.equal(noPres.res.statusCode, 400, 'a missing presentation is a 400');
 
   const noCommand = await call(handleAiIterate, {
@@ -193,21 +219,38 @@ test('iterate requires a presentation and a command', async () => {
 });
 
 test('refine-section validates presentation, slideIds, feedback and slide existence', async () => {
-  const base = { slides: [{ id: 's1', type: 'content-slide' }, { id: 's2', type: 'content-slide' }] };
+  const base = {
+    slides: [
+      { id: 's1', type: 'content-slide' },
+      { id: 's2', type: 'content-slide' },
+    ],
+  };
 
-  const noPres = await call(handleAiRefineSection, { body: { slideIds: ['s1'], feedback: 'x' } });
+  const noPres = await call(handleAiRefineSection, {
+    body: { slideIds: ['s1'], feedback: 'x' },
+  });
   assert.equal(noPres.res.statusCode, 400, 'a missing presentation is a 400');
 
-  const noIds = await call(handleAiRefineSection, { body: { presentation: base, feedback: 'x' } });
+  const noIds = await call(handleAiRefineSection, {
+    body: { presentation: base, feedback: 'x' },
+  });
   assert.equal(noIds.res.statusCode, 400, 'an empty slideIds array is a 400');
 
   const noFeedback = await call(handleAiRefineSection, {
     body: { presentation: base, slideIds: ['s1'] },
   });
-  assert.equal(noFeedback.res.statusCode, 400, 'a missing feedback string is a 400');
+  assert.equal(
+    noFeedback.res.statusCode,
+    400,
+    'a missing feedback string is a 400',
+  );
 
   const unknownIds = await call(handleAiRefineSection, {
     body: { presentation: base, slideIds: ['does-not-exist'], feedback: 'x' },
   });
-  assert.equal(unknownIds.res.statusCode, 400, 'slideIds that match no slide is a 400');
+  assert.equal(
+    unknownIds.res.statusCode,
+    400,
+    'slideIds that match no slide is a 400',
+  );
 });

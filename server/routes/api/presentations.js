@@ -8,13 +8,22 @@ import { handlePresentationsImportJson } from './presentations/import-json.js';
 import { handlePresentationsImportDeck } from './presentations/import-deck.js';
 import { handlePresentationsImportMarkdown } from './presentations/import-markdown.js';
 import { handlePresentationVisibility } from './presentations/visibility.js';
-import { handlePresentationItem, handlePresentationRevision } from './presentations/presentation.js';
+import {
+  handlePresentationItem,
+  handlePresentationRevision,
+} from './presentations/presentation.js';
 import { handlePresentationDuplicate } from './presentations/duplicate.js';
 import { handlePresentationDescriptionGenerate } from './presentations/description.js';
 import { handlePresentationTranslateFields } from './presentations/translate-fields.js';
 import { handlePresentationTranslateMissing } from './presentations/translate-missing.js';
 import { handlePresentationTranslate } from './presentations/translate.js';
-import { handlePresentationVersions, handlePresentationVersionItem, handlePresentationVersionExport, handlePresentationVersionCompareAi, handlePresentationSessionEnd } from './presentations/versions.js';
+import {
+  handlePresentationVersions,
+  handlePresentationVersionItem,
+  handlePresentationVersionExport,
+  handlePresentationVersionCompareAi,
+  handlePresentationSessionEnd,
+} from './presentations/versions.js';
 import { handlePresentationRestoreVersion } from './presentations/restore.js';
 import {
   handlePresentationsTrashList,
@@ -87,7 +96,13 @@ import {
  */
 function handlePresentationItemRoute(ctx, id) {
   // Skip special routes handled by other modules
-  const specialRoutes = ['shared-with-me', 'search', 'trash', 'import', 'popular'];
+  const specialRoutes = [
+    'shared-with-me',
+    'search',
+    'trash',
+    'import',
+    'popular',
+  ];
   if (specialRoutes.includes(id)) {
     return false;
   }
@@ -100,7 +115,13 @@ function handlePresentationItemRoute(ctx, id) {
  * @param {string} id
  */
 function handlePresentationTagsRoute({ storageScope, req, res, url }, id) {
-  return handlePresentationTags({ storageScope, req, res, url, presentationId: id });
+  return handlePresentationTags({
+    storageScope,
+    req,
+    res,
+    url,
+    presentationId: id,
+  });
 }
 
 /**
@@ -108,8 +129,14 @@ function handlePresentationTagsRoute({ storageScope, req, res, url }, id) {
  * @param {AuthedContext} ctx
  * @param {string} id
  */
-function handleRenderSlideRoute({ repoRoot, storageScope, req, res, authedUser }, id) {
-  return handleRenderSlide({ repoRoot, storageScope, req, res, authedUser }, id);
+function handleRenderSlideRoute(
+  { repoRoot, storageScope, req, res, authedUser },
+  id,
+) {
+  return handleRenderSlide(
+    { repoRoot, storageScope, req, res, authedUser },
+    id,
+  );
 }
 
 /**
@@ -137,155 +164,357 @@ function handleLegacyImportBadRequest({ res }) {
  * @type {Route[]}
  */
 const ROUTES = [
-  { method: 'GET', pattern: '/api/presentations', handler: handlePresentationsList },
+  {
+    method: 'GET',
+    pattern: '/api/presentations',
+    handler: handlePresentationsList,
+  },
 
   // Search endpoint (before :id routes to avoid conflicts)
-  { method: 'GET', pattern: '/api/presentations/search', handler: handlePresentationsSearch },
+  {
+    method: 'GET',
+    pattern: '/api/presentations/search',
+    handler: handlePresentationsSearch,
+  },
 
   // Popular presentations endpoint (before :id routes to avoid conflicts)
-  { method: 'GET', pattern: '/api/presentations/popular', handler: handlePopularPresentations },
+  {
+    method: 'GET',
+    pattern: '/api/presentations/popular',
+    handler: handlePopularPresentations,
+  },
 
   // Trash routes (before :id routes to avoid conflicts)
-  { pattern: '/api/presentations/trash', handler: handlePresentationsTrashList },
-  { pattern: /^\/api\/presentations\/([^/]+)\/restore$/, handler: handlePresentationRestore },
-  { pattern: /^\/api\/presentations\/([^/]+)\/permanent$/, handler: handlePresentationPermanentDelete },
+  {
+    pattern: '/api/presentations/trash',
+    handler: handlePresentationsTrashList,
+  },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/restore$/,
+    handler: handlePresentationRestore,
+  },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/permanent$/,
+    handler: handlePresentationPermanentDelete,
+  },
 
   // Translate a set of arbitrary fields (key -> string). Used for slide-level preview/apply in editor.
-  { pattern: /^\/api\/presentations\/([^/]+)\/translate\/fields$/, handler: handlePresentationTranslateFields },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/translate\/fields$/,
+    handler: handlePresentationTranslateFields,
+  },
   // Translate only missing (empty) fields into the other language (safe for manual edits).
-  { pattern: /^\/api\/presentations\/([^/]+)\/translate\/missing$/, handler: handlePresentationTranslateMissing },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/translate\/missing$/,
+    handler: handlePresentationTranslateMissing,
+  },
   // Translate a presentation into the other supported language and store as an i18n version.
-  { pattern: /^\/api\/presentations\/([^/]+)\/translate$/, handler: handlePresentationTranslate },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/translate$/,
+    handler: handlePresentationTranslate,
+  },
 
-  { pattern: /^\/api\/presentations\/([^/]+)\/description\/generate$/, handler: handlePresentationDescriptionGenerate },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/description\/generate$/,
+    handler: handlePresentationDescriptionGenerate,
+  },
 
-  { method: 'POST', pattern: '/api/presentations', handler: handlePresentationsCreate },
+  {
+    method: 'POST',
+    pattern: '/api/presentations',
+    handler: handlePresentationsCreate,
+  },
 
   // Import (portable JSON deck format)
-  { method: 'POST', pattern: '/api/presentations/import/json', handler: handlePresentationsImportJson },
+  {
+    method: 'POST',
+    pattern: '/api/presentations/import/json',
+    handler: handlePresentationsImportJson,
+  },
   // Import (self-contained .deck bundle — re-hydrates embedded assets)
-  { method: 'POST', pattern: '/api/presentations/import/deck', handler: handlePresentationsImportDeck },
+  {
+    method: 'POST',
+    pattern: '/api/presentations/import/deck',
+    handler: handlePresentationsImportDeck,
+  },
   // Import (markdown deck format — deterministic, no AI)
-  { method: 'POST', pattern: '/api/presentations/import/markdown', handler: handlePresentationsImportMarkdown },
+  {
+    method: 'POST',
+    pattern: '/api/presentations/import/markdown',
+    handler: handlePresentationsImportMarkdown,
+  },
 
-  { pattern: /^\/api\/presentations\/([^/]+)\/visibility$/, handler: handlePresentationVisibility },
-  { pattern: /^\/api\/presentations\/([^/]+)\/duplicate$/, handler: handlePresentationDuplicate },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/visibility$/,
+    handler: handlePresentationVisibility,
+  },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/duplicate$/,
+    handler: handlePresentationDuplicate,
+  },
 
   // Lightweight revision probe (staleness check for waking editor tabs)
-  { pattern: /^\/api\/presentations\/([^/]+)\/revision$/, handler: handlePresentationRevision },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/revision$/,
+    handler: handlePresentationRevision,
+  },
 
-  { pattern: /^\/api\/presentations\/([^/]+)$/, handler: handlePresentationItemRoute },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)$/,
+    handler: handlePresentationItemRoute,
+  },
 
   // Version history (snapshots)
-  { pattern: /^\/api\/presentations\/([^/]+)\/versions$/, handler: handlePresentationVersions },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/versions$/,
+    handler: handlePresentationVersions,
+  },
   // Session-end snapshot (called when editing session ends)
-  { pattern: /^\/api\/presentations\/([^/]+)\/session-end$/, handler: handlePresentationSessionEnd },
-  { pattern: /^\/api\/presentations\/([^/]+)\/versions\/([^/]+)\/restore$/, handler: handlePresentationRestoreVersion },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/session-end$/,
+    handler: handlePresentationSessionEnd,
+  },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/versions\/([^/]+)\/restore$/,
+    handler: handlePresentationRestoreVersion,
+  },
   // Version export as JSON
-  { pattern: /^\/api\/presentations\/([^/]+)\/versions\/([^/]+)\/export\/json$/, handler: handlePresentationVersionExport },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/versions\/([^/]+)\/export\/json$/,
+    handler: handlePresentationVersionExport,
+  },
   // AI-powered version comparison
-  { pattern: /^\/api\/presentations\/([^/]+)\/versions\/([^/]+)\/compare-ai$/, handler: handlePresentationVersionCompareAi },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/versions\/([^/]+)\/compare-ai$/,
+    handler: handlePresentationVersionCompareAi,
+  },
   // Single version retrieval (for preview/comparison)
-  { pattern: /^\/api\/presentations\/([^/]+)\/versions\/([^/]+)$/, handler: handlePresentationVersionItem },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/versions\/([^/]+)$/,
+    handler: handlePresentationVersionItem,
+  },
 
   // Presence / soft locks (advisory)
-  { pattern: /^\/api\/presentations\/([^/]+)\/lock$/, handler: handlePresentationLockStatus },
-  { pattern: /^\/api\/presentations\/([^/]+)\/lock\/acquire$/, handler: handlePresentationLockAcquire },
-  { pattern: /^\/api\/presentations\/([^/]+)\/lock\/refresh$/, handler: handlePresentationLockRefresh },
-  { pattern: /^\/api\/presentations\/([^/]+)\/lock\/release$/, handler: handlePresentationLockRelease },
-  { pattern: /^\/api\/presentations\/([^/]+)\/lock\/force-release$/, handler: handlePresentationLockForceRelease },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/lock$/,
+    handler: handlePresentationLockStatus,
+  },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/lock\/acquire$/,
+    handler: handlePresentationLockAcquire,
+  },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/lock\/refresh$/,
+    handler: handlePresentationLockRefresh,
+  },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/lock\/release$/,
+    handler: handlePresentationLockRelease,
+  },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/lock\/force-release$/,
+    handler: handlePresentationLockForceRelease,
+  },
 
   // Lock request endpoints
-  { pattern: /^\/api\/presentations\/([^/]+)\/lock\/request$/, handler: handlePresentationLockRequest },
-  { pattern: /^\/api\/presentations\/([^/]+)\/lock\/requests$/, handler: handlePresentationLockRequestsList },
-  { pattern: /^\/api\/presentations\/([^/]+)\/lock\/requests\/([^/]+)\/accept$/, handler: handlePresentationLockRequestAccept },
-  { pattern: /^\/api\/presentations\/([^/]+)\/lock\/requests\/([^/]+)\/reject$/, handler: handlePresentationLockRequestReject },
-  { pattern: /^\/api\/presentations\/([^/]+)\/lock\/my-request$/, handler: handlePresentationLockMyRequest },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/lock\/request$/,
+    handler: handlePresentationLockRequest,
+  },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/lock\/requests$/,
+    handler: handlePresentationLockRequestsList,
+  },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/lock\/requests\/([^/]+)\/accept$/,
+    handler: handlePresentationLockRequestAccept,
+  },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/lock\/requests\/([^/]+)\/reject$/,
+    handler: handlePresentationLockRequestReject,
+  },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/lock\/my-request$/,
+    handler: handlePresentationLockMyRequest,
+  },
 
   // ============================================================
   // SLIDE-LEVEL LOCKS (concurrent editing)
   // ============================================================
 
   // List all slide locks for a presentation
-  { pattern: /^\/api\/presentations\/([^/]+)\/slide-locks$/, handler: handleSlideLocksList },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/slide-locks$/,
+    handler: handleSlideLocksList,
+  },
   // Release all slide locks for current user
-  { pattern: /^\/api\/presentations\/([^/]+)\/slide-locks\/release-all$/, handler: handleSlideLocksReleaseAll },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/slide-locks\/release-all$/,
+    handler: handleSlideLocksReleaseAll,
+  },
   // Refresh a specific slide lock
-  { pattern: /^\/api\/presentations\/([^/]+)\/slides\/([^/]+)\/lock\/refresh$/, handler: handleSlideLockRefresh },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/slides\/([^/]+)\/lock\/refresh$/,
+    handler: handleSlideLockRefresh,
+  },
   // Acquire, release, or read a specific slide lock (method-dispatched)
-  { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/slides\/([^/]+)\/lock$/, handler: handleSlideLockStatus },
-  { method: 'POST', pattern: /^\/api\/presentations\/([^/]+)\/slides\/([^/]+)\/lock$/, handler: handleSlideLockAcquire },
-  { method: 'DELETE', pattern: /^\/api\/presentations\/([^/]+)\/slides\/([^/]+)\/lock$/, handler: handleSlideLockRelease },
+  {
+    method: 'GET',
+    pattern: /^\/api\/presentations\/([^/]+)\/slides\/([^/]+)\/lock$/,
+    handler: handleSlideLockStatus,
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/presentations\/([^/]+)\/slides\/([^/]+)\/lock$/,
+    handler: handleSlideLockAcquire,
+  },
+  {
+    method: 'DELETE',
+    pattern: /^\/api\/presentations\/([^/]+)\/slides\/([^/]+)\/lock$/,
+    handler: handleSlideLockRelease,
+  },
 
   // ============================================================
   // IMPORT SLIDES AS IMAGES (PDF → image-slide)
   // ============================================================
-  { pattern: /^\/api\/presentations\/([^/]+)\/import-slides-as-images$/, handler: handlePresentationImportSlidesAsImages },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/import-slides-as-images$/,
+    handler: handlePresentationImportSlidesAsImages,
+  },
 
   // ============================================================
   // AI ANALYSIS
   // ============================================================
-  { pattern: /^\/api\/presentations\/([^/]+)\/analyze$/, handler: handlePresentationAnalyze },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/analyze$/,
+    handler: handlePresentationAnalyze,
+  },
 
   // ============================================================
   // THEME CHANGE
   // ============================================================
-  { pattern: /^\/api\/presentations\/([^/]+)\/analyze-theme-change$/, handler: handleAnalyzeThemeChange },
-  { pattern: /^\/api\/presentations\/([^/]+)\/change-theme$/, handler: handleChangeTheme },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/analyze-theme-change$/,
+    handler: handleAnalyzeThemeChange,
+  },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/change-theme$/,
+    handler: handleChangeTheme,
+  },
 
   // ============================================================
   // TAGS
   // ============================================================
-  { pattern: /^\/api\/presentations\/([^/]+)\/tags$/, handler: handlePresentationTagsRoute },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/tags$/,
+    handler: handlePresentationTagsRoute,
+  },
 
   // ============================================================
   // OWNERSHIP TRANSFER
   // ============================================================
-  { pattern: /^\/api\/presentations\/([^/]+)\/transfer-ownership$/, handler: handleOwnershipTransfer },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/transfer-ownership$/,
+    handler: handleOwnershipTransfer,
+  },
 
   // ============================================================
   // RENDER SLIDE (server-side rendering for custom slide types)
   // ============================================================
-  { pattern: /^\/api\/presentations\/([^/]+)\/render-slide$/, handler: handleRenderSlideRoute },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/render-slide$/,
+    handler: handleRenderSlideRoute,
+  },
 
   // ============================================================
   // DECK OVERVIEW THUMBNAIL (server-rasterized PNG→WebP of slide 1)
   // ============================================================
-  { pattern: /^\/api\/presentations\/([^/]+)\/thumbnail$/, handler: handlePresentationThumbnail },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/thumbnail$/,
+    handler: handlePresentationThumbnail,
+  },
 
   // ============================================================
   // COMMENTS
   // ============================================================
 
   // Comment counts per slide (before more specific routes)
-  { pattern: /^\/api\/presentations\/([^/]+)\/comments\/counts$/, handler: handlePresentationCommentCounts },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/comments\/counts$/,
+    handler: handlePresentationCommentCounts,
+  },
   // Per-deck notification subscription (personal, GET current / PUT set)
-  { pattern: /^\/api\/presentations\/([^/]+)\/subscription$/, handler: handlePresentationSubscription },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/subscription$/,
+    handler: handlePresentationSubscription,
+  },
   // Mark comment threads as read for the current user (batch)
-  { pattern: /^\/api\/presentations\/([^/]+)\/comments\/mark-read$/, handler: handlePresentationCommentsMarkRead },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/comments\/mark-read$/,
+    handler: handlePresentationCommentsMarkRead,
+  },
   // SSE endpoint for real-time comment updates
-  { pattern: /^\/api\/presentations\/([^/]+)\/comments\/events$/, handler: handlePresentationCommentEvents },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/comments\/events$/,
+    handler: handlePresentationCommentEvents,
+  },
   // Resolve comment
-  { pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)\/resolve$/, handler: handlePresentationCommentResolve },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)\/resolve$/,
+    handler: handlePresentationCommentResolve,
+  },
   // Reopen comment
-  { pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)\/reopen$/, handler: handlePresentationCommentReopen },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)\/reopen$/,
+    handler: handlePresentationCommentReopen,
+  },
   // Dismiss AI suggestion
-  { pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)\/dismiss$/, handler: handlePresentationCommentDismiss },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)\/dismiss$/,
+    handler: handlePresentationCommentDismiss,
+  },
   // Apply AI suggestion (create proposed slide)
-  { pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)\/apply$/, handler: handlePresentationCommentApply },
+  {
+    pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)\/apply$/,
+    handler: handlePresentationCommentApply,
+  },
   // Single comment operations (GET/PUT/DELETE, method-dispatched)
-  { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)$/, handler: handlePresentationCommentGet },
-  { method: 'PUT', pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)$/, handler: handlePresentationCommentUpdate },
-  { method: 'DELETE', pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)$/, handler: handlePresentationCommentDelete },
+  {
+    method: 'GET',
+    pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)$/,
+    handler: handlePresentationCommentGet,
+  },
+  {
+    method: 'PUT',
+    pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)$/,
+    handler: handlePresentationCommentUpdate,
+  },
+  {
+    method: 'DELETE',
+    pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)$/,
+    handler: handlePresentationCommentDelete,
+  },
   // List/Create comments (method-dispatched)
-  { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/comments$/, handler: handlePresentationCommentsList },
-  { method: 'POST', pattern: /^\/api\/presentations\/([^/]+)\/comments$/, handler: handlePresentationCommentsCreate },
+  {
+    method: 'GET',
+    pattern: /^\/api\/presentations\/([^/]+)\/comments$/,
+    handler: handlePresentationCommentsList,
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/presentations\/([^/]+)\/comments$/,
+    handler: handlePresentationCommentsCreate,
+  },
 
   // This module purposely does NOT handle export/publish routes.
   // Those live in `export.js` and `publish.js`.
 
   // Note: keep a tiny placeholder route for early "bad import" debugging.
-  { method: 'POST', pattern: '/api/presentations/import', handler: handleLegacyImportBadRequest },
+  {
+    method: 'POST',
+    pattern: '/api/presentations/import',
+    handler: handleLegacyImportBadRequest,
+  },
 ];
 
 /**
@@ -299,5 +528,5 @@ const ROUTES = [
  * @returns {Promise<unknown>|unknown}
  */
 export const handlePresentations = withErrorHandler('presentations', (ctx) =>
-  dispatchRoutes(ROUTES, ctx)
+  dispatchRoutes(ROUTES, ctx),
 );

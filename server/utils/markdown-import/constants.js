@@ -9,52 +9,52 @@
  */
 export const LAYOUT_TO_SLIDE_TYPE = {
   // Title / cover
-  'title':        { type: 'title-slide' },
-  'cover':        { type: 'title-slide' },
+  title: { type: 'title-slide' },
+  cover: { type: 'title-slide' },
 
   // Section / chapter
-  'section':      { type: 'chapter-title-slide' },
-  'chapter':      { type: 'chapter-title-slide' },
+  section: { type: 'chapter-title-slide' },
+  chapter: { type: 'chapter-title-slide' },
 
   // Two-column layouts
-  'two-cols':     { type: 'content-slide', content: { layout: 'two-column' } },
-  'two-column':   { type: 'content-slide', content: { layout: 'two-column' } },
+  'two-cols': { type: 'content-slide', content: { layout: 'two-column' } },
+  'two-column': { type: 'content-slide', content: { layout: 'two-column' } },
 
   // Comparison
-  'comparison':   { type: 'comparison-slide' },
+  comparison: { type: 'comparison-slide' },
 
   // Image layouts
-  'image-left':   { type: 'image-text-slide', content: { imageSide: 'left' } },
-  'image-right':  { type: 'image-text-slide', content: { imageSide: 'right' } },
-  'image':        { type: 'image-slide' },
-  'image-full':   { type: 'image-slide' },
+  'image-left': { type: 'image-text-slide', content: { imageSide: 'left' } },
+  'image-right': { type: 'image-text-slide', content: { imageSide: 'right' } },
+  image: { type: 'image-slide' },
+  'image-full': { type: 'image-slide' },
 
   // Quote
-  'quote':        { type: 'quote-slide' },
+  quote: { type: 'quote-slide' },
 
   // Center / statement
-  'center':       { type: 'content-slide' },
-  'statement':    { type: 'content-slide' },
+  center: { type: 'content-slide' },
+  statement: { type: 'content-slide' },
 
   // Table
-  'table':        { type: 'table-slide' },
+  table: { type: 'table-slide' },
 
   // List
-  'list':         { type: 'list-slide' },
+  list: { type: 'list-slide' },
 
   // End / outro
-  'end':          { type: 'payoff-slide' },
-  'outro':        { type: 'payoff-slide' },
+  end: { type: 'payoff-slide' },
+  outro: { type: 'payoff-slide' },
 
   // Chart (deferred, but map anyway)
-  'chart':        { type: 'chart-slide' },
+  chart: { type: 'chart-slide' },
 
   // KPI / metrics (deferred, but map anyway)
-  'kpi':          { type: 'kpi-metrics-slide' },
-  'metrics':      { type: 'kpi-metrics-slide' },
+  kpi: { type: 'kpi-metrics-slide' },
+  metrics: { type: 'kpi-metrics-slide' },
 
   // Gallery
-  'gallery':      { type: 'gallery-slide' },
+  gallery: { type: 'gallery-slide' },
 };
 
 /**

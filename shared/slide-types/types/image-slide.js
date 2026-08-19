@@ -66,7 +66,8 @@ export default {
         {
           value: 'decorative',
           label: 'Decorative (no alt)',
-          title: 'This image is decorative; it will be hidden from screen readers.',
+          title:
+            'This image is decorative; it will be hidden from screen readers.',
           ariaLabel: 'Decorative image',
         },
       ],
@@ -228,7 +229,8 @@ export default {
       visibleWhen: { field: 'zoomSteps', in: ['custom'] },
       maxLength: 500,
       helpText: 'Custom positions as JSON array. X/Y are percentages (0-100).',
-      helpCopyExample: '[{"x":25,"y":25},{"x":75,"y":25},{"x":25,"y":75},{"x":75,"y":75}]',
+      helpCopyExample:
+        '[{"x":25,"y":25},{"x":75,"y":25},{"x":25,"y":75},{"x":75,"y":75}]',
     },
   ],
   // The ImageRef config anchor for this type (looked up, never stored per
@@ -267,15 +269,21 @@ export default {
       : '';
     const subheading = renderSubheadingHtml(content);
     const heading =
-      title || subheading ? `<div class="img-heading">${title}${subheading}</div>` : '';
+      title || subheading
+        ? `<div class="img-heading">${title}${subheading}</div>`
+        : '';
     const hasBottom = hasBottomSubheading(content);
     // On a bleed frame the heading and bottom subheading overlay the image
     // (there is no padded area to sit in) - keyed on the bleed axis alone, so
     // contain + bleed overlays too.
     const overlayHeading = bleed ? heading : '';
     const topHeading = bleed ? '' : heading;
-    const bottomSubheadingOverlay = bleed ? renderBottomSubheadingHtml(content) : '';
-    const bottomSubheadingBelow = bleed ? '' : renderBottomSubheadingHtml(content);
+    const bottomSubheadingOverlay = bleed
+      ? renderBottomSubheadingHtml(content)
+      : '';
+    const bottomSubheadingBelow = bleed
+      ? ''
+      : renderBottomSubheadingHtml(content);
     const imageRole =
       content?.imageRole === 'decorative' ? 'decorative' : 'content';
     const altNl =
@@ -300,7 +308,7 @@ export default {
           const ariaDecorative =
             imageRole === 'decorative' ? ' aria-hidden="true"' : '';
           return `<img class="image" data-inline-photo="0" src="${escapeHtml(content.image)}" alt="${escapeHtml(
-            alt
+            alt,
           )}"${ariaDecorative}${focusStyle} />`;
         })()
       : imagePlaceholderHtml({ label: copy.imagePlaceholder, index: 0 });
@@ -314,13 +322,15 @@ export default {
     const zoomPositions = content?.zoomPositions || '';
     const zoomAttrs = zoomSteps
       ? ` data-zoom-steps="${escapeHtml(zoomSteps)}" data-zoom-level="${zoomLevel}"${
-          zoomPositions ? ` data-zoom-positions="${escapeHtml(zoomPositions)}"` : ''
+          zoomPositions
+            ? ` data-zoom-positions="${escapeHtml(zoomPositions)}"`
+            : ''
         }`
       : '';
     return `
         <div class="slide slide-image is-fit-${fit}${bleed ? ' is-bleed' : ''} ${bgClass(content?.background)}${
-      topHeading ? ' has-heading' : ''
-    }${hasBottom ? ' has-bottom-subheading' : ''}${zoomSteps ? ' has-zoom-steps' : ''}"${zoomAttrs}>
+          topHeading ? ' has-heading' : ''
+        }${hasBottom ? ' has-bottom-subheading' : ''}${zoomSteps ? ' has-zoom-steps' : ''}"${zoomAttrs}>
           <div class="slide-inner">
             ${topHeading}
             <div class="media" data-morph-role="image">

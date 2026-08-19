@@ -10,12 +10,12 @@ hand. A habit is not a gate.
 
 ## What it asserts
 
-| Path | Check |
-| --- | --- |
-| `renderSlidesToPdfBuffer` | `%PDF-` magic, one page per slide, and extractable page text containing the slide's title and subheading |
-| `renderSlideToPngBuffer` | PNG at 3200×1800 (1600×900 at `scale: 2`), and non-blank: ≥ 64 distinct colours with no single colour covering ≥ 98% of the frame |
-| `buildPptxBuffer` | a real zip container holding `ppt/slides/slide1.xml` plus a non-trivial embedded media image |
-| `renderSandboxOgImagePng` | a 1200×630 PNG that is likewise non-blank |
+| Path                      | Check                                                                                                                             |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `renderSlidesToPdfBuffer` | `%PDF-` magic, one page per slide, and extractable page text containing the slide's title and subheading                          |
+| `renderSlideToPngBuffer`  | PNG at 3200×1800 (1600×900 at `scale: 2`), and non-blank: ≥ 64 distinct colours with no single colour covering ≥ 98% of the frame |
+| `buildPptxBuffer`         | a real zip container holding `ppt/slides/slide1.xml` plus a non-trivial embedded media image                                      |
+| `renderSandboxOgImagePng` | a 1200×630 PNG that is likewise non-blank                                                                                         |
 
 Both render functions are also asserted to return a Node `Buffer`. That is not
 pedantry — see [Why the Buffer assertion](#why-the-buffer-assertion) below.
@@ -32,7 +32,7 @@ antialiasing alone. A byte-length check would not catch a white page.
 
 ## What it deliberately does not assert
 
-It does not catch a *silent visual* regression — a webfont failing to load and
+It does not catch a _silent visual_ regression — a webfont failing to load and
 falling back to a system font, a gradient quietly disappearing. Form 1 is
 "Chrome starts and produces a real, non-empty PDF/PNG", which is far more
 coverage per line than anything visual, and it is what this file ships.
@@ -52,7 +52,7 @@ frame. Fixtures are one calibration slide per built-in theme plus one deck
 covering every field kind in the registry.
 
 That last-but-one item is the point: `getComputedStyle().fontFamily` reports
-the stack that was *requested* and stays cheerfully identical when a webfont
+the stack that was _requested_ and stays cheerfully identical when a webfont
 falls back, so the test reads the resolved face via
 `CSS.getPlatformFontsForNode` instead.
 
@@ -77,7 +77,7 @@ difference from `puppeteer`. So a browser has to come from somewhere, and that
 missing step is the reason this gap existed in the first place.
 
 **The choice made here:** `.github/workflows/ci.yml` installs the exact Chrome
-build that the *installed* `puppeteer-core` pins, via `@puppeteer/browsers`,
+build that the _installed_ `puppeteer-core` pins, via `@puppeteer/browsers`,
 and exports the resulting path as `PUPPETEER_EXECUTABLE_PATH`:
 
 ```yaml
@@ -154,5 +154,5 @@ natively, at which point the failure becomes unconditional.
 
 The fix is `toNodeBuffer()` in `server/utils/puppeteer-browser.js`, applied at
 every point where bytes leave Puppeteer. The smoke test keeps it honest twice
-over: it asserts the return type directly, and it runs the PPTX case *after*
+over: it asserts the return type directly, and it runs the PPTX case _after_
 the PDF case in the same process, so the poisoned-globals path stays covered.

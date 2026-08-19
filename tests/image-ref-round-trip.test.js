@@ -41,20 +41,30 @@ const IMAGE_REF_FIELDS = [
   {
     key: 'src',
     value: '/round-trip-src.png',
-    inRender: (html, v) => html.includes(`src="${v}"`) && html.includes('data-inline-photo="0"'),
-    reRead: (content) => [resolveImageTextCell(content, 0).item.src, content.images[0].src],
+    inRender: (html, v) =>
+      html.includes(`src="${v}"`) && html.includes('data-inline-photo="0"'),
+    reRead: (content) => [
+      resolveImageTextCell(content, 0).item.src,
+      content.images[0].src,
+    ],
   },
   {
     key: 'alt',
     value: 'A precise description',
     inRender: (html, v) => html.includes(`alt="${v}"`),
-    reRead: (content) => [resolveImageTextCell(content, 0).altExplicit, content.images[0].alt],
+    reRead: (content) => [
+      resolveImageTextCell(content, 0).altExplicit,
+      content.images[0].alt,
+    ],
   },
   {
     key: 'fit',
     value: 'contain',
     inRender: (html) => /frame is-fit-contain/.test(html),
-    reRead: (content) => [resolveImageTextCell(content, 0).fit, content.images[0].fit],
+    reRead: (content) => [
+      resolveImageTextCell(content, 0).fit,
+      content.images[0].fit,
+    ],
   },
   {
     key: 'focusX',
@@ -62,13 +72,19 @@ const IMAGE_REF_FIELDS = [
     // Focus needs both axes to render a deterministic object-position; the
     // fixture sets focusY too, so assert the X we vary lands as the first %.
     inRender: (html) => /object-position:30% \d+%/.test(html),
-    reRead: (content) => [resolveImageTextCell(content, 0).focusSource.focusX, content.images[0].focusX],
+    reRead: (content) => [
+      resolveImageTextCell(content, 0).focusSource.focusX,
+      content.images[0].focusX,
+    ],
   },
   {
     key: 'focusY',
     value: 80,
     inRender: (html) => /object-position:\d+% 80%/.test(html),
-    reRead: (content) => [resolveImageTextCell(content, 0).focusSource.focusY, content.images[0].focusY],
+    reRead: (content) => [
+      resolveImageTextCell(content, 0).focusSource.focusY,
+      content.images[0].focusY,
+    ],
   },
 ];
 
@@ -82,13 +98,25 @@ for (const field of IMAGE_REF_FIELDS) {
     // Render reflects it.
     assert.ok(
       field.inRender(render(content), field.value),
-      `render reflects images[0].${field.key} = ${field.value}`
+      `render reflects images[0].${field.key} = ${field.value}`,
     );
     // Both editor read seams re-read the same value.
     const [resolved, rawItem] = field.reRead(content);
-    assert.equal(resolved, field.value, `resolveImageTextCell re-reads ${field.key}`);
-    assert.equal(rawItem, field.value, `the raw item (grid seed) re-reads ${field.key}`);
-    assert.equal(resolved, rawItem, `${field.key}: the two read seams agree (no drift)`);
+    assert.equal(
+      resolved,
+      field.value,
+      `resolveImageTextCell re-reads ${field.key}`,
+    );
+    assert.equal(
+      rawItem,
+      field.value,
+      `the raw item (grid seed) re-reads ${field.key}`,
+    );
+    assert.equal(
+      resolved,
+      rawItem,
+      `${field.key}: the two read seams agree (no drift)`,
+    );
   });
 }
 
@@ -139,26 +167,42 @@ test('migration: a default base fit is dropped, never stamped onto the items', (
   // imageFit equal to the type default carries no information: the fold drops
   // the field and leaves every item fit empty, so the empty-means-follow-the-
   // type signal survives and a future default change still reaches this deck.
-  const content = slide({ layout: 'duo', imageFit: 'cover', images: [{ src: '/a.png' }, { src: '/b.png' }] });
+  const content = slide({
+    layout: 'duo',
+    imageFit: 'cover',
+    images: [{ src: '/a.png' }, { src: '/b.png' }],
+  });
   const before = render(structuredClone(content));
   ensureImageTextImages(content);
   assert.equal(content.imageFit, '');
   assert.equal(content.images[0].fit ?? '', '');
   assert.equal(content.images[1].fit ?? '', '');
-  assert.equal(render(content), before, 'render-identical (both resolve to the default)');
+  assert.equal(
+    render(content),
+    before,
+    'render-identical (both resolve to the default)',
+  );
 });
 
 test('migration: a deviating base fit fans out to every item without its own fit', () => {
   const content = slide({
     layout: 'duo',
     imageFit: 'contain',
-    images: [{ src: '/a.png' }, { src: '/b.png', fit: 'cover' }, { src: '/extra.png' }],
+    images: [
+      { src: '/a.png' },
+      { src: '/b.png', fit: 'cover' },
+      { src: '/extra.png' },
+    ],
   });
   const before = render(structuredClone(content));
   ensureImageTextImages(content);
   assert.equal(content.imageFit, '');
   assert.equal(content.images[0].fit, 'contain');
-  assert.equal(content.images[1].fit, 'cover', 'an item fit is never clobbered');
+  assert.equal(
+    content.images[1].fit,
+    'cover',
+    'an item fit is never clobbered',
+  );
   // The remembered extra beyond the duo cell count keeps its look too, so
   // switching to a 3-image row later still renders it contained.
   assert.equal(content.images[2].fit, 'contain');
@@ -169,7 +213,11 @@ test('migration: single-cell deviating base fit is render-neutral (the old doubl
   // Pre-unification this was the shape a blind fan-out would double-pad
   // (slide contain via `.media` padding + item contain via `.frame` padding).
   // With one frame-based mechanism the fold is byte-identical.
-  const content = slide({ layout: 'split', imageFit: 'contain', images: [{ src: '/a.png' }] });
+  const content = slide({
+    layout: 'split',
+    imageFit: 'contain',
+    images: [{ src: '/a.png' }],
+  });
   const before = render(structuredClone(content));
   ensureImageTextImages(content);
   assert.equal(content.images[0].fit, 'contain');
@@ -181,19 +229,41 @@ test('migration fixes the display-baseline bug: the grid seed becomes canonical'
   // Before: images[0] carries no focus, so the inspector focus grid (which
   // seeds from the raw item) would show centre, while the render used the
   // slide-level 25/75 - the grid showed the wrong crop start.
-  const content = slide({ layout: 'split', images: [{ src: '/x.png' }], focusX: 25, focusY: 75 });
-  assert.equal(content.images[0].focusX ?? '', '', 'grid seed is empty before migration (the bug)');
-  assert.equal(resolveImageTextCell(content, 0).focusSource.focusX, 25, 'render used the slide fallback');
+  const content = slide({
+    layout: 'split',
+    images: [{ src: '/x.png' }],
+    focusX: 25,
+    focusY: 75,
+  });
+  assert.equal(
+    content.images[0].focusX ?? '',
+    '',
+    'grid seed is empty before migration (the bug)',
+  );
+  assert.equal(
+    resolveImageTextCell(content, 0).focusSource.focusX,
+    25,
+    'render used the slide fallback',
+  );
 
   ensureImageTextImages(content);
 
   // After: the grid seed equals the rendered crop point.
-  assert.equal(content.images[0].focusX, 25, 'grid seed is now the canonical value');
+  assert.equal(
+    content.images[0].focusX,
+    25,
+    'grid seed is now the canonical value',
+  );
   assert.equal(resolveImageTextCell(content, 0).focusSource.focusX, 25);
 });
 
 test('migration preserves the alt-translation fallback (altNl/altEn untouched)', () => {
-  const content = slide({ layout: 'split', images: [{ src: '/x.png' }], altNl: 'NL alt', altEn: 'EN alt' });
+  const content = slide({
+    layout: 'split',
+    images: [{ src: '/x.png' }],
+    altNl: 'NL alt',
+    altEn: 'EN alt',
+  });
   ensureImageTextImages(content);
   // altNl/altEn are a read fallback we keep; the item alt stays empty so the
   // legacy per-language alt still resolves for cell 0.
@@ -211,8 +281,16 @@ test('migration does not clobber an existing item alt/focus with the slide value
     focusY: 75,
   });
   ensureImageTextImages(content);
-  assert.equal(content.images[0].alt, 'Own alt', 'the item alt wins, not overwritten');
-  assert.equal(content.images[0].focusX, 90, 'the item focus wins, not overwritten');
+  assert.equal(
+    content.images[0].alt,
+    'Own alt',
+    'the item alt wins, not overwritten',
+  );
+  assert.equal(
+    content.images[0].focusX,
+    90,
+    'the item focus wins, not overwritten',
+  );
 });
 
 // ---- Fit class snapshots: the unified, frame-based mechanism (step 2b) ------
@@ -229,7 +307,10 @@ test('migration does not clobber an existing item alt/focus with the slide value
  */
 const fitClasses = (content) => {
   const html = render(content);
-  const container = (html.match(/is-image-(?:cover|contain)/g) || []).slice(0, 1);
+  const container = (html.match(/is-image-(?:cover|contain)/g) || []).slice(
+    0,
+    1,
+  );
   const frames = html.match(/frame(?: is-fit-(?:cover|contain))?/g) || [];
   return { container: container[0] || null, frames };
 };
@@ -237,30 +318,62 @@ const fitClasses = (content) => {
 test('fit class snapshot: single-cell base fit rides the frame, no container class', () => {
   // split + slide-level contain: the frame carries the effective fit; the
   // container carries no fit class at all (the old `.media` mechanism is gone).
-  assert.deepEqual(fitClasses(slide({ layout: 'split', imageFit: 'contain', images: [{ src: '/a.png' }] })), {
-    container: null,
-    frames: ['frame is-fit-contain'],
-  });
-  assert.deepEqual(fitClasses(slide({ layout: 'split', imageFit: 'cover', images: [{ src: '/a.png' }] })), {
-    container: null,
-    frames: ['frame is-fit-cover'],
-  });
+  assert.deepEqual(
+    fitClasses(
+      slide({
+        layout: 'split',
+        imageFit: 'contain',
+        images: [{ src: '/a.png' }],
+      }),
+    ),
+    {
+      container: null,
+      frames: ['frame is-fit-contain'],
+    },
+  );
+  assert.deepEqual(
+    fitClasses(
+      slide({
+        layout: 'split',
+        imageFit: 'cover',
+        images: [{ src: '/a.png' }],
+      }),
+    ),
+    {
+      container: null,
+      frames: ['frame is-fit-cover'],
+    },
+  );
 });
 
 test('fit class snapshot: a per-image override renders identically to a slide base', () => {
   // split + per-image contain: byte-for-byte the same fit classes as the
   // slide-level contain above - the render no longer betrays the record level,
   // which is exactly what makes the step-2b fan-out render-neutral.
-  assert.deepEqual(fitClasses(slide({ layout: 'split', images: [{ src: '/a.png', fit: 'contain' }] })), {
-    container: null,
-    frames: ['frame is-fit-contain'],
-  });
+  assert.deepEqual(
+    fitClasses(
+      slide({ layout: 'split', images: [{ src: '/a.png', fit: 'contain' }] }),
+    ),
+    {
+      container: null,
+      frames: ['frame is-fit-contain'],
+    },
+  );
 });
 
 test('fit class snapshot: multi-cell base fit lands on every frame', () => {
   assert.deepEqual(
-    fitClasses(slide({ layout: 'duo', imageFit: 'contain', images: [{ src: '/a.png' }, { src: '/b.png' }] })),
-    { container: null, frames: ['frame is-fit-contain', 'frame is-fit-contain'] }
+    fitClasses(
+      slide({
+        layout: 'duo',
+        imageFit: 'contain',
+        images: [{ src: '/a.png' }, { src: '/b.png' }],
+      }),
+    ),
+    {
+      container: null,
+      frames: ['frame is-fit-contain', 'frame is-fit-contain'],
+    },
   );
 });
 
@@ -271,8 +384,8 @@ test('fit class snapshot: multi-cell with a per-image cover override deviates on
         layout: 'duo',
         imageFit: 'contain',
         images: [{ src: '/a.png' }, { src: '/b.png', fit: 'cover' }],
-      })
+      }),
     ),
-    { container: null, frames: ['frame is-fit-contain', 'frame is-fit-cover'] }
+    { container: null, frames: ['frame is-fit-contain', 'frame is-fit-cover'] },
   );
 });

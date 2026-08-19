@@ -1,6 +1,9 @@
 import { debugLog } from '../../lib/util/debug.js';
 import { t } from '../../lib/ui-i18n.js';
-import { createSSEConnection, LONG_LIVED_STREAM } from '../../lib/net/sse-connection.js';
+import {
+  createSSEConnection,
+  LONG_LIVED_STREAM,
+} from '../../lib/net/sse-connection.js';
 
 export function createNotesQaController({
   api,
@@ -21,12 +24,19 @@ export function createNotesQaController({
     qaBody.innerHTML = '';
     const q = Array.isArray(questions) ? questions : [];
     if (!q.length) {
-      qaBody.append(h('div', { class: 'help', text: t('qa.noQuestions', 'No questions (yet).') }));
+      qaBody.append(
+        h('div', {
+          class: 'help',
+          text: t('qa.noQuestions', 'No questions (yet).'),
+        }),
+      );
       return;
     }
     for (const item of q) {
       const qid = String(item?.id || '').trim();
-      const originalText = String(item?.original?.text || item?.text || '').trim();
+      const originalText = String(
+        item?.original?.text || item?.text || '',
+      ).trim();
       const isPromoted = String(item?.status || '') === 'promoted';
 
       // Questions are not auto-translated (for now). Always show original text.
@@ -85,7 +95,7 @@ export function createNotesQaController({
             h('div', {
               class: 'help notes-qa-pill',
               text: t('qa.addedToDeck', 'Added to deck'),
-            })
+            }),
           );
         } else {
           const addNextBtn = h('button', {
@@ -97,7 +107,7 @@ export function createNotesQaController({
               try {
                 await api(
                   `/api/moderate/${encodeURIComponent(
-                    presId
+                    presId,
                   )}/questions/${encodeURIComponent(qid)}/promote`,
                   {
                     method: 'POST',
@@ -105,10 +115,12 @@ export function createNotesQaController({
                       position: 'next',
                       afterSlideIndex,
                     }),
-                  }
+                  },
                 );
                 flashHint?.(t('qa.addedToDeck', 'Added to deck.'));
-                refresh().catch((e) => debugLog('[notes][qa] refresh after promote failed', e));
+                refresh().catch((e) =>
+                  debugLog('[notes][qa] refresh after promote failed', e),
+                );
               } catch (e) {
                 addNextBtn.disabled = false;
                 flashHint?.(t('qa.addFailed', 'Failed to add.'));
@@ -125,15 +137,17 @@ export function createNotesQaController({
               try {
                 await api(
                   `/api/moderate/${encodeURIComponent(
-                    presId
+                    presId,
                   )}/questions/${encodeURIComponent(qid)}/promote`,
                   {
                     method: 'POST',
                     body: JSON.stringify({ position: 'end' }),
-                  }
+                  },
                 );
                 flashHint?.(t('qa.addedToDeck', 'Added to deck.'));
-                refresh().catch((e) => debugLog('[notes][qa] refresh after promote failed', e));
+                refresh().catch((e) =>
+                  debugLog('[notes][qa] refresh after promote failed', e),
+                );
               } catch (e) {
                 addEndBtn.disabled = false;
                 flashHint?.(t('qa.addFailed', 'Failed to add.'));
@@ -156,9 +170,9 @@ export function createNotesQaController({
             try {
               await api(
                 `/api/moderate/${encodeURIComponent(
-                  presId
+                  presId,
                 )}/questions/${encodeURIComponent(qid)}/remove`,
-                { method: 'POST', body: JSON.stringify({}) }
+                { method: 'POST', body: JSON.stringify({}) },
               );
             } catch {
               removeBtn.disabled = false;
@@ -177,7 +191,9 @@ export function createNotesQaController({
   const refresh = async () => {
     try {
       const presId = getPresentationId?.() || '';
-      const resp = await api(`/api/follow/${encodeURIComponent(presId)}/questions`);
+      const resp = await api(
+        `/api/follow/${encodeURIComponent(presId)}/questions`,
+      );
       qaEnabled = resp?.capabilities ? !!resp.capabilities.canUseQa : true;
       qaWrap.style.display = qaEnabled ? '' : 'none';
       questions =
@@ -213,7 +229,10 @@ export function createNotesQaController({
               questions = Array.isArray(data?.questions) ? data.questions : [];
               renderQuestions();
             } catch (e) {
-              debugLog('[notes][qa] bad questions event', { data: ev?.data, e });
+              debugLog('[notes][qa] bad questions event', {
+                data: ev?.data,
+                e,
+              });
             }
             break;
           }

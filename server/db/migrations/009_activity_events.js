@@ -13,16 +13,16 @@ export const up = async (db) => {
     .createTable('activity_events')
     .ifNotExists()
     .addColumn('id', 'uuid', (col) =>
-      col.primaryKey().defaultTo(sql`gen_random_uuid()`)
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
     )
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade')
+      col.references('organizations.id').onDelete('cascade'),
     )
     .addColumn('event_type', 'varchar(50)', (col) => col.notNull())
     .addColumn('entity_type', 'varchar(30)', (col) => col.notNull())
     .addColumn('entity_id', 'uuid', (col) => col.notNull())
     .addColumn('presentation_id', 'uuid', (col) =>
-      col.references('presentations.id').onDelete('cascade')
+      col.references('presentations.id').onDelete('cascade'),
     )
     .addColumn('actor_email', 'varchar(320)', (col) => col.notNull())
     .addColumn('actor_name', 'varchar(255)')
@@ -64,16 +64,18 @@ export const up = async (db) => {
     .createTable('user_event_reads')
     .ifNotExists()
     .addColumn('id', 'uuid', (col) =>
-      col.primaryKey().defaultTo(sql`gen_random_uuid()`)
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
     )
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade')
+      col.references('organizations.id').onDelete('cascade'),
     )
     .addColumn('user_email', 'varchar(320)', (col) => col.notNull())
     .addColumn('last_read_event_id', 'uuid', (col) =>
-      col.references('activity_events.id').onDelete('set null')
+      col.references('activity_events.id').onDelete('set null'),
     )
-    .addColumn('last_read_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
+    .addColumn('last_read_at', 'timestamptz', (col) =>
+      col.defaultTo(sql`now()`),
+    )
     .execute();
 
   // Unique constraint for one read-marker per user per org
@@ -89,14 +91,14 @@ export const up = async (db) => {
     .createTable('notification_queue')
     .ifNotExists()
     .addColumn('id', 'uuid', (col) =>
-      col.primaryKey().defaultTo(sql`gen_random_uuid()`)
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
     )
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade')
+      col.references('organizations.id').onDelete('cascade'),
     )
     .addColumn('recipient_email', 'varchar(320)', (col) => col.notNull())
     .addColumn('event_id', 'uuid', (col) =>
-      col.references('activity_events.id').onDelete('cascade')
+      col.references('activity_events.id').onDelete('cascade'),
     )
     .addColumn('channel', 'varchar(20)', (col) => col.notNull())
     .addColumn('status', 'varchar(20)', (col) => col.defaultTo('pending'))
@@ -123,13 +125,25 @@ export const up = async (db) => {
 
 export const down = async (db) => {
   // Drop indexes first
-  await db.schema.dropIndex('idx_notification_queue_recipient').ifExists().execute();
-  await db.schema.dropIndex('idx_notification_queue_pending').ifExists().execute();
+  await db.schema
+    .dropIndex('idx_notification_queue_recipient')
+    .ifExists()
+    .execute();
+  await db.schema
+    .dropIndex('idx_notification_queue_pending')
+    .ifExists()
+    .execute();
   await db.schema.dropIndex('idx_user_event_reads_unique').ifExists().execute();
   await db.schema.dropIndex('idx_activity_events_actor').ifExists().execute();
   await db.schema.dropIndex('idx_activity_events_type').ifExists().execute();
-  await db.schema.dropIndex('idx_activity_events_presentation').ifExists().execute();
-  await db.schema.dropIndex('idx_activity_events_org_created').ifExists().execute();
+  await db.schema
+    .dropIndex('idx_activity_events_presentation')
+    .ifExists()
+    .execute();
+  await db.schema
+    .dropIndex('idx_activity_events_org_created')
+    .ifExists()
+    .execute();
 
   // Drop tables
   await db.schema.dropTable('notification_queue').ifExists().execute();

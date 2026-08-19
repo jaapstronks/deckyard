@@ -50,7 +50,7 @@ function translateLabelRightEl({ h, pres, onTranslateField, slideId, key }) {
     title: t(
       'editor.translateField.fromTitle',
       'Fill this field with a translation of the {lang} value (previewed first): “{value}”',
-      { lang: langLabel, value: preview }
+      { lang: langLabel, value: preview },
     ),
     onclick: async () => {
       try {
@@ -67,7 +67,9 @@ function translateLabelRightEl({ h, pres, onTranslateField, slideId, key }) {
 // to `title` (see editor-utils.js slideLabel) — so exactly those two keys can
 // change it, whatever the type.
 function affectsLabelForSlide({ def, fieldKey }) {
-  return fieldKey === 'title' || (!!def?.labelField && fieldKey === def.labelField);
+  return (
+    fieldKey === 'title' || (!!def?.labelField && fieldKey === def.labelField)
+  );
 }
 
 export function createRenderField({
@@ -129,7 +131,7 @@ export function createRenderField({
           class: 'help',
           text: t(
             'editor.chart.editDataHelp',
-            'Opens the data editor with a live chart preview.'
+            'Opens the data editor with a live chart preview.',
           ),
         }),
       ]);
@@ -181,7 +183,7 @@ export function createRenderField({
           markDirty?.();
           scheduleUiRefresh?.();
         },
-        {}
+        {},
       );
     }
     if (editor === 'card-link') {
@@ -195,7 +197,7 @@ export function createRenderField({
         },
         help: t(
           'editor.cards.linkHelp2',
-          'Makes the card clickable. Pick a slide to jump to, or type an https:// / mailto: link (opens in a new tab).'
+          'Makes the card clickable. Pick a slide to jump to, or type an https:// / mailto: link (opens in a new tab).',
         ),
       });
     }
@@ -224,18 +226,21 @@ export function createRenderField({
       const isAltField =
         field.key === 'alt' ||
         field.key === 'bgAlt' ||
-        String(field.key || '').toLowerCase().endsWith('alt');
+        String(field.key || '')
+          .toLowerCase()
+          .endsWith('alt');
       const helpText =
         typeof field.helpText === 'string' && field.helpText.trim()
           ? t(field.helpTextKey || field.key + '.help', field.helpText)
           : isAltField
             ? t(
                 'editor.alt.help',
-                "Describe what's important in the image (not the slide title). Aim for ~120–180 characters."
+                "Describe what's important in the image (not the slide title). Aim for ~120–180 characters.",
               )
             : '';
       const helpCopyExample =
-        typeof field.helpCopyExample === 'string' && field.helpCopyExample.trim()
+        typeof field.helpCopyExample === 'string' &&
+        field.helpCopyExample.trim()
           ? field.helpCopyExample
           : '';
       const labelRightEl = translateLabelRightEl({
@@ -260,7 +265,7 @@ export function createRenderField({
           labelRightEl,
           helpText,
           helpCopyExample,
-        }
+        },
       );
     }
 
@@ -280,7 +285,7 @@ export function createRenderField({
         slide.content[field.key] || '',
         t(
           'editor.markdown.help',
-          'Supports paragraphs, lists, bold/italic, links, and markdown tables.'
+          'Supports paragraphs, lists, bold/italic, links, and markdown tables.',
         ),
         (v) => {
           slide.content[field.key] = v;
@@ -292,7 +297,7 @@ export function createRenderField({
           required: !!field.required,
           labelRightEl,
           showHeading,
-        }
+        },
       );
     }
 
@@ -319,7 +324,7 @@ export function createRenderField({
         readOnly
           ? t(
               'editor.code.readOnly',
-              'Read-only. You do not have permission to edit raw HTML/CSS.'
+              'Read-only. You do not have permission to edit raw HTML/CSS.',
             )
           : helpText,
         (v) => {
@@ -331,7 +336,7 @@ export function createRenderField({
           maxLength: field.maxLength,
           required: !!field.required,
           readOnly,
-        }
+        },
       );
     }
 
@@ -356,7 +361,7 @@ export function createRenderField({
           max: field.max,
           step: field.step,
           helpText,
-        }
+        },
       );
     }
 
@@ -384,9 +389,10 @@ export function createRenderField({
       // clears the field, only a deviating choice is written. So a later
       // change to the default still reaches decks that never overrode it.
       const typeDefault = def?.defaults?.[field.key] === true;
-      const current = typeof slide.content[field.key] === 'boolean'
-        ? slide.content[field.key]
-        : typeDefault;
+      const current =
+        typeof slide.content[field.key] === 'boolean'
+          ? slide.content[field.key]
+          : typeDefault;
       return fieldEnum(
         {
           key: field.key,
@@ -403,7 +409,7 @@ export function createRenderField({
           markDirty?.();
           if (visibilityDrivers.has(field.key)) rerenderEditor?.();
           scheduleUiRefresh?.();
-        }
+        },
       );
     }
 
@@ -423,7 +429,11 @@ export function createRenderField({
         // Auto-fit: for image-slide and image-text-slide, detect aspect ratio mismatch
         // and automatically switch to contain/fit mode if the image would be heavily cropped.
         // Only apply when setting a new image (not clearing), and only for the main 'image' field.
-        if (url && field.key === 'image' && (slide.type === 'image-slide' || slide.type === 'image-text-slide')) {
+        if (
+          url &&
+          field.key === 'image' &&
+          (slide.type === 'image-slide' || slide.type === 'image-text-slide')
+        ) {
           getRecommendedImageFit(url)
             .then(({ shouldContain }) => {
               if (shouldContain) {
@@ -433,14 +443,20 @@ export function createRenderField({
                   // layout beyond the old default 'full').
                   const c = slide.content;
                   const explicit =
-                    c.fit === 'cover' || c.fit === 'contain' ||
+                    c.fit === 'cover' ||
+                    c.fit === 'contain' ||
                     (c.layout && c.layout !== 'full');
                   if (!explicit) {
                     c.fit = 'contain';
-                    debugLog('[auto-fit] Switched image-slide to contain fit due to aspect ratio mismatch');
+                    debugLog(
+                      '[auto-fit] Switched image-slide to contain fit due to aspect ratio mismatch',
+                    );
                     toast.info(
-                      t('editor.autoFit.applied', 'Switched to "Fit (no crop)" to show your full image. You can change this in Layout.'),
-                      { id: 'auto-fit-toast' }
+                      t(
+                        'editor.autoFit.applied',
+                        'Switched to "Fit (no crop)" to show your full image. You can change this in Layout.',
+                      ),
+                      { id: 'auto-fit-toast' },
                     );
                     markDirty?.();
                     rerenderEditor?.();
@@ -452,16 +468,24 @@ export function createRenderField({
                   // This path fires from the legacy flat `image` field, so the
                   // image may not be migrated into images[0] yet - then write
                   // the legacy slide-level fit, which the next edit folds in.
-                  const items = Array.isArray(slide.content.images) ? slide.content.images : [];
-                  const item0 = items[0] && typeof items[0] === 'object' ? items[0] : null;
+                  const items = Array.isArray(slide.content.images)
+                    ? slide.content.images
+                    : [];
+                  const item0 =
+                    items[0] && typeof items[0] === 'object' ? items[0] : null;
                   const currentFit = item0?.fit || slide.content.imageFit;
                   if (!currentFit || currentFit === 'cover') {
                     if (item0) item0.fit = 'contain';
                     else slide.content.imageFit = 'contain';
-                    debugLog('[auto-fit] Switched image-text-slide to contain fit due to aspect ratio mismatch');
+                    debugLog(
+                      '[auto-fit] Switched image-text-slide to contain fit due to aspect ratio mismatch',
+                    );
                     toast.info(
-                      t('editor.autoFit.applied', 'Switched to "Fit (no crop)" to show your full image. You can change this in Layout options.'),
-                      { id: 'auto-fit-toast' }
+                      t(
+                        'editor.autoFit.applied',
+                        'Switched to "Fit (no crop)" to show your full image. You can change this in Layout options.',
+                      ),
+                      { id: 'auto-fit-toast' },
                     );
                     markDirty?.();
                     rerenderEditor?.();
@@ -491,7 +515,7 @@ export function createRenderField({
           slide.content[field.key] = arr;
           markDirty?.();
           scheduleUiRefresh?.();
-        }
+        },
       );
     }
 
@@ -511,7 +535,7 @@ export function createRenderField({
           markDirty?.();
           scheduleUiRefresh?.();
         },
-        { helpText }
+        { helpText },
       );
     }
 

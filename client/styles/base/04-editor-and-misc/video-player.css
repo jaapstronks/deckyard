@@ -1,11 +1,7 @@
 body {
   font-family: Arial, sans-serif;
   margin: 0;
-  background: linear-gradient(
-    to bottom right,
-    #2d5752,
-    #18221f
-  );
+  background: linear-gradient(to bottom right, #2d5752, #18221f);
   min-height: 100vh;
   color: #ffffff;
 }
@@ -246,7 +242,9 @@ body {
   gap: var(--ps-space-2-5);
   flex-wrap: wrap;
   overflow: hidden;
-  transition: max-height 0.3s ease, opacity 0.3s ease;
+  transition:
+    max-height 0.3s ease,
+    opacity 0.3s ease;
 }
 
 .chapters-list.collapsed {

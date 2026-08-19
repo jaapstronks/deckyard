@@ -34,7 +34,9 @@ export function createCommentActions({
       await commentsApi.resolveComment(commentId);
       loadComments();
     } catch (err) {
-      toast?.error?.(t('comments.error.resolveFailed', 'Failed to resolve comment'));
+      toast?.error?.(
+        t('comments.error.resolveFailed', 'Failed to resolve comment'),
+      );
     }
   }
 
@@ -46,7 +48,9 @@ export function createCommentActions({
       await commentsApi.reopenComment(commentId);
       loadComments();
     } catch (err) {
-      toast?.error?.(t('comments.error.reopenFailed', 'Failed to reopen comment'));
+      toast?.error?.(
+        t('comments.error.reopenFailed', 'Failed to reopen comment'),
+      );
     }
   }
 
@@ -54,17 +58,22 @@ export function createCommentActions({
    * Delete a comment.
    */
   async function deleteComment(commentId) {
-    if (!(await confirmModal(h, document.body, {
-      title: t('comments.delete', 'Delete'),
-      message: t('comments.deleteConfirm', 'Delete this comment?'),
-      confirmLabel: t('comments.delete', 'Delete'),
-      danger: true,
-    }))) return;
+    if (
+      !(await confirmModal(h, document.body, {
+        title: t('comments.delete', 'Delete'),
+        message: t('comments.deleteConfirm', 'Delete this comment?'),
+        confirmLabel: t('comments.delete', 'Delete'),
+        danger: true,
+      }))
+    )
+      return;
     try {
       await commentsApi.deleteComment(commentId);
       loadComments();
     } catch (err) {
-      toast?.error?.(t('comments.error.deleteFailed', 'Failed to delete comment'));
+      toast?.error?.(
+        t('comments.error.deleteFailed', 'Failed to delete comment'),
+      );
     }
   }
 
@@ -73,13 +82,18 @@ export function createCommentActions({
    */
   async function dismissComment(commentId) {
     try {
-      await api(`/api/presentations/${presentationId}/comments/${commentId}/dismiss`, {
-        method: 'POST',
-      });
+      await api(
+        `/api/presentations/${presentationId}/comments/${commentId}/dismiss`,
+        {
+          method: 'POST',
+        },
+      );
       loadComments();
       toast?.success?.(t('comments.dismissed', 'Suggestion dismissed'));
     } catch (err) {
-      toast?.error?.(t('comments.error.dismissFailed', 'Failed to dismiss suggestion'));
+      toast?.error?.(
+        t('comments.error.dismissFailed', 'Failed to dismiss suggestion'),
+      );
     }
   }
 
@@ -88,23 +102,29 @@ export function createCommentActions({
    */
   async function applySuggestion(comment) {
     try {
-      const result = await api(`/api/presentations/${presentationId}/comments/${comment.id}/apply`, {
-        method: 'POST',
-      });
+      const result = await api(
+        `/api/presentations/${presentationId}/comments/${comment.id}/apply`,
+        {
+          method: 'POST',
+        },
+      );
 
       if (result.ok) {
         loadComments();
-        toast?.success?.(t('comments.slideAdded', 'New slide added after slide {num}', {
-          num: String(result.originalSlideIndex + 1),
-        }));
+        toast?.success?.(
+          t('comments.slideAdded', 'New slide added after slide {num}', {
+            num: String(result.originalSlideIndex + 1),
+          }),
+        );
 
         // Show follow-up prompt to delete original slide
         const slideNum = result.originalSlideIndex + 1;
         const shouldDelete = await confirmModal(h, document.body, {
           title: t('comments.deleteOriginal', 'Delete original slide'),
-          message: t('comments.deleteOriginalPrompt',
+          message: t(
+            'comments.deleteOriginalPrompt',
             'New slide added. Do you want to delete the original slide {num}?',
-            { num: String(slideNum) }
+            { num: String(slideNum) },
           ),
           confirmLabel: t('common.delete', 'Delete'),
           danger: true,
@@ -112,15 +132,21 @@ export function createCommentActions({
 
         if (shouldDelete && result.originalSlideId) {
           // Delete the original slide
-          const slideIndex = pres.slides?.findIndex(s => s?.id === result.originalSlideId);
+          const slideIndex = pres.slides?.findIndex(
+            (s) => s?.id === result.originalSlideId,
+          );
           if (slideIndex >= 0) {
             pres.slides.splice(slideIndex, 1);
-            toast?.success?.(t('comments.originalDeleted', 'Original slide deleted'));
+            toast?.success?.(
+              t('comments.originalDeleted', 'Original slide deleted'),
+            );
           }
         }
       }
     } catch (err) {
-      toast?.error?.(t('comments.error.applyFailed', 'Failed to apply suggestion'));
+      toast?.error?.(
+        t('comments.error.applyFailed', 'Failed to apply suggestion'),
+      );
     }
   }
 

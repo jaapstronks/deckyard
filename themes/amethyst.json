@@ -21,12 +21,7 @@
       "nl": "Lila"
     }
   },
-  "brandColors": [
-    "#5b21b6",
-    "#7c3aed",
-    "#a78bfa",
-    "#c4b5fd"
-  ],
+  "brandColors": ["#5b21b6", "#7c3aed", "#a78bfa", "#c4b5fd"],
   "gradient": {
     "enabled": false
   },

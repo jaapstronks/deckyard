@@ -4,7 +4,12 @@
  */
 
 import { escapeHtml } from '../../../shared/slide-types/helpers.js';
-import { EMAIL_STYLES, emailButton, emailWrapper, troubleClickingFooter } from './helpers.js';
+import {
+  EMAIL_STYLES,
+  emailButton,
+  emailWrapper,
+  troubleClickingFooter,
+} from './helpers.js';
 
 // ============================================================
 // COMMENT NOTIFICATION TEMPLATE
@@ -28,16 +33,31 @@ export function buildCommentNotificationEmail({
 
   // Mention is the most specific flavor and wins over reply/created.
   const bodyText = isMention
-    ? tr('email.commentNotification.body.mention', 'mentioned you in a comment on')
+    ? tr(
+        'email.commentNotification.body.mention',
+        'mentioned you in a comment on',
+      )
     : isReply
       ? tr('email.commentNotification.body.reply', 'replied to your comment on')
-      : tr('email.commentNotification.body.new', 'commented on your presentation');
+      : tr(
+          'email.commentNotification.body.new',
+          'commented on your presentation',
+        );
 
   const footerText = isMention
-    ? tr('email.commentNotification.footer.mention', 'This notification was sent because you were mentioned in a comment.')
+    ? tr(
+        'email.commentNotification.footer.mention',
+        'This notification was sent because you were mentioned in a comment.',
+      )
     : isOwner
-      ? tr('email.commentNotification.footer.owner', 'This notification was sent because you own this presentation.')
-      : tr('email.commentNotification.footer.commenter', 'This notification was sent because you commented on this presentation.');
+      ? tr(
+          'email.commentNotification.footer.owner',
+          'This notification was sent because you own this presentation.',
+        )
+      : tr(
+          'email.commentNotification.footer.commenter',
+          'This notification was sent because you commented on this presentation.',
+        );
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -122,15 +142,23 @@ export function buildLeadNotificationEmail({
     footerText = resolvedFields.footer;
   } else if (tr) {
     greeting = tr('email.common.greetingAnonymous', 'Hi there,');
-    bodyText = tr('email.leadNotification.body', 'A new lead was captured from your presentation <strong>{presTitle}</strong>:', { presTitle });
+    bodyText = tr(
+      'email.leadNotification.body',
+      'A new lead was captured from your presentation <strong>{presTitle}</strong>:',
+      { presTitle },
+    );
     buttonLabel = tr('email.leadNotification.button', 'View All Leads');
-    footerText = tr('email.leadNotification.footer', 'You received this notification because you have lead email notifications enabled.');
+    footerText = tr(
+      'email.leadNotification.footer',
+      'You received this notification because you have lead email notifications enabled.',
+    );
   } else {
     // Fallback defaults
     greeting = 'Hi there,';
     bodyText = `A new lead was captured from your presentation <strong>${escapeHtml(presTitle)}</strong>:`;
     buttonLabel = 'View All Leads';
-    footerText = 'You received this notification because you have lead email notifications enabled.';
+    footerText =
+      'You received this notification because you have lead email notifications enabled.';
   }
 
   const formattedDate = submittedAt
@@ -212,16 +240,16 @@ export function buildDataRequestEmail({ tr, verifyUrl }) {
   const greeting = tr('email.common.greetingAnonymous', 'Hi there,');
   const bodyText = tr(
     'email.dataRequest.body',
-    'We received a request to access the personal data collected about this email address. Click the button below to view it:'
+    'We received a request to access the personal data collected about this email address. Click the button below to view it:',
   );
   const buttonLabel = tr('email.dataRequest.button', 'View my data');
   const expiryText = tr(
     'email.dataRequest.expiry',
-    'This link expires in 15 minutes. From that page you can also erase the data.'
+    'This link expires in 15 minutes. From that page you can also erase the data.',
   );
   const safeToIgnore = tr(
     'email.common.safeToIgnore',
-    "If you didn't request this, you can safely ignore this email."
+    "If you didn't request this, you can safely ignore this email.",
   );
 
   const htmlContent = emailWrapper({

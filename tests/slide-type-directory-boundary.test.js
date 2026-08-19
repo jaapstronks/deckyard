@@ -33,8 +33,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 const TYPES_DIR = path.join(repoRoot, 'shared', 'slide-types', 'types');
 
 /**
@@ -49,7 +51,11 @@ const CORE_FILES = ['index.js', 'render.js'];
 
 /** The browser's entry into the slide-type registry. */
 const CLIENT_RENDER_ENTRY = path.join(
-  repoRoot, 'client', 'lib', 'slide-runtime', 'slide-render.js'
+  repoRoot,
+  'client',
+  'lib',
+  'slide-runtime',
+  'slide-render.js',
 );
 
 /**
@@ -69,7 +75,7 @@ function directoryTypes() {
 /** The subset whose definition module has moved in as well. */
 function definitionTypes() {
   return directoryTypes().filter((name) =>
-    fs.existsSync(path.join(TYPES_DIR, name, 'index.js'))
+    fs.existsSync(path.join(TYPES_DIR, name, 'index.js')),
   );
 }
 
@@ -141,7 +147,7 @@ describe('slide-type directory form', () => {
     // starts moving directories around.
     assert.ok(
       TYPE_NAMES.length > 0,
-      `no slide-type directories found under ${path.relative(repoRoot, TYPES_DIR)}`
+      `no slide-type directories found under ${path.relative(repoRoot, TYPES_DIR)}`,
     );
   });
 
@@ -153,7 +159,7 @@ describe('slide-type directory form', () => {
     for (const name of TYPE_NAMES) {
       assert.ok(
         Object.prototype.hasOwnProperty.call(SLIDE_TYPES, name),
-        `directory types/${name}/ does not match a registered slide type`
+        `directory types/${name}/ does not match a registered slide type`,
       );
     }
   });
@@ -168,14 +174,14 @@ describe('the isomorphic core reaches nothing sideways', () => {
       it(`${name}/${core} imports no companion`, () => {
         const specs = importSpecifiers(fs.readFileSync(file, 'utf8'));
         const offenders = specs.filter((s) =>
-          COMPANION_FILES.some((c) => s.endsWith(`/${c}`) || s === `./${c}`)
+          COMPANION_FILES.some((c) => s.endsWith(`/${c}`) || s === `./${c}`),
         );
         assert.deepStrictEqual(
           offenders,
           [],
           `${name}/${core} imports ${offenders.join(', ')}. The core is what the ` +
             'browser loads to render a slide; companions are imported by their own ' +
-            'consumer. See docs/reference/slide-type-directory.md.'
+            'consumer. See docs/reference/slide-type-directory.md.',
         );
       });
     }
@@ -191,13 +197,13 @@ describe('the client render path stays clear of the server-only layer', () => {
     // types whose definition has moved into the directory: a companion-only
     // directory has no index.js for the walk to reach.
     const found = DEFINITION_NAMES.filter((n) =>
-      reachable.has(path.join(TYPES_DIR, n, 'index.js'))
+      reachable.has(path.join(TYPES_DIR, n, 'index.js')),
     );
     assert.deepStrictEqual(
       found,
       DEFINITION_NAMES,
       'the module-graph walk did not reach every directory type from ' +
-        `${rel(CLIENT_RENDER_ENTRY)} — the check below would be vacuous`
+        `${rel(CLIENT_RENDER_ENTRY)} — the check below would be vacuous`,
     );
   });
 
@@ -210,14 +216,18 @@ describe('the client render path stays clear of the server-only layer', () => {
     // easy to get wrong: it sits next to registry.js, and registry.js *is* on
     // the render path.
     const leaked = [...reachable]
-      .filter((f) => f.startsWith(TYPES_DIR + path.sep) && path.basename(f) === 'authoring.js')
+      .filter(
+        (f) =>
+          f.startsWith(TYPES_DIR + path.sep) &&
+          path.basename(f) === 'authoring.js',
+      )
       .map(rel)
       .sort();
     assert.deepStrictEqual(
       leaked,
       [],
-      'a type\'s authoring.js is reachable from the client render entry — the ' +
-        'registry must never import shared/slide-types/authoring.js.'
+      "a type's authoring.js is reachable from the client render entry — the " +
+        'registry must never import shared/slide-types/authoring.js.',
     );
   });
 
@@ -230,27 +240,34 @@ describe('the client render path stays clear of the server-only layer', () => {
     // (shared/slide-types/inline-edit.js) is the same footgun as authoring's: it
     // sits in shared/, one careless import from registry.js away from the payload.
     const leaked = [...reachable]
-      .filter((f) => f.startsWith(TYPES_DIR + path.sep) && path.basename(f) === 'inline-edit.js')
+      .filter(
+        (f) =>
+          f.startsWith(TYPES_DIR + path.sep) &&
+          path.basename(f) === 'inline-edit.js',
+      )
       .map(rel)
       .sort();
     assert.deepStrictEqual(
       leaked,
       [],
-      'a type\'s inline-edit.js is reachable from the client render entry — the ' +
-        'registry must never import shared/slide-types/inline-edit.js.'
+      "a type's inline-edit.js is reachable from the client render entry — the " +
+        'registry must never import shared/slide-types/inline-edit.js.',
     );
   });
 
   it('no ai.js is reachable from the browser render entry', () => {
     const leaked = [...reachable]
-      .filter((f) => f.startsWith(TYPES_DIR + path.sep) && path.basename(f) === 'ai.js')
+      .filter(
+        (f) =>
+          f.startsWith(TYPES_DIR + path.sep) && path.basename(f) === 'ai.js',
+      )
       .map(rel)
       .sort();
     assert.deepStrictEqual(
       leaked,
       [],
       'a server-only ai.js is reachable from the client render entry, so the ' +
-        'browser now downloads editorial prose it never executes.'
+        'browser now downloads editorial prose it never executes.',
     );
   });
 
@@ -258,28 +275,42 @@ describe('the client render path stays clear of the server-only layer', () => {
     const importers = [];
     const walk = (dir) => {
       for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-        if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
+        if (entry.name === 'node_modules' || entry.name.startsWith('.'))
+          continue;
         const abs = path.join(dir, entry.name);
-        if (entry.isDirectory()) { walk(abs); continue; }
+        if (entry.isDirectory()) {
+          walk(abs);
+          continue;
+        }
         if (!entry.name.endsWith('.js')) continue;
         const specs = importSpecifiers(fs.readFileSync(abs, 'utf8'));
         if (!specs.some((s) => s.endsWith('/ai.js'))) continue;
         const resolved = specs
           .map((s) => resolveSpecifier(abs, s))
-          .filter((f) => f && f.startsWith(TYPES_DIR + path.sep) && path.basename(f) === 'ai.js');
+          .filter(
+            (f) =>
+              f &&
+              f.startsWith(TYPES_DIR + path.sep) &&
+              path.basename(f) === 'ai.js',
+          );
         if (resolved.length) importers.push(rel(abs));
       }
     };
     for (const dir of ['client', 'server', 'shared', 'scripts']) {
       walk(path.join(repoRoot, dir));
     }
-    const outsideServer = importers.filter((f) => !f.startsWith('server/')).sort();
+    const outsideServer = importers
+      .filter((f) => !f.startsWith('server/'))
+      .sort();
     assert.deepStrictEqual(
       outsideServer,
       [],
       'ai.js may only be imported from server/ — it is the one companion whose ' +
-        'weight the client must never pay.'
+        'weight the client must never pay.',
     );
-    assert.ok(importers.length > 0, 'nothing imports ai.js; the check is vacuous');
+    assert.ok(
+      importers.length > 0,
+      'nothing imports ai.js; the check is vacuous',
+    );
   });
 });

@@ -26,8 +26,15 @@ import {
   readStaleThumbnail,
   requestThumbnailGeneration,
 } from '../../../render/deck-thumbnail.js';
-import { scheduleThumbnailWarm, warmOnSaveEnabled } from '../../../render/thumbnail-warm-queue.js';
-import { methodNotAllowed, notFound, unauthorized } from '../../../utils/http.js';
+import {
+  scheduleThumbnailWarm,
+  warmOnSaveEnabled,
+} from '../../../render/thumbnail-warm-queue.js';
+import {
+  methodNotAllowed,
+  notFound,
+  unauthorized,
+} from '../../../utils/http.js';
 
 /**
  * Warm the deck-grid thumbnail cache for a presentation (fire-and-forget).
@@ -55,7 +62,13 @@ export async function warmDeckThumbnail(scope, pres) {
     if (!slide || typeof slide !== 'object') return;
     const theme = await loadThemeAssets(scope.repoRoot, pres?.theme);
     const slideTypes = await buildMergedSlideTypes(scope);
-    await requestThumbnailGeneration(scope.repoRoot, pres, slide, theme, slideTypes);
+    await requestThumbnailGeneration(
+      scope.repoRoot,
+      pres,
+      slide,
+      theme,
+      slideTypes,
+    );
   } catch {
     // best-effort: the on-demand route regenerates on next request
   }
@@ -84,12 +97,14 @@ export function scheduleDeckThumbnailWarm({ scope, before, after } = {}) {
   const id = after?.id;
   if (!id) return false;
   if (firstSlideSignature(before) === firstSlideSignature(after)) return false;
-  return scheduleThumbnailWarm(String(id), () => warmDeckThumbnail(scope, after));
+  return scheduleThumbnailWarm(String(id), () =>
+    warmDeckThumbnail(scope, after),
+  );
 }
 
 export async function handlePresentationThumbnail(
   { repoRoot, storageScope, req, res, authedUser } = {},
-  presentationId
+  presentationId,
 ) {
   if (req.method !== 'GET' && req.method !== 'HEAD') {
     return methodNotAllowed(res, ['GET']);
@@ -100,9 +115,11 @@ export async function handlePresentationThumbnail(
 
   const collaboratorPermission = await getCollaboratorPermission(
     presentationId,
-    authedUser?.email
+    authedUser?.email,
   );
-  if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission })) {
+  if (
+    !canReadPresentation({ user: authedUser, pres, collaboratorPermission })
+  ) {
     return unauthorized(res);
   }
 

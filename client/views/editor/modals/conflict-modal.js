@@ -1,6 +1,9 @@
 import { formatDateTime } from '../../../lib/format/format.js';
 import { createModal } from '../../../lib/dom/modal.js';
-import { copyToClipboard, showCopyFallbackModal } from '../../../lib/util/clipboard.js';
+import {
+  copyToClipboard,
+  showCopyFallbackModal,
+} from '../../../lib/util/clipboard.js';
 import { t } from '../../../lib/ui-i18n.js';
 
 function safeString(v) {
@@ -19,7 +22,7 @@ async function copyText(text) {
   if (!ok) {
     showCopyFallbackModal(
       str,
-      t('editor.conflict.copyPrompt', 'Copy your version (Ctrl/Cmd+C)')
+      t('editor.conflict.copyPrompt', 'Copy your version (Ctrl/Cmd+C)'),
     );
   }
   return true;
@@ -43,25 +46,17 @@ export function openConflictModal({
           'editor.conflict.hint',
           'This presentation was saved by {who}{whenPart}.',
           {
-            who:
-              who ||
-              t(
-                'editor.conflict.someoneElse',
-                'someone else'
-              ),
+            who: who || t('editor.conflict.someoneElse', 'someone else'),
             whenPart: when ? ` (${when})` : '',
-          }
+          },
         )
       : t(
           'editor.conflict.hintFallback',
-          'This presentation was saved by someone else.'
+          'This presentation was saved by someone else.',
         );
 
   const modal = createModal(h, {
-    title: t(
-      'editor.conflict.title',
-      'Could not save (conflict)'
-    ),
+    title: t('editor.conflict.title', 'Could not save (conflict)'),
     hint: hintText,
   });
 
@@ -70,27 +65,21 @@ export function openConflictModal({
     style: 'margin-bottom: 16px;',
     text: t(
       'editor.conflict.help',
-      "Reload to get the latest version. If you're worried about losing your changes: copy your version as JSON first."
+      "Reload to get the latest version. If you're worried about losing your changes: copy your version as JSON first.",
     ),
   });
 
   const row = h('div', { class: 'row is-wrap' });
   const btnCopy = h('button', {
     class: 'btn btn-secondary',
-    text: t(
-      'editor.conflict.copyMine',
-      'Copy my version (JSON)'
-    ),
+    text: t('editor.conflict.copyMine', 'Copy my version (JSON)'),
     onclick: async () => {
-      const ok = await copyText(
-        JSON.stringify(pres, null, 2)
-      );
-      if (ok)
-        btnCopy.textContent = t('common.copied', 'Copied');
+      const ok = await copyText(JSON.stringify(pres, null, 2));
+      if (ok) btnCopy.textContent = t('common.copied', 'Copied');
       setTimeout(() => {
         btnCopy.textContent = t(
           'editor.conflict.copyMine',
-          'Copy my version (JSON)'
+          'Copy my version (JSON)',
         );
       }, 1600);
     },

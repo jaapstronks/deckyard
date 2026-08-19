@@ -26,11 +26,7 @@ import { attachSwipeNavigation } from '../../lib/dom/swipe-nav.js';
  * @param {{ user?: object }} [opts]
  * @returns {Promise<() => void>} cleanup function.
  */
-export async function renderNotes(
-  root,
-  sessionId,
-  { user } = {}
-) {
+export async function renderNotes(root, sessionId, { user } = {}) {
   // Lock page to avoid sideways scroll on mobile.
   document.documentElement.classList.add('is-notes');
 
@@ -63,9 +59,7 @@ export async function renderNotes(
     virtualWidth: 1600,
   });
 
-  const sess = await api(
-    `/api/live-sessions/${sessionId}/state`
-  );
+  const sess = await api(`/api/live-sessions/${sessionId}/state`);
   // The deck comes from the session-scoped endpoint, not
   // `GET /api/presentations/:id`: the companion is authorized by the session id
   // in its join link and may have no account at all, so it must never depend on
@@ -78,8 +72,7 @@ export async function renderNotes(
   title.textContent = pres.title || t('notes.speakerNotes', 'Speaker notes');
 
   let follow = true;
-  let presenterSlideIndex =
-    Number(sess.slideIndex || 0) || 0;
+  let presenterSlideIndex = Number(sess.slideIndex || 0) || 0;
   let viewSlideIndex = presenterSlideIndex;
   let controlEnabled = !!sess.controlEnabled;
 
@@ -89,7 +82,11 @@ export async function renderNotes(
     presenterHint.hidden = false;
     setTimeout(() => {
       if (!follow)
-        presenterHint.textContent = t('notes.presenterOnSlide', 'Presenter is on slide {n}.', { n: presenterSlideIndex + 1 });
+        presenterHint.textContent = t(
+          'notes.presenterOnSlide',
+          'Presenter is on slide {n}.',
+          { n: presenterSlideIndex + 1 },
+        );
       else presenterHint.hidden = true;
     }, 2400);
   };
@@ -136,11 +133,7 @@ export async function renderNotes(
 
   const render = () => {
     const slides = Array.isArray(pres?.slides) ? pres.slides : [];
-    const idx = clamp(
-      viewSlideIndex,
-      0,
-      Math.max(0, slides.length - 1)
-    );
+    const idx = clamp(viewSlideIndex, 0, Math.max(0, slides.length - 1));
     viewSlideIndex = idx;
     const slide = slides[idx];
 
@@ -154,10 +147,14 @@ export async function renderNotes(
         presentationId: pres?.id,
       });
       nextPreviewWrap.classList.remove('is-empty');
-      nextLabel.textContent = t('notes.upNextSlideOf', 'Up next · Slide {current} / {total}', {
-        current: idx + 2,
-        total: slides.length,
-      });
+      nextLabel.textContent = t(
+        'notes.upNextSlideOf',
+        'Up next · Slide {current} / {total}',
+        {
+          current: idx + 2,
+          total: slides.length,
+        },
+      );
     } else {
       cleanupSlideRuntimes(nextPreviewWrap);
       nextPreviewWrap.innerHTML = '';
@@ -166,7 +163,7 @@ export async function renderNotes(
         h('div', {
           class: 'help thumb-overlay is-muted',
           text: t('notes.endOfDeck', 'End of deck'),
-        })
+        }),
       );
       nextLabel.textContent = t('notes.upNext', 'Up next');
     }
@@ -175,14 +172,25 @@ export async function renderNotes(
     // holds the visitor's buffer when they are typing.
     notesEditor.setSlide(slide || null);
 
-    notesTitle.textContent = t('notes.notesSlideOf', 'Notes · Slide {current} / {total}', {
+    notesTitle.textContent = t(
+      'notes.notesSlideOf',
+      'Notes · Slide {current} / {total}',
+      {
+        current: idx + 1,
+        total: slides.length,
+      },
+    );
+    previewMeta.textContent = t('notes.slideOf', 'Slide {current} / {total}', {
       current: idx + 1,
       total: slides.length,
     });
-    previewMeta.textContent = t('notes.slideOf', 'Slide {current} / {total}', { current: idx + 1, total: slides.length });
 
     if (!follow) {
-      presenterHint.textContent = t('notes.presenterOnSlide', 'Presenter is on slide {n}.', { n: presenterSlideIndex + 1 });
+      presenterHint.textContent = t(
+        'notes.presenterOnSlide',
+        'Presenter is on slide {n}.',
+        { n: presenterSlideIndex + 1 },
+      );
       presenterHint.hidden = false;
     }
   };
@@ -193,10 +201,8 @@ export async function renderNotes(
     render();
   };
 
-  previewPrevBtn.onclick = () =>
-    localGo(viewSlideIndex - 1, { detach: true });
-  previewNextBtn.onclick = () =>
-    localGo(viewSlideIndex + 1, { detach: true });
+  previewPrevBtn.onclick = () => localGo(viewSlideIndex - 1, { detach: true });
+  previewNextBtn.onclick = () => localGo(viewSlideIndex + 1, { detach: true });
 
   refollowBtn.onclick = () => {
     viewSlideIndex = presenterSlideIndex;
@@ -234,7 +240,11 @@ export async function renderNotes(
         setFollow(true);
         render();
       } else {
-        presenterHint.textContent = t('notes.presenterOnSlide', 'Presenter is on slide {n}.', { n: presenterSlideIndex + 1 });
+        presenterHint.textContent = t(
+          'notes.presenterOnSlide',
+          'Presenter is on slide {n}.',
+          { n: presenterSlideIndex + 1 },
+        );
         presenterHint.hidden = false;
       }
     },
@@ -247,7 +257,10 @@ export async function renderNotes(
     },
     onStatus: ({ kind }) => {
       if (kind === 'error' && !follow) {
-        presenterHint.textContent = t('notes.connectionLost', 'Connection lost (reconnecting...)');
+        presenterHint.textContent = t(
+          'notes.connectionLost',
+          'Connection lost (reconnecting...)',
+        );
         presenterHint.hidden = false;
       }
     },

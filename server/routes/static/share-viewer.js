@@ -26,13 +26,19 @@ export async function handleShareLink({ repoRoot, req, res, url, clientDir }) {
   let ogHeadHtml = '';
   try {
     const shareLink = await getShareLinkByToken(
-      crossOrganizationScope(repoRoot, 'share link: the share token is the authorization'),
-      token
+      crossOrganizationScope(
+        repoRoot,
+        'share link: the share token is the authorization',
+      ),
+      token,
     );
     if (shareLink?.presentationId) {
       const pres = await getPresentation(
-        crossOrganizationScope(repoRoot, 'share link: the share token is the authorization'),
-        shareLink.presentationId
+        crossOrganizationScope(
+          repoRoot,
+          'share link: the share token is the authorization',
+        ),
+        shareLink.presentationId,
       );
       if (pres) {
         const proto =
@@ -44,14 +50,14 @@ export async function handleShareLink({ repoRoot, req, res, url, clientDir }) {
         const canonicalUrl = new URL(url.pathname, origin).href;
         const ogImageAbs = new URL(
           '/assets/images/slides-previewimage.png',
-          origin
+          origin,
         ).href;
 
         const title = escapeHtml(pres.title || 'Presentation');
         const rawDesc =
           typeof pres?.description === 'string' ? pres.description.trim() : '';
         const description = escapeHtml(
-          rawDesc || `Bekijk de presentatie "${pres.title || 'Presentation'}".`
+          rawDesc || `Bekijk de presentatie "${pres.title || 'Presentation'}".`,
         );
 
         ogHeadHtml = `
@@ -90,7 +96,7 @@ export async function handleShareLink({ repoRoot, req, res, url, clientDir }) {
     // Remove existing Open Graph tags
     html = html.replace(
       /<!-- Open Graph -->[\s\S]*?<!-- Twitter -->/i,
-      '<!-- Open Graph -->\n  <!-- Twitter -->'
+      '<!-- Open Graph -->\n  <!-- Twitter -->',
     );
     html = html.replace(/<meta property="og:[^"]*"[^>]*>/gi, '');
     // Remove existing Twitter tags

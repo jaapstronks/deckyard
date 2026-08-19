@@ -56,7 +56,9 @@ function now() {
  * @returns {string}
  */
 function normalizeActorId(v) {
-  return String(v || '').trim().slice(0, MAX_AUTHOR_ID_LENGTH);
+  return String(v || '')
+    .trim()
+    .slice(0, MAX_AUTHOR_ID_LENGTH);
 }
 
 function normalizeText(v) {
@@ -66,7 +68,9 @@ function normalizeText(v) {
 }
 
 function normalizeName(v) {
-  const s = String(v || '').replace(/\s+/g, ' ').trim();
+  const s = String(v || '')
+    .replace(/\s+/g, ' ')
+    .trim();
   return s.slice(0, 60);
 }
 
@@ -77,7 +81,8 @@ function normalizeName(v) {
  */
 function toMillis(value) {
   if (!value) return 0;
-  const ms = value instanceof Date ? value.getTime() : new Date(value).getTime();
+  const ms =
+    value instanceof Date ? value.getTime() : new Date(value).getTime();
   return Number.isFinite(ms) ? ms : 0;
 }
 
@@ -178,7 +183,8 @@ function broadcast(sessionId, event, data) {
   const reg = sseSessions.get(String(sessionId || ''));
   if (!reg) return;
   // Serialize once for all clients; sseWrite passes strings through as-is.
-  const payload = data == null || typeof data === 'string' ? data : JSON.stringify(data);
+  const payload =
+    data == null || typeof data === 'string' ? data : JSON.stringify(data);
   for (const res of Array.from(reg.clients)) {
     try {
       sseWrite(res, { event, data: payload });
@@ -201,7 +207,9 @@ function broadcast(sessionId, event, data) {
 function broadcastQuestions(scope, sessionId) {
   if (!sseSessions.has(String(sessionId || ''))) return;
   listQuestions(scope, sessionId)
-    .then((questions) => broadcast(sessionId, 'questions', { questions: questions || [] }))
+    .then((questions) =>
+      broadcast(sessionId, 'questions', { questions: questions || [] }),
+    )
     .catch(() => {});
 }
 
@@ -245,7 +253,12 @@ export async function getQuestion(scope, sessionId, questionId) {
  * @returns {Promise<Array<object>|null>} Null when the session id is empty.
  */
 export async function listQuestions(scope, sessionId) {
-  toStorageContext(scope, 'listQuestions', {}, { allowCrossOrganization: true });
+  toStorageContext(
+    scope,
+    'listQuestions',
+    {},
+    { allowCrossOrganization: true },
+  );
   const sid = String(sessionId || '').trim();
   if (!sid) return null;
 
@@ -274,9 +287,14 @@ export async function listQuestions(scope, sessionId) {
 export async function createQuestion(
   scope,
   sessionId,
-  { authorId, authorName, text, originalLang } = {}
+  { authorId, authorName, text, originalLang } = {},
 ) {
-  toStorageContext(scope, 'createQuestion', {}, { allowCrossOrganization: true });
+  toStorageContext(
+    scope,
+    'createQuestion',
+    {},
+    { allowCrossOrganization: true },
+  );
   const sid = String(sessionId || '').trim();
   const a = normalizeActorId(authorId);
   const n = normalizeName(authorName);
@@ -326,8 +344,17 @@ export async function createQuestion(
  * @param {object} [opts]
  * @returns {Promise<{ok: true, upvotes: number}|{ok: false, reason: string}>}
  */
-export async function upvoteQuestion(scope, sessionId, { questionId, voterId } = {}) {
-  toStorageContext(scope, 'upvoteQuestion', {}, { allowCrossOrganization: true });
+export async function upvoteQuestion(
+  scope,
+  sessionId,
+  { questionId, voterId } = {},
+) {
+  toStorageContext(
+    scope,
+    'upvoteQuestion',
+    {},
+    { allowCrossOrganization: true },
+  );
   const sid = String(sessionId || '').trim();
   const qid = String(questionId || '').trim();
   const vid = normalizeActorId(voterId);
@@ -337,7 +364,8 @@ export async function upvoteQuestion(scope, sessionId, { questionId, voterId } =
   const q = await getQuestion(scope, sid, qid);
   if (!q) return { ok: false, reason: 'not_found' };
   if (q.status === 'promoted') return { ok: false, reason: 'locked' };
-  if (!ACTIVE_STATUSES.includes(q.status)) return { ok: false, reason: 'inactive' };
+  if (!ACTIVE_STATUSES.includes(q.status))
+    return { ok: false, reason: 'inactive' };
   if (q.authorId === vid) return { ok: false, reason: 'own_question' };
 
   const upvotes = await withDbGuard(null, async (db) => {
@@ -389,8 +417,17 @@ async function transitionQuestion(sessionId, questionId, set) {
  * @param {object} [opts]
  * @returns {Promise<{ok: boolean, reason?: string}>}
  */
-export async function cancelQuestion(scope, sessionId, { questionId, authorId } = {}) {
-  toStorageContext(scope, 'cancelQuestion', {}, { allowCrossOrganization: true });
+export async function cancelQuestion(
+  scope,
+  sessionId,
+  { questionId, authorId } = {},
+) {
+  toStorageContext(
+    scope,
+    'cancelQuestion',
+    {},
+    { allowCrossOrganization: true },
+  );
   const sid = String(sessionId || '').trim();
   const qid = String(questionId || '').trim();
   const aid = normalizeActorId(authorId);
@@ -401,7 +438,8 @@ export async function cancelQuestion(scope, sessionId, { questionId, authorId } 
   if (!q) return { ok: false, reason: 'not_found' };
   if (q.status === 'promoted') return { ok: false, reason: 'locked' };
   if (q.authorId !== aid) return { ok: false, reason: 'forbidden' };
-  if (!ACTIVE_STATUSES.includes(q.status)) return { ok: false, reason: 'inactive' };
+  if (!ACTIVE_STATUSES.includes(q.status))
+    return { ok: false, reason: 'inactive' };
 
   const changed = await transitionQuestion(sid, qid, {
     status: 'cancelled',
@@ -421,7 +459,11 @@ export async function cancelQuestion(scope, sessionId, { questionId, authorId } 
  * @param {object} [opts]
  * @returns {Promise<{ok: boolean, reason?: string}>}
  */
-export async function removeQuestion(scope, sessionId, { questionId, removedBy } = {}) {
+export async function removeQuestion(
+  scope,
+  sessionId,
+  { questionId, removedBy } = {},
+) {
   toStorageContext(scope, 'removeQuestion');
   const sid = String(sessionId || '').trim();
   const qid = String(questionId || '').trim();
@@ -430,12 +472,15 @@ export async function removeQuestion(scope, sessionId, { questionId, removedBy }
   const q = await getQuestion(scope, sid, qid);
   if (!q) return { ok: false, reason: 'not_found' };
   if (q.status === 'promoted') return { ok: false, reason: 'locked' };
-  if (!ACTIVE_STATUSES.includes(q.status)) return { ok: false, reason: 'inactive' };
+  if (!ACTIVE_STATUSES.includes(q.status))
+    return { ok: false, reason: 'inactive' };
 
   const changed = await transitionQuestion(sid, qid, {
     status: 'removed',
     removed_at: new Date(),
-    removed_by: String(removedBy || '').trim().slice(0, 320),
+    removed_by: String(removedBy || '')
+      .trim()
+      .slice(0, 320),
   });
   if (!changed) return { ok: false, reason: 'inactive' };
 
@@ -455,7 +500,7 @@ export async function removeQuestion(scope, sessionId, { questionId, removedBy }
 export async function promoteQuestion(
   scope,
   sessionId,
-  { questionId, slideId, promotedBy } = {}
+  { questionId, slideId, promotedBy } = {},
 ) {
   toStorageContext(scope, 'promoteQuestion');
   const sid = String(sessionId || '').trim();
@@ -465,13 +510,16 @@ export async function promoteQuestion(
   const q = await getQuestion(scope, sid, qid);
   if (!q) return { ok: false, reason: 'not_found' };
   if (q.status === 'promoted') return { ok: true, already: true };
-  if (!ACTIVE_STATUSES.includes(q.status)) return { ok: false, reason: 'inactive' };
+  if (!ACTIVE_STATUSES.includes(q.status))
+    return { ok: false, reason: 'inactive' };
 
   const changed = await transitionQuestion(sid, qid, {
     status: 'promoted',
     promoted_at: new Date(),
     promoted_slide_id: String(slideId || '').trim(),
-    promoted_by: String(promotedBy || '').trim().slice(0, 320),
+    promoted_by: String(promotedBy || '')
+      .trim()
+      .slice(0, 320),
   });
   if (!changed) return { ok: false, reason: 'inactive' };
 
@@ -489,7 +537,12 @@ export async function promoteQuestion(
  * @returns {Promise<(() => void)|null>} A detach function, or null for an empty id.
  */
 export async function attachQuestionsSseClient(scope, sessionId, res) {
-  toStorageContext(scope, 'attachQuestionsSseClient', {}, { allowCrossOrganization: true });
+  toStorageContext(
+    scope,
+    'attachQuestionsSseClient',
+    {},
+    { allowCrossOrganization: true },
+  );
   const sid = String(sessionId || '').trim();
   if (!sid) return null;
 

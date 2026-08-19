@@ -78,11 +78,25 @@ const CHECKS = [
     file: 'server/storage/slide-library/index.js',
     forbidden: [
       { label: 'shelf option/field spelled scope (use shelf)', re: /\bscope:/ },
-      { label: 'item.scope / opts.scope shelf read (use .shelf)', re: /\.scope\b/ },
-      { label: "WHERE on a 'scope' column (use 'shelf')", re: /where\('scope'/ },
-      { label: 'shelf mapped as scope (use shelf: row.shelf)', re: /scope:\s*row\.scope/ },
+      {
+        label: 'item.scope / opts.scope shelf read (use .shelf)',
+        re: /\.scope\b/,
+      },
+      {
+        label: "WHERE on a 'scope' column (use 'shelf')",
+        re: /where\('scope'/,
+      },
+      {
+        label: 'shelf mapped as scope (use shelf: row.shelf)',
+        re: /scope:\s*row\.scope/,
+      },
     ],
-    required: [/shelf:\s*'organization'/, /shelf:\s*'personal'/, /where\('shelf'/, /shelf:\s*row\.shelf/],
+    required: [
+      /shelf:\s*'organization'/,
+      /shelf:\s*'personal'/,
+      /where\('shelf'/,
+      /shelf:\s*row\.shelf/,
+    ],
   },
   {
     // B79/D34 folded both the Kysely queries and the row mapper here from the
@@ -92,37 +106,76 @@ const CHECKS = [
     file: 'server/storage/collections/index.js',
     forbidden: [
       { label: 'shelf option/field spelled scope (use shelf)', re: /\bscope:/ },
-      { label: 'existing.scope / item.scope shelf read (use .shelf)', re: /\.scope\b/ },
-      { label: "WHERE on a 'scope' column (use 'shelf')", re: /where\('scope'/ },
-      { label: 'shelf mapped as scope (use shelf: row.shelf)', re: /scope:\s*row\.scope/ },
+      {
+        label: 'existing.scope / item.scope shelf read (use .shelf)',
+        re: /\.scope\b/,
+      },
+      {
+        label: "WHERE on a 'scope' column (use 'shelf')",
+        re: /where\('scope'/,
+      },
+      {
+        label: 'shelf mapped as scope (use shelf: row.shelf)',
+        re: /scope:\s*row\.scope/,
+      },
     ],
-    required: [/shelf:\s*'organization'/, /shelf:\s*'personal'/, /where\('shelf'/, /shelf:\s*row\.shelf/],
+    required: [
+      /shelf:\s*'organization'/,
+      /shelf:\s*'personal'/,
+      /where\('shelf'/,
+      /shelf:\s*row\.shelf/,
+    ],
   },
   // ─── internal API route segments: /team became /organization ─────────────
   {
     file: 'server/routes/api/slide-library.js',
-    forbidden: [{ label: 'old /slide-library/team route segment (use /organization)', re: /slide-library[/\\]+team\b/ }],
+    forbidden: [
+      {
+        label: 'old /slide-library/team route segment (use /organization)',
+        re: /slide-library[/\\]+team\b/,
+      },
+    ],
     required: [/slide-library[/\\]+organization\b/],
   },
   {
     file: 'server/routes/api/slide-collections.js',
-    forbidden: [{ label: 'old /slide-collections/team route segment (use /organization)', re: /slide-collections[/\\]+team\b/ }],
+    forbidden: [
+      {
+        label: 'old /slide-collections/team route segment (use /organization)',
+        re: /slide-collections[/\\]+team\b/,
+      },
+    ],
     required: [/slide-collections[/\\]+organization\b/],
   },
   // ─── client shelf-axis modules: fully renamed, so a blanket scan holds ────
   {
     file: 'client/lib/slide-library/state.js',
-    forbidden: [{ label: 'scope-as-shelf in the library state module (use shelf)', re: /scope/i }],
+    forbidden: [
+      {
+        label: 'scope-as-shelf in the library state module (use shelf)',
+        re: /scope/i,
+      },
+    ],
     required: [/\bshelf\b/, /organization/],
   },
   {
     file: 'client/lib/slide-library/api.js',
-    forbidden: [{ label: 'scope-as-shelf in the library api module (use shelf)', re: /scope/i }],
+    forbidden: [
+      {
+        label: 'scope-as-shelf in the library api module (use shelf)',
+        re: /scope/i,
+      },
+    ],
     required: [/\bshelf\b/],
   },
   {
     file: 'client/lib/slide-collections/api.js',
-    forbidden: [{ label: 'scope-as-shelf in the collections api module (use shelf)', re: /scope/i }],
+    forbidden: [
+      {
+        label: 'scope-as-shelf in the collections api module (use shelf)',
+        re: /scope/i,
+      },
+    ],
     required: [/\bshelf\b/, /organization/],
   },
 ];
@@ -130,17 +183,20 @@ const CHECKS = [
 test('shelf vocabulary: the slide-library/collections axis is `shelf`, never scope', () => {
   const violations = [];
   for (const { file, forbidden = [] } of CHECKS) {
-    const lines = fs.readFileSync(path.join(repoRoot, file), 'utf8').split('\n');
+    const lines = fs
+      .readFileSync(path.join(repoRoot, file), 'utf8')
+      .split('\n');
     lines.forEach((line, i) => {
       for (const { label, re } of forbidden) {
-        if (re.test(line)) violations.push(`${file}:${i + 1}  [${label}]  ${line.trim()}`);
+        if (re.test(line))
+          violations.push(`${file}:${i + 1}  [${label}]  ${line.trim()}`);
       }
     });
   }
   assert.equal(
     violations.length,
     0,
-    `One word per meaning (docs/reference/vocabulary.md):\n  ${violations.join('\n  ')}`
+    `One word per meaning (docs/reference/vocabulary.md):\n  ${violations.join('\n  ')}`,
   );
 });
 
@@ -148,7 +204,10 @@ test('the canonical `shelf` spelling is present on every renamed surface', () =>
   for (const { file, required = [] } of CHECKS) {
     const text = fs.readFileSync(path.join(repoRoot, file), 'utf8');
     for (const re of required) {
-      assert.ok(re.test(text), `${file} must carry the canonical shelf spelling (${re})`);
+      assert.ok(
+        re.test(text),
+        `${file} must carry the canonical shelf spelling (${re})`,
+      );
     }
   }
 });
@@ -168,16 +227,35 @@ const DOC_PROSE = {
     'collab-research.md',
   ]),
   forbidden: [
-    { label: 'team library/shelf (the shared shelf is the organization shelf)', re: /\bteam[- ](librar(y|ies)|shelf|shelves)\b/i },
-    { label: 'team slides/collections (say organization-shelf)', re: /\bteam[- ](slides?|collections?)\b/i },
-    { label: 'team-scope (the axis is shelf; the value is organization)', re: /\bteam[- ]scoped?\b/i },
-    { label: "the 'personal | team' value pair (use 'personal' | 'organization')", re: /personal['"`]?\s*\|\s*['"`]?team\b/i },
-    { label: 'scope-as-shelf value (the field is shelf)', re: /\bscope:\s*['"`]?(personal|team)\b/i },
+    {
+      label: 'team library/shelf (the shared shelf is the organization shelf)',
+      re: /\bteam[- ](librar(y|ies)|shelf|shelves)\b/i,
+    },
+    {
+      label: 'team slides/collections (say organization-shelf)',
+      re: /\bteam[- ](slides?|collections?)\b/i,
+    },
+    {
+      label: 'team-scope (the axis is shelf; the value is organization)',
+      re: /\bteam[- ]scoped?\b/i,
+    },
+    {
+      label:
+        "the 'personal | team' value pair (use 'personal' | 'organization')",
+      re: /personal['"`]?\s*\|\s*['"`]?team\b/i,
+    },
+    {
+      label: 'scope-as-shelf value (the field is shelf)',
+      re: /\bscope:\s*['"`]?(personal|team)\b/i,
+    },
     // The /api/ anchor this needle used to carry is gone: B90 renamed the
     // bulk-export ZIP entry to `slide-library/organization.json`, so nothing
     // legitimate spells `slide-library/team` any more — route segment and
     // archive entry alike.
-    { label: 'old slide-library/team or slide-collections/team path', re: /slide-(library|collections)\/team\b/ },
+    {
+      label: 'old slide-library/team or slide-collections/team path',
+      re: /slide-(library|collections)\/team\b/,
+    },
   ],
 };
 
@@ -188,7 +266,8 @@ function referenceDocs() {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) walk(full);
-      else if (entry.name.endsWith('.md') && !DOC_PROSE.exempt.has(entry.name)) out.push(full);
+      else if (entry.name.endsWith('.md') && !DOC_PROSE.exempt.has(entry.name))
+        out.push(full);
     }
   })(abs);
   return out;
@@ -201,21 +280,25 @@ test('shelf vocabulary: reference prose says shelf/organization, never team-as-s
     const lines = fs.readFileSync(file, 'utf8').split('\n');
     lines.forEach((line, i) => {
       for (const { label, re } of DOC_PROSE.forbidden) {
-        if (re.test(line)) violations.push(`${rel}:${i + 1}  [${label}]  ${line.trim()}`);
+        if (re.test(line))
+          violations.push(`${rel}:${i + 1}  [${label}]  ${line.trim()}`);
       }
     });
   }
   assert.equal(
     violations.length,
     0,
-    `One word per meaning (docs/reference/vocabulary.md):\n  ${violations.join('\n  ')}`
+    `One word per meaning (docs/reference/vocabulary.md):\n  ${violations.join('\n  ')}`,
   );
 });
 
 test('the doc-prose exemptions still exist, so the list cannot rot', () => {
   for (const name of DOC_PROSE.exempt) {
     const abs = path.join(repoRoot, DOC_PROSE.dir, name);
-    assert.ok(fs.existsSync(abs), `${DOC_PROSE.dir}/${name} is exempt but no longer exists`);
+    assert.ok(
+      fs.existsSync(abs),
+      `${DOC_PROSE.dir}/${name} is exempt but no longer exists`,
+    );
   }
 });
 
@@ -247,27 +330,35 @@ const CODE_IDENTIFIERS = {
       label: 'shelf route handler named handleTeam* (use handleOrganization*)',
       re: /\bhandleTeam(List|Create|Get|Update|Delete)\b/,
     },
-    { label: 'teamMutateGuard (use organizationMutateGuard)', re: /\bteamMutateGuard\b/ },
     {
-      label: 'team-shelf response field (use organization / organizationSlides)',
+      label: 'teamMutateGuard (use organizationMutateGuard)',
+      re: /\bteamMutateGuard\b/,
+    },
+    {
+      label:
+        'team-shelf response field (use organization / organizationSlides)',
       re: /\bteamSlides\b|\bcollections[?]?\.team\b/,
     },
     {
-      label: 'two-shelf pair shape { personal, team } (use { personal, organization })',
+      label:
+        'two-shelf pair shape { personal, team } (use { personal, organization })',
       re: /[[{]\s*personal,\s*team\s*[\]}]/,
     },
     {
-      label: 'bulk-export ZIP entry slide-library/team.json (use organization.json)',
+      label:
+        'bulk-export ZIP entry slide-library/team.json (use organization.json)',
       re: /slide-library\/team\.json/,
     },
     {
-      label: 'teamSlideLibraryItems manifest stat (use organizationSlideLibraryItems)',
+      label:
+        'teamSlideLibraryItems manifest stat (use organizationSlideLibraryItems)',
       re: /\bteamSlideLibraryItems\b/,
     },
     // B92: the webhook surface — a stored settings key plus a public payload
     // contract, which is why it needed migration 077 rather than a rename.
     {
-      label: 'shelf webhook key/event spelled *TeamLibrary* (use *OrganizationLibrary*)',
+      label:
+        'shelf webhook key/event spelled *TeamLibrary* (use *OrganizationLibrary*)',
       re: /\bslideAddedToTeamLibrary(Url)?\b|slide\.added_to_team_library/,
     },
   ],
@@ -280,7 +371,8 @@ function sourceFiles() {
       for (const entry of fs.readdirSync(abs, { withFileTypes: true })) {
         const full = path.join(abs, entry.name);
         if (entry.isDirectory()) {
-          if (!CODE_IDENTIFIERS.exemptDirs.has(path.relative(repoRoot, full))) walk(full);
+          if (!CODE_IDENTIFIERS.exemptDirs.has(path.relative(repoRoot, full)))
+            walk(full);
         } else if (entry.name.endsWith('.js')) {
           const rel = path.relative(repoRoot, full).split(path.sep).join('/');
           if (!CODE_IDENTIFIERS.exempt.has(rel)) out.push(full);
@@ -298,21 +390,28 @@ test('shelf vocabulary: identifiers say Organization, never Team (B90)', () => {
     const lines = fs.readFileSync(file, 'utf8').split('\n');
     lines.forEach((line, i) => {
       for (const { label, re } of CODE_IDENTIFIERS.forbidden) {
-        if (re.test(line)) violations.push(`${rel}:${i + 1}  [${label}]  ${line.trim()}`);
+        if (re.test(line))
+          violations.push(`${rel}:${i + 1}  [${label}]  ${line.trim()}`);
       }
     });
   }
   assert.equal(
     violations.length,
     0,
-    `One word per meaning (docs/reference/vocabulary.md):\n  ${violations.join('\n  ')}`
+    `One word per meaning (docs/reference/vocabulary.md):\n  ${violations.join('\n  ')}`,
   );
 });
 
 test('the canonical Organization identifiers are present, so the scan cannot pass vacuously', () => {
   const required = [
-    ['server/storage/slide-library/index.js', /export async function listOrganizationLibrary\b/],
-    ['server/storage/collections/index.js', /export async function listOrganizationCollections\b/],
+    [
+      'server/storage/slide-library/index.js',
+      /export async function listOrganizationLibrary\b/,
+    ],
+    [
+      'server/storage/collections/index.js',
+      /export async function listOrganizationCollections\b/,
+    ],
     ['server/export/bulk-export.js', /slide-library\/organization\.json/],
     ['server/routes/api/home.js', /organizationSlides:/],
     ['server/storage/settings.js', /slideAddedToOrganizationLibraryUrl/],
@@ -320,6 +419,9 @@ test('the canonical Organization identifiers are present, so the scan cannot pas
   ];
   for (const [file, re] of required) {
     const text = fs.readFileSync(path.join(repoRoot, file), 'utf8');
-    assert.ok(re.test(text), `${file} must carry the canonical organization spelling (${re})`);
+    assert.ok(
+      re.test(text),
+      `${file} must carry the canonical organization spelling (${re})`,
+    );
   }
 });

@@ -28,7 +28,10 @@ import {
 } from '../shared/slide-types/removed.js';
 import { SLIDE_TYPES } from '../shared/slide-types.js';
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const REPO_ROOT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 
 /** Trees a slide-type name can legitimately appear in. */
 const SCAN_ROOTS = [
@@ -58,8 +61,22 @@ const SCAN_ROOTS = [
  * keep the type string of a removed type — that is the whole reason removal
  * needs a render contract — so deck JSON must never fail this test.
  */
-const SKIP_DIRS = new Set(['node_modules', 'vendor', '.git', 'i18n', 'custom', 'plans']);
-const SCAN_EXTENSIONS = new Set(['.js', '.css', '.md', '.html', '.json', '.yaml']);
+const SKIP_DIRS = new Set([
+  'node_modules',
+  'vendor',
+  '.git',
+  'i18n',
+  'custom',
+  'plans',
+]);
+const SCAN_EXTENSIONS = new Set([
+  '.js',
+  '.css',
+  '.md',
+  '.html',
+  '.json',
+  '.yaml',
+]);
 
 const isScannable = (rel) =>
   SCAN_EXTENSIONS.has(path.extname(rel)) &&
@@ -89,7 +106,9 @@ function collectFiles() {
   const walk = (relDir) => {
     let entries;
     try {
-      entries = fs.readdirSync(path.join(REPO_ROOT, relDir), { withFileTypes: true });
+      entries = fs.readdirSync(path.join(REPO_ROOT, relDir), {
+        withFileTypes: true,
+      });
     } catch {
       return; // an optional tree (docs/ops on a trimmed checkout) is fine
     }
@@ -125,8 +144,14 @@ function filesMentioning(name) {
 
 test('the scan actually sees the repo', () => {
   // A silent zero-file walk would make every assertion below vacuously pass.
-  assert.ok(FILES.length > 500, `expected a populated scan, got ${FILES.length} files`);
-  assert.ok(REMOVED_SLIDE_TYPE_NAMES.length > 0, 'expected at least one removed type on record');
+  assert.ok(
+    FILES.length > 500,
+    `expected a populated scan, got ${FILES.length} files`,
+  );
+  assert.ok(
+    REMOVED_SLIDE_TYPE_NAMES.length > 0,
+    'expected at least one removed type on record',
+  );
 });
 
 test('a removed type is not also registered', () => {
@@ -134,7 +159,7 @@ test('a removed type is not also registered', () => {
     assert.equal(
       SLIDE_TYPES[name],
       undefined,
-      `${name} is on the removed list but still in the registry — one of the two is wrong`
+      `${name} is on the removed list but still in the registry — one of the two is wrong`,
     );
   }
 });
@@ -145,14 +170,16 @@ test('a removed type names a registered successor, or none at all', () => {
     if (successor == null) continue;
     assert.ok(
       SLIDE_TYPES[successor],
-      `${name} points at successor "${successor}", which is not a registered type`
+      `${name} points at successor "${successor}", which is not a registered type`,
     );
   }
 });
 
 test('no file outside the allowlist still names a removed slide type', () => {
   for (const name of REMOVED_SLIDE_TYPE_NAMES) {
-    const allowed = new Set(Object.keys(REMOVED_SLIDE_TYPES[name].allowedReferences));
+    const allowed = new Set(
+      Object.keys(REMOVED_SLIDE_TYPES[name].allowedReferences),
+    );
     // The record itself must be free to name what it records.
     allowed.add('shared/slide-types/removed.js');
     allowed.add('tests/removed-slide-types.test.js');
@@ -164,7 +191,7 @@ test('no file outside the allowlist still names a removed slide type', () => {
       `"${name}" was removed but is still referenced in:\n` +
         leftovers.map((f) => `  - ${f}`).join('\n') +
         `\n\nEither drop the reference, or add it to allowedReferences in ` +
-        `shared/slide-types/removed.js with a reason why it must stay.`
+        `shared/slide-types/removed.js with a reason why it must stay.`,
     );
   }
 });
@@ -177,7 +204,7 @@ test('every allowlisted reference still exists (the allowlist cannot rot)', () =
       assert.ok(
         mentioning.has(rel),
         `${name}: allowedReferences lists "${rel}" (${why}) but that file no longer ` +
-          `mentions the type. Drop the entry — a stale allowlist hides the next leftover.`
+          `mentions the type. Drop the entry — a stale allowlist hides the next leftover.`,
       );
     }
   }
@@ -185,10 +212,12 @@ test('every allowlisted reference still exists (the allowlist cannot rot)', () =
 
 test('every allowlisted reference carries a reason', () => {
   for (const name of REMOVED_SLIDE_TYPE_NAMES) {
-    for (const [rel, why] of Object.entries(REMOVED_SLIDE_TYPES[name].allowedReferences)) {
+    for (const [rel, why] of Object.entries(
+      REMOVED_SLIDE_TYPES[name].allowedReferences,
+    )) {
       assert.ok(
         typeof why === 'string' && why.trim().length > 10,
-        `${name}: allowedReferences["${rel}"] needs a real reason, not "${why}"`
+        `${name}: allowedReferences["${rel}"] needs a real reason, not "${why}"`,
       );
     }
   }
@@ -200,7 +229,7 @@ test('a migration is recorded whenever stored decks needed converting', () => {
     if (migration == null) continue; // no deck used the type; nothing to convert
     assert.ok(
       fs.existsSync(path.join(REPO_ROOT, migration)),
-      `${name}: recorded migration "${migration}" does not exist`
+      `${name}: recorded migration "${migration}" does not exist`,
     );
   }
 });
@@ -208,13 +237,21 @@ test('a migration is recorded whenever stored decks needed converting', () => {
 test('getRemovedSlideType tells a deliberate removal apart from an unknown name', () => {
   const removed = getRemovedSlideType('freeform-slide');
   assert.ok(removed, 'a recorded removal resolves');
-  assert.equal(removed.successor, null, 'freeform had no equivalent to move to');
+  assert.equal(
+    removed.successor,
+    null,
+    'freeform had no equivalent to move to',
+  );
 
   const withSuccessor = getRemovedSlideType('agenda-timeline-slide');
   assert.equal(withSuccessor.successor, 'timeline-slide');
 
   assert.equal(getRemovedSlideType('never-existed-slide'), undefined);
-  assert.equal(getRemovedSlideType('title-slide'), undefined, 'a live type is not a removal');
+  assert.equal(
+    getRemovedSlideType('title-slide'),
+    undefined,
+    'a live type is not a removal',
+  );
   assert.equal(getRemovedSlideType(''), undefined);
   assert.equal(getRemovedSlideType(null), undefined);
   // Not inherited from Object.prototype.

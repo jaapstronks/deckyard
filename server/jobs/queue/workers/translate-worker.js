@@ -7,9 +7,15 @@
  */
 
 import { registerWorker, QUEUE_NAMES } from '../connection.js';
-import { getPresentation, updatePresentation } from '../../../storage/presentations/index.js';
+import {
+  getPresentation,
+  updatePresentation,
+} from '../../../storage/presentations/index.js';
 import { translatePresentationStrings } from '../../../utils/ai.js';
-import { normalizeTranslationLang, normalizeLang } from '../../../storage/presentations/i18n.js';
+import {
+  normalizeTranslationLang,
+  normalizeLang,
+} from '../../../storage/presentations/i18n.js';
 import { jobScope } from '../../../storage/scope.js';
 import { createLogger } from '../../../utils/logger.js';
 
@@ -72,7 +78,10 @@ async function processTranslateJob(job) {
   await job.updateProgress(10);
 
   // Load presentation
-  const pres = await getPresentation(jobScope(job.data, 'translate job'), presentationId);
+  const pres = await getPresentation(
+    jobScope(job.data, 'translate job'),
+    presentationId,
+  );
   if (!pres) {
     throw new Error('Presentation not found');
   }
@@ -87,8 +96,10 @@ async function processTranslateJob(job) {
       : {};
 
   // Validate languages
-  const fromLang = normalizeTranslationLang(from) || normalizeLang(pres.i18n.active) || 'nl';
-  const toLang = normalizeTranslationLang(to) || (fromLang === 'nl' ? 'en-GB' : 'nl');
+  const fromLang =
+    normalizeTranslationLang(from) || normalizeLang(pres.i18n.active) || 'nl';
+  const toLang =
+    normalizeTranslationLang(to) || (fromLang === 'nl' ? 'en-GB' : 'nl');
 
   if (fromLang === toLang) {
     throw new Error('Source and target languages must be different');
@@ -100,7 +111,8 @@ async function processTranslateJob(job) {
   }
 
   // Ensure source version exists
-  const dominant = normalizeLang(pres.i18n.dominant) || normalizeLang(fromLang) || 'nl';
+  const dominant =
+    normalizeLang(pres.i18n.dominant) || normalizeLang(fromLang) || 'nl';
   pres.i18n.dominant = dominant;
 
   if (normalizeLang(fromLang)) {
@@ -117,7 +129,10 @@ async function processTranslateJob(job) {
   await job.updateProgress(30);
 
   // Get source content
-  const src = pres.i18n.versions[fromLang] || { title: pres.title, slides: pres.slides };
+  const src = pres.i18n.versions[fromLang] || {
+    title: pres.title,
+    slides: pres.slides,
+  };
 
   // Get existing target for fill-missing mode
   const existingTarget =
@@ -135,7 +150,7 @@ async function processTranslateJob(job) {
       to: toLang,
       existingTarget,
       fillMissing: !!fillMissing && !overwrite,
-    }
+    },
   );
 
   await job.updateProgress(80);
@@ -147,10 +162,15 @@ async function processTranslateJob(job) {
   };
 
   // Save
-  await updatePresentation(jobScope(job.data, 'translate job'), presentationId, pres, {
-    actorEmail,
-    skipLimitCheck: true, // Skip limit check for translations
-  });
+  await updatePresentation(
+    jobScope(job.data, 'translate job'),
+    presentationId,
+    pres,
+    {
+      actorEmail,
+      skipLimitCheck: true, // Skip limit check for translations
+    },
+  );
 
   await job.updateProgress(100);
 
@@ -173,11 +193,7 @@ async function processTranslateJob(job) {
  * @returns {Promise<Object|null>} Worker instance
  */
 export async function initializeTranslateWorker() {
-  return registerWorker(
-    QUEUE_NAMES.TRANSLATE,
-    processTranslateJob,
-    {
-      concurrency: 1, // Limit to 1 concurrent translation (API rate limits)
-    }
-  );
+  return registerWorker(QUEUE_NAMES.TRANSLATE, processTranslateJob, {
+    concurrency: 1, // Limit to 1 concurrent translation (API rate limits)
+  });
 }

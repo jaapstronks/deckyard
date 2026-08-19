@@ -48,12 +48,18 @@ export default {
 
   async action(page) {
     await page
-      .waitForFunction(() => !document.querySelector('.editor-loading-skeleton'), {
-        timeout: 15_000,
-      })
+      .waitForFunction(
+        () => !document.querySelector('.editor-loading-skeleton'),
+        {
+          timeout: 15_000,
+        },
+      )
       .catch(() => {});
     // Open the "Add slide" modal — the slide-type picker.
     await page.click('button.slides-add-btn');
-    await page.waitForSelector('.slide-type-modal', { visible: true, timeout: 15_000 });
+    await page.waitForSelector('.slide-type-modal', {
+      visible: true,
+      timeout: 15_000,
+    });
   },
 };

@@ -49,13 +49,13 @@ export const down = async (db) => {
     .createTable('analytics_snapshots')
     .ifNotExists()
     .addColumn('id', 'uuid', (col) =>
-      col.primaryKey().defaultTo(sql`gen_random_uuid()`)
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
     )
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade')
+      col.references('organizations.id').onDelete('cascade'),
     )
     .addColumn('presentation_id', 'uuid', (col) =>
-      col.references('presentations.id').onDelete('cascade').notNull()
+      col.references('presentations.id').onDelete('cascade').notNull(),
     )
     .addColumn('period_type', 'varchar(10)', (col) => col.notNull())
     .addColumn('period_start', 'timestamptz', (col) => col.notNull())
@@ -63,7 +63,9 @@ export const down = async (db) => {
     .addColumn('total_views', 'integer', (col) => col.defaultTo(0))
     .addColumn('unique_viewers', 'integer', (col) => col.defaultTo(0))
     .addColumn('avg_duration_seconds', 'integer', (col) => col.defaultTo(0))
-    .addColumn('slide_metrics', 'jsonb', (col) => col.defaultTo(sql`'{}'::jsonb`))
+    .addColumn('slide_metrics', 'jsonb', (col) =>
+      col.defaultTo(sql`'{}'::jsonb`),
+    )
     .addColumn('poll_engagement_rate', sql`decimal(5,4)`)
     .addColumn('feedback_count', 'integer', (col) => col.defaultTo(0))
     .addColumn('question_count', 'integer', (col) => col.defaultTo(0))
@@ -81,13 +83,13 @@ export const down = async (db) => {
     .createTable('aggregate_analytics')
     .ifNotExists()
     .addColumn('id', 'uuid', (col) =>
-      col.primaryKey().defaultTo(sql`gen_random_uuid()`)
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
     )
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade')
+      col.references('organizations.id').onDelete('cascade'),
     )
     .addColumn('presentation_id', 'uuid', (col) =>
-      col.references('presentations.id').onDelete('cascade').notNull()
+      col.references('presentations.id').onDelete('cascade').notNull(),
     )
     .addColumn('period_date', 'date', (col) => col.notNull())
     .addColumn('period_type', 'varchar(10)', (col) => col.notNull())

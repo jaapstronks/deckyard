@@ -10,30 +10,32 @@
 Compared against run `2026-07-18_16-02-14` (prompt version `b11a78726ab7`).
 
 Prompt files changed since then:
+
 - `server/utils/ai/generate-outline.js`
 
 ## Scores by dimension
 
-| Dimension | Score | vs. previous |
-| --- | ---: | ---: |
-| Coverage | 4.67 | · 0.00 |
-| Structure | 5.00 | ▲ +0.33 |
-| Slide economy | 4.00 | · 0.00 |
-| Faithfulness | 5.00 | ▲ +0.67 |
-| Presentability | 3.67 | ▼ -1.00 |
-| Closeness to human deck | 3.00 | · 0.00 |
-| **Overall** | **4.47** | · 0.00 |
+| Dimension               |    Score | vs. previous |
+| ----------------------- | -------: | -----------: |
+| Coverage                |     4.67 |       · 0.00 |
+| Structure               |     5.00 |      ▲ +0.33 |
+| Slide economy           |     4.00 |       · 0.00 |
+| Faithfulness            |     5.00 |      ▲ +0.67 |
+| Presentability          |     3.67 |      ▼ -1.00 |
+| Closeness to human deck |     3.00 |       · 0.00 |
+| **Overall**             | **4.47** |       · 0.00 |
 
 > **Regression warning.** These dimensions moved down:
+>
 > - Presentability (-1.00)
 
 ## Per-case results
 
-| Case | Cat | Slides | Words/slide | Walls | Number support | Coverage | Mean |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| asml-q4-2024 | A | 12 | 29.08 | 0 | 82% | 4/5 | 4.17 |
-| cbs-persbericht-criminaliteit | B | 12 | 24.08 | 0 | 88% | 5/5 | 4.60 |
-| cloudflare-nov-2025-outage | B | 17 | 46.88 | 0 | 100% | 5/5 | 4.40 |
+| Case                          | Cat | Slides | Words/slide | Walls | Number support | Coverage | Mean |
+| ----------------------------- | --- | -----: | ----------: | ----: | -------------: | -------: | ---: |
+| asml-q4-2024                  | A   |     12 |       29.08 |     0 |            82% |      4/5 | 4.17 |
+| cbs-persbericht-criminaliteit | B   |     12 |       24.08 |     0 |            88% |      5/5 | 4.60 |
+| cloudflare-nov-2025-outage    | B   |     17 |       46.88 |     0 |           100% |      5/5 | 4.40 |
 
 ## Weakest dimensions — judge rationales
 
@@ -63,8 +65,8 @@ These rationales are the input for the next prompt change.
 
 ## Cost breakdown
 
-| Category | Calls | Input | Output | Cache write | Cache read | USD |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| generation | 12 | 221217 | 20863 | 0 | 0 | $1.6277 |
-| judge | 3 | 42803 | 5513 | 0 | 0 | $0.3518 |
-| **Total** | 15 | 264020 | 26376 | 0 | 0 | **$1.9795** |
+| Category   | Calls |  Input | Output | Cache write | Cache read |         USD |
+| ---------- | ----: | -----: | -----: | ----------: | ---------: | ----------: |
+| generation |    12 | 221217 |  20863 |           0 |          0 |     $1.6277 |
+| judge      |     3 |  42803 |   5513 |           0 |          0 |     $0.3518 |
+| **Total**  |    15 | 264020 |  26376 |           0 |          0 | **$1.9795** |

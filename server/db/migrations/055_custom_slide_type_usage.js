@@ -19,5 +19,8 @@ export const up = async (db) => {
 };
 
 export const down = async (db) => {
-  await db.schema.alterTable('custom_slide_types').dropColumn('usage').execute();
+  await db.schema
+    .alterTable('custom_slide_types')
+    .dropColumn('usage')
+    .execute();
 };

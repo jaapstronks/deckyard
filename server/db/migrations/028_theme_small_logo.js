@@ -11,8 +11,5 @@ export const up = async (db) => {
 };
 
 export const down = async (db) => {
-  await db.schema
-    .alterTable('themes')
-    .dropColumn('logo_small_url')
-    .execute();
+  await db.schema.alterTable('themes').dropColumn('logo_small_url').execute();
 };

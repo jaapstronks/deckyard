@@ -45,13 +45,19 @@ const cacheDir = (repoRoot) => path.join(dataDir(repoRoot), 'deck-thumbs');
 
 /** Keep the id prefix filesystem-safe; the sha suffix carries uniqueness. */
 function sanitizeId(id) {
-  return String(id || 'deck').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 64);
+  return String(id || 'deck')
+    .replace(/[^a-zA-Z0-9_-]/g, '_')
+    .slice(0, 64);
 }
 
 /** Stable sha1 prefix of any JSON-able value, with a caller-supplied fallback. */
 function hashOf(value, fallback) {
   try {
-    return crypto.createHash('sha1').update(JSON.stringify(value ?? null)).digest('hex').slice(0, 12);
+    return crypto
+      .createHash('sha1')
+      .update(JSON.stringify(value ?? null))
+      .digest('hex')
+      .slice(0, 12);
   } catch {
     return fallback;
   }
@@ -66,7 +72,9 @@ function hashOf(value, fallback) {
  * @returns {string}
  */
 export function firstSlideSignature(presentation) {
-  const firstSlide = Array.isArray(presentation?.slides) ? presentation.slides[0] : null;
+  const firstSlide = Array.isArray(presentation?.slides)
+    ? presentation.slides[0]
+    : null;
   return hashOf(firstSlide, 'noslide');
 }
 
@@ -86,7 +94,10 @@ export function firstSlideSignature(presentation) {
 export function thumbCacheKey(presentation, theme) {
   const id = String(presentation?.id || '');
   const slideSig = firstSlideSignature(presentation);
-  const themeSig = hashOf(theme ?? presentation?.theme ?? null, String(presentation?.theme || 'default'));
+  const themeSig = hashOf(
+    theme ?? presentation?.theme ?? null,
+    String(presentation?.theme || 'default'),
+  );
   const sig = crypto
     .createHash('sha1')
     .update(`${id}|${slideSig}|${themeSig}`)
@@ -117,20 +128,25 @@ export async function readStaleThumbnail(repoRoot, prefix, exceptFilename) {
     return null;
   }
   const candidates = names.filter(
-    (n) => n.startsWith(`${prefix}-`) && n.endsWith('.webp') && n !== exceptFilename
+    (n) =>
+      n.startsWith(`${prefix}-`) && n.endsWith('.webp') && n !== exceptFilename,
   );
   let newest = null;
   for (const name of candidates) {
     try {
       const stat = await fs.stat(path.join(dir, name));
-      if (!newest || stat.mtimeMs > newest.mtimeMs) newest = { name, mtimeMs: stat.mtimeMs };
+      if (!newest || stat.mtimeMs > newest.mtimeMs)
+        newest = { name, mtimeMs: stat.mtimeMs };
     } catch {
       // raced with a prune; skip
     }
   }
   if (!newest) return null;
   try {
-    return { buffer: await fs.readFile(path.join(dir, newest.name)), filename: newest.name };
+    return {
+      buffer: await fs.readFile(path.join(dir, newest.name)),
+      filename: newest.name,
+    };
   } catch {
     return null;
   }
@@ -155,8 +171,13 @@ export async function pruneOldThumbnails(repoRoot, prefix, keepFilename) {
   }
   await Promise.all(
     names
-      .filter((n) => n.startsWith(`${prefix}-`) && n.endsWith('.webp') && n !== keepFilename)
-      .map((n) => fs.rm(path.join(dir, n), { force: true }).catch(() => {}))
+      .filter(
+        (n) =>
+          n.startsWith(`${prefix}-`) &&
+          n.endsWith('.webp') &&
+          n !== keepFilename,
+      )
+      .map((n) => fs.rm(path.join(dir, n), { force: true }).catch(() => {})),
   );
 }
 
@@ -204,7 +225,11 @@ function releaseSlot() {
 async function generateAndCache(repoRoot, filename, slide, theme, slideTypes) {
   let pngBuffer;
   try {
-    pngBuffer = await renderSlideToPngBuffer(repoRoot, slide, { scale: 1, theme, slideTypes });
+    pngBuffer = await renderSlideToPngBuffer(repoRoot, slide, {
+      scale: 1,
+      theme,
+      slideTypes,
+    });
   } catch (err) {
     log.warn('png render failed (headless Chrome missing?):', err?.message);
     return false;
@@ -249,7 +274,13 @@ async function generateAndCache(repoRoot, filename, slide, theme, slideTypes) {
  * @param {object|null} slideTypes
  * @returns {Promise<boolean>} whether a raster now exists.
  */
-export function requestThumbnailGeneration(repoRoot, presentation, slide, theme, slideTypes) {
+export function requestThumbnailGeneration(
+  repoRoot,
+  presentation,
+  slide,
+  theme,
+  slideTypes,
+) {
   const { filename, prefix } = thumbCacheKey(presentation, theme);
   if (inFlight.has(filename)) return inFlight.get(filename);
 

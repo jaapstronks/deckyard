@@ -47,7 +47,10 @@
 import { getPuppeteerBrowser } from '../utils/puppeteer-browser.js';
 import { debugLog } from '../utils/debug-log.js';
 import { envInt } from '../config/utils.js';
-import { pdfImageCompressionConfig, compressImageForEmbed } from './image-compress.js';
+import {
+  pdfImageCompressionConfig,
+  compressImageForEmbed,
+} from './image-compress.js';
 
 /** Retina margin over the measured display size. A full-bleed image at 2× the
  *  1600px canvas is ≥290 ppi at print size — no visible loss, all the savings in
@@ -157,7 +160,8 @@ export async function measureImageDisplayPx({ slidesHtml, styleContent }) {
   const slides = Array.isArray(slidesHtml) ? slidesHtml : [];
   /** @type {Map<string, number>} */
   const out = new Map();
-  if (!slides.length || !styleContent || !hasMeasurableImages(slides)) return out;
+  if (!slides.length || !styleContent || !hasMeasurableImages(slides))
+    return out;
 
   const page = await openMeasurePage();
   if (!page) return out;
@@ -168,7 +172,10 @@ export async function measureImageDisplayPx({ slidesHtml, styleContent }) {
     // is then the box it has in the export. No CDN <script>/<link> tags: this
     // pass must not reach the network, and no measurement depends on them.
     const body = slides
-      .map((s) => `<div class="pdf-page"><div class="pdf-stage ps-theme">${s}</div></div>`)
+      .map(
+        (s) =>
+          `<div class="pdf-page"><div class="pdf-stage ps-theme">${s}</div></div>`,
+      )
       .join('\n');
     await page.setViewport({ width: 1600, height: 900 });
     await page.setContent(
@@ -227,7 +234,8 @@ export function displayAwareEmbedTransform(displayPx) {
   const map = displayPx instanceof Map ? displayPx : new Map();
   return (buf, ext, mime, url) => {
     const cap = displayCap(map.get(url), config, scale);
-    const perImage = cap === config.maxPx ? config : { maxPx: cap, quality: config.quality };
+    const perImage =
+      cap === config.maxPx ? config : { maxPx: cap, quality: config.quality };
     return compressImageForEmbed(buf, ext, mime, perImage);
   };
 }

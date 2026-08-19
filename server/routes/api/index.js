@@ -1,4 +1,11 @@
-import { notFound, unauthorized, forbidden, jsonError, serveJson, methodNotAllowed } from '../../utils/http.js';
+import {
+  notFound,
+  unauthorized,
+  forbidden,
+  jsonError,
+  serveJson,
+  methodNotAllowed,
+} from '../../utils/http.js';
 import { isCsrfSafe } from '../../utils/csrf.js';
 import {
   MaintenanceWriteError,
@@ -79,8 +86,15 @@ function handleMaintenanceState({ res }) {
  * @type {import('../../utils/router.js').Route[]}
  */
 export const MAINTENANCE_ROUTES = [
-  { method: 'GET', pattern: '/api/maintenance', handler: handleMaintenanceState },
-  { pattern: '/api/maintenance', handler: ({ res }) => methodNotAllowed(res, ['GET']) },
+  {
+    method: 'GET',
+    pattern: '/api/maintenance',
+    handler: handleMaintenanceState,
+  },
+  {
+    pattern: '/api/maintenance',
+    handler: ({ res }) => methodNotAllowed(res, ['GET']),
+  },
 ];
 
 export async function handleApi({ repoRoot, req, res, url }) {
@@ -95,7 +109,8 @@ export async function handleApi({ repoRoot, req, res, url }) {
   // Maintenance state. Public and unauthenticated on purpose: a client that
   // reconnects after a restart has to be able to ask "are you back?" before it
   // knows whether its session survived, and the answer leaks nothing.
-  if (await dispatchRoutes(MAINTENANCE_ROUTES, { repoRoot, req, res, url })) return;
+  if (await dispatchRoutes(MAINTENANCE_ROUTES, { repoRoot, req, res, url }))
+    return;
 
   // Maintenance mode refuses writes with a 503 that says when to come back,
   // instead of letting them hit a database that is mid-migration or a process
@@ -123,7 +138,7 @@ export async function handleApi({ repoRoot, req, res, url }) {
       {
         details: err.state,
         headers: { 'Retry-After': String(err.retryAfter) },
-      }
+      },
     );
   }
 
@@ -144,7 +159,10 @@ export async function handleApi({ repoRoot, req, res, url }) {
   // Follow code resolution (GET) is public; which reads skip the gate is the
   // PUBLIC_ROUTES table in follow-codes.js, an explicit reviewable row.
   // Follow code creation (POST) requires auth and is handled below.
-  if (await handleFollowCodesPublic({ repoRoot, req, res, url, authedUser: null })) return;
+  if (
+    await handleFollowCodesPublic({ repoRoot, req, res, url, authedUser: null })
+  )
+    return;
   // Present-session companion: the session id in the join link is the
   // authorization, so these sit in front of the login gate (see
   // live-session-audience.js). Presenter actions on the same session stay

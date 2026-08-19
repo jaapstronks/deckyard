@@ -18,10 +18,10 @@ export const up = async (db) => {
     .createTable('slide_library_tags')
     .ifNotExists()
     .addColumn('slide_library_id', 'uuid', (col) =>
-      col.references('slide_library.id').onDelete('cascade').notNull()
+      col.references('slide_library.id').onDelete('cascade').notNull(),
     )
     .addColumn('tag_id', 'uuid', (col) =>
-      col.references('tags.id').onDelete('cascade').notNull()
+      col.references('tags.id').onDelete('cascade').notNull(),
     )
     .addColumn('created_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
     .execute();

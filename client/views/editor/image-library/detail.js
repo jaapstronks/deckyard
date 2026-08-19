@@ -1,6 +1,11 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
-import { readFileAsDataUrl, getAllTags, installTagsAutocomplete, createFieldWrap } from './utils.js';
+import {
+  readFileAsDataUrl,
+  getAllTags,
+  installTagsAutocomplete,
+  createFieldWrap,
+} from './utils.js';
 
 /**
  * Creates the image library detail view component
@@ -40,22 +45,32 @@ export function createImageLibraryDetail({
       const usageResp = await api(`/api/image-library/${id}/usage`);
       const usage = Array.isArray(usageResp?.usage) ? usageResp.usage : [];
       const usedBy = usage.length;
-      const usedByPublished = usage.filter((u) => (u?.published || []).length > 0).length;
+      const usedByPublished = usage.filter(
+        (u) => (u?.published || []).length > 0,
+      ).length;
 
       const lines = [];
       if (usedBy) {
         lines.push(
-          t('imageLibrary.delete.usedBy', 'Used by {count} presentation(s).', { count: usedBy })
+          t('imageLibrary.delete.usedBy', 'Used by {count} presentation(s).', {
+            count: usedBy,
+          }),
         );
         if (usedByPublished) {
           lines.push(
-            t('imageLibrary.delete.usedByPublished', 'Warning: {count} of those are published on the web.', {
-              count: usedByPublished,
-            })
+            t(
+              'imageLibrary.delete.usedByPublished',
+              'Warning: {count} of those are published on the web.',
+              {
+                count: usedByPublished,
+              },
+            ),
           );
         }
         lines.push('');
-        lines.push(t('imageLibrary.delete.usedByList', 'Used by (most recent first):'));
+        lines.push(
+          t('imageLibrary.delete.usedByList', 'Used by (most recent first):'),
+        );
         for (const u of usage.slice(0, 8)) {
           const title = String(u?.title || u?.id || '').trim() || '(Untitled)';
           const mod = u?.modified ? ` — ${u.modified}` : '';
@@ -69,8 +84,8 @@ export function createImageLibraryDetail({
       lines.push(
         t(
           'imageLibrary.delete.confirm',
-          'Delete this image from the library? This will NOT delete the uploaded file; existing slides using the URL will keep working.'
-        )
+          'Delete this image from the library? This will NOT delete the uploaded file; existing slides using the URL will keep working.',
+        ),
       );
       const ok = await confirmModal(h, document.body, {
         title: t('imageLibrary.delete.title', 'Delete image'),
@@ -136,7 +151,11 @@ export function createImageLibraryDetail({
       loading: 'lazy',
     });
 
-    const inUrl = h('input', { class: 'form-input', value: String(it?.url || ''), readonly: true });
+    const inUrl = h('input', {
+      class: 'form-input',
+      value: String(it?.url || ''),
+      readonly: true,
+    });
     const inDescription = h('input', {
       class: 'form-input',
       value: String(it?.description || ''),
@@ -169,31 +188,42 @@ export function createImageLibraryDetail({
     });
 
     const altsAreEmpty = () =>
-      !String(inAltNl.value || '').trim() && !String(inAltEn.value || '').trim();
+      !String(inAltNl.value || '').trim() &&
+      !String(inAltEn.value || '').trim();
 
     const ensureAltBeforeUse = async () => {
       if (!altsAreEmpty()) return true;
       if (canAiAlt) {
         const genOk = await confirmModal(h, document.body, {
           title: t('imageLibrary.alt.missingTitle', 'Alt text missing'),
-          message: t('imageLibrary.alt.missingSuggestGenerate', 'Alt text is empty. Generate it with AI now? (Recommended)'),
+          message: t(
+            'imageLibrary.alt.missingSuggestGenerate',
+            'Alt text is empty. Generate it with AI now? (Recommended)',
+          ),
         });
         if (genOk) {
           try {
             setBusy(true);
             setStatus(t('imageLibrary.alt.generating', 'Generating alt text…'));
-            const resp = await api(`/api/image-library/${it.id}/generate-alts`, {
-              method: 'POST',
-              body: JSON.stringify({ context: context || null }),
-            });
-            const a = resp?.alts && typeof resp.alts === 'object' ? resp.alts : {};
+            const resp = await api(
+              `/api/image-library/${it.id}/generate-alts`,
+              {
+                method: 'POST',
+                body: JSON.stringify({ context: context || null }),
+              },
+            );
+            const a =
+              resp?.alts && typeof resp.alts === 'object' ? resp.alts : {};
             inAltNl.value = String(a?.nl || '');
             inAltEn.value = String(a?.['en-GB'] || '');
 
             const updated = await api(`/api/image-library/${it.id}`, {
               method: 'PUT',
               body: JSON.stringify({
-                alts: { nl: String(inAltNl.value || ''), 'en-GB': String(inAltEn.value || '') },
+                alts: {
+                  nl: String(inAltNl.value || ''),
+                  'en-GB': String(inAltEn.value || ''),
+                },
               }),
             });
             onItemUpdated(updated);
@@ -210,7 +240,10 @@ export function createImageLibraryDetail({
       }
       return await confirmModal(h, document.body, {
         title: t('imageLibrary.alt.missingTitle', 'Alt text missing'),
-        message: t('imageLibrary.alt.missingConfirmUse', 'Alt text is still empty. Use this image anyway?'),
+        message: t(
+          'imageLibrary.alt.missingConfirmUse',
+          'Alt text is still empty. Use this image anyway?',
+        ),
       });
     };
 
@@ -222,22 +255,38 @@ export function createImageLibraryDetail({
           onclick: async () => {
             try {
               const overwriteOk =
-                String(inAltNl.value || '').trim() || String(inAltEn.value || '').trim()
+                String(inAltNl.value || '').trim() ||
+                String(inAltEn.value || '').trim()
                   ? await confirmModal(h, document.body, {
-                      title: t('imageLibrary.alt.overwriteTitle', 'Overwrite alt text'),
-                      message: t('imageLibrary.alt.overwriteConfirm', 'Overwrite existing alt text with AI-generated text?'),
-                      confirmLabel: t('imageLibrary.alt.overwrite', 'Overwrite'),
+                      title: t(
+                        'imageLibrary.alt.overwriteTitle',
+                        'Overwrite alt text',
+                      ),
+                      message: t(
+                        'imageLibrary.alt.overwriteConfirm',
+                        'Overwrite existing alt text with AI-generated text?',
+                      ),
+                      confirmLabel: t(
+                        'imageLibrary.alt.overwrite',
+                        'Overwrite',
+                      ),
                       danger: true,
                     })
                   : true;
               if (!overwriteOk) return;
               setBusy(true);
-              setStatus(t('imageLibrary.alt.generating', 'Generating alt text…'));
-              const resp = await api(`/api/image-library/${it.id}/generate-alts`, {
-                method: 'POST',
-                body: JSON.stringify({ context: context || null }),
-              });
-              const a = resp?.alts && typeof resp.alts === 'object' ? resp.alts : {};
+              setStatus(
+                t('imageLibrary.alt.generating', 'Generating alt text…'),
+              );
+              const resp = await api(
+                `/api/image-library/${it.id}/generate-alts`,
+                {
+                  method: 'POST',
+                  body: JSON.stringify({ context: context || null }),
+                },
+              );
+              const a =
+                resp?.alts && typeof resp.alts === 'object' ? resp.alts : {};
               inAltNl.value = String(a?.nl || '');
               inAltEn.value = String(a?.['en-GB'] || '');
               setStatus(t('imageLibrary.alt.generated', 'Generated.'));
@@ -253,8 +302,16 @@ export function createImageLibraryDetail({
     const created = typeof it?.created === 'string' ? it.created : '';
     const modified = typeof it?.modified === 'string' ? it.modified : '';
     const dates = h('div', { class: 'help' }, [
-      h('div', { text: t('imageLibrary.detail.created', 'Uploaded: {date}', { date: created || '—' }) }),
-      h('div', { text: t('imageLibrary.detail.modified', 'Modified: {date}', { date: modified || '—' }) }),
+      h('div', {
+        text: t('imageLibrary.detail.created', 'Uploaded: {date}', {
+          date: created || '—',
+        }),
+      }),
+      h('div', {
+        text: t('imageLibrary.detail.modified', 'Modified: {date}', {
+          date: modified || '—',
+        }),
+      }),
     ]);
 
     const btnUse = onPick
@@ -265,7 +322,9 @@ export function createImageLibraryDetail({
           onclick: async () => {
             const ok = await ensureAltBeforeUse();
             if (!ok) return;
-            onPick?.(it, { applyCaptionCredit: allowCaptionCredit && creditCb?.checked });
+            onPick?.(it, {
+              applyCaptionCredit: allowCaptionCredit && creditCb?.checked,
+            });
             onClose();
           },
         })
@@ -280,14 +339,20 @@ export function createImageLibraryDetail({
             try {
               setBusy(true);
               setStatus(t('common.saving', 'Saving…'));
-              const tagsArr = String(inTags.value || '').split(',').map((s) => s.trim()).filter(Boolean);
+              const tagsArr = String(inTags.value || '')
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean);
               const updated = await api(`/api/image-library/${it.id}`, {
                 method: 'PUT',
                 body: JSON.stringify({
                   description: inDescription.value || '',
                   tags: tagsArr,
                   photographer: inPhotographer.value || '',
-                  alts: { nl: inAltNl.value || '', 'en-GB': inAltEn.value || '' },
+                  alts: {
+                    nl: inAltNl.value || '',
+                    'en-GB': inAltEn.value || '',
+                  },
                 }),
               });
               onItemUpdated(updated);
@@ -325,12 +390,20 @@ export function createImageLibraryDetail({
         setBusy(true);
         setStatus(t('imageLibrary.replace.replacing', 'Replacing file…'));
         const dataUrl = await readFileAsDataUrl(f);
-        const updated = await api(`/api/image-library/${it.id}/replace-upload`, {
-          method: 'POST',
-          body: JSON.stringify({ dataUrl }),
-        });
+        const updated = await api(
+          `/api/image-library/${it.id}/replace-upload`,
+          {
+            method: 'POST',
+            body: JSON.stringify({ dataUrl }),
+          },
+        );
         onItemUpdated(updated);
-        setStatus(t('imageLibrary.replace.done', 'Replaced. Existing slides keep working (URL unchanged).'));
+        setStatus(
+          t(
+            'imageLibrary.replace.done',
+            'Replaced. Existing slides keep working (URL unchanged).',
+          ),
+        );
         renderDetail(updated);
       } catch (e) {
         setStatus(String(e?.error || e?.message || e));
@@ -344,19 +417,31 @@ export function createImageLibraryDetail({
     const usageResp = usageById.get(String(it?.id || '').trim()) || null;
     const usageArr = Array.isArray(usageResp?.usage) ? usageResp.usage : [];
     const usedByCount = usageArr.length;
-    const publishedCount = usageArr.filter((u) => Array.isArray(u?.published) && u.published.length).length;
+    const publishedCount = usageArr.filter(
+      (u) => Array.isArray(u?.published) && u.published.length,
+    ).length;
 
     const usageBlock = h('div', { class: 'image-lib-usage' }, [
-      h('div', { class: 'field-label', text: t('imageLibrary.usage.title', 'Where is this used?') }),
+      h('div', {
+        class: 'field-label',
+        text: t('imageLibrary.usage.title', 'Where is this used?'),
+      }),
       usageLoading.has(String(it?.id || '').trim())
-        ? h('div', { class: 'help', text: t('imageLibrary.usage.loading', 'Checking usage…') })
+        ? h('div', {
+            class: 'help',
+            text: t('imageLibrary.usage.loading', 'Checking usage…'),
+          })
         : h('div', {
             class: 'help',
             text: usedByCount
-              ? t('imageLibrary.usage.summary', 'Used by {count} presentation(s) ({published} published).', {
-                  count: usedByCount,
-                  published: publishedCount,
-                })
+              ? t(
+                  'imageLibrary.usage.summary',
+                  'Used by {count} presentation(s) ({published} published).',
+                  {
+                    count: usedByCount,
+                    published: publishedCount,
+                  },
+                )
               : t('imageLibrary.usage.none', 'Not used by any presentations.'),
           }),
       usedByCount
@@ -364,7 +449,8 @@ export function createImageLibraryDetail({
             'div',
             { class: 'stack is-gap-sm' },
             usageArr.slice(0, 12).map((u) => {
-              const title = String(u?.title || u?.id || '').trim() || '(Untitled)';
+              const title =
+                String(u?.title || u?.id || '').trim() || '(Untitled)';
               const pub = Array.isArray(u?.published) ? u.published : [];
               const pubLinks = pub
                 .slice(0, 2)
@@ -397,7 +483,7 @@ export function createImageLibraryDetail({
                   ...pubLinks,
                 ]),
               ]);
-            })
+            }),
           )
         : null,
     ]);
@@ -421,17 +507,38 @@ export function createImageLibraryDetail({
       dates,
       h('div', { class: 'image-lib-detail-meta' }, [
         h('div', { class: 'image-lib-detail-grid' }, [
-          createFieldWrap(h, t('imageLibrary.upload.url.label', 'Image URL'), inUrl, {
-            helpText: t(
-              'imageLibrary.detail.urlHelp',
-              'Slides store the URL, so deleting from the library does not break existing slides.'
-            ),
-          }),
-          createFieldWrap(h, t('imageLibrary.description.label', 'Description (internal)'), inDescription),
+          createFieldWrap(
+            h,
+            t('imageLibrary.upload.url.label', 'Image URL'),
+            inUrl,
+            {
+              helpText: t(
+                'imageLibrary.detail.urlHelp',
+                'Slides store the URL, so deleting from the library does not break existing slides.',
+              ),
+            },
+          ),
+          createFieldWrap(
+            h,
+            t('imageLibrary.description.label', 'Description (internal)'),
+            inDescription,
+          ),
           createFieldWrap(h, t('imageLibrary.tags.label', 'Tags'), inTags),
-          createFieldWrap(h, t('imageLibrary.photographer.label', 'Photographer'), inPhotographer),
-          createFieldWrap(h, t('imageLibrary.altNl.label', 'Alt text (NL)'), inAltNl),
-          createFieldWrap(h, t('imageLibrary.altEn.label', 'Alt text (EN)'), inAltEn),
+          createFieldWrap(
+            h,
+            t('imageLibrary.photographer.label', 'Photographer'),
+            inPhotographer,
+          ),
+          createFieldWrap(
+            h,
+            t('imageLibrary.altNl.label', 'Alt text (NL)'),
+            inAltNl,
+          ),
+          createFieldWrap(
+            h,
+            t('imageLibrary.altEn.label', 'Alt text (EN)'),
+            inAltEn,
+          ),
         ]),
         tagsDatalist,
         inputReplace,
@@ -441,15 +548,20 @@ export function createImageLibraryDetail({
               class: 'help',
               text: t(
                 'imageLibrary.replace.notLocal',
-                'Replace file is only available for images stored as local uploads (/uploads/…).'
+                'Replace file is only available for images stored as local uploads (/uploads/…).',
               ),
             }),
         usageBlock,
         h('div', { class: 'image-lib-detail-actions' }, [
           h('div', {}, [btnUse]),
-          h('div', { class: 'row is-wrap' }, [btnReplace, btnGenerateAlt, btnSave, btnDelete]),
+          h('div', { class: 'row is-wrap' }, [
+            btnReplace,
+            btnGenerateAlt,
+            btnSave,
+            btnDelete,
+          ]),
         ]),
-      ])
+      ]),
     );
   };
 

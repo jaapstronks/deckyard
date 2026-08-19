@@ -1,75 +1,98 @@
 <!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Deckyard</title>
+    <meta
+      name="description"
+      content="Create and present professional slides in your browser. Self-hosted, templates, export to HTML/PDF."
+    />
+    <meta name="application-name" content="Deckyard" />
+    <meta name="theme-color" content="#0b1220" />
 
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Deckyard</title>
-  <meta name="description"
-    content="Create and present professional slides in your browser. Self-hosted, templates, export to HTML/PDF." />
-  <meta name="application-name" content="Deckyard" />
-  <meta name="theme-color" content="#0b1220" />
-
-  <!-- UI mode bootstrap (app UI only): avoid flash of wrong theme.
+    <!-- UI mode bootstrap (app UI only): avoid flash of wrong theme.
        Stored preference: localStorage['ps-ui-mode'] = 'system' | 'light' | 'dark' -->
-  <script>
-    (function () {
-      try {
-        var pref = (localStorage.getItem('ps-ui-mode') || 'system').toLowerCase();
-        if (pref !== 'light' && pref !== 'dark' && pref !== 'system') pref = 'system';
-        var resolved = pref;
-        if (pref === 'system') {
-          var m = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
-          resolved = m && m.matches ? 'dark' : 'light';
+    <script>
+      (function () {
+        try {
+          var pref = (
+            localStorage.getItem('ps-ui-mode') || 'system'
+          ).toLowerCase();
+          if (pref !== 'light' && pref !== 'dark' && pref !== 'system')
+            pref = 'system';
+          var resolved = pref;
+          if (pref === 'system') {
+            var m =
+              window.matchMedia &&
+              window.matchMedia('(prefers-color-scheme: dark)');
+            resolved = m && m.matches ? 'dark' : 'light';
+          }
+          document.documentElement.dataset.uiMode =
+            resolved === 'dark' ? 'dark' : 'light';
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta)
+            meta.setAttribute(
+              'content',
+              resolved === 'dark' ? '#0b1220' : '#f6f7fb',
+            );
+        } catch (e) {
+          // ignore
         }
-        document.documentElement.dataset.uiMode = resolved === 'dark' ? 'dark' : 'light';
-        var meta = document.querySelector('meta[name="theme-color"]');
-        if (meta) meta.setAttribute('content', resolved === 'dark' ? '#0b1220' : '#f6f7fb');
-      } catch (e) {
-        // ignore
-      }
-    })();
-  </script>
+      })();
+    </script>
 
-  <!-- Open Graph -->
-  <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="Deckyard" />
-  <meta property="og:title" content="Deckyard" />
-  <meta property="og:description"
-    content="Create and present professional slides in your browser. Self-hosted, templates, export to HTML/PDF." />
-  <meta property="og:image" content="/assets/images/slides-previewimage.png" />
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Deckyard" />
+    <meta property="og:title" content="Deckyard" />
+    <meta
+      property="og:description"
+      content="Create and present professional slides in your browser. Self-hosted, templates, export to HTML/PDF."
+    />
+    <meta
+      property="og:image"
+      content="/assets/images/slides-previewimage.png"
+    />
 
-  <!-- Twitter -->
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Deckyard" />
-  <meta name="twitter:description"
-    content="Create and present professional slides in your browser. Self-hosted, templates, export to HTML/PDF." />
-  <meta name="twitter:image" content="/assets/images/slides-previewimage.png" />
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Deckyard" />
+    <meta
+      name="twitter:description"
+      content="Create and present professional slides in your browser. Self-hosted, templates, export to HTML/PDF."
+    />
+    <meta
+      name="twitter:image"
+      content="/assets/images/slides-previewimage.png"
+    />
 
-  <link rel="icon" href="/assets/images/logo.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="/assets/fonts/google/fonts.css" />
-  <link rel="stylesheet" href="/client/styles/app.css" />
-  <link rel="stylesheet" href="/client/styles/theme.css" />
-  <link rel="stylesheet" href="/client/styles/slides.css" />
-  <!-- Bunny Stream Player.js is loaded lazily by slide-render.js only when a
+    <link rel="icon" href="/assets/images/logo.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/assets/fonts/google/fonts.css" />
+    <link rel="stylesheet" href="/client/styles/app.css" />
+    <link rel="stylesheet" href="/client/styles/theme.css" />
+    <link rel="stylesheet" href="/client/styles/slides.css" />
+    <!-- Bunny Stream Player.js is loaded lazily by slide-render.js only when a
        video slide is present, so pages without video make zero third-party
        requests to assets.mediadelivery.net (mirrors the export/embed behaviour). -->
-  <!-- DOMPurify for defense-in-depth HTML sanitization. Self-hosted: the file is
+    <!-- DOMPurify for defense-in-depth HTML sanitization. Self-hosted: the file is
        copied from the pinned npm dependency by `npm run vendor:dompurify`
        (postinstall), so the browser and the server-side sanitizer run the same
        version and the app boots without reaching a third-party CDN. -->
-  <script src="/client/vendor/dompurify/purify.min.js"></script>
-  <!-- Prism.js (code highlighting) and KaTeX (math) are self-hosted under
+    <script src="/client/vendor/dompurify/purify.min.js"></script>
+    <!-- Prism.js (code highlighting) and KaTeX (math) are self-hosted under
        /client/vendor/ (vendored by `npm run vendor:prism-katex`, postinstall)
        and loaded lazily by slide-runtime/prism-katex-loader.js only when a
        slide contains code or math — so the app shell makes zero third-party
        requests (gate: tests/app-shell-third-party-cdn.test.js). -->
-</head>
+  </head>
 
-<body>
-  <a href="#main-content" class="skip-link">Skip to main content</a>
-  <div id="app"></div>
-  <script type="module" src="/client/app.js"></script>
-</body>
-
+  <body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div id="app"></div>
+    <script type="module" src="/client/app.js"></script>
+  </body>
 </html>

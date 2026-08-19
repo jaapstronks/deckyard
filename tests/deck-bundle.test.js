@@ -28,9 +28,8 @@ before(async () => {
   process.env.UPLOADS_DIR = tmpUploads;
   fs.writeFileSync(path.join(tmpUploads, 'a.png'), PNG_A);
   fs.writeFileSync(path.join(tmpUploads, 'b.png'), PNG_B);
-  ({ buildDeckBundle, readDeckBundle, DECK_MIMETYPE } = await import(
-    '../server/export/deck-bundle.js'
-  ));
+  ({ buildDeckBundle, readDeckBundle, DECK_MIMETYPE } =
+    await import('../server/export/deck-bundle.js'));
 });
 
 after(() => {
@@ -45,10 +44,22 @@ const pres = () => ({
   title: 'Bundle test',
   theme: 'default',
   slides: [
-    { id: '1', type: 'image-slide', content: { image: '/uploads/a.png', alt: 'A' } },
-    { id: '2', type: 'image-slide', content: { image: '/uploads/a.png', alt: 'A again' } }, // dedup
+    {
+      id: '1',
+      type: 'image-slide',
+      content: { image: '/uploads/a.png', alt: 'A' },
+    },
+    {
+      id: '2',
+      type: 'image-slide',
+      content: { image: '/uploads/a.png', alt: 'A again' },
+    }, // dedup
     { id: '3', type: 'image-slide', content: { image: '/uploads/b.png' } },
-    { id: '4', type: 'content-slide', content: { title: 'External', body: '![x](https://example.com/z.png)' } },
+    {
+      id: '4',
+      type: 'content-slide',
+      content: { title: 'External', body: '![x](https://example.com/z.png)' },
+    },
     { id: '5', type: 'image-slide', content: { image: '/uploads/gone.png' } }, // missing on disk
   ],
 });
@@ -68,7 +79,9 @@ describe('buildDeckBundle', () => {
   });
 
   it('content-addresses + de-duplicates assets and records sources', async () => {
-    const { manifest } = await readDeckBundle(await buildDeckBundle('/repo', pres()));
+    const { manifest } = await readDeckBundle(
+      await buildDeckBundle('/repo', pres()),
+    );
     const aHash = crypto.createHash('sha256').update(PNG_A).digest('hex');
     const aAsset = manifest.assets.find((x) => x.hash === aHash);
     assert.ok(aAsset, 'a.png asset present by content hash');
@@ -80,11 +93,16 @@ describe('buildDeckBundle', () => {
   });
 
   it('rewrites deck refs to bundle refs and leaves external URLs alone', async () => {
-    const { deck } = await readDeckBundle(await buildDeckBundle('/repo', pres()));
+    const { deck } = await readDeckBundle(
+      await buildDeckBundle('/repo', pres()),
+    );
     const aHash = crypto.createHash('sha256').update(PNG_A).digest('hex');
     assert.equal(deck.slides[0].content.image, `assets/${aHash}.png`);
     assert.equal(deck.slides[1].content.image, `assets/${aHash}.png`);
-    assert.ok(!JSON.stringify(deck).includes('/uploads/a.png'), 'no upload refs remain for present assets');
+    assert.ok(
+      !JSON.stringify(deck).includes('/uploads/a.png'),
+      'no upload refs remain for present assets',
+    );
     // The missing asset keeps its original ref (nothing to rewrite to).
     assert.equal(deck.slides[4].content.image, '/uploads/gone.png');
     // External URL untouched.
@@ -92,7 +110,9 @@ describe('buildDeckBundle', () => {
   });
 
   it('round-trips asset bytes exactly', async () => {
-    const { manifest, assets } = await readDeckBundle(await buildDeckBundle('/repo', pres()));
+    const { manifest, assets } = await readDeckBundle(
+      await buildDeckBundle('/repo', pres()),
+    );
     const aHash = crypto.createHash('sha256').update(PNG_A).digest('hex');
     const aRef = manifest.assets.find((x) => x.hash === aHash).ref;
     assert.ok(assets.get(aRef).equals(PNG_A));
@@ -115,7 +135,9 @@ describe('readDeckBundle validation', () => {
     const buf = await buildDeckBundle('/repo', pres());
     const JSZip = (await import('jszip')).default;
     const zip = await JSZip.loadAsync(buf);
-    zip.file('mimetype', 'application/vnd.slidecreator.deck', { compression: 'STORE' });
+    zip.file('mimetype', 'application/vnd.slidecreator.deck', {
+      compression: 'STORE',
+    });
     const legacy = await zip.generateAsync({ type: 'nodebuffer' });
 
     const { mimetype, manifest } = await readDeckBundle(legacy);

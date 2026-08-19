@@ -66,7 +66,10 @@ export function presentationToDeck(pres) {
  *   Title slides without a background image take one from
  *   `theme.backgroundPresets`; without a theme they stay empty.
  */
-export function deckToPresentationParts(input, { theme: themeConfig = null } = {}) {
+export function deckToPresentationParts(
+  input,
+  { theme: themeConfig = null } = {},
+) {
   // Accept either the full object or a raw slides array (super simple use-case).
   const deck = Array.isArray(input) ? { slides: input } : input || {};
   const title =
@@ -111,7 +114,10 @@ function normalizeDeckSlide(raw, theme = null) {
     // replaces it, and carries the original content across as text. Import is
     // the one surface that persists rather than renders, so dropping the
     // content here would lose it for good.
-    const { title, body } = unresolvedSlideAsMarkdown({ type: localName, content: raw?.content });
+    const { title, body } = unresolvedSlideAsMarkdown({
+      type: localName,
+      content: raw?.content,
+    });
     return {
       id: cryptoUuid(),
       type: 'content-slide',
@@ -149,7 +155,9 @@ function normalizeDeckSlide(raw, theme = null) {
         const cleaned = v
           .filter((x) => typeof x === 'string' && x.trim())
           .map((x) => x.trim());
-        const limited = field.maxItems ? cleaned.slice(0, field.maxItems) : cleaned;
+        const limited = field.maxItems
+          ? cleaned.slice(0, field.maxItems)
+          : cleaned;
         if (field.required && limited.length === 0) continue; // don't blank required fields
         content[k] = limited;
       }

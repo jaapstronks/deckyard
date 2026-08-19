@@ -50,7 +50,8 @@
     .join-shell,
     .presenter-shell
   )
-  .slide-insert:hover .slide-insert-btn,
+  .slide-insert:hover
+  .slide-insert-btn,
 :where(
     .app-shell,
     .modal-backdrop,
@@ -59,7 +60,8 @@
     .join-shell,
     .presenter-shell
   )
-  .slide-insert.is-kb-active .slide-insert-btn {
+  .slide-insert.is-kb-active
+  .slide-insert-btn {
   opacity: 1;
   transform: scale(1);
   pointer-events: auto;
@@ -81,7 +83,11 @@
   /* Trailing "+" is visible at rest, so it must stay clickable. */
   pointer-events: auto;
 }
-.is-editor .slides-panel .list > .slide-insert:last-child:hover .slide-insert-btn {
+.is-editor
+  .slides-panel
+  .list
+  > .slide-insert:last-child:hover
+  .slide-insert-btn {
   opacity: 1;
 }
 
@@ -118,7 +124,6 @@
   font-weight: 700;
   font-size: var(--ps-text-base);
 }
-
 
 /* --- Touch -----------------------------------------------------------------
    "Insert a slide here" is hover-only, which on a touch screen means it does

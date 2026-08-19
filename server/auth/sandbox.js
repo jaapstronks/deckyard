@@ -1,9 +1,6 @@
 import crypto from 'node:crypto';
 import { parseCookies } from '../utils/cookies.js';
-import {
-  sandboxCookieMaxAgeDays,
-  sandboxEnabled,
-} from '../config/sandbox.js';
+import { sandboxCookieMaxAgeDays, sandboxEnabled } from '../config/sandbox.js';
 import { shouldUseSecureCookies } from '../utils/request-url.js';
 
 const COOKIE_NAME = 'sb_sandbox';
@@ -55,8 +52,7 @@ export function ensureSandboxUser(req, res) {
   if (!prev) res.setHeader('Set-Cookie', parts.join('; '));
   else if (Array.isArray(prev))
     res.setHeader('Set-Cookie', [...prev, parts.join('; ')]);
-  else
-    res.setHeader('Set-Cookie', [String(prev), parts.join('; ')]);
+  else res.setHeader('Set-Cookie', [String(prev), parts.join('; ')]);
 
   const email = `guest-${token}@${GUEST_EMAIL_DOMAIN}`.toLowerCase();
   return {

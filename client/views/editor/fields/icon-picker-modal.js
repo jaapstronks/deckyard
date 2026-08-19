@@ -52,7 +52,10 @@ function getRecent() {
 /** Record an icon as recently used. @param {string} name */
 function pushRecent(name) {
   try {
-    const next = [name, ...getRecent().filter((n) => n !== name)].slice(0, RECENT_MAX);
+    const next = [name, ...getRecent().filter((n) => n !== name)].slice(
+      0,
+      RECENT_MAX,
+    );
     localStorage.setItem(RECENT_KEY, JSON.stringify(next));
   } catch {
     // localStorage unavailable — non-fatal
@@ -92,7 +95,8 @@ export function openIconPicker({ current = '', onSelect } = {}) {
       text: label,
       onclick: () => {
         activeCategory = key;
-        for (const c of chips) c.el.classList.toggle('is-active', c.key === key);
+        for (const c of chips)
+          c.el.classList.toggle('is-active', c.key === key);
         search.value = '';
         rebuild();
         search.focus();
@@ -139,7 +143,9 @@ export function openIconPicker({ current = '', onSelect } = {}) {
       cell.classList.add('is-selected');
       cell.setAttribute('aria-selected', 'true');
     }
-    cell.append(h('img', { class: 'icon-picker-cell-img', src: iconUrl(name), alt: '' }));
+    cell.append(
+      h('img', { class: 'icon-picker-cell-img', src: iconUrl(name), alt: '' }),
+    );
     return cell;
   };
 
@@ -151,13 +157,14 @@ export function openIconPicker({ current = '', onSelect } = {}) {
         h('div', {
           class: 'icon-picker-empty help',
           text: t('editor.iconPicker.noResults', 'No icons match your search.'),
-        })
+        }),
       );
       return;
     }
     grid.append(...cells);
     // Roving tabindex: first cell (or the selected one) is the tab stop.
-    const initial = cells.find((c) => c.classList.contains('is-selected')) || cells[0];
+    const initial =
+      cells.find((c) => c.classList.contains('is-selected')) || cells[0];
     initial.tabIndex = 0;
   };
 
@@ -175,8 +182,14 @@ export function openIconPicker({ current = '', onSelect } = {}) {
     if (!query && activeCategory === 'all') {
       const recent = getRecent();
       if (recent.length) {
-        sectionLabel.textContent = t('editor.iconPicker.recent', 'Recently used');
-        renderNames([...recent, ...ICON_NAMES.filter((n) => !recent.includes(n))]);
+        sectionLabel.textContent = t(
+          'editor.iconPicker.recent',
+          'Recently used',
+        );
+        renderNames([
+          ...recent,
+          ...ICON_NAMES.filter((n) => !recent.includes(n)),
+        ]);
       } else {
         sectionLabel.textContent = '';
         renderNames(ICON_NAMES);
@@ -193,7 +206,9 @@ export function openIconPicker({ current = '', onSelect } = {}) {
     } else {
       sectionLabel.textContent = '';
     }
-    const names = query ? base.filter((n) => matchesQuery(n, query, tags)) : base;
+    const names = query
+      ? base.filter((n) => matchesQuery(n, query, tags))
+      : base;
     if (query) sectionLabel.textContent = '';
     renderNames(names);
   };

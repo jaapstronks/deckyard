@@ -17,7 +17,11 @@ describe('MCP Prompts Registration', () => {
   it('registers all 7 prompts', () => {
     const server = new McpServer();
     registerPrompts(server);
-    assert.strictEqual(server.prompts.size, 7, `Expected 7 prompts, got ${server.prompts.size}`);
+    assert.strictEqual(
+      server.prompts.size,
+      7,
+      `Expected 7 prompts, got ${server.prompts.size}`,
+    );
   });
 
   it('all prompts have required fields', () => {
@@ -25,8 +29,14 @@ describe('MCP Prompts Registration', () => {
     registerPrompts(server);
     for (const [name, prompt] of server.prompts) {
       assert.ok(prompt.description, `${name} missing description`);
-      assert.ok(Array.isArray(prompt.arguments), `${name} arguments should be an array`);
-      assert.ok(typeof prompt.handler === 'function', `${name} missing handler`);
+      assert.ok(
+        Array.isArray(prompt.arguments),
+        `${name} arguments should be an array`,
+      );
+      assert.ok(
+        typeof prompt.handler === 'function',
+        `${name} missing handler`,
+      );
     }
   });
 
@@ -36,7 +46,10 @@ describe('MCP Prompts Registration', () => {
     for (const [promptName, prompt] of server.prompts) {
       for (const arg of prompt.arguments) {
         assert.ok(arg.name, `${promptName}: argument missing name`);
-        assert.ok(arg.description, `${promptName}.${arg.name}: missing description`);
+        assert.ok(
+          arg.description,
+          `${promptName}.${arg.name}: missing description`,
+        );
       }
     }
   });
@@ -71,7 +84,7 @@ describe('MCP Prompts Inventory', () => {
     for (const name of server.prompts.keys()) {
       assert.ok(
         expectedPrompts.includes(name),
-        `Unexpected prompt: ${name} (update expectedPrompts if intentional)`
+        `Unexpected prompt: ${name} (update expectedPrompts if intentional)`,
       );
     }
   });
@@ -86,12 +99,16 @@ describe('MCP Prompt Handlers', () => {
     const server = new McpServer();
     registerPrompts(server);
     const prompt = server.prompts.get('create-presentation');
-    const result = await prompt.handler({ content: 'Test content about Q1 results' });
+    const result = await prompt.handler({
+      content: 'Test content about Q1 results',
+    });
 
     assert.ok(result.messages, 'Should return messages');
     assert.strictEqual(result.messages.length, 1);
     assert.strictEqual(result.messages[0].role, 'user');
-    assert.ok(result.messages[0].content.text.includes('Test content about Q1 results'));
+    assert.ok(
+      result.messages[0].content.text.includes('Test content about Q1 results'),
+    );
   });
 
   it('create-presentation includes language when specified', async () => {
@@ -107,7 +124,10 @@ describe('MCP Prompt Handlers', () => {
     const server = new McpServer();
     registerPrompts(server);
     const prompt = server.prompts.get('create-presentation');
-    const result = await prompt.handler({ content: 'Test', speaker: 'Jaap Stronks' });
+    const result = await prompt.handler({
+      content: 'Test',
+      speaker: 'Jaap Stronks',
+    });
 
     assert.ok(result.messages[0].content.text.includes('Jaap Stronks'));
   });
@@ -116,7 +136,10 @@ describe('MCP Prompt Handlers', () => {
     const server = new McpServer();
     registerPrompts(server);
     const prompt = server.prompts.get('improve-presentation');
-    const result = await prompt.handler({ presentationId: 'abc123', focus: 'punchier' });
+    const result = await prompt.handler({
+      presentationId: 'abc123',
+      focus: 'punchier',
+    });
 
     assert.ok(result.messages[0].content.text.includes('punchier'));
     assert.ok(result.messages[0].content.text.includes('abc123'));
@@ -154,7 +177,10 @@ describe('MCP Prompt Handlers', () => {
     const server = new McpServer();
     registerPrompts(server);
     const prompt = server.prompts.get('compress-presentation');
-    const result = await prompt.handler({ presentationId: 'abc', intensity: 'aggressive' });
+    const result = await prompt.handler({
+      presentationId: 'abc',
+      intensity: 'aggressive',
+    });
 
     assert.ok(result.messages[0].content.text.includes('aggressive'));
   });
@@ -168,24 +194,31 @@ describe('MCP Protocol — Prompts', () => {
   it('capabilities include prompts when registered', async () => {
     const server = new McpServer();
     registerPrompts(server);
-    const resp = JSON.parse(await server.handleMessage({
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'initialize',
-      params: {},
-    }));
+    const resp = JSON.parse(
+      await server.handleMessage({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'initialize',
+        params: {},
+      }),
+    );
 
-    assert.ok(resp.result.capabilities.prompts, 'Should advertise prompts capability');
+    assert.ok(
+      resp.result.capabilities.prompts,
+      'Should advertise prompts capability',
+    );
   });
 
   it('capabilities omit prompts when none registered', async () => {
     const server = new McpServer();
-    const resp = JSON.parse(await server.handleMessage({
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'initialize',
-      params: {},
-    }));
+    const resp = JSON.parse(
+      await server.handleMessage({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'initialize',
+        params: {},
+      }),
+    );
 
     assert.strictEqual(resp.result.capabilities.prompts, undefined);
   });
@@ -193,12 +226,14 @@ describe('MCP Protocol — Prompts', () => {
   it('prompts/list returns all prompts', async () => {
     const server = new McpServer();
     registerPrompts(server);
-    const resp = JSON.parse(await server.handleMessage({
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'prompts/list',
-      params: {},
-    }));
+    const resp = JSON.parse(
+      await server.handleMessage({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'prompts/list',
+        params: {},
+      }),
+    );
 
     assert.strictEqual(resp.result.prompts.length, 7);
     assert.ok(resp.result.prompts[0].name);
@@ -209,15 +244,17 @@ describe('MCP Protocol — Prompts', () => {
   it('prompts/get returns messages for valid prompt', async () => {
     const server = new McpServer();
     registerPrompts(server);
-    const resp = JSON.parse(await server.handleMessage({
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'prompts/get',
-      params: {
-        name: 'create-presentation',
-        arguments: { content: 'Hello world' },
-      },
-    }));
+    const resp = JSON.parse(
+      await server.handleMessage({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'prompts/get',
+        params: {
+          name: 'create-presentation',
+          arguments: { content: 'Hello world' },
+        },
+      }),
+    );
 
     assert.ok(resp.result.messages);
     assert.strictEqual(resp.result.messages[0].role, 'user');
@@ -227,12 +264,14 @@ describe('MCP Protocol — Prompts', () => {
   it('prompts/get returns error for unknown prompt', async () => {
     const server = new McpServer();
     registerPrompts(server);
-    const resp = JSON.parse(await server.handleMessage({
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'prompts/get',
-      params: { name: 'nonexistent' },
-    }));
+    const resp = JSON.parse(
+      await server.handleMessage({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'prompts/get',
+        params: { name: 'nonexistent' },
+      }),
+    );
 
     assert.ok(resp.error);
     assert.strictEqual(resp.error.code, -32601);

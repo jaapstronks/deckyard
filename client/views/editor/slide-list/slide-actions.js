@@ -69,7 +69,7 @@ export function duplicateSlides({
     copy.parentId =
       s.parentId && idMap.has(s.parentId)
         ? idMap.get(s.parentId)
-        : s.parentId ?? null;
+        : (s.parentId ?? null);
     if (copy.type === 'poll-slide' && copy.content) {
       copy.content.pollId = newId();
     }
@@ -96,7 +96,7 @@ export function duplicateSlides({
   toast?.success?.(
     t('editor.slides.duplicated', '{n} slide(s) duplicated', {
       n: newSlides.length,
-    })
+    }),
   );
   return newSlides.length;
 }
@@ -128,12 +128,16 @@ export async function deleteSlides({
     confirmMsg = t(
       'editor.slides.bulkDeleteConfirmWithChildren',
       'Delete {n} selected slides and {c} nested slides?',
-      { n: selectedIds.size, c: childCount }
+      { n: selectedIds.size, c: childCount },
     );
   } else {
-    confirmMsg = t('editor.slides.bulkDeleteConfirm', 'Delete {n} selected slides?', {
-      n: selectedIds.size,
-    });
+    confirmMsg = t(
+      'editor.slides.bulkDeleteConfirm',
+      'Delete {n} selected slides?',
+      {
+        n: selectedIds.size,
+      },
+    );
   }
 
   if (

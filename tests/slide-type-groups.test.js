@@ -46,29 +46,42 @@ import {
   getCategories,
 } from '../client/views/settings/tabs/slide-types-tab/categories.js';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 
 /** Core types an author can still be offered — the ones that owe a group. */
 const OFFERABLE = Object.entries(SLIDE_TYPES)
-  .filter(([name, def]) => !CUSTOM_SLIDE_TYPE_NAMES.includes(name) && !def?.deprecated)
+  .filter(
+    ([name, def]) =>
+      !CUSTOM_SLIDE_TYPE_NAMES.includes(name) && !def?.deprecated,
+  )
   .map(([name]) => name);
 
 /** Core types past the deprecation gate — the ones that must declare none. */
 const DEPRECATED = Object.entries(SLIDE_TYPES)
-  .filter(([name, def]) => !CUSTOM_SLIDE_TYPE_NAMES.includes(name) && def?.deprecated)
+  .filter(
+    ([name, def]) => !CUSTOM_SLIDE_TYPE_NAMES.includes(name) && def?.deprecated,
+  )
   .map(([name]) => name);
 
 describe('the group axis', () => {
   it('every offerable core type declares a group from the vocabulary', () => {
-    const undeclared = OFFERABLE.filter((name) => !SLIDE_TYPE_GROUP[name]).sort();
+    const undeclared = OFFERABLE.filter(
+      (name) => !SLIDE_TYPE_GROUP[name],
+    ).sort();
     assert.deepStrictEqual(
       undeclared,
       [],
       'a type without a group is not visibly broken — it just quietly lands in ' +
         '"Other" on both surfaces, which is exactly how the old drift hid. ' +
-        'Declare `group` in shared/slide-types/types/<name>/authoring.js.'
+        'Declare `group` in shared/slide-types/types/<name>/authoring.js.',
     );
-    assert.ok(OFFERABLE.length > 30, 'the offerable set looks wrong; the check would be vacuous');
+    assert.ok(
+      OFFERABLE.length > 30,
+      'the offerable set looks wrong; the check would be vacuous',
+    );
   });
 
   it('no type declares a group outside the vocabulary', () => {
@@ -76,7 +89,11 @@ describe('the group axis', () => {
       .filter(([, a]) => a?.group !== undefined && !isSlideTypeGroup(a.group))
       .map(([name, a]) => `${name}: ${JSON.stringify(a.group)}`)
       .sort();
-    assert.deepStrictEqual(bogus, [], `known groups: ${Object.keys(SLIDE_TYPE_GROUPS).join(', ')}`);
+    assert.deepStrictEqual(
+      bogus,
+      [],
+      `known groups: ${Object.keys(SLIDE_TYPE_GROUPS).join(', ')}`,
+    );
   });
 
   it('a deprecated type declares no group', () => {
@@ -85,7 +102,7 @@ describe('the group axis', () => {
       stale,
       [],
       'curation is about what an author may insert, so a deprecated type has ' +
-        'nothing to be on a shelf for (see isInsertableSlideType).'
+        'nothing to be on a shelf for (see isInsertableSlideType).',
     );
   });
 
@@ -93,7 +110,7 @@ describe('the group axis', () => {
     for (const group of Object.keys(SLIDE_TYPE_GROUPS)) {
       assert.ok(
         typesInGroup(group).length > 0,
-        `no type declares "${group}" — an unused shelf is vocabulary nobody asked for`
+        `no type declares "${group}" — an unused shelf is vocabulary nobody asked for`,
       );
     }
   });
@@ -106,7 +123,9 @@ describe('the group axis', () => {
     // there (say, returning the declared *and* the core answer) would show up
     // as a type on two shelves.
     const live = {
-      ...Object.fromEntries(Object.keys(SLIDE_TYPES).map((name) => [name, SLIDE_TYPES[name]])),
+      ...Object.fromEntries(
+        Object.keys(SLIDE_TYPES).map((name) => [name, SLIDE_TYPES[name]]),
+      ),
       'acme-hero': { label: 'Hero', group: 'media' },
       // Declares its shelf while core also has an answer for the name.
       'quote-slide': { ...SLIDE_TYPES['quote-slide'], group: 'other' },
@@ -114,12 +133,23 @@ describe('the group axis', () => {
     const seen = new Map();
     for (const group of Object.keys(SLIDE_TYPE_GROUPS)) {
       for (const type of typesInGroup(group, [], live)) {
-        assert.ok(!seen.has(type), `${type} is on both ${seen.get(type)} and ${group}`);
+        assert.ok(
+          !seen.has(type),
+          `${type} is on both ${seen.get(type)} and ${group}`,
+        );
         seen.set(type, group);
       }
     }
-    assert.equal(seen.get('acme-hero'), 'media', 'a non-core declarant is not on a shelf at all');
-    assert.equal(seen.get('quote-slide'), 'other', 'the declaration did not beat the aggregator');
+    assert.equal(
+      seen.get('acme-hero'),
+      'media',
+      'a non-core declarant is not on a shelf at all',
+    );
+    assert.equal(
+      seen.get('quote-slide'),
+      'other',
+      'the declaration did not beat the aggregator',
+    );
   });
 });
 
@@ -132,7 +162,11 @@ describe('the aggregator seam', () => {
   // tests/slide-type-api-companions.test.js, which covers the wire half.
 
   it('a declaration on the definition wins over the aggregator', () => {
-    assert.equal(slideTypeGroup('quote-slide'), 'basic', 'core answer changed; fixture is stale');
+    assert.equal(
+      slideTypeGroup('quote-slide'),
+      'basic',
+      'core answer changed; fixture is stale',
+    );
     assert.equal(slideTypeGroup('quote-slide', { group: 'other' }), 'other');
   });
 
@@ -193,14 +227,14 @@ describe('the aggregator seam', () => {
       Object.entries(SLIDE_TYPES).filter(
         ([name]) =>
           !CUSTOM_SLIDE_TYPE_NAMES.includes(name) ||
-          OVERRIDDEN_CORE_SLIDE_TYPE_NAMES.includes(name)
-      )
+          OVERRIDDEN_CORE_SLIDE_TYPE_NAMES.includes(name),
+      ),
     );
     for (const group of Object.keys(SLIDE_TYPE_GROUPS)) {
       assert.deepStrictEqual(
         typesInGroup(group, PICKER_GROUP_ORDER[group] || []),
         typesInGroup(group, PICKER_GROUP_ORDER[group] || [], core),
-        `core-only resolution differs for "${group}"`
+        `core-only resolution differs for "${group}"`,
       );
     }
   });
@@ -220,21 +254,27 @@ describe('the consumers derive rather than restate', () => {
   it('the settings tab renders every declared shelf', () => {
     assert.deepStrictEqual(
       CATEGORY_ORDER.map((c) => c.key).sort(),
-      Object.keys(SLIDE_TYPE_GROUPS).sort()
+      Object.keys(SLIDE_TYPE_GROUPS).sort(),
     );
     for (const { key } of CATEGORY_ORDER) {
-      assert.equal(typeof CATEGORY_LABELS[key], 'function', `no label for ${key}`);
+      assert.equal(
+        typeof CATEGORY_LABELS[key],
+        'function',
+        `no label for ${key}`,
+      );
     }
   });
 
   it('both surfaces agree, because they read the same declarations', () => {
-    const settings = Object.fromEntries(getCategories().map((c) => [c.key, c.types]));
+    const settings = Object.fromEntries(
+      getCategories().map((c) => [c.key, c.types]),
+    );
     for (const key of PICKER_GROUP_KEYS) {
       assert.deepStrictEqual(
         typesInGroup(key, PICKER_GROUP_ORDER[key]).slice().sort(),
         settings[key].slice().sort(),
         `${key} differs between the picker and the settings tab — impossible ` +
-          'unless one of them grew its own membership again'
+          'unless one of them grew its own membership again',
       );
     }
   });
@@ -248,12 +288,14 @@ describe('the consumers derive rather than restate', () => {
       'acme-hero': { label: 'Hero', group: 'media' },
       'acme-plain': { label: 'Plain' },
     };
-    const shelves = Object.fromEntries(getCategories(live).map((c) => [c.key, c.types]));
+    const shelves = Object.fromEntries(
+      getCategories(live).map((c) => [c.key, c.types]),
+    );
     assert.deepStrictEqual(shelves.media, ['acme-hero']);
     assert.deepStrictEqual(shelves.basic, ['quote-slide']);
     assert.ok(
       !Object.values(shelves).some((types) => types.includes('acme-plain')),
-      'a type that declares nothing must reach the tab\'s uncategorized merge'
+      "a type that declares nothing must reach the tab's uncategorized merge",
     );
   });
 
@@ -267,14 +309,14 @@ describe('the consumers derive rather than restate', () => {
       assert.deepStrictEqual(
         typesInGroup(group, order).slice().sort(),
         members.slice().sort(),
-        `the hint for "${group}" changed the membership`
+        `the hint for "${group}" changed the membership`,
       );
       const strays = order.filter((type) => !members.includes(type));
       assert.deepStrictEqual(
         strays,
         [],
         `the "${group}" order hint names ${strays.join(', ')}, which no longer ` +
-          'declares that group. Harmless at runtime (it is ignored), but stale.'
+          'declares that group. Harmless at runtime (it is ignored), but stale.',
       );
     }
   });
@@ -286,10 +328,13 @@ describe('the ceiling: nothing re-derives the grouping by hand', () => {
   // a module grows its own list of "the media types", the declaration has
   // stopped being the single authority even while every assertion above passes.
   // Same shape as the ceiling `runtime` replaced its floor assertion with.
-  const GROUPED = Object.entries(SLIDE_TYPE_GROUP).reduce((acc, [type, group]) => {
-    (acc[group] ||= []).push(type);
-    return acc;
-  }, {});
+  const GROUPED = Object.entries(SLIDE_TYPE_GROUP).reduce(
+    (acc, [type, group]) => {
+      (acc[group] ||= []).push(type);
+      return acc;
+    },
+    {},
+  );
 
   /** Files a module may legitimately hold a shelf-shaped list in. */
   const ALLOWED = new Set([
@@ -303,14 +348,19 @@ describe('the ceiling: nothing re-derives the grouping by hand', () => {
     const out = [];
     const walk = (dir) => {
       for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-        if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
+        if (entry.name === 'node_modules' || entry.name.startsWith('.'))
+          continue;
         const abs = path.join(dir, entry.name);
-        if (entry.isDirectory()) { walk(abs); continue; }
+        if (entry.isDirectory()) {
+          walk(abs);
+          continue;
+        }
         if (!entry.name.endsWith('.js')) continue;
         out.push(abs);
       }
     };
-    for (const dir of ['client', 'server', 'shared', 'scripts']) walk(path.join(repoRoot, dir));
+    for (const dir of ['client', 'server', 'shared', 'scripts'])
+      walk(path.join(repoRoot, dir));
     return out;
   };
 
@@ -335,7 +385,7 @@ describe('the ceiling: nothing re-derives the grouping by hand', () => {
       if (ALLOWED.has(rel)) continue;
       const src = fs.readFileSync(abs, 'utf8');
       const named = ALL_TYPES.filter(
-        (type) => src.includes(`'${type}'`) || src.includes(`"${type}"`)
+        (type) => src.includes(`'${type}'`) || src.includes(`"${type}"`),
       );
       if (named.length < 3) continue;
       for (const [group, types] of Object.entries(GROUPED)) {
@@ -350,7 +400,7 @@ describe('the ceiling: nothing re-derives the grouping by hand', () => {
       offenders,
       [],
       'a module whose type vocabulary is exactly one shelf has re-derived the ' +
-        'grouping by hand. Read it from SLIDE_TYPE_GROUP / typesInGroup().'
+        'grouping by hand. Read it from SLIDE_TYPE_GROUP / typesInGroup().',
     );
   });
 });

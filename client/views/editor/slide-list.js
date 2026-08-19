@@ -2,10 +2,7 @@ import { oneLine, slideLabel, slidePrimaryLabel } from './editor-utils.js';
 import { attachSlideListKeyNavigation } from './slide-list/keyboard-nav.js';
 import { createInsertRow } from './slide-list/insert-row.js';
 import { t } from '../../lib/ui-i18n.js';
-import {
-  findFirstMatchInSlide,
-  normalizeQuery,
-} from './slide-list/search.js';
+import { findFirstMatchInSlide, normalizeQuery } from './slide-list/search.js';
 import {
   buildChildrenMap,
   getDescendantIds,
@@ -14,7 +11,10 @@ import {
   getCollapsedState,
   saveCollapsedState,
 } from './slide-list/nested-helpers.js';
-import { createSlideItem, applySlideLockIndicator } from './slide-list/render-item.js';
+import {
+  createSlideItem,
+  applySlideLockIndicator,
+} from './slide-list/render-item.js';
 import { attachDragHandlers } from './slide-list/drag-handlers.js';
 import { attachLongPress } from '../../lib/dom/long-press.js';
 import { attachClickHandler } from './slide-list/click-handlers.js';
@@ -59,7 +59,9 @@ export function setupSlideList({
 
   const clearDraggingVisuals = () => {
     try {
-      for (const el of slideListEl.querySelectorAll('.slide-item.is-dragging')) {
+      for (const el of slideListEl.querySelectorAll(
+        '.slide-item.is-dragging',
+      )) {
         el.classList.remove('is-dragging');
       }
     } catch {
@@ -72,7 +74,7 @@ export function setupSlideList({
     if (!sid) return;
     requestAnimationFrame(() => {
       const el = slideListEl.querySelector(
-        `.list-item.slide-item[data-slide-id="${sid}"]`
+        `.list-item.slide-item[data-slide-id="${sid}"]`,
       );
       if (!el) return;
       el.classList.remove('is-reorder-flash');
@@ -135,7 +137,7 @@ export function setupSlideList({
         const targetChildren = pres.slides.filter((s) => s.parentId === toId);
         if (targetChildren.length > 0) {
           const lastChildIdx = pres.slides.findIndex(
-            (s) => s.id === targetChildren[targetChildren.length - 1].id
+            (s) => s.id === targetChildren[targetChildren.length - 1].id,
           );
           insertIdx = lastChildIdx + 1;
         } else {
@@ -211,7 +213,9 @@ export function setupSlideList({
       }
     }
 
-    const slidesToMove = (pres.slides || []).filter((s) => allIdsToMove.has(s.id));
+    const slidesToMove = (pres.slides || []).filter((s) =>
+      allIdsToMove.has(s.id),
+    );
     if (slidesToMove.length === 0) return;
 
     pres.slides = pres.slides.filter((s) => !allIdsToMove.has(s.id));
@@ -231,7 +235,7 @@ export function setupSlideList({
         const targetChildren = pres.slides.filter((s) => s.parentId === toId);
         if (targetChildren.length > 0) {
           const lastChildIdx = pres.slides.findIndex(
-            (s) => s.id === targetChildren[targetChildren.length - 1].id
+            (s) => s.id === targetChildren[targetChildren.length - 1].id,
           );
           insertIdx = lastChildIdx + 1;
         } else {
@@ -256,7 +260,9 @@ export function setupSlideList({
   };
 
   const clearDropIndicators = () => {
-    for (const el of slideListEl.querySelectorAll('.list-item.is-drop-before, .list-item.is-drop-after, .list-item.is-drop-nest')) {
+    for (const el of slideListEl.querySelectorAll(
+      '.list-item.is-drop-before, .list-item.is-drop-after, .list-item.is-drop-nest',
+    )) {
       el.classList.remove('is-drop-before');
       el.classList.remove('is-drop-after');
       el.classList.remove('is-drop-nest');
@@ -270,7 +276,8 @@ export function setupSlideList({
 
   const setDropIndicator = (itemEl, pos) => {
     if (!itemEl) return;
-    if (dropTargetId === itemEl.dataset.slideId && dropTargetPos === pos) return;
+    if (dropTargetId === itemEl.dataset.slideId && dropTargetPos === pos)
+      return;
     clearDropIndicators();
     dropTargetId = itemEl.dataset.slideId;
     dropTargetPos = pos;
@@ -284,7 +291,7 @@ export function setupSlideList({
         h('div', {
           class: 'slide-nest-hint',
           text: t('editor.slideList.nestHint', 'Drop to nest'),
-        })
+        }),
       );
     }
   };
@@ -335,7 +342,10 @@ export function setupSlideList({
     const slides = matches.map((x) => x.slide);
     const matchedIds = slides.map((s) => s.id);
 
-    const insertRow = (afterSlideId, { isChild = false, parentId = null } = {}) => {
+    const insertRow = (
+      afterSlideId,
+      { isChild = false, parentId = null } = {},
+    ) => {
       const row = createInsertRow({
         h,
         afterSlideId,
@@ -363,9 +373,9 @@ export function setupSlideList({
           class: 'help slides-search-hint',
           text: t(
             'editor.slideList.searchHint',
-            'Search results — clear the search box to reorder or add slides.'
+            'Search results — clear the search box to reorder or add slides.',
           ),
-        })
+        }),
       );
     } else {
       slideListEl.append(insertRow(null));
@@ -376,7 +386,7 @@ export function setupSlideList({
         h('div', {
           class: 'help slides-search-empty',
           text: t('editor.slideList.empty', 'No slides found.'),
-        })
+        }),
       );
       return {
         total: allSlides.length,
@@ -413,9 +423,13 @@ export function setupSlideList({
       getSearchQuery,
       // Drag state
       getDraggingSlideId: () => draggingSlideId,
-      setDraggingSlideId: (id) => { draggingSlideId = id; },
+      setDraggingSlideId: (id) => {
+        draggingSlideId = id;
+      },
       getDraggingSlideIds: () => draggingSlideIds,
-      setDraggingSlideIds: (ids) => { draggingSlideIds = ids; },
+      setDraggingSlideIds: (ids) => {
+        draggingSlideIds = ids;
+      },
       getDropTargetPos: () => dropTargetPos,
       dropTargetId,
       setDropIndicator,
@@ -433,7 +447,9 @@ export function setupSlideList({
       editorState,
       onAfterSelectSlide,
       getLastClickedSlideId: () => lastClickedSlideId,
-      setLastClickedSlideId: (id) => { lastClickedSlideId = id; },
+      setLastClickedSlideId: (id) => {
+        lastClickedSlideId = id;
+      },
     };
 
     // Main rendering loop - handle nested structure
@@ -482,8 +498,11 @@ export function setupSlideList({
         const children = childrenMap.get(s.id) || [];
 
         for (const child of children) {
-          const childMatch = matches.find((m) => m.slide.id === child.id)?.match || null;
-          const childOriginalIdx = indexById.has(child.id) ? indexById.get(child.id) : 0;
+          const childMatch =
+            matches.find((m) => m.slide.id === child.id)?.match || null;
+          const childOriginalIdx = indexById.has(child.id)
+            ? indexById.get(child.id)
+            : 0;
 
           const { item: childItem } = createSlideItem({
             h,
@@ -494,7 +513,11 @@ export function setupSlideList({
           });
 
           // Attach event handlers to child
-          attachClickHandler({ item: childItem, slide: child, context: renderContext });
+          attachClickHandler({
+            item: childItem,
+            slide: child,
+            context: renderContext,
+          });
           attachDragHandlers({
             item: childItem,
             slide: child,
@@ -506,7 +529,10 @@ export function setupSlideList({
           slideListEl.append(childItem);
 
           // Insert row after each child (also hidden when collapsed)
-          const childInsertRow = insertRow(child.id, { isChild: true, parentId: s.id });
+          const childInsertRow = insertRow(child.id, {
+            isChild: true,
+            parentId: s.id,
+          });
           if (isCollapsed) childInsertRow.classList.add('is-hidden');
           slideListEl.append(childInsertRow);
         }
@@ -525,7 +551,9 @@ export function setupSlideList({
     const selectedSlideId = getSelectedSlideId?.();
     const slide = pres.slides.find((s) => s.id === selectedSlideId);
     if (!slide) return;
-    const item = slideListEl.querySelector(`.list-item[data-slide-id="${selectedSlideId}"]`);
+    const item = slideListEl.querySelector(
+      `.list-item[data-slide-id="${selectedSlideId}"]`,
+    );
     if (!item) return;
     const fullTitle = slideLabel(slide, SLIDE_TYPES);
 
@@ -576,14 +604,18 @@ export function setupSlideList({
     for (const id of lockedIds || []) {
       if (id) targets.add(String(id));
     }
-    for (const el of slideListEl.querySelectorAll('.list-item.is-locked-by-other')) {
+    for (const el of slideListEl.querySelectorAll(
+      '.list-item.is-locked-by-other',
+    )) {
       const sid = el.dataset.slideId;
       if (sid) targets.add(sid);
     }
     if (!targets.size) return;
 
     for (const slideId of targets) {
-      const item = slideListEl.querySelector(`.list-item[data-slide-id="${slideId}"]`);
+      const item = slideListEl.querySelector(
+        `.list-item[data-slide-id="${slideId}"]`,
+      );
       if (!item) continue;
       applySlideLockIndicator({
         h,
@@ -611,22 +643,23 @@ export function setupSlideList({
     });
   };
 
-  const { selectSlideByIndex, detach: detachKeyNav } = attachSlideListKeyNavigation({
-    slideListEl,
-    pres,
-    getSlides: () => getSlidesForNav(),
-    getSelectedSlideId,
-    setSelectedSlideId,
-    getSelectedSlideIds,
-    setSelectedSlideIds,
-    clearMultiSelection,
-    onMultiSelectionChange,
-    editorState,
-    rerenderSlideList,
-    markDirty,
-    performUndo,
-    performRedo,
-  });
+  const { selectSlideByIndex, detach: detachKeyNav } =
+    attachSlideListKeyNavigation({
+      slideListEl,
+      pres,
+      getSlides: () => getSlidesForNav(),
+      getSelectedSlideId,
+      setSelectedSlideId,
+      getSelectedSlideIds,
+      setSelectedSlideIds,
+      clearMultiSelection,
+      onMultiSelectionChange,
+      editorState,
+      rerenderSlideList,
+      markDirty,
+      performUndo,
+      performRedo,
+    });
 
   // Right-click a slide row for a quick actions menu (duplicate / delete /
   // visibility). Delegated on the list container so a single listener covers

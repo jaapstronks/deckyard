@@ -35,19 +35,19 @@ that same object:
 
 Set these in `.env` (see `.env.example` for the annotated block):
 
-| Variable | Required | Meaning |
-|----------|----------|---------|
-| `SSO_ENABLED` | yes | `true` to turn SSO on. |
-| `SSO_PROVIDER` | yes | `oidc` (only value supported today). |
-| `OIDC_ISSUER_URL` | yes | Issuer base URL; discovery uses `/.well-known/openid-configuration`. |
-| `OIDC_CLIENT_ID` | yes | Client ID from the IdP app registration. |
-| `OIDC_CLIENT_SECRET` | yes | Client secret (keep out of version control). |
-| `OIDC_REDIRECT_URI` | yes | Must exactly match the redirect URI registered at the IdP, e.g. `https://deck.example.com/api/auth/oidc/callback`. |
-| `OIDC_ALLOWED_DOMAINS` | no | Comma-separated email domains allowed to log in (hosted-domain guard). |
-| `OIDC_AUTO_PROVISION` | no | JIT-create unknown users on first login. Default `true`. Set `false` to require users be invited first. |
-| `OIDC_DEFAULT_ROLE` | no | Role for newly provisioned users: `user` (default) or `admin`. |
-| `OIDC_ADMIN_GROUPS` | no | Comma-separated IdP group/role claim values that map to the Deckyard `admin` role. |
-| `SSO_ENFORCE` | no | `true` hides password + magic-link login (SSO only). Default `false`. |
+| Variable               | Required | Meaning                                                                                                            |
+| ---------------------- | -------- | ------------------------------------------------------------------------------------------------------------------ |
+| `SSO_ENABLED`          | yes      | `true` to turn SSO on.                                                                                             |
+| `SSO_PROVIDER`         | yes      | `oidc` (only value supported today).                                                                               |
+| `OIDC_ISSUER_URL`      | yes      | Issuer base URL; discovery uses `/.well-known/openid-configuration`.                                               |
+| `OIDC_CLIENT_ID`       | yes      | Client ID from the IdP app registration.                                                                           |
+| `OIDC_CLIENT_SECRET`   | yes      | Client secret (keep out of version control).                                                                       |
+| `OIDC_REDIRECT_URI`    | yes      | Must exactly match the redirect URI registered at the IdP, e.g. `https://deck.example.com/api/auth/oidc/callback`. |
+| `OIDC_ALLOWED_DOMAINS` | no       | Comma-separated email domains allowed to log in (hosted-domain guard).                                             |
+| `OIDC_AUTO_PROVISION`  | no       | JIT-create unknown users on first login. Default `true`. Set `false` to require users be invited first.            |
+| `OIDC_DEFAULT_ROLE`    | no       | Role for newly provisioned users: `user` (default) or `admin`.                                                     |
+| `OIDC_ADMIN_GROUPS`    | no       | Comma-separated IdP group/role claim values that map to the Deckyard `admin` role.                                 |
+| `SSO_ENFORCE`          | no       | `true` hides password + magic-link login (SSO only). Default `false`.                                              |
 
 The server **refuses to boot** when `SSO_ENABLED=true` but a required OIDC
 setting is missing or an URL is malformed — a half-configured SSO fails loudly

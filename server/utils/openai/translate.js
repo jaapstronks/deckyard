@@ -20,7 +20,8 @@ let getGuidelines = () => '';
 try {
   // eslint-disable-next-line import-x/no-unresolved -- fork-only, see above
   const rules = await import('ciiic-translation-rules');
-  generateTerminologyPrompt = rules.generateTerminologyPrompt || generateTerminologyPrompt;
+  generateTerminologyPrompt =
+    rules.generateTerminologyPrompt || generateTerminologyPrompt;
   getGuidelines = rules.getGuidelines || getGuidelines;
 } catch {
   // ciiic-translation-rules not installed - using empty fallbacks
@@ -35,7 +36,8 @@ function translateKeysForSlideType(type) {
   if (!def || !Array.isArray(def.fields)) return [];
   return def.fields
     .filter(
-      (f) => f && (f.type === 'string' || f.type === 'markdown' || f.type === 'csv')
+      (f) =>
+        f && (f.type === 'string' || f.type === 'markdown' || f.type === 'csv'),
     )
     .map((f) => f.key)
     .filter((k) => typeof k === 'string' && k.trim());
@@ -54,7 +56,11 @@ function itemsFieldsForSlideType(type) {
     .map((f) => ({
       key: f.key,
       itemKeys: f.itemFields
-        .filter((itemField) => itemField && (itemField.type === 'string' || itemField.type === 'markdown'))
+        .filter(
+          (itemField) =>
+            itemField &&
+            (itemField.type === 'string' || itemField.type === 'markdown'),
+        )
         .map((itemField) => itemField.key)
         .filter((k) => typeof k === 'string' && k.trim()),
     }))
@@ -63,7 +69,7 @@ function itemsFieldsForSlideType(type) {
 
 export async function translatePresentationStrings(
   presentation,
-  { from, to, existingTarget = null, fillMissing = false, vendor = null } = {}
+  { from, to, existingTarget = null, fillMissing = false, vendor = null } = {},
 ) {
   const fromLang = normalizeTranslationLang(from);
   const toLang = normalizeTranslationLang(to);
@@ -79,19 +85,14 @@ export async function translatePresentationStrings(
     ? presentation.slides
     : [];
   const targetTitle =
-    typeof existingTarget?.title === 'string'
-      ? existingTarget.title
-      : '';
+    typeof existingTarget?.title === 'string' ? existingTarget.title : '';
   const targetSlides = Array.isArray(existingTarget?.slides)
     ? existingTarget.slides
     : [];
   const targetById = new Map(
     targetSlides
-      .filter(
-        (s) =>
-          s && typeof s === 'object' && typeof s.id === 'string'
-      )
-      .map((s) => [s.id, s])
+      .filter((s) => s && typeof s === 'object' && typeof s.id === 'string')
+      .map((s) => [s.id, s]),
   );
 
   const slideMeta = srcSlides.map((s) => ({
@@ -139,14 +140,11 @@ export async function translatePresentationStrings(
         slides: srcSlides.map((s) => ({
           id: s?.id,
           type: s?.type,
-          content:
-            s?.content && typeof s.content === 'object'
-              ? s.content
-              : {},
+          content: s?.content && typeof s.content === 'object' ? s.content : {},
         })),
       },
       null,
-      2
+      2,
     ),
     '',
     'SLIDE META (translate keys per slide id):',
@@ -169,35 +167,31 @@ export async function translatePresentationStrings(
   const obj = extractJsonObject(content);
   if (!obj || typeof obj !== 'object') {
     // The raw response rides along as a field for logging, never the envelope.
-    throw new LlmError(`${resolvedVendor} did not return valid translation JSON.`, {
-      statusCode: 502,
-      vendor: resolvedVendor,
-      response: content,
-      phase: 'translate',
-    });
+    throw new LlmError(
+      `${resolvedVendor} did not return valid translation JSON.`,
+      {
+        statusCode: 502,
+        vendor: resolvedVendor,
+        response: content,
+        phase: 'translate',
+      },
+    );
   }
 
-  const llmTitle =
-    typeof obj.title === 'string' ? obj.title : srcTitle;
-  const outTitle =
-    fillMissing && targetTitle.trim() ? targetTitle : llmTitle;
+  const llmTitle = typeof obj.title === 'string' ? obj.title : srcTitle;
+  const outTitle = fillMissing && targetTitle.trim() ? targetTitle : llmTitle;
   const outSlides = Array.isArray(obj.slides) ? obj.slides : [];
   const outById = new Map(
     outSlides
-      .filter(
-        (s) =>
-          s && typeof s === 'object' && typeof s.id === 'string'
-      )
-      .map((s) => [s.id, s])
+      .filter((s) => s && typeof s === 'object' && typeof s.id === 'string')
+      .map((s) => [s.id, s]),
   );
 
   // Post-process: only accept translated values for known text fields.
   const mergedSlides = srcSlides.map((src) => {
     const t = outById.get(src.id);
     const srcContent =
-      src?.content && typeof src.content === 'object'
-        ? src.content
-        : {};
+      src?.content && typeof src.content === 'object' ? src.content : {};
     const nextContent = { ...srcContent };
     const keys = translateKeysForSlideType(src?.type);
     const itemsFields = itemsFieldsForSlideType(src?.type);
@@ -225,14 +219,22 @@ export async function translatePresentationStrings(
 
     // Handle items arrays (e.g., items, metrics, levels, cells, images)
     for (const { key: arrKey, itemKeys } of itemsFields) {
-      const srcArr = Array.isArray(srcContent?.[arrKey]) ? srcContent[arrKey] : [];
+      const srcArr = Array.isArray(srcContent?.[arrKey])
+        ? srcContent[arrKey]
+        : [];
       const tArr = Array.isArray(tContent?.[arrKey]) ? tContent[arrKey] : [];
-      const existingArr = Array.isArray(existingContent?.[arrKey]) ? existingContent[arrKey] : [];
+      const existingArr = Array.isArray(existingContent?.[arrKey])
+        ? existingContent[arrKey]
+        : [];
 
       // Merge translated items - preserve all source fields, only update translatable keys
       const mergedArr = srcArr.map((srcItem, idx) => {
-        const tItem = tArr[idx] && typeof tArr[idx] === 'object' ? tArr[idx] : {};
-        const existingItem = existingArr[idx] && typeof existingArr[idx] === 'object' ? existingArr[idx] : {};
+        const tItem =
+          tArr[idx] && typeof tArr[idx] === 'object' ? tArr[idx] : {};
+        const existingItem =
+          existingArr[idx] && typeof existingArr[idx] === 'object'
+            ? existingArr[idx]
+            : {};
         const mergedItem = { ...srcItem };
 
         for (const itemKey of itemKeys) {
@@ -265,7 +267,10 @@ export async function translatePresentationStrings(
   return { title: outTitle, slides: mergedSlides };
 }
 
-export async function translateShortText(text, { from, to, vendor = null } = {}) {
+export async function translateShortText(
+  text,
+  { from, to, vendor = null } = {},
+) {
   const fromLang = normalizeTranslationLang(from);
   const toLang = normalizeTranslationLang(to);
   if (!fromLang || !toLang || fromLang === toLang) {
@@ -314,7 +319,10 @@ export async function translateShortText(text, { from, to, vendor = null } = {})
   return String(out || '').trim();
 }
 
-export async function translateFieldMap(fields, { from, to, vendor = null } = {}) {
+export async function translateFieldMap(
+  fields,
+  { from, to, vendor = null } = {},
+) {
   const fromLang = normalizeTranslationLang(from);
   const toLang = normalizeTranslationLang(to);
   if (!fromLang || !toLang || fromLang === toLang) {
@@ -354,7 +362,7 @@ export async function translateFieldMap(fields, { from, to, vendor = null } = {}
   const user = JSON.stringify(
     { fields: Object.fromEntries(keys.map((k) => [k, input[k]])) },
     null,
-    2
+    2,
   );
 
   const content = await requestChatCompletionContent({
@@ -383,7 +391,7 @@ export async function translateFieldMap(fields, { from, to, vendor = null } = {}
 
 export async function translatePresentationStringsFillMissing(
   { sourcePresentation, targetPresentation, missing = [] } = {},
-  { from, to, vendor = null } = {}
+  { from, to, vendor = null } = {},
 ) {
   const fromLang = normalizeTranslationLang(from);
   const toLang = normalizeTranslationLang(to);
@@ -451,14 +459,11 @@ export async function translatePresentationStringsFillMissing(
         slides: srcSlides.map((s) => ({
           id: s?.id,
           type: s?.type,
-          content:
-            s?.content && typeof s.content === 'object'
-              ? s.content
-              : {},
+          content: s?.content && typeof s.content === 'object' ? s.content : {},
         })),
       },
       null,
-      2
+      2,
     ),
     '',
     'TARGET PRESENTATION JSON (fill missing fields only):',
@@ -468,14 +473,11 @@ export async function translatePresentationStringsFillMissing(
         slides: tgtSlides.map((s) => ({
           id: s?.id,
           type: s?.type,
-          content:
-            s?.content && typeof s.content === 'object'
-              ? s.content
-              : {},
+          content: s?.content && typeof s.content === 'object' ? s.content : {},
         })),
       },
       null,
-      2
+      2,
     ),
     '',
     'MISSING FIELDS (fill these only):',
@@ -501,28 +503,29 @@ export async function translatePresentationStringsFillMissing(
   const obj = extractJsonObject(content);
   if (!obj || typeof obj !== 'object') {
     // The raw response rides along as a field for logging, never the envelope.
-    throw new LlmError(`${resolvedVendor} did not return valid translation JSON.`, {
-      statusCode: 502,
-      vendor: resolvedVendor,
-      response: content,
-      phase: 'translate',
-    });
+    throw new LlmError(
+      `${resolvedVendor} did not return valid translation JSON.`,
+      {
+        statusCode: 502,
+        vendor: resolvedVendor,
+        response: content,
+        phase: 'translate',
+      },
+    );
   }
 
   const outTitle = typeof obj.title === 'string' ? obj.title : tgtTitle;
   const outSlides = Array.isArray(obj.slides) ? obj.slides : [];
   const outById = new Map(
     outSlides
-      .filter(
-        (s) =>
-          s && typeof s === 'object' && typeof s.id === 'string'
-      )
-      .map((s) => [s.id, s])
+      .filter((s) => s && typeof s === 'object' && typeof s.id === 'string')
+      .map((s) => [s.id, s]),
   );
 
   const mergedSlides = tgtSlides.map((tSlide, idx) => {
     const out = outById.get(tSlide?.id) || outSlides[idx] || null;
-    const srcSlide = srcSlides.find((s) => s?.id === tSlide?.id) || srcSlides[idx] || null;
+    const srcSlide =
+      srcSlides.find((s) => s?.id === tSlide?.id) || srcSlides[idx] || null;
     const tgtContent =
       tSlide?.content && typeof tSlide.content === 'object'
         ? tSlide.content
@@ -547,14 +550,26 @@ export async function translatePresentationStringsFillMissing(
 
     // Handle items arrays (e.g., items, metrics, levels, cells, images)
     for (const { key: arrKey, itemKeys } of itemsFields) {
-      const srcArr = Array.isArray(srcContent?.[arrKey]) ? srcContent[arrKey] : [];
-      const tgtArr = Array.isArray(tgtContent?.[arrKey]) ? tgtContent[arrKey] : [];
-      const outArr = Array.isArray(outContent?.[arrKey]) ? outContent[arrKey] : [];
+      const srcArr = Array.isArray(srcContent?.[arrKey])
+        ? srcContent[arrKey]
+        : [];
+      const tgtArr = Array.isArray(tgtContent?.[arrKey])
+        ? tgtContent[arrKey]
+        : [];
+      const outArr = Array.isArray(outContent?.[arrKey])
+        ? outContent[arrKey]
+        : [];
 
       // Merge translated items - preserve all target fields, only fill missing keys
       const mergedArr = srcArr.map((srcItem, itemIdx) => {
-        const tgtItem = tgtArr[itemIdx] && typeof tgtArr[itemIdx] === 'object' ? tgtArr[itemIdx] : {};
-        const outItem = outArr[itemIdx] && typeof outArr[itemIdx] === 'object' ? outArr[itemIdx] : {};
+        const tgtItem =
+          tgtArr[itemIdx] && typeof tgtArr[itemIdx] === 'object'
+            ? tgtArr[itemIdx]
+            : {};
+        const outItem =
+          outArr[itemIdx] && typeof outArr[itemIdx] === 'object'
+            ? outArr[itemIdx]
+            : {};
         const mergedItem = { ...tgtItem };
 
         for (const itemKey of itemKeys) {

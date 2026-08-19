@@ -103,8 +103,8 @@ const CORE_SLIDE_TYPE_CATALOG = Object.freeze(
         };
         return rank(a) - rank(b) || a.localeCompare(b);
       })
-      .map((type) => [type, SLIDE_TYPE_AI[type]])
-  )
+      .map((type) => [type, SLIDE_TYPE_AI[type]]),
+  ),
 );
 
 /**

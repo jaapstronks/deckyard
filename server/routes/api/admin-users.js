@@ -3,11 +3,22 @@
  * Allows admins to list, create, update, and delete users.
  */
 
-import { serveJson, badRequest, unauthorized, notFound, rateLimited, requireJsonBody, withErrorHandler } from '../../utils/http.js';
+import {
+  serveJson,
+  badRequest,
+  unauthorized,
+  notFound,
+  rateLimited,
+  requireJsonBody,
+  withErrorHandler,
+} from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { getClientIp, getOrgId } from '../../utils/context.js';
 import { dispatchRoutes } from '../../utils/router.js';
-import { sendUserInvitationEmail, sendActivationReminderEmail } from '../../integrations/brevo.js';
+import {
+  sendUserInvitationEmail,
+  sendActivationReminderEmail,
+} from '../../integrations/brevo.js';
 import {
   listUsers,
   getUserById,
@@ -59,7 +70,10 @@ function checkAdminRateLimit(adminEmail, maxRequests) {
 
   if (!entry || entry.resetAt < now) {
     // New window
-    createRateLimits.set(adminEmail, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    createRateLimits.set(adminEmail, {
+      count: 1,
+      resetAt: now + RATE_LIMIT_WINDOW_MS,
+    });
     return false;
   }
 
@@ -79,7 +93,8 @@ function checkAdminRateLimit(adminEmail, maxRequests) {
  */
 function buildSetupUrl(req, token) {
   const host = req.headers?.host || 'localhost:3000';
-  const protocol = req.headers?.['x-forwarded-proto'] === 'https' ? 'https' : 'http';
+  const protocol =
+    req.headers?.['x-forwarded-proto'] === 'https' ? 'https' : 'http';
   return `${protocol}://${host}/reset-password?token=${encodeURIComponent(token)}`;
 }
 
@@ -90,28 +105,43 @@ async function handleAdminUserList({ storageScope: ctx, res }) {
   // Enrich users with designer status from their org membership
   const orgId = getOrgId(ctx);
   const org = await getOrganizationById(orgId).catch(() => null);
-  const orgSettings = org?.settings && typeof org.settings === 'object' ? org.settings : {};
+  const orgSettings =
+    org?.settings && typeof org.settings === 'object' ? org.settings : {};
 
-  const enrichedUsers = await Promise.all(users.map(async (u) => {
-    try {
-      const membership = await getMembershipByEmail(u.email, orgId);
-      const isDesigner = membership ? hasDesignerCapability(membership, orgSettings) : false;
-      const isExplicitDesigner = membership ? membership.isDesigner : false;
-      return { ...u, isDesigner, isExplicitDesigner };
-    } catch {
-      return { ...u, isDesigner: false, isExplicitDesigner: false };
-    }
-  }));
+  const enrichedUsers = await Promise.all(
+    users.map(async (u) => {
+      try {
+        const membership = await getMembershipByEmail(u.email, orgId);
+        const isDesigner = membership
+          ? hasDesignerCapability(membership, orgSettings)
+          : false;
+        const isExplicitDesigner = membership ? membership.isDesigner : false;
+        return { ...u, isDesigner, isExplicitDesigner };
+      } catch {
+        return { ...u, isDesigner: false, isExplicitDesigner: false };
+      }
+    }),
+  );
 
   serveJson(res, 200, { users: enrichedUsers });
   return true;
 }
 
 // POST /api/admin/users - Create a new user
-async function handleAdminUserCreate({ repoRoot, storageScope: ctx, req, res, authedUser: user }) {
+async function handleAdminUserCreate({
+  repoRoot,
+  storageScope: ctx,
+  req,
+  res,
+  authedUser: user,
+}) {
   // Rate limit user creation to prevent abuse
   if (checkAdminRateLimit(user.email, RATE_LIMIT_CREATE_PER_ADMIN)) {
-    rateLimited(res, 3600, 'Too many user creation requests. Please try again later.');
+    rateLimited(
+      res,
+      3600,
+      'Too many user creation requests. Please try again later.',
+    );
     return true;
   }
 
@@ -176,7 +206,7 @@ async function handleAdminUserCreate({ repoRoot, storageScope: ctx, req, res, au
       log.warn(
         '[admin-users] Invitation email not sent to %s: %s',
         email,
-        sendResult?.error || 'unknown error'
+        sendResult?.error || 'unknown error',
       );
     }
   }
@@ -234,7 +264,7 @@ async function handleAdminUserUpdate({ storageScope: ctx, req, res }, userId) {
 
   // Update designer flag on the user's org membership
   if (hasDesignerUpdate) {
-    const targetUser = resultUser || await getUserById(ctx, userId);
+    const targetUser = resultUser || (await getUserById(ctx, userId));
     if (!targetUser) {
       return notFound(res);
     }
@@ -264,7 +294,10 @@ async function handleAdminUserUpdate({ storageScope: ctx, req, res }, userId) {
 }
 
 // DELETE /api/admin/users/:id - Delete a user
-async function handleAdminUserDelete({ storageScope: ctx, req, res, authedUser: user }, userId) {
+async function handleAdminUserDelete(
+  { storageScope: ctx, req, res, authedUser: user },
+  userId,
+) {
   // Prevent self-deletion
   const targetUser = await getUserById(ctx, userId);
   if (targetUser?.email === user.email) {
@@ -295,7 +328,10 @@ async function handleAdminUserDelete({ storageScope: ctx, req, res, authedUser: 
 }
 
 // POST /api/admin/users/:id/resend-invitation - Resend invitation
-async function handleAdminUserResendInvitation({ repoRoot, storageScope: ctx, req, res, authedUser: user }, userId) {
+async function handleAdminUserResendInvitation(
+  { repoRoot, storageScope: ctx, req, res, authedUser: user },
+  userId,
+) {
   const result = await resendInvitation(ctx, userId);
 
   if (!result.ok) {
@@ -334,7 +370,7 @@ async function handleAdminUserResendInvitation({ repoRoot, storageScope: ctx, re
       log.warn(
         '[admin-users] Activation reminder not sent to %s: %s',
         targetUser.email,
-        sendResult?.error || 'unknown error'
+        sendResult?.error || 'unknown error',
       );
     }
   }
@@ -356,11 +392,31 @@ async function handleAdminUserResendInvitation({ repoRoot, storageScope: ctx, re
  */
 export const ROUTES = [
   { method: 'GET', pattern: '/api/admin/users', handler: handleAdminUserList },
-  { method: 'POST', pattern: '/api/admin/users', handler: handleAdminUserCreate },
-  { method: 'GET', pattern: /^\/api\/admin\/users\/([^/]+)$/, handler: handleAdminUserGet },
-  { method: 'PATCH', pattern: /^\/api\/admin\/users\/([^/]+)$/, handler: handleAdminUserUpdate },
-  { method: 'DELETE', pattern: /^\/api\/admin\/users\/([^/]+)$/, handler: handleAdminUserDelete },
-  { method: 'POST', pattern: /^\/api\/admin\/users\/([^/]+)\/resend-invitation$/, handler: handleAdminUserResendInvitation },
+  {
+    method: 'POST',
+    pattern: '/api/admin/users',
+    handler: handleAdminUserCreate,
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/admin\/users\/([^/]+)$/,
+    handler: handleAdminUserGet,
+  },
+  {
+    method: 'PATCH',
+    pattern: /^\/api\/admin\/users\/([^/]+)$/,
+    handler: handleAdminUserUpdate,
+  },
+  {
+    method: 'DELETE',
+    pattern: /^\/api\/admin\/users\/([^/]+)$/,
+    handler: handleAdminUserDelete,
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/admin\/users\/([^/]+)\/resend-invitation$/,
+    handler: handleAdminUserResendInvitation,
+  },
 ];
 
 /**

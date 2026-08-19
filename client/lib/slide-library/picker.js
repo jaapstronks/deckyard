@@ -132,7 +132,11 @@ export function createSlideLibraryPicker({
     return th;
   };
 
-  const renderList = async (mount, shelf, { afterSlideId, onPicked, rerender } = {}) => {
+  const renderList = async (
+    mount,
+    shelf,
+    { afterSlideId, onPicked, rerender } = {},
+  ) => {
     const items = state.getCache(shelf);
     const activeView = state.getView();
     const activeLang = state.getLang();
@@ -158,13 +162,16 @@ export function createSlideLibraryPicker({
           ? it.tags.map((t) => (t?.name || t || '').toLowerCase())
           : [];
         return activeTagFilter.every((filterTag) =>
-          itemTagNames.includes(filterTag.toLowerCase())
+          itemTagNames.includes(filterTag.toLowerCase()),
         );
       });
     }
 
     // Apply sorting first, then filtering (with type filter and search)
-    const sorted = activeView === 'trash' ? sortByTrashedThenName(tagFiltered) : sortByPinnedThenName(tagFiltered);
+    const sorted =
+      activeView === 'trash'
+        ? sortByTrashedThenName(tagFiltered)
+        : sortByPinnedThenName(tagFiltered);
     const filtered = filterItems(sorted, q, {
       labelForType: controls.typeLabel,
       typeFilter: activeView !== 'trash' ? activeTypeFilter : '',
@@ -178,22 +185,36 @@ export function createSlideLibraryPicker({
             activeView === 'trash'
               ? t('slideLibrary.empty.trash', 'Trash is empty.')
               : shelf === 'organization'
-                ? t('slideLibrary.empty.team', 'No slides in the team library yet.')
-                : t('slideLibrary.empty.personal', 'No slides in your personal library yet.'),
-        })
+                ? t(
+                    'slideLibrary.empty.team',
+                    'No slides in the team library yet.',
+                  )
+                : t(
+                    'slideLibrary.empty.personal',
+                    'No slides in your personal library yet.',
+                  ),
+        }),
       );
       return;
     }
 
     const grid = h('div', { class: 'ps-lib-grid' });
     for (const it of filtered) {
-      const card = await renderCard(it, shelf, { afterSlideId, onPicked, rerender });
+      const card = await renderCard(it, shelf, {
+        afterSlideId,
+        onPicked,
+        rerender,
+      });
       grid.append(card);
     }
     mount.append(grid);
   };
 
-  const renderCard = async (it, shelf, { afterSlideId, onPicked, rerender } = {}) => {
+  const renderCard = async (
+    it,
+    shelf,
+    { afterSlideId, onPicked, rerender } = {},
+  ) => {
     const fav = shelf === 'organization' ? !!it?.isFavorite : !!it?.favorite;
     const type = cleanStr(it?.slideType);
     const insertDisabled = type === 'follow-invite-slide';
@@ -227,7 +248,12 @@ export function createSlideLibraryPicker({
     card.append(thumbWrap);
 
     // Card content
-    const content = renderCardContent(it, shelf, type, { afterSlideId, onPicked, insertDisabled, rerender });
+    const content = renderCardContent(it, shelf, type, {
+      afterSlideId,
+      onPicked,
+      insertDisabled,
+      rerender,
+    });
     card.append(content);
 
     return card;
@@ -262,7 +288,9 @@ export function createSlideLibraryPicker({
     const favBtn = h('button', {
       class: `ps-lib-overlay-btn ps-lib-fav-btn ${fav ? 'is-on' : ''}`,
       type: 'button',
-      title: fav ? t('slideLibrary.action.unfavorite', 'Unfavorite') : t('slideLibrary.action.favorite', 'Favorite'),
+      title: fav
+        ? t('slideLibrary.action.unfavorite', 'Unfavorite')
+        : t('slideLibrary.action.favorite', 'Favorite'),
       text: fav ? '★' : '☆',
       onclick: (e) => {
         e.stopPropagation();
@@ -279,7 +307,9 @@ export function createSlideLibraryPicker({
   };
 
   const renderMoreMenu = (it, shelf, { rerender } = {}) => {
-    const moreDetails = h('details', { class: 'dropdown ps-lib-more-dropdown' });
+    const moreDetails = h('details', {
+      class: 'dropdown ps-lib-more-dropdown',
+    });
     const moreSummary = h('summary', {
       class: 'ps-lib-overlay-btn ps-lib-more-btn dropdown-trigger',
       title: t('common.moreOptions', 'More options'),
@@ -326,7 +356,10 @@ export function createSlideLibraryPicker({
         moreDetails.open = false;
         const ok = await confirmModal(h, document.body, {
           title: t('slideLibrary.action.trash', 'Move to trash'),
-          message: t('slideLibrary.action.trash.confirm', 'Move this slide to trash?'),
+          message: t(
+            'slideLibrary.action.trash.confirm',
+            'Move this slide to trash?',
+          ),
           confirmLabel: t('slideLibrary.action.trash', 'Move to trash'),
           danger: true,
         });
@@ -359,27 +392,39 @@ export function createSlideLibraryPicker({
     installDismissOnOutside({
       rootEl: moreDetails,
       isOpen: () => !!moreDetails.open,
-      close: () => { moreDetails.open = false; },
+      close: () => {
+        moreDetails.open = false;
+      },
     });
 
     return moreDetails;
   };
 
-  const renderCardContent = (it, shelf, type, { afterSlideId, onPicked, insertDisabled, rerender } = {}) => {
+  const renderCardContent = (
+    it,
+    shelf,
+    type,
+    { afterSlideId, onPicked, insertDisabled, rerender } = {},
+  ) => {
     const activeView = state.getView();
     const content = h('div', { class: 'ps-lib-card-content' });
     const meta = h('div', { class: 'ps-lib-meta' });
 
     meta.append(
-      h('div', { class: 'ps-lib-name', text: cleanStr(it?.name) || 'Untitled' }),
-      h('div', { class: 'ps-lib-sub', text: controls.typeLabel(type || '') })
+      h('div', {
+        class: 'ps-lib-name',
+        text: cleanStr(it?.name) || 'Untitled',
+      }),
+      h('div', { class: 'ps-lib-sub', text: controls.typeLabel(type || '') }),
     );
 
     // Description (truncated)
     const desc = cleanStr(it?.description);
     if (desc) {
       const truncatedDesc = desc.length > 80 ? desc.slice(0, 77) + '...' : desc;
-      meta.append(h('div', { class: 'ps-lib-description', text: truncatedDesc }));
+      meta.append(
+        h('div', { class: 'ps-lib-description', text: truncatedDesc }),
+      );
     }
 
     // Tags
@@ -388,10 +433,17 @@ export function createSlideLibraryPicker({
       const tagsWrap = h('div', { class: 'ps-lib-tags' });
       const visibleTags = itemTags.slice(0, 3);
       for (const tag of visibleTags) {
-        tagsWrap.append(h('span', { class: 'ps-lib-tag', text: tag.name || tag }));
+        tagsWrap.append(
+          h('span', { class: 'ps-lib-tag', text: tag.name || tag }),
+        );
       }
       if (itemTags.length > 3) {
-        tagsWrap.append(h('span', { class: 'ps-lib-tag ps-lib-tag-more', text: `+${itemTags.length - 3}` }));
+        tagsWrap.append(
+          h('span', {
+            class: 'ps-lib-tag ps-lib-tag-more',
+            text: `+${itemTags.length - 3}`,
+          }),
+        );
       }
       meta.append(tagsWrap);
     }
@@ -437,7 +489,10 @@ export function createSlideLibraryPicker({
     return content;
   };
 
-  const renderSelectionBar = (mount, { afterSlideId, onPicked, rerender } = {}) => {
+  const renderSelectionBar = (
+    mount,
+    { afterSlideId, onPicked, rerender } = {},
+  ) => {
     const selectionBar = h('div', { class: 'ps-lib-selection-bar' });
 
     updateSelectionBar = () => {
@@ -455,7 +510,9 @@ export function createSlideLibraryPicker({
       const leftSide = h('div', { class: 'ps-lib-selection-left' });
       const countText = h('span', {
         class: 'ps-lib-selection-count',
-        text: t('slideLibrary.selection.count', '{count} selected', { count: String(count) }),
+        text: t('slideLibrary.selection.count', '{count} selected', {
+          count: String(count),
+        }),
       });
       const clearBtn = h('button', {
         class: 'ps-lib-selection-clear-btn',
@@ -482,7 +539,9 @@ export function createSlideLibraryPicker({
         const insertAllBtn = h('button', {
           class: 'btn btn-primary is-compact',
           type: 'button',
-          text: t('slideLibrary.selection.insertAll', 'Insert {count} slides', { count: String(count) }),
+          text: t('slideLibrary.selection.insertAll', 'Insert {count} slides', {
+            count: String(count),
+          }),
           onclick: async () => {
             const items = state.getSelectedItems();
             for (const item of items) {
@@ -534,7 +593,11 @@ export function createSlideLibraryPicker({
             const items = state.getSelectedItems();
             const ok = await confirmModal(h, document.body, {
               title: t('slideLibrary.selection.trash', 'Move to trash'),
-              message: t('slideLibrary.selection.trashConfirm', 'Move {count} slide(s) to trash?', { count: String(items.length) }),
+              message: t(
+                'slideLibrary.selection.trashConfirm',
+                'Move {count} slide(s) to trash?',
+                { count: String(items.length) },
+              ),
               confirmLabel: t('slideLibrary.selection.trash', 'Move to trash'),
               danger: true,
             });
@@ -557,12 +620,13 @@ export function createSlideLibraryPicker({
 
   const renderSlideLibraryPicker = async (
     mount,
-    { afterSlideId, onPicked, shelf: shelfOverride } = {}
+    { afterSlideId, onPicked, shelf: shelfOverride } = {},
   ) => {
     // Optional one-shot shelf override (e.g. the insert picker's per-shelf
     // "See all"): switch the active shelf before rendering, then let the
     // picker's own state drive subsequent re-renders.
-    if (shelfOverride === 'organization' || shelfOverride === 'personal') state.setShelf(shelfOverride);
+    if (shelfOverride === 'organization' || shelfOverride === 'personal')
+      state.setShelf(shelfOverride);
     mount.innerHTML = '';
 
     const header = h('div', { class: 'ps-lib-header' });
@@ -581,10 +645,16 @@ export function createSlideLibraryPicker({
       listContainer.innerHTML = '';
       const shelf = state.getShelf();
       if (state.isLoading(shelf)) {
-        listContainer.append(h('div', { class: 'help', text: t('common.loading', 'Loading…') }));
+        listContainer.append(
+          h('div', { class: 'help', text: t('common.loading', 'Loading…') }),
+        );
         return;
       }
-      await renderList(listContainer, shelf, { afterSlideId, onPicked, rerender });
+      await renderList(listContainer, shelf, {
+        afterSlideId,
+        onPicked,
+        rerender,
+      });
     };
 
     // Header controls
@@ -612,7 +682,11 @@ export function createSlideLibraryPicker({
       // Shelf/view rerenders clear the selection; keep the host in sync.
       notifySelection();
     } else {
-      const selectionBar = renderSelectionBar(mount, { afterSlideId, onPicked, rerender });
+      const selectionBar = renderSelectionBar(mount, {
+        afterSlideId,
+        onPicked,
+        rerender,
+      });
       mount.append(header, listContainer, selectionBar);
       updateSelectionBar();
     }
@@ -627,11 +701,17 @@ export function createSlideLibraryPicker({
     }
 
     if (state.isLoading(shelf)) {
-      listContainer.append(h('div', { class: 'help', text: t('common.loading', 'Loading…') }));
+      listContainer.append(
+        h('div', { class: 'help', text: t('common.loading', 'Loading…') }),
+      );
       return;
     }
 
-    await renderList(listContainer, shelf, { afterSlideId, onPicked, rerender });
+    await renderList(listContainer, shelf, {
+      afterSlideId,
+      onPicked,
+      rerender,
+    });
   };
 
   const openSlideById = async (shelf, slideId) => {
@@ -650,7 +730,9 @@ export function createSlideLibraryPicker({
 
   // Re-sync one card's checkbox UI to the selection state (no-op if not shown).
   const syncCardChecked = (id, mount, selected) => {
-    const card = (mount || document).querySelector?.(`.ps-lib-card[data-id="${id}"]`);
+    const card = (mount || document).querySelector?.(
+      `.ps-lib-card[data-id="${id}"]`,
+    );
     if (!card) return;
     card.classList.toggle('is-selected', selected);
     const cb = card.querySelector('.ps-lib-select-checkbox input');

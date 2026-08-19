@@ -21,12 +21,7 @@
       "nl": "Salie"
     }
   },
-  "brandColors": [
-    "#254d38",
-    "#8a6209",
-    "#4f8f6b",
-    "#c9931a"
-  ],
+  "brandColors": ["#254d38", "#8a6209", "#4f8f6b", "#c9931a"],
   "gradient": {
     "enabled": false
   },

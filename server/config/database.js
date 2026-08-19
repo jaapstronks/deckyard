@@ -122,14 +122,15 @@ export function getDatabaseConfig() {
     } catch {
       throw new Error(
         'DATABASE_URL is set but is not a valid connection URL ' +
-          '(expected e.g. postgres://user:pass@host:5432/dbname).'
+          '(expected e.g. postgres://user:pass@host:5432/dbname).',
       );
     }
     const host = parsed.hostname || 'localhost';
     return {
       host,
       port: parsed.port ? parseInt(parsed.port, 10) : 5432,
-      database: decodeURIComponent(parsed.pathname.replace(/^\//, '')) || 'deckyard',
+      database:
+        decodeURIComponent(parsed.pathname.replace(/^\//, '')) || 'deckyard',
       user: decodeURIComponent(parsed.username) || 'deckyard',
       password: decodeURIComponent(parsed.password) || '',
       ssl: resolveSsl(host),
@@ -154,5 +155,8 @@ export function getDatabaseConfig() {
  * In multi-tenant SaaS mode, this is used only as a fallback.
  */
 export function getDefaultOrganizationId() {
-  return process.env.DEFAULT_ORGANIZATION_ID || '00000000-0000-0000-0000-000000000001';
+  return (
+    process.env.DEFAULT_ORGANIZATION_ID ||
+    '00000000-0000-0000-0000-000000000001'
+  );
 }

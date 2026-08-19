@@ -83,7 +83,9 @@
   border-radius: var(--ps-radius-md);
   cursor: pointer;
   font: inherit;
-  transition: background var(--ps-transition-fast), color var(--ps-transition-fast);
+  transition:
+    background var(--ps-transition-fast),
+    color var(--ps-transition-fast);
 }
 
 .ghost-icon-btn:hover {
@@ -297,8 +299,13 @@ summary.ghost-icon-btn::-webkit-details-marker {
   border-color: hsl(0 72% 51% / 0.45);
 }
 @keyframes save-status-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.35; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .topbar-save-status.is-saving::before {
@@ -610,7 +617,9 @@ summary.ghost-icon-btn::-webkit-details-marker {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transition: opacity 150ms ease, visibility 150ms ease;
+  transition:
+    opacity 150ms ease,
+    visibility 150ms ease;
 }
 
 .lang-popover.is-visible {
@@ -708,7 +717,8 @@ summary.ghost-icon-btn::-webkit-details-marker {
 
 .topbar-search-input {
   width: 100%;
-  padding: var(--ps-space-2) var(--ps-space-3) var(--ps-space-2) calc(var(--ps-space-3) + 1.5em);
+  padding: var(--ps-space-2) var(--ps-space-3) var(--ps-space-2)
+    calc(var(--ps-space-3) + 1.5em);
   font: inherit;
   font-size: var(--ps-text-sm);
   color: hsl(var(--app-text-primary));
@@ -738,7 +748,8 @@ summary.ghost-icon-btn::-webkit-details-marker {
   -webkit-appearance: none;
   height: 1em;
   width: 1em;
-  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23666" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>') center/contain no-repeat;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23666" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>')
+    center/contain no-repeat;
   cursor: pointer;
   opacity: 0.5;
 }
@@ -775,5 +786,3 @@ summary.ghost-icon-btn::-webkit-details-marker {
     padding-left: calc(var(--ps-space-2) + 1.5em);
   }
 }
-
-

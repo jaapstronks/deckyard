@@ -19,7 +19,12 @@
 import { after, before, beforeEach, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { closeTestDb, openTestDb, pgDescribe, truncate } from './helpers/harness.js';
+import {
+  closeTestDb,
+  openTestDb,
+  pgDescribe,
+  truncate,
+} from './helpers/harness.js';
 import { seedDefaultOrganization, seedPresentation } from './helpers/seed.js';
 import { testScope } from '../helpers/storage-scope.js';
 import { sessions } from '../../server/storage/live-sessions/state.js';
@@ -33,7 +38,10 @@ import { getFollowStateForPresentation } from '../../server/storage/live-session
 import { updateLiveSessionState } from '../../server/storage/live-sessions/sse.js';
 import { setLiveSessionControlEnabled } from '../../server/storage/live-sessions/control.js';
 import { closeSession } from '../../server/storage/live-sessions/close.js';
-import { persistSession, sweepExpiredSessions } from '../../server/storage/live-sessions/db.js';
+import {
+  persistSession,
+  sweepExpiredSessions,
+} from '../../server/storage/live-sessions/db.js';
 import { TTL_MS } from '../../server/storage/live-sessions/constants.js';
 
 /** Drop everything this process holds: the state a fresh worker starts from. */
@@ -61,7 +69,13 @@ pgDescribe('live-session storage (real PostgreSQL)', () => {
 
   beforeEach(async () => {
     coldStart();
-    await truncate(db, 'organizations', 'presentations', 'present_sessions', 'follow_codes');
+    await truncate(
+      db,
+      'organizations',
+      'presentations',
+      'present_sessions',
+      'follow_codes',
+    );
     await seedDefaultOrganization(db);
     presentationId = await seedPresentation(db, { title: 'Live deck' });
   });
@@ -83,7 +97,10 @@ pgDescribe('live-session storage (real PostgreSQL)', () => {
     assert.equal(row.state.slideIndex, 0);
     assert.deepEqual(row.follow_codes, created.followCodes);
     assert.equal(Object.keys(created.followCodes).length, 2, 'nl + en minted');
-    assert.ok(row.follow_codes_created_at, 'the follow-code age survives a restart');
+    assert.ok(
+      row.follow_codes_created_at,
+      'the follow-code age survives a restart',
+    );
   });
 
   it('finds a session created by another process', async () => {
@@ -138,13 +155,19 @@ pgDescribe('live-session storage (real PostgreSQL)', () => {
     await persistSession(sessions.get(created.sessionId));
     coldStart();
 
-    const state = await getFollowStateForPresentation(testScope(), presentationId);
+    const state = await getFollowStateForPresentation(
+      testScope(),
+      presentationId,
+    );
     assert.equal(state.status, 'live');
     assert.equal(state.sessionId, created.sessionId);
     assert.equal(state.slideId, 's2');
     assert.equal(state.slideIndex, 1);
 
-    const best = await findMostRecentSessionForPresentation(testScope(), presentationId);
+    const best = await findMostRecentSessionForPresentation(
+      testScope(),
+      presentationId,
+    );
     assert.equal(best?.sessionId, created.sessionId);
   });
 
@@ -153,9 +176,16 @@ pgDescribe('live-session storage (real PostgreSQL)', () => {
     coldStart();
 
     const second = await createLiveSession(testScope(), { presentationId });
-    assert.equal(second.sessionId, first.sessionId, 'a cold process resumes, not duplicates');
+    assert.equal(
+      second.sessionId,
+      first.sessionId,
+      'a cold process resumes, not duplicates',
+    );
 
-    const rows = await db.selectFrom('present_sessions').select('session_id').execute();
+    const rows = await db
+      .selectFrom('present_sessions')
+      .select('session_id')
+      .execute();
     assert.equal(rows.length, 1);
   });
 
@@ -165,7 +195,11 @@ pgDescribe('live-session storage (real PostgreSQL)', () => {
     await db
       .updateTable('present_sessions')
       .set({
-        state: JSON.stringify({ slideId: 'stale', slideIndex: 9, updatedAt: 1 }),
+        state: JSON.stringify({
+          slideId: 'stale',
+          slideIndex: 9,
+          updatedAt: 1,
+        }),
         last_activity_at: new Date(Date.now() - 60_000),
       })
       .where('session_id', '=', created.sessionId)
@@ -178,7 +212,11 @@ pgDescribe('live-session storage (real PostgreSQL)', () => {
     await db
       .updateTable('present_sessions')
       .set({
-        state: JSON.stringify({ slideId: 'from-other-worker', slideIndex: 4, updatedAt: 2 }),
+        state: JSON.stringify({
+          slideId: 'from-other-worker',
+          slideIndex: 4,
+          updatedAt: 2,
+        }),
         last_activity_at: new Date(Date.now() + 60_000),
       })
       .where('session_id', '=', created.sessionId)
@@ -202,10 +240,17 @@ pgDescribe('live-session storage (real PostgreSQL)', () => {
 
   it('deletes the session with its deck', async () => {
     const created = await createLiveSession(testScope(), { presentationId });
-    await db.deleteFrom('presentations').where('id', '=', presentationId).execute();
+    await db
+      .deleteFrom('presentations')
+      .where('id', '=', presentationId)
+      .execute();
 
     const rows = await db.selectFrom('present_sessions').selectAll().execute();
-    assert.equal(rows.length, 0, 'presentation_id cascades — no deckless sessions survive');
+    assert.equal(
+      rows.length,
+      0,
+      'presentation_id cascades — no deckless sessions survive',
+    );
     coldStart();
     assert.equal(await getLiveSession(testScope(), created.sessionId), null);
   });
@@ -213,7 +258,9 @@ pgDescribe('live-session storage (real PostgreSQL)', () => {
   it('sweeps sessions past the idle TTL and leaves live ones alone', async () => {
     const live = await createLiveSession(testScope(), { presentationId });
     const otherDeck = await seedPresentation(db, { title: 'Yesterday' });
-    const stale = await createLiveSession(testScope(), { presentationId: otherDeck });
+    const stale = await createLiveSession(testScope(), {
+      presentationId: otherDeck,
+    });
     await db
       .updateTable('present_sessions')
       .set({ last_activity_at: new Date(Date.now() - TTL_MS - 60_000) })
@@ -222,10 +269,13 @@ pgDescribe('live-session storage (real PostgreSQL)', () => {
 
     assert.equal(await sweepExpiredSessions(), 1);
 
-    const rows = await db.selectFrom('present_sessions').select('session_id').execute();
+    const rows = await db
+      .selectFrom('present_sessions')
+      .select('session_id')
+      .execute();
     assert.deepEqual(
       rows.map((r) => r.session_id),
-      [live.sessionId]
+      [live.sessionId],
     );
   });
 
@@ -239,7 +289,10 @@ pgDescribe('live-session storage (real PostgreSQL)', () => {
     coldStart();
 
     assert.equal(await getLiveSession(testScope(), created.sessionId), null);
-    const state = await getFollowStateForPresentation(testScope(), presentationId);
+    const state = await getFollowStateForPresentation(
+      testScope(),
+      presentationId,
+    );
     assert.equal(state.status, 'not_started');
   });
 
@@ -250,10 +303,13 @@ pgDescribe('live-session storage (real PostgreSQL)', () => {
   // § Failure signalling; tests/storage-call-convention.test.js gates it.
 
   it('createLiveSession rejects a blank deck id with { ok: false }', async () => {
-    assert.deepEqual(await createLiveSession(testScope(), { presentationId: '  ' }), {
-      ok: false,
-      reason: 'invalid',
-    });
+    assert.deepEqual(
+      await createLiveSession(testScope(), { presentationId: '  ' }),
+      {
+        ok: false,
+        reason: 'invalid',
+      },
+    );
   });
 
   it('createLiveSession marks the success payload with ok', async () => {
@@ -278,8 +334,10 @@ pgDescribe('live-session storage (real PostgreSQL)', () => {
 
   it('updateLiveSessionState answers not_found for an unknown session', async () => {
     assert.deepEqual(
-      await updateLiveSessionState(testScope(), 'no-such-session', { slideId: 's1' }),
-      { ok: false, reason: 'not_found' }
+      await updateLiveSessionState(testScope(), 'no-such-session', {
+        slideId: 's1',
+      }),
+      { ok: false, reason: 'not_found' },
     );
   });
 
@@ -296,21 +354,30 @@ pgDescribe('live-session storage (real PostgreSQL)', () => {
   });
 
   it('setLiveSessionControlEnabled answers not_found for an unknown session', () => {
-    assert.deepEqual(setLiveSessionControlEnabled(testScope(), 'no-such-session', true), {
-      ok: false,
-      reason: 'not_found',
-    });
+    assert.deepEqual(
+      setLiveSessionControlEnabled(testScope(), 'no-such-session', true),
+      {
+        ok: false,
+        reason: 'not_found',
+      },
+    );
   });
 
   it('setLiveSessionControlEnabled returns the new flag under ok', async () => {
     const created = await createLiveSession(testScope(), { presentationId });
-    assert.deepEqual(setLiveSessionControlEnabled(testScope(), created.sessionId, true), {
-      ok: true,
-      controlEnabled: true,
-    });
-    assert.deepEqual(setLiveSessionControlEnabled(testScope(), created.sessionId, false), {
-      ok: true,
-      controlEnabled: false,
-    });
+    assert.deepEqual(
+      setLiveSessionControlEnabled(testScope(), created.sessionId, true),
+      {
+        ok: true,
+        controlEnabled: true,
+      },
+    );
+    assert.deepEqual(
+      setLiveSessionControlEnabled(testScope(), created.sessionId, false),
+      {
+        ok: true,
+        controlEnabled: false,
+      },
+    );
   });
 });

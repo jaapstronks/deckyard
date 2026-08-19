@@ -107,7 +107,10 @@
 
 /* Slide-locked banner - text is set via --slide-locked-banner-text CSS variable for i18n */
 .editor-shell.is-slide-locked .inspector-panel::before {
-  content: var(--slide-locked-banner-text, 'This slide is being edited by someone else');
+  content: var(
+    --slide-locked-banner-text,
+    'This slide is being edited by someone else'
+  );
   position: absolute;
   top: 8px;
   left: 50%;

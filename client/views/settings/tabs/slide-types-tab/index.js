@@ -17,7 +17,10 @@ import {
   deriveUniqueSlug,
 } from '../../slide-type-editor/io.js';
 import { loadThemeById } from '../../../../lib/theme/theme.js';
-import { computeDrop, resolveMove } from '../../../editor/inline-edit/reorder-geometry.js';
+import {
+  computeDrop,
+  resolveMove,
+} from '../../../editor/inline-edit/reorder-geometry.js';
 import { getCategories, CATEGORY_LABELS } from './categories.js';
 import { createCurationThumbnail } from './curation-thumbnails.js';
 import { openTypePreview as openTypePreviewModal } from './type-preview-modal.js';
@@ -45,7 +48,9 @@ export function createSlideTypesTab({ user } = {}) {
   // Section containers
   const customTypesSection = h('div', { class: 'custom-types-section' });
   const curationSection = h('div', { class: 'curation-section' });
-  const editorSection = h('div', { class: 'slide-type-editor-section is-hidden' });
+  const editorSection = h('div', {
+    class: 'slide-type-editor-section is-hidden',
+  });
 
   const load = async () => {
     el.innerHTML = '';
@@ -56,30 +61,36 @@ export function createSlideTypesTab({ user } = {}) {
         class: 'help',
         text: t(
           'settings.slideTypes.description',
-          'Create custom slide types and control which types are available in the slide picker.'
+          'Create custom slide types and control which types are available in the slide picker.',
         ),
-      })
+      }),
     );
 
     el.append(customTypesSection, editorSection, curationSection);
 
     try {
       // Load all data in parallel
-      const [orgSettingsRes, typeMetaRes, customTypesRes, themesRes] = await Promise.all([
-        api('/api/settings/organization'),
-        api('/api/slide-types'),
-        api('/api/custom-slide-types').catch(() => ({ customSlideTypes: [] })),
-        api('/api/themes').catch(() => ({ themes: [] })),
-      ]);
+      const [orgSettingsRes, typeMetaRes, customTypesRes, themesRes] =
+        await Promise.all([
+          api('/api/settings/organization'),
+          api('/api/slide-types'),
+          api('/api/custom-slide-types').catch(() => ({
+            customSlideTypes: [],
+          })),
+          api('/api/themes').catch(() => ({ themes: [] })),
+        ]);
 
       const orgSettings = orgSettingsRes?.settings || {};
       disabledTypes = new Set(
-        Array.isArray(orgSettings.disabledSlideTypes) ? orgSettings.disabledSlideTypes : []
+        Array.isArray(orgSettings.disabledSlideTypes)
+          ? orgSettings.disabledSlideTypes
+          : [],
       );
       slideTypeMeta = typeMetaRes || {};
       customTypes = customTypesRes?.customSlideTypes || [];
       const themes = Array.isArray(themesRes?.themes) ? themesRes.themes : [];
-      const defaultThemeId = themes.find(t => t.isDefault)?.id || DEFAULT_THEME_ID;
+      const defaultThemeId =
+        themes.find((t) => t.isDefault)?.id || DEFAULT_THEME_ID;
       currentTheme = await loadThemeById(defaultThemeId);
 
       renderCustomTypesSection();
@@ -88,8 +99,11 @@ export function createSlideTypesTab({ user } = {}) {
       el.append(
         h('div', {
           class: 'help',
-          text: t('settings.slideTypes.loadError', 'Failed to load slide type settings.'),
-        })
+          text: t(
+            'settings.slideTypes.loadError',
+            'Failed to load slide type settings.',
+          ),
+        }),
       );
     }
   };
@@ -101,7 +115,9 @@ export function createSlideTypesTab({ user } = {}) {
   function renderCustomTypesSection() {
     customTypesSection.innerHTML = '';
 
-    const sectionHeader = h('div', { class: 'themes-list-header row is-between is-center' });
+    const sectionHeader = h('div', {
+      class: 'themes-list-header row is-between is-center',
+    });
     const headerActions = h('div', { class: 'row gap-2 is-center' });
     headerActions.append(
       h('button', {
@@ -115,24 +131,29 @@ export function createSlideTypesTab({ user } = {}) {
         type: 'button',
         text: t('settings.slideTypes.createType', 'Create Type'),
         onclick: () => openEditor(null),
-      })
+      }),
     );
     sectionHeader.append(
       h('h3', {
         class: 'field-label',
         text: t('settings.slideTypes.customTypes', 'Custom Slide Types'),
       }),
-      headerActions
+      headerActions,
     );
 
     const grid = h('div', { class: 'custom-types-grid' });
     const emptyState = h('div', { class: 'custom-types-empty-state' }, [
-      h('p', { text: t('settings.slideTypes.noCustomTypes', 'No custom slide types yet.') }),
+      h('p', {
+        text: t(
+          'settings.slideTypes.noCustomTypes',
+          'No custom slide types yet.',
+        ),
+      }),
       h('p', {
         class: 'help',
         text: t(
           'settings.slideTypes.noCustomTypesHint',
-          'Create a custom slide type to define your own layout with fields, templates, and CSS.'
+          'Create a custom slide type to define your own layout with fields, templates, and CSS.',
         ),
       }),
     ]);
@@ -179,10 +200,14 @@ export function createSlideTypesTab({ user } = {}) {
     const meta = h('div', { class: 'custom-type-card-meta' });
     meta.append(h('span', { class: 'custom-type-card-slug', text: ct.slug }));
     if (ct.baseType) {
-      meta.append(h('span', {
-        class: 'custom-type-card-base',
-        text: t('settings.slideTypes.basedOn', 'Based on: {type}', { type: ct.baseType }),
-      }));
+      meta.append(
+        h('span', {
+          class: 'custom-type-card-base',
+          text: t('settings.slideTypes.basedOn', 'Based on: {type}', {
+            type: ct.baseType,
+          }),
+        }),
+      );
     }
 
     // Actions
@@ -323,7 +348,9 @@ export function createSlideTypesTab({ user } = {}) {
     const existing = document.querySelector('.custom-type-context-menu');
     if (existing) existing.remove();
 
-    const menu = h('div', { class: 'custom-type-context-menu dropdown-menu is-open' });
+    const menu = h('div', {
+      class: 'custom-type-context-menu dropdown-menu is-open',
+    });
 
     // Single teardown: removes the node AND the outside-click listener. Every
     // item calls this, so clicking one doesn't leave the pointerdown handler
@@ -337,76 +364,88 @@ export function createSlideTypesTab({ user } = {}) {
     };
 
     // Publish / Unpublish
-    menu.append(h('button', {
-      class: 'dropdown-item',
-      type: 'button',
-      text: ct.isPublished
-        ? t('settings.slideTypes.unpublish', 'Unpublish')
-        : t('settings.slideTypes.publish', 'Publish'),
-      onclick: async () => {
-        closeMenu();
-        await togglePublish(ct);
-      },
-    }));
+    menu.append(
+      h('button', {
+        class: 'dropdown-item',
+        type: 'button',
+        text: ct.isPublished
+          ? t('settings.slideTypes.unpublish', 'Unpublish')
+          : t('settings.slideTypes.publish', 'Publish'),
+        onclick: async () => {
+          closeMenu();
+          await togglePublish(ct);
+        },
+      }),
+    );
 
     // Move earlier / later. Dragging is the primary gesture, but it is
     // mouse-only; these keep reordering reachable from the keyboard.
     const index = customTypes.findIndex((x) => x.id === ct.id);
     if (index > 0) {
-      menu.append(h('button', {
-        class: 'dropdown-item',
-        type: 'button',
-        text: t('settings.slideTypes.moveEarlier', 'Move earlier'),
-        onclick: async () => {
-          closeMenu();
-          await moveCustomType(index, index - 1);
-        },
-      }));
+      menu.append(
+        h('button', {
+          class: 'dropdown-item',
+          type: 'button',
+          text: t('settings.slideTypes.moveEarlier', 'Move earlier'),
+          onclick: async () => {
+            closeMenu();
+            await moveCustomType(index, index - 1);
+          },
+        }),
+      );
     }
     if (index >= 0 && index < customTypes.length - 1) {
-      menu.append(h('button', {
-        class: 'dropdown-item',
-        type: 'button',
-        text: t('settings.slideTypes.moveLater', 'Move later'),
-        onclick: async () => {
-          closeMenu();
-          await moveCustomType(index, index + 1);
-        },
-      }));
+      menu.append(
+        h('button', {
+          class: 'dropdown-item',
+          type: 'button',
+          text: t('settings.slideTypes.moveLater', 'Move later'),
+          onclick: async () => {
+            closeMenu();
+            await moveCustomType(index, index + 1);
+          },
+        }),
+      );
     }
 
     // Duplicate
-    menu.append(h('button', {
-      class: 'dropdown-item',
-      type: 'button',
-      text: t('settings.slideTypes.duplicate', 'Duplicate'),
-      onclick: async () => {
-        closeMenu();
-        await duplicateCustomType(ct);
-      },
-    }));
+    menu.append(
+      h('button', {
+        class: 'dropdown-item',
+        type: 'button',
+        text: t('settings.slideTypes.duplicate', 'Duplicate'),
+        onclick: async () => {
+          closeMenu();
+          await duplicateCustomType(ct);
+        },
+      }),
+    );
 
     // Export as JSON
-    menu.append(h('button', {
-      class: 'dropdown-item',
-      type: 'button',
-      text: t('settings.slideTypes.export', 'Export as JSON'),
-      onclick: () => {
-        closeMenu();
-        exportCustomType(ct);
-      },
-    }));
+    menu.append(
+      h('button', {
+        class: 'dropdown-item',
+        type: 'button',
+        text: t('settings.slideTypes.export', 'Export as JSON'),
+        onclick: () => {
+          closeMenu();
+          exportCustomType(ct);
+        },
+      }),
+    );
 
     // Delete
-    menu.append(h('button', {
-      class: 'dropdown-item is-danger',
-      type: 'button',
-      text: t('common.delete', 'Delete'),
-      onclick: async () => {
-        closeMenu();
-        await confirmDeleteCustomType(ct);
-      },
-    }));
+    menu.append(
+      h('button', {
+        class: 'dropdown-item is-danger',
+        type: 'button',
+        text: t('common.delete', 'Delete'),
+        onclick: async () => {
+          closeMenu();
+          await confirmDeleteCustomType(ct);
+        },
+      }),
+    );
 
     // Position menu
     const rect = e.target.getBoundingClientRect();
@@ -432,7 +471,7 @@ export function createSlideTypesTab({ user } = {}) {
       toast.success(
         ct.isPublished
           ? t('settings.slideTypes.unpublished', 'Slide type unpublished.')
-          : t('settings.slideTypes.publishedMsg', 'Slide type published.')
+          : t('settings.slideTypes.publishedMsg', 'Slide type published.'),
       );
       await reloadCustomTypes();
     } catch (err) {
@@ -442,8 +481,12 @@ export function createSlideTypesTab({ user } = {}) {
 
   async function duplicateCustomType(ct) {
     try {
-      await api(`/api/custom-slide-types/${ct.id}/duplicate`, { method: 'POST' });
-      toast.success(t('settings.slideTypes.duplicateSuccess', 'Slide type duplicated.'));
+      await api(`/api/custom-slide-types/${ct.id}/duplicate`, {
+        method: 'POST',
+      });
+      toast.success(
+        t('settings.slideTypes.duplicateSuccess', 'Slide type duplicated.'),
+      );
       await reloadCustomTypes();
     } catch (err) {
       toast.error(String(err?.message || err));
@@ -455,7 +498,9 @@ export function createSlideTypesTab({ user } = {}) {
    * @param {Object} ct
    */
   function exportCustomType(ct) {
-    const blob = new Blob([serializeSlideType(ct)], { type: 'application/json' });
+    const blob = new Blob([serializeSlideType(ct)], {
+      type: 'application/json',
+    });
     downloadBlob(blob, `${ct.slug || 'custom-type'}.slidetype.json`);
   }
 
@@ -480,18 +525,28 @@ export function createSlideTypesTab({ user } = {}) {
       try {
         text = await readFileAsText(file);
       } catch {
-        toast.error(t('settings.slideTypes.importReadError', 'Could not read that file.'));
+        toast.error(
+          t('settings.slideTypes.importReadError', 'Could not read that file.'),
+        );
         return;
       }
 
       const parsed = parseImportedSlideType(text);
       if (!parsed.ok) {
-        toast.error(t('settings.slideTypes.importInvalid', 'That file is not a valid slide type export.'));
+        toast.error(
+          t(
+            'settings.slideTypes.importInvalid',
+            'That file is not a valid slide type export.',
+          ),
+        );
         return;
       }
 
       const def = parsed.definition;
-      const slug = deriveUniqueSlug(def.label, customTypes.map((c) => c.slug));
+      const slug = deriveUniqueSlug(
+        def.label,
+        customTypes.map((c) => c.slug),
+      );
 
       try {
         // isPublished is intentionally omitted: the create endpoint always
@@ -500,7 +555,12 @@ export function createSlideTypesTab({ user } = {}) {
           method: 'POST',
           body: JSON.stringify({ ...def, slug }),
         });
-        toast.success(t('settings.slideTypes.importSuccess', 'Slide type imported as a draft.'));
+        toast.success(
+          t(
+            'settings.slideTypes.importSuccess',
+            'Slide type imported as a draft.',
+          ),
+        );
         await reloadCustomTypes();
       } catch (err) {
         toast.error(String(err?.message || err));
@@ -516,7 +576,7 @@ export function createSlideTypesTab({ user } = {}) {
       message: t(
         'settings.slideTypes.deleteConfirm',
         'Delete custom type "{label}"? This cannot be undone.',
-        { label: ct.label }
+        { label: ct.label },
       ),
       confirmLabel: t('common.delete', 'Delete'),
       danger: true,
@@ -524,7 +584,9 @@ export function createSlideTypesTab({ user } = {}) {
     if (!confirmed) return;
     try {
       await api(`/api/custom-slide-types/${ct.id}`, { method: 'DELETE' });
-      toast.success(t('settings.slideTypes.deleteSuccess', 'Slide type deleted.'));
+      toast.success(
+        t('settings.slideTypes.deleteSuccess', 'Slide type deleted.'),
+      );
       await reloadCustomTypes();
     } catch (err) {
       toast.error(String(err?.message || err));
@@ -576,13 +638,17 @@ export function createSlideTypesTab({ user } = {}) {
               method: 'PUT',
               body: JSON.stringify(data),
             });
-            toast.success(t('settings.slideTypes.updateSuccess', 'Slide type updated.'));
+            toast.success(
+              t('settings.slideTypes.updateSuccess', 'Slide type updated.'),
+            );
           } else {
             await api('/api/custom-slide-types', {
               method: 'POST',
               body: JSON.stringify(data),
             });
-            toast.success(t('settings.slideTypes.createSuccess', 'Slide type created.'));
+            toast.success(
+              t('settings.slideTypes.createSuccess', 'Slide type created.'),
+            );
           }
           await reloadCustomTypes();
           closeEditor();
@@ -615,9 +681,13 @@ export function createSlideTypesTab({ user } = {}) {
           method: 'PATCH',
           body: JSON.stringify({ disabledSlideTypes: [...disabledTypes] }),
         });
-        toast.success(t('settings.slideTypes.saved', 'Slide type settings saved.'));
+        toast.success(
+          t('settings.slideTypes.saved', 'Slide type settings saved.'),
+        );
       } catch {
-        toast.error(t('settings.slideTypes.saveError', 'Failed to save settings.'));
+        toast.error(
+          t('settings.slideTypes.saveError', 'Failed to save settings.'),
+        );
       }
     }, 400);
   };
@@ -628,22 +698,24 @@ export function createSlideTypesTab({ user } = {}) {
     curationSection.append(
       h('h3', {
         class: 'field-label',
-        style: 'margin-top: var(--ps-space-5); padding-top: var(--ps-space-4); border-top: 1px solid hsl(var(--app-border-subtle));',
+        style:
+          'margin-top: var(--ps-space-5); padding-top: var(--ps-space-4); border-top: 1px solid hsl(var(--app-border-subtle));',
         text: t('settings.slideTypes.curation', 'Slide Type Curation'),
       }),
       h('p', {
         class: 'help',
         text: t(
           'settings.slideTypes.curationDescription',
-          'Control which core slide types are available for new slides. Disabling a type hides it from the picker but existing slides remain unaffected.'
+          'Control which core slide types are available for new slides. Disabling a type hides it from the picker but existing slides remain unaffected.',
         ),
-      })
+      }),
     );
 
     // Curation is about which types an author may *insert*, so a deprecated type
     // has nothing to curate: it is already unreachable from every insertion path
     // (see isInsertableSlideType) while existing slides keep rendering.
-    const isCuratable = type => Boolean(slideTypeMeta[type]) && !slideTypeMeta[type].deprecated;
+    const isCuratable = (type) =>
+      Boolean(slideTypeMeta[type]) && !slideTypeMeta[type].deprecated;
 
     // The shelves, with membership resolved from each type's own `group`
     // declaration (see ./categories.js). Resolved against slideTypeMeta — the
@@ -659,18 +731,25 @@ export function createSlideTypesTab({ user } = {}) {
 
     // Find uncategorized types from the metadata
     const uncategorized = Object.keys(slideTypeMeta)
-      .filter(type => !categorized.has(type) && isCuratable(type))
+      .filter((type) => !categorized.has(type) && isCuratable(type))
       .sort();
 
     // Build categories including any uncategorized types.
     // Merge uncategorized into the existing 'other' group to avoid duplicate headings.
-    const allCategories = categories.map(c => ({ ...c, types: [...c.types] }));
+    const allCategories = categories.map((c) => ({
+      ...c,
+      types: [...c.types],
+    }));
     if (uncategorized.length) {
-      const otherCat = allCategories.find(c => c.key === 'other');
+      const otherCat = allCategories.find((c) => c.key === 'other');
       if (otherCat) {
         otherCat.types.push(...uncategorized);
       } else {
-        allCategories.push({ key: 'other', label: 'Other', types: uncategorized });
+        allCategories.push({
+          key: 'other',
+          label: 'Other',
+          types: uncategorized,
+        });
       }
     }
 
@@ -689,10 +768,12 @@ export function createSlideTypesTab({ user } = {}) {
       if (!validTypes.length) continue;
 
       const group = h('div', { class: 'slide-type-curation-group' });
-      group.append(h('h3', {
-        class: 'slide-type-curation-group-title',
-        text: CATEGORY_LABELS[cat.key]?.() ?? cat.key,
-      }));
+      group.append(
+        h('h3', {
+          class: 'slide-type-curation-group-title',
+          text: CATEGORY_LABELS[cat.key]?.() ?? cat.key,
+        }),
+      );
 
       const grid = h('div', { class: 'slide-type-curation-grid' });
 
@@ -731,11 +812,16 @@ export function createSlideTypesTab({ user } = {}) {
 
     // Info bar: label + checkbox
     const info = h('div', { class: 'slide-type-curation-info' });
-    const labelEl = h('span', { class: 'slide-type-curation-label', text: label });
+    const labelEl = h('span', {
+      class: 'slide-type-curation-label',
+      text: label,
+    });
     const toggle = h('input', {
       type: 'checkbox',
       checked: isEnabled,
-      'aria-label': t('settings.slideTypes.toggleType', 'Toggle {type}', { type: label }),
+      'aria-label': t('settings.slideTypes.toggleType', 'Toggle {type}', {
+        type: label,
+      }),
     });
 
     toggle.addEventListener('change', () => {

@@ -194,11 +194,19 @@
 
 /* Every other stage gets a slightly different shade */
 .slide-funnel .funnel-stage:nth-child(even) .stage-bar {
-  background: color-mix(in srgb, var(--slide-bg-lime, #e2fe52) 85%, var(--slide-accent, #375c5d));
+  background: color-mix(
+    in srgb,
+    var(--slide-bg-lime, #e2fe52) 85%,
+    var(--slide-accent, #375c5d)
+  );
 }
 
 .slide-funnel.slide-bg-lime .funnel-stage:nth-child(even) .stage-bar {
-  background: color-mix(in srgb, var(--slide-accent, #375c5d) 85%, var(--slide-bg-lime, #e2fe52));
+  background: color-mix(
+    in srgb,
+    var(--slide-accent, #375c5d) 85%,
+    var(--slide-bg-lime, #e2fe52)
+  );
 }
 
 /* ===========================================

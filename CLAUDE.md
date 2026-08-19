@@ -9,15 +9,15 @@ cleanup) live in **`AGENTS.md`** — read it before structural work.
 
 Three planning horizons, three files:
 
-- **`docs/plans/TODO.md`** — *now*: the operational worklist (in progress / queue
+- **`docs/plans/TODO.md`** — _now_: the operational worklist (in progress / queue
   / done). When asked to "pick up the next thing" or plan work, read this file
   first, not the whole plans folder.
-- **`docs/plans/STRATEGY.md`** — *internal longer-term*: directional tracks with
+- **`docs/plans/STRATEGY.md`** — _internal longer-term_: directional tracks with
   rationale and "done when", not yet public. Elaborated briefings live in
   `docs/plans/briefs/<slug>.md` (the three anchors — `TODO.md`, `STRATEGY.md`,
   `README.md` — sit at the `docs/plans/` root, the per-item briefings one level
   down in `briefs/`). (Private; in the `deckyard-planning` sibling.)
-- **`ROADMAP.md`** — *public commitment*: the coarse, public-facing overview,
+- **`ROADMAP.md`** — _public commitment_: the coarse, public-facing overview,
   one line per project. This is the only one of the three that ships in the OSS
   repo.
 
@@ -35,13 +35,13 @@ Deckyard is in beta with a near-zero installed base (one fork, ours). The
 standing direction of the current work is **tightening**: one canonical form
 per concept, drift reduced, a spec/API/slide-type system that is consistent,
 understandable and elegant. The canonical statement is
-`docs/reference/versioning.md` § *The beta stance: purity over compatibility*.
+`docs/reference/versioning.md` § _The beta stance: purity over compatibility_.
 Apply it at the recurring moments:
 
 - **Picking up work** ("check TODO.md", "geef een prompt om verder te gaan"):
   frame the item against the course — prefer the structural fix over the
   tolerant patch, and say so in the prompt or plan you produce.
-- **Reviewing a PR**: tolerance-creep is a *blocking* finding, not a style
+- **Reviewing a PR**: tolerance-creep is a _blocking_ finding, not a style
   nit — a second accepted shape/spelling for one meaning, an "accepts both"
   without a normalize-and-remove story, a "valid forever" promise while the
   beta badge is up. Breaking-but-clean beats compatible-but-cluttered during
@@ -67,8 +67,8 @@ Apply it at the recurring moments:
   individually. Writing the whole investigation into `TODO.md` is how it reached
   2.468 lines by 2026-07-27; the folding rules and the line budget live in
   `docs/plans/LEESWIJZER.md`, and `merge-housekeeping` measures it every merge.
-- **Starting a plan**: move its entry to *In progress* in `docs/plans/TODO.md`.
-- **Finishing a plan**: move the entry to *Recently done* (dated), then delete
+- **Starting a plan**: move its entry to _In progress_ in `docs/plans/TODO.md`.
+- **Finishing a plan**: move the entry to _Recently done_ (dated), then delete
   the plan file or convert its durable parts to `docs/reference/`, and remove
   the `ROADMAP.md` line. Don't leave shipped plans lying around as if open —
   that's how the docs rotted last time.
@@ -102,7 +102,7 @@ Apply it at the recurring moments:
   `main`** — no branch or PR needed.
 - **Code changes** go via a feature branch and a **PR** — and there the
   work-agent stops. Open the PR, hand it off with `claude-notify-pr`, and let a
-  *different* actor review and merge (Jaap, or a Fable agent Jaap points at it).
+  _different_ actor review and merge (Jaap, or a Fable agent Jaap points at it).
   **Do not self-merge code to `main`**, even when it's green and tested. The
   only exception is an explicit "review en merge" hand-off — then you're in the
   reviewing role, so merge and run `merge-housekeeping` as the tail (see below).
@@ -111,7 +111,7 @@ Apply it at the recurring moments:
   that branch (not `main`), which gets one umbrella PR to `main` when the
   whole track is accepted. **No integration branch is active right now** —
   the `collab` track (ADR 001) shipped to `main` and its branch is gone, so
-  everything currently bases on `main`. When a track *does* open one:
+  everything currently bases on `main`. When a track _does_ open one:
   **the base branch is set at PR creation** and GitHub defaults to `main`,
   so always pass it explicitly (`gh pr create --base <track> …`) and
   double-check the "wants to merge into" line before finishing up.

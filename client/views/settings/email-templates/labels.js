@@ -16,15 +16,39 @@ export { TEMPLATE_TYPES };
  */
 export function getTemplateLabel(type) {
   const labels = {
-    userInvitation: t('settings.admin.emailTemplates.types.userInvitation', 'User Invitation'),
-    activationReminder: t('settings.admin.emailTemplates.types.activationReminder', 'Activation Reminder'),
-    collaboratorInvite: t('settings.admin.emailTemplates.types.collaboratorInvite', 'Collaborator Invitation'),
-    guestInvitation: t('settings.admin.emailTemplates.types.guestInvitation', 'Guest Invitation'),
-    passwordReset: t('settings.admin.emailTemplates.types.passwordReset', 'Password Reset'),
+    userInvitation: t(
+      'settings.admin.emailTemplates.types.userInvitation',
+      'User Invitation',
+    ),
+    activationReminder: t(
+      'settings.admin.emailTemplates.types.activationReminder',
+      'Activation Reminder',
+    ),
+    collaboratorInvite: t(
+      'settings.admin.emailTemplates.types.collaboratorInvite',
+      'Collaborator Invitation',
+    ),
+    guestInvitation: t(
+      'settings.admin.emailTemplates.types.guestInvitation',
+      'Guest Invitation',
+    ),
+    passwordReset: t(
+      'settings.admin.emailTemplates.types.passwordReset',
+      'Password Reset',
+    ),
     magicLink: t('settings.admin.emailTemplates.types.magicLink', 'Magic Link'),
-    commentNotification: t('settings.admin.emailTemplates.types.commentNotification', 'Comment Notification'),
-    guestVerification: t('settings.admin.emailTemplates.types.guestVerification', 'Guest Verification'),
-    leadNotification: t('settings.admin.emailTemplates.types.leadNotification', 'Lead Notification'),
+    commentNotification: t(
+      'settings.admin.emailTemplates.types.commentNotification',
+      'Comment Notification',
+    ),
+    guestVerification: t(
+      'settings.admin.emailTemplates.types.guestVerification',
+      'Guest Verification',
+    ),
+    leadNotification: t(
+      'settings.admin.emailTemplates.types.leadNotification',
+      'Lead Notification',
+    ),
   };
   return labels[type] || type;
 }
@@ -59,7 +83,10 @@ export function getFieldLabel(field) {
     subject: t('settings.admin.emailTemplates.fields.subject', 'Subject'),
     greeting: t('settings.admin.emailTemplates.fields.greeting', 'Greeting'),
     body: t('settings.admin.emailTemplates.fields.body', 'Body'),
-    buttonLabel: t('settings.admin.emailTemplates.fields.buttonLabel', 'Button Label'),
+    buttonLabel: t(
+      'settings.admin.emailTemplates.fields.buttonLabel',
+      'Button Label',
+    ),
     footer: t('settings.admin.emailTemplates.fields.footer', 'Footer'),
   };
   return labels[field] || field;

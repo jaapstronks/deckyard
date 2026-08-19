@@ -129,7 +129,7 @@ async function main() {
     if (!tables.size) {
       throw new Error(
         'The database has no tables. Run the migrations first — this check reads ' +
-          'the schema they produce, it does not create it.'
+          'the schema they produce, it does not create it.',
       );
     }
 
@@ -147,7 +147,7 @@ async function main() {
     for (const table of [...modelled].sort()) {
       if (!tables.has(table)) {
         problems.push(
-          `table "${table}" is modelled by the double but does not exist in the schema`
+          `table "${table}" is modelled by the double but does not exist in the schema`,
         );
       }
     }
@@ -164,8 +164,12 @@ async function main() {
         problems.push(
           `${table}: the double enforces UNIQUE (${columns.join(', ')}), which the schema does not have.\n` +
             `    the schema has: ${
-              actual.size ? [...actual].map((c) => `(${c.split(',').join(', ')})`).join(', ') : '(no non-primary uniques)'
-            }`
+              actual.size
+                ? [...actual]
+                    .map((c) => `(${c.split(',').join(', ')})`)
+                    .join(', ')
+                : '(no non-primary uniques)'
+            }`,
         );
       }
     }
@@ -178,7 +182,7 @@ async function main() {
       for (const column of columns) {
         if (actual.has(column)) continue;
         problems.push(
-          `${table}.${column}: the double treats it as jsonb, but it is not a jsonb column`
+          `${table}.${column}: the double treats it as jsonb, but it is not a jsonb column`,
         );
       }
     }
@@ -193,7 +197,7 @@ async function main() {
         if (declared.has(column)) continue;
         problems.push(
           `${table}.${column} is jsonb in the schema but not in JSONB_COLUMNS — ` +
-            'the double will hand it back as a string where production hands back an object'
+            'the double will hand it back as a string where production hands back an object',
         );
       }
     }
@@ -204,7 +208,7 @@ async function main() {
           problems.map((p) => `  - ${p}`).join('\n') +
           '\n\nFix tests/helpers/fake-db.js to match the migrations. If a migration ' +
           'changed a constraint, every test that exercises that upsert has been ' +
-          'passing against the old shape.'
+          'passing against the old shape.',
       );
     }
 
@@ -212,7 +216,7 @@ async function main() {
     const jsonbCount = Object.values(JSONB_COLUMNS).flat().length;
     console.log(
       `✓ the test double agrees with the schema: ${uniqueCount} unique constraint(s) ` +
-        `and ${jsonbCount} jsonb column(s) across ${modelled.size} table(s).`
+        `and ${jsonbCount} jsonb column(s) across ${modelled.size} table(s).`,
     );
   } finally {
     await db.destroy();

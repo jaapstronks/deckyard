@@ -4,77 +4,77 @@ services:
     container_name: deckyard-sandbox-app
     restart: unless-stopped
     environment:
-      PORT: "4177"
-      HOST: "0.0.0.0"
+      PORT: '4177'
+      HOST: '0.0.0.0'
 
       # Sandbox mode
-      SANDBOX_MODE: "1"
+      SANDBOX_MODE: '1'
 
       # Storage. Sandbox runs on Postgres like every other deploy: the deck TTL
       # sweep and per-guest quota are Postgres queries against the presentations
       # table. The bundled `postgres` service below needs no setup — migrations
       # run automatically at app start (scripts/docker-entrypoint.sh). Uploads
       # stay on disk (SANDBOX_UPLOADS_DIR).
-      STORAGE_MODE: "${STORAGE_MODE:-postgres}"
-      DATABASE_HOST: "${DATABASE_HOST:-postgres}"
-      DATABASE_PORT: "${DATABASE_PORT:-5432}"
-      DATABASE_NAME: "${DATABASE_NAME:-deckyard}"
-      DATABASE_USER: "${DATABASE_USER:-deckyard}"
-      DATABASE_PASSWORD: "${DATABASE_PASSWORD:-deckyard}"
+      STORAGE_MODE: '${STORAGE_MODE:-postgres}'
+      DATABASE_HOST: '${DATABASE_HOST:-postgres}'
+      DATABASE_PORT: '${DATABASE_PORT:-5432}'
+      DATABASE_NAME: '${DATABASE_NAME:-deckyard}'
+      DATABASE_USER: '${DATABASE_USER:-deckyard}'
+      DATABASE_PASSWORD: '${DATABASE_PASSWORD:-deckyard}'
       # The bundled database is only reachable on the compose network, never
       # from the host, so it speaks plaintext.
-      DATABASE_SSL: "${DATABASE_SSL:-false}"
-      SANDBOX_TTL_HOURS: "${SANDBOX_TTL_HOURS:-24}"
+      DATABASE_SSL: '${DATABASE_SSL:-false}'
+      SANDBOX_TTL_HOURS: '${SANDBOX_TTL_HOURS:-24}'
       # Must be a real theme id. Sandbox shows only the neutral built-in
       # themes (corporate, deckyard, editorial, midnight, playful); an operator
       # can narrow that to a curated set by adding sandbox-*.json themes.
-      SANDBOX_DEFAULT_THEME: "${SANDBOX_DEFAULT_THEME:-deckyard}"
-      SANDBOX_WATERMARK: "${SANDBOX_WATERMARK:-Sandbox export • Created by an anonymous user}"
+      SANDBOX_DEFAULT_THEME: '${SANDBOX_DEFAULT_THEME:-deckyard}'
+      SANDBOX_WATERMARK: '${SANDBOX_WATERMARK:-Sandbox export • Created by an anonymous user}'
       # Ensure sandbox writes into the mounted volumes (not /app/server/data-sandbox).
-      SANDBOX_DATA_DIR: "/app/server/data"
-      SANDBOX_UPLOADS_DIR: "/app/server/uploads"
+      SANDBOX_DATA_DIR: '/app/server/data'
+      SANDBOX_UPLOADS_DIR: '/app/server/uploads'
 
       # Guardrails
-      SECURE_COOKIES: "1"
-      UPLOADS_ENABLED: "0"
+      SECURE_COOKIES: '1'
+      UPLOADS_ENABLED: '0'
 
       # Rate-limiter proxy trust. Caddy terminates TLS and forwards
       # X-Forwarded-For, so without this the limiter keys every request on the
       # Caddy container IP — all guests share one create/export/update bucket and
       # a single abuser trips 429 for everyone. One trusted hop (Caddy) → key on
       # the real client IP. See server/utils/rate-limit.js.
-      TRUST_PROXY: "1"
-      TRUSTED_PROXY_COUNT: "1"
+      TRUST_PROXY: '1'
+      TRUSTED_PROXY_COUNT: '1'
 
       # Lower body cap for an anonymous playground: bounds per-request (and thus
       # per-deck) bytes well below the 25 MB default, so imports/saves can't be
       # used to fill the shared volume. 8 MB still covers a modest demo deck.
-      MAX_REQUEST_BODY_BYTES: "${MAX_REQUEST_BODY_BYTES:-8388608}"
+      MAX_REQUEST_BODY_BYTES: '${MAX_REQUEST_BODY_BYTES:-8388608}'
 
       # Per-guest disk quota (anonymous abuse guard). A guest that hits the cap
       # gets a 4xx instead of filling sandbox_data. See
       # server/storage/presentations/sandbox-quota.js.
-      SANDBOX_MAX_DECKS_PER_GUEST: "${SANDBOX_MAX_DECKS_PER_GUEST:-25}"
-      SANDBOX_MAX_BYTES_PER_GUEST: "${SANDBOX_MAX_BYTES_PER_GUEST:-52428800}"
+      SANDBOX_MAX_DECKS_PER_GUEST: '${SANDBOX_MAX_DECKS_PER_GUEST:-25}'
+      SANDBOX_MAX_BYTES_PER_GUEST: '${SANDBOX_MAX_BYTES_PER_GUEST:-52428800}'
       # Global soft ceiling: the cleanup loop logs a warning when the whole
       # presentations dir exceeds this (observability, non-destructive). Empty
       # disables the check.
-      SANDBOX_MAX_TOTAL_BYTES: "${SANDBOX_MAX_TOTAL_BYTES:-}"
+      SANDBOX_MAX_TOTAL_BYTES: '${SANDBOX_MAX_TOTAL_BYTES:-}'
 
       # AI is off in sandbox (SANDBOX_MODE forces enableAi off): a public,
       # anonymous playground plus per-prompt LLM cost is an open-ended bill.
       # These are kept for reference but have no effect while sandbox is on.
-      MISTRAL_API: "${MISTRAL_API:-}"
-      MISTRAL_MODEL: "${MISTRAL_MODEL:-mistral-small-latest}"
+      MISTRAL_API: '${MISTRAL_API:-}'
+      MISTRAL_MODEL: '${MISTRAL_MODEL:-mistral-small-latest}'
 
       # Optional: keep Notion off by default in sandbox
-      NOTION_FEATURE: "${NOTION_FEATURE:-0}"
-      NOTION_SECRET: "${NOTION_SECRET:-}"
+      NOTION_FEATURE: '${NOTION_FEATURE:-0}'
+      NOTION_SECRET: '${NOTION_SECRET:-}'
     volumes:
       - sandbox_data:/app/server/data
       - sandbox_uploads:/app/server/uploads
     expose:
-      - "4177"
+      - '4177'
     depends_on:
       postgres:
         condition: service_healthy
@@ -88,13 +88,17 @@ services:
     container_name: deckyard-sandbox-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: "${DATABASE_NAME:-deckyard}"
-      POSTGRES_USER: "${DATABASE_USER:-deckyard}"
-      POSTGRES_PASSWORD: "${DATABASE_PASSWORD:-deckyard}"
+      POSTGRES_DB: '${DATABASE_NAME:-deckyard}'
+      POSTGRES_USER: '${DATABASE_USER:-deckyard}'
+      POSTGRES_PASSWORD: '${DATABASE_PASSWORD:-deckyard}'
     volumes:
       - sandbox_pg_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-deckyard} -d ${DATABASE_NAME:-deckyard}"]
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${DATABASE_USER:-deckyard} -d ${DATABASE_NAME:-deckyard}',
+        ]
       interval: 5s
       timeout: 5s
       retries: 12
@@ -107,11 +111,11 @@ services:
     depends_on:
       - app
     ports:
-      - "80:80"
-      - "443:443"
+      - '80:80'
+      - '443:443'
     environment:
-      DOMAIN: "${DOMAIN:-sandbox.deckyard.eu}"
-      LETSENCRYPT_EMAIL: "${LETSENCRYPT_EMAIL:-}"
+      DOMAIN: '${DOMAIN:-sandbox.deckyard.eu}'
+      LETSENCRYPT_EMAIL: '${LETSENCRYPT_EMAIL:-}'
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
@@ -123,5 +127,3 @@ volumes:
   sandbox_pg_data:
   caddy_data:
   caddy_config:
-
-

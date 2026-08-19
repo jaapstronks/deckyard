@@ -82,17 +82,23 @@ function scryptCompare(password, salt, keyHex, params) {
     // Derive to the stored key's length so timingSafeEqual sees equal-size
     // buffers when the password is correct; a malformed hex length just fails.
     const keyLen = expected.length || KEY_LENGTH;
-    crypto.scrypt(password, salt, keyLen, scryptOptions(params), (err, derivedKey) => {
-      if (err) {
-        resolve(false);
-        return;
-      }
-      try {
-        resolve(crypto.timingSafeEqual(expected, derivedKey));
-      } catch {
-        resolve(false);
-      }
-    });
+    crypto.scrypt(
+      password,
+      salt,
+      keyLen,
+      scryptOptions(params),
+      (err, derivedKey) => {
+        if (err) {
+          resolve(false);
+          return;
+        }
+        try {
+          resolve(crypto.timingSafeEqual(expected, derivedKey));
+        } catch {
+          resolve(false);
+        }
+      },
+    );
   });
 }
 
@@ -110,13 +116,21 @@ export function hashPassword(password) {
     }
     const { N, r, p } = SCRYPT_PARAMS;
     const salt = crypto.randomBytes(16).toString('hex');
-    crypto.scrypt(pw, salt, KEY_LENGTH, scryptOptions(SCRYPT_PARAMS), (err, derivedKey) => {
-      if (err) {
-        reject(err);
-        return;
-      }
-      resolve(`${VERSION_PREFIX}${N}$${r}$${p}$${salt}$${derivedKey.toString('hex')}`);
-    });
+    crypto.scrypt(
+      pw,
+      salt,
+      KEY_LENGTH,
+      scryptOptions(SCRYPT_PARAMS),
+      (err, derivedKey) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve(
+          `${VERSION_PREFIX}${N}$${r}$${p}$${salt}$${derivedKey.toString('hex')}`,
+        );
+      },
+    );
   });
 }
 

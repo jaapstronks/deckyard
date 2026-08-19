@@ -24,7 +24,8 @@ for (const key of Object.keys(process.env)) {
   if (key.startsWith('IMAGEKIT_')) delete process.env[key];
 }
 
-const { processNotionImages } = await import('../server/utils/convert-notion.js');
+const { processNotionImages } =
+  await import('../server/utils/convert-notion.js');
 const { initializeMediaProvider } = await import('../server/media/index.js');
 
 const SIGNED_URL =
@@ -32,7 +33,9 @@ const SIGNED_URL =
 
 // A tiny GIF payload — the local provider does not run GIFs through sharp, so
 // arbitrary bytes are stored verbatim without needing a valid raster image.
-const GIF_BYTES = Buffer.from([0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00]);
+const GIF_BYTES = Buffer.from([
+  0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00,
+]);
 
 let tmpRoot;
 const savedFetch = globalThis.fetch;
@@ -59,7 +62,9 @@ test('re-hosts each image through the media library and rewrites to a durable UR
     return {
       ok: true,
       status: 200,
-      headers: { get: (h) => (h.toLowerCase() === 'content-type' ? 'image/gif' : null) },
+      headers: {
+        get: (h) => (h.toLowerCase() === 'content-type' ? 'image/gif' : null),
+      },
       arrayBuffer: async () => GIF_BYTES.buffer.slice(0, GIF_BYTES.length),
     };
   };
@@ -68,20 +73,31 @@ test('re-hosts each image through the media library and rewrites to a durable UR
     { url: SIGNED_URL, caption: 'A caption', blockId: 'block-1' },
   ]);
 
-  assert.equal(fetchedUrl, SIGNED_URL, 'fetches the original signed Notion URL');
+  assert.equal(
+    fetchedUrl,
+    SIGNED_URL,
+    'fetches the original signed Notion URL',
+  );
   assert.equal(result.originalUrl, SIGNED_URL);
   assert.equal(result.caption, 'A caption');
   assert.ok(
     result.uploadedUrl.startsWith('/uploads/'),
-    `expected a durable /uploads/ URL, got ${result.uploadedUrl}`
+    `expected a durable /uploads/ URL, got ${result.uploadedUrl}`,
   );
-  assert.notEqual(result.uploadedUrl, SIGNED_URL, 'no longer the expiring signed URL');
+  assert.notEqual(
+    result.uploadedUrl,
+    SIGNED_URL,
+    'no longer the expiring signed URL',
+  );
 
   // The bytes actually landed on disk under the temp uploads dir.
   const key = result.uploadedUrl.replace('/uploads/', '');
   const onDisk = path.join(tmpRoot, 'server', 'uploads', key);
   const stat = await fs.stat(onDisk);
-  assert.ok(stat.size > 0, 'the re-hosted image was written to the media library');
+  assert.ok(
+    stat.size > 0,
+    'the re-hosted image was written to the media library',
+  );
 });
 
 test('SSRF: a private-range image URL is never fetched, and the original URL is kept', async () => {
@@ -101,7 +117,11 @@ test('SSRF: a private-range image URL is never fetched, and the original URL is 
   ]);
 
   assert.equal(fetched, false, 'the blocked URL is never fetched');
-  assert.equal(result.uploadedUrl, METADATA_URL, 'keeps the original URL when blocked');
+  assert.equal(
+    result.uploadedUrl,
+    METADATA_URL,
+    'keeps the original URL when blocked',
+  );
   assert.equal(result.originalUrl, METADATA_URL);
 });
 
@@ -114,15 +134,26 @@ test('the re-host fetch goes through the hardened helper: no redirects, with a t
     if (imageFetchOpts === undefined) imageFetchOpts = opts;
     return {
       ok: true,
-      headers: { get: (h) => (h.toLowerCase() === 'content-type' ? 'image/gif' : null) },
+      headers: {
+        get: (h) => (h.toLowerCase() === 'content-type' ? 'image/gif' : null),
+      },
       arrayBuffer: async () => GIF_BYTES.buffer.slice(0),
     };
   };
 
-  await processNotionImages([{ url: SIGNED_URL, caption: '', blockId: 'block-redirect' }]);
+  await processNotionImages([
+    { url: SIGNED_URL, caption: '', blockId: 'block-redirect' },
+  ]);
 
-  assert.equal(imageFetchOpts?.redirect, 'error', 'the re-host fetch must refuse redirects');
-  assert.ok(imageFetchOpts?.signal, 'the re-host fetch must carry a timeout signal');
+  assert.equal(
+    imageFetchOpts?.redirect,
+    'error',
+    'the re-host fetch must refuse redirects',
+  );
+  assert.ok(
+    imageFetchOpts?.signal,
+    'the re-host fetch must carry a timeout signal',
+  );
 });
 
 test('falls back to the original URL when the fetch fails', async () => {
@@ -137,6 +168,10 @@ test('falls back to the original URL when the fetch fails', async () => {
     { url: SIGNED_URL, caption: '', blockId: 'block-2' },
   ]);
 
-  assert.equal(result.uploadedUrl, SIGNED_URL, 'keeps the original URL on failure');
+  assert.equal(
+    result.uploadedUrl,
+    SIGNED_URL,
+    'keeps the original URL on failure',
+  );
   assert.equal(result.originalUrl, SIGNED_URL);
 });

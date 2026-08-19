@@ -35,7 +35,8 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
     const s = shelf === 'organization' ? 'organization' : 'personal';
     const id = cleanStr(item?.id);
     if (!id) return;
-    const current = s === 'organization' ? !!item?.isFavorite : !!item?.favorite;
+    const current =
+      s === 'organization' ? !!item?.isFavorite : !!item?.favorite;
     const optimistic = !current;
 
     // Optimistic UI: update immediately, then reconcile with server response.
@@ -46,10 +47,13 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
     rerender?.();
 
     try {
-      const updated = await api(`/api/slide-library/${s}/${encodeURIComponent(id)}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ favorite: !current }),
-      });
+      const updated = await api(
+        `/api/slide-library/${s}/${encodeURIComponent(id)}`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ favorite: !current }),
+        },
+      );
       const arr = state.getCache(s);
       const idx = arr.findIndex((x) => String(x?.id || '') === id);
       if (idx >= 0) arr[idx] = updated;
@@ -79,10 +83,13 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
     rerender?.();
 
     try {
-      const updated = await api(`/api/slide-library/${s}/${encodeURIComponent(id)}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ trashed: !!trashed }),
-      });
+      const updated = await api(
+        `/api/slide-library/${s}/${encodeURIComponent(id)}`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ trashed: !!trashed }),
+        },
+      );
       const arr = state.getCache(s);
       const idx = arr.findIndex((x) => String(x?.id || '') === id);
       if (idx >= 0) arr[idx] = updated;
@@ -136,10 +143,13 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
   const saveTags = async (shelf, item, newTags) => {
     const s = shelf === 'organization' ? 'organization' : 'personal';
     try {
-      const result = await api(`/api/slide-library/${s}/${encodeURIComponent(item.id)}/tags`, {
-        method: 'PUT',
-        body: JSON.stringify({ tags: newTags }),
-      });
+      const result = await api(
+        `/api/slide-library/${s}/${encodeURIComponent(item.id)}/tags`,
+        {
+          method: 'PUT',
+          body: JSON.stringify({ tags: newTags }),
+        },
+      );
       item.tags = result;
       return { ok: true, tags: result };
     } catch (err) {
@@ -154,10 +164,13 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
     if (!id) return { ok: false, error: new Error('Missing item id') };
 
     try {
-      const updated = await api(`/api/slide-library/${s}/${encodeURIComponent(id)}`, {
-        method: 'PATCH',
-        body: JSON.stringify(patch),
-      });
+      const updated = await api(
+        `/api/slide-library/${s}/${encodeURIComponent(id)}`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify(patch),
+        },
+      );
       // Update cache
       const arr = state.getCache(s);
       const idx = arr.findIndex((x) => String(x?.id || '') === id);

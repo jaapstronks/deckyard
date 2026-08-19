@@ -26,7 +26,10 @@ const repoRoot = path.join(here, '..');
 
 /** The helper itself, plus any argued non-download exception. */
 const ALLOWLIST = [
-  { file: 'client/lib/dom/download.js', reason: 'the downloadBlob() implementation itself' },
+  {
+    file: 'client/lib/dom/download.js',
+    reason: 'the downloadBlob() implementation itself',
+  },
 ];
 
 /** Third-party code we neither wrote nor patch. */
@@ -68,7 +71,7 @@ test('URL.createObjectURL in client/ only via downloadBlob()', () => {
     0,
     'Use downloadBlob() from client/lib/dom/download.js instead of a direct ' +
       'URL.createObjectURL, or add an allowlist entry with a reason to this ' +
-      `test:\n  ${violations.join('\n  ')}`
+      `test:\n  ${violations.join('\n  ')}`,
   );
 });
 
@@ -76,7 +79,7 @@ test('the allowlist only names files that still exist', () => {
   for (const { file } of ALLOWLIST) {
     assert.ok(
       fs.existsSync(path.join(repoRoot, file)),
-      `Stale allowlist entry: ${file} no longer exists — remove it.`
+      `Stale allowlist entry: ${file} no longer exists — remove it.`,
     );
   }
 });

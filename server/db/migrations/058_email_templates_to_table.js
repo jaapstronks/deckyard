@@ -97,7 +97,10 @@ export async function importEmailTemplatesFromDisk(db) {
   if (!config) return { templates: 0, defaultLocale: false };
 
   let imported = 0;
-  const templates = config.templates && typeof config.templates === 'object' ? config.templates : {};
+  const templates =
+    config.templates && typeof config.templates === 'object'
+      ? config.templates
+      : {};
   for (const [type, byLocale] of Object.entries(templates)) {
     if (!byLocale || typeof byLocale !== 'object') continue;
     for (const [locale, fields] of Object.entries(byLocale)) {
@@ -153,7 +156,7 @@ export const up = async (db) => {
   const result = await importEmailTemplatesFromDisk(db);
   log.info(
     `imported ${result.templates} email-template override(s)` +
-      (result.defaultLocale ? ' and the instance default locale' : '')
+      (result.defaultLocale ? ' and the instance default locale' : ''),
   );
 };
 

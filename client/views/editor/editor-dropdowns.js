@@ -34,16 +34,14 @@ export function createEditorDropdowns({
   user,
 }) {
   // Export dropdown (file downloads)
-  const {
-    exportEl: topbarExport,
-    detach: detachExportDropdown,
-  } = setupExportDropdown({
-    h,
-    pres,
-    id,
-    root,
-    overlayClosers: openOverlayClosers,
-  });
+  const { exportEl: topbarExport, detach: detachExportDropdown } =
+    setupExportDropdown({
+      h,
+      pres,
+      id,
+      root,
+      overlayClosers: openOverlayClosers,
+    });
 
   // Share dropdown (sharing + publishing)
   const {

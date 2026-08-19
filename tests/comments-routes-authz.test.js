@@ -55,13 +55,11 @@ const DECK = 'deck-owned';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } = await import(
-  '../server/storage/lifecycle.js'
-);
+const { initializeStorage, __resetStorageForTests } =
+  await import('../server/storage/lifecycle.js');
 const { createStorageScope } = await import('../server/utils/context.js');
-const { invalidatePermission } = await import(
-  '../server/storage/cache/permission-cache.js'
-);
+const { invalidatePermission } =
+  await import('../server/storage/cache/permission-cache.js');
 const {
   handlePresentationCommentsCreate,
   handlePresentationCommentUpdate,
@@ -76,18 +74,43 @@ const {
 /** @typedef {{email: string, name: string, organizationId: string, isAdmin?: boolean}} Actor */
 
 const ACTORS = {
-  owner: { email: 'owner@example.com', name: 'Olive Owner', organizationId: ORG },
-  admin: { email: 'admin@example.com', name: 'Ada Admin', organizationId: ORG, isAdmin: true },
-  author: { email: 'author@example.com', name: 'Andy Author', organizationId: ORG },
-  member: { email: 'member@example.com', name: 'Mia Member', organizationId: ORG },
-  outsider: { email: 'otto@other.example', name: 'Otto Outsider', organizationId: OTHER_ORG },
+  owner: {
+    email: 'owner@example.com',
+    name: 'Olive Owner',
+    organizationId: ORG,
+  },
+  admin: {
+    email: 'admin@example.com',
+    name: 'Ada Admin',
+    organizationId: ORG,
+    isAdmin: true,
+  },
+  author: {
+    email: 'author@example.com',
+    name: 'Andy Author',
+    organizationId: ORG,
+  },
+  member: {
+    email: 'member@example.com',
+    name: 'Mia Member',
+    organizationId: ORG,
+  },
+  outsider: {
+    email: 'otto@other.example',
+    name: 'Otto Outsider',
+    organizationId: OTHER_ORG,
+  },
 };
 
 /** @type {ReturnType<typeof createFakeDb>} */
 let db;
 
 test.before(async () => {
-  __setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+  __setTestDb(
+    createFakeDb({
+      organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+    }),
+  );
   await initializeStorage();
 });
 
@@ -181,7 +204,11 @@ async function seed() {
     presentation_collaborators: [],
     presentation_comments: [
       commentRow({ id: 'cm-open' }),
-      commentRow({ id: 'cm-resolved', status: 'resolved', resolved_by: ACTORS.owner.email }),
+      commentRow({
+        id: 'cm-resolved',
+        status: 'resolved',
+        resolved_by: ACTORS.owner.email,
+      }),
       // An AI suggestion carrying a proposed slide, anchored to s1 — for apply/dismiss.
       commentRow({
         id: 'cm-ai',
@@ -189,7 +216,10 @@ async function seed() {
         author_name: 'Deckyard AI',
         comment_type: 'ai_suggestion',
         suggestion_category: 'clarity',
-        proposed_slide: { type: 'content-slide', content: { title: 'Proposed' } },
+        proposed_slide: {
+          type: 'content-slide',
+          content: { title: 'Proposed' },
+        },
       }),
     ],
     comment_thread_reads: [],
@@ -258,10 +288,12 @@ async function call(handler, method, { as = null, body, args = [DECK] } = {}) {
       storageScope: createStorageScope(authedUser, { repoRoot: process.cwd() }),
       req,
       res,
-      url: new URL(`http://decks.example.test/api/presentations/${DECK}/comments`),
+      url: new URL(
+        `http://decks.example.test/api/presentations/${DECK}/comments`,
+      ),
       authedUser,
     },
-    ...args
+    ...args,
   );
   return { handled, res };
 }
@@ -282,7 +314,10 @@ test('the deck owner can create a comment', async () => {
   });
 
   assert.equal(res.statusCode, 201);
-  assert.equal(comments().filter((c) => c.author_email === ACTORS.owner.email).length, 1);
+  assert.equal(
+    comments().filter((c) => c.author_email === ACTORS.owner.email).length,
+    1,
+  );
 });
 
 test('a same-organization member can create a comment on an org-visible deck', async () => {
@@ -304,7 +339,11 @@ test('someone in another organization cannot comment — the deck is absent to t
     args: [DECK],
   });
 
-  assert.equal(res.statusCode, 404, 'a cross-org deck is not-found, not forbidden');
+  assert.equal(
+    res.statusCode,
+    404,
+    'a cross-org deck is not-found, not forbidden',
+  );
 });
 
 // The anonymous cells pin the wiring of the permission check itself: the
@@ -318,7 +357,11 @@ test('an anonymous visitor cannot comment', async () => {
     args: [DECK],
   });
 
-  assert.equal(res.statusCode, 401, 'no session and no guest grant means no commenting');
+  assert.equal(
+    res.statusCode,
+    401,
+    'no session and no guest grant means no commenting',
+  );
   assert.equal(comments().length, 3, 'nothing was written');
 });
 
@@ -328,13 +371,21 @@ test('an anonymous visitor cannot edit, delete or resolve', async () => {
     body: { body: 'Rewrite' },
     args: [DECK, 'cm-open'],
   });
-  const del = await call(handlePresentationCommentDelete, 'DELETE', { args: [DECK, 'cm-open'] });
-  const resolve = await call(handlePresentationCommentResolve, 'POST', { args: [DECK, 'cm-open'] });
+  const del = await call(handlePresentationCommentDelete, 'DELETE', {
+    args: [DECK, 'cm-open'],
+  });
+  const resolve = await call(handlePresentationCommentResolve, 'POST', {
+    args: [DECK, 'cm-open'],
+  });
 
   assert.equal(edit.res.statusCode, 401);
   assert.equal(del.res.statusCode, 401);
   assert.equal(resolve.res.statusCode, 401);
-  assert.equal(commentById('cm-open').body, 'Body of cm-open', 'the comment is untouched');
+  assert.equal(
+    commentById('cm-open').body,
+    'Body of cm-open',
+    'the comment is untouched',
+  );
   assert.equal(commentById('cm-open').resolved_at, null, 'and not resolved');
 });
 
@@ -351,7 +402,10 @@ test('create rejects an empty body with a 400', async () => {
 
 test('create only answers POST', async () => {
   await seed();
-  const { res } = await call(handlePresentationCommentsCreate, 'GET', { as: ACTORS.owner, args: [DECK] });
+  const { res } = await call(handlePresentationCommentsCreate, 'GET', {
+    as: ACTORS.owner,
+    args: [DECK],
+  });
 
   assert.equal(res.statusCode, 405);
 });
@@ -380,8 +434,16 @@ test('the deck owner may not edit someone else’s comment', async () => {
     args: [DECK, 'cm-open'],
   });
 
-  assert.equal(res.statusCode, 401, 'editing is author-only, even for the owner');
-  assert.equal(commentById('cm-open').body, 'Body of cm-open', 'the words are untouched');
+  assert.equal(
+    res.statusCode,
+    401,
+    'editing is author-only, even for the owner',
+  );
+  assert.equal(
+    commentById('cm-open').body,
+    'Body of cm-open',
+    'the words are untouched',
+  );
 });
 
 test('an admin may edit any comment', async () => {
@@ -589,8 +651,16 @@ test('the owner can apply an AI suggestion, inserting the proposed slide', async
   assert.equal(res.statusCode, 200);
   assert.ok(res.body.newSlideId, 'the new slide id is reported');
   assert.equal(res.body.originalSlideId, 's1');
-  assert.equal(db2.__tables.presentations[0].slides.length, before + 1, 'a slide was inserted');
-  assert.equal(commentById('cm-ai').status, 'resolved', 'the suggestion is resolved once applied');
+  assert.equal(
+    db2.__tables.presentations[0].slides.length,
+    before + 1,
+    'a slide was inserted',
+  );
+  assert.equal(
+    commentById('cm-ai').status,
+    'resolved',
+    'the suggestion is resolved once applied',
+  );
 });
 
 test('applying a comment without a proposed slide is a 400', async () => {

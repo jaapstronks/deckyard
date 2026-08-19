@@ -27,8 +27,10 @@ globalThis.Element = dom.window.Element;
 globalThis.CustomEvent = dom.window.CustomEvent;
 globalThis.KeyboardEvent = dom.window.KeyboardEvent;
 globalThis.getComputedStyle = dom.window.getComputedStyle;
-globalThis.requestAnimationFrame = dom.window.requestAnimationFrame || ((cb) => setTimeout(cb, 0));
-globalThis.cancelAnimationFrame = dom.window.cancelAnimationFrame || clearTimeout;
+globalThis.requestAnimationFrame =
+  dom.window.requestAnimationFrame || ((cb) => setTimeout(cb, 0));
+globalThis.cancelAnimationFrame =
+  dom.window.cancelAnimationFrame || clearTimeout;
 globalThis.ResizeObserver =
   dom.window.ResizeObserver ||
   class {
@@ -38,8 +40,10 @@ globalThis.ResizeObserver =
   };
 
 const { h } = await import('../client/lib/dom.js');
-const { createFieldRenderers } = await import('../client/views/editor/fields.js');
-const { createRerenderEditor } = await import('../client/views/editor/editor-form.js');
+const { createFieldRenderers } =
+  await import('../client/views/editor/fields.js');
+const { createRerenderEditor } =
+  await import('../client/views/editor/editor-form.js');
 const { SLIDE_TYPES } = await import('../shared/slide-types.js');
 
 function renderForm({ type, content }) {
@@ -85,7 +89,9 @@ test('gallery: schema-driven collection with collapse, hidden focus fields', () 
     type: 'gallery-slide',
     content: structuredClone(SLIDE_TYPES['gallery-slide'].defaults),
   });
-  const groups = editorMount.querySelectorAll('.items-reorder-list .card-group');
+  const groups = editorMount.querySelectorAll(
+    '.items-reorder-list .card-group',
+  );
   assert.equal(groups.length, slide.content.images.length);
   // collapsible: true → per-item chevron + bulk toggle
   assert.ok(editorMount.querySelector('.row-collapse-toggle'));
@@ -107,7 +113,7 @@ test('gallery: add respects maxItems, remove respects minItems', () => {
   }
   // add up to maxItems (6)
   const addBtn = Array.from(editorMount.querySelectorAll('button')).find((b) =>
-    b.textContent.startsWith('+')
+    b.textContent.startsWith('+'),
   );
   for (let i = 0; i < 10; i += 1) addBtn.click();
   assert.equal(slide.content.images.length, 6);
@@ -130,13 +136,18 @@ test('keyboard reorder: ArrowDown on the drag handle moves the item', () => {
     { src: 'c.jpg', caption: 'C', alt: '' },
   ];
   const { editorMount, slide } = renderForm({ type: 'gallery-slide', content });
-  const handle = editorMount.querySelector('.items-reorder-list .card-group .item-drag-handle');
+  const handle = editorMount.querySelector(
+    '.items-reorder-list .card-group .item-drag-handle',
+  );
   handle.dispatchEvent(
-    new dom.window.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })
+    new dom.window.KeyboardEvent('keydown', {
+      key: 'ArrowDown',
+      bubbles: true,
+    }),
   );
   assert.deepEqual(
     slide.content.images.map((i) => i.caption),
-    ['B', 'A', 'C']
+    ['B', 'A', 'C'],
   );
 });
 
@@ -146,14 +157,26 @@ test('text-blocks: nested blocks collection, relation field skipped on last row'
     content: {
       title: 'T',
       rows: [
-        { title: '', color: 'yellow', arrow: 'down', blocks: [{ title: 'B1', body: '' }] },
-        { title: 'R2', color: 'black', arrow: 'none', blocks: [{ title: 'B2', body: '' }] },
+        {
+          title: '',
+          color: 'yellow',
+          arrow: 'down',
+          blocks: [{ title: 'B1', body: '' }],
+        },
+        {
+          title: 'R2',
+          color: 'black',
+          arrow: 'none',
+          blocks: [{ title: 'B2', body: '' }],
+        },
       ],
     },
   });
   const outerList = editorMount.querySelector('.items-reorder-list');
   // (children-filter, not `:scope >` — jsdom treats the latter as descendant)
-  const rows = Array.from(outerList.children).filter((c) => c.classList.contains('card-group'));
+  const rows = Array.from(outerList.children).filter((c) =>
+    c.classList.contains('card-group'),
+  );
   assert.equal(rows.length, 2);
   // nested collection editor inside each row
   assert.ok(rows[0].querySelector('.items-reorder-list .card-group'));
@@ -166,7 +189,7 @@ test('text-blocks: nested blocks collection, relation field skipped on last row'
   assert.ok(!enumLabels(rows[1]).some((l) => /Arrow/i.test(l)));
   // adding a block through the nested editor grows the row's blocks[]
   const nestedAdd = Array.from(rows[1].querySelectorAll('button')).find((b) =>
-    b.textContent.includes('Add block')
+    b.textContent.includes('Add block'),
   );
   nestedAdd.click();
   assert.equal(slide.content.rows[1].blocks.length, 2);
@@ -179,32 +202,44 @@ test('kpi-metrics: generic items path keeps the metric field pairing', () => {
   for (const want of ['Value', 'Unit', 'Label']) {
     assert.ok(
       labels.some((l) => l.includes(want)),
-      `missing metric field ${want}`
+      `missing metric field ${want}`,
     );
   }
   // The pairing is a formLayout declaration on the item fields, rendered as
   // declared rows: value+unit share one .field-grid, label gets its own.
-  const firstItem = editorMount.querySelector('.items-reorder-list .card-group');
-  const rows = Array.from(firstItem.querySelectorAll('.field-grid')).map((g) =>
-    labelsOf(g)
+  const firstItem = editorMount.querySelector(
+    '.items-reorder-list .card-group',
   );
-  assert.deepEqual(rows[0], ['Value', 'Unit'], 'value and unit share the first row');
+  const rows = Array.from(firstItem.querySelectorAll('.field-grid')).map((g) =>
+    labelsOf(g),
+  );
+  assert.deepEqual(
+    rows[0],
+    ['Value', 'Unit'],
+    'value and unit share the first row',
+  );
   assert.deepEqual(rows[1], ['Label'], 'label stands on its own row');
 });
 
 test('team-cards and logo-wall run generic: collection renders from schema', () => {
   for (const [type, key, seed] of [
-    ['team-cards-slide', 'members', [{ image: '', alt: '', name: 'N', byline: 'B', linkedin: '' }]],
+    [
+      'team-cards-slide',
+      'members',
+      [{ image: '', alt: '', name: 'N', byline: 'B', linkedin: '' }],
+    ],
     ['logo-wall-slide', 'logos', [{ image: '', name: 'L', alt: '', link: '' }]],
   ]) {
     const content = structuredClone(SLIDE_TYPES[type].defaults);
     content[key] = seed;
     const { editorMount } = renderForm({ type, content });
-    const groups = editorMount.querySelectorAll('.items-reorder-list .card-group');
+    const groups = editorMount.querySelectorAll(
+      '.items-reorder-list .card-group',
+    );
     assert.equal(groups.length, 1, `${type}: expected one item card`);
     assert.ok(
       editorMount.querySelector('.collapse-all-toggle') === null,
-      `${type}: bulk toggle hidden for a single item`
+      `${type}: bulk toggle hidden for a single item`,
     );
   }
 });

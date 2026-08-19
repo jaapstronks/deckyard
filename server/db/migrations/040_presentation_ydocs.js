@@ -15,10 +15,10 @@ export const up = async (db) => {
     .createTable('presentation_ydocs')
     .ifNotExists()
     .addColumn('presentation_id', 'uuid', (col) =>
-      col.primaryKey().references('presentations.id').onDelete('cascade')
+      col.primaryKey().references('presentations.id').onDelete('cascade'),
     )
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade')
+      col.references('organizations.id').onDelete('cascade'),
     )
     .addColumn('state', 'bytea', (col) => col.notNull())
     .addColumn('updated_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))

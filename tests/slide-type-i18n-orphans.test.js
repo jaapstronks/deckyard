@@ -69,6 +69,6 @@ test('no locale carries slide-type i18n keys for a type that no longer exists', 
     orphans,
     [],
     'orphaned slide-type i18n namespaces (delete the keys, then `npm run i18n:validate`):\n' +
-      orphans.join('\n')
+      orphans.join('\n'),
   );
 });

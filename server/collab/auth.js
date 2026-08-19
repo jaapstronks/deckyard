@@ -77,13 +77,13 @@ export async function authorizeDocument({ repoRoot, documentName, user }) {
 
   const pres = await getPresentation(
     createStorageScope(user, { repoRoot }),
-    presentationId
+    presentationId,
   );
   if (!pres) throw new NotFoundError('Presentation not found');
 
   const collaboratorPermission = await getCollaboratorPermission(
     presentationId,
-    user.email
+    user.email,
   );
   if (!canReadPresentation({ user, pres, collaboratorPermission }))
     throw new ForbiddenError();
@@ -96,5 +96,9 @@ export async function authorizeDocument({ repoRoot, documentName, user }) {
   // The document's organization, so the persistence hooks — which run outside
   // any request — can write back into the organization the deck actually lives
   // in instead of the instance default.
-  return { presentationId, readOnly, organizationId: pres.organizationId ?? null };
+  return {
+    presentationId,
+    readOnly,
+    organizationId: pres.organizationId ?? null,
+  };
 }

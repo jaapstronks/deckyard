@@ -128,7 +128,8 @@
     .presenter-shell,
     .viewer-shell
   )
-  .slide-item.is-author-locked .thumb.thumb-mini {
+  .slide-item.is-author-locked
+  .thumb.thumb-mini {
   outline: 2px solid hsl(30 100% 50% / 0.6);
   outline-offset: -2px;
 }

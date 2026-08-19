@@ -18,7 +18,10 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert';
 
-import { canonicalJson, slideFingerprint } from '../shared/slide-fingerprint.js';
+import {
+  canonicalJson,
+  slideFingerprint,
+} from '../shared/slide-fingerprint.js';
 import { createSaveManager } from '../client/views/editor/save-manager.js';
 import { testScope } from './helpers/storage-scope.js';
 
@@ -27,15 +30,12 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } = await import(
-  '../server/storage/lifecycle.js'
-);
-const { mergeSlidesAtSlideLevel, mergeMaxRevisionGap } = await import(
-  '../server/storage/presentations/crud/helpers.js'
-);
-const { createPresentation, getPresentation, updatePresentation } = await import(
-  '../server/storage/presentations/index.js'
-);
+const { initializeStorage, __resetStorageForTests } =
+  await import('../server/storage/lifecycle.js');
+const { mergeSlidesAtSlideLevel, mergeMaxRevisionGap } =
+  await import('../server/storage/presentations/crud/helpers.js');
+const { createPresentation, getPresentation, updatePresentation } =
+  await import('../server/storage/presentations/index.js');
 
 const slide = (id, body, extra = {}) => ({
   id,
@@ -52,8 +52,16 @@ const slide = (id, body, extra = {}) => ({
 
 describe('slideFingerprint', () => {
   it('is stable across object key order', () => {
-    const a = { id: 'a', type: 'text-slide', content: { title: 'X', body: 'Y' } };
-    const b = { content: { body: 'Y', title: 'X' }, type: 'text-slide', id: 'a' };
+    const a = {
+      id: 'a',
+      type: 'text-slide',
+      content: { title: 'X', body: 'Y' },
+    };
+    const b = {
+      content: { body: 'Y', title: 'X' },
+      type: 'text-slide',
+      id: 'a',
+    };
     assert.equal(slideFingerprint(a), slideFingerprint(b));
     assert.equal(canonicalJson(a), canonicalJson(b));
   });
@@ -61,14 +69,14 @@ describe('slideFingerprint', () => {
   it('changes when content changes', () => {
     assert.notEqual(
       slideFingerprint(slide('a', 'v1')),
-      slideFingerprint(slide('a', 'v2'))
+      slideFingerprint(slide('a', 'v2')),
     );
   });
 
   it('ignores undefined values like JSON.stringify does', () => {
     assert.equal(
       slideFingerprint({ id: 'a', gone: undefined }),
-      slideFingerprint({ id: 'a' })
+      slideFingerprint({ id: 'a' }),
     );
   });
 });
@@ -89,7 +97,10 @@ describe('mergeSlidesAtSlideLevel — staleness cap + fingerprints', () => {
     });
     assert.equal(r.merged, true);
     assert.deepEqual(r.conflicts, []);
-    assert.equal(r.slides.find((s) => s.id === 'a').content.body, 'A stale client edit');
+    assert.equal(
+      r.slides.find((s) => s.id === 'a').content.body,
+      'A stale client edit',
+    );
   });
 
   it('flags a conflict when a modified slide also changed server-side', () => {
@@ -113,7 +124,10 @@ describe('mergeSlidesAtSlideLevel — staleness cap + fingerprints', () => {
     });
     assert.equal(r.merged, true);
     assert.deepEqual(r.conflicts, []);
-    assert.equal(r.slides.find((s) => s.id === 'a').content.body, 'A stale client edit');
+    assert.equal(
+      r.slides.find((s) => s.id === 'a').content.body,
+      'A stale client edit',
+    );
   });
 
   it('refuses to merge beyond the staleness cap', () => {
@@ -153,7 +167,11 @@ describe('updatePresentation — stale-tab guards', () => {
   let template;
 
   before(async () => {
-    __setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+    __setTestDb(
+      createFakeDb({
+        organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+      }),
+    );
     await initializeStorage();
     const created = await createPresentation(testScope(), {
       title: 'Stale merge guard',
@@ -176,13 +194,15 @@ describe('updatePresentation — stale-tab guards', () => {
     s.content = { ...s.content, title };
     return s;
   };
-  const titleOf = (doc, id) => doc.slides.find((s) => s.id === id).content.title;
+  const titleOf = (doc, id) =>
+    doc.slides.find((s) => s.id === id).content.title;
   const setTitle = (doc, id, title) => {
     const s = doc.slides.find((sl) => sl.id === id);
     s.content = { ...s.content, title };
   };
 
-  const loadDoc = async () => structuredClone(await getPresentation(testScope(), deckId));
+  const loadDoc = async () =>
+    structuredClone(await getPresentation(testScope(), deckId));
 
   /** Keep the active i18n buffer in sync with top-level slides, like the client does. */
   const syncI18n = (doc) => {
@@ -198,7 +218,9 @@ describe('updatePresentation — stale-tab guards', () => {
     const doc = await loadDoc();
     doc.slides = structuredClone(slides);
     syncI18n(doc);
-    await updatePresentation(testScope(), deckId, doc, { actorEmail: 'owner@example.com' });
+    await updatePresentation(testScope(), deckId, doc, {
+      actorEmail: 'owner@example.com',
+    });
     return loadDoc();
   };
 
@@ -207,14 +229,21 @@ describe('updatePresentation — stale-tab guards', () => {
 
     // The stale tab captures its state (and base fingerprints) here.
     const staleTab = structuredClone(base);
-    const staleFingerprints = { [X]: slideFingerprint(staleTab.slides.find((s) => s.id === X)) };
+    const staleFingerprints = {
+      [X]: slideFingerprint(staleTab.slides.find((s) => s.id === X)),
+    };
 
     // Meanwhile another user edits slide X, adds Y mid-deck and deletes Z.
     const other = await loadDoc();
     setTitle(other, X, 'X v2 by other');
-    other.slides = [other.slides.find((s) => s.id === X), mkSlide(Y, 'Y new by other')];
+    other.slides = [
+      other.slides.find((s) => s.id === X),
+      mkSlide(Y, 'Y new by other'),
+    ];
     syncI18n(other);
-    await updatePresentation(testScope(), deckId, other, { actorEmail: 'other@example.com' });
+    await updatePresentation(testScope(), deckId, other, {
+      actorEmail: 'other@example.com',
+    });
 
     // The stale tab wakes up and autosaves its old copy with its own X edit.
     setTitle(staleTab, X, 'X stale edit');
@@ -230,7 +259,7 @@ describe('updatePresentation — stale-tab guards', () => {
         assert.equal(e.statusCode, 409);
         assert.deepEqual(e.details?.conflictingSlides, [X]);
         return true;
-      }
+      },
     );
 
     // Server state is untouched: other user's work survived.
@@ -243,13 +272,17 @@ describe('updatePresentation — stale-tab guards', () => {
     const base = await resetDeck([mkSlide(X, 'X v1'), mkSlide(W, 'W v1')]);
 
     const tabA = structuredClone(base);
-    const fingerprints = { [W]: slideFingerprint(tabA.slides.find((s) => s.id === W)) };
+    const fingerprints = {
+      [W]: slideFingerprint(tabA.slides.find((s) => s.id === W)),
+    };
 
     // Other user edits X (revision advances past tabA's base).
     const other = await loadDoc();
     setTitle(other, X, 'X v2 by other');
     syncI18n(other);
-    await updatePresentation(testScope(), deckId, other, { actorEmail: 'other@example.com' });
+    await updatePresentation(testScope(), deckId, other, {
+      actorEmail: 'other@example.com',
+    });
 
     // Tab A edits only W: base fingerprint of W still matches the server.
     setTitle(tabA, W, 'W v2 by tab A');
@@ -274,7 +307,9 @@ describe('updatePresentation — stale-tab guards', () => {
       const doc = await loadDoc();
       setTitle(doc, X, `X tick ${i}`);
       syncI18n(doc);
-      await updatePresentation(testScope(), deckId, doc, { actorEmail: 'other@example.com' });
+      await updatePresentation(testScope(), deckId, doc, {
+        actorEmail: 'other@example.com',
+      });
     }
 
     setTitle(staleTab, W, 'W stale edit');
@@ -283,10 +318,12 @@ describe('updatePresentation — stale-tab guards', () => {
       updatePresentation(testScope(), deckId, staleTab, {
         expectedRevision: staleTab.revision,
         modifiedSlideIds: [W],
-        slideBaseFingerprints: { [W]: slideFingerprint(base.slides.find((s) => s.id === W)) },
+        slideBaseFingerprints: {
+          [W]: slideFingerprint(base.slides.find((s) => s.id === W)),
+        },
         actorEmail: 'stale@example.com',
       }),
-      (e) => Number(e.statusCode) === 409
+      (e) => Number(e.statusCode) === 409,
     );
   });
 });
@@ -297,14 +334,20 @@ describe('updatePresentation — stale-tab guards', () => {
 
 describe('save-manager — base fingerprints', () => {
   const noopToast = { info: () => {}, error: () => {}, success: () => {} };
-  const SLIDE_TYPES = { 'text-slide': { fields: [{ key: 'body', type: 'markdown' }] } };
+  const SLIDE_TYPES = {
+    'text-slide': { fields: [{ key: 'body', type: 'markdown' }] },
+  };
 
   const makePres = () => ({
     id: 'p1',
     title: 'Deck',
     revision: 1,
     slides: [slide('a', 'A v1'), slide('b', 'B v1')],
-    i18n: { active: 'nl', dominant: 'nl', versions: { nl: { title: 'Deck', slides: [] } } },
+    i18n: {
+      active: 'nl',
+      dominant: 'nl',
+      versions: { nl: { title: 'Deck', slides: [] } },
+    },
   });
 
   const makeManager = ({ pres, apiImpl }) =>
@@ -326,7 +369,11 @@ describe('save-manager — base fingerprints', () => {
     const apiImpl = async (_path, opts) => {
       sentHeaders.push(opts.headers);
       const body = JSON.parse(opts.body);
-      return { ...body, revision: Number(opts.headers['If-Match']) + 1, modified: 'x' };
+      return {
+        ...body,
+        revision: Number(opts.headers['If-Match']) + 1,
+        modified: 'x',
+      };
     };
     const mgr = makeManager({ pres, apiImpl });
 
@@ -337,7 +384,11 @@ describe('save-manager — base fingerprints', () => {
 
     const fps = JSON.parse(sentHeaders[0]['X-Slide-Base-Fingerprints']);
     assert.deepEqual(Object.keys(fps), ['b']);
-    assert.equal(fps.b, baseFp, 'must fingerprint the base version, not the edited one');
+    assert.equal(
+      fps.b,
+      baseFp,
+      'must fingerprint the base version, not the edited one',
+    );
   });
 
   it('rebases fingerprints on the save response for the next save', async () => {
@@ -346,7 +397,11 @@ describe('save-manager — base fingerprints', () => {
     const apiImpl = async (_path, opts) => {
       sentHeaders.push(opts.headers);
       const body = JSON.parse(opts.body);
-      return { ...body, revision: Number(opts.headers['If-Match']) + 1, modified: 'x' };
+      return {
+        ...body,
+        revision: Number(opts.headers['If-Match']) + 1,
+        modified: 'x',
+      };
     };
     const mgr = makeManager({ pres, apiImpl });
 
@@ -363,7 +418,7 @@ describe('save-manager — base fingerprints', () => {
     assert.equal(
       secondFps.b,
       slideFingerprint(slide('b', 'B v2')),
-      'second save must use the first save result as its base'
+      'second save must use the first save result as its base',
     );
   });
 });

@@ -32,11 +32,8 @@ const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { testScope } = await import('./helpers/storage-scope.js');
 const { writeAppSettings } = await import('../server/storage/settings.js');
-const {
-  maybeFireWebhook,
-  maybeFireLeadWebhook,
-  maybeFireInteractionWebhook,
-} = await import('../server/utils/webhooks.js');
+const { maybeFireWebhook, maybeFireLeadWebhook, maybeFireInteractionWebhook } =
+  await import('../server/utils/webhooks.js');
 
 const REPO_ROOT = '/tmp/webhook-contract-tests';
 
@@ -86,7 +83,11 @@ function delivered(i = 0) {
 }
 
 before(async () => {
-  __setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+  __setTestDb(
+    createFakeDb({
+      organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+    }),
+  );
   await writeAppSettings(testScope(REPO_ROOT), { webhooks: URLS });
 });
 
@@ -114,9 +115,16 @@ describe('the delivered request', () => {
     assert.equal(url, URLS.presentationPublishedUrl);
     assert.equal(options.method, 'POST');
     assert.equal(options.headers['x-sb-event'], 'presentation.published');
-    assert.equal(options.headers['content-type'], 'application/json; charset=utf-8');
+    assert.equal(
+      options.headers['content-type'],
+      'application/json; charset=utf-8',
+    );
     assert.equal(options.headers['user-agent'], 'Deckyard-Webhook/1');
-    assert.equal(options.redirect, 'error', 'a 30x must not walk into private space');
+    assert.equal(
+      options.redirect,
+      'error',
+      'a 30x must not walk into private space',
+    );
     // Unsigned by default: no secret configured means no signature header.
     assert.equal(options.headers['x-sb-signature'], undefined);
   });
@@ -155,7 +163,13 @@ describe('common payload shape', () => {
     await settle();
 
     const { payload } = delivered();
-    assert.deepEqual(Object.keys(payload).sort(), ['actor', 'createdAt', 'event', 'links', 'presentation']);
+    assert.deepEqual(Object.keys(payload).sort(), [
+      'actor',
+      'createdAt',
+      'event',
+      'links',
+      'presentation',
+    ]);
     assert.equal(payload.event, 'presentation.published');
     assert.ok(!Number.isNaN(Date.parse(payload.createdAt)));
 
@@ -205,7 +219,11 @@ describe('common payload shape', () => {
     assert.equal(payload.actor.id, null);
     assert.equal(payload.actor.email, 'user@example.com');
     assert.equal(payload.presentation.published, null);
-    assert.equal(payload.presentation.visibility, 'private', 'defaults to private');
+    assert.equal(
+      payload.presentation.visibility,
+      'private',
+      'defaults to private',
+    );
     assert.equal(payload.links.publicPath, null);
     assert.equal(payload.links.publicUrl, null);
   });
@@ -221,7 +239,14 @@ describe('common payload shape', () => {
 
     const { url, payload } = delivered();
     assert.equal(url, URLS.commentCreatedUrl);
-    assert.deepEqual(Object.keys(payload).sort(), ['actor', 'createdAt', 'event', 'extra', 'links', 'presentation']);
+    assert.deepEqual(Object.keys(payload).sort(), [
+      'actor',
+      'createdAt',
+      'event',
+      'extra',
+      'links',
+      'presentation',
+    ]);
     assert.deepEqual(payload.extra, { comment: { id: 'c-1', body: 'Nice' } });
   });
 });
@@ -246,7 +271,13 @@ describe('slide.added_to_organization_library payload shape', () => {
 
     const { url, payload } = delivered();
     assert.equal(url, URLS.slideAddedToOrganizationLibraryUrl);
-    assert.deepEqual(Object.keys(payload).sort(), ['actor', 'createdAt', 'event', 'links', 'slide']);
+    assert.deepEqual(Object.keys(payload).sort(), [
+      'actor',
+      'createdAt',
+      'event',
+      'links',
+      'slide',
+    ]);
     assert.deepEqual(payload.slide, {
       id: 'sl-9',
       name: 'KPI grid',
@@ -295,7 +326,12 @@ describe('interaction.* payload shape', () => {
       assert.equal(options.headers['x-sb-event'], event);
       // These fire from the storage layer during a live session; the acting
       // party is the audience, so there is no actor block (webhooks.md).
-      assert.deepEqual(Object.keys(payload).sort(), ['event', 'interaction', 'session', 'timestamp']);
+      assert.deepEqual(Object.keys(payload).sort(), [
+        'event',
+        'interaction',
+        'session',
+        'timestamp',
+      ]);
       assert.equal(payload.event, event);
       assert.ok(!Number.isNaN(Date.parse(payload.timestamp)));
       assert.deepEqual(payload.session, { id: 'sess-1' });
@@ -317,14 +353,24 @@ describe('lead.submitted payload shape', () => {
     await maybeFireLeadWebhook(REPO_ROOT, REQ, {
       presentation: { id: 'pres-1', title: 'Quarterly' },
       slideId: 'slide-7',
-      lead: { name: 'Visitor V', email: 'visitor@example.org', submittedAt: '2026-08-16T10:00:00.000Z' },
+      lead: {
+        name: 'Visitor V',
+        email: 'visitor@example.org',
+        submittedAt: '2026-08-16T10:00:00.000Z',
+      },
     });
     await settle();
 
     const { url, payload, options } = delivered();
     assert.equal(url, URLS.leadSubmittedUrl);
     assert.equal(options.headers['x-sb-event'], 'lead.submitted');
-    assert.deepEqual(Object.keys(payload).sort(), ['createdAt', 'event', 'lead', 'presentation', 'slide']);
+    assert.deepEqual(Object.keys(payload).sort(), [
+      'createdAt',
+      'event',
+      'lead',
+      'presentation',
+      'slide',
+    ]);
     assert.equal(payload.event, 'lead.submitted');
     assert.deepEqual(payload.presentation, {
       id: 'pres-1',
@@ -360,7 +406,7 @@ describe('best-effort fire', () => {
         event: 'presentation.published',
         pres: { id: 'pres-1', title: 'T' },
         authedUser: ACTOR,
-      })
+      }),
     );
     await settle();
     assert.equal(fetchCalls.length, 1, 'the attempt was made');
@@ -374,8 +420,14 @@ describe('best-effort fire', () => {
       maybeFireInteractionWebhook(REPO_ROOT, {
         event: 'interaction.poll_closed',
         sessionId: 's',
-        interaction: { type: 'poll', slideId: 'x', totals: [], total: 0, status: 'closed' },
-      })
+        interaction: {
+          type: 'poll',
+          slideId: 'x',
+          totals: [],
+          total: 0,
+          status: 'closed',
+        },
+      }),
     );
     await settle();
     assert.equal(fetchCalls.length, 1);
@@ -392,7 +444,7 @@ describe('best-effort fire', () => {
         event: 'presentation.published',
         pres: { id: 'pres-1', title: 'T' },
         authedUser: ACTOR,
-      })
+      }),
     );
     await settle();
     assert.equal(fetchCalls.length, 0, 'blocked before fetch');
@@ -436,7 +488,8 @@ describe('HMAC signing', () => {
     const { options } = delivered();
     const body = options.body;
     const expected =
-      'sha256=' + createHmac('sha256', SECRET).update(body, 'utf8').digest('hex');
+      'sha256=' +
+      createHmac('sha256', SECRET).update(body, 'utf8').digest('hex');
     assert.equal(options.headers['x-sb-signature'], expected);
     // The signature is over the bytes actually sent, and lands beside x-sb-event.
     assert.equal(options.headers['x-sb-event'], 'presentation.published');
@@ -451,26 +504,42 @@ describe('HMAC signing', () => {
     await maybeFireLeadWebhook(REPO_ROOT, REQ, {
       presentation: { id: 'pres-1', title: 'T' },
       slideId: 'slide-7',
-      lead: { name: 'V', email: 'v@example.org', submittedAt: '2026-08-16T10:00:00.000Z' },
+      lead: {
+        name: 'V',
+        email: 'v@example.org',
+        submittedAt: '2026-08-16T10:00:00.000Z',
+      },
     });
     await settle();
     const lead = delivered();
     assert.equal(
       lead.options.headers['x-sb-signature'],
-      'sha256=' + createHmac('sha256', SECRET).update(lead.options.body, 'utf8').digest('hex')
+      'sha256=' +
+        createHmac('sha256', SECRET)
+          .update(lead.options.body, 'utf8')
+          .digest('hex'),
     );
 
     stubFetch();
     await maybeFireInteractionWebhook(REPO_ROOT, {
       event: 'interaction.poll_closed',
       sessionId: 's',
-      interaction: { type: 'poll', slideId: 'x', totals: [], total: 0, status: 'closed' },
+      interaction: {
+        type: 'poll',
+        slideId: 'x',
+        totals: [],
+        total: 0,
+        status: 'closed',
+      },
     });
     await settle();
     const interaction = delivered();
     assert.equal(
       interaction.options.headers['x-sb-signature'],
-      'sha256=' + createHmac('sha256', SECRET).update(interaction.options.body, 'utf8').digest('hex')
+      'sha256=' +
+        createHmac('sha256', SECRET)
+          .update(interaction.options.body, 'utf8')
+          .digest('hex'),
     );
   });
 });

@@ -12,18 +12,14 @@ export default {
   defaults: {},
   renderHtml: (content, slide, ctx) => {
     const theme =
-      ctx?.theme && typeof ctx.theme === 'object'
-        ? ctx.theme
-        : null;
+      ctx?.theme && typeof ctx.theme === 'object' ? ctx.theme : null;
     const logo = String(
       theme?.assets?.payoffLogo ||
         theme?.assets?.logo ||
-        '/assets/images/logo.svg'
+        '/assets/images/logo.svg',
     );
     const alt = String(
-      theme?.assets?.payoffAlt ||
-        theme?.assets?.logoAlt ||
-        'Logo'
+      theme?.assets?.payoffAlt || theme?.assets?.logoAlt || 'Logo',
     );
     return `
         <div class="slide slide-payoff slide-bg-lime">

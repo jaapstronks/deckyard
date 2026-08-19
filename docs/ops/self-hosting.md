@@ -67,15 +67,15 @@ TLS certificate automatically; a minute later the app is live at
 Edit `/opt/deckyard/.env` on the server. `.env.example` in the repo documents
 every option; the ones most installs want:
 
-| Variable | Purpose |
-|---|---|
-| `AUTH_ENABLED` + `AUTH_SECRET` | Enable auth; long random string for session signing |
-| `AUTH_ADMIN_EMAIL` | This user gets the admin role |
-| `OPENAI_API` / `CLAUDE_API` / `MISTRAL_API` / `DEEPSEEK_API` | Enable the AI wizard (optional; one is enough) |
-| `DATABASE_*` | Override the bundled Postgres (host, credentials, SSL) — see below |
-| `DEFAULT_THEME` | Default theme id for new decks |
-| `COLLAB_ENABLED` (+ `COLLAB_LIVE_EDITS`) | Real-time collaboration: presence, and optionally live co-editing (default off) |
-| `BREVO_API_KEY` + `BREVO_SENDER_*`, `APP_URL` | Outgoing notification email (optional); `APP_URL` is used for links in those mails |
+| Variable                                                     | Purpose                                                                            |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| `AUTH_ENABLED` + `AUTH_SECRET`                               | Enable auth; long random string for session signing                                |
+| `AUTH_ADMIN_EMAIL`                                           | This user gets the admin role                                                      |
+| `OPENAI_API` / `CLAUDE_API` / `MISTRAL_API` / `DEEPSEEK_API` | Enable the AI wizard (optional; one is enough)                                     |
+| `DATABASE_*`                                                 | Override the bundled Postgres (host, credentials, SSL) — see below                 |
+| `DEFAULT_THEME`                                              | Default theme id for new decks                                                     |
+| `COLLAB_ENABLED` (+ `COLLAB_LIVE_EDITS`)                     | Real-time collaboration: presence, and optionally live co-editing (default off)    |
+| `BREVO_API_KEY` + `BREVO_SENDER_*`, `APP_URL`                | Outgoing notification email (optional); `APP_URL` is used for links in those mails |
 
 After editing: `docker compose up -d` to apply.
 
@@ -115,7 +115,7 @@ Two things you may want to change in `.env`:
     app:
       depends_on: !reset []
     postgres:
-      profiles: ["disabled"]
+      profiles: ['disabled']
   ```
 
 PostgreSQL is the only storage backend. The old `file` backend (JSON on disk)
@@ -187,6 +187,7 @@ Do this in order (on a compose stack, prefix the npm commands with
 
    Zero rows in `presentations` while `server/data/presentations/` has decks →
    **stop**: run `npm run db:import` first.
+
 3. **Back up the whole directory** before deleting anything, and keep the
    archive at least one release:
 

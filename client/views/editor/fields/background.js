@@ -2,9 +2,7 @@ import { getUiLocale, t } from '../../../lib/ui-i18n.js';
 
 export function createBackgroundFields({ h, theme } = {}) {
   const themeVars =
-    theme?.cssVars && typeof theme.cssVars === 'object'
-      ? theme.cssVars
-      : {};
+    theme?.cssVars && typeof theme.cssVars === 'object' ? theme.cssVars : {};
 
   const normalizeOption = (o) => {
     if (typeof o === 'string') {
@@ -109,9 +107,7 @@ export function createBackgroundFields({ h, theme } = {}) {
       type: 'button',
       class: 'bg-picker-trigger',
       'aria-label':
-        field?.label ||
-        field?.key ||
-        t('editor.background.aria', 'Background'),
+        field?.label || field?.key || t('editor.background.aria', 'Background'),
     });
     const menu = h('div', { class: 'bg-picker-menu', hidden: true });
 
@@ -141,8 +137,7 @@ export function createBackgroundFields({ h, theme } = {}) {
     const renderTrigger = () => {
       trigger.innerHTML = '';
       const currentOpt =
-        options.find((o) => o.value === current) ||
-        normalizeOption(current);
+        options.find((o) => o.value === current) || normalizeOption(current);
       const sw = h('span', {
         class: 'bg-picker-swatch',
         style: swatchForOpt(currentOpt)
@@ -152,7 +147,7 @@ export function createBackgroundFields({ h, theme } = {}) {
       sw.classList.toggle('is-transparent', current === 'transparent');
       trigger.append(
         sw,
-        h('span', { class: 'bg-picker-label', text: labelForOpt(currentOpt) })
+        h('span', { class: 'bg-picker-label', text: labelForOpt(currentOpt) }),
       );
     };
 

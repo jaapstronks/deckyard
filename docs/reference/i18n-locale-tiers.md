@@ -7,9 +7,9 @@ here.
 
 ## The two tiers
 
-| Tier | Locales | Promise |
-|------|---------|---------|
-| **1 — supported** | `nl`, `en` | Complete and **gated**. Every key the code uses exists in both, and `npm test` fails if one drifts. No release ships with a Tier-1 gap. |
+| Tier                | Locales                                                    | Promise                                                                                                                                                                                                                                             |
+| ------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1 — supported**   | `nl`, `en`                                                 | Complete and **gated**. Every key the code uses exists in both, and `npm test` fails if one drifts. No release ships with a Tier-1 gap.                                                                                                             |
 | **2 — best effort** | `de`, `fr`, `es`, `pt`, `it`, `pl`, `fi`, `da`, `sv`, `no` | Present and useful, **not gated**. A missing key falls back to the inline English string in the `t(key, fallback)` call, so an incomplete Tier-2 locale degrades to English rather than breaking. Tooling reports the gap; it does not block on it. |
 
 `nl` is the default UI locale; `en` is the reference — the fallback baked into
@@ -20,7 +20,7 @@ every `t()` call is the English string, so English is what a Tier-2 gap shows.
 Dropping the ten Tier-2 locales was considered and **rejected**: it buys nothing
 over tiering and would break any user we don't know about (Deckyard is in beta
 with a near-zero installed base, so "we don't know about them" is the honest
-default). Tiering removes the *permanent obligation* — every new string no
+default). Tiering removes the _permanent obligation_ — every new string no
 longer owes twelve translations — without throwing away the translations that
 exist or the users who rely on them. It is a promise problem, not a quality one:
 the ten locales stay, we are just honest about what "supported" covers.

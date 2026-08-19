@@ -263,7 +263,11 @@
    semantic fills working without !important. */
 .slide.has-slide-bg-light-text {
   --slide-bg-text: var(--slide-on-dark);
-  --slide-bg-text-muted: color-mix(in srgb, var(--slide-bg-text) 78%, transparent);
+  --slide-bg-text-muted: color-mix(
+    in srgb,
+    var(--slide-bg-text) 78%,
+    transparent
+  );
   --slide-on-surface: var(--slide-bg-text);
   --slide-on-surface-muted: var(--slide-bg-text-muted);
   /* Inverted plane fills with the (light) text colour, so its on-colour is
@@ -277,7 +281,11 @@
 }
 .slide.has-slide-bg-dark-text {
   --slide-bg-text: var(--slide-on-light);
-  --slide-bg-text-muted: color-mix(in srgb, var(--slide-bg-text) 70%, transparent);
+  --slide-bg-text-muted: color-mix(
+    in srgb,
+    var(--slide-bg-text) 70%,
+    transparent
+  );
   --slide-on-surface: var(--slide-bg-text);
   --slide-on-surface-muted: var(--slide-bg-text-muted);
   --slide-on-inverted: var(--slide-on-dark);
@@ -326,7 +334,8 @@
    See docs/reference/nested-surfaces.md.
    ============================================================================ */
 
-.slide :is(
+.slide
+  :is(
     .on-surface-light,
     .on-surface-dark,
     .on-surface-accent,
@@ -431,16 +440,3 @@
   object-fit: contain;
   display: block;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

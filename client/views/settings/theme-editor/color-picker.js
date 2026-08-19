@@ -4,7 +4,10 @@
  */
 
 import { h } from '../../../lib/dom.js';
-import { isValidHexColor, normalizeHex } from '../../../lib/theme/color-utils.js';
+import {
+  isValidHexColor,
+  normalizeHex,
+} from '../../../lib/theme/color-utils.js';
 
 /**
  * Create a color picker component.
@@ -17,7 +20,10 @@ import { isValidHexColor, normalizeHex } from '../../../lib/theme/color-utils.js
 export function createColorPicker({ label, value, onChange }) {
   const container = h('div', { class: 'theme-color-picker' });
 
-  const labelEl = h('label', { class: 'theme-color-picker-label', text: label });
+  const labelEl = h('label', {
+    class: 'theme-color-picker-label',
+    text: label,
+  });
 
   const inputsRow = h('div', { class: 'theme-color-picker-inputs row gap-2' });
 

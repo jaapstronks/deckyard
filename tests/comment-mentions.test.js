@@ -19,8 +19,10 @@ import { buildInAppNotificationInputs } from '../server/services/comment-notific
 describe('parseMentions', () => {
   it('parses a single mention', () => {
     assert.deepStrictEqual(
-      parseMentions('Hey @[Chris de Vries](user:chris@example.com), kijk even mee'),
-      [{ name: 'Chris de Vries', email: 'chris@example.com' }]
+      parseMentions(
+        'Hey @[Chris de Vries](user:chris@example.com), kijk even mee',
+      ),
+      [{ name: 'Chris de Vries', email: 'chris@example.com' }],
     );
   });
 
@@ -34,7 +36,10 @@ describe('parseMentions', () => {
   });
 
   it('ignores plain @email and loose @names', () => {
-    assert.deepStrictEqual(parseMentions('mail chris@example.com of @chris'), []);
+    assert.deepStrictEqual(
+      parseMentions('mail chris@example.com of @chris'),
+      [],
+    );
   });
 
   it('requires an email-shaped target', () => {
@@ -49,7 +54,9 @@ describe('parseMentions', () => {
 
 describe('splitMentionSegments', () => {
   it('splits text and mentions in order', () => {
-    const segs = splitMentionSegments('Voor @[Chris](user:chris@example.com): zie slide 2');
+    const segs = splitMentionSegments(
+      'Voor @[Chris](user:chris@example.com): zie slide 2',
+    );
     assert.deepStrictEqual(segs, [
       { type: 'text', text: 'Voor ' },
       { type: 'mention', name: 'Chris', email: 'chris@example.com' },
@@ -66,7 +73,10 @@ describe('splitMentionSegments', () => {
 
 describe('mentionMarkup / stripMentionMarkup', () => {
   it('round-trips through the parser', () => {
-    const markup = mentionMarkup({ name: 'Chris de Vries', email: 'chris@example.com' });
+    const markup = mentionMarkup({
+      name: 'Chris de Vries',
+      email: 'chris@example.com',
+    });
     assert.deepStrictEqual(parseMentions(`hi ${markup}!`), [
       { name: 'Chris de Vries', email: 'chris@example.com' },
     ]);
@@ -76,13 +86,15 @@ describe('mentionMarkup / stripMentionMarkup', () => {
     const markup = mentionMarkup({ name: 'X[y]z', email: 'x@example.com' });
     assert.strictEqual(markup, '@[X y z](user:x@example.com)');
     // Still parseable despite the hostile name
-    assert.deepStrictEqual(parseMentions(markup), [{ name: 'X y z', email: 'x@example.com' }]);
+    assert.deepStrictEqual(parseMentions(markup), [
+      { name: 'X y z', email: 'x@example.com' },
+    ]);
   });
 
   it('strips markup to @Name for excerpts', () => {
     assert.strictEqual(
       stripMentionMarkup('Voor @[Chris](user:chris@example.com): fix dit'),
-      'Voor @Chris: fix dit'
+      'Voor @Chris: fix dit',
     );
   });
 });

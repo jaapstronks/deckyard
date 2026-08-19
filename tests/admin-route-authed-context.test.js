@@ -22,7 +22,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-const { handleAdminAiLogs } = await import('../server/routes/api/admin-ai-logs.js');
+const { handleAdminAiLogs } =
+  await import('../server/routes/api/admin-ai-logs.js');
 
 /** Collects what the handler wrote. */
 function fakeResponse() {
@@ -84,7 +85,7 @@ test('an admin route trusts the enriched user on the context, without a fresh lo
   assert.equal(
     ctx.res.statusCode,
     200,
-    'served from ctx.authedUser — no session cookie, yet not a 401'
+    'served from ctx.authedUser — no session cookie, yet not a 401',
   );
 });
 
@@ -102,7 +103,7 @@ test('the admin capability is read off the context: a non-admin user is refused'
   assert.equal(
     ctx.res.statusCode,
     401,
-    'the isAdmin flag on the context gates the route'
+    'the isAdmin flag on the context gates the route',
   );
 });
 

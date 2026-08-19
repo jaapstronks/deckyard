@@ -51,10 +51,22 @@ export async function sendCommentNotification({
 
   // Default behavior; mention is the most specific flavor and wins.
   const subject = isMention
-    ? tr('email.commentNotification.subject.mention', '{commenterName} mentioned you on "{presTitle}"', { commenterName, presTitle })
+    ? tr(
+        'email.commentNotification.subject.mention',
+        '{commenterName} mentioned you on "{presTitle}"',
+        { commenterName, presTitle },
+      )
     : isReply
-      ? tr('email.commentNotification.subject.reply', '{commenterName} replied to your comment', { commenterName })
-      : tr('email.commentNotification.subject.new', 'New comment on "{presTitle}"', { presTitle });
+      ? tr(
+          'email.commentNotification.subject.reply',
+          '{commenterName} replied to your comment',
+          { commenterName },
+        )
+      : tr(
+          'email.commentNotification.subject.new',
+          'New comment on "{presTitle}"',
+          { presTitle },
+        );
 
   const { htmlContent, textContent } = buildCommentNotificationEmail({
     tr,
@@ -110,7 +122,11 @@ export async function sendGuestVerificationEmail({
   if (customResult) return customResult;
 
   // Default behavior
-  const subject = tr('email.guestVerification.subject', 'Verify your email to comment on "{presTitle}"', { presTitle });
+  const subject = tr(
+    'email.guestVerification.subject',
+    'Verify your email to comment on "{presTitle}"',
+    { presTitle },
+  );
 
   const { htmlContent, textContent } = buildGuestVerificationEmail({
     tr,
@@ -155,15 +171,24 @@ export async function sendCollaboratorInviteEmail({
   // Permission text mapping
   const permissionTextMap = {
     view: tr('email.collaboratorInvite.permission.view', 'view'),
-    comment: tr('email.collaboratorInvite.permission.comment', 'view and comment on'),
+    comment: tr(
+      'email.collaboratorInvite.permission.comment',
+      'view and comment on',
+    ),
     edit: tr('email.collaboratorInvite.permission.edit', 'edit'),
   };
   const permissionText = permissionTextMap[permission] || 'access';
 
   const accessLevelMap = {
     view: tr('email.collaboratorInvite.accessLevel.view', 'view access'),
-    comment: tr('email.collaboratorInvite.accessLevel.comment', 'commenting access'),
-    edit: tr('email.collaboratorInvite.accessLevel.edit', 'full editing access'),
+    comment: tr(
+      'email.collaboratorInvite.accessLevel.comment',
+      'commenting access',
+    ),
+    edit: tr(
+      'email.collaboratorInvite.accessLevel.edit',
+      'full editing access',
+    ),
   };
   const accessLevel = accessLevelMap[permission] || accessLevelMap.view;
 
@@ -179,7 +204,11 @@ export async function sendCollaboratorInviteEmail({
   if (customResult) return customResult;
 
   // Default behavior
-  const subject = tr('email.collaboratorInvite.subject', '{inviter} shared "{presTitle}" with you', { inviter, presTitle });
+  const subject = tr(
+    'email.collaboratorInvite.subject',
+    '{inviter} shared "{presTitle}" with you',
+    { inviter, presTitle },
+  );
 
   const { htmlContent, textContent } = buildCollaboratorInviteEmail({
     tr,
@@ -234,7 +263,11 @@ export async function sendGuestInvitationEmail({
   if (customResult) return customResult;
 
   // Default behavior
-  const subject = tr('email.guestInvitation.subject', '{inviter} invited you to view "{presTitle}"', { inviter, presTitle });
+  const subject = tr(
+    'email.guestInvitation.subject',
+    '{inviter} invited you to view "{presTitle}"',
+    { inviter, presTitle },
+  );
 
   const { htmlContent, textContent } = buildGuestInvitationEmail({
     tr,

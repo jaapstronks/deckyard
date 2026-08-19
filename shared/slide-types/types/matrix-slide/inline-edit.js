@@ -13,12 +13,16 @@ import { HEADER_GHOSTS, HEADER_TEXT } from '../../inline-edit-common.js';
 
 /** @type {Object} InlineDescriptor for matrix-slide. */
 export const inlineEdit = {
-    ghosts: HEADER_GHOSTS,
-    // cells are fixed 4/4 (min == max), so no add/remove buttons render; the
-    // cards entry only provides item indexing for future use.
-    cards: { field: 'cells', container: '.matrix-grid', itemSelector: '.matrix-cell' },
-    formText: [...HEADER_TEXT, 'cells'],
-  };
+  ghosts: HEADER_GHOSTS,
+  // cells are fixed 4/4 (min == max), so no add/remove buttons render; the
+  // cards entry only provides item indexing for future use.
+  cards: {
+    field: 'cells',
+    container: '.matrix-grid',
+    itemSelector: '.matrix-cell',
+  },
+  formText: [...HEADER_TEXT, 'cells'],
+};
 
 /**
  * Fields the inspector keeps rendering even though the inline layer covers the

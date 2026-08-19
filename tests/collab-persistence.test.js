@@ -22,25 +22,22 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } = await import(
-  '../server/storage/lifecycle.js'
-);
-const {
-  getYDocState,
-  setYDocState,
-  deleteYDocState,
-} = await import('../server/storage/presentations/ydocs.js');
-const {
-  createPresentation,
-  getPresentation,
-  updatePresentation,
-} = await import('../server/storage/presentations/index.js');
+const { initializeStorage, __resetStorageForTests } =
+  await import('../server/storage/lifecycle.js');
+const { getYDocState, setYDocState, deleteYDocState } =
+  await import('../server/storage/presentations/ydocs.js');
+const { createPresentation, getPresentation, updatePresentation } =
+  await import('../server/storage/presentations/index.js');
 
 // The collab hooks still take a `repoRoot` for their scope shape; storage
 // ignores it entirely now that PostgreSQL is the only backend.
 const REPO_ROOT = process.cwd();
 
-__setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+__setTestDb(
+  createFakeDb({
+    organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+  }),
+);
 await initializeStorage();
 
 // `closeStorage()` would call `db.destroy()`, which the in-memory double does
@@ -115,51 +112,82 @@ describe('collab persistence hooks', () => {
 
   it('first open bootstraps the doc from the deck JSON and persists the binary', async () => {
     const doc = new Y.Doc();
-    await hooks.onLoadDocument({ documentName: docName(deckId), document: doc });
+    await hooks.onLoadDocument({
+      documentName: docName(deckId),
+      document: doc,
+    });
 
     const stored = await getPresentation(testScope(), deckId);
     assert.deepStrictEqual(
       stripVolatile(deckYdocCodec.projectDocToPresentation(doc)),
-      stripVolatile(stored)
+      stripVolatile(stored),
     );
 
     const bin = await getYDocState(testScope(), deckId);
-    assert.ok(bin instanceof Uint8Array && bin.length > 0, 'bootstrap binary persisted');
+    assert.ok(
+      bin instanceof Uint8Array && bin.length > 0,
+      'bootstrap binary persisted',
+    );
   });
 
   it('later opens load the binary instead of re-bootstrapping', async () => {
     const doc = new Y.Doc();
-    await hooks.onLoadDocument({ documentName: docName(deckId), document: doc });
+    await hooks.onLoadDocument({
+      documentName: docName(deckId),
+      document: doc,
+    });
 
     // Edit the live doc + store, then open a second doc: it must see the edit.
     const title = doc.getMap('meta').get('title').get('nl');
     title.insert(title.length, ' (bewerkt)');
-    await hooks.onStoreDocument({ documentName: docName(deckId), document: doc });
+    await hooks.onStoreDocument({
+      documentName: docName(deckId),
+      document: doc,
+    });
 
     const doc2 = new Y.Doc();
-    await hooks.onLoadDocument({ documentName: docName(deckId), document: doc2 });
-    assert.match(doc2.getMap('meta').get('title').get('nl').toString(), / \(bewerkt\)$/);
+    await hooks.onLoadDocument({
+      documentName: docName(deckId),
+      document: doc2,
+    });
+    assert.match(
+      doc2.getMap('meta').get('title').get('nl').toString(),
+      / \(bewerkt\)$/,
+    );
   });
 
   it('onStoreDocument serializes the doc back to the deck JSON via the facade', async () => {
     const doc = new Y.Doc();
-    await hooks.onLoadDocument({ documentName: docName(deckId), document: doc });
+    await hooks.onLoadDocument({
+      documentName: docName(deckId),
+      document: doc,
+    });
     const before = await getPresentation(testScope(), deckId);
 
     const title = doc.getMap('meta').get('title').get('nl');
     title.delete(0, title.length);
     title.insert(0, 'Live bewerkt');
-    await hooks.onStoreDocument({ documentName: docName(deckId), document: doc });
+    await hooks.onStoreDocument({
+      documentName: docName(deckId),
+      document: doc,
+    });
 
     const afterJson = await getPresentation(testScope(), deckId);
     assert.equal(afterJson.title, 'Live bewerkt');
-    assert.equal(afterJson.revision, before.revision + 1, 'revision bumped by the facade');
+    assert.equal(
+      afterJson.revision,
+      before.revision + 1,
+      'revision bumped by the facade',
+    );
     assert.equal(log.lines.error.length, 0, log.lines.error.join('\n'));
   });
 
   it('keeps the binary and leaves the JSON untouched when serialization fails', async () => {
     const doc = new Y.Doc();
-    await hooks.onLoadDocument({ documentName: docName(deckId), document: doc });
+    await hooks.onLoadDocument({
+      documentName: docName(deckId),
+      document: doc,
+    });
     const before = await getPresentation(testScope(), deckId);
 
     const failing = createCollabPersistence({
@@ -175,7 +203,7 @@ describe('collab persistence hooks', () => {
     const title = doc.getMap('meta').get('title').get('nl');
     title.insert(title.length, '!!!');
     await assert.doesNotReject(
-      failing.onStoreDocument({ documentName: docName(deckId), document: doc })
+      failing.onStoreDocument({ documentName: docName(deckId), document: doc }),
     );
 
     const afterJson = await getPresentation(testScope(), deckId);
@@ -186,13 +214,19 @@ describe('collab persistence hooks', () => {
 
     // The binary DID advance: a reload sees the unserialized edit.
     const doc2 = new Y.Doc();
-    await failing.onLoadDocument({ documentName: docName(deckId), document: doc2 });
+    await failing.onLoadDocument({
+      documentName: docName(deckId),
+      document: doc2,
+    });
     assert.match(doc2.getMap('meta').get('title').get('nl').toString(), /!!!$/);
   });
 
   it('never stores an unpopulated doc over a real deck', async () => {
     const before = await getPresentation(testScope(), deckId);
-    await hooks.onStoreDocument({ documentName: docName(deckId), document: new Y.Doc() });
+    await hooks.onStoreDocument({
+      documentName: docName(deckId),
+      document: new Y.Doc(),
+    });
     const afterJson = await getPresentation(testScope(), deckId);
     assert.equal(afterJson.revision, before.revision);
     assert.equal(log.lines.warn.length, 1);
@@ -214,7 +248,12 @@ describe('collab persistence hooks', () => {
           title: 'Diverged deck',
           slides: [
             ...JSON.parse(JSON.stringify(pres.slides)),
-            { id: 'ghost-slide', type: 'quote-slide', content: { quote: 'boo' }, notes: '' },
+            {
+              id: 'ghost-slide',
+              type: 'quote-slide',
+              content: { quote: 'boo' },
+              notes: '',
+            },
           ],
         },
       },
@@ -222,7 +261,10 @@ describe('collab persistence hooks', () => {
     await updatePresentation(testScope(), diverged.id, pres);
 
     const doc = new Y.Doc();
-    await hooks.onLoadDocument({ documentName: docName(diverged.id), document: doc });
+    await hooks.onLoadDocument({
+      documentName: docName(diverged.id),
+      document: doc,
+    });
     assert.equal(log.lines.warn.length, 1);
     assert.match(log.lines.warn[0], /normalized diverged language versions/);
     assert.match(log.lines.warn[0], /ghost-slide/);
@@ -234,7 +276,8 @@ describe('cold-binary invalidation on non-collab saves', () => {
   const envBefore = {};
 
   before(async () => {
-    for (const k of ['COLLAB_ENABLED', 'COLLAB_LIVE_EDITS']) envBefore[k] = process.env[k];
+    for (const k of ['COLLAB_ENABLED', 'COLLAB_LIVE_EDITS'])
+      envBefore[k] = process.env[k];
     process.env.COLLAB_ENABLED = 'true';
     process.env.COLLAB_LIVE_EDITS = 'true';
     const created = await createPresentation(testScope(), {
@@ -251,16 +294,32 @@ describe('cold-binary invalidation on non-collab saves', () => {
   });
 
   it('a REST/MCP-style save deletes the stored doc binary', async () => {
-    const hooks = createCollabPersistence({ repoRoot: REPO_ROOT, deps: { log: makeLog() } });
+    const hooks = createCollabPersistence({
+      repoRoot: REPO_ROOT,
+      deps: { log: makeLog() },
+    });
     const doc = new Y.Doc();
-    await hooks.onLoadDocument({ documentName: docName(deckId), document: doc });
-    assert.ok(await getYDocState(testScope(), deckId), 'binary exists after collab open');
+    await hooks.onLoadDocument({
+      documentName: docName(deckId),
+      document: doc,
+    });
+    assert.ok(
+      await getYDocState(testScope(), deckId),
+      'binary exists after collab open',
+    );
 
     const pres = await getPresentation(testScope(), deckId);
-    await updatePresentation(testScope(), deckId, { ...pres, title: 'Edited via REST' });
+    await updatePresentation(testScope(), deckId, {
+      ...pres,
+      title: 'Edited via REST',
+    });
     // The invalidation is fire-and-forget; give it a tick.
     await new Promise((r) => setTimeout(r, 50));
-    assert.equal(await getYDocState(testScope(), deckId), null, 'binary invalidated');
+    assert.equal(
+      await getYDocState(testScope(), deckId),
+      null,
+      'binary invalidated',
+    );
   });
 
   it('invalidation also fires while the flag is off (no resurrection after re-enable)', async () => {
@@ -271,9 +330,16 @@ describe('cold-binary invalidation on non-collab saves', () => {
     try {
       await setYDocState(testScope(), deckId, new Uint8Array([1, 2, 3]));
       const pres = await getPresentation(testScope(), deckId);
-      await updatePresentation(testScope(), deckId, { ...pres, title: 'Saved while flag off' });
+      await updatePresentation(testScope(), deckId, {
+        ...pres,
+        title: 'Saved while flag off',
+      });
       await new Promise((r) => setTimeout(r, 50));
-      assert.equal(await getYDocState(testScope(), deckId), null, 'binary invalidated');
+      assert.equal(
+        await getYDocState(testScope(), deckId),
+        null,
+        'binary invalidated',
+      );
     } finally {
       process.env.COLLAB_ENABLED = 'true';
       process.env.COLLAB_LIVE_EDITS = 'true';
@@ -281,11 +347,23 @@ describe('cold-binary invalidation on non-collab saves', () => {
   });
 
   it('a collab-originated save keeps the binary', async () => {
-    const hooks = createCollabPersistence({ repoRoot: REPO_ROOT, deps: { log: makeLog() } });
+    const hooks = createCollabPersistence({
+      repoRoot: REPO_ROOT,
+      deps: { log: makeLog() },
+    });
     const doc = new Y.Doc();
-    await hooks.onLoadDocument({ documentName: docName(deckId), document: doc });
-    await hooks.onStoreDocument({ documentName: docName(deckId), document: doc });
+    await hooks.onLoadDocument({
+      documentName: docName(deckId),
+      document: doc,
+    });
+    await hooks.onStoreDocument({
+      documentName: docName(deckId),
+      document: doc,
+    });
     await new Promise((r) => setTimeout(r, 50));
-    assert.ok(await getYDocState(testScope(), deckId), 'binary survives collab save');
+    assert.ok(
+      await getYDocState(testScope(), deckId),
+      'binary survives collab save',
+    );
   });
 });

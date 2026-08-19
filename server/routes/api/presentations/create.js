@@ -13,7 +13,9 @@ import { recordSlideLibraryUsage } from '../../../storage/slide-library-usage/in
  */
 function usageRefsFromBody(body) {
   const refs = [];
-  const ids = Array.isArray(body?.sourceLibraryItemIds) ? body.sourceLibraryItemIds : [];
+  const ids = Array.isArray(body?.sourceLibraryItemIds)
+    ? body.sourceLibraryItemIds
+    : [];
   for (const raw of ids) {
     const id = String(raw || '').trim();
     if (id) refs.push({ type: 'slide', id });
@@ -23,7 +25,12 @@ function usageRefsFromBody(body) {
   return refs;
 }
 
-export async function handlePresentationsCreate({ storageScope, req, res, authedUser } = {}) {
+export async function handlePresentationsCreate({
+  storageScope,
+  req,
+  res,
+  authedUser,
+} = {}) {
   const parsed = await requireJsonBody(req, res, { allowEmpty: true });
   if (!parsed.ok) return true;
   const body = parsed.body;
@@ -44,9 +51,11 @@ export async function handlePresentationsCreate({ storageScope, req, res, authed
     // (non-blocking; badge tracking must never fail a create).
     const usageRefs = usageRefsFromBody(body);
     if (usageRefs.length) {
-      void recordSlideLibraryUsage(storageScope, authedUser.email, usageRefs).catch(
-        () => {}
-      );
+      void recordSlideLibraryUsage(
+        storageScope,
+        authedUser.email,
+        usageRefs,
+      ).catch(() => {});
     }
   }
 

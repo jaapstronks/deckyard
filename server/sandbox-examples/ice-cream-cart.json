@@ -54,10 +54,30 @@
         "background": "mist",
         "accent": "highlight-best",
         "metrics": [
-          { "value": "3.50", "unit": "€", "label": "Price per scoop", "note": "premium local positioning" },
-          { "value": "0.95", "unit": "€", "label": "Cost per scoop", "note": "ingredients + cone" },
-          { "value": "73", "unit": "%", "label": "Gross margin", "note": "+8pp vs café average" },
-          { "value": "11", "unit": "wk", "label": "Payback period", "note": "cart paid off mid-July" }
+          {
+            "value": "3.50",
+            "unit": "€",
+            "label": "Price per scoop",
+            "note": "premium local positioning"
+          },
+          {
+            "value": "0.95",
+            "unit": "€",
+            "label": "Cost per scoop",
+            "note": "ingredients + cone"
+          },
+          {
+            "value": "73",
+            "unit": "%",
+            "label": "Gross margin",
+            "note": "+8pp vs café average"
+          },
+          {
+            "value": "11",
+            "unit": "wk",
+            "label": "Payback period",
+            "note": "cart paid off mid-July"
+          }
         ]
       }
     },
@@ -69,8 +89,14 @@
         "variant": "bullets",
         "layout": "two-column",
         "items": [
-          { "title": "Sea Salt Caramel", "text": "Our signature — always on the cart" },
-          { "title": "Stracciatella", "text": "Fresh cream, shards of dark chocolate" },
+          {
+            "title": "Sea Salt Caramel",
+            "text": "Our signature — always on the cart"
+          },
+          {
+            "title": "Stracciatella",
+            "text": "Fresh cream, shards of dark chocolate"
+          },
           { "title": "Wild Strawberry", "text": "Local fruit, minimal sugar" },
           { "title": "Pistachio", "text": "Sicilian nuts, no colouring" },
           { "title": "Espresso Chip", "text": "For the evening concert crowd" },
@@ -85,10 +111,26 @@
         "title": "Rollout plan",
         "subheading": "From permit to profit in one season",
         "items": [
-          { "date": "Apr", "title": "Permit & cart", "text": "Secure the vendor licence and refurbish the cart." },
-          { "date": "May", "title": "Soft launch", "text": "Weekends only on the promenade to tune the menu." },
-          { "date": "Jul", "title": "Full season", "text": "Seven days a week across all three pitches." },
-          { "date": "Sep", "title": "Review", "text": "Close the books, decide on a second cart." }
+          {
+            "date": "Apr",
+            "title": "Permit & cart",
+            "text": "Secure the vendor licence and refurbish the cart."
+          },
+          {
+            "date": "May",
+            "title": "Soft launch",
+            "text": "Weekends only on the promenade to tune the menu."
+          },
+          {
+            "date": "Jul",
+            "title": "Full season",
+            "text": "Seven days a week across all three pitches."
+          },
+          {
+            "date": "Sep",
+            "title": "Review",
+            "text": "Close the books, decide on a second cart."
+          }
         ],
         "background": "mist"
       }

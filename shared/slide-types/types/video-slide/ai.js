@@ -19,12 +19,12 @@
  */
 
 export const ai = {
-    category: 'media',
-    resolveInPhase1: false,
-    description: `
+  category: 'media',
+  resolveInPhase1: false,
+  description: `
       Embed a video (YouTube, Vimeo, or direct URL).
       Use when video content is explicitly provided or requested.
     `,
-    bestFor: ['Embedded video content'],
-    notFor: ['Content without a video URL'],
+  bestFor: ['Embedded video content'],
+  notFor: ['Content without a video URL'],
 };

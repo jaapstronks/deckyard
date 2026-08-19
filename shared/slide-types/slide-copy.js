@@ -57,7 +57,8 @@ export const SLIDE_COPY = {
     leadCaptureSubmitting: 'Versturen...',
     leadCaptureSuccess: 'Gelukt!',
     leadCaptureError: 'Er is iets misgegaan. Probeer het opnieuw.',
-    leadCaptureCookieRequired: 'Schakel marketing cookies in om dit formulier te versturen.',
+    leadCaptureCookieRequired:
+      'Schakel marketing cookies in om dit formulier te versturen.',
   },
   'en-GB': {
     // Poll slide
@@ -106,7 +107,8 @@ export const SLIDE_COPY = {
     leadCaptureSubmitting: 'Submitting...',
     leadCaptureSuccess: 'Success!',
     leadCaptureError: 'Something went wrong. Please try again.',
-    leadCaptureCookieRequired: 'Please enable marketing cookies to submit this form.',
+    leadCaptureCookieRequired:
+      'Please enable marketing cookies to submit this form.',
   },
 };
 

@@ -11,20 +11,18 @@ export const up = async (db) => {
   await db.schema
     .createTable('presentation_collaborators')
     .addColumn('id', 'uuid', (col) =>
-      col.primaryKey().defaultTo(sql`gen_random_uuid()`)
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
     )
     .addColumn('presentation_id', 'uuid', (col) =>
-      col.references('presentations.id').onDelete('cascade').notNull()
+      col.references('presentations.id').onDelete('cascade').notNull(),
     )
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade')
+      col.references('organizations.id').onDelete('cascade'),
     )
     .addColumn('user_email', 'varchar(320)', (col) => col.notNull())
     .addColumn('permission', 'varchar(20)', (col) => col.notNull())
     .addColumn('invited_by', 'varchar(320)')
-    .addColumn('invited_at', 'timestamptz', (col) =>
-      col.defaultTo(sql`now()`)
-    )
+    .addColumn('invited_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
     .addColumn('accepted_at', 'timestamptz')
     .addColumn('revoked_at', 'timestamptz')
     .addColumn('revoked_by', 'varchar(320)')

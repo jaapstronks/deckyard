@@ -18,7 +18,7 @@ none of those says anything it returns **`null`** — not a guess.
 
 That order is load-bearing. `active` is the language the deck is currently being
 shown in — the editor swaps `pres.slides` to that version, and the language
-toggle reads it — while `pres.lang` is the language the deck was *created* in
+toggle reads it — while `pres.lang` is the language the deck was _created_ in
 and never moves. A bilingual deck created in Dutch and read in English has
 `lang: 'nl'` and `active: 'en-GB'`, so reading `lang` first puts Dutch copy
 under English slides. `dominant` covers a deck with an i18n block but no active
@@ -85,22 +85,22 @@ be empty.
 Copy that a renderer prints must go through `getSlideCopy()`. Some strings still
 do not. The first group are editor-canvas affordances rather than deck content:
 
-| Type | Strings |
-| --- | --- |
-| `countdown-slide` | `Start`, `Pause`, `Reset` |
-| `custom-html-slide` | `Custom HTML` |
-| `embed-slide` | the "Paste an HTTPS URL to embed…" hint |
-| `video-slide` | the "Paste a YouTube/Vimeo URL…" hint |
+| Type                | Strings                                 |
+| ------------------- | --------------------------------------- |
+| `countdown-slide`   | `Start`, `Pause`, `Reset`               |
+| `custom-html-slide` | `Custom HTML`                           |
+| `embed-slide`       | the "Paste an HTTPS URL to embed…" hint |
+| `video-slide`       | the "Paste a YouTube/Vimeo URL…" hint   |
 
-The second group *is* deck content — it is just only ever heard, not seen. Four
+The second group _is_ deck content — it is just only ever heard, not seen. Four
 types hardcode the `aria-label` on their structural list, where their siblings
 (`poll-slide`, `likert-slide`, `timeline-slide`) take it from `copy`:
 
-| Type | Label |
-| --- | --- |
-| `cycle-slide` | `Cycle stages` |
-| `funnel-slide` | `Funnel stages` |
-| `process-slide` | `Process steps` |
+| Type            | Label            |
+| --------------- | ---------------- |
+| `cycle-slide`   | `Cycle stages`   |
+| `funnel-slide`  | `Funnel stages`  |
+| `process-slide` | `Process steps`  |
 | `pyramid-slide` | `Pyramid levels` |
 
 All of these are English-only, so they are an untranslated string rather than a
@@ -130,5 +130,5 @@ anywhere a presentation is in hand it should be passed.
 `client/`, `server/` and `shared/` and fails on any `renderSlideHtml` call whose
 options object has no `lang`. That gate exists because the two MCP preview tools
 were missed on the first pass — and with the per-type `|| 'nl'` gone, a missed
-call site no longer renders the *wrong* language loudly; it renders the default
+call site no longer renders the _wrong_ language loudly; it renders the default
 quietly, which is harder to notice.

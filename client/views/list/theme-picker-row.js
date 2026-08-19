@@ -47,7 +47,7 @@ function createThemePreview(theme, h, detachCallbacks) {
       h('div', {
         class: 'theme-picker-fallback',
         text: theme?.label || 'Theme',
-      })
+      }),
     );
     // eslint-disable-next-line no-console
     console.warn('[theme-picker] Failed to render preview:', err);
@@ -66,7 +66,13 @@ function createThemePreview(theme, h, detachCallbacks) {
  * @param {number} options.maxVisible - Maximum themes to show (default: 5)
  * @returns {Object} { el, load, detach }
  */
-export function createThemePickerRow({ h, api, onThemeSelect, onShowAll, maxVisible = 5 }) {
+export function createThemePickerRow({
+  h,
+  api,
+  onThemeSelect,
+  onShowAll,
+  maxVisible = 5,
+}) {
   const el = h('div', { class: 'theme-picker-row' });
   const detachCallbacks = [];
 
@@ -134,14 +140,20 @@ export function createThemePickerRow({ h, api, onThemeSelect, onShowAll, maxVisi
           const item = h('button', {
             class: 'theme-picker-item',
             type: 'button',
-            title: fullTheme?.label || themeInfo.label || t('list.theme.unnamed', 'Unnamed theme'),
+            title:
+              fullTheme?.label ||
+              themeInfo.label ||
+              t('list.theme.unnamed', 'Unnamed theme'),
             onclick: () => onThemeSelect?.(themeInfo),
           });
 
           const preview = createThemePreview(fullTheme, h, detachCallbacks);
           const name = h('span', {
             class: 'theme-picker-name',
-            text: fullTheme?.label || themeInfo.label || t('list.theme.unnamed', 'Unnamed theme'),
+            text:
+              fullTheme?.label ||
+              themeInfo.label ||
+              t('list.theme.unnamed', 'Unnamed theme'),
           });
 
           item.append(preview, name);
@@ -149,7 +161,10 @@ export function createThemePickerRow({ h, api, onThemeSelect, onShowAll, maxVisi
         } catch (err) {
           // Skip themes that fail to load
           // eslint-disable-next-line no-console
-          console.warn(`[theme-picker] Failed to load theme ${themeInfo.id}:`, err);
+          console.warn(
+            `[theme-picker] Failed to load theme ${themeInfo.id}:`,
+            err,
+          );
         }
       }
 
@@ -168,7 +183,9 @@ export function createThemePickerRow({ h, api, onThemeSelect, onShowAll, maxVisi
         });
         const moreLabel = h('span', {
           class: 'theme-picker-more-label',
-          text: t('list.theme.moreCount', '{count} more', { count: themeList.length - maxVisible }),
+          text: t('list.theme.moreCount', '{count} more', {
+            count: themeList.length - maxVisible,
+          }),
         });
 
         moreItem.append(moreIcon, moreLabel);

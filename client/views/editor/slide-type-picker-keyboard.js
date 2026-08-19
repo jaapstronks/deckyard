@@ -34,7 +34,7 @@ export function wireGridKeyboardNav({
   // collapsed section (grid `display:none`) or a search-hidden tile/section.
   const visibleCards = () =>
     Array.from(container.querySelectorAll(cardSelector)).filter(
-      (el) => el.offsetParent !== null
+      (el) => el.offsetParent !== null,
     );
 
   // Nearest visible card in the row above/below the current one, chosen by

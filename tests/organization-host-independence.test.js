@@ -41,7 +41,9 @@ import assert from 'node:assert/strict';
 
 // Assembled rather than written as one literal so secret scanners do not flag
 // it; authConfigError() only requires MIN_AUTH_SECRET_LENGTH characters.
-process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
+process.env.AUTH_SECRET = ['deckyard', 'test', 'auth']
+  .join('-')
+  .padEnd(40, '0');
 delete process.env.AUTH_ENABLED;
 delete process.env.AUTH_DEV_BYPASS;
 process.env.MULTI_ORG_ENABLED = 'true';
@@ -56,9 +58,8 @@ const { hashPassword } = await import('../server/utils/password-hash.js');
 const auth = await import('../server/auth/auth.js');
 const context = await import('../server/utils/context.js');
 const { createStorageScope } = context;
-const { createOrganization, updateOrganization, listUserOrganizations } = await import(
-  '../server/storage/user-organizations/index.js'
-);
+const { createOrganization, updateOrganization, listUserOrganizations } =
+  await import('../server/storage/user-organizations/index.js');
 
 let passwordHash;
 
@@ -153,13 +154,17 @@ function requestWithSession(user, organizationId, headers = {}) {
  * @returns {Promise<Object>} the route context
  */
 async function contextFor(organizationId, headers = {}) {
-  const login = await auth.verifyLoginAsync('alice@example.com', 'correct horse battery', {
-    organizationId: ORG_A,
-    actorEmail: 'alice@example.com',
-  });
+  const login = await auth.verifyLoginAsync(
+    'alice@example.com',
+    'correct horse battery',
+    {
+      organizationId: ORG_A,
+      actorEmail: 'alice@example.com',
+    },
+  );
   const authedUser = await auth.getUserFromRequestAsync(
     requestWithSession(login, organizationId, headers),
-    {}
+    {},
   );
   return createStorageScope(authedUser);
 }
@@ -179,7 +184,7 @@ test('a Host header naming another organization does not move the request', asyn
   assert.equal(
     ctx.organizationId,
     ORG_B,
-    'the session organization wins over a hostname that names another one'
+    'the session organization wins over a hostname that names another one',
   );
 });
 
@@ -190,7 +195,7 @@ test('an organization-shaped hostname does not stand in for a session', async ()
   // and it must produce no authenticated user and therefore no binding.
   const authedUser = await auth.getUserFromRequestAsync(
     { headers: { host: 'beta.deckyard.test' } },
-    {}
+    {},
   );
 
   assert.equal(authedUser, null, 'a hostname alone authenticates nobody');
@@ -206,7 +211,11 @@ test('the context module exposes no way to derive an organization from a request
     'getOrgContextFromRequest',
     'createMultiOrganizationContext',
   ]) {
-    assert.equal(gone in context, false, `${gone} is not part of the context surface`);
+    assert.equal(
+      gone in context,
+      false,
+      `${gone} is not part of the context surface`,
+    );
   }
 });
 
@@ -239,9 +248,17 @@ test('creating an organization stores no host-routing or billing column', async 
 
   // The public shape follows the columns, so nothing downstream can read them.
   for (const key of ['subdomain', 'customDomain', 'billingEmail']) {
-    assert.equal(key in result.organization, false, `${key} is not in the returned organization`);
+    assert.equal(
+      key in result.organization,
+      false,
+      `${key} is not in the returned organization`,
+    );
   }
-  assert.equal(result.organization.displayName, 'Gamma Inc', 'real metadata still round-trips');
+  assert.equal(
+    result.organization.displayName,
+    'Gamma Inc',
+    'real metadata still round-trips',
+  );
 });
 
 test('updating an organization ignores host-routing and billing fields', async () => {
@@ -256,7 +273,11 @@ test('updating an organization ignores host-routing and billing fields', async (
   assert.equal(result.ok, true);
 
   const stored = db.__tables.organizations.find((row) => row.id === ORG_A);
-  assert.equal(stored.display_name, 'Alpha Inc', 'the supported field was written');
+  assert.equal(
+    stored.display_name,
+    'Alpha Inc',
+    'the supported field was written',
+  );
   for (const column of ['subdomain', 'custom_domain', 'billing_email']) {
     assert.equal(column in stored, false, `${column} stayed off the row`);
   }
@@ -269,7 +290,11 @@ test('the organization list carries no subdomain', async () => {
 
   assert.equal(organizations.length, 2, 'both memberships are listed');
   for (const org of organizations) {
-    assert.equal('subdomain' in org, false, `${org.slug} is listed without a subdomain`);
+    assert.equal(
+      'subdomain' in org,
+      false,
+      `${org.slug} is listed without a subdomain`,
+    );
     assert.ok(org.slug, 'slug remains the human-readable identifier');
   }
 });

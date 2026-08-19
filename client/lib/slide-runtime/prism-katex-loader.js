@@ -29,7 +29,7 @@ function loadOnce(url, create) {
       el.addEventListener(
         'error',
         () => reject(new Error(`Failed to load ${url}`)),
-        { once: true }
+        { once: true },
       );
       document.head.append(el);
     });

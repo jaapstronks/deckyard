@@ -15,7 +15,12 @@ export default [
   ...base,
 
   {
-    files: ['client/**/*.js', 'server/**/*.js', 'shared/**/*.js', 'scripts/**/*.js'],
+    files: [
+      'client/**/*.js',
+      'server/**/*.js',
+      'shared/**/*.js',
+      'scripts/**/*.js',
+    ],
     plugins: {
       'import-x': importX,
     },

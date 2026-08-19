@@ -11,17 +11,24 @@
 
 /** @type {Object} InlineDescriptor for content-slide. */
 export const inlineEdit = {
-    ghosts: [{ field: 'subheading', anchor: '.heading', pos: 'after', chip: 'below-end' }],
-    formText: ['title', 'subheading', 'body'],
-    convert: {
-      // "Add an image" on a text slide = become an image-text slide (empty
-      // image); the existing placeholder + media popover take over from there.
-      addMedia: {
-        toType: 'image-text-slide',
-        anchors: [{ sel: '.slide-inner', chip: 'bottom-start' }],
-      },
+  ghosts: [
+    {
+      field: 'subheading',
+      anchor: '.heading',
+      pos: 'after',
+      chip: 'below-end',
     },
-  };
+  ],
+  formText: ['title', 'subheading', 'body'],
+  convert: {
+    // "Add an image" on a text slide = become an image-text slide (empty
+    // image); the existing placeholder + media popover take over from there.
+    addMedia: {
+      toType: 'image-text-slide',
+      anchors: [{ sel: '.slide-inner', chip: 'bottom-start' }],
+    },
+  },
+};
 
 /**
  * Fields the inspector keeps rendering even though the inline layer covers the

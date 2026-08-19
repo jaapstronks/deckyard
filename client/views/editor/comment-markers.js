@@ -3,7 +3,6 @@
  * Displays pin markers at comment positions and handles click-to-add mode.
  */
 
-
 /**
  * Creates comment markers component for a slide preview.
  * @param {Object} options - Configuration options
@@ -64,7 +63,7 @@ export function createCommentMarkers({
 
     // Only render positioned comments (with positionX and positionY)
     const positionedComments = comments.filter(
-      (c) => typeof c.positionX === 'number' && typeof c.positionY === 'number'
+      (c) => typeof c.positionX === 'number' && typeof c.positionY === 'number',
     );
 
     for (const comment of positionedComments) {
@@ -87,7 +86,12 @@ export function createCommentMarkers({
     });
 
     // Marker icon (pin)
-    const icon = h('img', { class: 'comment-marker-icon', src: '/client/vendor/lucide-icons/map-pin.svg', alt: '', 'aria-hidden': 'true' });
+    const icon = h('img', {
+      class: 'comment-marker-icon',
+      src: '/client/vendor/lucide-icons/map-pin.svg',
+      alt: '',
+      'aria-hidden': 'true',
+    });
     marker.appendChild(icon);
 
     // Reply count badge if has replies

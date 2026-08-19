@@ -11,7 +11,11 @@
  * @param {string} [options.sourceId] - The publish ID
  * @returns {string} Script HTML to inject
  */
-export function generateTrackingScriptHtml({ presentationId, sourceType, sourceId }) {
+export function generateTrackingScriptHtml({
+  presentationId,
+  sourceType,
+  sourceId,
+}) {
   // Escape values for safe injection into JavaScript
   const safePresId = JSON.stringify(presentationId);
   const safeSourceType = JSON.stringify(sourceType);

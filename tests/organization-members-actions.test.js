@@ -83,7 +83,11 @@ let nextResponse = null;
 globalThis.fetch = async (input, init = {}) => {
   const path = String(input);
   const method = init?.method || 'GET';
-  requested.push({ method, path, body: init?.body ? JSON.parse(init.body) : null });
+  requested.push({
+    method,
+    path,
+    body: init?.body ? JSON.parse(init.body) : null,
+  });
 
   if (nextResponse) {
     const { status, body } = nextResponse;
@@ -94,20 +98,22 @@ globalThis.fetch = async (input, init = {}) => {
     });
   }
 
-  return new Response(JSON.stringify({ ok: true, members: ALL, total: ALL.length }), {
-    status: 200,
-    headers: { 'content-type': 'application/json' },
-  });
+  return new Response(
+    JSON.stringify({ ok: true, members: ALL, total: ALL.length }),
+    {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    },
+  );
 };
 
 const { setFeatures } = await import('../client/lib/state/features.js');
-const permissions = await import('../client/views/settings/organization-members/permissions.js');
-const { renderMembersList } = await import(
-  '../client/views/settings/organization-members/member-list.js'
-);
-const { renderOrganizationMembersPanel } = await import(
-  '../client/views/settings/organization-members/panel.js'
-);
+const permissions =
+  await import('../client/views/settings/organization-members/permissions.js');
+const { renderMembersList } =
+  await import('../client/views/settings/organization-members/member-list.js');
+const { renderOrganizationMembersPanel } =
+  await import('../client/views/settings/organization-members/panel.js');
 
 setFeatures({ multiOrganization: true });
 
@@ -157,7 +163,11 @@ test('removal follows the same ladder the route enforces', () => {
   const asOwner = viewer(OWNER, 'owner');
   assert.equal(canRemove(ADMIN, asOwner), true);
   assert.equal(canRemove(MEMBER, asOwner), true);
-  assert.equal(canRemove(OWNER, asOwner), false, 'the owner leaves by transferring first');
+  assert.equal(
+    canRemove(OWNER, asOwner),
+    false,
+    'the owner leaves by transferring first',
+  );
 
   const asAdmin = viewer(ADMIN, 'admin');
   assert.equal(canRemove(MEMBER, asAdmin), true);
@@ -165,15 +175,27 @@ test('removal follows the same ladder the route enforces', () => {
   assert.equal(canRemove(ADMIN, asAdmin), true, 'leaving is removing yourself');
 
   const asMember = viewer(MEMBER, 'member');
-  assert.equal(canRemove(MEMBER, asMember), true, 'anyone but the owner may leave');
-  assert.equal(canRemove(MEMBER2, asMember), false, 'but not take someone else with them');
+  assert.equal(
+    canRemove(MEMBER, asMember),
+    true,
+    'anyone but the owner may leave',
+  );
+  assert.equal(
+    canRemove(MEMBER2, asMember),
+    false,
+    'but not take someone else with them',
+  );
 });
 
 test('single-organization has no membership role, so it has no member actions', () => {
   // `organizationRole` is null outside multi-organization (and under the dev
   // bypass). Nothing here should fall back to the instance-wide `isAdmin`,
   // which is exactly the asymmetry slice 2 removed.
-  const instanceAdmin = { email: OWNER.user.email, isAdmin: true, organizationId: ORG };
+  const instanceAdmin = {
+    email: OWNER.user.email,
+    isAdmin: true,
+    organizationId: ORG,
+  };
   assert.equal(permissions.canChangeRole(MEMBER, instanceAdmin), false);
   assert.equal(permissions.canRemove(MEMBER, instanceAdmin), false);
   assert.equal(permissions.canTransferOwnership(MEMBER, instanceAdmin), false);
@@ -196,7 +218,7 @@ function renderWith(currentUser, handlers = {}) {
 /** The card for one member. */
 const cardFor = (container, member) =>
   Array.from(container.querySelectorAll('.admin-user-card')).find((card) =>
-    card.textContent.includes(member.user.email)
+    card.textContent.includes(member.user.email),
   );
 
 test('the owner sees role, transfer and remove on other rows', () => {
@@ -204,7 +226,9 @@ test('the owner sees role, transfer and remove on other rows', () => {
   const card = cardFor(container, MEMBER);
 
   assert.ok(card.querySelector('select'), 'a role control');
-  const labels = Array.from(card.querySelectorAll('button')).map((b) => b.textContent);
+  const labels = Array.from(card.querySelectorAll('button')).map(
+    (b) => b.textContent,
+  );
   assert.deepEqual(labels, ['Make owner', 'Remove']);
 });
 
@@ -216,7 +240,7 @@ test('the owner’s own row explains why it has no Leave button', () => {
   assert.match(
     card.textContent,
     /Hand the organization over to someone else before you can leave it/,
-    'silence would read as a missing feature; this is a rule with a way out'
+    'silence would read as a missing feature; this is a rule with a way out',
   );
 });
 
@@ -224,19 +248,23 @@ test('an admin gets Remove on members and Leave on their own row', () => {
   const container = renderWith(viewer(ADMIN, 'admin'));
 
   assert.deepEqual(
-    Array.from(cardFor(container, MEMBER).querySelectorAll('button')).map((b) => b.textContent),
-    ['Remove']
+    Array.from(cardFor(container, MEMBER).querySelectorAll('button')).map(
+      (b) => b.textContent,
+    ),
+    ['Remove'],
   );
   assert.equal(cardFor(container, MEMBER).querySelector('select'), null);
 
   assert.deepEqual(
-    Array.from(cardFor(container, ADMIN).querySelectorAll('button')).map((b) => b.textContent),
-    ['Leave']
+    Array.from(cardFor(container, ADMIN).querySelectorAll('button')).map(
+      (b) => b.textContent,
+    ),
+    ['Leave'],
   );
   assert.equal(
     cardFor(container, OWNER).querySelectorAll('button').length,
     0,
-    'an admin cannot touch the owner'
+    'an admin cannot touch the owner',
   );
 });
 
@@ -244,11 +272,16 @@ test('a plain member can only leave', () => {
   const container = renderWith(viewer(MEMBER, 'member'));
 
   assert.deepEqual(
-    Array.from(cardFor(container, MEMBER).querySelectorAll('button')).map((b) => b.textContent),
-    ['Leave']
+    Array.from(cardFor(container, MEMBER).querySelectorAll('button')).map(
+      (b) => b.textContent,
+    ),
+    ['Leave'],
   );
   for (const other of [OWNER, ADMIN, MEMBER2]) {
-    assert.equal(cardFor(container, other).querySelectorAll('button').length, 0);
+    assert.equal(
+      cardFor(container, other).querySelectorAll('button').length,
+      0,
+    );
   }
 });
 
@@ -268,7 +301,8 @@ async function confirmDialog() {
 test('changing a role PATCHes the membership', async () => {
   const panel = renderOrganizationMembersPanel({
     user: viewer(OWNER, 'owner'),
-    reload: () => assert.fail('changing someone else’s role must not reload the page'),
+    reload: () =>
+      assert.fail('changing someone else’s role must not reload the page'),
   });
   await panel.ready;
   requested = [];
@@ -283,16 +317,27 @@ test('changing a role PATCHes the membership', async () => {
     path: `/api/organizations/${ORG}/members/m-member`,
     body: { role: 'admin' },
   });
-  assert.equal(requested[1].method, 'GET', 'and the list is re-read afterwards');
+  assert.equal(
+    requested[1].method,
+    'GET',
+    'and the list is re-read afterwards',
+  );
 });
 
 test('a refused role change snaps the control back instead of lying', async () => {
-  const panel = renderOrganizationMembersPanel({ user: viewer(OWNER, 'owner'), reload: () => {} });
+  const panel = renderOrganizationMembersPanel({
+    user: viewer(OWNER, 'owner'),
+    reload: () => {},
+  });
   await panel.ready;
 
   nextResponse = {
     status: 403,
-    body: { ok: false, error: 'forbidden', message: 'Admins cannot modify other admins or owners' },
+    body: {
+      ok: false,
+      error: 'forbidden',
+      message: 'Admins cannot modify other admins or owners',
+    },
   };
 
   const select = cardFor(panel.el, MEMBER).querySelector('select');
@@ -300,12 +345,16 @@ test('a refused role change snaps the control back instead of lying', async () =
   select.dispatchEvent(new dom.window.Event('change'));
   await settle();
 
-  assert.equal(select.value, 'member', 'the screen shows the role the member still has');
+  assert.equal(
+    select.value,
+    'member',
+    'the screen shows the role the member still has',
+  );
   assert.equal(select.disabled, false, 'and the control is usable again');
   assert.match(
     document.body.textContent,
     /Admins cannot modify other admins or owners/,
-    'the server’s own sentence is more specific than anything the client could invent'
+    'the server’s own sentence is more specific than anything the client could invent',
   );
 });
 
@@ -320,9 +369,7 @@ test('removing someone else reloads the list, not the page', async () => {
   await panel.ready;
   requested = [];
 
-  cardFor(panel.el, MEMBER)
-    .querySelectorAll('button')[1]
-    .click();
+  cardFor(panel.el, MEMBER).querySelectorAll('button')[1].click();
   await confirmDialog();
 
   assert.equal(requested[0].method, 'DELETE');
@@ -350,7 +397,7 @@ test('leaving reloads the page, because the session is now in an organization yo
   assert.equal(
     requested.filter((r) => r.method === 'GET').length,
     0,
-    're-reading a list you can no longer see would only produce a 403'
+    're-reading a list you can no longer see would only produce a 403',
   );
 });
 
@@ -373,11 +420,18 @@ test('handing the organization over reloads the page too', async () => {
     path: `/api/organizations/${ORG}/members/m-member`,
     body: { role: 'owner' },
   });
-  assert.equal(reloaded, true, 'every gate on this page was drawn for an owner');
+  assert.equal(
+    reloaded,
+    true,
+    'every gate on this page was drawn for an owner',
+  );
 });
 
 test('a destructive action asks first, and cancelling sends nothing', async () => {
-  const panel = renderOrganizationMembersPanel({ user: viewer(OWNER, 'owner'), reload: () => {} });
+  const panel = renderOrganizationMembersPanel({
+    user: viewer(OWNER, 'owner'),
+    reload: () => {},
+  });
   await panel.ready;
   requested = [];
 
@@ -408,7 +462,11 @@ function pagedPanel(total, currentUser = viewer(OWNER, 'owner')) {
           role: 'member',
           isDesigner: false,
           joinedAt: '2026-03-05T00:00:00.000Z',
-          user: { id: `u-${i}`, email: `person${i}@example.com`, name: `Person ${i}` },
+          user: {
+            id: `u-${i}`,
+            email: `person${i}@example.com`,
+            name: `Person ${i}`,
+          },
         });
       }
       return { members, total, offset };
@@ -422,7 +480,10 @@ test('a single page states its range and offers no navigation', async () => {
   await panel.ready;
 
   assert.match(panel.el.textContent, /Showing 1–4 of 4 members/);
-  assert.equal(panel.el.querySelectorAll('.admin-users-pager button').length, 0);
+  assert.equal(
+    panel.el.querySelectorAll('.admin-users-pager button').length,
+    0,
+  );
 });
 
 test('a long list pages, and the range follows', async () => {
@@ -455,7 +516,10 @@ test('the last page disables Next and still states a true range', async () => {
   await settle();
 
   assert.match(panel.el.textContent, /Showing 26–30 of 30 members/);
-  assert.equal(panel.el.querySelectorAll('.admin-users-pager button')[1].disabled, true);
+  assert.equal(
+    panel.el.querySelectorAll('.admin-users-pager button')[1].disabled,
+    true,
+  );
 });
 
 test('emptying the last page steps back to the one before it', async () => {
@@ -475,7 +539,11 @@ test('emptying the last page steps back to the one before it', async () => {
           role: 'member',
           isDesigner: false,
           joinedAt: '2026-03-05T00:00:00.000Z',
-          user: { id: `u-${i}`, email: `person${i}@example.com`, name: `Person ${i}` },
+          user: {
+            id: `u-${i}`,
+            email: `person${i}@example.com`,
+            name: `Person ${i}`,
+          },
         });
       }
       return { members, total, offset };
@@ -488,9 +556,9 @@ test('emptying the last page steps back to the one before it', async () => {
   assert.equal(asked.at(-1), 25, 'on the last page, holding one member');
 
   total = 25;
-  const remove = Array.from(panel.el.querySelectorAll('.admin-user-card button')).find(
-    (b) => b.textContent === 'Remove'
-  );
+  const remove = Array.from(
+    panel.el.querySelectorAll('.admin-user-card button'),
+  ).find((b) => b.textContent === 'Remove');
   remove.click();
   await confirmDialog();
 

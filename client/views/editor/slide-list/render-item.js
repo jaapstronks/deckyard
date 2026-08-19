@@ -12,10 +12,7 @@ import {
   createVisibilityMenu,
   showVisibilityMenuAt,
 } from '../slide-visibility-menu.js';
-import {
-  isParentSlide,
-  createChevronSvg,
-} from './nested-helpers.js';
+import { isParentSlide, createChevronSvg } from './nested-helpers.js';
 import { normalizeQuery, renderHighlightedText } from './search.js';
 
 /**
@@ -46,7 +43,9 @@ export function applySlideLockIndicator({
   item.classList.toggle('is-locked-by-other', active);
 
   const existing = item.querySelector('.slide-lock-indicator');
-  const existingCollapsed = item.querySelector('.slide-lock-indicator-collapsed');
+  const existingCollapsed = item.querySelector(
+    '.slide-lock-indicator-collapsed',
+  );
 
   if (!active) {
     existing?.remove();
@@ -55,7 +54,9 @@ export function applySlideLockIndicator({
   }
 
   const lockedBy = lockInfo.holderName || lockInfo.holderEmail || '';
-  const lockTitle = t('editor.slideList.lockedBy', 'Locked by {name}', { name: lockedBy });
+  const lockTitle = t('editor.slideList.lockedBy', 'Locked by {name}', {
+    name: lockedBy,
+  });
 
   const thumb = thumbEl || item.querySelector('.thumb.thumb-mini');
   if (existing) {
@@ -64,11 +65,14 @@ export function applySlideLockIndicator({
     thumb.append(h('div', { class: 'slide-lock-indicator', title: lockTitle }));
   }
 
-  const numCollapsed = numCollapsedEl || item.querySelector('.slide-num-collapsed');
+  const numCollapsed =
+    numCollapsedEl || item.querySelector('.slide-num-collapsed');
   if (existingCollapsed) {
     existingCollapsed.title = lockTitle;
   } else if (numCollapsed) {
-    numCollapsed.append(h('div', { class: 'slide-lock-indicator-collapsed', title: lockTitle }));
+    numCollapsed.append(
+      h('div', { class: 'slide-lock-indicator-collapsed', title: lockTitle }),
+    );
   }
 }
 
@@ -82,10 +86,7 @@ export function createSlideItem({
   options = {},
   context = {},
 }) {
-  const {
-    isChild = false,
-    isHidden = false,
-  } = options;
+  const { isChild = false, isHidden = false } = options;
 
   const {
     pres,
@@ -136,7 +137,7 @@ export function createSlideItem({
     'aria-label',
     t('editor.slideList.selectSlideN', 'Select slide {n}', {
       n: Number(originalIdx) + 1,
-    })
+    }),
   );
 
   const isDisabled =
@@ -178,7 +179,9 @@ export function createSlideItem({
     title: oneLine(fullTitle),
   });
   try {
-    thumbMini.append(renderSlideElement(s, { mode: 'thumb', presentationId: pres?.id }));
+    thumbMini.append(
+      renderSlideElement(s, { mode: 'thumb', presentationId: pres?.id }),
+    );
   } catch {
     // ignore render errors in list
   }
@@ -196,7 +199,9 @@ export function createSlideItem({
     const commentIndicator = h('div', {
       class: 'slide-comment-indicator',
       text: String(commentCount),
-      title: t('editor.slideList.commentsOnSlide', '{n} comment(s)', { n: commentCount }),
+      title: t('editor.slideList.commentsOnSlide', '{n} comment(s)', {
+        n: commentCount,
+      }),
     });
     thumbMini.append(commentIndicator);
   }
@@ -229,7 +234,11 @@ export function createSlideItem({
           existingMenu?.remove();
         },
       });
-      showVisibilityMenuAt({ anchor: e.currentTarget, menu, container: document.body });
+      showVisibilityMenuAt({
+        anchor: e.currentTarget,
+        menu,
+        container: document.body,
+      });
     },
   });
   thumbMini.append(visibilityToggle);
@@ -275,7 +284,7 @@ export function createSlideItem({
             class: 'slide-title-line',
             title: oneLine(fullTitle),
           },
-          renderHighlightedText(h, primary, q)
+          renderHighlightedText(h, primary, q),
         ),
         match?.snippet
           ? h(
@@ -293,7 +302,7 @@ export function createSlideItem({
                       : t('editor.slideList.src.text', 'Text: '),
                 }),
                 ...renderHighlightedText(h, match.snippet, q),
-              ]
+              ],
             )
           : null,
       ])
@@ -306,7 +315,9 @@ export function createSlideItem({
       const childrenCountBadge = h('div', {
         class: 'slide-children-count',
         text: String(childCount),
-        title: t('editor.slideList.childrenCount', '{n} nested slide(s)', { n: childCount }),
+        title: t('editor.slideList.childrenCount', '{n} nested slide(s)', {
+          n: childCount,
+        }),
       });
       thumbMini.append(childrenCountBadge);
     }

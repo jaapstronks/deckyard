@@ -64,7 +64,7 @@ describe('quoteFontScale', () => {
     // Same average length -> same scale regardless of distribution.
     assert.equal(
       quoteFontScale(2, [SHORT, LONG]),
-      quoteFontScale(2, [SHORT, LONG])
+      quoteFontScale(2, [SHORT, LONG]),
     );
   });
 });
@@ -88,7 +88,7 @@ describe('quote slide render', () => {
     assert.ok(scaleFromHtml(html) > 0.6);
     // Exactly one item index (the extra, index 0) - the primary has none.
     const indices = [...html.matchAll(/data-inline-item-index="(\d+)"/g)].map(
-      (m) => m[1]
+      (m) => m[1],
     );
     assert.deepEqual(indices, ['0']);
     assert.match(html, /data-inline-item="quotes" data-inline-item-index="0"/);
@@ -106,7 +106,7 @@ describe('quote slide render', () => {
     });
     assert.match(html, /data-quote-count="3"/);
     const indices = [...html.matchAll(/data-inline-item-index="(\d+)"/g)].map(
-      (m) => m[1]
+      (m) => m[1],
     );
     assert.deepEqual(indices, ['0', '1']);
   });

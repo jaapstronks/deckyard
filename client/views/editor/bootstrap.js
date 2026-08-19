@@ -75,8 +75,7 @@ export function initNewDeckTitlePromptFlag({ startUrl, id } = {}) {
 }
 
 export function initPresentationI18n({ pres, initialLang } = {}) {
-  pres.i18n =
-    pres.i18n && typeof pres.i18n === 'object' ? pres.i18n : {};
+  pres.i18n = pres.i18n && typeof pres.i18n === 'object' ? pres.i18n : {};
   pres.i18n.versions =
     pres.i18n.versions && typeof pres.i18n.versions === 'object'
       ? pres.i18n.versions
@@ -87,8 +86,8 @@ export function initPresentationI18n({ pres, initialLang } = {}) {
       initialLang === 'nl' || initialLang === 'en-GB'
         ? initialLang
         : pres.i18n.dominant === 'nl' || pres.i18n.dominant === 'en-GB'
-        ? pres.i18n.dominant
-        : 'nl';
+          ? pres.i18n.dominant
+          : 'nl';
   }
   if (pres.i18n.dominant !== 'nl' && pres.i18n.dominant !== 'en-GB') {
     pres.i18n.dominant = pres.i18n.active;
@@ -136,7 +135,7 @@ export async function loadSlideTypes({ api, LOCAL_SLIDE_TYPES } = {}) {
           fields: v.fields,
           defaults: v.defaults,
         },
-      ])
+      ]),
     );
   }
 }

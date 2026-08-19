@@ -27,11 +27,16 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { isMultiOrgEnabled } = await import('../server/config/features.js');
-const { resolveDesignerCapability } = await import('../server/utils/designer.js');
+const { resolveDesignerCapability } =
+  await import('../server/utils/designer.js');
 const { canManage } = await import('../server/utils/route-middleware.js');
 
 test.before(() => {
-  assert.equal(isMultiOrgEnabled(), false, 'multi-organization flag is off for this file');
+  assert.equal(
+    isMultiOrgEnabled(),
+    false,
+    'multi-organization flag is off for this file',
+  );
 });
 
 /**
@@ -73,9 +78,13 @@ function seed({ memberships = [], settings = {} } = {}) {
 test('an instance admin is a designer, membership row or not', async () => {
   seed();
   assert.equal(
-    await resolveDesignerCapability({ email: 'alice@example.com', isAdmin: true, organizationId: ORG }),
+    await resolveDesignerCapability({
+      email: 'alice@example.com',
+      isAdmin: true,
+      organizationId: ORG,
+    }),
     true,
-    'auth off / dev bypass / sandbox have no membership to read'
+    'auth off / dev bypass / sandbox have no membership to read',
   );
 
   seed({
@@ -91,19 +100,27 @@ test('an instance admin is a designer, membership row or not', async () => {
     ],
   });
   assert.equal(
-    await resolveDesignerCapability({ email: 'alice@example.com', isAdmin: true, organizationId: ORG }),
+    await resolveDesignerCapability({
+      email: 'alice@example.com',
+      isAdmin: true,
+      organizationId: ORG,
+    }),
     true,
-    'and a membership that says otherwise does not take it away here'
+    'and a membership that says otherwise does not take it away here',
   );
 });
 
 test('the admin short-circuit costs no database work', async () => {
   const db = seed();
-  await resolveDesignerCapability({ email: 'alice@example.com', isAdmin: true, organizationId: ORG });
+  await resolveDesignerCapability({
+    email: 'alice@example.com',
+    isAdmin: true,
+    organizationId: ORG,
+  });
   assert.deepEqual(
     db.__queryLog,
     [],
-    'single-organization answers this from the instance flag alone'
+    'single-organization answers this from the instance flag alone',
   );
 });
 
@@ -121,8 +138,12 @@ test('a non-admin is still judged on the membership', async () => {
     ],
   });
   assert.equal(
-    await resolveDesignerCapability({ email: 'bob@example.com', isAdmin: false, organizationId: ORG }),
-    true
+    await resolveDesignerCapability({
+      email: 'bob@example.com',
+      isAdmin: false,
+      organizationId: ORG,
+    }),
+    true,
   );
 
   seed({
@@ -138,16 +159,24 @@ test('a non-admin is still judged on the membership', async () => {
     ],
   });
   assert.equal(
-    await resolveDesignerCapability({ email: 'bob@example.com', isAdmin: false, organizationId: ORG }),
-    false
+    await resolveDesignerCapability({
+      email: 'bob@example.com',
+      isAdmin: false,
+      organizationId: ORG,
+    }),
+    false,
   );
 });
 
 test('a non-admin with no membership gets nothing', async () => {
   seed();
   assert.equal(
-    await resolveDesignerCapability({ email: 'bob@example.com', isAdmin: false, organizationId: ORG }),
-    false
+    await resolveDesignerCapability({
+      email: 'bob@example.com',
+      isAdmin: false,
+      organizationId: ORG,
+    }),
+    false,
   );
 });
 
@@ -172,7 +201,9 @@ test('the organization settings route keeps letting the instance admin in', asyn
     method: 'PATCH',
     headers: { 'content-type': 'application/json' },
     async *[Symbol.asyncIterator]() {
-      yield Buffer.from(JSON.stringify({ disabledSlideTypes: ['title-slide'] }));
+      yield Buffer.from(
+        JSON.stringify({ disabledSlideTypes: ['title-slide'] }),
+      );
     },
   };
   await handleSettings({
@@ -180,9 +211,17 @@ test('the organization settings route keeps letting the instance admin in', asyn
     req,
     res,
     url: new URL('http://localhost/api/settings/organization'),
-    authedUser: { email: 'alice@example.com', isAdmin: true, organizationId: ORG },
+    authedUser: {
+      email: 'alice@example.com',
+      isAdmin: true,
+      organizationId: ORG,
+    },
   });
-  assert.equal(res.statusCode, 200, 'isDesigner unset, isAdmin true — still allowed here');
+  assert.equal(
+    res.statusCode,
+    200,
+    'isDesigner unset, isAdmin true — still allowed here',
+  );
 });
 
 test('canManage keeps its admin fallback here', () => {

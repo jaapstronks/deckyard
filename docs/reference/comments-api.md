@@ -2,8 +2,8 @@
 
 Agents and scripts can read reviewer feedback on a deck and respond to it —
 as the owner of the API key (or MCP session). This closes the loop for the
-scenario: *"deck X has new comments → analyze them → reply 'good point,
-fixed in slide 7' → resolve"*.
+scenario: _"deck X has new comments → analyze them → reply 'good point,
+fixed in slide 7' → resolve"_.
 
 Comments live in PostgreSQL, like all deck storage; without a reachable
 database the endpoints/tools return empty results or a clear error.
@@ -12,10 +12,10 @@ database the endpoints/tools return empty results or a clear error.
 
 Two dedicated permissions gate comment access (Settings → API Keys):
 
-| Permission | Grants |
-|-------|--------|
-| `comments:read` | Read comments on presentations the key owner can read |
-| `comments:write` | Create comments/replies, resolve/reopen/dismiss |
+| Permission       | Grants                                                |
+| ---------------- | ----------------------------------------------------- |
+| `comments:read`  | Read comments on presentations the key owner can read |
+| `comments:write` | Create comments/replies, resolve/reopen/dismiss       |
 
 Existing keys don't have these permissions and get a `403 API key lacks
 required permission` until recreated (or granted the permission).
@@ -25,11 +25,11 @@ required permission` until recreated (or granted the permission).
 Comments are only useful to an agent with context. Every comment payload
 carries:
 
-- **`slide`** — the commented slide *as the deck is now*: `null` when the
+- **`slide`** — the commented slide _as the deck is now_: `null` when the
   comment has no slide anchor, `{ "deleted": true }` when the slide has been
   removed, otherwise `{ index, number, type, title, deleted: false }`.
-- **`slideSnapshot`** — the slide `{ id, type, content }` *as it was when
-  the comment was created* (stored at create time, migration 041). `null`
+- **`slideSnapshot`** — the slide `{ id, type, content }` _as it was when
+  the comment was created_ (stored at create time, migration 041). `null`
   for comments that predate snapshots — the API reports that honestly
   rather than reconstructing.
 - **`editUrl`** — a deep link into the editor, anchored to the commented
@@ -79,12 +79,12 @@ Semantics:
   `slideId`, `since` (ISO 8601); replies come nested under their parent.
   Needs read access to the deck.
 - **Create** (`POST …/comments`) — author is always the key owner. Needs
-  *comment* permission (owner/creator, organization member, or collaborator
+  _comment_ permission (owner/creator, organization member, or collaborator
   with comment rights or higher) — deliberately weaker than deck `write`.
   `slideId` must exist in the deck; `parentId` must be a comment on the
   same deck.
 - **Status** (`POST /comments/:id/status`) — body `{ "status": "resolved" |
-  "open" | "dismissed" }`. Transitions follow the app: `open→resolved`,
+"open" | "dismissed" }`. Transitions follow the app: `open→resolved`,
   `open→dismissed`, `resolved→open`; anything else is a `409`. Only the
   presentation owner/creator may change status (same `canResolveComment`
   rule as the editor UI).

@@ -24,11 +24,14 @@ import {
   badRequest,
   requireJsonBody,
 } from '../../../utils/http.js';
-import { getOptionalObject, getString } from '../../../utils/request-validators.js';
+import {
+  getOptionalObject,
+  getString,
+} from '../../../utils/request-validators.js';
 
 export async function handleRenderSlide(
   { repoRoot, storageScope, req, res, authedUser } = {},
-  presentationId
+  presentationId,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
@@ -38,9 +41,11 @@ export async function handleRenderSlide(
   // Authorization check
   const collaboratorPermission = await getCollaboratorPermission(
     presentationId,
-    authedUser?.email
+    authedUser?.email,
   );
-  if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission })) {
+  if (
+    !canReadPresentation({ user: authedUser, pres, collaboratorPermission })
+  ) {
     return unauthorized(res);
   }
 

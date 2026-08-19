@@ -1,7 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { SLIDE_TYPES, CORE_SLIDE_TYPE_NAMES } from '../shared/slide-types/registry.js';
+import {
+  SLIDE_TYPES,
+  CORE_SLIDE_TYPE_NAMES,
+} from '../shared/slide-types/registry.js';
 import {
   LIVE_INTERACTION_NAMES,
   SLIDE_RUNTIME_NAMES,
@@ -53,13 +56,14 @@ test('every core slide type declares a runtime from the vocabulary', () => {
   const missing = [];
   for (const name of CORE_SLIDE_TYPE_NAMES) {
     const declared = SLIDE_TYPES[name]?.runtime;
-    if (!isSlideRuntime(declared)) missing.push(`${name} (${declared ?? 'none'})`);
+    if (!isSlideRuntime(declared))
+      missing.push(`${name} (${declared ?? 'none'})`);
   }
   assert.deepEqual(
     missing,
     [],
     `every type must declare one of ${SLIDE_RUNTIME_NAMES.join(', ')}:\n` +
-      missing.join('\n')
+      missing.join('\n'),
   );
 });
 
@@ -76,15 +80,17 @@ test('a live type declares an interaction kind, and nothing else does', () => {
       if (!kind) {
         problems.push(
           `${name}: live, but its interaction kind is ${
-            declared === undefined ? 'missing' : `'${declared}' (not one of ${LIVE_INTERACTION_NAMES.join(', ')})`
+            declared === undefined
+              ? 'missing'
+              : `'${declared}' (not one of ${LIVE_INTERACTION_NAMES.join(', ')})`
           }. Every consumer that guards submission also has to dispatch on the ` +
-            `kind — declaring one without the other just moves the hard-coded list.`
+            `kind — declaring one without the other just moves the hard-coded list.`,
         );
       }
     } else if (declared !== undefined) {
       problems.push(
         `${name}: declares interaction '${declared}' while runtime is '${runtime}'. ` +
-          `The kind is the contract 'live' implies; on anything else it is dead metadata.`
+          `The kind is the contract 'live' implies; on anything else it is dead metadata.`,
       );
     }
   }
@@ -104,7 +110,9 @@ test('a live type carries the question it asks the room', () => {
       problems.push(`${name}: declared live but carries no 'question' field`);
     }
     if (slideStructure(def) === 'chrome') {
-      problems.push(`${name}: declared live but 'chrome' — a slide with no content cannot ask anything`);
+      problems.push(
+        `${name}: declared live but 'chrome' — a slide with no content cannot ask anything`,
+      );
     }
   }
   assert.deepEqual(problems, [], problems.join('\n'));
@@ -124,15 +132,25 @@ test('no module re-derives the live set by hand', () => {
   const live = liveSlideTypeNames();
   const derived = deriveNameBranchingModules();
 
-  assert.ok(live.length >= 4, `expected the live types from the registry, got ${live.length}`);
-  assert.ok(derived.size > 20, `expected the codebase scan, got ${derived.size} modules`);
+  assert.ok(
+    live.length >= 4,
+    `expected the live types from the registry, got ${live.length}`,
+  );
+  assert.ok(
+    derived.size > 20,
+    `expected the codebase scan, got ${derived.size} modules`,
+  );
 
   const rederivers = [...derived]
     .filter(([file, names]) => {
       // A per-type table has a row for each live type for the same reason it
       // has one for every type; that is not a second definition of the set.
       const kind = INVENTORY[file]?.kind;
-      if (kind === KINDS.table || kind === KINDS.generated || kind === KINDS.source) {
+      if (
+        kind === KINDS.table ||
+        kind === KINDS.generated ||
+        kind === KINDS.source
+      ) {
         return false;
       }
       const liveNames = names.filter((n) => live.includes(n));
@@ -155,6 +173,6 @@ test('no module re-derives the live set by hand', () => {
       `\n\nUse isLiveSlideType()/liveInteractionKind() from ` +
       `shared/slide-types/runtime.js instead.\nThat is what the facet is for: ` +
       `nine modules answered this question separately and had\nalready drifted ` +
-      `apart at the edges.`
+      `apart at the edges.`,
   );
 });

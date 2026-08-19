@@ -42,10 +42,12 @@ export function createSlideUpdateHandler({
     // Self-ignore: skip events from our own saves. Id-primary, e-mail fallback
     // (shared/identity-match.js) — the same rule the server enforces, so a
     // renamed editor still recognizes their own save.
-    if (matchesIdentity(user, { userId: data.actorId, email: data.actorEmail })) return;
+    if (matchesIdentity(user, { userId: data.actorId, email: data.actorEmail }))
+      return;
 
     // Revision check: skip stale events
-    if (typeof data.revision === 'number' && data.revision <= pres.revision) return;
+    if (typeof data.revision === 'number' && data.revision <= pres.revision)
+      return;
 
     // Store the latest event data (coalescing rapid saves)
     pendingEvent = data;
@@ -68,7 +70,9 @@ export function createSlideUpdateHandler({
     try {
       // Fetch the full updated presentation from the server
       const langParam = pres.i18n?.active ? `?lang=${pres.i18n.active}` : '';
-      const remote = await api(`/api/presentations/${presentationId}${langParam}`);
+      const remote = await api(
+        `/api/presentations/${presentationId}${langParam}`,
+      );
       if (!remote || !Array.isArray(remote.slides)) return;
 
       const lockedSlideId = getCurrentLockedSlideId();
@@ -85,7 +89,9 @@ export function createSlideUpdateHandler({
           // Never overwrite the slide the current user has locked
           if (remoteSlide.id === lockedSlideId) continue;
 
-          const localIdx = pres.slides.findIndex((s) => s.id === remoteSlide.id);
+          const localIdx = pres.slides.findIndex(
+            (s) => s.id === remoteSlide.id,
+          );
           if (localIdx >= 0) {
             pres.slides[localIdx] = remoteSlide;
           }
@@ -138,12 +144,24 @@ export function createSlideUpdateHandler({
       toast.info(`Slides updated by ${who}`, { id: 'remote-update' });
 
       // Re-render UI
-      try { rerenderSlideList(); } catch { /* ignore */ }
-      try { rerenderPreview(); } catch { /* ignore */ }
+      try {
+        rerenderSlideList();
+      } catch {
+        /* ignore */
+      }
+      try {
+        rerenderPreview();
+      } catch {
+        /* ignore */
+      }
 
       // Only rerender editor if the selected (but not locked) slide was modified
       if (selectedSlideWasModified && selectedSlideId !== lockedSlideId) {
-        try { rerenderEditor(); } catch { /* ignore */ }
+        try {
+          rerenderEditor();
+        } catch {
+          /* ignore */
+        }
       }
     } catch (err) {
       console.warn('Slide update fetch failed:', err.message || err);

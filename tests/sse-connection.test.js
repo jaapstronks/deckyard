@@ -12,7 +12,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { createSSEConnection, LONG_LIVED_STREAM } from '../client/lib/net/sse-connection.js';
+import {
+  createSSEConnection,
+  LONG_LIVED_STREAM,
+} from '../client/lib/net/sse-connection.js';
 
 /** Minimal stand-in for the browser EventSource, driven by test helpers. */
 class FakeEventSource {
@@ -220,7 +223,11 @@ test('stop() cancels a pending reopen and closes the stream', (t) => {
 
 test('stop() is reversible: connect() works again afterwards', (t) => {
   withFakeEventSource(t);
-  const conn = createSSEConnection({ url: '/x', events: ['msg'], onEvent: () => {} });
+  const conn = createSSEConnection({
+    url: '/x',
+    events: ['msg'],
+    onEvent: () => {},
+  });
   conn.connect();
   conn.stop();
   conn.connect();

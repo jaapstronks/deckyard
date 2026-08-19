@@ -87,7 +87,8 @@ export default {
 
     const sourceRaw = String(content?.source || '').trim();
     const libId =
-      typeof content?.bunnyLibraryId === 'string' && content.bunnyLibraryId.trim()
+      typeof content?.bunnyLibraryId === 'string' &&
+      content.bunnyLibraryId.trim()
         ? content.bunnyLibraryId.trim()
         : '366590';
 
@@ -104,17 +105,25 @@ export default {
     let needsPlayerJs = false;
     if (yt) {
       provider = 'youtube';
-      embedNoAutoplay = appendQuery(yt, isThumb ? { autoplay: 0, mute: 1 } : { autoplay: 0 });
+      embedNoAutoplay = appendQuery(
+        yt,
+        isThumb ? { autoplay: 0, mute: 1 } : { autoplay: 0 },
+      );
       embedAutoplay = appendQuery(yt, { autoplay: 1, mute: 1 });
     } else if (vm) {
       provider = 'vimeo';
-      embedNoAutoplay = appendQuery(vm, isThumb ? { autoplay: 0, muted: 1 } : { autoplay: 0 });
+      embedNoAutoplay = appendQuery(
+        vm,
+        isThumb ? { autoplay: 0, muted: 1 } : { autoplay: 0 },
+      );
       embedAutoplay = appendQuery(vm, { autoplay: 1, muted: 1 });
     } else if (bunny) {
       provider = 'bunny';
       embedNoAutoplay = appendQuery(bunny, {
         // Thumbnails must never produce sound (or autoplay).
-        ...(isThumb ? { autoplay: 'false', muted: 'true' } : { autoplay: 'false' }),
+        ...(isThumb
+          ? { autoplay: 'false', muted: 'true' }
+          : { autoplay: 'false' }),
         preload: 'true',
         responsive: 'true',
         ...BUNNY_PLAYER_COLORS,

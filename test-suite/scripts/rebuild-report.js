@@ -44,13 +44,21 @@ async function main() {
     // never diffs a run against its own successors.
     const earlier = history.slice(
       0,
-      Math.max(0, history.findIndex((entry) => entry.runId === runId))
+      Math.max(
+        0,
+        history.findIndex((entry) => entry.runId === runId),
+      ),
     );
-    const previous = await findComparableRun(earlier, run.caseIds, run.generationVendor || "claude");
+    const previous = await findComparableRun(
+      earlier,
+      run.caseIds,
+      run.generationVendor || 'claude',
+    );
 
     await writeReport(run, previous, path.join(RUNS_DIR, runId, 'report.md'));
     console.log(
-      `[${runId}] rebuilt` + (previous ? ` (compared against ${previous.runId})` : ' (no baseline)')
+      `[${runId}] rebuilt` +
+        (previous ? ` (compared against ${previous.runId})` : ' (no baseline)'),
     );
   }
 }

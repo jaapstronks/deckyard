@@ -35,7 +35,7 @@ export function createDataSourceProvider({ name, fetchData, parseResponse }) {
         // (upstream fetch broke, not the caller's request).
         const error = new AppError(
           `Data source "${name}" fetch failed: ${err.message}`,
-          err.statusCode || 502
+          err.statusCode || 502,
         );
         error.provider = name;
         throw error;
@@ -52,7 +52,11 @@ export function createDataSourceProvider({ name, fetchData, parseResponse }) {
     async refresh(providerConfig, bindings, currentContent) {
       const rawData = await this.fetch(providerConfig);
       const mapped = parseResponse(rawData, bindings);
-      const { content, applied, errors } = applyBindings(currentContent, bindings, mapped);
+      const { content, applied, errors } = applyBindings(
+        currentContent,
+        bindings,
+        mapped,
+      );
 
       return {
         content,

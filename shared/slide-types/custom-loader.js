@@ -32,7 +32,9 @@ export async function loadCustomSlideTypes() {
   // Check it's actually a directory
   const stat = statSync(CUSTOM_SLIDE_TYPES_DIR);
   if (!stat.isDirectory()) {
-    console.warn('[custom-loader] custom/slide-types exists but is not a directory');
+    console.warn(
+      '[custom-loader] custom/slide-types exists but is not a directory',
+    );
     return {};
   }
 
@@ -59,7 +61,7 @@ export async function loadCustomSlideTypes() {
       const def = mod.default;
       if (!def || typeof def !== 'object') {
         console.warn(
-          `[custom-loader] Skipping ${file}: no valid default export`
+          `[custom-loader] Skipping ${file}: no valid default export`,
         );
         continue;
       }
@@ -67,7 +69,7 @@ export async function loadCustomSlideTypes() {
       // Basic validation: must have at least a label
       if (!def.label) {
         console.warn(
-          `[custom-loader] Skipping ${file}: missing 'label' property`
+          `[custom-loader] Skipping ${file}: missing 'label' property`,
         );
         continue;
       }

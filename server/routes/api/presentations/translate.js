@@ -1,4 +1,7 @@
-import { getPresentation, updatePresentation } from '../../../storage/presentations/index.js';
+import {
+  getPresentation,
+  updatePresentation,
+} from '../../../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
 import { getFeatureFlags } from '../../../config/flags-snapshot.js';
 import { translatePresentationStrings } from '../../../utils/ai.js';
@@ -11,11 +14,14 @@ import {
   requireJsonBody,
 } from '../../../utils/http.js';
 import { canWritePresentation } from '../../../utils/presentation-authz.js';
-import { normalizeTranslationLang, normalizeLang } from '../../../storage/presentations/i18n.js';
+import {
+  normalizeTranslationLang,
+  normalizeLang,
+} from '../../../storage/presentations/i18n.js';
 
 export async function handlePresentationTranslate(
   { repoRoot, storageScope, req, res, authedUser } = {},
-  id
+  id,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
   const flags = getFeatureFlags();
@@ -30,10 +36,14 @@ export async function handlePresentationTranslate(
   // Fetch collaborator permission for ACL check
   let collaboratorPermission = null;
   if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email);
+    collaboratorPermission = await getCollaboratorPermission(
+      pres.id,
+      authedUser.email,
+    );
   }
 
-  if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission })) return unauthorized(res);
+  if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission }))
+    return unauthorized(res);
 
   pres.i18n = pres.i18n && typeof pres.i18n === 'object' ? pres.i18n : {};
   pres.i18n.versions =
@@ -63,7 +73,8 @@ export async function handlePresentationTranslate(
 
   // Ensure from-version exists (back-compat: store current top-level as the dominant version).
   // dominant/active only support nl/en-GB, so we only set them if 'from' is a legacy language.
-  const dominant = normalizeLang(pres.i18n.dominant) || normalizeLang(from) || 'nl';
+  const dominant =
+    normalizeLang(pres.i18n.dominant) || normalizeLang(from) || 'nl';
   pres.i18n.dominant = dominant;
   // Only update active if 'from' is a legacy language (nl/en-GB)
   if (normalizeLang(from)) {
@@ -79,7 +90,7 @@ export async function handlePresentationTranslate(
   if (pres.i18n.versions[to] && !overwrite && !fillMissing)
     return badRequest(
       res,
-      `Target language version already exists (${to}). Pass { overwrite: true } to replace it.`
+      `Target language version already exists (${to}). Pass { overwrite: true } to replace it.`,
     );
 
   const src =
@@ -88,15 +99,20 @@ export async function handlePresentationTranslate(
       : { title: pres.title, slides: pres.slides };
 
   const existingTarget =
-    !overwrite && pres.i18n.versions[to] && typeof pres.i18n.versions[to] === 'object'
+    !overwrite &&
+    pres.i18n.versions[to] &&
+    typeof pres.i18n.versions[to] === 'object'
       ? pres.i18n.versions[to]
       : null;
   const translated = await translatePresentationStrings(
     { title: src.title, slides: src.slides },
-    { from, to, existingTarget, fillMissing: !!fillMissing && !overwrite }
+    { from, to, existingTarget, fillMissing: !!fillMissing && !overwrite },
   );
 
-  pres.i18n.versions[to] = { title: translated.title, slides: translated.slides };
+  pres.i18n.versions[to] = {
+    title: translated.title,
+    slides: translated.slides,
+  };
 
   // Persist (server-side update will keep top-level aligned to dominant)
   const updated = await updatePresentation(storageScope, id, pres, {

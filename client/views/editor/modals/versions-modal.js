@@ -20,13 +20,19 @@ import { openVersionCompareModal } from './versions-compare.js';
 function openLabelModal({ h, root, openOverlayClosers } = {}) {
   const modal = createPromiseModal(h, {
     title: t('editor.versions.labelModalTitle', 'Create save point'),
-    hint: t('editor.versions.labelModalHint', 'Optionally add a label to help identify this save point later.'),
+    hint: t(
+      'editor.versions.labelModalHint',
+      'Optionally add a label to help identify this save point later.',
+    ),
     closeOnBackdrop: true,
     onClose: (result) => result || { ok: false },
   });
 
   const labelInput = createTextInput(h, {
-    placeholder: t('editor.versions.labelPlaceholder', 'E.g. Before major changes'),
+    placeholder: t(
+      'editor.versions.labelPlaceholder',
+      'E.g. Before major changes',
+    ),
     autoFocus: true,
   });
 
@@ -60,20 +66,29 @@ export function openVersionsModal({
     title: t('editor.versions.title', 'Versions'),
     hint: t(
       'editor.versions.hint',
-      'Versions are "save points" and automatic snapshots. Restore first creates a backup snapshot.'
+      'Versions are "save points" and automatic snapshots. Restore first creates a backup snapshot.',
     ),
   });
 
   const status = h('div', { class: 'small modal-status', text: '' });
-  const backupBanner = h('div', { class: 'editor-callout editor-callout-info is-mb-sm' }, [
-    h('img', { class: 'callout-icon', src: iconUrl('shield-check'), alt: '', 'aria-hidden': 'true' }),
-    h('span', {
-      text: t(
-        'editor.versions.backupNotice',
-        'Safe to explore: Restoring always creates a backup of your current version first.'
-      ),
-    }),
-  ]);
+  const backupBanner = h(
+    'div',
+    { class: 'editor-callout editor-callout-info is-mb-sm' },
+    [
+      h('img', {
+        class: 'callout-icon',
+        src: iconUrl('shield-check'),
+        alt: '',
+        'aria-hidden': 'true',
+      }),
+      h('span', {
+        text: t(
+          'editor.versions.backupNotice',
+          'Safe to explore: Restoring always creates a backup of your current version first.',
+        ),
+      }),
+    ],
+  );
   const listEl = h('div', { class: 'stack is-gap-sm' });
 
   const setStatus = (text) => {
@@ -91,7 +106,7 @@ export function openVersionsModal({
           h('div', {
             class: 'help',
             text: t('editor.versions.empty', 'No versions yet.'),
-          })
+          }),
         );
         setStatus('');
         return;
@@ -101,12 +116,15 @@ export function openVersionsModal({
         const when = formatDateTime(v?.created);
         const reason = String(v?.reason || '').trim() || 'snapshot';
         const label = String(v?.label || '').trim();
-        const slideCount = typeof v?.slideCount === 'number' ? v.slideCount : null;
+        const slideCount =
+          typeof v?.slideCount === 'number' ? v.slideCount : null;
         const row = h('div', { class: 'row spread editor-callout' });
         const metaParts = [who, when];
         if (slideCount !== null) {
           metaParts.push(
-            t('editor.versions.slideCount', '{count} slides', { count: slideCount })
+            t('editor.versions.slideCount', '{count} slides', {
+              count: slideCount,
+            }),
           );
         }
         const left = h('div', { class: 'stack is-gap-xs' }, [
@@ -115,12 +133,12 @@ export function openVersionsModal({
             text: label
               ? `${label}`
               : reason === 'manual'
-              ? 'Save point'
-              : reason === 'pre_restore'
-              ? 'Backup (pre-restore)'
-              : reason === 'restore'
-              ? 'Restore'
-              : 'Autosave snapshot',
+                ? 'Save point'
+                : reason === 'pre_restore'
+                  ? 'Backup (pre-restore)'
+                  : reason === 'restore'
+                    ? 'Restore'
+                    : 'Autosave snapshot',
           }),
           h('div', {
             class: 'help',
@@ -169,7 +187,9 @@ export function openVersionsModal({
           text: t('editor.versions.export', 'Export'),
           onclick: () => {
             // Trigger download via hidden link
-            const link = h('a', { href: `/api/presentations/${id}/versions/${v.id}/export/json` });
+            const link = h('a', {
+              href: `/api/presentations/${id}/versions/${v.id}/export/json`,
+            });
             link.download = '';
             document.body.appendChild(link);
             link.click();
@@ -186,7 +206,10 @@ export function openVersionsModal({
               await requestSave?.();
               if (isDirty?.()) {
                 setStatus(
-                  t('editor.versions.restoreAborted', 'Could not save; restore aborted.')
+                  t(
+                    'editor.versions.restoreAborted',
+                    'Could not save; restore aborted.',
+                  ),
                 );
                 return;
               }
@@ -195,7 +218,7 @@ export function openVersionsModal({
               title: t('editor.versions.restore', 'Restore'),
               message: t(
                 'editor.versions.confirmRestore',
-                'Restore this version? The current state will first be saved as a backup.'
+                'Restore this version? The current state will first be saved as a backup.',
               ),
               confirmLabel: t('editor.versions.restore', 'Restore'),
             });
@@ -209,7 +232,7 @@ export function openVersionsModal({
                   headers: {
                     'If-Match': await ifMatchRevision({ api, id, pres }),
                   },
-                }
+                },
               );
               const updated = resp?.presentation;
               if (updated && typeof updated === 'object') {
@@ -226,7 +249,12 @@ export function openVersionsModal({
           },
         });
 
-        const buttons = h('div', { class: 'row is-gap-xs' }, [previewBtn, compareBtn, exportBtn, restoreBtn]);
+        const buttons = h('div', { class: 'row is-gap-xs' }, [
+          previewBtn,
+          compareBtn,
+          exportBtn,
+          restoreBtn,
+        ]);
         row.append(left, buttons);
         listEl.append(row);
       }
@@ -270,7 +298,7 @@ export function openVersionsModal({
     h('div', { class: 'row' }, [savePointBtn]),
     status,
     backupBanner,
-    listEl
+    listEl,
   );
   modal.show(root, openOverlayClosers);
   load();

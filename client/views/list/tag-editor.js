@@ -11,7 +11,12 @@ import { t } from '../../lib/ui-i18n.js';
  * @param {string} [opts.placeholder] - Input placeholder
  * @returns {object} - { el, getTags, setTags, detach }
  */
-export function createTagEditor({ api, initialTags = [], onChange, placeholder }) {
+export function createTagEditor({
+  api,
+  initialTags = [],
+  onChange,
+  placeholder,
+}) {
   let tags = [...initialTags];
   let suggestions = [];
   let highlightedIndex = -1;
@@ -124,10 +129,12 @@ export function createTagEditor({ api, initialTags = [], onChange, placeholder }
 
     fetchTimeout = setTimeout(async () => {
       try {
-        const results = await api(`/api/tags/search?q=${encodeURIComponent(query)}&limit=10`);
+        const results = await api(
+          `/api/tags/search?q=${encodeURIComponent(query)}&limit=10`,
+        );
         // Filter out already-selected tags
         suggestions = results.filter(
-          (s) => !tags.some((t) => t.toLowerCase() === s.name.toLowerCase())
+          (s) => !tags.some((t) => t.toLowerCase() === s.name.toLowerCase()),
         );
         highlightedIndex = suggestions.length > 0 ? 0 : -1;
         isOpen = suggestions.length > 0;
@@ -150,7 +157,10 @@ export function createTagEditor({ api, initialTags = [], onChange, placeholder }
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       if (suggestions.length > 0) {
-        highlightedIndex = Math.min(highlightedIndex + 1, suggestions.length - 1);
+        highlightedIndex = Math.min(
+          highlightedIndex + 1,
+          suggestions.length - 1,
+        );
         renderSuggestions();
       }
     } else if (e.key === 'ArrowUp') {

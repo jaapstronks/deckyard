@@ -21,8 +21,12 @@ function safeB64ToUtf8(s) {
 }
 
 function joinUrl(base, path) {
-  const b = String(base || '').trim().replace(/\/+$/, '');
-  const p = String(path || '').trim().replace(/^\/+/, '');
+  const b = String(base || '')
+    .trim()
+    .replace(/\/+$/, '');
+  const p = String(path || '')
+    .trim()
+    .replace(/^\/+/, '');
   if (!b || !p) return '';
   return `${b}/${p}`;
 }
@@ -31,7 +35,13 @@ function joinUrl(base, path) {
 // Provider HTML generators
 // ============================================================
 
-function buildMatomoHtml({ url, siteId, disableCookies = true, requireConsent = false, trackLinks = true }) {
+function buildMatomoHtml({
+  url,
+  siteId,
+  disableCookies = true,
+  requireConsent = false,
+  trackLinks = true,
+}) {
   const safeBase = escAttr(url);
   const safeSiteId = escAttr(siteId);
   return [
@@ -40,8 +50,10 @@ function buildMatomoHtml({ url, siteId, disableCookies = true, requireConsent = 
     '  var _paq = window._paq = window._paq || [];',
     requireConsent ? "  _paq.push(['requireConsent']);" : '',
     disableCookies ? "  _paq.push(['disableCookies']);" : '',
-    trackLinks ? "  _paq.push(['trackPageView']);\n  _paq.push(['enableLinkTracking']);" : "  _paq.push(['trackPageView']);",
-    "  (function() {",
+    trackLinks
+      ? "  _paq.push(['trackPageView']);\n  _paq.push(['enableLinkTracking']);"
+      : "  _paq.push(['trackPageView']);",
+    '  (function() {',
     `    var u="${safeBase}/";`,
     "    _paq.push(['setTrackerUrl', u+'matomo.php']);",
     `    _paq.push(['setSiteId', '${safeSiteId}']);`,
@@ -50,7 +62,9 @@ function buildMatomoHtml({ url, siteId, disableCookies = true, requireConsent = 
     '  })();',
     '</script>',
     '<!-- End Analytics: Matomo -->',
-  ].filter(Boolean).join('\n');
+  ]
+    .filter(Boolean)
+    .join('\n');
 }
 
 function buildPlausibleHtml({ domain, url }) {
@@ -164,27 +178,35 @@ export function analyticsHeadHtml({
 
   // Matomo: settings → env vars
   const matomoSettings = providers?.matomo;
-  if (matomoSettings?.enabled && matomoSettings?.url && matomoSettings?.siteId) {
+  if (
+    matomoSettings?.enabled &&
+    matomoSettings?.url &&
+    matomoSettings?.siteId
+  ) {
     // Use settings-based config
-    out.push(buildMatomoHtml({
-      url: matomoSettings.url.replace(/\/+$/, ''),
-      siteId: matomoSettings.siteId,
-      disableCookies: matomoSettings.disableCookies !== false,
-      requireConsent: matomoSettings.requireConsent === true,
-      trackLinks: true,
-    }));
+    out.push(
+      buildMatomoHtml({
+        url: matomoSettings.url.replace(/\/+$/, ''),
+        siteId: matomoSettings.siteId,
+        disableCookies: matomoSettings.disableCookies !== false,
+        requireConsent: matomoSettings.requireConsent === true,
+        trackLinks: true,
+      }),
+    );
   } else {
     // Fall back to env vars
     const matomoUrl = envStr('MATOMO_URL').replace(/\/+$/, '');
     const matomoSiteId = envStr('MATOMO_SITE_ID');
     if (matomoUrl && matomoSiteId) {
-      out.push(buildMatomoHtml({
-        url: matomoUrl,
-        siteId: matomoSiteId,
-        disableCookies: envBool('MATOMO_DISABLE_COOKIES', true),
-        requireConsent: envBool('MATOMO_REQUIRE_CONSENT', false),
-        trackLinks: envBool('MATOMO_TRACK_LINKS', true),
-      }));
+      out.push(
+        buildMatomoHtml({
+          url: matomoUrl,
+          siteId: matomoSiteId,
+          disableCookies: envBool('MATOMO_DISABLE_COOKIES', true),
+          requireConsent: envBool('MATOMO_REQUIRE_CONSENT', false),
+          trackLinks: envBool('MATOMO_TRACK_LINKS', true),
+        }),
+      );
     }
   }
 
@@ -192,18 +214,22 @@ export function analyticsHeadHtml({
   const plausibleSettings = providers?.plausible;
   if (plausibleSettings?.enabled && plausibleSettings?.domain) {
     // Use settings-based config
-    out.push(buildPlausibleHtml({
-      domain: plausibleSettings.domain,
-      url: plausibleSettings.url || '',
-    }));
+    out.push(
+      buildPlausibleHtml({
+        domain: plausibleSettings.domain,
+        url: plausibleSettings.url || '',
+      }),
+    );
   } else {
     // Fall back to env vars
     const plausibleDomain = envStr('PLAUSIBLE_DOMAIN');
     if (plausibleDomain) {
-      out.push(buildPlausibleHtml({
-        domain: plausibleDomain,
-        url: envStr('PLAUSIBLE_URL'),
-      }));
+      out.push(
+        buildPlausibleHtml({
+          domain: plausibleDomain,
+          url: envStr('PLAUSIBLE_URL'),
+        }),
+      );
     }
   }
 
@@ -211,18 +237,22 @@ export function analyticsHeadHtml({
   const umamiSettings = providers?.umami;
   if (umamiSettings?.enabled && umamiSettings?.websiteId) {
     // Use settings-based config
-    out.push(buildUmamiHtml({
-      websiteId: umamiSettings.websiteId,
-      url: umamiSettings.url || '',
-    }));
+    out.push(
+      buildUmamiHtml({
+        websiteId: umamiSettings.websiteId,
+        url: umamiSettings.url || '',
+      }),
+    );
   } else {
     // Fall back to env vars
     const umamiWebsiteId = envStr('UMAMI_WEBSITE_ID');
     if (umamiWebsiteId) {
-      out.push(buildUmamiHtml({
-        websiteId: umamiWebsiteId,
-        url: envStr('UMAMI_URL'),
-      }));
+      out.push(
+        buildUmamiHtml({
+          websiteId: umamiWebsiteId,
+          url: envStr('UMAMI_URL'),
+        }),
+      );
     }
   }
 
@@ -230,16 +260,20 @@ export function analyticsHeadHtml({
   const ga4Settings = providers?.googleAnalytics;
   if (ga4Settings?.enabled && ga4Settings?.measurementId) {
     // Use settings-based config
-    out.push(buildGa4Html({
-      measurementId: ga4Settings.measurementId,
-    }));
+    out.push(
+      buildGa4Html({
+        measurementId: ga4Settings.measurementId,
+      }),
+    );
   } else {
     // Fall back to env vars
     const ga4MeasurementId = envStr('GA4_MEASUREMENT_ID');
     if (ga4MeasurementId) {
-      out.push(buildGa4Html({
-        measurementId: ga4MeasurementId,
-      }));
+      out.push(
+        buildGa4Html({
+          measurementId: ga4MeasurementId,
+        }),
+      );
     }
   }
 

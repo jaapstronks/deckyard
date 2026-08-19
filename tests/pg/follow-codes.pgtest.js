@@ -17,7 +17,12 @@ import { after, before, beforeEach, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { testScope } from '../helpers/storage-scope.js';
 
-import { closeTestDb, openTestDb, pgDescribe, truncate } from './helpers/harness.js';
+import {
+  closeTestDb,
+  openTestDb,
+  pgDescribe,
+  truncate,
+} from './helpers/harness.js';
 import {
   createFollowCode,
   resolveFollowCode,
@@ -62,17 +67,32 @@ pgDescribe('follow-code storage (real PostgreSQL)', () => {
   });
 
   it('resolves case-insensitively and misses on an unknown code', async () => {
-    const code = await createFollowCode(testScope(), '/follow/deck-42?lang=en-GB');
-    assert.equal(await resolveFollowCode(testScope(), code.toLowerCase()), '/follow/deck-42?lang=en-GB');
+    const code = await createFollowCode(
+      testScope(),
+      '/follow/deck-42?lang=en-GB',
+    );
+    assert.equal(
+      await resolveFollowCode(testScope(), code.toLowerCase()),
+      '/follow/deck-42?lang=en-GB',
+    );
     assert.equal(await resolveFollowCode(testScope(), 'ZZZZZ'), null);
   });
 
   it('mints distinct codes for the two languages of one deck', async () => {
     const nl = await createFollowCode(testScope(), '/follow/deck-42?lang=nl');
-    const en = await createFollowCode(testScope(), '/follow/deck-42?lang=en-GB');
+    const en = await createFollowCode(
+      testScope(),
+      '/follow/deck-42?lang=en-GB',
+    );
     assert.notEqual(nl, en);
-    assert.equal(await resolveFollowCode(testScope(), nl), '/follow/deck-42?lang=nl');
-    assert.equal(await resolveFollowCode(testScope(), en), '/follow/deck-42?lang=en-GB');
+    assert.equal(
+      await resolveFollowCode(testScope(), nl),
+      '/follow/deck-42?lang=nl',
+    );
+    assert.equal(
+      await resolveFollowCode(testScope(), en),
+      '/follow/deck-42?lang=en-GB',
+    );
   });
 
   it('refuses to resolve an expired code and deletes it on the way out', async () => {
@@ -86,7 +106,11 @@ pgDescribe('follow-code storage (real PostgreSQL)', () => {
     assert.equal(await resolveFollowCode(testScope(), code), null);
 
     const rows = await db.selectFrom('follow_codes').selectAll().execute();
-    assert.equal(rows.length, 0, 'an expired hit is cleaned up, not left to rot');
+    assert.equal(
+      rows.length,
+      0,
+      'an expired hit is cleaned up, not left to rot',
+    );
   });
 
   it('sweeps expired codes and leaves live ones alone', async () => {
@@ -103,7 +127,7 @@ pgDescribe('follow-code storage (real PostgreSQL)', () => {
     const rows = await db.selectFrom('follow_codes').select('code').execute();
     assert.deepEqual(
       rows.map((r) => r.code),
-      [live]
+      [live],
     );
     // Idempotent: nothing left to collect on a second pass.
     assert.equal(await cleanupExpiredCodes(testScope()), 0);

@@ -22,18 +22,21 @@ exercised by `tests/deck-format-spec.test.js` (the CI gate behind this spec).
   "title": "My deck",
   "theme": "default",
   "slides": [
-    { "type": "eu.deckyard.slide.title", "content": { "title": "Hello", "background": "lime" } }
+    {
+      "type": "eu.deckyard.slide.title",
+      "content": { "title": "Hello", "background": "lime" }
+    }
   ]
 }
 ```
 
-| Field        | Type     | Notes |
-|--------------|----------|-------|
-| `format`     | string   | Always `"deckyard.deck"`. The magic sentinel that identifies the format. A conforming reader also accepts the historical `"slidecreator.deck"` (see [Legacy sentinel](#legacy-sentinel)). |
-| `version`    | integer  | Format version. `1` today. Bumped only on a breaking envelope change (see [Versioning](#versioning)). |
-| `title`      | string   | Human title of the deck. |
-| `theme`      | string   | Theme id the deck was authored against (e.g. `"default"`). A reader that lacks the theme falls back to its own default; content is unaffected. |
-| `slides`     | array    | Ordered list of slides, each `{ type, content }`. |
+| Field     | Type    | Notes                                                                                                                                                                                     |
+| --------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `format`  | string  | Always `"deckyard.deck"`. The magic sentinel that identifies the format. A conforming reader also accepts the historical `"slidecreator.deck"` (see [Legacy sentinel](#legacy-sentinel)). |
+| `version` | integer | Format version. `1` today. Bumped only on a breaking envelope change (see [Versioning](#versioning)).                                                                                     |
+| `title`   | string  | Human title of the deck.                                                                                                                                                                  |
+| `theme`   | string  | Theme id the deck was authored against (e.g. `"default"`). A reader that lacks the theme falls back to its own default; content is unaffected.                                            |
+| `slides`  | array   | Ordered list of slides, each `{ type, content }`.                                                                                                                                         |
 
 The envelope is **lenient**: unknown top-level keys are ignored by the importer,
 not rejected. This keeps forward-compatibility — a newer producer can add fields
@@ -50,7 +53,7 @@ reverse-DNS id** — `<authority>.<name>[@version]`:
 
 - Core types are published under `eu.deckyard.slide`; a fork that declares its
   own authority gets its own (`nl.ciiic.slide.hero`), and one that declares only
-  a bare namespace keeps the slash form (`acme/hero`) — that slash form *is* its
+  a bare namespace keeps the slash form (`acme/hero`) — that slash form _is_ its
   canonical id, not a lesser spelling.
 - **One type has one id.** The older spellings — `core/title-slide` and the
   bare registry key `title-slide` — are pre-convergence residue, not part of the
@@ -106,7 +109,7 @@ source, no hand-synced copy. The schemas are served live and are versioned by
 Schemas are **lenient contracts, not gates**: `additionalProperties` is allowed
 so legacy and forward-compatible keys still validate. They document the known
 shape; they do not reject history. (Note the generated `deck.schema.json`
-describes the *stored* deck, which additionally carries `id`/`schemaVersion`;
+describes the _stored_ deck, which additionally carries `id`/`schemaVersion`;
 the portable envelope here is the interchange projection of that model.)
 
 The same leniency applies to the two fields that used to close the schema:
@@ -116,14 +119,14 @@ The same leniency applies to the two fields that used to close the schema:
   `@version` — the grammar in `shared/slide-types/type-id.js`, exported as the
   schema's `pattern` so there is one copy. A fork type, an org type or a
   third-party type is therefore
-  *valid*, which is the whole point of publishing an open format; enumerating
+  _valid_, which is the whole point of publishing an open format; enumerating
   this install's registry keys made every such deck invalid against our own
   spec. The per-type discrimination is unaffected: a known type is discriminated
-  in *every* spelling of its id (so writing the canonical form never costs a
+  in _every_ spelling of its id (so writing the canonical form never costs a
   slide its content contract), and an unknown type matches no `if` branch, so no
   content contract is demanded of it.
 - **`lang` is any well-formed BCP 47 tag**, not `nl` or `en-GB`. Which languages
-  a given implementation *authors* in is its own product choice — Deckyard's
+  a given implementation _authors_ in is its own product choice — Deckyard's
   editor still normalizes to two — but the format has no business deciding it.
 
 What a reader owes for an unknown type, and what it may claim once it does,
@@ -191,7 +194,7 @@ content key, an envelope key, an enum value.
 (`shared/slide-types/schema-version.js`) because it owns both ends of the line:
 an old deck is read, migrated forward in memory, and written back in the current
 shape. That freedom stops at our own storage. **A reader we do not own does not
-run our migration chain** — so for anything *published*, a migration is not a
+run our migration chain** — so for anything _published_, a migration is not a
 fix, it is a break that we happen to survive. The rule is what we trade the
 freedom for, and it is worth more: it is why a reader written today still works
 in three years without tracking our releases.
@@ -212,7 +215,7 @@ shipped as a documented breaking change with a migration for stored decks, per
 the [beta stance](./versioning.md#the-beta-stance-purity-over-compatibility).
 The one-spelling convergence on this page is exactly such a change.
 
-What the window does *not* license: undocumented breaks, silent narrowing, or
+What the window does _not_ license: undocumented breaks, silent narrowing, or
 drift into several accepted shapes for one meaning. Tolerance without
 normalization is not compatibility; it is entropy with a friendly face.
 
@@ -228,7 +231,7 @@ When the badge comes off, the window closes and the rule binds absolutely.
   against the schema version it understands; the lenient contract lets it tolerate
   newer keys.
 - A **type id's** `@version` is neither of those two: it is a hint about which
-  *definition* a deck was written against, carried inline on the slide's own
+  _definition_ a deck was written against, carried inline on the slide's own
   `type` (`eu.deckyard.slide.title@2`; a producer MAY pin it). It never makes a
   type a different type (see the evolution rule: a real change of meaning would
   have taken a new name).

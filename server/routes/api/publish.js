@@ -4,7 +4,13 @@ import {
   upsertPublishedEntry,
 } from '../../storage/published/index.js';
 import { updatePresentation } from '../../storage/presentations/index.js';
-import { serveJson, serverError, badRequest, requireJsonBody, withErrorHandler } from '../../utils/http.js';
+import {
+  serveJson,
+  serverError,
+  badRequest,
+  requireJsonBody,
+  withErrorHandler,
+} from '../../utils/http.js';
 import { withPresentationAuth } from '../../utils/route-middleware.js';
 import { isMediaProviderInitialized } from '../../media/index.js';
 import {
@@ -17,23 +23,44 @@ import { dispatchRoutes } from '../../utils/router.js';
 const log = createLogger('publish');
 
 // POST /api/presentations/:id/publish — publish (public share link)
-async function handlePublishCreate({ repoRoot, storageScope, req, res, authedUser }, id) {
+async function handlePublishCreate(
+  { repoRoot, storageScope, req, res, authedUser },
+  id,
+) {
   // Refuse in sandbox before loading the deck (the shared policy gate).
   assertPublishingEnabled();
 
-  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'write' });
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+    permission: 'write',
+  });
   if (!pres) return true;
 
   // The publish flow (sandbox refusal, OG preview, entry upsert, thumbnail
   // warm, webhook) is shared with the v1 route — one canonical form.
-  const result = await publishPresentation({ repoRoot, storageScope, req, pres, actor: authedUser });
+  const result = await publishPresentation({
+    repoRoot,
+    storageScope,
+    req,
+    pres,
+    actor: authedUser,
+  });
   serveJson(res, 200, result);
   return true;
 }
 
 // DELETE /api/presentations/:id/publish — depublish (disable public link)
 async function handlePublishDelete({ storageScope, res, authedUser }, id) {
-  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'write' });
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+    permission: 'write',
+  });
   if (!pres) return true;
 
   const publishId = String(pres?.published?.id || '').trim();
@@ -54,7 +81,13 @@ async function handlePublishDelete({ storageScope, res, authedUser }, id) {
 // PATCH /api/presentations/:id/publish/slug — update published slug (cosmetic,
 // but controls the canonical URL)
 async function handlePublishSlug({ storageScope, req, res, authedUser }, id) {
-  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'write' });
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+    permission: 'write',
+  });
   if (!pres) return true;
 
   const publishId = String(pres?.published?.id || '').trim();
@@ -71,7 +104,9 @@ async function handlePublishSlug({ storageScope, req, res, authedUser }, id) {
   const nextPres = {
     ...pres,
     published: {
-      ...(pres.published && typeof pres.published === 'object' ? pres.published : {}),
+      ...(pres.published && typeof pres.published === 'object'
+        ? pres.published
+        : {}),
       id: publishId,
       slug: entry.slug,
       modified: entry.modified,
@@ -91,8 +126,17 @@ async function handlePublishSlug({ storageScope, req, res, authedUser }, id) {
 
 // POST /api/presentations/:id/preview/regenerate — regenerate the preview image
 // for an already-published presentation
-async function handlePreviewRegenerate({ repoRoot, storageScope, res, authedUser }, id) {
-  const pres = await withPresentationAuth({ storageScope, id, authedUser, res, permission: 'write' });
+async function handlePreviewRegenerate(
+  { repoRoot, storageScope, res, authedUser },
+  id,
+) {
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+    permission: 'write',
+  });
   if (!pres) return true;
 
   const publishId = String(pres?.published?.id || '').trim();
@@ -145,7 +189,9 @@ async function handlePreviewRegenerate({ repoRoot, storageScope, res, authedUser
     const nextPres = {
       ...pres,
       published: {
-        ...(pres.published && typeof pres.published === 'object' ? pres.published : {}),
+        ...(pres.published && typeof pres.published === 'object'
+          ? pres.published
+          : {}),
         ogImageUrl,
       },
     };
@@ -170,10 +216,26 @@ async function handlePreviewRegenerate({ repoRoot, storageScope, res, authedUser
  * @type {import('../../utils/router.js').Route[]}
  */
 export const ROUTES = [
-  { method: 'POST', pattern: /^\/api\/presentations\/([^/]+)\/publish$/, handler: handlePublishCreate },
-  { method: 'DELETE', pattern: /^\/api\/presentations\/([^/]+)\/publish$/, handler: handlePublishDelete },
-  { method: 'PATCH', pattern: /^\/api\/presentations\/([^/]+)\/publish\/slug$/, handler: handlePublishSlug },
-  { method: 'POST', pattern: /^\/api\/presentations\/([^/]+)\/preview\/regenerate$/, handler: handlePreviewRegenerate },
+  {
+    method: 'POST',
+    pattern: /^\/api\/presentations\/([^/]+)\/publish$/,
+    handler: handlePublishCreate,
+  },
+  {
+    method: 'DELETE',
+    pattern: /^\/api\/presentations\/([^/]+)\/publish$/,
+    handler: handlePublishDelete,
+  },
+  {
+    method: 'PATCH',
+    pattern: /^\/api\/presentations\/([^/]+)\/publish\/slug$/,
+    handler: handlePublishSlug,
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/presentations\/([^/]+)\/preview\/regenerate$/,
+    handler: handlePreviewRegenerate,
+  },
 ];
 
 /**

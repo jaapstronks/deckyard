@@ -19,20 +19,20 @@
  */
 
 export const ai = {
-    category: 'structural',
-    resolveInPhase1: true,
-    description: `
+  category: 'structural',
+  resolveInPhase1: true,
+  description: `
       A section divider that announces a new topic/chapter.
       Use to break up the presentation into logical sections.
       Should be followed by 1-4 content slides that elaborate on that chapter.
     `,
-    bestFor: [
-      'Introducing a new major section or topic',
-      'Creating visual breaks between different parts of the presentation',
-      'Helping audience understand the structure',
-    ],
-    notFor: [
-      'Content that needs explanation (use content slides after this)',
-      'Minor sub-topics within a section',
-    ],
+  bestFor: [
+    'Introducing a new major section or topic',
+    'Creating visual breaks between different parts of the presentation',
+    'Helping audience understand the structure',
+  ],
+  notFor: [
+    'Content that needs explanation (use content slides after this)',
+    'Minor sub-topics within a section',
+  ],
 };

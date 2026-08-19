@@ -20,7 +20,7 @@ export function createGooglePanel({ sourceConfig = {}, onChange }) {
     class: 'help',
     text: t(
       'fonts.googleHelp',
-      'Add Google Fonts beyond the curated list. Enter the exact font family name from fonts.google.com.'
+      'Add Google Fonts beyond the curated list. Enter the exact font family name from fonts.google.com.',
     ),
   });
 
@@ -32,7 +32,7 @@ export function createGooglePanel({ sourceConfig = {}, onChange }) {
     h('label', {
       class: 'field-label',
       text: t('fonts.googleSpec', 'Google Fonts specification'),
-    })
+    }),
   );
   const specInput = h('input', {
     class: 'input',
@@ -48,14 +48,17 @@ export function createGooglePanel({ sourceConfig = {}, onChange }) {
     class: 'help',
     text: t(
       'fonts.googleSpecHint',
-      'Use format "Family Name:weights", e.g. "Raleway:400,700" or just "Raleway".'
+      'Use format "Family Name:weights", e.g. "Raleway:400,700" or just "Raleway".',
     ),
   });
   specField.append(specInput, specHint);
 
   // Preview
   const preview = h('div', { class: 'font-preview-text' });
-  preview.textContent = t('common.pangram', 'The quick brown fox jumps over the lazy dog');
+  preview.textContent = t(
+    'common.pangram',
+    'The quick brown fox jumps over the lazy dog',
+  );
 
   function loadPreview() {
     const spec = specInput.value.trim();

@@ -9,7 +9,10 @@
 
 import { getFollowStateForPresentation } from '../../../storage/live-sessions/index.js';
 import { getPresentationCached } from '../../../storage/presentations/cache.js';
-import { computeAudienceCapabilitiesFromState, followAudienceScope } from './helpers.js';
+import {
+  computeAudienceCapabilitiesFromState,
+  followAudienceScope,
+} from './helpers.js';
 
 const TICK_MS = 2000;
 
@@ -24,8 +27,14 @@ const TICK_MS = 2000;
 const groups = new Map();
 
 async function computeShared(g) {
-  const state = await getFollowStateForPresentation(followAudienceScope(g.repoRoot), g.presentationId);
-  const pres = await getPresentationCached(followAudienceScope(g.repoRoot), g.presentationId);
+  const state = await getFollowStateForPresentation(
+    followAudienceScope(g.repoRoot),
+    g.presentationId,
+  );
+  const pres = await getPresentationCached(
+    followAudienceScope(g.repoRoot),
+    g.presentationId,
+  );
   const capabilities = computeAudienceCapabilitiesFromState(state, pres);
   return {
     state,
@@ -52,7 +61,8 @@ async function tickGroup(g) {
   } catch {
     return;
   }
-  for (const subscriber of Array.from(g.subscribers)) dispatch(subscriber, shared);
+  for (const subscriber of Array.from(g.subscribers))
+    dispatch(subscriber, shared);
 }
 
 /**

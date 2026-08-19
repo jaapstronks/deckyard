@@ -34,9 +34,10 @@ function extractSlideTitle(slide) {
  * Build the system prompt for deck compression analysis
  */
 function buildCompressionSystemPrompt({ targetReduction }) {
-  const aggressiveness = targetReduction === 'aggressive'
-    ? 'Be aggressive - recommend removing or merging as many slides as reasonable while keeping core content.'
-    : 'Be moderate - recommend clear improvements but preserve important content.';
+  const aggressiveness =
+    targetReduction === 'aggressive'
+      ? 'Be aggressive - recommend removing or merging as many slides as reasonable while keeping core content.'
+      : 'Be moderate - recommend clear improvements but preserve important content.';
 
   return `You are a presentation editor analyzing a deck for consolidation opportunities.
 
@@ -96,13 +97,18 @@ function buildCompressionUserPrompt({ title, slides }) {
       lines.push(`    Body: ${content.body.slice(0, 100)}...`);
     }
     if (content.items?.length) {
-      const itemTitles = content.items.slice(0, 3).map(i => i.title || i.text || '').join(', ');
+      const itemTitles = content.items
+        .slice(0, 3)
+        .map((i) => i.title || i.text || '')
+        .join(', ');
       lines.push(`    Items: ${itemTitles}`);
     }
   });
 
   lines.push('');
-  lines.push('Analyze this presentation and identify consolidation opportunities.');
+  lines.push(
+    'Analyze this presentation and identify consolidation opportunities.',
+  );
 
   return lines.join('\n');
 }
@@ -126,8 +132,12 @@ function normalizeCompressionOutput(parsed, slideCount) {
   // Normalize merges
   if (Array.isArray(parsed.merges)) {
     for (const merge of parsed.merges) {
-      const indexes = Array.isArray(merge?.slideIndexes) ? merge.slideIndexes : [];
-      const validIndexes = indexes.filter(i => typeof i === 'number' && i >= 0 && i < slideCount);
+      const indexes = Array.isArray(merge?.slideIndexes)
+        ? merge.slideIndexes
+        : [];
+      const validIndexes = indexes.filter(
+        (i) => typeof i === 'number' && i >= 0 && i < slideCount,
+      );
 
       if (validIndexes.length >= 2) {
         output.merges.push({
@@ -153,12 +163,19 @@ function normalizeCompressionOutput(parsed, slideCount) {
   }
 
   // Calculate recommended count
-  const uniqueMergeSlides = new Set(output.merges.flatMap(m => m.slideIndexes));
-  const removalSlides = new Set(output.removals.map(r => r.slideIndex));
+  const uniqueMergeSlides = new Set(
+    output.merges.flatMap((m) => m.slideIndexes),
+  );
+  const removalSlides = new Set(output.removals.map((r) => r.slideIndex));
   const mergeReduction = uniqueMergeSlides.size - output.merges.length; // Each merge removes N-1 slides
-  const removalReduction = [...removalSlides].filter(i => !uniqueMergeSlides.has(i)).length;
+  const removalReduction = [...removalSlides].filter(
+    (i) => !uniqueMergeSlides.has(i),
+  ).length;
 
-  output.recommendedCount = Math.max(1, slideCount - mergeReduction - removalReduction);
+  output.recommendedCount = Math.max(
+    1,
+    slideCount - mergeReduction - removalReduction,
+  );
 
   return output;
 }
@@ -172,10 +189,10 @@ function normalizeCompressionOutput(parsed, slideCount) {
  * @param {string} options.vendor - LLM vendor override
  * @returns {Promise<Object>} Compression recommendations
  */
-export async function analyzeForCompression(presentation, {
-  targetReduction = 'moderate',
-  vendor = null,
-} = {}) {
+export async function analyzeForCompression(
+  presentation,
+  { targetReduction = 'moderate', vendor = null } = {},
+) {
   const startTime = Date.now();
   const { vendor: resolvedVendor, apiKey, model } = getLlmConfig({ vendor });
 
@@ -243,7 +260,7 @@ export function applyCompression(presentation, recommendations) {
   const { merges = [], removals = [] } = recommendations;
 
   // Track which slides to remove
-  const toRemove = new Set(removals.map(r => r.slideIndex));
+  const toRemove = new Set(removals.map((r) => r.slideIndex));
 
   // Track which slides are part of merges (except the first one which becomes the merged slide)
   for (const merge of merges) {
@@ -263,7 +280,9 @@ export function applyCompression(presentation, recommendations) {
       originalCount: slides.length,
       newCount: newSlides.length,
       mergesApplied: merges.length,
-      removalsApplied: toRemove.size - merges.reduce((sum, m) => sum + m.slideIndexes.length - 1, 0),
+      removalsApplied:
+        toRemove.size -
+        merges.reduce((sum, m) => sum + m.slideIndexes.length - 1, 0),
     },
   };
 }

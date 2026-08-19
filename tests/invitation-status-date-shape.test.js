@@ -18,7 +18,9 @@ import assert from 'node:assert/strict';
 
 // Assembled rather than written as one literal so secret scanners do not flag
 // it; authConfigError() only requires MIN_AUTH_SECRET_LENGTH characters.
-process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
+process.env.AUTH_SECRET = ['deckyard', 'test', 'auth']
+  .join('-')
+  .padEnd(40, '0');
 delete process.env.AUTH_ENABLED;
 delete process.env.AUTH_DEV_BYPASS;
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
@@ -29,7 +31,11 @@ const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { listUsers } = await import('../server/storage/users.js');
 
-const scope = { organizationId: ORG, actorEmail: 'admin@example.com', repoRoot: null };
+const scope = {
+  organizationId: ORG,
+  actorEmail: 'admin@example.com',
+  repoRoot: null,
+};
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -98,9 +104,16 @@ test('a fresh invitation is active when the expiry is an ISO string', async () =
 });
 
 test('an expired invitation is expired in both shapes', async () => {
-  for (const shape of [new Date(Date.now() - DAY_MS), new Date(Date.now() - DAY_MS).toISOString()]) {
+  for (const shape of [
+    new Date(Date.now() - DAY_MS),
+    new Date(Date.now() - DAY_MS).toISOString(),
+  ]) {
     installDb(shape);
     const [dana] = await listUsers(scope);
-    assert.equal(dana.invitationStatus, 'expired', `shape: ${shape.constructor.name}`);
+    assert.equal(
+      dana.invitationStatus,
+      'expired',
+      `shape: ${shape.constructor.name}`,
+    );
   }
 });

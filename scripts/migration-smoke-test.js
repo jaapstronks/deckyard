@@ -73,16 +73,18 @@ async function main() {
       // the failure mode of a broken glob or a moved migrations directory.
       throw new Error(
         'Found no migrations on disk. Expected server/db/migrations/ to hold ' +
-          'numbered `NNN_*.js` files; a smoke test over zero migrations proves nothing.'
+          'numbered `NNN_*.js` files; a smoke test over zero migrations proves nothing.',
       );
     }
-    console.log(`Migration smoke test: ${files.length} migration(s) on disk.\n`);
+    console.log(
+      `Migration smoke test: ${files.length} migration(s) on disk.\n`,
+    );
 
     const before = await publicTables(db);
     if (before.length) {
       throw new Error(
         `Expected an empty database, found ${before.length} table(s): ${before.join(', ')}.\n` +
-          'Point DATABASE_NAME at a scratch database — this script is destructive.'
+          'Point DATABASE_NAME at a scratch database — this script is destructive.',
       );
     }
 
@@ -90,16 +92,19 @@ async function main() {
     const appliedFirst = await runUp(db, { log: quiet });
     if (appliedFirst.length !== files.length) {
       throw new Error(
-        `up applied ${appliedFirst.length} migration(s), expected all ${files.length}.`
+        `up applied ${appliedFirst.length} migration(s), expected all ${files.length}.`,
       );
     }
     const tablesAfterUp = await publicTables(db);
-    console.log(`  ${appliedFirst.length} applied, ${tablesAfterUp.length} table(s) present.\n`);
+    console.log(
+      `  ${appliedFirst.length} applied, ${tablesAfterUp.length} table(s) present.\n`,
+    );
 
     console.log('→ down (all the way back)');
     for (let i = files.length; i > 0; i -= 1) {
       const rolled = await runDown(db, { log: quiet });
-      if (!rolled) throw new Error(`down stopped early: ${i} migration(s) still applied.`);
+      if (!rolled)
+        throw new Error(`down stopped early: ${i} migration(s) still applied.`);
     }
     const stillApplied = await listAppliedMigrations(db);
     if (stillApplied.length) {
@@ -119,20 +124,24 @@ async function main() {
           `  expected only _migrations, found: ${tablesAfterDown.join(', ') || '(nothing)'}\n` +
           (leftovers.length
             ? `  a down() is not dropping: ${leftovers.join(', ')}\n`
-            : '  the _migrations bookkeeping table is gone\n')
+            : '  the _migrations bookkeeping table is gone\n'),
       );
     }
-    console.log(`  ${files.length} rolled back, schema back to _migrations only.\n`);
+    console.log(
+      `  ${files.length} rolled back, schema back to _migrations only.\n`,
+    );
 
     console.log('→ up (second pass)');
     const appliedSecond = await runUp(db, { log: quiet });
     if (appliedSecond.length !== files.length) {
       throw new Error(
-        `second up applied ${appliedSecond.length} migration(s), expected all ${files.length}.`
+        `second up applied ${appliedSecond.length} migration(s), expected all ${files.length}.`,
       );
     }
     const tablesAfterReUp = await publicTables(db);
-    console.log(`  ${appliedSecond.length} applied, ${tablesAfterReUp.length} table(s) present.\n`);
+    console.log(
+      `  ${appliedSecond.length} applied, ${tablesAfterReUp.length} table(s) present.\n`,
+    );
 
     // The round trip has to land on the same schema, or "down" is quietly
     // dropping something "up" no longer recreates. Table names are a coarse
@@ -143,8 +152,12 @@ async function main() {
     if (missing.length || extra.length) {
       throw new Error(
         'up → down → up did not reproduce the same tables.\n' +
-          (missing.length ? `  missing after re-up: ${missing.join(', ')}\n` : '') +
-          (extra.length ? `  unexpected after re-up: ${extra.join(', ')}\n` : '')
+          (missing.length
+            ? `  missing after re-up: ${missing.join(', ')}\n`
+            : '') +
+          (extra.length
+            ? `  unexpected after re-up: ${extra.join(', ')}\n`
+            : ''),
       );
     }
 

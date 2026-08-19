@@ -74,7 +74,9 @@ function libraryProvider(openLibraryRaw) {
             tags: Array.isArray(it?.tags) ? it.tags : undefined,
             caption:
               applyCaptionCredit && photographer
-                ? t('editor.image.photoCredit', 'Photo: {photographer}', { photographer })
+                ? t('editor.image.photoCredit', 'Photo: {photographer}', {
+                    photographer,
+                  })
                 : undefined,
             meta: {
               photographer: photographer || undefined,
@@ -131,7 +133,8 @@ function imagekitProvider(openImageKitRaw) {
           if (!url) return;
           opts.onPick?.({
             url,
-            alt: typeof picked?.altSeed === 'string' ? picked.altSeed : undefined,
+            alt:
+              typeof picked?.altSeed === 'string' ? picked.altSeed : undefined,
             tags: Array.isArray(picked?.tags) ? picked.tags : undefined,
             providerId: picked?.fileId || undefined,
           });
@@ -169,7 +172,7 @@ function openSourceChooser({ h, root, providers, onChoose }) {
           modal.close();
           onChoose(p);
         },
-      })
+      }),
     );
   }
   modal.append(list);

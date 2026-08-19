@@ -23,14 +23,22 @@ import { after, before, beforeEach, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { sql } from 'kysely';
 
-import { closeTestDb, openTestDb, pgDescribe, truncate } from './helpers/harness.js';
+import {
+  closeTestDb,
+  openTestDb,
+  pgDescribe,
+  truncate,
+} from './helpers/harness.js';
 import { seedDefaultOrganization } from './helpers/seed.js';
 import { up as stripIdentityFromSnapshots } from '../../server/db/migrations/068_strip_identity_from_snapshots.js';
 import {
   verifyIdentityConsistency,
   formatIdentityReport,
 } from '../../server/storage/identity-verification.js';
-import { getUserSettings, writeUserSettings } from '../../server/storage/settings.js';
+import {
+  getUserSettings,
+  writeUserSettings,
+} from '../../server/storage/settings.js';
 import { getDefaultOrganizationId } from '../../server/config/database.js';
 import { testScope } from '../helpers/storage-scope.js';
 
@@ -62,7 +70,9 @@ const LEGACY_SNAPSHOT = {
 
 /** Find one check in a report by its id column. */
 function check(report, table, idColumn) {
-  const found = report.checks.find((c) => c.table === table && c.idColumn === idColumn);
+  const found = report.checks.find(
+    (c) => c.table === table && c.idColumn === idColumn,
+  );
   assert.ok(found, `report has a check for ${table}.${idColumn}`);
   return found;
 }
@@ -87,16 +97,32 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
       'presentations',
       'presentation_collaborators',
       'user_settings',
-      'organizations'
+      'organizations',
     );
     await seedDefaultOrganization(db);
     await db
       .insertInto('users')
       .values([
-        { id: ALICE_ID, organization_id: ORG, email: ALICE, name: 'Alice', role: 'user' },
-        { id: BOB_ID, organization_id: ORG, email: BOB, name: 'Bob', role: 'user' },
+        {
+          id: ALICE_ID,
+          organization_id: ORG,
+          email: ALICE,
+          name: 'Alice',
+          role: 'user',
+        },
+        {
+          id: BOB_ID,
+          organization_id: ORG,
+          email: BOB,
+          name: 'Bob',
+          role: 'user',
+        },
       ])
-      .onConflict((oc) => oc.column('id').doUpdateSet({ email: (eb) => eb.ref('excluded.email') }))
+      .onConflict((oc) =>
+        oc
+          .column('id')
+          .doUpdateSet({ email: (eb) => eb.ref('excluded.email') }),
+      )
       .execute();
   });
 
@@ -147,7 +173,7 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
     assert.equal(
       before.presentation_data.ownerEmail,
       ALICE,
-      'the seeded row really did carry identity'
+      'the seeded row really did carry identity',
     );
 
     await stripIdentityFromSnapshots(db);
@@ -164,7 +190,7 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
     ]) {
       assert.ok(
         !(field in after.presentation_data),
-        `${field} is gone from the embedded copy`
+        `${field} is gone from the embedded copy`,
       );
     }
   });
@@ -173,15 +199,20 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
     await seedLegacySnapshot();
     await stripIdentityFromSnapshots(db);
 
-    const { presentation_data: data, created_by: createdBy } = await readSnapshot();
+    const { presentation_data: data, created_by: createdBy } =
+      await readSnapshot();
     assert.deepEqual(data.slides, LEGACY_SNAPSHOT.slides, 'slides survive');
-    assert.deepEqual(data.settings, LEGACY_SNAPSHOT.settings, 'settings survive');
+    assert.deepEqual(
+      data.settings,
+      LEGACY_SNAPSHOT.settings,
+      'settings survive',
+    );
     assert.equal(data.title, 'A deck', 'title survives');
     assert.equal(data.id, DECK_ID, 'the deck id survives');
     assert.equal(
       createdBy,
       ALICE,
-      'the created_by column is a separate first-class field, dual-keyed in its own right (PR F1)'
+      'the created_by column is a separate first-class field, dual-keyed in its own right (PR F1)',
     );
   });
 
@@ -209,7 +240,12 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
   it('is a no-op on rows that were already clean', async () => {
     await db
       .insertInto('presentations')
-      .values({ id: DECK_ID, organization_id: ORG, title: 'A deck', owner_email: ALICE })
+      .values({
+        id: DECK_ID,
+        organization_id: ORG,
+        title: 'A deck',
+        owner_email: ALICE,
+      })
       .execute();
     await db
       .insertInto('presentation_versions')
@@ -219,18 +255,24 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
         created_by: ALICE,
         revision: 1,
         title: 'A deck',
-        presentation_data: JSON.stringify({ id: DECK_ID, title: 'A deck', slides: [] }),
+        presentation_data: JSON.stringify({
+          id: DECK_ID,
+          title: 'A deck',
+          slides: [],
+        }),
       })
       .execute();
 
-    const { rows: before } = await sql`SELECT xmin::text AS v FROM presentation_versions`.execute(db);
+    const { rows: before } =
+      await sql`SELECT xmin::text AS v FROM presentation_versions`.execute(db);
     await stripIdentityFromSnapshots(db);
-    const { rows: after } = await sql`SELECT xmin::text AS v FROM presentation_versions`.execute(db);
+    const { rows: after } =
+      await sql`SELECT xmin::text AS v FROM presentation_versions`.execute(db);
 
     assert.deepEqual(
       after.map((r) => r.v),
       before.map((r) => r.v),
-      'a deck whose snapshots are already clean is not rewritten'
+      'a deck whose snapshots are already clean is not rewritten',
     );
   });
 
@@ -252,7 +294,11 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
       })
       .execute();
 
-    await db.updateTable('users').set({ email: ALICE_RENAMED }).where('id', '=', ALICE_ID).execute();
+    await db
+      .updateTable('users')
+      .set({ email: ALICE_RENAMED })
+      .where('id', '=', ALICE_ID)
+      .execute();
 
     // Before the orphan rule this threw on the e-mail primary key.
     await writeUserSettings(testScope(), ALICE_RENAMED, { uiLocale: 'nl' });
@@ -263,8 +309,16 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
       .where('email', '=', ALICE_RENAMED)
       .execute();
     assert.equal(rows.length, 1, 'one row per person — the orphan is gone');
-    assert.equal(rows[0].user_id, ALICE_ID, 'the surviving row is the id-bearing one');
-    assert.equal(rows[0].settings.uiLocale, 'nl', "and it carries Alice's settings, not the orphan's");
+    assert.equal(
+      rows[0].user_id,
+      ALICE_ID,
+      'the surviving row is the id-bearing one',
+    );
+    assert.equal(
+      rows[0].settings.uiLocale,
+      'nl',
+      "and it carries Alice's settings, not the orphan's",
+    );
 
     const read = await getUserSettings(testScope(), ALICE_RENAMED);
     assert.equal(read.uiLocale, 'nl', 'the rename kept her preferences');
@@ -275,7 +329,11 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
     // does have a users row, but a settings row that predates the backfill.
     await db
       .insertInto('user_settings')
-      .values({ email: BOB, user_id: null, settings: JSON.stringify({ uiLocale: 'en-gb' }) })
+      .values({
+        email: BOB,
+        user_id: null,
+        settings: JSON.stringify({ uiLocale: 'en-gb' }),
+      })
       .execute();
 
     await writeUserSettings(testScope(), BOB, {});
@@ -286,15 +344,27 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
       .where('email', '=', BOB)
       .execute();
     assert.equal(rows.length, 1);
-    assert.equal(rows[0].user_id, BOB_ID, 'the legacy row picked up its id rather than being replaced');
-    assert.equal(rows[0].settings.uiLocale, 'en-gb', 'its stored preferences survived the adoption');
+    assert.equal(
+      rows[0].user_id,
+      BOB_ID,
+      'the legacy row picked up its id rather than being replaced',
+    );
+    assert.equal(
+      rows[0].settings.uiLocale,
+      'en-gb',
+      'its stored preferences survived the adoption',
+    );
   });
 
   it('leaves an unrelated orphan row alone', async () => {
     await writeUserSettings(testScope(), ALICE, { uiLocale: 'nl' });
     await db
       .insertInto('user_settings')
-      .values({ email: EXTERNAL, user_id: null, settings: JSON.stringify({ uiLocale: 'en-gb' }) })
+      .values({
+        email: EXTERNAL,
+        user_id: null,
+        settings: JSON.stringify({ uiLocale: 'en-gb' }),
+      })
       .execute();
 
     await writeUserSettings(testScope(), ALICE, { uiLocale: 'nl' });
@@ -347,7 +417,11 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
         reason: 'snapshot',
         revision: 1,
         title: 'A deck',
-        presentation_data: JSON.stringify({ id: DECK_ID, title: 'A deck', slides: [] }),
+        presentation_data: JSON.stringify({
+          id: DECK_ID,
+          title: 'A deck',
+          slides: [],
+        }),
       })
       .execute();
     await db
@@ -381,19 +455,43 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
     assert.equal(report.ok, true, formatIdentityReport(report).join('\n'));
     assert.equal(report.mismatched, 0);
     assert.equal(check(report, 'presentations', 'owner_user_id').linked, 1);
-    assert.equal(check(report, 'presentations', 'trashed_by_user_id').linked, 1);
-    assert.equal(check(report, 'presentation_versions', 'created_by_user_id').linked, 1);
-    assert.equal(check(report, 'presentation_collaborators', 'user_id').linked, 1);
-    assert.equal(check(report, 'slide_library', 'created_by_user_id').linked, 1);
-    assert.equal(check(report, 'slide_library', 'updated_by_user_id').linked, 1);
-    assert.equal(check(report, 'slide_collections', 'created_by_user_id').linked, 1);
+    assert.equal(
+      check(report, 'presentations', 'trashed_by_user_id').linked,
+      1,
+    );
+    assert.equal(
+      check(report, 'presentation_versions', 'created_by_user_id').linked,
+      1,
+    );
+    assert.equal(
+      check(report, 'presentation_collaborators', 'user_id').linked,
+      1,
+    );
+    assert.equal(
+      check(report, 'slide_library', 'created_by_user_id').linked,
+      1,
+    );
+    assert.equal(
+      check(report, 'slide_library', 'updated_by_user_id').linked,
+      1,
+    );
+    assert.equal(
+      check(report, 'slide_collections', 'created_by_user_id').linked,
+      1,
+    );
     assert.equal(check(report, 'user_settings', 'user_id').linked, 1);
   });
 
   it('counts an id-less row with no users row as external, not as a defect', async () => {
     await db
       .insertInto('presentations')
-      .values({ id: DECK_ID, organization_id: ORG, title: 'A deck', owner_email: ALICE, owner_user_id: ALICE_ID })
+      .values({
+        id: DECK_ID,
+        organization_id: ORG,
+        title: 'A deck',
+        owner_email: ALICE,
+        owner_user_id: ALICE_ID,
+      })
       .execute();
     await db
       .insertInto('presentation_collaborators')
@@ -410,25 +508,45 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
 
     const report = await verifyIdentityConsistency();
     assert.equal(report.ok, true, formatIdentityReport(report).join('\n'));
-    assert.equal(check(report, 'presentation_collaborators', 'user_id').external, 1);
+    assert.equal(
+      check(report, 'presentation_collaborators', 'user_id').external,
+      1,
+    );
     assert.equal(check(report, 'user_settings', 'user_id').external, 1);
-    assert.equal(report.unlinked, 0, 'external rows are not repairable — they are correct');
+    assert.equal(
+      report.unlinked,
+      0,
+      'external rows are not repairable — they are correct',
+    );
   });
 
   it('flags an id-less row whose e-mail does have a users row as repairable', async () => {
     // Exactly what an un-run backfill leaves behind.
     await db
       .insertInto('presentations')
-      .values({ id: DECK_ID, organization_id: ORG, title: 'A deck', owner_email: ALICE, owner_user_id: null })
+      .values({
+        id: DECK_ID,
+        organization_id: ORG,
+        title: 'A deck',
+        owner_email: ALICE,
+        owner_user_id: null,
+      })
       .execute();
 
     const report = await verifyIdentityConsistency();
     const owner = check(report, 'presentations', 'owner_user_id');
     assert.equal(owner.unlinked, 1);
     assert.equal(owner.linked, 0);
-    assert.equal(report.ok, true, 'not wrong today — the e-mail fallback still finds it');
+    assert.equal(
+      report.ok,
+      true,
+      'not wrong today — the e-mail fallback still finds it',
+    );
     assert.equal(report.unlinked, 1);
-    assert.match(formatIdentityReport(report).join('\n'), /re-run the backfill/);
+    assert.match(
+      formatIdentityReport(report).join('\n'),
+      /re-run the backfill/,
+    );
   });
 
   it('fails on a row whose id and e-mail name two different people', async () => {
@@ -459,10 +577,18 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
     // column until she writes again — the exact "id present, e-mail stale"
     // state the re-stamp exists to close, and the one this check watches.
     await writeUserSettings(testScope(), ALICE, { uiLocale: 'nl' });
-    await db.updateTable('users').set({ email: ALICE_RENAMED }).where('id', '=', ALICE_ID).execute();
+    await db
+      .updateTable('users')
+      .set({ email: ALICE_RENAMED })
+      .where('id', '=', ALICE_ID)
+      .execute();
 
     const drifted = await verifyIdentityConsistency();
-    assert.equal(drifted.ok, false, 'a stale e-mail column is a mismatch, not a shrug');
+    assert.equal(
+      drifted.ok,
+      false,
+      'a stale e-mail column is a mismatch, not a shrug',
+    );
     assert.equal(check(drifted, 'user_settings', 'user_id').mismatched, 1);
 
     await writeUserSettings(testScope(), ALICE_RENAMED, {});
@@ -475,19 +601,27 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
   it('re-running the verification changes nothing', async () => {
     await db
       .insertInto('presentations')
-      .values({ id: DECK_ID, organization_id: ORG, title: 'A deck', owner_email: ALICE, owner_user_id: ALICE_ID })
+      .values({
+        id: DECK_ID,
+        organization_id: ORG,
+        title: 'A deck',
+        owner_email: ALICE,
+        owner_user_id: ALICE_ID,
+      })
       .execute();
 
-    const { rows: before } = await sql`SELECT xmin::text AS v FROM presentations`.execute(db);
+    const { rows: before } =
+      await sql`SELECT xmin::text AS v FROM presentations`.execute(db);
     const first = await verifyIdentityConsistency();
     const second = await verifyIdentityConsistency();
-    const { rows: after } = await sql`SELECT xmin::text AS v FROM presentations`.execute(db);
+    const { rows: after } =
+      await sql`SELECT xmin::text AS v FROM presentations`.execute(db);
 
     assert.deepEqual(second, first, 'same answer');
     assert.deepEqual(
       after.map((r) => r.v),
       before.map((r) => r.v),
-      'and it wrote nothing on the way to it'
+      'and it wrote nothing on the way to it',
     );
   });
 });

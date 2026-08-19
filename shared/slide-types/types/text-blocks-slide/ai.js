@@ -19,9 +19,9 @@
  */
 
 export const ai = {
-    category: 'content',
-    resolveInPhase1: false,
-    description: `
+  category: 'content',
+  resolveInPhase1: false,
+  description: `
       A SPECIFIC slide for a DIRECTIONAL RELATIONSHIP between 1-3 ROWS of
       colored blocks: the rows are connected by arrows that assert
       cause→effect, input→output, before→after, or problem→solution.
@@ -48,24 +48,24 @@ export const ai = {
       2. THREE-ROW FLOW: Inputs -> Processing -> Outputs
       3. PROBLEM → SOLUTION or BEFORE → AFTER (two contrasting rows)
     `,
-    bestFor: [
-      'Cause→effect: activities/programmes (A, B, C) that PRODUCE specific outputs',
-      'Input→processing→output flows',
-      'Problem→solution or challenge→response structures',
-      'Before→after transformations',
-      'Strategy→tactics→results chains',
-      'Any 2-3 row structure where each row LEADS TO the next',
-      'Consequence chains: X causes Y, which causes Z. Prefer this over process-slide when nobody performs the steps -- the items are outcomes, not actions',
-    ],
-    notFor: [
-      'Plain enumerations or lists of points (use list-slide or content-slide)',
-      'Parallel items/categories with NO causal or sequential relationship — '
-        + 'use list-slide, or icon-card-grid-slide if each needs an icon',
-      'A single row of blocks used just to group text (use list-slide)',
-      'Single items without grouping (use content-slide)',
-      'Sequential timelines with dates (use timeline-slide)',
-      'Items that each need an icon (use icon-card-grid-slide)',
-    ],
+  bestFor: [
+    'Cause→effect: activities/programmes (A, B, C) that PRODUCE specific outputs',
+    'Input→processing→output flows',
+    'Problem→solution or challenge→response structures',
+    'Before→after transformations',
+    'Strategy→tactics→results chains',
+    'Any 2-3 row structure where each row LEADS TO the next',
+    'Consequence chains: X causes Y, which causes Z. Prefer this over process-slide when nobody performs the steps -- the items are outcomes, not actions',
+  ],
+  notFor: [
+    'Plain enumerations or lists of points (use list-slide or content-slide)',
+    'Parallel items/categories with NO causal or sequential relationship — ' +
+      'use list-slide, or icon-card-grid-slide if each needs an icon',
+    'A single row of blocks used just to group text (use list-slide)',
+    'Single items without grouping (use content-slide)',
+    'Sequential timelines with dates (use timeline-slide)',
+    'Items that each need an icon (use icon-card-grid-slide)',
+  ],
 };
 
 /**

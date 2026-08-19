@@ -28,7 +28,12 @@ import { getDataUrl } from '../../utils/request-validators.js';
 // The enableImageLibrary flag answers 404 before the method decision, so the
 // whole path stays one no-method handler (route-dispatch.md, guard-before-
 // method exception).
-async function handleImageLibraryCollection({ storageScope, req, res, authedUser }) {
+async function handleImageLibraryCollection({
+  storageScope,
+  req,
+  res,
+  authedUser,
+}) {
   const flags = getFeatureFlags();
   if (!flags.enableImageLibrary) return notFound(res);
   if (req.method === 'GET') {
@@ -52,7 +57,8 @@ async function handleImageLibraryCollection({ storageScope, req, res, authedUser
   }
   if (req.method === 'POST') {
     // Demo stance: keep the library read-only (curated) to avoid abuse.
-    if (flags.demoMode || flags.sandboxMode) return methodNotAllowed(res, ['GET']);
+    if (flags.demoMode || flags.sandboxMode)
+      return methodNotAllowed(res, ['GET']);
     if (!authedUser) return unauthorized(res, 'Login required');
     const parsed = await requireJsonBody(req, res);
     if (!parsed.ok) return true;
@@ -72,7 +78,8 @@ async function handleImageLibraryCollection({ storageScope, req, res, authedUser
 // not persist)
 async function handleGenerateAltsPreview({ repoRoot, req, res, authedUser }) {
   const flags = getFeatureFlags();
-  if (flags.demoMode || flags.sandboxMode) return methodNotAllowed(res, ['GET']);
+  if (flags.demoMode || flags.sandboxMode)
+    return methodNotAllowed(res, ['GET']);
   if (!authedUser) return unauthorized(res, 'Login required');
   if (!flags.aiAltText) return unauthorized(res, 'AI alt text is not enabled');
   const parsed = await requireJsonBody(req, res);
@@ -110,11 +117,15 @@ async function handleImageUsage({ storageScope, req, res }, imageId) {
 
 // /api/image-library/:id/generate-alts - Generate alt texts for a library item
 // (flag before method, so one no-method handler)
-async function handleItemGenerateAlts({ repoRoot, storageScope, req, res, authedUser }, imageId) {
+async function handleItemGenerateAlts(
+  { repoRoot, storageScope, req, res, authedUser },
+  imageId,
+) {
   const flags = getFeatureFlags();
   if (!flags.enableImageLibrary) return notFound(res);
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-  if (flags.demoMode || flags.sandboxMode) return methodNotAllowed(res, ['GET']);
+  if (flags.demoMode || flags.sandboxMode)
+    return methodNotAllowed(res, ['GET']);
   if (!authedUser) return unauthorized(res, 'Login required');
   if (!flags.aiAltText) return unauthorized(res, 'AI alt text is not enabled');
   const item = await getImageLibraryItem(storageScope, imageId);
@@ -137,11 +148,15 @@ async function handleItemGenerateAlts({ repoRoot, storageScope, req, res, authed
 
 // /api/image-library/:id/replace-upload - Replace a local upload in place
 // (flag before method, so one no-method handler)
-async function handleReplaceUpload({ repoRoot, storageScope, req, res, authedUser }, imageId) {
+async function handleReplaceUpload(
+  { repoRoot, storageScope, req, res, authedUser },
+  imageId,
+) {
   const flags = getFeatureFlags();
   if (!flags.enableImageLibrary) return notFound(res);
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-  if (flags.demoMode || flags.sandboxMode) return methodNotAllowed(res, ['GET']);
+  if (flags.demoMode || flags.sandboxMode)
+    return methodNotAllowed(res, ['GET']);
   if (!authedUser) return unauthorized(res, 'Login required');
 
   const item = await getImageLibraryItem(storageScope, imageId);
@@ -149,7 +164,7 @@ async function handleReplaceUpload({ repoRoot, storageScope, req, res, authedUse
   if (!String(item.url || '').startsWith('/uploads/')) {
     return badRequest(
       res,
-      'This image is not stored as a local upload (/uploads/...), so it cannot be replaced in-place.'
+      'This image is not stored as a local upload (/uploads/...), so it cannot be replaced in-place.',
     );
   }
 
@@ -170,7 +185,10 @@ async function handleReplaceUpload({ repoRoot, storageScope, req, res, authedUse
 
 // /api/image-library/:id/favorite - Toggle favorite status (flag before
 // method, so one no-method handler)
-async function handleToggleFavorite({ storageScope, req, res, authedUser }, imageId) {
+async function handleToggleFavorite(
+  { storageScope, req, res, authedUser },
+  imageId,
+) {
   const flags = getFeatureFlags();
   if (!flags.enableImageLibrary) return notFound(res);
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
@@ -179,14 +197,21 @@ async function handleToggleFavorite({ storageScope, req, res, authedUser }, imag
   const item = await getImageLibraryItem(storageScope, imageId);
   if (!item) return notFound(res);
 
-  const isFavorite = await toggleImageFavorite(storageScope, imageId, authedUser.email);
+  const isFavorite = await toggleImageFavorite(
+    storageScope,
+    imageId,
+    authedUser.email,
+  );
   serveJson(res, 200, { id: imageId, isFavorite });
   return true;
 }
 
 // /api/image-library/:id - Get / update / delete one item (flag before
 // method, so one no-method handler)
-async function handleImageItem({ storageScope, req, res, authedUser }, imageId) {
+async function handleImageItem(
+  { storageScope, req, res, authedUser },
+  imageId,
+) {
   const flags = getFeatureFlags();
   if (!flags.enableImageLibrary) return notFound(res);
   if (req.method === 'GET') {
@@ -196,7 +221,8 @@ async function handleImageItem({ storageScope, req, res, authedUser }, imageId) 
     return true;
   }
   if (req.method === 'PUT') {
-    if (flags.demoMode || flags.sandboxMode) return methodNotAllowed(res, ['GET']);
+    if (flags.demoMode || flags.sandboxMode)
+      return methodNotAllowed(res, ['GET']);
     if (!authedUser) return unauthorized(res, 'Login required');
     const parsed = await requireJsonBody(req, res);
     if (!parsed.ok) return true;
@@ -207,7 +233,8 @@ async function handleImageItem({ storageScope, req, res, authedUser }, imageId) 
     return true;
   }
   if (req.method === 'DELETE') {
-    if (flags.demoMode || flags.sandboxMode) return methodNotAllowed(res, ['GET']);
+    if (flags.demoMode || flags.sandboxMode)
+      return methodNotAllowed(res, ['GET']);
     if (!authedUser?.isAdmin) return unauthorized(res, 'Admin required');
     const deleted = await deleteImageLibraryItem(storageScope, imageId);
     if (!deleted.ok) return notFound(res);
@@ -230,12 +257,31 @@ async function handleImageItem({ storageScope, req, res, authedUser }, imageId) 
  */
 export const ROUTES = [
   { pattern: '/api/image-library', handler: handleImageLibraryCollection },
-  { method: 'POST', pattern: '/api/image-library/generate-alts', handler: handleGenerateAltsPreview },
-  { pattern: '/api/image-library/generate-alts', handler: ({ res }) => methodNotAllowed(res, ['POST']) },
-  { pattern: /^\/api\/image-library\/([^/]+)\/usage$/, handler: handleImageUsage },
-  { pattern: /^\/api\/image-library\/([^/]+)\/generate-alts$/, handler: handleItemGenerateAlts },
-  { pattern: /^\/api\/image-library\/([^/]+)\/replace-upload$/, handler: handleReplaceUpload },
-  { pattern: /^\/api\/image-library\/([^/]+)\/favorite$/, handler: handleToggleFavorite },
+  {
+    method: 'POST',
+    pattern: '/api/image-library/generate-alts',
+    handler: handleGenerateAltsPreview,
+  },
+  {
+    pattern: '/api/image-library/generate-alts',
+    handler: ({ res }) => methodNotAllowed(res, ['POST']),
+  },
+  {
+    pattern: /^\/api\/image-library\/([^/]+)\/usage$/,
+    handler: handleImageUsage,
+  },
+  {
+    pattern: /^\/api\/image-library\/([^/]+)\/generate-alts$/,
+    handler: handleItemGenerateAlts,
+  },
+  {
+    pattern: /^\/api\/image-library\/([^/]+)\/replace-upload$/,
+    handler: handleReplaceUpload,
+  },
+  {
+    pattern: /^\/api\/image-library\/([^/]+)\/favorite$/,
+    handler: handleToggleFavorite,
+  },
   { pattern: /^\/api\/image-library\/([^/]+)$/, handler: handleImageItem },
 ];
 
@@ -248,5 +294,5 @@ export const ROUTES = [
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
 export const handleImageLibrary = withErrorHandler('image-library', (ctx) =>
-  dispatchRoutes(ROUTES, ctx)
+  dispatchRoutes(ROUTES, ctx),
 );

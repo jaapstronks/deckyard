@@ -58,7 +58,9 @@ async function api(method, pathname, body) {
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) {
-    throw new Error(`${method} ${pathname} → ${res.status} ${await res.text()}`);
+    throw new Error(
+      `${method} ${pathname} → ${res.status} ${await res.text()}`,
+    );
   }
   const text = await res.text();
   return text ? JSON.parse(text) : null;
@@ -86,7 +88,13 @@ function slide({ title, body, image, tone, text = 'auto', overlay = 'auto' }) {
       content.slideBgAutoFor = image;
     }
   }
-  return { id: randomUUID(), type: 'content-slide', content, notes: '', visibility: {} };
+  return {
+    id: randomUUID(),
+    type: 'content-slide',
+    content,
+    notes: '',
+    visibility: {},
+  };
 }
 
 function buildSlides(themeId, isDarkTheme) {
@@ -144,9 +152,11 @@ async function deleteExistingDemos() {
   } catch {
     return 0;
   }
-  const items = Array.isArray(list) ? list : list?.items || list?.presentations || [];
+  const items = Array.isArray(list)
+    ? list
+    : list?.items || list?.presentations || [];
   const demos = items.filter((p) =>
-    String(p?.title || '').startsWith(DEMO_PREFIX)
+    String(p?.title || '').startsWith(DEMO_PREFIX),
   );
   for (const p of demos) {
     try {
@@ -174,7 +184,10 @@ async function main() {
   const created = [];
   for (const themeId of THEMES) {
     const title = `${DEMO_PREFIX} — ${themeId}`;
-    const deck = await api('POST', '/api/presentations', { title, theme: themeId });
+    const deck = await api('POST', '/api/presentations', {
+      title,
+      theme: themeId,
+    });
     const id = deck?.id || deck?.presentation?.id;
     if (!id) throw new Error(`No id returned creating ${title}`);
     const full = await api('GET', `/api/presentations/${id}`);
@@ -188,7 +201,7 @@ async function main() {
   for (const c of created) console.log(`  ${c.title}\n    ${c.url}`);
   console.log(
     '\nOpen each in the editor/presenter. Tip: the auto values are pre-seeded;' +
-      ' re-picking an image in the editor re-runs live detection.'
+      ' re-picking an image in the editor re-runs live detection.',
   );
 }
 

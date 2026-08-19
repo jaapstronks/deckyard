@@ -36,7 +36,10 @@ import {
   refreshDeckActivityNotification,
   getUnreadCount,
 } from '../storage/notifications.js';
-import { broadcastToUser, NotificationEventTypes } from './notification-events.js';
+import {
+  broadcastToUser,
+  NotificationEventTypes,
+} from './notification-events.js';
 import { crossOrganizationScope } from '../storage/scope.js';
 import { createLogger } from '../utils/logger.js';
 
@@ -74,7 +77,11 @@ export function formatDeckActivityTitle(actorName, count, presentationTitle) {
  * @param {string[]} [options.collaborators] - Emails with standing deck access.
  * @returns {string[]} Deduped, normalised recipient emails (actor excluded).
  */
-export function buildDeckActivityCandidates({ presentation, actor, collaborators = [] }) {
+export function buildDeckActivityCandidates({
+  presentation,
+  actor,
+  collaborators = [],
+}) {
   const set = new Set();
   const add = (email) => {
     const e = normalizeEmail(email);
@@ -97,7 +104,11 @@ export function buildDeckActivityCandidates({ presentation, actor, collaborators
  * @param {number} options.count - Total slides added within the window.
  * @returns {Object}
  */
-export function buildDeckActivityNotificationInput({ presentation, actor, count }) {
+export function buildDeckActivityNotificationInput({
+  presentation,
+  actor,
+  count,
+}) {
   const presentationTitle = presentation?.title || 'Untitled';
   const actorName = actor?.name || actor?.email || 'Someone';
   return {
@@ -126,7 +137,12 @@ export function buildDeckActivityNotificationInput({ presentation, actor, count 
  * @param {import('../storage/scope.js').StorageScope} options.scope - the caller's storage scope
  * @returns {Promise<string[]>} Recipient emails.
  */
-async function resolveDeckActivityRecipients({ repoRoot, presentation, actor, scope }) {
+async function resolveDeckActivityRecipients({
+  repoRoot,
+  presentation,
+  actor,
+  scope,
+}) {
   let collaborators = [];
   try {
     collaborators = (await listCollaborators(presentation?.id))
@@ -136,7 +152,11 @@ async function resolveDeckActivityRecipients({ repoRoot, presentation, actor, sc
     collaborators = [];
   }
 
-  const candidates = buildDeckActivityCandidates({ presentation, actor, collaborators });
+  const candidates = buildDeckActivityCandidates({
+    presentation,
+    actor,
+    collaborators,
+  });
   if (candidates.length === 0) return [];
 
   let overrides = new Map();
@@ -152,8 +172,11 @@ async function resolveDeckActivityRecipients({ repoRoot, presentation, actor, sc
       if (!level) {
         try {
           const settings = await getUserSettings(
-            crossOrganizationScope(repoRoot || defaultRepoRoot, 'notification fan-out: recipient preference read'),
-            email
+            crossOrganizationScope(
+              repoRoot || defaultRepoRoot,
+              'notification fan-out: recipient preference read',
+            ),
+            email,
           );
           level = settings?.notifications?.defaultLevel || 'participating';
         } catch {
@@ -163,7 +186,7 @@ async function resolveDeckActivityRecipients({ repoRoot, presentation, actor, sc
       // Deck activity is a 'participating'-grade signal: owners on the default
       // level get it, mute / mentions_only do not.
       return levelAllows(level, 'participating') ? email : null;
-    })
+    }),
   );
   return resolved.filter(Boolean);
 }
@@ -181,12 +204,24 @@ async function resolveDeckActivityRecipients({ repoRoot, presentation, actor, sc
  * @param {number} options.slideCount - Slides added in this save.
  * @param {import('../storage/scope.js').StorageScope} options.scope - the caller's storage scope
  */
-export async function notifyDeckActivity({ repoRoot, presentation, actor, slideCount, scope }) {
+export async function notifyDeckActivity({
+  repoRoot,
+  presentation,
+  actor,
+  slideCount,
+  scope,
+}) {
   try {
     if (!presentation?.id || !actor?.email) return;
-    const added = Number.isInteger(slideCount) && slideCount > 0 ? slideCount : 1;
+    const added =
+      Number.isInteger(slideCount) && slideCount > 0 ? slideCount : 1;
 
-    const recipients = await resolveDeckActivityRecipients({ repoRoot, presentation, actor, scope });
+    const recipients = await resolveDeckActivityRecipients({
+      repoRoot,
+      presentation,
+      actor,
+      scope,
+    });
     if (recipients.length === 0) return;
 
     const actorEmail = normalizeEmail(actor?.email) || null;
@@ -200,11 +235,15 @@ export async function notifyDeckActivity({ repoRoot, presentation, actor, slideC
           recipientEmail,
           presentation.id,
           actorEmail,
-          since
+          since,
         );
         const prevCount = Number(existing?.data?.slideCount) || 0;
         const count = prevCount + added;
-        const input = buildDeckActivityNotificationInput({ presentation, actor, count });
+        const input = buildDeckActivityNotificationInput({
+          presentation,
+          actor,
+          count,
+        });
 
         let notification = null;
         if (existing) {
@@ -212,24 +251,30 @@ export async function notifyDeckActivity({ repoRoot, presentation, actor, slideC
             scope,
             existing.id,
             recipientEmail,
-            { title: input.title, body: input.body, data: input.data }
+            { title: input.title, body: input.body, data: input.data },
           );
           notification = res?.ok ? res.notification : null;
         } else {
-          const res = await createNotification(scope, { ...input, userEmail: recipientEmail });
+          const res = await createNotification(scope, {
+            ...input,
+            userEmail: recipientEmail,
+          });
           notification = res?.ok ? res.notification : null;
         }
 
         if (notification) {
-          broadcastToUser(recipientEmail, NotificationEventTypes.NEW, notification);
+          broadcastToUser(
+            recipientEmail,
+            NotificationEventTypes.NEW,
+            notification,
+          );
           const unreadCount = await getUnreadCount(scope, recipientEmail);
-          broadcastToUser(recipientEmail, NotificationEventTypes.COUNTS, { unreadCount });
+          broadcastToUser(recipientEmail, NotificationEventTypes.COUNTS, {
+            unreadCount,
+          });
         }
       } catch (e) {
-        log.warn(
-          `notification failed to=${recipientEmail}:`,
-          e?.message || e
-        );
+        log.warn(`notification failed to=${recipientEmail}:`, e?.message || e);
       }
     }
   } catch (e) {

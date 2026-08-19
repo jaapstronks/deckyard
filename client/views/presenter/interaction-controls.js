@@ -10,7 +10,8 @@ import {
 // module used to answer both questions with its own list of four type names —
 // one of nine copies. See shared/slide-types/runtime.js.
 const isInteractionSlideType = (type) => isLiveSlideType(type);
-const interactionTypeFromSlideType = (type) => liveInteractionKind(type) || null;
+const interactionTypeFromSlideType = (type) =>
+  liveInteractionKind(type) || null;
 
 export function createPresenterInteractionControls({
   h,
@@ -30,15 +31,22 @@ export function createPresenterInteractionControls({
     class: 'btn btn-secondary',
     text: t('presenter.interaction.download', 'Download'),
     disabled: true,
-    title: t('presenter.interaction.downloadTitle', 'Download feedback (CSV) for this slide'),
+    title: t(
+      'presenter.interaction.downloadTitle',
+      'Download feedback (CSV) for this slide',
+    ),
     onclick: () => {
       const cur = getCurrentSlide?.() || null;
       const sessionId = getSessionId?.() || null;
-      if (!sessionId || !cur || interactionTypeFromSlideType(cur.type) !== 'feedback')
+      if (
+        !sessionId ||
+        !cur ||
+        interactionTypeFromSlideType(cur.type) !== 'feedback'
+      )
         return;
       try {
         const url = `/api/live-sessions/${encodeURIComponent(
-          sessionId
+          sessionId,
         )}/feedback/${encodeURIComponent(cur.id)}.csv`;
         window.open(url, '_blank', 'noopener,noreferrer');
       } catch {
@@ -58,9 +66,9 @@ export function createPresenterInteractionControls({
       try {
         await api(
           `/api/live-sessions/${encodeURIComponent(
-            sessionId
+            sessionId,
           )}/interactions/${encodeURIComponent(cur.id)}/open`,
-          { method: 'POST', body: '{}' }
+          { method: 'POST', body: '{}' },
         );
       } catch {
         // ignore
@@ -79,9 +87,9 @@ export function createPresenterInteractionControls({
       try {
         await api(
           `/api/live-sessions/${encodeURIComponent(
-            sessionId
+            sessionId,
           )}/interactions/${encodeURIComponent(cur.id)}/close`,
-          { method: 'POST', body: '{}' }
+          { method: 'POST', body: '{}' },
         );
       } catch {
         // ignore
@@ -97,18 +105,21 @@ export function createPresenterInteractionControls({
       const cur = getCurrentSlide?.() || null;
       const sessionId = getSessionId?.() || null;
       if (!sessionId || !cur || !isInteractionSlideType(cur.type)) return;
-      if (!(await confirmModal(h, document.body, {
-        title: t('presenter.interaction.reset', 'Reset'),
-        message: t('presenter.interaction.resetConfirm', 'Reset results?'),
-        confirmLabel: t('presenter.interaction.reset', 'Reset'),
-        danger: true,
-      }))) return;
+      if (
+        !(await confirmModal(h, document.body, {
+          title: t('presenter.interaction.reset', 'Reset'),
+          message: t('presenter.interaction.resetConfirm', 'Reset results?'),
+          confirmLabel: t('presenter.interaction.reset', 'Reset'),
+          danger: true,
+        }))
+      )
+        return;
       try {
         await api(
           `/api/live-sessions/${encodeURIComponent(
-            sessionId
+            sessionId,
           )}/interactions/${encodeURIComponent(cur.id)}/reset`,
-          { method: 'POST', body: '{}' }
+          { method: 'POST', body: '{}' },
         );
       } catch {
         // ignore
@@ -121,7 +132,7 @@ export function createPresenterInteractionControls({
     feedbackDownloadBtn,
     pollOpenBtn,
     pollCloseBtn,
-    pollResetBtn
+    pollResetBtn,
   );
 
   const sync = () => {
@@ -133,31 +144,42 @@ export function createPresenterInteractionControls({
     pollOpenBtn.disabled = !(sessionId && isInteractive);
     pollCloseBtn.disabled = !(sessionId && isInteractive);
     pollResetBtn.disabled = !(sessionId && isInteractive);
-    feedbackDownloadBtn.disabled = !(sessionId && interactionType === 'feedback');
+    feedbackDownloadBtn.disabled = !(
+      sessionId && interactionType === 'feedback'
+    );
     if (!sessionId || !isInteractive || !cur) {
       interactionText.textContent = '';
       return;
     }
     const st = getInteractionStateBySlideId?.(cur.id) || null;
-    const open = st?.open != null ? !!st.open : String(st?.status || '') !== 'closed';
+    const open =
+      st?.open != null ? !!st.open : String(st?.status || '') !== 'closed';
     const total = Math.max(0, Number(st?.total || 0) || 0);
     const state = open
       ? t('presenter.interaction.stateOpen', 'open')
       : t('presenter.interaction.stateClosed', 'closed');
     interactionText.textContent =
       interactionType === 'feedback'
-        ? t('presenter.interaction.feedbackStatus', 'Feedback: {state} · {total} responses', {
-            state,
-            total,
-          })
-        : t('presenter.interaction.voteStatus', '{label}: {state} · {total} votes', {
-            label:
-              interactionType === 'likert'
-                ? t('presenter.interaction.likert', 'Likert')
-                : t('presenter.interaction.poll', 'Poll'),
-            state,
-            total,
-          });
+        ? t(
+            'presenter.interaction.feedbackStatus',
+            'Feedback: {state} · {total} responses',
+            {
+              state,
+              total,
+            },
+          )
+        : t(
+            'presenter.interaction.voteStatus',
+            '{label}: {state} · {total} votes',
+            {
+              label:
+                interactionType === 'likert'
+                  ? t('presenter.interaction.likert', 'Likert')
+                  : t('presenter.interaction.poll', 'Poll'),
+              state,
+              total,
+            },
+          );
   };
 
   return {

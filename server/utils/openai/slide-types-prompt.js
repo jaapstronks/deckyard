@@ -17,7 +17,10 @@
 import { SLIDE_TYPES } from '../../../shared/slide-types.js';
 import { SLIDE_TYPE_CATALOG } from '../ai/slide-type-catalog.js';
 import { getSlideTypeExamples } from '../ai/slide-catalog/examples.js';
-import { isAgentOptOut, deriveAgentSchema } from '../ai/slide-catalog/agent-catalog.js';
+import {
+  isAgentOptOut,
+  deriveAgentSchema,
+} from '../ai/slide-catalog/agent-catalog.js';
 
 function stableSlideTypeEntries() {
   return Object.entries(SLIDE_TYPES || {});
@@ -114,7 +117,11 @@ export const MANUAL_EXAMPLES = {
       option3: 'Neutral',
       option4: 'Agree',
       option5: 'Strongly agree',
-      option6: '', option7: '', option8: '', option9: '', option10: '',
+      option6: '',
+      option7: '',
+      option8: '',
+      option9: '',
+      option10: '',
       background: 'lime',
     },
   }),
@@ -271,7 +278,7 @@ function compactAgentSchema(schema) {
         : '';
       lines.push(
         `- ${key}: array[${fieldDef.minItems || 1}-${fieldDef.maxItems || '?'}]` +
-          `${itemFields ? ` of { ${itemFields} }` : ''}`
+          `${itemFields ? ` of { ${itemFields} }` : ''}`,
       );
     } else if (fieldDef.type === 'enum') {
       lines.push(`- ${key}: enum = ${(fieldDef.options || []).join('|')}`);
@@ -289,9 +296,13 @@ export function buildSlideTypesPrompt({
   customSlideTypes = [],
 } = {}) {
   const lines = [];
-  const disabled = new Set(Array.isArray(disabledSlideTypes) ? disabledSlideTypes : []);
+  const disabled = new Set(
+    Array.isArray(disabledSlideTypes) ? disabledSlideTypes : [],
+  );
 
-  lines.push('SLIDE TYPE CATALOG (use exact "type" strings; content must match the schemas):');
+  lines.push(
+    'SLIDE TYPE CATALOG (use exact "type" strings; content must match the schemas):',
+  );
   lines.push('');
 
   for (const [type, def] of stableSlideTypeEntries()) {
@@ -341,10 +352,15 @@ export function buildSlideTypesPrompt({
       } else {
         // Last resort: defaults
         lines.push('JSON example (based on defaults):');
-        lines.push(jsonExample({
-          type,
-          content: def?.defaults && typeof def.defaults === 'object' ? def.defaults : {},
-        }));
+        lines.push(
+          jsonExample({
+            type,
+            content:
+              def?.defaults && typeof def.defaults === 'object'
+                ? def.defaults
+                : {},
+          }),
+        );
       }
     }
 
@@ -372,15 +388,20 @@ export function buildSlideTypesPrompt({
         lines.push(...schemaLines);
       }
       lines.push('JSON example (based on defaults):');
-      lines.push(jsonExample({
-        type: typeKey,
-        content: ct.defaults && typeof ct.defaults === 'object' ? ct.defaults : {},
-      }));
+      lines.push(
+        jsonExample({
+          type: typeKey,
+          content:
+            ct.defaults && typeof ct.defaults === 'object' ? ct.defaults : {},
+        }),
+      );
       lines.push('');
     }
   }
 
-  lines.push('IMPORTANT: Do NOT output "follow-invite-slide"; the app manages that automatically.');
+  lines.push(
+    'IMPORTANT: Do NOT output "follow-invite-slide"; the app manages that automatically.',
+  );
 
   return lines.join('\n');
 }

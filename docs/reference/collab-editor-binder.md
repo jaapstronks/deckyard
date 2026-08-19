@@ -1,10 +1,10 @@
 # Collab editor binder (live edits in the editor)
 
-*How the editor binds to the shared Y.Doc when `COLLAB_LIVE_EDITS` is on
+_How the editor binds to the shared Y.Doc when `COLLAB_LIVE_EDITS` is on
 (phase 2, step 3 of [ADR 001](../adr/001-realtime-collaboration.md) §9).
 The doc schema/serializer and server persistence are covered in
 [collab-deck-doc.md](collab-deck-doc.md); presence in
-[collab-presence.md](collab-presence.md).*
+[collab-presence.md](collab-presence.md)._
 
 ## Design: one seam, two directions
 
@@ -46,7 +46,7 @@ these paths is untouched:
   controller's `markDirty` routes into the binder instead of the save
   manager, so the saveManager never sees a dirty state and never PUTs;
   persistence is the server's debounced `onStoreDocument`. The topbar chip
-  shows *Saved* after each edit (or *Unsaved changes* while the socket is
+  shows _Saved_ after each edit (or _Unsaved changes_ while the socket is
   down — edits wait in the local doc and sync on reconnect).
 - **Undo/redo**: `Y.UndoManager` scoped to the slides array + meta map with
   `trackedOrigins` = the binder's local origin — undo reverts **your own**
@@ -74,7 +74,7 @@ these paths is untouched:
 - **Different fields / slides / items**: merge cleanly, including two people
   typing in different fields of the same slide.
 - **Same field, both mid-edit**: the CRDT merges at character level, but the
-  editor's inputs hold their whole value, so the *focused* user's next
+  editor's inputs hold their whole value, so the _focused_ user's next
   keystroke overwrites remote characters in that one field — field-level
   last-writer-wins while focused. This is the accepted step-3 fallback; a
   true caret-mapped `Y.Text` ↔ contenteditable binding can replace it later
@@ -107,9 +107,9 @@ before any exchange):
 
 - **Delete vs edit of the same slide** → the delete wins; the edit vanishes
   with the slide. The inline (WYSIWYG) editor commits to the slide the edit
-  *started* on (pinned by id): when that slide was deleted remotely
+  _started_ on (pinned by id): when that slide was deleted remotely
   mid-edit, the commit is dropped and the canvas repaints — without the id
-  pin, the commit would resolve the *current* selection (which fell back to
+  pin, the commit would resolve the _current_ selection (which fell back to
   another slide) and write the text into the wrong slide. Found and fixed
   in the step-5 browser verification.
 - **Move vs delete of the same slide** → the move wins: the concurrent

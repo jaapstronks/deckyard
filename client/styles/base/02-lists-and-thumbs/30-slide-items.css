@@ -70,7 +70,8 @@
     .presenter-shell,
     .viewer-shell
   )
-  .slide-item .thumb.thumb-mini {
+  .slide-item
+  .thumb.thumb-mini {
   position: relative;
   width: 100%;
   /* Use dynamic scale from JS, fallback to default for 200px panel width: (200-16-2-15)/1600 = 0.1044 */
@@ -86,7 +87,8 @@
     .presenter-shell,
     .viewer-shell
   )
-  .thumb.thumb-mini .slide {
+  .thumb.thumb-mini
+  .slide {
   pointer-events: none;
 }
 

@@ -9,7 +9,7 @@ export async function renderForgotPassword(root, { nav } = {}) {
     title: t('forgotPassword.title', 'Reset your password'),
     subtitle: t(
       'forgotPassword.help',
-      "Enter your email address and we'll send you a link to reset your password."
+      "Enter your email address and we'll send you a link to reset your password.",
     ),
   });
 
@@ -49,7 +49,7 @@ export async function renderForgotPassword(root, { nav } = {}) {
     if (!e || !e.includes('@')) {
       status.textContent = t(
         'forgotPassword.error',
-        'Please enter a valid email address.'
+        'Please enter a valid email address.',
       );
       status.className = 'auth-status is-error';
       return;
@@ -74,14 +74,16 @@ export async function renderForgotPassword(root, { nav } = {}) {
         class: 'auth-status is-success',
         text: t(
           'forgotPassword.success',
-          'If an account exists with this email, a reset link has been sent. Check your inbox.'
+          'If an account exists with this email, a reset link has been sent. Check your inbox.',
         ),
       });
       successMsg.style.textAlign = 'left';
       successMsg.style.marginBottom = 'var(--ps-space-4)';
       form.append(successMsg, backLink);
     } catch (err) {
-      status.textContent = err.message || t('forgotPassword.error', 'Something went wrong. Please try again.');
+      status.textContent =
+        err.message ||
+        t('forgotPassword.error', 'Something went wrong. Please try again.');
       status.className = 'auth-status is-error';
       busyManager.setBusy(false);
     }

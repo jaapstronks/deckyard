@@ -50,15 +50,22 @@ export function createPresenterAutoAdvanceUi({
   getDeck,
 }) {
   // Total deck time in progress area (visible when auto-advance is enabled)
-  const progressTimeEl = h('div', { class: 'presenter-progress-time', text: '' });
+  const progressTimeEl = h('div', {
+    class: 'presenter-progress-time',
+    text: '',
+  });
   if (autoAdvanceEnabled) {
     progress.append(progressTimeEl);
   }
   const syncProgressTime = () => {
     if (!autoAdvanceEnabled) return;
     const deckCtl = getDeck();
-    const slides = deckCtl?.getState?.()?.presentation?.slides || pres?.slides || [];
-    const { formatted } = calculateDeckTime(slides, autoAdvanceCfg?.intervalSeconds || DEFAULT_ADVANCE_INTERVAL_SECONDS);
+    const slides =
+      deckCtl?.getState?.()?.presentation?.slides || pres?.slides || [];
+    const { formatted } = calculateDeckTime(
+      slides,
+      autoAdvanceCfg?.intervalSeconds || DEFAULT_ADVANCE_INTERVAL_SECONDS,
+    );
     const st = deckCtl?.getState?.();
     const idx = (st?.idx ?? 0) + 1;
     const total = st?.slidesCount ?? slides.length;
@@ -70,7 +77,9 @@ export function createPresenterAutoAdvanceUi({
   const autoAdvanceBarFill = h('div', { class: 'auto-advance-bar-fill' });
   autoAdvanceBarEl.append(autoAdvanceBarFill);
   // Only show bar if enabled + showCountdown
-  autoAdvanceBarEl.hidden = !(autoAdvanceEnabled && autoAdvanceCfg?.showCountdown !== false);
+  autoAdvanceBarEl.hidden = !(
+    autoAdvanceEnabled && autoAdvanceCfg?.showCountdown !== false
+  );
   stageWrap.append(autoAdvanceBarEl);
 
   const autoAdvance = createAutoAdvance({
@@ -100,13 +109,15 @@ export function createPresenterAutoAdvanceUi({
   const syncAutoAdvanceBtn = () => {
     const s = autoAdvance.getState();
     if (autoAdvanceMode === 'pacing') {
-      autoAdvanceBtn.textContent = s === 'running'
-        ? t('presenter.pacingPause', 'Pause timer')
-        : t('presenter.pacingResume', 'Resume timer');
+      autoAdvanceBtn.textContent =
+        s === 'running'
+          ? t('presenter.pacingPause', 'Pause timer')
+          : t('presenter.pacingResume', 'Resume timer');
     } else {
-      autoAdvanceBtn.textContent = s === 'running'
-        ? t('presenter.autoAdvancePause', 'Pause auto')
-        : t('presenter.autoAdvanceResume', 'Resume auto');
+      autoAdvanceBtn.textContent =
+        s === 'running'
+          ? t('presenter.autoAdvancePause', 'Pause auto')
+          : t('presenter.autoAdvanceResume', 'Resume auto');
     }
     autoAdvanceBtn.classList.toggle('is-active', s === 'running');
   };
@@ -116,13 +127,18 @@ export function createPresenterAutoAdvanceUi({
 
   // Per-slide duration lookup: reads live from deck state
   const getSlideInterval = (idx) => {
-    const slides = getDeck()?.getState?.()?.presentation?.slides || pres?.slides || [];
-    return getSlideEffectiveDuration(slides[idx], autoAdvanceCfg?.intervalSeconds || DEFAULT_ADVANCE_INTERVAL_SECONDS);
+    const slides =
+      getDeck()?.getState?.()?.presentation?.slides || pres?.slides || [];
+    return getSlideEffectiveDuration(
+      slides[idx],
+      autoAdvanceCfg?.intervalSeconds || DEFAULT_ADVANCE_INTERVAL_SECONDS,
+    );
   };
 
   if (autoAdvanceEnabled) {
     autoAdvance.configure({
-      intervalSeconds: autoAdvanceCfg?.intervalSeconds || DEFAULT_ADVANCE_INTERVAL_SECONDS,
+      intervalSeconds:
+        autoAdvanceCfg?.intervalSeconds || DEFAULT_ADVANCE_INTERVAL_SECONDS,
       loop: !!autoAdvanceCfg?.loop,
       mode: autoAdvanceMode,
       getSlideInterval,

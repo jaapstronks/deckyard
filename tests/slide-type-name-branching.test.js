@@ -41,7 +41,7 @@ test('the derivation actually sees the codebase', () => {
   // — all of them would pass while guarding nothing.
   assert.ok(
     CORE_TYPE_NAMES.length > 30,
-    `expected the core registry, got ${CORE_TYPE_NAMES.length} names`
+    `expected the core registry, got ${CORE_TYPE_NAMES.length} names`,
   );
   // A floor against a broken scan, not a coverage target: the count goes DOWN
   // as facts move into the type directories (the point of A7.1), so keep it
@@ -49,12 +49,12 @@ test('the derivation actually sees the codebase', () => {
   // that silently returns (near-)nothing.
   assert.ok(
     derived.size > 20,
-    `expected dozens of name-branching modules, got ${derived.size}`
+    `expected dozens of name-branching modules, got ${derived.size}`,
   );
   for (const [file, names] of derived) {
     assert.ok(
       names.length >= BRANCH_THRESHOLD,
-      `${file}: derived with ${names.length} names, below the threshold`
+      `${file}: derived with ${names.length} names, below the threshold`,
     );
   }
 });
@@ -69,12 +69,14 @@ test('every module that branches on slide-type names is accounted for', () => {
     [],
     `these modules branch on ${BRANCH_THRESHOLD}+ slide-type names and are not in ` +
       `the inventory:\n` +
-      unaccounted.map((f) => `  - ${f} (${derived.get(f).length} types)`).join('\n') +
+      unaccounted
+        .map((f) => `  - ${f} (${derived.get(f).length} types)`)
+        .join('\n') +
       `\n\nAdd an entry in tests/helpers/slide-type-name-branching.js saying what ` +
       `kind of\nper-type knowledge it carries and why that is safe. If it is a ` +
       `table every type\nowes a row in, it belongs in the companion matrix too.\n` +
       `Nothing crashes without this — a type just quietly misses a place. That is ` +
-      `why\nit is a test.`
+      `why\nit is a test.`,
   );
 });
 
@@ -88,7 +90,7 @@ test('no inventory entry has gone stale', () => {
     [],
     `these files no longer branch on ${BRANCH_THRESHOLD}+ type names (moved, ` +
       `deleted, or the\nknowledge was derived away — which is the good outcome). ` +
-      `Drop them from the\ninventory:\n${stale.map((f) => `  - ${f}`).join('\n')}`
+      `Drop them from the\ninventory:\n${stale.map((f) => `  - ${f}`).join('\n')}`,
   );
 });
 
@@ -101,14 +103,16 @@ test('every table-kind module is gated by the companion matrix', () => {
     if (!entry.companion) {
       problems.push(`${file}: kind 'table' without a companion id`);
     } else if (!COMPANION_IDS.has(entry.companion)) {
-      problems.push(`${file}: companion '${entry.companion}' is not in the matrix`);
+      problems.push(
+        `${file}: companion '${entry.companion}' is not in the matrix`,
+      );
     }
   }
   assert.deepEqual(
     problems,
     [],
     `a per-type table has to be gated by tests/helpers/slide-type-companions.js, ` +
-      `or it is\nexactly the hole this test is named after:\n${problems.join('\n')}`
+      `or it is\nexactly the hole this test is named after:\n${problems.join('\n')}`,
   );
 });
 
@@ -118,10 +122,13 @@ test('the inventory is a worklist, not a hiding place', () => {
     assert.ok(kinds.has(entry.kind), `${file}: unknown kind '${entry.kind}'`);
     assert.ok(
       typeof entry.why === 'string' && entry.why.length > 60,
-      `${file}: needs a real reason, not a label`
+      `${file}: needs a real reason, not a label`,
     );
     if (entry.kind === KINDS.generated || entry.gate) {
-      assert.ok(entry.gate, `${file}: generated code names the script that produces it`);
+      assert.ok(
+        entry.gate,
+        `${file}: generated code names the script that produces it`,
+      );
     }
   }
 });

@@ -10,8 +10,15 @@
 
 import { sandboxEnabled } from '../../config/sandbox.js';
 import { isMultiOrgEnabled } from '../../config/features.js';
-import { canComment, canWrite, canManage } from '../../../shared/constants/permissions.js';
-import { hasIdentity, isOwnerOrCreator } from '../../../shared/identity-match.js';
+import {
+  canComment,
+  canWrite,
+  canManage,
+} from '../../../shared/constants/permissions.js';
+import {
+  hasIdentity,
+  isOwnerOrCreator,
+} from '../../../shared/identity-match.js';
 
 /**
  * Normalize presentation visibility to either 'organization' or 'private'.
@@ -72,12 +79,17 @@ export function isSameOrganization(user, pres) {
 /**
  * Check if a user can read a presentation.
  */
-export function canReadPresentation({ user, pres, collaboratorPermission } = {}) {
+export function canReadPresentation({
+  user,
+  pres,
+  collaboratorPermission,
+} = {}) {
   if (isUnrestricted(user)) return true;
   if (!pres || typeof pres !== 'object') return false;
   const visibility = normalizePresentationVisibility(pres?.visibility);
   if (!hasIdentity(user)) return false;
-  if (visibility === 'organization' && isSameOrganization(user, pres)) return true;
+  if (visibility === 'organization' && isSameOrganization(user, pres))
+    return true;
 
   // Owner or creator can read
   if (isOwnerOrCreator(user, pres)) return true;
@@ -91,7 +103,11 @@ export function canReadPresentation({ user, pres, collaboratorPermission } = {})
 /**
  * Check if a user can write/edit a presentation.
  */
-export function canWritePresentation({ user, pres, collaboratorPermission } = {}) {
+export function canWritePresentation({
+  user,
+  pres,
+  collaboratorPermission,
+} = {}) {
   if (isUnrestricted(user)) return true;
   // Sandbox stance: organization-visible decks are curated seed decks and must be read-only for guests.
   const visibility = normalizePresentationVisibility(pres?.visibility);
@@ -105,7 +121,8 @@ export function canWritePresentation({ user, pres, collaboratorPermission } = {}
   if (pres?.isViewOnly) return false;
 
   // Organization-visible presentations: any user of that same organization can write
-  if (visibility === 'organization' && isSameOrganization(user, pres)) return true;
+  if (visibility === 'organization' && isSameOrganization(user, pres))
+    return true;
 
   // Collaborator with edit or admin permission can write
   if (canWrite(collaboratorPermission)) return true;
@@ -126,7 +143,11 @@ export function canDeletePresentation({ user, pres } = {}) {
 /**
  * Check if a user can change presentation visibility.
  */
-export function canChangePresentationVisibility({ user, pres, nextVisibility } = {}) {
+export function canChangePresentationVisibility({
+  user,
+  pres,
+  nextVisibility,
+} = {}) {
   if (!pres || typeof pres !== 'object') return false;
   if (!hasIdentity(user)) return false;
 
@@ -186,7 +207,11 @@ export function isPresentationAuthor({ user, pres } = {}) {
  * Check if a user can manage collaborators on a presentation.
  * Allowed for: owner, creator, or collaborator with 'admin' permission.
  */
-export function canManageCollaborators({ user, pres, collaboratorPermission } = {}) {
+export function canManageCollaborators({
+  user,
+  pres,
+  collaboratorPermission,
+} = {}) {
   if (isUnrestricted(user)) return true;
   if (!pres || typeof pres !== 'object') return false;
   if (!hasIdentity(user)) return false;
@@ -201,7 +226,11 @@ export function canManageCollaborators({ user, pres, collaboratorPermission } = 
 /**
  * Check if a user can comment on a presentation.
  */
-export function canCommentOnPresentation({ user, pres, collaboratorPermission } = {}) {
+export function canCommentOnPresentation({
+  user,
+  pres,
+  collaboratorPermission,
+} = {}) {
   if (isUnrestricted(user)) return true;
   if (!pres || typeof pres !== 'object') return false;
   if (!hasIdentity(user)) return false;
@@ -211,7 +240,8 @@ export function canCommentOnPresentation({ user, pres, collaboratorPermission } 
 
   // Organization-visible presentations: any user of that same organization can comment
   const visibility = normalizePresentationVisibility(pres?.visibility);
-  if (visibility === 'organization' && isSameOrganization(user, pres)) return true;
+  if (visibility === 'organization' && isSameOrganization(user, pres))
+    return true;
 
   // Collaborator with comment or edit permission can comment
   if (canComment(collaboratorPermission)) return true;
@@ -224,7 +254,11 @@ export function canCommentOnPresentation({ user, pres, collaboratorPermission } 
  * Used by the client to determine which UI to show (editor vs viewer).
  * @returns {'edit' | 'comment' | 'view'}
  */
-export function getEffectivePermission({ user, pres, collaboratorPermission } = {}) {
+export function getEffectivePermission({
+  user,
+  pres,
+  collaboratorPermission,
+} = {}) {
   if (isUnrestricted(user)) return 'edit';
   if (!pres || typeof pres !== 'object') return 'view';
 

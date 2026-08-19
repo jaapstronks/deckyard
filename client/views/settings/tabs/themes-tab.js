@@ -40,7 +40,7 @@ export function createThemesTab({ user }) {
     class: 'settings-tab-description',
     text: t(
       'settings.themes.description',
-      'Create and manage custom themes for your organization. Custom themes define colors, fonts, and logos for presentations.'
+      'Create and manage custom themes for your organization. Custom themes define colors, fonts, and logos for presentations.',
     ),
   });
 
@@ -49,7 +49,9 @@ export function createThemesTab({ user }) {
   // These write app settings (defaultThemeId / enabledThemes) that govern the
   // creation flow's theme picker.
   // ============================================================
-  const workspaceCard = h('div', { class: 'stack editor-card themes-workspace-card' });
+  const workspaceCard = h('div', {
+    class: 'stack editor-card themes-workspace-card',
+  });
   const workspaceTitle = h('h3', {
     class: 'field-label',
     text: t('settings.themes.workspace.title', 'Theme picker'),
@@ -58,7 +60,7 @@ export function createThemesTab({ user }) {
     class: 'help',
     text: t(
       'settings.themes.workspace.hint',
-      'Set the theme new presentations start with, and which themes appear in the picker up front. Hidden themes stay reachable behind "Show all themes".'
+      'Set the theme new presentations start with, and which themes appear in the picker up front. Hidden themes stay reachable behind "Show all themes".',
     ),
   });
 
@@ -83,7 +85,7 @@ export function createThemesTab({ user }) {
     class: 'help',
     text: t(
       'settings.themes.workspace.visibleHint',
-      'Check the themes shown up front. The default theme is always visible. With everything checked, new themes are visible automatically.'
+      'Check the themes shown up front. The default theme is always visible. With everything checked, new themes are visible automatically.',
     ),
   });
   const visibleList = h('div', { class: 'themes-visible-list stack' });
@@ -94,14 +96,16 @@ export function createThemesTab({ user }) {
     type: 'button',
     text: t('common.save', 'Save'),
   });
-  const workspaceActions = h('div', { class: 'row is-end' }, [workspaceSaveBtn]);
+  const workspaceActions = h('div', { class: 'row is-end' }, [
+    workspaceSaveBtn,
+  ]);
 
   workspaceCard.append(
     workspaceTitle,
     workspaceHint,
     defaultField,
     visibleField,
-    workspaceActions
+    workspaceActions,
   );
 
   // State for the workspace card
@@ -112,13 +116,17 @@ export function createThemesTab({ user }) {
   function renderWorkspaceControls(defaultThemeId, enabledThemes) {
     defaultSelect.innerHTML = '';
     for (const th of allThemes) {
-      defaultSelect.append(h('option', { value: th.id, text: th.label || th.id }));
+      defaultSelect.append(
+        h('option', { value: th.id, text: th.label || th.id }),
+      );
     }
     const hasDefault = allThemes.some((th) => th.id === defaultThemeId);
-    defaultSelect.value = hasDefault ? defaultThemeId : (allThemes[0]?.id || '');
+    defaultSelect.value = hasDefault ? defaultThemeId : allThemes[0]?.id || '';
 
     // Empty allowlist means "all visible".
-    const allowSet = new Set((enabledThemes || []).map((id) => String(id).toLowerCase()));
+    const allowSet = new Set(
+      (enabledThemes || []).map((id) => String(id).toLowerCase()),
+    );
     const allVisible = allowSet.size === 0;
 
     visibleList.innerHTML = '';
@@ -127,14 +135,16 @@ export function createThemesTab({ user }) {
       const isDefault = th.id === defaultSelect.value;
       const checkbox = h('input', {
         type: 'checkbox',
-        checked: allVisible || allowSet.has(String(th.id).toLowerCase()) || isDefault,
+        checked:
+          allVisible || allowSet.has(String(th.id).toLowerCase()) || isDefault,
       });
       // The default theme is always visible and can't be unchecked.
       checkbox.disabled = isDefault;
-      const row = h('label', { class: 'row is-center gap-2 themes-visible-row' }, [
-        checkbox,
-        h('span', { text: th.label || th.id }),
-      ]);
+      const row = h(
+        'label',
+        { class: 'row is-center gap-2 themes-visible-row' },
+        [checkbox, h('span', { text: th.label || th.id })],
+      );
       visibleList.append(row);
       visibleCheckboxes.set(th.id, checkbox);
     }
@@ -159,7 +169,8 @@ export function createThemesTab({ user }) {
       }
       // If everything is checked, store an empty allowlist so future themes
       // stay visible by default.
-      const enabledThemes = checkedIds.length === allThemes.length ? [] : checkedIds;
+      const enabledThemes =
+        checkedIds.length === allThemes.length ? [] : checkedIds;
 
       await updateAppSettings({
         defaultThemeId: defaultSelect.value || '',
@@ -183,7 +194,7 @@ export function createThemesTab({ user }) {
       ]);
       allThemes = Array.isArray(themesResp?.themes) ? themesResp.themes : [];
       const defaultThemeId = String(
-        app?.defaultThemeId || themesResp?.defaultThemeId || ''
+        app?.defaultThemeId || themesResp?.defaultThemeId || '',
       );
       renderWorkspaceControls(defaultThemeId, app?.enabledThemes || []);
     } catch (err) {
@@ -194,7 +205,9 @@ export function createThemesTab({ user }) {
   // Theme list container
   const themeListSection = h('div', { class: 'themes-list-section' });
 
-  const listHeader = h('div', { class: 'themes-list-header row is-between is-center' });
+  const listHeader = h('div', {
+    class: 'themes-list-header row is-between is-center',
+  });
   const listTitle = h('h3', {
     class: 'field-label',
     text: t('settings.themes.customThemes', 'Custom Themes'),
@@ -215,7 +228,7 @@ export function createThemesTab({ user }) {
       class: 'help',
       text: t(
         'settings.themes.noThemesHint',
-        'Create a custom theme to define your organization\'s brand colors and fonts.'
+        "Create a custom theme to define your organization's brand colors and fonts.",
       ),
     }),
   ]);
@@ -226,7 +239,13 @@ export function createThemesTab({ user }) {
   const editorSection = h('div', { class: 'theme-editor-section is-hidden' });
 
   // Assemble container
-  container.append(title, description, workspaceCard, themeListSection, editorSection);
+  container.append(
+    title,
+    description,
+    workspaceCard,
+    themeListSection,
+    editorSection,
+  );
 
   // State
   let themes = [];
@@ -279,7 +298,9 @@ export function createThemesTab({ user }) {
 
     // Theme info
     const info = h('div', { class: 'theme-card-info' });
-    const nameRow = h('div', { class: 'theme-card-name-row row is-center gap-2' });
+    const nameRow = h('div', {
+      class: 'theme-card-name-row row is-center gap-2',
+    });
     const name = h('span', { class: 'theme-card-name', text: theme.label });
     nameRow.append(name);
 
@@ -332,7 +353,9 @@ export function createThemesTab({ user }) {
     const existingMenu = document.querySelector('.theme-context-menu');
     if (existingMenu) existingMenu.remove();
 
-    const menu = h('div', { class: 'theme-context-menu dropdown-menu is-open' });
+    const menu = h('div', {
+      class: 'theme-context-menu dropdown-menu is-open',
+    });
 
     // Single teardown: removes the node AND the outside-click listener. Every
     // item calls this, so clicking one doesn't leave the pointerdown handler
@@ -415,8 +438,12 @@ export function createThemesTab({ user }) {
    */
   async function setDefaultTheme(themeId) {
     try {
-      await api(`/api/themes/custom/${themeId}/set-default`, { method: 'POST' });
-      toast.success(t('settings.themes.setDefaultSuccess', 'Theme set as default.'));
+      await api(`/api/themes/custom/${themeId}/set-default`, {
+        method: 'POST',
+      });
+      toast.success(
+        t('settings.themes.setDefaultSuccess', 'Theme set as default.'),
+      );
       await loadThemes();
     } catch (err) {
       toast.error(String(err?.message || err));
@@ -429,7 +456,9 @@ export function createThemesTab({ user }) {
   async function clearDefaultTheme() {
     try {
       await api('/api/themes/custom/clear-default', { method: 'POST' });
-      toast.success(t('settings.themes.clearDefaultSuccess', 'Default theme cleared.'));
+      toast.success(
+        t('settings.themes.clearDefaultSuccess', 'Default theme cleared.'),
+      );
       await loadThemes();
     } catch (err) {
       toast.error(String(err?.message || err));
@@ -472,9 +501,13 @@ export function createThemesTab({ user }) {
   async function confirmDeleteTheme(theme) {
     const confirmed = await confirmModal(h, document.body, {
       title: t('common.delete', 'Delete'),
-      message: t('settings.themes.deleteConfirm', 'Delete theme "{label}"? This cannot be undone.', {
-        label: theme.label,
-      }),
+      message: t(
+        'settings.themes.deleteConfirm',
+        'Delete theme "{label}"? This cannot be undone.',
+        {
+          label: theme.label,
+        },
+      ),
       confirmLabel: t('common.delete', 'Delete'),
       danger: true,
     });

@@ -15,9 +15,19 @@ import { buildPhase2CatalogPrompt } from '../../slide-type-catalog.js';
 /**
  * Build the system prompt for Phase 2 refinement
  */
-export function buildPhase2SystemPrompt({ lang, adjacentContext, presentationContext, disabledSlideTypes, customSlideTypes, themeContext }) {
+export function buildPhase2SystemPrompt({
+  lang,
+  adjacentContext,
+  presentationContext,
+  disabledSlideTypes,
+  customSlideTypes,
+  themeContext,
+}) {
   const langLabel = lang === 'nl' ? 'DUTCH' : 'ENGLISH';
-  const catalogPrompt = buildPhase2CatalogPrompt({ disabledSlideTypes, customSlideTypes });
+  const catalogPrompt = buildPhase2CatalogPrompt({
+    disabledSlideTypes,
+    customSlideTypes,
+  });
 
   let contextSection = '';
   if (presentationContext?.title) {
@@ -119,8 +129,12 @@ export function buildThemeContextSection(themeContext) {
   const parts = [];
 
   if (themeContext.backgroundOptions?.length) {
-    parts.push(`Available slide backgrounds: ${themeContext.backgroundOptions.join(', ')}`);
-    parts.push('When a slide type supports a "background" field, choose from these options.');
+    parts.push(
+      `Available slide backgrounds: ${themeContext.backgroundOptions.join(', ')}`,
+    );
+    parts.push(
+      'When a slide type supports a "background" field, choose from these options.',
+    );
   }
 
   if (themeContext.brandColors?.length) {
@@ -128,7 +142,9 @@ export function buildThemeContextSection(themeContext) {
   }
 
   if (themeContext.hasBackgroundImages) {
-    parts.push('This theme has background image presets — image-slide and other image-capable types will look good.');
+    parts.push(
+      'This theme has background image presets — image-slide and other image-capable types will look good.',
+    );
   }
 
   if (!parts.length) return '';
@@ -150,7 +166,9 @@ export function buildPhase2UserPrompt({ slides, groupId }) {
 
   if (slides.length > 1) {
     lines.push(`GROUP ID: ${groupId}`);
-    lines.push('These slides should have consistent styling where appropriate.');
+    lines.push(
+      'These slides should have consistent styling where appropriate.',
+    );
     lines.push('');
   }
 
@@ -159,7 +177,9 @@ export function buildPhase2UserPrompt({ slides, groupId }) {
     const slide = slides[pos];
     lines.push(`--- SLIDE #${pos + 1} (originalIndex: ${slide.index}) ---`);
     lines.push(`Intent: ${slide.intent}`);
-    lines.push(`Hints: ${slide.hints.length ? slide.hints.join(', ') : 'none'}`);
+    lines.push(
+      `Hints: ${slide.hints.length ? slide.hints.join(', ') : 'none'}`,
+    );
     lines.push('Content:');
     lines.push(slide.roughContent);
     if (slide.presenterNotes) {
@@ -170,7 +190,11 @@ export function buildPhase2UserPrompt({ slides, groupId }) {
     lines.push('');
   }
 
-  lines.push('IMPORTANT: For each slide in your response, set "originalIndex" to the exact number shown above (e.g., originalIndex: ' + slides[0].index + ' for the first slide).');
+  lines.push(
+    'IMPORTANT: For each slide in your response, set "originalIndex" to the exact number shown above (e.g., originalIndex: ' +
+      slides[0].index +
+      ' for the first slide).',
+  );
 
   return lines.join('\n');
 }

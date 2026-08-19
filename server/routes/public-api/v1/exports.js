@@ -10,7 +10,10 @@ import { buildPptxBuffer } from '../../../export/pptx.js';
 import { presentationToDeck } from '../../../../shared/slide-types.js';
 import { safeFilename } from '../../../utils/filename.js';
 import { stripLiveOnlySlidesFromPresentation } from '../../../utils/public-output.js';
-import { normalizeLang, projectPresentationForLang } from '../../../utils/i18n.js';
+import {
+  normalizeLang,
+  projectPresentationForLang,
+} from '../../../utils/i18n.js';
 import { loadThemeAssets } from '../../../utils/themes.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import {
@@ -48,10 +51,16 @@ async function prepareExportContext(ctx, presentationId) {
   }
 
   if (!(await canActorAccessPresentation(pres, ctx.authedUser, 'read'))) {
-    return { ok: false, status: 403, error: 'Access denied to this presentation' };
+    return {
+      ok: false,
+      status: 403,
+      error: 'Access denied to this presentation',
+    };
   }
 
-  const projected = exportLang ? projectPresentationForLang(pres, exportLang) : pres;
+  const projected = exportLang
+    ? projectPresentationForLang(pres, exportLang)
+    : pres;
   const filteredPres = stripLiveOnlySlidesFromPresentation(projected);
   const theme = await loadThemeAssets(repoRoot, projected?.themeId);
   const langSuffix = getLangSuffix(exportLang);
@@ -75,13 +84,20 @@ async function prepareExportContext(ctx, presentationId) {
 /**
  * Send export response with appropriate headers.
  */
-async function sendExportResponse(ctx, { contentType, filename, extension, data }) {
+async function sendExportResponse(
+  ctx,
+  { contentType, filename, extension, data },
+) {
   const { res, apiKey } = ctx;
 
   const fullFilename = `${safeFilename(filename)}${extension}`;
 
   // Get rate limit headers
-  const rateLimitHeaders = await getRateLimitHeaders(apiKey.id, apiKey.tier, 'exports');
+  const rateLimitHeaders = await getRateLimitHeaders(
+    apiKey.id,
+    apiKey.tier,
+    'exports',
+  );
 
   res.writeHead(200, {
     'Content-Type': contentType,
@@ -229,7 +245,8 @@ async function handlePptxExport(ctx, id) {
     });
 
     await sendExportResponse(ctx, {
-      contentType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      contentType:
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
       filename: `${exportCtx.title}${exportCtx.langSuffix}`,
       extension: '.pptx',
       data: result.buffer,
@@ -248,36 +265,47 @@ async function handlePptxExport(ctx, id) {
 /**
  * Main handler for /api/v1/presentations/:id/export/* routes.
  */
-export const handleExports = withV1ErrorHandler('public-api-v1:exports', async (ctx) => {
-  const { req, res, url } = ctx;
+export const handleExports = withV1ErrorHandler(
+  'public-api-v1:exports',
+  async (ctx) => {
+    const { req, res, url } = ctx;
 
-  // JSON export
-  const jsonMatch = url.pathname.match(/^\/api\/v1\/presentations\/([^/]+)\/export\/json$/);
-  if (jsonMatch) {
-    if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
-    return handleJsonExport(ctx, jsonMatch[1]);
-  }
+    // JSON export
+    const jsonMatch = url.pathname.match(
+      /^\/api\/v1\/presentations\/([^/]+)\/export\/json$/,
+    );
+    if (jsonMatch) {
+      if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
+      return handleJsonExport(ctx, jsonMatch[1]);
+    }
 
-  // HTML export
-  const htmlMatch = url.pathname.match(/^\/api\/v1\/presentations\/([^/]+)\/export\/html$/);
-  if (htmlMatch) {
-    if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
-    return handleHtmlExport(ctx, htmlMatch[1]);
-  }
+    // HTML export
+    const htmlMatch = url.pathname.match(
+      /^\/api\/v1\/presentations\/([^/]+)\/export\/html$/,
+    );
+    if (htmlMatch) {
+      if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
+      return handleHtmlExport(ctx, htmlMatch[1]);
+    }
 
-  // PDF export
-  const pdfMatch = url.pathname.match(/^\/api\/v1\/presentations\/([^/]+)\/export\/pdf$/);
-  if (pdfMatch) {
-    if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
-    return handlePdfExport(ctx, pdfMatch[1]);
-  }
+    // PDF export
+    const pdfMatch = url.pathname.match(
+      /^\/api\/v1\/presentations\/([^/]+)\/export\/pdf$/,
+    );
+    if (pdfMatch) {
+      if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
+      return handlePdfExport(ctx, pdfMatch[1]);
+    }
 
-  // PPTX export
-  const pptxMatch = url.pathname.match(/^\/api\/v1\/presentations\/([^/]+)\/export\/pptx$/);
-  if (pptxMatch) {
-    if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
-    return handlePptxExport(ctx, pptxMatch[1]);
-  }
+    // PPTX export
+    const pptxMatch = url.pathname.match(
+      /^\/api\/v1\/presentations\/([^/]+)\/export\/pptx$/,
+    );
+    if (pptxMatch) {
+      if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
+      return handlePptxExport(ctx, pptxMatch[1]);
+    }
 
-  return false;
-});
+    return false;
+  },
+);

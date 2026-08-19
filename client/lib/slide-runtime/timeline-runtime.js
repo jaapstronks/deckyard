@@ -25,7 +25,7 @@ function fitTitle(titleEl) {
   const minPx = readPx(titleEl, '--timeline-title-min-px', MIN_PX_DEFAULT);
   const maxLines = Math.max(
     1,
-    readPx(titleEl, '--timeline-title-max-lines', MAX_LINES_DEFAULT)
+    readPx(titleEl, '--timeline-title-max-lines', MAX_LINES_DEFAULT),
   );
 
   // The height budget is maxLines worth of line-boxes, with a small multiplier
@@ -34,7 +34,8 @@ function fitTitle(titleEl) {
   const budgetH = (lh) => lh * maxLines * 1.1;
 
   titleEl.style.fontSize = `${maxPx}px`;
-  const lineHeight = parseFloat(getComputedStyle(titleEl).lineHeight) || maxPx * 1.15;
+  const lineHeight =
+    parseFloat(getComputedStyle(titleEl).lineHeight) || maxPx * 1.15;
   if (titleEl.scrollHeight <= budgetH(lineHeight)) return;
 
   for (let px = maxPx - 1; px >= minPx; px--) {
@@ -77,6 +78,8 @@ export function initTimelineSlides(rootEl) {
   }
 
   return () => {
-    try { ro?.disconnect(); } catch {}
+    try {
+      ro?.disconnect();
+    } catch {}
   };
 }

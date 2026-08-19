@@ -40,7 +40,7 @@ export function slideTypeLabel(type, SLIDE_TYPES) {
  */
 export function canConvertSlideTo(slide, toType, SLIDE_TYPES) {
   return getConvertibleSlideTypes(slide, { slideTypes: SLIDE_TYPES }).includes(
-    String(toType || '')
+    String(toType || ''),
   );
 }
 
@@ -66,7 +66,9 @@ export async function convertSlideWithConfirm({
 }) {
   if (!slide || !canConvertSlideTo(slide, toType, SLIDE_TYPES)) return false;
 
-  const lossy = getConversionLossyKeys(slide, toType, { slideTypes: SLIDE_TYPES });
+  const lossy = getConversionLossyKeys(slide, toType, {
+    slideTypes: SLIDE_TYPES,
+  });
   if (lossy.length) {
     const ok = await confirmModal(h, document.body, {
       title: t('editor.slide.convert', 'Convert…'),
@@ -77,7 +79,7 @@ export async function convertSlideWithConfirm({
           from: slideTypeLabel(slide.type, SLIDE_TYPES),
           to: slideTypeLabel(toType, SLIDE_TYPES),
           fields: lossy.map((k) => `- ${k}`).join('\n'),
-        }
+        },
       ),
       confirmLabel: t('editor.slide.convert', 'Convert…'),
       danger: true,

@@ -23,7 +23,10 @@ import { fileURLToPath } from 'node:url';
 
 import { sseErrorPayload, sseError } from '../server/utils/sse.js';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 
 /** Minimal writable stand-in that records everything written to the stream. */
 function fakeRes() {
@@ -41,8 +44,14 @@ function fakeRes() {
 test('sseErrorPayload carries message and nothing from the HTTP envelope', () => {
   const payload = sseErrorPayload('Conversion failed');
   assert.deepEqual(payload, { message: 'Conversion failed' });
-  assert.ok(!('ok' in payload), 'no ok field: the event name is the discriminator');
-  assert.ok(!('error' in payload), 'no error key: that slot means machine code on HTTP');
+  assert.ok(
+    !('ok' in payload),
+    'no ok field: the event name is the discriminator',
+  );
+  assert.ok(
+    !('error' in payload),
+    'no error key: that slot means machine code on HTTP',
+  );
 });
 
 test('sseErrorPayload keeps endpoint-specific extras alongside message', () => {
@@ -62,7 +71,9 @@ test('sseErrorPayload coerces a missing message rather than emitting undefined',
 test('the documented upgrade path is additive, not a rename', () => {
   // A future consumer that needs to branch gets `error` NEXT TO `message`, with
   // the HTTP meaning. `message` must survive that, or clients break.
-  const payload = sseErrorPayload('Notion session expired', { error: 'notion_unauthorized' });
+  const payload = sseErrorPayload('Notion session expired', {
+    error: 'notion_unauthorized',
+  });
   assert.equal(payload.message, 'Notion session expired');
   assert.equal(payload.error, 'notion_unauthorized');
 });
@@ -74,7 +85,10 @@ test('sseError writes a well-formed SSE frame on the error event', () => {
   const dataLine = res.written.split('\n').find((l) => l.startsWith('data: '));
   assert.ok(dataLine, 'frame has a data line');
   assert.deepEqual(JSON.parse(dataLine.slice(6)), { message: 'Import failed' });
-  assert.ok(res.written.endsWith('\n\n'), 'frame is terminated by a blank line');
+  assert.ok(
+    res.written.endsWith('\n\n'),
+    'frame is terminated by a blank line',
+  );
 });
 
 test('sseError stays silent on a closed stream', () => {
@@ -103,14 +117,15 @@ test('no route hand-rolls an SSE error payload with an `error:` prose key', () =
     // An error emission that opens an object literal inline is hand-rolling the
     // shape instead of going through the shared producer.
     // `sendSSE` takes `res` first, `sendEvent` closures don't — allow both.
-    const inlineObject = /send(?:Event|SSE)\(\s*(?:res\s*,\s*)?'error'\s*,\s*\{/.test(src)
-      || /event:\s*'error'\s*,\s*\n?\s*data:\s*\{/.test(src);
+    const inlineObject =
+      /send(?:Event|SSE)\(\s*(?:res\s*,\s*)?'error'\s*,\s*\{/.test(src) ||
+      /event:\s*'error'\s*,\s*\n?\s*data:\s*\{/.test(src);
     if (inlineObject) offenders.push(rel);
   }
   assert.deepEqual(
     offenders,
     [],
-    `these routes build an SSE error payload inline instead of via sseErrorPayload/sseError: ${offenders.join(', ')}`
+    `these routes build an SSE error payload inline instead of via sseErrorPayload/sseError: ${offenders.join(', ')}`,
   );
 });
 
@@ -119,5 +134,9 @@ test('every listed route reaches the shared SSE error producer', () => {
     const src = fs.readFileSync(path.join(repoRoot, rel), 'utf8');
     return !/sseErrorPayload|sseError\b/.test(src);
   });
-  assert.deepEqual(missing, [], `routes not using the shared producer: ${missing.join(', ')}`);
+  assert.deepEqual(
+    missing,
+    [],
+    `routes not using the shared producer: ${missing.join(', ')}`,
+  );
 });

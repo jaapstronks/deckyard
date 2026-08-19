@@ -10,7 +10,10 @@
 import { createDropdown } from '../../lib/dom/dropdown.js';
 import { openSettingsModal as openSettingsModalImpl } from './modals/settings-modal.js';
 import { openVersionsModal as openVersionsModalImpl } from './modals/versions-modal.js';
-import { getUiModePreference, setUiModePreference } from '../../lib/theme/ui-mode.js';
+import {
+  getUiModePreference,
+  setUiModePreference,
+} from '../../lib/theme/ui-mode.js';
 import { logout } from '../../lib/user/auth.js';
 import { createEditorTopbarMoreMenu } from './topbar/more-menu.js';
 import { openSubscriptionModal } from './modals/subscription-modal.js';
@@ -111,23 +114,25 @@ export function createEditorTopbar({
     authorDisplayEl.append(authorAvatar, authorNameEl);
 
     // Fetch profile and update
-    getUserProfileAsync(ownerEmail).then((profile) => {
-      // Pass the resolved name along, not just the image: the initials were
-      // derived from the address ("dev@local" → "DE"), so without this the
-      // chip keeps showing e-mail initials next to the profile's real name.
-      if (profile?.imageUrl || profile?.name) {
-        updateAvatar(authorAvatar, {
-          ...(profile.imageUrl ? { imageUrl: profile.imageUrl } : {}),
-          ...(profile.name ? { name: profile.name } : {}),
-        });
-      }
-      if (profile?.name) {
-        const firstName = profile.name.split(' ')[0];
-        authorNameEl.textContent = firstName;
-      }
-    }).catch(() => {
-      // Keep initial values on error
-    });
+    getUserProfileAsync(ownerEmail)
+      .then((profile) => {
+        // Pass the resolved name along, not just the image: the initials were
+        // derived from the address ("dev@local" → "DE"), so without this the
+        // chip keeps showing e-mail initials next to the profile's real name.
+        if (profile?.imageUrl || profile?.name) {
+          updateAvatar(authorAvatar, {
+            ...(profile.imageUrl ? { imageUrl: profile.imageUrl } : {}),
+            ...(profile.name ? { name: profile.name } : {}),
+          });
+        }
+        if (profile?.name) {
+          const firstName = profile.name.split(' ')[0];
+          authorNameEl.textContent = firstName;
+        }
+      })
+      .catch(() => {
+        // Keep initial values on error
+      });
   }
 
   // ============================================================
@@ -142,7 +147,12 @@ export function createEditorTopbar({
   });
   topbarTitleEl.append(
     h('span', { text: pres.title }),
-    h('img', { class: 'topbar-title-pencil', src: iconUrl('pencil'), alt: '', 'aria-hidden': 'true' })
+    h('img', {
+      class: 'topbar-title-pencil',
+      src: iconUrl('pencil'),
+      alt: '',
+      'aria-hidden': 'true',
+    }),
   );
 
   // ============================================================
@@ -238,7 +248,14 @@ export function createEditorTopbar({
     'aria-label': t('editor.deckGrid.open', 'Slide overview'),
     onclick: () => onOpenOverview?.(),
   });
-  btnOverview.append(h('img', { class: 'topbar-btn-icon', src: iconUrl('layout-grid'), alt: '', 'aria-hidden': 'true' }));
+  btnOverview.append(
+    h('img', {
+      class: 'topbar-btn-icon',
+      src: iconUrl('layout-grid'),
+      alt: '',
+      'aria-hidden': 'true',
+    }),
+  );
 
   // ============================================================
   // THEME TOGGLE
@@ -246,7 +263,8 @@ export function createEditorTopbar({
 
   const toggleTheme = () => {
     const current = getUiModePreference();
-    const next = current === 'system' ? 'light' : current === 'light' ? 'dark' : 'system';
+    const next =
+      current === 'system' ? 'light' : current === 'light' ? 'dark' : 'system';
     setUiModePreference(next);
   };
 
@@ -345,7 +363,8 @@ export function createEditorTopbar({
     onAnalyze: () => onAnalyze?.(),
     onShowShortcuts: () => onShowShortcuts?.(),
     onOpenSettings: () => openSettings(),
-    onSubscription: () => openSubscriptionModal({ h, api, toast, presentationId: id }),
+    onSubscription: () =>
+      openSubscriptionModal({ h, api, toast, presentationId: id }),
     onOpenOverview: () => onOpenOverview?.(),
   });
   detachers.push(moreMenu.detach);
@@ -361,11 +380,18 @@ export function createEditorTopbar({
     'aria-label': t('editor.analytics', 'Analytics'),
     onclick: () => nav?.(`/analytics/${id}`),
   });
-  btnAnalytics.append(h('img', { class: 'topbar-btn-icon', src: iconUrl('chart-column'), alt: '', 'aria-hidden': 'true' }));
+  btnAnalytics.append(
+    h('img', {
+      class: 'topbar-btn-icon',
+      src: iconUrl('chart-column'),
+      alt: '',
+      'aria-hidden': 'true',
+    }),
+  );
 
   // Only show analytics button if presentation is published or has share links
   // (analytics only tracks external viewers via share links/follow mode)
-  const isPublished = !!(pres?.published?.id);
+  const isPublished = !!pres?.published?.id;
   if (isPublished) {
     // Already published - show analytics button immediately
     btnAnalytics.style.display = '';
@@ -374,7 +400,8 @@ export function createEditorTopbar({
     btnAnalytics.style.display = 'none';
     api(`/api/presentations/${id}/share-links`)
       .then((resp) => {
-        const hasShareLinks = Array.isArray(resp?.shareLinks) && resp.shareLinks.length > 0;
+        const hasShareLinks =
+          Array.isArray(resp?.shareLinks) && resp.shareLinks.length > 0;
         btnAnalytics.style.display = hasShareLinks ? '' : 'none';
       })
       .catch(() => {
@@ -397,9 +424,15 @@ export function createEditorTopbar({
         });
         await requestSave?.();
         if (isDirty?.()) {
-          toast.error(t('editor.present.abortedSaveFailed', 'Could not save; presenting aborted.'), {
-            id: 'editor-present',
-          });
+          toast.error(
+            t(
+              'editor.present.abortedSaveFailed',
+              'Could not save; presenting aborted.',
+            ),
+            {
+              id: 'editor-present',
+            },
+          );
           return;
         }
       }
@@ -429,14 +462,18 @@ export function createEditorTopbar({
     text: t('editor.companion', 'Companion'),
     title: t(
       'editor.companion.title',
-      'Open speaker notes companion on your phone (QR code).'
+      'Open speaker notes companion on your phone (QR code).',
     ),
     onclick: () => {
       closePresentMenu();
       openNotesQr();
     },
   });
-  const { details: presentMenuDetails, close: closePresentMenu, detach: detachPresentMenu } = createDropdown({
+  const {
+    details: presentMenuDetails,
+    close: closePresentMenu,
+    detach: detachPresentMenu,
+  } = createDropdown({
     h,
     triggerClass: 'btn btn-primary btn-icon topbar-present-caret',
     triggerContent: [chevronDownIcon({ size: 14 })],
@@ -447,7 +484,10 @@ export function createEditorTopbar({
     items: [presentCompanionItem],
   });
   detachers.push(detachPresentMenu);
-  const presentGroup = h('div', { class: 'topbar-present-group' }, [btnPresent, presentMenuDetails]);
+  const presentGroup = h('div', { class: 'topbar-present-group' }, [
+    btnPresent,
+    presentMenuDetails,
+  ]);
 
   // ============================================================
   // UNDO / REDO
@@ -461,7 +501,14 @@ export function createEditorTopbar({
     disabled: true,
     onclick: () => onUndo?.(),
   });
-  btnUndo.append(h('img', { class: 'topbar-btn-icon', src: iconUrl('undo'), alt: '', 'aria-hidden': 'true' }));
+  btnUndo.append(
+    h('img', {
+      class: 'topbar-btn-icon',
+      src: iconUrl('undo'),
+      alt: '',
+      'aria-hidden': 'true',
+    }),
+  );
 
   const btnRedo = h('button', {
     class: 'ghost-icon-btn topbar-redo-btn',
@@ -471,9 +518,19 @@ export function createEditorTopbar({
     disabled: true,
     onclick: () => onRedo?.(),
   });
-  btnRedo.append(h('img', { class: 'topbar-btn-icon', src: iconUrl('redo'), alt: '', 'aria-hidden': 'true' }));
+  btnRedo.append(
+    h('img', {
+      class: 'topbar-btn-icon',
+      src: iconUrl('redo'),
+      alt: '',
+      'aria-hidden': 'true',
+    }),
+  );
 
-  const undoRedoGroup = h('div', { class: 'topbar-undo-group' }, [btnUndo, btnRedo]);
+  const undoRedoGroup = h('div', { class: 'topbar-undo-group' }, [
+    btnUndo,
+    btnRedo,
+  ]);
 
   // Reflect the undo manager's stacks on the buttons. Called on every stack change.
   const syncUndoButtons = () => {
@@ -499,7 +556,14 @@ export function createEditorTopbar({
     title: t('common.back', 'Back'),
     onclick: () => nav?.('/app'),
   });
-  backBtn.append(h('img', { class: 'topbar-btn-icon', src: iconUrl('arrow-left'), alt: '', 'aria-hidden': 'true' }));
+  backBtn.append(
+    h('img', {
+      class: 'topbar-btn-icon',
+      src: iconUrl('arrow-left'),
+      alt: '',
+      'aria-hidden': 'true',
+    }),
+  );
 
   const topbarEl = h('div', { class: 'topbar' }, [
     backBtn,
@@ -537,5 +601,13 @@ export function createEditorTopbar({
     }
   };
 
-  return { topbarEl, topbarTitleEl, setSaveStatus, syncLangUi: languageMode.syncLangUi, syncUndoButtons, openNotesQr, detach };
+  return {
+    topbarEl,
+    topbarTitleEl,
+    setSaveStatus,
+    syncLangUi: languageMode.syncLangUi,
+    syncUndoButtons,
+    openNotesQr,
+    detach,
+  };
 }

@@ -59,12 +59,13 @@ const EXEMPT_TREES = [
 ];
 
 /** `const path = url.pathname;` — a local alias every rule must see through. */
-const ALIAS_DEF = /(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*[\w$.]+\.pathname\s*;?\s*$/;
+const ALIAS_DEF =
+  /(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*[\w$.]+\.pathname\s*;?\s*$/;
 
 /** Alternation of `pathname` plus the file's aliases, regex-escaped. */
 function tokenAlt(aliases) {
   const names = ['pathname', ...aliases].map((n) =>
-    n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
   );
   return `(?:${names.join('|')})`;
 }
@@ -73,14 +74,20 @@ function bannedRules(alt) {
   return [
     { name: 'pathname ===/!==', re: new RegExp(`\\b${alt}\\s*[!=]==`) },
     { name: 'pathname.match(', re: new RegExp(`\\b${alt}\\s*\\.match\\(`) },
-    { name: '.exec(…pathname)', re: new RegExp(`\\.exec\\(\\s*[\\w$.]*\\b${alt}\\s*\\)`) },
-    { name: '.test(…pathname)', re: new RegExp(`\\.test\\(\\s*[\\w$.]*\\b${alt}\\s*\\)`) },
+    {
+      name: '.exec(…pathname)',
+      re: new RegExp(`\\.exec\\(\\s*[\\w$.]*\\b${alt}\\s*\\)`),
+    },
+    {
+      name: '.test(…pathname)',
+      re: new RegExp(`\\.test\\(\\s*[\\w$.]*\\b${alt}\\s*\\)`),
+    },
   ];
 }
 
 function prefixGuardRe(alt) {
   return new RegExp(
-    `if\\s*\\(\\s*!\\s*[\\w$.]*\\b${alt}\\.startsWith\\(\\s*['"][^'"]+['"]\\s*\\)\\s*\\)`
+    `if\\s*\\(\\s*!\\s*[\\w$.]*\\b${alt}\\.startsWith\\(\\s*['"][^'"]+['"]\\s*\\)\\s*\\)`,
   );
 }
 
@@ -117,7 +124,8 @@ function scanFile(path) {
     if (isComment(line)) continue;
 
     for (const { name, re } of banned) {
-      if (re.test(line)) violations.push({ line: i + 1, rule: name, text: line.trim() });
+      if (re.test(line))
+        violations.push({ line: i + 1, rule: name, text: line.trim() });
     }
 
     if (startsWithRe.test(line)) {
@@ -125,7 +133,9 @@ function scanFile(path) {
       const sameLineReturn = /return false;?\s*$/.test(line);
       const next = (lines[i + 1] || '').trim();
       const nextNext = (lines[i + 2] || '').trim();
-      const nextLineReturn = next === 'return false;' || (next === '{' && nextNext === 'return false;');
+      const nextLineReturn =
+        next === 'return false;' ||
+        (next === '{' && nextNext === 'return false;');
       if (!(guardShaped && (sameLineReturn || nextLineReturn))) {
         violations.push({
           line: i + 1,
@@ -156,7 +166,7 @@ test('no hand-written path compares in server/routes/** outside a ROUTES table',
     [],
     'Hand-written path compares outside a ROUTES table.\n' +
       'Migrate the module to a ROUTES table (docs/reference/route-dispatch.md):\n' +
-      offenders.join('\n')
+      offenders.join('\n'),
   );
 });
 
@@ -164,7 +174,8 @@ test('the sanctioned prefix-guard idiom itself stays accepted', () => {
   // Regression pin for the idiom matcher: both spellings used by migrated
   // modules must pass, and a positive startsWith dispatch must not.
   const guard = prefixGuardRe(tokenAlt([]));
-  const ok1 = "  if (!ctx.url.pathname.startsWith('/api/media/')) return false;";
+  const ok1 =
+    "  if (!ctx.url.pathname.startsWith('/api/media/')) return false;";
   const ok2 = "  if (!url.pathname.startsWith('/api/admin/users')) {";
   const bad = "  if (url.pathname.startsWith('/api/follow-codes')) {";
   assert.ok(guard.test(ok1));

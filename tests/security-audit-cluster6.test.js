@@ -65,7 +65,11 @@ test('M2: a lone forged XFF entry cannot impersonate an arbitrary client', () =>
   // MUST append. We assert the victim-poisoning vector is closed instead:
   // a two-entry list never returns the leftmost.
   const ip = getClientIp(mockReq({ xff: `${CLIENT}, ${PROXY1}` }));
-  assert.notEqual(ip, CLIENT, 'leftmost (client-supplied) must never be trusted');
+  assert.notEqual(
+    ip,
+    CLIENT,
+    'leftmost (client-supplied) must never be trusted',
+  );
   assert.equal(ip, PROXY1);
 });
 
@@ -121,10 +125,16 @@ test('M3: generation has high entropy (no degenerate constant output)', () => {
 
 test('M3: the generator uses a CSPRNG, not Math.random', async () => {
   const src = await fs.readFile(
-    fileURLToPath(new URL('../server/storage/follow-codes.js', import.meta.url)),
+    fileURLToPath(
+      new URL('../server/storage/follow-codes.js', import.meta.url),
+    ),
     'utf8',
   );
   assert.match(src, /crypto\.randomInt\(/, 'must use crypto.randomInt');
   // The call itself must be gone (the doc comment may still name it).
-  assert.doesNotMatch(src, /Math\.random\s*\(/, 'Math.random() call must be gone');
+  assert.doesNotMatch(
+    src,
+    /Math\.random\s*\(/,
+    'Math.random() call must be gone',
+  );
 });

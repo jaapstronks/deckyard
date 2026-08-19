@@ -22,7 +22,10 @@ export async function loadDotEnv(repoRoot) {
     let val = trimmed.slice(idx + 1).trim();
     if (!key) continue;
     if (process.env[key] != null) continue;
-    if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+    if (
+      (val.startsWith('"') && val.endsWith('"')) ||
+      (val.startsWith("'") && val.endsWith("'"))
+    ) {
       val = val.slice(1, -1);
     }
     process.env[key] = val;

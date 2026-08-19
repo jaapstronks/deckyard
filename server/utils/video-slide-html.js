@@ -21,15 +21,11 @@ import { resolveVideoThumbnailDataUrl } from '../export/video-thumbnail.js';
  */
 export async function renderVideoSlidePngHtml(
   slide,
-  { missingSourceText = 'Video bron ontbreekt' } = {}
+  { missingSourceText = 'Video bron ontbreekt' } = {},
 ) {
-  const content =
-    slide && typeof slide === 'object' ? slide.content : {};
+  const content = slide && typeof slide === 'object' ? slide.content : {};
   const title = String(content?.title || '').trim();
-  const bg =
-    content?.background === 'lime'
-      ? 'slide-bg-lime'
-      : 'slide-bg-mist';
+  const bg = content?.background === 'lime' ? 'slide-bg-lime' : 'slide-bg-mist';
   const source = String(content?.source || '').trim();
 
   const titleHtml = title

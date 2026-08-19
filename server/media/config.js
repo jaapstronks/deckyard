@@ -60,7 +60,9 @@ export function getEffectiveMediaProvider() {
 
   if (mode === 'scaleway') {
     if (!isScalewayConfigured()) {
-      throw new Error('MEDIA_STORAGE_MODE=scaleway but Scaleway is not configured');
+      throw new Error(
+        'MEDIA_STORAGE_MODE=scaleway but Scaleway is not configured',
+      );
     }
     return 'scaleway';
   }

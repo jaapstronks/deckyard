@@ -11,7 +11,7 @@ out the same four names (`poll-slide`, `likert-slide`, `likert-slider-slide`,
 
 > does this slide collect answers from the audience?
 
-None of the nine wanted to know *which* type it was. They all wanted a
+None of the nine wanted to know _which_ type it was. They all wanted a
 capability the type did not declare, so each re-derived it — and they had
 already drifted apart at the edges. The session storage covered three of the
 four. The presenter's live set reached past them to `follow-invite-slide`. Every
@@ -22,11 +22,11 @@ one of the nine was a place a fifth interaction type would have been forgotten.
 Defined in `shared/slide-types/runtime.js`; declared as `runtime: '…'` on each
 type's definition; served out through `/api/slide-types`.
 
-| `runtime` | Meaning | Types |
-|---|---|---|
-| `static` | the session does nothing for it | every other type |
-| `timed` | a presenter-driven clock; the state lives in the presenting window | countdown |
-| `live` | the audience answers, and the session collects and aggregates | poll, likert, likert-slider, feedback |
+| `runtime` | Meaning                                                            | Types                                 |
+| --------- | ------------------------------------------------------------------ | ------------------------------------- |
+| `static`  | the session does nothing for it                                    | every other type                      |
+| `timed`   | a presenter-driven clock; the state lives in the presenting window | countdown                             |
+| `live`    | the audience answers, and the session collects and aggregates      | poll, likert, likert-slider, feedback |
 
 The line is drawn at **session state**, not at "has behaviour", which is what
 makes the three edge cases fall out of the definition instead of being argued
@@ -59,15 +59,15 @@ short hand-written list and its inventory entry.
 ## The sub-declaration a `live` type carries
 
 `live` alone did not retire the hand-rolled lists. Five of the nine modules also
-re-derived *which kind* of answer the slide collects, mapping four type names
+re-derived _which kind_ of answer the slide collects, mapping four type names
 onto the three values the follow API already puts on the wire as
 `interaction.type`. So a `live` type also declares its kind:
 
-| `interaction` | What the audience sends | Types |
-|---|---|---|
-| `poll` | one choice out of a short option list | poll |
-| `likert` | a point on a scale | likert, likert-slider |
-| `feedback` | free text | feedback |
+| `interaction` | What the audience sends               | Types                 |
+| ------------- | ------------------------------------- | --------------------- |
+| `poll`        | one choice out of a short option list | poll                  |
+| `likert`      | a point on a scale                    | likert, likert-slider |
+| `feedback`    | free text                             | feedback              |
 
 It is not a second facet. It is the contract the `live` value implies, it is
 meaningless on any other value, and the guardrail asserts both directions.
@@ -102,14 +102,14 @@ So `tests/slide-type-runtime.test.js` checks truthfulness from the other end:
    a type live.
 3. **No second definition** — no module re-derives the live set by hand. This is
    the measurement that produced the facet, kept and inverted. Brief B's
-   assertion 5 asserted a *floor* (at least eight modules hard-code the quartet,
+   assertion 5 asserted a _floor_ (at least eight modules hard-code the quartet,
    so build the facet) and was written to fail the moment the count dropped;
-   this is a *ceiling* (no module hard-codes it, and none may start).
+   this is a _ceiling_ (no module hard-codes it, and none may start).
 
 The ceiling skips per-type tables — a table has a row for each live type for the
 same reason it has one for every type — and, for the sparse tables that have no
 kind to lean on, it distinguishes by proportion: a module naming the live types
-*and little else* is answering "is this slide live?", while one that also names
+_and little else_ is answering "is this slide live?", while one that also names
 twenty other types is a table that happens to have rows for them.
 
 ## What moved
@@ -118,18 +118,18 @@ Ten modules left the name-branching inventory when the facet landed: the nine
 the measurement counted, plus the presenter's deck controller, which answered a
 neighbouring question a tenth way.
 
-| Module | What it hard-coded | What it asks now |
-|---|---|---|
-| `client/views/editor/slides-panel.js` | the four, to decide which insert needs a follow-invite slide | `isLiveSlideType()` |
-| `client/views/follow/interactions.js` | the four, to decide whether to show a widget, plus feedback-vs-choice | `isLiveSlideType()` + `liveInteractionKind()` |
-| `client/views/presenter/interaction-controls.js` | the four, twice: the guard and the kind | both helpers |
-| `server/utils/interaction-helpers.js` | `isInteractiveSlideType()`, the closest thing to a home the capability had | deleted; callers use the facet |
-| `server/routes/api/follow/helpers.js` | the four, computing the audience's capabilities | `liveInteractionKind()` |
-| `server/routes/api/follow/interactions.js` | the four, in three handlers | `liveInteractionKind()` |
-| `server/routes/api/live-sessions.js` | the four, guarding open/close/reset and the feedback export | `liveInteractionKind()` |
-| `server/storage/live-sessions/control.js` | three of the four (poll missing from the branch, harmlessly) | `liveInteractionKind()` |
-| `scripts/test-concurrent-votes.js` | three, to find a votable slide to hammer | `liveInteractionKind()` |
-| `client/views/presenter/deck-controller.js` | `follow-invite` + poll + feedback, to pass follow codes | `isLiveSlideType()` + follow-invite |
+| Module                                           | What it hard-coded                                                         | What it asks now                              |
+| ------------------------------------------------ | -------------------------------------------------------------------------- | --------------------------------------------- |
+| `client/views/editor/slides-panel.js`            | the four, to decide which insert needs a follow-invite slide               | `isLiveSlideType()`                           |
+| `client/views/follow/interactions.js`            | the four, to decide whether to show a widget, plus feedback-vs-choice      | `isLiveSlideType()` + `liveInteractionKind()` |
+| `client/views/presenter/interaction-controls.js` | the four, twice: the guard and the kind                                    | both helpers                                  |
+| `server/utils/interaction-helpers.js`            | `isInteractiveSlideType()`, the closest thing to a home the capability had | deleted; callers use the facet                |
+| `server/routes/api/follow/helpers.js`            | the four, computing the audience's capabilities                            | `liveInteractionKind()`                       |
+| `server/routes/api/follow/interactions.js`       | the four, in three handlers                                                | `liveInteractionKind()`                       |
+| `server/routes/api/live-sessions.js`             | the four, guarding open/close/reset and the feedback export                | `liveInteractionKind()`                       |
+| `server/storage/live-sessions/control.js`        | three of the four (poll missing from the branch, harmlessly)               | `liveInteractionKind()`                       |
+| `scripts/test-concurrent-votes.js`               | three, to find a votable slide to hammer                                   | `liveInteractionKind()`                       |
+| `client/views/presenter/deck-controller.js`      | `follow-invite` + poll + feedback, to pass follow codes                    | `isLiveSlideType()` + follow-invite           |
 
 Only the last one changed behaviour, and deliberately. It was passing
 `ctx.followCodes` to the renderers that read them — follow-invite, poll and

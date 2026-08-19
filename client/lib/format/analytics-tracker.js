@@ -23,7 +23,9 @@ const RETRY_BASE_DELAY_MS = 1000; // 1 second base delay for exponential backoff
 function generateDeviceId() {
   const array = new Uint8Array(16);
   crypto.getRandomValues(array);
-  return Array.from(array, (byte) => byte.toString(16).padStart(2, '0')).join('');
+  return Array.from(array, (byte) => byte.toString(16).padStart(2, '0')).join(
+    '',
+  );
 }
 
 /**
@@ -95,14 +97,21 @@ export function createAnalyticsTracker({
    * @param {boolean} [options.critical] - Whether this is a critical request (uses retries)
    * @returns {Promise<Object|null>}
    */
-  async function sendTrack(endpoint, data, { retry = false, critical = false } = {}) {
-    const maxAttempts = (retry || critical) ? MAX_RETRIES : 1;
+  async function sendTrack(
+    endpoint,
+    data,
+    { retry = false, critical = false } = {},
+  ) {
+    const maxAttempts = retry || critical ? MAX_RETRIES : 1;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         // Create abort controller for timeout
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+        const timeoutId = setTimeout(
+          () => controller.abort(),
+          FETCH_TIMEOUT_MS,
+        );
 
         const response = await fetch(endpoint, {
           method: 'POST',
@@ -146,7 +155,9 @@ export function createAnalyticsTracker({
    */
   function sendBeacon(endpoint, data) {
     try {
-      const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+      const blob = new Blob([JSON.stringify(data)], {
+        type: 'application/json',
+      });
       navigator.sendBeacon(endpoint, blob);
     } catch {
       // Ignore errors
@@ -161,14 +172,18 @@ export function createAnalyticsTracker({
     if (isStarted || isDestroyed) return false;
 
     // Session start is critical - use retry logic
-    const result = await sendTrack('/api/track/session/start', {
-      presentationId,
-      sourceType,
-      sourceId,
-      viewerEmail,
-      viewerType,
-      deviceId,
-    }, { critical: true });
+    const result = await sendTrack(
+      '/api/track/session/start',
+      {
+        presentationId,
+        sourceType,
+        sourceId,
+        viewerEmail,
+        viewerType,
+        deviceId,
+      },
+      { critical: true },
+    );
 
     // destroy() can land while the (retrying, therefore slow) session-start
     // request is in flight — the viewer navigated away before tracking was
@@ -326,7 +341,9 @@ export function createAnalyticsTracker({
   async function erase() {
     if (isDestroyed || !isStarted || !sessionToken) return null;
 
-    const result = await sendTrack('/api/track/my-data/erase', { sessionToken });
+    const result = await sendTrack('/api/track/my-data/erase', {
+      sessionToken,
+    });
 
     // Nothing was erased (rate limit, network, server error): keep the tracker
     // live and the device id in place, so a retry click can actually succeed

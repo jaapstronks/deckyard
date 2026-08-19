@@ -28,8 +28,10 @@ globalThis.CustomEvent = dom.window.CustomEvent;
 globalThis.KeyboardEvent = dom.window.KeyboardEvent;
 globalThis.getComputedStyle = dom.window.getComputedStyle;
 globalThis.Image = dom.window.Image;
-globalThis.requestAnimationFrame = dom.window.requestAnimationFrame || ((cb) => setTimeout(cb, 0));
-globalThis.cancelAnimationFrame = dom.window.cancelAnimationFrame || clearTimeout;
+globalThis.requestAnimationFrame =
+  dom.window.requestAnimationFrame || ((cb) => setTimeout(cb, 0));
+globalThis.cancelAnimationFrame =
+  dom.window.cancelAnimationFrame || clearTimeout;
 globalThis.ResizeObserver =
   dom.window.ResizeObserver ||
   class {
@@ -39,13 +41,15 @@ globalThis.ResizeObserver =
   };
 
 const { h } = await import('../client/lib/dom.js');
-const { createFieldRenderers } = await import('../client/views/editor/fields.js');
-const { createRerenderEditor } = await import('../client/views/editor/editor-form.js');
+const { createFieldRenderers } =
+  await import('../client/views/editor/fields.js');
+const { createRerenderEditor } =
+  await import('../client/views/editor/editor-form.js');
 const { SLIDE_TYPES } = await import('../shared/slide-types.js');
-const { normalizeSlideContent } = await import('../shared/slide-types/normalize-content.js');
-const { FIELD_EDITOR_VALUES, fieldEditor } = await import(
-  '../shared/slide-types/field-editors.js'
-);
+const { normalizeSlideContent } =
+  await import('../shared/slide-types/normalize-content.js');
+const { FIELD_EDITOR_VALUES, fieldEditor } =
+  await import('../shared/slide-types/field-editors.js');
 
 function renderForm({ type, content, contentOnly = true } = {}) {
   const editorMount = document.createElement('div');
@@ -87,10 +91,13 @@ function renderForm({ type, content, contentOnly = true } = {}) {
 }
 
 const labelsOf = (root) =>
-  Array.from(root.querySelectorAll('label, .field-label')).map((el) => el.textContent.trim());
+  Array.from(root.querySelectorAll('label, .field-label')).map((el) =>
+    el.textContent.trim(),
+  );
 
 /** The field wrapper for a content key (every one carries its collab key). */
-const fieldFor = (root, key) => root.querySelector(`[data-collab-field-key="${key}"]`);
+const fieldFor = (root, key) =>
+  root.querySelector(`[data-collab-field-key="${key}"]`);
 
 /** Every option label of the control for `key`, or null when it doesn't render. */
 function optionsFor(root, key) {
@@ -105,7 +112,7 @@ function chooseOption(root, key, optionText) {
   const field = fieldFor(root, key);
   assert.ok(field, `control "${key}" renders`);
   const btn = Array.from(field.querySelectorAll('.sb-segmented-btn')).find(
-    (el) => el.textContent.trim().toLowerCase() === optionText.toLowerCase()
+    (el) => el.textContent.trim().toLowerCase() === optionText.toLowerCase(),
   );
   if (btn) {
     btn.click();
@@ -114,7 +121,7 @@ function chooseOption(root, key, optionText) {
   const select = field.querySelector('select');
   assert.ok(select, `control "${key}" has a choosable option`);
   const opt = Array.from(select.options).find(
-    (o) => o.textContent.trim().toLowerCase() === optionText.toLowerCase()
+    (o) => o.textContent.trim().toLowerCase() === optionText.toLowerCase(),
   );
   assert.ok(opt, `option "${optionText}" exists`);
   select.value = opt.value;
@@ -123,9 +130,13 @@ function chooseOption(root, key, optionText) {
 
 test('image-fit is in the closed vocabulary and both image types declare it', () => {
   assert.ok(FIELD_EDITOR_VALUES.includes('image-fit'));
-  const slideFit = SLIDE_TYPES['image-slide'].fields.find((f) => f.key === 'fit');
+  const slideFit = SLIDE_TYPES['image-slide'].fields.find(
+    (f) => f.key === 'fit',
+  );
   assert.equal(fieldEditor(slideFit), 'image-fit');
-  const images = SLIDE_TYPES['image-text-slide'].fields.find((f) => f.key === 'images');
+  const images = SLIDE_TYPES['image-text-slide'].fields.find(
+    (f) => f.key === 'images',
+  );
   const itemFit = images.itemFields.find((f) => f.key === 'fit');
   assert.equal(fieldEditor(itemFit), 'image-fit');
 });
@@ -137,18 +148,24 @@ test('image-slide: the fit control offers the default derived from imageDefaults
   // imageDefaults.fit is 'cover', so the empty option names Fill (crop).
   assert.ok(
     options.some((o) => o.startsWith('Default') && o.includes('Fill')),
-    `derived default option, got ${JSON.stringify(options)}`
+    `derived default option, got ${JSON.stringify(options)}`,
   );
-  assert.ok(options.some((o) => o.includes('Fit (no crop)')), 'contain option');
+  assert.ok(
+    options.some((o) => o.includes('Fit (no crop)')),
+    'contain option',
+  );
 });
 
 test('image-slide: fit and bleed share one declared row', () => {
   const { editorMount } = renderForm({ type: 'image-slide' });
-  const grid = Array.from(editorMount.querySelectorAll('.field-grid')).find((g) =>
-    labelsOf(g).some((l) => l.includes('Image fit'))
+  const grid = Array.from(editorMount.querySelectorAll('.field-grid')).find(
+    (g) => labelsOf(g).some((l) => l.includes('Image fit')),
   );
   assert.ok(grid, 'fit renders inside a field-grid row');
-  assert.ok(labelsOf(grid).some((l) => l.includes('Edge-to-edge')), 'bleed shares the row');
+  assert.ok(
+    labelsOf(grid).some((l) => l.includes('Edge-to-edge')),
+    'bleed shares the row',
+  );
 });
 
 test('boolean fields store only the deviating value (bleed)', () => {
@@ -156,44 +173,75 @@ test('boolean fields store only the deviating value (bleed)', () => {
   chooseOption(editorMount, 'bleed', 'On');
   assert.equal(slide.content.bleed, true, 'On is written');
   chooseOption(editorMount, 'bleed', 'Off');
-  assert.equal(slide.content.bleed, '', 'Off clears, so the type default stays looked up');
+  assert.equal(
+    slide.content.bleed,
+    '',
+    'Off clears, so the type default stays looked up',
+  );
 });
 
 test('image-slide: alt is declared away for a decorative image', () => {
   const meaningful = renderForm({
     type: 'image-slide',
-    content: { ...structuredClone(SLIDE_TYPES['image-slide'].defaults), imageRole: 'content' },
+    content: {
+      ...structuredClone(SLIDE_TYPES['image-slide'].defaults),
+      imageRole: 'content',
+    },
   });
   assert.ok(
     labelsOf(meaningful.editorMount).some((l) => l.includes('Alt text')),
-    'alt renders for a meaningful image'
+    'alt renders for a meaningful image',
   );
   const decorative = renderForm({
     type: 'image-slide',
-    content: { ...structuredClone(SLIDE_TYPES['image-slide'].defaults), imageRole: 'decorative' },
+    content: {
+      ...structuredClone(SLIDE_TYPES['image-slide'].defaults),
+      imageRole: 'decorative',
+    },
   });
   assert.ok(
     !labelsOf(decorative.editorMount).some((l) => l.includes('Alt text')),
-    'alt is hidden for a decorative image'
+    'alt is hidden for a decorative image',
   );
 });
 
 test('image-slide: the zoom chain is a visibleWhen chain', () => {
   const base = structuredClone(SLIDE_TYPES['image-slide'].defaults);
-  const off = renderForm({ type: 'image-slide', content: { ...base, zoomSteps: '' } });
+  const off = renderForm({
+    type: 'image-slide',
+    content: { ...base, zoomSteps: '' },
+  });
   const offLabels = labelsOf(off.editorMount);
-  assert.ok(!offLabels.some((l) => l.includes('Zoom level')), 'no zoom level while zoom is off');
-  assert.ok(!offLabels.some((l) => l.includes('Custom zoom')), 'no positions while zoom is off');
+  assert.ok(
+    !offLabels.some((l) => l.includes('Zoom level')),
+    'no zoom level while zoom is off',
+  );
+  assert.ok(
+    !offLabels.some((l) => l.includes('Custom zoom')),
+    'no positions while zoom is off',
+  );
 
-  const corners = renderForm({ type: 'image-slide', content: { ...base, zoomSteps: 'corners' } });
+  const corners = renderForm({
+    type: 'image-slide',
+    content: { ...base, zoomSteps: 'corners' },
+  });
   const cornerLabels = labelsOf(corners.editorMount);
-  assert.ok(cornerLabels.some((l) => l.includes('Zoom level')), 'zoom level once zoom is on');
-  assert.ok(!cornerLabels.some((l) => l.includes('Custom zoom')), 'positions stay custom-only');
+  assert.ok(
+    cornerLabels.some((l) => l.includes('Zoom level')),
+    'zoom level once zoom is on',
+  );
+  assert.ok(
+    !cornerLabels.some((l) => l.includes('Custom zoom')),
+    'positions stay custom-only',
+  );
 
-  const custom = renderForm({ type: 'image-slide', content: { ...base, zoomSteps: 'custom' } });
+  const custom = renderForm({
+    type: 'image-slide',
+    content: { ...base, zoomSteps: 'custom' },
+  });
   assert.ok(
     labelsOf(custom.editorMount).some((l) => l.includes('Custom zoom')),
-    'positions appear on custom'
+    'positions appear on custom',
   );
 });
 
@@ -201,7 +249,10 @@ test('image-slide: the ImageRef keys the element surfaces own never render as fi
   const { editorMount } = renderForm({ type: 'image-slide' });
   const labels = labelsOf(editorMount);
   for (const dead of ['Focus X', 'Focus Y', 'Layout']) {
-    assert.ok(!labels.some((l) => l === dead), `${dead} is carried data, not a control`);
+    assert.ok(
+      !labels.some((l) => l === dead),
+      `${dead} is carried data, not a control`,
+    );
   }
 });
 
@@ -221,23 +272,31 @@ test('image-text: images render through the generic collection editor', () => {
   assert.ok(collection, 'one generic collection editor');
   // Item widgets are inside the collection editor's own item loop, so they
   // carry no collab field key — find them by the control's accessible name.
-  const fitControls = collection.querySelectorAll('.sb-segmented[aria-label="Image fit"]');
-  assert.equal(fitControls.length, 2, 'one fit control per image item');
-  const options = Array.from(fitControls[0].querySelectorAll('.sb-segmented-btn')).map((el) =>
-    el.textContent.trim()
+  const fitControls = collection.querySelectorAll(
+    '.sb-segmented[aria-label="Image fit"]',
   );
+  assert.equal(fitControls.length, 2, 'one fit control per image item');
+  const options = Array.from(
+    fitControls[0].querySelectorAll('.sb-segmented-btn'),
+  ).map((el) => el.textContent.trim());
   assert.ok(
     options.some((o) => o.startsWith('Default') && o.includes('Fill')),
-    `the item widget also carries the derived default, got ${JSON.stringify(options)}`
+    `the item widget also carries the derived default, got ${JSON.stringify(options)}`,
   );
   const labels = labelsOf(editorMount);
-  assert.ok(!labels.some((l) => l === 'Focus X'), 'per-item focus stays element-owned');
+  assert.ok(
+    !labels.some((l) => l === 'Focus X'),
+    'per-item focus stays element-owned',
+  );
 });
 
 test('normalizeContent folds the legacy layout enum when the editor opens', () => {
   const { slide } = renderForm({
     type: 'image-slide',
-    content: { ...structuredClone(SLIDE_TYPES['image-slide'].defaults), layout: 'centered' },
+    content: {
+      ...structuredClone(SLIDE_TYPES['image-slide'].defaults),
+      layout: 'centered',
+    },
   });
   assert.equal(slide.content.fit, 'contain', 'centered became the contain fit');
   assert.equal(slide.content.layout, '', 'the legacy enum is cleared');
@@ -255,7 +314,7 @@ test('normalizeSlideContent degrades instead of breaking the editor', () => {
   assert.equal(
     normalizeSlideContent('x', thrower, content),
     content,
-    'a throwing hook is swallowed'
+    'a throwing hook is swallowed',
   );
 });
 
@@ -264,7 +323,11 @@ test('the hook is found on the bundled registry when the def cannot carry it', (
   // no functions. Resolution has to fall back to the registry or the migration
   // silently stops running in the real app (which is how it was caught).
   const wireDef = JSON.parse(JSON.stringify(SLIDE_TYPES['image-slide']));
-  assert.equal(wireDef.normalizeContent, undefined, 'a function cannot survive JSON');
+  assert.equal(
+    wireDef.normalizeContent,
+    undefined,
+    'a function cannot survive JSON',
+  );
   const content = { layout: 'centered' };
   normalizeSlideContent('image-slide', wireDef, content);
   assert.equal(content.fit, 'contain', 'the registry hook still ran');
@@ -274,7 +337,8 @@ test('the hook is found on the bundled registry when the def cannot carry it', (
 test('imageDefaults travels on the /api/slide-types projection', async () => {
   // The widget's derived default label reads def.imageDefaults.fit, and the
   // editor holds the wire response, not the registry.
-  const { handleSlideTypes } = await import('../server/routes/api/slide-types.js');
+  const { handleSlideTypes } =
+    await import('../server/routes/api/slide-types.js');
   let payload = null;
   const res = {
     setHeader() {},

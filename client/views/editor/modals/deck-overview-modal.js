@@ -41,12 +41,12 @@ export function openDeckOverviewModal({
       hint: t(
         'editor.deckGrid.hint',
         'All {count} slides at a glance. Click a slide to jump to it in the editor.',
-        { count }
+        { count },
       ),
       modalClass: 'modal-deck-grid',
       onClose: () => grid?.teardown(),
     },
-    openOverlayClosers
+    openOverlayClosers,
   );
 
   grid = createDeckGridView({

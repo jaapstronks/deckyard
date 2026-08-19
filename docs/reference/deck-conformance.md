@@ -13,10 +13,10 @@ conformance claim.
 The answer here is **two levels**, and the point of the split is that the first
 one does not scale with the number of types.
 
-| Level | You implement | You may claim |
-|---|---|---|
-| **1 — Structure** | the envelope, the six `structure` contracts, and the unknown-type behaviour | *reads Deckyard decks* — every deck renders, nothing is dropped |
-| **2 — Core profile** | level 1, plus the nine tier-1 types' own field contracts, plus `fallback` | *renders the Deckyard core profile* — every deck renders the way it was authored, up to declared degradation |
+| Level                | You implement                                                               | You may claim                                                                                                |
+| -------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| **1 — Structure**    | the envelope, the six `structure` contracts, and the unknown-type behaviour | _reads Deckyard decks_ — every deck renders, nothing is dropped                                              |
+| **2 — Core profile** | level 1, plus the nine tier-1 types' own field contracts, plus `fallback`   | _renders the Deckyard core profile_ — every deck renders the way it was authored, up to declared degradation |
 
 Neither level requires all <!--gen:slide-type-count-->34<!--/gen:slide-type-count--> types. Tier 2 is not a conformance surface: we
 ship those types and version them with the app
@@ -104,7 +104,7 @@ A reader that does not recognise `slides[].type`:
    field order, so that order is the author's. A reader whose parser does not
    preserve member order MUST pick a stable order (lexicographic will do) rather
    than an arbitrary one. Non-string scalars render as their text form; the
-   empty string means *unset* and MAY be skipped.
+   empty string means _unset_ and MAY be skipped.
 3. **MUST render each element of an array-valued entry as a repeated item**, in
    array order, applying rule 2 within each element. This is the `collection`
    contract, which is the honest reading of an array whose meaning is unknown:
@@ -128,13 +128,13 @@ completeness, and a reader must not guess at a shape it does not know.
 
 **This contract is the last resort, not the first.** Three cases, in order:
 
-| The reader has | It does |
-|---|---|
-| the type, implemented | renders it natively |
+| The reader has                               | It does                                                                    |
+| -------------------------------------------- | -------------------------------------------------------------------------- |
+| the type, implemented                        | renders it natively                                                        |
 | the type's declaration but no implementation | uses `structure` + the item contract, or the declared `fallback` (level 2) |
-| nothing but the slide | the unknown-type contract above |
+| nothing but the slide                        | the unknown-type contract above                                            |
 
-A reader that reaches case 3 for a *Deckyard* type is a reader that has not read
+A reader that reaches case 3 for a _Deckyard_ type is a reader that has not read
 `GET /api/slide-types`, which carries the declaration. Case 3 is for types that
 are genuinely nobody's business but their declarant's — which is exactly the
 case a format has to survive to be open.
@@ -146,14 +146,14 @@ enforced against every built-in type by `tests/slide-type-structure.test.js`, so
 the table below is a statement the code has to keep true rather than a
 description of it.
 
-| `structure` | The content carries | The count means | A reader that knows only this |
-|---|---|---|---|
-| `singleton` | no repeated-item array | nothing to count | render the named scalar slots in declaration order |
-| `collection` | exactly one item array | the author's choice | iterate; you may reflow, paginate or split across slides |
-| `fixed-collection` | exactly one item array, `minItems === maxItems` | part of the type's meaning | iterate, but never drop or pad items to fit a layout |
-| `tabular` | exactly one item array (the rows) | the author's choice | items are rows, item keys are columns, the column set is shared |
-| `dataset` | an encoded payload plus its encoding | inside the payload | decode to rows and fall back to `tabular`; only the visual encoding is lost |
-| `chrome` | no content fields at all | nothing to count | render the beat it occupies, or omit the slide — either is lossless |
+| `structure`        | The content carries                             | The count means            | A reader that knows only this                                               |
+| ------------------ | ----------------------------------------------- | -------------------------- | --------------------------------------------------------------------------- |
+| `singleton`        | no repeated-item array                          | nothing to count           | render the named scalar slots in declaration order                          |
+| `collection`       | exactly one item array                          | the author's choice        | iterate; you may reflow, paginate or split across slides                    |
+| `fixed-collection` | exactly one item array, `minItems === maxItems` | part of the type's meaning | iterate, but never drop or pad items to fit a layout                        |
+| `tabular`          | exactly one item array (the rows)               | the author's choice        | items are rows, item keys are columns, the column set is shared             |
+| `dataset`          | an encoded payload plus its encoding            | inside the payload         | decode to rows and fall back to `tabular`; only the visual encoding is lost |
+| `chrome`           | no content fields at all                        | nothing to count           | render the beat it occupies, or omit the slide — either is lossless         |
 
 Two consequences worth stating outright:
 

@@ -25,7 +25,10 @@ import { fileURLToPath } from 'node:url';
  * deliberately *not* matched — that is not a field check.
  */
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const REPO_ROOT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 
 // `typeof body` immediately followed by member access: `.field`, `?.field`,
 // or `[expr]`. The whole-body `typeof body !== 'object'` form has an operator
@@ -60,16 +63,18 @@ test('no route type-checks a request-body field with a bare typeof', async () =>
     [],
     'Validate request-body fields through server/utils/request-validators.js, ' +
       'not a hand-rolled `typeof body.field`:\n' +
-      offenders.join('\n')
+      offenders.join('\n'),
   );
 });
 
 test('the request-validators vocabulary the routes lean on still exists', async () => {
   const src = await fs.readFile(
     path.join(REPO_ROOT, 'server/utils/request-validators.js'),
-    'utf8'
+    'utf8',
   );
-  const exported = [...src.matchAll(/^export function (\w+)/gm)].map((m) => m[1]);
+  const exported = [...src.matchAll(/^export function (\w+)/gm)].map(
+    (m) => m[1],
+  );
 
   // The forms the C6-restant sweep adopted. If one is removed, its call sites
   // fall back to bare typeof — so the guard above must not be the only thing
@@ -85,6 +90,9 @@ test('the request-validators vocabulary the routes lean on still exists', async 
     'getDataUrl',
     'getStringArray',
   ]) {
-    assert.ok(exported.includes(name), `request-validators.js must export ${name}`);
+    assert.ok(
+      exported.includes(name),
+      `request-validators.js must export ${name}`,
+    );
   }
 });

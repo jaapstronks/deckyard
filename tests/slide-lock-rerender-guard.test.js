@@ -27,9 +27,8 @@ globalThis.EventSource = class {
   close() {}
 };
 
-const { createSlideLockManager } = await import(
-  '../client/views/editor/slide-lock-manager.js'
-);
+const { createSlideLockManager } =
+  await import('../client/views/editor/slide-lock-manager.js');
 
 function makeManager() {
   let calls = 0;
@@ -53,7 +52,7 @@ function makeManager() {
 
 function dispatchLock(type, data) {
   window.dispatchEvent(
-    new dom.window.CustomEvent('sse:slide-lock', { detail: { type, data } })
+    new dom.window.CustomEvent('sse:slide-lock', { detail: { type, data } }),
   );
 }
 

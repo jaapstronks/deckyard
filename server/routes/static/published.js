@@ -28,15 +28,18 @@ import { crossOrganizationScope } from '../../storage/scope.js';
  */
 export async function handlePublishedReader({ repoRoot, req, res, url }) {
   const pubReaderMatch = url.pathname.match(
-    /^\/p\/([a-f0-9]{8})(?:-([^/]+))?\/reader$/
+    /^\/p\/([a-f0-9]{8})(?:-([^/]+))?\/reader$/,
   );
   if (!pubReaderMatch || req.method !== 'GET') return false;
 
   const publishId = pubReaderMatch[1];
   const reqSlug = String(pubReaderMatch[2] || '').trim();
   const entry = await getPublishedById(
-    crossOrganizationScope(repoRoot, 'published-deck: the publish id is the authorization'),
-    publishId
+    crossOrganizationScope(
+      repoRoot,
+      'published-deck: the publish id is the authorization',
+    ),
+    publishId,
   );
   if (!entry?.presentationId) {
     notFound(res);
@@ -44,8 +47,11 @@ export async function handlePublishedReader({ repoRoot, req, res, url }) {
   }
 
   const pres = await getPresentation(
-    crossOrganizationScope(repoRoot, 'published-deck: the publish id is the authorization'),
-    entry.presentationId
+    crossOrganizationScope(
+      repoRoot,
+      'published-deck: the publish id is the authorization',
+    ),
+    entry.presentationId,
   );
   if (!pres) {
     notFound(res);
@@ -98,8 +104,11 @@ export async function handlePublishedPage({ repoRoot, req, res, url }) {
   const publishId = pubMatch[1];
   const reqSlug = String(pubMatch[2] || '').trim();
   const entry = await getPublishedById(
-    crossOrganizationScope(repoRoot, 'published-deck: the publish id is the authorization'),
-    publishId
+    crossOrganizationScope(
+      repoRoot,
+      'published-deck: the publish id is the authorization',
+    ),
+    publishId,
   );
   if (!entry?.presentationId) {
     notFound(res);
@@ -107,8 +116,11 @@ export async function handlePublishedPage({ repoRoot, req, res, url }) {
   }
 
   const pres = await getPresentation(
-    crossOrganizationScope(repoRoot, 'published-deck: the publish id is the authorization'),
-    entry.presentationId
+    crossOrganizationScope(
+      repoRoot,
+      'published-deck: the publish id is the authorization',
+    ),
+    entry.presentationId,
   );
   if (!pres) {
     notFound(res);
@@ -136,7 +148,7 @@ export async function handlePublishedPage({ repoRoot, req, res, url }) {
   const projected = projectPresentationForLang(pres, modeLang);
   const canonicalUrl = new URL(
     `${canonicalPath}?lang=${encodeURIComponent(modeLang)}`,
-    origin
+    origin,
   ).href;
   const ogImageAbs = entry.ogImageUrl
     ? new URL(entry.ogImageUrl, origin).href
@@ -177,7 +189,7 @@ export async function handlePublishedPage({ repoRoot, req, res, url }) {
   }
   // Escape `<` so a value can never break out of the <script> block.
   const jsonLdScript = `<script type="application/ld+json">${JSON.stringify(
-    jsonLd
+    jsonLd,
   ).replace(/</g, '\\u003c')}</script>`;
 
   const headHtml = `
@@ -204,7 +216,10 @@ export async function handlePublishedPage({ repoRoot, req, res, url }) {
     ${jsonLdScript}
     `.trim();
   const publishedSettings = await getAppSettings(
-    crossOrganizationScope(repoRoot, 'published deck page: analytics config is instance-level')
+    crossOrganizationScope(
+      repoRoot,
+      'published deck page: analytics config is instance-level',
+    ),
   );
   const analytics = analyticsHeadHtml({
     context: 'published',
@@ -228,9 +243,9 @@ export async function handlePublishedPage({ repoRoot, req, res, url }) {
 
   // Visible link to the semantic reader view (discoverable a11y/no-JS surface).
   const readerLinkHtml = `<a class="presenter-help ps-reader-link" href="${escapeHtml(
-    readerPath
+    readerPath,
   )}" rel="alternate" style="text-decoration: underline; white-space: nowrap;">${escapeHtml(
-    readerLabel
+    readerLabel,
   )}</a>`;
 
   const theme = await loadThemeAssets(repoRoot, pres?.theme);

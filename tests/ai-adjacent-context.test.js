@@ -25,28 +25,47 @@ test('an unresolved previous group still yields adjacency context', () => {
 });
 
 test('resolved types are preferred over hints when available', () => {
-  const resolved = [{ ...groups[0], resolvedTypes: ['kpi-metrics-slide', 'list-slide'] }, groups[1]];
+  const resolved = [
+    { ...groups[0], resolvedTypes: ['kpi-metrics-slide', 'list-slide'] },
+    groups[1],
+  ];
   const context = buildAdjacentContext(resolved[1], resolved, 1);
   assert.match(context, /Previous slides: kpi-metrics-slide, list-slide/);
   assert.doesNotMatch(context, /hints/, 'hints are only the fallback');
 });
 
 test('the first group has no previous context', () => {
-  assert.doesNotMatch(buildAdjacentContext(groups[0], groups, 0), /Previous slides/);
+  assert.doesNotMatch(
+    buildAdjacentContext(groups[0], groups, 0),
+    /Previous slides/,
+  );
 });
 
 test('duplicate hints are collapsed and the list is bounded', () => {
   const noisy = [
-    { slides: Array.from({ length: 12 }, (_, i) => ({ hints: ['has-4-items', `hint-${i}`] })) },
+    {
+      slides: Array.from({ length: 12 }, (_, i) => ({
+        hints: ['has-4-items', `hint-${i}`],
+      })),
+    },
     { slides: [{ hints: [] }] },
   ];
   const line = buildAdjacentContext(noisy[1], noisy, 1);
   const hints = line.replace(/^.*hints: /, '').split(', ');
-  assert.ok(hints.length <= 4, 'context stays short enough to be read as a hint, not a spec');
+  assert.ok(
+    hints.length <= 4,
+    'context stays short enough to be read as a hint, not a spec',
+  );
   assert.equal(new Set(hints).size, hints.length, 'no duplicates');
 });
 
 test('a previous group with no hints produces no context line', () => {
-  const empty = [{ slides: [{ hints: [] }] }, { slides: [{ hints: ['is-timeline'] }] }];
-  assert.doesNotMatch(buildAdjacentContext(empty[1], empty, 1), /Previous slides/);
+  const empty = [
+    { slides: [{ hints: [] }] },
+    { slides: [{ hints: ['is-timeline'] }] },
+  ];
+  assert.doesNotMatch(
+    buildAdjacentContext(empty[1], empty, 1),
+    /Previous slides/,
+  );
 });

@@ -14,9 +14,7 @@ export function pickOgImageUrlFromPresentation(pres) {
 
   const type = String(first.type || '');
   const content =
-    first.content && typeof first.content === 'object'
-      ? first.content
-      : {};
+    first.content && typeof first.content === 'object' ? first.content : {};
   const def = SLIDE_TYPES?.[type];
 
   // Heuristic: use the first image-like field (in schema order).
@@ -25,13 +23,9 @@ export function pickOgImageUrlFromPresentation(pres) {
       if (!f || typeof f !== 'object') continue;
       if (f.type === 'image' && typeof f.key === 'string') {
         const v = content[f.key];
-        if (typeof v === 'string' && v.trim())
-          return v.trim();
+        if (typeof v === 'string' && v.trim()) return v.trim();
       }
-      if (
-        f.type === 'images' &&
-        typeof f.key === 'string'
-      ) {
+      if (f.type === 'images' && typeof f.key === 'string') {
         const v = content[f.key];
         if (Array.isArray(v)) {
           const s = firstNonEmptyString(v);
@@ -45,19 +39,11 @@ export function pickOgImageUrlFromPresentation(pres) {
   for (const v of Object.values(content)) {
     if (typeof v === 'string' && v.trim()) {
       const s = v.trim();
-      if (
-        s.startsWith('/uploads/') ||
-        s.startsWith('/assets/')
-      )
-        return s;
+      if (s.startsWith('/uploads/') || s.startsWith('/assets/')) return s;
     }
     if (Array.isArray(v)) {
       const s = firstNonEmptyString(v);
-      if (
-        s.startsWith('/uploads/') ||
-        s.startsWith('/assets/')
-      )
-        return s;
+      if (s.startsWith('/uploads/') || s.startsWith('/assets/')) return s;
     }
   }
 

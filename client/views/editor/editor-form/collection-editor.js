@@ -108,9 +108,9 @@ export function createCollectionEditor({
   // collection (a row's blocks) may honestly go down to its declared minimum.
   const removeFloor = depth > 0 ? minItems : Math.max(1, minItems);
   const itemDefaults = resolveItemDefaults(field, lang);
-  const itemFields = (Array.isArray(field?.itemFields) ? field.itemFields : []).filter(
-    (f) => f && !f.hidden
-  );
+  const itemFields = (
+    Array.isArray(field?.itemFields) ? field.itemFields : []
+  ).filter((f) => f && !f.hidden);
   const collapsible = !!field?.collapsible && depth === 0;
 
   // Canonicalize once on mount: dual-model types (icon-card-grid, team-cards,
@@ -158,7 +158,7 @@ export function createCollectionEditor({
     h('div', {
       class: 'field-label',
       text: t(field.labelKey || field.key, field.label || field.key),
-    })
+    }),
   );
   const controlsRow = h('div', { class: 'row is-wrap' });
   const btnAdd = h('button', {
@@ -181,7 +181,13 @@ export function createCollectionEditor({
 
   const moveItem = (from, to) => {
     const current = readArr();
-    if (from === to || from < 0 || to < 0 || from >= current.length || to >= current.length) {
+    if (
+      from === to ||
+      from < 0 ||
+      to < 0 ||
+      from >= current.length ||
+      to >= current.length
+    ) {
       return;
     }
     const next = current.slice();
@@ -197,7 +203,12 @@ export function createCollectionEditor({
     onReorder: moveItem,
   });
 
-  const makeInput = (label, value, { maxLength, multiline, number, placeholder } = {}, onChange) => {
+  const makeInput = (
+    label,
+    value,
+    { maxLength, multiline, number, placeholder } = {},
+    onChange,
+  ) => {
     if (number && fieldNumber) {
       return fieldNumber(label, value ?? '', onChange, {});
     }
@@ -206,7 +217,8 @@ export function createCollectionEditor({
       : h('input', { class: 'form-input' });
     input.value = value ?? '';
     if (Number(maxLength) > 0) input.maxLength = Number(maxLength);
-    if (typeof placeholder === 'string' && placeholder) input.placeholder = placeholder;
+    if (typeof placeholder === 'string' && placeholder)
+      input.placeholder = placeholder;
     input.addEventListener('input', () => onChange(input.value));
     return h('div', { class: 'stack is-field' }, [
       h('div', { class: 'field-label', text: label }),
@@ -221,7 +233,10 @@ export function createCollectionEditor({
       const v = String(item?.[f.key] || '').trim();
       if (v) return { text: v, placeholder: false };
     }
-    return { text: t('editor.items.itemN', 'Item {n}', { n: i + 1 }), placeholder: true };
+    return {
+      text: t('editor.items.itemN', 'Item {n}', { n: i + 1 }),
+      placeholder: true,
+    };
   };
 
   function renderList() {
@@ -229,7 +244,8 @@ export function createCollectionEditor({
     list.innerHTML = '';
 
     for (let i = 0; i < current.length; i += 1) {
-      const item = current[i] && typeof current[i] === 'object' ? current[i] : {};
+      const item =
+        current[i] && typeof current[i] === 'object' ? current[i] : {};
       const group = h('div', { class: 'stack card-group' });
       const key = stateKey(i);
       const isCollapsed = collapsible && collapsedState.isCollapsed(key);
@@ -238,7 +254,8 @@ export function createCollectionEditor({
       const setItemKey = (k, v) => {
         const now = readArr();
         const next = now.slice();
-        const nextItem = next[i] && typeof next[i] === 'object' ? { ...next[i] } : {};
+        const nextItem =
+          next[i] && typeof next[i] === 'object' ? { ...next[i] } : {};
         nextItem[k] = v;
         next[i] = nextItem;
         if (model) model.write(next);
@@ -283,7 +300,7 @@ export function createCollectionEditor({
         h('div', {
           class: `card-group-title item-title-preview${title.placeholder ? ' is-placeholder' : ''}`,
           text: title.text,
-        })
+        }),
       );
       header.append(headerLeft);
 
@@ -293,7 +310,9 @@ export function createCollectionEditor({
           type: 'button',
           text: '×',
           title: t('editor.items.remove', 'Remove item'),
-          'aria-label': t('editor.items.removeN', 'Remove item {n}', { n: i + 1 }),
+          'aria-label': t('editor.items.removeN', 'Remove item {n}', {
+            n: i + 1,
+          }),
           disabled: current.length <= removeFloor,
           onclick: () => {
             const now = readArr();
@@ -302,7 +321,7 @@ export function createCollectionEditor({
             next.splice(i, 1);
             commit(next);
           },
-        })
+        }),
       );
       group.append(header);
 
@@ -321,7 +340,11 @@ export function createCollectionEditor({
 
         // `relationField` names the relation to the NEXT item (text-blocks'
         // arrow): meaningless on the last item, so it doesn't render there.
-        if (field.relationField && k === field.relationField && i >= current.length - 1) {
+        if (
+          field.relationField &&
+          k === field.relationField &&
+          i >= current.length - 1
+        ) {
           continue;
         }
 
@@ -331,7 +354,15 @@ export function createCollectionEditor({
         // for the declared type.
         const editor = fieldEditor(f);
         if (editor === 'icon-picker' && typeof fieldIconPicker === 'function') {
-          pushWidget(k, fieldIconPicker(label, item?.[k] || '', (v) => setItemKey(k, v), {}));
+          pushWidget(
+            k,
+            fieldIconPicker(
+              label,
+              item?.[k] || '',
+              (v) => setItemKey(k, v),
+              {},
+            ),
+          );
           continue;
         }
         if (editor === 'card-link') {
@@ -343,9 +374,9 @@ export function createCollectionEditor({
               onChange: (v) => setItemKey(k, v),
               help: t(
                 'editor.cards.linkHelp2',
-                'Makes the card clickable. Pick a slide to jump to, or type an https:// / mailto: link (opens in a new tab).'
+                'Makes the card clickable. Pick a slide to jump to, or type an https:// / mailto: link (opens in a new tab).',
               ),
-            })
+            }),
           );
           continue;
         }
@@ -377,7 +408,7 @@ export function createCollectionEditor({
             fieldImage(proxySlide, imageField, (url) => {
               setItemKey(k, url);
               renderList();
-            })
+            }),
           );
           continue;
         }
@@ -385,12 +416,21 @@ export function createCollectionEditor({
         if (f.type === 'enum' && typeof fieldEnum === 'function') {
           // Resolve stamped option labelKeys here — the enum renderer shows
           // `option.label` verbatim.
-          const options = (Array.isArray(f.options) ? f.options : []).map((o) =>
-            o && typeof o === 'object' && o.labelKey
-              ? { ...o, label: t(o.labelKey, o.label ?? String(o.value ?? '')) }
-              : o
+          const options = (Array.isArray(f.options) ? f.options : []).map(
+            (o) =>
+              o && typeof o === 'object' && o.labelKey
+                ? {
+                    ...o,
+                    label: t(o.labelKey, o.label ?? String(o.value ?? '')),
+                  }
+                : o,
           );
-          pushWidget(k, fieldEnum({ ...f, options }, item?.[k] ?? '', (v) => setItemKey(k, v)));
+          pushWidget(
+            k,
+            fieldEnum({ ...f, options }, item?.[k] ?? '', (v) =>
+              setItemKey(k, v),
+            ),
+          );
           continue;
         }
 
@@ -429,7 +469,11 @@ export function createCollectionEditor({
           continue;
         }
 
-        if (f.type === 'string' || f.type === 'markdown' || f.type === 'number') {
+        if (
+          f.type === 'string' ||
+          f.type === 'markdown' ||
+          f.type === 'number'
+        ) {
           pushWidget(
             k,
             makeInput(
@@ -444,8 +488,8 @@ export function createCollectionEditor({
                     ? t(f.placeholderKey, f.placeholder)
                     : f.placeholder,
               },
-              (v) => setItemKey(k, v)
-            )
+              (v) => setItemKey(k, v),
+            ),
           );
           continue;
         }
@@ -453,7 +497,9 @@ export function createCollectionEditor({
       }
 
       const gridWidgets = widgets.filter((w) => !(w && w.fullWidth));
-      const fullWidgets = widgets.filter((w) => w && w.fullWidth).map((w) => w.fullWidth);
+      const fullWidgets = widgets
+        .filter((w) => w && w.fullWidth)
+        .map((w) => w.fullWidth);
       if (hasItemFormLayout && typeof fieldGrid === 'function') {
         // Declared rows (formLayout on item fields): a run of consecutive
         // `pair` fields shares one grid row, every other field gets its own.

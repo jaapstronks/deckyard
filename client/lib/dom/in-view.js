@@ -24,7 +24,7 @@ export function createInViewLoader({ rootMargin = '400px 0px' } = {}) {
             if (typeof fn === 'function') fn();
           }
         },
-        { rootMargin }
+        { rootMargin },
       )
     : null;
 

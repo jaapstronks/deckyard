@@ -103,7 +103,9 @@ export async function createLiveSession(scope, { presentationId }) {
     // Check if follow codes need refresh
     let followCodes = s.followCodes || {};
     if (areFollowCodesExpired(s)) {
-      log.info(`[Follow Codes] Codes expired for session ${s.sessionId}, refreshing...`);
+      log.info(
+        `[Follow Codes] Codes expired for session ${s.sessionId}, refreshing...`,
+      );
       followCodes = await mintFollowCodes(scope, presId);
       s.followCodes = followCodes;
       s.followCodesCreatedAt = Date.now();
@@ -160,7 +162,12 @@ export async function createLiveSession(scope, { presentationId }) {
  * @param {string} sessionId
  */
 export async function getLiveSession(scope, sessionId) {
-  toStorageContext(scope, 'getLiveSession', {}, { allowCrossOrganization: true });
+  toStorageContext(
+    scope,
+    'getLiveSession',
+    {},
+    { allowCrossOrganization: true },
+  );
   return hydrateSession(sessionId);
 }
 
@@ -168,8 +175,16 @@ export async function getLiveSession(scope, sessionId) {
  * @param {import('../scope.js').StorageScope} scope
  * @param {string} presentationId
  */
-export async function findMostRecentSessionForPresentation(scope, presentationId) {
-  toStorageContext(scope, 'findMostRecentSessionForPresentation', {}, { allowCrossOrganization: true });
+export async function findMostRecentSessionForPresentation(
+  scope,
+  presentationId,
+) {
+  toStorageContext(
+    scope,
+    'findMostRecentSessionForPresentation',
+    {},
+    { allowCrossOrganization: true },
+  );
   const pid = String(presentationId || '').trim();
   if (!pid) return null;
   await hydrateSessionsForPresentation(pid);
@@ -177,7 +192,8 @@ export async function findMostRecentSessionForPresentation(scope, presentationId
   let bestTs = -1;
   for (const s of sessions.values()) {
     if (!s || s.presentationId !== pid) continue;
-    const ts = Number(s?.state?.updatedAt || 0) || Number(s?.createdAt || 0) || 0;
+    const ts =
+      Number(s?.state?.updatedAt || 0) || Number(s?.createdAt || 0) || 0;
     if (ts > bestTs) {
       bestTs = ts;
       best = s;
@@ -195,7 +211,12 @@ export async function findMostRecentSessionForPresentation(scope, presentationId
  * @returns {Promise<{ok: true, session: object}|{ok: false, reason: string}>}
  */
 export async function touchLiveSession(scope, sessionId) {
-  toStorageContext(scope, 'touchLiveSession', {}, { allowCrossOrganization: true });
+  toStorageContext(
+    scope,
+    'touchLiveSession',
+    {},
+    { allowCrossOrganization: true },
+  );
   const s = await getLiveSession(scope, sessionId);
   if (!s) return { ok: false, reason: 'not_found' };
   s.lastActivityAt = Date.now();

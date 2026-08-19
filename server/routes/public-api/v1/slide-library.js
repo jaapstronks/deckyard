@@ -11,7 +11,17 @@ import {
 } from '../../../storage/slide-library/index.js';
 import { updatePresentation } from '../../../storage/presentations/index.js';
 import { newSlide } from '../../../../shared/slide-types.js';
-import { requirePermission, v1MethodNotAllowed, withV1ErrorHandler, getPresentationWithAccess, readApiV1Body, parsePaginationParams, apiSuccess, apiCreated, apiError } from './middleware.js';
+import {
+  requirePermission,
+  v1MethodNotAllowed,
+  withV1ErrorHandler,
+  getPresentationWithAccess,
+  readApiV1Body,
+  parsePaginationParams,
+  apiSuccess,
+  apiCreated,
+  apiError,
+} from './middleware.js';
 import { getNonNegativeNumber } from '../../../utils/request-validators.js';
 
 /**
@@ -60,12 +70,15 @@ async function handleList(ctx) {
 
   // Fetch tags for items
   const ids = paginated.map((it) => it.id);
-  const tagsMap = ids.length > 0
-    ? await getTagsForSlideLibraryItems(storageScope, ids, { userEmail: apiKey.ownerEmail })
-    : new Map();
+  const tagsMap =
+    ids.length > 0
+      ? await getTagsForSlideLibraryItems(storageScope, ids, {
+          userEmail: apiKey.ownerEmail,
+        })
+      : new Map();
 
   const sanitizedItems = paginated.map((it) =>
-    sanitizeLibraryItem(it, tagsMap.get(it.id) || [])
+    sanitizeLibraryItem(it, tagsMap.get(it.id) || []),
   );
 
   await apiSuccess(ctx, {
@@ -125,13 +138,19 @@ async function handleAddFromLibrary(ctx, presentationId) {
   }
 
   // Load presentation
-  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId, { access: 'write' });
+  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId, {
+    access: 'write',
+  });
   if (!ok) return true;
 
   // Load library item
-  const libraryItem = await getOrganizationLibraryItem(storageScope, libraryItemId, {
-    userEmail: apiKey.ownerEmail,
-  });
+  const libraryItem = await getOrganizationLibraryItem(
+    storageScope,
+    libraryItemId,
+    {
+      userEmail: apiKey.ownerEmail,
+    },
+  );
 
   if (!libraryItem || libraryItem.trashedAt) {
     await apiError(ctx, 404, 'Library item not found');
@@ -167,9 +186,14 @@ async function handleAddFromLibrary(ctx, presentationId) {
   slides.splice(insertIndex, 0, newSlideObj);
 
   // Update presentation (throws answered in the v1 envelope by the wrap).
-  const updated = await updatePresentation(storageScope, presentationId, { slides }, {
-    actorEmail: apiKey.ownerEmail,
-  });
+  const updated = await updatePresentation(
+    storageScope,
+    presentationId,
+    { slides },
+    {
+      actorEmail: apiKey.ownerEmail,
+    },
+  );
 
   await apiCreated(ctx, {
     slide: newSlideObj,
@@ -194,30 +218,33 @@ async function handleAddFromLibrary(ctx, presentationId) {
 /**
  * Main handler for /api/v1/slide-library routes.
  */
-export const handleSlideLibrary = withV1ErrorHandler('public-api-v1:slide-library', async (ctx) => {
-  const { req, res, url } = ctx;
+export const handleSlideLibrary = withV1ErrorHandler(
+  'public-api-v1:slide-library',
+  async (ctx) => {
+    const { req, res, url } = ctx;
 
-  // POST /api/v1/presentations/:id/slides/from-library
-  const fromLibraryMatch = url.pathname.match(
-    /^\/api\/v1\/presentations\/([^/]+)\/slides\/from-library$/
-  );
-  if (fromLibraryMatch) {
-    if (req.method !== 'POST') return v1MethodNotAllowed(res, ['POST']);
-    return handleAddFromLibrary(ctx, fromLibraryMatch[1]);
-  }
+    // POST /api/v1/presentations/:id/slides/from-library
+    const fromLibraryMatch = url.pathname.match(
+      /^\/api\/v1\/presentations\/([^/]+)\/slides\/from-library$/,
+    );
+    if (fromLibraryMatch) {
+      if (req.method !== 'POST') return v1MethodNotAllowed(res, ['POST']);
+      return handleAddFromLibrary(ctx, fromLibraryMatch[1]);
+    }
 
-  // GET /api/v1/slide-library/:itemId
-  const itemMatch = url.pathname.match(/^\/api\/v1\/slide-library\/([^/]+)$/);
-  if (itemMatch) {
-    if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
-    return handleGet(ctx, itemMatch[1]);
-  }
+    // GET /api/v1/slide-library/:itemId
+    const itemMatch = url.pathname.match(/^\/api\/v1\/slide-library\/([^/]+)$/);
+    if (itemMatch) {
+      if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
+      return handleGet(ctx, itemMatch[1]);
+    }
 
-  // GET /api/v1/slide-library
-  if (url.pathname === '/api/v1/slide-library') {
-    if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
-    return handleList(ctx);
-  }
+    // GET /api/v1/slide-library
+    if (url.pathname === '/api/v1/slide-library') {
+      if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
+      return handleList(ctx);
+    }
 
-  return false;
-});
+    return false;
+  },
+);

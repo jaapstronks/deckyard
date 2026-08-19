@@ -21,7 +21,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 const MANIFEST_PATH = path.join(repoRoot, 'client', 'i18n', 'manifest.json');
 
 /** @type {{locales: Array<{id: string, label: string, tier: number}>}} */

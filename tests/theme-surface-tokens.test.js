@@ -20,7 +20,7 @@ import { RADIUS_SCALES, SHADOW_SCALES } from '../shared/theme-config-schema.js';
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const tokensCss = readFileSync(
   join(repoRoot, 'client/styles/slides/00-tokens.css'),
-  'utf8'
+  'utf8',
 );
 
 test('the radius scale is read by the slide radius tokens', () => {
@@ -31,16 +31,19 @@ test('the radius scale is read by the slide radius tokens', () => {
 
 test('every shadow token is scaled by --t-shadow-scale', () => {
   // Unset must behave as 1, so a theme that says nothing renders as before.
-  assert.match(tokensCss, /--slide-shadow-scale:\s*var\(--t-shadow-scale,\s*1\)/);
+  assert.match(
+    tokensCss,
+    /--slide-shadow-scale:\s*var\(--t-shadow-scale,\s*1\)/,
+  );
 
   for (const name of ['sm', 'md', 'lg', 'card', 'elevated']) {
     const decl = tokensCss.match(
-      new RegExp(`--slide-shadow-${name}:[^;]+;`)
+      new RegExp(`--slide-shadow-${name}:[^;]+;`),
     )?.[0];
     assert.ok(decl, `--slide-shadow-${name} is missing`);
     assert.ok(
       decl.includes('calc(') && decl.includes('var(--slide-shadow-scale)'),
-      `--slide-shadow-${name} does not scale with the theme: ${decl}`
+      `--slide-shadow-${name} does not scale with the theme: ${decl}`,
     );
   }
 });
@@ -55,7 +58,10 @@ test('print still drops every shadow regardless of the theme', () => {
 
 test('every scale the schema can emit is a value CSS can use', () => {
   for (const [name, value] of Object.entries(SHADOW_SCALES)) {
-    assert.ok(Number.isFinite(Number(value)), `${name} is not numeric: ${value}`);
+    assert.ok(
+      Number.isFinite(Number(value)),
+      `${name} is not numeric: ${value}`,
+    );
     assert.ok(Number(value) >= 0, `${name} is negative`);
   }
   for (const [name, vars] of Object.entries(RADIUS_SCALES)) {

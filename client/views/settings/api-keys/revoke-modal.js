@@ -25,20 +25,20 @@ export function showRevokeModal(key, onSuccess) {
     h('p', {
       text: t(
         'settings.apiKeys.revokeModal.message',
-        'Are you sure you want to revoke this API key? This action cannot be undone.'
+        'Are you sure you want to revoke this API key? This action cannot be undone.',
       ),
     }),
     h('div', { class: 'api-key-revoke-details' }, [
       h('strong', { text: key.name }),
       h('code', { class: 'api-key-prefix', text: `${key.prefix}...` }),
-    ])
+    ]),
   );
 
   const warning = h('p', {
     class: 'help',
     text: t(
       'settings.apiKeys.revokeModal.warning',
-      'Any applications using this key will immediately lose access.'
+      'Any applications using this key will immediately lose access.',
     ),
   });
 
@@ -62,16 +62,23 @@ export function showRevokeModal(key, onSuccess) {
 
     busy = true;
     btnRevoke.disabled = true;
-    status.textContent = t('settings.apiKeys.revokeModal.revoking', 'Revoking...');
+    status.textContent = t(
+      'settings.apiKeys.revokeModal.revoking',
+      'Revoking...',
+    );
 
     const result = await revokeApiKey(key.id);
 
     if (result.success) {
-      toast.success(t('settings.apiKeys.revokeModal.success', 'API key revoked.'));
+      toast.success(
+        t('settings.apiKeys.revokeModal.success', 'API key revoked.'),
+      );
       overlay.remove();
       onSuccess();
     } else {
-      status.textContent = result.error || t('settings.apiKeys.revokeModal.error', 'Failed to revoke API key.');
+      status.textContent =
+        result.error ||
+        t('settings.apiKeys.revokeModal.error', 'Failed to revoke API key.');
       busy = false;
       btnRevoke.disabled = false;
     }
@@ -82,7 +89,10 @@ export function showRevokeModal(key, onSuccess) {
     if (e.target === overlay) overlay.remove();
   };
 
-  const btnRow = h('div', { class: 'row is-end', style: 'gap: 8px; margin-top: 16px;' });
+  const btnRow = h('div', {
+    class: 'row is-end',
+    style: 'gap: 8px; margin-top: 16px;',
+  });
   btnRow.append(btnCancel, btnRevoke);
 
   modal.append(modalTitle, message, warning, status, btnRow);

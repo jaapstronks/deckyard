@@ -22,17 +22,23 @@ test('getOrgId returns the organization the context carries', () => {
   assert.equal(getOrgId({ organizationId: 'org_alpha' }), 'org_alpha');
   assert.equal(
     getOrgId({ organizationId: 'org_beta', actorEmail: 'a@b.c' }),
-    'org_beta'
+    'org_beta',
   );
 });
 
 test('getOrgId throws — never a silent default — when the context has no organization', () => {
   // Every shape a missing organization can take must throw, not fall back.
-  for (const ctx of [undefined, null, {}, { organizationId: undefined }, { organizationId: '' }]) {
+  for (const ctx of [
+    undefined,
+    null,
+    {},
+    { organizationId: undefined },
+    { organizationId: '' },
+  ]) {
     assert.throws(
       () => getOrgId(ctx),
       /no organization to act in/,
-      `expected getOrgId(${JSON.stringify(ctx)}) to throw`
+      `expected getOrgId(${JSON.stringify(ctx)}) to throw`,
     );
   }
 });

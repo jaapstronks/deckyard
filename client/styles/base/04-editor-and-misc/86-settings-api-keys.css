@@ -108,7 +108,14 @@
 }
 
 .api-key-prefix {
-  font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    SF Mono,
+    Menlo,
+    Consolas,
+    Liberation Mono,
+    monospace;
   font-size: var(--ps-text-sm);
   color: hsl(var(--app-text-secondary));
   background: hsl(var(--app-bg-secondary) / 0.5);
@@ -180,7 +187,9 @@
   border-radius: var(--ps-radius-md);
   border: 1px solid hsl(var(--app-border-subtle));
   background: hsl(var(--app-bg-base));
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .api-key-permission-checkbox:hover {
@@ -193,7 +202,7 @@
   border-color: hsl(var(--app-accent-primary) / 0.3);
 }
 
-.api-key-permission-checkbox input[type="checkbox"] {
+.api-key-permission-checkbox input[type='checkbox'] {
   margin-top: 2px;
   width: 18px;
   height: 18px;
@@ -266,7 +275,14 @@
 }
 
 .api-key-full {
-  font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    SF Mono,
+    Menlo,
+    Consolas,
+    Liberation Mono,
+    monospace;
   font-size: var(--ps-text-sm);
   color: hsl(var(--app-text-primary));
   word-break: break-all;

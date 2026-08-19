@@ -89,7 +89,9 @@ export function buildActivityOpts(searchParams, email) {
  * @returns {Promise<boolean>} true if handled
  */
 async function handleHomeGet({ storageScope, res, url, authedUser }) {
-  const email = String(authedUser?.email || '').trim().toLowerCase();
+  const email = String(authedUser?.email || '')
+    .trim()
+    .toLowerCase();
   if (!email) return unauthorized(res);
 
   const activityOpts = buildActivityOpts(url.searchParams, email);
@@ -97,19 +99,30 @@ async function handleHomeGet({ storageScope, res, url, authedUser }) {
   // Fire every section's storage read in parallel — the whole point of the
   // aggregation. Each piece degrades to an empty result so one failing section
   // never takes down the rest of Home.
-  const [popular, activity, personalCols, organizationCols, organizationLib, usage] =
-    await Promise.all([
-      getPopularPresentations({ user: authedUser, organizationId: storageScope?.organizationId }).catch(
-        () => []
-      ),
-      getEnrichedActivity({ storageScope, authedUser, opts: activityOpts }).catch(
-        () => ({ events: [], total: 0, limit: activityOpts.limit, offset: 0 })
-      ),
-      listPersonalCollections(storageScope, email).catch(() => ({ items: [] })),
-      listOrganizationCollections(storageScope, { userEmail: email }).catch(() => ({ items: [] })),
-      listOrganizationLibrary(storageScope, { userEmail: email }).catch(() => ({ items: [] })),
-      listSlideLibraryUsage(storageScope, email).catch(() => ({ items: [] })),
-    ]);
+  const [
+    popular,
+    activity,
+    personalCols,
+    organizationCols,
+    organizationLib,
+    usage,
+  ] = await Promise.all([
+    getPopularPresentations({
+      user: authedUser,
+      organizationId: storageScope?.organizationId,
+    }).catch(() => []),
+    getEnrichedActivity({ storageScope, authedUser, opts: activityOpts }).catch(
+      () => ({ events: [], total: 0, limit: activityOpts.limit, offset: 0 }),
+    ),
+    listPersonalCollections(storageScope, email).catch(() => ({ items: [] })),
+    listOrganizationCollections(storageScope, { userEmail: email }).catch(
+      () => ({ items: [] }),
+    ),
+    listOrganizationLibrary(storageScope, { userEmail: email }).catch(() => ({
+      items: [],
+    })),
+    listSlideLibraryUsage(storageScope, email).catch(() => ({ items: [] })),
+  ]);
 
   const asItems = (r) => (Array.isArray(r?.items) ? r.items : []);
 
@@ -139,7 +152,10 @@ async function handleHomeGet({ storageScope, res, url, authedUser }) {
  */
 export const ROUTES = [
   { method: 'GET', pattern: '/api/home', handler: handleHomeGet },
-  { pattern: '/api/home', handler: ({ res }) => methodNotAllowed(res, ['GET']) },
+  {
+    pattern: '/api/home',
+    handler: ({ res }) => methodNotAllowed(res, ['GET']),
+  },
 ];
 
 /**

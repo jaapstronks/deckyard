@@ -36,7 +36,7 @@
 }
 
 .slide-visibility-badge--draft::before {
-  content: "D";
+  content: 'D';
 }
 
 .slide-visibility-badge--internal {
@@ -45,7 +45,7 @@
 }
 
 .slide-visibility-badge--internal::before {
-  content: "I";
+  content: 'I';
 }
 
 .slide-visibility-badge--hidden {
@@ -54,7 +54,7 @@
 }
 
 .slide-visibility-badge--hidden::before {
-  content: "H";
+  content: 'H';
 }
 
 .slide-visibility-badge--skipInPresentation {
@@ -63,7 +63,7 @@
 }
 
 .slide-visibility-badge--skipInPresentation::before {
-  content: "S";
+  content: 'S';
 }
 
 .slide-visibility-badge--custom {
@@ -72,7 +72,7 @@
 }
 
 .slide-visibility-badge--custom::before {
-  content: "?";
+  content: '?';
 }
 
 /* ========================================
@@ -95,7 +95,9 @@
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: opacity 0.15s ease, background 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    background 0.15s ease;
   z-index: 7;
 }
 
@@ -371,7 +373,7 @@
 
 /* Viewer slides panel - draft indicator */
 .viewer-slides-panel .slide-item.is-draft .thumb-mini::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   right: 0;

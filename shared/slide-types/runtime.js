@@ -111,7 +111,9 @@ export const LIVE_INTERACTIONS = Object.freeze({
 });
 
 /** @type {ReadonlyArray<string>} */
-export const LIVE_INTERACTION_NAMES = Object.freeze(Object.keys(LIVE_INTERACTIONS));
+export const LIVE_INTERACTION_NAMES = Object.freeze(
+  Object.keys(LIVE_INTERACTIONS),
+);
 
 /**
  * Whether a value is a declared runtime.

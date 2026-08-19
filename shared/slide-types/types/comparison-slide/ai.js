@@ -19,23 +19,23 @@
  */
 
 export const ai = {
-    category: 'content',
-    resolveInPhase1: false,
-    description: `
+  category: 'content',
+  resolveInPhase1: false,
+  description: `
       Side-by-side comparison of two options/concepts.
       Each side has title and body (Markdown bullets). Optional verdict badge.
       Use for A vs B, pros vs cons, before vs after.
     `,
-    bestFor: [
-      'A vs B comparisons (products, approaches)',
-      'Pros and cons analysis',
-      'Before vs after transformations',
-      'Option evaluation and decision support',
-    ],
-    notFor: [
-      'More than 2 options (use table-slide or icon-card-grid-slide)',
-      '2x2 matrices like SWOT (use matrix-slide)',
-    ],
+  bestFor: [
+    'A vs B comparisons (products, approaches)',
+    'Pros and cons analysis',
+    'Before vs after transformations',
+    'Option evaluation and decision support',
+  ],
+  notFor: [
+    'More than 2 options (use table-slide or icon-card-grid-slide)',
+    '2x2 matrices like SWOT (use matrix-slide)',
+  ],
 };
 
 /**
@@ -48,9 +48,11 @@ export const aiExamples = [
     _variation: 'Pros and cons comparison',
     title: 'Build vs Buy Decision',
     leftTitle: 'Build In-House',
-    leftBody: '- Full customization possible\n- Complete ownership of IP\n- Higher upfront investment\n- Longer time to market\n- Requires dedicated team',
+    leftBody:
+      '- Full customization possible\n- Complete ownership of IP\n- Higher upfront investment\n- Longer time to market\n- Requires dedicated team',
     rightTitle: 'Buy Solution',
-    rightBody: '- Faster deployment\n- Lower initial cost\n- Proven reliability\n- Vendor dependency\n- Limited customization',
+    rightBody:
+      '- Faster deployment\n- Lower initial cost\n- Proven reliability\n- Vendor dependency\n- Limited customization',
     verdict: 'Recommended: Buy for MVP, build later',
     background: 'lime',
   },
@@ -58,9 +60,11 @@ export const aiExamples = [
     _variation: 'Before and after transformation',
     title: 'Digital Transformation Impact',
     leftTitle: 'Before',
-    leftBody: '- Manual data entry\n- Paper-based workflows\n- Siloed departments\n- 2-week processing time\n- High error rate (15%)',
+    leftBody:
+      '- Manual data entry\n- Paper-based workflows\n- Siloed departments\n- 2-week processing time\n- High error rate (15%)',
     rightTitle: 'After',
-    rightBody: '- Automated pipelines\n- Digital-first processes\n- Connected systems\n- Same-day processing\n- Near-zero errors (<1%)',
+    rightBody:
+      '- Automated pipelines\n- Digital-first processes\n- Connected systems\n- Same-day processing\n- Near-zero errors (<1%)',
     background: 'mist',
   },
 ];

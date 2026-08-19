@@ -153,7 +153,7 @@ export const up = async (db) => {
 
   log.info(
     `imported ${imported} file-based version snapshot(s) ` +
-      `(skipped ${skippedExisting} already present, ${skippedOrphan} orphaned presentation(s))`
+      `(skipped ${skippedExisting} already present, ${skippedOrphan} orphaned presentation(s))`,
   );
 };
 

@@ -27,13 +27,12 @@ const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 // `__resetStorageForTests` rather than `closeStorage`: the double is not a real
 // Kysely handle, so closing it would call a `destroy()` it does not have.
-const { initializeStorage, __resetStorageForTests } = await import(
-  '../server/storage/lifecycle.js'
-);
-const { createPresentation, createPresentationVersion } = await import(
-  '../server/storage/presentations/index.js'
-);
-const { handlePresentations } = await import('../server/routes/api/presentations.js');
+const { initializeStorage, __resetStorageForTests } =
+  await import('../server/storage/lifecycle.js');
+const { createPresentation, createPresentationVersion } =
+  await import('../server/storage/presentations/index.js');
+const { handlePresentations } =
+  await import('../server/routes/api/presentations.js');
 
 const OWNER = 'owner@example.com';
 // A revision that will never match a freshly-seeded deck (revision 1), so the
@@ -41,7 +40,11 @@ const OWNER = 'owner@example.com';
 const STALE_REVISION = '999';
 
 test.before(async () => {
-  __setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+  __setTestDb(
+    createFakeDb({
+      organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+    }),
+  );
   await initializeStorage();
 });
 
@@ -86,7 +89,13 @@ async function seedDeck() {
   return createPresentation(testScope(), {
     title: 'Conflict deck',
     ownerEmail: OWNER,
-    slides: [{ id: 's1', type: 'content-slide', content: { title: 'A', body: 'Hello' } }],
+    slides: [
+      {
+        id: 's1',
+        type: 'content-slide',
+        content: { title: 'A', body: 'Hello' },
+      },
+    ],
   });
 }
 
@@ -101,13 +110,17 @@ function assertConflictEnvelope(res, presId) {
   assert.equal(
     typeof body.message,
     'string',
-    'human message moved to the message field'
+    'human message moved to the message field',
   );
   assert.ok(body.message.length > 0, 'message is non-empty');
   // The revision details the client needs for conflict resolution survive.
   assert.ok(body.details, 'details preserved');
   assert.equal(body.details.id, presId, 'details carry the presentation id');
-  assert.equal(typeof body.details.revision, 'number', 'details carry the revision');
+  assert.equal(
+    typeof body.details.revision,
+    'number',
+    'details carry the revision',
+  );
 }
 
 test('PUT /:id conflict emits the canonical envelope', async () => {
@@ -158,7 +171,9 @@ test('POST /:id/versions/:v/restore conflict emits the canonical envelope', asyn
       body: {},
     }),
     res,
-    url: new URL(`http://test.local/api/presentations/${pres.id}/versions/${version?.id}/restore`),
+    url: new URL(
+      `http://test.local/api/presentations/${pres.id}/versions/${version?.id}/restore`,
+    ),
     authedUser: owner,
   });
   assertConflictEnvelope(res, pres.id);

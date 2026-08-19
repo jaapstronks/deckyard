@@ -33,12 +33,21 @@ export function createVideoMockup(className) {
  *   map the tab loaded from /api/slide-types
  * @returns {HTMLElement}
  */
-export function createCurationThumbnail(type, className, theme, slideTypes = null) {
+export function createCurationThumbnail(
+  type,
+  className,
+  theme,
+  slideTypes = null,
+) {
   if (type === 'video-slide') {
     return createVideoMockup(className);
   }
 
-  const sampleContent = getSampleContent(type, slideTypes || BUNDLED_SLIDE_TYPES, theme);
+  const sampleContent = getSampleContent(
+    type,
+    slideTypes || BUNDLED_SLIDE_TYPES,
+    theme,
+  );
   const slide = {
     id: `curation-${type}`,
     type,
@@ -52,7 +61,9 @@ export function createCurationThumbnail(type, className, theme, slideTypes = nul
     thumbWrap.append(el);
   } catch {
     thumbWrap.classList.add('is-error');
-    thumbWrap.append(h('div', { class: 'slide-type-curation-thumb-error', text: '?' }));
+    thumbWrap.append(
+      h('div', { class: 'slide-type-curation-thumb-error', text: '?' }),
+    );
   }
   return thumbWrap;
 }

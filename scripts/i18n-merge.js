@@ -17,7 +17,16 @@ const __dirname = path.dirname(__filename);
 
 const I18N_DIR = path.join(__dirname, '..', 'client', 'i18n');
 const LANGUAGES = ['en', 'nl', 'de', 'fr', 'es', 'pt', 'da', 'sv', 'no'];
-const MODULES = ['common', 'auth', 'editor', 'list', 'share', 'settings', 'presenter', 'slide-types'];
+const MODULES = [
+  'common',
+  'auth',
+  'editor',
+  'list',
+  'share',
+  'settings',
+  'presenter',
+  'slide-types',
+];
 
 function loadJson(filePath) {
   try {

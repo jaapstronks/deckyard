@@ -64,7 +64,10 @@ export function createInlineCoachMark({ h, stage } = {}) {
     el = h('div', { class: 'ie-coach', role: 'status' }, [
       h('span', {
         class: 'ie-coach-text',
-        text: t('editor.inline.coach', 'Click any text on the slide to edit it'),
+        text: t(
+          'editor.inline.coach',
+          'Click any text on the slide to edit it',
+        ),
       }),
       h('button', {
         class: 'ie-coach-dismiss',

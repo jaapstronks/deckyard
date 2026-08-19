@@ -38,12 +38,18 @@ import { reviseOutline } from '../../server/utils/ai/revise-outline.js';
  */
 export async function runOutlineStage(
   sourceText,
-  { targetLang = null, vendor = null, userName = '', revise = false } = {}
+  { targetLang = null, vendor = null, userName = '', revise = false } = {},
 ) {
-  const outline = await generateOutline(sourceText, { userName, targetLang, vendor, onLog: null });
+  const outline = await generateOutline(sourceText, {
+    userName,
+    targetLang,
+    vendor,
+    onLog: null,
+  });
   if (!revise) return outline;
 
-  const lang = outline.metadata?.requestedLang || outline.metadata?.detectedLang || 'en';
+  const lang =
+    outline.metadata?.requestedLang || outline.metadata?.detectedLang || 'en';
   const revised = await reviseOutline(outline, sourceText, { vendor, lang });
   // Carry the revision record so a run can report what the pass actually did.
   return { ...revised.outline, _revision: revised.revision };
@@ -76,7 +82,10 @@ export function splitOutline(outline) {
  * @param {string} [options.theme]
  * @returns {Promise<{deck: object, groupCount: number, refinedCount: number}>}
  */
-export async function runRefineStage(outline, { vendor = null, groupLimit = null, theme = 'default' } = {}) {
+export async function runRefineStage(
+  outline,
+  { vendor = null, groupLimit = null, theme = 'default' } = {},
+) {
   const { structuralSlides, contentGroups } = splitOutline(outline);
 
   const groups =
@@ -84,7 +93,8 @@ export async function runRefineStage(outline, { vendor = null, groupLimit = null
       ? contentGroups.slice(0, groupLimit)
       : contentGroups;
 
-  const lang = outline.metadata?.requestedLang || outline.metadata?.detectedLang || 'en';
+  const lang =
+    outline.metadata?.requestedLang || outline.metadata?.detectedLang || 'en';
 
   let refinedContentSlides = [];
   if (groups.length > 0) {
@@ -103,9 +113,15 @@ export async function runRefineStage(outline, { vendor = null, groupLimit = null
     partial: groups.length !== contentGroups.length,
   });
 
-  const deck = assembleDeck(outline, validateAndFixRefinedSlides(allSlides), { theme });
+  const deck = assembleDeck(outline, validateAndFixRefinedSlides(allSlides), {
+    theme,
+  });
 
-  return { deck, groupCount: contentGroups.length, refinedCount: refinedContentSlides.length };
+  return {
+    deck,
+    groupCount: contentGroups.length,
+    refinedCount: refinedContentSlides.length,
+  };
 }
 
 /**
@@ -135,14 +151,22 @@ export async function runFullPipeline(sourceText, options = {}) {
  * @param {boolean} options.partial - Whether only some groups were refined
  * @returns {object[]} Slides in original-index order
  */
-export function selectSlidesForDeck({ structuralSlides, refinedContentSlides, partial }) {
+export function selectSlidesForDeck({
+  structuralSlides,
+  refinedContentSlides,
+  partial,
+}) {
   const highestIndex = refinedContentSlides.reduce(
     (max, slide) => Math.max(max, slide.originalIndex ?? 0),
-    0
+    0,
   );
   const kept = partial
-    ? structuralSlides.filter((slide) => (slide.originalIndex ?? 0) <= highestIndex)
+    ? structuralSlides.filter(
+        (slide) => (slide.originalIndex ?? 0) <= highestIndex,
+      )
     : structuralSlides;
 
-  return [...kept, ...refinedContentSlides].sort((a, b) => a.originalIndex - b.originalIndex);
+  return [...kept, ...refinedContentSlides].sort(
+    (a, b) => a.originalIndex - b.originalIndex,
+  );
 }

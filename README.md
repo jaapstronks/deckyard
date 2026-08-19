@@ -22,16 +22,16 @@ Built with plain Node.js and vanilla ESM. No framework, no bundler, no vendor lo
 
 ### What makes it different
 
-| | Gamma / Tome / Beautiful.ai | Google Slides + Gemini | Deckyard |
-|---|---|---|---|
-| AI generation | ✅ | ✅ | ✅ <!--gen:slide-type-count-->34<!--/gen:slide-type-count--> typed slides |
-| MCP interface | ❌ | ❌ | ✅ 27 tools + 7 prompts |
-| Self-hosted | ❌ | ❌ | ✅ |
-| BYO LLM | ❌ | ❌ | ✅ |
-| Custom themes | Limited | Limited | ✅ Full control |
-| Embed SDK | ❌ | Limited | ✅ |
-| White-label | ❌ | ❌ | ✅ |
-| Open source | ❌ | ❌ | ✅ MIT |
+|               | Gamma / Tome / Beautiful.ai | Google Slides + Gemini | Deckyard                                                                  |
+| ------------- | --------------------------- | ---------------------- | ------------------------------------------------------------------------- |
+| AI generation | ✅                          | ✅                     | ✅ <!--gen:slide-type-count-->34<!--/gen:slide-type-count--> typed slides |
+| MCP interface | ❌                          | ❌                     | ✅ 27 tools + 7 prompts                                                   |
+| Self-hosted   | ❌                          | ❌                     | ✅                                                                        |
+| BYO LLM       | ❌                          | ❌                     | ✅                                                                        |
+| Custom themes | Limited                     | Limited                | ✅ Full control                                                           |
+| Embed SDK     | ❌                          | Limited                | ✅                                                                        |
+| White-label   | ❌                          | ❌                     | ✅                                                                        |
+| Open source   | ❌                          | ❌                     | ✅ MIT                                                                    |
 
 ## Quick Start
 
@@ -176,9 +176,7 @@ import { esc } from '../shared/slide-types/helpers.js';
 
 export default {
   label: 'My Custom Slide',
-  fields: [
-    { key: 'title', label: 'Title', type: 'string', required: true },
-  ],
+  fields: [{ key: 'title', label: 'Title', type: 'string', required: true }],
   defaults: { title: 'New slide' },
   renderHtml: (content) => `
     <div class="slide slide-custom">

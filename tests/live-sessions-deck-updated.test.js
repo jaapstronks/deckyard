@@ -12,7 +12,11 @@ import { notifyDeckUpdatedForPresentation } from '../server/storage/live-session
 
 /** The presenter scope the routes would pass (see server/storage/scope.js). */
 function testScope(repoRoot) {
-  return { repoRoot, organizationId: '00000000-0000-0000-0000-0000000000aa', actorEmail: null };
+  return {
+    repoRoot,
+    organizationId: '00000000-0000-0000-0000-0000000000aa',
+    actorEmail: null,
+  };
 }
 
 function fakeSseClient() {
@@ -33,16 +37,22 @@ test('notifyDeckUpdatedForPresentation broadcasts deckUpdated to session clients
   const repoRoot = mkdtempSync(join(tmpdir(), 'deckyard-deck-updated-'));
   const presentationId = 'pres-deck-updated-test';
 
-  const created = await createLiveSession(testScope(repoRoot), { presentationId });
+  const created = await createLiveSession(testScope(repoRoot), {
+    presentationId,
+  });
   assert.ok(created?.sessionId, 'session should be created');
 
   const session = await getLiveSession(testScope(repoRoot), created.sessionId);
   const client = fakeSseClient();
   session.clients.add(client);
 
-  const result = await notifyDeckUpdatedForPresentation(testScope(repoRoot), presentationId, {
-    reason: 'test_mutation',
-  });
+  const result = await notifyDeckUpdatedForPresentation(
+    testScope(repoRoot),
+    presentationId,
+    {
+      reason: 'test_mutation',
+    },
+  );
   assert.equal(result.ok, true);
 
   // The underlying broadcast is fire-and-forget; allow it to flush.
@@ -56,7 +66,10 @@ test('notifyDeckUpdatedForPresentation broadcasts deckUpdated to session clients
 
 test('notifyDeckUpdatedForPresentation is a no-op without a live session', async () => {
   const repoRoot = mkdtempSync(join(tmpdir(), 'deckyard-deck-updated-'));
-  const result = await notifyDeckUpdatedForPresentation(testScope(repoRoot), 'no-such-presentation');
+  const result = await notifyDeckUpdatedForPresentation(
+    testScope(repoRoot),
+    'no-such-presentation',
+  );
   assert.equal(result.ok, false);
   assert.equal(result.reason, 'no_live_session');
 });
@@ -66,7 +79,10 @@ test('notifyDeckUpdatedForPresentation ignores sessions without clients', async 
   const presentationId = 'pres-no-clients-test';
   await createLiveSession(testScope(repoRoot), { presentationId });
 
-  const result = await notifyDeckUpdatedForPresentation(testScope(repoRoot), presentationId);
+  const result = await notifyDeckUpdatedForPresentation(
+    testScope(repoRoot),
+    presentationId,
+  );
   assert.equal(result.ok, false);
   assert.equal(result.reason, 'no_live_session');
 });

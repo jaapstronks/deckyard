@@ -7,7 +7,17 @@
  * Supported locales for email templates.
  * @type {string[]}
  */
-export const SUPPORTED_LOCALES = ['en', 'nl', 'de', 'fr', 'es', 'pt', 'da', 'sv', 'no'];
+export const SUPPORTED_LOCALES = [
+  'en',
+  'nl',
+  'de',
+  'fr',
+  'es',
+  'pt',
+  'da',
+  'sv',
+  'no',
+];
 
 /**
  * Default locale for email templates.
@@ -19,7 +29,13 @@ export const DEFAULT_LOCALE = 'en';
  * Template fields that can be customized.
  * @type {string[]}
  */
-export const TEMPLATE_FIELDS = ['subject', 'greeting', 'body', 'buttonLabel', 'footer'];
+export const TEMPLATE_FIELDS = [
+  'subject',
+  'greeting',
+  'body',
+  'buttonLabel',
+  'footer',
+];
 
 /**
  * Metadata for every admin-customizable email template type: the single source
@@ -54,10 +70,14 @@ export const TEMPLATE_METADATA = {
   },
   activationReminder: {
     label: 'Activation Reminder',
-    description: 'Sent as a reminder to users who have not yet activated their account',
+    description:
+      'Sent as a reminder to users who have not yet activated their account',
     placeholders: [
       { key: 'name', description: 'Recipient name' },
-      { key: 'inviter', description: 'Name of person who sent the original invite' },
+      {
+        key: 'inviter',
+        description: 'Name of person who sent the original invite',
+      },
     ],
     fields: TEMPLATE_FIELDS,
   },
@@ -68,7 +88,10 @@ export const TEMPLATE_METADATA = {
       { key: 'name', description: 'Recipient name' },
       { key: 'inviter', description: 'Name of person who shared' },
       { key: 'presTitle', description: 'Presentation title' },
-      { key: 'permission', description: 'Permission level (view/comment/edit)' },
+      {
+        key: 'permission',
+        description: 'Permission level (view/comment/edit)',
+      },
       { key: 'accessLevel', description: 'Access level description' },
     ],
     fields: TEMPLATE_FIELDS,
@@ -86,9 +109,7 @@ export const TEMPLATE_METADATA = {
   passwordReset: {
     label: 'Password Reset',
     description: 'Sent when a user requests to reset their password',
-    placeholders: [
-      { key: 'name', description: 'Recipient name' },
-    ],
+    placeholders: [{ key: 'name', description: 'Recipient name' }],
     fields: TEMPLATE_FIELDS,
   },
   magicLink: {
@@ -135,4 +156,3 @@ export const TEMPLATE_METADATA = {
  * @type {string[]}
  */
 export const TEMPLATE_TYPES = Object.keys(TEMPLATE_METADATA);
-

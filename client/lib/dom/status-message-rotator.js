@@ -32,8 +32,11 @@ export function createMessageRotator({
     if (currentIndex < messages.length) {
       const message = messages[currentIndex];
       const progress = Math.min(
-        baseProgress + Math.round((currentIndex / messages.length) * (maxProgress - baseProgress)),
-        maxProgress
+        baseProgress +
+          Math.round(
+            (currentIndex / messages.length) * (maxProgress - baseProgress),
+          ),
+        maxProgress,
       );
       onUpdate?.(message, progress);
       currentIndex++;

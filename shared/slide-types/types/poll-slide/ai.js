@@ -19,16 +19,19 @@
  */
 
 export const ai = {
-    category: 'interactive',
-    resolveInPhase1: false,
-    description: `
+  category: 'interactive',
+  resolveInPhase1: false,
+  description: `
       Multiple-choice audience poll with 2-4 options.
       Live voting functionality.
     `,
-    bestFor: [
-      'Audience questions with discrete options',
-      '"Which do you prefer?" style questions',
-      'Quick pulse checks',
-    ],
-    notFor: ['Open-ended questions (use feedback-slide)', 'Scale ratings (use likert slides)'],
+  bestFor: [
+    'Audience questions with discrete options',
+    '"Which do you prefer?" style questions',
+    'Quick pulse checks',
+  ],
+  notFor: [
+    'Open-ended questions (use feedback-slide)',
+    'Scale ratings (use likert slides)',
+  ],
 };

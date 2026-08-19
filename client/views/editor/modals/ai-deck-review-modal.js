@@ -58,12 +58,12 @@ export function openAiDeckReviewModal({
         : t('editor.deckReview.title', 'Review deck'),
       hint: t(
         'editor.deckReview.hint',
-        'Each slide shows why its type was picked. Click a slide for a closer look; tick one or more to revise that section as a group.'
+        'Each slide shows why its type was picked. Click a slide for a closer look; tick one or more to revise that section as a group.',
       ),
       modalClass: 'modal-ai-review',
       onClose: () => grid?.teardown(),
     },
-    openOverlayClosers
+    openOverlayClosers,
   );
 
   const status = h('div', { class: 'help ui-status-line' });
@@ -79,7 +79,7 @@ export function openAiDeckReviewModal({
     // Swapping a type applies to the live deck (undo covers regret).
     replaceSlide: (slide, next) => {
       const i = (pres.slides || []).findIndex(
-        (s) => s === slide || (slide.id && s.id === slide.id)
+        (s) => s === slide || (slide.id && s.id === slide.id),
       );
       if (i < 0) return;
       pres.slides[i] = { ...next, id: pres.slides[i].id };
@@ -105,7 +105,7 @@ export function openAiDeckReviewModal({
     if (!n) {
       selectionHint.textContent = t(
         'editor.deckReview.selectHint',
-        'Select slides to revise a section.'
+        'Select slides to revise a section.',
       );
       return;
     }
@@ -119,10 +119,14 @@ export function openAiDeckReviewModal({
     selectionHint.textContent =
       start === end
         ? t('editor.deckReview.selectedOne', 'Slide {n} selected', { n: start })
-        : t('editor.deckReview.selectedRange', 'Slides {start}–{end} selected (revised as one section)', {
-            start,
-            end,
-          });
+        : t(
+            'editor.deckReview.selectedRange',
+            'Slides {start}–{end} selected (revised as one section)',
+            {
+              start,
+              end,
+            },
+          );
   };
 
   grid = createDeckGridView({
@@ -153,13 +157,16 @@ export function openAiDeckReviewModal({
     rows: '2',
     placeholder: t(
       'editor.deckReview.feedbackPlaceholder',
-      'E.g. merge these into one timeline, add per-phase descriptions, shorter texts…'
+      'E.g. merge these into one timeline, add per-phase descriptions, shorter texts…',
     ),
   });
   const feedbackWrap = h('div', { class: 'ai-review-feedback stack' }, [
     h('div', {
       class: 'field-label',
-      text: t('editor.deckReview.feedbackLabel', 'What should change in the selected section?'),
+      text: t(
+        'editor.deckReview.feedbackLabel',
+        'What should change in the selected section?',
+      ),
     }),
     feedbackTa,
   ]);
@@ -188,7 +195,7 @@ export function openAiDeckReviewModal({
     if (!feedback) {
       status.textContent = t(
         'editor.aiReview.feedbackRequired',
-        'First describe what should change.'
+        'First describe what should change.',
       );
       feedbackTa.focus();
       return;
@@ -217,7 +224,10 @@ export function openAiDeckReviewModal({
       const range = resp?.range;
       if (!revised.length || !range || typeof range.start !== 'number') {
         throw new Error(
-          t('editor.deckReview.revisionFailed', 'No revised section received (please try again).')
+          t(
+            'editor.deckReview.revisionFailed',
+            'No revised section received (please try again).',
+          ),
         );
       }
       // Replace the range in the live deck; ids of the revised slides are
@@ -233,7 +243,7 @@ export function openAiDeckReviewModal({
           t('editor.deckReview.revised', 'Section replaced ({count} slides)', {
             count: revised.length,
           }),
-        { id: 'ai-deck-review-revised', durationMs: 7000 }
+        { id: 'ai-deck-review-revised', durationMs: 7000 },
       );
     } catch (e) {
       status.textContent = String(e?.message || e);
@@ -255,7 +265,7 @@ export function openAiDeckReviewModal({
           title: t('editor.deckReview.discardDeck', 'Discard deck'),
           message: t(
             'editor.deckReview.discardConfirm',
-            'Delete this generated presentation? It will be moved to the trash.'
+            'Delete this generated presentation? It will be moved to the trash.',
           ),
           confirmLabel: t('editor.deckReview.discardDeck', 'Discard deck'),
           danger: true,

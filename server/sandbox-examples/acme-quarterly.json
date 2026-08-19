@@ -42,10 +42,30 @@
         "background": "mist",
         "accent": "highlight-best",
         "metrics": [
-          { "value": "48.6", "unit": "M€", "label": "Annual revenue", "note": "+18% vs FY24" },
-          { "value": "31", "unit": "%", "label": "Gross margin", "note": "+2pp" },
-          { "value": "62", "unit": "", "label": "NPS", "note": "+7 vs last review" },
-          { "value": "94", "unit": "%", "label": "Net revenue retention", "note": "-1pp vs plan" }
+          {
+            "value": "48.6",
+            "unit": "M€",
+            "label": "Annual revenue",
+            "note": "+18% vs FY24"
+          },
+          {
+            "value": "31",
+            "unit": "%",
+            "label": "Gross margin",
+            "note": "+2pp"
+          },
+          {
+            "value": "62",
+            "unit": "",
+            "label": "NPS",
+            "note": "+7 vs last review"
+          },
+          {
+            "value": "94",
+            "unit": "%",
+            "label": "Net revenue retention",
+            "note": "-1pp vs plan"
+          }
         ]
       }
     },
@@ -104,10 +124,26 @@
         "title": "The road to FY26",
         "subheading": "Committed milestones for the year ahead",
         "items": [
-          { "date": "Q1", "title": "EU data residency", "text": "Frankfurt region goes live for enterprise accounts." },
-          { "date": "Q2", "title": "Self-serve tier", "text": "Open the SMB funnel with a no-touch onboarding path." },
-          { "date": "Q3", "title": "Partner marketplace", "text": "First ten integration partners shipped." },
-          { "date": "Q4", "title": "50M€ run-rate", "text": "Cross the milestone we set out to reach." }
+          {
+            "date": "Q1",
+            "title": "EU data residency",
+            "text": "Frankfurt region goes live for enterprise accounts."
+          },
+          {
+            "date": "Q2",
+            "title": "Self-serve tier",
+            "text": "Open the SMB funnel with a no-touch onboarding path."
+          },
+          {
+            "date": "Q3",
+            "title": "Partner marketplace",
+            "text": "First ten integration partners shipped."
+          },
+          {
+            "date": "Q4",
+            "title": "50M€ run-rate",
+            "text": "Cross the milestone we set out to reach."
+          }
         ],
         "background": "mist"
       }

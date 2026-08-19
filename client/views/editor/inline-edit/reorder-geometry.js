@@ -89,9 +89,13 @@ export function gapCandidates(rects) {
     const next = rects[i + 1];
     const buddy =
       prev && next
-        ? (dist2(rects[i], prev) <= dist2(rects[i], next) ? prev : next)
+        ? dist2(rects[i], prev) <= dist2(rects[i], next)
+          ? prev
+          : next
         : prev || next;
-    const horizontal = buddy ? isHorizontalPair(rects[i], buddy) : rects[i].width < rects[i].height;
+    const horizontal = buddy
+      ? isHorizontalPair(rects[i], buddy)
+      : rects[i].width < rects[i].height;
     out.push(edgeCandidate(rects[i], horizontal, 'leading', i));
     out.push(edgeCandidate(rects[i], horizontal, 'trailing', i + 1));
   }

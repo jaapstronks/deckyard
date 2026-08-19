@@ -114,7 +114,9 @@
   background: hsl(var(--app-bg-base));
   border-radius: 8px;
   border: 1px solid hsl(var(--app-border-default));
-  transition: transform var(--ps-transition-normal), box-shadow var(--ps-transition-normal);
+  transition:
+    transform var(--ps-transition-normal),
+    box-shadow var(--ps-transition-normal);
 }
 
 .analytics-card:hover {
@@ -169,8 +171,13 @@
 }
 
 @keyframes realtime-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .analytics-realtime.has-viewers .analytics-realtime-count {
@@ -182,7 +189,8 @@
 }
 
 @keyframes realtime-glow {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
     filter: drop-shadow(0 0 0 transparent);
   }
@@ -211,7 +219,9 @@
 
 .analytics-chart-bar {
   fill: hsl(var(--app-accent-primary));
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
   cursor: pointer;
   transform-origin: bottom center;
 }
@@ -295,7 +305,9 @@
   padding: var(--ps-space-3);
   border-radius: 8px;
   border: 1px solid hsl(var(--app-border-default));
-  transition: transform var(--ps-transition-normal), box-shadow var(--ps-transition-normal);
+  transition:
+    transform var(--ps-transition-normal),
+    box-shadow var(--ps-transition-normal);
 }
 
 .analytics-heatmap-card:hover {

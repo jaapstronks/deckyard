@@ -19,21 +19,24 @@ export function createPasswordSection({ h }) {
     h('div', {
       class: 'field-label',
       text: t('settings.changePassword.title', 'Change password'),
-    })
+    }),
   );
 
   const hint = h('div', {
     class: 'help',
     text: t(
       'settings.changePassword.hint',
-      "Change your account password. You'll stay logged in after changing."
+      "Change your account password. You'll stay logged in after changing.",
     ),
   });
 
   const currentPasswordInput = h('input', {
     class: 'form-input settings-compact-control',
     type: 'password',
-    placeholder: t('settings.changePassword.currentPassword', 'Current password'),
+    placeholder: t(
+      'settings.changePassword.currentPassword',
+      'Current password',
+    ),
     autocomplete: 'current-password',
   });
 
@@ -47,7 +50,10 @@ export function createPasswordSection({ h }) {
   const confirmPasswordInput = h('input', {
     class: 'form-input settings-compact-control',
     type: 'password',
-    placeholder: t('settings.changePassword.confirmPassword', 'Confirm new password'),
+    placeholder: t(
+      'settings.changePassword.confirmPassword',
+      'Confirm new password',
+    ),
     autocomplete: 'new-password',
   });
 
@@ -72,7 +78,7 @@ export function createPasswordSection({ h }) {
     if (newPw.length < 8) {
       statusEl.textContent = t(
         'settings.changePassword.tooShort',
-        'New password must be at least 8 characters.'
+        'New password must be at least 8 characters.',
       );
       return;
     }
@@ -80,7 +86,7 @@ export function createPasswordSection({ h }) {
     if (newPw !== confirmPw) {
       statusEl.textContent = t(
         'settings.changePassword.mismatch',
-        'New passwords do not match.'
+        'New passwords do not match.',
       );
       return;
     }
@@ -100,10 +106,13 @@ export function createPasswordSection({ h }) {
           newPassword: newPw,
         },
       });
-      toast.success(t('settings.changePassword.success', 'Password changed successfully.'), {
-        id: 'password-change',
-        durationMs: 3000,
-      });
+      toast.success(
+        t('settings.changePassword.success', 'Password changed successfully.'),
+        {
+          id: 'password-change',
+          durationMs: 3000,
+        },
+      );
       // Clear fields
       currentPasswordInput.value = '';
       newPasswordInput.value = '';
@@ -111,7 +120,10 @@ export function createPasswordSection({ h }) {
       statusEl.textContent = '';
     } catch (e) {
       statusEl.textContent = e.message?.includes('incorrect')
-        ? t('settings.changePassword.incorrectCurrent', 'Current password is incorrect.')
+        ? t(
+            'settings.changePassword.incorrectCurrent',
+            'Current password is incorrect.',
+          )
         : t('settings.changePassword.error', 'Failed to change password.');
     } finally {
       busy = false;
@@ -128,7 +140,7 @@ export function createPasswordSection({ h }) {
     newPasswordInput,
     confirmPasswordInput,
     btnChangePassword,
-    statusEl
+    statusEl,
   );
 
   return {

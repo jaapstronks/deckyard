@@ -52,7 +52,7 @@ describe('computeToolbarPlacement', () => {
         host,
         size,
       }),
-      null
+      null,
     );
     assert.equal(computeToolbarPlacement({ sel: null, host, size }), null);
   });
@@ -87,7 +87,10 @@ describe('emphasisDisables (dialect cannot nest emphasis)', () => {
 
 describe('slideLinkUrl (serializer keeps http/https only)', () => {
   it('accepts http and https', () => {
-    assert.equal(slideLinkUrl('https://example.com/x'), 'https://example.com/x');
+    assert.equal(
+      slideLinkUrl('https://example.com/x'),
+      'https://example.com/x',
+    );
     assert.equal(slideLinkUrl('  http://example.com  '), 'http://example.com');
     assert.equal(slideLinkUrl('HTTPS://EXAMPLE.COM'), 'HTTPS://EXAMPLE.COM');
   });

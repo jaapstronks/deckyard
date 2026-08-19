@@ -7,7 +7,7 @@ have a rule attached — **spacing** and **z-index** — and the one trap that m
 a token silently resolve to nothing.
 
 For the breakpoint ladder, see [CSS breakpoints](css-breakpoints.md). For slide
-*theme* variables (`--t-*`), see [Theme config](theme-config.md) — those are a
+_theme_ variables (`--t-*`), see [Theme config](theme-config.md) — those are a
 different system on purpose, and `ui-tokens.css` must never depend on them.
 
 ## Scope: app chrome, not slides
@@ -21,7 +21,7 @@ agent's preview — none of which share the app's chrome.
 > **The trap.** `client/styles/slides.css` does **not** import `ui-tokens.css`.
 > In a browser you will not notice, because the editor loads `app.css` and
 > `slides.css` together and the token resolves anyway. But
-> `server/mcp/preview.js` bundles `slides.css` *alone* (deliberately — skipping
+> `server/mcp/preview.js` bundles `slides.css` _alone_ (deliberately — skipping
 > `app.css` saves ~458KB), so a `var(--ps-*)` or `var(--z-*)` written inside
 > `client/styles/slides/**` resolves to **nothing** there, with no error.
 >
@@ -42,18 +42,18 @@ name.
 
 **Up to 20px the scale ticks every 2px. Above 20px it ticks every 4px.**
 
-| Token | Value | px | | Token | Value | px |
-|---|---|---|---|---|---|---|
-| `--ps-space-0-5` | 0.125rem | 2 | | `--ps-space-6` | 1.5rem | 24 |
-| `--ps-space-1` | 0.25rem | 4 | | `--ps-space-7` | 1.75rem | 28 |
-| `--ps-space-1-5` | 0.375rem | 6 | | `--ps-space-8` | 2rem | 32 |
-| `--ps-space-2` | 0.5rem | 8 | | `--ps-space-9` | 2.25rem | 36 |
-| `--ps-space-2-5` | 0.625rem | 10 | | `--ps-space-10` | 2.5rem | 40 |
-| `--ps-space-3` | 0.75rem | 12 | | `--ps-space-12` | 3rem | 48 |
-| `--ps-space-3-5` | 0.875rem | 14 | | `--ps-space-15` | 3.75rem | 60 |
-| `--ps-space-4` | 1rem | 16 | | | | |
-| `--ps-space-4-5` | 1.125rem | 18 | | | | |
-| `--ps-space-5` | 1.25rem | 20 | | | | |
+| Token            | Value    | px  |     | Token           | Value   | px  |
+| ---------------- | -------- | --- | --- | --------------- | ------- | --- |
+| `--ps-space-0-5` | 0.125rem | 2   |     | `--ps-space-6`  | 1.5rem  | 24  |
+| `--ps-space-1`   | 0.25rem  | 4   |     | `--ps-space-7`  | 1.75rem | 28  |
+| `--ps-space-1-5` | 0.375rem | 6   |     | `--ps-space-8`  | 2rem    | 32  |
+| `--ps-space-2`   | 0.5rem   | 8   |     | `--ps-space-9`  | 2.25rem | 36  |
+| `--ps-space-2-5` | 0.625rem | 10  |     | `--ps-space-10` | 2.5rem  | 40  |
+| `--ps-space-3`   | 0.75rem  | 12  |     | `--ps-space-12` | 3rem    | 48  |
+| `--ps-space-3-5` | 0.875rem | 14  |     | `--ps-space-15` | 3.75rem | 60  |
+| `--ps-space-4`   | 1rem     | 16  |     |                 |         |     |
+| `--ps-space-4-5` | 1.125rem | 18  |     |                 |         |     |
+| `--ps-space-5`   | 1.25rem  | 20  |     |                 |         |     |
 
 > **Squint at the half-steps.** `--ps-space-1-5` is the **half-step** between
 > `-1` and `-2` — 6px. `--ps-space-15` is **fifteen ticks** — 60px. The two are
@@ -63,7 +63,7 @@ name.
 
 There is no `-11` (44px), `-13` (52px) or `-14` (56px): not one
 `margin`/`padding`/`gap` in scope uses those values, and the scale should carry
-what exists rather than what might. The upper additions that *did* earn a token
+what exists rather than what might. The upper additions that _did_ earn a token
 are 28px (6 uses), 36px (2) and 60px (1).
 
 ### Why the fine band exists
@@ -101,7 +101,7 @@ Existing CSS is being moved onto the scale file by file, not in one sweep. The
 rule below is what makes such a change reviewable by reading it, rather than by
 opening a browser:
 
-> **Convert a declaration only when *every* length in it lands on the scale.**
+> **Convert a declaration only when _every_ length in it lands on the scale.**
 > If any value is off-scale (3, 5, 7, 13, 22px) or the declaration carries
 > `!important`, leave the whole declaration alone.
 
@@ -171,20 +171,20 @@ Seventeen tiers, so cross-component overlap has one source of truth instead of
 scattered magic numbers. The full list with per-tier intent lives in
 `ui-tokens.css` itself; the shape is:
 
-| Band | Tiers | For |
-|---|---|---|
-| In-flow | `--z-behind` (-1) → `--z-raised` (10) | decorative layers, lifted siblings |
-| Chrome | `--z-sticky` (50) → `--z-drawer` (200) | sticky bars, nav, headers, drawers |
-| Overlay | `--z-overlay` (1000) → `--z-toast` (1200) | modal backdrops, dialogs, banners, toasts |
+| Band        | Tiers                                         | For                                                |
+| ----------- | --------------------------------------------- | -------------------------------------------------- |
+| In-flow     | `--z-behind` (-1) → `--z-raised` (10)         | decorative layers, lifted siblings                 |
+| Chrome      | `--z-sticky` (50) → `--z-drawer` (200)        | sticky bars, nav, headers, drawers                 |
+| Overlay     | `--z-overlay` (1000) → `--z-toast` (1200)     | modal backdrops, dialogs, banners, toasts          |
 | Full-screen | `--z-loading` (2000) → `--z-skip-link` (5000) | veils, lightboxes, the consent gate, the skip-link |
-| Ceiling | `--z-drag` (999999) | the drag ghost |
+| Ceiling     | `--z-drag` (999999)                           | the drag ghost                                     |
 
 Rules:
 
 - **Reach for the nearest tier; do not invent a value.** If two things must sit
   within one tier, order them with the token plus a small offset:
   `calc(var(--z-header) + 1)`.
-- **Local sibling ordering stays plain integers.** `z-index: 0/1/2` *inside* one
+- **Local sibling ordering stays plain integers.** `z-index: 0/1/2` _inside_ one
   component's own stacking context — a slide's background/content/overlay layers,
   a card, a thumbnail — is not an app layer and deliberately does not use this
   scale. Roughly 108 such values exist and are correct as they are.
@@ -199,14 +199,14 @@ element is `16px` and `rem` is always root-relative, each token equals a fixed
 pixel value regardless of nesting — so a raw `font-size` and its token are
 value-identical:
 
-| Token | Value | px |
-|---|---|---|
-| `--ps-text-xs` | 0.6875rem | 11 |
-| `--ps-text-sm` | 0.8125rem | 13 |
-| `--ps-text-base` | 0.875rem | 14 |
-| `--ps-text-lg` | 1rem | 16 |
-| `--ps-text-xl` | 1.125rem | 18 |
-| `--ps-text-2xl` | 1.375rem | 22 |
+| Token            | Value     | px  |
+| ---------------- | --------- | --- |
+| `--ps-text-xs`   | 0.6875rem | 11  |
+| `--ps-text-sm`   | 0.8125rem | 13  |
+| `--ps-text-base` | 0.875rem  | 14  |
+| `--ps-text-lg`   | 1rem      | 16  |
+| `--ps-text-xl`   | 1.125rem  | 18  |
+| `--ps-text-2xl`  | 1.375rem  | 22  |
 
 ### Migrating hardcoded font-size onto the scale
 
@@ -219,7 +219,7 @@ not carry, and closing that gap is a design decision, not a conversion.
 
 Two things stay literal by construction:
 
-- **The root anchor.** `html { font-size: 16px }` defines what `1rem` *is*;
+- **The root anchor.** `html { font-size: 16px }` defines what `1rem` _is_;
   tokenising it to `var(--ps-text-lg)` would be circular. It stays `16px`.
 - **`slides/**` and parked stylesheets.** Same trap as spacing — a `--ps-text-*`
   inside `client/styles/slides/**` resolves to nothing in the MCP preview bundle.

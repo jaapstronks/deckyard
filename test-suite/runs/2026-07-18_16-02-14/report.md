@@ -12,6 +12,7 @@ Compared against run `2026-07-18_15-51-29` (prompt version `2f0e86683435`).
 That run covered 4 cases; its scores are narrowed to this run's 3 for a like-for-like comparison.
 
 Prompt files changed since then:
+
 - `server/utils/ai/slide-catalog/examples/basic-slides.js`
 - `server/utils/ai/slide-catalog/examples/card-slides.js`
 - `server/utils/ai/slide-catalog/examples/data-slides.js`
@@ -21,23 +22,23 @@ Prompt files changed since then:
 
 ## Scores by dimension
 
-| Dimension | Score | vs. previous |
-| --- | ---: | ---: |
-| Coverage | 4.67 | · 0.00 |
-| Structure | 4.67 | · 0.00 |
-| Slide economy | 4.00 | · 0.00 |
-| Faithfulness | 4.33 | ▲ +0.33 |
-| Presentability | 4.67 | ▲ +0.34 |
-| Closeness to human deck | 3.00 | · 0.00 |
-| **Overall** | **4.47** | · +0.14 |
+| Dimension               |    Score | vs. previous |
+| ----------------------- | -------: | -----------: |
+| Coverage                |     4.67 |       · 0.00 |
+| Structure               |     4.67 |       · 0.00 |
+| Slide economy           |     4.00 |       · 0.00 |
+| Faithfulness            |     4.33 |      ▲ +0.33 |
+| Presentability          |     4.67 |      ▲ +0.34 |
+| Closeness to human deck |     3.00 |       · 0.00 |
+| **Overall**             | **4.47** |      · +0.14 |
 
 ## Per-case results
 
-| Case | Cat | Slides | Words/slide | Walls | Number support | Coverage | Mean |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| asml-q4-2024 | A | 12 | 28.83 | 0 | 100% | 4/5 | 3.83 |
-| cbs-persbericht-criminaliteit | B | 13 | 25.62 | 0 | 95% | 5/5 | 4.60 |
-| cloudflare-nov-2025-outage | B | 15 | 38.27 | 0 | 100% | 5/5 | 4.80 |
+| Case                          | Cat | Slides | Words/slide | Walls | Number support | Coverage | Mean |
+| ----------------------------- | --- | -----: | ----------: | ----: | -------------: | -------: | ---: |
+| asml-q4-2024                  | A   |     12 |       28.83 |     0 |           100% |      4/5 | 3.83 |
+| cbs-persbericht-criminaliteit | B   |     13 |       25.62 |     0 |            95% |      5/5 | 4.60 |
+| cloudflare-nov-2025-outage    | B   |     15 |       38.27 |     0 |           100% |      5/5 | 4.80 |
 
 ## Weakest dimensions — judge rationales
 
@@ -67,9 +68,9 @@ These rationales are the input for the next prompt change.
 
 ## Cost breakdown
 
-| Category | Calls | Input | Output | Cache write | Cache read | USD |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| generation | 15 | 281216 | 18776 | 0 | 0 | $1.8755 |
-| judge | 3 | 42316 | 5841 | 0 | 0 | $0.3576 |
-| topics | 2 | 17457 | 1475 | 0 | 0 | $0.1242 |
-| **Total** | 20 | 340989 | 26092 | 0 | 0 | **$2.3572** |
+| Category   | Calls |  Input | Output | Cache write | Cache read |         USD |
+| ---------- | ----: | -----: | -----: | ----------: | ---------: | ----------: |
+| generation |    15 | 281216 |  18776 |           0 |          0 |     $1.8755 |
+| judge      |     3 |  42316 |   5841 |           0 |          0 |     $0.3576 |
+| topics     |     2 |  17457 |   1475 |           0 |          0 |     $0.1242 |
+| **Total**  |    20 | 340989 |  26092 |           0 |          0 | **$2.3572** |

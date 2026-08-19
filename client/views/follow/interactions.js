@@ -31,7 +31,8 @@ export function createFollowInteractionController({
   // a choice. Asks the type's declared capability instead of recognising a name
   // — this module was one of nine that kept its own copy of the live four. See
   // shared/slide-types/runtime.js.
-  const isFeedbackSlide = () => liveInteractionKind(currentSlideType) === 'feedback';
+  const isFeedbackSlide = () =>
+    liveInteractionKind(currentSlideType) === 'feedback';
   let model = null; // { interaction, interactionState }
   let busy = false;
   // Likert slider UX: SSE updates can arrive while the user is dragging the range input.
@@ -109,11 +110,13 @@ export function createFollowInteractionController({
     const feedbackThanks =
       copy?.interactionThanksFeedback || 'Thanks! Your feedback was saved.';
     const feedbackSending = copy?.interactionFeedbackSending || 'Sending…';
-    const feedbackHint = copy?.interactionFeedbackHint || 'Write your feedback and press Send.';
+    const feedbackHint =
+      copy?.interactionFeedbackHint || 'Write your feedback and press Send.';
     const feedbackSend = copy?.interactionFeedbackSend || 'Send';
     const feedbackUpdate = copy?.interactionFeedbackUpdate || 'Update';
     const feedbackUpdating = copy?.interactionFeedbackUpdating || 'Updating…';
-    const feedbackPlaceholder = copy?.interactionFeedbackPlaceholder || 'Type your feedback…';
+    const feedbackPlaceholder =
+      copy?.interactionFeedbackPlaceholder || 'Type your feedback…';
 
     const interaction = safeObj(model?.interaction);
     const st = safeObj(model?.interactionState);
@@ -128,7 +131,9 @@ export function createFollowInteractionController({
       return;
     }
     const question = String(interaction?.question || '').trim();
-    const options = Array.isArray(interaction?.options) ? interaction.options : [];
+    const options = Array.isArray(interaction?.options)
+      ? interaction.options
+      : [];
     // Prefer local cached vote to avoid flip-flopping on aggregate-only refresh/SSE payloads.
     const localVote = getLocalVote(currentSlideId);
     const myVote =
@@ -137,8 +142,7 @@ export function createFollowInteractionController({
         : st && st.myVote != null
           ? clamp0(st.myVote)
           : null;
-    const open =
-      st ? !!st.open : true;
+    const open = st ? !!st.open : true;
 
     const type = String(interaction.type || '');
     const isSliderLikert =
@@ -151,14 +155,12 @@ export function createFollowInteractionController({
       try {
         const resp = await api(
           `/api/follow/${encodeURIComponent(
-            presentationId
-          )}/interactions/${encodeURIComponent(
-            currentSlideId
-          )}/vote`,
+            presentationId,
+          )}/interactions/${encodeURIComponent(currentSlideId)}/vote`,
           {
             method: 'POST',
             body: JSON.stringify({ optionIndex: idx }),
-          }
+          },
         );
         if (resp?.capabilities && onCapabilities)
           onCapabilities(resp.capabilities);
@@ -169,7 +171,7 @@ export function createFollowInteractionController({
             ...(model || {}),
             interactionState: applyLocalVoteToState(
               currentSlideId,
-              resp.interactionState
+              resp.interactionState,
             ),
           };
         }
@@ -207,14 +209,12 @@ export function createFollowInteractionController({
       try {
         const resp = await api(
           `/api/follow/${encodeURIComponent(
-            presentationId
-          )}/interactions/${encodeURIComponent(
-            currentSlideId
-          )}/feedback`,
+            presentationId,
+          )}/interactions/${encodeURIComponent(currentSlideId)}/feedback`,
           {
             method: 'POST',
             body: JSON.stringify({ text: t }),
-          }
+          },
         );
         if (resp?.capabilities && onCapabilities)
           onCapabilities(resp.capabilities);
@@ -225,7 +225,7 @@ export function createFollowInteractionController({
             ...(model || {}),
             interactionState: applyLocalFeedbackToState(
               currentSlideId,
-              resp.interactionState
+              resp.interactionState,
             ),
           };
         }
@@ -283,18 +283,15 @@ export function createFollowInteractionController({
           const value = draft || '';
           const maxLength = Math.max(
             1,
-            Number(interaction?.maxLength || 4000) || 4000
+            Number(interaction?.maxLength || 4000) || 4000,
           );
           const placeholder =
-            String(interaction?.placeholder || '').trim() || feedbackPlaceholder;
+            String(interaction?.placeholder || '').trim() ||
+            feedbackPlaceholder;
 
           const hint = h('div', {
             class: 'help',
-            text: open
-              ? busy
-                ? feedbackSending
-                : feedbackHint
-              : closedText,
+            text: open ? (busy ? feedbackSending : feedbackHint) : closedText,
           });
 
           const ta = h('textarea', {
@@ -336,7 +333,9 @@ export function createFollowInteractionController({
             focusIntentTid?.unref?.();
           };
           ta.addEventListener('pointerdown', markEditingIntent);
-          ta.addEventListener('touchstart', markEditingIntent, { passive: true });
+          ta.addEventListener('touchstart', markEditingIntent, {
+            passive: true,
+          });
           ta.addEventListener('focus', () => {
             feedbackEditActive = true;
             clearFocusIntentTimer();
@@ -388,10 +387,16 @@ export function createFollowInteractionController({
                 onclick: () => vote(i),
               },
               [
-                h('span', { class: 'follow-interaction-likert-num', text: String(i + 1) }),
-                h('span', { class: 'follow-interaction-likert-text', text: String(opt || '') }),
-              ]
-            )
+                h('span', {
+                  class: 'follow-interaction-likert-num',
+                  text: String(i + 1),
+                }),
+                h('span', {
+                  class: 'follow-interaction-likert-text',
+                  text: String(opt || ''),
+                }),
+              ],
+            ),
           )
         : options.map((opt, i) =>
             h('button', {
@@ -401,12 +406,13 @@ export function createFollowInteractionController({
               text: String(opt || ''),
               disabled: !open || busy,
               onclick: () => vote(i),
-            })
+            }),
           );
 
-    const hasSubmittedFeedback =
-      !!(getLocalFeedback(currentSlideId) ||
-        (typeof st?.myText === 'string' && st.myText.trim()));
+    const hasSubmittedFeedback = !!(
+      getLocalFeedback(currentSlideId) ||
+      (typeof st?.myText === 'string' && st.myText.trim())
+    );
 
     mountEl.append(
       h('div', { class: 'follow-interaction-card' }, [
@@ -420,18 +426,14 @@ export function createFollowInteractionController({
         }),
         sliderUi ||
           feedbackUi ||
-          h(
-            'div',
-            { class: 'follow-interaction-options' },
-            optionButtons
-          ),
+          h('div', { class: 'follow-interaction-options' }, optionButtons),
         (isFeedback ? hasSubmittedFeedback : myVote != null)
           ? h('div', {
               class: 'help follow-interaction-thanks',
               text: isFeedback ? feedbackThanks : thanks,
             })
           : null,
-      ])
+      ]),
     );
   };
 
@@ -441,7 +443,7 @@ export function createFollowInteractionController({
     try {
       const lang = String(getLang?.() || '').trim();
       const base = `/api/follow/${encodeURIComponent(
-        presentationId
+        presentationId,
       )}/interactions/current`;
       const url = lang ? `${base}?lang=${encodeURIComponent(lang)}` : base;
       const resp = await api(url);
@@ -457,9 +459,12 @@ export function createFollowInteractionController({
         interactionState: isFeedbackSlide()
           ? applyLocalFeedbackToState(
               currentSlideId,
-              resp?.interactionState || null
+              resp?.interactionState || null,
             )
-          : applyLocalVoteToState(currentSlideId, resp?.interactionState || null),
+          : applyLocalVoteToState(
+              currentSlideId,
+              resp?.interactionState || null,
+            ),
       };
       render();
       return true;
@@ -476,8 +481,8 @@ export function createFollowInteractionController({
     capabilities = safeObj(next) || null;
 
     // Only re-render if interaction capability actually changed
-    const wasActive = !!(prev?.interaction);
-    const nowActive = !!(capabilities?.interaction);
+    const wasActive = !!prev?.interaction;
+    const nowActive = !!capabilities?.interaction;
     if (wasActive === nowActive) return;
 
     if (!nowActive) {

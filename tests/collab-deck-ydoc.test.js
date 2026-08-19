@@ -16,7 +16,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import * as Y from 'yjs';
-import { createDeckYdocCodec, textFieldSpecForType } from '../shared/collab/deck-ydoc.js';
+import {
+  createDeckYdocCodec,
+  textFieldSpecForType,
+} from '../shared/collab/deck-ydoc.js';
 import { SLIDE_TYPES } from '../shared/slide-types.js';
 
 const codec = createDeckYdocCodec(Y);
@@ -166,7 +169,10 @@ describe('textFieldSpecForType', () => {
 
   it('classifies item text keys, recursively for nested items', () => {
     const list = textFieldSpecForType('list-slide');
-    assert.deepEqual([...list.items.get('items').textKeys].sort(), ['text', 'title']);
+    assert.deepEqual([...list.items.get('items').textKeys].sort(), [
+      'text',
+      'title',
+    ]);
 
     const blocks = textFieldSpecForType('text-blocks-slide');
     const rows = blocks.items.get('rows');
@@ -228,8 +234,14 @@ describe('round-trip: two-language deck', () => {
     const pres = normalizeTopLevel(twoLangDeck());
     delete pres.i18n.versions['en-GB'].slides[0].content.subheading;
     const { projected } = roundTrip(pres);
-    assert.equal(projected.i18n.versions['en-GB'].slides[0].content.subheading, '');
-    assert.equal(projected.i18n.versions.nl.slides[0].content.subheading, 'onderkop');
+    assert.equal(
+      projected.i18n.versions['en-GB'].slides[0].content.subheading,
+      '',
+    );
+    assert.equal(
+      projected.i18n.versions.nl.slides[0].content.subheading,
+      'onderkop',
+    );
   });
 
   it('preserves a translation that only exists in a non-dominant version', () => {
@@ -237,7 +249,10 @@ describe('round-trip: two-language deck', () => {
     delete pres.i18n.versions.nl.slides[0].content.subheading;
     pres.slides = pres.i18n.versions.nl.slides;
     const { projected } = roundTrip(pres);
-    assert.equal(projected.i18n.versions['en-GB'].slides[0].content.subheading, 'subheading');
+    assert.equal(
+      projected.i18n.versions['en-GB'].slides[0].content.subheading,
+      'subheading',
+    );
   });
 });
 
@@ -254,43 +269,51 @@ describe('round-trip: nested items (text-blocks rows/blocks)', () => {
         versions: {
           nl: {
             title: 'Blokken',
-            slides: [{
-              id: 's1',
-              type: 'text-blocks-slide',
-              content: {
-                title: 'Aanpak',
-                rows: [{
-                  title: 'Fase 1',
-                  color: 'yellow',
-                  arrow: 'down',
-                  blocks: [
-                    { title: 'Onderzoek', body: 'We kijken rond' },
-                    { title: 'Bouw', body: 'We bouwen' },
+            slides: [
+              {
+                id: 's1',
+                type: 'text-blocks-slide',
+                content: {
+                  title: 'Aanpak',
+                  rows: [
+                    {
+                      title: 'Fase 1',
+                      color: 'yellow',
+                      arrow: 'down',
+                      blocks: [
+                        { title: 'Onderzoek', body: 'We kijken rond' },
+                        { title: 'Bouw', body: 'We bouwen' },
+                      ],
+                    },
                   ],
-                }],
+                },
+                notes: '',
               },
-              notes: '',
-            }],
+            ],
           },
           'en-GB': {
             title: 'Blocks',
-            slides: [{
-              id: 's1',
-              type: 'text-blocks-slide',
-              content: {
-                title: 'Approach',
-                rows: [{
-                  title: 'Phase 1',
-                  color: 'yellow',
-                  arrow: 'down',
-                  blocks: [
-                    { title: 'Research', body: 'We look around' },
-                    { title: 'Build', body: 'We build' },
+            slides: [
+              {
+                id: 's1',
+                type: 'text-blocks-slide',
+                content: {
+                  title: 'Approach',
+                  rows: [
+                    {
+                      title: 'Phase 1',
+                      color: 'yellow',
+                      arrow: 'down',
+                      blocks: [
+                        { title: 'Research', body: 'We look around' },
+                        { title: 'Build', body: 'We build' },
+                      ],
+                    },
                   ],
-                }],
+                },
+                notes: '',
               },
-              notes: '',
-            }],
+            ],
           },
         },
       },
@@ -304,8 +327,15 @@ describe('round-trip: nested items (text-blocks rows/blocks)', () => {
     const { doc } = roundTrip(pres);
     const rows = doc.getArray('slides').get(0).get('content').get('rows');
     const blocks = rows.get(0).get('blocks');
-    assert.equal(blocks.get(0).get('body').get('en-GB').toString(), 'We look around');
-    assert.equal(rows.get(0).get('color'), 'yellow', 'enum stays a single plain value');
+    assert.equal(
+      blocks.get(0).get('body').get('en-GB').toString(),
+      'We look around',
+    );
+    assert.equal(
+      rows.get(0).get('color'),
+      'yellow',
+      'enum stays a single plain value',
+    );
   });
 });
 
@@ -331,8 +361,15 @@ describe('divergent versions are normalized with warnings, not corrupted', () =>
     pres.i18n.versions['en-GB'].slides[0].content.variant = 'bullets';
     const { projected, warnings } = roundTrip(pres);
     assert.equal(warnings.length, 1);
-    assert.match(warnings[0], /plain field 'variant' differs in version 'en-GB'/);
-    assert.equal(projected.i18n.versions['en-GB'].slides[0].content.variant, 'numbers', 'dominant wins');
+    assert.match(
+      warnings[0],
+      /plain field 'variant' differs in version 'en-GB'/,
+    );
+    assert.equal(
+      projected.i18n.versions['en-GB'].slides[0].content.variant,
+      'numbers',
+      'dominant wins',
+    );
   });
 
   it('lets the dominant type win on a type mismatch, with a warning', () => {
@@ -340,8 +377,14 @@ describe('divergent versions are normalized with warnings, not corrupted', () =>
     pres.i18n.versions['en-GB'].slides[1].type = 'content-slide';
     const { projected, warnings } = roundTrip(pres);
     assert.equal(warnings.length, 1);
-    assert.match(warnings[0], /type 'content-slide' in version 'en-GB' differs/);
-    assert.equal(projected.i18n.versions['en-GB'].slides[1].type, 'quote-slide');
+    assert.match(
+      warnings[0],
+      /type 'content-slide' in version 'en-GB' differs/,
+    );
+    assert.equal(
+      projected.i18n.versions['en-GB'].slides[1].type,
+      'quote-slide',
+    );
   });
 });
 
@@ -360,16 +403,34 @@ describe('CRDT wire format', () => {
     const docB = syncToFreshDoc(docA);
 
     // A edits the Dutch title, B edits the English title, concurrently.
-    docA.getArray('slides').get(0).get('content').get('title').get('nl').insert(0, 'Belangrijke ');
-    docB.getArray('slides').get(0).get('content').get('title').get('en-GB').insert(0, 'Key ');
+    docA
+      .getArray('slides')
+      .get(0)
+      .get('content')
+      .get('title')
+      .get('nl')
+      .insert(0, 'Belangrijke ');
+    docB
+      .getArray('slides')
+      .get(0)
+      .get('content')
+      .get('title')
+      .get('en-GB')
+      .insert(0, 'Key ');
     Y.applyUpdate(docA, Y.encodeStateAsUpdate(docB));
     Y.applyUpdate(docB, Y.encodeStateAsUpdate(docA));
 
     const projA = codec.projectDocToPresentation(docA);
     const projB = codec.projectDocToPresentation(docB);
     assert.deepStrictEqual(projA, projB);
-    assert.equal(projA.i18n.versions.nl.slides[0].content.title, 'Belangrijke Punten');
-    assert.equal(projA.i18n.versions['en-GB'].slides[0].content.title, 'Key Points');
+    assert.equal(
+      projA.i18n.versions.nl.slides[0].content.title,
+      'Belangrijke Punten',
+    );
+    assert.equal(
+      projA.i18n.versions['en-GB'].slides[0].content.title,
+      'Key Points',
+    );
   });
 });
 
@@ -385,14 +446,18 @@ describe('round-trip: every registered slide type with real defaults', () => {
     for (const [k, sub] of spec.items) {
       if (!Array.isArray(content[k])) continue;
       for (const item of content[k]) {
-        if (item && typeof item === 'object' && !Array.isArray(item)) overlayTexts(item, sub, fn);
+        if (item && typeof item === 'object' && !Array.isArray(item))
+          overlayTexts(item, sub, fn);
       }
     }
   }
 
   it('round-trips a deck containing all slide types losslessly', () => {
     const types = Object.keys(SLIDE_TYPES);
-    assert.ok(types.length >= 30, `expected the full registry, got ${types.length}`);
+    assert.ok(
+      types.length >= 30,
+      `expected the full registry, got ${types.length}`,
+    );
 
     const nlSlides = types.map((type, i) => {
       const def = SLIDE_TYPES[type];
@@ -406,7 +471,9 @@ describe('round-trip: every registered slide type with real defaults', () => {
     });
     const enSlides = nlSlides.map((s) => {
       const clone = JSON.parse(JSON.stringify(s));
-      overlayTexts(clone.content, textFieldSpecForType(s.type), (v) => (v ? `EN: ${v}` : v));
+      overlayTexts(clone.content, textFieldSpecForType(s.type), (v) =>
+        v ? `EN: ${v}` : v,
+      );
       clone.notes = s.notes ? `EN ${s.notes}` : '';
       return clone;
     });
@@ -437,7 +504,9 @@ describe('round-trip: real local decks (skipped when none present)', () => {
   // checkout's file storage. CI has none; locally this catches real-world
   // shapes the fixtures miss. Volatile/derived fields are ignored.
   const dir = path.join(process.cwd(), 'server', 'data', 'presentations');
-  const files = fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => f.endsWith('.json')) : [];
+  const files = fs.existsSync(dir)
+    ? fs.readdirSync(dir).filter((f) => f.endsWith('.json'))
+    : [];
 
   function stripVolatile(pres) {
     const p = JSON.parse(JSON.stringify(pres));
@@ -448,15 +517,19 @@ describe('round-trip: real local decks (skipped when none present)', () => {
     return p;
   }
 
-  it(`round-trips ${files.length} local deck(s)`, { skip: files.length === 0 }, () => {
-    for (const f of files) {
-      const pres = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
-      const { projected } = roundTrip(pres);
-      assert.deepStrictEqual(
-        stripVolatile(projected),
-        stripVolatile(pres),
-        `round-trip mismatch for ${f}`
-      );
-    }
-  });
+  it(
+    `round-trips ${files.length} local deck(s)`,
+    { skip: files.length === 0 },
+    () => {
+      for (const f of files) {
+        const pres = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
+        const { projected } = roundTrip(pres);
+        assert.deepStrictEqual(
+          stripVolatile(projected),
+          stripVolatile(pres),
+          `round-trip mismatch for ${f}`,
+        );
+      }
+    },
+  );
 });

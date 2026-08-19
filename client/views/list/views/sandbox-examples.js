@@ -46,10 +46,10 @@ export function createSandboxExamplesSection({ h, api, nav, detachThumbs }) {
       class: 'help sandbox-examples-hint',
       text: t(
         'sandbox.examples.hint',
-        'Open a ready-made deck and start editing — the quickest way to explore Deckyard.'
+        'Open a ready-made deck and start editing — the quickest way to explore Deckyard.',
       ),
     }),
-    loading
+    loading,
   );
 
   let busy = false;
@@ -65,19 +65,28 @@ export function createSandboxExamplesSection({ h, api, nav, detachThumbs }) {
         body: JSON.stringify({ deck: example.deck, lang }),
       });
       if (created?.id) {
-        nav?.(`/app/${created.id}?lang=${encodeURIComponent(created.lang || lang)}`);
+        nav?.(
+          `/app/${created.id}?lang=${encodeURIComponent(created.lang || lang)}`,
+        );
       } else {
         throw new Error('no id');
       }
     } catch {
-      toast.error(t('sandbox.examples.error', 'Could not open that example. Please try again.'));
+      toast.error(
+        t(
+          'sandbox.examples.error',
+          'Could not open that example. Please try again.',
+        ),
+      );
       busy = false;
     }
   }
 
   function renderThumb(example) {
     const thumb = h('div', { class: 'thumb sandbox-example-thumb' });
-    const first = Array.isArray(example?.deck?.slides) ? example.deck.slides[0] : null;
+    const first = Array.isArray(example?.deck?.slides)
+      ? example.deck.slides[0]
+      : null;
     if (!first) return thumb;
     const detach = attachThumbScale(thumb, { virtualWidth: 1600 });
     if (Array.isArray(detachThumbs)) detachThumbs.push(detach);
@@ -102,7 +111,9 @@ export function createSandboxExamplesSection({ h, api, nav, detachThumbs }) {
       h('span', { class: 'sandbox-example-name', text: example.title }),
     ]);
     if (example.description) {
-      meta.append(h('span', { class: 'sandbox-example-desc', text: example.description }));
+      meta.append(
+        h('span', { class: 'sandbox-example-desc', text: example.description }),
+      );
     }
     meta.append(
       h('span', {
@@ -110,7 +121,7 @@ export function createSandboxExamplesSection({ h, api, nav, detachThumbs }) {
         text: t('sandbox.examples.count', '{count} slides', {
           count: String(example.slideCount || 0),
         }),
-      })
+      }),
     );
     card.append(renderThumb(example), meta);
     return card;
@@ -128,7 +139,10 @@ export function createSandboxExamplesSection({ h, api, nav, detachThumbs }) {
       for (const example of examples) grid.append(renderCard(example));
       section.append(grid);
     } catch {
-      loading.textContent = t('sandbox.examples.loadError', 'Failed to load examples.');
+      loading.textContent = t(
+        'sandbox.examples.loadError',
+        'Failed to load examples.',
+      );
     }
   })();
 

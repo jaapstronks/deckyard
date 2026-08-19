@@ -3,7 +3,6 @@
  */
 import { envStr } from '../config/utils.js';
 
-
 /**
  * Fetch from an external API with standardized error handling.
  *

@@ -2,7 +2,9 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 function isJsonFile(f) {
-  return String(f || '').toLowerCase().endsWith('.json');
+  return String(f || '')
+    .toLowerCase()
+    .endsWith('.json');
 }
 
 async function readJson(p) {
@@ -30,7 +32,7 @@ async function main() {
   const presFiles = new Set(
     (await fs.readdir(presDir))
       .filter(isJsonFile)
-      .map((f) => f.replace(/\.json$/i, ''))
+      .map((f) => f.replace(/\.json$/i, '')),
   );
   const versionDirs = (await fs.readdir(versionsRoot)).filter(Boolean);
 
@@ -68,11 +70,3 @@ async function main() {
 }
 
 await main();
-
-
-
-
-
-
-
-

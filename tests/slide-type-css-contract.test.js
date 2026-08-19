@@ -35,12 +35,18 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { CORE_SLIDE_TYPE_DEFS, CORE_SLIDE_TYPE_NAMES } from '../shared/slide-types/registry.js';
+import {
+  CORE_SLIDE_TYPE_DEFS,
+  CORE_SLIDE_TYPE_NAMES,
+} from '../shared/slide-types/registry.js';
 import { renderSlideHtml } from '../shared/slide-types/presentation.js';
 import { resolveItemDefaults } from '../shared/slide-types/item-defaults.js';
 import { extractCssClasses } from '../scripts/lint-dead-css.js';
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const REPO_ROOT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 const STYLES_DIR = path.join(REPO_ROOT, 'client', 'styles');
 
 /**
@@ -122,7 +128,8 @@ function cssFilesUnder(dir) {
 function definedClasses() {
   const out = new Set();
   for (const file of cssFilesUnder(STYLES_DIR)) {
-    for (const rec of extractCssClasses(fs.readFileSync(file, 'utf8'), file)) out.add(rec.name);
+    for (const rec of extractCssClasses(fs.readFileSync(file, 'utf8'), file))
+      out.add(rec.name);
   }
   return out;
 }
@@ -145,7 +152,9 @@ function fieldValueVariants(field) {
   const out = [];
   for (const option of options) {
     const value =
-      option && typeof option === 'object' ? (option.value ?? option.id ?? option.key) : option;
+      option && typeof option === 'object'
+        ? (option.value ?? option.id ?? option.key)
+        : option;
     if (value === undefined) continue;
     out.push(value);
   }
@@ -170,7 +179,9 @@ function fieldValueVariants(field) {
  */
 function itemsValueVariants(field, current) {
   const seed =
-    Array.isArray(current) && current.length ? current : [resolveItemDefaults(field, 'nl')];
+    Array.isArray(current) && current.length
+      ? current
+      : [resolveItemDefaults(field, 'nl')];
   const out = [];
   for (const itemField of field.itemFields || []) {
     for (const value of fieldValueVariants(itemField)) {
@@ -179,7 +190,10 @@ function itemsValueVariants(field, current) {
       out.push(items);
     }
     if (Array.isArray(itemField.itemFields)) {
-      for (const nested of itemsValueVariants(itemField, seed[0]?.[itemField.key])) {
+      for (const nested of itemsValueVariants(
+        itemField,
+        seed[0]?.[itemField.key],
+      )) {
         const items = structuredClone(seed);
         items[0] = { ...items[0], [itemField.key]: nested };
         out.push(items);
@@ -240,7 +254,8 @@ function classesIn(html) {
   }
   const selfStyled = new Set();
   for (const match of html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)) {
-    for (const rec of extractCssClasses(match[1], 'inline <style>')) selfStyled.add(rec.name);
+    for (const rec of extractCssClasses(match[1], 'inline <style>'))
+      selfStyled.add(rec.name);
   }
   return { emitted, selfStyled };
 }
@@ -255,7 +270,10 @@ for (const type of CORE_SLIDE_TYPE_NAMES) {
   for (const content of contentVariants(def)) {
     let html;
     try {
-      html = renderSlideHtml({ type, content }, { lang: 'nl', slideTypes: CORE_SLIDE_TYPE_DEFS });
+      html = renderSlideHtml(
+        { type, content },
+        { lang: 'nl', slideTypes: CORE_SLIDE_TYPE_DEFS },
+      );
     } catch {
       // A variant a type rejects is not this test's business; the defaults
       // render is asserted separately below.
@@ -275,17 +293,26 @@ test('the scan actually renders the registry', () => {
   assert.ok(CORE_SLIDE_TYPE_NAMES.length > 20, 'expected a populated registry');
   for (const type of CORE_SLIDE_TYPE_NAMES) {
     const html = renderSlideHtml(
-      { type, content: structuredClone(CORE_SLIDE_TYPE_DEFS[type].defaults || {}) },
-      { lang: 'nl', slideTypes: CORE_SLIDE_TYPE_DEFS }
+      {
+        type,
+        content: structuredClone(CORE_SLIDE_TYPE_DEFS[type].defaults || {}),
+      },
+      { lang: 'nl', slideTypes: CORE_SLIDE_TYPE_DEFS },
     );
     assert.match(html, /class="/, `${type} rendered no classes at all`);
   }
-  assert.ok(EMITTED.size > 100, `expected many emitted classes, got ${EMITTED.size}`);
+  assert.ok(
+    EMITTED.size > 100,
+    `expected many emitted classes, got ${EMITTED.size}`,
+  );
 });
 
 test('every class a slide type emits resolves to a CSS rule', () => {
   const defined = definedClasses();
-  assert.ok(defined.size > 1000, `expected the stylesheets to define many classes, got ${defined.size}`);
+  assert.ok(
+    defined.size > 1000,
+    `expected the stylesheets to define many classes, got ${defined.size}`,
+  );
 
   const orphans = [...EMITTED.keys()]
     .filter((name) => !defined.has(name))
@@ -297,12 +324,14 @@ test('every class a slide type emits resolves to a CSS rule', () => {
     orphans,
     [],
     'these classes are rendered but have no CSS rule anywhere:\n' +
-      orphans.map((n) => `  .${n}  (from ${[...EMITTED.get(n)].join(', ')})`).join('\n') +
+      orphans
+        .map((n) => `  .${n}  (from ${[...EMITTED.get(n)].join(', ')})`)
+        .join('\n') +
       '\n\nA class with no rule renders as bare document flow — valid HTML, green ' +
       'tests, wrong page. If you renamed a class, rename it in the stylesheet too ' +
       'and put the rename in the release notes (docs/reference/versioning.md ' +
       '§ Renamed slide-type classes). If the class is a selector hook or a known ' +
-      'leftover, add it to UNSTYLED in this file with a reason.'
+      'leftover, add it to UNSTYLED in this file with a reason.',
   );
 });
 
@@ -314,7 +343,7 @@ test('no UNSTYLED entry outlives the class it excuses', () => {
     stale,
     [],
     'these UNSTYLED entries name classes no slide type renders any more — ' +
-      `delete them:\n${stale.map((n) => `  ${n}`).join('\n')}`
+      `delete them:\n${stale.map((n) => `  ${n}`).join('\n')}`,
   );
 });
 
@@ -327,7 +356,7 @@ test('no UNSTYLED entry quietly gained a stylesheet', () => {
     nowStyled,
     [],
     'these UNSTYLED entries now have CSS rules, so the excuse is stale — ' +
-      `delete them:\n${nowStyled.map((n) => `  ${n}`).join('\n')}`
+      `delete them:\n${nowStyled.map((n) => `  ${n}`).join('\n')}`,
   );
 });
 
@@ -335,11 +364,11 @@ test('every UNSTYLED entry carries a reason and a kind', () => {
   for (const [name, entry] of Object.entries(UNSTYLED)) {
     assert.ok(
       entry && (entry.kind === 'hook' || entry.kind === 'unstyled'),
-      `UNSTYLED["${name}"] needs kind 'hook' or 'unstyled'`
+      `UNSTYLED["${name}"] needs kind 'hook' or 'unstyled'`,
     );
     assert.ok(
       typeof entry.why === 'string' && entry.why.trim().length > 20,
-      `UNSTYLED["${name}"] needs a reason that says where the class is used, or that nothing uses it`
+      `UNSTYLED["${name}"] needs a reason that says where the class is used, or that nothing uses it`,
     );
   }
 });

@@ -19,7 +19,11 @@ import { t } from '../../lib/ui-i18n.js';
 import { openModal } from '../../lib/dom/modal.js';
 import { toast } from '../../lib/dom/toast.js';
 import { downloadBlob } from '../../lib/dom/download.js';
-import { normalizeLang, hasLangVersion, otherLang } from '../../lib/format/i18n.js';
+import {
+  normalizeLang,
+  hasLangVersion,
+  otherLang,
+} from '../../lib/format/i18n.js';
 import { createSegmented } from '../../lib/dom/segmented.js';
 import { buildExportUrl } from './publish-export/urls.js';
 
@@ -43,17 +47,58 @@ function exportGroups() {
       key: 'slides',
       title: t('editor.export.groupSlides', 'Slides'),
       formats: [
-        { key: 'pdf', name: 'PDF', desc: t('editor.export.descPdf', 'One slide per page (16:9)'), icon: 'file-text', color: 'red' },
-        { key: 'png', name: 'PNG', desc: t('editor.export.descPng', 'Image of each slide'), icon: 'image', color: 'green', path: 'png', open: 'tab' },
-        { key: 'pptx', name: 'PPTX', desc: t('editor.export.descPptx', 'PowerPoint file'), icon: 'presentation', color: 'amber', path: 'pptx', open: 'tab' },
-        { key: 'html', name: 'HTML', desc: t('editor.export.descHtml', 'Self-contained web page'), icon: 'code-xml', color: 'blue', path: 'html', open: 'download' },
+        {
+          key: 'pdf',
+          name: 'PDF',
+          desc: t('editor.export.descPdf', 'One slide per page (16:9)'),
+          icon: 'file-text',
+          color: 'red',
+        },
+        {
+          key: 'png',
+          name: 'PNG',
+          desc: t('editor.export.descPng', 'Image of each slide'),
+          icon: 'image',
+          color: 'green',
+          path: 'png',
+          open: 'tab',
+        },
+        {
+          key: 'pptx',
+          name: 'PPTX',
+          desc: t('editor.export.descPptx', 'PowerPoint file'),
+          icon: 'presentation',
+          color: 'amber',
+          path: 'pptx',
+          open: 'tab',
+        },
+        {
+          key: 'html',
+          name: 'HTML',
+          desc: t('editor.export.descHtml', 'Self-contained web page'),
+          icon: 'code-xml',
+          color: 'blue',
+          path: 'html',
+          open: 'download',
+        },
       ],
     },
     {
       key: 'documents',
       title: t('editor.export.groupDocuments', 'Documents'),
       formats: [
-        { key: 'textpdf', name: t('editor.export.textPdf', 'Text handout'), desc: t('editor.export.descTextPdf', 'Readable handout, no slide layout'), icon: 'sticky-note', color: 'teal', path: 'pdf', open: 'tab' },
+        {
+          key: 'textpdf',
+          name: t('editor.export.textPdf', 'Text handout'),
+          desc: t(
+            'editor.export.descTextPdf',
+            'Readable handout, no slide layout',
+          ),
+          icon: 'sticky-note',
+          color: 'teal',
+          path: 'pdf',
+          open: 'tab',
+        },
         {
           key: 'notes',
           name: t('editor.export.notes', 'Notes'),
@@ -62,7 +107,11 @@ function exportGroups() {
           color: 'purple',
           actions: [
             { label: 'Markdown', path: 'notes.md', open: 'tab' },
-            { label: t('editor.export.notesWordShort', 'Word'), path: 'notes.docx', open: 'tab' },
+            {
+              label: t('editor.export.notesWordShort', 'Word'),
+              path: 'notes.docx',
+              open: 'tab',
+            },
           ],
         },
       ],
@@ -71,8 +120,27 @@ function exportGroups() {
       key: 'data',
       title: t('editor.export.groupData', 'Data & bundle'),
       formats: [
-        { key: 'json', name: 'JSON', desc: t('editor.export.descJson', 'Raw deck data'), icon: 'database', color: 'slate', path: 'json', open: 'download' },
-        { key: 'handoff', name: t('editor.export.handoff', 'Handoff ZIP'), desc: t('editor.export.descHandoff', 'Everything bundled (PDF, PPTX, PNG, notes)'), icon: 'package', color: 'indigo', path: 'handoff.zip', open: 'tab' },
+        {
+          key: 'json',
+          name: 'JSON',
+          desc: t('editor.export.descJson', 'Raw deck data'),
+          icon: 'database',
+          color: 'slate',
+          path: 'json',
+          open: 'download',
+        },
+        {
+          key: 'handoff',
+          name: t('editor.export.handoff', 'Handoff ZIP'),
+          desc: t(
+            'editor.export.descHandoff',
+            'Everything bundled (PDF, PPTX, PNG, notes)',
+          ),
+          icon: 'package',
+          color: 'indigo',
+          path: 'handoff.zip',
+          open: 'tab',
+        },
       ],
     },
   ];
@@ -115,23 +183,32 @@ async function exportPdf({ id, getLang, title, button, fallbackWrap }) {
   const lang = getLang();
   // ?sync=1 forces the synchronous render path, so the response is the PDF
   // bytes (or an error) rather than a 202 job hand-off we'd have to poll.
-  const url = buildExportUrl(`/api/presentations/${id}/export/pdf-slides.pdf?sync=1`, lang);
+  const url = buildExportUrl(
+    `/api/presentations/${id}/export/pdf-slides.pdf?sync=1`,
+    lang,
+  );
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), PDF_FETCH_TIMEOUT_MS);
   try {
-    const res = await fetch(url, { signal: controller.signal, credentials: 'same-origin' });
+    const res = await fetch(url, {
+      signal: controller.signal,
+      credentials: 'same-origin',
+    });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const blob = await res.blob();
     const filename = filenameFromDisposition(
       res.headers.get('Content-Disposition'),
-      `${title || 'export'}.pdf`
+      `${title || 'export'}.pdf`,
     );
     downloadBlob(blob, filename);
   } catch (err) {
     // Reveal the browser-print fallback: open the printable slide page in a new
     // tab, where the user does Cmd/Ctrl-P → Save as PDF.
-    const printUrl = buildExportUrl(`/api/presentations/${id}/export/pdf-slides`, getLang());
+    const printUrl = buildExportUrl(
+      `/api/presentations/${id}/export/pdf-slides`,
+      getLang(),
+    );
     const fallbackBtn = h('button', {
       class: 'btn btn-secondary btn-sm',
       type: 'button',
@@ -139,8 +216,14 @@ async function exportPdf({ id, getLang, title, button, fallbackWrap }) {
       onclick: () => window.open(printUrl, '_blank', 'noopener,noreferrer'),
     });
     fallbackWrap.replaceChildren(
-      h('span', { class: 'help', text: t('editor.export.pdfFailed', 'PDF render failed or timed out. Print it in the browser instead:') }),
-      fallbackBtn
+      h('span', {
+        class: 'help',
+        text: t(
+          'editor.export.pdfFailed',
+          'PDF render failed or timed out. Print it in the browser instead:',
+        ),
+      }),
+      fallbackBtn,
     );
     fallbackWrap.hidden = false;
     if (err?.name !== 'AbortError') {
@@ -181,12 +264,16 @@ function buildFormatRow(fmt, { id, getLang, title }) {
   };
 
   if (fmt.key === 'pdf') {
-    const fallbackWrap = h('div', { class: 'export-format-fallback', hidden: true });
+    const fallbackWrap = h('div', {
+      class: 'export-format-fallback',
+      hidden: true,
+    });
     const btn = h('button', {
       class: 'btn btn-primary btn-sm',
       type: 'button',
       text: t('editor.export.exportAction', 'Export'),
-      onclick: () => exportPdf({ id, getLang, title, button: btn, fallbackWrap }),
+      onclick: () =>
+        exportPdf({ id, getLang, title, button: btn, fallbackWrap }),
     });
     actions.append(btn);
     makeClickable(() => btn.click());
@@ -201,7 +288,7 @@ function buildFormatRow(fmt, { id, getLang, title }) {
           type: 'button',
           text: action.label,
           onclick: () => runExport(id, action.path, getLang(), action.open),
-        })
+        }),
       );
     }
     return row;
@@ -213,7 +300,7 @@ function buildFormatRow(fmt, { id, getLang, title }) {
       type: 'button',
       text: t('editor.export.exportAction', 'Export'),
       onclick: () => runExport(id, fmt.path, getLang(), fmt.open),
-    })
+    }),
   );
   makeClickable(() => runExport(id, fmt.path, getLang(), fmt.open));
 
@@ -224,7 +311,7 @@ function buildFormatRow(fmt, { id, getLang, title }) {
       class: 'export-format-hint',
       text: t(
         'editor.export.publishHint',
-        'Want a link that stays current and revocable? Publish it from the Share menu.'
+        'Want a link that stays current and revocable? Publish it from the Share menu.',
       ),
     });
     return h('div', { class: 'export-format-rowwrap' }, [row, hint]);
@@ -259,13 +346,16 @@ export function openExportModal({ pres, id, root, overlayClosers }) {
       title: t('editor.export.title', 'Export to file'),
       modalClass: 'export-modal',
     },
-    overlayClosers
+    overlayClosers,
   );
 
   // Language toggle - only when the deck actually has both languages.
   if (hasOther) {
     const langRow = h('div', { class: 'export-lang-row' });
-    const label = h('span', { class: 'field-label', text: t('editor.export.langLabel', 'Language') });
+    const label = h('span', {
+      class: 'field-label',
+      text: t('editor.export.langLabel', 'Language'),
+    });
     const seg = createSegmented({
       h,
       ariaLabel: t('editor.export.langLabel', 'Language'),

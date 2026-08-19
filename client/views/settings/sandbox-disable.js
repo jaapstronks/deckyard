@@ -23,13 +23,17 @@ export function disableForSandbox({ content, message } = {}) {
 
   content.classList.add('is-sandbox-disabled');
   content.setAttribute('aria-disabled', 'true');
-  for (const ctl of content.querySelectorAll('input, select, textarea, button')) {
+  for (const ctl of content.querySelectorAll(
+    'input, select, textarea, button',
+  )) {
     ctl.disabled = true;
   }
 
   const note = h('div', {
     class: 'help sandbox-settings-note',
-    text: message || t('sandbox.settings.unavailable', 'Not available in the sandbox.'),
+    text:
+      message ||
+      t('sandbox.settings.unavailable', 'Not available in the sandbox.'),
   });
   content.prepend(note);
   return true;

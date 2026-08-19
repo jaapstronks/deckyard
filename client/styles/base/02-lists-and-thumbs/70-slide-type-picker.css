@@ -200,7 +200,8 @@
   border: 1px solid hsl(var(--app-border-strong));
   border-radius: var(--ps-radius-md);
   box-shadow: var(--app-shadow-sm);
-  transition: border-color var(--ps-transition-fast),
+  transition:
+    border-color var(--ps-transition-fast),
     box-shadow var(--ps-transition-fast);
 }
 
@@ -272,7 +273,9 @@
   border: 1px solid hsl(var(--app-border-strong));
   background: var(--sw, hsl(var(--app-bg-elevated)));
   cursor: pointer;
-  transition: box-shadow var(--ps-transition-fast), transform var(--ps-transition-fast);
+  transition:
+    box-shadow var(--ps-transition-fast),
+    transform var(--ps-transition-fast);
 }
 
 /* "Auto" swatch: a diagonal two-tone of the first two offered surfaces, so it
@@ -323,7 +326,9 @@
   font-size: var(--ps-text-xs);
   font-weight: 600;
   cursor: pointer;
-  transition: background var(--ps-transition-fast), color var(--ps-transition-fast);
+  transition:
+    background var(--ps-transition-fast),
+    color var(--ps-transition-fast);
 }
 
 .ps-view-toggle-btn svg {
@@ -485,7 +490,9 @@
   color: hsl(var(--app-text-tertiary));
   cursor: pointer;
   opacity: 0;
-  transition: opacity var(--ps-transition-fast), color var(--ps-transition-fast);
+  transition:
+    opacity var(--ps-transition-fast),
+    color var(--ps-transition-fast);
 }
 
 .ps-type-pin svg {
@@ -555,7 +562,11 @@
 
 /* Video slide thumbnail mockup */
 .ps-type-thumb.ps-type-thumb-video {
-  background: linear-gradient(135deg, hsl(220 15% 20%) 0%, hsl(220 20% 12%) 100%);
+  background: linear-gradient(
+    135deg,
+    hsl(220 15% 20%) 0%,
+    hsl(220 20% 12%) 100%
+  );
 }
 
 .ps-type-video-mock {
@@ -662,7 +673,6 @@
   height: 40px;
 }
 
-
 /* ============================================
    Responsive adjustments for thumbnail mode
    ============================================ */
@@ -695,7 +705,9 @@
   color: hsl(var(--app-text-tertiary));
   cursor: pointer;
   opacity: 0;
-  transition: opacity var(--ps-transition-fast), color var(--ps-transition-fast);
+  transition:
+    opacity var(--ps-transition-fast),
+    color var(--ps-transition-fast);
 }
 
 .ps-type-peek-btn svg {

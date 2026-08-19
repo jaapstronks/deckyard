@@ -8,8 +8,7 @@ let sbPrevHtmlOverflow = '';
 let sbPrevBodyOverflow = '';
 export function lockDocumentScroll() {
   if (sbScrollLockCount === 0) {
-    sbPrevHtmlOverflow =
-      document.documentElement.style.overflow;
+    sbPrevHtmlOverflow = document.documentElement.style.overflow;
     sbPrevBodyOverflow = document.body.style.overflow;
     document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
@@ -21,8 +20,7 @@ export function lockDocumentScroll() {
     unlocked = true;
     sbScrollLockCount = Math.max(0, sbScrollLockCount - 1);
     if (sbScrollLockCount === 0) {
-      document.documentElement.style.overflow =
-        sbPrevHtmlOverflow;
+      document.documentElement.style.overflow = sbPrevHtmlOverflow;
       document.body.style.overflow = sbPrevBodyOverflow;
     }
   };
@@ -32,7 +30,7 @@ export function slideLabel(slide, slideTypes) {
   const def = slideTypes?.[slide?.type];
   const defLabel = t(
     def?.labelKey || `slideType.${slide?.type}.label`,
-    def?.label || slide?.type || ''
+    def?.label || slide?.type || '',
   );
   const content = slide?.content || {};
 

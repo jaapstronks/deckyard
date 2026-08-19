@@ -31,7 +31,7 @@ export function costOf(tokens, model) {
   const rates = PRICING[model];
   if (!rates) {
     throw new Error(
-      `No pricing for model "${model}". Add it to PRICING in test-suite/lib/config.js.`
+      `No pricing for model "${model}". Add it to PRICING in test-suite/lib/config.js.`,
     );
   }
   const perMillion = (count, rate) => (count / 1_000_000) * rate;
@@ -64,7 +64,7 @@ export class CostTracker {
   attachToAppLlm() {
     if (this.unsubscribe) return this;
     this.unsubscribe = subscribeLlmUsage((event) =>
-      this.record('generation', event, event.model)
+      this.record('generation', event, event.model),
     );
     return this;
   }
@@ -113,7 +113,10 @@ export class CostTracker {
     }
     // Total is summed from the per-model line items; the aggregate token
     // counts span models and cannot be priced at a single rate.
-    const totalUsd = Object.values(byCategory).reduce((sum, entry) => sum + entry.usd, 0);
+    const totalUsd = Object.values(byCategory).reduce(
+      (sum, entry) => sum + entry.usd,
+      0,
+    );
     return { byCategory, total, totalUsd: round(totalUsd) };
   }
 }

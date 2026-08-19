@@ -25,15 +25,23 @@ import { canWritePresentation } from '../../utils/presentation-authz.js';
 import { dispatchRoutes } from '../../utils/router.js';
 
 // POST /api/moderate/:presentationId/questions/:questionId/remove — moderator removes a question
-async function handleQuestionRemove({ repoRoot, storageScope, res, authedUser }, presentationId, questionId) {
+async function handleQuestionRemove(
+  { repoRoot, storageScope, res, authedUser },
+  presentationId,
+  questionId,
+) {
   if (!authedUser) return unauthorized(res);
   // "Moderator path" is intended for coworkers; require admin to avoid accidental abuse.
   if (!authedUser.isAdmin) return unauthorized(res, 'Admin required');
 
-  const state = await getFollowStateForPresentation(storageScope, presentationId);
+  const state = await getFollowStateForPresentation(
+    storageScope,
+    presentationId,
+  );
   // Allow moderation even if the session is no longer considered "live" (talk breaks, tab sleep, etc),
   // as long as we can resolve a sessionId for the presentation.
-  if (!state.sessionId) return badRequest(res, 'No session found for presentation');
+  if (!state.sessionId)
+    return badRequest(res, 'No session found for presentation');
 
   const result = await removeQuestion(storageScope, state.sessionId, {
     questionId,
@@ -48,7 +56,11 @@ async function handleQuestionRemove({ repoRoot, storageScope, res, authedUser },
 }
 
 // POST /api/moderate/:presentationId/questions/:questionId/promote — promote a question to a slide
-async function handleQuestionPromote({ repoRoot, storageScope, req, res, authedUser }, presentationId, questionId) {
+async function handleQuestionPromote(
+  { repoRoot, storageScope, req, res, authedUser },
+  presentationId,
+  questionId,
+) {
   if (!authedUser) return unauthorized(res);
 
   const pres = await getPresentation(storageScope, presentationId);
@@ -57,7 +69,10 @@ async function handleQuestionPromote({ repoRoot, storageScope, req, res, authedU
   // Fetch collaborator permission for ACL check
   let collaboratorPermission = null;
   if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email);
+    collaboratorPermission = await getCollaboratorPermission(
+      pres.id,
+      authedUser.email,
+    );
   }
 
   if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission }))
@@ -69,15 +84,18 @@ async function handleQuestionPromote({ repoRoot, storageScope, req, res, authedU
   const position = body?.position === 'next' ? 'next' : 'end';
   const afterSlideIndex = Number(body?.afterSlideIndex ?? NaN);
 
-  const state = await getFollowStateForPresentation(storageScope, presentationId);
+  const state = await getFollowStateForPresentation(
+    storageScope,
+    presentationId,
+  );
   // Allow promotion even if session isn't "live" anymore, as long as we have a sessionId.
-  if (!state.sessionId) return badRequest(res, 'No session found for presentation');
+  if (!state.sessionId)
+    return badRequest(res, 'No session found for presentation');
 
   const q = await getQuestion(storageScope, state.sessionId, questionId);
   if (!q) return notFound(res);
 
-  const dominant =
-    normalizeLang(pres?.i18n?.dominant) || 'nl';
+  const dominant = normalizeLang(pres?.i18n?.dominant) || 'nl';
   const texts = q.texts && typeof q.texts === 'object' ? q.texts : {};
   const originalText = String(q.text || '').trim();
 
@@ -123,7 +141,8 @@ async function handleQuestionPromote({ repoRoot, storageScope, req, res, authedU
   // Insert into top-level slides (dominant view) and into any i18n versions that exist.
   const nextPres = { ...pres };
   nextPres.slides = Array.isArray(nextPres.slides) ? [...nextPres.slides] : [];
-  nextPres.i18n = nextPres.i18n && typeof nextPres.i18n === 'object' ? nextPres.i18n : {};
+  nextPres.i18n =
+    nextPres.i18n && typeof nextPres.i18n === 'object' ? nextPres.i18n : {};
   nextPres.i18n.versions =
     nextPres.i18n.versions && typeof nextPres.i18n.versions === 'object'
       ? { ...nextPres.i18n.versions }
@@ -133,8 +152,8 @@ async function handleQuestionPromote({ repoRoot, storageScope, req, res, authedU
     position === 'end'
       ? nextPres.slides.length
       : Number.isFinite(afterSlideIndex)
-      ? Math.max(0, afterSlideIndex + 1)
-      : Math.max(0, Number(state.slideIndex || 0) + 1);
+        ? Math.max(0, afterSlideIndex + 1)
+        : Math.max(0, Number(state.slideIndex || 0) + 1);
 
   insertAt(nextPres.slides, insertIndex, makeSlide(dominant));
 
@@ -153,9 +172,14 @@ async function handleQuestionPromote({ repoRoot, storageScope, req, res, authedU
     };
   }
 
-  const updated = await updatePresentation(storageScope, presentationId, nextPres, {
-    actorEmail: authedUser?.email || null,
-  });
+  const updated = await updatePresentation(
+    storageScope,
+    presentationId,
+    nextPres,
+    {
+      actorEmail: authedUser?.email || null,
+    },
+  );
   // Lock / mark promoted so audience sees it will be addressed (and voting/removal stops).
   await promoteQuestion(storageScope, state.sessionId, {
     questionId,
@@ -179,10 +203,24 @@ async function handleQuestionPromote({ repoRoot, storageScope, req, res, authedU
  * @type {import('../../utils/router.js').Route[]}
  */
 export const ROUTES = [
-  { method: 'POST', pattern: /^\/api\/moderate\/([^/]+)\/questions\/([^/]+)\/remove$/, handler: handleQuestionRemove },
-  { pattern: /^\/api\/moderate\/([^/]+)\/questions\/([^/]+)\/remove$/, handler: ({ res }) => methodNotAllowed(res, ['POST']) },
-  { method: 'POST', pattern: /^\/api\/moderate\/([^/]+)\/questions\/([^/]+)\/promote$/, handler: handleQuestionPromote },
-  { pattern: /^\/api\/moderate\/([^/]+)\/questions\/([^/]+)\/promote$/, handler: ({ res }) => methodNotAllowed(res, ['POST']) },
+  {
+    method: 'POST',
+    pattern: /^\/api\/moderate\/([^/]+)\/questions\/([^/]+)\/remove$/,
+    handler: handleQuestionRemove,
+  },
+  {
+    pattern: /^\/api\/moderate\/([^/]+)\/questions\/([^/]+)\/remove$/,
+    handler: ({ res }) => methodNotAllowed(res, ['POST']),
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/moderate\/([^/]+)\/questions\/([^/]+)\/promote$/,
+    handler: handleQuestionPromote,
+  },
+  {
+    pattern: /^\/api\/moderate\/([^/]+)\/questions\/([^/]+)\/promote$/,
+    handler: ({ res }) => methodNotAllowed(res, ['POST']),
+  },
 ];
 
 /**

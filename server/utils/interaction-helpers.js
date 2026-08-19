@@ -16,7 +16,9 @@ import { liveInteractionKind } from '../../shared/slide-types/runtime.js';
  * @returns {Object} Content object or empty object
  */
 function getSlideContent(slide) {
-  return slide?.content && typeof slide.content === 'object' ? slide.content : {};
+  return slide?.content && typeof slide.content === 'object'
+    ? slide.content
+    : {};
 }
 
 /**

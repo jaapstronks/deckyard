@@ -20,9 +20,16 @@ function mockRes() {
     statusCode: null,
     payload: null,
     headers: {},
-    writeHead(c, headers) { this.statusCode = c; Object.assign(this.headers, headers); },
-    end(payload) { this.payload = payload ? JSON.parse(payload) : null; },
-    setHeader(k, v) { this.headers[k] = v; },
+    writeHead(c, headers) {
+      this.statusCode = c;
+      Object.assign(this.headers, headers);
+    },
+    end(payload) {
+      this.payload = payload ? JSON.parse(payload) : null;
+    },
+    setHeader(k, v) {
+      this.headers[k] = v;
+    },
   };
 }
 
@@ -46,21 +53,30 @@ function putCtx(path, rawBody) {
 
 for (const shelf of ['personal', 'organization']) {
   test(`${shelf} tags PUT: a bare array body is a 400 (object guarantee, no opt-out)`, async () => {
-    const { ctx, res } = putCtx(`/api/slide-library/${shelf}/item-1/tags`, '["a","b"]');
+    const { ctx, res } = putCtx(
+      `/api/slide-library/${shelf}/item-1/tags`,
+      '["a","b"]',
+    );
     assert.equal(await handleSlideLibrary(ctx), true);
     assert.equal(res.statusCode, 400);
     assert.equal(res.payload.message, 'Request body must be a JSON object');
   });
 
   test(`${shelf} tags PUT: a non-array tags field is a 400`, async () => {
-    const { ctx, res } = putCtx(`/api/slide-library/${shelf}/item-1/tags`, '{"tags":"a"}');
+    const { ctx, res } = putCtx(
+      `/api/slide-library/${shelf}/item-1/tags`,
+      '{"tags":"a"}',
+    );
     assert.equal(await handleSlideLibrary(ctx), true);
     assert.equal(res.statusCode, 400);
     assert.equal(res.payload.message, 'Expected { tags: [...] }');
   });
 
   test(`${shelf} tags PUT: a missing tags field is a 400`, async () => {
-    const { ctx, res } = putCtx(`/api/slide-library/${shelf}/item-1/tags`, '{}');
+    const { ctx, res } = putCtx(
+      `/api/slide-library/${shelf}/item-1/tags`,
+      '{}',
+    );
     assert.equal(await handleSlideLibrary(ctx), true);
     assert.equal(res.statusCode, 400);
     assert.equal(res.payload.message, 'Expected { tags: [...] }');

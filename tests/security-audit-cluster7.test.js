@@ -34,18 +34,32 @@ const readSrc = (rel) =>
 // ============================================================================
 
 test('L4: an unexpected 500 error never leaks its message', () => {
-  const body = buildTopLevelErrorBody(500, new Error('ECONNREFUSED /var/run/pg.sock: SELECT * FROM users'));
+  const body = buildTopLevelErrorBody(
+    500,
+    new Error('ECONNREFUSED /var/run/pg.sock: SELECT * FROM users'),
+  );
   assert.equal(body.error, 'server_error');
   assert.equal(body.message, 'Server error', 'generic message only');
-  assert.doesNotMatch(JSON.stringify(body), /ECONNREFUSED|pg\.sock|SELECT/, 'raw message must not leak');
+  assert.doesNotMatch(
+    JSON.stringify(body),
+    /ECONNREFUSED|pg\.sock|SELECT/,
+    'raw message must not leak',
+  );
 });
 
 test('L4: a bare error (no statusCode) is treated as 500 with no details', () => {
-  const body = buildTopLevelErrorBody(500, new Error('/etc/secret path in message'));
+  const body = buildTopLevelErrorBody(
+    500,
+    new Error('/etc/secret path in message'),
+  );
   assert.equal(body.error, 'server_error');
   assert.equal(body.message, 'Server error');
   assert.ok(!('details' in body));
-  assert.doesNotMatch(JSON.stringify(body), /etc\/secret/, 'raw path must not leak');
+  assert.doesNotMatch(
+    JSON.stringify(body),
+    /etc\/secret/,
+    'raw path must not leak',
+  );
 });
 
 test('L4: an intentional sub-500 error surfaces its (safe) message', () => {
@@ -61,8 +75,16 @@ test('L4: a sub-500 status without an explicit statusCode gets no details', () =
   // don't trust its message.
   const body = buildTopLevelErrorBody(400, new Error('raw internal detail'));
   assert.equal(body.error, 'request_error');
-  assert.equal(body.message, 'Request error', 'generic, does not echo the raw message');
-  assert.doesNotMatch(JSON.stringify(body), /raw internal detail/, 'raw message must not leak');
+  assert.equal(
+    body.message,
+    'Request error',
+    'generic, does not echo the raw message',
+  );
+  assert.doesNotMatch(
+    JSON.stringify(body),
+    /raw internal detail/,
+    'raw message must not leak',
+  );
 });
 
 // ============================================================================
@@ -82,10 +104,24 @@ test('L5: filterCssText strips @import, defangs expression()/javascript:, escape
 
 test('L5: the custom-type runtime and custom-html slide share one filter', async () => {
   const runtime = await readSrc('../server/utils/custom-slide-type-runtime.js');
-  const slide = await readSrc('../shared/slide-types/types/custom-html-slide.js');
-  assert.match(runtime, /filterCssText\(ct\.css\)/, 'runtime uses filterCssText');
-  assert.doesNotMatch(runtime, /function sanitizeCss/, 'weak local sanitizeCss removed');
-  assert.match(slide, /from '\.\.\/\.\.\/css-filter\.js'/, 'slide imports the shared filter');
+  const slide = await readSrc(
+    '../shared/slide-types/types/custom-html-slide.js',
+  );
+  assert.match(
+    runtime,
+    /filterCssText\(ct\.css\)/,
+    'runtime uses filterCssText',
+  );
+  assert.doesNotMatch(
+    runtime,
+    /function sanitizeCss/,
+    'weak local sanitizeCss removed',
+  );
+  assert.match(
+    slide,
+    /from '\.\.\/\.\.\/css-filter\.js'/,
+    'slide imports the shared filter',
+  );
 });
 
 // ============================================================================
@@ -100,14 +136,27 @@ test('L6: fetchFontAsDataUrl rejects loopback/private/metadata/IPv6 literals', a
     'http://[::ffff:169.254.169.254]/f.woff2',
   ];
   for (const url of blocked) {
-    await assert.rejects(() => fetchFontAsDataUrl(url), /internal addresses/, url);
+    await assert.rejects(
+      () => fetchFontAsDataUrl(url),
+      /internal addresses/,
+      url,
+    );
   }
 });
 
 test('L6: fetchFontAsDataUrl rejects non-http schemes and malformed URLs', async () => {
-  await assert.rejects(() => fetchFontAsDataUrl('ftp://example.com/f.woff2'), /HTTP\(S\)/);
-  await assert.rejects(() => fetchFontAsDataUrl('file:///etc/passwd'), /HTTP\(S\)/);
-  await assert.rejects(() => fetchFontAsDataUrl('not-a-url'), /Invalid font URL/);
+  await assert.rejects(
+    () => fetchFontAsDataUrl('ftp://example.com/f.woff2'),
+    /HTTP\(S\)/,
+  );
+  await assert.rejects(
+    () => fetchFontAsDataUrl('file:///etc/passwd'),
+    /HTTP\(S\)/,
+  );
+  await assert.rejects(
+    () => fetchFontAsDataUrl('not-a-url'),
+    /Invalid font URL/,
+  );
 });
 
 // ============================================================================
@@ -115,7 +164,11 @@ test('L6: fetchFontAsDataUrl rejects non-http schemes and malformed URLs', async
 // ============================================================================
 
 test('L7: postJson blocks non-public webhook targets before fetching', async () => {
-  for (const url of ['http://127.0.0.1/hook', 'http://[::1]/hook', 'http://169.254.169.254/']) {
+  for (const url of [
+    'http://127.0.0.1/hook',
+    'http://[::1]/hook',
+    'http://169.254.169.254/',
+  ]) {
     const r = await postJson(url, { hi: 1 });
     assert.equal(r.ok, false);
     assert.equal(r.error, 'Blocked non-public webhook URL', url);
@@ -142,14 +195,30 @@ test('L2: redactSecret keeps only a short prefix', () => {
 
 test('L2: follow-code values are no longer logged; the session token is redacted', async () => {
   const codes = await readSrc('../server/storage/follow-codes.js');
-  assert.doesNotMatch(codes, /console\.log\([^)]*\$\{upperCode\}/, 'no code in resolve logs');
-  assert.doesNotMatch(codes, /Looking up code/, 'verbose code lookup log removed');
+  assert.doesNotMatch(
+    codes,
+    /console\.log\([^)]*\$\{upperCode\}/,
+    'no code in resolve logs',
+  );
+  assert.doesNotMatch(
+    codes,
+    /Looking up code/,
+    'verbose code lookup log removed',
+  );
 
   const sessions = await readSrc('../server/storage/live-sessions/sessions.js');
-  assert.doesNotMatch(sessions, /nl: followCodes\.nl/, 'code values no longer logged');
+  assert.doesNotMatch(
+    sessions,
+    /nl: followCodes\.nl/,
+    'code values no longer logged',
+  );
 
   const track = await readSrc('../server/routes/api/analytics-track.js');
-  assert.match(track, /redactSecret\(sessionToken\)/, 'session token redacted in logs');
+  assert.match(
+    track,
+    /redactSecret\(sessionToken\)/,
+    'session token redacted in logs',
+  );
 });
 
 // ============================================================================
@@ -163,5 +232,9 @@ test('L8: public analytics report gates on presentation scope, not settings.visi
     /normalizePresentationVisibility\(presentation\.visibility\)\s*===\s*'private'/,
     'must check normalized scope',
   );
-  assert.doesNotMatch(src, /settings\?\.visibility/, 'the dead visibility check is gone');
+  assert.doesNotMatch(
+    src,
+    /settings\?\.visibility/,
+    'the dead visibility check is gone',
+  );
 });

@@ -36,7 +36,10 @@ export async function fetchUsers(onSuccess, onError) {
 export async function confirmDelete(targetUser, onSuccess) {
   const confirmed = await confirmModal(h, document.body, {
     title: t('admin.users.delete', 'Delete user'),
-    message: t('admin.users.deleteConfirm', 'Are you sure you want to delete this user? This action cannot be undone.'),
+    message: t(
+      'admin.users.deleteConfirm',
+      'Are you sure you want to delete this user? This action cannot be undone.',
+    ),
     confirmLabel: t('admin.users.delete', 'Delete user'),
     danger: true,
   });
@@ -64,7 +67,10 @@ export async function resendInvitation(targetUser, btn) {
   btn.textContent = t('admin.users.invitationSending', 'Sending…');
 
   try {
-    const res = await api(`/api/admin/users/${targetUser.id}/resend-invitation`, { method: 'POST' });
+    const res = await api(
+      `/api/admin/users/${targetUser.id}/resend-invitation`,
+      { method: 'POST' },
+    );
     // A resend rotates the setup token whether or not the mail leaves the
     // instance, so a 200 is not the same as "it arrived". The route reports
     // the send itself, and only that may be called sent.
@@ -74,12 +80,15 @@ export async function resendInvitation(targetUser, btn) {
       toast.error(
         t(
           'admin.users.invitationNotSent',
-          'A new setup link was created, but the email could not be sent. Check the email configuration.'
-        )
+          'A new setup link was created, but the email could not be sent. Check the email configuration.',
+        ),
       );
     }
   } catch (e) {
-    toast.error(e.message || t('admin.users.invitationError', 'Failed to send invitation.'));
+    toast.error(
+      e.message ||
+        t('admin.users.invitationError', 'Failed to send invitation.'),
+    );
   } finally {
     btn.disabled = false;
     btn.textContent = originalText;

@@ -1,5 +1,14 @@
 import { getFeatureFlags } from '../../config/flags-snapshot.js';
-import { badRequest, jsonError, methodNotAllowed, serveJson, serverError, unauthorized, requireJsonBody, withErrorHandler } from '../../utils/http.js';
+import {
+  badRequest,
+  jsonError,
+  methodNotAllowed,
+  serveJson,
+  serverError,
+  unauthorized,
+  requireJsonBody,
+  withErrorHandler,
+} from '../../utils/http.js';
 import {
   getImageKitConfigFromEnv,
   listImageKitFiles,
@@ -7,7 +16,11 @@ import {
   getImageKitFileDetails,
   patchImageKitFileDetails,
 } from '../../media/imagekit.js';
-import { getMediaStatus, getMediaProvider, isMediaProviderInitialized } from '../../media/index.js';
+import {
+  getMediaStatus,
+  getMediaProvider,
+  isMediaProviderInitialized,
+} from '../../media/index.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { getString } from '../../utils/request-validators.js';
 
@@ -31,7 +44,10 @@ async function handleMediaPresign({ req, res, authedUser }) {
 
   const provider = getMediaProvider();
   if (!provider.getStatus().supportsPresigned) {
-    return badRequest(res, 'Current media provider does not support presigned uploads');
+    return badRequest(
+      res,
+      'Current media provider does not support presigned uploads',
+    );
   }
 
   const parsed = await requireJsonBody(req, res);
@@ -49,7 +65,11 @@ async function handleMediaPresign({ req, res, authedUser }) {
   }
 
   try {
-    const result = await provider.createPresignedUpload({ filename, contentType, size });
+    const result = await provider.createPresignedUpload({
+      filename,
+      contentType,
+      size,
+    });
     serveJson(res, 200, result);
   } catch (err) {
     const status = err.statusCode || 500;
@@ -135,7 +155,8 @@ async function handleImageKitDetailsGet({ res }, fileId) {
 async function handleImageKitDetailsPatch({ req, res, authedUser }, fileId) {
   if (!authedUser) return unauthorized(res);
   const flags = getFeatureFlags();
-  if (flags.demoMode || flags.sandboxMode) return methodNotAllowed(res, ['GET']);
+  if (flags.demoMode || flags.sandboxMode)
+    return methodNotAllowed(res, ['GET']);
   const parsed = await requireJsonBody(req, res, { allowEmpty: true });
   if (!parsed.ok) return true;
   const body = parsed.body;
@@ -154,20 +175,69 @@ async function handleImageKitDetailsPatch({ req, res, authedUser }, fileId) {
  */
 export const ROUTES = [
   { method: 'GET', pattern: '/api/media/status', handler: handleMediaStatus },
-  { pattern: '/api/media/status', handler: ({ res }) => methodNotAllowed(res, ['GET']) },
-  { method: 'POST', pattern: '/api/media/presign', handler: handleMediaPresign },
-  { pattern: '/api/media/presign', handler: ({ res }) => methodNotAllowed(res, ['POST']) },
-  { method: 'POST', pattern: '/api/media/confirm', handler: handleMediaConfirm },
-  { pattern: '/api/media/confirm', handler: ({ res }) => methodNotAllowed(res, ['POST']) },
-  { method: 'GET', pattern: '/api/media/imagekit/status', handler: handleImageKitStatus },
-  { pattern: '/api/media/imagekit/status', handler: ({ res }) => methodNotAllowed(res, ['GET']) },
-  { method: 'GET', pattern: '/api/media/imagekit/files', handler: handleImageKitFiles },
-  { pattern: '/api/media/imagekit/files', handler: ({ res }) => methodNotAllowed(res, ['GET']) },
-  { method: 'GET', pattern: '/api/media/imagekit/tags', handler: handleImageKitTagList },
-  { pattern: '/api/media/imagekit/tags', handler: ({ res }) => methodNotAllowed(res, ['GET']) },
-  { method: 'GET', pattern: /^\/api\/media\/imagekit\/files\/([^/]+)\/details$/, handler: handleImageKitDetailsGet },
-  { method: 'PATCH', pattern: /^\/api\/media\/imagekit\/files\/([^/]+)\/details$/, handler: handleImageKitDetailsPatch },
-  { pattern: /^\/api\/media\/imagekit\/files\/([^/]+)\/details$/, handler: ({ res }) => methodNotAllowed(res, ['GET', 'PATCH']) },
+  {
+    pattern: '/api/media/status',
+    handler: ({ res }) => methodNotAllowed(res, ['GET']),
+  },
+  {
+    method: 'POST',
+    pattern: '/api/media/presign',
+    handler: handleMediaPresign,
+  },
+  {
+    pattern: '/api/media/presign',
+    handler: ({ res }) => methodNotAllowed(res, ['POST']),
+  },
+  {
+    method: 'POST',
+    pattern: '/api/media/confirm',
+    handler: handleMediaConfirm,
+  },
+  {
+    pattern: '/api/media/confirm',
+    handler: ({ res }) => methodNotAllowed(res, ['POST']),
+  },
+  {
+    method: 'GET',
+    pattern: '/api/media/imagekit/status',
+    handler: handleImageKitStatus,
+  },
+  {
+    pattern: '/api/media/imagekit/status',
+    handler: ({ res }) => methodNotAllowed(res, ['GET']),
+  },
+  {
+    method: 'GET',
+    pattern: '/api/media/imagekit/files',
+    handler: handleImageKitFiles,
+  },
+  {
+    pattern: '/api/media/imagekit/files',
+    handler: ({ res }) => methodNotAllowed(res, ['GET']),
+  },
+  {
+    method: 'GET',
+    pattern: '/api/media/imagekit/tags',
+    handler: handleImageKitTagList,
+  },
+  {
+    pattern: '/api/media/imagekit/tags',
+    handler: ({ res }) => methodNotAllowed(res, ['GET']),
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/media\/imagekit\/files\/([^/]+)\/details$/,
+    handler: handleImageKitDetailsGet,
+  },
+  {
+    method: 'PATCH',
+    pattern: /^\/api\/media\/imagekit\/files\/([^/]+)\/details$/,
+    handler: handleImageKitDetailsPatch,
+  },
+  {
+    pattern: /^\/api\/media\/imagekit\/files\/([^/]+)\/details$/,
+    handler: ({ res }) => methodNotAllowed(res, ['GET', 'PATCH']),
+  },
 ];
 
 /**

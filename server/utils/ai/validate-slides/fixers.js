@@ -29,7 +29,7 @@ export function fixTableSlideContent(content) {
         reason: 'rows are arrays instead of {c1, c2...} objects',
         rowCount: content.rows.length,
       });
-      const fixedRows = content.rows.map(row => {
+      const fixedRows = content.rows.map((row) => {
         if (!Array.isArray(row)) return row;
         const obj = {};
         row.forEach((cell, idx) => {
@@ -48,7 +48,7 @@ export function fixTableSlideContent(content) {
       preview: content.table.slice(0, 100),
     });
 
-    const lines = content.table.split('\n').filter(l => l.trim());
+    const lines = content.table.split('\n').filter((l) => l.trim());
     if (lines.length > 0) {
       const rows = [];
       let colCount = 0;
@@ -75,13 +75,17 @@ export function fixTableSlideContent(content) {
   }
 
   // Check for 'data' field (sometimes AI confuses with chart-slide)
-  if (typeof content.data === 'string' && content.data.includes('\t') && !content.chartType) {
+  if (
+    typeof content.data === 'string' &&
+    content.data.includes('\t') &&
+    !content.chartType
+  ) {
     logValidation('convert-table-from-data', {
       reason: 'AI returned table data in chart-slide format',
       preview: content.data.slice(0, 100),
     });
 
-    const lines = content.data.split('\n').filter(l => l.trim());
+    const lines = content.data.split('\n').filter((l) => l.trim());
     if (lines.length > 0) {
       const rows = [];
       let colCount = 0;
@@ -145,20 +149,26 @@ export function fixTextBlocksSlideDefaults(content) {
   if (!Array.isArray(rows) || rows.length < 2) return content;
 
   // Check if colors are explicitly set (not just defaults)
-  const hasExplicitColors = rows.some(r => r.color && r.color !== 'yellow');
+  const hasExplicitColors = rows.some((r) => r.color && r.color !== 'yellow');
 
   if (!hasExplicitColors && rows.length === 2) {
     // Apply alternating colors; only set arrow if not already specified
     const fixedRows = rows.map((row, idx) => ({
       ...row,
       color: idx % 2 === 0 ? 'yellow' : 'black',
-      arrow: row.arrow && row.arrow !== 'none' ? row.arrow : (idx === 0 ? 'down' : 'none'),
+      arrow:
+        row.arrow && row.arrow !== 'none'
+          ? row.arrow
+          : idx === 0
+            ? 'down'
+            : 'none',
     }));
 
     logValidation('auto-text-blocks-defaults', {
       slideType: 'text-blocks-slide',
       rowCount: rows.length,
-      reason: 'Applied alternating colors (yellow/black) and arrow for visual hierarchy',
+      reason:
+        'Applied alternating colors (yellow/black) and arrow for visual hierarchy',
     });
 
     return { ...content, rows: fixedRows };

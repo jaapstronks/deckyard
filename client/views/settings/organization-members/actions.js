@@ -30,7 +30,7 @@ export async function fetchMembers(organizationId, options = {}) {
   const limit = Math.max(1, Number(options.limit) || MEMBERS_PAGE_SIZE);
   const query = `limit=${limit}&offset=${offset}`;
   const res = await api(
-    `/api/organizations/${encodeURIComponent(organizationId)}/members?${query}`
+    `/api/organizations/${encodeURIComponent(organizationId)}/members?${query}`,
   );
   const members = Array.isArray(res?.members) ? res.members : [];
   // `total` counts the whole organization, not this page — the panel uses the
@@ -56,11 +56,19 @@ export async function fetchMembers(organizationId, options = {}) {
  * @returns {Promise<{ outcome: 'invited'|'added'|'created', email: string }>}
  *   Which of the two things happened, so the report can be honest about it.
  */
-export async function inviteMember({ organizationId, email, name, role = 'member' }) {
-  const res = await api(`/api/organizations/${encodeURIComponent(organizationId)}/members`, {
-    method: 'POST',
-    body: { email, name: name || null, role },
-  });
+export async function inviteMember({
+  organizationId,
+  email,
+  name,
+  role = 'member',
+}) {
+  const res = await api(
+    `/api/organizations/${encodeURIComponent(organizationId)}/members`,
+    {
+      method: 'POST',
+      body: { email, name: name || null, role },
+    },
+  );
 
   // The route reports both facts and they are not the same event: an existing
   // account is *added* and hears nothing, a new one is *invited* and gets a
@@ -68,7 +76,9 @@ export async function inviteMember({ organizationId, email, name, role = 'member
   // reader only discovers when the person says they never got a mail.
   const member = res?.member || {};
   const outcome = member.isNewUser
-    ? (member.invitationSent ? 'invited' : 'created')
+    ? member.invitationSent
+      ? 'invited'
+      : 'created'
     : 'added';
   return { outcome, email };
 }
@@ -96,12 +106,20 @@ async function mutateMember({ run, success, failure }) {
       // fact that it is a refusal.
       toast.error(
         t('organization.members.notAllowed', 'Not allowed: {reason}', {
-          reason: err?.message || t('organization.members.notAllowedGeneric', 'you do not have permission for this.'),
-        })
+          reason:
+            err?.message ||
+            t(
+              'organization.members.notAllowedGeneric',
+              'you do not have permission for this.',
+            ),
+        }),
       );
     } else if (status === 404) {
       toast.error(
-        t('organization.members.gone', 'That member is no longer in this organization.')
+        t(
+          'organization.members.gone',
+          'That member is no longer in this organization.',
+        ),
       );
     } else {
       toast.error(err?.message || failure);
@@ -124,10 +142,13 @@ export function changeMemberRole({ organizationId, member, role }) {
     run: () =>
       api(
         `/api/organizations/${encodeURIComponent(organizationId)}/members/${encodeURIComponent(member.membershipId)}`,
-        { method: 'PATCH', body: { role } }
+        { method: 'PATCH', body: { role } },
       ),
     success: t('organization.members.roleChanged', 'Role updated.'),
-    failure: t('organization.members.roleChangeFailed', 'Could not update the role.'),
+    failure: t(
+      'organization.members.roleChangeFailed',
+      'Could not update the role.',
+    ),
   });
 }
 
@@ -145,10 +166,16 @@ export function transferOwnership({ organizationId, member }) {
     run: () =>
       api(
         `/api/organizations/${encodeURIComponent(organizationId)}/members/${encodeURIComponent(member.membershipId)}`,
-        { method: 'PATCH', body: { role: 'owner' } }
+        { method: 'PATCH', body: { role: 'owner' } },
       ),
-    success: t('organization.members.ownershipTransferred', 'Ownership transferred.'),
-    failure: t('organization.members.ownershipTransferFailed', 'Could not transfer ownership.'),
+    success: t(
+      'organization.members.ownershipTransferred',
+      'Ownership transferred.',
+    ),
+    failure: t(
+      'organization.members.ownershipTransferFailed',
+      'Could not transfer ownership.',
+    ),
   });
 }
 
@@ -166,13 +193,16 @@ export function removeMember({ organizationId, member, self = false }) {
     run: () =>
       api(
         `/api/organizations/${encodeURIComponent(organizationId)}/members/${encodeURIComponent(member.membershipId)}`,
-        { method: 'DELETE' }
+        { method: 'DELETE' },
       ),
     success: self
       ? t('organization.members.left', 'You have left the organization.')
       : t('organization.members.removed', 'Member removed.'),
     failure: self
-      ? t('organization.members.leaveFailed', 'Could not leave the organization.')
+      ? t(
+          'organization.members.leaveFailed',
+          'Could not leave the organization.',
+        )
       : t('organization.members.removeFailed', 'Could not remove the member.'),
   });
 }

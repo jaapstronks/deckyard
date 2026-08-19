@@ -20,15 +20,18 @@ export class LlmError extends AppError {
    * @param {boolean} [options.retryable=true] - Whether the operation can be retried
    * @param {Object} [options.context] - Additional context for debugging
    */
-  constructor(message, {
-    statusCode = 502,
-    vendor = null,
-    model = null,
-    response = null,
-    phase = null,
-    retryable = true,
-    context = null,
-  } = {}) {
+  constructor(
+    message,
+    {
+      statusCode = 502,
+      vendor = null,
+      model = null,
+      response = null,
+      phase = null,
+      retryable = true,
+      context = null,
+    } = {},
+  ) {
     super(message, statusCode);
     this.vendor = vendor;
     this.model = model;
@@ -64,7 +67,10 @@ export class LlmError extends AppError {
    * @param {string} [model] - Model name
    * @returns {LlmError}
    */
-  static fromJsonParseFailure(rawResponse, { phase = null, vendor = null, model = null } = {}) {
+  static fromJsonParseFailure(
+    rawResponse,
+    { phase = null, vendor = null, model = null } = {},
+  ) {
     return new LlmError('Failed to parse LLM response as JSON', {
       statusCode: 502,
       vendor,
@@ -87,5 +93,4 @@ export class LlmError extends AppError {
       retryable: false,
     });
   }
-
 }

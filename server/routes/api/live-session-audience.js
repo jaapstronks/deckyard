@@ -39,7 +39,10 @@ import {
 } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { getOptionalString } from '../../utils/request-validators.js';
-import { allowCompanionNotesWrite, getClientIp } from '../../utils/rate-limit.js';
+import {
+  allowCompanionNotesWrite,
+  getClientIp,
+} from '../../utils/rate-limit.js';
 import { openSseStream } from '../../utils/sse.js';
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 
@@ -78,7 +81,7 @@ async function resolveSessionDeck(repoRoot, sessionId) {
   if (!session?.presentationId) return null;
   const pres = await getPresentation(
     companionScope(repoRoot),
-    session.presentationId
+    session.presentationId,
   );
   if (!pres) return null;
   return { session, pres };
@@ -172,7 +175,11 @@ async function handleSessionDeck({ repoRoot, res }, sessionId) {
  * field and inherits the shared slide-lock policy (423) and the `deckUpdated`
  * broadcast that refreshes the editor and any other companion.
  */
-async function handleSessionNotesWrite({ repoRoot, req, res }, sessionId, rawSlideId) {
+async function handleSessionNotesWrite(
+  { repoRoot, req, res },
+  sessionId,
+  rawSlideId,
+) {
   const slideId = decodeURIComponent(rawSlideId);
   // Anonymous write path: throttle per IP so a leaked join link cannot be used
   // to hammer the deck's slides column.
@@ -188,10 +195,12 @@ async function handleSessionNotesWrite({ repoRoot, req, res }, sessionId, rawSli
   if (!parsed.ok) return true;
   const body = parsed.body;
   const notes = getOptionalString(body, 'notes');
-  if (notes === null)
-    return badRequest(res, 'Expected { notes: string }');
+  if (notes === null) return badRequest(res, 'Expected { notes: string }');
   if (notes.length > MAX_NOTES_LENGTH)
-    return badRequest(res, `Notes must be ${MAX_NOTES_LENGTH} characters or less`);
+    return badRequest(
+      res,
+      `Notes must be ${MAX_NOTES_LENGTH} characters or less`,
+    );
 
   // A write must state its organization (see storage/scope.js). The deck the
   // token addressed is the one that answers it — resolved from the deck itself,
@@ -212,7 +221,8 @@ async function handleSessionNotesWrite({ repoRoot, req, res }, sessionId, rawSli
   });
 
   if (!result.ok) {
-    if (result.reason === 'slide_not_found') return notFound(res, 'Slide not found');
+    if (result.reason === 'slide_not_found')
+      return notFound(res, 'Slide not found');
     return badRequest(res, result.reason);
   }
 
@@ -239,12 +249,34 @@ async function handleSessionNotesWrite({ repoRoot, req, res }, sessionId, rawSli
  * @type {import('../../utils/router.js').Route[]}
  */
 export const ROUTES = [
-  { method: 'GET', pattern: /^\/api\/live-sessions\/([^/]+)\/state$/, handler: handleSessionState },
-  { method: 'GET', pattern: /^\/api\/live-sessions\/([^/]+)\/events$/, handler: handleSessionEvents },
-  { method: 'GET', pattern: /^\/api\/live-sessions\/([^/]+)\/deck$/, handler: handleSessionDeck },
-  { pattern: /^\/api\/live-sessions\/([^/]+)\/deck$/, handler: ({ res }) => methodNotAllowed(res, ['GET']) },
-  { method: 'PUT', pattern: /^\/api\/live-sessions\/([^/]+)\/notes\/([^/]+)$/, handler: handleSessionNotesWrite },
-  { pattern: /^\/api\/live-sessions\/([^/]+)\/notes\/([^/]+)$/, handler: ({ res }) => methodNotAllowed(res, ['PUT']) },
+  {
+    method: 'GET',
+    pattern: /^\/api\/live-sessions\/([^/]+)\/state$/,
+    handler: handleSessionState,
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/live-sessions\/([^/]+)\/events$/,
+    handler: handleSessionEvents,
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/live-sessions\/([^/]+)\/deck$/,
+    handler: handleSessionDeck,
+  },
+  {
+    pattern: /^\/api\/live-sessions\/([^/]+)\/deck$/,
+    handler: ({ res }) => methodNotAllowed(res, ['GET']),
+  },
+  {
+    method: 'PUT',
+    pattern: /^\/api\/live-sessions\/([^/]+)\/notes\/([^/]+)$/,
+    handler: handleSessionNotesWrite,
+  },
+  {
+    pattern: /^\/api\/live-sessions\/([^/]+)\/notes\/([^/]+)$/,
+    handler: ({ res }) => methodNotAllowed(res, ['PUT']),
+  },
 ];
 
 /**
@@ -254,6 +286,7 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').PublicContext} ctx
  * @returns {Promise<boolean>|boolean} Whether a route handled the request.
  */
-export const handleLiveSessionsPublic = withErrorHandler('live-session-audience', (ctx) =>
-  dispatchRoutes(ROUTES, ctx)
+export const handleLiveSessionsPublic = withErrorHandler(
+  'live-session-audience',
+  (ctx) => dispatchRoutes(ROUTES, ctx),
 );

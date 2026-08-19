@@ -55,9 +55,17 @@ test('the flag defaults off and reports a usable retry hint', () => {
 
 test('setMaintenanceActive reports whether it actually changed anything', () => {
   resetMaintenanceForTests();
-  assert.equal(setMaintenanceActive(true, { reason: 'shutdown' }), true, 'off -> on changed');
+  assert.equal(
+    setMaintenanceActive(true, { reason: 'shutdown' }),
+    true,
+    'off -> on changed',
+  );
   assert.equal(setMaintenanceActive(true), false, 'on -> on is a no-op');
-  assert.equal(getMaintenanceState().reason, 'shutdown', 'the first reason survives the no-op');
+  assert.equal(
+    getMaintenanceState().reason,
+    'shutdown',
+    'the first reason survives the no-op',
+  );
   assert.equal(setMaintenanceActive(false), true, 'on -> off changed');
   assert.equal(getMaintenanceState().reason, null, 'clearing drops the reason');
   resetMaintenanceForTests();
@@ -83,7 +91,9 @@ test('broadcastToAll reaches every client across every presentation', () => {
   addClient('pres-2', c);
 
   try {
-    const sent = broadcastToAll(MaintenanceEventTypes.CHANGED, { active: true });
+    const sent = broadcastToAll(MaintenanceEventTypes.CHANGED, {
+      active: true,
+    });
     assert.equal(sent, 3, 'all three connections written to');
     for (const client of [a, b, c]) {
       assert.equal(client.written.length, 1);
@@ -108,7 +118,9 @@ test('a dead connection does not stop the announcement reaching the live ones', 
   addClient('pres-1', live);
 
   try {
-    const sent = broadcastToAll(MaintenanceEventTypes.CHANGED, { active: true });
+    const sent = broadcastToAll(MaintenanceEventTypes.CHANGED, {
+      active: true,
+    });
     assert.equal(sent, 1, 'only the live connection counts');
     assert.equal(live.written.length, 1, 'and it still got the message');
   } finally {
@@ -151,11 +163,20 @@ test('MAINTENANCE_RETRY_AFTER_SECONDS overrides the default, garbage does not', 
     process.env.MAINTENANCE_RETRY_AFTER_SECONDS = '120';
     assert.equal(maintenanceRetryAfterSeconds(), 120);
     process.env.MAINTENANCE_RETRY_AFTER_SECONDS = 'soon';
-    assert.equal(maintenanceRetryAfterSeconds(), 30, 'falls back rather than sending NaN');
+    assert.equal(
+      maintenanceRetryAfterSeconds(),
+      30,
+      'falls back rather than sending NaN',
+    );
     process.env.MAINTENANCE_RETRY_AFTER_SECONDS = '-5';
-    assert.equal(maintenanceRetryAfterSeconds(), 30, 'a negative wait is not a wait');
+    assert.equal(
+      maintenanceRetryAfterSeconds(),
+      30,
+      'a negative wait is not a wait',
+    );
   } finally {
-    if (original === undefined) delete process.env.MAINTENANCE_RETRY_AFTER_SECONDS;
+    if (original === undefined)
+      delete process.env.MAINTENANCE_RETRY_AFTER_SECONDS;
     else process.env.MAINTENANCE_RETRY_AFTER_SECONDS = original;
   }
 });

@@ -25,7 +25,10 @@ import {
   truncate,
   uninstallFacadeStorage,
 } from './helpers/harness.js';
-import { seedDefaultOrganization, seedImageLibraryItem } from './helpers/seed.js';
+import {
+  seedDefaultOrganization,
+  seedImageLibraryItem,
+} from './helpers/seed.js';
 import { testScope } from '../helpers/storage-scope.js';
 import {
   getImageFavorites,
@@ -78,7 +81,10 @@ pgDescribe('image favorites (real PostgreSQL, via facade)', () => {
     await toggleImageFavorite(storageScope, imageId, ALICE);
     // A second toggle removes rather than inserting a duplicate; the composite
     // PK is never doubled.
-    assert.equal(await toggleImageFavorite(storageScope, imageId, ALICE), false);
+    assert.equal(
+      await toggleImageFavorite(storageScope, imageId, ALICE),
+      false,
+    );
 
     assert.equal(await countFor(ALICE), 0, 'no favorite rows remain');
   });
@@ -86,7 +92,11 @@ pgDescribe('image favorites (real PostgreSQL, via facade)', () => {
   it('keeps favorites per user', async () => {
     await toggleImageFavorite(storageScope, imageId, ALICE);
 
-    assert.deepEqual(await getImageFavorites(storageScope, BOB), [], "Bob sees none of Alice's");
+    assert.deepEqual(
+      await getImageFavorites(storageScope, BOB),
+      [],
+      "Bob sees none of Alice's",
+    );
     assert.deepEqual(await getImageFavorites(storageScope, ALICE), [imageId]);
   });
 
@@ -94,7 +104,10 @@ pgDescribe('image favorites (real PostgreSQL, via facade)', () => {
     assert.equal(await toggleImageFavorite(storageScope, imageId, ALICE), true);
     assert.deepEqual(await getImageFavorites(storageScope, ALICE), [imageId]);
 
-    assert.equal(await toggleImageFavorite(storageScope, imageId, ALICE), false);
+    assert.equal(
+      await toggleImageFavorite(storageScope, imageId, ALICE),
+      false,
+    );
     assert.deepEqual(await getImageFavorites(storageScope, ALICE), []);
     assert.equal(await countFor(ALICE), 0);
   });

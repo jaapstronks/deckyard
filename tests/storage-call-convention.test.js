@@ -185,7 +185,11 @@ function moduleFunctions(ast) {
       into.set(decl.id.name, decl);
     } else if (decl.type === 'VariableDeclaration') {
       for (const d of decl.declarations) {
-        if (d.init && FUNCTION_NODES.has(d.init.type) && d.id.type === 'Identifier') {
+        if (
+          d.init &&
+          FUNCTION_NODES.has(d.init.type) &&
+          d.id.type === 'Identifier'
+        ) {
           into.set(d.id.name, d.init);
         }
       }
@@ -206,7 +210,8 @@ function ownReturnStatements(fn) {
     const inNested = nested || (node !== fn && FUNCTION_NODES.has(node.type));
     if (!inNested && node.type === 'ReturnStatement') found.push(node);
     for (const key of Object.keys(node)) {
-      if (key === 'type' || key === 'start' || key === 'end' || key === 'loc') continue;
+      if (key === 'type' || key === 'start' || key === 'end' || key === 'loc')
+        continue;
       const value = node[key];
       if (Array.isArray(value)) {
         for (const child of value) {
@@ -232,7 +237,8 @@ function ownReturnStatements(fn) {
 function forbiddenFailureLiteral(argument) {
   if (!argument) return null;
   if (argument.type === 'Literal' && argument.value === null) return 'null';
-  if (argument.type === 'Identifier' && argument.name === 'undefined') return 'undefined';
+  if (argument.type === 'Identifier' && argument.name === 'undefined')
+    return 'undefined';
   return null;
 }
 
@@ -245,7 +251,8 @@ function forbiddenFailureLiteral(argument) {
 function delegatedCallee(ret, local) {
   let arg = ret.argument;
   if (arg?.type === 'AwaitExpression') arg = arg.argument;
-  if (arg?.type !== 'CallExpression' || arg.callee.type !== 'Identifier') return null;
+  if (arg?.type !== 'CallExpression' || arg.callee.type !== 'Identifier')
+    return null;
   const fn = local.get(arg.callee.name);
   return fn ? { name: arg.callee.name, fn } : null;
 }
@@ -297,10 +304,13 @@ function scanViolations() {
       const paramsSrc = grabParens(text, m.index + m[0].length - 1);
       if (paramsSrc === null) continue;
       const names = splitParams(paramsSrc).map(
-        (p) => (p.replace(/=.*/s, '').trim().match(/^\w+/) || [''])[0]
+        (p) => (p.replace(/=.*/s, '').trim().match(/^\w+/) || [''])[0],
       );
       const key = `${rel} :: ${name}`;
-      if (/^_?repoRoot$/.test(names[0] || '') && !PERMANENT_EXCEPTIONS.has(key)) {
+      if (
+        /^_?repoRoot$/.test(names[0] || '') &&
+        !PERMANENT_EXCEPTIONS.has(key)
+      ) {
         violations.push(`${key} :: repoRoot-first`);
       }
       names.forEach((n, i) => {
@@ -315,7 +325,10 @@ function scanViolations() {
 }
 
 const burndown = JSON.parse(
-  readFileSync(join(repoRoot, 'tests', 'storage-call-convention-burndown.json'), 'utf8')
+  readFileSync(
+    join(repoRoot, 'tests', 'storage-call-convention-burndown.json'),
+    'utf8',
+  ),
 );
 const found = scanViolations();
 
@@ -331,14 +344,17 @@ test('no storage export takes a new pre-convention shape', () => {
       'validated via toStorageContext(scope, …) (docs/reference/storage-scope.md), and ' +
       'a mutation signals failure with `{ ok: false, reason }`, never `null`/`undefined` ' +
       '(docs/reference/storage-layer.md § Failure signalling). ' +
-      'Do not add lines to the burndown list; it only shrinks.'
+      'Do not add lines to the burndown list; it only shrinks.',
   );
 });
 
 // Needles built from fragments so this guard file does not match its own text.
 const RETIRED_REASONS = [
   { needle: 'no' + '_session', use: 'not_found' },
-  { needle: 'bad' + '_request', use: 'invalid (bad_request is the HTTP envelope code, not a storage reason)' },
+  {
+    needle: 'bad' + '_request',
+    use: 'invalid (bad_request is the HTTP envelope code, not a storage reason)',
+  },
   { needle: "'emp" + "ty'", use: 'invalid' },
 ];
 
@@ -348,7 +364,8 @@ test('no storage reason uses a retired spelling', () => {
     const rel = relative(repoRoot, file).replace(/\\/g, '/');
     const text = readFileSync(file, 'utf8');
     for (const { needle, use } of RETIRED_REASONS) {
-      if (text.includes(needle)) violations.push(`${rel}: ${needle} → use ${use}`);
+      if (text.includes(needle))
+        violations.push(`${rel}: ${needle} → use ${use}`);
     }
   }
   assert.deepEqual(
@@ -356,7 +373,7 @@ test('no storage reason uses a retired spelling', () => {
     [],
     'a storage `reason` is drawn from the layer-wide vocabulary before a domain ' +
       'one is minted, and never as a second spelling of a meaning that already ' +
-      'has one (docs/reference/storage-layer.md § Failure signalling)'
+      'has one (docs/reference/storage-layer.md § Failure signalling)',
   );
 });
 
@@ -367,13 +384,17 @@ test('the burndown list only shrinks: every line still names a real violation', 
     stale,
     [],
     'these exports were fixed or removed — delete their lines from ' +
-      'tests/storage-call-convention-burndown.json so the list keeps burning down'
+      'tests/storage-call-convention-burndown.json so the list keeps burning down',
   );
 });
 
 test('the burndown list is sorted and free of duplicates', () => {
   const sorted = [...burndown].sort();
-  assert.deepEqual(burndown, sorted, 'keep the list sorted so diffs stay reviewable');
+  assert.deepEqual(
+    burndown,
+    sorted,
+    'keep the list sorted so diffs stay reviewable',
+  );
   assert.equal(new Set(burndown).size, burndown.length, 'no duplicate lines');
 });
 
@@ -392,13 +413,13 @@ test('the permanent exceptions still exist and still take a disk path first', ()
     for (const name of names) {
       const re = new RegExp(
         `export\\s+(?:async\\s+)?function\\s+${name}\\s*\\(\\s*repoRoot\\b|` +
-          `export\\s+const\\s+${name}\\s*=\\s*(?:async\\s*)?\\(\\s*repoRoot\\b`
+          `export\\s+const\\s+${name}\\s*=\\s*(?:async\\s*)?\\(\\s*repoRoot\\b`,
       );
       assert.match(
         text,
         re,
         `${rel} :: ${name} is on the permanent exception list but no longer ` +
-          'exports a repoRoot-first function — update PERMANENT_EXCEPTIONS'
+          'exports a repoRoot-first function — update PERMANENT_EXCEPTIONS',
       );
     }
   }
@@ -406,7 +427,11 @@ test('the permanent exceptions still exist and still take a disk path first', ()
 
 test('no burndown line doubles as a permanent exception', () => {
   const overlap = burndown.filter((v) =>
-    PERMANENT_EXCEPTIONS.has(v.split(' :: ').slice(0, 2).join(' :: '))
+    PERMANENT_EXCEPTIONS.has(v.split(' :: ').slice(0, 2).join(' :: ')),
   );
-  assert.deepEqual(overlap, [], 'an export is either exempt or on the burndown list, never both');
+  assert.deepEqual(
+    overlap,
+    [],
+    'an export is either exempt or on the burndown list, never both',
+  );
 });

@@ -11,8 +11,8 @@
   grid-template-columns: 220px 1fr;
   grid-template-rows: auto 1fr;
   grid-template-areas:
-    "topbar topbar"
-    "sidebar content";
+    'topbar topbar'
+    'sidebar content';
   min-height: 100vh;
   min-height: 100dvh;
 }
@@ -75,7 +75,9 @@
   font-weight: 500;
   text-align: left;
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .settings-sidebar-tab:hover {
@@ -204,14 +206,14 @@
 
 /* Native form controls adopt the app accent instead of the browser default
    blue, so checkboxes, radios and sliders match the rest of the UI. */
-.settings-page input[type="checkbox"],
-.settings-page input[type="radio"],
-.settings-page input[type="range"] {
+.settings-page input[type='checkbox'],
+.settings-page input[type='radio'],
+.settings-page input[type='range'] {
   accent-color: hsl(var(--app-accent-primary));
 }
 
-.settings-page .settings-tab-view input[type="checkbox"],
-.settings-page .settings-tab-view input[type="radio"] {
+.settings-page .settings-tab-view input[type='checkbox'],
+.settings-page .settings-tab-view input[type='radio'] {
   width: 16px;
   height: 16px;
   cursor: pointer;
@@ -239,7 +241,7 @@
   cursor: pointer;
 }
 
-.admin-checkbox-item input[type="checkbox"] {
+.admin-checkbox-item input[type='checkbox'] {
   width: 18px;
   height: 18px;
   cursor: pointer;
@@ -291,9 +293,9 @@
     grid-template-columns: 1fr;
     grid-template-rows: auto auto 1fr;
     grid-template-areas:
-      "topbar"
-      "sidebar"
-      "content";
+      'topbar'
+      'sidebar'
+      'content';
   }
 
   .settings-page > .settings-sidebar {
@@ -565,7 +567,7 @@
     gap: var(--ps-space-2);
   }
 
-  .settings-modal-grid .row.is-start input[type="checkbox"] {
+  .settings-modal-grid .row.is-start input[type='checkbox'] {
     width: 22px;
     height: 22px;
   }
@@ -667,7 +669,7 @@
   gap: var(--ps-space-3);
 }
 
-.analytics-provider-header input[type="checkbox"] {
+.analytics-provider-header input[type='checkbox'] {
   width: 18px;
   height: 18px;
   cursor: pointer;
@@ -762,7 +764,7 @@
   cursor: pointer;
 }
 
-.analytics-provider-config .field-row.is-checkbox input[type="checkbox"] {
+.analytics-provider-config .field-row.is-checkbox input[type='checkbox'] {
   order: 1;
   width: 16px;
   height: 16px;

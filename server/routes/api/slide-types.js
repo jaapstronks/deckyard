@@ -81,9 +81,7 @@ async function handleSlideTypeList({ storageScope, res, authedUser }) {
       // The client's descriptor registry falls back to this when it has no
       // core entry for the type. JSON-only (no function-valued options).
       inline:
-        def.inline && typeof def.inline === 'object'
-          ? def.inline
-          : undefined,
+        def.inline && typeof def.inline === 'object' ? def.inline : undefined,
       // The descriptor's counterpart: which fields the settings inspector
       // keeps rendering once the canvas covers the rest. Resolved, and on the
       // wire for the same reason `schematic` is — the editor holds this

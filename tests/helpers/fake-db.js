@@ -126,7 +126,11 @@ function parseJsonbColumns(table, row) {
  * @returns {boolean}
  */
 function isRawExpression(value) {
-  return !!value && typeof value === 'object' && typeof value.toOperationNode === 'function';
+  return (
+    !!value &&
+    typeof value === 'object' &&
+    typeof value.toOperationNode === 'function'
+  );
 }
 
 /**
@@ -156,7 +160,9 @@ function evaluateRawExpression(value, row, column) {
     const base = Number(row[operand]) || 0;
     return operator === '+' ? base + Number(amount) : base - Number(amount);
   }
-  throw new Error(`fake-db: unsupported sql expression for "${column}": ${text}`);
+  throw new Error(
+    `fake-db: unsupported sql expression for "${column}": ${text}`,
+  );
 }
 
 /**
@@ -190,7 +196,7 @@ function isBuilderNode(value) {
 function evaluateBuilderArithmetic(node, row, column) {
   if (node.op !== '+' && node.op !== '-') {
     throw new Error(
-      `fake-db: unsupported expression-builder operator "${node.op}" for "${column}"`
+      `fake-db: unsupported expression-builder operator "${node.op}" for "${column}"`,
     );
   }
   const base = Number(readColumn(row, node.column)) || 0;
@@ -245,7 +251,9 @@ function compileCaseRank(value) {
   }
 
   const [, column, arms] = shape;
-  const whens = [...arms.matchAll(/WHEN\s+'([^']*)'\s+THEN\s+(-?\d+)/gi)].map((m) => [m[1], Number(m[2])]);
+  const whens = [...arms.matchAll(/WHEN\s+'([^']*)'\s+THEN\s+(-?\d+)/gi)].map(
+    (m) => [m[1], Number(m[2])],
+  );
   const fallback = arms.match(/ELSE\s+(-?\d+)/i);
   if (!whens.length) {
     throw new Error(`fake-db: unsupported CASE arms in orderBy: ${text}`);
@@ -303,7 +311,7 @@ class UniqueViolationError extends Error {
   constructor(table, columns, value) {
     super(
       `duplicate key value violates unique constraint "${table}_${columns.join('_')}_key" ` +
-        `(${columns.join(', ')})=(${value})`
+        `(${columns.join(', ')})=(${value})`,
     );
     this.name = 'UniqueViolationError';
     this.code = '23505';
@@ -328,7 +336,9 @@ const lastSegment = (column) => String(column).split('.').pop();
  */
 function parseTableRef(ref) {
   const match = String(ref).match(/^(\S+)\s+as\s+(\S+)$/i);
-  return match ? { table: match[1], alias: match[2] } : { table: String(ref), alias: String(ref) };
+  return match
+    ? { table: match[1], alias: match[2] }
+    : { table: String(ref), alias: String(ref) };
 }
 
 /**
@@ -365,9 +375,13 @@ function compare(left, op, right) {
     case '<=':
       return left <= right;
     case 'is':
-      return right === null ? left === null || left === undefined : left === right;
+      return right === null
+        ? left === null || left === undefined
+        : left === right;
     case 'is not':
-      return right === null ? left !== null && left !== undefined : left !== right;
+      return right === null
+        ? left !== null && left !== undefined
+        : left !== right;
     case 'in':
       return Array.isArray(right) && right.includes(left);
     case 'not in':
@@ -378,7 +392,7 @@ function compare(left, op, right) {
       const haystack = String(left ?? '');
       const rx = new RegExp(
         `^${pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replaceAll('%', '.*')}$`,
-        op === 'ilike' ? 'i' : ''
+        op === 'ilike' ? 'i' : '',
       );
       return rx.test(haystack);
     }
@@ -393,9 +407,12 @@ function makeExpressionBuilder() {
   eb.or = (predicates) => ({ kind: 'or', predicates });
   eb.and = (predicates) => ({ kind: 'and', predicates });
   eb.fn = {
-    count: (column) => makeAggregate((list) =>
-      list.filter((context) => readColumn(context, column) !== undefined).length
-    ),
+    count: (column) =>
+      makeAggregate(
+        (list) =>
+          list.filter((context) => readColumn(context, column) !== undefined)
+            .length,
+      ),
     countAll: () => makeAggregate((list) => list.length),
   };
   return eb;
@@ -419,7 +436,11 @@ function makeAggregate(compute) {
  */
 function matches(row, predicate) {
   if (predicate.kind === 'cmp') {
-    return compare(readColumn(row, predicate.column), predicate.op, predicate.value);
+    return compare(
+      readColumn(row, predicate.column),
+      predicate.op,
+      predicate.value,
+    );
   }
   if (predicate.kind === 'or') {
     return predicate.predicates.some((p) => matches(row, p));
@@ -471,12 +492,20 @@ export function createFakeDb(seed = {}) {
 
   const assertUnique = (table, candidate, ignoreRow = null) => {
     for (const columns of UNIQUE_CONSTRAINTS[table] || []) {
-      if (columns.some((c) => candidate[c] === undefined || candidate[c] === null)) continue;
+      if (
+        columns.some((c) => candidate[c] === undefined || candidate[c] === null)
+      )
+        continue;
       const clash = rowsOf(table).find(
-        (row) => row !== ignoreRow && columns.every((c) => row[c] === candidate[c])
+        (row) =>
+          row !== ignoreRow && columns.every((c) => row[c] === candidate[c]),
       );
       if (clash) {
-        throw new UniqueViolationError(table, columns, columns.map((c) => candidate[c]).join(', '));
+        throw new UniqueViolationError(
+          table,
+          columns,
+          columns.map((c) => candidate[c]).join(', '),
+        );
       }
     }
   };
@@ -514,7 +543,7 @@ export function createFakeDb(seed = {}) {
           const partner = rowsOf(join.table).find(
             (row) =>
               mergeIntoContext(context, join.alias, row)[join.left] ===
-              mergeIntoContext(context, join.alias, row)[join.right]
+              mergeIntoContext(context, join.alias, row)[join.right],
           );
           if (partner) {
             joined.push({
@@ -529,7 +558,7 @@ export function createFakeDb(seed = {}) {
       }
 
       list = list.filter((context) =>
-        state.predicates.every((predicate) => matches(context, predicate))
+        state.predicates.every((predicate) => matches(context, predicate)),
       );
 
       for (const { column, direction } of [...state.orderBy].reverse()) {
@@ -576,11 +605,21 @@ export function createFakeDb(seed = {}) {
 
     const builder = {
       innerJoin(joinTable, left, right) {
-        state.joins.push({ ...parseTableRef(joinTable), left, right, type: 'inner' });
+        state.joins.push({
+          ...parseTableRef(joinTable),
+          left,
+          right,
+          type: 'inner',
+        });
         return builder;
       },
       leftJoin(joinTable, left, right) {
-        state.joins.push({ ...parseTableRef(joinTable), left, right, type: 'left' });
+        state.joins.push({
+          ...parseTableRef(joinTable),
+          left,
+          right,
+          type: 'left',
+        });
         return builder;
       },
       select(columns) {
@@ -588,7 +627,10 @@ export function createFakeDb(seed = {}) {
         // the counting queries use. Resolve it before treating entries as
         // column references, or the function would be stringified into a
         // nonsense projection and the count would silently come back as 0.
-        const resolved = typeof columns === 'function' ? columns(makeExpressionBuilder()) : columns;
+        const resolved =
+          typeof columns === 'function'
+            ? columns(makeExpressionBuilder())
+            : columns;
         const list = Array.isArray(resolved) ? resolved : [resolved];
         state.projection = state.projection || [];
         for (const entry of list) {
@@ -597,7 +639,10 @@ export function createFakeDb(seed = {}) {
             continue;
           }
           const [column, , alias] = String(entry).split(/\s+/);
-          state.projection.push({ column, alias: alias || lastSegment(column) });
+          state.projection.push({
+            column,
+            alias: alias || lastSegment(column),
+          });
         }
         return builder;
       },
@@ -631,7 +676,12 @@ export function createFakeDb(seed = {}) {
         if (typeof columnOrCallback === 'function') {
           state.predicates.push(columnOrCallback(makeExpressionBuilder()));
         } else {
-          state.predicates.push({ kind: 'cmp', column: columnOrCallback, op, value });
+          state.predicates.push({
+            kind: 'cmp',
+            column: columnOrCallback,
+            op,
+            value,
+          });
         }
         return builder;
       },
@@ -712,7 +762,12 @@ export function createFakeDb(seed = {}) {
               if (typeof columnOrCallback === 'function') {
                 oc.where.push(columnOrCallback(makeExpressionBuilder()));
               } else {
-                oc.where.push({ kind: 'cmp', column: columnOrCallback, op, value });
+                oc.where.push({
+                  kind: 'cmp',
+                  column: columnOrCallback,
+                  op,
+                  value,
+                });
               }
               return ocBuilder;
             },
@@ -734,15 +789,16 @@ export function createFakeDb(seed = {}) {
           for (const value of pending) {
             if (conflict) {
               const existing = rowsOf(table).find((row) =>
-                conflict.columns.every((c) => row[c] === value[c])
+                conflict.columns.every((c) => row[c] === value[c]),
               );
               if (existing) {
                 if (conflict.doNothing) continue;
                 // DO UPDATE, gated by the optional WHERE against the existing row.
-                if (!conflict.where.every((p) => matches(existing, p))) continue;
+                if (!conflict.where.every((p) => matches(existing, p)))
+                  continue;
                 const applied = parseJsonbColumns(
                   table,
-                  resolveWriteValues(conflict.set || {}, existing)
+                  resolveWriteValues(conflict.set || {}, existing),
                 );
                 Object.assign(existing, applied);
                 if (returning) inserted.push(structuredClone(existing));
@@ -751,13 +807,15 @@ export function createFakeDb(seed = {}) {
             }
             const row = parseJsonbColumns(
               table,
-              resolveWriteValues({ id: crypto.randomUUID(), ...value })
+              resolveWriteValues({ id: crypto.randomUUID(), ...value }),
             );
             assertUnique(table, row);
             rowsOf(table).push(row);
             inserted.push(structuredClone(row));
           }
-          return returning ? inserted : [{ numInsertedOrUpdatedRows: BigInt(inserted.length) }];
+          return returning
+            ? inserted
+            : [{ numInsertedOrUpdatedRows: BigInt(inserted.length) }];
         },
         async executeTakeFirst() {
           const [first] = await builder.execute();
@@ -779,14 +837,22 @@ export function createFakeDb(seed = {}) {
         // the function as a value is what keeps the increment from silently
         // compiling to an empty SET clause.
         set(input) {
-          updates = typeof input === 'function' ? input(makeExpressionBuilder()) : input;
+          updates =
+            typeof input === 'function'
+              ? input(makeExpressionBuilder())
+              : input;
           return builder;
         },
         where(columnOrCallback, op, value) {
           if (typeof columnOrCallback === 'function') {
             predicates.push(columnOrCallback(makeExpressionBuilder()));
           } else {
-            predicates.push({ kind: 'cmp', column: columnOrCallback, op, value });
+            predicates.push({
+              kind: 'cmp',
+              column: columnOrCallback,
+              op,
+              value,
+            });
           }
           return builder;
         },
@@ -795,9 +861,14 @@ export function createFakeDb(seed = {}) {
           return builder;
         },
         async execute() {
-          const targets = rowsOf(table).filter((row) => predicates.every((p) => matches(row, p)));
+          const targets = rowsOf(table).filter((row) =>
+            predicates.every((p) => matches(row, p)),
+          );
           for (const row of targets) {
-            const applied = parseJsonbColumns(table, resolveWriteValues(updates, row));
+            const applied = parseJsonbColumns(
+              table,
+              resolveWriteValues(updates, row),
+            );
             assertUnique(table, { ...row, ...applied }, row);
             Object.assign(row, applied);
           }
@@ -823,7 +894,12 @@ export function createFakeDb(seed = {}) {
           if (typeof columnOrCallback === 'function') {
             predicates.push(columnOrCallback(makeExpressionBuilder()));
           } else {
-            predicates.push({ kind: 'cmp', column: columnOrCallback, op, value });
+            predicates.push({
+              kind: 'cmp',
+              column: columnOrCallback,
+              op,
+              value,
+            });
           }
           return builder;
         },
@@ -837,12 +913,18 @@ export function createFakeDb(seed = {}) {
         },
         async execute() {
           const rows = rowsOf(table);
-          const gone = rows.filter((row) => predicates.every((p) => matches(row, p)));
-          const keep = rows.filter((row) => !predicates.every((p) => matches(row, p)));
+          const gone = rows.filter((row) =>
+            predicates.every((p) => matches(row, p)),
+          );
+          const keep = rows.filter(
+            (row) => !predicates.every((p) => matches(row, p)),
+          );
           tables[table] = keep;
           if (returningColumns) {
             return gone.map((row) =>
-              Object.fromEntries(returningColumns.map((column) => [column, row[column]]))
+              Object.fromEntries(
+                returningColumns.map((column) => [column, row[column]]),
+              ),
             );
           }
           return [{ numDeletedRows: BigInt(rows.length - keep.length) }];
@@ -881,7 +963,8 @@ export function createFakeDb(seed = {}) {
             return await fn(db);
           } catch (err) {
             for (const name of Object.keys(tables)) delete tables[name];
-            for (const [name, rows] of Object.entries(snapshot)) tables[name] = rows;
+            for (const [name, rows] of Object.entries(snapshot))
+              tables[name] = rows;
             throw err;
           }
         },
@@ -906,7 +989,9 @@ export function createFakeDb(seed = {}) {
  * @returns {string[]}
  */
 export function touchedTables(db, op) {
-  return db.__queryLog.filter((entry) => !op || entry.op === op).map((entry) => entry.table);
+  return db.__queryLog
+    .filter((entry) => !op || entry.op === op)
+    .map((entry) => entry.table);
 }
 
 export { UniqueViolationError };

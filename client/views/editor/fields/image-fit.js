@@ -39,7 +39,10 @@ export function imageFitOptions({ typeDefault } = {}) {
       label: t('editor.imageText.fitDefaultType', 'Default · {fit}', {
         fit: typeDefault === 'contain' ? containLabel : coverLabel,
       }),
-      title: t('editor.imageText.fitDefaultTypeTitle', 'Follow the slide type default'),
+      title: t(
+        'editor.imageText.fitDefaultTypeTitle',
+        'Follow the slide type default',
+      ),
     },
     ...options,
   ];
@@ -73,10 +76,13 @@ export function renderImageFitField({
   return fieldEnum(
     {
       key: field.key,
-      label: t(field.labelKey || field.key, field.label || t('editor.imageText.imageFit', 'Image fit')),
+      label: t(
+        field.labelKey || field.key,
+        field.label || t('editor.imageText.imageFit', 'Image fit'),
+      ),
       options: imageFitOptions({ typeDefault }),
     },
     current,
-    onChange
+    onChange,
   );
 }

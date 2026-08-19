@@ -28,26 +28,25 @@ const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 // `__resetStorageForTests` rather than `closeStorage`: the double is not a real
 // Kysely handle, so closing it would call a `destroy()` it does not have.
-const { initializeStorage, __resetStorageForTests } = await import(
-  '../server/storage/lifecycle.js'
-);
-const { createPresentation, getPresentation, createPresentationVersion } = await import(
-  '../server/storage/presentations/index.js'
-);
-const { handlePresentationItem } = await import(
-  '../server/routes/api/presentations/presentation.js'
-);
-const { handlePresentationVisibility } = await import(
-  '../server/routes/api/presentations/visibility.js'
-);
-const { handlePresentationRestoreVersion } = await import(
-  '../server/routes/api/presentations/restore.js'
-);
+const { initializeStorage, __resetStorageForTests } =
+  await import('../server/storage/lifecycle.js');
+const { createPresentation, getPresentation, createPresentationVersion } =
+  await import('../server/storage/presentations/index.js');
+const { handlePresentationItem } =
+  await import('../server/routes/api/presentations/presentation.js');
+const { handlePresentationVisibility } =
+  await import('../server/routes/api/presentations/visibility.js');
+const { handlePresentationRestoreVersion } =
+  await import('../server/routes/api/presentations/restore.js');
 
 const OWNER = 'owner@example.com';
 
 test.before(async () => {
-  __setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+  __setTestDb(
+    createFakeDb({
+      organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+    }),
+  );
   await initializeStorage();
 });
 
@@ -89,7 +88,13 @@ async function seedDeck() {
   return createPresentation(testScope(), {
     title: 'Lockable deck',
     ownerEmail: OWNER,
-    slides: [{ id: 's1', type: 'content-slide', content: { title: 'A', body: 'Hello' } }],
+    slides: [
+      {
+        id: 's1',
+        type: 'content-slide',
+        content: { title: 'A', body: 'Hello' },
+      },
+    ],
   });
 }
 
@@ -107,9 +112,13 @@ test('PUT without If-Match is 428 for an admin (escape hatch removed)', async ()
       url: `/api/presentations/${pres.id}`,
       authedUser: admin,
     },
-    pres.id
+    pres.id,
   );
-  assert.equal(res.statusCode, 428, 'admin must supply If-Match, no blind overwrite');
+  assert.equal(
+    res.statusCode,
+    428,
+    'admin must supply If-Match, no blind overwrite',
+  );
   // The deck is untouched — the write never happened.
   const after = await getPresentation(testScope(), pres.id);
   assert.equal(after.title, 'Lockable deck', 'title unchanged');
@@ -126,7 +135,7 @@ test('PUT without If-Match is 428 for a non-admin owner too', async () => {
       url: `/api/presentations/${pres.id}`,
       authedUser: owner,
     },
-    pres.id
+    pres.id,
   );
   assert.equal(res.statusCode, 428);
 });
@@ -146,9 +155,13 @@ test('PUT with a matching If-Match still succeeds for an admin', async () => {
       url: `/api/presentations/${pres.id}`,
       authedUser: admin,
     },
-    pres.id
+    pres.id,
   );
-  assert.equal(res.statusCode, 200, 'the merge path is intact, not blanket-blocked');
+  assert.equal(
+    res.statusCode,
+    200,
+    'the merge path is intact, not blanket-blocked',
+  );
   const after = await getPresentation(testScope(), pres.id);
   assert.equal(after.title, 'Properly merged');
 });
@@ -159,11 +172,15 @@ test('POST /visibility without If-Match is 428 for an admin', async () => {
   await handlePresentationVisibility(
     {
       storageScope: testScope(),
-      req: fakeReq({ method: 'PATCH', headers: {}, body: { visibility: 'organization' } }),
+      req: fakeReq({
+        method: 'PATCH',
+        headers: {},
+        body: { visibility: 'organization' },
+      }),
       res,
       authedUser: admin,
     },
-    pres.id
+    pres.id,
   );
   assert.equal(res.statusCode, 428);
 });
@@ -182,7 +199,7 @@ test('POST /restore without If-Match is 428 for an admin', async () => {
       authedUser: admin,
     },
     pres.id,
-    version?.id
+    version?.id,
   );
   assert.equal(res.statusCode, 428);
 });

@@ -6,7 +6,11 @@ import { api } from '../../lib/api.js';
 import { h } from '../../lib/dom.js';
 import { spinner } from '../../lib/dom/spinner.js';
 import { t } from '../../lib/ui-i18n.js';
-import { formatDuration, formatDate, getSourceLabel } from '../../lib/format/analytics-format.js';
+import {
+  formatDuration,
+  formatDate,
+  getSourceLabel,
+} from '../../lib/format/analytics-format.js';
 
 /**
  * Render shared report view.
@@ -25,7 +29,7 @@ export async function renderSharedReport(root, token) {
     h('div', { class: 'shared-report-loading' }, [
       spinner('lg'),
       h('div', { text: t('analytics.loadingReport', 'Loading report...') }),
-    ])
+    ]),
   );
 
   // Fetch report
@@ -33,17 +37,18 @@ export async function renderSharedReport(root, token) {
   try {
     report = await api(`/api/analytics/reports/${encodeURIComponent(token)}`);
   } catch (err) {
-    const message = err.statusCode === 404
-      ? 'Report not found or expired'
-      : err.statusCode
-        ? 'Failed to load report'
-        : err.message || 'This report may have expired or been removed.';
+    const message =
+      err.statusCode === 404
+        ? 'Report not found or expired'
+        : err.statusCode
+          ? 'Failed to load report'
+          : err.message || 'This report may have expired or been removed.';
     shell.innerHTML = '';
     shell.append(
       h('div', { class: 'shared-report-error' }, [
         h('h1', { text: t('analytics.reportError', 'Report Not Available') }),
         h('p', { text: message }),
-      ])
+      ]),
     );
     return cleanup;
   }
@@ -79,10 +84,22 @@ export async function renderSharedReport(root, token) {
     const overviewSection = h('div', { class: 'shared-report-section' }, [
       h('h2', { text: t('analytics.overview', 'Overview') }),
       h('div', { class: 'shared-report-cards' }, [
-        createCard(t('analytics.totalViews', 'Total Views'), overview.totalViews || 0),
-        createCard(t('analytics.uniqueViewers', 'Unique Viewers'), overview.uniqueViewers || 0),
-        createCard(t('analytics.avgTime', 'Avg. Time'), formatDuration(overview.avgDurationSeconds || 0)),
-        createCard(t('analytics.completionRate', 'Completion'), `${Math.round((reportData.journey?.completionRate || 0) * 100)}%`),
+        createCard(
+          t('analytics.totalViews', 'Total Views'),
+          overview.totalViews || 0,
+        ),
+        createCard(
+          t('analytics.uniqueViewers', 'Unique Viewers'),
+          overview.uniqueViewers || 0,
+        ),
+        createCard(
+          t('analytics.avgTime', 'Avg. Time'),
+          formatDuration(overview.avgDurationSeconds || 0),
+        ),
+        createCard(
+          t('analytics.completionRate', 'Completion'),
+          `${Math.round((reportData.journey?.completionRate || 0) * 100)}%`,
+        ),
       ]),
     ]);
 
@@ -93,16 +110,29 @@ export async function renderSharedReport(root, token) {
       const maxViews = Math.max(...viewsByDay.map((d) => d.views), 1);
       viewsSection = h('div', { class: 'shared-report-section' }, [
         h('h2', { text: t('analytics.viewsOverTime', 'Views Over Time') }),
-        h('div', { class: 'shared-report-chart' }, viewsByDay.map((d) => {
-          const barWidth = (d.views / maxViews) * 100;
-          return h('div', { class: 'shared-report-chart-row' }, [
-            h('span', { class: 'shared-report-chart-label', text: formatDate(d.date) }),
-            h('div', { class: 'shared-report-chart-bar-container' }, [
-              h('div', { class: 'shared-report-chart-bar', style: `width: ${barWidth}%;` }),
-            ]),
-            h('span', { class: 'shared-report-chart-value', text: String(d.views) }),
-          ]);
-        })),
+        h(
+          'div',
+          { class: 'shared-report-chart' },
+          viewsByDay.map((d) => {
+            const barWidth = (d.views / maxViews) * 100;
+            return h('div', { class: 'shared-report-chart-row' }, [
+              h('span', {
+                class: 'shared-report-chart-label',
+                text: formatDate(d.date),
+              }),
+              h('div', { class: 'shared-report-chart-bar-container' }, [
+                h('div', {
+                  class: 'shared-report-chart-bar',
+                  style: `width: ${barWidth}%;`,
+                }),
+              ]),
+              h('span', {
+                class: 'shared-report-chart-value',
+                text: String(d.views),
+              }),
+            ]);
+          }),
+        ),
       ]);
     }
 
@@ -121,14 +151,20 @@ export async function renderSharedReport(root, token) {
               h('th', { text: t('analytics.dropoff', 'Dropoff') }),
             ]),
           ]),
-          h('tbody', {}, slideEngagement.map((slide) =>
-            h('tr', {}, [
-              h('td', { text: `Slide ${(slide.slideIndex || 0) + 1}` }),
-              h('td', { text: String(slide.views || 0) }),
-              h('td', { text: formatDuration(slide.avgTimeSeconds || 0) }),
-              h('td', { text: `${Math.round((slide.dropoffRate || 0) * 100)}%` }),
-            ])
-          )),
+          h(
+            'tbody',
+            {},
+            slideEngagement.map((slide) =>
+              h('tr', {}, [
+                h('td', { text: `Slide ${(slide.slideIndex || 0) + 1}` }),
+                h('td', { text: String(slide.views || 0) }),
+                h('td', { text: formatDuration(slide.avgTimeSeconds || 0) }),
+                h('td', {
+                  text: `${Math.round((slide.dropoffRate || 0) * 100)}%`,
+                }),
+              ]),
+            ),
+          ),
         ]),
       ]);
     }
@@ -139,18 +175,30 @@ export async function renderSharedReport(root, token) {
     if (sources.length > 0) {
       sourcesSection = h('div', { class: 'shared-report-section' }, [
         h('h2', { text: t('analytics.sources', 'Traffic Sources') }),
-        h('div', { class: 'shared-report-sources' }, sources.map((source) =>
-          h('div', { class: 'shared-report-source' }, [
-            h('span', { class: 'shared-report-source-type', text: getSourceLabel(source.type) }),
-            h('span', { class: 'shared-report-source-count', text: String(source.count) }),
-          ])
-        )),
+        h(
+          'div',
+          { class: 'shared-report-sources' },
+          sources.map((source) =>
+            h('div', { class: 'shared-report-source' }, [
+              h('span', {
+                class: 'shared-report-source-type',
+                text: getSourceLabel(source.type),
+              }),
+              h('span', {
+                class: 'shared-report-source-count',
+                text: String(source.count),
+              }),
+            ]),
+          ),
+        ),
       ]);
     }
 
     // Footer
     const footer = h('div', { class: 'shared-report-footer' }, [
-      h('p', { text: t('analytics.poweredBy', 'Powered by Deckyard Analytics') }),
+      h('p', {
+        text: t('analytics.poweredBy', 'Powered by Deckyard Analytics'),
+      }),
       h('button', {
         class: 'btn btn-secondary',
         text: t('analytics.print', 'Print Report'),

@@ -64,8 +64,16 @@ export function mountLikertHill(container, { optionCount = 5 } = {}) {
     y2: '1',
   });
   grad.append(
-    svgEl('stop', { offset: '0%', 'stop-color': 'currentColor', 'stop-opacity': '0.40' }),
-    svgEl('stop', { offset: '100%', 'stop-color': 'currentColor', 'stop-opacity': '0.08' })
+    svgEl('stop', {
+      offset: '0%',
+      'stop-color': 'currentColor',
+      'stop-opacity': '0.40',
+    }),
+    svgEl('stop', {
+      offset: '100%',
+      'stop-color': 'currentColor',
+      'stop-opacity': '0.08',
+    }),
   );
   defs.append(grad);
   svg.append(defs);

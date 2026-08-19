@@ -34,8 +34,16 @@
 import { after, before, beforeEach, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { closeTestDb, openTestDb, pgDescribe, truncate } from './helpers/harness.js';
-import { getUserSettings, writeUserSettings } from '../../server/storage/settings.js';
+import {
+  closeTestDb,
+  openTestDb,
+  pgDescribe,
+  truncate,
+} from './helpers/harness.js';
+import {
+  getUserSettings,
+  writeUserSettings,
+} from '../../server/storage/settings.js';
 import { getDefaultOrganizationId } from '../../server/config/database.js';
 import { testScope } from '../helpers/storage-scope.js';
 
@@ -62,19 +70,38 @@ pgDescribe('user_settings on users.id (real PostgreSQL)', () => {
 
   beforeEach(async () => {
     await truncate(db, 'user_settings', 'organizations');
-    await db.insertInto('organizations').values({ id: ORG, name: 'Default', slug: 'default' }).execute();
+    await db
+      .insertInto('organizations')
+      .values({ id: ORG, name: 'Default', slug: 'default' })
+      .execute();
     await db
       .insertInto('users')
       .values([
-        { id: ALICE_ID, organization_id: ORG, email: ALICE_EMAIL, name: 'Alice', role: 'user' },
-        { id: BOB_ID, organization_id: ORG, email: BOB_EMAIL, name: 'Bob', role: 'user' },
+        {
+          id: ALICE_ID,
+          organization_id: ORG,
+          email: ALICE_EMAIL,
+          name: 'Alice',
+          role: 'user',
+        },
+        {
+          id: BOB_ID,
+          organization_id: ORG,
+          email: BOB_EMAIL,
+          name: 'Bob',
+          role: 'user',
+        },
       ])
       .execute();
   });
 
   /** Every stored row, so a test can assert there is exactly one. */
   async function rows() {
-    return db.selectFrom('user_settings').select(['email', 'user_id']).orderBy('email').execute();
+    return db
+      .selectFrom('user_settings')
+      .select(['email', 'user_id'])
+      .orderBy('email')
+      .execute();
   }
 
   /** Rename a `users` row the way an account e-mail change does. */
@@ -86,7 +113,10 @@ pgDescribe('user_settings on users.id (real PostgreSQL)', () => {
     await writeUserSettings(testScope(), ALICE_EMAIL, { uiLocale: 'nl' });
 
     assert.deepEqual(await rows(), [{ email: ALICE_EMAIL, user_id: ALICE_ID }]);
-    assert.equal((await getUserSettings(testScope(), ALICE_EMAIL)).uiLocale, 'nl');
+    assert.equal(
+      (await getUserSettings(testScope(), ALICE_EMAIL)).uiLocale,
+      'nl',
+    );
   });
 
   it('a renamed user keeps their settings', async () => {
@@ -107,14 +137,22 @@ pgDescribe('user_settings on users.id (real PostgreSQL)', () => {
   it('a write after a rename re-stamps the e-mail on the same row', async () => {
     await writeUserSettings(testScope(), ALICE_EMAIL, { uiLocale: 'nl' });
     await renameUser(ALICE_ID, ALICE_NEW_EMAIL);
-    await writeUserSettings(testScope(), ALICE_NEW_EMAIL, { digest: { dayOfWeek: 4 } });
+    await writeUserSettings(testScope(), ALICE_NEW_EMAIL, {
+      digest: { dayOfWeek: 4 },
+    });
 
     // One row, not two: matched on user_id, with its e-mail column brought
     // back in step so the id and the address never drift apart.
-    assert.deepEqual(await rows(), [{ email: ALICE_NEW_EMAIL, user_id: ALICE_ID }]);
+    assert.deepEqual(await rows(), [
+      { email: ALICE_NEW_EMAIL, user_id: ALICE_ID },
+    ]);
 
     const merged = await getUserSettings(testScope(), ALICE_NEW_EMAIL);
-    assert.equal(merged.uiLocale, 'nl', 'the partial write merged onto the stored value');
+    assert.equal(
+      merged.uiLocale,
+      'nl',
+      'the partial write merged onto the stored value',
+    );
     assert.equal(merged.digest.dayOfWeek, 4);
   });
 
@@ -125,14 +163,20 @@ pgDescribe('user_settings on users.id (real PostgreSQL)', () => {
 
     // The address is nobody's now, so it reads the code defaults rather than
     // handing a stranger the previous holder's preferences.
-    assert.equal((await getUserSettings(testScope(), ALICE_EMAIL)).uiLocale, 'en');
+    assert.equal(
+      (await getUserSettings(testScope(), ALICE_EMAIL)).uiLocale,
+      'en',
+    );
   });
 
   it('an address with no users row stays external, with a NULL id', async () => {
     await writeUserSettings(testScope(), EXTERNAL_EMAIL, { uiLocale: 'nl' });
 
     assert.deepEqual(await rows(), [{ email: EXTERNAL_EMAIL, user_id: null }]);
-    assert.equal((await getUserSettings(testScope(), EXTERNAL_EMAIL)).uiLocale, 'nl');
+    assert.equal(
+      (await getUserSettings(testScope(), EXTERNAL_EMAIL)).uiLocale,
+      'nl',
+    );
   });
 
   it('the anonymous bucket is not a person and never takes an id', async () => {
@@ -147,16 +191,34 @@ pgDescribe('user_settings on users.id (real PostgreSQL)', () => {
     // no id, written before 067's backfill ever ran.
     await db
       .insertInto('user_settings')
-      .values({ email: BOB_EMAIL, user_id: null, settings: JSON.stringify({ uiLocale: 'nl' }) })
+      .values({
+        email: BOB_EMAIL,
+        user_id: null,
+        settings: JSON.stringify({ uiLocale: 'nl' }),
+      })
       .execute();
 
-    assert.equal((await getUserSettings(testScope(), BOB_EMAIL)).uiLocale, 'nl', 'read still finds it');
+    assert.equal(
+      (await getUserSettings(testScope(), BOB_EMAIL)).uiLocale,
+      'nl',
+      'read still finds it',
+    );
 
-    await writeUserSettings(testScope(), BOB_EMAIL, { digest: { dayOfWeek: 3 } });
+    await writeUserSettings(testScope(), BOB_EMAIL, {
+      digest: { dayOfWeek: 3 },
+    });
 
-    assert.deepEqual(await rows(), [{ email: BOB_EMAIL, user_id: BOB_ID }], 'adopted, not duplicated');
+    assert.deepEqual(
+      await rows(),
+      [{ email: BOB_EMAIL, user_id: BOB_ID }],
+      'adopted, not duplicated',
+    );
     const merged = await getUserSettings(testScope(), BOB_EMAIL);
-    assert.equal(merged.uiLocale, 'nl', 'and the legacy value survived the adoption');
+    assert.equal(
+      merged.uiLocale,
+      'nl',
+      'and the legacy value survived the adoption',
+    );
     assert.equal(merged.digest.dayOfWeek, 3);
   });
 
@@ -178,9 +240,13 @@ pgDescribe('user_settings on users.id (real PostgreSQL)', () => {
     await assert.rejects(
       db
         .insertInto('user_settings')
-        .values({ email: 'clone@example.com', user_id: ALICE_ID, settings: JSON.stringify({}) })
+        .values({
+          email: 'clone@example.com',
+          user_id: ALICE_ID,
+          settings: JSON.stringify({}),
+        })
         .execute(),
-      /idx_user_settings_user_id|duplicate key/i
+      /idx_user_settings_user_id|duplicate key/i,
     );
   });
 
@@ -191,6 +257,9 @@ pgDescribe('user_settings on users.id (real PostgreSQL)', () => {
     // ON DELETE SET NULL, not CASCADE: losing the account must not silently
     // delete what the person stored.
     assert.deepEqual(await rows(), [{ email: BOB_EMAIL, user_id: null }]);
-    assert.equal((await getUserSettings(testScope(), BOB_EMAIL)).uiLocale, 'nl');
+    assert.equal(
+      (await getUserSettings(testScope(), BOB_EMAIL)).uiLocale,
+      'nl',
+    );
   });
 });

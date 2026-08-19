@@ -37,7 +37,8 @@ export function hashToken(token) {
  * Validates common email formats without being overly strict.
  * Based on HTML5 email input pattern with additional checks.
  */
-const EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+const EMAIL_REGEX =
+  /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
 
 /**
  * Validate an email address format.
@@ -45,7 +46,9 @@ const EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-
  * @returns {{valid: boolean, reason?: string}} - Validation result
  */
 export function validateEmail(email) {
-  const normalized = String(email || '').trim().toLowerCase();
+  const normalized = String(email || '')
+    .trim()
+    .toLowerCase();
 
   if (!normalized) {
     return { valid: false, reason: 'missing' };

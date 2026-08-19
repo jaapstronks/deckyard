@@ -67,7 +67,12 @@ test('every http helper emits { ok:false, error:<code>, message }', () => {
     [(r) => forbidden(r, 'Denied'), 403, 'forbidden', 'Denied'],
     [(r) => notFound(r, 'Gone'), 404, 'not_found', 'Gone'],
     [(r) => serverError(r), 500, 'internal_error', 'Internal server error'],
-    [(r) => payloadTooLarge(r), 413, 'payload_too_large', 'Request body too large'],
+    [
+      (r) => payloadTooLarge(r),
+      413,
+      'payload_too_large',
+      'Request body too large',
+    ],
   ];
   for (const [fn, status, code, message] of cases) {
     const res = new MockRes();
@@ -136,7 +141,10 @@ test('top-level handler stays generic for 500 and safe for sub-500', () => {
   assert.equal(leak.message, 'Server error');
   assert.doesNotMatch(JSON.stringify(leak), /SELECT/);
 
-  const safe = buildTopLevelErrorBody(413, Object.assign(new Error('too big'), { statusCode: 413 }));
+  const safe = buildTopLevelErrorBody(
+    413,
+    Object.assign(new Error('too big'), { statusCode: 413 }),
+  );
   assert.equal(safe.error, 'request_error');
   assert.equal(safe.message, 'too big');
 });
@@ -158,7 +166,11 @@ function stubFetch(status, obj) {
 
 test('api() maps the coded envelope to err.code + err.message', async () => {
   const orig = globalThis.fetch;
-  globalThis.fetch = stubFetch(429, { ok: false, error: 'rate_limited', message: 'Slow down' });
+  globalThis.fetch = stubFetch(429, {
+    ok: false,
+    error: 'rate_limited',
+    message: 'Slow down',
+  });
   try {
     const { api } = await import('../client/lib/api.js');
     await assert.rejects(api('/api/whatever'), (err) => {
@@ -197,7 +209,14 @@ test('api() falls back to error text for a legacy prose body', async () => {
 test('errorText prefers message over the machine code', async () => {
   const { errorText } = await import('../client/lib/api.js');
   // Canonical envelope: message is the human text, error is a code to hide.
-  assert.equal(errorText({ ok: false, error: 'internal_error', message: 'Failed to load users' }), 'Failed to load users');
+  assert.equal(
+    errorText({
+      ok: false,
+      error: 'internal_error',
+      message: 'Failed to load users',
+    }),
+    'Failed to load users',
+  );
 });
 
 test('errorText falls back to a legacy prose-in-error body', async () => {

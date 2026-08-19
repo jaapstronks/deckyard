@@ -4,7 +4,7 @@ Registering a slide type in `shared/slide-types/registry.js` gets you a working
 type: the editor renders a form from `fields[]`, the JSON schema and validation
 follow, i18n keys are scaffolded, the renderer is the type's own `renderHtml`.
 
-What does *not* follow are the **companions**: hand-maintained per-type entries
+What does _not_ follow are the **companions**: hand-maintained per-type entries
 that live in other files. Every one of them degrades gracefully when it is
 missing — the picker falls back to a label, the agent catalog derives a minimal
 description, the curation list drops the type into "Other". Nothing breaks. The
@@ -28,33 +28,33 @@ fails the build.
 
 Two markers decide whether a type owes a companion, and both already existed:
 
-| Marker | Meaning | Effect |
-|---|---|---|
+| Marker             | Meaning                                              | Effect                                                   |
+| ------------------ | ---------------------------------------------------- | -------------------------------------------------------- |
 | `deprecated: true` | renderable, not authorable (`isInsertableSlideType`) | owes no author-facing companion; a leftover entry is rot |
-| `ai: false` | deliberately not offered to agents (`isAgentOptOut`) | owes no agent-facing companion |
+| `ai: false`        | deliberately not offered to agents (`isAgentOptOut`) | owes no agent-facing companion                           |
 
 **Author-facing companions die with deprecation; editing-facing ones do not.**
 A deprecated type is gone from every insertion path, but stored decks still
 contain slides of that type and those slides still get opened in the editor. So
-`deprecated` exempts a type from being *offered*, never from being *edited* — the
+`deprecated` exempts a type from being _offered_, never from being _edited_ — the
 inline-edit descriptor and inspector keep-list stay, the picker entries go.
 
 ## The gated companions
 
-| Companion | Source of truth | Owed by | Silent degradation |
-|---|---|---|---|
-| AI / MCP catalog **prose** (description, bestFor, notFor) | `shared/slide-types/types/<name>/ai.js` | not `ai: false`, not deprecated | derived entry flagged `documented: false`; category falls back to `content` |
-| AI prompt examples | `shared/slide-types/types/<name>/ai.js` (`aiExamples`) | sparse by design (reverse only) | prompt shows the schema without filled-in content |
-| v1 generator manual example | `server/utils/openai/slide-types-prompt.js` (`MANUAL_EXAMPLES`) | sparse by design (reverse only) | falls through to the catalog example, then to defaults |
-| Picker description | `shared/slide-types/types/<name>/authoring.js` (`description`) | every insertable type | tile shows the bare label, no tooltip |
-| Dutch picker description | `client/i18n/nl/editor.json` (`editor.slideTypeDesc.<name>`) | every insertable type (Tier-1 pair) | tile shows the English description to Dutch users — English tile among Dutch neighbours, suite still green |
-| Picker search aliases | same file (`aliases`) | every insertable type | only findable by exact label |
-| Picker schematic glyph | `client/views/editor/slide-type-schematics.js` | every insertable type | generic text-only diagram |
-| Curated group | `shared/slide-types/types/<name>/authoring.js` (`group`) | every insertable type | lands in the picker's computed "Other" group *and* the settings tab's "Other" heading |
-| Inline-edit descriptor | `client/views/editor/inline-edit/descriptors.js` (`INLINE_DESCRIPTORS`) | every registered type | no on-canvas editing; every field is side-form only |
-| Inspector keep-list | `shared/slide-types/types/<name>/inline-edit.js` (`inspectorKeeps`) | sparse by design (reverse only) | inspector shows every field the inline layer misses (the safe default) |
-| Refine content schema | `server/utils/ai/schemas/refined-slide.js` (`SLIDE_SCHEMAS`) | every agent-emittable type (not `ai: false`, not deprecated) | `validateSlideContent` hits its "unknown type" branch and skips validation — refine never notices malformed content |
-| Structural validator | `server/utils/ai/validate-slide-structure.js` (`STRUCTURE_VALIDATORS`) | every agent-emittable `collection` / `fixed-collection` type | `validateSlideContentStructure` returns no issues — a collection with too few items or a missing item field is accepted unvalidated |
+| Companion                                                 | Source of truth                                                         | Owed by                                                      | Silent degradation                                                                                                                  |
+| --------------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| AI / MCP catalog **prose** (description, bestFor, notFor) | `shared/slide-types/types/<name>/ai.js`                                 | not `ai: false`, not deprecated                              | derived entry flagged `documented: false`; category falls back to `content`                                                         |
+| AI prompt examples                                        | `shared/slide-types/types/<name>/ai.js` (`aiExamples`)                  | sparse by design (reverse only)                              | prompt shows the schema without filled-in content                                                                                   |
+| v1 generator manual example                               | `server/utils/openai/slide-types-prompt.js` (`MANUAL_EXAMPLES`)         | sparse by design (reverse only)                              | falls through to the catalog example, then to defaults                                                                              |
+| Picker description                                        | `shared/slide-types/types/<name>/authoring.js` (`description`)          | every insertable type                                        | tile shows the bare label, no tooltip                                                                                               |
+| Dutch picker description                                  | `client/i18n/nl/editor.json` (`editor.slideTypeDesc.<name>`)            | every insertable type (Tier-1 pair)                          | tile shows the English description to Dutch users — English tile among Dutch neighbours, suite still green                          |
+| Picker search aliases                                     | same file (`aliases`)                                                   | every insertable type                                        | only findable by exact label                                                                                                        |
+| Picker schematic glyph                                    | `client/views/editor/slide-type-schematics.js`                          | every insertable type                                        | generic text-only diagram                                                                                                           |
+| Curated group                                             | `shared/slide-types/types/<name>/authoring.js` (`group`)                | every insertable type                                        | lands in the picker's computed "Other" group _and_ the settings tab's "Other" heading                                               |
+| Inline-edit descriptor                                    | `client/views/editor/inline-edit/descriptors.js` (`INLINE_DESCRIPTORS`) | every registered type                                        | no on-canvas editing; every field is side-form only                                                                                 |
+| Inspector keep-list                                       | `shared/slide-types/types/<name>/inline-edit.js` (`inspectorKeeps`)     | sparse by design (reverse only)                              | inspector shows every field the inline layer misses (the safe default)                                                              |
+| Refine content schema                                     | `server/utils/ai/schemas/refined-slide.js` (`SLIDE_SCHEMAS`)            | every agent-emittable type (not `ai: false`, not deprecated) | `validateSlideContent` hits its "unknown type" branch and skips validation — refine never notices malformed content                 |
+| Structural validator                                      | `server/utils/ai/validate-slide-structure.js` (`STRUCTURE_VALIDATORS`)  | every agent-emittable `collection` / `fixed-collection` type | `validateSlideContentStructure` returns no issues — a collection with too few items or a missing item field is accepted unvalidated |
 
 A fork-local type in `custom/slide-types/` can satisfy the agent, schematic and
 inline companions from its own definition (`ai: {}`, `schematic: {}`,
@@ -62,7 +62,7 @@ inline companions from its own definition (`ai: {}`, `schematic: {}`,
 **core types only** — the same line `git ls-files` draws in
 `tests/removed-slide-types.test.js`.
 
-Four rows are marked *sparse by design*: the entry exists only where the default
+Four rows are marked _sparse by design_: the entry exists only where the default
 is wrong (an example the schema cannot convey, a picker group for the long tail,
 an inspector override). Forward coverage there is a quality goal, so only the
 reverse direction is a gate — which is exactly the drift #323 hit: examples for a
@@ -70,8 +70,8 @@ type whose catalog entry was already gone.
 
 ### `usage` — inside the catalog entry, deliberately never gated
 
-The catalog entry carries an optional `usage` string: the rules *this
-organization* set for filling the type (sources, cut-off dates, mandatory
+The catalog entry carries an optional `usage` string: the rules _this
+organization_ set for filling the type (sources, cut-off dates, mandatory
 explanations), as opposed to the editorial copy that says which type to pick.
 It ships in `get_slide_types`, so an agent reads it before it builds the slide.
 Written in one of three places, all resolving to the same field:
@@ -85,7 +85,7 @@ It gets **no row of its own**, and that is the design, not an oversight:
   visible type produces invented filler on ~31 core types that have no
   organization whose rules to codify. Absence here means "no rule", which is the
   normal case and a true statement.
-- **Reverse coverage is already free.** Because `usage` lives *inside* the
+- **Reverse coverage is already free.** Because `usage` lives _inside_ the
   catalog entry rather than beside it, the `AI / MCP catalog entry` row's stale
   check retires it along with the entry. A second row would have restated the
   same iteration with a different exemption shape — the duplication this matrix
@@ -98,14 +98,14 @@ Rules and limits: `shared/slide-types/usage.js`.
 
 ## Derived — nothing to maintain
 
-| Layer | Derived from |
-|---|---|
-| Editor form, JSON schema, validation | `fields[]` on the definition |
-| Agent-facing content schema (MCP + generation prompt) | `fields[]`, via `deriveAgentSchema()` — hand-written until T7-slice 3; see below |
-| i18n key scaffolding | `addUiI18nKeysToSlideType()` at registry build |
-| Agent-visible type list (MCP `get_slide_types`) | the runtime registry, since #386 — was hand-maintained, and was the biggest hole in this matrix |
-| Canonical type id (`eu.deckyard.slide.title`) | `SLIDE_TYPE_IDS` |
-| Wire spelling of `slides[].type` (export/read) | `canonicalSlideType()` |
+| Layer                                                 | Derived from                                                                                    |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Editor form, JSON schema, validation                  | `fields[]` on the definition                                                                    |
+| Agent-facing content schema (MCP + generation prompt) | `fields[]`, via `deriveAgentSchema()` — hand-written until T7-slice 3; see below                |
+| i18n key scaffolding                                  | `addUiI18nKeysToSlideType()` at registry build                                                  |
+| Agent-visible type list (MCP `get_slide_types`)       | the runtime registry, since #386 — was hand-maintained, and was the biggest hole in this matrix |
+| Canonical type id (`eu.deckyard.slide.title`)         | `SLIDE_TYPE_IDS`                                                                                |
+| Wire spelling of `slides[].type` (export/read)        | `canonicalSlideType()`                                                                          |
 
 ### The agent-facing schema, and how a field opts out
 
@@ -118,15 +118,15 @@ the catalog carries prose only.
 
 Which fields reach an agent is therefore a property of the field:
 
-| On the field | Meaning | Reaches agents |
-|---|---|---|
-| *(nothing)* | an ordinary authorable field | yes — this is the default |
-| `hidden: true` | legacy mirror of a structured field; also skipped by the semantic projection | no |
-| `deprecated: true` | legacy field kept for stored decks | no |
-| `ai: false` | live and editable, but deliberately withheld (infrastructure, legacy counters) | no |
-| `helpText: '…'` | the editor's own prose about the field | yes — becomes the schema entry's `description` |
+| On the field       | Meaning                                                                        | Reaches agents                                 |
+| ------------------ | ------------------------------------------------------------------------------ | ---------------------------------------------- |
+| _(nothing)_        | an ordinary authorable field                                                   | yes — this is the default                      |
+| `hidden: true`     | legacy mirror of a structured field; also skipped by the semantic projection   | no                                             |
+| `deprecated: true` | legacy field kept for stored decks                                             | no                                             |
+| `ai: false`        | live and editable, but deliberately withheld (infrastructure, legacy counters) | no                                             |
+| `helpText: '…'`    | the editor's own prose about the field                                         | yes — becomes the schema entry's `description` |
 
-The default is *offered*, matching the type-level rule from #386: withholding is
+The default is _offered_, matching the type-level rule from #386: withholding is
 a decision somebody writes down, not something that happens by omission. The
 `ai` key means the same thing on a field as it does on a type
 (`isAgentOptOut`), one level down.
@@ -140,7 +140,7 @@ Since #453 every **core** type must declare `structure` on its definition —
 (`poll` / `likert` / `feedback`), which is the contract `live` implies.
 
 Neither is in the matrix above, and neither should be: a companion is a
-hand-written entry in *another* file that degrades quietly when missing, whereas
+hand-written entry in _another_ file that degrades quietly when missing, whereas
 these live on the definition itself and their absence is a hard CI failure.
 Different shape, different gate — `tests/slide-type-structure.test.js` and
 `tests/slide-type-runtime.test.js` rather than
@@ -173,7 +173,7 @@ are in [`slide-type-structure.md`](slide-type-structure.md) and
 - **PPTX export tier** — the pattern this matrix generalizes ("no tier → the
   build fails"), but the tier itself does not exist yet. It belongs here when
   STRATEGY T4 lands.
-- **Behavioural subsets** — hardcoded `*-slide` arrays that answer a *behaviour*
+- **Behavioural subsets** — hardcoded `*-slide` arrays that answer a _behaviour_
   question rather than a coverage one: `NON_CONTENT_SLIDE_TYPES` and
   `SLIDE_ITEM_REQUIREMENTS` (`server/utils/ai/validate-slides/constants.js`),
   and the per-type branches in `server/utils/openai/convert-slide.js`,
@@ -198,7 +198,7 @@ This is why the locale-tiering work (A6 / A7.7) added **no** Dutch-sample
 obligation. It was considered — a `sampleNl` per type, gated like the other
 companions — and rejected: it would make every future slide type owe a second
 translated sample (a new permanent per-type obligation, exactly what the
-locale-tiering brief set out to *reduce*) to change a preview thumbnail that the
+locale-tiering brief set out to _reduce_) to change a preview thumbnail that the
 user never keeps. Inserted content — the part that becomes the deck — is already
 correct. So the sample stays a single English example on purpose, and a Dutch
 deck previews an English thumbnail but inserts Dutch content.
@@ -208,13 +208,13 @@ deck previews an English thumbnail but inserts Dutch content.
 The matrix guards the companions. Nothing guarded the matrix: it is itself a
 hand-written list, so a module carrying per-type knowledge that nobody had ever
 added simply was not checked. That has a cost on the record. When the List
-type's Dutch alias was folded into `list-slide` (PR #451) the *offer* companions
+type's Dutch alias was folded into `list-slide` (PR #451) the _offer_ companions
 moved because the matrix named them, and `shared/slide-types/convert.js`,
 `slide-form-router.js` and two special cases in `render-field.js` stayed behind
 because it did not — so newly authored lists lost affordances that legacy lists
 kept, with the whole **Convert** submenu missing.
 
-`tests/slide-type-name-branching.test.js` closes that by *deriving* the set
+`tests/slide-type-name-branching.test.js` closes that by _deriving_ the set
 instead of declaring it: every tracked module that branches on **three or more**
 core type names must be accounted for in `INVENTORY`
 (`tests/helpers/slide-type-name-branching.js`), with a kind and a reason. The
@@ -222,19 +222,19 @@ gate is on the accounting, not the contents — a module may be a closed-set
 special case; it may not be a surprise.
 
 The threshold is the whole judgement, so it is written down rather than implied:
-94 modules *name* a type, 46 branched on three or more when the inventory was
+94 modules _name_ a type, 46 branched on three or more when the inventory was
 first taken. One or two names reads as type-specific behaviour (the custom-HTML
 guard exists for `custom-html-slide`) and no future type can be "missing" from
 it; three or more is where a module stops being about a type and becomes a table
-*of* types.
+_of_ types.
 
-| Kind | Count | What it means |
-|---|---|---|
-| `table` | 16 | a row per eligible type; must name a companion, which gates it both ways |
-| `sparse` | 13 | intentionally partial (repair rules, conversion pairs, the CSS map); only staleness is a defect |
-| `specific` | 5 | a closed set of types that behave differently; not a table |
-| `generated` | 1 | produced by a script from per-type sources, so it cannot drift |
-| `source` | 1 | the registry — the list every other list derives from |
+| Kind        | Count | What it means                                                                                   |
+| ----------- | ----- | ----------------------------------------------------------------------------------------------- |
+| `table`     | 16    | a row per eligible type; must name a companion, which gates it both ways                        |
+| `sparse`    | 13    | intentionally partial (repair rules, conversion pairs, the CSS map); only staleness is a defect |
+| `specific`  | 5     | a closed set of types that behave differently; not a table                                      |
+| `generated` | 1     | produced by a script from per-type sources, so it cannot drift                                  |
+| `source`    | 1     | the registry — the list every other list derives from                                           |
 
 `specific` was 15 at the first reading. Ten of those entries left when the
 `runtime` facet landed and the modules started asking the type instead of
@@ -249,7 +249,7 @@ refine phase — and neither was gated. They have now been promoted to the matri
 (the two AI-refine companions above), so no inventory entry carries `promote`.
 Their eligibility rules differ, which is the point of writing them down:
 
-- **Refine content schema** is owed by *every* agent-emittable type
+- **Refine content schema** is owed by _every_ agent-emittable type
   (`!isAgentOptOut`), because the refine phase can emit any of them and a
   missing schema silently skips validation. Even a chrome type owes a trivial
   schema — it keeps the "unknown slide type" warning meaningful.
@@ -273,7 +273,7 @@ was a place a fifth interaction type would be forgotten.
 
 That is the `runtime` facet, which
 [`slide-type-structure.md`](./slide-type-structure.md) had deferred with "real,
-but no consumer yet". There were nine. The test asserted a *floor* on that count
+but no consumer yet". There were nine. The test asserted a _floor_ on that count
 so it would fail the moment the number dropped, which was the signal to delete
 it and point at the facet instead — and that is what happened: see
 [`slide-type-runtime.md`](./slide-type-runtime.md). The measurement survives as
@@ -296,7 +296,7 @@ design. The test picks it up automatically, in both directions.
 ## Related
 
 - `tests/agent-slide-type-contract.test.js` — unit-tests the agent-catalog
-  *derivation* (opt-out rule, Tier-2 resolution, schema derivation). This
+  _derivation_ (opt-out rule, Tier-2 resolution, schema derivation). This
   document is about author discipline; that file is about behaviour.
 - `tests/removed-slide-types.test.js` + `shared/slide-types/removed.js` — the
   same both-directions-with-reasons shape, for types that are gone entirely.

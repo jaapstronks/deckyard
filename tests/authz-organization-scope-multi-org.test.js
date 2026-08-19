@@ -39,7 +39,9 @@ import assert from 'node:assert/strict';
 
 // Assembled rather than written as one literal so secret scanners do not flag
 // it; authConfigError() only requires MIN_AUTH_SECRET_LENGTH characters.
-process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
+process.env.AUTH_SECRET = ['deckyard', 'test', 'auth']
+  .join('-')
+  .padEnd(40, '0');
 delete process.env.AUTH_ENABLED;
 delete process.env.AUTH_DEV_BYPASS;
 process.env.MULTI_ORG_ENABLED = 'true';
@@ -61,18 +63,19 @@ const {
   canDeletePresentation,
   getEffectivePermission,
 } = await import('../server/utils/presentation-authz/presentations.js');
-const { checkActorAccess } = await import(
-  '../server/utils/presentation-authz/actor-access.js'
-);
-const { __store } = await import(
-  '../server/storage/presentations/index.js'
-);
+const { checkActorAccess } =
+  await import('../server/utils/presentation-authz/actor-access.js');
+const { __store } = await import('../server/storage/presentations/index.js');
 
 let passwordHash;
 
 test.before(async () => {
   passwordHash = await hashPassword('correct horse battery');
-  assert.equal(isMultiOrgEnabled(), true, 'multi-organization flag is on for this file');
+  assert.equal(
+    isMultiOrgEnabled(),
+    true,
+    'multi-organization flag is on for this file',
+  );
 });
 
 /**
@@ -111,7 +114,12 @@ function seedDb() {
     presentations: [
       deckRow({ id: 'deck-alpha', org: ORG_A, visibility: 'organization' }),
       deckRow({ id: 'deck-beta', org: ORG_B, visibility: 'organization' }),
-      deckRow({ id: 'deck-alpha-owned', org: ORG_A, visibility: 'private', owner: 'bob@beta.example' }),
+      deckRow({
+        id: 'deck-alpha-owned',
+        org: ORG_A,
+        visibility: 'private',
+        owner: 'bob@beta.example',
+      }),
     ],
   });
   __setTestDb(db);
@@ -166,7 +174,9 @@ function requestWithSession(user, options = {}) {
     },
   };
   auth.setSessionCookie(req, res, user, options);
-  return { headers: { cookie: String(res.headers['Set-Cookie']).split(';')[0] } };
+  return {
+    headers: { cookie: String(res.headers['Set-Cookie']).split(';')[0] },
+  };
 }
 
 /** Log in and hand back the user a route handler would receive. */
@@ -175,7 +185,10 @@ async function sessionUser(email, organizationId) {
     organizationId,
     actorEmail: email,
   });
-  return auth.getUserFromRequestAsync(requestWithSession(login, { organizationId }), {});
+  return auth.getUserFromRequestAsync(
+    requestWithSession(login, { organizationId }),
+    {},
+  );
 }
 
 /**
@@ -229,7 +242,11 @@ test('an organization deck with no organization is refused', async () => {
   const bob = await sessionUser('bob@beta.example', ORG_B);
   // A presentation shape that lost its organization on the way here must fail
   // closed: in multi-organization mode "no organization" is not "any organization".
-  const pres = { id: 'deck-nowhere', visibility: 'organization', ownerEmail: 'carol@alpha.example' };
+  const pres = {
+    id: 'deck-nowhere',
+    visibility: 'organization',
+    ownerEmail: 'carol@alpha.example',
+  };
 
   assert.equal(canReadPresentation({ user: bob, pres }), false);
   assert.equal(getEffectivePermission({ user: bob, pres }), 'view');
@@ -239,8 +256,14 @@ test('a user with no organization is refused an organization deck', async () => 
   seedDb();
   const alphaDeck = await loadDeck('deck-alpha', ORG_A);
 
-  assert.equal(canReadPresentation({ user: { email: 'nobody@example' }, pres: alphaDeck }), false);
-  assert.equal(isSameOrganization({ email: 'nobody@example' }, alphaDeck), false);
+  assert.equal(
+    canReadPresentation({ user: { email: 'nobody@example' }, pres: alphaDeck }),
+    false,
+  );
+  assert.equal(
+    isSameOrganization({ email: 'nobody@example' }, alphaDeck),
+    false,
+  );
 });
 
 // ---------------------------------------------------------------------------
@@ -254,8 +277,14 @@ test('an organization deck in the person own organization stays fully available'
 
   assert.equal(canReadPresentation({ user: alice, pres: alphaDeck }), true);
   assert.equal(canWritePresentation({ user: alice, pres: alphaDeck }), true);
-  assert.equal(canCommentOnPresentation({ user: alice, pres: alphaDeck }), true);
-  assert.equal(getEffectivePermission({ user: alice, pres: alphaDeck }), 'edit');
+  assert.equal(
+    canCommentOnPresentation({ user: alice, pres: alphaDeck }),
+    true,
+  );
+  assert.equal(
+    getEffectivePermission({ user: alice, pres: alphaDeck }),
+    'edit',
+  );
 });
 
 test('ownership still grants access across the organization boundary', async () => {
@@ -278,12 +307,20 @@ test('a collaborator row still grants access across the organization boundary', 
   const alphaDeck = await loadDeck('deck-alpha', ORG_A);
 
   assert.equal(
-    canReadPresentation({ user: bob, pres: alphaDeck, collaboratorPermission: 'view' }),
-    true
+    canReadPresentation({
+      user: bob,
+      pres: alphaDeck,
+      collaboratorPermission: 'view',
+    }),
+    true,
   );
   assert.equal(
-    canWritePresentation({ user: bob, pres: alphaDeck, collaboratorPermission: 'edit' }),
-    true
+    canWritePresentation({
+      user: bob,
+      pres: alphaDeck,
+      collaboratorPermission: 'edit',
+    }),
+    true,
   );
 });
 
@@ -293,7 +330,10 @@ test('an unrestricted operator is unaffected', async () => {
   const operator = { email: 'root@example', unrestricted: true };
 
   assert.equal(canReadPresentation({ user: operator, pres: alphaDeck }), true);
-  assert.equal(getEffectivePermission({ user: operator, pres: alphaDeck }), 'edit');
+  assert.equal(
+    getEffectivePermission({ user: operator, pres: alphaDeck }),
+    'edit',
+  );
 });
 
 test('a machine client acting in another organization is refused (L10)', async () => {
@@ -305,8 +345,11 @@ test('a machine client acting in another organization is refused (L10)', async (
   // An API key belongs to one organization and now says so, which is what turns
   // the check into a check.
   assert.equal(
-    checkActorAccess({ pres: alphaDeck, actor: { email: 'dave@beta.example', organizationId: ORG_B } }),
-    false
+    checkActorAccess({
+      pres: alphaDeck,
+      actor: { email: 'dave@beta.example', organizationId: ORG_B },
+    }),
+    false,
   );
 });
 
@@ -314,8 +357,11 @@ test('a machine client of the deck’s own organization still gets the organizat
   seedDb();
   const alphaDeck = await loadDeck('deck-alpha', ORG_A);
   assert.equal(
-    checkActorAccess({ pres: alphaDeck, actor: { email: 'dave@alpha.example', organizationId: ORG_A } }),
-    true
+    checkActorAccess({
+      pres: alphaDeck,
+      actor: { email: 'dave@alpha.example', organizationId: ORG_A },
+    }),
+    true,
   );
 });
 
@@ -325,7 +371,13 @@ test('a machine client that states no organization fails closed on the organizat
   // Multi-organization mode refuses an organization it cannot read on either side
   // rather than waving it through — the same fail-closed rule the session path
   // follows. Grants that rest on a relation to the deck are unaffected.
-  assert.equal(checkActorAccess({ pres: alphaDeck, actor: { email: 'dave@beta.example' } }), false);
+  assert.equal(
+    checkActorAccess({
+      pres: alphaDeck,
+      actor: { email: 'dave@beta.example' },
+    }),
+    false,
+  );
   assert.equal(
     checkActorAccess({
       pres: alphaDeck,
@@ -333,7 +385,7 @@ test('a machine client that states no organization fails closed on the organizat
       collaboratorPermission: 'edit',
       access: 'write',
     }),
-    true
+    true,
   );
 });
 
@@ -350,12 +402,20 @@ test('the organization check costs no queries', async () => {
   canReadPresentation({ user: bob, pres: alphaDeck });
   canWritePresentation({ user: bob, pres: alphaDeck });
 
-  assert.deepEqual(db.__queryLog, [], 'membership is read off the session, not looked up');
+  assert.deepEqual(
+    db.__queryLog,
+    [],
+    'membership is read off the session, not looked up',
+  );
 });
 
 test('the session carries the organization the check compares against', async () => {
   seedDb();
   const bob = await sessionUser('bob@beta.example', ORG_B);
 
-  assert.equal(bob.organizationId, ORG_B, 'this is the value #356 put on the user');
+  assert.equal(
+    bob.organizationId,
+    ORG_B,
+    'this is the value #356 put on the user',
+  );
 });

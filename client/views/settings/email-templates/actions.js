@@ -71,8 +71,11 @@ export function createActions(state, elements, rebuildUI) {
       state.setBusy(true);
       await updateEmailDefaultLocale(locale);
       toast.success(
-        t('settings.admin.emailTemplates.defaultLocaleSaved', 'Default language updated.'),
-        { id: 'email-templates-save', durationMs: 2000 }
+        t(
+          'settings.admin.emailTemplates.defaultLocaleSaved',
+          'Default language updated.',
+        ),
+        { id: 'email-templates-save', durationMs: 2000 },
       );
     } catch (err) {
       toast.error(String(err?.message || err), { id: 'email-templates-save' });
@@ -92,13 +95,17 @@ export function createActions(state, elements, rebuildUI) {
 
     try {
       state.setBusy(true);
-      await updateEmailTemplate(state.getCurrentType(), state.getCurrentLocale(), fields);
+      await updateEmailTemplate(
+        state.getCurrentType(),
+        state.getCurrentLocale(),
+        fields,
+      );
       const data = await fetchEmailTemplates({ maxAgeMs: 0 });
       state.setData(data);
       rebuildUI();
       toast.success(
         t('settings.admin.emailTemplates.saved', 'Template saved.'),
-        { id: 'email-templates-save', durationMs: 2000 }
+        { id: 'email-templates-save', durationMs: 2000 },
       );
     } catch (err) {
       toast.error(String(err?.message || err), { id: 'email-templates-save' });
@@ -117,23 +124,29 @@ export function createActions(state, elements, rebuildUI) {
       title: t('settings.admin.emailTemplates.resetTitle', 'Reset to default'),
       message: t(
         'settings.admin.emailTemplates.resetConfirm',
-        'Reset this template to the default? This will remove all customizations for this language.'
+        'Reset this template to the default? This will remove all customizations for this language.',
       ),
-      confirmLabel: t('settings.admin.emailTemplates.resetTitle', 'Reset to default'),
+      confirmLabel: t(
+        'settings.admin.emailTemplates.resetTitle',
+        'Reset to default',
+      ),
       danger: true,
     });
     if (!confirmed) return;
 
     try {
       state.setBusy(true);
-      await resetEmailTemplate(state.getCurrentType(), state.getCurrentLocale());
+      await resetEmailTemplate(
+        state.getCurrentType(),
+        state.getCurrentLocale(),
+      );
       const data = await fetchEmailTemplates({ maxAgeMs: 0 });
       state.setData(data);
       rebuildUI();
       previewContainer.style.display = 'none';
       toast.success(
         t('settings.admin.emailTemplates.reset', 'Template reset to default.'),
-        { id: 'email-templates-save', durationMs: 2000 }
+        { id: 'email-templates-save', durationMs: 2000 },
       );
     } catch (err) {
       toast.error(String(err?.message || err), { id: 'email-templates-save' });
@@ -154,14 +167,16 @@ export function createActions(state, elements, rebuildUI) {
       const resp = await previewEmailTemplate(
         state.getCurrentType(),
         state.getCurrentLocale(),
-        Object.keys(fields).length > 0 ? fields : null
+        Object.keys(fields).length > 0 ? fields : null,
       );
       if (resp?.preview?.htmlContent) {
         previewContent.innerHTML = resp.preview.htmlContent;
         previewContainer.style.display = '';
       }
     } catch (err) {
-      toast.error(String(err?.message || err), { id: 'email-templates-preview' });
+      toast.error(String(err?.message || err), {
+        id: 'email-templates-preview',
+      });
     } finally {
       state.setBusy(false);
     }
@@ -179,11 +194,12 @@ export function createActions(state, elements, rebuildUI) {
       const resp = await sendTestEmail(
         state.getCurrentType(),
         state.getCurrentLocale(),
-        Object.keys(fields).length > 0 ? fields : null
+        Object.keys(fields).length > 0 ? fields : null,
       );
       toast.success(
-        resp?.message || t('settings.admin.emailTemplates.testSent', 'Test email sent.'),
-        { id: 'email-templates-test', durationMs: 3000 }
+        resp?.message ||
+          t('settings.admin.emailTemplates.testSent', 'Test email sent.'),
+        { id: 'email-templates-test', durationMs: 3000 },
       );
     } catch (err) {
       toast.error(String(err?.message || err), { id: 'email-templates-test' });

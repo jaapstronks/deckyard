@@ -42,7 +42,10 @@ export async function renderAnalytics(root, presentationId, { nav } = {}) {
     // Skeleton overview cards
     h('div', { class: 'analytics-section' }, [
       h('div', { class: 'analytics-section-header' }, [
-        h('div', { class: 'analytics-skeleton analytics-skeleton-text', style: 'width: 120px; height: 20px;' }),
+        h('div', {
+          class: 'analytics-skeleton analytics-skeleton-text',
+          style: 'width: 120px; height: 20px;',
+        }),
       ]),
       h('div', { class: 'analytics-overview-cards' }, [
         h('div', { class: 'analytics-skeleton analytics-skeleton-card' }),
@@ -54,14 +57,20 @@ export async function renderAnalytics(root, presentationId, { nav } = {}) {
     // Skeleton chart
     h('div', { class: 'analytics-section' }, [
       h('div', { class: 'analytics-section-header' }, [
-        h('div', { class: 'analytics-skeleton analytics-skeleton-text', style: 'width: 140px; height: 20px;' }),
+        h('div', {
+          class: 'analytics-skeleton analytics-skeleton-text',
+          style: 'width: 140px; height: 20px;',
+        }),
       ]),
       h('div', { class: 'analytics-skeleton analytics-skeleton-chart' }),
     ]),
     // Skeleton table rows
     h('div', { class: 'analytics-section' }, [
       h('div', { class: 'analytics-section-header' }, [
-        h('div', { class: 'analytics-skeleton analytics-skeleton-text', style: 'width: 160px; height: 20px;' }),
+        h('div', {
+          class: 'analytics-skeleton analytics-skeleton-text',
+          style: 'width: 160px; height: 20px;',
+        }),
       ]),
       h('div', {}, [
         h('div', { class: 'analytics-skeleton analytics-skeleton-row' }),
@@ -80,14 +89,19 @@ export async function renderAnalytics(root, presentationId, { nav } = {}) {
     }
   } catch (err) {
     shell.innerHTML = '';
-    shell.append(h('div', { class: 'analytics-error' }, [
-      h('div', { class: 'analytics-error-text', text: err.message || 'Failed to load presentation' }),
-      h('button', {
-        class: 'btn btn-secondary',
-        text: t('common.back', 'Back'),
-        onclick: () => nav?.('/app'),
-      }),
-    ]));
+    shell.append(
+      h('div', { class: 'analytics-error' }, [
+        h('div', {
+          class: 'analytics-error-text',
+          text: err.message || 'Failed to load presentation',
+        }),
+        h('button', {
+          class: 'btn btn-secondary',
+          text: t('common.back', 'Back'),
+          onclick: () => nav?.('/app'),
+        }),
+      ]),
+    );
     return cleanup;
   }
 
@@ -107,11 +121,21 @@ export async function renderAnalytics(root, presentationId, { nav } = {}) {
       [overview, slideMetrics, sessions, leads] = await Promise.all([
         api(`/api/presentations/${presentationId}/analytics?${params}`),
         api(`/api/presentations/${presentationId}/analytics/slides?${params}`),
-        api(`/api/presentations/${presentationId}/analytics/sessions?${params}&limit=10`),
-        api(`/api/presentations/${presentationId}/leads?limit=50`).catch(() => ({ leads: [], total: 0 })),
+        api(
+          `/api/presentations/${presentationId}/analytics/sessions?${params}&limit=10`,
+        ),
+        api(`/api/presentations/${presentationId}/leads?limit=50`).catch(
+          () => ({ leads: [], total: 0 }),
+        ),
       ]);
     } catch {
-      overview = { totalViews: 0, uniqueViewers: 0, avgDurationSeconds: 0, viewsByDay: [], topSourceTypes: [] };
+      overview = {
+        totalViews: 0,
+        uniqueViewers: 0,
+        avgDurationSeconds: 0,
+        viewsByDay: [],
+        topSourceTypes: [],
+      };
       slideMetrics = { slides: [] };
       sessions = { sessions: [], total: 0 };
       leads = { leads: [], total: 0 };
@@ -129,7 +153,10 @@ export async function renderAnalytics(root, presentationId, { nav } = {}) {
       }),
       h('div', { class: 'analytics-title' }, [
         h('span', { text: t('analytics.title', 'Presentation Analytics') }),
-        h('span', { class: 'analytics-pres-name', text: presentation.title || 'Untitled' }),
+        h('span', {
+          class: 'analytics-pres-name',
+          text: presentation.title || 'Untitled',
+        }),
       ]),
       h('div', { class: 'analytics-topbar-spacer' }),
     ]);
@@ -171,7 +198,9 @@ export async function renderAnalytics(root, presentationId, { nav } = {}) {
       h,
       presentationId,
     });
-    overviewPanel.el.querySelector('.analytics-overview-cards')?.append(realtimeConnection.el);
+    overviewPanel.el
+      .querySelector('.analytics-overview-cards')
+      ?.append(realtimeConnection.el);
 
     // Timeline chart
     const timeline = createTimelineChart({
@@ -199,7 +228,9 @@ export async function renderAnalytics(root, presentationId, { nav } = {}) {
         if (dateRange.until) params.set('until', dateRange.until);
         params.set('limit', '20');
         params.set('offset', String(offset));
-        const more = await api(`/api/presentations/${presentationId}/analytics/sessions?${params}`);
+        const more = await api(
+          `/api/presentations/${presentationId}/analytics/sessions?${params}`,
+        );
         return more?.sessions || [];
       },
       onGenerateReport: () => openReportModal(),

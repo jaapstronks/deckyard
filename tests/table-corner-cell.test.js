@@ -42,7 +42,7 @@ describe('table-slide cornerCell', () => {
     const html = render(LEGACY_CONTENT);
     assert.ok(
       !html.includes(CORNER_CLASS),
-      'absent cornerCell must not fold the corner into the header'
+      'absent cornerCell must not fold the corner into the header',
     );
     // The exact class list is pinned so a future default flip is caught.
     assert.ok(html.includes('class="md-table md-table--soft"'));
@@ -69,7 +69,7 @@ describe('table-slide cornerCell', () => {
       });
       assert.ok(
         html.includes(`md-table--${style} ${CORNER_CLASS}`),
-        `corner modifier must apply on tableStyle "${style}"`
+        `corner modifier must apply on tableStyle "${style}"`,
       );
     }
   });
@@ -87,7 +87,7 @@ describe('table-slide cornerCell', () => {
     assert.deepStrictEqual(field.options, ['label', 'header']);
     assert.ok(
       typeof field.description === 'string' && field.description.length > 0,
-      'the agent needs help text to know what "header" does'
+      'the agent needs help text to know what "header" does',
     );
   });
 });

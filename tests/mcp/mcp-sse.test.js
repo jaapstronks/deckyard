@@ -15,10 +15,12 @@ import path from 'node:path';
 
 // Resolve the server/mcp directory relative to this test file so the structure
 // checks work from any checkout (not a hardcoded sandbox path).
-const MCP_DIR = path.resolve(fileURLToPath(import.meta.url), '../../../server/mcp');
+const MCP_DIR = path.resolve(
+  fileURLToPath(import.meta.url),
+  '../../../server/mcp',
+);
 
 describe('MCP SSE Transport — Protocol', () => {
-
   describe('Context passing through McpServer', () => {
     it('handleMessage passes context to tool handlers', async () => {
       const { McpServer } = await import('../../server/mcp/protocol.js');
@@ -26,22 +28,37 @@ describe('MCP SSE Transport — Protocol', () => {
 
       let receivedArgs = null;
       let receivedContext = null;
-      server.tool('test_tool', 'Test', { type: 'object', properties: {} }, async (args, ctx) => {
-        receivedArgs = args;
-        receivedContext = ctx;
-        return 'ok';
-      });
+      server.tool(
+        'test_tool',
+        'Test',
+        { type: 'object', properties: {} },
+        async (args, ctx) => {
+          receivedArgs = args;
+          receivedContext = ctx;
+          return 'ok';
+        },
+      );
 
       const context = { ownerEmail: 'test@example.com', transport: 'sse' };
 
       // Initialize
-      await server.handleMessage({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} });
+      await server.handleMessage({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'initialize',
+        params: {},
+      });
       await server.handleMessage({ method: 'notifications/initialized' });
 
       // Call tool with context
       const response = await server.handleMessage(
-        { jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'test_tool', arguments: { foo: 'bar' } } },
-        context
+        {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: { name: 'test_tool', arguments: { foo: 'bar' } },
+        },
+        context,
       );
 
       assert.deepEqual(receivedArgs, { foo: 'bar' });
@@ -58,18 +75,31 @@ describe('MCP SSE Transport — Protocol', () => {
       const server = new McpServer();
 
       let receivedContext = undefined;
-      server.tool('test_tool', 'Test', { type: 'object', properties: {} }, async (args, ctx) => {
-        receivedContext = ctx;
-        return 'ok';
-      });
+      server.tool(
+        'test_tool',
+        'Test',
+        { type: 'object', properties: {} },
+        async (args, ctx) => {
+          receivedContext = ctx;
+          return 'ok';
+        },
+      );
 
-      await server.handleMessage({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} });
+      await server.handleMessage({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'initialize',
+        params: {},
+      });
       await server.handleMessage({ method: 'notifications/initialized' });
 
       // Call without context — simulates stdio transport
-      await server.handleMessage(
-        { jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'test_tool', arguments: {} } }
-      );
+      await server.handleMessage({
+        jsonrpc: '2.0',
+        id: 2,
+        method: 'tools/call',
+        params: { name: 'test_tool', arguments: {} },
+      });
 
       assert.equal(receivedContext, undefined);
     });
@@ -78,14 +108,19 @@ describe('MCP SSE Transport — Protocol', () => {
       const { McpServer } = await import('../../server/mcp/protocol.js');
       const server = new McpServer();
 
-      server.tool('test_tool', 'Test', { type: 'object', properties: {} }, async () => 'ok');
+      server.tool(
+        'test_tool',
+        'Test',
+        { type: 'object', properties: {} },
+        async () => 'ok',
+      );
 
       const context = { ownerEmail: 'test@example.com' };
 
       // tools/list doesn't need context
       const response = await server.handleMessage(
         { jsonrpc: '2.0', id: 1, method: 'tools/list' },
-        context
+        context,
       );
       const parsed = JSON.parse(response);
       assert.ok(parsed.result.tools);
@@ -97,22 +132,42 @@ describe('MCP SSE Transport — Protocol', () => {
       const server = new McpServer();
 
       const contexts = [];
-      server.tool('test_tool', 'Test', { type: 'object', properties: {} }, async (args, ctx) => {
-        contexts.push(ctx);
-        return 'ok';
-      });
+      server.tool(
+        'test_tool',
+        'Test',
+        { type: 'object', properties: {} },
+        async (args, ctx) => {
+          contexts.push(ctx);
+          return 'ok';
+        },
+      );
 
-      await server.handleMessage({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} });
+      await server.handleMessage({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'initialize',
+        params: {},
+      });
       await server.handleMessage({ method: 'notifications/initialized' });
 
       // Two calls with different contexts
       await server.handleMessage(
-        { jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'test_tool', arguments: {} } },
-        { ownerEmail: 'alice@example.com' }
+        {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: { name: 'test_tool', arguments: {} },
+        },
+        { ownerEmail: 'alice@example.com' },
       );
       await server.handleMessage(
-        { jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'test_tool', arguments: {} } },
-        { ownerEmail: 'bob@example.com' }
+        {
+          jsonrpc: '2.0',
+          id: 3,
+          method: 'tools/call',
+          params: { name: 'test_tool', arguments: {} },
+        },
+        { ownerEmail: 'bob@example.com' },
       );
 
       assert.equal(contexts.length, 2);
@@ -127,8 +182,13 @@ describe('MCP SSE Transport — Protocol', () => {
       const server = new McpServer();
 
       const response = await server.handleMessage(
-        { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'nonexistent', arguments: {} } },
-        { ownerEmail: 'test@example.com' }
+        {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/call',
+          params: { name: 'nonexistent', arguments: {} },
+        },
+        { ownerEmail: 'test@example.com' },
       );
 
       const parsed = JSON.parse(response);
@@ -140,20 +200,37 @@ describe('MCP SSE Transport — Protocol', () => {
       const { McpServer } = await import('../../server/mcp/protocol.js');
       const server = new McpServer();
 
-      server.tool('failing_tool', 'Fails', { type: 'object', properties: {} }, async () => {
-        throw new Error('Deliberate test error');
+      server.tool(
+        'failing_tool',
+        'Fails',
+        { type: 'object', properties: {} },
+        async () => {
+          throw new Error('Deliberate test error');
+        },
+      );
+
+      await server.handleMessage({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'initialize',
+        params: {},
       });
 
-      await server.handleMessage({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} });
-
       const response = await server.handleMessage(
-        { jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'failing_tool', arguments: {} } },
-        { ownerEmail: 'test@example.com' }
+        {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: { name: 'failing_tool', arguments: {} },
+        },
+        { ownerEmail: 'test@example.com' },
       );
 
       const parsed = JSON.parse(response);
       assert.ok(parsed.result.isError);
-      assert.ok(parsed.result.content[0].text.includes('Deliberate test error'));
+      assert.ok(
+        parsed.result.content[0].text.includes('Deliberate test error'),
+      );
     });
   });
 
@@ -199,7 +276,7 @@ describe('MCP SSE Transport — Protocol', () => {
     it('sse.js uses existing validateApiKey', async () => {
       const fs = await import('node:fs/promises');
       const content = await fs.readFile(path.join(MCP_DIR, 'sse.js'), 'utf8');
-      assert.ok(content.includes("import { validateApiKey }"));
+      assert.ok(content.includes('import { validateApiKey }'));
       assert.ok(content.includes('Bearer'));
     });
 

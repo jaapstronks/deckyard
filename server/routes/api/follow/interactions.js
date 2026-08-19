@@ -44,19 +44,30 @@ import { liveInteractionKind } from '../../../../shared/slide-types/runtime.js';
 
 export async function handleFollowInteractionsCurrent(
   { repoRoot, req, res, url },
-  presentationId
+  presentationId,
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
   const lang = normalizeLang(url.searchParams.get('lang'));
-  const state = await getFollowStateForPresentation(followAudienceScope(repoRoot), presentationId);
-  const pres0 = await getPresentationCached(followAudienceScope(repoRoot), presentationId);
+  const state = await getFollowStateForPresentation(
+    followAudienceScope(repoRoot),
+    presentationId,
+  );
+  const pres0 = await getPresentationCached(
+    followAudienceScope(repoRoot),
+    presentationId,
+  );
   const caps = computeAudienceCapabilitiesFromState(state, pres0);
 
   const dev = ensureInteractionDeviceCookie(req);
   const extraHeaders = dev.setCookie ? { 'Set-Cookie': dev.setCookie } : {};
 
   if (state.status !== 'live' || !state.sessionId) {
-    serveJson(res, 200, { ...state, capabilities: caps, interaction: null }, extraHeaders);
+    serveJson(
+      res,
+      200,
+      { ...state, capabilities: caps, interaction: null },
+      extraHeaders,
+    );
     return true;
   }
   if (!pres0) return notFound(res);
@@ -77,7 +88,7 @@ export async function handleFollowInteractionsCurrent(
         capabilities: caps,
         interaction: null,
       },
-      extraHeaders
+      extraHeaders,
     );
     return true;
   }
@@ -88,7 +99,8 @@ export async function handleFollowInteractionsCurrent(
     slideType === 'likert-slider-slide'
       ? slider10InteractionFromSlide(slide)
       : null;
-  const feedback = type === 'feedback' ? feedbackInteractionFromSlide(slide) : null;
+  const feedback =
+    type === 'feedback' ? feedbackInteractionFromSlide(slide) : null;
   const options = slider
     ? slider.options
     : type === 'likert'
@@ -101,8 +113,8 @@ export async function handleFollowInteractionsCurrent(
     : feedback
       ? feedback.question
       : type === 'likert'
-      ? likertQuestionFromSlide(slide)
-      : pollQuestionFromSlide(slide);
+        ? likertQuestionFromSlide(slide)
+        : pollQuestionFromSlide(slide);
   const optionCount = type === 'feedback' ? 0 : options.length;
 
   // Ensure a session-scoped interaction exists even before the first vote.
@@ -110,38 +122,62 @@ export async function handleFollowInteractionsCurrent(
   // below is the authoritative one, and it answers `null` for exactly the
   // sessions an ensure failure would have named.
   if (type === 'feedback') {
-    await ensureFeedbackForSlide(followAudienceScope(repoRoot), state.sessionId, {
-      slideId,
-    });
+    await ensureFeedbackForSlide(
+      followAudienceScope(repoRoot),
+      state.sessionId,
+      {
+        slideId,
+      },
+    );
   } else if (type === 'likert') {
-    await ensureLikertInteractionForSlide(followAudienceScope(repoRoot), state.sessionId, {
-      slideId,
-      optionCount,
-    });
+    await ensureLikertInteractionForSlide(
+      followAudienceScope(repoRoot),
+      state.sessionId,
+      {
+        slideId,
+        optionCount,
+      },
+    );
   } else {
-    await ensurePollInteractionForSlide(followAudienceScope(repoRoot), state.sessionId, {
-      slideId,
-      optionCount,
-    });
+    await ensurePollInteractionForSlide(
+      followAudienceScope(repoRoot),
+      state.sessionId,
+      {
+        slideId,
+        optionCount,
+      },
+    );
   }
 
   const agg =
     type === 'feedback'
-      ? await getFeedbackAggregate(followAudienceScope(repoRoot), state.sessionId, {
-          slideId,
-          deviceId: dev.id,
-        })
+      ? await getFeedbackAggregate(
+          followAudienceScope(repoRoot),
+          state.sessionId,
+          {
+            slideId,
+            deviceId: dev.id,
+          },
+        )
       : type === 'likert'
-        ? await getLikertInteractionAggregate(followAudienceScope(repoRoot), state.sessionId, {
-            slideId,
-            deviceId: dev.id,
-            optionCount,
-          })
-        : await getPollInteractionAggregate(followAudienceScope(repoRoot), state.sessionId, {
-            slideId,
-            deviceId: dev.id,
-            optionCount,
-          });
+        ? await getLikertInteractionAggregate(
+            followAudienceScope(repoRoot),
+            state.sessionId,
+            {
+              slideId,
+              deviceId: dev.id,
+              optionCount,
+            },
+          )
+        : await getPollInteractionAggregate(
+            followAudienceScope(repoRoot),
+            state.sessionId,
+            {
+              slideId,
+              deviceId: dev.id,
+              optionCount,
+            },
+          );
 
   serveJson(
     res,
@@ -172,7 +208,7 @@ export async function handleFollowInteractionsCurrent(
       },
       interactionState: agg,
     },
-    extraHeaders
+    extraHeaders,
   );
   return true;
 }
@@ -180,17 +216,28 @@ export async function handleFollowInteractionsCurrent(
 export async function handleFollowInteractionState(
   { repoRoot, req, res },
   presentationId,
-  slideId
+  slideId,
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
-  const state = await getFollowStateForPresentation(followAudienceScope(repoRoot), presentationId);
-  const pres = await getPresentationCached(followAudienceScope(repoRoot), presentationId);
+  const state = await getFollowStateForPresentation(
+    followAudienceScope(repoRoot),
+    presentationId,
+  );
+  const pres = await getPresentationCached(
+    followAudienceScope(repoRoot),
+    presentationId,
+  );
   const caps = computeAudienceCapabilitiesFromState(state, pres);
   const dev = ensureInteractionDeviceCookie(req);
   const extraHeaders = dev.setCookie ? { 'Set-Cookie': dev.setCookie } : {};
 
   if (state.status !== 'live' || !state.sessionId) {
-    serveJson(res, 200, { ...state, capabilities: caps, interactionState: null }, extraHeaders);
+    serveJson(
+      res,
+      200,
+      { ...state, capabilities: caps, interactionState: null },
+      extraHeaders,
+    );
     return true;
   }
   if (!pres) return notFound(res);
@@ -199,37 +246,53 @@ export async function handleFollowInteractionState(
   const currentSlideId = String(state.slideId || '').trim();
   const requested = String(slideId || '').trim();
   if (!requested || requested !== currentSlideId)
-    return badRequest(res, 'interaction state is only available for the current slide');
+    return badRequest(
+      res,
+      'interaction state is only available for the current slide',
+    );
 
   const slide = findSlideById(pres, requested);
   const slideType = String(state.slideType || '');
   const type = liveInteractionKind(slideType);
-  if (!slide || !type) return badRequest(res, 'current slide is not interactive');
+  if (!slide || !type)
+    return badRequest(res, 'current slide is not interactive');
 
   const optionCount = getOptionCountForSlide(slideType, slide);
   const agg =
     type === 'feedback'
-      ? await getFeedbackAggregate(followAudienceScope(repoRoot), state.sessionId, {
-          slideId: requested,
-          deviceId: dev.id,
-        })
+      ? await getFeedbackAggregate(
+          followAudienceScope(repoRoot),
+          state.sessionId,
+          {
+            slideId: requested,
+            deviceId: dev.id,
+          },
+        )
       : type === 'likert'
-        ? await getLikertInteractionAggregate(followAudienceScope(repoRoot), state.sessionId, {
-            slideId: requested,
-            deviceId: dev.id,
-            optionCount,
-          })
-        : await getPollInteractionAggregate(followAudienceScope(repoRoot), state.sessionId, {
-            slideId: requested,
-            deviceId: dev.id,
-            optionCount,
-          });
+        ? await getLikertInteractionAggregate(
+            followAudienceScope(repoRoot),
+            state.sessionId,
+            {
+              slideId: requested,
+              deviceId: dev.id,
+              optionCount,
+            },
+          )
+        : await getPollInteractionAggregate(
+            followAudienceScope(repoRoot),
+            state.sessionId,
+            {
+              slideId: requested,
+              deviceId: dev.id,
+              optionCount,
+            },
+          );
 
   serveJson(
     res,
     200,
     { ...state, capabilities: caps, interactionState: agg },
-    extraHeaders
+    extraHeaders,
   );
   return true;
 }
@@ -237,14 +300,20 @@ export async function handleFollowInteractionState(
 export async function handleFollowInteractionVote(
   { repoRoot, req, res },
   presentationId,
-  slideId
+  slideId,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-  const state = await getFollowStateForPresentation(followAudienceScope(repoRoot), presentationId);
+  const state = await getFollowStateForPresentation(
+    followAudienceScope(repoRoot),
+    presentationId,
+  );
   if (state.status !== 'live' || !state.sessionId)
     return badRequest(res, 'Presentation is not live');
 
-  const pres = await getPresentationCached(followAudienceScope(repoRoot), presentationId);
+  const pres = await getPresentationCached(
+    followAudienceScope(repoRoot),
+    presentationId,
+  );
   const caps = computeAudienceCapabilitiesFromState(state, pres);
   if (!pres) return notFound(res);
 
@@ -268,7 +337,7 @@ export async function handleFollowInteractionVote(
   if (!optionCount)
     return badRequest(
       res,
-      type === 'likert' ? 'likert has no options' : 'poll has no options'
+      type === 'likert' ? 'likert has no options' : 'poll has no options',
     );
 
   const parsed = await requireJsonBody(req, res);
@@ -280,20 +349,30 @@ export async function handleFollowInteractionVote(
 
   const result =
     type === 'likert'
-      ? await voteLikertInteraction(followAudienceScope(repoRoot), state.sessionId, {
-          slideId: requested,
-          deviceId: dev.id,
-          optionIndex,
-          optionCount,
-        })
-      : await votePollInteraction(followAudienceScope(repoRoot), state.sessionId, {
-          slideId: requested,
-          deviceId: dev.id,
-          optionIndex,
-          optionCount,
-        });
+      ? await voteLikertInteraction(
+          followAudienceScope(repoRoot),
+          state.sessionId,
+          {
+            slideId: requested,
+            deviceId: dev.id,
+            optionIndex,
+            optionCount,
+          },
+        )
+      : await votePollInteraction(
+          followAudienceScope(repoRoot),
+          state.sessionId,
+          {
+            slideId: requested,
+            deviceId: dev.id,
+            optionIndex,
+            optionCount,
+          },
+        );
   if (!result.ok) {
-    jsonError(res, getErrorStatus(result.reason), result.reason, undefined, { headers: extraHeaders });
+    jsonError(res, getErrorStatus(result.reason), result.reason, undefined, {
+      headers: extraHeaders,
+    });
     return true;
   }
 
@@ -305,7 +384,7 @@ export async function handleFollowInteractionVote(
       capabilities: caps,
       interactionState: result.aggregate,
     },
-    extraHeaders
+    extraHeaders,
   );
   return true;
 }
@@ -313,14 +392,20 @@ export async function handleFollowInteractionVote(
 export async function handleFollowInteractionFeedback(
   { repoRoot, req, res },
   presentationId,
-  slideId
+  slideId,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-  const state = await getFollowStateForPresentation(followAudienceScope(repoRoot), presentationId);
+  const state = await getFollowStateForPresentation(
+    followAudienceScope(repoRoot),
+    presentationId,
+  );
   if (state.status !== 'live' || !state.sessionId)
     return badRequest(res, 'Presentation is not live');
 
-  const pres = await getPresentationCached(followAudienceScope(repoRoot), presentationId);
+  const pres = await getPresentationCached(
+    followAudienceScope(repoRoot),
+    presentationId,
+  );
   const caps = computeAudienceCapabilitiesFromState(state, pres);
   if (!pres) return notFound(res);
 
@@ -340,13 +425,19 @@ export async function handleFollowInteractionFeedback(
   if (!parsed.ok) return true;
   const body = parsed.body;
   const text = getString(body, 'text');
-  const result = await submitFeedback(followAudienceScope(repoRoot), state.sessionId, {
-    slideId: requested,
-    deviceId: dev.id,
-    text,
-  });
+  const result = await submitFeedback(
+    followAudienceScope(repoRoot),
+    state.sessionId,
+    {
+      slideId: requested,
+      deviceId: dev.id,
+      text,
+    },
+  );
   if (!result.ok) {
-    jsonError(res, getErrorStatus(result.reason), result.reason, undefined, { headers: extraHeaders });
+    jsonError(res, getErrorStatus(result.reason), result.reason, undefined, {
+      headers: extraHeaders,
+    });
     return true;
   }
   serveJson(
@@ -357,7 +448,7 @@ export async function handleFollowInteractionFeedback(
       capabilities: caps,
       interactionState: result.aggregate,
     },
-    extraHeaders
+    extraHeaders,
   );
   return true;
 }

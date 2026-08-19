@@ -60,7 +60,7 @@ export function buildPrismKatexCdnTags({
     const languageScripts = resolvePrismComponents(languages)
       .map(
         (lang) =>
-          `    <script src="${prismBase}/components/prism-${lang}.min.js"></script>`
+          `    <script src="${prismBase}/components/prism-${lang}.min.js"></script>`,
       )
       .join('\n');
     parts.push(
@@ -68,7 +68,7 @@ export function buildPrismKatexCdnTags({
     <link rel="stylesheet" href="${prismBase}/themes/prism-tomorrow.min.css" />
     <script src="${prismBase}/prism.min.js"></script>${
       languageScripts ? `\n${languageScripts}` : ''
-    }`
+    }`,
     );
   }
 
@@ -76,7 +76,7 @@ export function buildPrismKatexCdnTags({
     parts.push(
       `<!-- KaTeX for math rendering -->
     <link rel="stylesheet" href="${katexBase}/dist/katex.min.css" />
-    <script src="${katexBase}/dist/katex.min.js"></script>`
+    <script src="${katexBase}/dist/katex.min.js"></script>`,
     );
   }
 

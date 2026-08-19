@@ -1,4 +1,9 @@
-import { bgClass, escapeHtml, renderSubheadingHtml, BACKGROUND_FIELD } from '../helpers.js';
+import {
+  bgClass,
+  escapeHtml,
+  renderSubheadingHtml,
+  BACKGROUND_FIELD,
+} from '../helpers.js';
 import { markdownToSafeHtml } from '../../markdown.js';
 import { ACTIONS_FIELD, renderActionsHtml } from '../actions-field.js';
 

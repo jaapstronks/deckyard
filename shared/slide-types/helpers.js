@@ -105,10 +105,7 @@ function humanizeFilename(filename) {
   const f = String(filename || '').trim();
   if (!f) return '';
   const noExt = f.replace(/\.[a-z0-9]{2,5}$/i, '');
-  const cleaned = noExt
-    .replace(/[_-]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  const cleaned = noExt.replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
   if (!cleaned) return '';
   // Capitalize first letter, keep the rest as-is.
   return cleaned[0].toUpperCase() + cleaned.slice(1);
@@ -164,7 +161,7 @@ export function safeHref(value) {
 
 function looksLikeUuid(s) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    String(s || '').trim()
+    String(s || '').trim(),
   );
 }
 
@@ -178,26 +175,26 @@ export function youtubeEmbedUrl(input) {
       const id = u.pathname.replace(/^\//, '').trim();
       if (!id) return '';
       return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(
-        id
+        id,
       )}?rel=0&modestbranding=1`;
     }
     if (host.endsWith('youtube.com') || host.endsWith('youtube-nocookie.com')) {
       const v = u.searchParams.get('v');
       if (v) {
         return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(
-          v
+          v,
         )}?rel=0&modestbranding=1`;
       }
       const m = u.pathname.match(/\/embed\/([^/]+)/);
       if (m?.[1]) {
         return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(
-          m[1]
+          m[1],
         )}?rel=0&modestbranding=1`;
       }
       const s = u.pathname.match(/\/shorts\/([^/]+)/);
       if (s?.[1]) {
         return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(
-          s[1]
+          s[1],
         )}?rel=0&modestbranding=1`;
       }
     }
@@ -245,8 +242,7 @@ export function appendQuery(url, params) {
     const qs = Object.entries(params || {})
       .filter(([, v]) => v != null)
       .map(
-        ([k, v]) =>
-          `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`
+        ([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`,
       )
       .join('&');
     if (!qs) return raw;
@@ -268,7 +264,7 @@ export function bunnyEmbedUrlFromInput(input, { libraryId = '366590' } = {}) {
         const lib = m[1];
         const id = m[2];
         return `https://iframe.mediadelivery.net/embed/${encodeURIComponent(
-          lib
+          lib,
         )}/${encodeURIComponent(id)}`;
       }
     } catch {
@@ -281,7 +277,7 @@ export function bunnyEmbedUrlFromInput(input, { libraryId = '366590' } = {}) {
   }
   if (looksLikeUuid(raw)) {
     return `https://iframe.mediadelivery.net/embed/${encodeURIComponent(
-      libraryId
+      libraryId,
     )}/${encodeURIComponent(raw)}`;
   }
   return '';
@@ -309,7 +305,9 @@ export function curlyQuote(raw) {
 }
 
 export function bgClass(bg) {
-  const v = String(bg || 'lime').trim().toLowerCase();
+  const v = String(bg || 'lime')
+    .trim()
+    .toLowerCase();
   if (v === 'mist') return 'slide-bg-mist';
   if (v === 'lime') return 'slide-bg-lime';
   // Theme-defined variant (see shared/theme-slide-backgrounds.js). The class
@@ -326,15 +324,24 @@ export function bgClass(bg) {
  * @returns {string} CSS class name
  */
 export function bgClassExtended(bg) {
-  const v = String(bg || 'lime').trim().toLowerCase();
+  const v = String(bg || 'lime')
+    .trim()
+    .toLowerCase();
   switch (v) {
-    case 'mist': return 'slide-bg-mist';
-    case 'dark': return 'slide-bg-dark';
-    case 'accent': return 'slide-bg-accent';
-    case 'brand-1': return 'slide-bg-brand-1';
-    case 'brand-2': return 'slide-bg-brand-2';
-    case 'custom': return 'slide-bg-custom';
-    case 'lime': return 'slide-bg-lime';
+    case 'mist':
+      return 'slide-bg-mist';
+    case 'dark':
+      return 'slide-bg-dark';
+    case 'accent':
+      return 'slide-bg-accent';
+    case 'brand-1':
+      return 'slide-bg-brand-1';
+    case 'brand-2':
+      return 'slide-bg-brand-2';
+    case 'custom':
+      return 'slide-bg-custom';
+    case 'lime':
+      return 'slide-bg-lime';
     default:
       // Theme-defined variant, same rules as bgClass().
       return SLIDE_BG_ID_RE.test(v) ? `slide-bg-${v}` : 'slide-bg-lime';
@@ -446,7 +453,9 @@ export function clampInt(n, min, max, fallback) {
  * @returns {string} Trimmed subheading text or empty string
  */
 export function getSubheadingText(content) {
-  return (typeof content?.subheading === 'string' && content.subheading.trim()) || '';
+  return (
+    (typeof content?.subheading === 'string' && content.subheading.trim()) || ''
+  );
 }
 
 /**
@@ -457,7 +466,11 @@ export function getSubheadingText(content) {
  *   'subtitle') so morph transitions can target the subheading. Omit for none.
  * @returns {string} HTML string or empty string
  */
-export function renderSubheadingHtml(content, className = 'subheading', morphRole = null) {
+export function renderSubheadingHtml(
+  content,
+  className = 'subheading',
+  morphRole = null,
+) {
   const text = getSubheadingText(content);
   if (!text) return '';
   const morphAttr = morphRole ? ` data-morph-role="${morphRole}"` : '';
@@ -470,10 +483,13 @@ export function renderSubheadingHtml(content, className = 'subheading', morphRol
  * @returns {string} HTML string or empty string
  */
 export function renderBottomSubheadingHtml(content) {
-  const text = typeof content?.bottomSubheading === 'string'
-    ? content.bottomSubheading.trim()
+  const text =
+    typeof content?.bottomSubheading === 'string'
+      ? content.bottomSubheading.trim()
+      : '';
+  return text
+    ? `<p class="bottom-subheading" data-inline-field="bottomSubheading" dir="auto">${escapeHtml(text)}</p>`
     : '';
-  return text ? `<p class="bottom-subheading" data-inline-field="bottomSubheading" dir="auto">${escapeHtml(text)}</p>` : '';
 }
 
 /**
@@ -482,7 +498,10 @@ export function renderBottomSubheadingHtml(content) {
  * @returns {boolean}
  */
 export function hasBottomSubheading(content) {
-  return typeof content?.bottomSubheading === 'string' && content.bottomSubheading.trim().length > 0;
+  return (
+    typeof content?.bottomSubheading === 'string' &&
+    content.bottomSubheading.trim().length > 0
+  );
 }
 
 export function isIsoString(v) {
@@ -493,7 +512,7 @@ export function isUuid(v) {
   return (
     typeof v === 'string' &&
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-      v
+      v,
     )
   );
 }
@@ -519,7 +538,11 @@ export function cryptoUuid() {
  */
 export function getCardTitle(content, cardIndex) {
   // DEPRECATED: cardNLabel fallback - Remove after April 2026
-  return String(content?.[`card${cardIndex}Title`] || content?.[`card${cardIndex}Label`] || '').trim();
+  return String(
+    content?.[`card${cardIndex}Title`] ||
+      content?.[`card${cardIndex}Label`] ||
+      '',
+  ).trim();
 }
 
 /**
@@ -529,7 +552,11 @@ export function getCardTitle(content, cardIndex) {
  * @param {string[]} fallbackKeys - Fallback keys to check (e.g., ['steps', 'stages'])
  * @returns {Array} Array of items or empty array
  */
-export function getCollectionItems(content, primaryKey = 'items', fallbackKeys = []) {
+export function getCollectionItems(
+  content,
+  primaryKey = 'items',
+  fallbackKeys = [],
+) {
   // DEPRECATED: fallbackKeys support - Remove after April 2026
   const arr = content?.[getCollectionKey(content, primaryKey, fallbackKeys)];
   return Array.isArray(arr) ? arr : [];
@@ -545,7 +572,11 @@ export function getCollectionItems(content, primaryKey = 'items', fallbackKeys =
  * @param {string[]} fallbackKeys - Fallback keys to check (e.g., ['steps'])
  * @returns {string} The key holding the rendered collection
  */
-export function getCollectionKey(content, primaryKey = 'items', fallbackKeys = []) {
+export function getCollectionKey(
+  content,
+  primaryKey = 'items',
+  fallbackKeys = [],
+) {
   if (Array.isArray(content?.[primaryKey]) && content[primaryKey].length > 0) {
     return primaryKey;
   }
@@ -679,13 +710,20 @@ export function imagePlaceholderHtml({
   compact = false,
   attrs = '',
 } = {}) {
-  const classes = ['image-placeholder', className, compact ? 'is-compact' : '', 'is-empty']
+  const classes = [
+    'image-placeholder',
+    className,
+    compact ? 'is-compact' : '',
+    'is-empty',
+  ]
     .filter(Boolean)
     .join(' ');
   // String() first: escapeHtml() collapses falsy input to '', which would silently
   // drop index 0 — the first slot of every deck.
   const photoAttr =
-    index === undefined || index === null ? '' : ` data-inline-photo="${escapeHtml(String(index))}"`;
+    index === undefined || index === null
+      ? ''
+      : ` data-inline-photo="${escapeHtml(String(index))}"`;
   const inner = imagePlaceholderInnerHtml(compact ? '' : label);
   return `<div class="${classes}"${photoAttr}${attrs} aria-hidden="true">${inner}</div>`;
 }

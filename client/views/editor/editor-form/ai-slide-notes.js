@@ -46,7 +46,10 @@ export function buildAiReasoningPanel({ h, slide }) {
     altCode.textContent = alt.type;
     // One key for the whole suggestion: {type} marks where the <code> node
     // goes, so translations control word order and punctuation.
-    const tpl = t('editor.slide.aiAlternativeSuggestion', 'Consider {type} — {reason}');
+    const tpl = t(
+      'editor.slide.aiAlternativeSuggestion',
+      'Consider {type} — {reason}',
+    );
     const [beforeType, afterType = ''] = tpl.split('{type}');
     const fillReason = (s) => s.replace('{reason}', () => String(alt.reason));
     altDiv.append(
@@ -54,7 +57,7 @@ export function buildAiReasoningPanel({ h, slide }) {
       document.createTextNode(' '),
       document.createTextNode(fillReason(beforeType)),
       altCode,
-      document.createTextNode(fillReason(afterType))
+      document.createTextNode(fillReason(afterType)),
     );
     aiSection.append(altDiv);
   }
@@ -77,7 +80,9 @@ export function buildAiWarningsPanel({ h, slide }) {
   const warningsDiv = h('div', { class: 'ai-warnings' });
   for (const w of slide._aiWarnings) {
     const p = h('p', { class: 'ai-warning-item' });
-    p.textContent = t('editor.slide.aiWarningItem', '⚠️ {warning}', { warning: w });
+    p.textContent = t('editor.slide.aiWarningItem', '⚠️ {warning}', {
+      warning: w,
+    });
     warningsDiv.append(p);
   }
   return warningsDiv;

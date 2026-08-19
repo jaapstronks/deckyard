@@ -21,15 +21,12 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } = await import(
-  '../server/storage/lifecycle.js'
-);
-const { collectContentChangedSlideIds, enforceSlideLocks } = await import(
-  '../server/storage/presentations/crud/enforce-slide-locks.js'
-);
-const { createPresentation, getPresentation, updatePresentation } = await import(
-  '../server/storage/presentations/index.js'
-);
+const { initializeStorage, __resetStorageForTests } =
+  await import('../server/storage/lifecycle.js');
+const { collectContentChangedSlideIds, enforceSlideLocks } =
+  await import('../server/storage/presentations/crud/enforce-slide-locks.js');
+const { createPresentation, getPresentation, updatePresentation } =
+  await import('../server/storage/presentations/index.js');
 
 const OWNER = 'owner@example.com';
 const OTHER = 'collab@example.com';
@@ -57,14 +54,21 @@ describe('collectContentChangedSlideIds', () => {
   });
 
   it('ignores object key order', () => {
-    const prev = [{ id: 'a', type: 'text-slide', content: { title: 'X', body: 'Y' } }];
-    const next = [{ content: { body: 'Y', title: 'X' }, type: 'text-slide', id: 'a' }];
+    const prev = [
+      { id: 'a', type: 'text-slide', content: { title: 'X', body: 'Y' } },
+    ];
+    const next = [
+      { content: { body: 'Y', title: 'X' }, type: 'text-slide', id: 'a' },
+    ];
     assert.deepEqual(collectContentChangedSlideIds(prev, next), []);
   });
 
   it('detects a content change', () => {
     const prev = [slide('a'), slide('b')];
-    const next = [slide('a'), slide('b', { content: { title: 'Anders', body: 'Tekst' } })];
+    const next = [
+      slide('a'),
+      slide('b', { content: { title: 'Anders', body: 'Tekst' } }),
+    ];
     assert.deepEqual(collectContentChangedSlideIds(prev, next), ['b']);
   });
 
@@ -94,7 +98,9 @@ describe('collectContentChangedSlideIds', () => {
 
   it('treats a missing parentId as null (legacy slides)', () => {
     const prev = [{ id: 'a', type: 'text-slide', content: { title: 'X' } }];
-    const next = [{ id: 'a', type: 'text-slide', content: { title: 'X' }, parentId: null }];
+    const next = [
+      { id: 'a', type: 'text-slide', content: { title: 'X' }, parentId: null },
+    ];
     assert.deepEqual(collectContentChangedSlideIds(prev, next), []);
   });
 });
@@ -104,11 +110,19 @@ describe('collectContentChangedSlideIds', () => {
 // ============================================================================
 
 describe('enforceSlideLocks', () => {
-  const locked = { id: 'locked', type: 'text-slide', content: { title: 'Vast' }, lockedByAuthor: true };
+  const locked = {
+    id: 'locked',
+    type: 'text-slide',
+    content: { title: 'Vast' },
+    lockedByAuthor: true,
+  };
   const free = { id: 'free', type: 'text-slide', content: { title: 'Los' } };
   const noLocks = async () => ({});
 
-  const edited = (slide) => ({ ...slide, content: { ...slide.content, title: 'Bewerkt' } });
+  const edited = (slide) => ({
+    ...slide,
+    content: { ...slide.content, title: 'Bewerkt' },
+  });
 
   it('rejects a non-author editing an author-locked slide with 423', async () => {
     await assert.rejects(
@@ -120,7 +134,10 @@ describe('enforceSlideLocks', () => {
         actorEmail: OTHER,
         loadSlideLocks: noLocks,
       }),
-      (e) => e.statusCode === 423 && e.details?.lockKind === 'author' && e.details?.slideId === 'locked'
+      (e) =>
+        e.statusCode === 423 &&
+        e.details?.lockKind === 'author' &&
+        e.details?.slideId === 'locked',
     );
   });
 
@@ -134,7 +151,7 @@ describe('enforceSlideLocks', () => {
         actorEmail: OTHER,
         loadSlideLocks: noLocks,
       }),
-      (e) => e.statusCode === 423 && e.details?.lockKind === 'author'
+      (e) => e.statusCode === 423 && e.details?.lockKind === 'author',
     );
   });
 
@@ -176,7 +193,7 @@ describe('enforceSlideLocks', () => {
       (e) =>
         e.statusCode === 423 &&
         e.details?.lockKind === 'concurrent' &&
-        e.details?.holderName === 'Christel'
+        e.details?.holderName === 'Christel',
     );
   });
 
@@ -219,7 +236,11 @@ describe('updatePresentation — slide-lock enforcement', () => {
   let deckId;
 
   before(async () => {
-    __setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+    __setTestDb(
+      createFakeDb({
+        organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+      }),
+    );
     await initializeStorage();
     const created = await createPresentation(testScope(), {
       title: 'Lock enforcement',
@@ -234,7 +255,8 @@ describe('updatePresentation — slide-lock enforcement', () => {
   });
 
   /** Fresh working copy of the stored deck. */
-  const loadDoc = async () => structuredClone(await getPresentation(testScope(), deckId));
+  const loadDoc = async () =>
+    structuredClone(await getPresentation(testScope(), deckId));
 
   /** Keep the active i18n buffer in sync with top-level slides, like the client does. */
   const syncI18n = (doc) => {
@@ -264,13 +286,13 @@ describe('updatePresentation — slide-lock enforcement', () => {
     syncI18n(doc);
     await assert.rejects(
       updatePresentation(testScope(), deckId, doc, { actorEmail: OTHER }),
-      (e) => e.statusCode === 423 && e.details?.slideId === LOCKED_ID
+      (e) => e.statusCode === 423 && e.details?.slideId === LOCKED_ID,
     );
     // Nothing was written
     const stored = await getPresentation(testScope(), deckId);
     assert.notEqual(
       stored.slides.find((s) => s.id === LOCKED_ID).content.title,
-      'Gehackt'
+      'Gehackt',
     );
   });
 
@@ -280,7 +302,7 @@ describe('updatePresentation — slide-lock enforcement', () => {
     syncI18n(doc);
     await assert.rejects(
       updatePresentation(testScope(), deckId, doc, { actorEmail: OTHER }),
-      (e) => e.statusCode === 423
+      (e) => e.statusCode === 423,
     );
   });
 
@@ -288,10 +310,12 @@ describe('updatePresentation — slide-lock enforcement', () => {
     const doc = await loadDoc();
     doc.slides.find((s) => s.id === FREE_ID).content.title = 'Aangepast';
     syncI18n(doc);
-    const updated = await updatePresentation(testScope(), deckId, doc, { actorEmail: OTHER });
+    const updated = await updatePresentation(testScope(), deckId, doc, {
+      actorEmail: OTHER,
+    });
     assert.equal(
       updated.slides.find((s) => s.id === FREE_ID).content.title,
-      'Aangepast'
+      'Aangepast',
     );
   });
 
@@ -299,7 +323,9 @@ describe('updatePresentation — slide-lock enforcement', () => {
     const doc = await loadDoc();
     doc.slides = [...doc.slides].reverse();
     syncI18n(doc);
-    const updated = await updatePresentation(testScope(), deckId, doc, { actorEmail: OTHER });
+    const updated = await updatePresentation(testScope(), deckId, doc, {
+      actorEmail: OTHER,
+    });
     assert.equal(updated.slides[0].id, FREE_ID);
   });
 
@@ -307,10 +333,12 @@ describe('updatePresentation — slide-lock enforcement', () => {
     const doc = await loadDoc();
     doc.slides.find((s) => s.id === LOCKED_ID).content.title = 'Door auteur';
     syncI18n(doc);
-    const updated = await updatePresentation(testScope(), deckId, doc, { actorEmail: OWNER });
+    const updated = await updatePresentation(testScope(), deckId, doc, {
+      actorEmail: OWNER,
+    });
     assert.equal(
       updated.slides.find((s) => s.id === LOCKED_ID).content.title,
-      'Door auteur'
+      'Door auteur',
     );
   });
 
@@ -324,7 +352,7 @@ describe('updatePresentation — slide-lock enforcement', () => {
     });
     assert.equal(
       updated.slides.find((s) => s.id === LOCKED_ID).content.title,
-      'Door admin'
+      'Door admin',
     );
   });
 
@@ -334,7 +362,7 @@ describe('updatePresentation — slide-lock enforcement', () => {
     syncI18n(doc);
     await assert.rejects(
       updatePresentation(testScope(), deckId, doc, { actorEmail: OTHER }),
-      (e) => e.statusCode === 400
+      (e) => e.statusCode === 400,
     );
   });
 
@@ -349,7 +377,7 @@ describe('updatePresentation — slide-lock enforcement', () => {
     });
     assert.equal(
       updated.slides.find((s) => s.id === LOCKED_ID).content.title,
-      'Interne write'
+      'Interne write',
     );
   });
 
@@ -362,10 +390,14 @@ describe('updatePresentation — slide-lock enforcement', () => {
       syncI18n(doc);
       // The author-lock *flag* guard still applies, so act as the author here;
       // the point is that the content-edit enforcement itself is off.
-      const updated = await updatePresentation(testScope(), deckId, doc, { actorEmail: OTHER, bypassLockCheck: false, user: { email: OWNER } });
+      const updated = await updatePresentation(testScope(), deckId, doc, {
+        actorEmail: OTHER,
+        bypassLockCheck: false,
+        user: { email: OWNER },
+      });
       assert.equal(
         updated.slides.find((s) => s.id === LOCKED_ID).content.title,
-        'Via CRDT-pad'
+        'Via CRDT-pad',
       );
     } finally {
       delete process.env.COLLAB_ENABLED;
@@ -395,12 +427,15 @@ describe('updatePresentation — slide-lock enforcement', () => {
     doc.slides = structuredClone(doc.i18n.versions['en-GB'].slides);
     doc.slides.find((s) => s.id === FREE_ID).content.title = 'EN edited';
     syncI18n(doc);
-    const updated = await updatePresentation(testScope(), deckId, doc, { actorEmail: OTHER });
+    const updated = await updatePresentation(testScope(), deckId, doc, {
+      actorEmail: OTHER,
+    });
     // Top-level slides realign to the dominant (nl) buffer; the edit lands
     // in the en-GB version buffer.
     assert.equal(
-      updated.i18n.versions['en-GB'].slides.find((s) => s.id === FREE_ID).content.title,
-      'EN edited'
+      updated.i18n.versions['en-GB'].slides.find((s) => s.id === FREE_ID)
+        .content.title,
+      'EN edited',
     );
   });
 
@@ -424,7 +459,7 @@ describe('updatePresentation — slide-lock enforcement', () => {
     syncI18n(doc);
     await assert.rejects(
       updatePresentation(testScope(), deckId, doc, { actorEmail: OTHER }),
-      (e) => e.statusCode === 423 && e.details?.slideId === LOCKED_ID
+      (e) => e.statusCode === 423 && e.details?.slideId === LOCKED_ID,
     );
   });
 });

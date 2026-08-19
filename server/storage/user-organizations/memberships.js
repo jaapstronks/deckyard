@@ -57,7 +57,8 @@ export function hasDesignerCapability(membership, orgSettings) {
 
   // Admins inherit designer capability by default (configurable)
   if (membership.role === 'admin') {
-    const settings = orgSettings && typeof orgSettings === 'object' ? orgSettings : {};
+    const settings =
+      orgSettings && typeof orgSettings === 'object' ? orgSettings : {};
     // Default to true if not explicitly set to false
     return settings.adminsAreDesigners !== false;
   }
@@ -174,7 +175,11 @@ export async function listUserOrganizations(userId) {
   return withDbGuard([], async (db) => {
     const rows = await db
       .selectFrom('user_organizations')
-      .innerJoin('organizations', 'organizations.id', 'user_organizations.organization_id')
+      .innerJoin(
+        'organizations',
+        'organizations.id',
+        'user_organizations.organization_id',
+      )
       .select([
         'user_organizations.id as membership_id',
         'user_organizations.role',
@@ -289,7 +294,7 @@ export async function getOrganizationMember(organizationId, identifier) {
         eb.or([
           eb('user_organizations.id', '=', identifier),
           eb('user_organizations.user_id', '=', identifier),
-        ])
+        ]),
       )
       .executeTakeFirst()
       .catch((err) => {
@@ -480,7 +485,11 @@ export async function removeMember(membershipId) {
  * @param {string} newOwnerUserId - New owner's user ID
  * @returns {Promise<Object>}
  */
-export async function transferOwnership(organizationId, currentOwnerUserId, newOwnerUserId) {
+export async function transferOwnership(
+  organizationId,
+  currentOwnerUserId,
+  newOwnerUserId,
+) {
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
     const now = nowIso();
 

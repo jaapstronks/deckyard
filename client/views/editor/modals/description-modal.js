@@ -1,4 +1,7 @@
-import { createPromiseModal, createBusyManager } from '../../../lib/dom/modal.js';
+import {
+  createPromiseModal,
+  createBusyManager,
+} from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 
 function countSentences(text) {
@@ -22,11 +25,17 @@ export function openDescriptionModal({
   const modal = createPromiseModal(h, {
     title:
       context === 'share'
-        ? t('editor.descriptionModal.title.share', 'Add a description before sharing')
-        : t('editor.descriptionModal.title.publish', 'Add a description before publishing'),
+        ? t(
+            'editor.descriptionModal.title.share',
+            'Add a description before sharing',
+          )
+        : t(
+            'editor.descriptionModal.title.publish',
+            'Add a description before publishing',
+          ),
     hint: t(
       'editor.descriptionModal.hint',
-      'This becomes the public meta description and is included in integrations. Keep it short: exactly two sentences.'
+      'This becomes the public meta description and is included in integrations. Keep it short: exactly two sentences.',
     ),
     closeOnBackdrop: true,
     onClose: (result) => result,
@@ -37,7 +46,10 @@ export function openDescriptionModal({
     class: 'form-input',
     style: 'min-height:120px;',
     value: String(pres.description || ''),
-    placeholder: t('editor.descriptionModal.placeholder', 'Two-sentence description…'),
+    placeholder: t(
+      'editor.descriptionModal.placeholder',
+      'Two-sentence description…',
+    ),
     autofocus: true,
   });
 
@@ -48,18 +60,28 @@ export function openDescriptionModal({
     const max = 600;
     const sCount = countSentences(v);
     if (!v.trim()) {
-      status.textContent = t('editor.descriptionModal.required', 'Please enter a description.');
+      status.textContent = t(
+        'editor.descriptionModal.required',
+        'Please enter a description.',
+      );
       return;
     }
     if (n > max) {
-      status.textContent = t('editor.descriptionModal.tooLong', 'Too long ({n}/{max}). Please shorten.', {
-        n: String(n),
-        max: String(max),
-      });
+      status.textContent = t(
+        'editor.descriptionModal.tooLong',
+        'Too long ({n}/{max}). Please shorten.',
+        {
+          n: String(n),
+          max: String(max),
+        },
+      );
       return;
     }
     if (sCount !== 2) {
-      status.textContent = t('editor.descriptionModal.twoSentences', 'Aim for exactly two sentences.');
+      status.textContent = t(
+        'editor.descriptionModal.twoSentences',
+        'Aim for exactly two sentences.',
+      );
       return;
     }
     status.textContent = t('editor.descriptionModal.ok', 'Looks good.');
@@ -74,13 +96,21 @@ export function openDescriptionModal({
       if (busyManager.isBusy()) return;
       busyManager.setBusy(true);
       try {
-        const resp = await api(`/api/presentations/${id}/description/generate`, {
-          method: 'POST',
-          body: JSON.stringify({}),
-        });
+        const resp = await api(
+          `/api/presentations/${id}/description/generate`,
+          {
+            method: 'POST',
+            body: JSON.stringify({}),
+          },
+        );
         const d = typeof resp?.description === 'string' ? resp.description : '';
         if (!d.trim())
-          throw new Error(t('editor.descriptionModal.generateFailed', 'Could not generate a description.'));
+          throw new Error(
+            t(
+              'editor.descriptionModal.generateFailed',
+              'Could not generate a description.',
+            ),
+          );
         ta.value = d.trim();
         sync();
       } catch (e) {
@@ -125,7 +155,12 @@ export function openDescriptionModal({
   });
 
   // Use busy manager to control all interactive elements
-  const busyManager = createBusyManager([btnCancel, btnContinue, btnGenerate, ta]);
+  const busyManager = createBusyManager([
+    btnCancel,
+    btnContinue,
+    btnGenerate,
+    ta,
+  ]);
 
   btnRow.append(btnGenerate, btnCancel, btnContinue);
 

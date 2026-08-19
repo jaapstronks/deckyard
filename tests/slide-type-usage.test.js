@@ -49,7 +49,7 @@ test('normalizeUsage dedents the indentation an author never meant to send', () 
   `;
   assert.equal(
     normalizeUsage(raw),
-    'Cijfers komen uit de vastgestelde kwartaalrapportage.\nVermeld altijd de peildatum.'
+    'Cijfers komen uit de vastgestelde kwartaalrapportage.\nVermeld altijd de peildatum.',
   );
 });
 
@@ -64,14 +64,30 @@ test('normalizeUsage strips stray control characters, keeping newlines and tabs'
 });
 
 test('normalizeUsage treats nothing-to-say as null, whatever shape it arrives in', () => {
-  for (const value of ['', '   ', '\n\n\t\n', null, undefined, 42, {}, () => 'x']) {
-    assert.equal(normalizeUsage(value), null, `${String(value)} should normalize to null`);
+  for (const value of [
+    '',
+    '   ',
+    '\n\n\t\n',
+    null,
+    undefined,
+    42,
+    {},
+    () => 'x',
+  ]) {
+    assert.equal(
+      normalizeUsage(value),
+      null,
+      `${String(value)} should normalize to null`,
+    );
   }
 });
 
 test('validateUsage rejects on the authoring path instead of silently shortening', () => {
   const tooLong = 'a'.repeat(USAGE_MAX_LENGTH + 1);
-  assert.deepEqual(validateUsage(tooLong), { ok: false, reason: 'usage_too_long' });
+  assert.deepEqual(validateUsage(tooLong), {
+    ok: false,
+    reason: 'usage_too_long',
+  });
 
   // Exactly at the cap is fine — the boundary is inclusive.
   const atCap = 'a'.repeat(USAGE_MAX_LENGTH);
@@ -79,8 +95,14 @@ test('validateUsage rejects on the authoring path instead of silently shortening
 
   // A non-string is a different failure from an over-long one: the caller maps
   // them to different messages.
-  assert.deepEqual(validateUsage({ text: 'x' }), { ok: false, reason: 'invalid_usage' });
-  assert.deepEqual(validateUsage(() => 'x'), { ok: false, reason: 'invalid_usage' });
+  assert.deepEqual(validateUsage({ text: 'x' }), {
+    ok: false,
+    reason: 'invalid_usage',
+  });
+  assert.deepEqual(
+    validateUsage(() => 'x'),
+    { ok: false, reason: 'invalid_usage' },
+  );
 
   // Absent means "no rule", which is valid and stays null rather than ''.
   assert.deepEqual(validateUsage(undefined), { ok: true, usage: null });
@@ -101,7 +123,9 @@ test('clampUsage truncates on the load path instead of killing the type', () => 
 
 test('a Tier-2 rule reaches the agent, after the schema', () => {
   const resolved = resolveAgentSlideTypes({
-    customSlideTypes: [{ ...CUSTOM_TYPE, usage: '  Altijd de peildatum vermelden.  ' }],
+    customSlideTypes: [
+      { ...CUSTOM_TYPE, usage: '  Altijd de peildatum vermelden.  ' },
+    ],
   });
 
   const entry = resolved['custom-kwartaalcijfers'];
@@ -137,16 +161,23 @@ test('a type with no rule carries no usage key at all', () => {
 
 test('an over-long stored rule is truncated on the way out, not passed through', () => {
   const resolved = resolveAgentSlideTypes({
-    customSlideTypes: [{ ...CUSTOM_TYPE, usage: 'c'.repeat(USAGE_MAX_LENGTH * 3) }],
+    customSlideTypes: [
+      { ...CUSTOM_TYPE, usage: 'c'.repeat(USAGE_MAX_LENGTH * 3) },
+    ],
   });
   // The write path rejects this, so it can only exist in a row written before
   // the cap. The response is the last place it can still be bounded.
-  assert.equal(resolved['custom-kwartaalcijfers'].usage.length, USAGE_MAX_LENGTH);
+  assert.equal(
+    resolved['custom-kwartaalcijfers'].usage.length,
+    USAGE_MAX_LENGTH,
+  );
 });
 
 test('usage does not promote a Tier-2 type to documented', () => {
   const resolved = resolveAgentSlideTypes({
-    customSlideTypes: [{ ...CUSTOM_TYPE, usage: 'Altijd de peildatum vermelden.' }],
+    customSlideTypes: [
+      { ...CUSTOM_TYPE, usage: 'Altijd de peildatum vermelden.' },
+    ],
   });
   // `documented` means editorial copy on the description/bestFor axis, which
   // Tier 2 has no columns for. Two meanings in one flag is one too many.

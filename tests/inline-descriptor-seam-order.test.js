@@ -34,7 +34,9 @@ import {
 
 /** A descriptor shaped like one a fork would declare on its definition. */
 const FORK_DESCRIPTOR = {
-  ghosts: [{ field: 'kicker', anchors: [{ sel: '.acme-headline', pos: 'before' }] }],
+  ghosts: [
+    { field: 'kicker', anchors: [{ sel: '.acme-headline', pos: 'before' }] },
+  ],
   formText: ['headline', 'kicker', 'sponsor'],
 };
 
@@ -53,7 +55,7 @@ test('a fork override of a core name gets its OWN descriptor (definition-first)'
     getInlineDescriptor(type, def),
     FORK_DESCRIPTOR,
     'the fork markup is what the browser draws for an override, so the fork ' +
-      'descriptor must win over core'
+      'descriptor must win over core',
   );
   assert.deepEqual(getInlineFormTextKeys(type, def), FORK_DESCRIPTOR.formText);
 });
@@ -74,9 +76,12 @@ test('a fork type with a new name still gets its own descriptor', () => {
     getInlineDescriptor('acme-hero', def),
     FORK_DESCRIPTOR,
     'no core entry: the type is server-rendered from the fork markup this ' +
-      'descriptor describes'
+      'descriptor describes',
   );
-  assert.deepEqual(getInlineFormTextKeys('acme-hero', def), FORK_DESCRIPTOR.formText);
+  assert.deepEqual(
+    getInlineFormTextKeys('acme-hero', def),
+    FORK_DESCRIPTOR.formText,
+  );
 });
 
 test('a type nobody describes resolves to null, not a throw', () => {
@@ -102,18 +107,18 @@ test('the premise: a fork override of a core name is routed to server rendering'
     assert.equal(
       isServerOverriddenType('title-slide'),
       true,
-      'the head global names title-slide as a fork override'
+      'the head global names title-slide as a fork override',
     );
     assert.equal(
       needsServerRender('title-slide'),
       true,
       'a bundled core name the server overrides must still be server-rendered, ' +
-        'so the browser draws the fork markup def.inline describes'
+        'so the browser draws the fork markup def.inline describes',
     );
     assert.equal(
       needsServerRender('content-slide'),
       false,
-      'a core name the fork did NOT override stays client-rendered'
+      'a core name the fork did NOT override stays client-rendered',
     );
   } finally {
     if (hadWindow) globalThis.window = prevWindow;

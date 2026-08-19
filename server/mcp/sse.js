@@ -75,7 +75,11 @@ function destroySession(sessionId) {
   if (!session) return;
   session.closeSse?.();
   if (session.sseResponse) {
-    try { session.sseResponse.end(); } catch { /* ignore */ }
+    try {
+      session.sseResponse.end();
+    } catch {
+      /* ignore */
+    }
   }
   sessions.delete(sessionId);
 }
@@ -130,7 +134,8 @@ function sendSseEvent(res, data, eventType) {
 
 // ─── Request body parsing ────────────────────────────────────────────────
 
-function readBody(req, limit = 1_048_576) { // 1MB limit
+function readBody(req, limit = 1_048_576) {
+  // 1MB limit
   return new Promise((resolve, reject) => {
     const chunks = [];
     let size = 0;
@@ -177,7 +182,8 @@ export function createSseHandler(server, options = {}) {
       res.writeHead(204, {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Authorization, Content-Type, Mcp-Session-Id',
+        'Access-Control-Allow-Headers':
+          'Authorization, Content-Type, Mcp-Session-Id',
         'Access-Control-Expose-Headers': 'Mcp-Session-Id',
         'Access-Control-Max-Age': '86400',
       });
@@ -219,16 +225,19 @@ async function handlePost(server, req, res, basePath) {
   if (!auth.ok) {
     const status = auth.reason === 'unavailable' ? 503 : 401;
     res.writeHead(status, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
-      jsonrpc: '2.0',
-      id: null,
-      error: {
-        code: -32000,
-        message: auth.reason === 'unavailable'
-          ? 'Authentication service unavailable'
-          : 'Unauthorized — provide a valid API key via Bearer token',
-      },
-    }));
+    res.end(
+      JSON.stringify({
+        jsonrpc: '2.0',
+        id: null,
+        error: {
+          code: -32000,
+          message:
+            auth.reason === 'unavailable'
+              ? 'Authentication service unavailable'
+              : 'Unauthorized — provide a valid API key via Bearer token',
+        },
+      }),
+    );
     return true;
   }
 
@@ -239,11 +248,13 @@ async function handlePost(server, req, res, basePath) {
     body = JSON.parse(raw);
   } catch (err) {
     res.writeHead(400, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
-      jsonrpc: '2.0',
-      id: null,
-      error: { code: -32700, message: 'Parse error: ' + err.message },
-    }));
+    res.end(
+      JSON.stringify({
+        jsonrpc: '2.0',
+        id: null,
+        error: { code: -32700, message: 'Parse error: ' + err.message },
+      }),
+    );
     return true;
   }
 
@@ -266,21 +277,32 @@ async function handlePost(server, req, res, basePath) {
     session = getSession(sessionId);
     if (!session) {
       res.writeHead(404, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
-        jsonrpc: '2.0',
-        id: body.id ?? null,
-        error: { code: -32000, message: 'Session expired or invalid. Send initialize to start a new session.' },
-      }));
+      res.end(
+        JSON.stringify({
+          jsonrpc: '2.0',
+          id: body.id ?? null,
+          error: {
+            code: -32000,
+            message:
+              'Session expired or invalid. Send initialize to start a new session.',
+          },
+        }),
+      );
       return true;
     }
     // Verify same API key owner
     if (session.ownerEmail !== auth.apiKey.ownerEmail) {
       res.writeHead(403, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
-        jsonrpc: '2.0',
-        id: body.id ?? null,
-        error: { code: -32000, message: 'Session belongs to a different API key owner' },
-      }));
+      res.end(
+        JSON.stringify({
+          jsonrpc: '2.0',
+          id: body.id ?? null,
+          error: {
+            code: -32000,
+            message: 'Session belongs to a different API key owner',
+          },
+        }),
+      );
       return true;
     }
   } else if (body.method !== 'initialize') {
@@ -346,7 +368,12 @@ async function handleGet(req, res) {
   const sessionId = req.headers['mcp-session-id'];
   if (!sessionId) {
     res.writeHead(400, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: 'Missing Mcp-Session-Id header. POST an initialize request first.' }));
+    res.end(
+      JSON.stringify({
+        error:
+          'Missing Mcp-Session-Id header. POST an initialize request first.',
+      }),
+    );
     return true;
   }
 
@@ -359,7 +386,11 @@ async function handleGet(req, res) {
 
   // Close existing SSE stream if any
   if (session.sseResponse) {
-    try { session.sseResponse.end(); } catch { /* ignore */ }
+    try {
+      session.sseResponse.end();
+    } catch {
+      /* ignore */
+    }
     session.closeSse?.();
   }
 
@@ -381,7 +412,11 @@ async function handleGet(req, res) {
   session.closeSse = stream.close;
 
   // Send initial connected event
-  sendSseEvent(res, { type: 'session', status: 'connected', sessionId: session.id }, 'endpoint');
+  sendSseEvent(
+    res,
+    { type: 'session', status: 'connected', sessionId: session.id },
+    'endpoint',
+  );
 
   return true;
 }

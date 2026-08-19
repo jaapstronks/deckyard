@@ -37,7 +37,9 @@
   border-radius: var(--ps-radius-md);
   overflow: hidden;
   background: hsl(var(--app-bg-elevated));
-  transition: opacity 0.15s ease, border-color 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .slide-type-curation-card.is-disabled {
@@ -83,7 +85,11 @@
 /* Video slide mockup */
 .slide-type-curation-thumb.is-video-mock,
 .slide-type-preview-thumb.is-video-mock {
-  background: linear-gradient(135deg, hsl(220 15% 20%) 0%, hsl(220 20% 12%) 100%);
+  background: linear-gradient(
+    135deg,
+    hsl(220 15% 20%) 0%,
+    hsl(220 20% 12%) 100%
+  );
 }
 
 .slide-type-curation-video-mock {
@@ -100,7 +106,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(145deg, hsl(220 15% 28%) 0%, hsl(220 18% 18%) 100%);
+  background: linear-gradient(
+    145deg,
+    hsl(220 15% 28%) 0%,
+    hsl(220 18% 18%) 100%
+  );
   border-radius: 4px;
   border: 1px solid hsl(0 0% 100% / 0.1);
 }
@@ -149,7 +159,7 @@
   line-height: 1.2;
 }
 
-.slide-type-curation-info input[type="checkbox"] {
+.slide-type-curation-info input[type='checkbox'] {
   flex-shrink: 0;
   width: 16px;
   height: 16px;
@@ -278,7 +288,7 @@
   cursor: pointer;
 }
 
-.slide-type-preview-toggle input[type="checkbox"] {
+.slide-type-preview-toggle input[type='checkbox'] {
   width: 16px;
   height: 16px;
   accent-color: hsl(var(--app-accent-primary));

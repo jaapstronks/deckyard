@@ -75,7 +75,11 @@ describe('identity resolver — Postgres mode (users table present)', () => {
   it('normalizes the email before looking it up (case + whitespace)', async () => {
     const res = await resolveIdentityByEmail('  Alice@Example.COM  ');
     assert.equal(res.userId, ALICE_ID);
-    assert.equal(res.value, 'alice@example.com', 'the normalized value is reported back');
+    assert.equal(
+      res.value,
+      'alice@example.com',
+      'the normalized value is reported back',
+    );
     assert.equal(res.resolved, true);
   });
 
@@ -107,7 +111,7 @@ describe('identity resolver — Postgres mode (users table present)', () => {
   it('rejects an unsupported identifier kind loudly', async () => {
     await assert.rejects(
       () => resolveIdentity({ kind: 'atproto_did', value: 'did:plc:abc123' }),
-      /unsupported identifier kind/
+      /unsupported identifier kind/,
     );
   });
 });

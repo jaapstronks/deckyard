@@ -55,7 +55,14 @@ import crypto from 'node:crypto';
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 // Make sure no ambient SSO config leaks in from the environment; each SSO test
 // sets exactly what it needs.
-for (const k of ['SSO_ENABLED', 'SSO_PROVIDER', 'OIDC_ISSUER_URL', 'OIDC_CLIENT_ID', 'OIDC_CLIENT_SECRET', 'OIDC_REDIRECT_URI']) {
+for (const k of [
+  'SSO_ENABLED',
+  'SSO_PROVIDER',
+  'OIDC_ISSUER_URL',
+  'OIDC_CLIENT_ID',
+  'OIDC_CLIENT_SECRET',
+  'OIDC_REDIRECT_URI',
+]) {
   delete process.env[k];
 }
 
@@ -64,9 +71,8 @@ const OTHER_ORG = '00000000-0000-0000-0000-0000000000bb';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } = await import(
-  '../server/storage/lifecycle.js'
-);
+const { initializeStorage, __resetStorageForTests } =
+  await import('../server/storage/lifecycle.js');
 const { createStorageScope } = await import('../server/utils/context.js');
 const { handleSso } = await import('../server/routes/api/sso.js');
 const { handleProfile } = await import('../server/routes/api/profile.js');
@@ -75,17 +81,38 @@ const { handleUsers } = await import('../server/routes/api/users.js');
 /** @typedef {{email: string, name: string, organizationId: string, isAdmin?: boolean}} Actor */
 
 const ACTORS = {
-  owner: { email: 'owner@example.com', name: 'Olive Owner', organizationId: ORG },
-  viewer: { email: 'viewer@example.com', name: 'Vera Viewer', organizationId: ORG },
-  admin: { email: 'admin@example.com', name: 'Ada Admin', organizationId: ORG, isAdmin: true },
-  outsider: { email: 'otto@other.example', name: 'Otto Outsider', organizationId: OTHER_ORG },
+  owner: {
+    email: 'owner@example.com',
+    name: 'Olive Owner',
+    organizationId: ORG,
+  },
+  viewer: {
+    email: 'viewer@example.com',
+    name: 'Vera Viewer',
+    organizationId: ORG,
+  },
+  admin: {
+    email: 'admin@example.com',
+    name: 'Ada Admin',
+    organizationId: ORG,
+    isAdmin: true,
+  },
+  outsider: {
+    email: 'otto@other.example',
+    name: 'Otto Outsider',
+    organizationId: OTHER_ORG,
+  },
 };
 
 /** @type {ReturnType<typeof createFakeDb>} */
 let db;
 
 test.before(async () => {
-  __setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+  __setTestDb(
+    createFakeDb({
+      organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+    }),
+  );
   await initializeStorage();
 });
 
@@ -132,7 +159,10 @@ function seed() {
     ],
     users: Object.values(ACTORS).map(userRow),
     user_settings: [
-      settingsRow(ACTORS.viewer, { name: 'Vera Viewer', imageUrl: 'https://cdn.example/vera.png' }),
+      settingsRow(ACTORS.viewer, {
+        name: 'Vera Viewer',
+        imageUrl: 'https://cdn.example/vera.png',
+      }),
     ],
     auth_audit_log: [],
   });
@@ -189,7 +219,10 @@ function makeRes() {
  */
 async function call(handler, method, path, { as = null, body, cookie } = {}) {
   const payload = body === undefined ? '' : JSON.stringify(body);
-  const headers = { host: 'decks.example.test', 'content-type': 'application/json' };
+  const headers = {
+    host: 'decks.example.test',
+    'content-type': 'application/json',
+  };
   if (cookie) headers.cookie = cookie;
   const req = {
     method,
@@ -254,7 +287,11 @@ test('login bounces to sso_disabled when SSO is off', async () => {
 
 test('callback bounces to sso_disabled when SSO is off', async () => {
   seed();
-  const { res } = await call(handleSso, 'GET', '/api/auth/oidc/callback?code=abc&state=def');
+  const { res } = await call(
+    handleSso,
+    'GET',
+    '/api/auth/oidc/callback?code=abc&state=def',
+  );
 
   assert.equal(res.statusCode, 302);
   assert.equal(res.headers.Location, '/login?error=sso_disabled');
@@ -263,7 +300,11 @@ test('callback bounces to sso_disabled when SSO is off', async () => {
 test('a callback with SSO on but no state cookie is refused and audited', async () => {
   seed();
   await withSsoEnabled(async () => {
-    const { res } = await call(handleSso, 'GET', '/api/auth/oidc/callback?code=abc&state=def');
+    const { res } = await call(
+      handleSso,
+      'GET',
+      '/api/auth/oidc/callback?code=abc&state=def',
+    );
 
     assert.equal(res.statusCode, 302);
     assert.equal(res.headers.Location, '/login?error=sso_state');
@@ -282,7 +323,13 @@ test('a callback with SSO on but no state cookie is refused and audited', async 
 // cookie would be refused by parsing alone and prove neither.)
 function stateCookie({ exp, sig } = {}) {
   const body = Buffer.from(
-    JSON.stringify({ state: 'def', nonce: 'n', codeVerifier: 'v', returnTo: '/', exp })
+    JSON.stringify({
+      state: 'def',
+      nonce: 'n',
+      codeVerifier: 'v',
+      returnTo: '/',
+      exp,
+    }),
   ).toString('base64url');
   const realSig = crypto
     .createHmac('sha256', String(process.env.AUTH_SECRET || ''))
@@ -294,9 +341,14 @@ function stateCookie({ exp, sig } = {}) {
 test('a callback with a forged state signature is refused before any token exchange', async () => {
   seed();
   await withSsoEnabled(async () => {
-    const { res } = await call(handleSso, 'GET', '/api/auth/oidc/callback?code=abc&state=def', {
-      cookie: stateCookie({ exp: Date.now() + 60_000, sig: 'a'.repeat(43) }),
-    });
+    const { res } = await call(
+      handleSso,
+      'GET',
+      '/api/auth/oidc/callback?code=abc&state=def',
+      {
+        cookie: stateCookie({ exp: Date.now() + 60_000, sig: 'a'.repeat(43) }),
+      },
+    );
 
     assert.equal(res.statusCode, 302);
     assert.equal(res.headers.Location, '/login?error=sso_state');
@@ -306,9 +358,14 @@ test('a callback with a forged state signature is refused before any token excha
 test('a correctly signed but expired state cookie is refused', async () => {
   seed();
   await withSsoEnabled(async () => {
-    const { res } = await call(handleSso, 'GET', '/api/auth/oidc/callback?code=abc&state=def', {
-      cookie: stateCookie({ exp: Date.now() - 1000 }),
-    });
+    const { res } = await call(
+      handleSso,
+      'GET',
+      '/api/auth/oidc/callback?code=abc&state=def',
+      {
+        cookie: stateCookie({ exp: Date.now() - 1000 }),
+      },
+    );
 
     assert.equal(res.statusCode, 302);
     assert.equal(res.headers.Location, '/login?error=sso_state');
@@ -317,7 +374,11 @@ test('a correctly signed but expired state cookie is refused', async () => {
 
 test('handleSso ignores a path outside its prefix', async () => {
   seed();
-  const { res, handled } = await call(handleSso, 'GET', '/api/users/search?q=x');
+  const { res, handled } = await call(
+    handleSso,
+    'GET',
+    '/api/users/search?q=x',
+  );
 
   assert.equal(handled, false, 'not this module’s path');
   assert.equal(res.statusCode, null, 'and nothing was written');
@@ -325,7 +386,11 @@ test('handleSso ignores a path outside its prefix', async () => {
 
 test('the login route only answers GET', async () => {
   seed();
-  const { res, handled } = await call(handleSso, 'POST', '/api/auth/oidc/login');
+  const { res, handled } = await call(
+    handleSso,
+    'POST',
+    '/api/auth/oidc/login',
+  );
 
   assert.equal(handled, false, 'a POST falls through the GET-only route');
   assert.equal(res.statusCode, null);
@@ -337,34 +402,52 @@ test('the login route only answers GET', async () => {
 
 test('search returns people in the caller’s organization, not others', async () => {
   seed();
-  const { res } = await call(handleUsers, 'GET', '/api/users/search?q=example', { as: ACTORS.owner });
+  const { res } = await call(
+    handleUsers,
+    'GET',
+    '/api/users/search?q=example',
+    { as: ACTORS.owner },
+  );
 
   assert.equal(res.statusCode, 200);
   const emails = res.body.users.map((u) => u.email).sort();
-  assert.ok(emails.includes('viewer@example.com'), 'a same-org person is found');
+  assert.ok(
+    emails.includes('viewer@example.com'),
+    'a same-org person is found',
+  );
   assert.ok(emails.includes('owner@example.com'));
-  assert.ok(!emails.includes('otto@other.example'), 'a person in another org is not');
+  assert.ok(
+    !emails.includes('otto@other.example'),
+    'a person in another org is not',
+  );
 });
 
 test('search scopes to the caller’s organization, not the default one', async () => {
   seed();
   // Otto's org is not DEFAULT_ORGANIZATION_ID, so a search that silently fell
   // back to the default org would return the wrong people here.
-  const { res } = await call(handleUsers, 'GET', '/api/users/search?q=example', {
-    as: ACTORS.outsider,
-  });
+  const { res } = await call(
+    handleUsers,
+    'GET',
+    '/api/users/search?q=example',
+    {
+      as: ACTORS.outsider,
+    },
+  );
 
   assert.equal(res.statusCode, 200);
   assert.deepEqual(
     res.body.users.map((u) => u.email),
     ['otto@other.example'],
-    'only the caller’s own organization is searched'
+    'only the caller’s own organization is searched',
   );
 });
 
 test('search with an empty query returns an empty list, no query', async () => {
   const db2 = seed();
-  const { res } = await call(handleUsers, 'GET', '/api/users/search?q=', { as: ACTORS.owner });
+  const { res } = await call(handleUsers, 'GET', '/api/users/search?q=', {
+    as: ACTORS.owner,
+  });
 
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.body.users, []);
@@ -377,20 +460,31 @@ test('search honours the exclude list', async () => {
     handleUsers,
     'GET',
     '/api/users/search?q=example&exclude=owner@example.com',
-    { as: ACTORS.owner }
+    { as: ACTORS.owner },
   );
 
   assert.equal(res.statusCode, 200);
   const emails = res.body.users.map((u) => u.email);
-  assert.ok(!emails.includes('owner@example.com'), 'the excluded address is dropped');
+  assert.ok(
+    !emails.includes('owner@example.com'),
+    'the excluded address is dropped',
+  );
   assert.ok(emails.includes('viewer@example.com'));
 });
 
 test('profile lookup refuses an unauthenticated caller with a 401', async () => {
   seed();
-  const { res } = await call(handleUsers, 'GET', '/api/users/profiles?emails=viewer@example.com');
+  const { res } = await call(
+    handleUsers,
+    'GET',
+    '/api/users/profiles?emails=viewer@example.com',
+  );
 
-  assert.equal(res.statusCode, 401, 'the batch lookup is not an anonymous enumeration oracle');
+  assert.equal(
+    res.statusCode,
+    401,
+    'the batch lookup is not an anonymous enumeration oracle',
+  );
   assert.equal(res.body.error, 'unauthorized');
 });
 
@@ -400,22 +494,30 @@ test('profile lookup returns name and imageUrl per address', async () => {
     handleUsers,
     'GET',
     '/api/users/profiles?emails=viewer@example.com,ghost@example.com',
-    { as: ACTORS.owner }
+    { as: ACTORS.owner },
   );
 
   assert.equal(res.statusCode, 200);
   assert.equal(res.body.profiles['viewer@example.com'].name, 'Vera Viewer');
-  assert.equal(res.body.profiles['viewer@example.com'].imageUrl, 'https://cdn.example/vera.png');
+  assert.equal(
+    res.body.profiles['viewer@example.com'].imageUrl,
+    'https://cdn.example/vera.png',
+  );
   assert.deepEqual(
     res.body.profiles['ghost@example.com'],
     { name: '', imageUrl: '' },
-    'an unknown address resolves to an empty profile, not an error'
+    'an unknown address resolves to an empty profile, not an error',
   );
 });
 
 test('profile lookup with no addresses returns an empty map', async () => {
   seed();
-  const { res } = await call(handleUsers, 'GET', '/api/users/profiles?emails=', { as: ACTORS.owner });
+  const { res } = await call(
+    handleUsers,
+    'GET',
+    '/api/users/profiles?emails=',
+    { as: ACTORS.owner },
+  );
 
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.body.profiles, {});
@@ -423,7 +525,9 @@ test('profile lookup with no addresses returns an empty map', async () => {
 
 test('profile lookup only answers GET', async () => {
   seed();
-  const { res } = await call(handleUsers, 'POST', '/api/users/profiles', { as: ACTORS.owner });
+  const { res } = await call(handleUsers, 'POST', '/api/users/profiles', {
+    as: ACTORS.owner,
+  });
 
   assert.equal(res.statusCode, 405);
 });
@@ -442,7 +546,12 @@ test('the profile surface refuses an anonymous caller with a 401', async () => {
 
 test('handleProfile ignores a path outside its prefix', async () => {
   seed();
-  const { res, handled } = await call(handleProfile, 'GET', '/api/users/search', { as: ACTORS.owner });
+  const { res, handled } = await call(
+    handleProfile,
+    'GET',
+    '/api/users/search',
+    { as: ACTORS.owner },
+  );
 
   assert.equal(handled, false);
   assert.equal(res.statusCode, null);
@@ -450,7 +559,9 @@ test('handleProfile ignores a path outside its prefix', async () => {
 
 test('a user may clear their own profile image', async () => {
   seed();
-  const { res } = await call(handleProfile, 'DELETE', '/api/profile/image', { as: ACTORS.viewer });
+  const { res } = await call(handleProfile, 'DELETE', '/api/profile/image', {
+    as: ACTORS.viewer,
+  });
 
   assert.equal(res.statusCode, 200);
   assert.equal(res.body.ok, true);
@@ -463,22 +574,37 @@ test('an own-image upload without a media provider is a 400, not a crash', async
     body: { dataUrl: 'data:image/png;base64,AAAA' },
   });
 
-  assert.equal(res.statusCode, 400, 'the media-provider guard short-circuits before Sharp');
-  assert.equal(res.body.message, 'Media provider not initialized', 'and it is that guard, not body validation');
+  assert.equal(
+    res.statusCode,
+    400,
+    'the media-provider guard short-circuits before Sharp',
+  );
+  assert.equal(
+    res.body.message,
+    'Media provider not initialized',
+    'and it is that guard, not body validation',
+  );
 });
 
 test('an unsupported method on the own-image route is a 405', async () => {
   seed();
-  const { res } = await call(handleProfile, 'PATCH', '/api/profile/image', { as: ACTORS.owner });
+  const { res } = await call(handleProfile, 'PATCH', '/api/profile/image', {
+    as: ACTORS.owner,
+  });
 
   assert.equal(res.statusCode, 405);
 });
 
 test('the admin image route refuses a non-admin with a 403', async () => {
   seed();
-  const { res } = await call(handleProfile, 'DELETE', '/api/profile/image/viewer@example.com', {
-    as: ACTORS.owner, // a normal user, not an admin
-  });
+  const { res } = await call(
+    handleProfile,
+    'DELETE',
+    '/api/profile/image/viewer@example.com',
+    {
+      as: ACTORS.owner, // a normal user, not an admin
+    },
+  );
 
   assert.equal(res.statusCode, 403);
   assert.equal(res.body.error, 'forbidden');
@@ -486,18 +612,32 @@ test('the admin image route refuses a non-admin with a 403', async () => {
 
 test('the admin image route rejects a malformed target address with a 400', async () => {
   seed();
-  const { res } = await call(handleProfile, 'DELETE', '/api/profile/image/not-an-address', {
-    as: ACTORS.admin,
-  });
+  const { res } = await call(
+    handleProfile,
+    'DELETE',
+    '/api/profile/image/not-an-address',
+    {
+      as: ACTORS.admin,
+    },
+  );
 
-  assert.equal(res.statusCode, 400, 'the address is validated before anything is written');
+  assert.equal(
+    res.statusCode,
+    400,
+    'the address is validated before anything is written',
+  );
 });
 
 test('an admin may clear another user’s image', async () => {
   seed();
-  const { res } = await call(handleProfile, 'DELETE', '/api/profile/image/viewer@example.com', {
-    as: ACTORS.admin,
-  });
+  const { res } = await call(
+    handleProfile,
+    'DELETE',
+    '/api/profile/image/viewer@example.com',
+    {
+      as: ACTORS.admin,
+    },
+  );
 
   assert.equal(res.statusCode, 200);
   assert.equal(res.body.ok, true);
@@ -505,10 +645,15 @@ test('an admin may clear another user’s image', async () => {
 
 test('an admin upload without a media provider is a 400, after the admin check', async () => {
   seed();
-  const { res } = await call(handleProfile, 'POST', '/api/profile/image/viewer@example.com', {
-    as: ACTORS.admin,
-    body: { dataUrl: 'data:image/png;base64,AAAA' },
-  });
+  const { res } = await call(
+    handleProfile,
+    'POST',
+    '/api/profile/image/viewer@example.com',
+    {
+      as: ACTORS.admin,
+      body: { dataUrl: 'data:image/png;base64,AAAA' },
+    },
+  );
 
   assert.equal(res.statusCode, 400);
   assert.equal(res.body.message, 'Media provider not initialized');

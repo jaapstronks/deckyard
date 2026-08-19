@@ -66,7 +66,7 @@ export async function setYDocState(storageScope, id, state) {
       oc.column('presentation_id').doUpdateSet({
         state: buf,
         updated_at: timestamp,
-      })
+      }),
     )
     .execute();
   return true;

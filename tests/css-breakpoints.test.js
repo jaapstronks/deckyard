@@ -22,7 +22,10 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 const stylesDir = path.join(repoRoot, 'client', 'styles');
 
 /** The ladder. Keep in sync with docs/reference/css-breakpoints.md. */
@@ -64,7 +67,9 @@ async function cssFiles(dir) {
  * @returns {string}
  */
 function stripComments(source) {
-  return source.replace(/\/\*[\s\S]*?\*\//g, (block) => block.replace(/[^\n]/g, ' '));
+  return source.replace(/\/\*[\s\S]*?\*\//g, (block) =>
+    block.replace(/[^\n]/g, ' '),
+  );
 }
 
 /**
@@ -96,13 +101,19 @@ function mediaPreludes(source, label) {
   const out = [];
   for (const media of clean.matchAll(/@media([^{]*)\{/gi)) {
     const where = `${label}:${clean.slice(0, media.index).split('\n').length}`;
-    const conditions = [...media[1].matchAll(/(min|max)-width\s*:\s*([\d.]+)([a-z%]*)/gi)].map(
-      (cond) => {
-        const side = /** @type {'min'|'max'} */ (cond[1].toLowerCase());
-        const unit = cond[3].toLowerCase();
-        return { key: `${side}-width: ${cond[2]}${unit}`, side, value: Number(cond[2]), unit, where };
-      }
-    );
+    const conditions = [
+      ...media[1].matchAll(/(min|max)-width\s*:\s*([\d.]+)([a-z%]*)/gi),
+    ].map((cond) => {
+      const side = /** @type {'min'|'max'} */ (cond[1].toLowerCase());
+      const unit = cond[3].toLowerCase();
+      return {
+        key: `${side}-width: ${cond[2]}${unit}`,
+        side,
+        value: Number(cond[2]),
+        unit,
+        where,
+      };
+    });
     out.push({ conditions, text: media[1], where });
   }
   return out;
@@ -117,7 +128,10 @@ function mediaPreludes(source, label) {
  * @returns {boolean}
  */
 function hasUnparsedWidth(prelude) {
-  const rest = prelude.text.replace(/(min|max)-width\s*:\s*[\d.]+[a-z%]*/gi, '');
+  const rest = prelude.text.replace(
+    /(min|max)-width\s*:\s*[\d.]+[a-z%]*/gi,
+    '',
+  );
   return /\bwidth\b/i.test(rest);
 }
 
@@ -125,8 +139,11 @@ const files = await cssFiles(stylesDir);
 const preludes = (
   await Promise.all(
     files.map(async (file) =>
-      mediaPreludes(await fs.readFile(file, 'utf8'), path.relative(repoRoot, file))
-    )
+      mediaPreludes(
+        await fs.readFile(file, 'utf8'),
+        path.relative(repoRoot, file),
+      ),
+    ),
   )
 ).flat();
 const found = preludes.flatMap((p) => p.conditions);
@@ -136,7 +153,10 @@ const onLadder = (c) => c.unit === 'px' && LADDER[c.side].includes(c.value);
 
 describe('css breakpoints', () => {
   it('finds media queries to check', () => {
-    assert.ok(found.length > 0, `no @media width conditions found under ${stylesDir}`);
+    assert.ok(
+      found.length > 0,
+      `no @media width conditions found under ${stylesDir}`,
+    );
   });
 
   it('expresses every width condition in px', () => {
@@ -144,7 +164,7 @@ describe('css breakpoints', () => {
     assert.deepStrictEqual(
       wrong.map((c) => `${c.where}  ${c.key}`).sort(),
       [],
-      'Media query widths must use px (see docs/reference/css-breakpoints.md).'
+      'Media query widths must use px (see docs/reference/css-breakpoints.md).',
     );
   });
 
@@ -154,7 +174,7 @@ describe('css breakpoints', () => {
       ranged.map((p) => `${p.where}  @media${p.text.trim()}`).sort(),
       [],
       'Media Queries 4 range syntax such as (width <= 600px) is not checkable\n' +
-        'against the ladder. Use (max-width: 600px) / (min-width: 601px).'
+        'against the ladder. Use (max-width: 600px) / (min-width: 601px).',
     );
   });
 
@@ -166,7 +186,7 @@ describe('css breakpoints', () => {
       `${off.length} width condition(s) off the breakpoint ladder.\n` +
         `Use 480/640/768/1024/1280 (or min-width 481/641/769/1025/1281, or the\n` +
         `ultra-wide 1400/1600/1800). See docs/reference/css-breakpoints.md.\n` +
-        `Do not extend the ALLOWLIST in this file — it may only shrink.`
+        `Do not extend the ALLOWLIST in this file — it may only shrink.`,
     );
   });
 
@@ -177,7 +197,7 @@ describe('css breakpoints', () => {
       stale.sort(),
       [],
       `${stale.length} allowlisted value(s) no longer appear in client/styles/**.\n` +
-        `Delete them from ALLOWLIST in this file — the migration is that much done.`
+        `Delete them from ALLOWLIST in this file — the migration is that much done.`,
     );
   });
 });

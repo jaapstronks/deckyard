@@ -2,8 +2,7 @@ import { bgClass, escapeHtml, nonEmpty, BACKGROUND_FIELD } from '../helpers.js';
 import { getSlideCopy } from '../slide-copy.js';
 
 function optionsFromContent(content) {
-  const c =
-    content && typeof content === 'object' ? content : {};
+  const c = content && typeof content === 'object' ? content : {};
   // Keep the source field key with each option so inline-edit paths stay
   // correct even when a middle option is empty.
   const out = [];
@@ -183,13 +182,11 @@ export default {
         (t, i) => `
           <li class="likert-option">
             <div class="likert-option-inner on-surface-light">
-              <span class="likert-num" aria-hidden="true">${
-                i + 1
-              }</span>
+              <span class="likert-num" aria-hidden="true">${i + 1}</span>
               <span class="likert-text" data-inline-field="${t.key}" dir="auto">${escapeHtml(t.text)}</span>
             </div>
           </li>
-        `
+        `,
       )
       .join('');
 
@@ -198,7 +195,7 @@ export default {
         (_t, i) =>
           `<div class="likert-axis-tick" aria-hidden="true" style="--i:${i};">${
             i + 1
-          }</div>`
+          }</div>`,
       )
       .join('');
 

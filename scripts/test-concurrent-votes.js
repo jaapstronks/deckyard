@@ -24,7 +24,9 @@ const NUM_CLIENTS = parseInt(process.argv[3], 10) || 15;
 const VOTE_ROUNDS = parseInt(process.argv[4], 10) || 3;
 
 if (!PRESENTATION_ID) {
-  console.error('Usage: node scripts/test-concurrent-votes.js <presentationId> [numClients] [voteRounds]');
+  console.error(
+    'Usage: node scripts/test-concurrent-votes.js <presentationId> [numClients] [voteRounds]',
+  );
   console.error('');
   console.error('Make sure you have:');
   console.error('  1. The server running locally');
@@ -60,7 +62,7 @@ function request(method, path, body = null, cookies = '') {
       method,
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
+        Accept: 'application/json',
       },
     };
     if (cookies) {
@@ -73,7 +75,7 @@ function request(method, path, body = null, cookies = '') {
     const req = httpModule.request(options, (res) => {
       let data = '';
       const setCookie = res.headers['set-cookie'];
-      res.on('data', (chunk) => data += chunk);
+      res.on('data', (chunk) => (data += chunk));
       res.on('end', () => {
         try {
           resolve({
@@ -82,7 +84,12 @@ function request(method, path, body = null, cookies = '') {
             cookies: setCookie,
           });
         } catch (e) {
-          resolve({ status: res.statusCode, data, cookies: setCookie, parseError: e });
+          resolve({
+            status: res.statusCode,
+            data,
+            cookies: setCookie,
+            parseError: e,
+          });
         }
       });
     });
@@ -105,7 +112,10 @@ function extractDeviceCookie(setCookieHeaders) {
 // Create a simulated client
 async function createClient(clientId) {
   // First request to get device cookie
-  const res = await request('GET', `/api/follow/${encodeURIComponent(PRESENTATION_ID)}/interactions/current?lang=en`);
+  const res = await request(
+    'GET',
+    `/api/follow/${encodeURIComponent(PRESENTATION_ID)}/interactions/current?lang=en`,
+  );
   const cookie = extractDeviceCookie(res.cookies);
 
   if (!cookie) {
@@ -117,7 +127,10 @@ async function createClient(clientId) {
     id: clientId,
     cookie,
     slideId: res.data?.slideId,
-    optionCount: res.data?.interactionState?.optionCount || res.data?.interaction?.optionCount || 4,
+    optionCount:
+      res.data?.interactionState?.optionCount ||
+      res.data?.interaction?.optionCount ||
+      4,
     status: res.data?.status,
     slideType: res.data?.slideType,
   };
@@ -134,7 +147,7 @@ async function castVote(client, optionIndex) {
     'POST',
     `/api/follow/${encodeURIComponent(PRESENTATION_ID)}/interactions/${encodeURIComponent(client.slideId)}/vote`,
     JSON.stringify({ optionIndex }),
-    client.cookie
+    client.cookie,
   );
 
   if (res.data?.ok) {
@@ -154,65 +167,71 @@ function monitorPresenterSSE(sessionId) {
     const url = new URL(`/api/live-sessions/${sessionId}/events`, BASE_URL);
     console.log(`      SSE URL: ${url.href}`);
 
-    const req = httpModule.request({
-      hostname: url.hostname,
-      port: url.port || (isHttps ? 443 : 80),
-      path: url.pathname,
-      method: 'GET',
-      headers: { 'Accept': 'text/event-stream' },
-    }, (res) => {
-      console.log(`      SSE response status: ${res.statusCode}`);
-      if (res.statusCode === 200) {
-        stats.sseConnected = true;
-      } else if (res.statusCode === 401) {
-        console.log('      (SSE requires auth - skipping SSE monitoring)');
-      }
-      let buffer = '';
+    const req = httpModule.request(
+      {
+        hostname: url.hostname,
+        port: url.port || (isHttps ? 443 : 80),
+        path: url.pathname,
+        method: 'GET',
+        headers: { Accept: 'text/event-stream' },
+      },
+      (res) => {
+        console.log(`      SSE response status: ${res.statusCode}`);
+        if (res.statusCode === 200) {
+          stats.sseConnected = true;
+        } else if (res.statusCode === 401) {
+          console.log('      (SSE requires auth - skipping SSE monitoring)');
+        }
+        let buffer = '';
 
-      res.on('data', (chunk) => {
-        const chunkStr = chunk.toString();
-        if (process.env.DEBUG) console.log(`      [SSE chunk] ${chunkStr.slice(0, 100).replace(/\n/g, '\\n')}...`);
-        buffer += chunkStr;
+        res.on('data', (chunk) => {
+          const chunkStr = chunk.toString();
+          if (process.env.DEBUG)
+            console.log(
+              `      [SSE chunk] ${chunkStr.slice(0, 100).replace(/\n/g, '\\n')}...`,
+            );
+          buffer += chunkStr;
 
-        // Parse SSE messages from buffer
-        const messages = buffer.split('\n\n');
-        buffer = messages.pop(); // Keep incomplete message in buffer
+          // Parse SSE messages from buffer
+          const messages = buffer.split('\n\n');
+          buffer = messages.pop(); // Keep incomplete message in buffer
 
-        for (const msg of messages) {
-          if (!msg.trim()) continue;
+          for (const msg of messages) {
+            if (!msg.trim()) continue;
 
-          const lines = msg.split('\n');
-          let event = null;
-          let data = null;
+            const lines = msg.split('\n');
+            let event = null;
+            let data = null;
 
-          for (const line of lines) {
-            if (line.startsWith('event: ')) event = line.slice(7);
-            else if (line.startsWith('data: ')) data = line.slice(6);
-          }
+            for (const line of lines) {
+              if (line.startsWith('event: ')) event = line.slice(7);
+              else if (line.startsWith('data: ')) data = line.slice(6);
+            }
 
-          if (process.env.DEBUG && event) {
-            console.log(`      [SSE event] ${event}`);
-          }
-          if (event === 'interactionState' && data) {
-            stats.sseMessagesReceived++;
-            try {
-              const parsed = JSON.parse(data);
-              stats.lastTotals = parsed.totals;
-            } catch (e) {
-              stats.sseParseErrors++;
-              stats.sseCorruptedData.push({
-                error: e.message,
-                rawData: data.slice(0, 300),
-              });
-              console.error(`\n[SSE PARSE ERROR] ${e.message}`);
-              console.error(`  Raw data: ${data.slice(0, 200)}...`);
+            if (process.env.DEBUG && event) {
+              console.log(`      [SSE event] ${event}`);
+            }
+            if (event === 'interactionState' && data) {
+              stats.sseMessagesReceived++;
+              try {
+                const parsed = JSON.parse(data);
+                stats.lastTotals = parsed.totals;
+              } catch (e) {
+                stats.sseParseErrors++;
+                stats.sseCorruptedData.push({
+                  error: e.message,
+                  rawData: data.slice(0, 300),
+                });
+                console.error(`\n[SSE PARSE ERROR] ${e.message}`);
+                console.error(`  Raw data: ${data.slice(0, 200)}...`);
+              }
             }
           }
-        }
-      });
+        });
 
-      resolve({ close: () => req.destroy() });
-    });
+        resolve({ close: () => req.destroy() });
+      },
+    );
 
     req.on('error', (e) => {
       console.error('SSE connection error:', e.message);
@@ -225,7 +244,10 @@ function monitorPresenterSSE(sessionId) {
 
 // Get current session ID from the follow endpoint
 async function getSessionId() {
-  const res = await request('GET', `/api/follow/${encodeURIComponent(PRESENTATION_ID)}/interactions/current?lang=en`);
+  const res = await request(
+    'GET',
+    `/api/follow/${encodeURIComponent(PRESENTATION_ID)}/interactions/current?lang=en`,
+  );
   return res.data?.sessionId;
 }
 
@@ -247,7 +269,9 @@ async function runTest() {
 
   if (!sessionId) {
     console.error('ERROR: Could not get session ID.');
-    console.error('Make sure you have the presentation open in presenter mode.');
+    console.error(
+      'Make sure you have the presentation open in presenter mode.',
+    );
     process.exit(1);
   }
   console.log(`      Session ID: ${sessionId}`);
@@ -257,7 +281,7 @@ async function runTest() {
   const sse = await monitorPresenterSSE(sessionId);
 
   // Give SSE time to connect
-  await new Promise(r => setTimeout(r, 500));
+  await new Promise((r) => setTimeout(r, 500));
 
   // Step 3: Create simulated clients
   console.log(`[3/5] Creating ${NUM_CLIENTS} simulated clients...`);
@@ -303,7 +327,9 @@ async function runTest() {
   console.log(`[4/5] Firing ${VOTE_ROUNDS} rounds of concurrent votes...`);
 
   for (let round = 1; round <= VOTE_ROUNDS; round++) {
-    console.log(`      Round ${round}/${VOTE_ROUNDS}: ${clients.length} votes simultaneously...`);
+    console.log(
+      `      Round ${round}/${VOTE_ROUNDS}: ${clients.length} votes simultaneously...`,
+    );
 
     // All clients vote at the same time
     const votePromises = clients.map((client, idx) => {
@@ -314,12 +340,12 @@ async function runTest() {
     await Promise.all(votePromises);
 
     // Small delay between rounds to let SSE catch up
-    await new Promise(r => setTimeout(r, 200));
+    await new Promise((r) => setTimeout(r, 200));
   }
 
   // Step 5: Wait for SSE to process all messages
   console.log('[5/5] Waiting for SSE messages to settle...');
-  await new Promise(r => setTimeout(r, 1000));
+  await new Promise((r) => setTimeout(r, 1000));
 
   sse.close();
 
@@ -337,7 +363,9 @@ async function runTest() {
   const totals = stats.lastTotalsFromVote || stats.lastTotals;
   if (totals) {
     const totalVotes = totals.reduce((a, b) => a + b, 0);
-    console.log(`Final vote totals:     [${totals.join(', ')}] = ${totalVotes} total`);
+    console.log(
+      `Final vote totals:     [${totals.join(', ')}] = ${totalVotes} total`,
+    );
   }
 
   // SSE monitoring results (if connected)
@@ -373,7 +401,9 @@ async function runTest() {
     console.log('*** TEST PASSED ***');
     console.log(`All ${stats.votesSucceeded} votes succeeded.`);
     if (!stats.sseConnected) {
-      console.log('(SSE monitoring skipped - requires presenter authentication)');
+      console.log(
+        '(SSE monitoring skipped - requires presenter authentication)',
+      );
     } else if (stats.sseMessagesReceived > 0) {
       console.log('All SSE messages parsed successfully.');
     }

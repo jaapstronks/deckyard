@@ -9,19 +9,19 @@
  * Note: 'en' is normalized to 'en-GB' for backwards compatibility.
  */
 const ALL_TRANSLATION_LANGS = new Set([
-  'nl',     // Dutch
-  'en-GB',  // British English (canonical)
-  'en',     // English (alias for en-GB)
-  'de',     // German
-  'fr',     // French
-  'es',     // Spanish
-  'pt',     // Portuguese
-  'it',     // Italian
-  'pl',     // Polish
-  'fi',     // Finnish
-  'da',     // Danish
-  'sv',     // Swedish
-  'no',     // Norwegian
+  'nl', // Dutch
+  'en-GB', // British English (canonical)
+  'en', // English (alias for en-GB)
+  'de', // German
+  'fr', // French
+  'es', // Spanish
+  'pt', // Portuguese
+  'it', // Italian
+  'pl', // Polish
+  'fi', // Finnish
+  'da', // Danish
+  'sv', // Swedish
+  'no', // Norwegian
 ]);
 
 /**

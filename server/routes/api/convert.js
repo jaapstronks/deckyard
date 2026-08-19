@@ -13,9 +13,7 @@ import {
   requireJsonBody,
   withErrorHandler,
 } from '../../utils/http.js';
-import {
-  getConvertParams,
-} from '../../utils/request-validators.js';
+import { getConvertParams } from '../../utils/request-validators.js';
 import { deckToPresentationParts } from '../../../shared/slide-types.js';
 import { createLogger } from '../../utils/logger.js';
 import { sseErrorPayload, openSseStream } from '../../utils/sse.js';
@@ -27,7 +25,6 @@ import {
   SUPPORTED_MIME_TYPES,
 } from '../../utils/convert-file/index.js';
 
-
 // POST /api/convert - Convert a file to a presentation
 async function handleConvertFile({ storageScope, req, res, authedUser }) {
   const parsed = await requireJsonBody(req, res);
@@ -36,22 +33,14 @@ async function handleConvertFile({ storageScope, req, res, authedUser }) {
   const { dataUrl, filename, vendor, lang, theme } = getConvertParams(body);
 
   if (!dataUrl) {
-    return badRequest(
-      res,
-      'Expected { dataUrl: "data:..." }'
-    );
+    return badRequest(res, 'Expected { dataUrl: "data:..." }');
   }
   if (!filename) {
-    return badRequest(
-      res,
-      'Expected { filename: "..." }'
-    );
+    return badRequest(res, 'Expected { filename: "..." }');
   }
 
   // Parse the data URL
-  const dataUrlMatch = dataUrl.match(
-    /^data:([^;]+);base64,(.*)$/
-  );
+  const dataUrlMatch = dataUrl.match(/^data:([^;]+);base64,(.*)$/);
   if (!dataUrlMatch) {
     return badRequest(res, 'Invalid data URL format');
   }
@@ -67,9 +56,7 @@ async function handleConvertFile({ storageScope, req, res, authedUser }) {
   ) {
     return badRequest(
       res,
-      `Unsupported file type. Supported: ${SUPPORTED_EXTENSIONS.join(
-        ', '
-      )}`
+      `Unsupported file type. Supported: ${SUPPORTED_EXTENSIONS.join(', ')}`,
     );
   }
 
@@ -102,7 +89,7 @@ async function handleConvertFile({ storageScope, req, res, authedUser }) {
       422,
       'conversion_failed',
       report.errors.join('; ') || 'Conversion failed',
-      { details: { report } }
+      { details: { report } },
     );
     return true;
   }
@@ -113,35 +100,28 @@ async function handleConvertFile({ storageScope, req, res, authedUser }) {
 
     // Use the detected/effective language from the deck, not the original request
     const effectiveLang =
-      deck.lang ||
-      deck._generationMeta?.effectiveLang ||
-      'nl';
+      deck.lang || deck._generationMeta?.effectiveLang || 'nl';
 
     const created = await createPresentation(storageScope, {
-      title:
-        parts.title ||
-        deck.title ||
-        'Converted Presentation',
+      title: parts.title || deck.title || 'Converted Presentation',
       theme: theme,
       ownerEmail: authedUser?.email || null,
       lang: effectiveLang,
     });
 
-    const updated = await updatePresentation(storageScope,
+    const updated = await updatePresentation(
+      storageScope,
       created.id,
       {
         ...created,
-        title:
-          parts.title ||
-          deck.title ||
-          'Converted Presentation',
+        title: parts.title || deck.title || 'Converted Presentation',
         slides: parts.slides,
         settings: deck.settings || {
           stepParagraphs: true,
           transitions: { preset: 'fade' },
         },
       },
-      { actorEmail: authedUser?.email || null }
+      { actorEmail: authedUser?.email || null },
     );
 
     serveJson(res, 201, {
@@ -151,7 +131,12 @@ async function handleConvertFile({ storageScope, req, res, authedUser }) {
       detectedLang: effectiveLang, // Include detected language for client navigation
     });
   } catch {
-    jsonError(res, 500, 'presentation_create_failed', 'Failed to create presentation');
+    jsonError(
+      res,
+      500,
+      'presentation_create_failed',
+      'Failed to create presentation',
+    );
   }
 
   return true;
@@ -165,22 +150,14 @@ async function handleConvertStream({ storageScope, req, res, authedUser }) {
   const { dataUrl, filename, vendor, lang, theme } = getConvertParams(body);
 
   if (!dataUrl) {
-    return badRequest(
-      res,
-      'Expected { dataUrl: "data:..." }'
-    );
+    return badRequest(res, 'Expected { dataUrl: "data:..." }');
   }
   if (!filename) {
-    return badRequest(
-      res,
-      'Expected { filename: "..." }'
-    );
+    return badRequest(res, 'Expected { filename: "..." }');
   }
 
   // Parse the data URL
-  const dataUrlMatch = dataUrl.match(
-    /^data:([^;]+);base64,(.*)$/
-  );
+  const dataUrlMatch = dataUrl.match(/^data:([^;]+);base64,(.*)$/);
   if (!dataUrlMatch) {
     return badRequest(res, 'Invalid data URL format');
   }
@@ -196,9 +173,7 @@ async function handleConvertStream({ storageScope, req, res, authedUser }) {
   ) {
     return badRequest(
       res,
-      `Unsupported file type. Supported: ${SUPPORTED_EXTENSIONS.join(
-        ', '
-      )}`
+      `Unsupported file type. Supported: ${SUPPORTED_EXTENSIONS.join(', ')}`,
     );
   }
 
@@ -227,11 +202,8 @@ async function handleConvertStream({ storageScope, req, res, authedUser }) {
 
   // Determine file type for contextual messages
   const isPptx =
-    ext === 'pptx' ||
-    ext === 'ppt' ||
-    mimeType.includes('presentation');
-  const isPdf =
-    ext === 'pdf' || mimeType === 'application/pdf';
+    ext === 'pptx' || ext === 'ppt' || mimeType.includes('presentation');
+  const isPdf = ext === 'pdf' || mimeType === 'application/pdf';
   const isDocument =
     ext === 'docx' ||
     ext === 'rtf' ||
@@ -259,45 +231,43 @@ async function handleConvertStream({ storageScope, req, res, authedUser }) {
           'Looking for images...',
         ]
     : isPdf
-    ? isNl
-      ? [
-          'PDF-bestand laden...',
-          "Pagina's analyseren...",
-          'Tekst extraheren...',
-          'Afbeeldingen detecteren...',
-        ]
-      : [
-          'Loading PDF file...',
-          'Analyzing pages...',
-          'Extracting text content...',
-          'Detecting images...',
-        ]
-    : isDocument
-    ? isNl
-      ? [
-          'Document laden...',
-          'Tekst extraheren...',
-          'Structuur analyseren...',
-          'Secties identificeren...',
-        ]
-      : [
-          'Loading document...',
-          'Extracting text...',
-          'Analyzing structure...',
-          'Identifying sections...',
-        ]
-    : isNl
-    ? ['Bestand laden...', 'Inhoud extraheren...']
-    : ['Loading file...', 'Extracting content...'];
+      ? isNl
+        ? [
+            'PDF-bestand laden...',
+            "Pagina's analyseren...",
+            'Tekst extraheren...',
+            'Afbeeldingen detecteren...',
+          ]
+        : [
+            'Loading PDF file...',
+            'Analyzing pages...',
+            'Extracting text content...',
+            'Detecting images...',
+          ]
+      : isDocument
+        ? isNl
+          ? [
+              'Document laden...',
+              'Tekst extraheren...',
+              'Structuur analyseren...',
+              'Secties identificeren...',
+            ]
+          : [
+              'Loading document...',
+              'Extracting text...',
+              'Analyzing structure...',
+              'Identifying sections...',
+            ]
+        : isNl
+          ? ['Bestand laden...', 'Inhoud extraheren...']
+          : ['Loading file...', 'Extracting content...'];
 
   try {
     // Stream initial messages with delays
     // These are shown during file parsing which is fast, so we show them with minimal delay
     // The real waiting happens during AI processing where content-aware messages are shown
     let progress = 5;
-    const progressStep = Math.floor(
-      20 / initialMessages.length
-    );
+    const progressStep = Math.floor(20 / initialMessages.length);
 
     for (const msg of initialMessages) {
       sendEvent('status', {
@@ -336,10 +306,7 @@ async function handleConvertStream({ storageScope, req, res, authedUser }) {
           sendEvent('status', {
             message: msg,
             phase: 'convert',
-            progress: Math.min(
-              25 + statusMessages.length * 3,
-              75
-            ),
+            progress: Math.min(25 + statusMessages.length * 3, 75),
           });
         }
       },
@@ -355,17 +322,16 @@ async function handleConvertStream({ storageScope, req, res, authedUser }) {
     });
 
     // If no messages were streamed during conversion, send what we have
-    if (
-      statusMessages.length > 0 &&
-      !statusMessagesSent
-    ) {
+    if (statusMessages.length > 0 && !statusMessagesSent) {
       sendEvent('messages', { statusMessages });
     }
 
     if (!deck || report.errors.length > 0) {
       sendEvent(
         'error',
-        sseErrorPayload(report.errors.join('; ') || 'Conversion failed', { report })
+        sseErrorPayload(report.errors.join('; ') || 'Conversion failed', {
+          report,
+        }),
       );
       res.end();
       return true;
@@ -375,21 +341,15 @@ async function handleConvertStream({ storageScope, req, res, authedUser }) {
     const slideCount = deck?.slides?.length || 0;
     sendEvent('status', {
       message: isNl
-        ? `${slideCount} slide${
-            slideCount !== 1 ? 's' : ''
-          } gegenereerd`
-        : `Generated ${slideCount} slide${
-            slideCount !== 1 ? 's' : ''
-          }`,
+        ? `${slideCount} slide${slideCount !== 1 ? 's' : ''} gegenereerd`
+        : `Generated ${slideCount} slide${slideCount !== 1 ? 's' : ''}`,
       progress: 85,
       phase: 'finalize',
     });
     await new Promise((r) => setTimeout(r, 300));
 
     sendEvent('status', {
-      message: isNl
-        ? 'Presentatie opbouwen...'
-        : 'Building presentation...',
+      message: isNl ? 'Presentatie opbouwen...' : 'Building presentation...',
       progress: 90,
       phase: 'finalize',
     });
@@ -397,9 +357,7 @@ async function handleConvertStream({ storageScope, req, res, authedUser }) {
 
     // Create presentation
     sendEvent('status', {
-      message: isNl
-        ? 'Opslaan in bibliotheek...'
-        : 'Saving to library...',
+      message: isNl ? 'Opslaan in bibliotheek...' : 'Saving to library...',
       progress: 95,
       phase: 'save',
     });
@@ -408,35 +366,28 @@ async function handleConvertStream({ storageScope, req, res, authedUser }) {
 
     // Use the detected/effective language from the deck, not the original request
     const effectiveLang =
-      deck.lang ||
-      deck._generationMeta?.effectiveLang ||
-      'nl';
+      deck.lang || deck._generationMeta?.effectiveLang || 'nl';
 
     const created = await createPresentation(storageScope, {
-      title:
-        parts.title ||
-        deck.title ||
-        'Converted Presentation',
+      title: parts.title || deck.title || 'Converted Presentation',
       theme: theme,
       ownerEmail: authedUser?.email || null,
       lang: effectiveLang,
     });
 
-    const updated = await updatePresentation(storageScope,
+    const updated = await updatePresentation(
+      storageScope,
       created.id,
       {
         ...created,
-        title:
-          parts.title ||
-          deck.title ||
-          'Converted Presentation',
+        title: parts.title || deck.title || 'Converted Presentation',
         slides: parts.slides,
         settings: deck.settings || {
           stepParagraphs: true,
           transitions: { preset: 'fade' },
         },
       },
-      { actorEmail: authedUser?.email || null }
+      { actorEmail: authedUser?.email || null },
     );
 
     sendEvent('complete', {
@@ -472,8 +423,16 @@ function handleConvertStatus({ res }) {
  */
 export const ROUTES = [
   { method: 'POST', pattern: '/api/convert', handler: handleConvertFile },
-  { method: 'POST', pattern: '/api/convert/stream', handler: handleConvertStream },
-  { method: 'GET', pattern: '/api/convert/status', handler: handleConvertStatus },
+  {
+    method: 'POST',
+    pattern: '/api/convert/stream',
+    handler: handleConvertStream,
+  },
+  {
+    method: 'GET',
+    pattern: '/api/convert/status',
+    handler: handleConvertStatus,
+  },
 ];
 
 /**
@@ -482,5 +441,5 @@ export const ROUTES = [
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
 export const handleConvert = withErrorHandler('convert', (ctx) =>
-  dispatchRoutes(ROUTES, ctx)
+  dispatchRoutes(ROUTES, ctx),
 );

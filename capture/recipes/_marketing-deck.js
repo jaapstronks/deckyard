@@ -72,7 +72,8 @@ const SLIDE_SPECS = [
     },
     nl: {
       title: 'Limonadekraam Zonnehoek',
-      subheading: 'Groeiplan voor de zomer, plus een klein verzoek aan onze investeerders',
+      subheading:
+        'Groeiplan voor de zomer, plus een klein verzoek aan onze investeerders',
       meta: 'Kwartaaloverleg, keukentafel',
       background: 'lime',
       titleBlockAlign: 'left',
@@ -101,7 +102,8 @@ const SLIDE_SPECS = [
     type: 'kpi-metrics-slide',
     notes: {
       nl: 'Drie zaterdagen, verder niets. Niet verdedigen, gewoon voorlezen.',
-      'en-GB': 'Three Saturdays, nothing else. Do not defend it, just read it out.',
+      'en-GB':
+        'Three Saturdays, nothing else. Do not defend it, just read it out.',
     },
     nl: {
       headerAlign: 'left',
@@ -112,10 +114,30 @@ const SLIDE_SPECS = [
       accent: 'none',
       countUp: 'off',
       metrics: [
-        { value: '38', unit: '', label: 'Bekers verkocht', note: 'Sinds de opening' },
-        { value: '0,50', unit: '€', label: 'Prijs per beker', note: 'Rietje inbegrepen' },
-        { value: '19', unit: '€', label: 'Omzet', note: 'Citroenen van thuis niet meegerekend' },
-        { value: '3', unit: '', label: 'Vaste klanten', note: 'Twee daarvan wonen hier' },
+        {
+          value: '38',
+          unit: '',
+          label: 'Bekers verkocht',
+          note: 'Sinds de opening',
+        },
+        {
+          value: '0,50',
+          unit: '€',
+          label: 'Prijs per beker',
+          note: 'Rietje inbegrepen',
+        },
+        {
+          value: '19',
+          unit: '€',
+          label: 'Omzet',
+          note: 'Citroenen van thuis niet meegerekend',
+        },
+        {
+          value: '3',
+          unit: '',
+          label: 'Vaste klanten',
+          note: 'Twee daarvan wonen hier',
+        },
       ],
     },
     'en-GB': {
@@ -127,10 +149,30 @@ const SLIDE_SPECS = [
       accent: 'none',
       countUp: 'off',
       metrics: [
-        { value: '38', unit: '', label: 'Cups sold', note: 'Since opening day' },
-        { value: '0.50', unit: '€', label: 'Price per cup', note: 'Straw included' },
-        { value: '19', unit: '€', label: 'Revenue', note: 'Lemons from the kitchen not counted' },
-        { value: '3', unit: '', label: 'Regulars', note: 'Two of whom live here' },
+        {
+          value: '38',
+          unit: '',
+          label: 'Cups sold',
+          note: 'Since opening day',
+        },
+        {
+          value: '0.50',
+          unit: '€',
+          label: 'Price per cup',
+          note: 'Straw included',
+        },
+        {
+          value: '19',
+          unit: '€',
+          label: 'Revenue',
+          note: 'Lemons from the kitchen not counted',
+        },
+        {
+          value: '3',
+          unit: '',
+          label: 'Regulars',
+          note: 'Two of whom live here',
+        },
       ],
     },
   },
@@ -152,10 +194,18 @@ const SLIDE_SPECS = [
       bottomSubheading: 'De grootste sprong zit tussen kopen en opdrinken.',
       background: 'mist',
       items: [
-        { label: 'Loopt of fietst langs', value: '240', text: 'Fietsers meegeteld' },
+        {
+          label: 'Loopt of fietst langs',
+          value: '240',
+          text: 'Fietsers meegeteld',
+        },
         { label: 'Kijkt naar het bord', value: '86', text: 'Het bord werkt' },
         { label: 'Koopt een beker', value: '38', text: 'Het bord werkt echt' },
-        { label: 'Drinkt de beker leeg', value: '11', text: 'Hier zit onze uitdaging' },
+        {
+          label: 'Drinkt de beker leeg',
+          value: '11',
+          text: 'Hier zit onze uitdaging',
+        },
         { label: 'Komt een keer terug', value: '3', text: '' },
       ],
     },
@@ -165,10 +215,18 @@ const SLIDE_SPECS = [
       bottomSubheading: 'The biggest drop sits between buying and finishing.',
       background: 'mist',
       items: [
-        { label: 'Walks or cycles past', value: '240', text: 'Cyclists included' },
+        {
+          label: 'Walks or cycles past',
+          value: '240',
+          text: 'Cyclists included',
+        },
         { label: 'Looks at the sign', value: '86', text: 'The sign works' },
         { label: 'Buys a cup', value: '38', text: 'The sign really works' },
-        { label: 'Finishes the cup', value: '11', text: 'This is where our challenge lives' },
+        {
+          label: 'Finishes the cup',
+          value: '11',
+          text: 'This is where our challenge lives',
+        },
         { label: 'Comes back once', value: '3', text: '' },
       ],
     },
@@ -198,7 +256,8 @@ const SLIDE_SPECS = [
         '- Omzet tot nu toe: € 19,00\n' +
         '- Spaarpot: € 6,50\n' +
         '- Statiegeld, nog in te leveren: € 2,40',
-      verdict: 'Tekort € 84,10. Voorstel: een investeringsronde bij papa en mama.',
+      verdict:
+        'Tekort € 84,10. Voorstel: een investeringsronde bij papa en mama.',
       background: 'mist',
     },
     'en-GB': {
@@ -241,13 +300,21 @@ const SLIDE_SPECS = [
       bottomSubheading: '',
       background: 'mist',
       items: [
-        { date: 'Juli', title: 'Eigen spandoek', text: 'Zichtbaar vanaf de hoek' },
+        {
+          date: 'Juli',
+          title: 'Eigen spandoek',
+          text: 'Zichtbaar vanaf de hoek',
+        },
         {
           date: 'Augustus',
           title: 'Tweede kraam',
           text: 'Bij de speeltuin, mits iemand kan fietsen met een volle kan',
         },
-        { date: 'September', title: 'Wijkdekkend', text: 'Vier straten, één merk' },
+        {
+          date: 'September',
+          title: 'Wijkdekkend',
+          text: 'Vier straten, één merk',
+        },
         {
           date: 'Volgend jaar',
           title: 'Ook ijsthee',
@@ -261,13 +328,21 @@ const SLIDE_SPECS = [
       bottomSubheading: '',
       background: 'mist',
       items: [
-        { date: 'July', title: 'Our own banner', text: 'Visible from the corner' },
+        {
+          date: 'July',
+          title: 'Our own banner',
+          text: 'Visible from the corner',
+        },
         {
           date: 'August',
           title: 'A second stand',
           text: 'By the playground, if someone can cycle with a full jug',
         },
-        { date: 'September', title: 'Neighbourhood coverage', text: 'Four streets, one brand' },
+        {
+          date: 'September',
+          title: 'Neighbourhood coverage',
+          text: 'Four streets, one brand',
+        },
         {
           date: 'Next year',
           title: 'Iced tea as well',
@@ -293,9 +368,18 @@ const SLIDE_SPECS = [
       density: 'auto',
       background: 'lime',
       items: [
-        { title: '“Verfrissend. Echt heel erg verfrissend.”', text: 'Er zit veel water in.' },
-        { title: '“Je proeft de citroen goed.”', text: 'Er zit ook veel citroen in.' },
-        { title: '“Ik neem de rest mee naar huis.”', text: 'De beker is thuis nooit aangekomen.' },
+        {
+          title: '“Verfrissend. Echt heel erg verfrissend.”',
+          text: 'Er zit veel water in.',
+        },
+        {
+          title: '“Je proeft de citroen goed.”',
+          text: 'Er zit ook veel citroen in.',
+        },
+        {
+          title: '“Ik neem de rest mee naar huis.”',
+          text: 'De beker is thuis nooit aangekomen.',
+        },
         { title: '“Voor dit weer is dit precies goed.”', text: 'Het regende.' },
       ],
     },
@@ -308,9 +392,18 @@ const SLIDE_SPECS = [
       density: 'auto',
       background: 'lime',
       items: [
-        { title: '“Refreshing. Really very refreshing.”', text: 'There is a lot of water in it.' },
-        { title: '“You can really taste the lemon.”', text: 'There is a lot of lemon in it too.' },
-        { title: '“I will take the rest home.”', text: 'The cup never arrived home.' },
+        {
+          title: '“Refreshing. Really very refreshing.”',
+          text: 'There is a lot of water in it.',
+        },
+        {
+          title: '“You can really taste the lemon.”',
+          text: 'There is a lot of lemon in it too.',
+        },
+        {
+          title: '“I will take the rest home.”',
+          text: 'The cup never arrived home.',
+        },
         { title: '“Perfect for this weather.”', text: 'It was raining.' },
       ],
     },
@@ -351,7 +444,8 @@ const SLIDE_SPECS = [
     type: 'end-slide',
     notes: {
       nl: 'Het besluit hardop herhalen en dan pas naar de proeverij.',
-      'en-GB': 'Repeat the decision out loud, and only then move to the tasting.',
+      'en-GB':
+        'Repeat the decision out loud, and only then move to the tasting.',
     },
     nl: {
       title: 'Dank, en tot zaterdag',

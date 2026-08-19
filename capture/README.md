@@ -64,19 +64,19 @@ export default {
 
 Field reference:
 
-| field | required | purpose |
-|-------|----------|---------|
-| `id` | ✓ | Stable slug; matches the registry entry id without the `shot-` prefix. |
-| `output` | ✓ | Output filename; must be the basename of `registryPath`. |
-| `registryPath` | ✓ | Exact path from the website registry — the file docs reference. Sacred. |
-| `navigate` | ✓ | Path (relative to base) to open, as a string or `(ctx) => string`. |
-| `viewport` | | `{ width, height, deviceScaleFactor }`. Defaults to `1440×900 @2x`. |
-| `fullPage` | | `true` captures the whole scrollable page. Default `false`. |
-| `state` | | `async (api) => ctx`. Seed data via REST; return a context object. |
-| `waitFor` | | CSS selector that signals the page finished rendering. |
-| `action` | | `async (page, ctx)`. Clicks/hovers to reach the exact UI state. |
-| `localStorage` | | `{ key: value }` seeded before app scripts run — suppress one-time hints/coach-marks for a clean shot. |
-| `cleanup` | | `async (api, ctx)`. Optional teardown after the shot. |
+| field          | required | purpose                                                                                                |
+| -------------- | -------- | ------------------------------------------------------------------------------------------------------ |
+| `id`           | ✓        | Stable slug; matches the registry entry id without the `shot-` prefix.                                 |
+| `output`       | ✓        | Output filename; must be the basename of `registryPath`.                                               |
+| `registryPath` | ✓        | Exact path from the website registry — the file docs reference. Sacred.                                |
+| `navigate`     | ✓        | Path (relative to base) to open, as a string or `(ctx) => string`.                                     |
+| `viewport`     |          | `{ width, height, deviceScaleFactor }`. Defaults to `1440×900 @2x`.                                    |
+| `fullPage`     |          | `true` captures the whole scrollable page. Default `false`.                                            |
+| `state`        |          | `async (api) => ctx`. Seed data via REST; return a context object.                                     |
+| `waitFor`      |          | CSS selector that signals the page finished rendering.                                                 |
+| `action`       |          | `async (page, ctx)`. Clicks/hovers to reach the exact UI state.                                        |
+| `localStorage` |          | `{ key: value }` seeded before app scripts run — suppress one-time hints/coach-marks for a clean shot. |
+| `cleanup`      |          | `async (api, ctx)`. Optional teardown after the shot.                                                  |
 
 ### Why the recipe body lives here and not in the registry
 
@@ -116,12 +116,12 @@ flagged for review — the same drift mechanism the registry uses for source dep
   as a normal deck name (it shows in the editor title bar) rather than a
   debug marker. Only run captures against a throwaway dev instance.
 - **Account settings are set, never inherited.** `uiLocale` and the profile's
-  display name are *account* settings, so they survive from one recipe to the
+  display name are _account_ settings, so they survive from one recipe to the
   next inside a `--all` run — a shot that contains UI text and doesn't call
   `setUiLocale()` comes out in whatever language the previous recipe happened
   to leave behind. Every recipe with visible chrome pins both:
   - `setUiLocale()` for the chrome's language. Note `?lang=` cannot do this
-    job: that is the *deck* language, and its English code is `en-GB` where the
+    job: that is the _deck_ language, and its English code is `en-GB` where the
     UI locale's is `en`.
   - `setDisplayName(api, CAPTURE_ACCOUNT_NAME)` for who the account is. The
     editor names the deck's owner beside the title, falling back to the local
@@ -134,19 +134,19 @@ flagged for review — the same drift mechanism the registry uses for source dep
 deckyard-website `planning/marketing-beeld.md`. Fourteen recipes, seven shots ×
 two languages, in two groups:
 
-| group | shots | shapes live in |
-|---|---|---|
-| home page | `editor-form`, `poll-live`, `join-screen` | `recipes/_marketing-shots.js` |
-| `/features` | `presenter-view`, `comments`, `share-link-rules`, `ai-fills-fields` | `recipes/_features-shots.js` |
+| group       | shots                                                               | shapes live in                |
+| ----------- | ------------------------------------------------------------------- | ----------------------------- |
+| home page   | `editor-form`, `poll-live`, `join-screen`                           | `recipes/_marketing-shots.js` |
+| `/features` | `presenter-view`, `comments`, `share-link-rules`, `ai-fills-fields` | `recipes/_features-shots.js`  |
 
 They share the docs harness but differ in four ways, each for a stated reason:
 
-| | docs shots | marketing shots |
-|---|---|---|
-| viewport | 1440×900 @2x | **1280×800 @2x** → 2560×1600, the size the site's layout is built around. `share-link-rules` is 1280×1200 because the dialog is capped at 80vh and would otherwise be cut in half |
-| theme | whatever `DEFAULT_THEME_ID` is | **pinned to `brand`** — a marketing image must not change colour the day the default does |
-| content | `_sample-content.js` | `_marketing-deck.js` — typed slides with something to photograph |
-| frame | whole viewport | four of the seven are **clipped** (`clip:`): `poll-live` / `join-screen` to the slide, because the presenter toolbar around them is a different shot; `share-link-rules` / `ai-fills-fields` to their dialog, because the editor behind it is not the subject |
+|          | docs shots                     | marketing shots                                                                                                                                                                                                                                               |
+| -------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| viewport | 1440×900 @2x                   | **1280×800 @2x** → 2560×1600, the size the site's layout is built around. `share-link-rules` is 1280×1200 because the dialog is capped at 80vh and would otherwise be cut in half                                                                             |
+| theme    | whatever `DEFAULT_THEME_ID` is | **pinned to `brand`** — a marketing image must not change colour the day the default does                                                                                                                                                                     |
+| content  | `_sample-content.js`           | `_marketing-deck.js` — typed slides with something to photograph                                                                                                                                                                                              |
+| frame    | whole viewport                 | four of the seven are **clipped** (`clip:`): `poll-live` / `join-screen` to the slide, because the presenter toolbar around them is a different shot; `share-link-rules` / `ai-fills-fields` to their dialog, because the editor behind it is not the subject |
 
 Five mechanisms live in `lib/marketing.js` (and one in `lib/comments-seed.js`)
 because a docs screenshot never needs them:
@@ -158,7 +158,7 @@ because a docs screenshot never needs them:
   votes go through the public vote route, one fresh device cookie each, and the
   helper then blocks until the server reports the expected tally rather than
   handing that race to the browser.
-- **`rewriteJoinOrigin()`** puts `deckyard.eu` on the join screen. This is *not*
+- **`rewriteJoinOrigin()`** puts `deckyard.eu` on the join screen. This is _not_
   `APP_URL`: the follow-invite slide builds its URL client-side from
   `location.origin`, which no server setting can reach. The human-readable URL
   is substituted after render; the QR is deliberately left encoding the capture
@@ -169,12 +169,12 @@ because a docs screenshot never needs them:
   instead of from a model. The fill-from-translation preview only renders once
   `/api/presentations/:id/translate/fields` responds, and a live call would need
   a provider key, cost money and return different words every run. The deck is
-  already bilingual, so the other version of the slide *is* the translation:
+  already bilingual, so the other version of the slide _is_ the translation:
   the request is intercepted and answered with it. Nothing on screen is
   invented; the model is simply not asked a question the deck already answers.
 - **`seedCommentThreads()`** (in `lib/comments-seed.js`) is the one seeder that
   writes through storage rather than REST, and the reason is identity. The
-  comments route takes its author from the *session* — as it should; a comments
+  comments route takes its author from the _session_ — as it should; a comments
   API that let the caller name someone else would be an impersonation hole —
   and the capture run has exactly one session, the dev bypass's. Over REST every
   comment in the shot is therefore by the same "Dev", which is not a picture of
@@ -202,12 +202,12 @@ as stale nearly every day, and a gate that is always red gets ignored.
 Two things the hash therefore cannot see. Both can change every screenshot
 without moving a single hash:
 
-- **What a recipe seeds and renders *through*.** Change `server/storage/` under
+- **What a recipe seeds and renders _through_.** Change `server/storage/` under
   `seedCommentThreads()`, or any app code the shot photographs, and the hash
   stays put. That is the boundary doing its job, but it is still a blind spot.
 - **The harness that takes the shot.** `run.js`, `lib/browser.js` and
   `lib/recipe.js` itself — `openPage()`, `gotoStable()`, `settle()`, the clip
-  and full-page logic — live *inside* `capture/`, yet no recipe imports them.
+  and full-page logic — live _inside_ `capture/`, yet no recipe imports them.
   The dependency runs the other way: the runner imports the recipe. Rewrite
   `settle()` and every PNG changes while every hash holds.
 

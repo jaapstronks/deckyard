@@ -74,7 +74,9 @@
   padding: var(--ps-space-3) var(--ps-space-4);
   background: hsl(var(--app-accent-primary) / 0.1);
   border-radius: var(--ps-radius-md);
-  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+  transition:
+    opacity 0.2s ease-out,
+    transform 0.2s ease-out;
 }
 
 .loading-modal-message.is-fading {

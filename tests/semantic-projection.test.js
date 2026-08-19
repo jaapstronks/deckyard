@@ -12,27 +12,42 @@ import assert from 'node:assert';
 import { initSanitizer } from '../shared/sanitize.js';
 await initSanitizer();
 
-const { slideHeading, renderSlideBodySemanticHtml } = await import(
-  '../shared/slide-types/semantic-projection.js'
-);
+const { slideHeading, renderSlideBodySemanticHtml } =
+  await import('../shared/slide-types/semantic-projection.js');
 
-const body = (slide, def, opts) => renderSlideBodySemanticHtml(slide, def, opts);
+const body = (slide, def, opts) =>
+  renderSlideBodySemanticHtml(slide, def, opts);
 
 describe('slideHeading resolution', () => {
   it('prefers an a11yTitle override', () => {
-    const h = slideHeading({ content: { a11yTitle: 'Override', title: 'Title' } }, {});
+    const h = slideHeading(
+      { content: { a11yTitle: 'Override', title: 'Title' } },
+      {},
+    );
     assert.deepEqual(h, { text: 'Override', key: null });
   });
   it('uses the def labelField next', () => {
-    const h = slideHeading({ content: { name: 'Ada' } }, { labelField: 'name' });
+    const h = slideHeading(
+      { content: { name: 'Ada' } },
+      { labelField: 'name' },
+    );
     assert.deepEqual(h, { text: 'Ada', key: 'name' });
   });
   it('falls back to common title candidate keys', () => {
-    assert.equal(slideHeading({ content: { question: 'Why?' } }, {}).text, 'Why?');
+    assert.equal(
+      slideHeading({ content: { question: 'Why?' } }, {}).text,
+      'Why?',
+    );
   });
   it('falls back to the type label, then a numbered default', () => {
-    assert.equal(slideHeading({ content: {} }, { label: 'Quote' }).text, 'Quote');
-    assert.equal(slideHeading({ type: '', content: {} }, {}, 4).text, 'Slide 5');
+    assert.equal(
+      slideHeading({ content: {} }, { label: 'Quote' }).text,
+      'Quote',
+    );
+    assert.equal(
+      slideHeading({ type: '', content: {} }, {}, 4).text,
+      'Slide 5',
+    );
   });
 });
 
@@ -63,11 +78,17 @@ describe('field-type projection', () => {
     assert.ok(html.includes('<strong>bold</strong>'), html);
     assert.ok(html.includes('<h3'), 'markdown ## renders as h3');
     assert.ok(!html.includes('two-col'), 'enum skipped');
-    assert.ok(!html.includes('>3<') && !html.includes('size'), 'number skipped');
+    assert.ok(
+      !html.includes('>3<') && !html.includes('size'),
+      'number skipped',
+    );
   });
 
   it('renders the a11ySummary as an intro paragraph', () => {
-    const html = body({ content: { a11ySummary: 'In short.' } }, { fields: [] });
+    const html = body(
+      { content: { a11ySummary: 'In short.' } },
+      { fields: [] },
+    );
     assert.ok(html.includes('class="reader-summary"'), html);
     assert.ok(html.includes('In short.'), html);
   });
@@ -77,8 +98,10 @@ describe('images and figures', () => {
   it('renders an image field as a <figure> with resolved alt + caption', () => {
     const def = { fields: [{ key: 'image', type: 'image' }] };
     const html = body(
-      { content: { image: '/uploads/x.png', alt: 'A chart', caption: 'Fig 1' } },
-      def
+      {
+        content: { image: '/uploads/x.png', alt: 'A chart', caption: 'Fig 1' },
+      },
+      def,
     );
     assert.ok(html.includes('<figure'), html);
     assert.ok(html.includes('alt="A chart"'), html);
@@ -88,8 +111,14 @@ describe('images and figures', () => {
   it('marks a decorative image with empty alt + aria-hidden', () => {
     const def = { fields: [{ key: 'image', type: 'image' }] };
     const html = body(
-      { content: { image: '/uploads/x.png', imageRole: 'decorative', alt: 'ignored' } },
-      def
+      {
+        content: {
+          image: '/uploads/x.png',
+          imageRole: 'decorative',
+          alt: 'ignored',
+        },
+      },
+      def,
     );
     assert.ok(html.includes('alt=""'), html);
     assert.ok(html.includes('aria-hidden="true"'), html);
@@ -108,18 +137,35 @@ describe('images and figures', () => {
       ],
     };
     const html = body(
-      { content: { image: '/uploads/x.png', alt: 'Chart alt', caption: 'A caption', subheading: 'Keep me' } },
+      {
+        content: {
+          image: '/uploads/x.png',
+          alt: 'Chart alt',
+          caption: 'A caption',
+          subheading: 'Keep me',
+        },
+      },
       def,
-      { headingKey: 'subheading' }
+      { headingKey: 'subheading' },
     );
-    assert.equal((html.match(/A caption/g) || []).length, 1, 'caption appears once (in figcaption)');
-    assert.ok(!html.includes('<p>Chart alt</p>'), 'alt is not a standalone paragraph');
+    assert.equal(
+      (html.match(/A caption/g) || []).length,
+      1,
+      'caption appears once (in figcaption)',
+    );
+    assert.ok(
+      !html.includes('<p>Chart alt</p>'),
+      'alt is not a standalone paragraph',
+    );
     assert.ok(html.includes('alt="Chart alt"'), 'alt still used on the img');
   });
 
   it('always emits an alt attribute even without explicit alt', () => {
     const def = { fields: [{ key: 'image', type: 'image' }] };
-    const html = body({ content: { image: '/uploads/quarterly-report.png' } }, def);
+    const html = body(
+      { content: { image: '/uploads/quarterly-report.png' } },
+      def,
+    );
     assert.ok(/<img[^>]*\balt="/.test(html), html);
   });
 
@@ -147,8 +193,15 @@ describe('items and tables', () => {
       ],
     };
     const html = body(
-      { content: { cards: [{ label: 'One', text: 'first' }, { label: 'Two', text: 'second' }] } },
-      def
+      {
+        content: {
+          cards: [
+            { label: 'One', text: 'first' },
+            { label: 'Two', text: 'second' },
+          ],
+        },
+      },
+      def,
     );
     assert.ok(html.includes('<ul class="reader-items">'), html);
     assert.ok(html.includes('<h3>One</h3>'), html);
@@ -174,7 +227,12 @@ describe('background/logo global fields are excluded', () => {
         { key: 'body', type: 'markdown' },
       ],
     };
-    const html = body({ content: { slideBgImage: '/bg.png', slideLogo: 'top-right', body: 'x' } }, def);
+    const html = body(
+      {
+        content: { slideBgImage: '/bg.png', slideLogo: 'top-right', body: 'x' },
+      },
+      def,
+    );
     assert.ok(!html.includes('/bg.png'), html);
     assert.ok(!html.includes('<figure'), html);
     assert.ok(html.includes('x'), html);
@@ -184,10 +242,23 @@ describe('background/logo global fields are excluded', () => {
 describe('count-/order-aware collection projection', () => {
   it('projects an ordered items field to <ol>, an unordered one to <ul>', () => {
     const ordered = {
-      fields: [{ key: 'items', type: 'items', ordered: true, itemFields: [{ key: 'title', type: 'string' }] }],
+      fields: [
+        {
+          key: 'items',
+          type: 'items',
+          ordered: true,
+          itemFields: [{ key: 'title', type: 'string' }],
+        },
+      ],
     };
     const unordered = {
-      fields: [{ key: 'items', type: 'items', itemFields: [{ key: 'title', type: 'string' }] }],
+      fields: [
+        {
+          key: 'items',
+          type: 'items',
+          itemFields: [{ key: 'title', type: 'string' }],
+        },
+      ],
     };
     const val = { content: { items: [{ title: 'A' }, { title: 'B' }] } };
     const oh = body(val, ordered);
@@ -201,21 +272,37 @@ describe('count-/order-aware collection projection', () => {
   it('projects a flat repeating group bounded by its count, grouped per slot', () => {
     const def = {
       repeatingGroups: [
-        { countKey: 'cardCount', prefix: 'card', slotFields: ['Title', 'Body'], ordered: false },
+        {
+          countKey: 'cardCount',
+          prefix: 'card',
+          slotFields: ['Title', 'Body'],
+          ordered: false,
+        },
       ],
       fields: [
         { key: 'cardCount', type: 'enum' },
-        { key: 'card1Title', type: 'string' }, { key: 'card1Body', type: 'markdown' },
-        { key: 'card2Title', type: 'string' }, { key: 'card2Body', type: 'markdown' },
-        { key: 'card3Title', type: 'string' }, { key: 'card3Body', type: 'markdown' },
+        { key: 'card1Title', type: 'string' },
+        { key: 'card1Body', type: 'markdown' },
+        { key: 'card2Title', type: 'string' },
+        { key: 'card2Body', type: 'markdown' },
+        { key: 'card3Title', type: 'string' },
+        { key: 'card3Body', type: 'markdown' },
       ],
     };
-    const html = body({ content: {
-      cardCount: '2',
-      card1Title: 'One', card1Body: 'first',
-      card2Title: 'Two', card2Body: 'second',
-      card3Title: 'LEAK', card3Body: 'should not appear',
-    } }, def);
+    const html = body(
+      {
+        content: {
+          cardCount: '2',
+          card1Title: 'One',
+          card1Body: 'first',
+          card2Title: 'Two',
+          card2Body: 'second',
+          card3Title: 'LEAK',
+          card3Body: 'should not appear',
+        },
+      },
+      def,
+    );
     // stale slot 3 (beyond cardCount=2) must not leak
     assert.ok(!/LEAK/.test(html), html);
     // title + body stay grouped in one <li>, title becomes the block heading
@@ -227,7 +314,13 @@ describe('count-/order-aware collection projection', () => {
 
   it('does not surface a hidden slot field (deprecated card label)', () => {
     const def = {
-      repeatingGroups: [{ countKey: 'cardCount', prefix: 'card', slotFields: ['Title', 'Label', 'Body'] }],
+      repeatingGroups: [
+        {
+          countKey: 'cardCount',
+          prefix: 'card',
+          slotFields: ['Title', 'Label', 'Body'],
+        },
+      ],
       fields: [
         { key: 'cardCount', type: 'enum' },
         { key: 'card1Title', type: 'string' },
@@ -235,14 +328,26 @@ describe('count-/order-aware collection projection', () => {
         { key: 'card1Body', type: 'markdown' },
       ],
     };
-    const html = body({ content: { cardCount: '1', card1Title: 'T', card1Label: 'HIDDENLABEL', card1Body: 'b' } }, def);
+    const html = body(
+      {
+        content: {
+          cardCount: '1',
+          card1Title: 'T',
+          card1Label: 'HIDDENLABEL',
+          card1Body: 'b',
+        },
+      },
+      def,
+    );
     assert.ok(!/HIDDENLABEL/.test(html), html);
     assert.ok(/<h3>T<\/h3>/.test(html), html);
   });
 
   it('falls back to all declared slots when the count field is missing', () => {
     const def = {
-      repeatingGroups: [{ countKey: 'cardCount', prefix: 'card', slotFields: ['Title'] }],
+      repeatingGroups: [
+        { countKey: 'cardCount', prefix: 'card', slotFields: ['Title'] },
+      ],
       fields: [
         { key: 'cardCount', type: 'enum' },
         { key: 'card1Title', type: 'string' },
@@ -258,7 +363,12 @@ describe('url field projection', () => {
   it('renders a safe url as an <a href>', () => {
     const def = { fields: [{ key: 'link', type: 'url' }] };
     const html = body({ content: { link: 'https://example.com/x' } }, def);
-    assert.ok(/<a href="https:\/\/example\.com\/x">https:\/\/example\.com\/x<\/a>/.test(html), html);
+    assert.ok(
+      /<a href="https:\/\/example\.com\/x">https:\/\/example\.com\/x<\/a>/.test(
+        html,
+      ),
+      html,
+    );
   });
   it('drops an unsafe scheme instead of emitting a link', () => {
     const def = { fields: [{ key: 'link', type: 'url' }] };
@@ -287,7 +397,10 @@ describe('relation-aware collection projection (text-blocks arrows)', () => {
           {
             key: 'blocks',
             type: 'items',
-            itemFields: [{ key: 'title', type: 'string' }, { key: 'body', type: 'markdown' }],
+            itemFields: [
+              { key: 'title', type: 'string' },
+              { key: 'body', type: 'markdown' },
+            ],
           },
         ],
       },
@@ -295,23 +408,55 @@ describe('relation-aware collection projection (text-blocks arrows)', () => {
   });
 
   it('renders an ordered <ol> with a relation marker when rows carry an arrow', () => {
-    const html = body({ content: { rows: [
-      { title: 'Phase 1', arrow: 'down', blocks: [{ title: 'A', body: 'a' }] },
-      { title: 'Phase 2', arrow: 'none', blocks: [{ title: 'B', body: 'b' }] },
-    ] } }, relDef());
+    const html = body(
+      {
+        content: {
+          rows: [
+            {
+              title: 'Phase 1',
+              arrow: 'down',
+              blocks: [{ title: 'A', body: 'a' }],
+            },
+            {
+              title: 'Phase 2',
+              arrow: 'none',
+              blocks: [{ title: 'B', body: 'b' }],
+            },
+          ],
+        },
+      },
+      relDef(),
+    );
     assert.ok(/^<ol class="reader-items">/.test(html), html);
-    assert.ok(/class="reader-relation" data-relation="down">leads to</.test(html), html);
+    assert.ok(
+      /class="reader-relation" data-relation="down">leads to</.test(html),
+      html,
+    );
     // nested blocks stay an unordered sub-list
-    assert.ok(/<ul class="reader-items"><li class="reader-item"><h3>A<\/h3>/.test(html), html);
+    assert.ok(
+      /<ul class="reader-items"><li class="reader-item"><h3>A<\/h3>/.test(html),
+      html,
+    );
     // the row heading is a heading, the arrow enum never renders as content
     assert.ok(/<h3>Phase 1<\/h3>/.test(html), html);
     assert.ok(!/none/.test(html), html);
   });
 
   it('stays an unordered <ul> with no marker when no row has an arrow', () => {
-    const html = body({ content: { rows: [
-      { title: 'Only', arrow: 'none', blocks: [{ title: 'A', body: 'a' }] },
-    ] } }, relDef());
+    const html = body(
+      {
+        content: {
+          rows: [
+            {
+              title: 'Only',
+              arrow: 'none',
+              blocks: [{ title: 'A', body: 'a' }],
+            },
+          ],
+        },
+      },
+      relDef(),
+    );
     assert.ok(/^<ul class="reader-items">/.test(html), html);
     assert.ok(!/reader-relation/.test(html), html);
   });

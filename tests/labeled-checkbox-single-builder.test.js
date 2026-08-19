@@ -39,7 +39,7 @@ const MIGRATED_CLASSES = [
 // `class: 'admin-checkbox-item'` — the h() attribute form. The helper passes the
 // class as `className:`, so its own call sites never match this.
 const RAW_CLASS = new RegExp(
-  `\\bclass:\\s*['"\`](?:${MIGRATED_CLASSES.join('|')})['"\`]`
+  `\\bclass:\\s*['"\`](?:${MIGRATED_CLASSES.join('|')})['"\`]`,
 );
 
 function walk(dir, out = []) {
@@ -61,7 +61,8 @@ test('migrated labeled-checkbox classes are only built via labeledCheckbox()', (
       .forEach((line, i) => {
         const trimmed = line.trimStart();
         if (trimmed.startsWith('//') || trimmed.startsWith('*')) return;
-        if (RAW_CLASS.test(line)) violations.push(`${rel}:${i + 1}  ${trimmed.trim()}`);
+        if (RAW_CLASS.test(line))
+          violations.push(`${rel}:${i + 1}  ${trimmed.trim()}`);
       });
   }
 
@@ -69,13 +70,13 @@ test('migrated labeled-checkbox classes are only built via labeledCheckbox()', (
     violations.length,
     0,
     'Build labeled checkboxes with labeledCheckbox({ className }) ' +
-      `(client/lib/dom/labeled-checkbox.js), not a hand-rolled label:\n  ${violations.join('\n  ')}`
+      `(client/lib/dom/labeled-checkbox.js), not a hand-rolled label:\n  ${violations.join('\n  ')}`,
   );
 });
 
 test('the labeledCheckbox helper still exists', () => {
   assert.ok(
     fs.existsSync(path.join(repoRoot, HELPER)),
-    `${HELPER} must exist — the gate points at it.`
+    `${HELPER} must exist — the gate points at it.`,
   );
 });

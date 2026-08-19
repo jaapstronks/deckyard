@@ -13,8 +13,15 @@ import { getDefaultOrganizationId } from '../../config/database.js';
 
 /** Column list shared by all organization-by-X queries. */
 const ORG_COLUMNS = [
-  'id', 'name', 'slug',
-  'logo_url', 'display_name', 'description', 'settings', 'created_at', 'updated_at',
+  'id',
+  'name',
+  'slug',
+  'logo_url',
+  'display_name',
+  'description',
+  'settings',
+  'created_at',
+  'updated_at',
 ];
 
 /**
@@ -46,7 +53,9 @@ export async function getOrganizationById(organizationId) {
  */
 export async function createOrganization(data) {
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const slug = String(data.slug || '').toLowerCase().trim();
+    const slug = String(data.slug || '')
+      .toLowerCase()
+      .trim();
 
     if (!slug || slug.length < 2) {
       return { ok: false, reason: 'invalid_slug' };
@@ -113,7 +122,8 @@ export async function updateOrganization(organizationId, updates) {
     if ('displayName' in updates) updateData.display_name = updates.displayName;
     if ('description' in updates) updateData.description = updates.description;
     if ('logoUrl' in updates) updateData.logo_url = updates.logoUrl;
-    if ('settings' in updates) updateData.settings = JSON.stringify(updates.settings);
+    if ('settings' in updates)
+      updateData.settings = JSON.stringify(updates.settings);
 
     const row = await db
       .updateTable('organizations')
@@ -146,7 +156,9 @@ export async function updateOrganization(organizationId, updates) {
  * @returns {boolean}
  */
 export function isDefaultOrganization(organizationId) {
-  return Boolean(organizationId) && organizationId === getDefaultOrganizationId();
+  return (
+    Boolean(organizationId) && organizationId === getDefaultOrganizationId()
+  );
 }
 
 /**

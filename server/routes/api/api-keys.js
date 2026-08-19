@@ -17,7 +17,16 @@ import {
   AVAILABLE_PERMISSIONS,
 } from '../../storage/api-keys.js';
 import { getUsageHistory, getTodayUsage } from '../../storage/api-usage.js';
-import { serveJson, getErrorStatus, jsonError, methodNotAllowed, notFound, badRequest, requireJsonBody, withErrorHandler } from '../../utils/http.js';
+import {
+  serveJson,
+  getErrorStatus,
+  jsonError,
+  methodNotAllowed,
+  notFound,
+  badRequest,
+  requireJsonBody,
+  withErrorHandler,
+} from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 
 // GET /api/api-keys - List user's API keys
@@ -57,7 +66,10 @@ async function handleApiKeyCreate({ storageScope, req, res, authedUser }) {
       invalid_permissions: `Invalid permissions. Available: ${AVAILABLE_PERMISSIONS.join(', ')}`,
       unavailable: 'Database unavailable',
     };
-    return badRequest(res, messages[result.reason] || 'Failed to create API key');
+    return badRequest(
+      res,
+      messages[result.reason] || 'Failed to create API key',
+    );
   }
 
   // Important: Return the full key only once at creation time
@@ -74,15 +86,20 @@ async function handleApiKeyCreate({ storageScope, req, res, authedUser }) {
 }
 
 // GET /api/api-keys/:id/usage - Get usage statistics
-async function handleApiKeyUsage({ storageScope, res, url, authedUser }, keyId) {
-
+async function handleApiKeyUsage(
+  { storageScope, res, url, authedUser },
+  keyId,
+) {
   // Verify the key belongs to the user
   const keyResult = await getApiKeyById(storageScope, keyId);
   if (!keyResult.ok) {
     return notFound(res, 'API key not found');
   }
 
-  const days = Math.min(90, Math.max(1, parseInt(url.searchParams.get('days') || '30', 10)));
+  const days = Math.min(
+    90,
+    Math.max(1, parseInt(url.searchParams.get('days') || '30', 10)),
+  );
   const historyResult = await getUsageHistory(keyId, { days });
 
   if (!historyResult.ok) {
@@ -98,11 +115,13 @@ async function handleApiKeyUsage({ storageScope, res, url, authedUser }, keyId) 
       prefix: keyResult.prefix,
       tier: keyResult.tier,
     },
-    today: todayResult.ok ? {
-      requestCount: todayResult.requestCount,
-      aiRequestCount: todayResult.aiRequestCount,
-      exportCount: todayResult.exportCount,
-    } : null,
+    today: todayResult.ok
+      ? {
+          requestCount: todayResult.requestCount,
+          aiRequestCount: todayResult.aiRequestCount,
+          exportCount: todayResult.exportCount,
+        }
+      : null,
     history: historyResult.history,
     totals: historyResult.totals,
     days: historyResult.days,
@@ -146,7 +165,7 @@ async function handleApiKeyRevoke({ storageScope, res, authedUser }, keyId) {
       res,
       getErrorStatus(result.reason),
       result.reason,
-      messages[result.reason] || 'Failed to revoke API key'
+      messages[result.reason] || 'Failed to revoke API key',
     );
   }
 
@@ -169,12 +188,33 @@ async function handleApiKeyRevoke({ storageScope, res, authedUser }, keyId) {
 export const ROUTES = [
   { method: 'GET', pattern: '/api/api-keys', handler: handleApiKeyList },
   { method: 'POST', pattern: '/api/api-keys', handler: handleApiKeyCreate },
-  { method: 'GET', pattern: /^\/api\/api-keys\/([^/]+)\/usage$/, handler: handleApiKeyUsage },
-  { method: 'GET', pattern: /^\/api\/api-keys\/([^/]+)$/, handler: handleApiKeyGet },
-  { method: 'DELETE', pattern: /^\/api\/api-keys\/([^/]+)$/, handler: handleApiKeyRevoke },
-  { pattern: '/api/api-keys', handler: ({ res }) => methodNotAllowed(res, ['GET', 'POST']) },
-  { pattern: /^\/api\/api-keys\/[^/]+$/, handler: ({ res }) => methodNotAllowed(res, ['GET', 'DELETE']) },
-  { pattern: /^\/api\/api-keys\/[^/]+\/usage$/, handler: ({ res }) => methodNotAllowed(res, ['GET']) },
+  {
+    method: 'GET',
+    pattern: /^\/api\/api-keys\/([^/]+)\/usage$/,
+    handler: handleApiKeyUsage,
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/api-keys\/([^/]+)$/,
+    handler: handleApiKeyGet,
+  },
+  {
+    method: 'DELETE',
+    pattern: /^\/api\/api-keys\/([^/]+)$/,
+    handler: handleApiKeyRevoke,
+  },
+  {
+    pattern: '/api/api-keys',
+    handler: ({ res }) => methodNotAllowed(res, ['GET', 'POST']),
+  },
+  {
+    pattern: /^\/api\/api-keys\/[^/]+$/,
+    handler: ({ res }) => methodNotAllowed(res, ['GET', 'DELETE']),
+  },
+  {
+    pattern: /^\/api\/api-keys\/[^/]+\/usage$/,
+    handler: ({ res }) => methodNotAllowed(res, ['GET']),
+  },
 ];
 
 /**

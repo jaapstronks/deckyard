@@ -12,9 +12,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-const { harvestSource, extractCssClasses, isAlive, scan } = await import(
-  '../scripts/lint-dead-css.js'
-);
+const { harvestSource, extractCssClasses, isAlive, scan } =
+  await import('../scripts/lint-dead-css.js');
 
 describe('harvestSource', () => {
   it('harvests class tokens from single/double-quoted strings', () => {
@@ -38,9 +37,15 @@ describe('harvestSource', () => {
 
 describe('extractCssClasses', () => {
   it('reads classes from selector context with line numbers', () => {
-    const css = ['.alpha {', '  color: red;', '}', '', '.beta.gamma:hover {', '  margin: 0;', '}'].join(
-      '\n'
-    );
+    const css = [
+      '.alpha {',
+      '  color: red;',
+      '}',
+      '',
+      '.beta.gamma:hover {',
+      '  margin: 0;',
+      '}',
+    ].join('\n');
     const found = extractCssClasses(css, 'x.css');
     const byName = Object.fromEntries(found.map((r) => [r.name, r.line]));
     assert.equal(byName.alpha, 1);
@@ -49,7 +54,12 @@ describe('extractCssClasses', () => {
   });
 
   it('ignores dotted tokens inside property values and strings', () => {
-    const css = ['.real {', '  margin: .5em;', '  content: ".fake-not-a-selector";', '}'].join('\n');
+    const css = [
+      '.real {',
+      '  margin: .5em;',
+      '  content: ".fake-not-a-selector";',
+      '}',
+    ].join('\n');
     const names = extractCssClasses(css, 'x.css').map((r) => r.name);
     assert.deepEqual(names, ['real']);
   });
@@ -61,14 +71,21 @@ describe('extractCssClasses', () => {
   });
 
   it('reads nested rules inside @media', () => {
-    const css = ['@media (min-width: 40em) {', '  .responsive { color: red }', '}'].join('\n');
+    const css = [
+      '@media (min-width: 40em) {',
+      '  .responsive { color: red }',
+      '}',
+    ].join('\n');
     const names = extractCssClasses(css, 'x.css').map((r) => r.name);
     assert.deepEqual(names, ['responsive']);
   });
 });
 
 describe('isAlive', () => {
-  const ev = { used: new Set(['card', 'card-header']), prefixes: new Set(['slide-bg-']) };
+  const ev = {
+    used: new Set(['card', 'card-header']),
+    prefixes: new Set(['slide-bg-']),
+  };
 
   it('is alive when used as a literal', () => {
     assert.equal(isAlive('card', ev), true);
@@ -96,7 +113,9 @@ describe('harvestSource — classes embedded in markup and selectors', () => {
   });
 
   it('reads classes out of a selector string', () => {
-    const ev = harvestSource(`el.querySelectorAll('.slide-table > .table-step-cell');`);
+    const ev = harvestSource(
+      `el.querySelectorAll('.slide-table > .table-step-cell');`,
+    );
     assert.equal(ev.used.has('slide-table'), true);
     assert.equal(ev.used.has('table-step-cell'), true);
   });
@@ -105,7 +124,7 @@ describe('harvestSource — classes embedded in markup and selectors', () => {
     // The string scanner desyncs here — the regex's quotes pair up with the
     // attribute's — so the class attribute is harvested separately.
     const ev = harvestSource(
-      `s.replace(/"([^"]+)":/g, '<span class="json-key">"$1"</span>:')`
+      `s.replace(/"([^"]+)":/g, '<span class="json-key">"$1"</span>:')`,
     );
     assert.equal(ev.used.has('json-key'), true);
   });
@@ -121,7 +140,11 @@ describe('scan (end to end, injected reader)', () => {
   it('reports only the genuinely unreferenced selector', () => {
     const files = {
       'client/app.js': `h('div', { class: 'card' }); const c = \`slide-bg-\${id}\`;`,
-      'client/styles/x.css': ['.card {}', '.slide-bg-red {}', '.orphan {}'].join('\n'),
+      'client/styles/x.css': [
+        '.card {}',
+        '.slide-bg-red {}',
+        '.orphan {}',
+      ].join('\n'),
     };
     const { dead, totalClasses } = scan({
       sourceFiles: ['client/app.js'],
@@ -132,7 +155,7 @@ describe('scan (end to end, injected reader)', () => {
     assert.deepEqual(
       dead.map((d) => d.name),
       ['orphan'],
-      'card is a literal, slide-bg-red is composed-alive, only orphan is dead'
+      'card is a literal, slide-bg-red is composed-alive, only orphan is dead',
     );
   });
 });

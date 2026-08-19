@@ -70,7 +70,7 @@
   gap: var(--ps-space-3);
 }
 
-.analytics-provider-header input[type="checkbox"] {
+.analytics-provider-header input[type='checkbox'] {
   width: 18px;
   height: 18px;
   cursor: pointer;
@@ -165,7 +165,7 @@
   cursor: pointer;
 }
 
-.analytics-provider-config .field-row.is-checkbox input[type="checkbox"] {
+.analytics-provider-config .field-row.is-checkbox input[type='checkbox'] {
   order: 1;
   width: 16px;
   height: 16px;

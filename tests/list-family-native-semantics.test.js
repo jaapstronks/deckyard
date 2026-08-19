@@ -13,9 +13,21 @@ function render(type, content) {
 }
 
 const CASES = [
-  ['funnel-slide', { title: 'F', items: [{ label: 'a' }, { label: 'b' }, { label: 'c' }] }, 'ol'],
-  ['pyramid-slide', { title: 'P', levels: [{ label: 'a' }, { label: 'b' }, { label: 'c' }] }, 'ol'],
-  ['cycle-slide', { title: 'C', items: [{ label: 'a' }, { label: 'b' }, { label: 'c' }] }, 'ol'],
+  [
+    'funnel-slide',
+    { title: 'F', items: [{ label: 'a' }, { label: 'b' }, { label: 'c' }] },
+    'ol',
+  ],
+  [
+    'pyramid-slide',
+    { title: 'P', levels: [{ label: 'a' }, { label: 'b' }, { label: 'c' }] },
+    'ol',
+  ],
+  [
+    'cycle-slide',
+    { title: 'C', items: [{ label: 'a' }, { label: 'b' }, { label: 'c' }] },
+    'ol',
+  ],
 ];
 
 for (const [type, content, tag] of CASES) {
@@ -51,8 +63,16 @@ test('list bullet variant renders <ul>', () => {
 
 test('two-column list wraps each column in its own <ul>/<ol> with direct <li> children', () => {
   // 8 items forces the two-column layout (> one-column cap).
-  const items = Array.from({ length: 8 }, (_, i) => ({ title: `t${i}`, text: `x${i}` }));
-  const html = render('list-slide', { title: 'L', variant: 'numbers', layout: 'two-column', items });
+  const items = Array.from({ length: 8 }, (_, i) => ({
+    title: `t${i}`,
+    text: `x${i}`,
+  }));
+  const html = render('list-slide', {
+    title: 'L',
+    variant: 'numbers',
+    layout: 'two-column',
+    items,
+  });
   // .lijst is a plain container, each .lijst-col is a native list
   assert.match(html, /<div class="lijst">/);
   assert.equal((html.match(/<ol class="lijst-col">/g) || []).length, 2);

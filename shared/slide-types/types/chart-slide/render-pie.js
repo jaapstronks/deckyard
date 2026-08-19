@@ -28,7 +28,7 @@ export function pieEntriesFromDataset({ labels, values }) {
 
 export function renderPieSvg(
   { labels, values },
-  { showLegend = true, pieLabelMode = 'percent', palette = null } = {}
+  { showLegend = true, pieLabelMode = 'percent', palette = null } = {},
 ) {
   void showLegend;
 
@@ -52,7 +52,7 @@ export function renderPieSvg(
     const d = describeArc(cx, cy, r, angle, next);
 
     let frag = `<path class="chart-slice chart-slice-${i % 8}" d="${escapeHtml(
-      d
+      d,
     )}"></path>`;
     if (pieLabelMode !== 'none') {
       const mid = angle + (next - angle) / 2;
@@ -62,8 +62,8 @@ export function renderPieSvg(
         pieLabelMode === 'value'
           ? String(e.v)
           : pieLabelMode === 'both'
-          ? `${e.v} (${pct}%)`
-          : `${pct}%`;
+            ? `${e.v} (${pct}%)`
+            : `${pct}%`;
       frag += svgText(p.x, p.y, label, {
         anchor: 'middle',
         cls: `chart-pie-label${pieLabelInvertClass(i, palette)}`,

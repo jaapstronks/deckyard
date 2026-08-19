@@ -18,7 +18,12 @@ export const SAMPLE_DECK_TITLE = 'Quarterly product review';
  * @param {{title: string, body?: string, subheading?: string, layout?: string}} spec
  * @returns {{id: string, type: string, content: object, notes: string, visibility: object}}
  */
-function contentSlide({ title, body = '', subheading = '', layout = 'one-column' }) {
+function contentSlide({
+  title,
+  body = '',
+  subheading = '',
+  layout = 'one-column',
+}) {
   return {
     id: randomUUID(),
     type: 'content-slide',

@@ -10,23 +10,23 @@
 
 ## Scores by dimension
 
-| Dimension | Score | vs. previous |
-| --- | ---: | ---: |
-| Coverage | 4.67 | — |
-| Structure | 4.67 | — |
-| Slide economy | 3.67 | — |
-| Faithfulness | 4.67 | — |
-| Presentability | 4.00 | — |
-| Closeness to human deck | 4.00 | — |
-| **Overall** | **4.34** | — |
+| Dimension               |    Score | vs. previous |
+| ----------------------- | -------: | -----------: |
+| Coverage                |     4.67 |            — |
+| Structure               |     4.67 |            — |
+| Slide economy           |     3.67 |            — |
+| Faithfulness            |     4.67 |            — |
+| Presentability          |     4.00 |            — |
+| Closeness to human deck |     4.00 |            — |
+| **Overall**             | **4.34** |            — |
 
 ## Per-case results
 
-| Case | Cat | Slides | Words/slide | Walls | Number support | Coverage | Mean |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| asml-q4-2024 | A | 15 | 32.47 | 0 | 84% | 4/5 | 4.17 |
-| cbs-persbericht-criminaliteit | B | 16 | 30.31 | 0 | 95% | 5/5 | 4.60 |
-| cloudflare-nov-2025-outage | B | 22 | 50.95 | 3 | 100% | 5/5 | 4.20 |
+| Case                          | Cat | Slides | Words/slide | Walls | Number support | Coverage | Mean |
+| ----------------------------- | --- | -----: | ----------: | ----: | -------------: | -------: | ---: |
+| asml-q4-2024                  | A   |     15 |       32.47 |     0 |            84% |      4/5 | 4.17 |
+| cbs-persbericht-criminaliteit | B   |     16 |       30.31 |     0 |            95% |      5/5 | 4.60 |
+| cloudflare-nov-2025-outage    | B   |     22 |       50.95 |     3 |           100% |      5/5 | 4.20 |
 
 ## Weakest dimensions — judge rationales
 
@@ -56,8 +56,8 @@ These rationales are the input for the next prompt change.
 
 ## Cost breakdown
 
-| Category | Model | Calls | Input | Output | Cache write | Cache read | USD |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| generation | `gpt-5.5` | 15 | 183218 | 34465 | 0 | 0 | $1.9500 |
-| judge | `claude-opus-4-8` | 3 | 46579 | 6843 | 0 | 0 | $0.4040 |
-| **Total** | | 18 | 229797 | 41308 | 0 | 0 | **$2.3540** |
+| Category   | Model             | Calls |  Input | Output | Cache write | Cache read |         USD |
+| ---------- | ----------------- | ----: | -----: | -----: | ----------: | ---------: | ----------: |
+| generation | `gpt-5.5`         |    15 | 183218 |  34465 |           0 |          0 |     $1.9500 |
+| judge      | `claude-opus-4-8` |     3 |  46579 |   6843 |           0 |          0 |     $0.4040 |
+| **Total**  |                   |    18 | 229797 |  41308 |           0 |          0 | **$2.3540** |

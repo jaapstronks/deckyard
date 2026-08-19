@@ -3,7 +3,11 @@
  * Handles API key authentication, rate limiting, and usage tracking.
  */
 
-import { validateApiKey, TIER_LIMITS, hasPermission } from '../../../storage/api-keys.js';
+import {
+  validateApiKey,
+  TIER_LIMITS,
+  hasPermission,
+} from '../../../storage/api-keys.js';
 import {
   normalizePresentationVisibility,
   canActorAccessPresentation,
@@ -11,10 +15,19 @@ import {
   isOwnerOrCreator,
 } from '../../../utils/presentation-authz.js';
 import { resolveIdentityByEmail } from '../../../storage/identity-resolver.js';
-import { incrementUsage, getRateLimitHeaders, checkAiRateLimit, checkExportRateLimit } from '../../../storage/api-usage.js';
+import {
+  incrementUsage,
+  getRateLimitHeaders,
+  checkAiRateLimit,
+  checkExportRateLimit,
+} from '../../../storage/api-usage.js';
 import { allowRequest } from '../../../utils/rate-limit.js';
 import { apiTierBucket } from '../../../config/rate-limits.js';
-import { serveJson, readRequestBody, isJsonObject } from '../../../utils/http.js';
+import {
+  serveJson,
+  readRequestBody,
+  isJsonObject,
+} from '../../../utils/http.js';
 import { codeForStatus, getStatusCode } from '../../../utils/errors.js';
 import { logError } from '../../../utils/logger.js';
 import { getPresentation } from '../../../storage/presentations/index.js';
@@ -47,18 +60,27 @@ export async function authenticateApiKey(ctx) {
 
   const token = extractBearerToken(req);
   if (!token) {
-    sendV1Error(res, 401, 'Missing or invalid Authorization header. Use: Bearer <api_key>', {
-      code: 'unauthorized',
-    });
+    sendV1Error(
+      res,
+      401,
+      'Missing or invalid Authorization header. Use: Bearer <api_key>',
+      {
+        code: 'unauthorized',
+      },
+    );
     return { ok: false, reason: 'missing_auth' };
   }
 
   const result = await validateApiKey(token);
   if (!result.ok) {
     if (result.reason === 'unavailable') {
-      sendV1Error(res, 503, 'Database unavailable', { code: 'service_unavailable' });
+      sendV1Error(res, 503, 'Database unavailable', {
+        code: 'service_unavailable',
+      });
     } else {
-      sendV1Error(res, 401, 'Invalid or revoked API key', { code: 'unauthorized' });
+      sendV1Error(res, 401, 'Invalid or revoked API key', {
+        code: 'unauthorized',
+      });
     }
     return { ok: false, reason: result.reason };
   }
@@ -111,7 +133,9 @@ export function requirePermission(ctx, permission) {
   }
 
   if (!hasPermission(apiKey.permissions, permission)) {
-    sendV1Error(res, 403, `API key lacks required permission: ${permission}`, { code: 'forbidden' });
+    sendV1Error(res, 403, `API key lacks required permission: ${permission}`, {
+      code: 'forbidden',
+    });
     return false;
   }
 
@@ -163,7 +187,11 @@ export function canAccessPresentation(presentation, actor) {
  * @param {'read'|'write'} [options.access='read'] - Required access level
  * @returns {Promise<{ok: boolean, pres?: Object}>} - Result with presentation if successful
  */
-export async function getPresentationWithAccess(ctx, presentationId, { access = 'read' } = {}) {
+export async function getPresentationWithAccess(
+  ctx,
+  presentationId,
+  { access = 'read' } = {},
+) {
   const { storageScope, authedUser } = ctx;
 
   const pres = await getPresentation(storageScope, presentationId);
@@ -177,7 +205,10 @@ export async function getPresentationWithAccess(ctx, presentationId, { access = 
     return { ok: false };
   }
 
-  if (access === 'write' && !(await canActorAccessPresentation(pres, authedUser, 'write'))) {
+  if (
+    access === 'write' &&
+    !(await canActorAccessPresentation(pres, authedUser, 'write'))
+  ) {
     await apiError(ctx, 403, 'You have read-only access to this presentation');
     return { ok: false };
   }
@@ -209,7 +240,11 @@ export async function readApiV1Body(ctx, req, { requireObject = false } = {}) {
     raw = (await readRequestBody(req)).toString('utf8');
   } catch (err) {
     // The size cap throws; the v1 surface answers it in its own envelope.
-    await apiError(ctx, err?.statusCode === 413 ? 413 : 400, 'Request body too large');
+    await apiError(
+      ctx,
+      err?.statusCode === 413 ? 413 : 400,
+      'Request body too large',
+    );
     return { ok: false };
   }
   // An absent body stays `null` here, unlike the internal `requireJsonBody`:
@@ -246,8 +281,17 @@ export async function readApiV1Body(ctx, req, { requireObject = false } = {}) {
  */
 export function parsePaginationParams(url, options = {}) {
   const { defaultLimit = 50, maxLimit = 100 } = options;
-  const limit = Math.min(maxLimit, Math.max(1, parseInt(url.searchParams.get('limit') || String(defaultLimit), 10)));
-  const offset = Math.max(0, parseInt(url.searchParams.get('offset') || '0', 10));
+  const limit = Math.min(
+    maxLimit,
+    Math.max(
+      1,
+      parseInt(url.searchParams.get('limit') || String(defaultLimit), 10),
+    ),
+  );
+  const offset = Math.max(
+    0,
+    parseInt(url.searchParams.get('offset') || '0', 10),
+  );
   return { limit, offset };
 }
 
@@ -270,13 +314,21 @@ export async function checkRequestRateLimit(ctx) {
   const limits = TIER_LIMITS[tier] || TIER_LIMITS.free;
   const key = `api:${apiKey.id}`;
 
-  const allowed = await allowRequest(key, apiTierBucket(limits.requestsPerMinute));
+  const allowed = await allowRequest(
+    key,
+    apiTierBucket(limits.requestsPerMinute),
+  );
 
   if (!allowed) {
-    sendV1Error(res, 429, 'Rate limit exceeded. Please slow down your requests.', {
-      code: 'rate_limited',
-      headers: { 'Retry-After': '60' },
-    });
+    sendV1Error(
+      res,
+      429,
+      'Rate limit exceeded. Please slow down your requests.',
+      {
+        code: 'rate_limited',
+        headers: { 'Retry-After': '60' },
+      },
+    );
     return false;
   }
 
@@ -295,7 +347,9 @@ export async function checkAiLimit(ctx) {
 
   const result = await checkAiRateLimit(apiKey.id, apiKey.tier);
   if (!result.ok) {
-    sendV1Error(res, 503, 'Service unavailable', { code: 'service_unavailable' });
+    sendV1Error(res, 503, 'Service unavailable', {
+      code: 'service_unavailable',
+    });
     return false;
   }
 
@@ -304,7 +358,11 @@ export async function checkAiLimit(ctx) {
     sendV1Error(res, 429, 'Daily AI request limit exceeded', {
       code: 'rate_limited',
       headers,
-      details: { limit: result.limit, used: result.used, resetAt: headers['X-RateLimit-Reset'] },
+      details: {
+        limit: result.limit,
+        used: result.used,
+        resetAt: headers['X-RateLimit-Reset'],
+      },
     });
     return false;
   }
@@ -324,16 +382,26 @@ export async function checkExportLimit(ctx) {
 
   const result = await checkExportRateLimit(apiKey.id, apiKey.tier);
   if (!result.ok) {
-    sendV1Error(res, 503, 'Service unavailable', { code: 'service_unavailable' });
+    sendV1Error(res, 503, 'Service unavailable', {
+      code: 'service_unavailable',
+    });
     return false;
   }
 
   if (result.limited) {
-    const headers = await getRateLimitHeaders(apiKey.id, apiKey.tier, 'exports');
+    const headers = await getRateLimitHeaders(
+      apiKey.id,
+      apiKey.tier,
+      'exports',
+    );
     sendV1Error(res, 429, 'Daily export limit exceeded', {
       code: 'rate_limited',
       headers,
-      details: { limit: result.limit, used: result.used, resetAt: headers['X-RateLimit-Reset'] },
+      details: {
+        limit: result.limit,
+        used: result.used,
+        resetAt: headers['X-RateLimit-Reset'],
+      },
     });
     return false;
   }
@@ -390,7 +458,11 @@ async function apiResponse(ctx, status, data, limitType = 'requests') {
 
   // Add rate limit headers if we have an API key
   if (apiKey) {
-    const limitHeaders = await getRateLimitHeaders(apiKey.id, apiKey.tier, limitType);
+    const limitHeaders = await getRateLimitHeaders(
+      apiKey.id,
+      apiKey.tier,
+      limitType,
+    );
     Object.assign(headers, limitHeaders);
   }
 
@@ -444,7 +516,12 @@ export async function apiCreated(ctx, data) {
  * @param {Object} [opts.headers] - Extra response headers (e.g. Retry-After).
  * @returns {true}
  */
-export function sendV1Error(res, status, message, { code, details, headers } = {}) {
+export function sendV1Error(
+  res,
+  status,
+  message,
+  { code, details, headers } = {},
+) {
   const body = { error: code || codeForStatus(status) };
   if (message != null && message !== '') body.message = message;
   if (details != null) body.details = details;
@@ -488,11 +565,19 @@ export function v1NotFound(res, message = 'Not found') {
  * @param {*} [opts.details] - Structured extra (omitted when null/undefined).
  * @param {Object} [opts.headers] - Extra response headers.
  */
-export async function apiError(ctx, status, message, { code, details, headers } = {}) {
+export async function apiError(
+  ctx,
+  status,
+  message,
+  { code, details, headers } = {},
+) {
   const { res, apiKey } = ctx;
   const merged = {};
   if (apiKey) {
-    Object.assign(merged, await getRateLimitHeaders(apiKey.id, apiKey.tier, 'requests'));
+    Object.assign(
+      merged,
+      await getRateLimitHeaders(apiKey.id, apiKey.tier, 'requests'),
+    );
   }
   Object.assign(merged, headers || {});
   sendV1Error(res, status, message, { code, details, headers: merged });
@@ -521,8 +606,14 @@ export function withV1ErrorHandler(moduleName, handler) {
       return await handler(ctx, ...args);
     } catch (err) {
       const { res } = ctx;
-      const reqCtx = [ctx?.req?.method, ctx?.url?.pathname].filter(Boolean).join(' ');
-      logError(moduleName, reqCtx ? `Error handling ${reqCtx}:` : 'Error:', err);
+      const reqCtx = [ctx?.req?.method, ctx?.url?.pathname]
+        .filter(Boolean)
+        .join(' ');
+      logError(
+        moduleName,
+        reqCtx ? `Error handling ${reqCtx}:` : 'Error:',
+        err,
+      );
 
       // Headers already flushed (e.g. a streaming export): just close.
       if (res.headersSent || res.writableEnded) {
@@ -537,7 +628,9 @@ export function withV1ErrorHandler(moduleName, handler) {
       const status = getStatusCode(err);
       if (status >= 500) {
         // Never leak internal detail on a server-side failure.
-        sendV1Error(res, status, 'Internal server error', { code: codeForStatus(status) });
+        sendV1Error(res, status, 'Internal server error', {
+          code: codeForStatus(status),
+        });
       } else {
         sendV1Error(res, status, err?.message, {
           code: err?.code || codeForStatus(status),

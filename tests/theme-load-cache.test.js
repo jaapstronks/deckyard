@@ -13,9 +13,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 
-const dom = new JSDOM('<!doctype html><html><head></head><body></body></html>', {
-  url: 'http://localhost/app/x',
-});
+const dom = new JSDOM(
+  '<!doctype html><html><head></head><body></body></html>',
+  {
+    url: 'http://localhost/app/x',
+  },
+);
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 globalThis.location = dom.window.location;
@@ -36,11 +39,13 @@ const dbTheme = () => ({
 });
 
 let served = dbTheme();
-globalThis.fetch = async () => ({ ok: true, json: async () => structuredClone(served) });
+globalThis.fetch = async () => ({
+  ok: true,
+  json: async () => structuredClone(served),
+});
 
-const { loadThemeById, invalidateTheme, clearThemeCache } = await import(
-  '../client/lib/theme/theme.js'
-);
+const { loadThemeById, invalidateTheme, clearThemeCache } =
+  await import('../client/lib/theme/theme.js');
 
 test('a database theme is accepted even though its id is the slug', async () => {
   clearThemeCache();
@@ -57,13 +62,23 @@ test('its font and background styles are injected under the requested id', async
   clearThemeCache();
   await loadThemeById(UUID);
 
-  assert.ok(document.getElementById(`theme-fonts-${UUID}`), 'font styles injected');
-  assert.ok(document.getElementById(`theme-slide-bgs-${UUID}`), 'bg styles injected');
+  assert.ok(
+    document.getElementById(`theme-fonts-${UUID}`),
+    'font styles injected',
+  );
+  assert.ok(
+    document.getElementById(`theme-slide-bgs-${UUID}`),
+    'bg styles injected',
+  );
 });
 
 test('a theme that is genuinely not the one asked for still falls back', async () => {
   clearThemeCache();
-  served = { id: 'someone-else', label: 'Wrong', cssVars: { '--t-color-accent': '#f00' } };
+  served = {
+    id: 'someone-else',
+    label: 'Wrong',
+    cssVars: { '--t-color-accent': '#f00' },
+  };
 
   const theme = await loadThemeById(UUID);
   assert.equal(theme.label, UUID, 'blank fallback');
@@ -98,12 +113,18 @@ test('invalidation removes the injected style elements', async () => {
 
 test('an edited theme serves its new values after invalidation', async () => {
   clearThemeCache();
-  assert.equal((await loadThemeById(UUID)).cssVars['--t-color-accent'], '#00aa55');
+  assert.equal(
+    (await loadThemeById(UUID)).cssVars['--t-color-accent'],
+    '#00aa55',
+  );
 
   served = { ...dbTheme(), cssVars: { '--t-color-accent': '#ff0000' } };
   invalidateTheme(UUID);
 
-  assert.equal((await loadThemeById(UUID)).cssVars['--t-color-accent'], '#ff0000');
+  assert.equal(
+    (await loadThemeById(UUID)).cssVars['--t-color-accent'],
+    '#ff0000',
+  );
   served = dbTheme();
 });
 

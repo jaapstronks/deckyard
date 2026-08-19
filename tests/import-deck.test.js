@@ -24,9 +24,8 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } = await import(
-  '../server/storage/lifecycle.js'
-);
+const { initializeStorage, __resetStorageForTests } =
+  await import('../server/storage/lifecycle.js');
 
 let tmpUploads;
 let repoRoot;
@@ -39,17 +38,23 @@ const PNG_B = Buffer.from('89504e470d0a1a0a0000000d49484452BBBBCCCC', 'hex');
 
 test.before(async () => {
   // Assets still live on disk; only the deck itself moved to the adapter.
-  tmpUploads = fs.mkdtempSync(path.join(os.tmpdir(), 'deckyard-import-uploads-'));
+  tmpUploads = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'deckyard-import-uploads-'),
+  );
   repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'deckyard-import-repo-'));
   process.env.UPLOADS_DIR = tmpUploads;
   fs.writeFileSync(path.join(tmpUploads, 'a.png'), PNG_A);
   fs.writeFileSync(path.join(tmpUploads, 'b.png'), PNG_B);
-  __setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+  __setTestDb(
+    createFakeDb({
+      organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+    }),
+  );
   await initializeStorage();
-  ({ buildDeckBundle, readDeckBundle } = await import('../server/export/deck-bundle.js'));
-  ({ handlePresentationsImportDeck } = await import(
-    '../server/routes/api/presentations/import-deck.js'
-  ));
+  ({ buildDeckBundle, readDeckBundle } =
+    await import('../server/export/deck-bundle.js'));
+  ({ handlePresentationsImportDeck } =
+    await import('../server/routes/api/presentations/import-deck.js'));
 });
 
 test.after(() => {
@@ -111,10 +116,22 @@ const fixture = () => ({
   title: 'Round-trip deck',
   theme: 'default',
   slides: [
-    { id: '1', type: 'image-slide', content: { image: '/uploads/a.png', alt: 'A' } },
-    { id: '2', type: 'image-slide', content: { image: '/uploads/a.png', alt: 'A2' } }, // dedup
+    {
+      id: '1',
+      type: 'image-slide',
+      content: { image: '/uploads/a.png', alt: 'A' },
+    },
+    {
+      id: '2',
+      type: 'image-slide',
+      content: { image: '/uploads/a.png', alt: 'A2' },
+    }, // dedup
     { id: '3', type: 'image-slide', content: { image: '/uploads/b.png' } },
-    { id: '4', type: 'content-slide', content: { title: 'Ext', body: '![x](https://example.com/z.png)' } },
+    {
+      id: '4',
+      type: 'content-slide',
+      content: { title: 'Ext', body: '![x](https://example.com/z.png)' },
+    },
     { id: '5', type: 'image-slide', content: { image: '/uploads/gone.png' } }, // missing on disk
     { id: '6', type: 'totally-unknown-type', content: { foo: 'bar' } }, // unknown type
   ],
@@ -128,10 +145,16 @@ test('imports a .deck bundle, re-hydrating assets to /uploads/', async () => {
   assert.ok(body?.id, 'a presentation was created');
 
   const json = JSON.stringify(body.slides);
-  assert.ok(!json.includes('assets/'), 'no bundle refs remain in the imported deck');
+  assert.ok(
+    !json.includes('assets/'),
+    'no bundle refs remain in the imported deck',
+  );
   assert.ok(json.includes('/uploads/'), 'assets are referenced by upload URL');
   // External URL survives untouched.
-  assert.ok(json.includes('https://example.com/z.png'), 'external URL preserved');
+  assert.ok(
+    json.includes('https://example.com/z.png'),
+    'external URL preserved',
+  );
   // The missing asset keeps its original ref and does not crash the import.
   assert.ok(json.includes('/uploads/gone.png'), 'missing asset ref preserved');
 
@@ -141,7 +164,10 @@ test('imports a .deck bundle, re-hydrating assets to /uploads/', async () => {
     .filter((f) => f !== 'gone.png');
   assert.ok(uploadRefs.length >= 2, 'at least a.png + b.png re-hydrated');
   for (const f of uploadRefs) {
-    assert.ok(fs.existsSync(path.join(tmpUploads, f)), `re-hydrated file ${f} exists`);
+    assert.ok(
+      fs.existsSync(path.join(tmpUploads, f)),
+      `re-hydrated file ${f} exists`,
+    );
   }
 });
 
@@ -150,14 +176,20 @@ test('unknown slide type degrades to a placeholder, not a crash', async () => {
   const { res, body } = await importBundle(bundle);
   assert.equal(res.statusCode, 201);
   const placeholder = body.slides.find(
-    (s) => s.type === 'content-slide' && /does not have/i.test(JSON.stringify(s.content))
+    (s) =>
+      s.type === 'content-slide' &&
+      /does not have/i.test(JSON.stringify(s.content)),
   );
   assert.ok(placeholder, 'unknown type became a content-slide placeholder');
   // Import is the one surface that PERSISTS rather than renders, so the
   // archived-slide contract has to hold here too: the placeholder names the
   // missing type and carries its content across as text instead of dropping it.
   assert.match(JSON.stringify(placeholder.content), /totally-unknown-type/);
-  assert.match(JSON.stringify(placeholder.content), /bar/, 'stored content carried across');
+  assert.match(
+    JSON.stringify(placeholder.content),
+    /bar/,
+    'stored content carried across',
+  );
 });
 
 // Known-only variant: the unknown-type placeholder is a deliberately lossy
@@ -167,10 +199,22 @@ const knownFixture = () => ({
   title: 'Round-trip deck',
   theme: 'default',
   slides: [
-    { id: '1', type: 'image-slide', content: { image: '/uploads/a.png', alt: 'A' } },
-    { id: '2', type: 'image-slide', content: { image: '/uploads/a.png', alt: 'A2' } },
+    {
+      id: '1',
+      type: 'image-slide',
+      content: { image: '/uploads/a.png', alt: 'A' },
+    },
+    {
+      id: '2',
+      type: 'image-slide',
+      content: { image: '/uploads/a.png', alt: 'A2' },
+    },
     { id: '3', type: 'image-slide', content: { image: '/uploads/b.png' } },
-    { id: '4', type: 'content-slide', content: { title: 'Ext', body: '![x](https://example.com/z.png)' } },
+    {
+      id: '4',
+      type: 'content-slide',
+      content: { title: 'Ext', body: '![x](https://example.com/z.png)' },
+    },
     { id: '5', type: 'image-slide', content: { image: '/uploads/gone.png' } },
   ],
 });
@@ -189,7 +233,11 @@ test('export→import→export is content-stable (round-trip fixpoint)', async (
   const deck3 = (await readDeckBundle(bundle3)).deck;
 
   // Same bytes → same content-addressed refs; normalized content is identical.
-  assert.deepEqual(contentShape(deck3), contentShape(deck2), 'round-trip content is stable');
+  assert.deepEqual(
+    contentShape(deck3),
+    contentShape(deck2),
+    'round-trip content is stable',
+  );
 });
 
 test('rejects a non-bundle body with 400', async () => {

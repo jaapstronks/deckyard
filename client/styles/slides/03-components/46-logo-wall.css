@@ -188,8 +188,6 @@
   margin-top: var(--slide-space-3);
 }
 
-
-
 /* Header-block alignment (author-driven, horizontal axis). `is-align-center`
    comes from the type's `headerAlign`; the subheading carries a 75ch measure
    cap that also anchored it to the start, so it needs `margin-inline: auto` to

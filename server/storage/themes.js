@@ -8,7 +8,11 @@ import { toStorageContext } from './scope.js';
 import { nowIso } from '../utils/normalize.js';
 import { withDbGuard } from './utils/db-guard.js';
 import { isValidSlug } from './utils/helpers.js';
-import { isValidFont, DEFAULT_HEADING_FONT, DEFAULT_BODY_FONT } from '../../shared/theme-fonts.js';
+import {
+  isValidFont,
+  DEFAULT_HEADING_FONT,
+  DEFAULT_BODY_FONT,
+} from '../../shared/theme-fonts.js';
 import { validateThemeConfig } from '../../shared/theme-config-schema.js';
 
 /**
@@ -84,9 +88,14 @@ export async function listThemes(scope) {
  * @returns {Promise<Object|null>} - Theme object or null
  */
 export async function getThemeRecord(scope, themeId) {
-  const context = toStorageContext(scope, 'getThemeRecord', {}, {
-    allowCrossOrganization: true,
-  });
+  const context = toStorageContext(
+    scope,
+    'getThemeRecord',
+    {},
+    {
+      allowCrossOrganization: true,
+    },
+  );
   if (!themeId || typeof themeId !== 'string') return null;
 
   return withDbGuard(null, async (db) => {
@@ -198,7 +207,9 @@ export async function createTheme(scope, data) {
         is_default: false,
         created_at: now,
         updated_at: now,
-        created_by: scope?.actorEmail ? await getUserIdByEmail(db, orgId, scope.actorEmail) : null,
+        created_by: scope?.actorEmail
+          ? await getUserIdByEmail(db, orgId, scope.actorEmail)
+          : null,
       })
       .returningAll()
       .executeTakeFirst();
@@ -508,7 +519,8 @@ function validateFonts(fonts) {
   };
 
   // Preserve familyId references if present
-  if (normalized.headingFamilyId) result.headingFamilyId = normalized.headingFamilyId;
+  if (normalized.headingFamilyId)
+    result.headingFamilyId = normalized.headingFamilyId;
   if (normalized.bodyFamilyId) result.bodyFamilyId = normalized.bodyFamilyId;
 
   return result;

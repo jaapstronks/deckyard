@@ -15,7 +15,10 @@ import {
   generateDigestWithAI,
   generateTeamDigestWithAI,
 } from '../services/digest-generation.js';
-import { sendWeeklyDigestEmail, sendTeamDigestEmail } from '../integrations/brevo.js';
+import {
+  sendWeeklyDigestEmail,
+  sendTeamDigestEmail,
+} from '../integrations/brevo.js';
 import { getAppSettings } from '../storage/settings.js';
 import { crossOrganizationScope } from '../storage/scope.js';
 import { createLogger } from '../utils/logger.js';
@@ -45,7 +48,10 @@ async function runDigestEmailJob({ repoRoot = null, dayOfWeek = null } = {}) {
   if (repoRoot) {
     try {
       const appSettings = await getAppSettings(
-        crossOrganizationScope(repoRoot ?? null, 'digest job: analytics switch is instance-level')
+        crossOrganizationScope(
+          repoRoot ?? null,
+          'digest job: analytics switch is instance-level',
+        ),
       );
       if (!appSettings.analytics?.enabled) {
         log.info('Analytics disabled, skipping digest job');
@@ -92,12 +98,17 @@ async function runDigestEmailJob({ repoRoot = null, dayOfWeek = null } = {}) {
         results.skipped++;
       }
     } catch (err) {
-      log.error(`Error processing team digest for ${admin.email}:`, err.message);
+      log.error(
+        `Error processing team digest for ${admin.email}:`,
+        err.message,
+      );
       results.errors++;
     }
   }
 
-  log.info(`Completed: ${results.sent} sent, ${results.skipped} skipped, ${results.errors} errors`);
+  log.info(
+    `Completed: ${results.sent} sent, ${results.skipped} skipped, ${results.errors} errors`,
+  );
   return results;
 }
 
@@ -122,7 +133,7 @@ async function processUserDigest(user, repoRoot) {
   // Generate digest content
   const digest = await generateDigestWithAI(
     { email: user.email, name: analytics.userName },
-    analytics
+    analytics,
   );
 
   // Send email
@@ -169,7 +180,7 @@ async function processTeamDigest(admin, repoRoot) {
   // Generate team digest content
   const digest = await generateTeamDigestWithAI(
     { email: admin.email, name: admin.email.split('@')[0] },
-    teamAnalytics
+    teamAnalytics,
   );
 
   // Send email
@@ -258,7 +269,9 @@ export function scheduleDigestEmailJob({
 
   // Schedule first run
   const initialDelay = getDelayUntilRunTime();
-  log.info(`Scheduling first run in ${Math.round(initialDelay / 1000 / 60)} minutes`);
+  log.info(
+    `Scheduling first run in ${Math.round(initialDelay / 1000 / 60)} minutes`,
+  );
 
   timeoutId = setTimeout(() => {
     // Align the first run to runAtHour, then run once and every intervalMs.
@@ -290,7 +303,9 @@ if (process.argv[1]?.endsWith('digest-email.js')) {
 
   runDigestEmailJob({ dayOfWeek })
     .then((result) => {
-      console.log(`Digest job completed: ${result.sent} sent, ${result.skipped} skipped, ${result.errors} errors`);
+      console.log(
+        `Digest job completed: ${result.sent} sent, ${result.skipped} skipped, ${result.errors} errors`,
+      );
       process.exit(result.errors > 0 ? 1 : 0);
     })
     .catch((err) => {

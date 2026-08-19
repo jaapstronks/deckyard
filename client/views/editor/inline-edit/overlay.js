@@ -125,7 +125,11 @@ export function createInlineOverlay({ h, thumb }) {
     // Chips sharing an anchor (subheading + byline + attribution) pack into a
     // horizontal row, wrapping to a new row only if they exceed the slide width
     // - so bottom-anchored fields don't push chips off-slide.
-    const pack = { x: new Map(), rowTop: new Map(), width: thumb.clientWidth || 9999 };
+    const pack = {
+      x: new Map(),
+      rowTop: new Map(),
+      width: thumb.clientWidth || 9999,
+    };
     for (const p of placements) {
       if (!p.target || !p.target.isConnected) {
         p.el.style.display = 'none';
@@ -380,7 +384,9 @@ export function createInlineOverlay({ h, thumb }) {
     if (chip?.__ieOwner) return chip.__ieOwner;
     return node.closest('[data-inline-item-index]') || null;
   }
-  thumb.addEventListener('pointerover', (e) => setActiveOwner(ownerFromEventTarget(e.target)));
+  thumb.addEventListener('pointerover', (e) =>
+    setActiveOwner(ownerFromEventTarget(e.target)),
+  );
   thumb.addEventListener('pointerleave', (e) => {
     // Chips can overhang the thumb's edge; moving onto one must not clear the
     // reveal (relatedTarget is then a node inside the overlay layer).
@@ -397,5 +403,14 @@ export function createInlineOverlay({ h, thumb }) {
     layer.remove();
   }
 
-  return { layer, clear, outline, place, focusPoint, reposition, ensureAttached, destroy };
+  return {
+    layer,
+    clear,
+    outline,
+    place,
+    focusPoint,
+    reposition,
+    ensureAttached,
+    destroy,
+  };
 }

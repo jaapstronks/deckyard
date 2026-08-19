@@ -57,20 +57,23 @@ export function createDropdown({
     if (caret === true) content.push(makeDropdownCaret());
     else if (caret) content.push(caret);
   }
-  const contentArr = content == null ? [] : Array.isArray(content) ? content : [content];
+  const contentArr =
+    content == null ? [] : Array.isArray(content) ? content : [content];
 
   const summaryAttrs = { class: `${triggerClass} dropdown-trigger` };
   if (title) summaryAttrs.title = title;
   if (ariaLabel) summaryAttrs['aria-label'] = ariaLabel;
   const summary = h('summary', summaryAttrs, contentArr);
 
-  const menu = h('div', { class: `dropdown-menu${menuClass ? ` ${menuClass}` : ''}` });
+  const menu = h('div', {
+    class: `dropdown-menu${menuClass ? ` ${menuClass}` : ''}`,
+  });
   if (items && items.length) menu.append(...items);
 
   const details = h(
     'details',
     { class: `dropdown${detailsClass ? ` ${detailsClass}` : ''}` },
-    [summary, menu]
+    [summary, menu],
   );
 
   const close = () => {

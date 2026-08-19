@@ -20,13 +20,17 @@ function consumeNotionRateLimit() {
   const elapsed = now - NOTION_RATE_LIMIT.lastRefill;
   NOTION_RATE_LIMIT.tokens = Math.min(
     NOTION_RATE_LIMIT.capacity,
-    NOTION_RATE_LIMIT.tokens + elapsed * NOTION_RATE_LIMIT.refillPerMs
+    NOTION_RATE_LIMIT.tokens + elapsed * NOTION_RATE_LIMIT.refillPerMs,
   );
   NOTION_RATE_LIMIT.lastRefill = now;
 
   if (NOTION_RATE_LIMIT.tokens < 1) {
-    const waitMs = Math.ceil((1 - NOTION_RATE_LIMIT.tokens) / NOTION_RATE_LIMIT.refillPerMs);
-    const err = new RateLimitError(`Notion rate limit exceeded. Retry in ${waitMs}ms.`);
+    const waitMs = Math.ceil(
+      (1 - NOTION_RATE_LIMIT.tokens) / NOTION_RATE_LIMIT.refillPerMs,
+    );
+    const err = new RateLimitError(
+      `Notion rate limit exceeded. Retry in ${waitMs}ms.`,
+    );
     err.retryAfterMs = waitMs;
     throw err;
   }
@@ -50,7 +54,10 @@ function notionHeaders() {
   };
 }
 
-export async function notionFetchJson(path, { method = 'GET', body = null } = {}) {
+export async function notionFetchJson(
+  path,
+  { method = 'GET', body = null } = {},
+) {
   if (!notionEnabled()) {
     throw new AppError('Notion is not configured', 501);
   }
@@ -70,8 +77,11 @@ export async function notionFetchJson(path, { method = 'GET', body = null } = {}
   if (!res.ok) {
     const msg =
       payload && typeof payload === 'object'
-        ? payload?.message || payload?.error || `Notion request failed (${res.status})`
-        : String(payload || '').trim() || `Notion request failed (${res.status})`;
+        ? payload?.message ||
+          payload?.error ||
+          `Notion request failed (${res.status})`
+        : String(payload || '').trim() ||
+          `Notion request failed (${res.status})`;
     const err = new AppError(msg, res.status);
     // Raw upstream payload rides along for logging only — deliberately NOT
     // in `details`, which AppError.toJSON() would echo to the client.
@@ -90,7 +100,7 @@ export async function fetchAllBlockChildren(blockId, { limit = 400 } = {}) {
     if (cursor) qs.set('start_cursor', cursor);
     const resp = await notionFetchJson(
       `/blocks/${encodeURIComponent(blockId)}/children?${qs.toString()}`,
-      { method: 'GET' }
+      { method: 'GET' },
     );
     const results = Array.isArray(resp?.results) ? resp.results : [];
     out.push(...results);

@@ -70,7 +70,7 @@ function buildMatrix(value, chartType, model) {
     return out;
   };
   header = fit(header).map((c, i) =>
-    c && String(c).trim() ? c : model.defaultHeaders[i] || ''
+    c && String(c).trim() ? c : model.defaultHeaders[i] || '',
   );
   body = body.map(fit);
   if (body.length === 0) body.push(new Array(cols).fill(''));
@@ -110,7 +110,8 @@ export function applyHeaderPaste({
   model,
 }) {
   if (!Array.isArray(matrix) || !matrix.length) return { header, body, cols };
-  if (startCol === 0) return buildMatrix(serializeCsv(matrix), chartType, model);
+  if (startCol === 0)
+    return buildMatrix(serializeCsv(matrix), chartType, model);
 
   const nextHeader = header.slice();
   const nextBody = body.map((r) => r.slice());
@@ -159,17 +160,15 @@ export function createCsvGridEditor({
   const currentCsv = () =>
     serializeCsv(
       [header, ...body].filter(
-        (r, i) => i === 0 || r.some((c) => String(c).trim())
-      )
+        (r, i) => i === 0 || r.some((c) => String(c).trim()),
+      ),
     );
 
   const emit = () => onChange?.(currentCsv());
 
   // -- structural ops (re-render the grid) --------------------------------
   const focusCell = (r, c, caret = 'all') => {
-    const input = tableEl?.querySelector(
-      `input[data-r="${r}"][data-c="${c}"]`
-    );
+    const input = tableEl?.querySelector(`input[data-r="${r}"][data-c="${c}"]`);
     if (!input) return;
     input.focus();
     if (caret === 'start') input.setSelectionRange?.(0, 0);
@@ -351,7 +350,10 @@ export function createCsvGridEditor({
       htr.append(th);
     }
     htr.append(
-      h('th', { class: 'csv-grid-th csv-grid-th-actions', 'aria-hidden': 'true' })
+      h('th', {
+        class: 'csv-grid-th csv-grid-th-actions',
+        'aria-hidden': 'true',
+      }),
     );
     thead.append(htr);
     table.append(thead);
@@ -418,7 +420,7 @@ export function createCsvGridEditor({
           type: 'button',
           text: t('editor.chart.grid.addSeries', '+ Series'),
           onclick: () => addColumn(),
-        })
+        }),
       );
     }
     wrap.append(actions);
@@ -509,18 +511,22 @@ export function createCsvGridEditor({
       String(chartType) === 'line'
         ? t(
             'editor.chart.grid.helpLine',
-            'X label in the first column, then one or two numeric series. The header row sets the series names.'
+            'X label in the first column, then one or two numeric series. The header row sets the series names.',
           )
         : t(
             'editor.chart.grid.helpBarPie',
-            'A label and a numeric value per row. Paste a block from Sheets/Excel into any cell.'
+            'A label and a numeric value per row. Paste a block from Sheets/Excel into any cell.',
           ),
   });
 
   const children = [];
   if (label) children.push(h('div', { class: 'field-label', text: label }));
   children.push(toolbar, contentHost, help);
-  const el = h('div', { class: 'stack is-field is-field-full csv-grid-field' }, children);
+  const el = h(
+    'div',
+    { class: 'stack is-field is-field-full csv-grid-field' },
+    children,
+  );
 
   renderContent();
   return { el };

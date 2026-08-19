@@ -45,7 +45,7 @@ import {
  * where no name is overridden.
  */
 const CORE_NAMES_SERVED_BY_CORE = CORE_SLIDE_TYPE_NAMES.filter(
-  (name) => !OVERRIDDEN_CORE_SLIDE_TYPE_NAMES.includes(name)
+  (name) => !OVERRIDDEN_CORE_SLIDE_TYPE_NAMES.includes(name),
 );
 
 describe('getSlideType resolver', () => {
@@ -87,7 +87,7 @@ describe('the three spellings are one type', () => {
       assert.equal(
         getSlideType(ref),
         SLIDE_TYPES['title-slide'],
-        `${ref} must resolve to the title-slide definition`
+        `${ref} must resolve to the title-slide definition`,
       );
       assert.equal(resolveSlideTypeName(ref), 'title-slide', ref);
     }
@@ -100,12 +100,12 @@ describe('the three spellings are one type', () => {
       assert.equal(
         resolveSlideTypeName(SLIDE_TYPE_IDS[name]),
         name,
-        `${SLIDE_TYPE_IDS[name]} must resolve back to ${name}`
+        `${SLIDE_TYPE_IDS[name]} must resolve back to ${name}`,
       );
       assert.equal(
         resolveSlideTypeName(canonicalTypeName(name)),
         name,
-        `the suffix-free name of ${name} must resolve back to it`
+        `the suffix-free name of ${name} must resolve back to it`,
       );
     }
     // sameType() compares identities, and a bare name is a CORE identity — so
@@ -115,7 +115,7 @@ describe('the three spellings are one type', () => {
     for (const name of CORE_NAMES_SERVED_BY_CORE) {
       assert.ok(
         sameType(name, SLIDE_TYPE_IDS[name]),
-        `${name} and its canonical id must compare equal`
+        `${name} and its canonical id must compare equal`,
       );
     }
   });
@@ -132,7 +132,7 @@ describe('the three spellings are one type', () => {
       assert.equal(
         clash,
         undefined,
-        `${name} and ${clash} share the canonical name "${canonical}"`
+        `${name} and ${clash} share the canonical name "${canonical}"`,
       );
       byCanonical.set(canonical, name);
     }
@@ -152,15 +152,24 @@ describe('the three spellings are one type', () => {
       }
       // The published id is the fork's, which is what tells a reader the deck
       // needs the fork's definition rather than core's.
-      assert.equal(SLIDE_TYPE_IDS[name], formatCanonicalId(parseTypeId(SLIDE_TYPE_IDS[name])));
-      assert.ok(!SLIDE_TYPE_IDS[name].startsWith(`${CORE_AUTHORITY}.`), SLIDE_TYPE_IDS[name]);
+      assert.equal(
+        SLIDE_TYPE_IDS[name],
+        formatCanonicalId(parseTypeId(SLIDE_TYPE_IDS[name])),
+      );
+      assert.ok(
+        !SLIDE_TYPE_IDS[name].startsWith(`${CORE_AUTHORITY}.`),
+        SLIDE_TYPE_IDS[name],
+      );
     }
   });
 
   it('lets an exact registry key win over a canonical alias', () => {
     // A fork registering a literal `title` keeps it; core's `title-slide` only
     // answers to `title` when nothing is registered under that key.
-    const fake = { title: { label: 'Fork title' }, 'title-slide': { label: 'Core' } };
+    const fake = {
+      title: { label: 'Fork title' },
+      'title-slide': { label: 'Core' },
+    };
     assert.deepEqual(getSlideType('title', fake), { label: 'Fork title' });
     assert.deepEqual(getSlideType('title-slide', fake), { label: 'Core' });
   });
@@ -173,7 +182,7 @@ describe('SLIDE_TYPE_IDS / getSlideTypeId', () => {
       assert.equal(
         formatCanonicalId(parseTypeId(id)),
         id,
-        `${name} -> ${id} is not the canonical spelling`
+        `${name} -> ${id} is not the canonical spelling`,
       );
     }
   });
@@ -199,11 +208,20 @@ describe('SLIDE_TYPE_IDS / getSlideTypeId', () => {
 describe('canonicalSlideType', () => {
   it('projects the stored registry key to its one published id', () => {
     assert.equal(canonicalSlideType('title-slide'), 'eu.deckyard.slide.title');
-    assert.equal(canonicalSlideType('content-slide'), 'eu.deckyard.slide.content');
+    assert.equal(
+      canonicalSlideType('content-slide'),
+      'eu.deckyard.slide.content',
+    );
   });
   it('folds any accepted spelling to the same canonical id', () => {
-    assert.equal(canonicalSlideType('core/title-slide'), 'eu.deckyard.slide.title');
-    assert.equal(canonicalSlideType('eu.deckyard.slide.title'), 'eu.deckyard.slide.title');
+    assert.equal(
+      canonicalSlideType('core/title-slide'),
+      'eu.deckyard.slide.title',
+    );
+    assert.equal(
+      canonicalSlideType('eu.deckyard.slide.title'),
+      'eu.deckyard.slide.title',
+    );
   });
   it('returns an unresolvable value unchanged (unknown/foreign type)', () => {
     // An unknown type still crosses the boundary intact rather than dropping.

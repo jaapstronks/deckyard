@@ -544,11 +544,11 @@ CONTENT TO CONVERT
 
 Replace these placeholders when using the prompt:
 
-| Variable | Description | Example Values |
-|----------|-------------|----------------|
-| `{{LANGUAGE}}` | Output language | `Dutch`, `English` |
-| `{{THEME}}` | Visual theme name | `amethyst`, `default` |
-| `{{CONTENT}}` | The raw content to convert into slides | User-provided text, document content, etc. |
+| Variable       | Description                            | Example Values                             |
+| -------------- | -------------------------------------- | ------------------------------------------ |
+| `{{LANGUAGE}}` | Output language                        | `Dutch`, `English`                         |
+| `{{THEME}}`    | Visual theme name                      | `amethyst`, `default`                      |
+| `{{CONTENT}}`  | The raw content to convert into slides | User-provided text, document content, etc. |
 
 ---
 

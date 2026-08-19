@@ -27,7 +27,8 @@ export default {
    * Extra search terms (incl. Dutch) folded into the picker's search haystack.
    * Never displayed.
    */
-  aliases: 'roster faces headshots portraits people staff team smoelenboek gezichten medewerkers',
+  aliases:
+    'roster faces headshots portraits people staff team smoelenboek gezichten medewerkers',
 
   /**
    * Abstract glyph for the picker's schematic view mode. JSON-safe spec read by
@@ -48,9 +49,21 @@ export default {
     title: 'Meet the Team',
     subheading: '',
     members: [
-      { image: 'https://picsum.photos/seed/slide-picker/800/600', name: 'Jane Doe', byline: 'CEO & Founder' },
-      { image: 'https://picsum.photos/seed/slide-picker-3/800/600', name: 'John Smith', byline: 'Head of Design' },
-      { image: 'https://picsum.photos/seed/slide-picker-4/800/600', name: 'Alex Johnson', byline: 'Lead Developer' },
+      {
+        image: 'https://picsum.photos/seed/slide-picker/800/600',
+        name: 'Jane Doe',
+        byline: 'CEO & Founder',
+      },
+      {
+        image: 'https://picsum.photos/seed/slide-picker-3/800/600',
+        name: 'John Smith',
+        byline: 'Head of Design',
+      },
+      {
+        image: 'https://picsum.photos/seed/slide-picker-4/800/600',
+        name: 'Alex Johnson',
+        byline: 'Lead Developer',
+      },
     ],
   },
 };

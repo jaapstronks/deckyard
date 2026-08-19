@@ -16,7 +16,10 @@ import { fileURLToPath } from 'node:url';
  * This guard keeps a second reader from growing back.
  */
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const REPO_ROOT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 
 async function walk(dir, out = []) {
   for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
@@ -28,17 +31,25 @@ async function walk(dir, out = []) {
 }
 
 test('http.js exports exactly one JSON body entry point', async () => {
-  const src = await fs.readFile(path.join(REPO_ROOT, 'server/utils/http.js'), 'utf8');
-  const exported = [...src.matchAll(/^export (?:async )?function (\w+)/gm)].map((m) => m[1]);
+  const src = await fs.readFile(
+    path.join(REPO_ROOT, 'server/utils/http.js'),
+    'utf8',
+  );
+  const exported = [...src.matchAll(/^export (?:async )?function (\w+)/gm)].map(
+    (m) => m[1],
+  );
 
-  assert.ok(exported.includes('requireJsonBody'), 'requireJsonBody is the entry point');
+  assert.ok(
+    exported.includes('requireJsonBody'),
+    'requireJsonBody is the entry point',
+  );
   assert.ok(
     !exported.includes('json'),
-    'the throwing `json()` reader is gone — it left the 400 to the call site'
+    'the throwing `json()` reader is gone — it left the 400 to the call site',
   );
   assert.ok(
     !exported.includes('parseJsonBody'),
-    'the `{ok, error}` reader is gone — its callers decided the status themselves'
+    'the `{ok, error}` reader is gone — its callers decided the status themselves',
   );
 });
 
@@ -68,6 +79,6 @@ test('no route handler reads a request body except through requireJsonBody', asy
   assert.deepEqual(
     offenders,
     [],
-    `route handlers must use requireJsonBody (or readApiV1Body on /api/v1):\n${offenders.join('\n')}`
+    `route handlers must use requireJsonBody (or readApiV1Body on /api/v1):\n${offenders.join('\n')}`,
   );
 });

@@ -30,7 +30,9 @@ export async function handleAiAppendSlides({ req, res, authedUser }) {
   const contentOnly = getBoolean(body, 'contentOnly', false);
   const verbatim = getBoolean(body, 'verbatim', false);
   // Revision mode (batch review "Adjust"): prior batch + feedback on it.
-  const priorSlides = Array.isArray(body?.priorSlides) ? body.priorSlides : null;
+  const priorSlides = Array.isArray(body?.priorSlides)
+    ? body.priorSlides
+    : null;
   const feedback = getOptionalString(body, 'feedback');
 
   const deckInput = getOptionalObject(body, 'deck');

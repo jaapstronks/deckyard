@@ -384,7 +384,8 @@ img.share-link-badge {
   display: flex;
   align-items: center;
   gap: var(--ps-space-2);
-  padding: var(--ps-space-1) var(--ps-space-2-5) var(--ps-space-1) var(--ps-space-1-5);
+  padding: var(--ps-space-1) var(--ps-space-2-5) var(--ps-space-1)
+    var(--ps-space-1-5);
   border-radius: 999px;
   background: hsl(var(--app-accent-soft));
   border: 1px solid hsl(var(--app-accent-primary) / 0.2);
@@ -426,8 +427,12 @@ img.share-link-badge {
 }
 
 @keyframes share-viewer-overlay-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .share-viewer-modal {

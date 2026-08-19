@@ -7,9 +7,27 @@ const outline = () => ({
   title: 'Deck',
   slides: [
     { index: 0, intent: 'chapter', roughContent: 'Part one' },
-    { index: 1, intent: 'content', roughContent: 'Bookings EUR 7.1bn', presenterNotes: 'A', hints: ['has-numeric-data'] },
-    { index: 2, intent: 'content', roughContent: 'Hiring plans', presenterNotes: 'B', hints: ['has-4-items'] },
-    { index: 3, intent: 'content', roughContent: 'Bookings recap EUR 7.1bn', presenterNotes: 'C', hints: ['is-list'] },
+    {
+      index: 1,
+      intent: 'content',
+      roughContent: 'Bookings EUR 7.1bn',
+      presenterNotes: 'A',
+      hints: ['has-numeric-data'],
+    },
+    {
+      index: 2,
+      intent: 'content',
+      roughContent: 'Hiring plans',
+      presenterNotes: 'B',
+      hints: ['has-4-items'],
+    },
+    {
+      index: 3,
+      intent: 'content',
+      roughContent: 'Bookings recap EUR 7.1bn',
+      presenterNotes: 'C',
+      hints: ['is-list'],
+    },
     { index: 4, intent: 'content', roughContent: 'Company boilerplate' },
     { index: 5, intent: 'closing', roughContent: 'Thanks' },
   ],
@@ -17,20 +35,35 @@ const outline = () => ({
 
 test('merge combines two slides into the earlier position', () => {
   const { outline: revised, applied } = applyRevisionOperations(outline(), [
-    { type: 'merge', slides: [2, 4], roughContent: 'Bookings EUR 7.1bn, incl. recap', reason: 'restatement' },
+    {
+      type: 'merge',
+      slides: [2, 4],
+      roughContent: 'Bookings EUR 7.1bn, incl. recap',
+      reason: 'restatement',
+    },
   ]);
   assert.equal(applied.length, 1);
   assert.equal(revised.slides.length, 5, 'one slide fewer');
-  const merged = revised.slides.find((s) => s.roughContent.includes('incl. recap'));
+  const merged = revised.slides.find((s) =>
+    s.roughContent.includes('incl. recap'),
+  );
   assert.ok(merged, 'merged content is present');
   assert.equal(merged.presenterNotes, 'A C', 'notes from both slides are kept');
-  assert.deepEqual(merged.hints, ['has-numeric-data', 'is-list'], 'hints are unioned');
+  assert.deepEqual(
+    merged.hints,
+    ['has-numeric-data', 'is-list'],
+    'hints are unioned',
+  );
 });
 
 test('merge without combined content is rejected, so nothing is lost', () => {
   // This is the failure mode that matters: a merge that silently drops the
   // second slide's substance.
-  const { outline: revised, applied, rejected } = applyRevisionOperations(outline(), [
+  const {
+    outline: revised,
+    applied,
+    rejected,
+  } = applyRevisionOperations(outline(), [
     { type: 'merge', slides: [2, 4], reason: 'restatement' },
   ]);
   assert.equal(applied.length, 0);
@@ -57,7 +90,8 @@ test('structural slides cannot be revised', () => {
   ]);
   assert.equal(applied.length, 0);
   assert.equal(rejected.length, 2);
-  for (const r of rejected) assert.equal(r.why, 'only content slides may be revised');
+  for (const r of rejected)
+    assert.equal(r.why, 'only content slides may be revised');
 });
 
 test('a slide may appear in only one operation', () => {
@@ -101,7 +135,7 @@ test('an empty operation list leaves the outline identical', () => {
   assert.equal(applied.length, 0);
   assert.deepEqual(
     revised.slides.map((s) => s.roughContent),
-    before.slides.map((s) => s.roughContent)
+    before.slides.map((s) => s.roughContent),
   );
 });
 
@@ -111,6 +145,6 @@ test('slides are renumbered contiguously after revision', () => {
   ]);
   assert.deepEqual(
     revised.slides.map((s) => s.index),
-    [0, 1, 2, 3, 4]
+    [0, 1, 2, 3, 4],
   );
 });

@@ -3,8 +3,18 @@
  * Allows admins to customize email templates per locale.
  */
 
-import { serveJson, badRequest, jsonError, unauthorized, requireJsonBody, withErrorHandler } from '../../utils/http.js';
-import { getTrimmedString, getOptionalString } from '../../utils/request-validators.js';
+import {
+  serveJson,
+  badRequest,
+  jsonError,
+  unauthorized,
+  requireJsonBody,
+  withErrorHandler,
+} from '../../utils/http.js';
+import {
+  getTrimmedString,
+  getOptionalString,
+} from '../../utils/request-validators.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import {
   writeEmailTemplate,
@@ -19,7 +29,12 @@ import {
   resolveTemplate,
 } from '../../integrations/email-template-resolver.js';
 import { sendEmail } from '../../integrations/brevo.js';
-import { EMAIL_STYLES, emailWrapper, emailButton, troubleClickingFooter } from '../../integrations/email-templates/index.js';
+import {
+  EMAIL_STYLES,
+  emailWrapper,
+  emailButton,
+  troubleClickingFooter,
+} from '../../integrations/email-templates/index.js';
 import { escapeHtml } from '../../../shared/slide-types/helpers.js';
 
 /**
@@ -65,7 +80,10 @@ async function handleEmailTemplateSettings({ storageScope, req, res }) {
   const locale = getTrimmedString(body, 'defaultLocale') || '';
 
   if (!SUPPORTED_LOCALES.includes(locale)) {
-    return badRequest(res, `Invalid locale. Supported: ${SUPPORTED_LOCALES.join(', ')}`);
+    return badRequest(
+      res,
+      `Invalid locale. Supported: ${SUPPORTED_LOCALES.join(', ')}`,
+    );
   }
 
   const updated = await updateDefaultLocale(storageScope, locale);
@@ -74,15 +92,25 @@ async function handleEmailTemplateSettings({ storageScope, req, res }) {
 }
 
 // PUT /api/admin/email-templates/:type/:locale - Update template for locale
-async function handleEmailTemplateWrite({ repoRoot, storageScope, req, res }, type, locale) {
+async function handleEmailTemplateWrite(
+  { repoRoot, storageScope, req, res },
+  type,
+  locale,
+) {
   // Validate type
   if (!TEMPLATE_METADATA[type]) {
-    return badRequest(res, `Invalid template type. Valid types: ${Object.keys(TEMPLATE_METADATA).join(', ')}`);
+    return badRequest(
+      res,
+      `Invalid template type. Valid types: ${Object.keys(TEMPLATE_METADATA).join(', ')}`,
+    );
   }
 
   // Validate locale
   if (!SUPPORTED_LOCALES.includes(locale)) {
-    return badRequest(res, `Invalid locale. Supported: ${SUPPORTED_LOCALES.join(', ')}`);
+    return badRequest(
+      res,
+      `Invalid locale. Supported: ${SUPPORTED_LOCALES.join(', ')}`,
+    );
   }
 
   const parsed = await requireJsonBody(req, res);
@@ -107,15 +135,25 @@ async function handleEmailTemplateWrite({ repoRoot, storageScope, req, res }, ty
 }
 
 // DELETE /api/admin/email-templates/:type/:locale - Reset to default
-async function handleEmailTemplateReset({ repoRoot, storageScope, res }, type, locale) {
+async function handleEmailTemplateReset(
+  { repoRoot, storageScope, res },
+  type,
+  locale,
+) {
   // Validate type
   if (!TEMPLATE_METADATA[type]) {
-    return badRequest(res, `Invalid template type. Valid types: ${Object.keys(TEMPLATE_METADATA).join(', ')}`);
+    return badRequest(
+      res,
+      `Invalid template type. Valid types: ${Object.keys(TEMPLATE_METADATA).join(', ')}`,
+    );
   }
 
   // Validate locale
   if (!SUPPORTED_LOCALES.includes(locale)) {
-    return badRequest(res, `Invalid locale. Supported: ${SUPPORTED_LOCALES.join(', ')}`);
+    return badRequest(
+      res,
+      `Invalid locale. Supported: ${SUPPORTED_LOCALES.join(', ')}`,
+    );
   }
 
   // Type and locale are validated above; a throw past that point is
@@ -130,7 +168,10 @@ async function handleEmailTemplateReset({ repoRoot, storageScope, res }, type, l
 async function handleEmailTemplatePreview({ repoRoot, req, res }, type) {
   // Validate type
   if (!TEMPLATE_METADATA[type]) {
-    return badRequest(res, `Invalid template type. Valid types: ${Object.keys(TEMPLATE_METADATA).join(', ')}`);
+    return badRequest(
+      res,
+      `Invalid template type. Valid types: ${Object.keys(TEMPLATE_METADATA).join(', ')}`,
+    );
   }
 
   const parsed = await requireJsonBody(req, res);
@@ -140,7 +181,10 @@ async function handleEmailTemplatePreview({ repoRoot, req, res }, type) {
   const customFields = body?.fields || null;
 
   if (!SUPPORTED_LOCALES.includes(locale)) {
-    return badRequest(res, `Invalid locale. Supported: ${SUPPORTED_LOCALES.join(', ')}`);
+    return badRequest(
+      res,
+      `Invalid locale. Supported: ${SUPPORTED_LOCALES.join(', ')}`,
+    );
   }
 
   // Type and locale are validated above; a throw past that point is
@@ -159,10 +203,16 @@ async function handleEmailTemplatePreview({ repoRoot, req, res }, type) {
 }
 
 // POST /api/admin/email-templates/:type/test - Send test email to admin
-async function handleEmailTemplateTest({ repoRoot, req, res, authedUser: user }, type) {
+async function handleEmailTemplateTest(
+  { repoRoot, req, res, authedUser: user },
+  type,
+) {
   // Validate type
   if (!TEMPLATE_METADATA[type]) {
-    return badRequest(res, `Invalid template type. Valid types: ${Object.keys(TEMPLATE_METADATA).join(', ')}`);
+    return badRequest(
+      res,
+      `Invalid template type. Valid types: ${Object.keys(TEMPLATE_METADATA).join(', ')}`,
+    );
   }
 
   const parsed = await requireJsonBody(req, res);
@@ -172,7 +222,10 @@ async function handleEmailTemplateTest({ repoRoot, req, res, authedUser: user },
   const customFields = body?.fields || null;
 
   if (!SUPPORTED_LOCALES.includes(locale)) {
-    return badRequest(res, `Invalid locale. Supported: ${SUPPORTED_LOCALES.join(', ')}`);
+    return badRequest(
+      res,
+      `Invalid locale. Supported: ${SUPPORTED_LOCALES.join(', ')}`,
+    );
   }
 
   // Type and locale are validated above; a throw past that point is
@@ -197,13 +250,18 @@ async function handleEmailTemplateTest({ repoRoot, req, res, authedUser: user },
         res,
         501,
         'email_not_configured',
-        'Outgoing email is not configured on this install (BREVO_API_KEY)'
+        'Outgoing email is not configured on this install (BREVO_API_KEY)',
       );
     }
     // The request was valid; the upstream email provider failed. That is a
     // 502, not a 400 — same status the AI routes use for provider failures
     // (LlmError default), same generic-5xx machine code (A7.19-C7h).
-    return jsonError(res, 502, 'internal_error', `Failed to send test email: ${result.error}`);
+    return jsonError(
+      res,
+      502,
+      'internal_error',
+      `Failed to send test email: ${result.error}`,
+    );
   }
 
   serveJson(res, 200, {
@@ -224,13 +282,41 @@ async function handleEmailTemplateTest({ repoRoot, req, res, authedUser: user },
  * @type {import('../../utils/router.js').Route[]}
  */
 export const ROUTES = [
-  { method: 'GET', pattern: '/api/admin/email-templates', handler: handleEmailTemplateList },
-  { method: 'GET', pattern: '/api/admin/email-templates/metadata', handler: handleEmailTemplateMetadata },
-  { method: 'PUT', pattern: '/api/admin/email-templates/settings', handler: handleEmailTemplateSettings },
-  { method: 'PUT', pattern: /^\/api\/admin\/email-templates\/([^/]+)\/([^/]+)$/, handler: handleEmailTemplateWrite },
-  { method: 'DELETE', pattern: /^\/api\/admin\/email-templates\/([^/]+)\/([^/]+)$/, handler: handleEmailTemplateReset },
-  { method: 'POST', pattern: /^\/api\/admin\/email-templates\/([^/]+)\/preview$/, handler: handleEmailTemplatePreview },
-  { method: 'POST', pattern: /^\/api\/admin\/email-templates\/([^/]+)\/test$/, handler: handleEmailTemplateTest },
+  {
+    method: 'GET',
+    pattern: '/api/admin/email-templates',
+    handler: handleEmailTemplateList,
+  },
+  {
+    method: 'GET',
+    pattern: '/api/admin/email-templates/metadata',
+    handler: handleEmailTemplateMetadata,
+  },
+  {
+    method: 'PUT',
+    pattern: '/api/admin/email-templates/settings',
+    handler: handleEmailTemplateSettings,
+  },
+  {
+    method: 'PUT',
+    pattern: /^\/api\/admin\/email-templates\/([^/]+)\/([^/]+)$/,
+    handler: handleEmailTemplateWrite,
+  },
+  {
+    method: 'DELETE',
+    pattern: /^\/api\/admin\/email-templates\/([^/]+)\/([^/]+)$/,
+    handler: handleEmailTemplateReset,
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/admin\/email-templates\/([^/]+)\/preview$/,
+    handler: handleEmailTemplatePreview,
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/admin\/email-templates\/([^/]+)\/test$/,
+    handler: handleEmailTemplateTest,
+  },
 ];
 
 /**
@@ -246,20 +332,23 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
-export const handleEmailTemplates = withErrorHandler('email-templates', (ctx) => {
-  // Only handle /api/admin/email-templates routes
-  if (!ctx.url.pathname.startsWith('/api/admin/email-templates')) {
-    return false;
-  }
+export const handleEmailTemplates = withErrorHandler(
+  'email-templates',
+  (ctx) => {
+    // Only handle /api/admin/email-templates routes
+    if (!ctx.url.pathname.startsWith('/api/admin/email-templates')) {
+      return false;
+    }
 
-  if (!ctx.authedUser) {
-    return unauthorized(ctx.res, 'Authentication required');
-  }
+    if (!ctx.authedUser) {
+      return unauthorized(ctx.res, 'Authentication required');
+    }
 
-  // All admin routes require admin role
-  if (!ctx.authedUser.isAdmin) {
-    return unauthorized(ctx.res, 'Admin access required');
-  }
+    // All admin routes require admin role
+    if (!ctx.authedUser.isAdmin) {
+      return unauthorized(ctx.res, 'Admin access required');
+    }
 
-  return dispatchRoutes(ROUTES, ctx);
-});
+    return dispatchRoutes(ROUTES, ctx);
+  },
+);

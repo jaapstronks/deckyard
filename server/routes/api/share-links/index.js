@@ -45,6 +45,9 @@ export const handleShareLinks = withErrorHandler('share-links', async (ctx) => {
  * Handle public share link endpoints (no auth required).
  * @param {import('../../../utils/context.js').PublicContext} ctx
  */
-export const handleSharePublic = withErrorHandler('share-links', async (ctx) => {
-  return dispatchRoutes(PUBLIC_ROUTES, ctx);
-});
+export const handleSharePublic = withErrorHandler(
+  'share-links',
+  async (ctx) => {
+    return dispatchRoutes(PUBLIC_ROUTES, ctx);
+  },
+);

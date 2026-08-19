@@ -107,7 +107,9 @@ export function isAgentOptOut(def) {
  * @returns {boolean}
  */
 function isFieldOptOut(field) {
-  return field?.deprecated === true || field?.hidden === true || field?.ai === false;
+  return (
+    field?.deprecated === true || field?.hidden === true || field?.ai === false
+  );
 }
 
 /**
@@ -147,13 +149,14 @@ export function deriveAgentSchema(fields) {
     if (Array.isArray(field.options)) {
       // Options are either bare values or { value, label } pairs.
       entry.options = field.options.map((o) =>
-        o && typeof o === 'object' ? o.value : o
+        o && typeof o === 'object' ? o.value : o,
       );
     }
     // The editor's own prose about the field. It answers exactly the question
     // an agent has ("what goes in here, and when"), so it carries over rather
     // than being rewritten a second time in the catalog.
-    const help = typeof field.helpText === 'string' ? field.helpText.trim() : '';
+    const help =
+      typeof field.helpText === 'string' ? field.helpText.trim() : '';
     if (help) entry.description = help;
     if (Array.isArray(field.itemFields) && field.itemFields.length) {
       entry.itemSchema = deriveAgentSchema(field.itemFields);
@@ -171,7 +174,10 @@ export function deriveAgentSchema(fields) {
  */
 function exampleFor(def, lang) {
   return (
-    def?.defaultsByLang?.[lang] || def?.defaultsByLang?.nl || def?.defaults || null
+    def?.defaultsByLang?.[lang] ||
+    def?.defaultsByLang?.nl ||
+    def?.defaults ||
+    null
   );
 }
 
@@ -296,12 +302,11 @@ export function resolveAgentSlideTypes({
   customSlideTypes = [],
 } = {}) {
   const disabled = new Set(
-    Array.isArray(disabledSlideTypes) ? disabledSlideTypes : []
+    Array.isArray(disabledSlideTypes) ? disabledSlideTypes : [],
   );
   const types = {};
 
-  const keep = (entry) =>
-    category === 'all' || entry.category === category;
+  const keep = (entry) => category === 'all' || entry.category === category;
 
   for (const [name, def] of Object.entries(SLIDE_TYPES)) {
     if (isAgentOptOut(def)) continue;

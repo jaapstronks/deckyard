@@ -17,7 +17,7 @@ export function getClient() {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     throw new Error(
-      'ANTHROPIC_API_KEY is not set. Run the suite with: node --env-file=.env ...'
+      'ANTHROPIC_API_KEY is not set. Run the suite with: node --env-file=.env ...',
     );
   }
   client = new Anthropic({ apiKey });
@@ -79,10 +79,14 @@ export async function requestJson({
   if (onUsage) onUsage(normalizeSdkUsage(response.usage));
 
   if (response.stop_reason === 'refusal') {
-    throw new Error(`Model refused the request (${response.stop_details?.category ?? 'unknown'})`);
+    throw new Error(
+      `Model refused the request (${response.stop_details?.category ?? 'unknown'})`,
+    );
   }
   if (response.stop_reason === 'max_tokens') {
-    throw new Error(`Response hit max_tokens (${maxTokens}); output is truncated.`);
+    throw new Error(
+      `Response hit max_tokens (${maxTokens}); output is truncated.`,
+    );
   }
 
   const text = response.content
@@ -93,7 +97,9 @@ export async function requestJson({
   try {
     return JSON.parse(text);
   } catch (err) {
-    throw new Error(`Schema-valid JSON expected but parse failed: ${err.message}`);
+    throw new Error(
+      `Schema-valid JSON expected but parse failed: ${err.message}`,
+    );
   }
 }
 

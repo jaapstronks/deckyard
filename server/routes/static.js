@@ -1,8 +1,15 @@
 import { notFound } from '../utils/http.js';
 import { handleFeed } from './feed.js';
-import { handleGo, handleMyData, handleStaticFiles } from './static/static-files.js';
+import {
+  handleGo,
+  handleMyData,
+  handleStaticFiles,
+} from './static/static-files.js';
 import { handleEmbed } from './static/embed.js';
-import { handlePublishedReader, handlePublishedPage } from './static/published.js';
+import {
+  handlePublishedReader,
+  handlePublishedPage,
+} from './static/published.js';
 import { handleSandboxOg } from './static/sandbox-og.js';
 import { handleShareLink } from './static/share-viewer.js';
 import { handleAppRoutes } from './static/app-shell.js';

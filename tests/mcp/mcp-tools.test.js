@@ -20,7 +20,11 @@ describe('MCP Tools Registration', () => {
   it('all 27 tools are registered', async () => {
     const server = new McpServer();
     registerTools(server, { defaultOwnerEmail: 'test@test.com' });
-    assert.strictEqual(server.tools.size, 27, `Expected 27 tools, got ${server.tools.size}`);
+    assert.strictEqual(
+      server.tools.size,
+      27,
+      `Expected 27 tools, got ${server.tools.size}`,
+    );
   });
 
   it('registers without defaultOwnerEmail', async () => {
@@ -54,7 +58,7 @@ describe('MCP Tools Registration', () => {
       assert.strictEqual(
         tool.inputSchema.type,
         'object',
-        `${name} inputSchema.type should be 'object'`
+        `${name} inputSchema.type should be 'object'`,
       );
     }
   });
@@ -65,7 +69,7 @@ describe('MCP Tools Registration', () => {
     for (const [name, tool] of server.tools) {
       assert.ok(
         typeof tool.inputSchema.properties === 'object',
-        `${name} inputSchema.properties should be an object`
+        `${name} inputSchema.properties should be an object`,
       );
     }
   });
@@ -122,7 +126,7 @@ describe('MCP Tools Inventory', () => {
     for (const toolName of server.tools.keys()) {
       assert.ok(
         expectedTools.includes(toolName),
-        `Unexpected tool: ${toolName} (update expectedTools array if intentional)`
+        `Unexpected tool: ${toolName} (update expectedTools array if intentional)`,
       );
     }
   });
@@ -180,14 +184,23 @@ describe('MCP Tool Schemas', () => {
     for (const field of ['presentationId', 'commentId', 'status']) {
       assert.ok(tool.inputSchema.required.includes(field), `requires ${field}`);
     }
-    assert.deepEqual(tool.inputSchema.properties.status.enum, ['resolved', 'open', 'dismissed']);
+    assert.deepEqual(tool.inputSchema.properties.status.enum, [
+      'resolved',
+      'open',
+      'dismissed',
+    ]);
   });
 
   it('list_comments and list_recent_comments accept a since filter', async () => {
     const server = new McpServer();
     registerTools(server, {});
-    assert.ok('since' in server.tools.get('list_comments').inputSchema.properties);
-    assert.ok('since' in server.tools.get('list_recent_comments').inputSchema.properties);
+    assert.ok(
+      'since' in server.tools.get('list_comments').inputSchema.properties,
+    );
+    assert.ok(
+      'since' in
+        server.tools.get('list_recent_comments').inputSchema.properties,
+    );
   });
 
   it('update_slide requires presentationId, slideIndex, content', async () => {
@@ -223,10 +236,13 @@ describe('MCP Tool Schemas', () => {
     registerTools(server, {});
     const tool = server.tools.get('export_presentation');
     const enumVals = tool.inputSchema.properties.format.enum;
-    assert.deepStrictEqual(
-      [...enumVals].sort(),
-      ['html', 'json', 'pdf', 'png-zip', 'pptx']
-    );
+    assert.deepStrictEqual([...enumVals].sort(), [
+      'html',
+      'json',
+      'pdf',
+      'png-zip',
+      'pptx',
+    ]);
   });
 
   it('compress_presentation has apply and intensity options', async () => {
@@ -273,7 +289,11 @@ describe('MCP Tool Schemas', () => {
     const tool = server.tools.get('get_slide_types');
     const props = tool.inputSchema.properties;
     assert.ok('category' in props);
-    assert.deepStrictEqual(props.category.enum, ['structural', 'content', 'all']);
+    assert.deepStrictEqual(props.category.enum, [
+      'structural',
+      'content',
+      'all',
+    ]);
   });
 
   it('get_slide_types exposes lang param and returns example field', async () => {
@@ -281,12 +301,18 @@ describe('MCP Tool Schemas', () => {
     registerTools(server, {});
     const tool = server.tools.get('get_slide_types');
     assert.ok('lang' in tool.inputSchema.properties);
-    assert.deepStrictEqual(tool.inputSchema.properties.lang.enum, ['nl', 'en-GB']);
+    assert.deepStrictEqual(tool.inputSchema.properties.lang.enum, [
+      'nl',
+      'en-GB',
+    ]);
 
     const { types, exampleLang } = await tool.handler({ lang: 'nl' });
     assert.strictEqual(exampleLang, 'nl');
     assert.ok(types['title-slide'], 'title-slide should be in catalog');
-    assert.ok(types['title-slide'].example, 'title-slide should have an example');
+    assert.ok(
+      types['title-slide'].example,
+      'title-slide should have an example',
+    );
     assert.strictEqual(typeof types['title-slide'].example.title, 'string');
   });
 
@@ -298,7 +324,10 @@ describe('MCP Tool Schemas', () => {
     assert.ok(tool.inputSchema.required.includes('title'));
     assert.ok(tool.inputSchema.required.includes('slides'));
     assert.ok('validation' in tool.inputSchema.properties);
-    assert.deepStrictEqual(tool.inputSchema.properties.validation.enum, ['strict', 'fix']);
+    assert.deepStrictEqual(tool.inputSchema.properties.validation.enum, [
+      'strict',
+      'fix',
+    ]);
     assert.ok('auto_prepend_title' in tool.inputSchema.properties);
   });
 });
@@ -325,12 +354,16 @@ describe('MCP Tools custom seam', () => {
           'fork_tool',
           'A fork-only tool',
           { type: 'object', properties: {} },
-          async () => 'ok'
+          async () => 'ok',
         );
       },
     });
 
-    assert.strictEqual(countAtCallback, coreCount, 'core tools registered first');
+    assert.strictEqual(
+      countAtCallback,
+      coreCount,
+      'core tools registered first',
+    );
     assert.strictEqual(server.tools.size, coreCount + 1);
     assert.ok(server.tools.has('fork_tool'));
 
@@ -342,7 +375,7 @@ describe('MCP Tools custom seam', () => {
     // getOwner prefers per-request (SSE) context over the static default
     assert.strictEqual(
       seenCtx.getOwner({ ownerEmail: 'session@test.com' }),
-      'session@test.com'
+      'session@test.com',
     );
     assert.strictEqual(seenCtx.getOwner(), 'fork@test.com');
   });
@@ -356,9 +389,8 @@ describe('MCP Tools custom seam', () => {
   });
 
   it('loadCustomToolsRegistrar returns a function or null without throwing', async () => {
-    const { loadCustomToolsRegistrar } = await import(
-      '../../server/mcp/custom-tools-loader.js'
-    );
+    const { loadCustomToolsRegistrar } =
+      await import('../../server/mcp/custom-tools-loader.js');
     const fn = await loadCustomToolsRegistrar();
     assert.ok(fn === null || typeof fn === 'function');
   });
@@ -387,7 +419,10 @@ describe('MCP presentationId / id alias', () => {
     const server = new McpServer();
     registerTools(server, {});
     const tool = server.tools.get('delete_presentation');
-    assert.ok('id' in tool.inputSchema.properties, 'delete_presentation must accept id');
+    assert.ok(
+      'id' in tool.inputSchema.properties,
+      'delete_presentation must accept id',
+    );
   });
 
   it('handler coalesces id into presentationId when only id is passed', () => {
@@ -402,7 +437,7 @@ describe('MCP presentationId / id alias', () => {
       (params) => {
         seen = params;
         return params;
-      }
+      },
     );
     server.tools.get('probe').handler({ id: 'deck-xyz', confirm: true });
     assert.strictEqual(seen.presentationId, 'deck-xyz');
@@ -419,9 +454,11 @@ describe('MCP presentationId / id alias', () => {
       (params) => {
         seen = params;
         return params;
-      }
+      },
     );
-    server.tools.get('probe2').handler({ presentationId: 'real', id: 'ignored' });
+    server.tools
+      .get('probe2')
+      .handler({ presentationId: 'real', id: 'ignored' });
     assert.strictEqual(seen.presentationId, 'real');
   });
 
@@ -441,7 +478,7 @@ describe('MCP presentationId / id alias', () => {
       (params) => {
         seen = params;
         return params;
-      }
+      },
     );
     // Own-id tools coalesce themselves; the wrapper must not touch params.
     server.tools.get('probe3').handler({ id: 'own' });

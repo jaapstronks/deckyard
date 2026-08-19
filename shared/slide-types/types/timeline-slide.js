@@ -19,18 +19,18 @@ function itemHtml(item, idx, total) {
     typeof item?.date === 'string'
       ? item.date
       : typeof item?.time === 'string'
-      ? item.time
-      : typeof item?.label === 'string'
-      ? item.label
-      : '';
+        ? item.time
+        : typeof item?.label === 'string'
+          ? item.label
+          : '';
   const date = String(dateRaw || '').trim();
   const title = typeof item?.title === 'string' ? item.title.trim() : '';
   const textRaw =
     typeof item?.text === 'string'
       ? item.text
       : typeof item?.body === 'string'
-      ? item.body
-      : '';
+        ? item.body
+        : '';
   const text = String(textRaw || '').trim();
 
   // Alternate cards above/below the track for visual interest
@@ -147,9 +147,21 @@ export default {
       subheading: '',
       bottomSubheading: '',
       items: [
-        { date: '2020', title: 'Oprichting', text: 'Het begin van ons verhaal' },
-        { date: '2021', title: 'Eerste klanten', text: 'Marktvalidatie behaald' },
-        { date: '2022', title: 'Groei', text: 'Team uitgebreid naar 10 mensen' },
+        {
+          date: '2020',
+          title: 'Oprichting',
+          text: 'Het begin van ons verhaal',
+        },
+        {
+          date: '2021',
+          title: 'Eerste klanten',
+          text: 'Marktvalidatie behaald',
+        },
+        {
+          date: '2022',
+          title: 'Groei',
+          text: 'Team uitgebreid naar 10 mensen',
+        },
         { date: '2023', title: 'Uitbreiding', text: 'Nieuwe markten betreden' },
         { date: '2024', title: 'Vandaag', text: 'Klaar voor de toekomst' },
       ],
@@ -161,7 +173,11 @@ export default {
       bottomSubheading: '',
       items: [
         { date: '2020', title: 'Founded', text: 'The beginning of our story' },
-        { date: '2021', title: 'First customers', text: 'Market validation achieved' },
+        {
+          date: '2021',
+          title: 'First customers',
+          text: 'Market validation achieved',
+        },
         { date: '2022', title: 'Growth', text: 'Team expanded to 10 people' },
         { date: '2023', title: 'Expansion', text: 'Entered new markets' },
         { date: '2024', title: 'Today', text: 'Ready for the future' },
@@ -175,7 +191,11 @@ export default {
     bottomSubheading: '',
     items: [
       { date: '2020', title: 'Founded', text: 'The beginning of our story' },
-      { date: '2021', title: 'First customers', text: 'Market validation achieved' },
+      {
+        date: '2021',
+        title: 'First customers',
+        text: 'Market validation achieved',
+      },
       { date: '2022', title: 'Growth', text: 'Team expanded to 10 people' },
       { date: '2023', title: 'Expansion', text: 'Entered new markets' },
       { date: '2024', title: 'Today', text: 'Ready for the future' },
@@ -189,7 +209,11 @@ export default {
       typeof content?.title === 'string' && content.title.trim()
         ? `<h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${escapeHtml(content.title.trim())}</h2>`
         : '';
-    const subheadingHtml = renderSubheadingHtml(content, 'subheading', 'subtitle');
+    const subheadingHtml = renderSubheadingHtml(
+      content,
+      'subheading',
+      'subtitle',
+    );
     const bottomSubheadingHtml = renderBottomSubheadingHtml(content);
     const hasBottom = hasBottomSubheading(content);
     const hasHeader = !!(title || subheadingHtml);

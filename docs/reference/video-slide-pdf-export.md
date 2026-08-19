@@ -27,7 +27,7 @@ drop the image:
 1. **The pull zone isn't in the slide.** A Bunny thumbnail lives at
    `https://<pullzone>.b-cdn.net/<videoId>/thumbnail.jpg`, and the pull zone used
    to come only from `BUNNY_PULLZONE` — an env var documented as an optional
-   *PPTX* setting. A fork that never enabled PPTX video embedding got an empty
+   _PPTX_ setting. A fork that never enabled PPTX video embedding got an empty
    grey box. The pull zone is now discovered from the library's own play page
    (`og:image`) and cached per library id for the process; a configured
    `BUNNY_PULLZONE` still wins and skips the lookup. The discovered URL is only

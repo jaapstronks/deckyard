@@ -23,8 +23,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { ROUTES as FOLLOW_ROUTES, handleFollowPublic } from '../server/routes/api/follow.js';
-import { ROUTES as CODE_ROUTES, handleFollowCodes } from '../server/routes/api/follow-codes.js';
+import {
+  ROUTES as FOLLOW_ROUTES,
+  handleFollowPublic,
+} from '../server/routes/api/follow.js';
+import {
+  ROUTES as CODE_ROUTES,
+  handleFollowCodes,
+} from '../server/routes/api/follow-codes.js';
 
 function select(routes, method, pathname) {
   for (const route of routes) {
@@ -43,9 +49,14 @@ function mockRes() {
   return {
     statusCode: null,
     headers: {},
-    writeHead(c, headers) { this.statusCode = c; Object.assign(this.headers, headers); },
+    writeHead(c, headers) {
+      this.statusCode = c;
+      Object.assign(this.headers, headers);
+    },
     end() {},
-    setHeader(k, v) { this.headers[k] = v; },
+    setHeader(k, v) {
+      this.headers[k] = v;
+    },
   };
 }
 
@@ -66,7 +77,11 @@ function ctx(method, pathname, { authedUser = null } = {}) {
 function named(routes, method, path, handlerName) {
   const route = select(routes, method, path);
   assert.ok(route, `${method} ${path} matches a route`);
-  assert.equal(route.handler.name, handlerName, `${method} ${path} → ${handlerName}`);
+  assert.equal(
+    route.handler.name,
+    handlerName,
+    `${method} ${path} → ${handlerName}`,
+  );
 }
 
 /** Assert what a route's pattern captures for a concrete path. */
@@ -74,20 +89,69 @@ function captures(routes, method, path, expected) {
   const route = select(routes, method, path);
   assert.ok(route, `${method} ${path} matches a route`);
   const match = route.pattern.exec(path);
-  assert.deepEqual(match.slice(1), expected, `${method} ${path} captures ${expected.join(', ')}`);
+  assert.deepEqual(
+    match.slice(1),
+    expected,
+    `${method} ${path} captures ${expected.join(', ')}`,
+  );
 }
 
 test('follow: routes resolve to their named sub-handlers in order', () => {
   named(FOLLOW_ROUTES, 'GET', '/api/follow/CODE/state', 'handleFollowState');
-  named(FOLLOW_ROUTES, 'GET', '/api/follow/CODE/interactions/current', 'handleFollowInteractionsCurrent');
-  named(FOLLOW_ROUTES, 'GET', '/api/follow/CODE/interactions/i1/state', 'handleFollowInteractionState');
-  named(FOLLOW_ROUTES, 'POST', '/api/follow/CODE/interactions/i1/vote', 'handleFollowInteractionVote');
-  named(FOLLOW_ROUTES, 'POST', '/api/follow/CODE/interactions/i1/feedback', 'handleFollowInteractionFeedback');
-  named(FOLLOW_ROUTES, 'POST', '/api/follow/CODE/questions', 'handleFollowQuestions');
-  named(FOLLOW_ROUTES, 'GET', '/api/follow/CODE/questions/events', 'handleFollowQuestionsEvents');
-  named(FOLLOW_ROUTES, 'POST', '/api/follow/CODE/questions/q1/upvote', 'handleFollowUpvote');
-  named(FOLLOW_ROUTES, 'POST', '/api/follow/CODE/questions/q1/cancel', 'handleFollowCancel');
-  named(FOLLOW_ROUTES, 'GET', '/api/follow/CODE/presentation', 'handleFollowPresentation');
+  named(
+    FOLLOW_ROUTES,
+    'GET',
+    '/api/follow/CODE/interactions/current',
+    'handleFollowInteractionsCurrent',
+  );
+  named(
+    FOLLOW_ROUTES,
+    'GET',
+    '/api/follow/CODE/interactions/i1/state',
+    'handleFollowInteractionState',
+  );
+  named(
+    FOLLOW_ROUTES,
+    'POST',
+    '/api/follow/CODE/interactions/i1/vote',
+    'handleFollowInteractionVote',
+  );
+  named(
+    FOLLOW_ROUTES,
+    'POST',
+    '/api/follow/CODE/interactions/i1/feedback',
+    'handleFollowInteractionFeedback',
+  );
+  named(
+    FOLLOW_ROUTES,
+    'POST',
+    '/api/follow/CODE/questions',
+    'handleFollowQuestions',
+  );
+  named(
+    FOLLOW_ROUTES,
+    'GET',
+    '/api/follow/CODE/questions/events',
+    'handleFollowQuestionsEvents',
+  );
+  named(
+    FOLLOW_ROUTES,
+    'POST',
+    '/api/follow/CODE/questions/q1/upvote',
+    'handleFollowUpvote',
+  );
+  named(
+    FOLLOW_ROUTES,
+    'POST',
+    '/api/follow/CODE/questions/q1/cancel',
+    'handleFollowCancel',
+  );
+  named(
+    FOLLOW_ROUTES,
+    'GET',
+    '/api/follow/CODE/presentation',
+    'handleFollowPresentation',
+  );
   named(FOLLOW_ROUTES, 'GET', '/api/follow/CODE/events', 'handleFollowEvents');
 });
 
@@ -98,20 +162,39 @@ test('follow: every row is method-less — the sub-handler owns the method decis
   // Same handler regardless of method, exactly like the old path-only chain.
   assert.equal(
     select(FOLLOW_ROUTES, 'DELETE', '/api/follow/CODE/state')?.handler.name,
-    'handleFollowState'
+    'handleFollowState',
   );
 });
 
 test('follow: patterns capture code and ids in handler-argument order', () => {
   captures(FOLLOW_ROUTES, 'GET', '/api/follow/CODE/state', ['CODE']);
-  captures(FOLLOW_ROUTES, 'GET', '/api/follow/CODE/interactions/i1/state', ['CODE', 'i1']);
-  captures(FOLLOW_ROUTES, 'POST', '/api/follow/CODE/questions/q1/upvote', ['CODE', 'q1']);
-  captures(FOLLOW_ROUTES, 'POST', '/api/follow/CODE/questions/q1/cancel', ['CODE', 'q1']);
+  captures(FOLLOW_ROUTES, 'GET', '/api/follow/CODE/interactions/i1/state', [
+    'CODE',
+    'i1',
+  ]);
+  captures(FOLLOW_ROUTES, 'POST', '/api/follow/CODE/questions/q1/upvote', [
+    'CODE',
+    'q1',
+  ]);
+  captures(FOLLOW_ROUTES, 'POST', '/api/follow/CODE/questions/q1/cancel', [
+    'CODE',
+    'q1',
+  ]);
 });
 
 test('follow: /questions does not swallow /questions/events or /questions/:id actions', () => {
-  named(FOLLOW_ROUTES, 'GET', '/api/follow/CODE/questions/events', 'handleFollowQuestionsEvents');
-  named(FOLLOW_ROUTES, 'POST', '/api/follow/CODE/questions/q1/upvote', 'handleFollowUpvote');
+  named(
+    FOLLOW_ROUTES,
+    'GET',
+    '/api/follow/CODE/questions/events',
+    'handleFollowQuestionsEvents',
+  );
+  named(
+    FOLLOW_ROUTES,
+    'POST',
+    '/api/follow/CODE/questions/q1/upvote',
+    'handleFollowUpvote',
+  );
 });
 
 test('follow: an unknown sub-path falls through', async () => {
@@ -127,7 +210,12 @@ test('follow: an unknown sub-path falls through', async () => {
 
 test('follow-codes: routes resolve to their named handlers in order', () => {
   named(CODE_ROUTES, 'POST', '/api/follow-codes', 'handleFollowCodeCreate');
-  named(CODE_ROUTES, 'GET', '/api/follow-codes/ABCD', 'handleFollowCodeResolve');
+  named(
+    CODE_ROUTES,
+    'GET',
+    '/api/follow-codes/ABCD',
+    'handleFollowCodeResolve',
+  );
   captures(CODE_ROUTES, 'GET', '/api/follow-codes/ABCD', ['ABCD']);
   // Case-insensitive resolve, as before (the handler upper-cases the code).
   captures(CODE_ROUTES, 'GET', '/api/follow-codes/abcd', ['abcd']);
@@ -148,10 +236,20 @@ test('follow-codes: anything else under the prefix answers 405 with Allow (Form 
     ['GET', '/api/follow-codes/ABCD/extra'],
   ];
   for (const [method, path] of cases) {
-    const { ctx: c, res } = ctx(method, path, { authedUser: { email: 'a@b.test' } });
-    assert.equal(await handleFollowCodes(c), true, `${method} ${path} → handled`);
+    const { ctx: c, res } = ctx(method, path, {
+      authedUser: { email: 'a@b.test' },
+    });
+    assert.equal(
+      await handleFollowCodes(c),
+      true,
+      `${method} ${path} → handled`,
+    );
     assert.equal(res.statusCode, 405, `${method} ${path} → 405`);
-    assert.equal(res.headers.Allow, 'GET, POST', `${method} ${path} pins Allow`);
+    assert.equal(
+      res.headers.Allow,
+      'GET, POST',
+      `${method} ${path} pins Allow`,
+    );
   }
 });
 

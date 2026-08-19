@@ -21,13 +21,19 @@ describe('diffAddedSlideIds', () => {
     const existing = S('a', 'b');
     const submitted = S('a', 'b', 'c', 'd');
     const updated = S('a', 'b', 'c', 'd');
-    assert.deepStrictEqual(diffAddedSlideIds(existing, submitted, updated), ['c', 'd']);
+    assert.deepStrictEqual(diffAddedSlideIds(existing, submitted, updated), [
+      'c',
+      'd',
+    ]);
   });
 
   it('is empty when nothing was added (edits only)', () => {
     const existing = S('a', 'b');
     const submitted = S('a', 'b');
-    assert.deepStrictEqual(diffAddedSlideIds(existing, submitted, submitted), []);
+    assert.deepStrictEqual(
+      diffAddedSlideIds(existing, submitted, submitted),
+      [],
+    );
   });
 
   it('ignores merge-appended slides the actor did not submit', () => {
@@ -35,26 +41,35 @@ describe('diffAddedSlideIds', () => {
     const existing = S('a');
     const submitted = S('a', 'c');
     const updated = S('a', 'c', 'x');
-    assert.deepStrictEqual(diffAddedSlideIds(existing, submitted, updated), ['c']);
+    assert.deepStrictEqual(diffAddedSlideIds(existing, submitted, updated), [
+      'c',
+    ]);
   });
 
   it('drops a submitted slide the merge rejected (absent from updated)', () => {
     const existing = S('a');
     const submitted = S('a', 'c', 'd');
     const updated = S('a', 'c'); // 'd' lost to the merge
-    assert.deepStrictEqual(diffAddedSlideIds(existing, submitted, updated), ['c']);
+    assert.deepStrictEqual(diffAddedSlideIds(existing, submitted, updated), [
+      'c',
+    ]);
   });
 
   it('dedupes and preserves first-appearance order', () => {
     const existing = S('a');
     const submitted = S('c', 'b', 'c', 'b');
     const updated = S('a', 'b', 'c');
-    assert.deepStrictEqual(diffAddedSlideIds(existing, submitted, updated), ['c', 'b']);
+    assert.deepStrictEqual(diffAddedSlideIds(existing, submitted, updated), [
+      'c',
+      'b',
+    ]);
   });
 
   it('tolerates missing/blank ids and non-arrays', () => {
     assert.deepStrictEqual(diffAddedSlideIds(null, null, null), []);
     const submitted = [{ id: '' }, {}, { id: 'good' }];
-    assert.deepStrictEqual(diffAddedSlideIds([], submitted, submitted), ['good']);
+    assert.deepStrictEqual(diffAddedSlideIds([], submitted, submitted), [
+      'good',
+    ]);
   });
 });

@@ -40,7 +40,8 @@ const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { resetRateLimitBuckets } = await import('../server/utils/rate-limit.js');
 const { AUTH_RATE_LIMITS } = await import('../server/config/rate-limits.js');
-const { handleAnalyticsTrack } = await import('../server/routes/api/analytics-track.js');
+const { handleAnalyticsTrack } =
+  await import('../server/routes/api/analytics-track.js');
 
 const DECK_ONE = 'deck-one';
 const DECK_TWO = 'deck-two';
@@ -60,7 +61,13 @@ const CLIENT_IP = '203.0.113.7';
 // ---------------------------------------------------------------------------
 
 /** A `view_sessions` row in the shape `createViewSession` writes. */
-function sessionRow({ id, deck = DECK_ONE, device = DEVICE, token, endedAt = null }) {
+function sessionRow({
+  id,
+  deck = DECK_ONE,
+  device = DEVICE,
+  token,
+  endedAt = null,
+}) {
   return {
     id,
     presentation_id: deck,
@@ -104,13 +111,19 @@ function seed({ sessions = [], slideViews = [] } = {}) {
   return db;
 }
 
-const sessionIds = (db) => (db.__tables.view_sessions || []).map((r) => r.id).sort();
-const slideViewIds = (db) => (db.__tables.slide_views || []).map((r) => r.id).sort();
+const sessionIds = (db) =>
+  (db.__tables.view_sessions || []).map((r) => r.id).sort();
+const slideViewIds = (db) =>
+  (db.__tables.slide_views || []).map((r) => r.id).sort();
 
 /** Call the erase route the way `routes/api/index.js` does. */
 async function erase(body, { ip = CLIENT_IP } = {}) {
   const payload =
-    body === undefined ? '' : typeof body === 'string' ? body : JSON.stringify(body);
+    body === undefined
+      ? ''
+      : typeof body === 'string'
+        ? body
+        : JSON.stringify(body);
   const req = {
     method: 'POST',
     headers: { host: 'decks.example.test', 'content-type': 'application/json' },
@@ -156,7 +169,9 @@ test('a malformed token is rejected and erases nothing', async () => {
     slideViews: [slideViewRow({ id: 'v1', sessionId: 's1' })],
   });
 
-  const { handled, status, body } = await erase({ sessionToken: 'not-a-token' });
+  const { handled, status, body } = await erase({
+    sessionToken: 'not-a-token',
+  });
 
   assert.equal(handled, true);
   assert.equal(status, 400);
@@ -200,9 +215,19 @@ test('one erase wipes every session of the device, across decks, with slide view
     sessions: [
       sessionRow({ id: 'here', deck: DECK_ONE, token: TOKEN_A }),
       sessionRow({ id: 'other-deck', deck: DECK_TWO, token: TOKEN_B }),
-      sessionRow({ id: 'old', deck: DECK_ONE, token: TOKEN_OLD, endedAt: '2026-02-01T00:00:00.000Z' }),
+      sessionRow({
+        id: 'old',
+        deck: DECK_ONE,
+        token: TOKEN_OLD,
+        endedAt: '2026-02-01T00:00:00.000Z',
+      }),
       // A different device on the same deck must survive.
-      sessionRow({ id: 'stranger', deck: DECK_ONE, device: OTHER_DEVICE, token: TOKEN_OTHER }),
+      sessionRow({
+        id: 'stranger',
+        deck: DECK_ONE,
+        device: OTHER_DEVICE,
+        token: TOKEN_OTHER,
+      }),
     ],
     slideViews: [
       slideViewRow({ id: 'v-here', sessionId: 'here' }),
@@ -218,7 +243,11 @@ test('one erase wipes every session of the device, across decks, with slide view
 
   assert.equal(status, 200);
   assert.deepEqual(body, { ok: true, deleted: { sessions: 3, slideViews: 3 } });
-  assert.deepEqual(sessionIds(db), ['stranger'], "only the other device's session remains");
+  assert.deepEqual(
+    sessionIds(db),
+    ['stranger'],
+    "only the other device's session remains",
+  );
   assert.deepEqual(slideViewIds(db), ['v-stranger']);
 });
 
@@ -244,7 +273,11 @@ test('a session with no device id erases only itself', async () => {
 
   assert.equal(status, 200);
   assert.deepEqual(body, { ok: true, deleted: { sessions: 1, slideViews: 1 } });
-  assert.deepEqual(sessionIds(db), ['stranger'], 'no cascade without a device id');
+  assert.deepEqual(
+    sessionIds(db),
+    ['stranger'],
+    'no cascade without a device id',
+  );
   assert.deepEqual(slideViewIds(db), ['v-stranger']);
 });
 
@@ -260,7 +293,11 @@ test('the route is rate-limited once the expensive-op bucket is spent', async ()
   // a 404 until the bucket empties, then a 429.
   for (let i = 0; i < EXPENSIVE_CAP; i++) {
     const { status } = await erase({ sessionToken: TOKEN_A });
-    assert.equal(status, 404, `call ${i + 1} within the burst reaches the lookup`);
+    assert.equal(
+      status,
+      404,
+      `call ${i + 1} within the burst reaches the lookup`,
+    );
   }
 
   const { status } = await erase({ sessionToken: TOKEN_A });

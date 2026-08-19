@@ -24,11 +24,22 @@ import {
 describe('buildDeckActivityCandidates', () => {
   it('includes owner, createdBy and collaborators, normalised + deduped', () => {
     const candidates = buildDeckActivityCandidates({
-      presentation: { ownerEmail: 'Owner@Example.com', createdBy: 'owner@example.com' },
+      presentation: {
+        ownerEmail: 'Owner@Example.com',
+        createdBy: 'owner@example.com',
+      },
       actor: { email: 'editor@example.com' },
-      collaborators: ['Collab@Example.com', 'collab@example.com', 'other@example.com'],
+      collaborators: [
+        'Collab@Example.com',
+        'collab@example.com',
+        'other@example.com',
+      ],
     });
-    assert.deepStrictEqual(candidates.sort(), ['collab@example.com', 'other@example.com', 'owner@example.com']);
+    assert.deepStrictEqual(candidates.sort(), [
+      'collab@example.com',
+      'other@example.com',
+      'owner@example.com',
+    ]);
   });
 
   it('never includes the actor (you do not notify yourself)', () => {
@@ -54,21 +65,21 @@ describe('formatDeckActivityTitle', () => {
   it('uses the singular for one slide', () => {
     assert.strictEqual(
       formatDeckActivityTitle('Riley', 1, 'Kickoff'),
-      'Riley added a slide to "Kickoff"'
+      'Riley added a slide to "Kickoff"',
     );
   });
 
   it('uses the plural + count for many slides', () => {
     assert.strictEqual(
       formatDeckActivityTitle('Riley', 5, 'Kickoff'),
-      'Riley added 5 slides to "Kickoff"'
+      'Riley added 5 slides to "Kickoff"',
     );
   });
 
   it('falls back to Someone / Untitled', () => {
     assert.strictEqual(
       formatDeckActivityTitle('', 2, ''),
-      'Someone added 2 slides to "Untitled"'
+      'Someone added 2 slides to "Untitled"',
     );
   });
 });
@@ -76,7 +87,11 @@ describe('formatDeckActivityTitle', () => {
 describe('buildDeckActivityNotificationInput', () => {
   it('builds a deck_activity payload with count in data and a deck action URL', () => {
     const input = buildDeckActivityNotificationInput({
-      presentation: { id: 'deck-1', title: 'Kickoff', ownerEmail: 'owner@example.com' },
+      presentation: {
+        id: 'deck-1',
+        title: 'Kickoff',
+        ownerEmail: 'owner@example.com',
+      },
       actor: { email: 'Editor@Example.com', name: 'Riley' },
       count: 3,
     });
@@ -126,11 +141,26 @@ const ORG = { organizationId: '00000000-0000-0000-0000-0000000000aa' };
 
 describe('deck-activity storage (no-DB contract)', () => {
   it('findUnreadDeckActivityNotification returns null without input or DB', async () => {
-    assert.strictEqual(await findUnreadDeckActivityNotification(ORG, '', 'deck', 'a@x.com', undefined), null);
+    assert.strictEqual(
+      await findUnreadDeckActivityNotification(
+        ORG,
+        '',
+        'deck',
+        'a@x.com',
+        undefined,
+      ),
+      null,
+    );
     // Valid params but no database configured in the test env: safe null.
     assert.strictEqual(
-      await findUnreadDeckActivityNotification(ORG, 'u@x.com', 'deck', 'a@x.com', undefined),
-      null
+      await findUnreadDeckActivityNotification(
+        ORG,
+        'u@x.com',
+        'deck',
+        'a@x.com',
+        undefined,
+      ),
+      null,
     );
   });
 
@@ -138,7 +168,9 @@ describe('deck-activity storage (no-DB contract)', () => {
     const bad = await refreshDeckActivityNotification(ORG, '', 'u@x.com', {});
     assert.strictEqual(bad.ok, false);
     assert.strictEqual(bad.reason, 'invalid_params');
-    const res = await refreshDeckActivityNotification(ORG, 'n1', 'u@x.com', { title: 'x' });
+    const res = await refreshDeckActivityNotification(ORG, 'n1', 'u@x.com', {
+      title: 'x',
+    });
     assert.strictEqual(res.ok, false);
     assert.strictEqual(res.reason, 'unavailable');
   });

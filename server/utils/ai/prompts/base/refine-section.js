@@ -21,7 +21,11 @@ const slideForPrompt = (s) => ({ type: s?.type, content: s?.content || {} });
  * @param {Array} [params.customSlideTypes]
  * @returns {string}
  */
-export function buildSectionSystemPrompt({ langLabel, disabledSlideTypes = [], customSlideTypes = [] }) {
+export function buildSectionSystemPrompt({
+  langLabel,
+  disabledSlideTypes = [],
+  customSlideTypes = [],
+}) {
   return [
     'You are revising a SECTION of an existing presentation deck in a self-hosted slide editor.',
     'Return ONLY valid JSON. No markdown fences, no commentary.',
@@ -55,7 +59,13 @@ export function buildSectionSystemPrompt({ langLabel, disabledSlideTypes = [], c
  * @param {string} params.feedback - What the user wants changed.
  * @returns {string}
  */
-export function buildSectionUserPrompt({ deckSummary, before, selected, after, feedback }) {
+export function buildSectionUserPrompt({
+  deckSummary,
+  before,
+  selected,
+  after,
+  feedback,
+}) {
   return [
     'DECK SUMMARY:',
     deckSummary,

@@ -39,7 +39,7 @@ test('contrastRatioFromLuminance backs getContrastRatio exactly', () => {
     const viaHex = getContrastRatio(a, b);
     const viaLuminance = contrastRatioFromLuminance(
       getRelativeLuminance(hexToRgb(a)),
-      getRelativeLuminance(hexToRgb(b))
+      getRelativeLuminance(hexToRgb(b)),
     );
     assert.equal(viaHex, viaLuminance, `${a} vs ${b}`);
   }
@@ -49,7 +49,7 @@ test('getContrastRatio is order-independent and clamps unparseable input', () =>
   assert.equal(getContrastRatio('#000000', '#ffffff'), 21);
   assert.equal(
     getContrastRatio('#38bdf8', '#1c1917'),
-    getContrastRatio('#1c1917', '#38bdf8')
+    getContrastRatio('#1c1917', '#38bdf8'),
   );
   assert.equal(getContrastRatio('nonsense', '#ffffff'), 1);
 });
@@ -75,7 +75,7 @@ test('APCA is polarity-aware where the WCAG ratio is not', () => {
   assert.ok(lcLightOnDark < 0, 'light text on dark ground reads negative');
   assert.notEqual(
     Math.abs(lcDarkOnLight).toFixed(4),
-    Math.abs(lcLightOnDark).toFixed(4)
+    Math.abs(lcLightOnDark).toFixed(4),
   );
 });
 
@@ -118,7 +118,7 @@ test('assessContrast defaults to the body bar and normalizes junk sizes', () => 
   assert.deepEqual(assessContrast('#431407', '#ea580c', {}), explicit);
   assert.deepEqual(
     assessContrast('#431407', '#ea580c', { size: 'enormous' }),
-    explicit
+    explicit,
   );
 });
 
@@ -131,7 +131,7 @@ test('assessContrast surfaces APCA disagreement rather than hiding it', () => {
   // The APCA verdict is judged on absolute Lc against the same size bucket.
   assert.equal(
     result.apcaPasses,
-    Math.abs(result.apcaLc) >= APCA_THRESHOLDS.body
+    Math.abs(result.apcaLc) >= APCA_THRESHOLDS.body,
   );
 });
 

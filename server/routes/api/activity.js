@@ -65,7 +65,11 @@ async function handleUnreadCount({ storageScope, res, authedUser }) {
       count += entry.count;
       continue;
     }
-    const pres = await getReadablePresentation(entry.presentationId, storageScope, authedUser);
+    const pres = await getReadablePresentation(
+      entry.presentationId,
+      storageScope,
+      authedUser,
+    );
     if (pres) count += entry.count;
   }
 
@@ -100,11 +104,28 @@ async function handleMarkRead({ storageScope, req, res, authedUser }) {
  */
 export const ROUTES = [
   { method: 'GET', pattern: '/api/activity', handler: handleActivityList },
-  { pattern: '/api/activity', handler: ({ res }) => methodNotAllowed(res, ['GET']) },
-  { method: 'GET', pattern: '/api/activity/unread-count', handler: handleUnreadCount },
-  { pattern: '/api/activity/unread-count', handler: ({ res }) => methodNotAllowed(res, ['GET']) },
-  { method: 'POST', pattern: '/api/activity/mark-read', handler: handleMarkRead },
-  { pattern: '/api/activity/mark-read', handler: ({ res }) => methodNotAllowed(res, ['POST']) },
+  {
+    pattern: '/api/activity',
+    handler: ({ res }) => methodNotAllowed(res, ['GET']),
+  },
+  {
+    method: 'GET',
+    pattern: '/api/activity/unread-count',
+    handler: handleUnreadCount,
+  },
+  {
+    pattern: '/api/activity/unread-count',
+    handler: ({ res }) => methodNotAllowed(res, ['GET']),
+  },
+  {
+    method: 'POST',
+    pattern: '/api/activity/mark-read',
+    handler: handleMarkRead,
+  },
+  {
+    pattern: '/api/activity/mark-read',
+    handler: ({ res }) => methodNotAllowed(res, ['POST']),
+  },
 ];
 
 /**
@@ -137,7 +158,11 @@ export const handleActivity = withErrorHandler('activity', (ctx) => {
  */
 export async function getEnrichedActivity({ storageScope, authedUser, opts }) {
   const result = await listActivityEvents(storageScope, opts);
-  const events = await enrichEventsWithPresentations(result.events, storageScope, authedUser);
+  const events = await enrichEventsWithPresentations(
+    result.events,
+    storageScope,
+    authedUser,
+  );
   return {
     events,
     // Note: total may be higher than accessible events; this is acceptable
@@ -159,7 +184,10 @@ async function getReadablePresentation(pid, storageScope, authedUser) {
 
     let collaboratorPermission = null;
     try {
-      collaboratorPermission = await getCollaboratorPermission(pid, authedUser?.email);
+      collaboratorPermission = await getCollaboratorPermission(
+        pid,
+        authedUser?.email,
+      );
     } catch {
       // Ignore - no collaborator access
     }
@@ -214,7 +242,9 @@ async function enrichEventsWithPresentations(events, storageScope, authedUser) {
       return accessibleIds.has(event.presentationId);
     })
     .map((event) => {
-      const pres = event.presentationId ? presMap.get(event.presentationId) : null;
+      const pres = event.presentationId
+        ? presMap.get(event.presentationId)
+        : null;
       const enriched = {
         ...event,
         presentation: pres
@@ -227,9 +257,13 @@ async function enrichEventsWithPresentations(events, storageScope, authedUser) {
       // same slide renderer the presentation cards use. Only for new comments
       // (the rail's thumb case), and only when the slide still resolves in a
       // deck the user may already read — so it leaks nothing.
-      if (pres && event.eventType === 'comment.created' && event.data?.slideId) {
+      if (
+        pres &&
+        event.eventType === 'comment.created' &&
+        event.data?.slideId
+      ) {
         const slide = (Array.isArray(pres.slides) ? pres.slides : []).find(
-          (s) => s?.id === event.data.slideId
+          (s) => s?.id === event.data.slideId,
         );
         if (slide) {
           enriched.slide = {

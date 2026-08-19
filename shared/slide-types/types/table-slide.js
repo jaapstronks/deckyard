@@ -1,4 +1,10 @@
-import { bgClass, escapeHtml, BACKGROUND_FIELD, TABLE_STYLE_FIELD, tableStyleClass } from '../helpers.js';
+import {
+  bgClass,
+  escapeHtml,
+  BACKGROUND_FIELD,
+  TABLE_STYLE_FIELD,
+  tableStyleClass,
+} from '../helpers.js';
 import { inlineMarkdownToSafeHtml } from '../../markdown.js';
 
 export const MAX_COLS = 10;
@@ -30,14 +36,21 @@ function normalizeRows(content, colCount) {
   return rows;
 }
 
-function rowToCellsHtml(rowObj, colCount, cellTag, stepByCell = false, rowIdx = -1) {
+function rowToCellsHtml(
+  rowObj,
+  colCount,
+  cellTag,
+  stepByCell = false,
+  rowIdx = -1,
+) {
   let out = '';
   for (let c = 1; c <= colCount; c += 1) {
     const k = `c${c}`;
     const v = rowObj?.[k] || '';
     const cellClass = stepByCell ? ' class="table-step-cell"' : '';
     // rowIdx < 0 marks the layout-stability placeholder row (not real data).
-    const inlineAttr = rowIdx >= 0 ? ` data-inline-field="rows.${rowIdx}.${k}"` : '';
+    const inlineAttr =
+      rowIdx >= 0 ? ` data-inline-field="rows.${rowIdx}.${k}"` : '';
     out += `<${cellTag}${cellClass}${inlineAttr} dir="auto">${inlineMarkdownToSafeHtml(v)}</${cellTag}>`;
   }
   return out;
@@ -209,7 +222,7 @@ export default {
               Array.from({ length: colCount }, (_v, idx) => [
                 `c${idx + 1}`,
                 '',
-              ])
+              ]),
             ),
           ];
 
@@ -219,7 +232,10 @@ export default {
       .map((r, i) => {
         const rowClass = animateByCell ? '' : ' class="table-step-row"';
         const rowIdx = isPlaceholderBody ? -1 : hasHeader ? i + 1 : i;
-        const itemAttrs = rowIdx >= 0 ? ` data-inline-item="rows" data-inline-item-index="${rowIdx}"` : '';
+        const itemAttrs =
+          rowIdx >= 0
+            ? ` data-inline-item="rows" data-inline-item-index="${rowIdx}"`
+            : '';
         return `<tr${rowClass}${itemAttrs}>${rowToCellsHtml(r, colCount, 'td', animateByCell, rowIdx)}</tr>`;
       })
       .join('')}</tbody>`;

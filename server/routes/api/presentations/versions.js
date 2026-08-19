@@ -6,7 +6,10 @@ import {
   prunePresentationVersions,
 } from '../../../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
-import { isAiCompareAvailable, compareVersionsWithAi } from '../../../utils/ai/compare-versions.js';
+import {
+  isAiCompareAvailable,
+  compareVersionsWithAi,
+} from '../../../utils/ai/compare-versions.js';
 import {
   jsonError,
   methodNotAllowed,
@@ -29,7 +32,7 @@ const SESSION_END_THROTTLE_MS = 60 * 1000;
 
 export async function handlePresentationVersions(
   { repoRoot, storageScope, req, res, authedUser } = {},
-  id
+  id,
 ) {
   const pres = await getPresentation(storageScope, id);
   if (!pres) return notFound(res);
@@ -37,10 +40,14 @@ export async function handlePresentationVersions(
   // Fetch collaborator permission for ACL check
   let collaboratorPermission = null;
   if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email);
+    collaboratorPermission = await getCollaboratorPermission(
+      pres.id,
+      authedUser.email,
+    );
   }
 
-  if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission })) return unauthorized(res);
+  if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission }))
+    return unauthorized(res);
 
   if (req.method === 'GET') {
     const versions = await listPresentationVersions(storageScope, id);
@@ -49,7 +56,10 @@ export async function handlePresentationVersions(
   }
 
   if (req.method === 'POST') {
-    if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission })) return unauthorized(res);
+    if (
+      !canWritePresentation({ user: authedUser, pres, collaboratorPermission })
+    )
+      return unauthorized(res);
     const parsed = await requireJsonBody(req, res, { allowEmpty: true });
     if (!parsed.ok) return true;
     const body = parsed.body;
@@ -87,7 +97,7 @@ export async function handlePresentationVersions(
 export async function handlePresentationVersionItem(
   { repoRoot, storageScope, req, res, authedUser } = {},
   id,
-  versionId
+  versionId,
 ) {
   if (req.method !== 'GET') {
     return methodNotAllowed(res, ['GET']);
@@ -99,10 +109,15 @@ export async function handlePresentationVersionItem(
   // Fetch collaborator permission for ACL check
   let collaboratorPermission = null;
   if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email);
+    collaboratorPermission = await getCollaboratorPermission(
+      pres.id,
+      authedUser.email,
+    );
   }
 
-  if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission })) {
+  if (
+    !canReadPresentation({ user: authedUser, pres, collaboratorPermission })
+  ) {
     return unauthorized(res);
   }
 
@@ -131,7 +146,7 @@ export async function handlePresentationVersionItem(
 export async function handlePresentationVersionExport(
   { repoRoot, storageScope, req, res, authedUser } = {},
   id,
-  versionId
+  versionId,
 ) {
   if (req.method !== 'GET') {
     return methodNotAllowed(res, ['GET']);
@@ -143,10 +158,15 @@ export async function handlePresentationVersionExport(
   // Fetch collaborator permission for ACL check
   let collaboratorPermission = null;
   if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email);
+    collaboratorPermission = await getCollaboratorPermission(
+      pres.id,
+      authedUser.email,
+    );
   }
 
-  if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission })) {
+  if (
+    !canReadPresentation({ user: authedUser, pres, collaboratorPermission })
+  ) {
     return unauthorized(res);
   }
 
@@ -193,7 +213,7 @@ export async function handlePresentationVersionExport(
 export async function handlePresentationVersionCompareAi(
   { repoRoot, storageScope, req, res, authedUser } = {},
   id,
-  versionId
+  versionId,
 ) {
   if (req.method !== 'POST') {
     return methodNotAllowed(res, ['POST']);
@@ -201,9 +221,15 @@ export async function handlePresentationVersionCompareAi(
 
   // Check if AI is available
   if (!isAiCompareAvailable()) {
-    return jsonError(res, 503, 'ai_unavailable', 'AI comparison not available', {
-      details: { reason: 'No LLM vendor configured' },
-    });
+    return jsonError(
+      res,
+      503,
+      'ai_unavailable',
+      'AI comparison not available',
+      {
+        details: { reason: 'No LLM vendor configured' },
+      },
+    );
   }
 
   const pres = await getPresentation(storageScope, id);
@@ -212,10 +238,15 @@ export async function handlePresentationVersionCompareAi(
   // Fetch collaborator permission for ACL check
   let collaboratorPermission = null;
   if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email);
+    collaboratorPermission = await getCollaboratorPermission(
+      pres.id,
+      authedUser.email,
+    );
   }
 
-  if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission })) {
+  if (
+    !canReadPresentation({ user: authedUser, pres, collaboratorPermission })
+  ) {
     return unauthorized(res);
   }
 
@@ -259,7 +290,7 @@ export async function handlePresentationVersionCompareAi(
  */
 export async function handlePresentationSessionEnd(
   { repoRoot, storageScope, req, res, authedUser } = {},
-  id
+  id,
 ) {
   if (req.method !== 'POST') {
     return methodNotAllowed(res, ['POST']);
@@ -271,10 +302,15 @@ export async function handlePresentationSessionEnd(
   // Fetch collaborator permission for ACL check
   let collaboratorPermission = null;
   if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email);
+    collaboratorPermission = await getCollaboratorPermission(
+      pres.id,
+      authedUser.email,
+    );
   }
 
-  if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission })) {
+  if (
+    !canWritePresentation({ user: authedUser, pres, collaboratorPermission })
+  ) {
     return unauthorized(res);
   }
 
@@ -286,7 +322,10 @@ export async function handlePresentationSessionEnd(
     if (lastSessionEnd?.created) {
       const lastCreatedMs = new Date(lastSessionEnd.created).getTime();
       if (Date.now() - lastCreatedMs < SESSION_END_THROTTLE_MS) {
-        logDebug('versions', `Skipping session-end snapshot for ${id}: throttled (last: ${lastSessionEnd.created})`);
+        logDebug(
+          'versions',
+          `Skipping session-end snapshot for ${id}: throttled (last: ${lastSessionEnd.created})`,
+        );
         return noContent(res);
       }
     }

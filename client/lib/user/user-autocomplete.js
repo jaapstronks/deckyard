@@ -44,7 +44,8 @@ export function createUserAutocomplete({
   const input = h('input', {
     type: 'text',
     class: 'form-input user-autocomplete-input',
-    placeholder: placeholder || t('userAutocomplete.placeholder', 'Search users...'),
+    placeholder:
+      placeholder || t('userAutocomplete.placeholder', 'Search users...'),
     autocomplete: 'off',
     autocorrect: 'off',
     autocapitalize: 'off',
@@ -103,7 +104,7 @@ export function createUserAutocomplete({
         h('div', {
           class: 'user-autocomplete-item is-loading',
           text: t('userAutocomplete.loading', 'Searching...'),
-        })
+        }),
       );
       return;
     }
@@ -113,7 +114,7 @@ export function createUserAutocomplete({
         h('div', {
           class: 'user-autocomplete-item is-empty',
           text: t('userAutocomplete.noResults', 'No users found'),
-        })
+        }),
       );
       return;
     }
@@ -131,9 +132,13 @@ export function createUserAutocomplete({
 
       const info = h('div', { class: 'user-autocomplete-item-info' });
       if (user.name) {
-        info.append(h('div', { class: 'user-autocomplete-item-name', text: user.name }));
+        info.append(
+          h('div', { class: 'user-autocomplete-item-name', text: user.name }),
+        );
       }
-      info.append(h('div', { class: 'user-autocomplete-item-email', text: user.email }));
+      info.append(
+        h('div', { class: 'user-autocomplete-item-email', text: user.email }),
+      );
       item.append(info);
 
       dropdown.append(item);
@@ -141,7 +146,9 @@ export function createUserAutocomplete({
   }
 
   function updateHighlight() {
-    const items = dropdown.querySelectorAll('.user-autocomplete-item:not(.is-loading):not(.is-empty)');
+    const items = dropdown.querySelectorAll(
+      '.user-autocomplete-item:not(.is-loading):not(.is-empty)',
+    );
     items.forEach((item, i) => {
       item.classList.toggle('is-highlighted', i === highlightIndex);
     });
@@ -198,8 +205,13 @@ export function createUserAutocomplete({
         ...selected.map((u) => u.email),
       ].filter(Boolean);
 
-      const excludeParam = allExclude.length > 0 ? `&exclude=${encodeURIComponent(allExclude.join(','))}` : '';
-      const resp = await api(`/api/users/search?q=${encodeURIComponent(trimmed)}&limit=10${excludeParam}`);
+      const excludeParam =
+        allExclude.length > 0
+          ? `&exclude=${encodeURIComponent(allExclude.join(','))}`
+          : '';
+      const resp = await api(
+        `/api/users/search?q=${encodeURIComponent(trimmed)}&limit=10${excludeParam}`,
+      );
       results = resp?.users || [];
       highlightIndex = results.length > 0 ? 0 : -1;
     } catch (e) {
@@ -236,7 +248,10 @@ export function createUserAutocomplete({
 
   input.addEventListener('keydown', (e) => {
     if (!isOpen) {
-      if (e.key === 'ArrowDown' && input.value.trim().length >= MIN_QUERY_LENGTH) {
+      if (
+        e.key === 'ArrowDown' &&
+        input.value.trim().length >= MIN_QUERY_LENGTH
+      ) {
         openDropdown();
         renderDropdown();
       }

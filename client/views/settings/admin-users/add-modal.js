@@ -30,18 +30,23 @@ export function showAddModal(onSuccess) {
   const nameInput = h('input', {
     class: 'form-input',
     type: 'text',
-    placeholder: t('admin.users.addModal.namePlaceholder', 'Full name (optional)'),
+    placeholder: t(
+      'admin.users.addModal.namePlaceholder',
+      'Full name (optional)',
+    ),
   });
 
   const roleSelect = h('select', { class: 'form-select' });
   roleSelect.append(
     h('option', { value: 'user', text: t('admin.users.roleUser', 'User') }),
-    h('option', { value: 'admin', text: t('admin.users.roleAdmin', 'Admin') })
+    h('option', { value: 'admin', text: t('admin.users.roleAdmin', 'Admin') }),
   );
 
   const sendInviteCheck = h('label', { class: 'row', style: 'gap: 8px;' }, [
     h('input', { type: 'checkbox', checked: true }),
-    h('span', { text: t('admin.users.addModal.sendInvitation', 'Send invitation email') }),
+    h('span', {
+      text: t('admin.users.addModal.sendInvitation', 'Send invitation email'),
+    }),
   ]);
 
   const status = h('div', { class: 'help modal-status' });
@@ -68,7 +73,10 @@ export function showAddModal(onSuccess) {
     const sendInvitation = sendInviteCheck.querySelector('input').checked;
 
     if (!email || !email.includes('@')) {
-      status.textContent = t('admin.users.addModal.invalidEmail', 'Please enter a valid email address.');
+      status.textContent = t(
+        'admin.users.addModal.invalidEmail',
+        'Please enter a valid email address.',
+      );
       return;
     }
 
@@ -91,17 +99,22 @@ export function showAddModal(onSuccess) {
         toast.error(
           t(
             'admin.users.addModal.successNoEmail',
-            'User added, but the invitation email could not be sent. Check the email configuration.'
-          )
+            'User added, but the invitation email could not be sent. Check the email configuration.',
+          ),
         );
       } else {
-        toast.success(t('admin.users.addModal.success', 'User added successfully.'));
+        toast.success(
+          t('admin.users.addModal.success', 'User added successfully.'),
+        );
       }
       overlay.remove();
       onSuccess();
     } catch (e) {
       status.textContent = e.message?.includes('exists')
-        ? t('admin.users.addModal.alreadyExists', 'A user with this email already exists.')
+        ? t(
+            'admin.users.addModal.alreadyExists',
+            'A user with this email already exists.',
+          )
         : t('admin.users.addModal.error', 'Failed to add user.');
       busy = false;
       btnSubmit.disabled = false;
@@ -116,10 +129,20 @@ export function showAddModal(onSuccess) {
     if (e.target === overlay) overlay.remove();
   };
 
-  const btnRow = h('div', { class: 'row is-end', style: 'gap: 8px; margin-top: 16px;' });
+  const btnRow = h('div', {
+    class: 'row is-end',
+    style: 'gap: 8px; margin-top: 16px;',
+  });
   btnRow.append(btnCancel, btnSubmit);
 
-  form.append(emailInput, nameInput, roleSelect, sendInviteCheck, status, btnRow);
+  form.append(
+    emailInput,
+    nameInput,
+    roleSelect,
+    sendInviteCheck,
+    status,
+    btnRow,
+  );
   modal.append(modalTitle, form);
   overlay.append(modal);
   document.body.append(overlay);

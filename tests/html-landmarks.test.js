@@ -31,7 +31,10 @@ test('export scaffold exposes header/main/nav/footer landmarks', async () => {
   });
   assert.match(html, /<header class="presenter-topbar">/);
   assert.match(html, /<main id="deck" class="deck"/);
-  assert.match(html, /<nav class="ps-standalone-nav" aria-label="Slide navigation">/);
+  assert.match(
+    html,
+    /<nav class="ps-standalone-nav" aria-label="Slide navigation">/,
+  );
   assert.match(html, /<footer class="presenter-progress">/);
   // exactly one <main> in the document
   assert.equal((html.match(/<main[\s>]/g) || []).length, 1);

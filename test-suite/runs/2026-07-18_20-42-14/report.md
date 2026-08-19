@@ -10,32 +10,32 @@
 
 ## Scores by dimension
 
-| Dimension | Score | vs. previous |
-| --- | ---: | ---: |
-| Coverage | 4.33 | — |
-| Structure | 4.67 | — |
-| Slide economy | 3.67 | — |
-| Faithfulness | 4.00 | — |
-| Presentability | 3.67 | — |
-| **Overall** | **4.07** | — |
+| Dimension      |    Score | vs. previous |
+| -------------- | -------: | -----------: |
+| Coverage       |     4.33 |            — |
+| Structure      |     4.67 |            — |
+| Slide economy  |     3.67 |            — |
+| Faithfulness   |     4.00 |            — |
+| Presentability |     3.67 |            — |
+| **Overall**    | **4.07** |            — |
 
 ## Per-case results
 
-| Case | Cat | Slides | Words/slide | Walls | Number support | Coverage | Mean |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| probe-causal-icons-quote | C | 6 | 31 | 0 | 60% | 4/5 | 4.20 |
-| probe-process-timeline | C | 6 | 43.33 | 0 | 50% | 5/5 | 3.60 |
-| probe-table-chart | C | 6 | 36.83 | 0 | 77% | 4/5 | 4.40 |
+| Case                     | Cat | Slides | Words/slide | Walls | Number support | Coverage | Mean |
+| ------------------------ | --- | -----: | ----------: | ----: | -------------: | -------: | ---: |
+| probe-causal-icons-quote | C   |      6 |          31 |     0 |            60% |      4/5 | 4.20 |
+| probe-process-timeline   | C   |      6 |       43.33 |     0 |            50% |      5/5 | 3.60 |
+| probe-table-chart        | C   |      6 |       36.83 |     0 |            77% |      4/5 | 4.40 |
 
 ## Specialised layout recall
 
 Whether content whose shape calls for a laborious-to-build layout got it.
 
-| Case | Recall | Missed | Fell back to |
-| --- | ---: | --- | --- |
-| probe-causal-icons-quote | 1/3 | `text-blocks-slide`, `icon-card-grid-slide` | `list-slide` |
-| probe-process-timeline | 2/3 | `kpi-metrics-slide` | `list-slide` |
-| probe-table-chart | 2/3 | `kpi-metrics-slide` | — |
+| Case                     | Recall | Missed                                      | Fell back to |
+| ------------------------ | -----: | ------------------------------------------- | ------------ |
+| probe-causal-icons-quote |    1/3 | `text-blocks-slide`, `icon-card-grid-slide` | `list-slide` |
+| probe-process-timeline   |    2/3 | `kpi-metrics-slide`                         | `list-slide` |
+| probe-table-chart        |    2/3 | `kpi-metrics-slide`                         | —            |
 
 ## Weakest dimensions — judge rationales
 
@@ -67,9 +67,9 @@ These rationales are the input for the next prompt change.
 
 ## Cost breakdown
 
-| Category | Model | Calls | Input | Output | Cache write | Cache read | USD |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| topics | `claude-opus-4-8` | 3 | 3434 | 1306 | 0 | 0 | $0.0498 |
-| generation | `gpt-5.5` | 16 | 145023 | 17726 | 0 | 0 | $1.2569 |
-| judge | `claude-opus-4-8` | 3 | 10674 | 4314 | 0 | 0 | $0.1612 |
-| **Total** | | 22 | 159131 | 23346 | 0 | 0 | **$1.4679** |
+| Category   | Model             | Calls |  Input | Output | Cache write | Cache read |         USD |
+| ---------- | ----------------- | ----: | -----: | -----: | ----------: | ---------: | ----------: |
+| topics     | `claude-opus-4-8` |     3 |   3434 |   1306 |           0 |          0 |     $0.0498 |
+| generation | `gpt-5.5`         |    16 | 145023 |  17726 |           0 |          0 |     $1.2569 |
+| judge      | `claude-opus-4-8` |     3 |  10674 |   4314 |           0 |          0 |     $0.1612 |
+| **Total**  |                   |    22 | 159131 |  23346 |           0 |          0 | **$1.4679** |

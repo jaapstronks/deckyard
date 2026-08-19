@@ -28,8 +28,16 @@
 import { after, before, beforeEach, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { closeTestDb, openTestDb, pgDescribe, truncate } from './helpers/harness.js';
-import { addCollaborator, removeCollaborator } from '../../server/storage/collaborators.js';
+import {
+  closeTestDb,
+  openTestDb,
+  pgDescribe,
+  truncate,
+} from './helpers/harness.js';
+import {
+  addCollaborator,
+  removeCollaborator,
+} from '../../server/storage/collaborators.js';
 import { getDefaultOrganizationId } from '../../server/config/database.js';
 
 // The seeded org owns the deck, and that is now the only organization in play:
@@ -57,12 +65,27 @@ pgDescribe('collaborator user_id dual-key write (real PostgreSQL)', () => {
 
   beforeEach(async () => {
     await truncate(db, 'organizations');
-    await db.insertInto('organizations').values({ id: ORG, name: 'Default', slug: 'default' }).execute();
+    await db
+      .insertInto('organizations')
+      .values({ id: ORG, name: 'Default', slug: 'default' })
+      .execute();
     await db
       .insertInto('users')
       .values([
-        { id: OWNER_ID, organization_id: ORG, email: OWNER_EMAIL, name: 'Owner', role: 'user' },
-        { id: MEMBER_ID, organization_id: ORG, email: MEMBER_EMAIL, name: 'Member', role: 'user' },
+        {
+          id: OWNER_ID,
+          organization_id: ORG,
+          email: OWNER_EMAIL,
+          name: 'Owner',
+          role: 'user',
+        },
+        {
+          id: MEMBER_ID,
+          organization_id: ORG,
+          email: MEMBER_EMAIL,
+          name: 'Member',
+          role: 'user',
+        },
       ])
       .execute();
     await db
@@ -92,14 +115,20 @@ pgDescribe('collaborator user_id dual-key write (real PostgreSQL)', () => {
   }
 
   it("writes the known user's stable users.id", async () => {
-    const added = await addCollaborator(PID, { userEmail: MEMBER_EMAIL, permission: 'edit' });
+    const added = await addCollaborator(PID, {
+      userEmail: MEMBER_EMAIL,
+      permission: 'edit',
+    });
     assert.equal(added.ok, true);
     assert.equal(await storedUserId(MEMBER_EMAIL), MEMBER_ID);
   });
 
   it('writes NULL for an external collaborator (no users row)', async () => {
     const email = 'external-partner@agency.test'; // deliberately NOT in `users`
-    const added = await addCollaborator(PID, { userEmail: email, permission: 'edit' });
+    const added = await addCollaborator(PID, {
+      userEmail: email,
+      permission: 'edit',
+    });
     assert.equal(added.ok, true);
     assert.equal(await storedUserId(email), null);
   });
@@ -108,10 +137,18 @@ pgDescribe('collaborator user_id dual-key write (real PostgreSQL)', () => {
     await addCollaborator(PID, { userEmail: MEMBER_EMAIL, permission: 'view' });
     assert.equal(await storedUserId(MEMBER_EMAIL), MEMBER_ID);
 
-    const removed = await removeCollaborator(PID, MEMBER_EMAIL, OWNER_EMAIL, {});
+    const removed = await removeCollaborator(
+      PID,
+      MEMBER_EMAIL,
+      OWNER_EMAIL,
+      {},
+    );
     assert.equal(removed.ok, true);
 
-    const readded = await addCollaborator(PID, { userEmail: MEMBER_EMAIL, permission: 'admin' });
+    const readded = await addCollaborator(PID, {
+      userEmail: MEMBER_EMAIL,
+      permission: 'admin',
+    });
     assert.equal(readded.ok, true);
     assert.equal(readded.reactivated, true);
     assert.equal(await storedUserId(MEMBER_EMAIL), MEMBER_ID);
@@ -130,11 +167,20 @@ pgDescribe('collaborator user_id dual-key write (real PostgreSQL)', () => {
     const lateId = '33333333-3333-3333-3333-333333333333';
     await db
       .insertInto('users')
-      .values({ id: lateId, organization_id: ORG, email, name: 'Late', role: 'user' })
+      .values({
+        id: lateId,
+        organization_id: ORG,
+        email,
+        name: 'Late',
+        role: 'user',
+      })
       .execute();
 
     // Re-adding resolves the freshly-created id instead of staying NULL.
-    const readded = await addCollaborator(PID, { userEmail: email, permission: 'edit' });
+    const readded = await addCollaborator(PID, {
+      userEmail: email,
+      permission: 'edit',
+    });
     assert.equal(readded.reactivated, true);
     assert.equal(await storedUserId(email), lateId);
   });

@@ -96,7 +96,9 @@ function initCodeAndMath(rootEl) {
   }
 
   if (
-    rootEl.querySelector('.md-math-block[data-math], .md-math-inline[data-math]')
+    rootEl.querySelector(
+      '.md-math-block[data-math], .md-math-inline[data-math]',
+    )
   ) {
     ensureKatex()
       .then(() => renderMathFormulas(rootEl))
@@ -164,12 +166,17 @@ async function serverRenderSlide({ slide, presentationId, mode, api }) {
   }
 
   const apiFn = api || defaultApi;
-  const resp = await apiFn(`/api/presentations/${presentationId}/render-slide`, {
-    method: 'POST',
-    body: JSON.stringify({ slide, mode }),
-  });
+  const resp = await apiFn(
+    `/api/presentations/${presentationId}/render-slide`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ slide, mode }),
+    },
+  );
 
-  const html = resp?.html || '<div class="slide"><div class="slide-inner"><div class="heading">Render error</div></div></div>';
+  const html =
+    resp?.html ||
+    '<div class="slide"><div class="slide-inner"><div class="heading">Render error</div></div></div>';
 
   // Cache for a short time (slides may be edited frequently)
   serverRenderCache.set(cacheKey, html);
@@ -184,9 +191,7 @@ function ensureBunnyPlayerJs() {
   if (globalThis.playerjs?.Player) return Promise.resolve();
   if (bunnyPlayerJsPromise) return bunnyPlayerJsPromise;
   bunnyPlayerJsPromise = new Promise((resolve, reject) => {
-    const existing = document.querySelector(
-      'script[data-bunny-playerjs="1"]'
-    );
+    const existing = document.querySelector('script[data-bunny-playerjs="1"]');
     if (existing) {
       existing.addEventListener('load', () => resolve(), {
         once: true,
@@ -194,13 +199,12 @@ function ensureBunnyPlayerJs() {
       existing.addEventListener(
         'error',
         () => reject(new Error('Failed to load Player.js')),
-        { once: true }
+        { once: true },
       );
       return;
     }
     const s = document.createElement('script');
-    s.src =
-      'https://assets.mediadelivery.net/playerjs/player-0.1.0.min.js';
+    s.src = 'https://assets.mediadelivery.net/playerjs/player-0.1.0.min.js';
     s.async = true;
     s.dataset.bunnyPlayerjs = '1';
     s.addEventListener('load', () => resolve(), {
@@ -209,7 +213,7 @@ function ensureBunnyPlayerJs() {
     s.addEventListener(
       'error',
       () => reject(new Error('Failed to load Player.js')),
-      { once: true }
+      { once: true },
     );
     document.head.append(s);
   });
@@ -219,7 +223,7 @@ function ensureBunnyPlayerJs() {
 function initVideoEmbeds(rootEl) {
   if (!rootEl) return;
   const iframes = rootEl.querySelectorAll(
-    '.slide-video iframe[data-bunny-playerjs="1"]'
+    '.slide-video iframe[data-bunny-playerjs="1"]',
   );
   if (!iframes.length) return;
   ensureBunnyPlayerJs()
@@ -309,7 +313,7 @@ export function cleanupSlideRuntimes(rootEl) {
 export function mountSlideInto(
   container,
   slide,
-  { mode, theme, presentationId, lang } = {}
+  { mode, theme, presentationId, lang } = {},
 ) {
   if (!container) return null;
   cleanupSlideRuntimes(container);
@@ -336,7 +340,7 @@ export function mountSlideInto(
  */
 export function renderSlideElement(
   slide,
-  { mode, theme, followCodes, presentationId, api, lang } = {}
+  { mode, theme, followCodes, presentationId, api, lang } = {},
 ) {
   let html;
 
@@ -363,10 +367,7 @@ export function renderSlideElement(
   const wrap = h('div');
   wrap.innerHTML = html;
   const el = wrap.firstElementChild;
-  if (!el)
-    throw new Error(
-      'renderSlideHtml returned empty markup'
-    );
+  if (!el) throw new Error('renderSlideHtml returned empty markup');
 
   // Allow callers that frequently replace slide DOM (editor/notes preview)
   // to clean up any runtime side-effects (EventSource, window listeners, etc).
@@ -405,7 +406,7 @@ export function renderSlideElement(
         initFollowInviteSlides(el, {
           enableResize: false,
           interactive: false,
-        })
+        }),
       );
     else cleanups.push(initFollowInviteSlides(el));
   } else if (mode !== 'thumb') {
@@ -422,7 +423,7 @@ export function renderSlideElement(
     cleanups.push(
       initCountdownSlides(el, {
         interactive: mode === 'present' || mode === 'follow',
-      })
+      }),
     );
   }
 
@@ -438,7 +439,11 @@ export function renderSlideElement(
  * Trigger server-side rendering for a custom slide type.
  * Replaces the placeholder element's content with server-rendered HTML.
  */
-async function triggerServerRender(el, slide, { mode, theme, presentationId, api }) {
+async function triggerServerRender(
+  el,
+  slide,
+  { mode, theme, presentationId, api },
+) {
   try {
     const html = await serverRenderSlide({ slide, presentationId, mode, api });
     const wrap = h('div');
@@ -460,7 +465,9 @@ async function triggerServerRender(el, slide, { mode, theme, presentationId, api
       // The sync mount already ran its decorators against the placeholder;
       // let listeners (the editor's inline-edit overlay) re-apply against the
       // real slide DOM now that it exists.
-      el.dispatchEvent(new CustomEvent('slide-server-rendered', { bubbles: true }));
+      el.dispatchEvent(
+        new CustomEvent('slide-server-rendered', { bubbles: true }),
+      );
     }
   } catch (err) {
     console.error('[slide-render] Server render failed:', err);

@@ -44,7 +44,10 @@ import { crossOrganizationScope } from '../../storage/scope.js';
  */
 async function getStockMediaStatus(repoRoot) {
   const settings = await getAppSettings(
-    crossOrganizationScope(repoRoot, 'stock media source toggles: instance-level settings')
+    crossOrganizationScope(
+      repoRoot,
+      'stock media source toggles: instance-level settings',
+    ),
   );
   const stockMedia = settings?.stockMedia || {};
 
@@ -80,8 +83,8 @@ async function handleStockMediaProviderStatus({ repoRoot, res }) {
 async function handleBundledManifest({ repoRoot, res }) {
   const status = await getStockMediaStatus(repoRoot);
   if (!status.bundled.enabled) {
-  return badRequest(res, 'Bundled gradients are not available');
-}
+    return badRequest(res, 'Bundled gradients are not available');
+  }
 
   const items = await listBundledGradients(repoRoot);
   serveJson(res, 200, { items });
@@ -140,7 +143,12 @@ async function handleUnsplashDownload({ repoRoot, storageScope, req, res }) {
   const filename = `unsplash-${photoId}-${size}.${ext}`;
 
   // Save to uploads
-  const localUrl = await writeUploadedFile(repoRoot, buffer, filename, contentType);
+  const localUrl = await writeUploadedFile(
+    repoRoot,
+    buffer,
+    filename,
+    contentType,
+  );
 
   // Add to image library with attribution
   const libraryItem = await createImageLibraryItem(storageScope, {
@@ -223,7 +231,12 @@ async function handleGiphyDownload({ repoRoot, storageScope, req, res }) {
 
   // Save to uploads
   const filename = `giphy-${gifId}.gif`;
-  const localUrl = await writeUploadedFile(repoRoot, buffer, filename, contentType);
+  const localUrl = await writeUploadedFile(
+    repoRoot,
+    buffer,
+    filename,
+    contentType,
+  );
 
   // Add to image library
   const libraryItem = await createImageLibraryItem(storageScope, {
@@ -249,8 +262,15 @@ async function handleGiphyDownload({ repoRoot, storageScope, req, res }) {
  * @type {import('../../utils/router.js').Route[]}
  */
 export const PUBLIC_ROUTES = [
-  { method: 'GET', pattern: '/api/stock-media/status', handler: handleStockMediaProviderStatus },
-  { pattern: '/api/stock-media/status', handler: ({ res }) => methodNotAllowed(res, ['GET']) },
+  {
+    method: 'GET',
+    pattern: '/api/stock-media/status',
+    handler: handleStockMediaProviderStatus,
+  },
+  {
+    pattern: '/api/stock-media/status',
+    handler: ({ res }) => methodNotAllowed(res, ['GET']),
+  },
 ];
 
 /**
@@ -262,18 +282,60 @@ export const PUBLIC_ROUTES = [
  * @type {import('../../utils/router.js').Route[]}
  */
 export const AUTHED_ROUTES = [
-  { method: 'GET', pattern: '/api/stock-media/bundled/manifest', handler: handleBundledManifest },
-  { pattern: '/api/stock-media/bundled/manifest', handler: ({ res }) => methodNotAllowed(res, ['GET']) },
-  { method: 'GET', pattern: '/api/stock-media/unsplash/search', handler: handleUnsplashSearch },
-  { pattern: '/api/stock-media/unsplash/search', handler: ({ res }) => methodNotAllowed(res, ['GET']) },
-  { method: 'POST', pattern: '/api/stock-media/unsplash/download', handler: handleUnsplashDownload },
-  { pattern: '/api/stock-media/unsplash/download', handler: ({ res }) => methodNotAllowed(res, ['POST']) },
-  { method: 'GET', pattern: '/api/stock-media/giphy/search', handler: handleGiphySearch },
-  { pattern: '/api/stock-media/giphy/search', handler: ({ res }) => methodNotAllowed(res, ['GET']) },
-  { method: 'GET', pattern: '/api/stock-media/giphy/trending', handler: handleGiphyTrending },
-  { pattern: '/api/stock-media/giphy/trending', handler: ({ res }) => methodNotAllowed(res, ['GET']) },
-  { method: 'POST', pattern: '/api/stock-media/giphy/download', handler: handleGiphyDownload },
-  { pattern: '/api/stock-media/giphy/download', handler: ({ res }) => methodNotAllowed(res, ['POST']) },
+  {
+    method: 'GET',
+    pattern: '/api/stock-media/bundled/manifest',
+    handler: handleBundledManifest,
+  },
+  {
+    pattern: '/api/stock-media/bundled/manifest',
+    handler: ({ res }) => methodNotAllowed(res, ['GET']),
+  },
+  {
+    method: 'GET',
+    pattern: '/api/stock-media/unsplash/search',
+    handler: handleUnsplashSearch,
+  },
+  {
+    pattern: '/api/stock-media/unsplash/search',
+    handler: ({ res }) => methodNotAllowed(res, ['GET']),
+  },
+  {
+    method: 'POST',
+    pattern: '/api/stock-media/unsplash/download',
+    handler: handleUnsplashDownload,
+  },
+  {
+    pattern: '/api/stock-media/unsplash/download',
+    handler: ({ res }) => methodNotAllowed(res, ['POST']),
+  },
+  {
+    method: 'GET',
+    pattern: '/api/stock-media/giphy/search',
+    handler: handleGiphySearch,
+  },
+  {
+    pattern: '/api/stock-media/giphy/search',
+    handler: ({ res }) => methodNotAllowed(res, ['GET']),
+  },
+  {
+    method: 'GET',
+    pattern: '/api/stock-media/giphy/trending',
+    handler: handleGiphyTrending,
+  },
+  {
+    pattern: '/api/stock-media/giphy/trending',
+    handler: ({ res }) => methodNotAllowed(res, ['GET']),
+  },
+  {
+    method: 'POST',
+    pattern: '/api/stock-media/giphy/download',
+    handler: handleGiphyDownload,
+  },
+  {
+    pattern: '/api/stock-media/giphy/download',
+    handler: ({ res }) => methodNotAllowed(res, ['POST']),
+  },
 ];
 
 /**

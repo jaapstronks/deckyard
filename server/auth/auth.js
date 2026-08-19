@@ -26,9 +26,7 @@ function base64url(buf) {
 
 function base64urlToBuf(s) {
   const pad = '='.repeat((4 - (s.length % 4)) % 4);
-  const b64 = (s + pad)
-    .replaceAll('-', '+')
-    .replaceAll('_', '/');
+  const b64 = (s + pad).replaceAll('-', '+').replaceAll('_', '/');
   return Buffer.from(b64, 'base64');
 }
 
@@ -45,10 +43,7 @@ function getAdminEmail() {
 
 function getSecret() {
   const s = envStr('AUTH_SECRET');
-  if (!s)
-    throw new Error(
-      'AUTH_SECRET is required when auth is enabled'
-    );
+  if (!s) throw new Error('AUTH_SECRET is required when auth is enabled');
   return s;
 }
 
@@ -69,7 +64,9 @@ function getCookieDomain() {
     if (!d.startsWith('.') && d.includes('.')) {
       // Not starting with dot but has dots - might be intentional for single domain
       // This is valid, just log for awareness
-      log.info(`COOKIE_DOMAIN "${d}" set for single domain (not subdomain sharing)`);
+      log.info(
+        `COOKIE_DOMAIN "${d}" set for single domain (not subdomain sharing)`,
+      );
     }
     warnedCookieDomain = true;
   }
@@ -89,7 +86,7 @@ export function authEnabled() {
   if (enabled && !hasSecret && !warnedAuthMisconfig) {
     warnedAuthMisconfig = true;
     log.warn(
-      'AUTH_ENABLED but AUTH_SECRET is missing; auth disabled until configured.'
+      'AUTH_ENABLED but AUTH_SECRET is missing; auth disabled until configured.',
     );
   }
   return enabled && hasSecret;
@@ -170,11 +167,15 @@ export function authConfigWarnings() {
   const secret = envStr('AUTH_SECRET');
   // A short secret weakens the HMAC that signs session tokens. This only
   // reaches boot when the hard floor was overridden or in sandbox/demo.
-  if (secret && envBool('AUTH_ENABLED', true) && secret.length < MIN_AUTH_SECRET_LENGTH) {
+  if (
+    secret &&
+    envBool('AUTH_ENABLED', true) &&
+    secret.length < MIN_AUTH_SECRET_LENGTH
+  ) {
     warnings.push(
       `AUTH_SECRET is only ${secret.length} characters; use at least ` +
         `${MIN_AUTH_SECRET_LENGTH} random characters so session tokens cannot ` +
-        'be brute-forced.'
+        'be brute-forced.',
     );
   }
   return warnings;
@@ -205,10 +206,7 @@ export function devBypassUser() {
 
 function sign(secret, payloadB64) {
   return base64url(
-    crypto
-      .createHmac('sha256', secret)
-      .update(payloadB64)
-      .digest()
+    crypto.createHmac('sha256', secret).update(payloadB64).digest(),
   );
 }
 
@@ -228,12 +226,7 @@ function parseSessionToken(req) {
   if (!payloadB64 || !sig) return null;
   const expected = sign(secret, payloadB64);
   try {
-    if (
-      !crypto.timingSafeEqual(
-        Buffer.from(sig),
-        Buffer.from(expected)
-      )
-    )
+    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected)))
       return null;
   } catch {
     return null;
@@ -241,16 +234,13 @@ function parseSessionToken(req) {
 
   let payload = null;
   try {
-    payload = JSON.parse(
-      base64urlToBuf(payloadB64).toString('utf8')
-    );
+    payload = JSON.parse(base64urlToBuf(payloadB64).toString('utf8'));
   } catch {
     return null;
   }
 
   const now = Date.now();
-  if (!payload?.exp || Number(payload.exp) < now)
-    return null;
+  if (!payload?.exp || Number(payload.exp) < now) return null;
   const email = String(payload?.email || '').toLowerCase();
   if (!email) return null;
 
@@ -304,9 +294,8 @@ export function getUserFromRequest(req) {
   // Return partial info for database users - needs async validation
   if (payload?.v) {
     const adminEmail = getAdminEmail();
-    const role = payload?.role === 'admin' || email === adminEmail
-      ? 'admin'
-      : 'user';
+    const role =
+      payload?.role === 'admin' || email === adminEmail ? 'admin' : 'user';
     return {
       email,
       role,
@@ -386,9 +375,7 @@ export async function getUserFromRequestAsync(req, ctx) {
 
     const adminEmail = getAdminEmail();
     const role =
-      dbUser.role === 'admin' || email === adminEmail
-        ? 'admin'
-        : 'user';
+      dbUser.role === 'admin' || email === adminEmail ? 'admin' : 'user';
     return {
       // The stable `users.id`. This is the key every ownership decision keys on
       // (shared/identity-match.js); the email beside it is a
@@ -423,7 +410,7 @@ export function setSessionCookie(
   req,
   res,
   user,
-  { days = 14, organizationId = null } = {}
+  { days = 14, organizationId = null } = {},
 ) {
   const secret = getSecret();
   const exp = Date.now() + days * 24 * 60 * 60 * 1000;
@@ -487,7 +474,10 @@ export function updateSessionOrganization(req, res, organizationId) {
 
   // Calculate remaining days until expiration
   const remainingMs = payload.exp - Date.now();
-  const remainingDays = Math.max(1, Math.ceil(remainingMs / (24 * 60 * 60 * 1000)));
+  const remainingDays = Math.max(
+    1,
+    Math.ceil(remainingMs / (24 * 60 * 60 * 1000)),
+  );
 
   setSessionCookie(req, res, user, { days: remainingDays, organizationId });
 }
@@ -539,9 +529,7 @@ export async function verifyLoginAsync(emailRaw, passwordRaw, ctx) {
     if (valid) {
       const adminEmail = getAdminEmail();
       const role =
-        dbUser.role === 'admin' || email === adminEmail
-          ? 'admin'
-          : 'user';
+        dbUser.role === 'admin' || email === adminEmail ? 'admin' : 'user';
       // Version key for session invalidation, derived exactly as
       // getUserFromRequestAsync will recompute it on the next request.
       const v = sessionVersion(dbUser);

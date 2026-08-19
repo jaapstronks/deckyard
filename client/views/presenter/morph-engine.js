@@ -54,7 +54,12 @@ function cleanupInlineStyles(el) {
  * @param {Function}    options.onCancel - Returns true if transition should abort
  * @returns {Promise<void>}
  */
-export function morphTransition(fromSection, toSection, stageInner, options = {}) {
+export function morphTransition(
+  fromSection,
+  toSection,
+  stageInner,
+  options = {},
+) {
   const { onCancel } = options;
   const cancelled = () => typeof onCancel === 'function' && onCancel();
 
@@ -65,7 +70,10 @@ export function morphTransition(fromSection, toSection, stageInner, options = {}
       return;
     }
 
-    if (cancelled()) { resolve(); return; }
+    if (cancelled()) {
+      resolve();
+      return;
+    }
 
     // ── FIRST: collect from-elements and measure rects ──
     const fromMap = collectMorphElements(fromSection);
@@ -180,7 +188,10 @@ export function morphTransition(fromSection, toSection, stageInner, options = {}
     // eslint-disable-next-line no-unused-expressions
     stageInner.offsetWidth;
 
-    if (cancelled()) { finish(); return; }
+    if (cancelled()) {
+      finish();
+      return;
+    }
 
     // ── PLAY: animate to identity ──
     const morphTrans = `transform ${MORPH_DURATION}ms ${MORPH_EASING}, opacity ${MORPH_DURATION}ms ${MORPH_EASING}`;
@@ -202,7 +213,8 @@ export function morphTransition(fromSection, toSection, stageInner, options = {}
     // Listen for transitionend on a morphed element (events bubble to toSection).
     // Accept both transform and opacity — stationary elements only fire opacity.
     const onEnd = (e) => {
-      if (e.propertyName !== 'transform' && e.propertyName !== 'opacity') return;
+      if (e.propertyName !== 'transform' && e.propertyName !== 'opacity')
+        return;
       // Any matched element finishing is sufficient (all start together)
       toSection.removeEventListener('transitionend', onEnd);
       finish();

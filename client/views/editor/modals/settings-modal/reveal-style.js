@@ -23,7 +23,7 @@ export function buildRevealStyleSection({ h, pres, markDirty, requestSave }) {
     class: 'help',
     text: t(
       'editor.deckSettings.revealStyle.help',
-      'How each bullet appears when builds are on. Typewriter types text in character-by-character. Presenter only; falls back to instant with reduced motion.'
+      'How each bullet appears when builds are on. Typewriter types text in character-by-character. Presenter only; falls back to instant with reduced motion.',
     ),
   });
   const REVEAL_STYLE_LABELS = {
@@ -33,7 +33,7 @@ export function buildRevealStyleSection({ h, pres, markDirty, requestSave }) {
   const sel = h('select', { class: 'form-input' });
   for (const style of REVEAL_STYLES) {
     sel.append(
-      h('option', { value: style, text: REVEAL_STYLE_LABELS[style] || style })
+      h('option', { value: style, text: REVEAL_STYLE_LABELS[style] || style }),
     );
   }
   sel.value = pres.settings.revealStyle;

@@ -3,7 +3,10 @@
  * Uses AI V2 (two-phase) to convert formatted content into a deck.
  */
 
-import { generateOutline, separateSlidesForProcessing } from '../ai/generate-outline.js';
+import {
+  generateOutline,
+  separateSlidesForProcessing,
+} from '../ai/generate-outline.js';
 import { refineAllSlideGroups } from '../ai/refine-slides.js';
 import { validateAndFixRefinedSlides } from '../ai/validate-slides.js';
 import { createSessionLogger, generateSessionId } from '../ai/logging.js';
@@ -44,7 +47,8 @@ export async function convertWithAi(formattedContent, options = {}) {
     userName: metadata?.author || '',
     targetLang: lang,
     vendor,
-    rawFirstSlideTitle: titleSlideCandidate?.title || firstSlideContent?.split('\n')[0] || '',
+    rawFirstSlideTitle:
+      titleSlideCandidate?.title || firstSlideContent?.split('\n')[0] || '',
     onLog: logger ? (data) => logger.logPhase1(data) : null,
   });
 
@@ -52,7 +56,12 @@ export async function convertWithAi(formattedContent, options = {}) {
 
   // Get the detected language for use in Phase 2 (if lang was 'auto')
   const detectedLang = outline.metadata?.detectedLang || 'nl';
-  const effectiveLang = (lang === 'nl' || lang === 'en-GB') ? lang : (detectedLang === 'en' ? 'en-GB' : 'nl');
+  const effectiveLang =
+    lang === 'nl' || lang === 'en-GB'
+      ? lang
+      : detectedLang === 'en'
+        ? 'en-GB'
+        : 'nl';
 
   // Call onOutlineComplete immediately when outline is ready
   // This allows the caller to send status messages to the client early
@@ -68,8 +77,12 @@ export async function convertWithAi(formattedContent, options = {}) {
   }
 
   // Phase 2: Separate structural vs content slides (like the wizard does)
-  const { structuralSlides, contentGroups } = separateSlidesForProcessing(outline.slides);
-  log.info(`Structural: ${structuralSlides.length}, Content groups: ${contentGroups.length}`);
+  const { structuralSlides, contentGroups } = separateSlidesForProcessing(
+    outline.slides,
+  );
+  log.info(
+    `Structural: ${structuralSlides.length}, Content groups: ${contentGroups.length}`,
+  );
 
   // Refine content slides with presentation context
   let refinedContentSlides = [];
@@ -87,11 +100,14 @@ export async function convertWithAi(formattedContent, options = {}) {
     });
   }
 
-  log.info(`Phase 2 complete: ${refinedContentSlides.length} content slides refined`);
+  log.info(
+    `Phase 2 complete: ${refinedContentSlides.length} content slides refined`,
+  );
 
   // Combine structural + content slides, sorted by original index
-  const allSlides = [...structuralSlides, ...refinedContentSlides]
-    .sort((a, b) => a.originalIndex - b.originalIndex);
+  const allSlides = [...structuralSlides, ...refinedContentSlides].sort(
+    (a, b) => a.originalIndex - b.originalIndex,
+  );
 
   // Validate and fix slides
   const validatedSlides = validateAndFixRefinedSlides(allSlides);
@@ -139,7 +155,8 @@ export async function convertWithAi(formattedContent, options = {}) {
         background: 'lime',
       },
       notes: '',
-      _aiReasoning: 'Automatic title slide (source file did not have a clear title slide)',
+      _aiReasoning:
+        'Automatic title slide (source file did not have a clear title slide)',
     });
   }
 

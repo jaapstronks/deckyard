@@ -69,14 +69,16 @@ export function renderOrganizationMembersPanel({
         class: 'help',
         text: t(
           'organization.members.help',
-          'Everyone with access to the organization you are currently in.'
+          'Everyone with access to the organization you are currently in.',
         ),
       }),
-    ])
+    ]),
   );
 
   const list = h('div', { class: 'admin-users-list' });
-  list.append(h('div', { class: 'help', text: t('common.loading', 'Loading…') }));
+  list.append(
+    h('div', { class: 'help', text: t('common.loading', 'Loading…') }),
+  );
 
   const footer = h('div', {
     class: 'row is-between admin-users-pager',
@@ -141,7 +143,8 @@ export function renderOrganizationMembersPanel({
       }
       // A removal can empty the last page; step back rather than show nothing.
       const remaining = Math.max(0, total - 1);
-      const nextOffset = offset >= remaining && offset > 0 ? offset - MEMBERS_PAGE_SIZE : offset;
+      const nextOffset =
+        offset >= remaining && offset > 0 ? offset - MEMBERS_PAGE_SIZE : offset;
       await show(Math.max(0, nextOffset));
       return true;
     },
@@ -195,12 +198,16 @@ export function renderOrganizationMembersPanel({
     footer.append(
       h('div', {
         class: 'help',
-        text: t('organization.members.range', 'Showing {first}–{last} of {total} members.', {
-          first,
-          last,
-          total,
-        }),
-      })
+        text: t(
+          'organization.members.range',
+          'Showing {first}–{last} of {total} members.',
+          {
+            first,
+            last,
+            total,
+          },
+        ),
+      }),
     );
 
     if (total <= shown && offset === 0) return;
@@ -233,8 +240,11 @@ export function renderOrganizationMembersPanel({
     list.append(
       h('div', {
         class: 'help',
-        text: t('organization.members.loadFailed', 'Could not load the member list.'),
-      })
+        text: t(
+          'organization.members.loadFailed',
+          'Could not load the member list.',
+        ),
+      }),
     );
   }
 }

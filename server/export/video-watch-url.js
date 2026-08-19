@@ -98,7 +98,11 @@ function buildProviderUrl(parsed, autoplay) {
  *   visibility diverge, the link may land on a neighbouring slide.
  * @returns {{ url: string, kind: 'explicit' | 'deck' | 'provider' } | { url: null, kind: null }}
  */
-export function resolveVideoWatchUrl(slide, pres, { baseUrl = '', slideIndex = 0 } = {}) {
+export function resolveVideoWatchUrl(
+  slide,
+  pres,
+  { baseUrl = '', slideIndex = 0 } = {},
+) {
   const content = slide && typeof slide === 'object' ? slide.content : {};
   const source = String(content?.source || '').trim();
   const autoplay = content?.autoplay === 'on';
@@ -109,15 +113,20 @@ export function resolveVideoWatchUrl(slide, pres, { baseUrl = '', slideIndex = 0
   if (explicit) return { url: explicit, kind: 'explicit' };
 
   // Rung 1: published deck deep-link.
-  const published = pres && typeof pres.published === 'object' ? pres.published : null;
+  const published =
+    pres && typeof pres.published === 'object' ? pres.published : null;
   const publishId = published ? String(published.id || '').trim() : '';
   const slug = published ? String(published.slug || '').trim() : '';
   const base = String(baseUrl || '').replace(/\/+$/, '');
   if (publishId && base) {
     const slugPart = slug ? `-${slug}` : '';
-    const idx = Number.isInteger(slideIndex) && slideIndex >= 0 ? slideIndex : 0;
+    const idx =
+      Number.isInteger(slideIndex) && slideIndex >= 0 ? slideIndex : 0;
     // The published deck reads the initial slide from `#slide=<0-based index>`.
-    return { url: `${base}/p/${publishId}${slugPart}#slide=${idx}`, kind: 'deck' };
+    return {
+      url: `${base}/p/${publishId}${slugPart}#slide=${idx}`,
+      kind: 'deck',
+    };
   }
 
   // Rung 2: provider URL from the video source.

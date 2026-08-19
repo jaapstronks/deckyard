@@ -21,7 +21,7 @@ non-zero, always attributed to `tests/migrate-data-import.test.js`.
 
 This is a **Node core bug in the test runner's IPC reader**, not a product bug
 and not a real test failure. A child process forwards its captured `stdout`
-back to the parent *over the same v8-serialized channel* as the structured test
+back to the parent _over the same v8-serialized channel_ as the structured test
 results. When a file emits a burst of `stdout`, the parent's `#processRawBuffer`
 can mis-frame the byte stream and fail to deserialize a message — surfacing as a
 spurious failure of whichever file produced the burst.
@@ -34,12 +34,12 @@ captured and forwarded as IPC messages; the burst tripped the framing bug.
 
 ## Options considered
 
-| Option | Result |
-| --- | --- |
-| `--test-isolation=none` (one process, no per-file IPC) | **Broke the suite**: 1904 fails / 0 pass. Files rely on per-process isolation (module-level mocks, env, global state) and bleed into each other. Not viable without a large test rewrite. |
-| `--test-concurrency=1` (serial, still process-isolated) | Deterministically clean, but **~130 s vs ~13.5 s** — a 10x slowdown on every run. |
-| `--test-concurrency=4` | Reduced but **did not eliminate** the flake (still 1/10). Any concurrency > 1 keeps the racy IPC path. |
-| **Silence the trigger's stdout burst** | **0 deserialize errors across 20 full-parallel runs**, at full ~13.5 s speed. Chosen. |
+| Option                                                  | Result                                                                                                                                                                                    |
+| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--test-isolation=none` (one process, no per-file IPC)  | **Broke the suite**: 1904 fails / 0 pass. Files rely on per-process isolation (module-level mocks, env, global state) and bleed into each other. Not viable without a large test rewrite. |
+| `--test-concurrency=1` (serial, still process-isolated) | Deterministically clean, but **~130 s vs ~13.5 s** — a 10x slowdown on every run.                                                                                                         |
+| `--test-concurrency=4`                                  | Reduced but **did not eliminate** the flake (still 1/10). Any concurrency > 1 keeps the racy IPC path.                                                                                    |
+| **Silence the trigger's stdout burst**                  | **0 deserialize errors across 20 full-parallel runs**, at full ~13.5 s speed. Chosen.                                                                                                     |
 
 ## The fix
 
@@ -56,7 +56,7 @@ The underlying Node bug is still latent. To avoid re-triggering it:
 - **Don't let a test emit a large burst of `stdout`.** If the code under test
   logs (a CLI / migration script), suppress or capture that output in the test
   rather than letting it flow to the console.
-- If a *new* file starts flaking with the `#processRawBuffer` "Unable to
+- If a _new_ file starts flaking with the `#processRawBuffer` "Unable to
   deserialize cloned data" error, it is almost certainly the same bug — look for
   noisy `console.*` output in that file's code path and silence it, rather than
   reaching for `--test-concurrency=1`.

@@ -19,24 +19,24 @@
  */
 
 export const ai = {
-    category: 'content',
-    resolveInPhase1: false,
-    description: `
+  category: 'content',
+  resolveInPhase1: false,
+  description: `
       Hierarchical pyramid with 3-6 levels.
       First item = top (pinnacle), last = base (foundation).
       Classic example: Maslow's hierarchy of needs.
     `,
-    bestFor: [
-      'Maslow-style need pyramids',
-      'Priority levels (Critical > High > Medium > Low)',
-      'Organizational hierarchies',
-      'Skill progression pyramids',
-    ],
-    notFor: [
-      'Narrowing funnels with metrics (use funnel-slide)',
-      'Linear processes (use process-slide)',
-      'Circular processes (use cycle-slide)',
-    ],
+  bestFor: [
+    'Maslow-style need pyramids',
+    'Priority levels (Critical > High > Medium > Low)',
+    'Organizational hierarchies',
+    'Skill progression pyramids',
+  ],
+  notFor: [
+    'Narrowing funnels with metrics (use funnel-slide)',
+    'Linear processes (use process-slide)',
+    'Circular processes (use cycle-slide)',
+  ],
 };
 
 /**

@@ -3,7 +3,7 @@ export function createPresenterFullscreenController({ shell } = {}) {
     // Use a class as a reliable cross-browser hook for fullscreen styling.
     document.documentElement.classList.toggle(
       'is-fullscreen',
-      !!document.fullscreenElement
+      !!document.fullscreenElement,
     );
   };
 

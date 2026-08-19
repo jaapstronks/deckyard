@@ -15,15 +15,15 @@ import { DREAMBOT_EMAIL, DREAMBOT_NAME } from '../../../shared/constants/ai.js';
 
 // Suggestion categories
 const SUGGESTION_CATEGORIES = [
-  'language',      // Improved wording, clarity, grammar
-  'slide-type',    // Better slide type recommendation
+  'language', // Improved wording, clarity, grammar
+  'slide-type', // Better slide type recommendation
   'visual-balance', // Too text-heavy, suggest images
-  'structure',     // Chapter organization suggestions
-  'tone',          // Inconsistent voice/style
-  'spelling',      // Typos and grammatical errors
-  'brevity',       // Opportunities to shorten
-  'logic',         // Ordering or argument issues
-  'repetition',    // Duplicate content detected
+  'structure', // Chapter organization suggestions
+  'tone', // Inconsistent voice/style
+  'spelling', // Typos and grammatical errors
+  'brevity', // Opportunities to shorten
+  'logic', // Ordering or argument issues
+  'repetition', // Duplicate content detected
 ];
 
 /**
@@ -177,7 +177,7 @@ function normalizeAnalysisOutput(parsed, slides) {
   }
 
   const suggestions = [];
-  const slideIdSet = new Set(slides.map(s => s.id));
+  const slideIdSet = new Set(slides.map((s) => s.id));
 
   if (Array.isArray(parsed.suggestions)) {
     for (const sug of parsed.suggestions) {
@@ -231,11 +231,10 @@ function normalizeAnalysisOutput(parsed, slides) {
  * @param {Function} options.onProgress - Callback for progress updates
  * @returns {Promise<Object>} Analysis results with suggestions
  */
-export async function analyzePresentation(presentation, {
-  categories = null,
-  vendor = null,
-  onProgress = null,
-} = {}) {
+export async function analyzePresentation(
+  presentation,
+  { categories = null, vendor = null, onProgress = null } = {},
+) {
   const startTime = Date.now();
   const { vendor: resolvedVendor, apiKey, model } = getLlmConfig({ vendor });
 
@@ -246,12 +245,15 @@ export async function analyzePresentation(presentation, {
   }
 
   // Detect language from first few slides
-  const sampleText = slides.slice(0, 5)
-    .map(s => `${s.content?.title || ''} ${s.content?.body || ''}`)
+  const sampleText = slides
+    .slice(0, 5)
+    .map((s) => `${s.content?.title || ''} ${s.content?.body || ''}`)
     .join(' ');
-  const language = /[àáâãäåæçèéêëìíîïñòóôõöùúûü]/i.test(sampleText) ||
+  const language =
+    /[àáâãäåæçèéêëìíîïñòóôõöùúûü]/i.test(sampleText) ||
     /\b(de|het|een|en|van|voor|met|zijn|worden)\b/i.test(sampleText)
-    ? 'nl' : 'en';
+      ? 'nl'
+      : 'en';
 
   if (onProgress) {
     onProgress({ phase: 'analyzing', slideCount: slides.length });
@@ -303,7 +305,10 @@ export async function analyzePresentation(presentation, {
   };
 
   if (onProgress) {
-    onProgress({ phase: 'complete', suggestionCount: output.suggestions.length });
+    onProgress({
+      phase: 'complete',
+      suggestionCount: output.suggestions.length,
+    });
   }
 
   return output;
@@ -316,7 +321,11 @@ export async function analyzePresentation(presentation, {
  * @param {Object} [aiIdentity] - Optional custom AI identity { email, name }
  * @returns {Object} Comment data object
  */
-export function suggestionToCommentData(suggestion, presentationId, aiIdentity = null) {
+export function suggestionToCommentData(
+  suggestion,
+  presentationId,
+  aiIdentity = null,
+) {
   return {
     presentationId,
     slideId: suggestion.slideId,

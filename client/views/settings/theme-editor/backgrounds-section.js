@@ -38,9 +38,9 @@ export function createBackgroundsSection({ config, onChange }) {
       class: 'help',
       text: t(
         'settings.themes.config.backgroundsHint',
-        'Your own imagery for title slides. New title slides pick one of these, and the per-slide picker offers them first. Without any, title slides stay flat rather than borrowing imagery that is not yours.'
+        'Your own imagery for title slides. New title slides pick one of these, and the per-slide picker offers them first. Without any, title slides stay flat rather than borrowing imagery that is not yours.',
       ),
-    })
+    }),
   );
 
   const grid = h('div', { class: 'row is-wrap is-gap-2 theme-bg-presets' });
@@ -79,7 +79,7 @@ export function createBackgroundsSection({ config, onChange }) {
           'aria-label': t('settings.themes.config.removeBackground', 'Remove'),
           title: t('settings.themes.config.removeBackground', 'Remove'),
           onclick: () => write(presets().filter((_, i) => i !== index)),
-        })
+        }),
       );
       grid.append(tile);
     }
@@ -87,8 +87,11 @@ export function createBackgroundsSection({ config, onChange }) {
       grid.append(
         h('p', {
           class: 'help',
-          text: t('settings.themes.config.noBackgrounds', 'No background images yet.'),
-        })
+          text: t(
+            'settings.themes.config.noBackgrounds',
+            'No background images yet.',
+          ),
+        }),
       );
     }
   }
@@ -106,7 +109,10 @@ export function createBackgroundsSection({ config, onChange }) {
       const room = MAX_PRESETS - presets().length;
       if (room <= 0) {
         toast.error(
-          t('settings.themes.config.backgroundsFull', 'That is as many background images as a theme can hold.')
+          t(
+            'settings.themes.config.backgroundsFull',
+            'That is as many background images as a theme can hold.',
+          ),
         );
         return;
       }
@@ -118,8 +124,8 @@ export function createBackgroundsSection({ config, onChange }) {
           t(
             'settings.themes.config.backgroundsSomeSkipped',
             'Only {count} more images fit; the rest were skipped.',
-            { count: String(room) }
-          )
+            { count: String(room) },
+          ),
         );
       }
 
@@ -147,7 +153,11 @@ export function createBackgroundsSection({ config, onChange }) {
   });
 
   render();
-  el.append(grid, h('div', { class: 'row is-gap-2' }, [addBtn, fileInput]), status);
+  el.append(
+    grid,
+    h('div', { class: 'row is-gap-2' }, [addBtn, fileInput]),
+    status,
+  );
 
   return { el };
 }

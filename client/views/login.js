@@ -14,22 +14,38 @@ import { authShell } from './auth-shell.js';
 function ssoErrorMessage(code) {
   const map = {
     sso_disabled: t('login.ssoErrDisabled', 'Single sign-on is not enabled.'),
-    sso_unavailable: t('login.ssoErrUnavailable', 'Single sign-on is temporarily unavailable. Try again.'),
-    sso_state: t('login.ssoErrState', 'Your sign-in session expired. Please try again.'),
-    sso_email_unverified: t('login.ssoErrUnverified', 'Your email is not verified with your identity provider.'),
-    sso_domain_not_allowed: t('login.ssoErrDomain', 'Your account is not permitted to sign in here.'),
-    sso_not_provisioned: t('login.ssoErrNotProvisioned', 'No account exists for you yet. Ask an administrator to invite you.'),
+    sso_unavailable: t(
+      'login.ssoErrUnavailable',
+      'Single sign-on is temporarily unavailable. Try again.',
+    ),
+    sso_state: t(
+      'login.ssoErrState',
+      'Your sign-in session expired. Please try again.',
+    ),
+    sso_email_unverified: t(
+      'login.ssoErrUnverified',
+      'Your email is not verified with your identity provider.',
+    ),
+    sso_domain_not_allowed: t(
+      'login.ssoErrDomain',
+      'Your account is not permitted to sign in here.',
+    ),
+    sso_not_provisioned: t(
+      'login.ssoErrNotProvisioned',
+      'No account exists for you yet. Ask an administrator to invite you.',
+    ),
   };
-  return map[code] || t('login.ssoErrGeneric', 'Single sign-on failed. Please try again.');
+  return (
+    map[code] ||
+    t('login.ssoErrGeneric', 'Single sign-on failed. Please try again.')
+  );
 }
 
 export async function renderLogin(root, { nav } = {}) {
   const url = new URL(location.href);
-  const returnToRaw =
-    url.searchParams.get('returnTo') || '';
+  const returnToRaw = url.searchParams.get('returnTo') || '';
   const returnTo =
-    returnToRaw.startsWith('/') &&
-    !returnToRaw.startsWith('//')
+    returnToRaw.startsWith('/') && !returnToRaw.startsWith('//')
       ? returnToRaw
       : '/app';
 
@@ -73,7 +89,9 @@ export async function renderLogin(root, { nav } = {}) {
   ssoBtn.onclick = () => {
     // Full-page navigation: this hits a server route that 302-redirects to the
     // identity provider, so it cannot go through the SPA router.
-    location.assign(`/api/auth/oidc/login?returnTo=${encodeURIComponent(returnTo)}`);
+    location.assign(
+      `/api/auth/oidc/login?returnTo=${encodeURIComponent(returnTo)}`,
+    );
   };
   ssoSection.append(ssoBtn);
 
@@ -85,7 +103,7 @@ export async function renderLogin(root, { nav } = {}) {
       class: 'auth-divider-text',
       text: t('login.dividerOrEmail', 'or sign in with email'),
     }),
-    h('span', { class: 'auth-divider-line' })
+    h('span', { class: 'auth-divider-line' }),
   );
 
   // ============================================================
@@ -105,7 +123,7 @@ export async function renderLogin(root, { nav } = {}) {
 
   const magicHelp = h('div', {
     class: 'auth-magic-help',
-    text: t('login.magicHelp', 'No password needed. We\'ll send you a link.'),
+    text: t('login.magicHelp', "No password needed. We'll send you a link."),
   });
 
   const magicForm = h('div', { class: 'auth-magic-form' });
@@ -162,10 +180,7 @@ export async function renderLogin(root, { nav } = {}) {
 
   const btnDev = h('button', {
     class: 'auth-btn',
-    text: t(
-      'login.devContinue',
-      'Continue without signing in (local dev)'
-    ),
+    text: t('login.devContinue', 'Continue without signing in (local dev)'),
     hidden: true,
   });
   btnDev.style.background = 'hsl(var(--app-bg-hover))';
@@ -182,7 +197,10 @@ export async function renderLogin(root, { nav } = {}) {
     if (busyManager.isBusy()) return;
     const e = (magicEmail.value || '').trim();
     if (!e || !e.includes('@')) {
-      magicStatus.textContent = t('login.magicMissingEmail', 'Enter your email address.');
+      magicStatus.textContent = t(
+        'login.magicMissingEmail',
+        'Enter your email address.',
+      );
       magicStatus.className = 'auth-magic-status is-error';
       return;
     }
@@ -199,7 +217,7 @@ export async function renderLogin(root, { nav } = {}) {
       if (data.ok) {
         magicStatus.textContent = t(
           'login.magicSuccess',
-          'Check your inbox! Click the link we sent to sign in.'
+          'Check your inbox! Click the link we sent to sign in.',
         );
         magicStatus.className = 'auth-magic-status is-success';
         magicEmail.value = '';
@@ -215,7 +233,10 @@ export async function renderLogin(root, { nav } = {}) {
   };
 
   magicBtn.onclick = submitMagicLink;
-  magicEmail.addEventListener('keydown', (ev) => ev.key === 'Enter' && submitMagicLink());
+  magicEmail.addEventListener(
+    'keydown',
+    (ev) => ev.key === 'Enter' && submitMagicLink(),
+  );
 
   // ============================================================
   // Password Login Handler
@@ -227,7 +248,7 @@ export async function renderLogin(root, { nav } = {}) {
     if (!e || !p) {
       status.textContent = t(
         'login.missingFields',
-        'Enter email and password.'
+        'Enter email and password.',
       );
       status.className = 'auth-status is-error';
       return;
@@ -240,7 +261,9 @@ export async function renderLogin(root, { nav } = {}) {
       // Set fresh login flag so list view starts on 'home'
       try {
         sessionStorage.setItem('ps:fresh-login-pending', '1');
-      } catch { /* sessionStorage may not be available */ }
+      } catch {
+        /* sessionStorage may not be available */
+      }
       nav?.(returnTo);
     } catch (err) {
       status.textContent = String(err?.message || err);
@@ -263,7 +286,9 @@ export async function renderLogin(root, { nav } = {}) {
       // Set fresh login flag so list view starts on 'home'
       try {
         sessionStorage.setItem('ps:fresh-login-pending', '1');
-      } catch { /* sessionStorage may not be available */ }
+      } catch {
+        /* sessionStorage may not be available */
+      }
       nav?.(returnTo);
     } catch (err) {
       status.textContent = String(err?.message || err);
@@ -302,7 +327,10 @@ export async function renderLogin(root, { nav } = {}) {
         magicSection.hidden = true;
         divider.hidden = true;
         form.hidden = true;
-        subtitle.textContent = t('login.ssoOnlyHelp', 'Sign in with your organization account.');
+        subtitle.textContent = t(
+          'login.ssoOnlyHelp',
+          'Sign in with your organization account.',
+        );
       } else {
         ssoDivider.hidden = false;
       }
@@ -330,14 +358,8 @@ export async function renderLogin(root, { nav } = {}) {
     // ignore
   }
 
-  email.addEventListener(
-    'keydown',
-    (ev) => ev.key === 'Enter' && submit()
-  );
-  password.addEventListener(
-    'keydown',
-    (ev) => ev.key === 'Enter' && submit()
-  );
+  email.addEventListener('keydown', (ev) => ev.key === 'Enter' && submit());
+  password.addEventListener('keydown', (ev) => ev.key === 'Enter' && submit());
 
   // Pre-fill email fields if email was provided in URL
   if (prefillEmail) {

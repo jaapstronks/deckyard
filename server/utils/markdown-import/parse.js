@@ -161,7 +161,9 @@ function splitOnSeparator(md) {
  * rather than slide content (headings, paragraphs, images)?
  */
 function looksLikeYaml(block) {
-  const lines = block.split('\n').filter((l) => l.trim() && !l.trim().startsWith('#'));
+  const lines = block
+    .split('\n')
+    .filter((l) => l.trim() && !l.trim().startsWith('#'));
   if (lines.length === 0) return false;
   // If >60% of non-empty lines contain a colon, treat as YAML
   const colonLines = lines.filter((l) => l.includes(':'));
@@ -195,7 +197,9 @@ function parseSlideBlock(block, index) {
 
   // Detect features
   const hasTable = PIPE_TABLE_RE.test(body);
-  const hasBlockquote = body.split('\n').some((l) => BLOCKQUOTE_LINE_RE.test(l.trim()));
+  const hasBlockquote = body
+    .split('\n')
+    .some((l) => BLOCKQUOTE_LINE_RE.test(l.trim()));
 
   // Columns
   const columns = extractColumns(body);
@@ -256,7 +260,14 @@ function extractFrontmatter(body) {
     }
 
     // A line with `key: value` pattern (but NOT a heading like `## Title`)
-    if (trimmed.includes(':') && !trimmed.startsWith('#') && !trimmed.startsWith('-') && !trimmed.startsWith('>') && !trimmed.startsWith('|') && !trimmed.startsWith('!')) {
+    if (
+      trimmed.includes(':') &&
+      !trimmed.startsWith('#') &&
+      !trimmed.startsWith('-') &&
+      !trimmed.startsWith('>') &&
+      !trimmed.startsWith('|') &&
+      !trimmed.startsWith('!')
+    ) {
       yamlLines.push(trimmed);
       restStartIdx = i + 1;
     } else {
@@ -407,9 +418,9 @@ function detectBrokenPatterns(body, slideIndex) {
     // Broken image: `![alt]url)` — missing opening paren
     if (/!\[[^\]]*\][^(]/.test(trimmed) && /!\[/.test(trimmed)) {
       // Make sure it's not a valid image (which would have `](`)
-      if (!(/!\[[^\]]*\]\(/.test(trimmed))) {
+      if (!/!\[[^\]]*\]\(/.test(trimmed)) {
         warnings.push(
-          `Slide ${slideNum}: Broken image syntax — looks like a missing "(" in "${truncate(trimmed, 80)}"`
+          `Slide ${slideNum}: Broken image syntax — looks like a missing "(" in "${truncate(trimmed, 80)}"`,
         );
       }
     }
@@ -417,21 +428,26 @@ function detectBrokenPatterns(body, slideIndex) {
     // Broken image: `![alt](url` — missing closing paren
     if (/!\[[^\]]*\]\([^)]+$/.test(trimmed)) {
       warnings.push(
-        `Slide ${slideNum}: Broken image syntax — looks like a missing ")" in "${truncate(trimmed, 80)}"`
+        `Slide ${slideNum}: Broken image syntax — looks like a missing ")" in "${truncate(trimmed, 80)}"`,
       );
     }
 
     // Broken link: `[text]url)` — missing opening paren (not an image)
-    if (!/!\[/.test(trimmed) && /\[[^\]]+\][^(![]/.test(trimmed) && !trimmed.includes('](') && /\]\s*http/.test(trimmed)) {
+    if (
+      !/!\[/.test(trimmed) &&
+      /\[[^\]]+\][^(![]/.test(trimmed) &&
+      !trimmed.includes('](') &&
+      /\]\s*http/.test(trimmed)
+    ) {
       warnings.push(
-        `Slide ${slideNum}: Broken link syntax — looks like a missing "(" in "${truncate(trimmed, 80)}"`
+        `Slide ${slideNum}: Broken link syntax — looks like a missing "(" in "${truncate(trimmed, 80)}"`,
       );
     }
 
     // Unclosed image alt: `![text` without closing `]`
     if (/!\[[^\]]*$/.test(trimmed)) {
       warnings.push(
-        `Slide ${slideNum}: Unclosed image alt text — missing "]" in "${truncate(trimmed, 80)}"`
+        `Slide ${slideNum}: Unclosed image alt text — missing "]" in "${truncate(trimmed, 80)}"`,
       );
     }
   }

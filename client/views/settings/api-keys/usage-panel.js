@@ -23,7 +23,10 @@ export async function showUsagePanel(key) {
     h('code', { class: 'api-key-prefix', text: `${key.prefix}...` }),
   ]);
 
-  const loading = h('div', { class: 'help', text: t('common.loading', 'Loading...') });
+  const loading = h('div', {
+    class: 'help',
+    text: t('common.loading', 'Loading...'),
+  });
   const content = h('div', { class: 'api-key-usage-content' });
   content.append(loading);
 
@@ -62,10 +65,19 @@ export async function showUsagePanel(key) {
   todaySection.append(
     h('h4', { text: t('settings.apiKeys.usageModal.today', 'Today') }),
     h('div', { class: 'api-key-usage-stats' }, [
-      createStatCard(t('settings.apiKeys.usageModal.requests', 'Requests'), usage.today?.requestCount || 0),
-      createStatCard(t('settings.apiKeys.usageModal.aiCalls', 'AI Calls'), usage.today?.aiRequestCount || 0),
-      createStatCard(t('settings.apiKeys.usageModal.exports', 'Exports'), usage.today?.exportCount || 0),
-    ])
+      createStatCard(
+        t('settings.apiKeys.usageModal.requests', 'Requests'),
+        usage.today?.requestCount || 0,
+      ),
+      createStatCard(
+        t('settings.apiKeys.usageModal.aiCalls', 'AI Calls'),
+        usage.today?.aiRequestCount || 0,
+      ),
+      createStatCard(
+        t('settings.apiKeys.usageModal.exports', 'Exports'),
+        usage.today?.exportCount || 0,
+      ),
+    ]),
   );
 
   // Totals
@@ -73,21 +85,36 @@ export async function showUsagePanel(key) {
   const totals = usage.totals || {};
   totalsSection.append(
     h('h4', {
-      text: t('settings.apiKeys.usageModal.totals', 'Total (last {days} days)', {
-        days: usage.days || 30,
-      }),
+      text: t(
+        'settings.apiKeys.usageModal.totals',
+        'Total (last {days} days)',
+        {
+          days: usage.days || 30,
+        },
+      ),
     }),
     h('div', { class: 'api-key-usage-stats' }, [
-      createStatCard(t('settings.apiKeys.usageModal.requests', 'Requests'), totals.requestCount || 0),
-      createStatCard(t('settings.apiKeys.usageModal.aiCalls', 'AI Calls'), totals.aiRequestCount || 0),
-      createStatCard(t('settings.apiKeys.usageModal.exports', 'Exports'), totals.exportCount || 0),
-    ])
+      createStatCard(
+        t('settings.apiKeys.usageModal.requests', 'Requests'),
+        totals.requestCount || 0,
+      ),
+      createStatCard(
+        t('settings.apiKeys.usageModal.aiCalls', 'AI Calls'),
+        totals.aiRequestCount || 0,
+      ),
+      createStatCard(
+        t('settings.apiKeys.usageModal.exports', 'Exports'),
+        totals.exportCount || 0,
+      ),
+    ]),
   );
 
   // History (last 7 days)
   const historySection = h('div', { class: 'api-key-usage-section' });
   historySection.append(
-    h('h4', { text: t('settings.apiKeys.usageModal.recentHistory', 'Last 7 Days') })
+    h('h4', {
+      text: t('settings.apiKeys.usageModal.recentHistory', 'Last 7 Days'),
+    }),
   );
 
   if (usage.history && usage.history.length > 0) {
@@ -96,10 +123,12 @@ export async function showUsagePanel(key) {
     thead.append(
       h('tr', {}, [
         h('th', { text: t('settings.apiKeys.usageModal.date', 'Date') }),
-        h('th', { text: t('settings.apiKeys.usageModal.requests', 'Requests') }),
+        h('th', {
+          text: t('settings.apiKeys.usageModal.requests', 'Requests'),
+        }),
         h('th', { text: t('settings.apiKeys.usageModal.aiCalls', 'AI Calls') }),
         h('th', { text: t('settings.apiKeys.usageModal.exports', 'Exports') }),
-      ])
+      ]),
     );
 
     const tbody = h('tbody');
@@ -110,7 +139,7 @@ export async function showUsagePanel(key) {
           h('td', { text: String(day.requestCount || 0) }),
           h('td', { text: String(day.aiRequestCount || 0) }),
           h('td', { text: String(day.exportCount || 0) }),
-        ])
+        ]),
       );
     }
 
@@ -118,7 +147,13 @@ export async function showUsagePanel(key) {
     historySection.append(table);
   } else {
     historySection.append(
-      h('p', { class: 'help', text: t('settings.apiKeys.usageModal.noHistory', 'No usage history yet.') })
+      h('p', {
+        class: 'help',
+        text: t(
+          'settings.apiKeys.usageModal.noHistory',
+          'No usage history yet.',
+        ),
+      }),
     );
   }
 

@@ -25,7 +25,10 @@
  *   call the jobs made on start so a crash's backlog is collected immediately.
  * @returns {{ stop: () => void }} Idempotent handle; `stop()` clears the timer.
  */
-export function createIntervalJob(task, { intervalMs, immediate = false } = {}) {
+export function createIntervalJob(
+  task,
+  { intervalMs, immediate = false } = {},
+) {
   if (immediate) task();
 
   let intervalId = setInterval(task, intervalMs);

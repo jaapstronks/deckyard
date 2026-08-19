@@ -112,7 +112,9 @@ export function createSlideLockManager({
   const fetchLocks = async () => {
     if (stopped) return;
     try {
-      const resp = await api(`/api/presentations/${presentationId}/slide-locks`);
+      const resp = await api(
+        `/api/presentations/${presentationId}/slide-locks`,
+      );
       if (resp?.ok) {
         locks = resp.locks || {};
         lockedByOthers = new Set(resp.lockedByOthers || []);
@@ -131,10 +133,13 @@ export function createSlideLockManager({
   const acquireLock = async (slideId) => {
     if (stopped || !slideId) return false;
     try {
-      const resp = await api(`/api/presentations/${presentationId}/slides/${slideId}/lock`, {
-        method: 'POST',
-        body: JSON.stringify({}),
-      });
+      const resp = await api(
+        `/api/presentations/${presentationId}/slides/${slideId}/lock`,
+        {
+          method: 'POST',
+          body: JSON.stringify({}),
+        },
+      );
       if (resp?.ok) {
         currentLockedSlideId = slideId;
         currentSlideIsLocked = false;
@@ -172,10 +177,13 @@ export function createSlideLockManager({
   const releaseLock = async (slideId) => {
     if (!slideId) return false;
     try {
-      const resp = await api(`/api/presentations/${presentationId}/slides/${slideId}/lock`, {
-        method: 'DELETE',
-        body: JSON.stringify({}),
-      });
+      const resp = await api(
+        `/api/presentations/${presentationId}/slides/${slideId}/lock`,
+        {
+          method: 'DELETE',
+          body: JSON.stringify({}),
+        },
+      );
       if (resp?.ok) {
         delete locks[slideId];
         if (currentLockedSlideId === slideId) {
@@ -202,7 +210,7 @@ export function createSlideLockManager({
         {
           method: 'POST',
           body: JSON.stringify({}),
-        }
+        },
       );
       if (resp?.ok) {
         locks[currentLockedSlideId] = resp.lock;
@@ -221,10 +229,13 @@ export function createSlideLockManager({
    */
   const releaseAllLocks = async () => {
     try {
-      await api(`/api/presentations/${presentationId}/slide-locks/release-all`, {
-        method: 'POST',
-        body: JSON.stringify({}),
-      });
+      await api(
+        `/api/presentations/${presentationId}/slide-locks/release-all`,
+        {
+          method: 'POST',
+          body: JSON.stringify({}),
+        },
+      );
       currentLockedSlideId = null;
       emitLocksChanged();
     } catch (err) {
@@ -246,7 +257,12 @@ export function createSlideLockManager({
             // Locked by someone else unless the holder is me. Id-primary, e-mail
             // fallback (shared/identity-match.js) — the lock payload carries
             // holderId, so a renamed holder still recognizes their own lock.
-            if (!matchesIdentity(user, { userId: data.lock.holderId, email: data.lock.holderEmail })) {
+            if (
+              !matchesIdentity(user, {
+                userId: data.lock.holderId,
+                email: data.lock.holderEmail,
+              })
+            ) {
               lockedByOthers.add(data.slideId);
             }
             emitLocksChanged();

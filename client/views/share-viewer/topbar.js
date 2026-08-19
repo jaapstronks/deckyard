@@ -43,7 +43,10 @@ export function buildShareViewerTopbar({
 }) {
   const topbar = h('div', { class: 'share-viewer-topbar' });
 
-  const titleEl = h('div', { class: 'share-viewer-title', text: presentation.title || 'Presentation' });
+  const titleEl = h('div', {
+    class: 'share-viewer-title',
+    text: presentation.title || 'Presentation',
+  });
   const permissionBadge = h('div', {
     class: `share-viewer-permission share-viewer-permission--${shareLink.permission}`,
     text: getPermissionLabel(shareLink.permission),
@@ -81,7 +84,10 @@ export function buildShareViewerTopbar({
 
     commentsToggleBtn.addEventListener('click', () => {
       commentsSection.toggle();
-      commentsToggleBtn.classList.toggle('is-active', commentsSection.isVisible());
+      commentsToggleBtn.classList.toggle(
+        'is-active',
+        commentsSection.isVisible(),
+      );
     });
 
     controls.append(commentsToggleBtn);
@@ -94,7 +100,10 @@ export function buildShareViewerTopbar({
       // Show logged in status
       const guestName = guestSession.name || guestSession.email;
       const guestInfo = h('div', { class: 'share-viewer-guest-info' }, [
-        h('span', { class: 'share-viewer-guest-avatar', text: guestName.charAt(0).toUpperCase() }),
+        h('span', {
+          class: 'share-viewer-guest-avatar',
+          text: guestName.charAt(0).toUpperCase(),
+        }),
         h('span', { class: 'share-viewer-guest-name', text: guestName }),
       ]);
       guestStatusEl.append(guestInfo);
@@ -105,9 +114,16 @@ export function buildShareViewerTopbar({
         text: t('share.guest.join', 'Join discussion'),
       });
       joinBtn.addEventListener('click', () => {
-        renderGuestJoinPrompt(h, shell, token, shareLink.permission, async () => {
-          await onGuestJoined();
-        }, prefillEmail);
+        renderGuestJoinPrompt(
+          h,
+          shell,
+          token,
+          shareLink.permission,
+          async () => {
+            await onGuestJoined();
+          },
+          prefillEmail,
+        );
       });
       guestStatusEl.append(joinBtn);
     }
@@ -121,16 +137,25 @@ export function buildShareViewerTopbar({
     tracker: analyticsTracker,
     labels: {
       button: t('share.erase.button', 'Forget me'),
-      tooltip: t('share.erase.tooltip', 'Erase the view history recorded for this device'),
+      tooltip: t(
+        'share.erase.tooltip',
+        'Erase the view history recorded for this device',
+      ),
       confirmTitle: t('share.erase.confirmTitle', 'Forget this device?'),
       confirmMessage: t(
         'share.erase.confirmMessage',
-        "This permanently erases the viewing history recorded for this device across every presentation on this site. It can't be undone."
+        "This permanently erases the viewing history recorded for this device across every presentation on this site. It can't be undone.",
       ),
       confirmOk: t('share.erase.confirmOk', 'Forget me'),
       cancel: t('common.cancel', 'Cancel'),
-      done: t('share.erase.done', 'Your viewing history on this device has been erased.'),
-      failed: t('share.erase.failed', "Couldn't erase your data. Please try again."),
+      done: t(
+        'share.erase.done',
+        'Your viewing history on this device has been erased.',
+      ),
+      failed: t(
+        'share.erase.failed',
+        "Couldn't erase your data. Please try again.",
+      ),
     },
     onErased: onAnalyticsErased,
   });

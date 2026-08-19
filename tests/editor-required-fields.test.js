@@ -23,8 +23,10 @@ globalThis.Node = dom.window.Node;
 globalThis.Element = dom.window.Element;
 
 const { h } = await import('../client/lib/dom.js');
-const { createBasicFields } = await import('../client/views/editor/fields/basic.js');
-const { emptyRequiredFields } = await import('../client/views/editor/fields/required.js');
+const { createBasicFields } =
+  await import('../client/views/editor/fields/basic.js');
+const { emptyRequiredFields } =
+  await import('../client/views/editor/fields/required.js');
 
 const { fieldText, fieldMarkdown, fieldCode } = createBasicFields({ h });
 
@@ -45,9 +47,16 @@ test('a required field is marked before anything is typed, but not flagged', () 
   const wrap = fieldText('Title', '', () => {}, { required: true });
   const input = wrap.querySelector('input');
   assert.ok(wrap.classList.contains('is-required'));
-  assert.ok(wrap.querySelector('.field-required-mark'), 'asterisk on the label');
+  assert.ok(
+    wrap.querySelector('.field-required-mark'),
+    'asterisk on the label',
+  );
   assert.equal(input.getAttribute('aria-required'), 'true');
-  assert.equal(wrap.classList.contains('is-invalid'), false, 'quiet until visited');
+  assert.equal(
+    wrap.classList.contains('is-invalid'),
+    false,
+    'quiet until visited',
+  );
   assert.equal(wrap.querySelector('.field-error').hidden, true);
 });
 
@@ -93,8 +102,11 @@ test('markdown fields get the same treatment', () => {
   assert.ok(wrap.classList.contains('is-invalid'));
 });
 
-test('a read-only code field is not the author\'s to fill in, so it is not flagged', () => {
-  const wrap = fieldCode('HTML', '', 'help', () => {}, { required: true, readOnly: true });
+test("a read-only code field is not the author's to fill in, so it is not flagged", () => {
+  const wrap = fieldCode('HTML', '', 'help', () => {}, {
+    required: true,
+    readOnly: true,
+  });
   assert.equal(wrap.classList.contains('is-required'), false);
   assert.equal(wrap.querySelector('.field-error'), null);
 });
@@ -106,8 +118,8 @@ test('emptyRequiredFields finds the empty ones only', () => {
     fieldText('C', '', () => {}),
     fieldMarkdown('D', '  ', 'help', () => {}, { required: true }),
   ]);
-  const labels = emptyRequiredFields(root).map(
-    (w) => w.querySelector('.field-label').textContent.replace('*', '')
+  const labels = emptyRequiredFields(root).map((w) =>
+    w.querySelector('.field-label').textContent.replace('*', ''),
   );
   assert.deepEqual(labels, ['A', 'D']);
 });

@@ -1,4 +1,7 @@
-import { createPresentation, updatePresentation } from '../../../storage/presentations/index.js';
+import {
+  createPresentation,
+  updatePresentation,
+} from '../../../storage/presentations/index.js';
 import { serveJson, requireJsonBody } from '../../../utils/http.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { loadThemeAssets, resolveThemeId } from '../../../utils/themes.js';
@@ -25,7 +28,10 @@ export async function handlePresentationsImportJson({
   const lang = body?.lang === 'nl' || body?.lang === 'en-GB' ? body.lang : 'nl';
   log.info('[import-json] Language:', lang);
   log.info('[import-json] Deck title:', deck?.title);
-  log.info('[import-json] Deck slides count:', Array.isArray(deck?.slides) ? deck.slides.length : 'not an array');
+  log.info(
+    '[import-json] Deck slides count:',
+    Array.isArray(deck?.slides) ? deck.slides.length : 'not an array',
+  );
 
   // Load the deck's theme first so imported title slides can take a
   // background image from its presets.
@@ -37,7 +43,14 @@ export async function handlePresentationsImportJson({
   }
 
   const parts = deckToPresentationParts(deck, { theme: themeConfig });
-  log.info('[import-json] Parsed parts - title:', parts.title, 'theme:', parts.theme, 'slides:', parts.slides?.length);
+  log.info(
+    '[import-json] Parsed parts - title:',
+    parts.title,
+    'theme:',
+    parts.theme,
+    'slides:',
+    parts.slides?.length,
+  );
 
   const created = await createPresentation(storageScope, {
     title: parts.title,
@@ -61,7 +74,8 @@ export async function handlePresentationsImportJson({
     },
   };
 
-  const updated = await updatePresentation(storageScope,
+  const updated = await updatePresentation(
+    storageScope,
     created.id,
     {
       title: parts.title,
@@ -72,7 +86,7 @@ export async function handlePresentationsImportJson({
     },
     {
       actorEmail: authedUser?.email || null,
-    }
+    },
   );
   log.info('[import-json] Updated presentation successfully');
 

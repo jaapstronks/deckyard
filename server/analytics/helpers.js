@@ -18,19 +18,29 @@ const log = createLogger('analytics');
  */
 export const ANALYTICS_CONFIG = {
   // Heartbeat interval (client-side sends heartbeats at this rate)
-  HEARTBEAT_INTERVAL_MS: envInt('ANALYTICS_HEARTBEAT_INTERVAL_MS', 30000, { min: 1 }),
+  HEARTBEAT_INTERVAL_MS: envInt('ANALYTICS_HEARTBEAT_INTERVAL_MS', 30000, {
+    min: 1,
+  }),
 
   // Active session threshold (sessions with activity within this window are "active")
-  ACTIVE_THRESHOLD_SECONDS: envInt('ANALYTICS_ACTIVE_THRESHOLD_SECONDS', 60, { min: 1 }),
+  ACTIVE_THRESHOLD_SECONDS: envInt('ANALYTICS_ACTIVE_THRESHOLD_SECONDS', 60, {
+    min: 1,
+  }),
 
   // SSE connection timeout (max time for real-time viewer connection)
-  SSE_TIMEOUT_MS: envInt('ANALYTICS_SSE_TIMEOUT_MS', 60 * 60 * 1000, { min: 1 }), // 1 hour
+  SSE_TIMEOUT_MS: envInt('ANALYTICS_SSE_TIMEOUT_MS', 60 * 60 * 1000, {
+    min: 1,
+  }), // 1 hour
 
   // SSE update interval (how often to push viewer counts)
-  SSE_UPDATE_INTERVAL_MS: envInt('ANALYTICS_SSE_UPDATE_INTERVAL_MS', 5000, { min: 1 }),
+  SSE_UPDATE_INTERVAL_MS: envInt('ANALYTICS_SSE_UPDATE_INTERVAL_MS', 5000, {
+    min: 1,
+  }),
 
   // Max user-agent length (truncate to prevent storage abuse)
-  MAX_USER_AGENT_LENGTH: envInt('ANALYTICS_MAX_USER_AGENT_LENGTH', 500, { min: 1 }),
+  MAX_USER_AGENT_LENGTH: envInt('ANALYTICS_MAX_USER_AGENT_LENGTH', 500, {
+    min: 1,
+  }),
 
   // Max slide index (sanity check for slide navigation)
   MAX_SLIDE_INDEX: envInt('ANALYTICS_MAX_SLIDE_INDEX', 1000, { min: 1 }),
@@ -185,12 +195,13 @@ function deviceLabelKey() {
  *   again.
  */
 export function publicDeviceLabel(deviceId, presentationId) {
-  if (deviceId === null || deviceId === undefined || deviceId === '') return null;
+  if (deviceId === null || deviceId === undefined || deviceId === '')
+    return null;
 
   const presId = String(presentationId || '').trim();
   if (!presId) {
     throw new Error(
-      'publicDeviceLabel requires a presentation id: the label is per-deck by construction'
+      'publicDeviceLabel requires a presentation id: the label is per-deck by construction',
     );
   }
 

@@ -1,7 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { resolveVideoWatchUrl, videoPdfCopy } from '../server/export/video-watch-url.js';
+import {
+  resolveVideoWatchUrl,
+  videoPdfCopy,
+} from '../server/export/video-watch-url.js';
 
 /**
  * The PDF video-slide placeholder resolves a "watch online" URL server-side.
@@ -33,14 +36,22 @@ test('an explicit watchUrl beats every generated rung', () => {
 });
 
 test('a scheme-less watchUrl is read as https (that is what people type)', () => {
-  const slide = { id: 'v1', content: { source: '', watchUrl: 'go.ciiic.nl/our-video' } };
+  const slide = {
+    id: 'v1',
+    content: { source: '', watchUrl: 'go.ciiic.nl/our-video' },
+  };
   const { url, kind } = resolveVideoWatchUrl(slide, {}, {});
   assert.equal(kind, 'explicit');
   assert.equal(url, 'https://go.ciiic.nl/our-video');
 });
 
 test('a non-http watchUrl is ignored, and the ladder continues', () => {
-  for (const watchUrl of ['javascript:alert(1)', 'data:text/html,x', 'intranet', '   ']) {
+  for (const watchUrl of [
+    'javascript:alert(1)',
+    'data:text/html,x',
+    'intranet',
+    '   ',
+  ]) {
     const slide = {
       id: 'v1',
       content: { source: 'https://youtu.be/dQw4w9WgXcQ', watchUrl },
@@ -52,7 +63,10 @@ test('a non-http watchUrl is ignored, and the ladder continues', () => {
 });
 
 test('a watchUrl on a slide with no source still resolves', () => {
-  const slide = { id: 'v1', content: { source: '', watchUrl: 'https://go.ciiic.nl/x' } };
+  const slide = {
+    id: 'v1',
+    content: { source: '', watchUrl: 'https://go.ciiic.nl/x' },
+  };
   const { url, kind } = resolveVideoWatchUrl(slide, {}, {});
   assert.equal(kind, 'explicit');
   assert.equal(url, 'https://go.ciiic.nl/x');
@@ -88,9 +102,13 @@ test('published but no base URL falls through to the provider URL', () => {
 });
 
 test('unpublished deck falls back to the YouTube watch URL', () => {
-  const { url, kind } = resolveVideoWatchUrl(youtubeSlide(), {}, {
-    baseUrl: 'https://slides.ciiic.nl',
-  });
+  const { url, kind } = resolveVideoWatchUrl(
+    youtubeSlide(),
+    {},
+    {
+      baseUrl: 'https://slides.ciiic.nl',
+    },
+  );
   assert.equal(kind, 'provider');
   assert.equal(url, 'https://www.youtube.com/watch?v=dQw4w9WgXcQ');
 });
@@ -128,7 +146,7 @@ test('bunny UUID resolves to the mediadelivery play URL with library id', () => 
   assert.equal(kind, 'provider');
   assert.equal(
     url,
-    'https://iframe.mediadelivery.net/play/366590/3045cc09-605c-40d9-aa76-9ace93e7f637'
+    'https://iframe.mediadelivery.net/play/366590/3045cc09-605c-40d9-aa76-9ace93e7f637',
   );
 });
 

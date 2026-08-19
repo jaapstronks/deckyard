@@ -22,14 +22,18 @@ test('every field.type across all slide-type definitions is a declared type', ()
     const fields = Array.isArray(def?.fields) ? def.fields : [];
     for (const field of fields) {
       if (!isKnownFieldType(field?.type)) {
-        offenders.push(`${typeName}.${field?.key} → ${JSON.stringify(field?.type)}`);
+        offenders.push(
+          `${typeName}.${field?.key} → ${JSON.stringify(field?.type)}`,
+        );
       }
       // itemFields describe the shape of each object in an `items` field.
-      const itemFields = Array.isArray(field?.itemFields) ? field.itemFields : [];
+      const itemFields = Array.isArray(field?.itemFields)
+        ? field.itemFields
+        : [];
       for (const f of itemFields) {
         if (!isKnownFieldType(f?.type)) {
           offenders.push(
-            `${typeName}.${field?.key}[].${f?.key} → ${JSON.stringify(f?.type)}`
+            `${typeName}.${field?.key}[].${f?.key} → ${JSON.stringify(f?.type)}`,
           );
         }
       }
@@ -39,7 +43,7 @@ test('every field.type across all slide-type definitions is a declared type', ()
     offenders,
     [],
     `Unknown field.type(s) found. Add them to FIELD_TYPES in ` +
-      `shared/slide-types/field-types.js or fix the definition:\n${offenders.join('\n')}`
+      `shared/slide-types/field-types.js or fix the definition:\n${offenders.join('\n')}`,
   );
 });
 
@@ -49,13 +53,14 @@ test('isKnownFieldType rejects anything not in the vocabulary', () => {
   assert.equal(isKnownFieldType(null), false);
   assert.equal(isKnownFieldType(undefined), false);
   assert.equal(isKnownFieldType(42), false);
-  for (const name of FIELD_TYPE_NAMES) assert.equal(isKnownFieldType(name), true);
+  for (const name of FIELD_TYPE_NAMES)
+    assert.equal(isKnownFieldType(name), true);
 });
 
 test('the developer docs document exactly the declared vocabulary', () => {
   const md = readFileSync(
     new URL('../docs/developer/slide-types.md', import.meta.url),
-    'utf8'
+    'utf8',
   );
   // Only look inside the "Field Types Reference" section.
   const start = md.indexOf('## Field Types Reference');
@@ -72,14 +77,18 @@ test('the developer docs document exactly the declared vocabulary', () => {
   assert.deepEqual(
     [...documented].sort(),
     FIELD_TYPE_NAMES,
-    'docs/developer/slide-types.md field-type tables must match FIELD_TYPES'
+    'docs/developer/slide-types.md field-type tables must match FIELD_TYPES',
   );
 });
 
 test('every declared type carries a validator and doc metadata', () => {
   for (const [name, spec] of Object.entries(FIELD_TYPES)) {
     assert.equal(typeof spec.validate, 'function', `${name} needs validate()`);
-    assert.equal(typeof spec.description, 'string', `${name} needs description`);
+    assert.equal(
+      typeof spec.description,
+      'string',
+      `${name} needs description`,
+    );
     assert.equal(typeof spec.docExtra, 'string', `${name} needs docExtra`);
     assert.equal(typeof spec.valueKind, 'string', `${name} needs valueKind`);
   }
@@ -94,12 +103,15 @@ test('number values are now validated (was a silent gap)', () => {
   ]);
   assert.deepEqual(
     validateFieldValue('', { type: 'number', key: 'x', required: true }),
-    ['Slide.content.x is required']
+    ['Slide.content.x is required'],
   );
 });
 
 test('color values are now validated (was a silent gap)', () => {
-  assert.deepEqual(validateFieldValue('accent', { type: 'color', key: 'c' }), []);
+  assert.deepEqual(
+    validateFieldValue('accent', { type: 'color', key: 'c' }),
+    [],
+  );
   assert.deepEqual(validateFieldValue('', { type: 'color', key: 'c' }), []);
   assert.deepEqual(validateFieldValue(123, { type: 'color', key: 'c' }), [
     'Slide.content.c must be a string',
@@ -115,25 +127,32 @@ test('enum validation is preserved, including the background theme-variant escap
   ]);
   // The `background` field also accepts theme-defined variant slugs.
   assert.deepEqual(
-    validateFieldValue('lime', { type: 'enum', key: 'background', options: [] }),
-    []
+    validateFieldValue('lime', {
+      type: 'enum',
+      key: 'background',
+      options: [],
+    }),
+    [],
   );
 });
 
 test('text validation (required, type, maxLength) is preserved', () => {
   assert.deepEqual(
     validateFieldValue('', { type: 'string', key: 't', required: true }),
-    ['Slide.content.t is required']
+    ['Slide.content.t is required'],
   );
   assert.deepEqual(validateFieldValue(5, { type: 'string', key: 't' }), [
     'Slide.content.t must be a string',
   ]);
   assert.deepEqual(
     validateFieldValue('abcd', { type: 'string', key: 't', maxLength: 3 }),
-    ['Slide.content.t exceeds max length (3)']
+    ['Slide.content.t exceeds max length (3)'],
   );
 });
 
 test('unknown field types are lenient at runtime (guarded by the drift test instead)', () => {
-  assert.deepEqual(validateFieldValue('anything', { type: 'bogus', key: 'z' }), []);
+  assert.deepEqual(
+    validateFieldValue('anything', { type: 'bogus', key: 'z' }),
+    [],
+  );
 });

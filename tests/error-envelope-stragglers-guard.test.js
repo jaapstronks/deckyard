@@ -32,7 +32,10 @@ import { fileURLToPath } from 'node:url';
 
 import { getErrorStatus } from '../server/utils/http.js';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 
 /** Recursively collect .js files under a directory. */
 function jsFiles(dir) {
@@ -51,20 +54,33 @@ test('no serveJson with a 4xx/5xx literal status in internal api routes', () => 
   const offenders = [];
   for (const file of jsFiles(path.join(repoRoot, 'server/routes/api'))) {
     const src = readFileSync(file, 'utf8');
-    if (ERROR_STATUS_SERVE.test(src)) offenders.push(path.relative(repoRoot, file));
+    if (ERROR_STATUS_SERVE.test(src))
+      offenders.push(path.relative(repoRoot, file));
   }
   assert.deepEqual(
     offenders,
     [],
-    `Error responses must use jsonError()/status helpers (canonical envelope), not serveJson: ${offenders.join(', ')}`
+    `Error responses must use jsonError()/status helpers (canonical envelope), not serveJson: ${offenders.join(', ')}`,
   );
 });
 
 test('server.js throttles through rateLimited(), not a handwritten 429', () => {
   const src = readFileSync(path.join(repoRoot, 'server/server.js'), 'utf8');
-  assert.match(src, /\brateLimited\(res\)/, 'server.js must answer throttled requests via rateLimited()');
-  assert.doesNotMatch(src, /writeHead\(\s*429/, 'no handwritten 429 response in server.js');
-  assert.doesNotMatch(src, /Rate limit exceeded/, 'the pre-envelope 429 body must not come back');
+  assert.match(
+    src,
+    /\brateLimited\(res\)/,
+    'server.js must answer throttled requests via rateLimited()',
+  );
+  assert.doesNotMatch(
+    src,
+    /writeHead\(\s*429/,
+    'no handwritten 429 response in server.js',
+  );
+  assert.doesNotMatch(
+    src,
+    /Rate limit exceeded/,
+    'the pre-envelope 429 body must not come back',
+  );
 });
 
 test('comment failure reasons map to the intended statuses', () => {
@@ -99,8 +115,15 @@ test('analytics access failures answer via machine codes, not prose matching (C7
   assert.equal(getErrorStatus('not_found'), 404);
   assert.equal(getErrorStatus('forbidden'), 403);
   // The pre-C7h route matched on the prose reason text; that must not return.
-  const src = readFileSync(path.join(repoRoot, 'server/routes/api/analytics-track.js'), 'utf8');
-  assert.doesNotMatch(src, /reason\?*\.includes\(/, 'no substring-matching on failure reasons');
+  const src = readFileSync(
+    path.join(repoRoot, 'server/routes/api/analytics-track.js'),
+    'utf8',
+  );
+  assert.doesNotMatch(
+    src,
+    /reason\?*\.includes\(/,
+    'no substring-matching on failure reasons',
+  );
 });
 
 test('the 403 machine code is `forbidden` — `permission_denied` must not come back', () => {
@@ -117,5 +140,9 @@ test('the 403 machine code is `forbidden` — `permission_denied` must not come 
       }
     }
   }
-  assert.deepEqual(offenders, [], `use 'forbidden', not 'permission_denied': ${offenders.join(', ')}`);
+  assert.deepEqual(
+    offenders,
+    [],
+    `use 'forbidden', not 'permission_denied': ${offenders.join(', ')}`,
+  );
 });

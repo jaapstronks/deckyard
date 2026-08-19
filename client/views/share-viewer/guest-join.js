@@ -13,17 +13,47 @@ import { escapeHtml } from '../../../shared/slide-types/helpers.js';
  */
 function getGuestErrorMessage(errorCode) {
   const messages = {
-    rate_limited: t('share.guest.error.rateLimited', 'Too many requests. Please try again later.'),
-    invalid_email: t('share.guest.error.invalidEmail', 'Please enter a valid email address.'),
-    forbidden: t('share.guest.error.permissionDenied', 'This share link does not allow commenting.'),
-    share_link_not_found: t('share.guest.error.linkNotFound', 'Share link not found.'),
-    share_link_expired: t('share.guest.error.linkExpired', 'This share link has expired.'),
-    invalid_token: t('share.guest.error.invalidToken', 'Invalid verification link.'),
-    token_expired: t('share.guest.error.tokenExpired', 'Verification link has expired. Please request a new one.'),
-    share_link_revoked: t('share.guest.error.linkRevoked', 'This share link has been revoked.'),
-    not_invited: t('share.guest.error.notInvited', 'This presentation requires an invitation. Please contact the author to request access.'),
+    rate_limited: t(
+      'share.guest.error.rateLimited',
+      'Too many requests. Please try again later.',
+    ),
+    invalid_email: t(
+      'share.guest.error.invalidEmail',
+      'Please enter a valid email address.',
+    ),
+    forbidden: t(
+      'share.guest.error.permissionDenied',
+      'This share link does not allow commenting.',
+    ),
+    share_link_not_found: t(
+      'share.guest.error.linkNotFound',
+      'Share link not found.',
+    ),
+    share_link_expired: t(
+      'share.guest.error.linkExpired',
+      'This share link has expired.',
+    ),
+    invalid_token: t(
+      'share.guest.error.invalidToken',
+      'Invalid verification link.',
+    ),
+    token_expired: t(
+      'share.guest.error.tokenExpired',
+      'Verification link has expired. Please request a new one.',
+    ),
+    share_link_revoked: t(
+      'share.guest.error.linkRevoked',
+      'This share link has been revoked.',
+    ),
+    not_invited: t(
+      'share.guest.error.notInvited',
+      'This presentation requires an invitation. Please contact the author to request access.',
+    ),
   };
-  return messages[errorCode] || t('share.guest.error.generic', 'Something went wrong. Please try again.');
+  return (
+    messages[errorCode] ||
+    t('share.guest.error.generic', 'Something went wrong. Please try again.')
+  );
 }
 
 /**
@@ -35,10 +65,19 @@ function getGuestErrorMessage(errorCode) {
  * @param {Function} onSuccess - Callback when verification email is sent
  * @param {string} [prefillEmail] - Optional email to pre-fill the input
  */
-export function renderGuestJoinPrompt(h, shell, token, permission, onSuccess, prefillEmail) {
+export function renderGuestJoinPrompt(
+  h,
+  shell,
+  token,
+  permission,
+  onSuccess,
+  prefillEmail,
+) {
   // Create modal overlay
   const overlay = h('div', { class: 'share-viewer-modal-overlay' });
-  const modal = h('div', { class: 'share-viewer-modal share-viewer-guest-modal' });
+  const modal = h('div', {
+    class: 'share-viewer-modal share-viewer-guest-modal',
+  });
 
   const closeBtn = h('button', {
     class: 'share-viewer-modal-close',
@@ -47,10 +86,15 @@ export function renderGuestJoinPrompt(h, shell, token, permission, onSuccess, pr
   });
   closeBtn.addEventListener('click', () => overlay.remove());
 
-  const title = h('h2', { text: t('share.guest.title', 'Join the Discussion') });
+  const title = h('h2', {
+    text: t('share.guest.title', 'Join the Discussion'),
+  });
   const help = h('p', {
     class: 'help',
-    text: t('share.guest.help', 'Enter your email to verify your identity and start commenting.'),
+    text: t(
+      'share.guest.help',
+      'Enter your email to verify your identity and start commenting.',
+    ),
   });
 
   const form = h('form', { class: 'share-viewer-guest-form' });
@@ -64,7 +108,9 @@ export function renderGuestJoinPrompt(h, shell, token, permission, onSuccess, pr
     required: true,
   });
 
-  const nameLabel = h('label', { text: t('share.guest.name', 'Name (optional)') });
+  const nameLabel = h('label', {
+    text: t('share.guest.name', 'Name (optional)'),
+  });
   const nameInput = h('input', {
     type: 'text',
     class: 'form-input',
@@ -78,8 +124,14 @@ export function renderGuestJoinPrompt(h, shell, token, permission, onSuccess, pr
     text: t('share.guest.submit', 'Send Verification Email'),
   });
 
-  const errorEl = h('div', { class: 'share-viewer-error', style: 'display: none;' });
-  const successEl = h('div', { class: 'share-viewer-success', style: 'display: none;' });
+  const errorEl = h('div', {
+    class: 'share-viewer-error',
+    style: 'display: none;',
+  });
+  const successEl = h('div', {
+    class: 'share-viewer-success',
+    style: 'display: none;',
+  });
 
   form.append(emailLabel, emailInput, nameLabel, nameInput, submitBtn);
   modal.append(closeBtn, title, help, form, errorEl, successEl);
@@ -124,7 +176,7 @@ export function renderGuestJoinPrompt(h, shell, token, permission, onSuccess, pr
           'share.guest.emailSentHelp',
           'We sent a verification link to <strong>{email}</strong>. Click the link to start commenting.',
           // Inserted via innerHTML below: the address must stay escaped.
-          { email: escapeHtml(email) }
+          { email: escapeHtml(email) },
         )}</p>
         <p class="help">${t('share.guest.emailExpires', 'The link expires in 24 hours.')}</p>
       `;
@@ -140,7 +192,10 @@ export function renderGuestJoinPrompt(h, shell, token, permission, onSuccess, pr
       errorEl.textContent = getGuestErrorMessage(err.message);
       errorEl.style.display = 'block';
       submitBtn.disabled = false;
-      submitBtn.textContent = t('share.guest.submit', 'Send Verification Email');
+      submitBtn.textContent = t(
+        'share.guest.submit',
+        'Send Verification Email',
+      );
     }
   });
 

@@ -34,11 +34,10 @@ export function createEditorTopbarMoreMenu({
     class: 'dropdown-item',
     type: 'button',
     text: t('editor.more.translate', 'Translate'),
-    title:
-      t(
-        'editor.more.translate.title',
-        'Create (or refresh) the other language version so follow-along and switching are ready.'
-      ),
+    title: t(
+      'editor.more.translate.title',
+      'Create (or refresh) the other language version so follow-along and switching are ready.',
+    ),
     onclick: () => onTranslateOther?.().catch?.((e) => onError?.(e)),
   });
   btnTranslateOther.style.display = canTranslate ? '' : 'none';
@@ -47,7 +46,8 @@ export function createEditorTopbarMoreMenu({
     class: 'dropdown-item',
     type: 'button',
     text: t('editor.more.versions', 'Versions…'),
-    onclick: () => onVersions?.({ openOverlayClosers }).catch?.((e) => onError?.(e)),
+    onclick: () =>
+      onVersions?.({ openOverlayClosers }).catch?.((e) => onError?.(e)),
   });
 
   const btnDuplicateDeck = h('button', {
@@ -56,7 +56,7 @@ export function createEditorTopbarMoreMenu({
     text: t('editor.more.duplicateDeck', 'Duplicate deck…'),
     title: t(
       'editor.more.duplicateDeck.title',
-      'Create a private copy of this presentation.'
+      'Create a private copy of this presentation.',
     ),
     onclick: async () => {
       if (isDirty?.()) {
@@ -66,9 +66,12 @@ export function createEditorTopbarMoreMenu({
         });
         await requestSave?.();
         if (isDirty?.()) {
-          toast.error(t('common.saveFailedAborted', 'Could not save; aborted.'), {
-            id: 'duplicate-deck',
-          });
+          toast.error(
+            t('common.saveFailedAborted', 'Could not save; aborted.'),
+            {
+              id: 'duplicate-deck',
+            },
+          );
           return;
         }
       }
@@ -81,8 +84,11 @@ export function createEditorTopbarMoreMenu({
           {
             title:
               pres?.title ||
-              t('editor.more.duplicateDeck.thisPresentation', 'this presentation'),
-          }
+              t(
+                'editor.more.duplicateDeck.thisPresentation',
+                'this presentation',
+              ),
+          },
         ),
       });
       if (!ok) return;
@@ -93,7 +99,7 @@ export function createEditorTopbarMoreMenu({
         });
         toast.success(
           t('editor.more.duplicateDeck.done', 'Duplicated. Opening copy…'),
-          { id: 'duplicate-deck', durationMs: 1800 }
+          { id: 'duplicate-deck', durationMs: 1800 },
         );
         nav?.(`/app/${created.id}`);
       } catch (e) {
@@ -106,22 +112,18 @@ export function createEditorTopbarMoreMenu({
     class: 'dropdown-item is-danger',
     type: 'button',
     text: t('editor.more.trash', 'Move to trash…'),
-    title: t(
-      'editor.more.trash.title',
-      'Move this presentation to trash.'
-    ),
+    title: t('editor.more.trash.title', 'Move this presentation to trash.'),
     onclick: async () => {
       const ok = await confirmModal(h, root || document.body, {
         title: t('editor.more.trash', 'Move to trash…'),
-        message: t(
-          'editor.more.trash.confirm',
-          'Move "{title}" to trash?',
-          {
-            title:
-              pres?.title ||
-              t('editor.more.duplicateDeck.thisPresentation', 'this presentation'),
-          }
-        ),
+        message: t('editor.more.trash.confirm', 'Move "{title}" to trash?', {
+          title:
+            pres?.title ||
+            t(
+              'editor.more.duplicateDeck.thisPresentation',
+              'this presentation',
+            ),
+        }),
         confirmLabel: t('editor.more.trash', 'Move to trash…'),
         danger: true,
       });
@@ -131,10 +133,10 @@ export function createEditorTopbarMoreMenu({
         await api(`/api/presentations/${id}`, {
           method: 'DELETE',
         });
-        toast.success(
-          t('editor.more.trash.done', 'Moved to trash.'),
-          { id: 'move-to-trash', durationMs: 1800 }
-        );
+        toast.success(t('editor.more.trash.done', 'Moved to trash.'), {
+          id: 'move-to-trash',
+          durationMs: 1800,
+        });
         nav?.('/app');
       } catch (e) {
         toast.error(String(e?.message || e), { id: 'move-to-trash' });
@@ -148,7 +150,7 @@ export function createEditorTopbarMoreMenu({
     text: t('editor.more.subscription', 'Deck notifications…'),
     title: t(
       'editor.more.subscription.title',
-      'Choose which comment activity on this deck notifies you.'
+      'Choose which comment activity on this deck notifies you.',
     ),
     onclick: () => onSubscription?.(),
   });
@@ -209,7 +211,11 @@ export function createEditorTopbarMoreMenu({
 
   // Close the "more" menu on outside click / Escape (capture-phase; robust
   // against stopPropagation()).
-  const { details: moreDetails, close: closeMore, detach: detachMore } = createDropdown({
+  const {
+    details: moreDetails,
+    close: closeMore,
+    detach: detachMore,
+  } = createDropdown({
     h,
     triggerClass: 'ghost-icon-btn',
     triggerContent: [moreIcon({ size: 16 })],

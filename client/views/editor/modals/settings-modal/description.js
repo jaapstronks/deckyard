@@ -19,7 +19,7 @@ export function buildDescriptionSection({ h, pres, markDirty, requestSave }) {
     class: 'help',
     text: t(
       'editor.deckSettings.description.help',
-      'Used as the public meta description when published. Keep it short (two sentences).'
+      'Used as the public meta description when published. Keep it short (two sentences).',
     ),
   });
   const ta = h('textarea', {
@@ -27,7 +27,7 @@ export function buildDescriptionSection({ h, pres, markDirty, requestSave }) {
     style: 'min-height:96px;',
     placeholder: t(
       'editor.deckSettings.description.placeholder',
-      'A short, two-sentence description of this presentation…'
+      'A short, two-sentence description of this presentation…',
     ),
     value: String(pres.description || ''),
   });
@@ -40,13 +40,12 @@ export function buildDescriptionSection({ h, pres, markDirty, requestSave }) {
         ? t(
             'editor.deckSettings.description.tooLong',
             'Too long ({n}/{max}). Please shorten.',
-            { n: String(n), max: String(max) }
+            { n: String(n), max: String(max) },
           )
-        : t(
-            'editor.deckSettings.description.count',
-            '{n}/{max} characters',
-            { n: String(n), max: String(max) }
-          );
+        : t('editor.deckSettings.description.count', '{n}/{max} characters', {
+            n: String(n),
+            max: String(max),
+          });
   };
   syncStatus();
   ta.addEventListener('input', () => {

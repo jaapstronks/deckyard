@@ -21,7 +21,10 @@ const cssEsc = (s) =>
  * @param {string[]} options.slideIds - Ids of the slides that were inserted
  * @param {Function} [options.onReview] - Adds a "Review" action to the toast
  */
-export function highlightAiInsertedSlides({ slideIds = [], onReview = null } = {}) {
+export function highlightAiInsertedSlides({
+  slideIds = [],
+  onReview = null,
+} = {}) {
   const ids = (slideIds || []).filter(Boolean);
   if (!ids.length) return;
 
@@ -32,7 +35,7 @@ export function highlightAiInsertedSlides({ slideIds = [], onReview = null } = {
       let firstRow = null;
       for (const id of ids) {
         const row = document.querySelector(
-          `.list-item.slide-item[data-slide-id="${cssEsc(id)}"]`
+          `.list-item.slide-item[data-slide-id="${cssEsc(id)}"]`,
         );
         if (!row) continue;
         row.classList.add('is-ai-new');
@@ -46,18 +49,25 @@ export function highlightAiInsertedSlides({ slideIds = [], onReview = null } = {
         }, HIGHLIGHT_MS);
       }
       firstRow?.scrollIntoView?.({ block: 'nearest' });
-    })
+    }),
   );
 
   const message =
     ids.length === 1
       ? t('editor.aiAppend.addedOne', 'Added 1 slide')
-      : t('editor.aiAppend.addedN', 'Added {count} slides', { count: ids.length });
+      : t('editor.aiAppend.addedN', 'Added {count} slides', {
+          count: ids.length,
+        });
   toast.success(message, {
     id: 'ai-append-added',
     durationMs: 6500,
     ...(typeof onReview === 'function'
-      ? { action: { label: t('editor.aiAppend.review', 'Review'), onClick: onReview } }
+      ? {
+          action: {
+            label: t('editor.aiAppend.review', 'Review'),
+            onClick: onReview,
+          },
+        }
       : {}),
   });
 }

@@ -19,9 +19,9 @@
  */
 
 export const ai = {
-    category: 'content',
-    resolveInPhase1: false,
-    description: `
+  category: 'content',
+  resolveInPhase1: false,
+  description: `
       Display 1-4 key metrics/KPIs PROMINENTLY with large, eye-catching numbers.
       This slide type makes numbers the HERO of the slide!
 
@@ -41,20 +41,20 @@ export const ai = {
       - note: Optional context — if it starts with +N or -N (e.g. "+12% vs last year"),
               the leading number is auto-coloured green/red
     `,
-    bestFor: [
-      'NUMERIC OUTPUT TARGETS: "220 research trajectories", "10,000 professionals"',
-      'Programme deliverables with specific numbers',
-      'Key performance indicators and goals',
-      'Budget figures or funding amounts',
-      'Statistics and metrics that should STAND OUT',
-      'Before/after comparisons with change indicators',
-      'Any 1-4 numbers that are the KEY POINT of the slide',
-    ],
-    notFor: [
-      'More than 4 metrics (split into multiple slides or use table/chart)',
-      'Qualitative descriptions without clear numeric values',
-      'Lists of activities or processes (use list-slide or text-blocks-slide)',
-    ],
+  bestFor: [
+    'NUMERIC OUTPUT TARGETS: "220 research trajectories", "10,000 professionals"',
+    'Programme deliverables with specific numbers',
+    'Key performance indicators and goals',
+    'Budget figures or funding amounts',
+    'Statistics and metrics that should STAND OUT',
+    'Before/after comparisons with change indicators',
+    'Any 1-4 numbers that are the KEY POINT of the slide',
+  ],
+  notFor: [
+    'More than 4 metrics (split into multiple slides or use table/chart)',
+    'Qualitative descriptions without clear numeric values',
+    'Lists of activities or processes (use list-slide or text-blocks-slide)',
+  ],
 };
 
 /**

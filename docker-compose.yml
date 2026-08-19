@@ -5,35 +5,35 @@ services:
     restart: unless-stopped
     # Allows container to reach services on the host (needed on Linux, harmless elsewhere)
     extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - 'host.docker.internal:host-gateway'
     # Pass all environment variables from .env file automatically
     env_file:
       - path: .env
         required: false
     environment:
       # These are always set regardless of .env
-      PORT: "4177"
-      HOST: "0.0.0.0"
+      PORT: '4177'
+      HOST: '0.0.0.0'
 
       # Storage. Postgres is the default everywhere; the compose stack ships its
       # own database so the container needs no setup. Every value below is
       # `.env`-overridable: point DATABASE_HOST at a managed database to ignore
       # the bundled service.
-      STORAGE_MODE: "${STORAGE_MODE:-postgres}"
-      DATABASE_HOST: "${DATABASE_HOST:-postgres}"
-      DATABASE_PORT: "${DATABASE_PORT:-5432}"
-      DATABASE_NAME: "${DATABASE_NAME:-deckyard}"
-      DATABASE_USER: "${DATABASE_USER:-deckyard}"
-      DATABASE_PASSWORD: "${DATABASE_PASSWORD:-deckyard}"
+      STORAGE_MODE: '${STORAGE_MODE:-postgres}'
+      DATABASE_HOST: '${DATABASE_HOST:-postgres}'
+      DATABASE_PORT: '${DATABASE_PORT:-5432}'
+      DATABASE_NAME: '${DATABASE_NAME:-deckyard}'
+      DATABASE_USER: '${DATABASE_USER:-deckyard}'
+      DATABASE_PASSWORD: '${DATABASE_PASSWORD:-deckyard}'
       # The bundled database is only reachable on the compose network, never
       # from the host, so it speaks plaintext. SSL stays on by default for any
       # non-localhost host, which is what a managed database wants.
-      DATABASE_SSL: "${DATABASE_SSL:-false}"
+      DATABASE_SSL: '${DATABASE_SSL:-false}'
     volumes:
       - ./server/data:/app/server/data
       - ./server/uploads:/app/server/uploads
     expose:
-      - "4177"
+      - '4177'
     depends_on:
       postgres:
         condition: service_healthy
@@ -46,16 +46,20 @@ services:
     container_name: deckyard-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: "${DATABASE_NAME:-deckyard}"
-      POSTGRES_USER: "${DATABASE_USER:-deckyard}"
-      POSTGRES_PASSWORD: "${DATABASE_PASSWORD:-deckyard}"
+      POSTGRES_DB: '${DATABASE_NAME:-deckyard}'
+      POSTGRES_USER: '${DATABASE_USER:-deckyard}'
+      POSTGRES_PASSWORD: '${DATABASE_PASSWORD:-deckyard}'
     volumes:
       - pg_data:/var/lib/postgresql/data
     # The app starts as soon as compose calls this healthy, which is earlier
     # than "accepting connections" on a first run — the entrypoint retries a few
     # times to cover the gap.
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-deckyard} -d ${DATABASE_NAME:-deckyard}"]
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${DATABASE_USER:-deckyard} -d ${DATABASE_NAME:-deckyard}',
+        ]
       interval: 5s
       timeout: 5s
       retries: 12
@@ -71,8 +75,8 @@ services:
     depends_on:
       - app
     ports:
-      - "80:80"
-      - "443:443"
+      - '80:80'
+      - '443:443'
     env_file:
       - path: .env
         required: false

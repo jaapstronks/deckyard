@@ -22,22 +22,34 @@ import { translateShortText } from '../server/utils/openai/translate.js';
 import { LlmError } from '../server/utils/llm/error.js';
 import { ValidationError, isAppError } from '../server/utils/errors.js';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 
 const isValidationError = (err) =>
   err instanceof ValidationError && err.statusCode === 400 && isAppError(err);
 
 test('convert-slide input validation throws 400 ValidationError', async () => {
-  await assert.rejects(() => convertSlideWithAi({}, 'list-slide'), isValidationError);
+  await assert.rejects(
+    () => convertSlideWithAi({}, 'list-slide'),
+    isValidationError,
+  );
   await assert.rejects(
     () => convertSlideWithAi({ type: 'content-slide' }, 'no-such-type'),
-    isValidationError
+    isValidationError,
   );
 });
 
 test('translate language-pair validation throws 400 ValidationError', async () => {
-  await assert.rejects(() => translateShortText('x', { from: 'nl', to: 'nl' }), isValidationError);
-  await assert.rejects(() => translateShortText('x', { from: 'xx', to: 'nl' }), isValidationError);
+  await assert.rejects(
+    () => translateShortText('x', { from: 'nl', to: 'nl' }),
+    isValidationError,
+  );
+  await assert.rejects(
+    () => translateShortText('x', { from: 'xx', to: 'nl' }),
+    isValidationError,
+  );
 });
 
 test('raw LLM content stays out of the envelope for upstream failures', () => {
@@ -60,7 +72,10 @@ test('raw LLM content stays out of the envelope for upstream failures', () => {
     error: 'bad_gateway',
     message: 'openai did not return valid deck JSON.',
   });
-  assert.equal(err.response, 'raw model output that must never leave the server');
+  assert.equal(
+    err.response,
+    'raw model output that must never leave the server',
+  );
 });
 
 test('"unsupported vendor" has exactly one form: LlmError.unsupportedVendor', () => {
@@ -69,7 +84,10 @@ test('"unsupported vendor" has exactly one form: LlmError.unsupportedVendor', ()
     for (const entry of readdirSync(dir)) {
       const full = path.join(dir, entry);
       if (statSync(full).isDirectory()) walk(full);
-      else if (entry.endsWith('.js') && readFileSync(full, 'utf8').includes('Unsupported LLM vendor')) {
+      else if (
+        entry.endsWith('.js') &&
+        readFileSync(full, 'utf8').includes('Unsupported LLM vendor')
+      ) {
         offenders.push(path.relative(repoRoot, full));
       }
     }
@@ -84,12 +102,19 @@ test('no bare .statusCode assignment left under openai/ and ai/', () => {
     for (const entry of readdirSync(dir)) {
       const full = path.join(dir, entry);
       if (statSync(full).isDirectory()) walk(full);
-      else if (entry.endsWith('.js') && /\.statusCode = /.test(readFileSync(full, 'utf8'))) {
+      else if (
+        entry.endsWith('.js') &&
+        /\.statusCode = /.test(readFileSync(full, 'utf8'))
+      ) {
         offenders.push(path.relative(repoRoot, full));
       }
     }
   };
   walk(path.join(repoRoot, 'server/utils/openai'));
   walk(path.join(repoRoot, 'server/utils/ai'));
-  assert.deepEqual(offenders, [], `These modules must throw AppError subclasses: ${offenders.join(', ')}`);
+  assert.deepEqual(
+    offenders,
+    [],
+    `These modules must throw AppError subclasses: ${offenders.join(', ')}`,
+  );
 });

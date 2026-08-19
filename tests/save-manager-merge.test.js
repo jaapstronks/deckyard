@@ -28,7 +28,11 @@ function makePres() {
       { id: 'a', type: 'text-slide', content: { body: 'A v1' } },
       { id: 'b', type: 'text-slide', content: { body: 'B v1' } },
     ],
-    i18n: { active: 'nl', dominant: 'nl', versions: { nl: { title: 'Deck', slides: [] } } },
+    i18n: {
+      active: 'nl',
+      dominant: 'nl',
+      versions: { nl: { title: 'Deck', slides: [] } },
+    },
   };
 }
 
@@ -50,7 +54,11 @@ test('save without concurrent writes keeps local slides and adopts revision', as
   const pres = makePres();
   const apiImpl = async (_path, opts) => {
     const body = JSON.parse(opts.body);
-    return { ...body, revision: Number(opts.headers['If-Match']) + 1, modified: 'x' };
+    return {
+      ...body,
+      revision: Number(opts.headers['If-Match']) + 1,
+      modified: 'x',
+    };
   };
   const mgr = makeManager({ pres, apiImpl });
 
@@ -64,7 +72,7 @@ test('save without concurrent writes keeps local slides and adopts revision', as
   assert.equal(mgr.isDirty(), false);
 });
 
-test('server-side merge: client adopts other editor\'s slides instead of going stale', async () => {
+test("server-side merge: client adopts other editor's slides instead of going stale", async () => {
   const pres = makePres();
   let merged = null;
   const apiImpl = async (_path, opts) => {
@@ -76,7 +84,11 @@ test('server-side merge: client adopts other editor\'s slides instead of going s
       ...body,
       revision: 3,
       slides: [
-        { id: 'a', type: 'text-slide', content: { body: 'A changed by other' } },
+        {
+          id: 'a',
+          type: 'text-slide',
+          content: { body: 'A changed by other' },
+        },
         body.slides.find((s) => s.id === 'b'),
       ],
     };
@@ -101,7 +113,7 @@ test('server-side merge: client adopts other editor\'s slides instead of going s
   // (If-Match 3, no conflict) can no longer overwrite it with stale content.
   assert.equal(
     pres.slides.find((s) => s.id === 'a').content.body,
-    'A changed by other'
+    'A changed by other',
   );
   assert.equal(remoteMergeCalls.length, 1);
   assert.deepEqual(remoteMergeCalls[0].changedSlideIds, ['a']);
@@ -118,9 +130,15 @@ test('edits made while a save is in flight stay tracked for the next save', asyn
     call += 1;
     if (call === 1) {
       // Hold the first save open so a mid-flight edit can happen
-      await new Promise((resolve) => { resolveFirstSave = resolve; });
+      await new Promise((resolve) => {
+        resolveFirstSave = resolve;
+      });
     }
-    return { ...body, revision: Number(opts.headers['If-Match']) + 1, modified: 'x' };
+    return {
+      ...body,
+      revision: Number(opts.headers['If-Match']) + 1,
+      modified: 'x',
+    };
   };
   const mgr = makeManager({ pres, apiImpl });
 
@@ -146,6 +164,6 @@ test('edits made while a save is in flight stay tracked for the next save', asyn
   const secondHeader = JSON.parse(sentModifiedHeaders[1]);
   assert.ok(
     secondHeader.includes('a'),
-    `mid-flight edit to slide "a" must stay tracked (got ${sentModifiedHeaders[1]})`
+    `mid-flight edit to slide "a" must stay tracked (got ${sentModifiedHeaders[1]})`,
   );
 });

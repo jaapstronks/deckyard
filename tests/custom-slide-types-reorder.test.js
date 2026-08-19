@@ -73,7 +73,11 @@ describe('drop index to array move', () => {
   it('a drop keeps every item exactly once', () => {
     for (let from = 0; from < 3; from += 1) {
       for (let gap = 0; gap <= 3; gap += 1) {
-        assert.deepEqual([...move(ABC, from, gap)].sort(), ABC, `from=${from} gap=${gap}`);
+        assert.deepEqual(
+          [...move(ABC, from, gap)].sort(),
+          ABC,
+          `from=${from} gap=${gap}`,
+        );
       }
     }
   });

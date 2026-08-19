@@ -22,9 +22,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { ROUTES as AUTH_ROUTES, handleAuth } from '../server/routes/api/auth.js';
-import { ROUTES as RESET_ROUTES, handlePasswordReset } from '../server/routes/api/password-reset.js';
-import { ROUTES as MAGIC_ROUTES, handleMagicLink } from '../server/routes/api/magic-link.js';
+import {
+  ROUTES as AUTH_ROUTES,
+  handleAuth,
+} from '../server/routes/api/auth.js';
+import {
+  ROUTES as RESET_ROUTES,
+  handlePasswordReset,
+} from '../server/routes/api/password-reset.js';
+import {
+  ROUTES as MAGIC_ROUTES,
+  handleMagicLink,
+} from '../server/routes/api/magic-link.js';
 import { ROUTES as SSO_ROUTES, handleSso } from '../server/routes/api/sso.js';
 import {
   ROUTES as LEAD_ROUTES,
@@ -50,9 +59,14 @@ function mockRes() {
   return {
     statusCode: null,
     headers: {},
-    writeHead(c, headers) { this.statusCode = c; Object.assign(this.headers, headers); },
+    writeHead(c, headers) {
+      this.statusCode = c;
+      Object.assign(this.headers, headers);
+    },
     end() {},
-    setHeader(k, v) { this.headers[k] = v; },
+    setHeader(k, v) {
+      this.headers[k] = v;
+    },
   };
 }
 
@@ -73,7 +87,11 @@ function ctx(method, pathname, { authedUser = null } = {}) {
 function named(routes, method, path, handlerName) {
   const route = select(routes, method, path);
   assert.ok(route, `${method} ${path} matches a route`);
-  assert.equal(route.handler.name, handlerName, `${method} ${path} → ${handlerName}`);
+  assert.equal(
+    route.handler.name,
+    handlerName,
+    `${method} ${path} → ${handlerName}`,
+  );
 }
 
 test('auth: routes resolve to their named handlers in order', () => {
@@ -99,18 +117,51 @@ test('auth: a wrong method falls through (no 405, storage-free)', async () => {
 });
 
 test('password-reset: routes resolve to their named handlers in order', () => {
-  named(RESET_ROUTES, 'POST', '/api/auth/forgot-password', 'handleForgotPassword');
-  named(RESET_ROUTES, 'GET', '/api/auth/reset-password/validate', 'handleResetPasswordValidate');
-  named(RESET_ROUTES, 'POST', '/api/auth/reset-password', 'handleResetPassword');
-  named(RESET_ROUTES, 'POST', '/api/auth/change-password', 'handleChangePassword');
+  named(
+    RESET_ROUTES,
+    'POST',
+    '/api/auth/forgot-password',
+    'handleForgotPassword',
+  );
+  named(
+    RESET_ROUTES,
+    'GET',
+    '/api/auth/reset-password/validate',
+    'handleResetPasswordValidate',
+  );
+  named(
+    RESET_ROUTES,
+    'POST',
+    '/api/auth/reset-password',
+    'handleResetPassword',
+  );
+  named(
+    RESET_ROUTES,
+    'POST',
+    '/api/auth/change-password',
+    'handleChangePassword',
+  );
 });
 
 test('password-reset: /reset-password does not swallow /reset-password/validate', () => {
   // Exact-string patterns cannot prefix-match, but pin it anyway: the
   // validate row must keep answering GET while the reset row takes POST.
-  named(RESET_ROUTES, 'GET', '/api/auth/reset-password/validate', 'handleResetPasswordValidate');
-  named(RESET_ROUTES, 'POST', '/api/auth/reset-password', 'handleResetPassword');
-  assert.equal(select(RESET_ROUTES, 'POST', '/api/auth/reset-password/validate'), null);
+  named(
+    RESET_ROUTES,
+    'GET',
+    '/api/auth/reset-password/validate',
+    'handleResetPasswordValidate',
+  );
+  named(
+    RESET_ROUTES,
+    'POST',
+    '/api/auth/reset-password',
+    'handleResetPassword',
+  );
+  assert.equal(
+    select(RESET_ROUTES, 'POST', '/api/auth/reset-password/validate'),
+    null,
+  );
 });
 
 test('password-reset: a wrong method falls through (no 405, storage-free)', async () => {
@@ -121,14 +172,23 @@ test('password-reset: a wrong method falls through (no 405, storage-free)', asyn
     ['GET', '/api/auth/change-password'],
   ]) {
     const { ctx: c, res } = ctx(method, path);
-    assert.equal(await handlePasswordReset(c), false, `${method} ${path} → false`);
+    assert.equal(
+      await handlePasswordReset(c),
+      false,
+      `${method} ${path} → false`,
+    );
     assert.equal(res.statusCode, null, `${method} ${path} sent no response`);
   }
 });
 
 test('magic-link: routes resolve to their named handlers in order', () => {
   named(MAGIC_ROUTES, 'POST', '/api/auth/magic-link', 'handleMagicLinkRequest');
-  named(MAGIC_ROUTES, 'POST', '/api/auth/magic-link/verify', 'handleMagicLinkVerify');
+  named(
+    MAGIC_ROUTES,
+    'POST',
+    '/api/auth/magic-link/verify',
+    'handleMagicLinkVerify',
+  );
 });
 
 test('magic-link: a wrong method falls through (no 405, storage-free)', async () => {
@@ -149,7 +209,11 @@ test('sso: routes resolve to their named handlers in order', () => {
 
 test('sso: outside the prefix the module declines; inside, unknown paths and wrong methods fall through', async () => {
   const outside = ctx('GET', '/api/auth/login');
-  assert.equal(await handleSso(outside.ctx), false, 'non-OIDC auth path declined');
+  assert.equal(
+    await handleSso(outside.ctx),
+    false,
+    'non-OIDC auth path declined',
+  );
 
   for (const [method, path] of [
     ['POST', '/api/auth/oidc/login'],
@@ -164,17 +228,41 @@ test('sso: outside the prefix the module declines; inside, unknown paths and wro
 
 test('leads: the public table carries the submit route and the three my-data routes', () => {
   named(LEAD_PUBLIC_ROUTES, 'POST', '/api/leads', 'handleLeadSubmit');
-  named(LEAD_PUBLIC_ROUTES, 'POST', '/api/leads/my-data/request', 'handleRequestMyData');
+  named(
+    LEAD_PUBLIC_ROUTES,
+    'POST',
+    '/api/leads/my-data/request',
+    'handleRequestMyData',
+  );
   named(LEAD_PUBLIC_ROUTES, 'GET', '/api/leads/my-data', 'handleGetMyData');
-  named(LEAD_PUBLIC_ROUTES, 'DELETE', '/api/leads/my-data', 'handleDeleteMyData');
+  named(
+    LEAD_PUBLIC_ROUTES,
+    'DELETE',
+    '/api/leads/my-data',
+    'handleDeleteMyData',
+  );
   assert.equal(LEAD_PUBLIC_ROUTES.length, 4);
-  assert.equal(select(LEAD_PUBLIC_ROUTES, 'GET', '/api/leads'), null, 'GET /api/leads is not public');
+  assert.equal(
+    select(LEAD_PUBLIC_ROUTES, 'GET', '/api/leads'),
+    null,
+    'GET /api/leads is not public',
+  );
 });
 
 test('leads: authed routes resolve to their named handlers in order', () => {
   named(LEAD_ROUTES, 'GET', '/api/presentations/p1/leads', 'handleGetLeads');
-  named(LEAD_ROUTES, 'GET', '/api/presentations/p1/leads/count', 'handleGetLeadCount');
-  named(LEAD_ROUTES, 'GET', '/api/presentations/p1/leads/export', 'handleExportLeads');
+  named(
+    LEAD_ROUTES,
+    'GET',
+    '/api/presentations/p1/leads/count',
+    'handleGetLeadCount',
+  );
+  named(
+    LEAD_ROUTES,
+    'GET',
+    '/api/presentations/p1/leads/export',
+    'handleExportLeads',
+  );
   named(LEAD_ROUTES, 'DELETE', '/api/leads/l1', 'handleDeleteLead');
   // The my-data routes are no longer in the authed table — they went public.
   assert.equal(select(LEAD_ROUTES, 'POST', '/api/leads/my-data/request'), null);
@@ -187,7 +275,12 @@ test('leads: the public my-data delete is not shadowed by the authed :id row', (
   // single segment — but 'my-data' can no longer reach it, because the public
   // dispatch answers first. Here: the public table resolves the erasure, and
   // the authed table resolves a real lead id.
-  named(LEAD_PUBLIC_ROUTES, 'DELETE', '/api/leads/my-data', 'handleDeleteMyData');
+  named(
+    LEAD_PUBLIC_ROUTES,
+    'DELETE',
+    '/api/leads/my-data',
+    'handleDeleteMyData',
+  );
   named(LEAD_ROUTES, 'DELETE', '/api/leads/l1', 'handleDeleteLead');
   // And the authed table would still (wrongly) resolve a bare 'my-data' to the
   // :id handler if it were reached — which is exactly why the route is public.
@@ -196,11 +289,25 @@ test('leads: the public my-data delete is not shadowed by the authed :id row', (
 
 test('leads: without a session the authed entry declines; unknown paths fall through', async () => {
   const anon = ctx('GET', '/api/presentations/p1/leads');
-  assert.equal(await handleLeads(anon.ctx), false, 'no authedUser → false (gate answers)');
+  assert.equal(
+    await handleLeads(anon.ctx),
+    false,
+    'no authedUser → false (gate answers)',
+  );
 
-  const unknown = ctx('PATCH', '/api/leads/l1', { authedUser: { email: 'a@b.test' } });
-  assert.equal(await handleLeads(unknown.ctx), false, 'wrong method on :id → false');
+  const unknown = ctx('PATCH', '/api/leads/l1', {
+    authedUser: { email: 'a@b.test' },
+  });
+  assert.equal(
+    await handleLeads(unknown.ctx),
+    false,
+    'wrong method on :id → false',
+  );
 
   const pub = ctx('POST', '/api/leads/other');
-  assert.equal(await handleLeadsPublic(pub.ctx), false, 'unknown public path → false');
+  assert.equal(
+    await handleLeadsPublic(pub.ctx),
+    false,
+    'unknown public path → false',
+  );
 });

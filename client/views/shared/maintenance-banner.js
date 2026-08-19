@@ -25,7 +25,7 @@ let unsubscribe = null;
 function bannerText() {
   return t(
     'maintenance.banner.text',
-    'Deckyard is briefly unavailable for maintenance. Your work is kept here and saves as soon as it is back.'
+    'Deckyard is briefly unavailable for maintenance. Your work is kept here and saves as soon as it is back.',
   );
 }
 
@@ -43,7 +43,7 @@ function buildBanner() {
     [
       h('span', { class: 'maintenance-banner-dot', 'aria-hidden': 'true' }),
       h('span', { class: 'maintenance-banner-text', text: bannerText() }),
-    ]
+    ],
   );
 }
 

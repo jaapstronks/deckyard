@@ -4,24 +4,24 @@ Deckyard names each concept exactly one way, at every level: wire (API fields
 and values), code (identifiers), database (columns and stored values), and
 docs. A second accepted spelling for the same meaning — or one word carrying
 two meanings — is a defect, not a convenience; the doctrine behind that is
-`versioning.md` § *The beta stance: purity over compatibility*. This page is
+`versioning.md` § _The beta stance: purity over compatibility_. This page is
 the normative register of the settled words. Guard tests pin the losers to
 zero so they cannot creep back.
 
 ## The register
 
-| Concept | The word | Never |
-|---|---|---|
-| The tenant entity (who owns decks, members, settings) | **`organization`** — code, DB, API, docs | `workspace` in any identifier, field, value, or column |
-| What the UI calls an organization | **"Workspace"** — user-visible label strings only (i18n values, `t()` fallbacks) | leaking the label into code |
-| Who can see a deck besides owner/creator/collaborators | **`visibility`**, values **`'private' \| 'organization'`** | `scope` as a field name; `'workspace'` as a value |
-| The org+actor context a storage call runs under | **`storageScope`** (type `StorageScope`, `server/storage/scope.js`) | a bare `scope` variable in mixed contexts |
-| Which decks a listing includes by source (`owned`/`shared`/`all`) | **`ownership`** — MCP list filters, the client presentations view | `scope` (that's storage-scope); `visibility` (that's deck audience) |
+| Concept                                                                   | The word                                                                                                                    | Never                                                                          |
+| ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| The tenant entity (who owns decks, members, settings)                     | **`organization`** — code, DB, API, docs                                                                                    | `workspace` in any identifier, field, value, or column                         |
+| What the UI calls an organization                                         | **"Workspace"** — user-visible label strings only (i18n values, `t()` fallbacks)                                            | leaking the label into code                                                    |
+| Who can see a deck besides owner/creator/collaborators                    | **`visibility`**, values **`'private' \| 'organization'`**                                                                  | `scope` as a field name; `'workspace'` as a value                              |
+| The org+actor context a storage call runs under                           | **`storageScope`** (type `StorageScope`, `server/storage/scope.js`)                                                         | a bare `scope` variable in mixed contexts                                      |
+| Which decks a listing includes by source (`owned`/`shared`/`all`)         | **`ownership`** — MCP list filters, the client presentations view                                                           | `scope` (that's storage-scope); `visibility` (that's deck audience)            |
 | Where a saved slide/collection lives (a person's shelf or the shared one) | **`shelf`**, values **`'personal' \| 'organization'`** — `slide_library`/`slide_collections`, storage, internal API, client | `scope` as the field name (that's storage-scope); `'team'` as the stored value |
-| What an API key may do (`['read','write','ai',…]`) | **`permissions`** | `scopes` |
-| What a collaborator may do on one deck (`view/comment/edit/admin`) | **`permission`** (singular, per deck) | — distinct from API-key `permissions` |
-| The presenter/audience live domain | **`live-session`** | `present-session` |
-| The multi-tenant feature flag | **`MULTI_ORG_ENABLED`** (`isMultiOrgEnabled()`) | `MULTI_WORKSPACE_ENABLED` |
+| What an API key may do (`['read','write','ai',…]`)                        | **`permissions`**                                                                                                           | `scopes`                                                                       |
+| What a collaborator may do on one deck (`view/comment/edit/admin`)        | **`permission`** (singular, per deck)                                                                                       | — distinct from API-key `permissions`                                          |
+| The presenter/audience live domain                                        | **`live-session`**                                                                                                          | `present-session`                                                              |
+| The multi-tenant feature flag                                             | **`MULTI_ORG_ENABLED`** (`isMultiOrgEnabled()`)                                                                             | `MULTI_WORKSPACE_ENABLED`                                                      |
 
 ## The organization / "Workspace" rule
 
@@ -79,14 +79,14 @@ breaking MINOR with a stored-data migration (074) — no accepts-both reading.
   (`sanitizeLibraryItem` omits it) and still does not. "Team" survives only as a
   UI label. Deploying this requires migration 076 to run.
   **Names finished in B90 (2026-08-18).** B53 moved the field, the values and
-  the route segment but left the *names*: the storage exports
+  the route segment but left the _names_: the storage exports
   (`listTeamLibrary`, `getTeamCollection`, …), the shelf route handlers, the
   bulk-export ZIP entry `slide-library/team.json` and the `/api/home` response
-  fields (`collections.team`, `teamSlides`). All now read *organization*; the
+  fields (`collections.team`, `teamSlides`). All now read _organization_; the
   ZIP entry is `slide-library/organization.json` and the manifest stat is
   `organizationSlideLibraryItems`. `tests/shelf-vocabulary.test.js` pins the
   loser identifiers to zero across `server/`, `client/` and `tests/`.
-  Deliberately untouched: the *tenant* axis, where "team" means an
+  Deliberately untouched: the _tenant_ axis, where "team" means an
   organization (`getTeamWeeklyAnalytics`, `buildTeamDigestEmail`).
   **Webhook surface done in B92 (2026-08-19, migration 077).** The settings key
   `slideAddedToTeamLibraryUrl` and the event `slide.added_to_team_library` were
@@ -102,7 +102,7 @@ breaking MINOR with a stored-data migration (074) — no accepts-both reading.
   A view-local variable using "scope" in its ordinary English sense (the
   comments panel's `'slide' | 'deck'` toggle, prose like "scoped to") makes
   no vocabulary claim: it names nothing in storage, the API, or a schema.
-  The register above governs *persisted and contract-level* names only.
+  The register above governs _persisted and contract-level_ names only.
 - The physical table `present_sessions` keeps its name (renaming is a
   migration with no behavioural payoff; see the note in
   `tests/live-session-vocabulary.test.js`).

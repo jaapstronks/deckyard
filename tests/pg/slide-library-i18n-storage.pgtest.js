@@ -40,50 +40,66 @@ const BILINGUAL = {
   },
 };
 
-pgDescribe('slide-library i18n round-trip (real PostgreSQL, via facade)', () => {
-  /** @type {import('kysely').Kysely<any>} */
-  let db;
+pgDescribe(
+  'slide-library i18n round-trip (real PostgreSQL, via facade)',
+  () => {
+    /** @type {import('kysely').Kysely<any>} */
+    let db;
 
-  before(async () => {
-    db = await openTestDb();
-    await installFacadeStorage();
-    await truncate(db, 'organizations');
-    await seedDefaultOrganization(db);
-  });
+    before(async () => {
+      db = await openTestDb();
+      await installFacadeStorage();
+      await truncate(db, 'organizations');
+      await seedDefaultOrganization(db);
+    });
 
-  after(async () => {
-    uninstallFacadeStorage();
-    await closeTestDb(db);
-  });
+    after(async () => {
+      uninstallFacadeStorage();
+      await closeTestDb(db);
+    });
 
-  it('keeps both languages through create, read-back and update', async () => {
-    const created = await createPersonalLibraryItem(
-      storageScope,
-      ALICE,
-      { name: 'Intro', slideType: 'content-slide', content: { title: 'Hallo' }, i18n: BILINGUAL },
-      { actorEmail: ALICE }
-    );
-    assert.ok(created?.ok && created.item?.id, 'created item has an id');
-    assert.deepStrictEqual(created.item.i18n, BILINGUAL, 'i18n survives create');
+    it('keeps both languages through create, read-back and update', async () => {
+      const created = await createPersonalLibraryItem(
+        storageScope,
+        ALICE,
+        {
+          name: 'Intro',
+          slideType: 'content-slide',
+          content: { title: 'Hallo' },
+          i18n: BILINGUAL,
+        },
+        { actorEmail: ALICE },
+      );
+      assert.ok(created?.ok && created.item?.id, 'created item has an id');
+      assert.deepStrictEqual(
+        created.item.i18n,
+        BILINGUAL,
+        'i18n survives create',
+      );
 
-    const listed = await listPersonalLibrary(storageScope, ALICE);
-    const found = listed.items.find((i) => i.id === created.item.id);
-    assert.deepStrictEqual(found?.i18n, BILINGUAL, 'i18n survives read-back');
+      const listed = await listPersonalLibrary(storageScope, ALICE);
+      const found = listed.items.find((i) => i.id === created.item.id);
+      assert.deepStrictEqual(found?.i18n, BILINGUAL, 'i18n survives read-back');
 
-    const nextI18n = {
-      versions: {
-        nl: { content: { title: 'Dag' } },
-        'en-GB': { content: { title: 'Bye' } },
-      },
-    };
-    const updated = await updatePersonalLibraryItem(
-      storageScope,
-      ALICE,
-      created.item.id,
-      { i18n: nextI18n },
-      { actorEmail: ALICE }
-    );
-    assert.ok(updated?.ok, 'update ok');
-    assert.deepStrictEqual(updated.item.i18n, nextI18n, 'i18n survives update');
-  });
-});
+      const nextI18n = {
+        versions: {
+          nl: { content: { title: 'Dag' } },
+          'en-GB': { content: { title: 'Bye' } },
+        },
+      };
+      const updated = await updatePersonalLibraryItem(
+        storageScope,
+        ALICE,
+        created.item.id,
+        { i18n: nextI18n },
+        { actorEmail: ALICE },
+      );
+      assert.ok(updated?.ok, 'update ok');
+      assert.deepStrictEqual(
+        updated.item.i18n,
+        nextI18n,
+        'i18n survives update',
+      );
+    });
+  },
+);

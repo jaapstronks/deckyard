@@ -7,7 +7,12 @@ import { cryptoUuid } from '../../../shared/slide-types/helpers.js';
 import { GLOBAL_SLIDE_FIELD_KEYS } from '../../../shared/slide-types/registry.js';
 
 const SUPPORTED_CONVERSIONS = {
-  'content-slide': ['list-slide', 'icon-card-grid-slide', 'text-blocks-slide', 'kpi-metrics-slide'],
+  'content-slide': [
+    'list-slide',
+    'icon-card-grid-slide',
+    'text-blocks-slide',
+    'kpi-metrics-slide',
+  ],
   'list-slide': ['icon-card-grid-slide', 'content-slide', 'text-blocks-slide'],
   'icon-card-grid-slide': ['list-slide', 'content-slide', 'text-blocks-slide'],
   'text-blocks-slide': ['icon-card-grid-slide', 'list-slide'],
@@ -151,7 +156,9 @@ Rules:
 - 1-4 metrics maximum — pick the most impactful numbers
 - ${langRule}
 - Return ONLY valid JSON, no markdown or explanation`,
-      user: (slide) => `Convert this content slide to a KPI metrics slide. Extract the most important numbers:
+      user: (
+        slide,
+      ) => `Convert this content slide to a KPI metrics slide. Extract the most important numbers:
 
 Title: ${slide.content?.title || ''}
 Body:
@@ -175,7 +182,9 @@ Rules:
 - ${langRule}
 - Return ONLY valid JSON, no markdown or explanation`,
       user: (slide) => {
-        const items = (slide.content?.items || []).map((it) => `- ${it.title}: ${it.text}`).join('\n');
+        const items = (slide.content?.items || [])
+          .map((it) => `- ${it.title}: ${it.text}`)
+          .join('\n');
         return `Convert this list slide to an icon cards slide:
 
 Title: ${slide.content?.title || ''}
@@ -199,7 +208,9 @@ Rules:
 - ${langRule}
 - Return ONLY valid JSON, no markdown or explanation`,
       user: (slide) => {
-        const items = (slide.content?.items || []).map((it) => `- ${it.title}: ${it.text}`).join('\n');
+        const items = (slide.content?.items || [])
+          .map((it) => `- ${it.title}: ${it.text}`)
+          .join('\n');
         return `Convert this list slide to a content slide:
 
 Title: ${slide.content?.title || ''}
@@ -223,7 +234,9 @@ Rules:
 - ${langRule}
 - Return ONLY valid JSON, no markdown or explanation`,
       user: (slide) => {
-        const items = (slide.content?.items || []).map((it) => `- ${it.title}: ${it.text}`).join('\n');
+        const items = (slide.content?.items || [])
+          .map((it) => `- ${it.title}: ${it.text}`)
+          .join('\n');
         return `Convert this list slide to a text blocks slide:
 
 Title: ${slide.content?.title || ''}
@@ -249,14 +262,18 @@ Rules:
 - ${langRule}
 - Return ONLY valid JSON, no markdown or explanation`,
       user: (slide) => {
-        const items = (slide.content?.items || []).map((it) => `- [${it.icon}] ${it.title}: ${it.body}`).join('\n');
+        const items = (slide.content?.items || [])
+          .map((it) => `- [${it.icon}] ${it.title}: ${it.body}`)
+          .join('\n');
         const legacy = !slide.content?.items;
         let cardText = items;
         if (legacy) {
           const count = Number(slide.content?.cardCount || 4);
           const cards = [];
           for (let i = 1; i <= count; i++) {
-            cards.push(`- ${slide.content?.[`card${i}Title`] || ''}: ${slide.content?.[`card${i}Body`] || ''}`);
+            cards.push(
+              `- ${slide.content?.[`card${i}Title`] || ''}: ${slide.content?.[`card${i}Body`] || ''}`,
+            );
           }
           cardText = cards.join('\n');
         }
@@ -282,7 +299,9 @@ Rules:
 - ${langRule}
 - Return ONLY valid JSON, no markdown or explanation`,
       user: (slide) => {
-        const items = (slide.content?.items || []).map((it) => `## ${it.title}\n${it.body}`).join('\n\n');
+        const items = (slide.content?.items || [])
+          .map((it) => `## ${it.title}\n${it.body}`)
+          .join('\n\n');
         return `Convert this icon cards slide to a content slide:
 
 Title: ${slide.content?.title || ''}
@@ -306,7 +325,9 @@ Rules:
 - ${langRule}
 - Return ONLY valid JSON, no markdown or explanation`,
       user: (slide) => {
-        const items = (slide.content?.items || []).map((it) => `- ${it.title}: ${it.body}`).join('\n');
+        const items = (slide.content?.items || [])
+          .map((it) => `- ${it.title}: ${it.body}`)
+          .join('\n');
         return `Convert this icon cards slide to a text blocks slide:
 
 Title: ${slide.content?.title || ''}
@@ -337,12 +358,15 @@ Rules:
         if (rows.length > 0) {
           rows.forEach((r, i) => {
             if (r.title) blockText += `\nRow "${r.title}":\n`;
-            (r.blocks || []).forEach((b) => { blockText += `- ${b.title}: ${b.body}\n`; });
+            (r.blocks || []).forEach((b) => {
+              blockText += `- ${b.title}: ${b.body}\n`;
+            });
           });
         } else {
           // Legacy format
           for (let rn = 1; rn <= 3; rn++) {
-            if (rn > 1 && slide.content?.[`row${rn}Enabled`] !== 'yes') continue;
+            if (rn > 1 && slide.content?.[`row${rn}Enabled`] !== 'yes')
+              continue;
             const count = Number(slide.content?.[`row${rn}Count`] || 3);
             for (let i = 1; i <= count; i++) {
               blockText += `- ${slide.content?.[`row${rn}Block${i}Title`] || ''}: ${slide.content?.[`row${rn}Block${i}Body`] || ''}\n`;
@@ -376,7 +400,9 @@ Rules:
         let blockText = '';
         if (rows.length > 0) {
           rows.forEach((r) => {
-            (r.blocks || []).forEach((b) => { blockText += `- ${b.title}: ${b.body}\n`; });
+            (r.blocks || []).forEach((b) => {
+              blockText += `- ${b.title}: ${b.body}\n`;
+            });
           });
         }
         return `Convert this text blocks slide to a list slide:
@@ -403,9 +429,11 @@ Rules:
 - ${langRule}
 - Return ONLY valid JSON, no markdown or explanation`,
       user: (slide) => {
-        const metrics = (slide.content?.metrics || []).map((m) => {
-          return `${m.value}${m.unit || ''} ${m.label}${m.note ? ` (${m.note})` : ''}`;
-        }).join('\n');
+        const metrics = (slide.content?.metrics || [])
+          .map((m) => {
+            return `${m.value}${m.unit || ''} ${m.label}${m.note ? ` (${m.note})` : ''}`;
+          })
+          .join('\n');
         return `Convert this KPI metrics slide to a content slide:
 
 Title: ${slide.content?.title || ''}
@@ -430,9 +458,11 @@ Rules:
 - ${langRule}
 - Return ONLY valid JSON, no markdown or explanation`,
       user: (slide) => {
-        const metrics = (slide.content?.metrics || []).map((m) => {
-          return `- ${m.value}${m.unit || ''} ${m.label}: ${m.note || ''}`;
-        }).join('\n');
+        const metrics = (slide.content?.metrics || [])
+          .map((m) => {
+            return `- ${m.value}${m.unit || ''} ${m.label}: ${m.note || ''}`;
+          })
+          .join('\n');
         return `Convert this KPI metrics slide to a list slide:
 
 Title: ${slide.content?.title || ''}
@@ -447,7 +477,11 @@ Return JSON with: { title, subheading, variant: "bullets", items: [{title, text}
   return null;
 }
 
-export async function convertSlideWithAi(slide, toType, { vendor = null, lang = 'nl' } = {}) {
+export async function convertSlideWithAi(
+  slide,
+  toType,
+  { vendor = null, lang = 'nl' } = {},
+) {
   const fromType = slide?.type;
   if (!fromType) {
     throw new ValidationError('Slide must have a type');
@@ -455,12 +489,16 @@ export async function convertSlideWithAi(slide, toType, { vendor = null, lang = 
 
   const allowed = SUPPORTED_CONVERSIONS[fromType] || [];
   if (!allowed.includes(toType)) {
-    throw new ValidationError(`AI conversion from "${fromType}" to "${toType}" is not supported`);
+    throw new ValidationError(
+      `AI conversion from "${fromType}" to "${toType}" is not supported`,
+    );
   }
 
   const prompt = getConversionPrompt(fromType, toType, lang);
   if (!prompt) {
-    throw new ValidationError(`No conversion prompt available for ${fromType} -> ${toType}`);
+    throw new ValidationError(
+      `No conversion prompt available for ${fromType} -> ${toType}`,
+    );
   }
 
   const llmConfig = getLlmConfig({ vendor });

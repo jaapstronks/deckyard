@@ -551,8 +551,6 @@
   margin-top: var(--ps-space-4);
 }
 
-
-
 /* Sandbox-only greyed "Your image source" hint: non-interactive, dimmed, the
    tooltip carries the "connect Unsplash/Giphy/your DAM in production" message. */
 .media-lib-nav-item.is-sandbox-source {

@@ -22,7 +22,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { presentationToDeck, deckToPresentationParts } from '../shared/slide-types/deck.js';
+import {
+  presentationToDeck,
+  deckToPresentationParts,
+} from '../shared/slide-types/deck.js';
 import {
   DECK_FORMAT_ID,
   LEGACY_DECK_FORMAT_IDS,
@@ -49,11 +52,18 @@ test('the example conforms to the documented deck envelope', () => {
   assert.equal(example.version, 1, 'format version');
   assert.equal(typeof example.title, 'string');
   assert.equal(typeof example.theme, 'string');
-  assert.equal(example.slideTypes, undefined, 'no separate slide-type manifest');
+  assert.equal(
+    example.slideTypes,
+    undefined,
+    'no separate slide-type manifest',
+  );
   assert.ok(Array.isArray(example.slides) && example.slides.length > 0);
   for (const s of example.slides) {
     assert.equal(typeof s.type, 'string', 'slide.type is a string');
-    assert.ok(s.content && typeof s.content === 'object', 'slide.content is an object');
+    assert.ok(
+      s.content && typeof s.content === 'object',
+      'slide.content is an object',
+    );
     assert.equal(s.id, undefined, 'portable slides carry no id');
   }
 });
@@ -64,7 +74,7 @@ test('the example spells every type as its one published (canonical) id', () => 
     assert.equal(
       s.type,
       canonicalSlideType(s.type),
-      `slide.type must be canonical, not a legacy spelling: ${s.type}`
+      `slide.type must be canonical, not a legacy spelling: ${s.type}`,
     );
   }
 });
@@ -77,17 +87,25 @@ test('the example round-trips: import → export → import → export is conten
   const parts2 = deckToPresentationParts(deck2);
   const deck3 = presentationToDeck(parts2);
 
-  assert.deepEqual(contentShape(deck3), contentShape(deck2), 'round-trip is content-stable');
+  assert.deepEqual(
+    contentShape(deck3),
+    contentShape(deck2),
+    'round-trip is content-stable',
+  );
   // The envelope is reproduced verbatim by the exporter.
   assert.equal(deck2.format, DECK_FORMAT_ID);
   assert.equal(deck2.version, 1);
-  assert.equal(deck2.slideTypes, undefined, 'exporter emits no slide-type manifest');
+  assert.equal(
+    deck2.slideTypes,
+    undefined,
+    'exporter emits no slide-type manifest',
+  );
   // Export projects the internal registry key back to the one published id, so
   // a re-exported deck spells its types exactly as the fixture does.
   assert.deepEqual(
     deck2.slides.map((s) => s.type),
     example.slides.map((s) => s.type),
-    'export emits canonical type ids'
+    'export emits canonical type ids',
   );
 });
 
@@ -104,14 +122,21 @@ test('every example slide validates against its generated per-type schema', () =
     const errors = validate(schema, slide.content, localName, []);
     if (errors.length) failures.push(`${localName}: ${errors.join('; ')}`);
   }
-  assert.deepEqual(failures, [], `example content failed its schema:\n${failures.join('\n')}`);
+  assert.deepEqual(
+    failures,
+    [],
+    `example content failed its schema:\n${failures.join('\n')}`,
+  );
 });
 
 test('local asset refs use the /uploads/ convention; external URLs stay external', () => {
   const json = JSON.stringify(example);
   // The documented example carries exactly one local asset ref.
   const localRefs = [...json.matchAll(/"\/uploads\/[^"]+"/g)].map((m) => m[0]);
-  assert.ok(localRefs.length >= 1, 'example demonstrates a local /uploads/ asset ref');
+  assert.ok(
+    localRefs.length >= 1,
+    'example demonstrates a local /uploads/ asset ref',
+  );
   // No bundle refs leak into the portable (non-bundled) deck.
   assert.ok(!json.includes('assets/'), 'portable deck has no bundle refs');
 });

@@ -11,7 +11,7 @@ export const up = async (db) => {
     .createTable('magic_link_tokens')
     .ifNotExists()
     .addColumn('id', 'uuid', (col) =>
-      col.primaryKey().defaultTo(sql`gen_random_uuid()`)
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
     )
     .addColumn('user_email', 'varchar(320)', (col) => col.notNull())
     .addColumn('token_hash', 'varchar(128)', (col) => col.notNull())
@@ -54,9 +54,18 @@ export const up = async (db) => {
 
 export const down = async (db) => {
   // Drop indexes first
-  await db.schema.dropIndex('idx_magic_link_tokens_expires').ifExists().execute();
-  await db.schema.dropIndex('idx_magic_link_tokens_ip_created').ifExists().execute();
-  await db.schema.dropIndex('idx_magic_link_tokens_email_created').ifExists().execute();
+  await db.schema
+    .dropIndex('idx_magic_link_tokens_expires')
+    .ifExists()
+    .execute();
+  await db.schema
+    .dropIndex('idx_magic_link_tokens_ip_created')
+    .ifExists()
+    .execute();
+  await db.schema
+    .dropIndex('idx_magic_link_tokens_email_created')
+    .ifExists()
+    .execute();
   await db.schema.dropIndex('idx_magic_link_tokens_hash').ifExists().execute();
 
   // Drop table

@@ -40,13 +40,17 @@ export const SSE_HEARTBEAT_MS = 15_000;
  * @returns {{ ok: true, close: () => void } | { ok: false }} `ok: false`
  *   means the guard already sent a 429 — the handler should return handled.
  */
-export function openSseStream(req, res, {
-  guard = true,
-  heartbeatMs = SSE_HEARTBEAT_MS,
-  cacheControl = 'no-cache',
-  extraHeaders = {},
-  onClose,
-} = {}) {
+export function openSseStream(
+  req,
+  res,
+  {
+    guard = true,
+    heartbeatMs = SSE_HEARTBEAT_MS,
+    cacheControl = 'no-cache',
+    extraHeaders = {},
+    onClose,
+  } = {},
+) {
   if (guard && !guardSseConnection(req, res)) return { ok: false };
 
   res.writeHead(200, {
@@ -63,7 +67,10 @@ export function openSseStream(req, res, {
 
   let heartbeatTimer = null;
   if (heartbeatMs > 0) {
-    heartbeatTimer = setInterval(() => sseComment(res, 'heartbeat'), heartbeatMs);
+    heartbeatTimer = setInterval(
+      () => sseComment(res, 'heartbeat'),
+      heartbeatMs,
+    );
     heartbeatTimer.unref?.();
   }
 
@@ -92,8 +99,7 @@ export function sseWrite(res, { event, data } = {}) {
   let message = '';
   if (event) message += `event: ${event}\n`;
   if (data != null) {
-    const payload =
-      typeof data === 'string' ? data : JSON.stringify(data);
+    const payload = typeof data === 'string' ? data : JSON.stringify(data);
     message += `data: ${payload}\n`;
   }
   message += '\n';
@@ -148,9 +154,7 @@ export function sseError(res, message, extra = null) {
 
 export function sseComment(res, comment) {
   if (!res?.writable || res.writableEnded) return;
-  res.write(
-    `: ${String(comment || '').replace(/\n/g, ' ')}\n\n`
-  );
+  res.write(`: ${String(comment || '').replace(/\n/g, ' ')}\n\n`);
 }
 
 /**
@@ -179,7 +183,10 @@ export function sseComment(res, comment) {
  *   stopHeartbeat: () => void,
  * }}
  */
-export function createSseHub({ normalizeKey = (k) => k, heartbeatMs = 30_000 } = {}) {
+export function createSseHub({
+  normalizeKey = (k) => k,
+  heartbeatMs = 30_000,
+} = {}) {
   /** @type {Map<*, Set<object>>} key -> set of open response objects */
   const clients = new Map();
 
@@ -268,5 +275,12 @@ export function createSseHub({ normalizeKey = (k) => k, heartbeatMs = 30_000 } =
     }
   }
 
-  return { addClient, removeClient, broadcast, broadcastAll, startHeartbeat, stopHeartbeat };
+  return {
+    addClient,
+    removeClient,
+    broadcast,
+    broadcastAll,
+    startHeartbeat,
+    stopHeartbeat,
+  };
 }

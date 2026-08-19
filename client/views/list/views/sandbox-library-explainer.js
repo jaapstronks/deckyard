@@ -41,16 +41,23 @@ export function createSandboxLibraryExplainer({ h }) {
     },
   ];
 
-  const grid = h('div', { class: 'sandbox-library-grid', 'aria-hidden': 'true' });
+  const grid = h('div', {
+    class: 'sandbox-library-grid',
+    'aria-hidden': 'true',
+  });
   for (const s of samples) {
     grid.append(
       h('div', { class: 'sandbox-library-card' }, [
         h('span', { class: 'sandbox-library-card-thumb' }, [
-          h('img', { class: 'sandbox-library-card-icon', src: iconUrl(s.icon), alt: '' }),
+          h('img', {
+            class: 'sandbox-library-card-icon',
+            src: iconUrl(s.icon),
+            alt: '',
+          }),
         ]),
         h('span', { class: 'sandbox-library-card-name', text: s.name }),
         h('span', { class: 'sandbox-library-card-meta', text: s.meta }),
-      ])
+      ]),
     );
   }
 
@@ -70,14 +77,14 @@ export function createSandboxLibraryExplainer({ h }) {
         class: 'sandbox-library-body',
         text: t(
           'sandbox.library.body',
-          'This is where you and your teammates keep the slides worth reusing — a team overview with headshots, the latest quarterly figures, your standard intro and disclaimer — and group them into collections to start new decks in seconds.'
+          'This is where you and your teammates keep the slides worth reusing — a team overview with headshots, the latest quarterly figures, your standard intro and disclaimer — and group them into collections to start new decks in seconds.',
         ),
       }),
       h('p', {
         class: 'help sandbox-library-note',
         text: t(
           'sandbox.library.note',
-          'It’s empty in the sandbox — a throwaway space has no team. In your own Deckyard, every slide you save to the library lands here.'
+          'It’s empty in the sandbox — a throwaway space has no team. In your own Deckyard, every slide you save to the library lands here.',
         ),
       }),
     ]),

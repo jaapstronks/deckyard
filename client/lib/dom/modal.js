@@ -469,12 +469,15 @@ export function createQuickModal({
  * @param {string} [options.actionText] - Action button text
  * @returns {Object} { wrap, cancel, action, setActionText, setDisabled }
  */
-export function createModalActions(h, {
-  onCancel,
-  onAction,
-  cancelText = t('common.cancel', 'Cancel'),
-  actionText = t('common.create', 'Create'),
-} = {}) {
+export function createModalActions(
+  h,
+  {
+    onCancel,
+    onAction,
+    cancelText = t('common.cancel', 'Cancel'),
+    actionText = t('common.create', 'Create'),
+  } = {},
+) {
   const wrap = h('div', { class: 'row is-end modal-actions' });
 
   const cancel = h('button', {
@@ -512,7 +515,13 @@ export function createModalActions(h, {
  * Internal helper to create a form element (input or textarea) with validation.
  * Extracts shared logic between createTextInput and createTextArea.
  */
-function createFormElement(h, elementType, elementAttrs, wrapperClass, { validate, onChange } = {}) {
+function createFormElement(
+  h,
+  elementType,
+  elementAttrs,
+  wrapperClass,
+  { validate, onChange } = {},
+) {
   const element = h(elementType, elementAttrs);
   const status = h('div', { class: 'help modal-status', text: '' });
 
@@ -564,19 +573,22 @@ function createFormElement(h, elementType, elementAttrs, wrapperClass, { validat
  * @param {boolean} [options.autoFocus=true] - Auto-focus the input
  * @returns {Object} { wrap, input, status, getValue, validate, focus }
  */
-export function createTextInput(h, {
-  value = '',
-  placeholder = '',
-  validate,
-  onChange,
-  autoFocus = true,
-} = {}) {
+export function createTextInput(
+  h,
+  { value = '', placeholder = '', validate, onChange, autoFocus = true } = {},
+) {
   const result = createFormElement(
     h,
     'input',
-    { class: 'form-input', value, placeholder, autocomplete: 'off', autofocus: autoFocus },
+    {
+      class: 'form-input',
+      value,
+      placeholder,
+      autocomplete: 'off',
+      autofocus: autoFocus,
+    },
     'modal-text-input',
-    { validate, onChange }
+    { validate, onChange },
   );
   // Rename element to input for backwards compatibility
   return { ...result, input: result.element };
@@ -595,20 +607,29 @@ export function createTextInput(h, {
  * @param {boolean} [options.autoFocus=true] - Auto-focus the textarea
  * @returns {Object} { wrap, textarea, status, getValue, validate, focus }
  */
-export function createTextArea(h, {
-  value = '',
-  placeholder = '',
-  minHeight = '120px',
-  validate,
-  onChange,
-  autoFocus = true,
-} = {}) {
+export function createTextArea(
+  h,
+  {
+    value = '',
+    placeholder = '',
+    minHeight = '120px',
+    validate,
+    onChange,
+    autoFocus = true,
+  } = {},
+) {
   const result = createFormElement(
     h,
     'textarea',
-    { class: 'form-input', style: `min-height:${minHeight};`, value, placeholder, autofocus: autoFocus },
+    {
+      class: 'form-input',
+      style: `min-height:${minHeight};`,
+      value,
+      placeholder,
+      autofocus: autoFocus,
+    },
     'modal-textarea',
-    { validate, onChange }
+    { validate, onChange },
   );
   // Rename element to textarea for backwards compatibility
   return { ...result, textarea: result.element };

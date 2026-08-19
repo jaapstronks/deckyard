@@ -38,7 +38,8 @@
     .presenter-shell,
     .viewer-shell
   )
-  .slide-item.is-active .slide-num-overlay,
+  .slide-item.is-active
+  .slide-num-overlay,
 :where(
     .app-shell,
     .modal-backdrop,
@@ -48,7 +49,8 @@
     .presenter-shell,
     .viewer-shell
   )
-  .slide-item.is-selected .slide-num-overlay {
+  .slide-item.is-selected
+  .slide-num-overlay {
   background: hsl(var(--app-accent-primary));
   color: hsl(var(--app-text-on-solid));
 }
@@ -66,7 +68,8 @@
     .presenter-shell,
     .viewer-shell
   )
-  .slide-item.is-active .slide-num-overlay {
+  .slide-item.is-active
+  .slide-num-overlay {
   background: hsl(var(--app-danger));
   color: #fff;
   box-shadow:
@@ -84,7 +87,8 @@
     .presenter-shell,
     .viewer-shell
   )
-  .slide-item.is-selected .thumb.thumb-mini {
+  .slide-item.is-selected
+  .thumb.thumb-mini {
   outline: 3px solid hsl(var(--app-accent-primary));
   outline-offset: -3px;
   border-radius: var(--ps-radius-sm);
@@ -100,7 +104,8 @@
     .presenter-shell,
     .viewer-shell
   )
-  .slide-item.is-selected .slide-num-overlay {
+  .slide-item.is-selected
+  .slide-num-overlay {
   top: 6px;
   left: 6px;
 }

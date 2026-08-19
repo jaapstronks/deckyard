@@ -81,9 +81,7 @@ export async function listAppliedMigrations(db) {
  */
 export async function listMigrationFiles() {
   const files = await fs.readdir(MIGRATIONS_DIR);
-  return files
-    .filter((f) => f.endsWith('.js') && /^\d{3}_/.test(f))
-    .sort();
+  return files.filter((f) => f.endsWith('.js') && /^\d{3}_/.test(f)).sort();
 }
 
 /**
@@ -111,10 +109,7 @@ export async function runUp(db, { log = console.log } = {}) {
 
     await db.transaction().execute(async (trx) => {
       await migration.up(trx);
-      await trx
-        .insertInto('_migrations')
-        .values({ name: file })
-        .execute();
+      await trx.insertInto('_migrations').values({ name: file }).execute();
     });
 
     log(`Completed: ${file}`);
@@ -172,7 +167,9 @@ async function showStatus(db) {
   }
 
   console.log('─'.repeat(50));
-  console.log(`Total: ${files.length} migration(s), ${applied.length} applied\n`);
+  console.log(
+    `Total: ${files.length} migration(s), ${applied.length} applied\n`,
+  );
 }
 
 async function main() {

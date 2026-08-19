@@ -26,13 +26,13 @@ npm run test:ai-suite -- --refresh           # bypass the judge/topic cache
 npm run test:ai-suite -- --label "baseline"  # tag the run in history
 ```
 
-| Flag | Effect |
-| --- | --- |
-| `--cases a,b` | Run a subset. Use this for iteration rounds; full runs are for milestones. |
-| `--repeat N` | Generate each case N times. The model takes no temperature, so this is the only honest read on stability. |
-| `--dry-run` | Skips the judge and topic extraction. Still generates decks, so it is not free. |
-| `--reuse-run ID` | Re-evaluates decks from a previous run. Free of generation cost — use it when you change the *judge*, not the generation prompts. |
-| `--refresh` | Forces judge and topic recomputation instead of reading the cache. |
+| Flag             | Effect                                                                                                                            |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `--cases a,b`    | Run a subset. Use this for iteration rounds; full runs are for milestones.                                                        |
+| `--repeat N`     | Generate each case N times. The model takes no temperature, so this is the only honest read on stability.                         |
+| `--dry-run`      | Skips the judge and topic extraction. Still generates decks, so it is not free.                                                   |
+| `--reuse-run ID` | Re-evaluates decks from a previous run. Free of generation cost — use it when you change the _judge_, not the generation prompts. |
+| `--refresh`      | Forces judge and topic recomputation instead of reading the cache.                                                                |
 
 ## What comes out
 
@@ -60,18 +60,18 @@ cases/     one directory per case (only case.json is committed)
 **Generation** calls `generateDeckV2` from `server/utils/ai/` directly. That
 function is a pure `(sourceText, options)` function — no database, no auth, no
 storage — so the suite exercises the exact production code path without running
-a server. Deck generation deliberately does *not* go through the Anthropic SDK;
+a server. Deck generation deliberately does _not_ go through the Anthropic SDK;
 it goes through the app's own LLM layer, because testing anything else would
 test something other than what ships.
 
 **Evaluation** has three layers:
 
-1. *Deterministic metrics* (`eval/metrics.js`) — slide count, words and bullets
+1. _Deterministic metrics_ (`eval/metrics.js`) — slide count, words and bullets
    per slide, wall-of-text and empty-slide counts, structure. Free.
-2. *Number fidelity* — every figure in the deck is traced back to the source.
+2. _Number fidelity_ — every figure in the deck is traced back to the source.
    Cheap hallucination detection with no model call. Years and small integers
    are ignored: they are usually formatting artefacts, not copied claims.
-3. *LLM judge* (`eval/judge.js`) — `claude-opus-4-8` scores five dimensions 1–5
+3. _LLM judge_ (`eval/judge.js`) — `claude-opus-4-8` scores five dimensions 1–5
    (coverage, structure, slide economy, faithfulness, presentability), plus
    closeness to the human deck for category A. Responses use
    `output_config.format` with a JSON schema, so verdicts are schema-valid by
@@ -86,19 +86,19 @@ prompt-tuning loop actually consumes.
 Category A cases pair a source with a human-made deck about the same content
 (ground truth). Category B cases are realistic sources with no reference.
 
-| Case | Cat | Lang | Source | Reference |
-| --- | --- | --- | --- | --- |
-| `asml-q4-2024` | A | en | 4-page press release | 25-slide investor deck |
-| `philips-q4-2024` | A | en | 24-page results report | 27-slide deck |
-| `pbl-kev-2024` | A | nl | 183-page climate report | 20-slide PBL deck |
-| `iea-weo-2024` | A | en | 10-page executive summary | 12-slide launch deck |
-| `naacl-good-conversation` | A | en | 22-page paper | 25-slide author deck |
-| `wikipedia-zero-knowledge-proof` | B | en | pinned wiki revision | — |
-| `cloudflare-nov-2025-outage` | B | en | incident post-mortem | — |
-| `cbs-persbericht-criminaliteit` | B | nl | short press release | — |
-| `cbs-veiligheidsmonitor-2025` | B | nl | 127-page report | — |
-| `nl-kamerbrief-duurzame-digitalisering` | B | nl | prose ministerial letter | — |
-| `deckyard-readme` | B | en | this repo's README | — |
+| Case                                    | Cat | Lang | Source                    | Reference              |
+| --------------------------------------- | --- | ---- | ------------------------- | ---------------------- |
+| `asml-q4-2024`                          | A   | en   | 4-page press release      | 25-slide investor deck |
+| `philips-q4-2024`                       | A   | en   | 24-page results report    | 27-slide deck          |
+| `pbl-kev-2024`                          | A   | nl   | 183-page climate report   | 20-slide PBL deck      |
+| `iea-weo-2024`                          | A   | en   | 10-page executive summary | 12-slide launch deck   |
+| `naacl-good-conversation`               | A   | en   | 22-page paper             | 25-slide author deck   |
+| `wikipedia-zero-knowledge-proof`        | B   | en   | pinned wiki revision      | —                      |
+| `cloudflare-nov-2025-outage`            | B   | en   | incident post-mortem      | —                      |
+| `cbs-persbericht-criminaliteit`         | B   | nl   | short press release       | —                      |
+| `cbs-veiligheidsmonitor-2025`           | B   | nl   | 127-page report           | —                      |
+| `nl-kamerbrief-duurzame-digitalisering` | B   | nl   | prose ministerial letter  | —                      |
+| `deckyard-readme`                       | B   | en   | this repo's README        | —                      |
 
 The spread is deliberate. Compression ratios run from expansion (ASML: 4 pages
 into 25 slides) to roughly 9:1 (PBL: 183 pages into 20). Those are not
@@ -154,15 +154,15 @@ Every run reports its own cost, and `history.json` records cost per run.
 
 Baseline across all 11 cases, and the state after three iteration rounds:
 
-| Dimension | Baseline (11 cases) | After round 3 (3 cases) |
-| --- | ---: | ---: |
-| Coverage | 4.73 | 4.67 |
-| Structure | 4.64 | 5.00 |
-| Slide economy | 4.00 | 4.00 |
-| Faithfulness | 4.82 | 5.00 |
-| Presentability | 4.09 | 3.67 |
-| Closeness to human deck | 2.80 | 3.00 |
-| **Overall** | **4.46** | **4.47** |
+| Dimension               | Baseline (11 cases) | After round 3 (3 cases) |
+| ----------------------- | ------------------: | ----------------------: |
+| Coverage                |                4.73 |                    4.67 |
+| Structure               |                4.64 |                    5.00 |
+| Slide economy           |                4.00 |                    4.00 |
+| Faithfulness            |                4.82 |                    5.00 |
+| Presentability          |                4.09 |                    3.67 |
+| Closeness to human deck |                2.80 |                    3.00 |
+| **Overall**             |            **4.46** |                **4.47** |
 
 The two columns cover different case sets, so read them as "where the corpus
 stands" rather than as a clean before/after. Per-round like-for-like
@@ -173,7 +173,7 @@ What the rounds actually established:
 - **Round 1 (kept)** — catalog examples contained escaped newlines, so the
   model copied literal `\n` onto slides. Slides carrying that defect: 5 → 0.
 - **Round 2 (reverted)** — a slide-type variety rule cut consecutive
-  same-type repeats by 64% and *lowered* every quality dimension
+  same-type repeats by 64% and _lowered_ every quality dimension
   (faithfulness −0.55). The proxy improved while the goal got worse.
 - **Round 3 (kept)** — chapter dividers were 22% of every deck; now 15%, with
   structure at 5.00 and no coverage or faithfulness cost.
@@ -195,7 +195,7 @@ score movement is variance rather than progress.
 
 `test:ai-suite` is the benchmark of record: full pipeline, full rubric,
 comparable across runs. It is the wrong tool for tuning a single prompt,
-because a change to phase 1 is measured *through* phase 2's slide-type
+because a change to phase 1 is measured _through_ phase 2's slide-type
 selection, validation and truncation — so the signal is both expensive and hard
 to attribute.
 
@@ -216,14 +216,14 @@ and stop — running phase 2 would only measure a bad plan being rendered
 faithfully. Only when the outline is sound is a bad deck actually phase 2's
 fault, and then you freeze that outline and iterate on one section.
 
-The outline judge has its own rubric, scoring the *plan* rather than the prose:
+The outline judge has its own rubric, scoring the _plan_ rather than the prose:
 
-| Dimension | Question |
-| --- | --- |
-| Sectioning | Right number of sections, at the right boundaries? |
-| Ordering | Does the sequence build, or does it bury the headline? |
-| Slide allocation | Does each planned slide earn its place, and does section size match what the section has to say? |
-| Content selection | Does the plan keep the important material and drop the rest? |
+| Dimension         | Question                                                                                         |
+| ----------------- | ------------------------------------------------------------------------------------------------ |
+| Sectioning        | Right number of sections, at the right boundaries?                                               |
+| Ordering          | Does the sequence build, or does it bury the headline?                                           |
+| Slide allocation  | Does each planned slide earn its place, and does section size match what the section has to say? |
+| Content selection | Does the plan keep the important material and drop the rest?                                     |
 
 Measured cost per case (gpt-5.5 generation, Opus judge): **outline stage
 ~$0.20, refine-one-section ~$0.24**, against ~$0.78 for a full pipeline run.

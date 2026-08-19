@@ -10,7 +10,9 @@
  * @returns {string|null} - Normalized email or null if empty
  */
 export function normalizeEmail(email) {
-  const s = String(email || '').trim().toLowerCase();
+  const s = String(email || '')
+    .trim()
+    .toLowerCase();
   return s || null;
 }
 
@@ -65,7 +67,10 @@ export function isoBefore(ms) {
  */
 export function durationSinceSeconds(startTime) {
   if (!startTime) return 0;
-  const startMs = startTime instanceof Date ? startTime.getTime() : new Date(startTime).getTime();
+  const startMs =
+    startTime instanceof Date
+      ? startTime.getTime()
+      : new Date(startTime).getTime();
   if (isNaN(startMs)) return 0;
   const durationMs = Date.now() - startMs;
   return Math.max(0, Math.floor(durationMs / 1000));
@@ -98,22 +103,36 @@ export function validateDateRange(since, until, options = {}) {
   const parsedUntil = until ? new Date(until) : null;
 
   // Validate date formats
-  if (since && (Number.isNaN(parsedSince.getTime()) || parsedSince.toString() === 'Invalid Date')) {
+  if (
+    since &&
+    (Number.isNaN(parsedSince.getTime()) ||
+      parsedSince.toString() === 'Invalid Date')
+  ) {
     return { valid: false, error: 'Invalid since date format' };
   }
-  if (until && (Number.isNaN(parsedUntil.getTime()) || parsedUntil.toString() === 'Invalid Date')) {
+  if (
+    until &&
+    (Number.isNaN(parsedUntil.getTime()) ||
+      parsedUntil.toString() === 'Invalid Date')
+  ) {
     return { valid: false, error: 'Invalid until date format' };
   }
 
   // Validate since <= until
   if (parsedSince && parsedUntil && parsedSince > parsedUntil) {
-    return { valid: false, error: 'since date must be before or equal to until date' };
+    return {
+      valid: false,
+      error: 'since date must be before or equal to until date',
+    };
   }
 
   // Validate reasonable date range
   const maxRange = maxRangeDays * 24 * 60 * 60 * 1000;
-  if (parsedSince && parsedUntil && (parsedUntil - parsedSince) > maxRange) {
-    return { valid: false, error: `Date range cannot exceed ${maxRangeDays} days` };
+  if (parsedSince && parsedUntil && parsedUntil - parsedSince > maxRange) {
+    return {
+      valid: false,
+      error: `Date range cannot exceed ${maxRangeDays} days`,
+    };
   }
 
   // Validate dates are not in the future (allow 1 day buffer for timezone issues)

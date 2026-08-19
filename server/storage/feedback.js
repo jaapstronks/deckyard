@@ -47,7 +47,9 @@ function now() {
  * @returns {string}
  */
 function normalizeDeviceId(v) {
-  return String(v || '').trim().slice(0, MAX_DEVICE_ID_LENGTH);
+  return String(v || '')
+    .trim()
+    .slice(0, MAX_DEVICE_ID_LENGTH);
 }
 
 /**
@@ -57,7 +59,8 @@ function normalizeDeviceId(v) {
  */
 function toMillis(value) {
   if (!value) return 0;
-  const ms = value instanceof Date ? value.getTime() : new Date(value).getTime();
+  const ms =
+    value instanceof Date ? value.getTime() : new Date(value).getTime();
   return Number.isFinite(ms) ? ms : 0;
 }
 
@@ -95,7 +98,11 @@ async function readEntrySummary(sessionId, slideId, deviceId) {
  * @returns {Promise<object>}
  */
 async function aggregateForDevice(slide, deviceId) {
-  const { total, myText } = await readEntrySummary(slide.sessionId, slide.slideId, deviceId);
+  const { total, myText } = await readEntrySummary(
+    slide.sessionId,
+    slide.slideId,
+    deviceId,
+  );
   return {
     slideId: slide.slideId,
     type: 'feedback',
@@ -134,9 +141,14 @@ async function maybeBroadcast(scope, sessionId, agg) {
 export async function ensureFeedbackForSlide(
   scope,
   sessionId,
-  { slideId = '', defaultStatus = 'open' } = {}
+  { slideId = '', defaultStatus = 'open' } = {},
 ) {
-  toStorageContext(scope, 'ensureFeedbackForSlide', {}, { allowCrossOrganization: true });
+  toStorageContext(
+    scope,
+    'ensureFeedbackForSlide',
+    {},
+    { allowCrossOrganization: true },
+  );
   const ensured = await ensureInteractionSlide({
     sessionId,
     slideId,
@@ -162,9 +174,14 @@ export async function ensureFeedbackForSlide(
 export async function getFeedbackAggregate(
   scope,
   sessionId,
-  { slideId = '', deviceId = null } = {}
+  { slideId = '', deviceId = null } = {},
 ) {
-  toStorageContext(scope, 'getFeedbackAggregate', {}, { allowCrossOrganization: true });
+  toStorageContext(
+    scope,
+    'getFeedbackAggregate',
+    {},
+    { allowCrossOrganization: true },
+  );
   const slide = await getInteractionSlide({ sessionId, slideId });
   if (!slide) return null;
   return aggregateForDevice(slide, deviceId);
@@ -189,9 +206,14 @@ export async function getFeedbackAggregate(
 export async function submitFeedback(
   scope,
   sessionId,
-  { slideId = '', deviceId = '', text = '' } = {}
+  { slideId = '', deviceId = '', text = '' } = {},
 ) {
-  toStorageContext(scope, 'submitFeedback', {}, { allowCrossOrganization: true });
+  toStorageContext(
+    scope,
+    'submitFeedback',
+    {},
+    { allowCrossOrganization: true },
+  );
   const sid = String(slideId || '').trim();
   const did = normalizeDeviceId(deviceId);
   if (!sid || !did) return { ok: false, reason: 'invalid' };
@@ -230,7 +252,7 @@ export async function submitFeedback(
         oc.columns(['session_id', 'slide_id', 'device_id']).doUpdateSet({
           text: limited,
           updated_at: new Date(),
-        })
+        }),
       )
       .execute();
   });
@@ -263,7 +285,7 @@ export async function submitFeedback(
 export async function setFeedbackStatus(
   scope,
   sessionId,
-  { slideId = '', status = 'open' } = {}
+  { slideId = '', status = 'open' } = {},
 ) {
   toStorageContext(scope, 'setFeedbackStatus');
   const updated = await updateInteractionSlide({ sessionId, slideId, status });
@@ -314,7 +336,11 @@ export async function resetFeedback(scope, sessionId, { slideId = '' } = {}) {
  * @param {string} [opts.slideId]
  * @returns {Promise<Array<{slideId: string, deviceId: string, text: string, createdAt: number, updatedAt: number}>>}
  */
-export async function listFeedbackEntries(scope, sessionId, { slideId = '' } = {}) {
+export async function listFeedbackEntries(
+  scope,
+  sessionId,
+  { slideId = '' } = {},
+) {
   toStorageContext(scope, 'listFeedbackEntries');
   const sid = String(sessionId || '').trim();
   const slide = String(slideId || '').trim();

@@ -21,12 +21,7 @@
       "nl": "Crème"
     }
   },
-  "brandColors": [
-    "#7f1d1d",
-    "#9f1239",
-    "#b45309",
-    "#a16207"
-  ],
+  "brandColors": ["#7f1d1d", "#9f1239", "#b45309", "#a16207"],
   "gradient": {
     "enabled": false
   },

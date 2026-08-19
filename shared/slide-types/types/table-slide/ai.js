@@ -19,9 +19,9 @@
  */
 
 export const ai = {
-    category: 'content',
-    resolveInPhase1: false,
-    description: `
+  category: 'content',
+  resolveInPhase1: false,
+  description: `
       Display tabular data with rows and columns.
 
       CRITICAL STRUCTURE - use this EXACT format:
@@ -40,18 +40,18 @@ export const ai = {
 
       The first row becomes the header if headerRow is "on".
     `,
-    bestFor: [
-      'Comparison tables',
-      'Feature matrices',
-      'Schedules or structured data',
-      'Country/region benchmarks',
-      'Side-by-side metrics',
-    ],
-    notFor: [
-      'Numeric data that would visualize better (use chart-slide)',
-      'Large datasets (summarize or link externally)',
-      'More than 10 columns (simplify or split)',
-    ],
+  bestFor: [
+    'Comparison tables',
+    'Feature matrices',
+    'Schedules or structured data',
+    'Country/region benchmarks',
+    'Side-by-side metrics',
+  ],
+  notFor: [
+    'Numeric data that would visualize better (use chart-slide)',
+    'Large datasets (summarize or link externally)',
+    'More than 10 columns (simplify or split)',
+  ],
 };
 
 /**
@@ -98,7 +98,13 @@ export const aiExamples = [
     colCount: '5',
     headerRow: 'on',
     rows: [
-      { c1: 'Country', c2: 'Companies', c3: 'Employees', c4: 'Revenue (B)', c5: 'Growth' },
+      {
+        c1: 'Country',
+        c2: 'Companies',
+        c3: 'Employees',
+        c4: 'Revenue (B)',
+        c5: 'Growth',
+      },
       { c1: 'Germany', c2: '~600', c3: '12,000', c4: '4.2', c5: '+8%' },
       { c1: 'Netherlands', c2: '~280', c3: '5,500', c4: '1.8', c5: '+12%' },
       { c1: 'Belgium', c2: '~150', c3: '3,200', c4: '0.9', c5: '+6%' },

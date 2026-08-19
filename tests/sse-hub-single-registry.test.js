@@ -54,7 +54,10 @@ function offendingLines(file, pattern) {
 
 test('SSE *-events services declare no bespoke registry or heartbeat (use createSseHub)', () => {
   const files = eventServiceFiles();
-  assert.ok(files.length >= 2, 'expected the notification and comment event services to exist');
+  assert.ok(
+    files.length >= 2,
+    'expected the notification and comment event services to exist',
+  );
 
   const violations = [];
   for (const file of files) {
@@ -63,7 +66,9 @@ test('SSE *-events services declare no bespoke registry or heartbeat (use create
       violations.push(`${rel}:${hit}  — heartbeat belongs to createSseHub`);
     }
     for (const hit of offendingLines(file, NEW_MAP)) {
-      violations.push(`${rel}:${hit}  — client registry belongs to createSseHub`);
+      violations.push(
+        `${rel}:${hit}  — client registry belongs to createSseHub`,
+      );
     }
   }
 
@@ -71,6 +76,6 @@ test('SSE *-events services declare no bespoke registry or heartbeat (use create
     violations.length,
     0,
     'Route SSE client tracking through createSseHub (server/utils/sse.js) ' +
-      `instead of a bespoke registry/heartbeat:\n  ${violations.join('\n  ')}`
+      `instead of a bespoke registry/heartbeat:\n  ${violations.join('\n  ')}`,
   );
 });

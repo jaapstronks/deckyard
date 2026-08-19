@@ -24,10 +24,9 @@ const repoRoot = path.resolve(
  */
 
 function id(n) {
-  return `0000000000000000000000000000000${n}`.slice(-32).replace(
-    /(.{8})(.{4})(.{4})(.{4})(.{12})/,
-    '$1-$2-$3-$4-$5',
-  );
+  return `0000000000000000000000000000000${n}`
+    .slice(-32)
+    .replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
 }
 
 // A content slide's markdown subheadings are only real <h3> elements once the
@@ -44,7 +43,11 @@ function outlineDeck() {
     slides: [
       { id: id(1), type: 'title-slide', content: { title: 'Opening' } },
       { id: id(2), type: 'content-slide', content: { title: 'Intro' } },
-      { id: id(3), type: 'chapter-title-slide', content: { title: 'Part One' } },
+      {
+        id: id(3),
+        type: 'chapter-title-slide',
+        content: { title: 'Part One' },
+      },
       {
         id: id(4),
         type: 'comparison-slide',
@@ -87,7 +90,10 @@ test('shiftHeadingLevels: floors to h2 and descends, preserving attributes', () 
     '<h4 class="md-subheading">S</h4>',
   );
   // non-heading tags starting with "h" are untouched
-  assert.equal(shiftHeadingLevels('<header><hr></header>', 1), '<header><hr></header>');
+  assert.equal(
+    shiftHeadingLevels('<header><hr></header>', 1),
+    '<header><hr></header>',
+  );
   // capped at h6
   assert.equal(shiftHeadingLevels('<h6>D</h6>', 1), '<h6>D</h6>');
 });

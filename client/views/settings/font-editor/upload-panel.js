@@ -42,7 +42,11 @@ function weightName(value) {
  * @param {Function} options.onVariantChange - Callback when variants change
  * @returns {{ el: HTMLElement, setVariants: Function }}
  */
-export function createUploadPanel({ familyId, variants = [], onVariantChange }) {
+export function createUploadPanel({
+  familyId,
+  variants = [],
+  onVariantChange,
+}) {
   const el = h('div', { class: 'font-source-panel' });
   let currentVariants = [...variants];
 
@@ -53,14 +57,16 @@ export function createUploadPanel({ familyId, variants = [], onVariantChange }) 
   header.append(
     h('span', { text: t('fonts.weight', 'Weight') }),
     h('span', { text: t('fonts.normal', 'Normal') }),
-    h('span', { text: t('fonts.italic', 'Italic') })
+    h('span', { text: t('fonts.italic', 'Italic') }),
   );
   grid.append(header);
 
   const rowEls = {};
 
   function findVariant(weight, style) {
-    return currentVariants.find((v) => v.weight === weight && v.style === style);
+    return currentVariants.find(
+      (v) => v.weight === weight && v.style === style,
+    );
   }
 
   function renderGrid() {
@@ -73,7 +79,10 @@ export function createUploadPanel({ familyId, variants = [], onVariantChange }) 
     for (const w of WEIGHTS) {
       const row = h('div', { class: 'font-variant-row' });
 
-      const weightLabel = h('div', { class: 'font-variant-weight', text: `${w}` });
+      const weightLabel = h('div', {
+        class: 'font-variant-weight',
+        text: `${w}`,
+      });
       weightLabel.title = weightName(w);
 
       const normalCell = createVariantCell(w, 'normal');
@@ -91,15 +100,19 @@ export function createUploadPanel({ familyId, variants = [], onVariantChange }) 
 
     if (variant) {
       const info = h('span', { class: 'font-variant-filename' });
-      const styleLabel = style === 'italic'
-        ? t('fonts.italic', 'Italic')
-        : t('fonts.normal', 'Normal');
+      const styleLabel =
+        style === 'italic'
+          ? t('fonts.italic', 'Italic')
+          : t('fonts.normal', 'Normal');
       info.textContent = t('fonts.variantLabel', '{weight} {style}', {
         weight: weightName(weight),
         style: styleLabel,
       });
       if (variant.fileSize) {
-        const size = h('span', { class: 'font-variant-size', text: formatFileSize(variant.fileSize) });
+        const size = h('span', {
+          class: 'font-variant-size',
+          text: formatFileSize(variant.fileSize),
+        });
         cell.append(info, size);
       } else {
         cell.append(info);
@@ -145,22 +158,28 @@ export function createUploadPanel({ familyId, variants = [], onVariantChange }) 
       };
       reader.onload = async () => {
         try {
-          const result = await api(`/api/font-families/${familyId}/upload-variant`, {
-            method: 'POST',
-            body: JSON.stringify({
-              dataUrl: reader.result,
-              weight,
-              style,
-              format,
-            }),
-          });
+          const result = await api(
+            `/api/font-families/${familyId}/upload-variant`,
+            {
+              method: 'POST',
+              body: JSON.stringify({
+                dataUrl: reader.result,
+                weight,
+                style,
+                format,
+              }),
+            },
+          );
 
           currentVariants.push(result);
           renderGrid();
           if (onVariantChange) onVariantChange(currentVariants);
           toast.success(t('fonts.variantUploaded', 'Font variant uploaded.'));
         } catch (err) {
-          toast.error(err.message || t('fonts.uploadError', 'Failed to upload font file.'));
+          toast.error(
+            err.message ||
+              t('fonts.uploadError', 'Failed to upload font file.'),
+          );
         }
       };
       reader.readAsDataURL(file);
@@ -179,13 +198,18 @@ export function createUploadPanel({ familyId, variants = [], onVariantChange }) 
       if (onVariantChange) onVariantChange(currentVariants);
       toast.success(t('fonts.variantRemoved', 'Font variant removed.'));
     } catch (err) {
-      toast.error(err.message || t('fonts.removeError', 'Failed to remove variant.'));
+      toast.error(
+        err.message || t('fonts.removeError', 'Failed to remove variant.'),
+      );
     }
   }
 
   const hint = h('div', {
     class: 'help',
-    text: t('fonts.uploadHint', 'Upload WOFF2 or WOFF font files for each weight and style you need.'),
+    text: t(
+      'fonts.uploadHint',
+      'Upload WOFF2 or WOFF font files for each weight and style you need.',
+    ),
   });
 
   el.append(hint, grid);

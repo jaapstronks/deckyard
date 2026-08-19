@@ -19,7 +19,10 @@ import { fileURLToPath } from 'node:url';
 
 import { extractUsedKeys, loadLocale, isDynamicKey } from './i18n-keys.js';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 const clientDir = path.join(repoRoot, 'client');
 const i18nDir = path.join(clientDir, 'i18n');
 
@@ -28,18 +31,51 @@ const i18nDir = path.join(clientDir, 'i18n');
  * lives in en/. Falls back to `common` for genuinely new prefixes.
  */
 const PREFIX_TO_FILE = {
-  access: 'common', activity: 'presenter', admin: 'settings', analytics: 'common',
-  app: 'common', appearance: 'common', comments: 'editor', common: 'common',
-  cookies: 'common', dashboard: 'common', dataSource: 'editor', editor: 'editor',
-  export: 'common', follow: 'follow', fonts: 'settings', forgotPassword: 'auth',
-  imageLibrary: 'list', imagekit: 'settings', language: 'common', leadCapture: 'common',
-  list: 'list', login: 'auth', magicLogin: 'auth', mediaLibrary: 'list',
-  mentions: 'editor', moderate: 'share', notes: 'presenter', notesJoin: 'presenter',
-  notifications: 'common', presentWindow: 'presenter', presenter: 'presenter',
-  qa: 'editor', resetPassword: 'auth', settings: 'settings', share: 'share',
-  shareViewer: 'share', shortcuts: 'common', slideLibrary: 'list',
-  slideType: 'slide-types', stockMedia: 'common', subscription: 'editor',
-  tags: 'list', userAutocomplete: 'common', viewer: 'common', visibility: 'editor',
+  access: 'common',
+  activity: 'presenter',
+  admin: 'settings',
+  analytics: 'common',
+  app: 'common',
+  appearance: 'common',
+  comments: 'editor',
+  common: 'common',
+  cookies: 'common',
+  dashboard: 'common',
+  dataSource: 'editor',
+  editor: 'editor',
+  export: 'common',
+  follow: 'follow',
+  fonts: 'settings',
+  forgotPassword: 'auth',
+  imageLibrary: 'list',
+  imagekit: 'settings',
+  language: 'common',
+  leadCapture: 'common',
+  list: 'list',
+  login: 'auth',
+  magicLogin: 'auth',
+  mediaLibrary: 'list',
+  mentions: 'editor',
+  moderate: 'share',
+  notes: 'presenter',
+  notesJoin: 'presenter',
+  notifications: 'common',
+  presentWindow: 'presenter',
+  presenter: 'presenter',
+  qa: 'editor',
+  resetPassword: 'auth',
+  settings: 'settings',
+  share: 'share',
+  shareViewer: 'share',
+  shortcuts: 'common',
+  slideLibrary: 'list',
+  slideType: 'slide-types',
+  stockMedia: 'common',
+  subscription: 'editor',
+  tags: 'list',
+  userAutocomplete: 'common',
+  viewer: 'common',
+  visibility: 'editor',
 };
 
 /** @param {string} key @returns {string} component file basename */
@@ -49,7 +85,11 @@ function fileFor(key) {
 
 /** Write a dict back to disk with stable key ordering. */
 async function writeComponent(locale, comp, dict) {
-  const sorted = Object.fromEntries(Object.keys(dict).sort().map((k) => [k, dict[k]]));
+  const sorted = Object.fromEntries(
+    Object.keys(dict)
+      .sort()
+      .map((k) => [k, dict[k]]),
+  );
   const file = path.join(i18nDir, locale, `${comp}.json`);
   await fs.writeFile(file, `${JSON.stringify(sorted, null, 2)}\n`, 'utf8');
 }
@@ -57,7 +97,9 @@ async function writeComponent(locale, comp, dict) {
 /** Load one component file (missing file -> empty). */
 async function readComponent(locale, comp) {
   try {
-    return JSON.parse(await fs.readFile(path.join(i18nDir, locale, `${comp}.json`), 'utf8'));
+    return JSON.parse(
+      await fs.readFile(path.join(i18nDir, locale, `${comp}.json`), 'utf8'),
+    );
   } catch {
     return {};
   }
@@ -100,18 +142,26 @@ const [mode, ...rest] = process.argv.slice(2);
 if (mode === '--report') {
   const locale = rest[0];
   if (!locale) throw new Error('--report needs a locale');
-  process.stdout.write(`${JSON.stringify(await missingFor(locale), null, 2)}\n`);
+  process.stdout.write(
+    `${JSON.stringify(await missingFor(locale), null, 2)}\n`,
+  );
 } else if (mode === '--apply') {
   const [locale, file] = rest;
   if (!locale || !file) throw new Error('--apply needs <locale> <file.json>');
   const entries = JSON.parse(await fs.readFile(file, 'utf8'));
   const n = await mergeIntoLocale(locale, entries);
-  console.log(`Merged ${Object.keys(entries).length} keys into ${n} ${locale}/ file(s)`);
+  console.log(
+    `Merged ${Object.keys(entries).length} keys into ${n} ${locale}/ file(s)`,
+  );
 } else if (mode === 'en') {
   const missing = await missingFor('en');
   const n = await mergeIntoLocale('en', missing);
-  console.log(`Wrote ${Object.keys(missing).length} EN keys across ${n} file(s)`);
+  console.log(
+    `Wrote ${Object.keys(missing).length} EN keys across ${n} file(s)`,
+  );
 } else {
-  console.error('Usage: i18n-fill.js en | --report <locale> | --apply <locale> <file.json>');
+  console.error(
+    'Usage: i18n-fill.js en | --report <locale> | --apply <locale> <file.json>',
+  );
   process.exit(1);
 }

@@ -10,7 +10,12 @@ import { norm, normalizeEmail, nowIso } from '../../utils/normalize.js';
 import { withDbGuard } from '../utils/db-guard.js';
 
 /** Valid subscription levels, most → least verbose. */
-export const SUBSCRIPTION_LEVELS = ['watching', 'participating', 'mentions_only', 'mute'];
+export const SUBSCRIPTION_LEVELS = [
+  'watching',
+  'participating',
+  'mentions_only',
+  'mute',
+];
 
 /**
  * Get a user's subscription override for a deck.
@@ -70,7 +75,9 @@ export async function setSubscription(scope, presentationId, userEmail, level) {
         updated_at: now,
       })
       .onConflict((oc) =>
-        oc.columns(['presentation_id', 'user_email']).doUpdateSet({ level, updated_at: now })
+        oc
+          .columns(['presentation_id', 'user_email'])
+          .doUpdateSet({ level, updated_at: now }),
       )
       .execute();
     return { ok: true, level };

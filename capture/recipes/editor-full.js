@@ -52,9 +52,12 @@ export default {
   async action(page) {
     // Make sure the loading skeleton is gone before the shot.
     await page
-      .waitForFunction(() => !document.querySelector('.editor-loading-skeleton'), {
-        timeout: 15_000,
-      })
+      .waitForFunction(
+        () => !document.querySelector('.editor-loading-skeleton'),
+        {
+          timeout: 15_000,
+        },
+      )
       .catch(() => {});
   },
 };

@@ -40,7 +40,10 @@ import { envStr } from '../config/utils.js';
 // If those reach stdout, Claude Desktop sees invalid JSON and disconnects.
 const _origLog = console.log;
 console.log = (...args) => {
-  process.stderr.write(args.map(a => typeof a === 'string' ? a : JSON.stringify(a)).join(' ') + '\n');
+  process.stderr.write(
+    args.map((a) => (typeof a === 'string' ? a : JSON.stringify(a))).join(' ') +
+      '\n',
+  );
 };
 console.info = console.log;
 console.debug = console.log;
@@ -128,7 +131,9 @@ async function main() {
     await initializeStorage();
   } catch (err) {
     process.stderr.write(`[MCP] Storage init failed: ${err.message}\n`);
-    process.stderr.write('[MCP] Continuing with limited functionality (no DB-backed features)\n');
+    process.stderr.write(
+      '[MCP] Continuing with limited functionality (no DB-backed features)\n',
+    );
   }
 
   {
@@ -162,11 +167,15 @@ async function main() {
   registerPrompts(server);
 
   // Log startup to stderr (stdout is for MCP protocol)
-  process.stderr.write('[MCP] Deckyard MCP server starting (stdio transport)\n');
+  process.stderr.write(
+    '[MCP] Deckyard MCP server starting (stdio transport)\n',
+  );
   if (defaultOwnerEmail) {
     process.stderr.write(`[MCP] Default owner: ${defaultOwnerEmail}\n`);
   }
-  process.stderr.write(`[MCP] Registered ${server.tools.size} tools, ${server.prompts.size} prompts\n`);
+  process.stderr.write(
+    `[MCP] Registered ${server.tools.size} tools, ${server.prompts.size} prompts\n`,
+  );
 
   // Run stdio transport
   runStdio(server);

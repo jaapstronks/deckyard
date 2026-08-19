@@ -50,7 +50,9 @@ export function buildDataSourceIndicator({
     const isFrozen = ds.refresh?.mode === 'frozen';
     const providerLabel = PROVIDER_LABELS[ds.provider] || ds.provider;
 
-    bar.classList.add(isFrozen ? 'data-source-bar--frozen' : 'data-source-bar--live');
+    bar.classList.add(
+      isFrozen ? 'data-source-bar--frozen' : 'data-source-bar--live',
+    );
 
     // Status indicator
     const statusDot = h('span', {
@@ -60,12 +62,19 @@ export function buildDataSourceIndicator({
       class: 'data-source-status',
       text: isFrozen
         ? t('dataSource.snapshot', 'Snapshot from {date}', {
-            date: ds.lastSync ? new Date(ds.lastSync).toLocaleDateString() : '—',
+            date: ds.lastSync
+              ? new Date(ds.lastSync).toLocaleDateString()
+              : '—',
           })
-        : t('dataSource.connected', 'Connected to {provider}', { provider: providerLabel }),
+        : t('dataSource.connected', 'Connected to {provider}', {
+            provider: providerLabel,
+          }),
     });
 
-    const statusRow = h('div', { class: 'data-source-status-row' }, [statusDot, statusText]);
+    const statusRow = h('div', { class: 'data-source-status-row' }, [
+      statusDot,
+      statusText,
+    ]);
     bar.append(statusRow);
 
     // Actions row
@@ -154,7 +163,10 @@ export function buildDataSourceIndicator({
     const connectBtn = h('button', {
       class: 'btn btn-xs btn-secondary',
       text: t('dataSource.connect', 'Connect data source'),
-      title: t('dataSource.connect.title', 'Bind this slide to live data from Notion, CSV, or an API'),
+      title: t(
+        'dataSource.connect.title',
+        'Bind this slide to live data from Notion, CSV, or an API',
+      ),
       onclick: () => {
         openDataSourceModal({
           h,
@@ -187,17 +199,19 @@ function openDataSourceModal({
   openOverlayClosers,
 } = {}) {
   // Lazy import to avoid circular deps
-  import('./data-source-modal.js').then(({ openDataSourceConfigModal }) => {
-    openDataSourceConfigModal({
-      h,
-      root,
-      slide,
-      api,
-      markDirty,
-      editorState,
-      openOverlayClosers,
+  import('./data-source-modal.js')
+    .then(({ openDataSourceConfigModal }) => {
+      openDataSourceConfigModal({
+        h,
+        root,
+        slide,
+        api,
+        markDirty,
+        editorState,
+        openOverlayClosers,
+      });
+    })
+    .catch((err) => {
+      console.error('Failed to load data source modal:', err);
     });
-  }).catch(err => {
-    console.error('Failed to load data source modal:', err);
-  });
 }

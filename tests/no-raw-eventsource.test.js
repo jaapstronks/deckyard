@@ -62,30 +62,39 @@ test('new EventSource only appears in the canonical helper (+ allowlist)', () =>
     if (rel === CANONICAL_FILE || ALLOWLIST.has(rel)) continue;
     const src = fs.readFileSync(file, 'utf8');
     if (RAW_EVENTSOURCE.test(src)) {
-      violations.push(`${rel}: constructs EventSource directly — use createSSEConnection`);
+      violations.push(
+        `${rel}: constructs EventSource directly — use createSSEConnection`,
+      );
     }
   }
   assert.equal(
     violations.length,
     0,
-    `raw EventSource outside the helper:\n  ${violations.join('\n  ')}`
+    `raw EventSource outside the helper:\n  ${violations.join('\n  ')}`,
   );
 });
 
 test('the canonical helper still owns an EventSource', () => {
   const src = fs.readFileSync(path.join(repoRoot, CANONICAL_FILE), 'utf8');
-  assert.match(src, RAW_EVENTSOURCE, `${CANONICAL_FILE} should construct the EventSource`);
+  assert.match(
+    src,
+    RAW_EVENTSOURCE,
+    `${CANONICAL_FILE} should construct the EventSource`,
+  );
 });
 
 test('every allowlisted file still exists and still constructs one', () => {
   for (const [rel] of ALLOWLIST) {
     const abs = path.join(repoRoot, rel);
-    assert.ok(fs.existsSync(abs), `allowlisted ${rel} no longer exists — update this guard.`);
+    assert.ok(
+      fs.existsSync(abs),
+      `allowlisted ${rel} no longer exists — update this guard.`,
+    );
     const src = fs.readFileSync(abs, 'utf8');
     assert.match(
       src,
       RAW_EVENTSOURCE,
-      `allowlisted ${rel} no longer constructs an EventSource — drop it from the allowlist.`
+      `allowlisted ${rel} no longer constructs an EventSource — drop it from the allowlist.`,
     );
   }
 });

@@ -27,12 +27,12 @@ async function main() {
   let version;
   try {
     const pkg = JSON.parse(
-      await fs.readFile(path.join(srcDir, 'package.json'), 'utf8')
+      await fs.readFile(path.join(srcDir, 'package.json'), 'utf8'),
     );
     version = pkg.version;
   } catch {
     throw new Error(
-      'Could not read node_modules/dompurify/package.json. Did npm install run?'
+      'Could not read node_modules/dompurify/package.json. Did npm install run?',
     );
   }
 
@@ -60,14 +60,14 @@ async function main() {
         files,
       },
       null,
-      2
+      2,
     )}\n`,
-    'utf8'
+    'utf8',
   );
 
   // eslint-disable-next-line no-console
   console.log(
-    `Vendored DOMPurify ${version} to ${path.relative(repoRoot, destDir)}`
+    `Vendored DOMPurify ${version} to ${path.relative(repoRoot, destDir)}`,
   );
 }
 

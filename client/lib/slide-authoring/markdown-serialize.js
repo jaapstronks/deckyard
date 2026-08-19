@@ -54,8 +54,22 @@ export function markdownNeedsModal(markdown) {
 }
 
 const BLOCK_TAGS = new Set([
-  'P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6',
-  'UL', 'OL', 'LI', 'PRE', 'TABLE', 'BLOCKQUOTE', 'SECTION', 'ARTICLE',
+  'P',
+  'DIV',
+  'H1',
+  'H2',
+  'H3',
+  'H4',
+  'H5',
+  'H6',
+  'UL',
+  'OL',
+  'LI',
+  'PRE',
+  'TABLE',
+  'BLOCKQUOTE',
+  'SECTION',
+  'ARTICLE',
 ]);
 
 /** Collapse runs of whitespace the way the renderer's paragraph pass does. */
@@ -134,7 +148,10 @@ function serializeList(listEl, depth, lines) {
     let text = '';
     const nested = [];
     for (const child of li.childNodes) {
-      if (child.nodeType === 1 && (child.tagName === 'UL' || child.tagName === 'OL')) {
+      if (
+        child.nodeType === 1 &&
+        (child.tagName === 'UL' || child.tagName === 'OL')
+      ) {
         nested.push(child);
       } else if (child.nodeType === 1 && child.tagName === 'P') {
         // contenteditable can wrap li text in a <p>; unwrap it.
@@ -152,10 +169,10 @@ function serializeList(listEl, depth, lines) {
 /** Serialize a rendered pipe table (.md-table markup) back to markdown. */
 function serializeTable(tableEl, blocks) {
   const headCells = [...tableEl.querySelectorAll('thead th')].map((th) =>
-    serializeInline(th).trim()
+    serializeInline(th).trim(),
   );
   const bodyRows = [...tableEl.querySelectorAll('tbody tr')].map((tr) =>
-    [...tr.children].map((td) => serializeInline(td).trim())
+    [...tr.children].map((td) => serializeInline(td).trim()),
   );
   if (!headCells.length) return;
   const lines = [
@@ -245,7 +262,10 @@ function serializeBlocks(root, blocks) {
       flush();
       continue;
     }
-    if (BLOCK_TAGS.has(child.tagName) || child.classList.contains('md-math-block')) {
+    if (
+      BLOCK_TAGS.has(child.tagName) ||
+      child.classList.contains('md-math-block')
+    ) {
       flush();
       serializeBlockElement(child, blocks);
       continue;
@@ -279,7 +299,11 @@ export function serializeMarkdownDom(root) {
  * @param {Document} [doc] - document to parse with (defaults to global)
  * @returns {boolean}
  */
-export function canInlineEditMarkdown(raw, markdownToSafeHtml, doc = globalThis.document) {
+export function canInlineEditMarkdown(
+  raw,
+  markdownToSafeHtml,
+  doc = globalThis.document,
+) {
   const s = String(raw || '');
   if (!s.trim()) return true; // empty: nothing to lose
   if (markdownNeedsModal(s)) return false;

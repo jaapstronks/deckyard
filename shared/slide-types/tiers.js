@@ -162,7 +162,7 @@ export const DECLARED_SLIDE_TYPES = Object.freeze({
 
 /** @type {ReadonlyArray<string>} */
 export const DECLARED_SLIDE_TYPE_NAMES = Object.freeze(
-  Object.keys(DECLARED_SLIDE_TYPES)
+  Object.keys(DECLARED_SLIDE_TYPES),
 );
 
 /**
@@ -236,5 +236,7 @@ export function coreProfileContract(name, def) {
   const declared = slideFallback(def);
   if (declared) return declared;
   const reserved = DECLARED_SLIDE_TYPES[name];
-  return reserved && isCoreProfileType(reserved.fallback) ? reserved.fallback : '';
+  return reserved && isCoreProfileType(reserved.fallback)
+    ? reserved.fallback
+    : '';
 }

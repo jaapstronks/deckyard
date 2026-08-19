@@ -44,7 +44,10 @@ describe('mergeSlideTypes', () => {
     });
     assert.equal(merged['title-slide'].label, 'Fork title');
     assert.equal(merged['title-slide'].override, true);
-    assert.ok(log.mock.calls.length >= 1, 'an intentional-override note is logged');
+    assert.ok(
+      log.mock.calls.length >= 1,
+      'an intentional-override note is logged',
+    );
     log.mock.restore();
   });
 

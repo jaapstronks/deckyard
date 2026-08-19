@@ -19,7 +19,13 @@ import {
   setSessionCookie,
   verifyLoginAsync,
 } from '../../auth/auth.js';
-import { rateLimited, serveJson, unauthorized, requireJsonBody, withErrorHandler } from '../../utils/http.js';
+import {
+  rateLimited,
+  serveJson,
+  unauthorized,
+  requireJsonBody,
+  withErrorHandler,
+} from '../../utils/http.js';
 import { getString } from '../../utils/request-validators.js';
 import { t } from '../../i18n/index.js';
 import { getFeatureFlags } from '../../config/flags-snapshot.js';
@@ -49,8 +55,7 @@ async function handleAuthConfig({ res }) {
 
 /** POST /api/auth/dev-login */
 async function handleDevLogin({ req, res }) {
-  if (!devAuthBypassEnabled())
-    return unauthorized(res, 'Dev bypass disabled');
+  if (!devAuthBypassEnabled()) return unauthorized(res, 'Dev bypass disabled');
   // If auth isn't enabled, /api/auth/me already returns an admin user, but
   // setting a session cookie makes the client path identical.
   if (authEnabled()) setSessionCookie(req, res, devBypassUser());
@@ -90,8 +95,8 @@ async function handleLogin({ repoRoot, req, res }) {
       10,
       t(
         'api.error.tooManyLoginAttempts',
-        'Too many login attempts. Please try again later.'
-      )
+        'Too many login attempts. Please try again later.',
+      ),
     );
     return true;
   }
@@ -109,7 +114,10 @@ async function handleLogin({ repoRoot, req, res }) {
   });
 
   if (!user)
-    return unauthorized(res, t('api.error.invalidEmailPassword', 'Invalid email/password'));
+    return unauthorized(
+      res,
+      t('api.error.invalidEmailPassword', 'Invalid email/password'),
+    );
   setSessionCookie(req, res, user);
   serveJson(res, 200, {
     user: {
@@ -144,14 +152,16 @@ async function handleAuthMe({ repoRoot, req, res }) {
   const u = sandboxEnabled()
     ? ensureSandboxUser(req, res)
     : await getUserFromRequestAsync(req, ctx);
-  if (!sandboxEnabled() && !u && authEnabled())
-    return unauthorized(res);
+  if (!sandboxEnabled() && !u && authEnabled()) return unauthorized(res);
   let outUser = u;
   try {
     if (u?.email) {
       const s = await getUserSettings(
-        crossOrganizationScope(repoRoot, 'login profile read: the session cookie identifies the user'),
-        u.email
+        crossOrganizationScope(
+          repoRoot,
+          'login profile read: the session cookie identifies the user',
+        ),
+        u.email,
       );
       const name = String(s?.profile?.name || '').trim();
       if (name) outUser = { ...u, name };

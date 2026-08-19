@@ -11,21 +11,23 @@
 Compared against run `2026-07-18_16-57-07` (prompt version `218d32ce56fc`).
 
 Prompt files changed since then:
+
 - `server/utils/ai/generate-outline.js`
 
 ## Scores by dimension
 
-| Dimension | Score | vs. previous |
-| --- | ---: | ---: |
-| Coverage | 4.00 | ▼ -0.67 |
-| Structure | 4.33 | ▼ -0.34 |
-| Slide economy | 3.67 | · 0.00 |
-| Faithfulness | 4.33 | ▼ -0.34 |
-| Presentability | 4.00 | · 0.00 |
-| Closeness to human deck | 3.00 | ▼ -1.00 |
-| **Overall** | **4.07** | ▼ -0.27 |
+| Dimension               |    Score | vs. previous |
+| ----------------------- | -------: | -----------: |
+| Coverage                |     4.00 |      ▼ -0.67 |
+| Structure               |     4.33 |      ▼ -0.34 |
+| Slide economy           |     3.67 |       · 0.00 |
+| Faithfulness            |     4.33 |      ▼ -0.34 |
+| Presentability          |     4.00 |       · 0.00 |
+| Closeness to human deck |     3.00 |      ▼ -1.00 |
+| **Overall**             | **4.07** |      ▼ -0.27 |
 
 > **Regression warning.** These dimensions moved down:
+>
 > - Coverage (-0.67)
 > - Structure (-0.34)
 > - Faithfulness (-0.34)
@@ -33,11 +35,11 @@ Prompt files changed since then:
 
 ## Per-case results
 
-| Case | Cat | Slides | Words/slide | Walls | Number support | Coverage | Mean |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| asml-q4-2024 | A | 13 | 35 | 0 | 100% | 4/5 | 4.00 |
-| cbs-persbericht-criminaliteit | B | 11 | 33.09 | 0 | 93% | 4/5 | 4.20 |
-| cloudflare-nov-2025-outage | B | 21 | 51.95 | 4 | 100% | 4/5 | 3.80 |
+| Case                          | Cat | Slides | Words/slide | Walls | Number support | Coverage | Mean |
+| ----------------------------- | --- | -----: | ----------: | ----: | -------------: | -------: | ---: |
+| asml-q4-2024                  | A   |     13 |          35 |     0 |           100% |      4/5 | 4.00 |
+| cbs-persbericht-criminaliteit | B   |     11 |       33.09 |     0 |            93% |      4/5 | 4.20 |
+| cloudflare-nov-2025-outage    | B   |     21 |       51.95 |     4 |           100% |      4/5 | 3.80 |
 
 ## Weakest dimensions — judge rationales
 
@@ -67,8 +69,8 @@ These rationales are the input for the next prompt change.
 
 ## Cost breakdown
 
-| Category | Model | Calls | Input | Output | Cache write | Cache read | USD |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| generation | `gpt-5.5` | 12 | 143312 | 37005 | 0 | 0 | $1.8267 |
-| judge | `claude-opus-4-8` | 3 | 45231 | 6652 | 0 | 0 | $0.3925 |
-| **Total** | | 15 | 188543 | 43657 | 0 | 0 | **$2.2192** |
+| Category   | Model             | Calls |  Input | Output | Cache write | Cache read |         USD |
+| ---------- | ----------------- | ----: | -----: | -----: | ----------: | ---------: | ----------: |
+| generation | `gpt-5.5`         |    12 | 143312 |  37005 |           0 |          0 |     $1.8267 |
+| judge      | `claude-opus-4-8` |     3 |  45231 |   6652 |           0 |          0 |     $0.3925 |
+| **Total**  |                   |    15 | 188543 |  43657 |           0 |          0 | **$2.2192** |

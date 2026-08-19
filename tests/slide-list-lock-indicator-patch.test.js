@@ -95,24 +95,27 @@ test('a lock takes: the badge appears on that row without rebuilding the list', 
   assert.equal(
     slideListEl.querySelectorAll('.slide-lock-indicator').length,
     1,
-    'exactly one badge, on one row'
+    'exactly one badge, on one row',
   );
-  assert.ok(target.querySelector('.slide-lock-indicator'), 'badge sits on the locked row');
+  assert.ok(
+    target.querySelector('.slide-lock-indicator'),
+    'badge sits on the locked row',
+  );
   assert.ok(
     target.querySelector('.slide-lock-indicator-collapsed'),
-    'the collapsed-rail twin appears too'
+    'the collapsed-rail twin appears too',
   );
   assert.match(
     target.querySelector('.slide-lock-indicator').title,
     /Other/,
-    'the holder is named in the tooltip'
+    'the holder is named in the tooltip',
   );
 
   const rowsAfter = [...slideListEl.querySelectorAll('.list-item')];
   assert.deepEqual(
     rowsAfter.map((el, i) => el === rowsBefore[i]),
     rowsAfter.map(() => true),
-    'the existing row elements survive — the list was patched, not rebuilt'
+    'the existing row elements survive — the list was patched, not rebuilt',
   );
 
   detach();
@@ -133,15 +136,21 @@ test('a lock releases: the stale badge is cleared even though the caller only kn
   assert.equal(
     slideListEl.querySelectorAll('.slide-lock-indicator').length,
     0,
-    'the badge disappears'
+    'the badge disappears',
   );
   assert.equal(
     slideListEl.querySelectorAll('.slide-lock-indicator-collapsed').length,
     0,
-    'and so does the collapsed-rail twin'
+    'and so does the collapsed-rail twin',
   );
-  assert.ok(!target.classList.contains('is-locked-by-other'), 'the row flag is cleared');
-  assert.ok(target.querySelector('.thumb.thumb-mini .slide'), 'the thumbnail is intact');
+  assert.ok(
+    !target.classList.contains('is-locked-by-other'),
+    'the row flag is cleared',
+  );
+  assert.ok(
+    target.querySelector('.thumb.thumb-mini .slide'),
+    'the thumbnail is intact',
+  );
 
   detach();
 });
@@ -154,7 +163,10 @@ test('a legitimate full rerender still paints the badge', () => {
 
   const target = row(slideListEl, 's3');
   assert.ok(target.classList.contains('is-locked-by-other'));
-  assert.ok(target.querySelector('.slide-lock-indicator'), 'full render uses the same helper');
+  assert.ok(
+    target.querySelector('.slide-lock-indicator'),
+    'full render uses the same helper',
+  );
 
   detach();
 });

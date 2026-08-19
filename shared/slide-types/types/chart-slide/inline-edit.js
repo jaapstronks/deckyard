@@ -13,16 +13,22 @@ import { HEADER_TEXT } from '../../inline-edit-common.js';
 
 /** @type {Object} InlineDescriptor for chart-slide. */
 export const inlineEdit = {
-    // Clicking the chart area opens the markdown data editor (the renderer tags
-    // `.chart-area` with data-inline-field="data"). Chart type / labels / legend
-    // stay in the side form.
-    ghosts: [
-      { field: 'subheading', anchors: [{ sel: '.chart-title-row', pos: 'after' }] },
-      { field: 'bottomSubheading', anchors: [{ sel: '.slide-inner', pos: 'append', chip: 'bottom-start' }] },
-    ],
-    // 'data' stays: the form's chart-data editor has type-aware extras.
-    formText: HEADER_TEXT,
-  };
+  // Clicking the chart area opens the markdown data editor (the renderer tags
+  // `.chart-area` with data-inline-field="data"). Chart type / labels / legend
+  // stay in the side form.
+  ghosts: [
+    {
+      field: 'subheading',
+      anchors: [{ sel: '.chart-title-row', pos: 'after' }],
+    },
+    {
+      field: 'bottomSubheading',
+      anchors: [{ sel: '.slide-inner', pos: 'append', chip: 'bottom-start' }],
+    },
+  ],
+  // 'data' stays: the form's chart-data editor has type-aware extras.
+  formText: HEADER_TEXT,
+};
 
 /**
  * Fields the inspector keeps rendering even though the inline layer covers the

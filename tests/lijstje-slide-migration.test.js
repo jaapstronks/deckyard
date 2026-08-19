@@ -34,7 +34,11 @@ describe('renameSlideTypeDeep', () => {
     const slide = {
       id: 's1',
       type: OLD_TYPE,
-      content: { title: 'Lijstje', items: [{ text: 'een' }, { text: 'twee' }], variant: 'numbers' },
+      content: {
+        title: 'Lijstje',
+        items: [{ text: 'een' }, { text: 'twee' }],
+        variant: 'numbers',
+      },
       notes: 'blijft staan',
     };
     const { value, count } = renameSlideTypeDeep(slide);
@@ -50,7 +54,11 @@ describe('renameSlideTypeDeep', () => {
     const once = renameSlideTypeDeep({ type: OLD_TYPE, content: {} });
     const twice = renameSlideTypeDeep(once.value);
     assert.equal(twice.count, 0);
-    assert.equal(twice.value, once.value, 'unchanged input is returned by identity');
+    assert.equal(
+      twice.value,
+      once.value,
+      'unchanged input is returned by identity',
+    );
   });
 
   it('reaches slides nested in i18n versions and version snapshots', () => {
@@ -60,7 +68,9 @@ describe('renameSlideTypeDeep', () => {
       i18n: {
         dominant: 'nl',
         versions: {
-          'en-GB': { slides: [{ id: 's1', type: OLD_TYPE, content: { title: 'List' } }] },
+          'en-GB': {
+            slides: [{ id: 's1', type: OLD_TYPE, content: { title: 'List' } }],
+          },
         },
       },
     };
@@ -68,11 +78,19 @@ describe('renameSlideTypeDeep', () => {
     const { value, count } = renameSlideTypeDeep(snapshot);
     assert.equal(count, 2);
     assert.equal(value.presentation.slides[0].type, NEW_TYPE);
-    assert.equal(value.presentation.i18n.versions['en-GB'].slides[0].type, NEW_TYPE);
+    assert.equal(
+      value.presentation.i18n.versions['en-GB'].slides[0].type,
+      NEW_TYPE,
+    );
   });
 
   it('rewrites slideType, the key the slide library stores', () => {
-    const item = { id: 'i1', name: 'Mijn lijstje', slideType: OLD_TYPE, content: { title: 'x' } };
+    const item = {
+      id: 'i1',
+      name: 'Mijn lijstje',
+      slideType: OLD_TYPE,
+      content: { title: 'x' },
+    };
     const { value, count } = renameSlideTypeDeep(item);
     assert.equal(count, 1);
     assert.equal(value.slideType, NEW_TYPE);
@@ -99,45 +117,70 @@ describe('migrateFileStore', () => {
   async function seed() {
     const root = await mkdtemp(path.join(tmpdir(), 'deckyard-lijstje-'));
     await mkdir(path.join(root, 'presentations'), { recursive: true });
-    await mkdir(path.join(root, 'presentation-versions', 'd1'), { recursive: true });
-    await mkdir(path.join(root, 'slide-library', 'personal'), { recursive: true });
+    await mkdir(path.join(root, 'presentation-versions', 'd1'), {
+      recursive: true,
+    });
+    await mkdir(path.join(root, 'slide-library', 'personal'), {
+      recursive: true,
+    });
 
     const deck = {
       id: 'd1',
       title: 'Testdeck',
       slides: [
         { id: 's1', type: 'title-slide', content: { title: 'Hallo' } },
-        { id: 's2', type: OLD_TYPE, content: { title: 'Lijstje', items: [{ text: 'een' }] } },
+        {
+          id: 's2',
+          type: OLD_TYPE,
+          content: { title: 'Lijstje', items: [{ text: 'een' }] },
+        },
       ],
       i18n: {
         dominant: 'nl',
-        versions: { 'en-GB': { slides: [{ id: 's2', type: OLD_TYPE, content: { title: 'List' } }] } },
+        versions: {
+          'en-GB': {
+            slides: [{ id: 's2', type: OLD_TYPE, content: { title: 'List' } }],
+          },
+        },
       },
     };
     await writeFile(
       path.join(root, 'presentations', 'd1.json'),
       JSON.stringify(deck, null, 2),
-      'utf8'
+      'utf8',
     );
     await writeFile(
       path.join(root, 'presentation-versions', 'd1', 'v1.json'),
-      JSON.stringify({ id: 'v1', presentationId: 'd1', presentation: deck }, null, 2),
-      'utf8'
+      JSON.stringify(
+        { id: 'v1', presentationId: 'd1', presentation: deck },
+        null,
+        2,
+      ),
+      'utf8',
     );
     await writeFile(
       path.join(root, 'slide-library', 'personal', 'abc.json'),
       JSON.stringify(
-        { v: 1, items: [{ id: 'i1', name: 'Lijstje', slideType: OLD_TYPE, content: {} }] },
+        {
+          v: 1,
+          items: [
+            { id: 'i1', name: 'Lijstje', slideType: OLD_TYPE, content: {} },
+          ],
+        },
         null,
-        2
+        2,
       ),
-      'utf8'
+      'utf8',
     );
     // A deck without the old type must not be rewritten at all.
     await writeFile(
       path.join(root, 'presentations', 'd2.json'),
-      JSON.stringify({ id: 'd2', slides: [{ id: 's1', type: 'list-slide', content: {} }] }, null, 2),
-      'utf8'
+      JSON.stringify(
+        { id: 'd2', slides: [{ id: 's1', type: 'list-slide', content: {} }] },
+        null,
+        2,
+      ),
+      'utf8',
     );
     return root;
   }
@@ -151,8 +194,16 @@ describe('migrateFileStore', () => {
 
     const stats = await migrateFileStore(root, { dryRun: true });
     assert.equal(stats.filesModified, 3, 'deck + version + library item');
-    assert.equal(stats.slidesRenamed, 5, '2 in the deck, 2 in its snapshot, 1 library item');
-    assert.equal(await readFile(deckPath, 'utf8'), before, 'dry run must not write');
+    assert.equal(
+      stats.slidesRenamed,
+      5,
+      '2 in the deck, 2 in its snapshot, 1 library item',
+    );
+    assert.equal(
+      await readFile(deckPath, 'utf8'),
+      before,
+      'dry run must not write',
+    );
   });
 
   it('the real run rewrites every surface, losslessly', async () => {
@@ -163,14 +214,21 @@ describe('migrateFileStore', () => {
 
     const deck = await readJson(path.join(root, 'presentations', 'd1.json'));
     assert.equal(deck.slides[1].type, NEW_TYPE);
-    assert.deepEqual(deck.slides[1].content, { title: 'Lijstje', items: [{ text: 'een' }] });
+    assert.deepEqual(deck.slides[1].content, {
+      title: 'Lijstje',
+      items: [{ text: 'een' }],
+    });
     assert.equal(deck.slides[0].type, 'title-slide', 'other slides untouched');
     assert.equal(deck.i18n.versions['en-GB'].slides[0].type, NEW_TYPE);
 
-    const version = await readJson(path.join(root, 'presentation-versions', 'd1', 'v1.json'));
+    const version = await readJson(
+      path.join(root, 'presentation-versions', 'd1', 'v1.json'),
+    );
     assert.equal(version.presentation.slides[1].type, NEW_TYPE);
 
-    const library = await readJson(path.join(root, 'slide-library', 'personal', 'abc.json'));
+    const library = await readJson(
+      path.join(root, 'slide-library', 'personal', 'abc.json'),
+    );
     assert.equal(library.items[0].slideType, NEW_TYPE);
   });
 

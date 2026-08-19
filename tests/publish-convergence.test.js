@@ -24,7 +24,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
 
-process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
+process.env.AUTH_SECRET = ['deckyard', 'test', 'auth']
+  .join('-')
+  .padEnd(40, '0');
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 process.env.STORAGE_MODE = 'postgres';
 delete process.env.SANDBOX_MODE;
@@ -42,8 +44,10 @@ const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage } = await import('../server/storage/lifecycle.js');
 const { testScope } = await import('./helpers/storage-scope.js');
 const { writeAppSettings } = await import('../server/storage/settings.js');
-const { handlePublishing } = await import('../server/routes/public-api/v1/publishing.js');
-const { publishPresentation } = await import('../server/services/publish-presentation.js');
+const { handlePublishing } =
+  await import('../server/routes/public-api/v1/publishing.js');
+const { publishPresentation } =
+  await import('../server/services/publish-presentation.js');
 const { isAppError, getStatusCode } = await import('../server/utils/errors.js');
 
 function deckRow({ id, owner }) {
@@ -100,12 +104,16 @@ function makeV1Ctx(method, deckId, { permissions = ['read', 'write'] } = {}) {
     statusCode: null,
     body: null,
     headers: {},
-    setHeader(name, value) { this.headers[name] = value; },
+    setHeader(name, value) {
+      this.headers[name] = value;
+    },
     writeHead(status, headers) {
       this.statusCode = status;
       Object.assign(this.headers, headers);
     },
-    end(payload) { this.body = payload ? JSON.parse(payload) : null; },
+    end(payload) {
+      this.body = payload ? JSON.parse(payload) : null;
+    },
   };
 
   return {
@@ -113,9 +121,24 @@ function makeV1Ctx(method, deckId, { permissions = ['read', 'write'] } = {}) {
     res,
     url: new URL(`http://localhost/api/v1/presentations/${deckId}/publish`),
     repoRoot: REPO_ROOT,
-    storageScope: { repoRoot: REPO_ROOT, organizationId: ORG, actorEmail: KEY_OWNER },
-    apiKey: { id: 'key-1', tier: 'free', ownerEmail: KEY_OWNER, permissions, organizationId: ORG },
-    authedUser: { id: null, email: KEY_OWNER, role: 'user', organizationId: ORG },
+    storageScope: {
+      repoRoot: REPO_ROOT,
+      organizationId: ORG,
+      actorEmail: KEY_OWNER,
+    },
+    apiKey: {
+      id: 'key-1',
+      tier: 'free',
+      ownerEmail: KEY_OWNER,
+      permissions,
+      organizationId: ORG,
+    },
+    authedUser: {
+      id: null,
+      email: KEY_OWNER,
+      role: 'user',
+      organizationId: ORG,
+    },
   };
 }
 
@@ -134,19 +157,20 @@ test('core: publishPresentation refuses in sandbox mode with a 403', async () =>
   process.env.SANDBOX_MODE = 'true';
   try {
     await assert.rejects(
-      () => publishPresentation({
-        repoRoot: REPO_ROOT,
-        storageScope: testScope(REPO_ROOT, { actorEmail: KEY_OWNER }),
-        req: { headers: {} },
-        pres,
-        actor: { email: KEY_OWNER },
-      }),
+      () =>
+        publishPresentation({
+          repoRoot: REPO_ROOT,
+          storageScope: testScope(REPO_ROOT, { actorEmail: KEY_OWNER }),
+          req: { headers: {} },
+          pres,
+          actor: { email: KEY_OWNER },
+        }),
       (err) => {
         assert.ok(isAppError(err), 'is an AppError');
         assert.equal(getStatusCode(err), 403);
         assert.equal(err.code, 'forbidden');
         return true;
-      }
+      },
     );
   } finally {
     delete process.env.SANDBOX_MODE;
@@ -171,12 +195,22 @@ test('core: publishPresentation writes the entry, the deck column, and the descr
   assert.ok(result.publishId, 'a publish id is minted');
   assert.equal(result.slug, 'title-of-deck-to-publish');
   assert.equal(result.path, `/p/${result.publishId}-${result.slug}`);
-  assert.equal(result.ogImageUrl, '/media/first-slide.jpg', 'fallback ladder: first slide image');
+  assert.equal(
+    result.ogImageUrl,
+    '/media/first-slide.jpg',
+    'fallback ladder: first slide image',
+  );
 
-  const entry = db.__tables.published_presentations.find((r) => r.presentation_id === DECK_ID);
+  const entry = db.__tables.published_presentations.find(
+    (r) => r.presentation_id === DECK_ID,
+  );
   assert.ok(entry, 'a publish entry row was written');
   assert.equal(entry.id, result.publishId);
-  assert.equal(storedDeck(db, DECK_ID).published.id, result.publishId, 'deck carries the publish state');
+  assert.equal(
+    storedDeck(db, DECK_ID).published.id,
+    result.publishId,
+    'deck carries the publish state',
+  );
 });
 
 // ---------------------------------------------------------------------------
@@ -195,7 +229,11 @@ test('v1: POST /publish is refused with 403 in sandbox mode and does not publish
   assert.equal(ctx.res.statusCode, 403);
   // The v1 envelope: a machine code, no internal `ok:false`.
   assert.equal(ctx.res.body.error, 'forbidden');
-  assert.equal(storedDeck(db, DECK_ID).published, null, 'the deck stays unpublished');
+  assert.equal(
+    storedDeck(db, DECK_ID).published,
+    null,
+    'the deck stays unpublished',
+  );
   assert.equal(db.__tables.published_presentations.length, 0);
 });
 

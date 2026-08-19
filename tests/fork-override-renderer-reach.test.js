@@ -38,8 +38,7 @@ import {
 const OVERRIDE = 'payoff-slide';
 
 /** True only when the override fork fixture has been loaded into the registry. */
-const forkOverrideLoaded =
-  OVERRIDDEN_CORE_SLIDE_TYPE_NAMES.includes(OVERRIDE);
+const forkOverrideLoaded = OVERRIDDEN_CORE_SLIDE_TYPE_NAMES.includes(OVERRIDE);
 const liveSkip = forkOverrideLoaded
   ? false
   : 'override fork fixture not loaded — this half runs in the `test-fork` CI ' +
@@ -56,19 +55,19 @@ test('overriddenCoreNames flags an override:true collision, nothing else', () =>
   assert.deepEqual(
     overriddenCoreNames(core, { 'title-slide': { override: true } }),
     ['title-slide'],
-    'a core name shadowed with override:true is an override'
+    'a core name shadowed with override:true is an override',
   );
   assert.deepEqual(
     overriddenCoreNames(core, { 'content-slide': {} }),
     [],
     'a shadow WITHOUT override:true is refused by mergeSlideTypes, so it is not ' +
-      'an override here either'
+      'an override here either',
   );
   assert.deepEqual(
     overriddenCoreNames(core, { 'acme-hero': { override: true } }),
     [],
     'a NEW name is additive, not an override — it is unbundled and already ' +
-      'server-rendered'
+      'server-rendered',
   );
 });
 
@@ -97,12 +96,12 @@ test('needsServerRender routes a listed override to the server', () => {
     assert.equal(
       needsServerRender('title-slide'),
       true,
-      'a bundled core name the server overrides is still drawn by the server'
+      'a bundled core name the server overrides is still drawn by the server',
     );
     assert.equal(
       needsServerRender('content-slide'),
       false,
-      'a core name the fork did not override stays on the client'
+      'a core name the fork did not override stays on the client',
     );
   } finally {
     if (had) globalThis.window = prev;
@@ -138,19 +137,19 @@ test(
     // browser is told to fetch it rather than draw core's markup.
     assert.ok(
       OVERRIDDEN_CORE_SLIDE_TYPE_NAMES.includes(OVERRIDE),
-      `${OVERRIDE} must be flagged as a fork override`
+      `${OVERRIDE} must be flagged as a fork override`,
     );
     const markup = SLIDE_TYPES[OVERRIDE].renderHtml({}, { type: OVERRIDE }, {});
     assert.match(
       markup,
       /fork-payoff/,
       'server-side, the override renders the FORK markup — the same string every ' +
-        'client context now receives once it routes through server rendering'
+        'client context now receives once it routes through server rendering',
     );
     assert.doesNotMatch(
       markup,
       /slide-payoff\b/,
-      "core's payoff markup must be gone: this is a replacement, not an addition"
+      "core's payoff markup must be gone: this is a replacement, not an addition",
     );
-  }
+  },
 );

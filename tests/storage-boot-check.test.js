@@ -58,7 +58,8 @@ const cleanup = [];
 afterEach(async () => {
   __setTestDb(null);
   delete process.env.STORAGE_MODE;
-  while (cleanup.length) await fs.rm(cleanup.pop(), { recursive: true, force: true });
+  while (cleanup.length)
+    await fs.rm(cleanup.pop(), { recursive: true, force: true });
 });
 
 test('empty database plus decks on disk refuses the boot with the import fix', async () => {
@@ -71,7 +72,11 @@ test('empty database plus decks on disk refuses the boot with the import fix', a
   assert.ok(err, 'expected the boot to be refused');
   assert.match(err, /2 decks/);
   assert.match(err, /db:import/, 'must name the import command');
-  assert.match(err, /removed in 1\.x/, 'must say the file backend is gone, not an option');
+  assert.match(
+    err,
+    /removed in 1\.x/,
+    'must say the file backend is gone, not an option',
+  );
   assert.match(err, /not been touched/, 'must say the file data is left alone');
 });
 
@@ -111,7 +116,7 @@ test('a database that cannot answer is left to the storage layer', async () => {
   assert.equal(await strandedFileDataError(root), null);
 });
 
-test('no database connection at all is not this guard\'s business', async () => {
+test("no database connection at all is not this guard's business", async () => {
   const root = await makeDataDir({ decks: 2 });
   cleanup.push(root);
   process.env.STORAGE_MODE = 'postgres';

@@ -60,21 +60,21 @@ Custom types live in the `custom_slide_types` table
 (`server/db/migrations/035_custom_slide_types.js`; the `usage` column was added
 in `055_custom_slide_type_usage.js`):
 
-| Column | Type | Notes |
-|--------|------|-------|
-| `organization_id` | uuid | FK → `organizations.id`, `ON DELETE CASCADE`; the tenancy anchor |
-| `slug` | varchar(80) | unique **per organization** (`idx_custom_slide_types_org_slug`) |
-| `label` | varchar(255) | display name |
-| `base_type` | varchar(80) | optional core type it derives from |
-| `fields` | jsonb | field definitions (default `[]`) |
-| `defaults` | jsonb | default field values (default `{}`) |
-| `defaults_by_lang` | jsonb | optional per-language defaults |
-| `template` | text | safe Handlebars-like subset |
-| `css` | text | per-type CSS |
-| `usage` | text | AI usage rules (max `USAGE_MAX_LENGTH`; travels to agents when published) |
-| `is_published` | boolean | default `false`; draft until explicitly published |
-| `sort_order` | integer | display order in picker and settings grid |
-| `created_at` / `created_by` | timestamptz / uuid | audit |
+| Column                      | Type               | Notes                                                                     |
+| --------------------------- | ------------------ | ------------------------------------------------------------------------- |
+| `organization_id`           | uuid               | FK → `organizations.id`, `ON DELETE CASCADE`; the tenancy anchor          |
+| `slug`                      | varchar(80)        | unique **per organization** (`idx_custom_slide_types_org_slug`)           |
+| `label`                     | varchar(255)       | display name                                                              |
+| `base_type`                 | varchar(80)        | optional core type it derives from                                        |
+| `fields`                    | jsonb              | field definitions (default `[]`)                                          |
+| `defaults`                  | jsonb              | default field values (default `{}`)                                       |
+| `defaults_by_lang`          | jsonb              | optional per-language defaults                                            |
+| `template`                  | text               | safe Handlebars-like subset                                               |
+| `css`                       | text               | per-type CSS                                                              |
+| `usage`                     | text               | AI usage rules (max `USAGE_MAX_LENGTH`; travels to agents when published) |
+| `is_published`              | boolean            | default `false`; draft until explicitly published                         |
+| `sort_order`                | integer            | display order in picker and settings grid                                 |
+| `created_at` / `created_by` | timestamptz / uuid | audit                                                                     |
 
 The field editor supports all six backend field types: `string`, `markdown`,
 `image`, `images`, `enum`, and `items` (with recursive nesting for `items`

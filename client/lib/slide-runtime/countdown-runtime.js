@@ -82,7 +82,7 @@ function initOne(slideEl, { interactive }) {
     slideEl.dataset.countdownSeconds,
     1,
     60 * 60,
-    300
+    300,
   );
   const sound = slideEl.dataset.countdownSound === '1';
   const autoStart = slideEl.dataset.countdownAutostart === '1';

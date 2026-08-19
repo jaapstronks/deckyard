@@ -2,10 +2,16 @@
  * Lead capture email senders.
  */
 
-import { buildLeadNotificationEmail, buildDataRequestEmail } from '../email-templates/index.js';
+import {
+  buildLeadNotificationEmail,
+  buildDataRequestEmail,
+} from '../email-templates/index.js';
 import { sendEmail, getSenderIdentity } from './core.js';
 import { getUserSettings } from '../../storage/settings.js';
-import { resolveTemplate, interpolatePlaceholders } from '../email-template-resolver.js';
+import {
+  resolveTemplate,
+  interpolatePlaceholders,
+} from '../email-template-resolver.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
 import { createLogger } from '../../utils/logger.js';
 import { envStr } from '../../config/utils.js';
@@ -21,7 +27,10 @@ const log = createLogger('email');
  * @param {Object} options.presentation - Presentation object
  * @param {Object} options.lead - Lead object with name, email, submittedAt
  */
-export async function maybeSendLeadNotification(repoRoot, { presentation, lead }) {
+export async function maybeSendLeadNotification(
+  repoRoot,
+  { presentation, lead },
+) {
   if (!repoRoot || !presentation || !lead) return;
 
   const ownerEmail = presentation.createdBy || presentation.owner;
@@ -29,8 +38,11 @@ export async function maybeSendLeadNotification(repoRoot, { presentation, lead }
 
   // Check if user has lead notifications enabled
   const userSettings = await getUserSettings(
-    crossOrganizationScope(repoRoot ?? null, 'lead notification: owner e-mail preference'),
-    ownerEmail
+    crossOrganizationScope(
+      repoRoot ?? null,
+      'lead notification: owner e-mail preference',
+    ),
+    ownerEmail,
   );
   if (!userSettings?.notifications?.leadEmails) {
     return; // User has disabled lead notifications
@@ -110,7 +122,11 @@ async function sendLeadNotificationEmail({
     resolvedFields: {
       greeting: interpolatePlaceholders(template.fields.greeting, vars, false),
       body: interpolatePlaceholders(template.fields.body, vars, false),
-      buttonLabel: interpolatePlaceholders(template.fields.buttonLabel, vars, false),
+      buttonLabel: interpolatePlaceholders(
+        template.fields.buttonLabel,
+        vars,
+        false,
+      ),
       footer: interpolatePlaceholders(template.fields.footer, vars, false),
     },
     presTitle,
@@ -143,7 +159,13 @@ async function sendLeadNotificationEmail({
  * @param {string|null} [options.repoRoot] - Repository root for sender resolution
  * @returns {Promise<{ok: boolean, status?: number, error?: string, reason?: 'not_configured'|'upstream'}>}
  */
-export async function sendDataRequestVerificationEmail({ email, token, requestOrigin = '', locale = 'en', repoRoot = null }) {
+export async function sendDataRequestVerificationEmail({
+  email,
+  token,
+  requestOrigin = '',
+  locale = 'en',
+  repoRoot = null,
+}) {
   const tr = createTranslator(locale);
   const senderOverride = await getSenderIdentity(repoRoot);
 

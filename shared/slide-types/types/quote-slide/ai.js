@@ -19,25 +19,25 @@
  */
 
 export const ai = {
-    category: 'structural',
-    resolveInPhase1: true,
-    description: `
+  category: 'structural',
+  resolveInPhase1: true,
+  description: `
       A visually prominent slide for a single powerful quote.
       Great for interviews, testimonials, and memorable statements.
       Keep quotes short (1-3 sentences, max ~260 characters).
     `,
-    bestFor: [
-      'Direct quotes from interviews',
-      'Memorable one-liners or punchy statements',
-      'Testimonials or endorsements',
-      'Key takeaways phrased as quotes',
-    ],
-    notFor: [
-      'Long passages (summarize or use content-slide)',
-      'Multiple quotes (use one quote-slide per quote, spaced apart)',
-      'Back-to-back placement (space them out in the deck)',
-    ],
-    varietyRule: 'Never place two quote-slides adjacent to each other',
+  bestFor: [
+    'Direct quotes from interviews',
+    'Memorable one-liners or punchy statements',
+    'Testimonials or endorsements',
+    'Key takeaways phrased as quotes',
+  ],
+  notFor: [
+    'Long passages (summarize or use content-slide)',
+    'Multiple quotes (use one quote-slide per quote, spaced apart)',
+    'Back-to-back placement (space them out in the deck)',
+  ],
+  varietyRule: 'Never place two quote-slides adjacent to each other',
 };
 
 /**

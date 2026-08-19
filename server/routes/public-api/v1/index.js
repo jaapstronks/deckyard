@@ -185,13 +185,18 @@ async function handleSchema(ctx) {
   }
 
   const typeMatch = url.pathname.match(
-    /^\/api\/v1\/schema\/slide-types\/([^/]+)\.json$/
+    /^\/api\/v1\/schema\/slide-types\/([^/]+)\.json$/,
   );
   if (typeMatch) {
     const name = typeMatch[1];
     const def = SLIDE_TYPES[name];
     if (!def) return v1NotFound(res, `Slide type '${name}' not found`);
-    serveJson(res, 200, slideTypeContentSchema(name, def, { withMeta: true }), headers);
+    serveJson(
+      res,
+      200,
+      slideTypeContentSchema(name, def, { withMeta: true }),
+      headers,
+    );
     return true;
   }
 
@@ -213,69 +218,72 @@ async function handleSchema(ctx) {
  * @param {Object} ctx - Request context { repoRoot, req, res, url }
  * @returns {Promise<boolean>} - True if handled
  */
-export const handlePublicApiV1 = withV1ErrorHandler('public-api-v1', async (ctx) => {
-  const { url } = ctx;
+export const handlePublicApiV1 = withV1ErrorHandler(
+  'public-api-v1',
+  async (ctx) => {
+    const { url } = ctx;
 
-  // Only handle /api/v1/ routes
-  if (!url.pathname.startsWith('/api/v1')) {
-    return false;
-  }
+    // Only handle /api/v1/ routes
+    if (!url.pathname.startsWith('/api/v1')) {
+      return false;
+    }
 
-  // Maintenance write gate. The v1 surface runs the shared choke-point itself
-  // (like the MCP tool dispatch) so the refusal answers this surface's own
-  // envelope, not the internal `{ ok:false, … }` one the /api dispatcher emits.
-  try {
-    assertWritable(ctx.req.method);
-  } catch (err) {
-    if (!(err instanceof MaintenanceWriteError)) throw err;
-    return sendV1Error(
-      ctx.res,
-      503,
-      'Deckyard is briefly unavailable for maintenance. Retry after the moment named in Retry-After.',
-      {
-        code: 'maintenance',
-        details: err.state,
-        headers: { 'Retry-After': String(err.retryAfter) },
-      }
-    );
-  }
+    // Maintenance write gate. The v1 surface runs the shared choke-point itself
+    // (like the MCP tool dispatch) so the refusal answers this surface's own
+    // envelope, not the internal `{ ok:false, … }` one the /api dispatcher emits.
+    try {
+      assertWritable(ctx.req.method);
+    } catch (err) {
+      if (!(err instanceof MaintenanceWriteError)) throw err;
+      return sendV1Error(
+        ctx.res,
+        503,
+        'Deckyard is briefly unavailable for maintenance. Retry after the moment named in Retry-After.',
+        {
+          code: 'maintenance',
+          details: err.state,
+          headers: { 'Retry-After': String(err.retryAfter) },
+        },
+      );
+    }
 
-  // API info endpoint doesn't require auth
-  if (url.pathname === '/api/v1/' || url.pathname === '/api/v1') {
-    return handleApiInfo(ctx);
-  }
+    // API info endpoint doesn't require auth
+    if (url.pathname === '/api/v1/' || url.pathname === '/api/v1') {
+      return handleApiInfo(ctx);
+    }
 
-  // Documentation endpoints don't require auth
-  if (await handleDocs(ctx)) return true;
-  if (await handleOpenApiSpec(ctx)) return true;
-  if (await handleSchema(ctx)) return true;
+    // Documentation endpoints don't require auth
+    if (await handleDocs(ctx)) return true;
+    if (await handleOpenApiSpec(ctx)) return true;
+    if (await handleSchema(ctx)) return true;
 
-  // Authenticate API key
-  const authResult = await authenticateApiKey(ctx);
-  if (!authResult.ok) {
-    return true; // Response already sent
-  }
+    // Authenticate API key
+    const authResult = await authenticateApiKey(ctx);
+    if (!authResult.ok) {
+      return true; // Response already sent
+    }
 
-  // Check per-minute rate limit
-  if (!(await checkRequestRateLimit(ctx))) {
-    return true; // Response already sent
-  }
+    // Check per-minute rate limit
+    if (!(await checkRequestRateLimit(ctx))) {
+      return true; // Response already sent
+    }
 
-  // Track the request (don't await - fire and forget)
-  trackRequest(ctx).catch(() => {});
+    // Track the request (don't await - fire and forget)
+    trackRequest(ctx).catch(() => {});
 
-  // Route to feature handlers. Each module entry is wrapped in
-  // withV1ErrorHandler, so a throw from any sub-handler answers the v1
-  // envelope rather than leaking the internal `{ ok:false, … }` shape.
-  if (await handlePublishing(ctx)) return true;
-  if (await handleTranslation(ctx)) return true;
-  if (await handleSlideLibrary(ctx)) return true;
-  if (await handleSlides(ctx)) return true;
-  if (await handleComments(ctx)) return true;
-  if (await handlePresentations(ctx)) return true;
-  if (await handleExports(ctx)) return true;
-  if (await handleAi(ctx)) return true;
-  if (await handleResources(ctx)) return true;
+    // Route to feature handlers. Each module entry is wrapped in
+    // withV1ErrorHandler, so a throw from any sub-handler answers the v1
+    // envelope rather than leaking the internal `{ ok:false, … }` shape.
+    if (await handlePublishing(ctx)) return true;
+    if (await handleTranslation(ctx)) return true;
+    if (await handleSlideLibrary(ctx)) return true;
+    if (await handleSlides(ctx)) return true;
+    if (await handleComments(ctx)) return true;
+    if (await handlePresentations(ctx)) return true;
+    if (await handleExports(ctx)) return true;
+    if (await handleAi(ctx)) return true;
+    if (await handleResources(ctx)) return true;
 
-  return v1NotFound(ctx.res);
-});
+    return v1NotFound(ctx.res);
+  },
+);

@@ -51,7 +51,7 @@ test('an unknown locale falls back to the default, not to Dutch', () => {
     assert.equal(
       slideCopyLang(unknown),
       DEFAULT_SLIDE_COPY_LANG,
-      `${unknown} should fall back to ${DEFAULT_SLIDE_COPY_LANG}`
+      `${unknown} should fall back to ${DEFAULT_SLIDE_COPY_LANG}`,
     );
   }
 });
@@ -66,7 +66,12 @@ test('an absent language falls back to the default', () => {
 test('a prototype key cannot masquerade as a language', () => {
   // `slideCopyLang` looks the tag up in an object literal; `toString` and
   // `constructor` are on its prototype and must not resolve to a copy table.
-  for (const key of ['constructor', 'toString', '__proto__', 'hasOwnProperty']) {
+  for (const key of [
+    'constructor',
+    'toString',
+    '__proto__',
+    'hasOwnProperty',
+  ]) {
     assert.equal(slideCopyLang(key), DEFAULT_SLIDE_COPY_LANG);
   }
 });
@@ -81,13 +86,13 @@ test('resolveDeckLang reads the deck, in the documented order', () => {
   assert.equal(
     resolveDeckLang({ lang: 'nl', i18n: { dominant: 'nl', active: 'en-GB' } }),
     'en-GB',
-    'the active language is the one on screen'
+    'the active language is the one on screen',
   );
   assert.equal(resolveDeckLang({ i18n: { active: 'nl' } }), 'nl');
   assert.equal(
     resolveDeckLang({ lang: 'nl', i18n: { dominant: 'en-GB' } }),
     'en-GB',
-    'dominant answers when no active choice was made'
+    'dominant answers when no active choice was made',
   );
   // A deck with no i18n block at all is the legacy single-language case.
   assert.equal(resolveDeckLang({ lang: 'en-GB' }), 'en-GB');
@@ -119,7 +124,7 @@ test('no slide type carries its own language fallback', () => {
   assert.deepEqual(
     offenders,
     [],
-    `slide types must not re-derive a language: ${offenders.join(', ')}`
+    `slide types must not re-derive a language: ${offenders.join(', ')}`,
   );
 });
 
@@ -144,7 +149,9 @@ test('every renderSlideHtml call site passes a language', () => {
       } else if (entry.name.endsWith('.js')) {
         const src = readFileSync(p, 'utf8');
         // Match the call and its options object, across lines.
-        for (const m of src.matchAll(/renderSlideHtml\(\s*[^,)]+,\s*\{([^}]*)\}/g)) {
+        for (const m of src.matchAll(
+          /renderSlideHtml\(\s*[^,)]+,\s*\{([^}]*)\}/g,
+        )) {
           if (!/\blang\b/.test(m[1])) {
             const line = src.slice(0, m.index).split('\n').length;
             offenders.push(`${p.slice(repoRoot.length + 1)}:${line}`);
@@ -157,7 +164,7 @@ test('every renderSlideHtml call site passes a language', () => {
   assert.deepEqual(
     offenders,
     [],
-    `every renderSlideHtml caller must pass ctx.lang (from resolveDeckLang):\n${offenders.join('\n')}`
+    `every renderSlideHtml caller must pass ctx.lang (from resolveDeckLang):\n${offenders.join('\n')}`,
   );
 });
 
@@ -171,7 +178,7 @@ test('every copy table carries exactly the same keys', () => {
     assert.deepEqual(
       actual,
       expected,
-      `${lang} and ${first} must carry the same keys`
+      `${lang} and ${first} must carry the same keys`,
     );
   }
 });
@@ -200,7 +207,11 @@ test('an en-GB deck shows no Dutch copy on any interactive type', () => {
   for (const type of COPY_TYPES) {
     const def = SLIDE_TYPES[type];
     assert.ok(def, `${type} should exist`);
-    const html = def.renderHtml(def.defaults || {}, { type }, { lang: 'en-GB' });
+    const html = def.renderHtml(
+      def.defaults || {},
+      { type },
+      { lang: 'en-GB' },
+    );
     for (const [key, dutch] of Object.entries(SLIDE_COPY.nl)) {
       const english = SLIDE_COPY['en-GB'][key];
       // Only Dutch strings that actually differ from their English twin can
@@ -208,7 +219,7 @@ test('an en-GB deck shows no Dutch copy on any interactive type', () => {
       if (dutch === english) continue;
       assert.ok(
         !html.includes(dutch),
-        `${type} rendered Dutch copy "${dutch}" (${key}) for an en-GB deck`
+        `${type} rendered Dutch copy "${dutch}" (${key}) for an en-GB deck`,
       );
     }
   }
@@ -223,7 +234,7 @@ test('a deck with no language gets the default, not Dutch', () => {
       if (dutch === fallback[key]) continue;
       assert.ok(
         !html.includes(dutch),
-        `${type} fell back to Dutch copy "${dutch}" (${key})`
+        `${type} fell back to Dutch copy "${dutch}" (${key})`,
       );
     }
   }

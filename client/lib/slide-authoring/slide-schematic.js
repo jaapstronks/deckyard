@@ -63,14 +63,25 @@
 export function renderSlideSchematic(h, spec = {}, opts = {}) {
   const s = spec && typeof spec === 'object' ? spec : {};
   const mirrored = !!opts.mirrored || !!s.mirror;
-  const box = h('div', { class: 'layout-tile-schematic', 'aria-hidden': 'true' });
+  const box = h('div', {
+    class: 'layout-tile-schematic',
+    'aria-hidden': 'true',
+  });
 
   // --- small primitives -----------------------------------------------------
-  const line = (mod) => h('div', { class: `layout-tile-line${mod ? ' ' + mod : ''}` });
+  const line = (mod) =>
+    h('div', { class: `layout-tile-line${mod ? ' ' + mod : ''}` });
   const image = (cls, style) =>
-    h('div', { class: `layout-tile-image${cls ? ' ' + cls : ''}`, ...(style ? { style } : {}) });
+    h('div', {
+      class: `layout-tile-image${cls ? ' ' + cls : ''}`,
+      ...(style ? { style } : {}),
+    });
   const textBlock = () =>
-    h('div', { class: 'layout-tile-text' }, [line('is-heading'), line(), line('is-short')]);
+    h('div', { class: 'layout-tile-text' }, [
+      line('is-heading'),
+      line(),
+      line('is-short'),
+    ]);
   const centerBlock = (children) => h('div', { class: 'sd-center' }, children);
   const grid = (cols, rows, cells) => {
     box.classList.add('is-grid');
@@ -78,17 +89,37 @@ export function renderSlideSchematic(h, spec = {}, opts = {}) {
     box.style.setProperty('--sd-rows', String(rows));
     for (const c of cells) box.append(c);
   };
-  const gridCells = (count, make) => Array.from({ length: count }, (_, i) => make(i));
+  const gridCells = (count, make) =>
+    Array.from({ length: count }, (_, i) => make(i));
   // Duotone landscape glyph: a symbolic "photo" (sky + sun + hills), so image
   // archetypes read as pictures rather than blank grey fills. Fills its box via
   // preserveAspectRatio="slice"; the two tones come from --sd-fill / --sd-strong.
   const landscape = () =>
-    h('svg', { class: 'sd-landscape', viewBox: '0 0 32 18', preserveAspectRatio: 'xMidYMid slice', 'aria-hidden': 'true' }, [
-      h('rect', { class: 'sd-ls-sky', x: '0', y: '0', width: '32', height: '18' }),
-      h('circle', { class: 'sd-ls-sun', cx: '23.5', cy: '5', r: '2.6' }),
-      h('path', { class: 'sd-ls-hill', d: 'M0 18 L9 10 L14.5 13.5 L21 7 L27 12 L32 9 L32 18 Z' }),
-    ]);
-  const photoCell = () => h('div', { class: 'layout-tile-image is-cell is-photo' }, [landscape()]);
+    h(
+      'svg',
+      {
+        class: 'sd-landscape',
+        viewBox: '0 0 32 18',
+        preserveAspectRatio: 'xMidYMid slice',
+        'aria-hidden': 'true',
+      },
+      [
+        h('rect', {
+          class: 'sd-ls-sky',
+          x: '0',
+          y: '0',
+          width: '32',
+          height: '18',
+        }),
+        h('circle', { class: 'sd-ls-sun', cx: '23.5', cy: '5', r: '2.6' }),
+        h('path', {
+          class: 'sd-ls-hill',
+          d: 'M0 18 L9 10 L14.5 13.5 L21 7 L27 12 L32 9 L32 18 Z',
+        }),
+      ],
+    );
+  const photoCell = () =>
+    h('div', { class: 'layout-tile-image is-cell is-photo' }, [landscape()]);
   // A few simple line-icon glyphs for the icon-cards archetype (see 'iconCards').
   const ICON_GLYPHS = {
     gear: 'M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm8 3.5a8 8 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a8 8 0 0 0-2-1.2l-.4-2.6H8.9l-.4 2.6a8 8 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6a8 8 0 0 0 0 2.4l-2 1.6 2 3.4 2.4-1a8 8 0 0 0 2 1.2l.4 2.6h4.2l.4-2.6a8 8 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.06-.4.1-.8.1-1.2Z',
@@ -97,9 +128,20 @@ export function renderSlideSchematic(h, spec = {}, opts = {}) {
     bolt: 'M13 2 4 14h6l-1 8 9-12h-6l1-8Z',
   };
   const iconGlyph = (name) =>
-    h('svg', { class: 'sd-glyph', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.7', 'stroke-linejoin': 'round', 'stroke-linecap': 'round', 'aria-hidden': 'true' }, [
-      h('path', { d: ICON_GLYPHS[name] }),
-    ]);
+    h(
+      'svg',
+      {
+        class: 'sd-glyph',
+        viewBox: '0 0 24 24',
+        fill: 'none',
+        stroke: 'currentColor',
+        'stroke-width': '1.7',
+        'stroke-linejoin': 'round',
+        'stroke-linecap': 'round',
+        'aria-hidden': 'true',
+      },
+      [h('path', { d: ICON_GLYPHS[name] })],
+    );
 
   const kind = s.kind || legacyKind(s);
 
@@ -131,7 +173,7 @@ export function renderSlideSchematic(h, spec = {}, opts = {}) {
           h('div', { class: 'sd-section-rule' }),
           line('is-title'),
           line('is-sub'),
-        ])
+        ]),
       );
       break;
     case 'quote':
@@ -143,13 +185,19 @@ export function renderSlideSchematic(h, spec = {}, opts = {}) {
           line('is-big'),
           line('is-big is-short'),
           line('is-attr'),
-        ])
+        ]),
       );
       break;
     case 'oneCol':
       box.classList.add('is-onecol');
       box.append(
-        h('div', { class: 'layout-tile-text' }, [line('is-heading'), line(), line(), line(), line('is-short')])
+        h('div', { class: 'layout-tile-text' }, [
+          line('is-heading'),
+          line(),
+          line(),
+          line(),
+          line('is-short'),
+        ]),
       );
       break;
     case 'twoCol':
@@ -157,9 +205,19 @@ export function renderSlideSchematic(h, spec = {}, opts = {}) {
       box.append(
         line('is-heading is-top'),
         h('div', { class: 'sd-cols' }, [
-          h('div', { class: 'layout-tile-text' }, [line(), line(), line(), line('is-short')]),
-          h('div', { class: 'layout-tile-text' }, [line(), line(), line(), line('is-short')]),
-        ])
+          h('div', { class: 'layout-tile-text' }, [
+            line(),
+            line(),
+            line(),
+            line('is-short'),
+          ]),
+          h('div', { class: 'layout-tile-text' }, [
+            line(),
+            line(),
+            line(),
+            line('is-short'),
+          ]),
+        ]),
       );
       break;
     case 'bullets':
@@ -176,8 +234,8 @@ export function renderSlideSchematic(h, spec = {}, opts = {}) {
               ? h('span', { class: 'sd-num', text: String(i + 1) })
               : h('span', { class: 'sd-bullet' }),
             line(),
-          ])
-        )
+          ]),
+        ),
       );
       break;
     }
@@ -185,11 +243,20 @@ export function renderSlideSchematic(h, spec = {}, opts = {}) {
     // --- media family -------------------------------------------------------
     case 'image':
       box.classList.add('is-image');
-      box.append(h('div', { class: 'layout-tile-image is-full is-photo' }, [landscape()]));
+      box.append(
+        h('div', { class: 'layout-tile-image is-full is-photo' }, [
+          landscape(),
+        ]),
+      );
       break;
     case 'video':
       box.classList.add('is-image', 'is-video');
-      box.append(h('div', { class: 'layout-tile-image is-full is-photo' }, [landscape()]), h('span', { class: 'sd-play' }));
+      box.append(
+        h('div', { class: 'layout-tile-image is-full is-photo' }, [
+          landscape(),
+        ]),
+        h('span', { class: 'sd-play' }),
+      );
       break;
     case 'code':
       box.classList.add('is-code');
@@ -203,36 +270,58 @@ export function renderSlideSchematic(h, spec = {}, opts = {}) {
           h('span', { class: 'sd-embed-dot' }),
           h('span', { class: 'sd-embed-dot' }),
         ]),
-        h('div', { class: 'sd-embed-body' })
+        h('div', { class: 'sd-embed-body' }),
       );
       break;
     case 'gallery':
-      grid(3, 2, gridCells(Number(s.cells) || 6, () => photoCell()));
+      grid(
+        3,
+        2,
+        gridCells(Number(s.cells) || 6, () => photoCell()),
+      );
       box.classList.add('is-gallery');
       break;
     case 'cards':
-      grid(Number(s.cols) || 3, Number(s.rows) || 2, gridCells(Number(s.cells) || 6, () =>
-        h('div', { class: 'sd-card' }, [photoCell(), line('is-short')])
-      ));
+      grid(
+        Number(s.cols) || 3,
+        Number(s.rows) || 2,
+        gridCells(Number(s.cells) || 6, () =>
+          h('div', { class: 'sd-card' }, [photoCell(), line('is-short')]),
+        ),
+      );
       box.classList.add('is-cards');
       break;
     case 'logos':
-      grid(4, 2, gridCells(Number(s.cells) || 8, () => h('div', { class: 'sd-logo' })));
+      grid(
+        4,
+        2,
+        gridCells(Number(s.cells) || 8, () => h('div', { class: 'sd-logo' })),
+      );
       box.classList.add('is-logos');
       break;
     case 'partners':
       box.classList.add('is-partners');
       box.append(
         centerBlock([line('is-title')]),
-        h('div', { class: 'sd-partner-row' }, [h('div', { class: 'sd-logo' }), h('div', { class: 'sd-logo' })])
+        h('div', { class: 'sd-partner-row' }, [
+          h('div', { class: 'sd-logo' }),
+          h('div', { class: 'sd-logo' }),
+        ]),
       );
       break;
 
     // --- structured / data family ------------------------------------------
     case 'blocks':
-      grid(2, 2, gridCells(Number(s.cells) || 4, () =>
-        h('div', { class: 'sd-block' }, [line('is-heading'), line('is-short')])
-      ));
+      grid(
+        2,
+        2,
+        gridCells(Number(s.cells) || 4, () =>
+          h('div', { class: 'sd-block' }, [
+            line('is-heading'),
+            line('is-short'),
+          ]),
+        ),
+      );
       box.classList.add('is-blocks');
       break;
     case 'iconCards': {
@@ -240,37 +329,65 @@ export function renderSlideSchematic(h, spec = {}, opts = {}) {
       // The old dot-over-line read as person avatars; recognisable glyphs make
       // it clear these are "icon + label" cards, and four at 2×2 stay legible.
       const names = ['gear', 'bulb', 'star', 'bolt'];
-      grid(2, 2, names.map((n) => h('div', { class: 'sd-card sd-iconcard' }, [iconGlyph(n)])));
+      grid(
+        2,
+        2,
+        names.map((n) =>
+          h('div', { class: 'sd-card sd-iconcard' }, [iconGlyph(n)]),
+        ),
+      );
       box.classList.add('is-iconcards');
       break;
     }
     case 'kpi':
-      grid(2, 2, gridCells(Number(s.cells) || 4, () =>
-        h('div', { class: 'sd-stat' }, [line('is-stat'), line('is-delta')])
-      ));
+      grid(
+        2,
+        2,
+        gridCells(Number(s.cells) || 4, () =>
+          h('div', { class: 'sd-stat' }, [line('is-stat'), line('is-delta')]),
+        ),
+      );
       box.classList.add('is-kpi');
       break;
     case 'table':
-      grid(Number(s.cols) || 3, Number(s.rows) || 3, gridCells((Number(s.cols) || 3) * (Number(s.rows) || 3), (i) =>
-        h('div', { class: `sd-cell${i < (Number(s.cols) || 3) ? ' is-head' : ''}` })
-      ));
+      grid(
+        Number(s.cols) || 3,
+        Number(s.rows) || 3,
+        gridCells((Number(s.cols) || 3) * (Number(s.rows) || 3), (i) =>
+          h('div', {
+            class: `sd-cell${i < (Number(s.cols) || 3) ? ' is-head' : ''}`,
+          }),
+        ),
+      );
       box.classList.add('is-table');
       break;
     case 'chart':
       box.classList.add('is-chart');
       box.append(
-        h('div', { class: 'sd-bars' }, [40, 65, 50, 85, 60].map((hpc) =>
-          h('div', { class: 'sd-bar', style: `height:${hpc}%` })
-        )),
-        h('div', { class: 'sd-axis' })
+        h(
+          'div',
+          { class: 'sd-bars' },
+          [40, 65, 50, 85, 60].map((hpc) =>
+            h('div', { class: 'sd-bar', style: `height:${hpc}%` }),
+          ),
+        ),
+        h('div', { class: 'sd-axis' }),
       );
       break;
     case 'comparison':
       box.classList.add('is-comparison');
       box.append(
-        h('div', { class: 'sd-panel' }, [line('is-heading'), line(), line('is-short')]),
+        h('div', { class: 'sd-panel' }, [
+          line('is-heading'),
+          line(),
+          line('is-short'),
+        ]),
         h('div', { class: 'sd-divider' }),
-        h('div', { class: 'sd-panel' }, [line('is-heading'), line(), line('is-short')])
+        h('div', { class: 'sd-panel' }, [
+          line('is-heading'),
+          line(),
+          line('is-short'),
+        ]),
       );
       break;
     case 'matrix':
@@ -278,7 +395,7 @@ export function renderSlideSchematic(h, spec = {}, opts = {}) {
       box.append(
         h('div', { class: 'sd-matrix-v' }),
         h('div', { class: 'sd-matrix-h' }),
-        ...gridCells(4, () => h('span', { class: 'sd-quad' }))
+        ...gridCells(4, () => h('span', { class: 'sd-quad' })),
       );
       break;
 
@@ -289,14 +406,18 @@ export function renderSlideSchematic(h, spec = {}, opts = {}) {
         ...[0, 1, 2].flatMap((i) => {
           const node = h('div', { class: 'sd-step' });
           return i < 2 ? [node, h('span', { class: 'sd-arrow' })] : [node];
-        })
+        }),
       );
       break;
     case 'timeline':
       box.classList.add('is-timeline');
       box.append(
         h('div', { class: 'sd-timeline-line' }),
-        h('div', { class: 'sd-timeline-dots' }, gridCells(4, () => h('span', { class: 'sd-dot' })))
+        h(
+          'div',
+          { class: 'sd-timeline-dots' },
+          gridCells(4, () => h('span', { class: 'sd-dot' })),
+        ),
       );
       break;
     case 'pyramid':
@@ -304,12 +425,22 @@ export function renderSlideSchematic(h, spec = {}, opts = {}) {
       const funnel = kind === 'funnel';
       box.classList.add(funnel ? 'is-funnel' : 'is-pyramid');
       const widths = funnel ? [92, 70, 46] : [46, 70, 92];
-      box.append(...widths.map((w) => h('div', { class: 'sd-tier', style: `width:${w}%` })));
+      box.append(
+        ...widths.map((w) =>
+          h('div', { class: 'sd-tier', style: `width:${w}%` }),
+        ),
+      );
       break;
     }
     case 'cycle':
       box.classList.add('is-cycle');
-      box.append(h('div', { class: 'sd-ring' }, gridCells(4, () => h('span', { class: 'sd-dot' }))));
+      box.append(
+        h(
+          'div',
+          { class: 'sd-ring' },
+          gridCells(4, () => h('span', { class: 'sd-dot' })),
+        ),
+      );
       break;
 
     // --- interaction family -------------------------------------------------
@@ -317,18 +448,28 @@ export function renderSlideSchematic(h, spec = {}, opts = {}) {
       box.classList.add('is-poll');
       box.append(
         line('is-heading'),
-        ...[80, 55, 35].map((w) => h('div', { class: 'sd-pollbar', style: `width:${w}%` }))
+        ...[80, 55, 35].map((w) =>
+          h('div', { class: 'sd-pollbar', style: `width:${w}%` }),
+        ),
       );
       break;
     case 'bars': {
       box.classList.add('is-poll', 'is-bars');
       const rows = Math.max(3, Math.min(Number(s.rows) || 5, 5));
-      box.append(line('is-heading'), ...Array.from({ length: rows }, () => h('div', { class: 'sd-pollbar', style: 'width:70%' })));
+      box.append(
+        line('is-heading'),
+        ...Array.from({ length: rows }, () =>
+          h('div', { class: 'sd-pollbar', style: 'width:70%' }),
+        ),
+      );
       break;
     }
     case 'slider':
       box.classList.add('is-slider');
-      box.append(line('is-heading'), h('div', { class: 'sd-track' }, [h('span', { class: 'sd-knob' })]));
+      box.append(
+        line('is-heading'),
+        h('div', { class: 'sd-track' }, [h('span', { class: 'sd-knob' })]),
+      );
       break;
     case 'feedback':
       box.classList.add('is-feedback');
@@ -336,7 +477,10 @@ export function renderSlideSchematic(h, spec = {}, opts = {}) {
       break;
     case 'qr':
       box.classList.add('is-qr');
-      box.append(h('div', { class: 'sd-qr' }), h('div', { class: 'sd-qr-cap' }, [line('is-short')]));
+      box.append(
+        h('div', { class: 'sd-qr' }),
+        h('div', { class: 'sd-qr-cap' }, [line('is-short')]),
+      );
       break;
     case 'countdown':
       box.classList.add('is-countdown');
@@ -348,7 +492,13 @@ export function renderSlideSchematic(h, spec = {}, opts = {}) {
       const cols = Math.min(Number(s.cols) || 3, 3);
       box.classList.add('is-cols');
       for (let i = 0; i < cols; i += 1) {
-        box.append(h('div', { class: 'layout-tile-col' }, [image(), line(), line('is-short')]));
+        box.append(
+          h('div', { class: 'layout-tile-col' }, [
+            image(),
+            line(),
+            line('is-short'),
+          ]),
+        );
       }
       break;
     }
@@ -357,7 +507,12 @@ export function renderSlideSchematic(h, spec = {}, opts = {}) {
       box.classList.add('is-text-cols');
       for (let i = 0; i < n; i += 1) {
         box.append(
-          h('div', { class: 'layout-tile-text' }, [line('is-heading'), line(), line(), line('is-short')])
+          h('div', { class: 'layout-tile-text' }, [
+            line('is-heading'),
+            line(),
+            line(),
+            line('is-short'),
+          ]),
         );
       }
       break;
@@ -377,7 +532,11 @@ export function renderSlideSchematic(h, spec = {}, opts = {}) {
       break;
     }
     case 'duo': {
-      const stack = h('div', { class: 'layout-tile-duo', style: `width:${Number(s.duo)}%` }, [image(), image()]);
+      const stack = h(
+        'div',
+        { class: 'layout-tile-duo', style: `width:${Number(s.duo)}%` },
+        [image(), image()],
+      );
       box.classList.add('is-duo');
       if (mirrored) box.append(textBlock(), stack);
       else box.append(stack, textBlock());
@@ -386,7 +545,10 @@ export function renderSlideSchematic(h, spec = {}, opts = {}) {
     case 'row': {
       const top = s.row === 'top';
       box.classList.add('is-row', top ? 'is-row-top' : 'is-row-bottom');
-      const rowBlock = h('div', { class: 'layout-tile-row' }, [image(), image()]);
+      const rowBlock = h('div', { class: 'layout-tile-row' }, [
+        image(),
+        image(),
+      ]);
       if (top) box.append(rowBlock, textBlock());
       else box.append(textBlock(), rowBlock);
       break;
@@ -408,9 +570,11 @@ export function renderSlideSchematic(h, spec = {}, opts = {}) {
  */
 function legacyKind(s) {
   if (Number.isFinite(Number(s.cols)) && Number(s.cols) > 1) return 'cols';
-  if (Number.isFinite(Number(s.textCols)) && Number(s.textCols) > 1) return 'textCols';
+  if (Number.isFinite(Number(s.textCols)) && Number(s.textCols) > 1)
+    return 'textCols';
   if (Number.isFinite(Number(s.split)) && Number(s.split) > 0) return 'split';
-  if (Number.isFinite(Number(s.corner)) && Number(s.corner) > 0) return 'corner';
+  if (Number.isFinite(Number(s.corner)) && Number(s.corner) > 0)
+    return 'corner';
   if (Number.isFinite(Number(s.duo)) && Number(s.duo) > 0) return 'duo';
   if (s.row === 'top' || s.row === 'bottom') return 'row';
   return 'text';

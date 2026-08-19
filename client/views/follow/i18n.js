@@ -31,9 +31,12 @@ async function loadDict(locale) {
   if (dictCache.has(locale)) return dictCache.get(locale);
   let data = {};
   try {
-    const res = await fetch(`/client/i18n/${encodeURIComponent(locale)}/follow.json`, {
-      cache: 'no-store',
-    });
+    const res = await fetch(
+      `/client/i18n/${encodeURIComponent(locale)}/follow.json`,
+      {
+        cache: 'no-store',
+      },
+    );
     if (res.ok) {
       const json = await res.json();
       if (json && typeof json === 'object') data = json;
@@ -48,7 +51,7 @@ async function loadDict(locale) {
 function interpolate(str, vars) {
   if (!vars) return str;
   return String(str).replace(/\{(\w+)\}/g, (m, name) =>
-    Object.prototype.hasOwnProperty.call(vars, name) ? String(vars[name]) : m
+    Object.prototype.hasOwnProperty.call(vars, name) ? String(vars[name]) : m,
   );
 }
 
@@ -69,26 +72,42 @@ export async function createFollowCopy(lang) {
   const translatingWithProgress = ({ missing, jobStatus } = {}) => {
     if (jobStatus === 'running') {
       return missing && missing > 0
-        ? tr('follow.translating.runningCount', 'Translating ({count} {unit})… This page will auto-refresh.', {
-            count: missing,
-            unit:
-              missing === 1
-                ? tr('follow.translating.unitSingular', 'item')
-                : tr('follow.translating.unitPlural', 'items'),
-          })
-        : tr('follow.translating.running', 'Translating… This page will auto-refresh.');
+        ? tr(
+            'follow.translating.runningCount',
+            'Translating ({count} {unit})… This page will auto-refresh.',
+            {
+              count: missing,
+              unit:
+                missing === 1
+                  ? tr('follow.translating.unitSingular', 'item')
+                  : tr('follow.translating.unitPlural', 'items'),
+            },
+          )
+        : tr(
+            'follow.translating.running',
+            'Translating… This page will auto-refresh.',
+          );
     }
     if (jobStatus === 'done' && missing && missing > 0) {
-      return tr('follow.translating.almostReady', 'Translation almost ready… This page will auto-refresh.');
+      return tr(
+        'follow.translating.almostReady',
+        'Translation almost ready… This page will auto-refresh.',
+      );
     }
-    return tr('follow.translating.preparing', 'Preparing translation… Please wait, this page will auto-refresh.');
+    return tr(
+      'follow.translating.preparing',
+      'Preparing translation… Please wait, this page will auto-refresh.',
+    );
   };
 
   return {
     title: tr('follow.title', 'Live follow-along'),
     notStarted: tr('follow.notStarted', "The presentation hasn't started yet."),
     ended: tr('follow.ended', 'The presentation is not active (anymore).'),
-    translating: tr('follow.translating', 'Translating… (this page will auto-refresh)'),
+    translating: tr(
+      'follow.translating',
+      'Translating… (this page will auto-refresh)',
+    ),
     translatingWithProgress,
     connecting: tr('follow.connecting', 'Connecting…'),
     qaTitle: tr('follow.qaTitle', 'Q&A'),
@@ -100,9 +119,18 @@ export async function createFollowCopy(lang) {
     qaPlaceholder: tr('follow.qaPlaceholder', 'Ask a question…'),
     qaAsk: tr('follow.qaAsk', 'Ask'),
     qaEmpty: tr('follow.qaEmpty', 'No questions yet. Ask the first one!'),
-    qaPromoted: tr('follow.qaPromoted', 'Will be addressed (added to the deck)'),
-    qaTranslatedFromEn: tr('follow.qaTranslatedFromEn', 'translated from English'),
-    qaTranslatedFromNl: tr('follow.qaTranslatedFromNl', 'translated from Dutch'),
+    qaPromoted: tr(
+      'follow.qaPromoted',
+      'Will be addressed (added to the deck)',
+    ),
+    qaTranslatedFromEn: tr(
+      'follow.qaTranslatedFromEn',
+      'translated from English',
+    ),
+    qaTranslatedFromNl: tr(
+      'follow.qaTranslatedFromNl',
+      'translated from Dutch',
+    ),
     qaUpvote: tr('follow.qaUpvote', 'Upvote'),
     qaCancel: tr('follow.qaCancel', 'Cancel my question'),
     qaViewOriginal: tr('follow.qaViewOriginal', 'View original'),
@@ -111,34 +139,61 @@ export async function createFollowCopy(lang) {
     interactionLoading: tr('follow.interactionLoading', 'Loading…'),
     interactionOpen: tr('follow.interactionOpen', 'Vote now.'),
     interactionClosed: tr('follow.interactionClosed', 'Voting is closed.'),
-    interactionThanks: tr('follow.interactionThanks', 'Thanks! Your vote was saved.'),
-    interactionThanksFeedback: tr('follow.interactionThanksFeedback', 'Thanks! Your feedback was saved.'),
-    interactionFeedbackSending: tr('follow.interactionFeedbackSending', 'Sending…'),
-    interactionFeedbackHint: tr('follow.interactionFeedbackHint', 'Write your feedback and press Send.'),
+    interactionThanks: tr(
+      'follow.interactionThanks',
+      'Thanks! Your vote was saved.',
+    ),
+    interactionThanksFeedback: tr(
+      'follow.interactionThanksFeedback',
+      'Thanks! Your feedback was saved.',
+    ),
+    interactionFeedbackSending: tr(
+      'follow.interactionFeedbackSending',
+      'Sending…',
+    ),
+    interactionFeedbackHint: tr(
+      'follow.interactionFeedbackHint',
+      'Write your feedback and press Send.',
+    ),
     interactionFeedbackSend: tr('follow.interactionFeedbackSend', 'Send'),
     interactionFeedbackUpdate: tr('follow.interactionFeedbackUpdate', 'Update'),
-    interactionFeedbackUpdating: tr('follow.interactionFeedbackUpdating', 'Updating…'),
-    interactionFeedbackPlaceholder: tr('follow.interactionFeedbackPlaceholder', 'Type your feedback…'),
+    interactionFeedbackUpdating: tr(
+      'follow.interactionFeedbackUpdating',
+      'Updating…',
+    ),
+    interactionFeedbackPlaceholder: tr(
+      'follow.interactionFeedbackPlaceholder',
+      'Type your feedback…',
+    ),
     likertSliderYourScore: (n) =>
       tr('follow.likertSlider.yourScore', 'Your score: {n}', { n }),
     likertSliderChooseScore: (n) =>
       tr('follow.likertSlider.chooseScore', 'Choose a score: {n}', { n }),
     followInviteSuccess: tr(
       'follow.followInviteSuccess',
-      'Follow along mode successful, this view will update automatically.'
+      'Follow along mode successful, this view will update automatically.',
     ),
     erase: {
       button: tr('follow.erase.button', 'Forget me'),
-      tooltip: tr('follow.erase.tooltip', 'Erase the view history recorded for this device'),
+      tooltip: tr(
+        'follow.erase.tooltip',
+        'Erase the view history recorded for this device',
+      ),
       confirmTitle: tr('follow.erase.confirmTitle', 'Forget this device?'),
       confirmMessage: tr(
         'follow.erase.confirmMessage',
-        "This permanently erases the viewing history recorded for this device across every presentation on this site. It can't be undone."
+        "This permanently erases the viewing history recorded for this device across every presentation on this site. It can't be undone.",
       ),
       confirmOk: tr('follow.erase.confirmOk', 'Forget me'),
       cancel: tr('follow.erase.cancel', 'Cancel'),
-      done: tr('follow.erase.done', 'Your viewing history on this device has been erased.'),
-      failed: tr('follow.erase.failed', "Couldn't erase your data. Please try again."),
+      done: tr(
+        'follow.erase.done',
+        'Your viewing history on this device has been erased.',
+      ),
+      failed: tr(
+        'follow.erase.failed',
+        "Couldn't erase your data. Please try again.",
+      ),
     },
   };
 }

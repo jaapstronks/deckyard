@@ -38,7 +38,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 const CLIENT_DIR = path.join(repoRoot, 'client');
 
 /** Third-party code we neither wrote nor patch. */
@@ -82,7 +85,8 @@ const USER_TEXT_SITES = [
   {
     file: 'client/views/presenter/console.js',
     rhs: 'notes.trim() ? markdownToSafeHtml(notes)…',
-    reason: 'Presenter-console speaker notes; same markdownToSafeHtml() path as notes/notes-editor.js.',
+    reason:
+      'Presenter-console speaker notes; same markdownToSafeHtml() path as notes/notes-editor.js.',
   },
   {
     file: 'client/views/editor/modals/json-debug-modal.js',
@@ -123,22 +127,26 @@ const INDIRECT_STATIC_SITES = [
   {
     file: 'client/views/editor/inline-edit/selection-toolbar.js',
     rhs: 'ICONS[name]',
-    reason: 'Icon map lookup; ICONS holds static SVG constants and `name` is an internal enum.',
+    reason:
+      'Icon map lookup; ICONS holds static SVG constants and `name` is an internal enum.',
   },
   {
     file: 'client/views/editor/slide-type-picker/index.js',
     rhs: 'VIEW_ICON[mode]',
-    reason: 'Icon map lookup; VIEW_ICON holds static SVG constants and `mode` is a view enum.',
+    reason:
+      'Icon map lookup; VIEW_ICON holds static SVG constants and `mode` is a view enum.',
   },
   {
     file: 'client/views/editor/image-library/grid.js',
     rhs: 'isFavorite ? \'<svg width="16"…',
-    reason: 'Ternary picking between two static SVG literals (filled / outline star).',
+    reason:
+      'Ternary picking between two static SVG literals (filled / outline star).',
   },
   {
     file: 'client/views/editor/image-library/detail.js',
     rhs: 'isFavorite ? \'<svg width="18"…',
-    reason: 'Ternary picking between two static SVG literals (filled / outline star).',
+    reason:
+      'Ternary picking between two static SVG literals (filled / outline star).',
   },
 ];
 
@@ -155,12 +163,13 @@ const DOM_ROUNDTRIP_SITES = [
     rhs: 'html',
     reason:
       'Slide-render contract boundary: parses renderSlideHtml() output into a ' +
-      'detached wrapper. Escaping is the slide type\'s job at render time.',
+      "detached wrapper. Escaping is the slide type's job at render time.",
   },
   {
     file: 'client/lib/slide-runtime/slide-render.js',
     rhs: 'html.trim()',
-    reason: 'Same contract boundary for the server-rendered variant; wrapper is detached.',
+    reason:
+      'Same contract boundary for the server-rendered variant; wrapper is detached.',
   },
   {
     file: 'client/lib/slide-runtime/slide-render.js',
@@ -180,12 +189,16 @@ const DOM_ROUNDTRIP_SITES = [
     file: 'client/views/editor/inline-edit/inline-editor.js',
     rhs: 'originalHtml',
     reason:
-      'Cancel-edit restore of the element\'s own prior DOM, captured from the ' +
+      "Cancel-edit restore of the element's own prior DOM, captured from the " +
       'same element before editing began.',
   },
 ];
 
-const ALLOWLIST = [...USER_TEXT_SITES, ...INDIRECT_STATIC_SITES, ...DOM_ROUNDTRIP_SITES];
+const ALLOWLIST = [
+  ...USER_TEXT_SITES,
+  ...INDIRECT_STATIC_SITES,
+  ...DOM_ROUNDTRIP_SITES,
+];
 
 // ---------------------------------------------------------------------------
 // Scanner
@@ -214,12 +227,15 @@ export function classifyChars(src) {
   // Last significant code character, used to decide whether `/` opens a regex.
   let prevCode = '';
 
-  const isRegexStart = () => !prevCode || '(,=:[!&|?{};+-*%~^<>'.includes(prevCode);
+  const isRegexStart = () =>
+    !prevCode || '(,=:[!&|?{};+-*%~^<>'.includes(prevCode);
 
   while (i < src.length) {
     const ch = src[i];
     const next = src[i + 1];
-    const top = templateStack.length ? templateStack[templateStack.length - 1] : null;
+    const top = templateStack.length
+      ? templateStack[templateStack.length - 1]
+      : null;
 
     // Inside template *text* — everything is string until the closing backtick
     // or the start of a `${…}` hole.
@@ -255,7 +271,8 @@ export function classifyChars(src) {
     if (ch === '/' && next === '*') {
       tags[i++] = 'comment';
       tags[i++] = 'comment';
-      while (i < src.length && !(src[i] === '*' && src[i + 1] === '/')) tags[i++] = 'comment';
+      while (i < src.length && !(src[i] === '*' && src[i + 1] === '/'))
+        tags[i++] = 'comment';
       if (i < src.length) {
         tags[i++] = 'comment';
         tags[i++] = 'comment';
@@ -387,7 +404,8 @@ export function isStaticLiteral(rhs) {
   if (src[src.length - 1] !== quote) return false;
   // A template with a hole is not static even though the hole is balanced by
   // the walk above; check explicitly for robustness.
-  if (quote === '`' && /\$\{/.test(src.slice(1, -1).replace(/\\\$/g, ''))) return false;
+  if (quote === '`' && /\$\{/.test(src.slice(1, -1).replace(/\\\$/g, '')))
+    return false;
   return true;
 }
 
@@ -473,7 +491,10 @@ test('every innerHTML write in client/ is a static literal or a documented excep
   }
 
   const report = violations
-    .map((v) => `  ${v.file}:${v.line}\n    innerHTML = ${normalize(v.rhs).slice(0, 120)}`)
+    .map(
+      (v) =>
+        `  ${v.file}:${v.line}\n    innerHTML = ${normalize(v.rhs).slice(0, 120)}`,
+    )
     .join('\n');
 
   assert.equal(
@@ -499,8 +520,14 @@ test('the allowlist has no stale entries', () => {
       if (entry) matched.add(entry);
     }
   }
-  const stale = ALLOWLIST.filter((e) => !matched.has(e)).map((e) => `${e.file} — ${e.rhs}`);
-  assert.deepEqual(stale, [], 'allowlist entries that no longer match any innerHTML site');
+  const stale = ALLOWLIST.filter((e) => !matched.has(e)).map(
+    (e) => `${e.file} — ${e.rhs}`,
+  );
+  assert.deepEqual(
+    stale,
+    [],
+    'allowlist entries that no longer match any innerHTML site',
+  );
 });
 
 test('exactly six innerHTML sites carry user-authored text', () => {
@@ -518,34 +545,66 @@ test('the scanner classifies contexts, literals and interpolation correctly', ()
   assert.equal(isStaticLiteral("''"), true, 'empty clear');
   assert.equal(isStaticLiteral('""'), true, 'empty clear, double quotes');
   assert.equal(isStaticLiteral("'&larr;'"), true, 'entity literal');
-  assert.equal(isStaticLiteral('`<svg viewBox="0 0 24 24"><path d="M8 5v14z"/></svg>`'), true);
-  assert.equal(isStaticLiteral("'<svg>\\n  <path/>\\n</svg>'"), true, 'escapes are fine');
+  assert.equal(
+    isStaticLiteral('`<svg viewBox="0 0 24 24"><path d="M8 5v14z"/></svg>`'),
+    true,
+  );
+  assert.equal(
+    isStaticLiteral("'<svg>\\n  <path/>\\n</svg>'"),
+    true,
+    'escapes are fine',
+  );
 
   // Non-static shapes — must be allowlisted.
   assert.equal(isStaticLiteral('`<p>${name}</p>`'), false, 'interpolation');
-  assert.equal(isStaticLiteral("'<b>' + name + '</b>'"), false, 'concatenation');
+  assert.equal(
+    isStaticLiteral("'<b>' + name + '</b>'"),
+    false,
+    'concatenation',
+  );
   assert.equal(isStaticLiteral('ICONS[name]'), false, 'identifier lookup');
   assert.equal(isStaticLiteral('render(doc)'), false, 'call');
-  assert.equal(isStaticLiteral("on ? '<a/>' : '<b/>'"), false, 'ternary of literals');
-  assert.equal(isStaticLiteral("'<a/>' /* sneaky */"), false, 'trailing comment');
+  assert.equal(
+    isStaticLiteral("on ? '<a/>' : '<b/>'"),
+    false,
+    'ternary of literals',
+  );
+  assert.equal(
+    isStaticLiteral("'<a/>' /* sneaky */"),
+    false,
+    'trailing comment',
+  );
   assert.equal(isStaticLiteral('`a` + `b`'), false, 'template concatenation');
 
   // Context classification: a sink hidden in a comment or a string is not a sink,
   // and neither may hide the real one that follows.
   const src = [
-    "// el.innerHTML = evil;",
+    '// el.innerHTML = evil;',
     "const s = 'x.innerHTML = alsoNotCode';",
-    "const re = /['\"]/g;", // a quote inside a regex must not desync the walk
-    "el.innerHTML = danger;",
+    'const re = /[\'"]/g;', // a quote inside a regex must not desync the walk
+    'el.innerHTML = danger;',
   ].join('\n');
   const tags = classifyChars(src);
   const hits = [...src.matchAll(ASSIGN_RE)].map((m) => tags[m.index]);
-  assert.deepEqual(hits, ['comment', 'string', 'code'], 'comment, string, then real code');
+  assert.deepEqual(
+    hits,
+    ['comment', 'string', 'code'],
+    'comment, string, then real code',
+  );
 
   // Compound writes store into the sink just like `=` does; comparisons do not.
-  const compound = 'a.innerHTML += x; b.innerHTML ||= y; c.innerHTML &&= y; d.innerHTML ??= z;';
-  assert.equal([...compound.matchAll(ASSIGN_RE)].length, 4, 'compound assignments are sinks');
-  assert.equal([...'if (a.innerHTML === b || a.innerHTML == c) {}'.matchAll(ASSIGN_RE)].length, 0);
+  const compound =
+    'a.innerHTML += x; b.innerHTML ||= y; c.innerHTML &&= y; d.innerHTML ??= z;';
+  assert.equal(
+    [...compound.matchAll(ASSIGN_RE)].length,
+    4,
+    'compound assignments are sinks',
+  );
+  assert.equal(
+    [...'if (a.innerHTML === b || a.innerHTML == c) {}'.matchAll(ASSIGN_RE)]
+      .length,
+    0,
+  );
 
   // RHS reading stops at the statement terminator, and spans a whole template.
   const rhsSrc = 'el.innerHTML = `<p>${a}</p>`;\nnext();';

@@ -83,7 +83,10 @@ function makeFakeDb(users = []) {
 }
 
 describe('059 settings import migration', () => {
-  const tmpDataDir = path.join(os.tmpdir(), `deckyard-settings-migrate-${crypto.randomUUID()}`);
+  const tmpDataDir = path.join(
+    os.tmpdir(),
+    `deckyard-settings-migrate-${crypto.randomUUID()}`,
+  );
   let migration;
 
   before(async () => {
@@ -92,21 +95,25 @@ describe('059 settings import migration', () => {
 
     await fs.writeFile(
       path.join(tmpDataDir, 'settings.json'),
-      JSON.stringify({ sessionDurationDays: 45, webhooks: { commentCreatedUrl: 'https://x.test/h' } })
+      JSON.stringify({
+        sessionDurationDays: 45,
+        webhooks: { commentCreatedUrl: 'https://x.test/h' },
+      }),
     );
 
     // jaap@ciiic.nl -> 'jaap at ciiic dot nl' -> safeSlug -> 'jaap-at-ciiic-dot-nl'
     await fs.writeFile(
       path.join(tmpDataDir, 'user-settings', 'jaap-at-ciiic-dot-nl.json'),
-      JSON.stringify({ uiLocale: 'nl', profile: { name: 'Jaap' } })
+      JSON.stringify({ uiLocale: 'nl', profile: { name: 'Jaap' } }),
     );
     // A file whose user is NOT in the users table -> must be skipped (orphan).
     await fs.writeFile(
       path.join(tmpDataDir, 'user-settings', 'ghost-at-nowhere-dot-test.json'),
-      JSON.stringify({ uiLocale: 'de' })
+      JSON.stringify({ uiLocale: 'de' }),
     );
 
-    migration = await import('../server/db/migrations/059_settings_to_tables.js');
+    migration =
+      await import('../server/db/migrations/059_settings_to_tables.js');
   });
 
   after(async () => {
@@ -126,7 +133,11 @@ describe('059 settings import migration', () => {
 
     const after = fake.insertCount;
     await migration.importAppSettingsFromDisk(fake.db);
-    assert.strictEqual(fake.insertCount, after, 'second run imported no new rows');
+    assert.strictEqual(
+      fake.insertCount,
+      after,
+      'second run imported no new rows',
+    );
   });
 
   it('recovers each real e-mail via the users table, skipping orphan files', async () => {
@@ -146,11 +157,18 @@ describe('059 settings import migration', () => {
     // Idempotent second run.
     const before = fake.insertCount;
     await migration.importUserSettingsFromDisk(fake.db);
-    assert.strictEqual(fake.insertCount, before, 'second run imported no new rows');
+    assert.strictEqual(
+      fake.insertCount,
+      before,
+      'second run imported no new rows',
+    );
   });
 
   it('is a no-op when the data files are absent', async () => {
-    const missingDir = path.join(os.tmpdir(), `deckyard-settings-missing-${crypto.randomUUID()}`);
+    const missingDir = path.join(
+      os.tmpdir(),
+      `deckyard-settings-missing-${crypto.randomUUID()}`,
+    );
     process.env.DATA_DIR = missingDir;
     const fake = makeFakeDb(['jaap@ciiic.nl']);
 

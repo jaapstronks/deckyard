@@ -16,9 +16,12 @@ import test, { mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 
-const dom = new JSDOM('<!doctype html><html><body><div id="app"></div></body></html>', {
-  url: 'http://localhost/app',
-});
+const dom = new JSDOM(
+  '<!doctype html><html><body><div id="app"></div></body></html>',
+  {
+    url: 'http://localhost/app',
+  },
+);
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 globalThis.location = dom.window.location;
@@ -52,7 +55,7 @@ function installIOStub() {
     fire(els) {
       this.cb(
         els.map((target) => ({ target, isIntersecting: true })),
-        this
+        this,
       );
     }
   }
@@ -68,7 +71,8 @@ function installIOStub() {
   };
 }
 
-const { createCardRenderer } = await import('../client/views/list/presentation-card.js');
+const { createCardRenderer } =
+  await import('../client/views/list/presentation-card.js');
 
 /** Capture <img> elements as they are created (they're only appended on load). */
 function captureImages() {
@@ -101,19 +105,38 @@ test('a card whose IntersectionObserver never fires still settles (candidate a)'
   mock.timers.enable({ apis: ['setTimeout'] });
   try {
     const detachThumbs = [];
-    const { renderCard } = createCardRenderer({ api: async () => ({}), nav: () => {}, detachThumbs });
+    const { renderCard } = createCardRenderer({
+      api: async () => ({}),
+      nav: () => {},
+      detachThumbs,
+    });
     const card = renderCard(baseDeck());
     const thumb = card.querySelector('.thumb');
 
     // Deliberately never fire intersection — mimics the observer callback not
     // running for a visible card. Before the safety net this hung forever.
-    assert.equal(thumb.classList.contains('is-loading'), true, 'shimmer while pending');
+    assert.equal(
+      thumb.classList.contains('is-loading'),
+      true,
+      'shimmer while pending',
+    );
 
     mock.timers.tick(8000);
 
-    assert.equal(thumb.classList.contains('is-loading'), false, 'skeleton cleared by safety net');
-    assert.equal(thumb.classList.contains('is-placeholder'), true, 'landed on the placeholder');
-    assert.ok(thumb.querySelector('.thumb-placeholder-title'), 'placeholder title rendered');
+    assert.equal(
+      thumb.classList.contains('is-loading'),
+      false,
+      'skeleton cleared by safety net',
+    );
+    assert.equal(
+      thumb.classList.contains('is-placeholder'),
+      true,
+      'landed on the placeholder',
+    );
+    assert.ok(
+      thumb.querySelector('.thumb-placeholder-title'),
+      'placeholder title rendered',
+    );
   } finally {
     mock.timers.reset();
     io.restore();
@@ -125,7 +148,11 @@ test('a thumbnail request that fires neither load nor error still settles (candi
   mock.timers.enable({ apis: ['setTimeout'] });
   try {
     const detachThumbs = [];
-    const { renderCard } = createCardRenderer({ api: async () => ({}), nav: () => {}, detachThumbs });
+    const { renderCard } = createCardRenderer({
+      api: async () => ({}),
+      nav: () => {},
+      detachThumbs,
+    });
     const images = captureImages();
     const card = renderCard(baseDeck());
     const thumb = card.querySelector('.thumb');
@@ -136,12 +163,24 @@ test('a thumbnail request that fires neither load nor error still settles (candi
     io.instances[0].fire([thumb]);
     assert.ok(images.last(), 'image request was issued');
     images.restore();
-    assert.equal(thumb.classList.contains('is-loading'), true, 'still loading before the net fires');
+    assert.equal(
+      thumb.classList.contains('is-loading'),
+      true,
+      'still loading before the net fires',
+    );
 
     mock.timers.tick(8000);
 
-    assert.equal(thumb.classList.contains('is-loading'), false, 'skeleton cleared');
-    assert.equal(thumb.classList.contains('is-placeholder'), true, 'landed on the placeholder');
+    assert.equal(
+      thumb.classList.contains('is-loading'),
+      false,
+      'skeleton cleared',
+    );
+    assert.equal(
+      thumb.classList.contains('is-placeholder'),
+      true,
+      'landed on the placeholder',
+    );
   } finally {
     mock.timers.reset();
     io.restore();
@@ -153,17 +192,28 @@ test('once a card settles, the safety net does not clobber the resolved state', 
   mock.timers.enable({ apis: ['setTimeout'] });
   try {
     const detachThumbs = [];
-    const { renderCard } = createCardRenderer({ api: async () => ({}), nav: () => {}, detachThumbs });
+    const { renderCard } = createCardRenderer({
+      api: async () => ({}),
+      nav: () => {},
+      detachThumbs,
+    });
     const card = renderCard(baseDeck({ hasSlides: false }));
     const thumb = card.querySelector('.thumb');
 
     io.instances[0].fire([thumb]); // empty deck → showEmpty() settles immediately
-    assert.ok(thumb.querySelector('.thumb-overlay'), 'empty-state overlay shown');
+    assert.ok(
+      thumb.querySelector('.thumb-overlay'),
+      'empty-state overlay shown',
+    );
 
     mock.timers.tick(8000); // net fires but must be a no-op now
 
     assert.ok(thumb.querySelector('.thumb-overlay'), 'empty state preserved');
-    assert.equal(thumb.querySelector('.thumb-placeholder-title'), null, 'not overwritten by placeholder');
+    assert.equal(
+      thumb.querySelector('.thumb-placeholder-title'),
+      null,
+      'not overwritten by placeholder',
+    );
   } finally {
     mock.timers.reset();
     io.restore();
@@ -175,7 +225,11 @@ test('a stuck card upgrades to the real thumbnail if it loads after the net fire
   mock.timers.enable({ apis: ['setTimeout'] });
   try {
     const detachThumbs = [];
-    const { renderCard } = createCardRenderer({ api: async () => ({}), nav: () => {}, detachThumbs });
+    const { renderCard } = createCardRenderer({
+      api: async () => ({}),
+      nav: () => {},
+      detachThumbs,
+    });
     const images = captureImages();
     const card = renderCard(baseDeck());
     const thumb = card.querySelector('.thumb');
@@ -184,12 +238,24 @@ test('a stuck card upgrades to the real thumbnail if it loads after the net fire
     const img = images.last();
     images.restore();
     mock.timers.tick(8000); // net → placeholder
-    assert.equal(thumb.classList.contains('is-placeholder'), true, 'placeholder after net');
+    assert.equal(
+      thumb.classList.contains('is-placeholder'),
+      true,
+      'placeholder after net',
+    );
 
     img.onload(); // the real raster finally arrives
-    assert.equal(thumb.classList.contains('is-placeholder'), false, 'placeholder cleared');
+    assert.equal(
+      thumb.classList.contains('is-placeholder'),
+      false,
+      'placeholder cleared',
+    );
     assert.equal(thumb.classList.contains('is-loading'), false, 'not loading');
-    assert.equal(thumb.querySelector('.thumb-img'), img, 'real image swapped in');
+    assert.equal(
+      thumb.querySelector('.thumb-img'),
+      img,
+      'real image swapped in',
+    );
   } finally {
     mock.timers.reset();
     io.restore();
@@ -200,7 +266,11 @@ test('detachThumbs does not grow per rendered card (bounded cleanup)', () => {
   const io = installIOStub();
   try {
     const detachThumbs = [];
-    const { renderCard } = createCardRenderer({ api: async () => ({}), nav: () => {}, detachThumbs });
+    const { renderCard } = createCardRenderer({
+      api: async () => ({}),
+      nav: () => {},
+      detachThumbs,
+    });
 
     const before = detachThumbs.length;
     for (let i = 0; i < 25; i += 1) renderCard(baseDeck({ id: `deck-${i}` }));
@@ -208,7 +278,7 @@ test('detachThumbs does not grow per rendered card (bounded cleanup)', () => {
     assert.equal(
       detachThumbs.length,
       before,
-      'per-card renders register no new view-level cleanup closures'
+      'per-card renders register no new view-level cleanup closures',
     );
   } finally {
     io.restore();

@@ -18,7 +18,9 @@ export async function loadPresentationList(api) {
   // Fetch main list and shared presentations in parallel with graceful fallbacks
   const [list, sharedResp] = await Promise.all([
     api('/api/presentations').catch(() => []),
-    api('/api/presentations/shared-with-me').catch(() => ({ presentations: [] })),
+    api('/api/presentations/shared-with-me').catch(() => ({
+      presentations: [],
+    })),
   ]);
 
   const workspace = [];
@@ -52,8 +54,8 @@ export async function loadPresentationList(api) {
     return Number.isNaN(time) ? 0 : time;
   };
 
-  const allByDate = [...workspace, ...priv, ...sharedPresentations].sort((a, b) =>
-    getTimestamp(b) - getTimestamp(a)
+  const allByDate = [...workspace, ...priv, ...sharedPresentations].sort(
+    (a, b) => getTimestamp(b) - getTimestamp(a),
   );
 
   return { workspace, priv, sharedPresentations, allByDate };

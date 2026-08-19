@@ -97,7 +97,9 @@ export const SLIDE_STRUCTURES = Object.freeze({
 });
 
 /** @type {ReadonlyArray<string>} */
-export const SLIDE_STRUCTURE_NAMES = Object.freeze(Object.keys(SLIDE_STRUCTURES));
+export const SLIDE_STRUCTURE_NAMES = Object.freeze(
+  Object.keys(SLIDE_STRUCTURES),
+);
 
 /**
  * Whether a value is a declared structure.
@@ -161,7 +163,7 @@ export const SLIDE_STRUCTURE_CONTRACTS = Object.freeze({
     itemsPhrase: 'exactly one items[] field',
     reader:
       'Iterate the single item array. Every item has the same shape, and the ' +
-      'length is the author\'s choice — a reader may reflow, paginate or split ' +
+      "length is the author's choice — a reader may reflow, paginate or split " +
       'across slides without losing meaning.',
   }),
   'fixed-collection': Object.freeze({
@@ -180,7 +182,7 @@ export const SLIDE_STRUCTURE_CONTRACTS = Object.freeze({
     hasContentFields: true,
     itemsPhrase: 'exactly one items[] field (the rows)',
     reader:
-      'Read the item array as rows and each item\'s keys as columns. The column ' +
+      "Read the item array as rows and each item's keys as columns. The column " +
       'set is shared across rows; a reader may render it as a table, as ' +
       'definition pairs, or as one block per row.',
   }),
@@ -200,7 +202,7 @@ export const SLIDE_STRUCTURE_CONTRACTS = Object.freeze({
     hasContentFields: false,
     itemsPhrase: 'no content fields at all',
     reader:
-      'There is no authored content to preserve. Render the type\'s beat in the ' +
+      "There is no authored content to preserve. Render the type's beat in the " +
       'deck (a closing slide, an interstitial) or omit the slide; either is ' +
       'lossless, because the slide *is* the chrome.',
   }),
@@ -212,7 +214,9 @@ export const SLIDE_STRUCTURE_CONTRACTS = Object.freeze({
  * @returns {StructureContract|null}
  */
 function structureContract(structure) {
-  return isSlideStructure(structure) ? SLIDE_STRUCTURE_CONTRACTS[String(structure)] : null;
+  return isSlideStructure(structure)
+    ? SLIDE_STRUCTURE_CONTRACTS[String(structure)]
+    : null;
 }
 
 /**
@@ -233,7 +237,9 @@ export function structureContractViolation(structure, shape) {
   if (!contract) return `unknown structure '${structure}'`;
 
   const arrays = Array.isArray(shape?.itemArrays) ? shape.itemArrays : [];
-  const contentKeys = Array.isArray(shape?.contentFieldKeys) ? shape.contentFieldKeys : [];
+  const contentKeys = Array.isArray(shape?.contentFieldKeys)
+    ? shape.contentFieldKeys
+    : [];
   const keys = arrays.map((f) => f?.key).join(', ') || 'none';
 
   if (!contract.hasContentFields && contentKeys.length) {

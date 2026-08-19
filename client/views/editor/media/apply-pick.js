@@ -33,13 +33,20 @@
  * @param {string|null} [opts.otherLang]
  * @param {(lang: string, alt: string) => void} opts.setAltForLang - language-scoped setter
  */
-export function applyAltFromPick({ picked, activeLang, otherLang, setAltForLang }) {
+export function applyAltFromPick({
+  picked,
+  activeLang,
+  otherLang,
+  setAltForLang,
+}) {
   if (typeof setAltForLang !== 'function' || !picked) return;
 
-  const alts = picked.alts && typeof picked.alts === 'object' ? picked.alts : null;
+  const alts =
+    picked.alts && typeof picked.alts === 'object' ? picked.alts : null;
   if (alts) {
     setAltForLang(activeLang, alts[activeLang] || '');
-    if (otherLang && otherLang !== activeLang) setAltForLang(otherLang, alts[otherLang] || '');
+    if (otherLang && otherLang !== activeLang)
+      setAltForLang(otherLang, alts[otherLang] || '');
     return;
   }
 
@@ -62,7 +69,12 @@ export function applyAltFromPick({ picked, activeLang, otherLang, setAltForLang 
  * @param {string} [opts.providerIdKey] - where to store `picked.providerId` (e.g. 'imagekitFileId')
  * @param {boolean} [opts.allowCaption] - whether this field accepts a caption/credit
  */
-export function applyPickMeta({ picked, content, providerIdKey, allowCaption = false } = {}) {
+export function applyPickMeta({
+  picked,
+  content,
+  providerIdKey,
+  allowCaption = false,
+} = {}) {
   if (!picked || !content || typeof content !== 'object') return;
 
   // Keep the opaque provider id in lock-step with the URL: a provider that

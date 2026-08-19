@@ -11,17 +11,17 @@ export const up = async (db) => {
   await db.schema
     .createTable('user_notifications')
     .addColumn('id', 'uuid', (col) =>
-      col.primaryKey().defaultTo(sql`gen_random_uuid()`)
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
     )
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade')
+      col.references('organizations.id').onDelete('cascade'),
     )
     .addColumn('user_email', 'varchar(320)', (col) => col.notNull())
     .addColumn('notification_type', 'varchar(50)', (col) => col.notNull())
     .addColumn('title', 'varchar(255)', (col) => col.notNull())
     .addColumn('body', 'text')
     .addColumn('presentation_id', 'uuid', (col) =>
-      col.references('presentations.id').onDelete('cascade')
+      col.references('presentations.id').onDelete('cascade'),
     )
     .addColumn('actor_email', 'varchar(320)')
     .addColumn('actor_name', 'varchar(255)')
@@ -29,9 +29,7 @@ export const up = async (db) => {
     .addColumn('action_url', 'varchar(500)')
     .addColumn('is_read', 'boolean', (col) => col.defaultTo(false))
     .addColumn('read_at', 'timestamptz')
-    .addColumn('created_at', 'timestamptz', (col) =>
-      col.defaultTo(sql`now()`)
-    )
+    .addColumn('created_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
     .execute();
 
   // Index for fetching user notifications (with read status and date ordering)

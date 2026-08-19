@@ -99,12 +99,12 @@ export function attachSlideListKeyNavigation({
       e.preventDefault();
       const slides =
         typeof getSlides === 'function' ? getSlides() : pres?.slides || [];
-      const curIdx = slides.findIndex(
-        (s) => s.id === getSelectedSlideId?.()
-      );
+      const curIdx = slides.findIndex((s) => s.id === getSelectedSlideId?.());
       if (curIdx < 0) return;
-      if (e.key === 'ArrowUp') selectSlideByIndex(curIdx - 1, { extend: isShift });
-      if (e.key === 'ArrowDown') selectSlideByIndex(curIdx + 1, { extend: isShift });
+      if (e.key === 'ArrowUp')
+        selectSlideByIndex(curIdx - 1, { extend: isShift });
+      if (e.key === 'ArrowDown')
+        selectSlideByIndex(curIdx + 1, { extend: isShift });
       return;
     }
 
@@ -122,7 +122,7 @@ export function attachSlideListKeyNavigation({
 
     e.preventDefault();
     const nav = Array.from(
-      slideListEl.querySelectorAll('.slide-item, .slide-insert-btn')
+      slideListEl.querySelectorAll('.slide-item, .slide-insert-btn'),
     );
     const cur = nav.indexOf(currentNav);
     if (cur < 0) return;
@@ -149,7 +149,7 @@ export function attachSlideListKeyNavigation({
       editorState.refreshAll();
       requestAnimationFrame(() => {
         const el = slideListEl.querySelector(
-          `.list-item.slide-item[data-slide-id="${sid}"]`
+          `.list-item.slide-item[data-slide-id="${sid}"]`,
         );
         el?.focus?.();
         el?.scrollIntoView?.({ block: 'nearest' });
@@ -180,7 +180,9 @@ export function attachSlideListKeyNavigation({
       const slidesToCopy = (pres?.slides || []).filter((s) => toCopy.has(s.id));
       if (slidesToCopy.length > 0 && copySlides(slidesToCopy)) {
         toast?.success?.(
-          t('editor.slides.copiedToClipboard', '{n} slide(s) copied', { n: slidesToCopy.length })
+          t('editor.slides.copiedToClipboard', '{n} slide(s) copied', {
+            n: slidesToCopy.length,
+          }),
         );
         onMultiSelectionChange?.();
       }
@@ -213,9 +215,10 @@ export function attachSlideListKeyNavigation({
           content: JSON.parse(JSON.stringify(clipSlide.content || {})),
           notes: clipSlide.notes || '',
           // Map parentId to new ID if it exists in the clipboard, otherwise null
-          parentId: clipSlide.parentId && idMap.has(clipSlide.parentId)
-            ? idMap.get(clipSlide.parentId)
-            : null,
+          parentId:
+            clipSlide.parentId && idMap.has(clipSlide.parentId)
+              ? idMap.get(clipSlide.parentId)
+              : null,
         };
         // Ensure interaction IDs don't collide for special slide types
         if (s.type === 'poll-slide' && s.content) {
@@ -237,7 +240,9 @@ export function attachSlideListKeyNavigation({
       editorState.refreshAll();
 
       toast?.success?.(
-        t('editor.slides.pasted', '{n} slide(s) pasted', { n: newSlides.length })
+        t('editor.slides.pasted', '{n} slide(s) pasted', {
+          n: newSlides.length,
+        }),
       );
       onMultiSelectionChange?.();
     }
@@ -284,13 +289,20 @@ export function attachSlideListKeyNavigation({
 
     // Never intercept while typing or operating a control.
     const tag = String(e.target?.tagName || '').toUpperCase();
-    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON') return;
+    if (
+      tag === 'INPUT' ||
+      tag === 'TEXTAREA' ||
+      tag === 'SELECT' ||
+      tag === 'BUTTON'
+    )
+      return;
     if (e.target?.isContentEditable) return;
 
     const multi = getSelectedSlideIds?.() || new Set();
-    const selectedIds = multi.size > 0
-      ? new Set(multi)
-      : new Set([getSelectedSlideId?.()].filter(Boolean));
+    const selectedIds =
+      multi.size > 0
+        ? new Set(multi)
+        : new Set([getSelectedSlideId?.()].filter(Boolean));
     if (selectedIds.size === 0) return;
     e.preventDefault();
 

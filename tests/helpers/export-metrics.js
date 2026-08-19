@@ -19,7 +19,10 @@
 
 import sharp from 'sharp';
 
-import { getPuppeteerBrowser, toNodeBuffer } from '../../server/utils/puppeteer-browser.js';
+import {
+  getPuppeteerBrowser,
+  toNodeBuffer,
+} from '../../server/utils/puppeteer-browser.js';
 import { buildSlidePngHtml } from '../../server/render/png.js';
 import { renderSlidesToPdfBuffer } from '../../server/render/pdf.js';
 import { parsePdf } from '../../server/utils/convert-file/pdf-parser.js';
@@ -45,7 +48,10 @@ function normalizeUnicodeRange(range) {
 
 /** `{ <normalized range>: 'latin' | 'latin-ext' }`, for labelling loaded faces. */
 const SUBSET_LABELS = Object.fromEntries(
-  FONT_SUBSETS.map(({ name, unicodeRange }) => [normalizeUnicodeRange(unicodeRange), name])
+  FONT_SUBSETS.map(({ name, unicodeRange }) => [
+    normalizeUnicodeRange(unicodeRange),
+    name,
+  ]),
 );
 
 /**
@@ -53,7 +59,11 @@ const SUBSET_LABELS = Object.fromEntries(
  * `content-slide` is used because it exposes the three roles as plain
  * `.heading` / `.subheading` / `.body` elements.
  */
-export const MEASURED_SELECTORS = ['.slide .heading', '.slide .subheading', '.slide .body'];
+export const MEASURED_SELECTORS = [
+  '.slide .heading',
+  '.slide .subheading',
+  '.slide .body',
+];
 
 /** Round to one decimal: enough to see a real layout shift, not sub-pixel noise. */
 function round1(n) {
@@ -81,7 +91,9 @@ function round1(n) {
  * @returns {string}
  */
 function pageTextKey(text) {
-  return String(text || '').replace(/\s+/g, '').slice(0, 80);
+  return String(text || '')
+    .replace(/\s+/g, '')
+    .slice(0, 80);
 }
 
 /** `rgb(r, g, b)` / `rgba(...)` or `#rrggbb` → `[r, g, b]`, else null. */
@@ -108,7 +120,9 @@ export function parseCssColor(value) {
  * @returns {Promise<{rgb: number[], share: number}>}
  */
 export async function dominantColor(pngBuffer) {
-  const { data, info } = await sharp(pngBuffer).raw().toBuffer({ resolveWithObject: true });
+  const { data, info } = await sharp(pngBuffer)
+    .raw()
+    .toBuffer({ resolveWithObject: true });
   const counts = new Map();
   for (let i = 0; i < data.length; i += info.channels) {
     const key = (data[i] << 16) | (data[i + 1] << 8) | data[i + 2];
@@ -143,11 +157,19 @@ export async function dominantColor(pngBuffer) {
  * @returns {Promise<Array<{family: string, glyphs: number}>>}
  */
 async function platformFonts(client, rootNodeId, selector) {
-  const { nodeId } = await client.send('DOM.querySelector', { nodeId: rootNodeId, selector });
+  const { nodeId } = await client.send('DOM.querySelector', {
+    nodeId: rootNodeId,
+    selector,
+  });
   if (!nodeId) return [];
-  const { fonts } = await client.send('CSS.getPlatformFontsForNode', { nodeId });
+  const { fonts } = await client.send('CSS.getPlatformFontsForNode', {
+    nodeId,
+  });
   return fonts
-    .map((f) => ({ family: String(f.familyName || ''), glyphs: Number(f.glyphCount || 0) }))
+    .map((f) => ({
+      family: String(f.familyName || ''),
+      glyphs: Number(f.glyphCount || 0),
+    }))
     .sort((a, b) => b.glyphs - a.glyphs);
 }
 
@@ -161,7 +183,11 @@ async function platformFonts(client, rootNodeId, selector) {
  * @param {string[]} [options.selectors] - Elements to measure
  * @returns {Promise<Object>} - The metrics object for this fixture
  */
-export async function measureSlide(repoRoot, slide, { theme = null, selectors = MEASURED_SELECTORS } = {}) {
+export async function measureSlide(
+  repoRoot,
+  slide,
+  { theme = null, selectors = MEASURED_SELECTORS } = {},
+) {
   const browser = await getPuppeteerBrowser({ featureName: 'export metrics' });
   const page = await browser.newPage();
   try {
@@ -192,7 +218,10 @@ export async function measureSlide(repoRoot, slide, { theme = null, selectors = 
             requestedFamily: cs.fontFamily,
             fontSize: cs.fontSize,
             fontWeight: cs.fontWeight,
-            text: (el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 60),
+            text: (el.textContent || '')
+              .replace(/\s+/g, ' ')
+              .trim()
+              .slice(0, 60),
           };
         }
 
@@ -211,7 +240,12 @@ export async function measureSlide(repoRoot, slide, { theme = null, selectors = 
             r.bottom > frame.height + EPSILON
           ) {
             overflowing.push({
-              selector: `${el.tagName.toLowerCase()}.${String(el.className || '').split(/\s+/).filter(Boolean).join('.')}`,
+              selector: `${el.tagName.toLowerCase()}.${String(
+                el.className || '',
+              )
+                .split(/\s+/)
+                .filter(Boolean)
+                .join('.')}`,
               rect: rectOf(el),
             });
           }
@@ -221,7 +255,9 @@ export async function measureSlide(repoRoot, slide, { theme = null, selectors = 
         // that is depends on the slide's `background` variant, so the test
         // compares it to the token the fixture declares rather than guessing.
         const slideEl = document.querySelector('.slide');
-        const slideBackground = slideEl ? getComputedStyle(slideEl).backgroundColor : null;
+        const slideBackground = slideEl
+          ? getComputedStyle(slideEl).backgroundColor
+          : null;
 
         // Reported raw; the subset labelling happens in Node, where the
         // normaliser already lives.
@@ -235,7 +271,7 @@ export async function measureSlide(repoRoot, slide, { theme = null, selectors = 
 
         return { elements, overflowing, slideBackground, loadedFonts };
       },
-      { selectors, frame: FRAME }
+      { selectors, frame: FRAME },
     );
 
     // Keyed by subset as well as family and weight. A curated family ships as
@@ -248,7 +284,7 @@ export async function measureSlide(repoRoot, slide, { theme = null, selectors = 
         inPage.loadedFonts.map((f) => {
           const range = normalizeUnicodeRange(f.unicodeRange);
           return `${f.family} ${f.weight} [${SUBSET_LABELS[range] || range}]`;
-        })
+        }),
       ),
     ].sort();
 
@@ -273,13 +309,18 @@ export async function measureSlide(repoRoot, slide, { theme = null, selectors = 
         },
         fontSize: measured.fontSize,
         fontWeight: measured.fontWeight,
-        requestedFamily: measured.requestedFamily.split(',')[0].trim().replace(/^['"]|['"]$/g, ''),
+        requestedFamily: measured.requestedFamily
+          .split(',')[0]
+          .trim()
+          .replace(/^['"]|['"]$/g, ''),
         paintedFamilies: await platformFonts(client, root.nodeId, sel),
         text: measured.text,
       };
     }
 
-    const png = toNodeBuffer(await page.screenshot({ type: 'png', fullPage: false }));
+    const png = toNodeBuffer(
+      await page.screenshot({ type: 'png', fullPage: false }),
+    );
     const dominant = await dominantColor(png);
 
     return {
@@ -295,7 +336,10 @@ export async function measureSlide(repoRoot, slide, { theme = null, selectors = 
       })),
       slideBackground: inPage.slideBackground,
       loadedFonts,
-      dominantColor: { rgb: dominant.rgb, share: Math.round(dominant.share * 1000) / 1000 },
+      dominantColor: {
+        rgb: dominant.rgb,
+        share: Math.round(dominant.share * 1000) / 1000,
+      },
     };
   } finally {
     try {
@@ -316,14 +360,18 @@ export async function measureSlide(repoRoot, slide, { theme = null, selectors = 
  * @returns {Promise<{pageCount: number, pages: Array<{width: number, height: number}>}>}
  */
 export async function measureDeckPdf(repoRoot, deck, { theme = null } = {}) {
-  const buf = Buffer.from(await renderSlidesToPdfBuffer(repoRoot, deck, { theme }));
+  const buf = Buffer.from(
+    await renderSlidesToPdfBuffer(repoRoot, deck, { theme }),
+  );
   const parsed = await parsePdf(buf);
 
   // Page geometry comes from the /MediaBox entries rather than the text
   // extractor, which reports content and not size. Chrome writes the page dicts
   // uncompressed, so a scan over the raw bytes is enough and costs no
   // dependency.
-  const mediaBoxes = [...buf.toString('latin1').matchAll(/\/MediaBox\s*\[([^\]]*)\]/g)].map((m) => {
+  const mediaBoxes = [
+    ...buf.toString('latin1').matchAll(/\/MediaBox\s*\[([^\]]*)\]/g),
+  ].map((m) => {
     const [x0, y0, x1, y1] = m[1].trim().split(/\s+/).map(Number);
     return { width: round1(x1 - x0), height: round1(y1 - y0) };
   });
@@ -335,7 +383,7 @@ export async function measureDeckPdf(repoRoot, deck, { theme = null } = {}) {
   if (mediaBoxes.length !== parsed.slides.length) {
     throw new Error(
       `/MediaBox scan found ${mediaBoxes.length} boxes for ${parsed.slides.length} pages — ` +
-        'the raw-bytes scan no longer describes this PDF and the geometry cannot be trusted'
+        'the raw-bytes scan no longer describes this PDF and the geometry cannot be trusted',
     );
   }
 

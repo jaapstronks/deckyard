@@ -1,8 +1,8 @@
 # Collaborator presence (realtime, phase 1)
 
-*How the live-presence layer works. Design rationale in
+_How the live-presence layer works. Design rationale in
 [ADR 001](../adr/001-realtime-collaboration.md); this phase ships awareness
-only — no shared document edits yet (that's phase 2).*
+only — no shared document edits yet (that's phase 2)._
 
 ## What the user sees
 
@@ -24,7 +24,7 @@ sees:
   line), and as an outline + name chip inside the top-right corner on flat
   surfaces — the side-form field wrapper, the presenter-notes block and the
   inline markdown modal (if you have the same field's modal open, your modal
-  shows the other editor's color). If the focused field has no *visible*
+  shows the other editor's color). If the focused field has no _visible_
   local counterpart — a freshly spawned field/item whose content hasn't
   synced here, or a form field hidden in a collapsed group — a fallback name
   chip appears in the slide's top-right corner instead, so editing presence
@@ -64,6 +64,7 @@ Browser editor ──ws /collab──▶ node:http server (same port 4177)
 
   The presence color is a deterministic hash of the email (like avatar
   initials colors).
+
 - **Editor UI**: `client/views/editor/presence/presence-ui.js`. The slide
   list and preview re-render destructively, so decorations are re-applied
   from the peer list via MutationObservers rather than stored in the DOM.

@@ -12,13 +12,13 @@ export const up = async (db) => {
     .createTable('presentation_share_links')
     .ifNotExists()
     .addColumn('id', 'uuid', (col) =>
-      col.primaryKey().defaultTo(sql`gen_random_uuid()`)
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
     )
     .addColumn('presentation_id', 'uuid', (col) =>
-      col.references('presentations.id').onDelete('cascade').notNull()
+      col.references('presentations.id').onDelete('cascade').notNull(),
     )
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade')
+      col.references('organizations.id').onDelete('cascade'),
     )
     .addColumn('token', 'varchar(64)', (col) => col.notNull().unique())
     .addColumn('label', 'varchar(255)')
@@ -69,10 +69,10 @@ export const up = async (db) => {
     .createTable('share_link_access_log')
     .ifNotExists()
     .addColumn('id', 'uuid', (col) =>
-      col.primaryKey().defaultTo(sql`gen_random_uuid()`)
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
     )
     .addColumn('share_link_id', 'uuid', (col) =>
-      col.references('presentation_share_links.id').onDelete('cascade')
+      col.references('presentation_share_links.id').onDelete('cascade'),
     )
     .addColumn('accessed_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
     .addColumn('ip_address', 'varchar(45)')
@@ -91,8 +91,14 @@ export const down = async (db) => {
   // Drop indexes first
   await db.schema.dropIndex('idx_access_log_link').ifExists().execute();
   await db.schema.dropIndex('idx_share_links_expires').ifExists().execute();
-  await db.schema.dropIndex('idx_share_links_token_active').ifExists().execute();
-  await db.schema.dropIndex('idx_share_links_presentation').ifExists().execute();
+  await db.schema
+    .dropIndex('idx_share_links_token_active')
+    .ifExists()
+    .execute();
+  await db.schema
+    .dropIndex('idx_share_links_presentation')
+    .ifExists()
+    .execute();
 
   // Drop tables in reverse order
   await db.schema.dropTable('share_link_access_log').ifExists().execute();

@@ -9,7 +9,9 @@ import { sql } from 'kysely';
 export const up = async (db) => {
   await db.schema
     .alterTable('presentations')
-    .addColumn('is_starter_kit', 'boolean', (col) => col.defaultTo(false).notNull())
+    .addColumn('is_starter_kit', 'boolean', (col) =>
+      col.defaultTo(false).notNull(),
+    )
     .execute();
 
   // Create index for efficient filtering of starter kits

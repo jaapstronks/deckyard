@@ -39,12 +39,18 @@ import { updatePresentation } from './index.js';
  * @returns {Promise<{ok: true, slideId: string, notes: string, revision: number|null, changed: boolean}
  *   | {ok: false, reason: string, errors?: Array}>}
  */
-export async function updateSlideNotes(storageScope, presentation, { slideId, notes } = {}) {
+export async function updateSlideNotes(
+  storageScope,
+  presentation,
+  { slideId, notes } = {},
+) {
   const targetId = String(slideId || '').trim();
   if (!targetId) return { ok: false, reason: 'missing_slide_id' };
 
   const slides = Array.isArray(presentation?.slides) ? presentation.slides : [];
-  const current = slides.find((s) => s && typeof s === 'object' && s.id === targetId);
+  const current = slides.find(
+    (s) => s && typeof s === 'object' && s.id === targetId,
+  );
   if (!current) return { ok: false, reason: 'slide_not_found' };
 
   const next = typeof notes === 'string' ? notes : String(notes ?? '');
@@ -62,16 +68,22 @@ export async function updateSlideNotes(storageScope, presentation, { slideId, no
   }
 
   const nextSlides = slides.map((s) =>
-    s && typeof s === 'object' && s.id === targetId ? { ...s, notes: next } : s
+    s && typeof s === 'object' && s.id === targetId ? { ...s, notes: next } : s,
   );
 
   // `{ slides }` and nothing else: the adapter's partial-write rule leaves every
   // column the caller did not name alone, so title, settings and the i18n
   // buffers survive untouched.
-  const result = await updatePresentation(storageScope, presentation.id, { slides: nextSlides });
+  const result = await updatePresentation(storageScope, presentation.id, {
+    slides: nextSlides,
+  });
   if (!result) return { ok: false, reason: 'not_found' };
   if (result.ok === false)
-    return { ok: false, reason: result.reason || 'write_failed', errors: result.errors };
+    return {
+      ok: false,
+      reason: result.reason || 'write_failed',
+      errors: result.errors,
+    };
 
   return {
     ok: true,

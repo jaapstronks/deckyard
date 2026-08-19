@@ -30,13 +30,17 @@ export async function renderMagicLogin(root, { nav } = {}) {
   if (!token) {
     spinnerEl.remove();
     title.textContent = t('magicLogin.error', 'Invalid link');
-    subtitle.textContent = t('magicLogin.invalidToken', 'This sign-in link is invalid or has expired.');
+    subtitle.textContent = t(
+      'magicLogin.invalidToken',
+      'This sign-in link is invalid or has expired.',
+    );
     subtitle.className = 'auth-subtitle';
 
     const loginLink = h('a', {
       href: '/login',
       class: 'auth-btn',
-      style: 'text-decoration: none; margin-top: var(--ps-space-4); width: auto;',
+      style:
+        'text-decoration: none; margin-top: var(--ps-space-4); width: auto;',
       text: t('magicLogin.goToLogin', 'Go to login'),
     });
     loginLink.onclick = (e) => {
@@ -61,17 +65,25 @@ export async function renderMagicLogin(root, { nav } = {}) {
       spinnerEl.remove();
 
       // Show success icon
-      const successIcon = h('div', { class: 'auth-success-icon', text: '\u2713' });
+      const successIcon = h('div', {
+        class: 'auth-success-icon',
+        text: '\u2713',
+      });
       header.before(successIcon);
 
       title.textContent = t('magicLogin.success', 'Welcome!');
-      subtitle.textContent = t('magicLogin.redirecting', 'Redirecting you now...');
+      subtitle.textContent = t(
+        'magicLogin.redirecting',
+        'Redirecting you now...',
+      );
       subtitle.className = 'auth-subtitle';
 
       // Set fresh login flag so list view starts on 'home'
       try {
         sessionStorage.setItem('ps:fresh-login-pending', '1');
-      } catch { /* sessionStorage may not be available */ }
+      } catch {
+        /* sessionStorage may not be available */
+      }
 
       // Verify session and navigate
       try {
@@ -84,15 +96,23 @@ export async function renderMagicLogin(root, { nav } = {}) {
       // Token invalid or expired
       spinnerEl.remove();
       title.textContent = t('magicLogin.error', 'Invalid link');
-      subtitle.textContent = data.reason === 'expired'
-        ? t('magicLogin.expiredToken', 'This sign-in link has expired. Please request a new one.')
-        : t('magicLogin.invalidToken', 'This sign-in link is invalid or has expired.');
+      subtitle.textContent =
+        data.reason === 'expired'
+          ? t(
+              'magicLogin.expiredToken',
+              'This sign-in link has expired. Please request a new one.',
+            )
+          : t(
+              'magicLogin.invalidToken',
+              'This sign-in link is invalid or has expired.',
+            );
       subtitle.className = 'auth-subtitle';
 
       const loginLink = h('a', {
         href: '/login',
         class: 'auth-btn',
-        style: 'text-decoration: none; margin-top: var(--ps-space-4); width: auto;',
+        style:
+          'text-decoration: none; margin-top: var(--ps-space-4); width: auto;',
         text: t('magicLogin.tryAgain', 'Try again'),
       });
       loginLink.onclick = (e) => {
@@ -104,13 +124,17 @@ export async function renderMagicLogin(root, { nav } = {}) {
   } catch (err) {
     spinnerEl.remove();
     title.textContent = t('magicLogin.error', 'Something went wrong');
-    subtitle.textContent = t('magicLogin.networkError', 'Could not verify your link. Please try again.');
+    subtitle.textContent = t(
+      'magicLogin.networkError',
+      'Could not verify your link. Please try again.',
+    );
     subtitle.className = 'auth-subtitle';
 
     const loginLink = h('a', {
       href: '/login',
       class: 'auth-btn',
-      style: 'text-decoration: none; margin-top: var(--ps-space-4); width: auto;',
+      style:
+        'text-decoration: none; margin-top: var(--ps-space-4); width: auto;',
       text: t('magicLogin.goToLogin', 'Go to login'),
     });
     loginLink.onclick = (e) => {

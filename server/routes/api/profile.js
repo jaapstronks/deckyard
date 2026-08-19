@@ -9,9 +9,21 @@
  */
 
 import sharp from 'sharp';
-import { badRequest, methodNotAllowed, serveJson, unauthorized, forbidden, jsonError, requireJsonBody, withErrorHandler } from '../../utils/http.js';
+import {
+  badRequest,
+  methodNotAllowed,
+  serveJson,
+  unauthorized,
+  forbidden,
+  jsonError,
+  requireJsonBody,
+  withErrorHandler,
+} from '../../utils/http.js';
 import { writeUserSettings } from '../../storage/settings.js';
-import { getMediaProvider, isMediaProviderInitialized } from '../../media/index.js';
+import {
+  getMediaProvider,
+  isMediaProviderInitialized,
+} from '../../media/index.js';
 import { getFeatureFlags } from '../../config/flags-snapshot.js';
 import { getDataUrl } from '../../utils/request-validators.js';
 import { createLogger } from '../../utils/logger.js';
@@ -22,14 +34,22 @@ const log = createLogger('profile');
 const MAX_PROFILE_IMAGE_SIZE = 400; // Max width/height in pixels
 const ALLOWED_MIME_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
 
-
 // POST /api/profile/image - Upload own profile image
-async function handleProfileImageUpload({ repoRoot, storageScope, req, res, authedUser }) {
+async function handleProfileImageUpload({
+  repoRoot,
+  storageScope,
+  req,
+  res,
+  authedUser,
+}) {
   const email = String(authedUser?.email || '').trim();
 
   const flags = getFeatureFlags();
   if (flags.demoMode || flags.sandboxMode) {
-    return badRequest(res, 'Profile image uploads disabled in demo/sandbox mode');
+    return badRequest(
+      res,
+      'Profile image uploads disabled in demo/sandbox mode',
+    );
   }
 
   if (!isMediaProviderInitialized()) {
@@ -95,13 +115,23 @@ async function handleProfileImageUpload({ repoRoot, storageScope, req, res, auth
   } catch (err) {
     log.error('[profile] Image upload failed:', err);
     const status = err.statusCode || 500;
-    jsonError(res, status, 'image_processing_failed', err.message || 'Image processing failed');
+    jsonError(
+      res,
+      status,
+      'image_processing_failed',
+      err.message || 'Image processing failed',
+    );
   }
   return true;
 }
 
 // DELETE /api/profile/image - Remove own profile image
-async function handleProfileImageDelete({ repoRoot, storageScope, res, authedUser }) {
+async function handleProfileImageDelete({
+  repoRoot,
+  storageScope,
+  res,
+  authedUser,
+}) {
   const email = String(authedUser?.email || '').trim();
 
   // Clear the image URL from user settings
@@ -116,7 +146,10 @@ async function handleProfileImageDelete({ repoRoot, storageScope, res, authedUse
 // POST or DELETE /api/profile/image/:email - Admin manages another account image.
 // Email validation and the admin check run before the method dispatch, so this
 // stays a single no-method handler (see route-dispatch.md, the Form B guard note).
-async function handleProfileImageAdmin({ repoRoot, storageScope, req, res, authedUser }, rawTargetEmail) {
+async function handleProfileImageAdmin(
+  { repoRoot, storageScope, req, res, authedUser },
+  rawTargetEmail,
+) {
   const targetEmail = decodeURIComponent(rawTargetEmail).toLowerCase().trim();
   if (!targetEmail || !targetEmail.includes('@')) {
     return badRequest(res, 'Invalid email address');
@@ -131,7 +164,10 @@ async function handleProfileImageAdmin({ repoRoot, storageScope, req, res, authe
   if (req.method === 'POST') {
     const flags = getFeatureFlags();
     if (flags.demoMode || flags.sandboxMode) {
-      return badRequest(res, 'Profile image uploads disabled in demo/sandbox mode');
+      return badRequest(
+        res,
+        'Profile image uploads disabled in demo/sandbox mode',
+      );
     }
 
     if (!isMediaProviderInitialized()) {
@@ -190,7 +226,12 @@ async function handleProfileImageAdmin({ repoRoot, storageScope, req, res, authe
       serveJson(res, 200, { imageUrl: result.publicUrl });
     } catch (err) {
       log.error('[profile] Admin image upload failed:', err);
-      jsonError(res, err.statusCode || 500, 'image_processing_failed', err.message || 'Image processing failed');
+      jsonError(
+        res,
+        err.statusCode || 500,
+        'image_processing_failed',
+        err.message || 'Image processing failed',
+      );
     }
     return true;
   }
@@ -216,10 +257,24 @@ async function handleProfileImageAdmin({ repoRoot, storageScope, req, res, authe
  * @type {import('../../utils/router.js').Route[]}
  */
 export const ROUTES = [
-  { method: 'POST', pattern: '/api/profile/image', handler: handleProfileImageUpload },
-  { method: 'DELETE', pattern: '/api/profile/image', handler: handleProfileImageDelete },
-  { pattern: '/api/profile/image', handler: ({ res }) => methodNotAllowed(res, ['POST', 'DELETE']) },
-  { pattern: /^\/api\/profile\/image\/(.+)$/, handler: handleProfileImageAdmin },
+  {
+    method: 'POST',
+    pattern: '/api/profile/image',
+    handler: handleProfileImageUpload,
+  },
+  {
+    method: 'DELETE',
+    pattern: '/api/profile/image',
+    handler: handleProfileImageDelete,
+  },
+  {
+    pattern: '/api/profile/image',
+    handler: ({ res }) => methodNotAllowed(res, ['POST', 'DELETE']),
+  },
+  {
+    pattern: /^\/api\/profile\/image\/(.+)$/,
+    handler: handleProfileImageAdmin,
+  },
 ];
 
 /**

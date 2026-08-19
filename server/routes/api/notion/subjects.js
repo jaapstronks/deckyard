@@ -4,7 +4,12 @@
  * These endpoints are feature-gated.
  */
 
-import { badRequest, jsonError, serveJson, requireJsonBody } from '../../../utils/http.js';
+import {
+  badRequest,
+  jsonError,
+  serveJson,
+  requireJsonBody,
+} from '../../../utils/http.js';
 import { getTrimmedString } from '../../../utils/request-validators.js';
 import {
   getPlainTextFromPage,
@@ -63,10 +68,7 @@ export async function handleNotionSubjects({ req, res }) {
   }
 
   if (!subjects.length) {
-    badRequest(
-      res,
-      'No recent Notion pages found.'
-    );
+    badRequest(res, 'No recent Notion pages found.');
     return true;
   }
 
@@ -105,7 +107,8 @@ export async function handleNotionCompose({ req, res }) {
 
   // If we don't have a page id but we do have a keyword: compose from multiple pages matching that keyword.
   if (!pageId) {
-    if (!hasKeyword) return badRequest(res, 'Expected { pageId } or { keyword }');
+    if (!hasKeyword)
+      return badRequest(res, 'Expected { pageId } or { keyword }');
 
     const results = await searchPages({ query: keywordRaw, pageSize: 50 });
     const ids = [];
@@ -126,7 +129,10 @@ export async function handleNotionCompose({ req, res }) {
       if (ids.length >= 3) break;
     }
     if (!ids.length)
-      return badRequest(res, 'No readable Notion content found for this keyword.');
+      return badRequest(
+        res,
+        'No readable Notion content found for this keyword.',
+      );
 
     const chunks = [];
     for (const id of ids) {
@@ -150,7 +156,9 @@ export async function handleNotionCompose({ req, res }) {
   const related =
     keyword.length >= 4
       ? base.filter((p) =>
-          String(p?.title || '').toLowerCase().includes(keyword)
+          String(p?.title || '')
+            .toLowerCase()
+            .includes(keyword),
         )
       : [];
 

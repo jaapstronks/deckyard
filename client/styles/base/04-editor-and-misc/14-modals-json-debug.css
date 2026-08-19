@@ -60,7 +60,9 @@
   border: none;
   border-bottom: 2px solid transparent;
   cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
   margin-bottom: -1px;
 }
 
@@ -103,7 +105,8 @@
 }
 
 .json-debug-info code {
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas, monospace;
   font-size: 0.9em;
   background: hsl(var(--app-bg-elevated));
   padding: 2px 6px;
@@ -114,7 +117,8 @@
 .json-debug-textarea {
   flex: 1;
   min-height: 300px;
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas, monospace;
   font-size: var(--ps-text-sm);
   line-height: 1.5;
   tab-size: 2;
@@ -138,7 +142,8 @@
   border-radius: var(--ps-radius-sm);
   color: hsl(0 65% 45%);
   font-size: var(--ps-text-sm);
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas, monospace;
 }
 
 /* Actions bar */
@@ -180,7 +185,8 @@
   font-weight: 600;
   margin: var(--ps-space-3) 0 var(--ps-space-1) 0;
   color: hsl(var(--app-accent-text));
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas, monospace;
 }
 
 .json-debug-schema ul {
@@ -199,7 +205,8 @@
 }
 
 .json-debug-schema code {
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas, monospace;
   font-size: 0.9em;
   background: hsl(var(--app-bg-hover));
   padding: 2px 6px;
@@ -218,7 +225,8 @@
   padding: var(--ps-space-3);
   background: hsl(220 15% 12%);
   border-radius: var(--ps-radius-md);
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas, monospace;
   font-size: 12px;
   line-height: 1.5;
   overflow-x: auto;

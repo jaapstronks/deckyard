@@ -81,5 +81,7 @@ export const up = async (db) => {
 
 export const down = async (db) => {
   await sql`DROP INDEX IF EXISTS idx_user_settings_user_id`.execute(db);
-  await sql`ALTER TABLE user_settings DROP COLUMN IF EXISTS user_id`.execute(db);
+  await sql`ALTER TABLE user_settings DROP COLUMN IF EXISTS user_id`.execute(
+    db,
+  );
 };

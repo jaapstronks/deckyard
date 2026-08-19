@@ -8,7 +8,10 @@ import { iconUrl } from '../../../../../shared/icon-names.js';
 import { createGuestManagementSection } from './guest-management.js';
 import { getExpiresAt, formatExpiration } from './utils.js';
 import { getPermissionLabel } from '../../../../lib/permission-labels.js';
-import { openRevokeMessageModal, REVOKE_CONTEXT } from '../revoke-message-modal.js';
+import {
+  openRevokeMessageModal,
+  REVOKE_CONTEXT,
+} from '../revoke-message-modal.js';
 
 /**
  * Create the share links section component.
@@ -22,7 +25,15 @@ import { openRevokeMessageModal, REVOKE_CONTEXT } from '../revoke-message-modal.
  * @param {Array} [options.openOverlayClosers] - Overlay closers array
  * @returns {Object} { element, loadShareLinks }
  */
-export function createShareLinksSection({ h, api, presentationId, copyToClipboard, toast, modalRoot, openOverlayClosers }) {
+export function createShareLinksSection({
+  h,
+  api,
+  presentationId,
+  copyToClipboard,
+  toast,
+  modalRoot,
+  openOverlayClosers,
+}) {
   let shareLinks = [];
   let isCreating = false;
 
@@ -32,7 +43,7 @@ export function createShareLinksSection({ h, api, presentationId, copyToClipboar
     h('div', {
       class: 'share-section-title',
       text: t('share.links.sectionTitle', 'Anyone with the link'),
-    })
+    }),
   );
 
   // Help text
@@ -40,7 +51,7 @@ export function createShareLinksSection({ h, api, presentationId, copyToClipboar
     class: 'help share-modal-help',
     text: t(
       'share.modal.help',
-      'Create a link that works without a Deckyard account.'
+      'Create a link that works without a Deckyard account.',
     ),
   });
 
@@ -51,27 +62,37 @@ export function createShareLinksSection({ h, api, presentationId, copyToClipboar
     text: t('share.create.title', 'Create New Link'),
   });
 
-  const permissionSelect = h('select', { class: 'form-input share-permission-select' });
+  const permissionSelect = h('select', {
+    class: 'form-input share-permission-select',
+  });
   // Share links are only ever issued as 'view' or 'comment' — there is no
   // guest-editing flow. Labels come from the shared helper so a link's badge
   // below reads exactly like the option that created it.
   permissionSelect.append(
     h('option', { value: 'view', text: getPermissionLabel('view') }),
-    h('option', { value: 'comment', text: getPermissionLabel('comment') })
+    h('option', { value: 'comment', text: getPermissionLabel('comment') }),
   );
 
-  const expirationSelect = h('select', { class: 'form-input share-expiration-select' });
+  const expirationSelect = h('select', {
+    class: 'form-input share-expiration-select',
+  });
   expirationSelect.append(
-    h('option', { value: '', text: t('share.expiration.never', 'Never expires') }),
+    h('option', {
+      value: '',
+      text: t('share.expiration.never', 'Never expires'),
+    }),
     h('option', { value: '1h', text: t('share.expiration.1h', '1 hour') }),
     h('option', { value: '24h', text: t('share.expiration.24h', '24 hours') }),
     h('option', { value: '7d', text: t('share.expiration.7d', '7 days') }),
-    h('option', { value: '30d', text: t('share.expiration.30d', '30 days') })
+    h('option', { value: '30d', text: t('share.expiration.30d', '30 days') }),
   );
 
   const labelInput = h('input', {
     class: 'form-input share-label-input',
-    placeholder: t('share.label.placeholder', 'Optional label (e.g., "For client review")'),
+    placeholder: t(
+      'share.label.placeholder',
+      'Optional label (e.g., "For client review")',
+    ),
   });
 
   const passwordInput = h('input', {
@@ -81,21 +102,37 @@ export function createShareLinksSection({ h, api, presentationId, copyToClipboar
   });
 
   // Registration mode toggle (for comment permission links)
-  const registrationModeSelect = h('select', { class: 'form-input share-registration-mode-select' });
+  const registrationModeSelect = h('select', {
+    class: 'form-input share-registration-mode-select',
+  });
   registrationModeSelect.append(
-    h('option', { value: 'invite_only', text: t('share.registration.inviteOnly', 'Invite specific people') }),
-    h('option', { value: 'open', text: t('share.registration.open', 'Anyone with the link') })
+    h('option', {
+      value: 'invite_only',
+      text: t('share.registration.inviteOnly', 'Invite specific people'),
+    }),
+    h('option', {
+      value: 'open',
+      text: t('share.registration.open', 'Anyone with the link'),
+    }),
   );
 
-  const registrationModeRow = h('div', { class: 'share-form-row share-registration-mode-row' }, [
-    h('label', { class: 'share-form-label', text: t('share.registration.label', 'Access') }),
-    registrationModeSelect,
-  ]);
+  const registrationModeRow = h(
+    'div',
+    { class: 'share-form-row share-registration-mode-row' },
+    [
+      h('label', {
+        class: 'share-form-label',
+        text: t('share.registration.label', 'Access'),
+      }),
+      registrationModeSelect,
+    ],
+  );
   registrationModeRow.style.display = 'none'; // Only show for comment links
 
   // Show/hide registration mode based on permission selection
   permissionSelect.addEventListener('change', () => {
-    registrationModeRow.style.display = permissionSelect.value === 'comment' ? '' : 'none';
+    registrationModeRow.style.display =
+      permissionSelect.value === 'comment' ? '' : 'none';
   });
 
   const createBtn = h('button', {
@@ -105,20 +142,32 @@ export function createShareLinksSection({ h, api, presentationId, copyToClipboar
 
   const createForm = h('div', { class: 'share-create-form' }, [
     h('div', { class: 'share-form-row' }, [
-      h('label', { class: 'share-form-label', text: t('share.permission.label', 'Permission') }),
+      h('label', {
+        class: 'share-form-label',
+        text: t('share.permission.label', 'Permission'),
+      }),
       permissionSelect,
     ]),
     registrationModeRow,
     h('div', { class: 'share-form-row' }, [
-      h('label', { class: 'share-form-label', text: t('share.expiration.label', 'Expiration') }),
+      h('label', {
+        class: 'share-form-label',
+        text: t('share.expiration.label', 'Expiration'),
+      }),
       expirationSelect,
     ]),
     h('div', { class: 'share-form-row' }, [
-      h('label', { class: 'share-form-label', text: t('share.label.label', 'Label') }),
+      h('label', {
+        class: 'share-form-label',
+        text: t('share.label.label', 'Label'),
+      }),
       labelInput,
     ]),
     h('div', { class: 'share-form-row' }, [
-      h('label', { class: 'share-form-label', text: t('share.password.label', 'Password') }),
+      h('label', {
+        class: 'share-form-label',
+        text: t('share.password.label', 'Password'),
+      }),
       passwordInput,
     ]),
     h('div', { class: 'share-form-actions' }, [createBtn]),
@@ -144,13 +193,20 @@ export function createShareLinksSection({ h, api, presentationId, copyToClipboar
       createdLinkInput.focus();
     },
   });
-  const createdLinkPanel = h('div', { class: 'share-created-link', hidden: true }, [
-    h('div', {
-      class: 'share-created-link-title',
-      text: t('share.create.newLinkTitle', 'New share link'),
-    }),
-    h('div', { class: 'share-created-link-row' }, [createdLinkInput, createdLinkCopyBtn]),
-  ]);
+  const createdLinkPanel = h(
+    'div',
+    { class: 'share-created-link', hidden: true },
+    [
+      h('div', {
+        class: 'share-created-link-title',
+        text: t('share.create.newLinkTitle', 'New share link'),
+      }),
+      h('div', { class: 'share-created-link-row' }, [
+        createdLinkInput,
+        createdLinkCopyBtn,
+      ]),
+    ],
+  );
 
   createSection.append(createTitle, createForm, createdLinkPanel);
 
@@ -173,17 +229,21 @@ export function createShareLinksSection({ h, api, presentationId, copyToClipboar
     try {
       const expiresAt = getExpiresAt(expirationSelect.value);
       const permission = permissionSelect.value;
-      const registrationMode = permission === 'comment' ? registrationModeSelect.value : 'open';
-      const resp = await api(`/api/presentations/${presentationId}/share-links`, {
-        method: 'POST',
-        body: JSON.stringify({
-          permission,
-          label: labelInput.value.trim() || null,
-          password: passwordInput.value || null,
-          expiresAt,
-          registrationMode,
-        }),
-      });
+      const registrationMode =
+        permission === 'comment' ? registrationModeSelect.value : 'open';
+      const resp = await api(
+        `/api/presentations/${presentationId}/share-links`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            permission,
+            label: labelInput.value.trim() || null,
+            password: passwordInput.value || null,
+            expiresAt,
+            registrationMode,
+          }),
+        },
+      );
 
       // Surface the new link inline (and auto-copy it as a convenience).
       if (resp?.url) {
@@ -191,9 +251,12 @@ export function createShareLinksSection({ h, api, presentationId, copyToClipboar
         createdLinkPanel.hidden = false;
         const ok = await copyToClipboard(resp.url);
         if (ok) {
-          toast?.success(t('share.create.copiedToClipboard', 'Link copied to clipboard!'), {
-            durationMs: 2500,
-          });
+          toast?.success(
+            t('share.create.copiedToClipboard', 'Link copied to clipboard!'),
+            {
+              durationMs: 2500,
+            },
+          );
         }
         createdLinkInput.focus();
       }
@@ -218,13 +281,18 @@ export function createShareLinksSection({ h, api, presentationId, copyToClipboar
 
   async function loadShareLinks() {
     try {
-      const resp = await api(`/api/presentations/${presentationId}/share-links`);
+      const resp = await api(
+        `/api/presentations/${presentationId}/share-links`,
+      );
       shareLinks = resp?.shareLinks || [];
       renderLinksList();
     } catch (e) {
       linksList.innerHTML = '';
       linksList.append(
-        h('div', { class: 'share-links-error', text: t('share.links.loadError', 'Failed to load links') })
+        h('div', {
+          class: 'share-links-error',
+          text: t('share.links.loadError', 'Failed to load links'),
+        }),
       );
     }
   }
@@ -234,7 +302,10 @@ export function createShareLinksSection({ h, api, presentationId, copyToClipboar
 
     if (shareLinks.length === 0) {
       linksList.append(
-        h('div', { class: 'share-links-empty', text: t('share.links.empty', 'No active share links') })
+        h('div', {
+          class: 'share-links-empty',
+          text: t('share.links.empty', 'No active share links'),
+        }),
       );
       return;
     }
@@ -256,21 +327,39 @@ export function createShareLinksSection({ h, api, presentationId, copyToClipboar
       meta.append(permBadge);
 
       if (link.registrationMode === 'invite_only') {
-        meta.append(h('span', { class: 'share-link-badge share-link-badge--invite', text: t('share.link.inviteOnly', 'Invite only') }));
+        meta.append(
+          h('span', {
+            class: 'share-link-badge share-link-badge--invite',
+            text: t('share.link.inviteOnly', 'Invite only'),
+          }),
+        );
       }
       if (link.hasPassword) {
-        meta.append(h('img', { class: 'share-link-badge', src: iconUrl('lock'), alt: '', 'aria-hidden': 'true' }));
+        meta.append(
+          h('img', {
+            class: 'share-link-badge',
+            src: iconUrl('lock'),
+            alt: '',
+            'aria-hidden': 'true',
+          }),
+        );
       }
       if (link.expiresAt) {
         const expDate = new Date(link.expiresAt);
-        const expText = expDate < new Date()
-          ? t('share.link.expired', 'Expired')
-          : formatExpiration(expDate);
+        const expText =
+          expDate < new Date()
+            ? t('share.link.expired', 'Expired')
+            : formatExpiration(expDate);
         meta.append(h('span', { class: 'share-link-expires', text: expText }));
       }
       if (link.useCount > 0) {
         meta.append(
-          h('span', { class: 'share-link-uses', text: t('share.link.uses', '{count} uses', { count: link.useCount }) })
+          h('span', {
+            class: 'share-link-uses',
+            text: t('share.link.uses', '{count} uses', {
+              count: link.useCount,
+            }),
+          }),
         );
       }
 
@@ -300,12 +389,17 @@ export function createShareLinksSection({ h, api, presentationId, copyToClipboar
           });
           if (!result.ok) return;
           try {
-            await api(`/api/presentations/${presentationId}/share-links/${link.id}`, {
-              method: 'DELETE',
-              body: JSON.stringify({ message: result.message }),
-            });
+            await api(
+              `/api/presentations/${presentationId}/share-links/${link.id}`,
+              {
+                method: 'DELETE',
+                body: JSON.stringify({ message: result.message }),
+              },
+            );
             await loadShareLinks();
-            toast?.success(t('share.link.revoked', 'Link revoked'), { durationMs: 2000 });
+            toast?.success(t('share.link.revoked', 'Link revoked'), {
+              durationMs: 2000,
+            });
           } catch (e) {
             toast?.error(String(e?.message || e), { durationMs: 3000 });
           }
@@ -316,7 +410,10 @@ export function createShareLinksSection({ h, api, presentationId, copyToClipboar
       item.append(info, actions);
 
       // Guest management section for invite_only links
-      if (link.registrationMode === 'invite_only' && link.permission === 'comment') {
+      if (
+        link.registrationMode === 'invite_only' &&
+        link.permission === 'comment'
+      ) {
         const guestSection = createGuestManagementSection({
           h,
           api,

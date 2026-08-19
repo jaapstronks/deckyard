@@ -72,10 +72,18 @@ export function createState(elements) {
     isBusy: () => busy,
 
     // Setters
-    setData: (d) => { data = d; },
-    setCurrentType: (type) => { currentType = type; },
-    setCurrentLocale: (locale) => { currentLocale = locale; },
-    setFormInputs: (inputs) => { formInputs = inputs; },
+    setData: (d) => {
+      data = d;
+    },
+    setCurrentType: (type) => {
+      currentType = type;
+    },
+    setCurrentLocale: (locale) => {
+      currentLocale = locale;
+    },
+    setFormInputs: (inputs) => {
+      formInputs = inputs;
+    },
 
     // Actions
     setBusy,

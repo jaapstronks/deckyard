@@ -48,9 +48,17 @@ function ctxFor(method, pathname) {
 
 test('isUuid accepts the canonical shape and nothing else', () => {
   assert.equal(isUuid('123e4567-e89b-42d3-a456-426614174000'), true);
-  assert.equal(isUuid('123E4567-E89B-42D3-A456-426614174000'), true, 'case-insensitive');
+  assert.equal(
+    isUuid('123E4567-E89B-42D3-A456-426614174000'),
+    true,
+    'case-insensitive',
+  );
   assert.equal(isUuid('nonexistent'), false);
-  assert.equal(isUuid('123e4567e89b42d3a456426614174000'), false, 'hyphens required');
+  assert.equal(
+    isUuid('123e4567e89b42d3a456426614174000'),
+    false,
+    'hyphens required',
+  );
   assert.equal(isUuid(''), false);
   assert.equal(isUuid(null), false);
   assert.equal(isUuid(42), false);
@@ -81,7 +89,10 @@ test('a uuid-shaped presentation id passes the guard into normal dispatch', asyn
   // The state handler answers a wrong method with 405 before it touches
   // storage — reaching that proves the guard let the uuid through into the
   // route table rather than short-circuiting everything to 404.
-  const ctx = ctxFor('PUT', '/api/follow/123e4567-e89b-42d3-a456-426614174000/state');
+  const ctx = ctxFor(
+    'PUT',
+    '/api/follow/123e4567-e89b-42d3-a456-426614174000/state',
+  );
   const handled = await handleFollowPublic(ctx);
   assert.equal(handled, true);
   assert.equal(ctx.res.statusCode, 405);

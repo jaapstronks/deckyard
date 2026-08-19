@@ -214,7 +214,12 @@ async function computeDataUrlIfLocal(
 export async function embedImgSrcDataUrls(
   repoRoot,
   html,
-  { includeClient = false, transform = null, embedRemote = false, cache = null } = {},
+  {
+    includeClient = false,
+    transform = null,
+    embedRemote = false,
+    cache = null,
+  } = {},
 ) {
   const s = String(html || '');
   const localPattern = includeClient
@@ -237,7 +242,12 @@ export async function embedImgSrcDataUrls(
   if (uniq.size) {
     const srcs = [...uniq.keys()];
     const datas = await mapLimit(srcs, exportEmbedConcurrency(), (src) =>
-      toDataUrlIfLocal(repoRoot, src, { includeClient, transform, embedRemote, cache }),
+      toDataUrlIfLocal(repoRoot, src, {
+        includeClient,
+        transform,
+        embedRemote,
+        cache,
+      }),
     );
     for (let i = 0; i < srcs.length; i++) {
       const src = srcs[i];
@@ -272,7 +282,11 @@ export async function embedImgSrcDataUrls(
   // install. Runs on the same paths as the <img src> pass above, because it has
   // the same reason to exist: the document has no base URL once it reaches
   // headless Chrome.
-  out = await embedLocalCssUrls(repoRoot, out, { includeClient, transform, cache });
+  out = await embedLocalCssUrls(repoRoot, out, {
+    includeClient,
+    transform,
+    cache,
+  });
 
   return out;
 }
@@ -348,7 +362,11 @@ export async function embedLocalCssUrls(
  * @param {Map<string, Promise<string>>} [opts.cache] - Shared per-run embed cache.
  * @returns {Promise<string>}
  */
-async function embedRemoteCssUrls(repoRoot, html, { transform = null, cache = null } = {}) {
+async function embedRemoteCssUrls(
+  repoRoot,
+  html,
+  { transform = null, cache = null } = {},
+) {
   const s = String(html || '');
   const uniq = new Set();
   for (const m of s.matchAll(REMOTE_CSS_URL_RE)) uniq.add(m[2]);
@@ -379,7 +397,6 @@ export function imageFieldKeysForType(type) {
     .filter((f) => f?.type === 'image' && typeof f?.key === 'string')
     .map((f) => f.key);
 }
-
 
 /**
  * Check if a string looks like a URL

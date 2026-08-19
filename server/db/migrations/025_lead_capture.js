@@ -16,31 +16,37 @@ export const up = async (db) => {
     .createTable('lead_submissions')
     .ifNotExists()
     .addColumn('id', 'uuid', (col) =>
-      col.primaryKey().defaultTo(sql`gen_random_uuid()`)
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
     )
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade')
+      col.references('organizations.id').onDelete('cascade'),
     )
     .addColumn('presentation_id', 'uuid', (col) =>
-      col.references('presentations.id').onDelete('cascade').notNull()
+      col.references('presentations.id').onDelete('cascade').notNull(),
     )
     .addColumn('slide_id', 'uuid', (col) => col.notNull())
     // Lead data
     .addColumn('name', 'varchar(200)', (col) => col.notNull())
     .addColumn('email', 'varchar(320)', (col) => col.notNull())
     // Consent proof (GDPR requirement)
-    .addColumn('consent_given', 'boolean', (col) => col.notNull().defaultTo(true))
+    .addColumn('consent_given', 'boolean', (col) =>
+      col.notNull().defaultTo(true),
+    )
     .addColumn('consent_text', 'text', (col) => col.notNull())
     .addColumn('privacy_url', 'text')
     // Metadata
     .addColumn('ip_address', 'varchar(45)')
     .addColumn('user_agent', 'text')
-    .addColumn('submitted_at', 'timestamptz', (col) => col.notNull().defaultTo(sql`now()`))
+    .addColumn('submitted_at', 'timestamptz', (col) =>
+      col.notNull().defaultTo(sql`now()`),
+    )
     // GDPR retention
     .addColumn('retention_expires_at', 'timestamptz', (col) => col.notNull())
     .addColumn('anonymized_at', 'timestamptz')
     // Timestamps
-    .addColumn('created_at', 'timestamptz', (col) => col.notNull().defaultTo(sql`now()`))
+    .addColumn('created_at', 'timestamptz', (col) =>
+      col.notNull().defaultTo(sql`now()`),
+    )
     .execute();
 
   // Index for listing leads by presentation (main query pattern)
@@ -77,7 +83,10 @@ export const down = async (db) => {
   await db.schema.dropIndex('idx_lead_submissions_slide').ifExists().execute();
   await db.schema.dropIndex('idx_lead_submissions_email').ifExists().execute();
   await sql`DROP INDEX IF EXISTS idx_lead_submissions_retention`.execute(db);
-  await db.schema.dropIndex('idx_lead_submissions_presentation').ifExists().execute();
+  await db.schema
+    .dropIndex('idx_lead_submissions_presentation')
+    .ifExists()
+    .execute();
 
   // Drop table
   await db.schema.dropTable('lead_submissions').ifExists().execute();

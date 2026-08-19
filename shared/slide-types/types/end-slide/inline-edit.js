@@ -11,33 +11,33 @@
 
 /** @type {Object} InlineDescriptor for end-slide. */
 export const inlineEdit = {
-    ghosts: [
-      { field: 'body', anchors: [{ sel: '.heading', pos: 'after' }] },
-      {
-        field: 'contactName',
-        anchors: [
-          { sel: '.end-contact', pos: 'prepend' },
-          { sel: '.slide-inner', pos: 'append', chip: 'bottom-start' },
-        ],
-      },
-      {
-        field: 'contactEmail',
-        anchors: [
-          { sel: '.end-contact', pos: 'append' },
-          { sel: '.slide-inner', pos: 'append', chip: 'bottom-start' },
-        ],
-      },
-      {
-        field: 'contactPhone',
-        anchors: [
-          { sel: '.end-contact', pos: 'append' },
-          { sel: '.slide-inner', pos: 'append', chip: 'bottom-start' },
-        ],
-      },
-    ],
-    // contactUrl / social links are URLs → stay in the form.
-    formText: ['title', 'body', 'contactName', 'contactEmail', 'contactPhone'],
-  };
+  ghosts: [
+    { field: 'body', anchors: [{ sel: '.heading', pos: 'after' }] },
+    {
+      field: 'contactName',
+      anchors: [
+        { sel: '.end-contact', pos: 'prepend' },
+        { sel: '.slide-inner', pos: 'append', chip: 'bottom-start' },
+      ],
+    },
+    {
+      field: 'contactEmail',
+      anchors: [
+        { sel: '.end-contact', pos: 'append' },
+        { sel: '.slide-inner', pos: 'append', chip: 'bottom-start' },
+      ],
+    },
+    {
+      field: 'contactPhone',
+      anchors: [
+        { sel: '.end-contact', pos: 'append' },
+        { sel: '.slide-inner', pos: 'append', chip: 'bottom-start' },
+      ],
+    },
+  ],
+  // contactUrl / social links are URLs → stay in the form.
+  formText: ['title', 'body', 'contactName', 'contactEmail', 'contactPhone'],
+};
 
 /**
  * Fields the inspector keeps rendering even though the inline layer covers the
@@ -47,4 +47,10 @@ export const inlineEdit = {
  * inline-edits name/email/phone only) — were bulk-only (audit 2026-07-21).
  * @type {string[]}
  */
-export const inspectorKeeps = ['contactUrl', 'social1Label', 'social1Url', 'social2Label', 'social2Url'];
+export const inspectorKeeps = [
+  'contactUrl',
+  'social1Label',
+  'social1Url',
+  'social2Label',
+  'social2Url',
+];

@@ -12,7 +12,9 @@ function getSlideContentForLang(pres, slideId, lang) {
   const version = pres?.i18n?.versions?.[lang];
   if (!version || !Array.isArray(version.slides)) return null;
   const slide = version.slides.find((s) => s?.id === slideId);
-  return slide?.content && typeof slide.content === 'object' ? slide.content : null;
+  return slide?.content && typeof slide.content === 'object'
+    ? slide.content
+    : null;
 }
 
 /**
@@ -21,7 +23,15 @@ function getSlideContentForLang(pres, slideId, lang) {
 function hasTextContent(content) {
   if (!content || typeof content !== 'object') return false;
   // Check common text fields
-  const textFields = ['title', 'subtitle', 'text', 'body', 'description', 'markdown', 'html'];
+  const textFields = [
+    'title',
+    'subtitle',
+    'text',
+    'body',
+    'description',
+    'markdown',
+    'html',
+  ];
   for (const key of textFields) {
     const val = content[key];
     if (typeof val === 'string' && val.trim()) return true;
@@ -75,7 +85,7 @@ export function openSaveToLibraryModal({
     title: t('editor.slideLibrary.saveModal.title', 'Save to slide library'),
     hint: t(
       'editor.slideLibrary.saveModal.hint',
-      'Save this slide so you can reuse it in other presentations.'
+      'Save this slide so you can reuse it in other presentations.',
     ),
   });
 
@@ -104,12 +114,18 @@ export function openSaveToLibraryModal({
   const onlyLang = hasOneLang ? availableLangs[0] : null;
 
   // Name input
-  const nameLabel = h('label', { class: 'field-label', text: t('editor.slideLibrary.saveModal.name', 'Name') });
+  const nameLabel = h('label', {
+    class: 'field-label',
+    text: t('editor.slideLibrary.saveModal.name', 'Name'),
+  });
   const nameInput = h('input', {
     class: 'form-input',
     type: 'text',
     value: suggestedName,
-    placeholder: t('editor.slideLibrary.saveModal.namePlaceholder', 'E.g. Contact slide'),
+    placeholder: t(
+      'editor.slideLibrary.saveModal.namePlaceholder',
+      'E.g. Contact slide',
+    ),
     autocomplete: 'off',
     autofocus: true,
   });
@@ -117,30 +133,48 @@ export function openSaveToLibraryModal({
   nameField.append(nameLabel, nameInput);
 
   // Description textarea (optional)
-  const descLabel = h('label', { class: 'field-label', text: t('editor.slideLibrary.saveModal.description', 'Description') });
+  const descLabel = h('label', {
+    class: 'field-label',
+    text: t('editor.slideLibrary.saveModal.description', 'Description'),
+  });
   const descInput = h('textarea', {
     class: 'form-input',
     rows: 2,
-    placeholder: t('editor.slideLibrary.saveModal.descriptionPlaceholder', 'Briefly describe this slide...'),
+    placeholder: t(
+      'editor.slideLibrary.saveModal.descriptionPlaceholder',
+      'Briefly describe this slide...',
+    ),
   });
   const descHint = h('div', {
     class: 'help is-small',
-    text: t('editor.slideLibrary.saveModal.descriptionHint', 'Optional. Helps you find this slide later.'),
+    text: t(
+      'editor.slideLibrary.saveModal.descriptionHint',
+      'Optional. Helps you find this slide later.',
+    ),
   });
   const descField = h('div', { class: 'field' });
   descField.append(descLabel, descInput, descHint);
 
   // Tag editor
-  const tagsLabel = h('label', { class: 'field-label', text: t('editor.slideLibrary.saveModal.tags', 'Tags') });
+  const tagsLabel = h('label', {
+    class: 'field-label',
+    text: t('editor.slideLibrary.saveModal.tags', 'Tags'),
+  });
   const tagEditor = createTagEditor({
     api,
     initialTags: [],
-    placeholder: t('editor.slideLibrary.saveModal.tagsPlaceholder', 'Add tags...'),
+    placeholder: t(
+      'editor.slideLibrary.saveModal.tagsPlaceholder',
+      'Add tags...',
+    ),
     onChange: () => {}, // Tags will be read on save
   });
   const tagsHint = h('div', {
     class: 'help is-small',
-    text: t('editor.slideLibrary.saveModal.tagsHint', 'Optional. Use tags to organize your slides.'),
+    text: t(
+      'editor.slideLibrary.saveModal.tagsHint',
+      'Optional. Use tags to organize your slides.',
+    ),
   });
   const tagsField = h('div', { class: 'field' });
   tagsField.append(tagsLabel, tagEditor.el, tagsHint);
@@ -150,12 +184,15 @@ export function openSaveToLibraryModal({
   if (hasBothLangs) {
     // Show info that both languages will be saved
     const langInfo = h('div', { class: 'field' });
-    const langLabel = h('label', { class: 'field-label', text: t('editor.slideLibrary.saveModal.languages', 'Languages') });
+    const langLabel = h('label', {
+      class: 'field-label',
+      text: t('editor.slideLibrary.saveModal.languages', 'Languages'),
+    });
     const langHint = h('div', {
       class: 'help is-small is-success',
       text: t(
         'editor.slideLibrary.saveModal.bothLangsAvailable',
-        'This slide has content in both Dutch and English. Both versions will be saved.'
+        'This slide has content in both Dutch and English. Both versions will be saved.',
       ),
     });
     langInfo.append(langLabel, langHint);
@@ -163,13 +200,19 @@ export function openSaveToLibraryModal({
   } else if (hasOneLang) {
     // Show warning that only one language is available
     const langInfo = h('div', { class: 'field' });
-    const langLabel = h('label', { class: 'field-label', text: t('editor.slideLibrary.saveModal.languages', 'Languages') });
+    const langLabel = h('label', {
+      class: 'field-label',
+      text: t('editor.slideLibrary.saveModal.languages', 'Languages'),
+    });
     const langText = t(
       'editor.slideLibrary.saveModal.onlyOneLang',
       'This slide only has content in {lang}. Consider translating it first to save both versions.',
-      { lang: getLangLabel(onlyLang) }
+      { lang: getLangLabel(onlyLang) },
     );
-    const langHint = h('div', { class: 'help is-small is-warning', text: langText });
+    const langHint = h('div', {
+      class: 'help is-small is-warning',
+      text: langText,
+    });
     langInfo.append(langLabel, langHint);
     langField = langInfo;
   }
@@ -212,7 +255,7 @@ export function openSaveToLibraryModal({
     class: 'help is-small',
     text: t(
       'editor.slideLibrary.saveModal.shelfHint',
-      'Personal slides are only visible to you. Team slides are shared with your organization.'
+      'Personal slides are only visible to you. Team slides are shared with your organization.',
     ),
   });
 
@@ -228,7 +271,10 @@ export function openSaveToLibraryModal({
   const doSave = async () => {
     const name = String(nameInput.value || '').trim();
     if (!name) {
-      status.textContent = t('editor.slideLibrary.saveModal.nameRequired', 'Please enter a name.');
+      status.textContent = t(
+        'editor.slideLibrary.saveModal.nameRequired',
+        'Please enter a name.',
+      );
       nameInput.focus();
       return;
     }
@@ -240,7 +286,9 @@ export function openSaveToLibraryModal({
 
     try {
       const endpoint =
-        selectedShelf === 'organization' ? '/api/slide-library/organization' : '/api/slide-library/personal';
+        selectedShelf === 'organization'
+          ? '/api/slide-library/organization'
+          : '/api/slide-library/personal';
 
       // Build the payload with i18n if we have multiple languages
       const description = String(descInput.value || '').trim();
@@ -288,8 +336,14 @@ export function openSaveToLibraryModal({
 
       const successMsg =
         selectedShelf === 'organization'
-          ? t('editor.slideLibrary.saveModal.doneTeam', 'Saved to team slide library.')
-          : t('editor.slideLibrary.saveModal.donePersonal', 'Saved to personal slide library.');
+          ? t(
+              'editor.slideLibrary.saveModal.doneTeam',
+              'Saved to team slide library.',
+            )
+          : t(
+              'editor.slideLibrary.saveModal.donePersonal',
+              'Saved to personal slide library.',
+            );
 
       toast.success(successMsg);
       modal.close();

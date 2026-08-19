@@ -99,7 +99,9 @@ export function applyBindings(content, bindings, fetchedData) {
       setByPath(result, segments, value);
       applied++;
     } catch (err) {
-      errors.push(`Failed to apply binding ${source} -> ${target}: ${err.message}`);
+      errors.push(
+        `Failed to apply binding ${source} -> ${target}: ${err.message}`,
+      );
     }
   }
 

@@ -11,7 +11,12 @@ import { iconUrl } from '../../../../shared/icon-names.js';
  * @param {Function} opts.onClearSearch - Callback when search is cleared
  * @returns {object} - { el, search, clear, getQuery }
  */
-export function createSearchView({ h, renderCard, allPresentations, onClearSearch }) {
+export function createSearchView({
+  h,
+  renderCard,
+  allPresentations,
+  onClearSearch,
+}) {
   const searchView = h('div', { class: 'sidebar-view', 'data-view': 'search' });
 
   // Header with search info
@@ -57,12 +62,16 @@ export function createSearchView({ h, renderCard, allPresentations, onClearSearc
     }
 
     // Search in description
-    if (normalizeForSearch(presentation.description)?.includes(normalizedQuery)) {
+    if (
+      normalizeForSearch(presentation.description)?.includes(normalizedQuery)
+    ) {
       return true;
     }
 
     // Search in owner email/name
-    if (normalizeForSearch(presentation.ownerEmail)?.includes(normalizedQuery)) {
+    if (
+      normalizeForSearch(presentation.ownerEmail)?.includes(normalizedQuery)
+    ) {
       return true;
     }
     if (normalizeForSearch(presentation.ownerName)?.includes(normalizedQuery)) {
@@ -95,44 +104,77 @@ export function createSearchView({ h, renderCard, allPresentations, onClearSearc
     if (!currentQuery) {
       searchTitle.textContent = t('list.search.title', 'Search');
       emptyState.append(
-        h('div', { class: 'help', text: t('list.search.enterQuery', 'Enter a search term to find presentations.') })
+        h('div', {
+          class: 'help',
+          text: t(
+            'list.search.enterQuery',
+            'Enter a search term to find presentations.',
+          ),
+        }),
       );
       return;
     }
 
     // Filter presentations
-    const results = allPresentations.filter(p => matchesQuery(p, currentQuery));
+    const results = allPresentations.filter((p) =>
+      matchesQuery(p, currentQuery),
+    );
 
     // Update title with count
-    searchTitle.textContent = t('list.search.resultsTitle', 'Search results', { query: currentQuery });
+    searchTitle.textContent = t('list.search.resultsTitle', 'Search results', {
+      query: currentQuery,
+    });
 
     if (results.length === 0) {
       emptyState.append(
         h('div', { class: 'search-no-results' }, [
-          h('img', { class: 'search-no-results-icon', src: iconUrl('search'), alt: '', 'aria-hidden': 'true' }),
-          h('div', { class: 'search-no-results-text', text: t('list.search.noResults', 'No presentations found for "{query}"', { query: currentQuery }) }),
-          h('div', { class: 'search-no-results-hint', text: t('list.search.noResultsHint', 'Try a different search term or check your spelling.') }),
-        ])
+          h('img', {
+            class: 'search-no-results-icon',
+            src: iconUrl('search'),
+            alt: '',
+            'aria-hidden': 'true',
+          }),
+          h('div', {
+            class: 'search-no-results-text',
+            text: t(
+              'list.search.noResults',
+              'No presentations found for "{query}"',
+              { query: currentQuery },
+            ),
+          }),
+          h('div', {
+            class: 'search-no-results-hint',
+            text: t(
+              'list.search.noResultsHint',
+              'Try a different search term or check your spelling.',
+            ),
+          }),
+        ]),
       );
     } else {
       // Show count
-      const countText = results.length === 1
-        ? t('list.search.resultCount.one', '1 presentation found')
-        : t('list.search.resultCount.many', '{count} presentations found', { count: results.length });
+      const countText =
+        results.length === 1
+          ? t('list.search.resultCount.one', '1 presentation found')
+          : t('list.search.resultCount.many', '{count} presentations found', {
+              count: results.length,
+            });
 
       emptyState.append(
-        h('div', { class: 'search-result-count', text: countText })
+        h('div', { class: 'search-result-count', text: countText }),
       );
 
       // Render results
       for (const p of results) {
-        searchList.append(renderCard(p, {
-          isOrganization: p.visibility === 'organization',
-          isSharedWithMe: p.isSharedWithMe,
-          sharedBy: p.sharedBy,
-          permission: p.permission,
-          highlightQuery: currentQuery,
-        }));
+        searchList.append(
+          renderCard(p, {
+            isOrganization: p.visibility === 'organization',
+            isSharedWithMe: p.isSharedWithMe,
+            sharedBy: p.sharedBy,
+            permission: p.permission,
+            highlightQuery: currentQuery,
+          }),
+        );
       }
     }
   }

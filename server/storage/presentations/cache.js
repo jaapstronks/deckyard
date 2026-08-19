@@ -28,7 +28,9 @@ const cache = new Map();
  * deck by construction.
  */
 function cacheKey(storageScope, id) {
-  const org = storageScope?.organizationId || `cross:${storageScope?.crossOrganization || ''}`;
+  const org =
+    storageScope?.organizationId ||
+    `cross:${storageScope?.crossOrganization || ''}`;
   return `${org}\n${String(repoRootOf(storageScope) || '')}\n${String(id || '')}`;
 }
 

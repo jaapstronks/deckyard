@@ -75,7 +75,7 @@ export function createPresenterDeckController({
     const navId = a.getAttribute('data-card-nav-id');
     if (navId) {
       const targetIdx = slides.findIndex(
-        (sec) => sec?.getAttribute?.('data-slide-id') === navId
+        (sec) => sec?.getAttribute?.('data-slide-id') === navId,
       );
       if (targetIdx >= 0) show(targetIdx);
       return;
@@ -111,7 +111,7 @@ export function createPresenterDeckController({
         class: 'deck-slide',
         'data-slide-id': s.id,
       });
-      
+
       // Pass follow codes to the slides that render a join hint: the invite
       // itself, plus every live slide (their renderers show "join with code
       // ABCD" beside the question). This used to name poll and feedback
@@ -119,7 +119,11 @@ export function createPresenterDeckController({
       // live renderers that read `ctx.followCodes` — a fifth interaction type
       // would silently not get them. Passing codes to a renderer that ignores
       // them is free, so the capability is the safe line to draw here.
-      const renderOptions = { theme, mode: 'present', lang: resolveDeckLang(pres) };
+      const renderOptions = {
+        theme,
+        mode: 'present',
+        lang: resolveDeckLang(pres),
+      };
       // Also pass `presentationId` so slides can render follow URLs/QR codes.
       renderOptions.presentationId = presentationId;
       if (s?.type === 'follow-invite-slide' || isLiveSlideType(s?.type)) {
@@ -128,7 +132,7 @@ export function createPresenterDeckController({
           renderOptions.followCodes = followCodes;
         }
       }
-      
+
       section.append(renderSlideElement(s, renderOptions));
       return section;
     });
@@ -180,8 +184,7 @@ export function createPresenterDeckController({
     if (!mode) return 0;
     if (mode === 'image-zoom')
       return step.collectImageZoomSteps(section).length;
-    if (mode === 'body')
-      return step.collectFragmentsForSlide(section).length;
+    if (mode === 'body') return step.collectFragmentsForSlide(section).length;
     if (mode === 'cards') return step.collectCardsForSlide(section).length;
     if (mode === 'chart')
       return step.collectChartFragmentsForSlide(section).length;
@@ -286,7 +289,9 @@ export function createPresenterDeckController({
 
     // Cancel any in-flight morph transition.
     if (typeof morphTransitionCancel === 'function') {
-      try { morphTransitionCancel(); } catch {}
+      try {
+        morphTransitionCancel();
+      } catch {}
       morphTransitionCancel = null;
     }
 
@@ -296,7 +301,9 @@ export function createPresenterDeckController({
       const toSection = slides[nextIdx];
 
       let cancelled = false;
-      morphTransitionCancel = () => { cancelled = true; };
+      morphTransitionCancel = () => {
+        cancelled = true;
+      };
 
       morphTransition(fromSection, toSection, stage, {
         onCancel: () => cancelled,
@@ -342,8 +349,7 @@ export function createPresenterDeckController({
       // Prep classes based on the current slide index (outgoing is active; incoming is neighbor).
       syncSlidePositionClasses(idx);
 
-      const incoming =
-        dir === 'next' ? slides[idx + 1] : slides[idx - 1];
+      const incoming = dir === 'next' ? slides[idx + 1] : slides[idx - 1];
       const outgoing = slides[idx] || null;
 
       // Force style flush so moving to "go" reliably triggers transitions.
@@ -570,7 +576,7 @@ export function createPresenterDeckController({
     const currentId = presentSlides?.[idx]?.id || '';
     try {
       const nextPres = await api(
-        `/api/presentations/${presentationId}${langQs}`
+        `/api/presentations/${presentationId}${langQs}`,
       );
       normalizeNotesStrings(nextPres);
       pres = nextPres;

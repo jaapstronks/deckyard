@@ -28,20 +28,20 @@ export const LEGACY_PHOSPHOR_MAP = {
   'rocket-launch': 'rocket',
   'magnifying-glass': 'search',
   'users-three': 'users-round',
-  'sparkle': 'sparkles',
-  'gear': 'settings',
+  sparkle: 'sparkles',
+  gear: 'settings',
   'check-circle': 'circle-check',
   'warning-circle': 'circle-alert',
   'arrows-clockwise': 'refresh-cw',
   'chat-circle-dots': 'message-circle',
   'clipboard-text': 'clipboard',
-  'envelope': 'mail',
+  envelope: 'mail',
   'chart-line-up': 'chart-line',
-  'microphone': 'mic',
+  microphone: 'mic',
   'trend-up': 'trending-up',
   'video-camera': 'video',
   // ui-mode-switcher used 'desktop' for the system/monitor icon
-  'desktop': 'monitor',
+  desktop: 'monitor',
 };
 
 /**

@@ -21,12 +21,7 @@
       "nl": "Bloesem"
     }
   },
-  "brandColors": [
-    "#db2777",
-    "#ea580c",
-    "#f59e0b",
-    "#fb7185"
-  ],
+  "brandColors": ["#db2777", "#ea580c", "#f59e0b", "#fb7185"],
   "textSwatches": [
     {
       "id": "brand-1",

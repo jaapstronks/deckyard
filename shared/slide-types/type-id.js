@@ -107,8 +107,7 @@ const VERSION_RE = new RegExp(`^${VERSION_SRC}$`);
  *
  * @type {string}
  */
-export const TYPE_ID_PATTERN =
-  `^(?:${NSID_SRC}|(?:${NAMESPACE_SRC}/)?${SEGMENT_SRC})(?:@${VERSION_SRC})?$`;
+export const TYPE_ID_PATTERN = `^(?:${NSID_SRC}|(?:${NAMESPACE_SRC}/)?${SEGMENT_SRC})(?:@${VERSION_SRC})?$`;
 
 /**
  * @typedef {object} TypeId
@@ -168,7 +167,7 @@ export function parseTypeId(ref) {
     if (!namespace.includes('.')) {
       throw new TypeError(
         `parseTypeId: "${raw}" is not a reverse-DNS id (an authority needs at ` +
-          `least two labels, e.g. "${CORE_AUTHORITY}.title")`
+          `least two labels, e.g. "${CORE_AUTHORITY}.title")`,
       );
     }
   }

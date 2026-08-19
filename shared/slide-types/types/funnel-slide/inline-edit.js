@@ -13,14 +13,26 @@ import { HEADER_GHOSTS, HEADER_TEXT } from '../../inline-edit-common.js';
 
 /** @type {Object} InlineDescriptor for funnel-slide. */
 export const inlineEdit = {
-    ghosts: HEADER_GHOSTS,
-    itemGhosts: [
-      { list: 'items', field: 'value', item: '.funnel-stage', within: '.stage-content', pos: 'append', chip: 'top-start' },
-      { list: 'items', field: 'text', item: '.funnel-stage', pos: 'append' },
-    ],
-    cards: { field: 'items', fieldAliases: ['stages'], container: '.funnel-container', itemSelector: '.funnel-stage' },
-    formText: [...HEADER_TEXT, 'items', 'stages'],
-  };
+  ghosts: HEADER_GHOSTS,
+  itemGhosts: [
+    {
+      list: 'items',
+      field: 'value',
+      item: '.funnel-stage',
+      within: '.stage-content',
+      pos: 'append',
+      chip: 'top-start',
+    },
+    { list: 'items', field: 'text', item: '.funnel-stage', pos: 'append' },
+  ],
+  cards: {
+    field: 'items',
+    fieldAliases: ['stages'],
+    container: '.funnel-container',
+    itemSelector: '.funnel-stage',
+  },
+  formText: [...HEADER_TEXT, 'items', 'stages'],
+};
 
 /**
  * Fields the inspector keeps rendering even though the inline layer covers the

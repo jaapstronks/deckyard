@@ -18,7 +18,11 @@ function listConfiguredVendors() {
   if (optionalEnv('CLAUDE_API')) out.push('claude');
   if (optionalEnv('MISTRAL_API')) out.push('mistral');
   if (optionalEnv('DEEPSEEK_API')) out.push('deepseek');
-  if (optionalEnv('OPENAI_COMPAT_ENDPOINT') && optionalEnv('OPENAI_COMPAT_MODEL')) out.push('openai-compat');
+  if (
+    optionalEnv('OPENAI_COMPAT_ENDPOINT') &&
+    optionalEnv('OPENAI_COMPAT_MODEL')
+  )
+    out.push('openai-compat');
   return out;
 }
 
@@ -35,7 +39,11 @@ export function detectDefaultVendor() {
   if (optionalEnv('CLAUDE_API')) return 'claude';
   if (optionalEnv('MISTRAL_API')) return 'mistral';
   if (optionalEnv('DEEPSEEK_API')) return 'deepseek';
-  if (optionalEnv('OPENAI_COMPAT_ENDPOINT') && optionalEnv('OPENAI_COMPAT_MODEL')) return 'openai-compat';
+  if (
+    optionalEnv('OPENAI_COMPAT_ENDPOINT') &&
+    optionalEnv('OPENAI_COMPAT_MODEL')
+  )
+    return 'openai-compat';
   return null;
 }
 
@@ -51,16 +59,23 @@ export function detectDefaultVendor() {
  */
 export function getLlmConfig({ vendor = null, role = null } = {}) {
   const normalized = normalizeLlmVendor(vendor);
-  if (vendor != null && typeof vendor === 'string' && vendor.trim() && !normalized) {
+  if (
+    vendor != null &&
+    typeof vendor === 'string' &&
+    vendor.trim() &&
+    !normalized
+  ) {
     throw new ValidationError(
-      `Invalid LLM vendor "${vendor}". Expected one of: ${KNOWN_VENDORS.join(', ')}.`
+      `Invalid LLM vendor "${vendor}". Expected one of: ${KNOWN_VENDORS.join(', ')}.`,
     );
   }
 
   // Sandbox stance: enforce Mistral-only even if clients request another vendor.
   if (sandboxEnabled()) {
     if (normalized && normalized !== 'mistral') {
-      throw new ValidationError('Sandbox mode only supports the Mistral LLM vendor.');
+      throw new ValidationError(
+        'Sandbox mode only supports the Mistral LLM vendor.',
+      );
     }
     return {
       vendor: 'mistral',
@@ -72,7 +87,7 @@ export function getLlmConfig({ vendor = null, role = null } = {}) {
   const resolved = normalized || detectDefaultVendor();
   if (!resolved) {
     throw new ValidationError(
-      'No LLM vendor configured. Set OPENAI_API, CLAUDE_API, MISTRAL_API, DEEPSEEK_API, or OPENAI_COMPAT_ENDPOINT in .env.'
+      'No LLM vendor configured. Set OPENAI_API, CLAUDE_API, MISTRAL_API, DEEPSEEK_API, or OPENAI_COMPAT_ENDPOINT in .env.',
     );
   }
 

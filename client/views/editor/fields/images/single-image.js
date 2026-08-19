@@ -27,11 +27,13 @@ export function createFieldImage(ctx) {
   const flags = features && typeof features === 'object' ? features : {};
   const uploadsDisabled = !flags.enableUploads;
   const hasPicker =
-    typeof openImagePicker === 'function' && (openImagePicker.providers?.length || 0) > 0;
+    typeof openImagePicker === 'function' &&
+    (openImagePicker.providers?.length || 0) > 0;
 
   const normalizeUrl = (x) => {
     if (typeof x === 'string') return x.trim();
-    if (x && typeof x === 'object' && typeof x.url === 'string') return x.url.trim();
+    if (x && typeof x === 'object' && typeof x.url === 'string')
+      return x.url.trim();
     return '';
   };
 
@@ -54,7 +56,7 @@ export function createFieldImage(ctx) {
       h('div', {
         class: 'field-label',
         text: field?.label || t('editor.image.fieldLabel', 'Image'),
-      })
+      }),
     );
 
     // Use explicit altFieldKey from field config, or derive from image key
@@ -75,7 +77,7 @@ export function createFieldImage(ctx) {
           class: 'btn btn-danger',
           text: t('common.delete', 'Delete'),
           onclick: () => onUploadedUrl(''),
-        })
+        }),
       );
     }
 
@@ -87,7 +89,8 @@ export function createFieldImage(ctx) {
           text: t('editor.image.chooseOrUpload', 'Choose / upload…'),
           onclick: () => {
             const activeLang = normalizeLang?.(pres?.i18n?.active) || 'nl';
-            const other = typeof otherLang === 'function' ? otherLang(activeLang) : null;
+            const other =
+              typeof otherLang === 'function' ? otherLang(activeLang) : null;
             const setAltForLang = createAltSetter({
               slide,
               pres,
@@ -101,19 +104,29 @@ export function createFieldImage(ctx) {
               docId: pres?.id || '',
               allowCaptionCredit: 'caption' in (slide?.content || {}),
               context: {
-                presentationTitle: typeof pres?.title === 'string' ? pres.title : '',
+                presentationTitle:
+                  typeof pres?.title === 'string' ? pres.title : '',
                 slideId: slide?.id || '',
                 slideType: slide?.type || '',
                 slideTitle:
-                  slide?.content && typeof slide.content === 'object' && typeof slide.content.title === 'string'
+                  slide?.content &&
+                  typeof slide.content === 'object' &&
+                  typeof slide.content.title === 'string'
                     ? slide.content.title
                     : '',
               },
               onPick: (picked) => {
                 onUploadedUrl(picked?.url || '');
                 slide.content =
-                  slide.content && typeof slide.content === 'object' ? slide.content : {};
-                applyAltFromPick({ picked, activeLang, otherLang: other, setAltForLang });
+                  slide.content && typeof slide.content === 'object'
+                    ? slide.content
+                    : {};
+                applyAltFromPick({
+                  picked,
+                  activeLang,
+                  otherLang: other,
+                  setAltForLang,
+                });
                 applyPickMeta({
                   picked,
                   content: slide.content,
@@ -126,24 +139,35 @@ export function createFieldImage(ctx) {
               },
             });
           },
-        })
+        }),
       );
     }
     wrap.append(row);
 
     // Preset images
-    const presetUrls = field?.presetSource === 'backgrounds' ? normalizeUrlList(BACKGROUNDS) : [];
+    const presetUrls =
+      field?.presetSource === 'backgrounds'
+        ? normalizeUrlList(BACKGROUNDS)
+        : [];
     if (presetUrls.length) {
       const presetsWrap = h('div', { class: 'stack' });
       presetsWrap.append(
-        h('div', { class: 'help', text: t('editor.image.presets', 'Preset images') })
+        h('div', {
+          class: 'help',
+          text: t('editor.image.presets', 'Preset images'),
+        }),
       );
       const grid = h('div', { class: 'row is-wrap is-start' });
       for (const url of presetUrls) {
         grid.append(
-          h('button', { class: 'btn btn-secondary editor-img-thumb-btn', onclick: () => onUploadedUrl(url) }, [
-            h('img', { src: url, class: 'editor-img-thumb' }),
-          ])
+          h(
+            'button',
+            {
+              class: 'btn btn-secondary editor-img-thumb-btn',
+              onclick: () => onUploadedUrl(url),
+            },
+            [h('img', { src: url, class: 'editor-img-thumb' })],
+          ),
         );
       }
       presetsWrap.append(grid);
@@ -157,9 +181,18 @@ export function createFieldImage(ctx) {
           class: 'help',
           text: uploadsDisabled
             ? flags.sandboxMode
-              ? t('editor.image.help.uploadsSandbox', 'Uploads are off in the sandbox. Choose from the library, Unsplash or Giphy.')
-              : t('editor.image.help.uploadsDisabled', 'Choose from the library (recommended). Uploads are disabled.')
-            : t('editor.image.help.withUploads', 'Choose from the library (recommended) or upload a new image.'),
+              ? t(
+                  'editor.image.help.uploadsSandbox',
+                  'Uploads are off in the sandbox. Choose from the library, Unsplash or Giphy.',
+                )
+              : t(
+                  'editor.image.help.uploadsDisabled',
+                  'Choose from the library (recommended). Uploads are disabled.',
+                )
+            : t(
+                'editor.image.help.withUploads',
+                'Choose from the library (recommended) or upload a new image.',
+              ),
         }),
         uploadsDisabled
           ? null
@@ -167,9 +200,9 @@ export function createFieldImage(ctx) {
               class: 'help',
               text: t(
                 'editor.image.help.storage',
-                'Local uploads are stored in /server/uploads. ImageKit assets stay hosted on ImageKit and are used via URL.'
+                'Local uploads are stored in /server/uploads. ImageKit assets stay hosted on ImageKit and are used via URL.',
               ),
-            })
+            }),
       );
     }
 

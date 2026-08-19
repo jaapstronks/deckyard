@@ -27,7 +27,7 @@ function makeSnippet(text, query, { radius = 28 } = {}) {
   const rightEllipsis = end < t.length ? '…' : '';
   const snippet = `${leftEllipsis}${t.slice(start, end)}${rightEllipsis}`;
   // index within the snippet string (account for left ellipsis)
-  const snippetIndex = (m.index - start) + leftEllipsis.length;
+  const snippetIndex = m.index - start + leftEllipsis.length;
   return { snippet, index: snippetIndex, length: m.length };
 }
 
@@ -101,7 +101,12 @@ export function findFirstMatchInSlide(slide, query) {
   return null;
 }
 
-export function renderHighlightedText(h, text, query, { className = 'search-hit' } = {}) {
+export function renderHighlightedText(
+  h,
+  text,
+  query,
+  { className = 'search-hit' } = {},
+) {
   const q = normalizeQuery(query);
   const t = String(text || '');
   if (!q) return [t];
@@ -118,7 +123,9 @@ export function renderHighlightedText(h, text, query, { className = 'search-hit'
       break;
     }
     if (at > i) parts.push(t.slice(i, at));
-    parts.push(h('mark', { class: className, text: t.slice(at, at + q.length) }));
+    parts.push(
+      h('mark', { class: className, text: t.slice(at, at + q.length) }),
+    );
     i = at + q.length;
   }
   return parts.length ? parts : [t];

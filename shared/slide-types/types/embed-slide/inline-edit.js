@@ -11,9 +11,14 @@
 
 /** @type {Object} InlineDescriptor for embed-slide. */
 export const inlineEdit = {
-    ghosts: [{ field: 'title', anchors: [{ sel: '.slide-inner', pos: 'prepend', chip: 'top-start' }] }],
-    formText: ['title'],
-  };
+  ghosts: [
+    {
+      field: 'title',
+      anchors: [{ sel: '.slide-inner', pos: 'prepend', chip: 'top-start' }],
+    },
+  ],
+  formText: ['title'],
+};
 
 /**
  * Fields the inspector keeps rendering even though the inline layer covers the

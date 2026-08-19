@@ -29,15 +29,19 @@ describe('icon-card-grid tiles layout', () => {
   it('renders no number prefix in either layout', () => {
     for (const layout of ['tiles', 'cards']) {
       const html = render({ title: 'Deck', layout, items: items(4) });
-      assert.doesNotMatch(html, /icon-card-num/, `${layout} still emits a number span`);
+      assert.doesNotMatch(
+        html,
+        /icon-card-num/,
+        `${layout} still emits a number span`,
+      );
     }
   });
 
   it('keeps the title element free of anything but the title text', () => {
     const html = render({ title: 'Deck', layout: 'tiles', items: items(3) });
-    const titles = [...html.matchAll(/<h3 class="icon-card-title"[^>]*>([\s\S]*?)<\/h3>/g)].map(
-      (m) => m[1].trim()
-    );
+    const titles = [
+      ...html.matchAll(/<h3 class="icon-card-title"[^>]*>([\s\S]*?)<\/h3>/g),
+    ].map((m) => m[1].trim());
     assert.deepEqual(titles.slice(0, 3), ['Card 1', 'Card 2', 'Card 3']);
   });
 
@@ -49,6 +53,9 @@ describe('icon-card-grid tiles layout', () => {
 
   it('tags the grid with the layout and card count the CSS sizes tiles from', () => {
     const html = render({ title: 'Deck', layout: 'tiles', items: items(5) });
-    assert.match(html, /class="icon-card-grid" data-layout="tiles" data-card-count="5"/);
+    assert.match(
+      html,
+      /class="icon-card-grid" data-layout="tiles" data-card-count="5"/,
+    );
   });
 });

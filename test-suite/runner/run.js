@@ -32,7 +32,11 @@ import {
 } from '../lib/config.js';
 import { computePromptVersion } from '../lib/prompt-version.js';
 import { judgeDeck, meanScore } from '../eval/judge.js';
-import { deckMetrics, numberFidelity, specialTypeUsage } from '../eval/metrics.js';
+import {
+  deckMetrics,
+  numberFidelity,
+  specialTypeUsage,
+} from '../eval/metrics.js';
 import { compareToReference } from '../eval/reference.js';
 import {
   aggregateScores,
@@ -62,8 +66,13 @@ function parseArgs(argv) {
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     const next = () => argv[(i += 1)];
-    if (arg === '--cases') options.cases = next().split(',').map((s) => s.trim()).filter(Boolean);
-    else if (arg === '--repeat') options.repeat = Math.max(1, Number(next()) || 1);
+    if (arg === '--cases')
+      options.cases = next()
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+    else if (arg === '--repeat')
+      options.repeat = Math.max(1, Number(next()) || 1);
     else if (arg === '--dry-run') options.dryRun = true;
     else if (arg === '--no-generate') options.generate = false;
     else if (arg === '--reuse-run') {
@@ -75,11 +84,10 @@ function parseArgs(argv) {
       options.vendor = next();
       if (!GENERATION_VENDORS[options.vendor]) {
         throw new Error(
-          `Unknown vendor "${options.vendor}". Known: ${Object.keys(GENERATION_VENDORS).join(', ')}`
+          `Unknown vendor "${options.vendor}". Known: ${Object.keys(GENERATION_VENDORS).join(', ')}`,
         );
       }
-    }
-    else if (arg === '--help' || arg === '-h') options.help = true;
+    } else if (arg === '--help' || arg === '-h') options.help = true;
     else throw new Error(`Unknown option: ${arg}`);
   }
   return options;
@@ -90,13 +98,19 @@ function parseArgs(argv) {
  * @returns {string}
  */
 function makeRunId() {
-  return new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, 19);
+  return new Date()
+    .toISOString()
+    .replace(/[:.]/g, '-')
+    .replace('T', '_')
+    .slice(0, 19);
 }
 
 async function main() {
   const options = parseArgs(process.argv.slice(2));
   if (options.help) {
-    console.log(await fs.readFile(new URL(import.meta.url), 'utf8').then(headerComment));
+    console.log(
+      await fs.readFile(new URL(import.meta.url), 'utf8').then(headerComment),
+    );
     return;
   }
 
@@ -104,10 +118,12 @@ async function main() {
   // per call, so setting them here covers the whole run. Both Claude stages
   // (plan and fill) are pinned to one model so the two phases stay comparable.
   const generation = GENERATION_VENDORS[options.vendor];
-  for (const envVar of generation.envVars) process.env[envVar] = generation.model;
+  for (const envVar of generation.envVars)
+    process.env[envVar] = generation.model;
   process.env.LLM_VENDOR = options.vendor;
   // Keep the app's own debug logging out of the repo during suite runs.
-  process.env.AI_VALIDATION_LOGGING = process.env.AI_VALIDATION_LOGGING || 'false';
+  process.env.AI_VALIDATION_LOGGING =
+    process.env.AI_VALIDATION_LOGGING || 'false';
 
   if (!process.env.CLAUDE_API && process.env.ANTHROPIC_API_KEY) {
     process.env.CLAUDE_API = process.env.ANTHROPIC_API_KEY;
@@ -124,10 +140,12 @@ async function main() {
 
   console.log(`\nRun ${runId}`);
   console.log(
-    `  generation=${options.vendor}/${generation.model}  judge=${MODEL} (effort ${JUDGE_EFFORT})`
+    `  generation=${options.vendor}/${generation.model}  judge=${MODEL} (effort ${JUDGE_EFFORT})`,
   );
   console.log(`  prompts=${promptVersion.hash}`);
-  console.log(`  cases=${cases.map((c) => c.id).join(', ')} repeat=${options.repeat}`);
+  console.log(
+    `  cases=${cases.map((c) => c.id).join(', ')} repeat=${options.repeat}`,
+  );
   if (options.dryRun) console.log('  mode=dry-run (no judge)');
   console.log('');
 
@@ -138,7 +156,9 @@ async function main() {
   const results = [];
 
   for (const testCase of cases) {
-    console.log(`[${testCase.id}] (category ${testCase.category}, ${testCase.language})`);
+    console.log(
+      `[${testCase.id}] (category ${testCase.category}, ${testCase.language})`,
+    );
     const sourceText = await readSourceText(testCase);
     const referenceDeck = await readReferenceDeck(testCase);
 
@@ -151,13 +171,18 @@ async function main() {
         refresh: options.refresh,
       });
       topics = extracted.topics;
-      console.log(`  topics: ${topics.length}${extracted.cached ? ' (cached)' : ''}`);
+      console.log(
+        `  topics: ${topics.length}${extracted.cached ? ' (cached)' : ''}`,
+      );
     }
 
     const repeats = [];
     for (let repeat = 0; repeat < options.repeat; repeat += 1) {
       const caseDir = path.join(runDir, testCase.id);
-      const deckPath = path.join(caseDir, `deck${repeat ? `-${repeat + 1}` : ''}.json`);
+      const deckPath = path.join(
+        caseDir,
+        `deck${repeat ? `-${repeat + 1}` : ''}.json`,
+      );
 
       let deck;
       if (options.generate) {
@@ -171,16 +196,17 @@ async function main() {
         await fs.mkdir(caseDir, { recursive: true });
         await fs.writeFile(deckPath, JSON.stringify(deck, null, 2));
         console.log(
-          `  repeat ${repeat + 1}: ${deck.slides?.length ?? 0} slides in ${Math.round(durationMs / 1000)}s`
+          `  repeat ${repeat + 1}: ${deck.slides?.length ?? 0} slides in ${Math.round(durationMs / 1000)}s`,
         );
       } else {
         const sourceRunId = options.reuseRun;
-        if (!sourceRunId) throw new Error('--no-generate requires --reuse-run <run-id>');
+        if (!sourceRunId)
+          throw new Error('--no-generate requires --reuse-run <run-id>');
         const reusePath = path.join(
           RUNS_DIR,
           sourceRunId,
           testCase.id,
-          `deck${repeat ? `-${repeat + 1}` : ''}.json`
+          `deck${repeat ? `-${repeat + 1}` : ''}.json`,
         );
         deck = JSON.parse(await fs.readFile(reusePath, 'utf8'));
         await fs.mkdir(caseDir, { recursive: true });
@@ -190,8 +216,13 @@ async function main() {
 
       const metrics = deckMetrics(deck);
       const fidelity = numberFidelity(deck, sourceText);
-      const specialTypes = specialTypeUsage(deck, testCase.expectedSlideTypes || []);
-      const referenceComparison = referenceDeck ? compareToReference(deck, referenceDeck) : null;
+      const specialTypes = specialTypeUsage(
+        deck,
+        testCase.expectedSlideTypes || [],
+      );
+      const referenceComparison = referenceDeck
+        ? compareToReference(deck, referenceDeck)
+        : null;
 
       let verdict = null;
       if (!options.dryRun) {
@@ -208,14 +239,14 @@ async function main() {
         });
         verdict = judged.verdict;
         console.log(
-          `    judge: ${meanScore(verdict.scores).toFixed(2)}/5${judged.cached ? ' (cached)' : ''}`
+          `    judge: ${meanScore(verdict.scores).toFixed(2)}/5${judged.cached ? ' (cached)' : ''}`,
         );
       }
       if (specialTypes.expected) {
         const missed = specialTypes.missing.map((m) => m.type).join(', ');
         console.log(
           `    specialised layouts: ${specialTypes.found.length}/${specialTypes.expected}` +
-            (missed ? ` — missed ${missed}` : '')
+            (missed ? ` — missed ${missed}` : ''),
         );
       }
 
@@ -264,10 +295,17 @@ async function main() {
   };
 
   await fs.mkdir(runDir, { recursive: true });
-  await fs.writeFile(path.join(runDir, 'run.json'), JSON.stringify(run, null, 2));
+  await fs.writeFile(
+    path.join(runDir, 'run.json'),
+    JSON.stringify(run, null, 2),
+  );
 
   const history = await loadHistory();
-  const previous = await findComparableRun(history, run.caseIds, options.vendor);
+  const previous = await findComparableRun(
+    history,
+    run.caseIds,
+    options.vendor,
+  );
   await writeReport(run, previous, path.join(runDir, 'report.md'));
 
   await appendHistory({
@@ -288,7 +326,9 @@ async function main() {
   });
 
   console.log('');
-  console.log(`Overall: ${run.overall === null ? 'n/a (dry run)' : `${run.overall.toFixed(2)}/5`}`);
+  console.log(
+    `Overall: ${run.overall === null ? 'n/a (dry run)' : `${run.overall.toFixed(2)}/5`}`,
+  );
   console.log(`Cost:    $${run.cost.totalUsd.toFixed(4)}`);
   console.log(`Report:  ${path.join(runDir, 'report.md')}`);
 }
@@ -296,7 +336,9 @@ async function main() {
 /** Pull the usage block out of this file's own header comment. */
 function headerComment(text) {
   const match = text.match(/\/\*\*([\s\S]*?)\*\//);
-  return match ? match[1].replace(/^\s*\*ate?/gm, '').replace(/^\s*\* ?/gm, '') : '';
+  return match
+    ? match[1].replace(/^\s*\*ate?/gm, '').replace(/^\s*\* ?/gm, '')
+    : '';
 }
 
 main().catch((err) => {

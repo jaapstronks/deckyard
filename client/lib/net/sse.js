@@ -70,8 +70,10 @@ export async function processSSEStream(body, handlers = {}) {
     }
 
     for (const evt of events) {
-      const handler = handlers[`on${evt.event.charAt(0).toUpperCase()}${evt.event.slice(1)}`]
-        || handlers[evt.event];
+      const handler =
+        handlers[
+          `on${evt.event.charAt(0).toUpperCase()}${evt.event.slice(1)}`
+        ] || handlers[evt.event];
       if (handler) {
         await handler(evt.data);
       }

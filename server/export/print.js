@@ -6,7 +6,10 @@ import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { sandboxWatermarkText } from '../config/sandbox.js';
 import { escapeHtml, isProbablyUrl } from '../utils/html-utils.js';
-import { buildPrismKatexCdnTags, buildPrismKatexInitScriptTag } from '../utils/prism-katex.js';
+import {
+  buildPrismKatexCdnTags,
+  buildPrismKatexInitScriptTag,
+} from '../utils/prism-katex.js';
 import { loadExportCssBundle } from './css-bundle.js';
 
 // Simple translations for server-side export
@@ -22,7 +25,11 @@ const PRINT_I18N = {
 };
 
 function getPrintTranslations(lang) {
-  const langKey = String(lang || '').toLowerCase().startsWith('nl') ? 'nl' : 'en';
+  const langKey = String(lang || '')
+    .toLowerCase()
+    .startsWith('nl')
+    ? 'nl'
+    : 'en';
   return PRINT_I18N[langKey] || PRINT_I18N.en;
 }
 
@@ -37,41 +44,28 @@ function linkify(s) {
 }
 
 function renderQuoteSlide(slide) {
-  const c =
-    slide && typeof slide === 'object' ? slide.content : {};
+  const c = slide && typeof slide === 'object' ? slide.content : {};
   const quote = String(c?.quote || '').trim();
   const name = String(c?.authorName || '').trim();
   const role = String(c?.authorTitle || '').trim();
-  const authorLine = [name, role]
-    .filter(Boolean)
-    .join(', ');
+  const authorLine = [name, role].filter(Boolean).join(', ');
   const footer = authorLine
-    ? `<footer class="print-quote-footer">- ${escapeHtml(
-        authorLine
-      )}</footer>`
+    ? `<footer class="print-quote-footer">- ${escapeHtml(authorLine)}</footer>`
     : '';
 
   return `<blockquote class="print-quote">
-    <p class="print-quote-text">&ldquo;${escapeHtml(
-      quote
-    )}&rdquo;</p>
+    <p class="print-quote-text">&ldquo;${escapeHtml(quote)}&rdquo;</p>
     ${footer}
   </blockquote>`;
 }
 
 function renderIconCardGridSlide(slide, lang) {
   const t = getPrintTranslations(lang);
-  const c =
-    slide && typeof slide === 'object' ? slide.content : {};
-  const count = Math.max(
-    1,
-    Math.min(6, Number(c?.cardCount || 6) || 6)
-  );
+  const c = slide && typeof slide === 'object' ? slide.content : {};
+  const count = Math.max(1, Math.min(6, Number(c?.cardCount || 6) || 6));
   const cards = [];
   for (let i = 1; i <= count; i += 1) {
-    const iconName = String(
-      c?.[`card${i}Icon`] || ''
-    ).trim();
+    const iconName = String(c?.[`card${i}Icon`] || '').trim();
     const iconSrc = iconUrl(iconName);
     const title = String(c?.[`card${i}Title`] || '').trim();
     const body = String(c?.[`card${i}Body`] || '').trim();
@@ -80,35 +74,25 @@ function renderIconCardGridSlide(slide, lang) {
       <div class="print-icon-card-head">
         ${
           iconSrc
-            ? `<img class="print-icon" src="${escapeHtml(
-                iconSrc
-              )}" alt="" />`
+            ? `<img class="print-icon" src="${escapeHtml(iconSrc)}" alt="" />`
             : ''
         }
         ${title ? `<h3>${escapeHtml(title)}</h3>` : ''}
       </div>
-      ${
-        body
-          ? `<div class="md">${markdownToSafeHtml(
-              body
-            )}</div>`
-          : ''
-      }
+      ${body ? `<div class="md">${markdownToSafeHtml(body)}</div>` : ''}
     </section>`);
   }
   return cards.length
-    ? `<div class="print-icon-cards">${cards.join(
-        ''
-      )}</div>`
+    ? `<div class="print-icon-cards">${cards.join('')}</div>`
     : `<p class="print-muted">${escapeHtml(t.noCardContent)}</p>`;
 }
 
 function slideH2(slide, idx, slideTypes) {
   const type = String(slide?.type || '');
-  const types = slideTypes && typeof slideTypes === 'object' ? slideTypes : SLIDE_TYPES;
+  const types =
+    slideTypes && typeof slideTypes === 'object' ? slideTypes : SLIDE_TYPES;
   const def = types[type];
-  const c =
-    slide && typeof slide === 'object' ? slide.content : {};
+  const c = slide && typeof slide === 'object' ? slide.content : {};
   const title = String(c?.title || '').trim();
   if (title) return title;
   if (type === 'quote-slide') return 'Quote';
@@ -117,32 +101,22 @@ function slideH2(slide, idx, slideTypes) {
 
 function renderSlideReadableHtml(slide, lang) {
   const type = String(slide?.type || '');
-  const c =
-    slide && typeof slide === 'object' ? slide.content : {};
+  const c = slide && typeof slide === 'object' ? slide.content : {};
 
-  if (type === 'quote-slide')
-    return renderQuoteSlide(slide);
+  if (type === 'quote-slide') return renderQuoteSlide(slide);
   if (type === 'icon-card-grid-slide')
     return renderIconCardGridSlide(slide, lang);
 
-  if (
-    type === 'title-slide' ||
-    type === 'chapter-title-slide'
-  ) {
+  if (type === 'title-slide' || type === 'chapter-title-slide') {
     const subheading = String(c?.subheading || '').trim();
     return subheading
       ? `<p class="print-lead">${escapeHtml(subheading)}</p>`
       : '';
   }
 
-  if (
-    type === 'content-slide' ||
-    type === 'image-text-slide'
-  ) {
+  if (type === 'content-slide' || type === 'image-text-slide') {
     const body = String(c?.body || '').trim();
-    return body
-      ? `<div class="md">${markdownToSafeHtml(body)}</div>`
-      : '';
+    return body ? `<div class="md">${markdownToSafeHtml(body)}</div>` : '';
   }
 
   if (type === 'image-slide') {
@@ -150,11 +124,8 @@ function renderSlideReadableHtml(slide, lang) {
     const caption = String(c?.caption || '').trim();
     const parts = [];
     if (subheading)
-      parts.push(
-        `<p class="print-lead">${escapeHtml(subheading)}</p>`
-      );
-    if (caption)
-      parts.push(`<p>${escapeHtml(caption)}</p>`);
+      parts.push(`<p class="print-lead">${escapeHtml(subheading)}</p>`);
+    if (caption) parts.push(`<p>${escapeHtml(caption)}</p>`);
     return parts.join('\n');
   }
 
@@ -173,9 +144,7 @@ function renderSlideTextHtml(slide, idx, lang, slideTypes) {
   const type = String(slide?.type || '');
   const h2 = slideH2(slide, idx, slideTypes);
   const content = renderSlideReadableHtml(slide, lang);
-  return `<section class="print-slide" data-slide-type="${escapeHtml(
-    type
-  )}">
+  return `<section class="print-slide" data-slide-type="${escapeHtml(type)}">
     <h2 class="print-h2"><span class="print-slide-num">${
       idx + 1
     }.</span> ${escapeHtml(h2)}</h2>
@@ -183,7 +152,11 @@ function renderSlideTextHtml(slide, idx, lang, slideTypes) {
   </section>`;
 }
 
-export async function buildPrintHtml(repoRoot, pres, { theme = null, watermark = null, slideTypes = null } = {}) {
+export async function buildPrintHtml(
+  repoRoot,
+  pres,
+  { theme = null, watermark = null, slideTypes = null } = {},
+) {
   pres = stripLiveOnlySlidesFromPresentation(pres);
   const docLang = resolveDocLangFromPresentation(pres);
   const css = await loadExportCssBundle(repoRoot, theme, watermark);
@@ -191,16 +164,11 @@ export async function buildPrintHtml(repoRoot, pres, { theme = null, watermark =
   const title = escapeHtml(pres.title || 'Presentation');
   const wmOn = css.wmOn;
   const wmText = wmOn ? escapeHtml(sandboxWatermarkText()) : '';
-  const slides = Array.isArray(pres?.slides)
-    ? pres.slides
-    : [];
+  const slides = Array.isArray(pres?.slides) ? pres.slides : [];
   const slidesHtml = slides
     .map((s, idx) => {
       const section = renderSlideTextHtml(s, idx, docLang, slideTypes);
-      const hr =
-        idx < slides.length - 1
-          ? `<hr class="print-break" />`
-          : '';
+      const hr = idx < slides.length - 1 ? `<hr class="print-break" />` : '';
       return `${section}\n${hr}`;
     })
     .join('\n');

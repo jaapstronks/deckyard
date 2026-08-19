@@ -18,7 +18,10 @@ import {
 import { canWritePresentation } from '../../../utils/presentation-authz.js';
 import { getString } from '../../../utils/request-validators.js';
 import { loadThemeAssets, resolveThemeId } from '../../../utils/themes.js';
-import { getConvertibleSlideTypes, convertSlideToType } from '../../../../shared/slide-types/convert.js';
+import {
+  getConvertibleSlideTypes,
+  convertSlideToType,
+} from '../../../../shared/slide-types/convert.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types/registry.js';
 import { createLogger } from '../../../utils/logger.js';
 import { DEFAULT_THEME_ID } from '../../../../shared/constants/themes.js';
@@ -34,7 +37,10 @@ function getThemeSlideTypeConfig(theme) {
   // `newTheme` comes from loadThemeAssets(), which normalizes, so `slideTypes.exclude`
   // is the whole story here — the legacy `hiddenSlideTypes` alias is folded away
   // in normalizeTheme().
-  const st = theme?.slideTypes && typeof theme.slideTypes === 'object' ? theme.slideTypes : {};
+  const st =
+    theme?.slideTypes && typeof theme.slideTypes === 'object'
+      ? theme.slideTypes
+      : {};
   const excludeArr = Array.isArray(st.exclude) ? st.exclude : [];
   const includeArr = Array.isArray(st.include) ? st.include : [];
 
@@ -102,7 +108,7 @@ function checkSlideTypeCompatibility(slideType, newTheme) {
  */
 export async function handleAnalyzeThemeChange(
   { repoRoot, storageScope, req, res, authedUser } = {},
-  id
+  id,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
@@ -139,15 +145,27 @@ export async function handleAnalyzeThemeChange(
     const slideType = String(slide?.type || '').trim();
     if (!slideType) continue;
 
-    const { compatible, reason } = checkSlideTypeCompatibility(slideType, newTheme);
+    const { compatible, reason } = checkSlideTypeCompatibility(
+      slideType,
+      newTheme,
+    );
 
     if (!compatible) {
       // Get the slide title for display
-      const content = slide?.content && typeof slide.content === 'object' ? slide.content : {};
-      const title = String(content?.title || content?.a11yTitle || `Slide ${i + 1}`).trim().slice(0, 100);
+      const content =
+        slide?.content && typeof slide.content === 'object'
+          ? slide.content
+          : {};
+      const title = String(
+        content?.title || content?.a11yTitle || `Slide ${i + 1}`,
+      )
+        .trim()
+        .slice(0, 100);
 
       // Get convertible options
-      const convertibleTo = getConvertibleSlideTypes(slide, { slideTypes: SLIDE_TYPES });
+      const convertibleTo = getConvertibleSlideTypes(slide, {
+        slideTypes: SLIDE_TYPES,
+      });
 
       problematicSlides.push({
         id: slide.id,
@@ -186,7 +204,7 @@ export async function handleAnalyzeThemeChange(
  */
 export async function handleChangeTheme(
   { repoRoot, storageScope, req, res, authedUser } = {},
-  id
+  id,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
@@ -236,7 +254,10 @@ export async function handleChangeTheme(
           lang: pres.lang || null,
         });
       } catch (err) {
-        log.warn(`[change-theme] Failed to convert slide ${slide.id}:`, err.message);
+        log.warn(
+          `[change-theme] Failed to convert slide ${slide.id}:`,
+          err.message,
+        );
         return slide; // Keep original if conversion fails
       }
     }

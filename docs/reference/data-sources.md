@@ -5,7 +5,7 @@ from (a Notion database, a Notion page, or a CSV URL) and how fetched values
 map onto its content fields. Refreshing re-fetches and rewrites the bound
 fields. Written 2026-08-16 against HEAD.
 
-This is one of two server-side fetch surfaces where the *target* is
+This is one of two server-side fetch surfaces where the _target_ is
 user-controlled (the other is outgoing [webhooks](webhooks.md)), which makes
 the csv-url provider a read-SSRF sink and the SSRF guard part of the contract,
 not an implementation detail.
@@ -83,15 +83,15 @@ The `dataSource` object lives on the slide (validated by
 All of them sit behind login **and** the `LIVE_DATA_ENABLED` feature flag
 (unauthenticated → 401, flag off → 403).
 
-| Method | Path | Does |
-|---|---|---|
-| GET | `/api/data-sources/providers` | List provider ids and `BINDABLE_SLIDE_TYPES` (for the mapping UI). |
-| POST | `/api/data-sources/preview` | `{provider, config}` → `{data}`: the raw fetched data (CSV grid, Notion rows/blocks), no bindings applied. |
-| POST | `/api/data-sources/refresh` | `{dataSource, content}` → `{content, applied, errors, lastSync}`. A pure transform; it never touches a presentation or its event stream. |
+| Method | Path                          | Does                                                                                                                                     |
+| ------ | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/data-sources/providers` | List provider ids and `BINDABLE_SLIDE_TYPES` (for the mapping UI).                                                                       |
+| POST   | `/api/data-sources/preview`   | `{provider, config}` → `{data}`: the raw fetched data (CSV grid, Notion rows/blocks), no bindings applied.                               |
+| POST   | `/api/data-sources/refresh`   | `{dataSource, content}` → `{content, applied, errors, lastSync}`. A pure transform; it never touches a presentation or its event stream. |
 
 Provider/validation failures are 400; an unconfigured Notion is 501; upstream
 fetch failures surface as `data_source_error` with the upstream status, or 502
-when untyped. `/providers` is GET-only but *falls through* on other methods
+when untyped. `/providers` is GET-only but _falls through_ on other methods
 (no 405) — `/preview` and `/refresh` answer an explicit 405.
 
 ## The SSRF guard (csv-url)
@@ -122,8 +122,7 @@ rejects before any fetch — and pinned by
 
 - `LIVE_DATA_ENABLED` — the feature flag; off by default.
 - `NOTION_SECRET` — one integration token for the whole instance
-  (`server/utils/notion/client.js`); unset means every Notion call answers
-  501.
+  (`server/utils/notion/client.js`); unset means every Notion call answers 501.
 
 ## Authz & tenancy
 

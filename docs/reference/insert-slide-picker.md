@@ -153,13 +153,13 @@ buttons.)
 
 ## Persisted keys (localStorage)
 
-| Key | Meaning |
-| --- | --- |
-| `ps-slide-picker-view` | thumbnail view mode (`schematic` \| `preview`; default `schematic`) |
-| `ps-slide-picker-collapsed` | per-section collapsed map (`getJSON/setJSON`) |
-| `ps-slide-type-usage` | `{ type: insertCount }` for Frequently-used |
-| `ps-slide-type-pins` | pinned type keys |
-| `ps-slide-picker-bg` | forced preview surface (`'' ` = auto) |
+| Key                         | Meaning                                                             |
+| --------------------------- | ------------------------------------------------------------------- |
+| `ps-slide-picker-view`      | thumbnail view mode (`schematic` \| `preview`; default `schematic`) |
+| `ps-slide-picker-collapsed` | per-section collapsed map (`getJSON/setJSON`)                       |
+| `ps-slide-type-usage`       | `{ type: insertCount }` for Frequently-used                         |
+| `ps-slide-type-pins`        | pinned type keys                                                    |
+| `ps-slide-picker-bg`        | forced preview surface (`'' ` = auto)                               |
 
 ## i18n
 

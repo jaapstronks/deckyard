@@ -36,7 +36,12 @@
           <button class="go-btn" type="submit" id="mdRequestSubmit">
             Send me a link
           </button>
-          <div class="go-error md-msg" id="mdRequestMsg" role="status" aria-live="polite"></div>
+          <div
+            class="go-error md-msg"
+            id="mdRequestMsg"
+            role="status"
+            aria-live="polite"
+          ></div>
         </form>
 
         <!-- Token verified: render the data and offer erase. -->
@@ -56,16 +61,29 @@
               undone.
             </p>
             <div class="md-actions">
-              <button class="go-btn md-btn-danger" type="button" id="mdConfirmYes">
+              <button
+                class="go-btn md-btn-danger"
+                type="button"
+                id="mdConfirmYes"
+              >
                 Yes, erase everything
               </button>
-              <button class="go-btn md-btn-ghost" type="button" id="mdConfirmNo">
+              <button
+                class="go-btn md-btn-ghost"
+                type="button"
+                id="mdConfirmNo"
+              >
                 Cancel
               </button>
             </div>
           </div>
 
-          <div class="go-error md-msg" id="mdEraseMsg" role="status" aria-live="polite"></div>
+          <div
+            class="go-error md-msg"
+            id="mdEraseMsg"
+            role="status"
+            aria-live="polite"
+          ></div>
         </section>
 
         <!-- Terminal state (erased / link invalid). -->

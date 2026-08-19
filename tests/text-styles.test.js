@@ -19,28 +19,40 @@ describe('normalizeTextStyles', () => {
   it('keeps known non-default values', () => {
     assert.deepEqual(
       normalizeTextStyles({ body: { align: 'center', color: 'accent' } }),
-      { body: { align: 'center', color: 'accent' } }
+      { body: { align: 'center', color: 'accent' } },
     );
   });
 
   it('keeps a non-default size', () => {
-    assert.deepEqual(normalizeTextStyles({ body: { size: 'lg' } }), { body: { size: 'lg' } });
-    assert.deepEqual(normalizeTextStyles({ body: { size: 'sm' } }), { body: { size: 'sm' } });
+    assert.deepEqual(normalizeTextStyles({ body: { size: 'lg' } }), {
+      body: { size: 'lg' },
+    });
+    assert.deepEqual(normalizeTextStyles({ body: { size: 'sm' } }), {
+      body: { size: 'sm' },
+    });
   });
 
   it('prunes defaults and empty results (no no-op overrides stored)', () => {
-    assert.deepEqual(normalizeTextStyles({ body: { align: 'left', color: 'default' } }), {});
+    assert.deepEqual(
+      normalizeTextStyles({ body: { align: 'left', color: 'default' } }),
+      {},
+    );
     assert.deepEqual(normalizeTextStyles({ body: { size: 'md' } }), {});
     assert.deepEqual(
-      normalizeTextStyles({ body: { align: 'left', color: 'default', size: 'md' } }),
-      {}
+      normalizeTextStyles({
+        body: { align: 'left', color: 'default', size: 'md' },
+      }),
+      {},
     );
     assert.deepEqual(normalizeTextStyles({ title: {} }), {});
   });
 
   it('drops unknown keys, values and non-objects', () => {
     assert.deepEqual(normalizeTextStyles({ body: { align: 'justify' } }), {});
-    assert.deepEqual(normalizeTextStyles({ body: { color: 'rebeccapurple' } }), {});
+    assert.deepEqual(
+      normalizeTextStyles({ body: { color: 'rebeccapurple' } }),
+      {},
+    );
     // 'inverse' was removed from the vocabulary; it now prunes like any unknown value.
     assert.deepEqual(normalizeTextStyles({ body: { color: 'inverse' } }), {});
     assert.deepEqual(normalizeTextStyles({ body: { size: 'xl' } }), {});
@@ -61,32 +73,42 @@ describe('normalizeTextStyles', () => {
   });
 
   it('keeps one property when the others are default', () => {
-    assert.deepEqual(normalizeTextStyles({ body: { align: 'right', color: 'default' } }), {
-      body: { align: 'right' },
-    });
     assert.deepEqual(
-      normalizeTextStyles({ body: { align: 'left', color: 'default', size: 'lg' } }),
-      { body: { size: 'lg' } }
+      normalizeTextStyles({ body: { align: 'right', color: 'default' } }),
+      {
+        body: { align: 'right' },
+      },
+    );
+    assert.deepEqual(
+      normalizeTextStyles({
+        body: { align: 'left', color: 'default', size: 'lg' },
+      }),
+      { body: { size: 'lg' } },
     );
   });
 
   it('keeps all three properties together', () => {
     assert.deepEqual(
-      normalizeTextStyles({ body: { align: 'center', color: 'accent', size: 'lg' } }),
-      { body: { align: 'center', color: 'accent', size: 'lg' } }
+      normalizeTextStyles({
+        body: { align: 'center', color: 'accent', size: 'lg' },
+      }),
+      { body: { align: 'center', color: 'accent', size: 'lg' } },
     );
   });
 });
 
 describe('textStyleClasses', () => {
   it('maps to tf-* classes', () => {
-    assert.equal(textStyleClasses({ align: 'center', color: 'muted' }), 'tf-align-center tf-color-muted');
+    assert.equal(
+      textStyleClasses({ align: 'center', color: 'muted' }),
+      'tf-align-center tf-color-muted',
+    );
   });
   it('includes tf-size-* for a non-default size', () => {
     assert.equal(textStyleClasses({ size: 'lg' }), 'tf-size-lg');
     assert.equal(
       textStyleClasses({ align: 'center', color: 'accent', size: 'sm' }),
-      'tf-align-center tf-color-accent tf-size-sm'
+      'tf-align-center tf-color-accent tf-size-sm',
     );
   });
   it('maps a theme brand swatch to tf-color-brand-*', () => {
@@ -94,7 +116,10 @@ describe('textStyleClasses', () => {
     assert.equal(textStyleClasses({ color: 'brand-2' }), 'tf-color-brand-2');
   });
   it('is empty for defaults', () => {
-    assert.equal(textStyleClasses({ align: 'left', color: 'default', size: 'md' }), '');
+    assert.equal(
+      textStyleClasses({ align: 'left', color: 'default', size: 'md' }),
+      '',
+    );
     assert.equal(textStyleClasses({}), '');
   });
 });
@@ -102,35 +127,53 @@ describe('textStyleClasses', () => {
 describe('injectTextStyles', () => {
   it('merges classes into an existing class attribute', () => {
     const html = '<p class="body" data-inline-field="body" dir="auto">Hi</p>';
-    const out = injectTextStyles(html, { textStyles: { body: { align: 'center' } } });
-    assert.equal(out, '<p class="body tf-align-center" data-inline-field="body" dir="auto">Hi</p>');
+    const out = injectTextStyles(html, {
+      textStyles: { body: { align: 'center' } },
+    });
+    assert.equal(
+      out,
+      '<p class="body tf-align-center" data-inline-field="body" dir="auto">Hi</p>',
+    );
   });
 
   it('adds a class attribute when the element has none', () => {
     const html = '<div data-inline-field="title">T</div>';
-    const out = injectTextStyles(html, { textStyles: { title: { color: 'accent' } } });
-    assert.equal(out, '<div class="tf-color-accent" data-inline-field="title">T</div>');
+    const out = injectTextStyles(html, {
+      textStyles: { title: { color: 'accent' } },
+    });
+    assert.equal(
+      out,
+      '<div class="tf-color-accent" data-inline-field="title">T</div>',
+    );
   });
 
   it('only touches the matching field, not similarly-named ones', () => {
     const html =
       '<div data-inline-field="card1" class="a">1</div>' +
       '<div data-inline-field="card1Body" class="b">1b</div>';
-    const out = injectTextStyles(html, { textStyles: { card1: { align: 'right' } } });
+    const out = injectTextStyles(html, {
+      textStyles: { card1: { align: 'right' } },
+    });
     assert.match(out, /data-inline-field="card1" class="a tf-align-right"/);
     assert.doesNotMatch(out, /card1Body[^>]*tf-align-right/);
   });
 
   it('does not match a value that only appears in another attribute', () => {
-    const html = '<p class="x" data-morph-role="body" data-inline-field="subheading">S</p>';
-    const out = injectTextStyles(html, { textStyles: { body: { align: 'center' } } });
+    const html =
+      '<p class="x" data-morph-role="body" data-inline-field="subheading">S</p>';
+    const out = injectTextStyles(html, {
+      textStyles: { body: { align: 'center' } },
+    });
     assert.equal(out, html); // field "body" is not present as data-inline-field
   });
 
   it('is a no-op for empty / default-only styles', () => {
     const html = '<p data-inline-field="body">x</p>';
     assert.equal(injectTextStyles(html, {}), html);
-    assert.equal(injectTextStyles(html, { textStyles: { body: { align: 'left' } } }), html);
+    assert.equal(
+      injectTextStyles(html, { textStyles: { body: { align: 'left' } } }),
+      html,
+    );
   });
 
   it('applies all classes together', () => {
@@ -143,7 +186,9 @@ describe('injectTextStyles', () => {
 
   it('injects a size-only override', () => {
     const html = '<p data-inline-field="body">x</p>';
-    const out = injectTextStyles(html, { textStyles: { body: { size: 'sm' } } });
+    const out = injectTextStyles(html, {
+      textStyles: { body: { size: 'sm' } },
+    });
     assert.equal(out, '<p class="tf-size-sm" data-inline-field="body">x</p>');
   });
 });
@@ -166,8 +211,12 @@ describe('injectTextStyles — role-gated alignment', () => {
     const html = '<div data-inline-field="items.0.text">x</div>';
     const out = injectTextStyles(
       html,
-      { textStyles: { 'items.0.text': { align: 'center', color: 'accent', size: 'lg' } } },
-      listFields
+      {
+        textStyles: {
+          'items.0.text': { align: 'center', color: 'accent', size: 'lg' },
+        },
+      },
+      listFields,
     );
     assert.doesNotMatch(out, /tf-align-center/);
     assert.match(out, /tf-color-accent/);
@@ -176,23 +225,37 @@ describe('injectTextStyles — role-gated alignment', () => {
 
   it('keeps the align class on a default (non-list) field', () => {
     const html = '<div data-inline-field="title">T</div>';
-    const out = injectTextStyles(html, { textStyles: { title: { align: 'center' } } }, listFields);
+    const out = injectTextStyles(
+      html,
+      { textStyles: { title: { align: 'center' } } },
+      listFields,
+    );
     assert.match(out, /tf-align-center/);
   });
 
   it('allows alignment when no fields schema is passed (back-compat)', () => {
     const html = '<div data-inline-field="items.0.text">x</div>';
-    const out = injectTextStyles(html, { textStyles: { 'items.0.text': { align: 'center' } } });
+    const out = injectTextStyles(html, {
+      textStyles: { 'items.0.text': { align: 'center' } },
+    });
     assert.match(out, /tf-align-center/);
   });
 
   it('drops an align value the field role does not allow (quote: no right)', () => {
     const quoteFields = [{ key: 'quote', type: 'string', role: 'quote' }];
     const html = '<blockquote data-inline-field="quote">q</blockquote>';
-    const right = injectTextStyles(html, { textStyles: { quote: { align: 'right' } } }, quoteFields);
+    const right = injectTextStyles(
+      html,
+      { textStyles: { quote: { align: 'right' } } },
+      quoteFields,
+    );
     assert.doesNotMatch(right, /tf-align-right/);
     // centre is allowed for a quote and still emits
-    const centre = injectTextStyles(html, { textStyles: { quote: { align: 'center' } } }, quoteFields);
+    const centre = injectTextStyles(
+      html,
+      { textStyles: { quote: { align: 'center' } } },
+      quoteFields,
+    );
     assert.match(centre, /tf-align-center/);
   });
 });

@@ -53,7 +53,7 @@ export function serializeSlideType(ct) {
       definition: toPortableDefinition(ct),
     },
     null,
-    2
+    2,
   );
 }
 

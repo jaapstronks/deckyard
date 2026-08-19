@@ -16,12 +16,21 @@ import {
   badRequest,
 } from '../../../utils/http.js';
 import { canDeletePresentation } from '../../../utils/presentation-authz.js';
-import { isOwnerOrCreator, matchesIdentity } from '../../../../shared/identity-match.js';
+import {
+  isOwnerOrCreator,
+  matchesIdentity,
+} from '../../../../shared/identity-match.js';
 
 /**
  * GET /api/presentations/trash - List trashed presentations
  */
-export async function handlePresentationsTrashList({ repoRoot, storageScope, req, res, authedUser }) {
+export async function handlePresentationsTrashList({
+  repoRoot,
+  storageScope,
+  req,
+  res,
+  authedUser,
+}) {
   if (req.method !== 'GET') {
     return methodNotAllowed(res, ['GET']);
   }
@@ -47,7 +56,10 @@ export async function handlePresentationsTrashList({ repoRoot, storageScope, req
 /**
  * POST /api/presentations/:id/restore - Restore a presentation from trash
  */
-export async function handlePresentationRestore({ repoRoot, storageScope, req, res, authedUser }, id) {
+export async function handlePresentationRestore(
+  { repoRoot, storageScope, req, res, authedUser },
+  id,
+) {
   if (req.method !== 'POST') {
     return methodNotAllowed(res, ['POST']);
   }
@@ -69,10 +81,16 @@ export async function handlePresentationRestore({ repoRoot, storageScope, req, r
   const canRestore =
     authedUser?.isAdmin ||
     isOwnerOrCreator(authedUser, existing) ||
-    matchesIdentity(authedUser, { userId: existing.trashedById, email: existing.trashedBy });
+    matchesIdentity(authedUser, {
+      userId: existing.trashedById,
+      email: existing.trashedBy,
+    });
 
   if (!canRestore) {
-    return forbidden(res, 'You do not have permission to restore this presentation');
+    return forbidden(
+      res,
+      'You do not have permission to restore this presentation',
+    );
   }
 
   const restored = await restorePresentation(storageScope, id);
@@ -87,7 +105,10 @@ export async function handlePresentationRestore({ repoRoot, storageScope, req, r
 /**
  * DELETE /api/presentations/:id/permanent - Permanently delete a presentation
  */
-export async function handlePresentationPermanentDelete({ repoRoot, storageScope, req, res, authedUser }, id) {
+export async function handlePresentationPermanentDelete(
+  { repoRoot, storageScope, req, res, authedUser },
+  id,
+) {
   if (req.method !== 'DELETE') {
     return methodNotAllowed(res, ['DELETE']);
   }
@@ -101,7 +122,10 @@ export async function handlePresentationPermanentDelete({ repoRoot, storageScope
   // Check authorization using existing canDeletePresentation helper
   // This checks: owner, creator, or admin
   if (!canDeletePresentation({ user: authedUser, pres: existing })) {
-    return forbidden(res, 'You do not have permission to permanently delete this presentation');
+    return forbidden(
+      res,
+      'You do not have permission to permanently delete this presentation',
+    );
   }
 
   const deleted = await permanentlyDeletePresentation(storageScope, id);

@@ -80,9 +80,7 @@ export function parseDelimited(text, delimiter) {
 
   // Trim and drop empty rows
   const cleaned = rows
-    .map((r) =>
-      Array.isArray(r) ? r.map((c) => String(c ?? '').trim()) : []
-    )
+    .map((r) => (Array.isArray(r) ? r.map((c) => String(c ?? '').trim()) : []))
     .filter((r) => r.some((c) => String(c || '').trim().length > 0));
   return cleaned;
 }
@@ -132,7 +130,7 @@ export function serializeCsv(rows) {
           const s = String(cell ?? '');
           return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
         })
-        .join(',')
+        .join(','),
     )
     .join('\n');
 }
@@ -153,8 +151,7 @@ export function parseCsvToGrid(text) {
 
 export function parseChartData({ chartType, data }) {
   const raw = String(data || '').trim();
-  if (!raw)
-    return { ok: false, errors: ['Data is leeg. Plak CSV/TSV data.'] };
+  if (!raw) return { ok: false, errors: ['Data is leeg. Plak CSV/TSV data.'] };
 
   const delimiter = detectDelimiter(raw);
   const rows = parseDelimited(raw, delimiter);

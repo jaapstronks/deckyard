@@ -6,7 +6,10 @@
 // companion does subscribe (`client/views/notes/session-sse.js`) — there it is
 // a different tab, so it carries information.
 
-import { createSSEConnection, LONG_LIVED_STREAM } from '../../lib/net/sse-connection.js';
+import {
+  createSSEConnection,
+  LONG_LIVED_STREAM,
+} from '../../lib/net/sse-connection.js';
 
 export async function startPresenterSession({
   api,
@@ -57,7 +60,12 @@ export async function startPresenterSession({
               const data = JSON.parse(ev.data || '{}');
               onInteractionState?.(data);
             } catch (err) {
-              console.error('[presenter] SSE interactionState parse error:', err.message, 'Raw:', ev.data?.slice?.(0, 200));
+              console.error(
+                '[presenter] SSE interactionState parse error:',
+                err.message,
+                'Raw:',
+                ev.data?.slice?.(0, 200),
+              );
             }
             break;
           }

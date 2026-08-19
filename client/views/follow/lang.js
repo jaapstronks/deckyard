@@ -1,4 +1,7 @@
-import { getLangShortLabel, getLangDisplayName } from '../../lib/format/lang-selector.js';
+import {
+  getLangShortLabel,
+  getLangDisplayName,
+} from '../../lib/format/lang-selector.js';
 import { spinner } from '../../lib/dom/spinner.js';
 
 /**
@@ -68,10 +71,7 @@ export function renderFollowLangButtons({
       },
     });
     if (isTranslating) {
-      btn.append(
-        spinner('sm'),
-        h('span', { text: label })
-      );
+      btn.append(spinner('sm'), h('span', { text: label }));
     } else {
       btn.textContent = label;
     }

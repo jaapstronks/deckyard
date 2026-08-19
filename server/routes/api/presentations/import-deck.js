@@ -21,12 +21,11 @@
  * anything else is a generic 500.
  */
 
-import { createPresentation, updatePresentation } from '../../../storage/presentations/index.js';
 import {
-  readRequestBody,
-  serveJson,
-  badRequest,
-} from '../../../utils/http.js';
+  createPresentation,
+  updatePresentation,
+} from '../../../storage/presentations/index.js';
+import { readRequestBody, serveJson, badRequest } from '../../../utils/http.js';
 import { readDeckBundle } from '../../../export/deck-bundle.js';
 import { writeUploadedFile } from '../../../storage/uploads.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
@@ -68,7 +67,12 @@ export async function handlePresentationsImportDeck({
     if (!buf) continue; // readDeckBundle guarantees presence, but be defensive
     const sourceName = Array.isArray(asset.sources) ? asset.sources[0] : '';
     try {
-      const url = await writeUploadedFile(repoRoot, buf, sourceName || asset.ref, asset.mime);
+      const url = await writeUploadedFile(
+        repoRoot,
+        buf,
+        sourceName || asset.ref,
+        asset.mime,
+      );
       refToUpload.set(asset.ref, url);
     } catch (err) {
       // Unsupported mime / oversized asset: leave the ref in place so the rest
@@ -84,7 +88,10 @@ export async function handlePresentationsImportDeck({
   // from its presets (mirrors import-json.js).
   let themeConfig = null;
   try {
-    themeConfig = await loadThemeAssets(repoRoot, resolveThemeId(rehydrated?.theme));
+    themeConfig = await loadThemeAssets(
+      repoRoot,
+      resolveThemeId(rehydrated?.theme),
+    );
   } catch {
     // ignore — title slides are imported without a background image
   }
@@ -111,7 +118,8 @@ export async function handlePresentationsImportDeck({
     },
   };
 
-  const updated = await updatePresentation(storageScope,
+  const updated = await updatePresentation(
+    storageScope,
     created.id,
     {
       title: parts.title,
@@ -122,7 +130,7 @@ export async function handlePresentationsImportDeck({
     },
     {
       actorEmail: authedUser?.email || null,
-    }
+    },
   );
 
   serveJson(res, 201, {

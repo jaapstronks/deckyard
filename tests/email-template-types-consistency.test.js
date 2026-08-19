@@ -21,7 +21,10 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 
-import { TEMPLATE_TYPES, TEMPLATE_METADATA } from '../shared/constants/email-templates.js';
+import {
+  TEMPLATE_TYPES,
+  TEMPLATE_METADATA,
+} from '../shared/constants/email-templates.js';
 import { resolveTemplate } from '../server/integrations/email-template-resolver.js';
 
 describe('email template types are one canonical list', () => {
@@ -37,8 +40,9 @@ describe('email template types are one canonical list', () => {
     for (const type of TEMPLATE_TYPES) {
       const resolved = await resolveTemplate(null, type, 'en');
       assert.ok(
-        typeof resolved.fields.subject === 'string' && resolved.fields.subject.length > 0,
-        `template "${type}" resolves to an empty subject — missing a TEMPLATE_I18N_MAP default`
+        typeof resolved.fields.subject === 'string' &&
+          resolved.fields.subject.length > 0,
+        `template "${type}" resolves to an empty subject — missing a TEMPLATE_I18N_MAP default`,
       );
     }
   });

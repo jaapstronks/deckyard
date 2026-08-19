@@ -97,7 +97,9 @@ function safeSlug(input) {
  * @returns {string}
  */
 function emailSlug(email) {
-  const e = String(email || '').trim().toLowerCase();
+  const e = String(email || '')
+    .trim()
+    .toLowerCase();
   if (!e) return 'anonymous';
   const mapped = e
     .replaceAll('@', ' at ')
@@ -119,7 +121,9 @@ function emailSlug(email) {
  * @returns {Promise<{ app: boolean }>}
  */
 export async function importAppSettingsFromDisk(db) {
-  const obj = await readJsonFile(path.join(dataDir(REPO_ROOT), 'settings.json'));
+  const obj = await readJsonFile(
+    path.join(dataDir(REPO_ROOT), 'settings.json'),
+  );
   if (!obj) return { app: false };
   await db
     .insertInto('app_settings')
@@ -152,7 +156,9 @@ export async function importUserSettingsFromDisk(db) {
   let imported = 0;
   const seen = new Set();
   for (const { email } of users) {
-    const key = String(email || '').trim().toLowerCase();
+    const key = String(email || '')
+      .trim()
+      .toLowerCase();
     if (!key || seen.has(key)) continue;
     seen.add(key);
     const obj = await readJsonFile(path.join(dir, `${emailSlug(key)}.json`));
@@ -198,7 +204,7 @@ export const up = async (db) => {
   const users = await importUserSettingsFromDisk(db);
   log.info(
     `imported ${app.app ? 'the instance settings' : 'no instance settings'}` +
-      ` and ${users.users} user-settings row(s)`
+      ` and ${users.users} user-settings row(s)`,
   );
 };
 

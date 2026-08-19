@@ -45,9 +45,12 @@ export default {
   renderHtml: (content, _slide, ctx = {}) => {
     const bg = bgClass(content?.background);
     const copy = getSlideCopy(ctx?.lang);
-    const followCodes = ctx && typeof ctx === 'object' ? ctx.followCodes || {} : {};
+    const followCodes =
+      ctx && typeof ctx === 'object' ? ctx.followCodes || {} : {};
     const presId =
-      ctx && typeof ctx === 'object' ? String(ctx.presentationId || '').trim() : '';
+      ctx && typeof ctx === 'object'
+        ? String(ctx.presentationId || '').trim()
+        : '';
     const relFollowNl = presId
       ? `/follow/${encodeURIComponent(presId)}?lang=nl`
       : '';
@@ -71,7 +74,7 @@ export default {
                 <div class="sfi-card-kicker">${escapeHtml(copy.feedbackScan)}</div>
                 <div class="sfi-qr-wrap">
                   <canvas class="sfi-qr" data-follow-qr="1" data-follow-url="${escapeHtml(
-                    relFollowNl || relFollowEn
+                    relFollowNl || relFollowEn,
                   )}" role="img" aria-label="${escapeHtml(copy.feedbackQrCodeLabel)}"></canvas>
                 </div>
               </div>
@@ -82,13 +85,13 @@ export default {
                 <div class="sfi-code-row">
                   <div class="sfi-row-label">NL</div>
                   <div class="sfi-code" aria-label="${escapeHtml(copy.feedbackAccessCodeNlLabel)}">${escapeHtml(
-                    followCodes?.nl || '----'
+                    followCodes?.nl || '----',
                   )}</div>
                 </div>
                 <div class="sfi-code-row">
                   <div class="sfi-row-label">EN</div>
                   <div class="sfi-code" aria-label="${escapeHtml(copy.feedbackAccessCodeEnLabel)}">${escapeHtml(
-                    followCodes?.en || '----'
+                    followCodes?.en || '----',
                   )}</div>
                 </div>
               </div>

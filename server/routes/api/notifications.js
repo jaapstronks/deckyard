@@ -18,17 +18,24 @@ import {
   archiveNotification,
   archiveAllNotifications,
 } from '../../storage/notifications.js';
-import {
-  addClient,
-  removeClient,
-} from '../../services/notification-events.js';
+import { addClient, removeClient } from '../../services/notification-events.js';
 import { dispatchRoutes } from '../../utils/router.js';
-import { serveJson, badRequest, requireJsonBody, withErrorHandler } from '../../utils/http.js';
+import {
+  serveJson,
+  badRequest,
+  requireJsonBody,
+  withErrorHandler,
+} from '../../utils/http.js';
 import { parsePaginationParams } from '../../utils/request-validators.js';
 import { openSseStream } from '../../utils/sse.js';
 
 // GET /api/notifications/events - SSE endpoint for real-time notifications
-async function handleNotificationEvents({ storageScope, req, res, authedUser }) {
+async function handleNotificationEvents({
+  storageScope,
+  req,
+  res,
+  authedUser,
+}) {
   const userEmail = authedUser.email;
 
   const stream = openSseStream(req, res);
@@ -51,14 +58,23 @@ async function handleNotificationEvents({ storageScope, req, res, authedUser }) 
 }
 
 // GET /api/notifications/unread-count - Get unread notification count
-async function handleNotificationUnreadCount({ storageScope, res, authedUser }) {
+async function handleNotificationUnreadCount({
+  storageScope,
+  res,
+  authedUser,
+}) {
   const count = await getUnreadCount(storageScope, authedUser.email);
   serveJson(res, 200, { unreadCount: count });
   return true;
 }
 
 // POST /api/notifications/mark-read - Mark notification(s) as read
-async function handleNotificationMarkRead({ storageScope, req, res, authedUser }) {
+async function handleNotificationMarkRead({
+  storageScope,
+  req,
+  res,
+  authedUser,
+}) {
   const userEmail = authedUser.email;
 
   const jsonResult = await requireJsonBody(req, res);
@@ -94,7 +110,12 @@ async function handleNotificationMarkRead({ storageScope, req, res, authedUser }
 }
 
 // POST /api/notifications/archive - Archive one item or all
-async function handleNotificationArchive({ storageScope, req, res, authedUser }) {
+async function handleNotificationArchive({
+  storageScope,
+  req,
+  res,
+  authedUser,
+}) {
   const userEmail = authedUser.email;
 
   const jsonResult = await requireJsonBody(req, res);
@@ -115,7 +136,11 @@ async function handleNotificationArchive({ storageScope, req, res, authedUser })
     return badRequest(res, 'notificationId or all:true is required');
   }
 
-  const result = await archiveNotification(storageScope, notificationId, userEmail);
+  const result = await archiveNotification(
+    storageScope,
+    notificationId,
+    userEmail,
+  );
   if (!result.ok) {
     if (result.reason === 'not_found') {
       return badRequest(res, 'Notification not found');
@@ -131,10 +156,13 @@ async function handleNotificationArchive({ storageScope, req, res, authedUser })
 async function handleNotificationList({ storageScope, res, url, authedUser }) {
   const userEmail = authedUser.email;
 
-  const { limit, offset } = parsePaginationParams(url.searchParams, { defaultLimit: 20 });
+  const { limit, offset } = parsePaginationParams(url.searchParams, {
+    defaultLimit: 20,
+  });
   // filter=all|unread|mentions|archived (legacy alias: unread=true)
-  const filter = url.searchParams.get('filter')
-    || (url.searchParams.get('unread') === 'true' ? 'unread' : 'all');
+  const filter =
+    url.searchParams.get('filter') ||
+    (url.searchParams.get('unread') === 'true' ? 'unread' : 'all');
 
   const opts = { limit, offset };
   if (filter === 'unread') opts.unreadOnly = true;
@@ -156,11 +184,31 @@ async function handleNotificationList({ storageScope, res, url, authedUser }) {
  * @type {import('../../utils/router.js').Route[]}
  */
 export const ROUTES = [
-  { method: 'GET', pattern: '/api/notifications/events', handler: handleNotificationEvents },
-  { method: 'GET', pattern: '/api/notifications/unread-count', handler: handleNotificationUnreadCount },
-  { method: 'POST', pattern: '/api/notifications/mark-read', handler: handleNotificationMarkRead },
-  { method: 'POST', pattern: '/api/notifications/archive', handler: handleNotificationArchive },
-  { method: 'GET', pattern: '/api/notifications', handler: handleNotificationList },
+  {
+    method: 'GET',
+    pattern: '/api/notifications/events',
+    handler: handleNotificationEvents,
+  },
+  {
+    method: 'GET',
+    pattern: '/api/notifications/unread-count',
+    handler: handleNotificationUnreadCount,
+  },
+  {
+    method: 'POST',
+    pattern: '/api/notifications/mark-read',
+    handler: handleNotificationMarkRead,
+  },
+  {
+    method: 'POST',
+    pattern: '/api/notifications/archive',
+    handler: handleNotificationArchive,
+  },
+  {
+    method: 'GET',
+    pattern: '/api/notifications',
+    handler: handleNotificationList,
+  },
 ];
 
 /**

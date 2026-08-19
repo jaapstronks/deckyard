@@ -14,21 +14,28 @@ import { SLIDE_TYPES } from '../../../../shared/slide-types/registry.js';
 // types also declare minItems/maxItems and are deliberately not listed here.
 // The *numbers* are no judgement at all, so they are read off the definition
 // (`fields[].minItems`/`maxItems`) instead of being written out a second time.
-const ITEM_REQUIREMENT_TYPES = ['list-slide', 'timeline-slide', 'kpi-metrics-slide'];
+const ITEM_REQUIREMENT_TYPES = [
+  'list-slide',
+  'timeline-slide',
+  'kpi-metrics-slide',
+];
 
 export const SLIDE_ITEM_REQUIREMENTS = Object.fromEntries(
   ITEM_REQUIREMENT_TYPES.map((type) => {
     const field = (SLIDE_TYPES[type]?.fields || []).find(
-      (f) => f.minItems != null || f.maxItems != null
+      (f) => f.minItems != null || f.maxItems != null,
     );
     if (!field) {
       throw new Error(
         `SLIDE_ITEM_REQUIREMENTS: "${type}" has no field with minItems/maxItems — ` +
-          'remove it from ITEM_REQUIREMENT_TYPES or restore the constraint on its definition'
+          'remove it from ITEM_REQUIREMENT_TYPES or restore the constraint on its definition',
       );
     }
-    return [type, { field: field.key, min: field.minItems, max: field.maxItems }];
-  })
+    return [
+      type,
+      { field: field.key, min: field.minItems, max: field.maxItems },
+    ];
+  }),
 );
 
 // Global accessibility fields that are added to all slide types

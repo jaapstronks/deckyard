@@ -19,9 +19,9 @@
  */
 
 export const ai = {
-    category: 'content',
-    resolveInPhase1: false,
-    description: `
+  category: 'content',
+  resolveInPhase1: false,
+  description: `
       A curated grid of 2-6 images with optional per-image captions. The go-to
       type for "show these images / screenshots / photos in one slide" when the
       images carry the slide (no long explanatory text). Handles mixed aspect
@@ -37,18 +37,18 @@ export const ai = {
       images shown together. For images that each need a Title AND a Caption,
       or for more than 6 images / people grids, use team-cards-slide instead.
     `,
-    bestFor: [
-      'Several screenshots or UI captures in one slide (use layout: masonry)',
-      'A photo gallery or set of related images',
-      '2-6 images shown together where the images tell the story',
-      'Mixed aspect-ratio images that must not be cropped (masonry)',
-    ],
-    notFor: [
-      'A single hero image (use image-slide)',
-      'One image beside a paragraph of text (use image-text-slide)',
-      'More than 6 images, or images each needing a Title + Caption (use team-cards-slide)',
-      'Partner/sponsor logos (use logo-wall-slide)',
-    ],
+  bestFor: [
+    'Several screenshots or UI captures in one slide (use layout: masonry)',
+    'A photo gallery or set of related images',
+    '2-6 images shown together where the images tell the story',
+    'Mixed aspect-ratio images that must not be cropped (masonry)',
+  ],
+  notFor: [
+    'A single hero image (use image-slide)',
+    'One image beside a paragraph of text (use image-text-slide)',
+    'More than 6 images, or images each needing a Title + Caption (use team-cards-slide)',
+    'Partner/sponsor logos (use logo-wall-slide)',
+  ],
 };
 
 /**
@@ -62,7 +62,11 @@ export const aiExamples = [
     subheading: 'The dashboard at a glance',
     layout: 'masonry',
     images: [
-      { src: '', caption: 'Overview dashboard', alt: 'Dashboard overview screen' },
+      {
+        src: '',
+        caption: 'Overview dashboard',
+        alt: 'Dashboard overview screen',
+      },
       { src: '', caption: 'Report builder', alt: 'Report builder screen' },
       { src: '', caption: 'Team settings', alt: 'Team settings screen' },
     ],

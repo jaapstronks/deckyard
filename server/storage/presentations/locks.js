@@ -96,7 +96,11 @@ export async function getPresentationLock(scope, presentationId) {
  * If the same user already holds the lock, refreshes it.
  * Returns { ok: true, lock } on success, { ok: false, reason, lock? } on failure.
  */
-export async function acquirePresentationLock(scope, presentationId, { email, name, userId } = {}) {
+export async function acquirePresentationLock(
+  scope,
+  presentationId,
+  { email, name, userId } = {},
+) {
   toStorageContext(scope, 'acquirePresentationLock');
   const pid = norm(presentationId);
   const holderEmail = norm(email).toLowerCase();
@@ -187,7 +191,11 @@ export async function acquirePresentationLock(scope, presentationId, { email, na
  * Refresh an existing lock (extend TTL).
  * Only the current holder can refresh.
  */
-export async function refreshPresentationLock(scope, presentationId, { email, userId } = {}) {
+export async function refreshPresentationLock(
+  scope,
+  presentationId,
+  { email, userId } = {},
+) {
   toStorageContext(scope, 'refreshPresentationLock');
   const pid = norm(presentationId);
   const holderEmail = norm(email).toLowerCase();
@@ -257,7 +265,11 @@ export async function refreshPresentationLock(scope, presentationId, { email, us
  * Release a lock.
  * Only the current holder can release (except force release).
  */
-export async function releasePresentationLock(scope, presentationId, { email, userId } = {}) {
+export async function releasePresentationLock(
+  scope,
+  presentationId,
+  { email, userId } = {},
+) {
   toStorageContext(scope, 'releasePresentationLock');
   const pid = norm(presentationId);
   const holderEmail = norm(email).toLowerCase();
@@ -333,7 +345,11 @@ export async function forceReleasePresentationLock(scope, presentationId) {
 /**
  * Create a request for access to a locked presentation.
  */
-export async function createLockRequest(scope, presentationId, { email, name, message } = {}) {
+export async function createLockRequest(
+  scope,
+  presentationId,
+  { email, name, message } = {},
+) {
   toStorageContext(scope, 'createLockRequest');
   const pid = norm(presentationId);
   const requesterEmail = norm(email).toLowerCase();
@@ -433,7 +449,11 @@ export async function getLockRequest(scope, requestId) {
 /**
  * Accept a lock request - transfers the lock directly to the requester.
  */
-export async function acceptLockRequest(scope, requestId, { holderEmail } = {}) {
+export async function acceptLockRequest(
+  scope,
+  requestId,
+  { holderEmail } = {},
+) {
   toStorageContext(scope, 'acceptLockRequest');
   // Get the request first (uses withDbGuard internally)
   const request = await getLockRequest(scope, requestId);
@@ -565,7 +585,11 @@ export async function rejectLockRequest(scope, requestId) {
  * Only returns pending requests or recently resolved ones (within 2 minutes).
  * Returns null if the user already holds the lock (they don't need their request status).
  */
-export async function getUserLockRequestStatus(scope, presentationId, { email, userId } = {}) {
+export async function getUserLockRequestStatus(
+  scope,
+  presentationId,
+  { email, userId } = {},
+) {
   toStorageContext(scope, 'getUserLockRequestStatus');
   const pid = norm(presentationId);
   const userEmail = norm(email).toLowerCase();
@@ -576,7 +600,13 @@ export async function getUserLockRequestStatus(scope, presentationId, { email, u
   // holder check is id-primary; the requester lookup below stays keyed on the
   // e-mail because lock_requests carries no requester id column.
   const currentLock = await getPresentationLock(scope, pid);
-  if (currentLock && matchesIdentity({ id: userId || null, email: userEmail }, { userId: currentLock.holderId, email: currentLock.holderEmail })) {
+  if (
+    currentLock &&
+    matchesIdentity(
+      { id: userId || null, email: userEmail },
+      { userId: currentLock.holderId, email: currentLock.holderEmail },
+    )
+  ) {
     return null;
   }
 

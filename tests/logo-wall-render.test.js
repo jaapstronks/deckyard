@@ -8,7 +8,10 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 
-import { renderSlideHtml, validateSlide } from '../shared/slide-types/presentation.js';
+import {
+  renderSlideHtml,
+  validateSlide,
+} from '../shared/slide-types/presentation.js';
 import { MAX_LOGOS } from '../shared/slide-types/types/logo-wall-slide.js';
 
 function makeLogos(n) {

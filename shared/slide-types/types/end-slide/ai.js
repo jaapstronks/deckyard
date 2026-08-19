@@ -19,9 +19,9 @@
  */
 
 export const ai = {
-    category: 'structural',
-    resolveInPhase1: true,
-    description: `
+  category: 'structural',
+  resolveInPhase1: true,
+  description: `
       A closing "Thank you" slide with optional contact information and social links.
       More functional than payoff-slide — includes space for contact details.
       Use as the last slide when the audience needs to know how to follow up.
@@ -29,13 +29,13 @@ export const ai = {
       The social link labels name the network (LinkedIn, Mastodon, Bluesky…);
       the matching URL field holds the profile address.
     `,
-    bestFor: [
-      'Final slide with contact information',
-      'Thank you / closing slide',
-      'Slides where the audience needs follow-up details',
-    ],
-    notFor: [
-      'Brand-only closing without contact info (use payoff-slide)',
-      'Content slides mid-deck',
-    ],
+  bestFor: [
+    'Final slide with contact information',
+    'Thank you / closing slide',
+    'Slides where the audience needs follow-up details',
+  ],
+  notFor: [
+    'Brand-only closing without contact info (use payoff-slide)',
+    'Content slides mid-deck',
+  ],
 };

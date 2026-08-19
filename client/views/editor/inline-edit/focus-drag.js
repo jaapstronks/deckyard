@@ -67,7 +67,9 @@ export function createFocusDrag({
     const xKey = sub(focus.xField);
     const yKey = sub(focus.yField);
     const cropMode =
-      typeof focus.cropMode === 'function' ? focus.cropMode(slide, idx) : 'cover';
+      typeof focus.cropMode === 'function'
+        ? focus.cropMode(slide, idx)
+        : 'cover';
     const raw =
       typeof focus.get === 'function'
         ? focus.get(slide, idx)
@@ -157,12 +159,24 @@ export function createFocusDrag({
       let x = focusNum(pt.dataset.fx);
       let y = focusNum(pt.dataset.fy);
       switch (e.key) {
-        case 'ArrowLeft': x -= step; break;
-        case 'ArrowRight': x += step; break;
-        case 'ArrowUp': y -= step; break;
-        case 'ArrowDown': y += step; break;
-        case 'Home': x = 50; y = 50; break;
-        default: return;
+        case 'ArrowLeft':
+          x -= step;
+          break;
+        case 'ArrowRight':
+          x += step;
+          break;
+        case 'ArrowUp':
+          y -= step;
+          break;
+        case 'ArrowDown':
+          y += step;
+          break;
+        case 'Home':
+          x = 50;
+          y = 50;
+          break;
+        default:
+          return;
       }
       e.preventDefault();
       e.stopPropagation();

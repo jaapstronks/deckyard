@@ -35,9 +35,8 @@ const {
   resetMaintenanceStateForTests,
   setMaintenanceState,
 } = await import('../client/lib/state/maintenance.js');
-const { startMaintenanceBanner, syncMaintenanceBanner } = await import(
-  '../client/views/shared/maintenance-banner.js'
-);
+const { startMaintenanceBanner, syncMaintenanceBanner } =
+  await import('../client/views/shared/maintenance-banner.js');
 
 function banner() {
   return document.querySelector('.maintenance-banner');
@@ -57,7 +56,10 @@ test('subscribers fire on transitions only, not on every announcement', () => {
   assert.equal(setMaintenanceState({ active: true, reason: 'shutdown' }), true);
   // A repeat announcement (or a reconnect re-reading the same state) must not
   // re-fire the banner and the toast.
-  assert.equal(setMaintenanceState({ active: true, reason: 'shutdown' }), false);
+  assert.equal(
+    setMaintenanceState({ active: true, reason: 'shutdown' }),
+    false,
+  );
   assert.equal(setMaintenanceState({ active: false }), true);
 
   assert.deepEqual(seen, [true, false]);
@@ -81,7 +83,11 @@ test('the banner mounts on the body and leaves on resume', () => {
   setMaintenanceState({ active: true, reason: 'shutdown' });
   const el = banner();
   assert.ok(el, 'banner appears');
-  assert.equal(el.parentElement, document.body, 'mounted outside the view root');
+  assert.equal(
+    el.parentElement,
+    document.body,
+    'mounted outside the view root',
+  );
   assert.equal(el.getAttribute('role'), 'alert', 'interrupting, so assertive');
   assert.match(el.textContent, /maintenance/i);
 

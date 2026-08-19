@@ -7,7 +7,10 @@ import { createImageLibraryUpload } from './upload.js';
 import { createUnsplashSearch } from './unsplash-search.js';
 import { createGiphySearch } from './giphy-search.js';
 import { createMediaLibrarySidebar, SECTIONS } from './sidebar.js';
-import { fetchStockMediaStatus, isStockSourceAvailable } from '../../../lib/net/stock-media.js';
+import {
+  fetchStockMediaStatus,
+  isStockSourceAvailable,
+} from '../../../lib/net/stock-media.js';
 
 // Re-export for backward compatibility
 export { readFileAsDataUrl } from './utils.js';
@@ -64,12 +67,30 @@ function filterBySection(items, section, userEmail) {
  */
 function getSectionInfo(section) {
   const info = {
-    [SECTIONS.RECENT]: { icon: 'clock', label: t('mediaLibrary.section.recent', 'Recent') },
-    [SECTIONS.FAVORITES]: { icon: 'star', label: t('mediaLibrary.section.favorites', 'Favorites') },
-    [SECTIONS.YOUR_MEDIA]: { icon: 'user', label: t('mediaLibrary.section.yourMedia', 'Your Media') },
-    [SECTIONS.ALL]: { icon: 'folder', label: t('mediaLibrary.section.allMedia', 'All Media') },
-    [SECTIONS.LOGOS]: { icon: 'tag', label: t('mediaLibrary.section.logos', 'Logos') },
-    [SECTIONS.ICONS]: { icon: 'sparkles', label: t('mediaLibrary.section.icons', 'Icons') },
+    [SECTIONS.RECENT]: {
+      icon: 'clock',
+      label: t('mediaLibrary.section.recent', 'Recent'),
+    },
+    [SECTIONS.FAVORITES]: {
+      icon: 'star',
+      label: t('mediaLibrary.section.favorites', 'Favorites'),
+    },
+    [SECTIONS.YOUR_MEDIA]: {
+      icon: 'user',
+      label: t('mediaLibrary.section.yourMedia', 'Your Media'),
+    },
+    [SECTIONS.ALL]: {
+      icon: 'folder',
+      label: t('mediaLibrary.section.allMedia', 'All Media'),
+    },
+    [SECTIONS.LOGOS]: {
+      icon: 'tag',
+      label: t('mediaLibrary.section.logos', 'Logos'),
+    },
+    [SECTIONS.ICONS]: {
+      icon: 'sparkles',
+      label: t('mediaLibrary.section.icons', 'Icons'),
+    },
   };
   return info[section] || info[SECTIONS.ALL];
 }
@@ -135,7 +156,7 @@ export function openImageLibraryPicker({
       class: 'btn btn-secondary',
       text: t('common.close', 'Close'),
       onclick: () => close(),
-    })
+    }),
   );
 
   // Status line
@@ -145,7 +166,10 @@ export function openImageLibraryPicker({
   };
 
   // Credit checkbox (for caption auto-fill)
-  const creditRow = h('label', { class: 'row', style: 'padding: var(--ps-space-2) var(--ps-space-4);' });
+  const creditRow = h('label', {
+    class: 'row',
+    style: 'padding: var(--ps-space-2) var(--ps-space-4);',
+  });
   const creditCb = h('input', { type: 'checkbox' });
   creditCb.checked = true;
   creditRow.append(
@@ -154,9 +178,9 @@ export function openImageLibraryPicker({
       class: 'help',
       text: t(
         'imageLibrary.creditAutoFill',
-        "Auto-fill caption with 'Photo: <photographer>' (only if caption is empty)"
+        "Auto-fill caption with 'Photo: <photographer>' (only if caption is empty)",
       ),
-    })
+    }),
   );
 
   // Get filtered items based on current section and tag
@@ -166,7 +190,9 @@ export function openImageLibraryPicker({
     if (activeTag) {
       filtered = filtered.filter((it) => {
         const tags = Array.isArray(it?.tags) ? it.tags : [];
-        return tags.some((tag) => String(tag).toLowerCase() === activeTag.toLowerCase());
+        return tags.some(
+          (tag) => String(tag).toLowerCase() === activeTag.toLowerCase(),
+        );
       });
     }
     return filtered;
@@ -185,10 +211,12 @@ export function openImageLibraryPicker({
   const handleToggleFavorite = async (item) => {
     if (!user?.email || !item?.id) return;
     try {
-      const resp = await api(`/api/image-library/${item.id}/favorite`, { method: 'POST' });
+      const resp = await api(`/api/image-library/${item.id}/favorite`, {
+        method: 'POST',
+      });
       // Update the item's isFavorite status in our local array
       items = items.map((it) =>
-        it?.id === item.id ? { ...it, isFavorite: resp.isFavorite } : it
+        it?.id === item.id ? { ...it, isFavorite: resp.isFavorite } : it,
       );
       // Update favorites set
       if (resp.isFavorite) {
@@ -289,7 +317,10 @@ export function openImageLibraryPicker({
   const layout = h('div', { class: 'media-lib-layout' });
   const mainContent = h('div', { class: 'media-lib-main' });
   const libraryView = h('div', { class: 'media-lib-library-view' });
-  const externalView = h('div', { class: 'media-lib-external-view', hidden: true });
+  const externalView = h('div', {
+    class: 'media-lib-external-view',
+    hidden: true,
+  });
 
   // Section header (shows current section name)
   const sectionHeader = h('div', { class: 'media-lib-section-header' });
@@ -335,7 +366,12 @@ export function openImageLibraryPicker({
   if (uploadBtn) toolbar.append(uploadBtn);
 
   // Assemble library view
-  libraryView.append(toolbar, sectionHeader, gridComponent.grid, uploadComponent.element);
+  libraryView.append(
+    toolbar,
+    sectionHeader,
+    gridComponent.grid,
+    uploadComponent.element,
+  );
 
   // Handle external section clicks (Unsplash/Giphy)
   const handleExternalSection = (section) => {
@@ -440,7 +476,8 @@ export function openImageLibraryPicker({
     detailComponent.hide();
     layout.hidden = false;
     mobileNav.hidden = false;
-    libraryView.hidden = activeSection === SECTIONS.UNSPLASH || activeSection === SECTIONS.GIPHY;
+    libraryView.hidden =
+      activeSection === SECTIONS.UNSPLASH || activeSection === SECTIONS.GIPHY;
     externalView.hidden = !libraryView.hidden;
     setStatus('');
   };
@@ -526,7 +563,9 @@ export function openImageLibraryPicker({
       sidebarComponent.render();
       renderMobileNav();
       updateSectionHeader();
-      setStatus(t('imageLibrary.count', '{count} items', { count: items.length }));
+      setStatus(
+        t('imageLibrary.count', '{count} items', { count: items.length }),
+      );
       gridComponent.renderGrid();
 
       // If detail was open before reload, restore it

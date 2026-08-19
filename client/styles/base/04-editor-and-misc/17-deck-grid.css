@@ -106,8 +106,10 @@
   color: transparent;
   cursor: pointer;
   opacity: 0;
-  transition: opacity var(--ps-transition-fast),
-    background var(--ps-transition-fast), color var(--ps-transition-fast),
+  transition:
+    opacity var(--ps-transition-fast),
+    background var(--ps-transition-fast),
+    color var(--ps-transition-fast),
     border-color var(--ps-transition-fast);
 }
 
@@ -250,7 +252,9 @@
   color: hsl(var(--app-text-tertiary));
   cursor: pointer;
   opacity: 0;
-  transition: opacity var(--ps-transition-fast), color var(--ps-transition-fast);
+  transition:
+    opacity var(--ps-transition-fast),
+    color var(--ps-transition-fast);
 }
 
 .deck-grid-peek-btn svg {
@@ -454,7 +458,8 @@
 @keyframes ai-new-flash {
   0%,
   55% {
-    box-shadow: inset 3px 0 0 hsl(var(--app-accent-primary)),
+    box-shadow:
+      inset 3px 0 0 hsl(var(--app-accent-primary)),
       0 0 0 1px hsl(var(--app-accent-primary) / 0.55);
     background: hsl(var(--app-accent-primary) / 0.1);
   }

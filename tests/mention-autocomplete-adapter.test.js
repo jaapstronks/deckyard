@@ -25,10 +25,10 @@ globalThis.Node = dom.window.Node;
 globalThis.Element = dom.window.Element;
 globalThis.getComputedStyle = dom.window.getComputedStyle;
 
-const { textareaCaretAdapter, attachMentionAutocomplete } = await import(
-  '../client/lib/comments/mention-autocomplete.js'
-);
-const { createRichCommentInput } = await import('../client/lib/comments/comment-rich-input.js');
+const { textareaCaretAdapter, attachMentionAutocomplete } =
+  await import('../client/lib/comments/mention-autocomplete.js');
+const { createRichCommentInput } =
+  await import('../client/lib/comments/comment-rich-input.js');
 
 const ANN = { name: 'Ann Lee', email: 'ann@x.com' };
 
@@ -61,7 +61,11 @@ test('textarea adapter replaces @query with markup and a trailing space', () => 
 
   assert.equal(adapter.replaceQueryWithMention(2, ANN), true);
   assert.equal(ta.value, 'hello @[Ann Lee](user:ann@x.com) ');
-  assert.equal(ta.selectionStart, ta.value.length, 'caret sits after the space');
+  assert.equal(
+    ta.selectionStart,
+    ta.value.length,
+    'caret sits after the space',
+  );
   ta.remove();
 });
 
@@ -124,7 +128,9 @@ async function queryFor(value) {
   const ac = attachMentionAutocomplete({
     textarea: ta,
     api: async (url) => {
-      searched = decodeURIComponent(new URL(url, 'http://x').searchParams.get('q'));
+      searched = decodeURIComponent(
+        new URL(url, 'http://x').searchParams.get('q'),
+      );
       return { users: [] };
     },
   });

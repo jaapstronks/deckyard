@@ -36,6 +36,9 @@ export const up = async (db) => {
 };
 
 export const down = async (db) => {
-  await db.schema.dropIndex('idx_comment_thread_reads_comment').ifExists().execute();
+  await db.schema
+    .dropIndex('idx_comment_thread_reads_comment')
+    .ifExists()
+    .execute();
   await db.schema.dropTable('comment_thread_reads').ifExists().execute();
 };

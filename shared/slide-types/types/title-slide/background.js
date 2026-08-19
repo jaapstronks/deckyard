@@ -33,15 +33,16 @@
  */
 export function resolveTitleSlideBackground(content) {
   const canonical =
-    typeof content?.slideBgImage === 'string' ? content.slideBgImage.trim() : '';
+    typeof content?.slideBgImage === 'string'
+      ? content.slideBgImage.trim()
+      : '';
   if (canonical) {
     return { image: canonical, alt: '', source: 'canonical' };
   }
   const legacy =
     typeof content?.bgImage === 'string' ? content.bgImage.trim() : '';
   if (legacy) {
-    const alt =
-      typeof content?.bgAlt === 'string' ? content.bgAlt.trim() : '';
+    const alt = typeof content?.bgAlt === 'string' ? content.bgAlt.trim() : '';
     return { image: legacy, alt, source: 'legacy' };
   }
   return { image: '', alt: '', source: 'none' };

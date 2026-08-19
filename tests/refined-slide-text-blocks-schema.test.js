@@ -42,7 +42,7 @@ describe('refined-slide text-blocks schema accepts the array-canonical shape', (
           },
         ],
       },
-      'rows[]-only slide'
+      'rows[]-only slide',
     );
   });
 
@@ -88,7 +88,7 @@ describe('refined-slide text-blocks schema accepts the array-canonical shape', (
         row2Block1Title: 'L3',
         row2Block1Body: 'Body 3',
       },
-      'legacy numbered slide'
+      'legacy numbered slide',
     );
   });
 });

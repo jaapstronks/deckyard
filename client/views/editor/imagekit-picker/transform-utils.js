@@ -2,7 +2,10 @@
  * ImageKit URL transformation utilities
  */
 
-import { cleanStr, uniqStrings as uniq } from '../../../../shared/string-utils.js';
+import {
+  cleanStr,
+  uniqStrings as uniq,
+} from '../../../../shared/string-utils.js';
 
 export { cleanStr, uniq };
 

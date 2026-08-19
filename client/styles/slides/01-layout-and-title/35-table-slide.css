@@ -137,19 +137,6 @@
   max-width: 80%;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 /* Box invariant for the caption: its 80% measure cap also anchored the box to
    the start, so "Center" centred the text 147px left of the slide centre at a
    1600px render. The cap stays; the margin follows the chosen alignment. */

@@ -47,7 +47,7 @@ function findThemeFile(repoRoot, themeId) {
     'custom',
     'themes',
     themeId,
-    'theme.json'
+    'theme.json',
   );
   if (existsSync(customFolder)) return customFolder;
 
@@ -79,8 +79,7 @@ export async function loadThemeAssets(repoRoot, rawThemeId, ctx = null) {
     try {
       const txt = await fs.readFile(themePath, 'utf8');
       const parsed = JSON.parse(txt);
-      const theme =
-        parsed && typeof parsed === 'object' ? parsed : null;
+      const theme = parsed && typeof parsed === 'object' ? parsed : null;
       if (!theme || theme.id !== id) throw new Error('Invalid theme');
       const normalized = normalizeTheme(theme);
       cache.set(id, normalized);
@@ -127,13 +126,19 @@ async function loadCustomTheme(themeId, ctx, repoRoot) {
     // and is the authorization (cross-organization category 1).
     const scope = ctx?.organizationId
       ? ctx
-      : crossOrganizationScope(repoRoot ?? null, 'theme UUID resolved from the deck being rendered; render/export paths carry no session');
+      : crossOrganizationScope(
+          repoRoot ?? null,
+          'theme UUID resolved from the deck being rendered; render/export paths carry no session',
+        );
     const dbTheme = await getCustomTheme(scope, themeId);
     if (dbTheme) {
       // Fetch managed fonts if the theme references any familyId
       let managedFonts;
       const fonts = dbTheme.fonts || {};
-      if ((fonts.headingFamilyId || fonts.bodyFamilyId) && dbTheme.organizationId) {
+      if (
+        (fonts.headingFamilyId || fonts.bodyFamilyId) &&
+        dbTheme.organizationId
+      ) {
         try {
           managedFonts = await listAllFontFamiliesWithVariants({
             organizationId: dbTheme.organizationId,
@@ -187,7 +192,9 @@ export async function resolveThemeThumbBg(repoRoot, rawThemeId, ctx = null) {
   try {
     const theme = await loadThemeAssets(repoRoot, rawThemeId, ctx);
     const bg = theme?.cssVars?.['--t-color-background'];
-    return typeof bg === 'string' && HEX_COLOR_RE.test(bg.trim()) ? bg.trim() : null;
+    return typeof bg === 'string' && HEX_COLOR_RE.test(bg.trim())
+      ? bg.trim()
+      : null;
   } catch {
     return null;
   }
@@ -218,7 +225,8 @@ export async function listThemeIds(repoRoot) {
       const ids = [];
       for (const e of entries) {
         if (e.isDirectory()) {
-          if (existsSync(path.join(dir, e.name, 'theme.json'))) ids.push(e.name);
+          if (existsSync(path.join(dir, e.name, 'theme.json')))
+            ids.push(e.name);
         } else if (String(e.name).toLowerCase().endsWith('.json')) {
           ids.push(e.name.replace(/\.json$/i, ''));
         }
@@ -277,7 +285,6 @@ export async function listCoreThemeIds(repoRoot) {
   }
 }
 
-
 /**
  * Theme vars that must be declared on the **slide root**, not on the stage.
  *
@@ -300,9 +307,7 @@ const SLIDE_ROOT_VARS = new Set(['--t-slide-gradient-bg']);
 
 export function themeVarsCssText(theme, { selector = '.ps-theme' } = {}) {
   const vars =
-    theme?.cssVars && typeof theme.cssVars === 'object'
-      ? theme.cssVars
-      : {};
+    theme?.cssVars && typeof theme.cssVars === 'object' ? theme.cssVars : {};
   const stageLines = [];
   const slideLines = [];
   for (const [k, v] of Object.entries(vars)) {
@@ -312,7 +317,7 @@ export function themeVarsCssText(theme, { selector = '.ps-theme' } = {}) {
     if (k.startsWith('--t-ui-')) continue;
     if (v == null) continue;
     (SLIDE_ROOT_VARS.has(k) ? slideLines : stageLines).push(
-      `  ${k}: ${String(v)};`
+      `  ${k}: ${String(v)};`,
     );
   }
   const sel = String(selector || '.ps-theme').trim() || '.ps-theme';
@@ -328,4 +333,3 @@ export function themeVarsCssText(theme, { selector = '.ps-theme' } = {}) {
   if (bgRules) blocks.push(bgRules);
   return blocks.join('\n');
 }
-

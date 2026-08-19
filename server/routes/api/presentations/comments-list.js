@@ -3,11 +3,7 @@
  * Includes list, get single, counts, and SSE events.
  */
 
-import {
-  methodNotAllowed,
-  serveJson,
-  notFound,
-} from '../../../utils/http.js';
+import { methodNotAllowed, serveJson, notFound } from '../../../utils/http.js';
 import {
   listComments,
   getComment,
@@ -32,18 +28,28 @@ import { openSseStream } from '../../../utils/sse.js';
  */
 export async function handlePresentationCommentsList(
   { storageScope, req, res, url, authedUser } = {},
-  id
+  id,
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
 
-  const { pres } = await withPresentationReadAuth({ storageScope, req, id, authedUser, res });
+  const { pres } = await withPresentationReadAuth({
+    storageScope,
+    req,
+    id,
+    authedUser,
+    res,
+  });
   if (!pres) return true;
 
   const slideId = url.searchParams.get('slideId') || null;
   const status = url.searchParams.get('status') || 'all';
   const commentType = url.searchParams.get('commentType') || null;
 
-  const comments = await listComments(storageScope, id, { slideId, status, commentType });
+  const comments = await listComments(storageScope, id, {
+    slideId,
+    status,
+    commentType,
+  });
   const openCount = await getOpenCommentCount(storageScope, id);
 
   // The effective AI-author identity so the client can recognise legacy
@@ -71,11 +77,17 @@ export async function handlePresentationCommentsList(
 export async function handlePresentationCommentGet(
   { storageScope, req, res, authedUser } = {},
   id,
-  commentId
+  commentId,
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
 
-  const { pres } = await withPresentationReadAuth({ storageScope, req, id, authedUser, res });
+  const { pres } = await withPresentationReadAuth({
+    storageScope,
+    req,
+    id,
+    authedUser,
+    res,
+  });
   if (!pres) return true;
 
   const comment = await getComment(storageScope, commentId);
@@ -96,11 +108,17 @@ export async function handlePresentationCommentGet(
  */
 export async function handlePresentationCommentCounts(
   { storageScope, req, res, authedUser } = {},
-  id
+  id,
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
 
-  const { pres } = await withPresentationReadAuth({ storageScope, req, id, authedUser, res });
+  const { pres } = await withPresentationReadAuth({
+    storageScope,
+    req,
+    id,
+    authedUser,
+    res,
+  });
   if (!pres) return true;
 
   const counts = await getCommentCountsBySlide(storageScope, id);
@@ -119,18 +137,26 @@ export async function handlePresentationCommentCounts(
  */
 export async function handlePresentationCommentEvents(
   { storageScope, req, res, authedUser } = {},
-  id
+  id,
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
 
-  const { pres } = await withPresentationReadAuth({ storageScope, req, id, authedUser, res });
+  const { pres } = await withPresentationReadAuth({
+    storageScope,
+    req,
+    id,
+    authedUser,
+    res,
+  });
   if (!pres) return true;
 
   const stream = openSseStream(req, res);
   if (!stream.ok) return true;
 
   // Send initial connection confirmation
-  res.write(`event: connected\ndata: ${JSON.stringify({ presentationId: id })}\n\n`);
+  res.write(
+    `event: connected\ndata: ${JSON.stringify({ presentationId: id })}\n\n`,
+  );
 
   // Register this client
   addClient(id, res);
@@ -139,7 +165,9 @@ export async function handlePresentationCommentEvents(
   try {
     const counts = await getCommentCountsBySlide(storageScope, id);
     const total = await getOpenCommentCount(storageScope, id);
-    res.write(`event: ${CommentEventTypes.COUNTS_CHANGED}\ndata: ${JSON.stringify({ counts, total })}\n\n`);
+    res.write(
+      `event: ${CommentEventTypes.COUNTS_CHANGED}\ndata: ${JSON.stringify({ counts, total })}\n\n`,
+    );
   } catch {
     // Ignore initial counts error
   }

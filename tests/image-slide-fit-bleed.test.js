@@ -50,20 +50,34 @@ test('render: defaults resolve to cover, no bleed, no legacy class', () => {
 
 test('render: legacy layout values map onto the axes (read-only fallback)', () => {
   assert.deepEqual(axisClasses(slide({ image: '/a.png', layout: 'full' })), {
-    fit: 'is-fit-cover', bleed: false, legacy: false,
+    fit: 'is-fit-cover',
+    bleed: false,
+    legacy: false,
   });
   assert.deepEqual(axisClasses(slide({ image: '/a.png', layout: 'bleed' })), {
-    fit: 'is-fit-cover', bleed: true, legacy: false,
+    fit: 'is-fit-cover',
+    bleed: true,
+    legacy: false,
   });
-  assert.deepEqual(axisClasses(slide({ image: '/a.png', layout: 'centered' })), {
-    fit: 'is-fit-contain', bleed: false, legacy: false,
-  });
+  assert.deepEqual(
+    axisClasses(slide({ image: '/a.png', layout: 'centered' })),
+    {
+      fit: 'is-fit-contain',
+      bleed: false,
+      legacy: false,
+    },
+  );
 });
 
 test('render: contain + bleed is expressible (the state the old enum could not say)', () => {
-  assert.deepEqual(axisClasses(slide({ image: '/a.png', fit: 'contain', bleed: true })), {
-    fit: 'is-fit-contain', bleed: true, legacy: false,
-  });
+  assert.deepEqual(
+    axisClasses(slide({ image: '/a.png', fit: 'contain', bleed: true })),
+    {
+      fit: 'is-fit-contain',
+      bleed: true,
+      legacy: false,
+    },
+  );
 });
 
 test('render: heading overlays on the bleed axis alone', () => {
@@ -71,10 +85,12 @@ test('render: heading overlays on the bleed axis alone', () => {
   const top = render(slide({ image: '/a.png', title: 'T' }));
   assert.match(top, /has-heading/);
   // Bleed (either fit): heading moves into the frame as an overlay.
-  const overlayCover = render(slide({ image: '/a.png', title: 'T', bleed: true }));
+  const overlayCover = render(
+    slide({ image: '/a.png', title: 'T', bleed: true }),
+  );
   assert.doesNotMatch(overlayCover, /has-heading/);
   const overlayContain = render(
-    slide({ image: '/a.png', title: 'T', fit: 'contain', bleed: true })
+    slide({ image: '/a.png', title: 'T', fit: 'contain', bleed: true }),
   );
   assert.doesNotMatch(overlayContain, /has-heading/);
 });
@@ -87,7 +103,11 @@ test('migration: layout full is dropped without stamping the defaults', () => {
   ensureImageSlideImage(content);
   assert.equal(content.layout, '');
   assert.equal(content.fit ?? '', '', 'default fit is looked up, not stored');
-  assert.equal(content.bleed ?? '', '', 'default bleed is looked up, not stored');
+  assert.equal(
+    content.bleed ?? '',
+    '',
+    'default bleed is looked up, not stored',
+  );
   assert.equal(render(content), before, 'render-identical');
 });
 
@@ -96,7 +116,11 @@ test('migration: layout bleed folds to bleed=true only', () => {
   const before = render(structuredClone(content));
   ensureImageSlideImage(content);
   assert.equal(content.layout, '');
-  assert.equal(content.fit ?? '', '', 'cover equals the default, so not stored');
+  assert.equal(
+    content.fit ?? '',
+    '',
+    'cover equals the default, so not stored',
+  );
   assert.equal(content.bleed, true);
   assert.equal(render(content), before, 'render-identical');
 });
@@ -114,7 +138,11 @@ test('migration: layout centered folds to fit=contain only', () => {
 test('migration: an explicit own value wins over the folded legacy one', () => {
   const content = slide({ image: '/a.png', layout: 'centered', fit: 'cover' });
   ensureImageSlideImage(content);
-  assert.equal(content.fit, 'cover', 'own fit not clobbered by the legacy fold');
+  assert.equal(
+    content.fit,
+    'cover',
+    'own fit not clobbered by the legacy fold',
+  );
   assert.equal(content.layout, '');
 });
 
@@ -140,7 +168,7 @@ test('resolve: own value -> legacy layout -> type default, per axis', () => {
   assert.equal(
     resolveImageSlideImage({ layout: 'bleed', bleed: false }).bleed,
     false,
-    'an explicit boolean beats the legacy layout'
+    'an explicit boolean beats the legacy layout',
   );
 });
 
@@ -150,11 +178,24 @@ test('convert: bleed image-slide -> image-text carries bleed on the ImageRef', (
   const src = {
     id: 's1',
     type: 'image-slide',
-    content: { ...structuredClone(DEF.defaults), image: '/x.png', layout: 'bleed', title: 'T' },
+    content: {
+      ...structuredClone(DEF.defaults),
+      image: '/x.png',
+      layout: 'bleed',
+      title: 'T',
+    },
   };
   const next = convertSlideToType(src, 'image-text-slide', { lang: 'nl' });
-  assert.equal(next.content.images[0].bleed, true, 'bleed travels, not guessed away');
-  assert.equal(next.content.images[0].fit ?? '', '', 'cover = default, so no fit written');
+  assert.equal(
+    next.content.images[0].bleed,
+    true,
+    'bleed travels, not guessed away',
+  );
+  assert.equal(
+    next.content.images[0].fit ?? '',
+    '',
+    'cover = default, so no fit written',
+  );
   // The image-text item sanitizer keeps the property through editor passes.
   ensureImageTextImages(next.content);
   assert.equal(imageTextImageItems(next.content)[0].bleed, true);
@@ -168,9 +209,15 @@ test('validate: bleed accepts booleans and the cleared empty string, rejects str
     type: 'image-slide',
     content: slide({ image: '/a.png' }),
   };
-  const withBleed = (v) => ({ ...base, content: { ...base.content, bleed: v } });
+  const withBleed = (v) => ({
+    ...base,
+    content: { ...base.content, bleed: v },
+  });
   assert.deepEqual(validateSlide(withBleed(true)), []);
   assert.deepEqual(validateSlide(withBleed(false)), []);
   assert.deepEqual(validateSlide(withBleed('')), []);
-  assert.ok(validateSlide(withBleed('on')).length, 'a string bleed is rejected');
+  assert.ok(
+    validateSlide(withBleed('on')).length,
+    'a string bleed is rejected',
+  );
 });

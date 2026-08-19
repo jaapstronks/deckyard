@@ -29,7 +29,14 @@ import { resolveFieldDef } from './field-lookup.js';
 import { fieldGroupId } from './field-groups.js';
 
 /** The controlled vocabulary of text roles. */
-export const TEXT_ROLES = ['heading', 'prose', 'list-item', 'quote', 'caption', 'label'];
+export const TEXT_ROLES = [
+  'heading',
+  'prose',
+  'list-item',
+  'quote',
+  'caption',
+  'label',
+];
 
 /**
  * The alignment a field has when the author has chosen nothing.
@@ -159,7 +166,10 @@ export function fieldDefaultAlign(typeOrFields, key) {
  */
 export function resolveFieldRole(fields, key) {
   const field = resolveFieldDef(fields, key);
-  return (field && TEXT_ROLES.includes(field.role) && field.role) || DEFAULT_TEXT_ROLE;
+  return (
+    (field && TEXT_ROLES.includes(field.role) && field.role) ||
+    DEFAULT_TEXT_ROLE
+  );
 }
 
 /**

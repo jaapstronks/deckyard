@@ -19,16 +19,16 @@
  */
 
 export const ai = {
-    category: 'interactive',
-    resolveInPhase1: false,
-    description: `
+  category: 'interactive',
+  resolveInPhase1: false,
+  description: `
       Open-ended text feedback collection.
       Audience types free-form responses.
     `,
-    bestFor: [
-      'Open feedback prompts',
-      '"What should we improve?" questions',
-      'Collecting ideas or suggestions',
-    ],
-    notFor: ['Structured questions (use poll or likert slides)'],
+  bestFor: [
+    'Open feedback prompts',
+    '"What should we improve?" questions',
+    'Collecting ideas or suggestions',
+  ],
+  notFor: ['Structured questions (use poll or likert slides)'],
 };

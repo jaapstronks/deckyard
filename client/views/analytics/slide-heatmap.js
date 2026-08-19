@@ -49,10 +49,24 @@ export function createSlideHeatmap({ h, slides, presentation }) {
     if (!slideData || slideData.length === 0) {
       container.append(
         h('div', { class: 'analytics-empty-state' }, [
-          h('img', { class: 'analytics-empty-state-icon', src: iconUrl('target'), alt: '', 'aria-hidden': 'true' }),
-          h('p', { class: 'analytics-empty-state-title', text: t('analytics.noSlideEngagement', 'No slide engagement data') }),
-          h('p', { class: 'analytics-empty-state-description', text: t('analytics.viewsNeededForEngagement', 'Once viewers start watching your presentation, you\'ll see which slides get the most attention.') }),
-        ])
+          h('img', {
+            class: 'analytics-empty-state-icon',
+            src: iconUrl('target'),
+            alt: '',
+            'aria-hidden': 'true',
+          }),
+          h('p', {
+            class: 'analytics-empty-state-title',
+            text: t('analytics.noSlideEngagement', 'No slide engagement data'),
+          }),
+          h('p', {
+            class: 'analytics-empty-state-description',
+            text: t(
+              'analytics.viewsNeededForEngagement',
+              "Once viewers start watching your presentation, you'll see which slides get the most attention.",
+            ),
+          }),
+        ]),
       );
       return;
     }
@@ -68,41 +82,57 @@ export function createSlideHeatmap({ h, slides, presentation }) {
     const grid = h('div', {
       class: 'analytics-heatmap-grid',
       role: 'list',
-      'aria-label': t('analytics.heatmapAriaLabel', 'Slide engagement heatmap showing {{count}} slides', { count: slideData.length }),
+      'aria-label': t(
+        'analytics.heatmapAriaLabel',
+        'Slide engagement heatmap showing {{count}} slides',
+        { count: slideData.length },
+      ),
     });
 
     slideData.forEach((data) => {
       const slideIndex = data.slideIndex ?? 0;
       const presSlide = presSlides[slideIndex];
-      const slideTitle = presSlide?.title || presSlide?.heading || `Slide ${slideIndex + 1}`;
+      const slideTitle =
+        presSlide?.title || presSlide?.heading || `Slide ${slideIndex + 1}`;
 
       // Calculate engagement score
       const viewScore = (data.views || 0) / maxViews;
       const timeScore = (data.avgTimeSeconds || 0) / maxTime;
-      const engagementScore = (viewScore * 0.4) + (timeScore * 0.6);
+      const engagementScore = viewScore * 0.4 + timeScore * 0.6;
 
       const engagementPercent = Math.round(engagementScore * 100);
       const card = h('div', {
         class: 'analytics-heatmap-card',
         style: `background: ${getEngagementColor(engagementScore)};`,
         role: 'listitem',
-        'aria-label': t('analytics.slideCardAriaLabel', 'Slide {{num}}: {{title}}, {{views}} views, {{time}} average time, {{engagement}}% engagement', {
-          num: slideIndex + 1,
-          title: slideTitle,
-          views: data.views || 0,
-          time: formatTime(data.avgTimeSeconds || 0),
-          engagement: engagementPercent,
-        }),
+        'aria-label': t(
+          'analytics.slideCardAriaLabel',
+          'Slide {{num}}: {{title}}, {{views}} views, {{time}} average time, {{engagement}}% engagement',
+          {
+            num: slideIndex + 1,
+            title: slideTitle,
+            views: data.views || 0,
+            time: formatTime(data.avgTimeSeconds || 0),
+            engagement: engagementPercent,
+          },
+        ),
       });
 
       // Slide number
-      const number = h('div', { class: 'analytics-heatmap-number', text: String(slideIndex + 1) });
+      const number = h('div', {
+        class: 'analytics-heatmap-number',
+        text: String(slideIndex + 1),
+      });
 
       // Slide info
       const info = h('div', { class: 'analytics-heatmap-info' }, [
         h('div', { class: 'analytics-heatmap-title', text: slideTitle }),
         h('div', { class: 'analytics-heatmap-stats' }, [
-          h('span', { text: t('analytics.heatmap.views', '{views} views', { views: data.views || 0 }) }),
+          h('span', {
+            text: t('analytics.heatmap.views', '{views} views', {
+              views: data.views || 0,
+            }),
+          }),
           h('span', { text: ' · ' }),
           h('span', {
             text: t('analytics.heatmap.avgTime', '{time} avg', {
@@ -113,7 +143,9 @@ export function createSlideHeatmap({ h, slides, presentation }) {
       ]);
 
       // Engagement bar
-      const barContainer = h('div', { class: 'analytics-heatmap-bar-container' });
+      const barContainer = h('div', {
+        class: 'analytics-heatmap-bar-container',
+      });
       const bar = h('div', {
         class: 'analytics-heatmap-bar',
         style: `width: ${Math.round(engagementScore * 100)}%;`,
@@ -138,9 +170,15 @@ export function createSlideHeatmap({ h, slides, presentation }) {
 
     // Legend
     const legend = h('div', { class: 'analytics-heatmap-legend' }, [
-      h('span', { class: 'analytics-heatmap-legend-label', text: t('analytics.lowEngagement', 'Low') }),
+      h('span', {
+        class: 'analytics-heatmap-legend-label',
+        text: t('analytics.lowEngagement', 'Low'),
+      }),
       h('div', { class: 'analytics-heatmap-legend-gradient' }),
-      h('span', { class: 'analytics-heatmap-legend-label', text: t('analytics.highEngagement', 'High') }),
+      h('span', {
+        class: 'analytics-heatmap-legend-label',
+        text: t('analytics.highEngagement', 'High'),
+      }),
     ]);
     container.append(legend);
   }

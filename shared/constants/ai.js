@@ -48,7 +48,11 @@ export function isAiAuthorEmail(email, configuredEmail) {
   if (!email) return false;
   const candidate = String(email).trim().toLowerCase();
   if (!candidate) return false;
-  if (configuredEmail && candidate === String(configuredEmail).trim().toLowerCase()) return true;
+  if (
+    configuredEmail &&
+    candidate === String(configuredEmail).trim().toLowerCase()
+  )
+    return true;
   if (candidate === DEFAULT_AI_EMAIL) return true;
   return LEGACY_AI_EMAILS.includes(candidate);
 }

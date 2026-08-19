@@ -74,6 +74,8 @@ export async function listSandboxExamples(repoRoot) {
     }
   }
 
-  examples.sort((a, b) => orderIndex(a.id) - orderIndex(b.id) || a.id.localeCompare(b.id));
+  examples.sort(
+    (a, b) => orderIndex(a.id) - orderIndex(b.id) || a.id.localeCompare(b.id),
+  );
   return examples;
 }

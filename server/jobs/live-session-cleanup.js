@@ -46,7 +46,10 @@ const log = createLogger('live-session-cleanup');
 export async function sweepExpiredLiveSessions() {
   const sessions = await sweepExpiredSessions();
   const followCodes = await cleanupExpiredCodes(
-    crossOrganizationScope(null, 'live-session sweep: expired follow codes are instance-wide maintenance')
+    crossOrganizationScope(
+      null,
+      'live-session sweep: expired follow codes are instance-wide maintenance',
+    ),
   );
   return { sessions, followCodes };
 }
@@ -59,7 +62,9 @@ export async function sweepExpiredLiveSessions() {
  *   the guard against a mistyped interval breaking running sessions).
  * @returns {{ stop: () => void }} Job handle.
  */
-export function scheduleLiveSessionCleanup({ intervalMs = 15 * 60 * 1000 } = {}) {
+export function scheduleLiveSessionCleanup({
+  intervalMs = 15 * 60 * 1000,
+} = {}) {
   let stopped = false;
   let running = false;
 
@@ -69,7 +74,9 @@ export function scheduleLiveSessionCleanup({ intervalMs = 15 * 60 * 1000 } = {})
     try {
       const { sessions, followCodes } = await sweepExpiredLiveSessions();
       if (sessions > 0 || followCodes > 0) {
-        log.info(`swept ${sessions} expired session(s) and ${followCodes} follow code(s)`);
+        log.info(
+          `swept ${sessions} expired session(s) and ${followCodes} follow code(s)`,
+        );
       }
     } catch (err) {
       // Best-effort: a sweep that fails (DB blip) simply retries next interval.

@@ -16,17 +16,17 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-const { defaultAppSettings, defaultUserSettings } = await import(
-  '../server/storage/settings.js'
-);
+const { defaultAppSettings, defaultUserSettings } =
+  await import('../server/storage/settings.js');
 
 describe('analytics settings: no internal/external chain', () => {
   it('the app-settings default carries only enabled/retention/externalProviders', () => {
     const analytics = defaultAppSettings().analytics;
-    assert.deepEqual(
-      Object.keys(analytics).sort(),
-      ['enabled', 'externalProviders', 'retention']
-    );
+    assert.deepEqual(Object.keys(analytics).sort(), [
+      'enabled',
+      'externalProviders',
+      'retention',
+    ]);
     assert.equal('teamAnalytics' in analytics, false);
     assert.equal('externalAnalytics' in analytics, false);
   });

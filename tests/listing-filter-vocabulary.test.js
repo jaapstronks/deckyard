@@ -53,16 +53,25 @@ const CHECKS = [
     file: 'client/views/list/views/presentations-view.js',
     // The whole view is renamed: it names nothing "scope" anymore.
     forbidden: [
-      { label: 'scope-as-ownership (use ownership) in the presentations view', re: /scope/i },
+      {
+        label: 'scope-as-ownership (use ownership) in the presentations view',
+        re: /scope/i,
+      },
     ],
     required: [/\bownership\b/],
   },
   {
     file: 'server/mcp/tools.js',
     forbidden: [
-      { label: "scope: {…} listing-filter schema property (use ownership)", re: /\bscope:\s*\{/ },
+      {
+        label: 'scope: {…} listing-filter schema property (use ownership)',
+        re: /\bscope:\s*\{/,
+      },
       { label: 'validScope (use validOwnership)', re: /validScope/ },
-      { label: "scope = 'owned' | 'all' listing default (use ownership)", re: /\bscope\s*=\s*'(owned|all)'/ },
+      {
+        label: "scope = 'owned' | 'all' listing default (use ownership)",
+        re: /\bscope\s*=\s*'(owned|all)'/,
+      },
     ],
     // Both list tools declare the ownership filter.
     required: [/ownership:\s*\{/],
@@ -72,25 +81,42 @@ const CHECKS = [
     // Every use of "visibility" in this comments module was the ownership
     // homonym; the real visibility concept lives elsewhere.
     forbidden: [
-      { label: 'visibility as the owned/shared/all ownership filter (use ownership)', re: /\bvisibility\b/ },
+      {
+        label:
+          'visibility as the owned/shared/all ownership filter (use ownership)',
+        re: /\bvisibility\b/,
+      },
     ],
     required: [/\bownership\b/],
   },
   {
     file: 'client/styles/base/02-lists-and-thumbs/80-tags.css',
     forbidden: [
-      { label: 'scope-filter CSS class (use ownership-filter)', re: /scope-filter/ },
+      {
+        label: 'scope-filter CSS class (use ownership-filter)',
+        re: /scope-filter/,
+      },
     ],
     required: [/ownership-filter/],
   },
   {
     file: 'client/i18n/en/list.json',
-    forbidden: [{ label: 'list.presentations.scope i18n key (use ownership)', re: /list\.presentations\.scope/ }],
+    forbidden: [
+      {
+        label: 'list.presentations.scope i18n key (use ownership)',
+        re: /list\.presentations\.scope/,
+      },
+    ],
     required: [/list\.presentations\.ownership/],
   },
   {
     file: 'client/i18n/nl/list.json',
-    forbidden: [{ label: 'list.presentations.scope i18n key (use ownership)', re: /list\.presentations\.scope/ }],
+    forbidden: [
+      {
+        label: 'list.presentations.scope i18n key (use ownership)',
+        re: /list\.presentations\.scope/,
+      },
+    ],
     required: [/list\.presentations\.ownership/],
   },
 ];
@@ -102,14 +128,15 @@ test('listing filter vocabulary: the deck source filter is `ownership`, never sc
     const lines = fs.readFileSync(abs, 'utf8').split('\n');
     lines.forEach((line, i) => {
       for (const { label, re } of forbidden) {
-        if (re.test(line)) violations.push(`${file}:${i + 1}  [${label}]  ${line.trim()}`);
+        if (re.test(line))
+          violations.push(`${file}:${i + 1}  [${label}]  ${line.trim()}`);
       }
     });
   }
   assert.equal(
     violations.length,
     0,
-    `One word per meaning (docs/reference/vocabulary.md):\n  ${violations.join('\n  ')}`
+    `One word per meaning (docs/reference/vocabulary.md):\n  ${violations.join('\n  ')}`,
   );
 });
 
@@ -117,7 +144,10 @@ test('the canonical `ownership` spelling is present on every renamed surface', (
   for (const { file, required = [] } of CHECKS) {
     const text = fs.readFileSync(path.join(repoRoot, file), 'utf8');
     for (const re of required) {
-      assert.ok(re.test(text), `${file} must carry the canonical ownership spelling (${re})`);
+      assert.ok(
+        re.test(text),
+        `${file} must carry the canonical ownership spelling (${re})`,
+      );
     }
   }
 });
@@ -154,7 +184,8 @@ function referenceDocs() {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) walkDocs(full);
-      else if (entry.name.endsWith('.md') && !DOC_EXEMPT.has(entry.name)) out.push(full);
+      else if (entry.name.endsWith('.md') && !DOC_EXEMPT.has(entry.name))
+        out.push(full);
     }
   })(path.join(repoRoot, DOC_DIR));
   return out;
@@ -167,14 +198,15 @@ test('listing filter vocabulary: reference prose says ownership, never scope/vis
     const lines = fs.readFileSync(file, 'utf8').split('\n');
     lines.forEach((line, i) => {
       for (const { label, re } of DOC_FORBIDDEN) {
-        if (re.test(line)) violations.push(`${rel}:${i + 1}  [${label}]  ${line.trim()}`);
+        if (re.test(line))
+          violations.push(`${rel}:${i + 1}  [${label}]  ${line.trim()}`);
       }
     });
   }
   assert.equal(
     violations.length,
     0,
-    `One word per meaning (docs/reference/vocabulary.md):\n  ${violations.join('\n  ')}`
+    `One word per meaning (docs/reference/vocabulary.md):\n  ${violations.join('\n  ')}`,
   );
 });
 
@@ -182,7 +214,7 @@ test('the doc-prose exemptions still exist, so the list cannot rot', () => {
   for (const name of DOC_EXEMPT) {
     assert.ok(
       fs.existsSync(path.join(repoRoot, DOC_DIR, name)),
-      `${DOC_DIR}/${name} is exempt but no longer exists`
+      `${DOC_DIR}/${name} is exempt but no longer exists`,
     );
   }
 });

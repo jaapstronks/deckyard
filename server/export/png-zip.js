@@ -25,7 +25,7 @@ function safeScale(n) {
 export async function buildSlidesPngZipBuffer(
   repoRoot,
   pres,
-  { theme = null, scale = 2, slideTypes = null } = {}
+  { theme = null, scale = 2, slideTypes = null } = {},
 ) {
   const filteredPres = stripLiveOnlySlidesFromPresentation(pres);
   const slides = Array.isArray(filteredPres?.slides) ? filteredPres.slides : [];

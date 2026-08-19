@@ -21,7 +21,10 @@ import {
   renderGradientSvg,
 } from '../server/media/bundled-gradients.js';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 
 async function main() {
   const outDir = path.join(repoRoot, GRADIENT_DIR_REL);
@@ -55,7 +58,7 @@ async function main() {
 
   console.log(
     `Bundled gradients: ${items.length} item(s) from ${new Set(items.map((i) => i.theme)).size} theme(s) — ` +
-      `${written} written, ${removed} removed → ${GRADIENT_DIR_REL}/`
+      `${written} written, ${removed} removed → ${GRADIENT_DIR_REL}/`,
   );
 }
 

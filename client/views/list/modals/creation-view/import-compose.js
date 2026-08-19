@@ -36,7 +36,10 @@ export function createImportCompose({ h, onChange }) {
   let selectedImportMdFile = null;
 
   // ===== Panel DOM =====
-  const panel = h('div', { class: 'creation-panel is-hidden', 'data-method': 'import' });
+  const panel = h('div', {
+    class: 'creation-panel is-hidden',
+    'data-method': 'import',
+  });
   const importSubtabs = h('div', { class: 'sb-segmented' });
   const btnImpJson = h('button', {
     type: 'button',
@@ -70,10 +73,13 @@ export function createImportCompose({ h, onChange }) {
   panelJson.append(
     h('div', {
       class: 'help modal-hint',
-      text: t('list.newPresentation.importJson.help', 'Import a presentation from a previously exported .json file.'),
+      text: t(
+        'list.newPresentation.importJson.help',
+        'Import a presentation from a previously exported .json file.',
+      ),
     }),
     importFileInput,
-    importFileInfo
+    importFileInfo,
   );
 
   const panelImportMd = h('div', { class: 'creation-subpanel is-hidden' });
@@ -91,31 +97,53 @@ export function createImportCompose({ h, onChange }) {
   panelImportMd.append(
     h('div', {
       class: 'help modal-hint',
-      text: t('list.newPresentation.importMarkdown.help', 'Import a presentation from a markdown file or zip bundle (.md + images). Use --- to separate slides. No AI — slides are mapped directly from your markdown structure.'),
+      text: t(
+        'list.newPresentation.importMarkdown.help',
+        'Import a presentation from a markdown file or zip bundle (.md + images). Use --- to separate slides. No AI — slides are mapped directly from your markdown structure.',
+      ),
     }),
     importMdFileInput,
-    importMdFileInfo
+    importMdFileInfo,
   );
 
   const panelPasteMd = h('div', { class: 'creation-subpanel is-hidden' });
   const pasteMdTextarea = h('textarea', {
     class: 'form-input form-textarea-lg',
-    placeholder: t('list.newPresentation.pasteMarkdown.placeholder', 'Paste your markdown here...'),
+    placeholder: t(
+      'list.newPresentation.pasteMarkdown.placeholder',
+      'Paste your markdown here...',
+    ),
   });
   panelPasteMd.append(
     h('div', {
       class: 'help modal-hint',
-      text: t('list.newPresentation.pasteMarkdown.help', 'Paste your markdown directly. Use --- to separate slides. No AI — slides are mapped directly from your markdown structure.'),
+      text: t(
+        'list.newPresentation.pasteMarkdown.help',
+        'Paste your markdown directly. Use --- to separate slides. No AI — slides are mapped directly from your markdown structure.',
+      ),
     }),
-    pasteMdTextarea
+    pasteMdTextarea,
   );
 
-  const importSubWrap = h('div', { class: 'creation-subpanels' }, [panelJson, panelImportMd, panelPasteMd]);
+  const importSubWrap = h('div', { class: 'creation-subpanels' }, [
+    panelJson,
+    panelImportMd,
+    panelPasteMd,
+  ]);
   panel.append(importSubtabs, importSubWrap);
 
-  btnImpJson.addEventListener('click', () => { importSubtab = 'json'; syncUI(); });
-  btnImpMd.addEventListener('click', () => { importSubtab = 'import-md'; syncUI(); });
-  btnImpPasteMd.addEventListener('click', () => { importSubtab = 'paste-md'; syncUI(); });
+  btnImpJson.addEventListener('click', () => {
+    importSubtab = 'json';
+    syncUI();
+  });
+  btnImpMd.addEventListener('click', () => {
+    importSubtab = 'import-md';
+    syncUI();
+  });
+  btnImpPasteMd.addEventListener('click', () => {
+    importSubtab = 'paste-md';
+    syncUI();
+  });
 
   // Update the panel's own sub-tabs to match the active sub-tab. Called from the
   // host's syncUI (the sub-tabs and their panels live inside this panel).
@@ -130,10 +158,17 @@ export function createImportCompose({ h, onChange }) {
 
   // Resolve which concrete create-flow the active sub-tab runs.
   const getMode = () =>
-    ({ json: 'import-json', 'import-md': 'import-markdown', 'paste-md': 'paste-markdown' }[importSubtab]);
+    ({
+      json: 'import-json',
+      'import-md': 'import-markdown',
+      'paste-md': 'paste-markdown',
+    })[importSubtab];
 
   // Import warnings render inline in their sub-panel, turning Create into "Open".
-  const makeWarningShower = (panel_, { setStatus, setBusy, btnAction, close, nav }) => {
+  const makeWarningShower = (
+    panel_,
+    { setStatus, setBusy, btnAction, close, nav },
+  ) => {
     return ({ warnings, navUrl }) => {
       panel_.innerHTML = '';
       panel_.append(
@@ -142,16 +177,20 @@ export function createImportCompose({ h, onChange }) {
           text: t(
             'list.newPresentation.importMarkdown.warningsIntro',
             'Import succeeded, but {count} issue(s) were detected:',
-            { count: warnings.length }
+            { count: warnings.length },
           ),
-        })
+        }),
       );
       const list = h('ul', { class: 'import-warnings' });
-      for (const w of warnings) list.append(h('li', { class: 'help', text: w }));
+      for (const w of warnings)
+        list.append(h('li', { class: 'help', text: w }));
       panel_.append(list);
       setStatus('');
       setBusy(false);
-      btnAction.textContent = t('list.newPresentation.importMarkdown.open', 'Open presentation');
+      btnAction.textContent = t(
+        'list.newPresentation.importMarkdown.open',
+        'Open presentation',
+      );
       btnAction.onclick = (e) => {
         e.preventDefault();
         close();
@@ -214,7 +253,9 @@ export function createImportCompose({ h, onChange }) {
      * paste-markdown textarea counts; a selected file is not "dirty" — both
      * match the pre-split behaviour.
      */
-    isDirty: () => importSubtab === 'paste-md' && !!String(pasteMdTextarea.value || '').trim(),
+    isDirty: () =>
+      importSubtab === 'paste-md' &&
+      !!String(pasteMdTextarea.value || '').trim(),
     /** Run the active sub-tab's import flow. */
     run,
   };

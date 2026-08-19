@@ -8,7 +8,7 @@
 
 Deckyard needs Miro/Google-Docs-style collaboration: visible presence (who is
 here, which slide are they on, what did they select) and live edits from
-other collaborators, including edits made *by the server* (AI iterations, MCP
+other collaborators, including edits made _by the server_ (AI iterations, MCP
 tools, public API, background translate jobs). Constraints from the briefing:
 
 - proven CRDT library, no home-grown conflict resolution;
@@ -114,7 +114,7 @@ ydoc
   structure **once** and per-language values inside each translatable field,
   instead of today's full slides-array copy per language. The legacy JSON
   format is preserved at the serialization boundary: the doc→JSON serializer
-  *projects* `i18n.versions[lang].slides` arrays back out (and top-level
+  _projects_ `i18n.versions[lang].slides` arrays back out (and top-level
   `slides` from the dominant language), so storage, exports, presenter,
   publish and the public API see the exact format they see today. The
   JSON→doc bootstrapper does the inverse. This removes the need to replicate
@@ -132,7 +132,7 @@ ydoc
   1. store the Y.Doc binary;
   2. serialize to legacy JSON and call the existing `updatePresentation`
      with an internal `origin: 'collab'` flag that bypasses the revision
-     conflict check (the doc *is* the merge) while keeping validation,
+     conflict check (the doc _is_ the merge) while keeping validation,
      normalization, cache invalidation, `deckUpdated` SSE and auto-snapshots.
 - If serialization/validation fails, keep the binary, log loudly, and do not
   clobber the JSON — the JSON is then at most one debounce window stale.
@@ -143,7 +143,7 @@ ydoc
 
 `updatePresentation` (`server/storage/presentations/index.js`) gains a guard: if
 collab is enabled **and** the deck has a loaded collab document, the incoming
-whole-deck JSON is applied *to the Y.Doc* via
+whole-deck JSON is applied _to the Y.Doc_ via
 `openDirectConnection().transact()` using a structural differ (match slides
 by id, fields by path — the Yjs twin of the existing
 `mergeSlidesAtSlideLevel`), and persistence then flows through
@@ -168,10 +168,10 @@ content sync):
 
 ```js
 awareness.setLocalState({
-  user:  { name, email, color },     // color: hash of email → palette
-  view:  { slideId },                // which slide I'm looking at
-  focus: { slideId, fieldPath } | null  // what I'm editing/selecting
-})
+  user: { name, email, color }, // color: hash of email → palette
+  view: { slideId }, // which slide I'm looking at
+  focus: { slideId, fieldPath } | null, // what I'm editing/selecting
+});
 ```
 
 UI: avatar stack in the topbar; colored ring/avatar dot on slide-list
@@ -212,7 +212,7 @@ is on (persistence is server-side); they remain untouched for flag-off.
 
 A Svelte/React rewrite was explicitly considered (see briefing) and
 **rejected**: Yjs is framework-agnostic; the editor already has manual but
-*targeted* re-render seams and a stable field addressing scheme, which is all
+_targeted_ re-render seams and a stable field addressing scheme, which is all
 a binding needs; and the one genuinely hard UI problem (caret-stable
 collaborative text in one field) requires a Y.Text↔contenteditable binding
 regardless of framework. A rewrite would cost months, freeze the roadmap, and

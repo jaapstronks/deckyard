@@ -35,7 +35,10 @@ export const JUDGE_EFFORT = 'high';
  * make the cost report guesswork.
  */
 export const GENERATION_VENDORS = {
-  claude: { model: 'claude-opus-4-8', envVars: ['CLAUDE_MODEL', 'CLAUDE_MODEL_PLAN'] },
+  claude: {
+    model: 'claude-opus-4-8',
+    envVars: ['CLAUDE_MODEL', 'CLAUDE_MODEL_PLAN'],
+  },
   openai: { model: 'gpt-5.5', envVars: ['OPENAI_MODEL'] },
 };
 

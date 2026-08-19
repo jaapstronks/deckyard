@@ -25,7 +25,7 @@ export function attachThumbScaleContain(
     virtualHeight = 900,
     containerEl = null,
     padding = 0,
-  } = {}
+  } = {},
 ) {
   if (!thumb) return () => {};
 

@@ -60,13 +60,13 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } = await import(
-  '../server/storage/lifecycle.js'
-);
+const { initializeStorage, __resetStorageForTests } =
+  await import('../server/storage/lifecycle.js');
 const { createStorageScope } = await import('../server/utils/context.js');
 const { handleMedia } = await import('../server/routes/api/media.js');
 const { handleUploads } = await import('../server/routes/api/uploads.js');
-const { handleStockMedia } = await import('../server/routes/api/stock-media.js');
+const { handleStockMedia } =
+  await import('../server/routes/api/stock-media.js');
 const { initializeMediaProvider } = await import('../server/media/index.js');
 
 const USER = { email: 'olive@example.com', name: 'Olive', organizationId: ORG };
@@ -83,7 +83,11 @@ let uploadsTmpDir;
 test.before(async () => {
   uploadsTmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'deckyard-media-'));
   process.env.UPLOADS_DIR = uploadsTmpDir;
-  __setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+  __setTestDb(
+    createFakeDb({
+      organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+    }),
+  );
   await initializeStorage();
 });
 
@@ -91,7 +95,8 @@ test.after(async () => {
   __resetStorageForTests();
   __setTestDb(null);
   delete process.env.UPLOADS_DIR;
-  if (uploadsTmpDir) await fs.rm(uploadsTmpDir, { recursive: true, force: true });
+  if (uploadsTmpDir)
+    await fs.rm(uploadsTmpDir, { recursive: true, force: true });
 });
 
 /** Reinstall a freshly seeded double; `appSettings` becomes the singleton bag. */
@@ -184,7 +189,7 @@ test('imagekit status is public and reports unconfigured on a bare install', asy
   assert.equal(res.body.configured, false);
   assert.ok(
     res.body.issues.some((i) => /IMAGEKIT_PRIVATE_KEY/.test(i)),
-    'the missing-key issues are surfaced'
+    'the missing-key issues are surfaced',
   );
 });
 
@@ -248,9 +253,14 @@ test('confirm refuses a missing provider with a 400', async () => {
 
 test('the imagekit detail write refuses an unauthenticated caller with a 401', async () => {
   seed();
-  const { res } = await call(handleMedia, 'PATCH', '/api/media/imagekit/files/abc/details', {
-    body: {},
-  });
+  const { res } = await call(
+    handleMedia,
+    'PATCH',
+    '/api/media/imagekit/files/abc/details',
+    {
+      body: {},
+    },
+  );
 
   assert.equal(res.statusCode, 401);
 });
@@ -259,12 +269,21 @@ test('the imagekit detail write is refused with a 405 in demo/sandbox mode', asy
   seed();
   process.env.SANDBOX_MODE = 'true';
   try {
-    const { res } = await call(handleMedia, 'PATCH', '/api/media/imagekit/files/abc/details', {
-      as: USER,
-      body: {},
-    });
+    const { res } = await call(
+      handleMedia,
+      'PATCH',
+      '/api/media/imagekit/files/abc/details',
+      {
+        as: USER,
+        body: {},
+      },
+    );
 
-    assert.equal(res.statusCode, 405, 'sandbox makes the write path method-not-allowed');
+    assert.equal(
+      res.statusCode,
+      405,
+      'sandbox makes the write path method-not-allowed',
+    );
     assert.equal(res.body.error, 'method_not_allowed');
   } finally {
     delete process.env.SANDBOX_MODE;
@@ -325,10 +344,18 @@ test('upload rejects a body without a data URL with a 400', async () => {
 
 test('stock-media status is public and reports the bare-install shape', async () => {
   seed();
-  const { res } = await call(handleStockMedia, 'GET', '/api/stock-media/status');
+  const { res } = await call(
+    handleStockMedia,
+    'GET',
+    '/api/stock-media/status',
+  );
 
   assert.equal(res.statusCode, 200);
-  assert.equal(res.body.bundled.configured, true, 'bundled has nothing to configure');
+  assert.equal(
+    res.body.bundled.configured,
+    true,
+    'bundled has nothing to configure',
+  );
   assert.equal(res.body.bundled.enabled, false, 'and is off until toggled on');
   assert.equal(res.body.unsplash.configured, false, 'no UNSPLASH_ACCESS_KEY');
   assert.equal(res.body.giphy.configured, false, 'no GIPHY_API_KEY');
@@ -336,17 +363,30 @@ test('stock-media status is public and reports the bare-install shape', async ()
 
 test('an authed-only stock-media route falls through (not 401) for an anonymous caller', async () => {
   seed();
-  const { handled, res } = await call(handleStockMedia, 'GET', '/api/stock-media/unsplash/search?q=cats');
+  const { handled, res } = await call(
+    handleStockMedia,
+    'GET',
+    '/api/stock-media/unsplash/search?q=cats',
+  );
 
-  assert.equal(handled, false, 'the module defers the auth decision to the outer gate');
+  assert.equal(
+    handled,
+    false,
+    'the module defers the auth decision to the outer gate',
+  );
   assert.equal(res.statusCode, null, 'and writes nothing itself');
 });
 
 test('bundled manifest is a 400 while the bundled source is toggled off', async () => {
   seed();
-  const { res } = await call(handleStockMedia, 'GET', '/api/stock-media/bundled/manifest', {
-    as: USER,
-  });
+  const { res } = await call(
+    handleStockMedia,
+    'GET',
+    '/api/stock-media/bundled/manifest',
+    {
+      as: USER,
+    },
+  );
 
   assert.equal(res.statusCode, 400);
   assert.match(res.body.message, /Bundled gradients are not available/);
@@ -354,9 +394,14 @@ test('bundled manifest is a 400 while the bundled source is toggled off', async 
 
 test('unsplash search is a 400 while Unsplash is unconfigured', async () => {
   seed();
-  const { res } = await call(handleStockMedia, 'GET', '/api/stock-media/unsplash/search?q=cats', {
-    as: USER,
-  });
+  const { res } = await call(
+    handleStockMedia,
+    'GET',
+    '/api/stock-media/unsplash/search?q=cats',
+    {
+      as: USER,
+    },
+  );
 
   assert.equal(res.statusCode, 400);
   assert.match(res.body.message, /Unsplash is not available/);
@@ -364,10 +409,15 @@ test('unsplash search is a 400 while Unsplash is unconfigured', async () => {
 
 test('unsplash download is a 400 while Unsplash is unconfigured', async () => {
   seed();
-  const { res } = await call(handleStockMedia, 'POST', '/api/stock-media/unsplash/download', {
-    as: USER,
-    body: { photoId: 'p1' },
-  });
+  const { res } = await call(
+    handleStockMedia,
+    'POST',
+    '/api/stock-media/unsplash/download',
+    {
+      as: USER,
+      body: { photoId: 'p1' },
+    },
+  );
 
   assert.equal(res.statusCode, 400);
   assert.match(res.body.message, /Unsplash is not available/);
@@ -375,9 +425,14 @@ test('unsplash download is a 400 while Unsplash is unconfigured', async () => {
 
 test('giphy search is a 400 while Giphy is unconfigured', async () => {
   seed();
-  const { res } = await call(handleStockMedia, 'GET', '/api/stock-media/giphy/search?q=cats', {
-    as: USER,
-  });
+  const { res } = await call(
+    handleStockMedia,
+    'GET',
+    '/api/stock-media/giphy/search?q=cats',
+    {
+      as: USER,
+    },
+  );
 
   assert.equal(res.statusCode, 400);
   assert.match(res.body.message, /Giphy is not available/);
@@ -385,10 +440,15 @@ test('giphy search is a 400 while Giphy is unconfigured', async () => {
 
 test('giphy download is a 400 while Giphy is unconfigured', async () => {
   seed();
-  const { res } = await call(handleStockMedia, 'POST', '/api/stock-media/giphy/download', {
-    as: USER,
-    body: { gifId: 'g1' },
-  });
+  const { res } = await call(
+    handleStockMedia,
+    'POST',
+    '/api/stock-media/giphy/download',
+    {
+      as: USER,
+      body: { gifId: 'g1' },
+    },
+  );
 
   assert.equal(res.statusCode, 400);
   assert.match(res.body.message, /Giphy is not available/);
@@ -402,9 +462,14 @@ test('a configured-and-enabled Unsplash still rejects an empty query with a 400'
   seed({ stockMedia: { unsplash: { enabled: true } } });
   process.env.UNSPLASH_ACCESS_KEY = 'test-unsplash-key';
   try {
-    const { res } = await call(handleStockMedia, 'GET', '/api/stock-media/unsplash/search?q=', {
-      as: USER,
-    });
+    const { res } = await call(
+      handleStockMedia,
+      'GET',
+      '/api/stock-media/unsplash/search?q=',
+      {
+        as: USER,
+      },
+    );
 
     assert.equal(res.statusCode, 400);
     assert.match(res.body.message, /Search query required/);
@@ -417,10 +482,15 @@ test('a configured-and-enabled Unsplash download still rejects a missing photo i
   seed({ stockMedia: { unsplash: { enabled: true } } });
   process.env.UNSPLASH_ACCESS_KEY = 'test-unsplash-key';
   try {
-    const { res } = await call(handleStockMedia, 'POST', '/api/stock-media/unsplash/download', {
-      as: USER,
-      body: {},
-    });
+    const { res } = await call(
+      handleStockMedia,
+      'POST',
+      '/api/stock-media/unsplash/download',
+      {
+        as: USER,
+        body: {},
+      },
+    );
 
     assert.equal(res.statusCode, 400);
     assert.match(res.body.message, /Photo ID required/);
@@ -433,9 +503,14 @@ test('a configured-and-enabled Giphy still rejects an empty query with a 400', a
   seed({ stockMedia: { giphy: { enabled: true } } });
   process.env.GIPHY_API_KEY = 'test-giphy-key';
   try {
-    const { res } = await call(handleStockMedia, 'GET', '/api/stock-media/giphy/search?q=', {
-      as: USER,
-    });
+    const { res } = await call(
+      handleStockMedia,
+      'GET',
+      '/api/stock-media/giphy/search?q=',
+      {
+        as: USER,
+      },
+    );
 
     assert.equal(res.statusCode, 400);
     assert.match(res.body.message, /Search query required/);
@@ -448,10 +523,15 @@ test('a configured-and-enabled Giphy download still rejects a missing gif id', a
   seed({ stockMedia: { giphy: { enabled: true } } });
   process.env.GIPHY_API_KEY = 'test-giphy-key';
   try {
-    const { res } = await call(handleStockMedia, 'POST', '/api/stock-media/giphy/download', {
-      as: USER,
-      body: {},
-    });
+    const { res } = await call(
+      handleStockMedia,
+      'POST',
+      '/api/stock-media/giphy/download',
+      {
+        as: USER,
+        body: {},
+      },
+    );
 
     assert.equal(res.statusCode, 400);
     assert.match(res.body.message, /GIF ID required/);
@@ -505,7 +585,11 @@ test('a valid data-URL upload is stored and returns 201 with its metadata', asyn
 
   assert.equal(res.statusCode, 201);
   assert.equal(res.body.mime, 'image/png');
-  assert.match(res.body.url, /^\/uploads\/.+\.png$/, 'a public URL under /uploads is returned');
+  assert.match(
+    res.body.url,
+    /^\/uploads\/.+\.png$/,
+    'a public URL under /uploads is returned',
+  );
   assert.ok(res.body.bytes > 0, 'the stored byte count is reported');
 
   // The bytes really landed in the temp uploads dir, not just in the response.
@@ -520,7 +604,10 @@ test('the upload file-type door rejects an unsupported content type with a 400',
 
   const { res } = await call(handleUploads, 'POST', '/api/uploads', {
     as: USER,
-    body: { dataUrl: 'data:application/pdf;base64,JVBERi0xLjQK', originalName: 'evil.pdf' },
+    body: {
+      dataUrl: 'data:application/pdf;base64,JVBERi0xLjQK',
+      originalName: 'evil.pdf',
+    },
   });
 
   assert.equal(res.statusCode, 400);
@@ -537,7 +624,10 @@ test('the upload size door rejects an over-size buffer with a 400', async () => 
   const oversized = Buffer.alloc(11 * 1024 * 1024, 0x41).toString('base64');
   const { res } = await call(handleUploads, 'POST', '/api/uploads', {
     as: USER,
-    body: { dataUrl: `data:image/png;base64,${oversized}`, originalName: 'huge.png' },
+    body: {
+      dataUrl: `data:image/png;base64,${oversized}`,
+      originalName: 'huge.png',
+    },
   });
 
   assert.equal(res.statusCode, 400);

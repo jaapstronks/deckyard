@@ -18,7 +18,9 @@ export function createIconFields({ h } = {}) {
     label,
     value,
     onChange,
-    { helpText = t('editor.iconPicker.help', 'Pick from the icon library') } = {}
+    {
+      helpText = t('editor.iconPicker.help', 'Pick from the icon library'),
+    } = {},
   ) => {
     let current = String(value || '').trim();
 
@@ -72,7 +74,7 @@ export function createIconFields({ h } = {}) {
           class: 'icon-picker-trigger-action',
           text: t('editor.iconPicker.change', 'Change'),
         }),
-      ]
+      ],
     );
 
     // `is-field` keeps the label tight to the control so this lines up with the

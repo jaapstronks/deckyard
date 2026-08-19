@@ -128,8 +128,8 @@ export const SLIDE_TYPE_GROUP = Object.freeze(
   Object.fromEntries(
     Object.keys(SLIDE_TYPE_AUTHORING)
       .map((type) => [type, slideTypeGroup(type)])
-      .filter(([, group]) => group)
-  )
+      .filter(([, group]) => group),
+  ),
 );
 
 /**
@@ -157,8 +157,12 @@ export function typesInGroup(group, order = [], types = null) {
   const rank = new Map(order.map((type, i) => [type, i]));
   const last = Number.MAX_SAFE_INTEGER;
   const members = types
-    ? Object.keys(types).filter((type) => slideTypeGroup(type, types[type]) === group)
-    : Object.keys(SLIDE_TYPE_GROUP).filter((type) => SLIDE_TYPE_GROUP[type] === group);
+    ? Object.keys(types).filter(
+        (type) => slideTypeGroup(type, types[type]) === group,
+      )
+    : Object.keys(SLIDE_TYPE_GROUP).filter(
+        (type) => SLIDE_TYPE_GROUP[type] === group,
+      );
   return members.sort((a, b) => {
     const diff = (rank.get(a) ?? last) - (rank.get(b) ?? last);
     return diff || a.localeCompare(b);

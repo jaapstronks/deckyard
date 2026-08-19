@@ -89,7 +89,10 @@
  * gradient. A slow background beats a broken one.
  */
 
-import { getPuppeteerBrowser, toNodeBuffer } from '../utils/puppeteer-browser.js';
+import {
+  getPuppeteerBrowser,
+  toNodeBuffer,
+} from '../utils/puppeteer-browser.js';
 import { debugLog } from '../utils/debug-log.js';
 import { envStr } from '../config/utils.js';
 
@@ -138,13 +141,15 @@ const SLIDE_BG_VAR_RE = /^--t-slide-bg-[a-z0-9-]+$/;
  * alternative matters because a PNG data URL contains a `;`, so a plain
  * `[^;}]+` would cut a rewritten declaration in half.
  */
-const VAR_DECL_RE = /(--t-slide-bg-[a-z0-9-]+)\s*:\s*((?:url\("[^"]*"\)|[^;}])+)/g;
+const VAR_DECL_RE =
+  /(--t-slide-bg-[a-z0-9-]+)\s*:\s*((?:url\("[^"]*"\)|[^;}])+)/g;
 
 /** `var(--name)` or `var(--name, fallback)`, with no nested `var()` inside. */
 const VAR_REF_RE = /var\(\s*(--[a-z0-9-]+)\s*(?:,\s*([^()]*?)\s*)?\)/gi;
 
 /** A trailing solid colour in a `background` shorthand: `…, #06090b`. */
-const TRAILING_COLOR_RE = /,\s*(#[0-9a-f]{3,8}|rgba?\([^()]*\)|hsla?\([^()]*\)|[a-z]+)\s*$/i;
+const TRAILING_COLOR_RE =
+  /,\s*(#[0-9a-f]{3,8}|rgba?\([^()]*\)|hsla?\([^()]*\)|[a-z]+)\s*$/i;
 
 /** JPEG quality for an opaque gradient stack. A soft wash is JPEG's best case. */
 const JPEG_QUALITY = 88;
@@ -158,14 +163,21 @@ const JPEG_QUALITY = 88;
  * @returns {boolean}
  */
 function isOpaqueColor(color) {
-  const c = String(color || '').trim().toLowerCase();
+  const c = String(color || '')
+    .trim()
+    .toLowerCase();
   if (!c || c === 'transparent') return false;
   if (c.startsWith('#')) return c.length === 4 || c.length === 7;
   const fn = /^(?:rgba?|hsla?)\(([^()]*)\)$/.exec(c);
   if (fn) {
-    const parts = fn[1].split(/[,/]/).map((p) => p.trim()).filter(Boolean);
+    const parts = fn[1]
+      .split(/[,/]/)
+      .map((p) => p.trim())
+      .filter(Boolean);
     if (parts.length < 4) return true;
-    const alpha = parts[3].endsWith('%') ? parseFloat(parts[3]) / 100 : parseFloat(parts[3]);
+    const alpha = parts[3].endsWith('%')
+      ? parseFloat(parts[3]) / 100
+      : parseFloat(parts[3]);
     return alpha >= 1;
   }
   // A named colour; `transparent` was the only non-opaque one and is handled above.
@@ -247,7 +259,9 @@ export function findGradientBgVars(themeVarsCss) {
  * @returns {string|null} The variant id (`calm`), not the class.
  */
 export function slideBgVariant(slideHtml) {
-  const m = /class="[^"]*\bslide-bg-([a-z0-9-]+)\b/.exec(String(slideHtml || ''));
+  const m = /class="[^"]*\bslide-bg-([a-z0-9-]+)\b/.exec(
+    String(slideHtml || ''),
+  );
   return m ? m[1] : null;
 }
 
@@ -379,13 +393,17 @@ async function renderLayersToDataUrls(specs) {
         const mime = opaque ? 'image/jpeg' : 'image/png';
         out.push(`data:${mime};base64,${shot.toString('base64')}`);
       } catch (err) {
-        debugLog(`[pdf-export] gradient raster failed for layer ${i}: ${err?.message || err}`);
+        debugLog(
+          `[pdf-export] gradient raster failed for layer ${i}: ${err?.message || err}`,
+        );
         out.push(null);
       }
     }
     return out;
   } catch (err) {
-    debugLog(`[pdf-export] gradient raster page failed: ${err?.message || err}`);
+    debugLog(
+      `[pdf-export] gradient raster page failed: ${err?.message || err}`,
+    );
     return specs.map(() => null);
   } finally {
     try {
@@ -495,7 +513,10 @@ async function probePseudoLayers({ styleContent, slidesHtml }) {
     // without the CDN <script>/<link> tags: this probe must not reach the
     // network, and nothing it measures depends on them.
     const body = slidesHtml
-      .map((s) => `<div class="pdf-page"><div class="pdf-stage ps-theme">${s}</div></div>`)
+      .map(
+        (s) =>
+          `<div class="pdf-page"><div class="pdf-stage ps-theme">${s}</div></div>`,
+      )
       .join('\n');
     await page.setViewport({ width: 1600, height: 900 });
     await page.setContent(
@@ -622,12 +643,18 @@ export async function rasterizeGradientBackgrounds({
   const bySignature = new Map();
   for (const hit of perSlide) {
     if (!hit || bySignature.has(hit.signature)) continue;
-    bySignature.set(hit.signature, { index: bySignature.size, varName: hit.varName });
+    bySignature.set(hit.signature, {
+      index: bySignature.size,
+      varName: hit.varName,
+    });
   }
 
   // The pseudo-element pass is a measurement of the assembled document, so it
   // runs even when no `--t-slide-bg-*` gradient exists — the two are unrelated.
-  const perSlidePseudo = await probePseudoLayers({ styleContent, slidesHtml: slides });
+  const perSlidePseudo = await probePseudoLayers({
+    styleContent,
+    slidesHtml: slides,
+  });
 
   /** @type {Map<string, {index: number, layer: Object}>} */
   const byPseudo = new Map();
@@ -654,7 +681,10 @@ export async function rasterizeGradientBackgrounds({
     // Scale on the layer's own box, not the slide's: `inset: -12%` makes the box
     // 124% of the slide, and 512px across the slide would only be 413px across
     // the bitmap that has to cover it.
-    const w = Math.max(1, Math.round((width * layer.width) / (layer.slideWidth || layer.width)));
+    const w = Math.max(
+      1,
+      Math.round((width * layer.width) / (layer.slideWidth || layer.width)),
+    );
     return {
       style:
         `background-color:${layer.backgroundColor};` +

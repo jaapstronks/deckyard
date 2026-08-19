@@ -10,16 +10,16 @@ overlapping PDF entries and a duplicated "other language" section.
 
 ## Layout
 
-| Group | Format | Route (`/api/presentations/:id/export/…`) | Builder |
-|-------|--------|--------------------------------------------|---------|
-| Slides | PDF | `pdf-slides.pdf` | `renderSlidesToPdfBuffer` (`server/render/pdf.js`, Puppeteer) |
-| Slides | PNG | `png` | `buildSlidesPngExportHtml` (opens in a tab) |
-| Slides | PPTX | `pptx` | `buildPptxBuffer` |
-| Slides | HTML | `html` | `buildStandaloneHtml` (download) |
-| Documents | Text handout | `pdf` | `buildPrintHtml` (document layout, not slides) |
-| Documents | Notes (Markdown / Word) | `notes.md` / `notes.docx` | `buildNotesMarkdown` / `buildNotesDocxBuffer` |
-| Data & bundle | JSON | `json` | `presentationToDeck` (download) |
-| Data & bundle | Handoff ZIP | `handoff.zip` | `buildHandoffZipBuffer` |
+| Group         | Format                  | Route (`/api/presentations/:id/export/…`) | Builder                                                       |
+| ------------- | ----------------------- | ----------------------------------------- | ------------------------------------------------------------- |
+| Slides        | PDF                     | `pdf-slides.pdf`                          | `renderSlidesToPdfBuffer` (`server/render/pdf.js`, Puppeteer) |
+| Slides        | PNG                     | `png`                                     | `buildSlidesPngExportHtml` (opens in a tab)                   |
+| Slides        | PPTX                    | `pptx`                                    | `buildPptxBuffer`                                             |
+| Slides        | HTML                    | `html`                                    | `buildStandaloneHtml` (download)                              |
+| Documents     | Text handout            | `pdf`                                     | `buildPrintHtml` (document layout, not slides)                |
+| Documents     | Notes (Markdown / Word) | `notes.md` / `notes.docx`                 | `buildNotesMarkdown` / `buildNotesDocxBuffer`                 |
+| Data & bundle | JSON                    | `json`                                    | `presentationToDeck` (download)                               |
+| Data & bundle | Handoff ZIP             | `handoff.zip`                             | `buildHandoffZipBuffer`                                       |
 
 The full server-side pipeline (routes, async queue, builders) is in
 `server/routes/api/export.js` and `server/export/`.
@@ -30,11 +30,11 @@ The full server-side pipeline (routes, async queue, builders) is in
 does **not** surface — they are reachable by URL but have no button. Documented
 here so the route inventory is complete, not because they are user-facing today.
 
-| Format | Route (`/api/presentations/:id/export/…`) | Builder |
-|--------|--------------------------------------------|---------|
-| `.deck` bundle | `deck.zip` | `buildDeckBundle` (`server/export/deck-bundle.js`) — self-contained portable deck (deck.json + content-addressed assets + manifest); renders/round-trips without the server |
-| PNG ZIP | `png.zip` | `buildSlidesPngZipBuffer` (`server/export/png-zip.js`) — every slide as PNG in one ZIP; `?scale=` supported |
-| Single-slide PNG | `png/:n.png` (1-based) | `renderSlideToPngBuffer` (`server/render/png.js`) — one slide as PNG; `?scale=` supported |
+| Format           | Route (`/api/presentations/:id/export/…`) | Builder                                                                                                                                                                     |
+| ---------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.deck` bundle   | `deck.zip`                                | `buildDeckBundle` (`server/export/deck-bundle.js`) — self-contained portable deck (deck.json + content-addressed assets + manifest); renders/round-trips without the server |
+| PNG ZIP          | `png.zip`                                 | `buildSlidesPngZipBuffer` (`server/export/png-zip.js`) — every slide as PNG in one ZIP; `?scale=` supported                                                                 |
+| Single-slide PNG | `png/:n.png` (1-based)                    | `renderSlideToPngBuffer` (`server/render/png.js`) — one slide as PNG; `?scale=` supported                                                                                   |
 
 Implementation status: the routes are live and covered by the export pipeline.
 Whether the `.deck` bundle and PNG-ZIP earn a menu row is an open product
@@ -59,8 +59,8 @@ render fails or times out.
   PDF.
 
 The old menu exposed the server render and the browser-print page as two
-co-equal items ("PDF" and "PDF (print in browser)"), which conflated *which
-renderer runs* (an implementation detail) with a genuine user choice. The
+co-equal items ("PDF" and "PDF (print in browser)"), which conflated _which
+renderer runs_ (an implementation detail) with a genuine user choice. The
 genuinely distinct artifact is the **Text handout** (document layout), which
 stays its own row under Documents.
 

@@ -19,7 +19,10 @@ import { fileURLToPath } from 'node:url';
 import { buildSlidesFromLibraryItems } from '../client/lib/slide-library/compose.js';
 import { prepareNewPresentation } from '../server/storage/presentations/crud/factory.js';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 
 describe('buildSlidesFromLibraryItems', () => {
   it('forwards both languages as contentByLang when the item has i18n versions', () => {
@@ -39,7 +42,9 @@ describe('buildSlidesFromLibraryItems', () => {
     assert.strictEqual(slides.length, 1);
     assert.strictEqual(slides[0].type, 'content-slide');
     assert.deepStrictEqual(slides[0].contentByLang.nl, { title: 'Hallo' });
-    assert.deepStrictEqual(slides[0].contentByLang['en-GB'], { title: 'Hello' });
+    assert.deepStrictEqual(slides[0].contentByLang['en-GB'], {
+      title: 'Hello',
+    });
   });
 
   it('omits contentByLang for a single-language item', () => {
@@ -124,7 +129,11 @@ describe('prepareNewPresentation multilingual compose', () => {
       lang: 'nl',
     });
     assert.ok(pres.i18n.versions.nl, 'nl version present');
-    assert.strictEqual(pres.i18n.versions['en-GB'], undefined, 'no en-GB version invented');
+    assert.strictEqual(
+      pres.i18n.versions['en-GB'],
+      undefined,
+      'no en-GB version invented',
+    );
     assert.strictEqual(pres.slides[0].content.title, 'Solo');
   });
 });

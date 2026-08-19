@@ -3,7 +3,10 @@
  * Used for revoking share links, removing collaborators, and trashing presentations.
  */
 
-import { createPromiseModal, createBusyManager } from '../../../lib/dom/modal.js';
+import {
+  createPromiseModal,
+  createBusyManager,
+} from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 
 /**
@@ -33,30 +36,39 @@ export function openRevokeMessageModal({
   openOverlayClosers,
 }) {
   const titles = {
-    [REVOKE_CONTEXT.SHARE_LINK]: t('share.revoke.modalTitle.shareLink', 'Revoke Share Link'),
-    [REVOKE_CONTEXT.COLLABORATOR]: t('share.revoke.modalTitle.collaborator', 'Remove Collaborator'),
+    [REVOKE_CONTEXT.SHARE_LINK]: t(
+      'share.revoke.modalTitle.shareLink',
+      'Revoke Share Link',
+    ),
+    [REVOKE_CONTEXT.COLLABORATOR]: t(
+      'share.revoke.modalTitle.collaborator',
+      'Remove Collaborator',
+    ),
     [REVOKE_CONTEXT.TRASH]: t('share.revoke.modalTitle.trash', 'Move to Trash'),
   };
 
   const descriptions = {
     [REVOKE_CONTEXT.SHARE_LINK]: t(
       'share.revoke.description.shareLink',
-      'This will revoke the share link. Anyone who has this link will no longer be able to access the presentation.'
+      'This will revoke the share link. Anyone who has this link will no longer be able to access the presentation.',
     ),
     [REVOKE_CONTEXT.COLLABORATOR]: t(
       'share.revoke.description.collaborator',
       'This will remove {name} as a collaborator. They will no longer have access to this presentation.',
-      { name: targetName || 'this user' }
+      { name: targetName || 'this user' },
     ),
     [REVOKE_CONTEXT.TRASH]: t(
       'share.revoke.description.trash',
-      'This will move the presentation to trash. Collaborators will no longer have access.'
+      'This will move the presentation to trash. Collaborators will no longer have access.',
     ),
   };
 
   const confirmLabels = {
     [REVOKE_CONTEXT.SHARE_LINK]: t('share.revoke.confirm.shareLink', 'Revoke'),
-    [REVOKE_CONTEXT.COLLABORATOR]: t('share.revoke.confirm.collaborator', 'Remove'),
+    [REVOKE_CONTEXT.COLLABORATOR]: t(
+      'share.revoke.confirm.collaborator',
+      'Remove',
+    ),
     [REVOKE_CONTEXT.TRASH]: t('share.revoke.confirm.trash', 'Move to Trash'),
   };
 
@@ -108,7 +120,10 @@ export function openRevokeMessageModal({
     },
   });
 
-  const charCount = h('div', { class: 'help revoke-modal-char-count', text: '0/1000' });
+  const charCount = h('div', {
+    class: 'help revoke-modal-char-count',
+    text: '0/1000',
+  });
   textarea.addEventListener('input', () => {
     const len = textarea.value.length;
     charCount.textContent = `${len}/1000`;
@@ -121,7 +136,10 @@ export function openRevokeMessageModal({
 
   const messageHelp = h('div', {
     class: 'help',
-    text: t('share.revoke.messageHelp', 'This message will be shown to anyone who tries to access.'),
+    text: t(
+      'share.revoke.messageHelp',
+      'This message will be shown to anyone who tries to access.',
+    ),
   });
 
   messageExpanded.append(messageLabel, textarea, charCount, messageHelp);

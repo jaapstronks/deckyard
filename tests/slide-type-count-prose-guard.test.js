@@ -31,7 +31,8 @@ const REPO_ROOT = fileURLToPath(new URL('../', import.meta.url));
 
 // A count already wrapped in the generator's marker span is guarded — replace the
 // whole span (digits included) so only UNguarded numbers remain to be matched.
-const MARKER_SPAN = /<!--gen:slide-type-count-->\d+<!--\/gen:slide-type-count-->/g;
+const MARKER_SPAN =
+  /<!--gen:slide-type-count-->\d+<!--\/gen:slide-type-count-->/g;
 
 // The count phrases, as they read in prose. A single descriptive adjective may
 // sit between the number and "slide types" — "37 typed slide types" (ROADMAP),
@@ -41,8 +42,14 @@ const ADJ = String.raw`(?:built-in|core|typed)[\s*_]+`;
 const PHRASES = String.raw`(?:${ADJ})?slide[ -]types?|core types`;
 // A bare number adjacent to a phrase, either order. Emphasis/whitespace between
 // them (`**37** built-in slide types`) is allowed; anything more is not adjacent.
-const NUM_BEFORE = new RegExp(String.raw`\b(\d+)[\s*_]{1,3}(?:${PHRASES})`, 'gi');
-const NUM_AFTER = new RegExp(String.raw`(?:${PHRASES})[\s*_:]{1,3}(\d+)\b`, 'gi');
+const NUM_BEFORE = new RegExp(
+  String.raw`\b(\d+)[\s*_]{1,3}(?:${PHRASES})`,
+  'gi',
+);
+const NUM_AFTER = new RegExp(
+  String.raw`(?:${PHRASES})[\s*_:]{1,3}(\d+)\b`,
+  'gi',
+);
 
 /**
  * Lines that are allowed to carry a bare slide-type count. Each entry names the
@@ -110,6 +117,6 @@ test('every slide-type count in committed .md is inside a count-marker span', ()
     'unguarded slide-type count(s) in prose — wrap the number in ' +
       '<!--gen:slide-type-count-->N<!--/gen:slide-type-count--> and add the file to ' +
       'COUNT_MARKER_FILES, or allowlist the line with a reason:\n' +
-      offenders.join('\n')
+      offenders.join('\n'),
   );
 });

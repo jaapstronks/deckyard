@@ -81,7 +81,7 @@ export function getContrastRatio(color1, color2) {
   if (!rgb1 || !rgb2) return 1;
   return contrastRatioFromLuminance(
     getRelativeLuminance(rgb1),
-    getRelativeLuminance(rgb2)
+    getRelativeLuminance(rgb2),
   );
 }
 
@@ -101,7 +101,12 @@ export function getContrastRatio(color1, color2) {
  * @param {{light?: string, dark?: string}} [poles]
  * @returns {string} the light or dark pole (dark when bgHex is unparseable)
  */
-export function pickTextColorForBg(bgHex, { light = '#ffffff', dark = '#212121' } = {}) {
+export function pickTextColorForBg(
+  bgHex,
+  { light = '#ffffff', dark = '#212121' } = {},
+) {
   if (!hexToRgb(bgHex)) return dark;
-  return getContrastRatio(bgHex, light) > getContrastRatio(bgHex, dark) ? light : dark;
+  return getContrastRatio(bgHex, light) > getContrastRatio(bgHex, dark)
+    ? light
+    : dark;
 }

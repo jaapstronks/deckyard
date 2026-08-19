@@ -30,11 +30,19 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 const { createFakeDb, touchedTables } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { handleFeed } = await import('../server/routes/feed.js');
-const { injectFeedDiscovery } = await import('../server/routes/static/app-shell.js');
+const { injectFeedDiscovery } =
+  await import('../server/routes/static/app-shell.js');
 
 function installDb() {
   const db = createFakeDb({
-    organizations: [{ id: ORG, name: 'Alpha', slug: 'alpha', settings: { rss: { enabled: true } } }],
+    organizations: [
+      {
+        id: ORG,
+        name: 'Alpha',
+        slug: 'alpha',
+        settings: { rss: { enabled: true } },
+      },
+    ],
   });
   __setTestDb(db);
   return db;
@@ -72,10 +80,14 @@ test('handleFeed passes the gate in single-organization and resolves the organiz
     /* storage abstraction not initialized in this unit test — see above */
   }
 
-  assert.notEqual(res.statusCode, 404, 'the feed was not gated off in single-organization');
+  assert.notEqual(
+    res.statusCode,
+    404,
+    'the feed was not gated off in single-organization',
+  );
   assert.ok(
     touchedTables(db).includes('organizations'),
-    'the feed resolved its organization instead of being gated off'
+    'the feed resolved its organization instead of being gated off',
   );
 });
 
@@ -85,5 +97,8 @@ test('injectFeedDiscovery advertises the feed links in single-organization', asy
 
   assert.ok(html.includes('/feed/rss.xml'), 'RSS autodiscovery link present');
   assert.ok(html.includes('/feed/atom.xml'), 'Atom autodiscovery link present');
-  assert.ok(html.includes('/feed/feed.json'), 'JSON autodiscovery link present');
+  assert.ok(
+    html.includes('/feed/feed.json'),
+    'JSON autodiscovery link present',
+  );
 });

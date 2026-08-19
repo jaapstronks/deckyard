@@ -23,7 +23,13 @@
  * @returns {{left:number, top:number, below:boolean}|null} null when the
  *   selection rect is empty (nothing to anchor to)
  */
-export function computeToolbarPlacement({ sel, host, size, gap = 8, margin = 4 }) {
+export function computeToolbarPlacement({
+  sel,
+  host,
+  size,
+  gap = 8,
+  margin = 4,
+}) {
   if (!sel || (sel.width <= 0 && sel.height <= 0)) return null;
   const selLeft = sel.left - host.left;
   const selTop = sel.top - host.top;
@@ -54,7 +60,10 @@ export function computeToolbarPlacement({ sel, host, size, gap = 8, margin = 4 }
  *   selection sits inside an em/i resp. strong/b ancestor
  * @returns {{bold: boolean, italic: boolean}} true = disable that button
  */
-export function emphasisDisables({ insideEm = false, insideStrong = false } = {}) {
+export function emphasisDisables({
+  insideEm = false,
+  insideStrong = false,
+} = {}) {
   return {
     bold: insideEm && !insideStrong,
     italic: insideStrong && !insideEm,
@@ -77,5 +86,7 @@ export function slideLinkUrl(url) {
   // bypasses get smuggled past a prefix check (see safeLinkUrl).
   if (/[\u0000-\u0020]/.test(raw)) return null;
   const lower = raw.toLowerCase();
-  return lower.startsWith('http://') || lower.startsWith('https://') ? raw : null;
+  return lower.startsWith('http://') || lower.startsWith('https://')
+    ? raw
+    : null;
 }

@@ -45,15 +45,21 @@ export const up = async (db) => {
     ALTER COLUMN code TYPE TEXT USING btrim(code)
   `.execute(db);
 
-  await sql`ALTER TABLE follow_codes DROP COLUMN IF EXISTS organization_id`.execute(db);
+  await sql`ALTER TABLE follow_codes DROP COLUMN IF EXISTS organization_id`.execute(
+    db,
+  );
 
   // --- present_sessions ---------------------------------------------------
-  await sql`ALTER TABLE present_sessions DROP COLUMN IF EXISTS organization_id`.execute(db);
+  await sql`ALTER TABLE present_sessions DROP COLUMN IF EXISTS organization_id`.execute(
+    db,
+  );
 
   // Rows with no deck cannot exist (nothing ever wrote this table) and cannot
   // be represented once presentation_id is NOT NULL. Clear them rather than
   // let the constraint fail on a row that is meaningless anyway.
-  await sql`DELETE FROM present_sessions WHERE presentation_id IS NULL`.execute(db);
+  await sql`DELETE FROM present_sessions WHERE presentation_id IS NULL`.execute(
+    db,
+  );
 
   // Drop every remaining foreign key on the table by looked-up name: the
   // constraint was created implicitly by the 001 table builder, so its name is

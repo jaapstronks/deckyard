@@ -27,7 +27,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
 
-process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
+process.env.AUTH_SECRET = ['deckyard', 'test', 'auth']
+  .join('-')
+  .padEnd(40, '0');
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 process.env.STORAGE_MODE = 'postgres';
 delete process.env.AI_ENABLED;
@@ -44,8 +46,10 @@ const KEY_ID = 'key-1';
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage } = await import('../server/storage/lifecycle.js');
-const { handleTranslation } = await import('../server/routes/public-api/v1/translate.js');
-const { TRANSLATION_LANGS } = await import('../server/storage/presentations/i18n.js');
+const { handleTranslation } =
+  await import('../server/routes/public-api/v1/translate.js');
+const { TRANSLATION_LANGS } =
+  await import('../server/storage/presentations/i18n.js');
 
 /**
  * Install a freshly seeded double and point the storage facade at Postgres.
@@ -61,14 +65,16 @@ async function installDb({ aiUsedToday = 0 } = {}) {
       deckRow({ id: FOREIGN_DECK_ID, owner: 'someone-else@example.com' }),
     ],
     api_usage_daily: aiUsedToday
-      ? [{
-          id: 'usage-1',
-          api_key_id: KEY_ID,
-          date: new Date().toISOString().split('T')[0],
-          request_count: aiUsedToday,
-          ai_request_count: aiUsedToday,
-          export_count: 0,
-        }]
+      ? [
+          {
+            id: 'usage-1',
+            api_key_id: KEY_ID,
+            date: new Date().toISOString().split('T')[0],
+            request_count: aiUsedToday,
+            ai_request_count: aiUsedToday,
+            export_count: 0,
+          },
+        ]
       : [],
   });
   __setTestDb(db);
@@ -98,7 +104,14 @@ function deckRow({ id, owner }) {
         de: { title: `Titel von ${id}`, slides: [] },
       },
     },
-    slides: [{ id: 'slide-1', type: 'title-slide', content: { title: 'Hoi' }, parentId: null }],
+    slides: [
+      {
+        id: 'slide-1',
+        type: 'title-slide',
+        content: { title: 'Hoi' },
+        parentId: null,
+      },
+    ],
     published: null,
     created_at: '2026-07-01T00:00:00.000Z',
     modified_at: '2026-07-01T00:00:00.000Z',
@@ -116,8 +129,14 @@ function deckRow({ id, owner }) {
  * @param {string[]} [options.permissions] - API key permissions
  * @returns {Object} ctx, with `res.statusCode` / `res.body` recorded
  */
-function makeCtx(method, pathname, { body = null, permissions = ['read', 'ai'] } = {}) {
-  const req = Readable.from(body === null ? [] : [Buffer.from(JSON.stringify(body))]);
+function makeCtx(
+  method,
+  pathname,
+  { body = null, permissions = ['read', 'ai'] } = {},
+) {
+  const req = Readable.from(
+    body === null ? [] : [Buffer.from(JSON.stringify(body))],
+  );
   req.method = method;
   req.headers = { 'content-type': 'application/json' };
 
@@ -125,12 +144,16 @@ function makeCtx(method, pathname, { body = null, permissions = ['read', 'ai'] }
     statusCode: null,
     body: null,
     headers: {},
-    setHeader(name, value) { this.headers[name] = value; },
+    setHeader(name, value) {
+      this.headers[name] = value;
+    },
     writeHead(status, headers) {
       this.statusCode = status;
       Object.assign(this.headers, headers);
     },
-    end(payload) { this.body = payload ? JSON.parse(payload) : null; },
+    end(payload) {
+      this.body = payload ? JSON.parse(payload) : null;
+    },
   };
 
   return {
@@ -138,14 +161,32 @@ function makeCtx(method, pathname, { body = null, permissions = ['read', 'ai'] }
     res,
     url: new URL(`http://localhost${pathname}`),
     repoRoot: process.cwd(),
-    storageScope: { repoRoot: process.cwd(), organizationId: ORG, actorEmail: KEY_OWNER },
-    apiKey: { id: KEY_ID, tier: 'free', ownerEmail: KEY_OWNER, permissions, organizationId: ORG },
-    authedUser: { id: null, email: KEY_OWNER, role: 'user', organizationId: ORG },
+    storageScope: {
+      repoRoot: process.cwd(),
+      organizationId: ORG,
+      actorEmail: KEY_OWNER,
+    },
+    apiKey: {
+      id: KEY_ID,
+      tier: 'free',
+      ownerEmail: KEY_OWNER,
+      permissions,
+      organizationId: ORG,
+    },
+    authedUser: {
+      id: null,
+      email: KEY_OWNER,
+      role: 'user',
+      organizationId: ORG,
+    },
   };
 }
 
 function translateCtx(deckId, body, options = {}) {
-  return makeCtx('POST', `/api/v1/presentations/${deckId}/translate`, { body, ...options });
+  return makeCtx('POST', `/api/v1/presentations/${deckId}/translate`, {
+    body,
+    ...options,
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -159,7 +200,10 @@ test('GET /translate/languages lists every supported language with a label', asy
 
   assert.equal(ctx.res.statusCode, 200);
   const { languages } = ctx.res.body;
-  assert.deepEqual(languages.map((l) => l.code), [...TRANSLATION_LANGS]);
+  assert.deepEqual(
+    languages.map((l) => l.code),
+    [...TRANSLATION_LANGS],
+  );
   for (const lang of languages) {
     assert.ok(lang.label, `${lang.code} carries a human label`);
   }
@@ -168,7 +212,9 @@ test('GET /translate/languages lists every supported language with a label', asy
 
 test('GET /translate/languages without the read permission is refused with 403', async () => {
   await installDb();
-  const ctx = makeCtx('GET', '/api/v1/translate/languages', { permissions: ['ai'] });
+  const ctx = makeCtx('GET', '/api/v1/translate/languages', {
+    permissions: ['ai'],
+  });
   await handleTranslation(ctx);
   assert.equal(ctx.res.statusCode, 403);
 });
@@ -188,7 +234,11 @@ test('POST /translate/languages answers 405 with the allowed methods', async () 
 test('POST /translate without the ai permission is refused with 403', async () => {
   await installDb();
   // `read`+`write` is not enough: translation is an AI feature.
-  const ctx = translateCtx(DECK_ID, { targetLang: 'fr' }, { permissions: ['read', 'write'] });
+  const ctx = translateCtx(
+    DECK_ID,
+    { targetLang: 'fr' },
+    { permissions: ['read', 'write'] },
+  );
   await handleTranslation(ctx);
   assert.equal(ctx.res.statusCode, 403);
 });
@@ -236,15 +286,25 @@ test('POST /translate still honors the legacy DISABLE_AI spelling (until 2026-11
 test('POST /translate with an unsupported targetLang answers 400', async () => {
   await installDb();
   for (const targetLang of [undefined, 'zz', 'en-US']) {
-    const ctx = translateCtx(DECK_ID, targetLang === undefined ? {} : { targetLang });
+    const ctx = translateCtx(
+      DECK_ID,
+      targetLang === undefined ? {} : { targetLang },
+    );
     await handleTranslation(ctx);
-    assert.equal(ctx.res.statusCode, 400, `targetLang ${targetLang} must be refused`);
+    assert.equal(
+      ctx.res.statusCode,
+      400,
+      `targetLang ${targetLang} must be refused`,
+    );
   }
 });
 
 test('POST /translate with equal source and target answers 400', async () => {
   await installDb();
-  const explicit = translateCtx(DECK_ID, { targetLang: 'de', sourceLang: 'de' });
+  const explicit = translateCtx(DECK_ID, {
+    targetLang: 'de',
+    sourceLang: 'de',
+  });
   await handleTranslation(explicit);
   assert.equal(explicit.res.statusCode, 400);
 

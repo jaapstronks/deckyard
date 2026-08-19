@@ -46,7 +46,9 @@ function parseArgs(argv) {
     all: false,
     list: false,
     base: process.env.CAPTURE_BASE_URL || 'http://localhost:4177',
-    out: process.env.CAPTURE_OUT_DIR || path.resolve(REPO_ROOT, '..', 'deckyard-website'),
+    out:
+      process.env.CAPTURE_OUT_DIR ||
+      path.resolve(REPO_ROOT, '..', 'deckyard-website'),
   };
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
@@ -91,7 +93,10 @@ async function captureOne(recipe, api, outRoot) {
     const url = `${api.base}${resolveNavigate(recipe, ctx)}`;
     await gotoStable(page, url);
     if (recipe.waitFor) {
-      await page.waitForSelector(recipe.waitFor, { visible: true, timeout: 20_000 });
+      await page.waitForSelector(recipe.waitFor, {
+        visible: true,
+        timeout: 20_000,
+      });
     }
     if (recipe.action) await recipe.action(page, ctx);
     await settle(page);
@@ -105,12 +110,15 @@ async function captureOne(recipe, api, outRoot) {
       const el = await page.$(recipe.clip);
       if (!el) {
         throw new Error(
-          `Recipe "${recipe.id}" clip selector matched nothing: ${recipe.clip}`
+          `Recipe "${recipe.id}" clip selector matched nothing: ${recipe.clip}`,
         );
       }
       await el.screenshot({ path: outPath });
     } else {
-      await page.screenshot({ path: outPath, fullPage: Boolean(recipe.fullPage) });
+      await page.screenshot({
+        path: outPath,
+        fullPage: Boolean(recipe.fullPage),
+      });
     }
     return outPath;
   } finally {
@@ -131,13 +139,15 @@ async function main() {
     return;
   }
 
-  const selected = opts.all ? RECIPES : RECIPES.filter((r) => opts.ids.includes(r.id));
+  const selected = opts.all
+    ? RECIPES
+    : RECIPES.filter((r) => opts.ids.includes(r.id));
   if (!selected.length) {
     const known = RECIPES.map((r) => r.id).join(', ');
     throw new Error(
       opts.ids.length
         ? `No matching recipe for: ${opts.ids.join(', ')}. Known: ${known}`
-        : `Nothing to capture. Pass recipe id(s), --all, or --list. Known: ${known}`
+        : `Nothing to capture. Pass recipe id(s), --all, or --list. Known: ${known}`,
     );
   }
 
@@ -153,7 +163,11 @@ async function main() {
         const hash = await hashRecipeGraph(recipeFsPath(recipe.id));
         // eslint-disable-next-line no-console
         console.log(`ok → ${path.relative(process.cwd(), outPath)}`);
-        results.push({ id: recipe.id, registryPath: recipe.registryPath, recipeHash: hash });
+        results.push({
+          id: recipe.id,
+          registryPath: recipe.registryPath,
+          recipeHash: hash,
+        });
       } catch (e) {
         // eslint-disable-next-line no-console
         console.log(`FAILED\n    ${e.message}`);
@@ -168,18 +182,18 @@ async function main() {
   // eslint-disable-next-line no-console
   console.log(
     `\n${results.length - failed.length}/${results.length} captured.` +
-      (failed.length ? ` ${failed.length} failed.` : '')
+      (failed.length ? ` ${failed.length} failed.` : ''),
   );
   if (!failed.length) {
     // eslint-disable-next-line no-console
     console.log(
-      '\nRegistry `recipe` references (for the deckyard-website session to fill in):'
+      '\nRegistry `recipe` references (for the deckyard-website session to fill in):',
     );
     for (const r of results) {
       // eslint-disable-next-line no-console
       console.log(
         `  ${r.registryPath}\n    recipe: { "id": "${r.id}", ` +
-          `"module": "../deckyard/capture/recipes/${r.id}.js", "hash": "${r.recipeHash}" }`
+          `"module": "../deckyard/capture/recipes/${r.id}.js", "hash": "${r.recipeHash}" }`,
       );
     }
   }

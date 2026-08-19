@@ -132,7 +132,7 @@ export async function renderPresentWindow(root, id) {
         class: 'present-window-curtain-hint help',
         text: t(
           'presentWindow.curtain.hint',
-          'Drag this window to the projector, then go full-screen. Navigate from the presenter window.'
+          'Drag this window to the projector, then go full-screen. Navigate from the presenter window.',
         ),
       }),
       curtainBtn,
@@ -159,7 +159,7 @@ export async function renderPresentWindow(root, id) {
   channel.onBye(() => {
     statusPill.textContent = t(
       'presentWindow.disconnected',
-      'Presenter disconnected'
+      'Presenter disconnected',
     );
     statusPill.hidden = false;
   });

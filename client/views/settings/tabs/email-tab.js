@@ -40,7 +40,10 @@ export function createEmailTab({ user }) {
   notificationsCard.append(...adminNotifications.elements);
 
   // Save button for notifications
-  const notifActions = h('div', { class: 'row is-end', style: 'margin-top: var(--ps-space-3);' });
+  const notifActions = h('div', {
+    class: 'row is-end',
+    style: 'margin-top: var(--ps-space-3);',
+  });
   const btnSaveNotif = h('button', {
     class: 'btn btn-primary',
     text: t('common.save', 'Save'),
@@ -59,9 +62,10 @@ export function createEmailTab({ user }) {
     // Load admin notification settings
     try {
       const app = await fetchAppSettings();
-      const notif = app?.notifications && typeof app.notifications === 'object'
-        ? app.notifications
-        : {};
+      const notif =
+        app?.notifications && typeof app.notifications === 'object'
+          ? app.notifications
+          : {};
       adminNotifications.setValue(notif?.emailEnabled === true);
     } catch (e) {
       toast.error(String(e?.message || e), { id: 'settings-load' });

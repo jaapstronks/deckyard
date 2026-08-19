@@ -39,9 +39,14 @@ before(() => {
   globalThis.fetch = async () => ({
     ok: true,
     status: 200,
-    headers: { get: (k) => (String(k).toLowerCase() === 'content-type' ? 'text/csv' : null) },
+    headers: {
+      get: (k) =>
+        String(k).toLowerCase() === 'content-type' ? 'text/csv' : null,
+    },
     text: async () => CSV_TEXT,
-    json: async () => { throw new Error('not json'); },
+    json: async () => {
+      throw new Error('not json');
+    },
   });
 });
 
@@ -53,7 +58,12 @@ after(() => {
 
 /** An SSE client connection double that records every stream write. */
 function fakeSseClient() {
-  return { writes: [], write(msg) { this.writes.push(String(msg)); } };
+  return {
+    writes: [],
+    write(msg) {
+      this.writes.push(String(msg));
+    },
+  };
 }
 
 function mockRes() {
@@ -61,9 +71,16 @@ function mockRes() {
     statusCode: null,
     body: '',
     headers: {},
-    writeHead(code, headers) { this.statusCode = code; Object.assign(this.headers, headers ?? {}); },
-    setHeader(k, v) { this.headers[k] = v; },
-    end(chunk) { if (chunk) this.body += chunk; },
+    writeHead(code, headers) {
+      this.statusCode = code;
+      Object.assign(this.headers, headers ?? {});
+    },
+    setHeader(k, v) {
+      this.headers[k] = v;
+    },
+    end(chunk) {
+      if (chunk) this.body += chunk;
+    },
   };
 }
 
@@ -80,12 +97,15 @@ function refreshCtx(body) {
       authedUser: { email: 'not-a-member-of-that-deck@example.test' },
       req,
       res,
-      url: { pathname: '/api/data-sources/refresh', searchParams: new URLSearchParams() },
+      url: {
+        pathname: '/api/data-sources/refresh',
+        searchParams: new URLSearchParams(),
+      },
     },
   };
 }
 
-test('a refresh naming a foreign presentationId does not write to that deck\'s SSE stream', async () => {
+test("a refresh naming a foreign presentationId does not write to that deck's SSE stream", async () => {
   const foreignClient = fakeSseClient();
   addClient(FOREIGN_DECK_ID, foreignClient);
   try {
@@ -112,7 +132,7 @@ test('a refresh naming a foreign presentationId does not write to that deck\'s S
     assert.deepEqual(
       foreignClient.writes,
       [],
-      'no SSE event may be emitted onto a deck stream the caller merely named in the body'
+      'no SSE event may be emitted onto a deck stream the caller merely named in the body',
     );
   } finally {
     removeClient(FOREIGN_DECK_ID, foreignClient);

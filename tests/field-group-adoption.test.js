@@ -24,11 +24,15 @@ import { getFieldGroup } from '../shared/slide-types/field-groups.js';
 
 const DEF = SLIDE_TYPES['title-slide'];
 const render = (content) =>
-  renderSlideHtml({ type: 'title-slide', content }, { theme: { titleLayout: 'bottom' } });
+  renderSlideHtml(
+    { type: 'title-slide', content },
+    { theme: { titleLayout: 'bottom' } },
+  );
 
 describe('title-slide declares a title-block group', () => {
   it('title, subtitle and meta are members; the align field is not', () => {
-    const groupOf = (key) => DEF.fields.find((f) => f.key === key)?.group || null;
+    const groupOf = (key) =>
+      DEF.fields.find((f) => f.key === key)?.group || null;
     assert.equal(groupOf('title'), 'title-block');
     assert.equal(groupOf('subheading'), 'title-block');
     assert.equal(groupOf('meta'), 'title-block');
@@ -63,12 +67,21 @@ describe('title-slide renders the group alignment as one root class', () => {
 
   it('centre emits is-align-center on the slide root', () => {
     const html = render({ title: 'Hi', titleBlockAlign: 'center' });
-    assert.match(html, /class="slide slide-title-universal[^"]*\bis-align-center\b/);
+    assert.match(
+      html,
+      /class="slide slide-title-universal[^"]*\bis-align-center\b/,
+    );
   });
 
   it('an unknown stored value falls back to the default', () => {
-    assert.doesNotMatch(render({ title: 'Hi', titleBlockAlign: 'right' }), /is-align-/);
-    assert.doesNotMatch(render({ title: 'Hi', titleBlockAlign: 'diagonal' }), /is-align-/);
+    assert.doesNotMatch(
+      render({ title: 'Hi', titleBlockAlign: 'right' }),
+      /is-align-/,
+    );
+    assert.doesNotMatch(
+      render({ title: 'Hi', titleBlockAlign: 'diagonal' }),
+      /is-align-/,
+    );
   });
 });
 
@@ -103,7 +116,7 @@ describe('the layout switcher is the group control', () => {
     const variants = getLayoutVariants(DEF);
     assert.deepEqual(
       variants.map((v) => v.id),
-      ['block-left', 'block-center']
+      ['block-left', 'block-center'],
     );
     for (const v of variants) {
       assert.equal(typeof v.set?.titleBlockAlign, 'string');
@@ -112,10 +125,16 @@ describe('the layout switcher is the group control', () => {
   });
 
   it('resolves the active tile, including on decks predating the field', () => {
-    assert.equal(activeLayoutVariantId({ type: 'title-slide', content: {} }, DEF), 'block-left');
     assert.equal(
-      activeLayoutVariantId({ type: 'title-slide', content: { titleBlockAlign: 'center' } }, DEF),
-      'block-center'
+      activeLayoutVariantId({ type: 'title-slide', content: {} }, DEF),
+      'block-left',
+    );
+    assert.equal(
+      activeLayoutVariantId(
+        { type: 'title-slide', content: { titleBlockAlign: 'center' } },
+        DEF,
+      ),
+      'block-center',
     );
   });
 
@@ -124,7 +143,11 @@ describe('the layout switcher is the group control', () => {
     const centre = getLayoutVariants(DEF).find((v) => v.id === 'block-center');
     assert.equal(applyLayoutVariant(slide, centre), true);
     assert.deepEqual(slide.content, { title: 'Hi', titleBlockAlign: 'center' });
-    assert.equal(applyLayoutVariant(slide, centre), false, 're-picking is a no-op');
+    assert.equal(
+      applyLayoutVariant(slide, centre),
+      false,
+      're-picking is a no-op',
+    );
   });
 });
 
@@ -135,7 +158,10 @@ describe('quote-slide: the hardcode is now the declared group', () => {
 
   it('quote, name and role are one group', () => {
     for (const key of ['quote', 'authorName', 'authorTitle']) {
-      assert.equal(fieldAlignAffordance(QUOTE.fields, key).groupId, 'quote-block');
+      assert.equal(
+        fieldAlignAffordance(QUOTE.fields, key).groupId,
+        'quote-block',
+      );
     }
   });
 
@@ -149,11 +175,17 @@ describe('quote-slide: the hardcode is now the declared group', () => {
     // once; the renderer must have no second reading form left, so a raw
     // un-migrated value is inert here. Covered from the migration side in
     // tests/schema-version.test.js.
-    assert.doesNotMatch(q({ textStyles: { quote: { align: 'center' } } }), /is-align-center/);
+    assert.doesNotMatch(
+      q({ textStyles: { quote: { align: 'center' } } }),
+      /is-align-center/,
+    );
   });
 
   it('a group member emits no per-field align class', () => {
-    assert.doesNotMatch(q({ textStyles: { quote: { align: 'center' } } }), /tf-align-/);
+    assert.doesNotMatch(
+      q({ textStyles: { quote: { align: 'center' } } }),
+      /tf-align-/,
+    );
   });
 });
 
@@ -175,7 +207,7 @@ describe('every adopting type behaves the same way', () => {
       def.renderHtml(
         { ...(def.defaults || {}), title: 'T', subheading: 'S', ...extra },
         { id: 's' },
-        { theme: {} }
+        { theme: {} },
       );
 
     it(`${type}: every member is owned by the declared group`, () => {
@@ -188,7 +220,11 @@ describe('every adopting type behaves the same way', () => {
     });
 
     it(`${type}: the default emits no class and centre emits one`, () => {
-      assert.doesNotMatch(draw({}), /is-align-/, `${type} default should be clean`);
+      assert.doesNotMatch(
+        draw({}),
+        /is-align-/,
+        `${type} default should be clean`,
+      );
       assert.match(draw({ [alignKey]: 'center' }), /is-align-center/, type);
     });
 
@@ -197,18 +233,19 @@ describe('every adopting type behaves the same way', () => {
       assert.equal(field?.type, 'enum', type);
       // The registry expands enum options into objects carrying i18n keys, so
       // compare the values rather than the raw entries.
-      const values = field.options.map((o) => (typeof o === 'string' ? o : o?.value));
+      const values = field.options.map((o) =>
+        typeof o === 'string' ? o : o?.value,
+      );
       assert.deepEqual(values, def.fieldGroups[0].align, type);
     });
 
     it(`${type}: the align field is not an inspector keep`, async () => {
-      const { getInspectorKeepKeys } = await import(
-        '../client/views/editor/editor-form/inspector-form.js'
-      );
+      const { getInspectorKeepKeys } =
+        await import('../client/views/editor/editor-form/inspector-form.js');
       assert.equal(
         getInspectorKeepKeys(type, def).has(alignKey),
         false,
-        `${type}: ${alignKey} must reach the author through the Layout chip only`
+        `${type}: ${alignKey} must reach the author through the Layout chip only`,
       );
     });
   }

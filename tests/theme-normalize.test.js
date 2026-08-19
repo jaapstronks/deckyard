@@ -100,7 +100,13 @@ test('the legacy alias family is no longer emitted', () => {
     ...baseTheme(),
     brandColors: ['#5b21b6', '#7c3aed'],
   });
-  for (const key of ['--t-primary', '--t-accent', '--t-bg-dark', '--t-brand-1', '--t-brand-2']) {
+  for (const key of [
+    '--t-primary',
+    '--t-accent',
+    '--t-bg-dark',
+    '--t-brand-1',
+    '--t-brand-2',
+  ]) {
     assert.equal(out.cssVars[key], undefined, `${key} must not be emitted`);
   }
 });
@@ -133,7 +139,7 @@ test('an unparseable dark surface falls back to the CSS var expression', () => {
   });
   assert.equal(
     out.cssVars['--t-slide-bg-dark-text'],
-    'var(--t-color-text, #0b0b0b)'
+    'var(--t-color-text, #0b0b0b)',
   );
 });
 
@@ -159,7 +165,7 @@ test('gradient on generates a background from the theme tokens', () => {
   assert.equal(out.cssVars['--t-slide-gradient-text'], '#ffffff');
   assert.equal(
     out.cssVars['--t-slide-gradient-text-muted'],
-    'rgba(255, 255, 255, 0.82)'
+    'rgba(255, 255, 255, 0.82)',
   );
 });
 
@@ -191,7 +197,7 @@ test('legacy hiddenSlideTypes folds into slideTypes.exclude, deduped, and is dro
   // consumer can read a second field meaning the same thing.
   assert.ok(
     !('hiddenSlideTypes' in out),
-    'the legacy alias must not survive normalization'
+    'the legacy alias must not survive normalization',
   );
 });
 
@@ -210,7 +216,7 @@ test('defaultTitleSlide falls back to title-slide', () => {
   assert.equal(
     normalizeTheme({ ...baseTheme(), defaultTitleSlide: '  custom-title  ' })
       .defaultTitleSlide,
-    'custom-title'
+    'custom-title',
   );
 });
 
@@ -227,7 +233,7 @@ test('slideBackgrounds become --t-slide-bg-<id> vars', () => {
   assert.equal(out.cssVars['--t-slide-bg-calm-text'], '#0b0b0b');
   assert.deepEqual(
     out.slideBackgrounds.map((b) => b.id),
-    ['calm']
+    ['calm'],
   );
 });
 
@@ -258,7 +264,7 @@ test('an explicit soft accent plane is never overwritten', () => {
 test('the per-type icon-card-grid token family is no longer derived', () => {
   const out = normalizeTheme(baseTheme());
   const icgKeys = Object.keys(out.cssVars).filter((k) =>
-    k.startsWith('--t-icon-card-grid-')
+    k.startsWith('--t-icon-card-grid-'),
   );
   assert.deepEqual(icgKeys, []);
 });
@@ -295,15 +301,23 @@ test('pickTextColorForBg picks the higher-contrast pole, not the luminance midpo
   // Mid-light backgrounds: a midpoint split (L < 0.5) would hand these white
   // text at 2.2-2.7:1. Measuring both poles picks dark, which clears AA.
   for (const bg of ['#a78bfa', '#10b981', '#f59e0b', '#3b82f6']) {
-    assert.equal(pickTextColorForBg(bg), '#212121', `${bg} should take dark text`);
+    assert.equal(
+      pickTextColorForBg(bg),
+      '#212121',
+      `${bg} should take dark text`,
+    );
     assert.ok(
       getContrastRatio(bg, '#212121') > getContrastRatio(bg, '#ffffff'),
-      `${bg}: dark pole should win on ratio`
+      `${bg}: dark pole should win on ratio`,
     );
   }
   // Genuinely dark backgrounds keep light text.
   for (const bg of ['#7c3aed', '#1e1b4b', '#111827']) {
-    assert.equal(pickTextColorForBg(bg), '#ffffff', `${bg} should take light text`);
+    assert.equal(
+      pickTextColorForBg(bg),
+      '#ffffff',
+      `${bg} should take light text`,
+    );
   }
 });
 
@@ -311,7 +325,7 @@ test('pickTextColorForBg honours custom poles when measuring', () => {
   // A dark "light" pole loses to white on a near-black background.
   assert.equal(
     pickTextColorForBg('#000000', { light: '#333333', dark: '#ffffff' }),
-    '#ffffff'
+    '#ffffff',
   );
 });
 
@@ -338,11 +352,11 @@ test('normalizeTheme keeps only valid, token-backed textSwatches', () => {
     },
     textSwatches: [
       { id: 'brand-1', label: { en: 'Pink', nl: 'Roze' } }, // valid + token present
-      'brand-2',                                             // string form, token present
-      { id: 'brand-3' },                                     // valid slot but NO token → dropped
-      { id: 'brand-1' },                                     // duplicate → dropped
-      { id: 'accent' },                                      // not a swatch slot → dropped
-      { id: 'lime' },                                        // unknown slot → dropped
+      'brand-2', // string form, token present
+      { id: 'brand-3' }, // valid slot but NO token → dropped
+      { id: 'brand-1' }, // duplicate → dropped
+      { id: 'accent' }, // not a swatch slot → dropped
+      { id: 'lime' }, // unknown slot → dropped
       'garbage',
     ],
   });
@@ -355,7 +369,12 @@ test('normalizeTheme keeps only valid, token-backed textSwatches', () => {
 test('normalizeTheme defaults textSwatches to an empty array', () => {
   const out = normalizeTheme({ id: 't', label: 'T', cssVars: {} });
   assert.deepEqual(out.textSwatches, []);
-  const out2 = normalizeTheme({ id: 't', label: 'T', cssVars: {}, textSwatches: 'nope' });
+  const out2 = normalizeTheme({
+    id: 't',
+    label: 'T',
+    cssVars: {},
+    textSwatches: 'nope',
+  });
   assert.deepEqual(out2.textSwatches, []);
 });
 
@@ -364,10 +383,24 @@ test('normalizeTheme defaults titleLayout to bottom and validates the token', ()
   assert.equal(base.titleLayout, 'bottom');
 
   for (const v of ['bottom', 'center', 'top']) {
-    const out = normalizeTheme({ id: 't', label: 'T', cssVars: {}, titleLayout: v });
+    const out = normalizeTheme({
+      id: 't',
+      label: 'T',
+      cssVars: {},
+      titleLayout: v,
+    });
     assert.equal(out.titleLayout, v);
   }
 
-  const bad = normalizeTheme({ id: 't', label: 'T', cssVars: {}, titleLayout: 'diagonal' });
-  assert.equal(bad.titleLayout, 'bottom', 'unknown token falls back to default');
-})
+  const bad = normalizeTheme({
+    id: 't',
+    label: 'T',
+    cssVars: {},
+    titleLayout: 'diagonal',
+  });
+  assert.equal(
+    bad.titleLayout,
+    'bottom',
+    'unknown token falls back to default',
+  );
+});

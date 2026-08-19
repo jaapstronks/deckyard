@@ -32,7 +32,10 @@ test('resolve: canonical slideBgImage wins over a legacy bgImage', () => {
 });
 
 test('resolve: legacy bgImage/bgAlt when no canonical', () => {
-  const r = resolveTitleSlideBackground({ bgImage: '/legacy.jpg', bgAlt: 'desc' });
+  const r = resolveTitleSlideBackground({
+    bgImage: '/legacy.jpg',
+    bgAlt: 'desc',
+  });
   assert.deepEqual(r, { image: '/legacy.jpg', alt: 'desc', source: 'legacy' });
 });
 
@@ -42,11 +45,14 @@ test('resolve: none when neither is set', () => {
     alt: '',
     source: 'none',
   });
-  assert.deepEqual(resolveTitleSlideBackground({ slideBgImage: '  ', bgImage: '' }), {
-    image: '',
-    alt: '',
-    source: 'none',
-  });
+  assert.deepEqual(
+    resolveTitleSlideBackground({ slideBgImage: '  ', bgImage: '' }),
+    {
+      image: '',
+      alt: '',
+      source: 'none',
+    },
+  );
 });
 
 // ---- ensureTitleSlideBackground: fold + reproduce look + idempotent ----
@@ -69,7 +75,7 @@ test('ensure: is idempotent (second run is a no-op)', () => {
   assert.deepEqual(content, once);
 });
 
-test('ensure: never overwrites an author\'s explicit text/overlay choices', () => {
+test("ensure: never overwrites an author's explicit text/overlay choices", () => {
   const content = {
     bgImage: '/legacy.jpg',
     slideBgText: 'dark',
@@ -82,7 +88,11 @@ test('ensure: never overwrites an author\'s explicit text/overlay choices', () =
 });
 
 test('ensure: canonical present → legacy dropped as redundant, canonical kept', () => {
-  const content = { slideBgImage: '/canon.jpg', bgImage: '/legacy.jpg', bgAlt: 'x' };
+  const content = {
+    slideBgImage: '/canon.jpg',
+    bgImage: '/legacy.jpg',
+    bgAlt: 'x',
+  };
   ensureTitleSlideBackground(content);
   assert.equal(content.slideBgImage, '/canon.jpg');
   assert.ok(!('bgImage' in content));
@@ -130,7 +140,11 @@ test('render: canonical slideBgImage draws only the shared layer, no legacy img'
 test('render: a slide with BOTH keys shows only the canonical layer (no double image)', () => {
   const html = renderSlideHtml({
     type: 'title-slide',
-    content: { title: 'Hello', slideBgImage: '/canon.jpg', bgImage: '/legacy.jpg' },
+    content: {
+      title: 'Hello',
+      slideBgImage: '/canon.jpg',
+      bgImage: '/legacy.jpg',
+    },
   });
   assert.match(html, /slide-bg-layer/);
   assert.doesNotMatch(html, /<img class="slide-bg"/);

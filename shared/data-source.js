@@ -6,7 +6,11 @@
  */
 
 /** Supported data source providers */
-export const DATA_SOURCE_PROVIDERS = ['notion-database', 'notion-block', 'csv-url'];
+export const DATA_SOURCE_PROVIDERS = [
+  'notion-database',
+  'notion-block',
+  'csv-url',
+];
 
 /** Refresh mode controls when data is fetched */
 export const REFRESH_MODES = ['frozen', 'manual'];
@@ -68,10 +72,16 @@ export function validateDataSource(ds) {
       return { valid: false, error: `bindings[${i}] must be an object` };
     }
     if (typeof b.target !== 'string' || !b.target.trim()) {
-      return { valid: false, error: `bindings[${i}].target must be a non-empty string` };
+      return {
+        valid: false,
+        error: `bindings[${i}].target must be a non-empty string`,
+      };
     }
     if (typeof b.source !== 'string' || !b.source.trim()) {
-      return { valid: false, error: `bindings[${i}].source must be a non-empty string` };
+      return {
+        valid: false,
+        error: `bindings[${i}].source must be a non-empty string`,
+      };
     }
   }
 
@@ -93,25 +103,53 @@ export const BINDABLE_SLIDE_TYPES = {
   'kpi-metrics-slide': {
     label: 'KPI Metrics',
     fields: [
-      { target: 'metrics[*].value', label: 'Metric value', sourceHint: 'cell or property' },
-      { target: 'metrics[*].label', label: 'Metric label', sourceHint: 'cell or property' },
-      { target: 'metrics[*].delta', label: 'Metric delta', sourceHint: 'cell or property' },
-      { target: 'metrics[*].unit', label: 'Metric unit', sourceHint: 'cell or property' },
-      { target: 'metrics[*].note', label: 'Metric note', sourceHint: 'cell or property' },
+      {
+        target: 'metrics[*].value',
+        label: 'Metric value',
+        sourceHint: 'cell or property',
+      },
+      {
+        target: 'metrics[*].label',
+        label: 'Metric label',
+        sourceHint: 'cell or property',
+      },
+      {
+        target: 'metrics[*].delta',
+        label: 'Metric delta',
+        sourceHint: 'cell or property',
+      },
+      {
+        target: 'metrics[*].unit',
+        label: 'Metric unit',
+        sourceHint: 'cell or property',
+      },
+      {
+        target: 'metrics[*].note',
+        label: 'Metric note',
+        sourceHint: 'cell or property',
+      },
       { target: 'title', label: 'Title', sourceHint: 'cell or property' },
     ],
   },
   'table-slide': {
     label: 'Table',
     fields: [
-      { target: 'rows[*].c*', label: 'Cell value', sourceHint: 'cell reference' },
+      {
+        target: 'rows[*].c*',
+        label: 'Cell value',
+        sourceHint: 'cell reference',
+      },
       { target: 'title', label: 'Title', sourceHint: 'cell or property' },
     ],
   },
   'chart-slide': {
     label: 'Chart',
     fields: [
-      { target: 'csvData', label: 'Chart data (CSV)', sourceHint: 'range or URL' },
+      {
+        target: 'csvData',
+        label: 'Chart data (CSV)',
+        sourceHint: 'range or URL',
+      },
       { target: 'title', label: 'Title', sourceHint: 'cell or property' },
     ],
   },
@@ -119,7 +157,11 @@ export const BINDABLE_SLIDE_TYPES = {
     label: 'Quote',
     fields: [
       { target: 'quote', label: 'Quote text', sourceHint: 'block or cell' },
-      { target: 'attribution', label: 'Attribution', sourceHint: 'block or cell' },
+      {
+        target: 'attribution',
+        label: 'Attribution',
+        sourceHint: 'block or cell',
+      },
     ],
   },
   'content-slide': {
@@ -132,9 +174,21 @@ export const BINDABLE_SLIDE_TYPES = {
   'timeline-slide': {
     label: 'Timeline',
     fields: [
-      { target: 'items[*].time', label: 'Time', sourceHint: 'cell or property' },
-      { target: 'items[*].title', label: 'Item title', sourceHint: 'cell or property' },
-      { target: 'items[*].text', label: 'Item text', sourceHint: 'cell or property' },
+      {
+        target: 'items[*].time',
+        label: 'Time',
+        sourceHint: 'cell or property',
+      },
+      {
+        target: 'items[*].title',
+        label: 'Item title',
+        sourceHint: 'cell or property',
+      },
+      {
+        target: 'items[*].text',
+        label: 'Item text',
+        sourceHint: 'cell or property',
+      },
       { target: 'title', label: 'Title', sourceHint: 'cell or property' },
     ],
   },

@@ -2,7 +2,7 @@
 
 const getBodyEl = (section) =>
   section?.querySelector?.(
-    '.slide-content .body, .slide-image-text .copy .body'
+    '.slide-content .body, .slide-image-text .copy .body',
   ) || null;
 
 // Zoom step presets: each position is { x, y } as percentages (0-100)
@@ -116,80 +116,58 @@ export const applyImageZoomStep = (section, stepIndex) => {
 export const collectCardsForSlide = (section) => {
   if (!section?.querySelectorAll) return [];
   const kpis = Array.from(
-    section.querySelectorAll(
-      '.slide-kpi-metrics .kpi-metric:not(.is-empty)'
-    )
+    section.querySelectorAll('.slide-kpi-metrics .kpi-metric:not(.is-empty)'),
   );
   if (kpis.length) return kpis;
   const iconCards = Array.from(
-    section.querySelectorAll(
-      '.slide-icon-card-grid .icon-card:not(.is-empty)'
-    )
+    section.querySelectorAll('.slide-icon-card-grid .icon-card:not(.is-empty)'),
   );
   if (iconCards.length) return iconCards;
   // Treat the “Lijstje” slide items as step-able cards so they use the same
   // presenter/follow stepping system as the icon-card slides.
   const lijstItems = Array.from(
-    section.querySelectorAll('.slide-lijstje .lijst-item')
+    section.querySelectorAll('.slide-lijstje .lijst-item'),
   );
   if (lijstItems.length) return lijstItems;
   const timelineItems = Array.from(
-    section.querySelectorAll(
-      '.slide-timeline .timeline-item'
-    )
+    section.querySelectorAll('.slide-timeline .timeline-item'),
   );
   if (timelineItems.length) return timelineItems;
   // Text-blocks slide: step through blocks, arrows, and row titles in DOM order.
   const textBlocksSteps = Array.from(
-    section.querySelectorAll(
-      '.slide-text-blocks .text-blocks-step'
-    )
+    section.querySelectorAll('.slide-text-blocks .text-blocks-step'),
   );
   if (textBlocksSteps.length) return textBlocksSteps;
   // Table slide: step through rows (default) or cells (if animateByCell is enabled).
   // Check for row-based stepping first (default behavior).
   const tableRows = Array.from(
-    section.querySelectorAll('.slide-table .table-step-row')
+    section.querySelectorAll('.slide-table .table-step-row'),
   );
   if (tableRows.length) return tableRows;
   // Fall back to cell-based stepping (animateByCell: 'on').
   const tableCells = Array.from(
-    section.querySelectorAll('.slide-table .table-step-cell')
+    section.querySelectorAll('.slide-table .table-step-cell'),
   );
   if (tableCells.length) return tableCells;
   return [];
 };
 
-export const applyCardsVisibility = (
-  section,
-  shownCount
-) => {
+export const applyCardsVisibility = (section, shownCount) => {
   const cards = collectCardsForSlide(section);
   for (let i = 0; i < cards.length; i += 1) {
-    cards[i].classList.toggle(
-      'sb-step-hidden',
-      i >= shownCount
-    );
+    cards[i].classList.toggle('sb-step-hidden', i >= shownCount);
   }
 };
 
 export const collectChartFragmentsForSlide = (section) => {
   if (!section?.querySelectorAll) return [];
-  return Array.from(
-    section.querySelectorAll('.slide-chart .chart-frag')
-  );
+  return Array.from(section.querySelectorAll('.slide-chart .chart-frag'));
 };
 
-export const applyChartVisibility = (
-  section,
-  shownCount
-) => {
+export const applyChartVisibility = (section, shownCount) => {
   const frags = collectChartFragmentsForSlide(section);
   for (let i = 0; i < frags.length; i += 1) {
-    frags[i].classList.toggle(
-      'sb-step-hidden',
-      i >= shownCount
-    );
+    frags[i].classList.toggle('sb-step-hidden', i >= shownCount);
   }
 };
 
@@ -213,7 +191,7 @@ export const collectFragmentsForSlide = (section) => {
 
   const lis = Array.from(body.querySelectorAll('li'));
   const ps = Array.from(body.querySelectorAll('p')).filter(
-    (p) => !p.closest('li')
+    (p) => !p.closest('li'),
   );
   // Order fragments as they appear in the DOM (important for mixed content).
   const all = [...lis, ...ps].sort((a, b) => {
@@ -223,15 +201,10 @@ export const collectFragmentsForSlide = (section) => {
     if (pos & Node.DOCUMENT_POSITION_PRECEDING) return 1;
     return 0;
   });
-  return all.filter(
-    (el) => (el.textContent || '').trim().length > 0
-  );
+  return all.filter((el) => (el.textContent || '').trim().length > 0);
 };
 
-export const applyFragmentsVisibility = (
-  section,
-  shownCount
-) => {
+export const applyFragmentsVisibility = (section, shownCount) => {
   const body = getBodyEl(section);
   if (!body) return;
   const frags = collectFragmentsForSlide(section);
@@ -243,9 +216,9 @@ export const applyFragmentsVisibility = (
   // Avoid blank space from empty lists when all items are hidden.
   const lists = Array.from(body.querySelectorAll('ul, ol'));
   for (const list of lists) {
-    const anyVisible = Array.from(
-      list.querySelectorAll('li')
-    ).some((li) => li.style.display !== 'none');
+    const anyVisible = Array.from(list.querySelectorAll('li')).some(
+      (li) => li.style.display !== 'none',
+    );
     list.style.display = anyVisible ? '' : 'none';
   }
 };

@@ -26,22 +26,36 @@ const pres = {
     {
       id: 'a',
       type: 'content-slide',
-      content: { title: 'Where we are', body: '## Momentum\n\nRevenue is **up**.\n\n- one\n- two' },
+      content: {
+        title: 'Where we are',
+        body: '## Momentum\n\nRevenue is **up**.\n\n- one\n- two',
+      },
     },
     {
       id: 'b',
       type: 'image-slide',
-      content: { image: '/uploads/chart.png', alt: 'Revenue chart', caption: 'Q3 revenue' },
+      content: {
+        image: '/uploads/chart.png',
+        alt: 'Revenue chart',
+        caption: 'Q3 revenue',
+      },
     },
     {
       id: 'c',
       type: 'content-slide',
-      content: { a11yTitle: 'Accessible label', a11ySummary: 'A short summary.', body: 'Body text.' },
+      content: {
+        a11yTitle: 'Accessible label',
+        a11ySummary: 'A short summary.',
+        body: 'Body text.',
+      },
     },
   ],
 };
 
-const html = buildReaderHtml('/repo', pres, { context: 'published', canonicalUrl: '/p/abc-x' });
+const html = buildReaderHtml('/repo', pres, {
+  context: 'published',
+  canonicalUrl: '/p/abc-x',
+});
 
 describe('document + landmarks', () => {
   it('is a full HTML document with lang and dir', () => {
@@ -55,7 +69,11 @@ describe('document + landmarks', () => {
   });
   it('sets the document title and description', () => {
     assert.ok(html.includes('<title>Quarterly Review</title>'));
-    assert.ok(html.includes('name="description" content="The Q3 story in a few slides."'));
+    assert.ok(
+      html.includes(
+        'name="description" content="The Q3 story in a few slides."',
+      ),
+    );
   });
 });
 
@@ -70,8 +88,10 @@ describe('heading hierarchy', () => {
     assert.equal((html.match(/<h2 id="slide-\d+-title">/g) || []).length, 3);
     for (const n of [1, 2, 3]) {
       assert.ok(
-        html.includes(`<section id="slide-${n}" class="reader-slide" aria-labelledby="slide-${n}-title">`),
-        `section ${n}`
+        html.includes(
+          `<section id="slide-${n}" class="reader-slide" aria-labelledby="slide-${n}-title">`,
+        ),
+        `section ${n}`,
       );
     }
   });
@@ -87,20 +107,39 @@ describe('accessibility + reflow contract', () => {
     assert.ok(!/<img(?![^>]*\balt=)/.test(html), 'an <img> is missing alt');
   });
   it('honours the a11yTitle override as the heading and renders a11ySummary', () => {
-    assert.ok(html.includes('>Accessible label</h2>') || html.includes('Accessible label</h2>'), html);
-    assert.ok(html.includes('class="reader-summary"') && html.includes('A short summary.'));
+    assert.ok(
+      html.includes('>Accessible label</h2>') ||
+        html.includes('Accessible label</h2>'),
+      html,
+    );
+    assert.ok(
+      html.includes('class="reader-summary"') &&
+        html.includes('A short summary.'),
+    );
   });
   it('is readable with JavaScript off (no <script>)', () => {
     assert.ok(!/<script/i.test(html), 'reader must ship no script');
   });
   it('uses no fixed 1600x900 canvas geometry', () => {
-    assert.ok(!/1600px/.test(html) && !/900px/.test(html), 'no canvas dimensions');
-    assert.ok(!/position:\s*absolute/i.test(html), 'no absolute canvas positioning');
+    assert.ok(
+      !/1600px/.test(html) && !/900px/.test(html),
+      'no canvas dimensions',
+    );
+    assert.ok(
+      !/position:\s*absolute/i.test(html),
+      'no absolute canvas positioning',
+    );
   });
   it('projects markdown bodies as real semantic elements', () => {
     assert.ok(html.includes('<h3'), 'markdown ## -> h3');
-    assert.ok(html.includes('<ul') && html.includes('<li'), 'markdown list -> ul/li');
-    assert.ok(html.includes('<strong>up</strong>'), 'inline emphasis preserved');
+    assert.ok(
+      html.includes('<ul') && html.includes('<li'),
+      'markdown list -> ul/li',
+    );
+    assert.ok(
+      html.includes('<strong>up</strong>'),
+      'inline emphasis preserved',
+    );
   });
 });
 
@@ -117,11 +156,18 @@ describe('resilience', () => {
     const out = buildReaderHtml('/repo', {
       title: 'X',
       slides: [
-        { id: 'z', type: 'no-such-slide', content: { title: 'Kept', tagline: 'Also kept' } },
+        {
+          id: 'z',
+          type: 'no-such-slide',
+          content: { title: 'Kept', tagline: 'Also kept' },
+        },
       ],
     });
     assert.ok(out.includes('reader-archived'), 'renders the archived note');
     assert.ok(out.includes('no-such-slide'), 'names the missing type');
-    assert.ok(out.includes('Also kept'), 'stored content survives into the reader');
+    assert.ok(
+      out.includes('Also kept'),
+      'stored content survives into the reader',
+    );
   });
 });

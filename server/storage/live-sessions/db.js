@@ -86,7 +86,8 @@ function normalizeState(raw) {
  */
 function toMillis(value) {
   if (!value) return 0;
-  const ms = value instanceof Date ? value.getTime() : new Date(value).getTime();
+  const ms =
+    value instanceof Date ? value.getTime() : new Date(value).getTime();
   return Number.isFinite(ms) ? ms : 0;
 }
 
@@ -101,7 +102,10 @@ function rowToSession(row) {
     presentationId: String(row.presentation_id),
     state: normalizeState(row.state),
     controlEnabled: !!row.control_enabled,
-    followCodes: row.follow_codes && typeof row.follow_codes === 'object' ? row.follow_codes : {},
+    followCodes:
+      row.follow_codes && typeof row.follow_codes === 'object'
+        ? row.follow_codes
+        : {},
     followCodesCreatedAt: toMillis(row.follow_codes_created_at),
     createdAt: toMillis(row.created_at) || Date.now(),
     lastActivityAt: toMillis(row.last_activity_at) || Date.now(),
@@ -187,7 +191,7 @@ export async function persistSession(s) {
           follow_codes: values.follow_codes,
           follow_codes_created_at: values.follow_codes_created_at,
           last_activity_at: values.last_activity_at,
-        })
+        }),
       )
       .execute();
   });
@@ -224,7 +228,7 @@ export async function hydrateSession(sessionId) {
       .selectFrom('present_sessions')
       .select(SESSION_COLUMNS)
       .where('session_id', '=', id)
-      .executeTakeFirst()
+      .executeTakeFirst(),
   );
 
   // No row: either the database is unavailable, or the session was created in
@@ -249,7 +253,7 @@ export async function hydrateSessionsForPresentation(presentationId) {
       .selectFrom('present_sessions')
       .select(SESSION_COLUMNS)
       .where('presentation_id', '=', pid)
-      .execute()
+      .execute(),
   );
 
   for (const row of rows) mergeRow(row);
@@ -266,7 +270,10 @@ export async function deletePersistedSession(sessionId) {
   const id = String(sessionId || '');
   if (!id) return;
   await withDbGuard(undefined, async (db) => {
-    await db.deleteFrom('present_sessions').where('session_id', '=', id).execute();
+    await db
+      .deleteFrom('present_sessions')
+      .where('session_id', '=', id)
+      .execute();
   });
 }
 

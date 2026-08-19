@@ -17,8 +17,16 @@ export function renderPasswordPrompt(h, shell, token, shareData, onSuccess) {
   shell.innerHTML = '';
 
   const card = h('div', { class: 'share-viewer-card' });
-  const title = h('h2', { text: t('share.passwordRequired', 'Password Required') });
-  const help = h('p', { class: 'help', text: t('share.passwordHelp', 'This presentation is password protected. Enter the password to continue.') });
+  const title = h('h2', {
+    text: t('share.passwordRequired', 'Password Required'),
+  });
+  const help = h('p', {
+    class: 'help',
+    text: t(
+      'share.passwordHelp',
+      'This presentation is password protected. Enter the password to continue.',
+    ),
+  });
 
   const form = h('form', { class: 'share-viewer-password-form' });
   const input = h('input', {
@@ -32,7 +40,10 @@ export function renderPasswordPrompt(h, shell, token, shareData, onSuccess) {
     class: 'btn btn-primary',
     text: t('share.unlock', 'Unlock'),
   });
-  const errorEl = h('div', { class: 'share-viewer-error', style: 'display: none;' });
+  const errorEl = h('div', {
+    class: 'share-viewer-error',
+    style: 'display: none;',
+  });
 
   form.append(input, submitBtn);
   card.append(title, help, form, errorEl);
@@ -56,9 +67,10 @@ export function renderPasswordPrompt(h, shell, token, shareData, onSuccess) {
 
       onSuccess(data);
     } catch (err) {
-      errorEl.textContent = err.code === 'invalid_password'
-        ? t('share.invalidPassword', 'Invalid password')
-        : err.message;
+      errorEl.textContent =
+        err.code === 'invalid_password'
+          ? t('share.invalidPassword', 'Invalid password')
+          : err.message;
       errorEl.style.display = 'block';
       submitBtn.disabled = false;
       submitBtn.textContent = t('share.unlock', 'Unlock');

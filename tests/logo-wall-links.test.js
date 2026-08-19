@@ -17,13 +17,15 @@ import { renderSlideHtml } from '../shared/slide-types/presentation.js';
 function render(logos, ctx = {}) {
   return renderSlideHtml(
     { type: 'logo-wall-slide', content: { title: 'Partners', logos } },
-    ctx
+    ctx,
   );
 }
 
 describe('logo-wall per-logo links', () => {
   it('renders an external URL as a sanitized new-tab anchor', () => {
-    const html = render([{ name: 'Acme', link: 'https://acme.example' }], { mode: 'present' });
+    const html = render([{ name: 'Acme', link: 'https://acme.example' }], {
+      mode: 'present',
+    });
     assert.match(html, /<a class="card-link" href="https:\/\/acme\.example"/);
     assert.match(html, /target="_blank"/);
     assert.match(html, /rel="noopener noreferrer"/);
@@ -41,7 +43,12 @@ describe('logo-wall per-logo links', () => {
   });
 
   it('ignores javascript: and other unsafe/relative schemes', () => {
-    for (const link of ['javascript:alert(1)', '/relative', 'ftp://x', 'notaurl']) {
+    for (const link of [
+      'javascript:alert(1)',
+      '/relative',
+      'ftp://x',
+      'notaurl',
+    ]) {
       const html = render([{ name: 'X', link }], { mode: 'present' });
       assert.doesNotMatch(html, /card-link/, `should reject "${link}"`);
     }
@@ -49,7 +56,9 @@ describe('logo-wall per-logo links', () => {
 
   it('omits links in thumbnail and inline-edit previews', () => {
     for (const mode of ['thumb', 'edit']) {
-      const html = render([{ name: 'Acme', link: 'https://acme.example' }], { mode });
+      const html = render([{ name: 'Acme', link: 'https://acme.example' }], {
+        mode,
+      });
       assert.doesNotMatch(html, /card-link/, `${mode} should omit the link`);
     }
   });
@@ -76,7 +85,7 @@ describe('logo-wall per-logo links', () => {
           logo1Link: 'https://legacy.example',
         },
       },
-      { mode: 'present' }
+      { mode: 'present' },
     );
     assert.match(html, /href="https:\/\/legacy\.example"/);
   });

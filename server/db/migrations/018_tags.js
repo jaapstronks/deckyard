@@ -11,10 +11,10 @@ export const up = async (db) => {
     .createTable('tags')
     .ifNotExists()
     .addColumn('id', 'uuid', (col) =>
-      col.primaryKey().defaultTo(sql`gen_random_uuid()`)
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
     )
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade').notNull()
+      col.references('organizations.id').onDelete('cascade').notNull(),
     )
     .addColumn('name', 'varchar(100)', (col) => col.notNull())
     .addColumn('created_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
@@ -38,10 +38,10 @@ export const up = async (db) => {
     .createTable('presentation_tags')
     .ifNotExists()
     .addColumn('presentation_id', 'uuid', (col) =>
-      col.references('presentations.id').onDelete('cascade').notNull()
+      col.references('presentations.id').onDelete('cascade').notNull(),
     )
     .addColumn('tag_id', 'uuid', (col) =>
-      col.references('tags.id').onDelete('cascade').notNull()
+      col.references('tags.id').onDelete('cascade').notNull(),
     )
     .addColumn('created_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
     .execute();

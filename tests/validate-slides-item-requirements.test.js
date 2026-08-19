@@ -23,18 +23,29 @@ import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 
 describe('SLIDE_ITEM_REQUIREMENTS derivation', () => {
   it('keeps the membership at the three types the judgement was made for', () => {
-    assert.deepStrictEqual(
-      Object.keys(SLIDE_ITEM_REQUIREMENTS).sort(),
-      ['kpi-metrics-slide', 'list-slide', 'timeline-slide']
-    );
+    assert.deepStrictEqual(Object.keys(SLIDE_ITEM_REQUIREMENTS).sort(), [
+      'kpi-metrics-slide',
+      'list-slide',
+      'timeline-slide',
+    ]);
   });
 
   it('reads every value off the definition, verbatim', () => {
     for (const [type, req] of Object.entries(SLIDE_ITEM_REQUIREMENTS)) {
-      const field = (SLIDE_TYPES[type]?.fields || []).find((f) => f.key === req.field);
+      const field = (SLIDE_TYPES[type]?.fields || []).find(
+        (f) => f.key === req.field,
+      );
       assert.ok(field, `${type}: field "${req.field}" not on the definition`);
-      assert.strictEqual(req.min, field.minItems, `${type}: min diverges from minItems`);
-      assert.strictEqual(req.max, field.maxItems, `${type}: max diverges from maxItems`);
+      assert.strictEqual(
+        req.min,
+        field.minItems,
+        `${type}: min diverges from minItems`,
+      );
+      assert.strictEqual(
+        req.max,
+        field.maxItems,
+        `${type}: max diverges from maxItems`,
+      );
     }
   });
 

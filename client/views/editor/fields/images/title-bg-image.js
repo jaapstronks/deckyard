@@ -28,12 +28,16 @@ export function createFieldTitleBgImage(ctx) {
   const flags = features && typeof features === 'object' ? features : {};
   const uploadsDisabled = !flags.enableUploads;
   const hasPicker =
-    typeof openImagePicker === 'function' && (openImagePicker.providers?.length || 0) > 0;
+    typeof openImagePicker === 'function' &&
+    (openImagePicker.providers?.length || 0) > 0;
 
   return function fieldTitleBgImage(slide, field, onUploadedUrl) {
     const wrap = h('div', { class: 'stack is-field' });
     wrap.append(
-      h('div', { class: 'field-label', text: field?.label || 'Background image' })
+      h('div', {
+        class: 'field-label',
+        text: field?.label || 'Background image',
+      }),
     );
 
     const current = slide.content?.[field.key];
@@ -45,7 +49,7 @@ export function createFieldTitleBgImage(ctx) {
           class: 'btn btn-danger',
           text: t('common.delete', 'Delete'),
           onclick: () => onUploadedUrl(''),
-        })
+        }),
       );
     }
 
@@ -57,7 +61,8 @@ export function createFieldTitleBgImage(ctx) {
           text: t('editor.image.chooseOrUpload', 'Choose / upload…'),
           onclick: () => {
             const activeLang = normalizeLang?.(pres?.i18n?.active) || 'nl';
-            const other = typeof otherLang === 'function' ? otherLang(activeLang) : null;
+            const other =
+              typeof otherLang === 'function' ? otherLang(activeLang) : null;
             const setBgAltForLang = createAltSetter({
               slide,
               pres,
@@ -71,34 +76,44 @@ export function createFieldTitleBgImage(ctx) {
               docId: pres?.id || '',
               allowCaptionCredit: false,
               context: {
-                presentationTitle: typeof pres?.title === 'string' ? pres.title : '',
+                presentationTitle:
+                  typeof pres?.title === 'string' ? pres.title : '',
                 slideId: slide?.id || '',
                 slideType: slide?.type || '',
                 slideTitle:
-                  slide?.content && typeof slide.content === 'object' && typeof slide.content.title === 'string'
+                  slide?.content &&
+                  typeof slide.content === 'object' &&
+                  typeof slide.content.title === 'string'
                     ? slide.content.title
                     : '',
               },
               onPick: (picked) => {
-                const url = typeof picked?.url === 'string' ? picked.url.trim() : '';
+                const url =
+                  typeof picked?.url === 'string' ? picked.url.trim() : '';
                 if (!url) return;
                 onUploadedUrl(url);
                 slide.content =
-                  slide.content && typeof slide.content === 'object' ? slide.content : {};
+                  slide.content && typeof slide.content === 'object'
+                    ? slide.content
+                    : {};
                 applyAltFromPick({
                   picked,
                   activeLang,
                   otherLang: other,
                   setAltForLang: setBgAltForLang,
                 });
-                applyPickMeta({ picked, content: slide.content, providerIdKey: 'bgImagekitFileId' });
+                applyPickMeta({
+                  picked,
+                  content: slide.content,
+                  providerIdKey: 'bgImagekitFileId',
+                });
                 markDirty?.();
                 rerenderEditor?.();
                 scheduleUiRefresh?.();
               },
             });
           },
-        })
+        }),
       );
     }
 
@@ -108,15 +123,31 @@ export function createFieldTitleBgImage(ctx) {
         class: 'help',
         text: uploadsDisabled
           ? flags.sandboxMode
-            ? t('editor.image.bgHelp.uploadsSandbox', 'Uploads are off in the sandbox. Choose from the library, Unsplash or Giphy.')
-            : t('editor.image.bgHelp.uploadsDisabled', 'Choose an existing image from the library. Uploads are disabled.')
-          : t('editor.image.bgHelp.withUploads', 'Choose an existing image from the library, or upload a new one.'),
-      })
+            ? t(
+                'editor.image.bgHelp.uploadsSandbox',
+                'Uploads are off in the sandbox. Choose from the library, Unsplash or Giphy.',
+              )
+            : t(
+                'editor.image.bgHelp.uploadsDisabled',
+                'Choose an existing image from the library. Uploads are disabled.',
+              )
+          : t(
+              'editor.image.bgHelp.withUploads',
+              'Choose an existing image from the library, or upload a new one.',
+            ),
+      }),
     );
 
     // Small preview
     if (current) {
-      wrap.append(h('img', { src: current, alt: '', class: 'editor-img-preview', loading: 'lazy' }));
+      wrap.append(
+        h('img', {
+          src: current,
+          alt: '',
+          class: 'editor-img-preview',
+          loading: 'lazy',
+        }),
+      );
     }
 
     // Preset backgrounds declared by the deck's theme. Labelled as such so it's
@@ -128,17 +159,29 @@ export function createFieldTitleBgImage(ctx) {
         h('div', {
           class: 'card-group-title',
           text: t('editor.image.themeBackgrounds', 'From this theme'),
-        })
+        }),
       );
       const grid = h('div', { class: 'row is-wrap is-start' });
       for (const url of presetUrls) {
         grid.append(
-          h('button', { class: 'btn btn-secondary editor-img-thumb-btn', onclick: () => onUploadedUrl(url) }, [
-            // Lazy + async: in the inspector this strip lives inside a
-            // collapsed section, so the thumbnails must not cost a request
-            // until the author actually opens it (declutter 2026-07-26).
-            h('img', { src: url, class: 'editor-img-thumb', loading: 'lazy', decoding: 'async' }),
-          ])
+          h(
+            'button',
+            {
+              class: 'btn btn-secondary editor-img-thumb-btn',
+              onclick: () => onUploadedUrl(url),
+            },
+            [
+              // Lazy + async: in the inspector this strip lives inside a
+              // collapsed section, so the thumbnails must not cost a request
+              // until the author actually opens it (declutter 2026-07-26).
+              h('img', {
+                src: url,
+                class: 'editor-img-thumb',
+                loading: 'lazy',
+                decoding: 'async',
+              }),
+            ],
+          ),
         );
       }
       presetsWrap.append(grid);

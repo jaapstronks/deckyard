@@ -22,7 +22,9 @@ const BATCH_DELAY_MS = 50; // Debounce batch requests
  * @returns {Object|null} Profile object or null if not cached
  */
 function getFromCache(email) {
-  const key = String(email || '').toLowerCase().trim();
+  const key = String(email || '')
+    .toLowerCase()
+    .trim();
   if (!key) return null;
 
   const entry = profileCache.get(key);
@@ -43,7 +45,9 @@ function getFromCache(email) {
  * @param {Object} profile - Profile object { name, imageUrl }
  */
 function setInCache(email, profile) {
-  const key = String(email || '').toLowerCase().trim();
+  const key = String(email || '')
+    .toLowerCase()
+    .trim();
   if (!key) return;
 
   profileCache.set(key, {
@@ -62,7 +66,9 @@ async function fetchProfilesFromServer(emails) {
 
   try {
     const emailParam = emails.join(',');
-    const resp = await api(`/api/users/profiles?emails=${encodeURIComponent(emailParam)}`);
+    const resp = await api(
+      `/api/users/profiles?emails=${encodeURIComponent(emailParam)}`,
+    );
     return resp?.profiles || {};
   } catch (err) {
     console.error('[user-profiles] Fetch failed:', err);
@@ -78,7 +84,7 @@ async function processBatch() {
 
   // Get emails that aren't already cached
   const emailsToFetch = Array.from(pendingEmails).filter(
-    (email) => !getFromCache(email)
+    (email) => !getFromCache(email),
   );
   pendingEmails.clear();
   batchTimer = null;
@@ -99,7 +105,9 @@ async function processBatch() {
  * @param {string} email - Email to fetch
  */
 function scheduleBatchFetch(email) {
-  const key = String(email || '').toLowerCase().trim();
+  const key = String(email || '')
+    .toLowerCase()
+    .trim();
   if (!key) return;
 
   pendingEmails.add(key);
@@ -134,7 +142,9 @@ export function getUserProfile(email) {
  * @returns {Promise<Object>} Profile object { name, imageUrl }
  */
 export async function getUserProfileAsync(email) {
-  const key = String(email || '').toLowerCase().trim();
+  const key = String(email || '')
+    .toLowerCase()
+    .trim();
   if (!key) return { name: '', imageUrl: '' };
 
   // Check cache first
@@ -159,7 +169,9 @@ export function prefetchProfiles(emails) {
   if (!Array.isArray(emails)) return;
 
   for (const email of emails) {
-    const key = String(email || '').toLowerCase().trim();
+    const key = String(email || '')
+      .toLowerCase()
+      .trim();
     if (key && !getFromCache(key)) {
       scheduleBatchFetch(key);
     }
@@ -172,7 +184,9 @@ export function prefetchProfiles(emails) {
  * @param {string} email - Email to invalidate
  */
 export function invalidateProfile(email) {
-  const key = String(email || '').toLowerCase().trim();
+  const key = String(email || '')
+    .toLowerCase()
+    .trim();
   if (key) {
     profileCache.delete(key);
   }

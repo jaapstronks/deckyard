@@ -22,7 +22,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
 
-process.env.AUTH_SECRET = ['amethyst', 'test', 'auth'].join('-').padEnd(40, '0');
+process.env.AUTH_SECRET = ['amethyst', 'test', 'auth']
+  .join('-')
+  .padEnd(40, '0');
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 process.env.STORAGE_MODE = 'postgres';
 delete process.env.SANDBOX_MODE;
@@ -34,7 +36,8 @@ const KEY_OWNER = 'owner@example.com';
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage } = await import('../server/storage/lifecycle.js');
-const { handleResources } = await import('../server/routes/public-api/v1/resources.js');
+const { handleResources } =
+  await import('../server/routes/public-api/v1/resources.js');
 const { SLIDE_TYPES } = await import('../shared/slide-types.js');
 
 /**
@@ -48,13 +51,36 @@ async function installDb() {
       { id: OTHER_ORG, name: 'Other', slug: 'other' },
     ],
     themes: [
-      themeRow({ id: 'theme-own', organization_id: ORG, label: 'Own custom theme' }),
-      themeRow({ id: 'theme-foreign', organization_id: OTHER_ORG, label: 'Foreign theme' }),
+      themeRow({
+        id: 'theme-own',
+        organization_id: ORG,
+        label: 'Own custom theme',
+      }),
+      themeRow({
+        id: 'theme-foreign',
+        organization_id: OTHER_ORG,
+        label: 'Foreign theme',
+      }),
     ],
     image_library: [
-      imageRow({ id: 'img-sea', organization_id: ORG, title: 'Sea', tags: ['nature', 'water'] }),
-      imageRow({ id: 'img-city', organization_id: ORG, title: 'City lights', tags: ['urban'] }),
-      imageRow({ id: 'img-foreign', organization_id: OTHER_ORG, title: 'Foreign', tags: ['nature'] }),
+      imageRow({
+        id: 'img-sea',
+        organization_id: ORG,
+        title: 'Sea',
+        tags: ['nature', 'water'],
+      }),
+      imageRow({
+        id: 'img-city',
+        organization_id: ORG,
+        title: 'City lights',
+        tags: ['urban'],
+      }),
+      imageRow({
+        id: 'img-foreign',
+        organization_id: OTHER_ORG,
+        title: 'Foreign',
+        tags: ['nature'],
+      }),
     ],
   });
   __setTestDb(db);
@@ -115,12 +141,16 @@ function makeCtx(method, pathname, { permissions = ['read'] } = {}) {
     statusCode: null,
     body: null,
     headers: {},
-    setHeader(name, value) { this.headers[name] = value; },
+    setHeader(name, value) {
+      this.headers[name] = value;
+    },
     writeHead(status, headers) {
       this.statusCode = status;
       Object.assign(this.headers, headers);
     },
-    end(payload) { this.body = payload ? JSON.parse(payload) : null; },
+    end(payload) {
+      this.body = payload ? JSON.parse(payload) : null;
+    },
   };
 
   return {
@@ -128,9 +158,24 @@ function makeCtx(method, pathname, { permissions = ['read'] } = {}) {
     res,
     url: new URL(`http://localhost${pathname}`),
     repoRoot: process.cwd(),
-    storageScope: { repoRoot: process.cwd(), organizationId: ORG, actorEmail: KEY_OWNER },
-    apiKey: { id: 'key-1', tier: 'free', ownerEmail: KEY_OWNER, permissions, organizationId: ORG },
-    authedUser: { id: null, email: KEY_OWNER, role: 'user', organizationId: ORG },
+    storageScope: {
+      repoRoot: process.cwd(),
+      organizationId: ORG,
+      actorEmail: KEY_OWNER,
+    },
+    apiKey: {
+      id: 'key-1',
+      tier: 'free',
+      ownerEmail: KEY_OWNER,
+      permissions,
+      organizationId: ORG,
+    },
+    authedUser: {
+      id: null,
+      email: KEY_OWNER,
+      role: 'user',
+      organizationId: ORG,
+    },
   };
 }
 
@@ -149,10 +194,17 @@ test('GET /themes returns system and own custom themes, custom first', async () 
 
   const custom = themes.filter((t) => t.type === 'custom');
   const system = themes.filter((t) => t.type === 'system');
-  assert.equal(custom.length + system.length, themes.length, 'only two theme types exist');
+  assert.equal(
+    custom.length + system.length,
+    themes.length,
+    'only two theme types exist',
+  );
   assert.ok(system.length > 0, 'the repo ships system themes');
   assert.ok(system.some((t) => t.id === 'amethyst'));
-  assert.deepEqual(custom.map((t) => t.id), ['theme-own']);
+  assert.deepEqual(
+    custom.map((t) => t.id),
+    ['theme-own'],
+  );
   assert.equal(custom[0].label, 'Own custom theme');
 
   // Custom themes sort before system themes.
@@ -169,7 +221,7 @@ test("GET /themes never returns another organization's custom theme", async () =
   assert.equal(ctx.res.statusCode, 200);
   assert.ok(
     !ctx.res.body.themes.some((t) => t.id === 'theme-foreign'),
-    'the key acts in its own organization only'
+    'the key acts in its own organization only',
   );
 });
 
@@ -200,7 +252,10 @@ test('GET /slide-types returns every registry type with label and fields', async
   assert.equal(ctx.res.statusCode, 200);
   const { slideTypes, count } = ctx.res.body;
   assert.equal(count, Object.keys(SLIDE_TYPES).length);
-  assert.deepEqual(Object.keys(slideTypes).sort(), Object.keys(SLIDE_TYPES).sort());
+  assert.deepEqual(
+    Object.keys(slideTypes).sort(),
+    Object.keys(SLIDE_TYPES).sort(),
+  );
   assert.ok(slideTypes['title-slide'].label);
   assert.ok(Array.isArray(slideTypes['title-slide'].fields));
 });
@@ -255,11 +310,16 @@ test('GET /image-library lists the own organization images with categories', asy
   assert.deepEqual(images.map((i) => i.id).sort(), ['img-city', 'img-sea']);
   assert.ok(
     !images.some((i) => i.id === 'img-foreign'),
-    'the other organization library stays invisible'
+    'the other organization library stays invisible',
   );
   // Categories are the distinct tags in use — of the own organization only.
   assert.deepEqual(categories, ['nature', 'urban', 'water']);
-  assert.deepEqual(pagination, { total: 2, limit: 50, offset: 0, hasMore: false });
+  assert.deepEqual(pagination, {
+    total: 2,
+    limit: 50,
+    offset: 0,
+    hasMore: false,
+  });
 });
 
 test('GET /image-library?search= matches title, description and tags', async () => {
@@ -267,13 +327,22 @@ test('GET /image-library?search= matches title, description and tags', async () 
 
   const byTitle = makeCtx('GET', '/api/v1/image-library?search=city');
   await handleResources(byTitle);
-  assert.deepEqual(byTitle.res.body.images.map((i) => i.id), ['img-city']);
+  assert.deepEqual(
+    byTitle.res.body.images.map((i) => i.id),
+    ['img-city'],
+  );
 
   const byTag = makeCtx('GET', '/api/v1/image-library?search=water');
   await handleResources(byTag);
-  assert.deepEqual(byTag.res.body.images.map((i) => i.id), ['img-sea']);
+  assert.deepEqual(
+    byTag.res.body.images.map((i) => i.id),
+    ['img-sea'],
+  );
 
-  const noHit = makeCtx('GET', '/api/v1/image-library?search=nothing-matches-this');
+  const noHit = makeCtx(
+    'GET',
+    '/api/v1/image-library?search=nothing-matches-this',
+  );
   await handleResources(noHit);
   assert.deepEqual(noHit.res.body.images, []);
   assert.equal(noHit.res.body.pagination.total, 0);
@@ -285,7 +354,10 @@ test('GET /image-library?category= filters on a tag', async () => {
   await handleResources(ctx);
 
   assert.equal(ctx.res.statusCode, 200);
-  assert.deepEqual(ctx.res.body.images.map((i) => i.id), ['img-sea']);
+  assert.deepEqual(
+    ctx.res.body.images.map((i) => i.id),
+    ['img-sea'],
+  );
 });
 
 test('GET /image-library paginates with limit and offset', async () => {
@@ -293,7 +365,12 @@ test('GET /image-library paginates with limit and offset', async () => {
   const first = makeCtx('GET', '/api/v1/image-library?limit=1');
   await handleResources(first);
   assert.equal(first.res.body.images.length, 1);
-  assert.deepEqual(first.res.body.pagination, { total: 2, limit: 1, offset: 0, hasMore: true });
+  assert.deepEqual(first.res.body.pagination, {
+    total: 2,
+    limit: 1,
+    offset: 0,
+    hasMore: true,
+  });
 
   const second = makeCtx('GET', '/api/v1/image-library?limit=1&offset=1');
   await handleResources(second);
@@ -304,7 +381,9 @@ test('GET /image-library paginates with limit and offset', async () => {
 
 test('GET /image-library without the read permission is refused with 403', async () => {
   await installDb();
-  const ctx = makeCtx('GET', '/api/v1/image-library', { permissions: ['export'] });
+  const ctx = makeCtx('GET', '/api/v1/image-library', {
+    permissions: ['export'],
+  });
   await handleResources(ctx);
   assert.equal(ctx.res.statusCode, 403);
 });

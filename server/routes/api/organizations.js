@@ -4,7 +4,15 @@
  */
 
 import { updateSessionOrganization } from '../../auth/auth.js';
-import { serveJson, badRequest, unauthorized, forbidden, notFound, requireJsonBody, withErrorHandler } from '../../utils/http.js';
+import {
+  serveJson,
+  badRequest,
+  unauthorized,
+  forbidden,
+  notFound,
+  requireJsonBody,
+  withErrorHandler,
+} from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { isMultiOrgEnabled } from '../../config/features.js';
@@ -50,15 +58,22 @@ async function handleOrgCreate({ req, res, userId }) {
   const body = parsed.body;
   const name = getTrimmedString(body, 'name') || '';
   const slug = (getTrimmedString(body, 'slug') || '').toLowerCase();
-  const displayName = body?.displayName ? String(body.displayName).trim() : null;
-  const description = body?.description ? String(body.description).trim() : null;
+  const displayName = body?.displayName
+    ? String(body.displayName).trim()
+    : null;
+  const description = body?.description
+    ? String(body.description).trim()
+    : null;
 
   if (!name || name.length < 2) {
     return badRequest(res, 'Organization name must be at least 2 characters');
   }
 
   if (!isValidSlug(slug)) {
-    return badRequest(res, 'Slug must be 2-63 characters, lowercase alphanumeric with optional hyphens');
+    return badRequest(
+      res,
+      'Slug must be 2-63 characters, lowercase alphanumeric with optional hyphens',
+    );
   }
 
   const result = await createOrganization({
@@ -102,7 +117,10 @@ async function handleOrgGet({ res, userId }, orgId) {
     // is what every single-organization path falls back to and may not be
     // removed. Without it the profile screen can only offer its owner a
     // Delete button that is certain to be refused.
-    organization: { ...organization, isDefault: isDefaultOrganization(organization.id) },
+    organization: {
+      ...organization,
+      isDefault: isDefaultOrganization(organization.id),
+    },
     membership: {
       role: membership.role,
       joinedAt: membership.joinedAt,
@@ -137,11 +155,15 @@ async function handleOrgUpdate({ req, res, userId }, orgId) {
   }
 
   if ('displayName' in body) {
-    updates.displayName = body.displayName ? String(body.displayName).trim() : null;
+    updates.displayName = body.displayName
+      ? String(body.displayName).trim()
+      : null;
   }
 
   if ('description' in body) {
-    updates.description = body.description ? String(body.description).trim() : null;
+    updates.description = body.description
+      ? String(body.description).trim()
+      : null;
   }
 
   if ('logoUrl' in body) {
@@ -232,10 +254,26 @@ async function handleOrgSwitch({ req, res, userId }, orgId) {
 export const ROUTES = [
   { method: 'GET', pattern: '/api/organizations', handler: handleOrgList },
   { method: 'POST', pattern: '/api/organizations', handler: handleOrgCreate },
-  { method: 'GET', pattern: /^\/api\/organizations\/([^/]+)$/, handler: handleOrgGet },
-  { method: 'PATCH', pattern: /^\/api\/organizations\/([^/]+)$/, handler: handleOrgUpdate },
-  { method: 'DELETE', pattern: /^\/api\/organizations\/([^/]+)$/, handler: handleOrgDelete },
-  { method: 'POST', pattern: /^\/api\/organizations\/([^/]+)\/switch$/, handler: handleOrgSwitch },
+  {
+    method: 'GET',
+    pattern: /^\/api\/organizations\/([^/]+)$/,
+    handler: handleOrgGet,
+  },
+  {
+    method: 'PATCH',
+    pattern: /^\/api\/organizations\/([^/]+)$/,
+    handler: handleOrgUpdate,
+  },
+  {
+    method: 'DELETE',
+    pattern: /^\/api\/organizations\/([^/]+)$/,
+    handler: handleOrgDelete,
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/organizations\/([^/]+)\/switch$/,
+    handler: handleOrgSwitch,
+  },
 ];
 
 /**
@@ -250,29 +288,32 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
  */
-export const handleOrganizations = withErrorHandler('organizations', async (ctx) => {
-  // Only handle /api/organizations routes
-  if (!ctx.url.pathname.startsWith('/api/organizations')) {
-    return false;
-  }
+export const handleOrganizations = withErrorHandler(
+  'organizations',
+  async (ctx) => {
+    // Only handle /api/organizations routes
+    if (!ctx.url.pathname.startsWith('/api/organizations')) {
+      return false;
+    }
 
-  // Feature flag guard - return 403 if multi-organization is not enabled
-  if (!isMultiOrgEnabled()) {
-    return forbidden(ctx.res, 'Multi-organization features are not enabled');
-  }
+    // Feature flag guard - return 403 if multi-organization is not enabled
+    if (!isMultiOrgEnabled()) {
+      return forbidden(ctx.res, 'Multi-organization features are not enabled');
+    }
 
-  if (!ctx.authedUser) {
-    return unauthorized(ctx.res, 'Authentication required');
-  }
+    if (!ctx.authedUser) {
+      return unauthorized(ctx.res, 'Authentication required');
+    }
 
-  // Get user's database record for ID. Resolved across organizations: this is
-  // the lookup that decides which organizations the person may switch to, so
-  // scoping it to the current one would make switching impossible for anyone
-  // whose home organization is not the one they are currently in.
-  const dbUser = await getUserByEmailGlobal(ctx.authedUser.email);
-  if (!dbUser) {
-    return unauthorized(ctx.res, 'User not found');
-  }
+    // Get user's database record for ID. Resolved across organizations: this is
+    // the lookup that decides which organizations the person may switch to, so
+    // scoping it to the current one would make switching impossible for anyone
+    // whose home organization is not the one they are currently in.
+    const dbUser = await getUserByEmailGlobal(ctx.authedUser.email);
+    if (!dbUser) {
+      return unauthorized(ctx.res, 'User not found');
+    }
 
-  return dispatchRoutes(ROUTES, { ...ctx, userId: dbUser.id });
-});
+    return dispatchRoutes(ROUTES, { ...ctx, userId: dbUser.id });
+  },
+);

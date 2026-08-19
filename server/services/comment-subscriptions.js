@@ -88,9 +88,10 @@ export function buildCandidates({
   };
 
   // Insertion order = specificity: the first reason set for an email wins.
-  const mentions = Array.isArray(comment?.mentions) && comment.mentions.length
-    ? comment.mentions
-    : parseMentions(comment?.body);
+  const mentions =
+    Array.isArray(comment?.mentions) && comment.mentions.length
+      ? comment.mentions
+      : parseMentions(comment?.body);
   for (const m of mentions) add(m?.email, 'mention');
 
   if (parentComment?.authorEmail) add(parentComment.authorEmail, 'reply');
@@ -186,8 +187,11 @@ export async function resolveCommentRecipients({
       if (!level) {
         try {
           const settings = await getUserSettings(
-            crossOrganizationScope(repoRoot || defaultRepoRoot, 'notification fan-out: recipient preference read'),
-            email
+            crossOrganizationScope(
+              repoRoot || defaultRepoRoot,
+              'notification fan-out: recipient preference read',
+            ),
+            email,
           );
           level = settings?.notifications?.defaultLevel || 'participating';
         } catch {
@@ -195,7 +199,7 @@ export async function resolveCommentRecipients({
         }
       }
       return levelAllows(level, reason) ? { email, reason } : null;
-    })
+    }),
   );
   return resolved.filter(Boolean);
 }

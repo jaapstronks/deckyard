@@ -60,7 +60,8 @@ export async function applyServerWriteToActiveDoc(id, storedPres, opts = {}) {
     log = console,
   } = opts;
   if (!isCollabLiveEditsEnabled()) return false;
-  if (!hocuspocus || !storedPres || typeof storedPres !== 'object') return false;
+  if (!hocuspocus || !storedPres || typeof storedPres !== 'object')
+    return false;
 
   const documentName = `${COLLAB_DOC_PREFIX}${id}`;
   // A doc that is still loading sits in `loadingDocuments`, not yet in
@@ -91,14 +92,18 @@ export async function applyServerWriteToActiveDoc(id, storedPres, opts = {}) {
       // An unpopulated doc means onLoadDocument failed or was skipped;
       // applying would bypass the bootstrap path. Leave it alone.
       if (document.getMap('meta').get('extra') === undefined) {
-        log.warn(`[collab] skipping live apply for ${id}: document has no deck state`);
+        log.warn(
+          `[collab] skipping live apply for ${id}: document has no deck state`,
+        );
         return;
       }
-      const { warnings } = codec.applyPresentationToDoc(pres, document, { base });
+      const { warnings } = codec.applyPresentationToDoc(pres, document, {
+        base,
+      });
       if (warnings.length) {
         log.warn(
           `[collab] live apply of ${id} normalized diverged language versions (${warnings.length} warning(s)):\n` +
-            warnings.map((w) => `  - ${w}`).join('\n')
+            warnings.map((w) => `  - ${w}`).join('\n'),
         );
       }
       applied = true;

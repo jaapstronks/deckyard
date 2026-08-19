@@ -51,7 +51,7 @@ export function buildAutoAdvanceSection({ h, pres, markDirty, requestSave }) {
     enableCb,
     h('span', {
       text: t('editor.deckSettings.autoAdvance.enable', 'Enable timed slides'),
-    })
+    }),
   );
   enableCb.addEventListener('change', () => {
     pres.settings.autoAdvance.enabled = !!enableCb.checked;
@@ -69,7 +69,10 @@ export function buildAutoAdvanceSection({ h, pres, markDirty, requestSave }) {
   // Interval input
   const intervalLabel = h('div', {
     class: 'help',
-    text: t('editor.deckSettings.autoAdvance.intervalHelp', 'Seconds per slide (1–300)'),
+    text: t(
+      'editor.deckSettings.autoAdvance.intervalHelp',
+      'Seconds per slide (1–300)',
+    ),
   });
   const intervalInput = h('input', {
     type: 'number',
@@ -95,7 +98,7 @@ export function buildAutoAdvanceSection({ h, pres, markDirty, requestSave }) {
     totalTimeEl.textContent = t(
       'editor.deckSettings.autoAdvance.totalTime',
       'Total deck time: {time}{detail}',
-      { time: formatted, detail }
+      { time: formatted, detail },
     );
   };
   syncTotalTime();
@@ -134,16 +137,16 @@ export function buildAutoAdvanceSection({ h, pres, markDirty, requestSave }) {
       value: 'auto',
       text: t(
         'editor.deckSettings.autoAdvance.modeAuto',
-        'Auto-advance (advance slides automatically)'
+        'Auto-advance (advance slides automatically)',
       ),
     }),
     h('option', {
       value: 'pacing',
       text: t(
         'editor.deckSettings.autoAdvance.modePacing',
-        'Pacing timer (shows timer, you advance manually)'
+        'Pacing timer (shows timer, you advance manually)',
       ),
-    })
+    }),
   );
   modeSel.value = pres.settings.autoAdvance.mode;
 
@@ -159,9 +162,9 @@ export function buildAutoAdvanceSection({ h, pres, markDirty, requestSave }) {
     h('span', {
       text: t(
         'editor.deckSettings.autoAdvance.loop',
-        'Loop (restart from first slide)'
+        'Loop (restart from first slide)',
       ),
-    })
+    }),
   );
   loopCb.addEventListener('change', () => {
     pres.settings.autoAdvance.loop = !!loopCb.checked;
@@ -191,9 +194,9 @@ export function buildAutoAdvanceSection({ h, pres, markDirty, requestSave }) {
     h('span', {
       text: t(
         'editor.deckSettings.autoAdvance.showCountdown',
-        'Show countdown bar'
+        'Show countdown bar',
       ),
-    })
+    }),
   );
   countdownCb.addEventListener('change', () => {
     pres.settings.autoAdvance.showCountdown = !!countdownCb.checked;
@@ -205,10 +208,16 @@ export function buildAutoAdvanceSection({ h, pres, markDirty, requestSave }) {
   const presetLabelText = {
     'pecha-kucha': t(
       'editor.deckSettings.autoAdvance.presetPechaKucha',
-      'Pecha Kucha (20s, loop)'
+      'Pecha Kucha (20s, loop)',
     ),
-    ignite: t('editor.deckSettings.autoAdvance.presetIgnite', 'Ignite (15s, loop)'),
-    kiosk: t('editor.deckSettings.autoAdvance.presetKiosk', 'Kiosk (10s, loop)'),
+    ignite: t(
+      'editor.deckSettings.autoAdvance.presetIgnite',
+      'Ignite (15s, loop)',
+    ),
+    kiosk: t(
+      'editor.deckSettings.autoAdvance.presetKiosk',
+      'Kiosk (10s, loop)',
+    ),
     custom: t('editor.deckSettings.autoAdvance.presetCustom', 'Custom'),
   };
   const presetLabel = h('div', {
@@ -220,14 +229,14 @@ export function buildAutoAdvanceSection({ h, pres, markDirty, requestSave }) {
     presetSel.append(h('option', { value: p.id, text: presetLabelText[p.id] }));
   }
   presetSel.append(
-    h('option', { value: 'custom', text: presetLabelText.custom })
+    h('option', { value: 'custom', text: presetLabelText.custom }),
   );
 
   const matchPreset = () => {
     const aa = pres.settings.autoAdvance;
     if (aa.mode !== 'auto') return 'custom';
     const hit = AUTO_ADVANCE_PRESETS.find(
-      (p) => p.intervalSeconds === aa.intervalSeconds && p.loop === !!aa.loop
+      (p) => p.intervalSeconds === aa.intervalSeconds && p.loop === !!aa.loop,
     );
     return hit ? hit.id : 'custom';
   };
@@ -265,9 +274,9 @@ export function buildAutoAdvanceSection({ h, pres, markDirty, requestSave }) {
     h('span', {
       text: t(
         'editor.deckSettings.autoAdvance.strict',
-        'Strict (timer only — disable manual navigation)'
+        'Strict (timer only — disable manual navigation)',
       ),
-    })
+    }),
   );
   strictCb.addEventListener('change', () => {
     pres.settings.autoAdvance.strict = !!strictCb.checked;
@@ -279,7 +288,7 @@ export function buildAutoAdvanceSection({ h, pres, markDirty, requestSave }) {
     class: 'help',
     text: t(
       'editor.deckSettings.autoAdvance.hint',
-      'Tip: Pecha Kucha = 20s, Ignite = 15s. Press A to pause/resume while presenting.'
+      'Tip: Pecha Kucha = 20s, Ignite = 15s. Press A to pause/resume while presenting.',
     ),
   });
 
@@ -294,7 +303,7 @@ export function buildAutoAdvanceSection({ h, pres, markDirty, requestSave }) {
     strictRow,
     countdownRow,
     hint,
-    totalTimeEl
+    totalTimeEl,
   );
   wrap.append(label, enableRow, fields);
   return { el: wrap };

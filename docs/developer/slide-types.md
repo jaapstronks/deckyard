@@ -8,12 +8,13 @@ Slide types are the canonical source of truth for:
 - AI wizard metadata (for AI-powered suggestions)
 
 **Slide type locations:**
+
 - `shared/slide-types/types/*.js` - Core slide types (shipped with the system)
 - `custom/slide-types/*.js` - Custom slide types (for your organization)
 
 Custom slide types are loaded automatically at startup and merged with core types. The `custom/slide-types/` directory is **gitignored**, so your custom slides won't be overwritten when you update from upstream.
 
-Taking a type back *out* is the harder direction and has its own checklist:
+Taking a type back _out_ is the harder direction and has its own checklist:
 `docs/reference/slide-type-removal.md` (deprecation ladder, the deck scan, and
 every place a type name is currently duplicated).
 
@@ -32,9 +33,9 @@ Every slide type has a canonical identity, published as a **reverse-DNS id**
   ```javascript
   export default {
     label: 'Acme Hero',
-    namespace: 'acme',   // optional; kebab-case label OR a reverse-DNS
-                         // authority ('nl.ciiic.slide'). Defaults to "custom".
-    version: '2',        // optional; free-form label recorded in the identity.
+    namespace: 'acme', // optional; kebab-case label OR a reverse-DNS
+    // authority ('nl.ciiic.slide'). Defaults to "custom".
+    version: '2', // optional; free-form label recorded in the identity.
     // ...fields, render, etc.
   };
   ```
@@ -43,6 +44,7 @@ Every slide type has a canonical identity, published as a **reverse-DNS id**
   canonical reverse-DNS id of its own — `nl.ciiic.slide.hero` instead of
   `acme/hero`. A single-label namespace keeps the slash form: we cannot invent a
   domain on a fork's behalf.
+
 - The registry **key** and a slide's stored `type` stay the bare name
   (`acme-hero`, `title-slide`), so existing decks and lookups keep working; the
   identity is an added layer, not a change to storage.
@@ -63,7 +65,7 @@ warning is logged, unless the definition opts in explicitly:
 ```javascript
 export default {
   label: 'My title slide',
-  override: true,        // intentionally replace core/title-slide
+  override: true, // intentionally replace core/title-slide
   // ...
 };
 ```
@@ -87,7 +89,7 @@ Create `custom/slide-types/my-title-slide.js`:
 import { bgClass, esc } from '../shared/slide-types/helpers.js';
 
 export default {
-  themeId: 'my-theme',  // Optional: tie to a specific theme
+  themeId: 'my-theme', // Optional: tie to a specific theme
   label: 'My Title Slide',
 
   // Optional: which field to use as the slide label in the panel
@@ -110,7 +112,7 @@ export default {
       key: 'bgImage',
       label: 'Background image',
       type: 'image',
-      presetSource: 'backgrounds',  // Shows theme background presets
+      presetSource: 'backgrounds', // Shows theme background presets
     },
     { key: 'bgAlt', label: 'Alt text', type: 'string' },
     {
@@ -186,14 +188,14 @@ Add an `ai` property to your slide type definition:
 ```javascript
 export default {
   label: 'Product Feature Cards',
-  themeId: 'my-theme',  // Optional: tie to a specific theme
+  themeId: 'my-theme', // Optional: tie to a specific theme
 
   // ... fields, defaults, renderHtml ...
 
   // AI wizard metadata
   ai: {
     // Category determines when AI considers this slide
-    category: 'content',  // 'structural' | 'content' | 'interactive' | 'media' | 'people'
+    category: 'content', // 'structural' | 'content' | 'interactive' | 'media' | 'people'
 
     // Phase 1 slides are resolved in the outline phase (title, chapter, closing)
     // Phase 2 slides are for content
@@ -253,15 +255,15 @@ export default {
 
 ### AI Metadata Fields
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `category` | string | `'structural'`, `'content'`, `'interactive'`, `'media'`, or `'people'` |
-| `resolveInPhase1` | boolean | `true` for structural slides (title, chapter, payoff), `false` for content |
-| `description` | string | Multi-line description explaining the slide type to the AI. Include structure, visual layout, and key concepts |
-| `bestFor` | string[] | List of use cases when this slide type is ideal |
-| `notFor` | string[] | List of anti-patterns when NOT to use this slide type |
-| `examples` | array | Example content objects. Use `_variation` to label different patterns |
-| `usage` | string | Your organization's rules for *filling* this type (optional, max 1000 chars) |
+| Field             | Type     | Description                                                                                                    |
+| ----------------- | -------- | -------------------------------------------------------------------------------------------------------------- |
+| `category`        | string   | `'structural'`, `'content'`, `'interactive'`, `'media'`, or `'people'`                                         |
+| `resolveInPhase1` | boolean  | `true` for structural slides (title, chapter, payoff), `false` for content                                     |
+| `description`     | string   | Multi-line description explaining the slide type to the AI. Include structure, visual layout, and key concepts |
+| `bestFor`         | string[] | List of use cases when this slide type is ideal                                                                |
+| `notFor`          | string[] | List of anti-patterns when NOT to use this slide type                                                          |
+| `examples`        | array    | Example content objects. Use `_variation` to label different patterns                                          |
+| `usage`           | string   | Your organization's rules for _filling_ this type (optional, max 1000 chars)                                   |
 
 Setting `ai` to `false` instead of an object is the explicit opt-out — see
 [Withholding a type from agents](#withholding-a-type-from-agents).
@@ -324,7 +326,7 @@ offered. This is what keeps "deliberately withheld" distinguishable from
 by absence, and therefore not at all. The reader is
 `isAgentOptOut()` in `server/utils/ai/slide-catalog/agent-catalog.js`.
 
-### The agent-facing schema is derived — and so is withholding a *field*
+### The agent-facing schema is derived — and so is withholding a _field_
 
 An `ai` block carries prose only: `description`, `bestFor`, `notFor`,
 `examples`, `usage`. It does **not** declare a schema. The shape an agent sees is
@@ -343,9 +345,13 @@ fields: [
   // Live and editable, but not something an agent should invent.
   { key: 'bunnyLibraryId', type: 'string', ai: false },
   // helpText travels with the field and becomes the schema's `description`.
-  { key: 'sandbox', type: 'enum', options: ['restricted', 'permissive'],
-    helpText: "'restricted' blocks scripts and forms." },
-]
+  {
+    key: 'sandbox',
+    type: 'enum',
+    options: ['restricted', 'permissive'],
+    helpText: "'restricted' blocks scripts and forms.",
+  },
+];
 ```
 
 `hidden: true` (a legacy mirror the semantic projection also skips) withholds a
@@ -362,7 +368,7 @@ To create a slide type that only appears for a specific theme:
 
 ```javascript
 export default {
-  themeId: 'acme-corp',  // Must match a theme ID
+  themeId: 'acme-corp', // Must match a theme ID
   label: 'Acme Hero Slide',
   // ...
 };
@@ -394,16 +400,16 @@ In `custom/themes/acme-corp.json`:
 
 ### Basic Fields
 
-| Type | Description | Extra Properties |
-|------|-------------|------------------|
-| `string` | Single-line text | `maxLength`, `required`, `placeholder`, `helpText` |
-| `markdown` | Multi-line rich text (renders to HTML; **HTML is escaped**) | `maxLength`, `required` |
-| `code` | Monospace textarea storing the raw string verbatim (no markdown, no escaping on input) | `maxLength`, `required`, `capability` |
-| `csv` | Tabular text stored as a CSV/TSV string. Editor renders a chart-type-aware grid with a "Raw CSV" toggle (`client/views/editor/fields/csv-grid.js`); serialises to exactly the string the parser eats. Treated as a per-language, collaborative text field everywhere `markdown` is (validation, collab text-keys, i18n/translate filters). Used by the chart `data` field. | `maxLength`, `required` |
-| `number` | Numeric input | `min`, `max`, `step` |
-| `enum` | Dropdown selection | `options` (array of strings) |
-| `boolean` | Toggle. Cleared fields use the `''` convention (like enums). | `required` |
-| `color` | Colour value (theme token or raw string), rendered via the colour picker | `helpText`, `required` |
+| Type       | Description                                                                                                                                                                                                                                                                                                                                                                | Extra Properties                                   |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `string`   | Single-line text                                                                                                                                                                                                                                                                                                                                                           | `maxLength`, `required`, `placeholder`, `helpText` |
+| `markdown` | Multi-line rich text (renders to HTML; **HTML is escaped**)                                                                                                                                                                                                                                                                                                                | `maxLength`, `required`                            |
+| `code`     | Monospace textarea storing the raw string verbatim (no markdown, no escaping on input)                                                                                                                                                                                                                                                                                     | `maxLength`, `required`, `capability`              |
+| `csv`      | Tabular text stored as a CSV/TSV string. Editor renders a chart-type-aware grid with a "Raw CSV" toggle (`client/views/editor/fields/csv-grid.js`); serialises to exactly the string the parser eats. Treated as a per-language, collaborative text field everywhere `markdown` is (validation, collab text-keys, i18n/translate filters). Used by the chart `data` field. | `maxLength`, `required`                            |
+| `number`   | Numeric input                                                                                                                                                                                                                                                                                                                                                              | `min`, `max`, `step`                               |
+| `enum`     | Dropdown selection                                                                                                                                                                                                                                                                                                                                                         | `options` (array of strings)                       |
+| `boolean`  | Toggle. Cleared fields use the `''` convention (like enums).                                                                                                                                                                                                                                                                                                               | `required`                                         |
+| `color`    | Colour value (theme token or raw string), rendered via the colour picker                                                                                                                                                                                                                                                                                                   | `helpText`, `required`                             |
 
 > The full set of valid `field.type` values is declared once in
 > `shared/slide-types/field-types.js` (`FIELD_TYPES`). Validation, the editor
@@ -417,17 +423,17 @@ enforces the same rule on write). Used by the built-in Custom HTML slide.
 
 ### Media Fields
 
-| Type | Description | Extra Properties |
-|------|-------------|------------------|
-| `image` | Image picker | `presetSource` (`'backgrounds'` or `'partnerlogos'`) |
-| `images` | Multiple images (gallery) | `maxCount` |
-| `url` | A hyperlink target (http(s), mailto, or root-/protocol-relative). Validated + allowlisted (`javascript:`/`data:` rejected via `safeHref`); projects as an `<a href>` in the reader/reflow view. Not translatable, so link targets are never sent to translation. | `maxLength`, `required`, `placeholder`, `helpText` |
+| Type     | Description                                                                                                                                                                                                                                                      | Extra Properties                                     |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `image`  | Image picker                                                                                                                                                                                                                                                     | `presetSource` (`'backgrounds'` or `'partnerlogos'`) |
+| `images` | Multiple images (gallery)                                                                                                                                                                                                                                        | `maxCount`                                           |
+| `url`    | A hyperlink target (http(s), mailto, or root-/protocol-relative). Validated + allowlisted (`javascript:`/`data:` rejected via `safeHref`); projects as an `<a href>` in the reader/reflow view. Not translatable, so link targets are never sent to translation. | `maxLength`, `required`, `placeholder`, `helpText`   |
 
 ### Structured Fields
 
-| Type | Description | Extra Properties |
-|------|-------------|------------------|
-| `items` | Repeating list of structured objects, each shaped by `itemFields`. Edited by the generic collection editor (add/remove, pointer reorder; `collapsible: true` adds per-item collapse, `relationField` names an enum item field describing the relation to the *next* item). Item fields may declare `formLayout`, `editor` and `hidden` like top-level fields. | `minItems`, `maxItems`, `itemFields`, `itemDefaults`, `itemDefaultsByLang`, `collapsible`, `relationField` |
+| Type    | Description                                                                                                                                                                                                                                                                                                                                                   | Extra Properties                                                                                           |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `items` | Repeating list of structured objects, each shaped by `itemFields`. Edited by the generic collection editor (add/remove, pointer reorder; `collapsible: true` adds per-item collapse, `relationField` names an enum item field describing the relation to the _next_ item). Item fields may declare `formLayout`, `editor` and `hidden` like top-level fields. | `minItems`, `maxItems`, `itemFields`, `itemDefaults`, `itemDefaultsByLang`, `collapsible`, `relationField` |
 
 `itemDefaults` is the skeleton a newly added item starts from — neutral
 (English) placeholder copy. `itemDefaultsByLang` holds complete per-language
@@ -491,12 +497,12 @@ declares a richer one from the closed field-editor vocabulary
 (`shared/slide-types/field-editors.js`), resolved by the generic field
 renderer:
 
-| Name | Widget | Declared on |
-|------|--------|-------------|
-| `csv-grid` | Spreadsheet-style data grid (also the base widget of the `csv` type) | chart `data` |
-| `table-grid` | Full table editor: cell grid, row/column add/remove, markdown import/export. Also manages the sibling `colCount`/`headerRow` keys | table `rows` |
-| `icon-picker` | Icon search/picker modal | icon-card-grid item `icon` |
-| `card-link` | Slide-or-URL link picker | icon-card-grid / logo-wall item `link` |
+| Name          | Widget                                                                                                                            | Declared on                            |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| `csv-grid`    | Spreadsheet-style data grid (also the base widget of the `csv` type)                                                              | chart `data`                           |
+| `table-grid`  | Full table editor: cell grid, row/column add/remove, markdown import/export. Also manages the sibling `colCount`/`headerRow` keys | table `rows`                           |
+| `icon-picker` | Icon search/picker modal                                                                                                          | icon-card-grid item `icon`             |
+| `card-link`   | Slide-or-URL link picker                                                                                                          | icon-card-grid / logo-wall item `link` |
 
 ```javascript
 { key: 'rows', type: 'items', editor: 'table-grid', … }
@@ -520,7 +526,7 @@ declares the condition instead of relying on a hand-built form to hide it:
 
 Read by the generic field renderer on both surfaces
 (`shared/slide-types/field-visibility.js`); the driving value falls back to
-the type's default when unset. A malformed declaration degrades to *visible* —
+the type's default when unset. A malformed declaration degrades to _visible_ —
 hiding a field on a parse error would orphan its data. The chart type's
 display toggles and axis/series labels are the canonical use.
 
@@ -528,18 +534,18 @@ display toggles and axis/series labels are the canonical use.
 
 ## Extension Properties Reference
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `themeId` | string | Tie this slide type to a specific theme |
-| `labelField` | string | Which content field to use as the slide label (default: checks for `title`) |
-| `autoBackgroundPreset` | boolean | Auto-assign random background from theme presets when creating new slides |
-| `sampleContent` | object | Sample content for the slide type picker thumbnail |
-| `defaultsByLang` | object | Localized default content: `{ nl: {...}, 'en-GB': {...} }` |
-| `ai` | object | AI wizard metadata (see AI Wizard Integration section) |
-| `inline` | object | Inline (WYSIWYG) edit descriptor for the editor canvas (see below) |
-| `structure` | string | The shape of the type's primary content: `singleton`, `collection`, `fixed-collection`, `tabular`, `dataset` or `chrome`. **Required on core types** and CI-enforced; optional on fork-local types. See [`docs/reference/slide-type-structure.md`](../reference/slide-type-structure.md) |
-| `runtime` | string | What the presenting session has to do for the type: `static`, `timed` or `live`. **Required on core types** and CI-enforced; optional on fork-local types. See [`docs/reference/slide-type-runtime.md`](../reference/slide-type-runtime.md) |
-| `interaction` | string | Which kind of answer a `live` type collects: `poll`, `likert` or `feedback`. Required on `live` types, forbidden on the others |
+| Property               | Type    | Description                                                                                                                                                                                                                                                                              |
+| ---------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `themeId`              | string  | Tie this slide type to a specific theme                                                                                                                                                                                                                                                  |
+| `labelField`           | string  | Which content field to use as the slide label (default: checks for `title`)                                                                                                                                                                                                              |
+| `autoBackgroundPreset` | boolean | Auto-assign random background from theme presets when creating new slides                                                                                                                                                                                                                |
+| `sampleContent`        | object  | Sample content for the slide type picker thumbnail                                                                                                                                                                                                                                       |
+| `defaultsByLang`       | object  | Localized default content: `{ nl: {...}, 'en-GB': {...} }`                                                                                                                                                                                                                               |
+| `ai`                   | object  | AI wizard metadata (see AI Wizard Integration section)                                                                                                                                                                                                                                   |
+| `inline`               | object  | Inline (WYSIWYG) edit descriptor for the editor canvas (see below)                                                                                                                                                                                                                       |
+| `structure`            | string  | The shape of the type's primary content: `singleton`, `collection`, `fixed-collection`, `tabular`, `dataset` or `chrome`. **Required on core types** and CI-enforced; optional on fork-local types. See [`docs/reference/slide-type-structure.md`](../reference/slide-type-structure.md) |
+| `runtime`              | string  | What the presenting session has to do for the type: `static`, `timed` or `live`. **Required on core types** and CI-enforced; optional on fork-local types. See [`docs/reference/slide-type-runtime.md`](../reference/slide-type-runtime.md)                                              |
+| `interaction`          | string  | Which kind of answer a `live` type collects: `poll`, `likert` or `feedback`. Required on `live` types, forbidden on the others                                                                                                                                                           |
 
 ---
 
@@ -553,18 +559,23 @@ slide-type definition itself, and that is what the lookup reads first:
 ```javascript
 export default {
   label: 'My cards',
-  fields: [ /* ... incl. an items field with itemFields ... */ ],
+  fields: [/* ... incl. an items field with itemFields ... */],
   inline: {
     // "+ <field>" chips for empty optional fields
     ghosts: [
-      { field: 'subheading', anchors: [{ sel: '.header', pos: 'append', chip: 'below-start' }] },
+      {
+        field: 'subheading',
+        anchors: [{ sel: '.header', pos: 'append', chip: 'below-start' }],
+      },
     ],
     // add/remove buttons for repeatable items (schema minItems/maxItems apply)
     cards: { field: 'items', container: '.my-grid', itemSelector: '.my-card' },
     // fields fully covered inline; the settings inspector may omit these
     formText: ['title', 'subheading', 'items'],
   },
-  renderHtml: (content) => { /* ... */ },
+  renderHtml: (content) => {
+    /* ... */
+  },
 };
 ```
 
@@ -583,7 +594,7 @@ in the core registry.
 
 **The definition wins.** `getInlineDescriptor()` reads `def.inline` first and
 falls back to the core map — the same definition-first order as every other
-companion. So if you override a core type *by name* (`override: true`), your
+companion. So if you override a core type _by name_ (`override: true`), your
 descriptor replaces core's rather than being shadowed by it, which is what you
 want: the server renders your markup for that name, and a descriptor only makes
 sense against the markup that was actually drawn. This order flipped on
@@ -610,7 +621,7 @@ renderHtml: (content, slide, ctx) => `
       <!-- content here -->
     </div>
   </div>
-`
+`;
 ```
 
 ### Security: Always Escape User Content
@@ -622,7 +633,7 @@ import { markdownToSafeHtml } from '../shared/markdown.js';
 renderHtml: (content) => `
   <h1>${esc(content?.title)}</h1>
   <div class="body">${markdownToSafeHtml(content?.body)}</div>
-`
+`;
 ```
 
 ### Theme Context
@@ -634,7 +645,7 @@ renderHtml: (content, slide, ctx) => {
   const theme = ctx?.theme;
   const logoSrc = theme?.assets?.logo || '/assets/images/logo.svg';
   // ...
-}
+};
 ```
 
 ---
@@ -647,15 +658,15 @@ a hand-written form only when the type needs something a declaration cannot
 express — and by now that is almost never true. Before writing one, check
 whether the thing you want is already a declaration:
 
-| You want | Declare |
-|---|---|
-| Field order, or two controls on one row | `fields[]` order, `formLayout: 'pair'` |
+| You want                                      | Declare                                                    |
+| --------------------------------------------- | ---------------------------------------------------------- |
+| Field order, or two controls on one row       | `fields[]` order, `formLayout: 'pair'`                     |
 | A richer widget than the field's type implies | `editor: '<name>'` (`shared/slide-types/field-editors.js`) |
-| A control that only matters in some states | `visibleWhen: { field, in: [...] }` |
-| Data the form must carry but never edit | `hidden: true` |
-| Add/remove/reorder over a list | `type: 'items'` with `itemFields` |
-| Anything settable on an image element | the inline descriptor's `media`/`focus`/`fit`/`bleed` |
-| A legacy shape to migrate on open | `normalizeContent` on the definition |
+| A control that only matters in some states    | `visibleWhen: { field, in: [...] }`                        |
+| Data the form must carry but never edit       | `hidden: true`                                             |
+| Add/remove/reorder over a list                | `type: 'items'` with `itemFields`                          |
+| Anything settable on an image element         | the inline descriptor's `media`/`focus`/`fit`/`bleed`      |
+| A legacy shape to migrate on open             | `normalizeContent` on the definition                       |
 
 The behaviour-abstraction track retired sixteen forms this way; the two that
 remain (`follow-invite`, the deprecated `content-columns`) each carry a written
@@ -667,7 +678,14 @@ the router comment too.
 `client/views/editor/editor-form/slide-forms/my-slide.js`:
 
 ```javascript
-export function renderMySlideForm({ form, slide, add, used, fieldByKey, renderField }) {
+export function renderMySlideForm({
+  form,
+  slide,
+  add,
+  used,
+  fieldByKey,
+  renderField,
+}) {
   // Custom form rendering logic. Every renderer receives the same flattened
   // context and destructures the subset it uses.
 }
@@ -700,7 +718,7 @@ renderHtml: (content) => `
   <div class="slide slide-my-type" data-interactive="true">
     <!-- content -->
   </div>
-`
+`;
 ```
 
 ### 2. Implement runtime handler
@@ -709,7 +727,9 @@ renderHtml: (content) => `
 
 ```javascript
 export function attachMySlideRuntime(slideEl) {
-  const timer = setInterval(() => { /* ... */ }, 1000);
+  const timer = setInterval(() => {
+    /* ... */
+  }, 1000);
 
   // Return cleanup function (called when slide unmounts)
   return () => {
@@ -770,8 +790,19 @@ export default {
   },
 
   fields: [
-    { key: 'headline', label: 'Headline', type: 'string', required: true, maxLength: 60 },
-    { key: 'subheadline', label: 'Subheadline', type: 'string', maxLength: 120 },
+    {
+      key: 'headline',
+      label: 'Headline',
+      type: 'string',
+      required: true,
+      maxLength: 60,
+    },
+    {
+      key: 'subheadline',
+      label: 'Subheadline',
+      type: 'string',
+      maxLength: 120,
+    },
     { key: 'body', label: 'Body', type: 'markdown' },
     { key: 'ctaText', label: 'CTA Button Text', type: 'string', maxLength: 30 },
     {
@@ -889,6 +920,7 @@ With the theme config in `custom/themes/acme-corp.json`:
 ```
 
 This setup:
+
 - Creates a custom hero slide only available for the Acme theme
 - Excludes the default title-slide for Acme presentations
 - Makes acme-hero-slide the default when creating new Acme presentations
@@ -914,7 +946,7 @@ slide (no special handling needed).
   (`shared/sanitize.js`). Rich structural markup plus SVG/MathML are kept;
   `<script>`, inline event handlers (`onclick=`…), `<iframe>`/`<object>`/
   `<embed>`, `<form>`/`<input>`, and external `<link>`/`<style>` are stripped.
-  **JavaScript is never executed** on any path - Puppeteer *would* run scripts,
+  **JavaScript is never executed** on any path - Puppeteer _would_ run scripts,
   but receives none.
 - The CSS is **scoped to the slide root** (`.custom-html-root[data-chr="<id>"]`)
   so it cannot restyle the deck chrome, and is filtered for `@import`,

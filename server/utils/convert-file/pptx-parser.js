@@ -42,7 +42,10 @@ export async function parsePptx(buffer) {
       });
 
     for (const slidePath of slideFiles) {
-      const slideNumber = parseInt(slidePath.match(/slide(\d+)/i)?.[1] || '0', 10);
+      const slideNumber = parseInt(
+        slidePath.match(/slide(\d+)/i)?.[1] || '0',
+        10,
+      );
 
       try {
         const slideXml = await zip.file(slidePath)?.async('string');
@@ -54,7 +57,12 @@ export async function parsePptx(buffer) {
         const textContent = extractTextFromSlideXml(slideXml);
 
         // Extract images from the slide
-        const images = await extractImagesFromSlide(zip, slidePath, slideXml, slideNumber);
+        const images = await extractImagesFromSlide(
+          zip,
+          slidePath,
+          slideXml,
+          slideNumber,
+        );
 
         // Try to get slide notes
         let notes = '';
@@ -118,7 +126,8 @@ async function extractImagesFromSlide(zip, slidePath, slideXml, slideNumber) {
     // Parse relationships to find image references
     // Format: <Relationship Id="rId2" Type="http://...image" Target="../media/image1.png"/>
     const imageRels = new Map();
-    const relRegex = /<Relationship[^>]+Id="([^"]+)"[^>]+Type="[^"]*image[^"]*"[^>]+Target="([^"]+)"[^>]*\/?>/gi;
+    const relRegex =
+      /<Relationship[^>]+Id="([^"]+)"[^>]+Type="[^"]*image[^"]*"[^>]+Target="([^"]+)"[^>]*\/?>/gi;
     let relMatch;
     while ((relMatch = relRegex.exec(relsXml)) !== null) {
       const rId = relMatch[1];
@@ -133,7 +142,8 @@ async function extractImagesFromSlide(zip, slidePath, slideXml, slideNumber) {
     }
 
     // Also check for Target before Type in the XML
-    const relRegex2 = /<Relationship[^>]+Target="([^"]+)"[^>]+Type="[^"]*image[^"]*"[^>]+Id="([^"]+)"[^>]*\/?>/gi;
+    const relRegex2 =
+      /<Relationship[^>]+Target="([^"]+)"[^>]+Type="[^"]*image[^"]*"[^>]+Id="([^"]+)"[^>]*\/?>/gi;
     while ((relMatch = relRegex2.exec(relsXml)) !== null) {
       let target = relMatch[1];
       const rId = relMatch[2];
@@ -277,6 +287,6 @@ function decodeXmlEntities(text) {
     .replace(/&apos;/g, "'")
     .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(parseInt(code, 10)))
     .replace(/&#x([0-9a-fA-F]+);/g, (_, code) =>
-      String.fromCharCode(parseInt(code, 16))
+      String.fromCharCode(parseInt(code, 16)),
     );
 }

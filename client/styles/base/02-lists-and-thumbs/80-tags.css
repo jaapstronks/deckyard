@@ -126,7 +126,7 @@
   background: hsl(var(--app-accent-soft));
 }
 
-.tag-filter-item input[type="checkbox"] {
+.tag-filter-item input[type='checkbox'] {
   flex-shrink: 0;
 }
 
@@ -180,7 +180,8 @@
 
 .tag-editor:focus-within {
   border-color: hsl(var(--app-border-focus));
-  box-shadow: 0 0 0 var(--ps-focus-ring-offset) hsl(var(--app-accent-primary) / 0.2);
+  box-shadow: 0 0 0 var(--ps-focus-ring-offset)
+    hsl(var(--app-accent-primary) / 0.2);
 }
 
 .tag-editor-tags {

@@ -211,7 +211,12 @@ export function validateVisibility(visibility) {
     return errors;
   }
 
-  const allowedKeys = ['hideInPresentation', 'hideInExport', 'hideInPublished', 'hideFromViewers'];
+  const allowedKeys = [
+    'hideInPresentation',
+    'hideInExport',
+    'hideInPublished',
+    'hideFromViewers',
+  ];
   for (const key of Object.keys(visibility)) {
     if (!allowedKeys.includes(key)) {
       errors.push(`Slide.visibility contains unknown key: ${key}`);

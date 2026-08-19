@@ -55,18 +55,20 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } = await import(
-  '../server/storage/lifecycle.js'
-);
-const { createPresentation, getPresentation, updatePresentation } = await import(
-  '../server/storage/presentations/index.js'
-);
+const { initializeStorage, __resetStorageForTests } =
+  await import('../server/storage/lifecycle.js');
+const { createPresentation, getPresentation, updatePresentation } =
+  await import('../server/storage/presentations/index.js');
 
 const OWNER = 'owner@example.com';
 const owner = { email: OWNER, isAdmin: false };
 
 test.before(async () => {
-  __setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+  __setTestDb(
+    createFakeDb({
+      organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+    }),
+  );
   await initializeStorage();
 });
 
@@ -147,13 +149,22 @@ test('warming is off by default under the node test runner', () => {
     // Guards the whole suite: without this, every test that saves a deck would
     // queue a headless-Chrome render. That is the regression that got the first
     // attempt at this feature reverted.
-    assert.equal(process.env.NODE_TEST_CONTEXT ? warmOnSaveEnabled() : false, false);
+    assert.equal(
+      process.env.NODE_TEST_CONTEXT ? warmOnSaveEnabled() : false,
+      false,
+    );
 
     let ran = 0;
     assert.equal(
-      scheduleThumbnailWarm('deck-off', () => { ran++; }, { delayMs: 1 }),
+      scheduleThumbnailWarm(
+        'deck-off',
+        () => {
+          ran++;
+        },
+        { delayMs: 1 },
+      ),
       false,
-      'scheduling reports that nothing was queued'
+      'scheduling reports that nothing was queued',
     );
     assert.deepEqual(pendingWarmKeys(), [], 'and nothing is pending');
     assert.equal(ran, 0);
@@ -180,7 +191,10 @@ test('the debounce window outlasts the editor autosave interval', () => {
   // The editor autosaves 1500ms after the last keystroke
   // (client/views/editor/save-manager.js). A window at or below that would let
   // continuous typing fire a render per save — the exact failure being avoided.
-  assert.ok(WARM_DEBOUNCE_MS > 1500, 'a typing burst must not out-tick the debounce');
+  assert.ok(
+    WARM_DEBOUNCE_MS > 1500,
+    'a typing burst must not out-tick the debounce',
+  );
 });
 
 // ── The debounce ────────────────────────────────────────────────────────────
@@ -189,13 +203,27 @@ test('a burst of saves collapses into one warm', async () => {
   await withWarmingEnabled(async () => {
     let runs = 0;
     for (let i = 0; i < 8; i++) {
-      scheduleThumbnailWarm('deck-burst', async () => { runs++; }, { delayMs: 20 });
+      scheduleThumbnailWarm(
+        'deck-burst',
+        async () => {
+          runs++;
+        },
+        { delayMs: 20 },
+      );
     }
-    assert.deepEqual(pendingWarmKeys(), ['deck-burst'], 'one pending warm, not eight');
+    assert.deepEqual(
+      pendingWarmKeys(),
+      ['deck-burst'],
+      'one pending warm, not eight',
+    );
 
     await flushPendingWarms();
     assert.equal(runs, 1, 'eight saves cost one render, not eight');
-    assert.deepEqual(pendingWarmKeys(), [], 'the queue empties once it has run');
+    assert.deepEqual(
+      pendingWarmKeys(),
+      [],
+      'the queue empties once it has run',
+    );
   });
 });
 
@@ -203,31 +231,67 @@ test('the last save in a burst is the one that gets rendered', async () => {
   await withWarmingEnabled(async () => {
     const rendered = [];
     for (const title of ['first', 'second', 'third']) {
-      scheduleThumbnailWarm('deck-latest', async () => { rendered.push(title); }, { delayMs: 20 });
+      scheduleThumbnailWarm(
+        'deck-latest',
+        async () => {
+          rendered.push(title);
+        },
+        { delayMs: 20 },
+      );
     }
     await flushPendingWarms();
-    assert.deepEqual(rendered, ['third'], 'the card must not show a superseded edit');
+    assert.deepEqual(
+      rendered,
+      ['third'],
+      'the card must not show a superseded edit',
+    );
   });
 });
 
 test('decks are debounced independently', async () => {
   await withWarmingEnabled(async () => {
     const runs = [];
-    scheduleThumbnailWarm('deck-a', async () => { runs.push('a'); }, { delayMs: 20 });
-    scheduleThumbnailWarm('deck-b', async () => { runs.push('b'); }, { delayMs: 20 });
-    scheduleThumbnailWarm('deck-a', async () => { runs.push('a2'); }, { delayMs: 20 });
+    scheduleThumbnailWarm(
+      'deck-a',
+      async () => {
+        runs.push('a');
+      },
+      { delayMs: 20 },
+    );
+    scheduleThumbnailWarm(
+      'deck-b',
+      async () => {
+        runs.push('b');
+      },
+      { delayMs: 20 },
+    );
+    scheduleThumbnailWarm(
+      'deck-a',
+      async () => {
+        runs.push('a2');
+      },
+      { delayMs: 20 },
+    );
 
     assert.deepEqual(pendingWarmKeys().sort(), ['deck-a', 'deck-b']);
     await flushPendingWarms();
-    assert.deepEqual(runs.sort(), ['a2', 'b'], 'one warm each, neither swallowed the other');
+    assert.deepEqual(
+      runs.sort(),
+      ['a2', 'b'],
+      'one warm each, neither swallowed the other',
+    );
   });
 });
 
 test('a failing warm never escapes the queue', async () => {
   await withWarmingEnabled(async () => {
-    scheduleThumbnailWarm('deck-boom', async () => {
-      throw new Error('no chrome here');
-    }, { delayMs: 20 });
+    scheduleThumbnailWarm(
+      'deck-boom',
+      async () => {
+        throw new Error('no chrome here');
+      },
+      { delayMs: 20 },
+    );
     await flushPendingWarms(); // rejects → the test fails; swallowed → it passes
     assert.deepEqual(pendingWarmKeys(), []);
   });
@@ -257,9 +321,12 @@ test('a save that leaves slide 1 alone schedules nothing', async () => {
     assert.equal(
       firstSlideSignature(before),
       firstSlideSignature(after),
-      'the raster inputs are untouched'
+      'the raster inputs are untouched',
     );
-    assert.equal(scheduleDeckThumbnailWarm({ repoRoot: '/tmp', before, after }), false);
+    assert.equal(
+      scheduleDeckThumbnailWarm({ repoRoot: '/tmp', before, after }),
+      false,
+    );
     assert.deepEqual(pendingWarmKeys(), [], 'most saves stay free');
   });
 });
@@ -267,8 +334,15 @@ test('a save that leaves slide 1 alone schedules nothing', async () => {
 test('a save that changes slide 1 schedules exactly one warm for that deck', async () => {
   await withWarmingEnabled(async () => {
     const before = { id: 'deck-2', slides: [slide('Cover')] };
-    const after = { id: 'deck-2', revision: 2, slides: [slide('Cover, revised')] };
-    assert.equal(scheduleDeckThumbnailWarm({ repoRoot: '/tmp', before, after }), true);
+    const after = {
+      id: 'deck-2',
+      revision: 2,
+      slides: [slide('Cover, revised')],
+    };
+    assert.equal(
+      scheduleDeckThumbnailWarm({ repoRoot: '/tmp', before, after }),
+      true,
+    );
     scheduleDeckThumbnailWarm({ repoRoot: '/tmp', before, after });
     assert.deepEqual(pendingWarmKeys(), ['deck-2']);
   });
@@ -281,7 +355,10 @@ test('adding a slide in front of the deck counts as changing slide 1', async () 
       id: 'deck-3',
       slides: [slide('New cover', SLIDE_0), slide('Cover')],
     };
-    assert.equal(scheduleDeckThumbnailWarm({ repoRoot: '/tmp', before, after }), true);
+    assert.equal(
+      scheduleDeckThumbnailWarm({ repoRoot: '/tmp', before, after }),
+      true,
+    );
   });
 });
 
@@ -307,16 +384,23 @@ test('PUT wires the gate in: slide 1 edited → warm pending, otherwise → noth
         req: fakeReq({
           headers: { 'if-match': String(created.revision) },
           // Slide 1 sent back exactly as stored — this is a slide-2-only save.
-          body: { ...created, slides: [created.slides[0], slide('Edited', SLIDE_2)] },
+          body: {
+            ...created,
+            slides: [created.slides[0], slide('Edited', SLIDE_2)],
+          },
         }),
         res: res1,
         url: `/api/presentations/${created.id}`,
         authedUser: owner,
       },
-      created.id
+      created.id,
     );
     assert.equal(res1.statusCode, 200, 'the save itself succeeded');
-    assert.deepEqual(pendingWarmKeys(), [], 'no render queued for a slide the card never shows');
+    assert.deepEqual(
+      pendingWarmKeys(),
+      [],
+      'no render queued for a slide the card never shows',
+    );
 
     // A save that touches slide 1.
     const current = await getPresentation(storageScope, created.id);
@@ -327,16 +411,23 @@ test('PUT wires the gate in: slide 1 edited → warm pending, otherwise → noth
         storageScope,
         req: fakeReq({
           headers: { 'if-match': String(current.revision) },
-          body: { ...current, slides: [slide('Cover, revised'), current.slides[1]] },
+          body: {
+            ...current,
+            slides: [slide('Cover, revised'), current.slides[1]],
+          },
         }),
         res: res2,
         url: `/api/presentations/${created.id}`,
         authedUser: owner,
       },
-      created.id
+      created.id,
     );
     assert.equal(res2.statusCode, 200);
-    assert.deepEqual(pendingWarmKeys(), [created.id], 'the raster is queued for a re-render');
+    assert.deepEqual(
+      pendingWarmKeys(),
+      [created.id],
+      'the raster is queued for a re-render',
+    );
   });
 
   await fs.rm(repoRoot, { recursive: true, force: true });
@@ -360,7 +451,7 @@ test('after the warm ran, the next Home load is a cache hit instead of a miss', 
       storageScope,
       created.id,
       { ...before, slides: [slide('Cover, revised')] },
-      { expectedRevision: before.revision, actorEmail: OWNER }
+      { expectedRevision: before.revision, actorEmail: OWNER },
     );
 
     const theme = await loadThemeAssets(repoRoot, updated.theme);
@@ -371,12 +462,17 @@ test('after the warm ran, the next Home load is a cache hit instead of a miss', 
     assert.equal(
       await readCachedThumbnail(repoRoot, filename),
       null,
-      'the edited slide 1 has no raster yet'
+      'the edited slide 1 has no raster yet',
     );
 
     // Stand in for warmDeckThumbnail: it resolves the same key and writes the
     // same file — the rasterization itself is covered by the generation tests.
-    scheduleDeckThumbnailWarm({ repoRoot, before, after: updated, authedUser: owner });
+    scheduleDeckThumbnailWarm({
+      repoRoot,
+      before,
+      after: updated,
+      authedUser: owner,
+    });
     assert.deepEqual(pendingWarmKeys(), [created.id]);
     cancelPendingWarms();
 
@@ -385,7 +481,7 @@ test('after the warm ran, the next Home load is a cache hit instead of a miss', 
     scheduleThumbnailWarm(
       created.id,
       () => fs.writeFile(path.join(dir, filename), Buffer.from('fresh-raster')),
-      { delayMs: 20 }
+      { delayMs: 20 },
     );
     await flushPendingWarms();
 
@@ -393,12 +489,26 @@ test('after the warm ran, the next Home load is a cache hit instead of a miss', 
     // max-age instead of the 10s revalidate window a stale serve gets.
     const res = fakeRes();
     await handlePresentationThumbnail(
-      { repoRoot, storageScope, req: { method: 'GET' }, res, authedUser: owner },
-      created.id
+      {
+        repoRoot,
+        storageScope,
+        req: { method: 'GET' },
+        res,
+        authedUser: owner,
+      },
+      created.id,
     );
     assert.equal(res.statusCode, 200);
-    assert.equal(res.body.toString(), 'fresh-raster', 'the card shows the edit, not the old cover');
-    assert.equal(res.headers['Cache-Control'], 'public, max-age=3600', 'served as fresh');
+    assert.equal(
+      res.body.toString(),
+      'fresh-raster',
+      'the card shows the edit, not the old cover',
+    );
+    assert.equal(
+      res.headers['Cache-Control'],
+      'public, max-age=3600',
+      'served as fresh',
+    );
   });
 
   await fs.rm(repoRoot, { recursive: true, force: true });

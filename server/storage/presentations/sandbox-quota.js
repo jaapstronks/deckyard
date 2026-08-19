@@ -40,12 +40,16 @@ const DEFAULT_MAX_BYTES_PER_GUEST = 50 * 1024 * 1024;
 
 /** @returns {number} Max decks per sandbox guest. */
 function sandboxMaxDecksPerGuest() {
-  return envInt('SANDBOX_MAX_DECKS_PER_GUEST', DEFAULT_MAX_DECKS_PER_GUEST, { min: 1 });
+  return envInt('SANDBOX_MAX_DECKS_PER_GUEST', DEFAULT_MAX_DECKS_PER_GUEST, {
+    min: 1,
+  });
 }
 
 /** @returns {number} Max total stored bytes per sandbox guest. */
 function sandboxMaxBytesPerGuest() {
-  return envInt('SANDBOX_MAX_BYTES_PER_GUEST', DEFAULT_MAX_BYTES_PER_GUEST, { min: 1 });
+  return envInt('SANDBOX_MAX_BYTES_PER_GUEST', DEFAULT_MAX_BYTES_PER_GUEST, {
+    min: 1,
+  });
 }
 
 /**
@@ -136,13 +140,13 @@ export async function assertSandboxQuotaForCreate(scope, ownerEmail) {
   if (deckCount >= maxDecks) {
     throw new SandboxQuotaError(
       `Sandbox deck limit reached (${maxDecks} per guest). Delete a deck to make room.`,
-      { limit: maxDecks, deckCount }
+      { limit: maxDecks, deckCount },
     );
   }
   if (totalBytes >= maxBytes) {
     throw new SandboxQuotaError(
       'Sandbox storage limit reached. Delete a deck to make room.',
-      { limitBytes: maxBytes, totalBytes }
+      { limitBytes: maxBytes, totalBytes },
     );
   }
 }

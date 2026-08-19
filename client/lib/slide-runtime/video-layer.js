@@ -43,11 +43,11 @@ export function createVideoLayer({ containerEl, getCurrentSlide }) {
   containerEl.append(el);
 
   // --- State ---
-  let config = null;      // liveVideo settings object
+  let config = null; // liveVideo settings object
   let provider = null;
   let embedUrl = '';
   let hlsInstance = null;
-  let playerEl = null;    // <iframe> or <video>
+  let playerEl = null; // <iframe> or <video>
 
   // --- Unmute handler ---
   unmuteBtn.addEventListener('click', () => {
@@ -111,7 +111,12 @@ export function createVideoLayer({ containerEl, getCurrentSlide }) {
           ensureHlsJs()
             .then(() => {
               if (!globalThis.Hls?.isSupported?.()) {
-                showError(t('video.error.hlsUnsupported', 'HLS is not supported in this browser.'));
+                showError(
+                  t(
+                    'video.error.hlsUnsupported',
+                    'HLS is not supported in this browser.',
+                  ),
+                );
                 return;
               }
               hlsInstance = new globalThis.Hls();
@@ -119,11 +124,15 @@ export function createVideoLayer({ containerEl, getCurrentSlide }) {
               hlsInstance.attachMedia(video);
               hlsInstance.on(globalThis.Hls.Events.ERROR, (_e, data) => {
                 if (data.fatal)
-                  showError(t('video.error.stream', 'Stream error. Check the URL.'));
+                  showError(
+                    t('video.error.stream', 'Stream error. Check the URL.'),
+                  );
               });
             })
             .catch(() =>
-              showError(t('video.error.hlsLoadFailed', 'Failed to load HLS player.'))
+              showError(
+                t('video.error.hlsLoadFailed', 'Failed to load HLS player.'),
+              ),
             );
         }
       } else {
@@ -137,7 +146,11 @@ export function createVideoLayer({ containerEl, getCurrentSlide }) {
 
   function destroyPlayer() {
     if (hlsInstance) {
-      try { hlsInstance.destroy(); } catch { /* ignore */ }
+      try {
+        hlsInstance.destroy();
+      } catch {
+        /* ignore */
+      }
       hlsInstance = null;
     }
     playerWrap.innerHTML = '';
@@ -169,7 +182,8 @@ export function createVideoLayer({ containerEl, getCurrentSlide }) {
       return;
     }
 
-    const detectedProvider = config.provider || detectStreamProvider(config.streamUrl);
+    const detectedProvider =
+      config.provider || detectStreamProvider(config.streamUrl);
     const newEmbedUrl = buildEmbedUrl(config.streamUrl, detectedProvider);
 
     if (newEmbedUrl === embedUrl && provider === detectedProvider) {
@@ -184,7 +198,9 @@ export function createVideoLayer({ containerEl, getCurrentSlide }) {
 
     if (!embedUrl) {
       hide();
-      showError(t('video.error.embedFailed', 'Unable to embed this stream URL.'));
+      showError(
+        t('video.error.embedFailed', 'Unable to embed this stream URL.'),
+      );
       return;
     }
 
@@ -196,7 +212,8 @@ export function createVideoLayer({ containerEl, getCurrentSlide }) {
   function updatePosition() {
     if (!config?.enabled) return;
 
-    const slide = typeof getCurrentSlide === 'function' ? getCurrentSlide() : null;
+    const slide =
+      typeof getCurrentSlide === 'function' ? getCurrentSlide() : null;
     const override = slide?.content?.videoOverride;
 
     // Per-slide visibility override
@@ -207,7 +224,8 @@ export function createVideoLayer({ containerEl, getCurrentSlide }) {
     el.dataset.visible = 'true';
 
     // Per-slide position override or deck default
-    const preset = override?.position || config?.defaultPosition || 'pip-top-right';
+    const preset =
+      override?.position || config?.defaultPosition || 'pip-top-right';
     applyPosition(resolvePosition(preset));
 
     // Mobile position via data attribute (CSS handles the rest)
@@ -224,7 +242,11 @@ export function createVideoLayer({ containerEl, getCurrentSlide }) {
 
   function destroy() {
     destroyPlayer();
-    try { el.remove(); } catch { /* ignore */ }
+    try {
+      el.remove();
+    } catch {
+      /* ignore */
+    }
   }
 
   return { setConfig, updatePosition, show, hide, destroy, el };

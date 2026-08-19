@@ -12,7 +12,10 @@ import {
   getPresentationVersion,
 } from '../storage/presentations/index.js';
 import { listImageLibrary } from '../storage/image-library/index.js';
-import { listPersonalLibrary, listOrganizationLibrary } from '../storage/slide-library/index.js';
+import {
+  listPersonalLibrary,
+  listOrganizationLibrary,
+} from '../storage/slide-library/index.js';
 import { listThemes } from '../storage/themes.js';
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
@@ -69,7 +72,16 @@ function extractImageUrls(obj, urls) {
     return;
   }
 
-  const urlFields = ['slideBgImage', 'bgImage', 'image', 'src', 'url', 'logoUrl', 'imageUrl', 'logoSmallUrl'];
+  const urlFields = [
+    'slideBgImage',
+    'bgImage',
+    'image',
+    'src',
+    'url',
+    'logoUrl',
+    'imageUrl',
+    'logoSmallUrl',
+  ];
   for (const field of urlFields) {
     const val = obj[field];
     if (typeof val === 'string' && val.trim() && isImageUrl(val)) {
@@ -93,7 +105,11 @@ function extractImageUrls(obj, urls) {
 function isImageUrl(str) {
   if (!str) return false;
   // Must be http(s) or start with /
-  if (!str.startsWith('http://') && !str.startsWith('https://') && !str.startsWith('/')) {
+  if (
+    !str.startsWith('http://') &&
+    !str.startsWith('https://') &&
+    !str.startsWith('/')
+  ) {
     return false;
   }
   // Skip data URIs (already embedded)
@@ -126,7 +142,9 @@ function deriveExtension(url, contentType) {
   try {
     const pathname = new URL(url, 'http://localhost').pathname;
     const ext = path.extname(pathname).toLowerCase();
-    if (['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.avif'].includes(ext)) {
+    if (
+      ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.avif'].includes(ext)
+    ) {
       return ext;
     }
   } catch {
@@ -194,7 +212,12 @@ async function resolveLocalImage(repoRoot, urlPath) {
     if (!isUpload && !isAsset && !isCustom) return null;
 
     const abs = isUpload
-      ? path.join(repoRoot, 'server', 'uploads', urlPath.replace('/uploads/', ''))
+      ? path.join(
+          repoRoot,
+          'server',
+          'uploads',
+          urlPath.replace('/uploads/', ''),
+        )
       : path.join(repoRoot, urlPath.replace(/^\//, ''));
 
     // Guard against path traversal (e.g. /uploads/../../etc/passwd)
@@ -238,7 +261,9 @@ export async function buildBulkExport(opts) {
   // to guess once an instance holds several.
   const storageScope = organizationId
     ? { repoRoot, organizationId, actorEmail: userEmail || null }
-    : singleOrganizationScope(repoRoot, 'bulk export', { actorEmail: userEmail || null });
+    : singleOrganizationScope(repoRoot, 'bulk export', {
+        actorEmail: userEmail || null,
+      });
 
   const {
     includeVersions = false,
@@ -268,7 +293,9 @@ export async function buildBulkExport(opts) {
   const exporterResolution = await resolveIdentityByEmail(userEmail);
   const exporter = { id: exporterResolution?.userId || null, email: userEmail };
   const allPresentations = await listPresentations(storageScope);
-  const userPresentations = allPresentations.filter((p) => isOwnerOrCreator(exporter, p));
+  const userPresentations = allPresentations.filter((p) =>
+    isOwnerOrCreator(exporter, p),
+  );
 
   const presentations = [];
   for (let i = 0; i < userPresentations.length; i++) {
@@ -313,9 +340,16 @@ export async function buildBulkExport(opts) {
       const versions = await listPresentationVersions(storageScope, pres.id);
 
       for (const ver of versions) {
-        const full = await getPresentationVersion(storageScope, pres.id, ver.id);
+        const full = await getPresentationVersion(
+          storageScope,
+          pres.id,
+          ver.id,
+        );
         if (!full) continue;
-        zip.file(`versions/${pres.id}/${ver.id}.json`, JSON.stringify(full, null, 2));
+        zip.file(
+          `versions/${pres.id}/${ver.id}.json`,
+          JSON.stringify(full, null, 2),
+        );
         versionCount++;
       }
 
@@ -331,7 +365,9 @@ export async function buildBulkExport(opts) {
     try {
       const images = await listImageLibrary(storageScope);
       zip.file('image-library/index.json', JSON.stringify(images, null, 2));
-      manifest.stats.imageLibraryItems = Array.isArray(images) ? images.length : 0;
+      manifest.stats.imageLibraryItems = Array.isArray(images)
+        ? images.length
+        : 0;
 
       // Extract image URLs from library items
       if (Array.isArray(images)) {
@@ -349,16 +385,25 @@ export async function buildBulkExport(opts) {
   if (includeSlideLibrary) {
     try {
       const personal = await listPersonalLibrary(storageScope, userEmail);
-      zip.file('slide-library/personal.json', JSON.stringify(personal, null, 2));
+      zip.file(
+        'slide-library/personal.json',
+        JSON.stringify(personal, null, 2),
+      );
       manifest.stats.personalSlideLibraryItems = personal?.items?.length || 0;
     } catch (err) {
       manifest.warnings.push(`Personal slide library: ${err.message}`);
     }
 
     try {
-      const organization = await listOrganizationLibrary(storageScope, { userEmail });
-      zip.file('slide-library/organization.json', JSON.stringify(organization, null, 2));
-      manifest.stats.organizationSlideLibraryItems = organization?.items?.length || 0;
+      const organization = await listOrganizationLibrary(storageScope, {
+        userEmail,
+      });
+      zip.file(
+        'slide-library/organization.json',
+        JSON.stringify(organization, null, 2),
+      );
+      manifest.stats.organizationSlideLibraryItems =
+        organization?.items?.length || 0;
     } catch (err) {
       manifest.warnings.push(`Organization slide library: ${err.message}`);
     }
@@ -372,7 +417,10 @@ export async function buildBulkExport(opts) {
       // carries the caller's organization (or the single-organization default via
       // singleOrganizationScope, which refuses to guess on a multi-organization
       // instance) instead of silently falling back to the default organization.
-      const ctx = { organizationId: storageScope.organizationId, actorEmail: userEmail };
+      const ctx = {
+        organizationId: storageScope.organizationId,
+        actorEmail: userEmail,
+      };
       const themes = await listThemes(ctx);
       if (Array.isArray(themes)) {
         for (const theme of themes) {
@@ -393,7 +441,7 @@ export async function buildBulkExport(opts) {
   const allUrls = [...imageUrls];
   const localUrls = allUrls.filter((u) => u.startsWith('/'));
   const remoteUrls = allUrls.filter(
-    (u) => u.startsWith('http://') || u.startsWith('https://')
+    (u) => u.startsWith('http://') || u.startsWith('https://'),
   );
 
   const imageMap = new Map(); // url -> { hash, ext, filename }
@@ -406,7 +454,11 @@ export async function buildBulkExport(opts) {
   for (const url of localUrls) {
     const result = await resolveLocalImage(repoRoot, url);
     if (result) {
-      const hash = crypto.createHash('sha256').update(result.buffer).digest('hex').slice(0, 16);
+      const hash = crypto
+        .createHash('sha256')
+        .update(result.buffer)
+        .digest('hex')
+        .slice(0, 16);
       const ext = result.ext;
       const filename = `${hash}${ext}`;
 
@@ -421,9 +473,10 @@ export async function buildBulkExport(opts) {
   }
 
   // Progress after local images
-  const localPct = localUrls.length > 0
-    ? 55 + Math.round((localUrls.length / Math.max(allUrls.length, 1)) * 30)
-    : 55;
+  const localPct =
+    localUrls.length > 0
+      ? 55 + Math.round((localUrls.length / Math.max(allUrls.length, 1)) * 30)
+      : 55;
   await onProgress(Math.min(localPct, 70));
 
   // 6b. Download remote images via fetch with concurrency limiter
@@ -437,7 +490,11 @@ export async function buildBulkExport(opts) {
       try {
         const result = await downloadImage(url);
         if (result) {
-          const hash = crypto.createHash('sha256').update(result.buffer).digest('hex').slice(0, 16);
+          const hash = crypto
+            .createHash('sha256')
+            .update(result.buffer)
+            .digest('hex')
+            .slice(0, 16);
           const ext = deriveExtension(url, result.contentType);
           const filename = `${hash}${ext}`;
 
@@ -457,16 +514,18 @@ export async function buildBulkExport(opts) {
 
       const total = remoteUrls.length;
       const done = downloaded + downloadFailed;
-      const pct = localPct + Math.round((done / Math.max(total, 1)) * (85 - localPct));
+      const pct =
+        localPct + Math.round((done / Math.max(total, 1)) * (85 - localPct));
       await onProgress(Math.min(pct, 85));
-    })
+    }),
   );
 
   manifest.stats.imagesLocal = localResolved;
   manifest.stats.imagesLocalFailed = localFailed;
   manifest.stats.imagesDownloaded = downloaded;
   manifest.stats.imagesFailed = downloadFailed;
-  manifest.stats.imagesSkipped = imageUrls.size - localUrls.length - remoteUrls.length;
+  manifest.stats.imagesSkipped =
+    imageUrls.size - localUrls.length - remoteUrls.length;
 
   // Build image URL mapping for reference
   if (imageMap.size > 0) {
@@ -484,7 +543,10 @@ export async function buildBulkExport(opts) {
 
   await onProgress(90);
 
-  const tmpPath = path.join(os.tmpdir(), `deckyard-export-${crypto.randomUUID()}.zip`);
+  const tmpPath = path.join(
+    os.tmpdir(),
+    `deckyard-export-${crypto.randomUUID()}.zip`,
+  );
 
   // Stream ZIP to temp file instead of holding in memory
   await new Promise((resolve, reject) => {
@@ -509,13 +571,19 @@ export async function buildBulkExport(opts) {
 
   // Add warnings for large exports
   if (stat.size > 500 * 1024 * 1024) {
-    manifest.warnings.push(`Large export: ${(stat.size / (1024 * 1024)).toFixed(0)} MB`);
+    manifest.warnings.push(
+      `Large export: ${(stat.size / (1024 * 1024)).toFixed(0)} MB`,
+    );
   }
   if (downloadFailed > 0) {
-    manifest.warnings.push(`${downloadFailed} remote image(s) could not be downloaded`);
+    manifest.warnings.push(
+      `${downloadFailed} remote image(s) could not be downloaded`,
+    );
   }
   if (localFailed > 0) {
-    manifest.warnings.push(`${localFailed} local image(s) could not be resolved`);
+    manifest.warnings.push(
+      `${localFailed} local image(s) could not be resolved`,
+    );
   }
 
   await onProgress(100);

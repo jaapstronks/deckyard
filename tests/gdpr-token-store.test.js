@@ -48,56 +48,116 @@ test.after(() => __setTestDb(null));
 
 test('a stored token verifies; a wrong or wrong-length token does not', async () => {
   freshDb();
-  await storeGdprToken({ email: EMAIL, token: TOKEN, expiresAt: Date.now() + 60_000 });
+  await storeGdprToken({
+    email: EMAIL,
+    token: TOKEN,
+    expiresAt: Date.now() + 60_000,
+  });
 
-  assert.equal(await verifyGdprToken({ email: EMAIL, token: TOKEN }), true, 'the exact token matches');
+  assert.equal(
+    await verifyGdprToken({ email: EMAIL, token: TOKEN }),
+    true,
+    'the exact token matches',
+  );
   assert.equal(
     await verifyGdprToken({ email: EMAIL, token: 'b'.repeat(64) }),
     false,
-    'a same-length wrong token is refused'
+    'a same-length wrong token is refused',
   );
   // The constant-time compare must not throw on a length mismatch — the classic
   // timingSafeEqual footgun. A short token is simply false.
   assert.equal(
     await verifyGdprToken({ email: EMAIL, token: 'short' }),
     false,
-    'a wrong-length token is refused, not an error'
+    'a wrong-length token is refused, not an error',
   );
-  assert.equal(await verifyGdprToken({ email: EMAIL, token: '' }), false, 'an empty token is refused');
+  assert.equal(
+    await verifyGdprToken({ email: EMAIL, token: '' }),
+    false,
+    'an empty token is refused',
+  );
   assert.equal(
     await verifyGdprToken({ email: 'nobody@example.com', token: TOKEN }),
     false,
-    'an address with no token is refused'
+    'an address with no token is refused',
   );
 });
 
 test('an expired token never validates, even though the row survives', async () => {
   freshDb();
-  await storeGdprToken({ email: EMAIL, token: TOKEN, expiresAt: Date.now() - 1 });
-  assert.equal(await verifyGdprToken({ email: EMAIL, token: TOKEN }), false, 'past its window it is dead');
+  await storeGdprToken({
+    email: EMAIL,
+    token: TOKEN,
+    expiresAt: Date.now() - 1,
+  });
+  assert.equal(
+    await verifyGdprToken({ email: EMAIL, token: TOKEN }),
+    false,
+    'past its window it is dead',
+  );
 });
 
 test('a second store replaces the first: one active token per address', async () => {
   freshDb();
   const OLD = 'c'.repeat(64);
   const NEW = 'd'.repeat(64);
-  await storeGdprToken({ email: EMAIL, token: OLD, expiresAt: Date.now() + 60_000 });
-  await storeGdprToken({ email: EMAIL, token: NEW, expiresAt: Date.now() + 60_000 });
+  await storeGdprToken({
+    email: EMAIL,
+    token: OLD,
+    expiresAt: Date.now() + 60_000,
+  });
+  await storeGdprToken({
+    email: EMAIL,
+    token: NEW,
+    expiresAt: Date.now() + 60_000,
+  });
 
-  assert.equal(await verifyGdprToken({ email: EMAIL, token: OLD }), false, 'the superseded token is gone');
-  assert.equal(await verifyGdprToken({ email: EMAIL, token: NEW }), true, 'only the latest validates');
+  assert.equal(
+    await verifyGdprToken({ email: EMAIL, token: OLD }),
+    false,
+    'the superseded token is gone',
+  );
+  assert.equal(
+    await verifyGdprToken({ email: EMAIL, token: NEW }),
+    true,
+    'only the latest validates',
+  );
 });
 
 test('consume burns the token; the sweep removes only expired rows', async () => {
   freshDb();
-  await storeGdprToken({ email: EMAIL, token: TOKEN, expiresAt: Date.now() + 60_000 });
+  await storeGdprToken({
+    email: EMAIL,
+    token: TOKEN,
+    expiresAt: Date.now() + 60_000,
+  });
   await consumeGdprToken(EMAIL);
-  assert.equal(await verifyGdprToken({ email: EMAIL, token: TOKEN }), false, 'a consumed token is dead');
+  assert.equal(
+    await verifyGdprToken({ email: EMAIL, token: TOKEN }),
+    false,
+    'a consumed token is dead',
+  );
 
   // A live token and an expired one; the sweep drops only the expired.
-  await storeGdprToken({ email: 'live@example.com', token: TOKEN, expiresAt: Date.now() + 60_000 });
-  await storeGdprToken({ email: 'stale@example.com', token: TOKEN, expiresAt: Date.now() - 1 });
+  await storeGdprToken({
+    email: 'live@example.com',
+    token: TOKEN,
+    expiresAt: Date.now() + 60_000,
+  });
+  await storeGdprToken({
+    email: 'stale@example.com',
+    token: TOKEN,
+    expiresAt: Date.now() - 1,
+  });
   await deleteExpiredGdprTokens();
-  assert.equal(await verifyGdprToken({ email: 'live@example.com', token: TOKEN }), true, 'the live token survives the sweep');
-  assert.equal(await verifyGdprToken({ email: 'stale@example.com', token: TOKEN }), false, 'the expired row is swept');
+  assert.equal(
+    await verifyGdprToken({ email: 'live@example.com', token: TOKEN }),
+    true,
+    'the live token survives the sweep',
+  );
+  assert.equal(
+    await verifyGdprToken({ email: 'stale@example.com', token: TOKEN }),
+    false,
+    'the expired row is swept',
+  );
 });

@@ -48,7 +48,8 @@ function setIntervalLines(file) {
     .forEach((line, i) => {
       const trimmed = line.trimStart();
       if (trimmed.startsWith('//') || trimmed.startsWith('*')) return;
-      if (SET_INTERVAL.test(line)) hits.push({ line: i + 1, text: trimmed.trim() });
+      if (SET_INTERVAL.test(line))
+        hits.push({ line: i + 1, text: trimmed.trim() });
     });
   return hits;
 }
@@ -66,15 +67,18 @@ test('setInterval under server/jobs/ appears only in the createIntervalJob helpe
     violations.length,
     0,
     'Schedule recurring work through createIntervalJob (server/jobs/interval-job.js), ' +
-      `not a raw setInterval:\n  ${violations.join('\n  ')}`
+      `not a raw setInterval:\n  ${violations.join('\n  ')}`,
   );
 });
 
 test('the createIntervalJob helper still exists and is the one that calls setInterval', () => {
   const helperPath = path.join(repoRoot, HELPER);
-  assert.ok(fs.existsSync(helperPath), `${HELPER} must exist — the gate points at it.`);
+  assert.ok(
+    fs.existsSync(helperPath),
+    `${HELPER} must exist — the gate points at it.`,
+  );
   assert.ok(
     setIntervalLines(helperPath).length > 0,
-    `${HELPER} is expected to own the sole setInterval call.`
+    `${HELPER} is expected to own the sole setInterval call.`,
   );
 });

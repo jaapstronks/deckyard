@@ -16,9 +16,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 
-const dom = new JSDOM('<!doctype html><html><body><div id="app"></div></body></html>', {
-  url: 'http://localhost/app',
-});
+const dom = new JSDOM(
+  '<!doctype html><html><body><div id="app"></div></body></html>',
+  {
+    url: 'http://localhost/app',
+  },
+);
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 globalThis.location = dom.window.location;
@@ -96,13 +99,21 @@ test('createInViewLoader runs the callback once on intersection, then unobserves
       calls += 1;
     });
 
-    assert.equal(io.observed.has(el), true, 'element is observed before it is seen');
+    assert.equal(
+      io.observed.has(el),
+      true,
+      'element is observed before it is seen',
+    );
     assert.equal(calls, 0, 'callback does not run before intersection');
 
     const inst = io.instances[0];
     inst.fire([el]);
     assert.equal(calls, 1, 'callback runs on first intersection');
-    assert.equal(io.observed.has(el), false, 'element is unobserved after firing');
+    assert.equal(
+      io.observed.has(el),
+      false,
+      'element is unobserved after firing',
+    );
 
     // A second intersection for the same element must not re-run the callback.
     inst.fire([el]);
@@ -133,7 +144,8 @@ test('createInViewLoader runs immediately when IntersectionObserver is unavailab
   }
 });
 
-const { createCardRenderer } = await import('../client/views/list/presentation-card.js');
+const { createCardRenderer } =
+  await import('../client/views/list/presentation-card.js');
 
 test('renderCard shows a skeleton, defers rendering, and does not fetch per card', () => {
   const io = installIOStub();
@@ -161,24 +173,32 @@ test('renderCard shows a skeleton, defers rendering, and does not fetch per card
 
     const thumb = card.querySelector('.thumb');
     assert.ok(thumb, 'thumb element exists');
-    assert.equal(thumb.classList.contains('is-loading'), true, 'skeleton shown before in-view');
-    assert.equal(io.observed.has(thumb), true, 'thumb is registered with the in-view loader');
+    assert.equal(
+      thumb.classList.contains('is-loading'),
+      true,
+      'skeleton shown before in-view',
+    );
+    assert.equal(
+      io.observed.has(thumb),
+      true,
+      'thumb is registered with the in-view loader',
+    );
     assert.equal(
       thumb.querySelector('.slide'),
       null,
-      'no live slide rendered before the card scrolls into view'
+      'no live slide rendered before the card scrolls into view',
     );
     assert.equal(
       thumb.querySelector('.thumb-img'),
       null,
-      'no thumbnail image requested before the card scrolls into view'
+      'no thumbnail image requested before the card scrolls into view',
     );
     assert.equal(apiCalls, 0, 'no per-card /api/presentations fetch');
 
     // The shared loader disconnect is collected for cleanup.
     assert.ok(
       detachThumbs.some((fn) => typeof fn === 'function'),
-      'a cleanup function is registered'
+      'a cleanup function is registered',
     );
   } finally {
     io.restore();
@@ -206,9 +226,20 @@ test('renderCard shows "No slides yet" for an empty deck once in view', () => {
     const thumb = card.querySelector('.thumb');
     io.instances[0].fire([thumb]);
 
-    assert.equal(thumb.classList.contains('is-loading'), false, 'skeleton cleared');
-    assert.ok(thumb.querySelector('.thumb-overlay'), 'renders the empty-state overlay');
-    assert.equal(thumb.querySelector('.thumb-img'), null, 'no image requested for an empty deck');
+    assert.equal(
+      thumb.classList.contains('is-loading'),
+      false,
+      'skeleton cleared',
+    );
+    assert.ok(
+      thumb.querySelector('.thumb-overlay'),
+      'renders the empty-state overlay',
+    );
+    assert.equal(
+      thumb.querySelector('.thumb-img'),
+      null,
+      'no image requested for an empty deck',
+    );
   } finally {
     io.restore();
   }

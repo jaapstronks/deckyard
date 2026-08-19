@@ -103,7 +103,8 @@ function mapValue(value, isRef, mapFn) {
   if (Array.isArray(value)) return value.map((v) => mapValue(v, isRef, mapFn));
   if (value && typeof value === 'object') {
     const out = {};
-    for (const [k, v] of Object.entries(value)) out[k] = mapValue(v, isRef, mapFn);
+    for (const [k, v] of Object.entries(value))
+      out[k] = mapValue(v, isRef, mapFn);
     return out;
   }
   return value;

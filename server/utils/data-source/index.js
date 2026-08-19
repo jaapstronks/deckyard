@@ -5,7 +5,10 @@
  * provider type string. Follows the pattern from server/utils/llm/index.js.
  */
 
-import { notionDatabaseProvider, notionBlockProvider } from './providers/notion.js';
+import {
+  notionDatabaseProvider,
+  notionBlockProvider,
+} from './providers/notion.js';
 import { csvUrlProvider } from './providers/csv-url.js';
 import { validateDataSource } from '../../../shared/data-source.js';
 import { ValidationError } from '../errors.js';
@@ -52,7 +55,11 @@ export async function refreshSlideData(dataSource, currentContent) {
   }
 
   const provider = getProvider(dataSource.provider);
-  return provider.refresh(dataSource.config, dataSource.bindings, currentContent);
+  return provider.refresh(
+    dataSource.config,
+    dataSource.bindings,
+    currentContent,
+  );
 }
 
 /**

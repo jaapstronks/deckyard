@@ -25,7 +25,8 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 
-const { createFakeDb, UniqueViolationError } = await import('./helpers/fake-db.js');
+const { createFakeDb, UniqueViolationError } =
+  await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { acquireSlideLock } = await import('../server/storage/slide-locks.js');
 
@@ -78,7 +79,11 @@ describe('acquireSlideLock — conflicting acquire', () => {
     const res = await acquireSlideLock(ctx, PID, SID, BOB);
     assert.equal(res.ok, false);
     assert.equal(res.reason, 'held');
-    assert.equal(res.lock.holderEmail, ALICE.email, 'the original holder keeps the lock');
+    assert.equal(
+      res.lock.holderEmail,
+      ALICE.email,
+      'the original holder keeps the lock',
+    );
     assert.equal(rows().length, 1, 'no duplicate row was inserted');
   });
 
@@ -100,7 +105,11 @@ describe('acquireSlideLock — conflicting acquire', () => {
 
     const res = await acquireSlideLock(ctx, PID, SID, BOB);
     assert.equal(res.ok, true);
-    assert.equal(res.lock.holderEmail, BOB.email, 'the expired lock is taken over');
+    assert.equal(
+      res.lock.holderEmail,
+      BOB.email,
+      'the expired lock is taken over',
+    );
     assert.equal(rows().length, 1);
   });
 });
@@ -114,7 +123,7 @@ describe('acquireSlideLock — substrate sanity', () => {
     __setTestDb(db);
     await assert.rejects(
       db.insertInto('slide_locks').values(lockRow()).execute(),
-      (err) => err instanceof UniqueViolationError && err.code === '23505'
+      (err) => err instanceof UniqueViolationError && err.code === '23505',
     );
   });
 });

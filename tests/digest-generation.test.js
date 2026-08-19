@@ -40,16 +40,16 @@ globalThis.fetch = async (endpoint, opts) => {
   return {
     ok: true,
     status: 200,
-    text: async () => JSON.stringify({ choices: [{ message: { content: aiResponse } }] }),
+    text: async () =>
+      JSON.stringify({ choices: [{ message: { content: aiResponse } }] }),
   };
 };
 process.on('exit', () => {
   globalThis.fetch = realFetch;
 });
 
-const { generateDigestWithAI, generateTeamDigestWithAI } = await import(
-  '../server/services/digest-generation.js'
-);
+const { generateDigestWithAI, generateTeamDigestWithAI } =
+  await import('../server/services/digest-generation.js');
 
 function resetSeam() {
   aiResponse = '';
@@ -68,9 +68,24 @@ function soloAnalytics(overrides = {}) {
     avgDurationSeconds: 95,
     presentationCount: 3,
     weekOverWeek: {
-      views: { current: 120, previous: 100, percentChange: 20, direction: 'up' },
-      uniqueViewers: { current: 45, previous: 50, percentChange: 10, direction: 'down' },
-      avgDuration: { current: 95, previous: 95, percentChange: 0, direction: 'flat' },
+      views: {
+        current: 120,
+        previous: 100,
+        percentChange: 20,
+        direction: 'up',
+      },
+      uniqueViewers: {
+        current: 45,
+        previous: 50,
+        percentChange: 10,
+        direction: 'down',
+      },
+      avgDuration: {
+        current: 95,
+        previous: 95,
+        percentChange: 0,
+        direction: 'flat',
+      },
     },
     topPresentations: [
       { title: 'Deck A', views: 80, avgDurationSeconds: 110 },
@@ -94,7 +109,12 @@ function teamAnalytics(overrides = {}) {
     activePresenters: 4,
     presentationCount: 12,
     weekOverWeek: {
-      views: { current: 500, previous: 400, percentChange: 25, direction: 'up' },
+      views: {
+        current: 500,
+        previous: 400,
+        percentChange: 25,
+        direction: 'up',
+      },
     },
     topPresentations: [
       { title: 'Team Deck 1', views: 200, ownerEmail: 'a@example.com' },
@@ -131,7 +151,11 @@ test('solo: no activity returns the quiet-week digest without calling AI', async
     weekEnd: '2026-08-10',
   });
 
-  assert.equal(lastFetch, null, 'AI must not be called when there is no activity');
+  assert.equal(
+    lastFetch,
+    null,
+    'AI must not be called when there is no activity',
+  );
   assert.equal(digest.greeting, 'Hi Author,');
   assert.deepEqual(digest.topPresentations, []);
   assert.equal(digest.insights.length, 2);
@@ -189,7 +213,10 @@ test('solo: AI success merges model prose with server-owned metrics', async () =
   assert.match(digest.weekOverWeek.uniqueViewers, /^45 \(-10%\)$/);
 
   // The AI request asked for JSON output, with a system + user message.
-  assert.equal(lastFetch.endpoint, 'https://api.openai.com/v1/chat/completions');
+  assert.equal(
+    lastFetch.endpoint,
+    'https://api.openai.com/v1/chat/completions',
+  );
   assert.equal(lastFetch.body.response_format.type, 'json_object');
   assert.equal(lastFetch.body.messages[0].role, 'system');
   assert.equal(lastFetch.body.messages[1].role, 'user');
@@ -222,7 +249,8 @@ test('team: AI success caps presenters and presentations from analytics', async 
 
 test('solo: AI JSON wrapped in a markdown code fence is still parsed', async () => {
   resetSeam();
-  aiResponse = '```json\n' + JSON.stringify({ subject: 'Fenced subject' }) + '\n```';
+  aiResponse =
+    '```json\n' + JSON.stringify({ subject: 'Fenced subject' }) + '\n```';
 
   const digest = await generateDigestWithAI(user, soloAnalytics());
   assert.equal(digest.subject, 'Fenced subject');
@@ -274,7 +302,7 @@ test('a user without a name is greeted by their email prefix', async () => {
   resetSeam();
   const digest = await generateDigestWithAI(
     { email: 'jane.doe@example.com' },
-    { hasActivity: false, weekStart: '2026-08-04', weekEnd: '2026-08-10' }
+    { hasActivity: false, weekStart: '2026-08-04', weekEnd: '2026-08-10' },
   );
   assert.equal(digest.greeting, 'Hi jane.doe,');
 });

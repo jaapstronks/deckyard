@@ -31,7 +31,7 @@ export const SYNTHETIC_CLICK_WINDOW_MS = 350;
 
 export function attachLongPress(
   el,
-  { onLongPress, delay = 500, moveTolerance = 10 } = {}
+  { onLongPress, delay = 500, moveTolerance = 10 } = {},
 ) {
   if (!el) return () => {};
 

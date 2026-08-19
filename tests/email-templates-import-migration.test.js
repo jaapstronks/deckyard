@@ -72,7 +72,10 @@ function makeFakeDb() {
 }
 
 describe('058 email-templates import migration', () => {
-  const tmpDataDir = path.join(os.tmpdir(), `deckyard-email-migrate-${crypto.randomUUID()}`);
+  const tmpDataDir = path.join(
+    os.tmpdir(),
+    `deckyard-email-migrate-${crypto.randomUUID()}`,
+  );
   let migration;
 
   before(async () => {
@@ -94,10 +97,11 @@ describe('058 email-templates import migration', () => {
     };
     await fs.writeFile(
       path.join(tmpDataDir, 'email-templates.json'),
-      JSON.stringify(config, null, 2)
+      JSON.stringify(config, null, 2),
     );
 
-    migration = await import('../server/db/migrations/058_email_templates_to_table.js');
+    migration =
+      await import('../server/db/migrations/058_email_templates_to_table.js');
   });
 
   after(async () => {
@@ -116,22 +120,34 @@ describe('058 email-templates import migration', () => {
       subject: 'Welcome',
       body: 'Join us',
     });
-    assert.deepStrictEqual(fake.templates.get('userInvitation\u0000nl'), { subject: 'Welkom' });
+    assert.deepStrictEqual(fake.templates.get('userInvitation\u0000nl'), {
+      subject: 'Welkom',
+    });
     // The whitespace-only magicLink override normalizes to nothing -> no row.
-    assert.ok(!fake.templates.has('magicLink\u0000en'), 'empty override skipped');
+    assert.ok(
+      !fake.templates.has('magicLink\u0000en'),
+      'empty override skipped',
+    );
     assert.strictEqual(fake.settings.get('singleton'), 'nl');
 
     const insertsAfterFirst = fake.insertCount;
 
     // Second run imports nothing new and never overwrites.
     await migration.importEmailTemplatesFromDisk(fake.db);
-    assert.strictEqual(fake.insertCount, insertsAfterFirst, 'second run imported no new rows');
+    assert.strictEqual(
+      fake.insertCount,
+      insertsAfterFirst,
+      'second run imported no new rows',
+    );
     assert.strictEqual(fake.templates.size, 2);
     assert.strictEqual(fake.settings.get('singleton'), 'nl');
   });
 
   it('is a no-op when email-templates.json is absent', async () => {
-    const missingDir = path.join(os.tmpdir(), `deckyard-email-missing-${crypto.randomUUID()}`);
+    const missingDir = path.join(
+      os.tmpdir(),
+      `deckyard-email-missing-${crypto.randomUUID()}`,
+    );
     process.env.DATA_DIR = missingDir;
     const fake = makeFakeDb();
 

@@ -10,7 +10,11 @@ import { api } from '../../../lib/api.js';
 import { createAvatar, updateAvatar } from '../../../lib/user/avatar.js';
 import { invalidateProfile } from '../../../lib/user/user-profiles.js';
 import { createPasswordSection } from '../sections/index.js';
-import { fetchMySettings, updateMySettings, invalidateSettingsCache } from '../../../lib/net/settings.js';
+import {
+  fetchMySettings,
+  updateMySettings,
+  invalidateSettingsCache,
+} from '../../../lib/net/settings.js';
 
 /**
  * Create the account tab component.
@@ -35,7 +39,10 @@ export function createAccountTab({ user }) {
   // Profile card
   const profileCard = h('div', { class: 'stack editor-card' });
   profileCard.append(
-    h('div', { class: 'field-label', text: t('settings.profile.title', 'Profile') })
+    h('div', {
+      class: 'field-label',
+      text: t('settings.profile.title', 'Profile'),
+    }),
   );
 
   // Profile image section
@@ -79,13 +86,22 @@ export function createAccountTab({ user }) {
 
     // Validate file type
     if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
-      toast.error(t('settings.profile.invalidImageType', 'Please select a PNG, JPEG, or WebP image.'), { id: 'profile-image' });
+      toast.error(
+        t(
+          'settings.profile.invalidImageType',
+          'Please select a PNG, JPEG, or WebP image.',
+        ),
+        { id: 'profile-image' },
+      );
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error(t('settings.profile.imageTooLarge', 'Image must be smaller than 5MB.'), { id: 'profile-image' });
+      toast.error(
+        t('settings.profile.imageTooLarge', 'Image must be smaller than 5MB.'),
+        { id: 'profile-image' },
+      );
       return;
     }
 
@@ -111,7 +127,10 @@ export function createAccountTab({ user }) {
         currentImageUrl = resp.imageUrl;
         updateAvatar(avatarEl, { imageUrl: currentImageUrl });
         removeBtn.style.display = '';
-        toast.success(t('settings.profile.imageUploaded', 'Profile photo updated.'), { id: 'profile-image', durationMs: 2000 });
+        toast.success(
+          t('settings.profile.imageUploaded', 'Profile photo updated.'),
+          { id: 'profile-image', durationMs: 2000 },
+        );
         invalidateProfile(user?.email);
       }
     } catch (err) {
@@ -134,7 +153,10 @@ export function createAccountTab({ user }) {
       currentImageUrl = '';
       updateAvatar(avatarEl, { imageUrl: '' });
       removeBtn.style.display = 'none';
-      toast.success(t('settings.profile.imageRemoved', 'Profile photo removed.'), { id: 'profile-image', durationMs: 2000 });
+      toast.success(
+        t('settings.profile.imageRemoved', 'Profile photo removed.'),
+        { id: 'profile-image', durationMs: 2000 },
+      );
       invalidateProfile(user?.email);
     } catch (err) {
       toast.error(String(err?.message || err), { id: 'profile-image' });
@@ -157,13 +179,16 @@ export function createAccountTab({ user }) {
     class: 'help',
     text: t(
       'settings.profile.hint',
-      'Used as your name in the app (instead of the auth name).'
+      'Used as your name in the app (instead of the auth name).',
     ),
   });
   profileCard.append(profileImageWrap, profileName, profileHint);
 
   // Save button for profile
-  const profileActions = h('div', { class: 'row is-end', style: 'margin-top: var(--ps-space-3);' });
+  const profileActions = h('div', {
+    class: 'row is-end',
+    style: 'margin-top: var(--ps-space-3);',
+  });
   const btnSaveProfile = h('button', {
     class: 'btn btn-primary',
     text: t('common.save', 'Save'),
@@ -196,7 +221,10 @@ export function createAccountTab({ user }) {
       const savedImageUrl = String(my?.profile?.imageUrl || '').trim();
       if (savedImageUrl) {
         currentImageUrl = savedImageUrl;
-        updateAvatar(avatarEl, { imageUrl: savedImageUrl, name: my?.profile?.name || user?.name });
+        updateAvatar(avatarEl, {
+          imageUrl: savedImageUrl,
+          name: my?.profile?.name || user?.name,
+        });
         removeBtn.style.display = '';
       }
     } catch (e) {

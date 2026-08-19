@@ -5,7 +5,10 @@
 
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { CURATED_FONTS, getFontsByCategory as getSharedFontsByCategory } from '../../../../shared/theme-fonts.js';
+import {
+  CURATED_FONTS,
+  getFontsByCategory as getSharedFontsByCategory,
+} from '../../../../shared/theme-fonts.js';
 
 // Track which fonts have been loaded
 const loadedFonts = new Set();
@@ -39,10 +42,14 @@ function loadAllFonts() {
   allFontsLoaded = true;
 
   // Load fonts in batches to avoid too many parallel requests
-  const families = CURATED_FONTS.map((f) => f.family).filter((f) => !loadedFonts.has(f));
+  const families = CURATED_FONTS.map((f) => f.family).filter(
+    (f) => !loadedFonts.has(f),
+  );
 
   // Google Fonts allows combining multiple families in one request
-  const familyParams = families.map((f) => `family=${encodeURIComponent(f)}:wght@400;600;700`).join('&');
+  const familyParams = families
+    .map((f) => `family=${encodeURIComponent(f)}:wght@400;600;700`)
+    .join('&');
 
   if (familyParams) {
     const link = document.createElement('link');
@@ -91,7 +98,7 @@ function loadManagedFontPreview(managedFont) {
   font-weight: ${v.weight || 400};
   font-style: ${v.style || 'normal'};
   font-display: swap;
-}`
+}`,
           )
           .join('\n');
         if (rules) {
@@ -172,7 +179,14 @@ const MANAGED_PREFIX = '__managed__';
  * @param {Function} options.onChange - Change callback (fontFamily, familyId)
  * @returns {Object} { el, getValue, setValue, getSource, getFamilyId }
  */
-export function createFontPicker({ label, value, familyId, managedFonts, context, onChange }) {
+export function createFontPicker({
+  label,
+  value,
+  familyId,
+  managedFonts,
+  context,
+  onChange,
+}) {
   const container = h('div', { class: 'theme-font-picker' });
 
   const labelEl = h('label', { class: 'theme-font-picker-label', text: label });
@@ -215,7 +229,9 @@ export function createFontPicker({ label, value, familyId, managedFonts, context
 
   // Add managed fonts optgroup (if any)
   if (filteredManaged.length > 0) {
-    const managedGroup = h('optgroup', { label: t('fonts.customFonts', 'Custom Fonts') });
+    const managedGroup = h('optgroup', {
+      label: t('fonts.customFonts', 'Custom Fonts'),
+    });
 
     for (const mf of filteredManaged) {
       const optValue = `${MANAGED_PREFIX}${mf.id}`;
@@ -241,7 +257,9 @@ export function createFontPicker({ label, value, familyId, managedFonts, context
   for (const [category, fonts] of Object.entries(grouped)) {
     if (fonts.length === 0) continue;
 
-    const optgroup = h('optgroup', { label: CATEGORY_LABELS[category] || category });
+    const optgroup = h('optgroup', {
+      label: CATEGORY_LABELS[category] || category,
+    });
 
     for (const font of fonts) {
       const option = h('option', {
@@ -261,7 +279,10 @@ export function createFontPicker({ label, value, familyId, managedFonts, context
 
   // Preview text showing the selected font
   const preview = h('div', { class: 'theme-font-picker-preview' });
-  preview.textContent = t('common.pangram', 'The quick brown fox jumps over the lazy dog');
+  preview.textContent = t(
+    'common.pangram',
+    'The quick brown fox jumps over the lazy dog',
+  );
 
   function updatePreview(fontFamily) {
     loadGoogleFont(fontFamily);

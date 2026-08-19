@@ -45,7 +45,9 @@ import assert from 'node:assert/strict';
 
 // Assembled rather than written as one literal so secret scanners do not flag
 // it; the auth layer only needs MIN_AUTH_SECRET_LENGTH characters to sign with.
-process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
+process.env.AUTH_SECRET = ['deckyard', 'test', 'auth']
+  .join('-')
+  .padEnd(40, '0');
 delete process.env.AUTH_ENABLED;
 delete process.env.AUTH_DEV_BYPASS;
 delete process.env.MULTI_ORG_ENABLED;
@@ -62,7 +64,8 @@ const { __setTestDb } = await import('../server/db/client.js');
 const { hashPassword } = await import('../server/utils/password-hash.js');
 const { hashToken } = await import('../server/utils/secure-tokens.js');
 const auth = await import('../server/auth/auth.js');
-const { handlePasswordReset } = await import('../server/routes/api/password-reset.js');
+const { handlePasswordReset } =
+  await import('../server/routes/api/password-reset.js');
 const { handleMagicLink } = await import('../server/routes/api/magic-link.js');
 
 const CURRENT_PASSWORD = 'correct horse battery';
@@ -80,7 +83,11 @@ let passwordHash;
 
 test.before(async () => {
   passwordHash = await hashPassword(CURRENT_PASSWORD);
-  assert.equal(auth.authEnabled(), true, 'auth is on for this file (secret set)');
+  assert.equal(
+    auth.authEnabled(),
+    true,
+    'auth is on for this file (secret set)',
+  );
 });
 
 // ---------------------------------------------------------------------------
@@ -116,7 +123,15 @@ function userRow(overrides) {
  * @param {Object} spec
  * @returns {Object}
  */
-function tokenRow({ id, email, raw, used_at = null, expiresAt = FUTURE, createdAt = RECENT, ip = null }) {
+function tokenRow({
+  id,
+  email,
+  raw,
+  used_at = null,
+  expiresAt = FUTURE,
+  createdAt = RECENT,
+  ip = null,
+}) {
   return {
     id,
     user_email: email,
@@ -146,8 +161,17 @@ function seed(extra = {}) {
     ],
     users: [
       userRow({ email: 'alice@example.com', name: 'Alice' }),
-      userRow({ email: 'carol@other.example', name: 'Carol', organization_id: OTHER_ORG }),
-      userRow({ email: 'dave@example.com', name: 'Dave', auth_source: 'magic_link', password_hash: null }),
+      userRow({
+        email: 'carol@other.example',
+        name: 'Carol',
+        organization_id: OTHER_ORG,
+      }),
+      userRow({
+        email: 'dave@example.com',
+        name: 'Dave',
+        auth_source: 'magic_link',
+        password_hash: null,
+      }),
     ],
     password_reset_tokens: [],
     magic_link_tokens: [],
@@ -200,8 +224,15 @@ function makeRes() {
  */
 async function call(handler, method, path, { body, cookie } = {}) {
   const payload =
-    body === undefined ? '' : typeof body === 'string' ? body : JSON.stringify(body);
-  const headers = { host: 'decks.example.test', 'content-type': 'application/json' };
+    body === undefined
+      ? ''
+      : typeof body === 'string'
+        ? body
+        : JSON.stringify(body);
+  const headers = {
+    host: 'decks.example.test',
+    'content-type': 'application/json',
+  };
   if (cookie) headers.cookie = cookie;
 
   const req = {
@@ -253,9 +284,14 @@ const auditTypes = () => auditRows().map((e) => e.event_type);
 
 test('forgot-password mints a token for a known address and records the request', async () => {
   seed();
-  const res = await call(handlePasswordReset, 'POST', '/api/auth/forgot-password', {
-    body: { email: 'alice@example.com' },
-  });
+  const res = await call(
+    handlePasswordReset,
+    'POST',
+    '/api/auth/forgot-password',
+    {
+      body: { email: 'alice@example.com' },
+    },
+  );
 
   assert.equal(res.status, 200);
   assert.equal(res.body.ok, true);
@@ -266,20 +302,38 @@ test('forgot-password mints a token for a known address and records the request'
 
 test('forgot-password gives an unknown address the same 200 and mints nothing', async () => {
   seed();
-  const res = await call(handlePasswordReset, 'POST', '/api/auth/forgot-password', {
-    body: { email: 'ghost@example.com' },
-  });
+  const res = await call(
+    handlePasswordReset,
+    'POST',
+    '/api/auth/forgot-password',
+    {
+      body: { email: 'ghost@example.com' },
+    },
+  );
 
-  assert.equal(res.status, 200, 'the response never reveals that nobody exists');
+  assert.equal(
+    res.status,
+    200,
+    'the response never reveals that nobody exists',
+  );
   assert.equal(res.body.ok, true);
-  assert.equal(resetTokens().length, 0, 'and no token is created for a phantom');
+  assert.equal(
+    resetTokens().length,
+    0,
+    'and no token is created for a phantom',
+  );
 });
 
 test('forgot-password refuses a body that is not an address', async () => {
   seed();
-  const res = await call(handlePasswordReset, 'POST', '/api/auth/forgot-password', {
-    body: { email: 'not-an-address' },
-  });
+  const res = await call(
+    handlePasswordReset,
+    'POST',
+    '/api/auth/forgot-password',
+    {
+      body: { email: 'not-an-address' },
+    },
+  );
 
   assert.equal(res.status, 400);
   assert.equal(resetTokens().length, 0);
@@ -288,9 +342,14 @@ test('forgot-password refuses a body that is not an address', async () => {
 test('forgot-password is a 400 when auth is disabled', async () => {
   seed();
   await withAuthDisabled(async () => {
-    const res = await call(handlePasswordReset, 'POST', '/api/auth/forgot-password', {
-      body: { email: 'alice@example.com' },
-    });
+    const res = await call(
+      handlePasswordReset,
+      'POST',
+      '/api/auth/forgot-password',
+      {
+        body: { email: 'alice@example.com' },
+      },
+    );
     assert.equal(res.status, 400);
   });
 });
@@ -303,13 +362,22 @@ test('a rate-limited address still gets 200, but no fourth token and an audit no
       tokenRow({ id: 'prt-3', email: 'alice@example.com', raw: 'seed-c' }),
     ],
   });
-  const res = await call(handlePasswordReset, 'POST', '/api/auth/forgot-password', {
-    body: { email: 'alice@example.com' },
-  });
+  const res = await call(
+    handlePasswordReset,
+    'POST',
+    '/api/auth/forgot-password',
+    {
+      body: { email: 'alice@example.com' },
+    },
+  );
 
   assert.equal(res.status, 200, 'the limit is invisible to the caller');
   assert.equal(res.body.ok, true);
-  assert.equal(resetTokens().length, 3, 'the request over the limit mints nothing');
+  assert.equal(
+    resetTokens().length,
+    3,
+    'the request over the limit mints nothing',
+  );
   assert.ok(auditTypes().includes('password_reset_rate_limited'));
 });
 
@@ -319,23 +387,37 @@ test('a rate-limited address still gets 200, but no fourth token and an audit no
 
 test('validate accepts a live token and masks the address, without consuming it', async () => {
   seed({
-    password_reset_tokens: [tokenRow({ id: 'prt-live', email: 'alice@example.com', raw: 'live-token' })],
+    password_reset_tokens: [
+      tokenRow({
+        id: 'prt-live',
+        email: 'alice@example.com',
+        raw: 'live-token',
+      }),
+    ],
   });
   const res = await call(
     handlePasswordReset,
     'GET',
-    '/api/auth/reset-password/validate?token=live-token'
+    '/api/auth/reset-password/validate?token=live-token',
   );
 
   assert.equal(res.status, 200);
   assert.equal(res.body.ok, true);
   assert.equal(res.body.maskedEmail, 'al***@example.com');
-  assert.equal(resetTokens()[0].used_at, null, 'validation must not spend the token');
+  assert.equal(
+    resetTokens()[0].used_at,
+    null,
+    'validation must not spend the token',
+  );
 });
 
 test('validate without a token is a 400', async () => {
   seed();
-  const res = await call(handlePasswordReset, 'GET', '/api/auth/reset-password/validate');
+  const res = await call(
+    handlePasswordReset,
+    'GET',
+    '/api/auth/reset-password/validate',
+  );
 
   assert.equal(res.status, 400);
 });
@@ -345,7 +427,7 @@ test('validate answers ok:false for an unknown token, not a 404 that leaks its a
   const res = await call(
     handlePasswordReset,
     'GET',
-    '/api/auth/reset-password/validate?token=nobody-minted-this'
+    '/api/auth/reset-password/validate?token=nobody-minted-this',
   );
 
   assert.equal(res.status, 200);
@@ -356,13 +438,18 @@ test('validate answers ok:false for an unknown token, not a 404 that leaks its a
 test('validate reports an expired token as expired', async () => {
   seed({
     password_reset_tokens: [
-      tokenRow({ id: 'prt-old', email: 'alice@example.com', raw: 'stale-token', expiresAt: PAST }),
+      tokenRow({
+        id: 'prt-old',
+        email: 'alice@example.com',
+        raw: 'stale-token',
+        expiresAt: PAST,
+      }),
     ],
   });
   const res = await call(
     handlePasswordReset,
     'GET',
-    '/api/auth/reset-password/validate?token=stale-token'
+    '/api/auth/reset-password/validate?token=stale-token',
   );
 
   assert.equal(res.status, 200);
@@ -376,17 +463,28 @@ test('validate reports an expired token as expired', async () => {
 
 test('reset-password sets a new password, spends the token, and records success', async () => {
   seed({
-    password_reset_tokens: [tokenRow({ id: 'prt-use', email: 'alice@example.com', raw: 'use-token' })],
+    password_reset_tokens: [
+      tokenRow({ id: 'prt-use', email: 'alice@example.com', raw: 'use-token' }),
+    ],
   });
   const before = userFor('alice@example.com').password_hash;
 
-  const res = await call(handlePasswordReset, 'POST', '/api/auth/reset-password', {
-    body: { token: 'use-token', password: NEW_PASSWORD },
-  });
+  const res = await call(
+    handlePasswordReset,
+    'POST',
+    '/api/auth/reset-password',
+    {
+      body: { token: 'use-token', password: NEW_PASSWORD },
+    },
+  );
 
   assert.equal(res.status, 200);
   assert.equal(res.body.ok, true);
-  assert.notEqual(userFor('alice@example.com').password_hash, before, 'the hash changed');
+  assert.notEqual(
+    userFor('alice@example.com').password_hash,
+    before,
+    'the hash changed',
+  );
   assert.equal(userFor('alice@example.com').auth_source, 'database');
   assert.equal(typeof resetTokens()[0].used_at, 'string', 'the token is spent');
   assert.ok(auditTypes().includes('password_reset_success'));
@@ -394,66 +492,132 @@ test('reset-password sets a new password, spends the token, and records success'
 
 test('reset-password for a home organization that is not the default still resolves', async () => {
   seed({
-    password_reset_tokens: [tokenRow({ id: 'prt-carol', email: 'carol@other.example', raw: 'carol-token' })],
+    password_reset_tokens: [
+      tokenRow({
+        id: 'prt-carol',
+        email: 'carol@other.example',
+        raw: 'carol-token',
+      }),
+    ],
   });
   const before = userFor('carol@other.example').password_hash;
 
-  const res = await call(handlePasswordReset, 'POST', '/api/auth/reset-password', {
-    body: { token: 'carol-token', password: NEW_PASSWORD },
-  });
+  const res = await call(
+    handlePasswordReset,
+    'POST',
+    '/api/auth/reset-password',
+    {
+      body: { token: 'carol-token', password: NEW_PASSWORD },
+    },
+  );
 
   assert.equal(res.status, 200);
-  const carol = db.__tables.users.filter((u) => u.email === 'carol@other.example');
-  assert.equal(carol.length, 1, 'the global lookup updates her, it does not duplicate her');
-  assert.equal(carol[0].organization_id, OTHER_ORG, 'her organization is untouched');
+  const carol = db.__tables.users.filter(
+    (u) => u.email === 'carol@other.example',
+  );
+  assert.equal(
+    carol.length,
+    1,
+    'the global lookup updates her, it does not duplicate her',
+  );
+  assert.equal(
+    carol[0].organization_id,
+    OTHER_ORG,
+    'her organization is untouched',
+  );
   assert.notEqual(carol[0].password_hash, before);
 });
 
 test('reset-password for a brand-new address creates the person in the acting organization', async () => {
   seed({
-    password_reset_tokens: [tokenRow({ id: 'prt-new', email: 'newcomer@example.com', raw: 'new-token' })],
+    password_reset_tokens: [
+      tokenRow({
+        id: 'prt-new',
+        email: 'newcomer@example.com',
+        raw: 'new-token',
+      }),
+    ],
   });
-  const res = await call(handlePasswordReset, 'POST', '/api/auth/reset-password', {
-    body: { token: 'new-token', password: NEW_PASSWORD },
-  });
+  const res = await call(
+    handlePasswordReset,
+    'POST',
+    '/api/auth/reset-password',
+    {
+      body: { token: 'new-token', password: NEW_PASSWORD },
+    },
+  );
 
   assert.equal(res.status, 200);
   const created = userFor('newcomer@example.com');
   assert.ok(created, 'a row was created for the previously-unknown address');
-  assert.equal(created.organization_id, DEFAULT_ORG, 'the new row lands in the default organization');
+  assert.equal(
+    created.organization_id,
+    DEFAULT_ORG,
+    'the new row lands in the default organization',
+  );
   assert.equal(created.auth_source, 'database');
 });
 
 test('reset-password without a token is a 400', async () => {
   seed();
-  const res = await call(handlePasswordReset, 'POST', '/api/auth/reset-password', {
-    body: { password: NEW_PASSWORD },
-  });
+  const res = await call(
+    handlePasswordReset,
+    'POST',
+    '/api/auth/reset-password',
+    {
+      body: { password: NEW_PASSWORD },
+    },
+  );
 
   assert.equal(res.status, 400);
 });
 
 test('reset-password refuses a short password before it spends the token', async () => {
   seed({
-    password_reset_tokens: [tokenRow({ id: 'prt-weak', email: 'alice@example.com', raw: 'weak-token' })],
+    password_reset_tokens: [
+      tokenRow({
+        id: 'prt-weak',
+        email: 'alice@example.com',
+        raw: 'weak-token',
+      }),
+    ],
   });
-  const res = await call(handlePasswordReset, 'POST', '/api/auth/reset-password', {
-    body: { token: 'weak-token', password: 'short' },
-  });
+  const res = await call(
+    handlePasswordReset,
+    'POST',
+    '/api/auth/reset-password',
+    {
+      body: { token: 'weak-token', password: 'short' },
+    },
+  );
 
   assert.equal(res.status, 400);
-  assert.equal(resetTokens()[0].used_at, null, 'a rejected password leaves the token usable');
+  assert.equal(
+    resetTokens()[0].used_at,
+    null,
+    'a rejected password leaves the token usable',
+  );
 });
 
 test('reset-password rejects a spent or expired token and records the failure', async () => {
   seed({
     password_reset_tokens: [
-      tokenRow({ id: 'prt-exp', email: 'alice@example.com', raw: 'expired-token', expiresAt: PAST }),
+      tokenRow({
+        id: 'prt-exp',
+        email: 'alice@example.com',
+        raw: 'expired-token',
+        expiresAt: PAST,
+      }),
     ],
   });
-  const res = await call(handlePasswordReset, 'POST', '/api/auth/reset-password', {
-    body: { token: 'expired-token', password: NEW_PASSWORD },
-  });
+  const res = await call(
+    handlePasswordReset,
+    'POST',
+    '/api/auth/reset-password',
+    {
+      body: { token: 'expired-token', password: NEW_PASSWORD },
+    },
+  );
 
   assert.equal(res.status, 400);
   assert.ok(auditTypes().includes('password_reset_failed'));
@@ -486,10 +650,15 @@ test('change-password rotates the password and issues a fresh session', async ()
   const cookie = await sessionCookieFor('alice@example.com', CURRENT_PASSWORD);
   const before = userFor('alice@example.com').password_hash;
 
-  const res = await call(handlePasswordReset, 'POST', '/api/auth/change-password', {
-    cookie,
-    body: { currentPassword: CURRENT_PASSWORD, newPassword: NEW_PASSWORD },
-  });
+  const res = await call(
+    handlePasswordReset,
+    'POST',
+    '/api/auth/change-password',
+    {
+      cookie,
+      body: { currentPassword: CURRENT_PASSWORD, newPassword: NEW_PASSWORD },
+    },
+  );
 
   assert.equal(res.status, 200);
   assert.equal(res.body.ok, true);
@@ -500,9 +669,14 @@ test('change-password rotates the password and issues a fresh session', async ()
 
 test('change-password refuses an anonymous caller with a 401', async () => {
   seed();
-  const res = await call(handlePasswordReset, 'POST', '/api/auth/change-password', {
-    body: { currentPassword: CURRENT_PASSWORD, newPassword: NEW_PASSWORD },
-  });
+  const res = await call(
+    handlePasswordReset,
+    'POST',
+    '/api/auth/change-password',
+    {
+      body: { currentPassword: CURRENT_PASSWORD, newPassword: NEW_PASSWORD },
+    },
+  );
 
   assert.equal(res.status, 401);
 });
@@ -512,10 +686,15 @@ test('change-password rejects a wrong current password and leaves the hash alone
   const cookie = await sessionCookieFor('alice@example.com', CURRENT_PASSWORD);
   const before = userFor('alice@example.com').password_hash;
 
-  const res = await call(handlePasswordReset, 'POST', '/api/auth/change-password', {
-    cookie,
-    body: { currentPassword: 'not the password', newPassword: NEW_PASSWORD },
-  });
+  const res = await call(
+    handlePasswordReset,
+    'POST',
+    '/api/auth/change-password',
+    {
+      cookie,
+      body: { currentPassword: 'not the password', newPassword: NEW_PASSWORD },
+    },
+  );
 
   assert.equal(res.status, 400);
   assert.equal(userFor('alice@example.com').password_hash, before, 'unchanged');
@@ -526,7 +705,12 @@ test('change-password refuses a user who has no database credentials', async () 
   seed();
   // Dave signed in through a magic link and never set a password; a session for
   // him is minted directly rather than through the password login path.
-  const magicUser = { email: 'dave@example.com', role: 'user', name: 'Dave', v: '' };
+  const magicUser = {
+    email: 'dave@example.com',
+    role: 'user',
+    name: 'Dave',
+    v: '',
+  };
   const cookieRes = makeRes();
   const daveRow = userFor('dave@example.com');
   const { sessionVersion } = await import('../server/utils/session-version.js');
@@ -534,21 +718,35 @@ test('change-password refuses a user who has no database credentials', async () 
   auth.setSessionCookie({ headers: {} }, cookieRes, magicUser);
   const cookie = String(cookieRes.headers['Set-Cookie']).split(';')[0];
 
-  const res = await call(handlePasswordReset, 'POST', '/api/auth/change-password', {
-    cookie,
-    body: { currentPassword: CURRENT_PASSWORD, newPassword: NEW_PASSWORD },
-  });
+  const res = await call(
+    handlePasswordReset,
+    'POST',
+    '/api/auth/change-password',
+    {
+      cookie,
+      body: { currentPassword: CURRENT_PASSWORD, newPassword: NEW_PASSWORD },
+    },
+  );
 
-  assert.equal(res.status, 400, 'there is no current password to verify against');
+  assert.equal(
+    res.status,
+    400,
+    'there is no current password to verify against',
+  );
 });
 
 test('change-password refuses a short new password', async () => {
   seed();
   const cookie = await sessionCookieFor('alice@example.com', CURRENT_PASSWORD);
-  const res = await call(handlePasswordReset, 'POST', '/api/auth/change-password', {
-    cookie,
-    body: { currentPassword: CURRENT_PASSWORD, newPassword: 'short' },
-  });
+  const res = await call(
+    handlePasswordReset,
+    'POST',
+    '/api/auth/change-password',
+    {
+      cookie,
+      body: { currentPassword: CURRENT_PASSWORD, newPassword: 'short' },
+    },
+  );
 
   assert.equal(res.status, 400);
 });
@@ -575,9 +773,17 @@ test('magic-link request gives an unknown address the same 200 and mints nothing
     body: { email: 'ghost@example.com' },
   });
 
-  assert.equal(res.status, 200, 'the response never reveals that nobody exists');
+  assert.equal(
+    res.status,
+    200,
+    'the response never reveals that nobody exists',
+  );
   assert.equal(res.body.ok, true);
-  assert.equal(magicTokens().length, 0, 'a link is only ever sent to a real account');
+  assert.equal(
+    magicTokens().length,
+    0,
+    'a link is only ever sent to a real account',
+  );
 });
 
 test('magic-link request refuses a malformed address', async () => {
@@ -616,7 +822,11 @@ test('a rate-limited address still gets 200, but no sixth magic token', async ()
 
   assert.equal(res.status, 200);
   assert.equal(res.body.ok, true);
-  assert.equal(magicTokens().length, 5, 'the request over the limit mints nothing');
+  assert.equal(
+    magicTokens().length,
+    5,
+    'the request over the limit mints nothing',
+  );
 });
 
 // ===========================================================================
@@ -625,11 +835,22 @@ test('a rate-limited address still gets 200, but no sixth magic token', async ()
 
 test('verify spends a live token, logs the person in, and opens a session', async () => {
   seed({
-    magic_link_tokens: [tokenRow({ id: 'mlt-live', email: 'alice@example.com', raw: 'live-magic' })],
+    magic_link_tokens: [
+      tokenRow({
+        id: 'mlt-live',
+        email: 'alice@example.com',
+        raw: 'live-magic',
+      }),
+    ],
   });
-  const res = await call(handleMagicLink, 'POST', '/api/auth/magic-link/verify', {
-    body: { token: 'live-magic' },
-  });
+  const res = await call(
+    handleMagicLink,
+    'POST',
+    '/api/auth/magic-link/verify',
+    {
+      body: { token: 'live-magic' },
+    },
+  );
 
   assert.equal(res.status, 200);
   assert.equal(res.body.ok, true);
@@ -641,11 +862,22 @@ test('verify spends a live token, logs the person in, and opens a session', asyn
 
 test('verify creates a first-time visitor as a magic-link user in the acting organization', async () => {
   seed({
-    magic_link_tokens: [tokenRow({ id: 'mlt-new', email: 'firsttimer@example.com', raw: 'new-magic' })],
+    magic_link_tokens: [
+      tokenRow({
+        id: 'mlt-new',
+        email: 'firsttimer@example.com',
+        raw: 'new-magic',
+      }),
+    ],
   });
-  const res = await call(handleMagicLink, 'POST', '/api/auth/magic-link/verify', {
-    body: { token: 'new-magic' },
-  });
+  const res = await call(
+    handleMagicLink,
+    'POST',
+    '/api/auth/magic-link/verify',
+    {
+      body: { token: 'new-magic' },
+    },
+  );
 
   assert.equal(res.status, 200);
   assert.equal(res.body.ok, true);
@@ -657,9 +889,14 @@ test('verify creates a first-time visitor as a magic-link user in the acting org
 
 test('verify without a token is a 400', async () => {
   seed();
-  const res = await call(handleMagicLink, 'POST', '/api/auth/magic-link/verify', {
-    body: {},
-  });
+  const res = await call(
+    handleMagicLink,
+    'POST',
+    '/api/auth/magic-link/verify',
+    {
+      body: {},
+    },
+  );
 
   assert.equal(res.status, 400);
 });
@@ -671,9 +908,14 @@ test('verify cannot tell an unknown token from an expired one, and says so unifo
   // (The GET validate path *can* separate them; the consuming verify path
   // cannot.)
   seed();
-  const res = await call(handleMagicLink, 'POST', '/api/auth/magic-link/verify', {
-    body: { token: 'nobody-minted-this' },
-  });
+  const res = await call(
+    handleMagicLink,
+    'POST',
+    '/api/auth/magic-link/verify',
+    {
+      body: { token: 'nobody-minted-this' },
+    },
+  );
 
   assert.equal(res.status, 200);
   assert.equal(res.body.ok, false);
@@ -683,12 +925,22 @@ test('verify cannot tell an unknown token from an expired one, and says so unifo
 test('verify reports an expired token as expired', async () => {
   seed({
     magic_link_tokens: [
-      tokenRow({ id: 'mlt-old', email: 'alice@example.com', raw: 'stale-magic', expiresAt: PAST }),
+      tokenRow({
+        id: 'mlt-old',
+        email: 'alice@example.com',
+        raw: 'stale-magic',
+        expiresAt: PAST,
+      }),
     ],
   });
-  const res = await call(handleMagicLink, 'POST', '/api/auth/magic-link/verify', {
-    body: { token: 'stale-magic' },
-  });
+  const res = await call(
+    handleMagicLink,
+    'POST',
+    '/api/auth/magic-link/verify',
+    {
+      body: { token: 'stale-magic' },
+    },
+  );
 
   assert.equal(res.status, 200);
   assert.equal(res.body.ok, false);

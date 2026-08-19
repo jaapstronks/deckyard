@@ -43,7 +43,7 @@ export function createSlideLibraryControls({
       });
     seg.append(
       mkBtn('personal', 'slideLibrary.shelf.personal', 'Personal'),
-      mkBtn('organization', 'slideLibrary.shelf.organization', 'Team')
+      mkBtn('organization', 'slideLibrary.shelf.organization', 'Team'),
     );
     mount.append(seg);
   };
@@ -62,7 +62,7 @@ export function createSlideLibraryControls({
       });
     seg.append(
       mkBtn('library', 'slideLibrary.view.library', 'Library'),
-      mkBtn('trash', 'slideLibrary.view.trash', 'Trash')
+      mkBtn('trash', 'slideLibrary.view.trash', 'Trash'),
     );
     mount.append(seg);
   };
@@ -86,7 +86,7 @@ export function createSlideLibraryControls({
       });
     seg.append(
       mkBtn('nl', t('language.nl.short', 'NL')),
-      mkBtn('en-GB', t('language.enGB.short', 'EN'))
+      mkBtn('en-GB', t('language.enGB.short', 'EN')),
     );
     mount.append(seg);
   };
@@ -95,7 +95,10 @@ export function createSlideLibraryControls({
     const input = h('input', {
       class: 'form-input ps-lib-search',
       type: 'search',
-      placeholder: t('slideLibrary.search.placeholder', 'Search slide library…'),
+      placeholder: t(
+        'slideLibrary.search.placeholder',
+        'Search slide library…',
+      ),
       value: state.getQuery(),
       'aria-label': t('slideLibrary.search.aria', 'Search slide library'),
     });
@@ -169,7 +172,10 @@ export function createSlideLibraryControls({
       });
       allBtn.append(
         h('span', { text: t('slideLibrary.filter.all', 'All') }),
-        h('span', { class: 'ps-lib-type-filter-count', text: String(activeItems.length) })
+        h('span', {
+          class: 'ps-lib-type-filter-count',
+          text: String(activeItems.length),
+        }),
       );
       filters.append(allBtn);
 
@@ -188,7 +194,7 @@ export function createSlideLibraryControls({
         });
         btn.append(
           h('span', { text: label }),
-          h('span', { class: 'ps-lib-type-filter-count', text: String(count) })
+          h('span', { class: 'ps-lib-type-filter-count', text: String(count) }),
         );
         filters.append(btn);
       }
@@ -219,7 +225,7 @@ export function createSlideLibraryControls({
         });
         btn.append(
           h('span', { text: `#${tagName}` }),
-          h('span', { class: 'ps-lib-type-filter-count', text: String(count) })
+          h('span', { class: 'ps-lib-type-filter-count', text: String(count) }),
         );
         filters.append(btn);
       }

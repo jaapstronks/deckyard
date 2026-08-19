@@ -88,13 +88,13 @@ shared multi-tenant cloud. That is no longer where Deckyard is going, and
 leaving it here would misrepresent the project:
 
 - **Resolving an organization from the hostname is a rejected model**, not
-  deferred work. A hostname identifies an *instance*; an organization is a
-  dimension *within* one. A customer who wants their own domain gets their own
+  deferred work. A hostname identifies an _instance_; an organization is a
+  dimension _within_ one. A customer who wants their own domain gets their own
   deployment — DNS, a reverse proxy and `BASE_URL`, none of which the
   application needs to know about. The half-built subdomain and custom-domain
   resolution has been removed; the reasoning is recorded in
   [`docs/reference/tenant-isolation.md`](docs/reference/tenant-isolation.md)
-  under *Why not the hostname*.
+  under _Why not the hostname_.
 - **There will be no shared multi-tenant SaaS** — no subscriptions, no payment
   integration, no self-serve signup, no commercial plan limits in this
   codebase. Deckyard stays something you run yourself, and the isolation shapes

@@ -4,7 +4,10 @@
  */
 
 import { t } from '../../lib/ui-i18n.js';
-import { getVisibilityPreset, applyVisibilityPreset } from '../../../shared/slide-visibility.js';
+import {
+  getVisibilityPreset,
+  applyVisibilityPreset,
+} from '../../../shared/slide-visibility.js';
 
 /**
  * Create a visibility preset option element.
@@ -18,7 +21,9 @@ function createPresetOption(h, { presetName, isActive, onClick }) {
     onclick: (e) => onClick(e),
   });
 
-  const icon = h('span', { class: `visibility-icon visibility-icon--${presetName}` });
+  const icon = h('span', {
+    class: `visibility-icon visibility-icon--${presetName}`,
+  });
   const content = h('div', { class: 'visibility-option-content' }, [
     h('div', { class: 'visibility-option-label', text: presetInfo.label }),
     h('div', { class: 'visibility-option-desc', text: presetInfo.description }),
@@ -48,13 +53,19 @@ function getPresetDisplayInfo(presetName) {
     case 'draft':
       return {
         label: t('visibility.draft', 'Draft'),
-        description: t('visibility.draftDesc', 'Hidden until finalized, visible to collaborators'),
+        description: t(
+          'visibility.draftDesc',
+          'Hidden until finalized, visible to collaborators',
+        ),
         iconClass: 'draft',
       };
     case 'internal':
       return {
         label: t('visibility.internal', 'Internal'),
-        description: t('visibility.internalDesc', 'Show in presentation, hide in exports and public'),
+        description: t(
+          'visibility.internalDesc',
+          'Show in presentation, hide in exports and public',
+        ),
         iconClass: 'internal',
       };
     case 'hidden':
@@ -66,7 +77,10 @@ function getPresetDisplayInfo(presetName) {
     case 'skipInPresentation':
       return {
         label: t('visibility.skipInPresentation', 'Skip in Presentation'),
-        description: t('visibility.skipInPresentationDesc', 'Hide in presenter mode only'),
+        description: t(
+          'visibility.skipInPresentationDesc',
+          'Hide in presenter mode only',
+        ),
         iconClass: 'skip',
       };
     case 'custom':
@@ -88,7 +102,12 @@ function getPresetDisplayInfo(presetName) {
  * @param {Function} options.onClose - Callback to close the menu
  * @returns {HTMLElement} The menu element
  */
-export function createVisibilityMenu({ h, slide, onVisibilityChange, onClose }) {
+export function createVisibilityMenu({
+  h,
+  slide,
+  onVisibilityChange,
+  onClose,
+}) {
   const currentPreset = getVisibilityPreset(slide);
 
   const menu = h('div', { class: 'visibility-menu' });
@@ -106,7 +125,13 @@ export function createVisibilityMenu({ h, slide, onVisibilityChange, onClose }) 
 
   const options = h('div', { class: 'visibility-menu-options' });
 
-  const presetOrder = ['visible', 'draft', 'internal', 'hidden', 'skipInPresentation'];
+  const presetOrder = [
+    'visible',
+    'draft',
+    'internal',
+    'hidden',
+    'skipInPresentation',
+  ];
 
   for (const presetName of presetOrder) {
     const option = createPresetOption(h, {
@@ -120,7 +145,10 @@ export function createVisibilityMenu({ h, slide, onVisibilityChange, onClose }) 
           if (check) check.remove();
         });
         e.currentTarget.classList.add('is-active');
-        const check = h('span', { class: 'visibility-option-check', text: '\u2713' });
+        const check = h('span', {
+          class: 'visibility-option-check',
+          text: '\u2713',
+        });
         e.currentTarget.append(check);
 
         // Apply change and close after brief delay for feedback
@@ -209,7 +237,7 @@ export function createVisibilityToggle({ h, slide, onToggle }) {
       'stroke-linecap': 'round',
       'stroke-linejoin': 'round',
     },
-    iconChildren
+    iconChildren,
   );
 
   button.append(svg);

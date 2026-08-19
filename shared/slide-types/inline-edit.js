@@ -95,8 +95,8 @@ function facet(exportName) {
     Object.fromEntries(
       Object.entries(MODULES)
         .filter(([, mod]) => mod[exportName] !== undefined)
-        .map(([type, mod]) => [type, mod[exportName]])
-    )
+        .map(([type, mod]) => [type, mod[exportName]]),
+    ),
   );
 }
 

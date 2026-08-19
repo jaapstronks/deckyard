@@ -23,7 +23,9 @@ import { sessionVersion } from '../server/utils/session-version.js';
 // authEnabled() and the multi-organization flag are read at module scope.
 // Assembled rather than written as one literal so secret scanners do not flag
 // it; authConfigError() only requires MIN_AUTH_SECRET_LENGTH characters.
-process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
+process.env.AUTH_SECRET = ['deckyard', 'test', 'auth']
+  .join('-')
+  .padEnd(40, '0');
 delete process.env.AUTH_ENABLED;
 delete process.env.AUTH_DEV_BYPASS;
 delete process.env.MULTI_ORG_ENABLED;
@@ -113,7 +115,11 @@ function seedSingleOrg(overrides = {}) {
 
 test('verifyLoginAsync accepts the correct password', async () => {
   seedSingleOrg();
-  const user = await auth.verifyLoginAsync('alice@example.com', 'correct horse battery', ctx);
+  const user = await auth.verifyLoginAsync(
+    'alice@example.com',
+    'correct horse battery',
+    ctx,
+  );
   assert.ok(user, 'login resolved a user');
   assert.equal(user.email, 'alice@example.com');
   assert.equal(user.role, 'user');
@@ -129,19 +135,31 @@ test('verifyLoginAsync rejects a wrong password', async () => {
 
 test('verifyLoginAsync rejects an unknown email', async () => {
   seedSingleOrg();
-  const user = await auth.verifyLoginAsync('nobody@example.com', 'correct horse battery', ctx);
+  const user = await auth.verifyLoginAsync(
+    'nobody@example.com',
+    'correct horse battery',
+    ctx,
+  );
   assert.equal(user, null);
 });
 
 test('verifyLoginAsync rejects a user without database credentials', async () => {
   seedSingleOrg({ auth_source: 'magic_link', password_hash: null });
-  const user = await auth.verifyLoginAsync('alice@example.com', 'correct horse battery', ctx);
+  const user = await auth.verifyLoginAsync(
+    'alice@example.com',
+    'correct horse battery',
+    ctx,
+  );
   assert.equal(user, null);
 });
 
 test('login is case-insensitive on the email', async () => {
   seedSingleOrg();
-  const user = await auth.verifyLoginAsync('ALICE@Example.com', 'correct horse battery', ctx);
+  const user = await auth.verifyLoginAsync(
+    'ALICE@Example.com',
+    'correct horse battery',
+    ctx,
+  );
   assert.ok(user, 'mixed-case email still resolves');
 });
 
@@ -151,7 +169,11 @@ test('login is case-insensitive on the email', async () => {
 
 test('getUserFromRequestAsync resolves a valid session to the default organization', async () => {
   const db = seedSingleOrg();
-  const login = await auth.verifyLoginAsync('alice@example.com', 'correct horse battery', ctx);
+  const login = await auth.verifyLoginAsync(
+    'alice@example.com',
+    'correct horse battery',
+    ctx,
+  );
   const req = requestWithSession(login);
 
   const resolved = await auth.getUserFromRequestAsync(req, ctx);
@@ -163,7 +185,11 @@ test('getUserFromRequestAsync resolves a valid session to the default organizati
 
 test('getUserFromRequestAsync rejects a tampered signature', async () => {
   seedSingleOrg();
-  const login = await auth.verifyLoginAsync('alice@example.com', 'correct horse battery', ctx);
+  const login = await auth.verifyLoginAsync(
+    'alice@example.com',
+    'correct horse battery',
+    ctx,
+  );
   const req = requestWithSession(login);
   req.headers.cookie = `${req.headers.cookie.slice(0, -2)}xx`;
 
@@ -177,7 +203,11 @@ test('getUserFromRequestAsync rejects a session with no cookie', async () => {
 
 test('getUserFromRequestAsync rejects a session whose version is stale', async () => {
   const db = seedSingleOrg();
-  const login = await auth.verifyLoginAsync('alice@example.com', 'correct horse battery', ctx);
+  const login = await auth.verifyLoginAsync(
+    'alice@example.com',
+    'correct horse battery',
+    ctx,
+  );
   const req = requestWithSession(login);
 
   // Simulate a password change after the session was issued.
@@ -188,7 +218,11 @@ test('getUserFromRequestAsync rejects a session whose version is stale', async (
 
 test('getUserFromRequestAsync rejects a session for a deleted user', async () => {
   const db = seedSingleOrg();
-  const login = await auth.verifyLoginAsync('alice@example.com', 'correct horse battery', ctx);
+  const login = await auth.verifyLoginAsync(
+    'alice@example.com',
+    'correct horse battery',
+    ctx,
+  );
   const req = requestWithSession(login);
 
   db.__tables.users = [];
@@ -198,7 +232,11 @@ test('getUserFromRequestAsync rejects a session for a deleted user', async () =>
 
 test('single-organization session resolution issues no membership lookup', async () => {
   const db = seedSingleOrg();
-  const login = await auth.verifyLoginAsync('alice@example.com', 'correct horse battery', ctx);
+  const login = await auth.verifyLoginAsync(
+    'alice@example.com',
+    'correct horse battery',
+    ctx,
+  );
   const req = requestWithSession(login);
 
   db.__queryLog.length = 0;
@@ -207,14 +245,21 @@ test('single-organization session resolution issues no membership lookup', async
   assert.deepEqual(
     [...new Set(touchedTables(db))],
     ['users'],
-    'only the users table is touched when multi-organization is off'
+    'only the users table is touched when multi-organization is off',
   );
 });
 
 test('a single-organization session carries no membership role', async () => {
   seedSingleOrg();
-  const login = await auth.verifyLoginAsync('alice@example.com', 'correct horse battery', ctx);
-  const resolved = await auth.getUserFromRequestAsync(requestWithSession(login), ctx);
+  const login = await auth.verifyLoginAsync(
+    'alice@example.com',
+    'correct horse battery',
+    ctx,
+  );
+  const resolved = await auth.getUserFromRequestAsync(
+    requestWithSession(login),
+    ctx,
+  );
 
   // There is one organization and no membership to read, so the instance-wide
   // role is the only one there is. The UI reads this as "fall back to isAdmin".
@@ -242,26 +287,48 @@ test('resolveActiveOrganization is configuration-only in single-organization mod
   const db = seedSingleOrg();
   db.__queryLog.length = 0;
 
-  assert.equal(await identity.resolveActiveOrganization('user-alice', OTHER_ORG), DEFAULT_ORG);
-  assert.equal(await identity.resolveActiveOrganization(null, undefined), DEFAULT_ORG);
-  assert.deepEqual(db.__queryLog, [], 'no database access when multi-organization is off');
+  assert.equal(
+    await identity.resolveActiveOrganization('user-alice', OTHER_ORG),
+    DEFAULT_ORG,
+  );
+  assert.equal(
+    await identity.resolveActiveOrganization(null, undefined),
+    DEFAULT_ORG,
+  );
+  assert.deepEqual(
+    db.__queryLog,
+    [],
+    'no database access when multi-organization is off',
+  );
 });
 
 test('hasDatabaseCredentials reflects password presence', async () => {
   seedSingleOrg();
-  assert.equal(await passwordReset.hasDatabaseCredentials('alice@example.com'), true);
+  assert.equal(
+    await passwordReset.hasDatabaseCredentials('alice@example.com'),
+    true,
+  );
 
   seedSingleOrg({ password_hash: null, auth_source: 'magic_link' });
-  assert.equal(await passwordReset.hasDatabaseCredentials('alice@example.com'), false);
+  assert.equal(
+    await passwordReset.hasDatabaseCredentials('alice@example.com'),
+    false,
+  );
 });
 
 test('verifyUserPassword checks the stored hash', async () => {
   seedSingleOrg();
   assert.equal(
-    await passwordReset.verifyUserPassword('alice@example.com', 'correct horse battery'),
-    true
+    await passwordReset.verifyUserPassword(
+      'alice@example.com',
+      'correct horse battery',
+    ),
+    true,
   );
-  assert.equal(await passwordReset.verifyUserPassword('alice@example.com', 'nope'), false);
+  assert.equal(
+    await passwordReset.verifyUserPassword('alice@example.com', 'nope'),
+    false,
+  );
 });
 
 test('getPasswordChangedAt returns the stored timestamp', async () => {
@@ -276,27 +343,44 @@ test('getPasswordChangedAt returns the stored timestamp', async () => {
 
 test('setUserPassword updates the existing row instead of adding one', async () => {
   const db = seedSingleOrg();
-  const result = await passwordReset.setUserPassword(ctx, 'alice@example.com', 'a brand new secret');
+  const result = await passwordReset.setUserPassword(
+    ctx,
+    'alice@example.com',
+    'a brand new secret',
+  );
 
   assert.equal(result.ok, true);
   assert.equal(db.__tables.users.length, 1, 'still one user row');
-  assert.notEqual(db.__tables.users[0].password_hash, passwordHash, 'hash was replaced');
+  assert.notEqual(
+    db.__tables.users[0].password_hash,
+    passwordHash,
+    'hash was replaced',
+  );
   assert.equal(db.__tables.users[0].auth_source, 'database');
 });
 
 test('setUserPassword creates a user when the email is unknown', async () => {
   const db = seedSingleOrg();
-  const result = await passwordReset.setUserPassword(ctx, 'newcomer@example.com', 'a brand new secret');
+  const result = await passwordReset.setUserPassword(
+    ctx,
+    'newcomer@example.com',
+    'a brand new secret',
+  );
 
   assert.equal(result.ok, true);
   assert.equal(db.__tables.users.length, 2);
-  const created = db.__tables.users.find((u) => u.email === 'newcomer@example.com');
+  const created = db.__tables.users.find(
+    (u) => u.email === 'newcomer@example.com',
+  );
   assert.equal(created.organization_id, DEFAULT_ORG);
 });
 
 test('getOrCreateMagicLinkUser reuses an existing user', async () => {
   const db = seedSingleOrg();
-  const result = await magicLinkStore.getOrCreateMagicLinkUser(ctx, 'alice@example.com');
+  const result = await magicLinkStore.getOrCreateMagicLinkUser(
+    ctx,
+    'alice@example.com',
+  );
 
   assert.equal(result.ok, true);
   assert.equal(result.user.id, 'user-alice');
@@ -305,11 +389,16 @@ test('getOrCreateMagicLinkUser reuses an existing user', async () => {
 
 test('getOrCreateMagicLinkUser provisions a new user in the context organization', async () => {
   const db = seedSingleOrg();
-  const result = await magicLinkStore.getOrCreateMagicLinkUser(ctx, 'newcomer@example.com');
+  const result = await magicLinkStore.getOrCreateMagicLinkUser(
+    ctx,
+    'newcomer@example.com',
+  );
 
   assert.equal(result.ok, true);
   assert.equal(db.__tables.users.length, 2);
-  const created = db.__tables.users.find((u) => u.email === 'newcomer@example.com');
+  const created = db.__tables.users.find(
+    (u) => u.email === 'newcomer@example.com',
+  );
   assert.equal(created.organization_id, DEFAULT_ORG);
   assert.equal(created.auth_source, 'magic_link');
 });
@@ -320,7 +409,7 @@ test('getOrCreateSsoUser provisions and then reuses the same row', async () => {
   const provisioned = await ssoStore.getOrCreateSsoUser(
     ctx,
     { email: 'sso@example.com', name: 'Sso Person' },
-    { autoProvision: true }
+    { autoProvision: true },
   );
   assert.equal(provisioned.ok, true);
   assert.equal(provisioned.provisioned, true);
@@ -329,15 +418,19 @@ test('getOrCreateSsoUser provisions and then reuses the same row', async () => {
   const again = await ssoStore.getOrCreateSsoUser(
     ctx,
     { email: 'sso@example.com', name: 'Renamed Person' },
-    { autoProvision: true }
+    { autoProvision: true },
   );
   assert.equal(again.ok, true);
   assert.equal(again.provisioned, false);
-  assert.equal(db.__tables.users.length, 2, 'no duplicate row for the same email');
+  assert.equal(
+    db.__tables.users.length,
+    2,
+    'no duplicate row for the same email',
+  );
   assert.equal(
     db.__tables.users.find((u) => u.email === 'sso@example.com').name,
     'Renamed Person',
-    'name refreshed on login'
+    'name refreshed on login',
   );
 });
 
@@ -346,7 +439,7 @@ test('getOrCreateSsoUser refuses an unknown identity when auto-provision is off'
   const result = await ssoStore.getOrCreateSsoUser(
     ctx,
     { email: 'stranger@example.com' },
-    { autoProvision: false }
+    { autoProvision: false },
   );
   assert.equal(result.ok, false);
   assert.equal(result.reason, 'not_provisioned');
@@ -358,7 +451,11 @@ test('getOrCreateSsoUser refuses an unknown identity when auto-provision is off'
 
 test('listUsers only returns members of the context organization', async () => {
   const db = seedSingleOrg();
-  db.__tables.organizations.push({ id: OTHER_ORG, name: 'Other', slug: 'other' });
+  db.__tables.organizations.push({
+    id: OTHER_ORG,
+    name: 'Other',
+    slug: 'other',
+  });
   db.__tables.users.push({
     id: 'user-bob',
     organization_id: OTHER_ORG,
@@ -371,7 +468,10 @@ test('listUsers only returns members of the context organization', async () => {
   });
 
   const list = await usersStore.listUsers(ctx);
-  assert.deepEqual(list.map((u) => u.email), ['alice@example.com']);
+  assert.deepEqual(
+    list.map((u) => u.email),
+    ['alice@example.com'],
+  );
 });
 
 test('searchUsers only returns members of the context organization', async () => {
@@ -388,7 +488,10 @@ test('searchUsers only returns members of the context organization', async () =>
   });
 
   const found = await usersStore.searchUsers(ctx, 'example.com', {});
-  assert.deepEqual(found.map((u) => u.email), ['alice@example.com']);
+  assert.deepEqual(
+    found.map((u) => u.email),
+    ['alice@example.com'],
+  );
 });
 
 test('getUserById only resolves within the context organization', async () => {
@@ -412,8 +515,14 @@ test('getUserById only resolves within the context organization', async () => {
 // changed digest, encoding or length would sail through. Every already-issued
 // cookie carries the format below, so changing it logs the whole world out.
 test('sessionVersion derivation matches its pinned wire format', () => {
-  assert.equal(sessionVersion({ password_changed_at: '2026-01-01T00:00:00.000Z' }), 'd-vHzFOcJBfd');
-  assert.equal(sessionVersion({ updated_at: '2026-01-01T00:00:00.000Z' }), 'd-vHzFOcJBfd');
+  assert.equal(
+    sessionVersion({ password_changed_at: '2026-01-01T00:00:00.000Z' }),
+    'd-vHzFOcJBfd',
+  );
+  assert.equal(
+    sessionVersion({ updated_at: '2026-01-01T00:00:00.000Z' }),
+    'd-vHzFOcJBfd',
+  );
   assert.equal(
     sessionVersion({ password_changed_at: '2026-06-01T00:00:00.000Z' }),
     'LFoii_whDVCl',
@@ -433,6 +542,10 @@ test('sessionVersion derivation matches its pinned wire format', () => {
 // The version the login path stamps must be the one the validator recomputes.
 test('login stamps the shared session version', async () => {
   seedSingleOrg();
-  const login = await auth.verifyLoginAsync('alice@example.com', 'correct horse battery', ctx);
+  const login = await auth.verifyLoginAsync(
+    'alice@example.com',
+    'correct horse battery',
+    ctx,
+  );
   assert.equal(login.v, 'd-vHzFOcJBfd');
 });

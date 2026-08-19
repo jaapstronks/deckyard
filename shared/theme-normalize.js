@@ -201,7 +201,7 @@ export function normalizeTheme(theme) {
   // Accent contrast token (icon blocks etc).
   vars['--t-color-accent-contrast'] = pickTextColorForBg(
     cssVar(vars, '--t-color-accent'),
-    poles
+    poles,
   );
 
   // Nested-surface text colours: same "set a bg token → get readable text for
@@ -242,7 +242,7 @@ export function normalizeTheme(theme) {
   if (!vars['--t-color-accent-soft-contrast']) {
     vars['--t-color-accent-soft-contrast'] = pickTextColorForBg(
       cssVar(vars, '--t-color-accent-soft'),
-      poles
+      poles,
     );
   }
 

@@ -17,7 +17,14 @@ import {
   getTagsForPresentation,
   setTagsForPresentation,
 } from '../../storage/tags/index.js';
-import { serveJson, badRequest, notFound, requireJsonBody, methodNotAllowed, withErrorHandler } from '../../utils/http.js';
+import {
+  serveJson,
+  badRequest,
+  notFound,
+  requireJsonBody,
+  methodNotAllowed,
+  withErrorHandler,
+} from '../../utils/http.js';
 import { parsePaginationParams } from '../../utils/request-validators.js';
 import { dispatchRoutes } from '../../utils/router.js';
 
@@ -31,7 +38,10 @@ async function handleTagList({ storageScope, res }) {
 // GET /api/tags/search?q=prefix - Search tags by prefix (for autocomplete)
 async function handleTagSearch({ storageScope, res, url }) {
   const query = url.searchParams.get('q') || '';
-  const { limit } = parsePaginationParams(url.searchParams, { defaultLimit: 10, maxLimit: 50 });
+  const { limit } = parsePaginationParams(url.searchParams, {
+    defaultLimit: 10,
+    maxLimit: 50,
+  });
   const tags = await searchTags(storageScope, query, limit);
   serveJson(res, 200, tags);
   return true;
@@ -75,7 +85,11 @@ export const ROUTES = [
   { method: 'GET', pattern: '/api/tags', handler: handleTagList },
   { method: 'GET', pattern: '/api/tags/search', handler: handleTagSearch },
   { method: 'POST', pattern: '/api/tags', handler: handleTagCreate },
-  { method: 'DELETE', pattern: /^\/api\/tags\/([a-f0-9-]+)$/, handler: handleTagDelete },
+  {
+    method: 'DELETE',
+    pattern: /^\/api\/tags\/([a-f0-9-]+)$/,
+    handler: handleTagDelete,
+  },
 ];
 
 /**
@@ -91,7 +105,12 @@ export const handleTags = withErrorHandler('tags', (ctx) => {
  * Handle presentation tags API requests
  * These are called from the presentations handler.
  */
-export async function handlePresentationTags({ storageScope, req, res, presentationId }) {
+export async function handlePresentationTags({
+  storageScope,
+  req,
+  res,
+  presentationId,
+}) {
   // The path is already matched by the presentations ROUTES table
   // (`/^\/api\/presentations\/([^/]+)\/tags$/`), which passes the captured id as
   // `presentationId` — so the pathname always equals
@@ -113,7 +132,11 @@ export async function handlePresentationTags({ storageScope, req, res, presentat
     if (!Array.isArray(body?.tags)) {
       return badRequest(res, 'Tags array is required');
     }
-    const tags = await setTagsForPresentation(storageScope, presentationId, body.tags);
+    const tags = await setTagsForPresentation(
+      storageScope,
+      presentationId,
+      body.tags,
+    );
     serveJson(res, 200, tags);
     return true;
   }

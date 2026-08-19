@@ -25,19 +25,26 @@ function render(cards, ctx = {}) {
         items: cards,
       },
     },
-    ctx
+    ctx,
   );
 }
 
 describe('icon-card-grid icon rendering', () => {
   it('renders the icon as a mask span carrying the Lucide SVG url', () => {
-    const html = render([{ icon: 'lightbulb', title: 'Insight', body: 'x' }], { mode: 'present' });
+    const html = render([{ icon: 'lightbulb', title: 'Insight', body: 'x' }], {
+      mode: 'present',
+    });
     assert.match(html, /<span class="icon-card-icon-img"/);
-    assert.match(html, /--icg-icon-url:url\(\/client\/vendor\/lucide-icons\/lightbulb\.svg\)/);
+    assert.match(
+      html,
+      /--icg-icon-url:url\(\/client\/vendor\/lucide-icons\/lightbulb\.svg\)/,
+    );
   });
 
   it('does not render the icon as an <img> anymore', () => {
-    const html = render([{ icon: 'target', title: 'Focus', body: 'x' }], { mode: 'present' });
+    const html = render([{ icon: 'target', title: 'Focus', body: 'x' }], {
+      mode: 'present',
+    });
     assert.doesNotMatch(html, /<img[^>]*class="icon-card-icon-img"/);
   });
 

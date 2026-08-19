@@ -37,7 +37,15 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(here, '..');
 const V1_DIR = path.join(repoRoot, 'server/routes/public-api/v1');
 
-const HTTP_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete', 'head', 'options']);
+const HTTP_METHODS = new Set([
+  'get',
+  'post',
+  'put',
+  'patch',
+  'delete',
+  'head',
+  'options',
+]);
 
 /** Feature handlers parsed for anchor→method-list pairs. */
 const FEATURE_HANDLERS = [
@@ -90,7 +98,9 @@ function stripPrefix(p) {
 // ---------------------------------------------------------------------------
 
 function specOperations() {
-  const spec = parseYaml(fs.readFileSync(path.join(repoRoot, 'docs/openapi.yaml'), 'utf8'));
+  const spec = parseYaml(
+    fs.readFileSync(path.join(repoRoot, 'docs/openapi.yaml'), 'utf8'),
+  );
   const ops = new Set();
   for (const [p, methods] of Object.entries(spec.paths || {})) {
     for (const method of Object.keys(methods)) {
@@ -126,7 +136,11 @@ function routerOperations() {
       events.push({ i: m.index, kind: 'path', path: stripPrefix(m[1]) });
     }
     for (const m of src.matchAll(ANCHOR_REGEX)) {
-      events.push({ i: m.index, kind: 'path', path: stripPrefix(regexToPath(m[1])) });
+      events.push({
+        i: m.index,
+        kind: 'path',
+        path: stripPrefix(regexToPath(m[1])),
+      });
     }
     for (const m of src.matchAll(METHOD_LIST)) {
       events.push({ i: m.index, kind: 'methods', methods: m[1] });
@@ -140,7 +154,8 @@ function routerOperations() {
       } else if (currentPath) {
         for (const raw of e.methods.split(',')) {
           const method = raw.trim().replace(/['"]/g, '');
-          if (method) ops.add(`${method.toUpperCase()} ${normalizePath(currentPath)}`);
+          if (method)
+            ops.add(`${method.toUpperCase()} ${normalizePath(currentPath)}`);
         }
       }
     }
@@ -166,7 +181,7 @@ test('docs/openapi.yaml and the v1 router describe the same operations', () => {
     { missingFromSpec: [], missingFromRouter: [] },
     'OpenAPI spec and v1 router drifted.\n' +
       `  Router routes with no spec entry: ${missingFromSpec.join(', ') || '(none)'}\n` +
-      `  Spec entries with no router route: ${missingFromRouter.join(', ') || '(none)'}`
+      `  Spec entries with no router route: ${missingFromRouter.join(', ') || '(none)'}`,
   );
 });
 

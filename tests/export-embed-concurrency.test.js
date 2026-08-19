@@ -42,7 +42,11 @@ test('mapLimit never exceeds the concurrency limit', async () => {
     active -= 1;
     return true;
   };
-  await mapLimit(Array.from({ length: 20 }, (_, i) => i), 4, work);
+  await mapLimit(
+    Array.from({ length: 20 }, (_, i) => i),
+    4,
+    work,
+  );
   assert.ok(peak <= 4, `peak concurrency ${peak} exceeded limit 4`);
   assert.ok(peak >= 2, `expected real parallelism, peak was ${peak}`);
 });
@@ -99,7 +103,10 @@ test('embedImgSrcDataUrls replaces every unique local src once', async () => {
     includeClient: true,
     cache,
   });
-  assert.ok(!out.includes('src="/assets/images/logo.svg"'), 'logo not embedded');
+  assert.ok(
+    !out.includes('src="/assets/images/logo.svg"'),
+    'logo not embedded',
+  );
   assert.ok(
     !out.includes('src="/assets/images/deckyard-mark.svg"'),
     'mark not embedded',

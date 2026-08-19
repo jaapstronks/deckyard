@@ -3,7 +3,11 @@
  */
 
 import { t } from '../../lib/ui-i18n.js';
-import { formatDuration, formatCount, formatPercent } from '../../lib/format/analytics-format.js';
+import {
+  formatDuration,
+  formatCount,
+  formatPercent,
+} from '../../lib/format/analytics-format.js';
 import { iconUrl } from '../../../shared/icon-names.js';
 
 /**
@@ -41,7 +45,12 @@ export function createOverviewPanel({ h, data }) {
     }),
   };
 
-  cardsContainer.append(cards.views.el, cards.viewers.el, cards.duration.el, cards.completion.el);
+  cardsContainer.append(
+    cards.views.el,
+    cards.viewers.el,
+    cards.duration.el,
+    cards.completion.el,
+  );
   el.append(cardsContainer);
 
   function update(newData) {
@@ -65,7 +74,12 @@ function createCard(h, { label, value, icon }) {
 
   const el = h('div', { class: 'analytics-card' }, [
     h('div', { class: 'analytics-card-icon' }, [
-      h('img', { src: iconUrl(icon), alt: '', 'aria-hidden': 'true', class: 'analytics-card-icon-img' }),
+      h('img', {
+        src: iconUrl(icon),
+        alt: '',
+        'aria-hidden': 'true',
+        class: 'analytics-card-icon-img',
+      }),
     ]),
     h('div', { class: 'analytics-card-content' }, [
       valueEl,

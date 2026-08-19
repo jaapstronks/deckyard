@@ -96,7 +96,7 @@ export function createAdminWebhooksSection({ h }) {
     class: 'help',
     text: t(
       'settings.admin.webhooks.hint',
-      'Configure webhook URLs to receive POSTed JSON payloads when certain events happen.'
+      'Configure webhook URLs to receive POSTed JSON payloads when certain events happen.',
     ),
   });
 
@@ -130,7 +130,10 @@ export function createAdminWebhooksSection({ h }) {
   const secretLabel = h('div', {
     class: 'field-label',
     style: 'margin-top:10px;',
-    text: t('settings.admin.webhooks.signingSecret.title', 'Signing secret (optional)'),
+    text: t(
+      'settings.admin.webhooks.signingSecret.title',
+      'Signing secret (optional)',
+    ),
   });
 
   const secretInput = h('input', {
@@ -145,7 +148,7 @@ export function createAdminWebhooksSection({ h }) {
     class: 'help',
     text: t(
       'settings.admin.webhooks.signingSecret.hint',
-      'When set, each delivery is signed with HMAC-SHA256 over the request body and the signature is sent in the x-sb-signature header as sha256=<hex>. Leave empty to send unsigned.'
+      'When set, each delivery is signed with HMAC-SHA256 over the request body and the signature is sent in the x-sb-signature header as sha256=<hex>. Leave empty to send unsigned.',
     ),
   });
 
@@ -163,7 +166,9 @@ export function createAdminWebhooksSection({ h }) {
     getValues: () => {
       const values = {};
       for (const config of WEBHOOK_CONFIGS) {
-        values[config.settingsKey] = String(inputs[config.key].value || '').trim();
+        values[config.settingsKey] = String(
+          inputs[config.key].value || '',
+        ).trim();
       }
       values.signingSecret = String(inputs.signingSecret.value || '').trim();
       return values;

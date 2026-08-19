@@ -30,15 +30,30 @@ function getActionText(eventType) {
   const actions = {
     'presentation.created': t('activity.action.created', 'created'),
     'presentation.updated': t('activity.action.updated', 'updated'),
-    'presentation.merged': t('activity.action.mergedChangesOn', 'merged concurrent changes in'),
+    'presentation.merged': t(
+      'activity.action.mergedChangesOn',
+      'merged concurrent changes in',
+    ),
     'presentation.deleted': t('activity.action.deleted', 'deleted'),
-    'presentation.moved_to_organization': t('activity.action.sharedToOrganization', 'shared to workspace'),
+    'presentation.moved_to_organization': t(
+      'activity.action.sharedToOrganization',
+      'shared to workspace',
+    ),
     'collaborator.added': t('activity.action.sharedWith', 'shared'),
     'collaborator.removed': t('activity.action.unshared', 'removed sharing on'),
-    'collaborator.permission_changed': t('activity.action.permissionChanged', 'changed access on'),
+    'collaborator.permission_changed': t(
+      'activity.action.permissionChanged',
+      'changed access on',
+    ),
     'comment.created': t('activity.action.commentedOn', 'commented on'),
-    'comment.resolved': t('activity.action.resolvedCommentOn', 'resolved a comment on'),
-    'comment.reopened': t('activity.action.reopenedCommentOn', 'reopened a comment on'),
+    'comment.resolved': t(
+      'activity.action.resolvedCommentOn',
+      'resolved a comment on',
+    ),
+    'comment.reopened': t(
+      'activity.action.reopenedCommentOn',
+      'reopened a comment on',
+    ),
     'share.accessed': t('activity.action.viewed', 'viewed'),
     // slide.added carries a count, handled separately in createActivityItem.
     'slide.added': t('activity.action.addedSlidesTo', 'added slides to'),
@@ -138,23 +153,26 @@ function createActivityItem(event, h, onNavigate) {
 
   const actor = h('span', {
     class: 'activity-actor',
-    text: event.actorName || event.actorEmail || t('activity.someone', 'Someone'),
+    text:
+      event.actorName || event.actorEmail || t('activity.someone', 'Someone'),
   });
 
   // slide.added carries a slide count in its data ("added 3 slides to X"); all
   // other types use the static action map.
-  const actionText = event.eventType === 'slide.added'
-    ? t('activity.action.addedNSlidesTo', 'added {count} slides to', {
-        count: Number(event.data?.count) || 1,
-      })
-    : getActionText(event.eventType);
+  const actionText =
+    event.eventType === 'slide.added'
+      ? t('activity.action.addedNSlidesTo', 'added {count} slides to', {
+          count: Number(event.data?.count) || 1,
+        })
+      : getActionText(event.eventType);
 
   const action = h('span', {
     class: 'activity-action',
     text: ' ' + actionText + ' ',
   });
 
-  const presentationTitle = event.presentation?.title ||
+  const presentationTitle =
+    event.presentation?.title ||
     event.data?.title ||
     event.data?.presentationTitle ||
     t('activity.untitled', 'Untitled');
@@ -174,7 +192,10 @@ function createActivityItem(event, h, onNavigate) {
   header.append(typeIcon, actor, action, target);
 
   // For collaborator.added events, show who it was shared with
-  if (event.eventType === 'collaborator.added' && event.data?.collaboratorEmail) {
+  if (
+    event.eventType === 'collaborator.added' &&
+    event.data?.collaboratorEmail
+  ) {
     const collaborator = h('span', {
       class: 'activity-collaborator',
       text: event.data.collaboratorEmail,
@@ -185,7 +206,7 @@ function createActivityItem(event, h, onNavigate) {
       h,
       t('activity.sharedWithCollaborator', 'with {collaborator}'),
       { collaborator },
-      'activity-action'
+      'activity-action',
     );
   }
 
@@ -229,7 +250,12 @@ function createActivityItem(event, h, onNavigate) {
  * @param {Function} options.onUnreadCountChange - Callback when unread count changes
  * @returns {Object} { el, load, refresh }
  */
-export function createActivityFeed({ h, api, onNavigate, onUnreadCountChange }) {
+export function createActivityFeed({
+  h,
+  api,
+  onNavigate,
+  onUnreadCountChange,
+}) {
   const el = h('div', { class: 'sidebar-view', 'data-view': 'activity' });
 
   // Header
@@ -287,7 +313,9 @@ export function createActivityFeed({ h, api, onNavigate, onUnreadCountChange }) 
     loading = true;
 
     try {
-      const result = await api(`/api/activity?limit=${limit}&offset=0&excludeSelf=true`);
+      const result = await api(
+        `/api/activity?limit=${limit}&offset=0&excludeSelf=true`,
+      );
       events = result.events || [];
       offset = events.length;
       total = result.total || 0;
@@ -301,7 +329,7 @@ export function createActivityFeed({ h, api, onNavigate, onUnreadCountChange }) 
         h('div', {
           class: 'activity-feed-empty',
           text: t('list.activity.error', 'Failed to load activity'),
-        })
+        }),
       );
     } finally {
       loading = false;
@@ -317,7 +345,9 @@ export function createActivityFeed({ h, api, onNavigate, onUnreadCountChange }) 
     loadMoreBtn.disabled = true;
 
     try {
-      const result = await api(`/api/activity?limit=${limit}&offset=${offset}&excludeSelf=true`);
+      const result = await api(
+        `/api/activity?limit=${limit}&offset=${offset}&excludeSelf=true`,
+      );
       const newEvents = result.events || [];
       events = events.concat(newEvents);
       offset += newEvents.length;

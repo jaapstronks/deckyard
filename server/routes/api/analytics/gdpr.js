@@ -7,7 +7,13 @@ import {
   logSecurityEvent,
   SECURITY_EVENTS,
 } from '../../../analytics/helpers.js';
-import { getErrorStatus, jsonError, rateLimited, serveJson, unauthorized } from '../../../utils/http.js';
+import {
+  getErrorStatus,
+  jsonError,
+  rateLimited,
+  serveJson,
+  unauthorized,
+} from '../../../utils/http.js';
 import { AUTH_RATE_LIMITS } from '../../../config/rate-limits.js';
 import {
   exportUserAnalyticsData,
@@ -26,7 +32,12 @@ export async function handleExportMyData(ctx) {
   }
 
   // Stricter rate limit for GDPR export (expensive operation)
-  if (!(await allowRequest(`analytics:gdpr:export:${authedUser.email}`, AUTH_RATE_LIMITS.expensive))) {
+  if (
+    !(await allowRequest(
+      `analytics:gdpr:export:${authedUser.email}`,
+      AUTH_RATE_LIMITS.expensive,
+    ))
+  ) {
     logSecurityEvent(SECURITY_EVENTS.RATE_LIMIT_EXCEEDED, {
       endpoint: path,
       user: authedUser.email,
@@ -40,10 +51,15 @@ export async function handleExportMyData(ctx) {
   const result = await exportUserAnalyticsData({ email: authedUser.email });
 
   if (!result.ok) {
-    return jsonError(res, getErrorStatus(result.reason, 500), result.reason || 'internal_error', 'Failed to export data');
+    return jsonError(
+      res,
+      getErrorStatus(result.reason, 500),
+      result.reason || 'internal_error',
+      'Failed to export data',
+    );
   }
 
-  return serveJson(res, 200, result.data), true;
+  return (serveJson(res, 200, result.data), true);
 }
 
 /**
@@ -58,7 +74,12 @@ export async function handleDeleteMyData(ctx) {
   }
 
   // Stricter rate limit for GDPR delete (expensive/destructive operation)
-  if (!(await allowRequest(`analytics:gdpr:delete:${authedUser.email}`, AUTH_RATE_LIMITS.expensive))) {
+  if (
+    !(await allowRequest(
+      `analytics:gdpr:delete:${authedUser.email}`,
+      AUTH_RATE_LIMITS.expensive,
+    ))
+  ) {
     logSecurityEvent(SECURITY_EVENTS.RATE_LIMIT_EXCEEDED, {
       endpoint: path,
       user: authedUser.email,
@@ -72,12 +93,20 @@ export async function handleDeleteMyData(ctx) {
   const result = await deleteUserAnalyticsData({ email: authedUser.email });
 
   if (!result.ok) {
-    return jsonError(res, getErrorStatus(result.reason, 500), result.reason || 'internal_error', 'Failed to delete data');
+    return jsonError(
+      res,
+      getErrorStatus(result.reason, 500),
+      result.reason || 'internal_error',
+      'Failed to delete data',
+    );
   }
 
-  return serveJson(res, 200, {
-    ok: true,
-    deleted: result.deleted,
-    message: 'Your analytics data has been deleted',
-  }), true;
+  return (
+    serveJson(res, 200, {
+      ok: true,
+      deleted: result.deleted,
+      message: 'Your analytics data has been deleted',
+    }),
+    true
+  );
 }

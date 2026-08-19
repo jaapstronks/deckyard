@@ -33,7 +33,8 @@ globalThis.Event = dom.window.Event;
 globalThis.getComputedStyle = dom.window.getComputedStyle;
 globalThis.requestAnimationFrame =
   dom.window.requestAnimationFrame || ((cb) => setTimeout(cb, 0));
-globalThis.cancelAnimationFrame = dom.window.cancelAnimationFrame || clearTimeout;
+globalThis.cancelAnimationFrame =
+  dom.window.cancelAnimationFrame || clearTimeout;
 
 // Record every request the UI makes so the single-org case can be proven quiet.
 const requested = [];
@@ -47,9 +48,8 @@ globalThis.fetch = async (input, init = {}) => {
 
 const { setFeatures } = await import('../client/lib/state/features.js');
 const { createUserMenu } = await import('../client/lib/user/user-menu.js');
-const { createOrganizationSection } = await import(
-  '../client/lib/user/organization-switcher.js'
-);
+const { createOrganizationSection } =
+  await import('../client/lib/user/organization-switcher.js');
 
 const ORGS = [
   { id: 'org-a', name: 'Alpha', membership: { role: 'owner' } },
@@ -79,12 +79,12 @@ test('single organization: no organization section and no /api/organizations req
   assert.equal(
     menu.el.querySelector('.user-menu-orgs'),
     null,
-    'no organization section is rendered'
+    'no organization section is rendered',
   );
   assert.deepEqual(
     requested.filter((r) => r.includes('/api/organizations')),
     [],
-    'the organization list is never requested in single-organization mode'
+    'the organization list is never requested in single-organization mode',
   );
 
   menu.detach();
@@ -101,7 +101,11 @@ test('multi-organization with a single organization: section renders nothing', a
   assert.ok(section, 'section is created when the feature is on');
   await section.ready;
 
-  assert.equal(orgRows(section.el).length, 0, 'one organization is not a choice');
+  assert.equal(
+    orgRows(section.el).length,
+    0,
+    'one organization is not a choice',
+  );
   assert.equal(section.el.textContent, '', 'nothing is shown at all');
 });
 
@@ -118,9 +122,13 @@ test('two organizations: both listed, the active one checked', async () => {
   assert.equal(rows.length, 2, 'one row per organization');
   assert.deepEqual(
     rows.map((r) => r.dataset.organizationId),
-    ['org-a', 'org-b']
+    ['org-a', 'org-b'],
   );
-  assert.equal(rows[0].getAttribute('aria-checked'), 'true', 'active org is checked');
+  assert.equal(
+    rows[0].getAttribute('aria-checked'),
+    'true',
+    'active org is checked',
+  );
   assert.equal(rows[1].getAttribute('aria-checked'), 'false');
   assert.equal(rows[0].disabled, false, 'the active row keeps full contrast');
   assert.match(rows[1].textContent, /Beta/);
@@ -131,7 +139,7 @@ test('two organizations: both listed, the active one checked', async () => {
   assert.equal(section.el.getAttribute('role'), 'radiogroup');
   assert.deepEqual(
     rows.map((r) => r.getAttribute('role')),
-    ['radio', 'radio']
+    ['radio', 'radio'],
   );
 
   // Both rows carry the fixed-width check slot — the empty one on the inactive
@@ -139,7 +147,7 @@ test('two organizations: both listed, the active one checked', async () => {
   assert.equal(
     section.el.querySelectorAll('.user-menu-org-check').length,
     2,
-    'every row has the check slot, filled or not'
+    'every row has the check slot, filled or not',
   );
   assert.equal(rows[1].querySelector('.user-menu-org-check').textContent, '');
 });
@@ -192,7 +200,11 @@ test('a successful switch posts, then reloads the whole page', async () => {
   orgRows(section.el)[1].click();
   await settle();
 
-  assert.deepEqual(switched, ['org-b'], 'switch request targets the clicked org');
+  assert.deepEqual(
+    switched,
+    ['org-b'],
+    'switch request targets the clicked org',
+  );
   assert.equal(closed, 1, 'the dropdown is closed before switching');
   assert.equal(reloads, 1, 'a full reload follows — no partial cache refresh');
 });
@@ -225,7 +237,7 @@ test('a refused switch shows a toast and leaves the page where it is', async () 
   assert.match(
     stack.textContent,
     /cannot switch to this organization/i,
-    'the 403 reads as a permission message, not an unknown error'
+    'the 403 reads as a permission message, not an unknown error',
   );
 });
 

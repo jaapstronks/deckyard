@@ -200,12 +200,17 @@ export default {
       typeof content?.title === 'string' && content.title.trim()
         ? `<h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${escapeHtml(content.title.trim())}</h2>`
         : '';
-    const subheadingHtml = renderSubheadingHtml(content, 'subheading', 'subtitle');
+    const subheadingHtml = renderSubheadingHtml(
+      content,
+      'subheading',
+      'subtitle',
+    );
     const bottomSubheadingHtml = renderBottomSubheadingHtml(content);
     const hasBottom = hasBottomSubheading(content);
     const hasHeader = !!(title || subheadingHtml);
 
-    const direction = content?.direction === 'vertical' ? 'vertical' : 'horizontal';
+    const direction =
+      content?.direction === 'vertical' ? 'vertical' : 'horizontal';
     // DEPRECATED: 'steps' fallback - Remove after April 2026
     const steps = getCollectionItems(content, 'items', ['steps']).slice(0, 7);
     const colKey = getCollectionKey(content, 'items', ['steps']);
@@ -214,7 +219,10 @@ export default {
     // Determine layout mode: 5+ items get multi-row (horizontal) or multi-column (vertical)
     let layoutAttr = '';
     if (count >= 5) {
-      layoutAttr = direction === 'horizontal' ? ' data-layout="multi-row"' : ' data-layout="multi-column"';
+      layoutAttr =
+        direction === 'horizontal'
+          ? ' data-layout="multi-row"'
+          : ' data-layout="multi-column"';
     }
 
     const stepsHtml = steps

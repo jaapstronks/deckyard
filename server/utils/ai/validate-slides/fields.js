@@ -78,7 +78,7 @@ export function checkForUnknownFields(slideType, content, context = {}) {
             const val = content[key];
             const str = typeof val === 'string' ? val : JSON.stringify(val);
             return [key, str.length > 100 ? str.slice(0, 100) + '...' : str];
-          })
+          }),
         ),
         validFields: Array.from(validKeys).slice(0, 10), // Show some valid options
         ...context,

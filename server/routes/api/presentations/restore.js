@@ -18,7 +18,7 @@ import { parseIfMatchRevision } from './helpers.js';
 export async function handlePresentationRestoreVersion(
   { repoRoot, storageScope, req, res, authedUser } = {},
   id,
-  versionId
+  versionId,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
@@ -28,10 +28,14 @@ export async function handlePresentationRestoreVersion(
   // Fetch collaborator permission for ACL check
   let collaboratorPermission = null;
   if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email);
+    collaboratorPermission = await getCollaboratorPermission(
+      pres.id,
+      authedUser.email,
+    );
   }
 
-  if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission })) return unauthorized(res);
+  if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission }))
+    return unauthorized(res);
 
   // If-Match required for everyone, admins included (escape hatch removed).
   const expectedRevision = parseIfMatchRevision(req);

@@ -28,11 +28,19 @@ test('omits theme from the payload when none is known', async () => {
   const { api, calls } = captureApi();
   await createDeckFromLibraryItems({ api, items: [], title: 'T' });
   assert.equal(calls.length, 1);
-  assert.ok(!('theme' in calls[0].body), 'no client-side theme fallback — the server decides');
+  assert.ok(
+    !('theme' in calls[0].body),
+    'no client-side theme fallback — the server decides',
+  );
 });
 
 test('sends the theme it was given', async () => {
   const { api, calls } = captureApi();
-  await createDeckFromLibraryItems({ api, items: [], title: 'T', theme: 'amethyst' });
+  await createDeckFromLibraryItems({
+    api,
+    items: [],
+    title: 'T',
+    theme: 'amethyst',
+  });
   assert.equal(calls[0].body.theme, 'amethyst');
 });

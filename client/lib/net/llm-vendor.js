@@ -47,6 +47,7 @@ export function labelForVendor(v, status) {
   if (s === 'claude') return 'Claude';
   if (s === 'mistral') return 'Mistral';
   if (s === 'deepseek') return 'DeepSeek';
-  if (s === 'openai-compat') return status?.vendorLabels?.['openai-compat'] || 'Custom LLM';
+  if (s === 'openai-compat')
+    return status?.vendorLabels?.['openai-compat'] || 'Custom LLM';
   return String(v || '');
 }

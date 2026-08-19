@@ -45,7 +45,10 @@ export function buildAiIteratePanel({
   const iterateInput = h('input', {
     type: 'text',
     class: 'form-input ai-iterate-input',
-    placeholder: t('editor.slide.aiIterate.placeholder', 'Make this punchier, split this slide...'),
+    placeholder: t(
+      'editor.slide.aiIterate.placeholder',
+      'Make this punchier, split this slide...',
+    ),
   });
   const iterateBtn = h('button', {
     type: 'button',
@@ -80,9 +83,7 @@ export function buildAiIteratePanel({
 
       // This panel edits one slide: tell the server which slide so refine
       // scopes to it (faster) unless the command names another slide.
-      const currentSlideIndex = pres.slides.findIndex(
-        (s) => s.id === slide.id
-      );
+      const currentSlideIndex = pres.slides.findIndex((s) => s.id === slide.id);
 
       const resp = await api('/api/ai/iterate', {
         method: 'POST',
@@ -108,7 +109,10 @@ export function buildAiIteratePanel({
 
         pres.slides = resp.presentation.slides;
         // Keep the edited slide selected/visible if the server flagged one.
-        if (resp.targetSlideIndex != null && pres.slides[resp.targetSlideIndex]) {
+        if (
+          resp.targetSlideIndex != null &&
+          pres.slides[resp.targetSlideIndex]
+        ) {
           setSelectedSlideId?.(pres.slides[resp.targetSlideIndex].id);
         }
         editorState.dirtyRefreshAll();
@@ -139,20 +143,28 @@ export function buildAiIteratePanel({
               }
               editorState.dirtyRefreshAll();
               toast.info(
-                t('editor.slide.aiIterate.reverted', 'Reverted the change.')
+                t('editor.slide.aiIterate.reverted', 'Reverted the change.'),
               );
             },
           },
         });
       } else {
-        toast.info(t('editor.slide.aiIterate.noChanges', 'No changes suggested'));
+        toast.info(
+          t('editor.slide.aiIterate.noChanges', 'No changes suggested'),
+        );
       }
     } catch (e) {
       if (e?.name === 'AbortError') {
-        toast.info(t('editor.slide.aiIterate.cancelled', 'Refinement cancelled.'));
+        toast.info(
+          t('editor.slide.aiIterate.cancelled', 'Refinement cancelled.'),
+        );
       } else {
         console.error('[AI Iterate] Error:', e);
-        toast.error(t('editor.slide.aiIterate.failed', 'Refinement failed: {error}', { error: e?.message || String(e) }));
+        toast.error(
+          t('editor.slide.aiIterate.failed', 'Refinement failed: {error}', {
+            error: e?.message || String(e),
+          }),
+        );
       }
     } finally {
       iterateController = null;

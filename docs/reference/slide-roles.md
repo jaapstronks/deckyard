@@ -41,14 +41,14 @@ Two consequences, both machine-checkable once the sweep lands:
 ## Snapping a value to the scale
 
 Every axis below carries a step scale, and the census keeps finding values that
-sit *between* two steps. One rule decides where each of them lands, and it is
+sit _between_ two steps. One rule decides where each of them lands, and it is
 the same rule on every axis.
 
-**A value between two steps goes to the step it is nearest in *ratio*, which at
+**A value between two steps goes to the step it is nearest in _ratio_, which at
 an exact midpoint is always the larger one.** Absolute distance cannot break
 that tie — the arithmetic midpoint is equidistant by definition — but the ratio
 can, because a scale is read as a series of relative steps, and the arithmetic
-midpoint always lies *above* the ratio midpoint (the geometric mean) of the two
+midpoint always lies _above_ the ratio midpoint (the geometric mean) of the two
 steps it sits between. So 10px between `--slide-space-2` (8) and
 `--slide-space-3` (12) goes up (`12/10 = 1.2` against `10/8 = 1.25`), and 18px
 between `--slide-text-sm` (16) and `--slide-text-base` (20) goes up for exactly
@@ -58,12 +58,12 @@ reviewable by reading instead of by argument.
 **Below the floor there is no tie to break**, because there is no lower step to
 weigh against. The question there is whether the value is a step at all, and the
 same ratio answers it: within one low-end step of the smallest step (4/3 = 1.33)
-it snaps, beyond it (a full doubling) it is a *sub-step hairline* and goes on
+it snaps, beyond it (a full doubling) it is a _sub-step hairline_ and goes on
 the allowlist. On the spacing scale that puts the line between 3px, which
 converts, and the 1–2px hairlines, which do not.
 
 Snapping is what B4 decided; the app layer answered the same question
-differently (`css-tokens.md` § *Why the fine band exists*) because 587 values
+differently (`css-tokens.md` § _Why the fine band exists_) because 587 values
 could not be visually reviewed one by one, and the slide axes are small enough
 that they can.
 
@@ -72,11 +72,11 @@ that they can.
 Both are ordering constraints, and both are written as a comment at the
 declaration that takes them. **Ordering is a constraint, the tie-break is a
 preference**: where they disagree the constraint wins and the value takes the
-*smaller* step.
+_smaller_ step.
 
 - **Ladder-rung ordering.** A density or responsive ladder — `[data-count]`,
   `[data-rows]`, `.is-compact`, `.has-bottom-subheading`, a `@media` tier, a
-  variant that overrides a base rule — is an *ordered* set: a rung exists to be
+  variant that overrides a base rule — is an _ordered_ set: a rung exists to be
   a step below the rung above it. Where the ratio-larger step would land on or
   above that rung, the value takes the smaller step instead. The scale is
   coarser than the ad-hoc ladders it replaces, so two rungs sometimes merge onto
@@ -90,7 +90,7 @@ preference**: where they disagree the constraint wins and the value takes the
 **Whether a base rule is a rung is a fact about the renderer**, not about the
 stylesheet. Funnel, pyramid and cycle clamp their count to a range whose default
 falls through to the base rule (`clampInt(stages.length, 3, 6, 4)`), so their
-base *is* the rung for that count and carries the ordering constraint. Process
+base _is_ the rung for that count and carries the ordering constraint. Process
 clamps to 3–7 and gives every count an explicit rung, so its base rule never
 renders and takes the plain rule.
 
@@ -98,7 +98,7 @@ renders and takes the plain rule.
 override** — the restated value is a fossil of the off-scale pair, not a
 decision. Two things are not fossils and stay: an overridden rule that is itself
 a rung (collapsing two rungs into one declaration hides an ordering the next
-change would have to rediscover), and an override that still *decides* something
+change would have to rediscover), and an override that still _decides_ something
 in the cascade, because a later rule of lower specificity — typically a `@media`
 tier — would win once it is gone. Delete only after checking what moves up; the
 process step titles are the worked example, where dropping two apparently
@@ -109,18 +109,18 @@ redundant rungs handed counts 3 and 4 to the responsive tier at 1024px.
 The 10-step size scale (`--slide-text-xs` … `--slide-text-5xl`, ~1.25 ratio)
 and the KPI display sizes carry the values; roles bind meaning to a step:
 
-| Role | Token | Bound to |
-| --- | --- | --- |
-| Title | `--slide-font-size-title` | `--slide-text-4xl` |
-| Heading | `--slide-font-size-heading` | `--slide-text-2xl` |
-| Subheading | `--slide-font-size-subheading` | `--slide-text-lg` |
-| Body | `--slide-font-size-body` | `--slide-text-base` |
-| Caption | `--slide-font-size-caption` | `--slide-text-sm` |
-| Label | `--slide-font-size-label` | `--slide-text-xs` |
-| Card title | `--slide-font-size-card-title` | `--slide-text-md` |
-| Card body | `--slide-font-size-card-body` | `--slide-text-md` |
+| Role       | Token                          | Bound to            |
+| ---------- | ------------------------------ | ------------------- |
+| Title      | `--slide-font-size-title`      | `--slide-text-4xl`  |
+| Heading    | `--slide-font-size-heading`    | `--slide-text-2xl`  |
+| Subheading | `--slide-font-size-subheading` | `--slide-text-lg`   |
+| Body       | `--slide-font-size-body`       | `--slide-text-base` |
+| Caption    | `--slide-font-size-caption`    | `--slide-text-sm`   |
+| Label      | `--slide-font-size-label`      | `--slide-text-xs`   |
+| Card title | `--slide-font-size-card-title` | `--slide-text-md`   |
+| Card body  | `--slide-font-size-card-body`  | `--slide-text-md`   |
 
-The two card rows are the only *contextual* roles: a card re-declares them for
+The two card rows are the only _contextual_ roles: a card re-declares them for
 its own density and the values above are what a card inherits when it declares
 nothing. That, and which patterns count as cards, is the section below.
 
@@ -128,7 +128,7 @@ Leading uses the five-step scale: `tight` 1.1 · `snug` 1.2 · `compact` 1.25 ·
 `normal` 1.35 · `relaxed` 1.5. The `compact` step exists because the census
 found a real 1.25 rhythm (18 declarations) in card titles and dense description
 text — the same "the scale should carry what exists" reasoning that gave the
-app spacing scale its fine band (`css-tokens.md` § *Why the fine band exists*).
+app spacing scale its fine band (`css-tokens.md` § _Why the fine band exists_).
 
 The size axis follows the shared tie-break above, and it is the axis where the
 two exceptions actually bite: nearly every slide type sizes its text down a
@@ -144,19 +144,19 @@ style controls a field offers) and the size roles above (which size a role
 renders) are **one vocabulary with two projections**, not two role systems. The
 size layer is finer-grained where the affordance layer does not need to be:
 
-| Affordance role (`TEXT_ROLES`) | Size role(s) |
-| --- | --- |
-| `heading` | title / heading / subheading (the affordance layer does not distinguish levels) |
-| `prose` | body |
-| `list-item` | body (marker-anchored; alignment is the axis that differs, not size) |
-| `quote` | type-scaled display (quote-slide's own scaling; allowlisted) |
-| `caption` | caption |
-| `label` | label |
+| Affordance role (`TEXT_ROLES`) | Size role(s)                                                                    |
+| ------------------------------ | ------------------------------------------------------------------------------- |
+| `heading`                      | title / heading / subheading (the affordance layer does not distinguish levels) |
+| `prose`                        | body                                                                            |
+| `list-item`                    | body (marker-anchored; alignment is the axis that differs, not size)            |
+| `quote`                        | type-scaled display (quote-slide's own scaling; allowlisted)                    |
+| `caption`                      | caption                                                                         |
+| `label`                        | label                                                                           |
 
 ## The card pattern
 
 A **card** is a repeated content unit that carries a title and a body which
-size *together* as one block, in a box the grid and the content set. The three
+size _together_ as one block, in a box the grid and the content set. The three
 card roles — `--slide-font-size-card-title`, `--slide-font-size-card-body`,
 `--slide-card-padding` — are the whole vocabulary a card's parts may speak on
 those axes.
@@ -171,7 +171,7 @@ logo-wall cell** carry media and a caption, not a title/body pair.
 ### The roles are contextual
 
 A card's text size is a function of its density, and density is a property of
-the *card*, not of the text inside it: six cards in a row are smaller than one,
+the _card_, not of the text inside it: six cards in a row are smaller than one,
 whatever their titles say. So the card element sets the roles and its parts
 read them —
 
@@ -184,8 +184,12 @@ read them —
   --slide-font-size-card-title: var(--slide-text-md);
   --slide-font-size-card-body: var(--slide-text-base);
 }
-.slide-text-blocks .text-block-title { font-size: var(--slide-font-size-card-title); }
-.slide-text-blocks .text-block-body  { font-size: var(--slide-font-size-card-body); }
+.slide-text-blocks .text-block-title {
+  font-size: var(--slide-font-size-card-title);
+}
+.slide-text-blocks .text-block-body {
+  font-size: var(--slide-font-size-card-body);
+}
 ```
 
 — which makes each rung of a density ladder **one rule that names the density**
@@ -208,7 +212,7 @@ within the card instead of down a ladder, so it is read the same way — where
 the ratio-larger step would put the body on or above the title, the body takes
 the smaller step. The KPI tile is the worked example: label and note were both
 26px, the label snapped up to `lg` on the plain rule, and the note stays at
-`md` because it hangs *from* the label. Expressing that as
+`md` because it hangs _from_ the label. Expressing that as
 `card-title: lg` / `card-body: md` is why the note needs no exception comment —
 the roles carry the ordering that a comment used to have to assert.
 
@@ -240,8 +244,8 @@ the values. Roles: `--slide-padding`, `--slide-header-gap`,
 **Composites write every length as a token** —
 `padding: var(--slide-space-4) var(--slide-space-6)`, never a token beside a
 raw length. This is the same conversion rule as the app layer
-(`css-tokens.md` § *Migrating hardcoded px*): convert a declaration only when
-*every* length in it lands on the scale, so the change is value-identical by
+(`css-tokens.md` § _Migrating hardcoded px_): convert a declaration only when
+_every_ length in it lands on the scale, so the change is value-identical by
 construction and reviewable by reading.
 
 The axis follows the shared tie-break above. The scale ticks by 4px below 24, so
@@ -260,14 +264,14 @@ one anyway, and only when its positive counterpart converts in the same step.
 second value is a fossil of the off-scale pair, not a decision — write
 `padding: var(--slide-space-8)`.
 
-Lengths that are *not* spacing stay out of this axis by definition: `inset`
+Lengths that are _not_ spacing stay out of this axis by definition: `inset`
 (`left`/`bottom` on an absolutely-positioned caption), `width`/`height`, and
 custom properties that feed them (`--marker-size`). A 20px inset and a 20px gap
 are not the same concept even when the number matches.
 
 **The scale carries two steps wider than the slide padding**,
 `--slide-space-20` (80px) and `--slide-space-24` (96px). They exist because
-`--slide-space-16` is *the slide padding*: anything that has to read as wider
+`--slide-space-16` is _the slide padding_: anything that has to read as wider
 than the frame — a title slide's gutter, the gap that separates two card
 groups from the gap inside one — had nowhere on the scale to land, and
 answering that with an allowlist category would have exempted the one place
@@ -282,7 +286,7 @@ is the layer below it: the private spacing locals (`--team-gap-x/y`,
 `--lw-gap-x/y`, `--timeline-gap`, `--tsu-pad-*`, `--split-gap`) that feed those
 declarations through a `var()`. The gate cannot see that layer — it reads
 declarations, and these are custom-property definitions — but the allowlist
-rule below counts a local that introduces a literal *as* a literal, so it was
+rule below counts a local that introduces a literal _as_ a literal, so it was
 never outside the axis, only outside the measurement.
 
 ## Colour roles
@@ -291,21 +295,21 @@ The role list. The roles are minted in `00-tokens.css`, fed by the theme
 colour contract, and the old `--color-*` alias spelling is gone from the
 bundle:
 
-| Role | Token |
-| --- | --- |
-| `surface` | `--slide-surface` ← `--t-color-background` |
-| `surface-raised` | `--slide-surface-raised` ← `--t-color-surface-raised` (opaque card/panel plane: table soft body, icon-card bodies) beside the translucent `--slide-surface-white(-solid)` pair |
-| `on-surface` / `on-surface-muted` | `--slide-on-surface(-muted)` ← `--t-color-text(-muted)` |
-| `surface-inverted` / `on-inverted` | `--slide-surface-inverted` = the current `--slide-on-surface` (an element that fills itself with the text colour: primary action chip, `.text-block.is-black`); `--slide-on-inverted` = the page surface at root, rebound to the opposite pole wherever the ground flips (contrast classes, theme background variants) |
-| `accent` / `on-accent` | `--slide-accent` / `--slide-on-accent` ← `--t-color-accent` / `--t-color-accent-contrast` |
-| link | `--slide-link` ← `--t-color-link`, defaulting to the accent; `--slide-link-on-dark` ← `--t-color-link-on-dark`, defaulting to the accent lightened toward white |
-| pole / variant text | `--slide-on-light` / `--slide-on-dark` ← the theme's two poles (`--t-text-color-dark/-light`); `--slide-on-lime` / `--slide-on-mist` / `--slide-on-bg-dark` ← the derived per-surface answer (`--t-slide-bg-<id>-text`); `--slide-on-gradient(-muted)` ← the gradient layer's pair (`--t-slide-gradient-text(-muted)`, emitted only when the gradient is on) |
-| accent companions | `--slide-accent-on-dark` ← `--t-color-accent-on-dark` (the display accent for dark grounds: quote attribution), defaulting to the on-dark link mix; `--slide-accent-soft` / `--slide-on-accent-soft` ← `--t-color-accent-soft(-contrast)` (the tinted plane icon blocks paint), derived mist-when-bright-else-accent |
-| `border` | `--slide-border-*` (opacity-derived) |
-| `emphasis` / `on-emphasis` | `--slide-emphasis` / `--slide-on-emphasis` — the filled band a type emphasises with (table header and label-column planes, kickers), fed by the accent pair |
-| series palette | `--slide-chart-{0..7}` ← `--t-chart-{0..7}` (numbered accent colours; the only series palette) |
-| brand slots | `--slide-brand-{1..3}` ← `--t-color-brand-{1..3}` (filled from the theme's `brandColors`; an explicit slot wins), falling back to the accent when the theme declares no brand palette — countdown paints these as backgrounds, so the slot must always resolve to a visible colour |
-| gradient layer | `--slide-gradient-bg` / `--slide-gradient-opacity` ← `--t-slide-gradient-bg` / `--t-gradient-enabled` |
+| Role                               | Token                                                                                                                                                                                                                                                                                                                                                        |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `surface`                          | `--slide-surface` ← `--t-color-background`                                                                                                                                                                                                                                                                                                                   |
+| `surface-raised`                   | `--slide-surface-raised` ← `--t-color-surface-raised` (opaque card/panel plane: table soft body, icon-card bodies) beside the translucent `--slide-surface-white(-solid)` pair                                                                                                                                                                               |
+| `on-surface` / `on-surface-muted`  | `--slide-on-surface(-muted)` ← `--t-color-text(-muted)`                                                                                                                                                                                                                                                                                                      |
+| `surface-inverted` / `on-inverted` | `--slide-surface-inverted` = the current `--slide-on-surface` (an element that fills itself with the text colour: primary action chip, `.text-block.is-black`); `--slide-on-inverted` = the page surface at root, rebound to the opposite pole wherever the ground flips (contrast classes, theme background variants)                                       |
+| `accent` / `on-accent`             | `--slide-accent` / `--slide-on-accent` ← `--t-color-accent` / `--t-color-accent-contrast`                                                                                                                                                                                                                                                                    |
+| link                               | `--slide-link` ← `--t-color-link`, defaulting to the accent; `--slide-link-on-dark` ← `--t-color-link-on-dark`, defaulting to the accent lightened toward white                                                                                                                                                                                              |
+| pole / variant text                | `--slide-on-light` / `--slide-on-dark` ← the theme's two poles (`--t-text-color-dark/-light`); `--slide-on-lime` / `--slide-on-mist` / `--slide-on-bg-dark` ← the derived per-surface answer (`--t-slide-bg-<id>-text`); `--slide-on-gradient(-muted)` ← the gradient layer's pair (`--t-slide-gradient-text(-muted)`, emitted only when the gradient is on) |
+| accent companions                  | `--slide-accent-on-dark` ← `--t-color-accent-on-dark` (the display accent for dark grounds: quote attribution), defaulting to the on-dark link mix; `--slide-accent-soft` / `--slide-on-accent-soft` ← `--t-color-accent-soft(-contrast)` (the tinted plane icon blocks paint), derived mist-when-bright-else-accent                                         |
+| `border`                           | `--slide-border-*` (opacity-derived)                                                                                                                                                                                                                                                                                                                         |
+| `emphasis` / `on-emphasis`         | `--slide-emphasis` / `--slide-on-emphasis` — the filled band a type emphasises with (table header and label-column planes, kickers), fed by the accent pair                                                                                                                                                                                                  |
+| series palette                     | `--slide-chart-{0..7}` ← `--t-chart-{0..7}` (numbered accent colours; the only series palette)                                                                                                                                                                                                                                                               |
+| brand slots                        | `--slide-brand-{1..3}` ← `--t-color-brand-{1..3}` (filled from the theme's `brandColors`; an explicit slot wins), falling back to the accent when the theme declares no brand palette — countdown paints these as backgrounds, so the slot must always resolve to a visible colour                                                                           |
+| gradient layer                     | `--slide-gradient-bg` / `--slide-gradient-opacity` ← `--t-slide-gradient-bg` / `--t-gradient-enabled`                                                                                                                                                                                                                                                        |
 
 The contextual rebinding mechanism in `00-patterns.css` (a surface class
 rebinds the text role for everything inside it) is correct and stays, including
@@ -323,7 +327,7 @@ through the `--slide-*` role, never `var(--t-…)` directly.
 
 The four radius steps are `sm` 10px · `md` 18px · `lg` 24px · `full` 999px, and
 the axis is **complete**: every `border-radius` in the slide bundle is either
-one of those roles or an allowlisted shape. `sm` is the smallest *corner*, not
+one of those roles or an allowlisted shape. `sm` is the smallest _corner_, not
 the smallest value — anything finer is the micro-chip case below, where the
 radius describes the outline of the box rather than its corners.
 
@@ -345,8 +349,8 @@ What a theme may set — the full contract, ~30–35 tokens, zero type names:
 Per-type `--t-<type>-*` tokens (icon-card-grid, per-KPI-tile, table, quote and
 chapter families) are **removed, not aliased** — the KPI tiles join the
 `--t-chart-*` series palette, table planes reduce to surface/emphasis roles.
-This is a deliberate breaking change during beta (see `versioning.md` § *The
-beta stance*): a theme that sets a removed token does not break — unknown
+This is a deliberate breaking change during beta (see `versioning.md` § _The
+beta stance_): a theme that sets a removed token does not break — unknown
 tokens do nothing — but the deck renders with role-derived styling instead;
 the release notes name each family. Status: every per-type family is gone —
 KPI-tile (`--t-kpi-tile-{1..4}-*`, `--t-kpi-delta-*`), table
@@ -412,7 +416,7 @@ occurrence:
   any other near-miss;
 - `line-height: 1` and below on **single-line display glyphs** — a numeral in
   a circle badge, a KPI figure, an arrow, the countdown digits. There the line
-  box *is* the layout: raising it to `tight` decentres the badge. The leading
+  box _is_ the layout: raising it to `tight` decentres the badge. The leading
   steps describe text rhythm, and these carriers have none. Marked in place
   with an `allowlist:` comment;
 - **KPI display figures** — the hero number on a metric tile and the unit
@@ -437,7 +441,7 @@ occurrence:
   than the display scale (≈1.17–1.21), so snapping them to scale steps either
   collapses two rungs onto one — breaking the shrink step the runtime relies on
   (25 and 22 both round to `md`; 31 has no step between `lg` 28 and `xl` 34) —
-  or forces a rung *up* (36 → 44, 32 → 34), which reintroduces overflow at the
+  or forces a rung _up_ (36 → 44, 32 → 34), which reintroduces overflow at the
   denser fills. Measured: a one-column body of five paragraphs lands on the 31px
   medium rung with 3px of clearance — 34px would overflow it, 28px would erase
   the step. Kept as raw px so the ladder reads as one uniform mechanism and stays
@@ -486,7 +490,7 @@ rule, not a parser one: **an arithmetic offset from a role token is a scale step
 the scale does not have yet** — write the step, or add it. `calc()` stays
 legitimate for the two things it cannot express otherwise, a scale multiplier
 (`--tf-size-scale`, `--quote-scale`) and `em`-relative sizing, and both are
-already allowlisted categories. A literal *inside* such an expression is not
+already allowlisted categories. A literal _inside_ such an expression is not
 covered by that allowlist: the multiplier is allowed, the number it multiplies
 is still a value on the axis.
 

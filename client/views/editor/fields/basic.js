@@ -13,8 +13,7 @@ export function createBasicFields({ h } = {}) {
     if (typeof opts?.placeholder === 'string')
       input.placeholder = opts.placeholder;
     input.addEventListener('input', () => onChange(input.value));
-    const helpText =
-      typeof opts?.helpText === 'string' ? opts.helpText : '';
+    const helpText = typeof opts?.helpText === 'string' ? opts.helpText : '';
     const helpCopyExample =
       typeof opts?.helpCopyExample === 'string' ? opts.helpCopyExample : '';
     const labelRightEl = opts?.labelRightEl || null;
@@ -30,7 +29,10 @@ export function createBasicFields({ h } = {}) {
         const copyBtn = h('button', {
           class: 'btn-copy-example',
           type: 'button',
-          title: t('editor.fields.copyExampleTitle', 'Copy example to clipboard'),
+          title: t(
+            'editor.fields.copyExampleTitle',
+            'Copy example to clipboard',
+          ),
           text: t('editor.fields.copyExample', 'Copy example'),
         });
         copyBtn.addEventListener('click', async (e) => {
@@ -39,7 +41,10 @@ export function createBasicFields({ h } = {}) {
             await navigator.clipboard.writeText(helpCopyExample);
             copyBtn.textContent = t('editor.fields.copied', 'Copied!');
             setTimeout(() => {
-              copyBtn.textContent = t('editor.fields.copyExample', 'Copy example');
+              copyBtn.textContent = t(
+                'editor.fields.copyExample',
+                'Copy example',
+              );
             }, 1500);
           } catch {
             // Fallback: paste into input
@@ -62,7 +67,9 @@ export function createBasicFields({ h } = {}) {
       input,
       helpEl,
     ]);
-    return opts?.required ? markFieldRequired({ h, wrap, control: input }) : wrap;
+    return opts?.required
+      ? markFieldRequired({ h, wrap, control: input })
+      : wrap;
   };
 
   const fieldNumber = (label, value, onChange, opts = {}) => {
@@ -90,8 +97,7 @@ export function createBasicFields({ h } = {}) {
       }
       onChange(n);
     });
-    const helpText =
-      typeof opts?.helpText === 'string' ? opts.helpText : '';
+    const helpText = typeof opts?.helpText === 'string' ? opts.helpText : '';
     const labelRightEl = opts?.labelRightEl || null;
     // Numbers are short; hint the responsive row that this field wants little
     // width so it packs beside neighbours instead of hogging a full column.
@@ -105,7 +111,9 @@ export function createBasicFields({ h } = {}) {
       input,
       helpText ? h('div', { class: 'help', text: helpText }) : null,
     ]);
-    return opts?.required ? markFieldRequired({ h, wrap, control: input }) : wrap;
+    return opts?.required
+      ? markFieldRequired({ h, wrap, control: input })
+      : wrap;
   };
 
   const fieldTextarea = (label, value, helpText, onChange, opts = {}) => {
@@ -209,7 +217,8 @@ export function createBasicFields({ h } = {}) {
       const end = ta.selectionEnd;
       const text = ta.value;
       const selected = text.slice(start, end);
-      const newText = text.slice(0, start) + before + selected + after + text.slice(end);
+      const newText =
+        text.slice(0, start) + before + selected + after + text.slice(end);
       ta.value = newText;
       onChange(newText);
       // Reselect the text (inside the markers)
@@ -226,7 +235,10 @@ export function createBasicFields({ h } = {}) {
       ta.value = newText;
       onChange(newText);
       ta.focus();
-      ta.setSelectionRange(start + textToInsert.length, start + textToInsert.length);
+      ta.setSelectionRange(
+        start + textToInsert.length,
+        start + textToInsert.length,
+      );
     };
 
     // Bold button
@@ -235,7 +247,8 @@ export function createBasicFields({ h } = {}) {
       type: 'button',
       title: t('editor.markdown.bold', 'Bold'),
     });
-    btnBold.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/></svg>';
+    btnBold.innerHTML =
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/></svg>';
     btnBold.addEventListener('click', (e) => {
       e.preventDefault();
       wrapSelection('**', '**');
@@ -247,7 +260,8 @@ export function createBasicFields({ h } = {}) {
       type: 'button',
       title: t('editor.markdown.italic', 'Italic'),
     });
-    btnItalic.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg>';
+    btnItalic.innerHTML =
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg>';
     btnItalic.addEventListener('click', (e) => {
       e.preventDefault();
       wrapSelection('*', '*');
@@ -259,7 +273,8 @@ export function createBasicFields({ h } = {}) {
       type: 'button',
       title: t('editor.markdown.link', 'Link'),
     });
-    btnLink.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+    btnLink.innerHTML =
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
     btnLink.addEventListener('click', (e) => {
       e.preventDefault();
       const start = ta.selectionStart;
@@ -284,7 +299,8 @@ export function createBasicFields({ h } = {}) {
       type: 'button',
       title: t('editor.markdown.heading', 'Heading'),
     });
-    btnHeading.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h8"/><path d="M4 18V6"/><path d="M12 18V6"/><path d="M17 10v8"/><path d="M21 10h-4l3-3"/></svg>';
+    btnHeading.innerHTML =
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h8"/><path d="M4 18V6"/><path d="M12 18V6"/><path d="M17 10v8"/><path d="M21 10h-4l3-3"/></svg>';
     btnHeading.addEventListener('click', (e) => {
       e.preventDefault();
       const start = ta.selectionStart;
@@ -303,7 +319,8 @@ export function createBasicFields({ h } = {}) {
         ta.setSelectionRange(start - 3, start - 3);
       } else {
         // Add ## at line start
-        const newText = text.slice(0, lineStart) + '## ' + text.slice(lineStart);
+        const newText =
+          text.slice(0, lineStart) + '## ' + text.slice(lineStart);
         ta.value = newText;
         onChange(newText);
         ta.focus();
@@ -317,7 +334,8 @@ export function createBasicFields({ h } = {}) {
       type: 'button',
       title: t('editor.markdown.inlineCode', 'Inline Code'),
     });
-    btnInlineCode.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>';
+    btnInlineCode.innerHTML =
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>';
     btnInlineCode.addEventListener('click', (e) => {
       e.preventDefault();
       wrapSelection('`', '`');
@@ -329,7 +347,8 @@ export function createBasicFields({ h } = {}) {
       type: 'button',
       title: t('editor.markdown.codeBlock', 'Code Block'),
     });
-    btnCodeBlock.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><polyline points="9 8 5 12 9 16"/><polyline points="15 8 19 12 15 16"/></svg>';
+    btnCodeBlock.innerHTML =
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><polyline points="9 8 5 12 9 16"/><polyline points="15 8 19 12 15 16"/></svg>';
     btnCodeBlock.addEventListener('click', (e) => {
       e.preventDefault();
       const start = ta.selectionStart;
@@ -338,7 +357,8 @@ export function createBasicFields({ h } = {}) {
       const selected = text.slice(start, end);
       if (selected) {
         // Wrap selected text in code block
-        const newText = text.slice(0, start) + '```\n' + selected + '\n```' + text.slice(end);
+        const newText =
+          text.slice(0, start) + '```\n' + selected + '\n```' + text.slice(end);
         ta.value = newText;
         onChange(newText);
         ta.focus();
@@ -357,7 +377,8 @@ export function createBasicFields({ h } = {}) {
       type: 'button',
       title: t('editor.markdown.inlineMath', 'Inline Math'),
     });
-    btnInlineMath.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4L4 20"/><path d="M20 4L12 20"/><path d="M8 12h8"/></svg>';
+    btnInlineMath.innerHTML =
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4L4 20"/><path d="M20 4L12 20"/><path d="M8 12h8"/></svg>';
     btnInlineMath.addEventListener('click', (e) => {
       e.preventDefault();
       wrapSelection('$', '$');
@@ -369,7 +390,8 @@ export function createBasicFields({ h } = {}) {
       type: 'button',
       title: t('editor.markdown.blockMath', 'Block Math'),
     });
-    btnBlockMath.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 8L7 16"/><path d="M17 8L15 16"/><path d="M7 12h4"/><path d="M13 12h4"/></svg>';
+    btnBlockMath.innerHTML =
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 8L7 16"/><path d="M17 8L15 16"/><path d="M7 12h4"/><path d="M13 12h4"/></svg>';
     btnBlockMath.addEventListener('click', (e) => {
       e.preventDefault();
       const start = ta.selectionStart;
@@ -378,7 +400,8 @@ export function createBasicFields({ h } = {}) {
       const selected = text.slice(start, end);
       if (selected) {
         // Wrap selected text in block math
-        const newText = text.slice(0, start) + '$$\n' + selected + '\n$$' + text.slice(end);
+        const newText =
+          text.slice(0, start) + '$$\n' + selected + '\n$$' + text.slice(end);
         ta.value = newText;
         onChange(newText);
         ta.focus();
@@ -432,11 +455,11 @@ export function createBasicFields({ h } = {}) {
         typeof o === 'string'
           ? { value: o, label: o }
           : o && typeof o === 'object'
-          ? {
-              value: String(o.value ?? ''),
-              label: String(o.label ?? o.value ?? ''),
-            }
-          : { value: '', label: '' };
+            ? {
+                value: String(o.value ?? ''),
+                label: String(o.label ?? o.value ?? ''),
+              }
+            : { value: '', label: '' };
       sel.append(h('option', { value: opt.value, text: opt.label }));
     }
     sel.value = String(value ?? '');
@@ -447,5 +470,12 @@ export function createBasicFields({ h } = {}) {
     ]);
   };
 
-  return { fieldText, fieldNumber, fieldTextarea, fieldMarkdown, fieldCode, fieldSelect };
+  return {
+    fieldText,
+    fieldNumber,
+    fieldTextarea,
+    fieldMarkdown,
+    fieldCode,
+    fieldSelect,
+  };
 }

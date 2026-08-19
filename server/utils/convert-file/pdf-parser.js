@@ -70,7 +70,7 @@ export async function parsePdf(buffer) {
 
       // Check for page markers like "-- 1 of N --"
       const pageMarkerPattern = /--\s*\d+\s+of\s+\d+\s*--/g;
-      const parts = rawText.split(pageMarkerPattern).filter(p => p.trim());
+      const parts = rawText.split(pageMarkerPattern).filter((p) => p.trim());
 
       if (parts.length > 1) {
         for (let i = 0; i < parts.length; i++) {
@@ -103,7 +103,9 @@ export async function parsePdf(buffer) {
 
   // If no slides were extracted, report an error
   if (slides.length === 0 && errors.length === 0) {
-    errors.push('Could not extract any text from the PDF. It may be image-based or protected.');
+    errors.push(
+      'Could not extract any text from the PDF. It may be image-based or protected.',
+    );
   }
 
   return { slides, metadata, errors };
@@ -157,13 +159,15 @@ function splitByHeuristics(text, estimatedPages) {
  * Clean up PDF text artifacts
  */
 function cleanPdfText(text) {
-  return String(text || '')
-    // Normalize whitespace
-    .replace(/[ \t]+/g, ' ')
-    // Remove excessive newlines but keep paragraph breaks
-    .replace(/\n{3,}/g, '\n\n')
-    // Clean up spacing around newlines
-    .replace(/ +\n/g, '\n')
-    .replace(/\n +/g, '\n')
-    .trim();
+  return (
+    String(text || '')
+      // Normalize whitespace
+      .replace(/[ \t]+/g, ' ')
+      // Remove excessive newlines but keep paragraph breaks
+      .replace(/\n{3,}/g, '\n\n')
+      // Clean up spacing around newlines
+      .replace(/ +\n/g, '\n')
+      .replace(/\n +/g, '\n')
+      .trim()
+  );
 }

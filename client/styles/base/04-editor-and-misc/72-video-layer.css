@@ -5,7 +5,10 @@
 .video-layer {
   position: absolute;
   z-index: 8;
-  transition: left 0.3s ease-out, top 0.3s ease-out, width 0.3s ease-out;
+  transition:
+    left 0.3s ease-out,
+    top 0.3s ease-out,
+    width 0.3s ease-out;
   border-radius: var(--ps-radius-md, 8px);
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
@@ -16,7 +19,7 @@
   width: 25%;
 }
 
-.video-layer[data-visible="false"] {
+.video-layer[data-visible='false'] {
   display: none;
 }
 
@@ -96,7 +99,7 @@
   }
 
   /* Bottom dock (default) */
-  .video-layer[data-mobile-position="bottom"] {
+  .video-layer[data-mobile-position='bottom'] {
     position: fixed;
     left: 0 !important;
     bottom: 0;
@@ -106,7 +109,7 @@
   }
 
   /* Top dock */
-  .video-layer[data-mobile-position="top"] {
+  .video-layer[data-mobile-position='top'] {
     position: fixed;
     left: 0 !important;
     top: 0 !important;
@@ -115,12 +118,12 @@
   }
 
   /* Hidden on mobile */
-  .video-layer[data-mobile-position="hidden"] {
+  .video-layer[data-mobile-position='hidden'] {
     display: none !important;
   }
 
   /* Small PiP on mobile */
-  .video-layer[data-mobile-position="pip"] {
+  .video-layer[data-mobile-position='pip'] {
     position: fixed;
     left: auto !important;
     right: 8px;

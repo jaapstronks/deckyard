@@ -3,7 +3,10 @@ import { sseWrite, openSseStream } from '../../../utils/sse.js';
 import { followAudienceScope } from './helpers.js';
 import { subscribeFollowStatus } from './status-ticker.js';
 
-export async function handleFollowEvents({ repoRoot, req, res }, presentationId) {
+export async function handleFollowEvents(
+  { repoRoot, req, res },
+  presentationId,
+) {
   if (req.method !== 'GET') return false;
 
   // openSseStream applies the connection guard (429 before stream headers).
@@ -36,7 +39,11 @@ export async function handleFollowEvents({ repoRoot, req, res }, presentationId)
         detachSession();
         currentSessionId = state.sessionId;
         // This will also emit an initial `state` event.
-        detach = await attachSessionSseClient(followAudienceScope(repoRoot), state.sessionId, res);
+        detach = await attachSessionSseClient(
+          followAudienceScope(repoRoot),
+          state.sessionId,
+          res,
+        );
       }
     } else {
       detachSession();

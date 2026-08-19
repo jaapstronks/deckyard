@@ -9,6 +9,7 @@ Custom font management for designers: upload font files, connect Adobe Fonts (Ty
 Two PostgreSQL tables (migration `037_font_management.js`), both org-scoped:
 
 **`font_families`** — one row per custom font family.
+
 - `source`: `upload` | `adobe` | `monotype` | `google`
 - `category`: `sans-serif` | `serif` | `display` | `monospace`
 - `source_config` (JSONB): source-specific data (Typekit project ID, Monotype project ID, Google spec string)
@@ -16,6 +17,7 @@ Two PostgreSQL tables (migration `037_font_management.js`), both org-scoped:
 - `css_fallback`: optional CSS fallback stack override
 
 **`font_variants`** — individual weight/style files for a family.
+
 - `weight`: 100–900 in 100 increments
 - `style`: `normal` | `italic`
 - `filename`: media provider storage key (not original filename)
@@ -27,12 +29,12 @@ Families cascade-delete their variants. Variants for uploaded fonts have stored 
 
 ### Font Sources
 
-| Source | How fonts load | What's stored | Export strategy |
-|--------|---------------|---------------|-----------------|
-| **Upload** | `@font-face` rules with variant URLs | woff2/woff files via media provider | Base64-embedded in HTML exports |
-| **Adobe** | `<link>` to Typekit CSS (`use.typekit.net`) | Project ID in `sourceConfig` | External `<link>` tag in exports |
-| **Monotype** | `<script>` from `fast.fonts.net` | Project ID + version in `sourceConfig` | External `<script>` tag in exports |
-| **Google** | `<link>` to Google Fonts CSS2 API | Spec string (e.g. `"Raleway:400,700"`) in `sourceConfig` | External `<link>` tag in exports |
+| Source       | How fonts load                              | What's stored                                            | Export strategy                    |
+| ------------ | ------------------------------------------- | -------------------------------------------------------- | ---------------------------------- |
+| **Upload**   | `@font-face` rules with variant URLs        | woff2/woff files via media provider                      | Base64-embedded in HTML exports    |
+| **Adobe**    | `<link>` to Typekit CSS (`use.typekit.net`) | Project ID in `sourceConfig`                             | External `<link>` tag in exports   |
+| **Monotype** | `<script>` from `fast.fonts.net`            | Project ID + version in `sourceConfig`                   | External `<script>` tag in exports |
+| **Google**   | `<link>` to Google Fonts CSS2 API           | Spec string (e.g. `"Raleway:400,700"`) in `sourceConfig` | External `<link>` tag in exports   |
 
 ### Theme Integration
 
@@ -50,6 +52,7 @@ Themes store font references in a `fonts` JSONB column:
 When `headingFamilyId` or `bodyFamilyId` is present, the system treats it as a managed font and resolves it from the database instead of the curated list. When absent, the standard curated font validation applies (backward-compatible).
 
 **Resolution chain:**
+
 1. Theme is loaded from DB (`server/utils/themes.js` → `loadCustomTheme()`)
 2. If theme has a familyId, `listAllFontFamiliesWithVariants()` fetches managed fonts for the org
 3. `buildThemeConfig()` receives managed fonts and produces:
@@ -76,11 +79,11 @@ schedule rather than of this repository, and no rendering baseline could mean
 anything (`docs/plans/briefs/export-structural-metrics.md`).
 
 **Which install failures are fatal.** A pinned URL that answers with an HTTP
-error, or answers with bytes whose checksum does not match, is a *repository*
+error, or answers with bytes whose checksum does not match, is a _repository_
 problem: the lock points at something that is no longer there, and installing
 anyway leaves a checkout with silently missing fonts. Those abort `postinstall`
 with a non-zero exit and a `--update-lock` instruction. A request that never
-gets an answer at all (DNS, timeout, offline, proxy) is an *environment*
+gets an answer at all (DNS, timeout, offline, proxy) is an _environment_
 problem: these assets are optional at runtime, every consumer falls back to the
 system stack, and failing `npm install` over a flaky connection would be worse.
 Those warn and continue.
@@ -94,7 +97,7 @@ simply override the first. Paths come from `curatedFontPath()` /
 `curatedFontFaces()` — never hand-built — so writer and readers cannot drift.
 `tests/google-fonts-lock.test.js` gates all of this.
 
-**One file, several weights.** Most curated families are *variable* fonts, and
+**One file, several weights.** Most curated families are _variable_ fonts, and
 Google serves the same file for every weight you ask for: a family pinned at
 400/500/600/700 is four identical downloads under four names (262 pinned
 entries across the curated list resolve to 98 distinct files). Declaring one
@@ -107,7 +110,7 @@ range (`font-weight: 400 700`), by `mergeFontFaces()` in
 `shared/theme-fonts.js`. It is used in exactly one spelling everywhere a rule
 is emitted: the generated `assets/fonts/google/fonts.css`, a theme's
 `embedFonts` (`curatedEmbedFonts()`), and the export embedder
-(`buildEmbeddedFontCss`). Files that are *not* identical — Lato, Poppins,
+(`buildEmbeddedFontCss`). Files that are _not_ identical — Lato, Poppins,
 Crimson Text and IBM Plex Mono are genuinely static — keep one rule per weight.
 The lockfile's SHA-256 is what decides which is which; nothing infers it.
 
@@ -121,6 +124,7 @@ The font picker dropdown shows both: curated fonts grouped by category, and mana
 ### Body Font Filtering
 
 Body fonts need regular (400) and bold (700) weights to work properly in slide content. The font picker enforces this:
+
 - Uploaded managed fonts only appear in the body picker if they have both weight 400 and 700 variants
 - Non-upload sources (Adobe, Monotype, Google) bypass this check since their variant availability is managed externally
 - Heading fonts have no weight restriction (single weight is fine for headings)
@@ -129,88 +133,96 @@ Body fonts need regular (400) and bold (700) weights to work properly in slide c
 
 ### API Endpoints
 
-| Method | Path | Auth | Purpose |
-|--------|------|------|---------|
-| GET | `/api/font-families` | Any user | List all families with variants |
-| POST | `/api/font-families` | Designer | Create a family |
-| GET | `/api/font-families/:id` | Any user | Get family with variants |
-| PUT | `/api/font-families/:id` | Designer | Update family metadata |
-| DELETE | `/api/font-families/:id` | Designer | Delete family + variants + media files |
-| POST | `/api/font-families/:id/upload-variant` | Designer | Upload a woff2/woff file |
-| DELETE | `/api/font-families/:id/variants/:vid` | Designer | Remove a single variant |
-| POST | `/api/font-families/discover-adobe` | Designer | Discover fonts from a Typekit project |
-| POST | `/api/font-families/import-adobe-family` | Designer | Import a discovered Adobe family |
+| Method | Path                                     | Auth     | Purpose                                |
+| ------ | ---------------------------------------- | -------- | -------------------------------------- |
+| GET    | `/api/font-families`                     | Any user | List all families with variants        |
+| POST   | `/api/font-families`                     | Designer | Create a family                        |
+| GET    | `/api/font-families/:id`                 | Any user | Get family with variants               |
+| PUT    | `/api/font-families/:id`                 | Designer | Update family metadata                 |
+| DELETE | `/api/font-families/:id`                 | Designer | Delete family + variants + media files |
+| POST   | `/api/font-families/:id/upload-variant`  | Designer | Upload a woff2/woff file               |
+| DELETE | `/api/font-families/:id/variants/:vid`   | Designer | Remove a single variant                |
+| POST   | `/api/font-families/discover-adobe`      | Designer | Discover fonts from a Typekit project  |
+| POST   | `/api/font-families/import-adobe-family` | Designer | Import a discovered Adobe family       |
 
 Upload endpoint validates magic bytes (woff2: `wOF2`, woff: `wOFF`) and enforces a 5MB size limit.
 
 ### Key Server Files
 
-| File | Purpose |
-|------|---------|
-| `server/db/migrations/037_font_management.js` | Database schema |
-| `server/storage/font-families.js` | CRUD operations (org-scoped, with `withDbGuard`) |
-| `server/routes/api/font-families.js` | HTTP route handlers |
-| `server/utils/theme-builder.js` | `buildThemeConfig()`, `generatePreviewCSS()`, `generateFontFaceCSS()`, `buildExternalFontLinks()` |
-| `server/utils/themes.js` | Theme loading with managed font resolution, `clearCustomThemeCache()` |
-| `server/storage/themes.js` | Theme CRUD with `validateFonts()` and `verifyFontFamilyIds()` |
-| `server/utils/curated-font-embed.js` | `curatedEmbedFonts()` — a curated family's `embedFonts` entries, merged by pinned file identity |
-| `server/utils/embed-fonts.js` | Base64-embeds font files for offline HTML exports |
-| `server/export/html.js` | Standalone HTML export (injects external font tags) |
-| `server/utils/embed-html/index.js` | Embed HTML builder (injects external font tags) |
-| `server/utils/embed-html/template.js` | Embed HTML template (renders external font HTML in `<head>`) |
-| `shared/theme-fonts.js` | Curated fonts list (single source of truth for client + server) |
+| File                                          | Purpose                                                                                           |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `server/db/migrations/037_font_management.js` | Database schema                                                                                   |
+| `server/storage/font-families.js`             | CRUD operations (org-scoped, with `withDbGuard`)                                                  |
+| `server/routes/api/font-families.js`          | HTTP route handlers                                                                               |
+| `server/utils/theme-builder.js`               | `buildThemeConfig()`, `generatePreviewCSS()`, `generateFontFaceCSS()`, `buildExternalFontLinks()` |
+| `server/utils/themes.js`                      | Theme loading with managed font resolution, `clearCustomThemeCache()`                             |
+| `server/storage/themes.js`                    | Theme CRUD with `validateFonts()` and `verifyFontFamilyIds()`                                     |
+| `server/utils/curated-font-embed.js`          | `curatedEmbedFonts()` — a curated family's `embedFonts` entries, merged by pinned file identity   |
+| `server/utils/embed-fonts.js`                 | Base64-embeds font files for offline HTML exports                                                 |
+| `server/export/html.js`                       | Standalone HTML export (injects external font tags)                                               |
+| `server/utils/embed-html/index.js`            | Embed HTML builder (injects external font tags)                                                   |
+| `server/utils/embed-html/template.js`         | Embed HTML template (renders external font HTML in `<head>`)                                      |
+| `shared/theme-fonts.js`                       | Curated fonts list (single source of truth for client + server)                                   |
 
 ### Key Client Files
 
-| File | Purpose |
-|------|---------|
-| `client/views/settings/tabs/fonts-tab.js` | Font families list page in settings |
-| `client/views/settings/font-editor/index.js` | Font family editor (source selection, common fields) |
-| `client/views/settings/font-editor/upload-panel.js` | Upload source: weight/style grid, file upload |
-| `client/views/settings/font-editor/adobe-panel.js` | Adobe source: project discovery + import |
-| `client/views/settings/font-editor/monotype-panel.js` | Monotype source: project ID config |
-| `client/views/settings/font-editor/google-panel.js` | Google source: spec string + preview |
-| `client/views/settings/theme-editor/font-picker.js` | Font dropdown (curated + managed, live preview) |
-| `client/views/settings/theme-editor/index.js` | Theme editor (fetches managed fonts, passes to pickers) |
-| `client/styles/base/04-editor-and-misc/104-font-manager.css` | All font management UI styles |
+| File                                                         | Purpose                                                 |
+| ------------------------------------------------------------ | ------------------------------------------------------- |
+| `client/views/settings/tabs/fonts-tab.js`                    | Font families list page in settings                     |
+| `client/views/settings/font-editor/index.js`                 | Font family editor (source selection, common fields)    |
+| `client/views/settings/font-editor/upload-panel.js`          | Upload source: weight/style grid, file upload           |
+| `client/views/settings/font-editor/adobe-panel.js`           | Adobe source: project discovery + import                |
+| `client/views/settings/font-editor/monotype-panel.js`        | Monotype source: project ID config                      |
+| `client/views/settings/font-editor/google-panel.js`          | Google source: spec string + preview                    |
+| `client/views/settings/theme-editor/font-picker.js`          | Font dropdown (curated + managed, live preview)         |
+| `client/views/settings/theme-editor/index.js`                | Theme editor (fetches managed fonts, passes to pickers) |
+| `client/styles/base/04-editor-and-misc/104-font-manager.css` | All font management UI styles                           |
 
 ### Export Pipeline
 
 **Standalone HTML** (`server/export/html.js`):
+
 - Uploaded fonts: fetched from URLs, base64-encoded into `@font-face` rules (via `embed-fonts.js`)
 - External fonts: `<link>` and `<script>` tags injected into `<head>` with URL safety checks
 
 **Embed HTML** (`server/utils/embed-html/`):
+
 - External fonts: same `<link>`/`<script>` injection as standalone
 - Uploaded fonts: served from URLs (embeds load from the server, not offline)
 
 **PDF/PNG** (Puppeteer):
+
 - Works via network access — Puppeteer loads URLs and external CSS/JS normally
 
 ### Cache Invalidation
 
 `customThemeCache` in `server/utils/themes.js` caches resolved theme configs:
+
 - **Theme update/delete**: `clearCustomThemeCache(themeId)` clears the specific theme
 - **Font family update/delete**: `clearCustomThemeCache()` clears all (font changes can affect any theme)
 
 ### Font Deletion Safety
 
 When a font family is deleted:
+
 1. All themes in the org that reference the familyId have their `headingFamilyId`/`bodyFamilyId` cleared (falls back to curated font behavior)
 2. Variant files are cleaned up from the media provider
 3. Custom theme cache is fully cleared
 
 When creating/updating a theme:
+
 - `verifyFontFamilyIds()` checks that any referenced familyId exists in the org's `font_families` table
 - Returns `invalid_fonts` error if the familyId doesn't exist
 
 ## Testing Checklist
 
 ### Migration
+
 - [ ] Run `npm run migrate` — verify `font_families` and `font_variants` tables are created
 - [ ] Run migration down/up cycle to verify rollback works
 
 ### Upload Flow
+
 - [ ] Create a font family (source: upload), upload a woff2 variant
 - [ ] Verify magic byte validation rejects non-font files
 - [ ] Verify 5MB size limit is enforced
@@ -220,17 +232,20 @@ When creating/updating a theme:
 - [ ] Delete a family — verify all variants and stored files are cleaned up
 
 ### Adobe Fonts
+
 - [ ] Enter a valid Typekit project ID, discover fonts
 - [ ] Import a discovered family — verify `font_families` + `font_variants` rows created
 - [ ] Assign to a theme — verify `<link>` tag with Typekit CSS URL appears in rendered output
 - [ ] Export as HTML — verify the Typekit link tag is in the exported file
 
 ### Monotype / Google
+
 - [ ] Create a Monotype font family with project ID — verify `<script>` tag in output
 - [ ] Create a Google font family with spec `"Open Sans:400,700"` — verify valid CSS2 API URL
 - [ ] Verify the generated URL properly encodes the family name without breaking the weights format
 
 ### Theme Integration
+
 - [ ] Open theme editor — verify all 40 curated fonts appear in both heading and body dropdowns
 - [ ] Create a theme and select a managed font for heading and body
 - [ ] Body picker should only show uploaded fonts with weights 400 + 700
@@ -240,6 +255,7 @@ When creating/updating a theme:
 - [ ] Curated (non-managed) fonts still work as before
 
 ### Export
+
 - [ ] Export with uploaded fonts as HTML — verify `@font-face` rules with base64 data
 - [ ] Export with Adobe/Google/Monotype fonts — verify external `<link>`/`<script>` tags
 - [ ] View embed HTML output for a theme with external fonts — verify tags are present
@@ -247,16 +263,19 @@ When creating/updating a theme:
 - [ ] Export as PNG slides — verify fonts render
 
 ### Permissions
+
 - [ ] Non-designer users cannot create/edit/delete font families (403)
 - [ ] Non-designer users can still list and view (for font picker in themes)
 
 ### Cache & Deletion
+
 - [ ] Update a theme → re-render a presentation → verify updated config is used (not stale)
 - [ ] Update a font family's variants → presentations using themes with that font reflect changes
 - [ ] Delete a font family that's referenced by a theme → theme falls back gracefully
 - [ ] Try to save a theme with a non-existent familyId → verify `invalid_fonts` error
 
 ### Edge Cases
+
 - [ ] Duplicate slug prevention for font families within same org
 - [ ] Duplicate weight+style prevention for variants within same family
 - [ ] Google spec with no weights (just family name) — should default to `400;600;700`
@@ -265,15 +284,19 @@ When creating/updating a theme:
 ## Known Limitations
 
 ### No Google Fonts validation
+
 Google Fonts are added by entering a spec string with no validation that the font exists. Invalid specs silently don't load. Could add a fetch-and-verify step, but it's not blocking since the failure mode is just a missing font (falls back to CSS generic family).
 
 ### No font usage overview
+
 There's no UI to see which themes use a given font family. The deletion flow now clears references automatically, but users have no way to preview the impact before deleting.
 
 ### External fonts require network
-Adobe, Monotype, and Google fonts need network access to load. Standalone HTML exports include the external `<link>`/`<script>` tags but won't work fully offline. Local (curated `/assets/...`) and uploaded fonts *are* base64-embedded for true offline use — see `docs/reference/standalone-html-export.md`.
+
+Adobe, Monotype, and Google fonts need network access to load. Standalone HTML exports include the external `<link>`/`<script>` tags but won't work fully offline. Local (curated `/assets/...`) and uploaded fonts _are_ base64-embedded for true offline use — see `docs/reference/standalone-html-export.md`.
 
 ### No font subsetting
+
 Uploaded fonts are embedded in full. For exports with large font files, this increases the HTML file size. Subsetting to commonly used character ranges would reduce this.
 
 ## Future Improvements

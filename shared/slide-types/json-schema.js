@@ -126,7 +126,8 @@ export function fieldToJsonSchema(field) {
       break;
     case 'stringArray':
       schema = { type: 'array', items: { type: 'string' } };
-      if (Number.isFinite(Number(field.maxItems))) schema.maxItems = Number(field.maxItems);
+      if (Number.isFinite(Number(field.maxItems)))
+        schema.maxItems = Number(field.maxItems);
       break;
     case 'objectArray':
       schema = itemsToJsonSchema(field);
@@ -134,7 +135,8 @@ export function fieldToJsonSchema(field) {
     case 'string':
     default:
       schema = { type: 'string' };
-      if (Number.isFinite(Number(field.maxLength))) schema.maxLength = Number(field.maxLength);
+      if (Number.isFinite(Number(field.maxLength)))
+        schema.maxLength = Number(field.maxLength);
       break;
   }
 
@@ -169,8 +171,10 @@ function itemsToJsonSchema(field) {
   if (required.length) items.required = required;
   /** @type {any} */
   const schema = { type: 'array', items };
-  if (Number.isFinite(Number(field.minItems))) schema.minItems = Number(field.minItems);
-  if (Number.isFinite(Number(field.maxItems))) schema.maxItems = Number(field.maxItems);
+  if (Number.isFinite(Number(field.minItems)))
+    schema.minItems = Number(field.minItems);
+  if (Number.isFinite(Number(field.maxItems)))
+    schema.maxItems = Number(field.maxItems);
   return schema;
 }
 
@@ -236,7 +240,9 @@ export function slideTypeContentSchema(typeName, def, opts = {}) {
  */
 function typeSpellings(name, def) {
   const namespace =
-    typeof def?.namespace === 'string' && def.namespace ? def.namespace : CORE_NAMESPACE;
+    typeof def?.namespace === 'string' && def.namespace
+      ? def.namespace
+      : CORE_NAMESPACE;
   const id = { namespace, name, version: null };
   const spellings = [name, formatTypeId(id), formatCanonicalId(id)];
   if (namespace === CORE_NAMESPACE) spellings.push(canonicalTypeName(name));
@@ -287,8 +293,12 @@ export function deckJsonSchema(slideTypes) {
     // Discriminate content by slide type: if type names X (in any of its
     // spellings), content matches X.
     allOf: names.map((name) => ({
-      if: { properties: { type: { enum: typeSpellings(name, slideTypes[name]) } } },
-      then: { properties: { content: { $ref: `#/$defs/${contentDefKey(name)}` } } },
+      if: {
+        properties: { type: { enum: typeSpellings(name, slideTypes[name]) } },
+      },
+      then: {
+        properties: { content: { $ref: `#/$defs/${contentDefKey(name)}` } },
+      },
     })),
   };
 

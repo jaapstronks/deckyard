@@ -12,14 +12,23 @@ import { getRequestOrigin } from '../utils/request-url.js';
 import { normalizeEmail } from '../utils/normalize.js';
 import { envStr } from '../config/utils.js';
 import { fireAndForget } from '../utils/fire-and-forget.js';
-import { parseMentions, stripMentionMarkup } from '../../shared/comment-mentions.js';
+import {
+  parseMentions,
+  stripMentionMarkup,
+} from '../../shared/comment-mentions.js';
 import {
   createNotification,
   archiveThreadNotifications,
   getUnreadCount,
 } from '../storage/notifications.js';
-import { broadcastToUser, NotificationEventTypes } from './notification-events.js';
-import { resolveCommentRecipients, REASON_TO_TYPE } from './comment-subscriptions.js';
+import {
+  broadcastToUser,
+  NotificationEventTypes,
+} from './notification-events.js';
+import {
+  resolveCommentRecipients,
+  REASON_TO_TYPE,
+} from './comment-subscriptions.js';
 import { getUserByEmail } from '../storage/users.js';
 import { crossOrganizationScope } from '../storage/scope.js';
 import { createLogger } from '../utils/logger.js';
@@ -40,13 +49,11 @@ const log = createLogger('comment-notifications');
  * @param {Object} options.actor - The user/guest who created the comment
  * @param {import('../storage/scope.js').StorageScope} options.scope - the caller's storage scope
  */
-export async function notifyCommentCreated(repoRoot, req, {
-  presentation,
-  comment,
-  parentComment,
-  actor,
-  scope,
-}) {
+export async function notifyCommentCreated(
+  repoRoot,
+  req,
+  { presentation, comment, parentComment, actor, scope },
+) {
   const ownerEmail = normalizeEmail(presentation?.ownerEmail);
   const commenterEmail = normalizeEmail(actor?.email);
 
@@ -67,21 +74,34 @@ export async function notifyCommentCreated(repoRoot, req, {
   // channel): personal subscription levels must not silence it, so it
   // keeps the pre-subscription recipient set (owner + parent author +
   // mentions, minus the actor), gated only on slackEnabled below.
-  const webhookRecipients = buildRecipients({ presentation, comment, parentComment, actor });
+  const webhookRecipients = buildRecipients({
+    presentation,
+    comment,
+    parentComment,
+    actor,
+  });
 
   // Your own reply archives your open inbox items for this thread — even
   // when nobody else is left to notify.
-  await autoArchiveOnOwnReply({ presentation, comment, parentComment, actor, scope });
+  await autoArchiveOnOwnReply({
+    presentation,
+    comment,
+    parentComment,
+    actor,
+    scope,
+  });
 
   if (recipientEmails.size === 0 && webhookRecipients.size === 0) return;
 
   const settings = await getAppSettings(
-    crossOrganizationScope(repoRoot ?? null, 'comment notification fan-out: e-mail switch is instance-level')
+    crossOrganizationScope(
+      repoRoot ?? null,
+      'comment notification fan-out: e-mail switch is instance-level',
+    ),
   );
   const origin = getRequestOrigin(req);
-  const editUrl = origin && presentation?.id
-    ? `${origin}/app/${presentation.id}`
-    : null;
+  const editUrl =
+    origin && presentation?.id ? `${origin}/app/${presentation.id}` : null;
 
   // In-app notifications (bell + live SSE push)
   await createInAppNotifications({
@@ -96,13 +116,18 @@ export async function notifyCommentCreated(repoRoot, req, {
   // Fetch user preferences for all recipients (both channels), in parallel
   const recipientPrefs = new Map();
   await Promise.all(
-    [...new Set([...recipientEmails, ...webhookRecipients])].map(async (email) => {
-      const userSettings = await getUserSettings(
-        crossOrganizationScope(repoRoot ?? null, 'comment notification fan-out: recipient preference read'),
-        email
-      );
-      recipientPrefs.set(email, userSettings?.notifications || {});
-    })
+    [...new Set([...recipientEmails, ...webhookRecipients])].map(
+      async (email) => {
+        const userSettings = await getUserSettings(
+          crossOrganizationScope(
+            repoRoot ?? null,
+            'comment notification fan-out: recipient preference read',
+          ),
+          email,
+        );
+        recipientPrefs.set(email, userSettings?.notifications || {});
+      },
+    ),
   );
 
   // Fire Slack/Discord webhook
@@ -157,9 +182,10 @@ function buildRecipients({ presentation, comment, parentComment, actor }) {
  * body for callers that pass a raw comment.
  */
 function commentMentions(comment) {
-  const list = Array.isArray(comment?.mentions) && comment.mentions.length
-    ? comment.mentions
-    : parseMentions(comment?.body);
+  const list =
+    Array.isArray(comment?.mentions) && comment.mentions.length
+      ? comment.mentions
+      : parseMentions(comment?.body);
   return list
     .map((m) => ({ ...m, email: normalizeEmail(m?.email) }))
     .filter((m) => m.email);
@@ -199,7 +225,13 @@ export async function notifyCommentCreatedInApp({
     scope,
   });
   // Your own reply archives your open inbox items for this thread.
-  await autoArchiveOnOwnReply({ presentation, comment, parentComment, actor, scope });
+  await autoArchiveOnOwnReply({
+    presentation,
+    comment,
+    parentComment,
+    actor,
+    scope,
+  });
 }
 
 /**
@@ -219,18 +251,15 @@ export async function notifyCommentCreatedInApp({
  * @param {Object} options.actor - The user who edited the comment
  * @param {import('../storage/scope.js').StorageScope} options.scope - the caller's storage scope
  */
-export async function notifyMentionsAdded(repoRoot, req, {
-  presentation,
-  comment,
-  previousMentions,
-  parentComment,
-  actor,
-  scope,
-}) {
+export async function notifyMentionsAdded(
+  repoRoot,
+  req,
+  { presentation, comment, previousMentions, parentComment, actor, scope },
+) {
   const before = new Set(
     (Array.isArray(previousMentions) ? previousMentions : [])
       .map((m) => normalizeEmail(m?.email))
-      .filter(Boolean)
+      .filter(Boolean),
   );
   const actorEmail = normalizeEmail(actor?.email);
   const added = commentMentions(comment)
@@ -238,13 +267,15 @@ export async function notifyMentionsAdded(repoRoot, req, {
     .filter((email) => !before.has(email) && email !== actorEmail);
   if (added.length === 0) return;
 
-  const users = await Promise.all(added.map(async (email) => {
-    try {
-      return await getUserByEmail(scope, email);
-    } catch {
-      return null;
-    }
-  }));
+  const users = await Promise.all(
+    added.map(async (email) => {
+      try {
+        return await getUserByEmail(scope, email);
+      } catch {
+        return null;
+      }
+    }),
+  );
   const recipients = added
     .filter((_, i) => users[i])
     .map((email) => ({ email, reason: 'mention' }));
@@ -260,20 +291,27 @@ export async function notifyMentionsAdded(repoRoot, req, {
   });
 
   const settings = await getAppSettings(
-    crossOrganizationScope(repoRoot ?? null, 'comment notification fan-out: e-mail switch is instance-level')
+    crossOrganizationScope(
+      repoRoot ?? null,
+      'comment notification fan-out: e-mail switch is instance-level',
+    ),
   );
   const origin = getRequestOrigin(req);
-  const editUrl = origin && presentation?.id
-    ? `${origin}/app/${presentation.id}`
-    : null;
+  const editUrl =
+    origin && presentation?.id ? `${origin}/app/${presentation.id}` : null;
   const recipientPrefs = new Map();
-  await Promise.all(recipients.map(async ({ email }) => {
-    const userSettings = await getUserSettings(
-      crossOrganizationScope(repoRoot ?? null, 'comment notification fan-out: recipient preference read'),
-      email
-    );
-    recipientPrefs.set(email, userSettings?.notifications || {});
-  }));
+  await Promise.all(
+    recipients.map(async ({ email }) => {
+      const userSettings = await getUserSettings(
+        crossOrganizationScope(
+          repoRoot ?? null,
+          'comment notification fan-out: recipient preference read',
+        ),
+        email,
+      );
+      recipientPrefs.set(email, userSettings?.notifications || {});
+    }),
+  );
   await sendCommentEmails({
     repoRoot,
     settings,
@@ -316,18 +354,20 @@ export function buildInAppNotificationInputs({
 }) {
   let resolved = recipients;
   if (!Array.isArray(resolved)) {
-    const mentionedEmails = new Set(commentMentions(comment).map((m) => m.email));
-    const parentAuthorEmail = normalizeEmail(parentComment?.authorEmail);
-    resolved = [...buildRecipients({ presentation, comment, parentComment, actor })].map(
-      (email) => ({
-        email,
-        reason: mentionedEmails.has(email)
-          ? 'mention'
-          : parentAuthorEmail && email === parentAuthorEmail
-            ? 'reply'
-            : 'participating',
-      })
+    const mentionedEmails = new Set(
+      commentMentions(comment).map((m) => m.email),
     );
+    const parentAuthorEmail = normalizeEmail(parentComment?.authorEmail);
+    resolved = [
+      ...buildRecipients({ presentation, comment, parentComment, actor }),
+    ].map((email) => ({
+      email,
+      reason: mentionedEmails.has(email)
+        ? 'mention'
+        : parentAuthorEmail && email === parentAuthorEmail
+          ? 'reply'
+          : 'participating',
+    }));
   }
   if (resolved.length === 0) return [];
 
@@ -351,11 +391,12 @@ export function buildInAppNotificationInputs({
     return {
       userEmail: recipientEmail,
       notificationType,
-      title: notificationType === 'comment_mention'
-        ? `${actorName} mentioned you in "${presentationTitle}"`
-        : notificationType === 'comment_reply'
-          ? `${actorName} replied to your comment`
-          : `${actorName} commented on "${presentationTitle}"`,
+      title:
+        notificationType === 'comment_mention'
+          ? `${actorName} mentioned you in "${presentationTitle}"`
+          : notificationType === 'comment_reply'
+            ? `${actorName} replied to your comment`
+            : `${actorName} commented on "${presentationTitle}"`,
       body: excerpt,
       presentationId: presentation?.id,
       actorEmail: actor?.email || null,
@@ -376,7 +417,13 @@ export function buildInAppNotificationInputs({
  * means you handled it, so your open inbox items for that thread archive
  * themselves. The badge follows live via a counts push.
  */
-async function autoArchiveOnOwnReply({ presentation, comment, parentComment, actor, scope }) {
+async function autoArchiveOnOwnReply({
+  presentation,
+  comment,
+  parentComment,
+  actor,
+  scope,
+}) {
   const actorEmail = normalizeEmail(actor?.email);
   if (!actorEmail || !parentComment) return;
   const threadId = parentComment.parentId || parentComment.id;
@@ -385,11 +432,13 @@ async function autoArchiveOnOwnReply({ presentation, comment, parentComment, act
       scope,
       actorEmail,
       presentation?.id,
-      threadId
+      threadId,
     );
     if (result?.ok && result.updatedCount > 0) {
       const unreadCount = await getUnreadCount(scope, actorEmail);
-      broadcastToUser(actorEmail, NotificationEventTypes.COUNTS, { unreadCount });
+      broadcastToUser(actorEmail, NotificationEventTypes.COUNTS, {
+        unreadCount,
+      });
     }
   } catch (e) {
     log.warn('auto-archive failed:', e?.message || e);
@@ -420,10 +469,17 @@ async function createInAppNotifications({
     try {
       const notifResult = await createNotification(scope, input);
       if (notifResult?.ok && notifResult.notification) {
-        broadcastToUser(input.userEmail, NotificationEventTypes.NEW, notifResult.notification);
+        broadcastToUser(
+          input.userEmail,
+          NotificationEventTypes.NEW,
+          notifResult.notification,
+        );
       }
     } catch (e) {
-      log.warn(`in-app notification failed to=${input.userEmail}:`, e?.message || e);
+      log.warn(
+        `in-app notification failed to=${input.userEmail}:`,
+        e?.message || e,
+      );
     }
   }
 }
@@ -431,16 +487,20 @@ async function createInAppNotifications({
 /**
  * Fire webhook for comment creation (Slack/Discord channel notifications).
  */
-async function fireCommentWebhook(repoRoot, req, {
-  settings,
-  presentation,
-  comment,
-  parentComment,
-  actor,
-  ownerEmail,
-  recipients,
-  recipientPrefs,
-}) {
+async function fireCommentWebhook(
+  repoRoot,
+  req,
+  {
+    settings,
+    presentation,
+    comment,
+    parentComment,
+    actor,
+    ownerEmail,
+    recipients,
+    recipientPrefs,
+  },
+) {
   // Filter recipients by their Slack/webhook preference
   const slackRecipients = [...recipients].filter((email) => {
     const prefs = recipientPrefs.get(email);
@@ -518,12 +578,11 @@ async function sendCommentEmails({
       }).then((result) => {
         if (!result.ok) {
           log.warn(
-            `[brevo] email failed to=${recipientEmail} error=${result.error || ''}`.trim()
+            `[brevo] email failed to=${recipientEmail} error=${result.error || ''}`.trim(),
           );
         }
       }),
-      `comment notification email to=${recipientEmail}`
+      `comment notification email to=${recipientEmail}`,
     );
   }
 }
-

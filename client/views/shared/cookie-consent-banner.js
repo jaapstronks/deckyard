@@ -27,7 +27,10 @@ import {
  * @param {HTMLElement} [options.container] - Container to mount to (default: document.body)
  * @returns {{ show: Function, hide: Function, destroy: Function, el: HTMLElement }}
  */
-export function createCookieConsentBanner({ isAuthenticated = false, container = document.body } = {}) {
+export function createCookieConsentBanner({
+  isAuthenticated = false,
+  container = document.body,
+} = {}) {
   let bannerEl = null;
   let settingsEl = null;
   let isVisible = false;
@@ -37,31 +40,48 @@ export function createCookieConsentBanner({ isAuthenticated = false, container =
 
   // Build the banner element
   function buildBanner() {
-    const banner = h('div', { class: 'cookie-consent-banner', role: 'dialog', 'aria-label': t('cookies.bannerLabel', 'Cookie consent') }, [
-      h('div', { class: 'cookie-consent-content' }, [
-        h('div', { class: 'cookie-consent-text' }, [
-          h('p', { class: 'cookie-consent-title', text: t('cookies.title', 'We use cookies') }),
-          h('p', { class: 'cookie-consent-description', text: t('cookies.description', 'We use cookies to improve your experience and analyze site usage. You can manage your preferences below.') }),
+    const banner = h(
+      'div',
+      {
+        class: 'cookie-consent-banner',
+        role: 'dialog',
+        'aria-label': t('cookies.bannerLabel', 'Cookie consent'),
+      },
+      [
+        h('div', { class: 'cookie-consent-content' }, [
+          h('div', { class: 'cookie-consent-text' }, [
+            h('p', {
+              class: 'cookie-consent-title',
+              text: t('cookies.title', 'We use cookies'),
+            }),
+            h('p', {
+              class: 'cookie-consent-description',
+              text: t(
+                'cookies.description',
+                'We use cookies to improve your experience and analyze site usage. You can manage your preferences below.',
+              ),
+            }),
+          ]),
+          h('div', { class: 'cookie-consent-actions' }, [
+            h('button', {
+              class: 'btn btn-secondary cookie-consent-btn-settings',
+              text: t('cookies.manage', 'Manage preferences'),
+              onclick: () => showSettings(),
+            }),
+            h('button', {
+              class: 'btn btn-secondary cookie-consent-btn-necessary',
+              text: t('cookies.acceptNecessary', 'Necessary only'),
+              onclick: () => handleAcceptNecessary(),
+            }),
+            h('button', {
+              class: 'btn btn-primary cookie-consent-btn-accept',
+              text: t('cookies.acceptAll', 'Accept all'),
+              onclick: () => handleAcceptAll(),
+            }),
+          ]),
         ]),
-        h('div', { class: 'cookie-consent-actions' }, [
-          h('button', {
-            class: 'btn btn-secondary cookie-consent-btn-settings',
-            text: t('cookies.manage', 'Manage preferences'),
-            onclick: () => showSettings(),
-          }),
-          h('button', {
-            class: 'btn btn-secondary cookie-consent-btn-necessary',
-            text: t('cookies.acceptNecessary', 'Necessary only'),
-            onclick: () => handleAcceptNecessary(),
-          }),
-          h('button', {
-            class: 'btn btn-primary cookie-consent-btn-accept',
-            text: t('cookies.acceptAll', 'Accept all'),
-            onclick: () => handleAcceptAll(),
-          }),
-        ]),
-      ]),
-    ]);
+      ],
+    );
 
     return banner;
   }
@@ -70,81 +90,141 @@ export function createCookieConsentBanner({ isAuthenticated = false, container =
   function buildSettings() {
     const currentState = getConsentState();
 
-    const settings = h('div', { class: 'cookie-consent-settings-overlay', onclick: (e) => {
-      if (e.target === settings) hideSettings();
-    } }, [
-      h('div', { class: 'cookie-consent-settings', role: 'dialog', 'aria-label': t('cookies.settingsLabel', 'Cookie preferences') }, [
-        h('div', { class: 'cookie-consent-settings-header' }, [
-          h('h2', { class: 'cookie-consent-settings-title', text: t('cookies.settingsTitle', 'Cookie preferences') }),
-          h('button', {
-            class: 'cookie-consent-settings-close',
-            'aria-label': t('common.close', 'Close'),
-            onclick: () => hideSettings(),
-          }, [h('span', { text: '\u00D7' })]),
-        ]),
-        h('div', { class: 'cookie-consent-settings-body' }, [
-          // Necessary cookies (always on)
-          h('div', { class: 'cookie-consent-category' }, [
-            h('div', { class: 'cookie-consent-category-header' }, [
-              h('div', { class: 'cookie-consent-category-info' }, [
-                h('h3', { class: 'cookie-consent-category-title', text: t('cookies.necessary.title', 'Necessary') }),
-                h('p', { class: 'cookie-consent-category-description', text: t('cookies.necessary.description', 'Essential for the website to function. Cannot be disabled.') }),
+    const settings = h(
+      'div',
+      {
+        class: 'cookie-consent-settings-overlay',
+        onclick: (e) => {
+          if (e.target === settings) hideSettings();
+        },
+      },
+      [
+        h(
+          'div',
+          {
+            class: 'cookie-consent-settings',
+            role: 'dialog',
+            'aria-label': t('cookies.settingsLabel', 'Cookie preferences'),
+          },
+          [
+            h('div', { class: 'cookie-consent-settings-header' }, [
+              h('h2', {
+                class: 'cookie-consent-settings-title',
+                text: t('cookies.settingsTitle', 'Cookie preferences'),
+              }),
+              h(
+                'button',
+                {
+                  class: 'cookie-consent-settings-close',
+                  'aria-label': t('common.close', 'Close'),
+                  onclick: () => hideSettings(),
+                },
+                [h('span', { text: '\u00D7' })],
+              ),
+            ]),
+            h('div', { class: 'cookie-consent-settings-body' }, [
+              // Necessary cookies (always on)
+              h('div', { class: 'cookie-consent-category' }, [
+                h('div', { class: 'cookie-consent-category-header' }, [
+                  h('div', { class: 'cookie-consent-category-info' }, [
+                    h('h3', {
+                      class: 'cookie-consent-category-title',
+                      text: t('cookies.necessary.title', 'Necessary'),
+                    }),
+                    h('p', {
+                      class: 'cookie-consent-category-description',
+                      text: t(
+                        'cookies.necessary.description',
+                        'Essential for the website to function. Cannot be disabled.',
+                      ),
+                    }),
+                  ]),
+                  h(
+                    'label',
+                    {
+                      class:
+                        'cookie-consent-toggle cookie-consent-toggle-disabled',
+                    },
+                    [
+                      h('input', {
+                        type: 'checkbox',
+                        checked: true,
+                        disabled: true,
+                      }),
+                      h('span', { class: 'cookie-consent-toggle-slider' }),
+                    ],
+                  ),
+                ]),
               ]),
-              h('label', { class: 'cookie-consent-toggle cookie-consent-toggle-disabled' }, [
-                h('input', { type: 'checkbox', checked: true, disabled: true }),
-                h('span', { class: 'cookie-consent-toggle-slider' }),
+              // Analytics cookies
+              h('div', { class: 'cookie-consent-category' }, [
+                h('div', { class: 'cookie-consent-category-header' }, [
+                  h('div', { class: 'cookie-consent-category-info' }, [
+                    h('h3', {
+                      class: 'cookie-consent-category-title',
+                      text: t('cookies.analytics.title', 'Analytics'),
+                    }),
+                    h('p', {
+                      class: 'cookie-consent-category-description',
+                      text: t(
+                        'cookies.analytics.description',
+                        'Help us understand how visitors interact with our website.',
+                      ),
+                    }),
+                  ]),
+                  h('label', { class: 'cookie-consent-toggle' }, [
+                    h('input', {
+                      type: 'checkbox',
+                      id: 'cookie-consent-analytics',
+                      checked: currentState.analytics,
+                    }),
+                    h('span', { class: 'cookie-consent-toggle-slider' }),
+                  ]),
+                ]),
+              ]),
+              // Marketing cookies
+              h('div', { class: 'cookie-consent-category' }, [
+                h('div', { class: 'cookie-consent-category-header' }, [
+                  h('div', { class: 'cookie-consent-category-info' }, [
+                    h('h3', {
+                      class: 'cookie-consent-category-title',
+                      text: t('cookies.marketing.title', 'Marketing'),
+                    }),
+                    h('p', {
+                      class: 'cookie-consent-category-description',
+                      text: t(
+                        'cookies.marketing.description',
+                        'Used for lead capture forms and personalized content.',
+                      ),
+                    }),
+                  ]),
+                  h('label', { class: 'cookie-consent-toggle' }, [
+                    h('input', {
+                      type: 'checkbox',
+                      id: 'cookie-consent-marketing',
+                      checked: currentState.marketing,
+                    }),
+                    h('span', { class: 'cookie-consent-toggle-slider' }),
+                  ]),
+                ]),
               ]),
             ]),
-          ]),
-          // Analytics cookies
-          h('div', { class: 'cookie-consent-category' }, [
-            h('div', { class: 'cookie-consent-category-header' }, [
-              h('div', { class: 'cookie-consent-category-info' }, [
-                h('h3', { class: 'cookie-consent-category-title', text: t('cookies.analytics.title', 'Analytics') }),
-                h('p', { class: 'cookie-consent-category-description', text: t('cookies.analytics.description', 'Help us understand how visitors interact with our website.') }),
-              ]),
-              h('label', { class: 'cookie-consent-toggle' }, [
-                h('input', {
-                  type: 'checkbox',
-                  id: 'cookie-consent-analytics',
-                  checked: currentState.analytics,
-                }),
-                h('span', { class: 'cookie-consent-toggle-slider' }),
-              ]),
+            h('div', { class: 'cookie-consent-settings-footer' }, [
+              h('button', {
+                class: 'btn btn-secondary',
+                text: t('common.cancel', 'Cancel'),
+                onclick: () => hideSettings(),
+              }),
+              h('button', {
+                class: 'btn btn-primary',
+                text: t('cookies.savePreferences', 'Save preferences'),
+                onclick: () => handleSavePreferences(),
+              }),
             ]),
-          ]),
-          // Marketing cookies
-          h('div', { class: 'cookie-consent-category' }, [
-            h('div', { class: 'cookie-consent-category-header' }, [
-              h('div', { class: 'cookie-consent-category-info' }, [
-                h('h3', { class: 'cookie-consent-category-title', text: t('cookies.marketing.title', 'Marketing') }),
-                h('p', { class: 'cookie-consent-category-description', text: t('cookies.marketing.description', 'Used for lead capture forms and personalized content.') }),
-              ]),
-              h('label', { class: 'cookie-consent-toggle' }, [
-                h('input', {
-                  type: 'checkbox',
-                  id: 'cookie-consent-marketing',
-                  checked: currentState.marketing,
-                }),
-                h('span', { class: 'cookie-consent-toggle-slider' }),
-              ]),
-            ]),
-          ]),
-        ]),
-        h('div', { class: 'cookie-consent-settings-footer' }, [
-          h('button', {
-            class: 'btn btn-secondary',
-            text: t('common.cancel', 'Cancel'),
-            onclick: () => hideSettings(),
-          }),
-          h('button', {
-            class: 'btn btn-primary',
-            text: t('cookies.savePreferences', 'Save preferences'),
-            onclick: () => handleSavePreferences(),
-          }),
-        ]),
-      ]),
-    ]);
+          ],
+        ),
+      ],
+    );
 
     return settings;
   }
@@ -160,8 +240,12 @@ export function createCookieConsentBanner({ isAuthenticated = false, container =
   }
 
   function handleSavePreferences() {
-    const analyticsCheckbox = settingsEl?.querySelector('#cookie-consent-analytics');
-    const marketingCheckbox = settingsEl?.querySelector('#cookie-consent-marketing');
+    const analyticsCheckbox = settingsEl?.querySelector(
+      '#cookie-consent-analytics',
+    );
+    const marketingCheckbox = settingsEl?.querySelector(
+      '#cookie-consent-marketing',
+    );
 
     setConsentState({
       analytics: analyticsCheckbox?.checked || false,

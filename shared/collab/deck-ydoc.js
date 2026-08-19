@@ -96,7 +96,11 @@ export function patchYText(ytext, next) {
   while (start < minLen && old[start] === next[start]) start += 1;
   let endOld = old.length;
   let endNew = next.length;
-  while (endOld > start && endNew > start && old[endOld - 1] === next[endNew - 1]) {
+  while (
+    endOld > start &&
+    endNew > start &&
+    old[endOld - 1] === next[endNew - 1]
+  ) {
     endOld -= 1;
     endNew -= 1;
   }
@@ -114,14 +118,19 @@ export function patchYText(ytext, next) {
  */
 function resolveVersions(pres) {
   const hasI18n = isPlainObject(pres?.i18n);
-  const rawVersions = hasI18n && isPlainObject(pres.i18n.versions) ? pres.i18n.versions : {};
-  const versionLangs = Object.keys(rawVersions).filter((l) => isPlainObject(rawVersions[l]));
+  const rawVersions =
+    hasI18n && isPlainObject(pres.i18n.versions) ? pres.i18n.versions : {};
+  const versionLangs = Object.keys(rawVersions).filter((l) =>
+    isPlainObject(rawVersions[l]),
+  );
   const fallbackLang =
     (typeof pres?.lang === 'string' && pres.lang) ||
     (hasI18n && typeof pres.i18n.dominant === 'string' && pres.i18n.dominant) ||
     'nl';
   const dominant =
-    (hasI18n && typeof pres.i18n.dominant === 'string' && rawVersions[pres.i18n.dominant]
+    (hasI18n &&
+    typeof pres.i18n.dominant === 'string' &&
+    rawVersions[pres.i18n.dominant]
       ? pres.i18n.dominant
       : versionLangs[0]) || fallbackLang;
 
@@ -129,8 +138,11 @@ function resolveVersions(pres) {
   if (versionLangs.length) {
     for (const l of versionLangs) {
       versions[l] = {
-        title: typeof rawVersions[l].title === 'string' ? rawVersions[l].title : '',
-        slides: Array.isArray(rawVersions[l].slides) ? rawVersions[l].slides : [],
+        title:
+          typeof rawVersions[l].title === 'string' ? rawVersions[l].title : '',
+        slides: Array.isArray(rawVersions[l].slides)
+          ? rawVersions[l].slides
+          : [],
       };
     }
   } else {
@@ -218,7 +230,8 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
     for (const key of keys) {
       if (spec.textKeys.has(key)) {
         const values = {};
-        if (typeof item[key] === 'string') values[peers.dominantLang] = item[key];
+        if (typeof item[key] === 'string')
+          values[peers.dominantLang] = item[key];
         for (const { lang, item: peer } of peers.list) {
           const v = peer?.[key];
           if (typeof v === 'string') values[lang] = v;
@@ -248,7 +261,9 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
         dominantLang: peers.dominantLang,
         list: peers.list.map(({ lang, item: peerParent }) => ({
           lang,
-          item: Array.isArray(peerParent?.[fieldKey]) ? peerParent[fieldKey][i] : undefined,
+          item: Array.isArray(peerParent?.[fieldKey])
+            ? peerParent[fieldKey][i]
+            : undefined,
         })),
       };
       return buildItem(item, itemPeers, spec);
@@ -285,7 +300,10 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
     for (const k of spec.textKeys) {
       // Union with schema text keys so a translation that only exists in
       // a non-dominant version isn't dropped.
-      if (matches.some(({ slide: peer }) => typeof textAt(peer, k) === 'string')) keys.add(k);
+      if (
+        matches.some(({ slide: peer }) => typeof textAt(peer, k) === 'string')
+      )
+        keys.add(k);
     }
     for (const key of keys) {
       if (spec.textKeys.has(key)) {
@@ -297,7 +315,8 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
         }
         if (Object.keys(values).length) ycontent.set(key, langTextMap(values));
         // Schema says text but the value isn't a string: keep as plain.
-        else if (content[key] !== undefined) ycontent.set(key, deepClone(content[key]));
+        else if (content[key] !== undefined)
+          ycontent.set(key, deepClone(content[key]));
         continue;
       }
       const itemSpec = spec.items.get(key);
@@ -323,7 +342,9 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
         for (const { lang: peerLang, slide: peer } of matches) {
           const pv = peer?.content?.[key];
           if (pv !== undefined && JSON.stringify(pv) !== dominantJson) {
-            warnings.push(`slide ${sid}: plain field '${key}' differs in version '${peerLang}' — dominant wins`);
+            warnings.push(
+              `slide ${sid}: plain field '${key}' differs in version '${peerLang}' — dominant wins`,
+            );
           }
         }
       }
@@ -332,7 +353,8 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
 
     // Any other slide-level keys ride along as plain LWW values.
     for (const [k, v] of Object.entries(slide)) {
-      if (!SLIDE_SPECIAL_KEYS.has(k) && v !== undefined) ymap.set(k, deepClone(v));
+      if (!SLIDE_SPECIAL_KEYS.has(k) && v !== undefined)
+        ymap.set(k, deepClone(v));
     }
     return ymap;
   }
@@ -385,17 +407,21 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
         byId: new Map(
           versions[lang].slides
             .filter((s) => isPlainObject(s) && typeof s.id === 'string' && s.id)
-            .map((s) => [s.id, s])
+            .map((s) => [s.id, s]),
         ),
       }));
 
       const dominantIds = new Set(
-        versions[dominant].slides.map((s) => (isPlainObject(s) ? s.id : undefined)).filter(Boolean)
+        versions[dominant].slides
+          .map((s) => (isPlainObject(s) ? s.id : undefined))
+          .filter(Boolean),
       );
       for (const { lang, byId } of peersById) {
         for (const id of byId.keys()) {
           if (!dominantIds.has(id)) {
-            warnings.push(`slide ${id} only exists in version '${lang}' — dropped (structure follows '${dominant}')`);
+            warnings.push(
+              `slide ${id} only exists in version '${lang}' — dropped (structure follows '${dominant}')`,
+            );
           }
         }
       }
@@ -405,12 +431,17 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
         if (!isPlainObject(slide)) return new Y.Map();
         const sid = typeof slide.id === 'string' ? slide.id : '';
         const matches = peersById
-          .map(({ lang, byId }) => ({ lang, slide: sid ? byId.get(sid) : undefined }))
+          .map(({ lang, byId }) => ({
+            lang,
+            slide: sid ? byId.get(sid) : undefined,
+          }))
           .filter((p) => isPlainObject(p.slide));
 
         for (const { lang, slide: peer } of matches) {
           if (peer.type !== slide.type) {
-            warnings.push(`slide ${sid}: type '${peer.type}' in version '${lang}' differs from dominant '${slide.type}' — dominant wins`);
+            warnings.push(
+              `slide ${sid}: type '${peer.type}' in version '${lang}' differs from dominant '${slide.type}' — dominant wins`,
+            );
           }
         }
 
@@ -429,7 +460,11 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
     if (value instanceof Y.Map) {
       // lang → Y.Text map
       const t = value.get(lang);
-      return t instanceof Y.Text ? t.toString() : typeof t === 'string' ? t : '';
+      return t instanceof Y.Text
+        ? t.toString()
+        : typeof t === 'string'
+          ? t
+          : '';
     }
     if (value instanceof Y.Array) {
       return value.toArray().map((entry) => {
@@ -458,7 +493,8 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
     const content = {};
     const ycontent = yslide.get('content');
     if (ycontent instanceof Y.Map) {
-      for (const [k, v] of ycontent.entries()) content[k] = projectValue(v, lang);
+      for (const [k, v] of ycontent.entries())
+        content[k] = projectValue(v, lang);
     }
     slide.content = content;
     return slide;
@@ -498,7 +534,11 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
       const t = ytitle instanceof Y.Map ? ytitle.get(lang) : undefined;
       versions[lang] = {
         title: t instanceof Y.Text ? t.toString() : '',
-        slides: yslides.toArray().map((s) => (s instanceof Y.Map ? projectSlide(s, lang) : deepClone(s))),
+        slides: yslides
+          .toArray()
+          .map((s) =>
+            s instanceof Y.Map ? projectSlide(s, lang) : deepClone(s),
+          ),
       };
     }
 
@@ -617,8 +657,11 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
   function applyItemsArray(yarr, arr, key, spec, ctx) {
     const { incByLang, baseByLang, dominant } = ctx;
     const incAt = (i) => itemViewByLangAt(incByLang, key, i);
-    const baseAt = baseByLang ? (i) => itemViewByLangAt(baseByLang, key, i) : null;
-    const buildAt = (i) => buildItem(arr[i], peersFromByLang(incAt(i), dominant), spec);
+    const baseAt = baseByLang
+      ? (i) => itemViewByLangAt(baseByLang, key, i)
+      : null;
+    const buildAt = (i) =>
+      buildItem(arr[i], peersFromByLang(incAt(i), dominant), spec);
 
     const n = arr.length;
     const common = Math.min(yarr.length, n);
@@ -634,7 +677,11 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
           baseByLang: baseAt ? baseAt(i) : null,
           warnLabel: null,
         });
-      } else if (!(yitem instanceof Y.Map) && !isPlainObject(item) && jsonEq(yitem, item)) {
+      } else if (
+        !(yitem instanceof Y.Map) &&
+        !isPlainObject(item) &&
+        jsonEq(yitem, item)
+      ) {
         // Equal plain passthrough values — leave as-is.
       } else {
         yarr.delete(i, 1);
@@ -644,14 +691,15 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
 
     const baseRef = baseByLang ? baseByLang[dominant] : undefined;
     const baseArr = isPlainObject(baseRef) ? baseRef[key] : undefined;
-    const lengthTouched = !baseAt || !Array.isArray(baseArr) || baseArr.length !== n;
+    const lengthTouched =
+      !baseAt || !Array.isArray(baseArr) || baseArr.length !== n;
     if (!lengthTouched) return;
     if (yarr.length > n) yarr.delete(n, yarr.length - n);
     else if (yarr.length < n) {
       const from = yarr.length;
       yarr.insert(
         from,
-        arr.slice(from).map((_, off) => buildAt(from + off))
+        arr.slice(from).map((_, off) => buildAt(from + off)),
       );
     }
   }
@@ -667,8 +715,17 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
    * warning at slide content level (parity with bootstrap).
    */
   function applyContentMap(ymap, spec, ctx) {
-    const { incByLang, baseByLang, dominant, warnings, force = false, warnLabel = null } = ctx;
-    const domObj = isPlainObject(incByLang[dominant]) ? incByLang[dominant] : {};
+    const {
+      incByLang,
+      baseByLang,
+      dominant,
+      warnings,
+      force = false,
+      warnLabel = null,
+    } = ctx;
+    const domObj = isPlainObject(incByLang[dominant])
+      ? incByLang[dominant]
+      : {};
     const keys = new Set(Object.keys(domObj));
     for (const k of spec.textKeys) {
       if (Object.keys(textValuesByLang(incByLang, k)).length) keys.add(k);
@@ -678,10 +735,16 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
     for (const key of keys) {
       const incoming = domObj[key];
       const baseView = baseByLang ? keyViewByLang(baseByLang, key) : null;
-      if (baseView && !force && jsonEq(keyViewByLang(incByLang, key), baseView)) continue;
+      if (baseView && !force && jsonEq(keyViewByLang(incByLang, key), baseView))
+        continue;
 
-      const textValues = spec.textKeys.has(key) ? textValuesByLang(incByLang, key) : null;
-      if (incoming === undefined && !(textValues && Object.keys(textValues).length)) {
+      const textValues = spec.textKeys.has(key)
+        ? textValuesByLang(incByLang, key)
+        : null;
+      if (
+        incoming === undefined &&
+        !(textValues && Object.keys(textValues).length)
+      ) {
         // Key absent from the incoming deck: delete it — in three-way mode
         // only when the caller's base knew it (else it's a concurrent
         // client addition).
@@ -696,7 +759,7 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
             ymap,
             key,
             textValues,
-            baseByLang ? textValuesByLang(baseByLang, key) : null
+            baseByLang ? textValuesByLang(baseByLang, key) : null,
           );
         }
         continue;
@@ -705,7 +768,15 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
       if (itemSpec && Array.isArray(incoming)) {
         const yarr = ymap.get(key);
         if (force || !(yarr instanceof Y.Array)) {
-          ymap.set(key, buildItemsArray(incoming, key, peersFromByLang(incByLang, dominant), itemSpec));
+          ymap.set(
+            key,
+            buildItemsArray(
+              incoming,
+              key,
+              peersFromByLang(incByLang, dominant),
+              itemSpec,
+            ),
+          );
         } else {
           applyItemsArray(yarr, incoming, key, itemSpec, ctx);
         }
@@ -714,7 +785,8 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
       // Plain LWW value (normalizes to the dominant version, with a warning
       // when other versions diverge — same policy as bootstrap).
       const cur = ymap.get(key);
-      const isYType = cur instanceof Y.Map || cur instanceof Y.Array || cur instanceof Y.Text;
+      const isYType =
+        cur instanceof Y.Map || cur instanceof Y.Array || cur instanceof Y.Text;
       if (isYType || !jsonEq(cur, incoming)) ymap.set(key, deepClone(incoming));
       if (warnLabel) {
         const dominantJson = JSON.stringify(incoming);
@@ -723,7 +795,7 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
           const pv = isPlainObject(obj) ? obj[key] : undefined;
           if (pv !== undefined && JSON.stringify(pv) !== dominantJson) {
             warnings.push(
-              `${warnLabel}: plain field '${key}' differs in version '${lang}' — dominant wins`
+              `${warnLabel}: plain field '${key}' differs in version '${lang}' — dominant wins`,
             );
           }
         }
@@ -736,7 +808,7 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
     for (const { lang, slide: peer } of matches) {
       if (peer.type !== slide.type) {
         warnings.push(
-          `slide ${sid}: type '${peer.type}' in version '${lang}' differs from dominant '${slide.type}' — dominant wins`
+          `slide ${sid}: type '${peer.type}' in version '${lang}' differs from dominant '${slide.type}' — dominant wins`,
         );
       }
     }
@@ -748,14 +820,18 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
    * gates every write on whether the caller actually changed the value vs
    * the deck state their write was based on.
    */
-  function applySlideYMap(yslide, { dominant, slideByLang, baseSlideByLang, warnings }) {
+  function applySlideYMap(
+    yslide,
+    { dominant, slideByLang, baseSlideByLang, warnings },
+  ) {
     const slide = slideByLang[dominant];
     const baseSlide = baseSlideByLang ? baseSlideByLang[dominant] : undefined;
     const sid = typeof slide.id === 'string' ? slide.id : '';
     const nextType = typeof slide.type === 'string' ? slide.type : '';
     const matches = [];
     for (const [lang, s] of Object.entries(slideByLang)) {
-      if (lang !== dominant && isPlainObject(s)) matches.push({ lang, slide: s });
+      if (lang !== dominant && isPlainObject(s))
+        matches.push({ lang, slide: s });
     }
     warnTypeDivergence(sid, slide, matches, warnings);
 
@@ -774,7 +850,10 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
     for (const key of slideKeys) {
       if (SLIDE_SPECIAL_KEYS.has(key)) continue;
       const v = slide[key];
-      if (baseSlideByLang && jsonEq(v, isPlainObject(baseSlide) ? baseSlide[key] : undefined)) {
+      if (
+        baseSlideByLang &&
+        jsonEq(v, isPlainObject(baseSlide) ? baseSlide[key] : undefined)
+      ) {
         continue; // untouched by the caller
       }
       if (v === undefined) {
@@ -941,18 +1020,25 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
       // Languages: removals are judged against the caller's base (a
       // language a client added in the write window survives); without a
       // base the incoming set is authoritative.
-      const removedLangs = (bas ? bas.langs : docLangs).filter((l) => !inc.langs.includes(l));
+      const removedLangs = (bas ? bas.langs : docLangs).filter(
+        (l) => !inc.langs.includes(l),
+      );
       const removedSet = new Set(removedLangs);
       const nextLangs = docLangs.filter((l) => !removedSet.has(l));
       for (const l of inc.langs) if (!nextLangs.includes(l)) nextLangs.push(l);
       if (!jsonEq(nextLangs, docLangs)) meta.set('langs', nextLangs);
       if (removedLangs.length) {
         for (const l of removedLangs) {
-          warnings.push(`language version '${l}' is not in the incoming deck — removed`);
+          warnings.push(
+            `language version '${l}' is not in the incoming deck — removed`,
+          );
         }
         removeLanguagesFromDoc(doc, removedLangs);
       }
-      if ((!bas || bas.dominant !== inc.dominant) && inc.dominant !== getDocDominant(doc)) {
+      if (
+        (!bas || bas.dominant !== inc.dominant) &&
+        inc.dominant !== getDocDominant(doc)
+      ) {
         meta.set('dominant', inc.dominant);
       }
 
@@ -974,20 +1060,30 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
       if (!bas) {
         if (!jsonEq(incExtra, meta.get('extra'))) meta.set('extra', incExtra);
       } else {
-        const { changed, next } = mergeEnvelope(meta.get('extra'), extraOf(base), incExtra);
+        const { changed, next } = mergeEnvelope(
+          meta.get('extra'),
+          extraOf(base),
+          incExtra,
+        );
         if (changed) meta.set('extra', next);
       }
 
       // i18n envelope minus versions/active (`active` is per-client state).
       const incI18n = i18nExtraOf(pres);
       if (!bas) {
-        if (!jsonEq(incI18n, meta.get('i18n') ?? null)) meta.set('i18n', incI18n);
+        if (!jsonEq(incI18n, meta.get('i18n') ?? null))
+          meta.set('i18n', incI18n);
       } else {
         const baseI18n = i18nExtraOf(base);
         if (!jsonEq(incI18n, baseI18n)) {
-          if (incI18n === null || !isPlainObject(meta.get('i18n'))) meta.set('i18n', incI18n);
+          if (incI18n === null || !isPlainObject(meta.get('i18n')))
+            meta.set('i18n', incI18n);
           else {
-            const { changed, next } = mergeEnvelope(meta.get('i18n'), baseI18n, incI18n);
+            const { changed, next } = mergeEnvelope(
+              meta.get('i18n'),
+              baseI18n,
+              incI18n,
+            );
             if (changed) meta.set('i18n', next);
           }
         }
@@ -999,8 +1095,10 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
         for (const l of rv.langs) {
           byId[l] = new Map(
             rv.versions[l].slides
-              .filter((s) => isPlainObject(s) && typeof s.id === 'string' && s.id)
-              .map((s) => [s.id, s])
+              .filter(
+                (s) => isPlainObject(s) && typeof s.id === 'string' && s.id,
+              )
+              .map((s) => [s.id, s]),
           );
         }
         return byId;
@@ -1017,7 +1115,7 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
       };
 
       const target = inc.versions[inc.dominant].slides.filter(
-        (s) => isPlainObject(s) && typeof s.id === 'string' && s.id
+        (s) => isPlainObject(s) && typeof s.id === 'string' && s.id,
       );
       const targetIds = target.map((s) => s.id);
       const targetIdSet = new Set(targetIds);
@@ -1034,10 +1132,12 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
         if (l === inc.dominant) continue;
         for (const id of incById[l].keys()) {
           if (targetIdSet.has(id)) continue;
-          const ghostInBase = bas ? basById[l]?.has(id) && !baseIdSet.has(id) : false;
+          const ghostInBase = bas
+            ? basById[l]?.has(id) && !baseIdSet.has(id)
+            : false;
           if (!ghostInBase) {
             warnings.push(
-              `slide ${id} only exists in version '${l}' — dropped (structure follows '${inc.dominant}')`
+              `slide ${id} only exists in version '${l}' — dropped (structure follows '${inc.dominant}')`,
             );
           }
         }
@@ -1069,7 +1169,8 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
       // (clone-based moves, same as the client binder: Yjs types can't be
       // re-inserted). Client-added unknown slides drift towards the end on
       // a genuine server reorder, but always survive.
-      const structureTouched = !baseIds || targetIds.join(' ') !== baseIds.join(' ');
+      const structureTouched =
+        !baseIds || targetIds.join(' ') !== baseIds.join(' ');
       const insertedIds = new Set();
       if (structureTouched) {
         for (let i = 0; i < targetIds.length; i += 1) {
@@ -1095,7 +1196,11 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
             }
             warnTypeDivergence(targetIds[i], target[i], matches, warnings);
             yslides.insert(i, [
-              buildSlideYMap(target[i], { lang: inc.dominant, matches, warnings }),
+              buildSlideYMap(target[i], {
+                lang: inc.dominant,
+                matches,
+                warnings,
+              }),
             ]);
             insertedIds.add(targetIds[i]);
           }
@@ -1103,7 +1208,8 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
           // it concurrently — the deletion wins, don't resurrect it.
         }
         if (!baseIds) {
-          while (yslides.length > targetIds.length) yslides.delete(targetIds.length, 1);
+          while (yslides.length > targetIds.length)
+            yslides.delete(targetIds.length, 1);
         }
       }
 
@@ -1138,7 +1244,12 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
     buildSlideForLang: (slide, lang) => buildSlideYMap(slide, { lang }),
     /** Build an items field Y.Array from a single-language items array. */
     buildItemsForLang: (arr, spec, lang) =>
-      buildItemsArray(Array.isArray(arr) ? arr : [], '', { dominantLang: lang, list: [] }, spec || EMPTY_SPEC),
+      buildItemsArray(
+        Array.isArray(arr) ? arr : [],
+        '',
+        { dominantLang: lang, list: [] },
+        spec || EMPTY_SPEC,
+      ),
     /** Build one item (Y.Map or plain passthrough) from a single-language item. */
     buildItemForLang: (item, spec, lang) =>
       buildItem(item, { dominantLang: lang, list: [] }, spec || EMPTY_SPEC),

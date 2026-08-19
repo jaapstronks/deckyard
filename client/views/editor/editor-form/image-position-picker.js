@@ -127,7 +127,10 @@ export function renderImagePositionPicker({
 
   // Contain mode: determine whether X or Y alignment is meaningful.
   wrap.append(
-    h('div', { class: 'field-label', text: t('editor.imagePosition.alignmentLabel', 'Image alignment (fit)') })
+    h('div', {
+      class: 'field-label',
+      text: t('editor.imagePosition.alignmentLabel', 'Image alignment (fit)'),
+    }),
   );
   const mount = h('div', { class: 'stack' });
   const help = h('div', {
@@ -139,11 +142,17 @@ export function renderImagePositionPicker({
   const renderAxis = ({ axis } = {}) => {
     mount.innerHTML = '';
     if (axis === 'none') {
-      help.textContent = t('editor.imagePosition.noExtraSpace', 'No extra space: alignment has no effect.');
+      help.textContent = t(
+        'editor.imagePosition.noExtraSpace',
+        'No extra space: alignment has no effect.',
+      );
       return;
     }
     if (axis === 'x') {
-      help.textContent = t('editor.imagePosition.tallerThanBox', 'Image is taller than the box: choose left/center/right.');
+      help.textContent = t(
+        'editor.imagePosition.tallerThanBox',
+        'Image is taller than the box: choose left/center/right.',
+      );
       const opts = [
         { value: 0, label: t('editor.imagePosition.left', 'Left') },
         { value: 50, label: t('editor.imagePosition.center', 'Center') },
@@ -152,17 +161,23 @@ export function renderImagePositionPicker({
       mount.append(
         segmented({
           h,
-          label: t('editor.imagePosition.horizontalAlignment', 'Horizontal alignment'),
+          label: t(
+            'editor.imagePosition.horizontalAlignment',
+            'Horizontal alignment',
+          ),
           options: opts,
           value: clamp01(activeX, 0, 100),
           disabled: false,
           onChange: (x) => onChange?.({ focusX: Number(x), focusY: 50 }),
-        })
+        }),
       );
       return;
     }
     if (axis === 'y') {
-      help.textContent = t('editor.imagePosition.widerThanBox', 'Image is wider than the box: choose top/center/bottom.');
+      help.textContent = t(
+        'editor.imagePosition.widerThanBox',
+        'Image is wider than the box: choose top/center/bottom.',
+      );
       const opts = [
         { value: 0, label: t('editor.imagePosition.top', 'Top') },
         { value: 50, label: t('editor.imagePosition.center', 'Center') },
@@ -171,16 +186,22 @@ export function renderImagePositionPicker({
       mount.append(
         segmented({
           h,
-          label: t('editor.imagePosition.verticalAlignment', 'Vertical alignment'),
+          label: t(
+            'editor.imagePosition.verticalAlignment',
+            'Vertical alignment',
+          ),
           options: opts,
           value: clamp01(activeY, 0, 100),
           disabled: false,
           onChange: (y) => onChange?.({ focusX: 50, focusY: Number(y) }),
-        })
+        }),
       );
       return;
     }
-    help.textContent = t('editor.imagePosition.alignmentAvailable', 'Alignment available.');
+    help.textContent = t(
+      'editor.imagePosition.alignmentAvailable',
+      'Alignment available.',
+    );
   };
 
   // Async compute and render.
@@ -194,7 +215,10 @@ export function renderImagePositionPicker({
       renderAxis({ axis });
     } catch {
       renderAxis({ axis: null });
-      help.textContent = t('editor.imagePosition.couldNotAnalyze', 'Could not analyze image.');
+      help.textContent = t(
+        'editor.imagePosition.couldNotAnalyze',
+        'Could not analyze image.',
+      );
     }
   })();
 

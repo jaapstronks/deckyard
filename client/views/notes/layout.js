@@ -36,13 +36,8 @@ export function buildNotesLayout() {
     hidden: true,
   });
   topbar.append(
-    h('div', { class: 'row' }, [
-      title,
-    ]),
-    h('div', { class: 'row' }, [
-      uiMode.el,
-      refollowBtn,
-    ])
+    h('div', { class: 'row' }, [title]),
+    h('div', { class: 'row' }, [uiMode.el, refollowBtn]),
   );
 
   const presenterHint = h('div', {
@@ -67,11 +62,7 @@ export function buildNotesLayout() {
     class: 'help notes-preview-meta',
     text: '',
   });
-  previewControls.append(
-    previewPrevBtn,
-    previewMeta,
-    previewNextBtn
-  );
+  previewControls.append(previewPrevBtn, previewMeta, previewNextBtn);
 
   const previewWrap = h('div', {
     class: 'notes-preview thumb',
@@ -117,7 +108,7 @@ export function buildNotesLayout() {
     'aria-label': t('notes.edit.label', 'Speaker notes (markdown)'),
     placeholder: t(
       'notes.edit.placeholder',
-      'Notes for this slide. Markdown works.'
+      'Notes for this slide. Markdown works.',
     ),
   });
   const notesSaveBtn = h('button', {
@@ -145,7 +136,10 @@ export function buildNotesLayout() {
   notesWrap.append(notesHeader, notesBody, notesEditor);
 
   const qaWrap = h('div', { class: 'notes-panel notes-qa-panel' });
-  const qaTitle = h('div', { class: 'notes-panel-title', text: t('notes.qa', 'Q&A') });
+  const qaTitle = h('div', {
+    class: 'notes-panel-title',
+    text: t('notes.qa', 'Q&A'),
+  });
   const qaBody = h('div', { class: 'stack' });
   qaWrap.append(qaTitle, qaBody);
 
@@ -156,7 +150,7 @@ export function buildNotesLayout() {
     previewWrap,
     nextPreview,
     notesWrap,
-    qaWrap
+    qaWrap,
   );
 
   return {

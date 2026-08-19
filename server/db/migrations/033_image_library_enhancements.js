@@ -40,5 +40,7 @@ export const up = async (db) => {
 export const down = async (db) => {
   await sql`DROP TABLE IF EXISTS image_library_favorites`.execute(db);
   await sql`DROP INDEX IF EXISTS idx_image_library_uploaded_by`.execute(db);
-  await sql`ALTER TABLE image_library DROP COLUMN IF EXISTS uploaded_by`.execute(db);
+  await sql`ALTER TABLE image_library DROP COLUMN IF EXISTS uploaded_by`.execute(
+    db,
+  );
 };

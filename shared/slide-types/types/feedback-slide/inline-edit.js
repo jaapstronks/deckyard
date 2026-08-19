@@ -11,8 +11,8 @@
 
 /** @type {Object} InlineDescriptor for feedback-slide. */
 export const inlineEdit = {
-    formText: ['question'],
-  };
+  formText: ['question'],
+};
 
 /**
  * Fields the inspector keeps rendering even though the inline layer covers the

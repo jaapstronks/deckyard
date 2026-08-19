@@ -9,16 +9,16 @@ import {
   unauthorized,
   requireJsonBody,
 } from '../../../utils/http.js';
-import { getOptionalString, getOptionalObject } from '../../../utils/request-validators.js';
 import {
-  normalizeLang,
-  otherLang,
-} from '../../../utils/translation-status.js';
+  getOptionalString,
+  getOptionalObject,
+} from '../../../utils/request-validators.js';
+import { normalizeLang, otherLang } from '../../../utils/translation-status.js';
 import { canReadPresentation } from '../../../utils/presentation-authz.js';
 
 export async function handlePresentationTranslateFields(
   { repoRoot, storageScope, req, res, authedUser } = {},
-  id
+  id,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
   const flags = getFeatureFlags();
@@ -34,10 +34,14 @@ export async function handlePresentationTranslateFields(
   // Fetch collaborator permission for ACL check
   let collaboratorPermission = null;
   if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email);
+    collaboratorPermission = await getCollaboratorPermission(
+      pres.id,
+      authedUser.email,
+    );
   }
 
-  if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission })) return unauthorized(res);
+  if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission }))
+    return unauthorized(res);
 
   const from =
     normalizeLang(body?.from) ||

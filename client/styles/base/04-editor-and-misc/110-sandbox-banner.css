@@ -28,7 +28,8 @@
   height: 8px;
   border-radius: 50%;
   background: hsl(var(--app-warning));
-  box-shadow: 0 0 0 3px color-mix(in srgb, hsl(var(--app-warning)) 22%, transparent);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, hsl(var(--app-warning)) 22%, transparent);
 }
 
 .sandbox-banner-text {
@@ -87,7 +88,9 @@
   overflow: hidden;
   border: 2px solid hsl(var(--app-border-subtle));
   background: hsl(var(--app-bg-sunken));
-  transition: border-color var(--ps-transition-fast), box-shadow var(--ps-transition-fast);
+  transition:
+    border-color var(--ps-transition-fast),
+    box-shadow var(--ps-transition-fast);
 }
 
 .sandbox-example-card:hover .sandbox-example-thumb {

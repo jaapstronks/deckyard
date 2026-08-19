@@ -49,7 +49,8 @@ export async function switchOrganization(organizationId) {
  * @returns {string}
  */
 function organizationLabel(org) {
-  const display = typeof org?.displayName === 'string' ? org.displayName.trim() : '';
+  const display =
+    typeof org?.displayName === 'string' ? org.displayName.trim() : '';
   if (display) return display;
   const name = typeof org?.name === 'string' ? org.name.trim() : '';
   return name || String(org?.id || '');
@@ -105,7 +106,7 @@ export function createOrganizationSection({
           text: t('common.organization', 'Organization'),
         }),
         ...organizations.map((org) => renderRow(org)),
-        h('div', { class: 'dropdown-sep' })
+        h('div', { class: 'dropdown-sep' }),
       );
     })
     .catch((err) => {
@@ -132,7 +133,9 @@ export function createOrganizationSection({
         'data-organization-id': org.id,
         title: isActive
           ? t('common.organizationCurrent', 'Current organization')
-          : t('common.organizationSwitchTo', 'Switch to {name}', { name: label }),
+          : t('common.organizationSwitchTo', 'Switch to {name}', {
+              name: label,
+            }),
         // Deliberately not `disabled`: the check mark already says "you are
         // here", and dimming the active row would make the organization you
         // are in look like the one you are not.
@@ -149,7 +152,7 @@ export function createOrganizationSection({
           text: isActive ? '✓' : '',
         }),
         h('span', { text: label }),
-      ]
+      ],
     );
     return row;
   }
@@ -166,9 +169,12 @@ export function createOrganizationSection({
         err?.statusCode === 403
           ? t(
               'common.organizationSwitchForbidden',
-              'You cannot switch to this organization.'
+              'You cannot switch to this organization.',
             )
-          : t('common.organizationSwitchFailed', 'Could not switch organization.');
+          : t(
+              'common.organizationSwitchFailed',
+              'Could not switch organization.',
+            );
       toast.error(message);
       return;
     }

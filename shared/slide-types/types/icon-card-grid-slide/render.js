@@ -37,7 +37,10 @@ export default function renderHtml(content, _slide, ctx) {
   const useItems = Array.isArray(content?.items) && content.items.length > 0;
   let count = useItems
     ? Math.max(1, Math.min(maxCards, filledItemCount(content.items)))
-    : Math.max(1, Math.min(maxCards, Number(content?.cardCount || maxCards) || maxCards));
+    : Math.max(
+        1,
+        Math.min(maxCards, Number(content?.cardCount || maxCards) || maxCards),
+      );
   // A bottom subheading eats a row of vertical space in the cards layout, so
   // cap at 4 (2 rows) to keep everything on the slide.
   if (hasBottom && layout === 'cards') count = Math.min(count, 4);
@@ -55,9 +58,10 @@ export default function renderHtml(content, _slide, ctx) {
     const titlePath = useItems ? `items.${i - 1}.title` : `card${i}Title`;
     const bodyPath = useItems ? `items.${i - 1}.body` : `card${i}Body`;
     const iconPath = useItems ? `items.${i - 1}.icon` : `card${i}Icon`;
-    const itemAttrs = !isEmpty && useItems
-      ? ` data-inline-item="items" data-inline-item-index="${i - 1}"`
-      : '';
+    const itemAttrs =
+      !isEmpty && useItems
+        ? ` data-inline-item="items" data-inline-item-index="${i - 1}"`
+        : '';
     const iconName = card.icon || '';
     const iconSrc = iconUrl(iconName);
     const title = card.title || '';
@@ -77,12 +81,14 @@ export default function renderHtml(content, _slide, ctx) {
     // Optional click behavior: a full-card overlay anchor (shared helper).
     // Only emitted in non-editor render modes, so it never intercepts inline
     // editing (which runs in mode 'thumb'/'edit').
-    const linkHtml = isEmpty ? '' : cardLinkOverlayHtml(card.link, mode, title || 'Card link');
+    const linkHtml = isEmpty
+      ? ''
+      : cardLinkOverlayHtml(card.link, mode, title || 'Card link');
 
     cards.push(`
           <div class="icon-card${isEmpty ? ' is-empty' : ''}${linkHtml ? ' has-link' : ''}" data-morph-role="icon-card-${i - 1}" role="group" ${
-      isEmpty ? 'aria-hidden="true"' : ''
-    }${itemAttrs}>
+            isEmpty ? 'aria-hidden="true"' : ''
+          }${itemAttrs}>
             <div class="icon-card-icon"${isEmpty ? '' : ` data-inline-icon="${iconPath}"`}>
               ${iconHtml}
             </div>

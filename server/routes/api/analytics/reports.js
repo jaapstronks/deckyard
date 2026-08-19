@@ -53,7 +53,10 @@ async function generateReportData(presentationId, reportType, opts) {
   }
 
   // Add slide engagement for detailed and engagement reports
-  const slideEngagement = await getDetailedSlideEngagement(presentationId, opts);
+  const slideEngagement = await getDetailedSlideEngagement(
+    presentationId,
+    opts,
+  );
   const heatmap = await getInteractionHeatmapData(presentationId, opts);
 
   if (reportType === 'detailed') {
@@ -91,10 +94,15 @@ export async function handleListReports(ctx, presentationId) {
   });
   if (!pres) return true;
 
-  const { limit, offset } = parsePaginationParams(url.searchParams, { defaultLimit: 20 });
+  const { limit, offset } = parsePaginationParams(url.searchParams, {
+    defaultLimit: 20,
+  });
 
-  const result = await listAnalyticsReports(ctx.storageScope, presentationId, { limit, offset });
-  return serveJson(res, 200, result), true;
+  const result = await listAnalyticsReports(ctx.storageScope, presentationId, {
+    limit,
+    offset,
+  });
+  return (serveJson(res, 200, result), true);
 }
 
 /**
@@ -110,7 +118,12 @@ export async function handleCreateReport(ctx, presentationId) {
   const rateLimitKey = authedUser?.email || authedUser?.id || getClientIp(req);
 
   // Stricter rate limit for report creation (expensive operation)
-  if (!(await allowRequest(`analytics:report:create:${rateLimitKey}`, AUTH_RATE_LIMITS.expensive))) {
+  if (
+    !(await allowRequest(
+      `analytics:report:create:${rateLimitKey}`,
+      AUTH_RATE_LIMITS.expensive,
+    ))
+  ) {
     logSecurityEvent(SECURITY_EVENTS.RATE_LIMIT_EXCEEDED, {
       endpoint: path,
       user: authedUser?.email,
@@ -154,7 +167,10 @@ export async function handleCreateReport(ctx, presentationId) {
   }
 
   // Generate report data
-  const reportData = await generateReportData(presentationId, reportType, { since: startDate, until: endDate });
+  const reportData = await generateReportData(presentationId, reportType, {
+    since: startDate,
+    until: endDate,
+  });
 
   const result = await createAnalyticsReport(ctx.storageScope, {
     presentationId,
@@ -169,10 +185,15 @@ export async function handleCreateReport(ctx, presentationId) {
   });
 
   if (!result.ok) {
-    return jsonError(res, getErrorStatus(result.reason, 500), result.reason || 'internal_error', 'Failed to create report');
+    return jsonError(
+      res,
+      getErrorStatus(result.reason, 500),
+      result.reason || 'internal_error',
+      'Failed to create report',
+    );
   }
 
-  return serveJson(res, 200, result.report), true;
+  return (serveJson(res, 200, result.report), true);
 }
 
 /**
@@ -210,10 +231,14 @@ export async function handleGetReport(ctx, presentationId, reportId) {
   });
   if (!pres) return true;
 
-  const report = await requireReportOnPresentation(ctx, presentationId, reportId);
+  const report = await requireReportOnPresentation(
+    ctx,
+    presentationId,
+    reportId,
+  );
   if (!report) return true;
 
-  return serveJson(res, 200, report), true;
+  return (serveJson(res, 200, report), true);
 }
 
 /**
@@ -231,7 +256,8 @@ export async function handleUpdateReport(ctx, presentationId, reportId) {
   });
   if (!pres) return true;
 
-  if (!(await requireReportOnPresentation(ctx, presentationId, reportId))) return true;
+  if (!(await requireReportOnPresentation(ctx, presentationId, reportId)))
+    return true;
 
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
@@ -240,10 +266,15 @@ export async function handleUpdateReport(ctx, presentationId, reportId) {
   const result = await updateAnalyticsReport(ctx.storageScope, reportId, body);
 
   if (!result.ok) {
-    return jsonError(res, getErrorStatus(result.reason, 500), result.reason || 'internal_error', 'Failed to update report');
+    return jsonError(
+      res,
+      getErrorStatus(result.reason, 500),
+      result.reason || 'internal_error',
+      'Failed to update report',
+    );
   }
 
-  return serveJson(res, 200, { ok: true }), true;
+  return (serveJson(res, 200, { ok: true }), true);
 }
 
 /**
@@ -261,15 +292,21 @@ export async function handleDeleteReport(ctx, presentationId, reportId) {
   });
   if (!pres) return true;
 
-  if (!(await requireReportOnPresentation(ctx, presentationId, reportId))) return true;
+  if (!(await requireReportOnPresentation(ctx, presentationId, reportId)))
+    return true;
 
   const result = await deleteAnalyticsReport(ctx.storageScope, reportId);
 
   if (!result.ok) {
-    return jsonError(res, getErrorStatus(result.reason, 500), result.reason || 'internal_error', 'Failed to delete report');
+    return jsonError(
+      res,
+      getErrorStatus(result.reason, 500),
+      result.reason || 'internal_error',
+      'Failed to delete report',
+    );
   }
 
-  return serveJson(res, 200, { ok: true }), true;
+  return (serveJson(res, 200, { ok: true }), true);
 }
 
 /**
@@ -287,13 +324,19 @@ export async function handleRegenerateToken(ctx, presentationId, reportId) {
   });
   if (!pres) return true;
 
-  if (!(await requireReportOnPresentation(ctx, presentationId, reportId))) return true;
+  if (!(await requireReportOnPresentation(ctx, presentationId, reportId)))
+    return true;
 
   const result = await regenerateShareToken(ctx.storageScope, reportId);
 
   if (!result.ok) {
-    return jsonError(res, getErrorStatus(result.reason, 500), result.reason || 'internal_error', 'Failed to regenerate token');
+    return jsonError(
+      res,
+      getErrorStatus(result.reason, 500),
+      result.reason || 'internal_error',
+      'Failed to regenerate token',
+    );
   }
 
-  return serveJson(res, 200, { shareToken: result.shareToken }), true;
+  return (serveJson(res, 200, { shareToken: result.shareToken }), true);
 }

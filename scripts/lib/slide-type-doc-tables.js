@@ -28,7 +28,10 @@
  * `tests/slide-type-docs.test.js` stays green on a fork checkout.
  */
 
-import { CORE_SLIDE_TYPE_DEFS, CORE_SLIDE_TYPE_NAMES } from '../../shared/slide-types/registry.js';
+import {
+  CORE_SLIDE_TYPE_DEFS,
+  CORE_SLIDE_TYPE_NAMES,
+} from '../../shared/slide-types/registry.js';
 import {
   SLIDE_TYPE_INLINE_EDIT,
   SLIDE_TYPE_INSPECTOR_KEEPS,
@@ -160,12 +163,20 @@ function descriptorElementKeys(d, def) {
     candidates.push(d.media.imageField, d.media.altField);
     for (const extra of d.media.extraFields || []) candidates.push(extra.key);
   }
-  candidates.push(d?.focus?.xField, d?.focus?.yField, d?.fit?.field, d?.bleed?.field);
+  candidates.push(
+    d?.focus?.xField,
+    d?.focus?.yField,
+    d?.fit?.field,
+    d?.bleed?.field,
+  );
   const wanted = new Set(candidates.filter(Boolean).map(String));
   const out = new Set();
   for (const f of def?.fields || []) {
     const key = String(f.key);
-    if (wanted.has(key) || wanted.has(familyPattern(key).replace(/\{m\}|\{p\}/g, '{n}'))) {
+    if (
+      wanted.has(key) ||
+      wanted.has(familyPattern(key).replace(/\{m\}|\{p\}/g, '{n}'))
+    ) {
       out.add(key);
     }
   }
@@ -214,7 +225,9 @@ export function coverageFor(type) {
   const def = CORE_SLIDE_TYPE_DEFS[type] || {};
   const descriptor = SLIDE_TYPE_INLINE_EDIT[type] || null;
   const keeps = SLIDE_TYPE_INSPECTOR_KEEPS[type] || null;
-  const formText = Array.isArray(descriptor?.formText) ? descriptor.formText : [];
+  const formText = Array.isArray(descriptor?.formText)
+    ? descriptor.formText
+    : [];
   const aliases = descriptor?.cards?.fieldAliases || [];
   const covered = new Set([
     ...formText,
@@ -273,7 +286,11 @@ function cardsCell(d, def) {
   }
   if (cards.child?.field) notes.push(`two-level → \`${cards.child.field}\``);
   const schema = (def?.fields || []).find((f) => f.key === field);
-  if (schema && schema.minItems != null && schema.minItems === schema.maxItems) {
+  if (
+    schema &&
+    schema.minItems != null &&
+    schema.minItems === schema.maxItems
+  ) {
     notes.push(`fixed ${schema.minItems}`);
   }
   if (cards.skipWhenEmpty) notes.push('array decks only');
@@ -289,7 +306,10 @@ function cardsCell(d, def) {
 function mediaCell(d) {
   if (!d) return NONE;
   const parts = [];
-  if (d.media) parts.push(d.media.list ? `media \`${d.media.list}[]\`` : 'media (flat keys)');
+  if (d.media)
+    parts.push(
+      d.media.list ? `media \`${d.media.list}[]\`` : 'media (flat keys)',
+    );
   if (d.icons) parts.push('icons');
   if (d.focus) parts.push('focus drag');
   if (d.fit) parts.push('fit toggle');
@@ -317,12 +337,15 @@ function table(header, rows) {
  */
 export function renderCoverageTable() {
   const rows = coverageRows().map((r) => {
-    const keeps = r.keeps === null ? '*(no declaration — conservative fallback)*' : codeList(r.keeps);
+    const keeps =
+      r.keeps === null
+        ? '*(no declaration — conservative fallback)*'
+        : codeList(r.keeps);
     return `| \`${r.type}\` | ${codeList(r.formText)} | ${codeList(r.bulkOnly)} | ${keeps} |`;
   });
   return table(
     ['Type', 'Canvas (wysiwyg)', 'Bulk modal (only home)', 'Inspector keeps'],
-    rows
+    rows,
   ).join('\n');
 }
 
@@ -346,6 +369,6 @@ export function renderCanvasTable() {
   });
   return table(
     ['Type', 'Inline text', 'Ghosts', 'Cards', 'Markdown', 'Media / other'],
-    rows
+    rows,
   ).join('\n');
 }

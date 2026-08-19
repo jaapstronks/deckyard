@@ -54,7 +54,10 @@ import {
   createOrganizationCollection,
   getOrganizationCollection,
 } from '../../server/storage/collections/index.js';
-import { isOwnerOrCreator, matchesIdentity } from '../../shared/identity-match.js';
+import {
+  isOwnerOrCreator,
+  matchesIdentity,
+} from '../../shared/identity-match.js';
 import { getDefaultOrganizationId } from '../../server/config/database.js';
 
 const ORG = getDefaultOrganizationId();
@@ -80,23 +83,44 @@ pgDescribe('trash + slide-library user_id dual-key (real PostgreSQL)', () => {
   });
 
   beforeEach(async () => {
-    await truncate(db, 'slide_collections', 'slide_library', 'presentations', 'organizations');
+    await truncate(
+      db,
+      'slide_collections',
+      'slide_library',
+      'presentations',
+      'organizations',
+    );
     await seedDefaultOrganization(db);
     await db
       .insertInto('users')
-      .values([{ id: ALICE_ID, organization_id: ORG, email: ALICE, name: 'Alice', role: 'user' }])
+      .values([
+        {
+          id: ALICE_ID,
+          organization_id: ORG,
+          email: ALICE,
+          name: 'Alice',
+          role: 'user',
+        },
+      ])
       .execute();
   });
 
   /** Rename Alice's account, as a real rename does. */
   async function renameAlice() {
-    await db.updateTable('users').set({ email: ALICE_RENAMED }).where('id', '=', ALICE_ID).execute();
+    await db
+      .updateTable('users')
+      .set({ email: ALICE_RENAMED })
+      .where('id', '=', ALICE_ID)
+      .execute();
   }
 
   // --- trash -----------------------------------------------------------------
 
   it('soft-delete stamps trashed_by_user_id and listTrashed surfaces it', async () => {
-    const pres = await createPresentation(storageScope, { title: 'Deck', ownerEmail: ALICE });
+    const pres = await createPresentation(storageScope, {
+      title: 'Deck',
+      ownerEmail: ALICE,
+    });
     await deletePresentation(storageScope, pres.id, { actorEmail: ALICE });
 
     const row = await db
@@ -109,11 +133,18 @@ pgDescribe('trash + slide-library user_id dual-key (real PostgreSQL)', () => {
 
     const [item] = await listTrashedPresentations(storageScope);
     assert.equal(item.trashedBy, ALICE);
-    assert.equal(item.trashedById, ALICE_ID, 'the trash list surfaces the id half');
+    assert.equal(
+      item.trashedById,
+      ALICE_ID,
+      'the trash list surfaces the id half',
+    );
   });
 
   it('an external trasher stamps a NULL id, not a failure', async () => {
-    const pres = await createPresentation(storageScope, { title: 'Deck', ownerEmail: ALICE });
+    const pres = await createPresentation(storageScope, {
+      title: 'Deck',
+      ownerEmail: ALICE,
+    });
     await deletePresentation(storageScope, pres.id, { actorEmail: EXTERNAL });
 
     const row = await db
@@ -126,17 +157,27 @@ pgDescribe('trash + slide-library user_id dual-key (real PostgreSQL)', () => {
   });
 
   it('restore clears both halves of the dual key', async () => {
-    const pres = await createPresentation(storageScope, { title: 'Deck', ownerEmail: ALICE });
+    const pres = await createPresentation(storageScope, {
+      title: 'Deck',
+      ownerEmail: ALICE,
+    });
     await deletePresentation(storageScope, pres.id, { actorEmail: ALICE });
     await restorePresentation(storageScope, pres.id);
 
     const restored = await getPresentation(storageScope, pres.id);
     assert.equal(restored.trashedBy, null);
-    assert.equal(restored.trashedById, null, 'no stale trasher id survives a restore');
+    assert.equal(
+      restored.trashedById,
+      null,
+      'no stale trasher id survives a restore',
+    );
   });
 
   it('a renamed trasher still matches by id where the raw e-mail no longer would', async () => {
-    const pres = await createPresentation(storageScope, { title: 'Deck', ownerEmail: ALICE });
+    const pres = await createPresentation(storageScope, {
+      title: 'Deck',
+      ownerEmail: ALICE,
+    });
     await deletePresentation(storageScope, pres.id, { actorEmail: ALICE });
     const [item] = await listTrashedPresentations(storageScope);
 
@@ -147,8 +188,11 @@ pgDescribe('trash + slide-library user_id dual-key (real PostgreSQL)', () => {
     assert.notEqual(item.trashedBy.toLowerCase(), ALICE_RENAMED);
     // …but the id half keeps the trasher's restore/visibility right.
     assert.equal(
-      matchesIdentity(renamed, { userId: item.trashedById, email: item.trashedBy }),
-      true
+      matchesIdentity(renamed, {
+        userId: item.trashedById,
+        email: item.trashedBy,
+      }),
+      true,
     );
     // And owner/creator likewise survive the rename (isOwnerOrCreator, id-first).
     assert.equal(isOwnerOrCreator(renamed, item), true);
@@ -160,7 +204,7 @@ pgDescribe('trash + slide-library user_id dual-key (real PostgreSQL)', () => {
     const r = await createOrganizationLibraryItem(
       storageScope,
       { name: 'Shelf item', slideType: 'title-slide' },
-      { actorEmail: ALICE }
+      { actorEmail: ALICE },
     );
     assert.equal(r.ok, true);
     assert.equal(r.item.createdById, ALICE_ID);
@@ -180,30 +224,47 @@ pgDescribe('trash + slide-library user_id dual-key (real PostgreSQL)', () => {
     const r = await createOrganizationLibraryItem(
       storageScope,
       { name: 'Shelf item', slideType: 'title-slide' },
-      { actorEmail: EXTERNAL }
+      { actorEmail: EXTERNAL },
     );
     assert.equal(r.item.createdById, null);
-    assert.equal(r.item.createdBy, EXTERNAL, 'the e-mail is still the fallback identifier');
+    assert.equal(
+      r.item.createdBy,
+      EXTERNAL,
+      'the e-mail is still the fallback identifier',
+    );
   });
 
   it('a renamed library creator still matches by id (the team trash/delete guard)', async () => {
     const created = await createOrganizationLibraryItem(
       storageScope,
       { name: 'Shelf item', slideType: 'title-slide' },
-      { actorEmail: ALICE }
+      { actorEmail: ALICE },
     );
     await renameAlice();
     const renamed = { id: ALICE_ID, email: ALICE_RENAMED };
 
-    const item = await getOrganizationLibraryItem(storageScope, created.item.id);
+    const item = await getOrganizationLibraryItem(
+      storageScope,
+      created.item.id,
+    );
     assert.notEqual(item.createdBy.toLowerCase(), ALICE_RENAMED);
-    assert.equal(matchesIdentity(renamed, { userId: item.createdById, email: item.createdBy }), true);
+    assert.equal(
+      matchesIdentity(renamed, {
+        userId: item.createdById,
+        email: item.createdBy,
+      }),
+      true,
+    );
   });
 
   // --- slide collections -----------------------------------------------------
 
   it('team-collection create stamps created_by_user_id, and a rename keeps the mutate right', async () => {
-    const r = await createOrganizationCollection(storageScope, { name: 'A set' }, { actorEmail: ALICE });
+    const r = await createOrganizationCollection(
+      storageScope,
+      { name: 'A set' },
+      { actorEmail: ALICE },
+    );
     assert.equal(r.ok, true);
     assert.equal(r.item.createdById, ALICE_ID);
 
@@ -220,8 +281,11 @@ pgDescribe('trash + slide-library user_id dual-key (real PostgreSQL)', () => {
     const collection = await getOrganizationCollection(storageScope, r.item.id);
     assert.notEqual(collection.createdBy.toLowerCase(), ALICE_RENAMED);
     assert.equal(
-      matchesIdentity(renamed, { userId: collection.createdById, email: collection.createdBy }),
-      true
+      matchesIdentity(renamed, {
+        userId: collection.createdById,
+        email: collection.createdBy,
+      }),
+      true,
     );
   });
 });

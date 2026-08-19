@@ -61,9 +61,17 @@ function holderStamp(lock) {
   return { userId: lock?.holderId || null, email: lock?.holderEmail || '' };
 }
 
-export async function acquirePresentationLock(scope, presentationId, { email, name, userId } = {}) {
+export async function acquirePresentationLock(
+  scope,
+  presentationId,
+  { email, name, userId } = {},
+) {
   if (useDbLocks()) {
-    return dbLocks.acquirePresentationLock(scope, presentationId, { email, name, userId });
+    return dbLocks.acquirePresentationLock(scope, presentationId, {
+      email,
+      name,
+      userId,
+    });
   }
   cleanupExpired();
   const pid = norm(presentationId);
@@ -76,7 +84,14 @@ export async function acquirePresentationLock(scope, presentationId, { email, na
 
   const existing = locks.get(pid);
   const t = nowMs();
-  if (existing && existing.holderEmail && !matchesIdentity({ id: holderId, email: holderEmail }, holderStamp(existing))) {
+  if (
+    existing &&
+    existing.holderEmail &&
+    !matchesIdentity(
+      { id: holderId, email: holderEmail },
+      holderStamp(existing),
+    )
+  ) {
     return {
       ok: false,
       reason: 'held',
@@ -109,9 +124,16 @@ export async function acquirePresentationLock(scope, presentationId, { email, na
   return { ok: true, lock: await getPresentationLock(scope, pid) };
 }
 
-export async function refreshPresentationLock(scope, presentationId, { email, userId } = {}) {
+export async function refreshPresentationLock(
+  scope,
+  presentationId,
+  { email, userId } = {},
+) {
   if (useDbLocks()) {
-    return dbLocks.refreshPresentationLock(scope, presentationId, { email, userId });
+    return dbLocks.refreshPresentationLock(scope, presentationId, {
+      email,
+      userId,
+    });
   }
   cleanupExpired();
   const pid = norm(presentationId);
@@ -119,8 +141,17 @@ export async function refreshPresentationLock(scope, presentationId, { email, us
   if (!pid || !holderEmail) return { ok: false, reason: 'invalid' };
   const existing = locks.get(pid);
   if (!existing) return { ok: false, reason: 'not_found' };
-  if (!matchesIdentity({ id: userId || null, email: holderEmail }, holderStamp(existing)))
-    return { ok: false, reason: 'held', lock: await getPresentationLock(scope, pid) };
+  if (
+    !matchesIdentity(
+      { id: userId || null, email: holderEmail },
+      holderStamp(existing),
+    )
+  )
+    return {
+      ok: false,
+      reason: 'held',
+      lock: await getPresentationLock(scope, pid),
+    };
 
   const t = nowMs();
   const isoNow = new Date(t).toISOString();
@@ -132,9 +163,16 @@ export async function refreshPresentationLock(scope, presentationId, { email, us
   return { ok: true, lock: await getPresentationLock(scope, pid) };
 }
 
-export async function releasePresentationLock(scope, presentationId, { email, userId } = {}) {
+export async function releasePresentationLock(
+  scope,
+  presentationId,
+  { email, userId } = {},
+) {
   if (useDbLocks()) {
-    return dbLocks.releasePresentationLock(scope, presentationId, { email, userId });
+    return dbLocks.releasePresentationLock(scope, presentationId, {
+      email,
+      userId,
+    });
   }
   cleanupExpired();
   const pid = norm(presentationId);
@@ -142,14 +180,24 @@ export async function releasePresentationLock(scope, presentationId, { email, us
   if (!pid || !holderEmail) return { ok: false, reason: 'invalid' };
   const existing = locks.get(pid);
   if (!existing) return { ok: true, released: false };
-  if (!matchesIdentity({ id: userId || null, email: holderEmail }, holderStamp(existing)))
-    return { ok: false, reason: 'held', lock: await getPresentationLock(scope, pid) };
+  if (
+    !matchesIdentity(
+      { id: userId || null, email: holderEmail },
+      holderStamp(existing),
+    )
+  )
+    return {
+      ok: false,
+      reason: 'held',
+      lock: await getPresentationLock(scope, pid),
+    };
   locks.delete(pid);
   return { ok: true, released: true };
 }
 
 // Re-export DB lock functions for new features
-export const forceReleasePresentationLock = dbLocks.forceReleasePresentationLock;
+export const forceReleasePresentationLock =
+  dbLocks.forceReleasePresentationLock;
 export const createLockRequest = dbLocks.createLockRequest;
 export const listPendingLockRequests = dbLocks.listPendingLockRequests;
 export const getLockRequest = dbLocks.getLockRequest;

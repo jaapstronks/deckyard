@@ -52,8 +52,14 @@ export function createViewerTopbar({
   // Made prominent since commenting is the main action for these users
   if (onToggleComments) {
     // Badge is hidden by default - only shows when there are comments
-    const commentsBadgeEl = h('span', { class: 'comments-badge', text: '', hidden: true });
-    const btnTextEl = h('span', { text: t('viewer.addComment', 'Add Comment') });
+    const commentsBadgeEl = h('span', {
+      class: 'comments-badge',
+      text: '',
+      hidden: true,
+    });
+    const btnTextEl = h('span', {
+      text: t('viewer.addComment', 'Add Comment'),
+    });
     const btnComments = h('button', {
       class: 'btn viewer-comments-btn viewer-comments-btn--prominent',
       type: 'button',
@@ -64,7 +70,8 @@ export function createViewerTopbar({
     btnComments.append(btnTextEl, commentsBadgeEl);
 
     const updateCommentsBadge = (data) => {
-      const n = typeof data === 'object' ? (Number(data.count) || 0) : (Number(data) || 0);
+      const n =
+        typeof data === 'object' ? Number(data.count) || 0 : Number(data) || 0;
       const hasNew = typeof data === 'object' ? Boolean(data.hasNew) : true;
 
       // Only show badge when there are comments (red for new, gray for seen)

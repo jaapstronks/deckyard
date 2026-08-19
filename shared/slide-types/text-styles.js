@@ -54,7 +54,12 @@ export const TEXT_COLOR_SWATCH_SLOTS = ['brand-1', 'brand-2', 'brand-3'];
  * Colour vocabulary (theme tokens); `default` means no override. The three
  * base tokens are always available; the brand slots are theme-declared.
  */
-const TEXT_COLOR_VALUES = ['default', 'muted', 'accent', ...TEXT_COLOR_SWATCH_SLOTS];
+const TEXT_COLOR_VALUES = [
+  'default',
+  'muted',
+  'accent',
+  ...TEXT_COLOR_SWATCH_SLOTS,
+];
 /** Size vocabulary (relative scale); `md` is the default (no override). */
 export const TEXT_SIZE_VALUES = ['sm', 'md', 'lg'];
 
@@ -91,10 +96,16 @@ export function normalizeTextStyles(raw, typeOrFields = null) {
     const defaultAlign = typeOrFields
       ? fieldDefaultAlign(typeOrFields, key)
       : DEFAULT_ALIGN;
-    if (TEXT_ALIGN_VALUES.includes(style.align) && style.align !== defaultAlign) {
+    if (
+      TEXT_ALIGN_VALUES.includes(style.align) &&
+      style.align !== defaultAlign
+    ) {
       clean.align = style.align;
     }
-    if (TEXT_COLOR_VALUES.includes(style.color) && style.color !== DEFAULT_COLOR) {
+    if (
+      TEXT_COLOR_VALUES.includes(style.color) &&
+      style.color !== DEFAULT_COLOR
+    ) {
       clean.color = style.color;
     }
     if (TEXT_SIZE_VALUES.includes(style.size) && style.size !== DEFAULT_SIZE) {
@@ -119,7 +130,7 @@ export function normalizeTextStyles(raw, typeOrFields = null) {
  */
 export function textStyleClasses(
   style,
-  { allowedAligns = TEXT_ALIGN_VALUES, defaultAlign = DEFAULT_ALIGN } = {}
+  { allowedAligns = TEXT_ALIGN_VALUES, defaultAlign = DEFAULT_ALIGN } = {},
 ) {
   if (!style || typeof style !== 'object') return '';
   const classes = [];
@@ -130,7 +141,10 @@ export function textStyleClasses(
   ) {
     classes.push(`tf-align-${style.align}`);
   }
-  if (TEXT_COLOR_VALUES.includes(style.color) && style.color !== DEFAULT_COLOR) {
+  if (
+    TEXT_COLOR_VALUES.includes(style.color) &&
+    style.color !== DEFAULT_COLOR
+  ) {
     classes.push(`tf-color-${style.color}`);
   }
   if (TEXT_SIZE_VALUES.includes(style.size) && style.size !== DEFAULT_SIZE) {
@@ -176,13 +190,13 @@ export function injectTextStyles(html, content, typeOrFields = null) {
     // `card1Body`; `data-morph-role="body"` never matches field `body`.
     const tagRe = new RegExp(
       `<([a-zA-Z][\\w-]*)\\b([^>]*\\bdata-inline-field="${escapeRegExp(key)}"[^>]*)>`,
-      'g'
+      'g',
     );
     out = out.replace(tagRe, (_m, tag, attrs) => {
       if (/\sclass="/.test(attrs)) {
         const merged = attrs.replace(
           /(\sclass=")([^"]*)(")/,
-          (_mm, a, existing, b) => `${a}${existing} ${cls}${b}`
+          (_mm, a, existing, b) => `${a}${existing} ${cls}${b}`,
         );
         return `<${tag}${merged}>`;
       }

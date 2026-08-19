@@ -17,7 +17,12 @@ import { MODEL } from '../lib/config.js';
 
 const OUTLINE_JUDGE_VERSION = 'outline-judge-v1';
 
-export const OUTLINE_DIMENSIONS = ['sectioning', 'ordering', 'allocation', 'selection'];
+export const OUTLINE_DIMENSIONS = [
+  'sectioning',
+  'ordering',
+  'allocation',
+  'selection',
+];
 
 export const OUTLINE_DIMENSION_LABELS = {
   sectioning: 'Sectioning',
@@ -86,7 +91,7 @@ const SCHEMA = {
             required: ['score', 'rationale'],
             additionalProperties: false,
           },
-        ])
+        ]),
       ),
       required: OUTLINE_DIMENSIONS,
       additionalProperties: false,
@@ -111,7 +116,9 @@ export function renderOutlineForJudge(outline) {
   lines.push('');
 
   for (const [index, slide] of (outline.slides || []).entries()) {
-    lines.push(`Planned slide ${index + 1} [intent: ${slide.intent}, group: ${slide.groupId || '-'}]`);
+    lines.push(
+      `Planned slide ${index + 1} [intent: ${slide.intent}, group: ${slide.groupId || '-'}]`,
+    );
     if (slide.hints?.length) lines.push(`  hints: ${slide.hints.join(', ')}`);
     lines.push(`  ${String(slide.roughContent || '').replace(/\n/g, '\n  ')}`);
     lines.push('');
@@ -131,7 +138,13 @@ export function renderOutlineForJudge(outline) {
  * @param {boolean} [options.refresh]
  * @returns {Promise<{verdict: object, cached: boolean}>}
  */
-export async function judgeOutline({ testCase, sourceText, outline, onUsage = null, refresh = false }) {
+export async function judgeOutline({
+  testCase,
+  sourceText,
+  outline,
+  onUsage = null,
+  refresh = false,
+}) {
   const context = `<source_document case="${testCase.id}">\n${sourceText}\n</source_document>`;
   const prompt = [
     `<proposed_outline>\n${renderOutlineForJudge(outline)}\n</proposed_outline>`,
@@ -144,8 +157,15 @@ export async function judgeOutline({ testCase, sourceText, outline, onUsage = nu
     'judge-outline',
     key,
     async () =>
-      requestJson({ system: SYSTEM, largeContext: context, prompt, schema: SCHEMA, maxTokens: 6000, onUsage }),
-    { skip: refresh }
+      requestJson({
+        system: SYSTEM,
+        largeContext: context,
+        prompt,
+        schema: SCHEMA,
+        maxTokens: 6000,
+        onUsage,
+      }),
+    { skip: refresh },
   );
 
   return { verdict: value, cached };
@@ -201,7 +221,11 @@ export function outlineDuplication(outline, minShared = 2) {
   const contentSlides = rawSlides
     .map((slide) => ({
       index: slide.index,
-      tokens: new Set([...slide.tokens].filter((t) => documentFrequency.get(t) <= maxFrequency)),
+      tokens: new Set(
+        [...slide.tokens].filter(
+          (t) => documentFrequency.get(t) <= maxFrequency,
+        ),
+      ),
     }))
     .filter((slide) => slide.tokens.size > 0);
 
@@ -210,9 +234,15 @@ export function outlineDuplication(outline, minShared = 2) {
 
   for (let i = 0; i < contentSlides.length; i += 1) {
     for (let j = i + 1; j < contentSlides.length; j += 1) {
-      const shared = [...contentSlides[i].tokens].filter((t) => contentSlides[j].tokens.has(t));
+      const shared = [...contentSlides[i].tokens].filter((t) =>
+        contentSlides[j].tokens.has(t),
+      );
       if (shared.length >= minShared) {
-        pairs.push({ a: contentSlides[i].index, b: contentSlides[j].index, shared });
+        pairs.push({
+          a: contentSlides[i].index,
+          b: contentSlides[j].index,
+          shared,
+        });
         involved.add(contentSlides[i].index);
         involved.add(contentSlides[j].index);
       }
@@ -226,7 +256,9 @@ export function outlineDuplication(outline, minShared = 2) {
     duplicateRate: total ? Math.round((involved.size / total) * 100) / 100 : 0,
     examples: pairs
       .slice(0, 5)
-      .map((p) => `slides ${p.a}+${p.b} share ${p.shared.slice(0, 3).join(', ')}`),
+      .map(
+        (p) => `slides ${p.a}+${p.b} share ${p.shared.slice(0, 3).join(', ')}`,
+      ),
   };
 }
 
@@ -243,7 +275,8 @@ function distinctiveTokens(text) {
   const tokens = new Set();
 
   // Figures, including currency/percentage forms and EU decimal commas.
-  for (const match of source.match(/\d[\d.,]*\s*(?:%|[a-zA-Z]{1,3}\b)?/g) || []) {
+  for (const match of source.match(/\d[\d.,]*\s*(?:%|[a-zA-Z]{1,3}\b)?/g) ||
+    []) {
     const cleaned = match.trim().replace(/[.,]$/, '');
     // Bare small integers are list numbering, not content.
     if (/^\d{1,2}$/.test(cleaned)) continue;
@@ -251,7 +284,9 @@ function distinctiveTokens(text) {
   }
 
   // Capitalised terms not at the start of a sentence or line.
-  for (const match of source.match(/(?<![.!?]\s|^|\n)\b[A-Z][A-Za-z]{2,}(?:\s+[A-Z][A-Za-z]{2,})?/gm) || []) {
+  for (const match of source.match(
+    /(?<![.!?]\s|^|\n)\b[A-Z][A-Za-z]{2,}(?:\s+[A-Z][A-Za-z]{2,})?/gm,
+  ) || []) {
     tokens.add(match.toLowerCase());
   }
 
@@ -267,7 +302,8 @@ function distinctiveTokens(text) {
 export function outlineMetrics(outline) {
   const slides = outline.slides || [];
   const byIntent = {};
-  for (const slide of slides) byIntent[slide.intent] = (byIntent[slide.intent] || 0) + 1;
+  for (const slide of slides)
+    byIntent[slide.intent] = (byIntent[slide.intent] || 0) + 1;
 
   const groups = new Map();
   for (const slide of slides) {
@@ -285,7 +321,8 @@ export function outlineMetrics(outline) {
       min: sizes.length ? Math.min(...sizes) : 0,
       max: sizes.length ? Math.max(...sizes) : 0,
       mean: sizes.length
-        ? Math.round((sizes.reduce((a, b) => a + b, 0) / sizes.length) * 100) / 100
+        ? Math.round((sizes.reduce((a, b) => a + b, 0) / sizes.length) * 100) /
+          100
         : 0,
     },
     // Sections holding a single slide usually mean the split was too eager.

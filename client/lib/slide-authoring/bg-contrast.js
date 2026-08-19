@@ -42,7 +42,7 @@ const REGION = { x: 0, y: 0, w: 0.7, h: 0.62 };
  */
 export async function detectBgTextContrast(
   url,
-  { light = '#ffffff', dark = '#212121' } = {}
+  { light = '#ffffff', dark = '#212121' } = {},
 ) {
   if (typeof document === 'undefined' || !url) return { ok: false };
 
@@ -91,8 +91,13 @@ export async function detectBgTextContrast(
   for (let i = 0; i < data.length; i += 4) {
     const a = data[i + 3] / 255;
     if (a === 0) continue;
-    const lPx = getRelativeLuminance({ r: data[i], g: data[i + 1], b: data[i + 2] });
-    if (contrastRatioFromLuminance(lLight, lPx) < CONTRAST_TARGET) failLight += a;
+    const lPx = getRelativeLuminance({
+      r: data[i],
+      g: data[i + 1],
+      b: data[i + 2],
+    });
+    if (contrastRatioFromLuminance(lLight, lPx) < CONTRAST_TARGET)
+      failLight += a;
     if (contrastRatioFromLuminance(lDark, lPx) < CONTRAST_TARGET) failDark += a;
     total += a;
   }

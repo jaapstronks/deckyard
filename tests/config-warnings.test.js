@@ -29,19 +29,19 @@ function withEnv(env, fn) {
 
 test('short AUTH_SECRET → warning', () => {
   withEnv({ AUTH_SECRET: 'tooshort' }, () =>
-    assert.equal(authConfigWarnings().length, 1)
+    assert.equal(authConfigWarnings().length, 1),
   );
 });
 
 test('32+ char AUTH_SECRET → no warning', () => {
   withEnv({ AUTH_SECRET: 'x'.repeat(32) }, () =>
-    assert.deepEqual(authConfigWarnings(), [])
+    assert.deepEqual(authConfigWarnings(), []),
   );
 });
 
 test('short secret but auth explicitly disabled → no warning', () => {
   withEnv({ AUTH_SECRET: 'tooshort', AUTH_ENABLED: 'false' }, () =>
-    assert.deepEqual(authConfigWarnings(), [])
+    assert.deepEqual(authConfigWarnings(), []),
   );
 });
 
@@ -55,12 +55,12 @@ test('no APP_URL and no DOMAIN → warning', () => {
 
 test('APP_URL set → no warning', () => {
   withEnv({ APP_URL: 'https://slides.example.com' }, () =>
-    assert.deepEqual(publicUrlWarnings(), [])
+    assert.deepEqual(publicUrlWarnings(), []),
   );
 });
 
 test('DOMAIN set → no warning', () => {
   withEnv({ DOMAIN: 'slides.example.com' }, () =>
-    assert.deepEqual(publicUrlWarnings(), [])
+    assert.deepEqual(publicUrlWarnings(), []),
   );
 });

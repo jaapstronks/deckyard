@@ -54,13 +54,13 @@ test('every identity field a presentation carries is on the strip list', () => {
   // on it; `organizationId` is tenancy, not identity, and stays (see the
   // module doc).
   const identityish = Object.keys(presentation()).filter((key) =>
-    /^(owner|createdBy|updatedBy|trashedBy)/.test(key)
+    /^(owner|createdBy|updatedBy|trashedBy)/.test(key),
   );
 
   assert.deepEqual(
     identityish.sort(),
     [...SNAPSHOT_IDENTITY_FIELDS].sort(),
-    'a presentation grew an identity field that snapshots would still embed'
+    'a presentation grew an identity field that snapshots would still embed',
   );
 });
 
@@ -68,7 +68,11 @@ test('stripping removes exactly the identity fields', () => {
   const stripped = stripIdentityForSnapshot(presentation());
 
   for (const field of SNAPSHOT_IDENTITY_FIELDS) {
-    assert.equal(field in stripped, false, `${field} must not be in the snapshot`);
+    assert.equal(
+      field in stripped,
+      false,
+      `${field} must not be in the snapshot`,
+    );
   }
 
   // Everything a restore actually consumes survives.
@@ -83,7 +87,7 @@ test('stripping removes exactly the identity fields', () => {
   assert.equal(stripped.theme, 'midnight');
 });
 
-test('stripping copies and never mutates the caller\'s presentation', () => {
+test("stripping copies and never mutates the caller's presentation", () => {
   const pres = presentation();
   const before = JSON.stringify(pres);
 

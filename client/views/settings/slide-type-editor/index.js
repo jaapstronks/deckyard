@@ -59,7 +59,12 @@ function tryParseJson(str) {
  * @param {Function} options.onCancel - Cancel callback
  * @returns {{ el: HTMLElement }}
  */
-export function createSlideTypeEditor({ slideType, coreTypes, onSave, onCancel }) {
+export function createSlideTypeEditor({
+  slideType,
+  coreTypes,
+  onSave,
+  onCancel,
+}) {
   const isEditing = Boolean(slideType?.id);
 
   const container = h('div', { class: 'slide-type-editor' });
@@ -71,7 +76,9 @@ export function createSlideTypeEditor({ slideType, coreTypes, onSave, onCancel }
     label: slideType?.label || '',
     slug: slideType?.slug || '',
     baseType: slideType?.baseType || '',
-    fields: Array.isArray(slideType?.fields) ? structuredClone(slideType.fields) : [],
+    fields: Array.isArray(slideType?.fields)
+      ? structuredClone(slideType.fields)
+      : [],
     defaults: slideType?.defaults || {},
     template: slideType?.template || '',
     css: slideType?.css || '',
@@ -87,7 +94,9 @@ export function createSlideTypeEditor({ slideType, coreTypes, onSave, onCancel }
   // ============================================================
   // Header
   // ============================================================
-  const header = h('div', { class: 'slide-type-editor-header row is-between is-center' });
+  const header = h('div', {
+    class: 'slide-type-editor-header row is-between is-center',
+  });
   const backBtn = h('button', {
     class: 'btn btn-secondary btn-icon',
     type: 'button',
@@ -120,7 +129,7 @@ export function createSlideTypeEditor({ slideType, coreTypes, onSave, onCancel }
 
   header.append(
     h('div', { class: 'row is-center gap-3' }, [backBtn, headerTitle]),
-    headerActions
+    headerActions,
   );
 
   // ============================================================
@@ -130,7 +139,12 @@ export function createSlideTypeEditor({ slideType, coreTypes, onSave, onCancel }
 
   // --- Name & slug ---
   const nameCard = h('div', { class: 'editor-card stack' });
-  nameCard.append(h('div', { class: 'field-label', text: t('settings.slideTypes.name', 'Name') }));
+  nameCard.append(
+    h('div', {
+      class: 'field-label',
+      text: t('settings.slideTypes.name', 'Name'),
+    }),
+  );
 
   const nameInput = h('input', {
     class: 'input',
@@ -170,8 +184,14 @@ export function createSlideTypeEditor({ slideType, coreTypes, onSave, onCancel }
   const slugHint = h('div', {
     class: 'help',
     text: isEditing
-      ? t('settings.slideTypes.slugReadonly', 'Slug cannot be changed after creation.')
-      : t('settings.slideTypes.slugHint', 'Auto-generated from name. Used as the internal type key.'),
+      ? t(
+          'settings.slideTypes.slugReadonly',
+          'Slug cannot be changed after creation.',
+        )
+      : t(
+          'settings.slideTypes.slugHint',
+          'Auto-generated from name. Used as the internal type key.',
+        ),
   });
 
   nameCard.append(nameInput, slugLabel, slugInput, slugHint);
@@ -179,11 +199,19 @@ export function createSlideTypeEditor({ slideType, coreTypes, onSave, onCancel }
   // --- Base type ---
   const baseTypeCard = h('div', { class: 'editor-card stack' });
   baseTypeCard.append(
-    h('div', { class: 'field-label', text: t('settings.slideTypes.baseType', 'Base Type') })
+    h('div', {
+      class: 'field-label',
+      text: t('settings.slideTypes.baseType', 'Base Type'),
+    }),
   );
 
   const baseTypeSelect = h('select', { class: 'input' });
-  baseTypeSelect.append(h('option', { value: '', text: t('settings.slideTypes.baseTypeNone', '(None)') }));
+  baseTypeSelect.append(
+    h('option', {
+      value: '',
+      text: t('settings.slideTypes.baseTypeNone', '(None)'),
+    }),
+  );
 
   const coreTypeKeys = Object.keys(coreTypes || {}).sort((a, b) => {
     const aLabel = coreTypes[a]?.label || a;
@@ -191,11 +219,13 @@ export function createSlideTypeEditor({ slideType, coreTypes, onSave, onCancel }
     return String(aLabel).localeCompare(String(bLabel));
   });
   for (const key of coreTypeKeys) {
-    baseTypeSelect.append(h('option', {
-      value: key,
-      text: `${coreTypes[key]?.label || key} (${key})`,
-      selected: state.baseType === key,
-    }));
+    baseTypeSelect.append(
+      h('option', {
+        value: key,
+        text: `${coreTypes[key]?.label || key} (${key})`,
+        selected: state.baseType === key,
+      }),
+    );
   }
 
   baseTypeSelect.addEventListener('change', () => {
@@ -204,7 +234,10 @@ export function createSlideTypeEditor({ slideType, coreTypes, onSave, onCancel }
 
   const baseTypeHint = h('div', {
     class: 'help',
-    text: t('settings.slideTypes.baseTypeHint', 'Optional. The core type this custom type extends. Used for fallback rendering.'),
+    text: t(
+      'settings.slideTypes.baseTypeHint',
+      'Optional. The core type this custom type extends. Used for fallback rendering.',
+    ),
   });
 
   baseTypeCard.append(baseTypeSelect, baseTypeHint);
@@ -212,7 +245,10 @@ export function createSlideTypeEditor({ slideType, coreTypes, onSave, onCancel }
   // --- Fields ---
   const fieldsCard = h('div', { class: 'editor-card stack' });
   fieldsCard.append(
-    h('div', { class: 'field-label', text: t('settings.slideTypes.fields', 'Fields') })
+    h('div', {
+      class: 'field-label',
+      text: t('settings.slideTypes.fields', 'Fields'),
+    }),
   );
 
   // Declared here so the field editor's onChange can refresh its field list;
@@ -232,7 +268,10 @@ export function createSlideTypeEditor({ slideType, coreTypes, onSave, onCancel }
   // --- Defaults ---
   const defaultsCard = h('div', { class: 'editor-card stack' });
   defaultsCard.append(
-    h('div', { class: 'field-label', text: t('settings.slideTypes.defaults', 'Defaults (JSON)') })
+    h('div', {
+      class: 'field-label',
+      text: t('settings.slideTypes.defaults', 'Defaults (JSON)'),
+    }),
   );
 
   const defaultsArea = h('textarea', {
@@ -242,7 +281,10 @@ export function createSlideTypeEditor({ slideType, coreTypes, onSave, onCancel }
   });
   defaultsArea.value = defaultsJson;
 
-  const defaultsError = h('div', { class: 'help', style: 'color: hsl(var(--app-danger))' });
+  const defaultsError = h('div', {
+    class: 'help',
+    style: 'color: hsl(var(--app-danger))',
+  });
   defaultsError.style.display = 'none';
 
   defaultsArea.addEventListener('input', () => {
@@ -260,14 +302,20 @@ export function createSlideTypeEditor({ slideType, coreTypes, onSave, onCancel }
       state.defaults = parsed;
       defaultsError.style.display = 'none';
     } else {
-      defaultsError.textContent = t('settings.slideTypes.defaultsInvalid', 'Invalid JSON');
+      defaultsError.textContent = t(
+        'settings.slideTypes.defaultsInvalid',
+        'Invalid JSON',
+      );
       defaultsError.style.display = '';
     }
   });
 
   const defaultsHint = h('div', {
     class: 'help',
-    text: t('settings.slideTypes.defaultsHint', 'Default field values for new slides of this type.'),
+    text: t(
+      'settings.slideTypes.defaultsHint',
+      'Default field values for new slides of this type.',
+    ),
   });
 
   defaultsCard.append(defaultsArea, defaultsError, defaultsHint);
@@ -275,13 +323,17 @@ export function createSlideTypeEditor({ slideType, coreTypes, onSave, onCancel }
   // --- Template ---
   const templateCard = h('div', { class: 'editor-card stack' });
   templateCard.append(
-    h('div', { class: 'field-label', text: t('settings.slideTypes.template', 'Template (HTML)') })
+    h('div', {
+      class: 'field-label',
+      text: t('settings.slideTypes.template', 'Template (HTML)'),
+    }),
   );
 
   const templateArea = h('textarea', {
     class: 'input code-textarea',
     rows: '12',
-    placeholder: '<div class="my-slide">\n  <h1>{{esc title}}</h1>\n  {{markdown body}}\n</div>',
+    placeholder:
+      '<div class="my-slide">\n  <h1>{{esc title}}</h1>\n  {{markdown body}}\n</div>',
   });
   templateArea.value = state.template;
   templateArea.addEventListener('input', () => {
@@ -294,7 +346,10 @@ export function createSlideTypeEditor({ slideType, coreTypes, onSave, onCancel }
   // --- CSS ---
   const cssCard = h('div', { class: 'editor-card stack' });
   cssCard.append(
-    h('div', { class: 'field-label', text: t('settings.slideTypes.css', 'Custom CSS') })
+    h('div', {
+      class: 'field-label',
+      text: t('settings.slideTypes.css', 'Custom CSS'),
+    }),
   );
 
   const cssArea = h('textarea', {
@@ -310,7 +365,10 @@ export function createSlideTypeEditor({ slideType, coreTypes, onSave, onCancel }
 
   const cssHint = h('div', {
     class: 'help',
-    text: t('settings.slideTypes.cssHint', 'Scoped CSS injected into the slide rendering context.'),
+    text: t(
+      'settings.slideTypes.cssHint',
+      'Scoped CSS injected into the slide rendering context.',
+    ),
   });
 
   cssCard.append(cssArea, cssHint);
@@ -323,7 +381,7 @@ export function createSlideTypeEditor({ slideType, coreTypes, onSave, onCancel }
     h('div', {
       class: 'field-label',
       text: t('settings.slideTypes.usage', 'Usage rules for AI'),
-    })
+    }),
   );
 
   const usageArea = h('textarea', {
@@ -332,7 +390,7 @@ export function createSlideTypeEditor({ slideType, coreTypes, onSave, onCancel }
     maxlength: String(USAGE_MAX_LENGTH),
     placeholder: t(
       'settings.slideTypes.usagePlaceholder',
-      'Figures come from the published quarterly report, never from a draft.\nAlways state the cut-off date.\nA deviation over 5% needs a note explaining it.'
+      'Figures come from the published quarterly report, never from a draft.\nAlways state the cut-off date.\nA deviation over 5% needs a note explaining it.',
     ),
   });
   usageArea.value = state.usage;
@@ -352,7 +410,7 @@ export function createSlideTypeEditor({ slideType, coreTypes, onSave, onCancel }
     class: 'help',
     text: t(
       'settings.slideTypes.usageHint',
-      'Rules an AI assistant must follow when filling this slide type — sources, cut-off dates, mandatory explanations. Not a description of what the type is: that is what the name and fields are for.'
+      'Rules an AI assistant must follow when filling this slide type — sources, cut-off dates, mandatory explanations. Not a description of what the type is: that is what the name and fields are for.',
     ),
   });
 
@@ -361,7 +419,10 @@ export function createSlideTypeEditor({ slideType, coreTypes, onSave, onCancel }
   // --- Publish toggle ---
   const publishCard = h('div', { class: 'editor-card stack' });
   publishCard.append(
-    h('div', { class: 'field-label', text: t('settings.slideTypes.publish', 'Publish') })
+    h('div', {
+      class: 'field-label',
+      text: t('settings.slideTypes.publish', 'Publish'),
+    }),
   );
 
   const publishToggle = h('div', { class: 'slide-type-publish-toggle' });
@@ -376,14 +437,20 @@ export function createSlideTypeEditor({ slideType, coreTypes, onSave, onCancel }
   });
   const publishLabel = h('label', {
     htmlFor: publishCheckboxId,
-    text: t('settings.slideTypes.publishLabel', 'Make available in slide picker'),
+    text: t(
+      'settings.slideTypes.publishLabel',
+      'Make available in slide picker',
+    ),
   });
 
   publishToggle.append(publishCheckbox, publishLabel);
 
   const publishHint = h('div', {
     class: 'help',
-    text: t('settings.slideTypes.publishHint', 'Draft types are only visible in settings. Published types appear in the slide picker for all users.'),
+    text: t(
+      'settings.slideTypes.publishHint',
+      'Draft types are only visible in settings. Published types appear in the slide picker for all users.',
+    ),
   });
 
   publishCard.append(publishToggle, publishHint);
@@ -397,7 +464,7 @@ export function createSlideTypeEditor({ slideType, coreTypes, onSave, onCancel }
     templateCard,
     cssCard,
     usageCard,
-    publishCard
+    publishCard,
   );
 
   // ============================================================
@@ -444,19 +511,34 @@ export function createSlideTypeEditor({ slideType, coreTypes, onSave, onCancel }
   saveBtn.addEventListener('click', async () => {
     // Validate
     if (!state.label.trim()) {
-      toast.error(t('settings.slideTypes.errorNameRequired', 'Slide type name is required.'));
+      toast.error(
+        t(
+          'settings.slideTypes.errorNameRequired',
+          'Slide type name is required.',
+        ),
+      );
       nameInput.focus();
       return;
     }
 
     if (!isValidSlug(state.slug)) {
-      toast.error(t('settings.slideTypes.errorInvalidSlug', 'Invalid slug. Use lowercase letters, numbers, and hyphens.'));
+      toast.error(
+        t(
+          'settings.slideTypes.errorInvalidSlug',
+          'Invalid slug. Use lowercase letters, numbers, and hyphens.',
+        ),
+      );
       slugInput.focus();
       return;
     }
 
     if (state.fields.length === 0) {
-      toast.error(t('settings.slideTypes.errorFieldsRequired', 'At least one field is required.'));
+      toast.error(
+        t(
+          'settings.slideTypes.errorFieldsRequired',
+          'At least one field is required.',
+        ),
+      );
       return;
     }
 
@@ -464,7 +546,12 @@ export function createSlideTypeEditor({ slideType, coreTypes, onSave, onCancel }
     if (defaultsJson.trim()) {
       const parsed = tryParseJson(defaultsJson);
       if (!parsed) {
-        toast.error(t('settings.slideTypes.errorInvalidDefaults', 'Defaults JSON is invalid.'));
+        toast.error(
+          t(
+            'settings.slideTypes.errorInvalidDefaults',
+            'Defaults JSON is invalid.',
+          ),
+        );
         defaultsArea.focus();
         return;
       }

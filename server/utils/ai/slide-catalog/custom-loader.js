@@ -92,7 +92,7 @@ export async function loadCustomAiCatalog() {
         if (!aiDef.description) {
           log.warn(
             `Skipping AI metadata for ${typeName}: missing 'description'` +
-              (aiDef.usage ? " (its 'usage' rule is dropped with it)" : '')
+              (aiDef.usage ? " (its 'usage' rule is dropped with it)" : ''),
           );
           continue;
         }
@@ -104,9 +104,9 @@ export async function loadCustomAiCatalog() {
         if (aiDef.schema && typeof aiDef.schema === 'object') {
           log.warn(
             `Ignoring 'ai.schema' on ${typeName}: the agent-facing ` +
-              'schema is derived from the type definition\'s fields[]. Move any ' +
+              "schema is derived from the type definition's fields[]. Move any " +
               'constraint you need onto the field itself, and use `ai: false` on a ' +
-              'field you do not want agents to fill.'
+              'field you do not want agents to fill.',
           );
         }
 
@@ -178,7 +178,7 @@ export async function getCustomAiCatalogForTheme(themeId) {
   // 2. Match the specified themeId
   return Object.fromEntries(
     Object.entries(catalog).filter(
-      ([, def]) => !def.themeId || def.themeId === themeId
-    )
+      ([, def]) => !def.themeId || def.themeId === themeId,
+    ),
   );
 }

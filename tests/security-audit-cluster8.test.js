@@ -93,8 +93,16 @@ test('L1: two independently produced hashes of the same password differ (random 
 
 test('L1: needsRehash flags legacy + sub-cost hashes, not current ones', async () => {
   assert.equal(needsRehash(legacyHash('x')), true, 'legacy → rehash');
-  assert.equal(needsRehash('scrypt$16384$8$1$aa$bb'), true, 'below current cost → rehash');
-  assert.equal(needsRehash(await hashPassword('x')), false, 'current cost → no rehash');
+  assert.equal(
+    needsRehash('scrypt$16384$8$1$aa$bb'),
+    true,
+    'below current cost → rehash',
+  );
+  assert.equal(
+    needsRehash(await hashPassword('x')),
+    false,
+    'current cost → no rehash',
+  );
   assert.equal(needsRehash(''), true, 'garbage → rehash');
 });
 
@@ -103,7 +111,15 @@ test('L1: needsRehash flags legacy + sub-cost hashes, not current ones', async (
 // ============================================================================
 
 test('L1: verifyPassword rejects malformed stored values without throwing', async () => {
-  for (const bad of ['', null, undefined, ':', 'nosep', 'scrypt$', 'scrypt$a$b$c$d$e']) {
+  for (const bad of [
+    '',
+    null,
+    undefined,
+    ':',
+    'nosep',
+    'scrypt$',
+    'scrypt$a$b$c$d$e',
+  ]) {
     assert.equal(await verifyPassword('pw', bad), false, JSON.stringify(bad));
   }
 });
@@ -113,9 +129,14 @@ test('L1: verifyPassword rejects malformed stored values without throwing', asyn
 // ============================================================================
 
 test('L1: validatePassword enforces both a lower and an upper length bound', () => {
-  assert.deepEqual(validatePassword('short'), { ok: false, reason: 'too_short' });
+  assert.deepEqual(validatePassword('short'), {
+    ok: false,
+    reason: 'too_short',
+  });
   assert.deepEqual(validatePassword('x'.repeat(8)), { ok: true });
-  assert.deepEqual(validatePassword('x'.repeat(MAX_PASSWORD_LENGTH)), { ok: true });
+  assert.deepEqual(validatePassword('x'.repeat(MAX_PASSWORD_LENGTH)), {
+    ok: true,
+  });
   assert.deepEqual(
     validatePassword('x'.repeat(MAX_PASSWORD_LENGTH + 1)),
     { ok: false, reason: 'too_long' },
@@ -127,7 +148,10 @@ test('L1: the hash util itself refuses over-length input (defense in depth)', as
   const tooLong = 'x'.repeat(MAX_PASSWORD_LENGTH + 1);
   await assert.rejects(() => hashPassword(tooLong), /maximum length/);
   // verifyPassword short-circuits to false before doing any scrypt work.
-  assert.equal(await verifyPassword(tooLong, await hashPassword('ok-length')), false);
+  assert.equal(
+    await verifyPassword(tooLong, await hashPassword('ok-length')),
+    false,
+  );
 });
 
 // ============================================================================
@@ -138,7 +162,10 @@ test('L1: both storage modules re-export the shared hash util, no local scrypt',
   const pwReset = await readSrc('../server/storage/password-reset.js');
   const shareLinks = await readSrc('../server/storage/share-links/index.js');
 
-  for (const [name, src] of [['password-reset', pwReset], ['share-links', shareLinks]]) {
+  for (const [name, src] of [
+    ['password-reset', pwReset],
+    ['share-links', shareLinks],
+  ]) {
     assert.match(
       src,
       /from '\.\.?\/(\.\.\/)?utils\/password-hash\.js'/,
@@ -246,7 +273,9 @@ async function jsFilesUnder(dir) {
 test('L3: nothing calls the sync getUserFromRequest (authz uses the async path)', async () => {
   const serverDir = fileURLToPath(new URL('../server', import.meta.url));
   const files = await jsFilesUnder(serverDir);
-  const authDef = fileURLToPath(new URL('../server/auth/auth.js', import.meta.url));
+  const authDef = fileURLToPath(
+    new URL('../server/auth/auth.js', import.meta.url),
+  );
 
   for (const file of files) {
     if (file === authDef) continue; // the definition itself

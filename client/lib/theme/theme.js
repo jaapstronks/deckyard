@@ -93,12 +93,15 @@ async function fetchThemeData(id) {
   // Built-in themes live in /themes/, custom themes in /custom/themes/
   // Only try /custom/themes/ for non-built-in themes to avoid 404 errors
   const isBuiltin = BUILTIN_THEMES.includes(id);
-  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id);
+  const isUuid =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id);
 
   // Database custom themes (UUIDs) are served from the API, not the filesystem
   if (isUuid) {
     try {
-      const resp = await fetch(`/api/themes/custom/${id}/config`, { cache: 'no-store' });
+      const resp = await fetch(`/api/themes/custom/${id}/config`, {
+        cache: 'no-store',
+      });
       if (resp.ok) return await resp.json();
     } catch {
       // ignore
@@ -216,7 +219,7 @@ export function injectThemeFontFaces(theme, key = null) {
     // server/utils/curated-font-embed.js.
     const range = f.unicodeRange ? ` unicode-range: ${f.unicodeRange};` : '';
     rules.push(
-      `@font-face { font-family: '${cssStringEscape(family)}'; src: ${src}; font-weight: ${f.weight || 400}; font-style: ${f.style || 'normal'}; font-display: swap;${range} }`
+      `@font-face { font-family: '${cssStringEscape(family)}'; src: ${src}; font-weight: ${f.weight || 400}; font-style: ${f.style || 'normal'}; font-display: swap;${range} }`,
     );
   }
 
@@ -251,9 +254,7 @@ export function applyThemeVarsToElement(el, theme) {
   const node = el && el.style ? el : null;
   if (!node) return;
   const vars =
-    theme?.cssVars && typeof theme.cssVars === 'object'
-      ? theme.cssVars
-      : {};
+    theme?.cssVars && typeof theme.cssVars === 'object' ? theme.cssVars : {};
   for (const [k, v] of Object.entries(vars)) {
     if (typeof k !== 'string' || !k.startsWith('--t-')) continue;
     // Defensive: never apply UI variables to slides, even if a theme accidentally contains them.

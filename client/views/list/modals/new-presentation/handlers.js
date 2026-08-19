@@ -83,7 +83,10 @@ export async function handlePasteText({
   const loadingModal = showLoadingModal({
     h,
     root,
-    initialMessage: t('list.newPresentation.preparing', 'Preparing your presentation...'),
+    initialMessage: t(
+      'list.newPresentation.preparing',
+      'Preparing your presentation...',
+    ),
     title: t('list.newPresentation.generatingTitle', 'Generating presentation'),
   });
   loadingModal.setProgress(5);
@@ -110,7 +113,11 @@ export async function handlePasteText({
       onStatus: ({ message, progress, phase }) => {
         // Real progress from the staged pipeline ("Wrote section 2 of 5…")
         // takes over from the rotating placeholder messages.
-        if (phase === 'refine-progress' || phase === 'save' || phase === 'finalize') {
+        if (
+          phase === 'refine-progress' ||
+          phase === 'save' ||
+          phase === 'finalize'
+        ) {
           rotator.stop();
           loadingModal.update(message);
           if (progress) loadingModal.setProgress(progress);
@@ -127,7 +134,9 @@ export async function handlePasteText({
       },
       onError: ({ message }) => {
         rotator.stop();
-        loadingModal.update(message || t('editor.aiAppend.failed', 'Generation failed.'));
+        loadingModal.update(
+          message || t('editor.aiAppend.failed', 'Generation failed.'),
+        );
       },
     });
 
@@ -161,7 +170,9 @@ export async function handlePasteText({
       await new Promise((r) => setTimeout(r, 800));
       loadingModal.close();
       close();
-      nav?.(`/app/${created.id}?lang=${encodeURIComponent(langMode)}&aiReview=1`);
+      nav?.(
+        `/app/${created.id}?lang=${encodeURIComponent(langMode)}&aiReview=1`,
+      );
     } catch (fallbackError) {
       loadingModal.close();
       showBackdrop?.();
@@ -246,7 +257,11 @@ export async function handleConvertFile({
         await processSSEStream(response.body, {
           onStatus: (data) => {
             const phase = data?.phase || '';
-            if (phase === 'finalize' || phase === 'save' || !rotator.getState().messages.length) {
+            if (
+              phase === 'finalize' ||
+              phase === 'save' ||
+              !rotator.getState().messages.length
+            ) {
               rotator.stop();
               loadingModal.update(data?.message || '');
               if (data?.progress) loadingModal.setProgress(data.progress);
@@ -265,14 +280,19 @@ export async function handleConvertFile({
             await new Promise((r) => setTimeout(r, 800));
             loadingModal.close();
             close();
-            nav?.(`/app/${result.presentation.id}?lang=${encodeURIComponent(lang)}`);
+            nav?.(
+              `/app/${result.presentation.id}?lang=${encodeURIComponent(lang)}`,
+            );
           },
           onError: (data) => {
             streamError = true;
             rotator.stop();
             loadingModal.close();
             showBackdrop?.();
-            setStatus(data?.message || t('list.fileConverter.failed', 'Conversion failed.'));
+            setStatus(
+              data?.message ||
+                t('list.fileConverter.failed', 'Conversion failed.'),
+            );
             setBusy(false);
           },
         });
@@ -284,7 +304,9 @@ export async function handleConvertFile({
     }
 
     if (!useStreaming) {
-      loadingModal.update(t('list.fileConverter.converting', 'Converting file...'));
+      loadingModal.update(
+        t('list.fileConverter.converting', 'Converting file...'),
+      );
       const result = await api('/api/convert', {
         method: 'POST',
         body: JSON.stringify({
@@ -301,11 +323,15 @@ export async function handleConvertFile({
         await new Promise((r) => setTimeout(r, 800));
         loadingModal.close();
         close();
-        nav?.(`/app/${result.presentation.id}?lang=${encodeURIComponent(lang)}`);
+        nav?.(
+          `/app/${result.presentation.id}?lang=${encodeURIComponent(lang)}`,
+        );
       } else {
         loadingModal.close();
         showBackdrop?.();
-        setStatus(result.error || t('list.fileConverter.failed', 'Conversion failed.'));
+        setStatus(
+          result.error || t('list.fileConverter.failed', 'Conversion failed.'),
+        );
         setBusy(false);
       }
     }
@@ -351,9 +377,12 @@ export async function handleImportJson({
     }
 
     // Use the language from the deck if available, otherwise fall back to langMode
-    const lang = deck?.lang === 'en-GB' || deck?.lang === 'nl'
-      ? deck.lang
-      : (langMode === 'en-GB' ? 'en-GB' : 'nl');
+    const lang =
+      deck?.lang === 'en-GB' || deck?.lang === 'nl'
+        ? deck.lang
+        : langMode === 'en-GB'
+          ? 'en-GB'
+          : 'nl';
 
     const created = await api('/api/presentations/import/json', {
       method: 'POST',
@@ -397,7 +426,9 @@ export async function handleImportMarkdown({
     const markdown = await selectedFile.text();
 
     if (!markdown.trim()) {
-      setStatus(t('list.newPresentation.importMarkdown.empty', 'The file is empty.'));
+      setStatus(
+        t('list.newPresentation.importMarkdown.empty', 'The file is empty.'),
+      );
       setBusy(false);
       return;
     }
@@ -443,7 +474,12 @@ export async function handlePasteMarkdown({
   showWarnings,
 }) {
   if (!raw) {
-    setStatus(t('list.newPresentation.pasteMarkdown.pasteFirst', 'Paste markdown content first.'));
+    setStatus(
+      t(
+        'list.newPresentation.pasteMarkdown.pasteFirst',
+        'Paste markdown content first.',
+      ),
+    );
     focusTextarea?.();
     return;
   }
@@ -493,7 +529,12 @@ export async function handleNotion({
   focusInput,
 }) {
   if (!notionUrl) {
-    setStatus(t('list.newPresentation.notion.urlRequired', 'Please enter a Notion page URL.'));
+    setStatus(
+      t(
+        'list.newPresentation.notion.urlRequired',
+        'Please enter a Notion page URL.',
+      ),
+    );
     focusInput?.();
     return;
   }
@@ -503,8 +544,14 @@ export async function handleNotion({
   const loadingModal = showLoadingModal({
     h,
     root,
-    initialMessage: t('list.newPresentation.notion.importing', 'Importing Notion page...'),
-    title: t('list.newPresentation.notion.importingTitle', 'Importing from Notion'),
+    initialMessage: t(
+      'list.newPresentation.notion.importing',
+      'Importing Notion page...',
+    ),
+    title: t(
+      'list.newPresentation.notion.importingTitle',
+      'Importing from Notion',
+    ),
   });
   loadingModal.setProgress(5);
 
@@ -538,7 +585,11 @@ export async function handleNotion({
         await processSSEStream(response.body, {
           onStatus: (data) => {
             const phase = data?.phase || '';
-            if (phase === 'finalize' || phase === 'save' || !rotator.getState().messages.length) {
+            if (
+              phase === 'finalize' ||
+              phase === 'save' ||
+              !rotator.getState().messages.length
+            ) {
               rotator.stop();
               loadingModal.update(data?.message || '');
               if (data?.progress) loadingModal.setProgress(data.progress);
@@ -552,20 +603,26 @@ export async function handleNotion({
             streamComplete = true;
             rotator.stop();
             const result = data;
-            const detectedLang = result.detectedLang || result.presentation?.lang || 'nl';
+            const detectedLang =
+              result.detectedLang || result.presentation?.lang || 'nl';
             loadingModal.update(t('common.done', 'Done!'));
             loadingModal.setProgress(100);
             await new Promise((r) => setTimeout(r, 800));
             loadingModal.close();
             close();
-            nav?.(`/app/${result.presentation.id}?lang=${encodeURIComponent(detectedLang)}`);
+            nav?.(
+              `/app/${result.presentation.id}?lang=${encodeURIComponent(detectedLang)}`,
+            );
           },
           onError: (data) => {
             streamError = true;
             rotator.stop();
             loadingModal.close();
             showBackdrop?.();
-            setStatus(data?.message || t('list.newPresentation.notion.failed', 'Import failed.'));
+            setStatus(
+              data?.message ||
+                t('list.newPresentation.notion.failed', 'Import failed.'),
+            );
             setBusy(false);
           },
         });
@@ -578,7 +635,9 @@ export async function handleNotion({
 
     // Fallback to non-streaming endpoint
     if (!useStreaming) {
-      loadingModal.update(t('list.newPresentation.notion.importing', 'Importing Notion page...'));
+      loadingModal.update(
+        t('list.newPresentation.notion.importing', 'Importing Notion page...'),
+      );
       const result = await api('/api/notion/import', {
         method: 'POST',
         body: JSON.stringify({
@@ -589,17 +648,23 @@ export async function handleNotion({
       });
 
       if (result.success && result.presentation) {
-        const detectedLang = result.detectedLang || result.presentation?.lang || 'nl';
+        const detectedLang =
+          result.detectedLang || result.presentation?.lang || 'nl';
         loadingModal.update(t('common.done', 'Done!'));
         loadingModal.setProgress(100);
         await new Promise((r) => setTimeout(r, 800));
         loadingModal.close();
         close();
-        nav?.(`/app/${result.presentation.id}?lang=${encodeURIComponent(detectedLang)}`);
+        nav?.(
+          `/app/${result.presentation.id}?lang=${encodeURIComponent(detectedLang)}`,
+        );
       } else {
         loadingModal.close();
         showBackdrop?.();
-        setStatus(result.error || t('list.newPresentation.notion.failed', 'Import failed.'));
+        setStatus(
+          result.error ||
+            t('list.newPresentation.notion.failed', 'Import failed.'),
+        );
         setBusy(false);
       }
     }

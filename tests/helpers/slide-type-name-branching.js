@@ -33,7 +33,10 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
-import { SLIDE_TYPES, CUSTOM_SLIDE_TYPE_NAMES } from '../../shared/slide-types/registry.js';
+import {
+  SLIDE_TYPES,
+  CUSTOM_SLIDE_TYPE_NAMES,
+} from '../../shared/slide-types/registry.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -63,7 +66,7 @@ export const BRANCH_THRESHOLD = 3;
 
 /** Core (non-fork) type names — the vocabulary a module can branch on. */
 export const CORE_TYPE_NAMES = Object.keys(SLIDE_TYPES).filter(
-  (name) => !CUSTOM_SLIDE_TYPE_NAMES.includes(name)
+  (name) => !CUSTOM_SLIDE_TYPE_NAMES.includes(name),
 );
 
 /**
@@ -133,7 +136,8 @@ export function deriveNameBranchingModules() {
     if (SKIP_PREFIXES.some((p) => file.startsWith(p))) continue;
     const src = stripComments(readFileSync(resolve(ROOT, file), 'utf8'));
     const names = CORE_TYPE_NAMES.filter(
-      (name) => src.includes(name) && branchPatterns(name).some((re) => re.test(src))
+      (name) =>
+        src.includes(name) && branchPatterns(name).some((re) => re.test(src)),
     );
     if (names.length >= BRANCH_THRESHOLD) out.set(file, names);
   }
@@ -197,7 +201,7 @@ export const INVENTORY = {
     kind: generated,
     gate: 'scripts/generate-slide-authoring-aggregator.js',
     why:
-      'Generated aggregator over each type\'s own authoring.js (sample content, ' +
+      "Generated aggregator over each type's own authoring.js (sample content, " +
       'schematic). Regenerating it is the only way to change it, so it cannot ' +
       'drift from the per-type sources it imports.',
   },
@@ -205,7 +209,7 @@ export const INVENTORY = {
     kind: generated,
     gate: 'scripts/generate-slide-ai-aggregator.js',
     why:
-      'Generated aggregator over each type\'s own ai.js (the agent-facing ' +
+      "Generated aggregator over each type's own ai.js (the agent-facing " +
       'description, bestFor and notFor, plus the sparse aiExamples the prompt ' +
       'shows as worked content). It replaced five hand-filed category modules ' +
       'whose grouping was not derivable from anything the type declares — and, ' +
@@ -225,7 +229,7 @@ export const INVENTORY = {
     kind: generated,
     gate: 'scripts/generate-slide-inline-edit-aggregator.js',
     why:
-      'Generated aggregator over each type\'s own inline-edit.js (the on-canvas ' +
+      "Generated aggregator over each type's own inline-edit.js (the on-canvas " +
       'editing descriptor). Regenerating it is the only way to change it, so it ' +
       'cannot drift from the per-type sources it imports.',
   },

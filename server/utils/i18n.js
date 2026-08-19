@@ -33,8 +33,7 @@ export function projectPresentationForLang(pres, lang) {
     ...pres,
     lang: l,
     title: v.title || pres.title,
-    slides:
-      Array.isArray(v.slides) && v.slides.length ? v.slides : pres.slides,
+    slides: Array.isArray(v.slides) && v.slides.length ? v.slides : pres.slides,
     i18n: {
       ...(pres?.i18n && typeof pres.i18n === 'object' ? pres.i18n : {}),
       active: l,

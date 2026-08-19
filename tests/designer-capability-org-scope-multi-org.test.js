@@ -41,11 +41,16 @@ const ORG_B = '00000000-0000-0000-0000-0000000000bb';
 const { createFakeDb, touchedTables } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { isMultiOrgEnabled } = await import('../server/config/features.js');
-const { resolveDesignerCapability } = await import('../server/utils/designer.js');
+const { resolveDesignerCapability } =
+  await import('../server/utils/designer.js');
 const { canManage } = await import('../server/utils/route-middleware.js');
 
 test.before(() => {
-  assert.equal(isMultiOrgEnabled(), true, 'multi-organization flag is on for this file');
+  assert.equal(
+    isMultiOrgEnabled(),
+    true,
+    'multi-organization flag is on for this file',
+  );
 });
 
 /**
@@ -124,7 +129,7 @@ test('an instance admin who is a plain member is not a designer there', async ()
   assert.equal(
     await resolveDesignerCapability(admin(ORG_B)),
     false,
-    'the instance flag must not carry designer capability across the switch'
+    'the instance flag must not carry designer capability across the switch',
   );
 });
 
@@ -152,14 +157,14 @@ test('an organization admin inherits it unless the organization opts out', async
   assert.equal(
     await resolveDesignerCapability(admin(ORG_B)),
     true,
-    'adminsAreDesigners defaults to on'
+    'adminsAreDesigners defaults to on',
   );
 
   seed({ roleInB: 'admin', settingsB: { adminsAreDesigners: false } });
   assert.equal(
     await resolveDesignerCapability(admin(ORG_B)),
     false,
-    'an organization that turns it off is obeyed'
+    'an organization that turns it off is obeyed',
   );
 });
 
@@ -172,14 +177,15 @@ test('someone who is not an instance admin is judged the same way', async () => 
   // Nothing about this path changed, but it is the baseline the admin case is
   // now measured against: the two must agree.
   seed({ roleInB: 'member', designerInB: true });
-  const member = { email: 'alice@example.com', isAdmin: false, organizationId: ORG_B };
+  const member = {
+    email: 'alice@example.com',
+    isAdmin: false,
+    organizationId: ORG_B,
+  };
   assert.equal(await resolveDesignerCapability(member), true);
 
   seed({ roleInB: 'member', designerInB: false });
-  assert.equal(
-    await resolveDesignerCapability({ ...member }),
-    false
-  );
+  assert.equal(await resolveDesignerCapability({ ...member }), false);
 });
 
 test('no email, no capability', async () => {
@@ -198,7 +204,11 @@ test('no email, no capability', async () => {
  * resolveActiveMembership() already read, so capability resolution must not read
  * the same row again.
  */
-const sessionUser = (organizationId, organizationRole, organizationIsDesigner) => ({
+const sessionUser = (
+  organizationId,
+  organizationRole,
+  organizationIsDesigner,
+) => ({
   email: 'alice@example.com',
   isAdmin: true,
   organizationId,
@@ -209,36 +219,55 @@ const sessionUser = (organizationId, organizationRole, organizationIsDesigner) =
 test('a carried membership answers without touching the database', async () => {
   const db = seed({ roleInB: 'member', designerInB: false });
   db.__queryLog.length = 0;
-  assert.equal(await resolveDesignerCapability(sessionUser(ORG_B, 'member', false)), false);
+  assert.equal(
+    await resolveDesignerCapability(sessionUser(ORG_B, 'member', false)),
+    false,
+  );
   assert.deepEqual(db.__queryLog, [], 'the membership was reused, not re-read');
 });
 
 test('a carried owner needs no organization-settings read', async () => {
-  const db = seed({ roleInB: 'owner', settingsB: { adminsAreDesigners: false } });
+  const db = seed({
+    roleInB: 'owner',
+    settingsB: { adminsAreDesigners: false },
+  });
   db.__queryLog.length = 0;
-  assert.equal(await resolveDesignerCapability(sessionUser(ORG_B, 'owner', false)), true);
+  assert.equal(
+    await resolveDesignerCapability(sessionUser(ORG_B, 'owner', false)),
+    true,
+  );
   assert.deepEqual(db.__queryLog, [], 'owner is decided by the row alone');
 });
 
 test('a carried explicit designer needs no organization-settings read', async () => {
   const db = seed({ roleInB: 'member', designerInB: true });
   db.__queryLog.length = 0;
-  assert.equal(await resolveDesignerCapability(sessionUser(ORG_B, 'member', true)), true);
-  assert.deepEqual(db.__queryLog, [], 'the designer flag on the row settles it');
+  assert.equal(
+    await resolveDesignerCapability(sessionUser(ORG_B, 'member', true)),
+    true,
+  );
+  assert.deepEqual(
+    db.__queryLog,
+    [],
+    'the designer flag on the row settles it',
+  );
 });
 
 test('a carried admin reads organization settings, and only those', async () => {
-  const db = seed({ roleInB: 'admin', settingsB: { adminsAreDesigners: false } });
+  const db = seed({
+    roleInB: 'admin',
+    settingsB: { adminsAreDesigners: false },
+  });
   db.__queryLog.length = 0;
   assert.equal(
     await resolveDesignerCapability(sessionUser(ORG_B, 'admin', false)),
     false,
-    'an admin without the flag is the one case adminsAreDesigners decides'
+    'an admin without the flag is the one case adminsAreDesigners decides',
   );
   assert.deepEqual(
     touchedTables(db, 'select'),
     ['organizations'],
-    'the organization row is read; the membership is not read a second time'
+    'the organization row is read; the membership is not read a second time',
   );
 });
 
@@ -292,11 +321,16 @@ test('the organization settings route does not carry a third copy of the bypass'
   seed({ roleInB: 'member' });
   assert.equal(
     await patchOrgSettings(
-      { email: 'alice@example.com', isAdmin: true, isDesigner: false, organizationId: ORG_B },
-      { disabledSlideTypes: ['title-slide'] }
+      {
+        email: 'alice@example.com',
+        isAdmin: true,
+        isDesigner: false,
+        organizationId: ORG_B,
+      },
+      { disabledSlideTypes: ['title-slide'] },
     ),
     401,
-    'an instance admin who is a plain member cannot disable slide types there'
+    'an instance admin who is a plain member cannot disable slide types there',
   );
 });
 
@@ -304,10 +338,15 @@ test('a real designer in the organization still writes that setting', async () =
   seed({ roleInB: 'member', designerInB: true });
   assert.equal(
     await patchOrgSettings(
-      { email: 'alice@example.com', isAdmin: false, isDesigner: true, organizationId: ORG_B },
-      { disabledSlideTypes: ['title-slide'] }
+      {
+        email: 'alice@example.com',
+        isAdmin: false,
+        isDesigner: true,
+        organizationId: ORG_B,
+      },
+      { disabledSlideTypes: ['title-slide'] },
     ),
-    200
+    200,
   );
 });
 
@@ -321,7 +360,7 @@ test('canManage does not reopen what the capability resolution closed', () => {
   assert.equal(
     canManage({ isAdmin: true, isDesigner: false }),
     false,
-    'the instance flag is not a second door into an organization'
+    'the instance flag is not a second door into an organization',
   );
   assert.equal(canManage({ isAdmin: true, isDesigner: true }), true);
   assert.equal(canManage({ isAdmin: false, isDesigner: true }), true);

@@ -33,7 +33,10 @@ import {
   resolveChromeExecutablePath,
   closePuppeteerBrowser,
 } from '../server/utils/puppeteer-browser.js';
-import { buildSlidesPdfHtml, buildStyleContent } from '../server/export/pdf-slides.js';
+import {
+  buildSlidesPdfHtml,
+  buildStyleContent,
+} from '../server/export/pdf-slides.js';
 import { loadExportCssBundle } from '../server/export/css-bundle.js';
 import { renderSlideHtml } from '../server/utils/render-slide.js';
 import { loadThemeAssets } from '../server/utils/themes.js';
@@ -46,7 +49,10 @@ import {
   mayHaveVisibleGradientLayer,
 } from '../server/export/gradient-raster.js';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 
 const chromePath = await resolveChromeExecutablePath();
 const isCi = /^(1|true|yes)$/i.test(String(process.env.CI || '').trim());
@@ -66,7 +72,9 @@ const skip =
  */
 function slideBgDeclarations(html) {
   return [
-    ...String(html).matchAll(/--t-slide-bg-[a-z0-9-]+\s*:\s*((?:url\("[^"]*"\)|[^;}])+)/g),
+    ...String(html).matchAll(
+      /--t-slide-bg-[a-z0-9-]+\s*:\s*((?:url\("[^"]*"\)|[^;}])+)/g,
+    ),
   ].map((m) => m[1].trim());
 }
 
@@ -77,63 +85,89 @@ function calmDeck(n) {
     slides: Array.from({ length: n }, (_, i) => ({
       id: `slide-${i}`,
       type: 'content-slide',
-      content: { title: `Onderwerp ${i}`, body: 'Tekst op de achtergrond.', background: 'calm' },
+      content: {
+        title: `Onderwerp ${i}`,
+        body: 'Tekst op de achtergrond.',
+        background: 'calm',
+      },
     })),
   };
 }
 
-test('a gradient slide background leaves the PDF export as a bitmap', { skip }, async () => {
-  const theme = await loadThemeAssets(repoRoot, 'amethyst');
-  const html = await buildSlidesPdfHtml(repoRoot, calmDeck(3), { theme });
+test(
+  'a gradient slide background leaves the PDF export as a bitmap',
+  { skip },
+  async () => {
+    const theme = await loadThemeAssets(repoRoot, 'amethyst');
+    const html = await buildSlidesPdfHtml(repoRoot, calmDeck(3), { theme });
 
-  const decls = slideBgDeclarations(html);
-  assert.ok(decls.length > 0, 'the theme must declare slide backgrounds at all');
-  assert.deepEqual(
-    decls.filter((v) => /radial-gradient\(/i.test(v)),
-    [],
-    'no slide background may still reach the PDF as a live gradient',
-  );
-  assert.match(
-    html,
-    /\.pdf-stage\.grad-bg-\d+ \.slide\.slide-bg-calm \{\s*background-image: url\("data:image\/(png|jpeg);base64,/,
-    'the bitmap must arrive as a background-image override',
-  );
-});
-
-test('the bitmap never lands in the --t-slide-bg-* token itself', { skip }, async () => {
-  // `--t-slide-bg-<id>` feeds `--slide-bg`, which client/styles also reads as a
-  // `background-color` (00-base.css) and as a `color`
-  // (32-markdown-and-actions.css). A `url()` in there is invalid at
-  // computed-value time, and an image-text slide then prints white on white.
-  const theme = await loadThemeAssets(repoRoot, 'amethyst');
-  const html = await buildSlidesPdfHtml(repoRoot, calmDeck(3), { theme });
-
-  for (const value of slideBgDeclarations(html)) {
+    const decls = slideBgDeclarations(html);
     assert.ok(
-      !/url\(/i.test(value),
-      `--t-slide-bg-* must stay a colour, got: ${value.slice(0, 60)}`,
+      decls.length > 0,
+      'the theme must declare slide backgrounds at all',
     );
-  }
-  assert.ok(
-    slideBgDeclarations(html).includes('#140a26'),
-    "the token must fall back to the stack's own base colour",
-  );
-});
+    assert.deepEqual(
+      decls.filter((v) => /radial-gradient\(/i.test(v)),
+      [],
+      'no slide background may still reach the PDF as a live gradient',
+    );
+    assert.match(
+      html,
+      /\.pdf-stage\.grad-bg-\d+ \.slide\.slide-bg-calm \{\s*background-image: url\("data:image\/(png|jpeg);base64,/,
+      'the bitmap must arrive as a background-image override',
+    );
+  },
+);
 
-test('one background shared by many slides is rasterized once', { skip }, async () => {
-  const theme = await loadThemeAssets(repoRoot, 'amethyst');
-  const html = await buildSlidesPdfHtml(repoRoot, calmDeck(6), { theme });
+test(
+  'the bitmap never lands in the --t-slide-bg-* token itself',
+  { skip },
+  async () => {
+    // `--t-slide-bg-<id>` feeds `--slide-bg`, which client/styles also reads as a
+    // `background-color` (00-base.css) and as a `color`
+    // (32-markdown-and-actions.css). A `url()` in there is invalid at
+    // computed-value time, and an image-text slide then prints white on white.
+    const theme = await loadThemeAssets(repoRoot, 'amethyst');
+    const html = await buildSlidesPdfHtml(repoRoot, calmDeck(3), { theme });
 
-  const dataUrls = new Set(
-    [...html.matchAll(/url\("(data:image\/(?:png|jpeg);base64,[^"]+)"\)/g)].map((m) => m[1]),
-  );
-  assert.equal(dataUrls.size, 1, 'six slides on one background must share one bitmap');
-  assert.equal(
-    [...html.matchAll(/\bgrad-bg-\d+\b/g)].filter((m) => m[0] !== 'grad-bg-0').length,
-    0,
-    'and they must all point at the same rule',
-  );
-});
+    for (const value of slideBgDeclarations(html)) {
+      assert.ok(
+        !/url\(/i.test(value),
+        `--t-slide-bg-* must stay a colour, got: ${value.slice(0, 60)}`,
+      );
+    }
+    assert.ok(
+      slideBgDeclarations(html).includes('#140a26'),
+      "the token must fall back to the stack's own base colour",
+    );
+  },
+);
+
+test(
+  'one background shared by many slides is rasterized once',
+  { skip },
+  async () => {
+    const theme = await loadThemeAssets(repoRoot, 'amethyst');
+    const html = await buildSlidesPdfHtml(repoRoot, calmDeck(6), { theme });
+
+    const dataUrls = new Set(
+      [
+        ...html.matchAll(/url\("(data:image\/(?:png|jpeg);base64,[^"]+)"\)/g),
+      ].map((m) => m[1]),
+    );
+    assert.equal(
+      dataUrls.size,
+      1,
+      'six slides on one background must share one bitmap',
+    );
+    assert.equal(
+      [...html.matchAll(/\bgrad-bg-\d+\b/g)].filter((m) => m[0] !== 'grad-bg-0')
+        .length,
+      0,
+      'and they must all point at the same rule',
+    );
+  },
+);
 
 test(
   'two slides whose background resolves differently do not share a bitmap',
@@ -151,7 +185,11 @@ test(
 
     const out = await rasterizeGradientBackgrounds({
       themeVarsCss,
-      slidesHtml: [slide('18%', '22%'), slide('82%', '74%'), slide('18%', '22%')],
+      slidesHtml: [
+        slide('18%', '22%'),
+        slide('82%', '74%'),
+        slide('18%', '22%'),
+      ],
     });
 
     assert.equal(out.rasterCount, 2, 'two distinct positions, two bitmaps');
@@ -167,29 +205,39 @@ test(
     );
 
     const dataUrls = [
-      ...out.extraCss.matchAll(/url\("(data:image\/(?:png|jpeg);base64,[^"]+)"\)/g),
+      ...out.extraCss.matchAll(
+        /url\("(data:image\/(?:png|jpeg);base64,[^"]+)"\)/g,
+      ),
     ].map((m) => m[1]);
     assert.equal(dataUrls.length, 2);
-    assert.notEqual(dataUrls[0], dataUrls[1], 'and the two bitmaps must differ');
+    assert.notEqual(
+      dataUrls[0],
+      dataUrls[1],
+      'and the two bitmaps must differ',
+    );
   },
 );
 
-test('a background that cannot be resolved keeps its live gradient', { skip }, async () => {
-  // No `--g1x` anywhere and no fallback in the `var()`: rasterizing would guess
-  // at the position, so the slow-but-correct gradient stays.
-  const themeVarsCss = `.ps-theme {
+test(
+  'a background that cannot be resolved keeps its live gradient',
+  { skip },
+  async () => {
+    // No `--g1x` anywhere and no fallback in the `var()`: rasterizing would guess
+    // at the position, so the slow-but-correct gradient stays.
+    const themeVarsCss = `.ps-theme {
   --t-slide-bg-calm: radial-gradient(circle at var(--g1x) 20%, rgba(219,255,0,0.9) 0%, rgba(219,255,0,0) 70%), #06090b;
 }`;
-  const out = await rasterizeGradientBackgrounds({
-    themeVarsCss,
-    slidesHtml: ['<div class="slide slide-content slide-bg-calm"></div>'],
-  });
+    const out = await rasterizeGradientBackgrounds({
+      themeVarsCss,
+      slidesHtml: ['<div class="slide slide-content slide-bg-calm"></div>'],
+    });
 
-  assert.equal(out.rasterCount, 0);
-  assert.equal(out.extraCss, '');
-  assert.match(out.themeVarsCss, /radial-gradient\(/);
-  assert.deepEqual(out.stageClasses, ['']);
-});
+    assert.equal(out.rasterCount, 0);
+    assert.equal(out.extraCss, '');
+    assert.match(out.themeVarsCss, /radial-gradient\(/);
+    assert.deepEqual(out.stageClasses, ['']);
+  },
+);
 
 test('only slide-background vars are candidates', () => {
   const css = `.ps-theme {
@@ -207,8 +255,14 @@ test('only slide-background vars are candidates', () => {
 });
 
 test('var resolution refuses to guess', () => {
-  assert.equal(resolveCssVars('circle at var(--g1x) 10%', { '--g1x': '62%' }), 'circle at 62% 10%');
-  assert.equal(resolveCssVars('circle at var(--g1x, 50%) 10%', {}), 'circle at 50% 10%');
+  assert.equal(
+    resolveCssVars('circle at var(--g1x) 10%', { '--g1x': '62%' }),
+    'circle at 62% 10%',
+  );
+  assert.equal(
+    resolveCssVars('circle at var(--g1x, 50%) 10%', {}),
+    'circle at 50% 10%',
+  );
   assert.equal(resolveCssVars('circle at var(--g1x) 10%', {}), null);
   assert.equal(resolveCssVars('circle at 50% 10%', {}), 'circle at 50% 10%');
 });
@@ -218,7 +272,10 @@ test('the slide root is read for its variant and its own custom properties', () 
     '<div class="slide slide-content slide-bg-calm" style="--g1x:62%;--quote-scale:1">' +
     '<span style="--icg-icon-url:url(x.svg)"></span></div>';
   assert.equal(slideBgVariant(html), 'calm');
-  assert.deepEqual(slideRootVars(html), { '--g1x': '62%', '--quote-scale': '1' });
+  assert.deepEqual(slideRootVars(html), {
+    '--g1x': '62%',
+    '--quote-scale': '1',
+  });
   assert.equal(slideBgVariant('<div class="slide slide-content"></div>'), null);
 });
 
@@ -249,7 +306,8 @@ const STAGE_CSS = `
   }
 `;
 
-const DEMO_SLIDE = '<div class="slide slide-demo" style="--gx:57%"><div class="slide-inner"></div></div>';
+const DEMO_SLIDE =
+  '<div class="slide slide-demo" style="--gx:57%"><div class="slide-inner"></div></div>';
 
 /** A `--t-slide-gradient-bg` that resolves without help from the slide root. */
 const SELF_CONTAINED_GRADIENT =
@@ -262,45 +320,54 @@ const THEME_ON = (gradient) =>
 /** What every upstream export path appends after the theme block. */
 const EXPORT_GATE = '.ps-theme { --t-gradient-enabled: 0; }';
 
-test('an invisible pseudo-element layer is never rasterized', { skip }, async () => {
-  // The real upstream shape: the theme switches the layer on, the export path
-  // switches it back off. It carries a gradient and its `content` is set, but it
-  // computes to `opacity: 0` — so rasterizing it would put a gradient in the PDF
-  // that the export does not currently draw. The probe still runs here (the
-  // theme's `1` is enough to look), and the opacity test is what stops it.
-  const styleContent = THEME_ON(SELF_CONTAINED_GRADIENT) + EXPORT_GATE + STAGE_CSS;
-  const out = await rasterizeGradientBackgrounds({
-    themeVarsCss: THEME_ON(SELF_CONTAINED_GRADIENT),
-    slidesHtml: [DEMO_SLIDE],
-    styleContent,
-  });
+test(
+  'an invisible pseudo-element layer is never rasterized',
+  { skip },
+  async () => {
+    // The real upstream shape: the theme switches the layer on, the export path
+    // switches it back off. It carries a gradient and its `content` is set, but it
+    // computes to `opacity: 0` — so rasterizing it would put a gradient in the PDF
+    // that the export does not currently draw. The probe still runs here (the
+    // theme's `1` is enough to look), and the opacity test is what stops it.
+    const styleContent =
+      THEME_ON(SELF_CONTAINED_GRADIENT) + EXPORT_GATE + STAGE_CSS;
+    const out = await rasterizeGradientBackgrounds({
+      themeVarsCss: THEME_ON(SELF_CONTAINED_GRADIENT),
+      slidesHtml: [DEMO_SLIDE],
+      styleContent,
+    });
 
-  assert.equal(out.rasterCount, 0);
-  assert.equal(out.extraCss, '');
-  assert.deepEqual(out.stageClasses, ['']);
-});
+    assert.equal(out.rasterCount, 0);
+    assert.equal(out.extraCss, '');
+    assert.deepEqual(out.stageClasses, ['']);
+  },
+);
 
-test('a visible pseudo-element layer becomes a bitmap sized to its own box', { skip }, async () => {
-  // The same document without the export gate — the shape a fork produces when
-  // it keeps the layer visible on purpose.
-  const styleContent = THEME_ON(SELF_CONTAINED_GRADIENT) + STAGE_CSS;
-  const out = await rasterizeGradientBackgrounds({
-    themeVarsCss: THEME_ON(SELF_CONTAINED_GRADIENT),
-    slidesHtml: [DEMO_SLIDE],
-    styleContent,
-  });
+test(
+  'a visible pseudo-element layer becomes a bitmap sized to its own box',
+  { skip },
+  async () => {
+    // The same document without the export gate — the shape a fork produces when
+    // it keeps the layer visible on purpose.
+    const styleContent = THEME_ON(SELF_CONTAINED_GRADIENT) + STAGE_CSS;
+    const out = await rasterizeGradientBackgrounds({
+      themeVarsCss: THEME_ON(SELF_CONTAINED_GRADIENT),
+      slidesHtml: [DEMO_SLIDE],
+      styleContent,
+    });
 
-  assert.equal(out.rasterCount, 1);
-  assert.deepEqual(out.stageClasses, ['grad-px-0']);
-  assert.match(
-    out.extraCss,
-    /\.pdf-stage\.grad-px-0 > \.slide::before \{\s*background-image: url\("data:image\/(png|jpeg);base64,/,
-    'the bitmap must arrive as a background-image override on the pseudo-element',
-  );
-  // `inset: -12%` makes the layer 124% of the slide, so the bitmap has to cover
-  // that box — scaling it to the slide's width would leave the edges short.
-  assert.match(out.extraCss, /background-size: 100% 100%/);
-});
+    assert.equal(out.rasterCount, 1);
+    assert.deepEqual(out.stageClasses, ['grad-px-0']);
+    assert.match(
+      out.extraCss,
+      /\.pdf-stage\.grad-px-0 > \.slide::before \{\s*background-image: url\("data:image\/(png|jpeg);base64,/,
+      'the bitmap must arrive as a background-image override on the pseudo-element',
+    );
+    // `inset: -12%` makes the layer 124% of the slide, so the bitmap has to cover
+    // that box — scaling it to the slide's width would leave the edges short.
+    assert.match(out.extraCss, /background-size: 100% 100%/);
+  },
+);
 
 test(
   'a pseudo-element layer whose gradient never resolves is left alone',
@@ -322,21 +389,29 @@ test(
       styleContent: THEME_ON(unresolvable) + STAGE_CSS,
     });
 
-    assert.equal(out.rasterCount, 0, 'nothing paints, so there is nothing to rasterize');
+    assert.equal(
+      out.rasterCount,
+      0,
+      'nothing paints, so there is nothing to rasterize',
+    );
     assert.equal(out.extraCss, '');
   },
 );
 
-test('no styleContent means no pseudo-element pass at all', { skip }, async () => {
-  // The pass is opt-in on the caller handing over the real cascade; a caller that
-  // does not (PNG export, tests) must see exactly the old behaviour.
-  const out = await rasterizeGradientBackgrounds({
-    themeVarsCss: THEME_ON(SELF_CONTAINED_GRADIENT),
-    slidesHtml: [DEMO_SLIDE],
-  });
-  assert.equal(out.rasterCount, 0);
-  assert.equal(out.extraCss, '');
-});
+test(
+  'no styleContent means no pseudo-element pass at all',
+  { skip },
+  async () => {
+    // The pass is opt-in on the caller handing over the real cascade; a caller that
+    // does not (PNG export, tests) must see exactly the old behaviour.
+    const out = await rasterizeGradientBackgrounds({
+      themeVarsCss: THEME_ON(SELF_CONTAINED_GRADIENT),
+      slidesHtml: [DEMO_SLIDE],
+    });
+    assert.equal(out.rasterCount, 0);
+    assert.equal(out.extraCss, '');
+  },
+);
 
 test('a document that cannot show the layer never starts a browser', () => {
   // Not a nicety: without this, every PDF export and every `/export/pdf-slides`
@@ -344,7 +419,9 @@ test('a document that cannot show the layer never starts a browser', () => {
   // test is NOT Chrome-gated — the point is that no browser is involved.
   assert.equal(mayHaveVisibleGradientLayer(''), false, 'no CSS at all');
   assert.equal(
-    mayHaveVisibleGradientLayer('.slide-quote::before { background: linear-gradient(red, blue); }'),
+    mayHaveVisibleGradientLayer(
+      '.slide-quote::before { background: linear-gradient(red, blue); }',
+    ),
     false,
     'a gradient layer with no --t-gradient-enabled anywhere cannot be switched on',
   );
@@ -354,108 +431,138 @@ test('a document that cannot show the layer never starts a browser', () => {
     "the theme's own 'off'",
   );
   assert.equal(
-    mayHaveVisibleGradientLayer('.ps-theme{--t-gradient-enabled:1}.ps-theme{--t-gradient-enabled:0}'),
+    mayHaveVisibleGradientLayer(
+      '.ps-theme{--t-gradient-enabled:1}.ps-theme{--t-gradient-enabled:0}',
+    ),
     true,
     'one non-zero declaration is enough to look, even when a later rule turns it off again',
   );
   assert.equal(
-    mayHaveVisibleGradientLayer('.ps-theme { --t-gradient-enabled: var(--fork-switch); }'),
+    mayHaveVisibleGradientLayer(
+      '.ps-theme { --t-gradient-enabled: var(--fork-switch); }',
+    ),
     true,
     'a value we cannot read counts as "might paint"',
   );
 });
 
-test('the pseudo-element raster follows what actually paints', { skip }, async () => {
-  // The property worth guarding is causal — *a layer is rasterized exactly when
-  // it paints* — and it needs both directions to mean anything. Asserting only
-  // "the shipped export has no bitmaps" pins upstream **policy**
-  // (`--t-gradient-enabled: 0` in every export path), which a fork legitimately
-  // inverts, and it passes just as happily when the feature is broken and nothing
-  // could ever be rasterized. That is not hypothetical: this assertion was green
-  // for exactly that wrong reason until `themeVarsCssText()` started declaring
-  // `--t-slide-gradient-bg` on the slide root, because before that `midnight`'s
-  // generated gradient was guaranteed-invalid and painted nothing at all.
-  const theme = await loadThemeAssets(repoRoot, 'amethyst');
-  const html = await buildSlidesPdfHtml(repoRoot, calmDeck(2), { theme });
-  assert.equal(/grad-px-\d+/.test(html), false, 'no pseudo-element raster upstream');
+test(
+  'the pseudo-element raster follows what actually paints',
+  { skip },
+  async () => {
+    // The property worth guarding is causal — *a layer is rasterized exactly when
+    // it paints* — and it needs both directions to mean anything. Asserting only
+    // "the shipped export has no bitmaps" pins upstream **policy**
+    // (`--t-gradient-enabled: 0` in every export path), which a fork legitimately
+    // inverts, and it passes just as happily when the feature is broken and nothing
+    // could ever be rasterized. That is not hypothetical: this assertion was green
+    // for exactly that wrong reason until `themeVarsCssText()` started declaring
+    // `--t-slide-gradient-bg` on the slide root, because before that `midnight`'s
+    // generated gradient was guaranteed-invalid and painted nothing at all.
+    const theme = await loadThemeAssets(repoRoot, 'amethyst');
+    const html = await buildSlidesPdfHtml(repoRoot, calmDeck(2), { theme });
+    assert.equal(
+      /grad-px-\d+/.test(html),
+      false,
+      'no pseudo-element raster upstream',
+    );
 
-  // `deckyard` has `gradient.enabled: false`, so the pre-check short-circuits and
-  // the probe never runs. `midnight` is the shipped theme that switches the layers
-  // on, so it is the one that actually walks the probe and lands on the opacity
-  // test.
-  const gradientTheme = await loadThemeAssets(repoRoot, 'midnight');
-  const layerDeck = {
-    title: 'Pseudo-element layers',
-    theme: 'midnight',
-    slides: [
-      { id: 's0', type: 'quote-slide', content: { quote: 'Zo dan.', author: 'Iemand' } },
-      { id: 's1', type: 'chapter-title-slide', content: { title: 'Hoofdstuk' } },
-    ],
-  };
-  const layerHtml = await buildSlidesPdfHtml(repoRoot, layerDeck, { theme: gradientTheme });
-  assert.equal(
-    /grad-px-\d+/.test(layerHtml),
-    false,
-    'the export gate still reaches the layers, so none of them is rasterized',
-  );
-
-  // Now the other direction, on the same real cascade with only the knob moved:
-  // a later, equal-specificity declaration re-opens the gate, the way a fork that
-  // wants its gradient in the PDF does. Those layers must now become bitmaps —
-  // and one bitmap *per slide*, because `gradientVarsForSlide()` puts each slide's
-  // blobs somewhere else and #491 dedupes on the resolved value, not the declared
-  // one. A single shared bitmap here would mean the per-slide jitter is dead again.
-  const css = await loadExportCssBundle(repoRoot, gradientTheme, null);
-  const slidesHtml = layerDeck.slides.map((s) =>
-    renderSlideHtml(s, { theme: gradientTheme, stripEditorAttrs: true }),
-  );
-  const out = await rasterizeGradientBackgrounds({
-    themeVarsCss: css.themeVarsCss,
-    slidesHtml,
-    styleContent: `${buildStyleContent(css)}\n.ps-theme { --t-gradient-enabled: 1; }`,
-  });
-  assert.equal(out.rasterCount, 2, 'two slides, two distinct gradient positions, two bitmaps');
-  assert.notEqual(
-    out.stageClasses[0],
-    out.stageClasses[1],
-    'and they must not be pointed at the same rule',
-  );
-});
-
-test('the pseudo-element probe never fetches a subresource', { skip }, async () => {
-  // The probe loads real slide HTML in Chrome, and it does so *before*
-  // `embedImgSrcDataUrls` has inlined remote images through the SSRF guard. So
-  // the markup it hands to Chrome can still carry an attacker-chosen
-  // `<img src="http://…">` — a theme's `assets.logo`, custom HTML — and without
-  // request interception Chrome fetches it: no guard, no allow-list, straight
-  // out of the deck. Pinned with a real listener rather than an assertion about
-  // the code, because only the socket proves it.
-  const hits = [];
-  const srv = http.createServer((req, res) => {
-    hits.push(req.url);
-    res.writeHead(200, { 'content-type': 'image/png' });
-    res.end(Buffer.from('89504e470d0a1a0a', 'hex'));
-  });
-  await new Promise((resolve) => srv.listen(0, '127.0.0.1', resolve));
-  try {
-    const url = `http://127.0.0.1:${srv.address().port}/should-never-be-fetched.png`;
-    // The theme switches the layer on, so the pre-check lets the probe run.
-    const themeVarsCss = THEME_ON(SELF_CONTAINED_GRADIENT);
-    await rasterizeGradientBackgrounds({
-      themeVarsCss,
-      slidesHtml: [
-        `<div class="slide slide-demo"><img src="${url}" alt="Logo" /></div>`,
+    // `deckyard` has `gradient.enabled: false`, so the pre-check short-circuits and
+    // the probe never runs. `midnight` is the shipped theme that switches the layers
+    // on, so it is the one that actually walks the probe and lands on the opacity
+    // test.
+    const gradientTheme = await loadThemeAssets(repoRoot, 'midnight');
+    const layerDeck = {
+      title: 'Pseudo-element layers',
+      theme: 'midnight',
+      slides: [
+        {
+          id: 's0',
+          type: 'quote-slide',
+          content: { quote: 'Zo dan.', author: 'Iemand' },
+        },
+        {
+          id: 's1',
+          type: 'chapter-title-slide',
+          content: { title: 'Hoofdstuk' },
+        },
       ],
-      styleContent: themeVarsCss + STAGE_CSS,
+    };
+    const layerHtml = await buildSlidesPdfHtml(repoRoot, layerDeck, {
+      theme: gradientTheme,
     });
-    // Chrome dispatches subresource requests as it parses, so give an
-    // un-intercepted fetch every chance to arrive before we conclude it did not.
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    assert.deepEqual(hits, [], 'the probe must not reach the network');
-  } finally {
-    srv.close();
-  }
-});
+    assert.equal(
+      /grad-px-\d+/.test(layerHtml),
+      false,
+      'the export gate still reaches the layers, so none of them is rasterized',
+    );
+
+    // Now the other direction, on the same real cascade with only the knob moved:
+    // a later, equal-specificity declaration re-opens the gate, the way a fork that
+    // wants its gradient in the PDF does. Those layers must now become bitmaps —
+    // and one bitmap *per slide*, because `gradientVarsForSlide()` puts each slide's
+    // blobs somewhere else and #491 dedupes on the resolved value, not the declared
+    // one. A single shared bitmap here would mean the per-slide jitter is dead again.
+    const css = await loadExportCssBundle(repoRoot, gradientTheme, null);
+    const slidesHtml = layerDeck.slides.map((s) =>
+      renderSlideHtml(s, { theme: gradientTheme, stripEditorAttrs: true }),
+    );
+    const out = await rasterizeGradientBackgrounds({
+      themeVarsCss: css.themeVarsCss,
+      slidesHtml,
+      styleContent: `${buildStyleContent(css)}\n.ps-theme { --t-gradient-enabled: 1; }`,
+    });
+    assert.equal(
+      out.rasterCount,
+      2,
+      'two slides, two distinct gradient positions, two bitmaps',
+    );
+    assert.notEqual(
+      out.stageClasses[0],
+      out.stageClasses[1],
+      'and they must not be pointed at the same rule',
+    );
+  },
+);
+
+test(
+  'the pseudo-element probe never fetches a subresource',
+  { skip },
+  async () => {
+    // The probe loads real slide HTML in Chrome, and it does so *before*
+    // `embedImgSrcDataUrls` has inlined remote images through the SSRF guard. So
+    // the markup it hands to Chrome can still carry an attacker-chosen
+    // `<img src="http://…">` — a theme's `assets.logo`, custom HTML — and without
+    // request interception Chrome fetches it: no guard, no allow-list, straight
+    // out of the deck. Pinned with a real listener rather than an assertion about
+    // the code, because only the socket proves it.
+    const hits = [];
+    const srv = http.createServer((req, res) => {
+      hits.push(req.url);
+      res.writeHead(200, { 'content-type': 'image/png' });
+      res.end(Buffer.from('89504e470d0a1a0a', 'hex'));
+    });
+    await new Promise((resolve) => srv.listen(0, '127.0.0.1', resolve));
+    try {
+      const url = `http://127.0.0.1:${srv.address().port}/should-never-be-fetched.png`;
+      // The theme switches the layer on, so the pre-check lets the probe run.
+      const themeVarsCss = THEME_ON(SELF_CONTAINED_GRADIENT);
+      await rasterizeGradientBackgrounds({
+        themeVarsCss,
+        slidesHtml: [
+          `<div class="slide slide-demo"><img src="${url}" alt="Logo" /></div>`,
+        ],
+        styleContent: themeVarsCss + STAGE_CSS,
+      });
+      // Chrome dispatches subresource requests as it parses, so give an
+      // un-intercepted fetch every chance to arrive before we conclude it did not.
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      assert.deepEqual(hits, [], 'the probe must not reach the network');
+    } finally {
+      srv.close();
+    }
+  },
+);
 
 after(async () => {
   await closePuppeteerBrowser();

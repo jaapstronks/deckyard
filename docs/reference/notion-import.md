@@ -46,7 +46,7 @@ The client and parser (`server/utils/notion/`, 5 modules, 772 lines):
 - `server/utils/notion/pages.js` — page-level reads: search, rich content
   extraction with sections/images/tables, the AI text formatter, and two
   plain-text variants (full and a cheap preview).
-- `server/utils/notion/blocks.js` — block *writers*: divider, heading,
+- `server/utils/notion/blocks.js` — block _writers_: divider, heading,
   paragraph, embed, callout, `appendBlocksToPage`, and
   `publishEmbedToNotionPage`.
 - `server/utils/notion/index.js` — the barrel (the sole public seam; every
@@ -98,10 +98,10 @@ Client surfaces:
 Deckyard stores **no Notion content of its own** — no page cache, no sync state,
 no token per user. Two things persist:
 
-| Where | What |
-|---|---|
+| Where                                                 | What                                                                                                                                                                                                                                                                                                             |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `presentations.notion_source_page_id` (migration 001) | The normalized 32-hex page id a deck was imported from. Written by both import routes and by the AI wizard when it carries one; exposed as `notionSourcePageId` (`mapPresentationRow` in `server/storage/presentations/index.js`). It exists for exactly one feature: knowing which page to append the embed to. |
-| `NOTION_SECRET` (environment) | The integration token. Not in the database, not per organization. |
+| `NOTION_SECRET` (environment)                         | The integration token. Not in the database, not per organization.                                                                                                                                                                                                                                                |
 
 The intermediate shape that never persists is worth naming, because three
 modules pass it around. `extractRichContentFromPage()` returns:
@@ -135,7 +135,7 @@ both structurally and as a pipe-delimited text rendering; images are lifted into
      children up to depth 3.
    - Re-host every extracted image so the deck stays durable: to ImageKit when it
      is configured, otherwise through Deckyard's own media library (see
-     *Implementation status*).
+     _Implementation status_).
    - `formatNotionContentForAi()` — flatten to the `NOTION PAGE: …` /
      `=== CONTENT ===` text block.
    - Run the two-phase pipeline: `generateOutline` →
@@ -206,21 +206,21 @@ message, which is the actual cause nine times out of ten.
 
 ## Config & flags
 
-| Variable | Effect |
-|---|---|
-| `NOTION_SECRET` | The internal integration token. Unset → `notionEnabled()` is false and every Notion route answers **501** `notion_not_configured`. This is the only switch import and publish need. |
-| `NOTION_FEATURE` | Turns on the flagged wizard endpoints (`subjects`, `compose`, `suggest`) via `enableNotion` in `server/config/flags-snapshot.js`. Forced off in demo mode. |
-| `IMAGEKIT_*` | When configured, imported images are re-hosted through ImageKit. See [`media-library.md`](media-library.md). |
+| Variable                  | Effect                                                                                                                                                                                  |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NOTION_SECRET`           | The internal integration token. Unset → `notionEnabled()` is false and every Notion route answers **501** `notion_not_configured`. This is the only switch import and publish need.     |
+| `NOTION_FEATURE`          | Turns on the flagged wizard endpoints (`subjects`, `compose`, `suggest`) via `enableNotion` in `server/config/flags-snapshot.js`. Forced off in demo mode.                              |
+| `IMAGEKIT_*`              | When configured, imported images are re-hosted through ImageKit. See [`media-library.md`](media-library.md).                                                                            |
 | `enableAi` (feature flag) | Does **not** gate the Notion routes — the dispatcher runs before the AI gate — but the import path calls the AI pipeline, so an install with AI off has an import that cannot complete. |
 
 `GET /api/notion/status` reports both switches to the client as `enabled`
-(token present) and `fullFeatures` (token present *and* flag on), so the UI
+(token present) and `fullFeatures` (token present _and_ flag on), so the UI
 never offers a button that can only 501.
 
 ## Authz & tenancy
 
 - **Every Notion route sits behind the login gate.** `handleNotion` is
-  dispatched from `server/routes/api/index.js` *after* the
+  dispatched from `server/routes/api/index.js` _after_ the
   `authEnabled() && !authedUser → 401` check, so the individual handlers do no
   authentication of their own.
 - **There is no per-deck authorization**, because the import creates a deck

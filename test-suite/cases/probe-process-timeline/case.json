@@ -26,9 +26,7 @@
     {
       "type": "kpi-metrics-slide",
       "because": "pilot outcome figures: 11.4 to 3.2 days, 31% to 9%, 3.1 to 4.4",
-      "acceptable": [
-        "table-slide"
-      ],
+      "acceptable": ["table-slide"],
       "acceptableWhy": "before/after pairs are legitimately tabular"
     }
   ],

@@ -31,7 +31,9 @@ import assert from 'node:assert/strict';
 
 // Assembled rather than written as one literal so secret scanners do not flag
 // it; authConfigError() only requires MIN_AUTH_SECRET_LENGTH characters.
-process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
+process.env.AUTH_SECRET = ['deckyard', 'test', 'auth']
+  .join('-')
+  .padEnd(40, '0');
 delete process.env.AUTH_ENABLED;
 delete process.env.AUTH_DEV_BYPASS;
 process.env.MULTI_ORG_ENABLED = 'true';
@@ -43,11 +45,12 @@ const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { sessionVersion } = await import('../server/utils/session-version.js');
 const auth = await import('../server/auth/auth.js');
-const { handleOrganizationMembers } = await import(
-  '../server/routes/api/organization-members.js'
-);
-const { handleAdminUsers } = await import('../server/routes/api/admin-users.js');
-const { authedRouteContext } = await import('./helpers/authed-route-context.js');
+const { handleOrganizationMembers } =
+  await import('../server/routes/api/organization-members.js');
+const { handleAdminUsers } =
+  await import('../server/routes/api/admin-users.js');
+const { authedRouteContext } =
+  await import('./helpers/authed-route-context.js');
 
 const UPDATED_AT = '2026-02-01T00:00:00.000Z';
 const OWNER = 'zoe@example.com';
@@ -201,8 +204,13 @@ function withSession(method, body) {
   auth.setSessionCookie(
     { headers: {} },
     sink,
-    { email: OWNER, role: 'admin', name: 'zoe', v: sessionVersion({ updated_at: UPDATED_AT }) },
-    { organizationId: ORG }
+    {
+      email: OWNER,
+      role: 'admin',
+      name: 'zoe',
+      v: sessionVersion({ updated_at: UPDATED_AT }),
+    },
+    { organizationId: ORG },
   );
   return fakeRequest(method, body, {
     cookie: String(sink.headers['Set-Cookie']).split(';')[0],
@@ -260,11 +268,16 @@ test('an instance without email configuration does not claim a mail went out', a
 
   assert.equal(status, 201);
   assert.equal(member.isNewUser, true, 'the account was created');
-  assert.equal(member.invitationSent, false, 'but nothing was sent, and the response says so');
   assert.equal(
-    db.__tables.user_organizations.filter((r) => r.organization_id === ORG).length,
+    member.invitationSent,
+    false,
+    'but nothing was sent, and the response says so',
+  );
+  assert.equal(
+    db.__tables.user_organizations.filter((r) => r.organization_id === ORG)
+      .length,
     2,
-    'the membership stands either way — only the mail is missing'
+    'the membership stands either way — only the mail is missing',
   );
 });
 
@@ -306,7 +319,11 @@ test('adding someone who already has an account sends nothing and says so', asyn
   const { status, member } = await invite('ex@example.com');
 
   assert.equal(status, 201);
-  assert.equal(member.isNewUser, false, 'no account was created, so there is no setup link');
+  assert.equal(
+    member.isNewUser,
+    false,
+    'no account was created, so there is no setup link',
+  );
   assert.equal(member.invitationSent, false);
   assert.equal(fetchCalls, 0, 'and no mail was attempted at all');
 });
@@ -345,7 +362,9 @@ async function resend(userId) {
     repoRoot: null,
     req: withSession('POST', {}),
     res,
-    url: new URL(`http://localhost/api/admin/users/${userId}/resend-invitation`),
+    url: new URL(
+      `http://localhost/api/admin/users/${userId}/resend-invitation`,
+    ),
   });
   await handleAdminUsers(ctx);
   return { status: res.statusCode, body: res.body() };
@@ -360,7 +379,11 @@ test('a resend that could not be sent is not reported as sent', async () => {
 
   assert.equal(status, 200);
   assert.equal(body.ok, true);
-  assert.equal(body.invitationSent, false, 'no Brevo key, so nothing was resent');
+  assert.equal(
+    body.invitationSent,
+    false,
+    'no Brevo key, so nothing was resent',
+  );
 });
 
 test('a resend that did go out is reported as sent', async () => {

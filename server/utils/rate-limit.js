@@ -74,7 +74,10 @@ export function getClientIp(req) {
     // added, which sits `trustedProxyCount` positions from the right.
     const xf = String(req.headers?.['x-forwarded-for'] || '').trim();
     if (xf) {
-      const ips = xf.split(',').map((s) => s.trim()).filter(Boolean);
+      const ips = xf
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
       const idx = ips.length - trustedProxyCount();
       if (idx >= 0 && isValidIp(ips[idx])) {
         return ips[idx];
@@ -83,7 +86,7 @@ export function getClientIp(req) {
       // don't guess — fall through to X-Real-IP / socket rather than trust a
       // client-supplied leftmost value.
       log.warn(
-        `Untrusted/short X-Forwarded-For (len ${ips.length}, hops ${trustedProxyCount()})`
+        `Untrusted/short X-Forwarded-For (len ${ips.length}, hops ${trustedProxyCount()})`,
       );
     }
 
@@ -218,7 +221,6 @@ export function allowRequestSync(key, { capacity, refillPerSec }) {
   return allowRequestInMemory(key, { capacity, refillPerSec });
 }
 
-
 /**
  * Throttle a password-login attempt. Consumes one token per attempt from a
  * per-IP and (only if the IP is still under budget) a per-email bucket.
@@ -234,7 +236,6 @@ export async function allowLoginAttempt({ ip, email } = {}) {
   return emailOk;
 }
 
-
 /**
  * Throttle an anonymous share-link password-verification attempt. Consumes one
  * token per attempt from a per-IP bucket.
@@ -245,7 +246,6 @@ export async function allowShareVerifyAttempt({ ip } = {}) {
   const ipKey = `share-verify:ip:${String(ip || 'unknown')}`;
   return allowRequest(ipKey, SHARE_VERIFY_LIMITS.ip);
 }
-
 
 /**
  * Throttle an anonymous notes-companion save. Consumes one token per write

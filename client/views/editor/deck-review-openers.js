@@ -57,7 +57,9 @@ export function createDeckReviewOpeners({
     rerenderPreview();
     requestAnimationFrame(() => {
       try {
-        const active = getSlideListEl()?.querySelector?.('.list-item.is-active');
+        const active = getSlideListEl()?.querySelector?.(
+          '.list-item.is-active',
+        );
         active?.scrollIntoView?.({ block: 'nearest' });
       } catch {
         /* ignore */

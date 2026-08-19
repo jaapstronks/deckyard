@@ -63,8 +63,16 @@
   --kpi-tile-border: rgba(0, 0, 0, 0.16);
   /* Deltas read against the tile, not the slide, so both stay legible on
      every fill. */
-  --kpi-delta-pos: color-mix(in srgb, var(--slide-accent) 75%, var(--kpi-tile-fg));
-  --kpi-delta-neg: color-mix(in srgb, var(--slide-color-danger) 80%, var(--kpi-tile-fg));
+  --kpi-delta-pos: color-mix(
+    in srgb,
+    var(--slide-accent) 75%,
+    var(--kpi-tile-fg)
+  );
+  --kpi-delta-neg: color-mix(
+    in srgb,
+    var(--slide-color-danger) 80%,
+    var(--kpi-tile-fg)
+  );
 
   display: flex;
   flex-direction: column;
@@ -224,10 +232,12 @@
    a solid grey rectangle); keep the hard-edged accent ring. */
 @media print {
   .slide-kpi-metrics.is-accent-best .kpi-metric.is-primary {
-    box-shadow: 0 0 0 6px color-mix(in srgb, var(--slide-accent) 18%, transparent);
+    box-shadow: 0 0 0 6px
+      color-mix(in srgb, var(--slide-accent) 18%, transparent);
   }
   .slide-kpi-metrics.is-accent-risk .kpi-metric.is-primary {
-    box-shadow: 0 0 0 6px color-mix(in srgb, var(--slide-color-danger) 16%, transparent);
+    box-shadow: 0 0 0 6px
+      color-mix(in srgb, var(--slide-color-danger) 16%, transparent);
   }
 }
 
@@ -235,26 +245,32 @@
 .slide-kpi-metrics.has-bottom-subheading .kpi-metric {
   --slide-card-padding: var(--slide-space-6) var(--slide-space-8);
 }
-.slide-kpi-metrics.has-bottom-subheading .kpi-grid[data-metric-count='1'] .kpi-metric {
+.slide-kpi-metrics.has-bottom-subheading
+  .kpi-grid[data-metric-count='1']
+  .kpi-metric {
   min-height: 400px;
   --slide-card-padding: var(--slide-space-10) var(--slide-space-12);
 }
-.slide-kpi-metrics.has-bottom-subheading .kpi-grid[data-metric-count='2'] .kpi-metric {
+.slide-kpi-metrics.has-bottom-subheading
+  .kpi-grid[data-metric-count='2']
+  .kpi-metric {
   min-height: 240px;
   --slide-card-padding: var(--slide-space-6);
 }
-.slide-kpi-metrics.has-bottom-subheading .kpi-grid[data-metric-count='3'] .kpi-metric {
+.slide-kpi-metrics.has-bottom-subheading
+  .kpi-grid[data-metric-count='3']
+  .kpi-metric {
   min-height: 220px;
   --slide-card-padding: var(--slide-space-6);
 }
 .slide-kpi-metrics.has-bottom-subheading .kpi-value-num {
   font-size: var(--slide-text-kpi-sm);
 }
-.slide-kpi-metrics.has-bottom-subheading .kpi-grid[data-metric-count='1'] .kpi-value-num {
+.slide-kpi-metrics.has-bottom-subheading
+  .kpi-grid[data-metric-count='1']
+  .kpi-value-num {
   font-size: 120px; /* allowlist: KPI display figure fitted to the single tile with a bottom subheading (see .kpi-unit) */
 }
-
-
 
 /* Header-block alignment (author-driven, horizontal axis). `is-align-center`
    comes from the type's `headerAlign` and moves the heading + subheading as

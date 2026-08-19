@@ -26,7 +26,7 @@ A slide type is never deleted in one step. Three rungs:
    image, or accepted as a loss. Exit code 1 while any deck still uses it, so a
    CI/maintenance step can gate on a clean scan.
 3. **Removed** — the definition, its CSS and every reference are gone. Decks
-   that still carry the type render as an *archived slide*: named, explained and
+   that still carry the type render as an _archived slide_: named, explained and
    with their content still visible (see "The render contract" below). Only take
    this rung after rung 2 comes back clean.
 
@@ -34,7 +34,7 @@ A slide type is never deleted in one step. Three rungs:
 mounted, still a support promise, and still an exception every later refactor
 has to route around.
 
-## Deprecating a *type* versus deprecating an *alias*
+## Deprecating a _type_ versus deprecating an _alias_
 
 The ladder above describes retiring a type: a definition nobody should author
 any more, and the companions that describe it go with it. An **alias** is a
@@ -55,8 +55,8 @@ companion left behind on the retired name is not just rot, it is a **hole in the
 survivor**.
 
 That failure is not hypothetical. The first version of #451 moved the
-*authoring* companions (picker description, aliases, schematic, category) to
-`list-slide` and left the *editing* companions (`INLINE_DESCRIPTORS`,
+_authoring_ companions (picker description, aliases, schematic, category) to
+`list-slide` and left the _editing_ companions (`INLINE_DESCRIPTORS`,
 `INSPECTOR_KEEPS`) plus the conversion map, the form router and the field
 special-cases pointing at `lijstje-slide`. Newly authored lists lost affordances
 that legacy lists kept — the asymmetry exactly inverted — and the **Convert**
@@ -69,7 +69,7 @@ Two things to carry into the next one:
   authoring side plus two editing tables; the conversion map in
   `shared/slide-types/convert.js`, the form router and the field special-cases
   in `render-field.js` are outside it. `grep -rn "'<old-name>'"` is the actual
-  worklist, and every hit is a *move*.
+  worklist, and every hit is a _move_.
 - **Pin the parity while both names exist.** For the list consolidation a
   dedicated test asserted that no module branched on one name without the other
   — the cheap guardrail an alias needs between rung 1 and rung 3. It was written
@@ -95,7 +95,7 @@ decks, and scan every deployment, not just the dev machine.
 
 **A "clean" scan is only as wide as the store you pointed it at.** It says
 nothing about the installs you do not have on disk — every fork, every
-self-host — so treat it as a check on *your* deployment, not as permission.
+self-host — so treat it as a check on _your_ deployment, not as permission.
 Where the type has a successor with the same field schema, the honest answer is
 step 0 below; where it has none, the tombstone plus the archived-slide render is
 what stored decks fall back on.
@@ -105,7 +105,7 @@ stores were clean and the alias was assumed to be barely used; the fork ran the
 rename against its production Postgres on 2026-07-31 and found **45 of 118
 decks / 565 slides** still carrying the old name, plus 28 version snapshots /
 127 slides. Shipping rung 3 without the migration would have turned those 565
-slides into *archived* placeholders in a live deployment. The scan that said
+slides into _archived_ placeholders in a live deployment. The scan that said
 "clean" was not wrong — it was answering about a store that had never seen those
 decks.
 
@@ -116,7 +116,7 @@ everything else never was is exactly why everything else may go. And a tier-2
 type already declares a `fallback`, which is the first candidate for the
 `successor` field: it names the tier-1 contract that holds the type's content
 without dropping any. It is a candidate rather than the answer, because a
-successor also has to carry the *fields*, which a degradation target does not
+successor also has to carry the _fields_, which a degradation target does not
 promise.
 
 Then, in rough dependency order:
@@ -142,19 +142,20 @@ Then, in rough dependency order:
    claimed CSS. **Two deliberate residues are left in shared sheets** and a
    removal still has to visit them by hand:
    - `03-components/70-step-reveal.css` — per-type step blocks for `image`,
-     `kpi-metrics`, `lijstje`, `table` and `timeline`. That is styling *of the
-     step machinery*, so it stays with the machinery (same rule as
+     `kpi-metrics`, `lijstje`, `table` and `timeline`. That is styling _of the
+     step machinery_, so it stays with the machinery (same rule as
      [_Behaviour stays in its layer_](./slide-type-directory.md#behaviour-stays-in-its-layer-decided-2026-08-01)).
      A removed type's own selector still has to be pruned from these lists by
      hand — `.slide-card-stack .card-stack-row` went with `card-stack-slide`.
    - `01-layout-and-title/00-base.css` — `.slide-unresolved`, the fallback
-     rendered for a type that is *not* registered. It cannot be claimed in
+     rendered for a type that is _not_ registered. It cannot be claimed in
      `TYPE_CSS`, which only accepts registered types.
 
    Everywhere else, a `.slide-<x>` selector now lives in a sheet that type
    claims. Still read the class off the definition's `renderHtml` and grep
-   *that* before calling the CSS gone: the removal guardrail matches the type
+   _that_ before calling the CSS gone: the removal guardrail matches the type
    **id**, and a CSS class is not derived from it.
+
 3. **Deregister** — the import and the `CORE_SLIDE_TYPES` entry in
    `shared/slide-types/registry.js`.
 4. **Remove the per-type entries in the hand-maintained tables that live outside
@@ -167,7 +168,7 @@ Then, in rough dependency order:
    `sample`, its `group`, and since #477/#533 its AI catalog entry and
    `aiExamples` (both live in the type's own `ai.js`) — go with the directory
    in step 3 and need no separate visit.
-   Not in the matrix, still by hand — each one branches on the type *name* and
+   Not in the matrix, still by hand — each one branches on the type _name_ and
    nothing checks that the set is complete (#451 hit all three):
    - the conversion map in `shared/slide-types/convert.js`, if the type was a
      conversion source or target.
@@ -212,7 +213,7 @@ Then, in rough dependency order:
    remove the plumbing or note in a comment that no core type declares it.
 9. **Verify**: `npm test`, `npm run lint`, `npm run i18n:validate`.
 
-### What you do *not* have to do
+### What you do _not_ have to do
 
 - ~~**i18n**: deprecated types are excluded from extraction, so a type that
   spent time on rung 1 has no keys in `client/i18n/<locale>/slide-types.json`.~~
@@ -236,15 +237,15 @@ Then, in rough dependency order:
 **25 files, 715 deletions.** Freeform was the cheapest possible case — already
 deprecated, its canvas editor already removed (#252), zero decks using it, no
 i18n keys, no AI catalog entry, no inline-edit descriptor, no conversion target.
-Grouped by *why* each file had to change:
+Grouped by _why_ each file had to change:
 
-| Group | Files | What was in them |
-|---|---|---|
-| **Owned by the type** | 2 | the definition (`types/freeform-slide.js`, 328 lines) and its stylesheet (`80-freeform.css`, 320 lines) |
-| **Registration / wiring** | 5 | registry import + map entry, the CSS aggregator `@import`, `INSPECTOR_KEEPS`, `EXCLUDED_TYPES`, the curated picker group (now the type's own `group`, so this row is one file smaller for the next removal) |
-| **Duplicated knowledge** | 18 | 10 comments naming the type, 3 reference docs (per-type rows + a hand-written core-type count in 4 places), 5 tests enumerating types by hand |
+| Group                     | Files | What was in them                                                                                                                                                                                            |
+| ------------------------- | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owned by the type**     | 2     | the definition (`types/freeform-slide.js`, 328 lines) and its stylesheet (`80-freeform.css`, 320 lines)                                                                                                     |
+| **Registration / wiring** | 5     | registry import + map entry, the CSS aggregator `@import`, `INSPECTOR_KEEPS`, `EXCLUDED_TYPES`, the curated picker group (now the type's own `group`, so this row is one file smaller for the next removal) |
+| **Duplicated knowledge**  | 18    | 10 comments naming the type, 3 reference docs (per-type rows + a hand-written core-type count in 4 places), 5 tests enumerating types by hand                                                               |
 
-Two of twenty-five files were actually *about* freeform. The other 23 changed
+Two of twenty-five files were actually _about_ freeform. The other 23 changed
 because the type's name is written into tables, prose and test fixtures that
 nothing derives from the registry.
 
@@ -256,7 +257,7 @@ consumers derive their lists from the registry instead of restating them.
 ## Second measurement: split-partner-title-slide (2026-07-30)
 
 The KPI measurement that closes the slide-type-seam done-gate (A7.1 phase 2),
-run *after* the fact-rollout landed (#403–#477). Same counting method as
+run _after_ the fact-rollout landed (#403–#477). Same counting method as
 freeform — every file the removal touches, grouped by why — so the two numbers
 are comparable.
 
@@ -275,23 +276,23 @@ The **production** scan this removal owed ran on slides.ciiic.nl on 2026-07-31:
 real deck degrades and the removal ships without a conversion migration —
 unlike `lijstje-slide`, where the same production store held 565 slides.
 
-**28 files, 472 deletions.** Grouped by *why*:
+**28 files, 472 deletions.** Grouped by _why_:
 
-| Group | Files | What was in them |
-|---|---|---|
-| **Owned by the type** | 4 | the definition (`types/split-partner-title-slide.js`, 147 lines), its directory companions (`authoring.js`, `inline-edit.js`), and its 118 lines of CSS — a block at the top of the then-shared `02-content-and-media/02-layouts.css` (that sheet has since been renamed to `40-quote.css` and claimed by quote-slide), not a file of its own |
-| **Registration / wiring** | 3 | `registry.js` (the one hand edit) + the two **generated** aggregators `authoring.js` / `inline-edit.js` (regenerated, not hand-edited) |
-| **Removal mechanism** | 2 | the `removed.js` tombstone and the archival→removal guardrail in `slide-types-policy.test.js` — every removal touches these by design |
-| **Derived docs** | 2 | `README.md`, `slide-type-inventory.md` — machine-generated count/inventory, now *derived* rather than hand-restated |
-| **Residual duplicated knowledge** | 5 | two hand table rows (`editor-inspector.md`, `wysiwyg-inline-editing.md`), a per-type coverage pin (`inspector-form.test.js`), per-type render tests (`theme-background-presets.test.js`), a sample-content allowlist entry (`i18n-audit-allowlist.json`) |
-| **Locale payloads** | 12 | `slideType.split-partner-title-slide.*` — six keys in every `client/i18n/<locale>/slide-types.json`, which the type should never have had (see below) |
+| Group                             | Files | What was in them                                                                                                                                                                                                                                                                                                                              |
+| --------------------------------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owned by the type**             | 4     | the definition (`types/split-partner-title-slide.js`, 147 lines), its directory companions (`authoring.js`, `inline-edit.js`), and its 118 lines of CSS — a block at the top of the then-shared `02-content-and-media/02-layouts.css` (that sheet has since been renamed to `40-quote.css` and claimed by quote-slide), not a file of its own |
+| **Registration / wiring**         | 3     | `registry.js` (the one hand edit) + the two **generated** aggregators `authoring.js` / `inline-edit.js` (regenerated, not hand-edited)                                                                                                                                                                                                        |
+| **Removal mechanism**             | 2     | the `removed.js` tombstone and the archival→removal guardrail in `slide-types-policy.test.js` — every removal touches these by design                                                                                                                                                                                                         |
+| **Derived docs**                  | 2     | `README.md`, `slide-type-inventory.md` — machine-generated count/inventory, now _derived_ rather than hand-restated                                                                                                                                                                                                                           |
+| **Residual duplicated knowledge** | 5     | two hand table rows (`editor-inspector.md`, `wysiwyg-inline-editing.md`), a per-type coverage pin (`inspector-form.test.js`), per-type render tests (`theme-background-presets.test.js`), a sample-content allowlist entry (`i18n-audit-allowlist.json`)                                                                                      |
+| **Locale payloads**               | 12    | `slideType.split-partner-title-slide.*` — six keys in every `client/i18n/<locale>/slide-types.json`, which the type should never have had (see below)                                                                                                                                                                                         |
 
 **Verdict: the done-gate is not met.** The gate is ≤3 files ideal, and anything
 above 10 fails "regardless of how clean the architecture looks." 28 > 10 — and
 even the like-for-like number against freeform (16 files, dropping the locale
 payloads freeform never had) fails it.
 
-What the seam *did* buy is real, and it is not the headline: files carrying
+What the seam _did_ buy is real, and it is not the headline: files carrying
 **hand-maintained duplicated knowledge** fell from freeform's 18 to 5, and the
 type count and inventory became derivation instead of prose. What it did not
 touch is the long tail — the CSS block, the two doc tables, the two per-type test
@@ -311,7 +312,7 @@ and edited by hand. That tail is the worklist to actually close the gate:
    should live in (or derive from) the type's own directory.
 4. `scripts/i18n-audit-allowlist.json` — sample-content entries that follow from
    each type's `authoring.js` and could be derived.
-5. **Locale payloads** — nothing *prunes* `slideType.<type>.*` when a type leaves
+5. **Locale payloads** — nothing _prunes_ `slideType.<type>.*` when a type leaves
    the registry, so the delete is still by hand — but it can no longer be
    forgotten silently: `tests/slide-type-i18n-orphans.test.js` (2026-07-30) fails
    on an orphaned namespace, naming the locale and id. A prune step in `i18n:sync`
@@ -335,7 +336,7 @@ type **id**, word-bounded:
   "split-partner-title _(archived)_ … existing decks still render and their
   inspector keeps these" — false after removal, and invisible to a word-bounded
   match on the full id. Adding it to `allowedReferences` would not have helped
-  either: that test checks the file mentions the *full* id, so the entry would
+  either: that test checks the file mentions the _full_ id, so the entry would
   have failed as stale.
 
 Neither is fixable by tightening the regex (a looser match would flag every
@@ -344,7 +345,7 @@ arguments for the same thing as the worklist above: fewer places that restate a
 type's name at all.
 
 One side-note the measurement surfaced and did not act on: the definition still
-sits *beside* its directory (`types/split-partner-title-slide.js` +
+sits _beside_ its directory (`types/split-partner-title-slide.js` +
 `types/split-partner-title-slide/`) rather than inside it — the state the
 per-companion rollout left every type in, not specific to this one.
 
@@ -376,9 +377,9 @@ promises is `shared/slide-types/unresolved.js`:
 
 1. **Name the type.** The author sees exactly which type is missing.
 2. **Say why, when the answer is known.** A type on the tombstone record renders
-   as *archived* ("The `card-stack-slide` slide type was removed (…)"), with the
-   successor when there is one ("Rebuild this slide as an *Icon card grid*
-   slide"). A name that resolves to nothing renders as *unavailable* — a fork's
+   as _archived_ ("The `card-stack-slide` slide type was removed (…)"), with the
+   successor when there is one ("Rebuild this slide as an _Icon card grid_
+   slide"). A name that resolves to nothing renders as _unavailable_ — a fork's
    custom type, a typo, a deck from a newer Deckyard. The record draws that line;
    the render never guesses.
 3. **Keep the content visible.** Every stored field is shown as readable text,
@@ -390,20 +391,19 @@ promises is `shared/slide-types/unresolved.js`:
 
 Per surface:
 
-| Surface | Behaviour |
-|---|---|
-| Canvas (editor, presenter, embed, HTML/PNG/PDF export) | `renderSlideHtml()` → `.slide-unresolved` placeholder. **Bounded** — a 1600x900 frame cannot grow, so it shows the first fields and says how many it withheld. |
-| Reader / reflow (`server/export/reader.js`) | The archived note plus **every** field, no elision. This is the recovery surface: whatever the canvas truncates is readable here. |
-| Deck import (`deckToPresentationParts`) | Becomes a real `content-slide` (an unregistered type would be neither editable nor saveable) carrying the same explanation and the original content as markdown. Import *persists* rather than renders, so what it drops is gone for good. |
-| Client sync render | A tombstoned type skips the custom-type server round-trip: it is gone server-side too, so the client renders the placeholder directly instead of stalling on the "loading" box. |
+| Surface                                                | Behaviour                                                                                                                                                                                                                                  |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Canvas (editor, presenter, embed, HTML/PNG/PDF export) | `renderSlideHtml()` → `.slide-unresolved` placeholder. **Bounded** — a 1600x900 frame cannot grow, so it shows the first fields and says how many it withheld.                                                                             |
+| Reader / reflow (`server/export/reader.js`)            | The archived note plus **every** field, no elision. This is the recovery surface: whatever the canvas truncates is readable here.                                                                                                          |
+| Deck import (`deckToPresentationParts`)                | Becomes a real `content-slide` (an unregistered type would be neither editable nor saveable) carrying the same explanation and the original content as markdown. Import _persists_ rather than renders, so what it drops is gone for good. |
+| Client sync render                                     | A tombstoned type skips the custom-type server round-trip: it is gone server-side too, so the client renders the placeholder directly instead of stalling on the "loading" box.                                                            |
 
 The contract is pinned by `tests/unresolved-slide-render.test.js`, which asserts
 the promise rather than one surface's markup.
 
 **Why this mattered for the deprecated-layer removal.** `freeform-slide` could
 go without it (zero decks). `content-columns-slide` and `card-stack-slide` (both
-removed 2026-08-02, finishing the deprecated layer, taking the count from 36 to
-34) could not: those were in real use, so "the content is still in the JSON
+removed 2026-08-02, finishing the deprecated layer, taking the count from 36 to 34) could not: those were in real use, so "the content is still in the JSON
 somewhere" is not an answer an author can act on. The contract is what let them
 go — `card-stack-slide` degrades to an archived slide that names its successor
 (`icon-card-grid-slide`); `content-columns-slide` has no core successor, so it
@@ -417,7 +417,7 @@ the prerequisite for rung 3 on any type decks actually used.
 - ~~**Nothing fails when a reference is orphaned.**~~ Fixed by
   `tests/removed-slide-types.test.js` (step 7 above).
 - **Per-type tables are deregistration points.** `INSPECTOR_KEEPS` and
-  `EXCLUDED_TYPES` both had to have an entry *removed*; neither was derived from
+  `EXCLUDED_TYPES` both had to have an entry _removed_; neither was derived from
   anything the type declares. `INSPECTOR_KEEPS` has since become exactly that —
   a type declares `inspectorKeeps` in its own `inline-edit.js` and the map is
   derived — so the next removal only has `EXCLUDED_TYPES` left in this row.

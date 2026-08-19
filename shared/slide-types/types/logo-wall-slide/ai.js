@@ -19,9 +19,9 @@
  */
 
 export const ai = {
-    category: 'content',
-    resolveInPhase1: false,
-    description: `
+  category: 'content',
+  resolveInPhase1: false,
+  description: `
       Display partner/sponsor/supporter logos in a grid. Logos are shown
       uncropped (contained) with matched heights — never cropped — which is
       exactly what logo artwork needs. Each logo has a name, an optional image,
@@ -36,18 +36,18 @@ export const ai = {
       Use when partner organisations, sponsors, or supporters are mentioned.
       You don't need actual logo files — names are enough.
     `,
-    bestFor: [
-      'Partner organizations',
-      'Sponsors and funding bodies',
-      'Client logos',
-      'Supporter acknowledgments',
-      'Consortium or coalition members',
-    ],
-    notFor: [
-      'Detailed partner descriptions (use content-slide or icon-card-grid-slide)',
-      'People (use team-cards-slide)',
-      'Screenshots or photos that want captions (use team-cards-slide or gallery-slide)',
-    ],
+  bestFor: [
+    'Partner organizations',
+    'Sponsors and funding bodies',
+    'Client logos',
+    'Supporter acknowledgments',
+    'Consortium or coalition members',
+  ],
+  notFor: [
+    'Detailed partner descriptions (use content-slide or icon-card-grid-slide)',
+    'People (use team-cards-slide)',
+    'Screenshots or photos that want captions (use team-cards-slide or gallery-slide)',
+  ],
 };
 
 /**

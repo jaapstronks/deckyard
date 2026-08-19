@@ -29,7 +29,9 @@ export function createUnsplashSearch({ h, api, onSelect, setStatus, setBusy }) {
   const searchInput = h('input', {
     type: 'search',
     class: 'input stock-media-search-input',
-    placeholder: t('stockMedia.search.placeholder', 'Search {provider}...', { provider: 'Unsplash' }),
+    placeholder: t('stockMedia.search.placeholder', 'Search {provider}...', {
+      provider: 'Unsplash',
+    }),
   });
 
   const searchBtn = h('button', {
@@ -56,12 +58,21 @@ export function createUnsplashSearch({ h, api, onSelect, setStatus, setBusy }) {
   // link: interpolate a marker, then split on it so translators can move the
   // link within the sentence.
   const ATTR_MARK = '\u0000';
-  const [attrBefore, attrAfter = ''] = t('stockMedia.attribution', 'Photos from {source}', {
-    source: ATTR_MARK,
-  }).split(ATTR_MARK);
+  const [attrBefore, attrAfter = ''] = t(
+    'stockMedia.attribution',
+    'Photos from {source}',
+    {
+      source: ATTR_MARK,
+    },
+  ).split(ATTR_MARK);
   const attribution = h('div', { class: 'stock-media-attribution' }, [
     h('span', { text: attrBefore }),
-    h('a', { href: 'https://unsplash.com', target: '_blank', rel: 'noopener', text: 'Unsplash' }),
+    h('a', {
+      href: 'https://unsplash.com',
+      target: '_blank',
+      rel: 'noopener',
+      text: 'Unsplash',
+    }),
     h('span', { text: attrAfter }),
   ]);
 
@@ -76,7 +87,11 @@ export function createUnsplashSearch({ h, api, onSelect, setStatus, setBusy }) {
     setStatus(t('stockMedia.search.searching', 'Searching...'));
 
     try {
-      const params = new URLSearchParams({ q: query, page: String(page), per_page: '20' });
+      const params = new URLSearchParams({
+        q: query,
+        page: String(page),
+        per_page: '20',
+      });
       const data = await api(`/api/stock-media/unsplash/search?${params}`);
 
       if (page === 1) {
@@ -93,9 +108,11 @@ export function createUnsplashSearch({ h, api, onSelect, setStatus, setBusy }) {
       renderResults();
 
       loadMoreBtn.hidden = currentPage >= totalPages;
-      setStatus(results.length === 0
-        ? t('stockMedia.search.noResults', 'No results found')
-        : '');
+      setStatus(
+        results.length === 0
+          ? t('stockMedia.search.noResults', 'No results found')
+          : '',
+      );
     } catch (e) {
       console.error('Unsplash search error:', e);
       setStatus(t('stockMedia.search.error', 'Search failed'));
@@ -121,7 +138,9 @@ export function createUnsplashSearch({ h, api, onSelect, setStatus, setBusy }) {
       const overlay = h('div', { class: 'stock-media-item-overlay' }, [
         h('div', { class: 'stock-media-item-credit' }, [
           h('a', {
-            href: photo.photographer.profileUrl + '?utm_source=presentation_system&utm_medium=referral',
+            href:
+              photo.photographer.profileUrl +
+              '?utm_source=presentation_system&utm_medium=referral',
             target: '_blank',
             rel: 'noopener',
             text: photo.photographer.name,
@@ -152,7 +171,9 @@ export function createUnsplashSearch({ h, api, onSelect, setStatus, setBusy }) {
         setStatus(t('stockMedia.download.success', 'Added to library'));
         onSelect(data.libraryItem);
       } else {
-        throw new Error(data.error || t('stockMedia.download.error', 'Download failed'));
+        throw new Error(
+          data.error || t('stockMedia.download.error', 'Download failed'),
+        );
       }
     } catch (e) {
       console.error('Unsplash download error:', e);
@@ -170,7 +191,9 @@ export function createUnsplashSearch({ h, api, onSelect, setStatus, setBusy }) {
       search(searchInput.value, 1);
     }
   });
-  loadMoreBtn.addEventListener('click', () => search(currentQuery, currentPage + 1));
+  loadMoreBtn.addEventListener('click', () =>
+    search(currentQuery, currentPage + 1),
+  );
 
   return {
     element: container,

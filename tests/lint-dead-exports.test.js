@@ -14,33 +14,49 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-const { extractExports, harvestUsage, resolveSpecifier, scan } = await import(
-  '../scripts/lint-dead-exports.js'
-);
+const { extractExports, harvestUsage, resolveSpecifier, scan } =
+  await import('../scripts/lint-dead-exports.js');
 
 /** Names of the candidates the scan reports, for a given virtual file tree. */
 const deadNames = (files) => {
-  const { candidates } = scan({ files: Object.keys(files), read: (f) => files[f] });
+  const { candidates } = scan({
+    files: Object.keys(files),
+    read: (f) => files[f],
+  });
   return candidates.map((c) => `${c.file}:${c.name}`).sort();
 };
 
 describe('extractExports', () => {
   it('reads declaration exports with line numbers', () => {
-    const src = ['export function a() {}', '', 'export const b = 1;', 'export class C {}'].join('\n');
-    const byName = Object.fromEntries(extractExports(src).map((e) => [e.name, e.line]));
+    const src = [
+      'export function a() {}',
+      '',
+      'export const b = 1;',
+      'export class C {}',
+    ].join('\n');
+    const byName = Object.fromEntries(
+      extractExports(src).map((e) => [e.name, e.line]),
+    );
     assert.equal(byName.a, 1);
     assert.equal(byName.b, 3);
     assert.equal(byName.C, 4);
   });
 
   it('names a default export "default", not its identifier', () => {
-    const names = extractExports('export default function foo() {}').map((e) => e.name);
+    const names = extractExports('export default function foo() {}').map(
+      (e) => e.name,
+    );
     assert.deepEqual(names, ['default']);
   });
 
   it('reads local and re-export blocks by their exported (right-hand) name', () => {
-    const src = ["export { internal as pub };", "export { x as y } from './other.js';"].join('\n');
-    const names = extractExports(src).map((e) => e.name).sort();
+    const src = [
+      'export { internal as pub };',
+      "export { x as y } from './other.js';",
+    ].join('\n');
+    const names = extractExports(src)
+      .map((e) => e.name)
+      .sort();
     assert.deepEqual(names, ['pub', 'y']);
   });
 });
@@ -48,16 +64,24 @@ describe('extractExports', () => {
 describe('harvestUsage', () => {
   it('records named, default and namespace imports', () => {
     const edges = harvestUsage(
-      ["import def, { a, b as c } from './m.js';", "import * as ns from './n.js';"].join('\n')
+      [
+        "import def, { a, b as c } from './m.js';",
+        "import * as ns from './n.js';",
+      ].join('\n'),
     );
-    const bySpec = Object.fromEntries(edges.map((e) => [e.spec, [...e.names].sort()]));
+    const bySpec = Object.fromEntries(
+      edges.map((e) => [e.spec, [...e.names].sort()]),
+    );
     assert.deepEqual(bySpec['./m.js'], ['a', 'b', 'default']);
     assert.deepEqual(bySpec['./n.js'], ['*']);
   });
 
   it('treats dynamic import() and JSDoc type import() as whole-module usage', () => {
     const edges = harvestUsage(
-      ["const m = await import('./lazy.js');", "/** @type {import('./types.js').T} */"].join('\n')
+      [
+        "const m = await import('./lazy.js');",
+        "/** @type {import('./types.js').T} */",
+      ].join('\n'),
     );
     const bySpec = Object.fromEntries(edges.map((e) => [e.spec, [...e.names]]));
     assert.deepEqual(bySpec['./lazy.js'], ['*']);
@@ -73,14 +97,26 @@ describe('harvestUsage', () => {
 describe('resolveSpecifier', () => {
   const tracked = new Set(['client/lib/x.js', 'client/lib/dir/index.js']);
   it('resolves a relative specifier with a .js fallback', () => {
-    assert.equal(resolveSpecifier('./x.js', 'client/lib/app.js', tracked), 'client/lib/x.js');
-    assert.equal(resolveSpecifier('./x', 'client/lib/app.js', tracked), 'client/lib/x.js');
+    assert.equal(
+      resolveSpecifier('./x.js', 'client/lib/app.js', tracked),
+      'client/lib/x.js',
+    );
+    assert.equal(
+      resolveSpecifier('./x', 'client/lib/app.js', tracked),
+      'client/lib/x.js',
+    );
   });
   it('resolves a directory to its index.js', () => {
-    assert.equal(resolveSpecifier('./dir', 'client/lib/app.js', tracked), 'client/lib/dir/index.js');
+    assert.equal(
+      resolveSpecifier('./dir', 'client/lib/app.js', tracked),
+      'client/lib/dir/index.js',
+    );
   });
   it('returns null for a bare (npm) specifier', () => {
-    assert.equal(resolveSpecifier('node:fs', 'client/lib/app.js', tracked), null);
+    assert.equal(
+      resolveSpecifier('node:fs', 'client/lib/app.js', tracked),
+      null,
+    );
   });
 });
 
@@ -98,7 +134,8 @@ describe('scan (end to end, injected reader)', () => {
       // Consumers import withBackoff from net.js only; the poll.js copy is dead.
       'client/net.js': 'export function withBackoff() {}',
       'client/poll.js': 'export function withBackoff() {}',
-      'client/app.js': "import { withBackoff } from './net.js';\nwithBackoff();",
+      'client/app.js':
+        "import { withBackoff } from './net.js';\nwithBackoff();",
     };
     assert.deepEqual(deadNames(files), ['client/poll.js:withBackoff']);
   });
@@ -123,7 +160,8 @@ describe('scan (end to end, injected reader)', () => {
   it('counts importers outside the four scanned trees (a test-only export lives)', () => {
     const files = {
       'client/lib.js': 'export function onlyForTests() {}',
-      'tests/x.test.js': "import { onlyForTests } from '../client/lib.js';\nonlyForTests();",
+      'tests/x.test.js':
+        "import { onlyForTests } from '../client/lib.js';\nonlyForTests();",
     };
     // tests/ is a usage source but not a scanned tree, so it reports nothing.
     assert.deepEqual(deadNames(files), []);

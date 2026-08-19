@@ -42,26 +42,38 @@ describe('AI-author identity', () => {
 
   it('recognises the built-in default regardless of the configured value', () => {
     // Configured to something custom, but a default-authored row is still AI.
-    assert.equal(isAiAuthorEmail(DEFAULT_AI_EMAIL, 'bot@self-hoster.example'), true);
+    assert.equal(
+      isAiAuthorEmail(DEFAULT_AI_EMAIL, 'bot@self-hoster.example'),
+      true,
+    );
     // And with no configured identity supplied.
     assert.equal(isAiAuthorEmail(DEFAULT_AI_EMAIL), true);
   });
 
   it('recognises a legacy address left in existing rows', () => {
-    assert.equal(isAiAuthorEmail('ai-assistant@deckyard.app', 'bot@self-hoster.example'), true);
+    assert.equal(
+      isAiAuthorEmail('ai-assistant@deckyard.app', 'bot@self-hoster.example'),
+      true,
+    );
     assert.equal(isAiAuthorEmail('ai-assistant@deckyard.app'), true);
   });
 
   it('matches case-insensitively, as stored rows are lowercased', () => {
     // Comment rows lowercase the author address on write, the setting keeps
     // whatever was typed — a mixed-case identity must still match its own rows.
-    assert.equal(isAiAuthorEmail('bot@self-hoster.example', 'Bot@Self-Hoster.Example'), true);
+    assert.equal(
+      isAiAuthorEmail('bot@self-hoster.example', 'Bot@Self-Hoster.Example'),
+      true,
+    );
     assert.equal(isAiAuthorEmail('AI-Assistant@Deckyard.eu'), true);
     assert.equal(isAiAuthorEmail('AI-Assistant@Deckyard.app'), true);
   });
 
   it('does not recognise an unrelated author', () => {
-    assert.equal(isAiAuthorEmail('alice@example.com', 'bot@self-hoster.example'), false);
+    assert.equal(
+      isAiAuthorEmail('alice@example.com', 'bot@self-hoster.example'),
+      false,
+    );
     assert.equal(isAiAuthorEmail(''), false);
     assert.equal(isAiAuthorEmail(undefined), false);
     assert.equal(isAiAuthorEmail(null), false);

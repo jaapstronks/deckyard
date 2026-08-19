@@ -148,7 +148,9 @@ async function deleteImage(id, ctx) {
     .where('organization_id', '=', orgId)
     .executeTakeFirst();
 
-  return result.numDeletedRows > 0 ? { ok: true } : { ok: false, reason: 'not_found' };
+  return result.numDeletedRows > 0
+    ? { ok: true }
+    : { ok: false, reason: 'not_found' };
 }
 
 // ============================================================

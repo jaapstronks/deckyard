@@ -1,6 +1,12 @@
 import { getPresentation } from '../../../storage/presentations/index.js';
 import { getFeatureFlags } from '../../../config/flags-snapshot.js';
-import { methodNotAllowed, notFound, serveJson, unauthorized, requireJsonBody } from '../../../utils/http.js';
+import {
+  methodNotAllowed,
+  notFound,
+  serveJson,
+  unauthorized,
+  requireJsonBody,
+} from '../../../utils/http.js';
 import { getOptionalString } from '../../../utils/request-validators.js';
 import { canReadPresentation } from '../../../utils/presentation-authz.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types.js';
@@ -13,7 +19,9 @@ function normalizeLangHint(v) {
 }
 
 function shouldIgnoreTextKey(key) {
-  const k = String(key || '').trim().toLowerCase();
+  const k = String(key || '')
+    .trim()
+    .toLowerCase();
   if (!k) return true;
   // Usually not helpful for a meta description.
   if (k === 'alt' || k === 'altnl' || k === 'alten') return true;
@@ -23,7 +31,8 @@ function shouldIgnoreTextKey(key) {
 function extractSlideText(slide) {
   const def = SLIDE_TYPES?.[slide?.type];
   if (!def || !Array.isArray(def.fields)) return '';
-  const content = slide?.content && typeof slide.content === 'object' ? slide.content : {};
+  const content =
+    slide?.content && typeof slide.content === 'object' ? slide.content : {};
   const parts = [];
 
   for (const f of def.fields || []) {
@@ -65,7 +74,7 @@ function pickSlidesForPrompt(slides) {
 
 export async function handlePresentationDescriptionGenerate(
   { repoRoot, storageScope, req, res, authedUser } = {},
-  id
+  id,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
   const flags = getFeatureFlags();
@@ -78,11 +87,12 @@ export async function handlePresentationDescriptionGenerate(
 
   const pres = await getPresentation(storageScope, id);
   if (!pres) return notFound(res);
-  if (!canReadPresentation({ user: authedUser, pres })) return unauthorized(res);
+  if (!canReadPresentation({ user: authedUser, pres }))
+    return unauthorized(res);
 
   const lang = normalizeLangHint(
     (pres?.i18n && typeof pres.i18n === 'object' && pres.i18n.active) ||
-      pres?.lang
+      pres?.lang,
   );
   const slides = Array.isArray(pres?.slides) ? pres.slides : [];
   const picked = pickSlidesForPrompt(slides);
@@ -134,7 +144,7 @@ export async function handlePresentationDescriptionGenerate(
         includedSlides: slideSnippets,
       },
       null,
-      2
+      2,
     ),
   ].join('\n');
 
@@ -152,7 +162,8 @@ export async function handlePresentationDescriptionGenerate(
   });
 
   const obj = extractJsonObject(content);
-  const descriptionRaw = typeof obj?.description === 'string' ? obj.description : '';
+  const descriptionRaw =
+    typeof obj?.description === 'string' ? obj.description : '';
   const description = String(descriptionRaw || '').trim();
   serveJson(res, 200, { ok: true, description });
   return true;

@@ -80,9 +80,16 @@ function mockRes() {
     statusCode: null,
     headers: {},
     body: null,
-    writeHead(code, headers) { this.statusCode = code; Object.assign(this.headers, headers || {}); },
-    end(chunk) { this.body = chunk; },
-    setHeader(k, v) { this.headers[k] = v; },
+    writeHead(code, headers) {
+      this.statusCode = code;
+      Object.assign(this.headers, headers || {});
+    },
+    end(chunk) {
+      this.body = chunk;
+    },
+    setHeader(k, v) {
+      this.headers[k] = v;
+    },
   };
 }
 
@@ -111,7 +118,11 @@ describe('assertWritable — the shared choke-point', () => {
   it('refuses writes during maintenance, carrying the refusal payload', () => {
     setMaintenanceActive(true, { reason: 'shutdown' });
     let err;
-    try { assertWritable('POST'); } catch (e) { err = e; }
+    try {
+      assertWritable('POST');
+    } catch (e) {
+      err = e;
+    }
     assert.ok(err instanceof MaintenanceWriteError);
     assert.equal(err.status, 503);
     assert.equal(err.code, 'maintenance');
@@ -136,7 +147,10 @@ describe('assertWritable — the shared choke-point', () => {
 describe('MCP tool classification', () => {
   it('matches the pinned read-only list exactly — new tools pick a side here', () => {
     const server = buildServer();
-    const readOnly = [...server.tools.values()].filter(t => t.readOnly).map(t => t.name).sort();
+    const readOnly = [...server.tools.values()]
+      .filter((t) => t.readOnly)
+      .map((t) => t.name)
+      .sort();
     assert.deepEqual(readOnly, [...READ_ONLY_TOOLS].sort());
     // Sanity: the registry is complete and the rest are writes.
     assert.equal(server.tools.size, 27);
@@ -144,14 +158,26 @@ describe('MCP tool classification', () => {
 
   it('tools/list advertises readOnlyHint for the read-only tools only', async () => {
     const server = buildServer();
-    const resp = JSON.parse(await server.handleMessage({
-      jsonrpc: '2.0', id: 1, method: 'tools/list',
-    }));
+    const resp = JSON.parse(
+      await server.handleMessage({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/list',
+      }),
+    );
     for (const tool of resp.result.tools) {
       if (READ_ONLY_TOOLS.includes(tool.name)) {
-        assert.deepEqual(tool.annotations, { readOnlyHint: true }, `${tool.name} advertises readOnlyHint`);
+        assert.deepEqual(
+          tool.annotations,
+          { readOnlyHint: true },
+          `${tool.name} advertises readOnlyHint`,
+        );
       } else {
-        assert.equal(tool.annotations, undefined, `${tool.name} is a write, no readOnlyHint`);
+        assert.equal(
+          tool.annotations,
+          undefined,
+          `${tool.name} is a write, no readOnlyHint`,
+        );
       }
     }
   });
@@ -161,22 +187,33 @@ describe('MCP write-gate behavior', () => {
   it('every write tool is refused during maintenance, before its handler runs', async () => {
     const server = buildServer();
     setMaintenanceActive(true, { reason: 'shutdown' });
-    const writeTools = [...server.tools.values()].filter(t => !t.readOnly).map(t => t.name);
+    const writeTools = [...server.tools.values()]
+      .filter((t) => !t.readOnly)
+      .map((t) => t.name);
     assert.equal(writeTools.length, 15, 'the 15 mutating tools');
     for (const name of writeTools) {
       // Empty args: the refusal must come from the gate, not from argument
       // validation inside the handler — the maintenance text proves which.
       const resp = await callTool(server, name);
-      assert.ok(isMaintenanceRefusal(resp), `${name} must be refused by the maintenance gate, got: ${JSON.stringify(resp)}`);
+      assert.ok(
+        isMaintenanceRefusal(resp),
+        `${name} must be refused by the maintenance gate, got: ${JSON.stringify(resp)}`,
+      );
     }
   });
 
   it('an unmarked (custom/fork) tool fails closed as a write', async () => {
     const server = buildServer();
     let ran = false;
-    server.tool('custom_mutator', 'fork-registered tool without a readOnly flag',
+    server.tool(
+      'custom_mutator',
+      'fork-registered tool without a readOnly flag',
       { type: 'object', properties: {} },
-      async () => { ran = true; return { ok: true }; });
+      async () => {
+        ran = true;
+        return { ok: true };
+      },
+    );
     setMaintenanceActive(true);
     const resp = await callTool(server, 'custom_mutator');
     assert.ok(isMaintenanceRefusal(resp), 'unmarked tool is refused');
@@ -191,16 +228,25 @@ describe('MCP write-gate behavior', () => {
       // (no storage); the assertion is only that the maintenance gate did not
       // refuse it.
       const resp = await callTool(server, name);
-      assert.ok(!isMaintenanceRefusal(resp), `${name} must pass the maintenance gate`);
+      assert.ok(
+        !isMaintenanceRefusal(resp),
+        `${name} must pass the maintenance gate`,
+      );
     }
   });
 
   it('the refusal lifts when maintenance ends', async () => {
     const server = buildServer();
     let ran = false;
-    server.tool('probe_write', 'write probe',
+    server.tool(
+      'probe_write',
+      'write probe',
       { type: 'object', properties: {} },
-      async () => { ran = true; return { ok: true }; });
+      async () => {
+        ran = true;
+        return { ok: true };
+      },
+    );
     setMaintenanceActive(true);
     assert.ok(isMaintenanceRefusal(await callTool(server, 'probe_write')));
     setMaintenanceActive(false);

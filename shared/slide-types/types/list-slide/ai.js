@@ -19,9 +19,9 @@
  */
 
 export const ai = {
-    category: 'content',
-    resolveInPhase1: false,
-    description: `
+  category: 'content',
+  resolveInPhase1: false,
+  description: `
       A "fancy list" slide with structured items. Each item has a title and short explanation.
       Visually cleaner than content-slide bullets. 2-8 items.
 
@@ -45,21 +45,21 @@ export const ai = {
       Use variant:"numbers" when order matters (steps, ranked items).
       Use variant:"bullets" when order doesn't matter (tips, points).
     `,
-    bestFor: [
-      'Tips, recommendations, or best practices',
-      'Meeting agendas (not roadmaps - those are timeline)',
-      'Steps with short explanations',
-      'Do/don\'t lists',
-      'Key takeaways or highlights',
-      'Any list where items have both a title AND a brief explanation',
-    ],
-    notFor: [
-      'NUMERIC HIGHLIGHTS like "220 trajectories" or "10,000 professionals" (use kpi-metrics-slide!)',
-      'Output targets or deliverables with specific numbers (use kpi-metrics-slide)',
-      'Parallel categories that should be compared side-by-side (use card slides)',
-      'Timeline/roadmap with phases over time (use timeline-slide)',
-      'Simple bullets without title+text structure (use content-slide)',
-    ],
+  bestFor: [
+    'Tips, recommendations, or best practices',
+    'Meeting agendas (not roadmaps - those are timeline)',
+    'Steps with short explanations',
+    "Do/don't lists",
+    'Key takeaways or highlights',
+    'Any list where items have both a title AND a brief explanation',
+  ],
+  notFor: [
+    'NUMERIC HIGHLIGHTS like "220 trajectories" or "10,000 professionals" (use kpi-metrics-slide!)',
+    'Output targets or deliverables with specific numbers (use kpi-metrics-slide)',
+    'Parallel categories that should be compared side-by-side (use card slides)',
+    'Timeline/roadmap with phases over time (use timeline-slide)',
+    'Simple bullets without title+text structure (use content-slide)',
+  ],
 };
 
 /**

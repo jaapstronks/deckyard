@@ -31,7 +31,10 @@ import {
   SECURITY_EVENTS,
   SOURCE_TYPES,
 } from '../../analytics/helpers.js';
-import { TRACKING_RATE_LIMITS, AUTH_RATE_LIMITS } from '../../config/rate-limits.js';
+import {
+  TRACKING_RATE_LIMITS,
+  AUTH_RATE_LIMITS,
+} from '../../config/rate-limits.js';
 import {
   createViewSession,
   updateViewSession,
@@ -77,8 +80,11 @@ async function validatePresentationAccess(data, ctx) {
 
   // Get the presentation first
   const presentation = await getPresentation(
-    crossOrganizationScope(null, 'analytics ingest from a public viewer; the source token is verified below'),
-    presentationId
+    crossOrganizationScope(
+      null,
+      'analytics ingest from a public viewer; the source token is verified below',
+    ),
+    presentationId,
   );
   if (!presentation) {
     return { ok: false, code: 'not_found', message: 'Presentation not found' };
@@ -86,7 +92,11 @@ async function validatePresentationAccess(data, ctx) {
 
   // Check if analytics is enabled for this presentation
   if (presentation.settings?.analyticsEnabled === false) {
-    return { ok: false, code: 'forbidden', message: 'Analytics disabled for this presentation' };
+    return {
+      ok: false,
+      code: 'forbidden',
+      message: 'Analytics disabled for this presentation',
+    };
   }
 
   // Validate access based on source type
@@ -94,7 +104,11 @@ async function validatePresentationAccess(data, ctx) {
     case SOURCE_TYPES.SHARE_LINK: {
       // Share link access requires a valid share token
       if (!sourceId) {
-        return { ok: false, code: 'forbidden', message: 'Share link token required' };
+        return {
+          ok: false,
+          code: 'forbidden',
+          message: 'Share link token required',
+        };
       }
 
       const validation = await validateShareLink(sourceId);
@@ -105,7 +119,11 @@ async function validatePresentationAccess(data, ctx) {
           presentationId,
           sourceType,
         });
-        return { ok: false, code: 'forbidden', message: 'Invalid or expired share link' };
+        return {
+          ok: false,
+          code: 'forbidden',
+          message: 'Invalid or expired share link',
+        };
       }
 
       // Verify the share link is for this presentation
@@ -116,7 +134,11 @@ async function validatePresentationAccess(data, ctx) {
           presentationId,
           shareLinkPresentationId: validation.shareLink.presentationId,
         });
-        return { ok: false, code: 'forbidden', message: 'Share link does not match presentation' };
+        return {
+          ok: false,
+          code: 'forbidden',
+          message: 'Share link does not match presentation',
+        };
       }
 
       return { ok: true, presentation };
@@ -127,9 +149,9 @@ async function validatePresentationAccess(data, ctx) {
       const followState = await getFollowStateForPresentation(
         crossOrganizationScope(
           ctx?.repoRoot ?? null,
-          'analytics track: the viewer is a follow-along audience member'
+          'analytics track: the viewer is a follow-along audience member',
         ),
-        presentationId
+        presentationId,
       );
 
       // Allow if there's a live or recently ended follow session
@@ -147,7 +169,11 @@ async function validatePresentationAccess(data, ctx) {
         sourceType,
       });
 
-      return { ok: false, code: 'forbidden', message: 'No active follow session' };
+      return {
+        ok: false,
+        code: 'forbidden',
+        message: 'No active follow session',
+      };
     }
 
     case SOURCE_TYPES.EMBED: {
@@ -173,7 +199,11 @@ async function validatePresentationAccess(data, ctx) {
           presentationId,
           sourceType,
         });
-        return { ok: false, code: 'forbidden', message: 'Presentation is not published' };
+        return {
+          ok: false,
+          code: 'forbidden',
+          message: 'Presentation is not published',
+        };
       }
 
       // Optionally verify the sourceId matches the publish ID
@@ -203,7 +233,12 @@ async function handleTrackSessionStart({ req, res, url, repoRoot }) {
   const clientIp = getClientIp(req);
 
   // Rate limit by IP address
-  if (!(await allowRequest(`track:start:${clientIp}`, TRACKING_RATE_LIMITS.sessionStart))) {
+  if (
+    !(await allowRequest(
+      `track:start:${clientIp}`,
+      TRACKING_RATE_LIMITS.sessionStart,
+    ))
+  ) {
     logSecurityEvent(SECURITY_EVENTS.RATE_LIMIT_EXCEEDED, {
       ip: clientIp,
       endpoint: path,
@@ -243,7 +278,7 @@ async function handleTrackSessionStart({ req, res, url, repoRoot }) {
   // Validate presentation access (security fix: verify viewer has legitimate access)
   const accessValidation = await validatePresentationAccess(
     { presentationId, sourceType, sourceId },
-    ctx
+    ctx,
   );
 
   if (!accessValidation.ok) {
@@ -251,34 +286,44 @@ async function handleTrackSessionStart({ req, res, url, repoRoot }) {
       res,
       getErrorStatus(accessValidation.code),
       accessValidation.code,
-      accessValidation.message
+      accessValidation.message,
     );
   }
 
   // Check app-level analytics settings
   const appSettings = await getAppSettings(
-    crossOrganizationScope(ctx.repoRoot ?? null, 'public view tracking: analytics switch is instance-level')
+    crossOrganizationScope(
+      ctx.repoRoot ?? null,
+      'public view tracking: analytics switch is instance-level',
+    ),
   );
   if (!appSettings.analytics?.enabled) {
     // Analytics disabled at app level - silently accept but don't track
-    return serveJson(res, 200, { sessionToken: null, sessionId: null }), true;
+    return (serveJson(res, 200, { sessionToken: null, sessionId: null }), true);
   }
 
   const viewerType = body?.viewerType ?? VIEWER_TYPES.ANONYMOUS;
   const viewerEmail = body?.viewerEmail ?? null;
-  const isAuthenticatedViewer = viewerType === VIEWER_TYPES.AUTHENTICATED && viewerEmail;
+  const isAuthenticatedViewer =
+    viewerType === VIEWER_TYPES.AUTHENTICATED && viewerEmail;
 
   // Check user privacy settings if viewer is authenticated
   let viewerPrivacySettings = null;
   if (isAuthenticatedViewer) {
     viewerPrivacySettings = await getUserSettings(
-      crossOrganizationScope(ctx.repoRoot ?? null, 'public view tracking: viewer privacy preference'),
-      viewerEmail
+      crossOrganizationScope(
+        ctx.repoRoot ?? null,
+        'public view tracking: viewer privacy preference',
+      ),
+      viewerEmail,
     );
 
     // If viewer has opted out of all tracking, don't track
     if (viewerPrivacySettings?.privacy?.disableAllTracking) {
-      return serveJson(res, 200, { sessionToken: null, sessionId: null }), true;
+      return (
+        serveJson(res, 200, { sessionToken: null, sessionId: null }),
+        true
+      );
     }
   }
 
@@ -289,11 +334,12 @@ async function handleTrackSessionStart({ req, res, url, repoRoot }) {
   // and the revive path: done/decisions.md § analytics-privacy-naden.
 
   // Check if viewer allows attribution (name to be shown in analytics)
-  const attributionAllowed = viewerPrivacySettings?.privacy?.allowViewAttribution === true;
+  const attributionAllowed =
+    viewerPrivacySettings?.privacy?.allowViewAttribution === true;
 
   // Sanitize user agent
   const userAgent = sanitizeUserAgent(
-    req.headers.get?.('user-agent') || req.headers['user-agent']
+    req.headers.get?.('user-agent') || req.headers['user-agent'],
   );
 
   const result = await createViewSession({
@@ -309,13 +355,21 @@ async function handleTrackSessionStart({ req, res, url, repoRoot }) {
   });
 
   if (!result.ok) {
-    return jsonError(res, getErrorStatus(result.reason, 500), result.reason || 'internal_error', 'Failed to create session');
+    return jsonError(
+      res,
+      getErrorStatus(result.reason, 500),
+      result.reason || 'internal_error',
+      'Failed to create session',
+    );
   }
 
-  return serveJson(res, 200, {
-    sessionToken: result.session.sessionToken,
-    sessionId: result.session.id,
-  }), true;
+  return (
+    serveJson(res, 200, {
+      sessionToken: result.session.sessionToken,
+      sessionId: result.session.id,
+    }),
+    true
+  );
 }
 
 // POST /api/track/session/heartbeat - Update session activity
@@ -324,7 +378,12 @@ async function handleTrackSessionHeartbeat({ req, res, url, repoRoot }) {
   const clientIp = getClientIp(req);
 
   // Rate limit by IP address
-  if (!(await allowRequest(`track:heartbeat:${clientIp}`, TRACKING_RATE_LIMITS.heartbeat))) {
+  if (
+    !(await allowRequest(
+      `track:heartbeat:${clientIp}`,
+      TRACKING_RATE_LIMITS.heartbeat,
+    ))
+  ) {
     logSecurityEvent(SECURITY_EVENTS.RATE_LIMIT_EXCEEDED, {
       ip: clientIp,
       endpoint: path,
@@ -354,7 +413,12 @@ async function handleTrackSessionHeartbeat({ req, res, url, repoRoot }) {
   }
 
   // Per-session rate limiting
-  if (!(await allowRequest(`track:session:heartbeat:${sessionToken}`, TRACKING_RATE_LIMITS.sessionHeartbeat))) {
+  if (
+    !(await allowRequest(
+      `track:session:heartbeat:${sessionToken}`,
+      TRACKING_RATE_LIMITS.sessionHeartbeat,
+    ))
+  ) {
     logSecurityEvent(SECURITY_EVENTS.RATE_LIMIT_EXCEEDED, {
       ip: clientIp,
       endpoint: path,
@@ -369,10 +433,15 @@ async function handleTrackSessionHeartbeat({ req, res, url, repoRoot }) {
   });
 
   if (!result.ok) {
-    return jsonError(res, getErrorStatus(result.reason, 500), result.reason || 'internal_error', 'Failed to update session');
+    return jsonError(
+      res,
+      getErrorStatus(result.reason, 500),
+      result.reason || 'internal_error',
+      'Failed to update session',
+    );
   }
 
-  return serveJson(res, 200, { ok: true }), true;
+  return (serveJson(res, 200, { ok: true }), true);
 }
 
 // POST /api/track/session/end - End a view session
@@ -381,7 +450,12 @@ async function handleTrackSessionEnd({ req, res, url, repoRoot }) {
   const clientIp = getClientIp(req);
 
   // Rate limit by IP address
-  if (!(await allowRequest(`track:end:${clientIp}`, TRACKING_RATE_LIMITS.sessionEnd))) {
+  if (
+    !(await allowRequest(
+      `track:end:${clientIp}`,
+      TRACKING_RATE_LIMITS.sessionEnd,
+    ))
+  ) {
     logSecurityEvent(SECURITY_EVENTS.RATE_LIMIT_EXCEEDED, {
       ip: clientIp,
       endpoint: path,
@@ -422,10 +496,15 @@ async function handleTrackSessionEnd({ req, res, url, repoRoot }) {
   });
 
   if (!result.ok) {
-    return jsonError(res, getErrorStatus(result.reason, 500), result.reason || 'internal_error', 'Failed to end session');
+    return jsonError(
+      res,
+      getErrorStatus(result.reason, 500),
+      result.reason || 'internal_error',
+      'Failed to end session',
+    );
   }
 
-  return serveJson(res, 200, { ok: true }), true;
+  return (serveJson(res, 200, { ok: true }), true);
 }
 
 // POST /api/track/slide/view - Record slide view
@@ -434,7 +513,12 @@ async function handleTrackSlideView({ req, res, url, repoRoot }) {
   const clientIp = getClientIp(req);
 
   // Rate limit by IP address
-  if (!(await allowRequest(`track:slide:${clientIp}`, TRACKING_RATE_LIMITS.slideView))) {
+  if (
+    !(await allowRequest(
+      `track:slide:${clientIp}`,
+      TRACKING_RATE_LIMITS.slideView,
+    ))
+  ) {
     logSecurityEvent(SECURITY_EVENTS.RATE_LIMIT_EXCEEDED, {
       ip: clientIp,
       endpoint: path,
@@ -466,7 +550,12 @@ async function handleTrackSlideView({ req, res, url, repoRoot }) {
   }
 
   // Per-session rate limiting
-  if (!(await allowRequest(`track:session:slide:${sessionToken}`, TRACKING_RATE_LIMITS.sessionSlideView))) {
+  if (
+    !(await allowRequest(
+      `track:session:slide:${sessionToken}`,
+      TRACKING_RATE_LIMITS.sessionSlideView,
+    ))
+  ) {
     logSecurityEvent(SECURITY_EVENTS.RATE_LIMIT_EXCEEDED, {
       ip: clientIp,
       endpoint: path,
@@ -495,7 +584,12 @@ async function handleTrackSlideView({ req, res, url, repoRoot }) {
   });
 
   if (!result.ok) {
-    return jsonError(res, getErrorStatus(result.reason, 500), result.reason || 'internal_error', 'Failed to record slide view');
+    return jsonError(
+      res,
+      getErrorStatus(result.reason, 500),
+      result.reason || 'internal_error',
+      'Failed to record slide view',
+    );
   }
 
   // Also update the session with current slide info
@@ -506,13 +600,18 @@ async function handleTrackSlideView({ req, res, url, repoRoot }) {
 
   // Log if session update failed (non-critical, slide view was already recorded)
   if (!sessionUpdate.ok) {
-    log.warn(`[analytics-track] Failed to update session ${redactSecret(sessionToken)}: ${sessionUpdate.reason}`);
+    log.warn(
+      `[analytics-track] Failed to update session ${redactSecret(sessionToken)}: ${sessionUpdate.reason}`,
+    );
   }
 
-  return serveJson(res, 200, {
-    ok: true,
-    slideViewId: result.slideView.id,
-  }), true;
+  return (
+    serveJson(res, 200, {
+      ok: true,
+      slideViewId: result.slideView.id,
+    }),
+    true
+  );
 }
 
 // POST /api/track/my-data/erase - Anonymous viewer erases their own data.
@@ -530,7 +629,9 @@ async function handleTrackMyDataErase({ req, res, url, repoRoot }) {
 
   // Destructive and instance-wide: gate it with the same strict expensive-op
   // tier the GDPR endpoints use, keyed by IP since there is no principal here.
-  if (!(await allowRequest(`track:erase:${clientIp}`, AUTH_RATE_LIMITS.expensive))) {
+  if (
+    !(await allowRequest(`track:erase:${clientIp}`, AUTH_RATE_LIMITS.expensive))
+  ) {
     logSecurityEvent(SECURITY_EVENTS.RATE_LIMIT_EXCEEDED, {
       ip: clientIp,
       endpoint: path,
@@ -578,10 +679,15 @@ async function handleTrackMyDataErase({ req, res, url, repoRoot }) {
     : await eraseAnalyticsDataForSession({ sessionId: session.id });
 
   if (!result.ok) {
-    return jsonError(res, getErrorStatus(result.reason, 500), result.reason || 'internal_error', 'Failed to erase data');
+    return jsonError(
+      res,
+      getErrorStatus(result.reason, 500),
+      result.reason || 'internal_error',
+      'Failed to erase data',
+    );
   }
 
-  return serveJson(res, 200, { ok: true, deleted: result.deleted }), true;
+  return (serveJson(res, 200, { ok: true, deleted: result.deleted }), true);
 }
 
 /**
@@ -593,11 +699,31 @@ async function handleTrackMyDataErase({ req, res, url, repoRoot }) {
  * @type {import('../../utils/router.js').Route[]}
  */
 export const ROUTES = [
-  { method: 'POST', pattern: '/api/track/session/start', handler: handleTrackSessionStart },
-  { method: 'POST', pattern: '/api/track/session/heartbeat', handler: handleTrackSessionHeartbeat },
-  { method: 'POST', pattern: '/api/track/session/end', handler: handleTrackSessionEnd },
-  { method: 'POST', pattern: '/api/track/slide/view', handler: handleTrackSlideView },
-  { method: 'POST', pattern: '/api/track/my-data/erase', handler: handleTrackMyDataErase },
+  {
+    method: 'POST',
+    pattern: '/api/track/session/start',
+    handler: handleTrackSessionStart,
+  },
+  {
+    method: 'POST',
+    pattern: '/api/track/session/heartbeat',
+    handler: handleTrackSessionHeartbeat,
+  },
+  {
+    method: 'POST',
+    pattern: '/api/track/session/end',
+    handler: handleTrackSessionEnd,
+  },
+  {
+    method: 'POST',
+    pattern: '/api/track/slide/view',
+    handler: handleTrackSlideView,
+  },
+  {
+    method: 'POST',
+    pattern: '/api/track/my-data/erase',
+    handler: handleTrackMyDataErase,
+  },
 ];
 
 /**
@@ -605,6 +731,9 @@ export const ROUTES = [
  * @param {import('../../utils/context.js').PublicContext} ctx
  * @returns {Promise<boolean>} True if handled
  */
-export const handleAnalyticsTrack = withErrorHandler('analytics-track', (ctx) => {
-  return dispatchRoutes(ROUTES, ctx);
-});
+export const handleAnalyticsTrack = withErrorHandler(
+  'analytics-track',
+  (ctx) => {
+    return dispatchRoutes(ROUTES, ctx);
+  },
+);

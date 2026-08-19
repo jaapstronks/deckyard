@@ -19,9 +19,16 @@ import { fileURLToPath } from 'node:url';
 
 import { LocalProvider, parseDataUrl } from '../server/media/local.js';
 import { listImageKitFiles } from '../server/media/imagekit.js';
-import { AppError, ValidationError, isAppError } from '../server/utils/errors.js';
+import {
+  AppError,
+  ValidationError,
+  isAppError,
+} from '../server/utils/errors.js';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 
 const isValidationError = (err) =>
   err instanceof ValidationError && err.statusCode === 400 && isAppError(err);
@@ -31,17 +38,23 @@ test('local media validation throws 400 ValidationError', async () => {
 
   const provider = new LocalProvider(repoRoot);
   await assert.rejects(
-    () => provider.uploadBuffer({ buffer: Buffer.from('x'), filename: 'x.bin', contentType: 'application/zip' }),
-    isValidationError
+    () =>
+      provider.uploadBuffer({
+        buffer: Buffer.from('x'),
+        filename: 'x.bin',
+        contentType: 'application/zip',
+      }),
+    isValidationError,
   );
   await assert.rejects(
-    () => provider.uploadBuffer({
-      buffer: Buffer.alloc(2),
-      filename: 'x.png',
-      contentType: 'image/png',
-      maxBytes: 1,
-    }),
-    isValidationError
+    () =>
+      provider.uploadBuffer({
+        buffer: Buffer.alloc(2),
+        filename: 'x.png',
+        contentType: 'image/png',
+        maxBytes: 1,
+      }),
+    isValidationError,
   );
 });
 
@@ -66,11 +79,18 @@ test('no bare .statusCode assignment left under server/media/', () => {
     for (const entry of readdirSync(dir)) {
       const full = path.join(dir, entry);
       if (statSync(full).isDirectory()) walk(full);
-      else if (entry.endsWith('.js') && /\.statusCode = /.test(readFileSync(full, 'utf8'))) {
+      else if (
+        entry.endsWith('.js') &&
+        /\.statusCode = /.test(readFileSync(full, 'utf8'))
+      ) {
         offenders.push(path.relative(repoRoot, full));
       }
     }
   };
   walk(path.join(repoRoot, 'server/media'));
-  assert.deepEqual(offenders, [], `Media modules must throw AppError subclasses: ${offenders.join(', ')}`);
+  assert.deepEqual(
+    offenders,
+    [],
+    `Media modules must throw AppError subclasses: ${offenders.join(', ')}`,
+  );
 });

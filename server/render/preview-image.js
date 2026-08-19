@@ -7,7 +7,10 @@
 
 import sharp from 'sharp';
 import { renderSlideToPngBuffer } from './png.js';
-import { getMediaProvider, isMediaProviderInitialized } from '../media/index.js';
+import {
+  getMediaProvider,
+  isMediaProviderInitialized,
+} from '../media/index.js';
 import {
   generateAuthorOverlay,
   fetchImageAsBuffer,
@@ -169,7 +172,13 @@ async function savePreviewToMedia(repoRoot, buffer, prefix) {
  * @param {object} [options.authorInfo] - Author info { name, imageUrl }
  * @returns {Promise<string>} Public URL of the saved image
  */
-export async function generateAndSaveOgPreview(repoRoot, slide, theme, prefix, options = {}) {
+export async function generateAndSaveOgPreview(
+  repoRoot,
+  slide,
+  theme,
+  prefix,
+  options = {},
+) {
   const buffer = await generateOgPreview(repoRoot, slide, theme, options);
   const url = await savePreviewToMedia(repoRoot, buffer, prefix);
   return url;

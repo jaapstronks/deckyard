@@ -9,11 +9,13 @@
  * order exactly.
  */
 
+import { authEnabled, setSessionCookie } from '../../auth/auth.js';
 import {
-  authEnabled,
-  setSessionCookie,
-} from '../../auth/auth.js';
-import { serveJson, badRequest, requireJsonBody, withErrorHandler } from '../../utils/http.js';
+  serveJson,
+  badRequest,
+  requireJsonBody,
+  withErrorHandler,
+} from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { t } from '../../i18n/index.js';
 import { getClientIp, createStorageScope } from '../../utils/context.js';
@@ -41,7 +43,8 @@ const log = createLogger('magic-link');
  */
 function buildMagicLinkUrl(req, token) {
   const host = req.headers?.host || 'localhost:3000';
-  const protocol = req.headers?.['x-forwarded-proto'] === 'https' ? 'https' : 'http';
+  const protocol =
+    req.headers?.['x-forwarded-proto'] === 'https' ? 'https' : 'http';
   return `${protocol}://${host}/magic-login?token=${encodeURIComponent(token)}`;
 }
 
@@ -65,7 +68,8 @@ async function getUserInfo(email) {
  */
 function buildLoginUrl(req) {
   const host = req.headers?.host || 'localhost:3000';
-  const protocol = req.headers?.['x-forwarded-proto'] === 'https' ? 'https' : 'http';
+  const protocol =
+    req.headers?.['x-forwarded-proto'] === 'https' ? 'https' : 'http';
   return `${protocol}://${host}/login`;
 }
 
@@ -75,7 +79,10 @@ function buildLoginUrl(req) {
 // ============================================================
 async function handleMagicLinkRequest({ repoRoot, req, res }) {
   if (!authEnabled()) {
-    return badRequest(res, t('api.error.authNotEnabled', 'Authentication is not enabled'));
+    return badRequest(
+      res,
+      t('api.error.authNotEnabled', 'Authentication is not enabled'),
+    );
   }
 
   const parsed = await requireJsonBody(req, res);
@@ -85,7 +92,10 @@ async function handleMagicLinkRequest({ repoRoot, req, res }) {
 
   const emailValidation = validateEmail(email);
   if (!emailValidation.valid) {
-    return badRequest(res, t('api.error.validEmailRequired', 'Valid email is required'));
+    return badRequest(
+      res,
+      t('api.error.validEmailRequired', 'Valid email is required'),
+    );
   }
 
   const ipAddress = getClientIp(req);
@@ -108,7 +118,10 @@ async function handleMagicLinkRequest({ repoRoot, req, res }) {
     // Still return success to prevent enumeration
     serveJson(res, 200, {
       ok: true,
-      message: t('api.success.magicLinkSent', 'If your email is registered, a magic link has been sent. Check your inbox.'),
+      message: t(
+        'api.success.magicLinkSent',
+        'If your email is registered, a magic link has been sent. Check your inbox.',
+      ),
     });
     return true;
   }
@@ -123,7 +136,10 @@ async function handleMagicLinkRequest({ repoRoot, req, res }) {
     success: true,
     ipAddress,
     userAgent,
-    metadata: { userExists: userInfo.exists, hasPassword: userInfo.hasPassword },
+    metadata: {
+      userExists: userInfo.exists,
+      hasPassword: userInfo.hasPassword,
+    },
   });
 
   // Only send magic link if user exists (prevents sending to non-existent accounts)
@@ -152,7 +168,10 @@ async function handleMagicLinkRequest({ repoRoot, req, res }) {
   // Always return success to prevent email enumeration
   serveJson(res, 200, {
     ok: true,
-    message: t('api.success.magicLinkSent', 'If your email is registered, a magic link has been sent. Check your inbox.'),
+    message: t(
+      'api.success.magicLinkSent',
+      'If your email is registered, a magic link has been sent. Check your inbox.',
+    ),
   });
   return true;
 }
@@ -165,7 +184,10 @@ async function handleMagicLinkVerify({ repoRoot, req, res }) {
   const ctx = createStorageScope(null, { repoRoot });
 
   if (!authEnabled()) {
-    return badRequest(res, t('api.error.authNotEnabled', 'Authentication is not enabled'));
+    return badRequest(
+      res,
+      t('api.error.authNotEnabled', 'Authentication is not enabled'),
+    );
   }
 
   const parsed = await requireJsonBody(req, res);
@@ -195,9 +217,8 @@ async function handleMagicLinkVerify({ repoRoot, req, res }) {
 
     serveJson(res, 200, {
       ok: false,
-      reason: consumeResult.reason === 'invalid_or_expired'
-        ? 'expired'
-        : 'invalid',
+      reason:
+        consumeResult.reason === 'invalid_or_expired' ? 'expired' : 'invalid',
     });
     return true;
   }
@@ -217,7 +238,10 @@ async function handleMagicLinkVerify({ repoRoot, req, res }) {
       metadata: { reason: userResult.reason },
     });
 
-    return badRequest(res, t('api.error.failedToCreateSession', 'Failed to create session'));
+    return badRequest(
+      res,
+      t('api.error.failedToCreateSession', 'Failed to create session'),
+    );
   }
 
   // Log successful login
@@ -248,8 +272,16 @@ async function handleMagicLinkVerify({ repoRoot, req, res }) {
 
 /** @type {import('../../utils/router.js').Route[]} */
 export const ROUTES = [
-  { method: 'POST', pattern: '/api/auth/magic-link', handler: handleMagicLinkRequest },
-  { method: 'POST', pattern: '/api/auth/magic-link/verify', handler: handleMagicLinkVerify },
+  {
+    method: 'POST',
+    pattern: '/api/auth/magic-link',
+    handler: handleMagicLinkRequest,
+  },
+  {
+    method: 'POST',
+    pattern: '/api/auth/magic-link/verify',
+    handler: handleMagicLinkVerify,
+  },
 ];
 
 /**

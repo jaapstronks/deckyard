@@ -94,13 +94,13 @@
 }
 
 /* Dark mode adjustments */
-:root[data-ui-mode="dark"] .viewer-comments-btn--prominent {
+:root[data-ui-mode='dark'] .viewer-comments-btn--prominent {
   background: hsl(210 70% 50% / 0.2);
   border-color: hsl(210 70% 50% / 0.35);
   color: hsl(210 70% 70%);
 }
 
-:root[data-ui-mode="dark"] .viewer-comments-btn--prominent:hover {
+:root[data-ui-mode='dark'] .viewer-comments-btn--prominent:hover {
   background: hsl(210 70% 50% / 0.28);
   border-color: hsl(210 70% 50% / 0.45);
 }

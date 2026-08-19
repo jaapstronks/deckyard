@@ -1,6 +1,9 @@
 import { bgClass, escapeHtml, BACKGROUND_FIELD } from '../helpers.js';
 import { resolveTitleSlideBackground } from './title-slide/background.js';
-import { TITLE_LAYOUTS, DEFAULT_TITLE_LAYOUT } from '../../theme-config-schema.js';
+import {
+  TITLE_LAYOUTS,
+  DEFAULT_TITLE_LAYOUT,
+} from '../../theme-config-schema.js';
 import { alignGroup, groupAlignClass } from '../field-groups.js';
 
 /**
@@ -130,7 +133,7 @@ export default {
       ? bgAlt
         ? `<img class="slide-bg" src="${escapeHtml(legacyBg)}" alt="${escapeHtml(bgAlt)}" />`
         : `<img class="slide-bg" src="${escapeHtml(
-            legacyBg
+            legacyBg,
           )}" alt="" aria-hidden="true" />`
       : '';
     const subtitle =
@@ -142,19 +145,15 @@ export default {
         ? `<p class="tsu-meta" data-morph-role="meta" data-inline-field="meta" dir="auto">${escapeHtml(content.meta)}</p>`
         : '';
     const theme =
-      ctx?.theme && typeof ctx.theme === 'object'
-        ? ctx.theme
-        : null;
+      ctx?.theme && typeof ctx.theme === 'object' ? ctx.theme : null;
     // Title slide can use a separate smaller logo (titleLogo) or fall back to main logo
     const logoSrc = String(
       theme?.assets?.titleLogo ||
         theme?.assets?.logo ||
-        '/assets/images/logo.svg'
+        '/assets/images/logo.svg',
     );
     const logoAlt = String(
-      theme?.assets?.titleLogoAlt ||
-        theme?.assets?.logoAlt ||
-        'Logo'
+      theme?.assets?.titleLogoAlt || theme?.assets?.logoAlt || 'Logo',
     );
     const logoCorner =
       content?.logoCorner === 'left' || content?.logoCorner === 'right'

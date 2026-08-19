@@ -1,5 +1,8 @@
 /* global window */ // page.evaluate() callbacks below run in the browser context.
-import { getPuppeteerBrowser, toNodeBuffer } from '../utils/puppeteer-browser.js';
+import {
+  getPuppeteerBrowser,
+  toNodeBuffer,
+} from '../utils/puppeteer-browser.js';
 
 /**
  * Convert a PDF file (as a data URL or buffer) to an array of PNG image buffers.
@@ -137,12 +140,9 @@ export async function pdfToImages({
     await renderPage.setContent(htmlContent, { waitUntil: 'networkidle0' });
 
     // Get the actual page count using pdf.js
-    const totalPages = await renderPage.evaluate(
-      async (pdfData) => {
-        return await window.getPageCount(pdfData);
-      },
-      pdfDataUrl
-    );
+    const totalPages = await renderPage.evaluate(async (pdfData) => {
+      return await window.getPageCount(pdfData);
+    }, pdfDataUrl);
 
     // Render each page
     for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
@@ -158,7 +158,7 @@ export async function pdfToImages({
         pdfDataUrl,
         pageNum,
         width,
-        height
+        height,
       );
 
       // Take screenshot of the canvas

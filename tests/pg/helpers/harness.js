@@ -114,12 +114,13 @@ export async function openTestDb() {
   // An unmigrated database means the CI step that runs the migrations was
   // skipped (or, locally, `npm run db:migrate` was not pointed at the scratch
   // DB). Fail loud rather than let every test error on a missing table.
-  const { rows } = await sql`SELECT to_regclass('public.slide_locks') AS present`.execute(db);
+  const { rows } =
+    await sql`SELECT to_regclass('public.slide_locks') AS present`.execute(db);
   if (!rows[0]?.present) {
     await db.destroy();
     throw new Error(
       'PG test suite: the database has no schema. Run the migrations against it ' +
-        'first (`DATABASE_URL=… npm run db:migrate`), then run `npm run test:pg`.'
+        'first (`DATABASE_URL=… npm run db:migrate`), then run `npm run test:pg`.',
     );
   }
 

@@ -22,10 +22,7 @@
   /* Typography */
   --font-heading: var(--t-font-heading, Arial, sans-serif);
   --font-body: var(--t-font-body, Arial, sans-serif);
-  --font-caption: var(
-    --t-font-caption,
-    var(--font-body)
-  );
+  --font-caption: var(--t-font-caption, var(--font-body));
   --font-mono: var(
     --t-font-mono,
     'JetBrains Mono',
@@ -40,10 +37,7 @@
   );
   --heading-transform: var(--t-heading-transform, none);
   --heading-weight: var(--t-heading-weight, 400);
-  --logo-url: var(
-    --t-logo-url,
-    url('/assets/images/logo.svg')
-  );
+  --logo-url: var(--t-logo-url, url('/assets/images/logo.svg'));
 
   /* Slide sizing lives in 00-tokens.css (e.g. --slide-font-size-title,
      --slide-padding) — no duplicates here. */

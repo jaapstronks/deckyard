@@ -33,4 +33,3 @@ export async function withDbGuard(fallback, fn) {
   const db = getDb();
   return fn(db);
 }
-

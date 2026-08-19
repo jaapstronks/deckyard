@@ -33,7 +33,7 @@ export function renderAdminUsersPanel({ user }) {
     class: 'help',
     text: t(
       'admin.users.help',
-      'Add, edit, or remove users. New users will receive an email invitation to set up their account.'
+      'Add, edit, or remove users. New users will receive an email invitation to set up their account.',
     ),
   });
 
@@ -66,11 +66,13 @@ export function renderAdminUsersPanel({ user }) {
       },
       () => {
         usersList.innerHTML = '';
-        usersList.append(h('div', {
-          class: 'help',
-          text: t('admin.users.loadFailed', 'Failed to load users.'),
-        }));
-      }
+        usersList.append(
+          h('div', {
+            class: 'help',
+            text: t('admin.users.loadFailed', 'Failed to load users.'),
+          }),
+        );
+      },
     );
 
     isLoading = false;
@@ -89,8 +91,14 @@ export function renderAdminUsersPanel({ user }) {
     loadUsers();
   }
 
-  const header = h('div', { class: 'row is-between is-align-start', style: 'margin-bottom: 12px;' });
-  header.append(h('div', { class: 'stack', style: 'gap: 4px;' }, [cardTitle, cardHint]), addBtn);
+  const header = h('div', {
+    class: 'row is-between is-align-start',
+    style: 'margin-bottom: 12px;',
+  });
+  header.append(
+    h('div', { class: 'stack', style: 'gap: 4px;' }, [cardTitle, cardHint]),
+    addBtn,
+  );
 
   card.append(header, usersList);
 

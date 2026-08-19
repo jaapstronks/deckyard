@@ -41,7 +41,9 @@ export function createViewerSlidesPanel({
         'data-slide-id': slide.id,
         tabindex: -1,
         role: 'button',
-        'aria-label': t('editor.slideList.selectSlideN', 'Select slide {n}', { n: index + 1 }),
+        'aria-label': t('editor.slideList.selectSlideN', 'Select slide {n}', {
+          n: index + 1,
+        }),
       });
 
       // Collapsed rail number (hidden in expanded mode, shown in collapsed)
@@ -53,12 +55,14 @@ export function createViewerSlidesPanel({
       // Thumbnail container - same structure as editor
       const thumbMini = h('div', { class: 'thumb thumb-mini' });
       try {
-        thumbMini.append(renderSlideElement(slide, {
+        thumbMini.append(
+          renderSlideElement(slide, {
             mode: 'thumb',
             theme,
             presentationId: pres?.id,
             lang: resolveDeckLang(pres),
-          }));
+          }),
+        );
       } catch {
         // ignore render errors
       }
@@ -76,7 +80,9 @@ export function createViewerSlidesPanel({
         const commentIndicator = h('div', {
           class: 'slide-comment-indicator',
           text: String(commentCount),
-          title: t('editor.slideList.commentsOnSlide', '{n} comment(s)', { n: commentCount }),
+          title: t('editor.slideList.commentsOnSlide', '{n} comment(s)', {
+            n: commentCount,
+          }),
         });
         thumbMini.append(commentIndicator);
       }

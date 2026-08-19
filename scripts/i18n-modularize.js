@@ -22,24 +22,24 @@ const LANGUAGES = ['en', 'nl', 'de', 'fr', 'es', 'pt', 'da', 'sv', 'no'];
 
 // Module definitions: maps key prefixes to module names
 const MODULE_MAP = {
-  'common': 'common',
-  'app': 'common',
-  'follow': 'common',
-  'login': 'auth',
-  'forgotPassword': 'auth',
-  'resetPassword': 'auth',
-  'editor': 'editor',
-  'list': 'list',
-  'slideLibrary': 'list',
-  'imageLibrary': 'list',
-  'share': 'share',
-  'shareViewer': 'share',
-  'moderate': 'share',
-  'settings': 'settings',
-  'admin': 'settings',
-  'presenter': 'presenter',
-  'notesJoin': 'presenter',
-  'slideType': 'slide-types',
+  common: 'common',
+  app: 'common',
+  follow: 'common',
+  login: 'auth',
+  forgotPassword: 'auth',
+  resetPassword: 'auth',
+  editor: 'editor',
+  list: 'list',
+  slideLibrary: 'list',
+  imageLibrary: 'list',
+  share: 'share',
+  shareViewer: 'share',
+  moderate: 'share',
+  settings: 'settings',
+  admin: 'settings',
+  presenter: 'presenter',
+  notesJoin: 'presenter',
+  slideType: 'slide-types',
 };
 
 function loadJson(filePath) {
@@ -141,7 +141,9 @@ function main() {
 
   // Find shared keys
   const sharedKeys = findSharedKeys(langData);
-  console.log(`Found ${Object.keys(sharedKeys).length} shared keys (language-agnostic)`);
+  console.log(
+    `Found ${Object.keys(sharedKeys).length} shared keys (language-agnostic)`,
+  );
 
   // Save shared.json
   const sharedPath = path.join(I18N_DIR, 'shared.json');
@@ -162,7 +164,9 @@ function main() {
     for (const [moduleName, moduleData] of Object.entries(modules)) {
       const modulePath = path.join(langDir, `${moduleName}.json`);
       saveJson(modulePath, sortKeys(moduleData));
-      console.log(`  ${moduleName}.json: ${Object.keys(moduleData).length} keys (${countLines(moduleData)} lines)`);
+      console.log(
+        `  ${moduleName}.json: ${Object.keys(moduleData).length} keys (${countLines(moduleData)} lines)`,
+      );
     }
 
     // Create merged index.json (shared + all modules)

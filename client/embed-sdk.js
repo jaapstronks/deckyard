@@ -26,48 +26,32 @@
     if (typeof baseUrl === 'string' && baseUrl.trim())
       return baseUrl.trim().replace(/\/+$/, '');
     return String(
-      global.location && global.location.origin
-        ? global.location.origin
-        : ''
+      global.location && global.location.origin ? global.location.origin : '',
     ).replace(/\/+$/, '');
   }
 
-  function buildEmbedSrc({
-    baseUrl,
-    publishId,
-    slug,
-    options,
-  }) {
+  function buildEmbedSrc({ baseUrl, publishId, slug, options }) {
     const base = ensureUrl(baseUrl);
     const pid = String(publishId || '').trim();
     if (!pid) throw new Error('publishId is required');
     const s = typeof slug === 'string' ? slug.trim() : '';
 
-    const path = s
-      ? `/embed/${pid}-${encodeURIComponent(s)}`
-      : `/embed/${pid}`;
+    const path = s ? `/embed/${pid}-${encodeURIComponent(s)}` : `/embed/${pid}`;
     const url = new URL(path, base);
 
-    const opt =
-      options && typeof options === 'object' ? options : {};
+    const opt = options && typeof options === 'object' ? options : {};
 
     const controls = toBool01(opt.controls);
-    if (controls != null)
-      url.searchParams.set('controls', String(controls));
+    if (controls != null) url.searchParams.set('controls', String(controls));
 
     const loop = toBool01(opt.loop);
-    if (loop != null)
-      url.searchParams.set('loop', String(loop));
+    if (loop != null) url.searchParams.set('loop', String(loop));
 
     const allowFs = toBool01(opt.allowFullscreen);
     if (allowFs != null)
-      url.searchParams.set(
-        'allowFullscreen',
-        String(allowFs)
-      );
+      url.searchParams.set('allowFullscreen', String(allowFs));
 
-    if (opt.ui != null)
-      url.searchParams.set('ui', String(opt.ui));
+    if (opt.ui != null) url.searchParams.set('ui', String(opt.ui));
 
     // Language selection (optional): lets host pages embed a specific i18n version.
     if (opt.lang === 'nl' || opt.lang === 'en-GB')
@@ -81,20 +65,15 @@
     if (opt.start != null)
       url.searchParams.set(
         'start',
-        String(Math.max(0, Number(opt.start) || 0))
+        String(Math.max(0, Number(opt.start) || 0)),
       );
 
     // postMessage origin allowlist for iframe to validate parent
     const allowedOrigins = Array.isArray(opt.allowedOrigins)
-      ? opt.allowedOrigins
-          .map((x) => String(x || '').trim())
-          .filter(Boolean)
+      ? opt.allowedOrigins.map((x) => String(x || '').trim()).filter(Boolean)
       : [];
     if (allowedOrigins.length)
-      url.searchParams.set(
-        'allowedOrigins',
-        allowedOrigins.join(',')
-      );
+      url.searchParams.set('allowedOrigins', allowedOrigins.join(','));
 
     return url.toString();
   }
@@ -115,7 +94,7 @@
         const arr = handlers.get(k) || [];
         handlers.set(
           k,
-          arr.filter((x) => x !== fn)
+          arr.filter((x) => x !== fn),
         );
       },
       emit(name, payload) {
@@ -144,27 +123,17 @@
    * - allowedOrigins?: string[] (default [location.origin])
    * - onReady?, onSlideChange?, onError? callbacks
    */
-  function createDeckEmbed({
-    el,
-    publishId,
-    options,
-  } = {}) {
-    if (!isEl(el))
-      throw new Error('Expected { el: HTMLElement }');
-    const opt =
-      options && typeof options === 'object' ? options : {};
+  function createDeckEmbed({ el, publishId, options } = {}) {
+    if (!isEl(el)) throw new Error('Expected { el: HTMLElement }');
+    const opt = options && typeof options === 'object' ? options : {};
 
     // Default to allowing the current origin, so the iframe can validate its parent safely.
     const defaultAllowedOrigins =
-      global.location && global.location.origin
-        ? [global.location.origin]
-        : [];
+      global.location && global.location.origin ? [global.location.origin] : [];
     if (!Array.isArray(opt.allowedOrigins))
       opt.allowedOrigins = defaultAllowedOrigins;
 
-    const aspectRatio = normalizeAspectRatio(
-      opt.aspectRatio
-    );
+    const aspectRatio = normalizeAspectRatio(opt.aspectRatio);
 
     const wrap = document.createElement('div');
     wrap.className = 'ps-embed-wrap';
@@ -205,10 +174,8 @@
     iframe.style.height = '100%';
     iframe.style.border = '0';
     iframe.loading = 'lazy';
-    iframe.referrerPolicy =
-      'strict-origin-when-cross-origin';
-    iframe.allow =
-      opt.allowFullscreen === false ? '' : 'fullscreen';
+    iframe.referrerPolicy = 'strict-origin-when-cross-origin';
+    iframe.allow = opt.allowFullscreen === false ? '' : 'fullscreen';
     if (opt.allowFullscreen !== false)
       iframe.setAttribute('allowfullscreen', '');
     iframe.title =
@@ -238,9 +205,7 @@
 
     function dispatchDomEvent(name, detail) {
       try {
-        wrap.dispatchEvent(
-          new CustomEvent(name, { detail })
-        );
+        wrap.dispatchEvent(new CustomEvent(name, { detail }));
       } catch (e) {
         // ignore
       }
@@ -262,7 +227,7 @@
             type: String(type || ''),
             payload: payload || {},
           },
-          iframeOrigin
+          iframeOrigin,
         );
       } catch (e) {
         // ignore
@@ -270,29 +235,24 @@
     }
 
     function onMessage(event) {
-      if (!event || event.source !== iframe.contentWindow)
-        return;
+      if (!event || event.source !== iframe.contentWindow) return;
       if (event.origin !== iframeOrigin) return;
       const data = event.data;
       if (!data || typeof data !== 'object') return;
       if (data.source !== EMBED_SOURCE) return;
       const type = String(data.type || '');
       const payload =
-        data.payload && typeof data.payload === 'object'
-          ? data.payload
-          : {};
+        data.payload && typeof data.payload === 'object' ? data.payload : {};
 
       if (type === 'READY') {
-        lastState.totalSlides =
-          Number(payload.totalSlides || 0) || 0;
+        lastState.totalSlides = Number(payload.totalSlides || 0) || 0;
         emitter.emit('ready', payload);
         dispatchDomEvent('ready', payload);
         safeCall(opt.onReady, payload);
         return;
       }
       if (type === 'SLIDE_CHANGE') {
-        lastState.slideIndex =
-          Number(payload.slideIndex || 0) || 0;
+        lastState.slideIndex = Number(payload.slideIndex || 0) || 0;
         lastState.slideId = String(payload.slideId || '');
         emitter.emit('slidechange', payload);
         dispatchDomEvent('slidechange', payload);
@@ -300,13 +260,11 @@
         return;
       }
       if (type === 'STATE') {
-        lastState.slideIndex =
-          Number(payload.slideIndex || 0) || 0;
+        lastState.slideIndex = Number(payload.slideIndex || 0) || 0;
         lastState.slideId = String(payload.slideId || '');
         lastState.totalSlides =
-          Number(
-            payload.totalSlides || lastState.totalSlides
-          ) || lastState.totalSlides;
+          Number(payload.totalSlides || lastState.totalSlides) ||
+          lastState.totalSlides;
         emitter.emit('state', payload);
         dispatchDomEvent('state', payload);
         return;
@@ -330,11 +288,7 @@
       },
       goToSlide(i) {
         postToIframe('GOTO', {
-          slideIndex: clamp(
-            Number(i) || 0,
-            0,
-            Number.MAX_SAFE_INTEGER
-          ),
+          slideIndex: clamp(Number(i) || 0, 0, Number.MAX_SAFE_INTEGER),
         });
       },
       getState() {
@@ -348,8 +302,7 @@
           wrap.remove();
         } catch {
           try {
-            if (wrap.parentNode)
-              wrap.parentNode.removeChild(wrap);
+            if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
           } catch {}
         }
       },
@@ -367,8 +320,6 @@
     return controller;
   }
 
-  global.PresentationSystemEmbed =
-    global.PresentationSystemEmbed || {};
-  global.PresentationSystemEmbed.createDeckEmbed =
-    createDeckEmbed;
+  global.PresentationSystemEmbed = global.PresentationSystemEmbed || {};
+  global.PresentationSystemEmbed.createDeckEmbed = createDeckEmbed;
 })(typeof window !== 'undefined' ? window : globalThis);

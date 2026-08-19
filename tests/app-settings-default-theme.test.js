@@ -16,11 +16,13 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 
-const { defaultAppSettings, getDefaultThemeId } = await import(
-  '../server/storage/settings.js'
-);
+const { defaultAppSettings, getDefaultThemeId } =
+  await import('../server/storage/settings.js');
 const { crossOrganizationScope } = await import('../server/storage/scope.js');
-const scope = crossOrganizationScope(null, 'test: instance-level settings read');
+const scope = crossOrganizationScope(
+  null,
+  'test: instance-level settings read',
+);
 const { DEFAULT_THEME_ID } = await import('../shared/constants/themes.js');
 
 describe('app settings: default theme + picker allowlist', () => {

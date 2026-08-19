@@ -35,11 +35,11 @@ no organization. Three categories are legitimate; everything else is a
 violation, not a fourth category waiting to be named:
 
 1. **Token-authorized reads** — a globally unique token (publish id, share
-   token, follow code) was already resolved, and the deck id came *out* of
+   token, follow code) was already resolved, and the deck id came _out_ of
    that lookup.
 2. **Session-capability audience interactions** — the live session id or
-   follow code *is* the authorization, and the rows are keyed by session, not
-   organization. This covers the anonymous audience *writes* too (Q&A
+   follow code _is_ the authorization, and the rows are keyed by session, not
+   organization. This covers the anonymous audience _writes_ too (Q&A
    submissions, poll/likert votes, feedback): the tables have no organization
    column, so an organization filter has nothing to bind to.
 3. **Instance-level configuration** — `app_settings`, `user_settings` and
@@ -62,19 +62,19 @@ reviewer who wonders why the call is exempt.
 Two call shapes used to coexist in the layer, and they carried **different
 authorization doctrines**:
 
-- Scope-first goes through `resolveScope()`, which *refuses* a call without
+- Scope-first goes through `resolveScope()`, which _refuses_ a call without
   an organization — loudly, with a `TypeError` naming the convention.
-- ctx-at-the-tail went through `getOrgId(ctx)`, which *guessed*: a missing or
+- ctx-at-the-tail went through `getOrgId(ctx)`, which _guessed_: a missing or
   scope-less ctx silently fell back to the default organization and read
   from the wrong organization. (That fallback is gone — `getOrgId` refuses too
   now; see the boundary section below.)
 
 A mandatory first parameter cannot be forgotten — leave it off and every
 argument shifts, so `resolveScope` throws on the first request. A tail
-parameter *can* be forgotten, and back then the guessing dialect answered.
+parameter _can_ be forgotten, and back then the guessing dialect answered.
 The parameter's position decides which dialect you get; that is why the
 position is the contract. Reading order also follows the mental model: first
-*where and on whose behalf*, then *what*.
+_where and on whose behalf_, then _what_.
 
 `toStorageContext(scope, '<fnName>')` as the first statement is the safety
 net for missed call sites: argument-shift bugs surface as a thrown `TypeError`
@@ -83,22 +83,22 @@ naming the function, not as an `undefined` deep inside a query.
 ## The six permanent exceptions
 
 These take `repoRoot` first because they genuinely operate on a disk path —
-they ask for a *path*, not a scope:
+they ask for a _path_, not a scope:
 
-| Export | Why |
-| --- | --- |
-| `uploads.js :: writeUploadedFile` | writes uploaded bytes to disk |
-| `uploads.js :: replaceUploadFromDataUrl` | rewrites an upload on disk |
-| `boot-check.js :: strandedFileDataError` | migration guard inspecting `dataDir()` before boot |
-| `scope.js :: crossOrganizationScope` | scope *builder*: repoRoot is its input |
-| `scope.js :: singleOrganizationScope` | scope *builder*: repoRoot is its input |
-| `presentations/crud/factory.js :: prepareNewPresentation` | reads theme files from disk via `loadThemeAssets` |
+| Export                                                    | Why                                                |
+| --------------------------------------------------------- | -------------------------------------------------- |
+| `uploads.js :: writeUploadedFile`                         | writes uploaded bytes to disk                      |
+| `uploads.js :: replaceUploadFromDataUrl`                  | rewrites an upload on disk                         |
+| `boot-check.js :: strandedFileDataError`                  | migration guard inspecting `dataDir()` before boot |
+| `scope.js :: crossOrganizationScope`                      | scope _builder_: repoRoot is its input             |
+| `scope.js :: singleOrganizationScope`                     | scope _builder_: repoRoot is its input             |
+| `presentations/crud/factory.js :: prepareNewPresentation` | reads theme files from disk via `loadThemeAssets`  |
 
 Outside `server/storage/**`, `repoRoot` remains a perfectly legitimate
 parameter (export pipeline, rendering, theme CSS, uploads); the convention's
 scope is the storage layer only.
 
-The *naming* half of the convention reaches one layer further: a function in
+The _naming_ half of the convention reaches one layer further: a function in
 `server/services/**` that carries a `StorageScope` names that parameter
 `scope`, never `ctx` — a second name for the same envelope is exactly the seam
 where a caller passes the wrong shape unnoticed (that mismatch is how #707
@@ -108,14 +108,14 @@ broke).
 
 `getOrgId(ctx)` throws when the context carries no organization. It used to
 fall back to `getDefaultOrganizationId()` — on a multi-organization instance
-that turned a missing organization into a query against the *default*
+that turned a missing organization into a query against the _default_
 organization, the tenant-isolation leak `resolveScope()` refuses in another
 guise. The org-scoping fallback-sweep (#623) removed the fallback, and
 `tests/get-org-id-refuses-empty-context.test.js` pins the refusal: a call
 site that reaches `getOrgId` without an organization is a bug and fails
 loudly, instead of silently scoping to the default organization.
 
-That removal happened *outside* this convention's migration, which stayed
+That removal happened _outside_ this convention's migration, which stayed
 behaviour-preserving throughout — the boundary decision (D5, 2026-08-06)
 placed it there on purpose. The net result is one doctrine on both paths:
 whether a call arrives scope-first through `resolveScope()` or reaches

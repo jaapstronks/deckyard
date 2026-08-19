@@ -20,7 +20,7 @@ import { liveInteractionKind } from '../../../../shared/slide-types/runtime.js';
 export function followAudienceScope(repoRoot) {
   return crossOrganizationScope(
     repoRoot,
-    'follow-along audience: the live follow code is the authorization'
+    'follow-along audience: the live follow code is the authorization',
   );
 }
 
@@ -86,7 +86,10 @@ export function ensureInteractionDeviceCookie(req) {
   return { id, setCookie: parts.join('; ') };
 }
 
-export function followMetaFromPresentation(pres, { includeTranslationStatus = false } = {}) {
+export function followMetaFromPresentation(
+  pres,
+  { includeTranslationStatus = false } = {},
+) {
   const dominant =
     typeof pres?.i18n?.dominant === 'string' ? pres.i18n.dominant : null;
   const versions =
@@ -152,4 +155,3 @@ export function computeAudienceCapabilitiesFromState(state, pres) {
     interaction: interaction || undefined,
   };
 }
-

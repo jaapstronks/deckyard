@@ -64,7 +64,7 @@ describe('the core profile', () => {
         'title-slide',
       ],
       'changing the profile changes what a conforming implementation owes — ' +
-        'that is a spec decision, not a refactor'
+        'that is a spec decision, not a refactor',
     );
   });
 
@@ -73,12 +73,12 @@ describe('the core profile', () => {
       assert.ok(SLIDE_TYPES[name], `profile names a registered type: ${name}`);
       assert.ok(
         CORE_SLIDE_TYPE_NAMES.includes(name),
-        `a normative type must be core, not a fork type: ${name}`
+        `a normative type must be core, not a fork type: ${name}`,
       );
       assert.notEqual(
         SLIDE_TYPES[name]?.deprecated,
         true,
-        `a deprecated type cannot be normative: ${name}`
+        `a deprecated type cannot be normative: ${name}`,
       );
     }
   });
@@ -94,13 +94,15 @@ describe('the core profile', () => {
 
 describe('the fallback facet', () => {
   it('is declared by every core type outside the profile', () => {
-    const missing = DECKYARD_SET.filter((name) => !slideFallback(SLIDE_TYPES[name]));
+    const missing = DECKYARD_SET.filter(
+      (name) => !slideFallback(SLIDE_TYPES[name]),
+    );
     assert.deepEqual(
       missing,
       [],
       'a tier-2 type without a fallback is a slide a core-profile-only reader ' +
         'has to drop. Declare one, or ask whether the type is a theme variant:\n' +
-        missing.join('\n')
+        missing.join('\n'),
     );
   });
 
@@ -114,7 +116,7 @@ describe('the fallback facet', () => {
       bad,
       [],
       `a fallback must name one of the nine, so the degradation is guaranteed ` +
-        `renderable:\n${bad.join('\n')}`
+        `renderable:\n${bad.join('\n')}`,
     );
   });
 
@@ -124,7 +126,7 @@ describe('the fallback facet', () => {
       declared,
       [],
       `the profile is the floor; a fallback on a tier-1 type is either a cycle ` +
-        `or a claim that the floor has a floor:\n${declared.join('\n')}`
+        `or a claim that the floor has a floor:\n${declared.join('\n')}`,
     );
   });
 
@@ -133,12 +135,12 @@ describe('the fallback facet', () => {
       const target = coreProfileContract(name, SLIDE_TYPES[name]);
       assert.ok(
         isCoreProfileType(target),
-        `${name} does not resolve to a tier-1 contract (got '${target}')`
+        `${name} does not resolve to a tier-1 contract (got '${target}')`,
       );
       assert.equal(
         coreProfileContract(target, SLIDE_TYPES[target]),
         target,
-        `${name} -> ${target} must be the last hop`
+        `${name} -> ${target} must be the last hop`,
       );
     }
   });
@@ -149,13 +151,16 @@ describe('the fallback facet', () => {
     assert.equal(slideFallback({ fallback: 'acme-hero' }), '');
     assert.equal(slideFallback({ fallback: 42 }), '');
     assert.equal(slideFallback(undefined), '');
-    assert.equal(coreProfileContract('acme-hero', { fallback: 'acme-hero' }), '');
+    assert.equal(
+      coreProfileContract('acme-hero', { fallback: 'acme-hero' }),
+      '',
+    );
   });
 
   it('hears a fork type that declares its own', () => {
     assert.equal(
       coreProfileContract('acme-hero', { fallback: 'content-slide' }),
-      'content-slide'
+      'content-slide',
     );
   });
 });
@@ -184,7 +189,7 @@ describe('the tier ladder', () => {
   it('accounts for every core type exactly once', () => {
     assert.equal(
       CORE_PROFILE.length + DECKYARD_SET.length,
-      CORE_SLIDE_TYPE_NAMES.length
+      CORE_SLIDE_TYPE_NAMES.length,
     );
   });
 });
@@ -196,13 +201,13 @@ describe('types declared without being built', () => {
         SLIDE_TYPES[name],
         undefined,
         `${name} is registered — it is a normal type now, so it declares its ` +
-          `own fallback and its entry in DECLARED_SLIDE_TYPES goes`
+          `own fallback and its entry in DECLARED_SLIDE_TYPES goes`,
       );
       assert.equal(
         REMOVED_SLIDE_TYPE_NAMES.includes(name),
         false,
         `${name} is a removed type — reserving a retired name would promise ` +
-          `its return under different semantics`
+          `its return under different semantics`,
       );
     }
   });
@@ -213,25 +218,25 @@ describe('types declared without being built', () => {
       assert.notEqual(
         entry.tier,
         SLIDE_TIER.CORE_PROFILE,
-        `${name} cannot be normative while nothing renders it`
+        `${name} cannot be normative while nothing renders it`,
       );
       assert.ok(
         isCoreProfileType(entry.fallback),
-        `${name} must name a tier-1 fallback (got '${entry.fallback}')`
+        `${name} must name a tier-1 fallback (got '${entry.fallback}')`,
       );
       assert.ok(
         SLIDE_STRUCTURE_NAMES.includes(entry.structure),
-        `${name} must declare a known structure (got '${entry.structure}')`
+        `${name} must declare a known structure (got '${entry.structure}')`,
       );
       assert.ok(
         entry.why.length > 60,
         `${name} needs a real reason — the bar for a new published name is ` +
-          `"which tier-1 type is the fallback, and why is that loss unacceptable"`
+          `"which tier-1 type is the fallback, and why is that loss unacceptable"`,
       );
       assert.equal(
         coreProfileContract(name),
         entry.fallback,
-        `${name} resolves to its declared fallback without a definition`
+        `${name} resolves to its declared fallback without a definition`,
       );
     }
   });
@@ -247,7 +252,12 @@ describe('types declared without being built', () => {
 /** Drive the route the way the server does and hand back the parsed body. */
 async function fetchMeta() {
   let body = '';
-  const res = { writeHead() {}, end(chunk) { body = chunk; } };
+  const res = {
+    writeHead() {},
+    end(chunk) {
+      body = chunk;
+    },
+  };
   const handled = await handleSlideTypes({
     req: { method: 'GET' },
     res,
@@ -265,20 +275,20 @@ describe('the wire', () => {
     for (const name of Object.keys(META)) {
       assert.ok(
         SLIDE_TIERS[META[name].tier],
-        `${name} was served tier '${META[name].tier}'`
+        `${name} was served tier '${META[name].tier}'`,
       );
     }
   });
 
   it('serves the resolved fallback for every tier-2 type', () => {
     const missing = DECKYARD_SET.filter(
-      (name) => META[name]?.fallback !== slideFallback(SLIDE_TYPES[name])
+      (name) => META[name]?.fallback !== slideFallback(SLIDE_TYPES[name]),
     );
     assert.deepEqual(
       missing,
       [],
       `the editor holds this response, not the registry — a fallback that does ` +
-        `not travel is a declaration nothing can read:\n${missing.join('\n')}`
+        `not travel is a declaration nothing can read:\n${missing.join('\n')}`,
     );
   });
 

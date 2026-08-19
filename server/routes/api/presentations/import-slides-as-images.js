@@ -1,6 +1,15 @@
-import { getPresentation, updatePresentation } from '../../../storage/presentations/index.js';
-import { uploadImageKitBuffer, getImageKitConfigFromEnv } from '../../../media/imagekit.js';
-import { getMediaProvider, isMediaProviderInitialized } from '../../../media/index.js';
+import {
+  getPresentation,
+  updatePresentation,
+} from '../../../storage/presentations/index.js';
+import {
+  uploadImageKitBuffer,
+  getImageKitConfigFromEnv,
+} from '../../../media/imagekit.js';
+import {
+  getMediaProvider,
+  isMediaProviderInitialized,
+} from '../../../media/index.js';
 import { pdfToImages } from '../../../render/pdf-to-images.js';
 import {
   methodNotAllowed,
@@ -50,7 +59,9 @@ async function uploadImageBuffer({ buffer, fileName, mimeType, tags = [] }) {
     return result?.publicUrl || '';
   }
 
-  throw new Error('No media provider configured (neither ImageKit nor Scaleway/local)');
+  throw new Error(
+    'No media provider configured (neither ImageKit nor Scaleway/local)',
+  );
 }
 
 function generateSlideId() {
@@ -72,7 +83,7 @@ function generateSlideId() {
  */
 export async function handlePresentationImportSlidesAsImages(
   { repoRoot, storageScope, req, res, authedUser } = {},
-  id
+  id,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
@@ -121,7 +132,11 @@ export async function handlePresentationImportSlidesAsImages(
   };
 
   try {
-    sendProgress('Starting PDF conversion...', { stage: 'converting', current: 0, total: 0 });
+    sendProgress('Starting PDF conversion...', {
+      stage: 'converting',
+      current: 0,
+      total: 0,
+    });
 
     // Convert PDF to images
     const images = await pdfToImages({
@@ -172,7 +187,10 @@ export async function handlePresentationImportSlidesAsImages(
           tags: ['pdf-import', `source:${baseFilename}`],
         });
       } catch (uploadErr) {
-        log.error(`[import-slides] Failed to upload page ${pageNum}:`, uploadErr?.message);
+        log.error(
+          `[import-slides] Failed to upload page ${pageNum}:`,
+          uploadErr?.message,
+        );
         // Continue with empty URL - user can add image later
       }
 
@@ -212,7 +230,9 @@ export async function handlePresentationImportSlidesAsImages(
     let insertIndex = existingSlides.length; // Default: end of deck
 
     if (insertAfterSlideId) {
-      const afterIdx = existingSlides.findIndex((s) => s?.id === insertAfterSlideId);
+      const afterIdx = existingSlides.findIndex(
+        (s) => s?.id === insertAfterSlideId,
+      );
       if (afterIdx >= 0) {
         insertIndex = afterIdx + 1;
       }
@@ -222,12 +242,17 @@ export async function handlePresentationImportSlidesAsImages(
     existingSlides.splice(insertIndex, 0, ...newSlides);
 
     // Update the presentation
-    const updated = await updatePresentation(storageScope, id, {
-      ...pres,
-      slides: existingSlides,
-    }, {
-      actorEmail: authedUser?.email || null,
-    });
+    const updated = await updatePresentation(
+      storageScope,
+      id,
+      {
+        ...pres,
+        slides: existingSlides,
+      },
+      {
+        actorEmail: authedUser?.email || null,
+      },
+    );
 
     sendComplete({
       success: true,

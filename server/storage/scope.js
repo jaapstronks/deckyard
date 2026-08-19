@@ -60,28 +60,34 @@ import { isMultiOrgEnabled } from '../config/features.js';
  * @returns {{organizationId: string|undefined, actorEmail: string|null, crossOrganization: string|undefined}}
  * @throws {TypeError} If the scope states no organization and declares no reason.
  */
-export function resolveScope(storageScope, operation, { allowCrossOrganization = false } = {}) {
+export function resolveScope(
+  storageScope,
+  operation,
+  { allowCrossOrganization = false } = {},
+) {
   if (typeof storageScope === 'string') {
     throw new TypeError(
       `${operation}() takes a storage scope, not a repoRoot string. ` +
         'Pass createStorageScope(authedUser, { repoRoot }) on session paths, or ' +
         "crossOrganizationScope(repoRoot, '<reason>') where a public token is the authorization. " +
-        'See server/storage/scope.js.'
+        'See server/storage/scope.js.',
     );
   }
   if (!storageScope || typeof storageScope !== 'object') {
     throw new TypeError(
       `${operation}() requires a storage scope; received ${storageScope === null ? 'null' : typeof storageScope}. ` +
-        'See server/storage/scope.js.'
+        'See server/storage/scope.js.',
     );
   }
 
   const crossOrganization =
-    typeof storageScope.crossOrganization === 'string' && storageScope.crossOrganization.trim()
+    typeof storageScope.crossOrganization === 'string' &&
+    storageScope.crossOrganization.trim()
       ? storageScope.crossOrganization.trim()
       : undefined;
   const organizationId =
-    typeof storageScope.organizationId === 'string' && storageScope.organizationId
+    typeof storageScope.organizationId === 'string' &&
+    storageScope.organizationId
       ? storageScope.organizationId
       : undefined;
 
@@ -90,7 +96,7 @@ export function resolveScope(storageScope, operation, { allowCrossOrganization =
       `${operation}() was given a scope with no organizationId. A storage call may not ` +
         'fall back to the default organization: state the organization, or declare ' +
         "crossOrganization: '<reason>' when a public token is the authorization. " +
-        'See server/storage/scope.js.'
+        'See server/storage/scope.js.',
     );
   }
 
@@ -99,7 +105,7 @@ export function resolveScope(storageScope, operation, { allowCrossOrganization =
       `${operation}() cannot run cross-organization (declared: "${crossOrganization}"). ` +
         'Only reads of a deck addressed by a public token may skip the organization ' +
         'filter; an operation that writes must state the organization it writes in, ' +
-        'or it would land wherever the storage layer guessed. See server/storage/scope.js.'
+        'or it would land wherever the storage layer guessed. See server/storage/scope.js.',
     );
   }
 
@@ -122,7 +128,9 @@ export function resolveScope(storageScope, operation, { allowCrossOrganization =
  * @returns {string|null}
  */
 export function repoRootOf(storageScope) {
-  return storageScope && typeof storageScope === 'object' ? (storageScope.repoRoot ?? null) : null;
+  return storageScope && typeof storageScope === 'object'
+    ? (storageScope.repoRoot ?? null)
+    : null;
 }
 
 /**
@@ -175,7 +183,7 @@ export function singleOrganizationScope(repoRoot, entryPoint, extra = {}) {
   if (isMultiOrgEnabled()) {
     throw new Error(
       `${entryPoint} has no organization to act in, and this instance runs several. ` +
-        'Give it one explicitly rather than letting it fall back to the default organization.'
+        'Give it one explicitly rather than letting it fall back to the default organization.',
     );
   }
   return {
@@ -228,11 +236,19 @@ export function jobScope(jobData, operation) {
  *   token.
  * @returns {Object} Context for the storage adapter.
  */
-export function toStorageContext(storageScope, operation, opts = {}, resolveOpts) {
+export function toStorageContext(
+  storageScope,
+  operation,
+  opts = {},
+  resolveOpts,
+) {
   const resolved = resolveScope(storageScope, operation, resolveOpts);
   return {
     ...resolved,
     actorEmail:
-      opts.actorEmail || opts.userEmail || opts.ownerEmail || resolved.actorEmail,
+      opts.actorEmail ||
+      opts.userEmail ||
+      opts.ownerEmail ||
+      resolved.actorEmail,
   };
 }

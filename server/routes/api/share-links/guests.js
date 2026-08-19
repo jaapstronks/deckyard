@@ -22,7 +22,15 @@ import {
 import { sendGuestInvitationEmail } from '../../../integrations/brevo.js';
 import { canWritePresentation } from '../../../utils/presentation-authz.js';
 import { dispatchRoutes } from '../../../utils/router.js';
-import { serveJson, notFound, unauthorized, badRequest, getErrorStatus, requireJsonBody, jsonError } from '../../../utils/http.js';
+import {
+  serveJson,
+  notFound,
+  unauthorized,
+  badRequest,
+  getErrorStatus,
+  requireJsonBody,
+  jsonError,
+} from '../../../utils/http.js';
 import { buildShareUrl } from '../../../utils/request-url.js';
 import { createLogger } from '../../../utils/logger.js';
 import { fireAndForget } from '../../../utils/fire-and-forget.js';
@@ -43,12 +51,14 @@ async function getCollabPermission(pres, authedUser) {
 async function handleGuestPreRegister(
   { repoRoot, storageScope, req, res, authedUser },
   presentationId,
-  linkId
+  linkId,
 ) {
   const pres = await getPresentation(storageScope, presentationId);
   if (!pres) return notFound(res);
   const collaboratorPermission = await getCollabPermission(pres, authedUser);
-  if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission })) {
+  if (
+    !canWritePresentation({ user: authedUser, pres, collaboratorPermission })
+  ) {
     return unauthorized(res);
   }
 
@@ -60,7 +70,7 @@ async function handleGuestPreRegister(
     storageScope,
     linkId,
     { email: body?.email, name: body?.name },
-    authedUser?.email
+    authedUser?.email,
   );
 
   if (!result.ok) {
@@ -93,11 +103,11 @@ async function handleGuestPreRegister(
             } else {
               // eslint-disable-next-line no-console
               log.warn(
-                `[brevo] guest invitation email failed to=${result.guest.email} error=${emailResult.error || ''}`.trim()
+                `[brevo] guest invitation email failed to=${result.guest.email} error=${emailResult.error || ''}`.trim(),
               );
             }
           }),
-          `guest invitation email to=${result.guest.email}`
+          `guest invitation email to=${result.guest.email}`,
         );
       }
     }
@@ -108,11 +118,17 @@ async function handleGuestPreRegister(
 }
 
 /** GET /api/presentations/:id/share-links/:linkId/guests - List guests */
-async function handleGuestList({ storageScope, res, authedUser }, presentationId, linkId) {
+async function handleGuestList(
+  { storageScope, res, authedUser },
+  presentationId,
+  linkId,
+) {
   const pres = await getPresentation(storageScope, presentationId);
   if (!pres) return notFound(res);
   const collaboratorPermission = await getCollabPermission(pres, authedUser);
-  if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission })) {
+  if (
+    !canWritePresentation({ user: authedUser, pres, collaboratorPermission })
+  ) {
     return unauthorized(res);
   }
 
@@ -126,12 +142,14 @@ async function handleGuestRemove(
   { storageScope, res, authedUser },
   presentationId,
   _linkId,
-  guestId
+  guestId,
 ) {
   const pres = await getPresentation(storageScope, presentationId);
   if (!pres) return notFound(res);
   const collaboratorPermission = await getCollabPermission(pres, authedUser);
-  if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission })) {
+  if (
+    !canWritePresentation({ user: authedUser, pres, collaboratorPermission })
+  ) {
     return unauthorized(res);
   }
 
@@ -149,12 +167,14 @@ async function handleGuestResend(
   { repoRoot, storageScope, req, res, authedUser },
   presentationId,
   linkId,
-  guestId
+  guestId,
 ) {
   const pres = await getPresentation(storageScope, presentationId);
   if (!pres) return notFound(res);
   const collaboratorPermission = await getCollabPermission(pres, authedUser);
-  if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission })) {
+  if (
+    !canWritePresentation({ user: authedUser, pres, collaboratorPermission })
+  ) {
     return unauthorized(res);
   }
 
@@ -197,9 +217,12 @@ async function handleGuestResend(
   return true;
 }
 
-const GUESTS_PATTERN = /^\/api\/presentations\/([^/]+)\/share-links\/([^/]+)\/guests$/;
-const GUEST_PATTERN = /^\/api\/presentations\/([^/]+)\/share-links\/([^/]+)\/guests\/([^/]+)$/;
-const RESEND_PATTERN = /^\/api\/presentations\/([^/]+)\/share-links\/([^/]+)\/guests\/([^/]+)\/resend$/;
+const GUESTS_PATTERN =
+  /^\/api\/presentations\/([^/]+)\/share-links\/([^/]+)\/guests$/;
+const GUEST_PATTERN =
+  /^\/api\/presentations\/([^/]+)\/share-links\/([^/]+)\/guests\/([^/]+)$/;
+const RESEND_PATTERN =
+  /^\/api\/presentations\/([^/]+)\/share-links\/([^/]+)\/guests\/([^/]+)\/resend$/;
 
 /**
  * Guest routes in the old chain's exact order: the two collection branches,

@@ -25,7 +25,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
 
-process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
+process.env.AUTH_SECRET = ['deckyard', 'test', 'auth']
+  .join('-')
+  .padEnd(40, '0');
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 process.env.STORAGE_MODE = 'postgres';
 
@@ -36,10 +38,10 @@ const DECK_ID = 'deck-type-validation';
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage } = await import('../server/storage/lifecycle.js');
-const { handleSlides } = await import('../server/routes/public-api/v1/slides.js');
-const { handlePresentations } = await import(
-  '../server/routes/public-api/v1/presentations.js'
-);
+const { handleSlides } =
+  await import('../server/routes/public-api/v1/slides.js');
+const { handlePresentations } =
+  await import('../server/routes/public-api/v1/presentations.js');
 
 /** Install a freshly seeded double and point the storage facade at Postgres. */
 async function installDb() {
@@ -57,7 +59,14 @@ async function installDb() {
         lang: 'nl',
         visibility: 'private',
         revision: 1,
-        slides: [{ id: 'slide-1', type: 'title-slide', content: { title: 'Hoi' }, parentId: null }],
+        slides: [
+          {
+            id: 'slide-1',
+            type: 'title-slide',
+            content: { title: 'Hoi' },
+            parentId: null,
+          },
+        ],
         created_at: '2026-07-01T00:00:00.000Z',
         modified_at: '2026-07-01T00:00:00.000Z',
         trashed_at: null,
@@ -79,7 +88,9 @@ function storedDeck(db) {
  * authenticated (authenticateApiKey is a different seam with its own tests).
  */
 function makeCtx(method, pathname, body = null) {
-  const req = Readable.from(body === null ? [] : [Buffer.from(JSON.stringify(body))]);
+  const req = Readable.from(
+    body === null ? [] : [Buffer.from(JSON.stringify(body))],
+  );
   req.method = method;
   req.headers = { 'content-type': 'application/json' };
 
@@ -87,9 +98,15 @@ function makeCtx(method, pathname, body = null) {
     statusCode: null,
     body: null,
     headers: {},
-    setHeader(name, value) { this.headers[name] = value; },
-    writeHead(status) { this.statusCode = status; },
-    end(payload) { this.body = payload ? JSON.parse(payload) : null; },
+    setHeader(name, value) {
+      this.headers[name] = value;
+    },
+    writeHead(status) {
+      this.statusCode = status;
+    },
+    end(payload) {
+      this.body = payload ? JSON.parse(payload) : null;
+    },
   };
 
   return {
@@ -97,8 +114,18 @@ function makeCtx(method, pathname, body = null) {
     res,
     url: new URL(`http://localhost${pathname}`),
     repoRoot: process.cwd(),
-    storageScope: { repoRoot: process.cwd(), organizationId: ORG, actorEmail: OWNER },
-    apiKey: { id: 'key-1', tier: 'free', ownerEmail: OWNER, permissions: ['read', 'write'], organizationId: ORG },
+    storageScope: {
+      repoRoot: process.cwd(),
+      organizationId: ORG,
+      actorEmail: OWNER,
+    },
+    apiKey: {
+      id: 'key-1',
+      tier: 'free',
+      ownerEmail: OWNER,
+      permissions: ['read', 'write'],
+      organizationId: ORG,
+    },
     // What authenticateApiKey puts on the context: who is acting and in which
     // organization. Per-deck checks read the actor from here, not off the deck.
     authedUser: { id: null, email: OWNER, role: 'user', organizationId: ORG },
@@ -109,25 +136,49 @@ test('B26: whole-deck PUT with an unknown slide type is rejected with 400', asyn
   const db = await installDb();
 
   const ctx = makeCtx('PUT', `/api/v1/presentations/${DECK_ID}`, {
-    slides: [{ id: 'slide-1', type: 'not-a-real-type', content: { title: 'x' } }],
+    slides: [
+      { id: 'slide-1', type: 'not-a-real-type', content: { title: 'x' } },
+    ],
   });
   await handlePresentations(ctx);
 
-  assert.equal(ctx.res.statusCode, 400, `expected 400, got ${ctx.res.statusCode}: ${JSON.stringify(ctx.res.body)}`);
+  assert.equal(
+    ctx.res.statusCode,
+    400,
+    `expected 400, got ${ctx.res.statusCode}: ${JSON.stringify(ctx.res.body)}`,
+  );
   // The junk type never reached storage.
-  assert.equal(storedDeck(db).slides[0].type, 'title-slide', 'the stored deck is untouched');
+  assert.equal(
+    storedDeck(db).slides[0].type,
+    'title-slide',
+    'the stored deck is untouched',
+  );
 });
 
 test('whole-deck PUT with a canonical id stores the registry key', async () => {
   const db = await installDb();
 
   const ctx = makeCtx('PUT', `/api/v1/presentations/${DECK_ID}`, {
-    slides: [{ id: 'slide-1', type: 'eu.deckyard.slide.title', content: { title: 'x' } }],
+    slides: [
+      {
+        id: 'slide-1',
+        type: 'eu.deckyard.slide.title',
+        content: { title: 'x' },
+      },
+    ],
   });
   await handlePresentations(ctx);
 
-  assert.equal(ctx.res.statusCode, 200, `expected 200, got ${ctx.res.statusCode}: ${JSON.stringify(ctx.res.body)}`);
-  assert.equal(storedDeck(db).slides[0].type, 'title-slide', 'canonical id normalized to the bare key');
+  assert.equal(
+    ctx.res.statusCode,
+    200,
+    `expected 200, got ${ctx.res.statusCode}: ${JSON.stringify(ctx.res.body)}`,
+  );
+  assert.equal(
+    storedDeck(db).slides[0].type,
+    'title-slide',
+    'canonical id normalized to the bare key',
+  );
 });
 
 test('per-slide POST with a canonical id stores the registry key', async () => {
@@ -139,10 +190,18 @@ test('per-slide POST with a canonical id stores the registry key', async () => {
   });
   await handleSlides(ctx);
 
-  assert.equal(ctx.res.statusCode, 201, `expected 201, got ${ctx.res.statusCode}: ${JSON.stringify(ctx.res.body)}`);
+  assert.equal(
+    ctx.res.statusCode,
+    201,
+    `expected 201, got ${ctx.res.statusCode}: ${JSON.stringify(ctx.res.body)}`,
+  );
   const stored = storedDeck(db).slides;
   assert.equal(stored.length, 2, 'the slide was added');
-  assert.equal(stored[1].type, 'title-slide', 'canonical id normalized to the bare key on the per-slide path');
+  assert.equal(
+    stored[1].type,
+    'title-slide',
+    'canonical id normalized to the bare key on the per-slide path',
+  );
 });
 
 test('per-slide POST with an unknown type is rejected with 400', async () => {
@@ -154,7 +213,11 @@ test('per-slide POST with an unknown type is rejected with 400', async () => {
   });
   await handleSlides(ctx);
 
-  assert.equal(ctx.res.statusCode, 400, `expected 400, got ${ctx.res.statusCode}: ${JSON.stringify(ctx.res.body)}`);
+  assert.equal(
+    ctx.res.statusCode,
+    400,
+    `expected 400, got ${ctx.res.statusCode}: ${JSON.stringify(ctx.res.body)}`,
+  );
   assert.equal(storedDeck(db).slides.length, 1, 'nothing was added');
 });
 
@@ -167,16 +230,28 @@ test('round-trip: whole-deck PUT with a canonical id → key stored → GET emit
     slides: [{ id: 'slide-1', type: CANONICAL, content: { title: 'x' } }],
   });
   await handlePresentations(putCtx);
-  assert.equal(putCtx.res.statusCode, 200, `PUT: ${JSON.stringify(putCtx.res.body)}`);
-  assert.equal(storedDeck(db).slides[0].type, 'title-slide', 'stored as the bare key');
+  assert.equal(
+    putCtx.res.statusCode,
+    200,
+    `PUT: ${JSON.stringify(putCtx.res.body)}`,
+  );
+  assert.equal(
+    storedDeck(db).slides[0].type,
+    'title-slide',
+    'stored as the bare key',
+  );
 
   const getCtx = makeCtx('GET', `/api/v1/presentations/${DECK_ID}`);
   await handlePresentations(getCtx);
-  assert.equal(getCtx.res.statusCode, 200, `GET: ${JSON.stringify(getCtx.res.body)}`);
+  assert.equal(
+    getCtx.res.statusCode,
+    200,
+    `GET: ${JSON.stringify(getCtx.res.body)}`,
+  );
   assert.equal(
     getCtx.res.body.presentation.slides[0].type,
     CANONICAL,
-    'the whole-deck GET emits the canonical id'
+    'the whole-deck GET emits the canonical id',
   );
 });
 
@@ -188,13 +263,36 @@ test('round-trip: per-slide POST with a canonical id → key stored → POST/GET
     content: { title: 'Nieuwe slide' },
   });
   await handleSlides(postCtx);
-  assert.equal(postCtx.res.statusCode, 201, `POST: ${JSON.stringify(postCtx.res.body)}`);
-  assert.equal(postCtx.res.body.slide.type, CANONICAL, 'the POST response emits the canonical id');
+  assert.equal(
+    postCtx.res.statusCode,
+    201,
+    `POST: ${JSON.stringify(postCtx.res.body)}`,
+  );
+  assert.equal(
+    postCtx.res.body.slide.type,
+    CANONICAL,
+    'the POST response emits the canonical id',
+  );
   const newId = postCtx.res.body.slide.id;
-  assert.equal(storedDeck(db).slides[1].type, 'title-slide', 'stored as the bare key');
+  assert.equal(
+    storedDeck(db).slides[1].type,
+    'title-slide',
+    'stored as the bare key',
+  );
 
-  const getCtx = makeCtx('GET', `/api/v1/presentations/${DECK_ID}/slides/${newId}`);
+  const getCtx = makeCtx(
+    'GET',
+    `/api/v1/presentations/${DECK_ID}/slides/${newId}`,
+  );
   await handleSlides(getCtx);
-  assert.equal(getCtx.res.statusCode, 200, `GET: ${JSON.stringify(getCtx.res.body)}`);
-  assert.equal(getCtx.res.body.slide.type, CANONICAL, 'the single-slide GET emits the canonical id');
+  assert.equal(
+    getCtx.res.statusCode,
+    200,
+    `GET: ${JSON.stringify(getCtx.res.body)}`,
+  );
+  assert.equal(
+    getCtx.res.body.slide.type,
+    CANONICAL,
+    'the single-slide GET emits the canonical id',
+  );
 });

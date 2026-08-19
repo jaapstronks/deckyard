@@ -3,7 +3,13 @@
  * Allows admins to view, download, and analyze AI validation events.
  */
 
-import { serveJson, unauthorized, notFound, badRequest, withErrorHandler } from '../../utils/http.js';
+import {
+  serveJson,
+  unauthorized,
+  notFound,
+  badRequest,
+  withErrorHandler,
+} from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import {
   getValidationLogs,
@@ -65,7 +71,10 @@ function handleAiLogsDownload({ res }, filename) {
 // POST /api/admin/ai-logs/cleanup - Force cleanup of old logs
 function handleAiLogsCleanup({ res }) {
   const deleted = cleanupOldLogs();
-  serveJson(res, 200, { deleted, message: `Cleaned up ${deleted} old log files` });
+  serveJson(res, 200, {
+    deleted,
+    message: `Cleaned up ${deleted} old log files`,
+  });
   return true;
 }
 
@@ -78,10 +87,26 @@ function handleAiLogsCleanup({ res }) {
  */
 export const ROUTES = [
   { method: 'GET', pattern: '/api/admin/ai-logs', handler: handleAiLogsList },
-  { method: 'GET', pattern: '/api/admin/ai-logs/summary', handler: handleAiLogsSummary },
-  { method: 'GET', pattern: '/api/admin/ai-logs/entries', handler: handleAiLogsEntries },
-  { method: 'GET', pattern: /^\/api\/admin\/ai-logs\/download\/(.+)$/, handler: handleAiLogsDownload },
-  { method: 'POST', pattern: '/api/admin/ai-logs/cleanup', handler: handleAiLogsCleanup },
+  {
+    method: 'GET',
+    pattern: '/api/admin/ai-logs/summary',
+    handler: handleAiLogsSummary,
+  },
+  {
+    method: 'GET',
+    pattern: '/api/admin/ai-logs/entries',
+    handler: handleAiLogsEntries,
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/admin\/ai-logs\/download\/(.+)$/,
+    handler: handleAiLogsDownload,
+  },
+  {
+    method: 'POST',
+    pattern: '/api/admin/ai-logs/cleanup',
+    handler: handleAiLogsCleanup,
+  },
 ];
 
 /**

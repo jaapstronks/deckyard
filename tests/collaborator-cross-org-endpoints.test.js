@@ -69,45 +69,50 @@ import { callArguments, walkJsFiles } from './helpers/call-sites.js';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } = await import(
-  '../server/storage/lifecycle.js'
-);
+const { initializeStorage, __resetStorageForTests } =
+  await import('../server/storage/lifecycle.js');
 const { isMultiOrgEnabled } = await import('../server/config/features.js');
 const { createStorageScope } = await import('../server/utils/context.js');
-const { invalidatePermission } = await import(
-  '../server/storage/cache/permission-cache.js'
-);
-const { canActorAccessPresentation } = await import(
-  '../server/utils/presentation-authz/actor-access.js'
-);
-const { withPresentationAuth } = await import('../server/utils/route-middleware.js');
-const { addCollaborator, getCollaboratorPermission } = await import(
-  '../server/storage/collaborators.js'
-);
-const { handlePresentationItem } = await import(
-  '../server/routes/api/presentations/presentation.js'
-);
-const { handlePresentationVersions } = await import(
-  '../server/routes/api/presentations/versions.js'
-);
-const { handlePresentationThumbnail } = await import(
-  '../server/routes/api/presentations/thumbnail.js'
-);
-const { handlePresentationDuplicate } = await import(
-  '../server/routes/api/presentations/duplicate.js'
-);
+const { invalidatePermission } =
+  await import('../server/storage/cache/permission-cache.js');
+const { canActorAccessPresentation } =
+  await import('../server/utils/presentation-authz/actor-access.js');
+const { withPresentationAuth } =
+  await import('../server/utils/route-middleware.js');
+const { addCollaborator, getCollaboratorPermission } =
+  await import('../server/storage/collaborators.js');
+const { handlePresentationItem } =
+  await import('../server/routes/api/presentations/presentation.js');
+const { handlePresentationVersions } =
+  await import('../server/routes/api/presentations/versions.js');
+const { handlePresentationThumbnail } =
+  await import('../server/routes/api/presentations/thumbnail.js');
+const { handlePresentationDuplicate } =
+  await import('../server/routes/api/presentations/duplicate.js');
 
 /** Holds an `edit` row on the deck. */
-const COLLABORATOR = { email: 'partner@home.example', name: 'Pia', organizationId: HOME_ORG };
+const COLLABORATOR = {
+  email: 'partner@home.example',
+  name: 'Pia',
+  organizationId: HOME_ORG,
+};
 /** Holds nothing, and is otherwise indistinguishable. */
-const COLLEAGUE = { email: 'colleague@home.example', name: 'Cas', organizationId: HOME_ORG };
+const COLLEAGUE = {
+  email: 'colleague@home.example',
+  name: 'Cas',
+  organizationId: HOME_ORG,
+};
 const OWNER_EMAIL = 'owner@example.test';
 
 /** @type {ReturnType<typeof createFakeDb>} */
 let db;
 
 test.before(async () => {
-  assert.equal(isMultiOrgEnabled(), true, 'multi-organization mode for this file');
+  assert.equal(
+    isMultiOrgEnabled(),
+    true,
+    'multi-organization mode for this file',
+  );
   __setTestDb(createFakeDb({}));
   await initializeStorage();
 });
@@ -158,7 +163,11 @@ function deckRow(organizationId) {
  * @param {boolean} [options.revoked=false] - Whether the row is revoked.
  * @returns {Promise<void>}
  */
-async function seed({ deckOrg = HOME_ORG, rowOrg = HOME_ORG, revoked = false } = {}) {
+async function seed({
+  deckOrg = HOME_ORG,
+  rowOrg = HOME_ORG,
+  revoked = false,
+} = {}) {
   db = createFakeDb({
     organizations: [
       { id: HOME_ORG, name: 'Home', slug: 'home' },
@@ -248,7 +257,7 @@ async function call(handler, user, { method = 'GET' } = {}) {
       url: new URL(`http://decks.example.test/api/presentations/${DECK}`),
       authedUser: user,
     },
-    DECK
+    DECK,
   );
 
   const raw = res.chunks.length ? res.chunks.join('') : null;
@@ -268,7 +277,11 @@ async function call(handler, user, { method = 'GET' } = {}) {
  */
 const ENDPOINTS = [
   { name: 'the deck itself', handler: handlePresentationItem, granted: 200 },
-  { name: 'the version history', handler: handlePresentationVersions, granted: 200 },
+  {
+    name: 'the version history',
+    handler: handlePresentationVersions,
+    granted: 200,
+  },
   // A slideless deck has nothing to rasterize, so the authorized answer here is
   // the route's own "nothing to show yet" 404 — distinct from its 401.
   { name: 'the thumbnail', handler: handlePresentationThumbnail, granted: 404 },
@@ -290,7 +303,11 @@ for (const { name, handler, granted, method } of ENDPOINTS) {
     const { status, body } = await call(handler, COLLABORATOR, { method });
     assert.equal(status, granted);
     if (handler === handlePresentationThumbnail) {
-      assert.equal(body?.error, 'thumbnail_pending', 'refused at rendering, not at the door');
+      assert.equal(
+        body?.error,
+        'thumbnail_pending',
+        'refused at rendering, not at the door',
+      );
     }
   });
 
@@ -336,17 +353,32 @@ test('the shared route middleware admits the same person for a write', async () 
 
 test('the machine-client seam gives the same answer as the routes', async () => {
   await seed();
-  const pres = { id: DECK, visibility: 'private', ownerEmail: OWNER_EMAIL, organizationId: HOME_ORG };
+  const pres = {
+    id: DECK,
+    visibility: 'private',
+    ownerEmail: OWNER_EMAIL,
+    organizationId: HOME_ORG,
+  };
   // A machine actor states its own organization (an API key belongs to one), which
   // on a private deck changes nothing: the collaborator row is the only thing
   // that can grant here, and it is a relation to the deck, not to an organization.
   // The collaborator is signed into AWAY_ORG and still gets in.
   const collaborator = { email: COLLABORATOR.email, organizationId: AWAY_ORG };
-  assert.equal(await canActorAccessPresentation(pres, collaborator, 'read'), true);
-  assert.equal(await canActorAccessPresentation(pres, collaborator, 'write'), true);
   assert.equal(
-    await canActorAccessPresentation(pres, { email: COLLEAGUE.email, organizationId: HOME_ORG }, 'read'),
-    false
+    await canActorAccessPresentation(pres, collaborator, 'read'),
+    true,
+  );
+  assert.equal(
+    await canActorAccessPresentation(pres, collaborator, 'write'),
+    true,
+  );
+  assert.equal(
+    await canActorAccessPresentation(
+      pres,
+      { email: COLLEAGUE.email, organizationId: HOME_ORG },
+      'read',
+    ),
+    false,
   );
 });
 
@@ -360,7 +392,10 @@ test('a row stamped with a foreign organization still grants — on every endpoi
   // grant was made, and then silently did nothing. It now means what it says.
   await seed({ rowOrg: AWAY_ORG });
 
-  assert.equal(await getCollaboratorPermission(DECK, COLLABORATOR.email), 'edit');
+  assert.equal(
+    await getCollaboratorPermission(DECK, COLLABORATOR.email),
+    'edit',
+  );
   for (const { name, handler, granted, method } of ENDPOINTS) {
     const { status } = await call(handler, COLLABORATOR, { method });
     assert.equal(status, granted, `${name} disagreed with the others`);
@@ -377,9 +412,13 @@ test('a new invite is stamped with the deck, not with the inviter', async () => 
   assert.equal(result.ok, true);
 
   const row = db.__tables.presentation_collaborators.find(
-    (r) => r.user_email === 'fresh@home.example'
+    (r) => r.user_email === 'fresh@home.example',
   );
-  assert.equal(row.organization_id, AWAY_ORG, "the deck's organization, not the session's");
+  assert.equal(
+    row.organization_id,
+    AWAY_ORG,
+    "the deck's organization, not the session's",
+  );
 });
 
 test('inviting onto a deck that does not exist is refused rather than guessed at', async () => {
@@ -405,7 +444,11 @@ test('a deck in another organization is absent on every endpoint, row or no row'
   for (const { name, handler, method } of ENDPOINTS) {
     for (const person of [COLLABORATOR, COLLEAGUE]) {
       const { status } = await call(handler, person, { method });
-      assert.equal(status, 404, `${name} answered differently for ${person.email}`);
+      assert.equal(
+        status,
+        404,
+        `${name} answered differently for ${person.email}`,
+      );
     }
   }
 });
@@ -419,7 +462,8 @@ const repoRoot = path.join(here, '..');
 
 // The bracket-depth scanner is shared with the share-link access-log guard,
 // which pins the same "the identifier is the scope" contract.
-const permissionCallArgs = (source) => callArguments(source, 'getCollaboratorPermission');
+const permissionCallArgs = (source) =>
+  callArguments(source, 'getCollaboratorPermission');
 
 test('no getCollaboratorPermission() call site passes a scope', () => {
   const offenders = [];
@@ -436,17 +480,23 @@ test('no getCollaboratorPermission() call site passes a scope', () => {
     [],
     'getCollaboratorPermission takes a presentation and an email — the deck is the scope. ' +
       'A third argument is the session organization creeping back in:\n  ' +
-      offenders.join('\n  ')
+      offenders.join('\n  '),
   );
 });
 
 test('the guard would catch a re-introduced scope argument', () => {
   const planted =
     'await getCollaboratorPermission(pres.id, user.email, { organizationId: ctx.organizationId });';
-  assert.equal(permissionCallArgs(planted)[0].length, 3, 'the parser sees all three arguments');
   assert.equal(
-    permissionCallArgs('await getCollaboratorPermission(pres.id, user.email);')[0].length,
+    permissionCallArgs(planted)[0].length,
+    3,
+    'the parser sees all three arguments',
+  );
+  assert.equal(
+    permissionCallArgs(
+      'await getCollaboratorPermission(pres.id, user.email);',
+    )[0].length,
     2,
-    'and exactly two on the canonical form'
+    'and exactly two on the canonical form',
   );
 });

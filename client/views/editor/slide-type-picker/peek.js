@@ -11,7 +11,10 @@
  * one — the same behaviour the old mutable `closePeek` closure gave.
  */
 
-import { renderSlideElement, cleanupSlideRuntimes } from '../../../lib/slide-runtime/slide-render.js';
+import {
+  renderSlideElement,
+  cleanupSlideRuntimes,
+} from '../../../lib/slide-runtime/slide-render.js';
 
 /**
  * Open the peek lightbox for a slide type (or curated preset variant).
@@ -49,7 +52,9 @@ export function openTypePeek(type, anchorBtn, preset, ctx) {
   // For a preset tile, title on the variant; otherwise the base type.
   const peekTitle = preset ? presetLabelFor(preset) : labelFor(type);
 
-  const backdrop = h('div', { class: 'modal-backdrop ps-modal-overlay ps-type-peek-overlay' });
+  const backdrop = h('div', {
+    class: 'modal-backdrop ps-modal-overlay ps-type-peek-overlay',
+  });
   const card = h('div', {
     class: 'modal ps-modal ps-type-peek',
     role: 'dialog',
@@ -61,8 +66,13 @@ export function openTypePeek(type, anchorBtn, preset, ctx) {
   const bigThumb = h('div', { class: 'thumb ps-type-peek-thumb' });
   try {
     const el = renderSlideElement(
-      { id: `peek-${type}`, type, content: sampleContentFor(type, previewOverridesFor(preset)), notes: '' },
-      { mode: 'thumb', theme }
+      {
+        id: `peek-${type}`,
+        type,
+        content: sampleContentFor(type, previewOverridesFor(preset)),
+        notes: '',
+      },
+      { mode: 'thumb', theme },
     );
     bigThumb.append(el);
   } catch {
@@ -90,13 +100,16 @@ export function openTypePeek(type, anchorBtn, preset, ctx) {
     text: tr('common.close', 'Close'),
     onclick: () => close(),
   });
-  const actions = h('div', { class: 'ps-type-peek-actions' }, [closeBtn, insertBtn]);
+  const actions = h('div', { class: 'ps-type-peek-actions' }, [
+    closeBtn,
+    insertBtn,
+  ]);
 
   card.append(
     h('div', { class: 'ps-type-peek-body' }, [
       stage,
       h('div', { class: 'ps-type-peek-foot' }, [info, actions]),
-    ])
+    ]),
   );
   backdrop.append(card);
   document.body.append(backdrop);

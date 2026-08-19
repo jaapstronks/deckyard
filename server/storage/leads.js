@@ -33,7 +33,9 @@ export async function createLead(data) {
   const presentationId = norm(data?.presentationId);
   const slideId = norm(data?.slideId);
   const name = String(data?.name || '').trim();
-  const email = String(data?.email || '').toLowerCase().trim();
+  const email = String(data?.email || '')
+    .toLowerCase()
+    .trim();
   const consentText = String(data?.consentText || '').trim();
 
   if (!presentationId || !slideId) {
@@ -50,7 +52,10 @@ export async function createLead(data) {
     return { ok: false, reason: 'invalid_email' };
   }
 
-  const retentionDays = Math.max(1, Math.min(MAX_RETENTION_DAYS, data?.retentionDays || DEFAULT_RETENTION_DAYS));
+  const retentionDays = Math.max(
+    1,
+    Math.min(MAX_RETENTION_DAYS, data?.retentionDays || DEFAULT_RETENTION_DAYS),
+  );
   const retentionExpiresAt = new Date();
   retentionExpiresAt.setDate(retentionExpiresAt.getDate() + retentionDays);
 
@@ -123,43 +128,43 @@ export async function getLeadsForPresentation(presentationId, opts = {}) {
   const presId = norm(presentationId);
   if (!presId) return { leads: [], total: 0, limit: 50, offset: 0 };
 
-  return withDbGuard({ leads: [], total: 0, limit: 50, offset: 0 }, async (db) => {
-    let query = db
-      .selectFrom('lead_submissions')
-      .selectAll()
-      .where('presentation_id', '=', presId)
-      .where('anonymized_at', 'is', null);
+  return withDbGuard(
+    { leads: [], total: 0, limit: 50, offset: 0 },
+    async (db) => {
+      let query = db
+        .selectFrom('lead_submissions')
+        .selectAll()
+        .where('presentation_id', '=', presId)
+        .where('anonymized_at', 'is', null);
 
-    // Filter by slide if provided
-    if (opts.slideId) {
-      query = query.where('slide_id', '=', opts.slideId);
-    }
+      // Filter by slide if provided
+      if (opts.slideId) {
+        query = query.where('slide_id', '=', opts.slideId);
+      }
 
-    // Count total
-    const countQuery = query
-      .clearSelect()
-      .select((eb) => eb.fn.count('id').as('count'));
-    const countResult = await countQuery.executeTakeFirst();
-    const total = Number(countResult?.count) || 0;
+      // Count total
+      const countQuery = query
+        .clearSelect()
+        .select((eb) => eb.fn.count('id').as('count'));
+      const countResult = await countQuery.executeTakeFirst();
+      const total = Number(countResult?.count) || 0;
 
-    // Apply pagination
-    const limit = Math.min(opts?.limit || 50, 100);
-    const offset = opts?.offset || 0;
+      // Apply pagination
+      const limit = Math.min(opts?.limit || 50, 100);
+      const offset = opts?.offset || 0;
 
-    query = query
-      .orderBy('submitted_at', 'desc')
-      .limit(limit)
-      .offset(offset);
+      query = query.orderBy('submitted_at', 'desc').limit(limit).offset(offset);
 
-    const rows = await query.execute();
+      const rows = await query.execute();
 
-    return {
-      leads: rows.map(rowToLead),
-      total,
-      limit,
-      offset,
-    };
-  });
+      return {
+        leads: rows.map(rowToLead),
+        total,
+        limit,
+        offset,
+      };
+    },
+  );
 }
 
 /**
@@ -189,7 +194,9 @@ export async function getLeadCountForPresentation(presentationId) {
  * @returns {Promise<Object[]>}
  */
 export async function getLeadsByEmail(email) {
-  const e = String(email || '').toLowerCase().trim();
+  const e = String(email || '')
+    .toLowerCase()
+    .trim();
   if (!e) return [];
 
   return withDbGuard([], async (db) => {
@@ -242,11 +249,21 @@ export async function exportLeadsAsCSV(presentationId, opts = {}) {
     const rows = await query.execute();
 
     if (rows.length === 0) {
-      return { csv: 'Name,Email,Slide ID,Submitted At,Consent Text,Privacy URL\n', count: 0 };
+      return {
+        csv: 'Name,Email,Slide ID,Submitted At,Consent Text,Privacy URL\n',
+        count: 0,
+      };
     }
 
     // Build CSV
-    const headers = ['Name', 'Email', 'Slide ID', 'Submitted At', 'Consent Text', 'Privacy URL'];
+    const headers = [
+      'Name',
+      'Email',
+      'Slide ID',
+      'Submitted At',
+      'Consent Text',
+      'Privacy URL',
+    ];
     const csvRows = [headers.join(',')];
 
     for (const row of rows) {
@@ -312,7 +329,9 @@ export async function anonymizeLead(leadId) {
  * @returns {Promise<{ok: boolean, anonymized: number}>}
  */
 export async function anonymizeLeadsByEmail(email) {
-  const e = String(email || '').toLowerCase().trim();
+  const e = String(email || '')
+    .toLowerCase()
+    .trim();
   if (!e) return { ok: false, anonymized: 0 };
 
   return withDbGuard({ ok: false, anonymized: 0 }, async (db) => {
@@ -426,7 +445,12 @@ function rowToLead(row) {
 function escapeCSV(value) {
   const str = String(value ?? '');
   // If the value contains comma, quote, or newline, wrap in quotes and escape quotes
-  if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+  if (
+    str.includes(',') ||
+    str.includes('"') ||
+    str.includes('\n') ||
+    str.includes('\r')
+  ) {
     return `"${str.replace(/"/g, '""')}"`;
   }
   return str;

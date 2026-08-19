@@ -11,18 +11,22 @@ export const up = async (db) => {
     .createTable('custom_slide_types')
     .ifNotExists()
     .addColumn('id', 'uuid', (col) =>
-      col.primaryKey().defaultTo(sql`gen_random_uuid()`)
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
     )
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade').notNull()
+      col.references('organizations.id').onDelete('cascade').notNull(),
     )
     .addColumn('slug', 'varchar(80)', (col) => col.notNull())
     .addColumn('label', 'varchar(255)', (col) => col.notNull())
     .addColumn('base_type', 'varchar(80)')
     // Field schema: array of field definitions
-    .addColumn('fields', 'jsonb', (col) => col.notNull().defaultTo(sql`'[]'::jsonb`))
+    .addColumn('fields', 'jsonb', (col) =>
+      col.notNull().defaultTo(sql`'[]'::jsonb`),
+    )
     // Default content values
-    .addColumn('defaults', 'jsonb', (col) => col.notNull().defaultTo(sql`'{}'::jsonb`))
+    .addColumn('defaults', 'jsonb', (col) =>
+      col.notNull().defaultTo(sql`'{}'::jsonb`),
+    )
     // Per-language defaults
     .addColumn('defaults_by_lang', 'jsonb')
     // Safe template string (Handlebars-like subset)
@@ -30,12 +34,18 @@ export const up = async (db) => {
     // Custom CSS for the slide type
     .addColumn('css', 'text')
     // Whether this type is published/available for use
-    .addColumn('is_published', 'boolean', (col) => col.notNull().defaultTo(false))
+    .addColumn('is_published', 'boolean', (col) =>
+      col.notNull().defaultTo(false),
+    )
     .addColumn('sort_order', 'integer', (col) => col.notNull().defaultTo(0))
-    .addColumn('created_at', 'timestamptz', (col) => col.notNull().defaultTo(sql`now()`))
-    .addColumn('updated_at', 'timestamptz', (col) => col.notNull().defaultTo(sql`now()`))
+    .addColumn('created_at', 'timestamptz', (col) =>
+      col.notNull().defaultTo(sql`now()`),
+    )
+    .addColumn('updated_at', 'timestamptz', (col) =>
+      col.notNull().defaultTo(sql`now()`),
+    )
     .addColumn('created_by', 'uuid', (col) =>
-      col.references('users.id').onDelete('set null')
+      col.references('users.id').onDelete('set null'),
     )
     .execute();
 

@@ -5,7 +5,10 @@
 
 import { t } from '../../../../lib/ui-i18n.js';
 import { createUserAutocomplete } from '../../../../lib/user/user-autocomplete.js';
-import { openRevokeMessageModal, REVOKE_CONTEXT } from '../revoke-message-modal.js';
+import {
+  openRevokeMessageModal,
+  REVOKE_CONTEXT,
+} from '../revoke-message-modal.js';
 import { confirmModal, promptModal } from '../../../../lib/dom/modal.js';
 import {
   getPermissionLabel,
@@ -29,7 +32,17 @@ const COLLABORATOR_PERMISSIONS = ['view', 'comment', 'edit', 'admin'];
  * @param {Array} [options.openOverlayClosers] - Overlay closers array
  * @returns {Object} { element, loadCollaborators, detach }
  */
-export function createCollaboratorsSection({ h, api, presentationId, pres, currentUserEmail, toast, isOwner, modalRoot, openOverlayClosers }) {
+export function createCollaboratorsSection({
+  h,
+  api,
+  presentationId,
+  pres,
+  currentUserEmail,
+  toast,
+  isOwner,
+  modalRoot,
+  openOverlayClosers,
+}) {
   let collaborators = [];
   let isAddingCollaborator = false;
   let autocomplete = null;
@@ -45,7 +58,7 @@ export function createCollaboratorsSection({ h, api, presentationId, pres, curre
     class: 'help share-collaborators-help',
     text: t(
       'share.collaborators.help',
-      'Invite team members to collaborate on this presentation.'
+      'Invite team members to collaborate on this presentation.',
     ),
   });
 
@@ -56,14 +69,19 @@ export function createCollaboratorsSection({ h, api, presentationId, pres, curre
   autocomplete = createUserAutocomplete({
     api,
     excludeEmails: [currentUserEmail, pres?.ownerEmail].filter(Boolean),
-    placeholder: t('share.collaborators.searchUsers', 'Search users to invite...'),
+    placeholder: t(
+      'share.collaborators.searchUsers',
+      'Search users to invite...',
+    ),
   });
 
-  const permissionSelect = h('select', { class: 'form-input share-collaborator-permission' });
+  const permissionSelect = h('select', {
+    class: 'form-input share-collaborator-permission',
+  });
   permissionSelect.append(
     ...COLLABORATOR_PERMISSIONS.map((value) =>
-      h('option', { value, text: getPermissionLabel(value) })
-    )
+      h('option', { value, text: getPermissionLabel(value) }),
+    ),
   );
 
   const addBtn = h('button', {
@@ -74,11 +92,11 @@ export function createCollaboratorsSection({ h, api, presentationId, pres, curre
   // Progress indicator for batch invites
   const progressEl = h('div', { class: 'share-collaborator-progress' });
 
-  const formRow = h('div', { class: 'share-collaborator-form-row has-autocomplete' }, [
-    autocomplete.el,
-    permissionSelect,
-    addBtn,
-  ]);
+  const formRow = h(
+    'div',
+    { class: 'share-collaborator-form-row has-autocomplete' },
+    [autocomplete.el, permissionSelect, addBtn],
+  );
 
   form.append(formRow, progressEl);
 
@@ -86,7 +104,10 @@ export function createCollaboratorsSection({ h, api, presentationId, pres, curre
   // not link-copying (the reason "Share Links" never described this section).
   const notifyHint = h('div', {
     class: 'share-notify-hint',
-    text: t('share.collaborators.notifyHint', 'Invited people get a notification.'),
+    text: t(
+      'share.collaborators.notifyHint',
+      'Invited people get a notification.',
+    ),
   });
 
   // Collaborators list
@@ -100,21 +121,31 @@ export function createCollaboratorsSection({ h, api, presentationId, pres, curre
       currentUserEmail,
       pres?.ownerEmail,
       ...collaborators.map((c) => c.userEmail),
-    ].filter(Boolean).map((e) => e.toLowerCase());
+    ]
+      .filter(Boolean)
+      .map((e) => e.toLowerCase());
 
     autocomplete.setExcludeEmails(excludeEmails);
   }
 
   async function loadCollaborators() {
     try {
-      const resp = await api(`/api/presentations/${presentationId}/collaborators`);
+      const resp = await api(
+        `/api/presentations/${presentationId}/collaborators`,
+      );
       collaborators = resp?.collaborators || [];
       renderCollaboratorsList();
       updateExcludeEmails();
     } catch {
       list.innerHTML = '';
       list.append(
-        h('div', { class: 'share-collaborators-error', text: t('share.collaborators.loadError', 'Failed to load collaborators') })
+        h('div', {
+          class: 'share-collaborators-error',
+          text: t(
+            'share.collaborators.loadError',
+            'Failed to load collaborators',
+          ),
+        }),
       );
     }
   }
@@ -125,10 +156,15 @@ export function createCollaboratorsSection({ h, api, presentationId, pres, curre
   function renderOwnerItem() {
     if (!ownerEmail) return null;
 
-    const item = h('div', { class: 'share-collaborator-item share-collaborator-owner' });
+    const item = h('div', {
+      class: 'share-collaborator-item share-collaborator-owner',
+    });
 
     const info = h('div', { class: 'share-collaborator-info' });
-    const emailEl = h('div', { class: 'share-collaborator-email', text: ownerEmail });
+    const emailEl = h('div', {
+      class: 'share-collaborator-email',
+      text: ownerEmail,
+    });
     const badge = h('span', {
       class: 'share-owner-badge',
       text: t('share.collaborators.owner', 'Owner'),
@@ -140,7 +176,10 @@ export function createCollaboratorsSection({ h, api, presentationId, pres, curre
       const transferBtn = h('button', {
         class: 'btn btn-secondary btn-sm',
         text: t('share.collaborators.transferOwnership', 'Transfer'),
-        title: t('share.collaborators.transferOwnershipTitle', 'Transfer ownership to another user'),
+        title: t(
+          'share.collaborators.transferOwnershipTitle',
+          'Transfer ownership to another user',
+        ),
         onclick: () => showTransferOwnershipDialog(),
       });
       item.append(info, transferBtn);
@@ -157,47 +196,79 @@ export function createCollaboratorsSection({ h, api, presentationId, pres, curre
   async function showTransferOwnershipDialog() {
     // Get list of potential new owners (collaborators with edit or admin permission)
     const eligibleUsers = collaborators.filter(
-      (c) => c.permission === 'edit' || c.permission === 'admin'
+      (c) => c.permission === 'edit' || c.permission === 'admin',
     );
 
     if (eligibleUsers.length === 0) {
       toast?.warning(
-        t('share.collaborators.noEligibleOwners', 'No collaborators with edit access to transfer ownership to. Add a collaborator with edit or admin permission first.'),
-        { durationMs: 4000 }
+        t(
+          'share.collaborators.noEligibleOwners',
+          'No collaborators with edit access to transfer ownership to. Add a collaborator with edit or admin permission first.',
+        ),
+        { durationMs: 4000 },
       );
       return;
     }
 
-    const newOwner = await promptModal(h, modalRoot, {
-      title: t('share.collaborators.transferOwnership', 'Transfer ownership'),
-      message: t('share.collaborators.transferOwnershipPrompt', 'Enter the email of the new owner (must be an existing collaborator with edit access):\n\nEligible users: {users}', {
-        users: eligibleUsers.map((u) => u.userEmail).join(', '),
-      }),
-      placeholder: t('share.collaborators.transferOwnershipPlaceholder', 'name@example.com'),
-      confirmLabel: t('common.continue', 'Continue'),
-    }, openOverlayClosers);
+    const newOwner = await promptModal(
+      h,
+      modalRoot,
+      {
+        title: t('share.collaborators.transferOwnership', 'Transfer ownership'),
+        message: t(
+          'share.collaborators.transferOwnershipPrompt',
+          'Enter the email of the new owner (must be an existing collaborator with edit access):\n\nEligible users: {users}',
+          {
+            users: eligibleUsers.map((u) => u.userEmail).join(', '),
+          },
+        ),
+        placeholder: t(
+          'share.collaborators.transferOwnershipPlaceholder',
+          'name@example.com',
+        ),
+        confirmLabel: t('common.continue', 'Continue'),
+      },
+      openOverlayClosers,
+    );
 
     if (!newOwner) return;
 
     const trimmedEmail = newOwner.trim().toLowerCase();
-    const eligible = eligibleUsers.find((u) => u.userEmail.toLowerCase() === trimmedEmail);
+    const eligible = eligibleUsers.find(
+      (u) => u.userEmail.toLowerCase() === trimmedEmail,
+    );
 
     if (!eligible) {
       toast?.error(
-        t('share.collaborators.notEligibleOwner', 'This user is not eligible for ownership transfer. They must have edit or admin permission.'),
-        { durationMs: 3000 }
+        t(
+          'share.collaborators.notEligibleOwner',
+          'This user is not eligible for ownership transfer. They must have edit or admin permission.',
+        ),
+        { durationMs: 3000 },
       );
       return;
     }
 
-    const confirmed = await confirmModal(h, modalRoot, {
-      title: t('share.collaborators.transferOwnership', 'Transfer ownership'),
-      message: t('share.collaborators.transferOwnershipConfirm', 'Transfer ownership of this presentation to {email}?\n\nYou will become a collaborator with edit access.', {
-        email: trimmedEmail,
-      }),
-      confirmLabel: t('share.collaborators.transferOwnership', 'Transfer ownership'),
-      danger: true,
-    }, openOverlayClosers);
+    const confirmed = await confirmModal(
+      h,
+      modalRoot,
+      {
+        title: t('share.collaborators.transferOwnership', 'Transfer ownership'),
+        message: t(
+          'share.collaborators.transferOwnershipConfirm',
+          'Transfer ownership of this presentation to {email}?\n\nYou will become a collaborator with edit access.',
+          {
+            email: trimmedEmail,
+          },
+        ),
+        confirmLabel: t(
+          'share.collaborators.transferOwnership',
+          'Transfer ownership',
+        ),
+        danger: true,
+      },
+      openOverlayClosers,
+    );
 
     if (!confirmed) return;
 
@@ -207,8 +278,12 @@ export function createCollaboratorsSection({ h, api, presentationId, pres, curre
         body: JSON.stringify({ newOwnerEmail: trimmedEmail }),
       });
       toast?.success(
-        t('share.collaborators.ownershipTransferred', 'Ownership transferred to {email}', { email: trimmedEmail }),
-        { durationMs: 3000 }
+        t(
+          'share.collaborators.ownershipTransferred',
+          'Ownership transferred to {email}',
+          { email: trimmedEmail },
+        ),
+        { durationMs: 3000 },
       );
       // Reload the page to reflect the change
       window.location.reload();
@@ -228,7 +303,10 @@ export function createCollaboratorsSection({ h, api, presentationId, pres, curre
 
     if (collaborators.length === 0) {
       list.append(
-        h('div', { class: 'share-collaborators-empty', text: t('share.collaborators.empty', 'No collaborators yet') })
+        h('div', {
+          class: 'share-collaborators-empty',
+          text: t('share.collaborators.empty', 'No collaborators yet'),
+        }),
       );
       return;
     }
@@ -237,8 +315,13 @@ export function createCollaboratorsSection({ h, api, presentationId, pres, curre
       const item = h('div', { class: 'share-collaborator-item' });
 
       const info = h('div', { class: 'share-collaborator-info' });
-      const email = h('div', { class: 'share-collaborator-email', text: collab.userEmail });
-      const name = collab.userName ? h('div', { class: 'share-collaborator-name', text: collab.userName }) : null;
+      const email = h('div', {
+        class: 'share-collaborator-email',
+        text: collab.userEmail,
+      });
+      const name = collab.userName
+        ? h('div', { class: 'share-collaborator-name', text: collab.userName })
+        : null;
       if (name) info.append(name);
       info.append(email);
 
@@ -249,12 +332,18 @@ export function createCollaboratorsSection({ h, api, presentationId, pres, curre
         onchange: async () => {
           try {
             permSelect.disabled = true;
-            await api(`/api/presentations/${presentationId}/collaborators/${encodeURIComponent(collab.userEmail)}`, {
-              method: 'PATCH',
-              body: JSON.stringify({ permission: permSelect.value }),
-            });
+            await api(
+              `/api/presentations/${presentationId}/collaborators/${encodeURIComponent(collab.userEmail)}`,
+              {
+                method: 'PATCH',
+                body: JSON.stringify({ permission: permSelect.value }),
+              },
+            );
             await loadCollaborators();
-            toast?.success(t('share.collaborators.permissionUpdated', 'Permission updated'), { durationMs: 2000 });
+            toast?.success(
+              t('share.collaborators.permissionUpdated', 'Permission updated'),
+              { durationMs: 2000 },
+            );
           } catch (e) {
             toast?.error(String(e?.message || e), { durationMs: 3000 });
             permSelect.value = collab.permission;
@@ -270,8 +359,8 @@ export function createCollaboratorsSection({ h, api, presentationId, pres, curre
             text: getPermissionLabel(value),
             selected: collab.permission === value,
             title: getPermissionDescription(value),
-          })
-        )
+          }),
+        ),
       );
 
       const removeBtn = h('button', {
@@ -287,12 +376,18 @@ export function createCollaboratorsSection({ h, api, presentationId, pres, curre
           });
           if (!result.ok) return;
           try {
-            await api(`/api/presentations/${presentationId}/collaborators/${encodeURIComponent(collab.userEmail)}`, {
-              method: 'DELETE',
-              body: JSON.stringify({ message: result.message }),
-            });
+            await api(
+              `/api/presentations/${presentationId}/collaborators/${encodeURIComponent(collab.userEmail)}`,
+              {
+                method: 'DELETE',
+                body: JSON.stringify({ message: result.message }),
+              },
+            );
             await loadCollaborators();
-            toast?.success(t('share.collaborators.removed', 'Collaborator removed'), { durationMs: 2000 });
+            toast?.success(
+              t('share.collaborators.removed', 'Collaborator removed'),
+              { durationMs: 2000 },
+            );
           } catch (e) {
             toast?.error(String(e?.message || e), { durationMs: 3000 });
           }
@@ -307,7 +402,13 @@ export function createCollaboratorsSection({ h, api, presentationId, pres, curre
   addBtn.addEventListener('click', async () => {
     const selectedUsers = autocomplete.getSelected();
     if (selectedUsers.length === 0) {
-      toast?.error(t('share.collaborators.selectUserError', 'Please select at least one user'), { durationMs: 2000 });
+      toast?.error(
+        t(
+          'share.collaborators.selectUserError',
+          'Please select at least one user',
+        ),
+        { durationMs: 2000 },
+      );
       return;
     }
 
@@ -317,8 +418,15 @@ export function createCollaboratorsSection({ h, api, presentationId, pres, curre
 
     const isBatch = selectedUsers.length > 1;
     if (isBatch) {
-      addBtn.textContent = t('share.collaborators.invitingMultiple', 'Inviting {count}...', { count: selectedUsers.length });
-      progressEl.textContent = t('share.collaborators.progress', 'Sending invitations...');
+      addBtn.textContent = t(
+        'share.collaborators.invitingMultiple',
+        'Inviting {count}...',
+        { count: selectedUsers.length },
+      );
+      progressEl.textContent = t(
+        'share.collaborators.progress',
+        'Sending invitations...',
+      );
       progressEl.classList.add('is-visible');
     } else {
       addBtn.textContent = t('share.collaborators.inviting', 'Inviting...');
@@ -327,13 +435,16 @@ export function createCollaboratorsSection({ h, api, presentationId, pres, curre
     try {
       const userEmails = selectedUsers.map((u) => u.email);
 
-      const resp = await api(`/api/presentations/${presentationId}/collaborators`, {
-        method: 'POST',
-        body: JSON.stringify({
-          userEmails,
-          permission: permissionSelect.value,
-        }),
-      });
+      const resp = await api(
+        `/api/presentations/${presentationId}/collaborators`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            userEmails,
+            permission: permissionSelect.value,
+          }),
+        },
+      );
 
       // Reset form
       autocomplete.clear();
@@ -346,17 +457,27 @@ export function createCollaboratorsSection({ h, api, presentationId, pres, curre
         const { successful, failed, total } = resp.summary;
         if (failed > 0) {
           toast?.warning(
-            t('share.collaborators.invitedPartial', '{successful} of {total} invitations sent. {failed} failed.', { successful, total, failed }),
-            { durationMs: 4000 }
+            t(
+              'share.collaborators.invitedPartial',
+              '{successful} of {total} invitations sent. {failed} failed.',
+              { successful, total, failed },
+            ),
+            { durationMs: 4000 },
           );
         } else {
           toast?.success(
-            t('share.collaborators.invitedMultiple', '{count} invitations sent', { count: successful }),
-            { durationMs: 2500 }
+            t(
+              'share.collaborators.invitedMultiple',
+              '{count} invitations sent',
+              { count: successful },
+            ),
+            { durationMs: 2500 },
           );
         }
       } else {
-        toast?.success(t('share.collaborators.invited', 'Invitation sent'), { durationMs: 2500 });
+        toast?.success(t('share.collaborators.invited', 'Invitation sent'), {
+          durationMs: 2500,
+        });
       }
     } catch (e) {
       // Branch on the machine code, never on the message: `api()` puts the
@@ -364,7 +485,13 @@ export function createCollaboratorsSection({ h, api, presentationId, pres, curre
       // to be friendly, translated or absent. Reading the message only ever
       // worked because this 409 happens to send none.
       if (e?.code === 'already_exists') {
-        toast?.error(t('share.collaborators.alreadyExists', 'One or more users are already collaborators'), { durationMs: 3000 });
+        toast?.error(
+          t(
+            'share.collaborators.alreadyExists',
+            'One or more users are already collaborators',
+          ),
+          { durationMs: 3000 },
+        );
       } else {
         toast?.error(e?.message || String(e), { durationMs: 3000 });
       }

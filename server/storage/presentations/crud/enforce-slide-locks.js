@@ -24,7 +24,8 @@ function canonical(value) {
   if (Array.isArray(value)) return value.map(canonical);
   if (value && typeof value === 'object') {
     const out = {};
-    for (const key of Object.keys(value).sort()) out[key] = canonical(value[key]);
+    for (const key of Object.keys(value).sort())
+      out[key] = canonical(value[key]);
     return out;
   }
   return value;
@@ -106,9 +107,12 @@ export async function enforceSlideLocks({
   ctx,
   loadSlideLocks = getSlideLocks,
 } = {}) {
-  const changed = new Set(collectContentChangedSlideIds(previousSlides, nextSlides));
+  const changed = new Set(
+    collectContentChangedSlideIds(previousSlides, nextSlides),
+  );
   for (const { previous, next } of extraPairs) {
-    for (const id of collectContentChangedSlideIds(previous, next)) changed.add(id);
+    for (const id of collectContentChangedSlideIds(previous, next))
+      changed.add(id);
   }
   const changedIds = Array.from(changed);
   if (!changedIds.length) return;
@@ -117,14 +121,17 @@ export async function enforceSlideLocks({
     const prevById = new Map(
       (previousSlides || [])
         .filter((s) => s && typeof s.id === 'string' && s.id)
-        .map((s) => [s.id, s])
+        .map((s) => [s.id, s]),
     );
     for (const slideId of changedIds) {
       if (prevById.get(slideId)?.lockedByAuthor) {
-        throw new LockedError('This slide is locked by the presentation author.', {
-          slideId,
-          lockKind: 'author',
-        });
+        throw new LockedError(
+          'This slide is locked by the presentation author.',
+          {
+            slideId,
+            lockKind: 'author',
+          },
+        );
       }
     }
   }
@@ -193,11 +200,15 @@ export async function enforceSlideWritePolicy({
   // below always reads the flags from the stored canonical slides.
   if (!isAuthor && Array.isArray(nextSlides)) {
     const existingSlides = existing?.slides || [];
-    const existingLockMap = new Map(existingSlides.map((s) => [s.id, !!s.lockedByAuthor]));
+    const existingLockMap = new Map(
+      existingSlides.map((s) => [s.id, !!s.lockedByAuthor]),
+    );
     for (const slide of nextSlides) {
       const existingLock = existingLockMap.get(slide.id) || false;
       if (existingLock !== !!slide.lockedByAuthor) {
-        throw new ValidationError('Only the presentation author can lock or unlock slides.');
+        throw new ValidationError(
+          'Only the presentation author can lock or unlock slides.',
+        );
       }
     }
   }

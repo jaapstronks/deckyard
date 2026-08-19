@@ -58,7 +58,10 @@ export function createSlidesPanelActions({
   isAuthor,
 }) {
   // Bulk action bar for multi-selection
-  const bulkActionBar = h('div', { class: 'slides-bulk-action-bar', hidden: true });
+  const bulkActionBar = h('div', {
+    class: 'slides-bulk-action-bar',
+    hidden: true,
+  });
   const bulkCountEl = h('span', { class: 'slides-bulk-count', text: '' });
 
   const updateBulkActionBar = () => {
@@ -68,7 +71,7 @@ export function createSlidesPanelActions({
       bulkCountEl.textContent = t(
         'editor.slides.bulkSelected',
         '{n} selected',
-        { n: count }
+        { n: count },
       );
       bulkActionBar.hidden = false;
     } else {
@@ -92,7 +95,9 @@ export function createSlidesPanelActions({
       const slidesToCopy = (pres.slides || []).filter((s) => toCopy.has(s.id));
       if (copySlides(slidesToCopy)) {
         toast?.success?.(
-          t('editor.slides.copiedToClipboard', '{n} slide(s) copied', { n: slidesToCopy.length })
+          t('editor.slides.copiedToClipboard', '{n} slide(s) copied', {
+            n: slidesToCopy.length,
+          }),
         );
         updateBulkActionBar();
       }
@@ -117,22 +122,25 @@ export function createSlidesPanelActions({
         confirmMsg = t(
           'editor.slides.bulkDeleteConfirmWithChildren',
           'Delete {n} selected slides and {c} nested slides?',
-          { n: selected.size, c: childCount }
+          { n: selected.size, c: childCount },
         );
       } else {
         confirmMsg = t(
           'editor.slides.bulkDeleteConfirm',
           'Delete {n} selected slides?',
-          { n: selected.size }
+          { n: selected.size },
         );
       }
 
-      if (!(await confirmModal(h, document.body, {
-        title: t('editor.slides.bulkDeleteTitle', 'Delete selected slides'),
-        message: confirmMsg,
-        confirmLabel: t('common.delete', 'Delete'),
-        danger: true,
-      }))) return;
+      if (
+        !(await confirmModal(h, document.body, {
+          title: t('editor.slides.bulkDeleteTitle', 'Delete selected slides'),
+          message: confirmMsg,
+          confirmLabel: t('common.delete', 'Delete'),
+          danger: true,
+        }))
+      )
+        return;
       pres.slides = (pres.slides || []).filter((s) => !toDelete.has(s.id));
       clearMultiSelection?.();
       setSelectedSlideId?.(pres.slides?.[0]?.id || null);
@@ -160,7 +168,7 @@ export function createSlidesPanelActions({
     onclick: () => {
       const selected = getSelectedSlideIds?.() || new Set();
       if (selected.size === 0) return;
-      for (const slide of (pres.slides || [])) {
+      for (const slide of pres.slides || []) {
         if (selected.has(slide.id)) {
           slide.lockedByAuthor = true;
         }
@@ -178,7 +186,7 @@ export function createSlidesPanelActions({
     onclick: () => {
       const selected = getSelectedSlideIds?.() || new Set();
       if (selected.size === 0) return;
-      for (const slide of (pres.slides || [])) {
+      for (const slide of pres.slides || []) {
         if (selected.has(slide.id)) {
           slide.lockedByAuthor = false;
         }
@@ -233,9 +241,10 @@ export function createSlidesPanelActions({
         content: deepClone(clipSlide.content || {}),
         notes: clipSlide.notes || '',
         // Map parentId to new ID if it exists in the clipboard, otherwise null
-        parentId: clipSlide.parentId && idMap.has(clipSlide.parentId)
-          ? idMap.get(clipSlide.parentId)
-          : null,
+        parentId:
+          clipSlide.parentId && idMap.has(clipSlide.parentId)
+            ? idMap.get(clipSlide.parentId)
+            : null,
       };
       // Ensure interaction IDs don't collide for special slide types
       if (s.type === 'poll-slide' && s.content) {
@@ -255,7 +264,7 @@ export function createSlidesPanelActions({
     editorState.dirtyRefreshAll();
 
     toast?.success?.(
-      t('editor.slides.pasted', '{n} slide(s) pasted', { n: newSlides.length })
+      t('editor.slides.pasted', '{n} slide(s) pasted', { n: newSlides.length }),
     );
   };
 
@@ -263,7 +272,10 @@ export function createSlidesPanelActions({
     class: 'btn btn-primary is-compact',
     type: 'button',
     text: t('editor.slides.paste', 'Paste'),
-    title: t('editor.slides.pasteTitle', 'Paste slides after selected slide (⌘V)'),
+    title: t(
+      'editor.slides.pasteTitle',
+      'Paste slides after selected slide (⌘V)',
+    ),
     onclick: () => pasteFromClipboard(),
   });
 
@@ -275,7 +287,7 @@ export function createSlidesPanelActions({
       pasteCountEl.textContent = t(
         'editor.slides.clipboardCount',
         '{n} in clipboard',
-        { n: count }
+        { n: count },
       );
       pasteBar.hidden = false;
     } else {

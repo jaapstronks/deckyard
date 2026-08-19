@@ -3,6 +3,7 @@
 Themes control the visual identity of presentations. They are loaded at runtime (no build step).
 
 **Theme locations:**
+
 - `themes/*.json` - Core themes (shipped with the system, always flat files)
 - `custom/themes/<id>/theme.json` - Custom themes, **folder layout** (recommended):
   a self-contained folder that co-locates the theme's own assets under
@@ -13,7 +14,7 @@ Themes control the visual identity of presentations. They are loaded at runtime 
 Custom themes take precedence over core themes with the same ID. The loader
 resolves a custom theme by trying the folder layout first, then the flat file.
 
-> **Which assets go where?** A theme folder holds the theme's own *chrome* —
+> **Which assets go where?** A theme folder holds the theme's own _chrome_ —
 > logo, fonts, and (for a fresh install) background presets. Assets that get
 > baked into saved slide content — uploaded images, deck-specific photos,
 > partner logos referenced by slides — belong in the shared `custom/assets/`
@@ -28,18 +29,18 @@ Six themes ship in `themes/`. Only one of them is Deckyard's own; the other
 five are neutral archetypes named after their palette, meant to be picked,
 forked or ignored.
 
-| id | label | palette | note |
-|----|-------|---------|------|
-| `brand` | Forest | forest green `#254d38` + brass `#b8860f` on warm paper | **the default** — Deckyard's own colours, the ones the logo mark and deckyard.eu use |
-| `amethyst` | Amethyst | violet `#7c3aed` | was `deckyard`/"Deckyard" until it was renamed to a palette name like its neighbours |
-| `corporate` | Boardroom | blue `#2563eb` | |
-| `editorial` | Editorial | carmine `#9f1239` | |
-| `midnight` | Midnight | cyan `#38bdf8` on near-black | the dark archetype |
-| `playful` | Sunset | orange `#ea580c` | |
+| id          | label     | palette                                                | note                                                                                 |
+| ----------- | --------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| `brand`     | Forest    | forest green `#254d38` + brass `#b8860f` on warm paper | **the default** — Deckyard's own colours, the ones the logo mark and deckyard.eu use |
+| `amethyst`  | Amethyst  | violet `#7c3aed`                                       | was `deckyard`/"Deckyard" until it was renamed to a palette name like its neighbours |
+| `corporate` | Boardroom | blue `#2563eb`                                         |                                                                                      |
+| `editorial` | Editorial | carmine `#9f1239`                                      |                                                                                      |
+| `midnight`  | Midnight  | cyan `#38bdf8` on near-black                           | the dark archetype                                                                   |
+| `playful`   | Sunset    | orange `#ea580c`                                       |                                                                                      |
 
 Two things follow from `brand` being the default rather than one of the archetypes:
 
-- **A theme is the *user's* house style, not the product's.** That claim is on
+- **A theme is the _user's_ house style, not the product's.** That claim is on
   the marketing site, so the product's own colours have to live in one theme
   among six, not in the fallback everyone inherits by accident.
 - **Marketing and docs screenshots are shot on `brand`**, so a screenshot and
@@ -89,11 +90,12 @@ custom/themes/your-org/
 }
 ```
 
-   Asset URLs inside the JSON are absolute site-root paths under the theme
-   folder: `/custom/themes/your-org/assets/...`. `embedFonts[].path` is
-   repo-root-relative (no leading slash): `custom/themes/your-org/assets/...`.
+Asset URLs inside the JSON are absolute site-root paths under the theme
+folder: `/custom/themes/your-org/assets/...`. `embedFonts[].path` is
+repo-root-relative (no leading slash): `custom/themes/your-org/assets/...`.
 
 2. Set as default in `.env`:
+
 ```
 DEFAULT_THEME=your-org
 ```
@@ -231,20 +233,21 @@ Themes can embed custom fonts for use in slides and exports:
 ```
 
 The fonts will be:
+
 - Loaded in the browser for live editing/presenting
 - Embedded in PDF/HTML exports for offline viewing
 
 ### Entry shape
 
-| Field | Required | Meaning |
-|-------|----------|---------|
-| `family` | yes | The `font-family` name the rule declares. Must match what `--t-font-heading` / `--t-font-body` name. |
-| `path` | one of | Repo-root-relative path to a `woff2` (no leading slash). |
-| `url` | one of | An `/uploads/…` path or an absolute URL, for managed/uploaded fonts. |
-| `weight` | no | `font-weight` for the rule. Defaults to `400`. |
-| `style` | no | `font-style`. Defaults to `normal`. |
-| `format` | no | `src` format hint for URL-based fonts. Defaults to `woff2`. |
-| `unicodeRange` | no | `unicode-range` for the rule — **required when one family is split across several files.** |
+| Field          | Required | Meaning                                                                                              |
+| -------------- | -------- | ---------------------------------------------------------------------------------------------------- |
+| `family`       | yes      | The `font-family` name the rule declares. Must match what `--t-font-heading` / `--t-font-body` name. |
+| `path`         | one of   | Repo-root-relative path to a `woff2` (no leading slash).                                             |
+| `url`          | one of   | An `/uploads/…` path or an absolute URL, for managed/uploaded fonts.                                 |
+| `weight`       | no       | `font-weight` for the rule. Defaults to `400`.                                                       |
+| `style`        | no       | `font-style`. Defaults to `normal`.                                                                  |
+| `format`       | no       | `src` format hint for URL-based fonts. Defaults to `woff2`.                                          |
+| `unicodeRange` | no       | `unicode-range` for the rule — **required when one family is split across several files.**           |
 
 **`unicodeRange` is not optional in practice for the curated fonts.** Google
 splits every family into disjoint per-script subsets: the `latin` file holds
@@ -271,7 +274,7 @@ separated by a space:
 This is how the curated families are written, and it is what keeps exports
 honest about size: an export base64-inlines every `@font-face` rule, so four
 weight-entries pointing at the same variable file inlined the same blob four
-times. Entries that *do* resolve to the same file are merged automatically
+times. Entries that _do_ resolve to the same file are merged automatically
 (`mergeFontFaces` in `shared/theme-fonts.js`), so a hand-written theme that
 lists one entry per weight still exports one copy — but writing the range is
 clearer. A truly static family (one file per weight, e.g. Poppins) keeps one
@@ -332,7 +335,7 @@ theme knows what its own slots are.
 ```
 
 Either a plain string or an `{ en, nl }` object per slot. Renaming the slots is
-what this is for; adding *new* options is `slideBackgrounds`
+what this is for; adding _new_ options is `slideBackgrounds`
 (`shared/theme-slide-backgrounds.js`; a theme declares extra `slideBackgrounds`
 entries and the generated CSS ships the matching `.slide-bg-<id>` rules).
 
@@ -358,7 +361,7 @@ A file theme sets these tokens directly in `cssVars`:
 
 `--t-shadow-scale` multiplies the alpha of all five `--slide-shadow-*` tokens at
 once: `0` flattens elevation away, `1` is the default, higher deepens it. The
-geometry (offset, blur) is fixed, so a theme changes how *present* elevation
+geometry (offset, blur) is fixed, so a theme changes how _present_ elevation
 feels rather than moving the light source. Leaving it unset means `1`.
 
 Radius is consumed by `--slide-radius-sm/-md/-lg`, which every rounded surface
@@ -387,7 +390,7 @@ A theme can declare that a brand property is **not** overridable per slide:
 - **`open`** (the default for everything) — the theme supplies a default and a
   per-slide override wins.
 - **`locked`** — the theme wins. The editor omits the control and explains why,
-  *and* the renderer ignores an override a slide already carries, so a deck
+  _and_ the renderer ignores an override a slide already carries, so a deck
   authored before the lock cannot leak past the branding.
 
 `background` governs the slide background as a whole — the colour/variant, the
@@ -513,6 +516,7 @@ To create a custom slide type that the AI wizard can use, add an `ai` property t
 If you want the AI to use your custom title slide instead of the default:
 
 1. Create your custom slide with AI metadata:
+
    ```javascript
    // custom/slide-types/my-title-slide.js
    export default {
@@ -547,11 +551,3 @@ If you want the AI to use your custom title slide instead of the default:
 
 - `docs/developer/slide-types.md` - Custom slide types and AI integration
 - `docs/developer/architecture.md` - System architecture overview
-
-
-
-
-
-
-
-

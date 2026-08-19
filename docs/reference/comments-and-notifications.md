@@ -15,12 +15,12 @@ items for whom. Nothing in the inbox ever touches shared thread status.
 
 ## Data model
 
-| Table | Migration | Purpose |
-|-------|-----------|---------|
-| `comment_thread_reads` | 042 | Per-user read-state per thread (`user_email`, top-level `comment_id`, `last_read_at`; PK user+comment, org-scoped). Drives the unread dots and the "waiting for me" filter. Guests have no account and no read-state. |
-| `presentation_comments.mentions` | 043 | JSONB list `[{name, email}]`, parsed server-side from body markup `@[Name](user:email)` at create **and** update — single source of truth for every write path (app, REST v1, MCP). Parser: `shared/comment-mentions.js`. |
-| `presentation_subscriptions` | 044 | Per-deck override (`level`: `watching` \| `participating` \| `mentions_only` \| `mute`). No row = use the user's global default (`settings.notifications.defaultLevel`). |
-| `user_notifications.archived_at` | 045 | "Handled" timestamp next to `is_read`/`read_at`. Archiving always also marks read; the badge counts unread **unarchived** items only. |
+| Table                            | Migration | Purpose                                                                                                                                                                                                                   |
+| -------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `comment_thread_reads`           | 042       | Per-user read-state per thread (`user_email`, top-level `comment_id`, `last_read_at`; PK user+comment, org-scoped). Drives the unread dots and the "waiting for me" filter. Guests have no account and no read-state.     |
+| `presentation_comments.mentions` | 043       | JSONB list `[{name, email}]`, parsed server-side from body markup `@[Name](user:email)` at create **and** update — single source of truth for every write path (app, REST v1, MCP). Parser: `shared/comment-mentions.js`. |
+| `presentation_subscriptions`     | 044       | Per-deck override (`level`: `watching` \| `participating` \| `mentions_only` \| `mute`). No row = use the user's global default (`settings.notifications.defaultLevel`).                                                  |
+| `user_notifications.archived_at` | 045       | "Handled" timestamp next to `is_read`/`read_at`. Archiving always also marks read; the badge counts unread **unarchived** items only.                                                                                     |
 
 ## Event → recipients (the subscription resolver)
 
@@ -83,7 +83,7 @@ or collaborate on, you get one bundled bell notification, not a ping per slide.
 
 - **Activity feed (layer 1)** — the save route emits a granular `slide.added`
   activity event (`recordSlidesAdded`), so the organization Activity feed shows
-  "… added N slides to *Deck*" instead of a generic "updated". Feed-only, no
+  "… added N slides to _Deck_" instead of a generic "updated". Feed-only, no
   inbox load.
 - **Bundled bell notification (layer 2)** — `server/services/deck-activity-notifications.js`
   fans out a `deck_activity` inbox notification to the deck's members.
@@ -100,7 +100,7 @@ or collaborate on, you get one bundled bell notification, not a ping per slide.
     the title, move it back to the top and re-mark unread
     (`refreshDeckActivityNotification`); the window extends on each edit. Not
     found → one new row. So an actor making 40 edits in an hour yields **one**
-    unread notification ("*Riley* added 40 slides to *Deck*"), not 40. No job
+    unread notification ("_Riley_ added 40 slides to _Deck_"), not 40. No job
     or queue: the coalescing happens on the write itself.
   - **Live**: pushes `notification:new` (the bell dedupes by id, so a coalesced
     bump replaces the row rather than stacking) followed by an authoritative
@@ -140,7 +140,7 @@ re-hydrated. Two subtleties it protects:
   visible; it must not read back as a newline. `deserialize` emits the same
   filler, so both sides agree.
 - **Shift+Enter is deliberately left to the browser.** It already inserts a
-  plain break and places the caret correctly (blocks only come from *plain*
+  plain break and places the caret correctly (blocks only come from _plain_
   Enter, which the component intercepts to submit). Hand-rolling it silently
   loses the newline: a caret anchored between child nodes gets normalised back
   into the preceding text, so the next keystroke lands on the wrong side.
@@ -194,7 +194,7 @@ The link button (`client/lib/comments/comment-toolbar.js`) lives beside Post rat
 in a bar of its own, so the composer keeps its height. It snapshots the
 selection on `mousedown` via `rememberSelection()` — by the time the dialog is
 open the live selection is gone, and closing a modal restores focus to the
-composer, which puts a *fresh* caret at position 0. That is why a snapshot
+composer, which puts a _fresh_ caret at position 0. That is why a snapshot
 wins over the live selection, and why it is cleared again on the next
 keydown/mousedown: a stale range would otherwise hijack the next mention
 insert or backspace.

@@ -56,13 +56,13 @@ export const up = async (db) => {
     .createTable('access_attempt_log')
     .ifNotExists()
     .addColumn('id', 'uuid', (col) =>
-      col.primaryKey().defaultTo(sql`gen_random_uuid()`)
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
     )
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade')
+      col.references('organizations.id').onDelete('cascade'),
     )
     .addColumn('presentation_id', 'uuid', (col) =>
-      col.references('presentations.id').onDelete('cascade')
+      col.references('presentations.id').onDelete('cascade'),
     )
     // Type of access that was attempted
     .addColumn('access_type', 'varchar(50)', (col) => col.notNull())
@@ -73,7 +73,7 @@ export const up = async (db) => {
     .addColumn('accessor_ip', 'varchar(45)')
     // Timestamps
     .addColumn('attempted_at', 'timestamptz', (col) =>
-      col.notNull().defaultTo(sql`now()`)
+      col.notNull().defaultTo(sql`now()`),
     )
     .addColumn('author_notified_at', 'timestamptz')
     .execute();
@@ -106,8 +106,14 @@ export const up = async (db) => {
 export const down = async (db) => {
   // Drop indexes first
   await db.schema.dropIndex('idx_access_attempt_log_org').ifExists().execute();
-  await db.schema.dropIndex('idx_access_attempt_log_accessor').ifExists().execute();
-  await db.schema.dropIndex('idx_access_attempt_log_presentation').ifExists().execute();
+  await db.schema
+    .dropIndex('idx_access_attempt_log_accessor')
+    .ifExists()
+    .execute();
+  await db.schema
+    .dropIndex('idx_access_attempt_log_presentation')
+    .ifExists()
+    .execute();
 
   // Drop access_attempt_log table
   await db.schema.dropTable('access_attempt_log').ifExists().execute();

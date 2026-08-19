@@ -24,60 +24,63 @@ function directives() {
       code: '{{field}}',
       desc: t(
         'settings.slideTypes.help.var',
-        'The value of a field, HTML-escaped. Same as {{esc field}}.'
+        'The value of a field, HTML-escaped. Same as {{esc field}}.',
       ),
     },
     {
       code: '{{esc field}}',
-      desc: t('settings.slideTypes.help.esc', 'The value of a field, HTML-escaped.'),
+      desc: t(
+        'settings.slideTypes.help.esc',
+        'The value of a field, HTML-escaped.',
+      ),
     },
     {
       code: '{{markdown field}}',
       desc: t(
         'settings.slideTypes.help.markdown',
-        'The field rendered as markdown (bold, italics, links, lists).'
+        'The field rendered as markdown (bold, italics, links, lists).',
       ),
     },
     {
       code: '{{raw field}}',
       desc: t(
         'settings.slideTypes.help.raw',
-        'The field inserted as-is, without escaping. Only for values you control.'
+        'The field inserted as-is, without escaping. Only for values you control.',
       ),
     },
     {
       code: '{{bgClass field}}',
       desc: t(
         'settings.slideTypes.help.bgClass',
-        'Turns a background choice into the matching slide background class.'
+        'Turns a background choice into the matching slide background class.',
       ),
     },
     {
       code: '{{#if field}} … {{else}} … {{/if}}',
       desc: t(
         'settings.slideTypes.help.if',
-        'Only renders the first part when the field has a value. Empty text, zero, false and empty lists all count as no value.'
+        'Only renders the first part when the field has a value. Empty text, zero, false and empty lists all count as no value.',
       ),
     },
     {
       code: '{{#each items}} … {{/each}}',
       desc: t(
         'settings.slideTypes.help.each',
-        'Repeats the block for every entry of an items field.'
+        'Repeats the block for every entry of an items field.',
       ),
     },
     {
       code: '{{this}} / {{this.key}}',
       desc: t(
         'settings.slideTypes.help.this',
-        'Inside {{#each}}: the current entry, or one of its sub-fields.'
+        'Inside {{#each}}: the current entry, or one of its sub-fields.',
       ),
     },
     {
       code: '{{@index}}',
       desc: t(
         'settings.slideTypes.help.index',
-        'Inside {{#each}}: the position of the current entry, starting at 0.'
+        'Inside {{#each}}: the position of the current entry, starting at 0.',
       ),
     },
   ];
@@ -97,7 +100,7 @@ export function createTemplateHelp({ fields = [] } = {}) {
   for (const d of directives()) {
     list.append(
       h('dt', {}, [h('code', { text: d.code })]),
-      h('dd', { text: d.desc })
+      h('dd', { text: d.desc }),
     );
   }
 
@@ -106,16 +109,18 @@ export function createTemplateHelp({ fields = [] } = {}) {
   /** @param {Array<{key: string}>} next */
   function setFields(next) {
     fieldsEl.textContent = '';
-    const keys = (next || []).map((f) => String(f?.key || '').trim()).filter(Boolean);
+    const keys = (next || [])
+      .map((f) => String(f?.key || '').trim())
+      .filter(Boolean);
     if (keys.length === 0) {
       fieldsEl.append(
         h('span', {
           class: 'help',
           text: t(
             'settings.slideTypes.help.noFields',
-            'This type has no fields yet — add some above and their names appear here.'
+            'This type has no fields yet — add some above and their names appear here.',
           ),
-        })
+        }),
       );
       return;
     }
@@ -123,7 +128,7 @@ export function createTemplateHelp({ fields = [] } = {}) {
       h('span', {
         class: 'field-label',
         text: t('settings.slideTypes.help.fieldsTitle', 'Fields you can use'),
-      })
+      }),
     );
     const row = h('div', { class: 'template-help-field-list' });
     for (const key of keys) row.append(h('code', { text: `{{${key}}}` }));

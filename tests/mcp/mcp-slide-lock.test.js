@@ -30,18 +30,14 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('../helpers/fake-db.js');
 const { __setTestDb } = await import('../../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } = await import(
-  '../../server/storage/lifecycle.js'
-);
+const { initializeStorage, __resetStorageForTests } =
+  await import('../../server/storage/lifecycle.js');
 const { McpServer } = await import('../../server/mcp/protocol.js');
 const { registerTools } = await import('../../server/mcp/tools.js');
 const { repoRoot } = await import('../../server/config/paths.js');
 const { testScope } = await import('../helpers/storage-scope.js');
-const {
-  createPresentation,
-  getPresentation,
-  updatePresentation,
-} = await import('../../server/storage/presentations/index.js');
+const { createPresentation, getPresentation, updatePresentation } =
+  await import('../../server/storage/presentations/index.js');
 
 const OWNER = 'owner@example.com';
 const OTHER = 'collab@example.com';
@@ -55,15 +51,23 @@ describe('MCP tools — slide-lock enforcement with acting owner', () => {
 
   /** Call an MCP tool handler as a given session owner (null = trusted local). */
   const callTool = (name, args, ownerEmail = null) =>
-    server.tools.get(name).handler(args, ownerEmail ? { ownerEmail } : undefined);
+    server.tools
+      .get(name)
+      .handler(args, ownerEmail ? { ownerEmail } : undefined);
 
   /** Fresh read of the stored deck (bypasses any stale in-memory copies). */
   const loadStored = () => getPresentation(testScope(repoRoot), deckId);
 
   before(async () => {
-    tempDataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'mcp-slide-lock-test-'));
+    tempDataDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), 'mcp-slide-lock-test-'),
+    );
     process.env.DATA_DIR = tempDataDir;
-    __setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+    __setTestDb(
+      createFakeDb({
+        organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+      }),
+    );
     await initializeStorage();
 
     server = new McpServer();
@@ -78,10 +82,15 @@ describe('MCP tools — slide-lock enforcement with acting owner', () => {
 
     // Organization scope so the non-author has write access and reaches the
     // slide-lock policy instead of failing the per-deck access check.
-    await updatePresentation(testScope(repoRoot), deckId, {
-      ...created,
-      visibility: 'organization',
-    }, { allowVisibilityChange: true, actorEmail: OWNER });
+    await updatePresentation(
+      testScope(repoRoot),
+      deckId,
+      {
+        ...created,
+        visibility: 'organization',
+      },
+      { allowVisibilityChange: true, actorEmail: OWNER },
+    );
   });
 
   after(async () => {
@@ -99,61 +108,82 @@ describe('MCP tools — slide-lock enforcement with acting owner', () => {
       { ...structuredClone(base), id: LOCKED_ID, lockedByAuthor: true },
       { ...structuredClone(base), id: FREE_ID, lockedByAuthor: false },
     ];
-    await updatePresentation(testScope(repoRoot), deckId, doc, { actorEmail: OWNER });
+    await updatePresentation(testScope(repoRoot), deckId, doc, {
+      actorEmail: OWNER,
+    });
   });
 
   it('lets the author edit their own author-locked slide (the PR #27 follow-up)', async () => {
-    const result = await callTool('update_slide', {
-      presentationId: deckId,
-      slideIndex: 0,
-      content: { title: 'Door auteur via MCP' },
-    }, OWNER);
+    const result = await callTool(
+      'update_slide',
+      {
+        presentationId: deckId,
+        slideIndex: 0,
+        content: { title: 'Door auteur via MCP' },
+      },
+      OWNER,
+    );
     assert.equal(result.updated, true);
 
     const stored = await loadStored();
     assert.equal(
       stored.slides.find((s) => s.id === LOCKED_ID).content.title,
-      'Door auteur via MCP'
+      'Door auteur via MCP',
     );
   });
 
   it('still rejects a non-author editing an author-locked slide with 423', async () => {
     await assert.rejects(
-      callTool('update_slide', {
-        presentationId: deckId,
-        slideIndex: 0,
-        content: { title: 'Gehackt via MCP' },
-      }, OTHER),
-      (e) => e.statusCode === 423 && e.details?.lockKind === 'author' && e.details?.slideId === LOCKED_ID
+      callTool(
+        'update_slide',
+        {
+          presentationId: deckId,
+          slideIndex: 0,
+          content: { title: 'Gehackt via MCP' },
+        },
+        OTHER,
+      ),
+      (e) =>
+        e.statusCode === 423 &&
+        e.details?.lockKind === 'author' &&
+        e.details?.slideId === LOCKED_ID,
     );
 
     // Nothing was written
     const stored = await loadStored();
     assert.notEqual(
       stored.slides.find((s) => s.id === LOCKED_ID).content.title,
-      'Gehackt via MCP'
+      'Gehackt via MCP',
     );
   });
 
   it('lets a non-author edit the unlocked slide next to a locked one', async () => {
-    const result = await callTool('update_slide', {
-      presentationId: deckId,
-      slideIndex: 1,
-      content: { title: 'Door collaborator' },
-    }, OTHER);
+    const result = await callTool(
+      'update_slide',
+      {
+        presentationId: deckId,
+        slideIndex: 1,
+        content: { title: 'Door collaborator' },
+      },
+      OTHER,
+    );
     assert.equal(result.updated, true);
 
     const stored = await loadStored();
     assert.equal(
       stored.slides.find((s) => s.id === FREE_ID).content.title,
-      'Door collaborator'
+      'Door collaborator',
     );
   });
 
   it('rejects a non-author removing an author-locked slide with 423', async () => {
     await assert.rejects(
-      callTool('remove_slide', { presentationId: deckId, slideIndex: 0 }, OTHER),
-      (e) => e.statusCode === 423 && e.details?.lockKind === 'author'
+      callTool(
+        'remove_slide',
+        { presentationId: deckId, slideIndex: 0 },
+        OTHER,
+      ),
+      (e) => e.statusCode === 423 && e.details?.lockKind === 'author',
     );
 
     const stored = await loadStored();
@@ -161,10 +191,14 @@ describe('MCP tools — slide-lock enforcement with acting owner', () => {
   });
 
   it('lets the author remove their own author-locked slide', async () => {
-    const result = await callTool('remove_slide', {
-      presentationId: deckId,
-      slideIndex: 0,
-    }, OWNER);
+    const result = await callTool(
+      'remove_slide',
+      {
+        presentationId: deckId,
+        slideIndex: 0,
+      },
+      OWNER,
+    );
     assert.equal(result.removed, true);
 
     const stored = await loadStored();
@@ -173,11 +207,15 @@ describe('MCP tools — slide-lock enforcement with acting owner', () => {
   });
 
   it('lets a non-author reorder slides (no content change)', async () => {
-    const result = await callTool('reorder_slides', {
-      presentationId: deckId,
-      fromIndex: 0,
-      toIndex: 1,
-    }, OTHER);
+    const result = await callTool(
+      'reorder_slides',
+      {
+        presentationId: deckId,
+        fromIndex: 0,
+        toIndex: 1,
+      },
+      OTHER,
+    );
     assert.equal(result.moved, true);
 
     const stored = await loadStored();
@@ -185,17 +223,21 @@ describe('MCP tools — slide-lock enforcement with acting owner', () => {
   });
 
   it('does not block a trusted local session (no owner configured) on a locked slide', async () => {
-    const result = await callTool('update_slide', {
-      presentationId: deckId,
-      slideIndex: 0,
-      content: { title: 'Lokale stdio-sessie' },
-    }, null);
+    const result = await callTool(
+      'update_slide',
+      {
+        presentationId: deckId,
+        slideIndex: 0,
+        content: { title: 'Lokale stdio-sessie' },
+      },
+      null,
+    );
     assert.equal(result.updated, true);
 
     const stored = await loadStored();
     assert.equal(
       stored.slides.find((s) => s.id === LOCKED_ID).content.title,
-      'Lokale stdio-sessie'
+      'Lokale stdio-sessie',
     );
   });
 });

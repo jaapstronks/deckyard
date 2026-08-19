@@ -69,7 +69,7 @@ export function getOrgId(ctx) {
     throw new Error(
       'getOrgId was called with a context that has no organization to act in. ' +
         'Build it through createStorageScope (a request) or singleOrganizationScope ' +
-        '(an entry point without a request) rather than falling back to the default organization.'
+        '(an entry point without a request) rather than falling back to the default organization.',
     );
   }
   return ctx.organizationId;
@@ -123,7 +123,9 @@ export function createStorageScope(authedUser, options = {}) {
     : authedUser?.organizationId;
 
   const organizationId =
-    options.organizationId || sessionOrganizationId || fallbackOrganizationId(authedUser);
+    options.organizationId ||
+    sessionOrganizationId ||
+    fallbackOrganizationId(authedUser);
 
   return {
     organizationId,
@@ -160,4 +162,3 @@ function fallbackOrganizationId(authedUser) {
   if (!authedUser) return getDefaultOrganizationId();
   return isMultiOrgEnabled() ? null : getDefaultOrganizationId();
 }
-

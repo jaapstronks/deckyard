@@ -58,14 +58,14 @@ export function openPublishModal({
       class: 'btn btn-secondary',
       text: t('common.close', 'Close'),
       onclick: () => close(),
-    })
+    }),
   );
 
   const topHelp = h('div', {
     class: 'help publish-top-help',
     text: t(
       'editor.publishModal.help',
-      'Copy the public link or embed code below. Tip: the public link is already on your clipboard.'
+      'Copy the public link or embed code below. Tip: the public link is already on your clipboard.',
     ),
   });
 
@@ -75,7 +75,9 @@ export function openPublishModal({
     if (!publishId) return h('div', { hidden: true });
 
     const currentOgUrl =
-      typeof pres?.published?.ogImageUrl === 'string' ? pres.published.ogImageUrl : '';
+      typeof pres?.published?.ogImageUrl === 'string'
+        ? pres.published.ogImageUrl
+        : '';
 
     const wrap = h('div', { class: 'publish-field' });
     const head = h('div', { class: 'publish-field-head' });
@@ -84,8 +86,14 @@ export function openPublishModal({
       class: 'help publish-field-status',
     });
     status.textContent = currentOgUrl
-      ? t('editor.publishModal.previewHint', 'Preview image is generated from your first slide.')
-      : t('editor.publishModal.previewHintDefault', 'A default preview image is used.');
+      ? t(
+          'editor.publishModal.previewHint',
+          'Preview image is generated from your first slide.',
+        )
+      : t(
+          'editor.publishModal.previewHintDefault',
+          'A default preview image is used.',
+        );
 
     const refreshBtn = h('button', {
       class: 'btn btn-secondary',
@@ -98,11 +106,14 @@ export function openPublishModal({
         try {
           const resp = await api(
             `/api/presentations/${id}/preview/regenerate`,
-            { method: 'POST' }
+            { method: 'POST' },
           );
           pres.published = pres.published || {};
           pres.published.ogImageUrl = resp.ogImageUrl || '';
-          status.textContent = t('editor.publishModal.previewUpdated', 'Preview updated.');
+          status.textContent = t(
+            'editor.publishModal.previewUpdated',
+            'Preview updated.',
+          );
           // Update the thumbnail if it exists
           const container = wrap.querySelector('.publish-preview-container');
           if (container && resp.ogImageUrl) {
@@ -118,7 +129,8 @@ export function openPublishModal({
               class: 'preview-thumb',
               src: resp.ogImageUrl,
               alt: t('editor.publishModal.previewAlt', 'Social preview image'),
-              style: 'max-width: 240px; height: auto; border-radius: 4px; border: 1px solid var(--color-border, #ddd); cursor: pointer;',
+              style:
+                'max-width: 240px; height: auto; border-radius: 4px; border: 1px solid var(--color-border, #ddd); cursor: pointer;',
             });
             link.append(img);
             container.append(link);
@@ -127,14 +139,20 @@ export function openPublishModal({
           status.textContent = String(e?.message || e);
         } finally {
           this.disabled = false;
-          this.textContent = t('editor.publishModal.refreshPreview', 'Refresh preview');
+          this.textContent = t(
+            'editor.publishModal.refreshPreview',
+            'Refresh preview',
+          );
         }
       },
     });
 
     head.append(
-      h('div', { class: 'publish-field-label', text: t('editor.publishModal.ogPreview', 'Social preview') }),
-      h('div', { class: 'publish-field-actions' }, [refreshBtn])
+      h('div', {
+        class: 'publish-field-label',
+        text: t('editor.publishModal.ogPreview', 'Social preview'),
+      }),
+      h('div', { class: 'publish-field-actions' }, [refreshBtn]),
     );
 
     // Show the current OG image as a clickable thumbnail
@@ -154,16 +172,20 @@ export function openPublishModal({
         class: 'preview-thumb',
         src: currentOgUrl,
         alt: t('editor.publishModal.previewAlt', 'Social preview image'),
-        style: 'max-width: 240px; height: auto; border-radius: 4px; border: 1px solid var(--color-border, #ddd); cursor: pointer;',
+        style:
+          'max-width: 240px; height: auto; border-radius: 4px; border: 1px solid var(--color-border, #ddd); cursor: pointer;',
       });
       link.append(img);
       previewContainer.append(link);
     } else {
-      previewContainer.append(h('div', {
-        class: 'preview-placeholder',
-        text: t('editor.publishModal.noPreviewYet', 'No preview image yet'),
-        style: 'width: 240px; height: 126px; display: flex; align-items: center; justify-content: center; background: var(--color-bg-muted, #f5f5f5); border-radius: 4px; border: 1px dashed var(--color-border, #ddd); font-size: 12px; color: var(--color-text-muted, #666);',
-      }));
+      previewContainer.append(
+        h('div', {
+          class: 'preview-placeholder',
+          text: t('editor.publishModal.noPreviewYet', 'No preview image yet'),
+          style:
+            'width: 240px; height: 126px; display: flex; align-items: center; justify-content: center; background: var(--color-bg-muted, #f5f5f5); border-radius: 4px; border: 1px dashed var(--color-border, #ddd); font-size: 12px; color: var(--color-text-muted, #666);',
+        }),
+      );
     }
 
     wrap.append(head, previewContainer, status);
@@ -180,7 +202,10 @@ export function openPublishModal({
     const wrap = h('div', { class: 'publish-field' });
     const head = h('div', { class: 'publish-field-head' });
     head.append(
-      h('div', { class: 'publish-field-label', text: t('editor.publishModal.slug', 'Slug') }),
+      h('div', {
+        class: 'publish-field-label',
+        text: t('editor.publishModal.slug', 'Slug'),
+      }),
       h('div', { class: 'publish-field-actions' }, [
         h('button', {
           class: 'btn btn-secondary',
@@ -188,13 +213,10 @@ export function openPublishModal({
           text: t('common.save', 'Save'),
           onclick: async () => {
             try {
-              const resp = await api(
-                `/api/presentations/${id}/publish/slug`,
-                {
-                  method: 'PATCH',
-                  body: JSON.stringify({ slug: input.value }),
-                }
-              );
+              const resp = await api(`/api/presentations/${id}/publish/slug`, {
+                method: 'PATCH',
+                body: JSON.stringify({ slug: input.value }),
+              });
               pres.published = pres.published || {};
               pres.published.slug = resp.slug;
               status.textContent = t('editor.publishModal.saved', 'Saved.');
@@ -204,20 +226,22 @@ export function openPublishModal({
             }
           },
         }),
-      ])
+      ]),
     );
     const input = h('input', {
       class: 'form-input publish-field-input',
       value: currentSlug,
-      placeholder: t('editor.publishModal.slugPlaceholder', 'e.g. my-presentation'),
+      placeholder: t(
+        'editor.publishModal.slugPlaceholder',
+        'e.g. my-presentation',
+      ),
     });
     const status = h('div', {
       class: 'help publish-field-status',
-      text:
-        t(
-          'editor.publishModal.slugHint',
-          'Tip: existing links will keep working (they redirect to the new slug).'
-        ),
+      text: t(
+        'editor.publishModal.slugHint',
+        'Tip: existing links will keep working (they redirect to the new slug).',
+      ),
     });
     wrap.append(head, input, status);
     return wrap;
@@ -229,9 +253,18 @@ export function openPublishModal({
     if (!publishId) return h('div', { hidden: true });
     return h('div', { class: 'publish-field' }, [
       h('div', { class: 'publish-field-head' }, [
-        h('div', { class: 'publish-field-label', text: t('editor.publishModal.publication', 'Publication') }),
+        h('div', {
+          class: 'publish-field-label',
+          text: t('editor.publishModal.publication', 'Publication'),
+        }),
       ]),
-      h('div', { class: 'help', text: t('editor.publishModal.unpublishHint', 'You can also unpublish later.') }),
+      h('div', {
+        class: 'help',
+        text: t(
+          'editor.publishModal.unpublishHint',
+          'You can also unpublish later.',
+        ),
+      }),
       h(
         'div',
         {
@@ -247,7 +280,7 @@ export function openPublishModal({
                 title: t('editor.publish.unpublish', 'Unpublish'),
                 message: t(
                   'editor.publish.unpublish.confirm',
-                  'Unpublish?\n\nThis will invalidate the public link and embed links. Anyone with a shared /p/ or /embed/ link will no longer be able to open the presentation.\n\nIf you use this link in a website, invite, follow-along, notes/QR or other tooling, it will stop working there too.'
+                  'Unpublish?\n\nThis will invalidate the public link and embed links. Anyone with a shared /p/ or /embed/ link will no longer be able to open the presentation.\n\nIf you use this link in a website, invite, follow-along, notes/QR or other tooling, it will stop working there too.',
                 ),
                 confirmLabel: t('editor.publish.unpublish', 'Unpublish'),
                 danger: true,
@@ -265,7 +298,7 @@ export function openPublishModal({
               }
             },
           }),
-        ]
+        ],
       ),
     ]);
   })();
@@ -322,7 +355,10 @@ export function openPublishModal({
           showStatus(
             ok
               ? t('common.copied', 'Copied')
-              : t('common.copyFailed', 'Copy failed (select and copy manually).')
+              : t(
+                  'common.copyFailed',
+                  'Copy failed (select and copy manually).',
+                ),
           );
           try {
             fieldEl.focus?.();
@@ -331,7 +367,7 @@ export function openPublishModal({
             // ignore
           }
         },
-      })
+      }),
     );
     if (openHref) {
       actions.append(
@@ -341,7 +377,7 @@ export function openPublishModal({
           target: '_blank',
           rel: 'noopener noreferrer',
           text: t('common.open', 'Open'),
-        })
+        }),
       );
     }
 
@@ -363,14 +399,26 @@ export function openPublishModal({
     const section = h('div', { class: 'publish-lang' });
     section.append(h('div', { class: 'publish-lang-title', text: langShort }));
     section.append(
-      makeRow({ label: `Link (${langShort})`, value: urlVal, openHref: urlVal }),
-      makeRow({ label: `Embed URL (${langShort})`, value: embedUrlVal })
+      makeRow({
+        label: `Link (${langShort})`,
+        value: urlVal,
+        openHref: urlVal,
+      }),
+      makeRow({ label: `Embed URL (${langShort})`, value: embedUrlVal }),
     );
 
     if (showAdvanced) {
       section.append(
-        makeRow({ label: `Iframe (${langShort})`, value: iframeVal, kind: 'textarea' }),
-        makeRow({ label: `SDK (${langShort})`, value: sdkVal, kind: 'textarea' })
+        makeRow({
+          label: `Iframe (${langShort})`,
+          value: iframeVal,
+          kind: 'textarea',
+        }),
+        makeRow({
+          label: `SDK (${langShort})`,
+          value: sdkVal,
+          kind: 'textarea',
+        }),
       );
     }
     return section;
@@ -385,7 +433,7 @@ export function openPublishModal({
       iframeVal: iframeSnippet,
       sdkVal: sdkSnippet,
       showAdvanced: false,
-    })
+    }),
   );
   if (urlOther) {
     main.append(
@@ -396,7 +444,7 @@ export function openPublishModal({
         iframeVal: iframeSnippetOther,
         sdkVal: sdkSnippetOther,
         showAdvanced: false,
-      })
+      }),
     );
   }
 
@@ -405,7 +453,7 @@ export function openPublishModal({
     h('summary', {
       class: 'publish-advanced-summary',
       text: t('editor.publish.advanced', 'Advanced (iframe / SDK)'),
-    })
+    }),
   );
   const advBody = h('div', { class: 'publish-advanced-body' });
   advBody.append(
@@ -416,7 +464,7 @@ export function openPublishModal({
       iframeVal: iframeSnippet,
       sdkVal: sdkSnippet,
       showAdvanced: true,
-    })
+    }),
   );
   if (urlOther) {
     advBody.append(
@@ -427,7 +475,7 @@ export function openPublishModal({
         iframeVal: iframeSnippetOther,
         sdkVal: sdkSnippetOther,
         showAdvanced: true,
-      })
+      }),
     );
   }
   advanced.append(advBody);

@@ -53,7 +53,7 @@ export async function incrementUsage(apiKeyId, counters = {}) {
           request_count: sql`COALESCE(api_usage_daily.request_count, 0) + ${requests}`,
           ai_request_count: sql`COALESCE(api_usage_daily.ai_request_count, 0) + ${aiRequests}`,
           export_count: sql`COALESCE(api_usage_daily.export_count, 0) + ${exports}`,
-        })
+        }),
       )
       .execute();
 
@@ -132,7 +132,7 @@ export async function getUsageHistory(apiKeyId, options = {}) {
       .orderBy('date', 'desc')
       .execute();
 
-    const history = rows.map(row => ({
+    const history = rows.map((row) => ({
       date: row.date,
       requestCount: row.request_count || 0,
       aiRequestCount: row.ai_request_count || 0,
@@ -233,7 +233,11 @@ export async function checkExportRateLimit(apiKeyId, tier = 'free') {
  * @param {string} limitType - Type of limit (requests, ai, exports)
  * @returns {Promise<Object>} - Rate limit header values
  */
-export async function getRateLimitHeaders(apiKeyId, tier = 'free', limitType = 'requests') {
+export async function getRateLimitHeaders(
+  apiKeyId,
+  tier = 'free',
+  limitType = 'requests',
+) {
   const limits = TIER_LIMITS[tier] || TIER_LIMITS.free;
   const usage = await getTodayUsage(apiKeyId);
 

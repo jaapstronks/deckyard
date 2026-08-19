@@ -30,7 +30,14 @@ const FULL = {
 test('toPortableDefinition strips identity, audit, and publish state', () => {
   const def = toPortableDefinition(FULL);
   assert.deepEqual(Object.keys(def).sort(), [
-    'baseType', 'css', 'defaults', 'defaultsByLang', 'fields', 'label', 'template', 'usage',
+    'baseType',
+    'css',
+    'defaults',
+    'defaultsByLang',
+    'fields',
+    'label',
+    'template',
+    'usage',
   ]);
   assert.equal(def.id, undefined);
   assert.equal(def.slug, undefined);
@@ -49,18 +56,26 @@ test('serialize → parse round-trips the portable definition', () => {
 });
 
 test('parse accepts a bare definition object (no envelope)', () => {
-  const bare = JSON.stringify({ label: 'Bare', fields: [{ key: 'a', type: 'string', label: 'A' }] });
+  const bare = JSON.stringify({
+    label: 'Bare',
+    fields: [{ key: 'a', type: 'string', label: 'A' }],
+  });
   const parsed = parseImportedSlideType(bare);
   assert.equal(parsed.ok, true);
   assert.equal(parsed.definition.label, 'Bare');
 });
 
 test('parse rejects invalid JSON', () => {
-  assert.deepEqual(parseImportedSlideType('{not json'), { ok: false, reason: 'invalid_json' });
+  assert.deepEqual(parseImportedSlideType('{not json'), {
+    ok: false,
+    reason: 'invalid_json',
+  });
 });
 
 test('parse rejects a definition with no label', () => {
-  const text = JSON.stringify({ definition: { fields: [{ key: 'a', type: 'string', label: 'A' }] } });
+  const text = JSON.stringify({
+    definition: { fields: [{ key: 'a', type: 'string', label: 'A' }] },
+  });
   assert.equal(parseImportedSlideType(text).reason, 'missing_label');
 });
 
@@ -81,7 +96,10 @@ test('deriveUniqueSlug returns the base slug when free', () => {
 
 test('deriveUniqueSlug appends a counter on collision', () => {
   assert.equal(deriveUniqueSlug('My Type', ['my-type']), 'my-type-2');
-  assert.equal(deriveUniqueSlug('My Type', ['my-type', 'my-type-2']), 'my-type-3');
+  assert.equal(
+    deriveUniqueSlug('My Type', ['my-type', 'my-type-2']),
+    'my-type-3',
+  );
 });
 
 test('deriveUniqueSlug falls back for an empty label', () => {

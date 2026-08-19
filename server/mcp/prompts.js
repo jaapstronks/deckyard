@@ -11,7 +11,6 @@
  * @param {McpServer} server
  */
 export function registerPrompts(server) {
-
   // ─── Create Presentation ────────────────────────────────────────────────
 
   server.prompt(
@@ -20,12 +19,14 @@ export function registerPrompts(server) {
     [
       {
         name: 'content',
-        description: 'Paste your text, meeting notes, report, or bullet points here',
+        description:
+          'Paste your text, meeting notes, report, or bullet points here',
         required: true,
       },
       {
         name: 'language',
-        description: 'Language: "nl" for Dutch, "en-GB" for English (auto-detected if omitted)',
+        description:
+          'Language: "nl" for Dutch, "en-GB" for English (auto-detected if omitted)',
         required: false,
       },
       {
@@ -39,11 +40,12 @@ export function registerPrompts(server) {
       const speakerNote = speaker ? ` The speaker is ${speaker}.` : '';
 
       return {
-        messages: [{
-          role: 'user',
-          content: {
-            type: 'text',
-            text: `Create a presentation from the following content using the Deckyard tools.${langNote}${speakerNote}
+        messages: [
+          {
+            role: 'user',
+            content: {
+              type: 'text',
+              text: `Create a presentation from the following content using the Deckyard tools.${langNote}${speakerNote}
 
 After generating, show me:
 1. The edit URL so I can open it in the browser
@@ -53,10 +55,11 @@ After generating, show me:
 Here's the content:
 
 ${content}`,
+            },
           },
-        }],
+        ],
       };
-    }
+    },
   );
 
   // ─── Create From Structured Data ───────────────────────────────────────
@@ -72,7 +75,8 @@ ${content}`,
       },
       {
         name: 'data',
-        description: 'Structured input describing the slides (JSON, table, or your own notes). The model maps this onto slide types.',
+        description:
+          'Structured input describing the slides (JSON, table, or your own notes). The model maps this onto slide types.',
         required: true,
       },
       {
@@ -84,11 +88,12 @@ ${content}`,
     async ({ title, data, language }) => {
       const lang = language || 'nl';
       return {
-        messages: [{
-          role: 'user',
-          content: {
-            type: 'text',
-            text: `Create a presentation titled "${title}" from the structured data below, using the create_presentation_from_slides tool — NOT create_presentation. Do not rewrite or summarize the data; map it directly onto slide types.
+        messages: [
+          {
+            role: 'user',
+            content: {
+              type: 'text',
+              text: `Create a presentation titled "${title}" from the structured data below, using the create_presentation_from_slides tool — NOT create_presentation. Do not rewrite or summarize the data; map it directly onto slide types.
 
 Steps:
 1. Call get_slide_types with lang="${lang}" to see available types + example content
@@ -100,10 +105,11 @@ Steps:
 Structured data:
 
 ${data}`,
+            },
           },
-        }],
+        ],
       };
-    }
+    },
   );
 
   // ─── Improve Presentation ──────────────────────────────────────────────
@@ -114,12 +120,14 @@ ${data}`,
     [
       {
         name: 'presentationId',
-        description: 'The presentation ID to improve (find it via list_presentations)',
+        description:
+          'The presentation ID to improve (find it via list_presentations)',
         required: true,
       },
       {
         name: 'focus',
-        description: 'What to focus on: "punchier", "shorter", "more visual", "better structure", or leave blank for general improvements',
+        description:
+          'What to focus on: "punchier", "shorter", "more visual", "better structure", or leave blank for general improvements',
         required: false,
       },
     ],
@@ -129,11 +137,12 @@ ${data}`,
         : 'Look at structure, visual variety, content density, and language.';
 
       return {
-        messages: [{
-          role: 'user',
-          content: {
-            type: 'text',
-            text: `Improve the presentation "${presentationId}" using the Deckyard tools.
+        messages: [
+          {
+            role: 'user',
+            content: {
+              type: 'text',
+              text: `Improve the presentation "${presentationId}" using the Deckyard tools.
 
 Steps:
 1. First, get the presentation and show me what's in it
@@ -143,10 +152,11 @@ Steps:
 5. Show me what changed
 
 Be specific about what you changed and why.`,
+            },
           },
-        }],
+        ],
       };
-    }
+    },
   );
 
   // ─── Refine Slide ─────────────────────────────────────────────────────
@@ -162,23 +172,26 @@ Be specific about what you changed and why.`,
       },
       {
         name: 'instruction',
-        description: 'What to change, e.g. "make slide 3 punchier", "split the long list", "convert to KPI grid"',
+        description:
+          'What to change, e.g. "make slide 3 punchier", "split the long list", "convert to KPI grid"',
         required: true,
       },
     ],
     async ({ presentationId, instruction }) => ({
-      messages: [{
-        role: 'user',
-        content: {
-          type: 'text',
-          text: `Modify the presentation "${presentationId}" using iterate_presentation.
+      messages: [
+        {
+          role: 'user',
+          content: {
+            type: 'text',
+            text: `Modify the presentation "${presentationId}" using iterate_presentation.
 
 First, get the presentation so you can see the current slides.
 Then apply this change: "${instruction}"
 Show me the before and after for the affected slide(s).`,
+          },
         },
-      }],
-    })
+      ],
+    }),
   );
 
   // ─── Compress Deck ────────────────────────────────────────────────────
@@ -199,16 +212,18 @@ Show me the before and after for the affected slide(s).`,
       },
     ],
     async ({ presentationId, intensity }) => {
-      const intensityNote = intensity === 'aggressive'
-        ? 'Be aggressive — cut hard, merge ruthlessly.'
-        : 'Be moderate — only merge or remove where it clearly improves the deck.';
+      const intensityNote =
+        intensity === 'aggressive'
+          ? 'Be aggressive — cut hard, merge ruthlessly.'
+          : 'Be moderate — only merge or remove where it clearly improves the deck.';
 
       return {
-        messages: [{
-          role: 'user',
-          content: {
-            type: 'text',
-            text: `Compress the presentation "${presentationId}" using the Deckyard tools.
+        messages: [
+          {
+            role: 'user',
+            content: {
+              type: 'text',
+              text: `Compress the presentation "${presentationId}" using the Deckyard tools.
 
 1. First, get the presentation and count the slides
 2. Run compress_presentation in preview mode to see recommendations
@@ -217,10 +232,11 @@ Show me the before and after for the affected slide(s).`,
 5. Ask me before applying — I want to approve first
 
 Show the current slide count and what it would become after compression.`,
+            },
           },
-        }],
+        ],
       };
-    }
+    },
   );
 
   // ─── Add Content ──────────────────────────────────────────────────────
@@ -241,11 +257,12 @@ Show the current slide count and what it would become after compression.`,
       },
     ],
     async ({ presentationId, content }) => ({
-      messages: [{
-        role: 'user',
-        content: {
-          type: 'text',
-          text: `Add new slides to the presentation "${presentationId}" using append_slides.
+      messages: [
+        {
+          role: 'user',
+          content: {
+            type: 'text',
+            text: `Add new slides to the presentation "${presentationId}" using append_slides.
 
 New content to add:
 
@@ -256,9 +273,10 @@ After adding, show me:
 2. What types they are
 3. The updated slide overview
 4. Run validation on the full deck to check for issues`,
+          },
         },
-      }],
-    })
+      ],
+    }),
   );
 
   // ─── Quick Overview ───────────────────────────────────────────────────
@@ -269,29 +287,33 @@ After adding, show me:
     [
       {
         name: 'presentationId',
-        description: 'The presentation ID (or leave blank to list all presentations)',
+        description:
+          'The presentation ID (or leave blank to list all presentations)',
         required: false,
       },
     ],
     async ({ presentationId }) => {
       if (!presentationId) {
         return {
-          messages: [{
-            role: 'user',
-            content: {
-              type: 'text',
-              text: `List all my presentations using list_presentations. Show them as a numbered list with title, theme, slide count, and edit URL.`,
+          messages: [
+            {
+              role: 'user',
+              content: {
+                type: 'text',
+                text: `List all my presentations using list_presentations. Show them as a numbered list with title, theme, slide count, and edit URL.`,
+              },
             },
-          }],
+          ],
         };
       }
 
       return {
-        messages: [{
-          role: 'user',
-          content: {
-            type: 'text',
-            text: `Give me a comprehensive overview of the presentation "${presentationId}":
+        messages: [
+          {
+            role: 'user',
+            content: {
+              type: 'text',
+              text: `Give me a comprehensive overview of the presentation "${presentationId}":
 
 1. Get the presentation data
 2. Show each slide: index, type, title/tagline, and a one-line content summary
@@ -300,9 +322,10 @@ After adding, show me:
 5. Show the edit and present URLs
 
 Keep it concise but complete.`,
+            },
           },
-        }],
+        ],
       };
-    }
+    },
   );
 }

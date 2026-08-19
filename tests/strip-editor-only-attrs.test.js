@@ -67,8 +67,5 @@ test('stripEditorOnlyAttrs leaves data-morph-role and other attrs intact', () =>
   const input =
     '<p class="x" data-morph-role="body" data-inline-field="body" data-inline-item="items" data-inline-item-index="2" dir="auto">hi</p>';
   const out = stripEditorOnlyAttrs(input);
-  assert.equal(
-    out,
-    '<p class="x" data-morph-role="body" dir="auto">hi</p>',
-  );
+  assert.equal(out, '<p class="x" data-morph-role="body" dir="auto">hi</p>');
 });

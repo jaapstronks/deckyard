@@ -25,9 +25,12 @@ export function formatRelativeTime(isoString) {
     const days = Math.floor(diff / 86400000);
 
     if (minutes < 1) return t('list.time.justNow', 'just now');
-    if (minutes < 60) return t('list.time.minutesAgo', '{count} min ago', { count: minutes });
-    if (hours < 24) return t('list.time.hoursAgo', '{count}h ago', { count: hours });
-    if (days < 7) return t('list.time.daysAgo', '{count}d ago', { count: days });
+    if (minutes < 60)
+      return t('list.time.minutesAgo', '{count} min ago', { count: minutes });
+    if (hours < 24)
+      return t('list.time.hoursAgo', '{count}h ago', { count: hours });
+    if (days < 7)
+      return t('list.time.daysAgo', '{count}d ago', { count: days });
     return date.toLocaleDateString();
   } catch {
     return '';

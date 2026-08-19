@@ -21,21 +21,13 @@ export function renderEmbedHtmlDocument({
   const lang = docLang === 'nl' ? 'nl' : 'en';
   const dir = docDir === 'rtl' ? 'rtl' : 'ltr';
   const mode = ui === 'min' ? 'min' : 'default';
-  const safeTotalSlides = Math.max(
-    0,
-    Number(totalSlides || 0) || 0
-  );
+  const safeTotalSlides = Math.max(0, Number(totalSlides || 0) || 0);
   const safeBoot = {
     publishId: String(boot?.publishId || publishId || ''),
     totalSlides: safeTotalSlides,
     options:
-      boot?.options && typeof boot.options === 'object'
-        ? boot.options
-        : {},
-    lang:
-      boot?.lang === 'nl' || boot?.lang === 'en-GB'
-        ? boot.lang
-        : null,
+      boot?.options && typeof boot.options === 'object' ? boot.options : {},
+    lang: boot?.lang === 'nl' || boot?.lang === 'en-GB' ? boot.lang : null,
     hasOtherLang: !!boot?.hasOtherLang,
   };
   const bootJson = JSON.stringify(safeBoot, null, 0);
@@ -169,9 +161,7 @@ export function renderEmbedHtmlDocument({
       </div>
     </div>
 
-    <script id="boot" type="application/json">${escapeHtml(
-      bootJson
-    )}</script>
+    <script id="boot" type="application/json">${escapeHtml(bootJson)}</script>
     <script type="module">
 
       const EMBED_SOURCE = 'presentation-system-embed';

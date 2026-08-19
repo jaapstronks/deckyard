@@ -11,41 +11,43 @@
 Compared against run `2026-07-18_20-42-14` (prompt version `2fc50a04f013`).
 
 Prompt files changed since then:
+
 - `server/utils/ai/slide-catalog/card-slides.js`
 - `server/utils/ai/slide-catalog/diagram-slides.js`
 
 ## Scores by dimension
 
-| Dimension | Score | vs. previous |
-| --- | ---: | ---: |
-| Coverage | 4.67 | ▲ +0.34 |
-| Structure | 4.33 | ▼ -0.34 |
-| Slide economy | 3.33 | ▼ -0.34 |
-| Faithfulness | 4.00 | · 0.00 |
-| Presentability | 4.00 | ▲ +0.33 |
-| **Overall** | **4.07** | · 0.00 |
+| Dimension      |    Score | vs. previous |
+| -------------- | -------: | -----------: |
+| Coverage       |     4.67 |      ▲ +0.34 |
+| Structure      |     4.33 |      ▼ -0.34 |
+| Slide economy  |     3.33 |      ▼ -0.34 |
+| Faithfulness   |     4.00 |       · 0.00 |
+| Presentability |     4.00 |      ▲ +0.33 |
+| **Overall**    | **4.07** |       · 0.00 |
 
 > **Regression warning.** These dimensions moved down:
+>
 > - Structure (-0.34)
 > - Slide economy (-0.34)
 
 ## Per-case results
 
-| Case | Cat | Slides | Words/slide | Walls | Number support | Coverage | Mean |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| probe-causal-icons-quote | C | 7 | 36.71 | 1 | 80% | 5/5 | 4.00 |
-| probe-process-timeline | C | 7 | 45.86 | 1 | 67% | 5/5 | 3.80 |
-| probe-table-chart | C | 7 | 34.14 | 0 | 81% | 4/5 | 4.40 |
+| Case                     | Cat | Slides | Words/slide | Walls | Number support | Coverage | Mean |
+| ------------------------ | --- | -----: | ----------: | ----: | -------------: | -------: | ---: |
+| probe-causal-icons-quote | C   |      7 |       36.71 |     1 |            80% |      5/5 | 4.00 |
+| probe-process-timeline   | C   |      7 |       45.86 |     1 |            67% |      5/5 | 3.80 |
+| probe-table-chart        | C   |      7 |       34.14 |     0 |            81% |      4/5 | 4.40 |
 
 ## Specialised layout recall
 
 Whether content whose shape calls for a laborious-to-build layout got it.
 
-| Case | Recall | Missed | Fell back to |
-| --- | ---: | --- | --- |
-| probe-causal-icons-quote | 3/3 | — | — |
-| probe-process-timeline | 3/3 | — | — |
-| probe-table-chart | 2/3 | `kpi-metrics-slide` | — |
+| Case                     | Recall | Missed              | Fell back to |
+| ------------------------ | -----: | ------------------- | ------------ |
+| probe-causal-icons-quote |    3/3 | —                   | —            |
+| probe-process-timeline   |    3/3 | —                   | —            |
+| probe-table-chart        |    2/3 | `kpi-metrics-slide` | —            |
 
 ## Weakest dimensions — judge rationales
 
@@ -77,8 +79,8 @@ These rationales are the input for the next prompt change.
 
 ## Cost breakdown
 
-| Category | Model | Calls | Input | Output | Cache write | Cache read | USD |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| generation | `gpt-5.5` | 12 | 122165 | 18651 | 0 | 5888 | $1.1733 |
-| judge | `claude-opus-4-8` | 3 | 11427 | 4830 | 0 | 0 | $0.1779 |
-| **Total** | | 15 | 133592 | 23481 | 0 | 5888 | **$1.3512** |
+| Category   | Model             | Calls |  Input | Output | Cache write | Cache read |         USD |
+| ---------- | ----------------- | ----: | -----: | -----: | ----------: | ---------: | ----------: |
+| generation | `gpt-5.5`         |    12 | 122165 |  18651 |           0 |       5888 |     $1.1733 |
+| judge      | `claude-opus-4-8` |     3 |  11427 |   4830 |           0 |          0 |     $0.1779 |
+| **Total**  |                   |    15 | 133592 |  23481 |           0 |       5888 | **$1.3512** |

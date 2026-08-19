@@ -65,7 +65,9 @@ export function attachDragHandlers({
         .map((slide) => slide.id);
       // Mark all selected slides as dragging
       for (const id of draggingIds) {
-        const el = slideListEl.querySelector(`.slide-item[data-slide-id="${id}"]`);
+        const el = slideListEl.querySelector(
+          `.slide-item[data-slide-id="${id}"]`,
+        );
         el?.classList?.add('is-dragging');
       }
     } else {
@@ -77,15 +79,17 @@ export function attachDragHandlers({
     const dragCount = draggingIds.length;
     const ghost = makeDragGhost({
       num: dragCount > 1 ? dragCount : originalIdx + 1,
-      title: dragCount > 1
-        ? t('editor.slides.dragMultiple', '{n} slides', { n: dragCount })
-        : slidePrimaryLabel(s, SLIDE_TYPES),
-      typeLabel: dragCount > 1
-        ? t('editor.slides.movingSlides', 'Moving')
-        : t(
-            SLIDE_TYPES[s.type]?.labelKey || `slideType.${s.type}.label`,
-            SLIDE_TYPES[s.type]?.label || s.type
-          ),
+      title:
+        dragCount > 1
+          ? t('editor.slides.dragMultiple', '{n} slides', { n: dragCount })
+          : slidePrimaryLabel(s, SLIDE_TYPES),
+      typeLabel:
+        dragCount > 1
+          ? t('editor.slides.movingSlides', 'Moving')
+          : t(
+              SLIDE_TYPES[s.type]?.labelKey || `slideType.${s.type}.label`,
+              SLIDE_TYPES[s.type]?.label || s.type,
+            ),
     });
     try {
       e.dataTransfer.setDragImage(ghost, 18, 18);
@@ -148,7 +152,12 @@ export function attachDragHandlers({
     // Handle multi-select or single slide move
     const draggingSlideIds = getDraggingSlideIds();
     if (draggingSlideIds.length > 1) {
-      moveMultipleSlides({ slideIds: draggingSlideIds, toId, pos: makeChild ? 'after' : pos, makeChild });
+      moveMultipleSlides({
+        slideIds: draggingSlideIds,
+        toId,
+        pos: makeChild ? 'after' : pos,
+        makeChild,
+      });
     } else {
       const draggingSlideId = getDraggingSlideId();
       const fromId = e.dataTransfer.getData('text/plain') || draggingSlideId;

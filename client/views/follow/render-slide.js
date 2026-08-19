@@ -1,4 +1,7 @@
-import { activateVideoEmbeds, mountSlideInto } from '../../lib/slide-runtime/slide-render.js';
+import {
+  activateVideoEmbeds,
+  mountSlideInto,
+} from '../../lib/slide-runtime/slide-render.js';
 import { slideByIdOrIndex } from './slides.js';
 import { h } from '../../lib/dom.js';
 import { applyStepVisibilityForMode } from '../presenter/step.js';
@@ -24,7 +27,8 @@ export function renderFollowSlide({
 
   // Always show a stable "slide counter" in the top-right, even when the slide
   // itself is replaced by an interaction UI.
-  if (statusEl) statusEl.textContent = `${idx + 1} / ${(pres.slides || []).length}`;
+  if (statusEl)
+    statusEl.textContent = `${idx + 1} / ${(pres.slides || []).length}`;
 
   // When a dominant interaction is active, hide the slide and show the interaction UI.
   if (capabilities?.interaction) {
@@ -44,7 +48,10 @@ export function renderFollowSlide({
       slideWrap.innerHTML = '';
       const msgSlide = h('div', { class: 'slide follow-message-slide' });
       const inner = h('div', { class: 'slide-inner' });
-      const box = h('div', { class: 'follow-message-box', text: followInviteMessage });
+      const box = h('div', {
+        class: 'follow-message-box',
+        text: followInviteMessage,
+      });
       inner.appendChild(box);
       msgSlide.appendChild(inner);
       slideWrap.appendChild(msgSlide);
@@ -52,7 +59,11 @@ export function renderFollowSlide({
     return;
   }
 
-  const el = mountSlideInto(slideWrap, slide, { mode: 'follow', theme, presentationId: pres?.id });
+  const el = mountSlideInto(slideWrap, slide, {
+    mode: 'follow',
+    theme,
+    presentationId: pres?.id,
+  });
 
   // Apply presenter step state (if enabled) so follow-along matches "Tekst stap voor stap".
   try {

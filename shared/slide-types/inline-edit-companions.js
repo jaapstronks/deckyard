@@ -44,7 +44,10 @@ import { SLIDE_TYPE_INSPECTOR_KEEPS } from './inline-edit.js';
  */
 export function slideTypeInspectorKeeps(type, def = null) {
   const declared = def?.inspectorKeeps;
-  if (Array.isArray(declared) && declared.every((key) => typeof key === 'string')) {
+  if (
+    Array.isArray(declared) &&
+    declared.every((key) => typeof key === 'string')
+  ) {
     return declared;
   }
   const core = SLIDE_TYPE_INSPECTOR_KEEPS[type];

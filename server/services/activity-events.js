@@ -19,7 +19,6 @@ export async function recordPresentationCreated({
   actor,
   scope,
 }) {
-
   return createActivityEvent(scope, {
     eventType: EVENT_TYPES.PRESENTATION_CREATED,
     entityType: ENTITY_TYPES.PRESENTATION,
@@ -44,7 +43,6 @@ export async function recordPresentationUpdated({
   changes,
   scope,
 }) {
-
   return createActivityEvent(scope, {
     eventType: EVENT_TYPES.PRESENTATION_UPDATED,
     entityType: ENTITY_TYPES.PRESENTATION,
@@ -75,7 +73,12 @@ export async function recordPresentationUpdated({
  * @param {import('../storage/scope.js').StorageScope} args.scope - the caller's storage scope
  * @returns {Promise<object|null>}
  */
-export async function recordSlidesAdded({ presentation, actor, slideIds, scope }) {
+export async function recordSlidesAdded({
+  presentation,
+  actor,
+  slideIds,
+  scope,
+}) {
   const ids = Array.isArray(slideIds) ? slideIds.filter(Boolean) : [];
   if (ids.length === 0) return null;
 
@@ -106,7 +109,6 @@ export async function recordSlideLevelMerge({
   merge,
   scope,
 }) {
-
   return createActivityEvent(scope, {
     eventType: EVENT_TYPES.PRESENTATION_MERGED,
     entityType: ENTITY_TYPES.PRESENTATION,
@@ -134,7 +136,6 @@ export async function recordPresentationDeleted({
   actor,
   scope,
 }) {
-
   return createActivityEvent(scope, {
     eventType: EVENT_TYPES.PRESENTATION_DELETED,
     entityType: ENTITY_TYPES.PRESENTATION,
@@ -184,7 +185,6 @@ export async function recordCommentCreated({
   isGuest,
   scope,
 }) {
-
   const result = await createActivityEvent(scope, {
     eventType: EVENT_TYPES.COMMENT_CREATED,
     entityType: ENTITY_TYPES.COMMENT,
@@ -217,7 +217,6 @@ export async function recordCommentResolved({
   actor,
   scope,
 }) {
-
   return createActivityEvent(scope, {
     eventType: EVENT_TYPES.COMMENT_RESOLVED,
     entityType: ENTITY_TYPES.COMMENT,
@@ -243,7 +242,6 @@ export async function recordCommentReopened({
   actor,
   scope,
 }) {
-
   return createActivityEvent(scope, {
     eventType: EVENT_TYPES.COMMENT_REOPENED,
     entityType: ENTITY_TYPES.COMMENT,
@@ -258,4 +256,3 @@ export async function recordCommentReopened({
     },
   });
 }
-

@@ -1,7 +1,13 @@
 import { lockDocumentScroll } from './editor-utils.js';
 import { t } from '../../lib/ui-i18n.js';
 import { confirmModal } from '../../lib/dom/modal.js';
-import { cleanStr, uniq, addTr, addNamedTr, buildDocTag } from './imagekit-picker/transform-utils.js';
+import {
+  cleanStr,
+  uniq,
+  addTr,
+  addNamedTr,
+  buildDocTag,
+} from './imagekit-picker/transform-utils.js';
 
 export function openImageKitPicker({
   title = t('imagekit.title', 'ImageKit'),
@@ -13,8 +19,10 @@ export function openImageKitPicker({
   docId = '',
   onPick,
 } = {}) {
-  if (typeof api !== 'function') throw new Error('openImageKitPicker: api is required');
-  if (typeof h !== 'function') throw new Error('openImageKitPicker: h is required');
+  if (typeof api !== 'function')
+    throw new Error('openImageKitPicker: api is required');
+  if (typeof h !== 'function')
+    throw new Error('openImageKitPicker: h is required');
   if (!root) throw new Error('openImageKitPicker: root is required');
 
   const backdrop = h('div', { class: 'modal-backdrop' });
@@ -90,7 +98,7 @@ export function openImageKitPicker({
           await reload();
           renderTagBar();
         },
-      })
+      }),
     );
 
     // Tag chips - show limited or all based on expansion state
@@ -99,21 +107,25 @@ export function openImageKitPicker({
     for (const { tag } of visibleTags) {
       const isActive = selectedTag === tag;
       tagBar.append(
-        h('button', {
-          type: 'button',
-          class: `imagekit-tag-chip${isActive ? ' is-active' : ''}`,
-          onclick: async () => {
-            if (selectedTag === tag) return;
-            selectedTag = tag;
-            qInput.value = '';
-            advInput.value = `tags IN ["${tag}"]`;
-            await reloadWithQuery();
-            renderTagBar();
+        h(
+          'button',
+          {
+            type: 'button',
+            class: `imagekit-tag-chip${isActive ? ' is-active' : ''}`,
+            onclick: async () => {
+              if (selectedTag === tag) return;
+              selectedTag = tag;
+              qInput.value = '';
+              advInput.value = `tags IN ["${tag}"]`;
+              await reloadWithQuery();
+              renderTagBar();
+            },
           },
-        }, [
-          h('span', { class: 'imagekit-tag-chip-hash', text: '#' }),
-          h('span', { class: 'imagekit-tag-chip-label', text: tag }),
-        ])
+          [
+            h('span', { class: 'imagekit-tag-chip-hash', text: '#' }),
+            h('span', { class: 'imagekit-tag-chip-label', text: tag }),
+          ],
+        ),
       );
     }
 
@@ -131,7 +143,7 @@ export function openImageKitPicker({
             tagsExpanded = !tagsExpanded;
             renderTagBar();
           },
-        })
+        }),
       );
     }
   };
@@ -143,7 +155,7 @@ export function openImageKitPicker({
       class: 'btn btn-secondary',
       text: t('common.close', 'Close'),
       onclick: () => close(),
-    })
+    }),
   );
 
   const qInput = h('input', {
@@ -152,7 +164,10 @@ export function openImageKitPicker({
   });
   const advInput = h('input', {
     class: 'form-input',
-    placeholder: t('imagekit.search.advanced.placeholder', 'Advanced searchQuery (optional)…'),
+    placeholder: t(
+      'imagekit.search.advanced.placeholder',
+      'Advanced searchQuery (optional)…',
+    ),
   });
 
   const btnSearch = h('button', {
@@ -184,11 +199,17 @@ export function openImageKitPicker({
     statusLine,
     h('div', { class: 'imagekit-search-row' }, [
       h('label', { class: 'stack is-field' }, [
-        h('div', { class: 'field-label', text: t('imagekit.search.label', 'Search') }),
+        h('div', {
+          class: 'field-label',
+          text: t('imagekit.search.label', 'Search'),
+        }),
         qInput,
       ]),
       h('label', { class: 'stack is-field' }, [
-        h('div', { class: 'field-label', text: t('imagekit.search.advanced.label', 'Advanced') }),
+        h('div', {
+          class: 'field-label',
+          text: t('imagekit.search.advanced.label', 'Advanced'),
+        }),
         advInput,
       ]),
       btnSearch,
@@ -207,7 +228,7 @@ export function openImageKitPicker({
         h('div', {
           class: 'help',
           text: t('imagekit.noResults', 'No results.'),
-        })
+        }),
       );
       return;
     }
@@ -215,7 +236,10 @@ export function openImageKitPicker({
     for (const it of list) {
       const fileId = cleanStr(it?.fileId);
       const isActive = selected && cleanStr(selected?.fileId) === fileId;
-      const thumbUrl = addTr(it?.thumbnailUrl || it?.url || '', 'w-520,h-320,c-at_max,f-auto,q-70');
+      const thumbUrl = addTr(
+        it?.thumbnailUrl || it?.url || '',
+        'w-520,h-320,c-at_max,f-auto,q-70',
+      );
       const tags = uniq(it?.tags).slice(0, 3);
       grid.append(
         h(
@@ -231,11 +255,16 @@ export function openImageKitPicker({
               const fileId = cleanStr(it?.fileId);
               if (fileId && cfg?.configured) {
                 try {
-                  const details = await api(`/api/media/imagekit/files/${encodeURIComponent(fileId)}/details`, { method: 'GET' });
+                  const details = await api(
+                    `/api/media/imagekit/files/${encodeURIComponent(fileId)}/details`,
+                    { method: 'GET' },
+                  );
                   if (details && cleanStr(details?.fileId) === fileId) {
                     // Merge full details (including customMetadata) into selected
                     selected = { ...selected, ...details };
-                    items = items.map((x) => (cleanStr(x?.fileId) === fileId ? selected : x));
+                    items = items.map((x) =>
+                      cleanStr(x?.fileId) === fileId ? selected : x,
+                    );
                     renderDetail();
                   }
                 } catch {
@@ -252,14 +281,17 @@ export function openImageKitPicker({
               loading: 'lazy',
             }),
             h('div', { class: 'imagekit-card-meta' }, [
-              h('div', { class: 'imagekit-card-name', text: cleanStr(it?.name) || '(unnamed)' }),
+              h('div', {
+                class: 'imagekit-card-name',
+                text: cleanStr(it?.name) || '(unnamed)',
+              }),
               h('div', {
                 class: 'imagekit-card-tags',
                 text: tags.length ? tags.map((t0) => `#${t0}`).join(' ') : '',
               }),
             ]),
-          ]
-        )
+          ],
+        ),
       );
     }
   };
@@ -268,20 +300,30 @@ export function openImageKitPicker({
     detail.innerHTML = '';
     if (!selected) {
       detail.append(
-        h('div', { class: 'help', text: t('imagekit.pickHint', 'Select an image to view details.') })
+        h('div', {
+          class: 'help',
+          text: t('imagekit.pickHint', 'Select an image to view details.'),
+        }),
       );
       return;
     }
 
     const altKey = cleanStr(cfg?.metadataFields?.altSeed);
-    const cm = selected?.customMetadata && typeof selected.customMetadata === 'object' ? selected.customMetadata : {};
+    const cm =
+      selected?.customMetadata && typeof selected.customMetadata === 'object'
+        ? selected.customMetadata
+        : {};
     const existingAltSeed = altKey ? cleanStr(cm?.[altKey]) : '';
 
     let chosenTransform = '';
     const transformSel = h('select', { class: 'form-input' });
     const mkOpt = (value, label) => h('option', { value, text: label });
-    transformSel.append(mkOpt('', t('imagekit.transform.original', 'Original')));
-    for (const tr of Array.isArray(cfg?.recommendedNamedTransformations) ? cfg.recommendedNamedTransformations : []) {
+    transformSel.append(
+      mkOpt('', t('imagekit.transform.original', 'Original')),
+    );
+    for (const tr of Array.isArray(cfg?.recommendedNamedTransformations)
+      ? cfg.recommendedNamedTransformations
+      : []) {
       const id = cleanStr(tr?.id);
       if (!id) continue;
       transformSel.append(mkOpt(id, cleanStr(tr?.label) || id));
@@ -290,14 +332,17 @@ export function openImageKitPicker({
       chosenTransform = cleanStr(transformSel.value);
       previewImg.src = addTr(
         addNamedTr(cleanStr(selected?.url), chosenTransform),
-        'w-1200,h-800,c-at_max,f-auto,q-80'
+        'w-1200,h-800,c-at_max,f-auto,q-80',
       );
       urlOut.value = addNamedTr(cleanStr(selected?.url), chosenTransform);
     });
 
     const previewImg = h('img', {
       class: 'imagekit-detail-preview',
-      src: addTr(cleanStr(selected?.thumbnailUrl || selected?.url), 'w-1200,h-800,c-at_max,f-auto,q-80'),
+      src: addTr(
+        cleanStr(selected?.thumbnailUrl || selected?.url),
+        'w-1200,h-800,c-at_max,f-auto,q-80',
+      ),
       alt: '',
       loading: 'lazy',
     });
@@ -311,7 +356,10 @@ export function openImageKitPicker({
     const altTa = h('textarea', {
       class: 'form-input',
       rows: 3,
-      placeholder: t('imagekit.alt.placeholder', 'ALT text (English, recommended)'),
+      placeholder: t(
+        'imagekit.alt.placeholder',
+        'ALT text (English, recommended)',
+      ),
     });
     // Set value via property, not attribute (textarea doesn't use value attribute)
     altTa.value = existingAltSeed;
@@ -340,7 +388,8 @@ export function openImageKitPicker({
               context: context || null,
             }),
           });
-          const a = resp?.alts && typeof resp.alts === 'object' ? resp.alts : {};
+          const a =
+            resp?.alts && typeof resp.alts === 'object' ? resp.alts : {};
           // For this project we treat ImageKit metadata as a single “seed” (English-first).
           altTa.value = cleanStr(a?.['en-GB']) || cleanStr(a?.nl) || '';
           statusLine.textContent = t('imagekit.alt.generated', 'Generated.');
@@ -372,7 +421,7 @@ export function openImageKitPicker({
             title: t('imagekit.alt.missingTitle', 'ALT text missing'),
             message: t(
               'imagekit.alt.missingConfirm',
-              'ALT seed is empty. Use this image anyway?'
+              'ALT seed is empty. Use this image anyway?',
             ),
           });
           if (!ok) return;
@@ -386,12 +435,17 @@ export function openImageKitPicker({
             if (fileId) {
               const nextTags = uniq(selected?.tags);
               if (tag && !nextTags.includes(tag)) nextTags.push(tag);
-              const patch = { customMetadata: { ...(cm || {}), [altKey]: seed } };
+              const patch = {
+                customMetadata: { ...(cm || {}), [altKey]: seed },
+              };
               if (nextTags.length) patch.tags = nextTags;
-              api(`/api/media/imagekit/files/${encodeURIComponent(fileId)}/details`, {
-                method: 'PATCH',
-                body: JSON.stringify(patch),
-              }).catch(() => {});
+              api(
+                `/api/media/imagekit/files/${encodeURIComponent(fileId)}/details`,
+                {
+                  method: 'PATCH',
+                  body: JSON.stringify(patch),
+                },
+              ).catch(() => {});
             }
           } catch {
             // ignore - don't block "Use"
@@ -415,11 +469,17 @@ export function openImageKitPicker({
         urlOut,
       ]),
       h('div', { class: 'stack is-field' }, [
-        h('div', { class: 'field-label', text: t('imagekit.transform', 'Transform') }),
+        h('div', {
+          class: 'field-label',
+          text: t('imagekit.transform', 'Transform'),
+        }),
         transformSel,
         h('div', {
           class: 'help',
-          text: t('imagekit.transform.help', 'Optional: adds ?tr=n-<name> to the URL.'),
+          text: t(
+            'imagekit.transform.help',
+            'Optional: adds ?tr=n-<name> to the URL.',
+          ),
         }),
       ]),
       h('div', { class: 'stack is-field' }, [
@@ -431,28 +491,40 @@ export function openImageKitPicker({
             ? t(
                 'imagekit.tags.autoTag',
                 'On save, we will also tag this as: {tag}',
-                { tag: bestEffortTag() }
+                { tag: bestEffortTag() },
               )
-            : t('imagekit.tags.autoTagOff', 'Optional: keep assets discoverable with tags.'),
+            : t(
+                'imagekit.tags.autoTagOff',
+                'Optional: keep assets discoverable with tags.',
+              ),
         }),
       ]),
       h('div', { class: 'stack is-field' }, [
-        h('div', { class: 'field-label', text: t('imagekit.alt', 'ALT text (English)') }),
+        h('div', {
+          class: 'field-label',
+          text: t('imagekit.alt', 'ALT text (English)'),
+        }),
         altTa,
         altKey
           ? h('label', { class: 'row is-start is-gap-sm' }, [
               updateAltCheckbox,
               h('span', {
                 class: 'help',
-                text: t('imagekit.alt.updateCheckbox', 'Update ALT in ImageKit'),
+                text: t(
+                  'imagekit.alt.updateCheckbox',
+                  'Update ALT in ImageKit',
+                ),
               }),
             ])
           : h('div', {
               class: 'help',
-              text: t('imagekit.alt.help.disabled', 'To persist ALT in ImageKit, configure IMAGEKIT_METADATA_FIELD_ALT_SEED on server.'),
+              text: t(
+                'imagekit.alt.help.disabled',
+                'To persist ALT in ImageKit, configure IMAGEKIT_METADATA_FIELD_ALT_SEED on server.',
+              ),
             }),
       ]),
-      h('div', { class: 'imagekit-detail-actions' }, [btnGenerateAlt, btnUse])
+      h('div', { class: 'imagekit-detail-actions' }, [btnGenerateAlt, btnUse]),
     );
   };
 
@@ -462,7 +534,11 @@ export function openImageKitPicker({
       const tagPrefix = cleanStr(cfg?.tagPrefix) || '';
       // Filter out auto-generated document tags
       allTags = (Array.isArray(resp) ? resp : [])
-        .filter(({ tag }) => !tagPrefix || !tag.toLowerCase().startsWith(tagPrefix.toLowerCase()))
+        .filter(
+          ({ tag }) =>
+            !tagPrefix ||
+            !tag.toLowerCase().startsWith(tagPrefix.toLowerCase()),
+        )
         .slice(0, 50); // Limit to top 50 tags
     } catch {
       // Fallback: aggregate from loaded files if tags endpoint fails
@@ -480,9 +556,14 @@ export function openImageKitPicker({
         api('/api/media/imagekit/files?limit=60', { method: 'GET' }),
         loadTags(),
       ]);
-      items = Array.isArray(filesResp) ? filesResp : Array.isArray(filesResp?.files) ? filesResp.files : filesResp;
+      items = Array.isArray(filesResp)
+        ? filesResp
+        : Array.isArray(filesResp?.files)
+          ? filesResp.files
+          : filesResp;
       // Some ImageKit responses return an array directly; keep it flexible.
-      if (!Array.isArray(items)) items = Array.isArray(filesResp?.items) ? filesResp.items : [];
+      if (!Array.isArray(items))
+        items = Array.isArray(filesResp?.items) ? filesResp.items : [];
       statusLine.textContent = '';
     } catch (e) {
       statusLine.textContent = String(e?.message || e);
@@ -506,8 +587,14 @@ export function openImageKitPicker({
       if (q) qs.set('q', q);
       if (searchQuery) qs.set('searchQuery', searchQuery);
       qs.set('limit', '60');
-      const resp = await api(`/api/media/imagekit/files?${qs.toString()}`, { method: 'GET' });
-      items = Array.isArray(resp) ? resp : Array.isArray(resp?.files) ? resp.files : resp;
+      const resp = await api(`/api/media/imagekit/files?${qs.toString()}`, {
+        method: 'GET',
+      });
+      items = Array.isArray(resp)
+        ? resp
+        : Array.isArray(resp?.files)
+          ? resp.files
+          : resp;
       if (!Array.isArray(items)) items = [];
       statusLine.textContent = '';
     } catch (e) {

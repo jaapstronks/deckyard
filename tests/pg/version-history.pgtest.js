@@ -69,11 +69,16 @@ pgDescribe('version history via the facade (real PostgreSQL)', () => {
       slides: [{ id: 's1', type: 'title-slide', content: {} }],
     };
 
-    const created = await createPresentationVersion(storageScope, deckId, pres, {
-      actorEmail: 'alice@example.com',
-      reason: 'manual',
-      label: 'checkpoint',
-    });
+    const created = await createPresentationVersion(
+      storageScope,
+      deckId,
+      pres,
+      {
+        actorEmail: 'alice@example.com',
+        reason: 'manual',
+        label: 'checkpoint',
+      },
+    );
     assert.ok(created, 'create returned a snapshot');
     assert.ok(created.id, 'snapshot has an id');
     assert.strictEqual(created.presentationId, deckId);
@@ -94,7 +99,10 @@ pgDescribe('version history via the facade (real PostgreSQL)', () => {
     const full = await getPresentationVersion(storageScope, deckId, created.id);
     assert.ok(full, 'full version fetched');
     assert.strictEqual(full.id, created.id);
-    assert.ok(full.presentation, 'full version carries the presentation payload');
+    assert.ok(
+      full.presentation,
+      'full version carries the presentation payload',
+    );
     assert.strictEqual(full.presentation.title, 'My deck');
     assert.deepStrictEqual(full.presentation.slides, pres.slides);
   });

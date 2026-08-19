@@ -105,7 +105,9 @@
    --tf-size-scale (per-field S/M/L, default 1) scales just the clicked item. */
 .slide-lijstje .item-title {
   font-family: var(--font-heading);
-  font-size: calc(0.95em * var(--tf-size-scale, 1)); /* slightly smaller than body */
+  font-size: calc(
+    0.95em * var(--tf-size-scale, 1)
+  ); /* slightly smaller than body */
   line-height: var(--slide-leading-tight);
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
@@ -128,7 +130,9 @@
   font-size: var(--slide-text-lg);
 }
 .slide-lijstje.is-comfortable .item-title {
-  font-size: calc(1.18em * var(--tf-size-scale, 1)); /* bigger titles are the main win for sparse slides */
+  font-size: calc(
+    1.18em * var(--tf-size-scale, 1)
+  ); /* bigger titles are the main win for sparse slides */
   margin-bottom: var(--slide-space-2);
 }
 .slide-lijstje.is-comfortable .item-text {
@@ -138,7 +142,9 @@
   padding: var(--slide-space-8) 0;
 }
 .slide-lijstje.is-comfortable.is-bullets .marker {
-  margin-top: var(--slide-space-5); /* keep bullet aligned with the taller title line */
+  margin-top: var(
+    --slide-space-5
+  ); /* keep bullet aligned with the taller title line */
 }
 
 .slide-lijstje.is-compact .lijst {
@@ -209,19 +215,6 @@
   border-top: none;
   padding-top: var(--slide-space-3);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /* Header-block alignment (author-driven, horizontal axis). The `header-block`
    field group moves the heading + subheading as one; `is-align-center` comes

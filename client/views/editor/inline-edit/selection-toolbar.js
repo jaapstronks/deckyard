@@ -29,7 +29,8 @@ import {
 
 const ICONS = {
   bold: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/></svg>',
-  italic: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg>',
+  italic:
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg>',
   link: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
   list: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>',
 };
@@ -44,14 +45,23 @@ const ICONS = {
  *   link modal flow (selection snapshot, blur suspension, URL validation)
  * @returns {{update: Function, destroy: Function, el: HTMLElement}}
  */
-export function createSelectionToolbar({ h, layer, thumb, editEl, onLinkRequest }) {
+export function createSelectionToolbar({
+  h,
+  layer,
+  thumb,
+  editEl,
+  onLinkRequest,
+}) {
   /** The selection's range, but only when it is non-empty and fully inside
    *  the edited field. */
   function editRange() {
     const sel = document.getSelection?.();
     if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return null;
     const range = sel.getRangeAt(0);
-    if (!editEl.contains(range.startContainer) || !editEl.contains(range.endContainer)) {
+    if (
+      !editEl.contains(range.startContainer) ||
+      !editEl.contains(range.endContainer)
+    ) {
       return null;
     }
     return range;
@@ -91,13 +101,21 @@ export function createSelectionToolbar({ h, layer, thumb, editEl, onLinkRequest 
     update();
   };
 
-  const btnBold = makeBtn('bold', t('editor.markdown.bold', 'Bold'), () => exec('bold'));
-  const btnItalic = makeBtn('italic', t('editor.markdown.italic', 'Italic'), () =>
-    exec('italic')
+  const btnBold = makeBtn('bold', t('editor.markdown.bold', 'Bold'), () =>
+    exec('bold'),
   );
-  const btnLink = makeBtn('link', t('editor.markdown.link', 'Link'), () => onLinkRequest?.());
-  const btnList = makeBtn('list', t('editor.inline.toolbar.list', 'Bullet list'), () =>
-    exec('insertUnorderedList')
+  const btnItalic = makeBtn(
+    'italic',
+    t('editor.markdown.italic', 'Italic'),
+    () => exec('italic'),
+  );
+  const btnLink = makeBtn('link', t('editor.markdown.link', 'Link'), () =>
+    onLinkRequest?.(),
+  );
+  const btnList = makeBtn(
+    'list',
+    t('editor.inline.toolbar.list', 'Bullet list'),
+    () => exec('insertUnorderedList'),
   );
 
   const el = h(
@@ -107,7 +125,7 @@ export function createSelectionToolbar({ h, layer, thumb, editEl, onLinkRequest 
       role: 'toolbar',
       'aria-label': t('editor.inline.toolbar.label', 'Text formatting'),
     },
-    [btnBold, btnItalic, btnLink, btnList]
+    [btnBold, btnItalic, btnLink, btnList],
   );
   // Keep focus (and the blur-commit listener) on the field: a mousedown on
   // the toolbar must never blur the contenteditable.

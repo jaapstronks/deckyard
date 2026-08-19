@@ -10,18 +10,20 @@ export const up = async (db) => {
   await db.schema
     .createTable('user_organizations')
     .ifNotExists()
-    .addColumn('id', 'uuid', (col) => col.primaryKey().defaultTo(sql`gen_random_uuid()`))
+    .addColumn('id', 'uuid', (col) =>
+      col.primaryKey().defaultTo(sql`gen_random_uuid()`),
+    )
     .addColumn('user_id', 'uuid', (col) =>
-      col.references('users.id').onDelete('cascade').notNull()
+      col.references('users.id').onDelete('cascade').notNull(),
     )
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('cascade').notNull()
+      col.references('organizations.id').onDelete('cascade').notNull(),
     )
     .addColumn('role', 'varchar(20)', (col) =>
-      col.notNull().defaultTo('member')
+      col.notNull().defaultTo('member'),
     )
     .addColumn('invited_by', 'uuid', (col) =>
-      col.references('users.id').onDelete('set null')
+      col.references('users.id').onDelete('set null'),
     )
     .addColumn('invited_at', 'timestamptz')
     .addColumn('joined_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))

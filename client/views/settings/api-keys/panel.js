@@ -23,7 +23,10 @@ export function renderApiKeysPanel({ user }) {
   });
 
   // Header
-  const header = h('div', { class: 'row is-between is-align-start', style: 'margin-bottom: 16px;' });
+  const header = h('div', {
+    class: 'row is-between is-align-start',
+    style: 'margin-bottom: 16px;',
+  });
 
   const titleSection = h('div', { class: 'stack', style: 'gap: 4px;' });
   titleSection.append(
@@ -35,9 +38,9 @@ export function renderApiKeysPanel({ user }) {
       class: 'help',
       text: t(
         'settings.apiKeys.description',
-        'Create and manage API keys for programmatic access to Deckyard.'
+        'Create and manage API keys for programmatic access to Deckyard.',
       ),
-    })
+    }),
   );
 
   const createBtn = h('button', {
@@ -49,7 +52,10 @@ export function renderApiKeysPanel({ user }) {
   header.append(titleSection, createBtn);
 
   // Toggle for showing revoked keys
-  const toggleRow = h('div', { class: 'row', style: 'margin-bottom: 12px; gap: 8px;' });
+  const toggleRow = h('div', {
+    class: 'row',
+    style: 'margin-bottom: 12px; gap: 8px;',
+  });
   const showRevokedCheckbox = h('input', {
     type: 'checkbox',
     id: 'show-revoked-keys',
@@ -63,7 +69,10 @@ export function renderApiKeysPanel({ user }) {
 
   // Keys list container
   const keysList = h('div', { class: 'api-keys-list' });
-  const loading = h('div', { class: 'help', text: t('common.loading', 'Loading...') });
+  const loading = h('div', {
+    class: 'help',
+    text: t('common.loading', 'Loading...'),
+  });
   keysList.append(loading);
 
   // State
@@ -79,7 +88,9 @@ export function renderApiKeysPanel({ user }) {
     isLoading = true;
 
     keysList.innerHTML = '';
-    keysList.append(h('div', { class: 'help', text: t('common.loading', 'Loading...') }));
+    keysList.append(
+      h('div', { class: 'help', text: t('common.loading', 'Loading...') }),
+    );
 
     const result = await fetchApiKeys({ includeRevoked });
 

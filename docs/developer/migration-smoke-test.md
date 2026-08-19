@@ -20,23 +20,23 @@ and nothing anywhere would have said so.
 
 ### What it asserts
 
-| Phase | Check |
-| --- | --- |
+| Phase        | Check                                                                                                                           |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------- |
 | precondition | there is at least one migration on disk, and the target database has no tables — the script is destructive and refuses to guess |
-| up | every migration applies, and the count matches the files on disk |
-| down | every migration rolls back, `_migrations` ends empty, and the only table left standing is `_migrations` itself |
-| up again | every migration re-applies from the rolled-back state |
-| round trip | the set of tables after the second `up` equals the set after the first |
+| up           | every migration applies, and the count matches the files on disk                                                                |
+| down         | every migration rolls back, `_migrations` ends empty, and the only table left standing is `_migrations` itself                  |
+| up again     | every migration re-applies from the rolled-back state                                                                           |
+| round trip   | the set of tables after the second `up` equals the set after the first                                                          |
 
 Two of those carry the weight. The **down-to-empty** assertion is what catches a
 `down()` that forgets to drop something: bookkeeping being empty says only that
-the runner *ran* each `down()`, not that any of them did anything, so the
+the runner _ran_ each `down()`, not that any of them did anything, so the
 surviving tables are compared against the single expected survivor.
 
 The **round trip** then catches the other direction — a `down()` that drops
 something its `up()` no longer recreates comes back short on the second pass.
 
-What the round trip does *not* catch on its own: 32 of the 57 migrations create
+What the round trip does _not_ catch on its own: 32 of the 57 migrations create
 with `IF NOT EXISTS`, so a leftover object does not make the second `up()`
 fail. For those, the down-to-empty check is the only thing that notices. The
 second `up()` failing on a still-present object is real, but only for the
@@ -48,7 +48,7 @@ migration landed — the failure mode the double already has.
 
 ### What it deliberately does not assert
 
-It says nothing about whether the resulting schema is *correct*, or whether any
+It says nothing about whether the resulting schema is _correct_, or whether any
 query the storage layer writes works against it. Conflict targets, `jsonb`
 round-trips, transaction isolation — the classes where the in-memory double can
 disagree with PostgreSQL — are all untouched here. That coverage is option A
@@ -106,7 +106,7 @@ times, and it is what made the fuller PostgreSQL test job (`test-postgres`,
 the schema the migrations just produced. It runs as the second step of the same
 job, on the database the smoke test leaves fully migrated behind it.
 
-The double carries two hand-written tables that *claim* to mirror the database —
+The double carries two hand-written tables that _claim_ to mirror the database —
 `UNIQUE_CONSTRAINTS` (what an insert must collide on) and `JSONB_COLUMNS` (what
 round-trips through JSON). Nothing checked that claim. #423 is what the gap
 costs: `acquireSlideLock` needed an `INSERT … ON CONFLICT DO UPDATE … WHERE`,
@@ -120,17 +120,17 @@ that upsert stays green against a reality that no longer exists.
 
 ### What it asserts
 
-| Check | Why |
-| --- | --- |
-| every table the double models exists | a renamed table leaves a rule that can never fire |
-| every declared unique exists, column for column | the #423 shape — right table, wrong columns, and every test agreed |
-| every declared jsonb column is jsonb | otherwise the double parses something PostgreSQL never serialized |
+| Check                                              | Why                                                                      |
+| -------------------------------------------------- | ------------------------------------------------------------------------ |
+| every table the double models exists               | a renamed table leaves a rule that can never fire                        |
+| every declared unique exists, column for column    | the #423 shape — right table, wrong columns, and every test agreed       |
+| every declared jsonb column is jsonb               | otherwise the double parses something PostgreSQL never serialized        |
 | every jsonb column on a modelled table is declared | otherwise the double returns a string where production returns an object |
 
 **Uniques are checked one way, jsonb both ways**, and the asymmetry is
-deliberate. A unique the *schema* has and the double does not is fine: the
+deliberate. A unique the _schema_ has and the double does not is fine: the
 double models the constraints it needs, not the whole database. A unique the
-*double* has and the schema does not is a lie. Jsonb is different — an
+_double_ has and the schema does not is a lie. Jsonb is different — an
 undeclared jsonb column is not an omission the double gets away with, it is a
 value handed back in the wrong shape.
 
@@ -139,7 +139,7 @@ double models them as identity rather than as a collision rule, and every
 `*_pkey` in the list would drown the constraints that matter.
 
 Partial unique indexes (`UNIQUE … WHERE`) are excluded for the opposite reason:
-counting one would *satisfy* a declared unique the schema does not actually
+counting one would _satisfy_ a declared unique the schema does not actually
 enforce on every row. The double collides unconditionally, so a partial index is
 not the constraint it claims to have — accepting it would be a false green of
 the #423 kind, which is the thing this check exists to prevent.
@@ -150,7 +150,7 @@ listed as jsonb, but it is `TEXT[]`, as declared in
 
 ### Why it is not in `npm test`
 
-The brief's option C proposed deriving the schema from the migration *files*, so
+The brief's option C proposed deriving the schema from the migration _files_, so
 the check could live in the database-free suite. That means writing a second
 hand-written model of the schema and checking the first against it — and when
 the two parsers disagree, neither is the database.

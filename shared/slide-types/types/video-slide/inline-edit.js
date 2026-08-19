@@ -11,9 +11,14 @@
 
 /** @type {Object} InlineDescriptor for video-slide. */
 export const inlineEdit = {
-    ghosts: [{ field: 'title', anchors: [{ sel: '.slide-inner', pos: 'prepend', chip: 'top-start' }] }],
-    formText: ['title'],
-  };
+  ghosts: [
+    {
+      field: 'title',
+      anchors: [{ sel: '.slide-inner', pos: 'prepend', chip: 'top-start' }],
+    },
+  ],
+  formText: ['title'],
+};
 
 /**
  * Fields the inspector keeps rendering even though the inline layer covers the
@@ -27,4 +32,9 @@ export const inlineEdit = {
  * export configuration with no canvas surface.
  * @type {string[]}
  */
-export const inspectorKeeps = ['source', 'autoplay', 'bunnyLibraryId', 'watchUrl'];
+export const inspectorKeeps = [
+  'source',
+  'autoplay',
+  'bunnyLibraryId',
+  'watchUrl',
+];

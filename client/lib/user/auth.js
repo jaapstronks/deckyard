@@ -1,7 +1,10 @@
 export async function meWithMeta() {
-  const res = await fetch('/api/auth/me', { headers: { 'Content-Type': 'application/json' } });
+  const res = await fetch('/api/auth/me', {
+    headers: { 'Content-Type': 'application/json' },
+  });
   if (res.status === 401) return { user: null, features: null };
-  if (!res.ok) throw new Error((await res.text()) || `Request failed (${res.status})`);
+  if (!res.ok)
+    throw new Error((await res.text()) || `Request failed (${res.status})`);
   const body = await res.json();
   return {
     user: body?.user || null,
@@ -37,7 +40,11 @@ export async function login(email, password) {
 }
 
 export async function logout() {
-  const res = await fetch('/api/auth/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-  if (!res.ok) throw new Error((await res.text()) || `Logout failed (${res.status})`);
+  const res = await fetch('/api/auth/logout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!res.ok)
+    throw new Error((await res.text()) || `Logout failed (${res.status})`);
   return true;
 }

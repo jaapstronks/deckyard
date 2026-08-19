@@ -10,7 +10,9 @@
  */
 
 function normEmail(v) {
-  return String(v || '').trim().toLowerCase();
+  return String(v || '')
+    .trim()
+    .toLowerCase();
 }
 
 /**

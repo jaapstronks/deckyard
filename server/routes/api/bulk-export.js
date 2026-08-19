@@ -6,7 +6,13 @@
  * Returns a job ID for status polling via the existing /api/jobs/:id infrastructure.
  */
 
-import { jsonError, requireJsonBody, serveJson, unauthorized, withErrorHandler } from '../../utils/http.js';
+import {
+  jsonError,
+  requireJsonBody,
+  serveJson,
+  unauthorized,
+  withErrorHandler,
+} from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { addJob, QUEUE_NAMES } from '../../jobs/queue/connection.js';
 import {
@@ -33,7 +39,7 @@ async function handleBulkExportStart({ res, req, repoRoot, authedUser }) {
       res,
       429,
       'export_in_progress',
-      'A bulk export is already in progress. Please wait for it to complete.'
+      'A bulk export is already in progress. Please wait for it to complete.',
     );
     return true;
   }
@@ -168,8 +174,16 @@ function handleBulkExportStatus({ res, authedUser }) {
  * @type {import('../../utils/router.js').Route[]}
  */
 export const ROUTES = [
-  { method: 'GET', pattern: '/api/bulk-export/status', handler: handleBulkExportStatus },
-  { method: 'POST', pattern: '/api/bulk-export', handler: handleBulkExportStart },
+  {
+    method: 'GET',
+    pattern: '/api/bulk-export/status',
+    handler: handleBulkExportStatus,
+  },
+  {
+    method: 'POST',
+    pattern: '/api/bulk-export',
+    handler: handleBulkExportStart,
+  },
 ];
 
 /**

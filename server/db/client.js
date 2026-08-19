@@ -55,7 +55,9 @@ export async function initializeDatabase() {
   }
 
   const config = getDatabaseConfig();
-  log.info(`Connecting to PostgreSQL at ${config.host}:${config.port}/${config.database}`);
+  log.info(
+    `Connecting to PostgreSQL at ${config.host}:${config.port}/${config.database}`,
+  );
 
   pool = new Pool({
     host: config.host,
@@ -95,7 +97,9 @@ export async function initializeDatabase() {
  */
 export function getDb() {
   if (!db) {
-    throw new Error('Database not initialized. Call initializeDatabase() first or check STORAGE_MODE.');
+    throw new Error(
+      'Database not initialized. Call initializeDatabase() first or check STORAGE_MODE.',
+    );
   }
   return db;
 }
@@ -107,7 +111,9 @@ export function getDb() {
  */
 export function getPool() {
   if (!pool) {
-    throw new Error('Database not initialized. Call initializeDatabase() first or check STORAGE_MODE.');
+    throw new Error(
+      'Database not initialized. Call initializeDatabase() first or check STORAGE_MODE.',
+    );
   }
   return pool;
 }

@@ -27,12 +27,10 @@ const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 // `__resetStorageForTests` rather than `closeStorage`: the double is not a real
 // Kysely handle, so closing it would call a `destroy()` it does not have.
-const { initializeStorage, __resetStorageForTests } = await import(
-  '../server/storage/lifecycle.js'
-);
-const { listAccessiblePresentationRefs, listRecentCommentsForOwner } = await import(
-  '../server/storage/presentations/comments.js'
-);
+const { initializeStorage, __resetStorageForTests } =
+  await import('../server/storage/lifecycle.js');
+const { listAccessiblePresentationRefs, listRecentCommentsForOwner } =
+  await import('../server/storage/presentations/comments.js');
 
 // An address that owns no decks and is shared none, in any environment.
 const NOBODY = 'nobody-xyz@example.invalid';
@@ -43,7 +41,9 @@ const ORG = { organizationId: ORG_ID };
 
 before(async () => {
   __setTestDb(
-    createFakeDb({ organizations: [{ id: ORG_ID, name: 'Default', slug: 'default' }] })
+    createFakeDb({
+      organizations: [{ id: ORG_ID, name: 'Default', slug: 'default' }],
+    }),
   );
   await initializeStorage();
 });
@@ -55,15 +55,24 @@ after(() => {
 
 describe('listAccessiblePresentationRefs', () => {
   it('returns [] when there is no acting owner', async () => {
-    assert.deepStrictEqual(await listAccessiblePresentationRefs({ ...ORG }, 'all'), []);
+    assert.deepStrictEqual(
+      await listAccessiblePresentationRefs({ ...ORG }, 'all'),
+      [],
+    );
   });
 
   it('throws on a missing scope', async () => {
-    await assert.rejects(listAccessiblePresentationRefs(null, 'all'), TypeError);
+    await assert.rejects(
+      listAccessiblePresentationRefs(null, 'all'),
+      TypeError,
+    );
   });
 
   it('returns [] for an owner with no owned or shared decks', async () => {
-    const refs = await listAccessiblePresentationRefs({ ...ORG, actorEmail: NOBODY }, 'all');
+    const refs = await listAccessiblePresentationRefs(
+      { ...ORG, actorEmail: NOBODY },
+      'all',
+    );
     assert.deepStrictEqual(refs, []);
   });
 
@@ -71,9 +80,12 @@ describe('listAccessiblePresentationRefs', () => {
     for (const ownership of ['owned', 'shared', 'all', 'bogus']) {
       const refs = await listAccessiblePresentationRefs(
         { ...ORG, actorEmail: NOBODY },
-        ownership
+        ownership,
       );
-      assert.ok(Array.isArray(refs), `ownership ${ownership} should return an array`);
+      assert.ok(
+        Array.isArray(refs),
+        `ownership ${ownership} should return an array`,
+      );
     }
   });
 });
@@ -91,14 +103,22 @@ describe('listRecentCommentsForOwner', () => {
   });
 
   it('returns an empty result for an owner with no accessible decks', async () => {
-    const result = await listRecentCommentsForOwner({ ...ORG, actorEmail: NOBODY });
+    const result = await listRecentCommentsForOwner({
+      ...ORG,
+      actorEmail: NOBODY,
+    });
     assert.deepStrictEqual(result, { comments: [], total: 0 });
   });
 
   it('tolerates odd options (bad ownership/status, oversized limit) without throwing', async () => {
     const result = await listRecentCommentsForOwner(
       { ...ORG, actorEmail: NOBODY },
-      { ownership: 'nonsense', status: 'weird', limit: 100000, authorEmail: 'x@y.z' }
+      {
+        ownership: 'nonsense',
+        status: 'weird',
+        limit: 100000,
+        authorEmail: 'x@y.z',
+      },
     );
     assert.deepStrictEqual(result, { comments: [], total: 0 });
   });

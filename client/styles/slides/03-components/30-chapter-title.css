@@ -106,8 +106,6 @@
   }
 }
 
-
-
 /* Title-block alignment (author-driven, horizontal axis). The `title-block`
    field group moves title + subtitle as one; `is-align-center` comes from the
    type's `titleBlockAlign`. Both boxes carry a measure cap (34ch / 48ch), so

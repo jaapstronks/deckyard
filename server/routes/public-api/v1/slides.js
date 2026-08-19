@@ -4,11 +4,32 @@
  */
 
 import { updatePresentation } from '../../../storage/presentations/index.js';
-import { newSlide, validateSlide, resolveSlideTypeName, canonicalSlideType } from '../../../../shared/slide-types.js';
+import {
+  newSlide,
+  validateSlide,
+  resolveSlideTypeName,
+  canonicalSlideType,
+} from '../../../../shared/slide-types.js';
 import { loadThemeAssets, resolveThemeId } from '../../../utils/themes.js';
-import { requirePermission, v1MethodNotAllowed, withV1ErrorHandler, getPresentationWithAccess, readApiV1Body, apiSuccess, apiCreated, apiError } from './middleware.js';
-import { emailCanEditCustomHtml, customHtmlEditViolation } from '../../../utils/route-middleware.js';
-import { getOptionalString, getOptionalObject, getNonNegativeNumber } from '../../../utils/request-validators.js';
+import {
+  requirePermission,
+  v1MethodNotAllowed,
+  withV1ErrorHandler,
+  getPresentationWithAccess,
+  readApiV1Body,
+  apiSuccess,
+  apiCreated,
+  apiError,
+} from './middleware.js';
+import {
+  emailCanEditCustomHtml,
+  customHtmlEditViolation,
+} from '../../../utils/route-middleware.js';
+import {
+  getOptionalString,
+  getOptionalObject,
+  getNonNegativeNumber,
+} from '../../../utils/request-validators.js';
 
 /**
  * Sanitize a slide for API response.
@@ -65,7 +86,9 @@ async function handleUpdateSlide(ctx, presentationId, slideId) {
   const { ok: bodyOk, body } = await readApiV1Body(ctx, req);
   if (!bodyOk) return true;
 
-  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId, { access: 'write' });
+  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId, {
+    access: 'write',
+  });
   if (!ok) return true;
 
   const slides = Array.isArray(pres.slides) ? [...pres.slides] : [];
@@ -82,7 +105,11 @@ async function handleUpdateSlide(ctx, presentationId, slideId) {
   // spelling the caller sent (title-slide / core/title-slide / eu.deckyard.slide.title).
   const slideType = resolveSlideTypeName(body.type || existingSlide.type);
   if (!slideType) {
-    await apiError(ctx, 400, `Unknown slide type: ${body.type || existingSlide.type}`);
+    await apiError(
+      ctx,
+      400,
+      `Unknown slide type: ${body.type || existingSlide.type}`,
+    );
     return true;
   }
 
@@ -112,7 +139,7 @@ async function handleUpdateSlide(ctx, presentationId, slideId) {
   const htmlViolation = customHtmlEditViolation(
     [existingSlide],
     [updatedSlide],
-    emailCanEditCustomHtml(apiKey.ownerEmail)
+    emailCanEditCustomHtml(apiKey.ownerEmail),
   );
   if (htmlViolation) {
     await apiError(ctx, 403, htmlViolation);
@@ -124,9 +151,14 @@ async function handleUpdateSlide(ctx, presentationId, slideId) {
 
   // Update presentation (a thrown storage error — 423 lock, 400 validation — is
   // answered in the v1 envelope by the mount-level withV1ErrorHandler wrap).
-  const updated = await updatePresentation(storageScope, presentationId, { slides }, {
-    actorEmail: apiKey.ownerEmail,
-  });
+  const updated = await updatePresentation(
+    storageScope,
+    presentationId,
+    { slides },
+    {
+      actorEmail: apiKey.ownerEmail,
+    },
+  );
 
   await apiSuccess(ctx, {
     slide: sanitizeSlide(updatedSlide),
@@ -150,7 +182,9 @@ async function handleCreateSlide(ctx, presentationId) {
   const { ok: bodyOk, body } = await readApiV1Body(ctx, req);
   if (!bodyOk) return true;
 
-  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId, { access: 'write' });
+  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId, {
+    access: 'write',
+  });
   if (!ok) return true;
 
   // Validate slide type, resolving any accepted spelling to the registry key.
@@ -207,7 +241,7 @@ async function handleCreateSlide(ctx, presentationId) {
   const htmlViolation = customHtmlEditViolation(
     [],
     [newSlideObj],
-    emailCanEditCustomHtml(apiKey.ownerEmail)
+    emailCanEditCustomHtml(apiKey.ownerEmail),
   );
   if (htmlViolation) {
     await apiError(ctx, 403, htmlViolation);
@@ -233,9 +267,14 @@ async function handleCreateSlide(ctx, presentationId) {
 
   // Update presentation (a thrown storage error — 423 lock, 400 validation — is
   // answered in the v1 envelope by the mount-level withV1ErrorHandler wrap).
-  const updated = await updatePresentation(storageScope, presentationId, { slides }, {
-    actorEmail: apiKey.ownerEmail,
-  });
+  const updated = await updatePresentation(
+    storageScope,
+    presentationId,
+    { slides },
+    {
+      actorEmail: apiKey.ownerEmail,
+    },
+  );
 
   await apiCreated(ctx, {
     slide: sanitizeSlide(newSlideObj),
@@ -257,7 +296,9 @@ async function handleDeleteSlide(ctx, presentationId, slideId) {
 
   if (!requirePermission(ctx, 'write')) return true;
 
-  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId, { access: 'write' });
+  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId, {
+    access: 'write',
+  });
   if (!ok) return true;
 
   const slides = Array.isArray(pres.slides) ? [...pres.slides] : [];
@@ -279,9 +320,14 @@ async function handleDeleteSlide(ctx, presentationId, slideId) {
 
   // Update presentation (a thrown storage error — 423 lock, 400 validation — is
   // answered in the v1 envelope by the mount-level withV1ErrorHandler wrap).
-  const updated = await updatePresentation(storageScope, presentationId, { slides }, {
-    actorEmail: apiKey.ownerEmail,
-  });
+  const updated = await updatePresentation(
+    storageScope,
+    presentationId,
+    { slides },
+    {
+      actorEmail: apiKey.ownerEmail,
+    },
+  );
 
   await apiSuccess(ctx, {
     deleted: true,
@@ -311,7 +357,9 @@ async function handleReorderSlides(ctx, presentationId) {
     return true;
   }
 
-  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId, { access: 'write' });
+  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId, {
+    access: 'write',
+  });
   if (!ok) return true;
 
   const existingSlides = Array.isArray(pres.slides) ? pres.slides : [];
@@ -343,9 +391,14 @@ async function handleReorderSlides(ctx, presentationId) {
   }
 
   // Update presentation (throws answered in the v1 envelope by the wrap).
-  const updated = await updatePresentation(storageScope, presentationId, { slides: reorderedSlides }, {
-    actorEmail: apiKey.ownerEmail,
-  });
+  const updated = await updatePresentation(
+    storageScope,
+    presentationId,
+    { slides: reorderedSlides },
+    {
+      actorEmail: apiKey.ownerEmail,
+    },
+  );
 
   // Return summary of new order
   const slidesSummary = reorderedSlides.map((s, idx) => ({
@@ -371,44 +424,51 @@ async function handleReorderSlides(ctx, presentationId) {
 /**
  * Main handler for /api/v1/presentations/:id/slides routes.
  */
-export const handleSlides = withV1ErrorHandler('public-api-v1:slides', async (ctx) => {
-  const { req, res, url } = ctx;
+export const handleSlides = withV1ErrorHandler(
+  'public-api-v1:slides',
+  async (ctx) => {
+    const { req, res, url } = ctx;
 
-  // POST /api/v1/presentations/:id/slides/reorder
-  const reorderMatch = url.pathname.match(
-    /^\/api\/v1\/presentations\/([^/]+)\/slides\/reorder$/
-  );
-  if (reorderMatch) {
-    if (req.method !== 'POST') return v1MethodNotAllowed(res, ['POST']);
-    return handleReorderSlides(ctx, reorderMatch[1]);
-  }
-
-  // Single slide operations: GET, PUT, DELETE /api/v1/presentations/:id/slides/:slideId
-  const singleSlideMatch = url.pathname.match(
-    /^\/api\/v1\/presentations\/([^/]+)\/slides\/([^/]+)$/
-  );
-  if (singleSlideMatch) {
-    const [, presentationId, slideId] = singleSlideMatch;
-
-    // Exclude 'reorder' and 'from-library' which are handled separately
-    if (slideId === 'reorder' || slideId === 'from-library') {
-      return false;
+    // POST /api/v1/presentations/:id/slides/reorder
+    const reorderMatch = url.pathname.match(
+      /^\/api\/v1\/presentations\/([^/]+)\/slides\/reorder$/,
+    );
+    if (reorderMatch) {
+      if (req.method !== 'POST') return v1MethodNotAllowed(res, ['POST']);
+      return handleReorderSlides(ctx, reorderMatch[1]);
     }
 
-    if (req.method === 'GET') return handleGetSlide(ctx, presentationId, slideId);
-    if (req.method === 'PUT') return handleUpdateSlide(ctx, presentationId, slideId);
-    if (req.method === 'DELETE') return handleDeleteSlide(ctx, presentationId, slideId);
-    return v1MethodNotAllowed(res, ['GET', 'PUT', 'DELETE']);
-  }
+    // Single slide operations: GET, PUT, DELETE /api/v1/presentations/:id/slides/:slideId
+    const singleSlideMatch = url.pathname.match(
+      /^\/api\/v1\/presentations\/([^/]+)\/slides\/([^/]+)$/,
+    );
+    if (singleSlideMatch) {
+      const [, presentationId, slideId] = singleSlideMatch;
 
-  // Collection: POST /api/v1/presentations/:id/slides
-  const collectionMatch = url.pathname.match(
-    /^\/api\/v1\/presentations\/([^/]+)\/slides$/
-  );
-  if (collectionMatch) {
-    if (req.method === 'POST') return handleCreateSlide(ctx, collectionMatch[1]);
-    return v1MethodNotAllowed(res, ['POST']);
-  }
+      // Exclude 'reorder' and 'from-library' which are handled separately
+      if (slideId === 'reorder' || slideId === 'from-library') {
+        return false;
+      }
 
-  return false;
-});
+      if (req.method === 'GET')
+        return handleGetSlide(ctx, presentationId, slideId);
+      if (req.method === 'PUT')
+        return handleUpdateSlide(ctx, presentationId, slideId);
+      if (req.method === 'DELETE')
+        return handleDeleteSlide(ctx, presentationId, slideId);
+      return v1MethodNotAllowed(res, ['GET', 'PUT', 'DELETE']);
+    }
+
+    // Collection: POST /api/v1/presentations/:id/slides
+    const collectionMatch = url.pathname.match(
+      /^\/api\/v1\/presentations\/([^/]+)\/slides$/,
+    );
+    if (collectionMatch) {
+      if (req.method === 'POST')
+        return handleCreateSlide(ctx, collectionMatch[1]);
+      return v1MethodNotAllowed(res, ['POST']);
+    }
+
+    return false;
+  },
+);

@@ -28,8 +28,10 @@ const log = createLogger('refine-slides');
  * @param {Array} [disabledSlideTypes] - Org-level disabled types to exclude
  */
 function getAllowedTypesForIntent(intent, disabledSlideTypes = []) {
-  const disabled = new Set(Array.isArray(disabledSlideTypes) ? disabledSlideTypes : []);
-  const filter = (types) => types.filter(t => !disabled.has(t));
+  const disabled = new Set(
+    Array.isArray(disabledSlideTypes) ? disabledSlideTypes : [],
+  );
+  const filter = (types) => types.filter((t) => !disabled.has(t));
 
   switch (intent) {
     case 'opening': {
@@ -89,7 +91,9 @@ export function buildAdjacentContext(slideGroup, allGroups, groupIndex) {
   if (groupIndex < allGroups.length - 1) {
     const nextGroup = allGroups[groupIndex + 1];
     if (nextGroup?.slides?.[0]?.hints?.length) {
-      lines.push(`Next slide hints: ${nextGroup.slides[0].hints.slice(0, 3).join(', ')}`);
+      lines.push(
+        `Next slide hints: ${nextGroup.slides[0].hints.slice(0, 3).join(', ')}`,
+      );
     }
   }
 
@@ -100,24 +104,34 @@ export function buildAdjacentContext(slideGroup, allGroups, groupIndex) {
  * Normalize and validate refined slide output
  */
 function normalizeRefinedSlide(slide, originalSlide, disabledSlideTypes = []) {
-  const allowedTypes = getAllowedTypesForIntent(originalSlide.intent, disabledSlideTypes);
+  const allowedTypes = getAllowedTypesForIntent(
+    originalSlide.intent,
+    disabledSlideTypes,
+  );
   let type = String(slide?.type || 'content-slide').trim();
   const content = slide?.content || {};
 
   // Validate type is allowed for this intent
   if (!allowedTypes.includes(type)) {
-    log.warn(`Type "${type}" not allowed for intent "${originalSlide.intent}", using fallback`, {
-      originalIndex: originalSlide.index,
-      requestedType: type,
-      intent: originalSlide.intent,
-      allowedTypes,
-      fallbackTo: allowedTypes[0] || 'content-slide',
-    });
+    log.warn(
+      `Type "${type}" not allowed for intent "${originalSlide.intent}", using fallback`,
+      {
+        originalIndex: originalSlide.index,
+        requestedType: type,
+        intent: originalSlide.intent,
+        allowedTypes,
+        fallbackTo: allowedTypes[0] || 'content-slide',
+      },
+    );
     type = allowedTypes[0] || 'content-slide';
   }
 
   // Validate content structure matches the type (existing validation)
-  const structureIssues = validateSlideContentStructure(type, content, originalSlide.index);
+  const structureIssues = validateSlideContentStructure(
+    type,
+    content,
+    originalSlide.index,
+  );
   if (structureIssues.length > 0) {
     log.warn(`Content structure issues for ${type}:`, {
       originalIndex: originalSlide.index,
@@ -154,7 +168,9 @@ function createFallbackSlide(originalSlide) {
   const presenterNotes = originalSlide.presenterNotes || '';
 
   if (intent === 'opening') {
-    const lines = originalSlide.roughContent.split('\n').filter(l => l.trim());
+    const lines = originalSlide.roughContent
+      .split('\n')
+      .filter((l) => l.trim());
     return {
       originalIndex: originalSlide.index,
       type: 'title-slide',
@@ -169,7 +185,9 @@ function createFallbackSlide(originalSlide) {
   }
 
   if (intent === 'chapter') {
-    const lines = originalSlide.roughContent.split('\n').filter(l => l.trim());
+    const lines = originalSlide.roughContent
+      .split('\n')
+      .filter((l) => l.trim());
     return {
       originalIndex: originalSlide.index,
       type: 'chapter-title-slide',
@@ -240,16 +258,19 @@ function createFallbackSlide(originalSlide) {
  * @param {Function} options.onLog - Callback to log the conversation
  * @returns {Promise<Array>} Refined slides
  */
-export async function refineSlideGroup(slideGroup, {
-  lang = 'en',
-  vendor = null,
-  adjacentContext = '',
-  presentationContext = null,
-  onLog = null,
-  disabledSlideTypes = [],
-  customSlideTypes = [],
-  themeContext = null,
-} = {}) {
+export async function refineSlideGroup(
+  slideGroup,
+  {
+    lang = 'en',
+    vendor = null,
+    adjacentContext = '',
+    presentationContext = null,
+    onLog = null,
+    disabledSlideTypes = [],
+    customSlideTypes = [],
+    themeContext = null,
+  } = {},
+) {
   const startTime = Date.now();
   const { vendor: resolvedVendor, apiKey, model } = getLlmConfig({ vendor });
   const { slides, groupId } = slideGroup;
@@ -295,7 +316,11 @@ export async function refineSlideGroup(slideGroup, {
 
       parsed = extractJsonObject(rawResponse);
 
-      if (parsed?.slides && Array.isArray(parsed.slides) && parsed.slides.length > 0) {
+      if (
+        parsed?.slides &&
+        Array.isArray(parsed.slides) &&
+        parsed.slides.length > 0
+      ) {
         break;
       }
 
@@ -303,10 +328,13 @@ export async function refineSlideGroup(slideGroup, {
     } catch (err) {
       retryCount++;
       if (retryCount > maxRetries) {
-        log.error(`Failed after ${maxRetries + 1} attempts for group ${groupId}:`, err.message);
+        log.error(
+          `Failed after ${maxRetries + 1} attempts for group ${groupId}:`,
+          err.message,
+        );
 
         // Return fallback slides
-        const fallbackSlides = slides.map(s => createFallbackSlide(s));
+        const fallbackSlides = slides.map((s) => createFallbackSlide(s));
 
         if (typeof onLog === 'function') {
           onLog({
@@ -333,7 +361,7 @@ export async function refineSlideGroup(slideGroup, {
 
   // Normalize the output with robust index matching
   const refinedSlides = [];
-  const slidesMap = new Map(slides.map(s => [s.index, s]));
+  const slidesMap = new Map(slides.map((s) => [s.index, s]));
   const usedOriginalIndexes = new Set();
 
   // First pass: match by originalIndex
@@ -345,7 +373,9 @@ export async function refineSlideGroup(slideGroup, {
     // If exact match not found, try position-based fallback
     if (!originalSlide && pos < slides.length) {
       originalSlide = slides[pos];
-      log.warn(`Index ${idx} not found, using position-based fallback (actual index: ${originalSlide.index})`);
+      log.warn(
+        `Index ${idx} not found, using position-based fallback (actual index: ${originalSlide.index})`,
+      );
     }
 
     if (!originalSlide) {
@@ -355,18 +385,24 @@ export async function refineSlideGroup(slideGroup, {
 
     // Skip if we already processed this original slide
     if (usedOriginalIndexes.has(originalSlide.index)) {
-      log.warn(`Duplicate refined slide for index ${originalSlide.index}, skipping`);
+      log.warn(
+        `Duplicate refined slide for index ${originalSlide.index}, skipping`,
+      );
       continue;
     }
 
     usedOriginalIndexes.add(originalSlide.index);
-    refinedSlides.push(normalizeRefinedSlide(refined, originalSlide, disabledSlideTypes));
+    refinedSlides.push(
+      normalizeRefinedSlide(refined, originalSlide, disabledSlideTypes),
+    );
   }
 
   // Add any missing slides as fallbacks
   for (const original of slides) {
     if (!usedOriginalIndexes.has(original.index)) {
-      log.warn(`Missing refined slide for index ${original.index}, using fallback`);
+      log.warn(
+        `Missing refined slide for index ${original.index}, using fallback`,
+      );
       refinedSlides.push(createFallbackSlide(original));
     }
   }
@@ -434,18 +470,21 @@ function getPhase2StatusMessages(lang) {
  *   each section group finishes (real progress, for streaming UIs)
  * @returns {Promise<Array>} All refined slides in order
  */
-export async function refineAllSlideGroups(groups, {
-  lang = 'en',
-  vendor = null,
-  onLog = null,
-  batchSize = 6,
-  presentationContext = null,
-  onStatusMessage = null,
-  onGroupDone = null,
-  disabledSlideTypes = [],
-  customSlideTypes = [],
-  themeContext = null,
-} = {}) {
+export async function refineAllSlideGroups(
+  groups,
+  {
+    lang = 'en',
+    vendor = null,
+    onLog = null,
+    batchSize = 6,
+    presentationContext = null,
+    onStatusMessage = null,
+    onGroupDone = null,
+    disabledSlideTypes = [],
+    customSlideTypes = [],
+    themeContext = null,
+  } = {},
+) {
   const allRefinedSlides = [];
   let statusMessageIndex = 0;
   let statusInterval = null;
@@ -490,9 +529,9 @@ export async function refineAllSlideGroups(groups, {
           disabledSlideTypes,
           customSlideTypes,
           themeContext,
-        }).then(refinedSlides => {
+        }).then((refinedSlides) => {
           // Track resolved types for adjacent context
-          group.resolvedTypes = refinedSlides.map(s => s.type);
+          group.resolvedTypes = refinedSlides.map((s) => s.type);
           // Real progress: one tick per finished section group.
           if (typeof onGroupDone === 'function') {
             groupsDone += 1;

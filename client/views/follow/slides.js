@@ -7,7 +7,7 @@ export function slideByIdOrIndex(pres, { slideId, slideIndex } = {}) {
   }
   const i = Math.max(
     0,
-    Math.min(slides.length - 1, Number(slideIndex || 0) || 0)
+    Math.min(slides.length - 1, Number(slideIndex || 0) || 0),
   );
   return { slide: slides[i] || null, idx: i };
 }

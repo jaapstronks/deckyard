@@ -51,7 +51,7 @@ export async function seedDefaultOrganization(db) {
  */
 export async function seedPresentation(
   db,
-  { organizationId, title = 'Deck', slides, i18n, modifiedAt, trashedAt } = {}
+  { organizationId, title = 'Deck', slides, i18n, modifiedAt, trashedAt } = {},
 ) {
   const orgId = organizationId || getDefaultOrganizationId();
   // presentations.id is a NOT NULL uuid with no default — the app supplies it.
@@ -99,7 +99,7 @@ export async function seedSlideLibraryItem(
     content = {},
     createdAt,
     createdBy,
-  } = {}
+  } = {},
 ) {
   const orgId = organizationId || getDefaultOrganizationId();
   const row = await db
@@ -132,7 +132,7 @@ export async function seedSlideLibraryItem(
  */
 export async function seedImageLibraryItem(
   db,
-  { organizationId, url = 'https://example.com/img.png' } = {}
+  { organizationId, url = 'https://example.com/img.png' } = {},
 ) {
   const orgId = organizationId || getDefaultOrganizationId();
   const row = await db

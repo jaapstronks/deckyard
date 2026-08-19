@@ -42,12 +42,18 @@ test('an undeclared language falls back to the neutral skeleton', () => {
 
 test('malformed declarations degrade to the neutral skeleton, never break', () => {
   assert.deepEqual(
-    resolveItemDefaults({ itemDefaults: { a: 1 }, itemDefaultsByLang: 'nope' }, 'nl'),
-    { a: 1 }
+    resolveItemDefaults(
+      { itemDefaults: { a: 1 }, itemDefaultsByLang: 'nope' },
+      'nl',
+    ),
+    { a: 1 },
   );
   assert.deepEqual(
-    resolveItemDefaults({ itemDefaults: { a: 1 }, itemDefaultsByLang: { nl: 'nope' } }, 'nl'),
-    { a: 1 }
+    resolveItemDefaults(
+      { itemDefaults: { a: 1 }, itemDefaultsByLang: { nl: 'nope' } },
+      'nl',
+    ),
+    { a: 1 },
   );
   assert.deepEqual(resolveItemDefaults({}, 'nl'), {});
   assert.deepEqual(resolveItemDefaults(null, 'nl'), {});
@@ -63,7 +69,9 @@ function* collectionFields() {
     for (const field of fields) {
       if (field?.type !== 'items') continue;
       yield { where: `${typeName}.${field.key}`, field };
-      for (const sub of Array.isArray(field.itemFields) ? field.itemFields : []) {
+      for (const sub of Array.isArray(field.itemFields)
+        ? field.itemFields
+        : []) {
         if (sub?.type !== 'items') continue;
         yield { where: `${typeName}.${field.key}.${sub.key}`, field: sub };
       }
@@ -79,7 +87,7 @@ test('every itemDefaultsByLang variant is a complete skeleton (same keys as item
       assert.deepEqual(
         Object.keys(variant || {}).sort(),
         baseKeys,
-        `${where} itemDefaultsByLang.${lang} must mirror itemDefaults' keys`
+        `${where} itemDefaultsByLang.${lang} must mirror itemDefaults' keys`,
       );
     }
   }
@@ -93,14 +101,14 @@ test('visible collection fields with placeholder copy declare an NL skeleton', (
   for (const { where, field } of collectionFields()) {
     if (field.hidden) continue; // legacy read-only mirrors never add items
     const hasCopy = Object.values(field.itemDefaults || {}).some(
-      (v) => typeof v === 'string' && /[A-Za-z]{3,}/.test(v)
+      (v) => typeof v === 'string' && /[A-Za-z]{3,}/.test(v),
     );
     if (!hasCopy) continue;
     // Icon names (icon-card-grid's 'lightbulb') are data, not copy — but that
     // field also carries real copy (title/body), so the check stands.
     assert.ok(
       field.itemDefaultsByLang?.nl,
-      `${where} seeds English placeholder copy but declares no NL skeleton`
+      `${where} seeds English placeholder copy but declares no NL skeleton`,
     );
   }
 });

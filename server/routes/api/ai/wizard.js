@@ -1,16 +1,28 @@
 import { badRequest, serveJson, requireJsonBody } from '../../../utils/http.js';
-import { getAiParams, getTrimmedString } from '../../../utils/request-validators.js';
+import {
+  getAiParams,
+  getTrimmedString,
+} from '../../../utils/request-validators.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { generateDeckJsonFromRawContent } from '../../../utils/ai.js';
 import { getDisplayNameForUser } from '../../../utils/user-name.js';
-import { sandboxDefaultThemeId, sandboxEnabled } from '../../../config/sandbox.js';
+import {
+  sandboxDefaultThemeId,
+  sandboxEnabled,
+} from '../../../config/sandbox.js';
 import { loadSlideTypeContext, createPresentationWithI18n } from './shared.js';
 
 /**
  * POST /api/ai/wizard — generate a deck from raw input and create a new presentation.
  * @param {import('./shared.js').AiContext} ctx
  */
-export async function handleAiWizard({ repoRoot, storageScope, req, res, authedUser }) {
+export async function handleAiWizard({
+  repoRoot,
+  storageScope,
+  req,
+  res,
+  authedUser,
+}) {
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
@@ -37,7 +49,8 @@ export async function handleAiWizard({ repoRoot, storageScope, req, res, authedU
 
   // Theme is chosen by the user at creation time; do not let the model/environment decide.
   const effectiveTheme =
-    themeFromRequest || (sandboxEnabled() ? sandboxDefaultThemeId() : parts.theme);
+    themeFromRequest ||
+    (sandboxEnabled() ? sandboxDefaultThemeId() : parts.theme);
 
   const updated = await createPresentationWithI18n(storageScope, {
     parts,

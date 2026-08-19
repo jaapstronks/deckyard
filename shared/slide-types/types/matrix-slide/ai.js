@@ -19,23 +19,23 @@
  */
 
 export const ai = {
-    category: 'content',
-    resolveInPhase1: false,
-    description: `
+  category: 'content',
+  resolveInPhase1: false,
+  description: `
       2x2 grid for SWOT, risk matrices, priority grids.
       Exactly 4 cells in quadrants. Each cell has title, body, and tone.
       Tones: default, positive (green), negative (red), neutral.
     `,
-    bestFor: [
-      'SWOT analysis',
-      'Risk vs Impact matrices',
-      'Urgent vs Important (Eisenhower)',
-      'Any 2x2 framework or quadrant analysis',
-    ],
-    notFor: [
-      'Simple A vs B (use comparison-slide)',
-      'More than 4 categories (use text-blocks or table)',
-    ],
+  bestFor: [
+    'SWOT analysis',
+    'Risk vs Impact matrices',
+    'Urgent vs Important (Eisenhower)',
+    'Any 2x2 framework or quadrant analysis',
+  ],
+  notFor: [
+    'Simple A vs B (use comparison-slide)',
+    'More than 4 categories (use text-blocks or table)',
+  ],
 };
 
 /**
@@ -48,10 +48,26 @@ export const aiExamples = [
     _variation: 'SWOT analysis',
     title: 'SWOT Analysis',
     cells: [
-      { title: 'Strengths', body: '- Strong brand recognition\n- Experienced team\n- Proprietary technology', tone: 'positive' },
-      { title: 'Weaknesses', body: '- Limited market presence\n- High operating costs\n- Legacy systems', tone: 'negative' },
-      { title: 'Opportunities', body: '- Emerging markets\n- New partnerships\n- Digital expansion', tone: 'positive' },
-      { title: 'Threats', body: '- Increasing competition\n- Regulatory changes\n- Economic uncertainty', tone: 'negative' },
+      {
+        title: 'Strengths',
+        body: '- Strong brand recognition\n- Experienced team\n- Proprietary technology',
+        tone: 'positive',
+      },
+      {
+        title: 'Weaknesses',
+        body: '- Limited market presence\n- High operating costs\n- Legacy systems',
+        tone: 'negative',
+      },
+      {
+        title: 'Opportunities',
+        body: '- Emerging markets\n- New partnerships\n- Digital expansion',
+        tone: 'positive',
+      },
+      {
+        title: 'Threats',
+        body: '- Increasing competition\n- Regulatory changes\n- Economic uncertainty',
+        tone: 'negative',
+      },
     ],
     background: 'lime',
   },
@@ -59,10 +75,26 @@ export const aiExamples = [
     _variation: 'Eisenhower priority matrix',
     title: 'Priority Matrix',
     cells: [
-      { title: 'Urgent + Important', body: '- Crisis management\n- Deadline-driven projects\n- Critical issues', tone: 'negative' },
-      { title: 'Not Urgent + Important', body: '- Strategic planning\n- Relationship building\n- Personal development', tone: 'positive' },
-      { title: 'Urgent + Not Important', body: '- Most interruptions\n- Some meetings\n- Some emails', tone: 'neutral' },
-      { title: 'Not Urgent + Not Important', body: '- Time wasters\n- Busy work\n- Escapism activities', tone: 'default' },
+      {
+        title: 'Urgent + Important',
+        body: '- Crisis management\n- Deadline-driven projects\n- Critical issues',
+        tone: 'negative',
+      },
+      {
+        title: 'Not Urgent + Important',
+        body: '- Strategic planning\n- Relationship building\n- Personal development',
+        tone: 'positive',
+      },
+      {
+        title: 'Urgent + Not Important',
+        body: '- Most interruptions\n- Some meetings\n- Some emails',
+        tone: 'neutral',
+      },
+      {
+        title: 'Not Urgent + Not Important',
+        body: '- Time wasters\n- Busy work\n- Escapism activities',
+        tone: 'default',
+      },
     ],
     background: 'mist',
   },

@@ -39,7 +39,7 @@ export function createIntegrationsTab({ user }) {
     class: 'settings-tab-description',
     text: t(
       'settings.integrations.description',
-      'Connect external services via webhooks to receive notifications about events.'
+      'Connect external services via webhooks to receive notifications about events.',
     ),
   });
 
@@ -59,7 +59,7 @@ export function createIntegrationsTab({ user }) {
     class: 'help',
     text: t(
       'settings.integrations.rss.description',
-      'Connect your published presentations to any feed reader, Slack channel, or automation tool.'
+      'Connect your published presentations to any feed reader, Slack channel, or automation tool.',
     ),
   });
 
@@ -73,7 +73,7 @@ export function createIntegrationsTab({ user }) {
     rssEnableCb,
     h('span', {
       text: t('settings.integrations.rss.enable', 'Enable RSS feed'),
-    })
+    }),
   );
 
   // Fields (hidden when disabled)
@@ -86,13 +86,19 @@ export function createIntegrationsTab({ user }) {
     type: 'text',
     class: 'form-input',
     maxlength: '200',
-    placeholder: t('settings.integrations.rss.titlePlaceholder', 'My Presentations'),
+    placeholder: t(
+      'settings.integrations.rss.titlePlaceholder',
+      'My Presentations',
+    ),
   });
   const rssDescInput = h('input', {
     type: 'text',
     class: 'form-input',
     maxlength: '500',
-    placeholder: t('settings.integrations.rss.descPlaceholder', 'Published presentations from our team'),
+    placeholder: t(
+      'settings.integrations.rss.descPlaceholder',
+      'Published presentations from our team',
+    ),
   });
   const rssLangSel = h('select', { class: 'form-input' });
   for (const [val, label] of [
@@ -140,8 +146,7 @@ export function createIntegrationsTab({ user }) {
       text: label,
     });
     const url = h('code', {
-      style:
-        'flex:1; word-break:break-all; font-size:var(--ps-font-xs);',
+      style: 'flex:1; word-break:break-all; font-size:var(--ps-font-xs);',
       text: `${location.origin}${feedPath}`,
     });
     const btn = h('button', {
@@ -150,9 +155,7 @@ export function createIntegrationsTab({ user }) {
     });
     btn.addEventListener('click', async () => {
       try {
-        await navigator.clipboard.writeText(
-          `${location.origin}${feedPath}`
-        );
+        await navigator.clipboard.writeText(`${location.origin}${feedPath}`);
         toast.success(t('common.copied', 'Copied'), {
           durationMs: 1200,
         });
@@ -170,7 +173,7 @@ export function createIntegrationsTab({ user }) {
     }),
     createFeedUrlRow('RSS', '/feed/rss.xml'),
     createFeedUrlRow('Atom', '/feed/atom.xml'),
-    createFeedUrlRow('JSON', '/feed/feed.json')
+    createFeedUrlRow('JSON', '/feed/feed.json'),
   );
 
   rssFields.append(
@@ -181,10 +184,7 @@ export function createIntegrationsTab({ user }) {
     rssTitleInput,
     h('label', {
       class: 'field-label',
-      text: t(
-        'settings.integrations.rss.feedDescription',
-        'Description'
-      ),
+      text: t('settings.integrations.rss.feedDescription', 'Description'),
     }),
     rssDescInput,
     h('label', {
@@ -204,13 +204,10 @@ export function createIntegrationsTab({ user }) {
     rssCopyrightInput,
     h('label', {
       class: 'field-label',
-      text: t(
-        'settings.integrations.rss.authorName',
-        'Author name'
-      ),
+      text: t('settings.integrations.rss.authorName', 'Author name'),
     }),
     rssAuthorInput,
-    rssFeedUrlsWrap
+    rssFeedUrlsWrap,
   );
 
   rssEnableCb.addEventListener('change', () => {
@@ -238,10 +235,7 @@ export function createIntegrationsTab({ user }) {
     title: rssTitleInput.value.trim(),
     description: rssDescInput.value.trim(),
     language: rssLangSel.value,
-    maxItems: Math.max(
-      1,
-      Math.min(100, Number(rssMaxInput.value) || 50)
-    ),
+    maxItems: Math.max(1, Math.min(100, Number(rssMaxInput.value) || 50)),
     copyright: rssCopyrightInput.value.trim(),
     authorName: rssAuthorInput.value.trim(),
   });
@@ -257,7 +251,10 @@ export function createIntegrationsTab({ user }) {
   };
 
   // ─── Save button ─────────────────────────────────────────
-  const actions = h('div', { class: 'row is-end', style: 'margin-top: var(--ps-space-4);' });
+  const actions = h('div', {
+    class: 'row is-end',
+    style: 'margin-top: var(--ps-space-4);',
+  });
   const btnSave = h('button', {
     class: 'btn btn-primary',
     text: t('common.save', 'Save'),

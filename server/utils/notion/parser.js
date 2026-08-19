@@ -6,7 +6,11 @@
 export function richTextToPlain(richText) {
   const parts = Array.isArray(richText) ? richText : [];
   return parts
-    .map((rt) => String(rt?.plain_text || '').replace(/\s+/g, ' ').trim())
+    .map((rt) =>
+      String(rt?.plain_text || '')
+        .replace(/\s+/g, ' ')
+        .trim(),
+    )
     .filter(Boolean)
     .join('');
 }
@@ -92,7 +96,11 @@ export function extractPageId(urlOrId) {
   if (/^[a-f0-9]{32}$/i.test(input)) return input.toLowerCase();
 
   // UUID with dashes (36 chars)?
-  if (/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(input)) {
+  if (
+    /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(
+      input,
+    )
+  ) {
     return input.replace(/-/g, '').toLowerCase();
   }
 
@@ -110,7 +118,10 @@ export function extractPageId(urlOrId) {
   }
 
   // Must be a notion.so domain
-  if (!url.hostname.endsWith('notion.so') && !url.hostname.endsWith('notion.site')) {
+  if (
+    !url.hostname.endsWith('notion.so') &&
+    !url.hostname.endsWith('notion.site')
+  ) {
     return null;
   }
 
@@ -120,7 +131,9 @@ export function extractPageId(urlOrId) {
   if (match) return match[1].toLowerCase();
 
   // Sometimes the ID has dashes in the URL
-  const dashMatch = path.match(/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i);
+  const dashMatch = path.match(
+    /([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
+  );
   if (dashMatch) return dashMatch[1].replace(/-/g, '').toLowerCase();
 
   // Last segment might be Title-<id> where id is 32 chars

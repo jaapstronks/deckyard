@@ -41,9 +41,8 @@ globalThis.fetch = async (url, opts) => {
   return respond(url);
 };
 
-const { createAnalyticsTracker } = await import(
-  '../client/lib/format/analytics-tracker.js'
-);
+const { createAnalyticsTracker } =
+  await import('../client/lib/format/analytics-tracker.js');
 const { storage } = await import('../client/lib/storage.js');
 
 const DEVICE_ID_KEY = 'ps.analytics.deviceId';
@@ -98,7 +97,10 @@ test('a successful erase tears the tracker down and drops the device id', async 
 
   const result = await tracker.erase();
 
-  assert.deepEqual(result, { ok: true, deleted: { sessions: 2, slideViews: 5 } });
+  assert.deepEqual(result, {
+    ok: true,
+    deleted: { sessions: 2, slideViews: 5 },
+  });
   assert.equal(tracker.isTracking(), false, 'tracking has stopped');
   assert.equal(tracker.getSessionToken(), null, 'the token is gone');
   assert.equal(storage.get(DEVICE_ID_KEY), null, 'the device id is forgotten');

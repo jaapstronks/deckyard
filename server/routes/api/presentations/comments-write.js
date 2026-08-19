@@ -28,16 +28,23 @@ import {
   updateComment,
   deleteComment,
 } from '../../../storage/presentations/comments.js';
-import {
-  recordCommentCreated,
-} from '../../../services/activity-events.js';
+import { recordCommentCreated } from '../../../services/activity-events.js';
 import {
   broadcastToPresentation,
   CommentEventTypes,
 } from '../../../services/comment-events.js';
-import { getGuestFromRequest, withPresentationCommentAuth } from '../../../utils/route-middleware.js';
-import { notifyCommentCreated, notifyMentionsAdded } from '../../../services/comment-notifications.js';
-import { MAX_COMMENT_LENGTH, broadcastCommentCounts } from './comments-shared.js';
+import {
+  getGuestFromRequest,
+  withPresentationCommentAuth,
+} from '../../../utils/route-middleware.js';
+import {
+  notifyCommentCreated,
+  notifyMentionsAdded,
+} from '../../../services/comment-notifications.js';
+import {
+  MAX_COMMENT_LENGTH,
+  broadcastCommentCounts,
+} from './comments-shared.js';
 import { getString } from '../../../utils/request-validators.js';
 import { createLogger } from '../../../utils/logger.js';
 const log = createLogger('comments-write');
@@ -79,11 +86,13 @@ async function checkCommentDeleteAccess({ req, authedUser, pres, comment }) {
  */
 export async function handlePresentationCommentsCreate(
   { repoRoot, storageScope, req, res, authedUser } = {},
-  id
+  id,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-  const { pres, guestInfo: foundGuestInfo } = await withPresentationCommentAuth({ storageScope, req, id, authedUser, res });
+  const { pres, guestInfo: foundGuestInfo } = await withPresentationCommentAuth(
+    { storageScope, req, id, authedUser, res },
+  );
   if (!pres) return true;
 
   // Determine commenter identity
@@ -100,11 +109,13 @@ export async function handlePresentationCommentsCreate(
     // Guest session found - verify they can comment
     guestInfo = foundGuestInfo;
 
-    if (!canGuestComment({
-      guest: guestInfo.guest,
-      shareLink: guestInfo.shareLink,
-      presentationId: id,
-    })) {
+    if (
+      !canGuestComment({
+        guest: guestInfo.guest,
+        shareLink: guestInfo.shareLink,
+        presentationId: id,
+      })
+    ) {
       return unauthorized(res);
     }
 
@@ -122,9 +133,11 @@ export async function handlePresentationCommentsCreate(
 
   // Validate comment body length
   if (body.body.length > MAX_COMMENT_LENGTH) {
-    return badRequest(res, `Comment must be ${MAX_COMMENT_LENGTH} characters or less`);
+    return badRequest(
+      res,
+      `Comment must be ${MAX_COMMENT_LENGTH} characters or less`,
+    );
   }
-
 
   // Get parent comment if this is a reply (for notification recipient)
   let parentComment = null;
@@ -189,7 +202,7 @@ export async function handlePresentationCommentsCreate(
 export async function handlePresentationCommentUpdate(
   { repoRoot, storageScope, req, res, authedUser } = {},
   id,
-  commentId
+  commentId,
 ) {
   if (req.method !== 'PUT') return methodNotAllowed(res, ['PUT']);
 
@@ -202,7 +215,12 @@ export async function handlePresentationCommentUpdate(
     return notFound(res, 'Comment not found');
   }
 
-  const canEdit = await checkCommentEditAccess({ req, authedUser, pres, comment });
+  const canEdit = await checkCommentEditAccess({
+    req,
+    authedUser,
+    pres,
+    comment,
+  });
   if (!canEdit) {
     return unauthorized(res);
   }
@@ -216,10 +234,15 @@ export async function handlePresentationCommentUpdate(
 
   // Validate comment body length
   if (body.body.length > MAX_COMMENT_LENGTH) {
-    return badRequest(res, `Comment must be ${MAX_COMMENT_LENGTH} characters or less`);
+    return badRequest(
+      res,
+      `Comment must be ${MAX_COMMENT_LENGTH} characters or less`,
+    );
   }
 
-  const result = await updateComment(storageScope, commentId, { body: body.body });
+  const result = await updateComment(storageScope, commentId, {
+    body: body.body,
+  });
 
   if (!result.ok) {
     return jsonError(res, getErrorStatus(result.reason), result.reason);
@@ -236,7 +259,10 @@ export async function handlePresentationCommentUpdate(
       comment: result.comment,
       previousMentions: comment.mentions,
       parentComment,
-      actor: authedUser || { email: comment.authorEmail, name: comment.authorName },
+      actor: authedUser || {
+        email: comment.authorEmail,
+        name: comment.authorName,
+      },
       scope: storageScope,
     });
   })().catch((e) => {
@@ -262,7 +288,7 @@ export async function handlePresentationCommentUpdate(
 export async function handlePresentationCommentDelete(
   { storageScope, req, res, authedUser } = {},
   id,
-  commentId
+  commentId,
 ) {
   if (req.method !== 'DELETE') return methodNotAllowed(res, ['DELETE']);
 
@@ -275,7 +301,12 @@ export async function handlePresentationCommentDelete(
     return notFound(res, 'Comment not found');
   }
 
-  const canDelete = await checkCommentDeleteAccess({ req, authedUser, pres, comment });
+  const canDelete = await checkCommentDeleteAccess({
+    req,
+    authedUser,
+    pres,
+    comment,
+  });
   if (!canDelete) {
     return unauthorized(res);
   }

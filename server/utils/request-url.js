@@ -15,16 +15,12 @@ import { getAllowedHosts, envBool } from '../config/utils.js';
 export function getRequestOrigin(req) {
   const proto =
     (req?.headers?.['x-forwarded-proto'] &&
-      String(req.headers['x-forwarded-proto'])
-        .split(',')[0]
-        .trim()) ||
+      String(req.headers['x-forwarded-proto']).split(',')[0].trim()) ||
     (req?.socket?.encrypted ? 'https' : 'http');
 
   const host =
     (req?.headers?.['x-forwarded-host'] &&
-      String(req.headers['x-forwarded-host'])
-        .split(',')[0]
-        .trim()) ||
+      String(req.headers['x-forwarded-host']).split(',')[0].trim()) ||
     String(req?.headers?.host || '').trim();
 
   if (!host) return null;

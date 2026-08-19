@@ -4,7 +4,10 @@ import { getPresentation } from '../../storage/presentations/index.js';
 import { getPublishedById } from '../../storage/published/index.js';
 import { loadThemeAssets } from '../../utils/themes.js';
 import { buildMergedSlideTypes } from '../../utils/custom-slide-type-runtime.js';
-import { buildEmbedHtml, parseEmbedOptionsFromUrl } from '../../utils/embed-html.js';
+import {
+  buildEmbedHtml,
+  parseEmbedOptionsFromUrl,
+} from '../../utils/embed-html.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
 import {
   hasLangVersion,
@@ -24,14 +27,19 @@ import { crossOrganizationScope } from '../../storage/scope.js';
  * @returns {Promise<boolean>} true if handled.
  */
 export async function handleEmbed({ repoRoot, req, res, url }) {
-  const embedMatch = url.pathname.match(/^\/embed\/([a-f0-9]{8})(?:-([^/]+))?$/);
+  const embedMatch = url.pathname.match(
+    /^\/embed\/([a-f0-9]{8})(?:-([^/]+))?$/,
+  );
   if (!embedMatch || req.method !== 'GET') return false;
 
   const publishId = embedMatch[1];
   const reqSlug = String(embedMatch[2] || '').trim();
   const entry = await getPublishedById(
-    crossOrganizationScope(repoRoot, 'embedded deck: the publish id is the authorization'),
-    publishId
+    crossOrganizationScope(
+      repoRoot,
+      'embedded deck: the publish id is the authorization',
+    ),
+    publishId,
   );
   if (!entry?.presentationId) {
     notFound(res);
@@ -39,8 +47,11 @@ export async function handleEmbed({ repoRoot, req, res, url }) {
   }
 
   const pres = await getPresentation(
-    crossOrganizationScope(repoRoot, 'embedded deck: the publish id is the authorization'),
-    entry.presentationId
+    crossOrganizationScope(
+      repoRoot,
+      'embedded deck: the publish id is the authorization',
+    ),
+    entry.presentationId,
   );
   if (!pres) {
     notFound(res);
@@ -67,7 +78,10 @@ export async function handleEmbed({ repoRoot, req, res, url }) {
   const modeLang = resolveLangModeFromPresOrUrl(pres, url);
   const projected = projectPresentationForLang(pres, modeLang);
   const embedSettings = await getAppSettings(
-    crossOrganizationScope(repoRoot, 'embed page: analytics config is instance-level')
+    crossOrganizationScope(
+      repoRoot,
+      'embed page: analytics config is instance-level',
+    ),
   );
   const analytics = analyticsHeadHtml({
     context: 'embed',
@@ -75,7 +89,9 @@ export async function handleEmbed({ repoRoot, req, res, url }) {
     settings: embedSettings,
   });
   const embedOrgId = pres?.organizationId;
-  const embedSlideTypes = await buildMergedSlideTypes({ organizationId: embedOrgId });
+  const embedSlideTypes = await buildMergedSlideTypes({
+    organizationId: embedOrgId,
+  });
 
   try {
     const html = buildEmbedHtml(repoRoot, projected, {
@@ -108,7 +124,7 @@ export async function handleEmbed({ repoRoot, req, res, url }) {
     try {
       // eslint-disable-next-line no-console
       log.error(
-        `[embed] render failed publishId=${publishId} slug=${slug} url=${url.pathname}${url.search}\n${stackRaw || msgRaw}`
+        `[embed] render failed publishId=${publishId} slug=${slug} url=${url.pathname}${url.search}\n${stackRaw || msgRaw}`,
       );
     } catch {
       // ignore

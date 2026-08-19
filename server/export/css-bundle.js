@@ -33,9 +33,15 @@ export async function loadExportCssBundle(repoRoot, theme, watermark) {
   // + a thin presenter/toolbar chrome layer, never the ~620 KB of editor-only
   // CSS app.css drags in. See client/styles/export.css for the boundary.
   const [chromeCss, themeCss, slidesCss, fontCss] = await Promise.all([
-    readCssWithImports(repoRoot, path.join(repoRoot, 'client', 'styles', 'export.css')),
+    readCssWithImports(
+      repoRoot,
+      path.join(repoRoot, 'client', 'styles', 'export.css'),
+    ),
     readTextIfExists(path.join(repoRoot, 'client', 'styles', 'theme.css')),
-    readCssWithImports(repoRoot, path.join(repoRoot, 'client', 'styles', 'slides.css')),
+    readCssWithImports(
+      repoRoot,
+      path.join(repoRoot, 'client', 'styles', 'slides.css'),
+    ),
     buildEmbeddedFontCss(repoRoot, theme),
   ]);
 
@@ -44,7 +50,16 @@ export async function loadExportCssBundle(repoRoot, theme, watermark) {
   const wmCss = wmOn ? sandboxWatermarkCss() : '';
   const wmHtml = wmOn ? sandboxWatermarkHtml() : '';
 
-  return { chromeCss, themeCss, slidesCss, fontCss, themeVarsCss, wmOn, wmCss, wmHtml };
+  return {
+    chromeCss,
+    themeCss,
+    slidesCss,
+    fontCss,
+    themeVarsCss,
+    wmOn,
+    wmCss,
+    wmHtml,
+  };
 }
 
 /**
@@ -93,7 +108,12 @@ export function buildExportStyleContent(bundle) {
 export async function embedSlideImages(
   repoRoot,
   rawSlides,
-  { includeClient = true, transform = null, embedRemote = false, cache = null } = {},
+  {
+    includeClient = true,
+    transform = null,
+    embedRemote = false,
+    cache = null,
+  } = {},
 ) {
   // Clone synchronously (preserves order), then collect every image field as a
   // {src, set} cell and resolve them concurrently. One slow remote image no
@@ -103,13 +123,23 @@ export async function embedSlideImages(
   for (const cloned of slides) {
     for (const k of imageFieldKeysForType(cloned?.type)) {
       if (cloned?.content?.[k]) {
-        cells.push({ src: cloned.content[k], set: (v) => { cloned.content[k] = v; } });
+        cells.push({
+          src: cloned.content[k],
+          set: (v) => {
+            cloned.content[k] = v;
+          },
+        });
       }
     }
   }
   await mapLimit(cells, exportEmbedConcurrency(), async (cell) => {
     cell.set(
-      await toDataUrlIfLocal(repoRoot, cell.src, { includeClient, transform, embedRemote, cache }),
+      await toDataUrlIfLocal(repoRoot, cell.src, {
+        includeClient,
+        transform,
+        embedRemote,
+        cache,
+      }),
     );
   });
   return slides;

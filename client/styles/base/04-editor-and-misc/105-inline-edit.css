@@ -83,7 +83,10 @@
     0 0 0 1px hsl(0 0% 100% / 0.55),
     inset 0 0 0 1px hsl(0 0% 100% / 0.45);
   opacity: 0;
-  transition: opacity 0.12s ease, border-color 0.12s ease, background-color 0.12s ease;
+  transition:
+    opacity 0.12s ease,
+    border-color 0.12s ease,
+    background-color 0.12s ease;
 }
 
 /* Reveal all outlines when hovering anywhere on the slide (Keynote-style). */
@@ -216,7 +219,10 @@
   box-shadow: 0 2px 6px hsl(0 0% 0% / 0.12);
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.12s ease, background-color 0.12s ease, border-color 0.12s ease;
+  transition:
+    opacity 0.12s ease,
+    background-color 0.12s ease,
+    border-color 0.12s ease;
 }
 
 .ie-overlay .ie-ghost-plus {
@@ -272,7 +278,9 @@
   transition: opacity 0.12s ease;
 }
 
-.thumb.is-inline-edit:hover .image-placeholder.is-empty .image-placeholder-inner {
+.thumb.is-inline-edit:hover
+  .image-placeholder.is-empty
+  .image-placeholder-inner {
   opacity: 0;
 }
 
@@ -294,7 +302,10 @@
   box-shadow: 0 2px 6px hsl(0 0% 0% / 0.15);
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.12s ease, background-color 0.12s ease, transform 0.08s ease;
+  transition:
+    opacity 0.12s ease,
+    background-color 0.12s ease,
+    transform 0.08s ease;
 }
 
 .thumb.is-inline-edit:hover .ie-overlay .ie-clear:not(.ie-item-scoped),
@@ -327,7 +338,9 @@
   cursor: grab;
   touch-action: none; /* the drag is pointer-based; don't let touch scroll it */
   opacity: 0;
-  transition: opacity 0.12s ease, background-color 0.12s ease;
+  transition:
+    opacity 0.12s ease,
+    background-color 0.12s ease;
 }
 
 .thumb.is-inline-edit:hover .ie-overlay .ie-card-grip:not(.ie-item-scoped),
@@ -404,13 +417,23 @@
 }
 
 @keyframes ie-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes ie-pop-in {
-  from { opacity: 0; transform: translate(-50%, -48%) scale(0.98); }
-  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 
 .ie-md-modal .ie-md-header {
@@ -517,8 +540,14 @@
 }
 
 @keyframes ie-coach-in {
-  from { opacity: 0; transform: translate(-50%, 8px); }
-  to { opacity: 1; transform: translate(-50%, 0); }
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -545,7 +574,9 @@
   cursor: grab;
   touch-action: none;
   z-index: 4;
-  transition: transform 0.1s ease, background-color 0.1s ease;
+  transition:
+    transform 0.1s ease,
+    background-color 0.1s ease;
 }
 
 /* Crosshair inside the ring. */

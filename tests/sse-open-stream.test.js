@@ -118,7 +118,9 @@ test('onClose fires exactly once, also under a double close event', () => {
   openSseStream(req, res, {
     guard: false,
     heartbeatMs: 0,
-    onClose: () => { closes += 1; },
+    onClose: () => {
+      closes += 1;
+    },
   });
 
   req.emit('close');
@@ -134,7 +136,9 @@ test('close() is idempotent and suppresses a later onClose (replace race)', (t) 
   const stream = openSseStream(req, res, {
     guard: false,
     heartbeatMs: 1000,
-    onClose: () => { closes += 1; },
+    onClose: () => {
+      closes += 1;
+    },
   });
 
   // The handler closes the stream itself (as MCP GET does when a new stream

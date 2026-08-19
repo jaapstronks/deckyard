@@ -30,15 +30,26 @@ import { createCollectionsApi } from '../../../../lib/slide-collections/api.js';
  * @param {() => boolean} opts.isBusy - read host busy flag.
  * @returns {object} library-compose controller
  */
-export function createLibraryCompose({ h, api, onSelectionChange, setStatus, isBusy }) {
+export function createLibraryCompose({
+  h,
+  api,
+  onSelectionChange,
+  setStatus,
+  isBusy,
+}) {
   const syncUI = () => onSelectionChange?.();
 
   // ===== Panel DOM =====
-  const panel = h('div', { class: 'creation-panel is-hidden', 'data-method': 'library' });
+  const panel = h('div', {
+    class: 'creation-panel is-hidden',
+    'data-method': 'library',
+  });
 
   // Source toggle: start from a saved Collection, or pick from all slides.
   let libraryMode = 'all'; // 'all' | 'collections'
-  const sourceTabs = h('div', { class: 'sb-segmented creation-library-source' });
+  const sourceTabs = h('div', {
+    class: 'sb-segmented creation-library-source',
+  });
   const btnSourceCollections = h('button', {
     type: 'button',
     class: 'sb-segmented-btn',
@@ -55,11 +66,13 @@ export function createLibraryCompose({ h, api, onSelectionChange, setStatus, isB
     class: 'help modal-hint',
     text: t(
       'list.creationView.library.help',
-      'Pick reusable slides to compose a new deck. Check slides to add them, then drag to reorder.'
+      'Pick reusable slides to compose a new deck. Check slides to add them, then drag to reorder.',
     ),
   });
   const pickerMount = h('div', { class: 'creation-library-picker' });
-  const collectionsMount = h('div', { class: 'creation-library-collections is-hidden' });
+  const collectionsMount = h('div', {
+    class: 'creation-library-collections is-hidden',
+  });
   const trayWrap = h('div', { class: 'creation-library-tray is-hidden' });
   panel.append(sourceTabs, hint, pickerMount, collectionsMount, trayWrap);
 
@@ -83,10 +96,14 @@ export function createLibraryCompose({ h, api, onSelectionChange, setStatus, isB
     trayWrap.append(
       h('div', {
         class: 'field-label',
-        text: t('list.creationView.library.selected', 'Selected slides ({count})', {
-          count: String(items.length),
-        }),
-      })
+        text: t(
+          'list.creationView.library.selected',
+          'Selected slides ({count})',
+          {
+            count: String(items.length),
+          },
+        ),
+      }),
     );
 
     const list = h('div', { class: 'creation-tray-list' });
@@ -100,7 +117,10 @@ export function createLibraryCompose({ h, api, onSelectionChange, setStatus, isB
         h('span', { class: 'creation-tray-order', text: String(index + 1) }),
         h('span', {
           class: 'creation-tray-name',
-          text: item.name || item.slideType || t('slideLibrary.preview.untitled', 'Untitled'),
+          text:
+            item.name ||
+            item.slideType ||
+            t('slideLibrary.preview.untitled', 'Untitled'),
         }),
         h('button', {
           type: 'button',
@@ -108,7 +128,7 @@ export function createLibraryCompose({ h, api, onSelectionChange, setStatus, isB
           'aria-label': t('common.remove', 'Remove'),
           text: '×',
           onclick: () => deselectFromTray(item.id),
-        })
+        }),
       );
 
       // Drag to reorder within the tray.
@@ -117,7 +137,9 @@ export function createLibraryCompose({ h, api, onSelectionChange, setStatus, isB
         e.dataTransfer.effectAllowed = 'move';
         chip.classList.add('is-dragging');
       });
-      chip.addEventListener('dragend', () => chip.classList.remove('is-dragging'));
+      chip.addEventListener('dragend', () =>
+        chip.classList.remove('is-dragging'),
+      );
       chip.addEventListener('dragover', (e) => {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
@@ -188,7 +210,7 @@ export function createLibraryCompose({ h, api, onSelectionChange, setStatus, isB
         h('div', {
           class: 'help is-error',
           text: t('slideLibrary.loadError', 'Failed to load slide library.'),
-        })
+        }),
       );
     }
   };
@@ -229,13 +251,23 @@ export function createLibraryCompose({ h, api, onSelectionChange, setStatus, isB
     selectedById = new Map(resolved.map((it) => [it.id, it]));
     selectedOrder = resolved.map((it) => it.id);
     // Reflect the active collection in the chooser.
-    for (const btn of collectionsMount.querySelectorAll('.creation-collection-card')) {
-      btn.classList.toggle('is-active', btn.getAttribute('data-id') === collection.id);
+    for (const btn of collectionsMount.querySelectorAll(
+      '.creation-collection-card',
+    )) {
+      btn.classList.toggle(
+        'is-active',
+        btn.getAttribute('data-id') === collection.id,
+      );
     }
     renderTray();
     syncUI();
     if (!resolved.length) {
-      setStatus(t('list.creationView.library.collectionEmpty', 'This collection has no available slides.'));
+      setStatus(
+        t(
+          'list.creationView.library.collectionEmpty',
+          'This collection has no available slides.',
+        ),
+      );
     } else {
       setStatus('');
     }
@@ -243,13 +275,19 @@ export function createLibraryCompose({ h, api, onSelectionChange, setStatus, isB
 
   const renderCollectionsChooser = (collections) => {
     collectionsMount.innerHTML = '';
-    const all = [...(collections?.personal || []), ...(collections?.organization || [])];
+    const all = [
+      ...(collections?.personal || []),
+      ...(collections?.organization || []),
+    ];
     if (!all.length) {
       collectionsMount.append(
         h('div', {
           class: 'help',
-          text: t('list.creationView.library.noCollections', 'No collections yet. Create one from the slide library to start decks from it.'),
-        })
+          text: t(
+            'list.creationView.library.noCollections',
+            'No collections yet. Create one from the slide library to start decks from it.',
+          ),
+        }),
       );
       return;
     }
@@ -262,19 +300,34 @@ export function createLibraryCompose({ h, api, onSelectionChange, setStatus, isB
         onclick: () => seedCollection(col),
       });
       card.append(
-        h('span', { class: 'creation-collection-card-name', text: col.name || t('slideLibrary.preview.untitled', 'Untitled') })
+        h('span', {
+          class: 'creation-collection-card-name',
+          text: col.name || t('slideLibrary.preview.untitled', 'Untitled'),
+        }),
       );
       const meta = h('span', { class: 'creation-collection-card-meta' });
       if (col.shelf === 'organization') {
-        meta.append(h('span', { class: 'creation-collection-card-badge', text: t('slideLibrary.shelf.organization', 'Team') }));
+        meta.append(
+          h('span', {
+            class: 'creation-collection-card-badge',
+            text: t('slideLibrary.shelf.organization', 'Team'),
+          }),
+        );
       }
       meta.append(
         h('span', {
           class: 'creation-collection-card-count',
-          text: t('list.creationView.library.collectionCount', '{count} slides', {
-            count: String(col.slideCount ?? (Array.isArray(col.slideIds) ? col.slideIds.length : 0)),
-          }),
-        })
+          text: t(
+            'list.creationView.library.collectionCount',
+            '{count} slides',
+            {
+              count: String(
+                col.slideCount ??
+                  (Array.isArray(col.slideIds) ? col.slideIds.length : 0),
+              ),
+            },
+          ),
+        }),
       );
       card.append(meta);
       grid.append(card);
@@ -287,7 +340,7 @@ export function createLibraryCompose({ h, api, onSelectionChange, setStatus, isB
     collectionsLoaded = true;
     collectionsMount.innerHTML = '';
     collectionsMount.append(
-      h('div', { class: 'help', text: t('common.loading', 'Loading…') })
+      h('div', { class: 'help', text: t('common.loading', 'Loading…') }),
     );
     try {
       const collections = await collectionsApi.listAll();
@@ -295,7 +348,13 @@ export function createLibraryCompose({ h, api, onSelectionChange, setStatus, isB
     } catch {
       collectionsMount.innerHTML = '';
       collectionsMount.append(
-        h('div', { class: 'help is-error', text: t('list.creationView.library.collectionsError', 'Failed to load collections.') })
+        h('div', {
+          class: 'help is-error',
+          text: t(
+            'list.creationView.library.collectionsError',
+            'Failed to load collections.',
+          ),
+        }),
       );
     }
   };
@@ -317,20 +376,34 @@ export function createLibraryCompose({ h, api, onSelectionChange, setStatus, isB
     syncUI();
   };
 
-  btnSourceCollections.addEventListener('click', () => switchMode('collections'));
+  btnSourceCollections.addEventListener('click', () =>
+    switchMode('collections'),
+  );
   btnSourceAll.addEventListener('click', () => switchMode('all'));
 
   // Update the panel's own controls to match the current source. Called from
   // the host's syncUI (the source toggle and hint live inside this panel).
   const syncPanel = () => {
-    btnSourceCollections.classList.toggle('is-active', libraryMode === 'collections');
+    btnSourceCollections.classList.toggle(
+      'is-active',
+      libraryMode === 'collections',
+    );
     btnSourceAll.classList.toggle('is-active', libraryMode === 'all');
     pickerMount.classList.toggle('is-hidden', libraryMode !== 'all');
-    collectionsMount.classList.toggle('is-hidden', libraryMode !== 'collections');
+    collectionsMount.classList.toggle(
+      'is-hidden',
+      libraryMode !== 'collections',
+    );
     hint.textContent =
       libraryMode === 'collections'
-        ? t('list.creationView.library.collectionsHelp', 'Pick a collection to pre-fill the deck. Reorder or remove slides below, then create.')
-        : t('list.creationView.library.help', 'Pick reusable slides to compose a new deck. Check slides to add them, then drag to reorder.');
+        ? t(
+            'list.creationView.library.collectionsHelp',
+            'Pick a collection to pre-fill the deck. Reorder or remove slides below, then create.',
+          )
+        : t(
+            'list.creationView.library.help',
+            'Pick reusable slides to compose a new deck. Check slides to add them, then drag to reorder.',
+          );
   };
 
   // Compose a new deck from the selected library slides (batch primitive,
@@ -345,7 +418,12 @@ export function createLibraryCompose({ h, api, onSelectionChange, setStatus, isB
   const compose = async ({ lang, theme, nav, close, setBusy }) => {
     const items = orderedSelectedItems();
     if (!items.length) {
-      setStatus(t('list.creationView.library.selectFirst', 'Select at least one slide.'));
+      setStatus(
+        t(
+          'list.creationView.library.selectFirst',
+          'Select at least one slide.',
+        ),
+      );
       return;
     }
     setBusy(true);
@@ -354,10 +432,14 @@ export function createLibraryCompose({ h, api, onSelectionChange, setStatus, isB
       const created = await createDeckFromLibraryItems({
         api,
         items,
-        title: t('slideLibrary.newPresentation.defaultTitle', 'New Presentation'),
+        title: t(
+          'slideLibrary.newPresentation.defaultTitle',
+          'New Presentation',
+        ),
         theme,
         lang,
-        sourceCollectionId: libraryMode === 'collections' ? activeCollectionId : null,
+        sourceCollectionId:
+          libraryMode === 'collections' ? activeCollectionId : null,
       });
       close();
       nav?.(`/app/${created.id}?lang=${encodeURIComponent(lang)}`);
@@ -389,7 +471,9 @@ export function createLibraryCompose({ h, api, onSelectionChange, setStatus, isB
     /** Seed the tray from a resolved item list. */
     seedItems,
     /** Force the active source ('all' | 'collections') without switch side effects. */
-    setMode: (mode) => { libraryMode = mode; },
+    setMode: (mode) => {
+      libraryMode = mode;
+    },
     /** Current source mode. */
     getMode: () => libraryMode,
     /** Update the panel's own source toggle + hint (call from host syncUI). */

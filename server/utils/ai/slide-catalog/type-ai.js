@@ -3,34 +3,91 @@
 // Source of truth: the `ai.js` in each shared/slide-types/types/<name>/.
 
 import { ai as chapterTitleSlideAi } from '../../../../shared/slide-types/types/chapter-title-slide/ai.js';
-import { ai as chartSlideAi, aiExamples as chartSlideAiExamples } from '../../../../shared/slide-types/types/chart-slide/ai.js';
-import { ai as comparisonSlideAi, aiExamples as comparisonSlideAiExamples } from '../../../../shared/slide-types/types/comparison-slide/ai.js';
-import { ai as contentSlideAi, aiExamples as contentSlideAiExamples } from '../../../../shared/slide-types/types/content-slide/ai.js';
+import {
+  ai as chartSlideAi,
+  aiExamples as chartSlideAiExamples,
+} from '../../../../shared/slide-types/types/chart-slide/ai.js';
+import {
+  ai as comparisonSlideAi,
+  aiExamples as comparisonSlideAiExamples,
+} from '../../../../shared/slide-types/types/comparison-slide/ai.js';
+import {
+  ai as contentSlideAi,
+  aiExamples as contentSlideAiExamples,
+} from '../../../../shared/slide-types/types/content-slide/ai.js';
 import { ai as countdownSlideAi } from '../../../../shared/slide-types/types/countdown-slide/ai.js';
-import { ai as cycleSlideAi, aiExamples as cycleSlideAiExamples } from '../../../../shared/slide-types/types/cycle-slide/ai.js';
+import {
+  ai as cycleSlideAi,
+  aiExamples as cycleSlideAiExamples,
+} from '../../../../shared/slide-types/types/cycle-slide/ai.js';
 import { ai as embedSlideAi } from '../../../../shared/slide-types/types/embed-slide/ai.js';
 import { ai as endSlideAi } from '../../../../shared/slide-types/types/end-slide/ai.js';
 import { ai as feedbackSlideAi } from '../../../../shared/slide-types/types/feedback-slide/ai.js';
-import { ai as funnelSlideAi, aiExamples as funnelSlideAiExamples } from '../../../../shared/slide-types/types/funnel-slide/ai.js';
-import { ai as gallerySlideAi, aiExamples as gallerySlideAiExamples } from '../../../../shared/slide-types/types/gallery-slide/ai.js';
-import { ai as iconCardGridSlideAi, aiExamples as iconCardGridSlideAiExamples } from '../../../../shared/slide-types/types/icon-card-grid-slide/ai.js';
+import {
+  ai as funnelSlideAi,
+  aiExamples as funnelSlideAiExamples,
+} from '../../../../shared/slide-types/types/funnel-slide/ai.js';
+import {
+  ai as gallerySlideAi,
+  aiExamples as gallerySlideAiExamples,
+} from '../../../../shared/slide-types/types/gallery-slide/ai.js';
+import {
+  ai as iconCardGridSlideAi,
+  aiExamples as iconCardGridSlideAiExamples,
+} from '../../../../shared/slide-types/types/icon-card-grid-slide/ai.js';
 import { ai as imageSlideAi } from '../../../../shared/slide-types/types/image-slide/ai.js';
-import { ai as imageTextSlideAi, aiExamples as imageTextSlideAiExamples } from '../../../../shared/slide-types/types/image-text-slide/ai.js';
-import { ai as kpiMetricsSlideAi, aiExamples as kpiMetricsSlideAiExamples } from '../../../../shared/slide-types/types/kpi-metrics-slide/ai.js';
+import {
+  ai as imageTextSlideAi,
+  aiExamples as imageTextSlideAiExamples,
+} from '../../../../shared/slide-types/types/image-text-slide/ai.js';
+import {
+  ai as kpiMetricsSlideAi,
+  aiExamples as kpiMetricsSlideAiExamples,
+} from '../../../../shared/slide-types/types/kpi-metrics-slide/ai.js';
 import { ai as likertSlideAi } from '../../../../shared/slide-types/types/likert-slide/ai.js';
 import { ai as likertSliderSlideAi } from '../../../../shared/slide-types/types/likert-slider-slide/ai.js';
-import { ai as listSlideAi, aiExamples as listSlideAiExamples } from '../../../../shared/slide-types/types/list-slide/ai.js';
-import { ai as logoWallSlideAi, aiExamples as logoWallSlideAiExamples } from '../../../../shared/slide-types/types/logo-wall-slide/ai.js';
-import { ai as matrixSlideAi, aiExamples as matrixSlideAiExamples } from '../../../../shared/slide-types/types/matrix-slide/ai.js';
+import {
+  ai as listSlideAi,
+  aiExamples as listSlideAiExamples,
+} from '../../../../shared/slide-types/types/list-slide/ai.js';
+import {
+  ai as logoWallSlideAi,
+  aiExamples as logoWallSlideAiExamples,
+} from '../../../../shared/slide-types/types/logo-wall-slide/ai.js';
+import {
+  ai as matrixSlideAi,
+  aiExamples as matrixSlideAiExamples,
+} from '../../../../shared/slide-types/types/matrix-slide/ai.js';
 import { ai as payoffSlideAi } from '../../../../shared/slide-types/types/payoff-slide/ai.js';
 import { ai as pollSlideAi } from '../../../../shared/slide-types/types/poll-slide/ai.js';
-import { ai as processSlideAi, aiExamples as processSlideAiExamples } from '../../../../shared/slide-types/types/process-slide/ai.js';
-import { ai as pyramidSlideAi, aiExamples as pyramidSlideAiExamples } from '../../../../shared/slide-types/types/pyramid-slide/ai.js';
-import { ai as quoteSlideAi, aiExamples as quoteSlideAiExamples } from '../../../../shared/slide-types/types/quote-slide/ai.js';
-import { ai as tableSlideAi, aiExamples as tableSlideAiExamples } from '../../../../shared/slide-types/types/table-slide/ai.js';
-import { ai as teamCardsSlideAi, aiExamples as teamCardsSlideAiExamples } from '../../../../shared/slide-types/types/team-cards-slide/ai.js';
-import { ai as textBlocksSlideAi, aiExamples as textBlocksSlideAiExamples } from '../../../../shared/slide-types/types/text-blocks-slide/ai.js';
-import { ai as timelineSlideAi, aiExamples as timelineSlideAiExamples } from '../../../../shared/slide-types/types/timeline-slide/ai.js';
+import {
+  ai as processSlideAi,
+  aiExamples as processSlideAiExamples,
+} from '../../../../shared/slide-types/types/process-slide/ai.js';
+import {
+  ai as pyramidSlideAi,
+  aiExamples as pyramidSlideAiExamples,
+} from '../../../../shared/slide-types/types/pyramid-slide/ai.js';
+import {
+  ai as quoteSlideAi,
+  aiExamples as quoteSlideAiExamples,
+} from '../../../../shared/slide-types/types/quote-slide/ai.js';
+import {
+  ai as tableSlideAi,
+  aiExamples as tableSlideAiExamples,
+} from '../../../../shared/slide-types/types/table-slide/ai.js';
+import {
+  ai as teamCardsSlideAi,
+  aiExamples as teamCardsSlideAiExamples,
+} from '../../../../shared/slide-types/types/team-cards-slide/ai.js';
+import {
+  ai as textBlocksSlideAi,
+  aiExamples as textBlocksSlideAiExamples,
+} from '../../../../shared/slide-types/types/text-blocks-slide/ai.js';
+import {
+  ai as timelineSlideAi,
+  aiExamples as timelineSlideAiExamples,
+} from '../../../../shared/slide-types/types/timeline-slide/ai.js';
 import { ai as titleSlideAi } from '../../../../shared/slide-types/types/title-slide/ai.js';
 import { ai as videoSlideAi } from '../../../../shared/slide-types/types/video-slide/ai.js';
 

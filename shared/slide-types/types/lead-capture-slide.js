@@ -1,4 +1,10 @@
-import { bgClass, escapeHtml, nonEmpty, BACKGROUND_FIELD, cryptoUuid } from '../helpers.js';
+import {
+  bgClass,
+  escapeHtml,
+  nonEmpty,
+  BACKGROUND_FIELD,
+  cryptoUuid,
+} from '../helpers.js';
 import { markdownToSafeHtml } from '../../markdown.js';
 
 export default {
@@ -78,7 +84,8 @@ export default {
       type: 'string',
       required: true,
       maxLength: 300,
-      helpText: 'Text shown next to the consent checkbox (e.g., "I agree to receive communications...")',
+      helpText:
+        'Text shown next to the consent checkbox (e.g., "I agree to receive communications...")',
     },
     {
       key: 'privacyUrl',
@@ -103,8 +110,10 @@ export default {
       privacyText: 'Ik ga akkoord met het ontvangen van communicatie.',
       privacyUrl: '',
       privacyLinkText: 'Privacybeleid',
-      cookieNoticeText: 'Schakel marketingcookies in om dit formulier te versturen.',
-      errorAcceptCookies: 'Accepteer marketingcookies om dit formulier te versturen.',
+      cookieNoticeText:
+        'Schakel marketingcookies in om dit formulier te versturen.',
+      errorAcceptCookies:
+        'Accepteer marketingcookies om dit formulier te versturen.',
       errorEnterName: 'Vul je naam in.',
       errorValidEmail: 'Vul een geldig e-mailadres in.',
       errorAcceptTerms: 'Accepteer de privacyvoorwaarden.',
@@ -124,7 +133,8 @@ export default {
       privacyUrl: '',
       privacyLinkText: 'Privacy Policy',
       cookieNoticeText: 'Please enable marketing cookies to submit this form.',
-      errorAcceptCookies: 'Please accept marketing cookies to submit this form.',
+      errorAcceptCookies:
+        'Please accept marketing cookies to submit this form.',
       errorEnterName: 'Please enter your name.',
       errorValidEmail: 'Please enter a valid email address.',
       errorAcceptTerms: 'Please accept the privacy terms.',
@@ -176,17 +186,30 @@ export default {
     const thankYouMessage = nonEmpty(content?.thankYouMessage);
     const privacyText = nonEmpty(content?.privacyText);
     const privacyUrl = nonEmpty(content?.privacyUrl);
-    const privacyLinkText = nonEmpty(content?.privacyLinkText) || 'Privacy Policy';
-    const cookieNoticeText = nonEmpty(content?.cookieNoticeText) || 'Please enable marketing cookies to submit this form.';
-    const errorAcceptCookies = nonEmpty(content?.errorAcceptCookies) || 'Please accept marketing cookies to submit this form.';
-    const errorEnterName = nonEmpty(content?.errorEnterName) || 'Please enter your name.';
-    const errorValidEmail = nonEmpty(content?.errorValidEmail) || 'Please enter a valid email address.';
-    const errorAcceptTerms = nonEmpty(content?.errorAcceptTerms) || 'Please accept the privacy terms.';
-    const errorGeneric = nonEmpty(content?.errorGeneric) || 'Something went wrong. Please try again.';
+    const privacyLinkText =
+      nonEmpty(content?.privacyLinkText) || 'Privacy Policy';
+    const cookieNoticeText =
+      nonEmpty(content?.cookieNoticeText) ||
+      'Please enable marketing cookies to submit this form.';
+    const errorAcceptCookies =
+      nonEmpty(content?.errorAcceptCookies) ||
+      'Please accept marketing cookies to submit this form.';
+    const errorEnterName =
+      nonEmpty(content?.errorEnterName) || 'Please enter your name.';
+    const errorValidEmail =
+      nonEmpty(content?.errorValidEmail) ||
+      'Please enter a valid email address.';
+    const errorAcceptTerms =
+      nonEmpty(content?.errorAcceptTerms) || 'Please accept the privacy terms.';
+    const errorGeneric =
+      nonEmpty(content?.errorGeneric) ||
+      'Something went wrong. Please try again.';
 
     // Render markdown for description and thank you message
     const descriptionHtml = description ? markdownToSafeHtml(description) : '';
-    const thankYouHtml = thankYouMessage ? markdownToSafeHtml(thankYouMessage) : '';
+    const thankYouHtml = thankYouMessage
+      ? markdownToSafeHtml(thankYouMessage)
+      : '';
 
     // Build privacy label with optional link
     let privacyLabelHtml = escapeHtml(privacyText);

@@ -7,10 +7,26 @@
  *   GET    /api/data-sources/providers     - List available providers
  */
 
-import { badRequest, methodNotAllowed, serveJson, unauthorized, forbidden, jsonError, requireJsonBody, withErrorHandler } from '../../utils/http.js';
+import {
+  badRequest,
+  methodNotAllowed,
+  serveJson,
+  unauthorized,
+  forbidden,
+  jsonError,
+  requireJsonBody,
+  withErrorHandler,
+} from '../../utils/http.js';
 import { isLiveDataEnabled } from '../../config/features.js';
-import { validateDataSource, DATA_SOURCE_PROVIDERS, BINDABLE_SLIDE_TYPES } from '../../../shared/data-source.js';
-import { refreshSlideData, fetchProviderData } from '../../utils/data-source/index.js';
+import {
+  validateDataSource,
+  DATA_SOURCE_PROVIDERS,
+  BINDABLE_SLIDE_TYPES,
+} from '../../../shared/data-source.js';
+import {
+  refreshSlideData,
+  fetchProviderData,
+} from '../../utils/data-source/index.js';
 import { dispatchRoutes } from '../../utils/router.js';
 
 // GET /api/data-sources/providers — list available providers and bindable slide types
@@ -93,11 +109,29 @@ async function handleDataSourceRefresh({ req, res }) {
  * @type {import('../../utils/router.js').Route[]}
  */
 export const ROUTES = [
-  { method: 'GET', pattern: '/api/data-sources/providers', handler: handleProviders },
-  { method: 'POST', pattern: '/api/data-sources/preview', handler: handleDataSourcePreview },
-  { pattern: '/api/data-sources/preview', handler: ({ res }) => methodNotAllowed(res, ['POST']) },
-  { method: 'POST', pattern: '/api/data-sources/refresh', handler: handleDataSourceRefresh },
-  { pattern: '/api/data-sources/refresh', handler: ({ res }) => methodNotAllowed(res, ['POST']) },
+  {
+    method: 'GET',
+    pattern: '/api/data-sources/providers',
+    handler: handleProviders,
+  },
+  {
+    method: 'POST',
+    pattern: '/api/data-sources/preview',
+    handler: handleDataSourcePreview,
+  },
+  {
+    pattern: '/api/data-sources/preview',
+    handler: ({ res }) => methodNotAllowed(res, ['POST']),
+  },
+  {
+    method: 'POST',
+    pattern: '/api/data-sources/refresh',
+    handler: handleDataSourceRefresh,
+  },
+  {
+    pattern: '/api/data-sources/refresh',
+    handler: ({ res }) => methodNotAllowed(res, ['POST']),
+  },
 ];
 
 /**

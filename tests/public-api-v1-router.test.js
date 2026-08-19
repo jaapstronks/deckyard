@@ -25,7 +25,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
 
-process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
+process.env.AUTH_SECRET = ['deckyard', 'test', 'auth']
+  .join('-')
+  .padEnd(40, '0');
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 process.env.STORAGE_MODE = 'postgres';
 
@@ -39,7 +41,8 @@ const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage } = await import('../server/storage/lifecycle.js');
 const { hashToken } = await import('../server/utils/secure-tokens.js');
-const { handlePublicApiV1 } = await import('../server/routes/public-api/v1/index.js');
+const { handlePublicApiV1 } =
+  await import('../server/routes/public-api/v1/index.js');
 const { SLIDE_TYPES } = await import('../shared/slide-types.js');
 
 /**
@@ -51,7 +54,11 @@ async function installDb() {
     organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
     api_keys: [
       apiKeyRow({ id: 'key-valid', rawKey: VALID_KEY }),
-      apiKeyRow({ id: 'key-revoked', rawKey: REVOKED_KEY, revoked_at: '2026-08-01T00:00:00.000Z' }),
+      apiKeyRow({
+        id: 'key-revoked',
+        rawKey: REVOKED_KEY,
+        revoked_at: '2026-08-01T00:00:00.000Z',
+      }),
       apiKeyRow({ id: 'key-limit', rawKey: LIMIT_KEY }),
     ],
   });
@@ -94,15 +101,24 @@ function makeCtx(method, pathname, { bearer = null } = {}) {
     statusCode: null,
     body: null,
     headers: {},
-    setHeader(name, value) { this.headers[name] = value; },
+    setHeader(name, value) {
+      this.headers[name] = value;
+    },
     writeHead(status, headers) {
       this.statusCode = status;
       Object.assign(this.headers, headers);
     },
-    end(payload) { this.body = payload ?? null; },
+    end(payload) {
+      this.body = payload ?? null;
+    },
   };
 
-  return { req, res, url: new URL(`http://localhost${pathname}`), repoRoot: process.cwd() };
+  return {
+    req,
+    res,
+    url: new URL(`http://localhost${pathname}`),
+    repoRoot: process.cwd(),
+  };
 }
 
 function jsonBody(res) {
@@ -117,11 +133,22 @@ function jsonBody(res) {
  * @param {string} code - expected machine code
  */
 function assertV1Error(res, status, code) {
-  assert.equal(res.statusCode, status, `expected ${status}, got ${res.statusCode}`);
+  assert.equal(
+    res.statusCode,
+    status,
+    `expected ${status}, got ${res.statusCode}`,
+  );
   const body = jsonBody(res);
   assert.equal(body.error, code, `error code should be ${code}`);
-  assert.ok(!('ok' in body), 'v1 envelope must not carry the internal `ok` discriminator');
-  assert.match(body.error, /^[a-z][a-z0-9_]*$/, 'error is a snake_case machine code');
+  assert.ok(
+    !('ok' in body),
+    'v1 envelope must not carry the internal `ok` discriminator',
+  );
+  assert.match(
+    body.error,
+    /^[a-z][a-z0-9_]*$/,
+    'error is a snake_case machine code',
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -148,7 +175,10 @@ test('GET /api/v1/docs serves the Swagger UI page without authentication', async
   assert.equal(await handlePublicApiV1(ctx), true);
   assert.equal(ctx.res.statusCode, 200);
   assert.match(ctx.res.headers['Content-Type'], /text\/html/);
-  assert.ok(String(ctx.res.body).includes('/api/v1/openapi.yaml'), 'the page loads the spec');
+  assert.ok(
+    String(ctx.res.body).includes('/api/v1/openapi.yaml'),
+    'the page loads the spec',
+  );
 });
 
 test('GET /api/v1/openapi.yaml serves the specification without authentication', async () => {
@@ -172,7 +202,7 @@ test('GET /api/v1/schema/deck.json serves the generated deck schema', async () =
   for (const name of Object.keys(SLIDE_TYPES)) {
     assert.ok(
       JSON.stringify(schema).includes(name),
-      `the schema mentions ${name}`
+      `the schema mentions ${name}`,
     );
   }
 });
@@ -184,7 +214,10 @@ test('GET /api/v1/schema/slide-types/:name.json serves one content schema, 404 u
   assert.equal(known.res.statusCode, 200);
   assert.ok(jsonBody(known.res).properties, 'a JSON Schema object comes back');
 
-  const unknown = makeCtx('GET', '/api/v1/schema/slide-types/never-a-type.json');
+  const unknown = makeCtx(
+    'GET',
+    '/api/v1/schema/slide-types/never-a-type.json',
+  );
   await handlePublicApiV1(unknown);
   assertV1Error(unknown.res, 404, 'not_found');
 
@@ -195,11 +228,19 @@ test('GET /api/v1/schema/slide-types/:name.json serves one content schema, 404 u
 
 test('POST on a meta endpoint answers 405 in the v1 envelope with Allow', async () => {
   await installDb();
-  for (const pathname of ['/api/v1/', '/api/v1/docs', '/api/v1/openapi.yaml', '/api/v1/schema/deck.json']) {
+  for (const pathname of [
+    '/api/v1/',
+    '/api/v1/docs',
+    '/api/v1/openapi.yaml',
+    '/api/v1/schema/deck.json',
+  ]) {
     const ctx = makeCtx('POST', pathname);
     await handlePublicApiV1(ctx);
     assertV1Error(ctx.res, 405, 'method_not_allowed');
-    assert.ok(ctx.res.headers['Allow'], `${pathname} names the accepted methods`);
+    assert.ok(
+      ctx.res.headers['Allow'],
+      `${pathname} names the accepted methods`,
+    );
   }
 });
 
@@ -216,7 +257,11 @@ test('a request without an Authorization header is refused with 401', async () =
 
 test('a malformed, unknown or revoked key is refused with 401', async () => {
   await installDb();
-  for (const bearer of ['not-a-key', 'dk_live_unknown-key-00000000000000000', REVOKED_KEY]) {
+  for (const bearer of [
+    'not-a-key',
+    'dk_live_unknown-key-00000000000000000',
+    REVOKED_KEY,
+  ]) {
     const ctx = makeCtx('GET', '/api/v1/presentations', { bearer });
     await handlePublicApiV1(ctx);
     assertV1Error(ctx.res, 401, 'unauthorized');
@@ -228,7 +273,11 @@ test('a valid key reaches the feature handlers with its own organization scope',
   const ctx = makeCtx('GET', '/api/v1/slide-types', { bearer: VALID_KEY });
   assert.equal(await handlePublicApiV1(ctx), true);
 
-  assert.equal(ctx.res.statusCode, 200, 'the chain auth → ctx → handler completes');
+  assert.equal(
+    ctx.res.statusCode,
+    200,
+    'the chain auth → ctx → handler completes',
+  );
   const body = jsonBody(ctx.res);
   assert.equal(body.count, Object.keys(SLIDE_TYPES).length);
 });
@@ -264,12 +313,19 @@ test('the 61st request within a minute is refused with 429 and Retry-After', asy
     last = makeCtx('GET', '/api/v1/never-a-route', { bearer: LIMIT_KEY });
     await handlePublicApiV1(last);
     if (i < 60) {
-      assert.equal(last.res.statusCode, 404, `request ${i + 1} passes the limiter`);
+      assert.equal(
+        last.res.statusCode,
+        404,
+        `request ${i + 1} passes the limiter`,
+      );
     }
   }
 
   assertV1Error(last.res, 429, 'rate_limited');
-  assert.ok(last.res.headers['Retry-After'], 'the limiter names a retry moment');
+  assert.ok(
+    last.res.headers['Retry-After'],
+    'the limiter names a retry moment',
+  );
 });
 
 // ---------------------------------------------------------------------------

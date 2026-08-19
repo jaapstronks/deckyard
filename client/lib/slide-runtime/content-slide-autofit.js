@@ -36,9 +36,7 @@ const findBodyAndContainer = (slide) => {
     return { body, container: inner };
   }
   if (slide.classList.contains('slide-image-text')) {
-    const copy = slide.querySelector(
-      ':scope > .slide-inner > .split > .copy'
-    );
+    const copy = slide.querySelector(':scope > .slide-inner > .split > .copy');
     const body = copy?.querySelector(':scope > .body') || null;
     return { body, container: copy };
   }

@@ -4,7 +4,7 @@ import { svgText } from './svg.js';
 
 export function renderBarSvg(
   { labels, values },
-  { showValues = false, xAxisLabel = '', yAxisLabel = '' } = {}
+  { showValues = false, xAxisLabel = '', yAxisLabel = '' } = {},
 ) {
   const W = 1600;
   const H = 620;
@@ -56,7 +56,7 @@ export function renderBarSvg(
         cls: 'chart-axis-label',
         size: 22,
         opacity: 0.85,
-      }
+      },
     );
     const vLabel = showValues
       ? svgText(x + barW / 2, y - 10, v == null ? '' : String(v), {
@@ -78,9 +78,7 @@ export function renderBarSvg(
   // Y ticks + faint gridlines
   let yTicks = '';
   for (const tv of ticks) {
-    const y =
-      baseY -
-      (tv / (ticks[ticks.length - 1] || maxV || 1)) * ph;
+    const y = baseY - (tv / (ticks[ticks.length - 1] || maxV || 1)) * ph;
     yTicks += `
       <line x1="${plotX}" y1="${y}" x2="${plotX + plotW}" y2="${y}" class="chart-grid"></line>
       ${svgText(plotX - 12, y + 7, formatTick(tv), {

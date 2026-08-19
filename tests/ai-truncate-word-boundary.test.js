@@ -15,7 +15,8 @@ function truncatedBody(text, type = 'content-slide') {
 }
 
 test('over-long body is cut at a word boundary, not mid-word', () => {
-  const sentence = 'We are deeply sorry for the disruption and we apologize for the problems caused. ';
+  const sentence =
+    'We are deeply sorry for the disruption and we apologize for the problems caused. ';
   const body = truncatedBody(sentence.repeat(40));
 
   assert.ok(body.endsWith('...'), 'ellipsis is appended');
@@ -24,7 +25,7 @@ test('over-long body is cut at a word boundary, not mid-word', () => {
   // The defect this guards: a hard slice left "...we apologize for the p".
   assert.ok(
     !/\s\S{1,2}$/.test(visible) || sentence.includes(visible.split(/\s/).pop()),
-    'the final token is a whole word from the source, not a fragment'
+    'the final token is a whole word from the source, not a fragment',
   );
 });
 

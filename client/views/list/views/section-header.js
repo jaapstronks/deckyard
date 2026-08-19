@@ -15,24 +15,40 @@ import { iconUrl } from '../../../../shared/icon-names.js';
  *   to hide the badge entirely; omit for the default "{count} presentations".
  * @returns {HTMLElement}
  */
-export function buildSectionHeader({ h, icon, title, count, onViewAll, hideViewAll = false, badge }) {
-  const badgeText = badge !== undefined
-    ? badge
-    : t('list.section.count', '{count} presentations', { count });
+export function buildSectionHeader({
+  h,
+  icon,
+  title,
+  count,
+  onViewAll,
+  hideViewAll = false,
+  badge,
+}) {
+  const badgeText =
+    badge !== undefined
+      ? badge
+      : t('list.section.count', '{count} presentations', { count });
 
   return h('div', { class: 'presentation-section-header' }, [
     h('div', { class: 'presentation-section-title' }, [
-      h('img', { class: 'presentation-section-icon', src: iconUrl(icon), alt: '', 'aria-hidden': 'true' }),
+      h('img', {
+        class: 'presentation-section-icon',
+        src: iconUrl(icon),
+        alt: '',
+        'aria-hidden': 'true',
+      }),
       document.createTextNode(title + ' '),
       badgeText
         ? h('span', { class: 'presentation-section-badge', text: badgeText })
         : null,
     ]),
-    hideViewAll ? null : h('button', {
-      class: 'presentation-section-link',
-      type: 'button',
-      text: t('list.section.viewAll', 'View all'),
-      onclick: () => onViewAll?.(),
-    }),
+    hideViewAll
+      ? null
+      : h('button', {
+          class: 'presentation-section-link',
+          type: 'button',
+          text: t('list.section.viewAll', 'View all'),
+          onclick: () => onViewAll?.(),
+        }),
   ]);
 }

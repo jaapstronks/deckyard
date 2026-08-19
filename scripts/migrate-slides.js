@@ -23,7 +23,8 @@ import { join, resolve } from 'node:path';
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
 const dirIdx = args.indexOf('--dir');
-const dataDir = dirIdx !== -1 ? resolve(args[dirIdx + 1]) : resolve('data/decks');
+const dataDir =
+  dirIdx !== -1 ? resolve(args[dirIdx + 1]) : resolve('data/decks');
 
 let totalDecks = 0;
 let modifiedDecks = 0;
@@ -46,7 +47,14 @@ function migrateCardStack(slide) {
   const c = slide.content || {};
   const count = parseInt(c.cardCount || '3', 10);
 
-  const defaultIcons = ['lightbulb', 'target', 'users', 'star', 'rocket', 'globe'];
+  const defaultIcons = [
+    'lightbulb',
+    'target',
+    'users',
+    'star',
+    'rocket',
+    'globe',
+  ];
 
   const newContent = {
     title: c.title || '',
@@ -57,7 +65,8 @@ function migrateCardStack(slide) {
 
   for (let i = 1; i <= count && i <= 6; i++) {
     newContent[`card${i}Icon`] = defaultIcons[(i - 1) % defaultIcons.length];
-    newContent[`card${i}Title`] = c[`card${i}Title`] || c[`card${i}Label`] || '';
+    newContent[`card${i}Title`] =
+      c[`card${i}Title`] || c[`card${i}Label`] || '';
     newContent[`card${i}Body`] = c[`card${i}Body`] || '';
   }
 
@@ -176,7 +185,10 @@ function migrateTextBlocksToRows(slide) {
 
   // Row 2
   if (c.row2Enabled === 'yes') {
-    const row2Count = Math.max(1, Math.min(6, parseInt(c.row2Count || '3', 10)));
+    const row2Count = Math.max(
+      1,
+      Math.min(6, parseInt(c.row2Count || '3', 10)),
+    );
     const row2Blocks = [];
     for (let i = 1; i <= row2Count; i++) {
       row2Blocks.push({
@@ -194,7 +206,10 @@ function migrateTextBlocksToRows(slide) {
 
   // Row 3
   if (c.row3Enabled === 'yes') {
-    const row3Count = Math.max(1, Math.min(6, parseInt(c.row3Count || '3', 10)));
+    const row3Count = Math.max(
+      1,
+      Math.min(6, parseInt(c.row3Count || '3', 10)),
+    );
     const row3Blocks = [];
     for (let i = 1; i <= row3Count; i++) {
       row3Blocks.push({
@@ -239,7 +254,8 @@ function migrateTeamCardsToMembers(slide) {
   // Scan beyond count for populated cards
   let maxUsed = 0;
   for (let i = 1; i <= 12; i++) {
-    if (c[`card${i}Name`] || c[`card${i}Image`] || c[`card${i}Byline`]) maxUsed = i;
+    if (c[`card${i}Name`] || c[`card${i}Image`] || c[`card${i}Byline`])
+      maxUsed = i;
   }
   const scanCount = Math.max(count, maxUsed);
 

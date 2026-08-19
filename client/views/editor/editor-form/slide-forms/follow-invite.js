@@ -27,7 +27,7 @@ export function renderFollowInviteForm({
     class: 'help editor-callout',
     text: t(
       'editor.followInvite.explanation',
-      'This "Follow-along invite" slide shows a QR code that lets your audience follow along in their own language and respond to interactive slides (polls, feedback). The slide is left out of publishing and exports. You can switch it off; it then stays in the list (greyed out) but is skipped while presenting.'
+      'This "Follow-along invite" slide shows a QR code that lets your audience follow along in their own language and respond to interactive slides (polls, feedback). The slide is left out of publishing and exports. You can switch it off; it then stays in the list (greyed out) but is skipped while presenting.',
     ),
   });
   form.append(expl);
@@ -48,17 +48,24 @@ export function renderFollowInviteForm({
     cb,
     h('div', {
       class: 'help',
-      text: t('editor.followInvite.useWhilePresenting', 'Use this slide while presenting'),
-    })
+      text: t(
+        'editor.followInvite.useWhilePresenting',
+        'Use this slide while presenting',
+      ),
+    }),
   );
   form.append(toggleRow);
 
   form.append(
-    fieldText(`Titel (${copyLangLabel})`, slide.content.customTitle || '', (v) => {
-      slide.content.customTitle = v;
-      markDirty?.();
-      scheduleUiRefresh?.();
-    })
+    fieldText(
+      `Titel (${copyLangLabel})`,
+      slide.content.customTitle || '',
+      (v) => {
+        slide.content.customTitle = v;
+        markDirty?.();
+        scheduleUiRefresh?.();
+      },
+    ),
   );
   form.append(
     fieldTextarea(
@@ -69,7 +76,7 @@ export function renderFollowInviteForm({
         slide.content.customBody = v;
         markDirty?.();
         scheduleUiRefresh?.();
-      }
-    )
+      },
+    ),
   );
 }

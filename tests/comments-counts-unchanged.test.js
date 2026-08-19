@@ -31,16 +31,17 @@ globalThis.EventSource = class {
 };
 
 const { h } = await import('../client/lib/dom.js');
-const { createCommentsPanel } = await import(
-  '../client/views/editor/comments-panel.js'
-);
+const { createCommentsPanel } =
+  await import('../client/views/editor/comments-panel.js');
 
 /** @param {{counts: Record<string, number>}} state - mutable counts source */
 function makePanel(state) {
   const changeCalls = [];
   const api = async (path) => {
-    if (String(path).includes('/comments/counts')) return { counts: state.counts };
-    if (String(path).includes('/comments')) return { comments: [], openCount: 0 };
+    if (String(path).includes('/comments/counts'))
+      return { counts: state.counts };
+    if (String(path).includes('/comments'))
+      return { comments: [], openCount: 0 };
     return {};
   };
   const panel = createCommentsPanel({

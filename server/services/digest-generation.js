@@ -269,10 +269,16 @@ function validated(parsed, user, analytics) {
 
   // Ensure all required fields exist with reasonable defaults
   return {
-    subject: parsed.subject || `Your weekly engagement insights - ${analytics.totalViews} views`,
+    subject:
+      parsed.subject ||
+      `Your weekly engagement insights - ${analytics.totalViews} views`,
     greeting: (parsed.greeting || `Hi ${name},`).replace('{name}', name),
-    highlights: parsed.highlights || `Your presentations received ${analytics.totalViews} views from ${analytics.uniqueViewers} unique viewers this week.`,
-    topPresentationsIntro: parsed.topPresentationsIntro || 'Here are your top performing presentations:',
+    highlights:
+      parsed.highlights ||
+      `Your presentations received ${analytics.totalViews} views from ${analytics.uniqueViewers} unique viewers this week.`,
+    topPresentationsIntro:
+      parsed.topPresentationsIntro ||
+      'Here are your top performing presentations:',
     topPresentations: analytics.topPresentations.slice(0, 3).map((p) => ({
       title: p.title,
       views: p.views,
@@ -298,10 +304,16 @@ function validatedTeam(parsed, admin, analytics) {
   }
 
   return {
-    subject: parsed.subject || `Your team's weekly engagement - ${analytics.totalViews} views`,
+    subject:
+      parsed.subject ||
+      `Your team's weekly engagement - ${analytics.totalViews} views`,
     greeting: (parsed.greeting || `Hi ${name},`).replace('{name}', name),
-    highlights: parsed.highlights || `Your team's presentations received ${analytics.totalViews} views from ${analytics.uniqueViewers} unique viewers this week.`,
-    topPresentationsIntro: parsed.topPresentationsIntro || 'Top performing presentations across your team:',
+    highlights:
+      parsed.highlights ||
+      `Your team's presentations received ${analytics.totalViews} views from ${analytics.uniqueViewers} unique viewers this week.`,
+    topPresentationsIntro:
+      parsed.topPresentationsIntro ||
+      'Top performing presentations across your team:',
     topPresentations: analytics.topPresentations.slice(0, 5).map((p) => ({
       title: p.title,
       views: p.views,
@@ -380,11 +392,12 @@ function generateNoActivityTeamDigest(admin, analytics) {
 function generateFallbackDigest(user, analytics) {
   const name = user.name || user.email.split('@')[0];
   const viewTrend = analytics.weekOverWeek.views;
-  const trendText = viewTrend.direction === 'up'
-    ? `up ${viewTrend.percentChange}% from last week`
-    : viewTrend.direction === 'down'
-    ? `down ${viewTrend.percentChange}% from last week`
-    : 'similar to last week';
+  const trendText =
+    viewTrend.direction === 'up'
+      ? `up ${viewTrend.percentChange}% from last week`
+      : viewTrend.direction === 'down'
+        ? `down ${viewTrend.percentChange}% from last week`
+        : 'similar to last week';
 
   const topTitle = analytics.topPresentations[0]?.title || 'your presentations';
 
@@ -413,11 +426,12 @@ function generateFallbackDigest(user, analytics) {
 function generateFallbackTeamDigest(admin, analytics) {
   const name = admin.name || admin.email.split('@')[0];
   const viewTrend = analytics.weekOverWeek.views;
-  const trendText = viewTrend.direction === 'up'
-    ? `up ${viewTrend.percentChange}% from last week`
-    : viewTrend.direction === 'down'
-    ? `down ${viewTrend.percentChange}% from last week`
-    : 'similar to last week';
+  const trendText =
+    viewTrend.direction === 'up'
+      ? `up ${viewTrend.percentChange}% from last week`
+      : viewTrend.direction === 'down'
+        ? `down ${viewTrend.percentChange}% from last week`
+        : 'similar to last week';
 
   return {
     subject: `Your team's weekly engagement - ${analytics.totalViews} views`,

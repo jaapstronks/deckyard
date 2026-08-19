@@ -1,6 +1,6 @@
 # Bundled gradients
 
-The image source that ships *inside* Deckyard: a set of abstract gradients
+The image source that ships _inside_ Deckyard: a set of abstract gradients
 rendered from the built-in themes' own palettes, served as static SVG from
 `/assets/gradients/`. No API key, no attribution, no rate limit, no external
 request.
@@ -30,7 +30,7 @@ See [`image-picker-seam.md`](image-picker-seam.md).
 
 - **`paletteFromTheme(theme)`** reads a theme's `brandColors` plus its
   `--t-slide-bg-dark` / `--t-slide-bg-lime` / `--t-slide-bg-mist` /
-  `--t-color-accent` tokens. A theme missing any of those yields *no* palette —
+  `--t-color-accent` tokens. A theme missing any of those yields _no_ palette —
   a half-derived gradient would be worse than none.
 - **`GRADIENT_COMPOSITIONS`** are the recipes the palette is poured into:
   `aurora`, `halo`, `dawn`, `drift` over the theme's deep background, and
@@ -38,7 +38,7 @@ See [`image-picker-seam.md`](image-picker-seam.md).
 - The library is **themes × compositions**, sorted by id. Six built-in themes ×
   five compositions = 30 gradients today.
 
-Each item's **tone** (`dark` / `light`) is *measured* from the resolved base
+Each item's **tone** (`dark` / `light`) is _measured_ from the resolved base
 colour, not declared by the recipe: Midnight's "paper" token is ink, so
 `midnight-mist` is correctly a dark image. The picker exposes tone as its only
 filter, because light-vs-dark is the choice that decides the text colour.
@@ -64,10 +64,10 @@ own gradients for free — no code change.
 
 ## API
 
-| Route | Method | Response |
-|-------|--------|----------|
-| `/api/stock-media/status` | GET | `bundled: { configured: true, enabled }` — always `configured`; there is no key to miss. |
-| `/api/stock-media/bundled/manifest` | GET | `{ items: [...] }`, or `400` when the toggle is off. |
+| Route                               | Method | Response                                                                                 |
+| ----------------------------------- | ------ | ---------------------------------------------------------------------------------------- |
+| `/api/stock-media/status`           | GET    | `bundled: { configured: true, enabled }` — always `configured`; there is no key to miss. |
+| `/api/stock-media/bundled/manifest` | GET    | `{ items: [...] }`, or `400` when the toggle is off.                                     |
 
 A manifest item:
 

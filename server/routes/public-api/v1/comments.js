@@ -38,7 +38,10 @@ import {
 } from '../../../services/comment-events.js';
 import { notifyCommentCreated } from '../../../services/comment-notifications.js';
 import { getTrimmedString } from '../../../utils/request-validators.js';
-import { broadcastCommentCounts, MAX_COMMENT_LENGTH } from '../../api/presentations/comments-shared.js';
+import {
+  broadcastCommentCounts,
+  MAX_COMMENT_LENGTH,
+} from '../../api/presentations/comments-shared.js';
 import {
   requirePermission,
   v1MethodNotAllowed,
@@ -107,13 +110,21 @@ async function handleListComments(ctx, presentationId) {
 
   const status = url.searchParams.get('status') || 'all';
   if (!['open', 'resolved', 'dismissed', 'all'].includes(status)) {
-    await apiError(ctx, 400, 'Invalid status filter (open|resolved|dismissed|all)');
+    await apiError(
+      ctx,
+      400,
+      'Invalid status filter (open|resolved|dismissed|all)',
+    );
     return true;
   }
 
   const sinceResult = parseSinceParam(url);
   if (!sinceResult.ok) {
-    await apiError(ctx, 400, 'Invalid since parameter (use an ISO 8601 date/datetime)');
+    await apiError(
+      ctx,
+      400,
+      'Invalid since parameter (use an ISO 8601 date/datetime)',
+    );
     return true;
   }
 
@@ -151,7 +162,11 @@ async function handleCreateComment(ctx, presentationId) {
   // Commenting needs comment permission (owner/creator, organization user, or
   // collaborator with comment rights or higher) — not full write access.
   if (!(await canActorCommentOnPresentation(pres, authedUser))) {
-    await apiError(ctx, 403, 'API key owner may not comment on this presentation');
+    await apiError(
+      ctx,
+      403,
+      'API key owner may not comment on this presentation',
+    );
     return true;
   }
 
@@ -161,7 +176,11 @@ async function handleCreateComment(ctx, presentationId) {
     return true;
   }
   if (text.length > MAX_COMMENT_LENGTH) {
-    await apiError(ctx, 400, `Comment must be ${MAX_COMMENT_LENGTH} characters or less`);
+    await apiError(
+      ctx,
+      400,
+      `Comment must be ${MAX_COMMENT_LENGTH} characters or less`,
+    );
     return true;
   }
 
@@ -197,7 +216,11 @@ async function handleCreateComment(ctx, presentationId) {
   });
 
   if (!result.ok) {
-    await apiError(ctx, result.reason === 'unavailable' ? 503 : 400, `Could not create comment: ${result.reason}`);
+    await apiError(
+      ctx,
+      result.reason === 'unavailable' ? 503 : 400,
+      `Could not create comment: ${result.reason}`,
+    );
     return true;
   }
 
@@ -260,22 +283,33 @@ async function handleCommentStatus(ctx, commentId) {
     return true;
   }
 
-  const { ok, pres } = await getPresentationWithAccess(ctx, comment.presentationId);
+  const { ok, pres } = await getPresentationWithAccess(
+    ctx,
+    comment.presentationId,
+  );
   if (!ok) return true;
 
   // Same rule as the app: only the presentation owner/creator moderates. The
   // context's authed user carries the API-key owner's resolved `users.id`, so
   // this decides on the stable key like every other ownership check.
   if (!canResolveComment({ user: authedUser, pres, comment })) {
-    await apiError(ctx, 403, 'Only the presentation owner can change comment status');
+    await apiError(
+      ctx,
+      403,
+      'Only the presentation owner can change comment status',
+    );
     return true;
   }
 
   let result;
   if (status === 'resolved') {
-    result = await resolveComment(sctx, commentId, { email: apiKey.ownerEmail });
+    result = await resolveComment(sctx, commentId, {
+      email: apiKey.ownerEmail,
+    });
   } else if (status === 'dismissed') {
-    result = await dismissComment(sctx, commentId, { email: apiKey.ownerEmail });
+    result = await dismissComment(sctx, commentId, {
+      email: apiKey.ownerEmail,
+    });
   } else {
     result = await reopenComment(sctx, commentId);
   }
@@ -287,13 +321,29 @@ async function handleCommentStatus(ctx, commentId) {
 
   const actor = { email: apiKey.ownerEmail };
   if (status === 'resolved') {
-    void recordCommentResolved({ comment: result.comment, presentation: pres, actor, scope: sctx });
-    void broadcastToPresentation(pres.id, CommentEventTypes.RESOLVED, { comment: result.comment });
+    void recordCommentResolved({
+      comment: result.comment,
+      presentation: pres,
+      actor,
+      scope: sctx,
+    });
+    void broadcastToPresentation(pres.id, CommentEventTypes.RESOLVED, {
+      comment: result.comment,
+    });
   } else if (status === 'open') {
-    void recordCommentReopened({ comment: result.comment, presentation: pres, actor, scope: sctx });
-    void broadcastToPresentation(pres.id, CommentEventTypes.REOPENED, { comment: result.comment });
+    void recordCommentReopened({
+      comment: result.comment,
+      presentation: pres,
+      actor,
+      scope: sctx,
+    });
+    void broadcastToPresentation(pres.id, CommentEventTypes.REOPENED, {
+      comment: result.comment,
+    });
   } else {
-    void broadcastToPresentation(pres.id, CommentEventTypes.RESOLVED, { comment: result.comment });
+    void broadcastToPresentation(pres.id, CommentEventTypes.RESOLVED, {
+      comment: result.comment,
+    });
   }
   void broadcastCommentCounts(pres.id, sctx);
 
@@ -315,25 +365,33 @@ async function handleCommentStatus(ctx, commentId) {
 /**
  * Main handler for public API v1 comment routes.
  */
-export const handleComments = withV1ErrorHandler('public-api-v1:comments', async (ctx) => {
-  const { req, res, url } = ctx;
+export const handleComments = withV1ErrorHandler(
+  'public-api-v1:comments',
+  async (ctx) => {
+    const { req, res, url } = ctx;
 
-  // GET/POST /api/v1/presentations/:id/comments
-  const collectionMatch = url.pathname.match(
-    /^\/api\/v1\/presentations\/([^/]+)\/comments$/
-  );
-  if (collectionMatch) {
-    if (req.method === 'GET') return handleListComments(ctx, collectionMatch[1]);
-    if (req.method === 'POST') return handleCreateComment(ctx, collectionMatch[1]);
-    return v1MethodNotAllowed(res, ['GET', 'POST']);
-  }
+    // GET/POST /api/v1/presentations/:id/comments
+    const collectionMatch = url.pathname.match(
+      /^\/api\/v1\/presentations\/([^/]+)\/comments$/,
+    );
+    if (collectionMatch) {
+      if (req.method === 'GET')
+        return handleListComments(ctx, collectionMatch[1]);
+      if (req.method === 'POST')
+        return handleCreateComment(ctx, collectionMatch[1]);
+      return v1MethodNotAllowed(res, ['GET', 'POST']);
+    }
 
-  // POST /api/v1/comments/:commentId/status
-  const statusMatch = url.pathname.match(/^\/api\/v1\/comments\/([^/]+)\/status$/);
-  if (statusMatch) {
-    if (req.method === 'POST') return handleCommentStatus(ctx, statusMatch[1]);
-    return v1MethodNotAllowed(res, ['POST']);
-  }
+    // POST /api/v1/comments/:commentId/status
+    const statusMatch = url.pathname.match(
+      /^\/api\/v1\/comments\/([^/]+)\/status$/,
+    );
+    if (statusMatch) {
+      if (req.method === 'POST')
+        return handleCommentStatus(ctx, statusMatch[1]);
+      return v1MethodNotAllowed(res, ['POST']);
+    }
 
-  return false;
-});
+    return false;
+  },
+);

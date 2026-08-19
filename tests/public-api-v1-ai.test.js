@@ -25,7 +25,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
 
-process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
+process.env.AUTH_SECRET = ['deckyard', 'test', 'auth']
+  .join('-')
+  .padEnd(40, '0');
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 process.env.STORAGE_MODE = 'postgres';
 
@@ -49,14 +51,16 @@ async function installDb({ aiUsedToday = 0 } = {}) {
   const db = createFakeDb({
     organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
     api_usage_daily: aiUsedToday
-      ? [{
-          id: 'usage-1',
-          api_key_id: KEY_ID,
-          date: new Date().toISOString().split('T')[0],
-          request_count: aiUsedToday,
-          ai_request_count: aiUsedToday,
-          export_count: 0,
-        }]
+      ? [
+          {
+            id: 'usage-1',
+            api_key_id: KEY_ID,
+            date: new Date().toISOString().split('T')[0],
+            request_count: aiUsedToday,
+            ai_request_count: aiUsedToday,
+            export_count: 0,
+          },
+        ]
       : [],
   });
   __setTestDb(db);
@@ -74,8 +78,14 @@ async function installDb({ aiUsedToday = 0 } = {}) {
  * @param {string[]} [options.permissions] - API key permissions
  * @returns {Object} ctx, with `res.statusCode` / `res.body` recorded
  */
-function makeCtx(method, pathname, { body = null, permissions = ['read', 'ai'] } = {}) {
-  const req = Readable.from(body === null ? [] : [Buffer.from(JSON.stringify(body))]);
+function makeCtx(
+  method,
+  pathname,
+  { body = null, permissions = ['read', 'ai'] } = {},
+) {
+  const req = Readable.from(
+    body === null ? [] : [Buffer.from(JSON.stringify(body))],
+  );
   req.method = method;
   req.headers = { 'content-type': 'application/json' };
 
@@ -83,12 +93,16 @@ function makeCtx(method, pathname, { body = null, permissions = ['read', 'ai'] }
     statusCode: null,
     body: null,
     headers: {},
-    setHeader(name, value) { this.headers[name] = value; },
+    setHeader(name, value) {
+      this.headers[name] = value;
+    },
     writeHead(status, headers) {
       this.statusCode = status;
       Object.assign(this.headers, headers);
     },
-    end(payload) { this.body = payload ? JSON.parse(payload) : null; },
+    end(payload) {
+      this.body = payload ? JSON.parse(payload) : null;
+    },
   };
 
   return {
@@ -96,7 +110,11 @@ function makeCtx(method, pathname, { body = null, permissions = ['read', 'ai'] }
     res,
     url: new URL(`http://localhost${pathname}`),
     repoRoot: process.cwd(),
-    storageScope: { repoRoot: process.cwd(), organizationId: ORG, actorEmail: KEY_OWNER },
+    storageScope: {
+      repoRoot: process.cwd(),
+      organizationId: ORG,
+      actorEmail: KEY_OWNER,
+    },
     apiKey: {
       id: KEY_ID,
       tier: 'free',
@@ -105,7 +123,12 @@ function makeCtx(method, pathname, { body = null, permissions = ['read', 'ai'] }
       permissions,
       organizationId: ORG,
     },
-    authedUser: { id: null, email: KEY_OWNER, role: 'user', organizationId: ORG },
+    authedUser: {
+      id: null,
+      email: KEY_OWNER,
+      role: 'user',
+      organizationId: ORG,
+    },
   };
 }
 
@@ -158,7 +181,9 @@ test('POST /ai/wizard without the ai permission is refused with 403', async () =
 
 test('POST /ai/wizard answers 429 with limit details when the daily AI budget is spent', async () => {
   await installDb({ aiUsedToday: 10 }); // free tier: 10 AI calls/day
-  const ctx = makeCtx('POST', '/api/v1/ai/wizard', { body: { raw: 'A deck about tests' } });
+  const ctx = makeCtx('POST', '/api/v1/ai/wizard', {
+    body: { raw: 'A deck about tests' },
+  });
   await handleAi(ctx);
 
   assert.equal(ctx.res.statusCode, 429);
@@ -175,7 +200,11 @@ test('POST /ai/wizard without raw content answers 400', async () => {
   for (const body of [null, {}, { raw: '' }, { raw: '   ' }]) {
     const ctx = makeCtx('POST', '/api/v1/ai/wizard', { body });
     await handleAi(ctx);
-    assert.equal(ctx.res.statusCode, 400, `${JSON.stringify(body)} must be refused`);
+    assert.equal(
+      ctx.res.statusCode,
+      400,
+      `${JSON.stringify(body)} must be refused`,
+    );
   }
 });
 
@@ -203,7 +232,9 @@ test('POST /ai/append-slides without the ai permission is refused with 403', asy
 
 test('POST /ai/append-slides answers 429 when the daily AI budget is spent', async () => {
   await installDb({ aiUsedToday: 10 });
-  const ctx = makeCtx('POST', '/api/v1/ai/append-slides', { body: { raw: 'More slides' } });
+  const ctx = makeCtx('POST', '/api/v1/ai/append-slides', {
+    body: { raw: 'More slides' },
+  });
   await handleAi(ctx);
   assert.equal(ctx.res.statusCode, 429);
 });
@@ -213,7 +244,11 @@ test('POST /ai/append-slides without raw content answers 400', async () => {
   for (const body of [null, {}, { raw: '' }]) {
     const ctx = makeCtx('POST', '/api/v1/ai/append-slides', { body });
     await handleAi(ctx);
-    assert.equal(ctx.res.statusCode, 400, `${JSON.stringify(body)} must be refused`);
+    assert.equal(
+      ctx.res.statusCode,
+      400,
+      `${JSON.stringify(body)} must be refused`,
+    );
   }
 });
 

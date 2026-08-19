@@ -52,4 +52,3 @@ export async function handleMcpSse(ctx) {
   const handler = await getHandler();
   return handler(ctx);
 }
-

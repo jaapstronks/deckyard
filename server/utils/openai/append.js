@@ -22,7 +22,7 @@ export async function generateSlidesToAppendFromRawContent(
     // plus the user's feedback on it. The model returns a revised full batch.
     priorSlides = null,
     feedback = '',
-  } = {}
+  } = {},
 ) {
   const { vendor: resolvedVendor, apiKey, model } = getLlmConfig({ vendor });
 
@@ -32,8 +32,8 @@ export async function generateSlidesToAppendFromRawContent(
     requestedLang === 'nl'
       ? 'DUTCH'
       : requestedLang === 'en-GB'
-      ? 'ENGLISH (UK)'
-      : null;
+        ? 'ENGLISH (UK)'
+        : null;
   const deckSummary = existingDeck
     ? summarizeDeckForPrompt(existingDeck, { maxSlides: 60 })
     : 'Title: (unknown)\nTheme: (unknown)\n\nSlides (in order):\n(none provided)';
@@ -65,10 +65,10 @@ export async function generateSlidesToAppendFromRawContent(
           '- The input may MIX instructions/context/explanation WITH the copy to use.',
           '  Follow the instructions to decide slide type, structure, and how to split',
           '  the copy across slides/fields, but the words placed on the slides must be',
-          '  the user\'s own copy, quoted verbatim. Do NOT treat the instructions as copy.',
-          '- Do NOT invent, add, or embellish content that is not in the user\'s text.',
+          "  the user's own copy, quoted verbatim. Do NOT treat the instructions as copy.",
+          "- Do NOT invent, add, or embellish content that is not in the user's text.",
           '  If a field would require inventing text, leave it empty instead.',
-          '- Preserve the user\'s ordering and line/bullet breaks where they map to',
+          "- Preserve the user's ordering and line/bullet breaks where they map to",
           '  titles, bullets, or fields.',
           'This VERBATIM rule overrides any style/rewriting guidance below when they',
           'conflict. Slide-type choice and field-splitting rules still apply.',
@@ -87,7 +87,11 @@ export async function generateSlidesToAppendFromRawContent(
     '- Do NOT add a new title-slide unless the user explicitly asks for it.',
     '- Do NOT output follow-invite-slide; the app manages that automatically.',
     '',
-    buildSlideTypesPrompt({ preferredPlaceholderImage, disabledSlideTypes, customSlideTypes }),
+    buildSlideTypesPrompt({
+      preferredPlaceholderImage,
+      disabledSlideTypes,
+      customSlideTypes,
+    }),
     '',
     'Rules:',
     '- Prefer specialized slide types when they fit (timeline-slide, table-slide, team-cards-slide, logo-wall-slide, poll-slide, likert-slide, likert-slider-slide, quote-slide, list-slide, icon-card-grid-slide, image-text-slide, chart-slide, video-slide, feedback-slide).',
@@ -125,7 +129,7 @@ export async function generateSlidesToAppendFromRawContent(
     '- IMPORTANT: after any "## Heading" line, add a blank line before starting a list so bullets render correctly.',
     '',
     'Lijstje slides (prefer for narrative lists):',
-    '- Use list-slide for tips, story beats, context/background points, agenda items, do/don\'t lists, small sequences.',
+    "- Use list-slide for tips, story beats, context/background points, agenda items, do/don't lists, small sequences.",
     '- Use variant:"numbers" when order matters; otherwise variant:"bullets".',
     '- Each items[] entry MUST have { title, text } and text MUST be ONE short line (no newlines).',
     '- IMPORTANT for variant:"numbers": Do NOT put "1", "2", "3" in items[].title. The number marker is rendered automatically.',
@@ -173,16 +177,16 @@ export async function generateSlidesToAppendFromRawContent(
         'calendar',
         'globe',
       ];
-      const allowed = new Set(
-        Array.isArray(ICON_NAMES) ? ICON_NAMES : []
-      );
+      const allowed = new Set(Array.isArray(ICON_NAMES) ? ICON_NAMES : []);
       const list = preferred.filter((n) => allowed.has(n));
       return ['  ' + list.join(', ')];
     })(),
   ].join('\n');
 
   const isRevision =
-    Array.isArray(priorSlides) && priorSlides.length > 0 && String(feedback || '').trim();
+    Array.isArray(priorSlides) &&
+    priorSlides.length > 0 &&
+    String(feedback || '').trim();
 
   const user = [
     'EXISTING PRESENTATION SUMMARY:',
@@ -197,9 +201,12 @@ export async function generateSlidesToAppendFromRawContent(
           'You previously generated the batch below for this request. The user reviewed it and wants changes.',
           'PRIOR BATCH (JSON):',
           JSON.stringify(
-            priorSlides.map((s) => ({ type: s?.type, content: s?.content || {} })),
+            priorSlides.map((s) => ({
+              type: s?.type,
+              content: s?.content || {},
+            })),
             null,
-            2
+            2,
           ),
           '',
           'USER FEEDBACK ON THE BATCH:',
@@ -232,10 +239,16 @@ export async function generateSlidesToAppendFromRawContent(
     // The raw response rides along as a field for logging, never the envelope.
     throw new LlmError(
       `${resolvedVendor} did not return a valid { slides: [...] } JSON object.`,
-      { statusCode: 502, vendor: resolvedVendor, response: content, phase: 'append' }
+      {
+        statusCode: 502,
+        vendor: resolvedVendor,
+        response: content,
+        phase: 'append',
+      },
     );
   }
-  const rationale = typeof obj?.rationale === 'string' ? obj.rationale.trim() : '';
+  const rationale =
+    typeof obj?.rationale === 'string' ? obj.rationale.trim() : '';
   // Per-slide review metadata ("why this type" + alternative types), aligned
   // with `slides` by index. Kept separate because deck normalization strips
   // unknown slide keys; the route re-attaches these after normalization.

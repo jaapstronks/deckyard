@@ -14,8 +14,7 @@ connections.
 ## Renewable share over time
 
 The renewable share of total supply has climbed steadily. It stood at 18% in
-2021, 24% in 2022, 31% in 2023, 39% in 2024, 46% in 2025, and reached 53% in
-2026. The board should note the curve is flattening: the year on year gain has
+2021, 24% in 2022, 31% in 2023, 39% in 2024, 46% in 2025, and reached 53% in 2026. The board should note the curve is flattening: the year on year gain has
 fallen from 7 percentage points to 7, then 8, then 7, and most recently 7.
 
 ## Headline figures

@@ -51,7 +51,9 @@ export function createAiReviewAnnotations({
       });
       const converted = resp?.slide;
       if (!converted?.type) {
-        throw new Error(t('editor.aiReview.convertFailed', 'Conversion failed.'));
+        throw new Error(
+          t('editor.aiReview.convertFailed', 'Conversion failed.'),
+        );
       }
       setStatus('');
       replaceSlide(slide, {
@@ -62,7 +64,10 @@ export function createAiReviewAnnotations({
         _aiAlternatives: [
           {
             type: slide.type,
-            reason: t('editor.aiReview.previousType', 'The originally proposed type'),
+            reason: t(
+              'editor.aiReview.previousType',
+              'The originally proposed type',
+            ),
           },
         ],
       });
@@ -76,7 +81,9 @@ export function createAiReviewAnnotations({
 
   const annotationFor = (slide) => {
     const why = String(slide?._aiReasoning || '').trim();
-    const alts = Array.isArray(slide?._aiAlternatives) ? slide._aiAlternatives : [];
+    const alts = Array.isArray(slide?._aiAlternatives)
+      ? slide._aiAlternatives
+      : [];
     if (!why && !alts.length) return null;
     const holder = h('div', {});
     if (why) holder.append(h('p', { class: 'deck-grid-why', text: why }));

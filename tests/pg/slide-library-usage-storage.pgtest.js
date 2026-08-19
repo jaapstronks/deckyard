@@ -87,22 +87,32 @@ pgDescribe('slide-library usage (real PostgreSQL, via facade)', () => {
   });
 
   it('increments useCount and keeps firstUsedAt on repeat use', async () => {
-    await recordSlideLibraryUsage(storageScope, ALICE, [{ type: 'slide', id: 'repeat' }]);
+    await recordSlideLibraryUsage(storageScope, ALICE, [
+      { type: 'slide', id: 'repeat' },
+    ]);
     const first = (await listSlideLibraryUsage(storageScope, ALICE)).items.find(
-      (u) => keyOf(u) === 'slide:repeat'
+      (u) => keyOf(u) === 'slide:repeat',
     );
     assert.strictEqual(first.useCount, 1);
 
-    await recordSlideLibraryUsage(storageScope, ALICE, [{ type: 'slide', id: 'repeat' }]);
-    const second = (await listSlideLibraryUsage(storageScope, ALICE)).items.find(
-      (u) => keyOf(u) === 'slide:repeat'
-    );
+    await recordSlideLibraryUsage(storageScope, ALICE, [
+      { type: 'slide', id: 'repeat' },
+    ]);
+    const second = (
+      await listSlideLibraryUsage(storageScope, ALICE)
+    ).items.find((u) => keyOf(u) === 'slide:repeat');
     assert.strictEqual(second.useCount, 2);
-    assert.strictEqual(second.firstUsedAt, first.firstUsedAt, 'firstUsedAt is stable');
+    assert.strictEqual(
+      second.firstUsedAt,
+      first.firstUsedAt,
+      'firstUsedAt is stable',
+    );
   });
 
   it('isolates usage between users', async () => {
-    await recordSlideLibraryUsage(storageScope, BOB, [{ type: 'slide', id: 'bob-only' }]);
+    await recordSlideLibraryUsage(storageScope, BOB, [
+      { type: 'slide', id: 'bob-only' },
+    ]);
     const aliceUsed = await usedSet(ALICE);
     const bobUsed = await usedSet(BOB);
     assert.ok(bobUsed.has('slide:bob-only'));
@@ -119,14 +129,21 @@ pgDescribe('slide-library usage (real PostgreSQL, via facade)', () => {
     ]);
     assert.strictEqual(r.recorded, 0);
 
-    const r2 = await recordSlideLibraryUsage(storageScope, ALICE, 'not-an-array');
+    const r2 = await recordSlideLibraryUsage(
+      storageScope,
+      ALICE,
+      'not-an-array',
+    );
     assert.strictEqual(r2.recorded, 0);
 
     assert.strictEqual((await usedSet(ALICE)).size, before, 'nothing recorded');
   });
 
   it('returns an empty set for a user with no usage', async () => {
-    const { items } = await listSlideLibraryUsage(storageScope, 'nobody@example.com');
+    const { items } = await listSlideLibraryUsage(
+      storageScope,
+      'nobody@example.com',
+    );
     assert.deepStrictEqual(items, []);
   });
 });

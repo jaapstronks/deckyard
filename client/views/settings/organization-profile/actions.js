@@ -19,7 +19,9 @@ export const PROFILE_FIELDS = ['name', 'displayName', 'description', 'logoUrl'];
  * @returns {Promise<{ organization: Object, membership: Object }>}
  */
 export async function fetchOrganization(organizationId) {
-  const res = await api(`/api/organizations/${encodeURIComponent(organizationId)}`);
+  const res = await api(
+    `/api/organizations/${encodeURIComponent(organizationId)}`,
+  );
   return {
     organization: res?.organization || null,
     membership: res?.membership || null,
@@ -41,10 +43,13 @@ export async function fetchOrganization(organizationId) {
  * @returns {Promise<Object>} The organization as the server now holds it.
  */
 export async function saveOrganizationProfile({ organizationId, updates }) {
-  const res = await api(`/api/organizations/${encodeURIComponent(organizationId)}`, {
-    method: 'PATCH',
-    body: updates,
-  });
+  const res = await api(
+    `/api/organizations/${encodeURIComponent(organizationId)}`,
+    {
+      method: 'PATCH',
+      body: updates,
+    },
+  );
   return res?.organization || null;
 }
 

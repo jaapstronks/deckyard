@@ -50,11 +50,14 @@ test('the matrix actually sees the registry', () => {
   // A vacuous pass is the one outcome worse than a failure here.
   assert.ok(
     CORE_SLIDE_TYPE_NAMES.length > 30,
-    `expected the core registry, got ${CORE_SLIDE_TYPE_NAMES.length} types`
+    `expected the core registry, got ${CORE_SLIDE_TYPE_NAMES.length} types`,
   );
   assert.ok(COMPANIONS.length > 0, 'expected at least one companion declared');
   for (const c of COMPANIONS) {
-    assert.ok(c.keys().length > 0, `${c.id}: companion source resolved to nothing`);
+    assert.ok(
+      c.keys().length > 0,
+      `${c.id}: companion source resolved to nothing`,
+    );
   }
 });
 
@@ -63,7 +66,9 @@ for (const companion of COMPANIONS) {
 
   test(`[${id}] every type that owes a ${label} has one`, (t) => {
     if (companion.optional) {
-      t.skip(`${id} is sparse by design — only the reverse direction is a gate`);
+      t.skip(
+        `${id} is sparse by design — only the reverse direction is a gate`,
+      );
       return;
     }
     const missing = missingFor(companion, CORE_SLIDE_TYPE_NAMES, SLIDE_TYPES);
@@ -74,7 +79,7 @@ for (const companion of COMPANIONS) {
         missing.map((n) => `  - ${n}`).join('\n') +
         `\n\nAdd an entry in ${where}, or exempt the type with a reason in\n` +
         `tests/helpers/slide-type-companions.js (companion "${id}").\n` +
-        `Nothing crashes without it — ${degradesTo}. That is why this is a test.`
+        `Nothing crashes without it — ${degradesTo}. That is why this is a test.`,
     );
   });
 
@@ -88,7 +93,7 @@ for (const companion of COMPANIONS) {
         `\n\nEach is either unregistered, deprecated, or opted out of this ` +
         `companion. Drop the entry (retiring a type means retiring its ` +
         `companions), or exempt it with a reason in ` +
-        `tests/helpers/slide-type-companions.js.`
+        `tests/helpers/slide-type-companions.js.`,
     );
   });
 
@@ -96,17 +101,20 @@ for (const companion of COMPANIONS) {
     for (const [name, why] of Object.entries(exempt)) {
       assert.ok(
         typeof why === 'string' && why.trim().length > 15,
-        `${id}: exempt["${name}"] needs a real reason, not "${why}"`
+        `${id}: exempt["${name}"] needs a real reason, not "${why}"`,
       );
       const def = SLIDE_TYPES[name];
-      assert.ok(def, `${id}: exempt["${name}"] names a type that is not registered`);
+      assert.ok(
+        def,
+        `${id}: exempt["${name}"] names a type that is not registered`,
+      );
       const owes = companion.appliesTo(name, def);
       const covered = companion.has(name, def);
       assert.ok(
         owes && !covered,
         `${id}: exempt["${name}"] is no longer needed — the type ` +
           `${!owes ? 'does not owe this companion' : 'has one now'}. ` +
-          `Drop the exemption; a stale one hides the next real gap.`
+          `Drop the exemption; a stale one hides the next real gap.`,
       );
     }
   });
@@ -134,7 +142,11 @@ const fakeCompanion = (entries, exempt = {}) => ({
 
 test('a new type with no companion is named, not tolerated', () => {
   const types = { 'kept-slide': {}, 'brand-new-slide': {} };
-  const missing = missingFor(fakeCompanion({ 'kept-slide': 1 }), Object.keys(types), types);
+  const missing = missingFor(
+    fakeCompanion({ 'kept-slide': 1 }),
+    Object.keys(types),
+    types,
+  );
   assert.deepEqual(missing, ['brand-new-slide']);
 });
 
@@ -146,13 +158,20 @@ test('a deprecated type owes nothing, and its leftover entry is rot', () => {
 });
 
 test('an entry for a type that no longer exists is rot', () => {
-  assert.deepEqual(staleFor(fakeCompanion({ 'ghost-slide': 1 }), {}), ['ghost-slide']);
+  assert.deepEqual(staleFor(fakeCompanion({ 'ghost-slide': 1 }), {}), [
+    'ghost-slide',
+  ]);
 });
 
 test('an exemption silences both directions, and only for its own type', () => {
   const types = { 'weird-slide': {}, 'other-slide': {} };
-  const companion = fakeCompanion({}, { 'weird-slide': 'a reason long enough to count' });
-  assert.deepEqual(missingFor(companion, Object.keys(types), types), ['other-slide']);
+  const companion = fakeCompanion(
+    {},
+    { 'weird-slide': 'a reason long enough to count' },
+  );
+  assert.deepEqual(missingFor(companion, Object.keys(types), types), [
+    'other-slide',
+  ]);
 });
 
 // ---------------------------------------------------------------------------
@@ -169,7 +188,10 @@ test('no core type reaches agents undocumented', () => {
   // is at least usable at runtime (a fork type may legitimately land there).
   // For core, that fallback must never be load-bearing.
   const undocumented = Object.entries(resolveAgentSlideTypes({}))
-    .filter(([name, entry]) => CORE_SLIDE_TYPE_NAMES.includes(name) && !entry.documented)
+    .filter(
+      ([name, entry]) =>
+        CORE_SLIDE_TYPE_NAMES.includes(name) && !entry.documented,
+    )
     .map(([name]) => name);
   assert.deepEqual(
     undocumented,
@@ -177,7 +199,7 @@ test('no core type reaches agents undocumented', () => {
     `these core types are offered to agents with a derived description:\n` +
       undocumented.map((n) => `  - ${n}`).join('\n') +
       `\n\nWrite the editorial entry, or mark the type ai:false if agents should ` +
-      `not have it. documented:false is the runtime safety net, not a resting place.`
+      `not have it. documented:false is the runtime safety net, not a resting place.`,
   );
 });
 
@@ -189,16 +211,19 @@ test('a structural type is never mistaken for a content type', () => {
   // breaks the other rather than silently mis-filing a type.
   const structural = resolveAgentSlideTypes({ category: 'structural' });
   const declaredStructural = CORE_SLIDE_TYPE_NAMES.filter(
-    (name) => SLIDE_TYPE_CATALOG[name]?.category === 'structural'
+    (name) => SLIDE_TYPE_CATALOG[name]?.category === 'structural',
   );
-  assert.ok(declaredStructural.length > 0, 'expected structural types in the catalog');
+  assert.ok(
+    declaredStructural.length > 0,
+    'expected structural types in the catalog',
+  );
   for (const name of declaredStructural) {
     if (isAgentOptOut(SLIDE_TYPES[name])) continue;
     assert.ok(
       structural[name],
       `${name} is category:'structural' in the catalog but missing from the ` +
         `structural filter — check that resolveAgentSlideTypes reads the same ` +
-        `signal the catalog writes.`
+        `signal the catalog writes.`,
     );
   }
 });
@@ -211,7 +236,7 @@ test('the catalog agrees with itself about what is structural', () => {
       entry.category === 'structural',
       entry.resolveInPhase1 === true,
       `${name}: category:'${entry.category}' and resolveInPhase1:${entry.resolveInPhase1} ` +
-        `disagree about whether this type is structural`
+        `disagree about whether this type is structural`,
     );
   }
 });

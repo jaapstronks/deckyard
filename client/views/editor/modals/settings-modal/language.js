@@ -22,13 +22,13 @@ export function buildLanguageSection({ h, pres, markDirty, requestSave }) {
     class: 'help',
     text: t(
       'editor.deckSettings.lang.help',
-      'Used for public sharing and exports (HTML lang attribute).'
+      'Used for public sharing and exports (HTML lang attribute).',
     ),
   });
   const sel = h('select', { class: 'form-input' });
   sel.append(
     h('option', { value: 'nl', text: 'Nederlands (nl)' }),
-    h('option', { value: 'en-GB', text: 'English (en-GB)' })
+    h('option', { value: 'en-GB', text: 'English (en-GB)' }),
   );
   sel.value = presLang;
   sel.addEventListener('change', () => {
