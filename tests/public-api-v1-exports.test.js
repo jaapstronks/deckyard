@@ -26,7 +26,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
 
-process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
+process.env.AUTH_SECRET = ['amethyst', 'test', 'auth'].join('-').padEnd(40, '0');
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 process.env.STORAGE_MODE = 'postgres';
 
@@ -79,7 +79,7 @@ function deckRow({ id, owner }) {
     updated_by: owner,
     title: 'Export Me',
     description: null,
-    theme: 'deckyard',
+    theme: 'amethyst',
     lang: 'nl',
     visibility: 'private',
     revision: 1,

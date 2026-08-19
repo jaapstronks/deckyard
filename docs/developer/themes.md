@@ -24,19 +24,20 @@ resolves a custom theme by trying the folder layout first, then the flat file.
 
 ## The built-in set
 
-Six themes ship in `themes/`. Only one of them is Deckyard's own; the rest are
-neutral archetypes meant to be picked, forked or ignored.
+Six themes ship in `themes/`. Only one of them is Deckyard's own; the other
+five are neutral archetypes named after their palette, meant to be picked,
+forked or ignored.
 
 | id | label | palette | note |
 |----|-------|---------|------|
 | `brand` | Forest | forest green `#254d38` + brass `#b8860f` on warm paper | **the default** — Deckyard's own colours, the ones the logo mark and deckyard.eu use |
-| `deckyard` | Deckyard | violet `#7c3aed` | keeps its id and label; was the default until the brand theme landed |
+| `amethyst` | Amethyst | violet `#7c3aed` | was `deckyard`/"Deckyard" until it was renamed to a palette name like its neighbours |
 | `corporate` | Boardroom | blue `#2563eb` | |
 | `editorial` | Editorial | carmine `#9f1239` | |
 | `midnight` | Midnight | cyan `#38bdf8` on near-black | the dark archetype |
 | `playful` | Sunset | orange `#ea580c` | |
 
-Two things follow from `brand` being the default rather than `deckyard`:
+Two things follow from `brand` being the default rather than one of the archetypes:
 
 - **A theme is the *user's* house style, not the product's.** That claim is on
   the marketing site, so the product's own colours have to live in one theme
@@ -132,7 +133,7 @@ They control:
 
 A valid theme file must include at least:
 
-- **`id`**: string (must match the filename, e.g. `themes/deckyard.json` → `"id": "deckyard"`)
+- **`id`**: string (must match the filename, e.g. `themes/amethyst.json` → `"id": "amethyst"`)
 - **`label`**: human name for UI
 - **`assets`**:
   - **`logo`**: URL path to a logo
@@ -164,7 +165,7 @@ Themes can control which slide types can be inserted:
 {
   "slideTypes": {
     "exclude": ["title-slide"],
-    "include": ["deckyard-title-slide"]
+    "include": ["amethyst-title-slide"]
   }
 }
 ```
@@ -316,7 +317,7 @@ The URLs may point anywhere the server serves — `custom/themes/<id>/assets/`,
 ## Naming the built-in backgrounds
 
 Every theme has two built-in background slots, stored as `lime` and `mist`.
-Those are **storage keys, not colours**: `deckyard` paints lime white and
+Those are **storage keys, not colours**: `amethyst` paints lime white and
 `midnight` paints it near-black. With nothing else to go on the picker
 labels them "Color 1" and "Color 2", which is accurate and useless — only the
 theme knows what its own slots are.

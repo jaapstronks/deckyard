@@ -372,7 +372,7 @@ test('no measured element paints in a system fallback font', { skip }, async () 
   // rather than only through the baselines: if the curated webfont fails to
   // load, Chrome silently paints a system face and every other metric still
   // matches. The theme's own first-choice family is the expected answer.
-  const theme = await loadThemeAssets(repoRoot, 'deckyard');
+  const theme = await loadThemeAssets(repoRoot, 'amethyst');
   const metrics = await measureSlide(repoRoot, calibrationSlide(), { theme });
 
   for (const selector of MEASURED_SELECTORS) {

@@ -37,9 +37,9 @@ export const LATIN_EXT_PANGRAM = 'Zażółć gęślą jaźń';
 
 /** Every theme shipped in `themes/`, each getting its own baseline file. */
 export const BUILTIN_THEMES = [
+  'amethyst',
   'brand',
   'corporate',
-  'deckyard',
   'editorial',
   'midnight',
   'playful',
@@ -169,7 +169,7 @@ export const ALL_FIELD_TYPES_SLIDES = [
 ];
 
 /** The all-field-types deck, rendered in one theme (the layout is the subject). */
-export function allFieldTypesDeck(theme = 'deckyard') {
+export function allFieldTypesDeck(theme = 'amethyst') {
   return {
     title: 'All field types',
     theme,

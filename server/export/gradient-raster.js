@@ -33,7 +33,7 @@
  * slide's size, and paint it as a `background-image` in place of the gradient
  * stack. A gradient is about the lowest-frequency image there is, so the bitmap
  * survives magnification, and it compresses to less than the shading it
- * replaces: on a deck whose slides all carry the `deckyard` theme's `calm`
+ * replaces: on a deck whose slides all carry the `amethyst` theme's `calm`
  * background, 3.30 s → 0.09 s per page under Ghostscript at 110 dpi, with the
  * file getting *smaller* (20 pages: 166 KB → 89 KB) and no page differing by
  * more than 5/255 per channel.

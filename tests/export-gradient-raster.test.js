@@ -6,7 +6,7 @@
  * alpha stops leaves Chrome as a page-sized tiling pattern behind a luminosity
  * SMask, both halves a ShadingType 1 shading driven by a FunctionType 4
  * PostScript program that the reader runs *per pixel*. Measured here on a
- * three-page deck on the `deckyard` theme's `calm` background: 3.3 s per page
+ * three-page deck on the `amethyst` theme's `calm` background: 3.3 s per page
  * under Ghostscript at 110 dpi, against 0.06 s for the same deck without one.
  * After rasterizing: 0.14 s, with the rendered page differing by at most 4/255.
  *
@@ -73,7 +73,7 @@ function slideBgDeclarations(html) {
 function calmDeck(n) {
   return {
     title: 'Gradient background',
-    theme: 'deckyard',
+    theme: 'amethyst',
     slides: Array.from({ length: n }, (_, i) => ({
       id: `slide-${i}`,
       type: 'content-slide',
@@ -83,7 +83,7 @@ function calmDeck(n) {
 }
 
 test('a gradient slide background leaves the PDF export as a bitmap', { skip }, async () => {
-  const theme = await loadThemeAssets(repoRoot, 'deckyard');
+  const theme = await loadThemeAssets(repoRoot, 'amethyst');
   const html = await buildSlidesPdfHtml(repoRoot, calmDeck(3), { theme });
 
   const decls = slideBgDeclarations(html);
@@ -105,7 +105,7 @@ test('the bitmap never lands in the --t-slide-bg-* token itself', { skip }, asyn
   // `background-color` (00-base.css) and as a `color`
   // (32-markdown-and-actions.css). A `url()` in there is invalid at
   // computed-value time, and an image-text slide then prints white on white.
-  const theme = await loadThemeAssets(repoRoot, 'deckyard');
+  const theme = await loadThemeAssets(repoRoot, 'amethyst');
   const html = await buildSlidesPdfHtml(repoRoot, calmDeck(3), { theme });
 
   for (const value of slideBgDeclarations(html)) {
@@ -121,7 +121,7 @@ test('the bitmap never lands in the --t-slide-bg-* token itself', { skip }, asyn
 });
 
 test('one background shared by many slides is rasterized once', { skip }, async () => {
-  const theme = await loadThemeAssets(repoRoot, 'deckyard');
+  const theme = await loadThemeAssets(repoRoot, 'amethyst');
   const html = await buildSlidesPdfHtml(repoRoot, calmDeck(6), { theme });
 
   const dataUrls = new Set(
@@ -375,7 +375,7 @@ test('the pseudo-element raster follows what actually paints', { skip }, async (
   // for exactly that wrong reason until `themeVarsCssText()` started declaring
   // `--t-slide-gradient-bg` on the slide root, because before that `midnight`'s
   // generated gradient was guaranteed-invalid and painted nothing at all.
-  const theme = await loadThemeAssets(repoRoot, 'deckyard');
+  const theme = await loadThemeAssets(repoRoot, 'amethyst');
   const html = await buildSlidesPdfHtml(repoRoot, calmDeck(2), { theme });
   assert.equal(/grad-px-\d+/.test(html), false, 'no pseudo-element raster upstream');
 

@@ -14,7 +14,7 @@ import { cssStringEscape } from '../../../shared/theme-fonts.js';
  *
  * @param {Object} options
  * @param {Function} options.h - DOM element helper function
- * @param {string} [options.initialTheme='deckyard'] - Initial theme ID
+ * @param {string} [options.initialTheme] - Initial theme ID
  * @param {Function} [options.onChange] - Called when theme changes
  * @param {string} [options.className] - Additional CSS class for wrapper
  * @returns {Object} { wrap, select, getTheme, setTheme }
@@ -114,7 +114,7 @@ async function populateThemes({
  * @param {Object} options
  * @param {Function} options.h - DOM element helper function
  * @param {Function} options.api - API fetch function
- * @param {string} [options.initialTheme='deckyard'] - Initial theme ID
+ * @param {string} [options.initialTheme] - Initial theme ID
  * @param {Function} [options.onChange] - Called when theme changes
  * @param {string} [options.className] - Additional CSS class for wrapper
  * @returns {Object} { wrap, select, getTheme, setTheme, populated: Promise }

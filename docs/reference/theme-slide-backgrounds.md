@@ -38,7 +38,7 @@ per-slide-type code.
   and darkens it on a light one. So a variant that flips its text colour gets a
   readable link for free — set `linkColor` only to override that answer.
 
-The default `brand` theme (and the older `deckyard` one) ships a `calm` variant
+The default `brand` theme (and `amethyst`) ships a `calm` variant
 as a living example.
 
 ## How it works

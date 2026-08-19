@@ -21,6 +21,7 @@ import { loadThemeAssets, resolveThemeId } from '../../../utils/themes.js';
 import { getConvertibleSlideTypes, convertSlideToType } from '../../../../shared/slide-types/convert.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types/registry.js';
 import { createLogger } from '../../../utils/logger.js';
+import { DEFAULT_THEME_ID } from '../../../../shared/constants/themes.js';
 const log = createLogger('change-theme');
 
 /**
@@ -128,7 +129,7 @@ export async function handleAnalyzeThemeChange(
     return badRequest(res, 'Theme not found');
   }
 
-  const currentThemeId = String(pres.themeId || 'deckyard').trim();
+  const currentThemeId = String(pres.themeId || DEFAULT_THEME_ID).trim();
   const slides = Array.isArray(pres.slides) ? pres.slides : [];
 
   const problematicSlides = [];

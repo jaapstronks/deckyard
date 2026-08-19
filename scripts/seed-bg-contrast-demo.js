@@ -5,7 +5,7 @@
  *
  * Usage:
  *   npm run start           # in one terminal (AUTH_DEV_BYPASS=true)
- *   node scripts/seed-bg-contrast-demo.js [baseUrl] [--themes=deckyard,playful,midnight]
+ *   node scripts/seed-bg-contrast-demo.js [baseUrl] [--themes=amethyst,playful,midnight]
  *
  * It is idempotent: existing decks whose title starts with the demo prefix are
  * deleted first, then recreated. Neutral test images (a dark, a light and a
@@ -31,7 +31,7 @@ const BASE =
 const themesArg = args.find((a) => a.startsWith('--themes='));
 const THEMES = themesArg
   ? themesArg.slice('--themes='.length).split(',').filter(Boolean)
-  : ['deckyard', 'playful', 'midnight'];
+  : ['amethyst', 'playful', 'midnight'];
 
 const DEMO_PREFIX = 'BG contrast demo';
 const repoRoot = path.resolve(fileURLToPath(import.meta.url), '../..');

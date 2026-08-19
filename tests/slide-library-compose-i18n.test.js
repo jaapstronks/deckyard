@@ -69,7 +69,7 @@ describe('prepareNewPresentation multilingual compose', () => {
     const pres = await prepareNewPresentation(repoRoot, {
       title: 'Composed deck',
       slides,
-      theme: 'deckyard',
+      theme: 'amethyst',
       lang: 'nl',
     });
 
@@ -105,7 +105,7 @@ describe('prepareNewPresentation multilingual compose', () => {
     const pres = await prepareNewPresentation(repoRoot, {
       title: 'Composed deck',
       slides,
-      theme: 'deckyard',
+      theme: 'amethyst',
       lang: 'en-GB',
     });
     assert.strictEqual(pres.i18n.dominant, 'en-GB');
@@ -120,7 +120,7 @@ describe('prepareNewPresentation multilingual compose', () => {
     const pres = await prepareNewPresentation(repoRoot, {
       title: 'Composed deck',
       slides,
-      theme: 'deckyard',
+      theme: 'amethyst',
       lang: 'nl',
     });
     assert.ok(pres.i18n.versions.nl, 'nl version present');

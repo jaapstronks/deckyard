@@ -32,8 +32,8 @@ const localFont = await (async () => {
   }
 })();
 
-const deckyardTheme = JSON.parse(
-  await fs.readFile(path.join(repoRoot, 'themes', 'deckyard.json'), 'utf8')
+const amethystTheme = JSON.parse(
+  await fs.readFile(path.join(repoRoot, 'themes', 'amethyst.json'), 'utf8')
 );
 
 test('inlineLocalFontUrls embeds a referenced local woff2 as a data URL', async (t) => {
@@ -77,7 +77,7 @@ test('standalone HTML export embeds theme fonts and drops /assets/fonts referenc
       { id: 's1', type: 'text-slide', content: { title: 'Hello', body: 'World' } },
     ],
   };
-  const html = await buildStandaloneHtml(repoRoot, pres, { theme: deckyardTheme });
+  const html = await buildStandaloneHtml(repoRoot, pres, { theme: amethystTheme });
   assert.ok(
     !html.includes('/assets/fonts/'),
     'downloaded standalone HTML must not reference server-hosted font files'
@@ -95,7 +95,7 @@ test('each distinct font file is inlined exactly once', async (t) => {
   // per weight base64-inlined the same blob three or four times — ~930 KB of
   // fonts in the default theme where ~250 KB is unique, in every standalone
   // HTML and every PNG/PDF render document.
-  const css = await buildEmbeddedFontCss(repoRoot, deckyardTheme);
+  const css = await buildEmbeddedFontCss(repoRoot, amethystTheme);
   const blobs = css.match(/data:font\/woff2;base64,[A-Za-z0-9+/=]+/g) || [];
   assert.ok(blobs.length > 0, 'the default theme should embed some fonts');
   assert.equal(

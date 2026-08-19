@@ -1,6 +1,7 @@
 import { t } from '../../../../lib/ui-i18n.js';
 import { createAndPopulateThemeSelect } from '../../../../lib/theme/theme-select.js';
 import { analyzeAndApplyThemeChange } from '../change-theme-modal.js';
+import { DEFAULT_THEME_ID } from '../../../../../shared/constants/themes.js';
 
 /**
  * Theme selector. Changing theme runs the analyze-and-apply flow, which may
@@ -50,7 +51,7 @@ export function buildThemeSection({
     return { el: wrap };
   }
 
-  const currentTheme = String(pres.themeId || 'deckyard').trim();
+  const currentTheme = String(pres.themeId || DEFAULT_THEME_ID).trim();
   const themeSelector = createAndPopulateThemeSelect({
     h,
     api,
@@ -84,7 +85,7 @@ export function buildThemeSection({
 
       // If cancelled or same theme, reset selector to current value
       if (!result?.ok) {
-        themeSelector.setTheme(pres.themeId || 'deckyard');
+        themeSelector.setTheme(pres.themeId || DEFAULT_THEME_ID);
       }
     },
   });

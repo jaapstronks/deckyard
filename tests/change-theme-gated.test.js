@@ -39,10 +39,10 @@ describe('updatePresentation — gated theme switch', () => {
       title: 'Theme lock',
       ownerEmail: OWNER,
       lang: 'nl',
-      theme: 'deckyard',
+      theme: 'amethyst',
     });
     deckId = created.id;
-    assert.equal(created.theme, 'deckyard', 'fixture should start on the deckyard theme');
+    assert.equal(created.theme, 'amethyst', 'fixture should start on the amethyst theme');
   });
 
   after(async () => {
@@ -56,10 +56,10 @@ describe('updatePresentation — gated theme switch', () => {
     const updated = await updatePresentation(testScope(), deckId, doc, {
       actorEmail: OWNER,
     });
-    assert.equal(updated.theme, 'deckyard', 'default write path must ignore a theme change');
+    assert.equal(updated.theme, 'amethyst', 'default write path must ignore a theme change');
 
     const stored = await getPresentation(testScope(), deckId);
-    assert.equal(stored.theme, 'deckyard', 'nothing was persisted');
+    assert.equal(stored.theme, 'amethyst', 'nothing was persisted');
   });
 
   it('switches the theme when allowThemeChange is set (the /change-theme route)', async () => {

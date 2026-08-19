@@ -532,7 +532,7 @@ export const THEMES = [
   // built-in other than the default is listed by id here: this array is the
   // validation enum, so a theme missing from it is rejected on save even
   // though `themes/<id>.json` exists on disk.
-  'deckyard',
+  'amethyst',
   'corporate',
   'editorial',
   'playful',

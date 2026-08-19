@@ -46,7 +46,7 @@ test.after(() => {
 });
 
 test('resolveThemeThumbBg returns a theme background hex', async () => {
-  const bg = await resolveThemeThumbBg(repoRoot, 'deckyard');
+  const bg = await resolveThemeThumbBg(repoRoot, 'amethyst');
   assert.match(bg || '', /^#[0-9a-f]{3,6}$/i, 'a hex color for a known theme');
 });
 

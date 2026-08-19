@@ -54,7 +54,9 @@ export function buildSlidesFromLibraryItems(items) {
  * @param {Array<Object>} opts.items - Selected library items.
  * @param {string} opts.title - Deck title.
  * @param {string} [opts.lang] - Dominant language for the new deck.
- * @param {string} [opts.theme] - Theme id for the new deck.
+ * @param {string} [opts.theme] - Theme id for the new deck. Omit it and the
+ *   server picks the default (sandbox-aware, `DEFAULT_THEME` env seam) — the
+ *   client does not own that decision.
  * @param {string} [opts.sourceCollectionId] - Collection the deck started from.
  * @returns {Promise<Object>} The created presentation.
  */
@@ -63,7 +65,7 @@ export function createDeckFromLibraryItems({
   items,
   title,
   lang = 'nl',
-  theme = 'deckyard',
+  theme = null,
   sourceCollectionId = null,
 }) {
   const slides = buildSlidesFromLibraryItems(items);
@@ -73,9 +75,10 @@ export function createDeckFromLibraryItems({
   const payload = {
     title,
     slides,
-    theme,
     lang: lang === 'en-GB' ? 'en-GB' : 'nl',
   };
+  const themeId = String(theme || '').trim();
+  if (themeId) payload.theme = themeId;
   if (sourceLibraryItemIds.length) payload.sourceLibraryItemIds = sourceLibraryItemIds;
   const collectionId = String(sourceCollectionId || '').trim();
   if (collectionId) payload.sourceCollectionId = collectionId;

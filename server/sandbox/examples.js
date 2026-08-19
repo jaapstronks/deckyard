@@ -12,6 +12,7 @@
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { DEFAULT_THEME_ID } from '../../shared/constants/themes.js';
 
 const EXAMPLES_DIRNAME = path.join('server', 'sandbox-examples');
 
@@ -64,7 +65,7 @@ export async function listSandboxExamples(repoRoot) {
         id,
         title: String(deck?.title || id),
         description: deriveDescription(deck),
-        theme: String(deck?.theme || 'deckyard'),
+        theme: String(deck?.theme || DEFAULT_THEME_ID),
         slideCount: Array.isArray(deck?.slides) ? deck.slides.length : 0,
         deck,
       });

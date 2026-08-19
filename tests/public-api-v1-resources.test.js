@@ -22,7 +22,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
 
-process.env.AUTH_SECRET = ['deckyard', 'test', 'auth'].join('-').padEnd(40, '0');
+process.env.AUTH_SECRET = ['amethyst', 'test', 'auth'].join('-').padEnd(40, '0');
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 process.env.STORAGE_MODE = 'postgres';
 delete process.env.SANDBOX_MODE;
@@ -151,7 +151,7 @@ test('GET /themes returns system and own custom themes, custom first', async () 
   const system = themes.filter((t) => t.type === 'system');
   assert.equal(custom.length + system.length, themes.length, 'only two theme types exist');
   assert.ok(system.length > 0, 'the repo ships system themes');
-  assert.ok(system.some((t) => t.id === 'deckyard'));
+  assert.ok(system.some((t) => t.id === 'amethyst'));
   assert.deepEqual(custom.map((t) => t.id), ['theme-own']);
   assert.equal(custom[0].label, 'Own custom theme');
 

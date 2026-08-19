@@ -206,7 +206,7 @@ curl http://localhost:4177/api/v1/presentations -H "Authorization: Bearer $API_K
 curl -X POST http://localhost:4177/api/v1/presentations \
   -H "Authorization: Bearer $API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"title": "Test", "theme": "deckyard"}'
+  -d '{"title": "Test", "theme": "amethyst"}'
 ```
 
 ### Interactive Documentation

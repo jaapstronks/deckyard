@@ -419,7 +419,7 @@ test('the read funnel migrates a stored legacy deck in memory', async () => {
 });
 
 test('validatePresentation accepts a freshly stamped deck', () => {
-  const { ok, errors } = validatePresentation(newPresentation({ theme: 'deckyard' }));
+  const { ok, errors } = validatePresentation(newPresentation({ theme: 'amethyst' }));
   assert.equal(ok, true, `unexpected errors: ${errors.join(', ')}`);
 });
 

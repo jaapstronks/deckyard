@@ -37,7 +37,7 @@ const { openSettingsModal } = await import(
 function messyPres() {
   return {
     id: 'p1',
-    themeId: 'deckyard',
+    themeId: 'amethyst',
     lang: 'zz-bad',
     description: 42, // non-string → normalized to ''
     settings: {
