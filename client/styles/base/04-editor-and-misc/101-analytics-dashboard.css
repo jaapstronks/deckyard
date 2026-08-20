@@ -371,9 +371,6 @@
 
 .dashboard-error-icon {
   flex-shrink: 0;
-  width: 18px;
-  height: 18px;
-  object-fit: contain;
 }
 
 /* Period Selector Wrapper */

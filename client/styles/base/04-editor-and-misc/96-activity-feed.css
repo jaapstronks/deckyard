@@ -122,12 +122,13 @@
 
 /* Activity event type icons */
 .activity-type-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 20px;
   height: 20px;
-  padding: 3px;
   border-radius: var(--ps-radius-sm);
   margin-right: var(--ps-space-2);
-  object-fit: contain;
   box-sizing: border-box;
 }
 

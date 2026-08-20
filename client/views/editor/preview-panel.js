@@ -8,7 +8,6 @@ export function createPreviewPanel({
   root,
   pres,
   theme,
-  iconUrl,
   lockDocumentScroll,
   attachThumbScale,
   attachThumbScaleContain,
@@ -85,12 +84,7 @@ export function createPreviewPanel({
       text: t('comments.addLabel', 'Add comment'),
     });
     pinCommentBtn.append(
-      h('img', {
-        class: 'btn-pin-icon',
-        src: iconUrl('map-pin'),
-        alt: '',
-        'aria-hidden': 'true',
-      }),
+      icon('map-pin', { size: 15, className: 'btn-pin-icon' }),
       pinCommentLabel,
     );
     // Mode hint: rendered as an overlay on the stage (appended to previewStage

@@ -3,7 +3,7 @@
  */
 
 import { t } from '../../lib/ui-i18n.js';
-import { iconUrl } from '../../../shared/icon-names.js';
+import { icon as uiIcon } from '../../lib/dom/icons.js';
 
 /**
  * Render an error state.
@@ -67,12 +67,7 @@ export function renderError(h, shell, errorCode, errorData = {}) {
   };
 
   const icon = h('div', { class: 'share-viewer-error-icon' }, [
-    h('img', {
-      src: iconUrl('circle-alert'),
-      alt: '',
-      'aria-hidden': 'true',
-      style: 'width: 48px; height: 48px;',
-    }),
+    uiIcon('circle-alert', { size: 48 }),
   ]);
   const title = h('h2', { text: errorInfo.title });
 

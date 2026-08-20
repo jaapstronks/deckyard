@@ -668,10 +668,7 @@ summary.ghost-icon-btn::-webkit-details-marker {
   left: var(--ps-space-3);
   top: 50%;
   transform: translateY(-50%);
-  width: 14px;
-  height: 14px;
   opacity: 0.5;
-  pointer-events: none;
 }
 
 .topbar-search-input {

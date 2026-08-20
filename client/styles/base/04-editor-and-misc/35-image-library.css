@@ -89,16 +89,10 @@
 }
 
 .media-lib-nav-icon {
-  width: 16px;
-  height: 16px;
-  object-fit: contain;
   flex-shrink: 0;
 }
 
 .media-lib-section-icon {
-  width: 16px;
-  height: 16px;
-  object-fit: contain;
   margin-right: var(--ps-space-1-5);
   vertical-align: middle;
 }

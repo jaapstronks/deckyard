@@ -7,7 +7,6 @@ import { icon } from '../../lib/dom/icons.js';
 import { spinner } from '../../lib/dom/spinner.js';
 import { api } from '../../lib/api.js';
 import { t } from '../../lib/ui-i18n.js';
-import { iconUrl } from '../../../shared/icon-names.js';
 import { createDashboardCards } from './dashboard-cards.js';
 import { createDashboardChart } from './dashboard-chart.js';
 import { createTopPresentations } from './top-presentations.js';
@@ -103,11 +102,9 @@ export async function renderDashboard(root, { nav } = {}) {
         'div',
         { class: 'dashboard-error-banner', role: 'alert' },
         [
-          h('img', {
-            class: 'dashboard-error-icon',
-            src: iconUrl('circle-alert'),
-            alt: '',
-            'aria-hidden': 'true',
+          icon('circle-alert', {
+            size: 18,
+            className: 'dashboard-error-icon',
           }),
           h('span', { text: loadError }),
         ],

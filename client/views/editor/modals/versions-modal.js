@@ -7,7 +7,7 @@ import {
   confirmModal,
 } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { iconUrl } from '../../../../shared/icon-names.js';
+import { icon } from '../../../lib/dom/icons.js';
 import { ifMatchRevision } from '../if-match-revision.js';
 import { openVersionPreviewModal } from './versions-preview.js';
 import { openVersionCompareModal } from './versions-compare.js';
@@ -74,12 +74,7 @@ export function openVersionsModal({
     'div',
     { class: 'editor-callout editor-callout-info is-mb-sm' },
     [
-      h('img', {
-        class: 'callout-icon',
-        src: iconUrl('shield-check'),
-        alt: '',
-        'aria-hidden': 'true',
-      }),
+      icon('shield-check', { size: 18, className: 'callout-icon' }),
       h('span', {
         text: t(
           'editor.versions.backupNotice',

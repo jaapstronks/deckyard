@@ -7,7 +7,7 @@ import { formatRelativeTime } from '../../lib/format/format-time.js';
 import { t } from '../../lib/ui-i18n.js';
 import { createAvatar } from '../../lib/user/avatar.js';
 import { getUserProfile } from '../../lib/user/user-profiles.js';
-import { iconUrl } from '../../../shared/icon-names.js';
+import { icon } from '../../lib/dom/icons.js';
 import { hexToRgb, getRelativeLuminance } from '../../../shared/color-utils.js';
 
 // Safety-net window: if a card's thumbnail hasn't reached any terminal state
@@ -621,43 +621,41 @@ function readableTextColor(hex) {
  * - Private (lock icon)
  */
 function getVisibilityIndicator(h, p, t) {
+  const indicator = (state, name, title) =>
+    h(
+      'span',
+      {
+        class: `presentation-visibility-indicator is-${state}`,
+        title,
+        'aria-hidden': 'true',
+      },
+      [icon(name, { size: 16 })],
+    );
+
   if (p.isPublished) {
-    return h('img', {
-      class: 'presentation-visibility-indicator is-published',
-      title: t('list.visibility.published', 'Published'),
-      src: iconUrl('globe'),
-      alt: '',
-      'aria-hidden': 'true',
-    });
+    return indicator(
+      'published',
+      'globe',
+      t('list.visibility.published', 'Published'),
+    );
   }
   if (p.visibility === 'organization') {
-    return h('img', {
-      class: 'presentation-visibility-indicator is-organization',
-      title: t('list.visibility.workspace', 'Shared with workspace'),
-      src: iconUrl('users'),
-      alt: '',
-      'aria-hidden': 'true',
-    });
+    return indicator(
+      'organization',
+      'users',
+      t('list.visibility.workspace', 'Shared with workspace'),
+    );
   }
   if (p.collaboratorCount > 0) {
-    return h('img', {
-      class: 'presentation-visibility-indicator is-shared',
-      title: t('list.visibility.shared', 'Shared with {count} people', {
+    return indicator(
+      'shared',
+      'link',
+      t('list.visibility.shared', 'Shared with {count} people', {
         count: p.collaboratorCount,
       }),
-      src: iconUrl('link'),
-      alt: '',
-      'aria-hidden': 'true',
-    });
+    );
   }
-  // Private - subtle lock icon
-  return h('img', {
-    class: 'presentation-visibility-indicator is-private',
-    title: t('list.visibility.private', 'Private'),
-    src: iconUrl('lock'),
-    alt: '',
-    'aria-hidden': 'true',
-  });
+  return indicator('private', 'lock', t('list.visibility.private', 'Private'));
 }
 
 /**
