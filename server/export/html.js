@@ -15,11 +15,144 @@ import {
   detectPrismKatexNeeds,
 } from '../utils/prism-katex.js';
 import { loadExportCssBundle, embedSlideImages } from './css-bundle.js';
+import { buildCssChain } from '../utils/css-chain.js';
 import { inlineLocalFontUrls } from '../utils/embed-fonts.js';
 import {
   getSlideEffectiveDuration,
   DEFAULT_ADVANCE_INTERVAL_SECONDS,
 } from '../../shared/slide-timing.js';
+
+/**
+ * Chrome the standalone/published page adds on top of the deck bundle: the
+ * letterboxed 1600x900 stage, the visible nav controls, and the `?ui=min`
+ * embed shape. A layer of the same chain, so the fork seam still lands last
+ * (server/utils/css-chain.js).
+ */
+const STANDALONE_CSS = `
+      /* Standalone published view: scale fixed design (1600×900) to fit viewport, letterboxed. */
+      .export-body .deck {
+        align-items: stretch;
+        justify-content: stretch;
+      }
+      .ps-standalone-stage-wrap {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+      }
+      .ps-standalone-stage {
+        position: absolute;
+        width: 1600px;
+        height: 900px;
+        left: 0;
+        top: 0;
+        transform-origin: top left;
+        max-width: none;
+        max-height: none;
+      }
+
+      /* Standalone published view: visible navigation controls (touch + discoverability). */
+      .ps-standalone-progress-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 6px;
+      }
+      .ps-standalone-nav {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .ps-standalone-loop {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: var(--color-text-muted, #666);
+      }
+      .ps-standalone-loop-interval {
+        width: 56px;
+        padding: 4px 6px;
+        border: 1px solid var(--color-border, #d0d0d0);
+        border-radius: 6px;
+        font: inherit;
+        text-align: right;
+      }
+      .ps-standalone-loop-interval::-webkit-outer-spin-button,
+      .ps-standalone-loop-interval::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+      .ps-standalone-loop-interval[type='number'] {
+        -moz-appearance: textfield;
+      }
+      .ps-standalone-loop-bar {
+        position: relative;
+        height: 2px;
+        margin-bottom: 6px;
+        background: var(--color-border, rgba(0, 0, 0, 0.08));
+        border-radius: 2px;
+        overflow: hidden;
+        display: none;
+      }
+      .ps-standalone-loop-bar.is-on {
+        display: block;
+      }
+      .ps-standalone-loop-bar-fill {
+        position: absolute;
+        inset: 0;
+        width: 0%;
+        background: var(--color-accent, #3b82f6);
+        transition: none;
+      }
+      .ps-standalone-loop-bar.is-paused .ps-standalone-loop-bar-fill {
+        opacity: 0.4;
+      }
+      /* Override presenter default spacing when we put the progress text in a row. */
+      .presenter-progress .presenter-progress-text {
+        margin-bottom: 0;
+        white-space: nowrap;
+      }
+
+      /* ?ui=min — embed-shaped chrome. The topbar and the control row go away
+         and their grid rows collapse to 0, so the scaled stage is the whole
+         frame and a host page can size the iframe with aspect-ratio: 16 / 9
+         alone (no "chrome height" constant to keep in sync). What remains is
+         the 3px progress fill, absolutely positioned so it costs no layout
+         height: it is the only cue that the deck has more slides, it is not
+         interactive, and it cannot wrap. The slide counter is dropped from
+         view but still announced through #srStatus.
+         Keyboard nav (arrows/space/Home/End) and F for fullscreen are
+         untouched — with the buttons gone they are the interaction surface. */
+      html.ui-min .presenter-shell {
+        --presenter-topbar-height: 0px;
+        --presenter-progress-height: 0px;
+      }
+      html.ui-min .presenter-topbar,
+      html.ui-min .ps-standalone-progress-row,
+      html.ui-min .ps-standalone-loop-bar {
+        display: none;
+      }
+      html.ui-min .presenter-progress {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 60;
+        padding: 0;
+        background: transparent;
+        border-top: none;
+        backdrop-filter: none;
+        pointer-events: none;
+      }
+      html.ui-min .presenter-progress-bar {
+        height: 3px;
+        border-radius: 0;
+        background: transparent;
+      }
+`;
 
 export async function buildStandaloneHtml(
   repoRoot,
@@ -173,136 +306,15 @@ export async function buildStandaloneHtml(
     ${externalFontScripts}
     ${buildPrismKatexCdnTags(highlightNeeds)}
     <style>
-${css.fontCss}
-${chromeCss}
-${css.themeVarsCss}
-${css.themeCss}
-${slidesCss}
-${css.wmCss}
-
-      /* Standalone published view: scale fixed design (1600×900) to fit viewport, letterboxed. */
-      .export-body .deck {
-        align-items: stretch;
-        justify-content: stretch;
-      }
-      .ps-standalone-stage-wrap {
-        position: relative;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        background: #000;
-      }
-      .ps-standalone-stage {
-        position: absolute;
-        width: 1600px;
-        height: 900px;
-        left: 0;
-        top: 0;
-        transform-origin: top left;
-        max-width: none;
-        max-height: none;
-      }
-
-      /* Standalone published view: visible navigation controls (touch + discoverability). */
-      .ps-standalone-progress-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 6px;
-      }
-      .ps-standalone-nav {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-      }
-      .ps-standalone-loop {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 13px;
-        color: var(--color-text-muted, #666);
-      }
-      .ps-standalone-loop-interval {
-        width: 56px;
-        padding: 4px 6px;
-        border: 1px solid var(--color-border, #d0d0d0);
-        border-radius: 6px;
-        font: inherit;
-        text-align: right;
-      }
-      .ps-standalone-loop-interval::-webkit-outer-spin-button,
-      .ps-standalone-loop-interval::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-      }
-      .ps-standalone-loop-interval[type='number'] {
-        -moz-appearance: textfield;
-      }
-      .ps-standalone-loop-bar {
-        position: relative;
-        height: 2px;
-        margin-bottom: 6px;
-        background: var(--color-border, rgba(0, 0, 0, 0.08));
-        border-radius: 2px;
-        overflow: hidden;
-        display: none;
-      }
-      .ps-standalone-loop-bar.is-on {
-        display: block;
-      }
-      .ps-standalone-loop-bar-fill {
-        position: absolute;
-        inset: 0;
-        width: 0%;
-        background: var(--color-accent, #3b82f6);
-        transition: none;
-      }
-      .ps-standalone-loop-bar.is-paused .ps-standalone-loop-bar-fill {
-        opacity: 0.4;
-      }
-      /* Override presenter default spacing when we put the progress text in a row. */
-      .presenter-progress .presenter-progress-text {
-        margin-bottom: 0;
-        white-space: nowrap;
-      }
-
-      /* ?ui=min — embed-shaped chrome. The topbar and the control row go away
-         and their grid rows collapse to 0, so the scaled stage is the whole
-         frame and a host page can size the iframe with aspect-ratio: 16 / 9
-         alone (no "chrome height" constant to keep in sync). What remains is
-         the 3px progress fill, absolutely positioned so it costs no layout
-         height: it is the only cue that the deck has more slides, it is not
-         interactive, and it cannot wrap. The slide counter is dropped from
-         view but still announced through #srStatus.
-         Keyboard nav (arrows/space/Home/End) and F for fullscreen are
-         untouched — with the buttons gone they are the interaction surface. */
-      html.ui-min .presenter-shell {
-        --presenter-topbar-height: 0px;
-        --presenter-progress-height: 0px;
-      }
-      html.ui-min .presenter-topbar,
-      html.ui-min .ps-standalone-progress-row,
-      html.ui-min .ps-standalone-loop-bar {
-        display: none;
-      }
-      html.ui-min .presenter-progress {
-        position: absolute;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        z-index: 60;
-        padding: 0;
-        background: transparent;
-        border-top: none;
-        backdrop-filter: none;
-        pointer-events: none;
-      }
-      html.ui-min .presenter-progress-bar {
-        height: 3px;
-        border-radius: 0;
-        background: transparent;
-      }
+${buildCssChain(repoRoot, [
+  css.fontCss,
+  chromeCss,
+  css.themeVarsCss,
+  css.themeCss,
+  slidesCss,
+  css.wmCss,
+  STANDALONE_CSS,
+])}
     </style>
   </head>
   <body class="export-body">

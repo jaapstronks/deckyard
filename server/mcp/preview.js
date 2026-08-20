@@ -12,84 +12,38 @@ import { readCssWithImports } from '../utils/read-css-with-imports.js';
 import { readTextIfExists } from '../utils/html-utils.js';
 import { themeVarsCssText } from '../utils/themes.js';
 import { embedSlideImages } from '../export/css-bundle.js';
-import { repoRoot } from '../config/paths.js';
+import { buildCssChain } from '../utils/css-chain.js';
+import { repoRoot as defaultRepoRoot } from '../config/paths.js';
 
-let _slidesCssCache = null;
+/** repoRoot -> minimal CSS text. Keyed so a test can point at a fixture root. */
+const _slidesCssCache = new Map();
 
 /**
  * Load and cache the minimal slide CSS (slides.css + theme.css only).
  * Skips app.css (~458KB) and font embeddings to keep output small.
+ *
+ * @param {string} root - Repository root path
+ * @returns {Promise<string>}
  */
-async function getMinimalCss() {
-  if (_slidesCssCache) return _slidesCssCache;
+async function getMinimalCss(root) {
+  const hit = _slidesCssCache.get(root);
+  if (hit) return hit;
 
   const [slidesCss, themeCss] = await Promise.all([
-    readCssWithImports(
-      repoRoot,
-      path.join(repoRoot, 'client', 'styles', 'slides.css'),
-    ),
-    readTextIfExists(path.join(repoRoot, 'client', 'styles', 'theme.css')),
+    readCssWithImports(root, path.join(root, 'client', 'styles', 'slides.css')),
+    readTextIfExists(path.join(root, 'client', 'styles', 'theme.css')),
   ]);
 
-  _slidesCssCache = `${themeCss || ''}\n${slidesCss}`;
-  return _slidesCssCache;
+  const css = `${themeCss || ''}\n${slidesCss}`;
+  _slidesCssCache.set(root, css);
+  return css;
 }
 
-/**
- * Build a self-contained HTML preview of one or more slides.
- * Uses the same rendering pipeline as the PDF/PNG export.
- *
- * @param {Array} slides - Array of slide objects ({ type, content, ... })
- * @param {Object} options
- * @param {Object} options.theme - Theme object (from loadThemeAssets)
- * @param {string} options.title - Presentation title
- * @param {number} options.startIndex - Starting slide index (for numbering)
- * @param {'nl'|'en-GB'|null} [options.lang] - Deck language, from `resolveDeckLang(pres)`
- * @returns {Promise<string>} Self-contained HTML string
- */
-export async function buildSlidePreviewHtml(
-  slides,
-  { theme = null, title = '', startIndex = 0, lang = null } = {},
-) {
-  const baseCss = await getMinimalCss();
-  const themeVars = theme ? themeVarsCssText(theme) : '';
+/** Previews are static images in a chat client; no animated gradients. */
+const GRADIENT_OFF_CSS = `.ps-theme { --t-gradient-enabled: 0; }`;
 
-  // Embed local images as data URLs
-  const embeddedSlides = await embedSlideImages(repoRoot, slides);
-
-  // Render each slide at 1600×900
-  const slideHtmls = embeddedSlides.map((slide, i) => {
-    const html = renderSlideHtml(slide, {
-      theme,
-      stripEditorAttrs: true,
-      lang,
-    });
-    const num = startIndex + i + 1;
-    return `
-      <div class="preview-item">
-        <div class="preview-label">${num}. ${escHtml(slide.type)}</div>
-        <div class="preview-frame">
-          <div class="preview-stage ps-theme">${html}</div>
-        </div>
-      </div>
-    `;
-  });
-
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>${escHtml(title || 'Slide Preview')}</title>
-  <style>
-    /* Theme variables */
-    ${themeVars}
-    /* Deckyard slide styles */
-    ${baseCss}
-
-    /* Disable animated gradients in preview */
-    .ps-theme { --t-gradient-enabled: 0; }
-
-    /* Preview chrome */
+/** The preview page's own chrome (header, frame, scaled stage) for the list view. */
+const PREVIEW_CHROME_CSS = `
     * { box-sizing: border-box; }
     body {
       margin: 0;
@@ -152,6 +106,95 @@ export async function buildSlidePreviewHtml(
       max-width: none;
       max-height: none;
     }
+`;
+
+/** Same chrome, single-slide variant. */
+const SINGLE_PREVIEW_CHROME_CSS = `
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f5f5f5; }
+    .frame {
+      position: relative;
+      width: 100%;
+      padding-top: 56.25%;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .stage {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1600px;
+      height: 900px;
+      transform-origin: top left;
+    }
+    .stage .slide {
+      width: 1600px;
+      height: 900px;
+      max-width: none;
+      max-height: none;
+    }
+`;
+
+/**
+ * Build a self-contained HTML preview of one or more slides.
+ * Uses the same rendering pipeline as the PDF/PNG export.
+ *
+ * @param {Array} slides - Array of slide objects ({ type, content, ... })
+ * @param {Object} options
+ * @param {Object} options.theme - Theme object (from loadThemeAssets)
+ * @param {string} options.title - Presentation title
+ * @param {number} options.startIndex - Starting slide index (for numbering)
+ * @param {'nl'|'en-GB'|null} [options.lang] - Deck language, from `resolveDeckLang(pres)`
+ * @param {string} [options.repoRoot] - Repository root (override for tests)
+ * @returns {Promise<string>} Self-contained HTML string
+ */
+export async function buildSlidePreviewHtml(
+  slides,
+  {
+    theme = null,
+    title = '',
+    startIndex = 0,
+    lang = null,
+    repoRoot = defaultRepoRoot,
+  } = {},
+) {
+  const baseCss = await getMinimalCss(repoRoot);
+  const themeVars = theme ? themeVarsCssText(theme) : '';
+
+  // Embed local images as data URLs
+  const embeddedSlides = await embedSlideImages(repoRoot, slides);
+
+  // Render each slide at 1600×900
+  const slideHtmls = embeddedSlides.map((slide, i) => {
+    const html = renderSlideHtml(slide, {
+      theme,
+      stripEditorAttrs: true,
+      lang,
+    });
+    const num = startIndex + i + 1;
+    return `
+      <div class="preview-item">
+        <div class="preview-label">${num}. ${escHtml(slide.type)}</div>
+        <div class="preview-frame">
+          <div class="preview-stage ps-theme">${html}</div>
+        </div>
+      </div>
+    `;
+  });
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>${escHtml(title || 'Slide Preview')}</title>
+  <style>
+${buildCssChain(repoRoot, [
+  themeVars,
+  baseCss,
+  GRADIENT_OFF_CSS,
+  PREVIEW_CHROME_CSS,
+])}
   </style>
   <script>
     // Scale each 1600×900 stage to fit its frame container
@@ -186,13 +229,14 @@ export async function buildSlidePreviewHtml(
  * @param {Object} [options]
  * @param {Object} [options.theme] - Theme object (from loadThemeAssets)
  * @param {'nl'|'en-GB'|null} [options.lang] - Deck language, from `resolveDeckLang(pres)`
+ * @param {string} [options.repoRoot] - Repository root (override for tests)
  * @returns {Promise<string>} Self-contained HTML string
  */
 export async function buildSingleSlidePreviewHtml(
   slide,
-  { theme = null, lang = null } = {},
+  { theme = null, lang = null, repoRoot = defaultRepoRoot } = {},
 ) {
-  const baseCss = await getMinimalCss();
+  const baseCss = await getMinimalCss(repoRoot);
   const themeVars = theme ? themeVarsCssText(theme) : '';
 
   // Embed local images
@@ -209,33 +253,12 @@ export async function buildSingleSlidePreviewHtml(
 <head>
   <meta charset="utf-8">
   <style>
-    ${themeVars}
-    ${baseCss}
-    .ps-theme { --t-gradient-enabled: 0; }
-    * { box-sizing: border-box; }
-    body { margin: 0; background: #f5f5f5; }
-    .frame {
-      position: relative;
-      width: 100%;
-      padding-top: 56.25%;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    .stage {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 1600px;
-      height: 900px;
-      transform-origin: top left;
-    }
-    .stage .slide {
-      width: 1600px;
-      height: 900px;
-      max-width: none;
-      max-height: none;
-    }
+${buildCssChain(repoRoot, [
+  themeVars,
+  baseCss,
+  GRADIENT_OFF_CSS,
+  SINGLE_PREVIEW_CHROME_CSS,
+])}
   </style>
   <script>
     function scaleStage() {

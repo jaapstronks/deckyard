@@ -49,6 +49,8 @@ custom/assets/*
 !custom/assets/.gitkeep
 custom/slide-types/*
 !custom/slide-types/.gitkeep
+custom/styles/*
+!custom/styles/.gitkeep
 custom/ai/*
 !custom/ai/.gitkeep
 ```

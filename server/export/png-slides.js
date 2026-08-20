@@ -14,6 +14,61 @@ import {
   embedSlideImages,
 } from './css-bundle.js';
 
+/** PNG export is static; disable animated gradients so the result is deterministic. */
+const GRADIENT_OFF_CSS = `.ps-theme { --t-gradient-enabled: 0; }`;
+
+/**
+ * The export page's own chrome (toolbar, thumbnail grid) — not deck CSS, but it
+ * goes through the same chain: a second <style> after the deck bundle would sit
+ * after the fork seam, and the seam is last. See server/utils/css-chain.js.
+ */
+const PAGE_CSS = `
+      body { margin: 0; background: #0f1413; color: #fff; }
+      .toolbar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        padding: 12px 16px;
+        background: rgba(0,0,0,0.72);
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .toolbar .btn { border-radius: 6px; }
+      .wrap { max-width: 980px; margin: 0 auto; padding: 16px; }
+      .hint { opacity: 0.82; font-size: 13px; }
+      .list { display: grid; gap: 14px; margin-top: 14px; }
+      .png-item {
+        border: 1px solid rgba(255,255,255,0.14);
+        border-radius: 12px;
+        padding: 12px;
+        background: rgba(255,255,255,0.04);
+      }
+      .png-actions { display: flex; gap: 10px; align-items: center; margin-top: 10px; }
+      .png-status { opacity: 0.8; font-size: 12px; }
+
+      .png-thumb {
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.12);
+        background: rgba(0,0,0,0.25);
+        aspect-ratio: 16 / 9;
+        position: relative;
+        --thumb-scale: 0.18;
+      }
+      .png-thumb .slide {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 1600px;
+        height: 900px;
+        transform: scale(var(--thumb-scale));
+        transform-origin: top left;
+        max-width: none;
+        max-height: none;
+      }
+`;
+
 export async function buildSlidesPngExportHtml(
   repoRoot,
   pres,
@@ -70,55 +125,7 @@ export async function buildSlidesPngExportHtml(
     <title>${title} (PNG Export)</title>
     ${buildPrismKatexCdnTags()}
     <style id="pngExportCss">
-${buildExportStyleContent(css)}
-      /* PNG export is static; disable animated gradients so the result is deterministic. */
-      .ps-theme { --t-gradient-enabled: 0; }
-    </style>
-    <style>
-      body { margin: 0; background: #0f1413; color: #fff; }
-      .toolbar {
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        padding: 12px 16px;
-        background: rgba(0,0,0,0.72);
-        display: flex;
-        gap: 10px;
-        align-items: center;
-      }
-      .toolbar .btn { border-radius: 6px; }
-      .wrap { max-width: 980px; margin: 0 auto; padding: 16px; }
-      .hint { opacity: 0.82; font-size: 13px; }
-      .list { display: grid; gap: 14px; margin-top: 14px; }
-      .png-item {
-        border: 1px solid rgba(255,255,255,0.14);
-        border-radius: 12px;
-        padding: 12px;
-        background: rgba(255,255,255,0.04);
-      }
-      .png-actions { display: flex; gap: 10px; align-items: center; margin-top: 10px; }
-      .png-status { opacity: 0.8; font-size: 12px; }
-
-      .png-thumb {
-        border-radius: 10px;
-        overflow: hidden;
-        border: 1px solid rgba(255,255,255,0.12);
-        background: rgba(0,0,0,0.25);
-        aspect-ratio: 16 / 9;
-        position: relative;
-        --thumb-scale: 0.18;
-      }
-      .png-thumb .slide {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 1600px;
-        height: 900px;
-        transform: scale(var(--thumb-scale));
-        transform-origin: top left;
-        max-width: none;
-        max-height: none;
-      }
+${buildExportStyleContent(css, [GRADIENT_OFF_CSS, PAGE_CSS])}
     </style>
   </head>
   <body>
