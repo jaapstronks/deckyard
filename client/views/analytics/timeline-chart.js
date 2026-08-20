@@ -4,6 +4,7 @@
 
 import { t } from '../../lib/ui-i18n.js';
 import { formatDate } from '../../lib/format/analytics-format.js';
+import { createEmptyState } from '../../lib/dom/empty-state.js';
 
 /**
  * Format date for chart display (short format: M/D).
@@ -43,25 +44,15 @@ export function createTimelineChart({ h, data }) {
 
     if (!chartData || chartData.length === 0) {
       chartContainer.append(
-        h('div', { class: 'analytics-empty-state' }, [
-          h('img', {
-            class: 'analytics-empty-state-icon',
-            src: '/client/vendor/lucide-icons/chart-column.svg',
-            alt: '',
-            'aria-hidden': 'true',
-          }),
-          h('p', {
-            class: 'analytics-empty-state-title',
-            text: t('analytics.noViewsYet', 'No views yet'),
-          }),
-          h('p', {
-            class: 'analytics-empty-state-description',
-            text: t(
-              'analytics.shareToGetViews',
-              'Share your presentation to start seeing view analytics here.',
-            ),
-          }),
-        ]),
+        createEmptyState({
+          h,
+          icon: 'chart-column',
+          title: t('analytics.noViewsYet', 'No views yet'),
+          message: t(
+            'analytics.shareToGetViews',
+            'Share your presentation to start seeing view analytics here.',
+          ),
+        }),
       );
       return;
     }

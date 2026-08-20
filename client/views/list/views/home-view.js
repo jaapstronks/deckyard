@@ -4,7 +4,7 @@ import { buildSectionHeader } from './section-header.js';
 import {
   createEmptyState,
   createNoPresentationsEmptyState,
-} from '../empty-state.js';
+} from '../../../lib/dom/empty-state.js';
 import { createSandboxExamplesSection } from './sandbox-examples.js';
 import { createOnboardingChecklist } from '../onboarding-checklist.js';
 import { displayNameFromEmail } from '../../../lib/user/user-format.js';

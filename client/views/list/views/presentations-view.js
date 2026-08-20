@@ -1,6 +1,6 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { createTagFilter, filterPresentationsByTags } from '../tag-filter.js';
-import { createNoPresentationsEmptyState } from '../empty-state.js';
+import { createNoPresentationsEmptyState } from '../../../lib/dom/empty-state.js';
 import { storage } from '../../../lib/storage.js';
 
 /**

@@ -130,7 +130,7 @@ test('timeline chart shows the empty state (no SVG) for no data', () => {
   const { el } = createTimelineChart({ h, data: [] });
   assert.equal(el.querySelector('svg'), null, 'no chart drawn');
   assert.ok(
-    el.querySelector('.analytics-empty-state'),
+    el.querySelector('.empty-state'),
     'empty state shown instead',
   );
 });

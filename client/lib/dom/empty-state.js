@@ -1,4 +1,4 @@
-import { t } from '../../lib/ui-i18n.js';
+import { t } from '../ui-i18n.js';
 import { iconUrl } from '../../../shared/icon-names.js';
 
 /**
@@ -6,13 +6,20 @@ import { iconUrl } from '../../../shared/icon-names.js';
  * (and an optional secondary). Replaces the dead-end "help" text in list views
  * so a user with no decks has an obvious way forward.
  *
+ * This is the one block-form empty state (A7.16 cluster 3). The other
+ * sanctioned form is the one-line placeholder note, which is plain
+ * `h('div', { class: 'empty-note', text })` — deliberately not a helper.
+ *
  * @param {object} opts
  * @param {Function} opts.h - DOM helper
- * @param {string} [opts.icon='presentation'] - Lucide icon name (rendered via iconUrl)
+ * @param {string|null} [opts.icon='presentation'] - Lucide icon name (rendered
+ *   via iconUrl); pass `null` for an icon-less block
  * @param {string} opts.title - Bold heading line
  * @param {string} [opts.message] - Secondary explanatory line
- * @param {string} opts.primaryLabel - Primary button label
- * @param {Function} opts.onPrimary - Primary button handler
+ * @param {string} [opts.className] - Extra class(es) on the root, e.g. the
+ *   `empty-state-panel` dashed-panel variant
+ * @param {string} [opts.primaryLabel] - Primary button label
+ * @param {Function} [opts.onPrimary] - Primary button handler
  * @param {string} [opts.secondaryLabel] - Optional secondary button label
  * @param {Function} [opts.onSecondary] - Optional secondary button handler
  * @returns {HTMLElement}
@@ -22,6 +29,7 @@ export function createEmptyState({
   icon = 'presentation',
   title,
   message,
+  className,
   primaryLabel,
   onPrimary,
   secondaryLabel,
@@ -51,15 +59,18 @@ export function createEmptyState({
     );
   }
 
-  const children = [
-    h('img', {
-      class: 'empty-state-icon',
-      src: iconUrl(icon),
-      alt: '',
-      'aria-hidden': 'true',
-    }),
-    h('div', { class: 'empty-state-title', text: title || '' }),
-  ];
+  const children = [];
+  if (icon) {
+    children.push(
+      h('img', {
+        class: 'empty-state-icon',
+        src: iconUrl(icon),
+        alt: '',
+        'aria-hidden': 'true',
+      }),
+    );
+  }
+  children.push(h('div', { class: 'empty-state-title', text: title || '' }));
   if (message) {
     children.push(
       h('div', { class: 'empty-state-message help', text: message }),
@@ -67,7 +78,8 @@ export function createEmptyState({
   }
   if (actions.childNodes.length) children.push(actions);
 
-  return h('div', { class: 'empty-state' }, children);
+  const rootClass = ['empty-state', className].filter(Boolean).join(' ');
+  return h('div', { class: rootClass }, children);
 }
 
 /**

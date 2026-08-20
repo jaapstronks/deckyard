@@ -8,7 +8,7 @@ import {
   formatDuration,
   getSourceLabel,
 } from '../../lib/format/analytics-format.js';
-import { iconUrl } from '../../../shared/icon-names.js';
+import { createEmptyState } from '../../lib/dom/empty-state.js';
 
 /**
  * Create viewer list component.
@@ -111,25 +111,15 @@ export function createViewerList({
 
     if (displaySessions.length === 0) {
       container.append(
-        h('div', { class: 'analytics-empty-state' }, [
-          h('img', {
-            class: 'analytics-empty-state-icon',
-            src: iconUrl('eye'),
-            alt: '',
-            'aria-hidden': 'true',
-          }),
-          h('p', {
-            class: 'analytics-empty-state-title',
-            text: t('analytics.noViewersYet', 'No viewers yet'),
-          }),
-          h('p', {
-            class: 'analytics-empty-state-description',
-            text: t(
-              'analytics.shareToGetViewers',
-              'Once people view your presentation, their sessions will appear here.',
-            ),
-          }),
-        ]),
+        createEmptyState({
+          h,
+          icon: 'eye',
+          title: t('analytics.noViewersYet', 'No viewers yet'),
+          message: t(
+            'analytics.shareToGetViewers',
+            'Once people view your presentation, their sessions will appear here.',
+          ),
+        }),
       );
       loadMoreBtn.style.display = 'none';
       return;
