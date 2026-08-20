@@ -101,13 +101,6 @@
   padding: var(--ps-space-1);
 }
 
-.tag-filter-empty {
-  padding: var(--ps-space-2);
-  text-align: center;
-  color: hsl(var(--app-text-tertiary));
-  font-size: var(--ps-text-base);
-}
-
 .tag-filter-item {
   display: flex;
   align-items: center;

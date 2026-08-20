@@ -18,6 +18,7 @@ import {
 } from '../../lib/slide-runtime/slide-render.js';
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 import { t } from '../../lib/ui-i18n.js';
+import { createEmptyState } from '../../lib/dom/empty-state.js';
 import {
   createAnalyticsTracker,
   isAnalyticsEnabled,
@@ -348,9 +349,11 @@ export async function renderShareViewer(root, token) {
     if (!slide) {
       slideWrap.innerHTML = '';
       slideWrap.append(
-        h('div', {
-          class: 'share-viewer-empty',
-          text: t('share.noSlides', 'No slides'),
+        createEmptyState({
+          h,
+          icon: null,
+          className: 'empty-state-fill',
+          title: t('share.noSlides', 'No slides'),
         }),
       );
       return;

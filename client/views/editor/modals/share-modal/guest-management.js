@@ -82,7 +82,7 @@ export function createGuestManagementSection({
     if (guests.length === 0) {
       guestList.append(
         h('div', {
-          class: 'share-guest-empty',
+          class: 'empty-note',
           text: t('share.guests.empty', 'No guests invited yet'),
         }),
       );

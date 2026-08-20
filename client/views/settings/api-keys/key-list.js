@@ -4,6 +4,7 @@
 
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { createEmptyState } from '../../../lib/dom/empty-state.js';
 
 /**
  * Format a date as relative time (e.g., "2 days ago").
@@ -77,15 +78,16 @@ function getPermissionDescription(permission) {
  * @returns {HTMLElement}
  */
 function renderEmptyState() {
-  return h('div', { class: 'api-keys-empty-state' }, [
-    h('p', {
-      class: 'help',
-      text: t(
-        'settings.apiKeys.emptyState',
-        'No API keys yet. Create one to connect AI agents, automation tools, or external services.',
-      ),
-    }),
-  ]);
+  return createEmptyState({
+    h,
+    icon: null,
+    className: 'empty-state-panel',
+    title: t('settings.apiKeys.emptyTitle', 'No API keys yet'),
+    message: t(
+      'settings.apiKeys.emptyDescription',
+      'Create one to connect AI agents, automation tools, or external services.',
+    ),
+  });
 }
 
 /**

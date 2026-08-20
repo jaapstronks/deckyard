@@ -170,11 +170,6 @@
   gap: var(--ps-space-2);
 }
 
-.field-list-empty {
-  padding: var(--ps-space-3);
-  text-align: center;
-}
-
 .field-list-item {
   border: 1px solid hsl(var(--app-border-subtle));
   border-radius: var(--ps-radius-md);

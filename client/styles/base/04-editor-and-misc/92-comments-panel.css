@@ -64,13 +64,6 @@
   padding: var(--ps-space-3);
 }
 
-.comments-empty {
-  text-align: center;
-  padding: var(--ps-space-8) var(--ps-space-4);
-  color: var(--text-muted, #666);
-  font-style: italic;
-}
-
 .comment-thread {
   margin-bottom: var(--ps-space-3);
   padding-bottom: var(--ps-space-3);
@@ -165,13 +158,6 @@
 .mention-autocomplete-email {
   font-size: var(--ps-text-xs);
   color: var(--text-muted, #888);
-}
-
-.mention-autocomplete-empty {
-  padding: var(--ps-space-2);
-  font-size: 12px;
-  color: var(--text-muted, #888);
-  font-style: italic;
 }
 
 /* Per-user read-state: unseen activity from others (mail convention) */

@@ -16,8 +16,9 @@ import { iconUrl } from '../../../shared/icon-names.js';
  *   via iconUrl); pass `null` for an icon-less block
  * @param {string} opts.title - Bold heading line
  * @param {string} [opts.message] - Secondary explanatory line
- * @param {string} [opts.className] - Extra class(es) on the root, e.g. the
- *   `empty-state-panel` dashed-panel variant
+ * @param {string} [opts.className] - Extra class(es) on the root: either
+ *   `empty-state-panel` (dashed placeholder panel, settings tabs) or
+ *   `empty-state-fill` (fills and centres in a stage-sized container)
  * @param {string} [opts.primaryLabel] - Primary button label
  * @param {Function} [opts.onPrimary] - Primary button handler
  * @param {string} [opts.secondaryLabel] - Optional secondary button label

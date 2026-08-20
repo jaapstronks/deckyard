@@ -92,16 +92,6 @@
     .presenter-shell,
     .viewer-shell
   )
-  .slides-search-hint,
-:where(
-    .app-shell,
-    .modal-backdrop,
-    .notes-shell,
-    .follow-shell,
-    .join-shell,
-    .presenter-shell,
-    .viewer-shell
-  )
-  .slides-search-empty {
+  .slides-search-hint {
   padding: var(--ps-space-2);
 }

@@ -212,15 +212,6 @@
   box-shadow: var(--app-shadow-lg);
 }
 
-.viewer-empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  opacity: 0.6;
-  font-size: var(--ps-text-xl);
-}
-
 /* --- Viewer navigation --- */
 .viewer-nav {
   display: flex;

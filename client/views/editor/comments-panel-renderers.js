@@ -52,7 +52,7 @@ export function createCommentRenderers({
 
     if (comments.length === 0) {
       const emptyEl = h('div', {
-        class: 'comments-empty',
+        class: 'empty-note',
         text: filter.slideMissing
           ? t('comments.empty.noSlide', 'Select a slide to see its comments')
           : filter.attention === 'waiting'

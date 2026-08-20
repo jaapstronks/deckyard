@@ -380,11 +380,6 @@
   flex-shrink: 0;
 }
 
-.ps-lib-empty {
-  padding: var(--ps-space-4) 0;
-  text-align: center;
-}
-
 /* Clickable thumbnail hover effect */
 .ps-lib-thumb-wrap:hover .ps-lib-thumb.thumb {
   filter: brightness(1.02);

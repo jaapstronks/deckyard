@@ -62,7 +62,7 @@ export function createFieldListEditor({ fields = [], onChange }) {
     if (currentFields.length === 0) {
       el.append(
         h('div', {
-          class: 'field-list-empty help',
+          class: 'empty-note',
           text: t(
             'settings.slideTypes.fields.empty',
             'No fields defined. Add fields to define the slide content structure.',

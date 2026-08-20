@@ -196,7 +196,7 @@ export function createCollectionsBar({ api, root }) {
     if (!all.length) {
       listWrap.append(
         h('div', {
-          class: 'help collections-bar-empty',
+          class: 'empty-note',
           text: t(
             'slideLibrary.collections.empty',
             'Group reusable slides into a named, ordered collection to start decks from.',

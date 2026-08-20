@@ -1,5 +1,5 @@
 import { t } from '../../../lib/ui-i18n.js';
-import { iconUrl } from '../../../../shared/icon-names.js';
+import { createEmptyState } from '../../../lib/dom/empty-state.js';
 
 /**
  * Create the search results view
@@ -32,9 +32,9 @@ export function createSearchView({
   headerRow.append(searchTitle, clearBtn);
 
   const searchList = h('div', { class: 'list presentation-grid' });
-  const emptyState = h('div', { class: 'search-empty-state' });
+  const statusSlot = h('div', { class: 'search-status' });
 
-  searchView.append(headerRow, searchList, emptyState);
+  searchView.append(headerRow, searchList, statusSlot);
 
   let currentQuery = '';
 
@@ -99,13 +99,13 @@ export function createSearchView({
 
     // Clear previous results
     searchList.innerHTML = '';
-    emptyState.innerHTML = '';
+    statusSlot.innerHTML = '';
 
     if (!currentQuery) {
       searchTitle.textContent = t('list.search.title', 'Search');
-      emptyState.append(
+      statusSlot.append(
         h('div', {
-          class: 'help',
+          class: 'empty-note',
           text: t(
             'list.search.enterQuery',
             'Enter a search term to find presentations.',
@@ -126,30 +126,20 @@ export function createSearchView({
     });
 
     if (results.length === 0) {
-      emptyState.append(
-        h('div', { class: 'search-no-results' }, [
-          h('img', {
-            class: 'search-no-results-icon',
-            src: iconUrl('search'),
-            alt: '',
-            'aria-hidden': 'true',
-          }),
-          h('div', {
-            class: 'search-no-results-text',
-            text: t(
-              'list.search.noResults',
-              'No presentations found for "{query}"',
-              { query: currentQuery },
-            ),
-          }),
-          h('div', {
-            class: 'search-no-results-hint',
-            text: t(
-              'list.search.noResultsHint',
-              'Try a different search term or check your spelling.',
-            ),
-          }),
-        ]),
+      statusSlot.append(
+        createEmptyState({
+          h,
+          icon: 'search',
+          title: t(
+            'list.search.noResults',
+            'No presentations found for "{query}"',
+            { query: currentQuery },
+          ),
+          message: t(
+            'list.search.noResultsHint',
+            'Try a different search term or check your spelling.',
+          ),
+        }),
       );
     } else {
       // Show count
@@ -160,7 +150,7 @@ export function createSearchView({
               count: results.length,
             });
 
-      emptyState.append(
+      statusSlot.append(
         h('div', { class: 'search-result-count', text: countText }),
       );
 
@@ -185,7 +175,7 @@ export function createSearchView({
   function clear() {
     currentQuery = '';
     searchList.innerHTML = '';
-    emptyState.innerHTML = '';
+    statusSlot.innerHTML = '';
   }
 
   return {

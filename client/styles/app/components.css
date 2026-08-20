@@ -706,12 +706,6 @@ table.csv-grid {
   /* Lucide SVGs are loaded as <img> (black stroke); adapt to dark UI mode. */
   filter: var(--app-icon-filter, none);
 }
-.icon-picker-empty {
-  grid-column: 1 / -1;
-  padding: var(--ps-space-5) 0;
-  text-align: center;
-}
-
 /* Table editor (custom slide form) */
 .table-editor-labelrow {
   align-items: center;
@@ -912,8 +906,11 @@ table.csv-grid {
    - .empty-state       block: icon + title + message (+ CTA row)
    - .empty-note        one-line placeholder ("No slides", "No results");
                         plain h('div', { class: 'empty-note', text }) — no helper
-   .empty-state-panel is the dashed placeholder-panel variant used by the
-   settings tabs (themes, fonts, custom slide types). */
+   Two block modifiers, passed as createEmptyState({ className }):
+   - .empty-state-panel dashed placeholder panel, used by the settings tabs
+                        (themes, fonts, custom slide types, API keys)
+   - .empty-state-fill  fills and centres in a stage-sized container (the
+                        viewer and share-viewer slide stages) */
 
 .empty-state {
   grid-column: 1 / -1;
@@ -964,7 +961,15 @@ table.csv-grid {
   border: 2px dashed hsl(var(--app-border-subtle));
 }
 
+.empty-state-fill {
+  height: 100%;
+  justify-content: center;
+}
+
 .empty-note {
+  /* Notes often stand in for a row of grid items (icon picker, gradient
+     picker), so span the track like .empty-state does; inert elsewhere. */
+  grid-column: 1 / -1;
   padding: var(--ps-space-4);
   text-align: center;
   font-size: var(--ps-text-sm);
