@@ -32,7 +32,7 @@ const { CLONE_REKEY_SOURCE_NAMES, applyCloneRekey, slideRekeyOnClone } =
   await import('../shared/slide-types/clone.js');
 const { cloneSlidesForInsert, pasteSlidesFromClipboard } =
   await import('../client/lib/slide-authoring/clone-slides.js');
-const { copySlides } =
+const { copySlides, getClipboardSlides, getClipboardCount } =
   await import('../client/lib/slide-authoring/slide-clipboard.js');
 
 /** Types that declare instance-bound content keys, from the registry. */
@@ -193,7 +193,82 @@ test('cloneSlidesForInsert: two clones of one poll never share the id', () => {
   assert.notEqual(one.id, two.id);
 });
 
+test('the clipboard carries the nesting a copy path collected', () => {
+  globalThis.localStorage.clear();
+  copySlides([
+    { id: 'p', type: 'content-slide', content: { title: 'P' } },
+    { id: 'c', parentId: 'p', type: 'content-slide', content: { title: 'C' } },
+  ]);
+  const round = getClipboardSlides();
+  assert.equal(round.length, 2);
+  assert.equal(round[0].id, 'p');
+  assert.equal(round[1].parentId, 'p', 'the parent link survives the store');
+  assert.equal(round[0].parentId, null, 'a top-level slide says so');
+});
+
+test('a clipboard in the previous shape reads as no clipboard', () => {
+  globalThis.localStorage.clear();
+  globalThis.localStorage.setItem(
+    'ps:slide-clipboard',
+    JSON.stringify({
+      version: 1,
+      timestamp: Date.now(),
+      slides: [{ type: 'content-slide', content: {}, notes: '' }],
+    }),
+  );
+  // A second accepted shape is what the beta stance rules out: the older entry
+  // is simply not a clipboard, and the paste bar hides itself.
+  assert.equal(getClipboardSlides(), null);
+  assert.equal(getClipboardCount(), 0);
+});
+
+test('pasteSlidesFromClipboard: parent and child land nested, with fresh ids', () => {
+  globalThis.localStorage.clear();
+  copySlides([
+    { id: 'p', type: 'content-slide', content: { title: 'P' } },
+    { id: 'c', parentId: 'p', type: 'content-slide', content: { title: 'C' } },
+  ]);
+
+  const pres = { id: 'deck-5', slides: [] };
+  const n = pasteSlidesFromClipboard({
+    pres,
+    slideTypes: SLIDE_TYPES,
+    editorState: { dirtyRefreshAll: () => {} },
+    t: (_key, fallback) => fallback,
+  });
+
+  assert.equal(n, 2);
+  const [parent, child] = pres.slides;
+  assert.notEqual(parent.id, 'p', 'fresh id');
+  assert.notEqual(child.id, 'c', 'fresh id');
+  assert.equal(parent.parentId, null);
+  assert.equal(child.parentId, parent.id, 'nesting restored on paste');
+});
+
+test('pasteSlidesFromClipboard: a child copied without its parent goes top-level', () => {
+  globalThis.localStorage.clear();
+  copySlides([
+    { id: 'c', parentId: 'p', type: 'content-slide', content: { title: 'C' } },
+  ]);
+
+  const pres = { id: 'deck-6', slides: [] };
+  pasteSlidesFromClipboard({
+    pres,
+    slideTypes: SLIDE_TYPES,
+    editorState: { dirtyRefreshAll: () => {} },
+    t: (_key, fallback) => fallback,
+  });
+
+  assert.equal(pres.slides.length, 1);
+  assert.equal(
+    pres.slides[0].parentId,
+    null,
+    'the parent lives in the source deck, so the copy detaches',
+  );
+});
+
 test('pasteSlidesFromClipboard: one routine for the paste bar and Ctrl+V', () => {
+  globalThis.localStorage.clear();
   copySlides([
     { id: 'src', type: 'poll-slide', content: { pollId: 'x', question: 'Q' } },
   ]);

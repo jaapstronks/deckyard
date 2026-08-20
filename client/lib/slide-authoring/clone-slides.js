@@ -43,8 +43,8 @@ function deepClone(value) {
  * Nesting: a clone whose parent is *also* being cloned is re-pointed at the
  * parent's clone. A clone whose parent is not in the set keeps its original
  * parent (duplicate: the copy lands next to its sibling under the same parent)
- * unless `detachOrphans` is set (paste: clipboard slides carry no ids, so
- * there is no parent to keep and the copies land at the top level).
+ * unless `detachOrphans` is set (paste: the parent lives in whichever deck the
+ * slide was copied from, so a child copied without it lands at the top level).
  *
  * The source slides are never mutated.
  *
@@ -92,8 +92,9 @@ export function cloneSlidesForInsert(
  * slide, mark dirty and refresh. Both entry points (the paste bar and Ctrl+V)
  * call this, so the two cannot drift again.
  *
- * Clipboard slides carry `{ type, content, notes }` only — no id, no parentId
- * (see slide-clipboard.js) — so pasted slides land at the top level.
+ * Clipboard slides carry their source `id` and `parentId` (see
+ * slide-clipboard.js), so a parent copied together with its children keeps them
+ * nested here; a child copied without its parent lands at the top level.
  *
  * @param {Object} opts
  * @param {Object} opts.pres - the presentation, mutated

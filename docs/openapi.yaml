@@ -303,7 +303,16 @@ paths:
                   type: array
                   items:
                     $ref: '#/components/schemas/Slide'
-                  description: Initial slides
+                  description: >-
+                    Initial slides. The deck mints its own `id` for each one, so
+                    any `id` you send is only a handle for the same payload: a
+                    `parentId` naming another slide in the array keeps that
+                    slide nested under it, and a `parentId` naming anything else
+                    is dropped to `null`. Content keys that identify a slide
+                    instance rather than its text (a poll's `pollId`, a
+                    follow-invite's `presentationId`) are re-derived against the
+                    new deck, so a slide copied from elsewhere never shares its
+                    live poll or its QR target with the deck it came from.
       responses:
         '201':
           description: Presentation created
