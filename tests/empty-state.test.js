@@ -49,7 +49,11 @@ test('a named icon resolves through iconUrl', () => {
 });
 
 test('icon: null renders an icon-less block', () => {
-  const el = createEmptyState({ h, icon: null, title: 'No custom themes yet.' });
+  const el = createEmptyState({
+    h,
+    icon: null,
+    title: 'No custom themes yet.',
+  });
   assert.equal(el.querySelector('img'), null);
   assert.equal(el.children[0].className, 'empty-state-title');
 });
