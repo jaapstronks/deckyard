@@ -734,14 +734,6 @@
   color: hsl(150 50% 30%);
 }
 
-/* Topbar icon buttons (comments, AI, analytics) */
-.topbar-btn-icon {
-  width: 16px;
-  height: 16px;
-  object-fit: contain;
-  vertical-align: middle;
-}
-
 /* ============================================================
    ANALYZE MODAL STYLES
    ============================================================ */
