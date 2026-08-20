@@ -907,6 +907,31 @@ table.csv-grid {
   margin: var(--ps-space-1) var(--ps-space-1);
 }
 
+/* UI-chrome icons (A7.16 cluster 5) ---------------------------------------
+   Built by icon() in client/lib/dom/icons.js: the vendored Lucide SVG is the
+   mask, currentColor is the paint. That is the whole point — a chrome glyph
+   has to follow the text colour of its button through hover, disabled,
+   danger and dark mode, which an <img> cannot do. Data-driven icons stay
+   <img src={iconUrl(name)}>; see the icons.js header for the boundary. */
+
+.icon {
+  display: inline-block;
+  flex: none;
+  width: var(--icon-size, 1em);
+  height: var(--icon-size, 1em);
+  background-color: currentColor;
+  -webkit-mask-image: var(--icon-url);
+  mask-image: var(--icon-url);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  /* Decorative: never the target of a click, hover or drag. */
+  pointer-events: none;
+}
+
 /* Empty states (A7.16 cluster 3) ------------------------------------------
    Two sanctioned forms, built in client/lib/dom/empty-state.js:
    - .empty-state       block: icon + title + message (+ CTA row)

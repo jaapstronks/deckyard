@@ -7,7 +7,7 @@ import { t } from '../ui-i18n.js';
 import { toast } from '../dom/toast.js';
 import { renderSlideElement } from '../slide-runtime/slide-render.js';
 import { cleanStr } from '../../../shared/string-utils.js';
-import { copyIcon } from '../dom/icons.js';
+import { icon } from '../dom/icons.js';
 import { createModal } from '../dom/modal.js';
 import { createTagEditor } from '../../views/list/tag-editor.js';
 import { getContentForLang } from './search.js';
@@ -239,7 +239,7 @@ export function createSlideLibraryModals({
         onCopySlide?.(itemWithLangContent);
       },
     });
-    const copyIconEl = copyIcon({ size: 24 });
+    const copyIconEl = icon('copy', { size: 24 });
     copyOption.append(
       h('div', { class: 'ps-lib-use-option-icon' }, [copyIconEl]),
       h('div', { class: 'ps-lib-use-option-text' }, [

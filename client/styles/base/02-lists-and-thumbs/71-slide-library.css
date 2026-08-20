@@ -330,11 +330,6 @@
   pointer-events: auto;
 }
 
-.ps-lib-more-btn svg {
-  width: 14px;
-  height: 14px;
-}
-
 .ps-lib-more-dropdown .dropdown-menu {
   position: fixed;
   min-width: 180px;
@@ -565,11 +560,6 @@
   flex-shrink: 0;
   font-size: 1.25rem;
   color: hsl(var(--app-text-secondary));
-}
-
-.ps-lib-use-option-icon svg {
-  width: 24px;
-  height: 24px;
 }
 
 .ps-lib-use-option-text {

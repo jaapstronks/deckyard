@@ -118,13 +118,6 @@ const USER_TEXT_SITES = [
  */
 const INDIRECT_STATIC_SITES = [
   {
-    file: 'client/lib/dom/icons.js',
-    rhs: 'innerHTML',
-    reason:
-      'Icon factory. Every caller in this module passes a module-level static ' +
-      'SVG path literal; the parameter is never reached from outside.',
-  },
-  {
     file: 'client/views/editor/inline-edit/selection-toolbar.js',
     rhs: 'ICONS[name]',
     reason:

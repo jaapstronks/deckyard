@@ -21,6 +21,32 @@ export { ICON_CATEGORIES } from './icon-catalog.js';
 export const ICON_NAMES = CATALOG_ICON_NAMES;
 
 /**
+ * Lucide names used for **UI chrome** — buttons, toolbars, menus, drag
+ * handles. These are written by us in code (see `icon()` in
+ * `client/lib/dom/icons.js`), never chosen by an author.
+ *
+ * This list exists so chrome glyphs get vendored independently of the picker
+ * catalog: the catalog is what an author may *choose*, this is what the app
+ * *uses*. Names may appear in both (an author can also pick `lock`); a name
+ * only here is vendored but never offered as slide content.
+ *
+ * Add a name here before calling `icon()` with it, then re-run
+ * `npm run vendor:lucide` so the SVG lands in client/vendor/lucide-icons/.
+ * @type {string[]}
+ */
+export const UI_ICON_NAMES = [
+  'chevron-down',
+  'copy',
+  'ellipsis',
+  'grip-vertical',
+  'lock',
+  'lock-open',
+  'trash-2',
+  'x',
+  'zoom-in',
+];
+
+/**
  * Maps old Phosphor icon names to their Lucide equivalents.
  * Used to resolve icon references in existing presentation data.
  */

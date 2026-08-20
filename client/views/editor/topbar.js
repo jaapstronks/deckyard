@@ -24,7 +24,7 @@ import { getUserProfileAsync } from '../../lib/user/user-profiles.js';
 import { displayNameFromEmail } from '../../lib/user/user-format.js';
 import { createUserMenu } from '../../lib/user/user-menu.js';
 import { createNotificationBell } from '../../lib/user/notification-bell.js';
-import { chevronDownIcon } from '../../lib/dom/icons.js';
+import { icon } from '../../lib/dom/icons.js';
 
 export function createEditorTopbar({
   h,
@@ -442,7 +442,7 @@ export function createEditorTopbar({
   } = createDropdown({
     h,
     triggerClass: 'btn btn-primary btn-icon topbar-present-caret',
-    triggerContent: [chevronDownIcon({ size: 14 })],
+    triggerContent: [icon('chevron-down', { size: 14 })],
     title: t('editor.present.more', 'More presenting options'),
     ariaLabel: t('editor.present.more', 'More presenting options'),
     detailsClass: 'topbar-present-more',

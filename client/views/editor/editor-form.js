@@ -5,7 +5,7 @@ import { t } from '../../lib/ui-i18n.js';
 import { toast as defaultToast } from '../../lib/dom/toast.js';
 import { isOrgDisabledSlideType } from './slide-types-policy.js';
 import { buildDataSourceIndicator } from './data-source-panel.js';
-import { closeIcon } from '../../lib/dom/icons.js';
+import { icon } from '../../lib/dom/icons.js';
 import { buildHeaderActions } from './editor-form/header-actions.js';
 import { getInlineDescriptor } from './inline-edit/descriptors.js';
 import { createLayoutSwitcherChip } from './layout-switcher.js';
@@ -157,7 +157,7 @@ export function createRerenderEditor({
           'aria-label': t('editor.inspector.hide', 'Hide inspector'),
           onclick: () => setInspectorCollapsed(true),
         });
-        closeBtn.append(closeIcon({ size: 16 }));
+        closeBtn.append(icon('x', { size: 16 }));
         closeSlot.append(closeBtn);
       }
 

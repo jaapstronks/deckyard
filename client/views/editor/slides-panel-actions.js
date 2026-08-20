@@ -6,13 +6,7 @@ import {
   copySlides,
   getClipboardCount,
 } from '../../lib/slide-authoring/slide-clipboard.js';
-import {
-  copyIcon,
-  trashIcon,
-  closeIcon,
-  lockIcon,
-  unlockIcon,
-} from '../../lib/dom/icons.js';
+import { icon } from '../../lib/dom/icons.js';
 
 /**
  * Expand selection to include children of any selected parents
@@ -198,11 +192,11 @@ export function createSlidesPanelActions({
   });
 
   // Add icons to buttons
-  bulkCopyBtn.append(copyIcon());
-  bulkDeleteBtn.append(trashIcon());
-  bulkCancelBtn.append(closeIcon());
-  bulkLockBtn.append(lockIcon());
-  bulkUnlockBtn.append(unlockIcon());
+  bulkCopyBtn.append(icon('copy'));
+  bulkDeleteBtn.append(icon('trash-2'));
+  bulkCancelBtn.append(icon('x'));
+  bulkLockBtn.append(icon('lock'));
+  bulkUnlockBtn.append(icon('lock-open'));
 
   bulkActionBar.append(bulkCountEl, bulkCopyBtn);
   // Add lock/unlock buttons for authors
