@@ -306,15 +306,19 @@ export async function buildStandaloneHtml(
     ${externalFontScripts}
     ${buildPrismKatexCdnTags(highlightNeeds)}
     <style>
-${buildCssChain(repoRoot, [
-  css.fontCss,
-  chromeCss,
-  css.themeVarsCss,
-  css.themeCss,
-  slidesCss,
-  css.wmCss,
-  STANDALONE_CSS,
-])}
+${buildCssChain(
+  repoRoot,
+  [
+    css.fontCss,
+    chromeCss,
+    css.themeVarsCss,
+    css.themeCss,
+    slidesCss,
+    css.wmCss,
+    STANDALONE_CSS,
+  ],
+  { customCss: css.customCss },
+)}
     </style>
   </head>
   <body class="export-body">

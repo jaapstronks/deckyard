@@ -41,6 +41,21 @@ Guidelines:
 - Avoid adding dependencies unless there's a strong reason.
 - Avoid hardcoding brand/copy in shared templates; keep copy centralized in view modules.
 
+## Test the switch, not its position
+
+Assert the _property_ a feature guarantees, not the _setting_ this repo happens
+to ship. `--t-gradient-enabled: 0` in every export path is upstream policy, and
+a fork that legitimately turns it on is not a regression — but a test written as
+"the flag is off everywhere" says it is. Written as "a layer is rasterized
+exactly when it paints", the same test covers the same ground and holds on both
+sides.
+
+This matters more now that `custom/styles/` lets a fork change styling without
+patching core (see [fork-setup.md](docs/reference/fork-setup.md)): the more a
+fork may legitimately flip, the more a test that pins a switch _position_ fails
+for the wrong reason. When you need a policy default pinned, assert it once
+where it is decided — not in every path that reads it.
+
 ## Running checks
 
 - `npm test` — the node test suite (also runs in CI on every PR)
