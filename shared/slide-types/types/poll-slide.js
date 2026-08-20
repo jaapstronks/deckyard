@@ -22,6 +22,10 @@ export default {
   fallback: 'list-slide',
   runtime: 'live',
   interaction: 'poll',
+  // `pollId` addresses the interaction state a live session collects, so two
+  // slides must never share one: every copy path re-mints it. Vocabulary and
+  // rationale in shared/slide-types/clone.js.
+  rekeyOnClone: { pollId: 'fresh-id' },
   label: 'Poll',
   labelField: 'question',
   fields: [

@@ -1,8 +1,8 @@
 import {
   copySlides,
-  getClipboardSlides,
+  getClipboardCount,
 } from '../../../lib/slide-authoring/slide-clipboard.js';
-import { newId } from '../../../lib/util/id.js';
+import { pasteSlidesFromClipboard } from '../../../lib/slide-authoring/clone-slides.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import {
@@ -14,6 +14,7 @@ import {
 export function attachSlideListKeyNavigation({
   slideListEl,
   pres,
+  slideTypes = null,
   getSlides,
   getSelectedSlideId,
   setSelectedSlideId,
@@ -187,64 +188,21 @@ export function attachSlideListKeyNavigation({
         onMultiSelectionChange?.();
       }
     } else if (e.key === 'v' || e.key === 'V') {
-      // Paste slides from clipboard
-      const clipboardSlides = getClipboardSlides();
-      if (!clipboardSlides || clipboardSlides.length === 0) return; // Let browser handle normal paste
+      // Paste slides from clipboard. Same routine as the paste bar, so the two
+      // entry points cannot drift (clone-slides.js).
+      if (!getClipboardCount()) return; // Let browser handle normal paste
       e.preventDefault();
-
-      const afterSlideId = getSelectedSlideId?.();
-      const slides = pres?.slides || [];
-      let insertIdx = slides.length;
-      if (afterSlideId) {
-        const afterIdx = slides.findIndex((x) => x.id === afterSlideId);
-        insertIdx = afterIdx >= 0 ? afterIdx + 1 : slides.length;
-      }
-
-      // Create a map of old IDs to new IDs for preserving parent-child relationships
-      const idMap = new Map();
-      for (const clipSlide of clipboardSlides) {
-        idMap.set(clipSlide.id, newId());
-      }
-
-      // Create new slides from clipboard data with new IDs
-      const newSlides = clipboardSlides.map((clipSlide) => {
-        const newSlideId = idMap.get(clipSlide.id);
-        const s = {
-          id: newSlideId,
-          type: clipSlide.type,
-          content: JSON.parse(JSON.stringify(clipSlide.content || {})),
-          notes: clipSlide.notes || '',
-          // Map parentId to new ID if it exists in the clipboard, otherwise null
-          parentId:
-            clipSlide.parentId && idMap.has(clipSlide.parentId)
-              ? idMap.get(clipSlide.parentId)
-              : null,
-        };
-        // Ensure interaction IDs don't collide for special slide types
-        if (s.type === 'poll-slide' && s.content) {
-          s.content.pollId = newId();
-        }
-        if (s.type === 'follow-invite-slide' && s.content) {
-          s.content.presentationId = pres?.id || '';
-        }
-        return s;
+      pasteSlidesFromClipboard({
+        pres,
+        slideTypes,
+        getSelectedSlideId,
+        setSelectedSlideId,
+        clearMultiSelection,
+        onMultiSelectionChange,
+        editorState,
+        toast,
+        t,
       });
-
-      // Insert slides at the calculated position
-      pres.slides.splice(insertIdx, 0, ...newSlides);
-
-      // Select the first pasted slide and clear multi-selection
-      clearMultiSelection?.();
-      setSelectedSlideId?.(newSlides[0]?.id || null);
-      markDirty?.();
-      editorState.refreshAll();
-
-      toast?.success?.(
-        t('editor.slides.pasted', '{n} slide(s) pasted', {
-          n: newSlides.length,
-        }),
-      );
-      onMultiSelectionChange?.();
     }
   };
 
@@ -272,6 +230,7 @@ export function attachSlideListKeyNavigation({
     duplicateSlides({
       ids: selectedIds,
       pres,
+      slideTypes,
       editorState,
       setSelectedSlideId,
       clearMultiSelection,

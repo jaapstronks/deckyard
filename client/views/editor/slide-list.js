@@ -647,6 +647,7 @@ export function setupSlideList({
     attachSlideListKeyNavigation({
       slideListEl,
       pres,
+      slideTypes: SLIDE_TYPES,
       getSlides: () => getSlidesForNav(),
       getSelectedSlideId,
       setSelectedSlideId,
@@ -693,6 +694,7 @@ export function setupSlideList({
       ids,
       ctx: {
         pres,
+        slideTypes: SLIDE_TYPES,
         editorState,
         setSelectedSlideId,
         clearMultiSelection,

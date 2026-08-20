@@ -13,6 +13,7 @@ import { sortByPinnedThenName } from '../../lib/slide-library/search.js';
 import { createSlidesPanelResize } from './slides-panel-resize.js';
 import { createSlidesPanelActions } from './slides-panel-actions.js';
 import { isLiveSlideType } from '../../../shared/slide-types/runtime.js';
+import { applyCloneRekey } from '../../../shared/slide-types/clone.js';
 
 // Which slide types need audience participation, and therefore a follow-invite
 // slide in the deck for the audience to join through. Declared by the type
@@ -190,6 +191,7 @@ export function createSlidesPanel({
     h,
     pres,
     toast,
+    SLIDE_TYPES,
     getSelectedSlideId,
     setSelectedSlideId,
     getSelectedSlideIds,
@@ -442,20 +444,16 @@ export function createSlidesPanel({
       item?.content && typeof item.content === 'object'
         ? deepClone(item.content)
         : {};
-    // Ensure interaction IDs don't collide across reused slides.
-    if (type === 'poll-slide') {
-      delete nextContent.pollId;
-      s.content = { ...s.content, ...nextContent, pollId: newId() };
-    } else if (type === 'follow-invite-slide') {
-      // Inject presentationId for follow-invite-slide so the QR code works
-      s.content = {
-        ...s.content,
-        ...nextContent,
-        presentationId: pres?.id || '',
-      };
-    } else {
-      s.content = { ...s.content, ...nextContent };
-    }
+    s.content = { ...s.content, ...nextContent };
+    // A library item is a copy of a slide, so the instance-bound content keys
+    // its type declares are re-derived here too — a reused poll gets its own
+    // pollId, a reused follow-invite points at this deck. Declaration:
+    // shared/slide-types/clone.js.
+    applyCloneRekey(s, {
+      def: SLIDE_TYPES?.[type] || null,
+      presentationId: pres?.id || '',
+      newId,
+    });
     maybeAssignRandomBg(s);
     recordLibraryUsage(item);
 

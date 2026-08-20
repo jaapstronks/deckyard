@@ -9,8 +9,8 @@
  * caller decides that).
  */
 
-import { newId } from '../../../lib/util/id.js';
 import { h } from '../../../lib/dom.js';
+import { cloneSlidesForInsert } from '../../../lib/slide-authoring/clone-slides.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
@@ -37,12 +37,16 @@ function toIdSet(ids) {
 
 /**
  * Duplicate the given slides in place, right after the (contiguous) selection.
- * Faithful deep copy with fresh ids and regenerated interaction ids.
+ * Faithful deep copy with fresh ids and regenerated interaction ids (the clone
+ * recipe lives in client/lib/slide-authoring/clone-slides.js).
+ * @param {Object} [opts.slideTypes] - slide-type metadata, for the per-type
+ *   `rekeyOnClone` declaration
  * @returns {number} how many slides were created (0 if nothing to do)
  */
 export function duplicateSlides({
   ids,
   pres,
+  slideTypes = null,
   editorState,
   setSelectedSlideId,
   clearMultiSelection,
@@ -57,26 +61,13 @@ export function duplicateSlides({
   const sourceSlides = slides.filter((s) => toClone.has(s.id));
   if (!sourceSlides.length) return 0;
 
-  // New id for every cloned slide so nested parent links can be remapped.
-  const idMap = new Map();
-  for (const s of sourceSlides) idMap.set(s.id, newId());
-
-  const newSlides = sourceSlides.map((s) => {
-    const copy = JSON.parse(JSON.stringify(s));
-    copy.id = idMap.get(s.id);
-    // Keep child under its clone if the parent is also being duplicated;
-    // otherwise stay under the original parent.
-    copy.parentId =
-      s.parentId && idMap.has(s.parentId)
-        ? idMap.get(s.parentId)
-        : (s.parentId ?? null);
-    if (copy.type === 'poll-slide' && copy.content) {
-      copy.content.pollId = newId();
-    }
-    if (copy.type === 'follow-invite-slide' && copy.content) {
-      copy.content.presentationId = pres?.id || '';
-    }
-    return copy;
+  // Fresh ids, nesting kept within the duplicated set, and the instance-bound
+  // content keys each type declares re-derived. A child whose parent is not
+  // duplicated stays under the original parent, which is what makes this a
+  // duplicate rather than a paste.
+  const newSlides = cloneSlidesForInsert(sourceSlides, {
+    slideTypes,
+    presentationId: pres?.id || '',
   });
 
   // Insert immediately after the last slide of the (contiguous) selection.

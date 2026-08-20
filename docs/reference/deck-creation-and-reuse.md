@@ -43,6 +43,27 @@ used to be split between starter kits and the slide library:
    of library slides - the "starter kit" job, but composable instead of
    clone-then-prune.
 
+### Copying a slide: what gets re-derived
+
+Duplicating, pasting and inserting from the library are all _copies of a slide_,
+and they share one routine — `cloneSlidesForInsert()` in
+`client/lib/slide-authoring/clone-slides.js`. It mints fresh slide ids,
+re-points a nested child at its cloned parent when both are copied, and applies
+the copied type's `rekeyOnClone` declaration.
+
+`rekeyOnClone` is the per-type half: which **content** keys are bound to one
+slide instance and must not travel with a copy. Two core types declare one — the
+poll's `pollId` (`fresh-id`: it addresses the interaction state a live session
+collects, so two slides sharing it would share the answers) and the
+follow-invite's `presentationId` (`presentation-id`: the QR code is built from
+it, so a copy into another deck has to re-point). The vocabulary is closed and
+lives in `shared/slide-types/clone.js`; the declaration travels on
+`GET /api/slide-types`, so a fork type carrying an id of its own is honoured by
+every copy path without touching a file outside its own directory.
+
+Whole-deck duplication (`POST /api/presentations/:id/duplicate`) is a different
+path and does not run this recipe.
+
 ### Collections
 
 A collection references existing `slide_library` items in an explicit order; it

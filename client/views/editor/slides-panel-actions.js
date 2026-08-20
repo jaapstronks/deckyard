@@ -1,11 +1,9 @@
 import { t } from '../../lib/ui-i18n.js';
 import { confirmModal } from '../../lib/dom/modal.js';
-import { newId } from '../../lib/util/id.js';
-import { deepClone } from './editor-utils.js';
 import { getChildIds } from './slide-list/nested-helpers.js';
+import { pasteSlidesFromClipboard } from '../../lib/slide-authoring/clone-slides.js';
 import {
   copySlides,
-  getClipboardSlides,
   getClipboardCount,
 } from '../../lib/slide-authoring/slide-clipboard.js';
 import {
@@ -43,12 +41,15 @@ function expandSelectionWithChildren(selectedIds, slides) {
  * @param {Function} options.rerenderSlideList - Re-render the slide list
  * @param {Object} options.editorState - Editor state updater
  * @param {Function} options.isAuthor - Check if current user is author
+ * @param {Object} [options.SLIDE_TYPES] - Slide-type metadata (drives the
+ *   per-type `rekeyOnClone` declaration on paste)
  * @returns {Object} Bulk action bar API
  */
 export function createSlidesPanelActions({
   h,
   pres,
   toast,
+  SLIDE_TYPES,
   getSelectedSlideId,
   setSelectedSlideId,
   getSelectedSlideIds,
@@ -215,57 +216,17 @@ export function createSlidesPanelActions({
   const pasteCountEl = h('span', { class: 'slides-paste-count', text: '' });
 
   const pasteFromClipboard = () => {
-    const clipboardSlides = getClipboardSlides();
-    if (!clipboardSlides || clipboardSlides.length === 0) return;
-
-    const afterSlideId = getSelectedSlideId?.();
-    const slides = pres.slides || [];
-    let insertIdx = slides.length;
-    if (afterSlideId) {
-      const afterIdx = slides.findIndex((x) => x.id === afterSlideId);
-      insertIdx = afterIdx >= 0 ? afterIdx + 1 : slides.length;
-    }
-
-    // Create a map of old IDs to new IDs for preserving parent-child relationships
-    const idMap = new Map();
-    for (const clipSlide of clipboardSlides) {
-      idMap.set(clipSlide.id, newId());
-    }
-
-    // Create new slides from clipboard data with new IDs
-    const newSlides = clipboardSlides.map((clipSlide) => {
-      const newSlideId = idMap.get(clipSlide.id);
-      const s = {
-        id: newSlideId,
-        type: clipSlide.type,
-        content: deepClone(clipSlide.content || {}),
-        notes: clipSlide.notes || '',
-        // Map parentId to new ID if it exists in the clipboard, otherwise null
-        parentId:
-          clipSlide.parentId && idMap.has(clipSlide.parentId)
-            ? idMap.get(clipSlide.parentId)
-            : null,
-      };
-      // Ensure interaction IDs don't collide for special slide types
-      if (s.type === 'poll-slide' && s.content) {
-        s.content.pollId = newId();
-      }
-      if (s.type === 'follow-invite-slide' && s.content) {
-        s.content.presentationId = pres?.id || '';
-      }
-      return s;
+    pasteSlidesFromClipboard({
+      pres,
+      slideTypes: SLIDE_TYPES,
+      getSelectedSlideId,
+      setSelectedSlideId,
+      clearMultiSelection,
+      onMultiSelectionChange: updateBulkActionBar,
+      editorState,
+      toast,
+      t,
     });
-
-    // Insert slides at the calculated position
-    pres.slides.splice(insertIdx, 0, ...newSlides);
-
-    // Select the first pasted slide
-    setSelectedSlideId?.(newSlides[0]?.id || null);
-    editorState.dirtyRefreshAll();
-
-    toast?.success?.(
-      t('editor.slides.pasted', '{n} slide(s) pasted', { n: newSlides.length }),
-    );
   };
 
   const pasteBtn = h('button', {

@@ -291,6 +291,11 @@ format` writes, `npm run format:check` gates in CI next to `npm run lint`.
   the breakage that reached production in v1.8.0 with 2151 green tests behind it.
   `docs/reference/slide-type-css-contract.md`.
 
+- If your type carries a content key that identifies **this slide instance** to
+  something outside the deck (an interaction id, a cached deck id), declare it
+  with `rekeyOnClone` so every copy path (duplicate, paste, library insert)
+  re-derives it. Vocabulary: `shared/slide-types/clone.js`.
+
 ### 4) Ensure the editor UX fits the patterns
 
 - If generic field rendering is enough: you’re done.
