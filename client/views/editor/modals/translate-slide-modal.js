@@ -94,7 +94,7 @@ export async function openTranslateSlideModal({
         ? resp.translations
         : {};
   } catch (e) {
-    toast?.error(String(e?.message || e), {
+    toast?.error(e, {
       id: 'slide-translate',
     });
     return;
@@ -234,7 +234,7 @@ export async function openTranslateSlideModal({
         durationMs: 1800,
       });
     } catch (e) {
-      toast?.error(String(e?.message || e), {
+      toast?.error(e, {
         id: 'slide-translate',
       });
     }

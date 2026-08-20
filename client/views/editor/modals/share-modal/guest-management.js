@@ -129,7 +129,7 @@ export function createGuestManagementSection({
                 durationMs: 2000,
               });
             } catch (e) {
-              toast?.error(String(e?.message || e), { durationMs: 3000 });
+              toast?.error(e, { durationMs: 3000 });
             } finally {
               resendBtn.disabled = false;
             }
@@ -161,7 +161,7 @@ export function createGuestManagementSection({
               durationMs: 2000,
             });
           } catch (e) {
-            toast?.error(String(e?.message || e), { durationMs: 3000 });
+            toast?.error(e, { durationMs: 3000 });
           }
         },
       });
@@ -209,7 +209,7 @@ export function createGuestManagementSection({
         durationMs: 2000,
       });
     } catch (e) {
-      toast?.error(String(e?.message || e), { durationMs: 3000 });
+      toast?.error(e, { durationMs: 3000 });
     } finally {
       addBtn.disabled = false;
     }

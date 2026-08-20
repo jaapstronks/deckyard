@@ -82,7 +82,7 @@ export async function openTranslateFieldModal({
     translated =
       typeof resp?.translations?.[k] === 'string' ? resp.translations[k] : '';
   } catch (e) {
-    toast?.error(String(e?.message || e), {
+    toast?.error(e, {
       id: 'field-translate',
     });
     return;
@@ -183,7 +183,7 @@ export async function openTranslateFieldModal({
         durationMs: 1600,
       });
     } catch (e) {
-      toast?.error(String(e?.message || e), {
+      toast?.error(e, {
         id: 'field-translate',
       });
     }
