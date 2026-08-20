@@ -384,7 +384,7 @@ export function setupSlideList({
     if (searchActive && !slides.length) {
       slideListEl.append(
         h('div', {
-          class: 'help slides-search-empty',
+          class: 'empty-note',
           text: t('editor.slideList.empty', 'No slides found.'),
         }),
       );

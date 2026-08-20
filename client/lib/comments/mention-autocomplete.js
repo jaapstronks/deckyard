@@ -108,7 +108,7 @@ export function attachMentionAutocomplete({
     if (results.length === 0) {
       dropdown.append(
         h('div', {
-          class: 'mention-autocomplete-empty',
+          class: 'empty-note',
           text: t('mentions.noResults', 'No matching users'),
         }),
       );

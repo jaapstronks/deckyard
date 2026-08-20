@@ -5,6 +5,7 @@
 import { h } from '../../lib/dom.js';
 import { t } from '../../lib/ui-i18n.js';
 import { formatDuration } from '../../lib/format/analytics-format.js';
+import { createEmptyState } from '../../lib/dom/empty-state.js';
 
 /**
  * Create top presentations table.
@@ -23,9 +24,10 @@ export function createTopPresentations({ presentations, nav }) {
 
   if (!presentations || !presentations.length) {
     card.append(
-      h('div', {
-        class: 'dashboard-empty',
-        text: t('dashboard.top.empty', 'No presentations with views yet'),
+      createEmptyState({
+        h,
+        icon: 'presentation',
+        title: t('dashboard.top.empty', 'No presentations with views yet'),
       }),
     );
     return card;

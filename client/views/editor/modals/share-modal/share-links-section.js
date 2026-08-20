@@ -303,7 +303,7 @@ export function createShareLinksSection({
     if (shareLinks.length === 0) {
       linksList.append(
         h('div', {
-          class: 'share-links-empty',
+          class: 'empty-note',
           text: t('share.links.empty', 'No active share links'),
         }),
       );

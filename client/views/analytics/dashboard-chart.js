@@ -6,6 +6,7 @@
 import { h } from '../../lib/dom.js';
 import { t } from '../../lib/ui-i18n.js';
 import { formatDate } from '../../lib/format/analytics-format.js';
+import { createEmptyState } from '../../lib/dom/empty-state.js';
 
 /** Full weekday+date label for a chart tooltip. */
 const formatDateLong = (dateStr) =>
@@ -32,9 +33,10 @@ export function createDashboardChart({ timeline, period }) {
 
   if (!timeline || !timeline.length) {
     card.append(
-      h('div', {
-        class: 'dashboard-chart-empty',
-        text: t('dashboard.chart.empty', 'No view data for this period'),
+      createEmptyState({
+        h,
+        icon: 'chart-column',
+        title: t('dashboard.chart.empty', 'No view data for this period'),
       }),
     );
     return card;

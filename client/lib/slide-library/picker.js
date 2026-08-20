@@ -180,7 +180,7 @@ export function createSlideLibraryPicker({
     if (!filtered.length) {
       mount.append(
         h('div', {
-          class: 'help ps-lib-empty',
+          class: 'empty-note',
           text:
             activeView === 'trash'
               ? t('slideLibrary.empty.trash', 'Trash is empty.')
