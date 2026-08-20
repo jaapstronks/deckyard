@@ -260,10 +260,10 @@ export function createSlidesPanel({
   const insertFollowInviteSlide = (afterSlideId) => {
     const s = makeNewSlide('follow-invite-slide', SLIDE_TYPES, {
       lang: pres?.i18n?.active,
+      presentationId: pres?.id || '',
     });
     // No language on the content: the invite renders in the language of the
     // version it sits in, derived from the render context.
-    if (pres?.id) s.content.presentationId = pres.id;
     insertSlideObject(s, { afterSlideId });
   };
 
@@ -291,15 +291,14 @@ export function createSlidesPanel({
       toast?.error?.('This slide type is not available for the active theme.');
       return;
     }
-    const s = makeNewSlide(type, SLIDE_TYPES, { lang: pres?.i18n?.active });
+    const s = makeNewSlide(type, SLIDE_TYPES, {
+      lang: pres?.i18n?.active,
+      presentationId: pres?.id || '',
+    });
     // Layout-variant presets (picker item 15) pre-configure a few content fields
     // (e.g. imageSide, layout, variant) on top of the type's defaults.
     if (contentOverrides && typeof contentOverrides === 'object') {
       Object.assign(s.content, contentOverrides);
-    }
-    // Inject presentationId for follow-invite-slide so the QR code works
-    if (type === 'follow-invite-slide' && pres?.id) {
-      s.content.presentationId = pres.id;
     }
     maybeAssignRandomBg(s);
 
@@ -439,7 +438,10 @@ export function createSlidesPanel({
       toast?.error?.('This slide type is not available for the active theme.');
       return;
     }
-    const s = makeNewSlide(type, SLIDE_TYPES, { lang: pres?.i18n?.active });
+    const s = makeNewSlide(type, SLIDE_TYPES, {
+      lang: pres?.i18n?.active,
+      presentationId: pres?.id || '',
+    });
     const nextContent =
       item?.content && typeof item.content === 'object'
         ? deepClone(item.content)
