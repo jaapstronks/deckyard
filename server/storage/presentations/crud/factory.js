@@ -12,6 +12,7 @@ import {
 } from '../../../config/sandbox.js';
 import { resolveThemeId, loadThemeAssets } from '../../../utils/themes.js';
 import { normalizeMeta } from './helpers.js';
+import { rekeyNewDeckSlides } from './rekey-new-deck.js';
 import { normalizeRevealStyle } from '../../../../shared/reveal-style.js';
 
 /**
@@ -60,6 +61,13 @@ export async function prepareNewPresentation(repoRoot, body) {
   // i18n version per language so a composed deck keeps both languages instead
   // of collapsing to the one the picker happened to show. A stable slide id is
   // shared across every language version so they remain the same slide.
+  //
+  // Every provided slide gets a fresh id, so a provided `parentId` is remapped
+  // onto the new ids the same way the editor's clone helper does it: a nested
+  // slide posted with its parent stays nested, one posted without its parent
+  // lands at the top level rather than pointing at a slide of some other deck.
+  // Content is deep-copied first — the rekey pass below writes into it, and two
+  // slides of one request may well name the same object.
   const SUPPORTED_LANGS = ['nl', 'en-GB'];
   const providedSlidesRaw =
     Array.isArray(body?.slides) && body.slides.length > 0 ? body.slides : null;
@@ -68,16 +76,36 @@ export async function prepareNewPresentation(repoRoot, body) {
   let providedVersions = null; // { [lang]: slides[] } when multilingual content is present
 
   if (providedSlidesRaw) {
-    const base = providedSlidesRaw.map((s) => ({
-      id: cryptoUuid(),
-      type: typeof s?.type === 'string' ? s.type : 'content-slide',
-      notes: typeof s?.notes === 'string' ? s.notes : '',
-      content: s?.content && typeof s.content === 'object' ? s.content : {},
-      contentByLang:
-        s?.contentByLang && typeof s.contentByLang === 'object'
-          ? s.contentByLang
-          : null,
-    }));
+    const idMap = new Map();
+    for (const s of providedSlidesRaw) {
+      const sourceId = typeof s?.id === 'string' && s.id ? s.id : null;
+      if (sourceId && !idMap.has(sourceId)) idMap.set(sourceId, cryptoUuid());
+    }
+    // A payload id names one slide: the first slide carrying it gets the
+    // mapped fresh id (and the parentId links pointing at it), a repeat is a
+    // slide of its own — the deck must never store two slides under one id.
+    const claimed = new Set();
+    const base = providedSlidesRaw.map((s) => {
+      const sourceId = typeof s?.id === 'string' && s.id ? s.id : null;
+      const mapped =
+        sourceId && !claimed.has(sourceId) ? idMap.get(sourceId) : null;
+      if (sourceId) claimed.add(sourceId);
+      return {
+        id: mapped || cryptoUuid(),
+        parentId:
+          (typeof s?.parentId === 'string' && idMap.get(s.parentId)) || null,
+        type: typeof s?.type === 'string' ? s.type : 'content-slide',
+        notes: typeof s?.notes === 'string' ? s.notes : '',
+        content:
+          s?.content && typeof s.content === 'object'
+            ? structuredClone(s.content)
+            : {},
+        contentByLang:
+          s?.contentByLang && typeof s.contentByLang === 'object'
+            ? structuredClone(s.contentByLang)
+            : null,
+      };
+    });
 
     // Which languages appear in any slide's contentByLang?
     const langSet = new Set();
@@ -101,6 +129,7 @@ export async function prepareNewPresentation(repoRoot, body) {
       for (const lang of langSet) {
         providedVersions[lang] = base.map((s) => ({
           id: s.id,
+          parentId: s.parentId,
           type: s.type,
           content: contentFor(s, lang),
           notes: s.notes,
@@ -110,6 +139,7 @@ export async function prepareNewPresentation(repoRoot, body) {
     } else {
       providedSlides = base.map((s) => ({
         id: s.id,
+        parentId: s.parentId,
         type: s.type,
         content: s.content,
         notes: s.notes,
@@ -228,6 +258,11 @@ export async function prepareNewPresentation(repoRoot, body) {
         },
   };
   normalizeI18n(pres);
+
+  // The slides came from somewhere else — a library item, another deck, an
+  // agent's payload — so the content keys a type declares as instance-bound are
+  // re-derived against *this* deck before it is stored.
+  rekeyNewDeckSlides(pres);
 
   return normalizeMeta(pres);
 }

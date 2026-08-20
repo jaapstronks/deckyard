@@ -28,6 +28,7 @@ import { repoRootOf, toStorageContext } from '../scope.js';
 import { isCollabLiveEditsEnabled } from '../../config/features.js';
 import { deleteYDocState } from './ydocs.js';
 import { normalizeSlides } from './slides.js';
+import { rekeyNewDeckSlides } from './crud/rekey-new-deck.js';
 import { normalizeI18n } from './i18n.js';
 import { prepareNewPresentation } from './crud/factory.js';
 import { assertSandboxQuotaForCreate } from './sandbox-quota.js';
@@ -1191,12 +1192,37 @@ async function duplicatePresentationRow(id, ctx) {
   const existing = await getPresentationRow(id, ctx);
   if (!existing) return { ok: false, reason: 'not_found' };
 
+  // One new id per *source* slide id, shared by every language version of it
+  // (they are one slide) and used to re-point a nested slide at its copied
+  // parent — a `parentId` left pointing at the original deck's slide is how the
+  // copy used to come out flat.
   const slideIdMap = new Map();
+  const newIdFor = (oldId) => {
+    if (!slideIdMap.has(oldId)) slideIdMap.set(oldId, crypto.randomUUID());
+    return slideIdMap.get(oldId);
+  };
   const mapSlides = (slides) => {
-    return (slides || []).map((s) => {
-      const newSlideId = crypto.randomUUID();
-      if (s.id) slideIdMap.set(s.id, newSlideId);
-      return { ...s, id: newSlideId };
+    const list = Array.isArray(slides) ? slides : [];
+    // Claim an id for every slide first: a child may precede its parent.
+    for (const s of list) if (s?.id) newIdFor(s.id);
+    // The mapped id is claimed once per list: language versions of one slide
+    // share it (they are one slide), a repeated id *within* a list is corrupt
+    // data that must not come out as two slides under one id.
+    const claimed = new Set();
+    return list.map((s) => {
+      const mapped = s?.id && !claimed.has(s.id) ? slideIdMap.get(s.id) : null;
+      if (s?.id) claimed.add(s.id);
+      return {
+        ...s,
+        id: mapped || crypto.randomUUID(),
+        parentId: (s?.parentId && slideIdMap.get(s.parentId)) || null,
+        // Deep-copied: the rekey pass writes into it, and the row we read from
+        // is not ours to change.
+        content:
+          s?.content && typeof s.content === 'object'
+            ? structuredClone(s.content)
+            : {},
+      };
     });
   };
 
@@ -1217,17 +1243,20 @@ async function duplicatePresentationRow(id, ctx) {
   const prefix = lang === 'en-GB' ? 'Copy of ' : 'Kopie van ';
   const newTitle = prefix + existing.title;
 
-  const created = await createPresentationRow(
-    {
-      title: newTitle,
-      theme: existing.theme,
-      lang: existing.lang,
-      settings: existing.settings,
-      i18n: newI18n,
-      slides: newSlides,
-    },
-    ctx,
-  );
+  // Mint the copy's id here rather than leaving it to the insert: the slides
+  // are rekeyed against it (a follow-invite slide's QR code has to point at the
+  // copy, not at the deck it was copied from).
+  const duplicate = rekeyNewDeckSlides({
+    id: crypto.randomUUID(),
+    title: newTitle,
+    theme: existing.theme,
+    lang: existing.lang,
+    settings: existing.settings,
+    i18n: newI18n,
+    slides: newSlides,
+  });
+
+  const created = await createPresentationRow(duplicate, ctx);
   return { ok: true, presentation: created };
 }
 

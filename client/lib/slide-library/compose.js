@@ -10,6 +10,13 @@
  * (nl + en-GB). We forward every available language as `contentByLang` so the
  * server can build one i18n version per language — a composed deck keeps both
  * languages instead of collapsing to whichever the picker happened to show.
+ *
+ * The item's content is forwarded as it is stored: a content key that belongs
+ * to the slide *instance* rather than to the item (a `pollId`, a follow-invite's
+ * `presentationId`) is re-derived server-side, in every language version at
+ * once — server/storage/presentations/crud/rekey-new-deck.js. Doing it here
+ * instead would cover the two views that call this and miss every agent that
+ * posts `slides[]` straight to the API.
  */
 
 const SUPPORTED_LANGS = ['nl', 'en-GB'];
