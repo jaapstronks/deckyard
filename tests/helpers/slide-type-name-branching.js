@@ -328,8 +328,8 @@ export const INVENTORY = {
   // auto-fit a freshly picked image, which get the markdown heading button,
   // both on PR #451's missed list — are field declarations now
   // (shared/slide-types/field-behaviour.js). The header's AI-convert menu was
-  // the second hand-written copy of the server's SUPPORTED_CONVERSIONS; the
-  // types declare `aiConvertTo` and both consumers read it.
+  // the second hand-written copy of the server's SUPPORTED_CONVERSIONS; both
+  // consumers read the one AI_CONVERT_PAIRS map in shared/slide-types/convert.js.
   // element-tab.js left the inventory with A7.15 PR C: which sub-element kinds
   // a type offers, and how many of each, is an `elementTab` declaration in the
   // type's own inline-edit.js now (gated by the companion matrix), and the tab
