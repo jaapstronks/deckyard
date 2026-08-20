@@ -5,7 +5,7 @@
 
 import { t } from '../../lib/ui-i18n.js';
 import { formatRelativeTime } from '../../lib/format/format-time.js';
-import { iconUrl } from '../../../shared/icon-names.js';
+import { icon } from '../../lib/dom/icons.js';
 import { createEmptyState } from '../../lib/dom/empty-state.js';
 
 /**
@@ -145,12 +145,14 @@ function createActivityItem(event, h, onNavigate) {
   const header = h('div', { class: 'activity-header' });
 
   // Event type icon
-  const typeIcon = h('img', {
-    class: `activity-type-icon ${getEventTypeClass(event.eventType)}`,
-    src: iconUrl(getEventIcon(event.eventType)),
-    alt: '',
-    'aria-hidden': 'true',
-  });
+  const typeIcon = h(
+    'span',
+    {
+      class: `activity-type-icon ${getEventTypeClass(event.eventType)}`,
+      'aria-hidden': 'true',
+    },
+    [icon(getEventIcon(event.eventType), { size: 14 })],
+  );
 
   const actor = h('span', {
     class: 'activity-actor',

@@ -329,8 +329,6 @@
 }
 
 .access-error-icon {
-  width: 64px;
-  height: 64px;
   margin-bottom: var(--ps-space-5);
 }
 
@@ -363,10 +361,6 @@
   .access-error-card {
     padding: var(--ps-space-9) var(--ps-space-6);
     border-radius: 20px;
-  }
-
-  .access-error-icon {
-    font-size: 56px;
   }
 
   .access-error-title {

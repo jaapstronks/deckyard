@@ -110,11 +110,6 @@
   font-size: 12px;
 }
 
-img.share-link-badge {
-  width: 14px;
-  height: 14px;
-  object-fit: contain;
-}
 .share-link-expires,
 .share-link-uses {
   color: hsl(var(--app-text-secondary));

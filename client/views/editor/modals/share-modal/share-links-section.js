@@ -4,7 +4,7 @@
  */
 
 import { t } from '../../../../lib/ui-i18n.js';
-import { iconUrl } from '../../../../../shared/icon-names.js';
+import { icon } from '../../../../lib/dom/icons.js';
 import { createGuestManagementSection } from './guest-management.js';
 import { getExpiresAt, formatExpiration } from './utils.js';
 import { getPermissionLabel } from '../../../../lib/permission-labels.js';
@@ -335,14 +335,7 @@ export function createShareLinksSection({
         );
       }
       if (link.hasPassword) {
-        meta.append(
-          h('img', {
-            class: 'share-link-badge',
-            src: iconUrl('lock'),
-            alt: '',
-            'aria-hidden': 'true',
-          }),
-        );
+        meta.append(icon('lock', { size: 16, className: 'share-link-badge' }));
       }
       if (link.expiresAt) {
         const expDate = new Date(link.expiresAt);

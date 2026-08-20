@@ -1,6 +1,6 @@
 import { lockDocumentScroll } from '../editor-utils.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { iconUrl } from '../../../../shared/icon-names.js';
+import { icon } from '../../../lib/dom/icons.js';
 import { createImageLibraryGrid } from './grid.js';
 import { createImageLibraryDetail } from './detail.js';
 import { createImageLibraryUpload } from './upload.js';
@@ -334,12 +334,10 @@ export function openImageLibraryPicker({
     if (activeTag) {
       sectionTitle.textContent = `#${activeTag}`;
     } else {
-      const iconImg = h('img');
-      iconImg.className = 'media-lib-section-icon';
-      iconImg.src = iconUrl(info.icon);
-      iconImg.alt = '';
-      iconImg.setAttribute('aria-hidden', 'true');
-      sectionTitle.append(iconImg, ` ${info.label}`);
+      sectionTitle.append(
+        icon(info.icon, { size: 16, className: 'media-lib-section-icon' }),
+        ` ${info.label}`,
+      );
     }
     sectionCount.textContent = `(${filtered.length})`;
   };

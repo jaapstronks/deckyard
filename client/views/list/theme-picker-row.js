@@ -4,7 +4,7 @@
  */
 
 import { t } from '../../lib/ui-i18n.js';
-import { iconUrl } from '../../../shared/icon-names.js';
+import { icon } from '../../lib/dom/icons.js';
 import { loadThemeById } from '../../lib/theme/theme.js';
 import { renderSlideElement } from '../../lib/slide-runtime/slide-render.js';
 import { attachThumbScale } from '../../lib/slide-runtime/thumb-scale.js';
@@ -80,12 +80,9 @@ export function createThemePickerRow({
   // "Start something new" lines up with Recent / Popular / Activity.
   const header = h('div', { class: 'theme-picker-header' });
   const titleWrap = h('div', { class: 'theme-picker-title-group' }, [
-    h('img', {
-      class: 'presentation-section-icon',
-      src: iconUrl('sparkles'),
-      alt: '',
-      'aria-hidden': 'true',
-    }),
+    h('span', { class: 'presentation-section-icon', 'aria-hidden': 'true' }, [
+      icon('sparkles', { size: 18 }),
+    ]),
     h('span', {
       class: 'theme-picker-title',
       text: t('list.theme.startNew', 'Start something new'),

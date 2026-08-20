@@ -1,7 +1,6 @@
 import { icon } from '../../../lib/dom/icons.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { createCommentMarkers } from '../comment-markers.js';
-import { iconUrl } from '../../../../shared/icon-names.js';
 import { renderCommentBodyNodes } from '../../../lib/comments/comment-body.js';
 
 export function createPreviewLightbox({
@@ -58,12 +57,7 @@ export function createPreviewLightbox({
         title: t('comments.addPositioned', 'Add comment to specific spot'),
       });
       pinBtn.append(
-        h('img', {
-          class: 'btn-pin-icon',
-          src: iconUrl('map-pin'),
-          alt: '',
-          'aria-hidden': 'true',
-        }),
+        icon('map-pin', { size: 15, className: 'btn-pin-icon' }),
         h('span', {
           class: 'pin-comment-btn-label',
           text: t('comments.pinCommentLabel', 'Comment'),

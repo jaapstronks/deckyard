@@ -19,7 +19,6 @@ import {
 import { convertSlideWithConfirm } from '../convert-slide-action.js';
 import { openJsonDebugModal } from '../modals/json-debug-modal.js';
 import { openSaveToLibraryModal } from '../modals/save-to-library-modal.js';
-import { iconUrl } from '../../../../shared/icon-names.js';
 import { readPreferredLlmVendor } from '../../../lib/net/llm-vendor.js';
 import { icon } from '../../../lib/dom/icons.js';
 
@@ -430,11 +429,9 @@ export function buildHeaderActions({
       },
     });
     btnLock.append(
-      h('img', {
-        class: 'btn-lock-icon',
-        src: isLocked ? iconUrl('lock-open') : iconUrl('lock'),
-        alt: '',
-        'aria-hidden': 'true',
+      icon(isLocked ? 'lock-open' : 'lock', {
+        size: 14,
+        className: 'btn-lock-icon',
       }),
     );
   }

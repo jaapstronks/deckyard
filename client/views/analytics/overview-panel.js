@@ -8,7 +8,7 @@ import {
   formatCount,
   formatPercent,
 } from '../../lib/format/analytics-format.js';
-import { iconUrl } from '../../../shared/icon-names.js';
+import { icon as uiIcon } from '../../lib/dom/icons.js';
 
 /**
  * Create an overview panel with metric cards.
@@ -74,12 +74,7 @@ function createCard(h, { label, value, icon }) {
 
   const el = h('div', { class: 'analytics-card' }, [
     h('div', { class: 'analytics-card-icon' }, [
-      h('img', {
-        src: iconUrl(icon),
-        alt: '',
-        'aria-hidden': 'true',
-        class: 'analytics-card-icon-img',
-      }),
+      uiIcon(icon, { size: 24, className: 'analytics-card-icon-img' }),
     ]),
     h('div', { class: 'analytics-card-content' }, [
       valueEl,
