@@ -137,6 +137,13 @@ app **and** in every export and render path (PDF, PNG, standalone HTML, print,
 embed, MCP preview). Screen and export get the same bytes in the same position,
 so they cannot drift.
 
+One exception, worth knowing before you debug it: a _theme's_ generated rules —
+its `@font-face` blocks and its `slideBackgrounds` variants — are injected into
+the page at runtime, so in the app they land after the seam, while exports
+inline them before it. Those selectors (`.slide.slide-bg-<id>`) outrank a
+single-class fork rule either way; if you need to beat one on screen, raise your
+selector rather than relying on load order.
+
 > **This loads after everything else and can override anything.** That is the
 > point — it is what makes patching a core file unnecessary — but it also means
 > a stray selector here outranks the whole design system, with no merge

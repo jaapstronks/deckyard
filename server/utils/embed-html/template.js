@@ -87,7 +87,6 @@ const EMBED_SHELL_CSS = `
       .deck-slide.is-active {
         display: block;
       }
-      
 `;
 
 export function renderEmbedHtmlDocument({
