@@ -121,7 +121,7 @@ function cellControlButtons({ h, content, i, cellCount, isRow, actions }) {
  * @param {Object} opts - h, slide, used + edit hooks
  * @returns {HTMLElement|null}
  */
-export function renderImageTextCollectionSection({
+function renderImageTextCollectionSection({
   h,
   slide,
   used,
@@ -217,4 +217,26 @@ export function renderImageTextCollectionSection({
   );
 
   return wrap;
+}
+
+/**
+ * The INSPECTOR_EXTRAS entry (inspector-form.js): the collection manager into
+ * the inspector's Slide tab. The selected cell's card is NOT rendered here —
+ * image-text declares `elementTab: { image: … }` like every other image type,
+ * so the shared "This image" card comes from the declaration-driven rule.
+ *
+ * @param {Object} ctx - Same context shape as renderSlideFormByType
+ */
+export function renderImageTextCollectionExtra(ctx) {
+  const { h, form, slide, used, markDirty, rerenderEditor, scheduleUiRefresh } =
+    ctx;
+  const section = renderImageTextCollectionSection({
+    h,
+    slide,
+    used,
+    markDirty,
+    rerenderEditor,
+    scheduleUiRefresh,
+  });
+  if (section) form.append(section);
 }
