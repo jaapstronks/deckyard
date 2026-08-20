@@ -93,12 +93,6 @@
   font-weight: 600;
 }
 
-.analytics-empty {
-  text-align: center;
-  padding: var(--ps-space-10) var(--ps-space-5);
-  color: hsl(var(--app-text-secondary));
-}
-
 /* Overview Cards */
 .analytics-overview-cards {
   display: grid;
@@ -914,36 +908,6 @@ img.analytics-viewer-badge {
 }
 
 /* Enhanced Empty States */
-.analytics-empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--ps-space-12) var(--ps-space-6);
-  text-align: center;
-}
-
-.analytics-empty-state-icon {
-  width: 48px;
-  height: 48px;
-  margin-bottom: var(--ps-space-4);
-  opacity: 0.6;
-}
-
-.analytics-empty-state-title {
-  font-size: var(--ps-text-lg);
-  font-weight: 600;
-  color: hsl(var(--app-text-primary));
-  margin: 0 0 var(--ps-space-2);
-}
-
-.analytics-empty-state-description {
-  font-size: var(--ps-text-base);
-  color: hsl(var(--app-text-secondary));
-  margin: 0 0 var(--ps-space-4);
-  max-width: 280px;
-}
-
 /* Skeleton Loading */
 .analytics-skeleton {
   background: linear-gradient(

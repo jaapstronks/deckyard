@@ -26,27 +26,6 @@
   display: none;
 }
 
-.themes-empty-state {
-  padding: var(--ps-space-6) var(--ps-space-4);
-  text-align: center;
-  background: hsl(var(--app-bg-secondary) / 0.3);
-  border-radius: var(--ps-radius-lg);
-  border: 2px dashed hsl(var(--app-border-subtle));
-}
-
-.themes-empty-state.is-hidden {
-  display: none;
-}
-
-.themes-empty-state p {
-  margin: 0;
-  color: hsl(var(--app-text-secondary));
-}
-
-.themes-empty-state .help {
-  margin-top: var(--ps-space-2);
-}
-
 /* Theme card */
 .theme-card {
   display: flex;

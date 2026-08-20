@@ -624,43 +624,6 @@
    EMPTY STATE (no presentations yet → clear create CTA)
    ============================================================ */
 
-.empty-state {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: var(--ps-space-3);
-  padding: var(--ps-space-8) var(--ps-space-4);
-  max-width: 520px;
-  margin: 0 auto;
-}
-
-.empty-state-icon {
-  width: 48px;
-  height: 48px;
-  opacity: 0.5;
-}
-
-.empty-state-title {
-  font-size: var(--ps-text-lg);
-  font-weight: 700;
-  color: hsl(var(--app-text-primary));
-}
-
-.empty-state-message {
-  margin: 0;
-  max-width: 40ch;
-}
-
-.empty-state-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ps-space-2);
-  justify-content: center;
-  margin-top: var(--ps-space-2);
-}
-
 /* First-run onboarding checklist ------------------------------------------ */
 
 .onboarding-checklist {

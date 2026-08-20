@@ -9,6 +9,7 @@ import { api } from '../../../lib/api.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
 import { createFontEditor } from '../font-editor/index.js';
+import { createEmptyState } from '../../../lib/dom/empty-state.js';
 
 const SOURCE_LABELS = {
   upload: 'Upload',
@@ -111,18 +112,18 @@ export function createFontsTab({ user } = {}) {
     listSection.append(header);
 
     if (families.length === 0) {
-      const empty = h('div', { class: 'font-families-empty' });
-      empty.append(
-        h('p', { text: t('fonts.emptyTitle', 'No custom fonts yet') }),
-        h('p', {
-          class: 'help',
-          text: t(
+      listSection.append(
+        createEmptyState({
+          h,
+          icon: null,
+          className: 'empty-state-panel',
+          title: t('fonts.emptyTitle', 'No custom fonts yet'),
+          message: t(
             'fonts.emptyDescription',
             'Add custom font families to use them in your themes.',
           ),
         }),
       );
-      listSection.append(empty);
       return;
     }
 

@@ -11,6 +11,7 @@ import { downloadBlob } from '../../../../lib/dom/download.js';
 import { confirmModal } from '../../../../lib/dom/modal.js';
 import { readFileAsText } from '../../../../lib/util/file.js';
 import { createSlideTypeEditor } from '../../slide-type-editor/index.js';
+import { createEmptyState } from '../../../../lib/dom/empty-state.js';
 import {
   serializeSlideType,
   parseImportedSlideType,
@@ -142,21 +143,19 @@ export function createSlideTypesTab({ user } = {}) {
     );
 
     const grid = h('div', { class: 'custom-types-grid' });
-    const emptyState = h('div', { class: 'custom-types-empty-state' }, [
-      h('p', {
-        text: t(
-          'settings.slideTypes.noCustomTypes',
-          'No custom slide types yet.',
-        ),
-      }),
-      h('p', {
-        class: 'help',
-        text: t(
-          'settings.slideTypes.noCustomTypesHint',
-          'Create a custom slide type to define your own layout with fields, templates, and CSS.',
-        ),
-      }),
-    ]);
+    const emptyState = createEmptyState({
+      h,
+      icon: null,
+      className: 'empty-state-panel',
+      title: t(
+        'settings.slideTypes.noCustomTypes',
+        'No custom slide types yet.',
+      ),
+      message: t(
+        'settings.slideTypes.noCustomTypesHint',
+        'Create a custom slide type to define your own layout with fields, templates, and CSS.',
+      ),
+    });
 
     if (customTypes.length === 0) {
       emptyState.classList.remove('is-hidden');

@@ -15,6 +15,7 @@ import {
 } from '../../../lib/net/settings.js';
 import { createThemeEditor } from '../theme-editor/index.js';
 import { invalidateTheme } from '../../../lib/theme/theme.js';
+import { createEmptyState } from '../../../lib/dom/empty-state.js';
 
 /**
  * Create the themes tab component.
@@ -222,16 +223,16 @@ export function createThemesTab({ user }) {
   listHeader.append(listTitle, createBtn);
 
   const themeList = h('div', { class: 'themes-grid' });
-  const emptyState = h('div', { class: 'themes-empty-state' }, [
-    h('p', { text: t('settings.themes.noThemes', 'No custom themes yet.') }),
-    h('p', {
-      class: 'help',
-      text: t(
-        'settings.themes.noThemesHint',
-        "Create a custom theme to define your organization's brand colors and fonts.",
-      ),
-    }),
-  ]);
+  const emptyState = createEmptyState({
+    h,
+    icon: null,
+    className: 'empty-state-panel',
+    title: t('settings.themes.noThemes', 'No custom themes yet.'),
+    message: t(
+      'settings.themes.noThemesHint',
+      "Create a custom theme to define your organization's brand colors and fonts.",
+    ),
+  });
 
   themeListSection.append(listHeader, themeList, emptyState);
 

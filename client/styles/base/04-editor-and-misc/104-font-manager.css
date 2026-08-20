@@ -278,21 +278,3 @@
   color: hsl(var(--app-text-secondary));
   margin-top: 2px;
 }
-
-/* Empty state */
-.font-families-empty {
-  padding: var(--ps-space-6) var(--ps-space-4);
-  text-align: center;
-  background: hsl(var(--app-bg-secondary) / 0.3);
-  border-radius: var(--ps-radius-lg);
-  border: 2px dashed hsl(var(--app-border-subtle));
-}
-
-.font-families-empty p {
-  margin: 0;
-  color: hsl(var(--app-text-secondary));
-}
-
-.font-families-empty .help {
-  margin-top: var(--ps-space-2);
-}

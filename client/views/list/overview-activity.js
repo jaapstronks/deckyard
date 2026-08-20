@@ -6,6 +6,7 @@
 import { t } from '../../lib/ui-i18n.js';
 import { formatRelativeTime } from '../../lib/format/format-time.js';
 import { iconUrl } from '../../../shared/icon-names.js';
+import { createEmptyState } from '../../lib/dom/empty-state.js';
 
 /**
  * Get initials from a name or email.
@@ -275,18 +276,11 @@ export function createActivityFeed({
   const feed = h('div', { class: 'activity-feed' });
 
   // Empty state
-  const emptyState = h('div', { class: 'activity-feed-empty' });
-  const emptyIcon = h('img', {
-    class: 'activity-feed-empty-icon',
-    src: iconUrl('inbox'),
-    alt: '',
-    'aria-hidden': 'true',
+  const emptyState = createEmptyState({
+    h,
+    icon: 'inbox',
+    title: t('list.activity.empty', 'No activity yet'),
   });
-  const emptyText = h('div', {
-    class: 'activity-feed-empty-text',
-    text: t('list.activity.empty', 'No activity yet'),
-  });
-  emptyState.append(emptyIcon, emptyText);
 
   // Load more button
   const loadMoreBtn = h('button', {
@@ -326,7 +320,7 @@ export function createActivityFeed({
       feed.textContent = '';
       feed.append(
         h('div', {
-          class: 'activity-feed-empty',
+          class: 'empty-note',
           text: t('list.activity.error', 'Failed to load activity'),
         }),
       );

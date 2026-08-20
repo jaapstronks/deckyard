@@ -906,3 +906,67 @@ table.csv-grid {
   background: #c0c0c0;
   margin: var(--ps-space-1) var(--ps-space-1);
 }
+
+/* Empty states (A7.16 cluster 3) ------------------------------------------
+   Two sanctioned forms, built in client/lib/dom/empty-state.js:
+   - .empty-state       block: icon + title + message (+ CTA row)
+   - .empty-note        one-line placeholder ("No slides", "No results");
+                        plain h('div', { class: 'empty-note', text }) — no helper
+   .empty-state-panel is the dashed placeholder-panel variant used by the
+   settings tabs (themes, fonts, custom slide types). */
+
+.empty-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--ps-space-3);
+  padding: var(--ps-space-8) var(--ps-space-4);
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.empty-state.is-hidden {
+  display: none;
+}
+
+.empty-state-icon {
+  width: 48px;
+  height: 48px;
+  opacity: 0.5;
+}
+
+.empty-state-title {
+  font-size: var(--ps-text-lg);
+  font-weight: 700;
+  color: hsl(var(--app-text-primary));
+}
+
+.empty-state-message {
+  margin: 0;
+  max-width: 40ch;
+}
+
+.empty-state-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ps-space-2);
+  justify-content: center;
+  margin-top: var(--ps-space-2);
+}
+
+.empty-state-panel {
+  max-width: none;
+  padding: var(--ps-space-6) var(--ps-space-4);
+  background: hsl(var(--app-bg-secondary) / 0.3);
+  border-radius: var(--ps-radius-lg);
+  border: 2px dashed hsl(var(--app-border-subtle));
+}
+
+.empty-note {
+  padding: var(--ps-space-4);
+  text-align: center;
+  font-size: var(--ps-text-sm);
+  color: hsl(var(--app-text-tertiary));
+}

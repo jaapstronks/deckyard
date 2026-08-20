@@ -8,7 +8,7 @@ import { confirmModal } from '../../lib/dom/modal.js';
 import { formatRelativeTime } from '../../lib/format/format-time.js';
 import { formatDate } from '../../lib/format/analytics-format.js';
 import { api } from '../../lib/api.js';
-import { iconUrl } from '../../../shared/icon-names.js';
+import { createEmptyState } from '../../lib/dom/empty-state.js';
 
 /**
  * Create leads tab component.
@@ -68,25 +68,15 @@ export function createLeadsTab({
 
     if (currentLeads.length === 0) {
       container.append(
-        h('div', { class: 'analytics-empty-state' }, [
-          h('img', {
-            class: 'analytics-empty-state-icon',
-            src: iconUrl('mail'),
-            alt: '',
-            'aria-hidden': 'true',
-          }),
-          h('p', {
-            class: 'analytics-empty-state-title',
-            text: t('analytics.noLeadsYet', 'No leads captured yet'),
-          }),
-          h('p', {
-            class: 'analytics-empty-state-description',
-            text: t(
-              'analytics.addLeadCaptureHint',
-              'Add a Lead Capture slide to your presentation to start collecting contact information from viewers.',
-            ),
-          }),
-        ]),
+        createEmptyState({
+          h,
+          icon: 'mail',
+          title: t('analytics.noLeadsYet', 'No leads captured yet'),
+          message: t(
+            'analytics.addLeadCaptureHint',
+            'Add a Lead Capture slide to your presentation to start collecting contact information from viewers.',
+          ),
+        }),
       );
       loadMoreBtn.style.display = 'none';
       return;

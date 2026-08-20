@@ -4,7 +4,7 @@
 
 import { t } from '../../lib/ui-i18n.js';
 import { formatTimeShort as formatTime } from '../../lib/format/analytics-format.js';
-import { iconUrl } from '../../../shared/icon-names.js';
+import { createEmptyState } from '../../lib/dom/empty-state.js';
 
 /**
  * Get color for engagement score (0-1).
@@ -48,25 +48,15 @@ export function createSlideHeatmap({ h, slides, presentation }) {
 
     if (!slideData || slideData.length === 0) {
       container.append(
-        h('div', { class: 'analytics-empty-state' }, [
-          h('img', {
-            class: 'analytics-empty-state-icon',
-            src: iconUrl('target'),
-            alt: '',
-            'aria-hidden': 'true',
-          }),
-          h('p', {
-            class: 'analytics-empty-state-title',
-            text: t('analytics.noSlideEngagement', 'No slide engagement data'),
-          }),
-          h('p', {
-            class: 'analytics-empty-state-description',
-            text: t(
-              'analytics.viewsNeededForEngagement',
-              "Once viewers start watching your presentation, you'll see which slides get the most attention.",
-            ),
-          }),
-        ]),
+        createEmptyState({
+          h,
+          icon: 'target',
+          title: t('analytics.noSlideEngagement', 'No slide engagement data'),
+          message: t(
+            'analytics.viewsNeededForEngagement',
+            "Once viewers start watching your presentation, you'll see which slides get the most attention.",
+          ),
+        }),
       );
       return;
     }
