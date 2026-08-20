@@ -142,6 +142,7 @@ export function buildEmbedHtml(
     .join('\n    ');
 
   return renderEmbedHtmlDocument({
+    repoRoot,
     title,
     docLang,
     docDir,

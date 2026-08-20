@@ -11,6 +11,7 @@ import {
   buildPrismKatexInitScriptTag,
 } from '../utils/prism-katex.js';
 import { loadExportCssBundle } from './css-bundle.js';
+import { buildCssChain } from '../utils/css-chain.js';
 
 // Simple translations for server-side export
 const PRINT_I18N = {
@@ -152,41 +153,12 @@ function renderSlideTextHtml(slide, idx, lang, slideTypes) {
   </section>`;
 }
 
-export async function buildPrintHtml(
-  repoRoot,
-  pres,
-  { theme = null, watermark = null, slideTypes = null } = {},
-) {
-  pres = stripLiveOnlySlidesFromPresentation(pres);
-  const docLang = resolveDocLangFromPresentation(pres);
-  const css = await loadExportCssBundle(repoRoot, theme, watermark);
-
-  const title = escapeHtml(pres.title || 'Presentation');
-  const wmOn = css.wmOn;
-  const wmText = wmOn ? escapeHtml(sandboxWatermarkText()) : '';
-  const slides = Array.isArray(pres?.slides) ? pres.slides : [];
-  const slidesHtml = slides
-    .map((s, idx) => {
-      const section = renderSlideTextHtml(s, idx, docLang, slideTypes);
-      const hr = idx < slides.length - 1 ? `<hr class="print-break" />` : '';
-      return `${section}\n${hr}`;
-    })
-    .join('\n');
-
-  return `<!doctype html>
-<html lang="${escapeHtml(docLang)}">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>${title} (Print)</title>
-    ${buildPrismKatexCdnTags()}
-    <style>
-${css.fontCss}
-${stripFontFacesFromCss(css.chromeCss)}
-${css.themeVarsCss}
-${css.themeCss}
-${stripFontFacesFromCss(css.slidesCss)}
-
+/**
+ * The print/handout document itself: reflowed text layout, not slide canvas.
+ * A layer of the same chain, so the fork seam still lands last
+ * (server/utils/css-chain.js).
+ */
+const PRINT_DOC_CSS = `
       html, body {
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
@@ -328,6 +300,45 @@ ${stripFontFacesFromCss(css.slidesCss)}
         .print-doc { max-width: none; padding: 0; }
         @page { margin: 14mm; }
       }
+`;
+
+export async function buildPrintHtml(
+  repoRoot,
+  pres,
+  { theme = null, watermark = null, slideTypes = null } = {},
+) {
+  pres = stripLiveOnlySlidesFromPresentation(pres);
+  const docLang = resolveDocLangFromPresentation(pres);
+  const css = await loadExportCssBundle(repoRoot, theme, watermark);
+
+  const title = escapeHtml(pres.title || 'Presentation');
+  const wmOn = css.wmOn;
+  const wmText = wmOn ? escapeHtml(sandboxWatermarkText()) : '';
+  const slides = Array.isArray(pres?.slides) ? pres.slides : [];
+  const slidesHtml = slides
+    .map((s, idx) => {
+      const section = renderSlideTextHtml(s, idx, docLang, slideTypes);
+      const hr = idx < slides.length - 1 ? `<hr class="print-break" />` : '';
+      return `${section}\n${hr}`;
+    })
+    .join('\n');
+
+  return `<!doctype html>
+<html lang="${escapeHtml(docLang)}">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>${title} (Print)</title>
+    ${buildPrismKatexCdnTags()}
+    <style>
+${buildCssChain(repoRoot, [
+  css.fontCss,
+  stripFontFacesFromCss(css.chromeCss),
+  css.themeVarsCss,
+  css.themeCss,
+  stripFontFacesFromCss(css.slidesCss),
+  PRINT_DOC_CSS,
+])}
     </style>
   </head>
   <body class="print-wrap ps-theme">

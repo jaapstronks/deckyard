@@ -4,6 +4,7 @@ import {
   stripFontFacesFromCss,
 } from '../utils/embed-fonts.js';
 import { readCssWithImports } from '../utils/read-css-with-imports.js';
+import { buildCssChain } from '../utils/css-chain.js';
 import { themeVarsCssText } from '../utils/themes.js';
 import {
   sandboxWatermarkCss,
@@ -51,6 +52,7 @@ export async function loadExportCssBundle(repoRoot, theme, watermark) {
   const wmHtml = wmOn ? sandboxWatermarkHtml() : '';
 
   return {
+    repoRoot,
     chromeCss,
     themeCss,
     slidesCss,
@@ -66,11 +68,16 @@ export async function loadExportCssBundle(repoRoot, theme, watermark) {
  * Build the <style> content block used by most visual exports (pdf, png, render).
  * Strips @font-face rules from app/slides CSS (since fonts are embedded separately).
  *
+ * Path-specific CSS (document rules, page chrome) goes in `extraCss` rather
+ * than into a second <style> after this one: it belongs in the same chain, and
+ * only `buildCssChain` may append the fork seam — which stays last.
+ *
  * @param {Object} bundle - CSS bundle from loadExportCssBundle
+ * @param {Array<string|null|undefined|false>} [extraCss] - Path-specific layers, after core
  * @returns {string} CSS text for a <style> block
  */
-export function buildExportStyleContent(bundle) {
-  return [
+export function buildExportStyleContent(bundle, extraCss = []) {
+  return buildCssChain(bundle.repoRoot, [
     bundle.fontCss,
     stripFontFacesFromCss(bundle.chromeCss),
     bundle.themeVarsCss,
@@ -89,7 +96,8 @@ export function buildExportStyleContent(bundle) {
     // outrank this (higher specificity), so headings etc. are unchanged.
     '.slide { font-family: var(--font-body); }',
     bundle.wmCss,
-  ].join('\n');
+    ...(Array.isArray(extraCss) ? extraCss : [extraCss]),
+  ]);
 }
 
 /**

@@ -301,11 +301,11 @@ const PDF_DOC_CSS = `
  * @returns {string}
  */
 export function buildStyleContent(bundle) {
-  return `${buildExportStyleContent(bundle)}
-
-      /* Export/print is a static medium; disable animated gradients to avoid flaky print engines. */
-      .ps-theme { --t-gradient-enabled: 0; }
-${PDF_DOC_CSS}`;
+  return buildExportStyleContent(bundle, [
+    `/* Export/print is a static medium; disable animated gradients to avoid flaky print engines. */
+      .ps-theme { --t-gradient-enabled: 0; }`,
+    PDF_DOC_CSS,
+  ]);
 }
 
 export async function buildSlidesPdfHtml(

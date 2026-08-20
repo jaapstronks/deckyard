@@ -21,6 +21,16 @@ import {
   buildExportStyleContent,
 } from '../export/css-bundle.js';
 
+/** The 1600x900 canvas this path renders into, plus the static-media gradient gate. */
+const PNG_DOC_CSS = `
+      /* Rendered PNGs are static; keep gradients deterministic and avoid animation timing. */
+      .ps-theme { --t-gradient-enabled: 0; }
+      html, body { margin: 0; padding: 0; }
+      body { width: 1600px; height: 900px; overflow: hidden; }
+      .slide { width: 1600px !important; height: 900px !important; }
+      .ps-theme { position: relative; width: 1600px; height: 900px; }
+`;
+
 /**
  * Build the standalone HTML document a PNG export renders.
  *
@@ -79,13 +89,7 @@ export async function buildSlidePngHtml(
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     ${buildPrismKatexCdnTags()}
     <style>
-${buildExportStyleContent(css)}
-      /* Rendered PNGs are static; keep gradients deterministic and avoid animation timing. */
-      .ps-theme { --t-gradient-enabled: 0; }
-      html, body { margin: 0; padding: 0; }
-      body { width: 1600px; height: 900px; overflow: hidden; }
-      .slide { width: 1600px !important; height: 900px !important; }
-      .ps-theme { position: relative; width: 1600px; height: 900px; }
+${buildExportStyleContent(css, [PNG_DOC_CSS])}
     </style>
   </head>
   <body>

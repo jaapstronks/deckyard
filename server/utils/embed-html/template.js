@@ -1,58 +1,15 @@
 import { escapeHtml } from './helpers.js';
 import { DEFAULT_THEME_ID } from '../../../shared/constants/themes.js';
+import { repoRoot as defaultRepoRoot } from '../../config/paths.js';
+import { buildCssChain } from '../css-chain.js';
 
-export function renderEmbedHtmlDocument({
-  title = 'Presentation',
-  docLang = 'en',
-  docDir = 'ltr',
-  totalSlides = 0,
-  publishId = '',
-  ui = 'default',
-  slidesHtml = '',
-  themeId = DEFAULT_THEME_ID,
-  themeVarsCss = '',
-  headHtml = '',
-  externalFontHtml = '',
-  watermarkCss = '',
-  watermarkHtml = '',
-  boot = {},
-} = {}) {
-  const safeTitle = escapeHtml(title || 'Presentation');
-  const lang = docLang === 'nl' ? 'nl' : 'en';
-  const dir = docDir === 'rtl' ? 'rtl' : 'ltr';
-  const mode = ui === 'min' ? 'min' : 'default';
-  const safeTotalSlides = Math.max(0, Number(totalSlides || 0) || 0);
-  const safeBoot = {
-    publishId: String(boot?.publishId || publishId || ''),
-    totalSlides: safeTotalSlides,
-    options:
-      boot?.options && typeof boot.options === 'object' ? boot.options : {},
-    lang: boot?.lang === 'nl' || boot?.lang === 'en-GB' ? boot.lang : null,
-    hasOtherLang: !!boot?.hasOtherLang,
-  };
-  const bootJson = JSON.stringify(safeBoot, null, 0);
-
-  const safeThemeId = escapeHtml(String(themeId || DEFAULT_THEME_ID));
-  const themeVars = String(themeVarsCss || '');
-  const extraHead = String(headHtml || '');
-  const extraFontHtml = String(externalFontHtml || '');
-  const wmCss = String(watermarkCss || '');
-  const wmHtml = String(watermarkHtml || '');
-  return `<!doctype html>
-<html lang="${escapeHtml(lang)}" dir="${escapeHtml(dir)}" data-theme="${safeThemeId}">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="robots" content="noindex,nofollow" />
-    <title>${safeTitle}</title>
-    ${extraHead}
-    ${extraFontHtml}
-    <link rel="stylesheet" href="/assets/fonts/google/fonts.css" />
-    <link rel="stylesheet" href="/client/styles/embed.css" />
-    <link rel="stylesheet" href="/client/styles/theme.css" />
-    <link rel="stylesheet" href="/client/styles/slides.css" />
-    <style id="ps-theme-vars">${themeVars}</style>
-    <style>
+/**
+ * The embed shell's own CSS: iframe-friendly chrome around the deck, no app
+ * assumptions. The three core stylesheets above it are <link>ed (the embed is a
+ * served page, not a bundled export), so this is the last inline layer before
+ * the fork seam — which `buildCssChain` appends. See server/utils/css-chain.js.
+ */
+const EMBED_SHELL_CSS = `
       /* Embed shell: keep it iframe-friendly (no app chrome assumptions) */
       html, body { height: 100%; }
       body {
@@ -130,7 +87,63 @@ export function renderEmbedHtmlDocument({
       .deck-slide.is-active {
         display: block;
       }
-      ${wmCss}
+      
+`;
+
+export function renderEmbedHtmlDocument({
+  repoRoot = defaultRepoRoot,
+  title = 'Presentation',
+  docLang = 'en',
+  docDir = 'ltr',
+  totalSlides = 0,
+  publishId = '',
+  ui = 'default',
+  slidesHtml = '',
+  themeId = DEFAULT_THEME_ID,
+  themeVarsCss = '',
+  headHtml = '',
+  externalFontHtml = '',
+  watermarkCss = '',
+  watermarkHtml = '',
+  boot = {},
+} = {}) {
+  const safeTitle = escapeHtml(title || 'Presentation');
+  const lang = docLang === 'nl' ? 'nl' : 'en';
+  const dir = docDir === 'rtl' ? 'rtl' : 'ltr';
+  const mode = ui === 'min' ? 'min' : 'default';
+  const safeTotalSlides = Math.max(0, Number(totalSlides || 0) || 0);
+  const safeBoot = {
+    publishId: String(boot?.publishId || publishId || ''),
+    totalSlides: safeTotalSlides,
+    options:
+      boot?.options && typeof boot.options === 'object' ? boot.options : {},
+    lang: boot?.lang === 'nl' || boot?.lang === 'en-GB' ? boot.lang : null,
+    hasOtherLang: !!boot?.hasOtherLang,
+  };
+  const bootJson = JSON.stringify(safeBoot, null, 0);
+
+  const safeThemeId = escapeHtml(String(themeId || DEFAULT_THEME_ID));
+  const themeVars = String(themeVarsCss || '');
+  const extraHead = String(headHtml || '');
+  const extraFontHtml = String(externalFontHtml || '');
+  const wmCss = String(watermarkCss || '');
+  const wmHtml = String(watermarkHtml || '');
+  return `<!doctype html>
+<html lang="${escapeHtml(lang)}" dir="${escapeHtml(dir)}" data-theme="${safeThemeId}">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>${safeTitle}</title>
+    ${extraHead}
+    ${extraFontHtml}
+    <link rel="stylesheet" href="/assets/fonts/google/fonts.css" />
+    <link rel="stylesheet" href="/client/styles/embed.css" />
+    <link rel="stylesheet" href="/client/styles/theme.css" />
+    <link rel="stylesheet" href="/client/styles/slides.css" />
+    <style id="ps-theme-vars">${themeVars}</style>
+    <style>
+${buildCssChain(repoRoot, [EMBED_SHELL_CSS, wmCss])}
     </style>
   </head>
   <body>
