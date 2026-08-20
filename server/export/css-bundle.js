@@ -1,10 +1,11 @@
 import path from 'node:path';
 import {
   buildEmbeddedFontCss,
+  inlineLocalFontUrls,
   stripFontFacesFromCss,
 } from '../utils/embed-fonts.js';
 import { readCssWithImports } from '../utils/read-css-with-imports.js';
-import { buildCssChain } from '../utils/css-chain.js';
+import { buildCssChain, readCustomStylesCss } from '../utils/css-chain.js';
 import { themeVarsCssText } from '../utils/themes.js';
 import {
   sandboxWatermarkCss,
@@ -46,6 +47,18 @@ export async function loadExportCssBundle(repoRoot, theme, watermark) {
     buildEmbeddedFontCss(repoRoot, theme),
   ]);
 
+  // The fork seam, with any local font file it references inlined as a data
+  // URL. Export documents are self-contained (Puppeteer `setContent`, or a
+  // downloaded .html): a fork `@font-face` pointing at `/custom/assets/...`
+  // has no origin to resolve against there, and would silently fall back to a
+  // system font — screen/export drift of exactly the kind this seam removes.
+  // The seam is deliberately *not* run through `stripFontFacesFromCss`: a
+  // fork's own faces are the point (see docs/reference/fork-setup.md).
+  const customCss = await inlineLocalFontUrls(
+    repoRoot,
+    readCustomStylesCss(repoRoot),
+  );
+
   const themeVarsCss = themeVarsCssText(theme);
   const wmOn = sandboxWatermarkEnabled(watermark);
   const wmCss = wmOn ? sandboxWatermarkCss() : '';
@@ -53,6 +66,7 @@ export async function loadExportCssBundle(repoRoot, theme, watermark) {
 
   return {
     repoRoot,
+    customCss,
     chromeCss,
     themeCss,
     slidesCss,
@@ -77,27 +91,31 @@ export async function loadExportCssBundle(repoRoot, theme, watermark) {
  * @returns {string} CSS text for a <style> block
  */
 export function buildExportStyleContent(bundle, extraCss = []) {
-  return buildCssChain(bundle.repoRoot, [
-    bundle.fontCss,
-    stripFontFacesFromCss(bundle.chromeCss),
-    bundle.themeVarsCss,
-    bundle.themeCss,
-    stripFontFacesFromCss(bundle.slidesCss),
-    // Anchor the slide's base font to the theme, not the export chrome. The
-    // export <body> carries `font-family: var(--ps-font-sans)` (an app-chrome
-    // token → 'Inter', …); slide text that sets no family of its own would
-    // otherwise inherit it. But `stripFontFacesFromCss` removes Inter's
-    // @font-face here (theme fonts are embedded separately), so that inherited
-    // stack falls through to the system font — which Skia can only embed as
-    // Type 3 (glyph-as-procedure). `--font-body` is defined on `.slide` itself
-    // (theme.css, hard default `Arial, sans-serif`), so this keeps unstyled
-    // slide text on an embeddable font and stops the chrome token leaking into
-    // the slide layer. Slide-type rules that set `--font-heading`/-body/-mono
-    // outrank this (higher specificity), so headings etc. are unchanged.
-    '.slide { font-family: var(--font-body); }',
-    bundle.wmCss,
-    ...(Array.isArray(extraCss) ? extraCss : [extraCss]),
-  ]);
+  return buildCssChain(
+    bundle.repoRoot,
+    [
+      bundle.fontCss,
+      stripFontFacesFromCss(bundle.chromeCss),
+      bundle.themeVarsCss,
+      bundle.themeCss,
+      stripFontFacesFromCss(bundle.slidesCss),
+      // Anchor the slide's base font to the theme, not the export chrome. The
+      // export <body> carries `font-family: var(--ps-font-sans)` (an app-chrome
+      // token → 'Inter', …); slide text that sets no family of its own would
+      // otherwise inherit it. But `stripFontFacesFromCss` removes Inter's
+      // @font-face here (theme fonts are embedded separately), so that inherited
+      // stack falls through to the system font — which Skia can only embed as
+      // Type 3 (glyph-as-procedure). `--font-body` is defined on `.slide` itself
+      // (theme.css, hard default `Arial, sans-serif`), so this keeps unstyled
+      // slide text on an embeddable font and stops the chrome token leaking into
+      // the slide layer. Slide-type rules that set `--font-heading`/-body/-mono
+      // outrank this (higher specificity), so headings etc. are unchanged.
+      '.slide { font-family: var(--font-body); }',
+      bundle.wmCss,
+      ...(Array.isArray(extraCss) ? extraCss : [extraCss]),
+    ],
+    { customCss: bundle.customCss },
+  );
 }
 
 /**

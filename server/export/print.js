@@ -331,14 +331,18 @@ export async function buildPrintHtml(
     <title>${title} (Print)</title>
     ${buildPrismKatexCdnTags()}
     <style>
-${buildCssChain(repoRoot, [
-  css.fontCss,
-  stripFontFacesFromCss(css.chromeCss),
-  css.themeVarsCss,
-  css.themeCss,
-  stripFontFacesFromCss(css.slidesCss),
-  PRINT_DOC_CSS,
-])}
+${buildCssChain(
+  repoRoot,
+  [
+    css.fontCss,
+    stripFontFacesFromCss(css.chromeCss),
+    css.themeVarsCss,
+    css.themeCss,
+    stripFontFacesFromCss(css.slidesCss),
+    PRINT_DOC_CSS,
+  ],
+  { customCss: css.customCss },
+)}
     </style>
   </head>
   <body class="print-wrap ps-theme">

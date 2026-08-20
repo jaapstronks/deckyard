@@ -75,6 +75,13 @@
     <link rel="stylesheet" href="/client/styles/app.css" />
     <link rel="stylesheet" href="/client/styles/theme.css" />
     <link rel="stylesheet" href="/client/styles/slides.css" />
+    <!-- The fork CSS seam: everything in custom/styles/, served as one
+       stylesheet (server/utils/css-chain.js). Empty on a stock install. It
+       loads LAST on purpose — a fork rule outranks the core rule it replaces,
+       which is what makes patching core files unnecessary. Every export and
+       render path inlines the same seam in the same position, so screen and
+       export cannot drift. See docs/reference/fork-setup.md. -->
+    <link rel="stylesheet" href="/custom/styles.css" />
     <!-- Bunny Stream Player.js is loaded lazily by slide-render.js only when a
        video slide is present, so pages without video make zero third-party
        requests to assets.mediadelivery.net (mirrors the export/embed behaviour). -->

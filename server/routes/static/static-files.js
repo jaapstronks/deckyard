@@ -1,5 +1,9 @@
 import path from 'node:path';
 import { notFound, serveFile } from '../../utils/http.js';
+import {
+  CUSTOM_STYLES_URL,
+  readCustomStylesCss,
+} from '../../utils/css-chain.js';
 
 /**
  * @typedef {object} StaticContext
@@ -46,6 +50,33 @@ export function handleMyData({ req, res, url, clientDir }) {
     return true;
   }
   return false;
+}
+
+/**
+ * The fork CSS seam (`custom/styles/*.css`) as one stylesheet.
+ *
+ * Server-built documents inline the seam through `buildCssChain`; the app
+ * shell is a static HTML file that cannot glob a directory, so it links this
+ * URL instead — the same bytes, last in its <head>. Always 200, empty body
+ * upstream, so the link is not a 404 on a stock install.
+ *
+ * `no-cache` (revalidate, don't reuse blind): a fork deploy changes this file
+ * without changing its URL, and a stale seam in a browser cache looks exactly
+ * like the seam not working.
+ *
+ * @param {StaticContext} ctx
+ * @returns {boolean} true if handled.
+ */
+export function handleCustomStyles({ repoRoot, req, res, url }) {
+  if (url.pathname !== CUSTOM_STYLES_URL || req.method !== 'GET') return false;
+  const css = readCustomStylesCss(repoRoot);
+  res.writeHead(200, {
+    'Content-Type': 'text/css; charset=utf-8',
+    'Content-Length': Buffer.byteLength(css, 'utf8'),
+    'Cache-Control': 'no-cache',
+  });
+  res.end(css);
+  return true;
 }
 
 /**

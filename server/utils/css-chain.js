@@ -28,6 +28,16 @@ import { createLogger } from './logger.js';
 
 const log = createLogger('css-chain');
 
+/**
+ * The one URL the seam is served at.
+ *
+ * Link-based paths (the app shell) cannot glob a directory, so the seam is
+ * exposed as a single stylesheet rather than as a servable folder: one spelling
+ * for one thing. A fork referencing its own files (a background, a font)
+ * addresses them through `custom/assets/`, which is already served.
+ */
+export const CUSTOM_STYLES_URL = '/custom/styles.css';
+
 /** Banner that precedes the seam in every assembled chain (also a test handle). */
 export const CUSTOM_STYLES_BANNER =
   '/* custom/styles — fork seam, loaded last (see server/utils/css-chain.js) */';
@@ -104,12 +114,18 @@ export function readCustomStylesCss(repoRoot) {
  *
  * @param {string} repoRoot - Repository root path
  * @param {Array<string|null|undefined|false>} layers - Cascade order, core first
+ * @param {Object} [options]
+ * @param {string} [options.customCss] - Pre-processed seam text. Self-contained
+ *   documents (PDF/PNG/standalone) pass the same seam with local font URLs
+ *   inlined, since a relative `url()` has nothing to resolve against there.
+ *   It is still the chain, not the caller, that decides where the seam goes.
  * @returns {string} CSS text for a single `<style>` block
  */
-export function buildCssChain(repoRoot, layers) {
+export function buildCssChain(repoRoot, layers, { customCss = null } = {}) {
   const core = (Array.isArray(layers) ? layers : [layers])
     .filter((layer) => typeof layer === 'string' && layer.trim())
     .join('\n');
-  const custom = readCustomStylesCss(repoRoot);
+  const custom =
+    typeof customCss === 'string' ? customCss : readCustomStylesCss(repoRoot);
   return custom ? `${core}\n${CUSTOM_STYLES_BANNER}\n${custom}` : core;
 }

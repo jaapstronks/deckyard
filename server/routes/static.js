@@ -1,6 +1,7 @@
 import { notFound } from '../utils/http.js';
 import { handleFeed } from './feed.js';
 import {
+  handleCustomStyles,
   handleGo,
   handleMyData,
   handleStaticFiles,
@@ -38,6 +39,7 @@ export async function handleStatic(ctx) {
   if (await handlePublishedReader(ctx)) return;
   if (await handlePublishedPage(ctx)) return;
   if (await handleSandboxOg(ctx)) return;
+  if (handleCustomStyles(ctx)) return;
   if (handleStaticFiles(ctx)) return;
   if (await handleShareLink(ctx)) return;
   if (await handleAppRoutes(ctx)) return;

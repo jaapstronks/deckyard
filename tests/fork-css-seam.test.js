@@ -40,7 +40,10 @@ import {
   buildCssChain,
   readCustomStylesCss,
   CUSTOM_STYLES_BANNER,
+  CUSTOM_STYLES_URL,
 } from '../server/utils/css-chain.js';
+import { handleCustomStyles } from '../server/routes/static/static-files.js';
+import { loadExportCssBundle } from '../server/export/css-bundle.js';
 import { buildSlidesPdfHtml } from '../server/export/pdf-slides.js';
 import { buildSlidesPngExportHtml } from '../server/export/png-slides.js';
 import { buildStandaloneHtml } from '../server/export/html.js';
@@ -319,3 +322,114 @@ test(
     }
   },
 );
+
+/**
+ * The seam also has to reach the *browser*, and the app shell is a static HTML
+ * file that cannot glob a directory — so the same bytes are served at one URL.
+ */
+test('the seam is served at a single URL', () => {
+  const written = { status: null, headers: null, body: null };
+  const res = {
+    writeHead(status, headers) {
+      written.status = status;
+      written.headers = headers;
+      return this;
+    },
+    end(body) {
+      written.body = body;
+    },
+  };
+  const handled = handleCustomStyles({
+    repoRoot: fixtureRoot,
+    req: { method: 'GET' },
+    res,
+    url: { pathname: CUSTOM_STYLES_URL },
+  });
+  assert.equal(handled, true, `${CUSTOM_STYLES_URL} must be routed`);
+  assert.equal(written.status, 200);
+  assert.match(written.headers['Content-Type'], /^text\/css/);
+  assert.equal(
+    written.headers['Cache-Control'],
+    'no-cache',
+    'a fork deploy changes this file without changing its URL',
+  );
+  assert.ok(written.body.includes("--font-body: 'SeamProbe'"));
+});
+
+test('a stock install serves the seam URL empty, not 404', () => {
+  if (readCustomStylesCss(repoRoot)) return; // a fork checkout; nothing to prove
+  let status = null;
+  let body = null;
+  handleCustomStyles({
+    repoRoot,
+    req: { method: 'GET' },
+    res: {
+      writeHead(s) {
+        status = s;
+        return this;
+      },
+      end(b) {
+        body = b;
+      },
+    },
+    url: { pathname: CUSTOM_STYLES_URL },
+  });
+  assert.equal(status, 200, 'the app shell links this unconditionally');
+  assert.equal(body, '');
+});
+
+test('the app shell links the seam last', async () => {
+  const shell = await import('node:fs/promises').then((fs) =>
+    fs.readFile(path.join(repoRoot, 'client', 'index.html'), 'utf8'),
+  );
+  const links = [...shell.matchAll(/<link[^>]+rel="stylesheet"[^>]*>/g)].map(
+    (m) => m[0],
+  );
+  assert.ok(links.length > 1, 'the app shell links stylesheets at all');
+  assert.match(
+    links.at(-1),
+    new RegExp(CUSTOM_STYLES_URL.replace('.', '\\.')),
+    'the seam must be the last stylesheet in the app shell — anything after ' +
+      'it outranks every fork rule, and screen would drift from export',
+  );
+});
+
+test('a fork @font-face survives into self-contained exports', async () => {
+  // The fonts route: a fork moves its @font-face blocks out of core
+  // client/styles/shared/fonts.css into custom/styles/fonts.css. In an export
+  // there is no origin to resolve `/assets/...` against, so the URL is inlined
+  // — and the face itself must not be stripped the way core faces are.
+  const fontRoot = mkdtempSync(path.join(tmpdir(), 'deckyard-seam-font-'));
+  for (const dir of ['client', 'assets', 'shared', 'themes']) {
+    symlinkSync(path.join(repoRoot, dir), path.join(fontRoot, dir), 'dir');
+  }
+  mkdirSync(path.join(fontRoot, 'custom', 'styles'), { recursive: true });
+  writeFileSync(
+    path.join(fontRoot, 'custom', 'styles', 'fonts.css'),
+    `@font-face {
+       font-family: 'ForkFace';
+       src: url('/assets/fonts/google/playfair-display/playfair-display-400-latin.woff2') format('woff2');
+     }`,
+    'utf8',
+  );
+  try {
+    const bundle = await loadExportCssBundle(fontRoot, null, null);
+    const style = buildCssChain(fontRoot, ['a { color: red; }'], {
+      customCss: bundle.customCss,
+    });
+    assert.match(
+      style,
+      /@font-face/,
+      'the seam is not run through stripFontFacesFromCss — a fork face is ' +
+        'the whole point of custom/styles/fonts.css',
+    );
+    assert.match(
+      style,
+      /url\('data:font\/woff2;base64,/,
+      'a local font URL in the seam must be inlined for export documents; ' +
+        'left relative it resolves against nothing and falls back silently',
+    );
+  } finally {
+    await rm(fontRoot, { recursive: true, force: true });
+  }
+});
