@@ -259,13 +259,14 @@ export const INVENTORY = {
   'client/views/editor/editor-form/inspector-form.js': {
     kind: sparse,
     why:
-      'No longer the keep-list table: INSPECTOR_KEEPS is re-exported from the ' +
-      'generated inline-edit aggregator, and each type declares its own keeps ' +
-      'in types/<name>/inline-edit.js. What still names types here is ' +
-      'renderInspectorExtrasByType — the per-type widget blocks a flat ' +
-      'keep-list cannot express (chart data editor, image focus/zoom pickers, ' +
-      'per-column image cards). Intentionally partial: a type without a case ' +
-      'renders through the generic keeps loop, which is the right default.',
+      "INSPECTOR_EXTRAS — the inspector counterpart of slide-form-router.js's " +
+      'SLIDE_FORMS: three documented exceptions (image-text’s slide-tab ' +
+      'collection manager, icon-card-grid’s per-card icon+link, ' +
+      'list-slide’s density step-down note), each with a written reason ' +
+      'in its slide-forms/ module header. The shared image element card no ' +
+      'longer lists names — it renders for any type declaring an `image` ' +
+      'elementTab. Intentionally partial: a type without a row renders ' +
+      'through the generic keeps loop, which is the right default.',
   },
   'server/utils/openai/slide-types-prompt.js': {
     kind: table,

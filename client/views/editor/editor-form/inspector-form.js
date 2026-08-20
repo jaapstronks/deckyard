@@ -1,11 +1,12 @@
-import { t } from '../../../lib/ui-i18n.js';
 import { getInlineFormTextKeys } from '../inline-edit/descriptors.js';
-import { fieldCardLink } from '../fields/card-link-field.js';
 import { SLIDE_TYPE_INSPECTOR_KEEPS } from '../../../../shared/slide-types/inline-edit.js';
-import { slideTypeInspectorKeeps } from '../../../../shared/slide-types/inline-edit-companions.js';
-import { syncIconCardsToNumbered } from '../../../../shared/slide-types/types/icon-card-grid-slide/cards.js';
-import { resolveListLayout } from '../../../../shared/slide-types/types/list-slide.js';
-import { renderImageTextCollectionSection } from './slide-forms/image-text-images.js';
+import {
+  slideTypeInspectorKeeps,
+  slideTypeElementTab,
+} from '../../../../shared/slide-types/inline-edit-companions.js';
+import { renderImageTextCollectionExtra } from './slide-forms/image-text-images.js';
+import { renderIconCardExtras } from './slide-forms/icon-card-links.js';
+import { renderListDensityExtra } from './slide-forms/list-density.js';
 import { renderImageElementCard } from './image-element-card.js';
 
 /**
@@ -78,45 +79,62 @@ export function getInspectorKeepKeys(type, def) {
 }
 
 /**
- * Collapsible group for a bulky per-type widget block, styled like the
- * Background/Accessibility sections. Big blocks default closed so the pane
- * leads with the at-a-glance settings (chrome re-org stap 3).
+ * The per-type inspector widgets a flat keeps-list cannot express — the
+ * inspector counterpart of slide-form-router.js's SLIDE_FORMS, held to the
+ * same criterion: empty, or only exceptions with a written reason.
  *
- * @param {Function} h - DOM helper
- * @param {string} title - Summary label
- * @param {{ open?: boolean }} [opts]
- * @returns {{ el: HTMLElement, body: HTMLElement }}
+ * One line per type; each renderer receives the full flattened context and
+ * destructures what it needs. Absence is the default, not a degradation: a
+ * type without a row — including every custom/fork type — renders through the
+ * generic keeps loop. The reasons live in the module headers:
+ *
+ * - image-text-slide: the slim slide-tab image collection manager
+ *   (add/reorder/remove, no per-image settings) — a difference between
+ *   SURFACES, not between types, so a field declaration is structurally the
+ *   wrong axis (slide-forms/image-text-images.js, the #528 exception).
+ * - icon-card-grid-slide: per-card icon + link with the selected-card /
+ *   all-cards split and the numbered-mirror sync — real one-type UI whose
+ *   declarative form would put an icon picker, a link field and a
+ *   write-through hook in the vocabulary for one declarant
+ *   (slide-forms/icon-card-links.js).
+ * - list-slide: the "Text size" step-down note — needs live layout
+ *   resolution, which the JSON-safe field vocabulary cannot carry
+ *   (slide-forms/list-density.js).
+ *
+ * This table used to be a ~170-line switch over eight types (route 4 PR D):
+ * the shared "This image" card was already generic in content, and its
+ * addressing — six case labels — was the only per-name part left, so it
+ * became the elementTab-driven rule in renderInspectorExtrasByType below.
  */
-function collapsibleGroup(h, title, { open = false } = {}) {
-  const el = h('details', { class: 'editor-advanced' });
-  if (open) el.open = true;
-  el.append(h('summary', { class: 'editor-advanced-summary', text: title }));
-  const body = h('div', { class: 'editor-advanced-body' });
-  el.append(body);
-  return { el, body };
-}
+const INSPECTOR_EXTRAS = new Map([
+  ['image-text-slide', renderImageTextCollectionExtra],
+  ['icon-card-grid-slide', renderIconCardExtras],
+  ['list-slide', renderListDensityExtra],
+]);
 
 /**
- * Per-type inspector widgets that a flat keeps-list cannot express: the shared
- * "This image" element card, per-card icon/link controls, the image-text
- * collection chrome, per-column image settings. Runs BEFORE the generic keeps
- * loop; anything rendered here marks its keys used so the loop skips them.
+ * Per-type inspector widgets, in two parts:
+ *
+ * 1. THE RULE — a selected image element gets the shared "This image" card
+ *    (image-element-card.js) whenever the type offers an `image` element tab.
+ *    The card is descriptor-driven and the offer is the `elementTab`
+ *    declaration on the type (inline-edit-companions.js), so the declaration
+ *    is the whole story: a fork type that declares an image element tab gets
+ *    the card without touching a file outside its own directory.
+ * 2. THE EXCEPTIONS — the INSPECTOR_EXTRAS table above.
+ *
+ * Runs BEFORE the generic keeps loop; anything rendered here marks its keys
+ * used so the loop skips them.
  *
  * @param {Object} ctx - Same context shape as renderSlideFormByType
  */
 export function renderInspectorExtrasByType(ctx) {
   const {
     h,
-    form,
     elementForm,
     selectedElement,
     slide,
     def,
-    add,
-    used,
-    fieldByKey,
-    renderField,
-    deckSlides,
     fieldRenderers,
     markDirty,
     rerenderEditor,
@@ -124,184 +142,23 @@ export function renderInspectorExtrasByType(ctx) {
     scheduleUiRefresh,
   } = ctx;
 
-  // The shared "This image" card for a selected image element — every image
-  // type, image-slide and image-text included. Renders into the element tab;
-  // returns whether it produced anything.
-  const renderSelectedImageCard = (container) =>
+  if (
+    selectedElement?.kind === 'image' &&
+    slideTypeElementTab(slide.type, def)?.image
+  ) {
     renderImageElementCard({
       h,
-      container,
+      container: elementForm,
       slide,
       def,
-      idx: selectedElement?.idx,
+      idx: selectedElement.idx,
       fieldRenderers,
       markDirty,
       rerenderEditor,
       rerenderPreview,
       scheduleUiRefresh,
     });
-
-  switch (slide.type) {
-    // chart-slide no longer has a case here: its config (chartType, display
-    // toggles, axis/series labels, the "Edit data…" entry point) renders via
-    // the generic keeps loop — visibility per chart type is a `visibleWhen`
-    // declaration on the fields and the data entry point is the csv-grid
-    // widget's inspector rendering (render-field.js, `onEditData`).
-
-    // image-slide no longer has a case here: the single image IS the element,
-    // and everything settable on it (replace/alt, fit, bleed, focus) is
-    // declared on the inline descriptor and rendered by the shared card below.
-    // Its slide-wide settings — the a11y role and the zoom chain, the latter
-    // with a `visibleWhen` chain instead of imperative show/hide — render via
-    // the generic keeps loop.
-
-    case 'image-text-slide': {
-      // Editing-surfaces tab split: the "This image" tab carries ONLY the
-      // selected cell's card — the same shared, descriptor-driven card every
-      // other image type uses (the hand-written per-cell copy is gone). The
-      // slide form — the no-selection view AND the Slide tab, identical by
-      // construction — carries the slide-wide settings via the keeps loop,
-      // plus the one thing no declaration expresses: the slim image
-      // collection (add/reorder/remove, no per-image settings).
-      if (selectedElement?.kind === 'image')
-        renderSelectedImageCard(elementForm);
-      const collectionSection = renderImageTextCollectionSection({
-        h,
-        slide,
-        used,
-        markDirty,
-        rerenderEditor,
-        scheduleUiRefresh,
-      });
-      if (collectionSection) {
-        collectionSection.setAttribute('data-inspector-section', 'image');
-        form.append(collectionSection);
-      }
-      return;
-    }
-
-    case 'icon-card-grid-slide': {
-      add('layout');
-      // Per-card icon picker + link: settings the wysiwyg deliberately never
-      // covers. With a card selected, only that card's controls render in the
-      // element tab; otherwise all cards render in the slide-tab collapsible.
-      const items = Array.isArray(slide.content?.items)
-        ? slide.content.items
-        : [];
-      if (!items.length) return;
-      const { fieldIconPicker } = fieldRenderers || {};
-      const renderCard = (item, idx, container) => {
-        const group = h('div', { class: 'stack card-group' });
-        group.append(
-          h('div', {
-            class: 'help',
-            text: `${idx + 1}. ${String(item?.title || '').trim() || t('editor.inspector.cardUntitled', 'Untitled card')}`,
-          }),
-        );
-        if (typeof fieldIconPicker === 'function') {
-          group.append(
-            fieldIconPicker(
-              t('editor.cards.icon', 'Icon'),
-              item.icon || '',
-              (v) => {
-                items[idx].icon = v;
-                syncIconCardsToNumbered(slide);
-                markDirty?.();
-                scheduleUiRefresh?.();
-              },
-              {},
-            ),
-          );
-        }
-        group.append(
-          fieldCardLink({
-            value: item.link || '',
-            slides: deckSlides,
-            onChange: (v) => {
-              items[idx].link = v;
-              syncIconCardsToNumbered(slide);
-              markDirty?.();
-              scheduleUiRefresh?.();
-            },
-            help: t(
-              'editor.cards.linkHelp2',
-              'Makes the card clickable. Pick a slide to jump to, or type an https:// / mailto: link (opens in a new tab).',
-            ),
-          }),
-        );
-        container.append(group);
-      };
-
-      const cardIdx =
-        selectedElement?.kind === 'card' && selectedElement.idx < items.length
-          ? selectedElement.idx
-          : null;
-      if (cardIdx != null) {
-        renderCard(items[cardIdx], cardIdx, elementForm);
-      } else {
-        const section = collapsibleGroup(
-          h,
-          t('editor.inspector.cardsConfig', 'Card icons & links'),
-        );
-        items.forEach((item, idx) => renderCard(item, idx, section.body));
-        form.append(section.el);
-      }
-      return;
-    }
-
-    case 'list-slide': {
-      // "Text size" is the one list setting the renderer can overrule: a list
-      // long AND wordy enough to spill even across two columns steps down a
-      // size. That used to happen silently, so an author who picked Large saw
-      // nothing change and no reason why. Render the field here (instead of
-      // via the generic keeps loop) so a note can sit under it when the step
-      // down is actually in effect.
-      const densityField = fieldByKey.get('density');
-      if (!densityField) return;
-      used.add('density');
-      const el = renderField(densityField);
-      if (!el) return;
-      form.append(el);
-      const { steppedDownFrom, twoCol } = resolveListLayout(slide?.content);
-      if (steppedDownFrom === 'comfortable') {
-        el.append(
-          h('div', {
-            class: 'help',
-            text: t(
-              'editor.list.sizeSteppedDown',
-              'Large does not fit these items, so they are shown at the default size. Shorten the item text, or use fewer items, to get Large back.',
-            ),
-          }),
-        );
-      } else if (!twoCol && slide?.content?.layout === 'two-column') {
-        // Defensive: the resolver honours an explicit two-column choice, so
-        // this should not occur. Kept so a future capacity change cannot make
-        // the column count silently disagree with the field.
-        el.append(
-          h('div', {
-            class: 'help',
-            text: t(
-              'editor.list.oneColumnFallback',
-              'Shown in one column: two columns do not fit.',
-            ),
-          }),
-        );
-      }
-      return;
-    }
-
-    // Image types whose only per-element settings are the shared card
-    // (replace/alt/fit/bleed/focus/extras). Their slide-wide settings render
-    // via the generic keeps loop; add/remove/reorder lives on the canvas.
-    case 'image-slide':
-    case 'gallery-slide':
-    case 'team-cards-slide':
-    case 'logo-wall-slide':
-    case 'quote-slide':
-      if (selectedElement?.kind === 'image')
-        renderSelectedImageCard(elementForm);
-      return;
-
-    default:
   }
+
+  INSPECTOR_EXTRAS.get(slide.type)?.(ctx);
 }
