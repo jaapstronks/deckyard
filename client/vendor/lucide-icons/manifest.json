@@ -401,9 +401,20 @@
     "croissant"
   ],
   "copiedUi": [
+    "bold",
     "chevron-down",
+    "chevron-left",
+    "columns-2",
     "ellipsis",
+    "file-up",
     "grip-vertical",
+    "heading-2",
+    "italic",
+    "layout-grid",
+    "layout-template",
+    "square-code",
+    "square-sigma",
+    "upload",
     "zoom-in"
   ],
   "missing": [],

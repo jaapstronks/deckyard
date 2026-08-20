@@ -1,6 +1,7 @@
 // Small, shared helpers for the editor view.
 import { newId } from '../../lib/util/id.js';
 import { t } from '../../lib/ui-i18n.js';
+import { applyInstanceKeyDefaults } from '../../../shared/slide-types/instance-keys.js';
 
 // Scroll locking for overlay modals (ref-counted; safe for nested modals).
 let sbScrollLockCount = 0;
@@ -67,7 +68,26 @@ export function deepClone(v) {
     : JSON.parse(JSON.stringify(v));
 }
 
-export function makeNewSlide(type, slideTypes, { lang } = {}) {
+/**
+ * Build a slide of `type`, seeded from the type's defaults for the deck's
+ * language, with its declared instance keys filled in.
+ *
+ * `presentationId` is what the type's `instanceKeys` declaration needs to
+ * resolve a `presentation-id` source; without it such a key is left alone
+ * (see `applyInstanceKeyDefaults`). Passing it is what lets a freshly inserted
+ * follow-invite slide render a working QR code before the first save, rather
+ * than waiting for the server's save seam to repair it.
+ *
+ * @param {string} type - slide-type name; must exist in `slideTypes`
+ * @param {Object} slideTypes - the type registry (`/api/slide-types` metadata)
+ * @param {Object} [options]
+ * @param {string} [options.lang] - deck language ('nl' / 'en-GB' seed
+ *   `defaultsByLang`; anything else falls back to `defaults`)
+ * @param {string} [options.presentationId] - id of the deck the slide is
+ *   being inserted into
+ * @returns {{id: string, type: string, content: Object, notes: string}}
+ */
+export function makeNewSlide(type, slideTypes, { lang, presentationId } = {}) {
   const def = slideTypes?.[type];
   if (!def) throw new Error(`Unknown slide type: ${type}`);
   const id = newId();
@@ -86,14 +106,16 @@ export function makeNewSlide(type, slideTypes, { lang } = {}) {
     content: deepClone(langDefaults || def.defaults || {}),
     notes: '',
   };
-  if (type === 'poll-slide') {
-    const pollId =
-      typeof slide.content?.pollId === 'string'
-        ? slide.content.pollId.trim()
-        : '';
-    if (!pollId) {
-      slide.content.pollId = newId();
-    }
-  }
+  // Instance-bound content keys come from the type's `instanceKeys`
+  // declaration, not from a branch on the type name here. Insert is the same
+  // "fill in what is missing" moment as save — a fresh slide holds nothing yet,
+  // so defaults and rekey coincide — and `applyInstanceKeyDefaults` is the
+  // helper that names it. Declaration + rationale:
+  // shared/slide-types/instance-keys.js.
+  applyInstanceKeyDefaults(slide, {
+    def,
+    presentationId: presentationId || '',
+    newId,
+  });
   return slide;
 }

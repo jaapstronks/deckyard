@@ -3,7 +3,12 @@ import crypto from 'node:crypto';
 import {
   resolveSlideTypeName,
   getSlideTypeId,
+  getSlideType,
 } from '../../../shared/slide-types/registry.js';
+import {
+  applyInstanceKeyDefaults,
+  slideInstanceKeys,
+} from '../../../shared/slide-types/instance-keys.js';
 import { normalizeDataSource } from '../../../shared/data-source.js';
 import { ValidationError } from '../../utils/errors.js';
 
@@ -25,11 +30,22 @@ const EXAMPLE_CANONICAL_ID =
  * answers to is a 400 — which is what finally closes the whole-deck PUT that,
  * in Postgres mode, let arbitrary strings reach storage unvalidated.
  *
+ * It is also where a slide's **instance keys** are filled in: the content keys
+ * a type declares as bound to one slide instance rather than to its text
+ * (`instanceKeys` in shared/slide-types/instance-keys.js — `poll-slide.pollId`,
+ * `follow-invite-slide.presentationId`). The declaration says which keys and
+ * where their value comes from, so this seam does not name a type to know that
+ * a poll needs an id.
+ *
  * @param {Array<object>} slides
+ * @param {object} [opts]
+ * @param {string} [opts.presentationId] - the deck being written. Needed for
+ *   `presentation-id` keys, which cache it; omit it and those keys are left
+ *   alone rather than blanked.
  * @returns {Array<object>}
  * @throws {ValidationError} 400 when a slide names an unresolvable type.
  */
-export function normalizeSlides(slides) {
+export function normalizeSlides(slides, { presentationId = '' } = {}) {
   if (!Array.isArray(slides)) return [];
   return slides.map((s, index) => {
     const type = resolveSlideTypeName(s?.type);
@@ -44,18 +60,21 @@ export function normalizeSlides(slides) {
       ...s,
       type,
       id: typeof s?.id === 'string' && s.id ? s.id : crypto.randomUUID(),
-      content:
-        type === 'poll-slide'
-          ? {
-              ...(s?.content && typeof s.content === 'object' ? s.content : {}),
-              pollId:
-                typeof s?.content?.pollId === 'string' &&
-                s.content.pollId.trim()
-                  ? s.content.pollId.trim()
-                  : crypto.randomUUID(),
-            }
-          : s?.content,
+      content: s?.content,
     };
+    // Instance keys, from the type's declaration. Copied first so the write
+    // lands on this slide's own content object rather than the caller's.
+    const def = getSlideType(type);
+    if (Object.keys(slideInstanceKeys(def)).length) {
+      normalized.content = {
+        ...(s?.content && typeof s.content === 'object' ? s.content : {}),
+      };
+      applyInstanceKeyDefaults(normalized, {
+        def,
+        presentationId,
+        newId: () => crypto.randomUUID(),
+      });
+    }
     // Preserve parentId for nested slides (null = top-level)
     normalized.parentId =
       typeof s?.parentId === 'string' && s.parentId.trim()

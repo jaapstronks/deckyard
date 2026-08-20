@@ -146,20 +146,11 @@
   border-radius: var(--ps-radius-md);
 }
 
-/* Ensure the X is always visible and matches Lovable's subtle icon button. */
+/* The close X is a masked span painted with currentColor (icon()), so slide CSS
+   that injects global SVG rules can no longer reach it — the !important
+   stroke/fill patch that used to guard it is gone with the inline <svg>. */
 .ps-modal-close {
   color: hsl(var(--app-text-secondary));
-}
-.ps-modal-close svg {
-  display: block;
-}
-
-/* Make sure the X icon is always visible even if slide CSS injects global SVG rules. */
-.ps-modal-close svg path {
-  stroke: currentColor !important;
-  fill: none !important;
-  stroke-linecap: round;
-  stroke-linejoin: round;
 }
 .ps-modal-close.btn-secondary {
   background: transparent;

@@ -13,7 +13,7 @@ import { sortByPinnedThenName } from '../../lib/slide-library/search.js';
 import { createSlidesPanelResize } from './slides-panel-resize.js';
 import { createSlidesPanelActions } from './slides-panel-actions.js';
 import { isLiveSlideType } from '../../../shared/slide-types/runtime.js';
-import { applyCloneRekey } from '../../../shared/slide-types/clone.js';
+import { applyInstanceKeyRekey } from '../../../shared/slide-types/instance-keys.js';
 
 // Which slide types need audience participation, and therefore a follow-invite
 // slide in the deck for the audience to join through. Declared by the type
@@ -260,10 +260,10 @@ export function createSlidesPanel({
   const insertFollowInviteSlide = (afterSlideId) => {
     const s = makeNewSlide('follow-invite-slide', SLIDE_TYPES, {
       lang: pres?.i18n?.active,
+      presentationId: pres?.id || '',
     });
     // No language on the content: the invite renders in the language of the
     // version it sits in, derived from the render context.
-    if (pres?.id) s.content.presentationId = pres.id;
     insertSlideObject(s, { afterSlideId });
   };
 
@@ -291,15 +291,14 @@ export function createSlidesPanel({
       toast?.error?.('This slide type is not available for the active theme.');
       return;
     }
-    const s = makeNewSlide(type, SLIDE_TYPES, { lang: pres?.i18n?.active });
+    const s = makeNewSlide(type, SLIDE_TYPES, {
+      lang: pres?.i18n?.active,
+      presentationId: pres?.id || '',
+    });
     // Layout-variant presets (picker item 15) pre-configure a few content fields
     // (e.g. imageSide, layout, variant) on top of the type's defaults.
     if (contentOverrides && typeof contentOverrides === 'object') {
       Object.assign(s.content, contentOverrides);
-    }
-    // Inject presentationId for follow-invite-slide so the QR code works
-    if (type === 'follow-invite-slide' && pres?.id) {
-      s.content.presentationId = pres.id;
     }
     maybeAssignRandomBg(s);
 
@@ -439,7 +438,10 @@ export function createSlidesPanel({
       toast?.error?.('This slide type is not available for the active theme.');
       return;
     }
-    const s = makeNewSlide(type, SLIDE_TYPES, { lang: pres?.i18n?.active });
+    const s = makeNewSlide(type, SLIDE_TYPES, {
+      lang: pres?.i18n?.active,
+      presentationId: pres?.id || '',
+    });
     const nextContent =
       item?.content && typeof item.content === 'object'
         ? deepClone(item.content)
@@ -448,8 +450,8 @@ export function createSlidesPanel({
     // A library item is a copy of a slide, so the instance-bound content keys
     // its type declares are re-derived here too — a reused poll gets its own
     // pollId, a reused follow-invite points at this deck. Declaration:
-    // shared/slide-types/clone.js.
-    applyCloneRekey(s, {
+    // shared/slide-types/instance-keys.js.
+    applyInstanceKeyRekey(s, {
       def: SLIDE_TYPES?.[type] || null,
       presentationId: pres?.id || '',
       newId,

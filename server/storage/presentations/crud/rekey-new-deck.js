@@ -3,8 +3,8 @@
  * created.
  *
  * A slide type declares which of its content keys belong to *this* slide
- * instance rather than to its text — `rekeyOnClone` in
- * shared/slide-types/clone.js, today `poll-slide.pollId` (`fresh-id`) and
+ * instance rather than to its text — `instanceKeys` in
+ * shared/slide-types/instance-keys.js, today `poll-slide.pollId` (`fresh-id`) and
  * `follow-invite-slide.presentationId` (`presentation-id`). The editor honours
  * that declaration on every copy path through `cloneSlidesForInsert()`. The two
  * server paths that also mint a deck full of slides someone else authored did
@@ -29,12 +29,12 @@
  * happens to be showing. So the value is computed on first sight of a slide id
  * and copied into every later version of it.
  *
- * @see shared/slide-types/clone.js — the declaration and its vocabulary.
+ * @see shared/slide-types/instance-keys.js — the declaration and its vocabulary.
  * @see client/lib/slide-authoring/clone-slides.js — the editor's half.
  */
 
 import { getSlideType } from '../../../../shared/slide-types/registry.js';
-import { applyCloneRekey } from '../../../../shared/slide-types/clone.js';
+import { applyInstanceKeyRekey } from '../../../../shared/slide-types/instance-keys.js';
 import { cryptoUuid } from '../../../../shared/slide-types/helpers.js';
 
 /**
@@ -57,7 +57,7 @@ function slideLists(pres) {
 }
 
 /**
- * Apply every slide type's `rekeyOnClone` declaration across a prepared deck,
+ * Apply every slide type's `instanceKeys` declaration across a prepared deck,
  * in place, before it is stored.
  *
  * @param {Object} pres - the deck being created, with its `id` already minted
@@ -74,7 +74,7 @@ export function rekeyNewDeckSlides(pres) {
       const def = getSlideType(slide?.type);
       const seen =
         typeof slide?.id === 'string' ? valuesBySlideId.get(slide.id) : null;
-      const written = applyCloneRekey(slide, {
+      const written = applyInstanceKeyRekey(slide, {
         def,
         presentationId,
         newId: cryptoUuid,

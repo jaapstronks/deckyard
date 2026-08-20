@@ -3,6 +3,7 @@
  */
 
 import { h } from '../../lib/dom.js';
+import { icon } from '../../lib/dom/icons.js';
 import { spinner } from '../../lib/dom/spinner.js';
 import { api } from '../../lib/api.js';
 import { t } from '../../lib/ui-i18n.js';
@@ -39,20 +40,7 @@ export async function renderDashboard(root, { nav } = {}) {
         },
       },
       [
-        h(
-          'svg',
-          {
-            width: '20',
-            height: '20',
-            viewBox: '0 0 24 24',
-            fill: 'none',
-            stroke: 'currentColor',
-            'stroke-width': '2',
-            'stroke-linecap': 'round',
-            'stroke-linejoin': 'round',
-          },
-          [h('path', { d: 'M19 12H5' }), h('path', { d: 'M12 19l-7-7 7-7' })],
-        ),
+        icon('arrow-left', { size: 20 }),
         h('span', { text: t('dashboard.back', 'Back to presentations') }),
       ],
     ),

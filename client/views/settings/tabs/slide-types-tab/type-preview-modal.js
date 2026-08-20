@@ -1,3 +1,4 @@
+import { icon } from '../../../../lib/dom/icons.js';
 import { h } from '../../../../lib/dom.js';
 import { t } from '../../../../lib/ui-i18n.js';
 import { createCurationThumbnail } from './curation-thumbnails.js';
@@ -50,7 +51,7 @@ export function openTypePreview(type, allTypesList, ctx) {
     'aria-label': t('common.previous', 'Previous'),
     onclick: () => navigate(-1),
   });
-  prevBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>`;
+  prevBtn.append(icon('chevron-left', { size: 16 }));
 
   const counterEl = h('span', { class: 'slide-type-preview-counter' });
 
@@ -60,7 +61,7 @@ export function openTypePreview(type, allTypesList, ctx) {
     'aria-label': t('common.next', 'Next'),
     onclick: () => navigate(1),
   });
-  nextBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>`;
+  nextBtn.append(icon('chevron-right', { size: 16 }));
 
   navWrap.append(prevBtn, counterEl, nextBtn);
 
@@ -70,7 +71,7 @@ export function openTypePreview(type, allTypesList, ctx) {
     'aria-label': t('common.close', 'Close'),
     onclick: close,
   });
-  closeBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>`;
+  closeBtn.append(icon('x', { size: 16 }));
 
   header.append(titleWrap, navWrap, closeBtn);
 

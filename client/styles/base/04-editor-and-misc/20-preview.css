@@ -169,12 +169,6 @@
   gap: 6px;
 }
 
-.pane-tab-icon {
-  width: 15px;
-  height: 15px;
-  display: block;
-}
-
 /* Active fill = accent-soft: the outlined control's default active fill is
    `bg-elevated`, identical to the white bar, so it would vanish. Matches the
    `.ghost-icon-btn.is-active` treatment used elsewhere in the chrome. */

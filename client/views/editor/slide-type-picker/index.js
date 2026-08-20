@@ -18,6 +18,7 @@
  * video/embed/schematic cases.
  */
 
+import { icon } from '../../../lib/dom/icons.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { isInsertableSlideType } from '../slide-types-policy.js';
 import {
@@ -376,7 +377,7 @@ export function createSlideTypePicker({
           applyPinChange(type, nowPinned);
         },
       });
-      pinBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M14 4v5l2 3v2h-4v5l-1 1-1-1v-5H6v-2l2-3V4H7V2h8v2z"/></svg>`;
+      pinBtn.append(icon('pin', { size: 14 }));
 
       // Peek button (top-left): enlarge the preview before inserting.
       const peekLabel = tr('editor.slideTypePicker.peek', 'Enlarge preview');
@@ -391,7 +392,7 @@ export function createSlideTypePicker({
           openTypePeek(type, peekBtn, preset, peekCtx);
         },
       });
-      peekBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M21 21l-4.35-4.35"/></svg>`;
+      peekBtn.append(icon('search', { size: 14 }));
 
       // Preset tiles keep the base label in their haystack too, so a search for
       // the type name still finds every variant (not just the variant label).
@@ -578,12 +579,8 @@ export function createSlideTypePicker({
       role: 'radiogroup',
       'aria-label': tr('editor.slideTypePicker.view.label', 'Thumbnail style'),
     });
-    const VIEW_ICON = {
-      schematic:
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4" width="8" height="6" rx="1"/><line x1="13" y1="5" x2="21" y2="5"/><line x1="13" y1="8" x2="19" y2="8"/><line x1="3" y1="14" x2="21" y2="14"/><line x1="3" y1="18" x2="17" y2="18"/></svg>',
-      preview:
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M4 18l5-5 4 4 3-3 4 4"/></svg>',
-    };
+    // Abstract wireframe vs. a real rendered slide — the two view modes.
+    const VIEW_ICON = { schematic: 'layout-template', preview: 'image' };
     const makeViewBtn = (mode, label) => {
       const on = viewMode === mode;
       const btn = h('button', {
@@ -596,8 +593,10 @@ export function createSlideTypePicker({
         'aria-label': label,
         onclick: () => applyViewMode(mode),
       });
-      btn.innerHTML = VIEW_ICON[mode];
-      btn.append(h('span', { class: 'ps-view-toggle-text', text: label }));
+      btn.append(
+        icon(VIEW_ICON[mode], { size: 15 }),
+        h('span', { class: 'ps-view-toggle-text', text: label }),
+      );
       return btn;
     };
     viewToggle.append(

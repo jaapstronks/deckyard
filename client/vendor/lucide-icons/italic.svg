@@ -1,6 +1,6 @@
 <!-- @license lucide-static v1.31.0 - ISC -->
 <svg
-  class="lucide lucide-layout-grid"
+  class="lucide lucide-italic"
   xmlns="http://www.w3.org/2000/svg"
   width="24"
   height="24"
@@ -11,8 +11,7 @@
   stroke-linecap="round"
   stroke-linejoin="round"
 >
-  <rect width="7" height="7" x="3" y="3" rx="1" />
-  <rect width="7" height="7" x="14" y="3" rx="1" />
-  <rect width="7" height="7" x="14" y="14" rx="1" />
-  <rect width="7" height="7" x="3" y="14" rx="1" />
+  <line x1="19" x2="10" y1="4" y2="4" />
+  <line x1="14" x2="5" y1="20" y2="20" />
+  <line x1="15" x2="9" y1="4" y2="20" />
 </svg>

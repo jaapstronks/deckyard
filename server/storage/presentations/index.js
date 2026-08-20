@@ -239,7 +239,11 @@ async function updatePresentationUncached(storageScope, id, body, opts) {
   // this column alone", so the key has to stay absent to get there.
   const normalized = { ...body };
   if (normalized.slides !== undefined) {
-    normalized.slides = normalizeSlides(normalized.slides);
+    // `id` rather than `body.id`: the deck being written is the one the route
+    // addressed, and a `presentation-id` instance key caches exactly that.
+    normalized.slides = normalizeSlides(normalized.slides, {
+      presentationId: id,
+    });
   }
   normalizeI18n(normalized);
 

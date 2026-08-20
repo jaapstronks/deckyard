@@ -110,6 +110,33 @@ async function main() {
     console.log(`Wrote search tags for ${Object.keys(trimmed).length} icons`);
   }
 
+  // Prune whatever the registries no longer claim. Copying alone can never
+  // produce a deletion, so a name dropped from ICON_NAMES/UI_ICON_NAMES left
+  // its SVG behind for good — and, worse, invisibly: CI's vendor-freshness job
+  // re-runs this script and fails on a changed tree, but an orphan is exactly
+  // the change a copy-only script cannot make. That is how layout-grid.svg sat
+  // in client/vendor at lucide-static 0.469.0 until #864 happened to re-list
+  // it. The expected set is the union of both registries plus the legacy alias
+  // names this script writes itself (those have no registry entry of their own
+  // and are not orphans), plus the two generated JSON files.
+  const expected = new Set([
+    ...ICON_NAMES.map((n) => `${n}.svg`),
+    ...UI_ICON_NAMES.map((n) => `${n}.svg`),
+    ...Object.keys(LEGACY_PHOSPHOR_MAP).map((n) => `${n}.svg`),
+    'manifest.json',
+    'tags.json',
+  ]);
+  // Deliberately not recorded in the manifest: the manifest describes the
+  // vendored tree, and after a run the tree never holds a pruned file. Writing
+  // the list there would make two consecutive runs produce different output —
+  // the one thing a freshness gate cannot tolerate.
+  const pruned = [];
+  for (const entry of await fs.readdir(destDir)) {
+    if (expected.has(entry)) continue;
+    await fs.rm(path.join(destDir, entry), { recursive: true, force: true });
+    pruned.push(entry);
+  }
+
   // Write manifest
   const manifestPath = path.join(destDir, 'manifest.json');
   await fs.writeFile(
@@ -138,6 +165,12 @@ async function main() {
   if (aliases.length) {
     // eslint-disable-next-line no-console
     console.log(`Created ${aliases.length} legacy alias files`);
+  }
+  if (pruned.length) {
+    // eslint-disable-next-line no-console
+    console.log(
+      `Pruned ${pruned.length} file(s) no longer in the registries: ${pruned.join(', ')}`,
+    );
   }
   if (missing.length) {
     // eslint-disable-next-line no-console

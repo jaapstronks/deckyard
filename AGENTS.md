@@ -293,8 +293,8 @@ format` writes, `npm run format:check` gates in CI next to `npm run lint`.
 
 - If your type carries a content key that identifies **this slide instance** to
   something outside the deck (an interaction id, a cached deck id), declare it
-  with `rekeyOnClone` so every copy path (duplicate, paste, library insert)
-  re-derives it. Vocabulary: `shared/slide-types/clone.js`.
+  with `instanceKeys` so every copy path (duplicate, paste, library insert)
+  re-derives it. Vocabulary: `shared/slide-types/instance-keys.js`.
 
 ### 4) Ensure the editor UX fits the patterns
 

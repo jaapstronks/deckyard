@@ -110,13 +110,6 @@
   background: hsl(var(--app-accent-soft, var(--app-accent-primary) / 0.12));
 }
 
-.ghost-icon-btn img,
-.ghost-icon-btn svg {
-  width: 16px;
-  height: 16px;
-  display: block;
-}
-
 /* details/summary ghost trigger: hide the disclosure marker */
 summary.ghost-icon-btn {
   list-style: none;
@@ -216,10 +209,9 @@ summary.ghost-icon-btn::-webkit-details-marker {
     hsl(var(--app-accent-primary) / 0.2);
 }
 
+/* The title's edit affordance: an icon() span, so it dims with the button's
+   text colour instead of staying a fixed-black stroke. */
 .topbar-title-pencil {
-  width: 12px;
-  height: 12px;
-  flex: none;
   opacity: 0.55;
 }
 

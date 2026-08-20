@@ -40,7 +40,7 @@ function toIdSet(ids) {
  * Faithful deep copy with fresh ids and regenerated interaction ids (the clone
  * recipe lives in client/lib/slide-authoring/clone-slides.js).
  * @param {Object} [opts.slideTypes] - slide-type metadata, for the per-type
- *   `rekeyOnClone` declaration
+ *   `instanceKeys` declaration
  * @returns {number} how many slides were created (0 if nothing to do)
  */
 export function duplicateSlides({

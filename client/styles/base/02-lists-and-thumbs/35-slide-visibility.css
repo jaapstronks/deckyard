@@ -101,11 +101,6 @@
   z-index: 7;
 }
 
-.slide-visibility-toggle svg {
-  width: 14px;
-  height: 14px;
-}
-
 .slide-visibility-toggle:hover {
   background: rgba(0, 0, 0, 0.8);
 }
