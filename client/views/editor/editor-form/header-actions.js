@@ -147,9 +147,10 @@ export function buildHeaderActions({
     }
   }
 
-  // Build AI conversion submenu. Which targets a type offers is declared by
-  // the type (`aiConvertTo`); the labels come from the same typeLabel() the
-  // deterministic Convert submenu uses, so the menu holds no type knowledge.
+  // Build AI conversion submenu. Which targets a type offers comes from the
+  // one AI_CONVERT_PAIRS map (shared/slide-types/convert.js); the labels come
+  // from the same typeLabel() the deterministic Convert submenu uses, so the
+  // menu holds no type knowledge.
   const aiConvertTargets = getAiConvertibleSlideTypes(slide, {
     slideTypes: SLIDE_TYPES,
   });

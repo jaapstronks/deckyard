@@ -10,10 +10,11 @@ import { getAiConvertibleSlideTypes } from '../../../shared/slide-types/convert.
 /**
  * The prompt for one conversion pair, or null when the pair has none.
  *
- * Which pairs exist is declared by the types (`aiConvertTo`, read through
- * getAiConvertibleSlideTypes) — this function is the prose half, and
- * tests/ai-convert-declared-pairs.test.js gates that every declared pair has
- * one. Exported for that test.
+ * Which pairs exist is the `AI_CONVERT_PAIRS` map in
+ * shared/slide-types/convert.js (read through getAiConvertibleSlideTypes) —
+ * this function is the prose half, and
+ * tests/field-behaviour-declarations.test.js gates that every declared pair
+ * has one. Exported for that test.
  */
 export function getConversionPrompt(fromType, toType, lang) {
   const isNl = lang === 'nl';
