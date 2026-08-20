@@ -35,7 +35,7 @@ export function createGooglePanel({ sourceConfig = {}, onChange }) {
     }),
   );
   const specInput = h('input', {
-    class: 'input',
+    class: 'form-input',
     type: 'text',
     placeholder: 'Raleway:400,700',
     value: sourceConfig.spec || '',

@@ -398,7 +398,6 @@
 
   /* Touch-friendly input sizes */
   .modal .form-input,
-  .modal .form-select,
   .modal select,
   .modal input[type='text'],
   .modal input[type='email'],

@@ -200,7 +200,7 @@ export function createFontEditor({ fontFamily, onSave, onCancel, onDelete }) {
     }),
   );
   const nameInput = h('input', {
-    class: 'input',
+    class: 'form-input',
     type: 'text',
     placeholder: 'Acme Sans',
     value: state.name,
@@ -217,7 +217,7 @@ export function createFontEditor({ fontFamily, onSave, onCancel, onDelete }) {
     h('label', { class: 'field-label', text: t('fonts.category', 'Category') }),
   );
   const categorySelect = h('select', {
-    class: 'select',
+    class: 'form-input',
     onchange: (e) => {
       state.category = e.target.value;
     },

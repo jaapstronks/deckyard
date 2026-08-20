@@ -257,7 +257,7 @@ export function createPreferencesTab({ user, nav }) {
   const digestDaySelect = h(
     'select',
     {
-      class: 'select',
+      class: 'form-input',
       'aria-label': t('settings.digest.dayOfWeek', 'Send digest on'),
     },
     [

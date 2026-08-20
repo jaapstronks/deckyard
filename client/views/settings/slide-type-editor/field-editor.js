@@ -205,7 +205,10 @@ export function createFieldListEditor({ fields = [], onChange }) {
           field.key = val.replace(/[^a-zA-Z0-9_]/g, '');
           notify();
         },
-        { class: 'input input-sm font-mono', placeholder: 'fieldKey' },
+        {
+          class: 'form-input form-input-sm font-mono',
+          placeholder: 'fieldKey',
+        },
       ),
     );
 
@@ -223,7 +226,7 @@ export function createFieldListEditor({ fields = [], onChange }) {
           notify();
         },
         {
-          class: 'input input-sm',
+          class: 'form-input form-input-sm',
           placeholder: t(
             'settings.slideTypes.fields.labelPlaceholder',
             'Field label',
@@ -234,7 +237,7 @@ export function createFieldListEditor({ fields = [], onChange }) {
 
     // Type
     const typeRow = h('div', { class: 'field-list-field-row' });
-    const typeSelect = h('select', { class: 'input input-sm' });
+    const typeSelect = h('select', { class: 'form-input form-input-sm' });
     for (const ft of FIELD_TYPES) {
       typeSelect.append(
         h('option', {
@@ -295,7 +298,7 @@ export function createFieldListEditor({ fields = [], onChange }) {
             notify();
           },
           {
-            class: 'input input-sm',
+            class: 'form-input form-input-sm',
             type: 'number',
             placeholder: t('settings.slideTypes.fields.noLimit', 'No limit'),
           },
@@ -318,7 +321,7 @@ export function createFieldListEditor({ fields = [], onChange }) {
           notify();
         },
         {
-          class: 'input input-sm',
+          class: 'form-input form-input-sm',
           placeholder: t(
             'settings.slideTypes.fields.placeholderPlaceholder',
             'Optional placeholder',
@@ -342,7 +345,7 @@ export function createFieldListEditor({ fields = [], onChange }) {
           notify();
         },
         {
-          class: 'input input-sm',
+          class: 'form-input form-input-sm',
           placeholder: t(
             'settings.slideTypes.fields.helpTextPlaceholder',
             'Optional help text',
@@ -360,7 +363,7 @@ export function createFieldListEditor({ fields = [], onChange }) {
         text: t('settings.slideTypes.fields.options', 'Options (one per line)'),
       });
       const optArea = h('textarea', {
-        class: 'input input-sm code-textarea',
+        class: 'form-input form-input-sm code-textarea',
         rows: '4',
         placeholder: 'option1\noption2\noption3',
       });
@@ -401,7 +404,11 @@ export function createFieldListEditor({ fields = [], onChange }) {
             field.minItems = Number.isFinite(n) && n >= 0 ? n : undefined;
             notify();
           },
-          { class: 'input input-sm', type: 'number', placeholder: '0' },
+          {
+            class: 'form-input form-input-sm',
+            type: 'number',
+            placeholder: '0',
+          },
         ),
       );
 
@@ -419,7 +426,7 @@ export function createFieldListEditor({ fields = [], onChange }) {
             notify();
           },
           {
-            class: 'input input-sm',
+            class: 'form-input form-input-sm',
             type: 'number',
             placeholder: t('settings.slideTypes.fields.noLimit', 'No limit'),
           },

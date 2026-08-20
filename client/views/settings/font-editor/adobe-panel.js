@@ -37,7 +37,7 @@ export function createAdobePanel({ sourceConfig = {}, onImport }) {
     text: t('fonts.adobeProjectId', 'Project ID'),
   });
   const input = h('input', {
-    class: 'input',
+    class: 'form-input',
     type: 'text',
     placeholder: 'abc1def',
     value: sourceConfig.projectId || '',

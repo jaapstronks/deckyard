@@ -121,7 +121,7 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
   );
 
   const nameInput = h('input', {
-    class: 'input',
+    class: 'form-input',
     type: 'text',
     placeholder: t('settings.themes.themeNamePlaceholder', 'My Custom Theme'),
     value: state.label,

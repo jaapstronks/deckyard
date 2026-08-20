@@ -96,13 +96,13 @@ export function createAdminTab({ user }) {
   });
   const aiNameInput = h('input', {
     type: 'text',
-    class: 'input',
+    class: 'form-input',
     placeholder: DEFAULT_AI_NAME,
     maxlength: '64',
   });
   const aiEmailInput = h('input', {
     type: 'email',
-    class: 'input',
+    class: 'form-input',
     placeholder: DEFAULT_AI_EMAIL,
     maxlength: '255',
   });
@@ -141,13 +141,13 @@ export function createAdminTab({ user }) {
   });
   const senderEmailInput = h('input', {
     type: 'email',
-    class: 'input',
+    class: 'form-input',
     placeholder: 'noreply@example.com',
     maxlength: '255',
   });
   const senderNameInput = h('input', {
     type: 'text',
-    class: 'input',
+    class: 'form-input',
     placeholder: getAppName(),
     maxlength: '128',
   });
@@ -184,7 +184,7 @@ export function createAdminTab({ user }) {
       'How long users stay logged in before needing to sign in again.',
     ),
   });
-  const sessionSelect = h('select', { class: 'select' }, [
+  const sessionSelect = h('select', { class: 'form-input' }, [
     h('option', {
       value: '1',
       text: t('settings.admin.sessionDuration.1day', '1 day'),
@@ -252,7 +252,7 @@ export function createAdminTab({ user }) {
   const retentionSessionSelect = h(
     'select',
     {
-      class: 'select',
+      class: 'form-input',
       'aria-label': t(
         'settings.admin.analytics.retentionDays',
         'Keep session data for',
@@ -299,7 +299,7 @@ export function createAdminTab({ user }) {
   const retentionIpSelect = h(
     'select',
     {
-      class: 'select',
+      class: 'form-input',
       'aria-label': t(
         'settings.admin.analytics.retentionIpDays',
         'Anonymize IP addresses after',
@@ -437,7 +437,7 @@ export function createAdminTab({ user }) {
   const leadsRetentionSelect = h(
     'select',
     {
-      class: 'select',
+      class: 'form-input',
       'aria-label': t(
         'settings.admin.leads.retentionDays',
         'Keep lead data for',

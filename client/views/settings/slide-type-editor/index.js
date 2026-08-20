@@ -147,7 +147,7 @@ export function createSlideTypeEditor({
   );
 
   const nameInput = h('input', {
-    class: 'input',
+    class: 'form-input',
     type: 'text',
     placeholder: t('settings.slideTypes.namePlaceholder', 'My Custom Slide'),
     value: state.label,
@@ -168,7 +168,7 @@ export function createSlideTypeEditor({
     text: t('settings.slideTypes.slug', 'Slug'),
   });
   const slugInput = h('input', {
-    class: 'input font-mono',
+    class: 'form-input font-mono',
     type: 'text',
     placeholder: 'my-custom-slide',
     value: state.slug,
@@ -205,7 +205,7 @@ export function createSlideTypeEditor({
     }),
   );
 
-  const baseTypeSelect = h('select', { class: 'input' });
+  const baseTypeSelect = h('select', { class: 'form-input' });
   baseTypeSelect.append(
     h('option', {
       value: '',
@@ -275,7 +275,7 @@ export function createSlideTypeEditor({
   );
 
   const defaultsArea = h('textarea', {
-    class: 'input code-textarea',
+    class: 'form-input code-textarea',
     rows: '6',
     placeholder: '{\n  "title": "Default Title"\n}',
   });
@@ -330,7 +330,7 @@ export function createSlideTypeEditor({
   );
 
   const templateArea = h('textarea', {
-    class: 'input code-textarea',
+    class: 'form-input code-textarea',
     rows: '12',
     placeholder:
       '<div class="my-slide">\n  <h1>{{esc title}}</h1>\n  {{markdown body}}\n</div>',
@@ -353,7 +353,7 @@ export function createSlideTypeEditor({
   );
 
   const cssArea = h('textarea', {
-    class: 'input code-textarea',
+    class: 'form-input code-textarea',
     rows: '8',
     placeholder: '.my-slide {\n  padding: 2em;\n}',
   });
@@ -385,7 +385,7 @@ export function createSlideTypeEditor({
   );
 
   const usageArea = h('textarea', {
-    class: 'input',
+    class: 'form-input',
     rows: '5',
     maxlength: String(USAGE_MAX_LENGTH),
     placeholder: t(

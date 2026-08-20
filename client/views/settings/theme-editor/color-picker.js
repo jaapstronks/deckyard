@@ -41,7 +41,7 @@ export function createColorPicker({ label, value, onChange }) {
 
   // Text input for manual hex entry
   const textInput = h('input', {
-    class: 'input theme-color-picker-text',
+    class: 'form-input theme-color-picker-text',
     type: 'text',
     value: value || '#000000',
     placeholder: '#000000',

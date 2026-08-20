@@ -60,7 +60,7 @@ function memberName(member) {
  */
 function renderRoleControl(member, handlers) {
   const select = h('select', {
-    class: 'form-select admin-user-role-select',
+    class: 'form-input admin-user-role-select',
     'aria-label': t('organization.members.changeRoleFor', 'Role for {name}', {
       name: memberName(member),
     }),

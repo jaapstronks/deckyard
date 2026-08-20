@@ -194,7 +194,7 @@ export async function showEditModal(targetUser, onSuccess) {
     value: targetUser.name || '',
   });
 
-  const roleSelect = h('select', { class: 'form-select' });
+  const roleSelect = h('select', { class: 'form-input' });
   roleSelect.append(
     h('option', {
       value: 'user',
