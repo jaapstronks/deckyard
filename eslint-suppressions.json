@@ -84,11 +84,6 @@
       "count": 1
     }
   },
-  "client/views/editor/slides-panel.js": {
-    "no-useless-assignment": {
-      "count": 1
-    }
-  },
   "client/views/list/views/home-view.js": {
     "no-useless-assignment": {
       "count": 2

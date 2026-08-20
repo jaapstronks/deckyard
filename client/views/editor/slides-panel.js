@@ -14,6 +14,10 @@ import { createSlidesPanelResize } from './slides-panel-resize.js';
 import { createSlidesPanelActions } from './slides-panel-actions.js';
 import { isLiveSlideType } from '../../../shared/slide-types/runtime.js';
 import { applyInstanceKeyRekey } from '../../../shared/slide-types/instance-keys.js';
+import {
+  anchorBehindInvite,
+  insertSlideAfter,
+} from './slide-insert-position.js';
 
 // Which slide types need audience participation, and therefore a follow-invite
 // slide in the deck for the audience to join through. Declared by the type
@@ -235,17 +239,11 @@ export function createSlidesPanel({
 
   const insertSlideObject = (s, { afterSlideId, parentId = null } = {}) => {
     const slides = pres.slides || [];
-    let insertIdx = slides.length;
-    if (afterSlideId == null) insertIdx = 0;
-    else {
-      const afterIdx = slides.findIndex((x) => x.id === afterSlideId);
-      insertIdx = afterIdx >= 0 ? afterIdx + 1 : slides.length;
-    }
     // Set parentId for nested slides
     if (parentId) {
       s.parentId = parentId;
     }
-    slides.splice(insertIdx, 0, s);
+    insertSlideAfter(slides, s, afterSlideId);
     setSelectedSlideId?.(s.id);
     editorState.dirtyRefreshAll();
 
@@ -265,6 +263,7 @@ export function createSlidesPanel({
     // No language on the content: the invite renders in the language of the
     // version it sits in, derived from the render context.
     insertSlideObject(s, { afterSlideId });
+    return s.id;
   };
 
   // Get the ID of the first slide (title slide) for inserting as second slide
@@ -315,10 +314,17 @@ export function createSlidesPanel({
         openOverlayClosers,
         onAddAsSecond: () => {
           // First insert the follow-invite slide as the second slide
-          insertFollowInviteSlide(getFirstSlideId());
-          // Then insert the interactive slide at its intended position
+          const firstSlideId = getFirstSlideId();
+          const inviteSlideId = insertFollowInviteSlide(firstSlideId);
+          // Then insert the interactive slide at its intended position, which
+          // moves behind the invite when both were headed for slot two.
           insertSlideObject(pendingSlide, {
-            afterSlideId: pendingAfterSlideId,
+            afterSlideId: anchorBehindInvite({
+              afterSlideId: pendingAfterSlideId,
+              firstSlideId,
+              inviteSlideId,
+              parentId: pendingParentId,
+            }),
             parentId: pendingParentId,
           });
         },
@@ -469,9 +475,14 @@ export function createSlidesPanel({
         root,
         openOverlayClosers,
         onAddAsSecond: () => {
-          insertFollowInviteSlide(getFirstSlideId());
+          const firstSlideId = getFirstSlideId();
+          const inviteSlideId = insertFollowInviteSlide(firstSlideId);
           insertSlideObject(pendingSlide, {
-            afterSlideId: pendingAfterSlideId,
+            afterSlideId: anchorBehindInvite({
+              afterSlideId: pendingAfterSlideId,
+              firstSlideId,
+              inviteSlideId,
+            }),
           });
         },
         onAddBeforeCurrent: () => {
