@@ -55,6 +55,9 @@ export default {
       key: 'body',
       label: 'Body (Markdown)',
       type: 'markdown',
+      // Long-form prose: the heading button earns its place here (see
+      // shared/slide-types/field-behaviour.js for why it is off by default).
+      toolbar: ['heading'],
       required: true,
       maxLength: 3000,
     },

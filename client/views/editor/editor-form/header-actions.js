@@ -12,97 +12,16 @@ import { createDropdown } from '../../../lib/dom/dropdown.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { slidePrimaryLabel } from '../editor-utils.js';
-import { getConvertibleSlideTypes } from '../../../../shared/slide-types.js';
+import {
+  getAiConvertibleSlideTypes,
+  getConvertibleSlideTypes,
+} from '../../../../shared/slide-types.js';
 import { convertSlideWithConfirm } from '../convert-slide-action.js';
 import { openJsonDebugModal } from '../modals/json-debug-modal.js';
 import { openSaveToLibraryModal } from '../modals/save-to-library-modal.js';
 import { iconUrl } from '../../../../shared/icon-names.js';
 import { readPreferredLlmVendor } from '../../../lib/net/llm-vendor.js';
 import { moreIcon } from '../../../lib/dom/icons.js';
-
-// AI conversion targets — which types can each slide type convert to?
-const AI_CONVERT_TARGETS = {
-  'content-slide': [
-    {
-      type: 'list-slide',
-      labelKey: 'slideType.list-slide.label',
-      label: 'List',
-    },
-    {
-      type: 'icon-card-grid-slide',
-      labelKey: 'slideType.icon-card-grid-slide.label',
-      label: 'Icon cards',
-    },
-    {
-      type: 'text-blocks-slide',
-      labelKey: 'slideType.text-blocks-slide.label',
-      label: 'Text blocks',
-    },
-    {
-      type: 'kpi-metrics-slide',
-      labelKey: 'slideType.kpi-metrics-slide.label',
-      label: 'KPI metrics',
-    },
-  ],
-  'list-slide': [
-    {
-      type: 'icon-card-grid-slide',
-      labelKey: 'slideType.icon-card-grid-slide.label',
-      label: 'Icon cards',
-    },
-    {
-      type: 'content-slide',
-      labelKey: 'slideType.content-slide.label',
-      label: 'Content',
-    },
-    {
-      type: 'text-blocks-slide',
-      labelKey: 'slideType.text-blocks-slide.label',
-      label: 'Text blocks',
-    },
-  ],
-  'icon-card-grid-slide': [
-    {
-      type: 'list-slide',
-      labelKey: 'slideType.list-slide.label',
-      label: 'List',
-    },
-    {
-      type: 'content-slide',
-      labelKey: 'slideType.content-slide.label',
-      label: 'Content',
-    },
-    {
-      type: 'text-blocks-slide',
-      labelKey: 'slideType.text-blocks-slide.label',
-      label: 'Text blocks',
-    },
-  ],
-  'text-blocks-slide': [
-    {
-      type: 'icon-card-grid-slide',
-      labelKey: 'slideType.icon-card-grid-slide.label',
-      label: 'Icon cards',
-    },
-    {
-      type: 'list-slide',
-      labelKey: 'slideType.list-slide.label',
-      label: 'List',
-    },
-  ],
-  'kpi-metrics-slide': [
-    {
-      type: 'content-slide',
-      labelKey: 'slideType.content-slide.label',
-      label: 'Content',
-    },
-    {
-      type: 'list-slide',
-      labelKey: 'slideType.list-slide.label',
-      label: 'List',
-    },
-  ],
-};
 
 /**
  * Build the header actions dropdown menu
@@ -228,8 +147,13 @@ export function buildHeaderActions({
     }
   }
 
-  // Build AI conversion submenu
-  const aiConvertTargets = AI_CONVERT_TARGETS[slide.type] || [];
+  // Build AI conversion submenu. Which targets a type offers comes from the
+  // one AI_CONVERT_PAIRS map (shared/slide-types/convert.js); the labels come
+  // from the same typeLabel() the deterministic Convert submenu uses, so the
+  // menu holds no type knowledge.
+  const aiConvertTargets = getAiConvertibleSlideTypes(slide, {
+    slideTypes: SLIDE_TYPES,
+  });
   let aiConvertDetails = null;
   if (aiConvertTargets.length && api) {
     const built = createDropdown({
@@ -260,7 +184,7 @@ export function buildHeaderActions({
     let aiConvertBusy = false;
 
     for (const target of aiConvertTargets) {
-      const targetLabel = t(target.labelKey, target.label);
+      const targetLabel = typeLabel(target);
       aiConvertMenu.append(
         h('button', {
           class: 'dropdown-item',
@@ -299,7 +223,7 @@ export function buildHeaderActions({
                     content: slide.content,
                     notes: slide.notes || '',
                   },
-                  toType: target.type,
+                  toType: target,
                   lang,
                   vendor,
                 }),

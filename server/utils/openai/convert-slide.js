@@ -5,21 +5,18 @@ import { ValidationError } from '../errors.js';
 import { extractJsonObject } from './json.js';
 import { cryptoUuid } from '../../../shared/slide-types/helpers.js';
 import { GLOBAL_SLIDE_FIELD_KEYS } from '../../../shared/slide-types/registry.js';
+import { getAiConvertibleSlideTypes } from '../../../shared/slide-types/convert.js';
 
-const SUPPORTED_CONVERSIONS = {
-  'content-slide': [
-    'list-slide',
-    'icon-card-grid-slide',
-    'text-blocks-slide',
-    'kpi-metrics-slide',
-  ],
-  'list-slide': ['icon-card-grid-slide', 'content-slide', 'text-blocks-slide'],
-  'icon-card-grid-slide': ['list-slide', 'content-slide', 'text-blocks-slide'],
-  'text-blocks-slide': ['icon-card-grid-slide', 'list-slide'],
-  'kpi-metrics-slide': ['content-slide', 'list-slide'],
-};
-
-function getConversionPrompt(fromType, toType, lang) {
+/**
+ * The prompt for one conversion pair, or null when the pair has none.
+ *
+ * Which pairs exist is the `AI_CONVERT_PAIRS` map in
+ * shared/slide-types/convert.js (read through getAiConvertibleSlideTypes) —
+ * this function is the prose half, and
+ * tests/field-behaviour-declarations.test.js gates that every declared pair
+ * has one. Exported for that test.
+ */
+export function getConversionPrompt(fromType, toType, lang) {
   const isNl = lang === 'nl';
   const langRule = isNl ? 'Output in Dutch' : 'Output in English';
 
@@ -487,7 +484,7 @@ export async function convertSlideWithAi(
     throw new ValidationError('Slide must have a type');
   }
 
-  const allowed = SUPPORTED_CONVERSIONS[fromType] || [];
+  const allowed = getAiConvertibleSlideTypes(fromType);
   if (!allowed.includes(toType)) {
     throw new ValidationError(
       `AI conversion from "${fromType}" to "${toType}" is not supported`,

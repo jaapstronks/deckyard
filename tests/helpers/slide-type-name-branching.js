@@ -323,21 +323,13 @@ export const INVENTORY = {
   // single documented exception (follow-invite), below the three-name
   // threshold. That is the good outcome this gate exists to surface — the
   // per-type knowledge was derived away, not moved.
-  'client/views/editor/editor-form/render-field.js': {
-    kind: sparse,
-    why:
-      'Field-level special cases: which types auto-fit a freshly picked image, ' +
-      'and which get the heading toolbar button. **The third module PR #451 ' +
-      'missed.** The slide-list-label table it also carried is gone — ' +
-      'affectsLabelForSlide now reads the labelField declaration.',
-  },
-  'client/views/editor/editor-form/header-actions.js': {
-    kind: sparse,
-    why:
-      'The convert targets offered in the editor header — the same knowledge as ' +
-      'convert.js, expressed a second time. Worth collapsing into one source; ' +
-      'until then, two places to visit.',
-  },
+  // render-field.js and header-actions.js left the inventory with A7.15 PR B.
+  // The generic field loop's two remaining per-type branches — which types
+  // auto-fit a freshly picked image, which get the markdown heading button,
+  // both on PR #451's missed list — are field declarations now
+  // (shared/slide-types/field-behaviour.js). The header's AI-convert menu was
+  // the second hand-written copy of the server's SUPPORTED_CONVERSIONS; the
+  // types declare `aiConvertTo` and both consumers read it.
   'client/views/editor/editor-form/element-tab.js': {
     kind: sparse,
     why:

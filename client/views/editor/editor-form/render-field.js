@@ -11,6 +11,11 @@ import { renderImageFitField } from '../fields/image-fit.js';
 import { createCollectionEditor } from './collection-editor.js';
 import { fieldEditor } from '../../../../shared/slide-types/field-editors.js';
 import {
+  applyAutoContainFit,
+  fieldAutoFit,
+  fieldToolbars,
+} from '../../../../shared/slide-types/field-behaviour.js';
+import {
   isFieldVisible,
   visibilityDriverKeys,
 } from '../../../../shared/slide-types/field-visibility.js';
@@ -277,9 +282,9 @@ export function createRenderField({
         slideId: slide.id,
         key: field.key,
       });
-      // Show heading button only for content and image-text slides
-      const showHeading =
-        slide.type === 'content-slide' || slide.type === 'image-text-slide';
+      // The heading button is a declared field affordance, not a type name:
+      // shared/slide-types/field-behaviour.js.
+      const showHeading = fieldToolbars(field).includes('heading');
       return fieldMarkdown(
         t(field.labelKey || field.key, field.label || field.key),
         slide.content[field.key] || '',
@@ -426,73 +431,29 @@ export function createRenderField({
       return fieldImage(slide, field, (url) => {
         slide.content[field.key] = url;
 
-        // Auto-fit: for image-slide and image-text-slide, detect aspect ratio mismatch
-        // and automatically switch to contain/fit mode if the image would be heavily cropped.
-        // Only apply when setting a new image (not clearing), and only for the main 'image' field.
-        if (
-          url &&
-          field.key === 'image' &&
-          (slide.type === 'image-slide' || slide.type === 'image-text-slide')
-        ) {
+        // Auto-fit: when the picked image would be heavily cropped, switch
+        // this slide to `contain` — but only where the type declares where its
+        // fit lives, and only when the author has not chosen one. Declaration
+        // and the write itself: shared/slide-types/field-behaviour.js.
+        const autoFit = url ? fieldAutoFit(field) : null;
+        if (autoFit) {
           getRecommendedImageFit(url)
             .then(({ shouldContain }) => {
-              if (shouldContain) {
-                if (slide.type === 'image-slide') {
-                  // Fit is an ImageRef axis (step 3): only auto-switch when the
-                  // user hasn't explicitly chosen one (no own fit, no legacy
-                  // layout beyond the old default 'full').
-                  const c = slide.content;
-                  const explicit =
-                    c.fit === 'cover' ||
-                    c.fit === 'contain' ||
-                    (c.layout && c.layout !== 'full');
-                  if (!explicit) {
-                    c.fit = 'contain';
-                    debugLog(
-                      '[auto-fit] Switched image-slide to contain fit due to aspect ratio mismatch',
-                    );
-                    toast.info(
-                      t(
-                        'editor.autoFit.applied',
-                        'Switched to "Fit (no crop)" to show your full image. You can change this in Layout.',
-                      ),
-                      { id: 'auto-fit-toast' },
-                    );
-                    markDirty?.();
-                    rerenderEditor?.();
-                    scheduleUiRefresh?.();
-                  }
-                } else if (slide.type === 'image-text-slide') {
-                  // Fit is per-image (ImageRef, step 2b): auto-switch the first
-                  // item's fit, and only when the user hasn't explicitly set one.
-                  // This path fires from the legacy flat `image` field, so the
-                  // image may not be migrated into images[0] yet - then write
-                  // the legacy slide-level fit, which the next edit folds in.
-                  const items = Array.isArray(slide.content.images)
-                    ? slide.content.images
-                    : [];
-                  const item0 =
-                    items[0] && typeof items[0] === 'object' ? items[0] : null;
-                  const currentFit = item0?.fit || slide.content.imageFit;
-                  if (!currentFit || currentFit === 'cover') {
-                    if (item0) item0.fit = 'contain';
-                    else slide.content.imageFit = 'contain';
-                    debugLog(
-                      '[auto-fit] Switched image-text-slide to contain fit due to aspect ratio mismatch',
-                    );
-                    toast.info(
-                      t(
-                        'editor.autoFit.applied',
-                        'Switched to "Fit (no crop)" to show your full image. You can change this in Layout options.',
-                      ),
-                      { id: 'auto-fit-toast' },
-                    );
-                    markDirty?.();
-                    rerenderEditor?.();
-                    scheduleUiRefresh?.();
-                  }
-                }
-              }
+              if (!shouldContain) return;
+              if (!applyAutoContainFit(slide.content, autoFit)) return;
+              debugLog(
+                `[auto-fit] Switched ${slide.type} to contain fit due to aspect ratio mismatch`,
+              );
+              toast.info(
+                t(
+                  'editor.autoFit.applied',
+                  'Switched to "Fit (no crop)" to show your full image. You can change this in Layout.',
+                ),
+                { id: 'auto-fit-toast' },
+              );
+              markDirty?.();
+              rerenderEditor?.();
+              scheduleUiRefresh?.();
             })
             .catch((err) => {
               debugLog('[auto-fit] Failed to determine image fit:', err);
