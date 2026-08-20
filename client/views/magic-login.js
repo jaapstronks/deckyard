@@ -1,3 +1,4 @@
+import { api } from '../lib/api.js';
 import { h } from '../lib/dom.js';
 import { t } from '../lib/ui-i18n.js';
 import { me } from '../lib/user/auth.js';
@@ -53,12 +54,11 @@ export async function renderMagicLogin(root, { nav } = {}) {
 
   // Verify and consume the token
   try {
-    const res = await fetch('/api/auth/magic-link/verify', {
+    // Verify is a soft-fail endpoint: HTTP 200 with { ok, reason } either way.
+    const data = await api('/api/auth/magic-link/verify', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token }),
+      body: { token },
     });
-    const data = await res.json();
 
     if (data.ok) {
       // Success! Redirect to app

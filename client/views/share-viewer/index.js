@@ -65,19 +65,18 @@ export async function renderShareViewer(root, token) {
 
   // Validate the token first
   try {
-    const resp = await fetch(`/api/share/${encodeURIComponent(token)}`);
-    const data = await resp.json();
-
-    if (!resp.ok) {
-      // Pass additional error data for revoked links
-      const errorData = {
-        message: data.message || null,
-        presentationTitle: data.presentationTitle || null,
-      };
-      // renderError branches on this arg as a machine code (map lookup +
+    let data;
+    try {
+      data = await api(`/api/share/${encodeURIComponent(token)}`);
+    } catch (err) {
+      if (!err?.statusCode) throw err; // network failure: generic path below
+      // renderError branches on err.code as a machine code (map lookup +
       // the `=== 'revoked'` blockquote gate), so pass the code, not the
-      // human message. The custom revocation text rides along in errorData.
-      renderError(h, shell, data.error, errorData);
+      // human message. The custom revocation text rides along in err.body.
+      renderError(h, shell, err.code, {
+        message: err.body?.message || null,
+        presentationTitle: err.body?.presentationTitle || null,
+      });
       return cleanup;
     }
 
@@ -90,18 +89,15 @@ export async function renderShareViewer(root, token) {
     }
 
     // No password required - verify and load
-    const verifyResp = await fetch(
-      `/api/share/${encodeURIComponent(token)}/verify`,
-      {
+    let verifyData;
+    try {
+      verifyData = await api(`/api/share/${encodeURIComponent(token)}/verify`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      },
-    );
-    const verifyData = await verifyResp.json();
-
-    if (!verifyResp.ok) {
-      renderError(h, shell, verifyData.error);
+        body: {},
+      });
+    } catch (err) {
+      if (!err?.statusCode) throw err; // network failure: generic path below
+      renderError(h, shell, err.code);
       return cleanup;
     }
 

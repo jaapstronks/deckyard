@@ -40,10 +40,10 @@ export async function renderResetPassword(root, { nav } = {}) {
 
   // Validate token
   try {
-    const res = await fetch(
+    // Validate is a soft-fail endpoint: HTTP 200 with { ok, reason } either way.
+    const data = await api(
       `/api/auth/reset-password/validate?token=${encodeURIComponent(token)}`,
     );
-    const data = await res.json();
 
     if (!data.ok) {
       subtitle.textContent =

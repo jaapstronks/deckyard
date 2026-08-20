@@ -76,6 +76,31 @@ export default [
             'missing key renders the raw key, defeating Tier-2 fallback ' +
             '(docs/reference/i18n-locale-tiers.md).',
         },
+        // Every request to our own /api/* surface goes through api() from
+        // client/lib/api.js — one network layer, one error shape (A7.16
+        // cluster 2; the same one-canonical-form stance as the t() rule).
+        // A raw fetch( is how the second network vocabulary starts: hand-
+        // rolled res.ok parsing, a second error envelope reading, no shared
+        // 401/429 branching. Legitimate exceptions — streaming-body readers
+        // (SSE), binary/blob downloads, presigned uploads to external
+        // storage, static-asset JSON — carry an inline disable directive
+        // with the reason at the call site.
+        {
+          selector: "CallExpression[callee.name='fetch']",
+          message:
+            'Use api() from client/lib/api.js instead of raw fetch() — one ' +
+            'network layer, one error shape (A7.16). Genuinely raw cases ' +
+            '(SSE stream, blob download, presigned upload, static asset) ' +
+            'get an inline eslint-disable-next-line stating the reason.',
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='fetch']" +
+            '[callee.object.name=/^(window|globalThis|self)$/]',
+          message:
+            'window.fetch/globalThis.fetch is still raw fetch — use api() ' +
+            'from client/lib/api.js (A7.16).',
+        },
       ],
     },
   },
