@@ -1,3 +1,4 @@
+import { icon } from '../../../lib/dom/icons.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
 import { getFeatures } from '../../../lib/state/features.js';
@@ -142,9 +143,10 @@ export function createImageLibraryUpload({
     style: 'display:none',
   });
 
-  // Dropzone - the main upload area (SVG upload icon)
-  const dropzoneIcon = h('div', { class: 'image-lib-dropzone-icon' });
-  dropzoneIcon.innerHTML = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`;
+  // Dropzone - the main upload area
+  const dropzoneIcon = h('div', { class: 'image-lib-dropzone-icon' }, [
+    icon('upload', { size: 32 }),
+  ]);
   const dropzoneText = h('div', {
     class: 'image-lib-dropzone-text',
     text: t('imageLibrary.dropzone.text', 'Drop image here or click to upload'),

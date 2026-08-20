@@ -43,10 +43,6 @@
   color: hsl(var(--app-text-primary));
 }
 
-.dashboard-back-btn svg {
-  flex-shrink: 0;
-}
-
 /* Shell */
 .dashboard-shell {
   max-width: 1200px;

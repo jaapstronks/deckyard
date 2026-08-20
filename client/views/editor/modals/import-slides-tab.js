@@ -1,3 +1,4 @@
+import { icon } from '../../../lib/dom/icons.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { errorText } from '../../../lib/api.js';
 import { readFileAsDataUrl } from '../../../lib/util/file.js';
@@ -37,14 +38,9 @@ export function createImportSlidesTab({
   });
 
   // Dropzone
-  const dropzoneIcon = h('div', { class: 'import-slides-dropzone-icon' });
-  dropzoneIcon.innerHTML = `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-    <polyline points="14 2 14 8 20 8"/>
-    <line x1="12" y1="18" x2="12" y2="12"/>
-    <line x1="9" y1="15" x2="12" y2="12"/>
-    <line x1="15" y1="15" x2="12" y2="12"/>
-  </svg>`;
+  const dropzoneIcon = h('div', { class: 'import-slides-dropzone-icon' }, [
+    icon('file-up', { size: 48 }),
+  ]);
 
   const dropzoneText = h('div', {
     class: 'import-slides-dropzone-text',
@@ -82,14 +78,7 @@ export function createImportSlidesTab({
     { class: 'import-slides-file-info', hidden: true },
     [
       h('div', { class: 'import-slides-file-icon' }, [
-        (() => {
-          const icon = h('span');
-          icon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-        </svg>`;
-          return icon;
-        })(),
+        icon('file', { size: 24 }),
       ]),
       h('div', { class: 'import-slides-file-details' }, [
         fileInfoName,

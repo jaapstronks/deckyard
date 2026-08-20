@@ -110,8 +110,9 @@
   background: hsl(var(--app-accent-soft, var(--app-accent-primary) / 0.12));
 }
 
-.ghost-icon-btn img,
-.ghost-icon-btn svg {
+/* Data-driven icons only: chrome glyphs are icon() spans that carry their own
+   --icon-size, so the button no longer sizes its child. */
+.ghost-icon-btn img {
   width: 16px;
   height: 16px;
   display: block;

@@ -1,3 +1,4 @@
+import { icon } from '../../../lib/dom/icons.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { createCommentMarkers } from '../comment-markers.js';
 import { iconUrl } from '../../../../shared/icon-names.js';
@@ -86,20 +87,7 @@ export function createPreviewLightbox({
         'aria-label': t('common.previous', 'Previous slide'),
         onclick: () => navigateSlide(-1),
       },
-      [
-        h(
-          'svg',
-          {
-            width: '18',
-            height: '18',
-            viewBox: '0 0 24 24',
-            fill: 'none',
-            stroke: 'currentColor',
-            'stroke-width': '2',
-          },
-          [h('path', { d: 'M15 18l-6-6 6-6' })],
-        ),
-      ],
+      [icon('chevron-left', { size: 18 })],
     );
     const slideCounter = h('span', { class: 'preview-lightbox-counter' });
     const nextBtn = h(
@@ -110,20 +98,7 @@ export function createPreviewLightbox({
         'aria-label': t('common.next', 'Next slide'),
         onclick: () => navigateSlide(1),
       },
-      [
-        h(
-          'svg',
-          {
-            width: '18',
-            height: '18',
-            viewBox: '0 0 24 24',
-            fill: 'none',
-            stroke: 'currentColor',
-            'stroke-width': '2',
-          },
-          [h('path', { d: 'M9 18l6-6-6-6' })],
-        ),
-      ],
+      [icon('chevron-right', { size: 18 })],
     );
     headerNav.append(prevBtn, slideCounter, nextBtn);
 
@@ -136,20 +111,7 @@ export function createPreviewLightbox({
         'aria-label': t('common.close', 'Close'),
         onclick: () => close(),
       },
-      [
-        h(
-          'svg',
-          {
-            width: '16',
-            height: '16',
-            viewBox: '0 0 24 24',
-            fill: 'none',
-            stroke: 'currentColor',
-            'stroke-width': '2',
-          },
-          [h('path', { d: 'M18 6L6 18M6 6l12 12' })],
-        ),
-      ],
+      [icon('x', { size: 16 })],
     );
     headerRight.append(closeBtn);
     header.append(headerLeft, headerNav, headerRight);

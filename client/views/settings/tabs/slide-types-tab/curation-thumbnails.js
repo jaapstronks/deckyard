@@ -1,4 +1,5 @@
 import { h } from '../../../../lib/dom.js';
+import { icon } from '../../../../lib/dom/icons.js';
 import { renderSlideElement } from '../../../../lib/slide-runtime/slide-render.js';
 import { getSampleContent } from '../../../editor/slide-type-sample-content.js';
 import { SLIDE_TYPES as BUNDLED_SLIDE_TYPES } from '../../../../../shared/slide-types.js';
@@ -13,8 +14,9 @@ export function createVideoMockup(className) {
   const thumbWrap = h('div', { class: `${className} thumb is-video-mock` });
   const inner = h('div', { class: 'slide-type-curation-video-mock' });
   const frame = h('div', { class: 'slide-type-curation-video-frame' });
-  const playBtn = h('div', { class: 'slide-type-curation-video-play' });
-  playBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
+  const playBtn = h('div', { class: 'slide-type-curation-video-play' }, [
+    icon('play', { size: 16 }),
+  ]);
   frame.append(playBtn);
   inner.append(frame);
   thumbWrap.append(inner);

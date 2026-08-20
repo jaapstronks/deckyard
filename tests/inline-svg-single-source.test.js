@@ -8,8 +8,10 @@
  *
  * Two assertions:
  *  1. No inline SVG construction in `client/**` outside `lib/dom/icons.js`,
- *     except the allowlist below. Entries are either PERMANENT (a real
- *     drawing, or the DOM primitive itself) or the PR I2 burndown.
+ *     except the PERMANENT allowlist below — a real drawing, or the DOM
+ *     primitive itself. The PR I2 burndown that stood beside it is empty:
+ *     every hand-drawn chrome glyph is an `icon()` call now, so the list can
+ *     only grow again by an argued addition, never by drift.
  *  2. Every name passed to `icon()` is vendored, so a typo fails here instead
  *     of rendering an invisible span.
  *
@@ -41,34 +43,7 @@ const PERMANENT = {
     'draws chart geometry (axes, bars, gridlines), not an icon',
 };
 
-// PR I2 burndown: each of these still hand-draws a glyph that the vendored
-// Lucide set already has. Migrating one means replacing the markup with an
-// icon() call and deleting its entry here.
-const I2_BURNDOWN = [
-  'client/lib/user/notification-bell.js',
-  'client/views/analytics/dashboard.js',
-  'client/views/editor/deck-grid.js',
-  'client/views/editor/fields/basic.js',
-  'client/views/editor/image-library/detail.js',
-  'client/views/editor/image-library/grid.js',
-  'client/views/editor/image-library/upload.js',
-  'client/views/editor/inline-edit/selection-toolbar.js',
-  'client/views/editor/layout-switcher.js',
-  'client/views/editor/modals/follow-invite-suggest-modal.js',
-  'client/views/editor/modals/import-slides-tab.js',
-  'client/views/editor/modals/preview-lightbox.js',
-  'client/views/editor/modals/slide-library-modal.js',
-  'client/views/editor/modals/slide-type-modal.js',
-  'client/views/editor/slide-list/nested-helpers.js',
-  'client/views/editor/slide-type-picker/index.js',
-  'client/views/editor/slide-type-picker/thumbnails.js',
-  'client/views/editor/slide-visibility-menu.js',
-  'client/views/settings/tabs/slide-types-tab/curation-thumbnails.js',
-  'client/views/settings/tabs/slide-types-tab/type-preview-modal.js',
-  'client/views/settings/theme-editor/logo-uploader.js',
-];
-
-const ALLOWED = new Set([...Object.keys(PERMANENT), ...I2_BURNDOWN]);
+const ALLOWED = new Set(Object.keys(PERMANENT));
 
 // `'<svg …'` in a string literal; `h('svg', …)` / `svgEl('svg', …)`, which
 // may wrap the tag name onto its own line; a hand-rolled namespaced element.

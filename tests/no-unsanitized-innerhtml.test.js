@@ -48,7 +48,7 @@ const CLIENT_DIR = path.join(repoRoot, 'client');
 const SKIP_DIRS = new Set(['vendor']);
 
 // ---------------------------------------------------------------------------
-// The allowlist, in three groups — the grouping is the argument.
+// The allowlist, in two groups — the grouping is the argument.
 // ---------------------------------------------------------------------------
 
 /**
@@ -112,39 +112,7 @@ const USER_TEXT_SITES = [
 ];
 
 /**
- * **Group 2 — author-controlled constants reached indirectly.** Static SVG that
- * a lookup or a ternary stands between, so the mechanical rule cannot see the
- * literal. No runtime data touches these; the keys are internal enums.
- */
-const INDIRECT_STATIC_SITES = [
-  {
-    file: 'client/views/editor/inline-edit/selection-toolbar.js',
-    rhs: 'ICONS[name]',
-    reason:
-      'Icon map lookup; ICONS holds static SVG constants and `name` is an internal enum.',
-  },
-  {
-    file: 'client/views/editor/slide-type-picker/index.js',
-    rhs: 'VIEW_ICON[mode]',
-    reason:
-      'Icon map lookup; VIEW_ICON holds static SVG constants and `mode` is a view enum.',
-  },
-  {
-    file: 'client/views/editor/image-library/grid.js',
-    rhs: 'isFavorite ? \'<svg width="16"…',
-    reason:
-      'Ternary picking between two static SVG literals (filled / outline star).',
-  },
-  {
-    file: 'client/views/editor/image-library/detail.js',
-    rhs: 'isFavorite ? \'<svg width="18"…',
-    reason:
-      'Ternary picking between two static SVG literals (filled / outline star).',
-  },
-];
-
-/**
- * **Group 3 — DOM round-trips and the render contract.** Markup that is either
+ * **Group 2 — DOM round-trips and the render contract.** Markup that is either
  * parsed into a **detached** node that never reaches the page, restored from
  * the element's own prior trusted DOM, or the sanctioned handoff of
  * `renderSlideHtml()` output (per `AGENTS.md`, escaping there is the slide
@@ -187,11 +155,7 @@ const DOM_ROUNDTRIP_SITES = [
   },
 ];
 
-const ALLOWLIST = [
-  ...USER_TEXT_SITES,
-  ...INDIRECT_STATIC_SITES,
-  ...DOM_ROUNDTRIP_SITES,
-];
+const ALLOWLIST = [...USER_TEXT_SITES, ...DOM_ROUNDTRIP_SITES];
 
 // ---------------------------------------------------------------------------
 // Scanner

@@ -11,6 +11,7 @@
  * (`convertTo`, e.g. "Text only" on image-text) go through the shared
  * convert seam and only render when the seam supports the conversion.
  */
+import { icon } from '../../lib/dom/icons.js';
 import { t } from '../../lib/ui-i18n.js';
 import {
   getLayoutVariants,
@@ -133,9 +134,10 @@ export function createLayoutSwitcherChip({
     'aria-haspopup': 'dialog',
     'aria-expanded': 'false',
   });
-  chip.innerHTML =
-    '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="1"/><line x1="8" y1="2.5" x2="8" y2="13.5"/></svg>';
-  chip.append(h('span', { text: t('editor.layoutSwitcher.chip', 'Layout') }));
+  chip.append(
+    icon('columns-2', { size: 14 }),
+    h('span', { text: t('editor.layoutSwitcher.chip', 'Layout') }),
+  );
 
   let close = null;
 

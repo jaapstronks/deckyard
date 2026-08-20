@@ -3,6 +3,7 @@
  * Drag-and-drop or URL input for theme logos.
  */
 
+import { icon } from '../../../lib/dom/icons.js';
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { uploadImage } from './upload-image.js';
@@ -33,8 +34,9 @@ export function createLogoUploader({ value, onChange }) {
 
   // Dropzone (shown when no logo)
   const dropzone = h('div', { class: 'theme-logo-dropzone' });
-  const dropzoneIcon = h('div', { class: 'theme-logo-dropzone-icon' });
-  dropzoneIcon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`;
+  const dropzoneIcon = h('div', { class: 'theme-logo-dropzone-icon' }, [
+    icon('upload', { size: 24 }),
+  ]);
   const dropzoneText = h('div', {
     class: 'theme-logo-dropzone-text',
     text: t(
