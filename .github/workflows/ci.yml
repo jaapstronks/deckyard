@@ -102,6 +102,15 @@ jobs:
   # lockfile), then fail if the committed tree changed. A dep bump of a vendored
   # package is green only when the PR re-vendors.
   #
+  # What this job cannot see on its own: an *orphan*. `vendor-lucide.js` only
+  # copied until A7.26, and a copy can never produce a deletion — so a name
+  # dropped from the icon registries left its SVG behind and regeneration kept
+  # the tree byte-identical, green. `layout-grid.svg` survived that way from
+  # lucide-static 0.469.0 until #864 re-listed the name. The script prunes now,
+  # which is what turns "the tree changed" into a real check for deletions too;
+  # `tests/vendored-icons-tree.test.js` asserts the same invariant in the
+  # `test` job, without needing an install.
+  #
   # A separate job, like the others, so a red mark reads as "the vendored
   # copies are stale — run the vendor scripts and commit" without opening the
   # run.
