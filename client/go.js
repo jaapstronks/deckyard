@@ -5,6 +5,8 @@
  * Uses data-* attributes on elements for i18n strings.
  */
 
+import { api } from './lib/api.js';
+
 function $id(id) {
   return document.getElementById(id);
 }
@@ -57,22 +59,17 @@ form?.addEventListener('submit', async (e) => {
   submit.textContent = strings.loading;
 
   try {
-    const res = await fetch(`/api/follow-codes/${encodeURIComponent(code)}`);
-    const data = await res.json().catch(() => ({}));
-    if (
-      res.ok &&
-      data &&
-      typeof data.followUrl === 'string' &&
-      data.followUrl
-    ) {
+    const data = await api(`/api/follow-codes/${encodeURIComponent(code)}`);
+    if (data && typeof data.followUrl === 'string' && data.followUrl) {
       window.location.href = data.followUrl;
       return;
     }
-    // Tolerate both the canonical error envelope (message + machine code) and
-    // legacy prose-in-error bodies: prefer the human message, fall back to error.
-    setError((data && (data.message || data.error)) || strings.codeNotFound);
-  } catch {
-    setError(strings.networkError);
+    setError(strings.codeNotFound);
+  } catch (err) {
+    // A response error carries a statusCode and the envelope's human message;
+    // without one the request itself failed (network).
+    if (err?.statusCode) setError(err.message || strings.codeNotFound);
+    else setError(strings.networkError);
   } finally {
     submit.disabled = false;
     submit.textContent = prevText || strings.continueText;

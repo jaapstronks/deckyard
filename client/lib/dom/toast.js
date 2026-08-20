@@ -19,6 +19,10 @@ function ensureStack() {
 function toText(v) {
   if (v == null) return '';
   if (typeof v === 'string') return v;
+  // The canonical failure form is `catch (e) { toast.error(e, opts) }` —
+  // callers hand over the caught error itself, never a hand-rolled
+  // `String(e?.message || e)` (client/lib/api.js documents the error shape).
+  if (v instanceof Error) return String(v.message || v);
   try {
     return JSON.stringify(v);
   } catch {

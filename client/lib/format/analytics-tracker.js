@@ -9,6 +9,7 @@
  */
 
 import { storage } from '../storage.js';
+import { api } from '../api.js';
 
 const DEVICE_ID_KEY = 'ps.analytics.deviceId';
 const HEARTBEAT_INTERVAL_MS = 30000; // 30 seconds
@@ -113,25 +114,21 @@ export function createAnalyticsTracker({
           FETCH_TIMEOUT_MS,
         );
 
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-          keepalive: true, // Allow request to complete even if page unloads
-          signal: controller.signal,
-        });
-
-        clearTimeout(timeoutId);
-
-        if (response.ok) {
-          return response.json();
-        }
-
-        // Don't retry on client errors (4xx)
-        if (response.status >= 400 && response.status < 500) {
-          return null;
+        try {
+          return await api(endpoint, {
+            method: 'POST',
+            body: data,
+            keepalive: true, // Allow request to complete even if page unloads
+            signal: controller.signal,
+          });
+        } finally {
+          clearTimeout(timeoutId);
         }
       } catch (error) {
+        // Don't retry on client errors (4xx)
+        if (error.statusCode >= 400 && error.statusCode < 500) {
+          return null;
+        }
         // Don't retry if aborted intentionally or on final attempt
         if (error.name === 'AbortError' && attempt === maxAttempts) {
           return null;

@@ -137,7 +137,7 @@ export function createBackgroundsSection({ config, onChange }) {
           if (url) added.push(url);
         } catch (err) {
           // Report and keep going: one bad file should not lose the others.
-          toast.error(String(err?.message || err));
+          toast.error(err);
         }
       }
       status.textContent = '';

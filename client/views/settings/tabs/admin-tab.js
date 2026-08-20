@@ -619,7 +619,7 @@ export function createAdminTab({ user }) {
         // Ignore status fetch errors
       }
     } catch (e) {
-      toast.error(String(e?.message || e), { id: 'settings-load' });
+      toast.error(e, { id: 'settings-load' });
     }
   };
 
@@ -675,7 +675,7 @@ export function createAdminTab({ user }) {
         durationMs: 1800,
       });
     } catch (e) {
-      toast.error(String(e?.message || e), { id: 'settings-save' });
+      toast.error(e, { id: 'settings-save' });
     } finally {
       setBusy(false);
     }

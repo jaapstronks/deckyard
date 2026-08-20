@@ -103,7 +103,7 @@ export function createEditorTopbarMoreMenu({
         );
         nav?.(`/app/${created.id}`);
       } catch (e) {
-        toast.error(String(e?.message || e), { id: 'duplicate-deck' });
+        toast.error(e, { id: 'duplicate-deck' });
       }
     },
   });
@@ -139,7 +139,7 @@ export function createEditorTopbarMoreMenu({
         });
         nav?.('/app');
       } catch (e) {
-        toast.error(String(e?.message || e), { id: 'move-to-trash' });
+        toast.error(e, { id: 'move-to-trash' });
       }
     },
   });

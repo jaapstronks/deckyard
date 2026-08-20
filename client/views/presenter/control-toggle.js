@@ -40,7 +40,7 @@ export function createPresenterControlToggle({ h, api, getSessionId } = {}) {
     } catch (e) {
       input.checked = false;
       label.classList.remove('is-active');
-      toast.error(String(e?.message || e));
+      toast.error(e);
     }
   });
 

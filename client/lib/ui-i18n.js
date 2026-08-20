@@ -169,6 +169,9 @@ export function t(key, fallback, vars) {
 }
 
 async function fetchJson(url) {
+  // Static locale JSON from /client/i18n/ — an asset load, not an /api/*
+  // call (and this module sits below api() in the layering).
+  // eslint-disable-next-line no-restricted-syntax
   const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) throw new Error(`Failed to load ${url} (${res.status})`);
   return res.json();

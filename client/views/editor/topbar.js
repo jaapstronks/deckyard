@@ -266,7 +266,7 @@ export function createEditorTopbar({
         try {
           if (w && !w.closed) w.close();
         } catch {}
-        toast.error(String(e?.message || e));
+        toast.error(e);
       });
   };
 

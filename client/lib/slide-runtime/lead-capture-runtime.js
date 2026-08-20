@@ -4,6 +4,7 @@
  */
 
 import { hasMarketingConsent } from '../util/cookie-consent.js';
+import { api } from '../api.js';
 import { t } from '../ui-i18n.js';
 
 /**
@@ -163,10 +164,9 @@ function initLeadCaptureSlide(slideEl, { interactive }) {
         );
       }
 
-      const response = await fetch('/api/leads', {
+      await api('/api/leads', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: {
           presentationId,
           slideId,
           name,
@@ -174,16 +174,8 @@ function initLeadCaptureSlide(slideEl, { interactive }) {
           consentGiven: true,
           consentText,
           privacyUrl,
-        }),
+        },
       });
-
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(
-          data.message ||
-            t('leadCapture.error.submitFailed', 'Submission failed'),
-        );
-      }
 
       // Mark as submitted
       localStorage.setItem(storageKey, 'true');

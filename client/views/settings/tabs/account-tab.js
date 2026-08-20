@@ -135,7 +135,7 @@ export function createAccountTab({ user }) {
         invalidateProfile(user?.id);
       }
     } catch (err) {
-      toast.error(String(err?.message || err), { id: 'profile-image' });
+      toast.error(err, { id: 'profile-image' });
     } finally {
       uploadBtn.disabled = false;
       imageStatus.textContent = '';
@@ -160,7 +160,7 @@ export function createAccountTab({ user }) {
       );
       invalidateProfile(user?.id);
     } catch (err) {
-      toast.error(String(err?.message || err), { id: 'profile-image' });
+      toast.error(err, { id: 'profile-image' });
     } finally {
       removeBtn.disabled = false;
       imageStatus.textContent = '';
@@ -229,7 +229,7 @@ export function createAccountTab({ user }) {
         removeBtn.style.display = '';
       }
     } catch (e) {
-      toast.error(String(e?.message || e), { id: 'settings-load' });
+      toast.error(e, { id: 'settings-load' });
     }
   };
 
@@ -248,7 +248,7 @@ export function createAccountTab({ user }) {
         durationMs: 1800,
       });
     } catch (e) {
-      toast.error(String(e?.message || e), { id: 'settings-save' });
+      toast.error(e, { id: 'settings-save' });
     } finally {
       busy = false;
       btnSaveProfile.disabled = false;

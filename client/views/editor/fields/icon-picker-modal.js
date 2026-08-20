@@ -29,6 +29,9 @@ let tagsCache = null;
 async function loadTags() {
   if (tagsCache) return tagsCache;
   try {
+    // Static vendored asset (Lucide tag index) — an asset load, not an
+    // /api/* call.
+    // eslint-disable-next-line no-restricted-syntax
     const res = await fetch('/client/vendor/lucide-icons/tags.json');
     tagsCache = res.ok ? await res.json() : {};
   } catch {

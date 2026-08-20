@@ -356,7 +356,7 @@ export function openSaveToLibraryModal({
       });
     } catch (e) {
       status.textContent = String(e?.message || e);
-      toast.error(String(e?.message || e));
+      toast.error(e);
     } finally {
       saving = false;
       actions.setDisabled(false);

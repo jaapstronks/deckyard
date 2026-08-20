@@ -110,7 +110,7 @@ export async function convertSlideWithConfirm({
     return true;
   } catch (e) {
     debugLog('[editor] convert slide failed', e);
-    toast.error(String(e?.message || e));
+    toast.error(e);
     return false;
   }
 }

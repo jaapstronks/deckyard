@@ -179,7 +179,7 @@ export function createThemesTab({ user }) {
       invalidateSettingsCache();
       toast.success(t('settings.saved', 'Saved.'));
     } catch (err) {
-      toast.error(String(err?.message || err));
+      toast.error(err);
     } finally {
       workspaceSaveBtn.disabled = false;
     }
@@ -198,7 +198,7 @@ export function createThemesTab({ user }) {
       );
       renderWorkspaceControls(defaultThemeId, app?.enabledThemes || []);
     } catch (err) {
-      toast.error(String(err?.message || err));
+      toast.error(err);
     }
   }
 
@@ -446,7 +446,7 @@ export function createThemesTab({ user }) {
       );
       await loadThemes();
     } catch (err) {
-      toast.error(String(err?.message || err));
+      toast.error(err);
     }
   }
 
@@ -461,7 +461,7 @@ export function createThemesTab({ user }) {
       );
       await loadThemes();
     } catch (err) {
-      toast.error(String(err?.message || err));
+      toast.error(err);
     }
   }
 
@@ -490,7 +490,7 @@ export function createThemesTab({ user }) {
       // Open editor for new theme
       openEditor(result);
     } catch (err) {
-      toast.error(String(err?.message || err));
+      toast.error(err);
     }
   }
 
@@ -519,7 +519,7 @@ export function createThemesTab({ user }) {
       toast.success(t('settings.themes.deleteSuccess', 'Theme deleted.'));
       await loadThemes();
     } catch (err) {
-      toast.error(String(err?.message || err));
+      toast.error(err);
     }
   }
 
@@ -562,7 +562,7 @@ export function createThemesTab({ user }) {
           await loadThemes();
           closeEditor();
         } catch (err) {
-          toast.error(String(err?.message || err));
+          toast.error(err);
         }
       },
       onCancel: closeEditor,
@@ -596,7 +596,7 @@ export function createThemesTab({ user }) {
       themes = result?.themes || [];
       renderThemeList();
     } catch (err) {
-      toast.error(String(err?.message || err));
+      toast.error(err);
       themes = [];
       renderThemeList();
     }

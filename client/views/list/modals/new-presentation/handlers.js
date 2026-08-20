@@ -237,6 +237,8 @@ export async function handleConvertFile({
     let useStreaming = true;
 
     try {
+      // SSE stream: progress events are read from response.body.
+      // eslint-disable-next-line no-restricted-syntax
       const response = await fetch('/api/convert/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -566,6 +568,8 @@ export async function handleNotion({
     let useStreaming = true;
 
     try {
+      // SSE stream: progress events are read from response.body.
+      // eslint-disable-next-line no-restricted-syntax
       const response = await fetch('/api/notion/import/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

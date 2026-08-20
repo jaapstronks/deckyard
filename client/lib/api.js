@@ -1,4 +1,33 @@
 /**
+ * The one client network layer (A7.16 cluster 2).
+ *
+ * Every request to our own `/api/*` surface goes through `api()`; raw `fetch(`
+ * outside this module is lint-gated (`eslint.config.js`, no-restricted-syntax)
+ * and allowed only for the documented exceptions — streaming-body readers
+ * (SSE), binary/blob downloads, presigned uploads to external storage, and
+ * static-asset JSON — each carrying an inline disable with its reason.
+ *
+ * Error handling has one canonical form. `api()` rejects with an `Error`
+ * whose fields carry the whole canonical envelope
+ * (`{ ok:false, error:'<code>', message:'<human>', details }`):
+ *
+ *   err.message    - human display text (errorText of the body, never empty)
+ *   err.statusCode - HTTP status, for branching (401-redirects, 429 copy, ...)
+ *   err.code       - stable machine code (`body.error`), for branching
+ *   err.details    - structured extra detail, when the route sent any
+ *   err.body       - the full parsed error body, for the rare caller that
+ *                    reads route-specific fields (e.g. the share viewer's
+ *                    `presentationTitle` on a revoked link)
+ *
+ * Callers show failures as `catch (e) { toast.error(e, opts) }` — toast
+ * coerces an Error to its message (client/lib/dom/toast.js). There is
+ * deliberately no `apiWithToast`/`withErrorToast` wrapper: transport and
+ * presentation stay separate, and most catch blocks also reset local state,
+ * so a wrapper would only add a second control-flow vocabulary next to the
+ * try/catch they need anyway.
+ */
+
+/**
  * Extract human-readable display text from a parsed JSON error body, tolerating
  * both the canonical envelope (`{ ok:false, error:'<code>', message:'<human>' }`)
  * and legacy prose-in-`error` bodies. Prefers `message`, then `details`, then a
@@ -35,6 +64,8 @@ export async function api(path, opts = {}) {
       ? JSON.stringify(opts.body)
       : opts.body;
 
+  // The one sanctioned fetch call: this module IS the network layer.
+  // eslint-disable-next-line no-restricted-syntax
   const res = await fetch(path, {
     credentials: 'include',
     cache: 'no-store',
@@ -60,6 +91,7 @@ export async function api(path, opts = {}) {
         err.statusCode = res.status;
         err.code = code;
         err.details = obj.details || null;
+        err.body = obj;
         throw err;
       }
     }

@@ -290,7 +290,7 @@ export function createIntegrationsTab({ user }) {
       adminWebhooks.setValues(app?.webhooks);
       rssSetValues(orgSettings?.rss);
     } catch (e) {
-      toast.error(String(e?.message || e), { id: 'settings-load' });
+      toast.error(e, { id: 'settings-load' });
     }
   };
 
@@ -315,7 +315,7 @@ export function createIntegrationsTab({ user }) {
         durationMs: 1800,
       });
     } catch (e) {
-      toast.error(String(e?.message || e), { id: 'settings-save' });
+      toast.error(e, { id: 'settings-save' });
     } finally {
       setBusy(false);
     }

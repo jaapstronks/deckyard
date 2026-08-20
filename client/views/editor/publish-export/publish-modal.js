@@ -294,7 +294,7 @@ export function openPublishModal({
                 syncPublishUi?.();
                 close();
               } catch (e) {
-                toast.error(String(e?.message || e));
+                toast.error(e);
               }
             },
           }),
