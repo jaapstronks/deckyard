@@ -208,22 +208,16 @@ export async function renderLogin(root, { nav } = {}) {
     magicStatus.className = 'auth-magic-status';
     busyManager.setBusy(true);
     try {
-      const res = await fetch('/api/auth/magic-link', {
+      await api('/api/auth/magic-link', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: e }),
+        body: { email: e },
       });
-      const data = await res.json();
-      if (data.ok) {
-        magicStatus.textContent = t(
-          'login.magicSuccess',
-          'Check your inbox! Click the link we sent to sign in.',
-        );
-        magicStatus.className = 'auth-magic-status is-success';
-        magicEmail.value = '';
-      } else {
-        throw new Error(data.message || 'Failed to send magic link');
-      }
+      magicStatus.textContent = t(
+        'login.magicSuccess',
+        'Check your inbox! Click the link we sent to sign in.',
+      );
+      magicStatus.className = 'auth-magic-status is-success';
+      magicEmail.value = '';
     } catch (err) {
       magicStatus.textContent = String(err?.message || err);
       magicStatus.className = 'auth-magic-status is-error';
