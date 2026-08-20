@@ -1,7 +1,7 @@
 import { createPreviewLightbox } from './modals/preview-lightbox.js';
 import { t } from '../../lib/ui-i18n.js';
 import { createCommentMarkers } from './comment-markers.js';
-import { zoomInIcon } from '../../lib/dom/icons.js';
+import { icon } from '../../lib/dom/icons.js';
 
 export function createPreviewPanel({
   h,
@@ -64,7 +64,7 @@ export function createPreviewPanel({
     'aria-label': t('editor.preview.openLarge', 'Open larger preview'),
     onclick: () => openPreviewLightbox(),
   });
-  zoomBtn.append(zoomInIcon({ size: 16 }));
+  zoomBtn.append(icon('zoom-in', { size: 16 }));
 
   // Add-comment button (only shown if commentsApi is available). Labeled, not
   // icon-only: placing a comment was too well hidden as a bare pin glyph. When

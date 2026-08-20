@@ -1,5 +1,5 @@
 import { t } from '../../lib/ui-i18n.js';
-import { chevronDownIcon } from '../../lib/dom/icons.js';
+import { icon } from '../../lib/dom/icons.js';
 
 const COLLAPSE_KEY = 'deckyard.notesStrip.collapsed';
 
@@ -52,8 +52,10 @@ export function createNotesStrip({
     type: 'button',
     'aria-expanded': String(!collapsed),
   });
-  const chevron = chevronDownIcon({ size: 16 });
-  chevron.classList.add('notes-strip-chevron');
+  const chevron = icon('chevron-down', {
+    size: 16,
+    className: 'notes-strip-chevron',
+  });
   toggleBtn.append(
     chevron,
     h('span', {

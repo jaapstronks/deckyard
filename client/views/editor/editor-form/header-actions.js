@@ -21,7 +21,7 @@ import { openJsonDebugModal } from '../modals/json-debug-modal.js';
 import { openSaveToLibraryModal } from '../modals/save-to-library-modal.js';
 import { iconUrl } from '../../../../shared/icon-names.js';
 import { readPreferredLlmVendor } from '../../../lib/net/llm-vendor.js';
-import { moreIcon } from '../../../lib/dom/icons.js';
+import { icon } from '../../../lib/dom/icons.js';
 
 /**
  * Build the header actions dropdown menu
@@ -70,7 +70,7 @@ export function buildHeaderActions({
   const { details: actionsDetails, menu: actionsMenu } = createDropdown({
     h,
     triggerClass: 'ghost-icon-btn slide-actions-btn',
-    triggerContent: [moreIcon({ size: 16 })],
+    triggerContent: [icon('ellipsis', { size: 16 })],
     title: t('common.moreOptions', 'More options'),
     ariaLabel: t('common.moreOptions', 'More options'),
     menuClass: 'dropdown-menu-right slide-actions-menu',

@@ -5,7 +5,7 @@
 
 import { createCommentsApi } from './comments-api.js';
 import { t } from '../../lib/ui-i18n.js';
-import { closeIcon, makeDropdownCaret } from '../../lib/dom/icons.js';
+import { icon, makeDropdownCaret } from '../../lib/dom/icons.js';
 import { createDropdown } from '../../lib/dom/dropdown.js';
 import { createSegmented } from '../../lib/dom/segmented.js';
 import { formatRelativeTime } from '../../lib/format/format-time.js';
@@ -459,7 +459,7 @@ export function createCommentsPanel({
     // dismissing the rail (onRequestClose), not just hiding this element.
     onclick: () => (onRequestClose ? onRequestClose() : hide()),
   });
-  closeBtn.append(closeIcon({ size: 16 }));
+  closeBtn.append(icon('x', { size: 16 }));
   headerEl.append(headerTitle, closeBtn);
 
   // Scope switch: the pane shows the current slide's threads by default (the

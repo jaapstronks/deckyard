@@ -1,7 +1,11 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ICON_NAMES, LEGACY_PHOSPHOR_MAP } from '../shared/icon-names.js';
+import {
+  ICON_NAMES,
+  UI_ICON_NAMES,
+  LEGACY_PHOSPHOR_MAP,
+} from '../shared/icon-names.js';
 import { ICON_SEARCH_ALIASES } from '../shared/icon-catalog.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -35,6 +39,7 @@ async function main() {
   }
 
   const copied = [];
+  const copiedUi = [];
   const missing = [];
 
   // Copy each icon in our curated list
@@ -47,6 +52,21 @@ async function main() {
     }
     await fs.copyFile(src, dst);
     copied.push(name);
+  }
+
+  // Copy the UI-chrome names too. They are kept out of `copied` on purpose:
+  // that list drives the picker's search tags, and chrome glyphs are not
+  // offered as slide content.
+  for (const name of UI_ICON_NAMES) {
+    if (copied.includes(name)) continue;
+    const src = path.join(srcDir, `${name}.svg`);
+    const dst = path.join(destDir, `${name}.svg`);
+    if (!(await exists(src))) {
+      missing.push(name);
+      continue;
+    }
+    await fs.copyFile(src, dst);
+    copiedUi.push(name);
   }
 
   // Create legacy alias files: copy the Lucide SVG under the old Phosphor name
@@ -100,6 +120,7 @@ async function main() {
         sourceDir: path.relative(repoRoot, srcDir),
         destDir: path.relative(repoRoot, destDir),
         copied,
+        copiedUi,
         missing,
         aliases,
       },
@@ -111,7 +132,8 @@ async function main() {
 
   // eslint-disable-next-line no-console
   console.log(
-    `Vendored ${copied.length} Lucide icons to ${path.relative(repoRoot, destDir)}`,
+    `Vendored ${copied.length} catalog + ${copiedUi.length} UI-chrome Lucide ` +
+      `icons to ${path.relative(repoRoot, destDir)}`,
   );
   if (aliases.length) {
     // eslint-disable-next-line no-console

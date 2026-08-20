@@ -1,5 +1,5 @@
 import { t } from '../../../lib/ui-i18n.js';
-import { dragHandleIcon, chevronDownIcon } from '../../../lib/dom/icons.js';
+import { icon } from '../../../lib/dom/icons.js';
 import { attachPointerSortable } from '../../../lib/dom/pointer-sortable.js';
 import { createCollapsedState } from '../../../lib/slide-authoring/collapsed-state.js';
 import { collapseAllToggle } from '../fields/collapse-all-toggle.js';
@@ -275,7 +275,7 @@ export function createCollectionEditor({
         title: t('editor.slideList.dragToReorder', 'Drag to reorder'),
         'aria-label': t('editor.slideList.dragToReorder', 'Drag to reorder'),
       });
-      handle.appendChild(dragHandleIcon());
+      handle.appendChild(icon('grip-vertical', { size: 12 }));
       headerLeft.append(handle);
 
       if (collapsible) {
@@ -286,7 +286,7 @@ export function createCollectionEditor({
             ? t('editor.cards.expand', 'Expand')
             : t('editor.cards.collapse', 'Collapse'),
         });
-        collapseBtn.appendChild(chevronDownIcon());
+        collapseBtn.appendChild(icon('chevron-down', { size: 12 }));
         collapseBtn.addEventListener('click', (e) => {
           e.preventDefault();
           collapsedState.toggle(key);

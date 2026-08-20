@@ -29,6 +29,7 @@
     "gen:slide-css": "node scripts/generate-slide-css-aggregators.js",
     "gen:slide-docs": "node scripts/generate-slide-type-docs.js",
     "gen:gradients": "node scripts/generate-bundled-gradients.js",
+    "vendor:lucide": "node scripts/vendor-lucide.js",
     "db:migrate": "node server/db/migrate.js up",
     "db:migrate:down": "node server/db/migrate.js down",
     "db:migrate:status": "node server/db/migrate.js status",

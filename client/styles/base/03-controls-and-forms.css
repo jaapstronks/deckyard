@@ -123,10 +123,6 @@
   cursor: grabbing;
 }
 
-.item-drag-handle svg {
-  pointer-events: none;
-}
-
 /* Subtle index badge on drag handle */
 .item-index-badge {
   position: absolute;
@@ -968,12 +964,12 @@
   background: hsl(var(--app-bg-hover));
 }
 
-.row-collapse-toggle svg {
+.row-collapse-toggle .icon {
   transition: transform var(--ps-transition-fast);
 }
 
 /* Rotate chevron when collapsed */
-.card-group.is-collapsed .row-collapse-toggle svg {
+.card-group.is-collapsed .row-collapse-toggle .icon {
   transform: rotate(-90deg);
 }
 
@@ -983,10 +979,10 @@
   align-items: center;
   gap: var(--ps-space-1);
 }
-.collapse-all-toggle svg {
+.collapse-all-toggle .icon {
   transition: transform var(--ps-transition-fast);
 }
-.collapse-all-toggle.is-all-collapsed svg {
+.collapse-all-toggle.is-all-collapsed .icon {
   transform: rotate(-90deg);
 }
 

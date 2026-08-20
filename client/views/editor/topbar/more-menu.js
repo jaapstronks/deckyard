@@ -1,6 +1,6 @@
 import { confirmModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { moreIcon } from '../../../lib/dom/icons.js';
+import { icon } from '../../../lib/dom/icons.js';
 import { createDropdown } from '../../../lib/dom/dropdown.js';
 
 export function createEditorTopbarMoreMenu({
@@ -218,7 +218,7 @@ export function createEditorTopbarMoreMenu({
   } = createDropdown({
     h,
     triggerClass: 'ghost-icon-btn',
-    triggerContent: [moreIcon({ size: 16 })],
+    triggerContent: [icon('ellipsis', { size: 16 })],
     title: t('common.moreOptions', 'More options'),
     ariaLabel: t('common.moreOptions', 'More options'),
     menuClass: 'dropdown-menu-right',

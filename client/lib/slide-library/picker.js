@@ -14,7 +14,7 @@ import { confirmModal } from '../dom/modal.js';
 import { renderSlideElement } from '../slide-runtime/slide-render.js';
 import { loadThemeById } from '../theme/theme.js';
 import { cleanStr } from '../../../shared/string-utils.js';
-import { moreIcon } from '../dom/icons.js';
+import { icon } from '../dom/icons.js';
 import { installDismissOnOutside } from '../dom.js';
 import { DEFAULT_THEME_ID } from '../../../shared/constants/themes.js';
 import {
@@ -315,7 +315,7 @@ export function createSlideLibraryPicker({
       title: t('common.moreOptions', 'More options'),
       onclick: (e) => e.stopPropagation(),
     });
-    moreSummary.appendChild(moreIcon({ size: 14 }));
+    moreSummary.appendChild(icon('ellipsis', { size: 14 }));
 
     const moreMenu = h('div', { class: 'dropdown-menu' });
 

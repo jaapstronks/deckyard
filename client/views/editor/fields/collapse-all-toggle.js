@@ -1,6 +1,6 @@
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { chevronDownIcon } from '../../../lib/dom/icons.js';
+import { icon } from '../../../lib/dom/icons.js';
 
 /**
  * Bulk "Collapse all / Expand all" toggle for multi-card slide editors.
@@ -34,7 +34,7 @@ export function collapseAllToggle({ state, keys, rerender } = {}) {
       rerender?.();
     },
   });
-  btn.appendChild(chevronDownIcon());
+  btn.appendChild(icon('chevron-down', { size: 12 }));
   btn.appendChild(h('span', { text: label }));
   return btn;
 }

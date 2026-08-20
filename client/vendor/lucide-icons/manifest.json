@@ -400,6 +400,12 @@
     "salad",
     "croissant"
   ],
+  "copiedUi": [
+    "chevron-down",
+    "ellipsis",
+    "grip-vertical",
+    "zoom-in"
+  ],
   "missing": [],
   "aliases": [
     "rocket-launch -> rocket",
