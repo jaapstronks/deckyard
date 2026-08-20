@@ -14,7 +14,7 @@
  */
 
 import { t } from '../../lib/ui-i18n.js';
-import { iconUrl } from '../../../shared/icon-names.js';
+import { icon } from '../../lib/dom/icons.js';
 import { createSegmented } from '../../lib/dom/segmented.js';
 
 /**
@@ -32,13 +32,8 @@ export function createPaneTabs({
   onToggleComments,
   compact = false,
 } = {}) {
-  const tabContent = (icon, label) => {
-    const iconEl = h('img', {
-      class: 'pane-tab-icon',
-      src: iconUrl(icon),
-      alt: '',
-      'aria-hidden': 'true',
-    });
+  const tabContent = (name, label) => {
+    const iconEl = icon(name, { size: 15 });
     if (compact) return [iconEl];
     return [iconEl, h('span', { class: 'pane-tab-label', text: label })];
   };
