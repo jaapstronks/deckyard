@@ -138,11 +138,12 @@
 }
 
 .presentation-section-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 28px;
   height: 28px;
-  padding: 5px;
   border-radius: var(--ps-radius-md);
-  object-fit: contain;
   box-sizing: border-box;
 }
 

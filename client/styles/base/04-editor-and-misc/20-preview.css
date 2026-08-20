@@ -218,8 +218,6 @@
 }
 
 .pin-comment-btn .btn-pin-icon {
-  width: 15px;
-  height: 15px;
   display: block;
 }
 
@@ -227,10 +225,6 @@
   background: hsl(var(--app-accent-primary));
   border-color: hsl(var(--app-accent-primary));
   color: hsl(0 0% 100%);
-}
-
-.pin-comment-btn.is-active .btn-pin-icon {
-  filter: brightness(0) invert(1);
 }
 
 /* Mode hint: overlay banner pinned to the top of the slide stage while

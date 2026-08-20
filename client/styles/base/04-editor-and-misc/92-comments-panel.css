@@ -543,6 +543,8 @@
   cursor: pointer;
   pointer-events: auto;
   transition: transform 0.1s ease;
+  /* The pin is a mask on currentColor, so the marker names its own ink. */
+  color: hsl(0 0% 100%);
 }
 
 .comment-marker:hover {
@@ -560,10 +562,7 @@
 }
 
 .comment-marker-icon {
-  width: 13px;
-  height: 13px;
-  filter: brightness(0) invert(1);
-  pointer-events: none;
+  display: block;
 }
 
 .comment-marker-badge {

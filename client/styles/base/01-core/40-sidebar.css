@@ -154,11 +154,8 @@
 
 /* Sidebar nav item icon */
 .sidebar-nav-icon {
-  width: 20px;
-  height: 20px;
   flex-shrink: 0;
   opacity: 0.85;
-  object-fit: contain;
 }
 
 .sidebar-nav-item.is-active .sidebar-nav-icon {
@@ -258,9 +255,7 @@
 }
 
 .bottom-tab-icon {
-  width: 20px;
-  height: 20px;
-  object-fit: contain;
+  display: block;
 }
 
 .bottom-tab-label {

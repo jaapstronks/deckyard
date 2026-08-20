@@ -1,5 +1,5 @@
 import { t } from '../../../lib/ui-i18n.js';
-import { iconUrl } from '../../../../shared/icon-names.js';
+import { icon as uiIcon } from '../../../lib/dom/icons.js';
 
 /**
  * Build a section header with icon, title, count badge, and optional "View all" button
@@ -31,12 +31,9 @@ export function buildSectionHeader({
 
   return h('div', { class: 'presentation-section-header' }, [
     h('div', { class: 'presentation-section-title' }, [
-      h('img', {
-        class: 'presentation-section-icon',
-        src: iconUrl(icon),
-        alt: '',
-        'aria-hidden': 'true',
-      }),
+      h('span', { class: 'presentation-section-icon', 'aria-hidden': 'true' }, [
+        uiIcon(icon, { size: 18 }),
+      ]),
       document.createTextNode(title + ' '),
       badgeText
         ? h('span', { class: 'presentation-section-badge', text: badgeText })

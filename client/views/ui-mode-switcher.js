@@ -3,7 +3,7 @@ import {
   setUiModePreference,
   subscribeUiMode,
 } from '../lib/theme/ui-mode.js';
-import { iconUrl } from '../../shared/icon-names.js';
+import { icon } from '../lib/dom/icons.js';
 import { t } from '../lib/ui-i18n.js';
 
 function prefLabel(p) {
@@ -32,18 +32,13 @@ export function createUiModeSwitcher({ h, className = '' } = {}) {
       onclick: () => setUiModePreference(value),
     });
 
-    const icon = h('span', {
-      class: `ui-mode-icon is-${value}`,
-      'aria-hidden': 'true',
-      style: `--ui-mode-icon-url: url("${iconUrl(iconName)}");`,
-    });
-    btn.append(icon);
+    btn.append(icon(iconName, { size: 16, className: 'ui-mode-icon' }));
     return btn;
   };
 
   const btnSystem = mkBtn(
     'system',
-    'desktop',
+    'monitor',
     t('appearance.system', 'System'),
   );
   const btnLight = mkBtn('light', 'sun', t('appearance.light', 'Light'));

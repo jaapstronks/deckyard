@@ -2,7 +2,7 @@ import { createEditorController } from './editor-controller.js';
 import { api } from '../../lib/api.js';
 import { h } from '../../lib/dom.js';
 import { t } from '../../lib/ui-i18n.js';
-import { iconUrl } from '../../../shared/icon-names.js';
+import { icon as uiIcon } from '../../lib/dom/icons.js';
 import { showEditorLoadingSkeleton } from './loading-skeleton.js';
 
 export async function renderEditor(root, id, { nav, user } = {}) {
@@ -81,12 +81,7 @@ function renderPermissionDenied(root, nav) {
 
   const card = h('div', { class: 'access-error-card' });
 
-  const icon = h('img', {
-    class: 'access-error-icon',
-    src: iconUrl('lock'),
-    alt: '',
-    'aria-hidden': 'true',
-  });
+  const icon = uiIcon('lock', { size: 64, className: 'access-error-icon' });
 
   const title = h('h1', {
     class: 'access-error-title',
@@ -123,12 +118,7 @@ function renderNotFound(root, nav) {
 
   const card = h('div', { class: 'access-error-card' });
 
-  const icon = h('img', {
-    class: 'access-error-icon',
-    src: iconUrl('search'),
-    alt: '',
-    'aria-hidden': 'true',
-  });
+  const icon = uiIcon('search', { size: 64, className: 'access-error-icon' });
 
   const title = h('h1', {
     class: 'access-error-title',

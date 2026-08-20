@@ -1,5 +1,5 @@
 import { t } from '../../../lib/ui-i18n.js';
-import { iconUrl } from '../../../../shared/icon-names.js';
+import { icon } from '../../../lib/dom/icons.js';
 import { getFeatures } from '../../../lib/state/features.js';
 
 /**
@@ -149,11 +149,9 @@ export function createMediaLibrarySidebar({
         },
       });
 
-      const iconSpan = h('img', {
-        class: 'media-lib-nav-icon',
-        src: iconUrl(config.icon),
-        alt: '',
-        'aria-hidden': 'true',
+      const iconSpan = icon(config.icon, {
+        size: 16,
+        className: 'media-lib-nav-icon',
       });
       const labelSpan = h('span', {
         class: 'media-lib-nav-label',
@@ -233,12 +231,7 @@ export function createMediaLibrarySidebar({
           'aria-disabled': 'true',
         },
         [
-          h('img', {
-            class: 'media-lib-nav-icon',
-            src: iconUrl('plug'),
-            alt: '',
-            'aria-hidden': 'true',
-          }),
+          icon('plug', { size: 16, className: 'media-lib-nav-icon' }),
           h('span', {
             class: 'media-lib-nav-label',
             text: t('mediaLibrary.section.yourSource', 'Your image source'),

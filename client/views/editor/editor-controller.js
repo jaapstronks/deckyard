@@ -55,7 +55,6 @@ import { openAnalyzeModal as openAnalyzeModalImpl } from './modals/analyze-modal
 import { createDeckReviewOpeners } from './deck-review-openers.js';
 import { normalizeLang, otherLang } from '../../lib/format/i18n.js';
 import { t } from '../../lib/ui-i18n.js';
-import { iconUrl } from '../../../shared/icon-names.js';
 import {
   createNotesSessionEnsurer,
   createSlidesCollapsedPreference,
@@ -846,7 +845,6 @@ export async function createEditorController({
     root,
     pres,
     theme,
-    iconUrl,
     lockDocumentScroll,
     attachThumbScale,
     attachThumbScaleContain,

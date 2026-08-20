@@ -1,5 +1,6 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { iconUrl } from '../../../../shared/icon-names.js';
+import { icon } from '../../../lib/dom/icons.js';
 
 /**
  * Sandbox stand-in for the slide library.
@@ -63,12 +64,7 @@ export function createSandboxLibraryExplainer({ h }) {
 
   return h('div', { class: 'sandbox-library-explainer' }, [
     h('div', { class: 'sandbox-library-lead' }, [
-      h('img', {
-        class: 'sandbox-library-lead-icon',
-        src: iconUrl('library'),
-        alt: '',
-        'aria-hidden': 'true',
-      }),
+      icon('library', { size: 32, className: 'sandbox-library-lead-icon' }),
       h('h2', {
         class: 'sandbox-library-title',
         text: t('sandbox.library.title', 'Your team’s slide library'),

@@ -374,21 +374,6 @@
   padding: var(--ps-space-1-5) 0;
 }
 
-.ui-mode-switcher .ui-mode-icon {
-  width: 16px;
-  height: 16px;
-  display: block;
-  background: currentColor;
-  -webkit-mask-image: var(--ui-mode-icon-url);
-  mask-image: var(--ui-mode-icon-url);
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
-  -webkit-mask-size: contain;
-  mask-size: contain;
-}
-
 .sb-swatch {
   width: 16px;
   height: 16px;
@@ -831,18 +816,12 @@
 }
 
 .callout-icon {
-  width: 18px;
-  height: 18px;
-  object-fit: contain;
   flex-shrink: 0;
   vertical-align: middle;
   margin-right: var(--ps-space-1);
 }
 
 .btn-lock-icon {
-  width: 14px;
-  height: 14px;
-  object-fit: contain;
   vertical-align: middle;
 }
 

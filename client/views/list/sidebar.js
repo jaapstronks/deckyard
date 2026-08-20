@@ -4,7 +4,7 @@
  */
 
 import { t } from '../../lib/ui-i18n.js';
-import { iconUrl } from '../../../shared/icon-names.js';
+import { icon as uiIcon } from '../../lib/dom/icons.js';
 
 /**
  * Sidebar view configuration.
@@ -99,11 +99,9 @@ export function createSidebar({
       },
     });
 
-    const icon = h('img', {
-      class: 'sidebar-nav-icon',
-      src: iconUrl(view.icon),
-      alt: '',
-      'aria-hidden': 'true',
+    const icon = uiIcon(view.icon, {
+      size: 20,
+      className: 'sidebar-nav-icon',
     });
     const label = h('span', { class: 'sidebar-nav-text', text: view.label() });
     item.append(icon, label);
@@ -184,11 +182,9 @@ export function createBottomTabs({
       },
     });
 
-    const icon = h('img', {
-      class: 'bottom-tab-icon',
-      src: iconUrl(view.icon),
-      alt: '',
-      'aria-hidden': 'true',
+    const icon = uiIcon(view.icon, {
+      size: 20,
+      className: 'bottom-tab-icon',
     });
     const label = h('span', { class: 'bottom-tab-label', text: view.label() });
     tab.append(icon, label);

@@ -5,7 +5,7 @@
 
 import { t } from '../../lib/ui-i18n.js';
 import { getAppName } from '../../lib/theme/branding.js';
-import { iconUrl } from '../../../shared/icon-names.js';
+import { icon } from '../../lib/dom/icons.js';
 import { createUiModeSwitcher } from '../ui-mode-switcher.js';
 import { createNotificationBell } from '../../lib/user/notification-bell.js';
 import { createUserMenu } from '../../lib/user/user-menu.js';
@@ -51,11 +51,9 @@ export function createTopbar({
 
   // Search input
   const searchWrapper = h('div', { class: 'topbar-search-wrapper' });
-  const searchIcon = h('img', {
-    class: 'topbar-search-icon',
-    src: iconUrl('search'),
-    alt: '',
-    'aria-hidden': 'true',
+  const searchIcon = icon('search', {
+    size: 14,
+    className: 'topbar-search-icon',
   });
   const searchInput = h('input', {
     type: 'search',
