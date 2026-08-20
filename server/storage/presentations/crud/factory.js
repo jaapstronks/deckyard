@@ -78,23 +78,34 @@ export async function prepareNewPresentation(repoRoot, body) {
   if (providedSlidesRaw) {
     const idMap = new Map();
     for (const s of providedSlidesRaw) {
-      if (typeof s?.id === 'string' && s.id) idMap.set(s.id, cryptoUuid());
+      const sourceId = typeof s?.id === 'string' && s.id ? s.id : null;
+      if (sourceId && !idMap.has(sourceId)) idMap.set(sourceId, cryptoUuid());
     }
-    const base = providedSlidesRaw.map((s) => ({
-      id: (typeof s?.id === 'string' && idMap.get(s.id)) || cryptoUuid(),
-      parentId:
-        (typeof s?.parentId === 'string' && idMap.get(s.parentId)) || null,
-      type: typeof s?.type === 'string' ? s.type : 'content-slide',
-      notes: typeof s?.notes === 'string' ? s.notes : '',
-      content:
-        s?.content && typeof s.content === 'object'
-          ? structuredClone(s.content)
-          : {},
-      contentByLang:
-        s?.contentByLang && typeof s.contentByLang === 'object'
-          ? structuredClone(s.contentByLang)
-          : null,
-    }));
+    // A payload id names one slide: the first slide carrying it gets the
+    // mapped fresh id (and the parentId links pointing at it), a repeat is a
+    // slide of its own — the deck must never store two slides under one id.
+    const claimed = new Set();
+    const base = providedSlidesRaw.map((s) => {
+      const sourceId = typeof s?.id === 'string' && s.id ? s.id : null;
+      const mapped =
+        sourceId && !claimed.has(sourceId) ? idMap.get(sourceId) : null;
+      if (sourceId) claimed.add(sourceId);
+      return {
+        id: mapped || cryptoUuid(),
+        parentId:
+          (typeof s?.parentId === 'string' && idMap.get(s.parentId)) || null,
+        type: typeof s?.type === 'string' ? s.type : 'content-slide',
+        notes: typeof s?.notes === 'string' ? s.notes : '',
+        content:
+          s?.content && typeof s.content === 'object'
+            ? structuredClone(s.content)
+            : {},
+        contentByLang:
+          s?.contentByLang && typeof s.contentByLang === 'object'
+            ? structuredClone(s.contentByLang)
+            : null,
+      };
+    });
 
     // Which languages appear in any slide's contentByLang?
     const langSet = new Set();

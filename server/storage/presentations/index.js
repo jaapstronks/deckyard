@@ -1205,17 +1205,25 @@ async function duplicatePresentationRow(id, ctx) {
     const list = Array.isArray(slides) ? slides : [];
     // Claim an id for every slide first: a child may precede its parent.
     for (const s of list) if (s?.id) newIdFor(s.id);
-    return list.map((s) => ({
-      ...s,
-      id: s?.id ? newIdFor(s.id) : crypto.randomUUID(),
-      parentId: (s?.parentId && slideIdMap.get(s.parentId)) || null,
-      // Deep-copied: the rekey pass writes into it, and the row we read from
-      // is not ours to change.
-      content:
-        s?.content && typeof s.content === 'object'
-          ? structuredClone(s.content)
-          : {},
-    }));
+    // The mapped id is claimed once per list: language versions of one slide
+    // share it (they are one slide), a repeated id *within* a list is corrupt
+    // data that must not come out as two slides under one id.
+    const claimed = new Set();
+    return list.map((s) => {
+      const mapped = s?.id && !claimed.has(s.id) ? slideIdMap.get(s.id) : null;
+      if (s?.id) claimed.add(s.id);
+      return {
+        ...s,
+        id: mapped || crypto.randomUUID(),
+        parentId: (s?.parentId && slideIdMap.get(s.parentId)) || null,
+        // Deep-copied: the rekey pass writes into it, and the row we read from
+        // is not ours to change.
+        content:
+          s?.content && typeof s.content === 'object'
+            ? structuredClone(s.content)
+            : {},
+      };
+    });
   };
 
   const newSlides = mapSlides(existing.slides);

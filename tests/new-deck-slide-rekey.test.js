@@ -156,6 +156,31 @@ describe('posting slides straight to the create path', () => {
     );
   });
 
+  it('never stores two slides under one id, even when the payload repeats one', async () => {
+    const pres = await prepareNewPresentation(repoRoot, {
+      title: 'Agent deck',
+      slides: [
+        { id: 'dup', type: 'poll-slide', content: { pollId: 'x' } },
+        { id: 'dup', type: 'poll-slide', content: { pollId: 'x' } },
+        { id: 'c', parentId: 'dup', type: 'content-slide', content: {} },
+      ],
+      theme: 'amethyst',
+      lang: 'nl',
+    });
+    const [first, second, child] = pres.slides;
+    assert.notEqual(first.id, second.id, 'a repeated payload id is two slides');
+    assert.notEqual(
+      first.content.pollId,
+      second.content.pollId,
+      'two slides, two polls',
+    );
+    assert.equal(
+      child.parentId,
+      first.id,
+      'a parentId naming the repeated id points at its first occurrence',
+    );
+  });
+
   it('does not write into the posted slides', async () => {
     const posted = [{ type: 'poll-slide', content: { pollId: 'caller-owns' } }];
     await prepareNewPresentation(repoRoot, {
