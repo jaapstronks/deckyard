@@ -20,11 +20,20 @@ validation/iteration, and an MCP server with 27 tools + SSE transport.
 
 ## Now
 
-- **Slide types as self-describing declarations** — every slide type declares
-  its structure, editor behaviour and per-language defaults in one place, and
-  the editor derives its forms from those declarations instead of hand-built
-  per-type code. Part of the beta-window tightening described in
-  [`docs/reference/versioning.md`](docs/reference/versioning.md).
+- **Beta tightening: one canonical form per concept** — the standing pass that
+  keeps reducing drift across the editor, CSS, storage and API surfaces while
+  the beta badge is up: one spelling, one shape and one code path per meaning,
+  with the guardrails pinned by tests. The stance and its rules are described
+  in [`docs/reference/versioning.md`](docs/reference/versioning.md).
+
+_The self-describing slide-type declarations project that stood here has
+shipped: every slide type declares its structure, editor behaviour, cloning
+rules and per-language defaults in one place, and the editor derives its
+forms, element tabs and inspector sections from those declarations — the last
+hand-built per-type editor code is gone. How the declaration system works is
+documented in
+[`docs/reference/slide-type-companions.md`](docs/reference/slide-type-companions.md)
+and [`docs/reference/slide-type-directory.md`](docs/reference/slide-type-directory.md)._
 
 _The one-spelling project that stood here has shipped (v1.11.0): every write
 path validates and normalizes slide-type ids against the registry, export and
