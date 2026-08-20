@@ -120,7 +120,7 @@ export function buildDataSourceIndicator({
 
     // Mode switcher
     const modeSelect = h('select', {
-      class: 'form-select form-select-xs',
+      class: 'form-input form-input-xs',
       'aria-label': t('dataSource.mode', 'Refresh mode'),
     });
     for (const mode of REFRESH_MODES) {

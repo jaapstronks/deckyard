@@ -36,7 +36,7 @@ export function showAddModal(onSuccess) {
     ),
   });
 
-  const roleSelect = h('select', { class: 'form-select' });
+  const roleSelect = h('select', { class: 'form-input' });
   roleSelect.append(
     h('option', { value: 'user', text: t('admin.users.roleUser', 'User') }),
     h('option', { value: 'admin', text: t('admin.users.roleAdmin', 'Admin') }),

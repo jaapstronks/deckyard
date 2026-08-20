@@ -101,6 +101,32 @@ export default [
             'window.fetch/globalThis.fetch is still raw fetch — use api() ' +
             'from client/lib/api.js (A7.16).',
         },
+        // One class name per control (A7.16 cluster 10). `form-input` is the
+        // canonical text-input/select/textarea class; `.form-input` in
+        // client/styles/app/components.css is the only place the control is
+        // actually drawn. The rejected spellings — `input`, `select`,
+        // `form-select`, `input-sm`, `form-select-xs` — were never defined as
+        // control styles anywhere, so a view that reached for one shipped a
+        // browser-default control next to styled neighbours. Size and role
+        // modifiers keep riding along (`form-input form-input-sm font-mono`).
+        //
+        // Written as a syntax rule rather than a greptest because it can bind
+        // to the `class:` property of an h() attrs object and match whole
+        // tokens only: `input-group` or `select-all` are untouched, and the
+        // error lands on the construction site instead of a file:line list.
+        // Boundary: classList.add('select') / className assignment are not
+        // covered — there are none, and `.add('select')` is ambiguous with
+        // Set#add, so a rule there would cost false positives for no burndown.
+        {
+          selector:
+            "Property:matches([key.name='class'],[key.value='class']) > " +
+            'Literal[value=/(^|\\s)(input|select|form-select|input-sm|form-select-xs)(\\s|$)/]',
+          message:
+            'Use the canonical control class `form-input` (plus `form-input-sm`/' +
+            '`form-input-xs` for size) — `input`/`select`/`form-select` have no ' +
+            'control styling anywhere and render a browser-default control (A7.16 ' +
+            'cluster 10, docs/developer/linting.md).',
+        },
       ],
     },
   },

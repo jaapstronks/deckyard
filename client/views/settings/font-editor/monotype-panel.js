@@ -35,7 +35,7 @@ export function createMonotypePanel({ sourceConfig = {}, onChange }) {
     }),
   );
   const projectInput = h('input', {
-    class: 'input',
+    class: 'form-input',
     type: 'text',
     placeholder: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
     value: sourceConfig.projectId || '',
@@ -54,7 +54,7 @@ export function createMonotypePanel({ sourceConfig = {}, onChange }) {
     }),
   );
   const versionInput = h('input', {
-    class: 'input',
+    class: 'form-input',
     type: 'text',
     placeholder: '3',
     value: sourceConfig.version || '',

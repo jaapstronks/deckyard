@@ -100,7 +100,7 @@ export function openDataSourceConfigModal({
     class: 'form-label',
     text: t('dataSource.provider', 'Data source'),
   });
-  const providerSelect = h('select', { class: 'form-select' });
+  const providerSelect = h('select', { class: 'form-input' });
   providerSelect.append(
     h('option', {
       value: '',

@@ -29,7 +29,7 @@ export function createGiphySearch({ h, api, onSelect, setStatus, setBusy }) {
   // Search input
   const searchInput = h('input', {
     type: 'search',
-    class: 'input stock-media-search-input',
+    class: 'form-input stock-media-search-input',
     placeholder: t('stockMedia.search.placeholder', 'Search {provider}...', {
       provider: 'Giphy',
     }),

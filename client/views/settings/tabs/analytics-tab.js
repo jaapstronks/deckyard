@@ -110,7 +110,7 @@ function createProviderCard({
     } else {
       input = h('input', {
         type: field.type || 'text',
-        class: 'input',
+        class: 'form-input',
         id: fieldId,
         placeholder: field.placeholder || '',
         maxlength: String(field.maxLength || 255),

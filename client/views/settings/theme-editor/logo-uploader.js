@@ -79,7 +79,7 @@ export function createLogoUploader({ value, onChange }) {
   });
   const urlSection = h('div', { class: 'theme-logo-url-section is-hidden' });
   const urlInput = h('input', {
-    class: 'input',
+    class: 'form-input',
     type: 'text',
     placeholder: t(
       'settings.themes.logoUrlPlaceholder',

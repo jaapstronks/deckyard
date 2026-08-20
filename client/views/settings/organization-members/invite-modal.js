@@ -156,7 +156,7 @@ export function showInviteModal({
   );
   if (roles.length > 1) {
     roleSelect = h('select', {
-      class: 'form-select',
+      class: 'form-input',
       'aria-label': t('organization.members.invite.roleLabel', 'Role'),
     });
     for (const role of roles) {

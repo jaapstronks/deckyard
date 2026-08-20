@@ -262,8 +262,7 @@
   color: hsl(var(--app-text-secondary));
 }
 
-.field-row .input,
-.field-row .select {
+.field-row .form-input {
   flex: 1;
   min-width: 0;
 }
@@ -455,8 +454,7 @@
   gap: 12px;
 }
 
-.modal-overlay .modal-form .form-input,
-.modal-overlay .modal-form .form-select {
+.modal-overlay .modal-form .form-input {
   width: 100%;
 }
 

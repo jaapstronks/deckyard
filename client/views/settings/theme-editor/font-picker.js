@@ -198,7 +198,7 @@ export function createFontPicker({
   let currentSource = null;
 
   const select = h('select', {
-    class: 'select theme-font-picker-select',
+    class: 'form-input theme-font-picker-select',
     onchange: (e) => {
       const raw = e.target.value;
       if (raw.startsWith(MANAGED_PREFIX)) {

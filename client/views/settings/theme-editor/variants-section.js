@@ -119,7 +119,7 @@ export function createVariantsSection({ config, colors, onChange }) {
     builtins.append(
       h('div', { class: 'row is-gap-2 is-items-center theme-builtin-row' }, [
         h('input', {
-          class: 'input form-input',
+          class: 'form-input',
           type: 'text',
           maxlength: '40',
           value: config.backgroundLabels?.[slot] || '',
@@ -261,7 +261,7 @@ export function createVariantsSection({ config, colors, onChange }) {
   }
 
   const nameInput = h('input', {
-    class: 'input form-input',
+    class: 'form-input',
     type: 'text',
     maxlength: '40',
     placeholder: t(

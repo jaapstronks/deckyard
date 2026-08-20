@@ -127,6 +127,30 @@ rather than adding a path to the config.
 too, if `server/utils/ai/schemas/` ever stops using zod and the carve-out
 outlives its reason.
 
+### `no-restricted-syntax` on control class names — one class per control
+
+Scoped to `client/**`, this rule rejects `class: 'input'`, `'select'`,
+`'form-select'`, `'input-sm'` and `'form-select-xs'` on an `h()` attrs object.
+`form-input` is the canonical class for a text input, a `<select>` and a
+`<textarea>`; size and role modifiers ride along next to it
+(`form-input form-input-sm font-mono`).
+
+The rejected spellings were never a competing style — they were **undefined**.
+`.form-input` in [`client/styles/app/components.css`](../../client/styles/app/components.css)
+is the only place a control is drawn; `.input`/`.select`/`.form-select` had no
+rule anywhere except three layout-scoped ones (`flex: 1`, `width: 100%`). A view
+that reached for one shipped a browser-default control — 2px inset border,
+square corners, 21px tall — next to styled neighbours. That is why this is a
+gate and not a style preference (A7.16 cluster 10).
+
+It is a syntax rule rather than a greptest because the selector can bind to the
+`class:` property specifically and match **whole tokens** only: `input-group`
+and `select-all` are untouched, and the error lands on the construction site
+instead of in a file:line list. Its honest boundary: `classList.add('select')`
+and `className =` assignment are not covered — there are none in the tree, and
+`.add('select')` is ambiguous with `Set#add`, so a rule there would buy false
+positives and no burndown.
+
 ### The suppressions baseline (burndown)
 
 The first run surfaced **397 `no-unused-vars`** and **10 `no-useless-escape`**
