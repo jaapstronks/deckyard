@@ -12,15 +12,15 @@
  * path cleared the multi-selection afterwards.
  *
  * The per-type half of the recipe is not here: which content keys are
- * instance-bound is declared by the type as `rekeyOnClone` and applied through
- * shared/slide-types/clone.js, so a fork type that carries an id of its own is
+ * instance-bound is declared by the type as `instanceKeys` and applied through
+ * shared/slide-types/instance-keys.js, so a fork type that carries an id of its own is
  * handled by every path without touching this file.
  *
  * Nothing in here reads the DOM; the callers own selection, refresh and toast.
  */
 
 import { newId } from '../util/id.js';
-import { applyCloneRekey } from '../../../shared/slide-types/clone.js';
+import { applyInstanceKeyRekey } from '../../../shared/slide-types/instance-keys.js';
 import { getClipboardSlides } from './slide-clipboard.js';
 
 /**
@@ -76,7 +76,7 @@ export function cloneSlidesForInsert(
     const mappedParent = s?.parentId ? idMap.get(s.parentId) : null;
     clone.parentId =
       mappedParent || (detachOrphans ? null : (s?.parentId ?? null));
-    applyCloneRekey(clone, {
+    applyInstanceKeyRekey(clone, {
       def: slideTypes?.[clone?.type] || null,
       presentationId,
       newId,

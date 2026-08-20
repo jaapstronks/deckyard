@@ -10,7 +10,7 @@
  * menu re-minted the poll id but not the follow-invite's presentation id.
  *
  * So this file gates the two halves the drift is now impossible in: the
- * declaration (shared/slide-types/clone.js, read off the type) and the helper
+ * declaration (shared/slide-types/instance-keys.js, read off the type) and the helper
  * (client/lib/slide-authoring/clone-slides.js, the only implementation).
  *
  * Run with: node --test tests/slide-clone-on-insert.test.js
@@ -28,8 +28,8 @@ globalThis.document = dom.window.document;
 globalThis.localStorage = dom.window.localStorage;
 
 const { SLIDE_TYPES } = await import('../shared/slide-types.js');
-const { CLONE_REKEY_SOURCE_NAMES, applyCloneRekey, slideRekeyOnClone } =
-  await import('../shared/slide-types/clone.js');
+const { INSTANCE_KEY_SOURCE_NAMES, applyInstanceKeyRekey, slideInstanceKeys } =
+  await import('../shared/slide-types/instance-keys.js');
 const { cloneSlidesForInsert, pasteSlidesFromClipboard } =
   await import('../client/lib/slide-authoring/clone-slides.js');
 const { copySlides, getClipboardSlides, getClipboardCount } =
@@ -38,19 +38,19 @@ const { copySlides, getClipboardSlides, getClipboardCount } =
 /** Types that declare instance-bound content keys, from the registry. */
 function declaringTypes() {
   return Object.entries(SLIDE_TYPES)
-    .map(([name, def]) => [name, slideRekeyOnClone(def)])
+    .map(([name, def]) => [name, slideInstanceKeys(def)])
     .filter(([, rekey]) => Object.keys(rekey).length > 0);
 }
 
 test('the declaration is read off the type, and only in the vocabulary', () => {
-  assert.deepEqual(slideRekeyOnClone(undefined), {});
-  assert.deepEqual(slideRekeyOnClone({}), {});
-  assert.deepEqual(slideRekeyOnClone({ rekeyOnClone: ['pollId'] }), {});
+  assert.deepEqual(slideInstanceKeys(undefined), {});
+  assert.deepEqual(slideInstanceKeys({}), {});
+  assert.deepEqual(slideInstanceKeys({ instanceKeys: ['pollId'] }), {});
   // An unknown source is dropped rather than applied: a fork cannot land a
   // source the clone helper has no way to satisfy.
   assert.deepEqual(
-    slideRekeyOnClone({
-      rekeyOnClone: { pollId: 'fresh-id', other: 'whatever-the-fork-wants' },
+    slideInstanceKeys({
+      instanceKeys: { pollId: 'fresh-id', other: 'whatever-the-fork-wants' },
     }),
     { pollId: 'fresh-id' },
   );
@@ -58,7 +58,7 @@ test('the declaration is read off the type, and only in the vocabulary', () => {
 
 test('every declared key is a real content key of its type', () => {
   const declaring = declaringTypes();
-  assert.ok(declaring.length > 0, 'no type declares rekeyOnClone');
+  assert.ok(declaring.length > 0, 'no type declares instanceKeys');
   for (const [name, rekey] of declaring) {
     const def = SLIDE_TYPES[name];
     const known = new Set([
@@ -68,10 +68,10 @@ test('every declared key is a real content key of its type', () => {
     for (const key of Object.keys(rekey)) {
       assert.ok(
         known.has(key),
-        `${name}: rekeyOnClone names '${key}', which is neither a field nor a default`,
+        `${name}: instanceKeys names '${key}', which is neither a field nor a default`,
       );
       assert.ok(
-        CLONE_REKEY_SOURCE_NAMES.includes(rekey[key]),
+        INSTANCE_KEY_SOURCE_NAMES.includes(rekey[key]),
         `${name}.${key}: '${rekey[key]}' is not a declared source`,
       );
     }
@@ -86,10 +86,10 @@ test('the two live cases are declared, not hard-coded', () => {
   });
 });
 
-test('applyCloneRekey writes each source and reports what it wrote', () => {
+test('applyInstanceKeyRekey writes each source and reports what it wrote', () => {
   let n = 0;
   const slide = { type: 'poll-slide', content: { pollId: 'old', q: 'keep' } };
-  const written = applyCloneRekey(slide, {
+  const written = applyInstanceKeyRekey(slide, {
     def: SLIDE_TYPES['poll-slide'],
     presentationId: 'deck-9',
     newId: () => `id-${++n}`,
@@ -99,7 +99,7 @@ test('applyCloneRekey writes each source and reports what it wrote', () => {
   assert.equal(slide.content.q, 'keep');
 
   const invite = { type: 'follow-invite-slide', content: {} };
-  applyCloneRekey(invite, {
+  applyInstanceKeyRekey(invite, {
     def: SLIDE_TYPES['follow-invite-slide'],
     presentationId: 'deck-9',
     newId: () => 'unused',
@@ -109,7 +109,7 @@ test('applyCloneRekey writes each source and reports what it wrote', () => {
   // A type that declares nothing is left alone, content object and all.
   const plain = { type: 'content-slide', content: { title: 'x' } };
   assert.deepEqual(
-    applyCloneRekey(plain, {
+    applyInstanceKeyRekey(plain, {
       def: SLIDE_TYPES['content-slide'],
       presentationId: 'deck-9',
       newId: () => 'unused',

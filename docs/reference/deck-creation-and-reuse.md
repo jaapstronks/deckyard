@@ -49,20 +49,36 @@ Duplicating, pasting and inserting from the library are all _copies of a slide_,
 and they share one routine — `cloneSlidesForInsert()` in
 `client/lib/slide-authoring/clone-slides.js`. It mints fresh slide ids,
 re-points a nested child at its cloned parent when both are copied, and applies
-the copied type's `rekeyOnClone` declaration.
+the copied type's `instanceKeys` declaration.
 
-`rekeyOnClone` is the per-type half: which **content** keys are bound to one
+`instanceKeys` is the per-type half: which **content** keys are bound to one
 slide instance and must not travel with a copy. Two core types declare one — the
 poll's `pollId` (`fresh-id`: it addresses the interaction state a live session
 collects, so two slides sharing it would share the answers) and the
 follow-invite's `presentationId` (`presentation-id`: the QR code is built from
 it, so a copy into another deck has to re-point). The vocabulary is closed and
-lives in `shared/slide-types/clone.js`; the declaration travels on
+lives in `shared/slide-types/instance-keys.js`; the declaration travels on
 `GET /api/slide-types`, so a fork type carrying an id of its own is honoured by
 every copy path without touching a file outside its own directory.
 
 Whole-deck duplication (`POST /api/presentations/:id/duplicate`) is a different
 path and does not run this recipe.
+
+### Saving a slide: the same declaration, a different rule
+
+Instance keys are also written when a slide is merely **saved**, at the storage
+write seam (`normalizeSlides` in
+`server/storage/presentations/slides.js`). It reads the same declaration, and
+the _source_ decides how each key is written:
+
+| source            | on copy           | on save                                                                                           |
+| ----------------- | ----------------- | ------------------------------------------------------------------------------------------------- |
+| `fresh-id`        | always re-minted  | minted only when missing — an existing value addresses state kept outside the deck                |
+| `presentation-id` | the new deck's id | re-derived from the deck being written, always; left alone when the writer does not know the deck |
+
+So a poll keeps its `pollId` (and the answers collected under it) across every
+save, while a follow-invite's `presentationId` is refreshed on every save and
+can never go stale.
 
 ### Collections
 

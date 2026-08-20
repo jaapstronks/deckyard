@@ -109,8 +109,13 @@ export function computeMissingCount({ source, target } = {}) {
 }
 
 /**
- * Normalize existing follow-invite slides (set presentationId, strip the
- * per-version language keys).
+ * Normalize existing follow-invite slides: strip the per-version language keys
+ * and default `enabled`.
+ *
+ * `presentationId` is *not* set here. It is an instance key the type declares
+ * (`instanceKeys` in shared/slide-types/instance-keys.js), so `normalizeSlides`
+ * derives it from that declaration one line up — this function no longer has to
+ * know which content key of which type caches the deck id (A7.23).
  *
  * `sourceLang`/`targetLang` used to be written here, once per language version.
  * They were never authored: the value was always the language of the version
@@ -126,15 +131,13 @@ export function computeMissingCount({ source, target } = {}) {
  *
  * Does NOT auto-insert a slide if missing – users add it manually.
  */
-function normalizeFollowInviteSlides(slides, { presentationId } = {}) {
+function normalizeFollowInviteSlides(slides) {
   const arr = Array.isArray(slides) ? slides : [];
-  const presId = String(presentationId || '').trim();
 
   // Find all follow-invite slides and ensure their content is correct.
   for (const s of arr) {
     if (s?.type !== 'follow-invite-slide') continue;
     s.content = s.content && typeof s.content === 'object' ? s.content : {};
-    s.content.presentationId = presId;
     delete s.content.sourceLang;
     delete s.content.targetLang;
     if (typeof s.content.enabled !== 'boolean') s.content.enabled = true;
@@ -234,12 +237,12 @@ export function normalizeI18n(pres) {
     const v = i18n.versions?.[lang];
     if (!v || typeof v !== 'object') continue;
     v.title = typeof v.title === 'string' ? v.title : '';
-    v.slides = normalizeSlides(v.slides);
-    // Normalize any existing follow-invite slides (set presentationId, strip
-    // the stored language keys — the version's own language is the answer).
-    v.slides = normalizeFollowInviteSlides(v.slides, {
-      presentationId: pres.id,
-    });
+    // The write seam fills in each type's declared instance keys, which is
+    // where the follow-invite slide's `presentationId` comes from.
+    v.slides = normalizeSlides(v.slides, { presentationId: pres.id });
+    // Strip the stored per-version language keys — the version's own language
+    // is the answer.
+    v.slides = normalizeFollowInviteSlides(v.slides);
   }
 
   // Track missing translation fields (computed, lightweight).

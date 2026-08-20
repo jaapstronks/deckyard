@@ -13,7 +13,7 @@ import { sortByPinnedThenName } from '../../lib/slide-library/search.js';
 import { createSlidesPanelResize } from './slides-panel-resize.js';
 import { createSlidesPanelActions } from './slides-panel-actions.js';
 import { isLiveSlideType } from '../../../shared/slide-types/runtime.js';
-import { applyCloneRekey } from '../../../shared/slide-types/clone.js';
+import { applyInstanceKeyRekey } from '../../../shared/slide-types/instance-keys.js';
 
 // Which slide types need audience participation, and therefore a follow-invite
 // slide in the deck for the audience to join through. Declared by the type
@@ -448,8 +448,8 @@ export function createSlidesPanel({
     // A library item is a copy of a slide, so the instance-bound content keys
     // its type declares are re-derived here too — a reused poll gets its own
     // pollId, a reused follow-invite points at this deck. Declaration:
-    // shared/slide-types/clone.js.
-    applyCloneRekey(s, {
+    // shared/slide-types/instance-keys.js.
+    applyInstanceKeyRekey(s, {
       def: SLIDE_TYPES?.[type] || null,
       presentationId: pres?.id || '',
       newId,
