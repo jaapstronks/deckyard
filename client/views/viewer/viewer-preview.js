@@ -9,6 +9,7 @@ import {
   mountSlideInto,
 } from '../../lib/slide-runtime/slide-render.js';
 import { t } from '../../lib/ui-i18n.js';
+import { createEmptyState } from '../../lib/dom/empty-state.js';
 
 export function createViewerPreview({
   h,
@@ -92,11 +93,14 @@ export function createViewerPreview({
       mountSlideInto(slideWrap, slide, { theme, presentationId: pres?.id });
     } else {
       slideWrap.innerHTML = '';
-      const empty = h('div', {
-        class: 'viewer-empty',
-        text: t('viewer.noSlides', 'No slides'),
-      });
-      slideWrap.append(empty);
+      slideWrap.append(
+        createEmptyState({
+          h,
+          icon: null,
+          className: 'empty-state-fill',
+          title: t('viewer.noSlides', 'No slides'),
+        }),
+      );
     }
 
     // Scroll to selected slide in panel

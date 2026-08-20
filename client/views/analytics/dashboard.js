@@ -10,6 +10,7 @@ import { iconUrl } from '../../../shared/icon-names.js';
 import { createDashboardCards } from './dashboard-cards.js';
 import { createDashboardChart } from './dashboard-chart.js';
 import { createTopPresentations } from './top-presentations.js';
+import { createEmptyState } from '../../lib/dom/empty-state.js';
 
 /**
  * Render the combined analytics dashboard.
@@ -253,9 +254,10 @@ export async function renderDashboard(root, { nav } = {}) {
 
     if (!sources.length) {
       card.append(
-        h('div', {
-          class: 'dashboard-empty',
-          text: t('dashboard.source.empty', 'No data yet'),
+        createEmptyState({
+          h,
+          icon: 'globe',
+          title: t('dashboard.source.empty', 'No data yet'),
         }),
       );
       return card;

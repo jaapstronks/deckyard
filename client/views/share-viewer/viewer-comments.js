@@ -128,7 +128,7 @@ export function createShareViewerCommentsSection({
 
     if (comments.length === 0) {
       const emptyEl = h('div', {
-        class: 'share-viewer-comments-empty',
+        class: 'empty-note',
         text: t(
           'comments.empty.none',
           'No comments yet. Be the first to add one!',

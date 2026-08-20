@@ -224,7 +224,6 @@
   gap: var(--ps-space-2);
 }
 
-.share-links-empty,
 .share-links-error {
   text-align: center;
   padding: var(--ps-space-4);
@@ -354,7 +353,6 @@ img.share-link-badge {
   gap: var(--ps-space-2);
 }
 
-.share-guest-empty,
 .share-guest-error {
   text-align: center;
   padding: var(--ps-space-3);
@@ -457,7 +455,6 @@ img.share-link-badge {
   gap: var(--ps-space-2);
 }
 
-.share-collaborators-empty,
 .share-collaborators-error {
   text-align: center;
   padding: var(--ps-space-3);

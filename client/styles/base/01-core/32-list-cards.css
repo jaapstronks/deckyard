@@ -559,32 +559,8 @@
   flex-shrink: 0;
 }
 
-.search-empty-state {
+.search-status {
   padding: var(--ps-space-2) 0;
-}
-
-.search-no-results {
-  text-align: center;
-  padding: var(--ps-space-8) var(--ps-space-4);
-}
-
-.search-no-results-icon {
-  width: 48px;
-  height: 48px;
-  margin-bottom: var(--ps-space-4);
-  opacity: 0.5;
-}
-
-.search-no-results-text {
-  font-size: var(--ps-text-lg);
-  font-weight: 600;
-  color: hsl(var(--app-text-primary));
-  margin-bottom: var(--ps-space-2);
-}
-
-.search-no-results-hint {
-  font-size: var(--ps-text-sm);
-  color: hsl(var(--app-text-tertiary));
 }
 
 .search-result-count {

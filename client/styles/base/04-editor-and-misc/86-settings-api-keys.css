@@ -14,19 +14,6 @@
   gap: 0;
 }
 
-/* Empty state */
-.api-keys-empty-state {
-  padding: var(--ps-space-6) var(--ps-space-4);
-  text-align: center;
-  border-radius: var(--ps-radius-md);
-  background: hsl(var(--app-bg-secondary) / 0.3);
-}
-
-.api-keys-empty-state p {
-  margin: 0;
-  color: hsl(var(--app-text-secondary));
-}
-
 /* Key row styles */
 .api-key-row {
   display: grid;

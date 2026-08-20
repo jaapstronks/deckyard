@@ -110,7 +110,7 @@ export function openBundledGradientPicker({
     if (!items.length) {
       grid.append(
         h('div', {
-          class: 'stock-media-empty',
+          class: 'empty-note',
           text: t('stockMedia.gradients.empty', 'No gradients available.'),
         }),
       );

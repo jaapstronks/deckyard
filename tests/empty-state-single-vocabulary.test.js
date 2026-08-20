@@ -9,12 +9,11 @@
  * each cloned the block under their own class names, and ~20 surfaces spelled
  * their own note class. This gate stops new spellings: any class token
  * containing "empty" in client JS must be one of the sanctioned tokens, a
- * state class, or on the burndown allowlist below.
+ * state class, or on the short allowlist below.
  *
- * Burndown (PR E2 of the cluster): migrate an allowlisted site to
- * `.empty-note` (or the block helper where it really is a block), fold its
- * CSS, and remove its entry here. The allowlist should shrink to just the
- * `compare-empty` entry.
+ * The burndown is done (PR E2): every one of those 20 sites now uses the
+ * sanctioned vocabulary, so the allowlist holds only the one permanent
+ * exception. Keep it that way — a new entry needs a reason, not a TODO.
  *
  * Run with: node --test tests/empty-state-single-vocabulary.test.js
  */
@@ -38,6 +37,7 @@ const SANCTIONED = new Set([
   'empty-state-message',
   'empty-state-actions',
   'empty-state-panel',
+  'empty-state-fill',
   'empty-note',
   'is-empty',
   'non-empty',
@@ -46,40 +46,8 @@ const SANCTIONED = new Set([
 // file (relative to repo root) -> tokens still tolerated there.
 // PERMANENT: versions-compare's `compare-empty` is a "—" placeholder cell in
 // the version diff table — a table cell, not an empty state; it stays.
-// The rest is the E2 burndown list.
 const ALLOWLIST = {
   'client/views/editor/modals/versions-compare.js': ['compare-empty'],
-  // --- E2 burndown from here down ---
-  'client/lib/slide-library/picker.js': ['ps-lib-empty'],
-  'client/lib/slide-collections/collections-bar.js': ['collections-bar-empty'],
-  'client/lib/comments/mention-autocomplete.js': ['mention-autocomplete-empty'],
-  'client/views/viewer/viewer-preview.js': ['viewer-empty'],
-  'client/views/share-viewer/index.js': ['share-viewer-empty'],
-  'client/views/share-viewer/viewer-comments.js': [
-    'share-viewer-comments-empty',
-  ],
-  'client/views/settings/slide-type-editor/field-editor.js': [
-    'field-list-empty',
-  ],
-  'client/views/settings/api-keys/key-list.js': ['api-keys-empty-state'],
-  'client/views/list/tag-filter.js': ['tag-filter-empty'],
-  'client/views/list/views/search-view.js': ['search-empty-state'],
-  'client/views/analytics/top-presentations.js': ['dashboard-empty'],
-  'client/views/analytics/dashboard.js': ['dashboard-empty'],
-  'client/views/analytics/dashboard-chart.js': ['dashboard-chart-empty'],
-  'client/views/editor/comments-panel-renderers.js': ['comments-empty'],
-  'client/views/editor/slide-list.js': ['slides-search-empty'],
-  'client/views/editor/bundled-gradients/picker.js': ['stock-media-empty'],
-  'client/views/editor/fields/icon-picker-modal.js': ['icon-picker-empty'],
-  'client/views/editor/modals/share-modal/collaborators-section.js': [
-    'share-collaborators-empty',
-  ],
-  'client/views/editor/modals/share-modal/share-links-section.js': [
-    'share-links-empty',
-  ],
-  'client/views/editor/modals/share-modal/guest-management.js': [
-    'share-guest-empty',
-  ],
 };
 
 function walk(dir, out = []) {

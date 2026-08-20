@@ -152,23 +152,6 @@
   color: var(--ps-color-warning);
 }
 
-/* Empty state */
-.stock-media-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--ps-space-6);
-  color: var(--ps-color-text-secondary);
-  text-align: center;
-}
-
-.stock-media-empty-icon {
-  font-size: 3rem;
-  margin-bottom: var(--ps-space-2);
-  opacity: 0.5;
-}
-
 /* Loading state */
 .stock-media-item.is-loading {
   pointer-events: none;

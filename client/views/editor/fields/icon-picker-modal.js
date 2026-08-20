@@ -158,7 +158,7 @@ export function openIconPicker({ current = '', onSelect } = {}) {
     if (cells.length === 0) {
       grid.append(
         h('div', {
-          class: 'icon-picker-empty help',
+          class: 'empty-note',
           text: t('editor.iconPicker.noResults', 'No icons match your search.'),
         }),
       );

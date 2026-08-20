@@ -305,7 +305,7 @@ export function createCollaboratorsSection({
     if (collaborators.length === 0) {
       list.append(
         h('div', {
-          class: 'share-collaborators-empty',
+          class: 'empty-note',
           text: t('share.collaborators.empty', 'No collaborators yet'),
         }),
       );

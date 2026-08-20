@@ -94,10 +94,7 @@ test('a deck with no slides shows no comments under the "This slide" scope', asy
     null,
     'no deck-wide comments leaked into the slide scope',
   );
-  assert.ok(
-    panel.panelEl.querySelector('.comments-empty'),
-    'empty state shown',
-  );
+  assert.ok(panel.panelEl.querySelector('.empty-note'), 'empty state shown');
   panel.panelEl.remove();
 });
 

@@ -97,7 +97,7 @@ export function createTagFilter({ api, onFilterChange }) {
     if (filtered.length === 0) {
       tagList.append(
         h('div', {
-          class: 'tag-filter-empty',
+          class: 'empty-note',
           text: t('tags.filter.empty', 'No tags found'),
         }),
       );

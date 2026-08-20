@@ -178,30 +178,6 @@
   margin: 0 0 var(--ps-space-4, 16px) 0;
 }
 
-.dashboard-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: hsl(var(--app-text-tertiary));
-  font-size: var(--ps-text-sm, 14px);
-  text-align: center;
-  padding: var(--ps-space-8, 32px) var(--ps-space-4, 16px);
-  background: hsl(var(--app-bg-sunken));
-  border-radius: var(--ps-radius-md, 8px);
-}
-
-.dashboard-empty::before {
-  content: '';
-  display: block;
-  width: 48px;
-  height: 48px;
-  margin-bottom: var(--ps-space-3, 12px);
-  background: hsl(var(--app-border-default));
-  border-radius: 50%;
-  opacity: 0.5;
-}
-
 /* Chart */
 .dashboard-chart-card {
   margin-bottom: var(--ps-space-6, 24px);
@@ -257,18 +233,6 @@
   color: hsl(var(--app-text-tertiary));
   border-top: 1px solid hsl(var(--app-border-subtle));
   padding-top: var(--ps-space-2, 8px);
-}
-
-.dashboard-chart-empty {
-  height: 160px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: hsl(var(--app-text-tertiary));
-  font-size: var(--ps-text-sm, 14px);
-  background: hsl(var(--app-bg-sunken));
-  border-radius: var(--ps-radius-md, 8px);
 }
 
 /* Bottom Row */
