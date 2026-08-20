@@ -17,7 +17,10 @@ import {
   slideTypeSample,
   slideTypeSchematic,
 } from '../../../shared/slide-types/authoring-companions.js';
-import { slideTypeInspectorKeeps } from '../../../shared/slide-types/inline-edit-companions.js';
+import {
+  slideTypeElementTab,
+  slideTypeInspectorKeeps,
+} from '../../../shared/slide-types/inline-edit-companions.js';
 import { slideRekeyOnClone } from '../../../shared/slide-types/clone.js';
 import { listPublishedCustomSlideTypes } from '../../storage/custom-slide-types.js';
 import { dispatchRoutes } from '../../utils/router.js';
@@ -91,6 +94,11 @@ async function handleSlideTypeList({ storageScope, res, authedUser }) {
       // `[]`) when nobody narrows the type: the inspector's conservative
       // fallback depends on telling those two apart.
       inspectorKeeps: slideTypeInspectorKeeps(key, def) || undefined,
+      // Which canvas sub-element kinds (image, card) offer a "This element"
+      // tab, and how many of each. Same seam half as `inspectorKeeps`: the
+      // inspector reads this response, not the registry, so a fork type's own
+      // offer is only heard if it travels.
+      elementTab: slideTypeElementTab(key, def) || undefined,
       // Layout catalogue for the editor's layout switcher. Declared on the
       // definition (JSON-safe) so forks that override a type by name bring
       // their own variant set; absent = no switcher chip.

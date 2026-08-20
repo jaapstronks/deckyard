@@ -48,3 +48,11 @@ export const inlineEdit = {
  * @type {string[]}
  */
 export const inspectorKeeps = [];
+
+/**
+ * Up to three author portraits, at indices 1-3: index 0 is the quote's own
+ * image slot, which has no element tab.
+ * Grammar: shared/slide-types/inline-edit-companions.js.
+ * @type {Object}
+ */
+export const elementTab = { image: { range: [1, 3] } };

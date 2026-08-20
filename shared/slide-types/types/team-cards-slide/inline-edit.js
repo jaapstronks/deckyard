@@ -101,3 +101,10 @@ export const inspectorKeeps = [
   'showPhotoFrame',
   'columnSplit',
 ];
+
+/**
+ * The image element of a team card is the member's portrait.
+ * Grammar: shared/slide-types/inline-edit-companions.js.
+ * @type {Object}
+ */
+export const elementTab = { image: { list: 'members' } };

@@ -157,6 +157,21 @@ export const SLIDE_TYPE_INLINE_EDIT = facet('inlineEdit');
  * @type {Readonly<Record<string, string[]>>}
  */
 export const SLIDE_TYPE_INSPECTOR_KEEPS = facet('inspectorKeeps');
+
+/**
+ * Element-tab offer per slide type: which kinds of canvas sub-element
+ * (\`image\`, \`card\`) get their own "This element" tab in the inspector, and
+ * how many of each.
+ *
+ * Sparse by design: a type without an entry offers no element tab, which is
+ * the answer for most types. Resolve it through \`slideTypeElementTab()\` in
+ * ./inline-edit-companions.js rather than reading this map — a fork type
+ * declares its own on the definition, and this map is core's answer, never the
+ * population.
+ *
+ * @type {Readonly<Record<string, Object>>}
+ */
+export const SLIDE_TYPE_ELEMENT_TAB = facet('elementTab');
 `;
   return formatGenerated(AGGREGATOR_PATH, raw);
 }

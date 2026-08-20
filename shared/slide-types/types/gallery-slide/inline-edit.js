@@ -57,3 +57,10 @@ export const inlineEdit = {
  * @type {string[]}
  */
 export const inspectorKeeps = ['layout'];
+
+/**
+ * One tab per gallery image, bounded by the collection.
+ * Grammar: shared/slide-types/inline-edit-companions.js.
+ * @type {Object}
+ */
+export const elementTab = { image: { list: 'images' } };

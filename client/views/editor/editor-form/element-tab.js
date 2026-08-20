@@ -6,50 +6,44 @@
  * hold no state from the editor-form closure. The tab-bar rendering stays in
  * the closure (it sews over DOM/rerender state); this module owns only the
  * "does this element get a tab, and what is it called" logic.
+ *
+ * Which sub-element kinds a type offers used to be a `switch (slide.type)` over
+ * seven names here — per-type data written as code, in the one place a new type
+ * would silently be missing from. The type declares it now (`elementTab`,
+ * beside `inspectorKeeps` in its own directory) and this module reads the
+ * grammar through shared/slide-types/inline-edit-companions.js.
  */
 import { t } from '../../../lib/ui-i18n.js';
+import {
+  elementTabOffersIndex,
+  slideTypeElementTab,
+} from '../../../../shared/slide-types/inline-edit-companions.js';
 
 /**
  * Whether a selected canvas element ({kind, idx}) has an element tab on this
- * slide type. Every image type now carries a "This image" tab (the shared
- * image-element card, or image-text's own images manager). Cards: icon-card-grid
- * (idx in range).
+ * slide type.
+ *
+ * @param {Object} slide - the current slide
+ * @param {Object} sel - the selection ({kind, idx, fieldKey})
+ * @param {Object} [opts]
+ * @param {Object} [opts.slideTypes] - the editor's slide-type metadata, so a
+ *   fork type's own declaration is heard (the definition is asked first)
  * @returns {boolean}
  */
-export function elementAppliesToSlide(slide, sel) {
+export function elementAppliesToSlide(slide, sel, { slideTypes = null } = {}) {
   if (!slide || !sel) return false;
-  const c = slide.content || {};
   // Any text field the user selected on this slide is stylable (block-level
   // alignment/colour, editing-surfaces text step 3). The selection is cleared
-  // on slide change, so a non-empty fieldKey is enough — no schema lookup.
+  // on slide change, so a non-empty fieldKey is enough — no schema lookup, and
+  // nothing per-type to declare.
   if (sel.kind === 'text') {
     return typeof sel.fieldKey === 'string' && sel.fieldKey.length > 0;
   }
-  if (sel.kind === 'image') {
-    const inList = (key) =>
-      Array.isArray(c[key]) && sel.idx >= 0 && sel.idx < c[key].length;
-    switch (slide.type) {
-      case 'image-slide':
-        return sel.idx === 0;
-      case 'image-text-slide':
-        return true; // images[] is padded to the layout's cell count on demand
-      case 'gallery-slide':
-        return inList('images');
-      case 'team-cards-slide':
-        return inList('members');
-      case 'logo-wall-slide':
-        return inList('logos');
-      case 'quote-slide':
-        return sel.idx >= 1 && sel.idx <= 3; // up to three author portraits
-      default:
-        return false;
-    }
-  }
-  if (sel.kind === 'card' && slide.type === 'icon-card-grid-slide') {
-    const items = slide.content?.items;
-    return Array.isArray(items) && sel.idx >= 0 && sel.idx < items.length;
-  }
-  return false;
+  const offer = slideTypeElementTab(
+    slide.type,
+    slideTypes?.[slide.type] || null,
+  )?.[sel.kind];
+  return elementTabOffersIndex(offer, slide.content || {}, sel.idx);
 }
 
 /** Label for the element tab, by selected element kind. */

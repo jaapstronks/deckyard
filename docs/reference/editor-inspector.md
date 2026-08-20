@@ -255,6 +255,17 @@ there is no tab bar - just the slide form (identical to the pre-tab pane).
   logo-wall, quote portraits - plus icon-cards. The shared card is driven by the
   type's inline descriptor (media/focus/fit), so it writes the same focusX/Y
   keys the canvas focal-point drag writes: one value, two representations.
+- **Who offers what is declared, not switched.** A type says which sub-element
+  kinds it offers, and how many, as `elementTab` in its own
+  `shared/slide-types/types/<name>/inline-edit.js`, beside `inspectorKeeps`.
+  Three shapes cover every case: `{ list: 'images' }` (one tab per item of that
+  collection), `{ range: [1, 3] }` (a fixed index window - quote's author
+  portraits), `{ any: true }` (image-text, whose `images[]` is padded to the
+  layout's cell count on demand). Resolve it through `slideTypeElementTab()` /
+  `elementTabOffersIndex()` in `shared/slide-types/inline-edit-companions.js`;
+  it travels on `GET /api/slide-types`, so a fork type is heard too. A type
+  that declares nothing offers no element tab, which is the answer for most.
+  Text selection is not declared at all: any named text field is stylable.
 
 The `data-inspector-section="image"` markers (image-slide, image-text) remain as
 a harmless addressing seam; the element tab now surfaces the controls directly.

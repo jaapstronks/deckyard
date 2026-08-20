@@ -96,3 +96,10 @@ export const inspectorKeeps = [
   'zoomLevel',
   'zoomPositions',
 ];
+
+/**
+ * The one image lives at index 0 — there is no collection to walk.
+ * Grammar: shared/slide-types/inline-edit-companions.js.
+ * @type {Object}
+ */
+export const elementTab = { image: { range: [0, 0] } };
