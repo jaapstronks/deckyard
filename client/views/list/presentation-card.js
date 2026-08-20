@@ -341,7 +341,7 @@ export function createCardRenderer({
             item.remove();
             onTrashRefresh?.();
           } catch (err) {
-            toast.error(String(err?.message || err), { id: 'list-restore' });
+            toast.error(err, { id: 'list-restore' });
           }
         },
       });
@@ -382,7 +382,7 @@ export function createCardRenderer({
             // Remove from trash list
             item.remove();
           } catch (err) {
-            toast.error(String(err?.message || err), {
+            toast.error(err, {
               id: 'list-permanent-delete',
             });
           }
@@ -420,7 +420,7 @@ export function createCardRenderer({
             });
             onDeckDuplicated?.(created);
           } catch (err) {
-            toast.error(String(err?.message || err), { id: 'list-duplicate' });
+            toast.error(err, { id: 'list-duplicate' });
           }
         },
       });

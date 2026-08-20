@@ -31,6 +31,9 @@ async function loadDict(locale) {
   if (dictCache.has(locale)) return dictCache.get(locale);
   let data = {};
   try {
+    // Static locale JSON from /client/i18n/ — an asset load, not an
+    // /api/* call.
+    // eslint-disable-next-line no-restricted-syntax
     const res = await fetch(
       `/client/i18n/${encodeURIComponent(locale)}/follow.json`,
       {

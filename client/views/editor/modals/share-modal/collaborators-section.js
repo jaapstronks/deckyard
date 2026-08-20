@@ -289,7 +289,7 @@ export function createCollaboratorsSection({
       // Reload the page to reflect the change
       window.location.reload();
     } catch (e) {
-      toast?.error(String(e?.message || e), { durationMs: 3000 });
+      toast?.error(e, { durationMs: 3000 });
     }
   }
 
@@ -346,7 +346,7 @@ export function createCollaboratorsSection({
               { durationMs: 2000 },
             );
           } catch (e) {
-            toast?.error(String(e?.message || e), { durationMs: 3000 });
+            toast?.error(e, { durationMs: 3000 });
             permSelect.value = collab.permission;
           } finally {
             permSelect.disabled = false;
@@ -390,7 +390,7 @@ export function createCollaboratorsSection({
               { durationMs: 2000 },
             );
           } catch (e) {
-            toast?.error(String(e?.message || e), { durationMs: 3000 });
+            toast?.error(e, { durationMs: 3000 });
           }
         },
       });
@@ -494,7 +494,7 @@ export function createCollaboratorsSection({
           { durationMs: 3000 },
         );
       } else {
-        toast?.error(e?.message || String(e), { durationMs: 3000 });
+        toast?.error(e, { durationMs: 3000 });
       }
     } finally {
       isAddingCollaborator = false;

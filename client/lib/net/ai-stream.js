@@ -53,6 +53,9 @@ export async function generatePresentationStreaming({
   };
 
   try {
+    // SSE stream: the caller reads response.body incrementally, which
+    // api()'s parse-the-whole-body contract cannot express.
+    // eslint-disable-next-line no-restricted-syntax
     const response = await fetch(url, {
       method: 'POST',
       headers: {

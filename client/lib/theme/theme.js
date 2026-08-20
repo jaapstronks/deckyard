@@ -1,3 +1,4 @@
+import { api } from '../api.js';
 import { DEFAULT_THEME_ID } from '../../../shared/constants/themes.js';
 import { THEMES as BUILTIN_THEMES } from '../../../shared/slide-types/registry.js';
 import { slideBackgroundsCssText } from '../../../shared/theme-slide-backgrounds.js';
@@ -99,10 +100,7 @@ async function fetchThemeData(id) {
   // Database custom themes (UUIDs) are served from the API, not the filesystem
   if (isUuid) {
     try {
-      const resp = await fetch(`/api/themes/custom/${id}/config`, {
-        cache: 'no-store',
-      });
-      if (resp.ok) return await resp.json();
+      return await api(`/api/themes/custom/${id}/config`);
     } catch {
       // ignore
     }
@@ -124,6 +122,9 @@ async function fetchThemeData(id) {
 
   for (const urlPath of candidates) {
     try {
+      // Static theme JSON from /themes/ and /custom/themes/ — an asset load,
+      // not an /api/* call, so it stays outside api() (like the locale JSON).
+      // eslint-disable-next-line no-restricted-syntax
       const resp = await fetch(urlPath, { cache: 'no-store' });
       if (resp.ok) {
         return await resp.json();

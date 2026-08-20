@@ -114,6 +114,8 @@ export function openAnalyzeModal({
 
     try {
       // Use fetch with SSE parsing since EventSource doesn't support POST
+      // SSE stream (POST, so EventSource is out): reads response.body.
+      // eslint-disable-next-line no-restricted-syntax
       const response = await fetch(`/api/presentations/${id}/analyze`, {
         method: 'POST',
         headers: {

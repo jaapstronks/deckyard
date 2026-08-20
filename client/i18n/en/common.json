@@ -207,7 +207,6 @@
   "language.nl": "Dutch",
   "language.nl.short": "NL",
   "leadCapture.error.noPresentationId": "Could not determine presentation ID",
-  "leadCapture.error.submitFailed": "Submission failed",
   "likert.distributionAria": "Distribution",
   "notifications.archive": "Archive",
   "notifications.archiveAll": "Archive all",

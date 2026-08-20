@@ -1,5 +1,6 @@
 import { createQrDataUrl, renderQrToCanvas } from './poll.js';
 import { t } from '../ui-i18n.js';
+import { api } from '../api.js';
 import { h } from '../dom.js';
 
 const followCodeCache = new Map();
@@ -19,17 +20,17 @@ async function getOrCreateFollowCode(followUrl) {
   if (!key) return '';
   if (followCodeCache.has(key)) return await followCodeCache.get(key);
   const p = (async () => {
-    const res = await fetch('/api/follow-codes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ followUrl: key }),
-    });
-    if (!res.ok) return '';
-    const data = await res.json().catch(() => ({}));
-    const code = String(data?.code || '')
-      .trim()
-      .toUpperCase();
-    return code;
+    try {
+      const data = await api('/api/follow-codes', {
+        method: 'POST',
+        body: { followUrl: key },
+      });
+      return String(data?.code || '')
+        .trim()
+        .toUpperCase();
+    } catch {
+      return '';
+    }
   })();
   followCodeCache.set(key, p);
   return await p;

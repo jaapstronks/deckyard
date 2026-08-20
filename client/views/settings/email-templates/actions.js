@@ -36,7 +36,7 @@ export function createActions(state, elements, rebuildUI) {
       state.setData(data);
       rebuildUI();
     } catch (err) {
-      toast.error(String(err?.message || err), { id: 'email-templates-load' });
+      toast.error(err, { id: 'email-templates-load' });
     } finally {
       state.setBusy(false);
     }
@@ -78,7 +78,7 @@ export function createActions(state, elements, rebuildUI) {
         { id: 'email-templates-save', durationMs: 2000 },
       );
     } catch (err) {
-      toast.error(String(err?.message || err), { id: 'email-templates-save' });
+      toast.error(err, { id: 'email-templates-save' });
       const data = state.getData();
       defaultLocaleSelect.value = data?.defaultLocale || 'en';
     } finally {
@@ -108,7 +108,7 @@ export function createActions(state, elements, rebuildUI) {
         { id: 'email-templates-save', durationMs: 2000 },
       );
     } catch (err) {
-      toast.error(String(err?.message || err), { id: 'email-templates-save' });
+      toast.error(err, { id: 'email-templates-save' });
     } finally {
       state.setBusy(false);
     }
@@ -149,7 +149,7 @@ export function createActions(state, elements, rebuildUI) {
         { id: 'email-templates-save', durationMs: 2000 },
       );
     } catch (err) {
-      toast.error(String(err?.message || err), { id: 'email-templates-save' });
+      toast.error(err, { id: 'email-templates-save' });
     } finally {
       state.setBusy(false);
     }
@@ -174,7 +174,7 @@ export function createActions(state, elements, rebuildUI) {
         previewContainer.style.display = '';
       }
     } catch (err) {
-      toast.error(String(err?.message || err), {
+      toast.error(err, {
         id: 'email-templates-preview',
       });
     } finally {
@@ -202,7 +202,7 @@ export function createActions(state, elements, rebuildUI) {
         { id: 'email-templates-test', durationMs: 3000 },
       );
     } catch (err) {
-      toast.error(String(err?.message || err), { id: 'email-templates-test' });
+      toast.error(err, { id: 'email-templates-test' });
     } finally {
       state.setBusy(false);
     }

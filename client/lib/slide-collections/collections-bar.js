@@ -177,7 +177,7 @@ export function createCollectionsBar({ api, root }) {
             );
             afterChange();
           } catch (e) {
-            toast.error(String(e?.message || e));
+            toast.error(e);
           }
         },
       }),

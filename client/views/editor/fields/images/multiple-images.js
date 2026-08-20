@@ -254,7 +254,7 @@ export function createFieldImages(ctx) {
             );
             onChange(maxItems ? deduped.slice(0, maxItems) : deduped);
           } catch (e) {
-            toast.error(String(e?.message || e));
+            toast.error(e);
           } finally {
             input.value = '';
           }

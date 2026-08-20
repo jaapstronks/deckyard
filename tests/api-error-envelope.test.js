@@ -177,6 +177,14 @@ test('api() maps the coded envelope to err.code + err.message', async () => {
       assert.equal(err.statusCode, 429);
       assert.equal(err.code, 'rate_limited');
       assert.equal(err.message, 'Slow down');
+      // The full parsed body rides along for callers that read
+      // route-specific fields off an error (e.g. the share viewer's
+      // presentationTitle on a revoked link).
+      assert.deepEqual(err.body, {
+        ok: false,
+        error: 'rate_limited',
+        message: 'Slow down',
+      });
       return true;
     });
   } finally {

@@ -35,7 +35,14 @@ globalThis.localStorage = dom.window.localStorage;
 // Scripted fetch double: each sendTrack call is recorded and answered by the
 // current responder. No retries trigger in these tests (4xx is never retried).
 let fetchCalls = [];
-let respond = async () => ({ ok: true, status: 200, json: async () => ({}) });
+// Response-like enough for api(): the layer reads status and content-type.
+const jsonHeaders = { get: () => 'application/json; charset=utf-8' };
+let respond = async () => ({
+  ok: true,
+  status: 200,
+  headers: jsonHeaders,
+  json: async () => ({}),
+});
 globalThis.fetch = async (url, opts) => {
   fetchCalls.push({ url, body: JSON.parse(opts.body) });
   return respond(url);
@@ -51,11 +58,13 @@ const TOKEN = 'abcd0123'.repeat(8);
 const ok = (payload) => async () => ({
   ok: true,
   status: 200,
+  headers: jsonHeaders,
   json: async () => payload,
 });
 const refuse = (status) => async () => ({
   ok: false,
   status,
+  headers: jsonHeaders,
   json: async () => ({ error: 'refused' }),
 });
 

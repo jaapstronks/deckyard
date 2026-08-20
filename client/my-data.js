@@ -12,6 +12,7 @@
  */
 
 import { h } from './lib/dom.js';
+import { api } from './lib/api.js';
 import { formatDate } from './lib/format/analytics-format.js';
 
 function $id(id) {
@@ -38,6 +39,7 @@ const confirmYes = $id('mdConfirmYes');
 const confirmNo = $id('mdConfirmNo');
 const doneEl = $id('mdDone');
 
+// Path prefix only — requests go through the shared api() layer.
 const API = '/api/leads/my-data';
 
 function show(el) {
@@ -71,27 +73,26 @@ requestForm?.addEventListener('submit', async (e) => {
   requestSubmit.disabled = true;
   requestMsg.textContent = 'Sending…';
   try {
-    const resp = await fetch(`${API}/request`, {
+    await api(`${API}/request`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: addr }),
+      body: { email: addr },
     });
-    if (resp.ok) {
-      // Deliberately non-committal: the server never reveals whether the
-      // address is on file, so neither do we.
-      requestMsg.textContent =
-        'If that address is on file, a link is on its way. Check your inbox.';
-      requestMsg.classList.add('is-ok');
-    } else if (resp.status === 429) {
+    // Deliberately non-committal: the server never reveals whether the
+    // address is on file, so neither do we.
+    requestMsg.textContent =
+      'If that address is on file, a link is on its way. Check your inbox.';
+    requestMsg.classList.add('is-ok');
+  } catch (err) {
+    if (err?.statusCode === 429) {
       requestMsg.textContent = 'Too many requests. Please try again later.';
-    } else if (resp.status === 501) {
+    } else if (err?.statusCode === 501) {
       requestMsg.textContent =
         'This site is not configured to send email, so self-service is unavailable here.';
-    } else {
+    } else if (err?.statusCode) {
       requestMsg.textContent = 'Something went wrong. Please try again.';
+    } else {
+      requestMsg.textContent = 'Network error. Please try again.';
     }
-  } catch {
-    requestMsg.textContent = 'Network error. Please try again.';
   } finally {
     requestSubmit.disabled = false;
   }
@@ -132,24 +133,25 @@ function renderData(data) {
 async function loadData() {
   show(loadingEl);
   try {
-    const resp = await fetch(
-      `${API}?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`,
+    renderData(
+      await api(
+        `${API}?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`,
+      ),
     );
-    if (resp.ok) {
-      renderData(await resp.json());
-    } else if (resp.status === 401) {
+  } catch (err) {
+    if (err?.statusCode === 401) {
       showRequestForm(
         'That link is invalid or has expired. Request a new one below.',
       );
-    } else if (resp.status === 429) {
+    } else if (err?.statusCode === 429) {
       showRequestForm('Too many requests. Please try again in a few minutes.');
-    } else {
+    } else if (err?.statusCode) {
       showRequestForm(
         'Something went wrong loading your data. Request a new link below.',
       );
+    } else {
+      showRequestForm('Network error. Request a new link below.');
     }
-  } catch {
-    showRequestForm('Network error. Request a new link below.');
   }
 }
 
@@ -172,34 +174,34 @@ confirmYes?.addEventListener('click', async () => {
   eraseMsg.classList.remove('is-ok');
   eraseMsg.textContent = 'Erasing…';
   try {
-    const resp = await fetch(
+    await api(
       `${API}?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`,
       { method: 'DELETE' },
     );
-    if (resp.ok) {
-      hide(dataView);
-      doneEl.textContent =
-        'Done. Your name and email have been removed from every record for this address.';
-      doneEl.classList.add('is-ok');
-      show(doneEl);
-    } else if (resp.status === 401) {
+    hide(dataView);
+    doneEl.textContent =
+      'Done. Your name and email have been removed from every record for this address.';
+    doneEl.classList.add('is-ok');
+    show(doneEl);
+  } catch (err) {
+    if (err?.statusCode === 401) {
       // The link expired between viewing and erasing, or was already spent.
       eraseMsg.textContent =
         'That link has expired. Request a fresh one to erase your data.';
-    } else if (resp.status === 429) {
+    } else if (err?.statusCode === 429) {
       eraseMsg.textContent =
         'Too many requests. Please try again in a few minutes.';
       confirmYes.disabled = false;
       confirmNo.disabled = false;
-    } else {
+    } else if (err?.statusCode) {
       eraseMsg.textContent = 'Something went wrong. Please try again.';
       confirmYes.disabled = false;
       confirmNo.disabled = false;
+    } else {
+      eraseMsg.textContent = 'Network error. Please try again.';
+      confirmYes.disabled = false;
+      confirmNo.disabled = false;
     }
-  } catch {
-    eraseMsg.textContent = 'Network error. Please try again.';
-    confirmYes.disabled = false;
-    confirmNo.disabled = false;
   }
 });
 

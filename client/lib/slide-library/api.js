@@ -65,7 +65,7 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
         state.patchInCache(s, id, () => snap.prev);
         rerender?.();
       }
-      toast.error(String(e?.message || e));
+      toast.error(e);
     }
   };
 
@@ -101,7 +101,7 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
         state.patchInCache(s, id, () => snap.prev);
         rerender?.();
       }
-      toast.error(String(e?.message || e));
+      toast.error(e);
     }
   };
 
@@ -123,7 +123,7 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
       toast.success(t('slideLibrary.addedToTeam', 'Added to team library.'));
       await fetchShelf('organization');
     } catch (e) {
-      toast.error(String(e?.message || e));
+      toast.error(e);
     }
   };
 

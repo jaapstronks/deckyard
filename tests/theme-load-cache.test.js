@@ -39,8 +39,11 @@ const dbTheme = () => ({
 });
 
 let served = dbTheme();
+// Response-like enough for api(): the layer reads status and content-type.
 globalThis.fetch = async () => ({
   ok: true,
+  status: 200,
+  headers: { get: () => 'application/json; charset=utf-8' },
   json: async () => structuredClone(served),
 });
 

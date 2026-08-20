@@ -114,7 +114,7 @@ export function openDescriptionModal({
         ta.value = d.trim();
         sync();
       } catch (e) {
-        toast?.error?.(String(e?.message || e), { id: 'desc-generate' });
+        toast?.error?.(e, { id: 'desc-generate' });
       } finally {
         busyManager.setBusy(false);
       }

@@ -580,7 +580,7 @@ export function createPreferencesTab({ user, nav }) {
       // Also set via property for browser compatibility
       uiLocaleSelect.value = String(myUiLocale || 'en');
     } catch (e) {
-      toast.error(String(e?.message || e), { id: 'settings-load' });
+      toast.error(e, { id: 'settings-load' });
     }
   };
 
@@ -637,7 +637,7 @@ export function createPreferencesTab({ user, nav }) {
         location.pathname + (location.search || '') + (location.hash || ''),
       );
     } catch (e) {
-      toast.error(String(e?.message || e), { id: 'settings-save' });
+      toast.error(e, { id: 'settings-save' });
     } finally {
       setBusy(false);
     }

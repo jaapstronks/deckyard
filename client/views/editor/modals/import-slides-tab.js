@@ -192,6 +192,8 @@ export function createImportSlidesTab({
       // Call the API with SSE for progress
       const url = `/api/presentations/${encodeURIComponent(presentationId)}/import-slides-as-images`;
 
+      // SSE stream: progress events are read from response.body.
+      // eslint-disable-next-line no-restricted-syntax
       const response = await fetch(url, {
         method: 'POST',
         headers: {

@@ -44,6 +44,9 @@ export async function uploadImage(file) {
       }),
     });
 
+    // Presigned upload straight to external storage: not our /api/*
+    // surface, and must not carry our credentials/JSON headers.
+    // eslint-disable-next-line no-restricted-syntax
     const uploadResp = await fetch(presign.uploadUrl, {
       method: 'PUT',
       headers: presign.headers || {},

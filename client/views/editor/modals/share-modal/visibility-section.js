@@ -112,7 +112,7 @@ export function createVisibilitySection({
       syncShareUi?.();
       editorState?.refreshAll?.();
     } catch (e) {
-      toast?.error?.(String(e?.message || e), { id: 'share-visibility' });
+      toast?.error?.(e, { id: 'share-visibility' });
     } finally {
       busy = false;
       render();

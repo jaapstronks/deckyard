@@ -68,7 +68,7 @@ export function createEmailTab({ user }) {
           : {};
       adminNotifications.setValue(notif?.emailEnabled === true);
     } catch (e) {
-      toast.error(String(e?.message || e), { id: 'settings-load' });
+      toast.error(e, { id: 'settings-load' });
     }
 
     // Render email templates panel (it handles its own data loading)
@@ -93,7 +93,7 @@ export function createEmailTab({ user }) {
         durationMs: 1800,
       });
     } catch (e) {
-      toast.error(String(e?.message || e), { id: 'settings-save' });
+      toast.error(e, { id: 'settings-save' });
     } finally {
       busy = false;
       btnSaveNotif.disabled = false;

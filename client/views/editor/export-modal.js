@@ -191,6 +191,9 @@ async function exportPdf({ id, getLang, title, button, fallbackWrap }) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), PDF_FETCH_TIMEOUT_MS);
   try {
+    // Binary download: the response is PDF bytes read as a blob, which
+    // api()'s json/text contract cannot express.
+    // eslint-disable-next-line no-restricted-syntax
     const res = await fetch(url, {
       signal: controller.signal,
       credentials: 'same-origin',

@@ -334,7 +334,7 @@ export function createSlideTypesTab({ user } = {}) {
     } catch (err) {
       customTypes = previous;
       renderCustomTypesSection();
-      toast.error(String(err?.message || err));
+      toast.error(err);
     }
   }
 
@@ -475,7 +475,7 @@ export function createSlideTypesTab({ user } = {}) {
       );
       await reloadCustomTypes();
     } catch (err) {
-      toast.error(String(err?.message || err));
+      toast.error(err);
     }
   }
 
@@ -489,7 +489,7 @@ export function createSlideTypesTab({ user } = {}) {
       );
       await reloadCustomTypes();
     } catch (err) {
-      toast.error(String(err?.message || err));
+      toast.error(err);
     }
   }
 
@@ -563,7 +563,7 @@ export function createSlideTypesTab({ user } = {}) {
         );
         await reloadCustomTypes();
       } catch (err) {
-        toast.error(String(err?.message || err));
+        toast.error(err);
       }
     });
     document.body.append(input);
@@ -589,7 +589,7 @@ export function createSlideTypesTab({ user } = {}) {
       );
       await reloadCustomTypes();
     } catch (err) {
-      toast.error(String(err?.message || err));
+      toast.error(err);
     }
   }
 
@@ -614,7 +614,7 @@ export function createSlideTypesTab({ user } = {}) {
       customTypes = res?.customSlideTypes || [];
       renderCustomTypesSection();
     } catch (err) {
-      toast.error(String(err?.message || err));
+      toast.error(err);
     }
   }
 
@@ -653,7 +653,7 @@ export function createSlideTypesTab({ user } = {}) {
           await reloadCustomTypes();
           closeEditor();
         } catch (err) {
-          toast.error(String(err?.message || err));
+          toast.error(err);
         }
       },
       onCancel: closeEditor,
