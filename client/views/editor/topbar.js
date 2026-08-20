@@ -17,7 +17,6 @@ import { logout } from '../../lib/user/auth.js';
 import { createEditorTopbarMoreMenu } from './topbar/more-menu.js';
 import { openSubscriptionModal } from './modals/subscription-modal.js';
 import { createLanguageMode } from './topbar/language-mode.js';
-import { iconUrl } from '../../../shared/icon-names.js';
 import { t } from '../../lib/ui-i18n.js';
 import { createAvatar, updateAvatar } from '../../lib/user/avatar.js';
 import { getUserProfileAsync } from '../../lib/user/user-profiles.js';
@@ -125,12 +124,7 @@ export function createEditorTopbar({
   });
   topbarTitleEl.append(
     h('span', { text: pres.title }),
-    h('img', {
-      class: 'topbar-title-pencil',
-      src: iconUrl('pencil'),
-      alt: '',
-      'aria-hidden': 'true',
-    }),
+    icon('pencil', { size: 12, className: 'topbar-title-pencil' }),
   );
 
   // ============================================================
@@ -214,14 +208,7 @@ export function createEditorTopbar({
     'aria-label': t('editor.deckGrid.open', 'Slide overview'),
     onclick: () => onOpenOverview?.(),
   });
-  btnOverview.append(
-    h('img', {
-      class: 'topbar-btn-icon',
-      src: iconUrl('layout-grid'),
-      alt: '',
-      'aria-hidden': 'true',
-    }),
-  );
+  btnOverview.append(icon('layout-grid', { size: 16 }));
 
   // ============================================================
   // THEME TOGGLE
@@ -346,14 +333,7 @@ export function createEditorTopbar({
     'aria-label': t('editor.analytics', 'Analytics'),
     onclick: () => nav?.(`/analytics/${id}`),
   });
-  btnAnalytics.append(
-    h('img', {
-      class: 'topbar-btn-icon',
-      src: iconUrl('chart-column'),
-      alt: '',
-      'aria-hidden': 'true',
-    }),
-  );
+  btnAnalytics.append(icon('chart-column', { size: 16 }));
 
   // Only show analytics button if presentation is published or has share links
   // (analytics only tracks external viewers via share links/follow mode)
@@ -467,14 +447,7 @@ export function createEditorTopbar({
     disabled: true,
     onclick: () => onUndo?.(),
   });
-  btnUndo.append(
-    h('img', {
-      class: 'topbar-btn-icon',
-      src: iconUrl('undo'),
-      alt: '',
-      'aria-hidden': 'true',
-    }),
-  );
+  btnUndo.append(icon('undo', { size: 16 }));
 
   const btnRedo = h('button', {
     class: 'ghost-icon-btn topbar-redo-btn',
@@ -484,14 +457,7 @@ export function createEditorTopbar({
     disabled: true,
     onclick: () => onRedo?.(),
   });
-  btnRedo.append(
-    h('img', {
-      class: 'topbar-btn-icon',
-      src: iconUrl('redo'),
-      alt: '',
-      'aria-hidden': 'true',
-    }),
-  );
+  btnRedo.append(icon('redo', { size: 16 }));
 
   const undoRedoGroup = h('div', { class: 'topbar-undo-group' }, [
     btnUndo,
@@ -523,14 +489,7 @@ export function createEditorTopbar({
     title: t('common.back', 'Back'),
     onclick: () => nav?.('/app'),
   });
-  backBtn.append(
-    h('img', {
-      class: 'topbar-btn-icon',
-      src: iconUrl('arrow-left'),
-      alt: '',
-      'aria-hidden': 'true',
-    }),
-  );
+  backBtn.append(icon('arrow-left', { size: 16 }));
 
   const topbarEl = h('div', { class: 'topbar' }, [
     backBtn,
