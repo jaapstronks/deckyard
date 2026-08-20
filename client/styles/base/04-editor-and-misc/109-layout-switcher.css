@@ -6,12 +6,6 @@
   align-items: center;
   gap: 6px;
 }
-.layout-switcher-chip svg {
-  width: 14px;
-  height: 14px;
-  display: block;
-}
-
 .layout-switcher-popover {
   z-index: var(--z-overlay);
   background: hsl(var(--app-bg-elevated));

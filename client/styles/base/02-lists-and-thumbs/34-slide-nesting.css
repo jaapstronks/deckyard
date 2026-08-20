@@ -110,11 +110,8 @@
     .viewer-shell
   )
   .slide-collapse-toggle
-  svg {
-  width: 12px;
-  height: 12px;
+  .icon {
   transition: transform 0.2s ease;
-  flex-shrink: 0;
 }
 
 /* Rotated chevron when expanded */
@@ -129,7 +126,7 @@
   )
   .slide-item--expanded
   .slide-collapse-toggle
-  svg {
+  .icon {
   transform: rotate(90deg);
 }
 

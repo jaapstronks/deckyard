@@ -126,9 +126,7 @@
   box-shadow: 0 2px 8px hsl(0 0% 0% / 0.3);
 }
 
-.slide-type-curation-video-play svg {
-  width: 16px;
-  height: 16px;
+.slide-type-curation-video-play .icon {
   color: hsl(220 15% 20%);
   margin-left: 2px;
 }

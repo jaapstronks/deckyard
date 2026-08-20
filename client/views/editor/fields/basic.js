@@ -1,3 +1,4 @@
+import { icon } from '../../../lib/dom/icons.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { markFieldRequired } from './required.js';
 
@@ -247,8 +248,7 @@ export function createBasicFields({ h } = {}) {
       type: 'button',
       title: t('editor.markdown.bold', 'Bold'),
     });
-    btnBold.innerHTML =
-      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/></svg>';
+    btnBold.append(icon('bold', { size: 16 }));
     btnBold.addEventListener('click', (e) => {
       e.preventDefault();
       wrapSelection('**', '**');
@@ -260,8 +260,7 @@ export function createBasicFields({ h } = {}) {
       type: 'button',
       title: t('editor.markdown.italic', 'Italic'),
     });
-    btnItalic.innerHTML =
-      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg>';
+    btnItalic.append(icon('italic', { size: 16 }));
     btnItalic.addEventListener('click', (e) => {
       e.preventDefault();
       wrapSelection('*', '*');
@@ -273,8 +272,7 @@ export function createBasicFields({ h } = {}) {
       type: 'button',
       title: t('editor.markdown.link', 'Link'),
     });
-    btnLink.innerHTML =
-      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+    btnLink.append(icon('link', { size: 16 }));
     btnLink.addEventListener('click', (e) => {
       e.preventDefault();
       const start = ta.selectionStart;
@@ -299,8 +297,7 @@ export function createBasicFields({ h } = {}) {
       type: 'button',
       title: t('editor.markdown.heading', 'Heading'),
     });
-    btnHeading.innerHTML =
-      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h8"/><path d="M4 18V6"/><path d="M12 18V6"/><path d="M17 10v8"/><path d="M21 10h-4l3-3"/></svg>';
+    btnHeading.append(icon('heading-2', { size: 16 }));
     btnHeading.addEventListener('click', (e) => {
       e.preventDefault();
       const start = ta.selectionStart;
@@ -334,8 +331,7 @@ export function createBasicFields({ h } = {}) {
       type: 'button',
       title: t('editor.markdown.inlineCode', 'Inline Code'),
     });
-    btnInlineCode.innerHTML =
-      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>';
+    btnInlineCode.append(icon('code', { size: 16 }));
     btnInlineCode.addEventListener('click', (e) => {
       e.preventDefault();
       wrapSelection('`', '`');
@@ -347,8 +343,7 @@ export function createBasicFields({ h } = {}) {
       type: 'button',
       title: t('editor.markdown.codeBlock', 'Code Block'),
     });
-    btnCodeBlock.innerHTML =
-      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><polyline points="9 8 5 12 9 16"/><polyline points="15 8 19 12 15 16"/></svg>';
+    btnCodeBlock.append(icon('square-code', { size: 16 }));
     btnCodeBlock.addEventListener('click', (e) => {
       e.preventDefault();
       const start = ta.selectionStart;
@@ -377,8 +372,7 @@ export function createBasicFields({ h } = {}) {
       type: 'button',
       title: t('editor.markdown.inlineMath', 'Inline Math'),
     });
-    btnInlineMath.innerHTML =
-      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4L4 20"/><path d="M20 4L12 20"/><path d="M8 12h8"/></svg>';
+    btnInlineMath.append(icon('sigma', { size: 16 }));
     btnInlineMath.addEventListener('click', (e) => {
       e.preventDefault();
       wrapSelection('$', '$');
@@ -390,8 +384,7 @@ export function createBasicFields({ h } = {}) {
       type: 'button',
       title: t('editor.markdown.blockMath', 'Block Math'),
     });
-    btnBlockMath.innerHTML =
-      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 8L7 16"/><path d="M17 8L15 16"/><path d="M7 12h4"/><path d="M13 12h4"/></svg>';
+    btnBlockMath.append(icon('square-sigma', { size: 16 }));
     btnBlockMath.addEventListener('click', (e) => {
       e.preventDefault();
       const start = ta.selectionStart;

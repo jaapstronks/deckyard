@@ -113,11 +113,6 @@
     border-color var(--ps-transition-fast);
 }
 
-.deck-grid-select svg {
-  width: 15px;
-  height: 15px;
-}
-
 .deck-grid-tile:hover .deck-grid-select,
 .deck-grid-select:focus-visible,
 .deck-grid-select.is-checked {
@@ -257,11 +252,6 @@
     color var(--ps-transition-fast);
 }
 
-.deck-grid-peek-btn svg {
-  width: 14px;
-  height: 14px;
-}
-
 .deck-grid-tile:hover .deck-grid-peek-btn,
 .deck-grid-peek-btn:focus-visible {
   opacity: 1;
@@ -315,11 +305,6 @@
   background: hsl(var(--app-bg-elevated));
   color: hsl(var(--app-text-secondary));
   cursor: pointer;
-}
-
-.deck-grid-peek-nav svg {
-  width: 20px;
-  height: 20px;
 }
 
 .deck-grid-peek-nav:hover:not(:disabled) {

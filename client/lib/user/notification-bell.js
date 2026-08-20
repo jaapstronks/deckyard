@@ -4,6 +4,7 @@
  */
 
 import { h, installDismissOnOutside } from '../dom.js';
+import { icon } from '../dom/icons.js';
 import {
   createSSEConnection,
   LONG_LIVED_STREAM,
@@ -63,23 +64,7 @@ export function createNotificationBell({ api, onNavigate }) {
     title: t('notifications.bell', 'Notifications'),
   });
 
-  // Bell icon (SVG)
-  const bellIcon = h(
-    'svg',
-    {
-      class: 'notification-bell-icon',
-      viewBox: '0 0 24 24',
-      fill: 'none',
-      stroke: 'currentColor',
-      'stroke-width': '2',
-      'stroke-linecap': 'round',
-      'stroke-linejoin': 'round',
-    },
-    [
-      h('path', { d: 'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9' }),
-      h('path', { d: 'M13.73 21a2 2 0 0 1-3.46 0' }),
-    ],
-  );
+  const bellIcon = icon('bell', { size: 20 });
 
   // Badge for unread count
   const badge = h('span', { class: 'notification-bell-badge' });

@@ -331,12 +331,6 @@
     color var(--ps-transition-fast);
 }
 
-.ps-view-toggle-btn svg {
-  width: 15px;
-  height: 15px;
-  display: block;
-}
-
 .ps-view-toggle-btn:hover {
   color: hsl(var(--app-text-primary));
 }
@@ -495,11 +489,6 @@
     color var(--ps-transition-fast);
 }
 
-.ps-type-pin svg {
-  width: 14px;
-  height: 14px;
-}
-
 .ps-type-card-wrap:hover .ps-type-pin,
 .ps-type-pin:focus-visible {
   opacity: 1;
@@ -611,9 +600,7 @@
   box-shadow: 0 4px 12px hsl(0 0% 0% / 0.35);
 }
 
-.ps-type-video-play svg {
-  width: 22px;
-  height: 22px;
+.ps-type-video-play .icon {
   color: hsl(220 15% 20%);
   margin-left: 3px; /* Visual centering for play icon */
 }
@@ -668,11 +655,6 @@
   color: hsl(var(--app-text-tertiary));
 }
 
-.ps-type-embed-body svg {
-  width: 40px;
-  height: 40px;
-}
-
 /* ============================================
    Responsive adjustments for thumbnail mode
    ============================================ */
@@ -708,11 +690,6 @@
   transition:
     opacity var(--ps-transition-fast),
     color var(--ps-transition-fast);
-}
-
-.ps-type-peek-btn svg {
-  width: 14px;
-  height: 14px;
 }
 
 .ps-type-card-wrap:hover .ps-type-peek-btn,

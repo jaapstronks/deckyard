@@ -3,6 +3,7 @@
  * Renders individual slide items in the slide list
  */
 
+import { icon } from '../../../lib/dom/icons.js';
 import { oneLine, slideLabel, slidePrimaryLabel } from '../editor-utils.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { getVisibilityPreset } from '../../../../shared/slide-visibility.js';
@@ -12,7 +13,7 @@ import {
   createVisibilityMenu,
   showVisibilityMenuAt,
 } from '../slide-visibility-menu.js';
-import { isParentSlide, createChevronSvg } from './nested-helpers.js';
+import { isParentSlide } from './nested-helpers.js';
 import { normalizeQuery, renderHighlightedText } from './search.js';
 
 /**
@@ -162,7 +163,7 @@ export function createSlideItem({
         toggleCollapsed(s.id);
       },
     });
-    collapseToggle.appendChild(createChevronSvg());
+    collapseToggle.appendChild(icon('chevron-right', { size: 12 }));
     item.append(collapseToggle);
   }
 

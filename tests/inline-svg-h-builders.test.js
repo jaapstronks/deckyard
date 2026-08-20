@@ -1,12 +1,16 @@
 /**
- * Inline-SVG view builders render through h() (client/lib/dom.js).
+ * The two ends of the SVG line, guarded from both sides.
  *
- * timeline-chart.js and slide-visibility-menu.js used to hand-roll their SVG
- * with document.createElementNS + setAttribute. They now go through h(), whose
- * SVG_TAGS path routes svg/g/line/rect/text/desc/path/circle through
- * createElementNS. This guards that the migrated output is still real SVG (in
- * the SVG namespace), keeps its attributes/classes, and that the bar's hover
- * handler is wired — the things a blind createElementNS→h() swap could break.
+ * timeline-chart.js *draws* — axes, bars, gridlines, a <desc> — so it stays on
+ * h(), whose SVG_TAGS path routes svg/g/line/rect/text/desc/path/circle through
+ * createElementNS. This guards that its output is still real SVG (in the SVG
+ * namespace), keeps its attributes/classes, and that the bar's hover handler is
+ * wired — the things a blind createElementNS→h() swap could break.
+ *
+ * slide-visibility-menu.js *shows a glyph*, so it went the other way: its
+ * hand-rolled eye/eye-off pair is now icon('eye' | 'eye-off'), a masked span.
+ * The tests below assert the state still reaches the DOM — which vendored SVG
+ * is masked, and the restricted class — now that no <svg> is there to inspect.
  *
  * Run with: node --test tests/inline-svg-h-builders.test.js
  */
@@ -36,7 +40,7 @@ const { createVisibilityToggle } =
   await import('../client/views/editor/slide-visibility-menu.js');
 const { applyVisibilityPreset } = await import('../shared/slide-visibility.js');
 
-test('visibility toggle renders an SVG eye icon in the SVG namespace', () => {
+test('visibility toggle masks the eye icon for a visible slide', () => {
   const visibleSlide = {};
   const button = createVisibilityToggle({
     h,
@@ -44,24 +48,22 @@ test('visibility toggle renders an SVG eye icon in the SVG namespace', () => {
     onToggle: () => {},
   });
 
-  const svg = button.querySelector('svg');
-  assert.ok(svg, 'toggle contains an <svg>');
-  assert.equal(svg.namespaceURI, SVG_NS, '<svg> is in the SVG namespace');
-  assert.equal(svg.getAttribute('viewBox'), '0 0 24 24');
-  assert.equal(svg.getAttribute('stroke'), 'currentColor');
-  // Visible preset → eye icon = path + circle
-  assert.ok(svg.querySelector('path'), 'has a path');
-  const circle = svg.querySelector('circle');
-  assert.ok(circle, 'visible state draws the eye circle');
-  assert.equal(circle.namespaceURI, SVG_NS);
+  const glyph = button.querySelector('span.icon');
+  assert.ok(glyph, 'toggle contains an icon() span');
+  assert.equal(glyph.style.getPropertyValue('--icon-size'), '14px');
+  assert.match(glyph.style.getPropertyValue('--icon-url'), /\/eye\.svg"\)$/);
   assert.equal(
-    svg.querySelector('line'),
+    button.querySelector('svg'),
     null,
-    'no eye-off strike when visible',
+    'no hand-rolled SVG left in the toggle',
+  );
+  assert.ok(
+    !button.classList.contains('is-visibility-restricted'),
+    'visible slide is not flagged restricted',
   );
 });
 
-test('visibility toggle swaps to the eye-off (line) icon when hidden', () => {
+test('visibility toggle swaps to the eye-off glyph when hidden', () => {
   const hiddenSlide = {};
   applyVisibilityPreset(hiddenSlide, 'hidden');
   const button = createVisibilityToggle({
@@ -70,9 +72,12 @@ test('visibility toggle swaps to the eye-off (line) icon when hidden', () => {
     onToggle: () => {},
   });
 
-  const svg = button.querySelector('svg');
-  assert.ok(svg.querySelector('line'), 'hidden state draws the eye-off strike');
-  assert.equal(svg.querySelector('circle'), null, 'no eye circle when hidden');
+  const glyph = button.querySelector('span.icon');
+  assert.match(
+    glyph.style.getPropertyValue('--icon-url'),
+    /\/eye-off\.svg"\)$/,
+    'hidden state masks the struck-through eye',
+  );
   assert.ok(
     button.classList.contains('is-visibility-restricted'),
     'button flags the restricted state',

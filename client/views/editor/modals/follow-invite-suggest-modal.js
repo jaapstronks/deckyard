@@ -1,3 +1,4 @@
+import { icon } from '../../../lib/dom/icons.js';
 import { t } from '../../../lib/ui-i18n.js';
 
 /**
@@ -27,20 +28,7 @@ export function openFollowInviteSuggestModal({
       'aria-label': t('common.close', 'Close'),
       onclick: () => close(true),
     },
-    [
-      h(
-        'svg',
-        {
-          width: '16',
-          height: '16',
-          viewBox: '0 0 24 24',
-          fill: 'none',
-          stroke: 'currentColor',
-          'stroke-width': '2',
-        },
-        [h('path', { d: 'M18 6L6 18M6 6l12 12' })],
-      ),
-    ],
+    [icon('x', { size: 16 })],
   );
   header.append(title, closeBtn);
 

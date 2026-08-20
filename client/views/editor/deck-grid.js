@@ -8,6 +8,7 @@
  * pending and hydrates lazily via an IntersectionObserver; a per-tile
  * `--thumb-scale` (tile width / 1600) is kept in sync by a ResizeObserver.
  */
+import { icon } from '../../lib/dom/icons.js';
 import { t } from '../../lib/ui-i18n.js';
 import {
   renderSlideElement,
@@ -166,10 +167,8 @@ export function createDeckGridView({
           onclick: () => show(peekIndex + 1),
         })
       : null;
-    if (prevBtn)
-      prevBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>`;
-    if (nextBtn)
-      nextBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>`;
+    if (prevBtn) prevBtn.append(icon('chevron-left', { size: 20 }));
+    if (nextBtn) nextBtn.append(icon('chevron-right', { size: 20 }));
 
     const titleEl = h('h3', { class: 'deck-grid-peek-title' });
     const counterEl = canNav
@@ -416,7 +415,7 @@ export function createDeckGridView({
           toggleSelection(slide, tile);
         },
       });
-      checkbox.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg>`;
+      checkbox.append(icon('check', { size: 15 }));
       tileChildren.push(checkbox);
     }
 
@@ -433,7 +432,7 @@ export function createDeckGridView({
           openPeek(index, peekBtn);
         },
       });
-      peekBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M21 21l-4.35-4.35"/></svg>`;
+      peekBtn.append(icon('search', { size: 14 }));
       tileChildren.push(peekBtn);
     }
 
