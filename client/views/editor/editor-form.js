@@ -651,9 +651,9 @@ export function createRerenderEditor({
       // Bulk modal: the full per-type content form (parity by construction).
       renderSlideFormByType(formTypeCtx);
     } else {
-      // Inspector: only the per-type widgets a flat keeps-list can't express
-      // (chart config, focus pickers, per-card icon/link, per-column image
-      // settings); the loop below renders the remaining keeps.
+      // Inspector: the shared image element card for any type declaring an
+      // `image` element tab, plus the INSPECTOR_EXTRAS exceptions; the loop
+      // below renders the remaining keeps.
       renderInspectorExtrasByType(formTypeCtx);
       // Type-agnostic: a selected text field gets a "This text" element tab
       // with block-level alignment/colour (editing-surfaces text step 3).

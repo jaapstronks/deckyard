@@ -267,8 +267,8 @@ there is no tab bar - just the slide form (identical to the pre-tab pane).
   that declares nothing offers no element tab, which is the answer for most.
   Text selection is not declared at all: any named text field is stylable.
 
-The `data-inspector-section="image"` markers (image-slide, image-text) remain as
-a harmless addressing seam; the element tab now surfaces the controls directly.
+The element tab surfaces the controls directly; the old
+`data-inspector-section="image"` addressing markers are gone (zero consumers).
 
 ### "This text" tab (block-level text styling)
 
