@@ -27,6 +27,7 @@ import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import http from 'node:http';
+import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 import {
@@ -536,15 +537,34 @@ test(
     // request interception Chrome fetches it: no guard, no allow-list, straight
     // out of the deck. Pinned with a real listener rather than an assertion about
     // the code, because only the socket proves it.
-    const hits = [];
+    //
+    // What identifies a leak is the URL we planted, not the port we happen to
+    // own. An ephemeral port is borrowed, not held: the runner starts sixteen
+    // test files at once, and a client in another process that was talking to
+    // this port a moment ago can still be retrying against it while we listen.
+    // That is the standing explanation for the intermittent `['/', '/']` — two
+    // requests for the *origin root*, which the Chrome under test would never
+    // send, because it was given a path. Scoping the assertion to the planted
+    // path costs nothing: a real leak fetches exactly that URL. Foreign traffic
+    // is kept and reported, so the next sighting names its own source instead
+    // of being another anonymous red run. See
+    // docs/plans/briefs/flaky-gradient-raster-port-reuse.md (A7.30).
+    const probePath = `/should-never-be-fetched-${randomUUID()}.png`;
+    const requests = [];
     const srv = http.createServer((req, res) => {
-      hits.push(req.url);
+      requests.push({
+        method: req.method,
+        url: req.url,
+        userAgent: req.headers['user-agent'] || '',
+        from: `${req.socket.remoteAddress}:${req.socket.remotePort}`,
+      });
       res.writeHead(200, { 'content-type': 'image/png' });
       res.end(Buffer.from('89504e470d0a1a0a', 'hex'));
     });
     await new Promise((resolve) => srv.listen(0, '127.0.0.1', resolve));
+    const port = srv.address().port;
     try {
-      const url = `http://127.0.0.1:${srv.address().port}/should-never-be-fetched.png`;
+      const url = `http://127.0.0.1:${port}${probePath}`;
       // The theme switches the layer on, so the pre-check lets the probe run.
       const themeVarsCss = THEME_ON(SELF_CONTAINED_GRADIENT);
       await rasterizeGradientBackgrounds({
@@ -557,7 +577,14 @@ test(
       // Chrome dispatches subresource requests as it parses, so give an
       // un-intercepted fetch every chance to arrive before we conclude it did not.
       await new Promise((resolve) => setTimeout(resolve, 500));
-      assert.deepEqual(hits, [], 'the probe must not reach the network');
+      const leaked = requests.filter((r) => r.url === probePath);
+      const foreign = requests.filter((r) => r.url !== probePath);
+      if (foreign.length) {
+        console.warn(
+          `[A7.30] ${foreign.length} request(s) reached the probe server on port ${port} without asking for ${probePath}: ${JSON.stringify(foreign)}`,
+        );
+      }
+      assert.deepEqual(leaked, [], 'the probe must not reach the network');
     } finally {
       srv.close();
     }
