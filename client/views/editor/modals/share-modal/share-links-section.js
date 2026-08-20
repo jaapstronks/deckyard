@@ -271,7 +271,7 @@ export function createShareLinksSection({
       // Refresh list
       await loadShareLinks();
     } catch (e) {
-      toast?.error(String(e?.message || e), { durationMs: 3000 });
+      toast?.error(e, { durationMs: 3000 });
     } finally {
       isCreating = false;
       createBtn.disabled = false;
@@ -401,7 +401,7 @@ export function createShareLinksSection({
               durationMs: 2000,
             });
           } catch (e) {
-            toast?.error(String(e?.message || e), { durationMs: 3000 });
+            toast?.error(e, { durationMs: 3000 });
           }
         },
       });

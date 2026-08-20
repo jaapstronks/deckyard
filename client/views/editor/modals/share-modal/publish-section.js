@@ -68,7 +68,7 @@ export function createPublishSection({
         render();
       }
     } catch (e) {
-      toast?.error?.(String(e?.message || e), { durationMs: 3000 });
+      toast?.error?.(e, { durationMs: 3000 });
     } finally {
       button.disabled = false;
       button.textContent = original;
@@ -96,7 +96,7 @@ export function createPublishSection({
       syncShareUi?.();
       render();
     } catch (e) {
-      toast?.error?.(String(e?.message || e), { durationMs: 3000 });
+      toast?.error?.(e, { durationMs: 3000 });
     }
   }
 

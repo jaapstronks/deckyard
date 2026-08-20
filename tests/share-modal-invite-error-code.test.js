@@ -91,7 +91,13 @@ function mount(inviteFailure) {
     pres: { id: PRESENTATION_ID, ownerEmail: 'owner@example.com' },
     currentUserEmail: 'owner@example.com',
     toast: {
-      error: (message) => toasts.push({ level: 'error', message }),
+      // Mirror the real toast's coercion (client/lib/dom/toast.js toText):
+      // the canonical call passes the caught Error itself.
+      error: (m) =>
+        toasts.push({
+          level: 'error',
+          message: m instanceof Error ? String(m.message || m) : m,
+        }),
       success: (message) => toasts.push({ level: 'success', message }),
       warning: (message) => toasts.push({ level: 'warning', message }),
     },
