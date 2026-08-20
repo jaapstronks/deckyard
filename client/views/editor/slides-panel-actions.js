@@ -36,7 +36,7 @@ function expandSelectionWithChildren(selectedIds, slides) {
  * @param {Object} options.editorState - Editor state updater
  * @param {Function} options.isAuthor - Check if current user is author
  * @param {Object} [options.SLIDE_TYPES] - Slide-type metadata (drives the
- *   per-type `rekeyOnClone` declaration on paste)
+ *   per-type `instanceKeys` declaration on paste)
  * @returns {Object} Bulk action bar API
  */
 export function createSlidesPanelActions({

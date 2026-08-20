@@ -35,8 +35,8 @@ export default {
   runtime: 'static',
   // `presentationId` caches which deck this slide invites people into (the QR
   // code is built from it), so a copy into another deck has to re-point it.
-  // Vocabulary and rationale in shared/slide-types/clone.js.
-  rekeyOnClone: { presentationId: 'presentation-id' },
+  // Vocabulary and rationale in shared/slide-types/instance-keys.js.
+  instanceKeys: { presentationId: 'presentation-id' },
   label: 'Follow-along invite',
   // Deliberately not offered to agents (see server/utils/ai/slide-catalog/
   // agent-catalog.js): the app inserts and maintains this slide itself, right

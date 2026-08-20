@@ -1,7 +1,7 @@
 /**
  * Slides entering a *new* deck re-derive their instance-bound content keys.
  *
- * `rekeyOnClone` (shared/slide-types/clone.js) says which content keys belong
+ * `instanceKeys` (shared/slide-types/instance-keys.js) says which content keys belong
  * to one slide instance — `poll-slide.pollId`, `follow-invite-slide
  * .presentationId`. The editor honoured it on every copy path; the two server
  * paths that also mint a deck full of someone else's slides did not, so a
