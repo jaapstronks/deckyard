@@ -3,6 +3,7 @@
  */
 
 import { api } from '../../lib/api.js';
+import { createOverlay } from '../../lib/dom/modal.js';
 import { t } from '../../lib/ui-i18n.js';
 import { escapeHtml } from '../../../shared/slide-types/helpers.js';
 
@@ -73,10 +74,15 @@ export function renderGuestJoinPrompt(
   onSuccess,
   prefillEmail,
 ) {
-  // Create modal overlay
-  const overlay = h('div', { class: 'share-viewer-modal-overlay' });
   const modal = h('div', {
     class: 'share-viewer-modal share-viewer-guest-modal',
+  });
+  // The share viewer's own backdrop tint and entrance animation ride along as
+  // a modifier; focus trap, Escape, focus restore and backdrop click come from
+  // the overlay, none of which this prompt had.
+  const overlay = createOverlay(h, {
+    backdropClass: 'modal-backdrop share-viewer-backdrop',
+    surface: modal,
   });
 
   const closeBtn = h('button', {
@@ -84,7 +90,7 @@ export function renderGuestJoinPrompt(
     text: '\u00d7',
     'aria-label': t('common.close', 'Close'),
   });
-  closeBtn.addEventListener('click', () => overlay.remove());
+  closeBtn.addEventListener('click', () => overlay.close());
 
   const title = h('h2', {
     text: t('share.guest.title', 'Join the Discussion'),
@@ -135,15 +141,20 @@ export function renderGuestJoinPrompt(
 
   form.append(emailLabel, emailInput, nameLabel, nameInput, submitBtn);
   modal.append(closeBtn, title, help, form, errorEl, successEl);
-  overlay.append(modal);
-  shell.append(overlay);
+  overlay.show(shell);
 
   // Pre-fill email if provided
   if (prefillEmail) {
     emailInput.value = prefillEmail;
   }
 
-  emailInput.focus();
+  requestAnimationFrame(() => {
+    try {
+      emailInput.focus();
+    } catch {
+      // ignore
+    }
+  });
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -183,11 +194,7 @@ export function renderGuestJoinPrompt(
       successEl.style.display = 'block';
 
       // Close after delay or user interaction
-      setTimeout(() => {
-        if (overlay.parentNode) {
-          overlay.remove();
-        }
-      }, 8000);
+      setTimeout(() => overlay.close(), 8000);
     } catch (err) {
       errorEl.textContent = getGuestErrorMessage(err.message);
       errorEl.style.display = 'block';
@@ -196,13 +203,6 @@ export function renderGuestJoinPrompt(
         'share.guest.submit',
         'Send Verification Email',
       );
-    }
-  });
-
-  // Close on overlay click
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) {
-      overlay.remove();
     }
   });
 }

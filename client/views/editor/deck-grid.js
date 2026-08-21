@@ -9,6 +9,7 @@
  * `--thumb-scale` (tile width / 1600) is kept in sync by a ResizeObserver.
  */
 import { icon } from '../../lib/dom/icons.js';
+import { createOverlay } from '../../lib/dom/modal.js';
 import { t } from '../../lib/ui-i18n.js';
 import {
   renderSlideElement,
@@ -128,21 +129,34 @@ export function createDeckGridView({
   // the picker's click-to-peek: capture-phase Escape so the host modal stays).
   // Navigates through the whole deck without closing (‹ › buttons + arrow keys)
   // and shows the optional peek note (the AI rationale) beside the preview.
-  const openPeek = (index, anchorBtn) => {
+  const openPeek = (index) => {
     closePeek?.();
     const slides = (typeof getSlides === 'function' ? getSlides() : []) || [];
     if (!slides.length) return;
     let peekIndex = Math.max(0, Math.min(index, slides.length - 1));
     const canNav = slides.length > 1;
-    const prevFocus = anchorBtn || document.activeElement;
-
-    const backdrop = h('div', {
-      class: 'modal-backdrop ps-modal-overlay deck-grid-peek-overlay',
-    });
     const card = h('div', {
       class: 'modal ps-modal deck-grid-peek',
       role: 'dialog',
       'aria-modal': 'true',
+    });
+    // Escape and the arrow keys are handled below in the capture phase, so the
+    // peek closes without also closing whatever it opened over; the overlay
+    // owns the backdrop, the focus trap and focus restore.
+    const overlay = createOverlay(h, {
+      backdropClass: 'modal-backdrop deck-grid-peek-overlay',
+      surface: card,
+      closeOnEscape: false,
+      onClose: () => {
+        document.removeEventListener('keydown', onKey, true);
+        window.removeEventListener('resize', updateScale);
+        try {
+          cleanupSlideRuntimes(bigThumb);
+        } catch {
+          // ignore
+        }
+        if (closePeek === close) closePeek = null;
+      },
     });
 
     const stage = h('div', { class: 'deck-grid-peek-stage' });
@@ -214,8 +228,7 @@ export function createDeckGridView({
         h('div', { class: 'deck-grid-peek-foot' }, [info, actions]),
       ]),
     );
-    backdrop.append(card);
-    document.body.append(backdrop);
+    overlay.show(document.body);
 
     const updateScale = () => {
       const r = stage.getBoundingClientRect();
@@ -294,26 +307,8 @@ export function createDeckGridView({
       }
     };
     document.addEventListener('keydown', onKey, true);
-    backdrop.addEventListener('click', (e) => {
-      if (e.target === backdrop) close();
-    });
 
-    const close = () => {
-      document.removeEventListener('keydown', onKey, true);
-      window.removeEventListener('resize', updateScale);
-      try {
-        cleanupSlideRuntimes(bigThumb);
-      } catch {
-        // ignore
-      }
-      backdrop.remove();
-      if (closePeek === close) closePeek = null;
-      try {
-        prevFocus?.focus?.();
-      } catch {
-        // ignore
-      }
-    };
+    const close = () => overlay.close();
     closePeek = close;
 
     show(peekIndex);
@@ -429,7 +424,7 @@ export function createDeckGridView({
         onclick: (e) => {
           e.preventDefault();
           e.stopPropagation();
-          openPeek(index, peekBtn);
+          openPeek(index);
         },
       });
       peekBtn.append(icon('search', { size: 14 }));
@@ -448,7 +443,7 @@ export function createDeckGridView({
     );
 
     tileBtn.addEventListener('click', () => {
-      if (previewOnClick) openPeek(index, tileBtn);
+      if (previewOnClick) openPeek(index);
       else if (selectable) toggleSelection(slide, tile);
       else onTilePick?.(slide, index);
     });

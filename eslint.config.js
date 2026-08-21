@@ -106,21 +106,6 @@ const overlayClassRestriction = {
     'docs/developer/linting.md).',
 };
 
-// Burndown allowlist for the overlay gate: the files that still hand-roll an
-// overlay with one of the restricted class names. Shrinks per migration PR —
-// M2 (settings), M3 (editor dialogs), M4 (chrome-less overlays) — and never
-// grows: a new overlay goes through the helpers.
-const MODAL_OVERLAY_BURNDOWN = [
-  // M2 — settings `.modal-overlay` dialogs: migrated, allowlist empty.
-  // M3 — editor dialogs: migrated, allowlist empty.
-  // M4 — chrome-less overlays (lightbox, peek, guest-join)
-  'client/views/editor/deck-grid.js',
-  'client/views/editor/inline-edit/markdown-modal.js',
-  'client/views/editor/modals/preview-lightbox.js',
-  'client/views/editor/slide-type-picker/peek.js',
-  'client/views/share-viewer/guest-join.js',
-];
-
 export default [
   {
     // Vendored bundles, generated assets, data dirs, gitignored drop-ins, and
@@ -175,14 +160,12 @@ export default [
     },
   },
 
-  // A7.16 cluster 1 burndown: these files still hand-roll an overlay, so the
-  // overlay-class restriction is off for them until their migration PR
-  // (M2/M3/M4) folds them into createModal/createOverlay and deletes them
-  // from MODAL_OVERLAY_BURNDOWN. Every other client restriction stays in
-  // force (rule entries replace per rule name, hence the re-statement).
-  // modal.js itself is the vocabulary's permanent home.
+  // modal.js is the overlay vocabulary's one permanent home, so the
+  // overlay-class restriction is off there — and nowhere else. Every other
+  // client restriction stays in force (rule entries replace per rule name,
+  // hence the re-statement).
   {
-    files: ['client/lib/dom/modal.js', ...MODAL_OVERLAY_BURNDOWN],
+    files: ['client/lib/dom/modal.js'],
     rules: {
       'no-restricted-syntax': ['error', ...clientRestrictedSyntax],
     },

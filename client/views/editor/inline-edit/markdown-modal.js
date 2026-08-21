@@ -28,6 +28,7 @@
 
 import { getByPath, setByPath } from './field-path.js';
 import { installDismissOnOutside } from '../../../lib/dom.js';
+import { createOverlay } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 
 export function createMarkdownEditModal({
@@ -97,7 +98,12 @@ export function createMarkdownEditModal({
     // field (and on their own modal if they have the same field open).
     editorEl.setAttribute('data-collab-field-key', String(path));
 
+    // Saving and cancelling both end in overlay.close(); only the cancel path
+    // re-renders the preview for a ghost-spawned field, so the teardown needs
+    // to know which one it is.
+    let saved = false;
     const save = () => {
+      saved = true;
       if (latest !== raw) {
         setByPath(slide.content, path, latest);
         markDirty?.();
@@ -107,10 +113,7 @@ export function createMarkdownEditModal({
       dismiss();
       rerenderPreview?.();
     };
-    const cancel = () => {
-      dismiss();
-      if (isNew) rerenderPreview?.();
-    };
+    const cancel = () => dismiss();
 
     const closeBtn = h('button', {
       class: 'ie-md-close',
@@ -152,23 +155,28 @@ export function createMarkdownEditModal({
       editorEl,
       footer,
     ]);
-    const backdrop = h('div', { class: 'ie-modal-backdrop' });
-    backdrop.addEventListener('click', cancel);
+    let detach = null;
+    const overlay = createOverlay(h, {
+      backdropClass: 'ie-md-backdrop',
+      surface: modal,
+      onClose: () => {
+        detach?.();
+        detach = null;
+        mdHost.classList.remove('is-ie-modal-open');
+        closeMarkdownModal = null;
+        if (!saved && isNew) rerenderPreview?.();
+      },
+    });
 
     mdHost.classList.add('is-ie-modal-open');
-    mdHost.append(backdrop, modal);
+    overlay.show(mdHost);
 
-    const detach = installDismissOnOutside({
+    detach = installDismissOnOutside({
       rootEl: modal,
-      isOpen: () => true,
+      isOpen: () => overlay.isOpen(),
       close: cancel,
     });
-    closeMarkdownModal = () => {
-      detach?.();
-      backdrop.remove();
-      modal.remove();
-      mdHost.classList.remove('is-ie-modal-open');
-    };
+    closeMarkdownModal = () => overlay.close();
 
     const ta = editorEl.querySelector('textarea');
     modal.addEventListener('keydown', (e) => {

@@ -317,34 +317,6 @@ test('gate: whole-token boundary — longer class tokens are untouched', async (
   );
 });
 
-test('gate: burndown files are exempt from the overlay rule but keep the other client rules', async () => {
-  // The overlay literal deck-grid.js actually carries: exempt.
-  const overlayMessages = await lintProbe(
-    "export const probe = { class: 'modal-backdrop ps-modal-overlay' };\n",
-    'client/views/editor/deck-grid.js',
-  );
-  assert.equal(
-    overlayMessages.filter((m) => OVERLAY_MESSAGE.test(m.message)).length,
-    0,
-    'burndown file must not trip the overlay gate',
-  );
-
-  // ...but the t()-fallback rule must still fire there (the allowlist block
-  // re-states clientRestrictedSyntax; a drifted copy would silently un-gate).
-  const tMessages = await lintProbe(
-    "const t = (k) => k;\nexport const probe = t('only.key');\n",
-    'client/views/editor/deck-grid.js',
-  );
-  assert.ok(
-    tMessages.some(
-      (m) =>
-        m.ruleId === 'no-restricted-syntax' &&
-        /English fallback/.test(m.message),
-    ),
-    `expected the t() fallback error, got: ${JSON.stringify(tMessages)}`,
-  );
-});
-
 test('gate: modal.js itself is the permanent home of the vocabulary', async () => {
   const messages = await lintProbe(
     "export const probe = { class: 'modal-backdrop' };\n",
@@ -353,5 +325,21 @@ test('gate: modal.js itself is the permanent home of the vocabulary', async () =
   assert.equal(
     messages.filter((m) => OVERLAY_MESSAGE.test(m.message)).length,
     0,
+  );
+
+  // ...exempt from the overlay rule only: the other client restrictions still
+  // fire there (the exemption block re-states clientRestrictedSyntax; a
+  // drifted copy would silently un-gate).
+  const tMessages = await lintProbe(
+    "const t = (k) => k;\nexport const probe = t('only.key');\n",
+    'client/lib/dom/modal.js',
+  );
+  assert.ok(
+    tMessages.some(
+      (m) =>
+        m.ruleId === 'no-restricted-syntax' &&
+        /English fallback/.test(m.message),
+    ),
+    `expected the t() fallback error, got: ${JSON.stringify(tMessages)}`,
   );
 });
