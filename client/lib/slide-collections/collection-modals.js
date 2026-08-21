@@ -36,7 +36,7 @@ export function openCollectionEditModal({
   const isEdit = mode === 'edit';
   const initialShelf = isEdit ? collection?.shelf || 'personal' : shelf;
 
-  const modal = createModal(h, {
+  const modal = createModal({
     title: isEdit
       ? t('slideLibrary.collections.edit.title', 'Edit collection')
       : t('slideLibrary.collections.new.title', 'New collection'),
@@ -197,7 +197,7 @@ export function openManageMembersModal({
     ? collection.slideIds.slice()
     : [];
 
-  const modal = createModal(h, {
+  const modal = createModal({
     title: t(
       'slideLibrary.collections.manage.title',
       'Manage slides · {name}',
@@ -346,7 +346,7 @@ export function openAddToCollectionModal({
   collectionsApi,
   onChanged,
 }) {
-  const modal = createModal(h, {
+  const modal = createModal({
     title: t('slideLibrary.collections.addTo.title', 'Add to collection'),
     modalClass: 'collection-add-modal',
     closeOnBackdrop: true,

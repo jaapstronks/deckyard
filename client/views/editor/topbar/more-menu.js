@@ -76,7 +76,7 @@ export function createEditorTopbarMoreMenu({
         }
       }
 
-      const ok = await confirmModal(h, root || document.body, {
+      const ok = await confirmModal(root || document.body, {
         title: t('editor.more.duplicateDeck', 'Duplicate deck…'),
         message: t(
           'editor.more.duplicateDeck.confirm',
@@ -114,7 +114,7 @@ export function createEditorTopbarMoreMenu({
     text: t('editor.more.trash', 'Move to trash…'),
     title: t('editor.more.trash.title', 'Move this presentation to trash.'),
     onclick: async () => {
-      const ok = await confirmModal(h, root || document.body, {
+      const ok = await confirmModal(root || document.body, {
         title: t('editor.more.trash', 'Move to trash…'),
         message: t('editor.more.trash.confirm', 'Move "{title}" to trash?', {
           title:

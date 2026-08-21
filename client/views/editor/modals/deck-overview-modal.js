@@ -34,7 +34,6 @@ export function openDeckOverviewModal({
   // up the grid's observers and slide runtimes.
   let grid = null;
   const modalApi = openModal(
-    h,
     root,
     {
       title: t('editor.deckGrid.title', 'Slide overview'),

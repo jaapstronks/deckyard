@@ -70,7 +70,7 @@ export async function convertSlideWithConfirm({
     slideTypes: SLIDE_TYPES,
   });
   if (lossy.length) {
-    const ok = await confirmModal(h, document.body, {
+    const ok = await confirmModal(document.body, {
       title: t('editor.slide.convert', 'Convert…'),
       message: t(
         'editor.slide.convert.confirmLossy',

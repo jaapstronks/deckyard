@@ -28,7 +28,7 @@ export function createReportModal({
   let expiresInDays = 7;
   let isSubmitting = false;
 
-  const modal = createModal(h, {
+  const modal = createModal({
     title: t('analytics.generateReport', 'Generate Report'),
     modalClass: 'analytics-report-modal',
   });

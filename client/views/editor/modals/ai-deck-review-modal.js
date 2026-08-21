@@ -50,7 +50,6 @@ export function openAiDeckReviewModal({
   const lang = pres?.i18n?.active || null;
 
   const modalApi = openModal(
-    h,
     root,
     {
       title: postGeneration
@@ -261,7 +260,7 @@ export function openAiDeckReviewModal({
       text: t('editor.deckReview.discardDeck', 'Discard deck'),
       onclick: async () => {
         if (busy) return;
-        const ok = await confirmModal(h, document.body, {
+        const ok = await confirmModal(document.body, {
           title: t('editor.deckReview.discardDeck', 'Discard deck'),
           message: t(
             'editor.deckReview.discardConfirm',

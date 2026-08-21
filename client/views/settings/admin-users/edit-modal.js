@@ -150,7 +150,7 @@ function createProfileImageSection(targetUser, avatarEl, initialImageUrl) {
  * @param {Function} onSuccess - Callback after successful update
  */
 export async function showEditModal(targetUser, onSuccess) {
-  const modal = createModal(h, {
+  const modal = createModal({
     title: t('admin.users.editModal.title', 'Edit user'),
   });
 
@@ -226,7 +226,7 @@ export async function showEditModal(targetUser, onSuccess) {
 
   const status = h('div', { class: 'help modal-status', role: 'status' });
 
-  const actions = createModalActions(h, {
+  const actions = createModalActions({
     cancelText: t('common.cancel', 'Cancel'),
     actionText: t('admin.users.editModal.submit', 'Save changes'),
     onCancel: () => modal.requestClose(),

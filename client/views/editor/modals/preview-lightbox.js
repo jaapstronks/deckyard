@@ -44,7 +44,7 @@ export function createPreviewLightbox({
     // Escape is layered here (comment detail → pin mode → close), so the
     // overlay only owns the backdrop, the focus trap and focus restore; the
     // key handler below stays.
-    const overlay = createOverlay(h, {
+    const overlay = createOverlay({
       surface: modal,
       closeOnEscape: false,
       onClose: () => {

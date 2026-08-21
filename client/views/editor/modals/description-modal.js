@@ -22,7 +22,7 @@ export function openDescriptionModal({
   openOverlayClosers,
   requestSave,
 } = {}) {
-  const modal = createPromiseModal(h, {
+  const modal = createPromiseModal({
     title:
       context === 'share'
         ? t(

@@ -106,7 +106,7 @@ export function createPresenterInteractionControls({
       const sessionId = getSessionId?.() || null;
       if (!sessionId || !cur || !isInteractionSlideType(cur.type)) return;
       if (
-        !(await confirmModal(h, document.body, {
+        !(await confirmModal(document.body, {
           title: t('presenter.interaction.reset', 'Reset'),
           message: t('presenter.interaction.resetConfirm', 'Reset results?'),
           confirmLabel: t('presenter.interaction.reset', 'Reset'),

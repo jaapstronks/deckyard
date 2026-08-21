@@ -156,7 +156,7 @@ export function createCollectionsBar({ api, root }) {
         'aria-label': t('common.delete', 'Delete'),
         text: '×',
         onclick: async () => {
-          const ok = await confirmModal(h, root, {
+          const ok = await confirmModal(root, {
             title: t(
               'slideLibrary.collections.delete.title',
               'Delete collection',

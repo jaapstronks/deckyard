@@ -14,7 +14,7 @@ import { revokeApiKey } from './actions.js';
  * @param {Function} onSuccess - Callback after successful revocation
  */
 export function showRevokeModal(key, onSuccess) {
-  const modal = createModal(h, {
+  const modal = createModal({
     title: t('settings.apiKeys.revokeModal.title', 'Revoke API Key'),
   });
 

@@ -570,7 +570,7 @@ export function createSlideTypesTab({ user } = {}) {
   }
 
   async function confirmDeleteCustomType(ct) {
-    const confirmed = await confirmModal(h, document.body, {
+    const confirmed = await confirmModal(document.body, {
       title: t('common.delete', 'Delete'),
       message: t(
         'settings.slideTypes.deleteConfirm',

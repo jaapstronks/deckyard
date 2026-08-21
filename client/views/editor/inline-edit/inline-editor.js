@@ -275,7 +275,7 @@ export function createInlineEditor({
     const selected = live.toString();
     ed.suspendBlur = true;
     try {
-      const url = await promptModal(h, mdHost, {
+      const url = await promptModal(mdHost, {
         title: t('editor.inline.link.title', 'Add link'),
         message: t('editor.inline.link.message', 'Link "{text}" to:', {
           text: selected.length > 40 ? `${selected.slice(0, 40)}…` : selected,

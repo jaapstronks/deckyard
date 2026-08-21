@@ -272,7 +272,7 @@ export function createFontsTab({ user } = {}) {
 
   // ─── Delete family ────────────────────────────────────────
   async function handleDelete(family) {
-    const confirmed = await confirmModal(h, document.body, {
+    const confirmed = await confirmModal(document.body, {
       title: t('common.delete', 'Delete'),
       message: t(
         'fonts.confirmDelete',

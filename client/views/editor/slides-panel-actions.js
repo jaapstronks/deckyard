@@ -128,7 +128,7 @@ export function createSlidesPanelActions({
       }
 
       if (
-        !(await confirmModal(h, document.body, {
+        !(await confirmModal(document.body, {
           title: t('editor.slides.bulkDeleteTitle', 'Delete selected slides'),
           message: confirmMsg,
           confirmLabel: t('common.delete', 'Delete'),

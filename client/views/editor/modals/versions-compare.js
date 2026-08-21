@@ -39,7 +39,7 @@ export function openVersionCompareModal({
   const versionDate = formatDateTime(version?.created);
   const versionLabel = version?.label || '';
 
-  const modal = createPromiseModal(h, {
+  const modal = createPromiseModal({
     title: t('editor.versions.compare.title', 'Compare versions'),
     modalClass: 'modal-wide modal-compare',
     closeOnBackdrop: true,

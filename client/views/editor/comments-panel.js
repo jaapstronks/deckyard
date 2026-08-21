@@ -260,7 +260,7 @@ export function createCommentsPanel({
     if (missing.length === 0) return;
 
     const names = missing.map((m) => m.name || m.email).join(', ');
-    const share = await confirmModal(h, document.body, {
+    const share = await confirmModal(document.body, {
       title: t('mentions.noAccess.title', 'No access to this presentation'),
       message: t(
         'mentions.noAccess.message',

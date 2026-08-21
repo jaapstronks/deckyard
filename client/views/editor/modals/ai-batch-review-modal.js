@@ -46,7 +46,6 @@ export function openAiBatchReviewModal({
   let grid = null;
 
   const modalApi = openModal(
-    h,
     root,
     {
       title: t('editor.aiReview.title', 'Review AI slides'),

@@ -88,7 +88,7 @@ export function createImageLibraryDetail({
           'Delete this image from the library? This will NOT delete the uploaded file; existing slides using the URL will keep working.',
         ),
       );
-      const ok = await confirmModal(h, document.body, {
+      const ok = await confirmModal(document.body, {
         title: t('imageLibrary.delete.title', 'Delete image'),
         message: lines.join('\n'),
         confirmLabel: t('common.delete', 'Delete'),
@@ -193,7 +193,7 @@ export function createImageLibraryDetail({
     const ensureAltBeforeUse = async () => {
       if (!altsAreEmpty()) return true;
       if (canAiAlt) {
-        const genOk = await confirmModal(h, document.body, {
+        const genOk = await confirmModal(document.body, {
           title: t('imageLibrary.alt.missingTitle', 'Alt text missing'),
           message: t(
             'imageLibrary.alt.missingSuggestGenerate',
@@ -237,7 +237,7 @@ export function createImageLibraryDetail({
           }
         }
       }
-      return await confirmModal(h, document.body, {
+      return await confirmModal(document.body, {
         title: t('imageLibrary.alt.missingTitle', 'Alt text missing'),
         message: t(
           'imageLibrary.alt.missingConfirmUse',
@@ -256,7 +256,7 @@ export function createImageLibraryDetail({
               const overwriteOk =
                 String(inAltNl.value || '').trim() ||
                 String(inAltEn.value || '').trim()
-                  ? await confirmModal(h, document.body, {
+                  ? await confirmModal(document.body, {
                       title: t(
                         'imageLibrary.alt.overwriteTitle',
                         'Overwrite alt text',

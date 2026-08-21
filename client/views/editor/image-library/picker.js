@@ -137,7 +137,7 @@ export function openImageLibraryPicker({
   }
   let stockMediaStatus = null;
 
-  const modal = createModal(h, {
+  const modal = createModal({
     title,
     modalClass: 'image-library-modal',
     onClose: () => {

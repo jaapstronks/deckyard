@@ -3,7 +3,6 @@
  * Event handlers and async operations.
  */
 
-import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
@@ -120,7 +119,7 @@ export function createActions(state, elements, rebuildUI) {
   const onReset = async () => {
     if (state.isBusy()) return;
 
-    const confirmed = await confirmModal(h, document.body, {
+    const confirmed = await confirmModal(document.body, {
       title: t('settings.admin.emailTemplates.resetTitle', 'Reset to default'),
       message: t(
         'settings.admin.emailTemplates.resetConfirm',

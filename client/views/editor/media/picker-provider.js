@@ -155,7 +155,6 @@ function imagekitProvider(openImageKitRaw) {
  */
 function openSourceChooser({ h, root, providers, onChoose }) {
   const modal = createQuickModal({
-    h,
     root: root || document.body,
     title: t('editor.image.source.title', 'Choose image source'),
     className: 'image-source-chooser',

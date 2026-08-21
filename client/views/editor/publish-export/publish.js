@@ -122,7 +122,7 @@ export async function doPublish({
       if (!r?.ok) return null;
     }
 
-    const ok = await confirmModal(h, root, {
+    const ok = await confirmModal(root, {
       title: t('editor.publish.publish', 'Publish'),
       message: t(
         'editor.publish.confirm',
@@ -158,7 +158,7 @@ export async function doPublish({
       'Warning: these slides contain an image without alt text (NL/EN): {slides}\n\nPublish anyway?',
       { slides: missingAlt.join(', ') },
     );
-    const ok = await confirmModal(h, root, {
+    const ok = await confirmModal(root, {
       title: t('editor.publish.missingAltTitle', 'Missing alt text'),
       message: msg,
       confirmLabel: t('editor.publish.publishAnyway', 'Publish anyway'),

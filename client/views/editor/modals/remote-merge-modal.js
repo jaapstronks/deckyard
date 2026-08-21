@@ -48,7 +48,7 @@ export function openRemoteMergeModal({
     .map((s, i) => ({ s, i }))
     .filter(({ s }) => s && typeof s.id === 'string' && changed.has(s.id));
 
-  const modalApi = createModal(h, {
+  const modalApi = createModal({
     title: t('editor.remoteMerge.title', 'Changes merged in'),
   });
 

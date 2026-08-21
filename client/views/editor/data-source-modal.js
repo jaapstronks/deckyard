@@ -79,7 +79,7 @@ export function openDataSourceConfigModal({
   const bindableInfo = BINDABLE_SLIDE_TYPES[slideType];
   if (!bindableInfo) return;
 
-  const modal = createModal(h, {
+  const modal = createModal({
     title: t('dataSource.modal.title', 'Connect Data Source'),
     hint: t('dataSource.modal.hint', 'Bind live data to this {type} slide', {
       type: bindableInfo.label,

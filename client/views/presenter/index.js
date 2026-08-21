@@ -569,7 +569,7 @@ export async function renderPresenter(root, id, { nav } = {}) {
       leaveConfirmOpen = true;
       let ok = false;
       try {
-        ok = await confirmModal(h, document.body, {
+        ok = await confirmModal(document.body, {
           title: t('presenter.leave.title', 'Leave presentation?'),
           message: t(
             'presenter.leave.message',

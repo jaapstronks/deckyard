@@ -48,7 +48,7 @@ export function createCommentLinkButton({ input, root, className = '' }) {
     if (!input.getSelectedText?.()) input.rememberSelection?.();
     const selected = input.getSelectedText?.() || '';
 
-    const url = await promptModal(h, root || document.body, {
+    const url = await promptModal(root || document.body, {
       title: t('comments.link.add', 'Add link'),
       message: selected
         ? t('comments.link.messageWithSelection', 'Link "{text}" to:').replace(

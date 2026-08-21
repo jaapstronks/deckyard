@@ -93,7 +93,7 @@ export function openChartDataModal({
   ]);
 
   let detachScale = null;
-  const modal = createModal(h, {
+  const modal = createModal({
     title: t('editor.chart.editDataTitle', 'Chart data'),
     modalClass: 'chart-data-modal',
     isDirty: () => latest !== raw,

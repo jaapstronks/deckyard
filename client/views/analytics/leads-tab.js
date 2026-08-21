@@ -255,7 +255,7 @@ export function createLeadsTab({
   async function handleDelete(e, lead) {
     const btn = e.target;
     if (
-      !(await confirmModal(h, document.body, {
+      !(await confirmModal(document.body, {
         title: t('common.delete', 'Delete'),
         message: t(
           'analytics.confirmDeleteLead',

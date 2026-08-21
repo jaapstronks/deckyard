@@ -3,7 +3,6 @@
  * Extracted from comments-panel.js for better modularity.
  */
 
-import { h } from '../../lib/dom.js';
 import { confirmModal } from '../../lib/dom/modal.js';
 import { t } from '../../lib/ui-i18n.js';
 
@@ -59,7 +58,7 @@ export function createCommentActions({
    */
   async function deleteComment(commentId) {
     if (
-      !(await confirmModal(h, document.body, {
+      !(await confirmModal(document.body, {
         title: t('comments.delete', 'Delete'),
         message: t('comments.deleteConfirm', 'Delete this comment?'),
         confirmLabel: t('comments.delete', 'Delete'),
@@ -119,7 +118,7 @@ export function createCommentActions({
 
         // Show follow-up prompt to delete original slide
         const slideNum = result.originalSlideIndex + 1;
-        const shouldDelete = await confirmModal(h, document.body, {
+        const shouldDelete = await confirmModal(document.body, {
           title: t('comments.deleteOriginal', 'Delete original slide'),
           message: t(
             'comments.deleteOriginalPrompt',

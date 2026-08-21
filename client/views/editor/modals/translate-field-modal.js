@@ -91,7 +91,7 @@ export async function openTranslateFieldModal({
 
   const unlockScroll = lockDocumentScroll?.();
 
-  const modal = createModal(h, {
+  const modal = createModal({
     title:
       targetLang === 'nl'
         ? `Vul veld (vertaling) → NL`

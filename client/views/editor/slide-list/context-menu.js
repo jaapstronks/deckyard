@@ -124,7 +124,7 @@ export function showSlideContextMenu({ x, y, slide, ids, ctx }) {
       label: t('editor.slide.moveTo', 'Move to position…'),
       onClick: async () => {
         closeSlideContextMenu();
-        const answer = await promptModal(h, document.body, {
+        const answer = await promptModal(document.body, {
           title: t('editor.slide.moveTo', 'Move to position…'),
           message: t(
             'editor.slide.moveToHint',

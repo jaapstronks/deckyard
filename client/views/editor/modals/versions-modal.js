@@ -17,7 +17,7 @@ import { openVersionCompareModal } from './versions-compare.js';
  * @returns {Promise<{ok: boolean, label?: string}>}
  */
 function openLabelModal({ h, root, openOverlayClosers } = {}) {
-  const modal = createPromiseModal(h, {
+  const modal = createPromiseModal({
     title: t('editor.versions.labelModalTitle', 'Create save point'),
     hint: t(
       'editor.versions.labelModalHint',
@@ -27,7 +27,7 @@ function openLabelModal({ h, root, openOverlayClosers } = {}) {
     onClose: (result) => result || { ok: false },
   });
 
-  const labelInput = createTextInput(h, {
+  const labelInput = createTextInput({
     placeholder: t(
       'editor.versions.labelPlaceholder',
       'E.g. Before major changes',
@@ -35,7 +35,7 @@ function openLabelModal({ h, root, openOverlayClosers } = {}) {
     autoFocus: true,
   });
 
-  const actions = createModalActions(h, {
+  const actions = createModalActions({
     cancelText: t('common.cancel', 'Cancel'),
     actionText: t('editor.versions.createSavePoint', 'Create save point'),
     onCancel: () => modal.close({ ok: false }),
@@ -61,7 +61,7 @@ export function openVersionsModal({
   onRestored,
   theme,
 } = {}) {
-  const modal = createModal(h, {
+  const modal = createModal({
     title: t('editor.versions.title', 'Versions'),
     hint: t(
       'editor.versions.hint',
@@ -208,7 +208,7 @@ export function openVersionsModal({
                 return;
               }
             }
-            const ok = await confirmModal(h, root, {
+            const ok = await confirmModal(root, {
               title: t('editor.versions.restore', 'Restore'),
               message: t(
                 'editor.versions.confirmRestore',

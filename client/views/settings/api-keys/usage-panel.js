@@ -14,7 +14,7 @@ import { fetchKeyUsage } from './actions.js';
 export async function showUsagePanel(key) {
   // Read-only panel: the header's Close is the only exit it needs, so there is
   // no second Close button in a footer row.
-  const modal = createModal(h, {
+  const modal = createModal({
     title: t('settings.apiKeys.usageModal.title', 'API Key Usage'),
     modalClass: 'api-key-usage-modal',
   });

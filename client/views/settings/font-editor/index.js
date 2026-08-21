@@ -112,7 +112,7 @@ export function createFontEditor({ fontFamily, onSave, onCancel, onDelete }) {
       type: 'button',
       text: t('common.delete', 'Delete'),
       onclick: async () => {
-        const confirmed = await confirmModal(h, document.body, {
+        const confirmed = await confirmModal(document.body, {
           title: t('common.delete', 'Delete'),
           message: t(
             'fonts.confirmDelete',

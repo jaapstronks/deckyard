@@ -28,7 +28,7 @@ export function openImageKitPicker({
   const unlockScroll = lockDocumentScroll();
   let closed = false;
 
-  const modal = createModal(h, {
+  const modal = createModal({
     title,
     modalClass: 'imagekit-modal',
     onClose: () => {
@@ -409,7 +409,7 @@ export function openImageKitPicker({
       onclick: async () => {
         const seed = cleanStr(altTa.value);
         if (!seed) {
-          const ok = await confirmModal(h, root, {
+          const ok = await confirmModal(root, {
             title: t('imagekit.alt.missingTitle', 'ALT text missing'),
             message: t(
               'imagekit.alt.missingConfirm',

@@ -60,7 +60,7 @@ export function openTypePeek(type, _anchorBtn, preset, ctx) {
   });
   // Escape is handled below in the capture phase so it closes the peek without
   // also closing the picker modal underneath; the overlay owns the rest.
-  const overlay = createOverlay(h, {
+  const overlay = createOverlay({
     backdropClass: 'modal-backdrop ps-type-peek-overlay',
     surface: card,
     closeOnEscape: false,

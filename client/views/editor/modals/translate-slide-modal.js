@@ -103,7 +103,7 @@ export async function openTranslateSlideModal({
 
   const unlockScroll = lockDocumentScroll?.();
 
-  const modal = createModal(h, {
+  const modal = createModal({
     title:
       targetLang === 'nl'
         ? t('editor.slide.fillTranslationToNl', 'Fill slide (translation) → NL')

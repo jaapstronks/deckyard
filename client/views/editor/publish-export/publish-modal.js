@@ -31,7 +31,7 @@ export function openPublishModal({
 
   const unlockScroll = lockDocumentScroll();
 
-  const modal = createModal(h, {
+  const modal = createModal({
     title: t('editor.publishModal.title', 'Published'),
     modalClass: 'publish-modal',
     onClose: () => unlockScroll(),
@@ -253,7 +253,7 @@ export function openPublishModal({
             type: 'button',
             text: t('editor.publish.unpublish', 'Unpublish'),
             onclick: async () => {
-              const ok = await confirmModal(h, root, {
+              const ok = await confirmModal(root, {
                 title: t('editor.publish.unpublish', 'Unpublish'),
                 message: t(
                   'editor.publish.unpublish.confirm',

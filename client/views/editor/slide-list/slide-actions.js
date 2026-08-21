@@ -9,7 +9,6 @@
  * caller decides that).
  */
 
-import { h } from '../../../lib/dom.js';
 import { cloneSlidesForInsert } from '../../../lib/slide-authoring/clone-slides.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
@@ -132,7 +131,7 @@ export async function deleteSlides({
   }
 
   if (
-    !(await confirmModal(h, document.body, {
+    !(await confirmModal(document.body, {
       title: t('editor.slide.delete', 'Delete'),
       message: confirmMsg,
       confirmLabel: t('common.delete', 'Delete'),

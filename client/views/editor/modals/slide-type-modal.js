@@ -36,7 +36,7 @@ export function openSlideTypeModal({
   let insertAfterSlideId = afterSlideId ?? null;
   const insertParentId = parentId ?? null;
 
-  const modal = createModal(h, {
+  const modal = createModal({
     title: t('editor.slideTypeModal.title', 'Insert slide'),
     modalClass: 'ps-modal slide-type-modal',
     closeButton: 'icon',

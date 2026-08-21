@@ -50,7 +50,6 @@ export function openBundledGradientPicker({
   let tone = 'all';
 
   const modalApi = openModal(
-    h,
     root,
     {
       title,

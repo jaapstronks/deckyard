@@ -80,7 +80,7 @@ export function createPublishSection({
   }
 
   async function unpublish() {
-    const ok = await confirmModal(h, modalRoot || document.body, {
+    const ok = await confirmModal(modalRoot || document.body, {
       title: t('editor.publish.unpublish', 'Unpublish'),
       message: t(
         'editor.publish.unpublish.confirm',

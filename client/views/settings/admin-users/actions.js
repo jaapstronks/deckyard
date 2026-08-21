@@ -3,7 +3,6 @@
  */
 
 import { api } from '../../../lib/api.js';
-import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
@@ -34,7 +33,7 @@ export async function fetchUsers(onSuccess, onError) {
  * @returns {Promise<void>}
  */
 export async function confirmDelete(targetUser, onSuccess) {
-  const confirmed = await confirmModal(h, document.body, {
+  const confirmed = await confirmModal(document.body, {
     title: t('admin.users.delete', 'Delete'),
     message: t(
       'admin.users.deleteConfirm',

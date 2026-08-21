@@ -15,7 +15,7 @@ export function openSlideLibraryModal({
   initialQuery = '',
   allowInsert = true,
 } = {}) {
-  const modal = createModal(h, {
+  const modal = createModal({
     title: t('slideLibrary.modal.title', 'Slide library'),
     modalClass: 'ps-modal slide-library-modal',
     closeButton: 'icon',

@@ -80,7 +80,7 @@ export function renderGuestJoinPrompt(
   // The share viewer's own backdrop tint and entrance animation ride along as
   // a modifier; focus trap, Escape, focus restore and backdrop click come from
   // the overlay, none of which this prompt had.
-  const overlay = createOverlay(h, {
+  const overlay = createOverlay({
     backdropClass: 'modal-backdrop share-viewer-backdrop',
     surface: modal,
   });

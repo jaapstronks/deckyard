@@ -95,7 +95,7 @@ export function openAiAppendWizard({
 
   const isDirty = () => !!String(ta.value || '').trim();
 
-  const modalApi = openModal(h, root, {
+  const modalApi = openModal(root, {
     title: t('editor.aiAppend.title', 'AI: add slides'),
     isDirty,
     confirmMessage: t(

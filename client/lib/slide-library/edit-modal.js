@@ -134,7 +134,7 @@ export function openEditModal({
   const workingContent = { ...(item.content || {}) };
   let workingName = item.name || '';
 
-  const modal = createModal(h, {
+  const modal = createModal({
     title: t('slideLibrary.edit.title', 'Edit slide'),
     modalClass: 'ps-modal ps-lib-edit-modal',
     closeLabel: t('common.cancel', 'Cancel'),

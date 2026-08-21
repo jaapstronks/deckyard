@@ -290,7 +290,7 @@ export function createShareViewerCommentsSection({
 
   async function deleteCommentAction(commentId) {
     if (
-      !(await confirmModal(h, document.body, {
+      !(await confirmModal(document.body, {
         title: t('comments.delete', 'Delete'),
         message: t('comments.deleteConfirm', 'Delete this comment?'),
         confirmLabel: t('comments.delete', 'Delete'),

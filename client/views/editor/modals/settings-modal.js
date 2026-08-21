@@ -35,7 +35,7 @@ export function openSettingsModal({
   onThemeChanged,
   onNavigateToSlide,
 } = {}) {
-  const modal = createModal(h, {
+  const modal = createModal({
     title: t('editor.deckSettings.title', 'Deck settings'),
   });
 
