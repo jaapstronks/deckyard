@@ -38,7 +38,10 @@ export function detectPrismKatexNeeds(html) {
 
 /**
  * Generate CDN link/script tags for Prism.js and KaTeX.
- * Returns an HTML string to be inserted in <head>.
+ *
+ * Returns one tag per line at column zero: the head chain
+ * (server/utils/head-chain.js) owns indentation, so a fragment that
+ * hand-indents for one caller's template shape lands ragged in the next.
  *
  * @param {object} [options]
  * @param {boolean} [options.prism=true] Emit the Prism tags.
@@ -57,30 +60,26 @@ export function buildPrismKatexCdnTags({
   const parts = [];
 
   if (prism) {
-    const languageScripts = resolvePrismComponents(languages)
-      .map(
-        (lang) =>
-          `    <script src="${prismBase}/components/prism-${lang}.min.js"></script>`,
-      )
-      .join('\n');
     parts.push(
-      `<!-- Prism.js for code syntax highlighting -->
-    <link rel="stylesheet" href="${prismBase}/themes/prism-tomorrow.min.css" />
-    <script src="${prismBase}/prism.min.js"></script>${
-      languageScripts ? `\n${languageScripts}` : ''
-    }`,
+      '<!-- Prism.js for code syntax highlighting -->',
+      `<link rel="stylesheet" href="${prismBase}/themes/prism-tomorrow.min.css" />`,
+      `<script src="${prismBase}/prism.min.js"></script>`,
+      ...resolvePrismComponents(languages).map(
+        (lang) =>
+          `<script src="${prismBase}/components/prism-${lang}.min.js"></script>`,
+      ),
     );
   }
 
   if (katex) {
     parts.push(
-      `<!-- KaTeX for math rendering -->
-    <link rel="stylesheet" href="${katexBase}/dist/katex.min.css" />
-    <script src="${katexBase}/dist/katex.min.js"></script>`,
+      '<!-- KaTeX for math rendering -->',
+      `<link rel="stylesheet" href="${katexBase}/dist/katex.min.css" />`,
+      `<script src="${katexBase}/dist/katex.min.js"></script>`,
     );
   }
 
-  return parts.join('\n    ');
+  return parts.join('\n');
 }
 
 /**

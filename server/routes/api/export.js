@@ -12,6 +12,7 @@ import {
 } from '../../export/notes.js';
 import { renderSlideToPngBuffer } from '../../render/png.js';
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
+import { resolveDocLangFromPresentation } from '../../utils/doc-lang.js';
 import { renderSlidesToPdfBuffer } from '../../render/pdf.js';
 import { presentationToDeck } from '../../../shared/slide-types.js';
 import { badRequest, withErrorHandler } from '../../utils/http.js';
@@ -218,6 +219,7 @@ async function handlePngSlideExport(
       theme: ctx.theme,
       slideTypes: ctx.slideTypes,
       lang: resolveDeckLang(ctx.pres),
+      docLang: resolveDocLangFromPresentation(ctx.pres),
     });
 
     sendExportResponse(res, {

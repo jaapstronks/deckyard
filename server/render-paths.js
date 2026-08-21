@@ -19,8 +19,10 @@
  * **Uniform signature.** Every `build` takes `(repoRoot, pres, options)` and
  * returns a document string (or a promise of one), so a caller can loop without
  * knowing which path it is holding. Paths that render a single slide rather than
- * a whole deck declare `scope: 'slide'` and receive `pres.slides[0]`; the
- * adapter below is where that unwrapping happens, not at the call site.
+ * a whole deck declare `scope: 'slide'` and receive `pres.slides[0]` plus the
+ * deck's `docLang` — a bare slide cannot see a deck-level `pres.lang`, and an
+ * RTL deck whose PNGs raster left-to-right is the bug that costs. The adapter
+ * below is where that unwrapping happens, not at each call site.
  *
  * **Imports are eager on purpose.** A register whose entries have to be awaited
  * before they can be inspected is a lookup table, not a register — and the
@@ -40,6 +42,7 @@ import {
 } from './mcp/preview.js';
 import { buildEmbedHtml } from './utils/embed-html/index.js';
 import { buildReaderHtml } from './export/reader.js';
+import { resolveDocLangFromPresentation } from './utils/doc-lang.js';
 
 /**
  * Document shape. `canvas` paths project the deck onto the fixed 1600×900 stage
@@ -104,7 +107,10 @@ export const RENDER_PATHS = Object.freeze([
     kind: 'canvas',
     scope: 'slide',
     build: (repoRoot, pres, options = {}) =>
-      buildSlidePngHtml(repoRoot, firstSlide(pres), options),
+      buildSlidePngHtml(repoRoot, firstSlide(pres), {
+        docLang: resolveDocLangFromPresentation(pres),
+        ...options,
+      }),
   },
   {
     name: 'mcp/preview (list)',
@@ -114,6 +120,7 @@ export const RENDER_PATHS = Object.freeze([
     build: (repoRoot, pres, options = {}) =>
       buildSlidePreviewHtml(slidesOf(pres), {
         title: pres?.title || 'Slide Preview',
+        docLang: resolveDocLangFromPresentation(pres),
         ...options,
         repoRoot,
       }),
@@ -124,7 +131,11 @@ export const RENDER_PATHS = Object.freeze([
     kind: 'canvas',
     scope: 'slide',
     build: (repoRoot, pres, options = {}) =>
-      buildSingleSlidePreviewHtml(firstSlide(pres), { ...options, repoRoot }),
+      buildSingleSlidePreviewHtml(firstSlide(pres), {
+        docLang: resolveDocLangFromPresentation(pres),
+        ...options,
+        repoRoot,
+      }),
   },
   {
     name: 'utils/embed-html',
@@ -158,6 +169,9 @@ export const RENDER_PATHS = Object.freeze([
  * that stops applying is how a path sneaks back out of the register.
  */
 export const NON_RENDER_PATH_DOCUMENTS = Object.freeze({
+  'server/utils/head-chain.js':
+    "the head chain itself — since A7.32 the one place a render path's " +
+    'document opening is written, which is what makes it addressable at all',
   'server/routes/static/embed.js':
     'error page shown when a render path threw — deliberately renders no deck',
   'server/routes/public-api/v1/index.js':

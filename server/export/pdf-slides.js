@@ -17,6 +17,7 @@ import {
   embedSlideImages,
 } from './css-bundle.js';
 import { pdfImageEmbedTransform } from './image-compress.js';
+import { buildDocumentHead } from '../utils/head-chain.js';
 import {
   measureImageDisplayPx,
   displayAwareEmbedTransform,
@@ -320,7 +321,8 @@ export async function buildSlidesPdfHtml(
   const baseUrl = getAppBaseUrl();
   const css = await loadExportCssBundle(repoRoot, theme, watermark);
 
-  const title = escapeHtml(pres.title || 'Presentation');
+  const rawTitle = pres.title || 'Presentation';
+  const title = escapeHtml(rawTitle);
 
   // Downsample + recompress images as they are inlined so a full-res photo
   // doesn't drag its original pixels into the PDF (null = compression disabled).
@@ -413,19 +415,12 @@ export async function buildSlidesPdfHtml(
   );
 
   // A4 landscape in CSS pixels varies by browser DPI; we use JS to scale the 1600x900 slide canvas per page.
-  return `<!doctype html>
-<html lang="${escapeHtml(docLang)}">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>${title} (PDF Slides)</title>
-    ${buildPrismKatexCdnTags()}
-    <style>
-${buildStyleContent(css)}
-
-${gradients.extraCss}
-    </style>
-  </head>
+  return `${buildDocumentHead({
+    lang: docLang,
+    title: `${rawTitle} (PDF Slides)`,
+    head: [buildPrismKatexCdnTags()],
+    styles: [`${buildStyleContent(css)}\n\n${gradients.extraCss}`],
+  })}
   <body>
     <div class="pdf-toolbar">
       <div style="flex:1">${title}</div>

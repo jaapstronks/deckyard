@@ -2,6 +2,7 @@ import { escapeHtml } from './helpers.js';
 import { DEFAULT_THEME_ID } from '../../../shared/constants/themes.js';
 import { repoRoot as defaultRepoRoot } from '../../config/paths.js';
 import { buildCssChain } from '../css-chain.js';
+import { buildDocumentHead } from '../head-chain.js';
 
 /**
  * The embed shell's own CSS: iframe-friendly chrome around the deck, no app
@@ -92,8 +93,7 @@ const EMBED_SHELL_CSS = `
 export function renderEmbedHtmlDocument({
   repoRoot = defaultRepoRoot,
   title = 'Presentation',
-  docLang = 'en',
-  docDir = 'ltr',
+  docLang = 'nl',
   totalSlides = 0,
   publishId = '',
   ui = 'default',
@@ -106,9 +106,6 @@ export function renderEmbedHtmlDocument({
   watermarkHtml = '',
   boot = {},
 } = {}) {
-  const safeTitle = escapeHtml(title || 'Presentation');
-  const lang = docLang === 'nl' ? 'nl' : 'en';
-  const dir = docDir === 'rtl' ? 'rtl' : 'ltr';
   const mode = ui === 'min' ? 'min' : 'default';
   const safeTotalSlides = Math.max(0, Number(totalSlides || 0) || 0);
   const safeBoot = {
@@ -121,30 +118,29 @@ export function renderEmbedHtmlDocument({
   };
   const bootJson = JSON.stringify(safeBoot, null, 0);
 
-  const safeThemeId = escapeHtml(String(themeId || DEFAULT_THEME_ID));
+  const docThemeId = String(themeId || DEFAULT_THEME_ID);
   const themeVars = String(themeVarsCss || '');
   const extraHead = String(headHtml || '');
   const extraFontHtml = String(externalFontHtml || '');
   const wmCss = String(watermarkCss || '');
   const wmHtml = String(watermarkHtml || '');
-  return `<!doctype html>
-<html lang="${escapeHtml(lang)}" dir="${escapeHtml(dir)}" data-theme="${safeThemeId}">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="robots" content="noindex,nofollow" />
-    <title>${safeTitle}</title>
-    ${extraHead}
-    ${extraFontHtml}
-    <link rel="stylesheet" href="/assets/fonts/google/fonts.css" />
-    <link rel="stylesheet" href="/client/styles/embed.css" />
-    <link rel="stylesheet" href="/client/styles/theme.css" />
-    <link rel="stylesheet" href="/client/styles/slides.css" />
-    <style id="ps-theme-vars">${themeVars}</style>
-    <style>
-${buildCssChain(repoRoot, [EMBED_SHELL_CSS, wmCss])}
-    </style>
-  </head>
+  return `${buildDocumentHead({
+    lang: docLang,
+    htmlAttrs: { 'data-theme': docThemeId },
+    title: title || 'Presentation',
+    robots: 'noindex,nofollow',
+    head: [extraHead, extraFontHtml],
+    stylesheets: [
+      '/assets/fonts/google/fonts.css',
+      '/client/styles/embed.css',
+      '/client/styles/theme.css',
+      '/client/styles/slides.css',
+    ],
+    styles: [
+      { id: 'ps-theme-vars', css: themeVars },
+      buildCssChain(repoRoot, [EMBED_SHELL_CSS, wmCss]),
+    ],
+  })}
   <body>
     <div class="ps-embed ui-${escapeHtml(mode)}">
       <div class="ps-embed-controls" role="toolbar" aria-label="Presentation controls">

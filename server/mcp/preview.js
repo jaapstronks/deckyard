@@ -14,7 +14,37 @@ import { readTextIfExists } from '../utils/html-utils.js';
 import { themeVarsCssText } from '../utils/themes.js';
 import { embedSlideImages } from '../export/css-bundle.js';
 import { buildCssChain } from '../utils/css-chain.js';
+import { buildDocumentHead } from '../utils/head-chain.js';
+import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { repoRoot as defaultRepoRoot } from '../config/paths.js';
+
+/** Fit each 1600x900 stage into its frame. Inert until load/resize, so it can
+ *  sit in the head next to the CSS it depends on. */
+const LIST_SCALE_SCRIPT = `<script>
+  function scaleStages() {
+    document.querySelectorAll('.preview-frame').forEach(frame => {
+      const stage = frame.querySelector('.preview-stage');
+      if (!stage) return;
+      const scale = frame.offsetWidth / 1600;
+      stage.style.transform = 'scale(' + scale + ')';
+    });
+  }
+  window.addEventListener('load', scaleStages);
+  window.addEventListener('resize', scaleStages);
+</script>`;
+
+/** The single-slide variant of the same thing. */
+const SINGLE_SCALE_SCRIPT = `<script>
+  function scaleStage() {
+    var frame = document.querySelector('.frame');
+    var stage = document.querySelector('.stage');
+    if (frame && stage) {
+      stage.style.transform = 'scale(' + (frame.offsetWidth / 1600) + ')';
+    }
+  }
+  window.addEventListener('load', scaleStage);
+  window.addEventListener('resize', scaleStage);
+</script>`;
 
 /** repoRoot -> minimal CSS text. Keyed so a test can point at a fixture root. */
 const _slidesCssCache = new Map();
@@ -146,7 +176,11 @@ const SINGLE_PREVIEW_CHROME_CSS = `
  * @param {Object} options.theme - Theme object (from loadThemeAssets)
  * @param {string} options.title - Presentation title
  * @param {number} options.startIndex - Starting slide index (for numbering)
- * @param {'nl'|'en-GB'|null} [options.lang] - Deck language, from `resolveDeckLang(pres)`
+ * @param {'nl'|'en-GB'|null} [options.lang] - Deck language, from `resolveDeckLang(pres)`:
+ *   which copy table a slide type reads. Not the same as `docLang`.
+ * @param {string} [options.docLang] - Document language for `<html lang>`, from
+ *   `resolveDocLangFromPresentation(pres)`. Falls back to resolving it from the
+ *   slides alone, which cannot see a deck-level `pres.lang`.
  * @param {string} [options.repoRoot] - Repository root (override for tests)
  * @returns {Promise<string>} Self-contained HTML string
  */
@@ -157,6 +191,7 @@ export async function buildSlidePreviewHtml(
     title = '',
     startIndex = 0,
     lang = null,
+    docLang = '',
     repoRoot = defaultRepoRoot,
   } = {},
 ) {
@@ -184,42 +219,28 @@ export async function buildSlidePreviewHtml(
     `;
   });
 
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>${escapeHtml(title || 'Slide Preview')}</title>
-  <style>
-${buildCssChain(repoRoot, [
-  themeVars,
-  baseCss,
-  GRADIENT_OFF_CSS,
-  PREVIEW_CHROME_CSS,
-])}
-  </style>
-  <script>
-    // Scale each 1600×900 stage to fit its frame container
-    function scaleStages() {
-      document.querySelectorAll('.preview-frame').forEach(frame => {
-        const stage = frame.querySelector('.preview-stage');
-        if (!stage) return;
-        const scale = frame.offsetWidth / 1600;
-        stage.style.transform = 'scale(' + scale + ')';
-      });
-    }
-    window.addEventListener('load', scaleStages);
-    window.addEventListener('resize', scaleStages);
-  </script>
-</head>
-<body>
-  <div class="preview-header">
-    <h1>${escapeHtml(title || 'Slide Preview')}</h1>
-    <p>${slides.length} slide${slides.length !== 1 ? 's' : ''}</p>
-  </div>
-  <div class="preview-list">
-    ${slideHtmls.join('\n')}
-  </div>
-</body>
+  return `${buildDocumentHead({
+    lang: docLang || resolveDocLangFromPresentation({ slides }),
+    title: title || 'Slide Preview',
+    head: [LIST_SCALE_SCRIPT],
+    styles: [
+      buildCssChain(repoRoot, [
+        themeVars,
+        baseCss,
+        GRADIENT_OFF_CSS,
+        PREVIEW_CHROME_CSS,
+      ]),
+    ],
+  })}
+  <body>
+    <div class="preview-header">
+      <h1>${escapeHtml(title || 'Slide Preview')}</h1>
+      <p>${slides.length} slide${slides.length !== 1 ? 's' : ''}</p>
+    </div>
+    <div class="preview-list">
+      ${slideHtmls.join('\n')}
+    </div>
+  </body>
 </html>`;
 }
 
@@ -229,13 +250,17 @@ ${buildCssChain(repoRoot, [
  * @param {Object} slide - Slide object
  * @param {Object} [options]
  * @param {Object} [options.theme] - Theme object (from loadThemeAssets)
- * @param {'nl'|'en-GB'|null} [options.lang] - Deck language, from `resolveDeckLang(pres)`
+ * @param {'nl'|'en-GB'|null} [options.lang] - Deck language, from `resolveDeckLang(pres)`:
+ *   which copy table a slide type reads. Not the same as `docLang`.
+ * @param {string} [options.docLang] - Document language for `<html lang>`, from
+ *   `resolveDocLangFromPresentation(pres)`. Falls back to resolving it from the
+ *   slide alone, which cannot see a deck-level `pres.lang`.
  * @param {string} [options.repoRoot] - Repository root (override for tests)
  * @returns {Promise<string>} Self-contained HTML string
  */
 export async function buildSingleSlidePreviewHtml(
   slide,
-  { theme = null, lang = null, repoRoot = defaultRepoRoot } = {},
+  { theme = null, lang = null, docLang = '', repoRoot = defaultRepoRoot } = {},
 ) {
   const baseCss = await getMinimalCss(repoRoot);
   const themeVars = theme ? themeVarsCssText(theme) : '';
@@ -249,34 +274,23 @@ export async function buildSingleSlidePreviewHtml(
     lang,
   });
 
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <style>
-${buildCssChain(repoRoot, [
-  themeVars,
-  baseCss,
-  GRADIENT_OFF_CSS,
-  SINGLE_PREVIEW_CHROME_CSS,
-])}
-  </style>
-  <script>
-    function scaleStage() {
-      var frame = document.querySelector('.frame');
-      var stage = document.querySelector('.stage');
-      if (frame && stage) {
-        stage.style.transform = 'scale(' + (frame.offsetWidth / 1600) + ')';
-      }
-    }
-    window.addEventListener('load', scaleStage);
-    window.addEventListener('resize', scaleStage);
-  </script>
-</head>
-<body>
-  <div class="frame">
-    <div class="stage ps-theme">${html}</div>
-  </div>
-</body>
+  // No <title>: a single-slide preview is rendered inside a host artifact frame.
+  return `${buildDocumentHead({
+    lang: docLang || resolveDocLangFromPresentation({ slides: [slide] }),
+    head: [SINGLE_SCALE_SCRIPT],
+    styles: [
+      buildCssChain(repoRoot, [
+        themeVars,
+        baseCss,
+        GRADIENT_OFF_CSS,
+        SINGLE_PREVIEW_CHROME_CSS,
+      ]),
+    ],
+  })}
+  <body>
+    <div class="frame">
+      <div class="stage ps-theme">${html}</div>
+    </div>
+  </body>
 </html>`;
 }

@@ -3,10 +3,7 @@ import {
   computeHeadingShifts,
 } from '../utils/render-slide.js';
 import { filterForExport, filterForPublished } from '../utils/public-output.js';
-import {
-  resolveDocLangFromPresentation,
-  getDocDir,
-} from '../utils/doc-lang.js';
+import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { resolveDeckLang } from '../../shared/i18n-utils.js';
 import { escapeHtml, embedImgSrcDataUrls } from '../utils/html-utils.js';
 import {
@@ -16,6 +13,7 @@ import {
 } from '../utils/prism-katex.js';
 import { loadExportCssBundle, embedSlideImages } from './css-bundle.js';
 import { buildCssChain } from '../utils/css-chain.js';
+import { buildDocumentHead } from '../utils/head-chain.js';
 import { inlineLocalFontUrls } from '../utils/embed-fonts.js';
 import {
   getSlideEffectiveDuration,
@@ -177,7 +175,6 @@ export async function buildStandaloneHtml(
   // <html lang>), this one stays null when the deck names no language so the
   // copy table can apply its own documented default.
   const deckLang = resolveDeckLang(pres);
-  const docDir = getDocDir(docLang);
   // Meta description: use the caller-supplied string (the published route
   // passes one with its own fallback), else the deck's own description. The
   // reader view already emits this; the visual export/published head didn't.
@@ -294,33 +291,32 @@ export async function buildStandaloneHtml(
   // the same builder serves every published /p/ page, not just downloads.
   const highlightNeeds = detectPrismKatexNeeds(slidesHtml);
 
-  return `<!doctype html>
-<html lang="${escapeHtml(docLang)}" dir="${escapeHtml(docDir)}">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>${title}</title>
-    ${metaDescription ? `<meta name="description" content="${escapeHtml(metaDescription)}" />` : ''}
-    ${extraHead}
-    ${externalFontCssLinks}
-    ${externalFontScripts}
-    ${buildPrismKatexCdnTags(highlightNeeds)}
-    <style>
-${buildCssChain(
-  repoRoot,
-  [
-    css.fontCss,
-    chromeCss,
-    css.themeVarsCss,
-    css.themeCss,
-    slidesCss,
-    css.wmCss,
-    STANDALONE_CSS,
-  ],
-  { customCss: css.customCss },
-)}
-    </style>
-  </head>
+  return `${buildDocumentHead({
+    lang: docLang,
+    title: pres.title || 'Presentation',
+    description: metaDescription,
+    head: [
+      extraHead,
+      externalFontCssLinks,
+      externalFontScripts,
+      buildPrismKatexCdnTags(highlightNeeds),
+    ],
+    styles: [
+      buildCssChain(
+        repoRoot,
+        [
+          css.fontCss,
+          chromeCss,
+          css.themeVarsCss,
+          css.themeCss,
+          slidesCss,
+          css.wmCss,
+          STANDALONE_CSS,
+        ],
+        { customCss: css.customCss },
+      ),
+    ],
+  })}
   <body class="export-body">
     <script>
       // ?ui=min: hide the presenter chrome (see the .ui-min rules above). Read

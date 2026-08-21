@@ -12,6 +12,7 @@ import {
 } from '../utils/prism-katex.js';
 import { loadExportCssBundle } from './css-bundle.js';
 import { buildCssChain } from '../utils/css-chain.js';
+import { buildDocumentHead } from '../utils/head-chain.js';
 
 // Simple translations for server-side export
 const PRINT_I18N = {
@@ -311,7 +312,8 @@ export async function buildPrintHtml(
   const docLang = resolveDocLangFromPresentation(pres);
   const css = await loadExportCssBundle(repoRoot, theme, watermark);
 
-  const title = escapeHtml(pres.title || 'Presentation');
+  const rawTitle = pres.title || 'Presentation';
+  const title = escapeHtml(rawTitle);
   const wmOn = css.wmOn;
   const wmText = wmOn ? escapeHtml(sandboxWatermarkText()) : '';
   const slides = Array.isArray(pres?.slides) ? pres.slides : [];
@@ -323,28 +325,25 @@ export async function buildPrintHtml(
     })
     .join('\n');
 
-  return `<!doctype html>
-<html lang="${escapeHtml(docLang)}">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>${title} (Print)</title>
-    ${buildPrismKatexCdnTags()}
-    <style>
-${buildCssChain(
-  repoRoot,
-  [
-    css.fontCss,
-    stripFontFacesFromCss(css.chromeCss),
-    css.themeVarsCss,
-    css.themeCss,
-    stripFontFacesFromCss(css.slidesCss),
-    PRINT_DOC_CSS,
-  ],
-  { customCss: css.customCss },
-)}
-    </style>
-  </head>
+  return `${buildDocumentHead({
+    lang: docLang,
+    title: `${rawTitle} (Print)`,
+    head: [buildPrismKatexCdnTags()],
+    styles: [
+      buildCssChain(
+        repoRoot,
+        [
+          css.fontCss,
+          stripFontFacesFromCss(css.chromeCss),
+          css.themeVarsCss,
+          css.themeCss,
+          stripFontFacesFromCss(css.slidesCss),
+          PRINT_DOC_CSS,
+        ],
+        { customCss: css.customCss },
+      ),
+    ],
+  })}
   <body class="print-wrap ps-theme">
     <div class="print-toolbar">
       <div style="flex:1">${title}</div>

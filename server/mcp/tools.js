@@ -87,6 +87,7 @@ import {
   buildSingleSlidePreviewHtml,
 } from './preview.js';
 import { resolveDeckLang } from '../../shared/i18n-utils.js';
+import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { fireAndForget } from '../utils/fire-and-forget.js';
 
 /**
@@ -1550,6 +1551,7 @@ export function registerTools(
       const html = await buildSingleSlidePreviewHtml(slide, {
         theme,
         lang: resolveDeckLang(pres),
+        docLang: resolveDocLangFromPresentation(pres),
       });
 
       // Return HTML directly as text — Claude Desktop will render it as an artifact
@@ -1604,6 +1606,7 @@ export function registerTools(
         title: pres.title,
         startIndex,
         lang: resolveDeckLang(pres),
+        docLang: resolveDocLangFromPresentation(pres),
       });
 
       // Return HTML directly as text — Claude Desktop will render it as an artifact

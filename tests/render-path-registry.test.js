@@ -141,15 +141,21 @@ test('every registered path builds a document', async (t) => {
 });
 
 /**
- * Walk `server/` and collect every module that emits a `<!doctype html>`.
+ * Walk `server/` and collect every module that builds a complete HTML document.
+ *
+ * Two signatures count, because a new builder is written in one of two ways:
+ * a hand-written `<!doctype html>` (the way every path started), or a call to
+ * `buildDocumentHead()` (the way a well-behaved one starts now — which emits
+ * the doctype for it, so the literal alone would miss exactly the newcomer
+ * that followed the rules).
  *
  * Text-level on purpose: the point is to catch a *new* document builder, and a
  * new one is written before anyone thinks about registers. An import-graph walk
  * would only see the ones already wired up.
  *
- * Block comments are stripped first, so a module that merely *writes about* the
- * doctype — this register's own docblock does — is not mistaken for one that
- * emits it.
+ * Comments are stripped first, so a module that merely *writes about* the
+ * doctype or the head chain — this register's own docblock does — is not
+ * mistaken for one that builds a document.
  */
 async function findDocumentEmitters(dir, acc = []) {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
@@ -160,8 +166,10 @@ async function findDocumentEmitters(dir, acc = []) {
       continue;
     }
     if (!entry.name.endsWith('.js')) continue;
-    const src = (await readFile(full, 'utf8')).replace(/\/\*[\s\S]*?\*\//g, '');
-    if (/<!doctype html/i.test(src)) {
+    const src = (await readFile(full, 'utf8'))
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/^\s*\/\/.*$/gm, '');
+    if (/<!doctype html/i.test(src) || /\bbuildDocumentHead\s*\(/.test(src)) {
       acc.push(path.relative(repoRoot, full).split(path.sep).join('/'));
     }
   }
@@ -197,15 +205,32 @@ test('every document builder under server/ is accounted for', async () => {
     'NON_RENDER_PATH_DOCUMENTS names modules that no longer build a ' +
       'document — drop the entries',
   );
+});
 
-  // Same in the other direction for the register itself.
-  const missingModules = RENDER_PATHS.map((p) => p.module)
-    .filter((m) => !emitters.includes(m))
-    .sort();
-  assert.deepEqual(
-    missingModules,
-    [],
-    'a registered render path names a module with no <!doctype html> in it ' +
-      '— the register points at the wrong file',
-  );
+test('no render path writes its own document opening', async (t) => {
+  // The other half of the gate above. A path may not be *missing* from the
+  // register, and a registered path may not hand-write the thing the register
+  // exists to make uniform: `<!doctype html>`, `<html lang>`, `<head>`. Since
+  // A7.32 all three come from server/utils/head-chain.js, which is why adding a
+  // CSP or an OG tag is one edit instead of twelve.
+  for (const module of [...new Set(RENDER_PATHS.map((p) => p.module))]) {
+    await t.test(module, async () => {
+      const src = (await readFile(path.join(repoRoot, module), 'utf8')).replace(
+        /\/\*[\s\S]*?\*\//g,
+        '',
+      );
+      assert.doesNotMatch(
+        src,
+        /<!doctype html/i,
+        'this render path writes its own doctype — build the opening with ' +
+          'buildDocumentHead() from server/utils/head-chain.js instead',
+      );
+      assert.match(
+        src,
+        /buildDocumentHead/,
+        'this render path builds a document but never calls ' +
+          'buildDocumentHead() — see server/utils/head-chain.js',
+      );
+    });
+  }
 });
