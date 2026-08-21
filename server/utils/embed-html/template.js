@@ -3,6 +3,11 @@ import { DEFAULT_THEME_ID } from '../../../shared/constants/themes.js';
 import { repoRoot as defaultRepoRoot } from '../../config/paths.js';
 import { buildCssChain } from '../css-chain.js';
 import { buildDocumentHead } from '../head-chain.js';
+import { buildScriptChain } from '../script-chain.js';
+import {
+  buildPrismKatexCdnTags,
+  detectPrismKatexNeeds,
+} from '../prism-katex.js';
 
 /**
  * The embed shell's own CSS: iframe-friendly chrome around the deck, no app
@@ -90,91 +95,19 @@ const EMBED_SHELL_CSS = `
       }
 `;
 
-export function renderEmbedHtmlDocument({
-  repoRoot = defaultRepoRoot,
-  title = 'Presentation',
-  docLang = 'nl',
-  totalSlides = 0,
-  publishId = '',
-  ui = 'default',
-  slidesHtml = '',
-  themeId = DEFAULT_THEME_ID,
-  themeVarsCss = '',
-  headHtml = '',
-  externalFontHtml = '',
-  watermarkCss = '',
-  watermarkHtml = '',
-  boot = {},
-} = {}) {
-  const mode = ui === 'min' ? 'min' : 'default';
-  const safeTotalSlides = Math.max(0, Number(totalSlides || 0) || 0);
-  const safeBoot = {
-    publishId: String(boot?.publishId || publishId || ''),
-    totalSlides: safeTotalSlides,
-    options:
-      boot?.options && typeof boot.options === 'object' ? boot.options : {},
-    lang: boot?.lang === 'nl' || boot?.lang === 'en-GB' ? boot.lang : null,
-    hasOtherLang: !!boot?.hasOtherLang,
-  };
-  const bootJson = JSON.stringify(safeBoot, null, 0);
-
-  const docThemeId = String(themeId || DEFAULT_THEME_ID);
-  const themeVars = String(themeVarsCss || '');
-  const extraHead = String(headHtml || '');
-  const extraFontHtml = String(externalFontHtml || '');
-  const wmCss = String(watermarkCss || '');
-  const wmHtml = String(watermarkHtml || '');
-  return `${buildDocumentHead({
-    lang: docLang,
-    htmlAttrs: { 'data-theme': docThemeId },
-    title: title || 'Presentation',
-    robots: 'noindex,nofollow',
-    head: [extraHead, extraFontHtml],
-    stylesheets: [
-      '/assets/fonts/google/fonts.css',
-      '/client/styles/embed.css',
-      '/client/styles/theme.css',
-      '/client/styles/slides.css',
-    ],
-    styles: [
-      { id: 'ps-theme-vars', css: themeVars },
-      buildCssChain(repoRoot, [EMBED_SHELL_CSS, wmCss]),
-    ],
-  })}
-  <body>
-    <div class="ps-embed ui-${escapeHtml(mode)}">
-      <div class="ps-embed-controls" role="toolbar" aria-label="Presentation controls">
-        <div class="row">
-          <button id="btnPrev" class="btn btn-secondary" type="button" aria-label="Previous slide">←</button>
-          <button id="btnNext" class="btn btn-secondary" type="button" aria-label="Next slide">→</button>
-          <div id="progress" class="ps-embed-progress" aria-live="polite"></div>
-        </div>
-        <div class="row">
-          <div class="sb-segmented" style="width: 120px;" aria-label="Language">
-            <button id="btnLangNl" class="sb-segmented-btn" type="button">NL</button>
-            <button id="btnLangEn" class="sb-segmented-btn" type="button">EN</button>
-          </div>
-          <button id="btnFs" class="btn btn-secondary" type="button" aria-label="Fullscreen">⛶</button>
-        </div>
-      </div>
-      <div class="ps-embed-deck-wrap">
-        <main id="deck" class="deck" aria-live="polite">
-          <div id="stageWrap" class="ps-embed-stage-wrap">
-            <div id="stage" class="ps-embed-stage ps-theme">
-              ${wmHtml}
-              ${slidesHtml || ''}
-            </div>
-          </div>
-        </main>
-      </div>
-    </div>
-
-    <script id="boot" type="application/json">${escapeHtml(bootJson)}</script>
-    <script type="module">
+/**
+ * The embed runtime: one slide at a time inside an iframe, driven by the host
+ * page over postMessage (NEXT/PREV/GOTO/GET_STATE/SET_OPTIONS) and by the bar
+ * of controls above the stage.
+ *
+ * Path-specific, so it is a body handed to the script chain rather than part
+ * of it. Video embeds and stage scaling used to sit inside here as a
+ * byte-for-byte copy of the standalone export's; they now come from
+ * `runtime: 'stage'` (server/utils/script-chain.js).
+ */
+const EMBED_RUNTIME_JS = `
 
       const EMBED_SOURCE = 'presentation-system-embed';
-      const BASE_W = 1600;
-      const BASE_H = 900;
 
       function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
       function safeJsonParse(s) { try { return JSON.parse(s); } catch { return null; } }
@@ -202,8 +135,6 @@ export function renderEmbedHtmlDocument({
       if (controlsEl) controlsEl.style.display = controls ? '' : 'none';
 
       const deckEl = document.getElementById('deck');
-      const stageWrapEl = document.getElementById('stageWrap');
-      const stageEl = document.getElementById('stage');
       const slides = Array.from(document.querySelectorAll('.deck-slide'));
       const btnPrev = document.getElementById('btnPrev');
       const btnNext = document.getElementById('btnNext');
@@ -212,89 +143,9 @@ export function renderEmbedHtmlDocument({
       const btnLangNl = document.getElementById('btnLangNl');
       const btnLangEn = document.getElementById('btnLangEn');
 
-      // Scale the fixed 1600×900 stage to fit the available iframe area.
-      function updateStageScale() {
-        if (!stageWrapEl || !stageEl) return;
-        const w = stageWrapEl.clientWidth || 1;
-        const h = stageWrapEl.clientHeight || 1;
-        const scale = Math.max(0.05, Math.min(w / BASE_W, h / BASE_H));
-        const sw = BASE_W * scale;
-        const sh = BASE_H * scale;
-        const left = Math.max(0, (w - sw) / 2);
-        const top = Math.max(0, (h - sh) / 2);
-        stageEl.style.left = left + 'px';
-        stageEl.style.top = top + 'px';
-        stageEl.style.transform = 'scale(' + scale + ')';
-      }
-      updateStageScale();
-      try {
-        const ro = new ResizeObserver(() => updateStageScale());
-        ro.observe(stageWrapEl);
-      } catch {
-        // Fallback for older browsers (best-effort)
-        window.addEventListener('resize', updateStageScale, { passive: true });
-      }
+      attachStageScale();
 
       // Poll slides were removed as a standalone feature (no poll runtime here).
-
-      // Bunny video embeds: best-effort init on active slide. This lazy loader
-      // is the only thing that fetches player.js, so an embed without a Bunny
-      // video makes no request to assets.mediadelivery.net.
-      let bunnyPlayerJsPromise = null;
-      function ensureBunnyPlayerJs() {
-        if (window.playerjs && window.playerjs.Player) return Promise.resolve();
-        if (bunnyPlayerJsPromise) return bunnyPlayerJsPromise;
-        bunnyPlayerJsPromise = new Promise((resolve, reject) => {
-          const existing = document.querySelector('script[data-bunny-playerjs="1"]');
-          if (existing) {
-            existing.addEventListener('load', () => resolve(), { once: true });
-            existing.addEventListener('error', () => reject(new Error('Failed to load Player.js')), { once: true });
-            return;
-          }
-          const s = document.createElement('script');
-          s.src = 'https://assets.mediadelivery.net/playerjs/player-0.1.0.min.js';
-          s.async = true;
-          s.dataset.bunnyPlayerjs = '1';
-          s.addEventListener('load', () => resolve(), { once: true });
-          s.addEventListener('error', () => reject(new Error('Failed to load Player.js')), { once: true });
-          document.head.appendChild(s);
-        });
-        return bunnyPlayerJsPromise;
-      }
-      function initVideoEmbeds(rootEl) {
-        if (!rootEl) return;
-        const iframes = rootEl.querySelectorAll('.slide-video iframe[data-bunny-playerjs="1"]');
-        if (!iframes.length) return;
-        ensureBunnyPlayerJs().then(() => {
-          for (const iframe of iframes) {
-            if (iframe.dataset.playerjsReady === '1') continue;
-            iframe.dataset.playerjsReady = '1';
-            try { new window.playerjs.Player(iframe); } catch {}
-          }
-        }).catch(() => {});
-      }
-
-      function pauseVideoEmbeds(rootEl) {
-        if (!rootEl) return;
-        const iframes = rootEl.querySelectorAll('.slide-video iframe');
-        for (const iframe of iframes) {
-          const noAuto = iframe && iframe.dataset ? iframe.dataset.videoSrcNoautoplay : '';
-          if (noAuto && iframe.getAttribute('src') !== noAuto) {
-            iframe.setAttribute('src', noAuto);
-          }
-        }
-      }
-
-      function activateVideoEmbeds(rootEl) {
-        if (!rootEl) return;
-        initVideoEmbeds(rootEl);
-        const iframes = rootEl.querySelectorAll('.slide-video iframe');
-        for (const iframe of iframes) {
-          const wantsAuto = iframe && iframe.dataset ? iframe.dataset.videoAutoplay === '1' : false;
-          const src = (wantsAuto && iframe.dataset.videoSrcAutoplay) || iframe.dataset.videoSrcNoautoplay || iframe.getAttribute('src') || '';
-          if (src && iframe.getAttribute('src') !== src) iframe.setAttribute('src', src);
-        }
-      }
 
       let idx = clamp(Number(options.start || 0) || 0, 0, Math.max(0, slides.length - 1));
 
@@ -474,7 +325,99 @@ export function renderEmbedHtmlDocument({
         slideId: currentSlideId(),
         totalSlides: slides.length,
       });
-    </script>
+`;
+
+export function renderEmbedHtmlDocument({
+  repoRoot = defaultRepoRoot,
+  title = 'Presentation',
+  docLang = 'nl',
+  totalSlides = 0,
+  publishId = '',
+  ui = 'default',
+  slidesHtml = '',
+  themeId = DEFAULT_THEME_ID,
+  themeVarsCss = '',
+  headHtml = '',
+  externalFontHtml = '',
+  watermarkCss = '',
+  watermarkHtml = '',
+  boot = {},
+} = {}) {
+  const mode = ui === 'min' ? 'min' : 'default';
+  const safeTotalSlides = Math.max(0, Number(totalSlides || 0) || 0);
+  const safeBoot = {
+    publishId: String(boot?.publishId || publishId || ''),
+    totalSlides: safeTotalSlides,
+    options:
+      boot?.options && typeof boot.options === 'object' ? boot.options : {},
+    lang: boot?.lang === 'nl' || boot?.lang === 'en-GB' ? boot.lang : null,
+    hasOtherLang: !!boot?.hasOtherLang,
+  };
+  const bootJson = JSON.stringify(safeBoot, null, 0);
+
+  const docThemeId = String(themeId || DEFAULT_THEME_ID);
+  const themeVars = String(themeVarsCss || '');
+  const extraHead = String(headHtml || '');
+  const extraFontHtml = String(externalFontHtml || '');
+  const wmCss = String(watermarkCss || '');
+  const wmHtml = String(watermarkHtml || '');
+  // Same gate as the export paths: a deck with no code block and no formula
+  // requests nothing from a CDN. The embed used to emit neither the libraries
+  // nor the initialiser, so a code block that highlighted in the download and
+  // in /p/ rendered plain here — the one visible cost of six script assemblers.
+  const highlightNeeds = detectPrismKatexNeeds(slidesHtml || '');
+  return `${buildDocumentHead({
+    lang: docLang,
+    htmlAttrs: { 'data-theme': docThemeId },
+    title: title || 'Presentation',
+    robots: 'noindex,nofollow',
+    head: [extraHead, extraFontHtml, buildPrismKatexCdnTags(highlightNeeds)],
+    stylesheets: [
+      '/assets/fonts/google/fonts.css',
+      '/client/styles/embed.css',
+      '/client/styles/theme.css',
+      '/client/styles/slides.css',
+    ],
+    styles: [
+      { id: 'ps-theme-vars', css: themeVars },
+      buildCssChain(repoRoot, [EMBED_SHELL_CSS, wmCss]),
+    ],
+  })}
+  <body>
+    <div class="ps-embed ui-${escapeHtml(mode)}">
+      <div class="ps-embed-controls" role="toolbar" aria-label="Presentation controls">
+        <div class="row">
+          <button id="btnPrev" class="btn btn-secondary" type="button" aria-label="Previous slide">←</button>
+          <button id="btnNext" class="btn btn-secondary" type="button" aria-label="Next slide">→</button>
+          <div id="progress" class="ps-embed-progress" aria-live="polite"></div>
+        </div>
+        <div class="row">
+          <div class="sb-segmented" style="width: 120px;" aria-label="Language">
+            <button id="btnLangNl" class="sb-segmented-btn" type="button">NL</button>
+            <button id="btnLangEn" class="sb-segmented-btn" type="button">EN</button>
+          </div>
+          <button id="btnFs" class="btn btn-secondary" type="button" aria-label="Fullscreen">⛶</button>
+        </div>
+      </div>
+      <div class="ps-embed-deck-wrap">
+        <main id="deck" class="deck" aria-live="polite">
+          <div id="stageWrap" class="ps-embed-stage-wrap">
+            <div id="stage" class="ps-embed-stage ps-theme">
+              ${wmHtml}
+              ${slidesHtml || ''}
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <script id="boot" type="application/json">${escapeHtml(bootJson)}</script>
+    ${buildScriptChain({
+      runtime: 'stage',
+      module: true,
+      needs: highlightNeeds,
+      body: EMBED_RUNTIME_JS,
+    })}
   </body>
 </html>`;
 }

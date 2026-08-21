@@ -6,10 +6,8 @@ import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { sandboxWatermarkText } from '../config/sandbox.js';
 import { escapeHtml, isProbablyUrl } from '../utils/html-utils.js';
-import {
-  buildPrismKatexCdnTags,
-  buildPrismKatexInitScriptTag,
-} from '../utils/prism-katex.js';
+import { buildPrismKatexCdnTags } from '../utils/prism-katex.js';
+import { buildScriptChain } from '../utils/script-chain.js';
 import { loadExportCssBundle } from './css-bundle.js';
 import { buildCssChain } from '../utils/css-chain.js';
 import { buildDocumentHead } from '../utils/head-chain.js';
@@ -355,7 +353,7 @@ export async function buildPrintHtml(
       ${wmText ? `<div class="print-watermark" style="margin: 0 0 14px;">${wmText}</div>` : ''}
       ${slidesHtml}
     </main>
-    ${buildPrismKatexInitScriptTag()}
+    ${buildScriptChain()}
   </body>
 </html>`;
 }

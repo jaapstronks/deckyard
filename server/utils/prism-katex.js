@@ -83,56 +83,46 @@ export function buildPrismKatexCdnTags({
 }
 
 /**
- * Generate the inline JavaScript that initializes Prism.js and KaTeX
- * on the rendered page. Returns a string (without <script> tags).
+ * The inline JavaScript that initialises Prism.js and KaTeX on the rendered
+ * page. Returns a bare body at column zero, without `<script>` tags — the
+ * script chain (server/utils/script-chain.js) wraps and indents it.
+ *
+ * There used to be a second exported spelling that returned the same body
+ * already wrapped in a `<script>`, and a third caller that hand-rewrote that
+ * wrapper character for character. One shape, one meaning.
  *
  * @param {object} [options]
  * @param {boolean} [options.prism=true] Include the Prism init.
  * @param {boolean} [options.katex=true] Include the KaTeX init.
+ * @returns {string} JavaScript source, or '' when neither library is wanted.
  */
 export function buildPrismKatexInitScript({ prism = true, katex = true } = {}) {
   const parts = [];
   if (prism) {
     parts.push(`// Initialize code highlighting with Prism
-        if (typeof Prism !== 'undefined') {
-          const codeBlocks = document.querySelectorAll('.md-code-block code');
-          for (const block of codeBlocks) {
-            try { Prism.highlightElement(block); } catch (e) {}
-          }
-        }`);
+if (typeof Prism !== 'undefined') {
+  const codeBlocks = document.querySelectorAll('.md-code-block code');
+  for (const block of codeBlocks) {
+    try { Prism.highlightElement(block); } catch {}
+  }
+}`);
   }
   if (katex) {
     parts.push(`// Initialize math rendering with KaTeX
-        if (typeof katex !== 'undefined') {
-          const mathBlocks = document.querySelectorAll('.md-math-block[data-math]');
-          for (const block of mathBlocks) {
-            const latex = block.dataset.math;
-            if (!latex) continue;
-            try { katex.render(latex, block, { displayMode: true, throwOnError: false, errorColor: '#c41a16' }); } catch (e) {}
-          }
-          const mathInlines = document.querySelectorAll('.md-math-inline[data-math]');
-          for (const span of mathInlines) {
-            const latex = span.dataset.math;
-            if (!latex) continue;
-            try { katex.render(latex, span, { displayMode: false, throwOnError: false, errorColor: '#c41a16' }); } catch (e) {}
-          }
-        }`);
+if (typeof katex !== 'undefined') {
+  const mathBlocks = document.querySelectorAll('.md-math-block[data-math]');
+  for (const block of mathBlocks) {
+    const latex = block.dataset.math;
+    if (!latex) continue;
+    try { katex.render(latex, block, { displayMode: true, throwOnError: false, errorColor: '#c41a16' }); } catch {}
   }
-  return parts.join('\n        ');
-}
-
-/**
- * Generate a complete <script> block with the Prism/KaTeX initialization.
- * Returns an HTML string, or '' when neither library is wanted.
- *
- * @param {object} [options] Same shape as `buildPrismKatexInitScript`.
- */
-export function buildPrismKatexInitScriptTag(options) {
-  const body = buildPrismKatexInitScript(options);
-  if (!body) return '';
-  return `<script>
-      (function() {
-        ${body}
-      })();
-    </script>`;
+  const mathInlines = document.querySelectorAll('.md-math-inline[data-math]');
+  for (const span of mathInlines) {
+    const latex = span.dataset.math;
+    if (!latex) continue;
+    try { katex.render(latex, span, { displayMode: false, throwOnError: false, errorColor: '#c41a16' }); } catch {}
+  }
+}`);
+  }
+  return parts.join('\n\n');
 }

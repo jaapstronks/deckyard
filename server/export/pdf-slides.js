@@ -4,10 +4,8 @@ import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { resolveDeckLang } from '../../shared/i18n-utils.js';
 import { escapeHtml, embedImgSrcDataUrls } from '../utils/html-utils.js';
 import { debugLog } from '../utils/debug-log.js';
-import {
-  buildPrismKatexCdnTags,
-  buildPrismKatexInitScript,
-} from '../utils/prism-katex.js';
+import { buildPrismKatexCdnTags } from '../utils/prism-katex.js';
+import { buildScriptChain } from '../utils/script-chain.js';
 import { getAppBaseUrl } from '../config/utils.js';
 import { resolveVideoThumbnailDataUrl } from './video-thumbnail.js';
 import { resolveVideoWatchUrl, videoPdfCopy } from './video-watch-url.js';
@@ -428,11 +426,7 @@ export async function buildSlidesPdfHtml(
       <div style="opacity:0.85; font-size:12px;">Tip: if colors look muted, enable “Background graphics” in the print dialog.</div>
     </div>
     ${pagesHtml}
-    <script>
-      (function() {
-        ${buildPrismKatexInitScript()}
-      })();
-    </script>
+    ${buildScriptChain()}
   </body>
 </html>`;
 }

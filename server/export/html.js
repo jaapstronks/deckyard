@@ -8,9 +8,9 @@ import { resolveDeckLang } from '../../shared/i18n-utils.js';
 import { escapeHtml, embedImgSrcDataUrls } from '../utils/html-utils.js';
 import {
   buildPrismKatexCdnTags,
-  buildPrismKatexInitScript,
   detectPrismKatexNeeds,
 } from '../utils/prism-katex.js';
+import { buildScriptChain } from '../utils/script-chain.js';
 import { loadExportCssBundle, embedSlideImages } from './css-bundle.js';
 import { buildCssChain } from '../utils/css-chain.js';
 import { buildDocumentHead } from '../utils/head-chain.js';
@@ -152,318 +152,33 @@ const STANDALONE_CSS = `
       }
 `;
 
-export async function buildStandaloneHtml(
-  repoRoot,
-  pres,
-  {
-    headHtml = '',
-    topbarRightHtml = '',
-    theme = null,
-    watermark = null,
-    context = 'export',
-    presentationId = '',
-    slideTypes = null,
-    description = null,
-  } = {},
-) {
-  // Apply the appropriate visibility filter based on context
-  pres =
-    context === 'published' ? filterForPublished(pres) : filterForExport(pres);
-  const docLang = resolveDocLangFromPresentation(pres);
-  // The deck's own language, for slide types that render built-in copy. Not
-  // the same value as docLang: that one always answers (falling back to nl for
-  // <html lang>), this one stays null when the deck names no language so the
-  // copy table can apply its own documented default.
-  const deckLang = resolveDeckLang(pres);
-  // Meta description: use the caller-supplied string (the published route
-  // passes one with its own fallback), else the deck's own description. The
-  // reader view already emits this; the visual export/published head didn't.
-  const metaDescription = (
-    typeof description === 'string' && description.trim()
-      ? description
-      : typeof pres?.description === 'string'
-        ? pres.description
-        : ''
-  ).trim();
-  const css = await loadExportCssBundle(repoRoot, theme, watermark);
-
-  // Inline any root-relative local font file a bundled stylesheet still
-  // references (a custom theme's own face) as a data URL, so a downloaded
-  // standalone file renders it offline instead of falling back to system fonts
-  // on a dead `/assets/...woff2` reference. Theme fonts are already embedded
-  // via css.fontCss; this only embeds what the CSS actually references, never
-  // the whole ~2.7 MB pinned library. See
-  // docs/reference/standalone-html-export.md.
-  const [chromeCss, slidesCss] = await Promise.all([
-    inlineLocalFontUrls(repoRoot, css.chromeCss),
-    inlineLocalFontUrls(repoRoot, css.slidesCss),
-  ]);
-
-  // Build external font links/scripts for managed fonts (Adobe, Monotype, Google)
-  function isSafeUrl(url) {
-    try {
-      const parsed = new URL(url);
-      return parsed.protocol === 'https:' || parsed.protocol === 'http:';
-    } catch {
-      return false;
-    }
-  }
-  const externalFontLinks = Array.isArray(theme?.externalFontLinks)
-    ? theme.externalFontLinks
-    : [];
-  const externalFontCssLinks = externalFontLinks
-    .filter((l) => l.type === 'css' && l.url)
-    .filter((l) => isSafeUrl(l.url))
-    .map(
-      (l) =>
-        `<link rel="stylesheet" href="${l.url.replace(/"/g, '&quot;')}" />`,
-    )
-    .join('\n    ');
-  const externalFontScripts = externalFontLinks
-    .filter((l) => l.type === 'js' && l.url)
-    .filter((l) => isSafeUrl(l.url))
-    .map((l) => `<script src="${l.url.replace(/"/g, '&quot;')}"></script>`)
-    .join('\n    ');
-
-  // Embed uploads + /client assets (Lucide icon SVGs), so the downloaded
-  // standalone HTML works without a server. Shared cache dedupes the same
-  // source across this pass and the rendered-HTML pass below.
-  const embedCache = new Map();
-  const slides = await embedSlideImages(repoRoot, pres.slides, {
-    includeClient: true,
-    cache: embedCache,
-  });
-
-  // Auto-advance / loop config (used by published /p/ pages and downloaded standalone HTML).
-  // URL params (?loop / ?autoplay / ?interval) can override these at runtime.
-  const autoAdvanceCfg =
-    pres?.settings?.autoAdvance && typeof pres.settings.autoAdvance === 'object'
-      ? pres.settings.autoAdvance
-      : {};
-  const autoAdvanceEnabled =
-    !!autoAdvanceCfg.enabled && autoAdvanceCfg.mode !== 'pacing';
-  const autoAdvanceLoop = !!autoAdvanceCfg.loop;
-  const autoAdvanceInterval =
-    Number(autoAdvanceCfg.intervalSeconds) || DEFAULT_ADVANCE_INTERVAL_SECONDS;
-  const slideDurations = slides.map((s) =>
-    getSlideEffectiveDuration(s, autoAdvanceInterval),
-  );
-  const autoAdvanceJson = JSON.stringify({
-    enabled: autoAdvanceEnabled,
-    loop: autoAdvanceLoop,
-    intervalSeconds: autoAdvanceInterval,
-    slideDurations,
-  });
-
-  // Per-slide heading depth for the document outline: the deck title below is
-  // the single <h1>; chapter sections push their slides one level deeper.
-  const headingShifts = computeHeadingShifts(slides);
-  let slidesHtml = slides
-    .map((s, i) => {
-      const c = s?.content && typeof s.content === 'object' ? s.content : {};
-      const a11yTitle =
-        typeof c?.a11yTitle === 'string' ? c.a11yTitle.trim() : '';
-      const a11ySummary =
-        typeof c?.a11ySummary === 'string' ? c.a11ySummary.trim() : '';
-      const a11yTitleAttr = a11yTitle
-        ? ` data-a11y-title="${escapeHtml(a11yTitle)}"`
-        : '';
-      const a11ySummaryAttr = a11ySummary
-        ? ` data-a11y-summary="${escapeHtml(a11ySummary)}"`
-        : '';
-      return `<section class="deck-slide" data-slide-id="${escapeHtml(
-        s.id,
-      )}"${a11yTitleAttr}${a11ySummaryAttr}>${renderSlideHtml(s, { theme, slideTypes, stripEditorAttrs: true, headingShift: headingShifts[i], lang: deckLang })}</section>`;
-    })
-    .join('\n');
-  slidesHtml = await embedImgSrcDataUrls(repoRoot, slidesHtml, {
-    includeClient: true,
-    cache: embedCache,
-  });
-  const title = escapeHtml(pres.title || 'Presentation');
-  const extraHead = String(headHtml || '');
-  const extraTopbar = String(topbarRightHtml || '');
-
-  // Prism/KaTeX are the only third-party CDN requests this page can make, so
-  // they are emitted only when the rendered slides actually contain a code
-  // block or math — and Prism only loads the language packs this deck uses.
-  // A deck with neither loads nothing from a CDN at all, which is the point:
-  // the same builder serves every published /p/ page, not just downloads.
-  const highlightNeeds = detectPrismKatexNeeds(slidesHtml);
-
-  return `${buildDocumentHead({
-    lang: docLang,
-    title: pres.title || 'Presentation',
-    description: metaDescription,
-    head: [
-      extraHead,
-      externalFontCssLinks,
-      externalFontScripts,
-      buildPrismKatexCdnTags(highlightNeeds),
-    ],
-    styles: [
-      buildCssChain(
-        repoRoot,
-        [
-          css.fontCss,
-          chromeCss,
-          css.themeVarsCss,
-          css.themeCss,
-          slidesCss,
-          css.wmCss,
-          STANDALONE_CSS,
-        ],
-        { customCss: css.customCss },
-      ),
-    ],
-  })}
-  <body class="export-body">
-    <script>
-      // ?ui=min: hide the presenter chrome (see the .ui-min rules above). Read
-      // before the shell renders so an embedded deck never flashes a topbar it
-      // is about to drop. Same param name and meaning as buildEmbedHtml's ui
-      // option, so the two runtimes keep one vocabulary.
-      (function () {
-        var ui = 'default';
-        try {
-          var raw = new URLSearchParams(location.search).get('ui');
-          if (String(raw || '').toLowerCase().trim() === 'min') ui = 'min';
-        } catch (e) {}
-        window.__DECK_UI__ = ui;
-        if (ui === 'min') document.documentElement.classList.add('ui-min');
-      })();
-    </script>
-    <a class="skip-link" href="#deck">Skip to slides</a>
-    <div class="presenter-shell">
-      <header class="presenter-topbar">
-        <h1 class="presenter-title">${title}</h1>
-        <div class="row" style="gap: 10px; align-items:center;">
-          ${extraTopbar}
-          <div class="presenter-help">←/→ or Space · F fullscreen · Esc</div>
-        </div>
-      </header>
-      <main id="deck" class="deck" aria-live="polite">
-        <div id="stageWrap" class="ps-standalone-stage-wrap">
-          <div id="stage" class="ps-standalone-stage ps-theme">
-            ${css.wmHtml}
-            ${slidesHtml}
-          </div>
-        </div>
-      </main>
-      <footer class="presenter-progress">
-        <div id="srStatus" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
-        <div id="loopBar" class="ps-standalone-loop-bar"><div id="loopBarFill" class="ps-standalone-loop-bar-fill"></div></div>
-        <div class="ps-standalone-progress-row">
-          <nav class="ps-standalone-nav" aria-label="Slide navigation">
-            <button id="btnPrev" class="btn btn-secondary is-compact" type="button" aria-label="Previous slide">Previous</button>
-            <button id="btnNext" class="btn btn-secondary is-compact" type="button" aria-label="Next slide">Next</button>
-            <button id="btnLoop" class="btn btn-secondary is-compact" type="button" aria-label="Auto-loop" aria-pressed="false" hidden>▶ Loop</button>
-            <label class="ps-standalone-loop" hidden id="loopIntervalWrap">
-              <input id="loopInterval" class="ps-standalone-loop-interval" type="number" min="1" max="300" step="1" aria-label="Seconds per slide" />
-              <span>s</span>
-            </label>
-          </nav>
-          <div id="progressText" class="presenter-progress-text" aria-live="polite"></div>
-        </div>
-        <div class="presenter-progress-bar"><div id="progressFill" class="presenter-progress-fill"></div></div>
-      </footer>
-    </div>
-    <script>
-      (function() {
+/**
+ * The standalone/published deck runtime: slide navigation, the progress bar and
+ * screen-reader status, fullscreen, and the auto-advance/loop machinery.
+ *
+ * Path-specific — no other render path shows one slide at a time with visible
+ * nav — so it stays here and is handed to the script chain as a body. What it
+ * is *not* responsible for any more: video embeds and stage scaling, which it
+ * shared byte-for-byte with the embed and which now come from
+ * `runtime: 'stage'` (server/utils/script-chain.js).
+ *
+ * @param {Object} options
+ * @param {string} options.presentationId - Baked in for the lead-capture POST
+ * @param {string} options.autoAdvanceJson - Pre-serialised auto-advance config
+ * @returns {string} JavaScript source
+ */
+function deckRuntimeJs({ presentationId, autoAdvanceJson }) {
+  return `
         // Presentation ID for lead capture forms
-        window.__PRESENTATION_ID__ = ${JSON.stringify(presentationId || pres?.id || '')};
+        window.__PRESENTATION_ID__ = ${JSON.stringify(presentationId)};
         // Auto-advance / loop config baked in at render time. URL params can override.
         window.__DECK_AUTO_ADVANCE__ = ${autoAdvanceJson};
 
-        const BASE_W = 1600;
-        const BASE_H = 900;
-
-        // Bunny Stream Player.js support (for video-slide embeds). This lazy
-        // loader is the only thing that fetches player.js: a deck without a
-        // Bunny video never touches assets.mediadelivery.net.
-        let bunnyPlayerJsPromise = null;
-        function ensureBunnyPlayerJs() {
-          if (window.playerjs && window.playerjs.Player) return Promise.resolve();
-          if (bunnyPlayerJsPromise) return bunnyPlayerJsPromise;
-          bunnyPlayerJsPromise = new Promise((resolve, reject) => {
-            const existing = document.querySelector('script[data-bunny-playerjs="1"]');
-            if (existing) {
-              existing.addEventListener('load', () => resolve(), { once: true });
-              existing.addEventListener('error', () => reject(new Error('Failed to load Player.js')), { once: true });
-              return;
-            }
-            const s = document.createElement('script');
-            s.src = 'https://assets.mediadelivery.net/playerjs/player-0.1.0.min.js';
-            s.async = true;
-            s.dataset.bunnyPlayerjs = '1';
-            s.addEventListener('load', () => resolve(), { once: true });
-            s.addEventListener('error', () => reject(new Error('Failed to load Player.js')), { once: true });
-            document.head.appendChild(s);
-          });
-          return bunnyPlayerJsPromise;
-        }
-        function initVideoEmbeds(rootEl) {
-          if (!rootEl) return;
-          const iframes = rootEl.querySelectorAll('.slide-video iframe[data-bunny-playerjs="1"]');
-          if (!iframes.length) return;
-          ensureBunnyPlayerJs().then(() => {
-            for (const iframe of iframes) {
-              if (iframe.dataset.playerjsReady === '1') continue;
-              iframe.dataset.playerjsReady = '1';
-              try { new window.playerjs.Player(iframe); } catch (e) {}
-            }
-          }).catch(() => {});
-        }
-
-        function pauseVideoEmbeds(rootEl) {
-          if (!rootEl) return;
-          const iframes = rootEl.querySelectorAll('.slide-video iframe');
-          for (const iframe of iframes) {
-            const noAuto = iframe && iframe.dataset ? iframe.dataset.videoSrcNoautoplay : '';
-            if (noAuto && iframe.getAttribute('src') !== noAuto) {
-              iframe.setAttribute('src', noAuto);
-            }
-          }
-        }
-
-        function activateVideoEmbeds(rootEl) {
-          if (!rootEl) return;
-          initVideoEmbeds(rootEl);
-          const iframes = rootEl.querySelectorAll('.slide-video iframe');
-          for (const iframe of iframes) {
-            const wantsAuto = iframe && iframe.dataset ? iframe.dataset.videoAutoplay === '1' : false;
-            const src = (wantsAuto && iframe.dataset.videoSrcAutoplay) || iframe.dataset.videoSrcNoautoplay || iframe.getAttribute('src') || '';
-            if (src && iframe.getAttribute('src') !== src) iframe.setAttribute('src', src);
-          }
-        }
-
-        const stageWrapEl = document.getElementById('stageWrap');
-        const stageEl = document.getElementById('stage');
         const btnPrev = document.getElementById('btnPrev');
         const btnNext = document.getElementById('btnNext');
         const srStatus = document.getElementById('srStatus');
 
-        // Scale the fixed 1600×900 stage to fit the available area (between topbar and progress).
-        function updateStageScale() {
-          if (!stageWrapEl || !stageEl) return;
-          const w = stageWrapEl.clientWidth || 1;
-          const h = stageWrapEl.clientHeight || 1;
-          const scale = Math.max(0.05, Math.min(w / BASE_W, h / BASE_H));
-          const sw = BASE_W * scale;
-          const sh = BASE_H * scale;
-          const left = Math.max(0, (w - sw) / 2);
-          const top = Math.max(0, (h - sh) / 2);
-          stageEl.style.left = left + 'px';
-          stageEl.style.top = top + 'px';
-          stageEl.style.transform = 'scale(' + scale + ')';
-        }
-        updateStageScale();
-        try {
-          const ro = new ResizeObserver(() => updateStageScale());
-          if (stageWrapEl) ro.observe(stageWrapEl);
-        } catch {
-          window.addEventListener('resize', updateStageScale, { passive: true });
-        }
+        attachStageScale();
 
         const slides = Array.from(document.querySelectorAll('.deck-slide'));
         let idx = 0;
@@ -694,66 +409,234 @@ export async function buildStandaloneHtml(
           if (shouldAutoplay) setPlaying(true);
           else updateButton();
         })();
+`;
+}
 
-        ${buildPrismKatexInitScript(highlightNeeds)}
+export async function buildStandaloneHtml(
+  repoRoot,
+  pres,
+  {
+    headHtml = '',
+    topbarRightHtml = '',
+    theme = null,
+    watermark = null,
+    context = 'export',
+    presentationId = '',
+    slideTypes = null,
+    description = null,
+  } = {},
+) {
+  // Apply the appropriate visibility filter based on context
+  pres =
+    context === 'published' ? filterForPublished(pres) : filterForExport(pres);
+  const docLang = resolveDocLangFromPresentation(pres);
+  // The deck's own language, for slide types that render built-in copy. Not
+  // the same value as docLang: that one always answers (falling back to nl for
+  // <html lang>), this one stays null when the deck names no language so the
+  // copy table can apply its own documented default.
+  const deckLang = resolveDeckLang(pres);
+  // Meta description: use the caller-supplied string (the published route
+  // passes one with its own fallback), else the deck's own description. The
+  // reader view already emits this; the visual export/published head didn't.
+  const metaDescription = (
+    typeof description === 'string' && description.trim()
+      ? description
+      : typeof pres?.description === 'string'
+        ? pres.description
+        : ''
+  ).trim();
+  const css = await loadExportCssBundle(repoRoot, theme, watermark);
 
-        // Lead capture form handling
-        function initLeadCaptureForms() {
-          const forms = document.querySelectorAll('.slide-lead-capture [data-lead-form="1"]');
-          for (const form of forms) {
-            const slideEl = form.closest('.slide-lead-capture');
-            if (!slideEl) continue;
-            const slideId = slideEl.dataset.slideId || '';
-            const formState = slideEl.querySelector('[data-lead-state="form"]');
-            const thankYouState = slideEl.querySelector('[data-lead-state="thankyou"]');
-            const errorEl = slideEl.querySelector('[data-lead-error="1"]');
+  // Inline any root-relative local font file a bundled stylesheet still
+  // references (a custom theme's own face) as a data URL, so a downloaded
+  // standalone file renders it offline instead of falling back to system fonts
+  // on a dead `/assets/...woff2` reference. Theme fonts are already embedded
+  // via css.fontCss; this only embeds what the CSS actually references, never
+  // the whole ~2.7 MB pinned library. See
+  // docs/reference/standalone-html-export.md.
+  const [chromeCss, slidesCss] = await Promise.all([
+    inlineLocalFontUrls(repoRoot, css.chromeCss),
+    inlineLocalFontUrls(repoRoot, css.slidesCss),
+  ]);
 
-            // Check if already submitted
-            const storageKey = 'lead_submitted_' + slideId;
-            if (localStorage.getItem(storageKey) === 'true') {
-              if (formState) formState.hidden = true;
-              if (thankYouState) thankYouState.hidden = false;
-              continue;
-            }
+  // Build external font links/scripts for managed fonts (Adobe, Monotype, Google)
+  function isSafeUrl(url) {
+    try {
+      const parsed = new URL(url);
+      return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+    } catch {
+      return false;
+    }
+  }
+  const externalFontLinks = Array.isArray(theme?.externalFontLinks)
+    ? theme.externalFontLinks
+    : [];
+  const externalFontCssLinks = externalFontLinks
+    .filter((l) => l.type === 'css' && l.url)
+    .filter((l) => isSafeUrl(l.url))
+    .map(
+      (l) =>
+        `<link rel="stylesheet" href="${l.url.replace(/"/g, '&quot;')}" />`,
+    )
+    .join('\n    ');
+  const externalFontScripts = externalFontLinks
+    .filter((l) => l.type === 'js' && l.url)
+    .filter((l) => isSafeUrl(l.url))
+    .map((l) => `<script src="${l.url.replace(/"/g, '&quot;')}"></script>`)
+    .join('\n    ');
 
-            form.addEventListener('submit', async function(e) {
-              e.preventDefault();
-              const formData = new FormData(form);
-              const name = (formData.get('name') || '').trim();
-              const email = (formData.get('email') || '').trim();
-              const consentChecked = form.querySelector('input[name="consent"]');
-              const consentText = formData.get('consentText') || '';
-              const privacyUrl = formData.get('privacyUrl') || '';
+  // Embed uploads + /client assets (Lucide icon SVGs), so the downloaded
+  // standalone HTML works without a server. Shared cache dedupes the same
+  // source across this pass and the rendered-HTML pass below.
+  const embedCache = new Map();
+  const slides = await embedSlideImages(repoRoot, pres.slides, {
+    includeClient: true,
+    cache: embedCache,
+  });
 
-              // Validation
-              if (!name) { if (errorEl) errorEl.textContent = 'Please enter your name.'; return; }
-              if (!email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) { if (errorEl) errorEl.textContent = 'Please enter a valid email.'; return; }
-              if (consentChecked && !consentChecked.checked) { if (errorEl) errorEl.textContent = 'Please accept the privacy terms.'; return; }
-              if (errorEl) errorEl.textContent = '';
+  // Auto-advance / loop config (used by published /p/ pages and downloaded standalone HTML).
+  // URL params (?loop / ?autoplay / ?interval) can override these at runtime.
+  const autoAdvanceCfg =
+    pres?.settings?.autoAdvance && typeof pres.settings.autoAdvance === 'object'
+      ? pres.settings.autoAdvance
+      : {};
+  const autoAdvanceEnabled =
+    !!autoAdvanceCfg.enabled && autoAdvanceCfg.mode !== 'pacing';
+  const autoAdvanceLoop = !!autoAdvanceCfg.loop;
+  const autoAdvanceInterval =
+    Number(autoAdvanceCfg.intervalSeconds) || DEFAULT_ADVANCE_INTERVAL_SECONDS;
+  const slideDurations = slides.map((s) =>
+    getSlideEffectiveDuration(s, autoAdvanceInterval),
+  );
+  const autoAdvanceJson = JSON.stringify({
+    enabled: autoAdvanceEnabled,
+    loop: autoAdvanceLoop,
+    intervalSeconds: autoAdvanceInterval,
+    slideDurations,
+  });
 
-              try {
-                const presentationId = window.__PRESENTATION_ID__ || '';
-                const response = await fetch('/api/leads', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ presentationId, slideId, name, email, consentGiven: true, consentText, privacyUrl })
-                });
-                if (!response.ok) {
-                  const data = await response.json().catch(() => ({}));
-                  throw new Error(data.error || 'Submission failed');
-                }
-                localStorage.setItem(storageKey, 'true');
-                if (formState) formState.hidden = true;
-                if (thankYouState) thankYouState.hidden = false;
-              } catch (err) {
-                if (errorEl) errorEl.textContent = err.message || 'Something went wrong.';
-              }
-            });
-          }
-        }
-        initLeadCaptureForms();
+  // Per-slide heading depth for the document outline: the deck title below is
+  // the single <h1>; chapter sections push their slides one level deeper.
+  const headingShifts = computeHeadingShifts(slides);
+  let slidesHtml = slides
+    .map((s, i) => {
+      const c = s?.content && typeof s.content === 'object' ? s.content : {};
+      const a11yTitle =
+        typeof c?.a11yTitle === 'string' ? c.a11yTitle.trim() : '';
+      const a11ySummary =
+        typeof c?.a11ySummary === 'string' ? c.a11ySummary.trim() : '';
+      const a11yTitleAttr = a11yTitle
+        ? ` data-a11y-title="${escapeHtml(a11yTitle)}"`
+        : '';
+      const a11ySummaryAttr = a11ySummary
+        ? ` data-a11y-summary="${escapeHtml(a11ySummary)}"`
+        : '';
+      return `<section class="deck-slide" data-slide-id="${escapeHtml(
+        s.id,
+      )}"${a11yTitleAttr}${a11ySummaryAttr}>${renderSlideHtml(s, { theme, slideTypes, stripEditorAttrs: true, headingShift: headingShifts[i], lang: deckLang })}</section>`;
+    })
+    .join('\n');
+  slidesHtml = await embedImgSrcDataUrls(repoRoot, slidesHtml, {
+    includeClient: true,
+    cache: embedCache,
+  });
+  const title = escapeHtml(pres.title || 'Presentation');
+  const extraHead = String(headHtml || '');
+  const extraTopbar = String(topbarRightHtml || '');
+
+  // Prism/KaTeX are the only third-party CDN requests this page can make, so
+  // they are emitted only when the rendered slides actually contain a code
+  // block or math — and Prism only loads the language packs this deck uses.
+  // A deck with neither loads nothing from a CDN at all, which is the point:
+  // the same builder serves every published /p/ page, not just downloads.
+  const highlightNeeds = detectPrismKatexNeeds(slidesHtml);
+
+  return `${buildDocumentHead({
+    lang: docLang,
+    title: pres.title || 'Presentation',
+    description: metaDescription,
+    head: [
+      extraHead,
+      externalFontCssLinks,
+      externalFontScripts,
+      buildPrismKatexCdnTags(highlightNeeds),
+    ],
+    styles: [
+      buildCssChain(
+        repoRoot,
+        [
+          css.fontCss,
+          chromeCss,
+          css.themeVarsCss,
+          css.themeCss,
+          slidesCss,
+          css.wmCss,
+          STANDALONE_CSS,
+        ],
+        { customCss: css.customCss },
+      ),
+    ],
+  })}
+  <body class="export-body">
+    <script>
+      // ?ui=min: hide the presenter chrome (see the .ui-min rules above). Read
+      // before the shell renders so an embedded deck never flashes a topbar it
+      // is about to drop. Same param name and meaning as buildEmbedHtml's ui
+      // option, so the two runtimes keep one vocabulary.
+      (function () {
+        var ui = 'default';
+        try {
+          var raw = new URLSearchParams(location.search).get('ui');
+          if (String(raw || '').toLowerCase().trim() === 'min') ui = 'min';
+        } catch (e) {}
+        window.__DECK_UI__ = ui;
+        if (ui === 'min') document.documentElement.classList.add('ui-min');
       })();
     </script>
+    <a class="skip-link" href="#deck">Skip to slides</a>
+    <div class="presenter-shell">
+      <header class="presenter-topbar">
+        <h1 class="presenter-title">${title}</h1>
+        <div class="row" style="gap: 10px; align-items:center;">
+          ${extraTopbar}
+          <div class="presenter-help">←/→ or Space · F fullscreen · Esc</div>
+        </div>
+      </header>
+      <main id="deck" class="deck" aria-live="polite">
+        <div id="stageWrap" class="ps-standalone-stage-wrap">
+          <div id="stage" class="ps-standalone-stage ps-theme">
+            ${css.wmHtml}
+            ${slidesHtml}
+          </div>
+        </div>
+      </main>
+      <footer class="presenter-progress">
+        <div id="srStatus" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+        <div id="loopBar" class="ps-standalone-loop-bar"><div id="loopBarFill" class="ps-standalone-loop-bar-fill"></div></div>
+        <div class="ps-standalone-progress-row">
+          <nav class="ps-standalone-nav" aria-label="Slide navigation">
+            <button id="btnPrev" class="btn btn-secondary is-compact" type="button" aria-label="Previous slide">Previous</button>
+            <button id="btnNext" class="btn btn-secondary is-compact" type="button" aria-label="Next slide">Next</button>
+            <button id="btnLoop" class="btn btn-secondary is-compact" type="button" aria-label="Auto-loop" aria-pressed="false" hidden>▶ Loop</button>
+            <label class="ps-standalone-loop" hidden id="loopIntervalWrap">
+              <input id="loopInterval" class="ps-standalone-loop-interval" type="number" min="1" max="300" step="1" aria-label="Seconds per slide" />
+              <span>s</span>
+            </label>
+          </nav>
+          <div id="progressText" class="presenter-progress-text" aria-live="polite"></div>
+        </div>
+        <div class="presenter-progress-bar"><div id="progressFill" class="presenter-progress-fill"></div></div>
+      </footer>
+    </div>
+    ${buildScriptChain({
+      runtime: 'stage',
+      leadCapture: true,
+      needs: highlightNeeds,
+      body: deckRuntimeJs({
+        presentationId: presentationId || pres?.id || '',
+        autoAdvanceJson,
+      }),
+    })}
   </body>
 </html>`;
 }

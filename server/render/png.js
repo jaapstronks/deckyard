@@ -10,10 +10,8 @@ import {
   embedImgSrcDataUrls,
   imageFieldKeysForType,
 } from '../utils/html-utils.js';
-import {
-  buildPrismKatexCdnTags,
-  buildPrismKatexInitScriptTag,
-} from '../utils/prism-katex.js';
+import { buildPrismKatexCdnTags } from '../utils/prism-katex.js';
+import { buildScriptChain } from '../utils/script-chain.js';
 import { renderVideoSlidePngHtml } from '../utils/video-slide-html.js';
 import { buildDocumentHead } from '../utils/head-chain.js';
 import {
@@ -95,7 +93,7 @@ export async function buildSlidePngHtml(
   })}
   <body>
     <div class="ps-theme">${css.wmHtml}${slideHtml}</div>
-    ${buildPrismKatexInitScriptTag()}
+    ${buildScriptChain()}
   </body>
 </html>`;
 }
