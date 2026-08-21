@@ -7,9 +7,12 @@
  * in the chain, so a fork rule beats the core rule it replaces without patching
  * a core file. Two things can rot that, and both are pinned here:
  *
- *   1. **Coverage.** Eight paths render a deck. A seam that lands in seven of
- *      them gives the fork screen/export drift, which is the bug class this
- *      exists to remove. Every path is built for real below and checked.
+ *   1. **Coverage.** Every path in `server/render-paths.js` renders a deck. A
+ *      seam that lands in all but one of them gives the fork screen/export
+ *      drift, which is the bug class this exists to remove. Every registered
+ *      path is built for real below and checked — including the reader, whose
+ *      chain is a different one (docs/reference/fork-setup.md § Two chains,
+ *      one seam) that nonetheless has to end in the same place.
  *   2. **Position.** "Loads after core" asserted as string order survives
  *      exactly one refactor. The cascade tests load the assembled document in
  *      Chrome and read `getComputedStyle`, so what is pinned is the outcome —
@@ -44,16 +47,7 @@ import {
 } from '../server/utils/css-chain.js';
 import { handleCustomStyles } from '../server/routes/static/static-files.js';
 import { loadExportCssBundle } from '../server/export/css-bundle.js';
-import { buildSlidesPdfHtml } from '../server/export/pdf-slides.js';
-import { buildSlidesPngExportHtml } from '../server/export/png-slides.js';
-import { buildStandaloneHtml } from '../server/export/html.js';
-import { buildPrintHtml } from '../server/export/print.js';
-import { buildSlidePngHtml } from '../server/render/png.js';
-import {
-  buildSlidePreviewHtml,
-  buildSingleSlidePreviewHtml,
-} from '../server/mcp/preview.js';
-import { buildEmbedHtml } from '../server/utils/embed-html/index.js';
+import { buildAllRenderPaths } from '../server/render-paths.js';
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -105,24 +99,14 @@ const SLIDE = {
 };
 const DECK = { title: 'Seam', theme: 'default', slides: [SLIDE] };
 
-/** Every path, built for real. Order matters: the seam must be last in each. */
-async function buildAllPaths(root) {
-  return {
-    'export/pdf-slides': await buildSlidesPdfHtml(root, DECK, {}),
-    'export/png-slides': await buildSlidesPngExportHtml(root, DECK, {}),
-    'export/html': await buildStandaloneHtml(root, DECK, {}),
-    'export/print': await buildPrintHtml(root, DECK, {}),
-    'render/png': await buildSlidePngHtml(root, SLIDE, {}),
-    'mcp/preview (list)': await buildSlidePreviewHtml([SLIDE], {
-      title: 'Seam',
-      repoRoot: root,
-    }),
-    'mcp/preview (single)': await buildSingleSlidePreviewHtml(SLIDE, {
-      repoRoot: root,
-    }),
-    'utils/embed-html': buildEmbedHtml(root, DECK, { publishId: 'seam' }),
-  };
-}
+/**
+ * Every path, built for real. Order matters: the seam must be last in each.
+ *
+ * The list itself lives in `server/render-paths.js` — this file used to keep
+ * its own copy, which made "add a ninth render path" and "forget the seam in
+ * the ninth render path" the same commit.
+ */
+const buildAllPaths = (root) => buildAllRenderPaths(root, DECK);
 
 const documents = await buildAllPaths(fixtureRoot);
 
@@ -256,6 +240,14 @@ const CASCADE_DUELS = {
     prop: 'background-color',
     expect: /^rgb\(1, 2, 3\)$/,
     core: 'the embed shell sets `body { background: #000 }`',
+  },
+  'export/reader': {
+    // The reflow chain. Its own layer is the only thing above the seam here,
+    // which is exactly the point: one layer or seven, the seam still lands last.
+    selector: 'body',
+    prop: 'margin-top',
+    expect: /^7px$/,
+    core: 'the reader document CSS sets `body { margin: 0 }`',
   },
 };
 

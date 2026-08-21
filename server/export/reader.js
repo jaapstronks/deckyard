@@ -27,11 +27,21 @@ import {
   getDocDir,
 } from '../utils/doc-lang.js';
 import { escapeHtml } from '../utils/html-utils.js';
+import { buildCssChain } from '../utils/css-chain.js';
 
 // Self-contained, reflow-first stylesheet. Relative units + a single readable
 // column; no fixed canvas dimensions, no absolute positioning. Degrades to
 // plain readable flow when disabled entirely.
-const READER_CSS = `
+//
+// This is the whole of the *reader chain* — the second of Deckyard's two CSS
+// chains (docs/reference/fork-setup.md § Two chains, one seam). The canvas
+// chain stacks core + theme + per-path document CSS; this one is a single
+// layer, because the reader shares no vocabulary with it: 51 `.reader-*`
+// selectors, no `.slide`, no `--t-*`, and a contract test that forbids the
+// canvas idiom outright (tests/semantic-reader.test.js). What the two chains do
+// share is where they end — `buildCssChain` appends `custom/styles/` last to
+// both, so a fork can restyle the reader without patching this file.
+const READER_DOC_CSS = `
 :root { color-scheme: light dark; }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
@@ -105,7 +115,8 @@ img { max-width: 100%; height: auto; }
 /**
  * Build the semantic reflowable HTML document for a presentation.
  *
- * @param {string} _repoRoot - unused (kept for a uniform export signature)
+ * @param {string} repoRoot - Repository root; the fork CSS seam is read from
+ *   `custom/styles/` under it (server/utils/css-chain.js)
  * @param {object} pres
  * @param {object} [opts]
  * @param {'export'|'published'} [opts.context='export'] - visibility filter
@@ -115,7 +126,7 @@ img { max-width: 100%; height: auto; }
  * @returns {string} a complete HTML document
  */
 export function buildReaderHtml(
-  _repoRoot,
+  repoRoot,
   pres,
   {
     context = 'export',
@@ -183,7 +194,9 @@ export function buildReaderHtml(
     <title>${escapeHtml(title)}</title>
     ${description ? `<meta name="description" content="${escapeHtml(description)}" />` : ''}
     ${headHtml || ''}
-    <style>${READER_CSS}</style>
+    <style>
+${buildCssChain(repoRoot, [READER_DOC_CSS])}
+    </style>
   </head>
   <body>
     <header class="reader-header">
