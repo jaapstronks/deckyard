@@ -957,6 +957,12 @@ const AUTHZ_DIR = fileURLToPath(
 /**
  * Deciders that are exported but not pinned here, each with the reason.
  *
+ * Every entry names where the decider *is* covered instead. "Nowhere" is not an
+ * allowed reason, and for a while three of the four below said exactly that:
+ * this gate recorded them as an open gap (B109) rather than close it. B113 did
+ * close it, in tests/actor-access-storage-backed.test.js. They stay listed
+ * because they need a database double, not because they are untested.
+ *
  * Held to the same two-way honesty as the other allowlists in this repo: an
  * entry whose export disappears fails, and so does an entry that has quietly
  * been pinned after all.
@@ -965,11 +971,11 @@ const NOT_PINNED_HERE = {
   canActorAccessPresentation:
     'async and storage-backed (identity resolution + a collaborator lookup); its pure core checkActorAccess delegates to canRead/canWritePresentation, which are pinned above. The wrapper needs a database double, so it belongs in a route or pg test — tests/pg/collaborator-authz-resolution.pgtest.js covers the resolution half.',
   canActorDeletePresentation:
-    'async and storage-backed; delegates to canDeletePresentation, pinned above. No direct test names it today — recorded as a gap in the B109 PR, not resolved by this entry.',
+    'async and storage-backed; delegates to canDeletePresentation, pinned above. The wrapper — identity resolution included — is pinned directly in tests/actor-access-storage-backed.test.js, which needs a database double and so cannot live in a pure matrix.',
   canActorResolveComment:
-    'async and storage-backed; delegates to canResolveComment, pinned above. No direct test names it today — recorded as a gap in the B109 PR, not resolved by this entry.',
+    'async and storage-backed; delegates to canResolveComment, pinned above. The wrapper — identity resolution included — is pinned directly in tests/actor-access-storage-backed.test.js, which needs a database double and so cannot live in a pure matrix.',
   canActorCommentOnPresentation:
-    'async and storage-backed; its pure core checkActorCommentAccess delegates to canCommentOnPresentation, pinned above. No direct test names it today — recorded as a gap in the B109 PR, not resolved by this entry.',
+    'async and storage-backed; its pure core checkActorCommentAccess delegates to canCommentOnPresentation, pinned above. The wrapper — the collaborator lookup included — is pinned directly in tests/actor-access-storage-backed.test.js, which needs a database double and so cannot live in a pure matrix.',
 };
 
 /** Every `can*`/`is*` export in the authz layer, module by module. */
