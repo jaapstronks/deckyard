@@ -102,7 +102,7 @@ function getSectionInfo(section) {
  * @param {Object} options - Picker options
  */
 export function openImageLibraryPicker({
-  title = t('imageLibrary.title', 'Library'),
+  title = t('imageLibrary.title', 'Media Library'),
   allowCaptionCredit = false,
   onPick,
   user,

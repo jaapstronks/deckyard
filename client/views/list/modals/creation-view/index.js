@@ -330,8 +330,8 @@ export function openCreationView({
       'convert-file': t('list.fileConverter.convert', 'Convert'),
       notion: t('list.newPresentation.notion.import', 'Import'),
       'import-json': t('list.importJson', 'Import JSON'),
-      'import-markdown': t('list.importJson', 'Import JSON'),
-      'paste-markdown': t('list.importJson', 'Import JSON'),
+      'import-markdown': t('list.importMarkdown', 'Import Markdown'),
+      'paste-markdown': t('list.importMarkdown', 'Import Markdown'),
     };
     return labels[mode] || t('common.create', 'Create');
   };
