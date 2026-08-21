@@ -15,7 +15,7 @@
  * field type) and the wide data surface (`chart-data-modal.js`).
  */
 
-import { h as defaultH } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { createSegmented } from '../../../lib/dom/segmented.js';
 import {
@@ -134,7 +134,6 @@ export function applyHeaderPaste({
  * Build a chart-data grid editor.
  *
  * @param {Object} opts
- * @param {Function} [opts.h] - DOM helper (defaults to shared `h()`).
  * @param {string} [opts.chartType] - 'bar' | 'line' | 'pie' (drives columns).
  * @param {string} [opts.value] - Initial CSV string.
  * @param {(csv: string) => void} [opts.onChange] - Called with the serialised
@@ -143,7 +142,6 @@ export function applyHeaderPaste({
  * @returns {{ el: HTMLElement }}
  */
 export function createCsvGridEditor({
-  h = defaultH,
   chartType = 'bar',
   value = '',
   onChange,
@@ -454,7 +452,6 @@ export function createCsvGridEditor({
   }
 
   const seg = createSegmented({
-    h,
     outlined: true,
     ariaLabel: t('editor.chart.grid.viewLabel', 'Data editor view'),
     segments: [

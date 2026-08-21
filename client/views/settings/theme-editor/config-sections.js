@@ -74,7 +74,6 @@ function choiceRow({ label, options, value, onChange }) {
   const row = h('div', { class: 'stack theme-config-choice' });
   row.append(h('div', { class: 'field-label field-label-sm', text: label }));
   const segmented = createSegmented({
-    h,
     segments: [
       { value: UNSET, label: t('settings.themes.config.default', 'Default') },
       ...options,

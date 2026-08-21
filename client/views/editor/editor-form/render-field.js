@@ -142,7 +142,6 @@ export function createRenderField({
       ]);
     }
     const dataEditor = createCsvGridEditor({
-      h,
       chartType: String(slide.content?.chartType || 'bar'),
       value: slide.content[field.key] || '',
       label,

@@ -216,7 +216,6 @@ export function createEditorTopbarMoreMenu({
     close: closeMore,
     detach: detachMore,
   } = createDropdown({
-    h,
     triggerClass: 'ghost-icon-btn',
     triggerContent: [icon('ellipsis', { size: 16 })],
     title: t('common.moreOptions', 'More options'),

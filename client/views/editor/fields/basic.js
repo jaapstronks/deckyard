@@ -68,9 +68,7 @@ export function createBasicFields({ h } = {}) {
       input,
       helpEl,
     ]);
-    return opts?.required
-      ? markFieldRequired({ h, wrap, control: input })
-      : wrap;
+    return opts?.required ? markFieldRequired({ wrap, control: input }) : wrap;
   };
 
   const fieldNumber = (label, value, onChange, opts = {}) => {
@@ -112,9 +110,7 @@ export function createBasicFields({ h } = {}) {
       input,
       helpText ? h('div', { class: 'help', text: helpText }) : null,
     ]);
-    return opts?.required
-      ? markFieldRequired({ h, wrap, control: input })
-      : wrap;
+    return opts?.required ? markFieldRequired({ wrap, control: input }) : wrap;
   };
 
   const fieldTextarea = (label, value, helpText, onChange, opts = {}) => {
@@ -140,7 +136,7 @@ export function createBasicFields({ h } = {}) {
       ta,
       h('div', { class: 'help', text: helpText }),
     ]);
-    return opts?.required ? markFieldRequired({ h, wrap, control: ta }) : wrap;
+    return opts?.required ? markFieldRequired({ wrap, control: ta }) : wrap;
   };
 
   /**
@@ -192,7 +188,7 @@ export function createBasicFields({ h } = {}) {
     ]);
     // Read-only code fields are capability-gated, not the author's to fill in.
     return opts?.required && !opts?.readOnly
-      ? markFieldRequired({ h, wrap, control: ta })
+      ? markFieldRequired({ wrap, control: ta })
       : wrap;
   };
 
@@ -438,7 +434,7 @@ export function createBasicFields({ h } = {}) {
       ta,
       h('div', { class: 'help', text: helpText }),
     ]);
-    return opts?.required ? markFieldRequired({ h, wrap, control: ta }) : wrap;
+    return opts?.required ? markFieldRequired({ wrap, control: ta }) : wrap;
   };
 
   const fieldSelect = (label, value, options, onChange) => {

@@ -10,14 +10,13 @@
  * `.dropdown-menu`), so there is no visual change versus the hand-built form.
  */
 
-import { h as defaultH, installDismissOnOutside } from '../dom.js';
+import { h, installDismissOnOutside } from '../dom.js';
 import { makeDropdownCaret } from './icons.js';
 
 /**
  * Build a details-based dropdown (trigger `<summary>` + `.dropdown-menu`).
  *
  * @param {Object} opts
- * @param {Function} [opts.h] - DOM helper (defaults to the shared `h()`).
  * @param {string} [opts.triggerClass='btn btn-secondary'] - classes on the
  *   `<summary>` trigger; `dropdown-trigger` is always appended.
  * @param {(Node|string|Array<Node|string>)} [opts.triggerContent] - content
@@ -39,7 +38,6 @@ import { makeDropdownCaret } from './icons.js';
  *   menu: HTMLElement, close: Function, detach: Function }}
  */
 export function createDropdown({
-  h = defaultH,
   triggerClass = 'btn btn-secondary',
   triggerContent,
   label,

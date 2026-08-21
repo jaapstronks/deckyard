@@ -14,7 +14,7 @@
  *   the UI.
  */
 
-import { h as defaultH } from '../dom.js';
+import { h } from '../dom.js';
 import { api } from '../api.js';
 import { toast } from '../dom/toast.js';
 import { t } from '../ui-i18n.js';
@@ -66,7 +66,6 @@ function organizationLabel(org) {
  * meaning from the second organization onwards.
  *
  * @param {Object} [options]
- * @param {Function} [options.h] - DOM helper.
  * @param {string} [options.activeOrganizationId] - Currently active organization.
  * @param {Function} [options.onBeforeSwitch] - Called before the switch request
  *   (used to close the dropdown).
@@ -76,7 +75,6 @@ function organizationLabel(org) {
  * @returns {{ el: HTMLElement, ready: Promise<void> }|null}
  */
 export function createOrganizationSection({
-  h = defaultH,
   activeOrganizationId = null,
   onBeforeSwitch,
   load = loadOrganizations,

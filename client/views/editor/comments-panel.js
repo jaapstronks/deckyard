@@ -468,7 +468,6 @@ export function createCommentsPanel({
   // `setScope` is the single owner of the selection (it also reloads), so the
   // control reports clicks rather than moving its own highlight.
   const scopeSegmented = createSegmented({
-    h,
     outlined: true,
     className: 'comments-scope',
     buttonClass: 'comments-scope-btn',
@@ -516,7 +515,6 @@ export function createCommentsPanel({
     close: closeFilterMenu,
     detach: detachFilterMenu,
   } = createDropdown({
-    h,
     triggerClass: 'btn btn-sm btn-secondary comments-filter-trigger',
     triggerContent: [filterMenuLabel, makeDropdownCaret()],
     title: t('comments.filter.title', 'Filter comments'),

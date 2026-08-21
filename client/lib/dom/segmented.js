@@ -14,7 +14,7 @@
  * scaffold, hand back the element plus the handful of controls a caller needs.
  */
 
-import { h as defaultH } from '../dom.js';
+import { h } from '../dom.js';
 
 /**
  * @typedef {Object} SegmentSpec
@@ -36,7 +36,6 @@ import { h as defaultH } from '../dom.js';
  * in sync by `setValue`, which is also what the buttons call on click.
  *
  * @param {Object} opts
- * @param {Function} [opts.h] - DOM helper (defaults to the shared `h()`).
  * @param {SegmentSpec[]} opts.segments - The segments, in order.
  * @param {string} [opts.value] - Initially selected value. Defaults to the
  *   first segment. Pass `null` for no initial selection.
@@ -55,7 +54,6 @@ import { h as defaultH } from '../dom.js';
  *   getValue: () => (string|null), setValue: (value: string|null) => void }}
  */
 export function createSegmented({
-  h = defaultH,
   segments = [],
   value,
   onSelect,

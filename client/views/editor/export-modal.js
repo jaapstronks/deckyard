@@ -359,7 +359,6 @@ export function openExportModal({ pres, id, root, overlayClosers }) {
       text: t('editor.export.langLabel', 'Language'),
     });
     const seg = createSegmented({
-      h,
       ariaLabel: t('editor.export.langLabel', 'Language'),
       value: activeLang,
       segments: [
