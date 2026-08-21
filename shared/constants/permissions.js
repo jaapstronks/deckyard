@@ -18,8 +18,13 @@ export const PERMISSIONS = {
 };
 
 /**
- * All permission levels as an array.
- * Use when checking if a permission is valid.
+ * All permission levels as an array, **in ascending order** — the order
+ * {@link PERMISSIONS} declares them in.
+ *
+ * Both properties are relied on: validity checks want the set, and the share
+ * modal's permission dropdowns render this array straight into `<option>`s, so
+ * reordering `PERMISSIONS` reorders the ladder a user sees. Ascending order is
+ * part of the contract, not an accident of `Object.values`.
  */
 export const ALL_PERMISSIONS = Object.values(PERMISSIONS);
 
