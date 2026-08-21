@@ -16,7 +16,7 @@ import {
   CommentEventTypes,
 } from '../../../services/comment-events.js';
 import { withPresentationReadAuth } from '../../../utils/route-middleware.js';
-import { openSseStream } from '../../../utils/sse.js';
+import { openSseStream, sseWrite } from '../../../utils/sse.js';
 
 /**
  * List comments for a presentation.
@@ -147,9 +147,7 @@ export async function handlePresentationCommentEvents(
   if (!stream.ok) return true;
 
   // Send initial connection confirmation
-  res.write(
-    `event: connected\ndata: ${JSON.stringify({ presentationId: id })}\n\n`,
-  );
+  sseWrite(res, { event: 'connected', data: { presentationId: id } });
 
   // Register this client
   addClient(id, res);
@@ -158,9 +156,10 @@ export async function handlePresentationCommentEvents(
   try {
     const counts = await getCommentCountsBySlide(storageScope, id);
     const total = await getOpenCommentCount(storageScope, id);
-    res.write(
-      `event: ${CommentEventTypes.COUNTS_CHANGED}\ndata: ${JSON.stringify({ counts, total })}\n\n`,
-    );
+    sseWrite(res, {
+      event: CommentEventTypes.COUNTS_CHANGED,
+      data: { counts, total },
+    });
   } catch {
     // Ignore initial counts error
   }

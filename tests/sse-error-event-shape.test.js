@@ -115,11 +115,9 @@ test('no route hand-rolls an SSE error payload with an `error:` prose key', () =
   for (const rel of SSE_ERROR_ROUTES) {
     const src = fs.readFileSync(path.join(repoRoot, rel), 'utf8');
     // An error emission that opens an object literal inline is hand-rolling the
-    // shape instead of going through the shared producer.
-    // `sendSSE` takes `res` first, `sendEvent` closures don't — allow both.
-    const inlineObject =
-      /send(?:Event|SSE)\(\s*(?:res\s*,\s*)?'error'\s*,\s*\{/.test(src) ||
-      /event:\s*'error'\s*,\s*\n?\s*data:\s*\{/.test(src);
+    // shape instead of going through the shared producer. Since B105 there is
+    // one emission spelling to check: `sseWrite(res, { event: 'error', … })`.
+    const inlineObject = /event:\s*'error'\s*,\s*\n?\s*data:\s*\{/.test(src);
     if (inlineObject) offenders.push(rel);
   }
   assert.deepEqual(

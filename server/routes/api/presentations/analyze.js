@@ -22,15 +22,8 @@ import {
 } from '../../../services/comment-events.js';
 import { getAiIdentity } from '../../../storage/settings.js';
 import { createLogger } from '../../../utils/logger.js';
-import { sseErrorPayload, openSseStream } from '../../../utils/sse.js';
+import { sseWrite, sseError, openSseStream } from '../../../utils/sse.js';
 const log = createLogger('analyze');
-
-/**
- * Send SSE event to client
- */
-function sendSSE(res, event, data) {
-  res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
-}
 
 /**
  * Analyze a presentation and create AI suggestions as comments.
@@ -74,38 +67,47 @@ export async function handlePresentationAnalyze(
   if (!stream.ok) return true;
 
   // Send initial connection confirmation
-  sendSSE(res, 'connected', { presentationId: id });
+  sseWrite(res, { event: 'connected', data: { presentationId: id } });
 
   // Get AI identity from settings (custom name/email if configured)
   const aiIdentity = await getAiIdentity(storageScope);
 
   try {
     // Run analysis
-    sendSSE(res, 'progress', {
-      phase: 'analyzing',
-      slideCount: pres.slides?.length || 0,
+    sseWrite(res, {
+      event: 'progress',
+      data: {
+        phase: 'analyzing',
+        slideCount: pres.slides?.length || 0,
+      },
     });
 
     const result = await analyzePresentation(pres, {
       categories,
       onProgress: (progress) => {
-        sendSSE(res, 'progress', progress);
+        sseWrite(res, { event: 'progress', data: progress });
       },
     });
 
     const { suggestions } = result;
 
     if (suggestions.length === 0) {
-      sendSSE(res, 'complete', {
-        suggestionCount: 0,
-        message: 'No suggestions found',
+      sseWrite(res, {
+        event: 'complete',
+        data: {
+          suggestionCount: 0,
+          message: 'No suggestions found',
+        },
       });
       res.end();
       return true;
     }
 
     // Create comments for each suggestion
-    sendSSE(res, 'progress', { phase: 'creating', total: suggestions.length });
+    sseWrite(res, {
+      event: 'progress',
+      data: { phase: 'creating', total: suggestions.length },
+    });
 
     const createdComments = [];
     for (let i = 0; i < suggestions.length; i++) {
@@ -116,10 +118,13 @@ export async function handlePresentationAnalyze(
 
       if (createResult.ok) {
         createdComments.push(createResult.comment);
-        sendSSE(res, 'suggestion', {
-          index: i + 1,
-          total: suggestions.length,
-          comment: createResult.comment,
+        sseWrite(res, {
+          event: 'suggestion',
+          data: {
+            index: i + 1,
+            total: suggestions.length,
+            comment: createResult.comment,
+          },
         });
 
         // Broadcast to other connected clients
@@ -129,13 +134,16 @@ export async function handlePresentationAnalyze(
       }
     }
 
-    sendSSE(res, 'complete', {
-      suggestionCount: createdComments.length,
-      metadata: result.metadata,
+    sseWrite(res, {
+      event: 'complete',
+      data: {
+        suggestionCount: createdComments.length,
+        metadata: result.metadata,
+      },
     });
   } catch (error) {
     log.error('[analyze] Error:', error);
-    sendSSE(res, 'error', sseErrorPayload(error?.message || 'Analysis failed'));
+    sseError(res, error?.message || 'Analysis failed');
   }
 
   res.end();

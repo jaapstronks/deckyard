@@ -16,7 +16,7 @@ import {
 import { getConvertParams } from '../../utils/request-validators.js';
 import { deckToPresentationParts } from '../../../shared/slide-types.js';
 import { createLogger } from '../../utils/logger.js';
-import { sseErrorPayload, openSseStream } from '../../utils/sse.js';
+import { sseWrite, sseError, openSseStream } from '../../utils/sse.js';
 import { dispatchRoutes } from '../../utils/router.js';
 const log = createLogger('convert');
 import {
@@ -195,11 +195,6 @@ async function handleConvertStream({ storageScope, req, res, authedUser }) {
   const stream = openSseStream(req, res);
   if (!stream.ok) return true;
 
-  const sendEvent = (event, data) => {
-    res.write(`event: ${event}\n`);
-    res.write(`data: ${JSON.stringify(data)}\n\n`);
-  };
-
   // Determine file type for contextual messages
   const isPptx =
     ext === 'pptx' || ext === 'ppt' || mimeType.includes('presentation');
@@ -270,22 +265,28 @@ async function handleConvertStream({ storageScope, req, res, authedUser }) {
     const progressStep = Math.floor(20 / initialMessages.length);
 
     for (const msg of initialMessages) {
-      sendEvent('status', {
-        message: msg,
-        phase: 'parse',
-        progress,
+      sseWrite(res, {
+        event: 'status',
+        data: {
+          message: msg,
+          phase: 'parse',
+          progress,
+        },
       });
       progress += progressStep;
       await new Promise((r) => setTimeout(r, 1200));
     }
 
     // Show "analyzing content" message while AI processes
-    sendEvent('status', {
-      message: isNl
-        ? 'Inhoud analyseren en structuur bepalen...'
-        : 'Analyzing content and structure...',
-      phase: 'analyze',
-      progress: 28,
+    sseWrite(res, {
+      event: 'status',
+      data: {
+        message: isNl
+          ? 'Inhoud analyseren en structuur bepalen...'
+          : 'Analyzing content and structure...',
+        phase: 'analyze',
+        progress: 28,
+      },
     });
 
     // Convert with streaming status callback
@@ -303,10 +304,13 @@ async function handleConvertStream({ storageScope, req, res, authedUser }) {
         statusMessages.push(msg);
         // Send messages immediately as they arrive (for real-time feel)
         if (!statusMessagesSent) {
-          sendEvent('status', {
-            message: msg,
-            phase: 'convert',
-            progress: Math.min(25 + statusMessages.length * 3, 75),
+          sseWrite(res, {
+            event: 'status',
+            data: {
+              message: msg,
+              phase: 'convert',
+              progress: Math.min(25 + statusMessages.length * 3, 75),
+            },
           });
         }
       },
@@ -314,8 +318,11 @@ async function handleConvertStream({ storageScope, req, res, authedUser }) {
         // When outline is ready, send all status messages at once for client rotation
         if (outline?.statusMessages?.length > 0) {
           statusMessagesSent = true;
-          sendEvent('messages', {
-            statusMessages: outline.statusMessages,
+          sseWrite(res, {
+            event: 'messages',
+            data: {
+              statusMessages: outline.statusMessages,
+            },
           });
         }
       },
@@ -323,43 +330,49 @@ async function handleConvertStream({ storageScope, req, res, authedUser }) {
 
     // If no messages were streamed during conversion, send what we have
     if (statusMessages.length > 0 && !statusMessagesSent) {
-      sendEvent('messages', { statusMessages });
+      sseWrite(res, { event: 'messages', data: { statusMessages } });
     }
 
     if (!deck || report.errors.length > 0) {
-      sendEvent(
-        'error',
-        sseErrorPayload(report.errors.join('; ') || 'Conversion failed', {
-          report,
-        }),
-      );
+      sseError(res, report.errors.join('; ') || 'Conversion failed', {
+        report,
+      });
       res.end();
       return true;
     }
 
     // Post-conversion messages
     const slideCount = deck?.slides?.length || 0;
-    sendEvent('status', {
-      message: isNl
-        ? `${slideCount} slide${slideCount !== 1 ? 's' : ''} gegenereerd`
-        : `Generated ${slideCount} slide${slideCount !== 1 ? 's' : ''}`,
-      progress: 85,
-      phase: 'finalize',
+    sseWrite(res, {
+      event: 'status',
+      data: {
+        message: isNl
+          ? `${slideCount} slide${slideCount !== 1 ? 's' : ''} gegenereerd`
+          : `Generated ${slideCount} slide${slideCount !== 1 ? 's' : ''}`,
+        progress: 85,
+        phase: 'finalize',
+      },
     });
     await new Promise((r) => setTimeout(r, 300));
 
-    sendEvent('status', {
-      message: isNl ? 'Presentatie opbouwen...' : 'Building presentation...',
-      progress: 90,
-      phase: 'finalize',
+    sseWrite(res, {
+      event: 'status',
+      data: {
+        message: isNl ? 'Presentatie opbouwen...' : 'Building presentation...',
+        progress: 90,
+        phase: 'finalize',
+      },
     });
     await new Promise((r) => setTimeout(r, 200));
 
     // Create presentation
-    sendEvent('status', {
-      message: isNl ? 'Opslaan in bibliotheek...' : 'Saving to library...',
-      progress: 95,
-      phase: 'save',
+    sseWrite(res, {
+      event: 'status',
+      data: {
+        message: isNl ? 'Opslaan in bibliotheek...' : 'Saving to library...',
+        progress: 95,
+        phase: 'save',
+      },
     });
 
     const parts = deckToPresentationParts(deck);
@@ -390,14 +403,17 @@ async function handleConvertStream({ storageScope, req, res, authedUser }) {
       { actorEmail: authedUser?.email || null },
     );
 
-    sendEvent('complete', {
-      presentation: updated,
-      report,
-      detectedLang: effectiveLang, // Include detected language for client navigation
+    sseWrite(res, {
+      event: 'complete',
+      data: {
+        presentation: updated,
+        report,
+        detectedLang: effectiveLang, // Include detected language for client navigation
+      },
     });
   } catch (e) {
     log.error('[Convert Stream] Error:', e);
-    sendEvent('error', sseErrorPayload(e.message || 'Conversion failed'));
+    sseError(res, e.message || 'Conversion failed');
   }
 
   res.end();

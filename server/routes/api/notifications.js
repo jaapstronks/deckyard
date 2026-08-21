@@ -27,7 +27,7 @@ import {
   withErrorHandler,
 } from '../../utils/http.js';
 import { parsePaginationParams } from '../../utils/request-validators.js';
-import { openSseStream } from '../../utils/sse.js';
+import { openSseStream, sseWrite } from '../../utils/sse.js';
 
 // GET /api/notifications/events - SSE endpoint for real-time notifications
 async function handleNotificationEvents({
@@ -46,7 +46,7 @@ async function handleNotificationEvents({
 
   // Send initial connection event with current unread count
   const unreadCount = await getUnreadCount(storageScope, userEmail);
-  res.write(`event: connected\ndata: ${JSON.stringify({ unreadCount })}\n\n`);
+  sseWrite(res, { event: 'connected', data: { unreadCount } });
 
   // Clean up on client disconnect
   req.on('close', () => {

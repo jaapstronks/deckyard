@@ -23,7 +23,7 @@ import {
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { handleNotionError } from './utils.js';
 import { createLogger } from '../../../utils/logger.js';
-import { sseErrorPayload, openSseStream } from '../../../utils/sse.js';
+import { sseWrite, sseError, openSseStream } from '../../../utils/sse.js';
 const log = createLogger('import');
 
 /**
@@ -161,11 +161,6 @@ export async function handleNotionImportStream({
   const stream = openSseStream(req, res);
   if (!stream.ok) return true;
 
-  const sendEvent = (event, data) => {
-    res.write(`event: ${event}\n`);
-    res.write(`data: ${JSON.stringify(data)}\n\n`);
-  };
-
   // Initial messages (Dutch by default - actual content language is auto-detected)
   const isNl = true;
   const initialMessages = isNl
@@ -185,17 +180,23 @@ export async function handleNotionImportStream({
     const progressStep = Math.floor(20 / initialMessages.length);
 
     for (const msg of initialMessages) {
-      sendEvent('status', { message: msg, phase: 'fetch', progress });
+      sseWrite(res, {
+        event: 'status',
+        data: { message: msg, phase: 'fetch', progress },
+      });
       progress += progressStep;
       await new Promise((r) => setTimeout(r, 1200));
     }
 
-    sendEvent('status', {
-      message: isNl
-        ? 'Inhoud converteren naar slides...'
-        : 'Converting content to slides...',
-      phase: 'convert',
-      progress: 28,
+    sseWrite(res, {
+      event: 'status',
+      data: {
+        message: isNl
+          ? 'Inhoud converteren naar slides...'
+          : 'Converting content to slides...',
+        phase: 'convert',
+        progress: 28,
+      },
     });
 
     const statusMessages = [];
@@ -213,58 +214,70 @@ export async function handleNotionImportStream({
       onStatusMessage: (msg) => {
         statusMessages.push(msg);
         if (!statusMessagesSent) {
-          sendEvent('status', {
-            message: msg,
-            phase: 'convert',
-            progress: Math.min(25 + statusMessages.length * 3, 75),
+          sseWrite(res, {
+            event: 'status',
+            data: {
+              message: msg,
+              phase: 'convert',
+              progress: Math.min(25 + statusMessages.length * 3, 75),
+            },
           });
         }
       },
       onOutlineComplete: (outline) => {
         if (outline?.statusMessages?.length > 0) {
           statusMessagesSent = true;
-          sendEvent('messages', { statusMessages: outline.statusMessages });
+          sseWrite(res, {
+            event: 'messages',
+            data: { statusMessages: outline.statusMessages },
+          });
         }
       },
     });
 
     if (statusMessages.length > 0 && !statusMessagesSent) {
-      sendEvent('messages', { statusMessages });
+      sseWrite(res, { event: 'messages', data: { statusMessages } });
     }
 
     if (!deck || report.errors.length > 0) {
-      sendEvent(
-        'error',
-        sseErrorPayload(report.errors.join('; ') || 'Conversion failed', {
-          report,
-        }),
-      );
+      sseError(res, report.errors.join('; ') || 'Conversion failed', {
+        report,
+      });
       res.end();
       return true;
     }
 
     // Post-conversion messages
     const slideCount = deck?.slides?.length || 0;
-    sendEvent('status', {
-      message: isNl
-        ? `${slideCount} slide${slideCount !== 1 ? 's' : ''} gegenereerd`
-        : `Generated ${slideCount} slide${slideCount !== 1 ? 's' : ''}`,
-      progress: 85,
-      phase: 'finalize',
+    sseWrite(res, {
+      event: 'status',
+      data: {
+        message: isNl
+          ? `${slideCount} slide${slideCount !== 1 ? 's' : ''} gegenereerd`
+          : `Generated ${slideCount} slide${slideCount !== 1 ? 's' : ''}`,
+        progress: 85,
+        phase: 'finalize',
+      },
     });
     await new Promise((r) => setTimeout(r, 300));
 
-    sendEvent('status', {
-      message: isNl ? 'Presentatie opbouwen...' : 'Building presentation...',
-      progress: 90,
-      phase: 'finalize',
+    sseWrite(res, {
+      event: 'status',
+      data: {
+        message: isNl ? 'Presentatie opbouwen...' : 'Building presentation...',
+        progress: 90,
+        phase: 'finalize',
+      },
     });
     await new Promise((r) => setTimeout(r, 200));
 
-    sendEvent('status', {
-      message: isNl ? 'Opslaan in bibliotheek...' : 'Saving to library...',
-      progress: 95,
-      phase: 'save',
+    sseWrite(res, {
+      event: 'status',
+      data: {
+        message: isNl ? 'Opslaan in bibliotheek...' : 'Saving to library...',
+        progress: 95,
+        phase: 'save',
+      },
     });
 
     // Create the presentation
@@ -295,15 +308,18 @@ export async function handleNotionImportStream({
       { actorEmail: authedUser?.email || null },
     );
 
-    sendEvent('complete', {
-      presentation: updated,
-      report,
-      detectedLang: effectiveLang,
+    sseWrite(res, {
+      event: 'complete',
+      data: {
+        presentation: updated,
+        report,
+        detectedLang: effectiveLang,
+      },
     });
   } catch (e) {
     log.error('[Notion Import Stream] Error:', e);
     const msg = String(e?.message || e || 'Unknown error');
-    sendEvent('error', sseErrorPayload(msg));
+    sseError(res, msg);
   }
 
   res.end();

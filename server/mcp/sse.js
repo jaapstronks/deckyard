@@ -15,7 +15,7 @@
 
 import { randomUUID } from 'node:crypto';
 import { validateApiKey } from '../storage/api-keys.js';
-import { openSseStream } from '../utils/sse.js';
+import { openSseStream, sseWrite } from '../utils/sse.js';
 
 // ─── Constants ───────────────────────────────────────────────────────────
 
@@ -122,14 +122,6 @@ async function authenticate(req) {
 
   // Check for the 'read' permission minimum (all MCP requests need at least read)
   return { ok: true, apiKey: result };
-}
-
-// ─── SSE helpers ─────────────────────────────────────────────────────────
-
-function sendSseEvent(res, data, eventType) {
-  if (!res.writable) return;
-  if (eventType) res.write(`event: ${eventType}\n`);
-  res.write(`data: ${JSON.stringify(data)}\n\n`);
 }
 
 // ─── Request body parsing ────────────────────────────────────────────────
@@ -412,11 +404,10 @@ async function handleGet(req, res) {
   session.closeSse = stream.close;
 
   // Send initial connected event
-  sendSseEvent(
-    res,
-    { type: 'session', status: 'connected', sessionId: session.id },
-    'endpoint',
-  );
+  sseWrite(res, {
+    event: 'endpoint',
+    data: { type: 'session', status: 'connected', sessionId: session.id },
+  });
 
   return true;
 }
