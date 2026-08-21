@@ -134,8 +134,8 @@ function formatSSEMessage(event, data) {
  * `{ error: '<snake_case_code>' }` as `extra`: additive, with the same meaning
  * as in the HTTP envelope, and never a rename of a field a client reads.
  *
- * Routes that build their own `sendEvent` closure can call this to get the
- * shape right; routes on `sseWrite` get it by construction.
+ * Routes never call this directly — `sseError` below pairs it with the one
+ * frame writer, so the shape comes by construction.
  *
  * @param {string} message - human-readable text, safe to display
  * @param {Object} [extra] - endpoint-specific extras (e.g. `report`)
