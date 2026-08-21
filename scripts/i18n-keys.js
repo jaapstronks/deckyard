@@ -185,7 +185,7 @@ function decodeJsLiteral(raw) {
  * `extractUsedKeys` deliberately keeps only the first fallback it sees for a
  * key, which is what the coverage gate needs and exactly what hides a key
  * carrying two different English strings. This returns them all, so the
- * one-fallback-per-key gate in tests/i18n-audit.test.js can see the collision.
+ * one-fallback-per-key gate in tests/i18n-coverage.test.js can see the collision.
  *
  * @param {string} dir - absolute path to a tree to scan (client/)
  * @returns {Promise<Array<{ key: string, fallback: string, file: string, line: number }>>}
