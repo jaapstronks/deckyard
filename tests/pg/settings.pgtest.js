@@ -106,6 +106,53 @@ pgDescribe('settings storage (real PostgreSQL)', () => {
     assert.equal(await getDefaultThemeId(testScope()), DEFAULT_THEME_ID);
   });
 
+  it('drops a third-party analytics id that is not spelled like an id', async () => {
+    // These land in the <head> of every published deck and embed, part of it
+    // inside <script> — so the write path validates the charset instead of
+    // escaping it, and an id that fails stores as '' (B101).
+    const after = await writeAppSettings(testScope(), {
+      analytics: {
+        externalProviders: {
+          matomo: {
+            enabled: true,
+            url: 'https://matomo.example.com',
+            siteId: "7',alert(1),'",
+          },
+          plausible: { enabled: true, domain: 'a.example.com"><script>' },
+          umami: { enabled: true, websiteId: 'id</script>' },
+          googleAnalytics: { enabled: true, measurementId: "G-1',alert(1),'" },
+        },
+      },
+    });
+    const p = after.analytics.externalProviders;
+    assert.equal(p.matomo.siteId, '');
+    assert.equal(p.plausible.domain, '');
+    assert.equal(p.umami.websiteId, '');
+    assert.equal(p.googleAnalytics.measurementId, '');
+    // The legitimate neighbour in the same block survives untouched.
+    assert.equal(p.matomo.url, 'https://matomo.example.com');
+
+    // And the drop is durable, not just in the return value.
+    const stored = (await getAppSettings(testScope())).analytics
+      .externalProviders;
+    assert.equal(stored.matomo.siteId, '');
+    assert.equal(stored.googleAnalytics.measurementId, '');
+
+    // A well-formed id round-trips.
+    const ok = await writeAppSettings(testScope(), {
+      analytics: {
+        externalProviders: {
+          matomo: {
+            enabled: true,
+            url: 'https://matomo.example.com',
+            siteId: '7',
+          },
+        },
+      },
+    });
+    assert.equal(ok.analytics.externalProviders.matomo.siteId, '7');
+  });
+
   it('keeps a stock-media source a partial write does not mention', async () => {
     assert.equal(
       (await getAppSettings(testScope())).stockMedia.bundled.enabled,

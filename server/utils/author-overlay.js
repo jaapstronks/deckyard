@@ -8,6 +8,7 @@
 
 import sharp from 'sharp';
 import { assertPublicHttpUrl } from './ssrf-guard.js';
+import { escapeXml } from '../../shared/xml.js';
 
 // Overlay dimensions
 const PILL_HEIGHT = 40;
@@ -199,20 +200,6 @@ export async function generateAuthorOverlay({ name, imageBuffer }) {
     width: pillWidth,
     height: PILL_HEIGHT,
   };
-}
-
-/**
- * Escape XML special characters.
- * @param {string} str - String to escape
- * @returns {string} Escaped string
- */
-function escapeXml(str) {
-  return String(str || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
 }
 
 /**

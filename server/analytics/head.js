@@ -1,12 +1,6 @@
 import { envBool, envStr } from '../config/utils.js';
-
-function escAttr(s) {
-  return String(s || '')
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
+import { escapeHtml } from '../../shared/slide-types/helpers.js';
+import { isEmbeddableUrl, isValidProviderId } from './provider-ids.js';
 
 function safeB64ToUtf8(s) {
   const raw = String(s || '').trim();
@@ -42,8 +36,14 @@ function buildMatomoHtml({
   requireConsent = false,
   trackLinks = true,
 }) {
-  const safeBase = escAttr(url);
-  const safeSiteId = escAttr(siteId);
+  // `url` and `siteId` land inside a <script> block, where HTML escaping is
+  // both wrong (entities are not decoded there) and insufficient. Charset
+  // validation is the containment; a value that fails it emits no provider.
+  if (!isEmbeddableUrl(url) || !isValidProviderId('matomoSiteId', siteId)) {
+    return '';
+  }
+  const safeBase = String(url);
+  const safeSiteId = String(siteId);
   return [
     '<!-- Analytics: Matomo -->',
     '<script>',
@@ -69,38 +69,42 @@ function buildMatomoHtml({
 
 function buildPlausibleHtml({ domain, url }) {
   const baseUrl = url || 'https://plausible.io';
+  if (
+    !isValidProviderId('plausibleDomain', domain) ||
+    !isEmbeddableUrl(baseUrl)
+  ) {
+    return '';
+  }
   const scriptSrc = joinUrl(baseUrl, '/js/script.js');
   return [
     '<!-- Analytics: Plausible -->',
-    `<script defer data-domain="${escAttr(domain)}" src="${escAttr(scriptSrc)}"></script>`,
+    `<script defer data-domain="${escapeHtml(domain)}" src="${escapeHtml(scriptSrc)}"></script>`,
     '<!-- End Analytics: Plausible -->',
   ].join('\n');
 }
 
 function buildUmamiHtml({ websiteId, url }) {
   const baseUrl = url || 'https://cloud.umami.is';
+  if (
+    !isValidProviderId('umamiWebsiteId', websiteId) ||
+    !isEmbeddableUrl(baseUrl)
+  ) {
+    return '';
+  }
   const scriptSrc = joinUrl(baseUrl, '/script.js');
   return [
     '<!-- Analytics: Umami -->',
-    `<script defer src="${escAttr(scriptSrc)}" data-website-id="${escAttr(websiteId)}"></script>`,
+    `<script defer src="${escapeHtml(scriptSrc)}" data-website-id="${escapeHtml(websiteId)}"></script>`,
     '<!-- End Analytics: Umami -->',
   ].join('\n');
 }
 
-/**
- * Validate GA4 measurement ID format.
- * Must match G-XXXXXXXXXX pattern (G- followed by alphanumeric).
- */
-function isValidGa4Id(id) {
-  return /^G-[A-Z0-9]+$/i.test(String(id || ''));
-}
-
 function buildGa4Html({ measurementId }) {
-  // Strict validation to prevent any injection
-  if (!isValidGa4Id(measurementId)) {
+  // The pattern that every provider here now follows: refuse rather than escape.
+  if (!isValidProviderId('ga4MeasurementId', measurementId)) {
     return '';
   }
-  const safeId = escAttr(measurementId);
+  const safeId = String(measurementId);
   return [
     '<!-- Analytics: Google Analytics 4 -->',
     `<script async src="https://www.googletagmanager.com/gtag/js?id=${safeId}"></script>`,
@@ -115,7 +119,10 @@ function buildGa4Html({ measurementId }) {
 }
 
 function buildGtmHtml({ containerId }) {
-  const safeId = escAttr(containerId);
+  if (!isValidProviderId('gtmContainerId', containerId)) {
+    return '';
+  }
+  const safeId = String(containerId);
   return [
     '<!-- Analytics: Google Tag Manager -->',
     '<script>',
@@ -277,5 +284,8 @@ export function analyticsHeadHtml({
     }
   }
 
-  return out.length ? out.join('\n') + '\n' : '';
+  // A provider whose values failed validation contributes '' — drop those so
+  // a refused provider leaves no blank line behind.
+  const emitted = out.filter(Boolean);
+  return emitted.length ? emitted.join('\n') + '\n' : '';
 }

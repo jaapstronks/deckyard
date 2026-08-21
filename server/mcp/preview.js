@@ -8,6 +8,7 @@
 
 import path from 'node:path';
 import { renderSlideHtml } from '../../shared/slide-types.js';
+import { escapeHtml } from '../../shared/slide-types/helpers.js';
 import { readCssWithImports } from '../utils/read-css-with-imports.js';
 import { readTextIfExists } from '../utils/html-utils.js';
 import { themeVarsCssText } from '../utils/themes.js';
@@ -175,7 +176,7 @@ export async function buildSlidePreviewHtml(
     const num = startIndex + i + 1;
     return `
       <div class="preview-item">
-        <div class="preview-label">${num}. ${escHtml(slide.type)}</div>
+        <div class="preview-label">${num}. ${escapeHtml(slide.type)}</div>
         <div class="preview-frame">
           <div class="preview-stage ps-theme">${html}</div>
         </div>
@@ -187,7 +188,7 @@ export async function buildSlidePreviewHtml(
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>${escHtml(title || 'Slide Preview')}</title>
+  <title>${escapeHtml(title || 'Slide Preview')}</title>
   <style>
 ${buildCssChain(repoRoot, [
   themeVars,
@@ -212,7 +213,7 @@ ${buildCssChain(repoRoot, [
 </head>
 <body>
   <div class="preview-header">
-    <h1>${escHtml(title || 'Slide Preview')}</h1>
+    <h1>${escapeHtml(title || 'Slide Preview')}</h1>
     <p>${slides.length} slide${slides.length !== 1 ? 's' : ''}</p>
   </div>
   <div class="preview-list">
@@ -278,12 +279,4 @@ ${buildCssChain(repoRoot, [
   </div>
 </body>
 </html>`;
-}
-
-function escHtml(s) {
-  return String(s || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
 }
