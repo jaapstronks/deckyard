@@ -3,6 +3,7 @@
  */
 
 import { h } from '../../../lib/dom.js';
+import { createModal, createModalActions } from '../../../lib/dom/modal.js';
 import { labeledCheckbox } from '../../../lib/dom/labeled-checkbox.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
@@ -149,11 +150,8 @@ function createProfileImageSection(targetUser, avatarEl, initialImageUrl) {
  * @param {Function} onSuccess - Callback after successful update
  */
 export async function showEditModal(targetUser, onSuccess) {
-  const overlay = h('div', { class: 'modal-overlay' });
-  const modal = h('div', { class: 'modal' });
-
-  const modalTitle = h('h3', {
-    text: t('admin.users.editModal.title', 'Edit user'),
+  const modal = createModal(h, {
+    title: t('admin.users.editModal.title', 'Edit user'),
   });
 
   const form = h('div', { class: 'stack modal-form' });
@@ -226,33 +224,62 @@ export async function showEditModal(targetUser, onSuccess) {
     style: 'font-size: 11px; margin-top: 2px;',
   });
 
-  const status = h('div', { class: 'help modal-status' });
+  const status = h('div', { class: 'help modal-status', role: 'status' });
 
-  const btnSubmit = h('button', {
-    class: 'btn btn-primary',
-    text: t('admin.users.editModal.submit', 'Save changes'),
-    type: 'button',
+  const actions = createModalActions(h, {
+    cancelText: t('common.cancel', 'Cancel'),
+    actionText: t('admin.users.editModal.submit', 'Save changes'),
+    onCancel: () => modal.requestClose(),
+    onAction: () => submit(),
   });
 
-  const btnCancel = h('button', {
-    class: 'btn btn-secondary',
-    text: t('common.cancel', 'Cancel'),
-    type: 'button',
+  form.append(
+    emailDisplay,
+    profileSection,
+    nameInput,
+    roleSelect,
+    designerRow,
+    designerHelp,
+    status,
+    actions.wrap,
+  );
+  modal.append(form);
+  modal.show(document.body);
+
+  requestAnimationFrame(() => {
+    try {
+      nameInput.focus();
+    } catch {
+      // ignore
+    }
   });
 
-  let busy = false;
-  btnSubmit.onclick = async () => {
-    if (busy) return;
+  return modal;
+
+  /**
+   * Set the disabled state of every input in the form.
+   * @param {boolean} disabled - Whether the form is locked
+   */
+  function setDisabled(disabled) {
+    actions.setDisabled(disabled);
+    nameInput.disabled = disabled;
+    roleSelect.disabled = disabled;
+    designerCheckbox.disabled = disabled;
+  }
+
+  /**
+   * Save the edited user and report the outcome.
+   * @returns {Promise<void>}
+   */
+  async function submit() {
+    if (modal.isBusy()) return;
 
     const name = nameInput.value.trim();
     const role = roleSelect.value;
     const isDesigner = designerCheckbox.checked;
 
-    busy = true;
-    btnSubmit.disabled = true;
-    nameInput.disabled = true;
-    roleSelect.disabled = true;
-    designerCheckbox.disabled = true;
+    modal.setBusy(true);
+    setDisabled(true);
     status.textContent = t('admin.users.editModal.saving', 'Saving…');
 
     try {
@@ -263,44 +290,16 @@ export async function showEditModal(targetUser, onSuccess) {
       toast.success(
         t('admin.users.editModal.success', 'User updated successfully.'),
       );
-      overlay.remove();
+      modal.setBusy(false);
+      modal.close();
       onSuccess();
     } catch (e) {
       status.textContent = t(
         'admin.users.editModal.error',
         'Failed to update user.',
       );
-      busy = false;
-      btnSubmit.disabled = false;
-      nameInput.disabled = false;
-      roleSelect.disabled = false;
-      designerCheckbox.disabled = false;
+      modal.setBusy(false);
+      setDisabled(false);
     }
-  };
-
-  btnCancel.onclick = () => overlay.remove();
-  overlay.onclick = (e) => {
-    if (e.target === overlay) overlay.remove();
-  };
-
-  const btnRow = h('div', {
-    class: 'row is-end',
-    style: 'gap: 8px; margin-top: 16px;',
-  });
-  btnRow.append(btnCancel, btnSubmit);
-
-  form.append(
-    emailDisplay,
-    profileSection,
-    nameInput,
-    roleSelect,
-    designerRow,
-    designerHelp,
-    status,
-    btnRow,
-  );
-  modal.append(modalTitle, form);
-  overlay.append(modal);
-  document.body.append(overlay);
-  nameInput.focus();
+  }
 }

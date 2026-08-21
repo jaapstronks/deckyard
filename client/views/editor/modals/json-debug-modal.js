@@ -7,7 +7,7 @@
 
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
-import { confirmModal } from '../../../lib/dom/modal.js';
+import { confirmModal, createModal } from '../../../lib/dom/modal.js';
 
 /**
  * Generate human-readable schema documentation from slide type definition.
@@ -161,25 +161,23 @@ export function openJsonDebugModal({
   }
 
   const def = SLIDE_TYPES?.[slide.type];
-  const overlay = h('div', { class: 'modal-overlay json-debug-overlay' });
-  const modal = h('div', { class: 'modal json-debug-modal' });
 
   // Track current tab and edit state
   let hasUnsavedChanges = false;
   let editedJson = null;
 
-  // Header
-  const header = h('div', { class: 'json-debug-header' });
-  const title = h('h3', {
-    text: t('admin.jsonDebug.title', 'Slide JSON Debug'),
+  // The dirty guard is the overlay's: Escape, backdrop click and the header
+  // close all route through the one shared "unsaved changes" confirm.
+  const modal = createModal(h, {
+    title: t('admin.jsonDebug.title', 'Slide JSON Debug'),
+    modalClass: 'json-debug-modal',
+    closeButton: 'icon',
+    isDirty: () => hasUnsavedChanges,
+    confirmMessage: t(
+      'admin.jsonDebug.unsavedChanges',
+      'You have unsaved changes. Close anyway?',
+    ),
   });
-  const closeBtn = h('button', {
-    class: 'btn btn-ghost btn-icon',
-    type: 'button',
-    'aria-label': t('common.close', 'Close'),
-    text: '✕',
-  });
-  header.append(title, closeBtn);
 
   // Tabs
   const tabs = h('div', { class: 'json-debug-tabs' });
@@ -409,50 +407,16 @@ export function openJsonDebugModal({
   tabSchema.onclick = () => switchTab('schema');
 
   content.append(jsonPanel, schemaPanel);
-  modal.append(header, tabs, content);
-  overlay.append(modal);
+  modal.append(tabs, content);
+  modal.show(root, openOverlayClosers);
 
-  // Close handler (defined first so it can be referenced)
-  let close;
-
-  // ESC key to close
-  const onKeydown = (e) => {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      close();
+  requestAnimationFrame(() => {
+    try {
+      jsonTextarea.focus();
+    } catch {
+      // ignore
     }
-  };
-
-  close = async () => {
-    if (hasUnsavedChanges) {
-      const ok = await confirmModal(h, document.body, {
-        title: t('admin.jsonDebug.unsavedChangesTitle', 'Unsaved changes'),
-        message: t(
-          'admin.jsonDebug.unsavedChanges',
-          'You have unsaved changes. Close anyway?',
-        ),
-        confirmLabel: t('common.close', 'Close'),
-        danger: true,
-      });
-      if (!ok) return;
-    }
-    document.removeEventListener('keydown', onKeydown);
-    openOverlayClosers?.delete?.(close);
-    overlay.remove();
-  };
-
-  document.addEventListener('keydown', onKeydown);
-
-  // Register with overlay registry so it can be closed externally
-  openOverlayClosers?.add?.(close);
-
-  closeBtn.onclick = close;
-  overlay.onclick = (e) => {
-    if (e.target === overlay) close();
-  };
-
-  document.body.append(overlay);
-  jsonTextarea.focus();
+  });
 }
 
 /**

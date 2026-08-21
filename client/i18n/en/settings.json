@@ -19,7 +19,6 @@
   "admin.jsonDebug.tab.schema": "Schema",
   "admin.jsonDebug.title": "Slide JSON Debug",
   "admin.jsonDebug.unsavedChanges": "You have unsaved changes. Close anyway?",
-  "admin.jsonDebug.unsavedChangesTitle": "Unsaved changes",
   "admin.jsonDebug.warn.idChange": "Warning: You are changing the slide ID. This may cause issues. Continue?",
   "admin.jsonDebug.warn.idChangeTitle": "Change slide ID?",
   "admin.jsonDebug.warn.typeChange": "Warning: You are changing the slide type. The content may not render correctly. Continue?",

@@ -166,7 +166,7 @@
   },
   "client/styles/base/04-editor-and-misc/14-modals-json-debug.css": {
     "tokenisable-spacing": {
-      "count": 5
+      "count": 4
     }
   },
   "client/styles/base/04-editor-and-misc/15-ai-reasoning.css": {
@@ -231,7 +231,7 @@
   },
   "client/styles/base/04-editor-and-misc/85-settings.css": {
     "tokenisable-spacing": {
-      "count": 16
+      "count": 13
     }
   },
   "client/styles/base/04-editor-and-misc/86-admin-users.css": {

@@ -6,7 +6,11 @@ import { h } from '../../../lib/dom.js';
 import { labeledCheckbox } from '../../../lib/dom/labeled-checkbox.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
-import { confirmModal } from '../../../lib/dom/modal.js';
+import {
+  confirmModal,
+  createModal,
+  createModalActions,
+} from '../../../lib/dom/modal.js';
 import { createApiKey } from './actions.js';
 
 /**
@@ -15,11 +19,15 @@ import { createApiKey } from './actions.js';
  * @param {Function} onClose - Callback when modal is closed
  */
 function showKeyDisplayModal(fullKey, onClose) {
-  const overlay = h('div', { class: 'modal-overlay' });
-  const modal = h('div', { class: 'modal api-key-display-modal' });
-
-  const modalTitle = h('h3', {
-    text: t('settings.apiKeys.keyCreated', 'API Key Created'),
+  // No Escape, no backdrop click, no header close: the key is shown exactly
+  // once, so every exit runs through Done and its "you have not copied it yet"
+  // check. Losing it to a stray click is unrecoverable.
+  const modal = createModal(h, {
+    title: t('settings.apiKeys.keyCreated', 'API Key Created'),
+    modalClass: 'api-key-display-modal',
+    closeButton: false,
+    closeOnBackdrop: false,
+    closeOnEscape: false,
   });
 
   const warning = h('div', { class: 'api-key-warning' }, [
@@ -74,19 +82,15 @@ function showKeyDisplayModal(fullKey, onClose) {
       });
       if (!confirmClose) return;
     }
-    overlay.remove();
+    modal.close();
     onClose();
   };
 
-  const btnRow = h('div', {
-    class: 'row is-end',
-    style: 'gap: 8px; margin-top: 16px;',
-  });
+  const btnRow = h('div', { class: 'row is-end modal-actions' });
   btnRow.append(doneBtn, copyBtn);
 
-  modal.append(modalTitle, warning, keyDisplay, btnRow);
-  overlay.append(modal);
-  document.body.append(overlay);
+  modal.append(warning, keyDisplay, btnRow);
+  modal.show(document.body);
 }
 
 /**
@@ -94,11 +98,8 @@ function showKeyDisplayModal(fullKey, onClose) {
  * @param {Function} onSuccess - Callback after successful creation
  */
 export function showCreateModal(onSuccess) {
-  const overlay = h('div', { class: 'modal-overlay' });
-  const modal = h('div', { class: 'modal' });
-
-  const modalTitle = h('h3', {
-    text: t('settings.apiKeys.createModal.title', 'Create API Key'),
+  const modal = createModal(h, {
+    title: t('settings.apiKeys.createModal.title', 'Create API Key'),
   });
 
   const form = h('div', { class: 'stack modal-form' });
@@ -207,24 +208,48 @@ export function showCreateModal(onSuccess) {
   permissionsLabel.append(permissionsLabelText, permissionCheckboxes);
 
   // Status message
-  const status = h('div', { class: 'help modal-status' });
+  const status = h('div', { class: 'help modal-status', role: 'status' });
 
-  // Buttons
-  const btnSubmit = h('button', {
-    class: 'btn btn-primary',
-    text: t('settings.apiKeys.createModal.create', 'Create Key'),
-    type: 'button',
+  const actions = createModalActions(h, {
+    cancelText: t('common.cancel', 'Cancel'),
+    actionText: t('settings.apiKeys.createModal.create', 'Create Key'),
+    onCancel: () => modal.requestClose(),
+    onAction: () => submit(),
+  });
+  actions.wrap.classList.add('api-key-modal-buttons');
+
+  form.append(nameLabel, permissionsLabel, status, actions.wrap);
+  modal.append(form);
+  modal.show(document.body);
+
+  requestAnimationFrame(() => {
+    try {
+      nameInput.focus();
+    } catch {
+      // ignore
+    }
   });
 
-  const btnCancel = h('button', {
-    class: 'btn btn-secondary',
-    text: t('common.cancel', 'Cancel'),
-    type: 'button',
-  });
+  return modal;
 
-  let busy = false;
-  btnSubmit.onclick = async () => {
-    if (busy) return;
+  /**
+   * Set the disabled state of every input in the form.
+   * @param {boolean} disabled - Whether the form is locked
+   */
+  function setDisabled(disabled) {
+    actions.setDisabled(disabled);
+    nameInput.disabled = disabled;
+    permissionCheckboxes
+      .querySelectorAll('input')
+      .forEach((cb) => (cb.disabled = disabled));
+  }
+
+  /**
+   * Validate, create the key, and hand it to the show-once display.
+   * @returns {Promise<void>}
+   */
+  async function submit() {
+    if (modal.isBusy()) return;
 
     const name = nameInput.value.trim();
     const selectedPermissions = Array.from(
@@ -236,6 +261,7 @@ export function showCreateModal(onSuccess) {
         'settings.apiKeys.createModal.nameRequired',
         'Please enter a key name.',
       );
+      nameInput.focus();
       return;
     }
 
@@ -247,12 +273,8 @@ export function showCreateModal(onSuccess) {
       return;
     }
 
-    busy = true;
-    btnSubmit.disabled = true;
-    nameInput.disabled = true;
-    permissionCheckboxes
-      .querySelectorAll('input')
-      .forEach((cb) => (cb.disabled = true));
+    modal.setBusy(true);
+    setDisabled(true);
     status.textContent = t(
       'settings.apiKeys.createModal.creating',
       'Creating…',
@@ -272,33 +294,16 @@ export function showCreateModal(onSuccess) {
             'API key created successfully.',
           ),
         );
-        overlay.remove();
+        modal.setBusy(false);
+        modal.close();
         onSuccess();
       });
     } else {
       status.textContent =
         result.error ||
         t('settings.apiKeys.createModal.error', 'Failed to create API key.');
-      busy = false;
-      btnSubmit.disabled = false;
-      nameInput.disabled = false;
-      permissionCheckboxes
-        .querySelectorAll('input')
-        .forEach((cb) => (cb.disabled = false));
+      modal.setBusy(false);
+      setDisabled(false);
     }
-  };
-
-  btnCancel.onclick = () => overlay.remove();
-  overlay.onclick = (e) => {
-    if (e.target === overlay) overlay.remove();
-  };
-
-  const btnRow = h('div', { class: 'api-key-modal-buttons' });
-  btnRow.append(btnCancel, btnSubmit);
-
-  form.append(nameLabel, permissionsLabel, status, btnRow);
-  modal.append(modalTitle, form);
-  overlay.append(modal);
-  document.body.append(overlay);
-  nameInput.focus();
+  }
 }

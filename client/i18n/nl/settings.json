@@ -19,7 +19,6 @@
   "admin.jsonDebug.tab.schema": "Schema",
   "admin.jsonDebug.title": "Slide-JSON debug",
   "admin.jsonDebug.unsavedChanges": "Je hebt niet-opgeslagen wijzigingen. Toch sluiten?",
-  "admin.jsonDebug.unsavedChangesTitle": "Niet-opgeslagen wijzigingen",
   "admin.jsonDebug.warn.idChange": "Let op: je wijzigt de slide-ID. Dit kan problemen veroorzaken. Doorgaan?",
   "admin.jsonDebug.warn.idChangeTitle": "Slide-ID wijzigen?",
   "admin.jsonDebug.warn.typeChange": "Let op: je wijzigt het slide-type. De inhoud wordt mogelijk niet correct weergegeven. Doorgaan?",
