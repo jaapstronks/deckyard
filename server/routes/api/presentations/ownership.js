@@ -7,7 +7,6 @@
 
 import { getPresentation } from '../../../storage/presentations/index.js';
 import { transferPresentationOwnership } from '../../../storage/presentations/ownership.js';
-import { getCollaboratorPermission } from '../../../storage/collaborators.js';
 import { listUsers } from '../../../storage/users.js';
 import { canTransferOwnership } from '../../../utils/presentation-authz.js';
 import {
@@ -42,15 +41,9 @@ export async function handleOwnershipTransfer(
   const pres = await getPresentation(storageScope, id);
   if (!pres) return notFound(res);
 
-  // Fetch collaborator permission for authorization check
-  const collaboratorPermission = await getCollaboratorPermission(
-    id,
-    authedUser?.email,
-  );
-
-  if (
-    !canTransferOwnership({ user: authedUser, pres, collaboratorPermission })
-  ) {
+  // Transfer is owner-scoped: `canTransferOwnership` never consults the
+  // collaborator ladder, so there is nothing to fetch for it.
+  if (!canTransferOwnership({ user: authedUser, pres })) {
     return unauthorized(res);
   }
 
