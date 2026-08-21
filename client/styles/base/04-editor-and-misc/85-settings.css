@@ -453,16 +453,6 @@
   margin: 0;
 }
 
-/* Make modal content scrollable and limit height */
-.modal-content {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ps-space-3);
-  max-height: 70vh;
-  overflow-y: auto;
-  padding-right: var(--ps-space-2);
-}
-
 /* Ensure modal has proper max-width for settings */
 .modal-backdrop .modal-box {
   max-width: 560px;

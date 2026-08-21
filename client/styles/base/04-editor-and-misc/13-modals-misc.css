@@ -366,7 +366,7 @@
 
 /* `.creation-view-body` is the dialog's `.modal-content`: rail + pane side by
    side, growing, with the pane doing its own scrolling. */
-.modal-content.creation-view-body {
+.creation-view-body {
   flex: 1 1 auto;
   min-height: 0;
   max-height: none;
