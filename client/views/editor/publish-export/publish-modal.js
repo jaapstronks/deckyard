@@ -1,5 +1,5 @@
 import { t } from '../../../lib/ui-i18n.js';
-import { confirmModal } from '../../../lib/dom/modal.js';
+import { confirmModal, createModal } from '../../../lib/dom/modal.js';
 import { toast } from '../../../lib/dom/toast.js';
 
 export function openPublishModal({
@@ -29,37 +29,14 @@ export function openPublishModal({
     return;
   }
 
-  const backdrop = h('div', { class: 'modal-backdrop' });
-  const modal = h('div', {
-    class: 'modal publish-modal',
-  });
-
   const unlockScroll = lockDocumentScroll();
-  let closed = false;
-  const onDocKeyDown = (e) => {
-    if (e.key === 'Escape') close();
-  };
-  const close = () => {
-    if (closed) return;
-    closed = true;
-    unlockScroll();
-    document.removeEventListener('keydown', onDocKeyDown);
-    openOverlayClosers?.delete?.(close);
-    backdrop.remove();
-  };
-  openOverlayClosers?.add?.(close);
 
-  const header = h('div', {
-    class: 'row spread',
+  const modal = createModal(h, {
+    title: t('editor.publishModal.title', 'Published'),
+    modalClass: 'publish-modal',
+    onClose: () => unlockScroll(),
   });
-  header.append(
-    h('h2', { text: t('editor.publishModal.title', 'Published') }),
-    h('button', {
-      class: 'btn btn-secondary',
-      text: t('common.close', 'Close'),
-      onclick: () => close(),
-    }),
-  );
+  const close = () => modal.close();
 
   const topHelp = h('div', {
     class: 'help publish-top-help',
@@ -484,17 +461,8 @@ export function openPublishModal({
 
   // Put "Publicatie" controls at the top (most important + potentially destructive),
   // then preview, then the slug, then the link guidance + link sections.
-  modal.append(header, dangerRow, previewRow, slugRow, topHelp, grid);
-  backdrop.append(modal);
-  backdrop.addEventListener('click', (e) => {
-    if (e.target === backdrop) close();
-  });
-  // Bound for the modal's lifetime and removed in close(). It used to be a
-  // `{ once: true }` listener, which any keystroke consumed — so Escape stopped
-  // closing the modal as soon as the user typed in the slug field, and the
-  // handler lingered on document until some unrelated key press disarmed it.
-  document.addEventListener('keydown', onDocKeyDown);
-  root.append(backdrop);
+  modal.append(dangerRow, previewRow, slugRow, topHelp, grid);
+  modal.show(root, openOverlayClosers);
 
   // Convenience: copy the public URL on open, but never block the UI if it fails.
   copyToClipboard(url).catch(() => {});

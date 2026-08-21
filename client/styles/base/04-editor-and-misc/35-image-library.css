@@ -7,6 +7,17 @@
   flex-direction: column;
 }
 
+/* Header, status bar, layout and credit row are stacked by the modal itself;
+   `.modal-content` is only the growing region between them. */
+.modal.image-library-modal > .modal-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow: hidden;
+  gap: 0;
+  padding: 0;
+}
+
 /* Modal header */
 .media-lib-header {
   display: flex;

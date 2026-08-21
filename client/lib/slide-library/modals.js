@@ -55,15 +55,23 @@ export function createSlideLibraryModals({
       onSlideOpen({ shelf, slideId: it.id });
     }
 
-    const backdrop = h('div', { class: 'modal-backdrop ps-modal-overlay' });
-    const modal = h('div', { class: 'modal ps-modal ps-lib-lightbox-modal' });
-
-    const header = h('div', { class: 'ps-modal-header' });
     const titleText =
       cleanStr(it?.name) || t('slideLibrary.preview.untitled', 'Untitled');
-    const title = h('h2', { text: titleText });
+    const modal = createModal(h, {
+      title: titleText,
+      modalClass: 'ps-modal ps-lib-lightbox-modal',
+      onClose: () => {
+        window.removeEventListener('resize', updateScale);
+        tagEditor.detach?.();
+        // Notify URL change for permalink support
+        if (updateUrl && onSlideClose) onSlideClose();
+      },
+    });
+    modal.header.classList.add('ps-modal-header');
+    modal.content.classList.add('ps-modal-body', 'ps-lib-lightbox-body');
+    const close = () => modal.close();
 
-    // Header actions (Edit + Close)
+    // Header actions (Edit + the standard close button, side by side)
     const headerActions = h('div', { class: 'ps-modal-header-actions' });
 
     // Edit button
@@ -92,17 +100,9 @@ export function createSlideLibraryModals({
       },
     });
 
-    const closeBtn = h('button', {
-      class: 'btn btn-secondary',
-      type: 'button',
-      text: t('common.close', 'Close'),
-      onclick: () => close(),
-    });
+    headerActions.append(editBtn, modal.closeBtn);
+    modal.header.append(headerActions);
 
-    headerActions.append(editBtn, closeBtn);
-    header.append(title, headerActions);
-
-    const body = h('div', { class: 'ps-modal-body ps-lib-lightbox-body' });
     const stage = h('div', { class: 'ps-lib-lightbox-stage' });
     const bigThumb = h('div', { class: 'thumb ps-lib-lightbox-thumb' });
 
@@ -171,11 +171,8 @@ export function createSlideLibraryModals({
 
     metaSection.append(descField, tagsField);
 
-    body.append(stage, metaSection);
-
-    modal.append(header, body);
-    backdrop.append(modal);
-    document.body.append(backdrop);
+    modal.append(stage, metaSection);
+    modal.show(document.body);
 
     // Scale the slide to fit the viewport
     const updateScale = () => {
@@ -192,26 +189,6 @@ export function createSlideLibraryModals({
     // Delay to allow layout
     requestAnimationFrame(() => requestAnimationFrame(updateScale));
     window.addEventListener('resize', updateScale);
-
-    const onKey = (e) => {
-      if (e.key === 'Escape') close();
-    };
-    document.addEventListener('keydown', onKey);
-
-    backdrop.addEventListener('click', (e) => {
-      if (e.target === backdrop) close();
-    });
-
-    function close() {
-      document.removeEventListener('keydown', onKey);
-      window.removeEventListener('resize', updateScale);
-      tagEditor.detach?.();
-      backdrop.remove();
-      // Notify URL change for permalink support
-      if (updateUrl && onSlideClose) {
-        onSlideClose();
-      }
-    }
   };
 
   const openUseSlideModal = (it) => {

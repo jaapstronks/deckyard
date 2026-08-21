@@ -169,7 +169,6 @@
   "list.new": "Nieuw maken",
   "list.newPresentation.confirmDiscard": "Je hebt tekst ingevuld. Wil je die weggooien?",
   "list.newPresentation.creating": "Aanmaken…",
-  "list.newPresentation.discard": "Weggooien",
   "list.newPresentation.generatingTitle": "Presentatie genereren",
   "list.newPresentation.importJson.help": "Importeer een presentatie vanuit een eerder geëxporteerd .json-bestand.",
   "list.newPresentation.importMarkdown.empty": "Het bestand is leeg.",

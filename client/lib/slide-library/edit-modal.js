@@ -5,6 +5,7 @@
 
 import { t } from '../ui-i18n.js';
 import { toast } from '../dom/toast.js';
+import { createModal } from '../dom/modal.js';
 import { renderSlideElement } from '../slide-runtime/slide-render.js';
 import { cleanStr } from '../../../shared/string-utils.js';
 import { SLIDE_TYPES } from '../../../shared/slide-types.js';
@@ -133,23 +134,17 @@ export function openEditModal({
   const workingContent = { ...(item.content || {}) };
   let workingName = item.name || '';
 
-  // Create modal elements
-  const backdrop = h('div', { class: 'modal-backdrop ps-modal-overlay' });
-  const modal = h('div', { class: 'modal ps-modal ps-lib-edit-modal' });
-
-  // Header
-  const header = h('div', { class: 'ps-modal-header' });
-  const title = h('h2', { text: t('slideLibrary.edit.title', 'Edit slide') });
-  const closeBtn = h('button', {
-    class: 'btn btn-secondary',
-    type: 'button',
-    text: t('common.cancel', 'Cancel'),
-    onclick: () => close(false),
+  const modal = createModal(h, {
+    title: t('slideLibrary.edit.title', 'Edit slide'),
+    modalClass: 'ps-modal ps-lib-edit-modal',
+    closeLabel: t('common.cancel', 'Cancel'),
+    onClose: (result) => {
+      if (previewTimeout) clearTimeout(previewTimeout);
+      onClose?.(result?.saved === true);
+    },
   });
-  header.append(title, closeBtn);
-
-  // Body with two columns: form and preview
-  const body = h('div', { class: 'ps-modal-body ps-lib-edit-body' });
+  modal.header.classList.add('ps-modal-header');
+  modal.content.classList.add('ps-modal-body', 'ps-lib-edit-body');
 
   // Form column
   const formCol = h('div', { class: 'ps-lib-edit-form' });
@@ -233,7 +228,7 @@ export function openEditModal({
   const previewThumb = h('div', { class: 'thumb ps-lib-edit-preview-thumb' });
   previewCol.append(previewLabel, previewThumb);
 
-  body.append(formCol, previewCol);
+  modal.append(formCol, previewCol);
 
   // Footer with save button
   const footer = h('div', { class: 'ps-modal-footer' });
@@ -274,7 +269,7 @@ export function openEditModal({
       if (result.item) {
         Object.assign(item, result.item);
       }
-      close(true);
+      modal.close({ saved: true });
     } else {
       status.textContent = String(
         result.error?.message ||
@@ -289,35 +284,22 @@ export function openEditModal({
 
   footer.append(status, saveBtn);
 
-  modal.append(header, body, footer);
-  backdrop.append(modal);
-  document.body.append(backdrop);
+  modal.show(document.body);
+  // The footer is pinned below the scrolling body, so it sits next to
+  // `.modal-content` rather than inside it — and show() rebuilds the dialog,
+  // so it goes on afterwards.
+  modal.modal.append(footer);
 
   // Initial preview
   updatePreview();
 
   // Focus name input
-  try {
-    nameInput.focus();
-    nameInput.select();
-  } catch {
-    // ignore
-  }
-
-  // Close handlers
-  const onKey = (e) => {
-    if (e.key === 'Escape') close(false);
-  };
-  document.addEventListener('keydown', onKey);
-
-  backdrop.addEventListener('click', (e) => {
-    if (e.target === backdrop) close(false);
+  requestAnimationFrame(() => {
+    try {
+      nameInput.focus();
+      nameInput.select();
+    } catch {
+      // ignore
+    }
   });
-
-  function close(saved) {
-    document.removeEventListener('keydown', onKey);
-    if (previewTimeout) clearTimeout(previewTimeout);
-    backdrop.remove();
-    onClose?.(saved);
-  }
 }
