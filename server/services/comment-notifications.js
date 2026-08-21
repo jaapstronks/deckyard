@@ -526,25 +526,28 @@ async function fireCommentWebhook(
 
   // Only fire if webhook URL is configured and there are recipients
   if (settings.webhooks?.commentCreatedUrl && slackRecipients.length > 0) {
-    void maybeFireWebhook(repoRoot, req, {
-      event: 'comment.created',
-      pres: presentation,
-      authedUser: actor,
-      extra: {
-        comment: {
-          id: comment.id,
-          body: stripMentionMarkup(comment.body),
-          slideId: comment.slideId,
-          parentId: comment.parentId,
-          // The author, named rather than addressed — the same shape the
-          // internal API uses since D22.
-          author: comment.author || null,
+    fireAndForget(
+      maybeFireWebhook(repoRoot, req, {
+        event: 'comment.created',
+        pres: presentation,
+        authedUser: actor,
+        extra: {
+          comment: {
+            id: comment.id,
+            body: stripMentionMarkup(comment.body),
+            slideId: comment.slideId,
+            parentId: comment.parentId,
+            // The author, named rather than addressed — the same shape the
+            // internal API uses since D22.
+            author: comment.author || null,
+          },
+          isReply: !!parentComment,
+          owner: { email: ownerEmail },
+          recipients: slackRecipients,
         },
-        isReply: !!parentComment,
-        owner: { email: ownerEmail },
-        recipients: slackRecipients,
-      },
-    });
+      }),
+      'webhook delivery',
+    );
   }
 }
 

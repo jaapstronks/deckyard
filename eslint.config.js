@@ -151,6 +151,31 @@ const emptyCatchRestriction = {
     'give the catch a body that says why the failure is ignorable (B106).',
 };
 
+// The other half of the same gate (B111). `emptyCatchRestriction` above catches
+// the *silent* swallow; this one catches the *absent* catch. `void doThing()`
+// reads as a deliberate decision and is the opposite: it discards the promise
+// without attaching anything, so a rejection is unhandled — and under Node's
+// default `--unhandled-rejections=throw` that takes the process down, which is
+// strictly worse than hiding the error.
+//
+// It was also a false signal half the time: 16 of the 50 sites this rule
+// retired applied `void` to a *synchronous* call, where there was no promise to
+// discard at all.
+//
+// The allowlist is empty on purpose. A background promise gets
+// `fireAndForget(promise, label)`; one whose rejection is both expected and
+// frequent gets `.catch(ignoreRejection)` — both from
+// server/utils/fire-and-forget.js. A synchronous call needs no operator.
+const voidCallRestriction = {
+  selector: "UnaryExpression[operator='void'] > CallExpression",
+  message:
+    'void doThing() discards a promise without a catch — an unhandled ' +
+    'rejection can kill the process. Use fireAndForget(promise, label) from ' +
+    'server/utils/fire-and-forget.js (or .catch(ignoreRejection) where the ' +
+    'rejection is expected and frequent). If the callee is synchronous, drop ' +
+    'the `void` — there is no promise to discard (B111).',
+};
+
 export default [
   {
     // Vendored bundles, generated assets, data dirs, gitignored drop-ins, and
@@ -267,17 +292,22 @@ export default [
             'envStr/envBool/envInt/envList from server/config/utils.js (B64).',
         },
         emptyCatchRestriction,
+        voidCallRestriction,
       ],
     },
   },
 
   // server/config/** is exempt from the env accessors (it *is* the accessor
-  // family) but not from the empty-catch rule — a silently dropped rejection
-  // is no more debuggable in config than anywhere else.
+  // family) but not from the two promise-guard rules — a dropped rejection is
+  // no more debuggable in config than anywhere else.
   {
     files: ['server/config/**/*.js'],
     rules: {
-      'no-restricted-syntax': ['error', emptyCatchRestriction],
+      'no-restricted-syntax': [
+        'error',
+        emptyCatchRestriction,
+        voidCallRestriction,
+      ],
     },
   },
 

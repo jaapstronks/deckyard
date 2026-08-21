@@ -203,10 +203,35 @@ for it (flat-config rule entries replace per rule name rather than merge).
 
 The rule's honest boundary: it reads the AST, where a comment is not a
 statement, so `.catch(() => { /* why */ })` counts as empty. That is deliberate
-— a comment does not survive into a log. Its blind spot is the other direction:
-a bare `void somePromise()` with no `.catch` at all is not covered and is
-strictly worse (it can crash the process). ~50 of those remain under
-`server/`; they are a separate sweep.
+— a comment does not survive into a log.
+
+### `no-restricted-syntax` on `void someCall()` — no unguarded rejections
+
+The other half of the same gate, also scoped to `server/**`. The empty-catch
+rule above catches the _silent_ swallow; this one catches the _absent_ catch.
+
+`void doThing()` reads as a deliberate decision and is the opposite of one: it
+discards the promise without attaching anything, so a rejection is unhandled —
+and under Node's default `--unhandled-rejections=throw` that takes the whole
+process down. Strictly worse than hiding the error, and invisible to the
+empty-catch selector, which looks for a `.catch` that is not there.
+
+It was also a **false signal half the time**. Of the 50 sites this rule retired
+(B111), 16 applied `void` to a _synchronous_ call — `broadcastToPresentation`,
+which writes to open SSE responses and returns `undefined`. There was no promise
+to discard, so the operator said "deliberately un-awaited" about something that
+was never awaitable.
+
+Three accepted outcomes, in order of how often they apply:
+
+- `fireAndForget(promise, label)` — the default, same primitive as above.
+- `.catch(ignoreRejection)` — expected _and_ frequent rejections only.
+- **Nothing at all** — when the callee is synchronous. Drop the `void`; a bare
+  expression statement is the honest spelling.
+
+The **allowlist is empty**, `server/config/**` included. `void 0` and other
+non-call operands are untouched: the selector requires a `CallExpression`
+operand.
 
 ### The suppressions baseline (burndown)
 

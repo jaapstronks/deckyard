@@ -42,11 +42,14 @@ export async function handlePresentationsCreate({
 
   // Record activity event (non-blocking)
   if (authedUser?.email) {
-    void recordPresentationCreated({
-      presentation: created,
-      actor: authedUser,
-      scope: storageScope,
-    });
+    fireAndForget(
+      recordPresentationCreated({
+        presentation: created,
+        actor: authedUser,
+        scope: storageScope,
+      }),
+      'record presentation-created activity',
+    );
 
     // Record library-usage server-side so it also covers MCP/agent composes
     // (non-blocking; badge tracking must never fail a create).

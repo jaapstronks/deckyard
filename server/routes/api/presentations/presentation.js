@@ -32,6 +32,7 @@ import {
   PresentationEventTypes,
 } from '../../../services/comment-events.js';
 import { scheduleDeckThumbnailWarm } from './thumbnail.js';
+import { fireAndForget } from '../../../utils/fire-and-forget.js';
 
 /**
  * GET /api/presentations/:id/revision — lightweight revision probe.
@@ -236,42 +237,54 @@ export async function handlePresentationItem(
         existing.visibility !== updated.visibility &&
         updated.visibility === 'organization'
       ) {
-        void recordPresentationMovedToOrganization({
-          presentation: updated,
-          actor: authedUser,
-          previousVisibility: existing.visibility,
-          scope: storageScope,
-        });
+        fireAndForget(
+          recordPresentationMovedToOrganization({
+            presentation: updated,
+            actor: authedUser,
+            previousVisibility: existing.visibility,
+            scope: storageScope,
+          }),
+          'record presentation-moved activity',
+        );
       } else if (addedSlideIds.length > 0) {
         // A slide-add is more specific than a generic update, so emit it
         // instead of `presentation.updated` — and for decks of any visibility, since
         // this is the collaborator-awareness signal. The feed enrichment
         // filters by read access, so it never leaks to non-readers.
-        void recordSlidesAdded({
-          presentation: updated,
-          actor: authedUser,
-          slideIds: addedSlideIds,
-          scope: storageScope,
-        });
+        fireAndForget(
+          recordSlidesAdded({
+            presentation: updated,
+            actor: authedUser,
+            slideIds: addedSlideIds,
+            scope: storageScope,
+          }),
+          'record slides-added activity',
+        );
         // Bundled "someone worked on your deck" bell notification for the
         // owner/collaborators (coalesced per actor within the debounce window;
         // the actor never notifies themselves). Fire-and-forget.
-        void notifyDeckActivity({
-          presentation: updated,
-          actor: authedUser,
-          slideCount: addedSlideIds.length,
-          scope: storageScope,
-        });
+        fireAndForget(
+          notifyDeckActivity({
+            presentation: updated,
+            actor: authedUser,
+            slideCount: addedSlideIds.length,
+            scope: storageScope,
+          }),
+          'deck-activity notification fan-out',
+        );
       } else if (updated.visibility === 'organization') {
         // Record general update (only for organization-visible presentations to reduce noise)
-        void recordPresentationUpdated({
-          presentation: updated,
-          actor: authedUser,
-          changes: {
-            titleChanged: existing.title !== updated.title,
-          },
-          scope: storageScope,
-        });
+        fireAndForget(
+          recordPresentationUpdated({
+            presentation: updated,
+            actor: authedUser,
+            changes: {
+              titleChanged: existing.title !== updated.title,
+            },
+            scope: storageScope,
+          }),
+          'record presentation-updated activity',
+        );
       }
     }
 
@@ -326,11 +339,14 @@ export async function handlePresentationItem(
 
     // Record activity event (non-blocking, only for organization-visible presentations)
     if (authedUser?.email && existing.visibility === 'organization') {
-      void recordPresentationDeleted({
-        presentation: existing,
-        actor: authedUser,
-        scope: storageScope,
-      });
+      fireAndForget(
+        recordPresentationDeleted({
+          presentation: existing,
+          actor: authedUser,
+          scope: storageScope,
+        }),
+        'record presentation-deleted activity',
+      );
     }
 
     serveJson(res, 200, { ok: true });

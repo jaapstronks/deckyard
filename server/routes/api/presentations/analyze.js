@@ -128,7 +128,7 @@ export async function handlePresentationAnalyze(
         });
 
         // Broadcast to other connected clients
-        void broadcastToPresentation(id, CommentEventTypes.CREATED, {
+        broadcastToPresentation(id, CommentEventTypes.CREATED, {
           comment: createResult.comment,
         });
       }

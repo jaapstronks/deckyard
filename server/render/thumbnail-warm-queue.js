@@ -20,6 +20,7 @@
 
 import { envBool } from '../config/utils.js';
 import { createLogger } from '../utils/logger.js';
+import { fireAndForget } from '../utils/fire-and-forget.js';
 
 const log = createLogger('thumbnail-warm');
 
@@ -71,7 +72,7 @@ export function scheduleThumbnailWarm(
 
   const timer = setTimeout(() => {
     pending.delete(key);
-    void run(key, task);
+    fireAndForget(run(key, task), 'thumbnail warm');
   }, delayMs);
   // A queued raster is never worth delaying shutdown for.
   timer.unref?.();
