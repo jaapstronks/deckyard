@@ -504,8 +504,7 @@
   }
 
   /* Adjust callout padding */
-  .settings-modal-grid .editor-callout,
-  .modal-content .editor-callout {
+  .settings-modal-grid .editor-callout {
     padding: var(--ps-space-3);
   }
 
@@ -520,20 +519,6 @@
     width: 22px;
     height: 22px;
   }
-
-  /* Modal content scrollable area */
-  .modal-content {
-    max-height: none;
-    flex: 1;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* Textarea adjustments */
-  .modal-content textarea.form-input {
-    min-height: 80px;
-    font-size: var(--ps-text-lg);
-  }
 }
 
 /* Small phones */
@@ -542,8 +527,7 @@
     padding: var(--ps-space-3);
   }
 
-  .settings-modal-grid .editor-callout,
-  .modal-content .editor-callout {
+  .settings-modal-grid .editor-callout {
     padding: var(--ps-space-2);
   }
 }

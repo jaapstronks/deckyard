@@ -346,6 +346,22 @@
     -webkit-overflow-scrolling: touch;
   }
 
+  /* The desktop rule caps `.modal-content` at 70vh; on a full-screen mobile
+     modal the content region is the flexible middle instead, so it grows and
+     scrolls. Same reason the generic rule itself lives here: this is
+     `createModal`'s own structure, not any one feature's. */
+  .modal-content {
+    max-height: none;
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* A callout inside the content region — tighter padding on a narrow screen. */
+  .modal-content .editor-callout {
+    padding: var(--ps-space-3);
+  }
+
   /* Touch-friendly input sizes */
   .modal .form-input,
   .modal select,
@@ -357,6 +373,7 @@
   }
 
   .modal textarea.form-input {
+    min-height: 80px;
     font-size: var(--ps-text-lg);
   }
 
@@ -378,6 +395,10 @@
 @media (max-width: 480px) {
   .modal {
     padding: var(--ps-space-3);
+  }
+
+  .modal-content .editor-callout {
+    padding: var(--ps-space-2);
   }
 
   .ps-modal-header {
