@@ -3,6 +3,7 @@ import { createCsvGridEditor } from './fields/csv-grid.js';
 import { mountSlideInto } from '../../lib/slide-runtime/slide-render.js';
 import { attachThumbScaleContain } from '../../lib/slide-runtime/thumb-scale.js';
 import { t } from '../../lib/ui-i18n.js';
+import { h } from '../../lib/dom.js';
 
 /**
  * Chart-data editor as its own roomy surface (editing-surfaces §4.3): a wide
@@ -17,7 +18,6 @@ import { t } from '../../lib/ui-i18n.js';
  * chart on the canvas — both route here (one data surface).
  *
  * @param {Object} opts
- * @param {Function} opts.h - DOM helper
  * @param {HTMLElement} opts.root - Mount root for the modal (usually document.body)
  * @param {Object} opts.slide - The chart slide being edited
  * @param {Object} [opts.theme] - Active theme, for a faithful preview
@@ -31,7 +31,6 @@ import { t } from '../../lib/ui-i18n.js';
  * @param {Set} [opts.overlayClosers] - Shared overlay-closer set for cleanup
  */
 export function openChartDataModal({
-  h,
   root,
   slide,
   theme,

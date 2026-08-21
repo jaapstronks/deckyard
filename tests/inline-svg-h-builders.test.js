@@ -33,7 +33,6 @@ globalThis.MouseEvent = dom.window.MouseEvent;
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
-const { h } = await import('../client/lib/dom.js');
 const { createTimelineChart } =
   await import('../client/views/analytics/timeline-chart.js');
 const { createVisibilityToggle } =
@@ -43,7 +42,6 @@ const { applyVisibilityPreset } = await import('../shared/slide-visibility.js');
 test('visibility toggle masks the eye icon for a visible slide', () => {
   const visibleSlide = {};
   const button = createVisibilityToggle({
-    h,
     slide: visibleSlide,
     onToggle: () => {},
   });
@@ -67,7 +65,6 @@ test('visibility toggle swaps to the eye-off glyph when hidden', () => {
   const hiddenSlide = {};
   applyVisibilityPreset(hiddenSlide, 'hidden');
   const button = createVisibilityToggle({
-    h,
     slide: hiddenSlide,
     onToggle: () => {},
   });
@@ -89,7 +86,7 @@ test('timeline chart renders bars as SVG rects with data attributes', () => {
     { date: '2026-07-01', views: 3 },
     { date: '2026-07-02', views: 7 },
   ];
-  const { el } = createTimelineChart({ h, data });
+  const { el } = createTimelineChart({ data });
 
   const svg = el.querySelector('svg.analytics-chart-svg');
   assert.ok(svg, 'chart has an <svg>');
@@ -113,7 +110,6 @@ test('timeline chart renders bars as SVG rects with data attributes', () => {
 
 test('timeline chart bar hover wires the tooltip handler through h()', () => {
   const { el } = createTimelineChart({
-    h,
     data: [{ date: '2026-07-01', views: 5 }],
   });
   const tooltip = el.querySelector('.analytics-chart-tooltip');
@@ -132,7 +128,7 @@ test('timeline chart bar hover wires the tooltip handler through h()', () => {
 });
 
 test('timeline chart shows the empty state (no SVG) for no data', () => {
-  const { el } = createTimelineChart({ h, data: [] });
+  const { el } = createTimelineChart({ data: [] });
   assert.equal(el.querySelector('svg'), null, 'no chart drawn');
   assert.ok(el.querySelector('.empty-state'), 'empty state shown instead');
 });

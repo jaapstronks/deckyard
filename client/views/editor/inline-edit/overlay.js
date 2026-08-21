@@ -18,13 +18,13 @@
  */
 
 import { t } from '../../../lib/ui-i18n.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * @param {Object} opts
- * @param {Function} opts.h - DOM helper
  * @param {HTMLElement} opts.thumb - the unscaled preview container
  */
-export function createInlineOverlay({ h, thumb }) {
+export function createInlineOverlay({ thumb }) {
   const layer = h('div', { class: 'ie-overlay', 'aria-hidden': 'false' });
 
   /**

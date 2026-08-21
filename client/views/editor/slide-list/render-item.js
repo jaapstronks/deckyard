@@ -15,6 +15,7 @@ import {
 } from '../slide-visibility-menu.js';
 import { isParentSlide } from './nested-helpers.js';
 import { normalizeQuery, renderHighlightedText } from './search.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * Add, update or remove the concurrent-lock affordances on one slide row.
@@ -24,7 +25,6 @@ import { normalizeQuery, renderHighlightedText } from './search.js';
  * positioned overlays, so append order carries no meaning.
  *
  * @param {Object} opts
- * @param {Function} opts.h DOM helper
  * @param {HTMLElement} opts.item The `.list-item` row
  * @param {HTMLElement} [opts.thumbEl] The row's `.thumb.thumb-mini` (looked up when omitted)
  * @param {HTMLElement} [opts.numCollapsedEl] The row's `.slide-num-collapsed` (looked up when omitted)
@@ -32,7 +32,6 @@ import { normalizeQuery, renderHighlightedText } from './search.js';
  * @param {boolean} opts.lockedByOther Whether another user holds the lock
  */
 export function applySlideLockIndicator({
-  h,
   item,
   thumbEl,
   numCollapsedEl,
@@ -80,13 +79,7 @@ export function applySlideLockIndicator({
 /**
  * Create a slide item element
  */
-export function createSlideItem({
-  h,
-  slide,
-  match,
-  options = {},
-  context = {},
-}) {
+export function createSlideItem({ slide, match, options = {}, context = {} }) {
   const { isChild = false, isHidden = false } = options;
 
   const {
@@ -212,17 +205,15 @@ export function createSlideItem({
   if (visibilityPreset !== 'visible') {
     item.classList.add('has-visibility');
     item.classList.add('is-visibility-hidden');
-    const badge = createVisibilityBadge({ h, slide: s });
+    const badge = createVisibilityBadge({ slide: s });
     if (badge) thumbMini.append(badge);
   }
 
   // Visibility toggle button (show on hover)
   const visibilityToggle = createVisibilityToggle({
-    h,
     slide: s,
     onToggle: (e) => {
       const menu = createVisibilityMenu({
-        h,
         slide: s,
         onVisibilityChange: () => {
           markDirty?.();
@@ -266,7 +257,6 @@ export function createSlideItem({
 
   // Lock indicator (concurrent editing)
   applySlideLockIndicator({
-    h,
     item,
     thumbEl: thumbMini,
     numCollapsedEl: numCollapsed,
@@ -285,7 +275,7 @@ export function createSlideItem({
             class: 'slide-title-line',
             title: oneLine(fullTitle),
           },
-          renderHighlightedText(h, primary, q),
+          renderHighlightedText(primary, q),
         ),
         match?.snippet
           ? h(
@@ -302,7 +292,7 @@ export function createSlideItem({
                       ? t('editor.slideList.src.notes', 'Notes: ')
                       : t('editor.slideList.src.text', 'Text: '),
                 }),
-                ...renderHighlightedText(h, match.snippet, q),
+                ...renderHighlightedText(match.snippet, q),
               ],
             )
           : null,

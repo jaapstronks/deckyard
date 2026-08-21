@@ -8,15 +8,15 @@ import { icon } from '../../lib/dom/icons.js';
 import { loadThemeById } from '../../lib/theme/theme.js';
 import { renderSlideElement } from '../../lib/slide-runtime/slide-render.js';
 import { attachThumbScale } from '../../lib/slide-runtime/thumb-scale.js';
+import { h } from '../../lib/dom.js';
 
 /**
  * Create a real slide thumbnail preview for a theme.
  * @param {Object} theme - Full theme object
- * @param {Function} h - DOM helper function
  * @param {Function[]} detachCallbacks - Array to collect cleanup functions
  * @returns {HTMLElement} Preview element
  */
-function createThemePreview(theme, h, detachCallbacks) {
+function createThemePreview(theme, detachCallbacks) {
   const preview = h('div', { class: 'theme-picker-preview' });
   const thumb = h('div', { class: 'thumb theme-picker-thumb' });
   preview.append(thumb);
@@ -59,7 +59,6 @@ function createThemePreview(theme, h, detachCallbacks) {
 /**
  * Create the theme quick-picker row component.
  * @param {Object} options
- * @param {Function} options.h - DOM helper function
  * @param {Function} options.api - API function
  * @param {Function} options.onThemeSelect - Callback when theme is selected
  * @param {Function} options.onShowAll - Callback to show all themes
@@ -67,7 +66,6 @@ function createThemePreview(theme, h, detachCallbacks) {
  * @returns {Object} { el, load, detach }
  */
 export function createThemePickerRow({
-  h,
   api,
   onThemeSelect,
   onShowAll,
@@ -144,7 +142,7 @@ export function createThemePickerRow({
             onclick: () => onThemeSelect?.(themeInfo),
           });
 
-          const preview = createThemePreview(fullTheme, h, detachCallbacks);
+          const preview = createThemePreview(fullTheme, detachCallbacks);
           const name = h('span', {
             class: 'theme-picker-name',
             text:

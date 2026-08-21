@@ -356,7 +356,6 @@ function openTableEditorModal({
  * import/export block.
  *
  * @param {Object} deps
- * @param {Function} deps.h
  * @param {Object} deps.slide - the slide being edited (content is mutated)
  * @param {Function} [deps.markDirty]
  * @param {Function} [deps.rerenderEditor] - structure changes rebuild the form

@@ -5,6 +5,7 @@
  */
 
 import { t } from '../ui-i18n.js';
+import { h } from '../dom.js';
 
 /**
  * Language display names mapping.
@@ -50,7 +51,6 @@ export function getLangDisplayName(code) {
  * or a dropdown (for >2 languages).
  *
  * @param {Object} options
- * @param {Function} options.h - DOM element helper function
  * @param {Function} options.readLangMode - Function to read current language mode
  * @param {Function} options.writeLangMode - Function to write language mode
  * @param {Function} [options.getSupportedLangs] - Function returning array of supported languages
@@ -60,7 +60,6 @@ export function getLangDisplayName(code) {
  * @returns {Object} { wrap, syncUi, getLang, setLang, setDisabled }
  */
 export function createLangSelector({
-  h,
   readLangMode,
   writeLangMode,
   getSupportedLangs,

@@ -5,18 +5,18 @@
  */
 
 import { t } from '../../../lib/ui-i18n.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * Create the Unsplash search component.
  * @param {Object} options
- * @param {Function} options.h - DOM element factory
  * @param {Function} options.api - API request function
  * @param {Function} options.onSelect - Callback when photo is selected (receives libraryItem)
  * @param {Function} options.setStatus - Status message setter
  * @param {Function} options.setBusy - Busy state setter
  * @returns {Object} Component with element property
  */
-export function createUnsplashSearch({ h, api, onSelect, setStatus, setBusy }) {
+export function createUnsplashSearch({ api, onSelect, setStatus, setBusy }) {
   const container = h('div', { class: 'stock-media-search unsplash-search' });
 
   let results = [];

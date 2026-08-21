@@ -1,8 +1,8 @@
 import { t } from '../../lib/ui-i18n.js';
 import { confirmModal } from '../../lib/dom/modal.js';
+import { h } from '../../lib/dom.js';
 
 export function createPresenterToolsMenu({
-  h,
   modeLang,
   getSessionId,
   getSessionPresentationId,

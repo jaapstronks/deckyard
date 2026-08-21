@@ -1,4 +1,5 @@
 import { t } from '../../lib/ui-i18n.js';
+import { h } from '../../lib/dom.js';
 
 /**
  * Start curtain: the first thing the presenter sees when the /present tab
@@ -10,7 +11,6 @@ import { t } from '../../lib/ui-i18n.js';
  *      provide. The curtain's button click is that gesture.
  *
  * @param {object} opts
- * @param {(tag: string, attrs?: object, kids?: any) => Element} opts.h
  * @param {string} opts.title - Deck title.
  * @param {number} opts.slideCount - Number of slides in the deck.
  * @param {() => void} opts.onStartFullscreen - Called (with a live gesture) to enter fullscreen.
@@ -18,7 +18,6 @@ import { t } from '../../lib/ui-i18n.js';
  * @returns {{ el: Element, dismiss: () => void }}
  */
 export function createStartCurtain({
-  h,
   title,
   slideCount = 0,
   onStartFullscreen,

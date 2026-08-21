@@ -172,7 +172,7 @@ export function createPreferencesTab({ user, nav }) {
   langCard.append(langControlWrap, langHint);
 
   // User notification preferences
-  const userNotifications = createUserNotificationsSection({ h });
+  const userNotifications = createUserNotificationsSection();
 
   // Privacy settings card
   const privacyCard = h('div', { class: 'stack editor-card' });

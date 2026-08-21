@@ -45,7 +45,7 @@ export function createIntegrationsTab({ user }) {
 
   // Webhooks card
   const webhooksCard = h('div', { class: 'stack editor-card' });
-  const adminWebhooks = createAdminWebhooksSection({ h });
+  const adminWebhooks = createAdminWebhooksSection();
   webhooksCard.append(...adminWebhooks.elements);
 
   // ─── RSS Feed card ───────────────────────────────────────

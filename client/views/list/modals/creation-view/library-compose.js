@@ -20,10 +20,10 @@ import { t } from '../../../../lib/ui-i18n.js';
 import { createSlideLibraryPicker } from '../../../../lib/slide-library/index.js';
 import { createDeckFromLibraryItems } from '../../../../lib/slide-library/compose.js';
 import { createCollectionsApi } from '../../../../lib/slide-collections/api.js';
+import { h } from '../../../../lib/dom.js';
 
 /**
  * @param {object} opts
- * @param {Function} opts.h - DOM builder.
  * @param {Function} opts.api - fetch wrapper.
  * @param {() => void} opts.onSelectionChange - re-run host syncUI.
  * @param {(text: string) => void} opts.setStatus - write footer status.
@@ -31,7 +31,6 @@ import { createCollectionsApi } from '../../../../lib/slide-collections/api.js';
  * @returns {object} library-compose controller
  */
 export function createLibraryCompose({
-  h,
   api,
   onSelectionChange,
   setStatus,
@@ -195,7 +194,6 @@ export function createLibraryCompose({
     if (pickerLoaded) return;
     pickerLoaded = true;
     picker = createSlideLibraryPicker({
-      h,
       api,
       allowInsert: false,
       compose: true,

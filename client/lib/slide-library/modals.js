@@ -12,11 +12,11 @@ import { createModal } from '../dom/modal.js';
 import { createTagEditor } from '../../views/list/tag-editor.js';
 import { getContentForLang } from './search.js';
 import { openEditModal } from './edit-modal.js';
+import { h } from '../dom.js';
 
 /**
  * Create modal functions for the slide library
  * @param {object} options
- * @param {Function} options.h - DOM helper function
  * @param {Function} options.api - API client
  * @param {object} options.state - State management object
  * @param {object} options.apiOps - API operations object
@@ -28,7 +28,6 @@ import { openEditModal } from './edit-modal.js';
  * @returns {object} Modal functions
  */
 export function createSlideLibraryModals({
-  h,
   api,
   state,
   apiOps,
@@ -82,7 +81,6 @@ export function createSlideLibraryModals({
       title: t('slideLibrary.edit.tooltip', 'Edit slide content'),
       onclick: () => {
         openEditModal({
-          h,
           item: it,
           shelf,
           apiOps,

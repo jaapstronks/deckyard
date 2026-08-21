@@ -5,6 +5,7 @@
 import { t } from '../../lib/ui-i18n.js';
 import { formatTimeShort as formatTime } from '../../lib/format/analytics-format.js';
 import { createEmptyState } from '../../lib/dom/empty-state.js';
+import { h } from '../../lib/dom.js';
 
 /**
  * Get color for engagement score (0-1).
@@ -25,12 +26,11 @@ function getEngagementColor(score) {
 /**
  * Create slide heatmap component.
  * @param {Object} options
- * @param {Function} options.h - DOM helper
  * @param {Array} options.slides - Slide engagement data
  * @param {Object} options.presentation - Presentation data
  * @returns {Object} Heatmap API with el and update method
  */
-export function createSlideHeatmap({ h, slides, presentation }) {
+export function createSlideHeatmap({ slides, presentation }) {
   const el = h('div', { class: 'analytics-section analytics-heatmap' });
 
   const header = h('div', { class: 'analytics-section-header' }, [
@@ -49,7 +49,6 @@ export function createSlideHeatmap({ h, slides, presentation }) {
     if (!slideData || slideData.length === 0) {
       container.append(
         createEmptyState({
-          h,
           icon: 'target',
           title: t('analytics.noSlideEngagement', 'No slide engagement data'),
           message: t(

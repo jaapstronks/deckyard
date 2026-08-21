@@ -1,11 +1,11 @@
 import { t } from '../../../../lib/ui-i18n.js';
+import { h } from '../../../../lib/dom.js';
 
 /**
  * Build the shared "checkbox + title + help" callout row used by several
  * boolean deck settings (Q&A, Builds, author-on-preview, RSS exclusion).
  *
  * @param {object} opts
- * @param {(tag: string, attrs?: object, children?: any) => HTMLElement} opts.h
  * @param {boolean} opts.checked - initial checkbox state
  * @param {string} opts.titleKey
  * @param {string} opts.title
@@ -15,7 +15,6 @@ import { t } from '../../../../lib/ui-i18n.js';
  * @returns {{ row: HTMLElement, cb: HTMLInputElement }}
  */
 export function buildCheckboxCallout({
-  h,
   checked,
   titleKey,
   title,

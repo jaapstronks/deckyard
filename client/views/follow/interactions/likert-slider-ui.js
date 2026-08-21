@@ -1,4 +1,4 @@
-/**
+import { h } from '../../../lib/dom.js'; /**
  * Likert slider interaction UI.
  *
  * Strings come from the follow `copy` object (deck-language scoped, built by
@@ -6,7 +6,6 @@
  * the deck language, which the UI-locale dictionary does not track.
  */
 export function renderLikertSliderUi({
-  h,
   interaction,
   myVote,
   open,

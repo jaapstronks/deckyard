@@ -3,6 +3,7 @@ import {
   createBusyManager,
 } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { h } from '../../../lib/dom.js';
 
 function countSentences(text) {
   const s = String(text || '').trim();
@@ -12,7 +13,6 @@ function countSentences(text) {
 }
 
 export function openDescriptionModal({
-  h,
   root,
   api,
   toast,

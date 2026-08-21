@@ -23,12 +23,10 @@ globalThis.Node = dom.window.Node;
 globalThis.Element = dom.window.Element;
 globalThis.SVGElement = dom.window.SVGElement;
 
-const { h } = await import('../client/lib/dom.js');
 const { createEmptyState } = await import('../client/lib/dom/empty-state.js');
 
 test('default builds .empty-state > img + title + message', () => {
   const el = createEmptyState({
-    h,
     title: 'No viewers yet',
     message: 'Share your presentation to see sessions here.',
   });
@@ -44,13 +42,12 @@ test('default builds .empty-state > img + title + message', () => {
 });
 
 test('a named icon resolves through iconUrl', () => {
-  const el = createEmptyState({ h, icon: 'inbox', title: 'No activity yet' });
+  const el = createEmptyState({ icon: 'inbox', title: 'No activity yet' });
   assert.match(el.children[0].getAttribute('src'), /inbox\.svg$/);
 });
 
 test('icon: null renders an icon-less block', () => {
   const el = createEmptyState({
-    h,
     icon: null,
     title: 'No custom themes yet.',
   });
@@ -60,7 +57,6 @@ test('icon: null renders an icon-less block', () => {
 
 test('className lands next to empty-state (the panel variant)', () => {
   const el = createEmptyState({
-    h,
     icon: null,
     className: 'empty-state-panel',
     title: 'No custom fonts yet',
@@ -71,7 +67,6 @@ test('className lands next to empty-state (the panel variant)', () => {
 test('primary/secondary actions render as buttons in the actions row', () => {
   let clicked = 0;
   const el = createEmptyState({
-    h,
     title: 'No presentations yet',
     primaryLabel: 'Create',
     onPrimary: () => {
@@ -87,7 +82,7 @@ test('primary/secondary actions render as buttons in the actions row', () => {
 });
 
 test('no actions row without handlers, no message node without message', () => {
-  const el = createEmptyState({ h, title: 'Empty' });
+  const el = createEmptyState({ title: 'Empty' });
   assert.equal(el.querySelector('.empty-state-actions'), null);
   assert.equal(el.querySelector('.empty-state-message'), null);
 });

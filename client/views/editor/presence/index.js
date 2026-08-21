@@ -13,7 +13,6 @@ import { createPresenceUI } from './presence-ui.js';
  * Start a presence session + UI for the open editor.
  *
  * @param {Object} opts
- * @param {Function} opts.h - DOM helper
  * @param {Object} opts.pres - presentation (needs .id)
  * @param {{ email: string, name?: string }} opts.user - current user
  * @param {HTMLElement} opts.topbarEl
@@ -24,7 +23,6 @@ import { createPresenceUI } from './presence-ui.js';
  * @returns {{ setViewSlide: Function, destroy: Function }}
  */
 export function initEditorPresence({
-  h,
   pres,
   user,
   topbarEl,
@@ -39,7 +37,6 @@ export function initEditorPresence({
   });
 
   const ui = createPresenceUI({
-    h,
     session,
     topbarEl,
     listEl,

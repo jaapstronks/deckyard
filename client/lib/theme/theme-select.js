@@ -11,19 +11,18 @@ import {
 } from '../../../shared/constants/themes.js';
 import { loadThemeById } from './theme.js';
 import { cssStringEscape } from '../../../shared/theme-fonts.js';
+import { h } from '../dom.js';
 
 /**
  * Create a theme selector field with label and select element.
  *
  * @param {Object} options
- * @param {Function} options.h - DOM element helper function
  * @param {string} [options.initialTheme] - Initial theme ID
  * @param {Function} [options.onChange] - Called when theme changes
  * @param {string} [options.className] - Additional CSS class for wrapper
  * @returns {Object} { wrap, select, getTheme, setTheme }
  */
 function createThemeSelect({
-  h,
   initialTheme = DEFAULT_THEME_ID,
   onChange,
   className = 'modal-field-narrow',
@@ -67,7 +66,6 @@ function createThemeSelect({
  *
  * @param {Object} options
  * @param {Function} options.api - API fetch function
- * @param {Function} options.h - DOM element helper function
  * @param {HTMLSelectElement} options.select - Select element to populate
  * @param {string} [options.currentTheme] - Currently selected theme ID
  * @param {Function} [options.onPopulated] - Called with final theme ID after population
@@ -75,7 +73,6 @@ function createThemeSelect({
  */
 async function populateThemes({
   api,
-  h,
   select,
   currentTheme = DEFAULT_THEME_ID,
   onPopulated,
@@ -121,7 +118,6 @@ async function populateThemes({
  * Convenience function that combines createThemeSelect and populateThemes.
  *
  * @param {Object} options
- * @param {Function} options.h - DOM element helper function
  * @param {Function} options.api - API fetch function
  * @param {string} [options.initialTheme] - Initial theme ID
  * @param {Function} [options.onChange] - Called when theme changes
@@ -129,17 +125,15 @@ async function populateThemes({
  * @returns {Object} { wrap, select, getTheme, setTheme, populated: Promise }
  */
 export function createAndPopulateThemeSelect({
-  h,
   api,
   initialTheme = DEFAULT_THEME_ID,
   onChange,
   className,
 } = {}) {
-  const result = createThemeSelect({ h, initialTheme, onChange, className });
+  const result = createThemeSelect({ initialTheme, onChange, className });
 
   const populated = populateThemes({
     api,
-    h,
     select: result.select,
     currentTheme: initialTheme,
     onPopulated: (resolvedTheme) => {
@@ -165,7 +159,6 @@ export function createAndPopulateThemeSelect({
  * themes" toggle.
  *
  * @param {Object} options
- * @param {Function} options.h - DOM element helper function
  * @param {Function} options.api - API fetch function
  * @param {string|null} [options.initialTheme=null] - Explicit initial theme ID;
  *   when falsy the workspace default is used
@@ -173,7 +166,6 @@ export function createAndPopulateThemeSelect({
  * @returns {Object} { wrap, getTheme, setTheme, populated: Promise }
  */
 export function createVisualThemePicker({
-  h,
   api,
   initialTheme = null,
   onChange,

@@ -16,9 +16,9 @@ import { openDescriptionModal } from './modals/description-modal.js';
 import { openExportModal } from './export-modal.js';
 import { t } from '../../lib/ui-i18n.js';
 import { handleNotionPublish } from './share-dropdown/share-actions.js';
+import { h } from '../../lib/dom.js';
 
 export function setupShareDropdown({
-  h,
   api,
   toast,
   pres,
@@ -68,7 +68,6 @@ export function setupShareDropdown({
   const openPublishModalBound = (data) =>
     openPublishModal({
       ...data,
-      h,
       api,
       pres,
       id,
@@ -81,7 +80,6 @@ export function setupShareDropdown({
 
   const doPublishBound = ({ openPublishModal: opm } = {}) =>
     doPublish({
-      h,
       root,
       api,
       toast,
@@ -102,7 +100,6 @@ export function setupShareDropdown({
 
   button.addEventListener('click', () => {
     dialog = openShareModal({
-      h,
       api,
       pres,
       id,

@@ -11,17 +11,17 @@
  */
 
 import { splitCommentSegments } from '../../../shared/comment-mentions.js';
+import { h } from '../dom.js';
 
 /**
  * Build DOM nodes for a comment body: mention markers become chips, the rest
  * stays plain text. Append them with `el.append(...renderCommentBodyNodes(...))`.
  *
  * @param {string} body - Raw comment body (may contain mention markup).
- * @param {(tag: string, attrs?: object, children?: any) => HTMLElement} h -
  *   The DOM helper (injected so this works in both editor and viewer contexts).
  * @returns {Array<HTMLElement|string>} Nodes/text ready for `.append(...)`.
  */
-export function renderCommentBodyNodes(body, h) {
+export function renderCommentBodyNodes(body) {
   const nodes = [];
   for (const seg of splitCommentSegments(body)) {
     if (seg.type === 'mention') {

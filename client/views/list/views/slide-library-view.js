@@ -125,7 +125,7 @@ export function createSlideLibraryView({ api, nav }) {
     if (getFeatures()?.sandboxMode) {
       loaded = true;
       view.innerHTML = '';
-      view.append(createSandboxLibraryExplainer({ h }));
+      view.append(createSandboxLibraryExplainer());
       return;
     }
 
@@ -141,7 +141,6 @@ export function createSlideLibraryView({ api, nav }) {
 
       // Create the slide library picker in browse-only mode with language switching
       picker = createSlideLibraryPicker({
-        h,
         api,
         allowInsert: false, // Browse-only mode
         showLanguageSwitch: true, // Enable language switching in browse mode

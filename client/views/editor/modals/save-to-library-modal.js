@@ -2,6 +2,7 @@ import { createModal, createModalActions } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createTagEditor } from '../../list/tag-editor.js';
+import { h } from '../../../lib/dom.js';
 
 const SUPPORTED_LANGS = ['nl', 'en-GB'];
 
@@ -62,7 +63,6 @@ function getLangLabel(lang) {
  * Open a modal to save the current slide to the slide library.
  *
  * @param {Object} options
- * @param {Function} options.h - DOM element factory
  * @param {HTMLElement} options.root - Root element for modal
  * @param {Object} options.slide - The slide to save
  * @param {Object} options.pres - The presentation (for themeId)
@@ -72,7 +72,6 @@ function getLangLabel(lang) {
  * @param {Function} [options.openSlideLibraryModal] - Callback to open library after save
  */
 export function openSaveToLibraryModal({
-  h,
   root,
   slide,
   pres,

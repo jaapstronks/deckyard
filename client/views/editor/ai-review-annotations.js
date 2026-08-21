@@ -5,10 +5,10 @@
  * swapped slide is committed differs (`replaceSlide`).
  */
 import { t } from '../../lib/ui-i18n.js';
+import { h } from '../../lib/dom.js';
 
 /**
  * @param {Object} options
- * @param {Function} options.h - DOM element factory
  * @param {Function} options.api - API fetch function
  * @param {Object} options.SLIDE_TYPES - Slide type registry
  * @param {string} [options.lang] - Language mode for the conversion call
@@ -19,7 +19,6 @@ import { t } from '../../lib/ui-i18n.js';
  * @returns {{ annotationFor: Function }}
  */
 export function createAiReviewAnnotations({
-  h,
   api,
   SLIDE_TYPES,
   lang = null,

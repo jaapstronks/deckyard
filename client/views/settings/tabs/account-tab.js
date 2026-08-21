@@ -198,7 +198,7 @@ export function createAccountTab({ user }) {
   profileCard.append(profileActions);
 
   // Password section
-  const passwordSection = createPasswordSection({ h });
+  const passwordSection = createPasswordSection();
 
   const cards = h('div', { class: 'settings-tab-cards' }, [
     profileCard,

@@ -8,6 +8,7 @@ import {
   installTagsAutocomplete,
   createFieldWrap,
 } from './utils.js';
+import { h } from '../../../lib/dom.js';
 
 // Cache media status to avoid repeated API calls
 let _mediaStatus = null;
@@ -90,7 +91,6 @@ export async function uploadFile(api, file) {
  * @returns {Object} Upload component API
  */
 export function createImageLibraryUpload({
-  h,
   api,
   user,
   items,
@@ -198,7 +198,6 @@ export function createImageLibraryUpload({
     { class: 'image-lib-url-section', hidden: true },
     [
       createFieldWrap(
-        h,
         t('imageLibrary.upload.url.label', 'Image URL'),
         inputUrl,
       ),

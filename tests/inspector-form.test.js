@@ -34,7 +34,6 @@ globalThis.ResizeObserver =
     disconnect() {}
   };
 
-const { h } = await import('../client/lib/dom.js');
 const { createFieldRenderers } =
   await import('../client/views/editor/fields.js');
 const { createRerenderEditor } =
@@ -62,7 +61,6 @@ function renderForm({
   const pres = { id: 'p1', slides: [slide], settings: {} };
   const noop = () => {};
   const deps = {
-    h,
     pres,
     user: {},
     markDirty: noop,

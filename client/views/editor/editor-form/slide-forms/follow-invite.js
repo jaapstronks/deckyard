@@ -1,8 +1,8 @@
 import { t } from '../../../../lib/ui-i18n.js';
 import { resolveDeckLang } from '../../../../../shared/i18n-utils.js';
+import { h } from '../../../../lib/dom.js';
 
 export function renderFollowInviteForm({
-  h,
   form,
   pres,
   slide,

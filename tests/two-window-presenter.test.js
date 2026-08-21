@@ -182,7 +182,6 @@ describe('deck-controller two-window hooks', () => {
     const noop = () => {};
     const stateEvents = [];
     const ctl = createPresenterDeckController({
-      h,
       api: async () => ({}),
       presentationId: 'p1',
       stage,

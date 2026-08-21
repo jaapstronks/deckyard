@@ -24,6 +24,7 @@ import {
   slideTypeLabel,
 } from './convert-slide-action.js';
 import { renderSlideSchematic } from '../../lib/slide-authoring/slide-schematic.js';
+import { h } from '../../lib/dom.js';
 
 /**
  * The definition's mirror declaration (`layoutMirror`): which enum field
@@ -94,20 +95,18 @@ function getLayoutTextColumns(def) {
  * renderer, so the layout switcher and the slide-type picker speak one visual
  * language. Reads the variant's declared `schematic` spec (see
  * client/lib/slide-authoring/slide-schematic.js for the grammar).
- * @param {Function} h
  * @param {Object} variant
  * @param {boolean} mirrored
  * @returns {HTMLElement}
  */
-function renderSchematic(h, variant, mirrored) {
-  return renderSlideSchematic(h, variant?.schematic, { mirrored });
+function renderSchematic(variant, mirrored) {
+  return renderSlideSchematic(variant?.schematic, { mirrored });
 }
 
 /**
  * Build the "Layout" toolbar chip for a slide, or null when its type
  * declares no layout variants.
  * @param {Object} opts
- * @param {Function} opts.h
  * @param {Object} opts.slide - live slide object
  * @param {Object} opts.pres
  * @param {Object} opts.SLIDE_TYPES
@@ -116,7 +115,6 @@ function renderSchematic(h, variant, mirrored) {
  * @returns {HTMLElement|null}
  */
 export function createLayoutSwitcherChip({
-  h,
   slide,
   pres,
   SLIDE_TYPES,
@@ -275,7 +273,6 @@ export function createLayoutSwitcherChip({
         // Cross-type tile: the shared convert seam moves the type underneath
         // (lossy confirm included); any `set` lands on the converted content.
         const ok = await convertSlideWithConfirm({
-          h,
           slide,
           toType: variant.convertTo,
           pres,
@@ -327,7 +324,7 @@ export function createLayoutSwitcherChip({
             onclick: () => pickVariant(variant),
           },
           [
-            renderSchematic(h, variant, mirrored),
+            renderSchematic(variant, mirrored),
             h('span', { class: 'layout-tile-label', text: label }),
           ],
         );

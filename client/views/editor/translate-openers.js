@@ -13,7 +13,6 @@ import { openTranslateFieldModal as openTranslateFieldModalImpl } from './modals
  * the live renderers rather than the boot-time no-op stubs.
  *
  * @param {object} ctx
- * @param {Function} ctx.h - hyperscript DOM helper
  * @param {object} ctx.api - API client
  * @param {string} ctx.id - presentation id
  * @param {object} ctx.pres - presentation model
@@ -32,7 +31,6 @@ import { openTranslateFieldModal as openTranslateFieldModalImpl } from './modals
  * @returns {{ openTranslateSlideModal: Function, openTranslateFieldModal: Function }}
  */
 export function createTranslateOpeners({
-  h,
   api,
   id,
   pres,
@@ -52,7 +50,6 @@ export function createTranslateOpeners({
   const openTranslateSlideModal = ({ slideId } = {}) =>
     openTranslateSlideModalImpl({
       slideId,
-      h,
       api,
       id,
       pres,
@@ -74,7 +71,6 @@ export function createTranslateOpeners({
     openTranslateFieldModalImpl({
       slideId,
       key,
-      h,
       api,
       id,
       pres,

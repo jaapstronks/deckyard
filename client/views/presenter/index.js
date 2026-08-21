@@ -147,7 +147,6 @@ export async function renderPresenter(root, id, { nav } = {}) {
   });
 
   const toolsMenu = createPresenterToolsMenu({
-    h,
     modeLang,
     getSessionId: () => sessionId,
     getSessionPresentationId: () => sessionPresId,
@@ -157,7 +156,6 @@ export async function renderPresenter(root, id, { nav } = {}) {
   });
   const toolsWrap = toolsMenu.el;
   const interactionCtl = createPresenterInteractionControls({
-    h,
     api,
     getSessionId: () => sessionId,
     getCurrentSlide: () => deckCtl?.getState?.()?.current || null,
@@ -167,7 +165,6 @@ export async function renderPresenter(root, id, { nav } = {}) {
   const interactionPill = interactionCtl.el;
 
   const langCtl = createPresenterLangSeg({
-    h,
     modeLang,
     getCurrentSlideId: () => deckCtl?.getState?.()?.current?.id || '',
   });
@@ -258,7 +255,7 @@ export async function renderPresenter(root, id, { nav } = {}) {
     progressText,
     progressFill,
     edgeHint,
-  } = createPresenterStageScaffold({ h, pres });
+  } = createPresenterStageScaffold({ pres });
 
   // Render the remaining-build indicator (dots) for the current slide.
   const renderStepIndicator = createStepIndicatorRenderer(stepIndicator);
@@ -281,7 +278,6 @@ export async function renderPresenter(root, id, { nav } = {}) {
   // label/handler around the timer engine. The deck controller is created
   // below, so it's reached through a thunk (as it was when this lived inline).
   const { autoAdvance, syncProgressTime } = createPresenterAutoAdvanceUi({
-    h,
     pres,
     autoAdvanceCfg,
     autoAdvanceEnabled,
@@ -342,7 +338,6 @@ export async function renderPresenter(root, id, { nav } = {}) {
   let lastSlideIdForHighlighter = '';
 
   deckCtl = createPresenterDeckController({
-    h,
     api,
     presentationId: id,
     langQs,
@@ -605,7 +600,6 @@ export async function renderPresenter(root, id, { nav } = {}) {
 
   // Start curtain: primary path into fullscreen (and the required user gesture).
   const startCurtain = createStartCurtain({
-    h,
     title: pres?.title || '',
     slideCount: deckCtl?.getState?.()?.slidesCount || 0,
     onStartFullscreen: () => {

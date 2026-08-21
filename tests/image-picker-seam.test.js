@@ -25,7 +25,6 @@ globalThis.Element = dom.window.Element;
 globalThis.requestAnimationFrame = (cb) => setTimeout(cb, 0);
 globalThis.cancelAnimationFrame = (id) => clearTimeout(id);
 
-const { h } = await import('../client/lib/dom.js');
 const { createImagePickerSeam } =
   await import('../client/views/editor/media/picker-provider.js');
 
@@ -40,7 +39,7 @@ function spyOpener() {
 
 test('no injected opener means no provider and no modal', () => {
   const root = document.createElement('div');
-  const seam = createImagePickerSeam({ h, root, features: {} });
+  const seam = createImagePickerSeam({ root, features: {} });
   assert.deepEqual(seam.providers, []);
   seam({ onPick: noop });
   assert.equal(root.querySelector('.image-source-chooser'), null);
@@ -50,7 +49,6 @@ test('a single provider opens directly, without a chooser', () => {
   const root = document.createElement('div');
   const lib = spyOpener();
   const seam = createImagePickerSeam({
-    h,
     root,
     features: { enableImageLibrary: true },
     openImageLibrary: lib.open,
@@ -68,7 +66,6 @@ test('a single provider opens directly, without a chooser', () => {
 test('bundled gradients register as a third source when their opener is injected', () => {
   const root = document.createElement('div');
   const seam = createImagePickerSeam({
-    h,
     root,
     features: { enableImageLibrary: true, imagekitConfigured: true },
     openImageLibrary: spyOpener().open,
@@ -84,7 +81,6 @@ test('bundled gradients register as a third source when their opener is injected
 test('without an injected opener the bundled source is absent, not merely hidden', () => {
   const root = document.createElement('div');
   const seam = createImagePickerSeam({
-    h,
     root,
     features: { enableImageLibrary: true },
     openImageLibrary: spyOpener().open,
@@ -98,7 +94,6 @@ test('without an injected opener the bundled source is absent, not merely hidden
 test('enableImageLibrary: false drops the library but keeps the other sources', () => {
   const root = document.createElement('div');
   const seam = createImagePickerSeam({
-    h,
     root,
     features: { enableImageLibrary: false },
     openImageLibrary: spyOpener().open,
@@ -116,7 +111,6 @@ test('more than one provider shows a chooser, and choosing opens that source', (
   const lib = spyOpener();
   const bundled = spyOpener();
   const seam = createImagePickerSeam({
-    h,
     root,
     features: { enableImageLibrary: true },
     openImageLibrary: lib.open,
@@ -142,7 +136,6 @@ test("the gradient picker keeps its own heading, not the field's", () => {
   const lib = spyOpener();
   const bundled = spyOpener();
   createImagePickerSeam({
-    h,
     root,
     features: { enableImageLibrary: true },
     openImageLibrary: lib.open,
@@ -153,7 +146,7 @@ test("the gradient picker keeps its own heading, not the field's", () => {
   // The library is named by the field it was opened from…
   assert.equal(lib.calls[0].title, 'Library: choose an image');
 
-  createImagePickerSeam({ h, root, openBundledGradients: bundled.open })({
+  createImagePickerSeam({ root, openBundledGradients: bundled.open })({
     title: 'Library: choose an image',
     onPick: noop,
   });
@@ -166,7 +159,6 @@ test('the bundled adapter forwards its pick untouched — the manifest is alread
   const root = document.createElement('div');
   let opened = null;
   const seam = createImagePickerSeam({
-    h,
     root,
     openBundledGradients: (opts) => {
       opened = opts;

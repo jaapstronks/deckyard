@@ -20,12 +20,12 @@ import { createCollaboratorsSection } from './collaborators-section.js';
 import { createShareLinksSection } from './share-links-section.js';
 import { createVisibilitySection } from './visibility-section.js';
 import { createPublishSection } from './publish-section.js';
+import { h } from '../../../../lib/dom.js';
 
 /**
  * Open the unified share dialog.
  *
  * @param {Object} options
- * @param {Function} options.h - Hyperscript function
  * @param {Function} options.api - API call function
  * @param {Object} options.pres - Presentation object
  * @param {string} options.id - Presentation ID
@@ -52,7 +52,6 @@ import { createPublishSection } from './publish-section.js';
  * @returns {{ close: Function, refresh: Function }}
  */
 export function openShareModal({
-  h,
   api,
   pres,
   id,
@@ -100,7 +99,6 @@ export function openShareModal({
 
   // --- Organization tab (labelled "Workspace" in the UI) ---
   const visibility = createVisibilitySection({
-    h,
     api,
     pres,
     id,
@@ -119,7 +117,6 @@ export function openShareModal({
   });
 
   collaborators = createCollaboratorsSection({
-    h,
     api,
     presentationId: id,
     pres,
@@ -138,7 +135,6 @@ export function openShareModal({
 
   // --- Link tab ---
   const shareLinks = createShareLinksSection({
-    h,
     api,
     presentationId: id,
     copyToClipboard,
@@ -156,7 +152,6 @@ export function openShareModal({
   const publishAvailable = !getFeatures()?.sandboxMode;
   const publish = publishAvailable
     ? createPublishSection({
-        h,
         api,
         pres,
         id,

@@ -11,12 +11,13 @@ import { icon } from '../../../lib/dom/icons.js';
 import { ifMatchRevision } from '../if-match-revision.js';
 import { openVersionPreviewModal } from './versions-preview.js';
 import { openVersionCompareModal } from './versions-compare.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * Opens a modal to prompt for an optional save point label.
  * @returns {Promise<{ok: boolean, label?: string}>}
  */
-function openLabelModal({ h, root, openOverlayClosers } = {}) {
+function openLabelModal({ root, openOverlayClosers } = {}) {
   const modal = createPromiseModal({
     title: t('editor.versions.labelModalTitle', 'Create save point'),
     hint: t(
@@ -50,7 +51,6 @@ function openLabelModal({ h, root, openOverlayClosers } = {}) {
 }
 
 export function openVersionsModal({
-  h,
   api,
   root,
   pres,
@@ -146,7 +146,6 @@ export function openVersionsModal({
           text: t('editor.versions.preview', 'Preview'),
           onclick: () => {
             openVersionPreviewModal({
-              h,
               root,
               api,
               presentationId: id,
@@ -163,7 +162,6 @@ export function openVersionsModal({
           text: t('editor.versions.compare', 'Compare'),
           onclick: () => {
             openVersionCompareModal({
-              h,
               root,
               api,
               presentationId: id,
@@ -270,7 +268,7 @@ export function openVersionsModal({
           return;
         }
       }
-      const result = await openLabelModal({ h, root, openOverlayClosers });
+      const result = await openLabelModal({ root, openOverlayClosers });
       if (!result?.ok) return;
       const label = result.label || '';
       setStatus(t('editor.versions.creatingSavePoint', 'Creating save point…'));

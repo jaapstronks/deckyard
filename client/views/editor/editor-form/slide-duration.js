@@ -11,10 +11,10 @@
 
 import { t } from '../../../lib/ui-i18n.js';
 import { DEFAULT_ADVANCE_INTERVAL_SECONDS } from '../../../../shared/slide-timing.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * @param {object} ctx
- * @param {(tag: string, props?: object, ...kids: any[]) => HTMLElement} ctx.h
  * @param {object} ctx.pres
  * @param {object} ctx.slide
  * @param {boolean} ctx.contentOnly Bulk-edit mode renders no duration control.
@@ -23,7 +23,6 @@ import { DEFAULT_ADVANCE_INTERVAL_SECONDS } from '../../../../shared/slide-timin
  * @returns {HTMLElement|null}
  */
 export function buildSlideDurationControl({
-  h,
   pres,
   slide,
   contentOnly,

@@ -4,10 +4,10 @@ import {
   createSSEConnection,
   LONG_LIVED_STREAM,
 } from '../../lib/net/sse-connection.js';
+import { h } from '../../lib/dom.js';
 
 export function createNotesQaController({
   api,
-  h,
   qaWrap,
   qaBody,
   getPresentationId,

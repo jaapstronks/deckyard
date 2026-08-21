@@ -1,11 +1,12 @@
 import { t } from '../../../../lib/ui-i18n.js';
+import { h } from '../../../../lib/dom.js';
 
 /**
  * Engagement Insights: how team-view analytics are collected and displayed.
  * @param {object} ctx - { h, pres, markDirty, requestSave }
  * @returns {{ el: HTMLElement }}
  */
-export function buildAnalyticsSection({ h, pres, markDirty, requestSave }) {
+export function buildAnalyticsSection({ pres, markDirty, requestSave }) {
   pres.settings.analyticsOptions =
     pres.settings.analyticsOptions &&
     typeof pres.settings.analyticsOptions === 'object'

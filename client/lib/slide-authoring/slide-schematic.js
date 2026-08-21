@@ -1,4 +1,4 @@
-// Shared "schematic" mini-diagram renderer: an abstract, symbolic drawing of a
+import { h } from '../dom.js'; // Shared "schematic" mini-diagram renderer: an abstract, symbolic drawing of a
 // slide's structure (grey image blocks + text bars), à la Keynote/PowerPoint's
 // layout picker. Built from plain <div>s styled by CSS — legible at any size
 // because it shows *structure*, not shrunk-down real content.
@@ -54,13 +54,12 @@
 
 /**
  * Build a schematic mini-diagram element for a slide layout/type.
- * @param {Function} h - hyperscript factory (from client/lib/dom.js)
  * @param {Object} [spec] - the schematic descriptor (see grammar above)
  * @param {Object} [opts]
  * @param {boolean} [opts.mirrored] - flip the image side (split/corner/duo)
  * @returns {HTMLElement} a `.layout-tile-schematic` element
  */
-export function renderSlideSchematic(h, spec = {}, opts = {}) {
+export function renderSlideSchematic(spec = {}, opts = {}) {
   const s = spec && typeof spec === 'object' ? spec : {};
   const mirrored = !!opts.mirrored || !!s.mirror;
   const box = h('div', {

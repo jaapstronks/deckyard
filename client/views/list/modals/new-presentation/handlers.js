@@ -59,7 +59,6 @@ export async function handleEmpty({
  */
 export async function handlePasteText({
   api,
-  h,
   root,
   raw,
   langMode,
@@ -81,7 +80,6 @@ export async function handlePasteText({
   hideBackdrop?.();
 
   const loadingModal = showLoadingModal({
-    h,
     root,
     initialMessage: t(
       'list.newPresentation.preparing',
@@ -187,7 +185,6 @@ export async function handlePasteText({
  */
 export async function handleConvertFile({
   api,
-  h,
   root,
   selectedFile,
   langMode,
@@ -219,7 +216,6 @@ export async function handleConvertFile({
 
   hideBackdrop?.();
   const loadingModal = showLoadingModal({
-    h,
     root,
     initialMessage: t('list.fileConverter.converting', 'Converting file…'),
     title: t('list.fileConverter.convertingTitle', 'Converting file'),
@@ -407,7 +403,6 @@ export async function handleImportJson({
  */
 export async function handleImportMarkdown({
   api,
-  h,
   selectedFile,
   langMode,
   themeId,
@@ -464,7 +459,6 @@ export async function handleImportMarkdown({
  */
 export async function handlePasteMarkdown({
   api,
-  h,
   raw,
   langMode,
   themeId,
@@ -518,7 +512,6 @@ export async function handlePasteMarkdown({
  */
 export async function handleNotion({
   api,
-  h,
   root,
   notionUrl,
   themeId,
@@ -544,7 +537,6 @@ export async function handleNotion({
   hideBackdrop?.();
 
   const loadingModal = showLoadingModal({
-    h,
     root,
     initialMessage: t(
       'list.newPresentation.notion.importing',

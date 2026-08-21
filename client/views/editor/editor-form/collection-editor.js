@@ -12,6 +12,7 @@ import {
   fieldFormLayout,
   fieldFormRows,
 } from '../../../../shared/slide-types/form-layout.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * The generic collection editor: ONE add/remove/reorder/collapse machine for
@@ -62,7 +63,6 @@ const collapsedState = createCollapsedState('collection');
 
 /**
  * @param {Object} o
- * @param {Function} o.h - DOM helper
  * @param {Object} o.slide - the slide being edited
  * @param {Object} o.def - the slide-type definition
  * @param {Object} o.field - the `type: 'items'` field schema
@@ -85,7 +85,6 @@ const collapsedState = createCollapsedState('collection');
  * @returns {HTMLElement}
  */
 export function createCollectionEditor({
-  h,
   slide,
   def,
   field,
@@ -446,7 +445,6 @@ export function createCollectionEditor({
             : null;
           pushWidget(k, {
             fullWidth: createCollectionEditor({
-              h,
               slide,
               def,
               field: f,

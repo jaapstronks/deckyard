@@ -1,6 +1,7 @@
 import { t } from '../../lib/ui-i18n.js';
 import { storage } from '../../lib/storage.js';
 import { getFeatures } from '../../lib/state/features.js';
+import { h } from '../../lib/dom.js';
 
 /**
  * First-run onboarding checklist for the Home view.
@@ -40,7 +41,6 @@ function writeState(state) {
  * (existing user, dismissed, or every step already done).
  *
  * @param {object} opts
- * @param {Function} opts.h - DOM helper
  * @param {Function} opts.nav - Navigation function
  * @param {Array} opts.allByDate - All presentations (used to derive "has a deck")
  * @param {Function} opts.onCreate - Open the new-presentation modal
@@ -48,13 +48,7 @@ function writeState(state) {
  *   AI agent (an API key that has actually been used).
  * @returns {HTMLElement|null}
  */
-export function createOnboardingChecklist({
-  h,
-  nav,
-  allByDate,
-  onCreate,
-  api,
-}) {
+export function createOnboardingChecklist({ nav, allByDate, onCreate, api }) {
   const hasDeck = Array.isArray(allByDate) && allByDate.length > 0;
   const isSandbox = !!getFeatures()?.sandboxMode;
 

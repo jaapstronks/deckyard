@@ -22,7 +22,6 @@ import {
  * small request per session, not per editor.
  *
  * @param {object} ctx
- * @param {Function} ctx.h - hyperscript DOM helper
  * @param {HTMLElement} ctx.root - editor root (overlay mount host)
  * @param {object} ctx.user - current user (image-library scoping)
  * @param {object} ctx.api - API client
@@ -31,7 +30,6 @@ import {
  * @returns {Promise<{ openImagePicker: Function }>} the single seam every call site uses
  */
 export async function createImagePickers({
-  h,
   root,
   user,
   api,
@@ -43,7 +41,6 @@ export async function createImagePickers({
       ...opts,
       user,
       api,
-      h,
       root,
       openOverlayClosers,
       features,
@@ -57,7 +54,6 @@ export async function createImagePickers({
         openImageKitPicker({
           ...opts,
           api,
-          h,
           root,
           openOverlayClosers,
         })
@@ -70,14 +66,12 @@ export async function createImagePickers({
     ? (opts) =>
         openBundledGradientPicker({
           ...opts,
-          h,
           root,
           openOverlayClosers,
         })
     : undefined;
 
   const openImagePicker = createImagePickerSeam({
-    h,
     root,
     features,
     openImageLibrary,

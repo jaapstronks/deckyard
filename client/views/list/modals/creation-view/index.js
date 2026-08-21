@@ -25,9 +25,9 @@ import { createLibraryCompose } from './library-compose.js';
 import { createContentCompose } from './content-compose.js';
 import { createImportCompose } from './import-compose.js';
 import { handleEmpty } from '../new-presentation/handlers.js';
+import { h } from '../../../../lib/dom.js';
 
 export function openCreationView({
-  h,
   api,
   root,
   nav,
@@ -178,7 +178,6 @@ export function openCreationView({
   // its source toggle, picker, selection tray, and collections cache. The host
   // only wires it in: syncUI drives its panel, isDirty/count read its state.
   const library = createLibraryCompose({
-    h,
     api,
     onSelectionChange: () => syncUI(),
     setStatus: (text) => setStatus(text),
@@ -191,7 +190,6 @@ export function openCreationView({
   // file, and the Notion reveal all live in the module. syncUI drives its panel,
   // getEffectiveMode/isDirty read its state, and Create delegates to its run().
   const content = createContentCompose({
-    h,
     api,
     onChange: () => syncUI(),
     aiDisabled,
@@ -204,7 +202,6 @@ export function openCreationView({
   // its panel, getEffectiveMode/isDirty/themeApplies read its state, and Create
   // delegates to its run().
   const importMethod = createImportCompose({
-    h,
     onChange: () => syncUI(),
   });
   const importPanel = importMethod.panel;
@@ -219,7 +216,6 @@ export function openCreationView({
   // than through the injected readLangMode/writeLangMode pair) keeps the
   // "no preference stored" case distinguishable, which readLangMode() hides.
   const langSelect = createLangSelector({
-    h,
     readLangMode,
     writeLangMode,
     getSupportedLangs,
@@ -230,7 +226,6 @@ export function openCreationView({
     className: '',
   });
   const themeSelect = createVisualThemePicker({
-    h,
     api,
     initialTheme: themeId,
     onChange: (id) => {
@@ -435,7 +430,6 @@ export function openCreationView({
     if (!mode) return;
     const commonOpts = {
       api,
-      h,
       root,
       close,
       nav,

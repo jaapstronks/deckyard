@@ -28,7 +28,7 @@ const { createBasicFields } =
 const { emptyRequiredFields } =
   await import('../client/views/editor/fields/required.js');
 
-const { fieldText, fieldMarkdown, fieldCode } = createBasicFields({ h });
+const { fieldText, fieldMarkdown, fieldCode } = createBasicFields({});
 
 const blur = (el) => el.dispatchEvent(new dom.window.Event('blur'));
 const type = (el, value) => {

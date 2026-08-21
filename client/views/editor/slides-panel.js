@@ -18,6 +18,7 @@ import {
   followInvitePlacements,
   insertSlideAfter,
 } from './slide-insert-position.js';
+import { h } from '../../lib/dom.js';
 
 // Which slide types need audience participation, and therefore a follow-invite
 // slide in the deck for the audience to join through. Declared by the type
@@ -35,7 +36,6 @@ function hasFollowInviteSlide(slides) {
 }
 
 export function createSlidesPanel({
-  h,
   root,
   pres,
   user,
@@ -69,7 +69,6 @@ export function createSlidesPanel({
 
   // Resize handle for drag-to-resize (PowerPoint/Keynote style)
   const { handleEl: resizeHandle } = createSlidesPanelResize({
-    h,
     panelEl: left,
     isSlidesCollapsed,
   });
@@ -192,7 +191,6 @@ export function createSlidesPanel({
     pasteFromClipboard,
     copySelectedSlides,
   } = createSlidesPanelActions({
-    h,
     pres,
     toast,
     SLIDE_TYPES,
@@ -289,7 +287,6 @@ export function createSlidesPanel({
     parentId = null,
   }) => {
     openFollowInviteSuggestModal({
-      h,
       root,
       openOverlayClosers,
       ...followInvitePlacements({
@@ -383,7 +380,6 @@ export function createSlidesPanel({
   };
 
   const { renderSlideTypePicker } = createSlideTypePicker({
-    h,
     SLIDE_TYPES,
     theme,
     insertSlide,
@@ -462,7 +458,6 @@ export function createSlidesPanel({
   };
 
   const { renderSlideLibraryPicker } = createSlideLibraryPicker({
-    h,
     api,
     pres,
     SLIDE_TYPES,
@@ -486,7 +481,6 @@ export function createSlidesPanel({
   // Drawer contents are re-rendered on open so it always inserts at the intended location.
   const openSlideTypeModal = ({ afterSlideId, parentId } = {}) =>
     openSlideTypeModalImpl({
-      h,
       root,
       pres,
       afterSlideId,
@@ -525,7 +519,6 @@ export function createSlidesPanel({
     allowInsert = true,
   } = {}) =>
     openSlideLibraryModalImpl({
-      h,
       root,
       api,
       pres,
@@ -553,7 +546,6 @@ export function createSlidesPanel({
       setSelectedSlideId,
       editorState,
       api,
-      h,
       user,
       initialPrompt,
       // Batch-review context: lets multi-slide results open the review grid

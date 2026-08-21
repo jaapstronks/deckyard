@@ -23,10 +23,10 @@
  */
 
 import { computeDrop, resolveMove } from './reorder-geometry.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * @param {object} opts
- * @param {Function} opts.h - DOM helper (createElement wrapper).
  * @param {HTMLElement} opts.thumb - the unscaled slide thumb element.
  * @param {object} opts.overlay - inline affordance overlay (provides `.layer`).
  * @param {(path: string, from: number, to: number) => void} opts.onReorder -
@@ -34,7 +34,7 @@ import { computeDrop, resolveMove } from './reorder-geometry.js';
  * @returns {{ begin: (e: PointerEvent, params: {path: string, scopeEl: HTMLElement,
  *   itemSelector: string, fromIdx: number}) => void }}
  */
-export function createReorderDrag({ h, thumb, overlay, onReorder }) {
+export function createReorderDrag({ thumb, overlay, onReorder }) {
   function begin(e, { path, scopeEl, itemSelector, fromIdx }) {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     e.preventDefault();

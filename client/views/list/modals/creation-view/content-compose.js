@@ -21,16 +21,16 @@ import {
   handleConvertFile,
   handleNotion,
 } from '../new-presentation/handlers.js';
+import { h } from '../../../../lib/dom.js';
 
 /**
  * @param {object} opts
- * @param {Function} opts.h - DOM builder.
  * @param {Function} opts.api - fetch wrapper.
  * @param {() => void} opts.onChange - re-run host syncUI.
  * @param {boolean} opts.aiDisabled - AI features off (gates the Notion reveal).
  * @returns {object} content-compose controller
  */
-export function createContentCompose({ h, api, onChange, aiDisabled }) {
+export function createContentCompose({ api, onChange, aiDisabled }) {
   const syncUI = () => onChange?.();
 
   // ===== State =====

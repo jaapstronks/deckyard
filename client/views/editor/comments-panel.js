@@ -26,11 +26,11 @@ import {
   threadWaitsFor,
   collectUnreadThreadIds,
 } from './comments-read-state.js';
+import { h } from '../../lib/dom.js';
 
 /**
  * Creates a comments panel component for the editor.
  * @param {Object} options - Configuration options
- * @param {Function} options.h - DOM helper function for creating elements
  * @param {Function} options.api - API function for making requests
  * @param {Object} [options.toast] - Toast notification handler
  * @param {string} options.presentationId - The presentation ID
@@ -43,7 +43,6 @@ import {
  * @returns {Object} Panel API with panelEl, show, hide, toggle, refresh, and other methods
  */
 export function createCommentsPanel({
-  h,
   api,
   toast,
   presentationId,
@@ -401,7 +400,6 @@ export function createCommentsPanel({
   // ========================================
 
   const renderers = createCommentRenderers({
-    h,
     filter,
     getSlideNumber,
     formatTime,

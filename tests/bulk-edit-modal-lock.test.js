@@ -36,7 +36,6 @@ globalThis.ResizeObserver =
     disconnect() {}
   };
 
-const { h } = await import('../client/lib/dom.js');
 const { createBulkEditModal } =
   await import('../client/views/editor/bulk-edit-modal.js');
 
@@ -50,7 +49,6 @@ test('modal gates its form pane on locked slides and releases it again', () => {
   };
   let selectedId = 's1';
   const modalApi = createBulkEditModal({
-    h,
     pres,
     getSelectedSlideId: () => selectedId,
     setSelectedSlideId: (v) => {

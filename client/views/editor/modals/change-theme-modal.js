@@ -12,12 +12,12 @@ import { createPromiseModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { downloadBlob } from '../../../lib/dom/download.js';
 import { DEFAULT_THEME_ID } from '../../../../shared/constants/themes.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * Open the change theme warning modal.
  *
  * @param {Object} options
- * @param {Function} options.h - DOM element factory
  * @param {HTMLElement} options.root - Root element to append modal to
  * @param {Function} options.api - API fetch function
  * @param {Function} options.toast - Toast notification function
@@ -30,7 +30,6 @@ import { DEFAULT_THEME_ID } from '../../../../shared/constants/themes.js';
  * @returns {Promise<{ ok: boolean }>}
  */
 function openChangeThemeModal({
-  h,
   root,
   api,
   toast,
@@ -296,7 +295,6 @@ function openChangeThemeModal({
  * Analyze and apply theme change, showing modal only if there are problems.
  *
  * @param {Object} options
- * @param {Function} options.h - DOM element factory
  * @param {HTMLElement} options.root - Root element
  * @param {Function} options.api - API fetch function
  * @param {Function} options.toast - Toast notification function
@@ -309,7 +307,6 @@ function openChangeThemeModal({
  * @returns {Promise<{ ok: boolean }>}
  */
 export async function analyzeAndApplyThemeChange({
-  h,
   root,
   api,
   toast,
@@ -354,7 +351,6 @@ export async function analyzeAndApplyThemeChange({
 
   // Show warning modal
   return openChangeThemeModal({
-    h,
     root,
     api,
     toast,

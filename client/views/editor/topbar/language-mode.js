@@ -17,12 +17,12 @@ import { confirmModal, createModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types.js';
 import { translatableKeysForType } from '../translatable.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * Create the language mode switcher component.
  *
  * @param {object} options
- * @param {Function} options.h - DOM element factory
  * @param {HTMLElement} options.root - Root element for modals
  * @param {object} options.pres - Presentation object
  * @param {string} options.id - Presentation ID
@@ -40,7 +40,6 @@ import { translatableKeysForType } from '../translatable.js';
  * @returns {object} Language mode controller
  */
 export function createLanguageMode({
-  h,
   root,
   pres,
   id,

@@ -114,7 +114,6 @@ export function createFontsTab({ user } = {}) {
     if (families.length === 0) {
       listSection.append(
         createEmptyState({
-          h,
           icon: null,
           className: 'empty-state-panel',
           title: t('fonts.emptyTitle', 'No custom fonts yet'),

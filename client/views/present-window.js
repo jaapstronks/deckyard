@@ -43,7 +43,7 @@ export async function renderPresentWindow(root, id) {
 
   const shell = h('div', { class: 'present-window' });
 
-  const { deck, stageWrap, stage } = createPresenterStageScaffold({ h, pres });
+  const { deck, stageWrap, stage } = createPresenterStageScaffold({ pres });
   shell.append(deck);
   root.append(shell);
 
@@ -68,7 +68,6 @@ export async function renderPresentWindow(root, id) {
   let followCodes = null;
 
   const deckCtl = createPresenterDeckController({
-    h,
     api,
     presentationId: id,
     langQs,

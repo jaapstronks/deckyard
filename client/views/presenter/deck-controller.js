@@ -2,6 +2,7 @@ import { isSlideVisibleIn } from '../../../shared/slide-visibility.js';
 import { isLiveSlideType } from '../../../shared/slide-types/runtime.js';
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 import { morphTransition } from './morph-engine.js';
+import { h } from '../../lib/dom.js';
 
 export function filterPresentSlides(presentation) {
   return (presentation?.slides || []).filter((s) => {
@@ -28,7 +29,6 @@ export function normalizeNotesStrings(presentation) {
 }
 
 export function createPresenterDeckController({
-  h,
   api,
   presentationId,
   langQs = '',

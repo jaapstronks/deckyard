@@ -36,9 +36,9 @@ import {
   buildAiWarningsPanel,
 } from './editor-form/ai-slide-notes.js';
 import { buildAiIteratePanel } from './editor-form/ai-iterate-panel.js';
+import { h } from '../../lib/dom.js';
 
 export function createRerenderEditor({
-  h,
   editorMount,
   pres,
   SLIDE_TYPES,
@@ -213,7 +213,6 @@ export function createRerenderEditor({
         // Layout switcher chip: only for types that declare layoutVariants
         // (type-agnostic; forks that override a type control their own set).
         const layoutChip = createLayoutSwitcherChip({
-          h,
           slide,
           pres,
           SLIDE_TYPES,
@@ -241,7 +240,6 @@ export function createRerenderEditor({
       }
 
       const headerActionsResult = buildHeaderActions({
-        h,
         slide,
         pres,
         api,
@@ -269,7 +267,6 @@ export function createRerenderEditor({
     // Data source indicator (shown for bindable slide types when live data is enabled)
     if (!contentOnly) {
       const dsBar = buildDataSourceIndicator({
-        h,
         slide,
         api,
         markDirty,
@@ -282,7 +279,6 @@ export function createRerenderEditor({
 
     // Per-slide duration input (shown only when auto-advance is enabled)
     const durationWrap = buildSlideDurationControl({
-      h,
       pres,
       slide,
       contentOnly,
@@ -347,13 +343,13 @@ export function createRerenderEditor({
 
     // AI reasoning panel (shown for AI-generated slides)
     if (!contentOnly) {
-      const aiReasoning = buildAiReasoningPanel({ h, slide });
+      const aiReasoning = buildAiReasoningPanel({ slide });
       if (aiReasoning) form.append(aiReasoning);
     }
 
     // AI warnings panel (shown when validation found issues)
     if (!contentOnly) {
-      const aiWarnings = buildAiWarningsPanel({ h, slide });
+      const aiWarnings = buildAiWarningsPanel({ slide });
       if (aiWarnings) form.append(aiWarnings);
     }
 
@@ -363,7 +359,6 @@ export function createRerenderEditor({
     const aiIteratePanel = contentOnly
       ? null
       : buildAiIteratePanel({
-          h,
           api,
           pres,
           slide,
@@ -472,7 +467,6 @@ export function createRerenderEditor({
     const deckSlides = buildDeckSlideOptions(pres, slide?.id);
 
     const renderField = createRenderField({
-      h,
       pres,
       slide,
       def,
@@ -598,7 +592,6 @@ export function createRerenderEditor({
     const background = contentOnly
       ? { colorGroup: null, imageSection: null }
       : buildBackgroundControls({
-          h,
           slide,
           pres,
           theme,
@@ -610,7 +603,6 @@ export function createRerenderEditor({
         });
 
     const formTypeCtx = {
-      h,
       form,
       // The deck, for forms that need the active language version rather than
       // anything stored on the slide (follow-invite's copy labels).
@@ -659,7 +651,6 @@ export function createRerenderEditor({
       // with block-level alignment/colour (editing-surfaces text step 3).
       if (elementActive && selectedElement?.kind === 'text') {
         renderTextElementCard({
-          h,
           container: elementForm,
           slide,
           fieldKey: selectedElement.fieldKey,

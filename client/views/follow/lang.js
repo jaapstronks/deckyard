@@ -3,13 +3,13 @@ import {
   getLangDisplayName,
 } from '../../lib/format/lang-selector.js';
 import { spinner } from '../../lib/dom/spinner.js';
+import { h } from '../../lib/dom.js';
 
 /**
  * Render language selection UI for follow-along view.
  * Uses buttons for ≤2 languages, dropdown for >2.
  */
 export function renderFollowLangButtons({
-  h,
   langWrap,
   currentLang,
   availableLangs,

@@ -6,6 +6,7 @@
 
 import { createModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { h } from '../../../lib/dom.js';
 
 const LEVELS = [
   {
@@ -55,12 +56,11 @@ const LEVELS = [
 /**
  * Open the subscription chooser for a deck.
  * @param {Object} options
- * @param {Function} options.h - DOM helper
  * @param {Function} options.api - API call function
  * @param {Object} options.toast - Toast handler
  * @param {string} options.presentationId
  */
-export async function openSubscriptionModal({ h, api, toast, presentationId }) {
+export async function openSubscriptionModal({ api, toast, presentationId }) {
   let current = null;
   let defaultLevel = 'participating';
   try {

@@ -103,7 +103,6 @@ export async function renderNotes(root, sessionId, { user } = {}) {
   const uiLang = normalizeLang(pres?.lang) || 'nl';
   const qaCtl = createNotesQaController({
     api,
-    h,
     qaWrap,
     qaBody,
     getPresentationId: () => pres?.id || '',

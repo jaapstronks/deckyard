@@ -2,9 +2,9 @@ import { createPreviewLightbox } from './modals/preview-lightbox.js';
 import { t } from '../../lib/ui-i18n.js';
 import { createCommentMarkers } from './comment-markers.js';
 import { icon } from '../../lib/dom/icons.js';
+import { h } from '../../lib/dom.js';
 
 export function createPreviewPanel({
-  h,
   root,
   pres,
   theme,
@@ -27,7 +27,6 @@ export function createPreviewPanel({
   const preview = h('div', { class: 'panel preview-panel' });
 
   const previewLightbox = createPreviewLightbox({
-    h,
     root,
     pres,
     theme,
@@ -269,7 +268,6 @@ export function createPreviewPanel({
 
   if (commentsApi) {
     commentMarkers = createCommentMarkers({
-      h,
       containerEl: thumb,
       onMarkerClick: (comment) => {
         // Open the comments pane in the inspector rail on this comment.

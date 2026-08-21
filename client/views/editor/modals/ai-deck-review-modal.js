@@ -16,10 +16,10 @@ import { toast } from '../../../lib/dom/toast.js';
 import { createDeckGridView } from '../deck-grid.js';
 import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
 import { createAiReviewAnnotations } from '../ai-review-annotations.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * @param {Object} options
- * @param {Function} options.h
  * @param {HTMLElement} options.root
  * @param {Function} options.api
  * @param {Object} options.pres - The live presentation (mutated on revise/swap)
@@ -33,7 +33,6 @@ import { createAiReviewAnnotations } from '../ai-review-annotations.js';
  * @param {Function} [options.nav] - Router navigate (for discard)
  */
 export function openAiDeckReviewModal({
-  h,
   root,
   api,
   pres,
@@ -68,7 +67,6 @@ export function openAiDeckReviewModal({
   const status = h('div', { class: 'help ui-status-line' });
 
   const { annotationFor } = createAiReviewAnnotations({
-    h,
     api,
     SLIDE_TYPES,
     lang,
@@ -129,7 +127,6 @@ export function openAiDeckReviewModal({
   };
 
   grid = createDeckGridView({
-    h,
     theme,
     SLIDE_TYPES,
     presentationId: pres?.id,

@@ -6,6 +6,7 @@
  */
 import { createModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * Derive a short display label for a slide: its position plus a best-effort
@@ -26,7 +27,6 @@ function slideLabel(slide, index) {
 /**
  * Open the remote-merge summary modal.
  * @param {Object} opts
- * @param {Function} opts.h - DOM factory
  * @param {HTMLElement} opts.root - Mount root
  * @param {Object[]} opts.slides - Current deck slides
  * @param {string[]} opts.changedSlideIds - Ids of slides changed by the merge
@@ -34,7 +34,6 @@ function slideLabel(slide, index) {
  * @param {Set} [opts.openOverlayClosers] - Overlay registry for cleanup
  */
 export function openRemoteMergeModal({
-  h,
   root,
   slides,
   changedSlideIds,

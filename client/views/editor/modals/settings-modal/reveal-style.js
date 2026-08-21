@@ -4,13 +4,14 @@ import {
   DEFAULT_REVEAL_STYLE,
   normalizeRevealStyle,
 } from '../../../../../shared/reveal-style.js';
+import { h } from '../../../../lib/dom.js';
 
 /**
  * Reveal style for builds: how each body fragment (bullet/paragraph) appears.
  * @param {object} ctx - { h, pres, markDirty, requestSave }
  * @returns {{ el: HTMLElement }}
  */
-export function buildRevealStyleSection({ h, pres, markDirty, requestSave }) {
+export function buildRevealStyleSection({ pres, markDirty, requestSave }) {
   pres.settings.revealStyle =
     normalizeRevealStyle(pres.settings.revealStyle) || DEFAULT_REVEAL_STYLE;
 

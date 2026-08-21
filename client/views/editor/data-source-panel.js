@@ -12,6 +12,7 @@ import {
   PROVIDER_LABELS,
   normalizeDataSource,
 } from '../../../shared/data-source.js';
+import { h } from '../../lib/dom.js';
 
 const MODE_LABELS = {
   frozen: 'Snapshot',
@@ -23,7 +24,6 @@ const MODE_LABELS = {
  * Returns null if the slide has no data source or the feature is disabled.
  */
 export function buildDataSourceIndicator({
-  h,
   slide,
   api,
   markDirty,
@@ -169,7 +169,6 @@ export function buildDataSourceIndicator({
       ),
       onclick: () => {
         openDataSourceModal({
-          h,
           root: document.body,
           slide,
           api,
@@ -190,7 +189,6 @@ export function buildDataSourceIndicator({
  * Open the data source configuration modal.
  */
 function openDataSourceModal({
-  h,
   root,
   slide,
   api,
@@ -202,7 +200,6 @@ function openDataSourceModal({
   import('./data-source-modal.js')
     .then(({ openDataSourceConfigModal }) => {
       openDataSourceConfigModal({
-        h,
         root,
         slide,
         api,

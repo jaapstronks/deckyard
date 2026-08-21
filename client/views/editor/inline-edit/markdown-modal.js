@@ -11,7 +11,6 @@
  * Split out of inline-editor.js (B10 P4 seam), behaviour-preserving.
  *
  * @param {object} deps
- * @param {Function} deps.h - DOM builder.
  * @param {HTMLElement} deps.mdHost - element the modal + backdrop mount into.
  * @param {Function} deps.mdField - canonical markdown field factory (label,
  *   value, help, onChange, opts) -> element.
@@ -27,12 +26,11 @@
  */
 
 import { getByPath, setByPath } from './field-path.js';
-import { installDismissOnOutside } from '../../../lib/dom.js';
+import { h, installDismissOnOutside } from '../../../lib/dom.js';
 import { createOverlay } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 
 export function createMarkdownEditModal({
-  h,
   mdHost,
   mdField,
   getSlide,

@@ -128,7 +128,7 @@ test('preferences: section collapse honours the interaction default', () => {
 // --- thumbnails.js ------------------------------------------------------
 test('thumbnails: video mock builds a poster + play button', () => {
   const wrap = h('div', {});
-  thumbs.fillVideoThumb(h, wrap);
+  thumbs.fillVideoThumb(wrap);
   assert.ok(wrap.classList.contains('ps-type-thumb-video'));
   assert.ok(wrap.querySelector('.ps-type-video-poster'));
   assert.ok(wrap.querySelector('.ps-type-video-play'));
@@ -136,7 +136,7 @@ test('thumbnails: video mock builds a poster + play button', () => {
 
 test('thumbnails: embed mock builds browser chrome', () => {
   const wrap = h('div', {});
-  thumbs.fillEmbedThumb(h, wrap);
+  thumbs.fillEmbedThumb(wrap);
   assert.ok(wrap.classList.contains('ps-type-thumb-embed'));
   assert.ok(wrap.querySelector('.ps-type-embed-bar'));
   assert.equal(wrap.querySelectorAll('.ps-type-embed-dot').length, 3);
@@ -147,7 +147,7 @@ test('thumbnails: schematic fill clears pending and appends a diagram', () => {
     class: 'is-pending',
     'data-thumb-type': 'title-slide',
   });
-  thumbs.fillSchematic(wrap, h, { 'title-slide': { label: 'Title' } });
+  thumbs.fillSchematic(wrap, { 'title-slide': { label: 'Title' } });
   assert.equal(wrap.classList.contains('is-pending'), false);
   assert.ok(wrap.firstChild, 'a schematic node was appended');
 });
@@ -169,7 +169,6 @@ const SLIDE_TYPES = {
 
 function makePicker(overrides = {}) {
   return createSlideTypePicker({
-    h,
     SLIDE_TYPES,
     theme: null,
     insertSlide: () => {},

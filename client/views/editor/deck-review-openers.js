@@ -15,7 +15,6 @@ import { openAiDeckReviewModal } from './modals/ai-deck-review-modal.js';
  * and the mounted list rather than the boot-time stubs.
  *
  * @param {object} ctx
- * @param {Function} ctx.h - hyperscript DOM helper
  * @param {HTMLElement} ctx.root - editor root (overlay mount host)
  * @param {object} ctx.api - API client
  * @param {object} ctx.pres - presentation model
@@ -32,7 +31,6 @@ import { openAiDeckReviewModal } from './modals/ai-deck-review-modal.js';
  * @returns {{ jumpToSlide: Function, openDeckOverview: Function, openAiDeckReview: Function }}
  */
 export function createDeckReviewOpeners({
-  h,
   root,
   api,
   pres,
@@ -70,7 +68,6 @@ export function createDeckReviewOpeners({
   // Shared by the topbar button and the "Review" affordance on the AI-added toast.
   const openDeckOverview = () => {
     openDeckOverviewModal({
-      h,
       root,
       pres,
       theme,
@@ -84,7 +81,6 @@ export function createDeckReviewOpeners({
   // automatically after AI generation (?aiReview=1).
   const openAiDeckReview = ({ postGeneration = false } = {}) => {
     openAiDeckReviewModal({
-      h,
       root,
       api,
       pres,

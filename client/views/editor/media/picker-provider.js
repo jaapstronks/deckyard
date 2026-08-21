@@ -21,6 +21,7 @@
  */
 import { t } from '../../../lib/ui-i18n.js';
 import { createQuickModal } from '../../../lib/dom/modal.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * @typedef {Object} PickedImage  Normalized, provider-agnostic pick.
@@ -148,12 +149,11 @@ function imagekitProvider(openImageKitRaw) {
  * Lightweight modal asking the user which source to pick from, shown only when
  * more than one provider is enabled.
  * @param {Object} args
- * @param {Function} args.h
  * @param {HTMLElement} args.root
  * @param {PickerProvider[]} args.providers
  * @param {(p: PickerProvider) => void} args.onChoose
  */
-function openSourceChooser({ h, root, providers, onChoose }) {
+function openSourceChooser({ root, providers, onChoose }) {
   const modal = createQuickModal({
     root: root || document.body,
     title: t('editor.image.source.title', 'Choose image source'),
@@ -190,7 +190,6 @@ function openSourceChooser({ h, root, providers, onChoose }) {
  * - ImageKit is enabled whenever its raw opener is provided.
  *
  * @param {Object} args
- * @param {Function} args.h
  * @param {HTMLElement} args.root
  * @param {Object} [args.features]
  * @param {Function} [args.openImageLibrary]     - bound `openImageLibraryPicker`
@@ -199,7 +198,6 @@ function openSourceChooser({ h, root, providers, onChoose }) {
  * @returns {((opts: PickerOpts) => void) & { providers: PickerProvider[] }}
  */
 export function createImagePickerSeam({
-  h,
   root,
   features = {},
   openImageLibrary,
@@ -225,7 +223,7 @@ export function createImagePickerSeam({
       providers[0].open(opts);
       return;
     }
-    openSourceChooser({ h, root, providers, onChoose: (p) => p.open(opts) });
+    openSourceChooser({ root, providers, onChoose: (p) => p.open(opts) });
   }
 
   openImagePicker.providers = providers;

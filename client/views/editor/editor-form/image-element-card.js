@@ -109,7 +109,6 @@ function resolveImageElement(slide, def, idx) {
  * Render the "This image" card for the selected image element into `container`.
  *
  * @param {Object} opts
- * @param {Function} opts.h
  * @param {HTMLElement} opts.container - the element-tab panel to append into
  * @param {Object} opts.slide
  * @param {Object} opts.def - slide-type definition (for the descriptor fallback)
@@ -122,7 +121,6 @@ function resolveImageElement(slide, def, idx) {
  * @returns {boolean} whether anything was rendered
  */
 export function renderImageElementCard({
-  h,
   container,
   slide,
   def,
@@ -275,7 +273,6 @@ export function renderImageElementCard({
   if (hasImage && focus && focus.cropMode === 'cover') {
     container.append(
       renderFocusGridField({
-        h,
         label: t('editor.imageText.imageFocus', 'Image focus (crop)'),
         helpText: t(
           'editor.image.focusGridHelp',
@@ -294,7 +291,6 @@ export function renderImageElementCard({
     );
   } else if (hasImage && focus && focus.containSelector) {
     const posEl = renderImagePositionPicker({
-      h,
       mode: 'contain',
       imageUrl: member[imageField],
       containerSelector: focus.containSelector,

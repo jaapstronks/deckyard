@@ -5,9 +5,8 @@ import { buildCheckboxCallout } from './checkbox-callout.js';
  * @param {object} ctx - { h, pres, markDirty, requestSave }
  * @returns {{ row: HTMLElement }}
  */
-export function buildQaSection({ h, pres, markDirty, requestSave }) {
+export function buildQaSection({ pres, markDirty, requestSave }) {
   const { row } = buildCheckboxCallout({
-    h,
     checked: pres.settings.qaEnabled !== false,
     titleKey: 'editor.deckSettings.qa.title',
     title: 'Enable Q&A',
@@ -27,10 +26,9 @@ export function buildQaSection({ h, pres, markDirty, requestSave }) {
  * @param {object} ctx - { h, pres, markDirty, requestSave }
  * @returns {{ row: HTMLElement }}
  */
-export function buildBuildsSection({ h, pres, markDirty, requestSave }) {
+export function buildBuildsSection({ pres, markDirty, requestSave }) {
   pres.settings.stepParagraphs = !!pres.settings.stepParagraphs;
   const { row } = buildCheckboxCallout({
-    h,
     checked: pres.settings.stepParagraphs,
     titleKey: 'editor.deckSettings.builds.title',
     title: 'Builds',
@@ -50,14 +48,13 @@ export function buildBuildsSection({ h, pres, markDirty, requestSave }) {
  * @param {object} ctx - { h, pres, markDirty, requestSave }
  * @returns {{ row: HTMLElement }}
  */
-export function buildAuthorPreviewSection({ h, pres, markDirty, requestSave }) {
+export function buildAuthorPreviewSection({ pres, markDirty, requestSave }) {
   pres.settings.ogPreview =
     pres.settings.ogPreview && typeof pres.settings.ogPreview === 'object'
       ? pres.settings.ogPreview
       : {};
   pres.settings.ogPreview.showAuthor = !!pres.settings.ogPreview.showAuthor;
   const { row } = buildCheckboxCallout({
-    h,
     checked: pres.settings.ogPreview.showAuthor,
     titleKey: 'editor.deckSettings.authorPreview.title',
     title: 'Show author on preview',
@@ -77,9 +74,8 @@ export function buildAuthorPreviewSection({ h, pres, markDirty, requestSave }) {
  * @param {object} ctx - { h, pres, api, markDirty, requestSave }
  * @returns {{ row: HTMLElement }}
  */
-export function buildRssFeedSection({ h, pres, api, markDirty, requestSave }) {
+export function buildRssFeedSection({ pres, api, markDirty, requestSave }) {
   const { row } = buildCheckboxCallout({
-    h,
     checked: !!pres.settings.excludeFromFeed,
     titleKey: 'editor.deckSettings.rssFeed.title',
     title: 'Exclude from RSS feed',

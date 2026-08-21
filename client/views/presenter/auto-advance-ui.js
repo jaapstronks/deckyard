@@ -22,10 +22,10 @@ import {
   getSlideEffectiveDuration,
   DEFAULT_ADVANCE_INTERVAL_SECONDS,
 } from '../../../shared/slide-timing.js';
+import { h } from '../../lib/dom.js';
 
 /**
  * @param {object} ctx
- * @param {(tag: string, props?: object, ...kids: any[]) => HTMLElement} ctx.h
  * @param {object} ctx.pres
  * @param {object} [ctx.autoAdvanceCfg] `pres.settings.autoAdvance`.
  * @param {boolean} ctx.autoAdvanceEnabled
@@ -38,7 +38,6 @@ import {
  * @returns {{ autoAdvance: any, syncProgressTime: () => void }}
  */
 export function createPresenterAutoAdvanceUi({
-  h,
   pres,
   autoAdvanceCfg,
   autoAdvanceEnabled,

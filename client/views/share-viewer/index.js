@@ -74,7 +74,7 @@ export async function renderShareViewer(root, token) {
       // renderError branches on err.code as a machine code (map lookup +
       // the `=== 'revoked'` blockquote gate), so pass the code, not the
       // human message. The custom revocation text rides along in err.body.
-      renderError(h, shell, err.code, {
+      renderError(shell, err.code, {
         message: err.body?.message || null,
         presentationTitle: err.body?.presentationTitle || null,
       });
@@ -82,7 +82,7 @@ export async function renderShareViewer(root, token) {
     }
 
     if (data.requiresPassword) {
-      renderPasswordPrompt(h, shell, token, data, async (verifiedData) => {
+      renderPasswordPrompt(shell, token, data, async (verifiedData) => {
         shareLink = verifiedData.shareLink || verifiedData;
         await loadAndRenderPresentation();
       });
@@ -98,7 +98,7 @@ export async function renderShareViewer(root, token) {
       });
     } catch (err) {
       if (!err?.statusCode) throw err; // network failure: generic path below
-      renderError(h, shell, err.code);
+      renderError(shell, err.code);
       return cleanup;
     }
 
@@ -124,7 +124,6 @@ export async function renderShareViewer(root, token) {
     await loadAndRenderPresentation();
   } catch (err) {
     renderError(
-      h,
       shell,
       err.message || t('share.error.loadLink', 'Failed to load share link'),
     );
@@ -176,7 +175,6 @@ export async function renderShareViewer(root, token) {
     } catch (err) {
       shell.innerHTML = '';
       renderError(
-        h,
         shell,
         err.message ||
           t('share.error.loadPresentation', 'Failed to load presentation'),
@@ -350,7 +348,6 @@ export async function renderShareViewer(root, token) {
       slideWrap.innerHTML = '';
       slideWrap.append(
         createEmptyState({
-          h,
           icon: null,
           className: 'empty-state-fill',
           title: t('share.noSlides', 'No slides'),

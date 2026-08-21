@@ -25,18 +25,18 @@
 import { t } from '../../../../lib/ui-i18n.js';
 import { fieldCardLink } from '../../fields/card-link-field.js';
 import { syncIconCardsToNumbered } from '../../../../../shared/slide-types/types/icon-card-grid-slide/cards.js';
+import { h } from '../../../../lib/dom.js';
 
 /**
  * Collapsible group for a bulky widget block, styled like the
  * Background/Accessibility sections. Big blocks default closed so the pane
  * leads with the at-a-glance settings (chrome re-org stap 3).
  *
- * @param {Function} h - DOM helper
  * @param {string} title - Summary label
  * @param {{ open?: boolean }} [opts]
  * @returns {{ el: HTMLElement, body: HTMLElement }}
  */
-function collapsibleGroup(h, title, { open = false } = {}) {
+function collapsibleGroup(title, { open = false } = {}) {
   const el = h('details', { class: 'editor-advanced' });
   if (open) el.open = true;
   el.append(h('summary', { class: 'editor-advanced-summary', text: title }));
@@ -54,7 +54,6 @@ function collapsibleGroup(h, title, { open = false } = {}) {
  */
 export function renderIconCardExtras(ctx) {
   const {
-    h,
     form,
     elementForm,
     selectedElement,
@@ -120,7 +119,6 @@ export function renderIconCardExtras(ctx) {
     renderCard(items[cardIdx], cardIdx, elementForm);
   } else {
     const section = collapsibleGroup(
-      h,
       t('editor.inspector.cardsConfig', 'Card icons & links'),
     );
     items.forEach((item, idx) => renderCard(item, idx, section.body));

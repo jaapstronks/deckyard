@@ -20,14 +20,14 @@ import {
   handleImportMarkdown,
   handlePasteMarkdown,
 } from '../new-presentation/handlers.js';
+import { h } from '../../../../lib/dom.js';
 
 /**
  * @param {object} opts
- * @param {Function} opts.h - DOM builder.
  * @param {() => void} opts.onChange - re-run host syncUI.
  * @returns {object} import controller
  */
-export function createImportCompose({ h, onChange }) {
+export function createImportCompose({ onChange }) {
   const syncUI = () => onChange?.();
 
   // ===== State =====

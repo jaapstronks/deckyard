@@ -6,19 +6,18 @@
  */
 
 import { spinner } from './spinner.js';
+import { h } from '../dom.js';
 
 /**
  * Create and show a loading modal
  *
  * @param {Object} options
- * @param {Function} options.h - Element helper function
  * @param {HTMLElement} options.root - Root element to append to
  * @param {string} options.initialMessage - Initial status message
  * @param {string} options.title - Modal title (optional)
  * @returns {Object} Controller with update(), setProgress(), close() methods
  */
 export function showLoadingModal({
-  h,
   root,
   initialMessage = '',
   title = '',

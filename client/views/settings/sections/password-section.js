@@ -6,14 +6,14 @@
 import { api } from '../../../lib/api.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * Create the password change section component.
  * @param {Object} options
- * @param {Function} options.h - Hyperscript function for creating DOM elements
  * @returns {Object} { element, setDisabled }
  */
-export function createPasswordSection({ h }) {
+export function createPasswordSection() {
   const card = h('div', { class: 'stack editor-card' });
   card.append(
     h('div', {

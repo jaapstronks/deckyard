@@ -9,11 +9,12 @@ import {
   getVisibilityPreset,
   applyVisibilityPreset,
 } from '../../../shared/slide-visibility.js';
+import { h } from '../../lib/dom.js';
 
 /**
  * Create a visibility preset option element.
  */
-function createPresetOption(h, { presetName, isActive, onClick }) {
+function createPresetOption({ presetName, isActive, onClick }) {
   const presetInfo = getPresetDisplayInfo(presetName);
 
   const option = h('button', {
@@ -97,18 +98,12 @@ function getPresetDisplayInfo(presetName) {
 /**
  * Create the visibility menu component.
  * @param {Object} options - Configuration options
- * @param {Function} options.h - Element helper function
  * @param {Object} options.slide - The slide object
  * @param {Function} options.onVisibilityChange - Callback when visibility changes
  * @param {Function} options.onClose - Callback to close the menu
  * @returns {HTMLElement} The menu element
  */
-export function createVisibilityMenu({
-  h,
-  slide,
-  onVisibilityChange,
-  onClose,
-}) {
+export function createVisibilityMenu({ slide, onVisibilityChange, onClose }) {
   const currentPreset = getVisibilityPreset(slide);
 
   const menu = h('div', { class: 'visibility-menu' });
@@ -135,7 +130,7 @@ export function createVisibilityMenu({
   ];
 
   for (const presetName of presetOrder) {
-    const option = createPresetOption(h, {
+    const option = createPresetOption({
       presetName,
       isActive: currentPreset === presetName,
       onClick: (e) => {
@@ -169,11 +164,10 @@ export function createVisibilityMenu({
 /**
  * Create a visibility badge for a slide thumbnail.
  * @param {Object} options - Configuration options
- * @param {Function} options.h - Element helper function
  * @param {Object} options.slide - The slide object
  * @returns {HTMLElement|null} The badge element or null if visible
  */
-export function createVisibilityBadge({ h, slide }) {
+export function createVisibilityBadge({ slide }) {
   const preset = getVisibilityPreset(slide);
 
   // Don't show badge for fully visible slides
@@ -194,12 +188,11 @@ export function createVisibilityBadge({ h, slide }) {
 /**
  * Create the visibility toggle button for slide thumbnails.
  * @param {Object} options - Configuration options
- * @param {Function} options.h - Element helper function
  * @param {Object} options.slide - The slide object
  * @param {Function} options.onToggle - Callback when button is clicked
  * @returns {HTMLElement} The toggle button element
  */
-export function createVisibilityToggle({ h, slide, onToggle }) {
+export function createVisibilityToggle({ slide, onToggle }) {
   const preset = getVisibilityPreset(slide);
   const isHidden = preset !== 'visible';
 

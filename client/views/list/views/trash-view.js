@@ -1,15 +1,15 @@
 import { t } from '../../../lib/ui-i18n.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * Create the trash view (lazy-loaded)
  *
  * @param {object} opts
- * @param {Function} opts.h - DOM helper
  * @param {Function} opts.api - API client
  * @param {Function} opts.renderCard - Card renderer function
  * @returns {object} - { el, load, refresh }
  */
-export function createTrashView({ h, api, renderCard }) {
+export function createTrashView({ api, renderCard }) {
   const trashView = h('div', { class: 'sidebar-view', 'data-view': 'trash' });
   const trashTitle = h('h2', {
     class: 'presentation-grid-title',

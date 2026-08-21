@@ -144,7 +144,6 @@ export function createSlideTypesTab({ user } = {}) {
 
     const grid = h('div', { class: 'custom-types-grid' });
     const emptyState = createEmptyState({
-      h,
       icon: null,
       className: 'empty-state-panel',
       title: t(

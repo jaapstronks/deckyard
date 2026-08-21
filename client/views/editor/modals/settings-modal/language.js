@@ -1,4 +1,5 @@
 import { t } from '../../../../lib/ui-i18n.js';
+import { h } from '../../../../lib/dom.js';
 
 const ALLOWED_LANGS = new Set(['nl', 'en-GB']);
 
@@ -7,7 +8,7 @@ const ALLOWED_LANGS = new Set(['nl', 'en-GB']);
  * @param {object} ctx - { h, pres, markDirty, requestSave }
  * @returns {{ el: HTMLElement }}
  */
-export function buildLanguageSection({ h, pres, markDirty, requestSave }) {
+export function buildLanguageSection({ pres, markDirty, requestSave }) {
   const presLang = ALLOWED_LANGS.has(String(pres?.lang || '').trim())
     ? String(pres.lang).trim()
     : 'nl';

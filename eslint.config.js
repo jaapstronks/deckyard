@@ -85,6 +85,30 @@ const clientRestrictedSyntax = [
       'control styling anywhere and render a browser-default control (A7.16 ' +
       'cluster 10, docs/developer/linting.md).',
   },
+  // `h()` — the hyperscript element factory — has exactly one implementation,
+  // `client/lib/dom.js`. It used to travel the client as a hand-threaded
+  // parameter in three spellings at once: positional (`createModal(h, opts)`),
+  // an opt-in option with a default (`h = defaultH`), and ~400 lines of
+  // `{ h, … }` pass-through. Every module now imports it, so `h` arriving as
+  // an argument is the fourth spelling starting over (A7.33).
+  //
+  // Whole-token by construction (`[name='h']` / `[key.name='h']`), so `height`,
+  // `hue` and `hsl` are untouched, and the allowlist is empty: `client/lib/dom.js`
+  // needs no exemption because the factory is a function *declaration* there,
+  // never a parameter. A geometry `{ h: rowH }` stays legal — only the
+  // shorthand `{ h }`, which can mean nothing but the factory, is restricted.
+  {
+    selector:
+      ":function > Identifier.params[name='h']," +
+      ":function > ObjectPattern.params > Property[key.name='h']," +
+      ":function > AssignmentPattern.params > ObjectPattern > Property[key.name='h']," +
+      "VariableDeclarator > ObjectPattern.id > Property[key.name='h']," +
+      "ObjectExpression > Property[key.name='h'][shorthand=true]",
+    message:
+      'Import `h` from client/lib/dom.js instead of taking or passing it: ' +
+      "`import { h } from '…/lib/dom.js'`. It has one implementation and " +
+      'threading it by hand is what A7.33 removed from ~200 files.',
+  },
 ];
 
 // One overlay vocabulary (A7.16 cluster 1). Overlays are built by

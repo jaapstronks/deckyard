@@ -4,15 +4,15 @@
 
 import { t } from '../../lib/ui-i18n.js';
 import { createSSEConnection } from '../../lib/net/sse-connection.js';
+import { h } from '../../lib/dom.js';
 
 /**
  * Create real-time viewer count component.
  * @param {Object} options
- * @param {Function} options.h - DOM helper
  * @param {string} options.presentationId - Presentation ID
  * @returns {Object} Component API with el and destroy method
  */
-export function createRealtimeViewer({ h, presentationId }) {
+export function createRealtimeViewer({ presentationId }) {
   let connection = null;
   let count = 0;
 

@@ -1,5 +1,6 @@
 import { t } from '../../../../lib/ui-i18n.js';
 import { createTagEditor } from '../../../list/tag-editor.js';
+import { h } from '../../../../lib/dom.js';
 
 /**
  * Tags editor. Saves changes straight to the server (not via requestSave).
@@ -8,7 +9,7 @@ import { createTagEditor } from '../../../list/tag-editor.js';
  * @param {object} ctx - { h, pres, api }
  * @returns {{ el: HTMLElement, instance: ?object }}
  */
-export function buildTagsSection({ h, pres, api }) {
+export function buildTagsSection({ pres, api }) {
   const wrap = h('div', { class: 'stack editor-callout' });
   const label = h('div', {
     class: 'field-label',

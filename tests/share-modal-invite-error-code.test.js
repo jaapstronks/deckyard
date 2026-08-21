@@ -37,7 +37,6 @@ globalThis.Element = dom.window.Element;
 globalThis.CustomEvent = dom.window.CustomEvent;
 globalThis.getComputedStyle = dom.window.getComputedStyle;
 
-const { h } = await import('../client/lib/dom.js');
 const { api } = await import('../client/lib/api.js');
 const { createCollaboratorsSection } =
   await import('../client/views/editor/modals/share-modal/collaborators-section.js');
@@ -85,7 +84,6 @@ function mount(inviteFailure) {
   };
 
   const section = createCollaboratorsSection({
-    h,
     api,
     presentationId: PRESENTATION_ID,
     pres: { id: PRESENTATION_ID, ownerEmail: 'owner@example.com' },

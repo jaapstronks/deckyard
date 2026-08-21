@@ -163,7 +163,6 @@ export async function renderAnalytics(root, presentationId, { nav } = {}) {
 
     // Date picker
     const datePicker = createDatePicker({
-      h,
       initialRange: dateRange,
       onChange: async (newRange) => {
         dateRange = newRange;
@@ -188,14 +187,12 @@ export async function renderAnalytics(root, presentationId, { nav } = {}) {
 
     // Overview panel
     const overviewPanel = createOverviewPanel({
-      h,
       data: overview,
     });
     content.append(overviewPanel.el);
 
     // Real-time viewer count
     realtimeConnection = createRealtimeViewer({
-      h,
       presentationId,
     });
     overviewPanel.el
@@ -204,14 +201,12 @@ export async function renderAnalytics(root, presentationId, { nav } = {}) {
 
     // Timeline chart
     const timeline = createTimelineChart({
-      h,
       data: overview?.viewsByDay || [],
     });
     content.append(timeline.el);
 
     // Slide heatmap
     const heatmap = createSlideHeatmap({
-      h,
       slides: slideMetrics?.slides || [],
       presentation,
     });
@@ -219,7 +214,6 @@ export async function renderAnalytics(root, presentationId, { nav } = {}) {
 
     // Viewer list
     const viewerList = createViewerList({
-      h,
       sessions: sessions?.sessions || [],
       total: sessions?.total || 0,
       onLoadMore: async (offset) => {
@@ -239,7 +233,6 @@ export async function renderAnalytics(root, presentationId, { nav } = {}) {
 
     // Leads tab
     const leadsTab = createLeadsTab({
-      h,
       presentationId,
       leads: leads?.leads || [],
       total: leads?.total || 0,
@@ -266,7 +259,6 @@ export async function renderAnalytics(root, presentationId, { nav } = {}) {
 
   function openReportModal() {
     createReportModal({
-      h,
       root,
       presentationId,
       presentation,

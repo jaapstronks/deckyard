@@ -5,11 +5,11 @@
 
 import { t } from '../ui-i18n.js';
 import { cleanStr } from '../../../shared/string-utils.js';
+import { h } from '../dom.js';
 
 /**
  * Create UI control renderers for the slide library
  * @param {object} options
- * @param {Function} options.h - DOM helper function
  * @param {object} options.state - State management object
  * @param {object} options.apiOps - API operations object
  * @param {Function} options.SLIDE_TYPES - Slide types definition
@@ -17,7 +17,6 @@ import { cleanStr } from '../../../shared/string-utils.js';
  * @returns {object} Control render functions
  */
 export function createSlideLibraryControls({
-  h,
   state,
   apiOps,
   SLIDE_TYPES = null,

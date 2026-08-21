@@ -15,6 +15,7 @@ import { t } from '../../../lib/ui-i18n.js';
 import { openModal } from '../../../lib/dom/modal.js';
 import { fetchBundledGradients } from '../../../lib/net/stock-media.js';
 import { lockDocumentScroll } from '../editor-utils.js';
+import { h } from '../../../lib/dom.js';
 
 /** @type {Array<Object>|null} Manifest is immutable per deploy; fetch once. */
 let manifestCache = null;
@@ -29,21 +30,17 @@ const TONES = [
 
 /**
  * @param {Object} opts
- * @param {Function} opts.h
  * @param {HTMLElement} opts.root
  * @param {Set<Function>} [opts.openOverlayClosers]
  * @param {string} [opts.title]
  * @param {(picked: { url: string, alt: string, tags: string[], meta: Object }) => void} opts.onPick
  */
 export function openBundledGradientPicker({
-  h,
   root,
   openOverlayClosers,
   title = t('stockMedia.gradients.title', 'Gradients'),
   onPick,
 } = {}) {
-  if (typeof h !== 'function')
-    throw new Error('openBundledGradientPicker: h is required');
   if (!root) throw new Error('openBundledGradientPicker: root is required');
 
   const unlockScroll = lockDocumentScroll();

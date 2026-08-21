@@ -1,6 +1,7 @@
 import { icon } from '../../../lib/dom/icons.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { matchesSearch, getAllTags } from './utils.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * Creates the image library grid component
@@ -8,7 +9,6 @@ import { matchesSearch, getAllTags } from './utils.js';
  * @returns {Object} Grid component API
  */
 export function createImageLibraryGrid({
-  h,
   items,
   onSelectItem,
   getActiveTag,

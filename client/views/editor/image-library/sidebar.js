@@ -1,6 +1,7 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { icon } from '../../../lib/dom/icons.js';
 import { getFeatures } from '../../../lib/state/features.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * Navigation sections for the media library sidebar
@@ -111,7 +112,6 @@ function getTopTags(items, limit = 10) {
  * @returns {Object} Sidebar component API
  */
 export function createMediaLibrarySidebar({
-  h,
   user,
   items,
   getActiveSection,

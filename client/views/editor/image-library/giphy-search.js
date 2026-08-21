@@ -5,18 +5,18 @@
  */
 
 import { t } from '../../../lib/ui-i18n.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * Create the Giphy search component.
  * @param {Object} options
- * @param {Function} options.h - DOM element factory
  * @param {Function} options.api - API request function
  * @param {Function} options.onSelect - Callback when GIF is selected (receives libraryItem)
  * @param {Function} options.setStatus - Status message setter
  * @param {Function} options.setBusy - Busy state setter
  * @returns {Object} Component with element property
  */
-export function createGiphySearch({ h, api, onSelect, setStatus, setBusy }) {
+export function createGiphySearch({ api, onSelect, setStatus, setBusy }) {
   const container = h('div', { class: 'stock-media-search giphy-search' });
 
   let results = [];

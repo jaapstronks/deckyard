@@ -2,6 +2,7 @@ import { t } from '../../../../lib/ui-i18n.js';
 import { createAndPopulateThemeSelect } from '../../../../lib/theme/theme-select.js';
 import { analyzeAndApplyThemeChange } from '../change-theme-modal.js';
 import { DEFAULT_THEME_ID } from '../../../../../shared/constants/themes.js';
+import { h } from '../../../../lib/dom.js';
 
 /**
  * Theme selector. Changing theme runs the analyze-and-apply flow, which may
@@ -14,7 +15,6 @@ import { DEFAULT_THEME_ID } from '../../../../../shared/constants/themes.js';
  * @returns {{ el: HTMLElement }}
  */
 export function buildThemeSection({
-  h,
   root,
   pres,
   api,
@@ -53,7 +53,6 @@ export function buildThemeSection({
 
   const currentTheme = String(pres.themeId || DEFAULT_THEME_ID).trim();
   const themeSelector = createAndPopulateThemeSelect({
-    h,
     api,
     initialTheme: currentTheme,
     className: '',
@@ -61,7 +60,6 @@ export function buildThemeSection({
       if (newThemeId === currentTheme) return;
 
       const result = await analyzeAndApplyThemeChange({
-        h,
         root,
         api,
         toast,

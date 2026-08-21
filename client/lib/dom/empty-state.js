@@ -1,5 +1,6 @@
 import { t } from '../ui-i18n.js';
 import { iconUrl } from '../../../shared/icon-names.js';
+import { h } from '../dom.js';
 
 /**
  * Reusable empty-state block: icon + title + one-line message + a primary CTA
@@ -11,7 +12,6 @@ import { iconUrl } from '../../../shared/icon-names.js';
  * `h('div', { class: 'empty-note', text })` — deliberately not a helper.
  *
  * @param {object} opts
- * @param {Function} opts.h - DOM helper
  * @param {string|null} [opts.icon='presentation'] - Lucide icon name (rendered
  *   via iconUrl); pass `null` for an icon-less block
  * @param {string} opts.title - Bold heading line
@@ -26,7 +26,6 @@ import { iconUrl } from '../../../shared/icon-names.js';
  * @returns {HTMLElement}
  */
 export function createEmptyState({
-  h,
   icon = 'presentation',
   title,
   message,
@@ -89,13 +88,11 @@ export function createEmptyState({
  * pass it only when there are templates to browse.
  */
 export function createNoPresentationsEmptyState({
-  h,
   title,
   onCreate,
   onBrowseTemplates,
 } = {}) {
   return createEmptyState({
-    h,
     icon: 'presentation',
     title: title || t('list.empty.title', 'No presentations yet'),
     message: t(

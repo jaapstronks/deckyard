@@ -5,6 +5,7 @@ import { t } from '../../../../lib/ui-i18n.js';
 import { getBackgroundPresets } from '../../../../lib/theme/theme.js';
 import { createAltSetter } from './alt-utils.js';
 import { applyAltFromPick, applyPickMeta } from '../../media/apply-pick.js';
+import { h } from '../../../../lib/dom.js';
 
 /**
  * Create a title background image field renderer
@@ -13,7 +14,6 @@ import { applyAltFromPick, applyPickMeta } from '../../media/apply-pick.js';
  */
 export function createFieldTitleBgImage(ctx) {
   const {
-    h,
     openImagePicker,
     features,
     theme,

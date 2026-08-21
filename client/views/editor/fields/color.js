@@ -1,10 +1,11 @@
 import { t } from '../../../lib/ui-i18n.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * Color picker field for custom color selection.
  * Provides a native color input with hex display and preset swatches.
  */
-export function createColorFields({ h } = {}) {
+export function createColorFields() {
   // Common preset colors from the theme
   const PRESET_COLORS = [
     { value: '#7c3aed', label: t('editor.color.preset.purple', 'Purple') },

@@ -6,6 +6,7 @@ import {
   isLiveSlideType,
   liveInteractionKind,
 } from '../../../shared/slide-types/runtime.js';
+import { h } from '../../lib/dom.js';
 
 function safeObj(v) {
   return v && typeof v === 'object' ? v : null;
@@ -16,7 +17,6 @@ function clamp0(n) {
 }
 
 export function createFollowInteractionController({
-  h,
   api,
   presentationId,
   mountEl,
@@ -260,7 +260,6 @@ export function createFollowInteractionController({
 
     const sliderUi = isSliderLikert
       ? renderLikertSliderUi({
-          h,
           interaction,
           myVote,
           open,

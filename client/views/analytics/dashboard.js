@@ -240,7 +240,6 @@ export async function renderDashboard(root, { nav } = {}) {
     if (!sources.length) {
       card.append(
         createEmptyState({
-          h,
           icon: 'globe',
           title: t('dashboard.source.empty', 'No data yet'),
         }),

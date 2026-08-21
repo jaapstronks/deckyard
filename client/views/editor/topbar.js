@@ -24,9 +24,9 @@ import { displayNameFromEmail } from '../../lib/user/user-format.js';
 import { createUserMenu } from '../../lib/user/user-menu.js';
 import { createNotificationBell } from '../../lib/user/notification-bell.js';
 import { icon } from '../../lib/dom/icons.js';
+import { h } from '../../lib/dom.js';
 
 export function createEditorTopbar({
-  h,
   api,
   toast,
   root,
@@ -164,7 +164,6 @@ export function createEditorTopbar({
   // ============================================================
 
   const languageMode = createLanguageMode({
-    h,
     root,
     pres,
     id,
@@ -188,7 +187,6 @@ export function createEditorTopbar({
 
   const openSettings = () =>
     openSettingsModalImpl({
-      h,
       root,
       pres,
       api,
@@ -283,7 +281,6 @@ export function createEditorTopbar({
   // ============================================================
 
   const moreMenu = createEditorTopbarMoreMenu({
-    h,
     root,
     toast,
     api,
@@ -298,7 +295,6 @@ export function createEditorTopbar({
     canTranslate: languageMode.canTranslate(),
     onVersions: () =>
       openVersionsModalImpl({
-        h,
         api,
         root,
         pres,
@@ -316,7 +312,7 @@ export function createEditorTopbar({
     onShowShortcuts: () => onShowShortcuts?.(),
     onOpenSettings: () => openSettings(),
     onSubscription: () =>
-      openSubscriptionModal({ h, api, toast, presentationId: id }),
+      openSubscriptionModal({ api, toast, presentationId: id }),
     onOpenOverview: () => onOpenOverview?.(),
   });
   detachers.push(moreMenu.detach);

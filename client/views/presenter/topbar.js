@@ -52,7 +52,7 @@ export function buildPresenterTopbar({
     translatePill,
     interactionPill,
     toolsWrap,
-    createPresenterControlToggle({ h, api, getSessionId }).el,
+    createPresenterControlToggle({ api, getSessionId }).el,
     laserBtn,
     drawBtn,
     consoleToggle,

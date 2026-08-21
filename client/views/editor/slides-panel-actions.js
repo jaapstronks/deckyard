@@ -7,6 +7,7 @@ import {
   getClipboardCount,
 } from '../../lib/slide-authoring/slide-clipboard.js';
 import { icon } from '../../lib/dom/icons.js';
+import { h } from '../../lib/dom.js';
 
 /**
  * Expand selection to include children of any selected parents
@@ -25,7 +26,6 @@ function expandSelectionWithChildren(selectedIds, slides) {
 /**
  * Creates bulk action bar and clipboard paste functionality for the slides panel.
  * @param {Object} options
- * @param {Function} options.h - DOM element factory
  * @param {Object} options.pres - Presentation object
  * @param {Object} options.toast - Toast notification API
  * @param {Function} options.getSelectedSlideId - Get currently selected slide ID
@@ -40,7 +40,6 @@ function expandSelectionWithChildren(selectedIds, slides) {
  * @returns {Object} Bulk action bar API
  */
 export function createSlidesPanelActions({
-  h,
   pres,
   toast,
   SLIDE_TYPES,

@@ -1,8 +1,9 @@
 import { icon } from '../../../lib/dom/icons.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { markFieldRequired } from './required.js';
+import { h } from '../../../lib/dom.js';
 
-export function createBasicFields({ h } = {}) {
+export function createBasicFields() {
   const fieldText = (label, value, onChange, opts = {}) => {
     const input = h('input', {
       class: 'form-input',

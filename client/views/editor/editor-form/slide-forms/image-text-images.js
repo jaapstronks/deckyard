@@ -31,6 +31,7 @@ import {
   ensureImageTextImages,
   imageTextCellCount,
 } from '../../../../../shared/slide-types/types/image-text-slide/images.js';
+import { h } from '../../../../lib/dom.js';
 
 /**
  * Reorder/add/remove wiring for the images collection.
@@ -68,7 +69,7 @@ function collectionActions({
 }
 
 /** The ↑ / ↓ / × buttons for cell i, or null when none apply. */
-function cellControlButtons({ h, content, i, cellCount, isRow, actions }) {
+function cellControlButtons({ content, i, cellCount, isRow, actions }) {
   const controls = h('div', { class: 'row' });
   if (i > 0) {
     controls.append(
@@ -122,7 +123,6 @@ function cellControlButtons({ h, content, i, cellCount, isRow, actions }) {
  * @returns {HTMLElement|null}
  */
 function renderImageTextCollectionSection({
-  h,
   slide,
   used,
   markDirty,
@@ -195,7 +195,6 @@ function renderImageTextCollectionSection({
     );
     rowEl.append(left);
     const controls = cellControlButtons({
-      h,
       content,
       i,
       cellCount,
@@ -228,10 +227,9 @@ function renderImageTextCollectionSection({
  * @param {Object} ctx - Same context shape as renderSlideFormByType
  */
 export function renderImageTextCollectionExtra(ctx) {
-  const { h, form, slide, used, markDirty, rerenderEditor, scheduleUiRefresh } =
+  const { form, slide, used, markDirty, rerenderEditor, scheduleUiRefresh } =
     ctx;
   const section = renderImageTextCollectionSection({
-    h,
     slide,
     used,
     markDirty,

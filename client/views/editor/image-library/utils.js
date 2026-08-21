@@ -155,13 +155,12 @@ export function installTagsAutocomplete(inputEl, datalistEl, getTagsFn) {
 
 /**
  * Create a wrapped field label + input
- * @param {Function} h - DOM factory
  * @param {string} label - Field label
  * @param {HTMLElement} control - Input control
  * @param {Object} opts - Options
  * @returns {HTMLElement} Field wrapper
  */
-export function createFieldWrap(h, label, control, opts = {}) {
+export function createFieldWrap(label, control, opts = {}) {
   const helpText = typeof opts?.helpText === 'string' ? opts.helpText : '';
   return h('label', { class: 'stack is-field' }, [
     h('div', { class: 'field-label', text: label }),

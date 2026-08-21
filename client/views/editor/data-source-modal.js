@@ -12,6 +12,7 @@ import {
   PROVIDER_LABELS,
   validateDataSource,
 } from '../../../shared/data-source.js';
+import { h } from '../../lib/dom.js';
 
 // `hintKey`/`labelKey` carry the i18n key and the sibling string the English
 // fallback: this table is built at import time, before the dictionary loads, so
@@ -67,7 +68,6 @@ const PROVIDER_OPTIONS = [
 ];
 
 export function openDataSourceConfigModal({
-  h,
   root,
   slide,
   api,

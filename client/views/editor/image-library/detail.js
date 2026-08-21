@@ -7,6 +7,7 @@ import {
   installTagsAutocomplete,
   createFieldWrap,
 } from './utils.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * Creates the image library detail view component
@@ -14,7 +15,6 @@ import {
  * @returns {Object} Detail component API
  */
 export function createImageLibraryDetail({
-  h,
   api,
   user,
   items,
@@ -507,7 +507,6 @@ export function createImageLibraryDetail({
       h('div', { class: 'image-lib-detail-meta' }, [
         h('div', { class: 'image-lib-detail-grid' }, [
           createFieldWrap(
-            h,
             t('imageLibrary.upload.url.label', 'Image URL'),
             inUrl,
             {
@@ -518,23 +517,19 @@ export function createImageLibraryDetail({
             },
           ),
           createFieldWrap(
-            h,
             t('imageLibrary.description.label', 'Description (internal)'),
             inDescription,
           ),
-          createFieldWrap(h, t('imageLibrary.tags.label', 'Tags'), inTags),
+          createFieldWrap(t('imageLibrary.tags.label', 'Tags'), inTags),
           createFieldWrap(
-            h,
             t('imageLibrary.photographer.label', 'Photographer'),
             inPhotographer,
           ),
           createFieldWrap(
-            h,
             t('imageLibrary.altNl.label', 'Alt text (NL)'),
             inAltNl,
           ),
           createFieldWrap(
-            h,
             t('imageLibrary.altEn.label', 'Alt text (EN)'),
             inAltEn,
           ),

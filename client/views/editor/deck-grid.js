@@ -15,6 +15,7 @@ import {
   renderSlideElement,
   cleanupSlideRuntimes,
 } from '../../lib/slide-runtime/slide-render.js';
+import { h } from '../../lib/dom.js';
 
 const SLIDE_CANVAS_WIDTH = 1600;
 const SLIDE_CANVAS_HEIGHT = 900;
@@ -34,7 +35,6 @@ function slideTileLabel(slide, SLIDE_TYPES) {
  * Create a deck grid view.
  *
  * @param {Object} options
- * @param {Function} options.h - DOM element factory
  * @param {Object} options.theme - Resolved theme (for truthful slide renders)
  * @param {Object} [options.SLIDE_TYPES] - Type registry (for tile labels)
  * @param {string} [options.presentationId] - Passed to renderSlideElement
@@ -58,7 +58,6 @@ function slideTileLabel(slide, SLIDE_TYPES) {
  * @returns {Object} { el, render, teardown, getSelectedIds, clearSelection, refreshTile }
  */
 export function createDeckGridView({
-  h,
   theme,
   SLIDE_TYPES = null,
   presentationId = null,

@@ -1,4 +1,5 @@
 import { t } from '../../../../lib/ui-i18n.js';
+import { h } from '../../../../lib/dom.js';
 
 const ALLOWED_TRANSITION_PRESETS = new Set([
   'none',
@@ -14,7 +15,7 @@ const ALLOWED_TRANSITION_PRESETS = new Set([
  * @param {object} ctx - { h, pres, markDirty, requestSave }
  * @returns {{ el: HTMLElement }}
  */
-export function buildTransitionsSection({ h, pres, markDirty, requestSave }) {
+export function buildTransitionsSection({ pres, markDirty, requestSave }) {
   pres.settings.transitions =
     pres.settings.transitions && typeof pres.settings.transitions === 'object'
       ? pres.settings.transitions

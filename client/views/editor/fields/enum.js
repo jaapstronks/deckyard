@@ -1,4 +1,5 @@
 import { t } from '../../../lib/ui-i18n.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * The translated visible label for an enum field. Enum fields resolve their
@@ -13,7 +14,7 @@ function enumFieldLabel(field) {
   return t(field?.labelKey || field?.key || '', field?.label || '');
 }
 
-export function createEnumFields({ h, fieldSelect } = {}) {
+export function createEnumFields({ fieldSelect } = {}) {
   const iconEl = (cls) =>
     h('span', {
       class: `sb-icon ${cls}`,

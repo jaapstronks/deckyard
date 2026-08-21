@@ -1,11 +1,11 @@
 import { createModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { readPreferredLlmVendor } from '../../../lib/net/llm-vendor.js';
+import { h } from '../../../lib/dom.js';
 
 export async function openTranslateFieldModal({
   slideId,
   key,
-  h,
   api,
   id,
   pres,

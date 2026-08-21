@@ -7,6 +7,7 @@ import { t } from '../../lib/ui-i18n.js';
 import { formatRelativeTime } from '../../lib/format/format-time.js';
 import { icon } from '../../lib/dom/icons.js';
 import { createEmptyState } from '../../lib/dom/empty-state.js';
+import { h } from '../../lib/dom.js';
 
 /**
  * Get initials from a name or email.
@@ -67,13 +68,12 @@ function getActionText(eventType) {
  * with DOM nodes so the whole sentence stays one translatable key (word order
  * and punctuation are decided by the translation, not by JS concatenation).
  * @param {HTMLElement} parent - Element to append into
- * @param {Function} h - DOM helper function
  * @param {string} template - Translated string containing {name} placeholders
  * @param {Object<string, Node>} slots - Nodes keyed by placeholder name
  * @param {string} textClass - Class for the literal text fragments
  * @returns {void}
  */
-function appendSentence(parent, h, template, slots, textClass) {
+function appendSentence(parent, template, slots, textClass) {
   const parts = String(template).split(/(\{[a-zA-Z0-9_]+\})/g);
   for (const part of parts) {
     if (!part) continue;
@@ -125,11 +125,10 @@ function getEventIcon(eventType) {
 /**
  * Create a single activity item element.
  * @param {Object} event - Activity event
- * @param {Function} h - DOM helper function
  * @param {Function} onNavigate - Navigation callback
  * @returns {HTMLElement} Activity item element
  */
-function createActivityItem(event, h, onNavigate) {
+function createActivityItem(event, onNavigate) {
   const item = h('div', { class: 'activity-item' });
 
   // Avatar
@@ -205,7 +204,6 @@ function createActivityItem(event, h, onNavigate) {
     header.append(' ');
     appendSentence(
       header,
-      h,
       t('activity.sharedWithCollaborator', 'with {collaborator}'),
       { collaborator },
       'activity-action',
@@ -246,18 +244,12 @@ function createActivityItem(event, h, onNavigate) {
 /**
  * Create the activity feed view component.
  * @param {Object} options
- * @param {Function} options.h - DOM helper function
  * @param {Function} options.api - API function
  * @param {Function} options.onNavigate - Navigation callback
  * @param {Function} options.onUnreadCountChange - Callback when unread count changes
  * @returns {Object} { el, load, refresh }
  */
-export function createActivityFeed({
-  h,
-  api,
-  onNavigate,
-  onUnreadCountChange,
-}) {
+export function createActivityFeed({ api, onNavigate, onUnreadCountChange }) {
   const el = h('div', { class: 'sidebar-view', 'data-view': 'activity' });
 
   // Header
@@ -279,7 +271,6 @@ export function createActivityFeed({
 
   // Empty state
   const emptyState = createEmptyState({
-    h,
     icon: 'inbox',
     title: t('list.activity.empty', 'No activity yet'),
   });
@@ -369,7 +360,7 @@ export function createActivityFeed({
     }
 
     for (const event of events) {
-      feed.append(createActivityItem(event, h, onNavigate));
+      feed.append(createActivityItem(event, onNavigate));
     }
 
     // Show load more if there are more events

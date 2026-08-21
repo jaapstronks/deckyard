@@ -6,6 +6,7 @@ import { api } from '../../lib/api.js';
 import { createOverlay } from '../../lib/dom/modal.js';
 import { t } from '../../lib/ui-i18n.js';
 import { escapeHtml } from '../../../shared/slide-types/helpers.js';
+import { h } from '../../lib/dom.js';
 
 /**
  * Get human-readable guest error message.
@@ -59,7 +60,6 @@ function getGuestErrorMessage(errorCode) {
 
 /**
  * Render the guest join/verification prompt.
- * @param {Function} h - DOM helper function
  * @param {HTMLElement} shell - Container element
  * @param {string} token - Share token
  * @param {string} permission - Share link permission
@@ -67,7 +67,6 @@ function getGuestErrorMessage(errorCode) {
  * @param {string} [prefillEmail] - Optional email to pre-fill the input
  */
 export function renderGuestJoinPrompt(
-  h,
   shell,
   token,
   permission,

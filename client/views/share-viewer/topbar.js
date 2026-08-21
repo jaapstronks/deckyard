@@ -75,7 +75,6 @@ export function buildShareViewerTopbar({
 
     // Create comments section (initially hidden)
     commentsSection = createShareViewerCommentsSection({
-      h,
       commentsApi,
       presentation,
       guestSession,
@@ -115,7 +114,6 @@ export function buildShareViewerTopbar({
       });
       joinBtn.addEventListener('click', () => {
         renderGuestJoinPrompt(
-          h,
           shell,
           token,
           shareLink.permission,
@@ -161,7 +159,7 @@ export function buildShareViewerTopbar({
   });
   if (eraseBtn) controls.append(eraseBtn);
 
-  const uiMode = createUiModeSwitcher({ h, className: 'share-viewer-ui-mode' });
+  const uiMode = createUiModeSwitcher({ className: 'share-viewer-ui-mode' });
   controls.append(uiMode.el);
 
   topbar.append(titleEl, permissionBadge, controls);

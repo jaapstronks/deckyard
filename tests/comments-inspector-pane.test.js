@@ -29,7 +29,6 @@ globalThis.EventSource = class {
   close() {}
 };
 
-const { h } = await import('../client/lib/dom.js');
 const { createCommentsPanel } =
   await import('../client/views/editor/comments-panel.js');
 
@@ -61,7 +60,6 @@ function makePanel({ onRequestClose } = {}) {
     return {};
   };
   const panel = createCommentsPanel({
-    h,
     api,
     toast: { error: () => {} },
     presentationId: 'p1',

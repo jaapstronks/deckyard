@@ -3,6 +3,7 @@
  */
 
 import { t } from '../../lib/ui-i18n.js';
+import { h } from '../../lib/dom.js';
 
 /**
  * Get preset date ranges.
@@ -71,12 +72,11 @@ function getPresets() {
 /**
  * Create date picker component.
  * @param {Object} options
- * @param {Function} options.h - DOM helper
  * @param {Object} options.initialRange - Initial date range
  * @param {Function} options.onChange - Change callback
  * @returns {Object} Picker API with el
  */
-export function createDatePicker({ h, initialRange, onChange }) {
+export function createDatePicker({ initialRange, onChange }) {
   const presets = getPresets();
   let currentPreset = '30d';
   let isOpen = false;

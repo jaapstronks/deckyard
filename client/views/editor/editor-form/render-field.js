@@ -19,6 +19,7 @@ import {
   isFieldVisible,
   visibilityDriverKeys,
 } from '../../../../shared/slide-types/field-visibility.js';
+import { h } from '../../../lib/dom.js';
 
 const LANG_SHORT = { nl: 'NL', 'en-GB': 'EN' };
 
@@ -39,7 +40,7 @@ function otherLangFieldValue({ pres, slideId, key }) {
   return { sourceLang, value };
 }
 
-function translateLabelRightEl({ h, pres, onTranslateField, slideId, key }) {
+function translateLabelRightEl({ pres, onTranslateField, slideId, key }) {
   if (!onTranslateField) return null;
   // Only offer the button when there is actually something to translate FROM:
   // a bare "Translate" next to an empty other-language field is dead UI and
@@ -78,7 +79,6 @@ function affectsLabelForSlide({ def, fieldKey }) {
 }
 
 export function createRenderField({
-  h,
   pres,
   slide,
   def,
@@ -168,7 +168,6 @@ export function createRenderField({
     const editor = fieldEditor(field);
     if (editor === 'table-grid') {
       return createTableGridEditor({
-        h,
         slide,
         markDirty,
         rerenderEditor,
@@ -248,7 +247,6 @@ export function createRenderField({
           ? field.helpCopyExample
           : '';
       const labelRightEl = translateLabelRightEl({
-        h,
         pres,
         onTranslateField,
         slideId: slide.id,
@@ -275,7 +273,6 @@ export function createRenderField({
 
     if (field.type === 'markdown') {
       const labelRightEl = translateLabelRightEl({
-        h,
         pres,
         onTranslateField,
         slideId: slide.id,
@@ -503,7 +500,6 @@ export function createRenderField({
       // The one generic collection editor (add/remove/reorder/collapse),
       // driven by this field's schema. See collection-editor.js.
       return createCollectionEditor({
-        h,
         slide,
         def,
         field,

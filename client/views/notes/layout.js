@@ -29,7 +29,7 @@ export function buildNotesLayout() {
     class: 'notes-title',
     text: t('notes.speakerNotes', 'Speaker notes'),
   });
-  const uiMode = createUiModeSwitcher({ h, className: 'notes-ui-mode' });
+  const uiMode = createUiModeSwitcher({ className: 'notes-ui-mode' });
   const refollowBtn = h('button', {
     class: 'btn btn-secondary',
     text: t('notes.refollow', 'Re-follow'),

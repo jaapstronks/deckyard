@@ -4,6 +4,7 @@ import {
   isLiveSlideType,
   liveInteractionKind,
 } from '../../../shared/slide-types/runtime.js';
+import { h } from '../../lib/dom.js';
 
 // Which slides get open/close/reset controls, and which store the presenter is
 // talking to, both come from the type's declared runtime capability. This
@@ -14,7 +15,6 @@ const interactionTypeFromSlideType = (type) =>
   liveInteractionKind(type) || null;
 
 export function createPresenterInteractionControls({
-  h,
   api,
   getSessionId,
   getCurrentSlide,

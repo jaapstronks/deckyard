@@ -4,14 +4,14 @@
  */
 
 import { t } from '../../../lib/ui-i18n.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * Create the admin notifications section component.
  * @param {Object} options
- * @param {Function} options.h - Hyperscript function for creating DOM elements
  * @returns {Object} { elements, checkbox, setDisabled, getValue, setValue }
  */
-export function createAdminNotificationsSection({ h }) {
+export function createAdminNotificationsSection() {
   const elements = [];
 
   const title = h('div', {

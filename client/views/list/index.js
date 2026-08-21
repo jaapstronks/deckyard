@@ -82,7 +82,6 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
     preselect,
   } = {}) =>
     openCreationView({
-      h,
       api,
       root,
       nav,
@@ -100,7 +99,6 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   let searchInput = null;
 
   const { el: topbar, searchInput: topbarSearchInput } = createTopbar({
-    h,
     features,
     api,
     nav,
@@ -116,7 +114,6 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   // ============================================================
 
   const sidebar = createSidebar({
-    h,
     activeView: currentView,
     unreadCount,
     onViewChange: setView,
@@ -131,7 +128,6 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   shell.append(sidebar.el);
 
   const bottomTabs = createBottomTabs({
-    h,
     activeView: currentView,
     unreadCount,
     onViewChange: setView,
@@ -196,7 +192,6 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   // ============================================================
 
   const themePicker = createThemePickerRow({
-    h,
     api,
     onThemeSelect: (theme) =>
       openNewPresentationModalWrapper({ preselectedTheme: theme }),
@@ -205,7 +200,6 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   detachers.push(() => themePicker.detach?.());
 
   const activityFeed = createActivityFeed({
-    h,
     api,
     onNavigate: (path) => nav?.(path),
     onUnreadCountChange: (count) => {
@@ -221,7 +215,6 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   // ============================================================
 
   const homeViewObj = createHomeView({
-    h,
     api,
     nav,
     renderCard,
@@ -239,7 +232,6 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   // Unified "Presentations" view — replaces the Recent / Workspace /
   // My presentations / Shared with me tabs with one shelf-chip + tag surface.
   const presentationsViewObj = createPresentationsView({
-    h,
     api,
     renderCard,
     allByDate,
@@ -247,7 +239,6 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   });
 
   const trashViewObj = createTrashView({
-    h,
     api,
     renderCard,
   });
@@ -260,7 +251,6 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   // Search view
   let previousView = currentView;
   const searchViewObj = createSearchView({
-    h,
     renderCard,
     allPresentations: [...workspace, ...priv, ...sharedPresentations],
     onClearSearch: () => {

@@ -11,7 +11,6 @@ import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
 
 /**
  * @param {Object} options
- * @param {Function} options.h - DOM element factory
  * @param {HTMLElement} options.root - Element to append the modal to
  * @param {Object} options.pres - The presentation (slides read live)
  * @param {Object} options.theme - Resolved theme
@@ -20,7 +19,6 @@ import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
  * @param {Function} options.onJumpToSlide - (slideId) => void
  */
 export function openDeckOverviewModal({
-  h,
   root,
   pres,
   theme,
@@ -49,7 +47,6 @@ export function openDeckOverviewModal({
   );
 
   grid = createDeckGridView({
-    h,
     theme,
     SLIDE_TYPES,
     presentationId: pres?.id,

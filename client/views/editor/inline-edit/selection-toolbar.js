@@ -27,10 +27,10 @@ import {
   computeToolbarPlacement,
   emphasisDisables,
 } from './selection-toolbar-logic.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * @param {Object} opts
- * @param {Function} opts.h - DOM helper
  * @param {HTMLElement} opts.layer - the overlay layer (unscaled, on the thumb)
  * @param {HTMLElement} opts.thumb - the positioning context (overlay's host)
  * @param {HTMLElement} opts.editEl - the contenteditable field being edited
@@ -39,7 +39,6 @@ import {
  * @returns {{update: Function, destroy: Function, el: HTMLElement}}
  */
 export function createSelectionToolbar({
-  h,
   layer,
   thumb,
   editEl,

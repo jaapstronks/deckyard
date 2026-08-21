@@ -18,6 +18,7 @@
  */
 import { t } from '../../../../lib/ui-i18n.js';
 import { resolveListLayout } from '../../../../../shared/slide-types/types/list-slide.js';
+import { h } from '../../../../lib/dom.js';
 
 /**
  * Render the density field with a contextual note when the renderer's
@@ -26,7 +27,7 @@ import { resolveListLayout } from '../../../../../shared/slide-types/types/list-
  * @param {Object} ctx - Same context shape as renderSlideFormByType
  */
 export function renderListDensityExtra(ctx) {
-  const { h, form, slide, used, fieldByKey, renderField } = ctx;
+  const { form, slide, used, fieldByKey, renderField } = ctx;
 
   const densityField = fieldByKey.get('density');
   if (!densityField) return;

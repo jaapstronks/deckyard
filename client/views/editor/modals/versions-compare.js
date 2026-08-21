@@ -12,11 +12,11 @@ import {
 } from '../../../lib/slide-authoring/slide-diff.js';
 import { formatDateTime } from '../../../lib/format/format.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * Opens a modal comparing current presentation with a snapshot version.
  * @param {Object} options
- * @param {Function} options.h - DOM element factory
  * @param {HTMLElement} options.root - Root element for modal
  * @param {Function} options.api - API function
  * @param {string} options.presentationId - Presentation ID
@@ -27,7 +27,6 @@ import { t } from '../../../lib/ui-i18n.js';
  * @returns {Promise} Modal promise
  */
 export function openVersionCompareModal({
-  h,
   root,
   api,
   presentationId,

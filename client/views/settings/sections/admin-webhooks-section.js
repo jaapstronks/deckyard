@@ -4,6 +4,7 @@
  */
 
 import { t } from '../../../lib/ui-i18n.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * Webhook configuration definition.
@@ -78,10 +79,9 @@ const WEBHOOK_CONFIGS = [
 /**
  * Create the admin webhooks section component.
  * @param {Object} options
- * @param {Function} options.h - Hyperscript function for creating DOM elements
  * @returns {Object} { elements, inputs, setDisabled, getValues, setValues }
  */
-export function createAdminWebhooksSection({ h }) {
+export function createAdminWebhooksSection() {
   const elements = [];
   const inputs = {};
 

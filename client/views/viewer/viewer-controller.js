@@ -75,7 +75,6 @@ export async function createViewerController({
 
   // Topbar
   const topbarApi = createViewerTopbar({
-    h,
     nav,
     pres,
     id,
@@ -94,7 +93,6 @@ export async function createViewerController({
 
   // Slides panel (read-only thumbnail navigation)
   const slidesPanel = createViewerSlidesPanel({
-    h,
     pres,
     theme,
     getSelectedSlideId: () => selectedSlideId,
@@ -105,7 +103,6 @@ export async function createViewerController({
 
   // Preview area
   const previewApi = createViewerPreview({
-    h,
     pres,
     theme,
     id,
@@ -122,7 +119,6 @@ export async function createViewerController({
   // Comments panel (only for comment permission)
   if (canComment) {
     commentsPanel = createCommentsPanel({
-      h,
       api,
       toast: { info: () => {}, error: () => {}, success: () => {} },
       presentationId: id,

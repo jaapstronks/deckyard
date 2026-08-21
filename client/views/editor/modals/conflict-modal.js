@@ -5,6 +5,7 @@ import {
   showCopyFallbackModal,
 } from '../../../lib/util/clipboard.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { h } from '../../../lib/dom.js';
 
 function safeString(v) {
   if (v == null) return '';
@@ -29,7 +30,6 @@ async function copyText(text) {
 }
 
 export function openConflictModal({
-  h,
   root,
   pres,
   conflictDetails,
