@@ -15,7 +15,7 @@ import { createSlidesPanelActions } from './slides-panel-actions.js';
 import { isLiveSlideType } from '../../../shared/slide-types/runtime.js';
 import { applyInstanceKeyRekey } from '../../../shared/slide-types/instance-keys.js';
 import {
-  anchorBehindInvite,
+  followInvitePlacements,
   insertSlideAfter,
 } from './slide-insert-position.js';
 
@@ -272,6 +272,37 @@ export function createSlidesPanel({
     return slides.length > 0 ? slides[0]?.id : null;
   };
 
+  /**
+   * Offer the follow-invite suggestion for a pending interactive slide, and
+   * carry out whichever placement the user picks. Both insertion paths (type
+   * picker and slide library) go through here so the three placements cannot
+   * drift apart; the rules themselves live in slide-insert-position.js.
+   *
+   * @param {Object} options
+   * @param {Object} options.pendingSlide - the interactive slide waiting to land
+   * @param {string|null|undefined} options.afterSlideId - where it was headed
+   * @param {string|null} [options.parentId] - parent, when it is being nested
+   */
+  const suggestFollowInvite = ({
+    pendingSlide,
+    afterSlideId,
+    parentId = null,
+  }) => {
+    openFollowInviteSuggestModal({
+      h,
+      root,
+      openOverlayClosers,
+      ...followInvitePlacements({
+        afterSlideId,
+        parentId,
+        getFirstSlideId,
+        insertInvite: insertFollowInviteSlide,
+        insertPending: (anchorId) =>
+          insertSlideObject(pendingSlide, { afterSlideId: anchorId, parentId }),
+      }),
+    });
+  };
+
   const canEditCustomHtml = Boolean(user?.canEditCustomHtml);
 
   const insertSlide = (
@@ -301,55 +332,10 @@ export function createSlidesPanel({
     }
     maybeAssignRandomBg(s);
 
-    // Check if adding an interactive slide without a follow-invite slide present
+    // An interactive slide needs an invite for the audience to join through:
+    // if the deck has none, ask where it should go before inserting either.
     if (isInteractiveSlideType(type) && !hasFollowInviteSlide(pres?.slides)) {
-      // Store the slide info and show the suggestion modal
-      const pendingSlide = s;
-      const pendingAfterSlideId = afterSlideId;
-      const pendingParentId = parentId;
-
-      openFollowInviteSuggestModal({
-        h,
-        root,
-        openOverlayClosers,
-        onAddAsSecond: () => {
-          // First insert the follow-invite slide as the second slide
-          const firstSlideId = getFirstSlideId();
-          const inviteSlideId = insertFollowInviteSlide(firstSlideId);
-          // Then insert the interactive slide at its intended position, which
-          // moves behind the invite when both were headed for slot two.
-          insertSlideObject(pendingSlide, {
-            afterSlideId: anchorBehindInvite({
-              afterSlideId: pendingAfterSlideId,
-              firstSlideId,
-              inviteSlideId,
-              parentId: pendingParentId,
-            }),
-            parentId: pendingParentId,
-          });
-        },
-        onAddBeforeCurrent: () => {
-          // First insert the follow-invite slide just before where the interactive slide will go
-          insertFollowInviteSlide(pendingAfterSlideId);
-          // The follow-invite is now at pendingAfterSlideId + 1, so the interactive slide
-          // should go after the follow-invite. We need to find the new follow-invite slide ID.
-          const slides = pres?.slides || [];
-          const followInviteSlide = slides.find(
-            (sl) => sl?.type === 'follow-invite-slide',
-          );
-          insertSlideObject(pendingSlide, {
-            afterSlideId: followInviteSlide?.id,
-            parentId: pendingParentId,
-          });
-        },
-        onSkip: () => {
-          // Just insert the interactive slide without the follow-invite
-          insertSlideObject(pendingSlide, {
-            afterSlideId: pendingAfterSlideId,
-            parentId: pendingParentId,
-          });
-        },
-      });
+      suggestFollowInvite({ pendingSlide: s, afterSlideId, parentId });
       return;
     }
 
@@ -465,42 +451,10 @@ export function createSlidesPanel({
     maybeAssignRandomBg(s);
     recordLibraryUsage(item);
 
-    // Check if adding an interactive slide without a follow-invite slide present
+    // Same suggestion as the type picker: a library copy of an interactive
+    // slide still needs an invite in the deck.
     if (isInteractiveSlideType(type) && !hasFollowInviteSlide(pres?.slides)) {
-      const pendingSlide = s;
-      const pendingAfterSlideId = afterSlideId;
-
-      openFollowInviteSuggestModal({
-        h,
-        root,
-        openOverlayClosers,
-        onAddAsSecond: () => {
-          const firstSlideId = getFirstSlideId();
-          const inviteSlideId = insertFollowInviteSlide(firstSlideId);
-          insertSlideObject(pendingSlide, {
-            afterSlideId: anchorBehindInvite({
-              afterSlideId: pendingAfterSlideId,
-              firstSlideId,
-              inviteSlideId,
-            }),
-          });
-        },
-        onAddBeforeCurrent: () => {
-          insertFollowInviteSlide(pendingAfterSlideId);
-          const slides = pres?.slides || [];
-          const followInviteSlide = slides.find(
-            (sl) => sl?.type === 'follow-invite-slide',
-          );
-          insertSlideObject(pendingSlide, {
-            afterSlideId: followInviteSlide?.id,
-          });
-        },
-        onSkip: () => {
-          insertSlideObject(pendingSlide, {
-            afterSlideId: pendingAfterSlideId,
-          });
-        },
-      });
+      suggestFollowInvite({ pendingSlide: s, afterSlideId });
       return;
     }
 
