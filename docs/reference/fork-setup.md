@@ -133,9 +133,30 @@ custom/styles/
 
 Every file in the folder is concatenated in filename order and loaded **last**:
 after the core stylesheets, after the theme, after the slide-type CSS, in the
-app **and** in every export and render path (PDF, PNG, standalone HTML, print,
-embed, MCP preview). Screen and export get the same bytes in the same position,
-so they cannot drift.
+app **and** in every render path. Screen and export get the same bytes in the
+same position, so they cannot drift.
+
+#### Two chains, one seam
+
+Deckyard assembles CSS through two named chains, not one — and both end in your
+seam. The list of paths each one covers is a module, `server/render-paths.js`,
+which a test walks; a ninth path added without a chain fails the suite rather
+than silently shipping without your CSS.
+
+|                       | **Canvas chain**                                                                | **Reader chain**                               |
+| --------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------- |
+| Paths                 | PDF, PNG, standalone HTML, print, single-slide render, embed, both MCP previews | the reflow reader at `/p/:id-:slug/reader`     |
+| Layers above the seam | core bundle → theme vars → theme → slide CSS → per-path document CSS            | one reflow stylesheet                          |
+| Vocabulary            | `.slide`, `.deck-slide`, `--t-*`, a fixed 1600×900 stage                        | `.reader-*`, relative units, no fixed geometry |
+| Your seam             | last                                                                            | last                                           |
+
+The reader is a genuinely different document — a semantic re-projection meant to
+stay readable with JavaScript _and_ author CSS off — so it deliberately shares
+no selectors with the canvas. Two named chains is the honest description; one
+chain plus an unexplained exception was the old one, and it left the reader as
+the single user-facing page a fork could not restyle. If you want your fork's
+type and colour on the reading view, write `.reader-*` rules in the same
+`custom/styles/` folder; they land last there too.
 
 One exception, worth knowing before you debug it: a _theme's_ generated rules —
 its `@font-face` blocks and its `slideBackgrounds` variants — are injected into
