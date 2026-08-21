@@ -10,8 +10,11 @@ Any user-provided text rendered into HTML must be **escaped** or passed through
 the **sanitizer** — never interpolated raw into an HTML sink (`innerHTML`,
 `insertAdjacentHTML`, `outerHTML`). The sanctioned tools:
 
-- **`esc()` / `escapeHtml()`** — `shared/slide-types/helpers.js`. HTML-escapes a
+- **`escapeHtml()`** — `shared/slide-types/helpers.js`. HTML-escapes a
   string. Use for single values interpolated into a template.
+- **`escapeXml()`** — `shared/xml.js`. The same job for XML sinks, which need
+  `&apos;` where HTML uses `&#039;`: PPTX note parts (`server/export/notes.js`)
+  and the author-overlay SVG (`server/utils/author-overlay.js`).
 - **`markdownToSafeHtml()`** — `shared/markdown.js`. Renders markdown and runs
   the result through `sanitizeHtmlSync()` (`shared/sanitize.js`). This is the
   only sanctioned path for rich text.
@@ -20,7 +23,19 @@ the **sanitizer** — never interpolated raw into an HTML sink (`innerHTML`,
   `innerHTML` template when the content is data-driven.
 
 Do not hand-roll a new HTML sink for user data. If you need markup from
-untrusted input, it goes through `markdownToSafeHtml()` or `h()`.
+untrusted input, it goes through `markdownToSafeHtml()` or `h()`. Do not
+hand-roll a new _escaper_ either: four private copies under three names
+(`escAttr`, `escHtml`, two `escapeXml`s) once lived in `server/`, one of them
+missing `'`. `tests/no-escape-markdown-aliases.test.js` now measures function
+bodies, so a fifth copy fails the suite.
+
+### Escaping is the wrong tool inside `<script>`
+
+HTML entities are not decoded inside script content, so escaping a value that
+lands in a JS string literal both corrupts legitimate input and fails to contain
+a quote. Those values are **charset-validated** instead — see
+`server/analytics/provider-ids.js` and
+[`analytics.md`](analytics.md#provider-identifiers-are-validated-never-escaped).
 
 ### The precondition: a DOMPurify instance must exist
 

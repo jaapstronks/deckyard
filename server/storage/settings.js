@@ -50,6 +50,10 @@ import { getAppName } from '../config/branding.js';
 import { envStr } from '../config/utils.js';
 import { DEFAULT_THEME_ID } from '../../shared/constants/themes.js';
 import { SUBSCRIPTION_LEVELS } from './presentations/subscriptions.js';
+import {
+  isEmbeddableUrl,
+  normalizeProviderId,
+} from '../analytics/provider-ids.js';
 
 /**
  * The shared bucket a caller with no e-mail writes to (mirrors the old file
@@ -279,18 +283,26 @@ function normalizeStringArray(arr, maxLen = 50) {
 
 function normalizeProviderUrl(v) {
   const s = String(v || '').trim();
-  if (!s) return '';
-  if (s.length > 2048) return '';
-  try {
-    const u = new URL(s);
-    if (u.protocol !== 'http:' && u.protocol !== 'https:') return '';
-    // Return without trailing slash
-    return u.toString().replace(/\/+$/, '');
-  } catch {
-    return '';
-  }
+  // isEmbeddableUrl is the same http(s) check plus the quoting-character check
+  // the head builders need — one rule, applied at both ends of the pipe.
+  if (!isEmbeddableUrl(s)) return '';
+  // Return without trailing slash
+  return new URL(s).toString().replace(/\/+$/, '');
 }
 
+/**
+ * Normalize the third-party analytics providers block.
+ *
+ * Every identifier here is charset-validated rather than escaped: these values
+ * are interpolated into the head of every published deck and embed, part of it
+ * inside `<script>`. An identifier that is not spelled the way its provider
+ * spells it is stored as `''` — the same drop-on-invalid shape the URL and
+ * theme-id normalizers in this file use, and the PUT echoes the stored settings
+ * back so the empty field is visible. See `server/analytics/provider-ids.js`.
+ *
+ * @param {Object} obj - Raw externalProviders object from the request body
+ * @returns {Object|null} Normalized providers, or null when absent
+ */
 function normalizeExternalProviders(obj) {
   if (!obj || typeof obj !== 'object') return null;
 
@@ -307,24 +319,27 @@ function normalizeExternalProviders(obj) {
   return {
     umami: {
       enabled: umamiObj?.enabled === true,
-      websiteId: normalizeString(umamiObj?.websiteId, 64),
+      websiteId: normalizeProviderId('umamiWebsiteId', umamiObj?.websiteId),
       url: normalizeProviderUrl(umamiObj?.url),
     },
     plausible: {
       enabled: plausibleObj?.enabled === true,
-      domain: normalizeString(plausibleObj?.domain, 255),
+      domain: normalizeProviderId('plausibleDomain', plausibleObj?.domain),
       url: normalizeProviderUrl(plausibleObj?.url),
     },
     matomo: {
       enabled: matomoObj?.enabled === true,
       url: normalizeProviderUrl(matomoObj?.url),
-      siteId: normalizeString(matomoObj?.siteId, 32),
+      siteId: normalizeProviderId('matomoSiteId', matomoObj?.siteId),
       disableCookies: matomoObj?.disableCookies !== false, // Default true
       requireConsent: matomoObj?.requireConsent === true,
     },
     googleAnalytics: {
       enabled: gaObj?.enabled === true,
-      measurementId: normalizeString(gaObj?.measurementId, 32),
+      measurementId: normalizeProviderId(
+        'ga4MeasurementId',
+        gaObj?.measurementId,
+      ),
     },
   };
 }

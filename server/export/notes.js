@@ -1,14 +1,6 @@
 import JSZip from 'jszip';
 import { SLIDE_TYPES } from '../../shared/slide-types.js';
-
-function escapeXml(s) {
-  return String(s || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
-}
+import { escapeXml } from '../../shared/xml.js';
 
 function slideTitleCandidate(slide) {
   const c =

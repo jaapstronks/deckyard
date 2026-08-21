@@ -197,6 +197,28 @@ Third-party head snippet (`analytics/head.js`), separate from the above:
 are also configurable from the settings UI
 (`settings.analytics.externalProviders`), which overrides the env vars.
 
+### Provider identifiers are validated, never escaped
+
+Every third-party identifier is charset-checked against its provider's own
+format (`server/analytics/provider-ids.js`) — Matomo `siteId` digits, Umami
+`websiteId` a UUID alphabet, Plausible `domain` a hostname (or the documented
+comma-separated list), GA4 `G-…`, GTM `GTM-…` — and provider URLs must parse as
+http(s) _and_ carry no quoting characters.
+
+The check runs at both ends. The write path
+(`normalizeExternalProviders`, `server/storage/settings.js`) stores `''` for a
+value that fails, the same drop-on-invalid shape the URL and theme-id
+normalizers use; the settings PUT echoes the stored object back, so a rejected
+value shows as an empty field. The render path refuses to emit a provider whose
+values fail the same check, which also covers the env vars — those never pass
+through the normalizer.
+
+Escaping is deliberately not the mechanism: several of these values are
+interpolated into a `<script>` block, where HTML entities are not decoded, so
+escaping would corrupt a legitimate id while failing to contain a hostile one.
+This head lands on the app shell, on every published deck and on every embed,
+which is what makes an admin-writable identifier a public surface.
+
 Settings, not env: `settings.analytics.enabled` is the **single master switch**
 for Deckyard's own tracking — off means `/api/track/session/start` returns a null
 token and nothing is recorded. `settings.analytics.retention.*` is the retention

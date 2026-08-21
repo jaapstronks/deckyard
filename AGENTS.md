@@ -148,7 +148,7 @@ format` writes, `npm run format:check` gates in CI next to `npm run lint`.
     with exactly the HTTP meaning, never a rename.
 
 - **Safety: HTML escaping and markdown**
-  - Any user-provided text rendered into HTML must be escaped (`esc()` from `shared/slide-types/helpers.js`) or passed through `markdownToSafeHtml()` (`shared/markdown.js`).
+  - Any user-provided text rendered into HTML must be escaped (`escapeHtml()` from `shared/slide-types/helpers.js`) or passed through `markdownToSafeHtml()` (`shared/markdown.js`). For XML sinks (PPTX parts, SVG) the escaper is `escapeXml()` (`shared/xml.js`). Do not hand-roll a third copy — `tests/no-escape-markdown-aliases.test.js` measures function bodies, not just imports.
   - Don’t introduce raw/unsafe HTML insertion. For data-driven markup use `h()` (`client/lib/dom.js`) rather than an `innerHTML` template.
   - The safe categories for an existing/new `innerHTML` write, and why every current client `innerHTML` site is safe, are catalogued in **`docs/reference/html-escaping.md`** — a new write is safe only if it falls into one of them.
 
