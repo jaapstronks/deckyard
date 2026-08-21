@@ -7,7 +7,7 @@ import { authShell } from './auth-shell.js';
 export async function renderResetPassword(root, { nav } = {}) {
   const { shell, card, subtitle } = authShell({
     title: t('resetPassword.title', 'Set a new password'),
-    subtitle: t('resetPassword.validating', 'Validating...'),
+    subtitle: t('resetPassword.validating', 'Validating…'),
   });
 
   const form = h('div', { class: 'auth-form' });
@@ -60,7 +60,7 @@ export async function renderResetPassword(root, { nav } = {}) {
       const forgotLink = h('a', {
         href: '/forgot-password',
         class: 'auth-link',
-        text: t('forgotPassword.submit', 'Request new link'),
+        text: t('forgotPassword.submit', 'Send reset link'),
       });
       forgotLink.onclick = (e) => {
         e.preventDefault();
@@ -124,7 +124,7 @@ export async function renderResetPassword(root, { nav } = {}) {
         return;
       }
 
-      status.textContent = t('resetPassword.resetting', 'Resetting...');
+      status.textContent = t('resetPassword.resetting', 'Resetting…');
       status.className = 'auth-status';
       busyManager.setBusy(true);
 

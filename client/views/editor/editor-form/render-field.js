@@ -290,7 +290,7 @@ export function createRenderField({
         slide.content[field.key] || '',
         t(
           'editor.markdown.help',
-          'Supports paragraphs, lists, bold/italic, links, and markdown tables.',
+          'Supports paragraphs, lists, bold/italic, links, code, math, and markdown tables.',
         ),
         (v) => {
           slide.content[field.key] = v;

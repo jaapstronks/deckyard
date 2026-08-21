@@ -96,7 +96,7 @@ export function createPasswordSection({ h }) {
     currentPasswordInput.disabled = true;
     newPasswordInput.disabled = true;
     confirmPasswordInput.disabled = true;
-    statusEl.textContent = t('settings.changePassword.changing', 'Changing...');
+    statusEl.textContent = t('settings.changePassword.changing', 'Changing…');
 
     try {
       await api('/api/auth/change-password', {

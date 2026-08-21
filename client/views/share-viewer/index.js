@@ -137,7 +137,7 @@ export async function renderShareViewer(root, token) {
       spinner('lg'),
       h('div', {
         class: 'share-viewer-loading-text',
-        text: t('share.loading', 'Loading presentation...'),
+        text: t('share.loading', 'Loading presentation…'),
       }),
     ]);
     shell.append(loading);
@@ -150,7 +150,7 @@ export async function renderShareViewer(root, token) {
       presentation = presResp;
 
       if (!presentation) {
-        throw new Error(t('share.error.notFound', 'Presentation not found'));
+        throw new Error(t('share.error.notFound', 'Link Not Found'));
       }
 
       // Load theme

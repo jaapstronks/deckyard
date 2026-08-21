@@ -85,7 +85,7 @@ export function showAddModal(onSuccess) {
     emailInput.disabled = true;
     nameInput.disabled = true;
     roleSelect.disabled = true;
-    status.textContent = t('admin.users.addModal.adding', 'Adding...');
+    status.textContent = t('admin.users.addModal.adding', 'Adding…');
 
     try {
       const created = await api('/api/admin/users', {

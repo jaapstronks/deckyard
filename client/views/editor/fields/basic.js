@@ -370,7 +370,7 @@ export function createBasicFields({ h } = {}) {
     const btnInlineMath = h('button', {
       class: 'md-toolbar-btn',
       type: 'button',
-      title: t('editor.markdown.inlineMath', 'Inline Math'),
+      title: t('editor.markdown.inlineMath', 'Inline Math (LaTeX)'),
     });
     btnInlineMath.append(icon('sigma', { size: 16 }));
     btnInlineMath.addEventListener('click', (e) => {
@@ -382,7 +382,7 @@ export function createBasicFields({ h } = {}) {
     const btnBlockMath = h('button', {
       class: 'md-toolbar-btn',
       type: 'button',
-      title: t('editor.markdown.blockMath', 'Block Math'),
+      title: t('editor.markdown.blockMath', 'Block Math (LaTeX)'),
     });
     btnBlockMath.append(icon('square-sigma', { size: 16 }));
     btnBlockMath.addEventListener('click', (e) => {

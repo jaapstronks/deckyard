@@ -6,11 +6,14 @@
  * fallback baked into the t() call, which looks like working software while
  * being untranslated. This test fails the build when that drift reappears.
  *
- * Three checks:
+ * The checks:
  *  1. every static t() key used in client/ exists in both nl/ and en/
  *  2. {var} placeholders match between en/ and nl/ for shared keys
  *  3. follow.* keys are not reachable through the global t() (see below)
  *  4. descriptor pairs use the one surviving spelling, `<x>Key` / `<x>`
+ *  5. every fallback spells the en/ value for its key — one key, one English
+ *     string, wherever it is written down
+ *  6. an ellipsis is the single glyph `…`, in code and in every locale
  *
  * Run with: node --test tests/i18n-coverage.test.js
  */
@@ -26,6 +29,7 @@ import {
   loadLocale,
   isDynamicKey,
   findLegacyDescriptorPairs,
+  collectFallbackSites,
 } from '../scripts/i18n-keys.js';
 import { TIER_1 } from '../scripts/i18n-tiers.js';
 
@@ -183,5 +187,74 @@ describe('i18n coverage', () => {
         `client/i18n/${locale}/ contains invalid JSON`,
       );
     }
+  });
+});
+
+describe('i18n fallback consistency', () => {
+  // The fallback in `t(key, 'English')` is not decoration: it is what renders
+  // the moment a locale lacks the key, so a key written down twice with two
+  // different English strings *is* two strings for one meaning. Before this
+  // gate, 25 keys carried more than one — `common.loading` carried three, one
+  // of which said "Generating…", a different concept wearing the same key.
+  //
+  // The rule is the strict one: a fallback must be the en/ value verbatim, so
+  // there is exactly one English spelling per key and it lives in one place.
+  // That subsumes "one fallback per key" — two call sites cannot both equal the
+  // en/ value and differ from each other — and it also catches the softer drift
+  // where the JSON was reworded and the call site kept the old copy.
+  it('every fallback spells the en/ value for its key', async () => {
+    const en = await loadLocale(i18nDir, 'en');
+    const sites = await collectFallbackSites(clientDir);
+    assert.ok(sites.length > 0, 'no fallbacks found — did the extractor move?');
+    const drifted = sites
+      .filter((s) => typeof en[s.key] === 'string' && s.fallback !== en[s.key])
+      .map(
+        (s) =>
+          `${s.file.replace(repoRoot + '/', '')}:${s.line}  ${s.key}\n` +
+          `      call site: ${JSON.stringify(s.fallback)}\n` +
+          `      en/:       ${JSON.stringify(en[s.key])}`,
+      );
+    assert.deepStrictEqual(
+      drifted,
+      [],
+      `${drifted.length} fallback(s) disagree with client/i18n/en/.\n` +
+        'Copy the en/ value to the call site — or, if the call site means a\n' +
+        'different thing, give it its own key in en/ and nl/ rather than a\n' +
+        'second English string under the shared one:\n' +
+        drifted.join('\n'),
+    );
+  });
+
+  it('an ellipsis is the single glyph …, never three dots', async () => {
+    // `…` and `...` were split almost evenly across ~340 strings with no rule.
+    // One glyph: it is one character to a screen reader, one to a line-breaker,
+    // and one thing for a translator to copy.
+    const offenders = [];
+    for (const s of await collectFallbackSites(clientDir)) {
+      if (s.fallback.includes('...')) {
+        offenders.push(
+          `${s.file.replace(repoRoot + '/', '')}:${s.line}  ${JSON.stringify(s.fallback)}`,
+        );
+      }
+    }
+    const locales = (await fs.readdir(i18nDir, { withFileTypes: true }))
+      .filter((e) => e.isDirectory())
+      .map((e) => e.name);
+    for (const locale of locales) {
+      const dict = await loadLocale(i18nDir, locale);
+      for (const [key, value] of Object.entries(dict)) {
+        if (String(value).includes('...')) {
+          offenders.push(
+            `client/i18n/${locale}/  ${key}: ${JSON.stringify(value)}`,
+          );
+        }
+      }
+    }
+    assert.deepStrictEqual(
+      offenders.sort(),
+      [],
+      `${offenders.length} string(s) spell an ellipsis as three dots — use …:\n` +
+        offenders.join('\n'),
+    );
   });
 });

@@ -64,7 +64,7 @@ export function showRevokeModal(key, onSuccess) {
     btnRevoke.disabled = true;
     status.textContent = t(
       'settings.apiKeys.revokeModal.revoking',
-      'Revoking...',
+      'Revoking…',
     );
 
     const result = await revokeApiKey(key.id);

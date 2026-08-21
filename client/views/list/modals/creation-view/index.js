@@ -163,7 +163,7 @@ export function openCreationView({
   const blankTitleField = h('div', { class: 'stack is-field' });
   const emptyTitleInput = h('input', {
     class: 'form-input',
-    placeholder: t('list.newPresentation.titlePlaceholder', 'Title...'),
+    placeholder: t('list.newPresentation.titlePlaceholder', 'Title…'),
     'aria-label': t('list.creationView.nameLabel', 'Give it a name'),
   });
   blankTitleField.append(
@@ -337,9 +337,9 @@ export function openCreationView({
       'paste-text': t('list.aiWizard.generate', 'Generate'),
       'convert-file': t('list.fileConverter.convert', 'Convert'),
       notion: t('list.newPresentation.notion.import', 'Import'),
-      'import-json': t('list.importJson', 'Import'),
-      'import-markdown': t('list.importJson', 'Import'),
-      'paste-markdown': t('list.importJson', 'Import'),
+      'import-json': t('list.importJson', 'Import JSON'),
+      'import-markdown': t('list.importJson', 'Import JSON'),
+      'paste-markdown': t('list.importJson', 'Import JSON'),
     };
     return labels[mode] || t('common.create', 'Create');
   };
@@ -435,7 +435,7 @@ export function openCreationView({
         title: t('list.newPresentation.discard', 'Discard'),
         message: t(
           'list.newPresentation.confirmDiscard',
-          'Discard your input?',
+          'You have entered text. Discard your input?',
         ),
         confirmLabel: t('list.newPresentation.discard', 'Discard'),
         danger: true,

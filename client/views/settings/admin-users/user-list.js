@@ -151,7 +151,9 @@ function renderUserCard(u, currentUser, onEdit, onRefresh) {
       title: t('admin.users.resendInvitation', 'Resend invitation'),
     });
     resendBtn.append(
-      h('span', { text: t('admin.users.resendInvitation', 'Resend') }),
+      h('span', {
+        text: t('admin.users.resendInvitation', 'Resend invitation'),
+      }),
     );
     resendBtn.onclick = () => resendInvitation(u, resendBtn);
     actionsWrap.append(resendBtn);

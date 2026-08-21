@@ -48,14 +48,14 @@ export async function renderForgotPassword(root, { nav } = {}) {
     const e = (email.value || '').trim();
     if (!e || !e.includes('@')) {
       status.textContent = t(
-        'forgotPassword.error',
+        'forgotPassword.invalidEmail',
         'Please enter a valid email address.',
       );
       status.className = 'auth-status is-error';
       return;
     }
 
-    status.textContent = t('forgotPassword.sending', 'Sending...');
+    status.textContent = t('forgotPassword.sending', 'Sending…');
     status.className = 'auth-status';
     busyManager.setBusy(true);
 

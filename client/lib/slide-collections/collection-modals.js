@@ -220,7 +220,7 @@ export function openManageMembersModal({
           class: 'help',
           text: t(
             'slideLibrary.collections.manage.empty',
-            'No slides in this collection yet. Add slides from a card’s menu.',
+            "No slides in this collection yet. Add slides from a card's menu.",
           ),
         }),
       );
@@ -401,7 +401,7 @@ export function openAddToCollectionModal({
         modal.close();
         if (added) {
           toast.success(
-            t('slideLibrary.collections.addTo.done', 'Added to “{name}”.', {
+            t('slideLibrary.collections.addTo.done', 'Added to "{name}".', {
               name: col.name || '',
             }),
           );

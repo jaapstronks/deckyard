@@ -96,7 +96,7 @@ export function createNotesEditor({ api, sessionId, ui, onSaved } = {}) {
   const save = async (targetSlideId, value) => {
     if (!targetSlideId || destroyed) return;
     saving = true;
-    setStatus(t('notes.edit.saving', 'Saving...'));
+    setStatus(t('notes.edit.saving', 'Saving…'));
     try {
       await api(
         `/api/live-sessions/${encodeURIComponent(sessionId)}/notes/${encodeURIComponent(targetSlideId)}`,

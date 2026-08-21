@@ -163,7 +163,7 @@ export function createCollectionsBar({ api, root }) {
             ),
             message: t(
               'slideLibrary.collections.delete.confirm',
-              'Delete “{name}”? The slides themselves are not deleted.',
+              'Delete "{name}"? The slides themselves are not deleted.',
               { name: col.name || '' },
             ),
             confirmLabel: t('common.delete', 'Delete'),

@@ -151,7 +151,7 @@ export function createHomeView({
   const homePopularList = h('div', { class: 'list presentation-grid' });
   const homePopularLoading = h('div', {
     class: 'help',
-    text: t('list.home.popularLoading', 'Loading popular...'),
+    text: t('list.home.popularLoading', 'Loading popular…'),
   });
 
   homePopularSection.append(
@@ -176,7 +176,7 @@ export function createHomeView({
   const homeActivityList = h('div', { class: 'home-activity-preview' });
   const homeActivityLoading = h('div', {
     class: 'help',
-    text: t('list.home.activityLoading', 'Loading activity...'),
+    text: t('list.home.activityLoading', 'Loading activity…'),
   });
 
   homeActivitySection.append(
@@ -205,7 +205,7 @@ export function createHomeView({
   const homeBlocksList = h('div', { class: 'home-blocks-grid' });
   const homeBlocksLoading = h('div', {
     class: 'help',
-    text: t('list.home.blocks.loading', 'Loading building blocks...'),
+    text: t('list.home.blocks.loading', 'Loading building blocks…'),
   });
 
   homeBlocksSection.append(

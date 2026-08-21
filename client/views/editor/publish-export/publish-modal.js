@@ -101,7 +101,7 @@ export function openPublishModal({
       text: t('editor.publishModal.refreshPreview', 'Refresh preview'),
       onclick: async function () {
         this.disabled = true;
-        this.textContent = t('editor.publishModal.generating', 'Generating...');
+        this.textContent = t('editor.publishModal.generating', 'Generating…');
         status.textContent = '';
         try {
           const resp = await api(

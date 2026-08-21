@@ -547,7 +547,7 @@ export function createCardRenderer({
           isOrganization
             ? h('span', {
                 class: 'presentation-shared-badge',
-                text: t('list.sharedBadge', 'Shared'),
+                text: t('list.sharedBadge', '👥 Shared'),
               })
             : null,
           isSharedWithMe

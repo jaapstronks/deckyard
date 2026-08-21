@@ -73,7 +73,7 @@ export function createContentCompose({ h, api, onChange, aiDisabled }) {
       class: 'form-input form-textarea-lg',
       placeholder: t(
         'list.newPresentation.pasteText.placeholder',
-        'Paste your notes here...',
+        'Paste your notes here…',
       ),
     }),
   );
@@ -103,7 +103,7 @@ export function createContentCompose({ h, api, onChange, aiDisabled }) {
       class: 'help modal-hint',
       text: t(
         'list.fileConverter.help',
-        'Upload a .pptx, .pdf, .docx, .rtf, or .odt file to convert it into a presentation. The converter will extract content and use AI to create appropriate slides.',
+        'Upload a .pptx, .pdf, .docx, .rtf, or .odt file to convert it into a presentation. The converter will extract content and use AI to create appropriate slides. Review the result afterwards.',
       ),
     }),
     convertFileInput,
@@ -115,7 +115,7 @@ export function createContentCompose({ h, api, onChange, aiDisabled }) {
     class: 'form-input',
     placeholder: t(
       'list.newPresentation.notion.placeholder',
-      'Paste Notion page URL...',
+      'Paste Notion page URL…',
     ),
   });
   panelNotion.append(

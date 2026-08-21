@@ -59,7 +59,7 @@ export async function renderDashboard(root, { nav } = {}) {
     spinner('lg'),
     h('div', {
       class: 'analytics-loading-text',
-      text: t('dashboard.loading', 'Loading insights...'),
+      text: t('dashboard.loading', 'Loading insights…'),
     }),
   ]);
   shell.append(loading);
@@ -117,7 +117,7 @@ export async function renderDashboard(root, { nav } = {}) {
       h('div', { class: 'dashboard-title-row' }, [
         h('h1', {
           class: 'dashboard-title',
-          text: t('dashboard.title', 'My Engagement Insights'),
+          text: t('dashboard.title', 'Engagement Insights'),
         }),
         createPeriodSelector(),
       ]),
@@ -220,12 +220,12 @@ export async function renderDashboard(root, { nav } = {}) {
       },
       {
         key: 'follow',
-        label: t('dashboard.source.follow', 'Follow Mode'),
+        label: t('dashboard.source.follow', 'Workspace'),
         value: breakdown.follow || 0,
       },
       {
         key: 'embed',
-        label: t('dashboard.source.embed', 'Embedded'),
+        label: t('dashboard.source.embed', 'Embed'),
         value: breakdown.embed || 0,
       },
     ].filter((s) => s.value > 0);

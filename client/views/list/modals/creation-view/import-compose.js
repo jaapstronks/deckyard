@@ -111,7 +111,7 @@ export function createImportCompose({ h, onChange }) {
     class: 'form-input form-textarea-lg',
     placeholder: t(
       'list.newPresentation.pasteMarkdown.placeholder',
-      'Paste your markdown here...',
+      'Paste your markdown here…',
     ),
   });
   panelPasteMd.append(

@@ -32,7 +32,7 @@ export async function handleEmpty({
   }
   const lang = langMode === 'en-GB' ? 'en-GB' : 'nl';
   setBusy(true);
-  setStatus(t('list.newPresentation.creating', 'Creating...'));
+  setStatus(t('list.newPresentation.creating', 'Creating…'));
   try {
     const created = await api('/api/presentations', {
       method: 'POST',
@@ -85,7 +85,7 @@ export async function handlePasteText({
     root,
     initialMessage: t(
       'list.newPresentation.preparing',
-      'Preparing your presentation...',
+      'Preparing your presentation…',
     ),
     title: t('list.newPresentation.generatingTitle', 'Generating presentation'),
   });
@@ -141,7 +141,7 @@ export async function handlePasteText({
     });
 
     rotator.stop();
-    loadingModal.update(t('common.done', 'Done!'));
+    loadingModal.update(t('common.done', 'Done'));
     loadingModal.setProgress(100);
     await new Promise((r) => setTimeout(r, 800));
     loadingModal.close();
@@ -152,7 +152,7 @@ export async function handlePasteText({
     rotator.stop();
     // Fallback to V1
     try {
-      loadingModal.update(t('editor.aiAppend.generating', 'Generating...'));
+      loadingModal.update(t('editor.aiAppend.generating', 'Generating…'));
       const created = await api('/api/ai/wizard', {
         method: 'POST',
         body: JSON.stringify({
@@ -165,7 +165,7 @@ export async function handlePasteText({
           },
         }),
       });
-      loadingModal.update(t('common.done', 'Done!'));
+      loadingModal.update(t('common.done', 'Done'));
       loadingModal.setProgress(100);
       await new Promise((r) => setTimeout(r, 800));
       loadingModal.close();
@@ -204,7 +204,7 @@ export async function handleConvertFile({
     return;
   }
   setBusy(true);
-  setStatus(t('list.fileConverter.reading', 'Reading file...'));
+  setStatus(t('list.fileConverter.reading', 'Reading file…'));
 
   const lang = langMode === 'en-GB' ? 'en-GB' : 'nl';
 
@@ -221,7 +221,7 @@ export async function handleConvertFile({
   const loadingModal = showLoadingModal({
     h,
     root,
-    initialMessage: t('list.fileConverter.converting', 'Converting file...'),
+    initialMessage: t('list.fileConverter.converting', 'Converting file…'),
     title: t('list.fileConverter.convertingTitle', 'Converting file'),
   });
   loadingModal.setProgress(5);
@@ -277,7 +277,7 @@ export async function handleConvertFile({
             streamComplete = true;
             rotator.stop();
             const result = data;
-            loadingModal.update(t('common.done', 'Done!'));
+            loadingModal.update(t('common.done', 'Done'));
             loadingModal.setProgress(100);
             await new Promise((r) => setTimeout(r, 800));
             loadingModal.close();
@@ -307,7 +307,7 @@ export async function handleConvertFile({
 
     if (!useStreaming) {
       loadingModal.update(
-        t('list.fileConverter.converting', 'Converting file...'),
+        t('list.fileConverter.converting', 'Converting file…'),
       );
       const result = await api('/api/convert', {
         method: 'POST',
@@ -320,7 +320,7 @@ export async function handleConvertFile({
       });
 
       if (result.success && result.presentation) {
-        loadingModal.update(t('common.done', 'Done!'));
+        loadingModal.update(t('common.done', 'Done'));
         loadingModal.setProgress(100);
         await new Promise((r) => setTimeout(r, 800));
         loadingModal.close();
@@ -363,7 +363,7 @@ export async function handleImportJson({
     return;
   }
   setBusy(true);
-  setStatus(t('list.newPresentation.importing', 'Importing...'));
+  setStatus(t('list.newPresentation.importing', 'Importing…'));
 
   try {
     const text = await selectedFile.text();
@@ -422,7 +422,7 @@ export async function handleImportMarkdown({
     return;
   }
   setBusy(true);
-  setStatus(t('list.newPresentation.importing', 'Importing...'));
+  setStatus(t('list.newPresentation.importing', 'Importing…'));
 
   try {
     const markdown = await selectedFile.text();
@@ -486,7 +486,7 @@ export async function handlePasteMarkdown({
     return;
   }
   setBusy(true);
-  setStatus(t('list.newPresentation.importing', 'Importing...'));
+  setStatus(t('list.newPresentation.importing', 'Importing…'));
 
   try {
     const lang = langMode === 'en-GB' ? 'en-GB' : 'nl';
@@ -548,7 +548,7 @@ export async function handleNotion({
     root,
     initialMessage: t(
       'list.newPresentation.notion.importing',
-      'Importing Notion page...',
+      'Importing Notion page…',
     ),
     title: t(
       'list.newPresentation.notion.importingTitle',
@@ -609,7 +609,7 @@ export async function handleNotion({
             const result = data;
             const detectedLang =
               result.detectedLang || result.presentation?.lang || 'nl';
-            loadingModal.update(t('common.done', 'Done!'));
+            loadingModal.update(t('common.done', 'Done'));
             loadingModal.setProgress(100);
             await new Promise((r) => setTimeout(r, 800));
             loadingModal.close();
@@ -640,7 +640,7 @@ export async function handleNotion({
     // Fallback to non-streaming endpoint
     if (!useStreaming) {
       loadingModal.update(
-        t('list.newPresentation.notion.importing', 'Importing Notion page...'),
+        t('list.newPresentation.notion.importing', 'Importing Notion page…'),
       );
       const result = await api('/api/notion/import', {
         method: 'POST',
@@ -654,7 +654,7 @@ export async function handleNotion({
       if (result.success && result.presentation) {
         const detectedLang =
           result.detectedLang || result.presentation?.lang || 'nl';
-        loadingModal.update(t('common.done', 'Done!'));
+        loadingModal.update(t('common.done', 'Done'));
         loadingModal.setProgress(100);
         await new Promise((r) => setTimeout(r, 800));
         loadingModal.close();

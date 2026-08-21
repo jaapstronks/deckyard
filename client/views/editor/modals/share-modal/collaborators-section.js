@@ -72,7 +72,7 @@ export function createCollaboratorsSection({
     excludeEmails: [currentUserEmail, pres?.ownerEmail].filter(Boolean),
     placeholder: t(
       'share.collaborators.searchUsers',
-      'Search users to invite...',
+      'Search users to invite…',
     ),
   });
 
@@ -215,7 +215,7 @@ export function createCollaboratorsSection({
       h,
       modalRoot,
       {
-        title: t('share.collaborators.transferOwnership', 'Transfer ownership'),
+        title: t('share.collaborators.transferOwnership', 'Transfer'),
         message: t(
           'share.collaborators.transferOwnershipPrompt',
           'Enter the email of the new owner (must be an existing collaborator with edit access):\n\nEligible users: {users}',
@@ -254,7 +254,7 @@ export function createCollaboratorsSection({
       h,
       modalRoot,
       {
-        title: t('share.collaborators.transferOwnership', 'Transfer ownership'),
+        title: t('share.collaborators.transferOwnership', 'Transfer'),
         message: t(
           'share.collaborators.transferOwnershipConfirm',
           'Transfer ownership of this presentation to {email}?\n\nYou will become a collaborator with edit access.',
@@ -262,10 +262,7 @@ export function createCollaboratorsSection({
             email: trimmedEmail,
           },
         ),
-        confirmLabel: t(
-          'share.collaborators.transferOwnership',
-          'Transfer ownership',
-        ),
+        confirmLabel: t('share.collaborators.transferOwnership', 'Transfer'),
         danger: true,
       },
       openOverlayClosers,
@@ -421,16 +418,16 @@ export function createCollaboratorsSection({
     if (isBatch) {
       addBtn.textContent = t(
         'share.collaborators.invitingMultiple',
-        'Inviting {count}...',
+        'Inviting {count}…',
         { count: selectedUsers.length },
       );
       progressEl.textContent = t(
         'share.collaborators.progress',
-        'Sending invitations...',
+        'Sending invitations…',
       );
       progressEl.classList.add('is-visible');
     } else {
-      addBtn.textContent = t('share.collaborators.inviting', 'Inviting...');
+      addBtn.textContent = t('share.collaborators.inviting', 'Inviting…');
     }
 
     try {

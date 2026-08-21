@@ -427,7 +427,7 @@ export function createLibraryCompose({
       return;
     }
     setBusy(true);
-    setStatus(t('list.newPresentation.creating', 'Creating...'));
+    setStatus(t('list.newPresentation.creating', 'Creating…'));
     try {
       const created = await createDeckFromLibraryItems({
         api,

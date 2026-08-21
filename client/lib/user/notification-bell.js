@@ -190,7 +190,7 @@ export function createNotificationBell({ api, onNavigate }) {
       listContainer.append(
         h('div', {
           class: 'notification-bell-item is-loading',
-          text: t('notifications.loading', 'Loading...'),
+          text: t('notifications.loading', 'Loading…'),
         }),
       );
       return;

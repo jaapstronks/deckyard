@@ -28,7 +28,7 @@ export async function renderSharedReport(root, token) {
   shell.append(
     h('div', { class: 'shared-report-loading' }, [
       spinner('lg'),
-      h('div', { text: t('analytics.loadingReport', 'Loading report...') }),
+      h('div', { text: t('analytics.loadingReport', 'Loading report…') }),
     ]),
   );
 

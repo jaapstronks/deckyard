@@ -254,7 +254,7 @@ export function createImageLibraryUpload({
     ? h('button', {
         class: 'btn btn-secondary btn-sm',
         type: 'button',
-        text: t('imageLibrary.alt.generate', 'Generate with AI'),
+        text: t('imageLibrary.alt.generate', 'Generate alt text (AI)'),
         onclick: async () => {
           if (!newUrl) return;
           try {
@@ -495,7 +495,7 @@ export function createImageLibraryUpload({
   addWrap.append(
     h('div', {
       class: 'field-label',
-      text: t('imageLibrary.addNew', 'Add new image'),
+      text: t('imageLibrary.addNew', 'Add new'),
     }),
     inputFile,
     dropzone,

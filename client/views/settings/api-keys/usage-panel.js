@@ -25,7 +25,7 @@ export async function showUsagePanel(key) {
 
   const loading = h('div', {
     class: 'help',
-    text: t('common.loading', 'Loading...'),
+    text: t('common.loading', 'Loading…'),
   });
   const content = h('div', { class: 'api-key-usage-content' });
   content.append(loading);

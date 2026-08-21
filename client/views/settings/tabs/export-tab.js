@@ -203,30 +203,24 @@ export function createExportTab({ user }) {
     if (pct < 15)
       return t(
         'settings.export.progress.collecting',
-        'Collecting presentations...',
+        'Collecting presentations…',
       );
     if (pct < 35)
       return t(
         'settings.export.progress.versions',
-        'Collecting version history...',
+        'Collecting version history…',
       );
     if (pct < 45)
-      return t(
-        'settings.export.progress.images',
-        'Collecting image library...',
-      );
+      return t('settings.export.progress.images', 'Collecting image library…');
     if (pct < 50)
-      return t(
-        'settings.export.progress.slides',
-        'Collecting slide library...',
-      );
+      return t('settings.export.progress.slides', 'Collecting slide library…');
     if (pct < 55)
-      return t('settings.export.progress.themes', 'Collecting themes...');
+      return t('settings.export.progress.themes', 'Collecting themes…');
     if (pct < 85)
-      return t('settings.export.progress.downloading', 'Downloading images...');
+      return t('settings.export.progress.downloading', 'Downloading images…');
     if (pct < 95)
-      return t('settings.export.progress.building', 'Building ZIP archive...');
-    return t('settings.export.progress.finishing', 'Finishing up...');
+      return t('settings.export.progress.building', 'Building ZIP archive…');
+    return t('settings.export.progress.finishing', 'Finishing up…');
   }
 
   function formatBytes(bytes) {
@@ -334,7 +328,7 @@ export function createExportTab({ user }) {
     progressFill.style.width = '0%';
     statusText.textContent = t(
       'settings.export.progress.collecting',
-      'Collecting presentations...',
+      'Collecting presentations…',
     );
 
     // Poll immediately, then on interval
@@ -402,10 +396,7 @@ export function createExportTab({ user }) {
 
     setExporting(true);
     progressFill.style.width = '0%';
-    statusText.textContent = t(
-      'settings.export.starting',
-      'Starting export...',
-    );
+    statusText.textContent = t('settings.export.starting', 'Starting export…');
     downloadSection.style.display = 'none';
 
     try {

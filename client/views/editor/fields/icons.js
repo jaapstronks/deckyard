@@ -19,7 +19,10 @@ export function createIconFields({ h } = {}) {
     value,
     onChange,
     {
-      helpText = t('editor.iconPicker.help', 'Pick from the icon library'),
+      helpText = t(
+        'editor.iconPicker.help',
+        'Type to search (e.g. "lightbulb")',
+      ),
     } = {},
   ) => {
     let current = String(value || '').trim();

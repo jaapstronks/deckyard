@@ -45,7 +45,7 @@ export function createUserAutocomplete({
     type: 'text',
     class: 'form-input user-autocomplete-input',
     placeholder:
-      placeholder || t('userAutocomplete.placeholder', 'Search users...'),
+      placeholder || t('userAutocomplete.placeholder', 'Search users…'),
     autocomplete: 'off',
     autocorrect: 'off',
     autocapitalize: 'off',
@@ -103,7 +103,7 @@ export function createUserAutocomplete({
       dropdown.append(
         h('div', {
           class: 'user-autocomplete-item is-loading',
-          text: t('userAutocomplete.loading', 'Searching...'),
+          text: t('userAutocomplete.loading', 'Searching…'),
         }),
       );
       return;

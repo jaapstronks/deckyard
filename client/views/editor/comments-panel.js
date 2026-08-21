@@ -590,7 +590,7 @@ export function createCommentsPanel({
   let mainMentionAc = null;
   const commentInput = createRichCommentInput({
     className: 'comments-input-textarea',
-    placeholder: t('comments.addPlaceholder', 'Add a comment...'),
+    placeholder: t('comments.addPlaceholder', 'Add a comment…'),
     onSubmit: () => submitComment(),
     // With the mention popover open, Enter picks a user instead.
     isSubmitBlocked: () => !!mainMentionAc?.isOpen(),

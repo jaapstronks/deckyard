@@ -56,7 +56,7 @@ export function renderPasswordPrompt(h, shell, token, shareData, onSuccess) {
     const password = input.value;
 
     submitBtn.disabled = true;
-    submitBtn.textContent = t('share.verifying', 'Verifying...');
+    submitBtn.textContent = t('share.verifying', 'Verifying…');
     errorEl.style.display = 'none';
 
     try {

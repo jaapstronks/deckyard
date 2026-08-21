@@ -204,7 +204,7 @@ export async function renderLogin(root, { nav } = {}) {
       magicStatus.className = 'auth-magic-status is-error';
       return;
     }
-    magicStatus.textContent = t('login.magicSending', 'Sending link...');
+    magicStatus.textContent = t('login.magicSending', 'Sending link…');
     magicStatus.className = 'auth-magic-status';
     busyManager.setBusy(true);
     try {
@@ -214,7 +214,7 @@ export async function renderLogin(root, { nav } = {}) {
       });
       magicStatus.textContent = t(
         'login.magicSuccess',
-        'Check your inbox! Click the link we sent to sign in.',
+        "If there is an account for this email, we've sent a sign-in link. Check your inbox.",
       );
       magicStatus.className = 'auth-magic-status is-success';
       magicEmail.value = '';

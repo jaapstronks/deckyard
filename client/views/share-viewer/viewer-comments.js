@@ -48,7 +48,7 @@ export function createShareViewerCommentsSection({
   const filterAllBtn = h('button', {
     class: 'btn btn-sm btn-secondary',
     type: 'button',
-    text: t('comments.filter.all', 'All slides'),
+    text: t('comments.filter.all', 'All'),
     onclick: () => setFilter('all'),
   });
   filterBtns.append(filterCurrentBtn, filterAllBtn);
@@ -71,7 +71,7 @@ export function createShareViewerCommentsSection({
   const inputArea = h('div', { class: 'share-viewer-comments-input' });
   const commentInput = createRichCommentInput({
     className: 'form-input',
-    placeholder: t('comments.addPlaceholder', 'Add a comment...'),
+    placeholder: t('comments.addPlaceholder', 'Add a comment…'),
     onSubmit: () => submitComment(),
   });
   const submitBtn = h('button', {
@@ -252,7 +252,7 @@ export function createShareViewerCommentsSection({
 
     const replyInput = createRichCommentInput({
       className: 'form-input',
-      placeholder: t('comments.replyPlaceholder', 'Reply...'),
+      placeholder: t('comments.replyPlaceholder', 'Reply…'),
       onSubmit: submitReply,
     });
     const btn = h('button', {

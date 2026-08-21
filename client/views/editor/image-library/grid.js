@@ -28,7 +28,7 @@ export function createImageLibraryGrid({
     class: 'form-input',
     placeholder: t(
       'imageLibrary.search.placeholder',
-      'Search description, tags, photographer, alt text…',
+      'Search title, photographer, alt text…',
     ),
   });
 
@@ -134,8 +134,7 @@ export function createImageLibraryGrid({
         h('div', { class: 'image-lib-meta' }, [
           h('div', {
             class: 'image-lib-title',
-            text:
-              it.description || t('imageLibrary.untitled', '(No description)'),
+            text: it.description || t('imageLibrary.untitled', '(Untitled)'),
             title: it.description || '',
           }),
           h('div', {

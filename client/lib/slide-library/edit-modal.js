@@ -166,7 +166,7 @@ export function openEditModal({
     class: 'form-input',
     type: 'text',
     id: 'lib-edit-name',
-    placeholder: t('slideLibrary.edit.namePlaceholder', 'Slide name...'),
+    placeholder: t('slideLibrary.edit.namePlaceholder', 'Slide name…'),
     maxlength: 120,
     value: workingName,
   });
@@ -259,7 +259,7 @@ export function openEditModal({
     if (saving) return;
     saving = true;
     saveBtn.disabled = true;
-    status.textContent = t('common.saving', 'Saving...');
+    status.textContent = t('common.saving', 'Saving…');
 
     const patch = {
       name,

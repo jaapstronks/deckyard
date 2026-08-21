@@ -188,7 +188,7 @@ export function createShareLinksSection({
     onclick: async () => {
       const ok = await copyToClipboard(createdLinkInput.value);
       if (ok) {
-        toast?.success(t('common.copied', 'Copied!'), { durationMs: 1500 });
+        toast?.success(t('common.copied', 'Copied'), { durationMs: 1500 });
       }
       createdLinkInput.focus();
     },
@@ -224,7 +224,7 @@ export function createShareLinksSection({
     if (isCreating) return;
     isCreating = true;
     createBtn.disabled = true;
-    createBtn.textContent = t('share.create.creating', 'Creating...');
+    createBtn.textContent = t('share.create.creating', 'Creating…');
 
     try {
       const expiresAt = getExpiresAt(expirationSelect.value);
@@ -365,7 +365,7 @@ export function createShareLinksSection({
         onclick: async () => {
           const ok = await copyToClipboard(link.url);
           if (ok) {
-            toast?.success(t('common.copied', 'Copied!'), { durationMs: 1500 });
+            toast?.success(t('common.copied', 'Copied'), { durationMs: 1500 });
           }
         },
       });

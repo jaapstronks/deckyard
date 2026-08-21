@@ -108,7 +108,7 @@ export function openRevokeMessageModal({
 
   const textarea = h('textarea', {
     class: 'form-input revoke-modal-textarea',
-    placeholder: t('share.revoke.messagePlaceholder', 'Let them know why...'),
+    placeholder: t('share.revoke.messagePlaceholder', 'Let them know why…'),
     maxLength: 1000,
     rows: 3,
     onkeydown: (e) => {

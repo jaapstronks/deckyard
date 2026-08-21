@@ -59,7 +59,7 @@ export function createReportModal({
   });
   body.append(
     h('div', { class: 'form-group' }, [
-      h('label', { text: t('analytics.reportTitle', 'Title') }),
+      h('label', { text: t('analytics.reportTitle', 'Report title') }),
       titleInput,
     ]),
   );
@@ -223,7 +223,7 @@ export function createReportModal({
 
     isSubmitting = true;
     submitBtn.disabled = true;
-    submitBtn.textContent = t('common.loading', 'Generating...');
+    submitBtn.textContent = t('analytics.generating', 'Generating…');
     errorEl.style.display = 'none';
 
     try {
@@ -291,7 +291,7 @@ export function createReportModal({
         text: t('common.copy', 'Copy'),
         onclick: () => {
           navigator.clipboard?.writeText(shareUrl);
-          copyBtn.textContent = t('common.copied', 'Copied!');
+          copyBtn.textContent = t('common.copied', 'Copied');
           setTimeout(() => {
             copyBtn.textContent = t('common.copy', 'Copy');
           }, 2000);

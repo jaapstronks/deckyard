@@ -161,7 +161,7 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
     class: 'help',
     text: t(
       'settings.themes.logoHint',
-      'Main logo used on payoff slide. SVG format recommended.',
+      'Upload your logo image. SVG format recommended for best quality.',
     ),
   });
 

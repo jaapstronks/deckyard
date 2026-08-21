@@ -162,7 +162,7 @@ export function buildDataSourceIndicator({
 
     const connectBtn = h('button', {
       class: 'btn btn-xs btn-secondary',
-      text: t('dataSource.connect', 'Connect data source'),
+      text: t('dataSource.connect', 'Connect'),
       title: t(
         'dataSource.connect.title',
         'Bind this slide to live data from Notion, CSV, or an API',

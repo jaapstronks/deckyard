@@ -215,7 +215,7 @@ export function createPreviewPanel({
 
     const textarea = h('textarea', {
       class: 'form-input',
-      placeholder: t('comments.addPlaceholder', 'Add a comment...'),
+      placeholder: t('comments.addPlaceholder', 'Add a comment…'),
       rows: 2,
     });
 

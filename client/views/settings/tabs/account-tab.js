@@ -107,7 +107,7 @@ export function createAccountTab({ user }) {
     }
 
     uploadBtn.disabled = true;
-    imageStatus.textContent = t('settings.profile.uploading', 'Uploading...');
+    imageStatus.textContent = t('settings.profile.uploading', 'Uploading…');
 
     try {
       // Read file as data URL
@@ -147,7 +147,7 @@ export function createAccountTab({ user }) {
 
   removeBtn.addEventListener('click', async () => {
     removeBtn.disabled = true;
-    imageStatus.textContent = t('settings.profile.removing', 'Removing...');
+    imageStatus.textContent = t('settings.profile.removing', 'Removing…');
 
     try {
       await api('/api/profile/image', { method: 'DELETE' });
@@ -173,7 +173,7 @@ export function createAccountTab({ user }) {
   // Profile name input
   const profileName = h('input', {
     class: 'form-input settings-compact-control',
-    placeholder: t('settings.profile.placeholder', 'Display name (optional)'),
+    placeholder: t('settings.profile.placeholder', 'Display name'),
     value: '',
   });
   const profileHint = h('div', {

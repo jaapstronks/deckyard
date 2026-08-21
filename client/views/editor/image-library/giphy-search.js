@@ -30,7 +30,7 @@ export function createGiphySearch({ h, api, onSelect, setStatus, setBusy }) {
   const searchInput = h('input', {
     type: 'search',
     class: 'form-input stock-media-search-input',
-    placeholder: t('stockMedia.search.placeholder', 'Search {provider}...', {
+    placeholder: t('stockMedia.search.placeholder', 'Search {provider}…', {
       provider: 'Giphy',
     }),
   });
@@ -83,7 +83,7 @@ export function createGiphySearch({ h, api, onSelect, setStatus, setBusy }) {
 
     isSearching = true;
     setBusy(true);
-    setStatus(t('stockMedia.search.searching', 'Searching...'));
+    setStatus(t('stockMedia.search.searching', 'Searching…'));
     showingTrending = false;
 
     try {
@@ -128,7 +128,7 @@ export function createGiphySearch({ h, api, onSelect, setStatus, setBusy }) {
 
     isSearching = true;
     setBusy(true);
-    setStatus(t('stockMedia.search.searching', 'Searching...'));
+    setStatus(t('stockMedia.search.searching', 'Searching…'));
     showingTrending = true;
 
     try {
@@ -203,7 +203,7 @@ export function createGiphySearch({ h, api, onSelect, setStatus, setBusy }) {
     if (isSearching) return;
 
     setBusy(true);
-    setStatus(t('stockMedia.download.downloading', 'Downloading...'));
+    setStatus(t('stockMedia.download.downloading', 'Downloading…'));
 
     try {
       const data = await api('/api/stock-media/giphy/download', {

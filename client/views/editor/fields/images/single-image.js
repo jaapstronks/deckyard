@@ -100,7 +100,7 @@ export function createFieldImage(ctx) {
             });
 
             openImagePicker({
-              title: t('editor.image.libraryTitle', 'Images'),
+              title: t('editor.image.libraryTitle', 'Library: choose an image'),
               docId: pres?.id || '',
               allowCaptionCredit: 'caption' in (slide?.content || {}),
               context: {
@@ -191,7 +191,7 @@ export function createFieldImage(ctx) {
                 )
             : t(
                 'editor.image.help.withUploads',
-                'Choose from the library (recommended) or upload a new image.',
+                'Choose from the library (recommended) or upload your own image.',
               ),
         }),
         uploadsDisabled
@@ -200,7 +200,7 @@ export function createFieldImage(ctx) {
               class: 'help',
               text: t(
                 'editor.image.help.storage',
-                'Local uploads are stored in /server/uploads. ImageKit assets stay hosted on ImageKit and are used via URL.',
+                'Images are stored locally in /server/uploads and used via URL.',
               ),
             }),
       );

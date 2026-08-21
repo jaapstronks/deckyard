@@ -44,7 +44,7 @@ export function buildSectionHeader({
       : h('button', {
           class: 'presentation-section-link',
           type: 'button',
-          text: t('list.section.viewAll', 'View all'),
+          text: t('list.section.viewAll', 'View all →'),
           onclick: () => onViewAll?.(),
         }),
   ]);

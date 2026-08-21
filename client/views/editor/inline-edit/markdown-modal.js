@@ -81,7 +81,7 @@ export function createMarkdownEditModal({
       raw,
       t(
         'editor.markdown.help',
-        'Supports paragraphs, lists, bold/italic, links, and markdown tables.',
+        'Supports paragraphs, lists, bold/italic, links, code, math, and markdown tables.',
       ),
       (v) => {
         latest = v;
