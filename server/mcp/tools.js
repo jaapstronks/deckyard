@@ -87,6 +87,7 @@ import {
   buildSingleSlidePreviewHtml,
 } from './preview.js';
 import { resolveDeckLang } from '../../shared/i18n-utils.js';
+import { fireAndForget } from '../utils/fire-and-forget.js';
 
 /**
  * Get the best display title for a slide, regardless of type.
@@ -1870,18 +1871,19 @@ export function registerTools(
     // Same side effects as the app routes so the editor UI updates live.
     // The parent lookup rides inside the voided task: the tool response
     // must not wait on notification plumbing.
-    void (async () => {
-      const parentComment = parentId ? await getComment(ctx, parentId) : null;
-      await notifyCommentCreatedInApp({
-        presentation: pres,
-        comment: result.comment,
-        parentComment,
-        actor: { email: owner },
-        scope: ctx,
-      });
-    })().catch(() => {
-      /* notification failures never fail the tool call */
-    });
+    fireAndForget(
+      (async () => {
+        const parentComment = parentId ? await getComment(ctx, parentId) : null;
+        await notifyCommentCreatedInApp({
+          presentation: pres,
+          comment: result.comment,
+          parentComment,
+          actor: { email: owner },
+          scope: ctx,
+        });
+      })(),
+      'MCP comment-created in-app notification',
+    );
     void recordCommentCreated({
       comment: result.comment,
       presentation: pres,
