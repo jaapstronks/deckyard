@@ -207,6 +207,14 @@ describe('provider-id patterns', () => {
     assert.ok(isValidProviderId('plausibleDomain', 'a.example.com'));
     // Plausible documents a comma-separated list of domains.
     assert.ok(isValidProviderId('plausibleDomain', 'a.example.com,b.test'));
+    // …but the list is bounded: the value stays length-capped as a whole.
+    assert.ok(
+      isValidProviderId('plausibleDomain', Array(32).fill('a.test').join(',')),
+    );
+    assert.equal(
+      isValidProviderId('plausibleDomain', Array(33).fill('a.test').join(',')),
+      false,
+    );
     assert.ok(isValidProviderId('ga4MeasurementId', 'G-ABC1234567'));
     assert.ok(isValidProviderId('gtmContainerId', 'GTM-ABC1234'));
   });

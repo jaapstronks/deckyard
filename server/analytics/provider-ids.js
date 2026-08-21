@@ -25,8 +25,11 @@ export const PROVIDER_ID_PATTERNS = Object.freeze({
   matomoSiteId: /^[0-9]{1,32}$/,
   /** Umami website ids are UUIDs; allow the same alphabet without the dashes. */
   umamiWebsiteId: /^[A-Za-z0-9-]{1,64}$/,
-  /** One hostname, or Plausible's documented comma-separated list of them. */
-  plausibleDomain: /^[A-Za-z0-9.-]{1,255}(?:,[A-Za-z0-9.-]{1,255})*$/,
+  /**
+   * One hostname, or Plausible's documented comma-separated list of them —
+   * bounded, so the whole value stays length-capped like its siblings.
+   */
+  plausibleDomain: /^[A-Za-z0-9.-]{1,255}(?:,[A-Za-z0-9.-]{1,255}){0,31}$/,
   /** GA4 measurement ids: `G-` plus an alphanumeric tail. */
   ga4MeasurementId: /^G-[A-Za-z0-9]{1,30}$/i,
   /** GTM container ids: `GTM-` plus an alphanumeric tail. */
