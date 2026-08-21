@@ -27,6 +27,7 @@ import { sql } from 'kysely';
 
 import { notifyLiveSessionInteractionState } from './live-sessions/index.js';
 import { maybeFireInteractionWebhook } from '../utils/webhooks.js';
+import { fireAndForget } from '../utils/fire-and-forget.js';
 import { repoRootOf, toStorageContext } from './scope.js';
 import { withDbGuard } from './utils/db-guard.js';
 import {
@@ -212,15 +213,18 @@ function scheduleInteractionBroadcast(
   }
   const send = () => {
     b.lastSentAt = now();
-    (async () => {
-      const slide = await getInteractionSlide({ sessionId, slideId });
-      if (!slide) return;
-      await maybeBroadcast(
-        scope,
-        sessionId,
-        await aggregateForDevice(slide, null),
-      );
-    })().catch(() => {});
+    fireAndForget(
+      (async () => {
+        const slide = await getInteractionSlide({ sessionId, slideId });
+        if (!slide) return;
+        await maybeBroadcast(
+          scope,
+          sessionId,
+          await aggregateForDevice(slide, null),
+        );
+      })(),
+      'interaction aggregate broadcast',
+    );
   };
   if (immediate) {
     if (b.timer) {
@@ -424,11 +428,14 @@ async function setInteractionStatus(
       slide.type === 'likert'
         ? 'interaction.likert_closed'
         : 'interaction.poll_closed';
-    maybeFireInteractionWebhook(repoRootOf(scope), {
-      event: webhookEvent,
-      sessionId,
-      interaction: agg,
-    }).catch(() => {});
+    fireAndForget(
+      maybeFireInteractionWebhook(repoRootOf(scope), {
+        event: webhookEvent,
+        sessionId,
+        interaction: agg,
+      }),
+      `${webhookEvent} webhook`,
+    );
   }
 
   return { ok: true, aggregate: agg };

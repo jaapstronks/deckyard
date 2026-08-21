@@ -2,6 +2,7 @@ import { sseWrite } from '../../utils/sse.js';
 import { toStorageContext } from '../scope.js';
 import { schedulePersist } from './db.js';
 import { sessions } from './state.js';
+import { fireAndForget } from '../../utils/fire-and-forget.js';
 import {
   touchLiveSession,
   findMostRecentSessionForPresentation,
@@ -124,7 +125,10 @@ export function notifyLiveSessionDeckUpdated(
     reason: String(reason || 'deck_updated'),
     updatedAt: Date.now(),
   };
-  broadcast(scope, sid, 'deckUpdated', payload).catch(() => {});
+  fireAndForget(
+    broadcast(scope, sid, 'deckUpdated', payload),
+    'live-session deckUpdated broadcast',
+  );
   return { ok: true };
 }
 
@@ -171,7 +175,10 @@ export function broadcastBranch(
     onCloseTarget: String(onCloseTarget || '').trim(),
     updatedAt: Date.now(),
   };
-  broadcast(scope, sid, 'branch', payload).catch(() => {});
+  fireAndForget(
+    broadcast(scope, sid, 'branch', payload),
+    'live-session branch broadcast',
+  );
   return { ok: true };
 }
 
@@ -209,7 +216,10 @@ export async function updateLiveSessionState(scope, sessionId, nextState) {
     updatedAt,
   };
   schedulePersist(s);
-  broadcast(scope, sessionId, 'state', s.state).catch(() => {});
+  fireAndForget(
+    broadcast(scope, sessionId, 'state', s.state),
+    'live-session state broadcast',
+  );
   return { ok: true, state: s.state };
 }
 

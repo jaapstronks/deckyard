@@ -5,6 +5,7 @@
 
 import { updatePresentation } from '../../../storage/presentations/index.js';
 import { translatePresentationStrings } from '../../../utils/ai.js';
+import { fireAndForget } from '../../../utils/fire-and-forget.js';
 import { getFeatureFlags } from '../../../config/flags-snapshot.js';
 import {
   normalizeTranslationLang,
@@ -172,7 +173,7 @@ async function handleTranslate(ctx, presentationId) {
   });
 
   // Track AI usage
-  trackAiRequest(ctx).catch(() => {});
+  fireAndForget(trackAiRequest(ctx), 'v1 AI usage tracking');
 
   await apiSuccess(ctx, {
     translated: true,

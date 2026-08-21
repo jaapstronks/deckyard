@@ -2,6 +2,7 @@ import { sseWrite } from '../../utils/sse.js';
 import { closeQuestionsClients } from '../questions.js';
 import { sessions } from './state.js';
 import { deletePersistedSession } from './db.js';
+import { fireAndForget } from '../../utils/fire-and-forget.js';
 
 /**
  * End a session: tell its SSE clients, stop its timers, drop it from this
@@ -34,6 +35,9 @@ export function closeSession(sessionId, reason = 'closed') {
     } catch {}
   }
   sessions.delete(sessionId);
-  deletePersistedSession(sessionId).catch(() => {});
+  fireAndForget(
+    deletePersistedSession(sessionId),
+    'live-session persisted-row delete',
+  );
   return true;
 }

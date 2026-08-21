@@ -29,6 +29,7 @@ import { sseWrite } from '../utils/sse.js';
 import { toStorageContext } from './scope.js';
 import { withDbGuard } from './utils/db-guard.js';
 import { UUID_RE } from '../utils/uuid.js';
+import { fireAndForget } from '../utils/fire-and-forget.js';
 
 // Note: questions are not auto-translated (explicit translation may be added later).
 
@@ -206,11 +207,12 @@ function broadcast(sessionId, event, data) {
  */
 function broadcastQuestions(scope, sessionId) {
   if (!sseSessions.has(String(sessionId || ''))) return;
-  listQuestions(scope, sessionId)
-    .then((questions) =>
+  fireAndForget(
+    listQuestions(scope, sessionId).then((questions) =>
       broadcast(sessionId, 'questions', { questions: questions || [] }),
-    )
-    .catch(() => {});
+    ),
+    'questions broadcast',
+  );
 }
 
 /**

@@ -24,6 +24,7 @@ import { sql } from 'kysely';
 
 import { notifyLiveSessionInteractionState } from './live-sessions/index.js';
 import { maybeFireInteractionWebhook } from '../utils/webhooks.js';
+import { fireAndForget } from '../utils/fire-and-forget.js';
 import { repoRootOf, toStorageContext } from './scope.js';
 import { withDbGuard } from './utils/db-guard.js';
 import {
@@ -263,11 +264,14 @@ export async function submitFeedback(
   const aggForBroadcast = await aggregateForDevice(touched, null);
   await maybeBroadcast(scope, sessionId, aggForBroadcast);
 
-  maybeFireInteractionWebhook(repoRootOf(scope), {
-    event: 'interaction.feedback_submitted',
-    sessionId,
-    interaction: aggForBroadcast,
-  }).catch(() => {});
+  fireAndForget(
+    maybeFireInteractionWebhook(repoRootOf(scope), {
+      event: 'interaction.feedback_submitted',
+      sessionId,
+      interaction: aggForBroadcast,
+    }),
+    'interaction.feedback_submitted webhook',
+  );
 
   return { ok: true, aggregate: aggForDevice };
 }

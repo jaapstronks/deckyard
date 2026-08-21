@@ -30,6 +30,7 @@ import { handleSlideLibrary } from './slide-library.js';
 import { handleSlides } from './slides.js';
 import { handleTranslation } from './translate.js';
 import { handleComments } from './comments.js';
+import { fireAndForget } from '../../../utils/fire-and-forget.js';
 
 // Generated deck JSON Schema (single source: the slide-type field registry).
 import { SLIDE_TYPES } from '../../../../shared/slide-types.js';
@@ -269,7 +270,7 @@ export const handlePublicApiV1 = withV1ErrorHandler(
     }
 
     // Track the request (don't await - fire and forget)
-    trackRequest(ctx).catch(() => {});
+    fireAndForget(trackRequest(ctx), 'v1 request tracking');
 
     // Route to feature handlers. Each module entry is wrapped in
     // withV1ErrorHandler, so a throw from any sub-handler answers the v1
