@@ -12,7 +12,10 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { fireAndForget } from '../server/utils/fire-and-forget.js';
+import {
+  fireAndForget,
+  ignoreRejection,
+} from '../server/utils/fire-and-forget.js';
 
 // Silence the guard's log.error so a deliberately-rejecting task doesn't spam
 // the test output, and restore it afterwards.
@@ -68,4 +71,22 @@ test("a task's own resolve handler still runs before the guard", async () => {
   );
   await flush();
   assert.equal(handled, true);
+});
+
+test('ignoreRejection swallows a rejection silently and without logging', async () => {
+  const seen = [];
+  const onUnhandled = (reason) => seen.push(reason);
+  const originalError = console.error;
+  const logged = [];
+  console.error = (...args) => logged.push(args);
+  process.on('unhandledRejection', onUnhandled);
+  try {
+    Promise.reject(new Error('expected')).catch(ignoreRejection);
+    await flush();
+  } finally {
+    process.off('unhandledRejection', onUnhandled);
+    console.error = originalError;
+  }
+  assert.deepEqual(seen, [], 'no unhandled rejection escaped');
+  assert.deepEqual(logged, [], 'the deliberate swallow logs nothing');
 });

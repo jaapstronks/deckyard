@@ -29,3 +29,20 @@ export function fireAndForget(promise, label = 'background task') {
     log.error(`${label} rejected:`, err);
   });
 }
+
+/**
+ * The deliberate opposite of {@link fireAndForget}: a rejection that is an
+ * expected outcome rather than a failure, dropped without a log line.
+ *
+ * Written as a named function so a swallowed rejection is a decision you can
+ * grep for (`ignoreRejection`) instead of an anonymous `.catch(() => {})` that
+ * looks the same whether it was reasoned about or not — which is why the
+ * ESLint gate bans the anonymous form under `server/**`.
+ *
+ * Use it only where the rejection is BOTH expected AND frequent enough that a
+ * log line would be noise (today: Puppeteer request-interception calls on a
+ * page that closed mid-flight). Anything else is a `fireAndForget` with a
+ * label.
+ * @returns {void}
+ */
+export function ignoreRejection() {}

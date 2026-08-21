@@ -179,6 +179,35 @@ spelling.
 each restricted shape, both legal look-alikes, and that the client is clean —
 so a plain `npm test` catches a reintroduction without the lint pass having run.
 
+### `no-restricted-syntax` on empty `.catch(() => {})` — no silent rejections
+
+Scoped to `server/**`, this rule rejects a `.catch()` whose callback body is
+empty. A background promise that drops its rejection into `() => {}` produces
+the one failure you cannot debug: no log line, no stack, nothing that says
+anything went wrong. It hid v1 request/AI-usage tracking failures and every
+live-session broadcast error (B106).
+
+Two accepted forms, both named:
+
+- [`fireAndForget(promise, label)`](../../server/utils/fire-and-forget.js) —
+  the default. Keeps an unhandled rejection from killing the process (Node's
+  `--unhandled-rejections=throw`) and leaves a labelled `log.error` behind.
+- `ignoreRejection` — the deliberate opposite, for a rejection that is an
+  expected _and_ frequent outcome where a log line would be noise (today: two
+  Puppeteer request-interception calls on a page that closed mid-flight).
+  Named rather than anonymous so every silent swallow is one `grep` away.
+
+The **allowlist is empty**, `server/config/**` included — it is exempt from the
+env-accessor rules in the same block, so the empty-catch selector is re-stated
+for it (flat-config rule entries replace per rule name rather than merge).
+
+The rule's honest boundary: it reads the AST, where a comment is not a
+statement, so `.catch(() => { /* why */ })` counts as empty. That is deliberate
+— a comment does not survive into a log. Its blind spot is the other direction:
+a bare `void somePromise()` with no `.catch` at all is not covered and is
+strictly worse (it can crash the process). ~50 of those remain under
+`server/`; they are a separate sweep.
+
 ### The suppressions baseline (burndown)
 
 The first run surfaced **397 `no-unused-vars`** and **10 `no-useless-escape`**
