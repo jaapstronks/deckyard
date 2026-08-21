@@ -387,7 +387,7 @@
   position: relative;
 }
 
-.ie-modal-backdrop {
+.ie-md-backdrop {
   position: absolute;
   inset: 0;
   z-index: 45;

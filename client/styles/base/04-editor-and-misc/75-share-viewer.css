@@ -399,14 +399,11 @@
 }
 
 /* Guest modal */
-.share-viewer-modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-overlay);
+/* Modifier on the one overlay class: position, centring and z-index come from
+   `.modal-backdrop`; only the tint, the roomier padding and the entrance
+   animation are the share viewer's own. */
+.modal-backdrop.share-viewer-backdrop {
   background: hsl(0 0% 0% / 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   padding: var(--ps-space-5);
   animation: share-viewer-overlay-in 0.15s ease-out;
 }

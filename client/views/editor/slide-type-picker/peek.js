@@ -15,11 +15,12 @@ import {
   renderSlideElement,
   cleanupSlideRuntimes,
 } from '../../../lib/slide-runtime/slide-render.js';
+import { createOverlay } from '../../../lib/dom/modal.js';
 
 /**
  * Open the peek lightbox for a slide type (or curated preset variant).
  * @param {string} type - slide type key
- * @param {HTMLElement} anchorBtn - button to restore focus to on close
+ * @param {HTMLElement} _anchorBtn - unused; the overlay restores focus itself
  * @param {object|null} preset - curated preset variant, or null for the base type
  * @param {object} ctx
  * @param {Function} ctx.h - DOM builder
@@ -33,7 +34,7 @@ import {
  * @param {Function} ctx.onPick - (type, preset) => insert the slide
  * @param {{close: (Function|null)}} ctx.peekRef - shared single-open handle
  */
-export function openTypePeek(type, anchorBtn, preset, ctx) {
+export function openTypePeek(type, _anchorBtn, preset, ctx) {
   const {
     h,
     tr,
@@ -48,18 +49,31 @@ export function openTypePeek(type, anchorBtn, preset, ctx) {
   } = ctx;
 
   peekRef.close?.();
-  const prevFocus = anchorBtn || document.activeElement;
   // For a preset tile, title on the variant; otherwise the base type.
   const peekTitle = preset ? presetLabelFor(preset) : labelFor(type);
 
-  const backdrop = h('div', {
-    class: 'modal-backdrop ps-modal-overlay ps-type-peek-overlay',
-  });
   const card = h('div', {
     class: 'modal ps-modal ps-type-peek',
     role: 'dialog',
     'aria-modal': 'true',
     'aria-label': peekTitle,
+  });
+  // Escape is handled below in the capture phase so it closes the peek without
+  // also closing the picker modal underneath; the overlay owns the rest.
+  const overlay = createOverlay(h, {
+    backdropClass: 'modal-backdrop ps-type-peek-overlay',
+    surface: card,
+    closeOnEscape: false,
+    onClose: () => {
+      window.removeEventListener('resize', updateScale);
+      document.removeEventListener('keydown', onKey, true);
+      try {
+        cleanupSlideRuntimes(bigThumb);
+      } catch {
+        // ignore
+      }
+      if (peekRef.close === close) peekRef.close = null;
+    },
   });
 
   const stage = h('div', { class: 'ps-type-peek-stage' });
@@ -111,8 +125,7 @@ export function openTypePeek(type, anchorBtn, preset, ctx) {
       h('div', { class: 'ps-type-peek-foot' }, [info, actions]),
     ]),
   );
-  backdrop.append(card);
-  document.body.append(backdrop);
+  overlay.show(document.body);
 
   // Scale the 1600x900 slide to fit the stage.
   const updateScale = () => {
@@ -134,26 +147,8 @@ export function openTypePeek(type, anchorBtn, preset, ctx) {
     close();
   };
   document.addEventListener('keydown', onKey, true);
-  backdrop.addEventListener('click', (e) => {
-    if (e.target === backdrop) close();
-  });
 
-  const close = () => {
-    document.removeEventListener('keydown', onKey, true);
-    window.removeEventListener('resize', updateScale);
-    try {
-      cleanupSlideRuntimes(bigThumb);
-    } catch {
-      // ignore
-    }
-    backdrop.remove();
-    if (peekRef.close === close) peekRef.close = null;
-    try {
-      prevFocus?.focus?.();
-    } catch {
-      // ignore
-    }
-  };
+  const close = () => overlay.close();
   peekRef.close = close;
   requestAnimationFrame(() => {
     try {

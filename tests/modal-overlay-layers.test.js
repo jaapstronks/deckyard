@@ -317,23 +317,44 @@ test('gate: whole-token boundary — longer class tokens are untouched', async (
   );
 });
 
-test('gate: burndown files are exempt from the overlay rule but keep the other client rules', async () => {
-  // The overlay literal deck-grid.js actually carries: exempt.
+// The burndown allowlist is read out of the config rather than hard-coded, so
+// this test follows the list down as migration PRs land and retires itself when
+// the list is empty (which is the point of the burndown).
+const eslintConfig = (await import('../eslint.config.js')).default;
+const burndownFiles = (
+  eslintConfig.find(
+    (block) =>
+      Array.isArray(block.files) &&
+      block.files.includes('client/lib/dom/modal.js') &&
+      block.rules?.['no-restricted-syntax'],
+  )?.files || []
+).filter((file) => file !== 'client/lib/dom/modal.js');
+
+test('gate: burndown files are exempt from the overlay rule but keep the other client rules', async (t) => {
+  if (!burndownFiles.length) {
+    t.skip(
+      'burndown allowlist is empty — every overlay goes through the helpers',
+    );
+    return;
+  }
+  const probeFile = burndownFiles[0];
+
+  // The overlay literal this file actually carries: exempt.
   const overlayMessages = await lintProbe(
     "export const probe = { class: 'modal-backdrop ps-modal-overlay' };\n",
-    'client/views/editor/deck-grid.js',
+    probeFile,
   );
   assert.equal(
     overlayMessages.filter((m) => OVERLAY_MESSAGE.test(m.message)).length,
     0,
-    'burndown file must not trip the overlay gate',
+    `burndown file ${probeFile} must not trip the overlay gate`,
   );
 
   // ...but the t()-fallback rule must still fire there (the allowlist block
   // re-states clientRestrictedSyntax; a drifted copy would silently un-gate).
   const tMessages = await lintProbe(
     "const t = (k) => k;\nexport const probe = t('only.key');\n",
-    'client/views/editor/deck-grid.js',
+    probeFile,
   );
   assert.ok(
     tMessages.some(

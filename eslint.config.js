@@ -133,12 +133,7 @@ const MODAL_OVERLAY_BURNDOWN = [
   'client/views/editor/publish-export/publish-modal.js',
   'client/views/editor/topbar/language-mode.js',
   'client/views/list/modals/creation-view/index.js',
-  // M4 — chrome-less overlays (lightbox, peek, guest-join)
-  'client/views/editor/deck-grid.js',
-  'client/views/editor/inline-edit/markdown-modal.js',
-  'client/views/editor/modals/preview-lightbox.js',
-  'client/views/editor/slide-type-picker/peek.js',
-  'client/views/share-viewer/guest-join.js',
+  // M4 — chrome-less overlays: migrated, allowlist empty.
 ];
 
 export default [

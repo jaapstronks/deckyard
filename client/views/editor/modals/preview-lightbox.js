@@ -1,3 +1,4 @@
+import { createOverlay } from '../../../lib/dom/modal.js';
 import { icon } from '../../../lib/dom/icons.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { createCommentMarkers } from '../comment-markers.js';
@@ -37,10 +38,33 @@ export function createPreviewLightbox({
     if (!slide) return;
 
     const unlockScroll = lockDocumentScroll?.();
-    const backdrop = h('div', { class: 'modal-backdrop ps-modal-overlay' });
     const modal = h('div', {
       class: 'modal ps-modal preview-lightbox-modal',
     });
+    // Escape is layered here (comment detail → pin mode → close), so the
+    // overlay only owns the backdrop, the focus trap and focus restore; the
+    // key handler below stays.
+    const overlay = createOverlay(h, {
+      surface: modal,
+      closeOnEscape: false,
+      onClose: () => {
+        try {
+          document.removeEventListener('keydown', onKey);
+          rerenderPreviewLightbox = null;
+          hidePopup();
+          hideCommentDetail();
+          commentMarkers?.destroy?.();
+          detachBigThumbScale();
+        } finally {
+          try {
+            unlockScroll?.();
+          } catch {
+            // ignore
+          }
+        }
+      },
+    });
+    const close = () => overlay.close();
 
     const header = h('div', { class: 'ps-modal-header' });
     const headerLeft = h('div', { class: 'ps-modal-header-left row' });
@@ -438,29 +462,6 @@ export function createPreviewLightbox({
       }
     };
 
-    const close = () => {
-      try {
-        document.removeEventListener('keydown', onKey);
-        rerenderPreviewLightbox = null;
-        hidePopup();
-        hideCommentDetail();
-        commentMarkers?.destroy?.();
-        detachBigThumbScale();
-        backdrop.remove();
-      } finally {
-        try {
-          unlockScroll?.();
-        } catch {
-          // ignore
-        }
-        openOverlayClosers?.delete(close);
-      }
-    };
-
-    backdrop.addEventListener('click', (e) => {
-      if (e.target === backdrop) close();
-    });
-
     // Close when clicking anywhere in the modal *except* the slide itself.
     // But don't close if in add comment mode or viewing a comment
     modal.addEventListener('click', (e) => {
@@ -476,9 +477,7 @@ export function createPreviewLightbox({
     });
 
     modal.append(header, body);
-    backdrop.append(modal);
-    root.append(backdrop);
-    openOverlayClosers?.add(close);
+    overlay.show(root, openOverlayClosers);
     document.addEventListener('keydown', onKey);
   };
 
