@@ -12,7 +12,8 @@
  *   selectFrom / select / selectAll / distinctOn / innerJoin / leftJoin /
  *   where / orderBy / limit / offset / clearSelect / execute / executeTakeFirst,
  *   insertInto / values / returningAll / onConflict (doNothing + doUpdateSet),
- *   updateTable / set, deleteFrom / returning, and `db.fn.count()`.
+ *   updateTable / set / returning / returningAll, deleteFrom / returning,
+ *   and `db.fn.count()`.
  *
  * Table references may carry an alias (`selectFrom('presentation_collaborators
  * as c').innerJoin('presentations as p', …)`, the "shared with me" query): the
@@ -830,6 +831,7 @@ export function createFakeDb(seed = {}) {
       const predicates = [];
       let updates = {};
       let returning = false;
+      let returningColumns = null;
 
       const builder = {
         // `.set()` also takes the callback form (`(eb) => ({ … })`) that the
@@ -860,6 +862,17 @@ export function createFakeDb(seed = {}) {
           returning = true;
           return builder;
         },
+        // `updateTable(...).returning('id').executeTakeFirst()` is how the
+        // storage layer tells "this update hit a row" from "the WHERE matched
+        // nothing" without a second read — the question state machine uses it
+        // to make `status = 'active'` a lock (questions.js). Without it the
+        // double answered with the update-count shape and the caller read a
+        // successful transition as a failed one.
+        returning(columns) {
+          returning = true;
+          returningColumns = Array.isArray(columns) ? columns : [columns];
+          return builder;
+        },
         async execute() {
           const targets = rowsOf(table).filter((row) =>
             predicates.every((p) => matches(row, p)),
@@ -872,9 +885,16 @@ export function createFakeDb(seed = {}) {
             assertUnique(table, { ...row, ...applied }, row);
             Object.assign(row, applied);
           }
-          return returning
-            ? targets.map((row) => structuredClone(row))
-            : [{ numUpdatedRows: BigInt(targets.length) }];
+          if (!returning) {
+            return [{ numUpdatedRows: BigInt(targets.length) }];
+          }
+          return targets.map((row) =>
+            returningColumns
+              ? Object.fromEntries(
+                  returningColumns.map((column) => [column, row[column]]),
+                )
+              : structuredClone(row),
+          );
         },
         async executeTakeFirst() {
           const [first] = await builder.execute();
