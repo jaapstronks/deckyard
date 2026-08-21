@@ -65,16 +65,12 @@ const {
 } = await import('../server/utils/presentation-authz.js');
 
 // `isSameOrganization` is the one decider the barrel does not re-export, and
-// the share-link deciders are not in the barrel at all (see the exhaustiveness
+// the share-link decider is not in the barrel at all (see the exhaustiveness
 // section at the foot of this file). Both are imported from their modules.
 const { isSameOrganization } =
   await import('../server/utils/presentation-authz/presentations.js');
-const {
-  canReadWithShareLink,
-  canCommentWithShareLink,
-  canWriteWithShareLink,
-  getShareLinkPermission,
-} = await import('../server/utils/presentation-authz/share-links.js');
+const { canCommentWithShareLink } =
+  await import('../server/utils/presentation-authz/share-links.js');
 
 // --- Actors -----------------------------------------------------------------
 // Owner and creator are deliberately different emails so a deck can distinguish
@@ -680,7 +676,8 @@ describe('sandbox overrides (SANDBOX_MODE on)', () => {
 // about an anonymous visitor holding a URL, or a guest who proved only an
 // address. A wrong answer here lands outside the organization, not inside it —
 // which is why they belong in this file, and why they were the last six without
-// a cell (B109).
+// a cell (B109). Three of those six were share-link deciders nothing called;
+// B112 deleted them rather than keep pinning surface, so four remain.
 
 /** A share link, as the validation layer hands it to a decider. */
 const shareLink = (permission, extra = {}) => ({
@@ -697,59 +694,44 @@ const HOUR = 60 * 60 * 1000;
 const past = () => new Date(Date.now() - HOUR).toISOString();
 const future = () => new Date(Date.now() + HOUR).toISOString();
 
-describe('share-link deciders — the permission ladder', () => {
-  it('read: every permission level a link can carry grants reading', () => {
-    for (const p of [VIEW, COMMENT, EDIT]) {
-      assert.equal(canReadWithShareLink(shareLink(p)), true, `permission=${p}`);
-    }
-  });
-  it('comment: comment and edit grant commenting, view does not', () => {
+describe('canCommentWithShareLink — the permission ladder', () => {
+  // The read and write rungs of this ladder used to live here too, as
+  // canRead/canWriteWithShareLink. They had no caller anywhere but this file,
+  // so B112 deleted them: a decider nothing asks is not a seam, it is surface.
+  // The rungs themselves are unchanged and still pinned — as canRead/canWrite
+  // in shared/constants/permissions.js, which is where the ladder lives.
+  it('comment and edit grant commenting, view does not', () => {
     assert.equal(canCommentWithShareLink(shareLink(COMMENT)), true);
     assert.equal(canCommentWithShareLink(shareLink(EDIT)), true);
     assert.equal(canCommentWithShareLink(shareLink(VIEW)), false);
   });
-  it('write: only edit grants writing', () => {
-    assert.equal(canWriteWithShareLink(shareLink(EDIT)), true);
-    assert.equal(canWriteWithShareLink(shareLink(COMMENT)), false);
-    assert.equal(canWriteWithShareLink(shareLink(VIEW)), false);
-  });
   it('an unknown permission string grants nothing', () => {
-    const bogus = shareLink('owner');
-    assert.equal(canReadWithShareLink(bogus), false);
-    assert.equal(canCommentWithShareLink(bogus), false);
-    assert.equal(canWriteWithShareLink(bogus), false);
-    assert.equal(getShareLinkPermission(bogus), null);
+    assert.equal(canCommentWithShareLink(shareLink('owner')), false);
   });
   it('no link at all grants nothing — the anonymous visitor with no URL', () => {
     for (const absent of [null, undefined, 'sl1', 42]) {
-      assert.equal(canReadWithShareLink(absent), false, String(absent));
       assert.equal(canCommentWithShareLink(absent), false, String(absent));
-      assert.equal(canWriteWithShareLink(absent), false, String(absent));
-      assert.equal(getShareLinkPermission(absent), null, String(absent));
-    }
-  });
-  it('getShareLinkPermission reports the level, it does not decide', () => {
-    for (const p of [VIEW, COMMENT, EDIT]) {
-      assert.equal(getShareLinkPermission(shareLink(p)), p);
     }
   });
 });
 
-describe('share-link deciders — what they deliberately do NOT check', () => {
-  // Pinned as a seam, not as an endorsement: these three read `permission` and
-  // nothing else, so a revoked or expired link still answers "yes" here. The
-  // validation layer that fetches the link is what refuses it — which means a
-  // future caller that skips validation gets no protection from this decider.
-  // canGuestComment below shows the other shape: it checks both itself.
+describe('canCommentWithShareLink — what it deliberately does NOT check', () => {
+  // Pinned as a seam, not as an endorsement: it reads `permission` and nothing
+  // else, so a revoked or expired link still answers "yes" here. The validation
+  // layer that fetches the link is what refuses it — which means a future caller
+  // that skips validation gets no protection from this decider. canGuestComment
+  // below shows the other shape: it checks both itself.
   it('a revoked link still passes the permission check', () => {
-    const revoked = shareLink(EDIT, { revokedAt: past() });
-    assert.equal(canReadWithShareLink(revoked), true);
-    assert.equal(canWriteWithShareLink(revoked), true);
+    assert.equal(
+      canCommentWithShareLink(shareLink(EDIT, { revokedAt: past() })),
+      true,
+    );
   });
   it('an expired link still passes the permission check', () => {
-    const expired = shareLink(EDIT, { expiresAt: past() });
-    assert.equal(canReadWithShareLink(expired), true);
-    assert.equal(canWriteWithShareLink(expired), true);
+    assert.equal(
+      canCommentWithShareLink(shareLink(EDIT, { expiresAt: past() })),
+      true,
+    );
   });
 });
 

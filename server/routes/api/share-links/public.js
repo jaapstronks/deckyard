@@ -37,6 +37,7 @@ import {
   requireJsonBody,
 } from '../../../utils/http.js';
 import { getTrimmedString } from '../../../utils/request-validators.js';
+import { canCommentWithShareLink } from '../../../utils/presentation-authz/share-links.js';
 import {
   buildRequestUrl,
   shouldUseSecureCookies,
@@ -173,7 +174,7 @@ async function handleShareGuestRequest({ repoRoot, req, res }, token) {
   }
 
   // Check permission allows commenting
-  if (!['comment', 'edit'].includes(validation.shareLink.permission)) {
+  if (!canCommentWithShareLink(validation.shareLink)) {
     forbidden(res, 'This share link does not allow commenting');
     return true;
   }
@@ -341,7 +342,7 @@ async function handleShareGuestMe({ req, res }, shareToken) {
     email: guestInfo.guest.email,
     name: guestInfo.guest.name,
     permission: guestInfo.shareLink.permission,
-    canComment: ['comment', 'edit'].includes(guestInfo.shareLink.permission),
+    canComment: canCommentWithShareLink(guestInfo.shareLink),
   });
   return true;
 }
