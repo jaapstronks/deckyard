@@ -125,9 +125,9 @@ export function createDeckGridView({
   };
 
   // Larger preview of one slide in a lightbox over the grid (same pattern as
-  // the picker's click-to-peek: capture-phase Escape so the host modal stays).
-  // Navigates through the whole deck without closing (‹ › buttons + arrow keys)
-  // and shows the optional peek note (the AI rationale) beside the preview.
+  // the picker's click-to-peek). Navigates through the whole deck without
+  // closing (‹ › buttons + arrow keys) and shows the optional peek note (the
+  // AI rationale) beside the preview.
   const openPeek = (index) => {
     closePeek?.();
     const slides = (typeof getSlides === 'function' ? getSlides() : []) || [];
@@ -139,13 +139,12 @@ export function createDeckGridView({
       role: 'dialog',
       'aria-modal': 'true',
     });
-    // Escape and the arrow keys are handled below in the capture phase, so the
-    // peek closes without also closing whatever it opened over; the overlay
-    // owns the backdrop, the focus trap and focus restore.
+    // The arrow keys are handled below in the capture phase, so they navigate
+    // the peek instead of reaching whatever it opened over. Escape belongs to
+    // the overlay, which only reacts on the topmost open overlay (#884).
     const overlay = createOverlay({
       backdropClass: 'modal-backdrop deck-grid-peek-overlay',
       surface: card,
-      closeOnEscape: false,
       onClose: () => {
         document.removeEventListener('keydown', onKey, true);
         window.removeEventListener('resize', updateScale);
@@ -292,11 +291,6 @@ export function createDeckGridView({
     window.addEventListener('resize', updateScale);
 
     const onKey = (e) => {
-      if (e.key === 'Escape') {
-        e.stopPropagation();
-        close();
-        return;
-      }
       if (canNav && e.key === 'ArrowLeft') {
         e.stopPropagation();
         show(peekIndex - 1);

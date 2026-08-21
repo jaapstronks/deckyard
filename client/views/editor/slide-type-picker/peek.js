@@ -57,15 +57,14 @@ export function openTypePeek(type, _anchorBtn, preset, ctx) {
     'aria-modal': 'true',
     'aria-label': peekTitle,
   });
-  // Escape is handled below in the capture phase so it closes the peek without
-  // also closing the picker modal underneath; the overlay owns the rest.
+  // The overlay owns everything here, Escape included: it only reacts on the
+  // topmost open overlay (#884), so one Escape peels the peek and leaves the
+  // picker modal underneath open.
   const overlay = createOverlay({
     backdropClass: 'modal-backdrop ps-type-peek-overlay',
     surface: card,
-    closeOnEscape: false,
     onClose: () => {
       window.removeEventListener('resize', updateScale);
-      document.removeEventListener('keydown', onKey, true);
       try {
         cleanupSlideRuntimes(bigThumb);
       } catch {
@@ -137,15 +136,6 @@ export function openTypePeek(type, _anchorBtn, preset, ctx) {
   };
   requestAnimationFrame(() => requestAnimationFrame(updateScale));
   window.addEventListener('resize', updateScale);
-
-  // Capture-phase Escape so it closes the peek without also closing the
-  // picker modal (whose keydown listener is registered earlier on document).
-  const onKey = (e) => {
-    if (e.key !== 'Escape') return;
-    e.stopPropagation();
-    close();
-  };
-  document.addEventListener('keydown', onKey, true);
 
   const close = () => overlay.close();
   peekRef.close = close;

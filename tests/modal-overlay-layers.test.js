@@ -383,3 +383,61 @@ test('gate: modal.js itself is the permanent home of the vocabulary', async () =
     `expected the t() fallback error, got: ${JSON.stringify(tMessages)}`,
   );
 });
+
+// --- A7.35: the peeks handed Escape back to the overlay ---------------------
+
+/**
+ * The two lightboxes that open *over* another overlay used to opt out of the
+ * overlay's Escape (`closeOnEscape: false`) and re-implement it in a
+ * capture-phase document listener that called `stopPropagation()`, because
+ * before #884 one Escape tore down both layers at once. The topmost check made
+ * that hand-rolled half dead weight: the overlay already peels one layer.
+ *
+ * Listed by name rather than matched by a pattern, so a third peek has to be
+ * added here consciously. The two legitimate `closeOnEscape: false` call sites
+ * are deliberately NOT covered by a blanket rule: `api-keys/create-modal.js`
+ * wants no Escape at all (the key is shown once), and `preview-lightbox.js`
+ * layers Escape within one overlay (comment detail → pin mode → close), which
+ * the overlay cannot express.
+ */
+const PEEKS_ON_TOP = [
+  'client/views/editor/slide-type-picker/peek.js',
+  'client/views/editor/deck-grid.js',
+];
+
+test('A7.35: the stacked peeks let the overlay own Escape', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const offenders = [];
+  for (const rel of PEEKS_ON_TOP) {
+    const src = await readFile(path.join(repoRoot, rel), 'utf8');
+    if (/closeOnEscape/.test(src))
+      offenders.push(`${rel}: opts out of the overlay Escape`);
+    if (/key\s*===?\s*'Escape'|key\s*!==?\s*'Escape'/.test(src))
+      offenders.push(`${rel}: hand-rolls an Escape branch`);
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    'createOverlay peels one layer per Escape (#884) — a peek over another ' +
+      'overlay needs neither closeOnEscape:false nor its own Escape branch:\n  ' +
+      offenders.join('\n  '),
+  );
+});
+
+test('A7.35: deck-grid keeps its capture-phase handler for arrow navigation', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const src = await readFile(
+    path.join(repoRoot, 'client/views/editor/deck-grid.js'),
+    'utf8',
+  );
+  assert.match(
+    src,
+    /ArrowLeft/,
+    'the peek still navigates the deck with the arrow keys',
+  );
+  assert.match(
+    src,
+    /addEventListener\('keydown', onKey, true\)/,
+    'and still does it in the capture phase, so the host modal never sees them',
+  );
+});
