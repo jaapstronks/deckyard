@@ -8,6 +8,7 @@ import {
   buildPrismKatexInitScript,
 } from '../utils/prism-katex.js';
 import { renderVideoSlidePngHtml } from '../utils/video-slide-html.js';
+import { buildDocumentHead } from '../utils/head-chain.js';
 import {
   loadExportCssBundle,
   buildExportStyleContent,
@@ -117,17 +118,17 @@ export async function buildSlidesPngExportHtml(
     cache: embedCache,
   });
 
-  return `<!doctype html>
-<html lang="${escapeHtml(docLang)}">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>${title} (PNG Export)</title>
-    ${buildPrismKatexCdnTags()}
-    <style id="pngExportCss">
-${buildExportStyleContent(css, [GRADIENT_OFF_CSS, PAGE_CSS])}
-    </style>
-  </head>
+  return `${buildDocumentHead({
+    lang: docLang,
+    title: `${titleRaw} (PNG Export)`,
+    head: [buildPrismKatexCdnTags()],
+    styles: [
+      {
+        id: 'pngExportCss',
+        css: buildExportStyleContent(css, [GRADIENT_OFF_CSS, PAGE_CSS]),
+      },
+    ],
+  })}
   <body>
     <div class="toolbar">
       <div style="flex:1">${title}</div>

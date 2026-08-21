@@ -22,12 +22,10 @@ import {
 } from '../../shared/slide-types/semantic-projection.js';
 import { renderUnresolvedSlideSemanticHtml } from '../../shared/slide-types/unresolved.js';
 import { filterForExport, filterForPublished } from '../utils/public-output.js';
-import {
-  resolveDocLangFromPresentation,
-  getDocDir,
-} from '../utils/doc-lang.js';
+import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { escapeHtml } from '../utils/html-utils.js';
 import { buildCssChain } from '../utils/css-chain.js';
+import { buildDocumentHead } from '../utils/head-chain.js';
 
 // Self-contained, reflow-first stylesheet. Relative units + a single readable
 // column; no fixed canvas dimensions, no absolute positioning. Degrades to
@@ -140,7 +138,6 @@ export function buildReaderHtml(
   const registry =
     slideTypes && typeof slideTypes === 'object' ? slideTypes : SLIDE_TYPES;
   const docLang = resolveDocLangFromPresentation(filtered);
-  const docDir = getDocDir(docLang);
 
   const title = str(filtered?.title) || 'Presentation';
   const description = str(filtered?.description);
@@ -186,18 +183,13 @@ export function buildReaderHtml(
     ? `<p class="reader-desc">${escapeHtml(description)}</p>`
     : '';
 
-  return `<!doctype html>
-<html lang="${escapeHtml(docLang)}" dir="${escapeHtml(docDir)}">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>${escapeHtml(title)}</title>
-    ${description ? `<meta name="description" content="${escapeHtml(description)}" />` : ''}
-    ${headHtml || ''}
-    <style>
-${buildCssChain(repoRoot, [READER_DOC_CSS])}
-    </style>
-  </head>
+  return `${buildDocumentHead({
+    lang: docLang,
+    title,
+    description,
+    head: [headHtml],
+    styles: [buildCssChain(repoRoot, [READER_DOC_CSS])],
+  })}
   <body>
     <header class="reader-header">
       <p class="reader-kicker">Presentation</p>

@@ -6,6 +6,7 @@ import { renderSlideToPngBuffer } from '../render/png.js';
 import { renderSlidesToPdfBuffer } from '../render/pdf.js';
 import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
 import { resolveDeckLang } from '../../shared/i18n-utils.js';
+import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 
 function safeScale(n) {
   const s = Number(n) || 2;
@@ -59,6 +60,7 @@ export async function buildHandoffZipBuffer(
   // `lang` above is the README's display label as the caller supplied it; the
   // render language is the deck's own, resolved the same way everywhere else.
   const deckLang = resolveDeckLang(filteredPres);
+  const docLang = resolveDocLangFromPresentation(filteredPres);
 
   const title = String(filteredPres?.title || 'presentation');
   const base = 'handoff';
@@ -94,6 +96,7 @@ export async function buildHandoffZipBuffer(
       theme,
       slideTypes,
       lang: deckLang,
+      docLang,
     });
     const name = `slide-${String(i + 1).padStart(2, '0')}.png`;
     pngFolder.file(name, buf);

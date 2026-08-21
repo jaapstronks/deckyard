@@ -1,16 +1,6 @@
 // Re-export from shared helpers for backwards compatibility
 export { escapeHtml } from '../../../shared/slide-types/helpers.js';
 
-export function detectLang(pres) {
-  const slides = Array.isArray(pres?.slides) ? pres.slides : [];
-  for (const s of slides) {
-    const lang = s?.content?.lang;
-    if (lang === 'en') return 'en';
-    if (lang === 'nl') return 'nl';
-  }
-  return 'nl';
-}
-
 export function slideA11yLabel(slide, idx, total) {
   const n = Number(idx || 0) + 1;
   const t = Math.max(0, Number(total || 0) || 0);

@@ -6,7 +6,6 @@ import {
 } from '../utils/puppeteer-browser.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import {
-  escapeHtml,
   toDataUrlIfLocal,
   embedImgSrcDataUrls,
   imageFieldKeysForType,
@@ -16,6 +15,7 @@ import {
   buildPrismKatexInitScriptTag,
 } from '../utils/prism-katex.js';
 import { renderVideoSlidePngHtml } from '../utils/video-slide-html.js';
+import { buildDocumentHead } from '../utils/head-chain.js';
 import {
   loadExportCssBundle,
   buildExportStyleContent,
@@ -50,7 +50,7 @@ const PNG_DOC_CSS = `
 export async function buildSlidePngHtml(
   repoRoot,
   slide,
-  { theme = null, slideTypes = null, lang = null } = {},
+  { theme = null, slideTypes = null, lang = null, docLang = '' } = {},
 ) {
   const css = await loadExportCssBundle(repoRoot, theme, null);
 
@@ -80,18 +80,19 @@ export async function buildSlidePngHtml(
     includeClient: true,
     embedRemote: true,
   });
-  const docLang = resolveDocLangFromPresentation({ slides: [cloned] });
+  // The deck's document language when the caller has one. A bare slide cannot
+  // see a deck-level `pres.lang`, so an RTL deck would raster left-to-right —
+  // the same gap the head chain closed for the document paths.
+  const resolvedDocLang =
+    docLang || resolveDocLangFromPresentation({ slides: [cloned] });
 
-  return `<!doctype html>
-<html lang="${escapeHtml(docLang)}">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    ${buildPrismKatexCdnTags()}
-    <style>
-${buildExportStyleContent(css, [PNG_DOC_CSS])}
-    </style>
-  </head>
+  // No <title>: this document exists to be screenshotted at 1600x900 and is
+  // never a tab, a bookmark or a share target.
+  return `${buildDocumentHead({
+    lang: resolvedDocLang,
+    head: [buildPrismKatexCdnTags()],
+    styles: [buildExportStyleContent(css, [PNG_DOC_CSS])],
+  })}
   <body>
     <div class="ps-theme">${css.wmHtml}${slideHtml}</div>
     ${buildPrismKatexInitScriptTag()}
@@ -102,7 +103,13 @@ ${buildExportStyleContent(css, [PNG_DOC_CSS])}
 export async function renderSlideToPngBuffer(
   repoRoot,
   slide,
-  { scale = 2, theme = null, slideTypes = null, lang = null } = {},
+  {
+    scale = 2,
+    theme = null,
+    slideTypes = null,
+    lang = null,
+    docLang = '',
+  } = {},
 ) {
   const s = Math.max(1, Math.min(3, Number(scale) || 2));
   const browser = await getPuppeteerBrowser({ featureName: 'PNG export' });
@@ -117,6 +124,7 @@ export async function renderSlideToPngBuffer(
       theme,
       slideTypes,
       lang,
+      docLang,
     });
     await page.setContent(html, { waitUntil: 'networkidle0' });
     try {

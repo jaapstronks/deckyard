@@ -197,15 +197,32 @@ test('every document builder under server/ is accounted for', async () => {
     'NON_RENDER_PATH_DOCUMENTS names modules that no longer build a ' +
       'document — drop the entries',
   );
+});
 
-  // Same in the other direction for the register itself.
-  const missingModules = RENDER_PATHS.map((p) => p.module)
-    .filter((m) => !emitters.includes(m))
-    .sort();
-  assert.deepEqual(
-    missingModules,
-    [],
-    'a registered render path names a module with no <!doctype html> in it ' +
-      '— the register points at the wrong file',
-  );
+test('no render path writes its own document opening', async (t) => {
+  // The other half of the gate above. A path may not be *missing* from the
+  // register, and a registered path may not hand-write the thing the register
+  // exists to make uniform: `<!doctype html>`, `<html lang>`, `<head>`. Since
+  // A7.32 all three come from server/utils/head-chain.js, which is why adding a
+  // CSP or an OG tag is one edit instead of twelve.
+  for (const module of [...new Set(RENDER_PATHS.map((p) => p.module))]) {
+    await t.test(module, async () => {
+      const src = (await readFile(path.join(repoRoot, module), 'utf8')).replace(
+        /\/\*[\s\S]*?\*\//g,
+        '',
+      );
+      assert.doesNotMatch(
+        src,
+        /<!doctype html/i,
+        'this render path writes its own doctype — build the opening with ' +
+          'buildDocumentHead() from server/utils/head-chain.js instead',
+      );
+      assert.match(
+        src,
+        /buildDocumentHead/,
+        'this render path builds a document but never calls ' +
+          'buildDocumentHead() — see server/utils/head-chain.js',
+      );
+    });
+  }
 });
