@@ -99,6 +99,11 @@
   }
 }
 
+/* `.ps-modal-header` / `.ps-modal-body` are modifiers on createModal's own
+   structure — the header row and `.modal-content` — not a second dialog
+   vocabulary. They exist because a ps-modal puts its padding on those two
+   parts instead of on `.modal`, so the header can stay put while the body
+   scrolls. */
 .ps-modal-header {
   display: flex;
   align-items: center;
@@ -124,6 +129,14 @@
   overflow: auto;
   flex: 1;
   min-height: 0;
+}
+
+/* `.modal-content` carries a 70vh cap and its own padding for plain dialogs;
+   inside a ps-modal the body owns the scroll, so both give way. */
+.modal-content.ps-modal-body {
+  padding: var(--ps-space-5);
+  gap: var(--ps-space-4);
+  max-height: none;
 }
 
 .slide-type-modal .ps-modal-body {
@@ -163,70 +176,8 @@
   color: hsl(var(--app-text-primary));
 }
 
-/* Simple modal close button (positioned top-right) */
-.modal-close {
-  position: absolute;
-  top: var(--ps-space-3);
-  right: var(--ps-space-3);
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border: none;
-  border-radius: var(--ps-radius-md);
-  background: transparent;
-  color: hsl(var(--app-text-secondary));
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.modal-close::before {
-  content: '\00d7'; /* × symbol */
-  font-size: 20px;
-  line-height: 1;
-}
-.modal-close:hover {
-  background: hsl(var(--app-bg-hover));
-  color: hsl(var(--app-text-primary));
-}
-.modal:has(.modal-close) {
-  position: relative;
-}
-
 .modal h2 {
   margin: 8px 0 10px;
-}
-
-/* Standard modal sections (for simpler modals) */
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-bottom: var(--ps-space-3);
-  margin-bottom: var(--ps-space-3);
-  border-bottom: 1px solid hsl(var(--app-border-subtle));
-}
-
-.modal-header h2 {
-  margin: 0;
-  font-size: var(--ps-text-lg);
-  font-weight: 700;
-}
-
-.modal-body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ps-space-4);
-}
-
-.modal-footer {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--ps-space-3);
-  padding-top: var(--ps-space-4);
-  margin-top: var(--ps-space-4);
-  border-top: 1px solid hsl(var(--app-border-subtle));
 }
 
 /* Form groups inside modals */
@@ -261,6 +212,11 @@
   min-height: 18px;
   opacity: 0.85;
   margin-top: 8px;
+}
+
+/* Stacked form inside a dialog: tighter than the 16px default of .stack. */
+.modal-form {
+  gap: var(--ps-space-3);
 }
 
 .modal-hint-lg {
@@ -370,14 +326,9 @@
   }
 
   /* Touch-friendly close button */
-  .modal-close,
   .ps-modal-close {
     width: 44px;
     height: 44px;
-  }
-
-  .modal-close::before {
-    font-size: 24px;
   }
 
   /* Ensure scrollable content */

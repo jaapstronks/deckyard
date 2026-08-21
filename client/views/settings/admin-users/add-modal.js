@@ -4,6 +4,7 @@
 
 import { api } from '../../../lib/api.js';
 import { h } from '../../../lib/dom.js';
+import { createModal, createModalActions } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 
@@ -12,11 +13,8 @@ import { toast } from '../../../lib/dom/toast.js';
  * @param {Function} onSuccess - Callback after successful addition
  */
 export function showAddModal(onSuccess) {
-  const overlay = h('div', { class: 'modal-overlay' });
-  const modal = h('div', { class: 'modal' });
-
-  const modalTitle = h('h3', {
-    text: t('admin.users.addModal.title', 'Add new user'),
+  const modal = createModal(h, {
+    title: t('admin.users.addModal.title', 'Add new user'),
   });
 
   const form = h('div', { class: 'stack modal-form' });
@@ -49,23 +47,53 @@ export function showAddModal(onSuccess) {
     }),
   ]);
 
-  const status = h('div', { class: 'help modal-status' });
+  const status = h('div', { class: 'help modal-status', role: 'status' });
 
-  const btnSubmit = h('button', {
-    class: 'btn btn-primary',
-    text: t('admin.users.addModal.submit', 'Add user'),
-    type: 'button',
+  const actions = createModalActions(h, {
+    cancelText: t('common.cancel', 'Cancel'),
+    actionText: t('admin.users.addModal.submit', 'Add user'),
+    onCancel: () => modal.requestClose(),
+    onAction: () => submit(),
   });
 
-  const btnCancel = h('button', {
-    class: 'btn btn-secondary',
-    text: t('common.cancel', 'Cancel'),
-    type: 'button',
+  form.append(
+    emailInput,
+    nameInput,
+    roleSelect,
+    sendInviteCheck,
+    status,
+    actions.wrap,
+  );
+  modal.append(form);
+  modal.show(document.body);
+
+  requestAnimationFrame(() => {
+    try {
+      emailInput.focus();
+    } catch {
+      // ignore
+    }
   });
 
-  let busy = false;
-  btnSubmit.onclick = async () => {
-    if (busy) return;
+  return modal;
+
+  /**
+   * Set the disabled state of every input in the form.
+   * @param {boolean} disabled - Whether the form is locked
+   */
+  function setDisabled(disabled) {
+    actions.setDisabled(disabled);
+    emailInput.disabled = disabled;
+    nameInput.disabled = disabled;
+    roleSelect.disabled = disabled;
+  }
+
+  /**
+   * Validate, create the user, and report the outcome.
+   * @returns {Promise<void>}
+   */
+  async function submit() {
+    if (modal.isBusy()) return;
 
     const email = emailInput.value.trim();
     const name = nameInput.value.trim();
@@ -77,14 +105,12 @@ export function showAddModal(onSuccess) {
         'admin.users.addModal.invalidEmail',
         'Please enter a valid email address.',
       );
+      emailInput.focus();
       return;
     }
 
-    busy = true;
-    btnSubmit.disabled = true;
-    emailInput.disabled = true;
-    nameInput.disabled = true;
-    roleSelect.disabled = true;
+    modal.setBusy(true);
+    setDisabled(true);
     status.textContent = t('admin.users.addModal.adding', 'Adding…');
 
     try {
@@ -107,7 +133,8 @@ export function showAddModal(onSuccess) {
           t('admin.users.addModal.success', 'User added successfully.'),
         );
       }
-      overlay.remove();
+      modal.setBusy(false);
+      modal.close();
       onSuccess();
     } catch (e) {
       status.textContent = e.message?.includes('exists')
@@ -116,35 +143,8 @@ export function showAddModal(onSuccess) {
             'A user with this email already exists.',
           )
         : t('admin.users.addModal.error', 'Failed to add user.');
-      busy = false;
-      btnSubmit.disabled = false;
-      emailInput.disabled = false;
-      nameInput.disabled = false;
-      roleSelect.disabled = false;
+      modal.setBusy(false);
+      setDisabled(false);
     }
-  };
-
-  btnCancel.onclick = () => overlay.remove();
-  overlay.onclick = (e) => {
-    if (e.target === overlay) overlay.remove();
-  };
-
-  const btnRow = h('div', {
-    class: 'row is-end',
-    style: 'gap: 8px; margin-top: 16px;',
-  });
-  btnRow.append(btnCancel, btnSubmit);
-
-  form.append(
-    emailInput,
-    nameInput,
-    roleSelect,
-    sendInviteCheck,
-    status,
-    btnRow,
-  );
-  modal.append(modalTitle, form);
-  overlay.append(modal);
-  document.body.append(overlay);
-  emailInput.focus();
+  }
 }

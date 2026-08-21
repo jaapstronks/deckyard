@@ -317,55 +317,6 @@ test('gate: whole-token boundary — longer class tokens are untouched', async (
   );
 });
 
-// The burndown allowlist is read out of the config rather than hard-coded, so
-// this test follows the list down as migration PRs land and retires itself when
-// the list is empty (which is the point of the burndown).
-const eslintConfig = (await import('../eslint.config.js')).default;
-const burndownFiles = (
-  eslintConfig.find(
-    (block) =>
-      Array.isArray(block.files) &&
-      block.files.includes('client/lib/dom/modal.js') &&
-      block.rules?.['no-restricted-syntax'],
-  )?.files || []
-).filter((file) => file !== 'client/lib/dom/modal.js');
-
-test('gate: burndown files are exempt from the overlay rule but keep the other client rules', async (t) => {
-  if (!burndownFiles.length) {
-    t.skip(
-      'burndown allowlist is empty — every overlay goes through the helpers',
-    );
-    return;
-  }
-  const probeFile = burndownFiles[0];
-
-  // The overlay literal this file actually carries: exempt.
-  const overlayMessages = await lintProbe(
-    "export const probe = { class: 'modal-backdrop ps-modal-overlay' };\n",
-    probeFile,
-  );
-  assert.equal(
-    overlayMessages.filter((m) => OVERLAY_MESSAGE.test(m.message)).length,
-    0,
-    `burndown file ${probeFile} must not trip the overlay gate`,
-  );
-
-  // ...but the t()-fallback rule must still fire there (the allowlist block
-  // re-states clientRestrictedSyntax; a drifted copy would silently un-gate).
-  const tMessages = await lintProbe(
-    "const t = (k) => k;\nexport const probe = t('only.key');\n",
-    probeFile,
-  );
-  assert.ok(
-    tMessages.some(
-      (m) =>
-        m.ruleId === 'no-restricted-syntax' &&
-        /English fallback/.test(m.message),
-    ),
-    `expected the t() fallback error, got: ${JSON.stringify(tMessages)}`,
-  );
-});
-
 test('gate: modal.js itself is the permanent home of the vocabulary', async () => {
   const messages = await lintProbe(
     "export const probe = { class: 'modal-backdrop' };\n",
@@ -374,5 +325,21 @@ test('gate: modal.js itself is the permanent home of the vocabulary', async () =
   assert.equal(
     messages.filter((m) => OVERLAY_MESSAGE.test(m.message)).length,
     0,
+  );
+
+  // ...exempt from the overlay rule only: the other client restrictions still
+  // fire there (the exemption block re-states clientRestrictedSyntax; a
+  // drifted copy would silently un-gate).
+  const tMessages = await lintProbe(
+    "const t = (k) => k;\nexport const probe = t('only.key');\n",
+    'client/lib/dom/modal.js',
+  );
+  assert.ok(
+    tMessages.some(
+      (m) =>
+        m.ruleId === 'no-restricted-syntax' &&
+        /English fallback/.test(m.message),
+    ),
+    `expected the t() fallback error, got: ${JSON.stringify(tMessages)}`,
   );
 });

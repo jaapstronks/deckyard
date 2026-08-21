@@ -1,3 +1,4 @@
+import { createModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { readPreferredLlmVendor } from '../../../lib/net/llm-vendor.js';
 
@@ -88,42 +89,23 @@ export async function openTranslateFieldModal({
     return;
   }
 
-  const backdrop = h('div', { class: 'modal-backdrop' });
-  const modal = h('div', {
-    class: 'modal translate-field-modal',
-  });
   const unlockScroll = lockDocumentScroll?.();
 
-  const close = () => {
-    try {
-      unlockScroll?.();
-    } catch {}
-    try {
-      backdrop.remove();
-    } finally {
-      openOverlayClosers?.delete(close);
-    }
-  };
-  backdrop.addEventListener('click', (e) => {
-    if (e.target === backdrop) close();
+  const modal = createModal(h, {
+    title:
+      targetLang === 'nl'
+        ? `Vul veld (vertaling) → NL`
+        : `Fill field (translation) → EN`,
+    modalClass: 'translate-field-modal',
+    onClose: () => {
+      try {
+        unlockScroll?.();
+      } catch {
+        // ignore
+      }
+    },
   });
-
-  const header = h('div', {
-    class: 'row spread',
-  });
-  header.append(
-    h('h2', {
-      text:
-        targetLang === 'nl'
-          ? `Vul veld (vertaling) → NL`
-          : `Fill field (translation) → EN`,
-    }),
-    h('button', {
-      class: 'btn btn-secondary',
-      text: t('common.close', 'Close'),
-      onclick: () => close(),
-    }),
-  );
+  const close = () => modal.close();
 
   const hint = h('div', {
     class: 'help modal-hint-lg',
@@ -190,8 +172,6 @@ export async function openTranslateFieldModal({
   });
   btnRow.append(btnApply);
 
-  modal.append(header, hint, card, btnRow);
-  backdrop.append(modal);
-  root.append(backdrop);
-  openOverlayClosers?.add(close);
+  modal.append(hint, card, btnRow);
+  modal.show(root, openOverlayClosers);
 }

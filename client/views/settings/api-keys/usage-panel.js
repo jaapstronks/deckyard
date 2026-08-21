@@ -3,6 +3,7 @@
  */
 
 import { h } from '../../../lib/dom.js';
+import { createModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { fetchKeyUsage } from './actions.js';
 
@@ -11,11 +12,11 @@ import { fetchKeyUsage } from './actions.js';
  * @param {Object} key - The API key
  */
 export async function showUsagePanel(key) {
-  const overlay = h('div', { class: 'modal-overlay' });
-  const modal = h('div', { class: 'modal api-key-usage-modal' });
-
-  const modalTitle = h('h3', {
-    text: t('settings.apiKeys.usageModal.title', 'API Key Usage'),
+  // Read-only panel: the header's Close is the only exit it needs, so there is
+  // no second Close button in a footer row.
+  const modal = createModal(h, {
+    title: t('settings.apiKeys.usageModal.title', 'API Key Usage'),
+    modalClass: 'api-key-usage-modal',
   });
 
   const keyInfo = h('div', { class: 'api-key-usage-info' }, [
@@ -30,23 +31,8 @@ export async function showUsagePanel(key) {
   const content = h('div', { class: 'api-key-usage-content' });
   content.append(loading);
 
-  const btnClose = h('button', {
-    class: 'btn btn-secondary',
-    text: t('common.close', 'Close'),
-    type: 'button',
-  });
-
-  btnClose.onclick = () => overlay.remove();
-  overlay.onclick = (e) => {
-    if (e.target === overlay) overlay.remove();
-  };
-
-  const btnRow = h('div', { class: 'row is-end', style: 'margin-top: 16px;' });
-  btnRow.append(btnClose);
-
-  modal.append(modalTitle, keyInfo, content, btnRow);
-  overlay.append(modal);
-  document.body.append(overlay);
+  modal.append(keyInfo, content);
+  modal.show(document.body);
 
   // Fetch and display usage data
   const result = await fetchKeyUsage(key.id, 30);

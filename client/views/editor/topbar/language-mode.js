@@ -13,7 +13,7 @@ import {
   getSupportedLangs,
   isSupportedLang,
 } from '../../../lib/format/i18n.js';
-import { confirmModal } from '../../../lib/dom/modal.js';
+import { confirmModal, createModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types.js';
 import { translatableKeysForType } from '../translatable.js';
@@ -391,8 +391,7 @@ export function createLanguageMode({
     }
 
     setTranslateBusy(true);
-    const backdrop = buildBusyModal();
-    root.append(backdrop);
+    const busyModal = openBusyModal();
     try {
       // fillMissing keeps every field the user already wrote by hand (top-level
       // AND per-item texts) and only translates the empty ones from `from`.
@@ -420,7 +419,7 @@ export function createLanguageMode({
       onStatus?.({ level: 'error', msg: errorMessage(e) });
     } finally {
       setTranslateBusy(false);
-      backdrop.remove();
+      busyModal.close();
     }
   };
 
@@ -476,8 +475,7 @@ export function createLanguageMode({
       msg: t('editor.translate.busy', 'Translating…'),
     });
     setTranslateBusy(true);
-    const backdrop = buildBusyModal();
-    root.append(backdrop);
+    const busyModal = openBusyModal();
     try {
       const resp = await api?.(`/api/presentations/${id}/translate`, {
         method: 'POST',
@@ -502,41 +500,26 @@ export function createLanguageMode({
       onStatus?.({ level: 'error', msg: errorMessage(e) });
     } finally {
       setTranslateBusy(false);
-      backdrop.remove();
+      busyModal.close();
     }
   };
 
   /** Dismissible "busy" modal shown while a translation request runs. */
-  function buildBusyModal() {
-    const backdrop = h('div', { class: 'modal-backdrop' });
-    const modal = h('div', { class: 'modal' });
+  function openBusyModal() {
+    const modal = createModal(h, {
+      title: t('editor.translate.modalTitle', 'Translating…'),
+    });
     modal.append(
-      h('button', {
-        class: 'modal-close',
-        type: 'button',
-        'aria-label': t('common.close', 'Close'),
-        onclick: () => backdrop.remove(),
-      }),
-      h('h2', { text: t('editor.translate.modalTitle', 'Translating…') }),
       h('div', {
-        class: 'help is-mt-8',
+        class: 'help',
         text: t(
           'editor.translate.modalHelp',
           'Please wait. You can keep using the editor once translation is done.',
         ),
       }),
     );
-    backdrop.append(modal);
-    const handleEscape = (e) => {
-      if (e.key === 'Escape') backdrop.remove();
-    };
-    document.addEventListener('keydown', handleEscape);
-    const origRemove = backdrop.remove.bind(backdrop);
-    backdrop.remove = () => {
-      document.removeEventListener('keydown', handleEscape);
-      origRemove();
-    };
-    return backdrop;
+    modal.show(root);
+    return modal;
   }
 
   // Post-switch invite popover: offer to AI-translate the missing texts of a

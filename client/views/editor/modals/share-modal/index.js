@@ -13,7 +13,7 @@
 
 import { t } from '../../../../lib/ui-i18n.js';
 import { isOwnerOrCreator } from '../../../../../shared/identity-match.js';
-import { createFocusTrap } from '../../../../lib/dom.js';
+import { createModal } from '../../../../lib/dom/modal.js';
 import { createSegmented } from '../../../../lib/dom/segmented.js';
 import { getFeatures } from '../../../../lib/state/features.js';
 import { createCollaboratorsSection } from './collaborators-section.js';
@@ -79,49 +79,18 @@ export function openShareModal({
 } = {}) {
   if (!root) return { close: () => {}, refresh: () => {} };
 
-  const modalId = `share-modal-${Date.now()}`;
-  const backdrop = h('div', { class: 'modal-backdrop' });
-  const modal = h('div', {
-    class: 'modal share-modal',
-    role: 'dialog',
-    'aria-modal': 'true',
-    'aria-labelledby': `${modalId}-title`,
-  });
-
   const unlockScroll = lockDocumentScroll();
-  let closed = false;
-  let detachFocusTrap = null;
   let collaborators = null;
 
-  const onKey = (e) => {
-    if (e.key === 'Escape') close();
-  };
-
-  const close = () => {
-    if (closed) return;
-    closed = true;
-    unlockScroll();
-    collaborators?.detach?.();
-    detachFocusTrap?.();
-    document.removeEventListener('keydown', onKey);
-    openOverlayClosers?.delete?.(close);
-    backdrop.remove();
-  };
-  openOverlayClosers?.add?.(close);
-
-  // Header
-  const header = h('div', { class: 'row spread' });
-  header.append(
-    h('h2', {
-      id: `${modalId}-title`,
-      text: t('share.modal.title', 'Share'),
-    }),
-    h('button', {
-      class: 'btn btn-secondary',
-      text: t('common.close', 'Close'),
-      onclick: () => close(),
-    }),
-  );
+  const modal = createModal(h, {
+    title: t('share.modal.title', 'Share'),
+    modalClass: 'share-modal',
+    onClose: () => {
+      unlockScroll();
+      collaborators?.detach?.();
+    },
+  });
+  const close = () => modal.close();
 
   // Owner check drives the transfer-ownership affordance in collaborators. It
   // is decided on the stable user id, like the server's — an address is not an
@@ -247,16 +216,8 @@ export function openShareModal({
     ...(publishPanel ? [publishPanel] : []),
   ]);
 
-  modal.append(header, tabs.el, body);
-  backdrop.append(modal);
-
-  backdrop.addEventListener('click', (e) => {
-    if (e.target === backdrop) close();
-  });
-  document.addEventListener('keydown', onKey);
-
-  root.append(backdrop);
-  detachFocusTrap = createFocusTrap(modal);
+  modal.append(tabs.el, body);
+  modal.show(root, openOverlayClosers);
 
   showTab(tabs.getValue());
 

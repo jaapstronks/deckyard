@@ -230,8 +230,8 @@
    KEY DISPLAY MODAL (shown once after creation)
    ============================================================ */
 
-.api-key-display-modal {
-  max-width: 520px !important;
+.modal.api-key-display-modal {
+  max-width: 520px;
 }
 
 .api-key-warning {
@@ -297,8 +297,8 @@
    USAGE MODAL
    ============================================================ */
 
-.api-key-usage-modal {
-  max-width: 560px !important;
+.modal.api-key-usage-modal {
+  max-width: 560px;
 }
 
 .api-key-usage-info {

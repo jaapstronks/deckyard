@@ -1,4 +1,4 @@
-import { icon } from '../../../lib/dom/icons.js';
+import { createModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { storage } from '../../../lib/storage.js';
 import { createImportSlidesTab } from './import-slides-tab.js';
@@ -36,25 +36,14 @@ export function openSlideTypeModal({
   let insertAfterSlideId = afterSlideId ?? null;
   const insertParentId = parentId ?? null;
 
-  const backdrop = h('div', { class: 'modal-backdrop ps-modal-overlay' });
-  const modal = h('div', { class: 'modal ps-modal slide-type-modal' });
-  const header = h('div', { class: 'ps-modal-header' });
-  const title = h('h2', {
-    text: t('editor.slideTypeModal.title', 'Insert slide'),
+  const modal = createModal(h, {
+    title: t('editor.slideTypeModal.title', 'Insert slide'),
+    modalClass: 'ps-modal slide-type-modal',
+    closeButton: 'icon',
   });
-  const closeBtn = h(
-    'button',
-    {
-      class: 'btn btn-secondary btn-icon ps-modal-close',
-      type: 'button',
-      'aria-label': t('common.close', 'Close'),
-      onclick: () => close(),
-    },
-    [icon('x', { size: 16 })],
-  );
-  header.append(title, closeBtn);
-
-  const body = h('div', { class: 'ps-modal-body' });
+  modal.header.classList.add('ps-modal-header');
+  modal.content.classList.add('ps-modal-body');
+  const close = () => modal.close();
 
   // Allow overriding insert position by slide number. Kept compact and inline
   // in the top toolbar (built below) rather than in a separate bordered card.
@@ -268,23 +257,6 @@ export function openSlideTypeModal({
     return btnLibrary || btnImport ? seg : null;
   })();
 
-  const onKey = (e) => {
-    if (e.key === 'Escape') close();
-  };
-
-  const close = () => {
-    try {
-      document.removeEventListener('keydown', onKey);
-      backdrop.remove();
-    } finally {
-      openOverlayClosers?.delete(close);
-    }
-  };
-
-  backdrop.addEventListener('click', (e) => {
-    if (e.target === backdrop) close();
-  });
-
   renderActive();
 
   // One compact toolbar: tabs on the left, insert-position + AI on the right.
@@ -293,10 +265,6 @@ export function openSlideTypeModal({
   toolbar.append(posGroup);
   if (aiBtn) toolbar.append(aiBtn);
 
-  body.append(toolbar, typesMount, libraryMount, importMount);
-  modal.append(header, body);
-  backdrop.append(modal);
-  root.append(backdrop);
-  openOverlayClosers?.add(close);
-  document.addEventListener('keydown', onKey);
+  modal.append(toolbar, typesMount, libraryMount, importMount);
+  modal.show(root, openOverlayClosers);
 }

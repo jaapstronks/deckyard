@@ -3,6 +3,7 @@
  */
 
 import { api } from '../../lib/api.js';
+import { createModal } from '../../lib/dom/modal.js';
 import { t } from '../../lib/ui-i18n.js';
 
 /**
@@ -27,28 +28,12 @@ export function createReportModal({
   let expiresInDays = 7;
   let isSubmitting = false;
 
-  // Modal backdrop
-  const backdrop = h('div', {
-    class: 'modal-backdrop analytics-report-modal-backdrop',
+  const modal = createModal(h, {
+    title: t('analytics.generateReport', 'Generate Report'),
+    modalClass: 'analytics-report-modal',
   });
-
-  // Modal content
-  const modal = h('div', { class: 'modal analytics-report-modal' });
-
-  // Header
-  const header = h('div', { class: 'modal-header' }, [
-    h('h2', { text: t('analytics.generateReport', 'Generate Report') }),
-  ]);
-
-  // Close button (uses standard modal-close styling)
-  const closeBtn = h('button', {
-    class: 'modal-close',
-    'aria-label': t('common.close', 'Close'),
-    onclick: () => close(),
-  });
-
-  // Body
-  const body = h('div', { class: 'modal-body' });
+  const body = modal.content;
+  const close = () => modal.close();
 
   // Report title
   const titleInput = h('input', {
@@ -185,32 +170,25 @@ export function createReportModal({
     onclick: () => submit(),
   });
 
-  const footer = h('div', { class: 'modal-footer' }, [
+  const footer = h('div', { class: 'row is-end modal-actions' }, [
     h('button', {
       class: 'btn btn-secondary',
       text: t('common.cancel', 'Cancel'),
-      onclick: () => close(),
+      onclick: () => modal.requestClose(),
     }),
     submitBtn,
   ]);
 
-  modal.append(closeBtn, header, body, footer);
-  backdrop.append(modal);
-  root.append(backdrop);
+  body.append(footer);
+  modal.show(root);
 
-  // Focus title input
-  titleInput.focus();
-
-  // Close on backdrop click
-  backdrop.addEventListener('click', (e) => {
-    if (e.target === backdrop) close();
+  requestAnimationFrame(() => {
+    try {
+      titleInput.focus();
+    } catch {
+      // ignore
+    }
   });
-
-  // Close on escape
-  const handleKeydown = (e) => {
-    if (e.key === 'Escape') close();
-  };
-  document.addEventListener('keydown', handleKeydown);
 
   async function submit() {
     if (isSubmitting) return;
@@ -335,10 +313,5 @@ export function createReportModal({
 
     submitBtn.textContent = t('common.done', 'Done');
     submitBtn.onclick = () => close();
-  }
-
-  function close() {
-    document.removeEventListener('keydown', handleKeydown);
-    backdrop.remove();
   }
 }

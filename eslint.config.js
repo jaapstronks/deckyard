@@ -106,36 +106,6 @@ const overlayClassRestriction = {
     'docs/developer/linting.md).',
 };
 
-// Burndown allowlist for the overlay gate: the files that still hand-roll an
-// overlay with one of the restricted class names. Shrinks per migration PR —
-// M2 (settings), M3 (editor dialogs), M4 (chrome-less overlays) — and never
-// grows: a new overlay goes through the helpers.
-const MODAL_OVERLAY_BURNDOWN = [
-  // M2 — settings `.modal-overlay` dialogs
-  'client/views/editor/modals/json-debug-modal.js',
-  'client/views/settings/admin-users/add-modal.js',
-  'client/views/settings/admin-users/edit-modal.js',
-  'client/views/settings/api-keys/create-modal.js',
-  'client/views/settings/api-keys/revoke-modal.js',
-  'client/views/settings/api-keys/usage-panel.js',
-  // M3 — editor dialogs (`modal-backdrop`, often + `ps-modal-overlay`)
-  'client/lib/slide-library/edit-modal.js',
-  'client/lib/slide-library/modals.js',
-  'client/views/analytics/report-modal.js',
-  'client/views/editor/image-library/picker.js',
-  'client/views/editor/imagekit-picker.js',
-  'client/views/editor/modals/follow-invite-suggest-modal.js',
-  'client/views/editor/modals/share-modal/index.js',
-  'client/views/editor/modals/slide-library-modal.js',
-  'client/views/editor/modals/slide-type-modal.js',
-  'client/views/editor/modals/translate-field-modal.js',
-  'client/views/editor/modals/translate-slide-modal.js',
-  'client/views/editor/publish-export/publish-modal.js',
-  'client/views/editor/topbar/language-mode.js',
-  'client/views/list/modals/creation-view/index.js',
-  // M4 — chrome-less overlays: migrated, allowlist empty.
-];
-
 export default [
   {
     // Vendored bundles, generated assets, data dirs, gitignored drop-ins, and
@@ -190,14 +160,12 @@ export default [
     },
   },
 
-  // A7.16 cluster 1 burndown: these files still hand-roll an overlay, so the
-  // overlay-class restriction is off for them until their migration PR
-  // (M2/M3/M4) folds them into createModal/createOverlay and deletes them
-  // from MODAL_OVERLAY_BURNDOWN. Every other client restriction stays in
-  // force (rule entries replace per rule name, hence the re-statement).
-  // modal.js itself is the vocabulary's permanent home.
+  // modal.js is the overlay vocabulary's one permanent home, so the
+  // overlay-class restriction is off there — and nowhere else. Every other
+  // client restriction stays in force (rule entries replace per rule name,
+  // hence the re-statement).
   {
-    files: ['client/lib/dom/modal.js', ...MODAL_OVERLAY_BURNDOWN],
+    files: ['client/lib/dom/modal.js'],
     rules: {
       'no-restricted-syntax': ['error', ...clientRestrictedSyntax],
     },
