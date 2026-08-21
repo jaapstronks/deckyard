@@ -1,5 +1,6 @@
 import { toast } from '../../lib/dom/toast.js';
 import { t } from '../../lib/ui-i18n.js';
+import { h } from '../../lib/dom.js';
 
 /**
  * The presenter's remote-control switch: flips the server-side gate that lets
@@ -10,12 +11,11 @@ import { t } from '../../lib/ui-i18n.js';
  * and the presenter view has no state to keep in sync with it.
  *
  * @param {object} opts
- * @param {typeof import('../../lib/dom.js').h} opts.h
  * @param {Function} opts.api
  * @param {() => (string|null)} opts.getSessionId
  * @returns {{ el: HTMLElement }}
  */
-export function createPresenterControlToggle({ h, api, getSessionId } = {}) {
+export function createPresenterControlToggle({ api, getSessionId } = {}) {
   const label = h('label', { class: 'presenter-toggle' });
   const input = h('input', { type: 'checkbox', checked: false });
   const text = h('span', {

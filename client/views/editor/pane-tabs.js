@@ -16,10 +16,10 @@
 import { t } from '../../lib/ui-i18n.js';
 import { icon } from '../../lib/dom/icons.js';
 import { createSegmented } from '../../lib/dom/segmented.js';
+import { h } from '../../lib/dom.js';
 
 /**
  * @param {Object} options
- * @param {Function} options.h - DOM helper
  * @param {Function} [options.onToggleInspector]
  * @param {Function} [options.onToggleComments]
  * @param {boolean} [options.compact] - Icon-only (no visible labels), for the
@@ -27,7 +27,6 @@ import { createSegmented } from '../../lib/dom/segmented.js';
  * @returns {{ el: HTMLElement, setState: Function, updateBadge: Function }}
  */
 export function createPaneTabs({
-  h,
   onToggleInspector,
   onToggleComments,
   compact = false,

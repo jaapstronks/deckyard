@@ -3,19 +3,18 @@ import {
   getLangDisplayName,
 } from '../../lib/format/lang-selector.js';
 import { t } from '../../lib/ui-i18n.js';
+import { h } from '../../lib/dom.js';
 
 /**
  * Create presenter language selector.
  * Uses toggle buttons for ≤2 languages, dropdown for >2.
  *
  * @param {Object} options
- * @param {Function} options.h - DOM element helper
  * @param {string} options.modeLang - Current language mode
  * @param {Function} options.getCurrentSlideId - Function to get current slide ID
  * @param {string[]} [options.supportedLangs] - Array of supported language codes
  */
 export function createPresenterLangSeg({
-  h,
   modeLang,
   getCurrentSlideId,
   supportedLangs = ['nl', 'en-GB'],

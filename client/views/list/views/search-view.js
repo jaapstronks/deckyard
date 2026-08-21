@@ -1,18 +1,17 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { createEmptyState } from '../../../lib/dom/empty-state.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * Create the search results view
  *
  * @param {object} opts
- * @param {Function} opts.h - DOM helper
  * @param {Function} opts.renderCard - Card renderer function
  * @param {Array} opts.allPresentations - All presentations to search through
  * @param {Function} opts.onClearSearch - Callback when search is cleared
  * @returns {object} - { el, search, clear, getQuery }
  */
 export function createSearchView({
-  h,
   renderCard,
   allPresentations,
   onClearSearch,
@@ -128,7 +127,6 @@ export function createSearchView({
     if (results.length === 0) {
       statusSlot.append(
         createEmptyState({
-          h,
           icon: 'search',
           title: t(
             'list.search.noResults',

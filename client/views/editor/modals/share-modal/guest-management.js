@@ -5,11 +5,11 @@
 
 import { t } from '../../../../lib/ui-i18n.js';
 import { confirmModal } from '../../../../lib/dom/modal.js';
+import { h } from '../../../../lib/dom.js';
 
 /**
  * Create a guest management section for a share link.
  * @param {Object} options
- * @param {Function} options.h - Hyperscript function
  * @param {Function} options.api - API call function
  * @param {string} options.presentationId - Presentation ID
  * @param {Object} options.link - Share link object
@@ -17,7 +17,6 @@ import { confirmModal } from '../../../../lib/dom/modal.js';
  * @returns {HTMLElement} Guest management section element
  */
 export function createGuestManagementSection({
-  h,
   api,
   presentationId,
   link,

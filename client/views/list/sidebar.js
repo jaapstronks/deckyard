@@ -5,6 +5,7 @@
 
 import { t } from '../../lib/ui-i18n.js';
 import { icon as uiIcon } from '../../lib/dom/icons.js';
+import { h } from '../../lib/dom.js';
 
 /**
  * Sidebar view configuration.
@@ -40,7 +41,6 @@ const SIDEBAR_VIEWS = [
 /**
  * Create the sidebar navigation component.
  * @param {Object} options
- * @param {Function} options.h - DOM helper function
  * @param {string} options.activeView - Currently active view key
  * @param {Function} options.onViewChange - Callback when view changes
  * @param {Function} options.onAction - Callback when an action item is clicked (key) => void
@@ -49,7 +49,6 @@ const SIDEBAR_VIEWS = [
  * @returns {Object} { el, updateBadge, setActiveView }
  */
 export function createSidebar({
-  h,
   activeView = 'home',
   onViewChange,
   onAction,
@@ -149,14 +148,12 @@ export function createSidebar({
 /**
  * Create the mobile bottom tab bar component.
  * @param {Object} options
- * @param {Function} options.h - DOM helper function
  * @param {string} options.activeView - Currently active view key
  * @param {Function} options.onViewChange - Callback when view changes
  * @param {number} options.unreadCount - Unread activity count
  * @returns {Object} { el, updateBadge, setActiveView }
  */
 export function createBottomTabs({
-  h,
   activeView = 'home',
   onViewChange,
   unreadCount = 0,

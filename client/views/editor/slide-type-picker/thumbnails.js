@@ -12,6 +12,7 @@ import { icon } from '../../../lib/dom/icons.js';
 import { renderSlideSchematic } from '../../../lib/slide-authoring/slide-schematic.js';
 import { schematicFor } from '../slide-type-schematics.js';
 import { SLIDE_CANVAS_WIDTH } from './data.js';
+import { h } from '../../../lib/dom.js';
 
 // Scale a rendered thumbnail's slide to exactly fill its (fluid) tile.
 export const applyThumbScale = (wrap) => {
@@ -23,7 +24,7 @@ export const applyThumbScale = (wrap) => {
 // Static mockup for the video slide: a poster frame with a play button. The
 // real video slide is never rendered in the picker (it would boot an embed
 // SDK), so this stands in for it.
-export const fillVideoThumb = (h, thumbWrap) => {
+export const fillVideoThumb = (thumbWrap) => {
   thumbWrap.classList.add('ps-type-thumb-video');
   const inner = h('div', { class: 'ps-type-video-mock' });
   const frame = h('div', { class: 'ps-type-video-frame' });
@@ -44,7 +45,7 @@ export const fillVideoThumb = (h, thumbWrap) => {
 // Static mockup for the embed slide: a small browser window. Rendering the
 // real slide with a sample URL would load a live external iframe in the
 // picker (once per visible thumbnail), so we mock the chrome instead.
-export const fillEmbedThumb = (h, thumbWrap) => {
+export const fillEmbedThumb = (thumbWrap) => {
   thumbWrap.classList.add('ps-type-thumb-embed');
   const win = h('div', { class: 'ps-type-embed-window' });
   const bar = h('div', { class: 'ps-type-embed-bar' });
@@ -64,7 +65,7 @@ export const fillEmbedThumb = (h, thumbWrap) => {
 // Fill a thumbnail wrapper with an abstract schematic diagram (view mode
 // 'schematic'). Cheap and synchronous — no live render, no observers needed.
 // Reads the type + optional preset id stashed on the wrap.
-export const fillSchematic = (thumbWrap, h, SLIDE_TYPES) => {
+export const fillSchematic = (thumbWrap, SLIDE_TYPES) => {
   const type = thumbWrap.dataset.thumbType;
   thumbWrap.classList.remove('is-pending');
   const spec = schematicFor(
@@ -72,5 +73,5 @@ export const fillSchematic = (thumbWrap, h, SLIDE_TYPES) => {
     thumbWrap.__presetId || null,
     SLIDE_TYPES?.[type],
   );
-  thumbWrap.append(renderSlideSchematic(h, spec || {}));
+  thumbWrap.append(renderSlideSchematic(spec || {}));
 };

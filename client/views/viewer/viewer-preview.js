@@ -10,9 +10,9 @@ import {
 } from '../../lib/slide-runtime/slide-render.js';
 import { t } from '../../lib/ui-i18n.js';
 import { createEmptyState } from '../../lib/dom/empty-state.js';
+import { h } from '../../lib/dom.js';
 
 export function createViewerPreview({
-  h,
   pres,
   theme,
   id,
@@ -95,7 +95,6 @@ export function createViewerPreview({
       slideWrap.innerHTML = '';
       slideWrap.append(
         createEmptyState({
-          h,
           icon: null,
           className: 'empty-state-fill',
           title: t('viewer.noSlides', 'No slides'),

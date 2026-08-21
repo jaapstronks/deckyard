@@ -1,4 +1,5 @@
 import { t } from '../../../lib/ui-i18n.js';
+import { h } from '../../../lib/dom.js';
 
 const imgSizeCache = new Map();
 
@@ -43,10 +44,10 @@ function nearestSnap(v, opts) {
 function measureContainerAspect(containerSelector) {
   const el = document.querySelector(containerSelector);
   if (!el) return null;
-  const w = el.clientWidth || 0;
-  const h = el.clientHeight || 0;
-  if (w <= 0 || h <= 0) return null;
-  return { w, h, aspect: w / h };
+  const width = el.clientWidth || 0;
+  const height = el.clientHeight || 0;
+  if (width <= 0 || height <= 0) return null;
+  return { width, height, aspect: width / height };
 }
 
 function containAxis({ imgAspect, containerAspect } = {}) {
@@ -60,7 +61,7 @@ function containAxis({ imgAspect, containerAspect } = {}) {
   return diff > 0 ? 'y' : 'x';
 }
 
-function segmented({ h, label, options, value, disabled, onChange }) {
+function segmented({ label, options, value, disabled, onChange }) {
   const group = h('div', {
     class: 'sb-segmented is-toggle',
     role: 'radiogroup',
@@ -99,7 +100,6 @@ function segmented({ h, label, options, value, disabled, onChange }) {
 }
 
 export function renderImagePositionPicker({
-  h,
   mode, // 'cover' | 'contain'
   imageUrl,
   containerSelector,
@@ -160,7 +160,6 @@ export function renderImagePositionPicker({
       ];
       mount.append(
         segmented({
-          h,
           label: t(
             'editor.imagePosition.horizontalAlignment',
             'Horizontal alignment',
@@ -185,7 +184,6 @@ export function renderImagePositionPicker({
       ];
       mount.append(
         segmented({
-          h,
           label: t(
             'editor.imagePosition.verticalAlignment',
             'Vertical alignment',

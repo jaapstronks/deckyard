@@ -7,11 +7,11 @@ import { t } from '../../lib/ui-i18n.js';
 import { renderCommentBodyNodes } from '../../lib/comments/comment-body.js';
 import { createRichCommentInput } from '../../lib/comments/comment-rich-input.js';
 import { createCommentLinkButton } from '../../lib/comments/comment-toolbar.js';
+import { h } from '../../lib/dom.js';
 
 /**
  * Creates comment rendering functions with bound dependencies.
  * @param {Object} deps - Dependencies
- * @param {Function} deps.h - DOM helper function
  * @param {Object} deps.filter - Current filter state
  * @param {Function} deps.getSlideNumber - Function to get slide number from ID
  *   (settings.aiAssistant.email, resolved to the default when unset) so
@@ -29,7 +29,6 @@ import { createCommentLinkButton } from '../../lib/comments/comment-toolbar.js';
  * @returns {Object} Rendering functions
  */
 export function createCommentRenderers({
-  h,
   filter,
   getSlideNumber,
   formatTime,
@@ -195,7 +194,7 @@ export function createCommentRenderers({
     // Body: mention markup renders as a styled chip; everything else stays
     // plain text (h() text nodes, so no escaping worries).
     const bodyEl = h('div', { class: 'comment-body' });
-    bodyEl.append(...renderCommentBodyNodes(comment.body, h));
+    bodyEl.append(...renderCommentBodyNodes(comment.body));
 
     // Actions row
     const actionsEl = h('div', { class: 'comment-actions' });

@@ -9,7 +9,6 @@ import { setupExportDropdown } from './export-dropdown.js';
 /**
  * Create and configure editor dropdowns (share + export)
  * @param {object} options
- * @param {Function} options.h - DOM helper
  * @param {Function} options.api - API client
  * @param {object} options.toast - Toast notifications
  * @param {Element} options.root - Root element
@@ -22,7 +21,6 @@ import { setupExportDropdown } from './export-dropdown.js';
  * @returns {object} Dropdown elements and cleanup
  */
 export function createEditorDropdowns({
-  h,
   api,
   toast,
   root,
@@ -36,7 +34,6 @@ export function createEditorDropdowns({
   // Export dropdown (file downloads)
   const { exportEl: topbarExport, detach: detachExportDropdown } =
     setupExportDropdown({
-      h,
       pres,
       id,
       root,
@@ -49,7 +46,6 @@ export function createEditorDropdowns({
     syncShareUi,
     detach: detachShareDropdown,
   } = setupShareDropdown({
-    h,
     api,
     toast,
     pres,

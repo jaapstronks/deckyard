@@ -9,11 +9,11 @@ import { isGuestCommentAuthor } from '../../lib/comments/comment-authz.js';
 import { renderCommentBodyNodes } from '../../lib/comments/comment-body.js';
 import { createRichCommentInput } from '../../lib/comments/comment-rich-input.js';
 import { createCommentLinkButton } from '../../lib/comments/comment-toolbar.js';
+import { h } from '../../lib/dom.js';
 
 /**
  * Create a comments section for the share viewer.
  * @param {Object} options - Configuration options
- * @param {Function} options.h - DOM helper function for creating elements
  * @param {Object} options.commentsApi - The comments API client
  * @param {Object} options.presentation - The presentation object
  * @param {Object} options.guestSession - The guest session object
@@ -21,7 +21,6 @@ import { createCommentLinkButton } from '../../lib/comments/comment-toolbar.js';
  * @returns {Object} Comments section API with el, toggle, isVisible, refresh
  */
 export function createShareViewerCommentsSection({
-  h,
   commentsApi,
   presentation,
   guestSession,
@@ -185,7 +184,7 @@ export function createShareViewerCommentsSection({
     // Body: mention markup renders as a styled chip; everything else stays
     // plain text. Shared with the editor thread (renderCommentBodyNodes).
     const bodyEl = h('div', { class: 'share-viewer-comment-body' });
-    bodyEl.append(...renderCommentBodyNodes(comment.body, h));
+    bodyEl.append(...renderCommentBodyNodes(comment.body));
 
     // Actions
     const actionsEl = h('div', { class: 'share-viewer-comment-actions' });

@@ -2,6 +2,7 @@ import { t } from '../../../lib/ui-i18n.js';
 import { createTagFilter, filterPresentationsByTags } from '../tag-filter.js';
 import { createNoPresentationsEmptyState } from '../../../lib/dom/empty-state.js';
 import { storage } from '../../../lib/storage.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * Unified "Presentations" view — one filterable surface that replaces the
@@ -13,7 +14,6 @@ import { storage } from '../../../lib/storage.js';
  * extra fetches, no per-view state to keep in sync.
  *
  * @param {object} opts
- * @param {Function} opts.h - DOM helper
  * @param {Function} opts.api - API client function
  * @param {Function} opts.renderCard - Card renderer function
  * @param {Array} opts.allByDate - All visible presentations, newest first
@@ -21,7 +21,6 @@ import { storage } from '../../../lib/storage.js';
  * @returns {object} - { el, list, tagFilter, refresh, addPresentation }
  */
 export function createPresentationsView({
-  h,
   api,
   renderCard,
   allByDate,
@@ -203,7 +202,7 @@ export function createPresentationsView({
           }),
         );
       } else if (typeof onCreate === 'function') {
-        list.append(createNoPresentationsEmptyState({ h, onCreate }));
+        list.append(createNoPresentationsEmptyState({ onCreate }));
       } else {
         list.append(
           h('div', {

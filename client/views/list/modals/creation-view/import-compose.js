@@ -20,14 +20,14 @@ import {
   handleImportMarkdown,
   handlePasteMarkdown,
 } from '../new-presentation/handlers.js';
+import { h } from '../../../../lib/dom.js';
 
 /**
  * @param {object} opts
- * @param {Function} opts.h - DOM builder.
  * @param {() => void} opts.onChange - re-run host syncUI.
  * @returns {object} import controller
  */
-export function createImportCompose({ h, onChange }) {
+export function createImportCompose({ onChange }) {
   const syncUI = () => onChange?.();
 
   // ===== State =====
@@ -203,7 +203,7 @@ export function createImportCompose({ h, onChange }) {
   // it does not receive the shared theme id; the two markdown flows do.
   //
   // @param {object} ctx
-  // @param {object} ctx.commonOpts - shared handler options (api, h, root, …).
+  // @param {object} ctx.commonOpts - shared handler options (api, root, …).
   // @param {string} ctx.langMode - deck language mode.
   // @param {string} ctx.themeId - selected theme id (markdown flows only).
   // @param {HTMLElement} ctx.btnAction - the footer Create button (warning shower).

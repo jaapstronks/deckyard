@@ -35,7 +35,6 @@ globalThis.Element = dom.window.Element;
 globalThis.CustomEvent = dom.window.CustomEvent;
 globalThis.requestAnimationFrame = (cb) => setTimeout(() => cb(0), 0);
 
-const { h } = await import('../client/lib/dom.js');
 const { createSlidesPanel } =
   await import('../client/views/editor/slides-panel.js');
 
@@ -43,7 +42,6 @@ const { createSlidesPanel } =
 function mount() {
   let rebuilds = 0;
   const panel = createSlidesPanel({
-    h,
     root: document.body,
     pres: { id: 'p1', slides: [{ id: 's1', type: 'text-slide', content: {} }] },
     user: {},

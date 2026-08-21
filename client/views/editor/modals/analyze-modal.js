@@ -8,9 +8,9 @@
 import { createPromiseModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { stripMentionMarkup } from '../../../../shared/comment-mentions.js';
+import { h } from '../../../lib/dom.js';
 
 export function openAnalyzeModal({
-  h,
   root,
   id,
   openOverlayClosers,

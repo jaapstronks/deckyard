@@ -13,11 +13,11 @@ export function createFieldRenderers(deps = {}) {
     fieldMarkdown,
     fieldCode,
     fieldSelect,
-  } = createBasicFields(deps);
+  } = createBasicFields();
   const { fieldEnum, fieldGrid } = createEnumFields({ ...deps, fieldSelect });
   const { fieldBackground } = createBackgroundFields(deps);
-  const { fieldColor } = createColorFields(deps);
-  const { fieldIconPicker } = createIconFields(deps);
+  const { fieldColor } = createColorFields();
+  const { fieldIconPicker } = createIconFields();
   const { fieldImage, fieldTitleBgImage, fieldImages } =
     createImageFields(deps);
 

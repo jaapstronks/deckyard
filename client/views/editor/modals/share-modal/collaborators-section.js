@@ -14,6 +14,7 @@ import {
   getPermissionLabel,
   getPermissionDescription,
 } from '../../../../lib/permission-labels.js';
+import { h } from '../../../../lib/dom.js';
 
 /** The four levels a workspace collaborator can hold, in ascending order. */
 const COLLABORATOR_PERMISSIONS = ['view', 'comment', 'edit', 'admin'];
@@ -21,7 +22,6 @@ const COLLABORATOR_PERMISSIONS = ['view', 'comment', 'edit', 'admin'];
 /**
  * Create the collaborators section component.
  * @param {Object} options
- * @param {Function} options.h - Hyperscript function
  * @param {Function} options.api - API call function
  * @param {string} options.presentationId - Presentation ID
  * @param {Object} options.pres - Presentation object
@@ -33,7 +33,6 @@ const COLLABORATOR_PERMISSIONS = ['view', 'comment', 'edit', 'admin'];
  * @returns {Object} { element, loadCollaborators, detach }
  */
 export function createCollaboratorsSection({
-  h,
   api,
   presentationId,
   pres,
@@ -364,7 +363,6 @@ export function createCollaboratorsSection({
         text: t('share.collaborators.remove', 'Remove'),
         onclick: async () => {
           const result = await openRevokeMessageModal({
-            h,
             root: modalRoot || document.body,
             context: REVOKE_CONTEXT.COLLABORATOR,
             targetName: collab.userName || collab.userEmail,

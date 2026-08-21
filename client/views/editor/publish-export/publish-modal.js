@@ -1,9 +1,9 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { confirmModal, createModal } from '../../../lib/dom/modal.js';
 import { toast } from '../../../lib/dom/toast.js';
+import { h } from '../../../lib/dom.js';
 
 export function openPublishModal({
-  h,
   api,
   pres,
   id,

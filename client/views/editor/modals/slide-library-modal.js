@@ -1,9 +1,9 @@
 import { createModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { createSlideLibraryPicker } from '../../../lib/slide-library/index.js';
+import { h } from '../../../lib/dom.js';
 
 export function openSlideLibraryModal({
-  h,
   root,
   api,
   pres,
@@ -36,7 +36,6 @@ export function openSlideLibraryModal({
   modal.show(root, openOverlayClosers);
 
   const picker = createSlideLibraryPicker({
-    h,
     api,
     themeId: pres?.theme || '',
     SLIDE_TYPES,

@@ -151,6 +151,34 @@ and `className =` assignment are not covered — there are none in the tree, and
 `.add('select')` is ambiguous with `Set#add`, so a rule there would buy false
 positives and no burndown.
 
+### `no-restricted-syntax` on the `h` parameter — one element factory
+
+Scoped to `client/**`, this rule rejects `h` arriving as a **parameter**, as a
+**destructured property** (in a parameter or out of a context object), or as a
+**shorthand `{ h }`** handed to someone else. The only accepted form is
+`import { h } from '…/lib/dom.js'`.
+
+`h()` has exactly one implementation —
+[`client/lib/dom.js`](../../client/lib/dom.js) — and no shadow implementations.
+Even so it used to reach the rest of the client in three spellings at once:
+positional (`createModal(h, opts)`, 153 call sites), an opt-in option with a
+default (`h = defaultH`, 7 helpers), and ~400 lines of `{ h, … }` pass-through
+across 167 of 503 client modules. Canonical form and injected form sat at
+parity, so every new modal-shaped helper had to pick which of the three to copy
+(A7.33).
+
+The **allowlist is empty**, `client/lib/dom.js` included: the factory is a
+function _declaration_ there, never a parameter. Whole-token by construction
+(`[name='h']` / `[key.name='h']`), so `hue`, `height` and `hsl` are untouched,
+and a geometry `{ h: rowH }` — a value property, not a shorthand — stays legal.
+Its honest boundary: a non-shorthand `{ h: someFactory }` is not covered, but
+no callee can accept it any more, so it would be dead data rather than a second
+spelling.
+
+[`tests/h-parameter-gate.test.js`](../../tests/h-parameter-gate.test.js) pins
+each restricted shape, both legal look-alikes, and that the client is clean —
+so a plain `npm test` catches a reintroduction without the lint pass having run.
+
 ### The suppressions baseline (burndown)
 
 The first run surfaced **397 `no-unused-vars`** and **10 `no-useless-escape`**

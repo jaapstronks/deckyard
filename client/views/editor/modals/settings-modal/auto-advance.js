@@ -3,6 +3,7 @@ import {
   calculateDeckTime,
   DEFAULT_ADVANCE_INTERVAL_SECONDS,
 } from '../../../../../shared/slide-timing.js';
+import { h } from '../../../../lib/dom.js';
 
 // Named presets: fill interval + loop + auto mode in one pick.
 // "Custom" is the catch-all for any values that don't match a preset.
@@ -18,7 +19,7 @@ const AUTO_ADVANCE_PRESETS = [
  * @param {object} ctx - { h, pres, markDirty, requestSave }
  * @returns {{ el: HTMLElement }}
  */
-export function buildAutoAdvanceSection({ h, pres, markDirty, requestSave }) {
+export function buildAutoAdvanceSection({ pres, markDirty, requestSave }) {
   pres.settings.autoAdvance =
     pres.settings.autoAdvance && typeof pres.settings.autoAdvance === 'object'
       ? pres.settings.autoAdvance

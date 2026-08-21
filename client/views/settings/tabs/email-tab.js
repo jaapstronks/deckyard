@@ -36,7 +36,7 @@ export function createEmailTab({ user }) {
 
   // Admin notifications section
   const notificationsCard = h('div', { class: 'stack editor-card' });
-  const adminNotifications = createAdminNotificationsSection({ h });
+  const adminNotifications = createAdminNotificationsSection();
   notificationsCard.append(...adminNotifications.elements);
 
   // Save button for notifications

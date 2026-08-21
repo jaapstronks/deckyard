@@ -9,11 +9,11 @@ import { formatRelativeTime } from '../../lib/format/format-time.js';
 import { formatDate } from '../../lib/format/analytics-format.js';
 import { api } from '../../lib/api.js';
 import { createEmptyState } from '../../lib/dom/empty-state.js';
+import { h } from '../../lib/dom.js';
 
 /**
  * Create leads tab component.
  * @param {Object} options
- * @param {Function} options.h - DOM helper
  * @param {string} options.presentationId - Presentation ID
  * @param {Array} [options.leads] - Initial leads data
  * @param {number} [options.total] - Total lead count
@@ -21,7 +21,6 @@ import { createEmptyState } from '../../lib/dom/empty-state.js';
  * @returns {Object} Tab API with el, update, and refresh methods
  */
 export function createLeadsTab({
-  h,
   presentationId,
   leads = [],
   total = 0,
@@ -69,7 +68,6 @@ export function createLeadsTab({
     if (currentLeads.length === 0) {
       container.append(
         createEmptyState({
-          h,
           icon: 'mail',
           title: t('analytics.noLeadsYet', 'No leads captured yet'),
           message: t(
@@ -113,7 +111,7 @@ export function createLeadsTab({
 
     // Lead rows
     currentLeads.forEach((lead) => {
-      const row = createLeadRow(h, lead);
+      const row = createLeadRow(lead);
       container.append(row);
     });
 
@@ -126,7 +124,7 @@ export function createLeadsTab({
     }
   }
 
-  function createLeadRow(h, lead) {
+  function createLeadRow(lead) {
     const row = h(
       'div',
       { class: 'analytics-lead-row', role: 'row', 'data-lead-id': lead.id },

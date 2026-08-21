@@ -6,6 +6,7 @@ import {
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createModal, createTextArea } from '../../../lib/dom/modal.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * The `table-grid` widget of the field-editor vocabulary
@@ -74,14 +75,17 @@ function colLabel(i) {
 
 function tableToMarkdown({ header, rows, colCount }) {
   const cols = Math.max(1, Math.min(MAX_COLS, Number(colCount) || 1));
-  const h = Array.from({ length: cols }, (_v, idx) => header?.[idx] || '');
+  const headCells = Array.from(
+    { length: cols },
+    (_v, idx) => header?.[idx] || '',
+  );
   const sep = Array.from({ length: cols }, () => '---');
   const body = (rows || []).map((r) =>
     Array.from({ length: cols }, (_v, idx) => r?.[idx] || ''),
   );
   const line = (cells) =>
     `| ${cells.map((c) => String(c || '').trim()).join(' | ')} |`;
-  return [line(h), line(sep), ...body.map(line)].join('\n');
+  return [line(headCells), line(sep), ...body.map(line)].join('\n');
 }
 
 // ─── structure mutations ─────────────────────────────────────────────────────
@@ -148,7 +152,6 @@ function deleteColumn(slide, cIdx) {
  * @param {{r: number, c: number}|null} [deps.focusCell] - cell to focus after build
  */
 function buildTableGrid({
-  h,
   slide,
   variant = 'compact',
   markDirty,
@@ -307,7 +310,6 @@ function buildTableGrid({
 // ─── "Edit table" modal ──────────────────────────────────────────────────────
 
 function openTableEditorModal({
-  h,
   slide,
   markDirty,
   rerenderEditor,
@@ -327,7 +329,6 @@ function openTableEditorModal({
     gridHost.innerHTML = '';
     gridHost.append(
       buildTableGrid({
-        h,
         slide,
         variant: 'roomy',
         markDirty,
@@ -355,7 +356,6 @@ function openTableEditorModal({
  * import/export block.
  *
  * @param {Object} deps
- * @param {Function} deps.h
  * @param {Object} deps.slide - the slide being edited (content is mutated)
  * @param {Function} [deps.markDirty]
  * @param {Function} [deps.rerenderEditor] - structure changes rebuild the form
@@ -363,7 +363,6 @@ function openTableEditorModal({
  * @returns {HTMLElement}
  */
 export function createTableGridEditor({
-  h,
   slide,
   markDirty,
   rerenderEditor,
@@ -385,7 +384,6 @@ export function createTableGridEditor({
       title: t('editor.table.editTip', 'Open a roomy table editor in a dialog'),
       onclick: () =>
         openTableEditorModal({
-          h,
           slide,
           markDirty,
           rerenderEditor,
@@ -397,7 +395,6 @@ export function createTableGridEditor({
 
   wrap.append(
     buildTableGrid({
-      h,
       slide,
       variant: 'compact',
       markDirty,

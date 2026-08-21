@@ -16,6 +16,7 @@ import {
   cleanupSlideRuntimes,
 } from '../../../lib/slide-runtime/slide-render.js';
 import { createOverlay } from '../../../lib/dom/modal.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * Open the peek lightbox for a slide type (or curated preset variant).
@@ -23,7 +24,6 @@ import { createOverlay } from '../../../lib/dom/modal.js';
  * @param {HTMLElement} _anchorBtn - unused; the overlay restores focus itself
  * @param {object|null} preset - curated preset variant, or null for the base type
  * @param {object} ctx
- * @param {Function} ctx.h - DOM builder
  * @param {Function} ctx.tr - translator (key, fallback)
  * @param {object|null} ctx.theme - resolved theme for the preview render
  * @param {Function} ctx.labelFor - (type) => resolved label
@@ -36,7 +36,6 @@ import { createOverlay } from '../../../lib/dom/modal.js';
  */
 export function openTypePeek(type, _anchorBtn, preset, ctx) {
   const {
-    h,
     tr,
     theme,
     labelFor,

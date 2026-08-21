@@ -13,10 +13,10 @@ import { openModal } from '../../../lib/dom/modal.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createDeckGridView } from '../deck-grid.js';
 import { createAiReviewAnnotations } from '../ai-review-annotations.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * @param {Object} options
- * @param {Function} options.h - DOM element factory
  * @param {HTMLElement} options.root - Element to append the modal to
  * @param {Function} options.api - API fetch function
  * @param {Object} options.theme - Resolved theme (truthful previews)
@@ -29,7 +29,6 @@ import { createAiReviewAnnotations } from '../ai-review-annotations.js';
  * @param {Function} [options.onDiscard] - () => void
  */
 export function openAiBatchReviewModal({
-  h,
   root,
   api,
   theme,
@@ -82,7 +81,6 @@ export function openAiBatchReviewModal({
   // AI layer under each tile (why + swappable alternatives), shared with the
   // whole-deck review. A swap replaces the slide in the local batch only.
   const { annotationFor } = createAiReviewAnnotations({
-    h,
     api,
     SLIDE_TYPES,
     lang: request?.lang,
@@ -100,7 +98,6 @@ export function openAiBatchReviewModal({
   });
 
   grid = createDeckGridView({
-    h,
     theme,
     SLIDE_TYPES,
     getSlides: () => slides,

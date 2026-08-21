@@ -34,7 +34,6 @@ export function createDashboardChart({ timeline, period }) {
   if (!timeline || !timeline.length) {
     card.append(
       createEmptyState({
-        h,
         icon: 'chart-column',
         title: t('dashboard.chart.empty', 'No view data for this period'),
       }),

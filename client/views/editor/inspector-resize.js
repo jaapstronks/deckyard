@@ -1,4 +1,5 @@
 import { storage } from '../../lib/storage.js';
+import { h } from '../../lib/dom.js';
 
 const MIN_WIDTH = 320;
 const BASE_MAX_WIDTH = 640;
@@ -20,12 +21,11 @@ const maxWidth = () =>
  * inspector width). The chosen width is persisted and applied via the
  * --inspector-width CSS variable. Mirrors createSlidesPanelResize.
  * @param {Object} options
- * @param {Function} options.h - DOM element factory
  * @param {HTMLElement} options.panelEl - The inspector panel element
  * @param {Function} options.isCollapsed - Whether the panel is collapsed
  * @returns {{ handleEl: HTMLElement, applyWidth: Function }}
  */
-export function createInspectorResize({ h, panelEl, isCollapsed }) {
+export function createInspectorResize({ panelEl, isCollapsed }) {
   const handleEl = h('div', { class: 'inspector-resize-handle' });
   let isResizing = false;
   let startX = 0;

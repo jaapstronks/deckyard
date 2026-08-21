@@ -28,6 +28,7 @@ import {
   resolveGroupAlign,
 } from '../../../../shared/slide-types/field-groups.js';
 import { getSlideType } from '../../../../shared/slide-types/registry.js';
+import { h } from '../../../lib/dom.js';
 
 // Alignment has no module-level default any more: it is per field, resolved by
 // fieldAlignAffordance(), because a type may centre in its own slide CSS.
@@ -60,7 +61,6 @@ function resolveThemeSwatchLabel(raw) {
  * rail doesn't inherit the slide's theme variables. Returns the field element.
  *
  * @param {Object} opts
- * @param {Function} opts.h
  * @param {Object} opts.slide
  * @param {string} opts.fieldKey
  * @param {Object|null} opts.theme - the loaded (normalized) theme
@@ -68,7 +68,7 @@ function resolveThemeSwatchLabel(raw) {
  * @param {Function} opts.commit
  * @returns {HTMLElement}
  */
-function renderColorControl({ h, slide, fieldKey, theme, current, commit }) {
+function renderColorControl({ slide, fieldKey, theme, current, commit }) {
   const themeVars =
     theme?.cssVars && typeof theme.cssVars === 'object' ? theme.cssVars : {};
   const themeSwatches = (
@@ -167,13 +167,12 @@ function renderColorControl({ h, slide, fieldKey, theme, current, commit }) {
  * than as unset.
  *
  * @param {Object} opts
- * @param {Function} opts.h
  * @param {{fieldEnum: Function}} opts.fieldRenderers
  * @param {Object|null} opts.group - the field group that owns the alignment
  * @param {Object} opts.slide
  * @returns {HTMLElement}
  */
-function renderGroupAlignHint({ h, fieldRenderers, group, slide }) {
+function renderGroupAlignHint({ fieldRenderers, group, slide }) {
   const values = groupAlignValues(group);
   const field = {
     key: 'textAlignGroup',
@@ -234,7 +233,6 @@ function setTextStyle(
  * Render the alignment + colour controls into `container`.
  *
  * @param {Object} opts
- * @param {Function} opts.h
  * @param {HTMLElement} opts.container - the element tab (elementForm)
  * @param {Object} opts.slide
  * @param {string} opts.fieldKey - the selected field's data-inline-field value
@@ -245,7 +243,6 @@ function setTextStyle(
  * @returns {boolean} whether anything was rendered
  */
 export function renderTextElementCard({
-  h,
   container,
   slide,
   fieldKey,
@@ -318,7 +315,6 @@ export function renderTextElementCard({
   const groupHintEl =
     alignOwner === 'group'
       ? renderGroupAlignHint({
-          h,
           fieldRenderers,
           group: getFieldGroup(getSlideType(slide?.type), groupId),
           slide,
@@ -326,7 +322,6 @@ export function renderTextElementCard({
       : null;
 
   const colorEl = renderColorControl({
-    h,
     slide,
     fieldKey,
     theme,

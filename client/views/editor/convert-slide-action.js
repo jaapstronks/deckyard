@@ -48,7 +48,6 @@ export function canConvertSlideTo(slide, toType, SLIDE_TYPES) {
  * Confirm (when fields would be lost) and convert `slide` to `toType` in
  * place, then refresh the editor.
  * @param {Object} opts
- * @param {Function} opts.h
  * @param {Object} opts.slide - the live slide object (mutated on success)
  * @param {string} opts.toType
  * @param {Object} opts.pres
@@ -57,7 +56,6 @@ export function canConvertSlideTo(slide, toType, SLIDE_TYPES) {
  * @returns {Promise<boolean>} true when the conversion was applied
  */
 export async function convertSlideWithConfirm({
-  h,
   slide,
   toType,
   pres,

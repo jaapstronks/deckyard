@@ -4,17 +4,17 @@
 
 import { t } from '../../lib/ui-i18n.js';
 import { icon as uiIcon } from '../../lib/dom/icons.js';
+import { h } from '../../lib/dom.js';
 
 /**
  * Render an error state.
- * @param {Function} h - DOM helper function
  * @param {HTMLElement} shell - Container element
  * @param {string} errorCode - Error code or message
  * @param {Object} [errorData] - Additional error data
  * @param {string} [errorData.message] - Custom revocation message
  * @param {string} [errorData.presentationTitle] - Presentation title
  */
-export function renderError(h, shell, errorCode, errorData = {}) {
+export function renderError(shell, errorCode, errorData = {}) {
   shell.innerHTML = '';
 
   const card = h('div', {

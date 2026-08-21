@@ -11,11 +11,11 @@
 import { t } from '../../../../lib/ui-i18n.js';
 import { confirmModal } from '../../../../lib/dom/modal.js';
 import { ifMatchRevision } from '../../if-match-revision.js';
+import { h } from '../../../../lib/dom.js';
 
 /**
  * Create the visibility section (private vs organization-wide; the UI says "Workspace").
  * @param {Object} options
- * @param {Function} options.h - Hyperscript function
  * @param {Function} options.api - API call function
  * @param {Object} options.pres - Presentation object
  * @param {string} options.id - Presentation ID
@@ -31,7 +31,6 @@ import { ifMatchRevision } from '../../if-match-revision.js';
  * @returns {{ element: HTMLElement, refresh: Function }}
  */
 export function createVisibilitySection({
-  h,
   api,
   pres,
   id,
@@ -129,7 +128,6 @@ export function createVisibilitySection({
       typeof pres?.description === 'string' && pres.description.trim();
     if (!hasDesc) {
       const r = await openDescriptionModal?.({
-        h,
         root: modalRoot,
         api,
         toast,

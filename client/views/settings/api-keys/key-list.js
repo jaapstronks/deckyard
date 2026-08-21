@@ -79,7 +79,6 @@ function getPermissionDescription(permission) {
  */
 function renderEmptyState() {
   return createEmptyState({
-    h,
     icon: null,
     className: 'empty-state-panel',
     title: t('settings.apiKeys.emptyTitle', 'No API keys yet'),

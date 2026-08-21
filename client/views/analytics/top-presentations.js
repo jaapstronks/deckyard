@@ -25,7 +25,6 @@ export function createTopPresentations({ presentations, nav }) {
   if (!presentations || !presentations.length) {
     card.append(
       createEmptyState({
-        h,
         icon: 'presentation',
         title: t('dashboard.top.empty', 'No presentations with views yet'),
       }),

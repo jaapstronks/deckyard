@@ -9,36 +9,36 @@ import {
   formatPercent,
 } from '../../lib/format/analytics-format.js';
 import { icon as uiIcon } from '../../lib/dom/icons.js';
+import { h } from '../../lib/dom.js';
 
 /**
  * Create an overview panel with metric cards.
  * @param {Object} options
- * @param {Function} options.h - DOM helper
  * @param {Object} options.data - Overview data
  * @returns {Object} Panel API with el and update method
  */
-export function createOverviewPanel({ h, data }) {
+export function createOverviewPanel({ data }) {
   const el = h('div', { class: 'analytics-section analytics-overview' });
 
   const cardsContainer = h('div', { class: 'analytics-overview-cards' });
 
   const cards = {
-    views: createCard(h, {
+    views: createCard({
       label: t('analytics.totalViews', 'Total Views'),
       value: formatCount(data?.totalViews || 0),
       icon: 'eye',
     }),
-    viewers: createCard(h, {
+    viewers: createCard({
       label: t('analytics.uniqueViewers', 'Unique Viewers'),
       value: formatCount(data?.uniqueViewers || 0),
       icon: 'user',
     }),
-    duration: createCard(h, {
+    duration: createCard({
       label: t('analytics.avgTime', 'Avg. Time'),
       value: formatDuration(data?.avgDurationSeconds || 0),
       icon: 'timer',
     }),
-    completion: createCard(h, {
+    completion: createCard({
       label: t('analytics.completionRate', 'Completion'),
       value: formatPercent(data?.completionRate || 0),
       icon: 'circle-check',
@@ -65,11 +65,10 @@ export function createOverviewPanel({ h, data }) {
 
 /**
  * Create a single metric card.
- * @param {Function} h - DOM helper
  * @param {Object} options
  * @returns {Object} Card API
  */
-function createCard(h, { label, value, icon }) {
+function createCard({ label, value, icon }) {
   const valueEl = h('div', { class: 'analytics-card-value', text: value });
 
   const el = h('div', { class: 'analytics-card' }, [

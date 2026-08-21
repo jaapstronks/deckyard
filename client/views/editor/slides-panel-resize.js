@@ -1,4 +1,5 @@
 import { storage } from '../../lib/storage.js';
+import { h } from '../../lib/dom.js';
 
 const MIN_WIDTH = 200;
 const BASE_MAX_WIDTH = 500;
@@ -15,12 +16,11 @@ const maxWidth = () =>
 /**
  * Creates a resize handle for the slides panel with drag-to-resize functionality.
  * @param {Object} options
- * @param {Function} options.h - DOM element factory
  * @param {HTMLElement} options.panelEl - The panel element to resize
  * @param {Function} options.isSlidesCollapsed - Function to check if slides are collapsed
  * @returns {{ handleEl: HTMLElement, applyWidth: Function }}
  */
-export function createSlidesPanelResize({ h, panelEl, isSlidesCollapsed }) {
+export function createSlidesPanelResize({ panelEl, isSlidesCollapsed }) {
   const handleEl = h('div', { class: 'slides-panel-resize-handle' });
   let isResizing = false;
   let startX = 0;

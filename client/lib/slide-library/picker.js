@@ -15,7 +15,7 @@ import { renderSlideElement } from '../slide-runtime/slide-render.js';
 import { loadThemeById } from '../theme/theme.js';
 import { cleanStr } from '../../../shared/string-utils.js';
 import { icon } from '../dom/icons.js';
-import { installDismissOnOutside } from '../dom.js';
+import { h, installDismissOnOutside } from '../dom.js';
 import { DEFAULT_THEME_ID } from '../../../shared/constants/themes.js';
 import {
   sortByPinnedThenName,
@@ -30,7 +30,6 @@ import { createSlideLibraryModals } from './modals.js';
 import { createSlideLibraryControls } from './controls.js';
 
 export function createSlideLibraryPicker({
-  h,
   api,
   themeId = '',
   theme: themeObj = null,
@@ -85,7 +84,6 @@ export function createSlideLibraryPicker({
 
   // Initialize modals
   const modals = createSlideLibraryModals({
-    h,
     api,
     state,
     apiOps,
@@ -98,7 +96,6 @@ export function createSlideLibraryPicker({
 
   // Initialize controls
   const controls = createSlideLibraryControls({
-    h,
     state,
     apiOps,
     SLIDE_TYPES,

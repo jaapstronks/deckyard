@@ -1,4 +1,5 @@
 import { t } from '../../../../lib/ui-i18n.js';
+import { h } from '../../../../lib/dom.js';
 
 const MAX_DESCRIPTION_CHARS = 600;
 
@@ -7,7 +8,7 @@ const MAX_DESCRIPTION_CHARS = 600;
  * @param {object} ctx - { h, pres, markDirty, requestSave }
  * @returns {{ el: HTMLElement }}
  */
-export function buildDescriptionSection({ h, pres, markDirty, requestSave }) {
+export function buildDescriptionSection({ pres, markDirty, requestSave }) {
   if (typeof pres.description !== 'string') pres.description = '';
 
   const wrap = h('div', { class: 'stack editor-callout' });

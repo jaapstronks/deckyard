@@ -7,7 +7,7 @@
  */
 import { debugLog } from '../../../lib/util/debug.js';
 import { cloneSlidesForInsert } from '../../../lib/slide-authoring/clone-slides.js';
-import { installDismissOnOutside } from '../../../lib/dom.js';
+import { h, installDismissOnOutside } from '../../../lib/dom.js';
 import { createDropdown } from '../../../lib/dom/dropdown.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
@@ -26,7 +26,6 @@ import { icon } from '../../../lib/dom/icons.js';
  * Build the header actions dropdown menu
  */
 export function buildHeaderActions({
-  h,
   slide,
   pres,
   api,
@@ -53,7 +52,6 @@ export function buildHeaderActions({
     if (!api) return;
     const suggestedName = slidePrimaryLabel(slide, SLIDE_TYPES) || '';
     openSaveToLibraryModal({
-      h,
       root: document.body,
       slide,
       pres,
@@ -131,7 +129,6 @@ export function buildHeaderActions({
             actionsDetails.open = false;
             convertDetails.open = false;
             await convertSlideWithConfirm({
-              h,
               slide,
               toType,
               pres,
@@ -347,7 +344,6 @@ export function buildHeaderActions({
             if (convertDetails) convertDetails.open = false;
             if (aiConvertDetails) aiConvertDetails.open = false;
             openJsonDebugModal({
-              h,
               root: document.body,
               slide,
               SLIDE_TYPES,

@@ -1,11 +1,11 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { icon as uiIcon } from '../../../lib/dom/icons.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * Build a section header with icon, title, count badge, and optional "View all" button
  *
  * @param {object} opts
- * @param {Function} opts.h - DOM helper function
  * @param {string} opts.icon - Lucide icon name
  * @param {string} opts.title - Section title
  * @param {number} opts.count - Number of items
@@ -16,7 +16,6 @@ import { icon as uiIcon } from '../../../lib/dom/icons.js';
  * @returns {HTMLElement}
  */
 export function buildSectionHeader({
-  h,
   icon,
   title,
   count,

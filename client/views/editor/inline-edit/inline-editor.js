@@ -53,10 +53,10 @@ import { slideLinkUrl } from './selection-toolbar-logic.js';
 import { createFocusDrag } from './focus-drag.js';
 import { createMarkdownEditModal } from './markdown-modal.js';
 import { createReorderDrag } from './reorder-drag.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * @param {Object} opts
- * @param {Function} opts.h - DOM helper
  * @param {Function} [opts.api] - fetch wrapper; used to upload dropped image files
  * @param {boolean} [opts.uploadsEnabled] - whether drag & drop image upload onto
  *   empty placeholders is available (mirrors `features.enableUploads`)
@@ -84,7 +84,6 @@ import { createReorderDrag } from './reorder-drag.js';
  *   only becomes visible if the settings pane is already open
  */
 export function createInlineEditor({
-  h,
   api,
   uploadsEnabled = false,
   thumb,
@@ -124,14 +123,13 @@ export function createInlineEditor({
 
   const mdHost = overlayHost || previewStage || thumb;
   // Reuse the canonical markdown editor (toolbar: bold/italic/link/heading/…).
-  const { fieldMarkdown: mdField } = createBasicFields({ h });
+  const { fieldMarkdown: mdField } = createBasicFields();
 
   // Affordances render on this unscaled overlay so they stay crisp / real-sized
   // instead of being shrunk with the transform-scaled slide. See overlay.js.
-  const overlay = createInlineOverlay({ h, thumb });
+  const overlay = createInlineOverlay({ thumb });
   // One-time "click any text to edit" hint, anchored to the slide canvas.
   const coach = createInlineCoachMark({
-    h,
     stage: previewStage || thumb.parentElement,
   });
   // field element -> its dashed outline box, for the stronger direct-hover.
@@ -146,7 +144,6 @@ export function createInlineEditor({
   // The richer-than-inline markdown editor lives in its own modal concern; the
   // inline editor routes to it (openMarkdownEdit) and reads isOpen().
   const mdModal = createMarkdownEditModal({
-    h,
     mdHost,
     mdField,
     getSlide,
@@ -400,7 +397,6 @@ export function createInlineEditor({
     // Selection-bound formatting (bold/italic/link/list) above the selection.
     // Rich edits only: plain-text fields cannot store formatting.
     editing.toolbar = createSelectionToolbar({
-      h,
       layer: overlay.layer,
       thumb,
       editEl: el,
@@ -1028,7 +1024,6 @@ export function createInlineEditor({
   // the first `begin()` call is a user drag via insertCardLevel (after the host
   // calls refresh()), so referencing it here is never a TDZ hazard.
   const reorderDrag = createReorderDrag({
-    h,
     thumb,
     overlay,
     onReorder: moveCard,

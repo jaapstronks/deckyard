@@ -353,7 +353,6 @@ export async function createEditorController({
       if (conflictModalShown) return;
       conflictModalShown = true;
       openConflictModalImpl({
-        h,
         root,
         pres,
         conflictDetails: err?.details || null,
@@ -397,7 +396,6 @@ export async function createEditorController({
               label: t('editor.save.remoteMergedSee', 'See what changed'),
               onClick: () =>
                 openRemoteMergeModal({
-                  h,
                   root,
                   slides: pres.slides,
                   changedSlideIds: mergedIds,
@@ -512,7 +510,6 @@ export async function createEditorController({
 
   const openTitleModal = ({ mode = 'edit' } = {}) =>
     openTitleModalImpl({
-      h,
       root,
       pres,
       setTitle: titleCtl.setTitle,
@@ -583,7 +580,6 @@ export async function createEditorController({
   // ============================================================
 
   const dropdowns = createEditorDropdowns({
-    h,
     api,
     toast,
     root,
@@ -604,7 +600,6 @@ export async function createEditorController({
   // renderers and slide-list element are bound later, so they're passed as
   // indirections read at call time.
   const { openDeckOverview, openAiDeckReview } = createDeckReviewOpeners({
-    h,
     root,
     api,
     pres,
@@ -625,7 +620,6 @@ export async function createEditorController({
   // ============================================================
 
   const topbarApi = createEditorTopbar({
-    h,
     api,
     toast,
     root,
@@ -667,7 +661,6 @@ export async function createEditorController({
     onOpenOverview: openDeckOverview,
     onAnalyze: () => {
       openAnalyzeModalImpl({
-        h,
         root,
         api,
         toast,
@@ -712,7 +705,6 @@ export async function createEditorController({
   // ============================================================
 
   const slidesPanel = createSlidesPanel({
-    h,
     root,
     pres,
     user,
@@ -786,7 +778,6 @@ export async function createEditorController({
   // position-bound the way comments are, and the strip fills the otherwise
   // empty space beneath the 16:9 stage. Mounted into the preview panel below.
   const notesStrip = createNotesStrip({
-    h,
     pres,
     getSelectedSlideId: () => selectedSlideId,
     markDirty,
@@ -800,7 +791,6 @@ export async function createEditorController({
     const slide = pres.slides.find((s) => s.id === selectedSlideId);
     if (!slide || slide.type !== 'chart-slide') return;
     openChartDataModal({
-      h,
       root,
       slide,
       theme,
@@ -816,7 +806,6 @@ export async function createEditorController({
 
   // Drag-to-resize handle on the left edge: trades inspector width for canvas width.
   const inspectorResize = createInspectorResize({
-    h,
     panelEl: inspectorPanel,
     isCollapsed: isInspectorCollapsed,
   });
@@ -834,14 +823,12 @@ export async function createEditorController({
   // (open on my pane = dismiss, else open/switch) live in the pane host;
   // dereferenced at click time (inspectorPanes is built above).
   const paneTabs = createPaneTabs({
-    h,
     onToggleInspector: () => inspectorPanes.toggle('settings'),
     onToggleComments: () => inspectorPanes.toggle('comments'),
   });
   setCommentsBadgeFn = paneTabs.updateBadge;
 
   const previewPanel = createPreviewPanel({
-    h,
     root,
     pres,
     theme,
@@ -913,7 +900,6 @@ export async function createEditorController({
       .then(({ initEditorPresence }) => {
         if (presenceClosed) return;
         presenceHandle = initEditorPresence({
-          h,
           pres,
           user,
           topbarEl: topbarApi.topbarEl,
@@ -999,7 +985,6 @@ export async function createEditorController({
   // ============================================================
 
   commentsPanel = createCommentsPanel({
-    h,
     api,
     toast,
     presentationId: id,
@@ -1061,7 +1046,7 @@ export async function createEditorController({
   // RESPONSIVE DRAWERS
   // ============================================================
 
-  const responsiveDrawers = createResponsiveDrawers({ h, root: shell });
+  const responsiveDrawers = createResponsiveDrawers({ root: shell });
   cleanup.register('responsiveDrawers', responsiveDrawers.detach);
 
   // ============================================================
@@ -1086,7 +1071,6 @@ export async function createEditorController({
   // ============================================================
 
   const slideListApi = setupSlideList({
-    h,
     slideListEl,
     pres,
     getSelectedSlideId: () => selectedSlideId,
@@ -1291,7 +1275,6 @@ export async function createEditorController({
   // this, so a new entry point can no longer silently forget a provider. See
   // image-pickers.js / media/picker-provider.js.
   const { openImagePicker } = await createImagePickers({
-    h,
     root,
     user,
     api,
@@ -1304,7 +1287,6 @@ export async function createEditorController({
   // ============================================================
 
   const fieldRenderers = createFieldRenderers({
-    h,
     api,
     user,
     features,
@@ -1327,7 +1309,6 @@ export async function createEditorController({
 
   const { openTranslateSlideModal, openTranslateFieldModal } =
     createTranslateOpeners({
-      h,
       api,
       id,
       pres,
@@ -1354,7 +1335,6 @@ export async function createEditorController({
   // Shared between the panel form and the bulk-edit modal (which runs a second
   // createRerenderEditor instance in contentOnly mode on its own mount).
   const editorFormDeps = {
-    h,
     editorMount,
     pres,
     SLIDE_TYPES,
@@ -1391,7 +1371,6 @@ export async function createEditorController({
   };
 
   const bulkEditModal = createBulkEditModal({
-    h,
     pres,
     getSelectedSlideId: () => selectedSlideId,
     setSelectedSlideId: setSelectedSlideIdWithLock,
@@ -1449,7 +1428,6 @@ export async function createEditorController({
   // ============================================================
 
   const inlineEditor = createInlineEditor({
-    h,
     api,
     // Drag & drop image upload onto empty canvas placeholders is gated on the
     // same flag as every other upload path (off in imagekit-only / sandbox /
@@ -1483,7 +1461,6 @@ export async function createEditorController({
       const slide = pres.slides.find((s) => s.id === selectedSlideId);
       if (!slide) return false;
       const ok = await convertSlideWithConfirm({
-        h,
         slide,
         toType,
         pres,

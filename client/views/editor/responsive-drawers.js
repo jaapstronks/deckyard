@@ -10,6 +10,7 @@
  */
 
 import { t } from '../../lib/ui-i18n.js';
+import { h } from '../../lib/dom.js';
 
 const DRAWER_BREAKPOINT = 820;
 
@@ -17,9 +18,8 @@ const DRAWER_BREAKPOINT = 820;
  * Creates the responsive slides-drawer toggle button and backdrop.
  * Call detach() when the editor unmounts.
  */
-export function createResponsiveDrawers({ h, root } = {}) {
-  if (!h || !root)
-    throw new Error('createResponsiveDrawers: h and root required');
+export function createResponsiveDrawers({ root } = {}) {
+  if (!root) throw new Error('createResponsiveDrawers: root required');
 
   const doc = document.documentElement;
 

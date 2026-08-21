@@ -13,6 +13,7 @@
 
 import { renderSlideElement } from '../../../lib/slide-runtime/slide-render.js';
 import { applyThumbScale } from './thumbnails.js';
+import { h } from '../../../lib/dom.js';
 
 const LIBRARY_STRIP_TOTAL = 8;
 
@@ -39,7 +40,6 @@ const splitLibraryBudget = (pCount, oCount) => {
  * off the async load and returns immediately.
  * @param {object} ctx
  * @param {HTMLElement} ctx.typesWrap - grid container to prepend the strip into
- * @param {Function} ctx.h - DOM builder
  * @param {Function} ctx.tr - translator (key, fallback)
  * @param {object|null} ctx.theme - resolved theme for thumbnail rendering
  * @param {Function} ctx.labelFor - (type) => resolved label
@@ -54,7 +54,6 @@ const splitLibraryBudget = (pCount, oCount) => {
 export function mountLibraryStrip(ctx) {
   const {
     typesWrap,
-    h,
     tr,
     theme,
     labelFor,

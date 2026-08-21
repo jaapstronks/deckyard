@@ -15,6 +15,7 @@ import { buildTagsSection } from './settings-modal/tags.js';
 import { buildAnalyticsSection } from './settings-modal/analytics.js';
 import { buildLiveVideoSection } from './settings-modal/live-video.js';
 import { buildAutoAdvanceSection } from './settings-modal/auto-advance.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * Open the deck settings modal. Assembles the form from independent section
@@ -24,7 +25,6 @@ import { buildAutoAdvanceSection } from './settings-modal/auto-advance.js';
  * unaffected by the internal split.
  */
 export function openSettingsModal({
-  h,
   root,
   pres,
   api,
@@ -43,13 +43,12 @@ export function openSettingsModal({
   pres.settings =
     pres.settings && typeof pres.settings === 'object' ? pres.settings : {};
 
-  const ctx = { h, pres, markDirty, requestSave };
+  const ctx = { pres, markDirty, requestSave };
 
   const qa = buildQaSection(ctx);
   const builds = buildBuildsSection(ctx);
   const revealStyle = buildRevealStyleSection(ctx);
   const theme = buildThemeSection({
-    h,
     root,
     pres,
     api,
@@ -66,7 +65,7 @@ export function openSettingsModal({
   const analytics = buildAnalyticsSection(ctx);
   const liveVideo = buildLiveVideoSection(ctx);
   const autoAdvance = buildAutoAdvanceSection(ctx);
-  const tags = buildTagsSection({ h, pres, api });
+  const tags = buildTagsSection({ pres, api });
   const description = buildDescriptionSection(ctx);
 
   // Two-column grid for compact settings on desktop

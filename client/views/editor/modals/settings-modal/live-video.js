@@ -4,6 +4,7 @@ import {
   POSITION_PRESET_LABELS,
   MOBILE_POSITIONS,
 } from '../../../../../shared/video-stream-providers.js';
+import { h } from '../../../../lib/dom.js';
 
 /**
  * Live Video overlay: enable toggle plus stream URL, provider detection, and
@@ -11,7 +12,7 @@ import {
  * @param {object} ctx - { h, pres, markDirty, requestSave }
  * @returns {{ el: HTMLElement }}
  */
-export function buildLiveVideoSection({ h, pres, markDirty, requestSave }) {
+export function buildLiveVideoSection({ pres, markDirty, requestSave }) {
   pres.settings.liveVideo =
     pres.settings.liveVideo && typeof pres.settings.liveVideo === 'object'
       ? pres.settings.liveVideo

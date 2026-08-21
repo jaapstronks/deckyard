@@ -4,18 +4,17 @@
  */
 
 import { icon as uiIcon } from '../../lib/dom/icons.js';
+import { h } from '../../lib/dom.js';
 
 /**
  * Creates comment markers component for a slide preview.
  * @param {Object} options - Configuration options
- * @param {Function} options.h - DOM helper function
  * @param {HTMLElement} options.containerEl - The container element to render markers into
  * @param {Function} options.onMarkerClick - Callback when clicking a marker (receives comment)
  * @param {Function} options.onPositionSelect - Callback when selecting a position to add comment (receives {x, y})
  * @returns {Object} Markers API
  */
 export function createCommentMarkers({
-  h,
   containerEl,
   onMarkerClick,
   onPositionSelect,

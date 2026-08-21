@@ -4,6 +4,7 @@ import { buildSectionHeader } from './section-header.js';
 import { renderSlideElement } from '../../../lib/slide-runtime/slide-render.js';
 import { attachThumbScale } from '../../../lib/slide-runtime/thumb-scale.js';
 import { loadThemeById } from '../../../lib/theme/theme.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * Sandbox "Example presentations" shelf.
@@ -16,13 +17,12 @@ import { loadThemeById } from '../../../lib/theme/theme.js';
  * Only mounted in sandbox mode; the caller gates on `features.sandboxMode`.
  *
  * @param {object} opts
- * @param {Function} opts.h - DOM helper
  * @param {Function} opts.api - API client
  * @param {Function} opts.nav - Navigation function
  * @param {Array<Function>} [opts.detachThumbs] - collector for thumb cleanup fns
  * @returns {HTMLElement} the section element (loads its content asynchronously)
  */
-export function createSandboxExamplesSection({ h, api, nav, detachThumbs }) {
+export function createSandboxExamplesSection({ api, nav, detachThumbs }) {
   const section = h('div', {
     class: 'presentation-section sandbox-examples',
     'data-section': 'sandbox-examples',
@@ -36,7 +36,6 @@ export function createSandboxExamplesSection({ h, api, nav, detachThumbs }) {
 
   section.append(
     buildSectionHeader({
-      h,
       icon: 'sparkles',
       title: t('sandbox.examples.title', 'Try an example'),
       badge: '',

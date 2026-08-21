@@ -3,13 +3,13 @@ import { t } from '../../../lib/ui-i18n.js';
 import { errorText } from '../../../lib/api.js';
 import { readFileAsDataUrl } from '../../../lib/util/file.js';
 import { formatFileSize } from '../../../lib/format/format.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * Creates the "Import from file" tab content for the slide-type-modal.
  * Supports PDF files - each page becomes an image-slide.
  *
  * @param {object} options
- * @param {function} options.h - Element creator function
  * @param {function} options.api - API caller function
  * @param {string} options.presentationId - Current presentation ID
  * @param {string|null} options.afterSlideId - Insert slides after this slide ID (null = end)
@@ -18,7 +18,6 @@ import { formatFileSize } from '../../../lib/format/format.js';
  * @returns {HTMLElement} The tab content element
  */
 export function createImportSlidesTab({
-  h,
   presentationId,
   afterSlideId,
   onComplete,

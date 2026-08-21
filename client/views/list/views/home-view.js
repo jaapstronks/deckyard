@@ -12,12 +12,12 @@ import { createCollectionsApi } from '../../../lib/slide-collections/api.js';
 import { renderSlideElement } from '../../../lib/slide-runtime/slide-render.js';
 import { attachThumbScale } from '../../../lib/slide-runtime/thumb-scale.js';
 import { loadThemeById } from '../../../lib/theme/theme.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * Create the home view with recent presentations and activity preview
  *
  * @param {object} opts
- * @param {Function} opts.h - DOM helper
  * @param {Function} opts.api - API client
  * @param {Function} opts.nav - Navigation function
  * @param {Function} opts.renderCard - Card renderer function
@@ -34,7 +34,6 @@ import { loadThemeById } from '../../../lib/theme/theme.js';
  * @returns {object} - { el, loadActivityPreview, loadPopularPresentations, loadBuildingBlocks }
  */
 export function createHomeView({
-  h,
   api,
   nav,
   renderCard,
@@ -53,7 +52,6 @@ export function createHomeView({
   // null for existing or dismissed users; persists progress so it survives the
   // jump from empty Home to populated Home.
   const onboardingChecklist = createOnboardingChecklist({
-    h,
     nav,
     allByDate,
     onCreate,
@@ -73,7 +71,6 @@ export function createHomeView({
       // and a shelf of ready-made examples they can open and edit.
       homeView.append(
         createEmptyState({
-          h,
           title: t('sandbox.home.title', 'Welcome to the Deckyard sandbox'),
           message: t(
             'sandbox.home.message',
@@ -82,13 +79,12 @@ export function createHomeView({
           primaryLabel: t('sandbox.home.create', 'New presentation'),
           onPrimary: onCreate,
         }),
-        createSandboxExamplesSection({ h, api, nav, detachThumbs }),
+        createSandboxExamplesSection({ api, nav, detachThumbs }),
       );
     } else {
       homeView.append(
         themePicker.el,
         createNoPresentationsEmptyState({
-          h,
           title: t(
             'list.home.firstRunTitle',
             'Welcome — let’s make your first deck',
@@ -118,7 +114,6 @@ export function createHomeView({
 
   homeRecentSection.append(
     buildSectionHeader({
-      h,
       icon: 'clock',
       title: t('list.home.recent', 'Recent'),
       count: allByDate.length,
@@ -156,7 +151,6 @@ export function createHomeView({
 
   homePopularSection.append(
     buildSectionHeader({
-      h,
       icon: 'flame',
       title: t('list.home.popular', 'Popular'),
       // Popular is a curated top-few strip, not a full list, so a count badge
@@ -181,7 +175,6 @@ export function createHomeView({
 
   homeActivitySection.append(
     buildSectionHeader({
-      h,
       icon: 'bell',
       title: t('list.home.activityFromOthers', 'From others'),
       count: unreadCount,
@@ -210,7 +203,6 @@ export function createHomeView({
 
   homeBlocksSection.append(
     buildSectionHeader({
-      h,
       icon: 'blocks',
       title: t('list.home.blocks.title', 'Building blocks'),
       badge: '',
@@ -221,7 +213,7 @@ export function createHomeView({
 
   // Greeting header — a real page anchor at the top of the column, replacing
   // the old orphan "Welcome" heading that labelled nothing.
-  const homeHeader = buildHomeHeader({ h, user, count: allByDate.length });
+  const homeHeader = buildHomeHeader({ user, count: allByDate.length });
 
   // Assemble home view as two columns under a full-width greeting header. The
   // main column carries the returning user's top job — resume recent work —
@@ -243,7 +235,7 @@ export function createHomeView({
     // / the activity rail — a throwaway guest has no library, no popularity
     // signal, and no collaborators, so those sections are permanently empty.
     homeMain.append(
-      createSandboxExamplesSection({ h, api, nav, detachThumbs }),
+      createSandboxExamplesSection({ api, nav, detachThumbs }),
       homeRecentSection,
     );
     homeColumns.append(homeMain);
@@ -326,7 +318,7 @@ export function createHomeView({
       } else {
         for (const bundle of bundles) {
           homeActivityList.append(
-            renderActivityPreviewItem(h, nav, bundle, detachThumbs),
+            renderActivityPreviewItem(nav, bundle, detachThumbs),
           );
         }
         homeActivitySection.append(homeActivityList);
@@ -397,20 +389,15 @@ export function createHomeView({
       // Reserve most of the shelf for collections; fill the rest with slides.
       const slideBudget = Math.max(2, 6 - shownCols.length);
 
-      homeBlocksList.append(renderBlankBlockCard(h, onCreate));
+      homeBlocksList.append(renderBlankBlockCard(onCreate));
       for (const col of shownCols) {
         homeBlocksList.append(
-          renderCollectionBlockCard(
-            h,
-            col,
-            onComposeFrom,
-            isNewCollection(col),
-          ),
+          renderCollectionBlockCard(col, onComposeFrom, isNewCollection(col)),
         );
       }
       for (const item of organizationSlides.slice(0, slideBudget)) {
         homeBlocksList.append(
-          renderSlideBlockCard(h, item, onComposeFrom, isNewSlide(item)),
+          renderSlideBlockCard(item, onComposeFrom, isNewSlide(item)),
         );
       }
       homeBlocksSection.append(homeBlocksList);
@@ -469,10 +456,9 @@ function blockTimestamp(item) {
 
 /**
  * Blank-start card — always present so Home keeps a visible "create" path.
- * @param {Function} h
  * @param {Function} [onCreate]
  */
-function renderBlankBlockCard(h, onCreate) {
+function renderBlankBlockCard(onCreate) {
   return h(
     'button',
     {
@@ -500,12 +486,11 @@ function renderBlankBlockCard(h, onCreate) {
 
 /**
  * Collection card — clicking opens the creation view seeded from the collection.
- * @param {Function} h
  * @param {object} col - collection ({ id, shelf, name, slideIds, slideCount })
  * @param {Function} [onComposeFrom]
  * @param {boolean} [isNew] - show a "new to you" badge (shared item, never used).
  */
-function renderCollectionBlockCard(h, col, onComposeFrom, isNew = false) {
+function renderCollectionBlockCard(col, onComposeFrom, isNew = false) {
   const count =
     col.slideCount ?? (Array.isArray(col.slideIds) ? col.slideIds.length : 0);
   const meta = h('span', { class: 'home-block-meta' });
@@ -545,19 +530,18 @@ function renderCollectionBlockCard(h, col, onComposeFrom, isNew = false) {
       meta,
     ],
   );
-  if (isNew) card.append(renderNewToYouBadge(h));
+  if (isNew) card.append(renderNewToYouBadge());
   return card;
 }
 
 /**
  * Reusable-slide card — clicking opens the creation view seeded with that one
  * slide (the compose tray, ready to add more or create as-is).
- * @param {Function} h
  * @param {object} item - library item ({ id, name, slideType })
  * @param {Function} [onComposeFrom]
  * @param {boolean} [isNew] - show a "new to you" badge (shared item, never used).
  */
-function renderSlideBlockCard(h, item, onComposeFrom, isNew = false) {
+function renderSlideBlockCard(item, onComposeFrom, isNew = false) {
   const card = h(
     'button',
     {
@@ -579,17 +563,16 @@ function renderSlideBlockCard(h, item, onComposeFrom, isNew = false) {
       }),
     ],
   );
-  if (isNew) card.append(renderNewToYouBadge(h));
+  if (isNew) card.append(renderNewToYouBadge());
   return card;
 }
 
 /**
  * The "new to you" badge — a subtle corner flag on a shared building block the
  * current user has never started a deck from.
- * @param {Function} h
  * @returns {HTMLElement}
  */
-function renderNewToYouBadge(h) {
+function renderNewToYouBadge() {
   return h('span', {
     class: 'home-block-new',
     text: t('list.home.blocks.newToYou', 'New to you'),
@@ -602,12 +585,11 @@ function renderNewToYouBadge(h) {
  * guests or when the user record has no name/email.
  *
  * @param {object} opts
- * @param {Function} opts.h - DOM helper
  * @param {object} [opts.user] - Current user
  * @param {number} opts.count - Total presentation count
  * @returns {HTMLElement}
  */
-function buildHomeHeader({ h, user, count }) {
+function buildHomeHeader({ user, count }) {
   const rawName = user?.name || displayNameFromEmail(user?.email || '') || '';
   const firstName = rawName.trim().split(/\s+/)[0] || '';
 
@@ -668,12 +650,11 @@ function bundleActivityEvents(events) {
 /**
  * Render a single (possibly bundled) activity preview item.
  *
- * @param {Function} h
  * @param {Function} nav
  * @param {{event: object, count: number}} bundle
  * @param {Array<Function>} [detachThumbs] - collector for thumb cleanup fns
  */
-function renderActivityPreviewItem(h, nav, { event, count }, detachThumbs) {
+function renderActivityPreviewItem(nav, { event, count }, detachThumbs) {
   const item = h('div', {
     class: 'home-activity-item',
     onclick: () => {
@@ -752,7 +733,7 @@ function renderActivityPreviewItem(h, nav, { event, count }, detachThumbs) {
   // Preview thumb of the commented slide, when the server could resolve it.
   // Rendered client-side with the same slide renderer the cards use — no
   // server image render, no caching.
-  const thumb = renderActivityThumb(h, event, detachThumbs);
+  const thumb = renderActivityThumb(event, detachThumbs);
   if (thumb) content.append(thumb);
 
   item.append(
@@ -781,12 +762,11 @@ function renderActivityPreviewItem(h, nav, { event, count }, detachThumbs) {
  * and thumb-scaler, exactly like the presentation cards. Returns null when the
  * event carries no resolvable slide.
  *
- * @param {Function} h
  * @param {object} event - enriched activity event
  * @param {Array<Function>} [detachThumbs] - collector for cleanup fns
  * @returns {HTMLElement|null}
  */
-function renderActivityThumb(h, event, detachThumbs) {
+function renderActivityThumb(event, detachThumbs) {
   const slide = event?.slide;
   if (!slide || !slide.type) return null;
 

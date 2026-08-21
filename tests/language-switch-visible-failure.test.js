@@ -40,7 +40,6 @@ globalThis.cancelAnimationFrame =
 globalThis.KeyboardEvent = dom.window.KeyboardEvent;
 globalThis.MouseEvent = dom.window.MouseEvent;
 
-const { h } = await import('../client/lib/dom.js');
 const { normalizeLang, otherLang } =
   await import('../client/lib/format/i18n.js');
 const { createLanguageMode } =
@@ -68,7 +67,6 @@ function mount({ api, pres = makePres() }) {
   const toasts = [];
   const record = (level) => (msg) => toasts.push({ level, msg });
   const controller = createLanguageMode({
-    h,
     root: document.body,
     pres,
     id: 'p1',

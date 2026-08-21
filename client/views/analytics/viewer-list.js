@@ -9,11 +9,11 @@ import {
   getSourceLabel,
 } from '../../lib/format/analytics-format.js';
 import { createEmptyState } from '../../lib/dom/empty-state.js';
+import { h } from '../../lib/dom.js';
 
 /**
  * Create viewer list component.
  * @param {Object} options
- * @param {Function} options.h - DOM helper
  * @param {Array} options.sessions - Session data
  * @param {number} options.total - Total session count
  * @param {Function} options.onLoadMore - Load more callback
@@ -21,7 +21,6 @@ import { createEmptyState } from '../../lib/dom/empty-state.js';
  * @returns {Object} List API with el and update method
  */
 export function createViewerList({
-  h,
   sessions,
   total,
   onLoadMore,
@@ -112,7 +111,6 @@ export function createViewerList({
     if (displaySessions.length === 0) {
       container.append(
         createEmptyState({
-          h,
           icon: 'eye',
           title: t('analytics.noViewersYet', 'No viewers yet'),
           message: t(
@@ -180,7 +178,7 @@ export function createViewerList({
 
     // Session rows
     sortedSessions.forEach((session) => {
-      const row = createSessionRow(h, session);
+      const row = createSessionRow(session);
       container.append(row);
     });
 
@@ -225,11 +223,10 @@ export function createViewerList({
 
 /**
  * Create a session row.
- * @param {Function} h - DOM helper
  * @param {Object} session - Session data
  * @returns {HTMLElement}
  */
-function createSessionRow(h, session) {
+function createSessionRow(session) {
   // Determine viewer identifier
   let viewerText;
   let viewerBadge = '';

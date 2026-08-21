@@ -1,3 +1,4 @@
+import { h } from '../../lib/dom.js';
 export function applyCapabilitiesToStage({
   capabilities,
   slideWrap,
@@ -24,7 +25,6 @@ function markStageMode(child, interacting) {
 }
 
 export function showFollowMessage({
-  h,
   slideWrap,
   interactionWrap,
   cleanupSlideRuntimes,

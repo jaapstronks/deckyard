@@ -22,6 +22,7 @@ import { loadThemeById } from '../../../lib/theme/theme.js';
 import { detectBgTextContrast } from '../../../lib/slide-authoring/bg-contrast.js';
 import { isLocked } from '../../../../shared/theme-locks.js';
 import { renderFocusGridField } from './focus-picker.js';
+import { h } from '../../../lib/dom.js';
 
 /** Field keys the colour group owns. */
 const BG_COLOR_KEYS = new Set(['background', 'bgCustomColor']);
@@ -155,7 +156,6 @@ function deferImagesUntilOpen(details, body) {
  * Build the two background surfaces for one slide.
  *
  * @param {Object} ctx
- * @param {Function} ctx.h - DOM helper
  * @param {Object} ctx.slide
  * @param {Object} ctx.pres
  * @param {Object|null} ctx.theme - active theme, for its override locks
@@ -169,7 +169,6 @@ function deferImagesUntilOpen(details, body) {
  *   to show. The caller decides where they sit in the rail.
  */
 export function buildBackgroundControls({
-  h,
   slide,
   pres,
   theme = null,
@@ -299,7 +298,6 @@ export function buildBackgroundControls({
       if (imageUrl) {
         body.append(
           renderFocusGridField({
-            h,
             label: t(
               'editor.slide.background.focus',
               'Background focus (crop)',

@@ -12,11 +12,11 @@ import {
   openRevokeMessageModal,
   REVOKE_CONTEXT,
 } from '../revoke-message-modal.js';
+import { h } from '../../../../lib/dom.js';
 
 /**
  * Create the share links section component.
  * @param {Object} options
- * @param {Function} options.h - Hyperscript function
  * @param {Function} options.api - API call function
  * @param {string} options.presentationId - Presentation ID
  * @param {Function} options.copyToClipboard - Clipboard copy function
@@ -26,7 +26,6 @@ import {
  * @returns {Object} { element, loadShareLinks }
  */
 export function createShareLinksSection({
-  h,
   api,
   presentationId,
   copyToClipboard,
@@ -374,7 +373,6 @@ export function createShareLinksSection({
         text: t('share.link.revoke', 'Revoke'),
         onclick: async () => {
           const result = await openRevokeMessageModal({
-            h,
             root: modalRoot || document.body,
             context: REVOKE_CONTEXT.SHARE_LINK,
             targetName: link.label || t('share.link.unlabeled', 'Unlabeled'),
@@ -408,7 +406,6 @@ export function createShareLinksSection({
         link.permission === 'comment'
       ) {
         const guestSection = createGuestManagementSection({
-          h,
           api,
           presentationId,
           link,

@@ -9,17 +9,17 @@
  */
 
 import { t } from '../../../lib/ui-i18n.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * "AI type reasoning" disclosure: why the generator picked this type, plus any
  * alternatives it considered.
  *
  * @param {object} ctx
- * @param {(tag: string, props?: object, ...kids: any[]) => HTMLElement} ctx.h
  * @param {object} ctx.slide
  * @returns {HTMLElement|null}
  */
-export function buildAiReasoningPanel({ h, slide }) {
+export function buildAiReasoningPanel({ slide }) {
   if (!slide._aiReasoning) return null;
 
   const aiSection = h('details', { class: 'ai-reasoning-panel' });
@@ -70,11 +70,10 @@ export function buildAiReasoningPanel({ h, slide }) {
  * slide.
  *
  * @param {object} ctx
- * @param {(tag: string, props?: object, ...kids: any[]) => HTMLElement} ctx.h
  * @param {object} ctx.slide
  * @returns {HTMLElement|null}
  */
-export function buildAiWarningsPanel({ h, slide }) {
+export function buildAiWarningsPanel({ slide }) {
   if (!slide._aiWarnings?.length) return null;
 
   const warningsDiv = h('div', { class: 'ai-warnings' });

@@ -37,7 +37,7 @@ export function buildFollowLayout({ getCopy }) {
   // (only for anonymous viewers, after an auth check), so the button is filled
   // in later — this keeps a stable place for it in the topbar.
   const eraseSlot = h('div', { class: 'follow-erase-slot' });
-  const uiMode = createUiModeSwitcher({ h, className: 'follow-ui-mode' });
+  const uiMode = createUiModeSwitcher({ className: 'follow-ui-mode' });
   const status = h('div', {
     class: 'follow-status',
     text: copy.connecting,

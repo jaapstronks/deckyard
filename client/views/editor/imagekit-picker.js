@@ -8,11 +8,11 @@ import {
   addNamedTr,
   buildDocTag,
 } from './imagekit-picker/transform-utils.js';
+import { h } from '../../lib/dom.js';
 
 export function openImageKitPicker({
   title = t('imagekit.title', 'ImageKit'),
   api,
-  h,
   root,
   openOverlayClosers,
   context = null,
@@ -21,8 +21,6 @@ export function openImageKitPicker({
 } = {}) {
   if (typeof api !== 'function')
     throw new Error('openImageKitPicker: api is required');
-  if (typeof h !== 'function')
-    throw new Error('openImageKitPicker: h is required');
   if (!root) throw new Error('openImageKitPicker: root is required');
 
   const unlockScroll = lockDocumentScroll();

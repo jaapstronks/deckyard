@@ -1,6 +1,7 @@
 import { getUiLocale, t } from '../../../lib/ui-i18n.js';
+import { h } from '../../../lib/dom.js';
 
-export function createBackgroundFields({ h, theme } = {}) {
+export function createBackgroundFields({ theme } = {}) {
   const themeVars =
     theme?.cssVars && typeof theme.cssVars === 'object' ? theme.cssVars : {};
 

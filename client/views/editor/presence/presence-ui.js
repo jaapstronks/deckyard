@@ -11,6 +11,7 @@
 import { createAvatar } from '../../../lib/user/avatar.js';
 import { displayNameFromEmail } from '../../../lib/user/user-format.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { h } from '../../../lib/dom.js';
 
 const MAX_STACK_AVATARS = 5;
 
@@ -38,7 +39,6 @@ function uniqueByEmail(peers) {
  * Mount the presence UI.
  *
  * @param {Object} opts
- * @param {Function} opts.h - DOM helper
  * @param {Object} opts.session - presence session
  * @param {HTMLElement} opts.topbarEl - editor topbar root
  * @param {HTMLElement} opts.listEl - slide list container (.slides-panel .list)
@@ -49,7 +49,6 @@ function uniqueByEmail(peers) {
  * @returns {{ destroy: Function }}
  */
 export function createPresenceUI({
-  h,
   session,
   topbarEl,
   listEl,

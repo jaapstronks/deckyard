@@ -5,18 +5,17 @@
 import { api } from '../../lib/api.js';
 import { createModal } from '../../lib/dom/modal.js';
 import { t } from '../../lib/ui-i18n.js';
+import { h } from '../../lib/dom.js';
 
 /**
  * Create and show report generation modal.
  * @param {Object} options
- * @param {Function} options.h - DOM helper
  * @param {HTMLElement} options.root - Root element to append modal
  * @param {string} options.presentationId - Presentation ID
  * @param {Object} options.presentation - Presentation data
  * @param {Object} options.dateRange - Current date range
  */
 export function createReportModal({
-  h,
   root,
   presentationId,
   presentation,

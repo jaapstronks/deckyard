@@ -41,7 +41,7 @@ export function rgbToHex(r, g, b) {
 /**
  * Convert hex to HSL.
  * @param {string} hex - Hex color
- * @returns {Object|null} - HSL object { h, s, l } or null
+ * @returns {Object|null} - HSL object { hue, s, l } or null
  */
 export function hexToHsl(hex) {
   const rgb = hexToRgb(hex);
@@ -53,7 +53,7 @@ export function hexToHsl(hex) {
 
   const max = Math.max(r, g, b);
   const min = Math.min(r, g, b);
-  let h = 0;
+  let hue = 0;
   let s = 0;
   const l = (max + min) / 2;
 
@@ -63,19 +63,19 @@ export function hexToHsl(hex) {
 
     switch (max) {
       case r:
-        h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+        hue = ((g - b) / d + (g < b ? 6 : 0)) / 6;
         break;
       case g:
-        h = ((b - r) / d + 2) / 6;
+        hue = ((b - r) / d + 2) / 6;
         break;
       case b:
-        h = ((r - g) / d + 4) / 6;
+        hue = ((r - g) / d + 4) / 6;
         break;
     }
   }
 
   return {
-    h: Math.round(h * 360),
+    hue: Math.round(hue * 360),
     s: Math.round(s * 100),
     l: Math.round(l * 100),
   };
@@ -83,37 +83,37 @@ export function hexToHsl(hex) {
 
 /**
  * Convert HSL to hex.
- * @param {number} h - Hue (0-360)
+ * @param {number} hue - Hue (0-360)
  * @param {number} s - Saturation (0-100)
  * @param {number} l - Lightness (0-100)
  * @returns {string} - Hex color
  */
-export function hslToHex(h, s, l) {
-  h = ((h % 360) + 360) % 360;
+export function hslToHex(hue, s, l) {
+  hue = ((hue % 360) + 360) % 360;
   s = Math.max(0, Math.min(100, s)) / 100;
   l = Math.max(0, Math.min(100, l)) / 100;
 
   const c = (1 - Math.abs(2 * l - 1)) * s;
-  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const x = c * (1 - Math.abs(((hue / 60) % 2) - 1));
   const m = l - c / 2;
 
   let r = 0,
     g = 0,
     b = 0;
 
-  if (h < 60) {
+  if (hue < 60) {
     r = c;
     g = x;
-  } else if (h < 120) {
+  } else if (hue < 120) {
     r = x;
     g = c;
-  } else if (h < 180) {
+  } else if (hue < 180) {
     g = c;
     b = x;
-  } else if (h < 240) {
+  } else if (hue < 240) {
     g = x;
     b = c;
-  } else if (h < 300) {
+  } else if (hue < 300) {
     r = x;
     b = c;
   } else {
@@ -145,16 +145,16 @@ export function deriveColorPalette(primary) {
   const hsl = hexToHsl(primary);
   if (!hsl) return [primary, primary, primary, primary];
 
-  const { h, s, l } = hsl;
+  const { hue, s, l } = hsl;
 
   // Generate a palette with variations in lightness and saturation
   return [
     primary, // Primary (as-is)
-    hslToHex(h, Math.min(100, s * 0.85), Math.min(85, l + 15)), // Lighter
-    hslToHex(h, Math.min(100, s * 0.7), Math.min(90, l + 25)), // Even lighter
-    hslToHex(h, Math.min(100, s * 0.5), Math.min(95, l + 35)), // Very light
-    hslToHex(h, Math.min(100, s * 1.1), Math.max(15, l - 15)), // Darker
-    hslToHex((h + 30) % 360, s, l), // Complementary shade
+    hslToHex(hue, Math.min(100, s * 0.85), Math.min(85, l + 15)), // Lighter
+    hslToHex(hue, Math.min(100, s * 0.7), Math.min(90, l + 25)), // Even lighter
+    hslToHex(hue, Math.min(100, s * 0.5), Math.min(95, l + 35)), // Very light
+    hslToHex(hue, Math.min(100, s * 1.1), Math.max(15, l - 15)), // Darker
+    hslToHex((hue + 30) % 360, s, l), // Complementary shade
   ];
 }
 
@@ -167,7 +167,7 @@ export function deriveColorPalette(primary) {
 export function lighten(hex, percent) {
   const hsl = hexToHsl(hex);
   if (!hsl) return hex;
-  return hslToHex(hsl.h, hsl.s, Math.min(100, hsl.l + percent));
+  return hslToHex(hsl.hue, hsl.s, Math.min(100, hsl.l + percent));
 }
 
 /**
@@ -179,7 +179,7 @@ export function lighten(hex, percent) {
 export function darken(hex, percent) {
   const hsl = hexToHsl(hex);
   if (!hsl) return hex;
-  return hslToHex(hsl.h, hsl.s, Math.max(0, hsl.l - percent));
+  return hslToHex(hsl.hue, hsl.s, Math.max(0, hsl.l - percent));
 }
 
 /**

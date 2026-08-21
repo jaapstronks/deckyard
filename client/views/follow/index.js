@@ -7,7 +7,6 @@
  */
 
 import { api } from '../../lib/api.js';
-import { h } from '../../lib/dom.js';
 import { attachThumbScaleContain } from '../../lib/slide-runtime/thumb-scale.js';
 import { cleanupSlideRuntimes } from '../../lib/slide-runtime/slide-render.js';
 import { normalizeLang } from '../../lib/format/i18n.js';
@@ -156,7 +155,6 @@ export async function renderFollow(root, presentationId) {
       ? meta.availableLangs
       : [];
     renderFollowLangButtons({
-      h,
       langWrap,
       currentLang: lang,
       availableLangs: avail,
@@ -214,7 +212,6 @@ export async function renderFollow(root, presentationId) {
 
   const showMessage = (msg) => {
     showFollowMessage({
-      h,
       slideWrap,
       interactionWrap,
       cleanupSlideRuntimes,
@@ -376,7 +373,6 @@ export async function renderFollow(root, presentationId) {
   }
 
   qa = createFollowQaController({
-    h,
     api,
     presentationId,
     qaWrap,
@@ -400,7 +396,6 @@ export async function renderFollow(root, presentationId) {
   });
 
   interactions = createFollowInteractionController({
-    h,
     api,
     presentationId,
     mountEl: interactionWrap,

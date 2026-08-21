@@ -15,10 +15,10 @@ import { mountSlideInto } from '../../lib/slide-runtime/slide-render.js';
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 import { attachThumbScaleContain } from '../../lib/slide-runtime/thumb-scale.js';
 import { t } from '../../lib/ui-i18n.js';
+import { h } from '../../lib/dom.js';
 
 /**
  * @param {Object} opts
- * @param {Function} opts.h - DOM helper
  * @param {Object} opts.pres - the presentation model (live reference)
  * @param {Function} opts.getSelectedSlideId
  * @param {Function} opts.setSelectedSlideId - the lock-aware selection seam
@@ -35,7 +35,6 @@ import { t } from '../../lib/ui-i18n.js';
  * @returns {{ open: Function }}
  */
 export function createBulkEditModal({
-  h,
   pres,
   getSelectedSlideId,
   setSelectedSlideId,

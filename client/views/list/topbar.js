@@ -9,11 +9,11 @@ import { icon } from '../../lib/dom/icons.js';
 import { createUiModeSwitcher } from '../ui-mode-switcher.js';
 import { createNotificationBell } from '../../lib/user/notification-bell.js';
 import { createUserMenu } from '../../lib/user/user-menu.js';
+import { h } from '../../lib/dom.js';
 
 /**
  * Create the topbar for the presentation list view
  * @param {object} options
- * @param {Function} options.h - DOM helper function
  * @param {object} options.features - Feature flags
  * @param {Function} options.api - API client
  * @param {Function} options.nav - Navigation function
@@ -23,7 +23,6 @@ import { createUserMenu } from '../../lib/user/user-menu.js';
  * @returns {object} { el, searchInput }
  */
 export function createTopbar({
-  h,
   features,
   api,
   nav,
@@ -77,7 +76,7 @@ export function createTopbar({
   const topbarContent = h('div', { class: 'presentation-topbar-content' });
 
   // UI mode switcher (dark/light mode)
-  const uiMode = createUiModeSwitcher({ h });
+  const uiMode = createUiModeSwitcher({});
   detachers.push(uiMode.detach);
 
   // Notification bell

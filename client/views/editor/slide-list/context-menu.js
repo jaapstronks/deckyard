@@ -183,7 +183,6 @@ export function showSlideContextMenu({ x, y, slide, ids, ctx }) {
         const rect = visItem.getBoundingClientRect();
         closeSlideContextMenu();
         const vm = createVisibilityMenu({
-          h,
           slide,
           onVisibilityChange: () => {
             ctx.markDirty?.();

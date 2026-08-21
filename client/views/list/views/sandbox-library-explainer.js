@@ -1,6 +1,7 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { iconUrl } from '../../../../shared/icon-names.js';
 import { icon } from '../../../lib/dom/icons.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * Sandbox stand-in for the slide library.
@@ -14,10 +15,9 @@ import { icon } from '../../../lib/dom/icons.js';
  * error.
  *
  * @param {object} opts
- * @param {Function} opts.h - DOM helper
  * @returns {HTMLElement}
  */
-export function createSandboxLibraryExplainer({ h }) {
+export function createSandboxLibraryExplainer() {
   // Illustrative "what would live here" cards — purely decorative.
   const samples = [
     {

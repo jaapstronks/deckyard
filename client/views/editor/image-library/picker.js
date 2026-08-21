@@ -12,6 +12,7 @@ import {
   fetchStockMediaStatus,
   isStockSourceAvailable,
 } from '../../../lib/net/stock-media.js';
+import { h } from '../../../lib/dom.js';
 
 // Re-export for backward compatibility
 export { readFileAsDataUrl } from './utils.js';
@@ -106,7 +107,6 @@ export function openImageLibraryPicker({
   onPick,
   user,
   api,
-  h,
   root,
   openOverlayClosers,
   features,
@@ -226,7 +226,6 @@ export function openImageLibraryPicker({
   };
 
   gridComponent = createImageLibraryGrid({
-    h,
     items: getFilteredItems,
     onSelectItem: (it) => detailComponent.show(it),
     getActiveTag: () => activeTag,
@@ -242,7 +241,6 @@ export function openImageLibraryPicker({
 
   // Detail component
   const detailComponent = createImageLibraryDetail({
-    h,
     api,
     user,
     items: () => items,
@@ -269,7 +267,6 @@ export function openImageLibraryPicker({
 
   // Upload component
   const uploadComponent = createImageLibraryUpload({
-    h,
     api,
     user,
     items: () => items,
@@ -414,7 +411,6 @@ export function openImageLibraryPicker({
 
   // Create sidebar component
   sidebarComponent = createMediaLibrarySidebar({
-    h,
     user,
     items: () => items,
     favorites: () => favorites,
@@ -509,7 +505,6 @@ export function openImageLibraryPicker({
       // Create stock media components if available
       if (hasUnsplash) {
         unsplashComponent = createUnsplashSearch({
-          h,
           api,
           onSelect: handleStockMediaSelect,
           setStatus,
@@ -518,7 +513,6 @@ export function openImageLibraryPicker({
       }
       if (hasGiphy) {
         giphyComponent = createGiphySearch({
-          h,
           api,
           onSelect: handleStockMediaSelect,
           setStatus,
@@ -528,7 +522,6 @@ export function openImageLibraryPicker({
 
       // Update sidebar with stock media availability
       sidebarComponent = createMediaLibrarySidebar({
-        h,
         user,
         items: () => items,
         favorites: () => favorites,

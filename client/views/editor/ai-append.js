@@ -11,6 +11,7 @@ import { t } from '../../lib/ui-i18n.js';
 import { openModal } from '../../lib/dom/modal.js';
 import { openAiBatchReviewModal } from './modals/ai-batch-review-modal.js';
 import { highlightAiInsertedSlides } from './ai-added-highlight.js';
+import { h } from '../../lib/dom.js';
 
 export function openAiAppendWizard({
   root,
@@ -20,7 +21,6 @@ export function openAiAppendWizard({
   setSelectedSlideId,
   editorState,
   api,
-  h,
   initialPrompt = '',
   // Review-step context (optional: without theme/SLIDE_TYPES the batch-review
   // step is skipped and slides insert directly, as before).
@@ -258,7 +258,6 @@ export function openAiAppendWizard({
       if (canReview) {
         modalApi.close();
         openAiBatchReviewModal({
-          h,
           root,
           api,
           theme,

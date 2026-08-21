@@ -1,5 +1,5 @@
+import { h } from '../../../lib/dom.js';
 export function createInsertRow({
-  h,
   afterSlideId,
   parentId = null,
   onRequestInsert,

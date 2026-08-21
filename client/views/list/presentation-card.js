@@ -543,7 +543,7 @@ export function createCardRenderer({
             h('span', { text: when }),
           ]),
           // Visibility indicator
-          getVisibilityIndicator(h, p, t),
+          getVisibilityIndicator(p, t),
           isOrganization
             ? h('span', {
                 class: 'presentation-shared-badge',
@@ -620,7 +620,7 @@ function readableTextColor(hex) {
  * - Shared with collaborators (link icon)
  * - Private (lock icon)
  */
-function getVisibilityIndicator(h, p, t) {
+function getVisibilityIndicator(p, t) {
   const indicator = (state, name, title) =>
     h(
       'span',

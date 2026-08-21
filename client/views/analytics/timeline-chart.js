@@ -5,6 +5,7 @@
 import { t } from '../../lib/ui-i18n.js';
 import { formatDate } from '../../lib/format/analytics-format.js';
 import { createEmptyState } from '../../lib/dom/empty-state.js';
+import { h } from '../../lib/dom.js';
 
 /**
  * Format date for chart display (short format: M/D).
@@ -22,11 +23,10 @@ const PADDING = { top: 20, right: 20, bottom: 40, left: 50 };
 /**
  * Create a timeline chart component.
  * @param {Object} options
- * @param {Function} options.h - DOM helper
  * @param {Array} options.data - Array of {date, views} objects
  * @returns {Object} Chart API with el and update method
  */
-export function createTimelineChart({ h, data }) {
+export function createTimelineChart({ data }) {
   const el = h('div', { class: 'analytics-section analytics-timeline' });
 
   const header = h('div', { class: 'analytics-section-header' }, [
@@ -45,7 +45,6 @@ export function createTimelineChart({ h, data }) {
     if (!chartData || chartData.length === 0) {
       chartContainer.append(
         createEmptyState({
-          h,
           icon: 'chart-column',
           title: t('analytics.noViewsYet', 'No views yet'),
           message: t(

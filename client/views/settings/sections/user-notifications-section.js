@@ -7,6 +7,7 @@
 
 import { t } from '../../../lib/ui-i18n.js';
 import { disableForSandbox } from '../sandbox-disable.js';
+import { h } from '../../../lib/dom.js';
 
 const LEVEL_OPTIONS = [
   {
@@ -44,10 +45,9 @@ const EMAIL_TYPES = [
 /**
  * Create the user notifications section component.
  * @param {Object} options
- * @param {Function} options.h - Hyperscript function for creating DOM elements
  * @returns {Object} { element, setDisabled, getValues, setValues }
  */
-export function createUserNotificationsSection({ h }) {
+export function createUserNotificationsSection() {
   const card = h('div', { class: 'stack editor-card' });
   card.append(
     h('div', {

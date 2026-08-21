@@ -65,9 +65,9 @@ import {
 } from './thumbnails.js';
 import { openTypePeek } from './peek.js';
 import { mountLibraryStrip } from './library-strip.js';
+import { h } from '../../../lib/dom.js';
 
 export function createSlideTypePicker({
-  h,
   SLIDE_TYPES,
   theme,
   insertSlide,
@@ -185,11 +185,11 @@ export function createSlideTypePicker({
     thumbWrap.classList.remove('is-pending');
 
     if (type === 'video-slide') {
-      fillVideoThumb(h, thumbWrap);
+      fillVideoThumb(thumbWrap);
       return;
     }
     if (type === 'embed-slide') {
-      fillEmbedThumb(h, thumbWrap);
+      fillEmbedThumb(thumbWrap);
       return;
     }
 
@@ -252,7 +252,6 @@ export function createSlideTypePicker({
     // Shared context for the peek lightbox (./peek.js). onPick is render-scoped;
     // the rest are stable factory helpers.
     const peekCtx = {
-      h,
       tr,
       theme,
       labelFor,
@@ -337,7 +336,7 @@ export function createSlideTypePicker({
       }
       if (viewMode === 'schematic') {
         // Cheap symbolic diagram — render now, skip observers entirely.
-        fillSchematic(thumbWrap, h, SLIDE_TYPES);
+        fillSchematic(thumbWrap, SLIDE_TYPES);
       } else if (intersectionObserver) {
         intersectionObserver.observe(thumbWrap);
       } else {
@@ -642,7 +641,7 @@ export function createSlideTypePicker({
           'ps-type-thumb-embed',
         );
         if (mode === 'schematic') {
-          fillSchematic(wrap, h, SLIDE_TYPES);
+          fillSchematic(wrap, SLIDE_TYPES);
         } else {
           wrap.classList.add('is-pending');
           if (intersectionObserver) intersectionObserver.observe(wrap);
@@ -1005,7 +1004,6 @@ export function createSlideTypePicker({
     ) {
       mountLibraryStrip({
         typesWrap,
-        h,
         tr,
         theme,
         labelFor,

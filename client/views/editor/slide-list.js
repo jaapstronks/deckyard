@@ -23,9 +23,9 @@ import {
   closeSlideContextMenu,
 } from './slide-list/context-menu.js';
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
+import { h } from '../../lib/dom.js';
 
 export function setupSlideList({
-  h,
   slideListEl,
   pres,
   getSelectedSlideId,
@@ -347,7 +347,6 @@ export function setupSlideList({
       { isChild = false, parentId = null } = {},
     ) => {
       const row = createInsertRow({
-        h,
         afterSlideId,
         parentId,
         onRequestInsert,
@@ -398,7 +397,6 @@ export function setupSlideList({
 
     // Shared context for render modules
     const renderContext = {
-      h,
       pres,
       slideListEl,
       selectedSlideId,
@@ -464,7 +462,6 @@ export function setupSlideList({
 
       // Render the slide item
       const { item, originalIdx } = createSlideItem({
-        h,
         slide: s,
         match,
         options: { isChild: false, isHidden: false },
@@ -505,7 +502,6 @@ export function setupSlideList({
             : 0;
 
           const { item: childItem } = createSlideItem({
-            h,
             slide: child,
             match: childMatch,
             options: { isChild: true, isHidden: isCollapsed },
@@ -618,7 +614,6 @@ export function setupSlideList({
       );
       if (!item) continue;
       applySlideLockIndicator({
-        h,
         item,
         lockInfo: getSlideLockInfo?.(slideId) || null,
         lockedByOther: isSlideLockedByOther?.(slideId) || false,

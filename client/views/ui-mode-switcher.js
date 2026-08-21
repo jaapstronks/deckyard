@@ -5,6 +5,7 @@ import {
 } from '../lib/theme/ui-mode.js';
 import { icon } from '../lib/dom/icons.js';
 import { t } from '../lib/ui-i18n.js';
+import { h } from '../lib/dom.js';
 
 function prefLabel(p) {
   if (p === 'light') return t('appearance.light', 'Light');
@@ -12,7 +13,7 @@ function prefLabel(p) {
   return t('appearance.system', 'System');
 }
 
-export function createUiModeSwitcher({ h, className = '' } = {}) {
+export function createUiModeSwitcher({ className = '' } = {}) {
   const wrap = h('div', {
     class:
       `sb-segmented is-toggle is-compact ui-mode-switcher ${className}`.trim(),

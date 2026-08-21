@@ -224,7 +224,6 @@ export function createThemesTab({ user }) {
 
   const themeList = h('div', { class: 'themes-grid' });
   const emptyState = createEmptyState({
-    h,
     icon: null,
     className: 'empty-state-panel',
     title: t('settings.themes.noThemes', 'No custom themes yet.'),

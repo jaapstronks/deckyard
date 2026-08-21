@@ -1,4 +1,5 @@
 import { oneLine } from '../editor-utils.js';
+import { h } from '../../../lib/dom.js';
 
 function norm(s) {
   return String(s || '').toLowerCase();
@@ -102,7 +103,6 @@ export function findFirstMatchInSlide(slide, query) {
 }
 
 export function renderHighlightedText(
-  h,
   text,
   query,
   { className = 'search-hit' } = {},

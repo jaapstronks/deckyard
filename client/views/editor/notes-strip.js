@@ -1,5 +1,6 @@
 import { t } from '../../lib/ui-i18n.js';
 import { icon } from '../../lib/dom/icons.js';
+import { h } from '../../lib/dom.js';
 
 const COLLAPSE_KEY = 'deckyard.notesStrip.collapsed';
 
@@ -19,7 +20,6 @@ const COLLAPSE_KEY = 'deckyard.notesStrip.collapsed';
  *   `previewNotesTa` (the strip is persistent DOM, so the reference holds).
  *
  * @param {Object} options
- * @param {Function} options.h - DOM helper
  * @param {Object} options.pres - Presentation model
  * @param {Function} options.getSelectedSlideId
  * @param {Function} options.markDirty
@@ -27,7 +27,6 @@ const COLLAPSE_KEY = 'deckyard.notesStrip.collapsed';
  * @returns {{ el: HTMLElement, textarea: HTMLTextAreaElement }}
  */
 export function createNotesStrip({
-  h,
   pres,
   getSelectedSlideId,
   markDirty,

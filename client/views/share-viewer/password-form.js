@@ -4,16 +4,16 @@
 
 import { api } from '../../lib/api.js';
 import { t } from '../../lib/ui-i18n.js';
+import { h } from '../../lib/dom.js';
 
 /**
  * Render a password prompt for password-protected share links.
- * @param {Function} h - DOM helper function
  * @param {HTMLElement} shell - Container element
  * @param {string} token - Share token
  * @param {Object} shareData - Share link data
  * @param {Function} onSuccess - Callback when password is verified
  */
-export function renderPasswordPrompt(h, shell, token, shareData, onSuccess) {
+export function renderPasswordPrompt(shell, token, shareData, onSuccess) {
   shell.innerHTML = '';
 
   const card = h('div', { class: 'share-viewer-card' });

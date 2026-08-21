@@ -51,7 +51,6 @@ function makeList() {
   let selectedSlideId = 's1';
 
   const api = setupSlideList({
-    h,
     slideListEl,
     pres: { id: 'p1', slides: SLIDES.map((s) => ({ ...s })) },
     getSelectedSlideId: () => selectedSlideId,

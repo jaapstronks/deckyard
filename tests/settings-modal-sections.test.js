@@ -30,7 +30,6 @@ globalThis.requestAnimationFrame =
 globalThis.cancelAnimationFrame =
   dom.window.cancelAnimationFrame || clearTimeout;
 
-const { h } = await import('../client/lib/dom.js');
 const { openSettingsModal } =
   await import('../client/views/editor/modals/settings-modal.js');
 
@@ -58,7 +57,6 @@ test('modal assembles all sections and normalizes each slice', () => {
   let saved = 0;
 
   openSettingsModal({
-    h,
     root,
     pres,
     api: null,
@@ -107,7 +105,6 @@ test('theme and tags show unavailable branch without an api', () => {
   const root = document.createElement('div');
   document.body.appendChild(root);
   openSettingsModal({
-    h,
     root,
     pres: messyPres(),
     api: null,

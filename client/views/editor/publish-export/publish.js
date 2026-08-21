@@ -86,7 +86,6 @@ export function buildPublishModalData({ pres, activeLang = null } = {}) {
 }
 
 export async function doPublish({
-  h,
   root,
   api,
   toast,
@@ -109,7 +108,6 @@ export async function doPublish({
       typeof pres?.description === 'string' && pres.description.trim();
     if (!hasDesc) {
       const r = await openDescriptionModal({
-        h,
         root,
         api,
         toast,

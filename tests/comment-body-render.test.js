@@ -18,13 +18,12 @@ globalThis.HTMLElement = dom.window.HTMLElement;
 globalThis.Node = dom.window.Node;
 globalThis.Element = dom.window.Element;
 
-const { h } = await import('../client/lib/dom.js');
 const { renderCommentBodyNodes } =
   await import('../client/lib/comments/comment-body.js');
 
 function render(body) {
   const el = document.createElement('div');
-  el.append(...renderCommentBodyNodes(body, h));
+  el.append(...renderCommentBodyNodes(body));
   return el;
 }
 

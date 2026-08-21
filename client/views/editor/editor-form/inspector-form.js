@@ -130,7 +130,6 @@ const INSPECTOR_EXTRAS = new Map([
  */
 export function renderInspectorExtrasByType(ctx) {
   const {
-    h,
     elementForm,
     selectedElement,
     slide,
@@ -147,7 +146,6 @@ export function renderInspectorExtrasByType(ctx) {
     slideTypeElementTab(slide.type, def)?.image
   ) {
     renderImageElementCard({
-      h,
       container: elementForm,
       slide,
       def,

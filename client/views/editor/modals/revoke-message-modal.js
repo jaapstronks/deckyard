@@ -8,6 +8,7 @@ import {
   createBusyManager,
 } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * Context types for the modal.
@@ -21,7 +22,6 @@ export const REVOKE_CONTEXT = {
 /**
  * Open the revoke message modal.
  * @param {Object} options
- * @param {Function} options.h - Hyperscript function
  * @param {HTMLElement} options.root - Root element for modal
  * @param {string} options.context - Context type (share_link, collaborator, trash)
  * @param {string} [options.targetName] - Name/email of what's being revoked
@@ -29,7 +29,6 @@ export const REVOKE_CONTEXT = {
  * @returns {Promise<{ ok: boolean, message?: string }>}
  */
 export function openRevokeMessageModal({
-  h,
   root,
   context,
   targetName,

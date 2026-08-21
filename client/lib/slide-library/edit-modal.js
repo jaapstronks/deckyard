@@ -9,6 +9,7 @@ import { createModal } from '../dom/modal.js';
 import { renderSlideElement } from '../slide-runtime/slide-render.js';
 import { cleanStr } from '../../../shared/string-utils.js';
 import { SLIDE_TYPES } from '../../../shared/slide-types.js';
+import { h } from '../dom.js';
 
 /**
  * Field types that we support editing in the library
@@ -46,7 +47,7 @@ const SKIP_FIELD_KEYS = [
 /**
  * Create a field editor element
  */
-function createFieldEditor(h, field, value, onChange) {
+function createFieldEditor(field, value, onChange) {
   const { key, label, type, maxLength, placeholder, helpText } = field;
   const isMultiline = MULTILINE_TYPES.includes(type);
 
@@ -95,7 +96,6 @@ function createFieldEditor(h, field, value, onChange) {
  * Open the edit modal for a slide library item
  */
 export function openEditModal({
-  h,
   item,
   shelf,
   apiOps,
@@ -206,7 +206,6 @@ export function openEditModal({
 
   for (const field of fields) {
     const fieldEl = createFieldEditor(
-      h,
       field,
       workingContent[field.key],
       (key, val) => {

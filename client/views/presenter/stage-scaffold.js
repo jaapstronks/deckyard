@@ -1,4 +1,5 @@
-export function createPresenterStageScaffold({ h, pres } = {}) {
+import { h } from '../../lib/dom.js';
+export function createPresenterStageScaffold({ pres } = {}) {
   const deck = h('div', {
     id: 'deck',
     class: 'deck',

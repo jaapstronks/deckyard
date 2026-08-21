@@ -15,10 +15,10 @@
 
 import { t } from '../../../lib/ui-i18n.js';
 import { readPreferredLlmVendor } from '../../../lib/net/llm-vendor.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * @param {object} ctx
- * @param {(tag: string, props?: object, ...kids: any[]) => HTMLElement} ctx.h
  * @param {(path: string, opts?: object) => Promise<any>} ctx.api
  * @param {object} ctx.pres The presentation being edited.
  * @param {object} ctx.slide The currently selected slide.
@@ -29,7 +29,6 @@ import { readPreferredLlmVendor } from '../../../lib/net/llm-vendor.js';
  * @returns {HTMLElement|null} The refine panel, or null when `api` is absent.
  */
 export function buildAiIteratePanel({
-  h,
   api,
   pres,
   slide,

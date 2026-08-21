@@ -1,5 +1,6 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { storage } from '../../../lib/storage.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * One-time coach mark for the inline WYSIWYG editor.
@@ -22,11 +23,10 @@ const AUTO_DISMISS_MS = 12000;
 
 /**
  * @param {object} opts
- * @param {Function} opts.h - DOM helper
  * @param {HTMLElement} opts.stage - The `.preview-stage` (positioning context)
  * @returns {{ maybeShow: Function, dismiss: Function, destroy: Function }}
  */
-export function createInlineCoachMark({ h, stage } = {}) {
+export function createInlineCoachMark({ stage } = {}) {
   let el = null;
   /** @type {number} */
   let timer = 0;

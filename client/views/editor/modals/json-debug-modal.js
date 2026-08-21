@@ -8,6 +8,7 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { confirmModal, createModal } from '../../../lib/dom/modal.js';
+import { h } from '../../../lib/dom.js';
 
 /**
  * Generate human-readable schema documentation from slide type definition.
@@ -134,7 +135,6 @@ function highlightJson(json) {
 /**
  * Open the JSON debug modal for a slide.
  * @param {Object} options
- * @param {Function} options.h - DOM helper
  * @param {HTMLElement} options.root - Root element to append modal to
  * @param {Object} options.slide - The slide object
  * @param {Object} options.SLIDE_TYPES - Slide type definitions
@@ -145,7 +145,6 @@ function highlightJson(json) {
  * @param {Function} options.rerenderSlideList - Re-render slide list
  */
 export function openJsonDebugModal({
-  h,
   root,
   slide,
   SLIDE_TYPES,

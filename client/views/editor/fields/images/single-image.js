@@ -4,6 +4,7 @@
 import { t } from '../../../../lib/ui-i18n.js';
 import { createAltSetter } from './alt-utils.js';
 import { applyAltFromPick, applyPickMeta } from '../../media/apply-pick.js';
+import { h } from '../../../../lib/dom.js';
 
 /**
  * Create a single image field renderer
@@ -12,7 +13,6 @@ import { applyAltFromPick, applyPickMeta } from '../../media/apply-pick.js';
  */
 export function createFieldImage(ctx) {
   const {
-    h,
     BACKGROUNDS,
     openImagePicker,
     features,

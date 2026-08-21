@@ -6,9 +6,9 @@
 import { createUiModeSwitcher } from '../ui-mode-switcher.js';
 import { t } from '../../lib/ui-i18n.js';
 import { getPermissionLabel } from '../../lib/permission-labels.js';
+import { h } from '../../lib/dom.js';
 
 export function createViewerTopbar({
-  h,
   nav,
   pres,
   id,
@@ -99,7 +99,7 @@ export function createViewerTopbar({
   }
 
   // UI mode switcher
-  const uiMode = createUiModeSwitcher({ h, className: 'viewer-ui-mode' });
+  const uiMode = createUiModeSwitcher({ className: 'viewer-ui-mode' });
   detachers.push(uiMode.detach);
   controls.append(uiMode.el);
 

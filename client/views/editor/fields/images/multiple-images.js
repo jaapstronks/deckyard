@@ -5,6 +5,7 @@ import { t } from '../../../../lib/ui-i18n.js';
 import { toast } from '../../../../lib/dom/toast.js';
 import { createIndexedAltSetter } from './alt-utils.js';
 import { applyAltFromPick } from '../../media/apply-pick.js';
+import { h } from '../../../../lib/dom.js';
 
 /**
  * Create a multiple images field renderer
@@ -13,7 +14,6 @@ import { applyAltFromPick } from '../../media/apply-pick.js';
  */
 export function createFieldImages(ctx) {
   const {
-    h,
     api,
     openImagePicker,
     readFileAsDataUrl,

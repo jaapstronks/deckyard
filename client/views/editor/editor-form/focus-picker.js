@@ -1,4 +1,5 @@
 import { t } from '../../../lib/ui-i18n.js';
+import { h } from '../../../lib/dom.js';
 
 function toNumberOrNull(v) {
   if (v == null) return null;
@@ -34,7 +35,6 @@ function posLabelFor(x, y) {
 }
 
 export function renderFocusGridField({
-  h,
   label = t('editor.imagePosition.cropLabel', 'Image focus (crop)'),
   helpText = 'Pick what should stay visible when the image is cropped (cover).',
   focusX,
