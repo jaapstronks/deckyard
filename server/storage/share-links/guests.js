@@ -12,6 +12,7 @@ import {
   normalizeEmail,
 } from '../../utils/normalize.js';
 import { withDbGuard } from '../utils/db-guard.js';
+import { canComment } from '../../../shared/constants/permissions.js';
 import { generateGuestToken } from './index.js';
 import {
   formatShareLink,
@@ -82,7 +83,7 @@ export async function requestGuestVerification(shareLinkId, email, name) {
     }
     const { shareLink } = validation;
 
-    if (!['comment', 'edit'].includes(shareLink.permission)) {
+    if (!canComment(shareLink.permission)) {
       return { ok: false, reason: 'forbidden' };
     }
 

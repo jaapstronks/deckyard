@@ -7,6 +7,7 @@ import { getOrgId } from '../../utils/context.js';
 import { toStorageContext } from '../scope.js';
 import { norm, nowIso } from '../../utils/normalize.js';
 import { withDbGuard } from '../utils/db-guard.js';
+import { isValidShareLinkPermission } from '../../../shared/constants/permissions.js';
 import { generateShareToken, hashPassword, verifyPassword } from './index.js';
 import {
   NO_DISPLAY_NAMES,
@@ -75,7 +76,7 @@ export async function createShareLink(scope, presentationId, options) {
   }
 
   const permission = options?.permission;
-  if (!['view', 'comment', 'edit'].includes(permission)) {
+  if (!isValidShareLinkPermission(permission)) {
     return { ok: false, reason: 'invalid_permission' };
   }
 
