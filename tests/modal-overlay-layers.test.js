@@ -111,6 +111,42 @@ test('createOverlay closes on Escape and on backdrop click', async () => {
   assert.equal(closes, 2);
 });
 
+test('createOverlay Escape peels one layer: only the topmost stacked overlay closes', async () => {
+  // The library lightbox with its edit modal on top: both listen on `document`,
+  // so before the topmost check a single Escape tore down both at once.
+  const closed = [];
+  const under = createOverlay({ onClose: () => closed.push('under') });
+  under.show(document.body);
+  const over = createOverlay({ onClose: () => closed.push('over') });
+  over.show(document.body);
+
+  pressEscape();
+  await tick();
+  assert.deepEqual(closed, ['over'], 'only the top overlay closes');
+  assert.equal(under.isOpen(), true, 'the one underneath stays open');
+
+  // ...and it takes the next Escape, now that it is on top again.
+  pressEscape();
+  await tick();
+  assert.deepEqual(closed, ['over', 'under']);
+});
+
+test('createOverlay hidden backdrop steps aside for the overlay under it', async () => {
+  // `hide()` is how a dialog gets out of the way of a loading modal; a hidden
+  // overlay must not swallow Escape just because it mounted last.
+  const closed = [];
+  const under = createOverlay({ onClose: () => closed.push('under') });
+  under.show(document.body);
+  const over = createOverlay({ onClose: () => closed.push('over') });
+  over.show(document.body);
+  over.hide();
+
+  pressEscape();
+  await tick();
+  assert.deepEqual(closed, ['under']);
+  over.close();
+});
+
 test('createOverlay busy state blocks Escape/backdrop/requestClose but not close()', async () => {
   let closed = false;
   const overlay = createOverlay({ onClose: () => (closed = true) });
@@ -191,9 +227,12 @@ test('createModal default DOM shape is the pre-split shape', () => {
     /modal-\d+-[a-z0-9]+/g,
     'modal-X',
   );
+  // `data-overlay-open` is the one addition to the pre-split shape: the marker
+  // that lets Escape find the topmost overlay (A7.34). It is set only while the
+  // overlay is open and carries no styling.
   assert.equal(
     html,
-    '<div class="modal-backdrop">' +
+    '<div class="modal-backdrop" data-overlay-open="">' +
       '<div class="modal share-modal" role="dialog" aria-modal="true" aria-labelledby="modal-X-title">' +
       '<div class="row spread"><h2 id="modal-X-title">Share deck</h2>' +
       '<button class="btn btn-secondary">Close</button></div>' +
@@ -202,6 +241,7 @@ test('createModal default DOM shape is the pre-split shape', () => {
       '</div></div>',
   );
   api.close();
+  assert.equal(api.backdrop.hasAttribute('data-overlay-open'), false);
 });
 
 test('createModal closeButton:"icon" renders the icon-X close affordance', () => {

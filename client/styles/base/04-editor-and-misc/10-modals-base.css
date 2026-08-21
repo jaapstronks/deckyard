@@ -23,6 +23,19 @@
   padding: var(--ps-space-5);
 }
 
+/* The dialog's content region, built by `createModal`. It is the base layer's
+   own structure, so it belongs here: putting it in a late-loading feature file
+   made every earlier single-class override lose on load order, which is why
+   four call sites had to double up as `.modal-content.<class>`. */
+.modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-3);
+  max-height: 70vh;
+  overflow-y: auto;
+  padding-right: var(--ps-space-2);
+}
+
 /* Confirm/prompt action rows live inside .modal-content, which reserves a
    scrollbar gutter via padding-right. That inset pushes the footer buttons
    ~8px left of the header's Close button; cancel it with the same token so the
@@ -129,13 +142,8 @@
   overflow: auto;
   flex: 1;
   min-height: 0;
-}
-
-/* `.modal-content` carries a 70vh cap and its own padding for plain dialogs;
-   inside a ps-modal the body owns the scroll, so both give way. */
-.modal-content.ps-modal-body {
-  padding: var(--ps-space-5);
-  gap: var(--ps-space-4);
+  /* The plain-dialog 70vh cap gives way: inside a ps-modal the modal box owns
+     the height and this body owns the scroll. */
   max-height: none;
 }
 

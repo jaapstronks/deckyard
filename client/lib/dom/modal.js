@@ -4,6 +4,37 @@ import { icon } from './icons.js';
 export { createBusyManager } from './busy.js';
 
 /**
+ * Marks a backdrop as an open overlay. Escape belongs to the overlay on top,
+ * and topness is read straight off the DOM: overlays mount in open order, so
+ * the last marked backdrop in document order is the one on top.
+ *
+ * Deliberately not a module-level stack — a second window (the presenter) has
+ * its own document, and `ownerDocument` answers for it for free. The wider
+ * question of where overlay-wide state should live (module singleton vs. a map
+ * per document) is still open in A7.33 PR 4; this attribute holds no state of
+ * its own, so that decision can still go either way.
+ */
+const OPEN_OVERLAY_ATTR = 'data-overlay-open';
+
+/**
+ * Whether `backdrop` is the topmost open overlay in its document.
+ * A hidden backdrop (see `hide()`) has stepped aside and is skipped.
+ * @param {HTMLElement} backdrop - The overlay backdrop element
+ * @returns {boolean}
+ */
+function isTopmostOverlay(backdrop) {
+  if (backdrop.style.display === 'none') return false;
+  const doc = backdrop.ownerDocument;
+  if (!doc) return true;
+  const open = doc.querySelectorAll(`[${OPEN_OVERLAY_ATTR}]`);
+  for (let i = open.length - 1; i >= 0; i--) {
+    if (open[i].style.display === 'none') continue;
+    return open[i] === backdrop;
+  }
+  return true;
+}
+
+/**
  * Creates a bare modal overlay: all behaviour, no imposed chrome.
  *
  * This is the behaviour layer under `createModal` (A7.16 cluster 1). It owns
@@ -22,7 +53,8 @@ export { createBusyManager } from './busy.js';
  *   it already carries those attributes, and hosts the focus trap. Without a
  *   surface the trap covers the backdrop itself.
  * @param {boolean} [options.closeOnBackdrop=true] - Close when clicking backdrop
- * @param {boolean} [options.closeOnEscape=true] - Close on Escape key
+ * @param {boolean} [options.closeOnEscape=true] - Close on Escape key. Only the
+ *   topmost open overlay reacts, so Escape peels one layer at a time.
  * @param {Function} [options.onClose] - Callback when overlay closes
  * @param {Function} [options.isDirty] - Function returning true if the overlay has unsaved changes
  * @param {string} [options.confirmMessage] - Confirmation message for dirty close
@@ -50,7 +82,10 @@ export function createOverlay(options = {}) {
   let previousActiveElement = null;
 
   const onKey = (e) => {
-    if (closeOnEscape && e.key === 'Escape' && !busy) requestClose();
+    if (!closeOnEscape || e.key !== 'Escape' || busy) return;
+    // Stacked overlays all listen on `document`; only the top one may close.
+    if (!isTopmostOverlay(backdrop)) return;
+    requestClose();
   };
 
   /**
@@ -64,6 +99,7 @@ export function createOverlay(options = {}) {
       detachFocusTrap?.();
       detachFocusTrap = null;
       document.removeEventListener('keydown', onKey);
+      backdrop.removeAttribute(OPEN_OVERLAY_ATTR);
       backdrop.remove();
       // Restore focus to previously focused element
       try {
@@ -157,6 +193,7 @@ export function createOverlay(options = {}) {
         surface.setAttribute('aria-modal', 'true');
       if (surface.parentNode !== backdrop) backdrop.append(surface);
     }
+    backdrop.setAttribute(OPEN_OVERLAY_ATTR, '');
     root.append(backdrop);
 
     openOverlayClosers?.add(close);
@@ -215,7 +252,8 @@ export function createOverlay(options = {}) {
  * @param {string} [options.closeLabel] - Custom close button label (the
  *   `aria-label` for the icon variant)
  * @param {boolean} [options.closeOnBackdrop=true] - Close when clicking backdrop
- * @param {boolean} [options.closeOnEscape=true] - Close on Escape key
+ * @param {boolean} [options.closeOnEscape=true] - Close on Escape key (topmost
+ *   overlay only)
  * @param {Function} [options.onClose] - Callback when modal closes
  * @param {Function} [options.isDirty] - Function returning true if modal has unsaved changes
  * @param {string} [options.confirmMessage] - Confirmation message for dirty close

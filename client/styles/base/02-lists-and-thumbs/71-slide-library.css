@@ -461,8 +461,9 @@
   white-space: nowrap;
 }
 
-/* This is the dialog's `.modal-content`; the generic rule for that class
-   lives in a later-loading file, so match its specificity here. */
+/* This is the dialog's `.modal-content`. The generic rule for that class lives
+   in the modals base layer (`04-editor-and-misc/10-modals-base.css`), which
+   still imports after this file, so match its specificity here. */
 .modal-content.ps-lib-lightbox-body {
   flex: 1;
   min-height: 0;
@@ -758,7 +759,7 @@
   flex-direction: column;
 }
 
-/* Also a `.modal-content` — same specificity note as the lightbox body. */
+/* Also a `.modal-content` — same load-order note as the lightbox body. */
 .modal-content.ps-lib-edit-body {
   flex: 1;
   min-height: 0;
