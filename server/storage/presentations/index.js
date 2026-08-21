@@ -35,6 +35,7 @@ import { assertSandboxQuotaForCreate } from './sandbox-quota.js';
 import { stripIdentityForSnapshot } from './snapshot-identity.js';
 import { recordSlideLevelMerge } from '../../services/activity-events.js';
 import { validatePresentationSize } from '../../utils/presentation-limits.js';
+import { fireAndForget } from '../../utils/fire-and-forget.js';
 import { invalidatePresentationCache } from './cache.js';
 import { migratePresentation } from '../../../shared/slide-types/schema-version.js';
 import { createLogger } from '../../utils/logger.js';
@@ -172,19 +173,25 @@ export async function updatePresentation(storageScope, id, body, opts) {
   // attach `_slideMerge` to the result). Fire-and-forget; the activity store
   // degrades to a no-op without a database.
   if (result && result.ok !== false && result._slideMerge && opts?.actorEmail) {
-    void recordSlideLevelMerge({
-      presentation: result,
-      actorEmail: opts.actorEmail,
-      merge: result._slideMerge,
-      scope: storageScope,
-    }).catch(() => {});
+    fireAndForget(
+      recordSlideLevelMerge({
+        presentation: result,
+        actorEmail: opts.actorEmail,
+        merge: result._slideMerge,
+        scope: storageScope,
+      }),
+      'slide-level merge audit',
+    );
   }
   // Any successful mutation (editor save, public API, MCP tool) refreshes
   // live presenting clients. Fire-and-forget: a no-op without a live session.
   if (result && result.ok !== false) {
-    import('../live-sessions/sse.js')
-      .then((m) => m.notifyDeckUpdatedForPresentation(storageScope, id))
-      .catch(() => {});
+    fireAndForget(
+      import('../live-sessions/sse.js').then((m) =>
+        m.notifyDeckUpdatedForPresentation(storageScope, id),
+      ),
+      'live-session deck refresh after save',
+    );
     // Collab live edits, server-as-collaborator seam (ADR 001 §6): when the
     // deck's collab doc is actively loaded, apply this just-stored save to
     // the live doc so it reaches open editors instead of being overwritten
@@ -217,7 +224,10 @@ export async function updatePresentation(storageScope, id, body, opts) {
     // off, or re-enabling the flag would resurrect stale state. No-op when
     // no binary exists.
     if (opts?.reason !== 'collab' && !appliedToLiveDoc) {
-      deleteYDocState(storageScope, id).catch(() => {});
+      fireAndForget(
+        deleteYDocState(storageScope, id),
+        'collab Y.Doc invalidation after save',
+      );
     }
   }
   return result;
@@ -295,7 +305,10 @@ export async function deletePresentation(storageScope, id, opts) {
     invalidatePresentationCache(id);
     // Trash/restore round-trips must not resurrect a stale collab doc.
     // Unconditional for the same reason as in updatePresentation.
-    deleteYDocState(storageScope, id).catch(() => {});
+    fireAndForget(
+      deleteYDocState(storageScope, id),
+      'collab Y.Doc invalidation after delete',
+    );
   }
 }
 

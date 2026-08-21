@@ -9,6 +9,7 @@
 
 import { getFollowStateForPresentation } from '../../../storage/live-sessions/index.js';
 import { getPresentationCached } from '../../../storage/presentations/cache.js';
+import { fireAndForget } from '../../../utils/fire-and-forget.js';
 import {
   computeAudienceCapabilitiesFromState,
   followAudienceScope,
@@ -46,8 +47,7 @@ async function computeShared(g) {
 
 function dispatch(subscriber, shared) {
   try {
-    const p = subscriber(shared);
-    if (p && typeof p.catch === 'function') p.catch(() => {});
+    fireAndForget(subscriber(shared), 'follow status subscriber');
   } catch {
     // Subscriber errors must not break the shared tick.
   }
@@ -80,7 +80,7 @@ export function subscribeFollowStatus(repoRoot, presentationId, subscriber) {
   if (!g) {
     g = { repoRoot, presentationId, subscribers: new Set(), timer: null };
     g.timer = setInterval(() => {
-      tickGroup(g).catch(() => {});
+      fireAndForget(tickGroup(g), 'follow status tick');
     }, TICK_MS);
     g.timer.unref?.();
     groups.set(key, g);
@@ -89,11 +89,12 @@ export function subscribeFollowStatus(repoRoot, presentationId, subscriber) {
 
   // Immediate first tick for this subscriber only, so a new connection gets
   // its initial `status` event right away.
-  computeShared(g)
-    .then((shared) => {
+  fireAndForget(
+    computeShared(g).then((shared) => {
       if (g.subscribers.has(subscriber)) dispatch(subscriber, shared);
-    })
-    .catch(() => {});
+    }),
+    'follow status first tick',
+  );
 
   return () => {
     g.subscribers.delete(subscriber);

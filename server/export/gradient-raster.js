@@ -94,6 +94,7 @@ import {
   toNodeBuffer,
 } from '../utils/puppeteer-browser.js';
 import { debugLog } from '../utils/debug-log.js';
+import { ignoreRejection } from '../utils/fire-and-forget.js';
 import { envStr } from '../config/utils.js';
 
 /**
@@ -312,9 +313,10 @@ async function openRasterPage({ offline = false } = {}) {
       page.on('request', (req) => {
         const url = req.url();
         const allowed = url.startsWith('data:') || url === 'about:blank';
-        Promise.resolve(allowed ? req.continue() : req.abort()).catch(() => {
-          // The page can close mid-flight; a dangling request is not an error.
-        });
+        // The page can close mid-flight; a dangling request is not an error.
+        Promise.resolve(allowed ? req.continue() : req.abort()).catch(
+          ignoreRejection,
+        );
       });
     }
     return page;

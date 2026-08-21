@@ -28,6 +28,7 @@
 import { TTL_MS } from './constants.js';
 import { sessions } from './state.js';
 import { withDbGuard } from '../utils/db-guard.js';
+import { fireAndForget } from '../../utils/fire-and-forget.js';
 
 /** Debounce window for persisting a mutated session. */
 const PERSIST_DEBOUNCE_MS = 600;
@@ -209,7 +210,7 @@ export function schedulePersist(s) {
   if (s.persistTimer) clearTimeout(s.persistTimer);
   s.persistTimer = setTimeout(() => {
     s.persistTimer = null;
-    persistSession(s).catch(() => {});
+    fireAndForget(persistSession(s), 'live-session persist');
   }, PERSIST_DEBOUNCE_MS);
   s.persistTimer.unref?.();
 }

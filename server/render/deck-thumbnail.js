@@ -177,7 +177,13 @@ export async function pruneOldThumbnails(repoRoot, prefix, keepFilename) {
           n.endsWith('.webp') &&
           n !== keepFilename,
       )
-      .map((n) => fs.rm(path.join(dir, n), { force: true }).catch(() => {})),
+      .map((n) =>
+        // Awaited, so not a fire-and-forget: a stale sibling that refuses to
+        // go is a disk-fills-up signal, not something to swallow.
+        fs.rm(path.join(dir, n), { force: true }).catch((err) => {
+          log.warn(`stale thumbnail ${n} not removed:`, err?.message || err);
+        }),
+      ),
   );
 }
 
