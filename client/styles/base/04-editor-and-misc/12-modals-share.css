@@ -9,6 +9,17 @@
   overflow: hidden;
 }
 
+/* The dialog lays itself out as a flex column, so `.modal-content` is the
+   growing region and `.share-modal-body` inside it does the scrolling — not
+   the generic 70vh cap. */
+.modal.share-modal > .modal-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow: hidden;
+  padding-right: 0;
+}
+
 .share-modal-help {
   margin-bottom: var(--ps-space-4);
 }

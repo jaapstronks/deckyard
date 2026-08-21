@@ -1,4 +1,4 @@
-import { icon } from '../../../lib/dom/icons.js';
+import { createModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 
 /**
@@ -12,27 +12,18 @@ export function openFollowInviteSuggestModal({
   onAddBeforeCurrent,
   onSkip,
 } = {}) {
-  const backdrop = h('div', { class: 'modal-backdrop ps-modal-overlay' });
-  const modal = h('div', {
-    class: 'modal ps-modal follow-invite-suggest-modal',
-  });
-  const header = h('div', { class: 'ps-modal-header' });
-  const title = h('h2', {
-    text: t('editor.followInviteSuggest.title', 'Add a QR code slide?'),
-  });
-  const closeBtn = h(
-    'button',
-    {
-      class: 'btn btn-secondary btn-icon ps-modal-close',
-      type: 'button',
-      'aria-label': t('common.close', 'Close'),
-      onclick: () => close(true),
+  // Every exit that is not one of the two "add" buttons counts as a skip:
+  // Escape, the backdrop, the header close and "Skip for now" alike.
+  const modal = createModal(h, {
+    title: t('editor.followInviteSuggest.title', 'Add a QR code slide?'),
+    modalClass: 'ps-modal follow-invite-suggest-modal',
+    closeButton: 'icon',
+    onClose: (result) => {
+      if (result?.added !== true) onSkip?.();
     },
-    [icon('x', { size: 16 })],
-  );
-  header.append(title, closeBtn);
-
-  const body = h('div', { class: 'ps-modal-body' });
+  });
+  modal.header.classList.add('ps-modal-header');
+  modal.content.classList.add('ps-modal-body');
 
   const description = h('p', {
     class: 'follow-invite-suggest-description',
@@ -49,7 +40,7 @@ export function openFollowInviteSuggestModal({
     type: 'button',
     text: t('editor.followInviteSuggest.addAsSecond', 'Add as second slide'),
     onclick: () => {
-      close(false);
+      modal.close({ added: true });
       onAddAsSecond?.();
     },
   });
@@ -62,7 +53,7 @@ export function openFollowInviteSuggestModal({
       'Add before this slide',
     ),
     onclick: () => {
-      close(false);
+      modal.close({ added: true });
       onAddBeforeCurrent?.();
     },
   });
@@ -71,33 +62,11 @@ export function openFollowInviteSuggestModal({
     class: 'btn btn-ghost',
     type: 'button',
     text: t('editor.followInviteSuggest.skip', 'Skip for now'),
-    onclick: () => close(true),
+    onclick: () => modal.close(),
   });
 
   buttonsRow.append(addSecondBtn, addBeforeBtn, skipBtn);
 
-  const onKey = (e) => {
-    if (e.key === 'Escape') close(true);
-  };
-
-  const close = (skipped) => {
-    try {
-      document.removeEventListener('keydown', onKey);
-      backdrop.remove();
-    } finally {
-      openOverlayClosers?.delete(close);
-    }
-    if (skipped) onSkip?.();
-  };
-
-  backdrop.addEventListener('click', (e) => {
-    if (e.target === backdrop) close(true);
-  });
-
-  body.append(description, buttonsRow);
-  modal.append(header, body);
-  backdrop.append(modal);
-  root.append(backdrop);
-  openOverlayClosers?.add(close);
-  document.addEventListener('keydown', onKey);
+  modal.append(description, buttonsRow);
+  modal.show(root, openOverlayClosers);
 }

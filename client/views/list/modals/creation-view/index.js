@@ -17,8 +17,7 @@ import {
   readStoredLangMode,
   resolveInitialDeckLang,
 } from '../../../../lib/format/i18n.js';
-import { confirmModal } from '../../../../lib/dom/modal.js';
-import { createFocusTrap } from '../../../../lib/dom.js';
+import { createModal } from '../../../../lib/dom/modal.js';
 import { getFeatures } from '../../../../lib/state/features.js';
 import { createVisualThemePicker } from '../../../../lib/theme/theme-select.js';
 import { createLangSelector } from '../../../../lib/format/lang-selector.js';
@@ -54,7 +53,6 @@ export function openCreationView({
   // null lets the visual picker adopt the workspace default theme.
   let themeId = preselectedTheme?.id || null;
   let onKey = null;
-  let detachFocusTrap = null;
 
   // Resolve which concrete flow a Create click runs, given the active method.
   const getEffectiveMode = () => {
@@ -66,20 +64,20 @@ export function openCreationView({
   };
 
   // ===== Shell =====
-  const backdrop = h('div', { class: 'modal-backdrop' });
-  const modal = h('div', {
-    class: 'modal creation-view',
-    role: 'dialog',
-    'aria-modal': 'true',
-    'aria-labelledby': 'creation-view-title',
+  // The rail/pane body is the dialog's content area and the footer is pinned
+  // below it, so both are the standard structure wearing this view's classes.
+  const modal = createModal(h, {
+    title: t('list.creationView.title', 'New presentation'),
+    modalClass: 'creation-view',
+    closeButton: false,
+    isDirty: () => isDirty(),
+    confirmMessage: t(
+      'list.newPresentation.confirmDiscard',
+      'You have entered text. Discard your input?',
+    ),
   });
-
-  const header = h('div', { class: 'creation-view-header' }, [
-    h('h2', {
-      id: 'creation-view-title',
-      text: t('list.creationView.title', 'New presentation'),
-    }),
-  ]);
+  modal.header.classList.add('creation-view-header');
+  modal.content.classList.add('creation-view-body');
 
   // ===== Left rail =====
   const rail = h('nav', {
@@ -313,9 +311,7 @@ export function openCreationView({
     h('div', { class: 'row is-end gap-2' }, [btnCancel, btnAction]),
   ]);
 
-  const body = h('div', { class: 'creation-view-body' }, [rail, pane]);
-  modal.append(header, body, footer);
-  backdrop.append(modal);
+  modal.append(rail, pane);
 
   // ===== Behavior =====
   const setStatus = (text) => {
@@ -324,7 +320,8 @@ export function openCreationView({
 
   const setBusy = (v) => {
     busy = v;
-    for (const el of modal.querySelectorAll(
+    modal.setBusy(v);
+    for (const el of modal.modal.querySelectorAll(
       'input, textarea, select, button',
     )) {
       el.disabled = v;
@@ -411,11 +408,10 @@ export function openCreationView({
   const close = () => {
     try {
       if (onKey) window.removeEventListener('keydown', onKey);
-    } catch {}
-    try {
-      detachFocusTrap?.();
-    } catch {}
-    backdrop.remove();
+    } catch {
+      // ignore
+    }
+    modal.close();
   };
 
   const isDirty = () => {
@@ -427,29 +423,11 @@ export function openCreationView({
     return false;
   };
 
-  const requestClose = async () => {
-    if (busy) return;
-    if (
-      isDirty() &&
-      !(await confirmModal(h, root, {
-        title: t('list.newPresentation.discard', 'Discard'),
-        message: t(
-          'list.newPresentation.confirmDiscard',
-          'You have entered text. Discard your input?',
-        ),
-        confirmLabel: t('list.newPresentation.discard', 'Discard'),
-        danger: true,
-      }))
-    ) {
-      return;
-    }
-    close();
-  };
+  // The overlay owns the dirty guard (Escape, backdrop, Cancel all route
+  // through it), so the confirm is the one shared unsaved-changes dialog.
+  const requestClose = () => modal.requestClose();
 
   btnCancel.addEventListener('click', requestClose);
-  backdrop.addEventListener('click', (e) => {
-    if (e.target === backdrop) requestClose();
-  });
 
   // ===== Create =====
   btnAction.addEventListener('click', async () => {
@@ -463,12 +441,8 @@ export function openCreationView({
       nav,
       setBusy,
       setStatus,
-      hideBackdrop: () => {
-        backdrop.style.display = 'none';
-      },
-      showBackdrop: () => {
-        backdrop.style.display = '';
-      },
+      hideBackdrop: () => modal.hide(),
+      showBackdrop: () => modal.unhide(),
     };
 
     switch (mode) {
@@ -513,15 +487,17 @@ export function openCreationView({
   });
 
   // ===== Mount =====
+  // Escape is the overlay's; this handler only adds Enter-to-create.
   onKey = (e) => {
-    if (e.key === 'Escape' && !busy) requestClose();
     if (e.key === 'Enter' && !busy && getEffectiveMode() === 'empty')
       btnAction.click();
   };
   window.addEventListener('keydown', onKey);
 
-  root.append(backdrop);
-  detachFocusTrap = createFocusTrap(modal);
+  modal.show(root);
+  // show() rebuilds the dialog from header + content, so the pinned footer
+  // goes on afterwards.
+  modal.modal.append(footer);
   syncUI();
 
   // External preselection wins over the default blank focus: open straight into
@@ -545,6 +521,8 @@ export function openCreationView({
       library.seedItems(preselect.items.filter(Boolean));
     }
   } else {
-    emptyTitleInput.focus();
+    // On a frame: the focus trap claims initial focus on the next frame, so a
+    // synchronous call here would be overridden one frame later.
+    requestAnimationFrame(() => emptyTitleInput.focus());
   }
 }

@@ -169,7 +169,6 @@
   "list.new": "New",
   "list.newPresentation.confirmDiscard": "You have entered text. Discard your input?",
   "list.newPresentation.creating": "Creating…",
-  "list.newPresentation.discard": "Discard",
   "list.newPresentation.generatingTitle": "Generating presentation",
   "list.newPresentation.importJson.help": "Import a presentation from a previously exported .json file.",
   "list.newPresentation.importMarkdown.empty": "The file is empty.",

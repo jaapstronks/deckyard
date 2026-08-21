@@ -6,6 +6,15 @@
   flex-direction: column;
 }
 
+/* The dialog is a flex column; `.modal-content` grows and the grid scrolls. */
+.modal.imagekit-modal > .modal-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow: hidden;
+  gap: 0;
+}
+
 .imagekit-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

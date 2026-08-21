@@ -1,6 +1,6 @@
 import { lockDocumentScroll } from './editor-utils.js';
 import { t } from '../../lib/ui-i18n.js';
-import { confirmModal } from '../../lib/dom/modal.js';
+import { confirmModal, createModal } from '../../lib/dom/modal.js';
 import {
   cleanStr,
   uniq,
@@ -25,19 +25,21 @@ export function openImageKitPicker({
     throw new Error('openImageKitPicker: h is required');
   if (!root) throw new Error('openImageKitPicker: root is required');
 
-  const backdrop = h('div', { class: 'modal-backdrop' });
-  const modal = h('div', { class: 'modal imagekit-modal' });
   const unlockScroll = lockDocumentScroll();
   let closed = false;
 
+  const modal = createModal(h, {
+    title,
+    modalClass: 'imagekit-modal',
+    onClose: () => {
+      closed = true;
+      unlockScroll();
+    },
+  });
   const close = () => {
     if (closed) return;
-    closed = true;
-    unlockScroll();
-    openOverlayClosers?.delete?.(close);
-    backdrop.remove();
+    modal.close();
   };
-  openOverlayClosers?.add?.(close);
 
   const statusLine = h('div', { class: 'help ui-status-line' });
 
@@ -147,16 +149,6 @@ export function openImageKitPicker({
       );
     }
   };
-
-  const header = h('div', { class: 'row spread' });
-  header.append(
-    h('h2', { text: title }),
-    h('button', {
-      class: 'btn btn-secondary',
-      text: t('common.close', 'Close'),
-      onclick: () => close(),
-    }),
-  );
 
   const qInput = h('input', {
     class: 'form-input',
@@ -618,14 +610,8 @@ export function openImageKitPicker({
     h('div', { class: 'imagekit-detail-pane' }, [detail]),
   ]);
 
-  modal.append(header, layout);
-  backdrop.append(modal);
-
-  backdrop.addEventListener('click', (e) => {
-    if (e.target === backdrop) close();
-  });
-
-  root.append(backdrop);
+  modal.append(layout);
+  modal.show(root, openOverlayClosers);
 
   // Initial boot
   (async () => {

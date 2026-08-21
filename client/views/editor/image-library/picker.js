@@ -1,5 +1,6 @@
 import { lockDocumentScroll } from '../editor-utils.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { createModal } from '../../../lib/dom/modal.js';
 import { icon } from '../../../lib/dom/icons.js';
 import { createImageLibraryGrid } from './grid.js';
 import { createImageLibraryDetail } from './detail.js';
@@ -115,9 +116,6 @@ export function openImageLibraryPicker({
   const uploadsDisabled = !flags.enableUploads;
   const canAiAlt = !!flags.enableAi && !!flags.aiAltText;
 
-  const backdrop = h('div', { class: 'modal-backdrop' });
-  const modal = h('div', { class: 'modal image-library-modal' });
-
   const unlockScroll = lockDocumentScroll();
   let closed = false;
   let busy = false;
@@ -139,25 +137,19 @@ export function openImageLibraryPicker({
   }
   let stockMediaStatus = null;
 
+  const modal = createModal(h, {
+    title,
+    modalClass: 'image-library-modal',
+    onClose: () => {
+      closed = true;
+      unlockScroll();
+    },
+  });
+  modal.header.classList.add('media-lib-header');
   const close = () => {
     if (closed) return;
-    closed = true;
-    unlockScroll();
-    openOverlayClosers?.delete?.(close);
-    backdrop.remove();
+    modal.close();
   };
-  openOverlayClosers?.add?.(close);
-
-  // Header
-  const header = h('div', { class: 'media-lib-header' });
-  header.append(
-    h('h2', { text: title }),
-    h('button', {
-      class: 'btn btn-secondary',
-      text: t('common.close', 'Close'),
-      onclick: () => close(),
-    }),
-  );
 
   // Status line
   const status = h('div', { class: 'help media-lib-status' });
@@ -204,6 +196,8 @@ export function openImageLibraryPicker({
 
   const setBusy = (v) => {
     busy = v;
+    // Busy blocks Escape and the backdrop too (it always did here).
+    modal.setBusy(v);
     if (gridComponent) gridComponent.setDisabled(busy);
   };
 
@@ -553,7 +547,7 @@ export function openImageLibraryPicker({
       });
 
       // Replace sidebar in DOM
-      const oldSidebar = modal.querySelector('.media-lib-sidebar');
+      const oldSidebar = modal.modal.querySelector('.media-lib-sidebar');
       if (oldSidebar) {
         oldSidebar.replaceWith(sidebarComponent.element);
       }
@@ -587,27 +581,15 @@ export function openImageLibraryPicker({
   layout.append(sidebarComponent.element, mainContent);
 
   // Assemble modal
-  modal.append(header, status, mobileNav, layout, detailComponent.element);
+  modal.append(status, mobileNav, layout, detailComponent.element);
   if (allowCaptionCredit) modal.append(creditRow);
-  backdrop.append(modal);
-
-  // Event handlers
-  backdrop.addEventListener('click', (e) => {
-    if (e.target === backdrop && !busy) close();
-  });
-
-  const handleKeydown = (e) => {
-    if (e.key === 'Escape' && !busy) {
-      close();
-      window.removeEventListener('keydown', handleKeydown);
-    }
-  };
-  window.addEventListener('keydown', handleKeydown);
 
   // Mount and initialize
-  root.append(backdrop);
+  modal.show(root, openOverlayClosers);
   sidebarComponent.render();
   renderMobileNav();
-  gridComponent.focus();
+  // On a frame: the focus trap claims initial focus on the next frame, so a
+  // synchronous call here would be overridden one frame later.
+  requestAnimationFrame(() => gridComponent.focus());
   load();
 }

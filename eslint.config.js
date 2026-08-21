@@ -112,21 +112,7 @@ const overlayClassRestriction = {
 // grows: a new overlay goes through the helpers.
 const MODAL_OVERLAY_BURNDOWN = [
   // M2 — settings `.modal-overlay` dialogs: migrated, allowlist empty.
-  // M3 — editor dialogs (`modal-backdrop`, often + `ps-modal-overlay`)
-  'client/lib/slide-library/edit-modal.js',
-  'client/lib/slide-library/modals.js',
-  'client/views/analytics/report-modal.js',
-  'client/views/editor/image-library/picker.js',
-  'client/views/editor/imagekit-picker.js',
-  'client/views/editor/modals/follow-invite-suggest-modal.js',
-  'client/views/editor/modals/share-modal/index.js',
-  'client/views/editor/modals/slide-library-modal.js',
-  'client/views/editor/modals/slide-type-modal.js',
-  'client/views/editor/modals/translate-field-modal.js',
-  'client/views/editor/modals/translate-slide-modal.js',
-  'client/views/editor/publish-export/publish-modal.js',
-  'client/views/editor/topbar/language-mode.js',
-  'client/views/list/modals/creation-view/index.js',
+  // M3 — editor dialogs: migrated, allowlist empty.
   // M4 — chrome-less overlays (lightbox, peek, guest-join)
   'client/views/editor/deck-grid.js',
   'client/views/editor/inline-edit/markdown-modal.js',

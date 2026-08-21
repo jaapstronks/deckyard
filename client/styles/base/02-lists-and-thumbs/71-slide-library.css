@@ -461,7 +461,9 @@
   white-space: nowrap;
 }
 
-.ps-lib-lightbox-body {
+/* This is the dialog's `.modal-content`; the generic rule for that class
+   lives in a later-loading file, so match its specificity here. */
+.modal-content.ps-lib-lightbox-body {
   flex: 1;
   min-height: 0;
   padding: var(--ps-space-3);
@@ -469,6 +471,8 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  gap: 0;
+  max-height: none;
 }
 
 .ps-lib-lightbox-stage {
@@ -754,7 +758,8 @@
   flex-direction: column;
 }
 
-.ps-lib-edit-body {
+/* Also a `.modal-content` — same specificity note as the lightbox body. */
+.modal-content.ps-lib-edit-body {
   flex: 1;
   min-height: 0;
   padding: var(--ps-space-4);
@@ -762,6 +767,7 @@
   grid-template-columns: 1fr 1fr;
   gap: var(--ps-space-6);
   overflow: hidden;
+  max-height: none;
 }
 
 .ps-lib-edit-form {
