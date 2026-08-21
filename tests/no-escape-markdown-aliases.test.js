@@ -170,9 +170,15 @@ test('the local-esc file is documented and still exists (its esc is not the help
 /** The opening link of every entity-escaping chain in this codebase. */
 const ESCAPE_CHAIN_START = /\.replace\(\s*\/&\/g\s*,\s*'&amp;'\s*\)/g;
 
-/** One `.replace(/re/g, 'literal')` link, with comments allowed between links. */
+/**
+ * One `.replace(/re/g, 'literal')` link, with comments allowed between links.
+ *
+ * The comment branch ends on a lookahead at the newline, so it cannot split a
+ * run of slashes with the whitespace branch — that ambiguity is exponential
+ * backtracking (CodeQL js/redos).
+ */
 const NEXT_LINK =
-  /(?:\s|\/\/[^\n]*)*\.replace\(\s*\/(?:[^/\\\n]|\\.)*\/[gimsuy]*\s*,\s*('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")\s*\)/y;
+  /(?:\s|\/\/[^\n]*(?=\n))*\.replace\(\s*\/(?:[^/\\\n]|\\.)*\/[gimsuy]*\s*,\s*('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")\s*\)/y;
 
 const ENTITY_LITERAL = /^['"]&[#a-zA-Z0-9]+;['"]$/;
 
