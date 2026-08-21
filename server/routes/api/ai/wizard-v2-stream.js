@@ -23,7 +23,7 @@ import {
   validateSlideCount,
 } from '../../../utils/ai/validate-slides.js';
 import { getDisplayNameForUser } from '../../../utils/user-name.js';
-import { sseErrorPayload, openSseStream } from '../../../utils/sse.js';
+import { sseWrite, sseError, openSseStream } from '../../../utils/sse.js';
 import {
   sandboxDefaultThemeId,
   sandboxEnabled,
@@ -85,16 +85,14 @@ export async function handleAiWizardV2Stream({
   const stream = openSseStream(req, res);
   if (!stream.ok) return true;
 
-  const sendEvent = (event, data) => {
-    res.write(`event: ${event}\n`);
-    res.write(`data: ${JSON.stringify(data)}\n\n`);
-  };
-
   try {
     // Phase 1: Generate outline (get status messages)
-    sendEvent('status', {
-      message: 'Analyzing your content...',
-      phase: 'outline',
+    sseWrite(res, {
+      event: 'status',
+      data: {
+        message: 'Analyzing your content...',
+        phase: 'outline',
+      },
     });
 
     const outline = await generateOutline(raw, {
@@ -109,7 +107,10 @@ export async function handleAiWizardV2Stream({
     // these while sections are being written; real per-section progress
     // events (phase 'refine-progress') below take over as groups finish.
     const statusMessages = outline.statusMessages || [];
-    sendEvent('messages', { statusMessages, total: outline.slides.length });
+    sseWrite(res, {
+      event: 'messages',
+      data: { statusMessages, total: outline.slides.length },
+    });
 
     // Phase 2: Separate structural vs content slides
     const { structuralSlides, contentGroups } = separateSlidesForProcessing(
@@ -121,13 +122,16 @@ export async function handleAiWizardV2Stream({
     // Informational (phase 'refine'): shown only until the rotator has its
     // messages; real per-section events below use 'refine-progress' and
     // take over the modal.
-    sendEvent('status', {
-      message:
-        langCode === 'nl'
-          ? `Outline klaar: ${outline.slides.length} slides in ${contentGroups.length} secties…`
-          : `Outline ready: ${outline.slides.length} slides in ${contentGroups.length} sections…`,
-      progress: 20,
-      phase: 'refine',
+    sseWrite(res, {
+      event: 'status',
+      data: {
+        message:
+          langCode === 'nl'
+            ? `Outline klaar: ${outline.slides.length} slides in ${contentGroups.length} secties…`
+            : `Outline ready: ${outline.slides.length} slides in ${contentGroups.length} sections…`,
+        progress: 20,
+        phase: 'refine',
+      },
     });
 
     // Only send content slides to AI refinement
@@ -147,13 +151,16 @@ export async function handleAiWizardV2Stream({
         themeContext,
         // Real progress: one event per finished section group.
         onGroupDone: ({ done, total }) => {
-          sendEvent('status', {
-            message:
-              langCode === 'nl'
-                ? `Sectie ${done} van ${total} geschreven…`
-                : `Wrote section ${done} of ${total}…`,
-            progress: Math.round(20 + (done / total) * 65),
-            phase: 'refine-progress',
+          sseWrite(res, {
+            event: 'status',
+            data: {
+              message:
+                langCode === 'nl'
+                  ? `Sectie ${done} van ${total} geschreven…`
+                  : `Wrote section ${done} of ${total}…`,
+              progress: Math.round(20 + (done / total) * 65),
+              phase: 'refine-progress',
+            },
           });
         },
       });
@@ -220,10 +227,13 @@ export async function handleAiWizardV2Stream({
     reattachAiMeta(parts.slides, deck.slides);
 
     // Create presentation
-    sendEvent('status', {
-      message: 'Saving your presentation...',
-      progress: 90,
-      phase: 'save',
+    sseWrite(res, {
+      event: 'status',
+      data: {
+        message: 'Saving your presentation...',
+        progress: 90,
+        phase: 'save',
+      },
     });
 
     const updated = await createPresentationWithI18n(storageScope, {
@@ -245,15 +255,18 @@ export async function handleAiWizardV2Stream({
     }
 
     // Send final result
-    sendEvent('complete', {
-      presentation: updated,
-      sessionId,
-      slideCount: updated.slides?.length || 0,
-      budget: {
-        target: budgetTarget,
-        actual: budgetValidation.contentSlides,
-        percentage: budgetValidation.percentage,
-        overBudget: budgetValidation.overBudget,
+    sseWrite(res, {
+      event: 'complete',
+      data: {
+        presentation: updated,
+        sessionId,
+        slideCount: updated.slides?.length || 0,
+        budget: {
+          target: budgetTarget,
+          actual: budgetValidation.contentSlides,
+          percentage: budgetValidation.percentage,
+          overBudget: budgetValidation.overBudget,
+        },
       },
     });
   } catch (e) {
@@ -268,7 +281,7 @@ export async function handleAiWizardV2Stream({
       }
     }
 
-    sendEvent('error', sseErrorPayload(e?.message || 'Deck generation failed'));
+    sseError(res, e?.message || 'Deck generation failed');
   }
 
   res.end();

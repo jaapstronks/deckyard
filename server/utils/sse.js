@@ -108,12 +108,15 @@ export function sseWrite(res, { event, data } = {}) {
 
 /**
  * Build an SSE frame string (event + JSON data) for broadcasting the same
- * message to many clients — build once, `res.write()` to each.
+ * message to many clients — build once, `res.write()` to each. Module-private:
+ * the only fan-out that needs it is the client hub below, and a public
+ * frame-builder is an invitation to hand-roll a second writer next to
+ * `sseWrite`.
  * @param {string} event
  * @param {*} data JSON-serializable payload
  * @returns {string}
  */
-export function formatSSEMessage(event, data) {
+function formatSSEMessage(event, data) {
   return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
 }
 

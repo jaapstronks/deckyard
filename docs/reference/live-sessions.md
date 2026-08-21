@@ -60,8 +60,10 @@ Routes:
 
 SSE helpers:
 
-- `server/utils/sse.js` — low-level frame helpers (`sseWrite`,
-  `formatSSEMessage`, `sseError`, `sseComment` for heartbeats).
+- `server/utils/sse.js` — low-level frame helpers (`openSseStream`,
+  `sseWrite`, `sseError`, `sseComment` for heartbeats). `sseWrite` is the one
+  way a handler writes a frame — it builds the message before writing it (no
+  interleaving) and no-ops on an ended stream.
 - `server/utils/sse-limiter.js` — DoS guard for unauthenticated long-lived
   streams (`guardSseConnection`): global cap, per-IP cap, absolute-lifetime
   force-close.

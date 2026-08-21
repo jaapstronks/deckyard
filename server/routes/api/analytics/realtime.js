@@ -5,7 +5,7 @@
 import { withPresentationAuth } from '../../../utils/route-middleware.js';
 import { ANALYTICS_CONFIG } from '../../../analytics/helpers.js';
 import { getActiveViewerCount } from '../../../storage/analytics/view-sessions.js';
-import { openSseStream } from '../../../utils/sse.js';
+import { openSseStream, sseWrite } from '../../../utils/sse.js';
 import { createLogger } from '../../../utils/logger.js';
 const log = createLogger('realtime');
 
@@ -32,15 +32,13 @@ export async function handleRealtime(ctx, presentationId) {
 
   // Send initial count
   const initialCount = await getActiveViewerCount(presentationId);
-  res.write(
-    `event: viewerCount\ndata: ${JSON.stringify({ count: initialCount })}\n\n`,
-  );
+  sseWrite(res, { event: 'viewerCount', data: { count: initialCount } });
 
   // Set up interval for updates (using configurable interval)
   const intervalId = setInterval(async () => {
     try {
       const count = await getActiveViewerCount(presentationId);
-      res.write(`event: viewerCount\ndata: ${JSON.stringify({ count })}\n\n`);
+      sseWrite(res, { event: 'viewerCount', data: { count } });
     } catch (err) {
       // Log error but don't crash the connection
       log.error('[analytics] SSE update error:', err.message);
