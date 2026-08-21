@@ -111,13 +111,7 @@ const overlayClassRestriction = {
 // M2 (settings), M3 (editor dialogs), M4 (chrome-less overlays) — and never
 // grows: a new overlay goes through the helpers.
 const MODAL_OVERLAY_BURNDOWN = [
-  // M2 — settings `.modal-overlay` dialogs
-  'client/views/editor/modals/json-debug-modal.js',
-  'client/views/settings/admin-users/add-modal.js',
-  'client/views/settings/admin-users/edit-modal.js',
-  'client/views/settings/api-keys/create-modal.js',
-  'client/views/settings/api-keys/revoke-modal.js',
-  'client/views/settings/api-keys/usage-panel.js',
+  // M2 — settings `.modal-overlay` dialogs: migrated, allowlist empty.
   // M3 — editor dialogs: migrated, allowlist empty.
   // M4 — chrome-less overlays (lightbox, peek, guest-join)
   'client/views/editor/deck-grid.js',

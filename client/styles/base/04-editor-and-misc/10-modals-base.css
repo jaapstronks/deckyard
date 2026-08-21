@@ -214,6 +214,11 @@
   margin-top: 8px;
 }
 
+/* Stacked form inside a dialog: tighter than the 16px default of .stack. */
+.modal-form {
+  gap: var(--ps-space-3);
+}
+
 .modal-hint-lg {
   margin-bottom: 10px;
 }
