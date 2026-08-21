@@ -93,7 +93,7 @@ export function showInviteModal({
   invite = inviteMember,
 } = {}) {
   const roles = invitableRoles(user);
-  const modal = createModal(h, {
+  const modal = createModal({
     title: t('organization.members.invite.title', 'Invite someone'),
     hint: t(
       'organization.members.invite.hint',
@@ -177,7 +177,7 @@ export function showInviteModal({
 
   const status = h('div', { class: 'help modal-status', role: 'status' });
 
-  const actions = createModalActions(h, {
+  const actions = createModalActions({
     cancelText: t('common.cancel', 'Cancel'),
     actionText: t('organization.members.invite.submit', 'Send invitation'),
     onCancel: () => modal.requestClose(),

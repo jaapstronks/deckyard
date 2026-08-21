@@ -313,7 +313,7 @@ function openTableEditorModal({
   rerenderEditor,
   scheduleUiRefresh,
 } = {}) {
-  const modal = createModal(h, {
+  const modal = createModal({
     title: t('editor.table.edit', 'Edit table'),
     hint: t('editor.table.editHint', 'Changes apply to the slide immediately.'),
     modalClass: 'table-editor-modal',
@@ -494,10 +494,10 @@ export function createTableGridEditor({
           );
         } catch {
           // Clipboard blocked: show the markdown in a read-only modal to copy manually.
-          const m = createModal(h, {
+          const m = createModal({
             title: t('editor.table.copyMarkdownTitle', 'Table markdown'),
           });
-          const taOut = createTextArea(h, { value: md, minHeight: '240px' });
+          const taOut = createTextArea({ value: md, minHeight: '240px' });
           taOut.textarea.readOnly = true;
           m.content.append(taOut.wrap);
           m.show(document.body);

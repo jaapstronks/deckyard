@@ -74,7 +74,7 @@ export async function openSubscriptionModal({ h, api, toast, presentationId }) {
     return;
   }
 
-  const modalApi = createModal(h, {
+  const modalApi = createModal({
     title: t('subscription.title', 'Notifications for this deck'),
     modalClass: 'subscription-modal',
   });

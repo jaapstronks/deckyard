@@ -167,7 +167,7 @@ export function createFieldListEditor({ fields = [], onChange }) {
         onclick: async (e) => {
           e.preventDefault();
           e.stopPropagation();
-          const confirmed = await confirmModal(h, document.body, {
+          const confirmed = await confirmModal(document.body, {
             title: t('common.remove', 'Remove'),
             message: t(
               'settings.slideTypes.fields.removeConfirm',

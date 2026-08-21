@@ -1,5 +1,5 @@
 import { t } from '../ui-i18n.js';
-import { createFocusTrap } from '../dom.js';
+import { h, createFocusTrap } from '../dom.js';
 import { icon } from './icons.js';
 export { createBusyManager } from './busy.js';
 
@@ -15,7 +15,6 @@ export { createBusyManager } from './busy.js';
  * Use this directly only for chrome-less overlays (lightbox, peek); dialogs
  * with a title/close affordance go through `createModal`.
  *
- * @param {Function} h - DOM element factory function
  * @param {Object} options - Overlay options
  * @param {string} [options.backdropClass='modal-backdrop'] - Backdrop CSS class
  * @param {HTMLElement} [options.surface] - Dialog surface element; appended to
@@ -29,7 +28,7 @@ export { createBusyManager } from './busy.js';
  * @param {string} [options.confirmMessage] - Confirmation message for dirty close
  * @returns {Object} Overlay API object
  */
-export function createOverlay(h, options = {}) {
+export function createOverlay(options = {}) {
   const {
     backdropClass = 'modal-backdrop',
     surface = null,
@@ -92,7 +91,7 @@ export function createOverlay(h, options = {}) {
       confirmingClose = true;
       let ok;
       try {
-        ok = await confirmModal(h, document.body, {
+        ok = await confirmModal(document.body, {
           title: t('common.unsavedChanges', 'Unsaved changes'),
           message: confirmMessage,
           confirmLabel: t('common.discardChanges', 'Discard changes'),
@@ -202,7 +201,6 @@ export function createOverlay(h, options = {}) {
  * focus restore and closers); this layer adds the dialog chrome: header with
  * title and close button, optional hint, and the content area.
  *
- * @param {Function} h - DOM element factory function
  * @param {Object} options - Modal options
  * @param {string} options.title - Modal title text
  * @param {string} [options.hint] - Optional hint text below title
@@ -223,7 +221,7 @@ export function createOverlay(h, options = {}) {
  * @param {string} [options.confirmMessage] - Confirmation message for dirty close
  * @returns {Object} Modal API object
  */
-export function createModal(h, options = {}) {
+export function createModal(options = {}) {
   const {
     title: titleText,
     hint: hintText,
@@ -255,7 +253,7 @@ export function createModal(h, options = {}) {
   }
   const modal = h('div', modalAttrs);
 
-  const overlay = createOverlay(h, {
+  const overlay = createOverlay({
     surface: modal,
     closeOnBackdrop,
     closeOnEscape,
@@ -385,14 +383,13 @@ export function createModal(h, options = {}) {
  * Creates and immediately shows a simple modal.
  * Shorthand for createModal + show.
  *
- * @param {Function} h - DOM element factory function
  * @param {HTMLElement} root - Element to append modal to
  * @param {Object} options - Modal options (see createModal)
  * @param {Set} [overlayClosers] - Set to register close function for cleanup
  * @returns {Object} Modal API object
  */
-export function openModal(h, root, options = {}, overlayClosers) {
-  const modalApi = createModal(h, options);
+export function openModal(root, options = {}, overlayClosers) {
+  const modalApi = createModal(options);
   modalApi.show(root, overlayClosers);
   return modalApi;
 }
@@ -400,7 +397,6 @@ export function openModal(h, root, options = {}, overlayClosers) {
 /**
  * Creates a confirmation modal with Cancel/Confirm buttons.
  *
- * @param {Function} h - DOM element factory function
  * @param {HTMLElement} root - Element to append modal to
  * @param {Object} options - Modal options
  * @param {string} options.title - Modal title
@@ -411,7 +407,7 @@ export function openModal(h, root, options = {}, overlayClosers) {
  * @param {Set} [overlayClosers] - Set to register close function for cleanup
  * @returns {Promise<boolean>} Resolves true if confirmed, false if cancelled
  */
-export function confirmModal(h, root, options = {}, overlayClosers) {
+export function confirmModal(root, options = {}, overlayClosers) {
   const {
     title: titleText,
     message,
@@ -421,7 +417,7 @@ export function confirmModal(h, root, options = {}, overlayClosers) {
   } = options;
 
   return new Promise((resolve) => {
-    const modalApi = createModal(h, {
+    const modalApi = createModal({
       title: titleText,
       closeOnBackdrop: false,
       onClose: (result) => resolve(result?.confirmed === true),
@@ -451,7 +447,6 @@ export function confirmModal(h, root, options = {}, overlayClosers) {
  * Creates a text-prompt modal with a labelled input and Cancel/Confirm buttons.
  * Accessible replacement for the native `prompt()`.
  *
- * @param {Function} h - DOM element factory function
  * @param {HTMLElement} root - Element to append modal to
  * @param {Object} options - Modal options
  * @param {string} options.title - Modal title
@@ -464,7 +459,7 @@ export function confirmModal(h, root, options = {}, overlayClosers) {
  * @param {Set} [overlayClosers] - Set to register close function for cleanup
  * @returns {Promise<string|null>} Resolves to the entered value, or null if cancelled
  */
-export function promptModal(h, root, options = {}, overlayClosers) {
+export function promptModal(root, options = {}, overlayClosers) {
   const {
     title: titleText,
     message,
@@ -476,14 +471,14 @@ export function promptModal(h, root, options = {}, overlayClosers) {
   } = options;
 
   return new Promise((resolve) => {
-    const modalApi = createModal(h, {
+    const modalApi = createModal({
       title: titleText,
       closeOnBackdrop: false,
       onClose: (result) =>
         resolve(typeof result?.value === 'string' ? result.value : null),
     });
 
-    const field = createTextInput(h, { value, placeholder, validate });
+    const field = createTextInput({ value, placeholder, validate });
 
     const submit = () => {
       if (typeof field.validate === 'function' && !field.validate()) return;
@@ -530,18 +525,17 @@ export function promptModal(h, root, options = {}, overlayClosers) {
  * Creates a modal that returns a Promise, resolving when closed.
  * Useful for modals that need to return data.
  *
- * @param {Function} h - DOM element factory function
  * @param {Object} options - Modal options (see createModal)
  * @returns {Object} Modal API with additional `promise` property
  */
-export function createPromiseModal(h, options = {}) {
+export function createPromiseModal(options = {}) {
   let resolvePromise;
   const promise = new Promise((resolve) => {
     resolvePromise = resolve;
   });
 
   const originalOnClose = options.onClose;
-  const modalApi = createModal(h, {
+  const modalApi = createModal({
     ...options,
     onClose: (result) => {
       originalOnClose?.(result);
@@ -559,8 +553,7 @@ export function createPromiseModal(h, options = {}) {
  * Creates a modal and immediately shows it.
  * Compatibility wrapper for the old create-modal.js API.
  *
- * @param {Object} options - Modal options with h and root included
- * @param {Function} options.h - DOM element factory function
+ * @param {Object} options - Modal options with root included
  * @param {HTMLElement} options.root - Root element to append modal to
  * @param {string} [options.title] - Modal title
  * @param {string} [options.className] - Additional CSS class (maps to modalClass)
@@ -572,7 +565,6 @@ export function createPromiseModal(h, options = {}) {
  * @returns {Object} Modal API object (already shown)
  */
 export function createQuickModal({
-  h,
   root,
   title,
   className,
@@ -582,7 +574,7 @@ export function createQuickModal({
   isDirty,
   confirmMessage,
 } = {}) {
-  const modalApi = createModal(h, {
+  const modalApi = createModal({
     title,
     modalClass: className,
     closeOnBackdrop,
@@ -598,7 +590,6 @@ export function createQuickModal({
 /**
  * Create action buttons for modal footer
  *
- * @param {Function} h - DOM element helper function
  * @param {Object} options - Button options
  * @param {Function} [options.onCancel] - Cancel button handler
  * @param {Function} [options.onAction] - Primary action handler
@@ -606,15 +597,12 @@ export function createQuickModal({
  * @param {string} [options.actionText] - Action button text
  * @returns {Object} { wrap, cancel, action, setActionText, setDisabled }
  */
-export function createModalActions(
-  h,
-  {
-    onCancel,
-    onAction,
-    cancelText = t('common.cancel', 'Cancel'),
-    actionText = t('common.create', 'Create'),
-  } = {},
-) {
+export function createModalActions({
+  onCancel,
+  onAction,
+  cancelText = t('common.cancel', 'Cancel'),
+  actionText = t('common.create', 'Create'),
+} = {}) {
   const wrap = h('div', { class: 'row is-end modal-actions' });
 
   const cancel = h('button', {
@@ -653,7 +641,6 @@ export function createModalActions(
  * Extracts shared logic between createTextInput and createTextArea.
  */
 function createFormElement(
-  h,
   elementType,
   elementAttrs,
   wrapperClass,
@@ -701,7 +688,6 @@ function createFormElement(
 /**
  * Create a text input with validation and status display.
  *
- * @param {Function} h - DOM element factory function
  * @param {Object} options - Input options
  * @param {string} [options.value] - Initial value
  * @param {string} [options.placeholder] - Placeholder text
@@ -710,12 +696,14 @@ function createFormElement(
  * @param {boolean} [options.autoFocus=true] - Auto-focus the input
  * @returns {Object} { wrap, input, status, getValue, validate, focus }
  */
-export function createTextInput(
-  h,
-  { value = '', placeholder = '', validate, onChange, autoFocus = true } = {},
-) {
+export function createTextInput({
+  value = '',
+  placeholder = '',
+  validate,
+  onChange,
+  autoFocus = true,
+} = {}) {
   const result = createFormElement(
-    h,
     'input',
     {
       class: 'form-input',
@@ -734,7 +722,6 @@ export function createTextInput(
 /**
  * Create a textarea with validation and status display.
  *
- * @param {Function} h - DOM element factory function
  * @param {Object} options - Textarea options
  * @param {string} [options.value] - Initial value
  * @param {string} [options.placeholder] - Placeholder text
@@ -744,19 +731,15 @@ export function createTextInput(
  * @param {boolean} [options.autoFocus=true] - Auto-focus the textarea
  * @returns {Object} { wrap, textarea, status, getValue, validate, focus }
  */
-export function createTextArea(
-  h,
-  {
-    value = '',
-    placeholder = '',
-    minHeight = '120px',
-    validate,
-    onChange,
-    autoFocus = true,
-  } = {},
-) {
+export function createTextArea({
+  value = '',
+  placeholder = '',
+  minHeight = '120px',
+  validate,
+  onChange,
+  autoFocus = true,
+} = {}) {
   const result = createFormElement(
-    h,
     'textarea',
     {
       class: 'form-input',

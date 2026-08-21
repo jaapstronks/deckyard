@@ -13,7 +13,7 @@ import { toast } from '../../../lib/dom/toast.js';
  * @param {Function} onSuccess - Callback after successful addition
  */
 export function showAddModal(onSuccess) {
-  const modal = createModal(h, {
+  const modal = createModal({
     title: t('admin.users.addModal.title', 'Add new user'),
   });
 
@@ -49,7 +49,7 @@ export function showAddModal(onSuccess) {
 
   const status = h('div', { class: 'help modal-status', role: 'status' });
 
-  const actions = createModalActions(h, {
+  const actions = createModalActions({
     cancelText: t('common.cancel', 'Cancel'),
     actionText: t('admin.users.addModal.submit', 'Add user'),
     onCancel: () => modal.requestClose(),

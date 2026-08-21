@@ -72,7 +72,7 @@ export function openShortcutsOverlay({
   modalClass = 'shortcuts-modal',
   onClose,
 } = {}) {
-  const modalApi = openModal(h, document.body, {
+  const modalApi = openModal(document.body, {
     title: title || t('shortcuts.title', 'Keyboard shortcuts'),
     modalClass,
     onClose: () => onClose?.(),

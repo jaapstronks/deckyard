@@ -212,7 +212,6 @@ export function createCollaboratorsSection({
     }
 
     const newOwner = await promptModal(
-      h,
       modalRoot,
       {
         title: t('share.collaborators.transferOwnership', 'Transfer'),
@@ -251,7 +250,6 @@ export function createCollaboratorsSection({
     }
 
     const confirmed = await confirmModal(
-      h,
       modalRoot,
       {
         title: t('share.collaborators.transferOwnership', 'Transfer'),

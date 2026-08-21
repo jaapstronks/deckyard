@@ -14,7 +14,7 @@ export function openFollowInviteSuggestModal({
 } = {}) {
   // Every exit that is not one of the two "add" buttons counts as a skip:
   // Escape, the backdrop, the header close and "Skip for now" alike.
-  const modal = createModal(h, {
+  const modal = createModal({
     title: t('editor.followInviteSuggest.title', 'Add a QR code slide?'),
     modalClass: 'ps-modal follow-invite-suggest-modal',
     closeButton: 'icon',

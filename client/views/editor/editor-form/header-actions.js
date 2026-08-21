@@ -375,7 +375,7 @@ export function buildHeaderActions({
         if (convertDetails) convertDetails.open = false;
         if (aiConvertDetails) aiConvertDetails.open = false;
         if (
-          !(await confirmModal(h, document.body, {
+          !(await confirmModal(document.body, {
             title: t('editor.slide.delete', 'Delete'),
             message: t('editor.slide.deleteConfirm', 'Delete this slide?'),
             confirmLabel: t('common.delete', 'Delete'),

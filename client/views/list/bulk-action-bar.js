@@ -126,7 +126,7 @@ export function createBulkActionBar({
         { count: state.count },
       );
       if (
-        !(await confirmModal(h, document.body, {
+        !(await confirmModal(document.body, {
           title: t('list.bulk.delete', 'Move to trash'),
           message: confirmMsg,
           confirmLabel: t('list.bulk.delete', 'Move to trash'),
@@ -247,7 +247,7 @@ export function createBulkActionBar({
         { count: state.count },
       );
       if (
-        !(await confirmModal(h, document.body, {
+        !(await confirmModal(document.body, {
           title: t('list.bulk.deletePermanently', 'Delete permanently'),
           message: confirmMsg,
           confirmLabel: t('list.bulk.deletePermanently', 'Delete permanently'),

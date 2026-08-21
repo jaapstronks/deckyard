@@ -16,7 +16,7 @@ export function openAnalyzeModal({
   openOverlayClosers,
   onComplete,
 } = {}) {
-  const modal = createPromiseModal(h, {
+  const modal = createPromiseModal({
     title: t('editor.analyzeModal.title', 'AI Analysis'),
     hint: t(
       'editor.analyzeModal.hint',

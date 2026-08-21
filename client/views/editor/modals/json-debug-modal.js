@@ -168,7 +168,7 @@ export function openJsonDebugModal({
 
   // The dirty guard is the overlay's: Escape, backdrop click and the header
   // close all route through the one shared "unsaved changes" confirm.
-  const modal = createModal(h, {
+  const modal = createModal({
     title: t('admin.jsonDebug.title', 'Slide JSON Debug'),
     modalClass: 'json-debug-modal',
     closeButton: 'icon',
@@ -318,7 +318,7 @@ export function openJsonDebugModal({
 
     // Warn about ID changes
     if (editedJson.id !== slide.id) {
-      const ok = await confirmModal(h, document.body, {
+      const ok = await confirmModal(document.body, {
         title: t('admin.jsonDebug.warn.idChangeTitle', 'Change slide ID?'),
         message: t(
           'admin.jsonDebug.warn.idChange',
@@ -332,7 +332,7 @@ export function openJsonDebugModal({
 
     // Warn about type changes
     if (editedJson.type !== slide.type) {
-      const ok = await confirmModal(h, document.body, {
+      const ok = await confirmModal(document.body, {
         title: t('admin.jsonDebug.warn.typeChangeTitle', 'Change slide type?'),
         message: t(
           'admin.jsonDebug.warn.typeChange',

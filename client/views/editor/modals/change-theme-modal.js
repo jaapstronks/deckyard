@@ -44,7 +44,7 @@ function openChangeThemeModal({
   const { problematicSlides, newTheme } = analysis;
   const slideCount = problematicSlides.length;
 
-  const modal = createPromiseModal(h, {
+  const modal = createPromiseModal({
     title: t(
       'editor.changeTheme.warningTitle',
       '{count} slides may be affected',

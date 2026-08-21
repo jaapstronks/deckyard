@@ -142,7 +142,7 @@ export function createGuestManagementSection({
         class: 'btn btn-danger btn-xs',
         text: t('share.guests.remove', 'Remove'),
         onclick: async () => {
-          const ok = await confirmModal(h, document.body, {
+          const ok = await confirmModal(document.body, {
             title: t('share.guests.remove', 'Remove'),
             message: t('share.guests.removeConfirm', 'Remove this guest?'),
             confirmLabel: t('share.guests.remove', 'Remove'),

@@ -48,7 +48,7 @@ export function createBulkEditModal({
   function open() {
     let detachScale = null;
     let previewRaf = 0;
-    const modal = createModal(h, {
+    const modal = createModal({
       title: t('editor.bulkEdit.title', 'Edit all text'),
       modalClass: 'bulk-edit-modal',
       onClose: () => {

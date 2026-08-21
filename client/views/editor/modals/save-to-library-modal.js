@@ -81,7 +81,7 @@ export function openSaveToLibraryModal({
   openOverlayClosers,
   openSlideLibraryModal,
 } = {}) {
-  const modal = createModal(h, {
+  const modal = createModal({
     title: t('editor.slideLibrary.saveModal.title', 'Save to slide library'),
     hint: t(
       'editor.slideLibrary.saveModal.hint',
@@ -363,7 +363,7 @@ export function openSaveToLibraryModal({
     }
   };
 
-  const actions = createModalActions(h, {
+  const actions = createModalActions({
     onCancel: () => modal.close(),
     onAction: doSave,
     cancelText: t('common.cancel', 'Cancel'),

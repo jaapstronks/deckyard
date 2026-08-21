@@ -143,7 +143,7 @@ export function createDeckGridView({
     // Escape and the arrow keys are handled below in the capture phase, so the
     // peek closes without also closing whatever it opened over; the overlay
     // owns the backdrop, the focus trap and focus restore.
-    const overlay = createOverlay(h, {
+    const overlay = createOverlay({
       backdropClass: 'modal-backdrop deck-grid-peek-overlay',
       surface: card,
       closeOnEscape: false,

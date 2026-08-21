@@ -156,7 +156,7 @@ export function createMarkdownEditModal({
       footer,
     ]);
     let detach = null;
-    const overlay = createOverlay(h, {
+    const overlay = createOverlay({
       backdropClass: 'ie-md-backdrop',
       surface: modal,
       onClose: () => {

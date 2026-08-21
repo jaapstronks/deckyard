@@ -55,7 +55,7 @@ export function openConflictModal({
           'This presentation was saved by someone else.',
         );
 
-  const modal = createModal(h, {
+  const modal = createModal({
     title: t('editor.conflict.title', 'Could not save (conflict)'),
     hint: hintText,
   });

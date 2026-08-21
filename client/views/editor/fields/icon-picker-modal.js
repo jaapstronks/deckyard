@@ -74,7 +74,7 @@ function pushRecent(name) {
 export function openIconPicker({ current = '', onSelect } = {}) {
   const selectedName = resolveIconName(current);
 
-  const modal = openModal(h, document.body, {
+  const modal = openModal(document.body, {
     title: t('editor.iconPicker.title', 'Choose an icon'),
     modalClass: 'icon-picker-modal',
   });

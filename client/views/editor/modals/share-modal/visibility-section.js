@@ -154,7 +154,6 @@ export function createVisibilitySection({
       return;
     }
     const ok = await confirmModal(
-      h,
       modalRoot || document.body,
       {
         title: t('editor.share.private', 'Move to private'),

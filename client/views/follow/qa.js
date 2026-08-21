@@ -328,7 +328,7 @@ export function createFollowQaController({
     qaNameBtn.onclick = async () => {
       const copy = getCopy?.() || {};
       const current = getQaName?.() || '';
-      const next = await promptModal(h, document.body, {
+      const next = await promptModal(document.body, {
         title: copy.qaName,
         value: current,
       });

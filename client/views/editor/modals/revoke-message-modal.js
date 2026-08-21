@@ -72,7 +72,7 @@ export function openRevokeMessageModal({
     [REVOKE_CONTEXT.TRASH]: t('share.revoke.confirm.trash', 'Move to Trash'),
   };
 
-  const modal = createPromiseModal(h, {
+  const modal = createPromiseModal({
     title: titles[context] || titles[REVOKE_CONTEXT.SHARE_LINK],
     closeOnBackdrop: true,
     onClose: (result) => result,

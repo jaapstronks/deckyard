@@ -57,7 +57,7 @@ export function createEraseMyDataButton({
   });
 
   btn.addEventListener('click', async () => {
-    const confirmed = await confirmModal(h, document.body, {
+    const confirmed = await confirmModal(document.body, {
       title: labels.confirmTitle,
       message: labels.confirmMessage,
       confirmLabel: labels.confirmOk,

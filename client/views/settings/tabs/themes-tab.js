@@ -500,7 +500,7 @@ export function createThemesTab({ user }) {
    * @param {Object} theme - Theme to delete
    */
   async function confirmDeleteTheme(theme) {
-    const confirmed = await confirmModal(h, document.body, {
+    const confirmed = await confirmModal(document.body, {
       title: t('common.delete', 'Delete'),
       message: t(
         'settings.themes.deleteConfirm',

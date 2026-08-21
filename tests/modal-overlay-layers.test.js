@@ -66,7 +66,7 @@ const tick = () => new Promise((r) => setTimeout(r, 0));
 
 test('createOverlay applies dialog aria to the surface and traps inside the backdrop', () => {
   const surface = h('div', { class: 'my-lightbox' });
-  const overlay = createOverlay(h, { surface });
+  const overlay = createOverlay({ surface });
   overlay.show(document.body);
 
   assert.equal(surface.getAttribute('role'), 'dialog');
@@ -83,14 +83,14 @@ test('createOverlay applies dialog aria to the surface and traps inside the back
 
 test('createOverlay leaves caller-set role/aria alone (idempotent defaults)', () => {
   const surface = h('div', { role: 'alertdialog', 'aria-modal': 'true' });
-  const overlay = createOverlay(h, { surface });
+  const overlay = createOverlay({ surface });
   overlay.show(document.body);
   assert.equal(surface.getAttribute('role'), 'alertdialog');
   overlay.close();
 });
 
 test('createOverlay honours a custom backdrop class', () => {
-  const overlay = createOverlay(h, { backdropClass: 'modal-backdrop peek' });
+  const overlay = createOverlay({ backdropClass: 'modal-backdrop peek' });
   overlay.show(document.body);
   assert.equal(overlay.backdrop.className, 'modal-backdrop peek');
   overlay.close();
@@ -98,13 +98,13 @@ test('createOverlay honours a custom backdrop class', () => {
 
 test('createOverlay closes on Escape and on backdrop click', async () => {
   let closes = 0;
-  const overlay = createOverlay(h, { onClose: () => closes++ });
+  const overlay = createOverlay({ onClose: () => closes++ });
   overlay.show(document.body);
   pressEscape();
   await tick();
   assert.equal(closes, 1);
 
-  const second = createOverlay(h, { onClose: () => closes++ });
+  const second = createOverlay({ onClose: () => closes++ });
   second.show(document.body);
   clickBackdrop(second.backdrop);
   await tick();
@@ -113,7 +113,7 @@ test('createOverlay closes on Escape and on backdrop click', async () => {
 
 test('createOverlay busy state blocks Escape/backdrop/requestClose but not close()', async () => {
   let closed = false;
-  const overlay = createOverlay(h, { onClose: () => (closed = true) });
+  const overlay = createOverlay({ onClose: () => (closed = true) });
   overlay.show(document.body);
   overlay.setBusy(true);
   assert.equal(overlay.isBusy(), true);
@@ -129,7 +129,7 @@ test('createOverlay busy state blocks Escape/backdrop/requestClose but not close
 
 test('createOverlay registers in overlayClosers and deregisters on close', () => {
   const closers = new Set();
-  const overlay = createOverlay(h, {});
+  const overlay = createOverlay({});
   overlay.show(document.body, closers);
   assert.equal(closers.size, 1);
   overlay.close();
@@ -142,7 +142,7 @@ test('createOverlay restores focus to the previously focused element', () => {
   button.focus();
   assert.equal(document.activeElement, button);
 
-  const overlay = createOverlay(h, {});
+  const overlay = createOverlay({});
   overlay.show(document.body);
   overlay.close();
   assert.equal(document.activeElement, button);
@@ -151,7 +151,7 @@ test('createOverlay restores focus to the previously focused element', () => {
 
 test('createOverlay dirty check routes requestClose through the confirm dialog', async () => {
   let closed = false;
-  const overlay = createOverlay(h, {
+  const overlay = createOverlay({
     isDirty: () => true,
     confirmMessage: 'Lose your edits?',
     onClose: () => (closed = true),
@@ -179,7 +179,7 @@ test('createOverlay dirty check routes requestClose through the confirm dialog',
 // ── createModal: the chrome layer ──────────────────────────────────────────
 
 test('createModal default DOM shape is the pre-split shape', () => {
-  const api = createModal(h, {
+  const api = createModal({
     title: 'Share deck',
     hint: 'Anyone with the link can view.',
     modalClass: 'share-modal',
@@ -205,7 +205,7 @@ test('createModal default DOM shape is the pre-split shape', () => {
 });
 
 test('createModal closeButton:"icon" renders the icon-X close affordance', () => {
-  const api = createModal(h, { title: 'Library', closeButton: 'icon' });
+  const api = createModal({ title: 'Library', closeButton: 'icon' });
   api.show(document.body);
 
   const btn = api.closeBtn;
@@ -220,7 +220,7 @@ test('createModal closeButton:"icon" renders the icon-X close affordance', () =>
 });
 
 test('createModal closeButton:false renders a header without a close button', () => {
-  const api = createModal(h, { title: 'No close', closeButton: false });
+  const api = createModal({ title: 'No close', closeButton: false });
   api.show(document.body);
   assert.equal(api.closeBtn, null);
   assert.equal(api.header.querySelector('button'), null);
@@ -229,7 +229,7 @@ test('createModal closeButton:false renders a header without a close button', ()
 });
 
 test('createModal header:false renders no header and labels the dialog directly', () => {
-  const api = createModal(h, { title: 'Quick peek', header: false });
+  const api = createModal({ title: 'Quick peek', header: false });
   api.append(h('div', { text: 'body' }));
   api.show(document.body);
 
@@ -249,7 +249,7 @@ test('createModal header:<node> uses the caller-supplied header row', () => {
   const custom = h('div', { class: 'lightbox-header' }, [
     h('h2', { text: 'Pinned' }),
   ]);
-  const api = createModal(h, { title: 'Lightbox', header: custom });
+  const api = createModal({ title: 'Lightbox', header: custom });
   api.show(document.body);
 
   assert.equal(api.header, custom);
@@ -260,7 +260,7 @@ test('createModal header:<node> uses the caller-supplied header row', () => {
 });
 
 test('createModal setHint after show inserts the hint before the content area', () => {
-  const api = createModal(h, { title: 'Hints' });
+  const api = createModal({ title: 'Hints' });
   api.show(document.body);
   api.setHint('added later');
   const hint = api.modal.querySelector('.modal-hint');
@@ -271,7 +271,7 @@ test('createModal setHint after show inserts the hint before the content area', 
 
 test('createModal escape and backdrop click still close the dialog', async () => {
   let result;
-  const api = createModal(h, { title: 'Esc', onClose: (r) => (result = r) });
+  const api = createModal({ title: 'Esc', onClose: (r) => (result = r) });
   api.show(document.body);
   pressEscape();
   await tick();

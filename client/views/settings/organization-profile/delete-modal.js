@@ -40,7 +40,7 @@ export function showDeleteOrganizationModal({
 } = {}) {
   const name = String(organization?.name || '').trim();
 
-  const modal = createModal(h, {
+  const modal = createModal({
     title: t('organization.profile.delete.title', 'Delete this organization'),
     hint: t(
       'organization.profile.delete.hint',

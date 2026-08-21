@@ -441,7 +441,7 @@ export function createLanguageMode({
     }
     const overwrite = !!pres.i18n.versions?.[to];
     if (overwrite) {
-      const ok = await confirmModal(h, root || document.body, {
+      const ok = await confirmModal(root || document.body, {
         title: t('editor.translate.overwrite', 'Overwrite translation'),
         message: t(
           'editor.translate.overwriteConfirm',
@@ -506,7 +506,7 @@ export function createLanguageMode({
 
   /** Dismissible "busy" modal shown while a translation request runs. */
   function openBusyModal() {
-    const modal = createModal(h, {
+    const modal = createModal({
       title: t('editor.translate.modalTitle', 'Translating…'),
     });
     modal.append(

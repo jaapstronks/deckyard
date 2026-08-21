@@ -45,7 +45,7 @@ export async function copyToClipboard(text) {
  * @param {string} [label] - Modal title
  */
 export function showCopyFallbackModal(text, label) {
-  const modalApi = createModal(h, { title: label || t('common.copy', 'Copy') });
+  const modalApi = createModal({ title: label || t('common.copy', 'Copy') });
   const hint = h('div', {
     class: 'help',
     text: t(
@@ -53,7 +53,7 @@ export function showCopyFallbackModal(text, label) {
       'Select the text below and copy it manually (Ctrl/Cmd+C).',
     ),
   });
-  const field = createTextArea(h, {
+  const field = createTextArea({
     value: String(text ?? ''),
     minHeight: '160px',
   });

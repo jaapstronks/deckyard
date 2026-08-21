@@ -66,7 +66,7 @@ export function openCreationView({
   // ===== Shell =====
   // The rail/pane body is the dialog's content area and the footer is pinned
   // below it, so both are the standard structure wearing this view's classes.
-  const modal = createModal(h, {
+  const modal = createModal({
     title: t('list.creationView.title', 'New presentation'),
     modalClass: 'creation-view',
     closeButton: false,

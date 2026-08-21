@@ -22,7 +22,7 @@ function showKeyDisplayModal(fullKey, onClose) {
   // No Escape, no backdrop click, no header close: the key is shown exactly
   // once, so every exit runs through Done and its "you have not copied it yet"
   // check. Losing it to a stray click is unrecoverable.
-  const modal = createModal(h, {
+  const modal = createModal({
     title: t('settings.apiKeys.keyCreated', 'API Key Created'),
     modalClass: 'api-key-display-modal',
     closeButton: false,
@@ -73,7 +73,7 @@ function showKeyDisplayModal(fullKey, onClose) {
 
   doneBtn.onclick = async () => {
     if (!copied) {
-      const confirmClose = await confirmModal(h, document.body, {
+      const confirmClose = await confirmModal(document.body, {
         title: t('common.close', 'Close'),
         message: t(
           'settings.apiKeys.confirmCloseWithoutCopy',
@@ -98,7 +98,7 @@ function showKeyDisplayModal(fullKey, onClose) {
  * @param {Function} onSuccess - Callback after successful creation
  */
 export function showCreateModal(onSuccess) {
-  const modal = createModal(h, {
+  const modal = createModal({
     title: t('settings.apiKeys.createModal.title', 'Create API Key'),
   });
 
@@ -210,7 +210,7 @@ export function showCreateModal(onSuccess) {
   // Status message
   const status = h('div', { class: 'help modal-status', role: 'status' });
 
-  const actions = createModalActions(h, {
+  const actions = createModalActions({
     cancelText: t('common.cancel', 'Cancel'),
     actionText: t('settings.apiKeys.createModal.create', 'Create Key'),
     onCancel: () => modal.requestClose(),

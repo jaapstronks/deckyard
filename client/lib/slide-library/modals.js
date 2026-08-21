@@ -57,7 +57,7 @@ export function createSlideLibraryModals({
 
     const titleText =
       cleanStr(it?.name) || t('slideLibrary.preview.untitled', 'Untitled');
-    const modal = createModal(h, {
+    const modal = createModal({
       title: titleText,
       modalClass: 'ps-modal ps-lib-lightbox-modal',
       onClose: () => {
@@ -192,7 +192,7 @@ export function createSlideLibraryModals({
   };
 
   const openUseSlideModal = (it) => {
-    const modal = createModal(h, {
+    const modal = createModal({
       title: t('slideLibrary.useModal.title', 'Use slide'),
       hint: t('slideLibrary.useModal.hint', 'Choose how to use this slide.'),
     });

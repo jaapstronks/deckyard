@@ -82,7 +82,7 @@ export function openShareModal({
   const unlockScroll = lockDocumentScroll();
   let collaborators = null;
 
-  const modal = createModal(h, {
+  const modal = createModal({
     title: t('share.modal.title', 'Share'),
     modalClass: 'share-modal',
     onClose: () => {

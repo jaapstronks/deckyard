@@ -114,7 +114,7 @@ function renderMemberActions(member, currentUser, handlers) {
       text: t('organization.members.transferOwnership', 'Make owner'),
     });
     btn.onclick = async () => {
-      const confirmed = await confirmModal(h, document.body, {
+      const confirmed = await confirmModal(document.body, {
         title: t('organization.members.transferOwnership', 'Make owner'),
         message: t(
           'organization.members.transferOwnershipConfirm',
@@ -143,7 +143,7 @@ function renderMemberActions(member, currentUser, handlers) {
         : t('organization.members.remove', 'Remove'),
     });
     btn.onclick = async () => {
-      const confirmed = await confirmModal(h, document.body, {
+      const confirmed = await confirmModal(document.body, {
         title: self
           ? t('organization.members.leaveTitle', 'Leave organization')
           : t('organization.members.removeTitle', 'Remove member'),

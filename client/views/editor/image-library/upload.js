@@ -352,7 +352,7 @@ export function createImageLibraryUpload({
 
       if (!altNl && !altEn) {
         if (canAiAlt) {
-          const genOk = await confirmModal(h, document.body, {
+          const genOk = await confirmModal(document.body, {
             title: t('imageLibrary.alt.missingTitle', 'Alt text missing'),
             message: t(
               'imageLibrary.alt.missingSuggestGenerate',
@@ -387,7 +387,7 @@ export function createImageLibraryUpload({
               setBusy(false);
             }
           } else {
-            const ok = await confirmModal(h, document.body, {
+            const ok = await confirmModal(document.body, {
               title: t('imageLibrary.alt.missingTitle', 'Alt text missing'),
               message: t(
                 'imageLibrary.alt.missingConfirmUse',
@@ -397,7 +397,7 @@ export function createImageLibraryUpload({
             if (!ok) return;
           }
         } else {
-          const ok = await confirmModal(h, document.body, {
+          const ok = await confirmModal(document.body, {
             title: t('imageLibrary.alt.missingTitle', 'Alt text missing'),
             message: t(
               'imageLibrary.alt.missingConfirmUse',

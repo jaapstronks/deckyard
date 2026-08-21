@@ -354,7 +354,7 @@ export function createCardRenderer({
           e.stopPropagation();
           menu.classList.remove('is-open');
           if (
-            !(await confirmModal(h, document.body, {
+            !(await confirmModal(document.body, {
               title: t('list.deletePermanently', 'Delete permanently'),
               message: t(
                 'list.deletePermanentlyConfirm',
@@ -433,7 +433,7 @@ export function createCardRenderer({
           e.stopPropagation();
           menu.classList.remove('is-open');
           if (
-            !(await confirmModal(h, document.body, {
+            !(await confirmModal(document.body, {
               title: t('list.delete', 'Move to trash'),
               message: t('list.deleteConfirm', 'Move "{title}" to trash?', {
                 title: p.title,

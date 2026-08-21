@@ -354,7 +354,7 @@ export function createSlideLibraryPicker({
       text: t('slideLibrary.action.trash', 'Move to trash'),
       onclick: async () => {
         moreDetails.open = false;
-        const ok = await confirmModal(h, document.body, {
+        const ok = await confirmModal(document.body, {
           title: t('slideLibrary.action.trash', 'Move to trash'),
           message: t(
             'slideLibrary.action.trash.confirm',
@@ -591,7 +591,7 @@ export function createSlideLibraryPicker({
           text: t('slideLibrary.selection.trash', 'Move to trash'),
           onclick: async () => {
             const items = state.getSelectedItems();
-            const ok = await confirmModal(h, document.body, {
+            const ok = await confirmModal(document.body, {
               title: t('slideLibrary.selection.trash', 'Move to trash'),
               message: t(
                 'slideLibrary.selection.trashConfirm',

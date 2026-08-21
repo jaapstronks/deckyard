@@ -5,7 +5,6 @@
  * in the Share dialog's Workspace tab (`modals/share-modal/visibility-section.js`).
  */
 
-import { h } from '../../../lib/dom.js';
 import { normalizeLang } from '../../../lib/format/i18n.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
@@ -34,7 +33,7 @@ export async function handleNotionPublish({ api, toast, pres }) {
   const embedUrl = `${location.origin}/embed/${publishId}${slug ? `-${slug}` : ''}?lang=${encodeURIComponent(lang)}`;
   const title = pres?.title || '';
 
-  const confirmed = await confirmModal(h, document.body, {
+  const confirmed = await confirmModal(document.body, {
     title: t('editor.publish.notion', 'Add to Notion page'),
     message: t(
       'editor.publish.notion.confirm',

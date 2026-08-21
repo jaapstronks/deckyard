@@ -10,7 +10,7 @@ export function openTitleModal({
   newTitleKey,
   mode = 'edit',
 } = {}) {
-  const modal = createModal(h, {
+  const modal = createModal({
     title:
       mode === 'new'
         ? t('editor.titleModal.newTitle', 'Name your presentation')

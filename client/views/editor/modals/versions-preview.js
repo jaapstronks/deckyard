@@ -36,7 +36,7 @@ export function openVersionPreviewModal({
         date: versionDate,
       });
 
-  const modal = createModal(h, {
+  const modal = createModal({
     title: titleText,
     modalClass: 'modal-wide',
     closeOnBackdrop: true,

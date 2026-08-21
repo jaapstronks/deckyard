@@ -103,7 +103,7 @@ export function createPresenterToolsMenu({
       closeTools();
       // Guard: the presenter link grants control over the live deck, so make
       // the user acknowledge that before it lands on their clipboard.
-      const confirmed = await confirmModal(h, document.body, {
+      const confirmed = await confirmModal(document.body, {
         title: t(
           'presenter.tools.copyPresenterConfirmTitle',
           'Copy the presenter link?',

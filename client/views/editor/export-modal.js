@@ -343,7 +343,6 @@ export function openExportModal({ pres, id, root, overlayClosers }) {
   const getLang = () => currentLang;
 
   const modal = openModal(
-    h,
     root,
     {
       title: t('editor.export.title', 'Export to file'),
