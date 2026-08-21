@@ -52,11 +52,29 @@ const {
   canChangePresentationVisibility,
   canManageCollaborators,
   canCommentOnPresentation,
+  canTransferOwnership,
   isPresentationAuthor,
+  isUnrestricted,
   getEffectivePermission,
   canResolveComment,
+  canEditComment,
   canDeleteComment,
+  canGuestComment,
+  canGuestEditComment,
+  canGuestDeleteComment,
 } = await import('../server/utils/presentation-authz.js');
+
+// `isSameOrganization` is the one decider the barrel does not re-export, and
+// the share-link deciders are not in the barrel at all (see the exhaustiveness
+// section at the foot of this file). Both are imported from their modules.
+const { isSameOrganization } =
+  await import('../server/utils/presentation-authz/presentations.js');
+const {
+  canReadWithShareLink,
+  canCommentWithShareLink,
+  canWriteWithShareLink,
+  getShareLinkPermission,
+} = await import('../server/utils/presentation-authz/share-links.js');
 
 // --- Actors -----------------------------------------------------------------
 // Owner and creator are deliberately different emails so a deck can distinguish
@@ -653,5 +671,404 @@ describe('sandbox overrides (SANDBOX_MODE on)', () => {
         true,
       );
     });
+  });
+});
+
+// --- Share links and guests -------------------------------------------------
+// The half of the matrix that answers to the **public internet**. Every decider
+// above answers about a party the instance already authenticated; these answer
+// about an anonymous visitor holding a URL, or a guest who proved only an
+// address. A wrong answer here lands outside the organization, not inside it —
+// which is why they belong in this file, and why they were the last six without
+// a cell (B109).
+
+/** A share link, as the validation layer hands it to a decider. */
+const shareLink = (permission, extra = {}) => ({
+  id: 'sl1',
+  presentationId: privateDeck.id,
+  permission,
+  revokedAt: null,
+  expiresAt: null,
+  ...extra,
+});
+
+/** Yesterday and tomorrow, relative to the run. */
+const HOUR = 60 * 60 * 1000;
+const past = () => new Date(Date.now() - HOUR).toISOString();
+const future = () => new Date(Date.now() + HOUR).toISOString();
+
+describe('share-link deciders — the permission ladder', () => {
+  it('read: every permission level a link can carry grants reading', () => {
+    for (const p of [VIEW, COMMENT, EDIT]) {
+      assert.equal(canReadWithShareLink(shareLink(p)), true, `permission=${p}`);
+    }
+  });
+  it('comment: comment and edit grant commenting, view does not', () => {
+    assert.equal(canCommentWithShareLink(shareLink(COMMENT)), true);
+    assert.equal(canCommentWithShareLink(shareLink(EDIT)), true);
+    assert.equal(canCommentWithShareLink(shareLink(VIEW)), false);
+  });
+  it('write: only edit grants writing', () => {
+    assert.equal(canWriteWithShareLink(shareLink(EDIT)), true);
+    assert.equal(canWriteWithShareLink(shareLink(COMMENT)), false);
+    assert.equal(canWriteWithShareLink(shareLink(VIEW)), false);
+  });
+  it('an unknown permission string grants nothing', () => {
+    const bogus = shareLink('owner');
+    assert.equal(canReadWithShareLink(bogus), false);
+    assert.equal(canCommentWithShareLink(bogus), false);
+    assert.equal(canWriteWithShareLink(bogus), false);
+    assert.equal(getShareLinkPermission(bogus), null);
+  });
+  it('no link at all grants nothing — the anonymous visitor with no URL', () => {
+    for (const absent of [null, undefined, 'sl1', 42]) {
+      assert.equal(canReadWithShareLink(absent), false, String(absent));
+      assert.equal(canCommentWithShareLink(absent), false, String(absent));
+      assert.equal(canWriteWithShareLink(absent), false, String(absent));
+      assert.equal(getShareLinkPermission(absent), null, String(absent));
+    }
+  });
+  it('getShareLinkPermission reports the level, it does not decide', () => {
+    for (const p of [VIEW, COMMENT, EDIT]) {
+      assert.equal(getShareLinkPermission(shareLink(p)), p);
+    }
+  });
+});
+
+describe('share-link deciders — what they deliberately do NOT check', () => {
+  // Pinned as a seam, not as an endorsement: these three read `permission` and
+  // nothing else, so a revoked or expired link still answers "yes" here. The
+  // validation layer that fetches the link is what refuses it — which means a
+  // future caller that skips validation gets no protection from this decider.
+  // canGuestComment below shows the other shape: it checks both itself.
+  it('a revoked link still passes the permission check', () => {
+    const revoked = shareLink(EDIT, { revokedAt: past() });
+    assert.equal(canReadWithShareLink(revoked), true);
+    assert.equal(canWriteWithShareLink(revoked), true);
+  });
+  it('an expired link still passes the permission check', () => {
+    const expired = shareLink(EDIT, { expiresAt: past() });
+    assert.equal(canReadWithShareLink(expired), true);
+    assert.equal(canWriteWithShareLink(expired), true);
+  });
+});
+
+describe('canGuestComment — the verified guest on a share link', () => {
+  const GUEST_ID = '44444444-4444-4444-8444-444444444444';
+  const verifiedGuest = {
+    id: GUEST_ID,
+    verifiedAt: '2026-01-01T00:00:00.000Z',
+  };
+  const unverifiedGuest = { id: GUEST_ID, verifiedAt: null };
+  const ask = (over = {}) =>
+    canGuestComment({
+      guest: verifiedGuest,
+      shareLink: shareLink(COMMENT),
+      presentationId: privateDeck.id,
+      ...over,
+    });
+
+  it('a verified guest on a comment or edit link may comment', () => {
+    assert.equal(ask(), true);
+    assert.equal(ask({ shareLink: shareLink(EDIT) }), true);
+  });
+  it('a view-only link does not let a guest comment', () => {
+    assert.equal(ask({ shareLink: shareLink(VIEW) }), false);
+  });
+  it('an unverified guest may not comment — the address is unproven', () => {
+    assert.equal(ask({ guest: unverifiedGuest }), false);
+  });
+  it('a guest whose link is for another deck may not comment here', () => {
+    assert.equal(
+      ask({ shareLink: shareLink(COMMENT, { presentationId: 'other-deck' }) }),
+      false,
+    );
+    assert.equal(ask({ presentationId: 'other-deck' }), false);
+  });
+  it('a revoked link may not be commented through', () => {
+    assert.equal(
+      ask({ shareLink: shareLink(COMMENT, { revokedAt: past() }) }),
+      false,
+    );
+  });
+  it('an expired link may not be commented through, an unexpired one may', () => {
+    assert.equal(
+      ask({ shareLink: shareLink(COMMENT, { expiresAt: past() }) }),
+      false,
+    );
+    assert.equal(
+      ask({ shareLink: shareLink(COMMENT, { expiresAt: future() }) }),
+      true,
+    );
+  });
+  it('no guest and no link answer no', () => {
+    assert.equal(ask({ guest: null }), false);
+    assert.equal(ask({ shareLink: null }), false);
+    assert.equal(canGuestComment(), false);
+  });
+});
+
+describe('canGuestEditComment / canGuestDeleteComment — own comment only', () => {
+  const GUEST_ID = '44444444-4444-4444-8444-444444444444';
+  const OTHER_GUEST_ID = '55555555-5555-4555-8555-555555555555';
+  const guest = { id: GUEST_ID, verifiedAt: '2026-01-01T00:00:00.000Z' };
+  const ownComment = { id: 'c1', authorGuestId: GUEST_ID };
+  const otherComment = { id: 'c2', authorGuestId: OTHER_GUEST_ID };
+
+  it('a guest may edit and delete the comment they wrote', () => {
+    assert.equal(canGuestEditComment({ guest, comment: ownComment }), true);
+    assert.equal(canGuestDeleteComment({ guest, comment: ownComment }), true);
+  });
+  it('a guest may not touch another guest’s comment', () => {
+    assert.equal(canGuestEditComment({ guest, comment: otherComment }), false);
+    assert.equal(
+      canGuestDeleteComment({ guest, comment: otherComment }),
+      false,
+    );
+  });
+  it('a comment by a logged-in user carries no authorGuestId, so no guest owns it', () => {
+    const userComment = { id: 'c3', author: { id: OTHER_ID } };
+    assert.equal(canGuestEditComment({ guest, comment: userComment }), false);
+    assert.equal(canGuestDeleteComment({ guest, comment: userComment }), false);
+  });
+  it('an id-less guest matches nothing, even an id-less comment', () => {
+    assert.equal(
+      canGuestEditComment({ guest: {}, comment: { authorGuestId: null } }),
+      false,
+    );
+    assert.equal(canGuestEditComment(), false);
+    assert.equal(canGuestDeleteComment(), false);
+  });
+});
+
+// --- The remaining deciders -------------------------------------------------
+
+describe('canTransferOwnership', () => {
+  it('owner and creator may hand the deck over; nobody else may', () => {
+    assert.equal(
+      canTransferOwnership({ user: OWNER, pres: privateDeck }),
+      true,
+    );
+    assert.equal(
+      canTransferOwnership({ user: CREATOR, pres: privateDeck }),
+      true,
+    );
+    assert.equal(
+      canTransferOwnership({ user: OTHER, pres: privateDeck }),
+      false,
+    );
+    assert.equal(
+      canTransferOwnership({ user: ANON, pres: privateDeck }),
+      false,
+    );
+  });
+  it('an organization deck is not transferable by any organization member', () => {
+    // Reading an organization deck is a membership grant; giving it away is not.
+    assert.equal(
+      canTransferOwnership({ user: OTHER, pres: organizationDeck }),
+      false,
+    );
+  });
+  it('the address-only actor cannot transfer, the operator can', () => {
+    assert.equal(
+      canTransferOwnership({ user: ADDRESS_ONLY, pres: privateDeck }),
+      false,
+    );
+    assert.equal(
+      canTransferOwnership({ user: OPERATOR, pres: privateDeck }),
+      true,
+    );
+  });
+});
+
+describe('canEditComment', () => {
+  it('only the author may edit their comment — the deck owner may not', () => {
+    const comment = { author: { id: OTHER_ID, displayName: 'Other' } };
+    assert.equal(canEditComment({ user: OTHER, comment }), true);
+    assert.equal(canEditComment({ user: OWNER, comment }), false);
+    assert.equal(canEditComment({ user: ANON, comment }), false);
+  });
+  it('an admin may edit any comment', () => {
+    const comment = { author: { id: OTHER_ID, displayName: 'Other' } };
+    assert.equal(canEditComment({ user: ADMIN, comment }), true);
+  });
+  it('a comment with no author is nobody’s to edit', () => {
+    assert.equal(canEditComment({ user: OTHER, comment: {} }), false);
+    assert.equal(canEditComment(), false);
+  });
+});
+
+describe('isSameOrganization (single-organization install)', () => {
+  // The file's scope: multi-organization on is pinned in
+  // authz-organization-scope-multi-org.test.js. With the flag off there is
+  // nothing to compare, and the grant answers yes unconditionally — which is
+  // what makes every organization-deck row above read the way it does.
+  it('answers yes whatever the two organizations say', () => {
+    assert.equal(isSameOrganization(OTHER, organizationDeck), true);
+    assert.equal(
+      isSameOrganization({ organizationId: 'a' }, { organizationId: 'b' }),
+      true,
+    );
+    assert.equal(isSameOrganization(undefined, undefined), true);
+  });
+});
+
+describe('isUnrestricted', () => {
+  // The operator bypass every decider above consults first. It is a flag on the
+  // actor, never derived from the deck — so a deck can never make its reader
+  // unrestricted.
+  it('only an explicit unrestricted:true actor is unrestricted', () => {
+    assert.equal(isUnrestricted(OPERATOR), true);
+    assert.equal(isUnrestricted(ADMIN), false);
+    assert.equal(isUnrestricted(OWNER), false);
+    assert.equal(isUnrestricted({ unrestricted: 'true' }), false);
+    assert.equal(isUnrestricted(ANON), false);
+    assert.equal(isUnrestricted(null), false);
+    assert.equal(isUnrestricted(), false);
+  });
+});
+
+// --- exhaustiveness gate below this line ---
+//
+// Everything above is a cell. This is the rule that makes the matrix a matrix:
+// a decider that is not pinned here cannot be added quietly.
+//
+// The six share-link and guest deciders reached the public internet with zero
+// direct test references (B109) — not because anyone waved them through, but
+// because nothing counted. A cell-by-cell matrix that does not know what it is
+// missing is a list, not an obligation.
+//
+// The corpus is the authz layer itself, `server/utils/presentation-authz/`,
+// deliberately *not* the `presentation-authz.js` barrel: the barrel does not
+// re-export `share-links.js` at all, and scanning it would have reproduced the
+// exact blind spot this gate exists to close.
+//
+// `shared/identity-match.js` sits outside the corpus on purpose — it is shared
+// with the client and pinned cell-by-cell in tests/authz-identity-key.test.js.
+
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const AUTHZ_DIR = fileURLToPath(
+  new URL('../server/utils/presentation-authz/', import.meta.url),
+);
+
+/**
+ * Deciders that are exported but not pinned here, each with the reason.
+ *
+ * Held to the same two-way honesty as the other allowlists in this repo: an
+ * entry whose export disappears fails, and so does an entry that has quietly
+ * been pinned after all.
+ */
+const NOT_PINNED_HERE = {
+  canActorAccessPresentation:
+    'async and storage-backed (identity resolution + a collaborator lookup); its pure core checkActorAccess delegates to canRead/canWritePresentation, which are pinned above. The wrapper needs a database double, so it belongs in a route or pg test — tests/pg/collaborator-authz-resolution.pgtest.js covers the resolution half.',
+  canActorDeletePresentation:
+    'async and storage-backed; delegates to canDeletePresentation, pinned above. No direct test names it today — recorded as a gap in the B109 PR, not resolved by this entry.',
+  canActorResolveComment:
+    'async and storage-backed; delegates to canResolveComment, pinned above. No direct test names it today — recorded as a gap in the B109 PR, not resolved by this entry.',
+  canActorCommentOnPresentation:
+    'async and storage-backed; its pure core checkActorCommentAccess delegates to canCommentOnPresentation, pinned above. No direct test names it today — recorded as a gap in the B109 PR, not resolved by this entry.',
+};
+
+/** Every `can*`/`is*` export in the authz layer, module by module. */
+function authzDeciders() {
+  const declaration = /^export (?:async )?function ((?:can|is)[A-Za-z0-9_]*)/gm;
+  const out = []; // { name, module }
+  for (const file of fs.readdirSync(AUTHZ_DIR).sort()) {
+    if (!file.endsWith('.js')) continue;
+    const text = fs.readFileSync(path.join(AUTHZ_DIR, file), 'utf8');
+    for (const m of text.matchAll(declaration)) {
+      out.push({ name: m[1], module: `presentation-authz/${file}` });
+    }
+  }
+  return out;
+}
+
+/**
+ * This file with its comments removed.
+ *
+ * A decider named only in prose is not pinned — before this stripping,
+ * `isUnrestricted` "passed" on the strength of one explanatory comment.
+ */
+const MATRIX_SOURCE = fs
+  .readFileSync(fileURLToPath(import.meta.url), 'utf8')
+  .replace(/\/\*[\s\S]*?\*\//g, ' ')
+  .replace(/^\s*\/\/.*$/gm, ' ')
+  // The marker is assembled here so this line cannot match itself.
+  .split(['//', '--- exhaustiveness gate below this line ---'].join(' '))[0];
+
+/** Every name this file destructures out of an `await import(...)`. */
+const IMPORTED = new Set(
+  [...MATRIX_SOURCE.matchAll(/const\s*\{([^}]*)\}\s*=\s*await import\(/g)]
+    .flatMap((m) => m[1].split(','))
+    .map((n) => n.trim())
+    .filter(Boolean),
+);
+
+/**
+ * A decider is pinned when this file imports it *and* calls it.
+ *
+ * Both halves matter: importing without asserting pins nothing, and a bare
+ * `name(` could be some other function of the same name.
+ */
+const isPinned = (name) =>
+  IMPORTED.has(name) && new RegExp(`\\b${name}\\s*\\(`).test(MATRIX_SOURCE);
+
+const DECIDERS = authzDeciders();
+
+describe('the matrix is exhaustive', () => {
+  it('the scan actually sees the authz layer', () => {
+    // A silent zero-decider scan would make the assertion below vacuous.
+    assert.ok(
+      DECIDERS.length > 15,
+      `expected the authz layer to export many deciders, got ${DECIDERS.length}`,
+    );
+    const modules = new Set(DECIDERS.map((d) => d.module));
+    for (const expected of [
+      'presentation-authz/presentations.js',
+      'presentation-authz/comments.js',
+      'presentation-authz/guests.js',
+      'presentation-authz/share-links.js',
+      'presentation-authz/actor-access.js',
+    ]) {
+      assert.ok(modules.has(expected), `${expected} is missing from the scan`);
+    }
+  });
+
+  it('every decider is pinned by a cell here, or allowlisted with a reason', () => {
+    const unpinned = DECIDERS.filter(
+      ({ name }) => !isPinned(name) && !Object.hasOwn(NOT_PINNED_HERE, name),
+    );
+    assert.deepEqual(
+      unpinned.map(({ name, module }) => `${name}  (${module})`),
+      [],
+      `these authorization deciders have no cell in the matrix:\n` +
+        unpinned
+          .map(({ name, module }) => `  - ${name}  (${module})`)
+          .join('\n') +
+        `\n\nAdd a cell above — import the decider and assert its answers — or, ` +
+        `if it genuinely cannot be pinned in a pure matrix, add it to ` +
+        `NOT_PINNED_HERE with the reason and where it is covered instead.`,
+    );
+  });
+
+  it('no allowlist entry has gone stale (the allowlist cannot rot)', () => {
+    const exported = new Set(DECIDERS.map(({ name }) => name));
+    for (const [name, why] of Object.entries(NOT_PINNED_HERE)) {
+      assert.ok(
+        exported.has(name),
+        `NOT_PINNED_HERE lists "${name}" (${why}) but the authz layer no longer exports it — drop the entry.`,
+      );
+      assert.ok(
+        !isPinned(name),
+        `NOT_PINNED_HERE lists "${name}" but the matrix now pins it — drop the entry.`,
+      );
+      assert.ok(
+        typeof why === 'string' && why.trim().length > 20,
+        `allowlist entry "${name}" needs a real reason, not "${why}"`,
+      );
+    }
   });
 });
