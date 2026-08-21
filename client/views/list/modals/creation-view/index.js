@@ -521,6 +521,8 @@ export function openCreationView({
       library.seedItems(preselect.items.filter(Boolean));
     }
   } else {
-    emptyTitleInput.focus();
+    // On a frame: the focus trap claims initial focus on the next frame, so a
+    // synchronous call here would be overridden one frame later.
+    requestAnimationFrame(() => emptyTitleInput.focus());
   }
 }

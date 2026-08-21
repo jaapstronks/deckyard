@@ -588,6 +588,8 @@ export function openImageLibraryPicker({
   modal.show(root, openOverlayClosers);
   sidebarComponent.render();
   renderMobileNav();
-  gridComponent.focus();
+  // On a frame: the focus trap claims initial focus on the next frame, so a
+  // synchronous call here would be overridden one frame later.
+  requestAnimationFrame(() => gridComponent.focus());
   load();
 }
