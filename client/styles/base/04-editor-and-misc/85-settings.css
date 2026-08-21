@@ -423,45 +423,6 @@
   font-weight: 500;
 }
 
-/* Modal overlay styles */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: var(--z-overlay);
-}
-
-.modal-overlay .modal {
-  background: hsl(var(--app-bg-elevated));
-  border-radius: 12px;
-  padding: 24px;
-  max-width: 420px;
-  width: 90%;
-  box-shadow: var(--app-shadow-lg);
-}
-
-.modal-overlay .modal h3 {
-  margin: 0 0 16px;
-}
-
-.modal-overlay .modal-form {
-  gap: 12px;
-}
-
-.modal-overlay .modal-form .form-input {
-  width: 100%;
-}
-
-.modal-status {
-  min-height: 20px;
-}
-
 /* Password status */
 .password-status {
   min-height: 18px;

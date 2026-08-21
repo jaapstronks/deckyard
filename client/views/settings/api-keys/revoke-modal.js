@@ -3,6 +3,7 @@
  */
 
 import { h } from '../../../lib/dom.js';
+import { createModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { revokeApiKey } from './actions.js';
@@ -13,11 +14,8 @@ import { revokeApiKey } from './actions.js';
  * @param {Function} onSuccess - Callback after successful revocation
  */
 export function showRevokeModal(key, onSuccess) {
-  const overlay = h('div', { class: 'modal-overlay' });
-  const modal = h('div', { class: 'modal' });
-
-  const modalTitle = h('h3', {
-    text: t('settings.apiKeys.revokeModal.title', 'Revoke API Key'),
+  const modal = createModal(h, {
+    title: t('settings.apiKeys.revokeModal.title', 'Revoke API Key'),
   });
 
   const message = h('div', { class: 'stack', style: 'gap: 12px;' });
@@ -42,26 +40,40 @@ export function showRevokeModal(key, onSuccess) {
     ),
   });
 
-  const status = h('div', { class: 'help modal-status' });
+  const status = h('div', { class: 'help modal-status', role: 'status' });
 
   const btnRevoke = h('button', {
     class: 'btn btn-danger',
     text: t('settings.apiKeys.revokeModal.confirm', 'Revoke Key'),
     type: 'button',
+    onclick: () => submit(),
   });
 
   const btnCancel = h('button', {
     class: 'btn btn-secondary',
     text: t('common.cancel', 'Cancel'),
     type: 'button',
+    onclick: () => modal.requestClose(),
   });
 
-  let busy = false;
-  btnRevoke.onclick = async () => {
-    if (busy) return;
+  const btnRow = h('div', { class: 'row is-end modal-actions' });
+  btnRow.append(btnCancel, btnRevoke);
 
-    busy = true;
+  modal.append(message, warning, status, btnRow);
+  modal.show(document.body);
+
+  return modal;
+
+  /**
+   * Revoke the key and report the outcome.
+   * @returns {Promise<void>}
+   */
+  async function submit() {
+    if (modal.isBusy()) return;
+
+    modal.setBusy(true);
     btnRevoke.disabled = true;
+    btnCancel.disabled = true;
     status.textContent = t(
       'settings.apiKeys.revokeModal.revoking',
       'Revoking…',
@@ -73,29 +85,16 @@ export function showRevokeModal(key, onSuccess) {
       toast.success(
         t('settings.apiKeys.revokeModal.success', 'API key revoked.'),
       );
-      overlay.remove();
+      modal.setBusy(false);
+      modal.close();
       onSuccess();
     } else {
       status.textContent =
         result.error ||
         t('settings.apiKeys.revokeModal.error', 'Failed to revoke API key.');
-      busy = false;
+      modal.setBusy(false);
       btnRevoke.disabled = false;
+      btnCancel.disabled = false;
     }
-  };
-
-  btnCancel.onclick = () => overlay.remove();
-  overlay.onclick = (e) => {
-    if (e.target === overlay) overlay.remove();
-  };
-
-  const btnRow = h('div', {
-    class: 'row is-end',
-    style: 'gap: 8px; margin-top: 16px;',
-  });
-  btnRow.append(btnCancel, btnRevoke);
-
-  modal.append(modalTitle, message, warning, status, btnRow);
-  overlay.append(modal);
-  document.body.append(overlay);
+  }
 }
