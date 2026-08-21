@@ -1,29 +1,38 @@
 import { t } from '../ui-i18n.js';
 import { createFocusTrap } from '../dom.js';
+import { icon } from './icons.js';
 export { createBusyManager } from './busy.js';
 
 /**
- * Creates a modal with standard structure and lifecycle management.
+ * Creates a bare modal overlay: all behaviour, no imposed chrome.
+ *
+ * This is the behaviour layer under `createModal` (A7.16 cluster 1). It owns
+ * the backdrop element, focus trap, Escape handling, `role`/`aria-modal` on
+ * the surface, focus restore, busy/dirty close guarding, and overlay-closers
+ * registration. What goes *inside* the overlay — header, title, close button,
+ * content — is entirely the caller's (or `createModal`'s) business.
+ *
+ * Use this directly only for chrome-less overlays (lightbox, peek); dialogs
+ * with a title/close affordance go through `createModal`.
  *
  * @param {Function} h - DOM element factory function
- * @param {Object} options - Modal options
- * @param {string} options.title - Modal title text
- * @param {string} [options.hint] - Optional hint text below title
- * @param {string} [options.modalClass] - Additional CSS class for the modal
- * @param {string} [options.closeLabel] - Custom close button label
+ * @param {Object} options - Overlay options
+ * @param {string} [options.backdropClass='modal-backdrop'] - Backdrop CSS class
+ * @param {HTMLElement} [options.surface] - Dialog surface element; appended to
+ *   the backdrop on show. Gets `role="dialog"` and `aria-modal="true"` unless
+ *   it already carries those attributes, and hosts the focus trap. Without a
+ *   surface the trap covers the backdrop itself.
  * @param {boolean} [options.closeOnBackdrop=true] - Close when clicking backdrop
  * @param {boolean} [options.closeOnEscape=true] - Close on Escape key
- * @param {Function} [options.onClose] - Callback when modal closes
- * @param {Function} [options.isDirty] - Function returning true if modal has unsaved changes
+ * @param {Function} [options.onClose] - Callback when overlay closes
+ * @param {Function} [options.isDirty] - Function returning true if the overlay has unsaved changes
  * @param {string} [options.confirmMessage] - Confirmation message for dirty close
- * @returns {Object} Modal API object
+ * @returns {Object} Overlay API object
  */
-export function createModal(h, options = {}) {
+export function createOverlay(h, options = {}) {
   const {
-    title: titleText,
-    hint: hintText,
-    modalClass,
-    closeLabel = t('common.close', 'Close'),
+    backdropClass = 'modal-backdrop',
+    surface = null,
     closeOnBackdrop = true,
     closeOnEscape = true,
     onClose,
@@ -31,39 +40,11 @@ export function createModal(h, options = {}) {
     confirmMessage,
   } = options;
 
-  const backdrop = h('div', { class: 'modal-backdrop' });
-  const modalClasses = ['modal', modalClass].filter(Boolean).join(' ');
-  const modalId = `modal-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-  const modal = h('div', {
-    class: modalClasses,
-    role: 'dialog',
-    'aria-modal': 'true',
-    'aria-labelledby': `${modalId}-title`,
-  });
-
-  // Header with title and close button
-  const header = h('div', { class: 'row spread' });
-  const title = h('h2', { id: `${modalId}-title`, text: titleText || '' });
-  const closeBtn = h('button', {
-    class: 'btn btn-secondary',
-    text: closeLabel,
-    // Same guarded path as Esc/backdrop: respects busy and the dirty check.
-    onclick: () => requestClose(),
-  });
-  header.append(title, closeBtn);
-
-  // Optional hint
-  let hint = null;
-  if (hintText) {
-    hint = h('div', { class: 'help modal-hint', text: hintText });
-  }
-
-  // Content area for custom content
-  const content = h('div', { class: 'modal-content' });
+  const backdrop = h('div', { class: backdropClass });
 
   // Track overlay closers for cleanup
   let openOverlayClosers = null;
-  let isOpen = false;
+  let open = false;
   let busy = false;
   let confirmingClose = false;
   let detachFocusTrap = null;
@@ -74,12 +55,12 @@ export function createModal(h, options = {}) {
   };
 
   /**
-   * Close the modal and clean up (bypasses dirty check)
+   * Close the overlay and clean up (bypasses dirty check)
    * @param {Object} [result] - Optional result to pass to onClose
    */
   function close(result) {
-    if (!isOpen) return;
-    isOpen = false;
+    if (!open) return;
+    open = false;
     try {
       detachFocusTrap?.();
       detachFocusTrap = null;
@@ -99,8 +80,8 @@ export function createModal(h, options = {}) {
   }
 
   /**
-   * Request to close the modal (respects busy state and dirty check).
-   * When the modal is dirty, an accessible confirm dialog is shown; this is
+   * Request to close the overlay (respects busy state and dirty check).
+   * When the overlay is dirty, an accessible confirm dialog is shown; this is
    * async, and the reentrancy guard stops the still-attached Escape handler
    * from stacking a second confirm on top of the first.
    * @param {Object} [result] - Optional result to pass to onClose
@@ -128,7 +109,7 @@ export function createModal(h, options = {}) {
 
   /**
    * Set busy state (prevents close)
-   * @param {boolean} value - Whether the modal is busy
+   * @param {boolean} value - Whether the overlay is busy
    */
   function setBusy(value) {
     busy = !!value;
@@ -142,6 +123,14 @@ export function createModal(h, options = {}) {
     return busy;
   }
 
+  /**
+   * Whether the overlay is currently shown
+   * @returns {boolean}
+   */
+  function isOpen() {
+    return open;
+  }
+
   if (closeOnBackdrop) {
     backdrop.addEventListener('click', (e) => {
       if (e.target === backdrop) requestClose();
@@ -149,56 +138,33 @@ export function createModal(h, options = {}) {
   }
 
   /**
-   * Show the modal
-   * @param {HTMLElement} root - Element to append modal to
+   * Show the overlay
+   * @param {HTMLElement} root - Element to append the overlay to
    * @param {Set} [overlayClosers] - Set to register close function for cleanup
    */
   function show(root, overlayClosers) {
-    if (isOpen) return;
-    isOpen = true;
+    if (open) return;
+    open = true;
     openOverlayClosers = overlayClosers || null;
 
     // Save currently focused element to restore later
     previousActiveElement = document.activeElement;
 
-    // Build modal structure
-    modal.innerHTML = '';
-    modal.append(header);
-    if (hint) modal.append(hint);
-    modal.append(content);
-
-    backdrop.append(modal);
+    if (surface) {
+      // Idempotent aria defaults: a surface built with its own role/aria
+      // (createModal's dialog) keeps its attributes byte-for-byte.
+      if (!surface.hasAttribute('role')) surface.setAttribute('role', 'dialog');
+      if (!surface.hasAttribute('aria-modal'))
+        surface.setAttribute('aria-modal', 'true');
+      if (surface.parentNode !== backdrop) backdrop.append(surface);
+    }
     root.append(backdrop);
 
     openOverlayClosers?.add(close);
     document.addEventListener('keydown', onKey);
 
     // Activate focus trap
-    detachFocusTrap = createFocusTrap(modal);
-  }
-
-  /**
-   * Update the title text
-   * @param {string} text - New title text
-   */
-  function setTitle(text) {
-    title.textContent = text || '';
-  }
-
-  /**
-   * Update the hint text
-   * @param {string} text - New hint text
-   */
-  function setHint(text) {
-    if (!hint) {
-      hint = h('div', { class: 'help modal-hint', text: text || '' });
-      // Insert after header if modal is already built
-      if (header.nextSibling) {
-        header.after(hint);
-      }
-    } else {
-      hint.textContent = text || '';
-    }
+    detachFocusTrap = createFocusTrap(surface || backdrop);
   }
 
   /**
@@ -213,6 +179,177 @@ export function createModal(h, options = {}) {
    */
   function unhide() {
     backdrop.style.display = '';
+  }
+
+  return {
+    backdrop,
+    surface,
+    show,
+    close,
+    requestClose,
+    setBusy,
+    isBusy,
+    isOpen,
+    hide,
+    unhide,
+  };
+}
+
+/**
+ * Creates a modal dialog with standard structure and lifecycle management.
+ *
+ * Built on `createOverlay` (which owns backdrop, focus trap, Escape, aria,
+ * focus restore and closers); this layer adds the dialog chrome: header with
+ * title and close button, optional hint, and the content area.
+ *
+ * @param {Function} h - DOM element factory function
+ * @param {Object} options - Modal options
+ * @param {string} options.title - Modal title text
+ * @param {string} [options.hint] - Optional hint text below title
+ * @param {string} [options.modalClass] - Additional CSS class for the modal
+ * @param {true|false|HTMLElement} [options.header=true] - `true` builds the
+ *   standard header (title + close button); `false` renders no header (the
+ *   title, when given, becomes the dialog's `aria-label`); an element is used
+ *   as a caller-supplied header row (close wiring is the caller's, via
+ *   `requestClose`).
+ * @param {'text'|'icon'|false} [options.closeButton='text'] - Close affordance
+ *   in the built header: the standard text button, an icon-X, or none.
+ * @param {string} [options.closeLabel] - Custom close button label (the
+ *   `aria-label` for the icon variant)
+ * @param {boolean} [options.closeOnBackdrop=true] - Close when clicking backdrop
+ * @param {boolean} [options.closeOnEscape=true] - Close on Escape key
+ * @param {Function} [options.onClose] - Callback when modal closes
+ * @param {Function} [options.isDirty] - Function returning true if modal has unsaved changes
+ * @param {string} [options.confirmMessage] - Confirmation message for dirty close
+ * @returns {Object} Modal API object
+ */
+export function createModal(h, options = {}) {
+  const {
+    title: titleText,
+    hint: hintText,
+    modalClass,
+    header: headerOption = true,
+    closeButton = 'text',
+    closeLabel = t('common.close', 'Close'),
+    closeOnBackdrop = true,
+    closeOnEscape = true,
+    onClose,
+    isDirty,
+    confirmMessage,
+  } = options;
+
+  const modalClasses = ['modal', modalClass].filter(Boolean).join(' ');
+  const modalId = `modal-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+  const builtHeader = headerOption === true;
+  const modalAttrs = {
+    class: modalClasses,
+    role: 'dialog',
+    'aria-modal': 'true',
+  };
+  if (builtHeader) {
+    modalAttrs['aria-labelledby'] = `${modalId}-title`;
+  } else if (titleText) {
+    // No title element to point aria-labelledby at, so label directly.
+    modalAttrs['aria-label'] = titleText;
+  }
+  const modal = h('div', modalAttrs);
+
+  const overlay = createOverlay(h, {
+    surface: modal,
+    closeOnBackdrop,
+    closeOnEscape,
+    onClose,
+    isDirty,
+    confirmMessage,
+  });
+  const { backdrop, close, requestClose, setBusy, isBusy, hide, unhide } =
+    overlay;
+
+  // Header with title and close button
+  let header = null;
+  let title = null;
+  let closeBtn = null;
+  if (builtHeader) {
+    header = h('div', { class: 'row spread' });
+    title = h('h2', { id: `${modalId}-title`, text: titleText || '' });
+    if (closeButton === 'icon') {
+      closeBtn = h(
+        'button',
+        {
+          class: 'btn btn-secondary btn-icon ps-modal-close',
+          type: 'button',
+          'aria-label': closeLabel,
+          // Same guarded path as Esc/backdrop: respects busy and the dirty check.
+          onclick: () => requestClose(),
+        },
+        [icon('x', { size: 16 })],
+      );
+    } else if (closeButton !== false) {
+      closeBtn = h('button', {
+        class: 'btn btn-secondary',
+        text: closeLabel,
+        // Same guarded path as Esc/backdrop: respects busy and the dirty check.
+        onclick: () => requestClose(),
+      });
+    }
+    header.append(...[title, closeBtn].filter(Boolean));
+  } else if (headerOption) {
+    header = headerOption;
+  }
+
+  // Optional hint
+  let hint = null;
+  if (hintText) {
+    hint = h('div', { class: 'help modal-hint', text: hintText });
+  }
+
+  // Content area for custom content
+  const content = h('div', { class: 'modal-content' });
+
+  /**
+   * Show the modal
+   * @param {HTMLElement} root - Element to append modal to
+   * @param {Set} [overlayClosers] - Set to register close function for cleanup
+   */
+  function show(root, overlayClosers) {
+    if (overlay.isOpen()) return;
+
+    // Build modal structure
+    modal.innerHTML = '';
+    if (header) modal.append(header);
+    if (hint) modal.append(hint);
+    modal.append(content);
+
+    overlay.show(root, overlayClosers);
+  }
+
+  /**
+   * Update the title text
+   * @param {string} text - New title text
+   */
+  function setTitle(text) {
+    if (title) {
+      title.textContent = text || '';
+    } else {
+      modal.setAttribute('aria-label', text || '');
+    }
+  }
+
+  /**
+   * Update the hint text
+   * @param {string} text - New hint text
+   */
+  function setHint(text) {
+    if (!hint) {
+      hint = h('div', { class: 'help modal-hint', text: text || '' });
+      // Insert before the content area if the modal is already built
+      if (content.parentNode === modal) {
+        content.before(hint);
+      }
+    } else {
+      hint.textContent = text || '';
+    }
   }
 
   /**
