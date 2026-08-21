@@ -15,6 +15,132 @@ import js from '@eslint/js';
 import globals from 'globals';
 import importX from 'eslint-plugin-import-x';
 
+// Every `t()` call must carry its English fallback: `t(key, fallback)`.
+// The fallback is what Tier-2 locales degrade to when a key is missing
+// (client/lib/ui-i18n.js) — the whole reason tiering is safe. Written as
+// `t(key)` alone, a missing key renders the raw key string instead of
+// English, which is the one way that safety net breaks. See
+// docs/reference/i18n-locale-tiers.md.
+//
+// Hoisted into a const because flat-config rule entries replace rather than
+// merge per rule name: the overlay-gate burndown block below must re-state
+// these when it drops the overlay-class restriction, and a drifted copy would
+// silently un-gate t()/fetch()/control-class for those files.
+const clientRestrictedSyntax = [
+  {
+    selector: "CallExpression[callee.name='t'][arguments.length<2]",
+    message:
+      't() needs an English fallback: t(key, fallback). Without it a ' +
+      'missing key renders the raw key, defeating Tier-2 fallback ' +
+      '(docs/reference/i18n-locale-tiers.md).',
+  },
+  // Every request to our own /api/* surface goes through api() from
+  // client/lib/api.js — one network layer, one error shape (A7.16
+  // cluster 2; the same one-canonical-form stance as the t() rule).
+  // A raw fetch( is how the second network vocabulary starts: hand-
+  // rolled res.ok parsing, a second error envelope reading, no shared
+  // 401/429 branching. Legitimate exceptions — streaming-body readers
+  // (SSE), binary/blob downloads, presigned uploads to external
+  // storage, static-asset JSON — carry an inline disable directive
+  // with the reason at the call site.
+  {
+    selector: "CallExpression[callee.name='fetch']",
+    message:
+      'Use api() from client/lib/api.js instead of raw fetch() — one ' +
+      'network layer, one error shape (A7.16). Genuinely raw cases ' +
+      '(SSE stream, blob download, presigned upload, static asset) ' +
+      'get an inline eslint-disable-next-line stating the reason.',
+  },
+  {
+    selector:
+      "CallExpression[callee.property.name='fetch']" +
+      '[callee.object.name=/^(window|globalThis|self)$/]',
+    message:
+      'window.fetch/globalThis.fetch is still raw fetch — use api() ' +
+      'from client/lib/api.js (A7.16).',
+  },
+  // One class name per control (A7.16 cluster 10). `form-input` is the
+  // canonical text-input/select/textarea class; `.form-input` in
+  // client/styles/app/components.css is the only place the control is
+  // actually drawn. The rejected spellings — `input`, `select`,
+  // `form-select`, `input-sm`, `form-select-xs` — were never defined as
+  // control styles anywhere, so a view that reached for one shipped a
+  // browser-default control next to styled neighbours. Size and role
+  // modifiers keep riding along (`form-input form-input-sm font-mono`).
+  //
+  // Written as a syntax rule rather than a greptest because it can bind
+  // to the `class:` property of an h() attrs object and match whole
+  // tokens only: `input-group` or `select-all` are untouched, and the
+  // error lands on the construction site instead of a file:line list.
+  // Boundary: classList.add('select') / className assignment are not
+  // covered — there are none, and `.add('select')` is ambiguous with
+  // Set#add, so a rule there would cost false positives for no burndown.
+  {
+    selector:
+      "Property:matches([key.name='class'],[key.value='class']) > " +
+      'Literal[value=/(^|\\s)(input|select|form-select|input-sm|form-select-xs)(\\s|$)/]',
+    message:
+      'Use the canonical control class `form-input` (plus `form-input-sm`/' +
+      '`form-input-xs` for size) — `input`/`select`/`form-select` have no ' +
+      'control styling anywhere and render a browser-default control (A7.16 ' +
+      'cluster 10, docs/developer/linting.md).',
+  },
+];
+
+// One overlay vocabulary (A7.16 cluster 1). Overlays are built by
+// createModal()/createOverlay() from client/lib/dom/modal.js — backdrop,
+// focus trap, Escape, aria-modal, focus restore and closers registration come
+// free there, and a hand-rolled backdrop is how six of eight sampled overlays
+// shipped without any of them. The five class names below are the overlay
+// vocabularies that grew next to the helper; written as a raw `class:`
+// literal outside modal.js, each means a hand-built overlay. Same whole-token
+// boundary as the control-class rule above.
+const overlayClassRestriction = {
+  selector:
+    "Property:matches([key.name='class'],[key.value='class']) > " +
+    'Literal[value=/(^|\\s)(modal-backdrop|modal-overlay|ps-modal-overlay|ie-modal-backdrop|share-viewer-modal-overlay)(\\s|$)/]',
+  message:
+    'Build overlays with createModal()/createOverlay() from ' +
+    'client/lib/dom/modal.js instead of a hand-rolled backdrop — one overlay ' +
+    'vocabulary, with focus trap/Escape/aria-modal included (A7.16 cluster 1, ' +
+    'docs/developer/linting.md).',
+};
+
+// Burndown allowlist for the overlay gate: the files that still hand-roll an
+// overlay with one of the restricted class names. Shrinks per migration PR —
+// M2 (settings), M3 (editor dialogs), M4 (chrome-less overlays) — and never
+// grows: a new overlay goes through the helpers.
+const MODAL_OVERLAY_BURNDOWN = [
+  // M2 — settings `.modal-overlay` dialogs
+  'client/views/editor/modals/json-debug-modal.js',
+  'client/views/settings/admin-users/add-modal.js',
+  'client/views/settings/admin-users/edit-modal.js',
+  'client/views/settings/api-keys/create-modal.js',
+  'client/views/settings/api-keys/revoke-modal.js',
+  'client/views/settings/api-keys/usage-panel.js',
+  // M3 — editor dialogs (`modal-backdrop`, often + `ps-modal-overlay`)
+  'client/lib/slide-library/edit-modal.js',
+  'client/lib/slide-library/modals.js',
+  'client/views/analytics/report-modal.js',
+  'client/views/editor/image-library/picker.js',
+  'client/views/editor/imagekit-picker.js',
+  'client/views/editor/modals/follow-invite-suggest-modal.js',
+  'client/views/editor/modals/share-modal/index.js',
+  'client/views/editor/modals/slide-library-modal.js',
+  'client/views/editor/modals/slide-type-modal.js',
+  'client/views/editor/modals/translate-field-modal.js',
+  'client/views/editor/modals/translate-slide-modal.js',
+  'client/views/editor/publish-export/publish-modal.js',
+  'client/views/editor/topbar/language-mode.js',
+  'client/views/list/modals/creation-view/index.js',
+  // M4 — chrome-less overlays (lightbox, peek, guest-join)
+  'client/views/editor/deck-grid.js',
+  'client/views/editor/inline-edit/markdown-modal.js',
+  'client/views/editor/modals/preview-lightbox.js',
+  'client/views/editor/slide-type-picker/peek.js',
+  'client/views/share-viewer/guest-join.js',
+];
+
 export default [
   {
     // Vendored bundles, generated assets, data dirs, gitignored drop-ins, and
@@ -61,73 +187,24 @@ export default [
       },
     },
     rules: {
-      // Every `t()` call must carry its English fallback: `t(key, fallback)`.
-      // The fallback is what Tier-2 locales degrade to when a key is missing
-      // (client/lib/ui-i18n.js) — the whole reason tiering is safe. Written as
-      // `t(key)` alone, a missing key renders the raw key string instead of
-      // English, which is the one way that safety net breaks. See
-      // docs/reference/i18n-locale-tiers.md.
       'no-restricted-syntax': [
         'error',
-        {
-          selector: "CallExpression[callee.name='t'][arguments.length<2]",
-          message:
-            't() needs an English fallback: t(key, fallback). Without it a ' +
-            'missing key renders the raw key, defeating Tier-2 fallback ' +
-            '(docs/reference/i18n-locale-tiers.md).',
-        },
-        // Every request to our own /api/* surface goes through api() from
-        // client/lib/api.js — one network layer, one error shape (A7.16
-        // cluster 2; the same one-canonical-form stance as the t() rule).
-        // A raw fetch( is how the second network vocabulary starts: hand-
-        // rolled res.ok parsing, a second error envelope reading, no shared
-        // 401/429 branching. Legitimate exceptions — streaming-body readers
-        // (SSE), binary/blob downloads, presigned uploads to external
-        // storage, static-asset JSON — carry an inline disable directive
-        // with the reason at the call site.
-        {
-          selector: "CallExpression[callee.name='fetch']",
-          message:
-            'Use api() from client/lib/api.js instead of raw fetch() — one ' +
-            'network layer, one error shape (A7.16). Genuinely raw cases ' +
-            '(SSE stream, blob download, presigned upload, static asset) ' +
-            'get an inline eslint-disable-next-line stating the reason.',
-        },
-        {
-          selector:
-            "CallExpression[callee.property.name='fetch']" +
-            '[callee.object.name=/^(window|globalThis|self)$/]',
-          message:
-            'window.fetch/globalThis.fetch is still raw fetch — use api() ' +
-            'from client/lib/api.js (A7.16).',
-        },
-        // One class name per control (A7.16 cluster 10). `form-input` is the
-        // canonical text-input/select/textarea class; `.form-input` in
-        // client/styles/app/components.css is the only place the control is
-        // actually drawn. The rejected spellings — `input`, `select`,
-        // `form-select`, `input-sm`, `form-select-xs` — were never defined as
-        // control styles anywhere, so a view that reached for one shipped a
-        // browser-default control next to styled neighbours. Size and role
-        // modifiers keep riding along (`form-input form-input-sm font-mono`).
-        //
-        // Written as a syntax rule rather than a greptest because it can bind
-        // to the `class:` property of an h() attrs object and match whole
-        // tokens only: `input-group` or `select-all` are untouched, and the
-        // error lands on the construction site instead of a file:line list.
-        // Boundary: classList.add('select') / className assignment are not
-        // covered — there are none, and `.add('select')` is ambiguous with
-        // Set#add, so a rule there would cost false positives for no burndown.
-        {
-          selector:
-            "Property:matches([key.name='class'],[key.value='class']) > " +
-            'Literal[value=/(^|\\s)(input|select|form-select|input-sm|form-select-xs)(\\s|$)/]',
-          message:
-            'Use the canonical control class `form-input` (plus `form-input-sm`/' +
-            '`form-input-xs` for size) — `input`/`select`/`form-select` have no ' +
-            'control styling anywhere and render a browser-default control (A7.16 ' +
-            'cluster 10, docs/developer/linting.md).',
-        },
+        ...clientRestrictedSyntax,
+        overlayClassRestriction,
       ],
+    },
+  },
+
+  // A7.16 cluster 1 burndown: these files still hand-roll an overlay, so the
+  // overlay-class restriction is off for them until their migration PR
+  // (M2/M3/M4) folds them into createModal/createOverlay and deletes them
+  // from MODAL_OVERLAY_BURNDOWN. Every other client restriction stays in
+  // force (rule entries replace per rule name, hence the re-statement).
+  // modal.js itself is the vocabulary's permanent home.
+  {
+    files: ['client/lib/dom/modal.js', ...MODAL_OVERLAY_BURNDOWN],
+    rules: {
+      'no-restricted-syntax': ['error', ...clientRestrictedSyntax],
     },
   },
 
