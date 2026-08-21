@@ -149,20 +149,20 @@ Upload endpoint validates magic bytes (woff2: `wOF2`, woff: `wOFF`) and enforces
 
 ### Key Server Files
 
-| File                                          | Purpose                                                                                           |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `server/db/migrations/037_font_management.js` | Database schema                                                                                   |
-| `server/storage/font-families.js`             | CRUD operations (org-scoped, with `withDbGuard`)                                                  |
-| `server/routes/api/font-families.js`          | HTTP route handlers                                                                               |
-| `server/utils/theme-builder.js`               | `buildThemeConfig()`, `generatePreviewCSS()`, `generateFontFaceCSS()`, `buildExternalFontLinks()` |
-| `server/utils/themes.js`                      | Theme loading with managed font resolution, `clearCustomThemeCache()`                             |
-| `server/storage/themes.js`                    | Theme CRUD with `validateFonts()` and `verifyFontFamilyIds()`                                     |
-| `server/utils/curated-font-embed.js`          | `curatedEmbedFonts()` — a curated family's `embedFonts` entries, merged by pinned file identity   |
-| `server/utils/embed-fonts.js`                 | Base64-embeds font files for offline HTML exports                                                 |
-| `server/export/html.js`                       | Standalone HTML export (injects external font tags)                                               |
-| `server/utils/embed-html/index.js`            | Embed HTML builder (injects external font tags)                                                   |
-| `server/utils/embed-html/template.js`         | Embed HTML template (renders external font HTML in `<head>`)                                      |
-| `shared/theme-fonts.js`                       | Curated fonts list (single source of truth for client + server)                                   |
+| File                                          | Purpose                                                                                         |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `server/db/migrations/037_font_management.js` | Database schema                                                                                 |
+| `server/storage/font-families.js`             | CRUD operations (org-scoped, with `withDbGuard`)                                                |
+| `server/routes/api/font-families.js`          | HTTP route handlers                                                                             |
+| `server/utils/theme-builder.js`               | `deriveThemeTokens()`, `buildThemeConfig()`, `generateFontFaceCSS()`                            |
+| `server/utils/themes.js`                      | Theme loading with managed font resolution, `clearCustomThemeCache()`                           |
+| `server/storage/themes.js`                    | Theme CRUD with `validateFonts()` and `verifyFontFamilyIds()`                                   |
+| `server/utils/curated-font-embed.js`          | `curatedEmbedFonts()` — a curated family's `embedFonts` entries, merged by pinned file identity |
+| `server/utils/embed-fonts.js`                 | Base64-embeds font files for offline HTML exports                                               |
+| `server/export/html.js`                       | Standalone HTML export (injects external font tags)                                             |
+| `server/utils/embed-html/index.js`            | Embed HTML builder (injects external font tags)                                                 |
+| `server/utils/embed-html/template.js`         | Embed HTML template (renders external font HTML in `<head>`)                                    |
+| `shared/theme-fonts.js`                       | Curated fonts list (single source of truth for client + server)                                 |
 
 ### Key Client Files
 

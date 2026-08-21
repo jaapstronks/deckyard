@@ -326,16 +326,28 @@ test('every allowlist entry carries a real reason', () => {
 
 /**
  * Second half: every doc file is reachable by a link, so the hand-maintained index
- * in `docs/README.md` cannot silently fall behind the folder. This guards *that*
- * a doc is linked, not *where* — the cheap check the item asked for, over a
- * generator.
+ * in `docs/README.md` cannot silently fall behind the folder.
+ *
+ * Two strengths, on purpose. `docs/reference/` is the tree `docs/README.md`
+ * calls "the complete documentation index", so for those the link has to come
+ * *from the index* — "linked from somewhere" was too weak and let `leads.md`
+ * and `i18n-locale-tiers.md` sit outside it while still passing (B108).
+ * Everything else under `docs/` keeps the looser rule: linked from any doc.
  */
 
-/** Repo-relative link targets reachable from any scanned doc's markdown links. */
-function linkedTargets() {
+/** The index file whose completeness the strict rule below enforces. */
+const DOC_INDEX = 'docs/README.md';
+
+/**
+ * Repo-relative link targets reachable from a doc's markdown links.
+ *
+ * @param {string[]} [docs] which docs to read; defaults to every scanned doc.
+ * @returns {Set<string>} the repo-relative paths they link to
+ */
+function linkedTargets(docs = DOC_FILES) {
   const link = /\]\(([^)]+)\)/g;
   const linked = new Set();
-  for (const doc of DOC_FILES) {
+  for (const doc of docs) {
     const dir = path.dirname(doc);
     const text = fs.readFileSync(path.join(REPO_ROOT, doc), 'utf8');
     let m;
@@ -350,23 +362,186 @@ function linkedTargets() {
   return linked;
 }
 
-test('every doc under docs/ is linked from somewhere', () => {
-  // README.md files are directory entry points — they do the linking, and are not
-  // themselves required to have an inbound link.
-  const targets = TRACKED.filter(
-    (r) =>
-      r.startsWith('docs/') &&
-      !isExcludedDocPath(r) &&
-      r.endsWith('.md') &&
-      path.basename(r) !== 'README.md',
+/** Every doc under `docs/` that is expected to have an inbound link. */
+const LINKABLE_DOCS = TRACKED.filter(
+  (r) =>
+    r.startsWith('docs/') &&
+    !isExcludedDocPath(r) &&
+    r.endsWith('.md') &&
+    // README.md files are directory entry points — they do the linking, and are
+    // not themselves required to have an inbound link.
+    path.basename(r) !== 'README.md',
+);
+
+test('every docs/reference/ doc is linked from the index itself', () => {
+  const targets = LINKABLE_DOCS.filter((r) => r.startsWith('docs/reference/'));
+  assert.ok(
+    targets.length > 50,
+    `expected a populated reference tree, got ${targets.length} docs`,
   );
+  const indexed = linkedTargets([DOC_INDEX]);
+  const missing = targets.filter((t) => !indexed.has(t));
+  assert.deepEqual(
+    missing,
+    [],
+    `${DOC_INDEX} calls itself the complete documentation index, but these ` +
+      `reference docs are not in it:\n` +
+      missing.map((t) => `  - ${t}`).join('\n'),
+  );
+});
+
+test('every other doc under docs/ is linked from somewhere', () => {
+  const targets = LINKABLE_DOCS.filter((r) => !r.startsWith('docs/reference/'));
   const linked = linkedTargets();
   const orphans = targets.filter((t) => !linked.has(t));
   assert.deepEqual(
     orphans,
     [],
     `these docs are not linked from any other doc — add them to the index in ` +
-      `docs/README.md (or another doc):\n` +
+      `${DOC_INDEX} (or another doc):\n` +
       orphans.map((t) => `  - ${t}`).join('\n'),
   );
+});
+
+/**
+ * Third pass: symbol citations.
+ *
+ * A doc that names `buildFeed()` makes the same kind of promise as one that
+ * names `server/utils/rss-feed.js`, and it rots the same way — silently, the
+ * moment a rename lands. The 2026-08-21 docs scan (B108) found the prose
+ * unusually reliable: all but three of the citations resolved. That reliability
+ * is exactly what makes the residue expensive, because a reader has no reason
+ * to double-check. One of the three was a real bug —
+ * `docs/reference/font-management.md` listed a `generatePreviewCSS()` export of
+ * `server/utils/theme-builder.js` that has never existed in this tree.
+ *
+ * The oracle is deliberately coarse: does the identifier occur *anywhere* in
+ * the first-party source corpus? That catches what this gate is for (the symbol
+ * is gone, or was never there) without pretending to resolve a citation to a
+ * specific module — which would need a parser and would still lose on
+ * re-exports.
+ */
+
+/** Source trees a documented symbol may live in. */
+const SOURCE_ROOTS = ['server', 'client', 'shared', 'scripts', 'tests'];
+
+/**
+ * Vendored third-party code is not our vocabulary. Including it would let the
+ * gate pass on a symbol that only pdf.js or Prism defines, which is the exact
+ * laxness `stringToTypedArray` below documents.
+ */
+const VENDOR_PREFIX = 'client/vendor/';
+
+/**
+ * This file, repo-relative. It is skipped when building the corpus: it names
+ * every absent symbol below in order to excuse it, and a gate that vouched for
+ * a symbol on the strength of its own allowlist would never fire.
+ */
+const SELF_REL = path
+  .relative(REPO_ROOT, fileURLToPath(import.meta.url))
+  .split(path.sep)
+  .join('/');
+
+/**
+ * Cited symbols that resolve to nothing yet are correct as written. Same
+ * two-way honesty as the path allowlists: an entry that stops being cited, or
+ * whose symbol comes back into the tree, fails.
+ */
+const ABSENT_SYMBOLS = {
+  multiOrganizationStorageError:
+    'tenant-isolation.md names the boot guard that was removed with the file backend, in a paragraph whose whole point is that it is gone',
+  stringToTypedArray:
+    'export-smoke-test.md names a pdf.js internal to explain the Uint8Array/Buffer flake; it is third-party, not ours',
+};
+
+/** Every identifier that occurs anywhere in the first-party source corpus. */
+function sourceIdentifiers() {
+  const ident = /[A-Za-z_$][A-Za-z0-9_$]*/g;
+  const seen = new Set();
+  for (const rel of TRACKED) {
+    if (!rel.endsWith('.js')) continue;
+    if (!SOURCE_ROOTS.includes(rel.split('/')[0])) continue;
+    if (rel.startsWith(VENDOR_PREFIX)) continue;
+    if (rel === SELF_REL) continue;
+    let text;
+    try {
+      text = fs.readFileSync(path.join(REPO_ROOT, rel), 'utf8');
+    } catch {
+      continue; // listed by git but absent on disk: the path gate above owns that
+    }
+    for (const m of text.matchAll(ident)) seen.add(m[0]);
+  }
+  return seen;
+}
+
+/**
+ * Every `` `name()` `` a doc cites: a bare identifier in backticks followed by
+ * an empty call. Dotted forms (`` `page.pdf()` ``, `` `Buffer.from()` ``) are
+ * skipped — those name a method on someone else's object, not a symbol this
+ * repo owns.
+ */
+function citedSymbols() {
+  const call = /`([A-Za-z_$][A-Za-z0-9_$]*)\(\)`/g;
+  const out = []; // { sym, doc }
+  for (const doc of DOC_FILES) {
+    const text = fs.readFileSync(path.join(REPO_ROOT, doc), 'utf8');
+    for (const m of text.matchAll(call)) out.push({ sym: m[1], doc });
+  }
+  return out;
+}
+
+const SOURCE_IDENTIFIERS = sourceIdentifiers();
+const SYMBOL_CITATIONS = citedSymbols();
+
+test('the symbol scan actually sees the source tree and the docs', () => {
+  assert.ok(
+    SOURCE_IDENTIFIERS.size > 5000,
+    `expected a populated source scan, got ${SOURCE_IDENTIFIERS.size} identifiers`,
+  );
+  assert.ok(
+    SYMBOL_CITATIONS.length > 100,
+    `expected the docs to cite many symbols, got ${SYMBOL_CITATIONS.length}`,
+  );
+  assert.ok(
+    SOURCE_IDENTIFIERS.has('buildFeed'),
+    'sanity: a known-live exported symbol is in the corpus',
+  );
+  assert.ok(
+    !SOURCE_IDENTIFIERS.has('generatePreviewCSS'),
+    'sanity: the symbol this gate was written for is absent',
+  );
+});
+
+test('every `symbol()` the docs cite exists somewhere in the source, or is allowlisted', () => {
+  const leftovers = SYMBOL_CITATIONS.filter(
+    ({ sym }) =>
+      !SOURCE_IDENTIFIERS.has(sym) && !Object.hasOwn(ABSENT_SYMBOLS, sym),
+  );
+  assert.deepEqual(
+    leftovers.map(({ sym, doc }) => `${sym}()  (in ${doc})`),
+    [],
+    `these documented symbols do not exist anywhere under ${SOURCE_ROOTS.join('/, ')}/:\n` +
+      leftovers.map(({ sym, doc }) => `  - ${sym}()  (in ${doc})`).join('\n') +
+      `\n\nEither fix the name, or — if the doc is deliberately naming something ` +
+      `absent (a removed guard, a third-party internal) — add it to ABSENT_SYMBOLS ` +
+      `in tests/docs-paths-resolvable.test.js, with a reason.`,
+  );
+});
+
+test('no absent-symbol entry has quietly come back or stopped being cited (the allowlist cannot rot)', () => {
+  const cited = new Set(SYMBOL_CITATIONS.map(({ sym }) => sym));
+  for (const [sym, why] of Object.entries(ABSENT_SYMBOLS)) {
+    assert.ok(
+      cited.has(sym),
+      `ABSENT_SYMBOLS lists "${sym}" (${why}) but no doc cites it any more — drop the entry.`,
+    );
+    assert.ok(
+      !SOURCE_IDENTIFIERS.has(sym),
+      `ABSENT_SYMBOLS lists "${sym}" but that symbol is back in the source — drop the entry.`,
+    );
+    assert.ok(
+      typeof why === 'string' && why.trim().length > 10,
+      `allowlist entry "${sym}" needs a real reason, not "${why}"`,
+    );
+  }
 });

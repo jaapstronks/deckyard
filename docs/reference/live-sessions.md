@@ -180,7 +180,7 @@ and there is **no max-audience** cap beyond the SSE connection caps.
   resolved deck, never from the caller. General rules:
   [`tenant-isolation.md`](tenant-isolation.md).
 
-## Implementation status
+## Implementation status (as of 2026-08-21)
 
 The session lifecycle, SSE fan-out, follower control, and interaction/Q&A/
 feedback flows are implemented and shipped. The **known limitation** is that SSE

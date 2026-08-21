@@ -64,23 +64,23 @@ Storage (`server/storage/analytics/`, 7 modules):
 
 Routes:
 
-- `server/routes/api/analytics-track.js` (573 lines) — the **public** tracking
+- `server/routes/api/analytics-track.js` — the **public** tracking
   endpoints plus the anonymous erase route.
-- `server/routes/api/analytics/index.js` (151 lines) — the authenticated
+- `server/routes/api/analytics/index.js` — the authenticated
   dispatcher; applies the per-user rate limit, then routes to the modules below.
-- `server/routes/api/analytics/dashboard.js` (82 lines) — cross-deck dashboard
+- `server/routes/api/analytics/dashboard.js` — cross-deck dashboard
   and the "decks that have analytics" list.
-- `server/routes/api/analytics/metrics.js` (160 lines) — overview, slides,
+- `server/routes/api/analytics/metrics.js` — overview, slides,
   heatmap, journey, sessions (the last one applies `publicDeviceLabel`).
-- `server/routes/api/analytics/realtime.js` (77 lines) — the live viewer-count
+- `server/routes/api/analytics/realtime.js` — the live viewer-count
   SSE stream, with its own `activeConnections` map.
-- `server/routes/api/analytics/reports.js` (280 lines) — report CRUD and
+- `server/routes/api/analytics/reports.js` — report CRUD and
   share-token regeneration.
-- `server/routes/api/analytics/public.js` (83 lines) — `GET
+- `server/routes/api/analytics/public.js` — `GET
 /api/analytics/reports/:token`, the only unauthenticated read.
-- `server/routes/api/analytics/gdpr.js` (85 lines) — `GET`/`DELETE
+- `server/routes/api/analytics/gdpr.js` — `GET`/`DELETE
 /api/analytics/my-data`.
-- `server/routes/api/analytics.js` (10 lines) — a compatibility re-export of
+- `server/routes/api/analytics.js` — a compatibility re-export of
   `analytics/index.js`.
 
 Job:
@@ -259,7 +259,7 @@ the authorization')` — the token _is_ the capability, exactly as a share link
   through `publicDeviceLabel`. Rationale and the erase routes:
   [`analytics-privacy.md`](analytics-privacy.md).
 
-## Implementation status
+## Implementation status (as of 2026-08-21)
 
 Shipped and in use: the four tracking endpoints, the four on-demand aggregations,
 the cross-deck dashboard, the realtime SSE count, report CRUD with public share

@@ -21,7 +21,7 @@ per-source credential store.
 
 ## Module map
 
-- `server/routes/api/data-sources.js` (123 lines) — the three endpoints, the
+- `server/routes/api/data-sources.js` — the three endpoints, the
   auth/feature gates, and the error envelope.
 - `server/utils/data-source/index.js` (68) — provider dispatch:
   `refreshSlideData()` (validate → frozen short-circuit → provider refresh) and

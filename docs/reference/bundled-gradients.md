@@ -91,7 +91,7 @@ image library: the asset is already served and already inlined, so a copy would
 only add a second address for the same bytes — unlike Unsplash and Giphy, whose
 bytes have to be brought in-house.
 
-## Implementation status
+## Implementation status (as of 2026-08-21)
 
 - The set is derived from `themes/*.json` only. Database and per-organization
   custom themes contribute nothing, because the bundled set has to match

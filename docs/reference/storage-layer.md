@@ -78,8 +78,8 @@ into camelCase API objects inline (there is no shared `mappers.js` module).
 
 ## Data model
 
-Schema lives in `server/db/migrations/` (**68 numbered migrations**,
-`001_initial_schema.js` … `068_strip_identity_from_snapshots.js`).
+Schema lives in `server/db/migrations/` (**79 numbered migrations**,
+`001_initial_schema.js` … `079_comment_author_identity.js`).
 `001_initial_schema.js` creates the core: `organizations`, `users`,
 `presentations` (the deck table), `presentation_versions`,
 `published_presentations`, plus `follow_codes`, `present_sessions`,
@@ -229,7 +229,7 @@ throwing when the pool is down — pass `null`/`[]` from a read and
 `{ ok: false, reason: 'unavailable' }` from a mutation, so the guard hands back
 that call kind's own failure shape.
 
-### Implementation status: failure shapes
+### Implementation status: failure shapes (as of 2026-08-21)
 
 **No mutation export signals failure with `null` any more.**
 [`tests/storage-call-convention-burndown.json`](../../tests/storage-call-convention-burndown.json)
@@ -302,7 +302,7 @@ The full isolation model (hosting shapes, `MULTI_ORG_ENABLED`, rules
 R1–R3) is in [`tenant-isolation.md`](tenant-isolation.md); it is not repeated
 here.
 
-## Implementation status
+## Implementation status (as of 2026-08-21)
 
 Postgres is the **only** backend today. The file/JSON backend was removed during
 1.x, and B79/D34 then removed the adapter class that had abstracted over the two:

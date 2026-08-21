@@ -75,14 +75,14 @@ Third-party sources:
 
 Routes:
 
-- `server/routes/api/media.js` (153 lines) — provider status, presign/confirm,
+- `server/routes/api/media.js` — provider status, presign/confirm,
   and the ImageKit browse/patch endpoints.
-- `server/routes/api/uploads.js` (49 lines) — the server-side data-URL upload.
-- `server/routes/api/image-library.js` (209 lines) — the library CRUD, usage,
+- `server/routes/api/uploads.js` — the server-side data-URL upload.
+- `server/routes/api/image-library.js` — the library CRUD, usage,
   favourites, alt-text generation and in-place replace.
-- `server/routes/api/stock-media.js` (289 lines) — status, bundled manifest, and
+- `server/routes/api/stock-media.js` — status, bundled manifest, and
   the Unsplash/Giphy search + import endpoints.
-- `server/routes/api/assets.js` (62 lines) — lists repo-shipped partner logos and
+- `server/routes/api/assets.js` — lists repo-shipped partner logos and
   backgrounds (`assets/images/…` plus a fork's `custom/assets/images/…`). These
   are static files, not library items.
 - `server/routes/static/static-files.js` — serves `/uploads/…`; user-uploaded
@@ -245,7 +245,7 @@ stock-media import 20 MB (GIFs are large), in-place replace 10 MB.
   the file. Uploaded content is served inert to keep an uploaded SVG from
   executing.
 
-## Implementation status
+## Implementation status (as of 2026-08-21)
 
 The provider seam, both providers, the per-organization library with favourites
 and usage lookup, the three stock sources and the ImageKit browse panel are
