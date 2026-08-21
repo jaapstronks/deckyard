@@ -15,9 +15,7 @@ import {
   getPermissionDescription,
 } from '../../../../lib/permission-labels.js';
 import { h } from '../../../../lib/dom.js';
-
-/** The four levels a workspace collaborator can hold, in ascending order. */
-const COLLABORATOR_PERMISSIONS = ['view', 'comment', 'edit', 'admin'];
+import { ALL_PERMISSIONS } from '../../../../../shared/constants/permissions.js';
 
 /**
  * Create the collaborators section component.
@@ -79,7 +77,7 @@ export function createCollaboratorsSection({
     class: 'form-input share-collaborator-permission',
   });
   permissionSelect.append(
-    ...COLLABORATOR_PERMISSIONS.map((value) =>
+    ...ALL_PERMISSIONS.map((value) =>
       h('option', { value, text: getPermissionLabel(value) }),
     ),
   );
@@ -348,7 +346,7 @@ export function createCollaboratorsSection({
         },
       });
       permSelect.append(
-        ...COLLABORATOR_PERMISSIONS.map((value) =>
+        ...ALL_PERMISSIONS.map((value) =>
           h('option', {
             value,
             text: getPermissionLabel(value),
