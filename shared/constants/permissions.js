@@ -24,6 +24,20 @@ export const PERMISSIONS = {
 export const ALL_PERMISSIONS = Object.values(PERMISSIONS);
 
 /**
+ * Permission levels a **share link** may carry.
+ *
+ * A link is a URL anyone can hold, so it never grants collaborator management:
+ * ADMIN is deliberately absent. This is the subset `createShareLink` validates
+ * against, and the reason the share-link deciders can lean on the ladder below
+ * without ever meeting an 'admin' link.
+ */
+export const SHARE_LINK_PERMISSIONS = [
+  PERMISSIONS.VIEW,
+  PERMISSIONS.COMMENT,
+  PERMISSIONS.EDIT,
+];
+
+/**
  * Permissions that allow reading (all of them).
  */
 const READ_PERMISSIONS = [
@@ -59,6 +73,15 @@ const MANAGE_PERMISSIONS = [PERMISSIONS.ADMIN];
  */
 export function isValidPermission(permission) {
   return ALL_PERMISSIONS.includes(permission);
+}
+
+/**
+ * Check if a permission is one a share link may carry (never 'admin').
+ * @param {string} permission - Permission to check
+ * @returns {boolean}
+ */
+export function isValidShareLinkPermission(permission) {
+  return SHARE_LINK_PERMISSIONS.includes(permission);
 }
 
 /**

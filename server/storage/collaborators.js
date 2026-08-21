@@ -38,6 +38,7 @@ import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
 import { norm, nowIso, normalizeEmail } from '../utils/normalize.js';
 import { withDbGuard } from './utils/db-guard.js';
+import { isValidPermission } from '../../shared/constants/permissions.js';
 import { resolveDisplayNames, toDisplayIdentity } from './display-identity.js';
 import { resolveIdentityByEmail } from './identity-resolver.js';
 import {
@@ -99,7 +100,7 @@ export async function addCollaborator(presentationId, options) {
   }
 
   const permission = options?.permission;
-  if (!['view', 'comment', 'edit', 'admin'].includes(permission)) {
+  if (!isValidPermission(permission)) {
     return { ok: false, reason: 'invalid_permission' };
   }
 
@@ -262,7 +263,7 @@ export async function updateCollaboratorPermission(
     return { ok: false, reason: 'invalid_email' };
   }
 
-  if (!['view', 'comment', 'edit', 'admin'].includes(permission)) {
+  if (!isValidPermission(permission)) {
     return { ok: false, reason: 'invalid_permission' };
   }
 
