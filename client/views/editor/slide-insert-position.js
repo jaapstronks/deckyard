@@ -62,3 +62,59 @@ export function anchorBehindInvite({
     return afterSlideId;
   return inviteSlideId;
 }
+
+/**
+ * The three placements the follow-invite suggestion offers, as one rule set.
+ *
+ * Adding an interactive slide to a deck without a follow-invite opens a modal
+ * with three answers, and the editor has two insertion paths (the type picker
+ * and the slide library) that each have to honour all three. Wiring them
+ * twice is how "add before this slide" came to look up the invite by type —
+ * finding the deck's *first* invite instead of the one the gesture just
+ * inserted. The placements live here so both paths get the same three.
+ *
+ * `insertInvite` inserts the follow-invite behind the anchor it is given and
+ * returns its id; `insertPending` inserts the waiting interactive slide behind
+ * the anchor it is given.
+ *
+ * @param {Object} options
+ * @param {string|null|undefined} options.afterSlideId - where the interactive
+ *   slide was headed before the suggestion interrupted it
+ * @param {string|null} [options.parentId] - parent of the interactive slide,
+ *   when it is being nested
+ * @param {() => (string|null|undefined)} options.getFirstSlideId - the deck's
+ *   first slide, read at answer time
+ * @param {(afterSlideId: string|null|undefined) => string} options.insertInvite
+ * @param {(afterSlideId: string|null|undefined) => void} options.insertPending
+ * @returns {{onAddAsSecond: () => void, onAddBeforeCurrent: () => void, onSkip: () => void}}
+ */
+export function followInvitePlacements({
+  afterSlideId,
+  parentId = null,
+  getFirstSlideId,
+  insertInvite,
+  insertPending,
+}) {
+  return {
+    onAddAsSecond() {
+      const firstSlideId = getFirstSlideId();
+      const inviteSlideId = insertInvite(firstSlideId);
+      insertPending(
+        anchorBehindInvite({
+          afterSlideId,
+          firstSlideId,
+          inviteSlideId,
+          parentId,
+        }),
+      );
+    },
+    onAddBeforeCurrent() {
+      // Behind the invite this gesture just inserted — not behind whichever
+      // invite happens to come first in the deck.
+      insertPending(insertInvite(afterSlideId));
+    },
+    onSkip() {
+      insertPending(afterSlideId);
+    },
+  };
+}
