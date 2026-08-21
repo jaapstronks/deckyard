@@ -76,7 +76,7 @@ function cellControlButtons({ h, content, i, cellCount, isRow, actions }) {
         type: 'button',
         class: 'btn btn-secondary btn-icon',
         text: '↑',
-        title: t('editor.gallery.dragToReorder', 'Reorder'),
+        title: t('editor.gallery.dragToReorder', 'Drag to reorder'),
         onclick: () => actions.swap(i, i - 1),
       }),
     );
@@ -87,7 +87,7 @@ function cellControlButtons({ h, content, i, cellCount, isRow, actions }) {
         type: 'button',
         class: 'btn btn-secondary btn-icon',
         text: '↓',
-        title: t('editor.gallery.dragToReorder', 'Reorder'),
+        title: t('editor.gallery.dragToReorder', 'Drag to reorder'),
         onclick: () => actions.swap(i, i + 1),
       }),
     );

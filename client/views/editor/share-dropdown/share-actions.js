@@ -38,7 +38,7 @@ export async function handleNotionPublish({ api, toast, pres }) {
     title: t('editor.publish.notion', 'Add to Notion page'),
     message: t(
       'editor.publish.notion.confirm',
-      'Add presentation embed to the source Notion page?',
+      'Add presentation embed to the source Notion page?\n\nThis will add a divider, heading, and embedded presentation at the bottom of the Notion page.',
     ),
   });
   if (!confirmed) return;

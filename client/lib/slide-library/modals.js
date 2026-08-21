@@ -126,7 +126,7 @@ export function createSlideLibraryModals({
       rows: 2,
       placeholder: t(
         'slideLibrary.descriptionPlaceholder',
-        'Add a description...',
+        'Add a description…',
       ),
       value: it?.description || '',
     });
@@ -157,7 +157,7 @@ export function createSlideLibraryModals({
     const tagEditor = createTagEditor({
       api,
       initialTags: initialTagNames,
-      placeholder: t('slideLibrary.tagsPlaceholder', 'Add tags...'),
+      placeholder: t('slideLibrary.tagsPlaceholder', 'Add tags…'),
       onChange: async (newTags) => {
         const result = await apiOps.saveTags(shelf, it, newTags);
         if (!result.ok) {

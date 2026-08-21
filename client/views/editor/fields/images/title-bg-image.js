@@ -72,7 +72,10 @@ export function createFieldTitleBgImage(ctx) {
             });
 
             openImagePicker({
-              title: t('editor.image.bgLibraryTitle', 'Background images'),
+              title: t(
+                'editor.image.bgLibraryTitle',
+                'Library: choose a background image',
+              ),
               docId: pres?.id || '',
               allowCaptionCredit: false,
               context: {
@@ -133,7 +136,7 @@ export function createFieldTitleBgImage(ctx) {
               )
           : t(
               'editor.image.bgHelp.withUploads',
-              'Choose an existing image from the library, or upload a new one.',
+              'Choose an existing image from the library, or upload your own image for this slide only.',
             ),
       }),
     );

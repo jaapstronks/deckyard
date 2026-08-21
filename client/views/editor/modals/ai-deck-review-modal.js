@@ -105,7 +105,7 @@ export function openAiDeckReviewModal({
     if (!n) {
       selectionHint.textContent = t(
         'editor.deckReview.selectHint',
-        'Select slides to revise a section.',
+        'Tick slides to revise a section.',
       );
       return;
     }

@@ -64,7 +64,7 @@ export function createAdobePanel({ sourceConfig = {}, onImport }) {
     }
 
     discoverBtn.disabled = true;
-    discoverBtn.textContent = t('fonts.discovering', 'Discovering...');
+    discoverBtn.textContent = t('fonts.discovering', 'Discovering…');
     resultsContainer.innerHTML = '';
 
     try {
@@ -115,7 +115,7 @@ export function createAdobePanel({ sourceConfig = {}, onImport }) {
 
         importBtn.addEventListener('click', async () => {
           importBtn.disabled = true;
-          importBtn.textContent = t('fonts.importing', 'Importing...');
+          importBtn.textContent = t('fonts.importing', 'Importing…');
           try {
             const imported = await api(
               '/api/font-families/import-adobe-family',

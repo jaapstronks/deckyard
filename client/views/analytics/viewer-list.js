@@ -189,7 +189,7 @@ export function createViewerList({
       loadMoreBtn.style.display = 'block';
       loadMoreBtn.onclick = async () => {
         loadMoreBtn.disabled = true;
-        loadMoreBtn.textContent = t('common.loading', 'Loading...');
+        loadMoreBtn.textContent = t('common.loading', 'Loading…');
         try {
           const more = await onLoadMore?.(loadedCount);
           if (more && more.length > 0) {
@@ -238,7 +238,7 @@ function createSessionRow(h, session) {
   viewerText = session.viewerEmail
     ? session.viewerEmail
     : session.deviceId
-      ? t('analytics.deviceLabel', 'Device {{id}}...', {
+      ? t('analytics.deviceLabel', 'Device {{id}}…', {
           id: session.deviceId.substring(0, 8),
         })
       : t('analytics.anonymous', 'Anonymous');

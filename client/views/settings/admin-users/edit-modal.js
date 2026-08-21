@@ -75,7 +75,7 @@ function createProfileImageSection(targetUser, avatarEl, initialImageUrl) {
     }
 
     uploadBtn.disabled = true;
-    imageStatus.textContent = t('admin.users.uploading', 'Uploading...');
+    imageStatus.textContent = t('admin.users.uploading', 'Uploading…');
 
     try {
       const dataUrl = await new Promise((resolve, reject) => {
@@ -114,7 +114,7 @@ function createProfileImageSection(targetUser, avatarEl, initialImageUrl) {
 
   removeBtn.addEventListener('click', async () => {
     removeBtn.disabled = true;
-    imageStatus.textContent = t('admin.users.removing', 'Removing...');
+    imageStatus.textContent = t('admin.users.removing', 'Removing…');
 
     try {
       await api(`/api/profile/image/${encodeURIComponent(targetUser.email)}`, {
@@ -253,7 +253,7 @@ export async function showEditModal(targetUser, onSuccess) {
     nameInput.disabled = true;
     roleSelect.disabled = true;
     designerCheckbox.disabled = true;
-    status.textContent = t('admin.users.editModal.saving', 'Saving...');
+    status.textContent = t('admin.users.editModal.saving', 'Saving…');
 
     try {
       await api(`/api/admin/users/${targetUser.id}`, {

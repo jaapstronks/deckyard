@@ -35,12 +35,12 @@ export async function fetchUsers(onSuccess, onError) {
  */
 export async function confirmDelete(targetUser, onSuccess) {
   const confirmed = await confirmModal(h, document.body, {
-    title: t('admin.users.delete', 'Delete user'),
+    title: t('admin.users.delete', 'Delete'),
     message: t(
       'admin.users.deleteConfirm',
       'Are you sure you want to delete this user? This action cannot be undone.',
     ),
-    confirmLabel: t('admin.users.delete', 'Delete user'),
+    confirmLabel: t('admin.users.delete', 'Delete'),
     danger: true,
   });
 

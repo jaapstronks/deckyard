@@ -159,13 +159,13 @@ export function createImportSlidesTab({
 
     importing = true;
     btnImport.disabled = true;
-    btnImport.textContent = t('editor.importSlides.importing', 'Importing...');
+    btnImport.textContent = t('editor.importSlides.importing', 'Importing…');
     btnClear.disabled = true;
     progressSection.hidden = false;
     setProgress(
       0,
       100,
-      t('editor.importSlides.progress.reading', 'Reading file...'),
+      t('editor.importSlides.progress.reading', 'Reading file…'),
     );
 
     try {
@@ -175,7 +175,7 @@ export function createImportSlidesTab({
       setProgress(
         5,
         100,
-        t('editor.importSlides.progress.uploading', 'Uploading...'),
+        t('editor.importSlides.progress.uploading', 'Uploading…'),
       );
 
       // Call the API with SSE for progress
@@ -340,7 +340,7 @@ export function createImportSlidesTab({
     class: 'import-slides-help help',
     text: t(
       'editor.importSlides.help',
-      'Import slides from a PDF file. Each page will be converted to an image slide at 1920×1080 resolution.',
+      'Import slides from a PDF file. Each page will be converted to an image slide at 1920x1080 resolution.',
     ),
   });
 

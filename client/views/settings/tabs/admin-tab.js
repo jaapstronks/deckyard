@@ -61,7 +61,7 @@ export function createAdminTab({ user }) {
       class: 'field-label',
       text: t(
         'settings.admin.supportedSlideLangs.title',
-        'Supported slide languages',
+        'Admin: supported slide languages',
       ),
     }),
   );
@@ -69,7 +69,7 @@ export function createAdminTab({ user }) {
     class: 'help',
     text: t(
       'settings.admin.supportedSlideLangs.hint',
-      'Controls which languages are available in language mode and translation tools.',
+      'This controls which languages are visible/usable in language mode and translation.',
     ),
   });
 
@@ -234,7 +234,7 @@ export function createAdminTab({ user }) {
     class: 'help',
     text: t(
       'settings.admin.analytics.hint',
-      'Configure how presentation engagement is tracked and reported.',
+      'Configure how engagement data is collected and displayed.',
     ),
   });
 
@@ -363,7 +363,7 @@ export function createAdminTab({ user }) {
     class: 'help',
     text: t(
       'settings.admin.stockMedia.hint',
-      'Enable stock photo and GIF integrations for the image picker.',
+      'Enable stock photo and GIF integrations for the image picker. Requires API keys in server environment.',
     ),
   });
 

@@ -61,7 +61,7 @@ export function createRealtimeViewer({ h, presentationId }) {
       onStateChange: (state) => {
         if (state === connection.STATE.RECONNECTING) {
           dotEl.classList.add('is-disconnected');
-          iconEl.title = t('analytics.reconnecting', 'Reconnecting...');
+          iconEl.title = t('analytics.reconnecting', 'Reconnecting…');
         } else if (state === connection.STATE.FAILED) {
           dotEl.classList.add('is-disconnected');
           iconEl.title = t('analytics.connectionFailed', 'Connection failed');

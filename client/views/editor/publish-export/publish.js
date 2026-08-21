@@ -155,7 +155,7 @@ export async function doPublish({
   if (missingAlt.length) {
     const msg = t(
       'editor.publish.missingAltConfirm',
-      'Warning: these slides contain an image without alt text: {slides}\n\nPublish anyway?',
+      'Warning: these slides contain an image without alt text (NL/EN): {slides}\n\nPublish anyway?',
       { slides: missingAlt.join(', ') },
     );
     const ok = await confirmModal(h, root, {

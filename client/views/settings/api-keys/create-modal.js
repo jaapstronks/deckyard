@@ -255,7 +255,7 @@ export function showCreateModal(onSuccess) {
       .forEach((cb) => (cb.disabled = true));
     status.textContent = t(
       'settings.apiKeys.createModal.creating',
-      'Creating...',
+      'Creating…',
     );
 
     const result = await createApiKey({

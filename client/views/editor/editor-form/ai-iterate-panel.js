@@ -47,7 +47,7 @@ export function buildAiIteratePanel({
     class: 'form-input ai-iterate-input',
     placeholder: t(
       'editor.slide.aiIterate.placeholder',
-      'Make this punchier, split this slide...',
+      'Make this punchier, split this slide…',
     ),
   });
   const iterateBtn = h('button', {

@@ -80,7 +80,7 @@ export function createEditorTopbarMoreMenu({
         title: t('editor.more.duplicateDeck', 'Duplicate deck…'),
         message: t(
           'editor.more.duplicateDeck.confirm',
-          'Duplicate "{title}"?',
+          'Duplicate “{title}”?',
           {
             title:
               pres?.title ||

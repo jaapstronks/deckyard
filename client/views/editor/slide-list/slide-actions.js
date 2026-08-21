@@ -133,7 +133,7 @@ export async function deleteSlides({
 
   if (
     !(await confirmModal(h, document.body, {
-      title: t('editor.slide.delete', 'Delete slide'),
+      title: t('editor.slide.delete', 'Delete'),
       message: confirmMsg,
       confirmLabel: t('common.delete', 'Delete'),
       danger: true,

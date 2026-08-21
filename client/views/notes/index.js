@@ -259,7 +259,7 @@ export async function renderNotes(root, sessionId, { user } = {}) {
       if (kind === 'error' && !follow) {
         presenterHint.textContent = t(
           'notes.connectionLost',
-          'Connection lost (reconnecting...)',
+          'Connection lost (reconnecting…)',
         );
         presenterHint.hidden = false;
       }

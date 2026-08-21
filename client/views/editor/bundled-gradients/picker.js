@@ -157,7 +157,7 @@ export function openBundledGradientPicker({
     }
     statusLine.textContent = t(
       'stockMedia.gradients.loading',
-      'Loading gradients...',
+      'Loading gradients…',
     );
     try {
       manifestCache = await fetchBundledGradients();

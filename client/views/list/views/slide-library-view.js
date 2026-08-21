@@ -31,7 +31,7 @@ export function createSlideLibraryView({ api, nav }) {
   const mount = h('div', { class: 'ps-slide-library-view-mount' });
   const loading = h('div', {
     class: 'help',
-    text: t('common.loading', 'Loading...'),
+    text: t('common.loading', 'Loading…'),
   });
 
   let loaded = false;

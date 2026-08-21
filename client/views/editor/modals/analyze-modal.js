@@ -105,7 +105,7 @@ export function openAnalyzeModal({
 
     statusText.textContent = t(
       'editor.analyzeModal.starting',
-      'Starting analysis...',
+      'Starting analysis…',
     );
     progressFill.style.width = '0%';
     suggestionsList.innerHTML = '';
@@ -184,7 +184,7 @@ export function openAnalyzeModal({
       case 'connected':
         statusText.textContent = t(
           'editor.analyzeModal.connected',
-          'Connected, analyzing...',
+          'Connected, analyzing…',
         );
         break;
 
@@ -192,7 +192,7 @@ export function openAnalyzeModal({
         if (data.phase === 'analyzing') {
           statusText.textContent = t(
             'editor.analyzeModal.analyzing',
-            'Analyzing {count} slides...',
+            'Analyzing {count} slides…',
             {
               count: String(data.slideCount || 0),
             },
@@ -201,13 +201,13 @@ export function openAnalyzeModal({
         } else if (data.phase === 'parsing') {
           statusText.textContent = t(
             'editor.analyzeModal.parsing',
-            'Processing suggestions...',
+            'Processing suggestions…',
           );
           progressFill.style.width = '60%';
         } else if (data.phase === 'creating') {
           statusText.textContent = t(
             'editor.analyzeModal.creating',
-            'Creating suggestions...',
+            'Creating suggestions…',
           );
           progressFill.style.width = '70%';
         } else if (data.phase === 'complete') {
@@ -219,7 +219,7 @@ export function openAnalyzeModal({
         progressFill.style.width = `${70 + (30 * data.index) / data.total}%`;
         statusText.textContent = t(
           'editor.analyzeModal.creatingN',
-          'Creating suggestion {n} of {total}...',
+          'Creating suggestion {n} of {total}…',
           {
             n: String(data.index),
             total: String(data.total),

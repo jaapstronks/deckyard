@@ -48,7 +48,7 @@ export function openTypePreview(type, allTypesList, ctx) {
   const prevBtn = h('button', {
     class: 'btn btn-secondary btn-sm btn-icon',
     type: 'button',
-    'aria-label': t('common.previous', 'Previous'),
+    'aria-label': t('common.previous', 'Previous slide'),
     onclick: () => navigate(-1),
   });
   prevBtn.append(icon('chevron-left', { size: 16 }));
@@ -58,7 +58,7 @@ export function openTypePreview(type, allTypesList, ctx) {
   const nextBtn = h('button', {
     class: 'btn btn-secondary btn-sm btn-icon',
     type: 'button',
-    'aria-label': t('common.next', 'Next'),
+    'aria-label': t('common.next', 'Next slide'),
     onclick: () => navigate(1),
   });
   nextBtn.append(icon('chevron-right', { size: 16 }));

@@ -300,7 +300,7 @@ export function createCommentRenderers({
     let mentionAc = null;
     const replyInput = createRichCommentInput({
       className: 'comment-reply-textarea',
-      placeholder: t('comments.replyPlaceholder', 'Reply...'),
+      placeholder: t('comments.replyPlaceholder', 'Reply…'),
       onSubmit: submitReply,
       isSubmitBlocked: () => !!mentionAc?.isOpen(),
     });

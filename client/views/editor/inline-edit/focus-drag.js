@@ -92,7 +92,10 @@ export function createFocusDrag({
       const ft = resolveFocusTarget(photo);
       if (!ft || ft.cropMode !== 'cover') continue; // crop focus only
       const pt = overlay.focusPoint(photo, ft.initial);
-      pt.title = t('editor.inline.focus.hint', 'Drag to set image focus');
+      pt.title = t(
+        'editor.inline.focus.hint',
+        'Drag or use arrow keys to set image focus',
+      );
       wireFocusDrag(pt, photo, ft);
     }
   }

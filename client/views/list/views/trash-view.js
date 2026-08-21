@@ -29,7 +29,7 @@ export function createTrashView({ h, api, renderCard }) {
   });
   const trashLoading = h('div', {
     class: 'help',
-    text: t('list.trash.loading', 'Loading...'),
+    text: t('list.trash.loading', 'Loading…'),
   });
 
   let loaded = false;

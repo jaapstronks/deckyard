@@ -117,7 +117,7 @@ export function createNotesQaController({
                     }),
                   },
                 );
-                flashHint?.(t('qa.addedToDeck', 'Added to deck.'));
+                flashHint?.(t('qa.addedToDeck', 'Added to deck'));
                 refresh().catch((e) =>
                   debugLog('[notes][qa] refresh after promote failed', e),
                 );
@@ -144,7 +144,7 @@ export function createNotesQaController({
                     body: JSON.stringify({ position: 'end' }),
                   },
                 );
-                flashHint?.(t('qa.addedToDeck', 'Added to deck.'));
+                flashHint?.(t('qa.addedToDeck', 'Added to deck'));
                 refresh().catch((e) =>
                   debugLog('[notes][qa] refresh after promote failed', e),
                 );

@@ -58,7 +58,7 @@ export function createVisibilitySection({
   /** Persist pending edits before a visibility change; returns false if save failed. */
   async function ensureSaved(toastId) {
     if (!isDirty?.()) return true;
-    toast?.info?.(t('common.savingFirst', 'Saving first...'), {
+    toast?.info?.(t('common.savingFirst', 'Saving first…'), {
       id: toastId,
       durationMs: 5200,
     });

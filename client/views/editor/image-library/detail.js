@@ -355,7 +355,7 @@ export function createImageLibraryDetail({
                 }),
               });
               onItemUpdated(updated);
-              setStatus(t('common.saved', 'Saved.'));
+              setStatus(t('common.saved', 'Saved'));
               renderDetail(updated);
             } catch (e) {
               setStatus(String(e?.message || e));

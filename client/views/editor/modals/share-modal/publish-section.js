@@ -84,7 +84,7 @@ export function createPublishSection({
       title: t('editor.publish.unpublish', 'Unpublish'),
       message: t(
         'editor.publish.unpublish.confirm',
-        'Unpublish?\n\nThis will invalidate the public link and embed links.',
+        'Unpublish?\n\nThis will invalidate the public link and embed links. Anyone with a shared /p/ or /embed/ link will no longer be able to open the presentation.\n\nIf you use this link in a website, invite, follow-along, notes/QR or other tooling, it will stop working there too.',
       ),
       confirmLabel: t('editor.publish.unpublish', 'Unpublish'),
       danger: true,
@@ -167,7 +167,7 @@ export function createPublishSection({
       onclick: async () => {
         const ok = await copyToClipboard(data.url);
         if (ok)
-          toast?.success?.(t('common.copied', 'Copied!'), { durationMs: 1500 });
+          toast?.success?.(t('common.copied', 'Copied'), { durationMs: 1500 });
         urlInput.focus();
       },
     });

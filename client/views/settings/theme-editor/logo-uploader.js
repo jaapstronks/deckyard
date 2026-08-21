@@ -119,7 +119,7 @@ export function createLogoUploader({ value, onChange }) {
       preview.classList.add('is-uploading');
       dropzone.classList.add('is-hidden');
       actions.classList.add('is-hidden');
-      status.textContent = t('settings.themes.uploading', 'Uploading...');
+      status.textContent = t('settings.themes.uploading', 'Uploading…');
       return;
     }
 

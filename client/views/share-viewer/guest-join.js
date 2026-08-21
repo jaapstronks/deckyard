@@ -158,7 +158,7 @@ export function renderGuestJoinPrompt(
     }
 
     submitBtn.disabled = true;
-    submitBtn.textContent = t('share.guest.sending', 'Sending...');
+    submitBtn.textContent = t('share.guest.sending', 'Sending…');
     errorEl.style.display = 'none';
 
     try {

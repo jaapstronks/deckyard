@@ -264,7 +264,7 @@ export function createPreviewLightbox({
       const marker = h('div', { class: 'positioned-comment-marker' });
       const textarea = h('textarea', {
         class: 'form-input',
-        placeholder: t('comments.addPlaceholder', 'Add a comment...'),
+        placeholder: t('comments.addPlaceholder', 'Add a comment…'),
         rows: 2,
       });
 

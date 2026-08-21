@@ -104,7 +104,7 @@ export function createThemePickerRow({
   // Loading state
   const loading = h('div', {
     class: 'theme-picker-loading',
-    text: t('list.theme.loading', 'Loading themes...'),
+    text: t('list.theme.loading', 'Loading themes…'),
   });
 
   el.append(header, loading);

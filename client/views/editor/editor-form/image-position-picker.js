@@ -135,7 +135,7 @@ export function renderImagePositionPicker({
   const mount = h('div', { class: 'stack' });
   const help = h('div', {
     class: 'help',
-    text: t('editor.imagePosition.analyzing', 'Analyzing image...'),
+    text: t('editor.imagePosition.analyzing', 'Analyzing image…'),
   });
   wrap.append(mount, help);
 

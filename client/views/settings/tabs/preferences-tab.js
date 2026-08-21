@@ -166,7 +166,7 @@ export function createPreferencesTab({ user, nav }) {
     class: 'help',
     text: t(
       'settings.slideLangMode.hint',
-      'Used for the editor\'s "language mode", AI output, and slide translation tools.',
+      'Used for the editor’s “language mode”, AI output, and slide translation tools.',
     ),
   });
   langCard.append(langControlWrap, langHint);
@@ -186,7 +186,7 @@ export function createPreferencesTab({ user, nav }) {
     class: 'help',
     text: t(
       'settings.privacy.hint',
-      'Control how your engagement is tracked when viewing presentations.',
+      'Control how your activity is tracked and displayed.',
     ),
   });
 
@@ -195,14 +195,14 @@ export function createPreferencesTab({ user, nav }) {
     labeledCheckbox({
       text: t(
         'settings.privacy.allowAttribution',
-        'Allow my name to be shown in engagement insights',
+        'Allow my views to be attributed to me',
       ),
     });
   const allowAttributionHint = h('div', {
     class: 'help',
     text: t(
       'settings.privacy.allowAttributionHint',
-      'When enabled, presenters can see your name instead of just "team member viewed".',
+      'When enabled, presenters can see your name when you view their presentations.',
     ),
   });
 
@@ -218,7 +218,7 @@ export function createPreferencesTab({ user, nav }) {
     class: 'help',
     text: t(
       'settings.privacy.disableTrackingHint',
-      'When enabled, your views will not be recorded in any analytics.',
+      "When enabled, your views won't be recorded in any analytics.",
     ),
   });
 
@@ -242,14 +242,14 @@ export function createPreferencesTab({ user, nav }) {
     class: 'help',
     text: t(
       'settings.digest.hint',
-      'Receive a weekly email summary of your presentation engagement.',
+      'Receive a weekly summary of how your presentations are performing.',
     ),
   });
 
   // Digest enabled toggle
   const { element: digestEnabledLabel, input: digestEnabledCheck } =
     labeledCheckbox({
-      text: t('settings.digest.enabled', 'Send weekly engagement digest'),
+      text: t('settings.digest.enabled', 'Receive weekly digest emails'),
       checked: true,
     });
 

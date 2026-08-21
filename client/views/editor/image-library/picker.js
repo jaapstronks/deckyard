@@ -100,7 +100,7 @@ function getSectionInfo(section) {
  * @param {Object} options - Picker options
  */
 export function openImageLibraryPicker({
-  title = t('imageLibrary.title', 'Media Library'),
+  title = t('imageLibrary.title', 'Library'),
   allowCaptionCredit = false,
   onPick,
   user,
@@ -498,7 +498,7 @@ export function openImageLibraryPicker({
   // Load data
   const load = async () => {
     setBusy(true);
-    setStatus(t('imageLibrary.loading', 'Loading library...'));
+    setStatus(t('imageLibrary.loading', 'Loading library…'));
     try {
       const [libraryResp, statusResp] = await Promise.all([
         api('/api/image-library'),

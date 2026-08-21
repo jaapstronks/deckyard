@@ -35,7 +35,7 @@ export function openAiAppendWizard({
     class: 'form-input form-textarea-lg',
     placeholder: t(
       'editor.aiAppend.placeholder',
-      'E.g.\n- Add 2 slides about approach and planning\n- Add a slide with a photo (placeholder) and 4 bullet points with key messages\n- Add a "list" slide with 6 tips (bullets)\n- Add a chart slide with a bar chart based on these numbers: ...\n',
+      'E.g.\n- Add 2 slides about approach and planning\n- Add a slide with a photo (placeholder) and 4 bullet points with key messages\n- Add a “list” slide with 6 tips (bullets)\n- Add a chart slide with a bar chart based on these numbers: …\n',
     ),
   });
   // Prefilled when reached from the picker's "build with AI" escape hatch, so

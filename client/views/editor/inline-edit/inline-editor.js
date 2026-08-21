@@ -1281,7 +1281,7 @@ export function createInlineEditor({
     const { slide, idx, member, imageField, altField } = target;
     const activeLang = normalizeLang?.(pres?.i18n?.active) || 'nl';
     openImagePicker({
-      title: t('editor.image.libraryTitle', 'Images'),
+      title: t('editor.image.libraryTitle', 'Library: choose an image'),
       docId: pres?.id || '',
       context: {
         presentationTitle: typeof pres?.title === 'string' ? pres.title : '',

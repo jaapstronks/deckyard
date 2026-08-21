@@ -25,6 +25,11 @@
  * away (46 pairs in four files, against 72 bare ones across client/ and
  * shared/). One meaning, one shape: a new `<x>Default:` next to an `<x>Key:` is
  * a drift the coverage gate fails on — see tests/i18n-coverage.test.js.
+ *
+ * The same one-shape rule applies to the fallback *string*: B107 pinned every
+ * fallback to the en/ value for its key, so `collectFallbackSites` reports the
+ * sites unfolded (rather than one-per-key, as `extractUsedKeys` does) for the
+ * gate that keeps them from drifting apart again.
  */
 
 import fs from 'node:fs/promises';
@@ -130,6 +135,80 @@ export async function extractUsedKeys(clientDir) {
       record(m[3], m[4] ?? m[5] ?? null, file);
   }
   return used;
+}
+
+/**
+ * Decode a JavaScript string literal's *source* text into the value it denotes.
+ * The extraction regexes capture what stands between the quotes, so `\'` and
+ * `\n` arrive here as two characters each and have to be resolved before the
+ * result can be compared with a locale value.
+ * @param {string} raw - literal body, without its delimiters
+ * @returns {string}
+ */
+function decodeJsLiteral(raw) {
+  return raw.replace(
+    /\\(u\{[0-9a-fA-F]+\}|u[0-9a-fA-F]{4}|x[0-9a-fA-F]{2}|.)/gs,
+    (_, esc) => {
+      switch (esc[0]) {
+        case 'n':
+          return '\n';
+        case 't':
+          return '\t';
+        case 'r':
+          return '\r';
+        case 'b':
+          return '\b';
+        case 'f':
+          return '\f';
+        case 'v':
+          return '\v';
+        case '0':
+          return esc.length === 1 ? '\0' : esc;
+        case 'x':
+          return String.fromCodePoint(parseInt(esc.slice(1), 16));
+        case 'u':
+          return String.fromCodePoint(
+            parseInt(esc[1] === '{' ? esc.slice(2, -1) : esc.slice(1), 16),
+          );
+        default:
+          return esc;
+      }
+    },
+  );
+}
+
+/**
+ * Every place the client spells an English fallback beside a key — the second
+ * argument of `t()` and the second half of a descriptor pair — as one flat list
+ * of *sites*, not folded per key.
+ *
+ * `extractUsedKeys` deliberately keeps only the first fallback it sees for a
+ * key, which is what the coverage gate needs and exactly what hides a key
+ * carrying two different English strings. This returns them all, so the
+ * one-fallback-per-key gate in tests/i18n-audit.test.js can see the collision.
+ *
+ * @param {string} dir - absolute path to a tree to scan (client/)
+ * @returns {Promise<Array<{ key: string, fallback: string, file: string, line: number }>>}
+ */
+export async function collectFallbackSites(dir) {
+  const sites = [];
+  for await (const file of walkJs(dir)) {
+    const src = await fs.readFile(file, 'utf8');
+    const record = (key, raw, index) => {
+      if (raw == null) return;
+      sites.push({
+        key,
+        fallback: decodeJsLiteral(raw),
+        file,
+        line: src.slice(0, index).split('\n').length,
+      });
+    };
+    for (const m of src.matchAll(T_CALL))
+      record(m[2], m[3] ?? m[4] ?? null, m.index);
+    for (const m of src.matchAll(DESCRIPTOR_PAIR))
+      record(m[3], m[4] ?? m[5] ?? null, m.index);
+  }
+  return sites;
 }
 
 // The pre-B94 spelling of the same pair: <x>Key: '<key>', <x>Default: '…'.

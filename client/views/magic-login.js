@@ -14,8 +14,8 @@ export async function renderMagicLogin(root, { nav } = {}) {
       : '/app';
 
   const { shell, card, header, title, subtitle } = authShell({
-    title: t('magicLogin.title', 'Signing you in...'),
-    subtitle: t('magicLogin.verifying', 'Verifying your link...'),
+    title: t('magicLogin.title', 'Signing you in…'),
+    subtitle: t('magicLogin.verifying', 'Verifying your link…'),
     centered: true,
   });
 
@@ -74,7 +74,7 @@ export async function renderMagicLogin(root, { nav } = {}) {
       title.textContent = t('magicLogin.success', 'Welcome!');
       subtitle.textContent = t(
         'magicLogin.redirecting',
-        'Redirecting you now...',
+        'Redirecting you now…',
       );
       subtitle.className = 'auth-subtitle';
 
@@ -123,7 +123,10 @@ export async function renderMagicLogin(root, { nav } = {}) {
     }
   } catch (err) {
     spinnerEl.remove();
-    title.textContent = t('magicLogin.error', 'Something went wrong');
+    title.textContent = t(
+      'magicLogin.networkErrorTitle',
+      'Something went wrong',
+    );
     subtitle.textContent = t(
       'magicLogin.networkError',
       'Could not verify your link. Please try again.',

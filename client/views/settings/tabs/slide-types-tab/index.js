@@ -130,7 +130,7 @@ export function createSlideTypesTab({ user } = {}) {
       h('button', {
         class: 'btn btn-primary btn-sm',
         type: 'button',
-        text: t('settings.slideTypes.createType', 'Create Type'),
+        text: t('settings.slideTypes.createType', 'Create Slide Type'),
         onclick: () => openEditor(null),
       }),
     );

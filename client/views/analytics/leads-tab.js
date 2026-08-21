@@ -203,7 +203,7 @@ export function createLeadsTab({
 
   async function handleLoadMore() {
     loadMoreBtn.disabled = true;
-    loadMoreBtn.textContent = t('common.loading', 'Loading...');
+    loadMoreBtn.textContent = t('common.loading', 'Loading…');
 
     try {
       const result = await api(
@@ -230,7 +230,7 @@ export function createLeadsTab({
     const exportBtn = el.querySelector('.analytics-leads-export');
     if (exportBtn) {
       exportBtn.disabled = true;
-      exportBtn.textContent = t('common.exporting', 'Exporting...');
+      exportBtn.textContent = t('common.exporting', 'Exporting…');
     }
 
     try {
@@ -269,7 +269,7 @@ export function createLeadsTab({
     }
 
     btn.disabled = true;
-    btn.textContent = t('common.deleting', 'Deleting...');
+    btn.textContent = t('common.deleting', 'Deleting…');
 
     try {
       await api(`/api/leads/${lead.id}`, { method: 'DELETE' });

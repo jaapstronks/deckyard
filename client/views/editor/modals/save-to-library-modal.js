@@ -142,7 +142,7 @@ export function openSaveToLibraryModal({
     rows: 2,
     placeholder: t(
       'editor.slideLibrary.saveModal.descriptionPlaceholder',
-      'Briefly describe this slide...',
+      'Briefly describe this slide…',
     ),
   });
   const descHint = h('div', {
@@ -165,7 +165,7 @@ export function openSaveToLibraryModal({
     initialTags: [],
     placeholder: t(
       'editor.slideLibrary.saveModal.tagsPlaceholder',
-      'Add tags...',
+      'Add tags…',
     ),
     onChange: () => {}, // Tags will be read on save
   });
@@ -282,7 +282,7 @@ export function openSaveToLibraryModal({
     if (saving) return;
     saving = true;
     actions.setDisabled(true);
-    status.textContent = t('common.saving', 'Saving...');
+    status.textContent = t('common.saving', 'Saving…');
 
     try {
       const endpoint =

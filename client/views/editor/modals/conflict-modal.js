@@ -22,7 +22,7 @@ async function copyText(text) {
   if (!ok) {
     showCopyFallbackModal(
       str,
-      t('editor.conflict.copyPrompt', 'Copy your version (Ctrl/Cmd+C)'),
+      t('editor.conflict.copyPrompt', 'Copy your version below (Ctrl/Cmd+C):'),
     );
   }
   return true;
@@ -65,7 +65,7 @@ export function openConflictModal({
     style: 'margin-bottom: 16px;',
     text: t(
       'editor.conflict.help',
-      "Reload to get the latest version. If you're worried about losing your changes: copy your version as JSON first.",
+      'Reload to get the latest version. If you’re worried about losing your changes: copy your version as JSON first.',
     ),
   });
 

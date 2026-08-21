@@ -71,7 +71,7 @@ export function renderApiKeysPanel({ user }) {
   const keysList = h('div', { class: 'api-keys-list' });
   const loading = h('div', {
     class: 'help',
-    text: t('common.loading', 'Loading...'),
+    text: t('common.loading', 'Loading…'),
   });
   keysList.append(loading);
 
@@ -89,7 +89,7 @@ export function renderApiKeysPanel({ user }) {
 
     keysList.innerHTML = '';
     keysList.append(
-      h('div', { class: 'help', text: t('common.loading', 'Loading...') }),
+      h('div', { class: 'help', text: t('common.loading', 'Loading…') }),
     );
 
     const result = await fetchApiKeys({ includeRevoked });

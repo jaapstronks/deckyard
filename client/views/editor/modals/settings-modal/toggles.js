@@ -12,7 +12,7 @@ export function buildQaSection({ h, pres, markDirty, requestSave }) {
     titleKey: 'editor.deckSettings.qa.title',
     title: 'Enable Q&A',
     helpKey: 'editor.deckSettings.qa.help',
-    help: "When disabled, Q&A is hidden in follow-along (participants can't ask questions).",
+    help: 'When disabled, Q&A is hidden in follow-along (participants can’t ask questions).',
     onChange: (checked) => {
       pres.settings.qaEnabled = checked;
       markDirty?.();
