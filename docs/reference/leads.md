@@ -21,7 +21,7 @@ the public submit path deliberately looks the deck up across organizations.
 - `shared/slide-types/types/lead-capture-slide.js` — the slide type;
   `client/lib/slide-runtime/lead-capture-runtime.js` posts the form from the
   public viewer.
-- `server/routes/api/leads.js` (484 lines) — the whole route surface: the
+- `server/routes/api/leads.js` — the whole route surface: the
   public submit, the public token-gated GDPR self-service, the per-deck reads,
   the admin delete, and the in-memory GDPR token store.
 - `server/storage/leads.js` (433) — storage: create/read/export plus the four

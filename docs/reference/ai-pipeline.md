@@ -46,29 +46,29 @@ Pipeline (`server/utils/ai/`, 42 modules). The top level:
 - `server/utils/ai/generate-deck-v2.js` — the orchestrator: `generateDeckV2`,
   `groupSlidesForPhase2`, `refineSlideGroup`, `assembleDeck`, plus session
   id/logger helpers.
-- `server/utils/ai/generate-outline.js` (366 lines) — **phase 1**:
+- `server/utils/ai/generate-outline.js` — **phase 1**:
   `generateOutline`, `separateSlidesForProcessing`, `calculateTargetSlides`.
-- `server/utils/ai/revise-outline.js` (215 lines) — **phase 1b**: a second pass
+- `server/utils/ai/revise-outline.js` — **phase 1b**: a second pass
   over the outline before any slide is built (an outline is cheap to re-plan).
-- `server/utils/ai/refine-slides.js` (522 lines) — **phase 2**:
+- `server/utils/ai/refine-slides.js` — **phase 2**:
   `refineAllSlideGroups`, type selection and content formatting per group.
-- `server/utils/ai/refine-section.js` (110 lines) — revise a contiguous range of
+- `server/utils/ai/refine-section.js` — revise a contiguous range of
   slides from user feedback (the review grid's "Adjust section").
-- `server/utils/ai/iterate-deck.js` (382 lines) — natural-language deck edits
+- `server/utils/ai/iterate-deck.js` — natural-language deck edits
   ("make this punchier", "split slide 3").
-- `server/utils/ai/compress-deck.js` (266 lines) — `analyzeForCompression`,
+- `server/utils/ai/compress-deck.js` — `analyzeForCompression`,
   `applyCompression`: find mergeable/low-value slides.
-- `server/utils/ai/analyze-presentation.js` (329 lines) — improvement
+- `server/utils/ai/analyze-presentation.js` — improvement
   suggestions delivered through the comments system, optionally with a proposed
   slide.
-- `server/utils/ai/compare-versions.js` (311 lines) — human-readable diff
+- `server/utils/ai/compare-versions.js` — human-readable diff
   summaries between two deck versions.
 - `server/utils/ai/validate-slides.js` + `server/utils/ai/validate-slides/`
   (8 modules) — the repair stage: `checks.js`, `constants.js` (item counts, max
   lengths), `fields.js` (valid/unknown field keys), `fix.js` (404 lines, the
   non-throwing repair pipeline), `fixers.js` (per-type repairs),
   `strict.js` (throwing validation for raw output), `truncate.js`, `logging.js`.
-- `server/utils/ai/validate-slide-structure.js` (275 lines) — structural check of
+- `server/utils/ai/validate-slide-structure.js` — structural check of
   one slide's content against its type.
 - `server/utils/ai/slide-type-catalog.js` — a 21-line compatibility re-export of
   `slide-catalog/`.
@@ -87,9 +87,9 @@ Pipeline (`server/utils/ai/`, 42 modules). The top level:
   patching the mechanism.
 - `server/utils/ai/schemas/` — `index.js`, `refined-slide.js`: the JSON shapes
   the model is asked to return.
-- `server/utils/ai/logging.js` (226 lines) — full LLM conversation logs for
+- `server/utils/ai/logging.js` — full LLM conversation logs for
   debugging/finetuning, written under `server/logs/ai/`; off in production.
-- `server/utils/ai/validation-logging.js` (335 lines) — small, production-safe
+- `server/utils/ai/validation-logging.js` — small, production-safe
   validation-event logs (unknown fields, schema issues) plus the admin readers.
 
 Legacy single-prompt path (`server/utils/openai/`, 8 modules):
@@ -103,7 +103,7 @@ Routes (`server/routes/api/ai/`, 9 modules + a 38-line dispatcher):
 
 - `server/routes/api/ai.js` — a declarative exact-path table; every route is a
   fixed method + pathname.
-- `server/routes/api/ai/shared.js` (141 lines) — the `AiContext` typedef and the
+- `server/routes/api/ai/shared.js` — the `AiContext` typedef and the
   shared helpers: `loadSlideTypeContext` (org disabled + custom types),
   `loadAiThemeContext` (backgrounds, brand colours, presets),
   `reattachAiMeta`, `createPresentationWithI18n`.
@@ -227,7 +227,7 @@ point of the seam.
   spend the instance's API budget; the only cost control is turning AI off. This
   is why sandbox mode disables AI outright.
 
-## Implementation status
+## Implementation status (as of 2026-08-21)
 
 Shipped and live: the two-phase stream path, the v1 one-shot wizard, append,
 section refine, convert, iterate, compress, analyze, version compare, the

@@ -130,7 +130,7 @@ Reads are org-scoped. Tenancy is the `organization_id` FK plus the
 per-organization unique slug index; the general isolation rules (R1–R3) are in
 [`tenant-isolation.md`](tenant-isolation.md), not repeated here.
 
-## Implementation status
+## Implementation status (as of 2026-08-21)
 
 The frontend described above is live: authoring, publish/unpublish, picker and
 form integration, server-side rendering seam, reorder, and import/export all

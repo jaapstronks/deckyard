@@ -28,17 +28,17 @@ htmlContent, textContent, senderOverride})` (a `POST` to
 - `server/integrations/email/template-builder.js` — `trySendCustomTemplate()`
   (resolve an override; return `null` to mean "no override, fall back") and
   `buildFromResolvedTemplate()` (resolved fields → html + text).
-- `server/integrations/email/senders-auth.js` (214 lines) —
+- `server/integrations/email/senders-auth.js` —
   `sendPasswordResetEmail`, `sendUserInvitationEmail`,
   `sendActivationReminderEmail`, `sendMagicLinkEmail`.
-- `server/integrations/email/senders-collaboration.js` (255 lines) —
+- `server/integrations/email/senders-collaboration.js` —
   `sendCommentNotification`, `sendGuestVerificationEmail`,
   `sendCollaboratorInviteEmail`, `sendGuestInvitationEmail`.
-- `server/integrations/email/senders-digests.js` (73 lines) —
+- `server/integrations/email/senders-digests.js` —
   `sendWeeklyDigestEmail`, `sendTeamDigestEmail`.
-- `server/integrations/email/senders-leads.js` (122 lines) —
+- `server/integrations/email/senders-leads.js` —
   `maybeSendLeadNotification` (the `maybe` is the owner's opt-in).
-- `server/integrations/email/senders-export.js` (66 lines) —
+- `server/integrations/email/senders-export.js` —
   `sendExportReadyNotification`. Not re-exported by the barrel; the bulk-export
   worker imports it directly.
 
@@ -46,25 +46,25 @@ Template bodies (`server/integrations/email-templates/`, 7 modules):
 
 - `server/integrations/email-templates/index.js` — the shared shell:
   `EMAIL_STYLES`, `emailButton`, `emailWrapper`, `troubleClickingFooter`.
-- `server/integrations/email-templates/auth.js` (178 lines) — password reset,
+- `server/integrations/email-templates/auth.js` — password reset,
   user invitation, activation reminder, magic link.
-- `server/integrations/email-templates/notifications.js` (195 lines) — comment
+- `server/integrations/email-templates/notifications.js` — comment
   notification, lead notification.
-- `server/integrations/email-templates/collaboration.js` (142 lines) — guest
+- `server/integrations/email-templates/collaboration.js` — guest
   verification, collaborator invite, guest invitation.
-- `server/integrations/email-templates/digest.js` (313 lines) — weekly and team
+- `server/integrations/email-templates/digest.js` — weekly and team
   digest.
-- `server/integrations/email-templates/export.js` (74 lines) — export ready.
-- `server/integrations/email-templates/helpers.js` (94 lines) — formatting
+- `server/integrations/email-templates/export.js` — export ready.
+- `server/integrations/email-templates/helpers.js` — formatting
   helpers (`formatBytes`, …).
 
 Override store and resolution:
 
-- `server/storage/email-templates.js` (366 lines) — `TEMPLATE_METADATA` (label,
+- `server/storage/email-templates.js` — `TEMPLATE_METADATA` (label,
   description, placeholders and customizable fields per type),
   `getEmailTemplates`, `writeEmailTemplate`, `deleteEmailTemplate`,
   `getEmailTemplateOverride`, `updateDefaultLocale`, `getEmailDefaultLocale`.
-- `server/integrations/email-template-resolver.js` (360 lines) —
+- `server/integrations/email-template-resolver.js` —
   `resolveTemplate(repoRoot, type, locale)` with the fallback chain _custom
   override → code default → `en` default_, plus `interpolatePlaceholders` and the
   preview builders.
@@ -74,7 +74,7 @@ Override store and resolution:
 
 Routes and UI:
 
-- `server/routes/api/email-templates.js` (251 lines) — the admin API under
+- `server/routes/api/email-templates.js` — the admin API under
   `/api/admin/email-templates`.
 - `client/views/settings/email-templates/` (5 modules: `index.js`, `builders.js`,
   `state.js`, `actions.js`, `labels.js`) — the admin panel.
@@ -174,7 +174,7 @@ whether `BREVO_API_KEY` is set.
 - **Test-send goes to the calling admin's own address**, so the admin API cannot
   be used to mail arbitrary third parties.
 
-## Implementation status
+## Implementation status (as of 2026-08-21)
 
 Shipped and in use: the Brevo transport, all four sender families plus export,
 the code-default builders in nine locales' worth of translator strings, the

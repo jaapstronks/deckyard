@@ -37,7 +37,7 @@ Decided as D10+D11 (2026-08-06); executed in B41-a. The public API break
 (`scope` → `visibility`, `'workspace'` → `'organization'`) shipped as a
 breaking MINOR with a stored-data migration (074) — no accepts-both reading.
 
-## Implementation status (honest notes)
+## Implementation status (honest notes, as of 2026-08-21)
 
 - **Enforced**: `tests/organization-vocabulary.test.js` pins `'workspace'`
   as a quoted value, the workspace-flag spellings, and the old scope-as-

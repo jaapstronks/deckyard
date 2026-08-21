@@ -63,7 +63,7 @@ that is not uuid-shaped is dropped before storage sees it (`server/utils/uuid.js
 identifier) that is hashed for the initials colour. It no longer derives a
 name from an address.
 
-## Implementation status
+## Implementation status (as of 2026-08-21)
 
 The rule is enforced by `tests/response-identity-shape.test.js`, which scans
 the storage return literals and `serveJson` payloads for address-shaped keys

@@ -25,7 +25,7 @@ See [`security-posture.md`](security-posture.md).
 
 ## Module map
 
-- `server/utils/webhooks.js` (402 lines) — the whole implementation: the
+- `server/utils/webhooks.js` — the whole implementation: the
   `postJson` transport with the SSRF guard and optional HMAC signing, three
   payload builders, and the three `maybeFire…` entry points.
 - `server/utils/ssrf-guard.js` — `assertPublicHttpUrl()`: scheme check, DNS

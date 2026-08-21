@@ -204,6 +204,7 @@ nothing is discoverable only by `ls`.
 | [`data-sources.md`](reference/data-sources.md)                   | Live slide data sources (Notion/CSV): the fetch/bind pipeline, the csv-url SSRF sink, and the config                       |
 | [`analytics.md`](reference/analytics.md)                         | View analytics end to end: tracking routes, aggregations, reports, retention job                                           |
 | [`analytics-privacy.md`](reference/analytics-privacy.md)         | What view analytics stores per viewer, the two erase routes, retention                                                     |
+| [`leads.md`](reference/leads.md)                                 | Lead capture: what the slide stores, who can read it, the webhook export path, retention and erasure                       |
 | [`email-infrastructure.md`](reference/email-infrastructure.md)   | The Brevo transport, the senders, and the admin-customizable templates                                                     |
 | [`jobs-and-queues.md`](reference/jobs-and-queues.md)             | The BullMQ queue layer, its synchronous fallback, and the recurring interval jobs                                          |
 | [`maintenance-mode.md`](reference/maintenance-mode.md)           | Deploying without failing saves in open editors                                                                            |
@@ -212,5 +213,6 @@ nothing is discoverable only by `ls`.
 | [`storage-scope.md`](reference/storage-scope.md)                 | The storage call convention: scope-first signatures, the six disk exceptions, the burndown gate                            |
 | [`versioning.md`](reference/versioning.md)                       | Versioning & releases                                                                                                      |
 | [`vocabulary.md`](reference/vocabulary.md)                       | One word per meaning: the vocabulary register (organization, visibility, permissions, storage scope) and the UI-label rule |
+| [`i18n-locale-tiers.md`](reference/i18n-locale-tiers.md)         | The two UI-locale tiers — which languages are gated-complete and which are best-effort                                     |
 | [`html-escaping.md`](reference/html-escaping.md)                 | Escaping and `innerHTML` in the client                                                                                     |
 | [`dynamic-imports.md`](reference/dynamic-imports.md)             | When a dynamic `import()` is justified, and where they survive                                                             |

@@ -121,7 +121,7 @@ placed it there on purpose. The net result is one doctrine on both paths:
 whether a call arrives scope-first through `resolveScope()` or reaches
 `getOrgId()` directly, an absent organization is refused, never guessed.
 
-## Enforcement and implementation status
+## Enforcement and implementation status (as of 2026-08-21)
 
 The convention is enforced by `tests/storage-call-convention.test.js`, which
 scans every export under `server/storage/**` and refuses (a) `repoRoot` as

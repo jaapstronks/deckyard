@@ -152,7 +152,7 @@ omission. Should a second consumer ever justify a durable, reusable viewer
 identity primitive (a signed device token was the runner-up option), the trade
 would be reconsidered as a deliberate feature — not a column kept on spec.
 
-## Implementation status
+## Implementation status (as of 2026-08-21)
 
 Shipped: the per-deck label, the logged-in export/erase, the anonymous
 token-scoped erase with device cascade, and the retention job — all with the

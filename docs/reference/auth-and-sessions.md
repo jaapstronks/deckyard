@@ -136,7 +136,7 @@ downstream — which organization a request may read or write, the R1–R3 isola
 rules, `MULTI_ORG_ENABLED` — is in
 [`tenant-isolation.md`](tenant-isolation.md), not repeated here.
 
-## Implementation status
+## Implementation status (as of 2026-08-21)
 
 All four identity paths are live: password, magic-link, OIDC SSO, and the
 dev-only bypass. Sessions are stateless signed cookies with version-based

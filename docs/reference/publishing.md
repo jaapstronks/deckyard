@@ -31,11 +31,11 @@ of the named `crossOrganizationScope` cases in
 
 Publish / unpublish:
 
-- `server/routes/api/publish.js` (301 lines) — the app's four routes: publish,
+- `server/routes/api/publish.js` — the app's four routes: publish,
   unpublish, rename the slug, regenerate the preview image.
-- `server/routes/public-api/v1/publishing.js` (197 lines) — the machine-client
+- `server/routes/public-api/v1/publishing.js` — the machine-client
   equivalents: publish, publish status, unpublish.
-- `server/storage/published/index.js` (224 lines) — the storage facade:
+- `server/storage/published/index.js` — the storage facade:
   `newPublishId`, `getPublishedById`, `upsertPublishedEntry`,
   `removePublishedEntry`, `updatePublishedSlug`, `getPublishedIndex`,
   `listPublishedForFeed`.
@@ -55,9 +55,9 @@ The public pages:
 
 The feed:
 
-- `server/routes/feed.js` (131 lines) — `/feed/rss.xml`, `/feed/atom.xml`,
+- `server/routes/feed.js` — `/feed/rss.xml`, `/feed/atom.xml`,
   `/feed/feed.json`.
-- `server/utils/rss-feed.js` (64 lines) — `buildFeed()`, all three formats from
+- `server/utils/rss-feed.js` — `buildFeed()`, all three formats from
   one model via the `feed` package.
 - `server/routes/static/app-shell.js` — `injectFeedDiscovery()`, the
   `<link rel="alternate">` autodiscovery tags.

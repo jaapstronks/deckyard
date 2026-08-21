@@ -141,7 +141,7 @@ owner email. The general isolation rules are in
 guardrails (secure cookies, CSRF, request-body caps) are summarized in
 [`security-posture.md`](security-posture.md).
 
-## Implementation status
+## Implementation status (as of 2026-08-21)
 
 Sandbox mode is implemented and shipped: guest identity, ephemeral decks with
 TTL sweep, per-guest quotas, watermarked exports, curated media, seed examples,

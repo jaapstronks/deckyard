@@ -12,9 +12,11 @@ doc names where flags live and the one naming rule that keeps them uniform.
   `server/config/utils.js` — no raw `process.env` reads (ESLint enforces this
   outside `server/config/`).
 - **Snapshot** — `server/config/flags-snapshot.js` aggregates the declared
-  flags with runtime status into the client-facing object served on
-  `/api/feature-flags`. Snapshot keys carry the same enable polarity
-  (`enableAi`, `enableLiveData`, …); a missing key reads as _off_.
+  flags with runtime status into the client-facing object. There is no
+  dedicated flags endpoint: `getFeatureFlags()` rides along in the
+  `/api/auth/me` payload as `features` (`server/routes/api/auth.js`), and
+  server-side routes call it directly. Snapshot keys carry the same enable
+  polarity (`enableAi`, `enableLiveData`, …); a missing key reads as _off_.
 - **Consumption** — routers and views read the snapshot keys positively
   (`flags.enableAi`, `!flags.enableUploads`); nothing downstream re-reads the
   env var.

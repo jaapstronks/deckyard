@@ -1,5 +1,6 @@
 /**
- * The feature-flag snapshot handed to the client (`/api/feature-flags`).
+ * The feature-flag snapshot handed to the client (as `features` in the
+ * `/api/auth/me` payload) and read directly by server-side routes.
  * Pure aggregator: every env-var read lives in `config/features.js` (the
  * declaration module); this file only combines declared flags with runtime
  * status (LLM config, ImageKit config, branding) into one object.
