@@ -3,10 +3,8 @@ import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { resolveDeckLang } from '../../shared/i18n-utils.js';
 import { escapeHtml, embedImgSrcDataUrls } from '../utils/html-utils.js';
-import {
-  buildPrismKatexCdnTags,
-  buildPrismKatexInitScript,
-} from '../utils/prism-katex.js';
+import { buildPrismKatexCdnTags } from '../utils/prism-katex.js';
+import { buildScriptChain } from '../utils/script-chain.js';
 import { renderVideoSlidePngHtml } from '../utils/video-slide-html.js';
 import { buildDocumentHead } from '../utils/head-chain.js';
 import {
@@ -70,87 +68,12 @@ const PAGE_CSS = `
       }
 `;
 
-export async function buildSlidesPngExportHtml(
-  repoRoot,
-  pres,
-  { theme = null, watermark = null, slideTypes = null } = {},
-) {
-  pres = stripLiveOnlySlidesFromPresentation(pres);
-  const docLang = resolveDocLangFromPresentation(pres);
-  const css = await loadExportCssBundle(repoRoot, theme, watermark);
-
-  const titleRaw = pres.title || 'Presentation';
-  const title = escapeHtml(titleRaw);
-
-  // Embed uploads referenced as field values (shared cache dedupes the same
-  // source across this pass and the rendered-HTML pass below).
-  const embedCache = new Map();
-  const slides = await embedSlideImages(repoRoot, pres.slides, {
-    cache: embedCache,
-  });
-
-  let slidesHtml = (
-    await Promise.all(
-      slides.map(async (s, idx) => {
-        const slideHtml =
-          s?.type === 'video-slide'
-            ? await renderVideoSlidePngHtml(s)
-            : renderSlideHtml(s, {
-                theme,
-                slideTypes,
-                stripEditorAttrs: true,
-                lang: resolveDeckLang(pres),
-              });
-        return `<div class="png-item" data-idx="${idx}">
-        <div class="png-thumb ps-theme">${css.wmHtml}${slideHtml}</div>
-        <div class="png-actions">
-          <button class="btn btn-secondary png-one">Download slide ${idx + 1}</button>
-          <span class="png-status" aria-live="polite"></span>
-        </div>
-      </div>`;
-      }),
-    )
-  ).join('\n');
-
-  // Embed any remaining <img src="/uploads|/assets|/client/..."> into data URLs.
-  slidesHtml = await embedImgSrcDataUrls(repoRoot, slidesHtml, {
-    includeClient: true,
-    cache: embedCache,
-  });
-
-  return `${buildDocumentHead({
-    lang: docLang,
-    title: `${titleRaw} (PNG Export)`,
-    head: [buildPrismKatexCdnTags()],
-    styles: [
-      {
-        id: 'pngExportCss',
-        css: buildExportStyleContent(css, [GRADIENT_OFF_CSS, PAGE_CSS]),
-      },
-    ],
-  })}
-  <body>
-    <div class="toolbar">
-      <div style="flex:1">${title}</div>
-      <button class="btn btn-primary" id="btnAll">Download all PNGs</button>
-      <label class="hint" style="display:flex; gap:8px; align-items:center;">
-        <span>Scale</span>
-        <select id="scaleSel" class="form-input" style="width:auto;">
-          <option value="1">1x (1600×900)</option>
-          <option value="2" selected>2x (3200×1800)</option>
-        </select>
-      </label>
-    </div>
-    <div class="wrap">
-      <div class="hint">
-        "Download all PNGs" levert alle slides als één ZIP-bestand. Of download een losse slide met de knop eronder.
-      </div>
-      <div class="list" id="list">
-        ${slidesHtml}
-      </div>
-    </div>
-    <script>
-      (function() {
+/**
+ * The PNG sheet's own toolbar: scale picker, per-slide download links and the
+ * "download all" ZIP button. Path-specific, so it stays here and is handed to
+ * the script chain as the body rather than living inside it.
+ */
+const PNG_TOOLBAR_JS = `
         const SLIDE_W = 1600;
         const SLIDE_H = 900;
 
@@ -252,10 +175,88 @@ export async function buildSlidesPngExportHtml(
         window.addEventListener('resize', layoutThumbs);
         setTimeout(layoutThumbs, 50);
         setTimeout(layoutThumbs, 250);
+`;
 
-        ${buildPrismKatexInitScript()}
-      })();
-    </script>
+export async function buildSlidesPngExportHtml(
+  repoRoot,
+  pres,
+  { theme = null, watermark = null, slideTypes = null } = {},
+) {
+  pres = stripLiveOnlySlidesFromPresentation(pres);
+  const docLang = resolveDocLangFromPresentation(pres);
+  const css = await loadExportCssBundle(repoRoot, theme, watermark);
+
+  const titleRaw = pres.title || 'Presentation';
+  const title = escapeHtml(titleRaw);
+
+  // Embed uploads referenced as field values (shared cache dedupes the same
+  // source across this pass and the rendered-HTML pass below).
+  const embedCache = new Map();
+  const slides = await embedSlideImages(repoRoot, pres.slides, {
+    cache: embedCache,
+  });
+
+  let slidesHtml = (
+    await Promise.all(
+      slides.map(async (s, idx) => {
+        const slideHtml =
+          s?.type === 'video-slide'
+            ? await renderVideoSlidePngHtml(s)
+            : renderSlideHtml(s, {
+                theme,
+                slideTypes,
+                stripEditorAttrs: true,
+                lang: resolveDeckLang(pres),
+              });
+        return `<div class="png-item" data-idx="${idx}">
+        <div class="png-thumb ps-theme">${css.wmHtml}${slideHtml}</div>
+        <div class="png-actions">
+          <button class="btn btn-secondary png-one">Download slide ${idx + 1}</button>
+          <span class="png-status" aria-live="polite"></span>
+        </div>
+      </div>`;
+      }),
+    )
+  ).join('\n');
+
+  // Embed any remaining <img src="/uploads|/assets|/client/..."> into data URLs.
+  slidesHtml = await embedImgSrcDataUrls(repoRoot, slidesHtml, {
+    includeClient: true,
+    cache: embedCache,
+  });
+
+  return `${buildDocumentHead({
+    lang: docLang,
+    title: `${titleRaw} (PNG Export)`,
+    head: [buildPrismKatexCdnTags()],
+    styles: [
+      {
+        id: 'pngExportCss',
+        css: buildExportStyleContent(css, [GRADIENT_OFF_CSS, PAGE_CSS]),
+      },
+    ],
+  })}
+  <body>
+    <div class="toolbar">
+      <div style="flex:1">${title}</div>
+      <button class="btn btn-primary" id="btnAll">Download all PNGs</button>
+      <label class="hint" style="display:flex; gap:8px; align-items:center;">
+        <span>Scale</span>
+        <select id="scaleSel" class="form-input" style="width:auto;">
+          <option value="1">1x (1600×900)</option>
+          <option value="2" selected>2x (3200×1800)</option>
+        </select>
+      </label>
+    </div>
+    <div class="wrap">
+      <div class="hint">
+        "Download all PNGs" levert alle slides als één ZIP-bestand. Of download een losse slide met de knop eronder.
+      </div>
+      <div class="list" id="list">
+        ${slidesHtml}
+      </div>
+    </div>
+    ${buildScriptChain({ body: PNG_TOOLBAR_JS })}
   </body>
 </html>`;
 }

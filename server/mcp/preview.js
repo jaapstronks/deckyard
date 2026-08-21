@@ -15,6 +15,11 @@ import { themeVarsCssText } from '../utils/themes.js';
 import { embedSlideImages } from '../export/css-bundle.js';
 import { buildCssChain } from '../utils/css-chain.js';
 import { buildDocumentHead } from '../utils/head-chain.js';
+import { buildScriptChain } from '../utils/script-chain.js';
+import {
+  buildPrismKatexCdnTags,
+  detectPrismKatexNeeds,
+} from '../utils/prism-katex.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { repoRoot as defaultRepoRoot } from '../config/paths.js';
 
@@ -219,10 +224,11 @@ export async function buildSlidePreviewHtml(
     `;
   });
 
+  const highlightNeeds = detectPrismKatexNeeds(slideHtmls.join('\n'));
   return `${buildDocumentHead({
     lang: docLang || resolveDocLangFromPresentation({ slides }),
     title: title || 'Slide Preview',
-    head: [LIST_SCALE_SCRIPT],
+    head: [LIST_SCALE_SCRIPT, buildPrismKatexCdnTags(highlightNeeds)],
     styles: [
       buildCssChain(repoRoot, [
         themeVars,
@@ -240,6 +246,7 @@ export async function buildSlidePreviewHtml(
     <div class="preview-list">
       ${slideHtmls.join('\n')}
     </div>
+    ${buildScriptChain({ needs: highlightNeeds })}
   </body>
 </html>`;
 }
@@ -275,9 +282,10 @@ export async function buildSingleSlidePreviewHtml(
   });
 
   // No <title>: a single-slide preview is rendered inside a host artifact frame.
+  const highlightNeeds = detectPrismKatexNeeds(html);
   return `${buildDocumentHead({
     lang: docLang || resolveDocLangFromPresentation({ slides: [slide] }),
-    head: [SINGLE_SCALE_SCRIPT],
+    head: [SINGLE_SCALE_SCRIPT, buildPrismKatexCdnTags(highlightNeeds)],
     styles: [
       buildCssChain(repoRoot, [
         themeVars,
@@ -291,6 +299,7 @@ export async function buildSingleSlidePreviewHtml(
     <div class="frame">
       <div class="stage ps-theme">${html}</div>
     </div>
+    ${buildScriptChain({ needs: highlightNeeds })}
   </body>
 </html>`;
 }
