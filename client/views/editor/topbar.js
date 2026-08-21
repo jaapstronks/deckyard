@@ -262,7 +262,6 @@ export function createEditorTopbar({
   // ============================================================
 
   const userMenu = createUserMenu({
-    h,
     user,
     nav,
     onLogout: () => logout(),
@@ -420,7 +419,6 @@ export function createEditorTopbar({
     close: closePresentMenu,
     detach: detachPresentMenu,
   } = createDropdown({
-    h,
     triggerClass: 'btn btn-primary btn-icon topbar-present-caret',
     triggerContent: [icon('chevron-down', { size: 14 })],
     title: t('editor.present.more', 'More presenting options'),

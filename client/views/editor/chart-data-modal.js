@@ -76,7 +76,6 @@ export function openChartDataModal({
 
   // --- Grid (left / bottom) ------------------------------------------------
   const { el: gridEl } = createCsvGridEditor({
-    h,
     chartType,
     value: raw,
     label: '',

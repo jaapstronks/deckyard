@@ -22,13 +22,12 @@
  * different recipe and is not built here.
  */
 
-import { h as defaultH } from '../dom.js';
+import { h } from '../dom.js';
 
 /**
  * Build a labeled checkbox.
  *
  * @param {Object} opts
- * @param {Function} [opts.h] - DOM helper (defaults to the shared `h()`).
  * @param {string} [opts.text] - Label text, wrapped in a `<span>`. Ignored when
  *   `content` is given.
  * @param {(Node|Node[])} [opts.content] - Custom label content (e.g. a title +
@@ -47,7 +46,6 @@ import { h as defaultH } from '../dom.js';
  * @returns {{ element: HTMLLabelElement, input: HTMLInputElement }}
  */
 export function labeledCheckbox({
-  h = defaultH,
   text,
   content,
   className = 'admin-checkbox-item',

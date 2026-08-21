@@ -4,8 +4,7 @@
  * Displays a user avatar that opens a dropdown with Settings and Sign out options.
  */
 
-import { h as defaultH } from '../dom.js';
-import { installDismissOnOutside } from '../dom.js';
+import { h, installDismissOnOutside } from '../dom.js';
 import { createAvatar, updateAvatar } from './avatar.js';
 import { getUserProfileAsync } from './user-profiles.js';
 import { displayNameFromEmail } from './user-format.js';
@@ -19,13 +18,12 @@ import { getHelpUrl } from '../theme/branding.js';
  * Create a user menu dropdown.
  *
  * @param {Object} options
- * @param {Function} [options.h] - DOM helper function
  * @param {Object} options.user - Current user object { email, name?, organizationId? }
  * @param {Function} options.nav - Navigation function
  * @param {Function} [options.onLogout] - Optional custom logout handler
  * @returns {{ el: HTMLElement, detach: Function }}
  */
-export function createUserMenu({ h = defaultH, user, nav, onLogout } = {}) {
+export function createUserMenu({ user, nav, onLogout } = {}) {
   const detachers = [];
 
   const email = user?.email || '';
@@ -92,7 +90,6 @@ export function createUserMenu({ h = defaultH, user, nav, onLogout } = {}) {
   const orgSection = isAnonymous
     ? null
     : createOrganizationSection({
-        h,
         activeOrganizationId: user?.organizationId || null,
         onBeforeSwitch: () => {
           details.open = false;

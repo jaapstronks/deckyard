@@ -88,7 +88,7 @@ export function createTopbar({
   detachers.push(notificationBell.detach);
 
   // User menu (settings + sign out)
-  const userMenu = createUserMenu({ h, user, nav });
+  const userMenu = createUserMenu({ user, nav });
   detachers.push(userMenu.detach);
 
   topbarContent.append(

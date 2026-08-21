@@ -16,7 +16,7 @@
  * typed anything.
  */
 
-import { h as defaultH } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 
 /** Fields whose "emptiness" is not just an empty string. */
@@ -29,14 +29,13 @@ function isEmptyValue(control) {
  * Mark a field as required and wire its inline validation.
  *
  * @param {Object} opts
- * @param {Function} [opts.h] - DOM helper (defaults to the shared `h()`).
  * @param {HTMLElement} opts.wrap - The field wrapper (`.is-field`), as
  *   returned by the field builder. Its `.field-label` gets the indicator and
  *   the error message is appended to it.
  * @param {HTMLElement} opts.control - The input/textarea to watch.
  * @returns {HTMLElement} `wrap`, for chaining off a builder's return.
  */
-export function markFieldRequired({ h = defaultH, wrap, control } = {}) {
+export function markFieldRequired({ wrap, control } = {}) {
   if (!wrap || !control) return wrap;
 
   wrap.classList.add('is-required');

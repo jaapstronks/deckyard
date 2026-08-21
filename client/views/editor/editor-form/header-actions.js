@@ -67,7 +67,6 @@ export function buildHeaderActions({
   // Top-level actions menu. dismissOnOutside is handled below with a custom
   // close that also collapses the Convert / AI Convert submenus.
   const { details: actionsDetails, menu: actionsMenu } = createDropdown({
-    h,
     triggerClass: 'ghost-icon-btn slide-actions-btn',
     triggerContent: [icon('ellipsis', { size: 16 })],
     title: t('common.moreOptions', 'More options'),
@@ -101,7 +100,6 @@ export function buildHeaderActions({
   let convertDetails = null;
   if (convertible.length) {
     const built = createDropdown({
-      h,
       triggerClass: 'dropdown-item',
       triggerContent: [
         h('span', { text: t('editor.slide.convert', 'Convert…') }),
@@ -156,7 +154,6 @@ export function buildHeaderActions({
   let aiConvertDetails = null;
   if (aiConvertTargets.length && api) {
     const built = createDropdown({
-      h,
       triggerClass: 'dropdown-item',
       triggerContent: [
         h('span', { text: t('editor.slide.aiConvert', 'AI Convert…') }),

@@ -192,7 +192,6 @@ export function openShareModal({
   };
 
   const tabs = createSegmented({
-    h,
     outlined: true,
     className: 'share-tabs',
     ariaLabel: t('share.modal.title', 'Share'),

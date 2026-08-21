@@ -48,7 +48,6 @@ export function createPaneTabs({
   // than re-selecting - so the control reports clicks and setState drives the
   // highlight.
   const segmented = createSegmented({
-    h,
     outlined: true,
     className: compact ? 'pane-tabs is-compact' : 'pane-tabs',
     buttonClass: 'pane-tab',
