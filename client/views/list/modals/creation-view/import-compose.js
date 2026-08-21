@@ -203,7 +203,7 @@ export function createImportCompose({ onChange }) {
   // it does not receive the shared theme id; the two markdown flows do.
   //
   // @param {object} ctx
-  // @param {object} ctx.commonOpts - shared handler options (api, h, root, …).
+  // @param {object} ctx.commonOpts - shared handler options (api, root, …).
   // @param {string} ctx.langMode - deck language mode.
   // @param {string} ctx.themeId - selected theme id (markdown flows only).
   // @param {HTMLElement} ctx.btnAction - the footer Create button (warning shower).

@@ -1,4 +1,4 @@
-import { h } from '../dom.js'; // Shared "schematic" mini-diagram renderer: an abstract, symbolic drawing of a
+// Shared "schematic" mini-diagram renderer: an abstract, symbolic drawing of a
 // slide's structure (grey image blocks + text bars), à la Keynote/PowerPoint's
 // layout picker. Built from plain <div>s styled by CSS — legible at any size
 // because it shows *structure*, not shrunk-down real content.
@@ -51,6 +51,8 @@ import { h } from '../dom.js'; // Shared "schematic" mini-diagram renderer: an a
 // Legacy image/text layout grammar (unchanged, used by the layout switcher):
 //   { split: <pct> } | { corner: <pct> } | { duo: <pct> } |
 //   { row: 'top'|'bottom' } | { cols: <n> } | { textCols: <n> } | {}
+
+import { h } from '../dom.js';
 
 /**
  * Build a schematic mini-diagram element for a slide layout/type.

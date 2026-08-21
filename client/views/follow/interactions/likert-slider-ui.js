@@ -1,10 +1,13 @@
-import { h } from '../../../lib/dom.js'; /**
+/**
  * Likert slider interaction UI.
  *
  * Strings come from the follow `copy` object (deck-language scoped, built by
  * `../i18n.js`), not from the global `t()` — the follow chrome switches with
  * the deck language, which the UI-locale dictionary does not track.
  */
+
+import { h } from '../../../lib/dom.js';
+
 export function renderLikertSliderUi({
   interaction,
   myVote,

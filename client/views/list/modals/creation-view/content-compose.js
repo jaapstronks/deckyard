@@ -178,7 +178,7 @@ export function createContentCompose({ api, onChange, aiDisabled }) {
   // passing the shared language + theme selected in the host footer.
   //
   // @param {object} ctx
-  // @param {object} ctx.commonOpts - shared handler options (api, h, root, …).
+  // @param {object} ctx.commonOpts - shared handler options (api, root, …).
   // @param {string} ctx.langMode - deck language mode.
   // @param {string} ctx.themeId - selected theme id.
   const run = async ({ commonOpts, langMode, themeId }) => {
