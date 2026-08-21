@@ -3,6 +3,7 @@ import { serveJson, requireJsonBody } from '../../../utils/http.js';
 import { getTrimmedString } from '../../../utils/request-validators.js';
 import { recordPresentationCreated } from '../../../services/activity-events.js';
 import { recordSlideLibraryUsage } from '../../../storage/slide-library-usage/index.js';
+import { fireAndForget } from '../../../utils/fire-and-forget.js';
 
 /**
  * Build the usage refs for a compose-from-library create: each source slide id
@@ -51,11 +52,10 @@ export async function handlePresentationsCreate({
     // (non-blocking; badge tracking must never fail a create).
     const usageRefs = usageRefsFromBody(body);
     if (usageRefs.length) {
-      void recordSlideLibraryUsage(
-        storageScope,
-        authedUser.email,
-        usageRefs,
-      ).catch(() => {});
+      fireAndForget(
+        recordSlideLibraryUsage(storageScope, authedUser.email, usageRefs),
+        'slide-library usage tracking',
+      );
     }
   }
 

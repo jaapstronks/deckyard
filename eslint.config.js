@@ -130,6 +130,27 @@ const overlayClassRestriction = {
     'docs/developer/linting.md).',
 };
 
+// A background promise whose rejection lands in an empty `.catch(() => {})`
+// is the one failure you cannot debug: no log line, no stack, no trace that
+// anything went wrong. `fireAndForget(promise, label)`
+// (server/utils/fire-and-forget.js) does the same job — it stops the
+// unhandled rejection from killing the process — and leaves a labelled log
+// line behind (B106). Where a swallow is genuinely correct, say so with a
+// non-empty catch body that logs or comments why.
+//
+// Hoisted into a const because flat-config rule entries replace rather than
+// merge per rule name: the `server/config/**` block below re-states it after
+// dropping the env restrictions, and a drifted copy would un-gate it there.
+const emptyCatchRestriction = {
+  selector:
+    "CallExpression[callee.property.name='catch']" +
+    '[arguments.0.body.body.length=0]',
+  message:
+    'Empty .catch(() => {}) swallows the rejection without a trace. Use ' +
+    'fireAndForget(promise, label) from server/utils/fire-and-forget.js, or ' +
+    'give the catch a body that says why the failure is ignorable (B106).',
+};
+
 export default [
   {
     // Vendored bundles, generated assets, data dirs, gitignored drop-ins, and
@@ -245,7 +266,18 @@ export default [
             'Do not alias or destructure process.env — read each variable via ' +
             'envStr/envBool/envInt/envList from server/config/utils.js (B64).',
         },
+        emptyCatchRestriction,
       ],
+    },
+  },
+
+  // server/config/** is exempt from the env accessors (it *is* the accessor
+  // family) but not from the empty-catch rule — a silently dropped rejection
+  // is no more debuggable in config than anywhere else.
+  {
+    files: ['server/config/**/*.js'],
+    rules: {
+      'no-restricted-syntax': ['error', emptyCatchRestriction],
     },
   },
 

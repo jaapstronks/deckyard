@@ -12,6 +12,7 @@ import {
   ensureLikertInteractionForSlide,
 } from '../interactions.js';
 import { ensureFeedbackForSlide } from '../feedback.js';
+import { fireAndForget } from '../../utils/fire-and-forget.js';
 import {
   crossOrganizationScope,
   repoRootOf,
@@ -72,10 +73,13 @@ export function setLiveSessionControlEnabled(scope, sessionId, enabled) {
   if (!s) return { ok: false, reason: 'not_found' };
   s.controlEnabled = !!enabled;
   touchSessionSync(s);
-  broadcast(scope, sessionId, 'controlEnabled', {
-    controlEnabled: !!s.controlEnabled,
-    updatedAt: Date.now(),
-  }).catch(() => {});
+  fireAndForget(
+    broadcast(scope, sessionId, 'controlEnabled', {
+      controlEnabled: !!s.controlEnabled,
+      updatedAt: Date.now(),
+    }),
+    'live-session controlEnabled broadcast',
+  );
   return { ok: true, controlEnabled: !!s.controlEnabled };
 }
 
@@ -100,7 +104,10 @@ export async function sendLiveSessionControlCommand(scope, sessionId, cmd) {
     return { ok: false, reason: 'bad_slideIndex' };
 
   // Send control event to presenter so their UI updates
-  broadcast(scope, sessionId, 'control', payload).catch(() => {});
+  fireAndForget(
+    broadcast(scope, sessionId, 'control', payload),
+    'live-session control broadcast',
+  );
 
   // OPTIMIZATION: Directly update session state so followers get immediate updates
   // instead of waiting for presenter window to process control event and post state.
