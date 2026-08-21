@@ -5,6 +5,7 @@ import { nowIso } from './normalize.js';
 import { assertPublicHttpUrl } from './ssrf-guard.js';
 import { crossOrganizationScope } from '../storage/scope.js';
 import { createLogger } from './logger.js';
+import { fireAndForget } from './fire-and-forget.js';
 
 const log = createLogger('webhook');
 
@@ -307,16 +308,19 @@ export async function maybeFireWebhook(
         });
 
   // Best-effort: never block the API response on webhook delivery.
-  void postJson(url, payload, {
-    headers: { 'x-sb-event': e },
-    signingSecret: String(wh.signingSecret || ''),
-  }).then((r) => {
-    if (!r.ok) {
-      log.warn(
-        `failed event=${e} status=${r.status} url=${url} err=${r.error || ''}`.trim(),
-      );
-    }
-  });
+  fireAndForget(
+    postJson(url, payload, {
+      headers: { 'x-sb-event': e },
+      signingSecret: String(wh.signingSecret || ''),
+    }).then((r) => {
+      if (!r.ok) {
+        log.warn(
+          `failed event=${e} status=${r.status} url=${url} err=${r.error || ''}`.trim(),
+        );
+      }
+    }),
+    'webhook POST',
+  );
 }
 
 /**
@@ -368,16 +372,19 @@ export async function maybeFireLeadWebhook(
   };
 
   // Best-effort: never block the API response on webhook delivery.
-  void postJson(url, payload, {
-    headers: { 'x-sb-event': 'lead.submitted' },
-    signingSecret: String(wh.signingSecret || ''),
-  }).then((r) => {
-    if (!r.ok) {
-      log.warn(
-        `failed event=lead.submitted status=${r.status} url=${url} err=${r.error || ''}`.trim(),
-      );
-    }
-  });
+  fireAndForget(
+    postJson(url, payload, {
+      headers: { 'x-sb-event': 'lead.submitted' },
+      signingSecret: String(wh.signingSecret || ''),
+    }).then((r) => {
+      if (!r.ok) {
+        log.warn(
+          `failed event=lead.submitted status=${r.status} url=${url} err=${r.error || ''}`.trim(),
+        );
+      }
+    }),
+    'webhook POST',
+  );
 }
 
 export async function maybeFireInteractionWebhook(
@@ -411,14 +418,17 @@ export async function maybeFireInteractionWebhook(
   });
 
   // Best-effort: never block the API response on webhook delivery.
-  void postJson(url, payload, {
-    headers: { 'x-sb-event': e },
-    signingSecret: String(wh.signingSecret || ''),
-  }).then((r) => {
-    if (!r.ok) {
-      log.warn(
-        `failed event=${e} status=${r.status} url=${url} err=${r.error || ''}`.trim(),
-      );
-    }
-  });
+  fireAndForget(
+    postJson(url, payload, {
+      headers: { 'x-sb-event': e },
+      signingSecret: String(wh.signingSecret || ''),
+    }).then((r) => {
+      if (!r.ok) {
+        log.warn(
+          `failed event=${e} status=${r.status} url=${url} err=${r.error || ''}`.trim(),
+        );
+      }
+    }),
+    'webhook POST',
+  );
 }

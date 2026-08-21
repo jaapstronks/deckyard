@@ -52,6 +52,7 @@ import {
   apiCreated,
   apiError,
 } from './middleware.js';
+import { fireAndForget } from '../../../utils/fire-and-forget.js';
 
 /**
  * Editor deep link for a comment: /app/:id, anchored to the commented
@@ -253,23 +254,32 @@ async function handleCreateComment(ctx, presentationId) {
   const actor = { email: apiKey.ownerEmail };
 
   // Same side effects as the internal route: notify, record, broadcast.
-  void notifyCommentCreated(repoRoot, req, {
-    presentation: pres,
+  fireAndForget(
+    notifyCommentCreated(repoRoot, req, {
+      presentation: pres,
+      comment: result.comment,
+      parentComment,
+      actor,
+      scope: sctx,
+    }),
+    'comment-created notification fan-out',
+  );
+  fireAndForget(
+    recordCommentCreated({
+      comment: result.comment,
+      presentation: pres,
+      actor,
+      scope: sctx,
+    }),
+    'record comment-created activity',
+  );
+  broadcastToPresentation(presentationId, CommentEventTypes.CREATED, {
     comment: result.comment,
-    parentComment,
-    actor,
-    scope: sctx,
   });
-  void recordCommentCreated({
-    comment: result.comment,
-    presentation: pres,
-    actor,
-    scope: sctx,
-  });
-  void broadcastToPresentation(presentationId, CommentEventTypes.CREATED, {
-    comment: result.comment,
-  });
-  void broadcastCommentCounts(presentationId, sctx);
+  fireAndForget(
+    broadcastCommentCounts(presentationId, sctx),
+    'broadcast comment counts',
+  );
 
   await apiCreated(ctx, {
     ok: true,
@@ -346,31 +356,40 @@ async function handleCommentStatus(ctx, commentId) {
 
   const actor = { email: apiKey.ownerEmail };
   if (status === 'resolved') {
-    void recordCommentResolved({
-      comment: result.comment,
-      presentation: pres,
-      actor,
-      scope: sctx,
-    });
-    void broadcastToPresentation(pres.id, CommentEventTypes.RESOLVED, {
+    fireAndForget(
+      recordCommentResolved({
+        comment: result.comment,
+        presentation: pres,
+        actor,
+        scope: sctx,
+      }),
+      'record comment-resolved activity',
+    );
+    broadcastToPresentation(pres.id, CommentEventTypes.RESOLVED, {
       comment: result.comment,
     });
   } else if (status === 'open') {
-    void recordCommentReopened({
-      comment: result.comment,
-      presentation: pres,
-      actor,
-      scope: sctx,
-    });
-    void broadcastToPresentation(pres.id, CommentEventTypes.REOPENED, {
+    fireAndForget(
+      recordCommentReopened({
+        comment: result.comment,
+        presentation: pres,
+        actor,
+        scope: sctx,
+      }),
+      'record comment-reopened activity',
+    );
+    broadcastToPresentation(pres.id, CommentEventTypes.REOPENED, {
       comment: result.comment,
     });
   } else {
-    void broadcastToPresentation(pres.id, CommentEventTypes.RESOLVED, {
+    broadcastToPresentation(pres.id, CommentEventTypes.RESOLVED, {
       comment: result.comment,
     });
   }
-  void broadcastCommentCounts(pres.id, sctx);
+  fireAndForget(
+    broadcastCommentCounts(pres.id, sctx),
+    'broadcast comment counts',
+  );
 
   await apiSuccess(ctx, {
     ok: true,

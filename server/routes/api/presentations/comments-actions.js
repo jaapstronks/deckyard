@@ -38,6 +38,7 @@ import {
   withPresentationReadAuth,
 } from '../../../utils/route-middleware.js';
 import { broadcastCommentCounts } from './comments-shared.js';
+import { fireAndForget } from '../../../utils/fire-and-forget.js';
 
 /**
  * Resolve a comment.
@@ -79,18 +80,24 @@ export async function handlePresentationCommentResolve(
   }
 
   // Record activity event (non-blocking)
-  void recordCommentResolved({
-    comment: result.comment,
-    presentation: pres,
-    actor: authedUser,
-    scope: storageScope,
-  });
+  fireAndForget(
+    recordCommentResolved({
+      comment: result.comment,
+      presentation: pres,
+      actor: authedUser,
+      scope: storageScope,
+    }),
+    'record comment-resolved activity',
+  );
 
   // Broadcast to all connected clients (non-blocking)
-  void broadcastToPresentation(id, CommentEventTypes.RESOLVED, {
+  broadcastToPresentation(id, CommentEventTypes.RESOLVED, {
     comment: result.comment,
   });
-  void broadcastCommentCounts(id, storageScope);
+  fireAndForget(
+    broadcastCommentCounts(id, storageScope),
+    'broadcast comment counts',
+  );
 
   serveJson(res, 200, result);
   return true;
@@ -134,18 +141,24 @@ export async function handlePresentationCommentReopen(
   }
 
   // Record activity event (non-blocking)
-  void recordCommentReopened({
-    comment: result.comment,
-    presentation: pres,
-    actor: authedUser,
-    scope: storageScope,
-  });
+  fireAndForget(
+    recordCommentReopened({
+      comment: result.comment,
+      presentation: pres,
+      actor: authedUser,
+      scope: storageScope,
+    }),
+    'record comment-reopened activity',
+  );
 
   // Broadcast to all connected clients (non-blocking)
-  void broadcastToPresentation(id, CommentEventTypes.REOPENED, {
+  broadcastToPresentation(id, CommentEventTypes.REOPENED, {
     comment: result.comment,
   });
-  void broadcastCommentCounts(id, storageScope);
+  fireAndForget(
+    broadcastCommentCounts(id, storageScope),
+    'broadcast comment counts',
+  );
 
   serveJson(res, 200, result);
   return true;
@@ -193,10 +206,13 @@ export async function handlePresentationCommentDismiss(
   }
 
   // Broadcast to all connected clients (non-blocking)
-  void broadcastToPresentation(id, CommentEventTypes.RESOLVED, {
+  broadcastToPresentation(id, CommentEventTypes.RESOLVED, {
     comment: result.comment,
   });
-  void broadcastCommentCounts(id, storageScope);
+  fireAndForget(
+    broadcastCommentCounts(id, storageScope),
+    'broadcast comment counts',
+  );
 
   serveJson(res, 200, result);
   return true;
@@ -280,11 +296,14 @@ export async function handlePresentationCommentApply(
 
   // Broadcast comment update
   if (resolveResult.ok) {
-    void broadcastToPresentation(id, CommentEventTypes.RESOLVED, {
+    broadcastToPresentation(id, CommentEventTypes.RESOLVED, {
       comment: resolveResult.comment,
     });
   }
-  void broadcastCommentCounts(id, storageScope);
+  fireAndForget(
+    broadcastCommentCounts(id, storageScope),
+    'broadcast comment counts',
+  );
 
   serveJson(res, 200, {
     ok: true,

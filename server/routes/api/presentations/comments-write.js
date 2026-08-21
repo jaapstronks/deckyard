@@ -47,8 +47,7 @@ import {
   broadcastCommentCounts,
 } from './comments-shared.js';
 import { getString } from '../../../utils/request-validators.js';
-import { createLogger } from '../../../utils/logger.js';
-const log = createLogger('comments-write');
+import { fireAndForget } from '../../../utils/fire-and-forget.js';
 
 /**
  * Check if a user (authenticated or guest) can edit a comment.
@@ -169,28 +168,37 @@ export async function handlePresentationCommentsCreate(
     ? { email: commenterEmail, name: commenterName }
     : authedUser;
 
-  void notifyCommentCreated(repoRoot, req, {
-    presentation: pres,
-    comment: result.comment,
-    parentComment,
-    actor: notificationUser,
-    scope: storageScope,
-  });
+  fireAndForget(
+    notifyCommentCreated(repoRoot, req, {
+      presentation: pres,
+      comment: result.comment,
+      parentComment,
+      actor: notificationUser,
+      scope: storageScope,
+    }),
+    'comment-created notification fan-out',
+  );
 
   // Record activity event (non-blocking)
-  void recordCommentCreated({
-    comment: result.comment,
-    presentation: pres,
-    actor: notificationUser,
-    isGuest,
-    scope: storageScope,
-  });
+  fireAndForget(
+    recordCommentCreated({
+      comment: result.comment,
+      presentation: pres,
+      actor: notificationUser,
+      isGuest,
+      scope: storageScope,
+    }),
+    'record comment-created activity',
+  );
 
   // Broadcast to all connected clients (non-blocking)
-  void broadcastToPresentation(id, CommentEventTypes.CREATED, {
+  broadcastToPresentation(id, CommentEventTypes.CREATED, {
     comment: result.comment,
   });
-  void broadcastCommentCounts(id, storageScope);
+  fireAndForget(
+    broadcastCommentCounts(id, storageScope),
+    'broadcast comment counts',
+  );
 
   serveJson(res, 201, result);
   return true;
@@ -254,31 +262,31 @@ export async function handlePresentationCommentUpdate(
 
   // A mention added by the edit notifies like a fresh mention (diffed
   // against the pre-edit list, so re-saving never re-notifies).
-  void (async () => {
-    const parentComment = result.comment?.parentId
-      ? await getComment(storageScope, result.comment.parentId)
-      : null;
-    await notifyMentionsAdded(repoRoot, req, {
-      presentation: pres,
-      comment: result.comment,
-      previousMentions: comment.mentions,
-      parentComment,
-      // A guest editing their own comment: the notification actor is them.
-      // A comment names its author and carries no address (D22), so the
-      // address comes from the row, server-side.
-      actor: authedUser || {
-        email: await getCommentAuthorEmail(storageScope, comment.id),
-        name: comment.author?.displayName || '',
-      },
-      scope: storageScope,
-    });
-  })().catch((e) => {
-    // eslint-disable-next-line no-console
-    log.warn('[comments] mention-on-edit notify failed:', e?.message || e);
-  });
+  fireAndForget(
+    (async () => {
+      const parentComment = result.comment?.parentId
+        ? await getComment(storageScope, result.comment.parentId)
+        : null;
+      await notifyMentionsAdded(repoRoot, req, {
+        presentation: pres,
+        comment: result.comment,
+        previousMentions: comment.mentions,
+        parentComment,
+        // A guest editing their own comment: the notification actor is them.
+        // A comment names its author and carries no address (D22), so the
+        // address comes from the row, server-side.
+        actor: authedUser || {
+          email: await getCommentAuthorEmail(storageScope, comment.id),
+          name: comment.author?.displayName || '',
+        },
+        scope: storageScope,
+      });
+    })(),
+    'mention-on-edit notification fan-out',
+  );
 
   // Broadcast to all connected clients (non-blocking)
-  void broadcastToPresentation(id, CommentEventTypes.UPDATED, {
+  broadcastToPresentation(id, CommentEventTypes.UPDATED, {
     comment: result.comment,
   });
 
@@ -324,11 +332,14 @@ export async function handlePresentationCommentDelete(
   }
 
   // Broadcast to all connected clients (non-blocking)
-  void broadcastToPresentation(id, CommentEventTypes.DELETED, {
+  broadcastToPresentation(id, CommentEventTypes.DELETED, {
     commentId,
     slideId: comment.slideId,
   });
-  void broadcastCommentCounts(id, storageScope);
+  fireAndForget(
+    broadcastCommentCounts(id, storageScope),
+    'broadcast comment counts',
+  );
 
   serveJson(res, 200, result);
   return true;

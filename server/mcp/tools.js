@@ -1884,16 +1884,22 @@ export function registerTools(
       })(),
       'MCP comment-created in-app notification',
     );
-    void recordCommentCreated({
+    fireAndForget(
+      recordCommentCreated({
+        comment: result.comment,
+        presentation: pres,
+        actor: { email: owner },
+        scope: ctx,
+      }),
+      'record comment-created activity',
+    );
+    broadcastToPresentation(presentationId, CommentEventTypes.CREATED, {
       comment: result.comment,
-      presentation: pres,
-      actor: { email: owner },
-      scope: ctx,
     });
-    void broadcastToPresentation(presentationId, CommentEventTypes.CREATED, {
-      comment: result.comment,
-    });
-    void broadcastCommentCounts(presentationId, ctx);
+    fireAndForget(
+      broadcastCommentCounts(presentationId, ctx),
+      'broadcast comment counts',
+    );
 
     return {
       ok: true,
@@ -2025,37 +2031,40 @@ export function registerTools(
 
       const actor = { email: owner };
       if (status === 'resolved') {
-        void recordCommentResolved({
-          comment: result.comment,
-          presentation: pres,
-          actor,
-          scope: ctx,
-        });
-        void broadcastToPresentation(
-          presentationId,
-          CommentEventTypes.RESOLVED,
-          { comment: result.comment },
+        fireAndForget(
+          recordCommentResolved({
+            comment: result.comment,
+            presentation: pres,
+            actor,
+            scope: ctx,
+          }),
+          'record comment-resolved activity',
         );
+        broadcastToPresentation(presentationId, CommentEventTypes.RESOLVED, {
+          comment: result.comment,
+        });
       } else if (status === 'open') {
-        void recordCommentReopened({
+        fireAndForget(
+          recordCommentReopened({
+            comment: result.comment,
+            presentation: pres,
+            actor,
+            scope: ctx,
+          }),
+          'record comment-reopened activity',
+        );
+        broadcastToPresentation(presentationId, CommentEventTypes.REOPENED, {
           comment: result.comment,
-          presentation: pres,
-          actor,
-          scope: ctx,
         });
-        void broadcastToPresentation(
-          presentationId,
-          CommentEventTypes.REOPENED,
-          { comment: result.comment },
-        );
       } else {
-        void broadcastToPresentation(
-          presentationId,
-          CommentEventTypes.RESOLVED,
-          { comment: result.comment },
-        );
+        broadcastToPresentation(presentationId, CommentEventTypes.RESOLVED, {
+          comment: result.comment,
+        });
       }
-      void broadcastCommentCounts(presentationId, ctx);
+      fireAndForget(
+        broadcastCommentCounts(presentationId, ctx),
+        'broadcast comment counts',
+      );
 
       return { ok: true, comment: result.comment };
     },

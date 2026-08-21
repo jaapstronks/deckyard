@@ -33,6 +33,7 @@ import { isMediaProviderInitialized } from '../../media/index.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { createLogger } from '../../utils/logger.js';
 import { matchesIdentity } from '../../../shared/identity-match.js';
+import { fireAndForget } from '../../utils/fire-and-forget.js';
 const log = createLogger('slide-library');
 
 function cleanThemeId(v) {
@@ -195,11 +196,14 @@ async function handleOrganizationCreate({
   }
 
   // Fire webhook for organization-library addition (reuses organization share webhook URL)
-  void maybeFireWebhook(repoRoot, req, {
-    event: 'slide.added_to_organization_library',
-    slideItem: { ...r.item, previewUrl },
-    authedUser,
-  });
+  fireAndForget(
+    maybeFireWebhook(repoRoot, req, {
+      event: 'slide.added_to_organization_library',
+      slideItem: { ...r.item, previewUrl },
+      authedUser,
+    }),
+    'webhook delivery',
+  );
 
   serveJson(res, 201, { ...r.item, previewUrl });
   return true;
