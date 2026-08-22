@@ -227,7 +227,7 @@ export async function buildSlidesPngExportHtml(
 
   return `${buildDocumentHead({
     lang: docLang,
-    title: `${titleRaw} (PNG Export)`,
+    title: titleRaw,
     head: [buildPrismKatexCdnTags()],
     styles: [
       {

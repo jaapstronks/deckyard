@@ -325,7 +325,7 @@ export async function buildPrintHtml(
 
   return `${buildDocumentHead({
     lang: docLang,
-    title: `${rawTitle} (Print)`,
+    title: rawTitle,
     head: [buildPrismKatexCdnTags()],
     styles: [
       buildCssChain(

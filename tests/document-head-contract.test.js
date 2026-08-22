@@ -9,7 +9,7 @@
  * `<html lang="nl" dir="rtl">`, the two attributes contradicting each other
  * inside one tag.
  *
- * Two things are pinned here:
+ * Three things are pinned here:
  *
  *   1. **The chain's own contract** — `dir` is derived from `lang`, never
  *      accepted beside it; optional metas are absent rather than blank; the
@@ -17,6 +17,9 @@
  *   2. **The cross-path outcome** — every registered render path answers the
  *      same deck with the same `lang`/`dir`. That is the assertion `detectLang`
  *      would have failed, and the one a thirteenth head would fail again.
+ *   3. **The title is the deck's** — no path signs the document with its own
+ *      name (D45). Same shape of argument: one `title:` argument per path, so
+ *      "which paths decorate it?" is a question the register can answer.
  *
  * Run with: node --test tests/document-head-contract.test.js
  */
@@ -150,6 +153,51 @@ test('every render path answers one deck with one lang and one dir', async (t) =
           );
         });
       }
+    });
+  }
+});
+
+/**
+ * The paths that emit no `<title>` at all, and why.
+ *
+ * Both raster a single slide to a PNG: the document is a painting surface, not
+ * a page anyone lands on, so there is no tab to name. `buildDocumentHead` omits
+ * an empty title rather than emitting a blank one. Held two ways below — an
+ * entry that grows a title fails, and so does a path that quietly loses one.
+ */
+const TITLELESS_PATHS = new Set(['render/png', 'mcp/preview (single)']);
+
+test('a render path titles the document with the deck title, and nothing else', async (t) => {
+  // A download's `<title>` is a user-facing artefact: it is what a tab, a
+  // bookmark and a "save as" dialog show. Three paths used to sign their own
+  // work there — `" (Print)"`, `" (PDF Slides)"`, `" (PNG Export)"` — so the
+  // path name leaked into the reader's bookmark bar for no reader's benefit
+  // (A7.32/D45). The head chain gives every path one `title:` argument, which
+  // is what makes the rule cheap to state and cheap to keep.
+  const pres = {
+    id: 'head-title',
+    title: 'Quarterly Review',
+    theme: 'default',
+    slides: [{ id: 's1', type: 'title-slide', content: { title: 'Kop' } }],
+  };
+  for (const p of RENDER_PATHS) {
+    await t.test(p.name, async () => {
+      const html = await p.build(repoRoot, pres, {});
+      const found = html.match(/<title>([\s\S]*?)<\/title>/);
+      if (TITLELESS_PATHS.has(p.name)) {
+        assert.equal(
+          found,
+          null,
+          `${p.name}: rasters one slide, so it names no tab`,
+        );
+        return;
+      }
+      assert.ok(found, `${p.name}: a page a reader lands on needs a title`);
+      assert.equal(
+        found[1],
+        'Quarterly Review',
+        `${p.name}: the deck title, verbatim — no path name appended`,
+      );
     });
   }
 });
