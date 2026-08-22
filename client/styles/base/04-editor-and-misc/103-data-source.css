@@ -66,13 +66,6 @@
   flex-wrap: wrap;
 }
 
-.data-source-actions .form-input-xs {
-  font-size: var(--ps-text-xs);
-  padding: 2px 6px;
-  height: auto;
-  min-height: 0;
-}
-
 /* Modal styles */
 .data-source-modal {
   max-width: 560px;
