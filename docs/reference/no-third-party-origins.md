@@ -120,18 +120,41 @@ allowlists drifting the way the CDN spellings and the app shell's did.
 than emitted as protection that is not there: `frame-ancestors` (a question
 about the response, and for the embed the answer is deliberately "anyone"),
 `report-uri` (a download has nowhere to report to) and `sandbox` (wrong here
-regardless — the paths need scripts and same-origin). The served surfaces set
-their own headers, and `frame-ancestors` belongs there.
+regardless — the paths need scripts and same-origin).
 
-## The three gates
+### The served surfaces also send a header (D53(i))
+
+`/p/…` and `/embed/…` are the two surfaces this server hands back over HTTP, so
+they are the two that _can_ set a header — and since D53(i) they do, via
+`buildDocumentCspHeader({ frameAncestors })`. It is the same policy the
+document already carries as a meta, plus the one directive a meta is specified
+to ignore. **The gain is consistency, not coverage**: every directive the meta
+can express was already in force on those documents.
+
+`frameAncestors` is a required argument, because the two callers want opposite
+answers and neither is a safe default for the other:
+
+| Surface    | `frame-ancestors` | `X-Frame-Options` (security-headers.js) |
+| ---------- | ----------------- | --------------------------------------- |
+| `/p/…`     | `'none'`          | `DENY`                                  |
+| `/embed/…` | `*`               | omitted, on purpose                     |
+
+**The two columns must agree.** Where a browser understands both,
+`frame-ancestors` wins, so a looser CSP value would widen framing on modern
+browsers while the older header still denied it elsewhere — a change of
+behaviour wearing a consistency change's clothes. `tests/served-surface-csp-header.test.js`
+pins the pair.
+
+## The four gates
 
 All must stay green, and they fail differently on purpose:
 
-| Gate                                   | Checks                                                                                                                                                                                                                   |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `tests/no-third-party-origins.test.js` | **The source.** Greps every `.js` under `server/`, `client/` (minus `client/vendor/`) and `shared/` for an asset-CDN URL, against an allowlist that carries a reason per entry. Fails the day a new offender is written. |
-| `tests/export-third-party-cdn.test.js` | **The output.** Builds every path in the render-path register (`server/render-paths.js`) from a deck with a code block and a formula, and asserts each document names no host outside a small allowlist.                 |
-| `tests/export-csp.test.js`             | **The policy.** Every path emits it, before anything loadable, identically; the code directives name exactly the declared origins and no wildcard; the omitted directives carry a reason.                                |
+| Gate                                      | Checks                                                                                                                                                                                                                   |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `tests/no-third-party-origins.test.js`    | **The source.** Greps every `.js` under `server/`, `client/` (minus `client/vendor/`) and `shared/` for an asset-CDN URL, against an allowlist that carries a reason per entry. Fails the day a new offender is written. |
+| `tests/export-third-party-cdn.test.js`    | **The output.** Builds every path in the render-path register (`server/render-paths.js`) from a deck with a code block and a formula, and asserts each document names no host outside a small allowlist.                 |
+| `tests/export-csp.test.js`                | **The policy.** Every path emits it, before anything loadable, identically; the code directives name exactly the declared origins and no wildcard; the omitted directives carry a reason.                                |
+| `tests/served-surface-csp-header.test.js` | **The header.** `/p/…` and `/embed/…` send the same policy as a response header plus `frame-ancestors`, and that value agrees with the `X-Frame-Options` the same response carries.                                      |
 
 The output gate strips the policy meta before reading hosts: a policy names
 every origin a document _may_ reach, and permitting is the opposite of fetching.
