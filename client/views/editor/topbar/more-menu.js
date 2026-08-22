@@ -12,7 +12,6 @@ export function createEditorTopbarMoreMenu({
   id,
   requestSave,
   isDirty,
-  openOverlayClosers,
   onError,
   nav,
   onTranslateOther,
@@ -46,8 +45,7 @@ export function createEditorTopbarMoreMenu({
     class: 'dropdown-item',
     type: 'button',
     text: t('editor.more.versions', 'Versions…'),
-    onclick: () =>
-      onVersions?.({ openOverlayClosers }).catch?.((e) => onError?.(e)),
+    onclick: () => onVersions?.().catch?.((e) => onError?.(e)),
   });
 
   const btnDuplicateDeck = h('button', {

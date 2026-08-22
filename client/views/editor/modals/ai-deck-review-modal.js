@@ -25,7 +25,6 @@ import { h } from '../../../lib/dom.js';
  * @param {Object} options.pres - The live presentation (mutated on revise/swap)
  * @param {Object} options.theme
  * @param {Object} options.SLIDE_TYPES
- * @param {Set} [options.openOverlayClosers]
  * @param {Object} options.editorState - dirtyRefreshAll() after mutations
  * @param {Function} [options.onJumpToSlide] - (slideId) => void
  * @param {boolean} [options.postGeneration] - Just-generated deck: offer
@@ -38,7 +37,6 @@ export function openAiDeckReviewModal({
   pres,
   theme,
   SLIDE_TYPES,
-  openOverlayClosers,
   editorState,
   onJumpToSlide,
   postGeneration = false,
@@ -48,21 +46,17 @@ export function openAiDeckReviewModal({
   let busy = false;
   const lang = pres?.i18n?.active || null;
 
-  const modalApi = openModal(
-    root,
-    {
-      title: postGeneration
-        ? t('editor.deckReview.titleNew', 'Review your generated deck')
-        : t('editor.deckReview.title', 'Review deck'),
-      hint: t(
-        'editor.deckReview.hint',
-        'Each slide shows why its type was picked. Click a slide for a closer look; tick one or more to revise that section as a group.',
-      ),
-      modalClass: 'modal-ai-review',
-      onClose: () => grid?.teardown(),
-    },
-    openOverlayClosers,
-  );
+  const modalApi = openModal(root, {
+    title: postGeneration
+      ? t('editor.deckReview.titleNew', 'Review your generated deck')
+      : t('editor.deckReview.title', 'Review deck'),
+    hint: t(
+      'editor.deckReview.hint',
+      'Each slide shows why its type was picked. Click a slide for a closer look; tick one or more to revise that section as a group.',
+    ),
+    modalClass: 'modal-ai-review',
+    onClose: () => grid?.teardown(),
+  });
 
   const status = h('div', { class: 'help ui-status-line' });
 

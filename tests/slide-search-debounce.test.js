@@ -59,7 +59,6 @@ function mount() {
     setSelectedSlideId: () => {},
     getSelectedSlideIds: () => new Set(),
     clearMultiSelection: () => {},
-    openOverlayClosers: [],
     openAiAppendWizardModal: () => {},
     openDeckOverview: () => {},
     isSlidesCollapsed: () => false,

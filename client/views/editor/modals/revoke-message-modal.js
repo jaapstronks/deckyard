@@ -25,15 +25,9 @@ export const REVOKE_CONTEXT = {
  * @param {HTMLElement} options.root - Root element for modal
  * @param {string} options.context - Context type (share_link, collaborator, trash)
  * @param {string} [options.targetName] - Name/email of what's being revoked
- * @param {Array} [options.openOverlayClosers] - Overlay closers array
  * @returns {Promise<{ ok: boolean, message?: string }>}
  */
-export function openRevokeMessageModal({
-  root,
-  context,
-  targetName,
-  openOverlayClosers,
-}) {
+export function openRevokeMessageModal({ root, context, targetName }) {
   const titles = {
     [REVOKE_CONTEXT.SHARE_LINK]: t(
       'share.revoke.modalTitle.shareLink',
@@ -178,7 +172,7 @@ export function openRevokeMessageModal({
   };
   modal.content.addEventListener('keydown', handleKeydown);
 
-  modal.show(root, openOverlayClosers);
+  modal.show(root);
 
   return modal.promise;
 }

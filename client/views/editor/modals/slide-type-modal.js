@@ -12,7 +12,6 @@ export function openSlideTypeModal({
   pres,
   afterSlideId,
   parentId = null,
-  openOverlayClosers,
   closeDrawer,
   openAiAppendWizard,
   renderSlideTypePicker,
@@ -265,5 +264,5 @@ export function openSlideTypeModal({
   if (aiBtn) toolbar.append(aiBtn);
 
   modal.append(toolbar, typesMount, libraryMount, importMount);
-  modal.show(root, openOverlayClosers);
+  modal.show(root);
 }

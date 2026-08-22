@@ -10,12 +10,7 @@ import { t } from '../../../lib/ui-i18n.js';
 import { stripMentionMarkup } from '../../../../shared/comment-mentions.js';
 import { h } from '../../../lib/dom.js';
 
-export function openAnalyzeModal({
-  root,
-  id,
-  openOverlayClosers,
-  onComplete,
-} = {}) {
+export function openAnalyzeModal({ root, id, onComplete } = {}) {
   const modal = createPromiseModal({
     title: t('editor.analyzeModal.title', 'AI Analysis'),
     hint: t(
@@ -282,7 +277,7 @@ export function openAnalyzeModal({
     }
   }
 
-  modal.show(root, openOverlayClosers);
+  modal.show(root);
 
   return modal.promise;
 }

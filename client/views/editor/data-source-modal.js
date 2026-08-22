@@ -73,7 +73,6 @@ export function openDataSourceConfigModal({
   api,
   markDirty,
   editorState,
-  openOverlayClosers,
 } = {}) {
   const slideType = slide?.type;
   const bindableInfo = BINDABLE_SLIDE_TYPES[slideType];
@@ -374,7 +373,7 @@ export function openDataSourceConfigModal({
     actionsRow,
   );
 
-  modal.show(root, openOverlayClosers);
+  modal.show(root);
 }
 
 /**

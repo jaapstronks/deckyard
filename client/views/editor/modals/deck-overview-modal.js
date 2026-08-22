@@ -15,7 +15,6 @@ import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
  * @param {Object} options.pres - The presentation (slides read live)
  * @param {Object} options.theme - Resolved theme
  * @param {Object} options.SLIDE_TYPES - Slide type registry
- * @param {Set} [options.openOverlayClosers] - Overlay registry for cleanup
  * @param {Function} options.onJumpToSlide - (slideId) => void
  */
 export function openDeckOverviewModal({
@@ -23,7 +22,6 @@ export function openDeckOverviewModal({
   pres,
   theme,
   SLIDE_TYPES,
-  openOverlayClosers,
   onJumpToSlide,
 } = {}) {
   const count = (pres?.slides || []).length;
@@ -31,20 +29,16 @@ export function openDeckOverviewModal({
   // Torn down via onClose so every close path (button, Esc, backdrop) cleans
   // up the grid's observers and slide runtimes.
   let grid = null;
-  const modalApi = openModal(
-    root,
-    {
-      title: t('editor.deckGrid.title', 'Slide overview'),
-      hint: t(
-        'editor.deckGrid.hint',
-        'All {count} slides at a glance. Click a slide to jump to it in the editor.',
-        { count },
-      ),
-      modalClass: 'modal-deck-grid',
-      onClose: () => grid?.teardown(),
-    },
-    openOverlayClosers,
-  );
+  const modalApi = openModal(root, {
+    title: t('editor.deckGrid.title', 'Slide overview'),
+    hint: t(
+      'editor.deckGrid.hint',
+      'All {count} slides at a glance. Click a slide to jump to it in the editor.',
+      { count },
+    ),
+    modalClass: 'modal-deck-grid',
+    onClose: () => grid?.teardown(),
+  });
 
   grid = createDeckGridView({
     theme,

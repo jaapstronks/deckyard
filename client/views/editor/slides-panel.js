@@ -50,7 +50,6 @@ export function createSlidesPanel({
   setSelectedSlideId,
   getSelectedSlideIds,
   clearMultiSelection,
-  openOverlayClosers,
   openAiAppendWizardModal,
   openDeckOverview,
   isSlidesCollapsed,
@@ -288,7 +287,6 @@ export function createSlidesPanel({
   }) => {
     openFollowInviteSuggestModal({
       root,
-      openOverlayClosers,
       ...followInvitePlacements({
         afterSlideId,
         parentId,
@@ -485,7 +483,6 @@ export function createSlidesPanel({
       pres,
       afterSlideId,
       parentId,
-      openOverlayClosers,
       closeDrawer,
       openAiAppendWizard,
       renderSlideTypePicker,
@@ -528,7 +525,6 @@ export function createSlidesPanel({
           ? getSelectedSlideId?.()
           : afterSlideId,
       insertFromLibraryItem,
-      openOverlayClosers,
       initialShelf,
       initialQuery,
       allowInsert,
@@ -552,7 +548,6 @@ export function createSlidesPanel({
       // (truthful previews) before anything is inserted.
       theme,
       SLIDE_TYPES,
-      openOverlayClosers,
       onReviewInserted: () => openDeckOverview?.(),
     });
   };

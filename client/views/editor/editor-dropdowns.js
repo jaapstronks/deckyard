@@ -15,7 +15,6 @@ import { setupExportDropdown } from './export-dropdown.js';
  * @param {object} options.pres - Presentation data
  * @param {string} options.id - Presentation ID
  * @param {object} options.saveManager - Save manager instance
- * @param {object} options.openOverlayClosers - Overlay closers set
  * @param {object} options.editorState - Editor state updater
  * @param {object} options.user - Current user
  * @returns {object} Dropdown elements and cleanup
@@ -27,7 +26,6 @@ export function createEditorDropdowns({
   pres,
   id,
   saveManager,
-  openOverlayClosers,
   editorState,
   user,
 }) {
@@ -37,7 +35,6 @@ export function createEditorDropdowns({
       pres,
       id,
       root,
-      overlayClosers: openOverlayClosers,
     });
 
   // Share dropdown (sharing + publishing)
@@ -54,7 +51,6 @@ export function createEditorDropdowns({
     isDirty: saveManager.isDirty,
     onError: (e) => saveManager.setLastError(e),
     root,
-    openOverlayClosers,
     editorState,
     currentUser: user,
     currentUserEmail: user?.email,

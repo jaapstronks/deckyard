@@ -10,7 +10,7 @@ import { t } from '../../lib/ui-i18n.js';
 import { openExportModal } from './export-modal.js';
 import { h } from '../../lib/dom.js';
 
-export function setupExportDropdown({ pres, id, root, overlayClosers } = {}) {
+export function setupExportDropdown({ pres, id, root } = {}) {
   let modal = null;
 
   const button = h('button', {
@@ -23,7 +23,6 @@ export function setupExportDropdown({ pres, id, root, overlayClosers } = {}) {
         pres,
         id,
         root: root || document.body,
-        overlayClosers,
       });
     },
   });

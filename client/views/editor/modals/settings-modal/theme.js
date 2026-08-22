@@ -9,8 +9,7 @@ import { h } from '../../../../lib/dom.js';
  * close the modal and navigate. Falls back to a disabled note without an API.
  *
  * @param {object} ctx - {
- *   h, root, pres, api, toast, openOverlayClosers, modal,
- *   onThemeChanged, onNavigateToSlide
+ *   root, pres, api, toast, modal, onThemeChanged, onNavigateToSlide
  * }
  * @returns {{ el: HTMLElement }}
  */
@@ -19,7 +18,6 @@ export function buildThemeSection({
   pres,
   api,
   toast,
-  openOverlayClosers,
   modal,
   onThemeChanged,
   onNavigateToSlide,
@@ -66,7 +64,6 @@ export function buildThemeSection({
         pres,
         presId: pres.id,
         newThemeId,
-        openOverlayClosers,
         onNavigateToSlide: (slideIndex) => {
           modal.close();
           onNavigateToSlide?.(slideIndex);

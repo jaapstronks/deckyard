@@ -23,7 +23,6 @@ import { h } from '../../../lib/dom.js';
  * @param {Object} options.currentPres - Current presentation data
  * @param {Object} options.version - Version metadata to compare against
  * @param {Object} options.theme - Theme for rendering
- * @param {Set} options.openOverlayClosers - Overlay closers set
  * @returns {Promise} Modal promise
  */
 export function openVersionCompareModal({
@@ -33,7 +32,6 @@ export function openVersionCompareModal({
   currentPres,
   version,
   theme,
-  openOverlayClosers,
 } = {}) {
   const versionDate = formatDateTime(version?.created);
   const versionLabel = version?.label || '';
@@ -108,7 +106,7 @@ export function openVersionCompareModal({
   const insightContainers = new Map();
 
   modal.content.append(status, summary, aiSection, legend, headers, grid);
-  modal.show(root, openOverlayClosers);
+  modal.show(root);
 
   // AI analysis handler - populates insights inline with each row
   async function analyzeWithAi() {

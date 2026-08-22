@@ -109,6 +109,31 @@ const clientRestrictedSyntax = [
       "`import { h } from '…/lib/dom.js'`. It has one implementation and " +
       'threading it by hand is what A7.33 removed from ~200 files.',
   },
+  // The other half of A7.33: the overlay-closer set. It used to be the
+  // optional 4th positional argument of openModal/confirmModal/promptModal and
+  // travelled as ~200 pass-through lines through 55 files — and being
+  // optional, forgetting one silently dropped that overlay out of close-all,
+  // invisibly at the call site. `client/lib/dom/modal.js` now keeps the
+  // register itself (`registerOverlayCloser` / `closeAllOverlays`, keyed per
+  // document), so registration happens where the overlay is built and cannot
+  // be forgotten.
+  //
+  // Restricted as a whole-token *identifier* rather than a parameter shape,
+  // because the old spelling appeared as a parameter, an options property, a
+  // destructured binding and a shorthand pass-through all at once — the name
+  // itself is the thing that must not come back. The allowlist is empty:
+  // `modal.js` needs no exemption because its internals are named
+  // `overlayClosersByDocument`, and a caller that genuinely needs the register
+  // imports the two functions instead of threading a set.
+  {
+    selector:
+      "Identifier[name='overlayClosers'],Identifier[name='openOverlayClosers']",
+    message:
+      'The overlay-closer set is not passed around any more: modal.js keeps ' +
+      'the register (registerOverlayCloser / closeAllOverlays, keyed per ' +
+      'document). createOverlay registers itself, so overlays need nothing; ' +
+      'a hand-rolled popover calls registerOverlayCloser(el, close) (A7.33).',
+  },
 ];
 
 // One overlay vocabulary (A7.16 cluster 1). Overlays are built by

@@ -12,7 +12,6 @@ export function createPreviewPanel({
   attachThumbScale,
   attachThumbScaleContain,
   renderSlideElement,
-  openOverlayClosers,
   getSelectedSlideId,
   // Slide comments support
   commentsApi,
@@ -34,7 +33,6 @@ export function createPreviewPanel({
     attachThumbScale,
     attachThumbScaleContain,
     renderSlideElement,
-    openOverlayClosers,
     getSelectedSlideId,
     // Pass comments support to lightbox
     commentsApi,

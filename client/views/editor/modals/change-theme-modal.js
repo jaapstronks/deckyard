@@ -24,7 +24,6 @@ import { h } from '../../../lib/dom.js';
  * @param {Object} options.pres - Presentation object
  * @param {string} options.presId - Presentation ID
  * @param {Object} options.analysis - Result from analyze-theme-change endpoint
- * @param {Set} [options.openOverlayClosers] - Set of overlay closers
  * @param {Function} [options.onNavigateToSlide] - Called when user wants to review a slide
  * @param {Function} [options.onThemeChanged] - Called after theme is successfully changed
  * @returns {Promise<{ ok: boolean }>}
@@ -36,7 +35,6 @@ function openChangeThemeModal({
   pres,
   presId,
   analysis,
-  openOverlayClosers,
   onNavigateToSlide,
   onThemeChanged,
 } = {}) {
@@ -287,7 +285,7 @@ function openChangeThemeModal({
     }
   }
 
-  modal.show(root, openOverlayClosers);
+  modal.show(root);
   return modal.promise;
 }
 
@@ -301,7 +299,6 @@ function openChangeThemeModal({
  * @param {Object} options.pres - Presentation object
  * @param {string} options.presId - Presentation ID
  * @param {string} options.newThemeId - New theme ID to apply
- * @param {Set} [options.openOverlayClosers] - Set of overlay closers
  * @param {Function} [options.onNavigateToSlide] - Called when user wants to review a slide
  * @param {Function} [options.onThemeChanged] - Called after theme is successfully changed
  * @returns {Promise<{ ok: boolean }>}
@@ -313,7 +310,6 @@ export async function analyzeAndApplyThemeChange({
   pres,
   presId,
   newThemeId,
-  openOverlayClosers,
   onNavigateToSlide,
   onThemeChanged,
 } = {}) {
@@ -357,7 +353,6 @@ export async function analyzeAndApplyThemeChange({
     pres,
     presId,
     analysis,
-    openOverlayClosers,
     onNavigateToSlide,
     onThemeChanged,
   });

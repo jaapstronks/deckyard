@@ -13,6 +13,7 @@
 
 import { api } from '../../lib/api.js';
 import { h } from '../../lib/dom.js';
+import { closeAllOverlays } from '../../lib/dom/modal.js';
 import {
   readLangMode,
   getSupportedLangs,
@@ -48,22 +49,6 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   });
   const detachThumbs = [];
   const detachers = [];
-  const openOverlayClosers = new Set();
-
-  // ============================================================
-  // CLEANUP HELPERS
-  // ============================================================
-
-  const closeAllOverlays = () => {
-    for (const close of Array.from(openOverlayClosers)) {
-      try {
-        close();
-      } catch {
-        /* ignore */
-      }
-    }
-    openOverlayClosers.clear();
-  };
 
   // ============================================================
   // STATE

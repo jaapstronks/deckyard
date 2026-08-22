@@ -330,10 +330,9 @@ function buildFormatRow(fmt, { id, getLang, title }) {
  * @param {Object} opts.pres - Presentation data
  * @param {string} opts.id - Presentation ID
  * @param {HTMLElement} opts.root - Element to append the modal to
- * @param {Set} [opts.overlayClosers] - Overlay-closer set for cleanup
  * @returns {Object} Modal API
  */
-export function openExportModal({ pres, id, root, overlayClosers }) {
+export function openExportModal({ pres, id, root }) {
   const activeLang = normalizeLang(pres?.i18n?.active) || 'nl';
   const other = otherLang(activeLang);
   const hasOther = other && hasLangVersion(pres, other);
@@ -342,14 +341,10 @@ export function openExportModal({ pres, id, root, overlayClosers }) {
   let currentLang = activeLang;
   const getLang = () => currentLang;
 
-  const modal = openModal(
-    root,
-    {
-      title: t('editor.export.title', 'Export to file'),
-      modalClass: 'export-modal',
-    },
-    overlayClosers,
-  );
+  const modal = openModal(root, {
+    title: t('editor.export.title', 'Export to file'),
+    modalClass: 'export-modal',
+  });
 
   // Language toggle - only when the deck actually has both languages.
   if (hasOther) {

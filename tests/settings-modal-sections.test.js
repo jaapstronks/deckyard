@@ -60,7 +60,6 @@ test('modal assembles all sections and normalizes each slice', () => {
     root,
     pres,
     api: null,
-    openOverlayClosers: new Set(),
     markDirty: () => dirty++,
     requestSave: () => saved++,
   });
@@ -108,7 +107,6 @@ test('theme and tags show unavailable branch without an api', () => {
     root,
     pres: messyPres(),
     api: null,
-    openOverlayClosers: new Set(),
     markDirty: () => {},
     requestSave: () => {},
   });

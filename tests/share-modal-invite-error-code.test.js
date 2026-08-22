@@ -101,7 +101,6 @@ function mount(inviteFailure) {
     },
     isOwner: true,
     modalRoot: document.body,
-    openOverlayClosers: [],
   });
   document.body.append(section.element);
   return { section, toasts };

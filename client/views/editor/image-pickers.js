@@ -26,23 +26,15 @@ import {
  * @param {object} ctx.user - current user (image-library scoping)
  * @param {object} ctx.api - API client
  * @param {object} ctx.features - feature flags
- * @param {Function} ctx.openOverlayClosers - overlay registry closer collector
  * @returns {Promise<{ openImagePicker: Function }>} the single seam every call site uses
  */
-export async function createImagePickers({
-  root,
-  user,
-  api,
-  features,
-  openOverlayClosers,
-}) {
+export async function createImagePickers({ root, user, api, features }) {
   const openImageLibrary = (opts) =>
     openImageLibraryPicker({
       ...opts,
       user,
       api,
       root,
-      openOverlayClosers,
       features,
     });
 
@@ -55,7 +47,6 @@ export async function createImagePickers({
           ...opts,
           api,
           root,
-          openOverlayClosers,
         })
     : undefined;
 
@@ -67,7 +58,6 @@ export async function createImagePickers({
         openBundledGradientPicker({
           ...opts,
           root,
-          openOverlayClosers,
         })
     : undefined;
 

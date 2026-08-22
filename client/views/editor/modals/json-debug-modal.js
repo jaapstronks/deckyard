@@ -138,7 +138,6 @@ function highlightJson(json) {
  * @param {HTMLElement} options.root - Root element to append modal to
  * @param {Object} options.slide - The slide object
  * @param {Object} options.SLIDE_TYPES - Slide type definitions
- * @param {Function} options.openOverlayClosers - Overlay registry
  * @param {Function} options.markDirty - Mark presentation dirty
  * @param {Function} options.rerenderEditor - Re-render editor
  * @param {Function} options.rerenderPreview - Re-render preview
@@ -148,7 +147,6 @@ export function openJsonDebugModal({
   root,
   slide,
   SLIDE_TYPES,
-  openOverlayClosers,
   markDirty,
   rerenderEditor,
   rerenderPreview,
@@ -407,7 +405,7 @@ export function openJsonDebugModal({
 
   content.append(jsonPanel, schemaPanel);
   modal.append(tabs, content);
-  modal.show(root, openOverlayClosers);
+  modal.show(root);
 
   requestAnimationFrame(() => {
     try {

@@ -31,14 +31,12 @@ function slideLabel(slide, index) {
  * @param {Object[]} opts.slides - Current deck slides
  * @param {string[]} opts.changedSlideIds - Ids of slides changed by the merge
  * @param {Function} opts.onJumpToSlide - Called with a slide id to navigate to it
- * @param {Set} [opts.openOverlayClosers] - Overlay registry for cleanup
  */
 export function openRemoteMergeModal({
   root,
   slides,
   changedSlideIds,
   onJumpToSlide,
-  openOverlayClosers,
 }) {
   const changed = new Set(
     Array.isArray(changedSlideIds) ? changedSlideIds : [],
@@ -85,6 +83,6 @@ export function openRemoteMergeModal({
   );
 
   modalApi.content.append(intro, list, actions);
-  modalApi.show(root, openOverlayClosers);
+  modalApi.show(root);
   return modalApi;
 }

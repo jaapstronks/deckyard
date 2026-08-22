@@ -56,7 +56,6 @@ test('modal gates its form pane on locked slides and releases it again', () => {
     },
     createFormRenderer: () => () => {},
     getSlideLockKind: (slideId) => (slideId === 's2' ? 'author' : null),
-    openOverlayClosers: new Set(),
   });
   modalApi.open();
 

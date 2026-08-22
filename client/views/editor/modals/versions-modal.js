@@ -17,7 +17,7 @@ import { h } from '../../../lib/dom.js';
  * Opens a modal to prompt for an optional save point label.
  * @returns {Promise<{ok: boolean, label?: string}>}
  */
-function openLabelModal({ root, openOverlayClosers } = {}) {
+function openLabelModal({ root } = {}) {
   const modal = createPromiseModal({
     title: t('editor.versions.labelModalTitle', 'Create save point'),
     hint: t(
@@ -44,7 +44,7 @@ function openLabelModal({ root, openOverlayClosers } = {}) {
   });
 
   modal.content.append(labelInput.wrap, actions.wrap);
-  modal.show(root, openOverlayClosers);
+  modal.show(root);
   labelInput.focus();
 
   return modal.promise;
@@ -57,7 +57,6 @@ export function openVersionsModal({
   id,
   requestSave,
   isDirty,
-  openOverlayClosers,
   onRestored,
   theme,
 } = {}) {
@@ -151,7 +150,6 @@ export function openVersionsModal({
               presentationId: id,
               version: v,
               theme,
-              openOverlayClosers,
             });
           },
         });
@@ -168,7 +166,6 @@ export function openVersionsModal({
               currentPres: pres,
               version: v,
               theme,
-              openOverlayClosers,
             });
           },
         });
@@ -268,7 +265,7 @@ export function openVersionsModal({
           return;
         }
       }
-      const result = await openLabelModal({ root, openOverlayClosers });
+      const result = await openLabelModal({ root });
       if (!result?.ok) return;
       const label = result.label || '';
       setStatus(t('editor.versions.creatingSavePoint', 'Creating save point…'));
@@ -292,6 +289,6 @@ export function openVersionsModal({
     backupBanner,
     listEl,
   );
-  modal.show(root, openOverlayClosers);
+  modal.show(root);
   load();
 }

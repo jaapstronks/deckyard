@@ -6,7 +6,6 @@ export function openTitleModal({
   root,
   pres,
   setTitle,
-  openOverlayClosers,
   newTitleKey,
   mode = 'edit',
 } = {}) {
@@ -69,7 +68,7 @@ export function openTitleModal({
   });
 
   modal.content.append(input, status);
-  modal.show(root, openOverlayClosers);
+  modal.show(root);
 
   // Update status to reflect current content
   status.textContent = String(input.value || '').trim()

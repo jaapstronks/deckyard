@@ -81,7 +81,6 @@ function renderForm({ type, content, contentOnly = true } = {}) {
     rerenderSlideList: noop,
     rerenderPreview: noop,
     fieldRenderers: createFieldRenderers(deps),
-    openOverlayClosers: new Set(),
     contentOnly,
   }).rerender;
   rerender();

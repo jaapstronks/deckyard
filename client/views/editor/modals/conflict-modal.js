@@ -29,12 +29,7 @@ async function copyText(text) {
   return true;
 }
 
-export function openConflictModal({
-  root,
-  pres,
-  conflictDetails,
-  openOverlayClosers,
-} = {}) {
+export function openConflictModal({ root, pres, conflictDetails } = {}) {
   const who = safeString(conflictDetails?.updatedBy?.displayName || '');
   const when = conflictDetails?.modified
     ? formatDateTime(conflictDetails.modified)
@@ -92,5 +87,5 @@ export function openConflictModal({
   row.append(btnCopy, btnReload);
 
   modal.content.append(help, row);
-  modal.show(root, openOverlayClosers);
+  modal.show(root);
 }

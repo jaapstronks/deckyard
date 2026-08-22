@@ -19,7 +19,6 @@ export function openDescriptionModal({
   pres,
   id,
   context = 'publish',
-  openOverlayClosers,
   requestSave,
 } = {}) {
   const modal = createPromiseModal({
@@ -165,7 +164,7 @@ export function openDescriptionModal({
   btnRow.append(btnGenerate, btnCancel, btnContinue);
 
   modal.content.append(ta, status, btnRow);
-  modal.show(root, openOverlayClosers);
+  modal.show(root);
   sync();
 
   try {

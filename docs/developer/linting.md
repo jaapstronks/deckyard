@@ -179,6 +179,38 @@ spelling.
 each restricted shape, both legal look-alikes, and that the client is clean —
 so a plain `npm test` catches a reintroduction without the lint pass having run.
 
+### `no-restricted-syntax` on `overlayClosers` — one overlay register
+
+Scoped to `client/**`, this rule rejects the identifiers `overlayClosers` and
+`openOverlayClosers` outright — as a parameter, an options property, a
+destructured binding, a locally owned `new Set()`, anywhere.
+
+The set of "close functions of everything currently open" was the optional 4th
+positional argument of `openModal`/`confirmModal`/`promptModal` and travelled as
+~200 pass-through lines through 55 modules. Being **optional** is what made it
+worse than the `h` thread above: a caller that forgot it still compiled, still
+opened its modal, and silently dropped that overlay out of close-all — nothing
+at the call site showed which half of the tree remembered.
+
+[`client/lib/dom/modal.js`](../../client/lib/dom/modal.js) now keeps the
+register itself: `registerOverlayCloser(el, close)` and `closeAllOverlays(doc)`
+over a `WeakMap<Document, Set>`. `createOverlay` registers on show and
+deregisters on close, so every overlay built through the helpers is in it by
+construction; a hand-rolled popover (the layout switcher) calls
+`registerOverlayCloser` directly. Keying on `Document` rather than a bare module
+singleton keeps the presenter's second window — and each jsdom test — on its own
+register (D44).
+
+Restricted as a whole-token **identifier** rather than a parameter shape,
+because the old spelling appeared as a parameter, an options property, a
+destructured binding and a shorthand pass-through all at once: the name itself
+is the thing that must not come back. The **allowlist is empty**, `modal.js`
+included — its own state is named `overlayClosersByDocument`, which the rule
+leaves alone (whole-token).
+
+[`tests/overlay-closers-gate.test.js`](../../tests/overlay-closers-gate.test.js)
+pins each restricted shape, the legal look-alikes, and that the client is clean.
+
 ### `no-restricted-syntax` on empty `.catch(() => {})` — no silent rejections
 
 Scoped to `server/**`, this rule rejects a `.catch()` whose callback body is

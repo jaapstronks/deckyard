@@ -29,7 +29,6 @@ export function buildDataSourceIndicator({
   markDirty,
   editorState,
   features,
-  openOverlayClosers,
 } = {}) {
   const flags = features && typeof features === 'object' ? features : {};
   if (!flags.enableLiveData) return null;
@@ -174,7 +173,6 @@ export function buildDataSourceIndicator({
           api,
           markDirty,
           editorState,
-          openOverlayClosers,
         });
       },
     });
@@ -194,7 +192,6 @@ function openDataSourceModal({
   api,
   markDirty,
   editorState,
-  openOverlayClosers,
 } = {}) {
   // Lazy import to avoid circular deps
   import('./data-source-modal.js')
@@ -205,7 +202,6 @@ function openDataSourceModal({
         api,
         markDirty,
         editorState,
-        openOverlayClosers,
       });
     })
     .catch((err) => {

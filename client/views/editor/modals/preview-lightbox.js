@@ -13,7 +13,6 @@ export function createPreviewLightbox({
   attachThumbScale,
   attachThumbScaleContain,
   renderSlideElement,
-  openOverlayClosers,
   getSelectedSlideId,
   // Comment support
   commentsApi,
@@ -476,7 +475,7 @@ export function createPreviewLightbox({
     });
 
     modal.append(header, body);
-    overlay.show(root, openOverlayClosers);
+    overlay.show(root);
     document.addEventListener('keydown', onKey);
   };
 

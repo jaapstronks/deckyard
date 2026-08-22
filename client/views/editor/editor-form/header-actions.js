@@ -37,7 +37,6 @@ export function buildHeaderActions({
   rerenderEditor,
   onTranslateSlide,
   user,
-  openOverlayClosers,
   markDirty,
   rerenderPreview,
   rerenderSlideList,
@@ -57,7 +56,6 @@ export function buildHeaderActions({
       pres,
       api,
       suggestedName,
-      openOverlayClosers,
       openSlideLibraryModal,
     });
   };
@@ -347,7 +345,6 @@ export function buildHeaderActions({
               root: document.body,
               slide,
               SLIDE_TYPES,
-              openOverlayClosers,
               markDirty,
               rerenderEditor,
               rerenderPreview,

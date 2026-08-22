@@ -12,7 +12,8 @@
  *      it byte-for-byte; the M1 PR carried a jsdom outerHTML diff against the
  *      pre-split module),
  *   2. the behaviour contract of `createOverlay` (aria, Escape, backdrop
- *      click, busy, focus restore, closers),
+ *      click, busy, focus restore, closer registration — including that the
+ *      register is keyed per document, A7.33 PR 4 / D44),
  *   3. the new `createModal` options,
  *   4. the ESLint gate: the five hand-rolled overlay class names are
  *      restricted outside modal.js and the burndown allowlist, and the
@@ -53,7 +54,7 @@ globalThis.cancelAnimationFrame =
   dom.window.cancelAnimationFrame || clearTimeout;
 
 const { h } = await import('../client/lib/dom.js');
-const { createOverlay, createModal } =
+const { createOverlay, createModal, registerOverlayCloser, closeAllOverlays } =
   await import('../client/lib/dom/modal.js');
 
 const pressEscape = () =>
@@ -163,13 +164,44 @@ test('createOverlay busy state blocks Escape/backdrop/requestClose but not close
   assert.equal(closed, true);
 });
 
-test('createOverlay registers in overlayClosers and deregisters on close', () => {
-  const closers = new Set();
+test('closeAllOverlays closes what show() registered, and close deregisters', () => {
+  let closedTwice = 0;
+  const first = createOverlay({});
+  const second = createOverlay({ onClose: () => (closedTwice += 1) });
+  const third = createOverlay({});
+  first.show(document.body);
+  second.show(document.body);
+  third.show(document.body);
+
+  // Closing one deregisters it, so the sweep must not close it a second time.
+  second.close();
+  assert.equal(closedTwice, 1);
+
+  closeAllOverlays(document);
+  assert.equal(first.isOpen(), false);
+  assert.equal(third.isOpen(), false);
+  assert.equal(closedTwice, 1);
+  assert.equal(document.querySelectorAll('.modal-backdrop').length, 0);
+});
+
+test('the closer register is per document, so a second window stands alone', () => {
+  const other = new JSDOM('<!doctype html><html><body></body></html>');
   const overlay = createOverlay({});
-  overlay.show(document.body, closers);
-  assert.equal(closers.size, 1);
-  overlay.close();
-  assert.equal(closers.size, 0);
+  overlay.show(document.body);
+
+  // An overlay mounted in the projector's document belongs to that document's
+  // register — the editor tearing down must not reach across and close it.
+  const foreign = other.window.document.createElement('div');
+  let foreignClosed = false;
+  other.window.document.body.append(foreign);
+  registerOverlayCloser(foreign, () => (foreignClosed = true));
+
+  closeAllOverlays(document);
+  assert.equal(overlay.isOpen(), false);
+  assert.equal(foreignClosed, false);
+
+  closeAllOverlays(other.window.document);
+  assert.equal(foreignClosed, true);
 });
 
 test('createOverlay restores focus to the previously focused element', () => {

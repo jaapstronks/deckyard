@@ -28,7 +28,6 @@ import { h } from '../../lib/dom.js';
  * @param {Function} [opts.requestSave]
  * @param {Function} [opts.rerenderEditor]
  * @param {Function} [opts.rerenderPreview]
- * @param {Set} [opts.overlayClosers] - Shared overlay-closer set for cleanup
  */
 export function openChartDataModal({
   root,
@@ -40,7 +39,6 @@ export function openChartDataModal({
   requestSave,
   rerenderEditor,
   rerenderPreview,
-  overlayClosers,
 } = {}) {
   if (!slide || slide.type !== 'chart-slide') return;
 
@@ -147,7 +145,7 @@ export function openChartDataModal({
     }
   });
 
-  modal.show(root, overlayClosers);
+  modal.show(root);
   detachScale = attachThumbScaleContain(previewThumb, {
     containerEl: previewStage,
     padding: 12,

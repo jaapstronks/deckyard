@@ -108,7 +108,6 @@ export function openImageLibraryPicker({
   user,
   api,
   root,
-  openOverlayClosers,
   features,
   context = null,
 } = {}) {
@@ -578,7 +577,7 @@ export function openImageLibraryPicker({
   if (allowCaptionCredit) modal.append(creditRow);
 
   // Mount and initialize
-  modal.show(root, openOverlayClosers);
+  modal.show(root);
   sidebarComponent.render();
   renderMobileNav();
   // On a frame: the focus trap claims initial focus on the next frame, so a
