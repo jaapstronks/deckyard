@@ -167,7 +167,7 @@ describe('deck-activity storage (no-DB contract)', () => {
   it('refreshDeckActivityNotification reports invalid/unavailable without a database', async () => {
     const bad = await refreshDeckActivityNotification(ORG, '', 'u@x.com', {});
     assert.strictEqual(bad.ok, false);
-    assert.strictEqual(bad.reason, 'invalid_params');
+    assert.strictEqual(bad.reason, 'invalid');
     const res = await refreshDeckActivityNotification(ORG, 'n1', 'u@x.com', {
       title: 'x',
     });

@@ -26,13 +26,12 @@ import { sendCollaboratorInviteEmail } from '../../integrations/brevo.js';
 import { canManageCollaborators } from '../../utils/presentation-authz.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import {
-  serveJson,
-  notFound,
-  unauthorized,
   badRequest,
+  notFound,
   requireJsonBody,
-  jsonError,
-  getErrorStatus,
+  serveJson,
+  storageError,
+  unauthorized,
   withErrorHandler,
 } from '../../utils/http.js';
 import { validatePermission } from '../../utils/request-validators.js';
@@ -58,9 +57,9 @@ const log = createLogger('collaborators');
  * `already_exists` has always done. Adding a message here stays free: clients
  * branch on the code, not on the display text.
  *
- * The status per reason is not here: it comes from the shared
- * `getErrorStatus()` table in `utils/http.js`, so one reason has one status
- * across every route that answers it.
+ * The status per reason is not here: it comes from the `REASONS` register
+ * (`server/storage/reasons.js`) via `getErrorStatus()`, so one reason has one
+ * status across every route that answers it.
  */
 const INVITE_FAILURE_MESSAGES = {
   user_not_found: 'User not found in organization',
@@ -296,17 +295,15 @@ async function handleCollaboratorAdd(
     // Single mode response (backward compatible)
     const singleResult = results[0];
     if (!singleResult.ok) {
-      // The reason decides the status, and an unmapped reason defaults to
-      // 500 rather than 400: the reasons on this path are a mix of "your
-      // request" (`user_not_found`, `invalid_permission`) and "our side"
-      // (`database_error`, `unavailable`), so a 400 fallthrough silently
-      // blames the caller for a failed insert. The batch branch below has
-      // always reported the reason factually per address; single mode did
-      // not.
-      return jsonError(
+      // The reason decides the status. The reasons on this path are a mix
+      // of "your request" (`user_not_found`, `invalid_permission`) and "our
+      // side" (`database_error`, `unavailable`), and the REASONS register
+      // states which is which — no route-local default is involved any more.
+      // The batch branch below has always reported the reason factually per
+      // address; single mode did not.
+      return storageError(
         res,
-        getErrorStatus(singleResult.reason, 500),
-        singleResult.reason,
+        singleResult,
         INVITE_FAILURE_MESSAGES[singleResult.reason],
       );
     }
@@ -401,8 +398,7 @@ async function handleCollaboratorRemove(
   );
 
   if (!result.ok) {
-    if (result.reason === 'not_found') return notFound(res);
-    return badRequest(res, result.reason);
+    return storageError(res, result);
   }
 
   // Log the revocation the way a grant is logged (non-blocking): a grant
@@ -468,8 +464,7 @@ async function handleCollaboratorUpdate(
   );
 
   if (!result.ok) {
-    if (result.reason === 'not_found') return notFound(res);
-    return badRequest(res, result.reason);
+    return storageError(res, result);
   }
 
   // Log the permission change symmetrically with grant and revoke

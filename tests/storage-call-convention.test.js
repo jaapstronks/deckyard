@@ -33,17 +33,13 @@
  * `return false`, because a boolean is as often the payload as the verdict.
  * It is a drift stop, not a proof.
  *
- * **The reason-vocabulary rule (B93).** A `reason` is drawn from the layer-wide
- * vocabulary (`not_found`, `invalid`, `forbidden`, `conflict`, `unavailable`)
- * before a domain-specific one is minted; a domain reason is fine where it
- * carries information a route or UI acts on, a *second spelling* for a meaning
- * that already has one is not. This file refuses
- *
- *   (d) the retired spellings `no_session`, `bad_request` and `empty` anywhere
- *       under `server/storage/**`. They were the audience-facing interaction
- *       and feedback exports' private vocabulary until B93 folded them into
- *       `not_found` / `invalid`. A flat needle, not a vocabulary proof: it
- *       stops the three known losers coming back, it cannot judge a new one.
+ * **The reason vocabulary is not here (B104).** It used to be, as rule (d): a
+ * flat blocklist of three retired spellings that admitted in its own comment
+ * that it *"cannot judge a new one"*. `tests/storage-reason-vocabulary.test.js`
+ * now judges every one against the `REASONS` register in
+ * `server/storage/reasons.js`, with an empty allowlist, so the blocklist is
+ * strictly redundant — the three retired spellings are simply not in the
+ * register.
  *
  * Existing violations are carried in `storage-call-convention-burndown.json`,
  * an allowlist that may only shrink (the `eslint-suppressions.json` pattern):
@@ -345,35 +341,6 @@ test('no storage export takes a new pre-convention shape', () => {
       'a mutation signals failure with `{ ok: false, reason }`, never `null`/`undefined` ' +
       '(docs/reference/storage-layer.md § Failure signalling). ' +
       'Do not add lines to the burndown list; it only shrinks.',
-  );
-});
-
-// Needles built from fragments so this guard file does not match its own text.
-const RETIRED_REASONS = [
-  { needle: 'no' + '_session', use: 'not_found' },
-  {
-    needle: 'bad' + '_request',
-    use: 'invalid (bad_request is the HTTP envelope code, not a storage reason)',
-  },
-  { needle: "'emp" + "ty'", use: 'invalid' },
-];
-
-test('no storage reason uses a retired spelling', () => {
-  const violations = [];
-  for (const file of walk(storageRoot)) {
-    const rel = relative(repoRoot, file).replace(/\\/g, '/');
-    const text = readFileSync(file, 'utf8');
-    for (const { needle, use } of RETIRED_REASONS) {
-      if (text.includes(needle))
-        violations.push(`${rel}: ${needle} → use ${use}`);
-    }
-  }
-  assert.deepEqual(
-    violations.sort(),
-    [],
-    'a storage `reason` is drawn from the layer-wide vocabulary before a domain ' +
-      'one is minted, and never as a second spelling of a meaning that already ' +
-      'has one (docs/reference/storage-layer.md § Failure signalling)',
   );
 });
 

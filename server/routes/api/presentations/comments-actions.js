@@ -8,14 +8,13 @@ import {
   updatePresentation,
 } from '../../../storage/presentations/index.js';
 import {
-  methodNotAllowed,
-  serveJson,
-  unauthorized,
   badRequest,
-  requireJsonBody,
+  methodNotAllowed,
   notFound,
-  jsonError,
-  getErrorStatus,
+  requireJsonBody,
+  serveJson,
+  storageError,
+  unauthorized,
 } from '../../../utils/http.js';
 import { canResolveComment } from '../../../utils/presentation-authz.js';
 import {
@@ -76,7 +75,7 @@ export async function handlePresentationCommentResolve(
   });
 
   if (!result.ok) {
-    return jsonError(res, getErrorStatus(result.reason), result.reason);
+    return storageError(res, result);
   }
 
   // Record activity event (non-blocking)
@@ -137,7 +136,7 @@ export async function handlePresentationCommentReopen(
   const result = await reopenComment(storageScope, commentId);
 
   if (!result.ok) {
-    return jsonError(res, getErrorStatus(result.reason), result.reason);
+    return storageError(res, result);
   }
 
   // Record activity event (non-blocking)
@@ -202,7 +201,7 @@ export async function handlePresentationCommentDismiss(
   });
 
   if (!result.ok) {
-    return jsonError(res, getErrorStatus(result.reason), result.reason);
+    return storageError(res, result);
   }
 
   // Broadcast to all connected clients (non-blocking)
@@ -350,7 +349,7 @@ export async function handlePresentationCommentsMarkRead(
 
   const result = await markThreadsRead(storageScope, id, commentIds);
   if (!result.ok) {
-    return jsonError(res, getErrorStatus(result.reason), result.reason);
+    return storageError(res, result);
   }
 
   serveJson(res, 200, { ok: true, marked: result.marked });

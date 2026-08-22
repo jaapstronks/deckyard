@@ -231,7 +231,7 @@ export async function createTheme(scope, data) {
 export async function updateTheme(scope, themeId, updates) {
   toStorageContext(scope, 'updateTheme');
   if (!themeId || typeof themeId !== 'string') {
-    return { ok: false, reason: 'invalid_id' };
+    return { ok: false, reason: 'invalid', field: 'id' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
@@ -332,7 +332,7 @@ export async function updateTheme(scope, themeId, updates) {
 export async function deleteTheme(scope, themeId) {
   toStorageContext(scope, 'deleteTheme');
   if (!themeId || typeof themeId !== 'string') {
-    return { ok: false, reason: 'invalid_id' };
+    return { ok: false, reason: 'invalid', field: 'id' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {

@@ -69,7 +69,7 @@ export async function createOrganization(data) {
       .executeTakeFirst();
 
     if (existingSlug) {
-      return { ok: false, reason: 'slug_taken' };
+      return { ok: false, reason: 'slug_exists' };
     }
 
     const now = nowIso();

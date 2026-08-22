@@ -153,7 +153,7 @@ export async function createCustomSlideType(scope, data) {
 
   const fieldsResult = validateFields(data?.fields);
   if (!fieldsResult.ok) {
-    return { ok: false, reason: 'invalid_fields' };
+    return { ok: false, reason: 'invalid', field: 'fields' };
   }
 
   const baseType = data?.baseType ? String(data.baseType).trim() : null;
@@ -229,7 +229,7 @@ export async function createCustomSlideType(scope, data) {
 export async function updateCustomSlideType(scope, typeId, updates) {
   toStorageContext(scope, 'updateCustomSlideType');
   if (!typeId || typeof typeId !== 'string') {
-    return { ok: false, reason: 'invalid_id' };
+    return { ok: false, reason: 'invalid', field: 'id' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
@@ -271,7 +271,7 @@ export async function updateCustomSlideType(scope, typeId, updates) {
     if ('fields' in updates) {
       const fieldsResult = validateFields(updates.fields);
       if (!fieldsResult.ok) {
-        return { ok: false, reason: 'invalid_fields' };
+        return { ok: false, reason: 'invalid', field: 'fields' };
       }
       updateData.fields = JSON.stringify(fieldsResult.fields);
     }
@@ -394,7 +394,7 @@ export async function reorderCustomSlideTypes(scope, orderedIds) {
 export async function deleteCustomSlideType(scope, typeId) {
   toStorageContext(scope, 'deleteCustomSlideType');
   if (!typeId || typeof typeId !== 'string') {
-    return { ok: false, reason: 'invalid_id' };
+    return { ok: false, reason: 'invalid', field: 'id' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {

@@ -34,11 +34,11 @@ describe('archiveNotification (no-DB contract)', () => {
   it('validates params', async () => {
     assert.deepStrictEqual(await archiveNotification(ORG, '', 'a@b.c'), {
       ok: false,
-      reason: 'invalid_params',
+      reason: 'invalid',
     });
     assert.deepStrictEqual(await archiveNotification(ORG, 'n-1', ''), {
       ok: false,
-      reason: 'invalid_params',
+      reason: 'invalid',
     });
   });
 
@@ -70,15 +70,15 @@ describe('archiveThreadNotifications (no-DB contract)', () => {
   it('validates params', async () => {
     assert.deepStrictEqual(
       await archiveThreadNotifications(ORG, '', 'p-1', 't-1'),
-      { ok: false, reason: 'invalid_params' },
+      { ok: false, reason: 'invalid' },
     );
     assert.deepStrictEqual(
       await archiveThreadNotifications(ORG, 'a@b.c', '', 't-1'),
-      { ok: false, reason: 'invalid_params' },
+      { ok: false, reason: 'invalid' },
     );
     assert.deepStrictEqual(
       await archiveThreadNotifications(ORG, 'a@b.c', 'p-1', ''),
-      { ok: false, reason: 'invalid_params' },
+      { ok: false, reason: 'invalid' },
     );
   });
 
