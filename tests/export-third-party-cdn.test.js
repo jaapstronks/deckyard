@@ -8,11 +8,11 @@
  * two things that make a path load a library at all — and reads back which
  * hosts the resulting documents name.
  *
- * It used to build two of the eight paths — the two that already respected the
+ * It used to build two of the nine paths — the two that already respected the
  * rule — while print, PDF, PNG and the single-slide render each pulled 14 files
  * from jsDelivr on every export (B102). Reading the list from
- * `server/render-paths.js` is what makes "add a ninth render path" and "forget
- * the rule in the ninth render path" different commits.
+ * `server/render-paths.js` is what makes "add a tenth render path" and "forget
+ * the rule in the tenth render path" different commits.
  *
  * The companion gate is `tests/no-third-party-origins.test.js`, which greps the
  * *source* — it catches a new offender the day it is written, without needing a
