@@ -4,6 +4,33 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.24.0](https://github.com/jaapstronks/deckyard/compare/v1.23.0...v1.24.0) (2026-08-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* **api:** an API client that branched on any of the 21 removed error codes must read `error: "invalid"` plus `details.field` instead. The status is unchanged (400 throughout), and `details.field` names the input the code used to encode in its suffix.
+* **authz:** a user who is a deck's `created_by` but not its owner, and who holds no collaborator row, can no longer write, delete, reshare or manage collaborators on that deck, and the editor now opens read-only for them. This is only reachable after an ownership transfer with `keepAsCollaborator: false`.
+
+### Added
+
+* **client:** remove the never-mounted cookie-consent banner ([#915](https://github.com/jaapstronks/deckyard/issues/915)) ([4da8bb3](https://github.com/jaapstronks/deckyard/commit/4da8bb359b912c931a3b784516b08fca947b8eda))
+* **security:** send the document CSP as a header on /p/ and /embed/ ([#919](https://github.com/jaapstronks/deckyard/issues/919)) ([bf54022](https://github.com/jaapstronks/deckyard/commit/bf5402215830511f5c9699a641c669f195cf62c6))
+* **security:** vendor hls.js and close the last render-path CDN ([#918](https://github.com/jaapstronks/deckyard/issues/918)) ([e368525](https://github.com/jaapstronks/deckyard/commit/e368525de364ce7edf35a92831b4c2bdddda153b))
+* **server:** remove the lead-capture server infrastructure ([#914](https://github.com/jaapstronks/deckyard/issues/914)) ([3a880e7](https://github.com/jaapstronks/deckyard/commit/3a880e708e45c560c4c802283d21b696416cf713))
+* **slides:** remove the lead-capture slide type and its viewer runtime ([#913](https://github.com/jaapstronks/deckyard/issues/913)) ([2a86fab](https://github.com/jaapstronks/deckyard/commit/2a86fab0fa7327ad34a23831e31dae9997727c81))
+
+
+### Fixed
+
+* **authz:** power over a deck reads the owner stamp, not owner-or-creator ([#916](https://github.com/jaapstronks/deckyard/issues/916)) ([088c861](https://github.com/jaapstronks/deckyard/commit/088c861a27f4170646b0447b5fb548d4cc368c6b))
+
+
+### Changed
+
+* **api:** collapse the 21 invalid_&lt;thing&gt; codes into invalid + field ([#917](https://github.com/jaapstronks/deckyard/issues/917)) ([33a16d4](https://github.com/jaapstronks/deckyard/commit/33a16d4b6c7d5ab8118ea630ed0ceb8c47d64d8a))
+* cap the round-5 breaking changes at a beta minor ([4b0ae74](https://github.com/jaapstronks/deckyard/commit/4b0ae74d561549767889772b13e6495efa422cd1))
+
 ## [1.23.0](https://github.com/jaapstronks/deckyard/compare/v1.22.0...v1.23.0) (2026-08-22)
 
 
