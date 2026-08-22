@@ -160,16 +160,17 @@ nothing is discoverable only by `ls`.
 
 **Formats & export**
 
-| Doc                                                                | What it covers                                                                 |
-| ------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
-| [`deck-format.md`](reference/deck-format.md)                       | The `deckyard.deck` interchange format                                         |
-| [`deck-conformance.md`](reference/deck-conformance.md)             | The two conformance levels a second implementation can claim                   |
-| [`deck-bundle-format.md`](reference/deck-bundle-format.md)         | The `.deck` bundle                                                             |
-| [`standalone-html-export.md`](reference/standalone-html-export.md) | Standalone HTML export                                                         |
-| [`reflowable-html-export.md`](reference/reflowable-html-export.md) | Reflowable "reader" export                                                     |
-| [`bulk-export.md`](reference/bulk-export.md)                       | Bulk export / backup                                                           |
-| [`publishing.md`](reference/publishing.md)                         | Publish/unpublish, the public deck pages and embed, and the RSS/Atom/JSON feed |
-| [`pdf-export-performance.md`](reference/pdf-export-performance.md) | What makes a PDF export heavy, and how to measure it                           |
+| Doc                                                                | What it covers                                                                                 |
+| ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| [`deck-format.md`](reference/deck-format.md)                       | The `deckyard.deck` interchange format                                                         |
+| [`deck-conformance.md`](reference/deck-conformance.md)             | The two conformance levels a second implementation can claim                                   |
+| [`deck-bundle-format.md`](reference/deck-bundle-format.md)         | The `.deck` bundle                                                                             |
+| [`standalone-html-export.md`](reference/standalone-html-export.md) | Standalone HTML export                                                                         |
+| [`reflowable-html-export.md`](reference/reflowable-html-export.md) | Reflowable "reader" export                                                                     |
+| [`bulk-export.md`](reference/bulk-export.md)                       | Bulk export / backup                                                                           |
+| [`publishing.md`](reference/publishing.md)                         | Publish/unpublish, the public deck pages and embed, and the RSS/Atom/JSON feed                 |
+| [`pdf-export-performance.md`](reference/pdf-export-performance.md) | What makes a PDF export heavy, and how to measure it                                           |
+| [`no-third-party-origins.md`](reference/no-third-party-origins.md) | Why a rendered document loads nothing from someone else's host, and the two gates that hold it |
 
 **Presenting & collaboration**
 

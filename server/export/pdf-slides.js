@@ -4,7 +4,10 @@ import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { resolveDeckLang } from '../../shared/i18n-utils.js';
 import { escapeHtml, embedImgSrcDataUrls } from '../utils/html-utils.js';
 import { debugLog } from '../utils/debug-log.js';
-import { buildPrismKatexCdnTags } from '../utils/prism-katex.js';
+import {
+  buildPrismKatexTags,
+  detectPrismKatexNeeds,
+} from '../utils/prism-katex.js';
 import { buildScriptChain } from '../utils/script-chain.js';
 import { getAppBaseUrl } from '../config/utils.js';
 import { resolveVideoThumbnailDataUrl } from './video-thumbnail.js';
@@ -412,11 +415,15 @@ export async function buildSlidesPdfHtml(
     `[pdf-export] embedded ${embedCache.size} unique image(s) in ${Date.now() - embedStartedAt}ms`,
   );
 
+  // The document is handed to Chrome through setContent(), which has no origin
+  // to resolve /client/vendor/ against: the vendored copies go in inline.
+  const highlightNeeds = detectPrismKatexNeeds(pagesHtml);
+
   // A4 landscape in CSS pixels varies by browser DPI; we use JS to scale the 1600x900 slide canvas per page.
   return `${buildDocumentHead({
     lang: docLang,
     title: rawTitle,
-    head: [buildPrismKatexCdnTags()],
+    head: [buildPrismKatexTags({ ...highlightNeeds, mode: 'inlined' })],
     styles: [`${buildStyleContent(css)}\n\n${gradients.extraCss}`],
   })}
   <body>
@@ -426,7 +433,7 @@ export async function buildSlidesPdfHtml(
       <div style="opacity:0.85; font-size:12px;">Tip: if colors look muted, enable “Background graphics” in the print dialog.</div>
     </div>
     ${pagesHtml}
-    ${buildScriptChain()}
+    ${buildScriptChain({ needs: highlightNeeds })}
   </body>
 </html>`;
 }

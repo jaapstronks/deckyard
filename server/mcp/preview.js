@@ -17,7 +17,7 @@ import { buildCssChain } from '../utils/css-chain.js';
 import { buildDocumentHead } from '../utils/head-chain.js';
 import { buildScriptChain } from '../utils/script-chain.js';
 import {
-  buildPrismKatexCdnTags,
+  buildPrismKatexTags,
   detectPrismKatexNeeds,
 } from '../utils/prism-katex.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
@@ -228,7 +228,12 @@ export async function buildSlidePreviewHtml(
   return `${buildDocumentHead({
     lang: docLang || resolveDocLangFromPresentation({ slides }),
     title: title || 'Slide Preview',
-    head: [LIST_SCALE_SCRIPT, buildPrismKatexCdnTags(highlightNeeds)],
+    head: [
+      LIST_SCALE_SCRIPT,
+      // A preview is rendered inside a host artifact frame, with no Deckyard
+      // origin behind it — everything it needs travels in the string.
+      buildPrismKatexTags({ ...highlightNeeds, mode: 'inlined' }),
+    ],
     styles: [
       buildCssChain(repoRoot, [
         themeVars,
@@ -285,7 +290,10 @@ export async function buildSingleSlidePreviewHtml(
   const highlightNeeds = detectPrismKatexNeeds(html);
   return `${buildDocumentHead({
     lang: docLang || resolveDocLangFromPresentation({ slides: [slide] }),
-    head: [SINGLE_SCALE_SCRIPT, buildPrismKatexCdnTags(highlightNeeds)],
+    head: [
+      SINGLE_SCALE_SCRIPT,
+      buildPrismKatexTags({ ...highlightNeeds, mode: 'inlined' }),
+    ],
     styles: [
       buildCssChain(repoRoot, [
         themeVars,

@@ -10,7 +10,10 @@ import {
   embedImgSrcDataUrls,
   imageFieldKeysForType,
 } from '../utils/html-utils.js';
-import { buildPrismKatexCdnTags } from '../utils/prism-katex.js';
+import {
+  buildPrismKatexTags,
+  detectPrismKatexNeeds,
+} from '../utils/prism-katex.js';
 import { buildScriptChain } from '../utils/script-chain.js';
 import { renderVideoSlidePngHtml } from '../utils/video-slide-html.js';
 import { buildDocumentHead } from '../utils/head-chain.js';
@@ -84,16 +87,20 @@ export async function buildSlidePngHtml(
   const resolvedDocLang =
     docLang || resolveDocLangFromPresentation({ slides: [cloned] });
 
+  // Rasterised through setContent(), which has no origin to resolve
+  // /client/vendor/ against: the vendored copies go in inline.
+  const highlightNeeds = detectPrismKatexNeeds(slideHtml);
+
   // No <title>: this document exists to be screenshotted at 1600x900 and is
   // never a tab, a bookmark or a share target.
   return `${buildDocumentHead({
     lang: resolvedDocLang,
-    head: [buildPrismKatexCdnTags()],
+    head: [buildPrismKatexTags({ ...highlightNeeds, mode: 'inlined' })],
     styles: [buildExportStyleContent(css, [PNG_DOC_CSS])],
   })}
   <body>
     <div class="ps-theme">${css.wmHtml}${slideHtml}</div>
-    ${buildScriptChain()}
+    ${buildScriptChain({ needs: highlightNeeds })}
   </body>
 </html>`;
 }

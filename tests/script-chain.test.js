@@ -187,9 +187,12 @@ test('a code block highlights in every render path', async (t) => {
         'the fixture stopped producing a code block — the assertions below ' +
           'would pass vacuously',
       );
-      assert.match(
-        html,
-        /prismjs@[\d.]+\/prism\.min\.js/,
+      assert.ok(
+        // Linked (a page this server serves) or inlined (a document with no
+        // origin) — either way it is the vendored copy, never a CDN.
+        /<script src="\/client\/vendor\/prism\/components\/prism-core\.min\.js">/.test(
+          html,
+        ) || /Prism\.languages\.markup=/.test(html),
         'this path renders a code block but never loads Prism',
       );
       assert.match(
@@ -205,24 +208,21 @@ test('a code block highlights in every render path', async (t) => {
   }
 });
 
-test('a deck without code or math loads nothing from a CDN', async (t) => {
+test('a deck without code or math loads neither library', async (t) => {
   const plain = {
     id: 'plain',
     title: 'Plain',
     theme: 'default',
     slides: [{ id: 's1', type: 'title-slide', content: { title: 'Kop' } }],
   };
-  // Only the paths that inspect the deck can make this promise; the export
-  // paths that render an arbitrary deck still load both libraries eagerly.
-  for (const name of [
-    'utils/embed-html',
-    'export/html',
-    'mcp/preview (list)',
-  ]) {
-    await t.test(name, async () => {
-      const p = RENDER_PATHS.find((x) => x.name === name);
+  // Every path inspects the deck now (B102): the four that used to emit one
+  // fixed head for any deck pass `detectPrismKatexNeeds()` too.
+  for (const p of RENDER_PATHS) {
+    await t.test(p.name, async () => {
       const html = await p.build(repoRoot, plain, {});
       assert.doesNotMatch(html, /cdn\.jsdelivr\.net/);
+      assert.doesNotMatch(html, /\/client\/vendor\/(?:prism|katex)\//);
+      assert.doesNotMatch(html, /Prism\.languages\.markup=/);
       assert.doesNotMatch(html, /Prism\.highlightElement/);
     });
   }

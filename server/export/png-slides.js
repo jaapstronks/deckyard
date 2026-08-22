@@ -3,7 +3,10 @@ import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { resolveDeckLang } from '../../shared/i18n-utils.js';
 import { escapeHtml, embedImgSrcDataUrls } from '../utils/html-utils.js';
-import { buildPrismKatexCdnTags } from '../utils/prism-katex.js';
+import {
+  buildPrismKatexTags,
+  detectPrismKatexNeeds,
+} from '../utils/prism-katex.js';
 import { buildScriptChain } from '../utils/script-chain.js';
 import { renderVideoSlidePngHtml } from '../utils/video-slide-html.js';
 import { buildDocumentHead } from '../utils/head-chain.js';
@@ -225,10 +228,14 @@ export async function buildSlidesPngExportHtml(
     cache: embedCache,
   });
 
+  // Rasterised through setContent(), which has no origin to resolve
+  // /client/vendor/ against: the vendored copies go in inline.
+  const highlightNeeds = detectPrismKatexNeeds(slidesHtml);
+
   return `${buildDocumentHead({
     lang: docLang,
     title: titleRaw,
-    head: [buildPrismKatexCdnTags()],
+    head: [buildPrismKatexTags({ ...highlightNeeds, mode: 'inlined' })],
     styles: [
       {
         id: 'pngExportCss',
@@ -256,7 +263,7 @@ export async function buildSlidesPngExportHtml(
         ${slidesHtml}
       </div>
     </div>
-    ${buildScriptChain({ body: PNG_TOOLBAR_JS })}
+    ${buildScriptChain({ body: PNG_TOOLBAR_JS, needs: highlightNeeds })}
   </body>
 </html>`;
 }
