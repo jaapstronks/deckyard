@@ -186,12 +186,12 @@ async function handleShareGuestRequest({ repoRoot, req, res }, token) {
   if (!parsed.ok) return true;
   const body = parsed.body;
 
+  // The address guard lives in the storage layer (`requestGuestVerification`),
+  // which answers the canonical `{ reason:'invalid', field:'email' }`. A route
+  // pre-check here would shadow it with `bad_request` and leave the client's
+  // email copy unreachable.
   const email = normalizeEmail(body?.email);
   const name = getTrimmedString(body, 'name') || '';
-
-  if (!email || !email.includes('@')) {
-    return badRequest(res, 'Valid email is required');
-  }
 
   // Request verification
   const result = await requestGuestVerification(
