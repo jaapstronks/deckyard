@@ -54,8 +54,6 @@
   "organization.members.you": "Tu",
   "settings.admin.webhooks.feedbackSubmitted.hint": "Evento: interaction.feedback_submitted",
   "settings.admin.webhooks.feedbackSubmitted.title": "Quando viene inviato un feedback",
-  "settings.admin.webhooks.leadSubmitted.hint": "Evento: lead.submitted",
-  "settings.admin.webhooks.leadSubmitted.title": "Quando viene inviato un lead",
   "settings.admin.webhooks.likertClosed.hint": "Evento: interaction.likert_closed",
   "settings.admin.webhooks.likertClosed.title": "Quando una scala Likert viene chiusa",
   "settings.admin.webhooks.pollClosed.hint": "Evento: interaction.poll_closed",

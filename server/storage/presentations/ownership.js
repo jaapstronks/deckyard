@@ -33,7 +33,7 @@ export async function transferPresentationOwnership(
   const actorEmail = options?.actorEmail || null;
 
   if (!newOwnerEmail) {
-    return { ok: false, reason: 'invalid_new_owner' };
+    return { ok: false, reason: 'invalid', field: 'new_owner_email' };
   }
 
   // Get current presentation

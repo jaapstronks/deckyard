@@ -58,7 +58,7 @@ export async function requestGuestVerification(shareLinkId, email, name) {
 
   const normalized = normalizeEmail(email);
   if (!normalized || !normalized.includes('@')) {
-    return { ok: false, reason: 'invalid_email' };
+    return { ok: false, reason: 'invalid', field: 'email' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
@@ -348,7 +348,7 @@ export async function preRegisterGuest(
 
   const normalized = normalizeEmail(guestData?.email);
   if (!normalized || !normalized.includes('@')) {
-    return { ok: false, reason: 'invalid_email' };
+    return { ok: false, reason: 'invalid', field: 'email' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {

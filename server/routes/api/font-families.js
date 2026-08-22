@@ -38,13 +38,6 @@ import { getMediaProvider } from '../../media/index.js';
 import { canManage } from '../../utils/route-middleware.js';
 
 const ERROR_MESSAGES = {
-  invalid_slug: 'Invalid font family slug.',
-  invalid_source:
-    'Invalid font source. Must be upload, adobe, monotype, or google.',
-  invalid_category: 'Invalid font category.',
-  invalid_weight: 'Invalid font weight. Must be 100-900 in increments of 100.',
-  invalid_style: 'Invalid font style. Must be normal or italic.',
-  invalid_format: 'Invalid font format. Must be woff2 or woff.',
   slug_exists: 'A font family with this slug already exists.',
   already_exists: 'A variant with this weight and style already exists.',
   not_found: 'Font family not found.',
@@ -62,6 +55,12 @@ const ERROR_MESSAGES = {
 const INVALID_FIELD_MESSAGES = {
   name: 'Invalid font family name.',
   id: 'Invalid font family ID.',
+  slug: 'Invalid font family slug.',
+  source: 'Invalid font source. Must be upload, adobe, monotype, or google.',
+  category: 'Invalid font category.',
+  weight: 'Invalid font weight. Must be 100-900 in increments of 100.',
+  style: 'Invalid font style. Must be normal or italic.',
+  format: 'Invalid font format. Must be woff2 or woff.',
 };
 
 /**

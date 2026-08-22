@@ -274,7 +274,6 @@ export async function handlePublishedPage({ repoRoot, req, res, url }) {
     theme,
     slideTypes,
     context: 'published', // Use published visibility filter
-    presentationId: entry.presentationId,
     description: descriptionRaw,
   });
   res.writeHead(200, {

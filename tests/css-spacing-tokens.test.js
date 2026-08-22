@@ -94,15 +94,17 @@ const SPACING_PROPERTIES = [
 ];
 
 /**
- * Stylesheets outside the gate, each for a reason that is not "too much work".
+ * Stylesheets outside the gate, for a reason that is not "too much work".
  *
- * - `slides/**` cannot use `--ps-*` at all: `server/mcp/preview.js` bundles
- *   `slides.css` without `ui-tokens.css`, so the token would resolve to nothing
- *   there with no error. The trap is documented in docs/reference/css-tokens.md.
- * - `cookie-consent.css` is parked — not in any load path, with its own revive
- *   checklist. Converting a sheet nothing loads is churn.
+ * `slides/**` cannot use `--ps-*` at all: `server/mcp/preview.js` bundles
+ * `slides.css` without `ui-tokens.css`, so the token would resolve to nothing
+ * there with no error. The trap is documented in docs/reference/css-tokens.md.
+ *
+ * The second entry here used to be `cookie-consent.css`, parked outside every
+ * load path; it went with the lead-capture strip (B119), and with it the only
+ * exemption that was about a sheet nothing loaded.
  */
-const EXCLUDED = [/^client\/styles\/slides\//, /(^|\/)cookie-consent\.css$/];
+const EXCLUDED = [/^client\/styles\/slides\//];
 
 /** @param {string} dir @returns {Promise<string[]>} absolute paths of .css files, recursively */
 async function cssFiles(dir) {

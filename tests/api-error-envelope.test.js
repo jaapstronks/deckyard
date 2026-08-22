@@ -103,9 +103,9 @@ test('methodNotAllowed carries the code and an Allow header', () => {
 
 test('jsonError echoes details and omits an empty message', () => {
   const res = new MockRes();
-  jsonError(res, 400, 'invalid_email', '', { details: { field: 'email' } });
+  jsonError(res, 400, 'invalid', '', { details: { field: 'email' } });
   const body = res.body();
-  assert.equal(body.error, 'invalid_email');
+  assert.equal(body.error, 'invalid');
   assert.ok(!('message' in body), 'empty message is omitted');
   assert.deepEqual(body.details, { field: 'email' });
 });

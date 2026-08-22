@@ -96,12 +96,12 @@ export async function addCollaborator(presentationId, options) {
 
   const userEmail = normalizeEmail(options?.userEmail);
   if (!userEmail || !userEmail.includes('@')) {
-    return { ok: false, reason: 'invalid_email' };
+    return { ok: false, reason: 'invalid', field: 'email' };
   }
 
   const permission = options?.permission;
   if (!isValidPermission(permission)) {
-    return { ok: false, reason: 'invalid_permission' };
+    return { ok: false, reason: 'invalid', field: 'permission' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
@@ -208,7 +208,7 @@ export async function removeCollaborator(
 
   const email = normalizeEmail(userEmail);
   if (!email) {
-    return { ok: false, reason: 'invalid_email' };
+    return { ok: false, reason: 'invalid', field: 'email' };
   }
 
   const message = options?.message || null;
@@ -260,11 +260,11 @@ export async function updateCollaboratorPermission(
 
   const email = normalizeEmail(userEmail);
   if (!email) {
-    return { ok: false, reason: 'invalid_email' };
+    return { ok: false, reason: 'invalid', field: 'email' };
   }
 
   if (!isValidPermission(permission)) {
-    return { ok: false, reason: 'invalid_permission' };
+    return { ok: false, reason: 'invalid', field: 'permission' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {

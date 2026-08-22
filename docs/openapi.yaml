@@ -1805,6 +1805,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '429':
           $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
 
@@ -2406,6 +2408,16 @@ components:
         (`error: service_unavailable`), or a maintenance window is briefly
         refusing writes (`error: maintenance`, with a `Retry-After` header
         naming when to come back).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    InternalError:
+      description: >-
+        Internal error — the request was well-formed and authorized, but the
+        server could not complete it (`error: internal_error`). Retrying an
+        identical request is unlikely to help.
       content:
         application/json:
           schema:

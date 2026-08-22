@@ -76,11 +76,14 @@ These are decisions, not leftovers. Each is documented where it lives:
   managed_ fonts — see `docs/reference/font-management.md` and
   `buildExternalFontLinks` in `server/utils/theme-builder.js`. Curated and
   uploaded fonts are embedded.
-- **Media playback seams.** Bunny's `player.js` and `hls.js` are injected
-  **lazily by the runtime**, only once a reader actually plays a video that
-  needs them (`ensureBunnyPlayerJs()`, `client/lib/slide-runtime/ensure-hls.js`).
-  A deck without such a video fetches nothing. Vendoring hls.js is a live
-  candidate, not a taken decision.
+- **Bunny's `player.js`** is injected **lazily by the runtime**, only once a
+  reader actually plays a Bunny-hosted video (`ensureBunnyPlayerJs()`). A deck
+  without such a video fetches nothing, and unlike a library this is a _service_
+  seam — the script talks to Bunny's own player API, so there is nothing to
+  vendor. **hls.js used to sit beside it and no longer does**: it is an ordinary
+  pinnable library, so D51(a) vendored it (`scripts/vendor-hls.js`,
+  `client/vendor/hls/`). `ensure-hls.js` is still lazy; it just loads from this
+  server, and `cdn.jsdelivr.net` left `script-src` in the same commit.
 - **The Swagger UI shell** at `/api/v1/docs` loads swagger-ui-dist from
   jsDelivr. It is developer documentation, not a render path.
 
@@ -112,9 +115,11 @@ kind of fetch fails closed. `object-src`, `base-uri` and `form-action` are
 locked down and used by nothing.
 
 `THIRD_PARTY_ORIGINS` in that module is the same set of hosts the two gates
-allow, which is the point of writing it there: vendoring hls.js deletes one
-entry and narrows the policy in the same commit, instead of the policy and the
-allowlists drifting the way the CDN spellings and the app shell's did.
+allow, which is the point of writing it there. Vendoring hls.js is the worked
+example: one entry left the list, `script-src` narrowed to
+`assets.mediadelivery.net` alone, and both gate allowlists shed their entries —
+all in one commit, instead of the policy and the allowlists drifting the way the
+CDN spellings and the app shell's did.
 
 **Three directives are unavailable in `<meta>` form** and are omitted rather
 than emitted as protection that is not there: `frame-ancestors` (a question
@@ -158,8 +163,9 @@ All must stay green, and they fail differently on purpose:
 
 The output gate strips the policy meta before reading hosts: a policy names
 every origin a document _may_ reach, and permitting is the opposite of fetching.
-The same reason puts `server/utils/document-csp.js` on the source gate's
-allowlist — it spells `cdn.jsdelivr.net` in order to permit hls.js.
+That is why `server/utils/document-csp.js` was on the source gate's allowlist
+while `script-src` still named jsDelivr; with hls.js vendored, neither the entry
+nor the origin is left.
 
 **What no gate can check** is that the policy does not break a real export: a
 string assertion passes just as happily against a policy that blocks the slide

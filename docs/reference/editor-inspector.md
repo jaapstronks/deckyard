@@ -377,7 +377,7 @@ routing, not of this table - the widgets are the open half of the same
 consolidation.
 
 Not repeated per row, because they are the same for all
-<!--gen:slide-type-count-->34<!--/gen:slide-type-count--> types: `slideBgImage`,
+<!--gen:slide-type-count-->33<!--/gen:slide-type-count--> types: `slideBgImage`,
 
 `slideBgFit`, `slideBgFocusX/Y`, `slideBgOverlay`, `slideBgText`, `slideLogo`
 (Background image section), `a11yTitle`/`a11ySummary` (Accessibility) and the
@@ -412,7 +412,6 @@ rather than getting a home of its own.
 | `likert-slide`         | `question`, `option{n}`                                                                                  | –                      | `onClose`, `onCloseTarget`                                                                            |
 | `likert-slider-slide`  | `question`, `minLabel`, `maxLabel`                                                                       | –                      | –                                                                                                     |
 | `feedback-slide`       | `question`                                                                                               | –                      | `placeholder`                                                                                         |
-| `lead-capture-slide`   | `title`, `description`, `nameLabel`, `emailLabel`, `submitLabel`                                         | –                      | `thankYouTitle`, `thankYouMessage`, `privacyText`, `privacyUrl`                                       |
 | `follow-invite-slide`  | –                                                                                                        | –                      | –                                                                                                     |
 | `chart-slide`          | `title`, `subheading`, `bottomSubheading`                                                                | –                      | `chartType`, `data`, `showLegend`, `showValues`, `pieLabelMode`, `xLabel`, `yLabel`, `series{n}Label` |
 | `text-blocks-slide`    | `title`, `subheading`, `bottomSubheading`                                                                | `rows`                 | –                                                                                                     |

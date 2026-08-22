@@ -54,8 +54,6 @@
   "organization.members.you": "Ty",
   "settings.admin.webhooks.feedbackSubmitted.hint": "Zdarzenie: interaction.feedback_submitted",
   "settings.admin.webhooks.feedbackSubmitted.title": "Gdy opinia zostanie wysłana",
-  "settings.admin.webhooks.leadSubmitted.hint": "Zdarzenie: lead.submitted",
-  "settings.admin.webhooks.leadSubmitted.title": "Gdy lead zostanie wysłany",
   "settings.admin.webhooks.likertClosed.hint": "Zdarzenie: interaction.likert_closed",
   "settings.admin.webhooks.likertClosed.title": "Gdy skala Likerta zostanie zamknięta",
   "settings.admin.webhooks.pollClosed.hint": "Zdarzenie: interaction.poll_closed",

@@ -37,9 +37,9 @@
  * `tests/no-third-party-origins.test.js` allows in the source and
  * `tests/export-third-party-cdn.test.js` allows in the output — that is the
  * point of writing it here rather than as a policy string in a template.
- * Vendoring hls.js deletes one entry and the policy narrows with it, instead of
- * the allowlist and the policy drifting apart the way the CDN spellings and the
- * app shell's did (B102).
+ * Vendoring hls.js was exactly that: one entry left this list and the policy
+ * narrowed with it (D51(a)), instead of the allowlist and the policy drifting
+ * apart the way the CDN spellings and the app shell's did (B102).
  *
  * @module server/utils/document-csp
  */
@@ -91,15 +91,6 @@ export const THIRD_PARTY_ORIGINS = Object.freeze([
       "Bunny's player.js, injected lazily by the runtime only once a reader " +
       'plays a video slide that needs it (`ensureBunnyPlayerJs`). A deck ' +
       'without such a video fetches nothing.',
-  },
-  {
-    origin: 'https://cdn.jsdelivr.net',
-    directives: ['script-src'],
-    reason:
-      'hls.js, same lazy shape (`client/lib/slide-runtime/ensure-hls.js`). ' +
-      'Vendoring it is a live candidate rather than a taken decision; when it ' +
-      'lands, this entry and the matching one in ' +
-      'tests/no-third-party-origins.test.js go together.',
   },
 ]);
 
@@ -183,8 +174,9 @@ export function documentCspDirectives() {
     'img-src': ["'self'", 'data:', 'blob:', 'https:'],
     'media-src': ["'self'", 'data:', 'blob:', 'https:'],
 
-    // `'self'` is the lead-capture POST to /api/leads on a published deck.
-    // `https:` is the HLS manifest a stream fetches from wherever it lives.
+    // `'self'` is the analytics tracking script posting to /api/track/* on a
+    // published deck. `https:` is the HLS manifest a stream fetches from
+    // wherever it lives.
     'connect-src': ["'self'", 'https:'],
 
     // Content too, not code: a framed document runs in its own cross-origin

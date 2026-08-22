@@ -383,7 +383,7 @@ export async function addMember(data) {
  */
 export async function updateMemberRole(membershipId, newRole) {
   if (!WORKSPACE_ROLES.includes(newRole)) {
-    return { ok: false, reason: 'invalid_role' };
+    return { ok: false, reason: 'invalid', field: 'role' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {

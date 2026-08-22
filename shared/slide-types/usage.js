@@ -92,14 +92,16 @@ export function normalizeUsage(value) {
  * design, and demanding one on every type would produce invented filler.
  *
  * @param {unknown} value
- * @returns {{ ok: true, usage: string|null } | { ok: false, reason: string }}
- *   `reason` is `invalid_usage` (not a string) or `usage_too_long`.
+ * @returns {{ ok: true, usage: string|null } | { ok: false, reason: string, field?: string }}
+ *   `reason` is `invalid` with `field: 'usage'` (not a string) or
+ *   `usage_too_long`.
  */
 export function validateUsage(value) {
   if (value === undefined || value === null || value === '') {
     return { ok: true, usage: null };
   }
-  if (typeof value !== 'string') return { ok: false, reason: 'invalid_usage' };
+  if (typeof value !== 'string')
+    return { ok: false, reason: 'invalid', field: 'usage' };
 
   const usage = normalizeUsage(value);
   if (usage === null) return { ok: true, usage: null };

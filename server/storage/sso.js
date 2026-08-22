@@ -51,7 +51,7 @@ export async function getOrCreateSsoUser(scope, identity, opts) {
   toStorageContext(scope, 'getOrCreateSsoUser');
   const email = normalizeEmail(identity?.email);
   if (!email || !email.includes('@')) {
-    return { ok: false, reason: 'invalid_email' };
+    return { ok: false, reason: 'invalid', field: 'email' };
   }
 
   const name = String(identity?.name || '').trim();

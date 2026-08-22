@@ -180,7 +180,7 @@ Themes can control which slide types can be inserted:
 `slideTypes.exclude` is the only spelling. Older theme files may still carry:
 
 ```json
-{ "hiddenSlideTypes": ["lead-capture-slide"] }
+{ "hiddenSlideTypes": ["poll-slide"] }
 ```
 
 `normalizeTheme()` folds that into `slideTypes.exclude` on read **and drops the

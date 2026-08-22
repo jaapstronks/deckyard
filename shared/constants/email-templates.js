@@ -137,17 +137,6 @@ export const TEMPLATE_METADATA = {
     ],
     fields: TEMPLATE_FIELDS,
   },
-  leadNotification: {
-    label: 'Lead Notification',
-    description: 'Sent to presentation owner when a lead is captured',
-    placeholders: [
-      { key: 'presTitle', description: 'Presentation title' },
-      { key: 'leadName', description: 'Name of the lead' },
-      { key: 'leadEmail', description: 'Email of the lead' },
-      { key: 'submittedAt', description: 'Submission date/time' },
-    ],
-    fields: TEMPLATE_FIELDS,
-  },
 };
 
 /**

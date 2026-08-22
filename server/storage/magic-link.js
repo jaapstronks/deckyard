@@ -92,7 +92,7 @@ export async function isRateLimitedByIp(ipAddress) {
 export async function createMagicToken(email, info) {
   const normalized = normalizeEmail(email);
   if (!normalized || !isValidEmail(normalized)) {
-    return { ok: false, reason: 'invalid_email' };
+    return { ok: false, reason: 'invalid', field: 'email' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
@@ -210,7 +210,7 @@ export async function getOrCreateMagicLinkUser(scope, email) {
   toStorageContext(scope, 'getOrCreateMagicLinkUser');
   const normalized = normalizeEmail(email);
   if (!normalized) {
-    return { ok: false, reason: 'invalid_email' };
+    return { ok: false, reason: 'invalid', field: 'email' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {

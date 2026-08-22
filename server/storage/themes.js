@@ -146,25 +146,25 @@ export async function createTheme(scope, data) {
   toStorageContext(scope, 'createTheme');
   const label = String(data?.label || '').trim();
   if (!label || label.length > 255) {
-    return { ok: false, reason: 'invalid_label' };
+    return { ok: false, reason: 'invalid', field: 'label' };
   }
 
   // Generate or validate slug
   let slug = data?.slug ? String(data.slug).trim() : generateSlug(label);
   if (!isValidSlug(slug)) {
-    return { ok: false, reason: 'invalid_slug' };
+    return { ok: false, reason: 'invalid', field: 'slug' };
   }
 
   // Validate colors
   const colors = validateColors(data?.colors);
   if (!colors) {
-    return { ok: false, reason: 'invalid_colors' };
+    return { ok: false, reason: 'invalid', field: 'colors' };
   }
 
   // Validate fonts
   const fonts = validateFonts(data?.fonts);
   if (!fonts) {
-    return { ok: false, reason: 'invalid_fonts' };
+    return { ok: false, reason: 'invalid', field: 'fonts' };
   }
 
   // Total: junk yields `{}` rather than an error, so a malformed config can
@@ -188,7 +188,7 @@ export async function createTheme(scope, data) {
 
     // Verify referenced font familyIds exist
     if (!(await verifyFontFamilyIds(db, orgId, fonts))) {
-      return { ok: false, reason: 'invalid_fonts' };
+      return { ok: false, reason: 'invalid', field: 'fonts' };
     }
 
     const now = nowIso();
@@ -245,7 +245,7 @@ export async function updateTheme(scope, themeId, updates) {
     if ('label' in updates) {
       const label = String(updates.label || '').trim();
       if (!label || label.length > 255) {
-        return { ok: false, reason: 'invalid_label' };
+        return { ok: false, reason: 'invalid', field: 'label' };
       }
       updateData.label = label;
     }
@@ -253,7 +253,7 @@ export async function updateTheme(scope, themeId, updates) {
     if ('slug' in updates) {
       const slug = String(updates.slug || '').trim();
       if (!isValidSlug(slug)) {
-        return { ok: false, reason: 'invalid_slug' };
+        return { ok: false, reason: 'invalid', field: 'slug' };
       }
 
       // Check if new slug already exists (different from this theme)
@@ -283,7 +283,7 @@ export async function updateTheme(scope, themeId, updates) {
     if ('colors' in updates) {
       const colors = validateColors(updates.colors);
       if (!colors) {
-        return { ok: false, reason: 'invalid_colors' };
+        return { ok: false, reason: 'invalid', field: 'colors' };
       }
       updateData.colors = colors;
     }
@@ -291,11 +291,11 @@ export async function updateTheme(scope, themeId, updates) {
     if ('fonts' in updates) {
       const fonts = validateFonts(updates.fonts);
       if (!fonts) {
-        return { ok: false, reason: 'invalid_fonts' };
+        return { ok: false, reason: 'invalid', field: 'fonts' };
       }
       // Verify referenced font familyIds exist
       if (!(await verifyFontFamilyIds(db, orgId, fonts))) {
-        return { ok: false, reason: 'invalid_fonts' };
+        return { ok: false, reason: 'invalid', field: 'fonts' };
       }
       updateData.fonts = fonts;
     }

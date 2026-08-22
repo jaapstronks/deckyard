@@ -3,10 +3,11 @@
  *
  * There used to be three lists that disagreed: the shared `TEMPLATE_TYPES`
  * (UI selector), the server `TEMPLATE_METADATA` (API validation + resolver),
- * and ad-hoc `templateType` strings in the senders. `leadNotification` was in
- * metadata but not the UI list (admin-invisible), and `exportReady` was sent
- * by a sender but existed in neither list (a silently dead custom-template
- * path). This test pins the invariants that keep them from drifting apart:
+ * and ad-hoc `templateType` strings in the senders. `leadNotification` (since
+ * removed with lead capture) was in metadata but not the UI list
+ * (admin-invisible), and `exportReady` was sent by a sender but existed in
+ * neither list (a silently dead custom-template path). This test pins the
+ * invariants that keep them from drifting apart:
  *
  *  1. `TEMPLATE_TYPES` is exactly `Object.keys(TEMPLATE_METADATA)` — one list,
  *     derived, not hand-maintained.
@@ -30,10 +31,6 @@ import { resolveTemplate } from '../server/integrations/email-template-resolver.
 describe('email template types are one canonical list', () => {
   it('TEMPLATE_TYPES is derived from TEMPLATE_METADATA', () => {
     assert.deepStrictEqual(TEMPLATE_TYPES, Object.keys(TEMPLATE_METADATA));
-  });
-
-  it('leadNotification is customizable and admin-visible', () => {
-    assert.ok(TEMPLATE_TYPES.includes('leadNotification'));
   });
 
   it('every customizable type has a code default (non-empty subject) without a DB', async () => {

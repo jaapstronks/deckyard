@@ -155,9 +155,6 @@ export async function renderShareViewer(root, token) {
       // Load theme
       theme = await loadThemeById(presentation.theme);
 
-      // Make presentation ID globally available for lead capture forms
-      window.__PRESENTATION_ID__ = presentation.id;
-
       // Initialize analytics tracking
       if (isAnalyticsEnabled(presentation)) {
         analyticsTracker = createAnalyticsTracker({

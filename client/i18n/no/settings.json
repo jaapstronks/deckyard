@@ -54,8 +54,6 @@
   "settings.admin.webhooks.feedbackSubmitted.hint": "Hendelse: interaction.feedback_submitted",
   "settings.admin.webhooks.feedbackSubmitted.title": "Når tilbakemelding sendes inn",
   "settings.admin.webhooks.hint": "Konfigurer webhook-URL-er for å motta POSTede JSON-payloads når visse hendelser inntreffer.",
-  "settings.admin.webhooks.leadSubmitted.hint": "Hendelse: lead.submitted",
-  "settings.admin.webhooks.leadSubmitted.title": "Når et lead sendes inn",
   "settings.admin.webhooks.likertClosed.hint": "Hendelse: interaction.likert_closed",
   "settings.admin.webhooks.likertClosed.title": "Når en Likert-skala lukkes",
   "settings.admin.webhooks.movedToOrganization.hint": "Hendelse: presentation.moved_to_organization",

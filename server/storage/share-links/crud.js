@@ -77,13 +77,13 @@ export async function createShareLink(scope, presentationId, options) {
 
   const permission = options?.permission;
   if (!isValidShareLinkPermission(permission)) {
-    return { ok: false, reason: 'invalid_permission' };
+    return { ok: false, reason: 'invalid', field: 'permission' };
   }
 
   // Registration mode: 'open' allows anyone, 'invite_only' requires pre-registration
   const registrationMode = options?.registrationMode || 'invite_only';
   if (!['open', 'invite_only'].includes(registrationMode)) {
-    return { ok: false, reason: 'invalid_registration_mode' };
+    return { ok: false, reason: 'invalid', field: 'registration_mode' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {

@@ -205,7 +205,6 @@ nothing is discoverable only by `ls`.
 | [`data-sources.md`](reference/data-sources.md)                   | Live slide data sources (Notion/CSV): the fetch/bind pipeline, the csv-url SSRF sink, and the config                       |
 | [`analytics.md`](reference/analytics.md)                         | View analytics end to end: tracking routes, aggregations, reports, retention job                                           |
 | [`analytics-privacy.md`](reference/analytics-privacy.md)         | What view analytics stores per viewer, the two erase routes, retention                                                     |
-| [`leads.md`](reference/leads.md)                                 | Lead capture: what the slide stores, who can read it, the webhook export path, retention and erasure                       |
 | [`email-infrastructure.md`](reference/email-infrastructure.md)   | The Brevo transport, the senders, and the admin-customizable templates                                                     |
 | [`jobs-and-queues.md`](reference/jobs-and-queues.md)             | The BullMQ queue layer, its synchronous fallback, and the recurring interval jobs                                          |
 | [`maintenance-mode.md`](reference/maintenance-mode.md)           | Deploying without failing saves in open editors                                                                            |

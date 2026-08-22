@@ -32,7 +32,6 @@ const LIVE = {
 const NOT_LIVE = [
   'countdown-slide', // timed: a clock, not an audience
   'follow-invite-slide', // renders the join code, collects nothing
-  'lead-capture-slide', // collects, but into lead storage, never the session
   'content-slide',
   'chart-slide',
   '',

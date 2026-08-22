@@ -19,7 +19,10 @@ function getGuestErrorMessage(errorCode) {
       'share.guest.error.rateLimited',
       'Too many requests. Please try again later.',
     ),
-    invalid_email: t(
+    // `invalid` (D52 collapsed `invalid_email` into it, carrying
+    // `details.field`). The only input this surface takes is the address, so
+    // the generic code can keep the specific copy here.
+    invalid: t(
       'share.guest.error.invalidEmail',
       'Please enter a valid email address.',
     ),

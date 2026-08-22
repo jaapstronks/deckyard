@@ -54,8 +54,6 @@
   "settings.admin.webhooks.feedbackSubmitted.hint": "Événement : interaction.feedback_submitted",
   "settings.admin.webhooks.feedbackSubmitted.title": "Lorsqu'un retour est envoyé",
   "settings.admin.webhooks.hint": "Configurez les URLs de webhook pour recevoir des payloads JSON POST lorsque certains événements se produisent.",
-  "settings.admin.webhooks.leadSubmitted.hint": "Événement : lead.submitted",
-  "settings.admin.webhooks.leadSubmitted.title": "Lorsqu'un lead est envoyé",
   "settings.admin.webhooks.likertClosed.hint": "Événement : interaction.likert_closed",
   "settings.admin.webhooks.likertClosed.title": "Lorsqu'une échelle de Likert est clôturée",
   "settings.admin.webhooks.movedToOrganization.hint": "Événement : presentation.moved_to_organization",
