@@ -102,7 +102,7 @@ gates are gone; `analyticsHeadHtml()` has one caller left, the shell.
 
 The trade is deliberate and it costs something: an operator who wants their own
 Plausible on their own published decks cannot have it. Three things decided it.
-A published deck is where *strangers* land, and unlike the shell there is no
+A published deck is where _strangers_ land, and unlike the shell there is no
 consent seam left on it (D47/D50). Widening the policy could not be done at the
 header alone — a browser enforces every policy it is given, so the document meta
 would have to widen too, and that meta is shared with seven render paths that

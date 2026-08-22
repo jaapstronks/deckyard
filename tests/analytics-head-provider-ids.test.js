@@ -166,26 +166,17 @@ describe('analytics head: provider ids are validated, not escaped', () => {
   it('validates the env-var path too, which bypasses the settings normalizer', () => {
     process.env.MATOMO_URL = 'https://m.example.com';
     process.env.MATOMO_SITE_ID = "1',alert(1),'";
-    assert.equal(
-      analyticsHeadHtml().includes('setSiteId'),
-      false,
-    );
+    assert.equal(analyticsHeadHtml().includes('setSiteId'), false);
 
     process.env.MATOMO_SITE_ID = '1';
     assert.match(analyticsHeadHtml(), /setSiteId/);
 
     process.env.GTM_CONTAINER_ID = "GTM-1',alert(1),'";
-    assert.equal(
-      analyticsHeadHtml().includes('alert(1)'),
-      false,
-    );
+    assert.equal(analyticsHeadHtml().includes('alert(1)'), false);
 
     process.env.PLAUSIBLE_DOMAIN = 'a.example.com';
     process.env.PLAUSIBLE_URL = "https://p.example.com/'+alert(1)+'";
-    assert.equal(
-      analyticsHeadHtml().includes('data-domain'),
-      false,
-    );
+    assert.equal(analyticsHeadHtml().includes('data-domain'), false);
   });
 
   it('leaves no blank line where a refused provider would have been', () => {

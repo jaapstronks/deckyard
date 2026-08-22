@@ -164,9 +164,7 @@ async function documentFrom(handle, pathAndQuery) {
 
 /** Every absolute `src` on a `<script>` tag in a document. */
 function externalScriptSrcs(html) {
-  return [
-    ...html.matchAll(/<script\b[^>]*\bsrc\s*=\s*["']?([^"'\s>]+)/gi),
-  ]
+  return [...html.matchAll(/<script\b[^>]*\bsrc\s*=\s*["']?([^"'\s>]+)/gi)]
     .map((m) => m[1])
     .filter((src) => /^(https?:)?\/\//i.test(src));
 }
