@@ -152,7 +152,12 @@ than silently shipping without your CSS.
 
 The reader is a genuinely different document — a semantic re-projection meant to
 stay readable with JavaScript _and_ author CSS off — so it deliberately shares
-no selectors with the canvas. Two named chains is the honest description; one
+no selectors with the canvas. **It reads no `--t-*` variable either**, which is
+the part that surprises people: a dark theme does not make the reading view
+dark. That is deliberate — the reader answers to the reading environment
+(`color-scheme: light dark`) and to its own contrast and line-length
+obligations, and a canvas theme picked for a projector is not a promise about
+either. Colour on the reader is a `custom/styles/` decision, not a theme one. Two named chains is the honest description; one
 chain plus an unexplained exception was the old one, and it left the reader as
 the single user-facing page a fork could not restyle. If you want your fork's
 type and colour on the reading view, write `.reader-*` rules in the same
