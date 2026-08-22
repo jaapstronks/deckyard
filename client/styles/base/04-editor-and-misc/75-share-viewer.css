@@ -290,6 +290,50 @@
   align-items: center;
 }
 
+/* Verification-failure banner: annotates the deck, never replaces it. */
+.share-viewer-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ps-space-3);
+  padding: var(--ps-space-2-5) var(--ps-space-3-5);
+  background: hsl(var(--app-danger) / 0.1);
+  border-bottom: 1px solid hsl(var(--app-danger) / 0.25);
+  color: hsl(var(--app-text-primary));
+}
+.share-viewer-notice-icon {
+  display: flex;
+  color: hsl(var(--app-danger));
+}
+.share-viewer-notice-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ps-space-1) var(--ps-space-2);
+  align-items: baseline;
+  font-size: var(--ps-text-base);
+}
+.share-viewer-notice-message {
+  color: hsl(var(--app-text-secondary));
+}
+.share-viewer-notice-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+}
+.share-viewer-notice-close {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 0 var(--ps-space-1);
+  font-size: var(--ps-text-lg);
+  line-height: 1;
+  color: hsl(var(--app-text-secondary));
+}
+.share-viewer-notice-close:hover {
+  color: hsl(var(--app-text-primary));
+}
+
 .share-viewer-stage {
   flex: 1;
   min-height: 0;
