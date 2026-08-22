@@ -4,7 +4,9 @@
  * Asserts the accessibility/reflow contract on the produced document:
  * single <h1>, one <h2> per slide with matching ids + aria-labelledby,
  * <header>/<nav>/<main> landmarks, <html lang/dir>, every <img> has an alt,
- * no <script> (readable with JS off), and no fixed 1600x900 canvas geometry.
+ * no <script> (readable with JS off), no fixed 1600x900 canvas geometry, and
+ * no `--t-*` — the reader shares neither selector nor variable vocabulary with
+ * the canvas chain.
  *
  * Run with: node --test tests/semantic-reader.test.js
  */
@@ -128,6 +130,19 @@ describe('accessibility + reflow contract', () => {
     assert.ok(
       !/position:\s*absolute/i.test(html),
       'no absolute canvas positioning',
+    );
+  });
+  it('reads no --t-* theme variable', () => {
+    // Not an oversight — a decision (D45). The reader is the reflow chain, and
+    // it answers to the reading environment (`color-scheme: light dark`) and to
+    // its own contrast and line-length obligations. A canvas theme is picked to
+    // look right on a projector; inheriting its colours is how a reading view
+    // quietly stops meeting the obligations it exists for. A fork that wants
+    // its brand here writes `.reader-*` rules in `custom/styles/`, which lands
+    // last on this chain too — see docs/reference/fork-setup.md § Two chains.
+    assert.ok(
+      !/--t-/.test(html),
+      'the reader chain shares no variable vocabulary with the canvas',
     );
   });
   it('projects markdown bodies as real semantic elements', () => {

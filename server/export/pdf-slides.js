@@ -415,7 +415,7 @@ export async function buildSlidesPdfHtml(
   // A4 landscape in CSS pixels varies by browser DPI; we use JS to scale the 1600x900 slide canvas per page.
   return `${buildDocumentHead({
     lang: docLang,
-    title: `${rawTitle} (PDF Slides)`,
+    title: rawTitle,
     head: [buildPrismKatexCdnTags()],
     styles: [`${buildStyleContent(css)}\n\n${gradients.extraCss}`],
   })}
