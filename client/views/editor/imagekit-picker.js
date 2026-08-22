@@ -14,7 +14,6 @@ export function openImageKitPicker({
   title = t('imagekit.title', 'ImageKit'),
   api,
   root,
-  openOverlayClosers,
   context = null,
   docId = '',
   onPick,
@@ -609,7 +608,7 @@ export function openImageKitPicker({
   ]);
 
   modal.append(layout);
-  modal.show(root, openOverlayClosers);
+  modal.show(root);
 
   // Initial boot
   (async () => {

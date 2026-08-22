@@ -7,7 +7,6 @@ import { h } from '../../../lib/dom.js';
  */
 export function openFollowInviteSuggestModal({
   root,
-  openOverlayClosers,
   onAddAsSecond,
   onAddBeforeCurrent,
   onSkip,
@@ -68,5 +67,5 @@ export function openFollowInviteSuggestModal({
   buttonsRow.append(addSecondBtn, addBeforeBtn, skipBtn);
 
   modal.append(description, buttonsRow);
-  modal.show(root, openOverlayClosers);
+  modal.show(root);
 }

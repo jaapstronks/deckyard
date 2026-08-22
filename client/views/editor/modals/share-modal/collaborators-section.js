@@ -28,7 +28,6 @@ import { ALL_PERMISSIONS } from '../../../../../shared/constants/permissions.js'
  * @param {boolean} [options.canTransfer] - Whether the current user may hand
  *   the deck over (the owner stamp only — see the share modal's mirror)
  * @param {HTMLElement} options.modalRoot - Root element for nested modals
- * @param {Array} [options.openOverlayClosers] - Overlay closers array
  * @returns {Object} { element, loadCollaborators, detach }
  */
 export function createCollaboratorsSection({
@@ -39,7 +38,6 @@ export function createCollaboratorsSection({
   toast,
   canTransfer,
   modalRoot,
-  openOverlayClosers,
 }) {
   let collaborators = [];
   let isAddingCollaborator = false;
@@ -209,25 +207,21 @@ export function createCollaboratorsSection({
       return;
     }
 
-    const newOwner = await promptModal(
-      modalRoot,
-      {
-        title: t('share.collaborators.transferOwnership', 'Transfer'),
-        message: t(
-          'share.collaborators.transferOwnershipPrompt',
-          'Enter the email of the new owner (must be an existing collaborator with edit access):\n\nEligible users: {users}',
-          {
-            users: eligibleUsers.map((u) => u.userEmail).join(', '),
-          },
-        ),
-        placeholder: t(
-          'share.collaborators.transferOwnershipPlaceholder',
-          'name@example.com',
-        ),
-        confirmLabel: t('common.continue', 'Continue'),
-      },
-      openOverlayClosers,
-    );
+    const newOwner = await promptModal(modalRoot, {
+      title: t('share.collaborators.transferOwnership', 'Transfer'),
+      message: t(
+        'share.collaborators.transferOwnershipPrompt',
+        'Enter the email of the new owner (must be an existing collaborator with edit access):\n\nEligible users: {users}',
+        {
+          users: eligibleUsers.map((u) => u.userEmail).join(', '),
+        },
+      ),
+      placeholder: t(
+        'share.collaborators.transferOwnershipPlaceholder',
+        'name@example.com',
+      ),
+      confirmLabel: t('common.continue', 'Continue'),
+    });
 
     if (!newOwner) return;
 
@@ -247,22 +241,18 @@ export function createCollaboratorsSection({
       return;
     }
 
-    const confirmed = await confirmModal(
-      modalRoot,
-      {
-        title: t('share.collaborators.transferOwnership', 'Transfer'),
-        message: t(
-          'share.collaborators.transferOwnershipConfirm',
-          'Transfer ownership of this presentation to {email}?\n\nYou will become a collaborator with edit access.',
-          {
-            email: trimmedEmail,
-          },
-        ),
-        confirmLabel: t('share.collaborators.transferOwnership', 'Transfer'),
-        danger: true,
-      },
-      openOverlayClosers,
-    );
+    const confirmed = await confirmModal(modalRoot, {
+      title: t('share.collaborators.transferOwnership', 'Transfer'),
+      message: t(
+        'share.collaborators.transferOwnershipConfirm',
+        'Transfer ownership of this presentation to {email}?\n\nYou will become a collaborator with edit access.',
+        {
+          email: trimmedEmail,
+        },
+      ),
+      confirmLabel: t('share.collaborators.transferOwnership', 'Transfer'),
+      danger: true,
+    });
 
     if (!confirmed) return;
 
@@ -365,7 +355,6 @@ export function createCollaboratorsSection({
             root: modalRoot || document.body,
             context: REVOKE_CONTEXT.COLLABORATOR,
             targetName: collab.userName || collab.userEmail,
-            openOverlayClosers,
           });
           if (!result.ok) return;
           try {

@@ -13,7 +13,6 @@ export async function openTranslateFieldModal({
   toast,
   root,
   lockDocumentScroll,
-  openOverlayClosers,
   normalizeLang,
   otherLang,
   markDirty,
@@ -173,5 +172,5 @@ export async function openTranslateFieldModal({
   btnRow.append(btnApply);
 
   modal.append(hint, card, btnRow);
-  modal.show(root, openOverlayClosers);
+  modal.show(root);
 }

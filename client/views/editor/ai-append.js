@@ -26,7 +26,6 @@ export function openAiAppendWizard({
   // step is skipped and slides insert directly, as before).
   theme = null,
   SLIDE_TYPES = null,
-  openOverlayClosers = null,
   onReviewInserted = null,
 } = {}) {
   const langMode = normalizeLang(pres?.i18n?.active) || 'nl';
@@ -262,7 +261,6 @@ export function openAiAppendWizard({
           api,
           theme,
           SLIDE_TYPES,
-          openOverlayClosers,
           batch: { slides: newSlides, rationale: resp?.rationale || '' },
           request: requestBody,
           onAccept: (slides) => insertBatch(slides),

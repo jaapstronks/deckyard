@@ -22,7 +22,6 @@ import { h } from '../../../../lib/dom.js';
  * @param {Function} options.copyToClipboard - Clipboard copy function
  * @param {Object} options.toast - Toast notification service
  * @param {HTMLElement} options.modalRoot - Root element for nested modals
- * @param {Array} [options.openOverlayClosers] - Overlay closers array
  * @returns {Object} { element, loadShareLinks }
  */
 export function createShareLinksSection({
@@ -31,7 +30,6 @@ export function createShareLinksSection({
   copyToClipboard,
   toast,
   modalRoot,
-  openOverlayClosers,
 }) {
   let shareLinks = [];
   let isCreating = false;
@@ -376,7 +374,6 @@ export function createShareLinksSection({
             root: modalRoot || document.body,
             context: REVOKE_CONTEXT.SHARE_LINK,
             targetName: link.label || t('share.link.unlabeled', 'Unlabeled'),
-            openOverlayClosers,
           });
           if (!result.ok) return;
           try {

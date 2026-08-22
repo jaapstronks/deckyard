@@ -8,13 +8,79 @@ export { createBusyManager } from './busy.js';
  * and topness is read straight off the DOM: overlays mount in open order, so
  * the last marked backdrop in document order is the one on top.
  *
- * Deliberately not a module-level stack — a second window (the presenter) has
- * its own document, and `ownerDocument` answers for it for free. The wider
- * question of where overlay-wide state should live (module singleton vs. a map
- * per document) is still open in A7.33 PR 4; this attribute holds no state of
- * its own, so that decision can still go either way.
+ * This marker survived A7.33 PR 4 rather than being absorbed into the closer
+ * register below, because the two answer different questions. Topness is an
+ * *ordering* question and the DOM already holds the order; the register is an
+ * unordered Set and could not answer it without becoming a stack that has to
+ * stay in sync with mount order. Keeping the marker leaves the register with
+ * exactly one job — close everything open in this document — and leaves Escape
+ * with no state of its own at all.
  */
 const OPEN_OVERLAY_ATTR = 'data-overlay-open';
+
+/**
+ * Every open overlay's `close`, keyed by the document it is mounted in.
+ *
+ * A view tears down by closing whatever it left open (`closeAllOverlays`), and
+ * until A7.33 PR 4 the Set for that travelled from the view root down to every
+ * modal call site as an optional 4th positional argument — ~200 pass-through
+ * lines across 55 files, where forgetting one silently dropped that overlay out
+ * of close-all. Registration now happens inside `createOverlay`, where it
+ * cannot be forgotten, and no caller passes anything.
+ *
+ * Keyed on `Document`, not a bare module singleton: the presenter's projector
+ * runs in a second window with its own document, and a jsdom test builds one
+ * document per case. `WeakMap` so a discarded document takes its Set with it
+ * (D44, docs/plans/briefs/ambient-parameter-threading.md).
+ *
+ * @type {WeakMap<Document, Set<Function>>}
+ */
+const overlayClosersByDocument = new WeakMap();
+
+/**
+ * Registers an overlay's close function against its document.
+ *
+ * Call this with an element that is already mounted — `ownerDocument` is the
+ * key, and appending into another document adopts the node, so registering
+ * before the append would file it under the wrong document.
+ *
+ * @param {HTMLElement} el - A mounted element belonging to the overlay
+ * @param {Function} close - The overlay's close function
+ * @returns {Function} Unregister; safe to call more than once
+ */
+export function registerOverlayCloser(el, close) {
+  const doc = el?.ownerDocument;
+  if (!doc || typeof close !== 'function') return () => {};
+  let closers = overlayClosersByDocument.get(doc);
+  if (!closers) {
+    closers = new Set();
+    overlayClosersByDocument.set(doc, closers);
+  }
+  closers.add(close);
+  return () => closers.delete(close);
+}
+
+/**
+ * Closes every overlay currently open in `doc`.
+ *
+ * The teardown path of a view: whatever it left open goes with it. Each
+ * `close` deregisters itself, so the Set empties as it drains; the explicit
+ * clear at the end covers a closer that threw before reaching its `finally`.
+ *
+ * @param {Document} [doc=document] - Document whose overlays should close
+ */
+export function closeAllOverlays(doc = document) {
+  const closers = overlayClosersByDocument.get(doc);
+  if (!closers) return;
+  for (const close of Array.from(closers)) {
+    try {
+      close();
+    } catch {
+      // One overlay's failure must not strand the ones behind it.
+    }
+  }
+  closers.clear();
+}
 
 /**
  * Whether `backdrop` is the topmost open overlay in its document.
@@ -73,8 +139,8 @@ export function createOverlay(options = {}) {
 
   const backdrop = h('div', { class: backdropClass });
 
-  // Track overlay closers for cleanup
-  let openOverlayClosers = null;
+  // Deregisters this overlay from its document's closer set; set on show.
+  let unregisterCloser = null;
   let open = false;
   let busy = false;
   let confirmingClose = false;
@@ -109,7 +175,8 @@ export function createOverlay(options = {}) {
       }
       previousActiveElement = null;
     } finally {
-      openOverlayClosers?.delete(close);
+      unregisterCloser?.();
+      unregisterCloser = null;
       onClose?.(result);
     }
   }
@@ -175,12 +242,10 @@ export function createOverlay(options = {}) {
   /**
    * Show the overlay
    * @param {HTMLElement} root - Element to append the overlay to
-   * @param {Set} [overlayClosers] - Set to register close function for cleanup
    */
-  function show(root, overlayClosers) {
+  function show(root) {
     if (open) return;
     open = true;
-    openOverlayClosers = overlayClosers || null;
 
     // Save currently focused element to restore later
     previousActiveElement = document.activeElement;
@@ -196,7 +261,9 @@ export function createOverlay(options = {}) {
     backdrop.setAttribute(OPEN_OVERLAY_ATTR, '');
     root.append(backdrop);
 
-    openOverlayClosers?.add(close);
+    // After the append: the backdrop's `ownerDocument` is the register's key,
+    // and appending into another document adopts the node.
+    unregisterCloser = registerOverlayCloser(backdrop, close);
     document.addEventListener('keydown', onKey);
 
     // Activate focus trap
@@ -346,9 +413,8 @@ export function createModal(options = {}) {
   /**
    * Show the modal
    * @param {HTMLElement} root - Element to append modal to
-   * @param {Set} [overlayClosers] - Set to register close function for cleanup
    */
-  function show(root, overlayClosers) {
+  function show(root) {
     if (overlay.isOpen()) return;
 
     // Build modal structure
@@ -357,7 +423,7 @@ export function createModal(options = {}) {
     if (hint) modal.append(hint);
     modal.append(content);
 
-    overlay.show(root, overlayClosers);
+    overlay.show(root);
   }
 
   /**
@@ -423,12 +489,11 @@ export function createModal(options = {}) {
  *
  * @param {HTMLElement} root - Element to append modal to
  * @param {Object} options - Modal options (see createModal)
- * @param {Set} [overlayClosers] - Set to register close function for cleanup
  * @returns {Object} Modal API object
  */
-export function openModal(root, options = {}, overlayClosers) {
+export function openModal(root, options = {}) {
   const modalApi = createModal(options);
-  modalApi.show(root, overlayClosers);
+  modalApi.show(root);
   return modalApi;
 }
 
@@ -442,10 +507,9 @@ export function openModal(root, options = {}, overlayClosers) {
  * @param {string} [options.confirmLabel] - Confirm button label
  * @param {string} [options.cancelLabel] - Cancel button label
  * @param {boolean} [options.danger=false] - Use danger styling for confirm
- * @param {Set} [overlayClosers] - Set to register close function for cleanup
  * @returns {Promise<boolean>} Resolves true if confirmed, false if cancelled
  */
-export function confirmModal(root, options = {}, overlayClosers) {
+export function confirmModal(root, options = {}) {
   const {
     title: titleText,
     message,
@@ -477,7 +541,7 @@ export function confirmModal(root, options = {}, overlayClosers) {
     actions.append(btnCancel, btnConfirm);
 
     modalApi.content.append(messageEl, actions);
-    modalApi.show(root, overlayClosers);
+    modalApi.show(root);
   });
 }
 
@@ -494,10 +558,9 @@ export function confirmModal(root, options = {}, overlayClosers) {
  * @param {string} [options.confirmLabel] - Confirm button label
  * @param {string} [options.cancelLabel] - Cancel button label
  * @param {Function} [options.validate] - Validation fn (value) => errorMessage|null
- * @param {Set} [overlayClosers] - Set to register close function for cleanup
  * @returns {Promise<string|null>} Resolves to the entered value, or null if cancelled
  */
-export function promptModal(root, options = {}, overlayClosers) {
+export function promptModal(root, options = {}) {
   const {
     title: titleText,
     message,
@@ -546,7 +609,7 @@ export function promptModal(root, options = {}, overlayClosers) {
     if (message) children.push(h('div', { class: 'help', text: message }));
     children.push(field.wrap, actions);
     modalApi.content.append(...children);
-    modalApi.show(root, overlayClosers);
+    modalApi.show(root);
     // The field carries an `autofocus` attribute, but that only applies to
     // markup present at page load, so the prompt opened with focus on its
     // first focusable element — the Cancel button. Typing went nowhere and

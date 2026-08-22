@@ -55,7 +55,6 @@ function setup(pres) {
     pres,
     theme: {},
     SLIDE_TYPES: {},
-    openOverlayClosers: new Set(),
     editorState: {},
     nav: {},
     setSelectedSlideId: (id) => calls.selected.push(id),

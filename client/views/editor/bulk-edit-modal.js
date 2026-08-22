@@ -31,7 +31,6 @@ import { h } from '../../lib/dom.js';
  *   this modal lives on document.body, so it mirrors that gating itself
  *   (prev/next can land on a locked slide).
  * @param {Function} [opts.onClosed] - called after close (resync main form)
- * @param {Set} [opts.openOverlayClosers]
  * @returns {{ open: Function }}
  */
 export function createBulkEditModal({
@@ -42,7 +41,6 @@ export function createBulkEditModal({
   getTheme,
   getSlideLockKind,
   onClosed,
-  openOverlayClosers,
 } = {}) {
   function open() {
     let detachScale = null;
@@ -171,7 +169,7 @@ export function createBulkEditModal({
       refresh();
     }
 
-    modal.show(document.body, openOverlayClosers);
+    modal.show(document.body);
     detachScale = attachThumbScaleContain(previewThumb, {
       containerEl: previewStage,
       padding: 16,

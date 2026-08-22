@@ -8,7 +8,6 @@ export function openPublishModal({
   pres,
   id,
   root,
-  openOverlayClosers,
   lockDocumentScroll,
   copyToClipboard,
   syncPublishUi,
@@ -462,7 +461,7 @@ export function openPublishModal({
   // Put "Publicatie" controls at the top (most important + potentially destructive),
   // then preview, then the slug, then the link guidance + link sections.
   modal.append(dangerRow, previewRow, slugRow, topHelp, grid);
-  modal.show(root, openOverlayClosers);
+  modal.show(root);
 
   // Convenience: copy the public URL on open, but never block the UI if it fails.
   copyToClipboard(url).catch(() => {});

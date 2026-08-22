@@ -72,7 +72,6 @@ function renderForm({ theme = null } = {}) {
     rerenderSlideList: noop,
     rerenderPreview: noop,
     fieldRenderers: createFieldRenderers(deps),
-    openOverlayClosers: new Set(),
     theme,
   }).rerender();
   return editorMount;

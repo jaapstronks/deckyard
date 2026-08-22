@@ -68,7 +68,6 @@ function getLangLabel(lang) {
  * @param {Object} options.pres - The presentation (for themeId)
  * @param {Function} options.api - API function
  * @param {string} options.suggestedName - Suggested name for the slide
- * @param {Set} [options.openOverlayClosers] - Set for overlay cleanup
  * @param {Function} [options.openSlideLibraryModal] - Callback to open library after save
  */
 export function openSaveToLibraryModal({
@@ -77,7 +76,6 @@ export function openSaveToLibraryModal({
   pres,
   api,
   suggestedName = '',
-  openOverlayClosers,
   openSlideLibraryModal,
 } = {}) {
   const modal = createModal({
@@ -381,7 +379,7 @@ export function openSaveToLibraryModal({
   modal.content.append(nameField, descField, tagsField);
   if (langField) modal.content.append(langField);
   modal.content.append(shelfField, status, actions.wrap);
-  modal.show(root, openOverlayClosers);
+  modal.show(root);
 
   // Focus and select the name input
   try {

@@ -28,7 +28,6 @@ export function openSettingsModal({
   root,
   pres,
   api,
-  openOverlayClosers,
   markDirty,
   requestSave,
   toast,
@@ -53,7 +52,6 @@ export function openSettingsModal({
     pres,
     api,
     toast,
-    openOverlayClosers,
     modal,
     onThemeChanged,
     onNavigateToSlide,
@@ -95,5 +93,5 @@ export function openSettingsModal({
     };
   }
 
-  modal.show(root, openOverlayClosers);
+  modal.show(root);
 }

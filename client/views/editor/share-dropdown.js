@@ -26,7 +26,6 @@ export function setupShareDropdown({
   requestSave,
   isDirty,
   root,
-  openOverlayClosers,
   editorState,
   currentUser,
   currentUserEmail,
@@ -72,7 +71,6 @@ export function setupShareDropdown({
       pres,
       id,
       root,
-      openOverlayClosers,
       lockDocumentScroll,
       copyToClipboard,
       syncPublishUi: syncShareUi,
@@ -87,7 +85,6 @@ export function setupShareDropdown({
       id,
       requestSave,
       openPublishModal: opm || openPublishModalBound,
-      openOverlayClosers,
     });
 
   const openExport = () =>
@@ -95,7 +92,6 @@ export function setupShareDropdown({
       pres,
       id,
       root: root || document.body,
-      overlayClosers: openOverlayClosers,
     });
 
   button.addEventListener('click', () => {
@@ -104,7 +100,6 @@ export function setupShareDropdown({
       pres,
       id,
       root,
-      openOverlayClosers,
       lockDocumentScroll,
       copyToClipboard,
       toast,

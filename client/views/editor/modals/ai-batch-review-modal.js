@@ -21,7 +21,6 @@ import { h } from '../../../lib/dom.js';
  * @param {Function} options.api - API fetch function
  * @param {Object} options.theme - Resolved theme (truthful previews)
  * @param {Object} options.SLIDE_TYPES - Slide type registry
- * @param {Set} [options.openOverlayClosers]
  * @param {Object} options.batch - { slides, rationale } from /api/ai/append-slides
  * @param {Object} options.request - The original request body (raw, lang,
  *   contentOnly, verbatim, vendor, deck) used to re-run generation on Adjust
@@ -33,7 +32,6 @@ export function openAiBatchReviewModal({
   api,
   theme,
   SLIDE_TYPES,
-  openOverlayClosers,
   batch,
   request,
   onAccept,
@@ -44,30 +42,26 @@ export function openAiBatchReviewModal({
   let busy = false;
   let grid = null;
 
-  const modalApi = openModal(
-    root,
-    {
-      title: t('editor.aiReview.title', 'Review AI slides'),
-      hint: t(
-        'editor.aiReview.hint',
-        'Nothing has been added yet. Inspect the proposed slides, switch types where useful, then accept or adjust the batch.',
-      ),
-      modalClass: 'modal-ai-review',
-      // The batch only exists in this modal until it's accepted: guard the
-      // implicit close paths (Esc, backdrop, the header Close button) with a
-      // confirm. The explicit Discard/Accept buttons close directly.
-      isDirty: () => true,
-      confirmMessage: t(
-        'editor.aiReview.closeConfirm',
-        'Close the review and discard the generated slides? Nothing has been added to the deck yet.',
-      ),
-      onClose: (result) => {
-        grid?.teardown();
-        if (!result?.accepted) onDiscard?.();
-      },
+  const modalApi = openModal(root, {
+    title: t('editor.aiReview.title', 'Review AI slides'),
+    hint: t(
+      'editor.aiReview.hint',
+      'Nothing has been added yet. Inspect the proposed slides, switch types where useful, then accept or adjust the batch.',
+    ),
+    modalClass: 'modal-ai-review',
+    // The batch only exists in this modal until it's accepted: guard the
+    // implicit close paths (Esc, backdrop, the header Close button) with a
+    // confirm. The explicit Discard/Accept buttons close directly.
+    isDirty: () => true,
+    confirmMessage: t(
+      'editor.aiReview.closeConfirm',
+      'Close the review and discard the generated slides? Nothing has been added to the deck yet.',
+    ),
+    onClose: (result) => {
+      grid?.teardown();
+      if (!result?.accepted) onDiscard?.();
     },
-    openOverlayClosers,
-  );
+  });
 
   const rationaleEl = h('div', { class: 'ai-review-rationale' });
   const setRationale = (text) => {

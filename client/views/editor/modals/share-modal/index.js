@@ -30,7 +30,6 @@ import { h } from '../../../../lib/dom.js';
  * @param {Object} options.pres - Presentation object
  * @param {string} options.id - Presentation ID
  * @param {HTMLElement} options.root - Root element to append the modal to
- * @param {Set} options.openOverlayClosers - Set of overlay close functions
  * @param {Function} options.lockDocumentScroll - Locks document scroll
  * @param {Function} options.copyToClipboard - Copies text to the clipboard
  * @param {Object} options.toast - Toast notification service
@@ -56,7 +55,6 @@ export function openShareModal({
   pres,
   id,
   root,
-  openOverlayClosers,
   lockDocumentScroll,
   copyToClipboard,
   toast,
@@ -115,7 +113,6 @@ export function openShareModal({
     isAdmin,
     modalRoot: root,
     openDescriptionModal,
-    openOverlayClosers,
   });
 
   collaborators = createCollaboratorsSection({
@@ -126,7 +123,6 @@ export function openShareModal({
     toast,
     canTransfer,
     modalRoot: root,
-    openOverlayClosers,
   });
 
   const organizationPanel = h(
@@ -142,7 +138,6 @@ export function openShareModal({
     copyToClipboard,
     toast,
     modalRoot: root,
-    openOverlayClosers,
   });
   const linkPanel = h('div', { class: 'share-tab-panel', 'data-tab': 'link' }, [
     shareLinks.element,
@@ -213,7 +208,7 @@ export function openShareModal({
   ]);
 
   modal.append(tabs.el, body);
-  modal.show(root, openOverlayClosers);
+  modal.show(root);
 
   showTab(tabs.getValue());
 

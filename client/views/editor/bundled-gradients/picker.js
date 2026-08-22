@@ -31,13 +31,11 @@ const TONES = [
 /**
  * @param {Object} opts
  * @param {HTMLElement} opts.root
- * @param {Set<Function>} [opts.openOverlayClosers]
  * @param {string} [opts.title]
  * @param {(picked: { url: string, alt: string, tags: string[], meta: Object }) => void} opts.onPick
  */
 export function openBundledGradientPicker({
   root,
-  openOverlayClosers,
   title = t('stockMedia.gradients.title', 'Gradients'),
   onPick,
 } = {}) {
@@ -46,19 +44,15 @@ export function openBundledGradientPicker({
   const unlockScroll = lockDocumentScroll();
   let tone = 'all';
 
-  const modalApi = openModal(
-    root,
-    {
-      title,
-      hint: t(
-        'stockMedia.gradients.hint',
-        'Abstract backgrounds generated from the built-in themes. No attribution needed.',
-      ),
-      modalClass: 'gradient-picker-modal',
-      onClose: () => unlockScroll(),
-    },
-    openOverlayClosers,
-  );
+  const modalApi = openModal(root, {
+    title,
+    hint: t(
+      'stockMedia.gradients.hint',
+      'Abstract backgrounds generated from the built-in themes. No attribution needed.',
+    ),
+    modalClass: 'gradient-picker-modal',
+    onClose: () => unlockScroll(),
+  });
 
   const statusLine = h('div', { class: 'help ui-status-line' });
   const filterBar = h('div', { class: 'row gradient-picker-filters' });

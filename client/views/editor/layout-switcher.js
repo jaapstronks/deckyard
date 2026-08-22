@@ -24,6 +24,7 @@ import {
   slideTypeLabel,
 } from './convert-slide-action.js';
 import { renderSlideSchematic } from '../../lib/slide-authoring/slide-schematic.js';
+import { registerOverlayCloser } from '../../lib/dom/modal.js';
 import { h } from '../../lib/dom.js';
 
 /**
@@ -111,7 +112,6 @@ function renderSchematic(variant, mirrored) {
  * @param {Object} opts.pres
  * @param {Object} opts.SLIDE_TYPES
  * @param {Object} opts.editorState - createEditorStateUpdater instance
- * @param {Set<Function>} [opts.openOverlayClosers]
  * @returns {HTMLElement|null}
  */
 export function createLayoutSwitcherChip({
@@ -119,7 +119,6 @@ export function createLayoutSwitcherChip({
   pres,
   SLIDE_TYPES,
   editorState,
-  openOverlayClosers,
 } = {}) {
   const def = SLIDE_TYPES?.[slide?.type];
   const variants = getLayoutVariants(def);
@@ -138,6 +137,7 @@ export function createLayoutSwitcherChip({
   );
 
   let close = null;
+  let unregisterCloser = null;
 
   const openPopover = () => {
     const popover = h('div', {
@@ -369,10 +369,11 @@ export function createLayoutSwitcherChip({
       document.removeEventListener('keydown', onKey, true);
       popover.remove();
       chip.setAttribute('aria-expanded', 'false');
-      openOverlayClosers?.delete(close);
+      unregisterCloser?.();
+      unregisterCloser = null;
       close = null;
     };
-    openOverlayClosers?.add(close);
+    unregisterCloser = registerOverlayCloser(popover, close);
     setTimeout(() => {
       document.addEventListener('click', onDocClick, true);
     }, 0);

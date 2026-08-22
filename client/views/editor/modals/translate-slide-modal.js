@@ -12,7 +12,6 @@ export async function openTranslateSlideModal({
   toast,
   root,
   lockDocumentScroll,
-  openOverlayClosers,
   normalizeLang,
   otherLang,
   translatableKeysForType,
@@ -221,5 +220,5 @@ export async function openTranslateSlideModal({
   btnRow.append(btnApply);
 
   modal.append(hint, list, btnRow);
-  modal.show(root, openOverlayClosers);
+  modal.show(root);
 }

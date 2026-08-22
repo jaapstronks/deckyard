@@ -10,7 +10,6 @@ export function openSlideLibraryModal({
   SLIDE_TYPES,
   afterSlideId = null,
   insertFromLibraryItem,
-  openOverlayClosers,
   initialShelf = 'organization',
   initialQuery = '',
   allowInsert = true,
@@ -33,7 +32,7 @@ export function openSlideLibraryModal({
 
   const mount = h('div', { class: 'ps-slide-library-mount' });
   modal.append(hint, mount);
-  modal.show(root, openOverlayClosers);
+  modal.show(root);
 
   const picker = createSlideLibraryPicker({
     api,

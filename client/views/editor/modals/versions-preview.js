@@ -17,7 +17,6 @@ import { h } from '../../../lib/dom.js';
  * @param {string} options.presentationId - Presentation ID
  * @param {Object} options.version - Version metadata
  * @param {Object} options.theme - Theme for rendering
- * @param {Set} options.openOverlayClosers - Overlay closers set
  */
 export function openVersionPreviewModal({
   root,
@@ -25,7 +24,6 @@ export function openVersionPreviewModal({
   presentationId,
   version,
   theme,
-  openOverlayClosers,
 } = {}) {
   const versionDate = formatDateTime(version?.created);
   const versionLabel = version?.label || '';
@@ -48,7 +46,7 @@ export function openVersionPreviewModal({
   const grid = h('div', { class: 'version-preview-grid' });
 
   modal.content.append(status, grid);
-  modal.show(root, openOverlayClosers);
+  modal.show(root);
 
   // Load version data
   loadVersionData();

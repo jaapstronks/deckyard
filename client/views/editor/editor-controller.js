@@ -31,6 +31,7 @@ import { createImagePickers } from './image-pickers.js';
 import { createFieldRenderers } from './fields.js';
 import { setupSlideList } from './slide-list.js';
 import { createRerenderEditor } from './editor-form.js';
+import { closeAllOverlays } from '../../lib/dom/modal.js';
 import { createBulkEditModal } from './bulk-edit-modal.js';
 import { createNotesStrip } from './notes-strip.js';
 import { createPreviewPanel } from './preview-panel.js';
@@ -72,7 +73,6 @@ import { attachEditorFindShortcut } from './find-shortcut.js';
 import { attachEditorShortcutsHelp } from './shortcuts.js';
 import { translatableKeysForType } from './translatable.js';
 import { focusSearchHitInEditor } from './search-focus.js';
-import { createOverlayRegistry } from './overlays.js';
 import { createResponsiveDrawers } from './responsive-drawers.js';
 import { createEditorStateUpdater } from '../../lib/state/editor-state.js';
 import { createEditorDropdowns } from './editor-dropdowns.js';
@@ -327,8 +327,6 @@ export async function createEditorController({
     commentsPanel?.onSlideChanged?.();
   };
 
-  const { openOverlayClosers, closeAll: closeAllOverlays } =
-    createOverlayRegistry();
   let conflictModalShown = false;
 
   // ============================================================
@@ -356,7 +354,6 @@ export async function createEditorController({
         root,
         pres,
         conflictDetails: err?.details || null,
-        openOverlayClosers,
       });
     },
     onRemoteMerge: ({ changedSlideIds } = {}) => {
@@ -417,7 +414,6 @@ export async function createEditorController({
                       /* ignore */
                     }
                   },
-                  openOverlayClosers,
                 }),
             },
           },
@@ -513,7 +509,6 @@ export async function createEditorController({
       root,
       pres,
       setTitle: titleCtl.setTitle,
-      openOverlayClosers,
       newTitleKey,
       mode,
     });
@@ -586,7 +581,6 @@ export async function createEditorController({
     pres,
     id,
     saveManager,
-    openOverlayClosers,
     editorState,
     user,
   });
@@ -605,7 +599,6 @@ export async function createEditorController({
     pres,
     theme,
     SLIDE_TYPES,
-    openOverlayClosers,
     editorState,
     nav,
     setSelectedSlideId: setSelectedSlideIdWithLock,
@@ -656,7 +649,6 @@ export async function createEditorController({
     topbarExportEl: dropdowns.topbarExport,
     topbarShareEl: dropdowns.topbarShare,
     syncShareUi: dropdowns.syncShareUi,
-    openOverlayClosers,
     markDirty,
     onOpenOverview: openDeckOverview,
     onAnalyze: () => {
@@ -666,7 +658,6 @@ export async function createEditorController({
         toast,
         pres,
         id,
-        openOverlayClosers,
         onComplete: ({ suggestionCount } = {}) => {
           if (suggestionCount > 0) {
             // AI suggestions can land on any slide: widen the pane to the
@@ -727,7 +718,6 @@ export async function createEditorController({
     clearMultiSelection: () => {
       selectedSlideIds = new Set();
     },
-    openOverlayClosers,
     openAiAppendWizardModal,
     openDeckOverview,
     isSlidesCollapsed: () =>
@@ -800,7 +790,6 @@ export async function createEditorController({
       requestSave,
       rerenderEditor: () => rerenderEditor(),
       rerenderPreview: () => rerenderPreview(),
-      overlayClosers: openOverlayClosers,
     });
   };
 
@@ -837,7 +826,6 @@ export async function createEditorController({
     attachThumbScaleContain,
     renderSlideElement: (s, opts) =>
       renderSlideElement(s, { ...(opts || {}), lang: resolveDeckLang(pres) }),
-    openOverlayClosers,
     getSelectedSlideId: () => selectedSlideId,
     nav,
     commentsApi,
@@ -1279,7 +1267,6 @@ export async function createEditorController({
     user,
     api,
     features,
-    openOverlayClosers,
   });
 
   // ============================================================
@@ -1316,7 +1303,6 @@ export async function createEditorController({
       toast,
       root,
       lockDocumentScroll,
-      openOverlayClosers,
       normalizeLang,
       otherLang,
       translatableKeysForType: translatableKeysForSlideType,
@@ -1359,7 +1345,6 @@ export async function createEditorController({
     onTranslateField: ({ slideId, key }) =>
       openTranslateFieldModal({ slideId, key }),
     user,
-    openOverlayClosers,
     isAuthor: isAuthor(),
     disabledSlideTypes,
     features,
@@ -1378,7 +1363,6 @@ export async function createEditorController({
     // The shell-scoped locked-slide CSS can't reach the modal (it mounts on
     // document.body), so it asks for the lock state and gates itself.
     getSlideLockKind,
-    openOverlayClosers,
     // Resync the panel form after the modal closes: the modal's structural
     // edits rerender its own form instance, not the panel behind it.
     onClosed: () => rerenderEditor(),

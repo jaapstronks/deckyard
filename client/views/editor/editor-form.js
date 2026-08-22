@@ -61,7 +61,6 @@ export function createRerenderEditor({
   onTranslateSlide,
   onTranslateField,
   user,
-  openOverlayClosers,
   isAuthor,
   disabledSlideTypes,
   features,
@@ -217,7 +216,6 @@ export function createRerenderEditor({
           pres,
           SLIDE_TYPES,
           editorState,
-          openOverlayClosers,
         });
         if (layoutChip) tbLeft.append(layoutChip);
 
@@ -251,7 +249,6 @@ export function createRerenderEditor({
         rerenderEditor,
         onTranslateSlide,
         user,
-        openOverlayClosers,
         markDirty,
         rerenderPreview,
         rerenderSlideList,
@@ -272,7 +269,6 @@ export function createRerenderEditor({
         markDirty,
         editorState,
         features,
-        openOverlayClosers,
       });
       if (dsBar) editorMount.append(dsBar);
     }

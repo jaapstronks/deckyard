@@ -20,7 +20,6 @@ import { openTranslateFieldModal as openTranslateFieldModalImpl } from './modals
  * @param {object} ctx.toast - toast helper
  * @param {HTMLElement} ctx.root - editor root (overlay mount host)
  * @param {Function} ctx.lockDocumentScroll - scroll-lock helper
- * @param {Function} ctx.openOverlayClosers - overlay registry closer collector
  * @param {Function} ctx.normalizeLang - language normalizer
  * @param {Function} ctx.otherLang - "the other" language resolver
  * @param {Function} ctx.translatableKeysForType - translatable-keys resolver (slide modal only)
@@ -38,7 +37,6 @@ export function createTranslateOpeners({
   toast,
   root,
   lockDocumentScroll,
-  openOverlayClosers,
   normalizeLang,
   otherLang,
   translatableKeysForType,
@@ -57,7 +55,6 @@ export function createTranslateOpeners({
       toast,
       root,
       lockDocumentScroll,
-      openOverlayClosers,
       normalizeLang,
       otherLang,
       translatableKeysForType,
@@ -78,7 +75,6 @@ export function createTranslateOpeners({
       toast,
       root,
       lockDocumentScroll,
-      openOverlayClosers,
       normalizeLang,
       otherLang,
       markDirty,

@@ -27,7 +27,6 @@ import { h } from '../../../../lib/dom.js';
  * @param {boolean} options.isAdmin - Whether the current user is an admin
  * @param {HTMLElement} options.modalRoot - Root element for nested confirm modals
  * @param {Function} options.openDescriptionModal - Opens the description modal
- * @param {Set} [options.openOverlayClosers] - Overlay closers set
  * @returns {{ element: HTMLElement, refresh: Function }}
  */
 export function createVisibilitySection({
@@ -42,7 +41,6 @@ export function createVisibilitySection({
   isAdmin,
   modalRoot,
   openDescriptionModal,
-  openOverlayClosers,
 }) {
   const section = h('div', { class: 'share-visibility-section' });
   const title = h('div', {
@@ -134,7 +132,6 @@ export function createVisibilitySection({
         pres,
         id,
         context: 'share',
-        openOverlayClosers,
         requestSave,
       });
       if (!r?.ok) {
@@ -151,23 +148,19 @@ export function createVisibilitySection({
       render();
       return;
     }
-    const ok = await confirmModal(
-      modalRoot || document.body,
-      {
-        title: t('editor.share.private', 'Move to private'),
-        message: t(
-          'editor.share.private.confirm',
-          'Move "{title}" to private? It will no longer be visible to other workspace members.',
-          {
-            title:
-              pres?.title ||
-              t('editor.share.thisPresentation', 'this presentation'),
-          },
-        ),
-        confirmLabel: t('editor.share.private', 'Move to private'),
-      },
-      openOverlayClosers,
-    );
+    const ok = await confirmModal(modalRoot || document.body, {
+      title: t('editor.share.private', 'Move to private'),
+      message: t(
+        'editor.share.private.confirm',
+        'Move "{title}" to private? It will no longer be visible to other workspace members.',
+        {
+          title:
+            pres?.title ||
+            t('editor.share.thisPresentation', 'this presentation'),
+        },
+      ),
+      confirmLabel: t('editor.share.private', 'Move to private'),
+    });
     if (!ok) {
       render();
       return;

@@ -93,7 +93,6 @@ export async function doPublish({
   id,
   requestSave,
   openPublishModal,
-  openOverlayClosers,
   activeLang = null,
 } = {}) {
   // Make sure the latest edits are persisted before publishing.
@@ -114,7 +113,6 @@ export async function doPublish({
         pres,
         id,
         context: 'publish',
-        openOverlayClosers,
         requestSave,
       });
       if (!r?.ok) return null;

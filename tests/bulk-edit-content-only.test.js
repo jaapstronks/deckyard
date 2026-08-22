@@ -71,7 +71,6 @@ function renderForm({ contentOnly, setInspectorCollapsed = null }) {
     rerenderSlideList: noop,
     rerenderPreview: noop,
     fieldRenderers: createFieldRenderers(deps),
-    openOverlayClosers: new Set(),
     contentOnly,
     setInspectorCollapsed,
   }).rerender;
