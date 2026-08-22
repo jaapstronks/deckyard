@@ -161,8 +161,35 @@ function attachStageScale() {
  * One caller today (the standalone/published export — it is the only render
  * path with a live form in it), but it lives here because it is *runtime*: the
  * alternative is a second place where a render path writes its own script, and
- * that is the thing this module exists to prevent. Its consent behaviour is a
- * separate open item (B103) and is unchanged here.
+ * that is the thing this module exists to prevent.
+ *
+ * ## Why this diverges from client/lib/slide-runtime/lead-capture-runtime.js
+ *
+ * The canonical runtime gates submission on `hasMarketingConsent()` — the
+ * cookie-consent banner's marketing category. **This copy deliberately does
+ * not, and that is the whole of the difference** (B103, decided as D47: *the
+ * form is the consent*).
+ *
+ * The reasoning: a banner is a mechanism for consenting to *storage on the
+ * visitor's device*, and this form stores nothing on anyone's device until it
+ * has already been submitted. What it needs consent for is the processing of a
+ * name and an address, and the form asks for exactly that, in the open, with a
+ * required checkbox whose text the author writes. That text travels with the
+ * submission as `consentText` and is stored beside the lead as the consent
+ * record — `POST /api/leads` refuses a submission without it. On a standalone
+ * download there is no banner to gate on in the first place, so importing the
+ * gate would not add a consent step, it would remove the form.
+ *
+ * So: the checkbox *is* the consent here, and the author's obligation is that
+ * its text names the processing (`privacyText`, a required field — see its
+ * helpText in shared/slide-types/types/lead-capture-slide.js). The two
+ * runtimes are pinned against one shared consent assertion in
+ * tests/lead-capture-consent-parity.test.js, which also pins this divergence
+ * as deliberate rather than letting it read as an omission.
+ *
+ * Everything else here tracks the canonical runtime, error texts included:
+ * they are read off the same `data-error-*` attributes the slide type renders,
+ * so a Dutch deck fails in Dutch.
  */
 const LEAD_CAPTURE_RUNTIME = `${SLIDE_RUNTIME_BANNER}
 function initLeadCaptureForms() {
@@ -174,6 +201,16 @@ function initLeadCaptureForms() {
     const formState = slideEl.querySelector('[data-lead-state="form"]');
     const thankYouState = slideEl.querySelector('[data-lead-state="thankyou"]');
     const errorEl = slideEl.querySelector('[data-lead-error="1"]');
+
+    // Same attributes the canonical runtime reads, with the same fallbacks:
+    // the slide type renders the author's (localised) strings onto the slide
+    // element, so nothing here needs a language of its own.
+    const i18n = {
+      enterName: slideEl.dataset.errorEnterName || 'Please enter your name.',
+      validEmail: slideEl.dataset.errorValidEmail || 'Please enter a valid email address.',
+      acceptTerms: slideEl.dataset.errorAcceptTerms || 'Please accept the privacy terms.',
+      generic: slideEl.dataset.errorGeneric || 'Something went wrong. Please try again.',
+    };
 
     // Check if already submitted
     const storageKey = 'lead_submitted_' + slideId;
@@ -192,10 +229,11 @@ function initLeadCaptureForms() {
       const consentText = formData.get('consentText') || '';
       const privacyUrl = formData.get('privacyUrl') || '';
 
-      // Validation
-      if (!name) { if (errorEl) errorEl.textContent = 'Please enter your name.'; return; }
-      if (!email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) { if (errorEl) errorEl.textContent = 'Please enter a valid email.'; return; }
-      if (consentChecked && !consentChecked.checked) { if (errorEl) errorEl.textContent = 'Please accept the privacy terms.'; return; }
+      // Validation. The consent checkbox is this runtime's whole consent step
+      // (see the module comment above): no checkbox ticked, no submission.
+      if (!name) { if (errorEl) errorEl.textContent = i18n.enterName; return; }
+      if (!email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) { if (errorEl) errorEl.textContent = i18n.validEmail; return; }
+      if (consentChecked && !consentChecked.checked) { if (errorEl) errorEl.textContent = i18n.acceptTerms; return; }
       if (errorEl) errorEl.textContent = '';
 
       try {
@@ -213,7 +251,7 @@ function initLeadCaptureForms() {
         if (formState) formState.hidden = true;
         if (thankYouState) thankYouState.hidden = false;
       } catch (err) {
-        if (errorEl) errorEl.textContent = err.message || 'Something went wrong.';
+        if (errorEl) errorEl.textContent = err.message || i18n.generic;
       }
     });
   }
