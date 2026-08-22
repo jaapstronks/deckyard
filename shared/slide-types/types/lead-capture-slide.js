@@ -85,7 +85,10 @@ export default {
       required: true,
       maxLength: 300,
       helpText:
-        'Text shown next to the consent checkbox (e.g., "I agree to receive communications...")',
+        'Text shown next to the required consent checkbox. This is the consent ' +
+        'record: it is stored with every submission, so it has to name what the ' +
+        'address will be used for (e.g. "I agree to receive communications ' +
+        'about ...").',
     },
     {
       key: 'privacyUrl',

@@ -1,6 +1,27 @@
 /**
- * Lead capture slide runtime.
+ * Lead capture slide runtime — the canonical one.
  * Handles form submission and displays thank you message without redirect.
+ *
+ * ## The second copy, and why it is allowed to differ
+ *
+ * The standalone/published export bakes its own copy of this form handler into
+ * the page (`LEAD_CAPTURE_RUNTIME` in server/utils/script-chain.js) — a
+ * download has no module graph to import from. The two agree on everything
+ * except one thing: **this runtime additionally gates on
+ * `hasMarketingConsent()`, the baked copy does not.**
+ *
+ * That is deliberate, decided as D47 (B103): *the form is the consent*. The
+ * required consent checkbox, whose text the author writes, is what authorises
+ * the processing; it travels as `consentText` and is stored beside the lead as
+ * the consent record. The banner gate is an additional condition that only
+ * exists where a banner does — which is here, in the app, and not on a
+ * standalone download. Importing the gate there would not add a consent step,
+ * it would disable the form.
+ *
+ * If that ever stops being the right split, the fix is to change *both* — a
+ * silent divergence is what B103 was. The shared assertion lives in
+ * tests/lead-capture-consent-parity.test.js, which pins the agreement and this
+ * one difference side by side.
  */
 
 import { hasMarketingConsent } from '../util/cookie-consent.js';
@@ -74,7 +95,10 @@ function initLeadCaptureSlide(slideEl, { interactive }) {
     return { cleanup: () => {} };
   }
 
-  // Check cookie consent
+  // Check cookie consent. This gate is what the export copy deliberately does
+  // not have (D47 — see the module header): in the app a banner exists and can
+  // be answered, so marketing consent is a real, revocable signal and the form
+  // follows it live (`storage` + `visibilitychange` below).
   function checkCookieConsent() {
     const hasConsent = hasMarketingConsent();
     if (!hasConsent) {
