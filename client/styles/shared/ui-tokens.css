@@ -90,7 +90,6 @@
   --z-toast: 1200; /* transient toasts, above modals */
   --z-loading: 2000; /* blocking full-screen veil: AI-generation loading modal */
   --z-lightbox: 3000; /* full-screen preview lightboxes (slide-type peek, version-compare enlarge), above the loading veil */
-  --z-consent: 4000; /* cookie-consent legal gate: banner, its full-screen scrim, and settings panel */
   --z-skip-link: 5000; /* WCAG skip-link — the keyboard escape hatch, above every overlay */
   --z-drag: 999999; /* drag ghost — the ceiling, above everything */
 

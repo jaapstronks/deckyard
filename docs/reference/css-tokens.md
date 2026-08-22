@@ -143,8 +143,8 @@ Not "every value must be on the scale" — an off-scale value is a design signal
 and is not counted. Only the value-identical case is caught, so a failure is
 always something a reviewer can fix by reading.
 
-Scope is `client/styles/**` minus `slides/**` (the trap above) and
-`cookie-consent.css` (parked). It looks at the `margin` / `padding` / `gap`
+Scope is `client/styles/**` minus `slides/**` (the trap above). It looks at the
+`margin` / `padding` / `gap`
 families only, in **both** the `px` and the `rem` spelling. Skipped, per the
 rule above: `!important` declarations, `0`, and any declaration that contains a
 negative length.
@@ -189,8 +189,8 @@ Rules:
   a card, a thumbnail — is not an app layer and deliberately does not use this
   scale. Roughly 108 such values exist and are correct as they are.
 - **The top of the scale is ordered by obligation, not by importance.** The
-  WCAG skip-link sits above the cookie-consent gate on purpose: a keyboard user
-  must be able to escape a modal legal gate.
+  WCAG skip-link sits above every overlay on purpose: a keyboard user must be
+  able to escape a blocking veil or lightbox.
 
 ## Typography — a fixed 6-step scale
 
@@ -221,9 +221,8 @@ Two things stay literal by construction:
 
 - **The root anchor.** `html { font-size: 16px }` defines what `1rem` _is_;
   tokenising it to `var(--ps-text-lg)` would be circular. It stays `16px`.
-- **`slides/**` and parked stylesheets.** Same trap as spacing — a `--ps-text-*`
-  inside `client/styles/slides/**` resolves to nothing in the MCP preview bundle.
-  `cookie-consent.css` is parked (not in the load path), so it is left alone too.
+- **`slides/**`.** Same trap as spacing — a `--ps-text-*` inside
+  `client/styles/slides/**` resolves to nothing in the MCP preview bundle.
 
 ## Where the other tokens are
 
