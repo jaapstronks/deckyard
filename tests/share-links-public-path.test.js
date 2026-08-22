@@ -694,13 +694,19 @@ test('a guest request against a dead link is refused before any mail', async () 
   assert.deepEqual(guests(), []);
 });
 
-test('a guest request without a usable email is a 400', async () => {
+test('a guest request without a usable email is a 400 that names the field', async () => {
   seed();
+  // The canonical shape (D52/D48): one `invalid` plus `details.field`, from
+  // the storage guard. The route used to pre-check the address itself and
+  // answer `bad_request`, which shadowed this and left the client's email
+  // copy unreachable — see tests/share-guest-join-error-copy.test.js.
   for (const body of [{}, { email: 'not-an-email' }, { email: '   ' }]) {
     const res = await call('POST', '/api/share/tok-open/guest/request', {
       body,
     });
     assert.equal(res.status, 400, `${JSON.stringify(body)} is refused`);
+    assert.equal(res.body.error, 'invalid', `${JSON.stringify(body)} code`);
+    assert.deepEqual(res.body.details, { field: 'email' });
   }
   assert.deepEqual(guests(), []);
 });

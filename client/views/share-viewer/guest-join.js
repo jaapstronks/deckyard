@@ -10,7 +10,14 @@ import { h } from '../../lib/dom.js';
 
 /**
  * Get human-readable guest error message.
- * @param {string} errorCode - Error code
+ *
+ * Every entry is reachable from `POST /api/share/:token/guest/request` — the
+ * only request this surface makes. Verify-path reasons (`invalid_token`,
+ * `token_expired`) arrive as a `?guest_error=` redirect on `/s/:token`, never
+ * here, so they are deliberately absent.
+ *
+ * @param {string} errorCode - Machine code from `err.code` (the canonical
+ *   `{ ok:false, error:'<code>' }` envelope), not the human message.
  * @returns {string} Human-readable message
  */
 function getGuestErrorMessage(errorCode) {
@@ -37,14 +44,6 @@ function getGuestErrorMessage(errorCode) {
     share_link_expired: t(
       'share.guest.error.linkExpired',
       'This share link has expired.',
-    ),
-    invalid_token: t(
-      'share.guest.error.invalidToken',
-      'Invalid verification link.',
-    ),
-    token_expired: t(
-      'share.guest.error.tokenExpired',
-      'Verification link has expired. Please request a new one.',
     ),
     share_link_revoked: t(
       'share.guest.error.linkRevoked',
@@ -198,7 +197,7 @@ export function renderGuestJoinPrompt(
       // Close after delay or user interaction
       setTimeout(() => overlay.close(), 8000);
     } catch (err) {
-      errorEl.textContent = getGuestErrorMessage(err.message);
+      errorEl.textContent = getGuestErrorMessage(err.code);
       errorEl.style.display = 'block';
       submitBtn.disabled = false;
       submitBtn.textContent = t(
