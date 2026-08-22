@@ -38,6 +38,7 @@ import {
 } from '../../../services/comment-events.js';
 import { notifyCommentCreated } from '../../../services/comment-notifications.js';
 import { getTrimmedString } from '../../../utils/request-validators.js';
+import { getErrorStatus } from '../../../utils/http.js';
 import {
   broadcastCommentCounts,
   MAX_COMMENT_LENGTH,
@@ -243,9 +244,13 @@ async function handleCreateComment(ctx, presentationId) {
   });
 
   if (!result.ok) {
+    // The status comes from the reason register, not from a ladder here (D52).
+    // The envelope stays `sendV1Error` via `apiError` — this route answers the
+    // public v1 shape, not the internal one — but which status a reason means
+    // is decided in one place for every surface.
     await apiError(
       ctx,
-      result.reason === 'unavailable' ? 503 : 400,
+      getErrorStatus(result.reason),
       `Could not create comment: ${result.reason}`,
     );
     return true;

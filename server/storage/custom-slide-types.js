@@ -143,12 +143,12 @@ export async function createCustomSlideType(scope, data) {
   toStorageContext(scope, 'createCustomSlideType');
   const label = String(data?.label || '').trim();
   if (!label || label.length > MAX_LABEL_LEN) {
-    return { ok: false, reason: 'invalid_label' };
+    return { ok: false, reason: 'invalid', field: 'label' };
   }
 
   let slug = data?.slug ? String(data.slug).trim() : generateSlug(label);
   if (!isValidSlug(slug)) {
-    return { ok: false, reason: 'invalid_slug' };
+    return { ok: false, reason: 'invalid', field: 'slug' };
   }
 
   const fieldsResult = validateFields(data?.fields);
@@ -166,7 +166,11 @@ export async function createCustomSlideType(scope, data) {
   // that pair guards the fork load path instead (see shared/slide-types/usage.js).
   const usageResult = validateUsage(data?.usage);
   if (!usageResult.ok) {
-    return { ok: false, reason: usageResult.reason };
+    // `field` rides on `invalid` and on nothing else, so it is forwarded only
+    // when the validator set one (D52).
+    return usageResult.field
+      ? { ok: false, reason: usageResult.reason, field: usageResult.field }
+      : { ok: false, reason: usageResult.reason };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
@@ -239,7 +243,7 @@ export async function updateCustomSlideType(scope, typeId, updates) {
     if ('label' in updates) {
       const label = String(updates.label || '').trim();
       if (!label || label.length > MAX_LABEL_LEN) {
-        return { ok: false, reason: 'invalid_label' };
+        return { ok: false, reason: 'invalid', field: 'label' };
       }
       updateData.label = label;
     }
@@ -247,7 +251,7 @@ export async function updateCustomSlideType(scope, typeId, updates) {
     if ('slug' in updates) {
       const slug = String(updates.slug || '').trim();
       if (!isValidSlug(slug)) {
-        return { ok: false, reason: 'invalid_slug' };
+        return { ok: false, reason: 'invalid', field: 'slug' };
       }
       const existingSlug = await db
         .selectFrom('custom_slide_types')
@@ -298,7 +302,9 @@ export async function updateCustomSlideType(scope, typeId, updates) {
     if ('usage' in updates) {
       const usageResult = validateUsage(updates.usage);
       if (!usageResult.ok) {
-        return { ok: false, reason: usageResult.reason };
+        return usageResult.field
+          ? { ok: false, reason: usageResult.reason, field: usageResult.field }
+          : { ok: false, reason: usageResult.reason };
       }
       updateData.usage = usageResult.usage;
     }
@@ -350,11 +356,11 @@ export async function updateCustomSlideType(scope, typeId, updates) {
 export async function reorderCustomSlideTypes(scope, orderedIds) {
   toStorageContext(scope, 'reorderCustomSlideTypes');
   if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
-    return { ok: false, reason: 'invalid_order' };
+    return { ok: false, reason: 'invalid', field: 'order' };
   }
   const ids = orderedIds.map((id) => String(id || '').trim());
   if (ids.some((id) => !id) || new Set(ids).size !== ids.length) {
-    return { ok: false, reason: 'invalid_order' };
+    return { ok: false, reason: 'invalid', field: 'order' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {

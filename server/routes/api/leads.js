@@ -59,8 +59,18 @@ import {
  * a `bad_request` code — the exact inversion `docs/reference/api-error-format.md`
  * forbids.
  */
-const LEAD_FAILURE_MESSAGES = {
-  invalid_email: 'Invalid email address',
+const LEAD_FAILURE_MESSAGES = {};
+
+/**
+ * Human-readable text per `field` when the reason is `invalid`.
+ *
+ * D48 collapsed four generic `invalid_*` spellings into one `invalid` carrying
+ * a `field`; D52 collapsed the rest, so the copy that used to hang off the
+ * suffix hangs off the field name instead. The field also reaches the client as
+ * `details.field`, which is more than the suffix gave it.
+ */
+const INVALID_FIELD_MESSAGES = {
+  email: 'Invalid email address',
 };
 
 /**
@@ -71,7 +81,10 @@ const LEAD_FAILURE_MESSAGES = {
  * @returns {true}
  */
 function leadError(res, result) {
-  return storageError(res, result, LEAD_FAILURE_MESSAGES[result.reason]);
+  const message =
+    INVALID_FIELD_MESSAGES[result.field] ||
+    LEAD_FAILURE_MESSAGES[result.reason];
+  return storageError(res, result, message);
 }
 
 // GDPR verification tokens live in the `gdpr_verification_tokens` DB table

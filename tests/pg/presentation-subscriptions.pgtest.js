@@ -94,7 +94,8 @@ pgDescribe('setSubscription (real PostgreSQL)', () => {
   it('rejects an unknown level without writing', async () => {
     const res = await setSubscription(ctx, pid, ALICE, 'nonsense');
     assert.equal(res.ok, false);
-    assert.equal(res.reason, 'invalid_level');
+    assert.equal(res.reason, 'invalid');
+    assert.equal(res.field, 'level');
     assert.equal(await countRows(), 0);
   });
 

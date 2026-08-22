@@ -59,15 +59,21 @@ async function handleApiKeyCreate({ storageScope, req, res, authedUser }) {
   });
 
   if (!result.ok) {
+    // `field` rides on `invalid` and names which input was bad (D52); every
+    // other reason names its own meaning.
+    const fieldMessages = {
+      email: 'Invalid email',
+      permissions: `Invalid permissions. Available: ${AVAILABLE_PERMISSIONS.join(', ')}`,
+    };
     const messages = {
-      invalid_email: 'Invalid email',
       name_required: 'Name is required',
-      invalid_permissions: `Invalid permissions. Available: ${AVAILABLE_PERMISSIONS.join(', ')}`,
       unavailable: 'Database unavailable',
     };
     return badRequest(
       res,
-      messages[result.reason] || 'Failed to create API key',
+      fieldMessages[result.field] ||
+        messages[result.reason] ||
+        'Failed to create API key',
     );
   }
 

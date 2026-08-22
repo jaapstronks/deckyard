@@ -39,17 +39,17 @@ export async function createLead(data) {
   const consentText = String(data?.consentText || '').trim();
 
   if (!presentationId || !slideId) {
-    return { ok: false, reason: 'invalid_presentation' };
+    return { ok: false, reason: 'invalid', field: 'presentation_id' };
   }
   if (!name || !email) {
-    return { ok: false, reason: 'invalid_contact' };
+    return { ok: false, reason: 'invalid', field: 'contact' };
   }
   if (!consentText) {
     return { ok: false, reason: 'consent_required' };
   }
   // Basic email validation
   if (!email.includes('@') || email.length > 320) {
-    return { ok: false, reason: 'invalid_email' };
+    return { ok: false, reason: 'invalid', field: 'email' };
   }
 
   const retentionDays = Math.max(

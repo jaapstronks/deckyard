@@ -280,7 +280,7 @@ export async function markThreadsRead(scope, presentationId, commentIds) {
   toStorageContext(scope, 'markThreadsRead');
   const pid = norm(presentationId);
   const userEmail = normalizeEmail(scope?.actorEmail);
-  if (!pid) return { ok: false, reason: 'invalid_presentation' };
+  if (!pid) return { ok: false, reason: 'invalid', field: 'presentation_id' };
   if (!userEmail) return { ok: true, marked: 0 };
 
   const ids = Array.isArray(commentIds)

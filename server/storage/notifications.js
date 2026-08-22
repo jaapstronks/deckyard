@@ -37,7 +37,7 @@ export async function createNotification(scope, data) {
   toStorageContext(scope, 'createNotification');
   const userEmail = normalizeEmail(data?.userEmail);
   if (!userEmail) {
-    return { ok: false, reason: 'invalid_email' };
+    return { ok: false, reason: 'invalid', field: 'email' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
@@ -209,7 +209,7 @@ export async function markAllAsRead(scope, userEmail) {
   toStorageContext(scope, 'markAllAsRead');
   const email = normalizeEmail(userEmail);
   if (!email) {
-    return { ok: false, reason: 'invalid_email' };
+    return { ok: false, reason: 'invalid', field: 'email' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
@@ -275,7 +275,7 @@ export async function archiveAllNotifications(scope, userEmail) {
   toStorageContext(scope, 'archiveAllNotifications');
   const email = normalizeEmail(userEmail);
   if (!email) {
-    return { ok: false, reason: 'invalid_email' };
+    return { ok: false, reason: 'invalid', field: 'email' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {

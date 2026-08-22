@@ -169,7 +169,7 @@ describe('presentation-subscriptions storage (no-DB contract)', () => {
 
   it('setSubscription validates level', async () => {
     const r = await setSubscription(ORG, 'p-1', 'a@b.c', 'shouting');
-    assert.deepStrictEqual(r, { ok: false, reason: 'invalid_level' });
+    assert.deepStrictEqual(r, { ok: false, reason: 'invalid', field: 'level' });
   });
 
   it('setSubscription reports unavailable without a database', async () => {

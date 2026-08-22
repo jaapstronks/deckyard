@@ -161,7 +161,7 @@ export async function createUser(scope, userData) {
   toStorageContext(scope, 'createUser');
   const email = normalizeEmail(userData?.email);
   if (!email || !email.includes('@')) {
-    return { ok: false, reason: 'invalid_email' };
+    return { ok: false, reason: 'invalid', field: 'email' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {

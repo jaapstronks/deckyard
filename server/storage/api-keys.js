@@ -107,7 +107,7 @@ export async function createApiKey(scope, { name, ownerEmail, permissions }) {
   toStorageContext(scope, 'createApiKey');
   const normalizedEmail = normalizeEmail(ownerEmail);
   if (!normalizedEmail || !isValidEmail(normalizedEmail)) {
-    return { ok: false, reason: 'invalid_email' };
+    return { ok: false, reason: 'invalid', field: 'email' };
   }
 
   if (!name?.trim()) {
@@ -120,7 +120,12 @@ export async function createApiKey(scope, { name, ownerEmail, permissions }) {
     (s) => !AVAILABLE_PERMISSIONS.includes(s),
   );
   if (invalidPermissions.length > 0) {
-    return { ok: false, reason: 'invalid_permissions', invalidPermissions };
+    return {
+      ok: false,
+      reason: 'invalid',
+      field: 'permissions',
+      invalidPermissions,
+    };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
@@ -162,7 +167,7 @@ export async function validateApiKey(rawKey) {
   const key = String(rawKey || '').trim();
 
   if (!key || !key.startsWith(KEY_PREFIX)) {
-    return { ok: false, reason: 'invalid_format' };
+    return { ok: false, reason: 'invalid', field: 'key' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
