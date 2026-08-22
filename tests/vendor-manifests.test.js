@@ -20,9 +20,10 @@ const vendorDir = path.join(repoRoot, 'client', 'vendor');
  * checked-in blobs byte for byte — the machine-verifiable pin that
  * google-fonts.lock.json already gives the fonts. A mismatch means someone
  * edited a vendored file by hand (or a vendor script changed without being
- * re-run): re-run `npm run vendor:dompurify` / `npm run vendor:prism-katex`.
+ * re-run): re-run `npm run vendor:dompurify` / `npm run vendor:prism-katex` /
+ * `npm run vendor:pdfjs`.
  */
-const HASHED_MANIFESTS = ['dompurify', 'prism', 'katex'];
+const HASHED_MANIFESTS = ['dompurify', 'prism', 'katex', 'pdfjs'];
 
 for (const name of HASHED_MANIFESTS) {
   test(`client/vendor/${name} matches its manifest hashes`, async () => {

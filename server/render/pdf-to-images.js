@@ -1,8 +1,37 @@
 /* global window */ // page.evaluate() callbacks below run in the browser context.
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import {
   getPuppeteerBrowser,
   toNodeBuffer,
 } from '../utils/puppeteer-browser.js';
+
+/**
+ * The vendored pdf.js build, resolved from this module (it ships with the
+ * server code, like every other `client/vendor/` copy).
+ */
+const PDFJS_DIR = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+  '..',
+  'client',
+  'vendor',
+  'pdfjs',
+);
+
+/** The two files, read once per process. */
+let pdfjsSourcesPromise = null;
+function readPdfjsSources() {
+  if (!pdfjsSourcesPromise) {
+    pdfjsSourcesPromise = Promise.all([
+      fs.readFile(path.join(PDFJS_DIR, 'pdf.min.mjs'), 'utf8'),
+      fs.readFile(path.join(PDFJS_DIR, 'pdf.worker.min.mjs'), 'utf8'),
+    ]).then(([lib, worker]) => ({ lib, worker }));
+  }
+  return pdfjsSourcesPromise;
+}
 
 /**
  * Convert a PDF file (as a data URL or buffer) to an array of PNG image buffers.
@@ -71,13 +100,11 @@ export async function pdfToImages({
     body { background: white; }
     #canvas { display: block; }
   </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 <body>
   <canvas id="canvas"></canvas>
   <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
+    // pdfjsLib is installed by the loader below, before either of these runs.
     window.renderPdfPage = async function(dataUrl, pageNum, targetWidth, targetHeight) {
       const base64 = dataUrl.split(',')[1];
       const binaryString = atob(base64);
@@ -86,7 +113,7 @@ export async function pdfToImages({
         bytes[i] = binaryString.charCodeAt(i);
       }
 
-      const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+      const pdf = await window.pdfjsLib.getDocument({ data: bytes }).promise;
       const page = await pdf.getPage(pageNum);
 
       // Calculate scale to fit the target dimensions while maintaining aspect ratio
@@ -129,7 +156,7 @@ export async function pdfToImages({
       for (let i = 0; i < binaryString.length; i++) {
         bytes[i] = binaryString.charCodeAt(i);
       }
-      const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+      const pdf = await window.pdfjsLib.getDocument({ data: bytes }).promise;
       return pdf.numPages;
     };
   </script>
@@ -138,6 +165,26 @@ export async function pdfToImages({
     `;
 
     await renderPage.setContent(htmlContent, { waitUntil: 'networkidle0' });
+
+    // Install the vendored pdf.js. The harness is a setContent() document with
+    // no origin, so `/client/vendor/pdfjs/…` would resolve against nothing:
+    // both files are passed in as source and imported from a blob URL instead.
+    // Handing this browser a third-party script tag is what the SSRF guard on
+    // the neighbouring render path exists to prevent (B102).
+    const pdfjs = await readPdfjsSources();
+    await renderPage.evaluate(
+      async (libSrc, workerSrc) => {
+        const blobUrl = (src) =>
+          URL.createObjectURL(new Blob([src], { type: 'text/javascript' }));
+        const lib = await import(blobUrl(libSrc));
+        // The build is an ES module, and so is its worker: pdf.js creates it
+        // with `{ type: 'module' }` from whatever this points at.
+        lib.GlobalWorkerOptions.workerSrc = blobUrl(workerSrc);
+        window.pdfjsLib = lib;
+      },
+      pdfjs.lib,
+      pdfjs.worker,
+    );
 
     // Get the actual page count using pdf.js
     const totalPages = await renderPage.evaluate(async (pdfData) => {

@@ -38,6 +38,18 @@ packs it uses; a deck with math carries KaTeX **and its fontset**, base64'd into
 the stylesheet — KaTeX's layout assumes its own glyph metrics, so a formula in a
 fallback face is wrong, not merely different (decision D46, ~400 KB).
 
+### Harness pages count too
+
+The rule is not only about what a reader loads. `server/render/pdf-to-images.js`
+parses an **uploaded** PDF inside the shared headless browser, and used to hand
+that browser a hardcoded pdf.js from cdnjs — in the same process that renders
+every deck, started with `--no-sandbox` unless `PUPPETEER_SANDBOX=true`, next to
+a render path that inlines remote images through the SSRF guard precisely so no
+user-supplied URL reaches Chrome. `pdfjs-dist` is a real dependency now and lives
+in `client/vendor/pdfjs/`. Its harness is a `setContent()` document, so the two
+files are read from disk and imported from **blob URLs** — the ES-module
+equivalent of inlining, and the shape to copy for the next such page.
+
 ## Vendoring something new
 
 `scripts/vendor-prism-katex.js` is the pattern:
