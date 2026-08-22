@@ -71,9 +71,11 @@ route of its own.
 
 These are decisions, not leftovers. Each is documented where it lives:
 
-- **Fonts.** `fonts.googleapis.com` / `fonts.gstatic.com` for _externally
-  managed_ fonts (Adobe, Monotype, Google-hosted) — see
-  `docs/reference/font-management.md`. Curated and uploaded fonts are embedded.
+- **Fonts.** `fonts.googleapis.com` / `fonts.gstatic.com` (Google),
+  `use.typekit.net` (Adobe) and `fast.fonts.net` (Monotype) for _externally
+  managed_ fonts — see `docs/reference/font-management.md` and
+  `buildExternalFontLinks` in `server/utils/theme-builder.js`. Curated and
+  uploaded fonts are embedded.
 - **Media playback seams.** Bunny's `player.js` and `hls.js` are injected
   **lazily by the runtime**, only once a reader actually plays a video that
   needs them (`ensureBunnyPlayerJs()`, `client/lib/slide-runtime/ensure-hls.js`).
@@ -101,11 +103,13 @@ refuse is `<script src="https://…">` pointing at any host not on the list, whi
 is reason 1 above.
 
 Content-shaped directives stay permissive on purpose. A deck legitimately
-references an image, a video or an HLS manifest on a host Deckyard never sees,
-and `embedSlideImages` inlines only what it can reach — so `img-src`,
-`media-src` and `connect-src` allow `https:`, while `default-src` is `'none'` so
-any _new_ kind of fetch fails closed. `object-src`, `base-uri` and `form-action`
-are locked down and used by nothing.
+references an image, a video, an HLS manifest or an embedded page (the embed
+slide type frames any HTTPS URL) on a host Deckyard never sees, and
+`embedSlideImages` inlines only what it can reach — so `img-src`, `media-src`,
+`connect-src` and `frame-src` allow `https:` (a framed page runs cross-origin,
+in its own browsing context), while `default-src` is `'none'` so any _new_
+kind of fetch fails closed. `object-src`, `base-uri` and `form-action` are
+locked down and used by nothing.
 
 `THIRD_PARTY_ORIGINS` in that module is the same set of hosts the two gates
 allow, which is the point of writing it there: vendoring hls.js deletes one

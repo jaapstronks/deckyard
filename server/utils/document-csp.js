@@ -24,10 +24,12 @@
  * paths that go through Puppeteer — in the server's own headless Chrome.
  *
  * Content-shaped directives stay permissive on purpose. A deck legitimately
- * references an image, a video or an HLS manifest on any host the author
- * chooses, and `embedSlideImages` inlines only what it can reach. Narrowing
- * `img-src`/`media-src`/`connect-src` would break real decks to guard bytes
- * that cannot execute.
+ * references an image, a video, an HLS manifest or an embedded page (the
+ * embed slide type frames any HTTPS URL) on any host the author chooses, and
+ * `embedSlideImages` inlines only what it can reach. Narrowing
+ * `img-src`/`media-src`/`connect-src`/`frame-src` would break real decks to
+ * guard bytes that cannot execute in this document's context — a framed page
+ * runs cross-origin, in its own browsing context.
  *
  * ## One list, two gates
  *
@@ -65,6 +67,24 @@ export const THIRD_PARTY_ORIGINS = Object.freeze([
     reason: 'the file host behind fonts.googleapis.com — same font seam',
   },
   {
+    origin: 'https://use.typekit.net',
+    directives: ['style-src', 'font-src'],
+    reason:
+      'the same font seam, Adobe half: a managed font with source "adobe" ' +
+      'links `use.typekit.net/<projectId>.css`, and the font files behind it ' +
+      'ride on the same origin (server/utils/theme-builder.js, ' +
+      'buildExternalFontLinks).',
+  },
+  {
+    origin: 'https://fast.fonts.net',
+    directives: ['script-src', 'style-src', 'font-src'],
+    reason:
+      'the same font seam, Monotype half: a managed font with source ' +
+      '"monotype" loads `fast.fonts.net/jsapi/<projectId>.js`, which pulls ' +
+      'its stylesheet and font files from the same origin ' +
+      '(server/utils/theme-builder.js, buildExternalFontLinks).',
+  },
+  {
     origin: 'https://assets.mediadelivery.net',
     directives: ['script-src'],
     reason:
@@ -80,23 +100,6 @@ export const THIRD_PARTY_ORIGINS = Object.freeze([
       'Vendoring it is a live candidate rather than a taken decision; when it ' +
       'lands, this entry and the matching one in ' +
       'tests/no-third-party-origins.test.js go together.',
-  },
-  {
-    origin: 'https://iframe.mediadelivery.net',
-    directives: ['frame-src'],
-    reason: 'Bunny Stream embeds — the player a video slide frames',
-  },
-  {
-    origin: 'https://player.vimeo.com',
-    directives: ['frame-src'],
-    reason: 'Vimeo embeds (shared/video-stream-providers.js)',
-  },
-  {
-    origin: 'https://www.youtube-nocookie.com',
-    directives: ['frame-src'],
-    reason:
-      'YouTube embeds. The privacy-preserving host is the only one the ' +
-      'providers module ever builds a URL for.',
   },
 ]);
 
@@ -180,8 +183,13 @@ export function documentCspDirectives() {
     // `https:` is the HLS manifest a stream fetches from wherever it lives.
     'connect-src': ["'self'", 'https:'],
 
-    // The video providers, and only those three.
-    'frame-src': originsFor('frame-src'),
+    // Content too, not code: a framed document runs in its own cross-origin
+    // browsing context and cannot touch this one. The embed slide type frames
+    // any HTTPS URL the author chooses (Figma, Miro, a dashboard —
+    // shared/slide-types/types/embed-slide.js normalizes to https-only), so
+    // pinning this to the three video providers would break a legitimate
+    // slide on every render path.
+    'frame-src': ["'self'", 'https:'],
 
     // Free hardening, none of it used by any path: no plugins, no <base>
     // rewriting every relative URL in the document, and a form that posts

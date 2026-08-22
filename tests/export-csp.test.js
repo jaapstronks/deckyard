@@ -115,12 +115,7 @@ test('default-src is none, so a new fetch kind fails closed', () => {
 
 test('the code directives name exactly the declared origins', () => {
   const directives = documentCspDirectives();
-  for (const directive of [
-    'script-src',
-    'style-src',
-    'font-src',
-    'frame-src',
-  ]) {
+  for (const directive of ['script-src', 'style-src', 'font-src']) {
     const declared = THIRD_PARTY_ORIGINS.filter((o) =>
       o.directives.includes(directive),
     ).map((o) => o.origin);
@@ -157,22 +152,26 @@ test('every declared origin carries a reason and a directive', () => {
 });
 
 test('no wildcard host survives in a code directive', () => {
-  // `img-src`/`media-src`/`connect-src` are deliberately permissive — a deck
-  // references content on hosts Deckyard never sees. The directives that decide
-  // what *executes* may not be, and `https:` there would silently undo the
-  // whole policy.
+  // `img-src`/`media-src`/`connect-src`/`frame-src` are deliberately
+  // permissive — a deck references content on hosts Deckyard never sees. The
+  // directives that decide what *executes in this document's context* may not
+  // be, and `https:` there would silently undo the whole policy.
   const directives = documentCspDirectives();
-  for (const directive of [
-    'script-src',
-    'style-src',
-    'font-src',
-    'frame-src',
-  ]) {
+  for (const directive of ['script-src', 'style-src', 'font-src']) {
     assert.ok(
       !directives[directive].some((s) => s === 'https:' || s === '*'),
       `${directive} allows any host, which makes the allowlist decorative`,
     );
   }
+});
+
+test('frame-src stays a content directive', () => {
+  // The embed slide type frames any HTTPS URL the author chooses (Figma,
+  // Miro, a dashboard — shared/slide-types/types/embed-slide.js, https-only
+  // by normalization), and a framed page runs cross-origin in its own
+  // browsing context, so it is content like img/media, not code. Pinning this
+  // to the video providers would break that slide on every render path.
+  assert.deepEqual(documentCspDirectives()['frame-src'], ["'self'", 'https:']);
 });
 
 test('the header-only directives are absent, and say why', () => {
