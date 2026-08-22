@@ -5,12 +5,11 @@
 
 import {
   badRequest,
-  getErrorStatus,
-  jsonError,
   notFound,
   rateLimited,
   requireJsonBody,
   serveJson,
+  storageError,
   withErrorHandler,
 } from '../../utils/http.js';
 import { isUuid } from '../../utils/uuid.js';
@@ -57,17 +56,19 @@ const log = createLogger('analytics-track');
  * Validate presentation access for analytics tracking.
  * Ensures the viewer has legitimate access to the presentation.
  *
- * Failures carry a machine code from `ERROR_STATUS_MAP` (`not_found` /
- * `forbidden`) plus a human `message` — the route answers with
- * `jsonError(res, getErrorStatus(code), code, message)`, no prose matching
- * (A7.19-C7h).
+ * Failures answer `{ ok: false, reason, message }` — the same shape and the
+ * same vocabulary a storage mutation uses (`not_found` / `forbidden` from the
+ * `REASONS` register), so the route answers with
+ * `storageError(res, result, result.message)` and matches no prose
+ * (A7.19-C7h). It said `code` rather than `reason` until B104 PR 3; one
+ * meaning, one field name.
  *
  * @param {Object} data - Request data
  * @param {string} data.presentationId - The presentation ID
  * @param {string} data.sourceType - The source type
  * @param {string} [data.sourceId] - The source ID (share token for share_link)
  * @param {Object} ctx - Request context
- * @returns {Promise<{ok: true, presentation: Object}|{ok: false, code: string, message: string}>}
+ * @returns {Promise<{ok: true, presentation: Object}|{ok: false, reason: string, message: string}>}
  */
 async function validatePresentationAccess(data, ctx) {
   const { presentationId, sourceType, sourceId } = data;
@@ -75,7 +76,11 @@ async function validatePresentationAccess(data, ctx) {
   // A non-uuid id cannot name a presentation; answer before the query would
   // make the Postgres uuid parser 500 (22P02).
   if (!isUuid(presentationId)) {
-    return { ok: false, code: 'not_found', message: 'Presentation not found' };
+    return {
+      ok: false,
+      reason: 'not_found',
+      message: 'Presentation not found',
+    };
   }
 
   // Get the presentation first
@@ -87,14 +92,18 @@ async function validatePresentationAccess(data, ctx) {
     presentationId,
   );
   if (!presentation) {
-    return { ok: false, code: 'not_found', message: 'Presentation not found' };
+    return {
+      ok: false,
+      reason: 'not_found',
+      message: 'Presentation not found',
+    };
   }
 
   // Check if analytics is enabled for this presentation
   if (presentation.settings?.analyticsEnabled === false) {
     return {
       ok: false,
-      code: 'forbidden',
+      reason: 'forbidden',
       message: 'Analytics disabled for this presentation',
     };
   }
@@ -106,7 +115,7 @@ async function validatePresentationAccess(data, ctx) {
       if (!sourceId) {
         return {
           ok: false,
-          code: 'forbidden',
+          reason: 'forbidden',
           message: 'Share link token required',
         };
       }
@@ -121,7 +130,7 @@ async function validatePresentationAccess(data, ctx) {
         });
         return {
           ok: false,
-          code: 'forbidden',
+          reason: 'forbidden',
           message: 'Invalid or expired share link',
         };
       }
@@ -136,7 +145,7 @@ async function validatePresentationAccess(data, ctx) {
         });
         return {
           ok: false,
-          code: 'forbidden',
+          reason: 'forbidden',
           message: 'Share link does not match presentation',
         };
       }
@@ -171,7 +180,7 @@ async function validatePresentationAccess(data, ctx) {
 
       return {
         ok: false,
-        code: 'forbidden',
+        reason: 'forbidden',
         message: 'No active follow session',
       };
     }
@@ -201,7 +210,7 @@ async function validatePresentationAccess(data, ctx) {
         });
         return {
           ok: false,
-          code: 'forbidden',
+          reason: 'forbidden',
           message: 'Presentation is not published',
         };
       }
@@ -215,14 +224,18 @@ async function validatePresentationAccess(data, ctx) {
           sourceId,
           actualPublishId: presentation.published.id,
         });
-        return { ok: false, code: 'forbidden', message: 'Invalid publish ID' };
+        return {
+          ok: false,
+          reason: 'forbidden',
+          message: 'Invalid publish ID',
+        };
       }
 
       return { ok: true, presentation };
     }
 
     default:
-      return { ok: false, code: 'forbidden', message: 'Invalid source type' };
+      return { ok: false, reason: 'forbidden', message: 'Invalid source type' };
   }
 }
 
@@ -282,12 +295,7 @@ async function handleTrackSessionStart({ req, res, url, repoRoot }) {
   );
 
   if (!accessValidation.ok) {
-    return jsonError(
-      res,
-      getErrorStatus(accessValidation.code),
-      accessValidation.code,
-      accessValidation.message,
-    );
+    return storageError(res, accessValidation, accessValidation.message);
   }
 
   // Check app-level analytics settings
@@ -355,12 +363,7 @@ async function handleTrackSessionStart({ req, res, url, repoRoot }) {
   });
 
   if (!result.ok) {
-    return jsonError(
-      res,
-      getErrorStatus(result.reason, 500),
-      result.reason || 'internal_error',
-      'Failed to create session',
-    );
+    return storageError(res, result, 'Failed to create session');
   }
 
   return (
@@ -433,12 +436,7 @@ async function handleTrackSessionHeartbeat({ req, res, url, repoRoot }) {
   });
 
   if (!result.ok) {
-    return jsonError(
-      res,
-      getErrorStatus(result.reason, 500),
-      result.reason || 'internal_error',
-      'Failed to update session',
-    );
+    return storageError(res, result, 'Failed to update session');
   }
 
   return (serveJson(res, 200, { ok: true }), true);
@@ -496,12 +494,7 @@ async function handleTrackSessionEnd({ req, res, url, repoRoot }) {
   });
 
   if (!result.ok) {
-    return jsonError(
-      res,
-      getErrorStatus(result.reason, 500),
-      result.reason || 'internal_error',
-      'Failed to end session',
-    );
+    return storageError(res, result, 'Failed to end session');
   }
 
   return (serveJson(res, 200, { ok: true }), true);
@@ -584,12 +577,7 @@ async function handleTrackSlideView({ req, res, url, repoRoot }) {
   });
 
   if (!result.ok) {
-    return jsonError(
-      res,
-      getErrorStatus(result.reason, 500),
-      result.reason || 'internal_error',
-      'Failed to record slide view',
-    );
+    return storageError(res, result, 'Failed to record slide view');
   }
 
   // Also update the session with current slide info
@@ -679,12 +667,7 @@ async function handleTrackMyDataErase({ req, res, url, repoRoot }) {
     : await eraseAnalyticsDataForSession({ sessionId: session.id });
 
   if (!result.ok) {
-    return jsonError(
-      res,
-      getErrorStatus(result.reason, 500),
-      result.reason || 'internal_error',
-      'Failed to erase data',
-    );
+    return storageError(res, result, 'Failed to erase data');
   }
 
   return (serveJson(res, 200, { ok: true, deleted: result.deleted }), true);

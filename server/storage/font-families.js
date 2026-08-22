@@ -109,7 +109,7 @@ export async function createFontFamily(scope, data) {
   toStorageContext(scope, 'createFontFamily');
   const name = String(data?.name || '').trim();
   if (!name || name.length > MAX_NAME_LEN) {
-    return { ok: false, reason: 'invalid_name' };
+    return { ok: false, reason: 'invalid', field: 'name' };
   }
 
   let slug = data?.slug ? String(data.slug).trim() : generateSlug(name);
@@ -185,7 +185,7 @@ export async function createFontFamily(scope, data) {
 export async function updateFontFamily(scope, familyId, updates) {
   toStorageContext(scope, 'updateFontFamily');
   if (!familyId || typeof familyId !== 'string') {
-    return { ok: false, reason: 'invalid_id' };
+    return { ok: false, reason: 'invalid', field: 'id' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
@@ -195,7 +195,7 @@ export async function updateFontFamily(scope, familyId, updates) {
     if ('name' in updates) {
       const name = String(updates.name || '').trim();
       if (!name || name.length > MAX_NAME_LEN) {
-        return { ok: false, reason: 'invalid_name' };
+        return { ok: false, reason: 'invalid', field: 'name' };
       }
       updateData.name = name;
     }
@@ -271,7 +271,7 @@ export async function updateFontFamily(scope, familyId, updates) {
 export async function deleteFontFamily(scope, familyId) {
   toStorageContext(scope, 'deleteFontFamily');
   if (!familyId || typeof familyId !== 'string') {
-    return { ok: false, reason: 'invalid_id' };
+    return { ok: false, reason: 'invalid', field: 'id' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
@@ -361,7 +361,7 @@ export async function deleteFontFamily(scope, familyId) {
 export async function addFontVariant(scope, familyId, variantData) {
   toStorageContext(scope, 'addFontVariant');
   if (!familyId || typeof familyId !== 'string') {
-    return { ok: false, reason: 'invalid_id' };
+    return { ok: false, reason: 'invalid', field: 'id' };
   }
 
   const weight = Number(variantData?.weight) || 400;
@@ -404,7 +404,7 @@ export async function addFontVariant(scope, familyId, variantData) {
       .executeTakeFirst();
 
     if (existing) {
-      return { ok: false, reason: 'variant_exists' };
+      return { ok: false, reason: 'already_exists' };
     }
 
     const row = await db
@@ -446,7 +446,7 @@ export async function addFontVariant(scope, familyId, variantData) {
 export async function removeFontVariant(scope, variantId) {
   toStorageContext(scope, 'removeFontVariant');
   if (!variantId || typeof variantId !== 'string') {
-    return { ok: false, reason: 'invalid_id' };
+    return { ok: false, reason: 'invalid', field: 'id' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {

@@ -1,10 +1,9 @@
 import {
   badRequest,
-  getErrorStatus,
   methodNotAllowed,
-  serveJson,
   requireJsonBody,
-  jsonError,
+  serveJson,
+  storageError,
 } from '../../../utils/http.js';
 import { getString } from '../../../utils/request-validators.js';
 import { getFollowStateForPresentation } from '../../../storage/live-sessions/index.js';
@@ -104,15 +103,9 @@ export async function handleFollowQuestions(
       },
     );
     if (!result.ok) {
-      return jsonError(
-        res,
-        getErrorStatus(result.reason),
-        result.reason,
-        undefined,
-        {
-          headers: dev.setCookie ? { 'Set-Cookie': dev.setCookie } : {},
-        },
-      );
+      return storageError(res, result, undefined, {
+        headers: dev.setCookie ? { 'Set-Cookie': dev.setCookie } : {},
+      });
     }
     serveJson(
       res,
@@ -157,15 +150,9 @@ export async function handleFollowUpvote(
     },
   );
   if (!result.ok) {
-    return jsonError(
-      res,
-      getErrorStatus(result.reason),
-      result.reason,
-      undefined,
-      {
-        headers: dev.setCookie ? { 'Set-Cookie': dev.setCookie } : {},
-      },
-    );
+    return storageError(res, result, undefined, {
+      headers: dev.setCookie ? { 'Set-Cookie': dev.setCookie } : {},
+    });
   }
   serveJson(
     res,
@@ -207,15 +194,9 @@ export async function handleFollowCancel(
     },
   );
   if (!result.ok) {
-    return jsonError(
-      res,
-      getErrorStatus(result.reason),
-      result.reason,
-      undefined,
-      {
-        headers: dev.setCookie ? { 'Set-Cookie': dev.setCookie } : {},
-      },
-    );
+    return storageError(res, result, undefined, {
+      headers: dev.setCookie ? { 'Set-Cookie': dev.setCookie } : {},
+    });
   }
   serveJson(
     res,

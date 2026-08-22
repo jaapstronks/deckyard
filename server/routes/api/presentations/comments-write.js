@@ -5,14 +5,13 @@
 
 import { getPresentation } from '../../../storage/presentations/index.js';
 import {
-  methodNotAllowed,
-  serveJson,
-  unauthorized,
   badRequest,
+  methodNotAllowed,
   notFound,
   requireJsonBody,
-  jsonError,
-  getErrorStatus,
+  serveJson,
+  storageError,
+  unauthorized,
 } from '../../../utils/http.js';
 import {
   canReadPresentation,
@@ -159,7 +158,7 @@ export async function handlePresentationCommentsCreate(
   });
 
   if (!result.ok) {
-    return jsonError(res, getErrorStatus(result.reason), result.reason);
+    return storageError(res, result);
   }
 
   // Fire notifications (non-blocking)
@@ -257,7 +256,7 @@ export async function handlePresentationCommentUpdate(
   });
 
   if (!result.ok) {
-    return jsonError(res, getErrorStatus(result.reason), result.reason);
+    return storageError(res, result);
   }
 
   // A mention added by the edit notifies like a fresh mention (diffed
@@ -328,7 +327,7 @@ export async function handlePresentationCommentDelete(
 
   const result = await deleteComment(storageScope, commentId);
   if (!result.ok) {
-    return jsonError(res, getErrorStatus(result.reason), result.reason);
+    return storageError(res, result);
   }
 
   // Broadcast to all connected clients (non-blocking)

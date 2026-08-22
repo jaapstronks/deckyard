@@ -208,17 +208,48 @@ one field to branch and one to use.
 `reason` is a short snake_case token, drawn from the layer-wide vocabulary
 before a domain-specific one is minted:
 
-| `reason`      | Means                                                            |
-| ------------- | ---------------------------------------------------------------- |
-| `not_found`   | The target row does not exist (or is not visible in this scope). |
-| `invalid`     | The caller's input is malformed — blank id, unparseable field.   |
-| `forbidden`   | The row exists but this scope may not change it.                 |
-| `conflict`    | Another writer got there first, or a uniqueness rule bites.      |
-| `unavailable` | The database is not reachable; the `withDbGuard` fallback.       |
+| `reason`         | Means                                                            |
+| ---------------- | ---------------------------------------------------------------- |
+| `not_found`      | The target row does not exist (or is not visible in this scope). |
+| `invalid`        | The caller's input is malformed — blank id, unparseable field.   |
+| `forbidden`      | The row exists but this scope may not change it.                 |
+| `already_exists` | A uniqueness rule bites: that row, slug or variant is taken.     |
+| `unavailable`    | The database is not reachable; the `withDbGuard` fallback.       |
+
+A result may carry **`field`** next to `reason` to say _which_ input was bad:
+`{ ok: false, reason: 'invalid', field: 'id' }`. It belongs to `invalid` and
+nothing else — every other reason already names its own meaning — and
+`storageError()` puts it on the wire as `details.field`.
 
 Domain-specific reasons are fine where they carry information a route or UI
 acts on (`slug_exists`, `last_owner`, `limit_exceeded`, `expired`). What is not
 fine is a second spelling for a meaning that already has one.
+
+### The register: one place a reason is minted
+
+[`server/storage/reasons.js`](../../server/storage/reasons.js) holds `REASONS`,
+the closed vocabulary. Every code the layer can answer is listed there with two
+fields:
+
+- **`status`** — the HTTP status it answers with. One reason, one status, on
+  every route; a handler never picks its own.
+- **`kind`** — `'caller'` (4xx, the request is at fault) or `'ours'` (5xx, the
+  server is). `unavailable`, `database_error`, `create_failed`, `update_failed`
+  and `write_failed` are the `'ours'` codes.
+
+`getErrorStatus(reason)` in `server/utils/http.js` is the only reader, and it
+takes **no default status**. A reason the register does not know is a hole in
+our own vocabulary, not a malformed request: it throws outside production (so a
+test, a dev run or CI fails on it) and answers `500` in production. Adding a
+code means adding a register entry — there is nowhere else to mint one.
+
+`tests/storage-reason-vocabulary.test.js` is the gate. It parses every
+`{ ok: false, reason: '<literal>' }` under `server/storage/**`,
+`server/routes/api/**` and `shared/**` and asserts membership, **with an empty
+allowlist**; it
+also refuses a code that is not a `snake_case` token, a `kind`/`status` pair
+that disagrees, a register entry nobody mints, and any `getErrorStatus(reason,
+<default>)` call.
 
 **Throws** — programmer errors (a missing scope, an impossible argument) and
 infrastructure failures raise. `toStorageContext()` throwing on an absent scope
@@ -228,6 +259,51 @@ or outages, not outcomes. The one softened edge is `withDbGuard(fallback, fn)`
 throwing when the pool is down — pass `null`/`[]` from a read and
 `{ ok: false, reason: 'unavailable' }` from a mutation, so the guard hands back
 that call kind's own failure shape.
+
+### Implementation status: the vocabulary (as of 2026-08-22)
+
+**The vocabulary is closed, the gate is green with an empty allowlist, and no
+route decides a status any more** (B104, PRs 1–3). Before it, `ERROR_STATUS_MAP` in `server/utils/http.js` covered 23
+of the 91 codes the layer mints and the other 68 fell through to a `400`
+default — so `createSlideCollection` answering `create_failed` because its
+insert returned nothing reached the client as _"your request was malformed"_,
+and never showed up on a dashboard watching 5xx. Two shape defects went with the
+default: three `reason`s were English sentences (`'No device id provided'`),
+which the envelope puts on the wire as the machine code clients branch on, and
+five were `camelCase` (`bad_slideIndex`, `missing_questionId`). All eight are
+now tokens from the register.
+
+**The call sites followed** (B104 PR 2). The 25 `badRequest(res, <reason>)`
+sites are gone — that form put the snake_case reason in the human `message`
+field under a `bad_request` code, the inversion
+[`api-error-format.md`](api-error-format.md) forbids — and so are the
+hand-written status ladders, the six-line not_found/forbidden/else chains that
+flattened every reason they did not name into a 400. Display copy moved to
+per-route message maps (the `INVITE_FAILURE_MESSAGES` pattern in
+`routes/api/collaborators.js`), where a status is not a thing a route can pick.
+Both are gated in `tests/storage-reason-vocabulary.test.js`: `badRequest` at a
+hard zero, the ladders against a documented exception list plus a shrink-only
+burndown holding the one that remains (the public `/api/v1` comments route,
+whose statuses are pinned in `docs/openapi.yaml`).
+
+**The synonyms collapsed last** (B104 PR 3, D48). Seven codes left the register:
+`slug_taken` was a spelling of `slug_exists` and `variant_exists` one of
+`already_exists`; `key_id_required` of `api_key_id_required`; and `invalid_id`,
+`invalid_name`, `invalid_fields` and `invalid_params` were four more ways of
+saying `invalid`.
+The first three now ride as `field` on the result, which is strictly more than
+the suffix carried — a client reads `details.field` instead of parsing a code —
+and `invalid_params` guarded several arguments at once, so it said nothing
+`invalid` does not. The remaining `invalid_<thing>` codes stay: `invalid_email`,
+`invalid_slug`, `invalid_permission` and their kin name a domain concept a UI
+acts on, not a second spelling of "your input is bad".
+
+That cut also gave the routes one emitter, `storageError(res, result, message?)`
+in `server/utils/http.js`. A route that spread the result by hand would drop
+`details.field`, so the gate refuses `jsonError(res, getErrorStatus(…), …)` under
+`server/routes/**`. The share-access validators in `routes/api/analytics-track.js`
+answered `{ ok: false, code, message }` until then; they say `reason` now, since
+one meaning gets one field name.
 
 ### Implementation status: failure shapes (as of 2026-08-21)
 
@@ -272,8 +348,9 @@ down reads `unavailable`. The follow routes map those through
 now a 404 rather than a 400, and a database outage a 503 rather than a 400. Both
 are only reachable on a race — the handlers pre-check live-ness and the current
 slide — and both are the honest status for what happened.
-`tests/storage-call-convention.test.js` pins the three retired spellings to zero
-under `server/storage/**`.
+Those three spellings cannot come back: they are not in the `REASONS` register,
+so the vocabulary gate refuses them (it superseded the flat blocklist that used
+to live in `tests/storage-call-convention.test.js`).
 
 One known gap sits outside the shape itself: several facades let a malformed
 caller id reach PostgreSQL, which raises `22P02` on a `uuid` column instead of

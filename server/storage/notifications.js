@@ -170,7 +170,7 @@ export async function markAsRead(scope, notificationId, userEmail) {
   toStorageContext(scope, 'markAsRead');
   const email = normalizeEmail(userEmail);
   if (!email || !notificationId) {
-    return { ok: false, reason: 'invalid_params' };
+    return { ok: false, reason: 'invalid' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
@@ -242,7 +242,7 @@ export async function archiveNotification(scope, notificationId, userEmail) {
   toStorageContext(scope, 'archiveNotification');
   const email = normalizeEmail(userEmail);
   if (!email || !notificationId) {
-    return { ok: false, reason: 'invalid_params' };
+    return { ok: false, reason: 'invalid' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
@@ -322,7 +322,7 @@ export async function archiveThreadNotifications(
   const tid = String(threadId || '').trim();
   const pid = String(presentationId || '').trim();
   if (!email || !tid || !pid) {
-    return { ok: false, reason: 'invalid_params' };
+    return { ok: false, reason: 'invalid' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
@@ -426,7 +426,7 @@ export async function refreshDeckActivityNotification(
   toStorageContext(scope, 'refreshDeckActivityNotification');
   const email = normalizeEmail(userEmail);
   if (!email || !notificationId) {
-    return { ok: false, reason: 'invalid_params' };
+    return { ok: false, reason: 'invalid' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {

@@ -8,13 +8,12 @@
  */
 
 import {
-  badRequest,
-  forbidden,
   methodNotAllowed,
-  serveJson,
-  unauthorized,
   notFound,
   requireJsonBody,
+  serveJson,
+  storageError,
+  unauthorized,
   withErrorHandler,
 } from '../../utils/http.js';
 import {
@@ -50,10 +49,19 @@ function organizationMutateGuard(authedUser) {
   };
 }
 
-function mutationError(res, reason) {
-  if (reason === 'not_found') return notFound(res);
-  if (reason === 'forbidden') return forbidden(res, 'Not allowed');
-  return badRequest(res, reason);
+/**
+ * Answer a failed collection mutation in the canonical envelope. The reason is
+ * the machine code and its `REASONS` entry is the status, so the three-way
+ * not_found/forbidden/else ladder this replaced is gone: `not_found` is a 404
+ * and `forbidden` a 403 because the register says so, not because this route
+ * happened to spell them out.
+ *
+ * @param {import('node:http').ServerResponse} res
+ * @param {{reason: string, field?: string}} result
+ * @returns {true}
+ */
+function mutationError(res, result) {
+  return storageError(res, result);
 }
 
 function actorEmail(authedUser) {
@@ -81,7 +89,7 @@ async function handlePersonalCreate({ storageScope, req, res, authedUser }) {
   const r = await createPersonalCollection(storageScope, email, body, {
     actorEmail: email,
   });
-  if (!r.ok) return badRequest(res, r.reason);
+  if (!r.ok) return mutationError(res, r);
   serveJson(res, 201, r.item);
   return true;
 }
@@ -110,7 +118,7 @@ async function handlePersonalUpdate(
   const r = await updatePersonalCollection(storageScope, email, id, body, {
     actorEmail: email,
   });
-  if (!r.ok) return mutationError(res, r.reason);
+  if (!r.ok) return mutationError(res, r);
   serveJson(res, 200, r.item);
   return true;
 }
@@ -150,7 +158,7 @@ async function handleOrganizationCreate({
   const r = await createOrganizationCollection(storageScope, body, {
     actorEmail: email,
   });
-  if (!r.ok) return badRequest(res, r.reason);
+  if (!r.ok) return mutationError(res, r);
   serveJson(res, 201, r.item);
   return true;
 }
@@ -177,7 +185,7 @@ async function handleOrganizationUpdate(
     actorEmail: actorEmail(authedUser),
     allowMutate: organizationMutateGuard(authedUser),
   });
-  if (!r.ok) return mutationError(res, r.reason);
+  if (!r.ok) return mutationError(res, r);
   serveJson(res, 200, r.item);
   return true;
 }
@@ -188,7 +196,7 @@ async function handleOrganizationDelete({ storageScope, res, authedUser }, id) {
     actorEmail: actorEmail(authedUser),
     allowMutate: organizationMutateGuard(authedUser),
   });
-  if (!r.ok) return mutationError(res, r.reason);
+  if (!r.ok) return mutationError(res, r);
   serveJson(res, 200, { ok: true });
   return true;
 }

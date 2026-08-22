@@ -101,7 +101,7 @@ export async function sendLiveSessionControlCommand(scope, sessionId, cmd) {
     updatedAt: Date.now(),
   };
   if (action === 'goto' && !Number.isFinite(payload.slideIndex))
-    return { ok: false, reason: 'bad_slideIndex' };
+    return { ok: false, reason: 'invalid_slide_index' };
 
   // Send control event to presenter so their UI updates
   fireAndForget(

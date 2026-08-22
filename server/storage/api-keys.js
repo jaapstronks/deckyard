@@ -219,7 +219,7 @@ export async function validateApiKey(rawKey) {
 export async function revokeApiKey(scope, keyId, revokerEmail) {
   toStorageContext(scope, 'revokeApiKey');
   if (!keyId) {
-    return { ok: false, reason: 'key_id_required' };
+    return { ok: false, reason: 'api_key_id_required' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
@@ -320,7 +320,7 @@ export async function listApiKeys(scope, options = {}) {
 export async function getApiKeyById(scope, keyId) {
   toStorageContext(scope, 'getApiKeyById');
   if (!keyId) {
-    return { ok: false, reason: 'key_id_required' };
+    return { ok: false, reason: 'api_key_id_required' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {

@@ -259,7 +259,7 @@ export async function createPersonalLibraryItem(
   const slideType =
     typeof input?.slideType === 'string' ? input.slideType.trim() : '';
   if (!name) return { ok: false, reason: 'name_required' };
-  if (!slideType) return { ok: false, reason: 'slideType_required' };
+  if (!slideType) return { ok: false, reason: 'slide_type_required' };
   const result = await createSlideLibraryRow(
     {
       ...input,
@@ -344,7 +344,7 @@ export async function createOrganizationLibraryItem(
   const slideType =
     typeof input?.slideType === 'string' ? input.slideType.trim() : '';
   if (!name) return { ok: false, reason: 'name_required' };
-  if (!slideType) return { ok: false, reason: 'slideType_required' };
+  if (!slideType) return { ok: false, reason: 'slide_type_required' };
   const result = await createSlideLibraryRow(
     {
       ...input,

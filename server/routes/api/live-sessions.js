@@ -24,9 +24,9 @@ import {
   badRequest,
   methodNotAllowed,
   notFound,
-  serveJson,
-  unauthorized,
   requireJsonBody,
+  serveJson,
+  storageError,
   withErrorHandler,
 } from '../../utils/http.js';
 import {
@@ -40,6 +40,14 @@ import {
   getString,
   getOptionalBoolean,
 } from '../../utils/request-validators.js';
+
+/**
+ * Human-readable text per remote-control failure. The status is the reason's
+ * `REASONS` entry (`server/storage/reasons.js`).
+ */
+const CONTROL_FAILURE_MESSAGES = {
+  disabled: 'Remote control is disabled for this session',
+};
 
 /**
  * Presenter-only live-session routes.
@@ -443,9 +451,10 @@ async function handleLiveSessionControlCommand(
     body,
   );
   if (!result.ok) {
-    if (result.reason === 'disabled')
-      return unauthorized(res, 'Remote control is disabled for this session');
-    return badRequest(res, `Control failed: ${result.reason}`);
+    // `disabled` used to answer 401, which asks the presenter to authenticate
+    // for a session they are already authenticated on; the register makes it a
+    // 409 — the session refuses the transition.
+    return storageError(res, result, CONTROL_FAILURE_MESSAGES[result.reason]);
   }
   serveJson(res, 200, { ok: true });
   return true;
