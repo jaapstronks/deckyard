@@ -1,9 +1,13 @@
 /* Embed slide */
 .slide-embed {
-  padding: 0;
+  /* The slide root carries no frame inset; stating it as --slide-padding (not
+     `padding: 0`) keeps the fluid type unit correct — see 00-tokens.css
+     § THE FLUID BASIS. */
+  --slide-padding: 0px;
 }
 .slide-embed .slide-inner {
-  padding: var(--slide-padding);
+  /* The frame inset, carried by the inner box instead of the root. */
+  padding: var(--slide-space-16);
   justify-content: center;
   align-items: center;
   gap: var(--slide-space-6);

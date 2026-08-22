@@ -1,6 +1,9 @@
 /* Image + text split slide */
 .slide-image-text {
-  padding: 0; /* image should bleed to slide edges */
+  /* The slide root carries no frame inset; stating it as --slide-padding (not
+     `padding: 0`) keeps the fluid type unit correct — see 00-tokens.css
+     § THE FLUID BASIS. */
+  --slide-padding: 0px;
 }
 .slide-image-text .slide-inner {
   justify-content: flex-start;
@@ -250,7 +253,7 @@
    same CSS path. Cover is the base state (.media img above); contain adds
    breathing room + a white plate inside the frame. */
 .slide-image-text .media .frame.is-fit-contain {
-  padding: calc(var(--slide-padding) * 0.35);
+  padding: calc(var(--slide-space-16) * 0.35);
   box-sizing: border-box;
   background: #fff;
 }
@@ -264,7 +267,9 @@
 }
 .slide-image-text .copy {
   height: 100%;
-  padding: var(--slide-padding);
+  /* The frame inset, on the copy column rather than on the slide root — the
+     root bleeds (--slide-padding: 0px above), so this reads the scale step. */
+  padding: var(--slide-space-16);
   display: flex;
   flex-direction: column;
   justify-content: flex-start;

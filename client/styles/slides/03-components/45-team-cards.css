@@ -93,7 +93,10 @@
 .slide-team-cards[data-card-count='11'],
 .slide-team-cards[data-card-count='12'] {
   /* Tighter padding for dense grids to fit content */
-  padding: var(--slide-space-12);
+  /* The inline half of this inset feeds the fluid type unit, so it is stated
+     as --slide-padding rather than written into the shorthand — see
+     00-tokens.css § THE FLUID BASIS. */
+  --slide-padding: var(--slide-space-12);
 }
 
 /* ============================================
@@ -165,7 +168,11 @@
 .slide-team-cards[data-card-count='23'],
 .slide-team-cards[data-card-count='24'],
 .slide-team-cards[data-card-count='25'] {
-  padding: var(--slide-space-10) var(--slide-space-12) var(--slide-space-12);
+  /* The inline half of this inset feeds the fluid type unit, so it is stated
+     as --slide-padding rather than written into the shorthand — see
+     00-tokens.css § THE FLUID BASIS. */
+  --slide-padding: var(--slide-space-12);
+  padding: var(--slide-space-10) var(--slide-padding) var(--slide-padding);
 }
 
 /* Reduce card sizes when bottom subheading is present (less vertical space) */

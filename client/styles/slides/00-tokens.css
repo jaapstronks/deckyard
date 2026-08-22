@@ -8,23 +8,73 @@
 
 .slide {
   /* =========================================================================
+     THE FLUID BASIS
+     =========================================================================
+     A slide is a fixed-aspect box: the stage renders it at 1600x900 and scales
+     the whole box with `transform: scale()` (client/views/presenter/stage-scale.js,
+     client/lib/slide-runtime/thumb-scale.js). Type therefore has to be a
+     function of *the slide's own box*, not of the viewport — a viewport unit
+     would make text follow the browser window while the box it sits in follows
+     the stage, and every thumbnail and both export paths would drift apart.
+
+     So the slide is its own size-query container and one reference pixel is
+     derived from it. `--slide-canvas-unit` is "1px on the 1600px reference
+     canvas the scale below was drawn against": exactly 1px while the box is
+     1600 wide, and proportional the moment it is not.
+
+     Two details the value encodes:
+
+     - Container query units resolve against the query container's CONTENT box,
+       so `100cqi` is the slide minus its own padding. Adding the padding back
+       reconstructs the border box, which keeps type size independent of
+       `--slide-padding` — shrink the padding and `100cqi` grows by exactly the
+       amount that was added back.
+     - Query containers are queried by their DESCENDANTS, never by themselves.
+       A `--slide-text-*` token consumed *on the `.slide` element itself* would
+       resolve against whatever container sits outside the slide (usually none,
+       i.e. the viewport). All slide typography is set on descendants; keep it
+       that way — `tests/slide-typography-scale.test.js` guards it.
+
+     The precedent is `.slide-countdown { container-type: size }`
+     (03-components/18-countdown.css), which already made the slide its own
+     container so the timer digits could scale against it. This generalises
+     that to the whole type scale. A type that needs both axes still declares
+     `container-type: size` on the slide root and wins on source order.
+     ========================================================================= */
+
+  container-type: inline-size;
+
+  --slide-canvas-width: 1600;
+  --slide-canvas-unit: calc(
+    (100cqi + 2 * var(--slide-padding)) / var(--slide-canvas-width)
+  );
+
+  /* =========================================================================
      TYPOGRAPHY SCALE
      =========================================================================
      Based on ~1.25 ratio (Major Third). All text sizes should use these tokens.
-     Theme-scalable via --t-slide-text-scale multiplier (not yet implemented).
+     The numbers are the size in reference pixels; `--slide-text-unit` turns
+     them into a length. A theme scales the whole scale at once through
+     `--t-slide-text-scale`, a multiplier: 1 is the design-system default,
+     lower is tighter, higher is larger. It moves type only — the spacing and
+     component scales below stay put, so a scaled deck keeps its rhythm rather
+     than becoming a zoom.
      ========================================================================= */
 
+  --slide-text-scale: var(--t-slide-text-scale, 1);
+  --slide-text-unit: calc(var(--slide-canvas-unit) * var(--slide-text-scale));
+
   /* Core scale tokens */
-  --slide-text-xs: 14px; /* Captions, labels */
-  --slide-text-sm: 16px; /* Small text, dates */
-  --slide-text-base: 20px; /* Default body text */
-  --slide-text-md: 24px; /* Emphasized body, step titles */
-  --slide-text-lg: 28px; /* Large body, subtitles */
-  --slide-text-xl: 34px; /* Small headings */
-  --slide-text-2xl: 44px; /* Section headings */
-  --slide-text-3xl: 52px; /* Large headings */
-  --slide-text-4xl: 64px; /* Title slides */
-  --slide-text-5xl: 80px; /* Hero titles */
+  --slide-text-xs: calc(14 * var(--slide-text-unit)); /* Captions, labels */
+  --slide-text-sm: calc(16 * var(--slide-text-unit)); /* Small text, dates */
+  --slide-text-base: calc(20 * var(--slide-text-unit)); /* Default body text */
+  --slide-text-md: calc(24 * var(--slide-text-unit)); /* Emphasized body */
+  --slide-text-lg: calc(28 * var(--slide-text-unit)); /* Large body, subtitle */
+  --slide-text-xl: calc(34 * var(--slide-text-unit)); /* Small headings */
+  --slide-text-2xl: calc(44 * var(--slide-text-unit)); /* Section headings */
+  --slide-text-3xl: calc(52 * var(--slide-text-unit)); /* Large headings */
+  --slide-text-4xl: calc(64 * var(--slide-text-unit)); /* Title slides */
+  --slide-text-5xl: calc(80 * var(--slide-text-unit)); /* Hero titles */
 
   /* Semantic typography aliases */
   --slide-font-size-title: var(--slide-text-4xl);
@@ -43,9 +93,9 @@
   --slide-font-size-card-body: var(--slide-text-md);
 
   /* KPI/metric display sizes */
-  --slide-text-kpi-lg: 156px;
-  --slide-text-kpi-md: 108px;
-  --slide-text-kpi-sm: 80px;
+  --slide-text-kpi-lg: calc(156 * var(--slide-text-unit));
+  --slide-text-kpi-md: calc(108 * var(--slide-text-unit));
+  --slide-text-kpi-sm: calc(80 * var(--slide-text-unit));
 
   /* Line heights. `compact` sits between snug and normal: the census found a
      real 1.25 rhythm in card titles and dense description text, the same kind
