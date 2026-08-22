@@ -14,7 +14,8 @@ import { h } from '../../lib/dom.js';
  * Every entry is reachable from `POST /api/share/:token/guest/request` — the
  * only request this surface makes. Verify-path reasons (`invalid_token`,
  * `token_expired`) arrive as a `?guest_error=` redirect on `/s/:token`, never
- * here, so they are deliberately absent.
+ * here, so they are deliberately absent — their copy and their surface live in
+ * `guest-verify-notice.js`, where that redirect lands.
  *
  * @param {string} errorCode - Machine code from `err.code` (the canonical
  *   `{ ok:false, error:'<code>' }` envelope), not the human message.

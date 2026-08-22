@@ -2,7 +2,7 @@
  * Public share link endpoints (no auth required) (A7.19 C8 — ROUTES table).
  *
  * GET    /api/share/:token                            - Validate token
- * POST   /api/share/:token/verify                     - Verify password & get access
+ * POST   /api/share/:token/verify                     - Verify password & get access (+ deck)
  * POST   /api/share/:token/guest/request              - Request guest email verification
  * GET    /api/share/:token/guest/verify/:vtoken       - Verify guest email & create session
  * GET    /api/share/:token/guest/me                   - Get current guest session info
@@ -32,6 +32,7 @@ import {
   forbidden,
   getErrorStatus,
   jsonError,
+  notFound,
   rateLimited,
   requireJsonBody,
   serveJson,
@@ -48,6 +49,8 @@ import {
   allowShareVerifyAttempt,
 } from '../../../utils/rate-limit.js';
 import { normalizeEmail } from '../../../utils/normalize.js';
+import { filterForViewOnly } from '../../../utils/public-output.js';
+import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
 import { createLogger } from '../../../utils/logger.js';
 import { fireAndForget } from '../../../utils/fire-and-forget.js';
 import { crossOrganizationScope } from '../../../storage/scope.js';
@@ -121,8 +124,53 @@ async function handleShareValidate({ repoRoot, req, res }, token) {
   return true;
 }
 
+/**
+ * The deck a share-link viewer is handed, as an explicit field list rather
+ * than the stored row — the same shape rule the live-session companion payload
+ * follows (`GET /api/live-sessions/:id/deck`).
+ *
+ * It rides on `verify` because that is where the link's password is proven.
+ * A separate `GET /api/share/:token/deck` would have to serve a
+ * password-protected deck to anyone holding the token, since nothing on this
+ * anonymous surface remembers that a password was entered; folding the deck
+ * into the one call that checks it keeps the gate real and adds no second
+ * authorization path.
+ *
+ * `settings` is an allowlist, not a passthrough: the viewer honours exactly
+ * these three, and a new deck setting should be a deliberate line here rather
+ * than something an operator-facing field leaks out through.
+ *
+ * @param {Object} pres - Presentation as stored.
+ * @returns {Object} Viewer-safe deck payload.
+ */
+function shareViewerDeck(pres) {
+  // Same filter the authenticated route applies to a view/comment reader:
+  // slides marked `hideFromViewers` never leave, drafts come through badged.
+  const visible = filterForViewOnly(pres, { markDrafts: true });
+  const settings =
+    pres?.settings && typeof pres.settings === 'object' ? pres.settings : {};
+  return {
+    // `id` as well as the envelope's `presentationId`: the viewer hands this
+    // object to the shared slide renderer and the comments API, which address
+    // a deck by `id` exactly as they do for an authenticated fetch.
+    id: pres.id,
+    title: typeof pres.title === 'string' ? pres.title : '',
+    theme: pres.theme || '',
+    // Resolved here so the viewer never re-derives it from a payload that
+    // deliberately omits the i18n block (shared/i18n-utils.js).
+    lang: resolveDeckLang(pres) || '',
+    revision: Number(pres.revision) || 0,
+    slides: Array.isArray(visible.slides) ? visible.slides : [],
+    settings: {
+      analyticsEnabled: settings.analyticsEnabled !== false,
+      autoAdvance: settings.autoAdvance ?? null,
+      liveVideo: settings.liveVideo ?? null,
+    },
+  };
+}
+
 /** POST /api/share/:token/verify - Verify password and get access */
-async function handleShareVerify({ req, res }, token) {
+async function handleShareVerify({ repoRoot, req, res }, token) {
   const parsed = await requireJsonBody(req, res, { allowEmpty: true });
   if (!parsed.ok) return true;
   const body = parsed.body;
@@ -159,10 +207,26 @@ async function handleShareVerify({ req, res }, token) {
   const userAgent = req.headers['user-agent'];
   await logShareLinkAccess(result.shareLink.id, { ipAddress, userAgent });
 
+  // The deck itself. `/api/presentations/:id` cannot serve it: that route is
+  // id-addressed and behind the login gate, so an anonymous holder of a valid
+  // link got a 401 and the viewer rendered "Failed to load presentation".
+  const pres = await getPresentation(
+    crossOrganizationScope(
+      repoRoot,
+      'share link: the share token is the authorization',
+    ),
+    result.shareLink.presentationId,
+  );
+  if (!pres) {
+    notFound(res);
+    return true;
+  }
+
   serveJson(res, 200, {
     presentationId: result.shareLink.presentationId,
     permission: result.shareLink.permission,
     token: result.shareLink.token,
+    presentation: shareViewerDeck(pres),
   });
   return true;
 }

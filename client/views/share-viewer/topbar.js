@@ -27,7 +27,11 @@ import { createEraseMyDataButton } from '../../lib/format/analytics-erase-button
  * @param {() => (void | Promise<void>)} opts.onGuestJoined - re-render after a guest joins.
  * @param {Object|null} [opts.analyticsTracker] - live tracker, for the "forget me" control.
  * @param {() => void} [opts.onAnalyticsErased] - called after the viewer erases their data.
- * @returns {{ topbar: HTMLElement, commentsSection: object|null }}
+ * @returns {{ topbar: HTMLElement, commentsSection: object|null,
+ *   openJoinPrompt: (() => void)|null }} `openJoinPrompt` is the join button's
+ *   own action, handed back so the verification-failure banner can offer the
+ *   same path without a second copy of the prompt's wiring. Null when this
+ *   link admits no guests, or when one is already signed in.
  */
 export function buildShareViewerTopbar({
   presentation,
@@ -59,6 +63,9 @@ export function buildShareViewerTopbar({
   // form in share-modal); there is no guest-editing flow, so 'edit' is not
   // handled here.
   const canComment = shareLink.permission === 'comment';
+
+  /** @type {(() => void)|null} */
+  let openJoinPrompt = null;
 
   // Comments toggle button (shown when guest is authenticated and can comment)
   let commentsToggleBtn = null;
@@ -108,11 +115,7 @@ export function buildShareViewerTopbar({
       guestStatusEl.append(guestInfo);
     } else {
       // Show join button
-      const joinBtn = h('button', {
-        class: 'btn btn-secondary share-viewer-join-btn',
-        text: t('share.guest.join', 'Join discussion'),
-      });
-      joinBtn.addEventListener('click', () => {
+      openJoinPrompt = () => {
         renderGuestJoinPrompt(
           shell,
           token,
@@ -122,7 +125,12 @@ export function buildShareViewerTopbar({
           },
           prefillEmail,
         );
+      };
+      const joinBtn = h('button', {
+        class: 'btn btn-secondary share-viewer-join-btn',
+        text: t('share.guest.join', 'Join discussion'),
       });
+      joinBtn.addEventListener('click', () => openJoinPrompt());
       guestStatusEl.append(joinBtn);
     }
 
@@ -164,5 +172,5 @@ export function buildShareViewerTopbar({
 
   topbar.append(titleEl, permissionBadge, controls);
 
-  return { topbar, commentsSection };
+  return { topbar, commentsSection, openJoinPrompt };
 }
