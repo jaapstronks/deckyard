@@ -12,6 +12,8 @@
 
 import {
   badRequest,
+  getErrorStatus,
+  jsonError,
   methodNotAllowed,
   serveJson,
   unauthorized,
@@ -48,6 +50,23 @@ const ERROR_MESSAGES = {
     'The order does not list exactly the current slide types. Reload and try again.',
 };
 
+/**
+ * Answer a failed slide type mutation in the canonical envelope.
+ *
+ * The status comes from the reason's `REASONS` entry
+ * (`server/storage/reasons.js`), never from this route. The ladders this
+ * replaced answered `notFound()` for one reason and flattened every other —
+ * `unavailable` included, whose own message here reads *"Database
+ * unavailable."* — into a 400.
+ *
+ * @param {import('node:http').ServerResponse} res
+ * @param {string} reason
+ * @returns {true}
+ */
+function slideTypeError(res, reason) {
+  return jsonError(res, getErrorStatus(reason), reason, ERROR_MESSAGES[reason]);
+}
+
 // GET /api/custom-slide-types - List all (org-scoped)
 async function handleCustomSlideTypeList({ storageScope, res, authedUser }) {
   if (!authedUser) return unauthorized(res);
@@ -71,10 +90,7 @@ async function handleCustomSlideTypeCreate({
   const result = await createCustomSlideType(storageScope, body);
 
   if (!result.ok) {
-    return badRequest(
-      res,
-      ERROR_MESSAGES[result.reason] || 'Failed to create slide type.',
-    );
+    return slideTypeError(res, result.reason);
   }
   serveJson(res, 201, result.customSlideType);
   return true;
@@ -97,10 +113,7 @@ async function handleCustomSlideTypeReorder({
 
   const result = await reorderCustomSlideTypes(storageScope, body.order);
   if (!result.ok) {
-    return badRequest(
-      res,
-      ERROR_MESSAGES[result.reason] || 'Failed to reorder slide types.',
-    );
+    return slideTypeError(res, result.reason);
   }
   serveJson(res, 200, { customSlideTypes: result.customSlideTypes });
   return true;
@@ -157,10 +170,7 @@ async function handleCustomSlideTypeDuplicate(
   });
 
   if (!result.ok) {
-    return badRequest(
-      res,
-      ERROR_MESSAGES[result.reason] || 'Failed to duplicate slide type.',
-    );
+    return slideTypeError(res, result.reason);
   }
   serveJson(res, 201, result.customSlideType);
   return true;
@@ -192,14 +202,7 @@ async function handleCustomSlideTypeUpdate(
 
   const result = await updateCustomSlideType(storageScope, typeId, body);
   if (!result.ok) {
-    if (result.reason === 'not_found') {
-      notFound(res, 'Slide type not found.');
-      return true;
-    }
-    return badRequest(
-      res,
-      ERROR_MESSAGES[result.reason] || 'Failed to update slide type.',
-    );
+    return slideTypeError(res, result.reason);
   }
   serveJson(res, 200, result.customSlideType);
   return true;
@@ -213,14 +216,7 @@ async function handleCustomSlideTypeDelete(
   if (!canManage(authedUser)) return unauthorized(res);
   const result = await deleteCustomSlideType(storageScope, typeId);
   if (!result.ok) {
-    if (result.reason === 'not_found') {
-      notFound(res, 'Slide type not found.');
-      return true;
-    }
-    return badRequest(
-      res,
-      ERROR_MESSAGES[result.reason] || 'Failed to delete slide type.',
-    );
+    return slideTypeError(res, result.reason);
   }
   serveJson(res, 200, { ok: true });
   return true;

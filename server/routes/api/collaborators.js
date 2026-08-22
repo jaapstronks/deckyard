@@ -400,8 +400,7 @@ async function handleCollaboratorRemove(
   );
 
   if (!result.ok) {
-    if (result.reason === 'not_found') return notFound(res);
-    return badRequest(res, result.reason);
+    return jsonError(res, getErrorStatus(result.reason), result.reason);
   }
 
   // Log the revocation the way a grant is logged (non-blocking): a grant
@@ -467,8 +466,7 @@ async function handleCollaboratorUpdate(
   );
 
   if (!result.ok) {
-    if (result.reason === 'not_found') return notFound(res);
-    return badRequest(res, result.reason);
+    return jsonError(res, getErrorStatus(result.reason), result.reason);
   }
 
   // Log the permission change symmetrically with grant and revoke

@@ -5,13 +5,41 @@
 
 import {
   badRequest,
+  getErrorStatus,
+  jsonError,
   notFound,
+  requireJsonBody,
   serveJson,
   unauthorized,
-  jsonError,
-  requireJsonBody,
   withErrorHandler,
 } from '../../utils/http.js';
+
+/**
+ * Human-readable text per lead-mutation failure reason. The status is the
+ * reason's `REASONS` entry (`server/storage/reasons.js`); the calls this
+ * replaced put the snake_case reason itself in the human `message` field under
+ * a `bad_request` code — the exact inversion `docs/reference/api-error-format.md`
+ * forbids.
+ */
+const LEAD_FAILURE_MESSAGES = {
+  invalid_email: 'Invalid email address',
+};
+
+/**
+ * Answer a failed lead mutation in the canonical envelope.
+ *
+ * @param {import('node:http').ServerResponse} res
+ * @param {string} reason
+ * @returns {true}
+ */
+function leadError(res, reason) {
+  return jsonError(
+    res,
+    getErrorStatus(reason),
+    reason,
+    LEAD_FAILURE_MESSAGES[reason],
+  );
+}
 import { dispatchRoutes } from '../../utils/router.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { getClientIp, allowRequest } from '../../utils/rate-limit.js';
@@ -130,10 +158,7 @@ async function handleLeadSubmit({ repoRoot, req, res }) {
   });
 
   if (!result.ok) {
-    if (result.reason === 'invalid_email') {
-      return (badRequest(res, 'Invalid email address'), true);
-    }
-    return (badRequest(res, result.reason || 'Failed to save lead'), true);
+    return (leadError(res, result.reason), true);
   }
 
   // Fire webhook (async, don't wait)
@@ -377,7 +402,7 @@ async function handleDeleteLead(ctx, leadId) {
 
   const result = await anonymizeLead(leadId);
   if (!result.ok) {
-    return (badRequest(res, result.reason || 'Failed to delete lead'), true);
+    return (leadError(res, result.reason), true);
   }
 
   serveJson(res, 200, { ok: true });

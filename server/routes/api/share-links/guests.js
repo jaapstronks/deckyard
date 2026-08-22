@@ -23,13 +23,13 @@ import { sendGuestInvitationEmail } from '../../../integrations/brevo.js';
 import { canWritePresentation } from '../../../utils/presentation-authz.js';
 import { dispatchRoutes } from '../../../utils/router.js';
 import {
-  serveJson,
-  notFound,
-  unauthorized,
   badRequest,
   getErrorStatus,
-  requireJsonBody,
   jsonError,
+  notFound,
+  requireJsonBody,
+  serveJson,
+  unauthorized,
 } from '../../../utils/http.js';
 import { buildShareUrl } from '../../../utils/request-url.js';
 import { createLogger } from '../../../utils/logger.js';
@@ -155,7 +155,7 @@ async function handleGuestRemove(
 
   const result = await removeGuest(storageScope, guestId);
   if (!result.ok) {
-    return badRequest(res, result.reason);
+    return jsonError(res, getErrorStatus(result.reason), result.reason);
   }
 
   serveJson(res, 200, { ok: true, deleted: result.deleted });

@@ -6,12 +6,33 @@
 import {
   serveJson,
   badRequest,
+  getErrorStatus,
+  jsonError,
   unauthorized,
   forbidden,
   notFound,
   requireJsonBody,
   withErrorHandler,
 } from '../../utils/http.js';
+
+/**
+ * Answer a failed membership mutation in the canonical envelope.
+ *
+ * The status comes from the reason's `REASONS` entry, never from this route:
+ * the ladders this replaced ended in `badRequest(res, 'Failed to …')`, so a
+ * database outage (`unavailable`) reported as the caller's malformed request.
+ * `messages` supplies display copy per reason where the wording is specific to
+ * the call site — `last_owner` reads differently when you are changing a role
+ * than when you are removing a member.
+ *
+ * @param {import('node:http').ServerResponse} res
+ * @param {string} reason
+ * @param {Record<string, string>} [messages]
+ * @returns {true}
+ */
+function memberError(res, reason, messages = {}) {
+  return jsonError(res, getErrorStatus(reason), reason, messages[reason]);
+}
 import { dispatchRoutes } from '../../utils/router.js';
 import { isMultiOrgEnabled } from '../../config/features.js';
 import { normalizeEmail } from '../../utils/normalize.js';
@@ -187,10 +208,9 @@ async function handleMemberInvite(
   });
 
   if (!memberResult.ok) {
-    if (memberResult.reason === 'already_member') {
-      return badRequest(res, 'This user is already a member');
-    }
-    return badRequest(res, 'Failed to add member');
+    return memberError(res, memberResult.reason, {
+      already_member: 'This user is already a member',
+    });
   }
 
   // Send invitation email if this is a new user.
@@ -324,16 +344,9 @@ async function handleMemberRoleUpdate(
   const result = await updateMemberRole(targetMembership.membershipId, newRole);
 
   if (!result.ok) {
-    if (result.reason === 'not_found') {
-      return notFound(res);
-    }
-    if (result.reason === 'last_owner') {
-      return badRequest(
-        res,
-        'Transfer ownership before changing the owner’s role',
-      );
-    }
-    return badRequest(res, 'Failed to update role');
+    return memberError(res, result.reason, {
+      last_owner: 'Transfer ownership before changing the owner’s role',
+    });
   }
 
   // Update designer flag if provided
@@ -397,13 +410,9 @@ async function handleMemberRemove(
   const result = await removeMember(targetMembership.membershipId);
 
   if (!result.ok) {
-    if (result.reason === 'not_found') {
-      return notFound(res);
-    }
-    if (result.reason === 'last_owner') {
-      return badRequest(res, 'Cannot remove the last owner');
-    }
-    return badRequest(res, 'Failed to remove member');
+    return memberError(res, result.reason, {
+      last_owner: 'Cannot remove the last owner',
+    });
   }
 
   serveJson(res, 200, { ok: true });

@@ -17,12 +17,44 @@ import {
 import {
   serveJson,
   badRequest,
+  getErrorStatus,
+  jsonError,
   unauthorized,
   requireJsonBody,
   withErrorHandler,
 } from '../../utils/http.js';
 import { getString, getTrimmedString } from '../../utils/request-validators.js';
 import { t } from '../../i18n/index.js';
+
+/**
+ * Answer a failed password validation in the canonical envelope: the reason is
+ * the machine code, its `REASONS` entry the status, and the translated text the
+ * human `message`.
+ *
+ * `validatePassword` answers `too_short` or `too_long`; the ternary this
+ * replaced folded `too_long` into a generic "Password is invalid" and shipped
+ * every case as `error: 'bad_request'`, so a client could not tell the two
+ * apart without matching on display copy.
+ *
+ * @param {import('node:http').ServerResponse} res
+ * @param {string} reason
+ * @returns {true}
+ */
+function passwordValidationError(res, reason) {
+  const messages = {
+    too_short: t(
+      'api.error.passwordTooShort',
+      'Password is too short (minimum 8 characters)',
+    ),
+    too_long: t('api.error.passwordTooLong', 'Password is too long'),
+  };
+  return jsonError(
+    res,
+    getErrorStatus(reason),
+    reason,
+    messages[reason] || t('api.error.passwordInvalid', 'Password is invalid'),
+  );
+}
 import { getClientIp, createStorageScope } from '../../utils/context.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { sendPasswordResetEmail } from '../../integrations/brevo.js';
@@ -232,15 +264,7 @@ async function handleResetPassword({ repoRoot, req, res }) {
   // Validate password
   const pwValidation = validatePassword(password);
   if (!pwValidation.ok) {
-    return badRequest(
-      res,
-      pwValidation.reason === 'too_short'
-        ? t(
-            'api.error.passwordTooShort',
-            'Password is too short (minimum 8 characters)',
-          )
-        : t('api.error.passwordInvalid', 'Password is invalid'),
-    );
+    return passwordValidationError(res, pwValidation.reason);
   }
 
   const ipAddress = getClientIp(req);
@@ -259,8 +283,13 @@ async function handleResetPassword({ repoRoot, req, res }) {
       metadata: { reason: consumeResult.reason },
     });
 
-    return badRequest(
+    // `invalid_or_expired` is a credential that does not hold, so the register
+    // answers 401 rather than the 400 this ternary used to send under a
+    // `bad_request` code.
+    return jsonError(
       res,
+      getErrorStatus(consumeResult.reason),
+      consumeResult.reason,
       consumeResult.reason === 'invalid_or_expired'
         ? t(
             'api.error.resetLinkExpired',
@@ -345,15 +374,7 @@ async function handleChangePassword({ repoRoot, req, res }) {
   // Validate new password
   const pwValidation = validatePassword(newPassword);
   if (!pwValidation.ok) {
-    return badRequest(
-      res,
-      pwValidation.reason === 'too_short'
-        ? t(
-            'api.error.passwordTooShort',
-            'Password is too short (minimum 8 characters)',
-          )
-        : t('api.error.passwordInvalid', 'Password is invalid'),
-    );
+    return passwordValidationError(res, pwValidation.reason);
   }
 
   const ipAddress = getClientIp(req);

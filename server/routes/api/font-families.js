@@ -14,6 +14,8 @@
 
 import {
   badRequest,
+  getErrorStatus,
+  jsonError,
   methodNotAllowed,
   serveJson,
   unauthorized,
@@ -52,6 +54,23 @@ const ERROR_MESSAGES = {
   invalid_id: 'Invalid font family ID.',
 };
 
+/**
+ * Answer a failed font family mutation in the canonical envelope.
+ *
+ * The status comes from the reason's `REASONS` entry
+ * (`server/storage/reasons.js`), never from this route. The ladders this
+ * replaced answered `notFound()` for one reason and flattened every other —
+ * `unavailable` included, whose own message here reads *"Database
+ * unavailable."* — into a 400.
+ *
+ * @param {import('node:http').ServerResponse} res
+ * @param {string} reason
+ * @returns {true}
+ */
+function fontFamilyError(res, reason) {
+  return jsonError(res, getErrorStatus(reason), reason, ERROR_MESSAGES[reason]);
+}
+
 // Max upload size: 5MB
 const MAX_UPLOAD_SIZE = 5 * 1024 * 1024;
 
@@ -78,10 +97,7 @@ async function handleFontFamilyCreate({ storageScope, req, res, authedUser }) {
   const result = await createFontFamily(storageScope, body);
 
   if (!result.ok) {
-    return badRequest(
-      res,
-      ERROR_MESSAGES[result.reason] || 'Failed to create font family.',
-    );
+    return fontFamilyError(res, result.reason);
   }
   serveJson(res, 201, result.fontFamily);
   return true;
@@ -146,10 +162,7 @@ async function handleFontFamilyImportAdobe({
   });
 
   if (!result.ok) {
-    return badRequest(
-      res,
-      ERROR_MESSAGES[result.reason] || 'Failed to import font family.',
-    );
+    return fontFamilyError(res, result.reason);
   }
 
   // Add variants if provided
@@ -238,10 +251,7 @@ async function handleFontFamilyUploadVariant(
   });
 
   if (!result.ok) {
-    return badRequest(
-      res,
-      ERROR_MESSAGES[result.reason] || 'Failed to add variant.',
-    );
+    return fontFamilyError(res, result.reason);
   }
 
   // Variant changes affect themes that embed this font family
@@ -261,14 +271,7 @@ async function handleFontFamilyRemoveVariant(
   const result = await removeFontVariant(storageScope, variantId);
 
   if (!result.ok) {
-    if (result.reason === 'not_found') {
-      notFound(res, 'Variant not found.');
-      return true;
-    }
-    return badRequest(
-      res,
-      ERROR_MESSAGES[result.reason] || 'Failed to remove variant.',
-    );
+    return fontFamilyError(res, result.reason);
   }
 
   // Clean up uploaded file from media provider using storage key
@@ -314,14 +317,7 @@ async function handleFontFamilyUpdate(
 
   const result = await updateFontFamily(storageScope, familyId, body);
   if (!result.ok) {
-    if (result.reason === 'not_found') {
-      notFound(res, 'Font family not found.');
-      return true;
-    }
-    return badRequest(
-      res,
-      ERROR_MESSAGES[result.reason] || 'Failed to update font family.',
-    );
+    return fontFamilyError(res, result.reason);
   }
   // Font changes can affect any theme referencing this font family
   clearCustomThemeCache();
@@ -337,14 +333,7 @@ async function handleFontFamilyDelete(
   if (!canManage(authedUser)) return unauthorized(res);
   const result = await deleteFontFamily(storageScope, familyId);
   if (!result.ok) {
-    if (result.reason === 'not_found') {
-      notFound(res, 'Font family not found.');
-      return true;
-    }
-    return badRequest(
-      res,
-      ERROR_MESSAGES[result.reason] || 'Failed to delete font family.',
-    );
+    return fontFamilyError(res, result.reason);
   }
 
   // Clean up uploaded files from media provider using storage keys

@@ -1,10 +1,12 @@
 import {
   badRequest,
+  getErrorStatus,
+  jsonError,
   methodNotAllowed,
   notFound,
+  requireJsonBody,
   serveJson,
   unauthorized,
-  requireJsonBody,
   withErrorHandler,
 } from '../../utils/http.js';
 import { getFollowStateForPresentation } from '../../storage/live-sessions/index.js';
@@ -48,8 +50,7 @@ async function handleQuestionRemove(
     removedBy: authedUser.email || 'moderator',
   });
   if (!result.ok) {
-    if (result.reason === 'not_found') return notFound(res);
-    return badRequest(res, result.reason);
+    return jsonError(res, getErrorStatus(result.reason), result.reason);
   }
   serveJson(res, 200, { ok: true });
   return true;
