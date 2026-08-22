@@ -1,11 +1,26 @@
 /**
  * Core presentation authorization functions.
  *
- * Who a deck belongs to is decided by {@link isOwnerOrCreator} in
- * shared/identity-match.js, which keys on the stable `users.id` and on nothing
- * else: a stamp whose id column is a defined NULL (an external or legacy row)
- * names nobody. These functions therefore never compare an email themselves —
- * see that module for the rule and why an address is not a second key.
+ * Who a deck belongs to is decided in shared/identity-match.js, which keys on
+ * the stable `users.id` and on nothing else: a stamp whose id column is a
+ * defined NULL (an external or legacy row) names nobody. These functions
+ * therefore never compare an email themselves — see that module for the rule
+ * and why an address is not a second key.
+ *
+ * ## Two stamps, two questions (D43, D49)
+ *
+ * A deck carries an **owner** and a **creator**, and they answer different
+ * questions. Power over the object — writing it, deleting it, changing who may
+ * see it, handing out access to it — reads {@link isOwner} alone. Authorship
+ * (slide locks, comment moderation) and sight (reading it, seeing it in a
+ * list) read {@link isOwnerOrCreator}, because making a deck is a fact about
+ * the past that transfer cannot revoke, and neither authorship nor sight is
+ * power over the object.
+ *
+ * The line follows from `created_by` being create-only by construction
+ * (server/storage/presentations/index.js): a creator-inclusive grant is one
+ * nothing can ever take away, which is exactly wrong for a power that is meant
+ * to be transferable. See docs/reference/permission-model.md.
  */
 
 import { sandboxEnabled } from '../../config/sandbox.js';
@@ -114,9 +129,10 @@ export function canWritePresentation({
   const visibility = normalizePresentationVisibility(pres?.visibility);
   if (sandboxEnabled() && visibility === 'organization') return false;
 
-  // Owner/creator can write
+  // The owner can write. Not the creator: writing is power over the object, and
+  // a transfer that cannot take it away is not a transfer (D49).
   if (!hasIdentity(user)) return false;
-  if (isOwnerOrCreator(user, pres)) return true;
+  if (isOwner(user, pres)) return true;
 
   // View-only presentations are read-only for non-owners
   if (pres?.isViewOnly) return false;
@@ -136,9 +152,10 @@ export function canWritePresentation({
  */
 export function canDeletePresentation({ user, pres } = {}) {
   if (isUnrestricted(user)) return true;
-  // Only the owner/creator can delete.
+  // Only the owner can delete — not the creator, and not a collaborator at any
+  // permission (D49).
   if (!hasIdentity(user)) return false;
-  return isOwnerOrCreator(user, pres);
+  return isOwner(user, pres);
 }
 
 /**
@@ -162,9 +179,10 @@ export function canChangePresentationVisibility({
   // Sandbox stance: prevent user-to-user sharing
   if (sandboxEnabled()) return false;
 
-  // Phase 1: allow private -> organization by owner/creator only.
+  // Phase 1: allow private -> organization by the owner only (D49). Widening
+  // who may see a deck is power over the object, not an authorship fact.
   if (from === 'private' && to === 'organization') {
-    return isOwnerOrCreator(user, pres);
+    return isOwner(user, pres);
   }
 
   // Organization -> private is intentionally not supported for non-admin in Phase 1.
@@ -181,8 +199,9 @@ export function canChangePresentationVisibility({
  * creator-inclusive check would leave the person who made a deck able to take
  * it straight back forever, whatever they agreed to when they handed it over.
  *
- * The creator's other powers are untouched: authorship (slide locks) and
- * comment moderation still read the pair — see
+ * D49 extended the same reasoning to write, delete, visibility and
+ * collaborator management. What the creator stamp still carries is authorship
+ * (slide locks) and comment moderation, which read the pair — see
  * docs/reference/permission-model.md.
  */
 export function canTransferOwnership({ user, pres } = {}) {
@@ -206,7 +225,8 @@ export function isPresentationAuthor({ user, pres } = {}) {
 
 /**
  * Check if a user can manage collaborators on a presentation.
- * Allowed for: owner, creator, or collaborator with 'admin' permission.
+ * Allowed for: the owner, or a collaborator with 'admin' permission — not the
+ * creator (D49). Handing out access to a deck is power over it.
  */
 export function canManageCollaborators({
   user,
@@ -216,7 +236,7 @@ export function canManageCollaborators({
   if (isUnrestricted(user)) return true;
   if (!pres || typeof pres !== 'object') return false;
   if (!hasIdentity(user)) return false;
-  if (isOwnerOrCreator(user, pres)) return true;
+  if (isOwner(user, pres)) return true;
 
   // Collaborator with admin permission can manage collaborators
   if (canManage(collaboratorPermission)) return true;
@@ -265,8 +285,12 @@ export function getEffectivePermission({
 
   if (!hasIdentity(user)) return 'view';
 
-  // Owner or creator always has edit permission
-  if (isOwnerOrCreator(user, pres)) return 'edit';
+  // The owner always has edit permission. Not the creator: this function is the
+  // read-side mirror of canWritePresentation (it picks editor-vs-viewer UI), so
+  // a creator-inclusive answer here would open an editor whose every save the
+  // server refuses. A previous owner kept as a collaborator still resolves to
+  // their collaborator permission below, which is what the transfer promises.
+  if (isOwner(user, pres)) return 'edit';
 
   // Organization-visible presentations handling
   const visibility = normalizePresentationVisibility(pres?.visibility);
