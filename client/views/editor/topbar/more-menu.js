@@ -29,6 +29,27 @@ export function createEditorTopbarMoreMenu({
 } = {}) {
   const detachers = [];
 
+  /**
+   * Invoke an optional `on*` handler and route any failure to `onError`.
+   *
+   * The props are a mix of sync and async: `handler?.()` covers "no handler
+   * was passed", but calling `.catch()` on what it returns only works when the
+   * handler happens to be async. `openVersionsModal` is synchronous and
+   * returns nothing, so `onVersions?.().catch?.(…)` threw a TypeError before
+   * the menu item had done anything (B116). Awaiting inside a try/catch is one
+   * shape that fits both kinds, and it also catches a synchronous throw.
+   *
+   * @param {Function|undefined} handler
+   * @returns {Promise<void>}
+   */
+  const run = async (handler) => {
+    try {
+      await handler?.();
+    } catch (e) {
+      onError?.(e);
+    }
+  };
+
   const btnTranslateOther = h('button', {
     class: 'dropdown-item',
     type: 'button',
@@ -37,7 +58,7 @@ export function createEditorTopbarMoreMenu({
       'editor.more.translate.title',
       'Create (or refresh) the other language version so follow-along and switching are ready.',
     ),
-    onclick: () => onTranslateOther?.().catch?.((e) => onError?.(e)),
+    onclick: () => run(onTranslateOther),
   });
   btnTranslateOther.style.display = canTranslate ? '' : 'none';
 
@@ -45,7 +66,7 @@ export function createEditorTopbarMoreMenu({
     class: 'dropdown-item',
     type: 'button',
     text: t('editor.more.versions', 'Versions…'),
-    onclick: () => onVersions?.().catch?.((e) => onError?.(e)),
+    onclick: () => run(onVersions),
   });
 
   const btnDuplicateDeck = h('button', {
@@ -150,7 +171,7 @@ export function createEditorTopbarMoreMenu({
       'editor.more.subscription.title',
       'Choose which comment activity on this deck notifies you.',
     ),
-    onclick: () => onSubscription?.(),
+    onclick: () => run(onSubscription),
   });
 
   // Utilities demoted from their own topbar icons (2026-07-16 chrome
@@ -159,21 +180,21 @@ export function createEditorTopbarMoreMenu({
     class: 'dropdown-item',
     type: 'button',
     text: t('editor.analyze', 'AI Analysis'),
-    onclick: () => onAnalyze?.(),
+    onclick: () => run(onAnalyze),
   });
 
   const btnSettings = h('button', {
     class: 'dropdown-item',
     type: 'button',
     text: t('common.settings', 'Settings'),
-    onclick: () => onOpenSettings?.(),
+    onclick: () => run(onOpenSettings),
   });
 
   const btnShortcuts = h('button', {
     class: 'dropdown-item',
     type: 'button',
     text: `${t('editor.shortcuts.title', 'Keyboard shortcuts')} (?)`,
-    onclick: () => onShowShortcuts?.(),
+    onclick: () => run(onShowShortcuts),
   });
 
   // Mirror of the deck-grid topbar button; CSS shows it only at widths
@@ -182,7 +203,7 @@ export function createEditorTopbarMoreMenu({
     class: 'dropdown-item topbar-overflow-item-lg',
     type: 'button',
     text: t('editor.deckGrid.open', 'Slide overview'),
-    onclick: () => onOpenOverview?.(),
+    onclick: () => run(onOpenOverview),
   });
 
   // Responsive overflow items - visible only at narrow widths (CSS hides on desktop)
@@ -190,7 +211,7 @@ export function createEditorTopbarMoreMenu({
     class: 'dropdown-item topbar-overflow-item',
     type: 'button',
     text: t('common.toggleTheme', 'Toggle dark/light mode'),
-    onclick: () => onToggleTheme?.(),
+    onclick: () => run(onToggleTheme),
   });
 
   const btnLogout = h('button', {
