@@ -3,8 +3,8 @@
 ## Purpose & scope
 
 Every email Deckyard sends — password resets, magic links, invitations,
-collaborator and guest invites, comment notifications, lead alerts, export-ready
-notices and the weekly digest — goes through **one transport function** over the
+collaborator and guest invites, comment notifications, export-ready notices and
+the weekly digest — goes through **one transport function** over the
 Brevo transactional API, and gets its body from **one of two places**: a code
 default (a builder function in `server/integrations/email-templates/`) or an
 admin's customized override stored in Postgres. The resolver in front decides
@@ -17,10 +17,10 @@ live with the notification system; this doc covers the sending half.
 
 ## Module map
 
-Transport and senders (`server/integrations/email/`, 8 modules):
+Transport and senders (`server/integrations/email/`, 7 modules):
 
 - `server/integrations/email/index.js` — the barrel; re-exports the transport,
-  the template-builder helpers and the four sender families.
+  the template-builder helpers and the three sender families.
 - `server/integrations/email/core.js` — `sendEmail({to, toName, subject,
 htmlContent, textContent, senderOverride})` (a `POST` to
   `https://api.brevo.com/v3/smtp/email` with a 10 s abort), `getSenderIdentity()`
@@ -36,8 +36,6 @@ htmlContent, textContent, senderOverride})` (a `POST` to
   `sendCollaboratorInviteEmail`, `sendGuestInvitationEmail`.
 - `server/integrations/email/senders-digests.js` —
   `sendWeeklyDigestEmail`, `sendTeamDigestEmail`.
-- `server/integrations/email/senders-leads.js` —
-  `maybeSendLeadNotification` (the `maybe` is the owner's opt-in).
 - `server/integrations/email/senders-export.js` —
   `sendExportReadyNotification`. Not re-exported by the barrel; the bulk-export
   worker imports it directly.
@@ -49,7 +47,7 @@ Template bodies (`server/integrations/email-templates/`, 7 modules):
 - `server/integrations/email-templates/auth.js` — password reset,
   user invitation, activation reminder, magic link.
 - `server/integrations/email-templates/notifications.js` — comment
-  notification, lead notification.
+  notification.
 - `server/integrations/email-templates/collaboration.js` — guest
   verification, collaborator invite, guest invitation.
 - `server/integrations/email-templates/digest.js` — weekly and team
@@ -176,7 +174,7 @@ whether `BREVO_API_KEY` is set.
 
 ## Implementation status (as of 2026-08-21)
 
-Shipped and in use: the Brevo transport, all four sender families plus export,
+Shipped and in use: the Brevo transport, all three sender families plus export,
 the code-default builders in nine locales' worth of translator strings, the
 Postgres override store with its migration off disk, the resolver's
 custom → default → `en` chain, and the admin panel with preview and test-send.
@@ -191,14 +189,6 @@ Honest gaps:
   code default — so the mail is correct, the customization path is dead, and
   nothing reports it. Same for the two digest senders, which do not attempt a
   custom template at all.
-- **Two lists of template types disagree, and one entry is inert.** The server
-  accepts the nine keys in `TEMPLATE_METADATA` (including `leadNotification`);
-  the admin panel renders the eight in `shared/constants/email-templates.js`
-  (which omits it). So `leadNotification` can be written over the API, is
-  invisible in the UI — and `senders-leads.js` never calls
-  `trySendCustomTemplate` anyway, so an override written for it is never read.
-  One canonical list is the target; today there are two, one of them partly
-  fictional.
 - **`integrations/brevo.js` is a shim** with ten live importers — the module move
   was made but the call sites were not followed through.
 - **No delivery observability.** No send log, no retry, no bounce handling, no

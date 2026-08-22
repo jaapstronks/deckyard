@@ -54,8 +54,6 @@
   "organization.members.you": "Sinä",
   "settings.admin.webhooks.feedbackSubmitted.hint": "Tapahtuma: interaction.feedback_submitted",
   "settings.admin.webhooks.feedbackSubmitted.title": "Kun palaute lähetetään",
-  "settings.admin.webhooks.leadSubmitted.hint": "Tapahtuma: lead.submitted",
-  "settings.admin.webhooks.leadSubmitted.title": "Kun liidi lähetetään",
   "settings.admin.webhooks.likertClosed.hint": "Tapahtuma: interaction.likert_closed",
   "settings.admin.webhooks.likertClosed.title": "Kun Likert-asteikko suljetaan",
   "settings.admin.webhooks.pollClosed.hint": "Tapahtuma: interaction.poll_closed",

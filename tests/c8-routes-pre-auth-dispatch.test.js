@@ -1,20 +1,18 @@
 /**
  * A7.19 C8 fase 2 — pre-auth family route-table migration
- * (auth, password-reset, magic-link, sso, leads).
+ * (auth, password-reset, magic-link, sso).
  *
- * These modules run **before** the auth gate (leads also has a post-gate
- * mount), so the migration is deliberately mechanical: Form A everywhere
- * (every old branch fell through on a method mismatch, no 405), order copied
- * line for line, and every guard (auth-enabled, rate limit, enumeration
- * masking, OIDC state) stays inside its handler untouched.
+ * These modules run **before** the auth gate, so the migration is deliberately
+ * mechanical: Form A everywhere (every old branch fell through on a method
+ * mismatch, no 405), order copied line for line, and every guard (auth-enabled,
+ * rate limit, enumeration masking, OIDC state) stays inside its handler
+ * untouched.
  *
  * Routing is asserted with `select()` over the exported tables
  * (storage-free); wrong-method and unknown-path fall-through is asserted by
  * invoking the entry functions — no row matches, so no handler (and no
- * storage) is reached. The leads `:id`-shadows-`my-data` DELETE quirk is now
- * gone by construction (B63b): the three `my-data` routes live in the public
- * table, dispatched before the authed `:id` row, so no ordering discipline is
- * needed and the authed table carries no literal for `:id` to shadow.
+ * storage) is reached. The fifth family this file covered, leads, went with
+ * the lead-capture strip (B119).
  *
  * Run with: node --test tests/c8-routes-pre-auth-dispatch.test.js
  */
@@ -35,12 +33,6 @@ import {
   handleMagicLink,
 } from '../server/routes/api/magic-link.js';
 import { ROUTES as SSO_ROUTES, handleSso } from '../server/routes/api/sso.js';
-import {
-  ROUTES as LEAD_ROUTES,
-  PUBLIC_ROUTES as LEAD_PUBLIC_ROUTES,
-  handleLeads,
-  handleLeadsPublic,
-} from '../server/routes/api/leads.js';
 
 function select(routes, method, pathname) {
   for (const route of routes) {
@@ -224,90 +216,4 @@ test('sso: outside the prefix the module declines; inside, unknown paths and wro
     assert.equal(await handleSso(c), false, `${method} ${path} → false`);
     assert.equal(res.statusCode, null, `${method} ${path} sent no response`);
   }
-});
-
-test('leads: the public table carries the submit route and the three my-data routes', () => {
-  named(LEAD_PUBLIC_ROUTES, 'POST', '/api/leads', 'handleLeadSubmit');
-  named(
-    LEAD_PUBLIC_ROUTES,
-    'POST',
-    '/api/leads/my-data/request',
-    'handleRequestMyData',
-  );
-  named(LEAD_PUBLIC_ROUTES, 'GET', '/api/leads/my-data', 'handleGetMyData');
-  named(
-    LEAD_PUBLIC_ROUTES,
-    'DELETE',
-    '/api/leads/my-data',
-    'handleDeleteMyData',
-  );
-  assert.equal(LEAD_PUBLIC_ROUTES.length, 4);
-  assert.equal(
-    select(LEAD_PUBLIC_ROUTES, 'GET', '/api/leads'),
-    null,
-    'GET /api/leads is not public',
-  );
-});
-
-test('leads: authed routes resolve to their named handlers in order', () => {
-  named(LEAD_ROUTES, 'GET', '/api/presentations/p1/leads', 'handleGetLeads');
-  named(
-    LEAD_ROUTES,
-    'GET',
-    '/api/presentations/p1/leads/count',
-    'handleGetLeadCount',
-  );
-  named(
-    LEAD_ROUTES,
-    'GET',
-    '/api/presentations/p1/leads/export',
-    'handleExportLeads',
-  );
-  named(LEAD_ROUTES, 'DELETE', '/api/leads/l1', 'handleDeleteLead');
-  // The my-data routes are no longer in the authed table — they went public.
-  assert.equal(select(LEAD_ROUTES, 'POST', '/api/leads/my-data/request'), null);
-  assert.equal(select(LEAD_ROUTES, 'GET', '/api/leads/my-data'), null);
-});
-
-test('leads: the public my-data delete is not shadowed by the authed :id row', () => {
-  // The literal my-data delete lives in the public table, matched before the
-  // authed table is ever consulted. The authed `:id` row still matches any
-  // single segment — but 'my-data' can no longer reach it, because the public
-  // dispatch answers first. Here: the public table resolves the erasure, and
-  // the authed table resolves a real lead id.
-  named(
-    LEAD_PUBLIC_ROUTES,
-    'DELETE',
-    '/api/leads/my-data',
-    'handleDeleteMyData',
-  );
-  named(LEAD_ROUTES, 'DELETE', '/api/leads/l1', 'handleDeleteLead');
-  // And the authed table would still (wrongly) resolve a bare 'my-data' to the
-  // :id handler if it were reached — which is exactly why the route is public.
-  named(LEAD_ROUTES, 'DELETE', '/api/leads/my-data', 'handleDeleteLead');
-});
-
-test('leads: without a session the authed entry declines; unknown paths fall through', async () => {
-  const anon = ctx('GET', '/api/presentations/p1/leads');
-  assert.equal(
-    await handleLeads(anon.ctx),
-    false,
-    'no authedUser → false (gate answers)',
-  );
-
-  const unknown = ctx('PATCH', '/api/leads/l1', {
-    authedUser: { email: 'a@b.test' },
-  });
-  assert.equal(
-    await handleLeads(unknown.ctx),
-    false,
-    'wrong method on :id → false',
-  );
-
-  const pub = ctx('POST', '/api/leads/other');
-  assert.equal(
-    await handleLeadsPublic(pub.ctx),
-    false,
-    'unknown public path → false',
-  );
 });

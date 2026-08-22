@@ -6,7 +6,7 @@
  *
  * - helpers.js - Shared utilities (EMAIL_STYLES, emailButton, emailWrapper)
  * - auth.js - Authentication emails (password reset, magic link, invitations)
- * - notifications.js - Notification emails (comments, leads)
+ * - notifications.js - Notification emails (comments)
  * - digest.js - Digest emails (weekly summary, team digest)
  * - collaboration.js - Collaboration emails (guest verification, invites)
  */
@@ -29,11 +29,7 @@ export {
 } from './auth.js';
 
 // Notification templates
-export {
-  buildCommentNotificationEmail,
-  buildLeadNotificationEmail,
-  buildDataRequestEmail,
-} from './notifications.js';
+export { buildCommentNotificationEmail } from './notifications.js';
 
 // Export templates
 export { buildExportReadyEmail } from './export.js';

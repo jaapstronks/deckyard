@@ -141,8 +141,6 @@ export const REMOVED_SLIDE_TYPES = {
     // breaking half of this removal and is called out in the release notes.
     migration: null,
     allowedReferences: {
-      'docs/reference/leads.md':
-        'documents POST /api/leads, which is still live: the endpoint, its storage and this doc go together in the server-infra half of the strip (B119 PR 2). Delete this entry with the file',
       'tests/slide-types-policy.test.js':
         'asserts the type is off the registry and a stored slide degrades safely',
     },
