@@ -82,7 +82,6 @@ export const REASONS = Object.freeze(
     held: { status: 409, kind: 'caller' },
     inactive: { status: 409, kind: 'caller' },
     locked: { status: 409, kind: 'caller' },
-    cannot_delete_default: { status: 409, kind: 'caller' },
     last_owner: { status: 409, kind: 'caller' },
     limit_exceeded: { status: 409, kind: 'caller' },
     order_mismatch: { status: 409, kind: 'caller' },
@@ -112,6 +111,9 @@ export const REASONS = Object.freeze(
     not_member: { status: 403, kind: 'caller' },
     not_owner: { status: 403, kind: 'caller' },
     not_provisioned: { status: 403, kind: 'caller' }, // SSO, auto-provision off
+    // Not a state conflict that could resolve: the default organization is
+    // undeletable by rule, for everyone. The delete route already answered 403.
+    cannot_delete_default: { status: 403, kind: 'caller' },
     own_question: { status: 403, kind: 'caller' },
 
     // ─── 401 Unauthorized: the credential is missing or does not hold ───────
