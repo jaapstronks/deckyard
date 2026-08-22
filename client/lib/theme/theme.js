@@ -156,7 +156,25 @@ function isThemeForId(theme, id) {
   );
 }
 
-export async function loadThemeById(rawThemeId) {
+/**
+ * Load a theme by id, caching it and injecting the styles it brings along.
+ *
+ * `config` is the preload entrance, not a second loader: an anonymous surface
+ * (share viewer, follow audience, notes companion) cannot reach
+ * `GET /api/themes/custom/:id/config` — it is behind the login gate — so a
+ * deck on a database theme rendered unbranded there. Those surfaces now get
+ * the theme with the payload their token authorizes and hand it in here, so
+ * caching, `@font-face` injection, slide-background rules and normalization
+ * stay on the one path every other view already uses.
+ *
+ * @param {string} rawThemeId
+ * @param {Object} [options]
+ * @param {Object|null} [options.config] - Theme config delivered with the
+ *   deck payload. Omit it (or pass null) to fetch, which is what an
+ *   authenticated view does and what a built-in theme always does.
+ * @returns {Promise<Object>} the normalized theme
+ */
+export async function loadThemeById(rawThemeId, { config = null } = {}) {
   const id = safeThemeId(rawThemeId);
   if (themeCache.has(id)) return themeCache.get(id);
 
@@ -165,7 +183,8 @@ export async function loadThemeById(rawThemeId) {
     return inFlightRequests.get(id);
   }
 
-  const promise = fetchThemeData(id).then((theme) => {
+  const source = config ? Promise.resolve(config) : fetchThemeData(id);
+  const promise = source.then((theme) => {
     inFlightRequests.delete(id);
     theme = normalizeTheme(theme);
     if (!isThemeForId(theme, id)) {

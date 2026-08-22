@@ -248,7 +248,9 @@ export async function renderFollow(root, presentationId) {
       return false;
     }
     pres = resp.presentation;
-    theme = await loadThemeById(pres?.theme);
+    // The theme comes with the payload the follow code authorizes; the
+    // login-gated config route answers 401 to this anonymous audience.
+    theme = await loadThemeById(pres?.theme, { config: pres?.themeConfig });
     meta = resp?.meta || meta;
     applyCapabilities(resp?.capabilities || null);
     stopTranslatingPoll();

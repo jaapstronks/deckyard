@@ -54,6 +54,7 @@ import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
 import { createLogger } from '../../../utils/logger.js';
 import { fireAndForget } from '../../../utils/fire-and-forget.js';
 import { crossOrganizationScope } from '../../../storage/scope.js';
+import { customThemeConfig } from '../../../utils/themes.js';
 const log = createLogger('public');
 
 // No request context on this surface on purpose: these endpoints are
@@ -140,10 +141,17 @@ async function handleShareValidate({ repoRoot, req, res }, token) {
  * these three, and a new deck setting should be a deliberate line here rather
  * than something an operator-facing field leaks out through.
  *
+ * `themeConfig` rides along for the same reason the deck itself does: a
+ * database theme is resolved through a route behind the login gate, so an
+ * anonymous viewer got a 401 and a blank theme (see
+ * `server/utils/themes.js` § customThemeConfig). It is null for a built-in
+ * theme, which the client loads from `/themes/` on its own.
+ *
+ * @param {string|null} repoRoot
  * @param {Object} pres - Presentation as stored.
- * @returns {Object} Viewer-safe deck payload.
+ * @returns {Promise<Object>} Viewer-safe deck payload.
  */
-function shareViewerDeck(pres) {
+async function shareViewerDeck(repoRoot, pres) {
   // Same filter the authenticated route applies to a view/comment reader:
   // slides marked `hideFromViewers` never leave, drafts come through badged.
   const visible = filterForViewOnly(pres, { markDrafts: true });
@@ -156,6 +164,7 @@ function shareViewerDeck(pres) {
     id: pres.id,
     title: typeof pres.title === 'string' ? pres.title : '',
     theme: pres.theme || '',
+    themeConfig: await customThemeConfig(repoRoot, pres.theme),
     // Resolved here so the viewer never re-derives it from a payload that
     // deliberately omits the i18n block (shared/i18n-utils.js).
     lang: resolveDeckLang(pres) || '',
@@ -226,7 +235,7 @@ async function handleShareVerify({ repoRoot, req, res }, token) {
     presentationId: result.shareLink.presentationId,
     permission: result.shareLink.permission,
     token: result.shareLink.token,
-    presentation: shareViewerDeck(pres),
+    presentation: await shareViewerDeck(repoRoot, pres),
   });
   return true;
 }
