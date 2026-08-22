@@ -167,6 +167,23 @@
     0 0 0 3px hsl(var(--app-accent-primary) / 0.15);
 }
 
+/* Input size ladder. Until now `form-input-sm`/`-xs` had no base definition:
+   the only rules carrying them were ancestor-scoped, so `form-input
+   form-input-sm` rendered at full size everywhere else. These are the
+   definitions the markup has been asking for; the scoped rules that remain
+   are layout (flex, max-width), not size. */
+.form-input-sm {
+  padding: var(--ps-space-1) var(--ps-space-2);
+  font-size: var(--ps-text-sm);
+}
+
+.form-input-xs {
+  padding: var(--ps-space-0-5) var(--ps-space-1-5);
+  font-size: var(--ps-text-xs);
+  height: auto;
+  min-height: 0;
+}
+
 .form-textarea-sm {
   min-height: 56px;
   resize: vertical;
