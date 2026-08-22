@@ -8,6 +8,7 @@ import {
   pickVersion,
 } from '../../../utils/translation-status.js';
 import { crossOrganizationScope } from '../../../storage/scope.js';
+import { customThemeConfig } from '../../../utils/themes.js';
 import {
   computeAudienceCapabilitiesFromState,
   followAudienceScope,
@@ -90,6 +91,12 @@ export async function handleFollowPresentation(
       id: picked.id,
       title: picked.title,
       theme: picked.theme,
+      // A database theme resolves through a route behind the login gate, so
+      // the audience — anonymous by definition — saw a 401 and followed along
+      // on an unbranded deck. The theme rides on the payload the follow code
+      // already authorizes (server/utils/themes.js § customThemeConfig);
+      // null for a built-in, which the client loads from /themes/ itself.
+      themeConfig: await customThemeConfig(repoRoot, picked.theme),
       slides: Array.isArray(picked.slides) ? picked.slides : [],
     },
   });
