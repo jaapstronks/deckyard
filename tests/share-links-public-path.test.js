@@ -22,10 +22,18 @@
  * server, no browser — the suite has no e2e harness and this item does not
  * introduce one.
  *
- * No production code changes with this file. One test-double gap did have to
- * close: `.set((eb) => …)`, which is how the use counter is incremented, used
- * to compile to an empty SET clause in the double, so "the link is spent now"
- * would have passed without the counter ever moving.
+ * No production code changes came with the first version of this file. One
+ * test-double gap did have to close: `.set((eb) => …)`, which is how the use
+ * counter is incremented, used to compile to an empty SET clause in the double,
+ * so "the link is spent now" would have passed without the counter ever moving.
+ *
+ * Since then `verify` also hands over the deck. That is the same rule again,
+ * not an exception to it: the viewer's old `/api/presentations/:id` fetch was
+ * id-addressed and behind the login gate, so it answered 401 to the anonymous
+ * audience the link exists for. The deck rides on the one call that proves the
+ * link — which is also the only place the password is checked — and the tests
+ * below pin both halves: the payload is an allowlist, and a refused password
+ * still names no deck.
  *
  * Run with: node --test tests/share-links-public-path.test.js
  */
@@ -103,7 +111,15 @@ function deckRow(id) {
     lang: 'nl',
     revision: 1,
     is_view_only: false,
-    slides: [{ id: 's1', type: 'content-slide', content: { title: 'Secret' } }],
+    slides: [
+      { id: 's1', type: 'content-slide', content: { title: 'Secret' } },
+      {
+        id: 's-hidden',
+        type: 'content-slide',
+        content: { title: 'Not for viewers' },
+        visibility: { hideFromViewers: true },
+      },
+    ],
     i18n: null,
     settings: {},
     created_at: '2026-02-01T00:00:00.000Z',
@@ -403,11 +419,15 @@ test('a link without a password verifies, is counted, and is logged', async () =
   const res = await call('POST', '/api/share/tok-view/verify', { body: {} });
 
   assert.equal(res.status, 200);
-  assert.deepEqual(res.body, {
-    presentationId: 'deck-shared',
-    permission: 'view',
-    token: 'tok-view',
-  });
+  assert.deepEqual(
+    { ...res.body, presentation: undefined },
+    {
+      presentationId: 'deck-shared',
+      permission: 'view',
+      token: 'tok-view',
+      presentation: undefined,
+    },
+  );
   assert.equal(link('tok-view').use_count, 1, 'the access is counted');
   assert.equal(link('tok-view').last_used_at != null, true);
   assert.deepEqual(
@@ -427,6 +447,7 @@ test('the right password opens the link; the response carries no hash', async ()
   assert.equal(res.body.presentationId, 'deck-shared');
   assert.deepEqual(Object.keys(res.body).sort(), [
     'permission',
+    'presentation',
     'presentationId',
     'token',
   ]);
@@ -459,6 +480,82 @@ test('a missing or wrong password buys nothing and costs the link nothing', asyn
     'a refused attempt is not a use',
   );
   assert.deepEqual(accessLog(), [], 'and it is not logged as an access');
+});
+
+test('verify hands over the deck itself — the anonymous viewer has no other way to it', async () => {
+  // `/api/presentations/:id` is id-addressed and sits behind the login gate,
+  // so the share viewer's old deck fetch answered 401 to exactly the audience
+  // a share link exists for. The deck rides on `verify` instead: the one call
+  // that proves the link, and the only place a password can be checked.
+  seed();
+  const res = await call('POST', '/api/share/tok-view/verify', { body: {} });
+
+  assert.equal(res.status, 200);
+  const deck = res.body.presentation;
+  assert.equal(deck.id, 'deck-shared');
+  assert.equal(deck.title, 'Title of deck-shared');
+  assert.equal(deck.theme, 'default');
+  assert.equal(deck.lang, 'nl');
+  assert.equal(deck.revision, 1);
+  assert.deepEqual(
+    deck.slides.map((s) => s.id),
+    ['s1'],
+    'a slide marked hideFromViewers never leaves the server',
+  );
+  assert.deepEqual(Object.keys(deck.settings).sort(), [
+    'analyticsEnabled',
+    'autoAdvance',
+    'liveVideo',
+  ]);
+});
+
+test('the deck payload is an allowlist, not the stored row', async () => {
+  // The viewer needs a deck, not the deck's private life. Ownership stamps,
+  // organization and visibility are what an id-addressed authenticated fetch
+  // would carry and what this surface must not.
+  seed();
+  const res = await call('POST', '/api/share/tok-view/verify', { body: {} });
+
+  assert.deepEqual(Object.keys(res.body.presentation).sort(), [
+    'id',
+    'lang',
+    'revision',
+    'settings',
+    'slides',
+    'theme',
+    'title',
+  ]);
+});
+
+test('a password-protected deck stays behind its password', async () => {
+  // The gate has to hold on the call that now carries the payload: a refused
+  // attempt must name no deck and hand over no slides.
+  seed();
+
+  const missing = await call('POST', '/api/share/tok-password/verify', {
+    body: {},
+  });
+  assert.equal(missing.status, 401);
+  assert.equal(missing.body.presentation, undefined);
+
+  const wrong = await call('POST', '/api/share/tok-password/verify', {
+    body: { password: 'not it' },
+  });
+  assert.equal(wrong.status, 401);
+  assert.equal(wrong.body.presentation, undefined);
+
+  const right = await call('POST', '/api/share/tok-password/verify', {
+    body: { password: PASSWORD },
+  });
+  assert.equal(right.status, 200);
+  assert.equal(right.body.presentation.id, 'deck-shared');
+});
+
+test('each token still hands over only its own deck', async () => {
+  seed();
+  const res = await call('POST', '/api/share/tok-other/verify', { body: {} });
+  assert.equal(res.body.presentation.id, 'deck-other');
+  assert.equal(res.body.presentation.title, 'Title of deck-other');
 });
 
 test('an unparseable body is a bad request, not a password attempt', async () => {

@@ -83,8 +83,8 @@ export async function renderShareViewer(root, token) {
 
     if (data.requiresPassword) {
       renderPasswordPrompt(shell, token, data, async (verifiedData) => {
-        shareLink = verifiedData.shareLink || verifiedData;
-        await loadAndRenderPresentation();
+        shareLink = verifiedData;
+        await renderDeck(verifiedData.presentation);
       });
       return cleanup;
     }
@@ -121,7 +121,7 @@ export async function renderShareViewer(root, token) {
       console.warn('Guest verification error:', errorCode);
     }
 
-    await loadAndRenderPresentation();
+    await renderDeck(verifyData.presentation);
   } catch (err) {
     renderError(
       shell,
@@ -129,7 +129,19 @@ export async function renderShareViewer(root, token) {
     );
   }
 
-  async function loadAndRenderPresentation() {
+  /**
+   * Render the deck that came back with `verify`.
+   *
+   * The deck rides on the verify response rather than being fetched from
+   * `/api/presentations/:id`: that route is id-addressed and sits behind the
+   * login gate, so an anonymous visitor holding a perfectly valid share link
+   * got a 401 and this view rendered "Failed to load presentation". The share
+   * token is the authorization here, and `verify` is the call that establishes
+   * it.
+   *
+   * @param {Object|null} deck - Viewer-safe deck from the verify response.
+   */
+  async function renderDeck(deck) {
     shell.innerHTML = '';
 
     const loading = h('div', { class: 'share-viewer-loading' }, [
@@ -142,11 +154,7 @@ export async function renderShareViewer(root, token) {
     shell.append(loading);
 
     try {
-      // Fetch the presentation
-      const presResp = await api(
-        `/api/presentations/${shareLink.presentationId}`,
-      );
-      presentation = presResp;
+      presentation = deck || null;
 
       if (!presentation) {
         throw new Error(t('share.error.notFound', 'Link Not Found'));
