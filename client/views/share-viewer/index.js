@@ -30,6 +30,7 @@ import { renderError } from './error-display.js';
 import { createVideoLayer } from '../../lib/slide-runtime/video-layer.js';
 import { attachSwipeNavigation } from '../../lib/dom/swipe-nav.js';
 import { buildShareViewerTopbar } from './topbar.js';
+import { createGuestVerifyNotice } from './guest-verify-notice.js';
 import { setupShareAutoAdvance } from './auto-advance.js';
 
 // Guest session state
@@ -63,6 +64,13 @@ export async function renderShareViewer(root, token) {
   let analyticsTracker = null;
   let videoLayer = null;
   let autoAdvanceInstance = null;
+  /**
+   * The `?guest_error=` code the verification redirect came back with, held
+   * until the viewer is built so the banner can sit inside the deck chrome.
+   * Cleared on dismissal so a re-render does not resurrect it.
+   * @type {string|null}
+   */
+  let guestVerifyError = null;
 
   // Validate the token first
   try {
@@ -114,11 +122,11 @@ export async function renderShareViewer(root, token) {
       window.history.replaceState({}, '', window.location.pathname);
     }
     if (urlParams.get('guest_error')) {
-      const errorCode = urlParams.get('guest_error');
-      // Remove URL parameters
+      // Held for renderViewer(), which puts it on screen. The parameter is
+      // stripped in the same breath so a reload — or anything else that reads
+      // the querystring later — cannot raise the banner a second time.
+      guestVerifyError = urlParams.get('guest_error');
       window.history.replaceState({}, '', window.location.pathname);
-      // Show error but continue loading
-      console.warn('Guest verification error:', errorCode);
     }
 
     await loadAndRenderPresentation();
@@ -204,7 +212,7 @@ export async function renderShareViewer(root, token) {
   function renderViewer() {
     detachViewerListeners();
 
-    const { topbar, commentsSection } = buildShareViewerTopbar({
+    const { topbar, commentsSection, openJoinPrompt } = buildShareViewerTopbar({
       presentation,
       shareLink,
       guestSession,
@@ -292,7 +300,27 @@ export async function renderShareViewer(root, token) {
     };
     document.addEventListener('keydown', handleKeydown);
 
-    shell.append(topbar, stage, nav);
+    // The verification-failure banner sits between the deck chrome and the
+    // slide: the link is valid and the deck is readable — only the identity
+    // step failed, so it annotates the view instead of replacing it.
+    if (guestVerifyError) {
+      shell.append(
+        topbar,
+        createGuestVerifyNotice({
+          code: guestVerifyError,
+          signedInAs: guestSession?.authenticated
+            ? guestSession.name || guestSession.email
+            : null,
+          onRequestNewLink: openJoinPrompt,
+          onDismiss: () => {
+            guestVerifyError = null;
+          },
+        }),
+      );
+    } else {
+      shell.append(topbar);
+    }
+    shell.append(stage, nav);
 
     // Add comments section below navigation if available
     if (commentsSection) {
