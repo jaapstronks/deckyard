@@ -100,6 +100,25 @@ test('heading transform falls back to none for unknown values', () => {
   );
 });
 
+test('text scale falls back to normal for unknown values', () => {
+  assert.equal(
+    validateThemeConfig({ typography: { textScale: 'compact' } }).typography
+      .textScale,
+    'compact',
+  );
+  assert.equal(
+    validateThemeConfig({ typography: { textScale: 'enormous' } }).typography
+      .textScale,
+    'normal',
+  );
+  // Unset stays unset, so the stylesheet default survives untouched.
+  assert.equal(
+    validateThemeConfig({ typography: { headingWeight: 400 } }).typography
+      .textScale,
+    undefined,
+  );
+});
+
 test('cssVarOverrides accepts only --t- tokens', () => {
   const out = validateThemeConfig({
     cssVarOverrides: {

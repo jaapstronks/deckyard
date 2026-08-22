@@ -10,6 +10,7 @@ import {
   validateThemeConfig,
   RADIUS_SCALES,
   SHADOW_SCALES,
+  TEXT_SCALES,
 } from '../../shared/theme-config-schema.js';
 import { pickTextColorForBg } from '../../shared/color-utils.js';
 
@@ -397,6 +398,8 @@ function applyThemeConfig(theme, rawConfig) {
     cssVars['--t-shadow-scale'] = SHADOW_SCALES[config.surfaces.shadow];
   }
 
+  if (config.typography?.textScale)
+    cssVars['--t-slide-text-scale'] = TEXT_SCALES[config.typography.textScale];
   if (config.typography?.headingTransform)
     cssVars['--t-heading-transform'] = config.typography.headingTransform;
   if (config.typography?.headingWeight)

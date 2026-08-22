@@ -21,6 +21,7 @@ import { createSegmented } from '../../../lib/dom/segmented.js';
 import {
   RADIUS_SCALES,
   SHADOW_SCALES,
+  TEXT_SCALES,
 } from '../../../../shared/theme-config-schema.js';
 import { LOCKABLE_PROPERTIES } from '../../../../shared/theme-locks.js';
 import { createBackgroundsSection } from './backgrounds-section.js';
@@ -135,17 +136,29 @@ function createSurfacesSection({ config, onChange }) {
 const HEADING_TRANSFORMS = ['none', 'uppercase', 'lowercase', 'capitalize'];
 const HEADING_WEIGHTS = ['300', '400', '500', '600', '700', '800'];
 
-/** Typography treatment: how headings are cased and weighted. */
+/** Typography: how large the type runs, and how headings are cased and weighted. */
 function createTypographySection({ config, onChange }) {
   const el = card(
-    t('settings.themes.config.typography', 'Heading treatment'),
+    t('settings.themes.config.typography', 'Typography'),
     t(
       'settings.themes.config.typographyHint',
-      'Applies to headings across every slide type. The fonts themselves are set above.',
+      'Text size applies to every slide type; capitalisation and weight apply to headings. The fonts themselves are set above.',
     ),
   );
 
   el.append(
+    choiceRow({
+      label: t('settings.themes.config.textScale', 'Text size'),
+      value: readValue(config, 'typography', 'textScale'),
+      options: Object.keys(TEXT_SCALES).map((key) => ({
+        value: key,
+        label: t(`settings.themes.config.textScale.${key}`, key),
+      })),
+      onChange: (v) => {
+        writeValue(config, 'typography', 'textScale', v);
+        onChange();
+      },
+    }),
     choiceRow({
       label: t('settings.themes.config.headingTransform', 'Capitalisation'),
       value: readValue(config, 'typography', 'headingTransform'),

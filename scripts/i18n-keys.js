@@ -66,7 +66,7 @@ export const DYNAMIC_KEY_PATTERNS = [
   /^editor\.textBlocks\.row\d+$/, // editor-form/slide-forms/text-blocks.js
   /^editor\.inline\.field\./, // inline-edit/inline-editor.js
   /^fonts\.weightName\./, // settings/font-editor/upload-panel.js
-  /^settings\.themes\.config\.(radius|shadow|transform)\./, // theme-editor/config-sections.js
+  /^settings\.themes\.config\.(radius|shadow|textScale|transform)\./, // theme-editor/config-sections.js
   /^follow\./, // resolved by the scoped loader in client/views/follow/i18n.js
 ];
 

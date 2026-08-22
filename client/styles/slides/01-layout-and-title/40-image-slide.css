@@ -92,7 +92,10 @@
 
 /* Bleed axis: edge-to-edge frame, heading/subheading overlay the image. */
 .slide-image.is-bleed {
-  padding: 0; /* override default slide padding so image can hit the edges */
+  /* The slide root carries no frame inset; stating it as --slide-padding (not
+     `padding: 0`) keeps the fluid type unit correct — see 00-tokens.css
+     § THE FLUID BASIS. */
+  --slide-padding: 0px;
 }
 .slide-image.is-bleed .slide-inner {
   padding: 0;

@@ -42,6 +42,7 @@
   "--t-slide-gradient-bg",
   "--t-slide-gradient-text",
   "--t-slide-gradient-text-muted",
+  "--t-slide-text-scale",
   "--t-text-color-dark",
   "--t-text-color-light"
 ]

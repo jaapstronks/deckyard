@@ -158,10 +158,20 @@ function numKey(n) {
 
 /**
  * Read the slide scales out of `00-tokens.css`, so the gate cannot drift from
- * the tokens it enforces. Only tokens whose value is a bare `px` length (the
- * text and space scales) or a bare number (the leading scale) participate —
+ * the tokens it enforces. Only tokens whose value is a plain size participate —
  * theme-following tokens like `--slide-radius-md: var(--t-radius, 18px)` are
  * skipped by construction, which is exactly the border-radius exclusion above.
+ *
+ * "A plain size" has two spellings, because the text scale is fluid and the
+ * space scale is not (yet):
+ *
+ *   --slide-space-4: 16px;
+ *   --slide-text-sm: calc(16 * var(--slide-text-unit));
+ *
+ * Both mean "16 on the 1600px reference canvas", which is what a raw `16px` in
+ * a slide sheet has to be written as. So both parse to the same key, and a
+ * literal `font-size: 16px` keeps resolving to `--slide-text-sm` after the
+ * typography scale went fluid.
  *
  * The `px` axis is split into a **per-category** map, `text` and `space`, each
  * keyed on value within its own scale. This matters where the two scales share
@@ -178,12 +188,15 @@ function readScales(source) {
   const text = new Map();
   const space = new Map();
   const leading = new Map();
-  for (const m of stripComments(source).matchAll(
-    /(--slide-(text|space)-[\w-]+)\s*:\s*([\d.]+)px\s*;/g,
-  )) {
-    const map = m[2] === 'text' ? text : space;
-    const key = numKey(Number(m[3]));
-    if (!map.has(key)) map.set(key, m[1]);
+  const plainPx = /(--slide-(text|space)-[\w-]+)\s*:\s*([\d.]+)px\s*;/g;
+  const referencePx =
+    /(--slide-(text|space)-[\w-]+)\s*:\s*calc\(\s*([\d.]+)\s*\*\s*var\(\s*--slide-\2-unit\s*\)\s*\)\s*;/g;
+  for (const re of [plainPx, referencePx]) {
+    for (const m of stripComments(source).matchAll(re)) {
+      const map = m[2] === 'text' ? text : space;
+      const key = numKey(Number(m[3]));
+      if (!map.has(key)) map.set(key, m[1]);
+    }
   }
   for (const m of stripComments(source).matchAll(
     /(--slide-leading-[\w-]+)\s*:\s*([\d.]+)\s*;/g,

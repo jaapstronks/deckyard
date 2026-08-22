@@ -319,6 +319,36 @@ surface classes and background variants now rebind `--slide-on-surface`,
 text pole — `--slide-on-inverted` (see `00-base.css` and the generated
 variant rules in `shared/theme-slide-backgrounds.js`).
 
+## The type scale is fluid
+
+`--slide-text-*` is not a px constant. Each step is a number of _reference
+pixels_ turned into a length by `--slide-text-unit`, which is derived from the
+slide's own box:
+
+```css
+--slide-canvas-unit: calc((100cqi + 2 * var(--slide-padding)) / 1600);
+--slide-text-unit: calc(var(--slide-canvas-unit) * var(--slide-text-scale));
+--slide-text-base: calc(20 * var(--slide-text-unit));
+```
+
+`.slide` is its own `container-type: inline-size` query container, so a step is
+exactly its historical px value while the slide renders at the 1600×900
+reference canvas — which every current path does — and proportional the moment
+it does not. Two consequences worth knowing:
+
+- **A query container is queried by its descendants, never by itself.** A
+  `--slide-text-*` value used _on_ the `.slide` element resolves against
+  whatever container sits outside the slide. Set slide typography on
+  descendants.
+- **`--slide-padding` is the slide root's inline inset, not just a value.** The
+  unit adds it back to reach the border box, so a type that bleeds to the edge
+  states `--slide-padding: 0px` rather than `padding: 0`, and an inner box that
+  wants the same 64px reads the spacing scale (`--slide-space-16`) instead.
+
+`tests/slide-typography-scale.test.js` pins the shape;
+`tests/slide-type-unit-parity.test.js` renders every registered type and
+measures that the unit really is one reference pixel there.
+
 ## Radius, shadow, opacity
 
 Already on the model: `--slide-radius-*` → `--t-radius*`, `--slide-shadow-*` →
@@ -339,10 +369,12 @@ What a theme may set — the full contract, ~30–35 tokens, zero type names:
   `--t-chart-{0..7}`, `--t-color-brand-{1..3}`, link colour.
 - **Typography**: `--t-font-{heading,body,caption,mono}`,
   `--t-heading-{weight,transform,letter-spacing}`, and the scale multiplier
-  `--t-slide-text-scale` (contract point; multiplier not yet implemented).
-  **No per-role px sizes for themes** — that would re-couple every theme to
-  every role.
-- **Spacing**: `--t-slide-space-scale` (same model, same status).
+  `--t-slide-text-scale` — **implemented**: it multiplies `--slide-text-unit`,
+  so it moves every `--slide-text-*` step and every role derived from one, and
+  nothing else. Unset behaves as `1`. **No per-role px sizes for themes** —
+  that would re-couple every theme to every role.
+- **Spacing**: `--t-slide-space-scale` (same model; contract point, multiplier
+  not yet implemented).
 - **Radius**: `--t-radius{,-sm,-lg}`. **Shadow**: `--t-shadow-scale`.
 - **Layout/branding**: `--t-logo-url`, gradient tokens, title layout.
 
