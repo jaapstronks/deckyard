@@ -3,6 +3,7 @@ import path from 'node:path';
 import { envInt } from '../config/utils.js';
 import { isAppError, getStatusCode, errorToResponse } from './errors.js';
 import { logError } from './logger.js';
+import { reasonEntry } from '../storage/reasons.js';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -221,82 +222,43 @@ export function noContent(res) {
 }
 
 /**
- * Standard mapping of error reason codes to HTTP status codes.
- * Consolidates duplicated statusMap objects across route handlers.
+ * Whether an unknown `reason` must throw rather than answer 500.
+ *
+ * D48: an unknown reason is a hole in our own vocabulary, so it is loud where
+ * someone can fix it (test, dev, CI) and quiet-but-honest where a visitor is
+ * waiting (production answers 500). The throw surfaces as a 500 too — the
+ * route's error handler catches it — so the only difference is the stack trace
+ * and a failing test, never a different status on the wire.
+ *
+ * @returns {boolean}
  */
-const ERROR_STATUS_MAP = {
-  // Not found errors
-  not_found: 404,
-  share_link_not_found: 404,
-
-  // Gone (resource no longer available)
-  revoked: 410,
-  expired: 410,
-  share_link_expired: 410,
-  max_uses_exceeded: 410,
-
-  // Authentication errors
-  password_required: 401,
-  invalid_password: 401,
-
-  // Permission errors
-  forbidden: 403,
-  not_invited: 403,
-
-  // Rate limiting
-  rate_limited: 429,
-
-  // Conflict (the resource is already in the requested state, or refuses the
-  // transition: a second vote, an invite that already went out, a closed poll)
-  already_exists: 409,
-  already_voted: 409,
-  already_invited: 409,
-  already_requested: 409,
-  already_resolved: 409,
-  closed: 409,
-  held: 409,
-
-  // Bad request — the caller sent something we cannot act on
-  invalid: 400,
-  invalid_email: 400,
-  invalid_permission: 400,
-  user_not_found: 400,
-
-  // Combined not-found/already-in-state reasons. Storage answers these from a
-  // single conditional UPDATE and deliberately does not distinguish "gone"
-  // from "already in that state" (splitting would need a second, racy query).
-  // The statuses differ on purpose and are pinned here as the explicit
-  // exception: revoking is a DELETE-shaped call where a missing key is a 404;
-  // resolve/dismiss are transition-shaped calls where the combined reason is
-  // the caller's request failing, hence 400.
-  not_found_or_already_revoked: 404,
-  not_found_or_already_resolved: 400,
-  not_found_or_already_handled: 400,
-
-  // Ours, not the caller's. These must never answer 4xx: telling a client its
-  // request is malformed when our insert failed sends it off to fix something
-  // that is not broken, and hides the outage from every error dashboard that
-  // watches 5xx.
-  database_error: 500,
-  unavailable: 503,
-};
+function throwOnUnknownReason() {
+  return process.env.NODE_ENV !== 'production';
+}
 
 /**
- * Get HTTP status code for an error reason.
+ * The HTTP status for a storage `reason` code.
  *
- * Pass `500` as the default on any surface whose reasons can be server-side:
- * an unrecognised reason is our vocabulary failing, not the caller's request.
+ * The vocabulary and its statuses live in `server/storage/reasons.js`; this is
+ * the only reader. There is **no default status**: a reason the register does
+ * not know is our vocabulary failing, not the caller's request, so it answers
+ * 500 (and throws outside production). The old `defaultStatus = 400` is exactly
+ * how 66 codes came to report server faults as malformed requests.
  *
  * @param {string} reason - Error reason code
- * @param {number} defaultStatus - Default status if reason not mapped (default: 400)
  * @returns {number} HTTP status code
  */
-export function getErrorStatus(reason, defaultStatus = 400) {
-  // `hasOwn`, not truthiness: a bare property read would answer `Object`'s
-  // inherited members (`constructor`, `toString`) with a function.
-  return Object.hasOwn(ERROR_STATUS_MAP, reason)
-    ? ERROR_STATUS_MAP[reason]
-    : defaultStatus;
+export function getErrorStatus(reason) {
+  const entry = reasonEntry(reason);
+  if (entry) return entry.status;
+
+  const message =
+    `Unknown storage reason ${JSON.stringify(reason)} — add it to REASONS ` +
+    'in server/storage/reasons.js, or use a code that is already there ' +
+    '(docs/reference/storage-layer.md § Failure signalling).';
+  if (throwOnUnknownReason()) throw new Error(message);
+  logError('http', message);
+  return 500;
 }
 
 export function methodNotAllowed(res, allowed) {

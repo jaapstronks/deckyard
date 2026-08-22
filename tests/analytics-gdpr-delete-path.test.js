@@ -411,15 +411,15 @@ test('the storage helpers refuse an identifier that is not an email', async () =
   // whose device it is; the helpers take an email and nothing else.
   assert.deepEqual(await exportUserAnalyticsData({ deviceId: 'dev-1' }), {
     ok: false,
-    reason: 'No identifier provided',
+    reason: 'invalid',
   });
   assert.deepEqual(await deleteUserAnalyticsData({ deviceId: 'dev-1' }), {
     ok: false,
-    reason: 'No identifier provided',
+    reason: 'invalid',
   });
   assert.deepEqual(await deleteUserAnalyticsData({}), {
     ok: false,
-    reason: 'No identifier provided',
+    reason: 'invalid',
   });
 
   assert.deepEqual(sessionIds(db), ['anon'], 'the refusals touched nothing');

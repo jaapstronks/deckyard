@@ -118,7 +118,7 @@ export function notifyLiveSessionDeckUpdated(
     { allowCrossOrganization: true },
   );
   const sid = String(sessionId || '').trim();
-  if (!sid) return { ok: false, reason: 'missing_sessionId' };
+  if (!sid) return { ok: false, reason: 'missing_session_id' };
   const payload = {
     presentationId: String(presentationId || '').trim(),
     slideId: String(slideId || '').trim(),
@@ -149,7 +149,7 @@ export async function notifyDeckUpdatedForPresentation(
     { allowCrossOrganization: true },
   );
   const pid = String(presentationId || '').trim();
-  if (!pid) return { ok: false, reason: 'missing_presentationId' };
+  if (!pid) return { ok: false, reason: 'missing_presentation_id' };
   const s = await findMostRecentSessionForPresentation(scope, pid);
   if (!s?.sessionId || !s.clients?.size)
     return { ok: false, reason: 'no_live_session' };
@@ -168,7 +168,7 @@ export function broadcastBranch(
   // Presenter action (fired on interaction close): the scope states its organization.
   toStorageContext(scope, 'broadcastBranch');
   const sid = String(sessionId || '').trim();
-  if (!sid) return { ok: false, reason: 'missing_sessionId' };
+  if (!sid) return { ok: false, reason: 'missing_session_id' };
   const payload = {
     slideId: String(slideId || '').trim(),
     onClose: String(onClose || 'stay').trim(),

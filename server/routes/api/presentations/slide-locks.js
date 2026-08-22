@@ -295,7 +295,7 @@ export async function handleSlideLocksReleaseAll(
   if (!result.ok && result.reason !== 'unavailable') {
     return jsonError(
       res,
-      getErrorStatus(result.reason, 500),
+      getErrorStatus(result.reason),
       result.reason || 'internal_error',
     );
   }

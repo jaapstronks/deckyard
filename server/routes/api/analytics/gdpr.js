@@ -53,7 +53,7 @@ export async function handleExportMyData(ctx) {
   if (!result.ok) {
     return jsonError(
       res,
-      getErrorStatus(result.reason, 500),
+      getErrorStatus(result.reason),
       result.reason || 'internal_error',
       'Failed to export data',
     );
@@ -95,7 +95,7 @@ export async function handleDeleteMyData(ctx) {
   if (!result.ok) {
     return jsonError(
       res,
-      getErrorStatus(result.reason, 500),
+      getErrorStatus(result.reason),
       result.reason || 'internal_error',
       'Failed to delete data',
     );

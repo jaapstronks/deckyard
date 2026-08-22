@@ -88,10 +88,15 @@ test('comment failure reasons map to the intended statuses', () => {
   assert.equal(getErrorStatus('unavailable'), 503);
   // A missing row on update is a 404, not a generic 400.
   assert.equal(getErrorStatus('not_found'), 404);
-  // Caller-side reasons stay 400 via the default.
+  // Caller-side input reasons are 400 — now by a REASONS entry, not by a
+  // fall-through default (B104).
   assert.equal(getErrorStatus('invalid'), 400);
   assert.equal(getErrorStatus('invalid_presentation'), 400);
-  assert.equal(getErrorStatus('parent_not_found'), 400);
+  // A missing parent comment is as absent as a missing comment: 404, where it
+  // used to inherit the 400 default.
+  assert.equal(getErrorStatus('parent_not_found'), 404);
+  // The combined not-found/already-in-state reasons stay 400 on purpose: they
+  // are transition-shaped calls, and the register carries that exception.
   assert.equal(getErrorStatus('not_found_or_already_resolved'), 400);
   assert.equal(getErrorStatus('not_found_or_not_resolved'), 400);
   assert.equal(getErrorStatus('not_found_or_already_handled'), 400);
@@ -104,9 +109,10 @@ test('follow/share failure reasons map to the intended statuses (C7g table-drive
   assert.equal(getErrorStatus('closed'), 409);
   assert.equal(getErrorStatus('already_invited'), 409);
   assert.equal(getErrorStatus('forbidden'), 403);
-  // Missing-input reasons stay on the caller-side default.
+  // Missing input is 400; "you may not upvote your own question" is a
+  // permission verdict, so it is 403 rather than the old 400 default (B104).
   assert.equal(getErrorStatus('missing_text'), 400);
-  assert.equal(getErrorStatus('own_question'), 400);
+  assert.equal(getErrorStatus('own_question'), 403);
 });
 
 test('analytics access failures answer via machine codes, not prose matching (C7h)', () => {

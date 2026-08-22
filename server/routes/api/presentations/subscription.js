@@ -79,7 +79,7 @@ export async function handlePresentationSubscription(
   if (!result.ok) {
     return jsonError(
       res,
-      getErrorStatus(result.reason, 400),
+      getErrorStatus(result.reason),
       result.reason || 'internal_error',
     );
   }

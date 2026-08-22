@@ -220,6 +220,31 @@ Domain-specific reasons are fine where they carry information a route or UI
 acts on (`slug_exists`, `last_owner`, `limit_exceeded`, `expired`). What is not
 fine is a second spelling for a meaning that already has one.
 
+### The register: one place a reason is minted
+
+[`server/storage/reasons.js`](../../server/storage/reasons.js) holds `REASONS`,
+the closed vocabulary. Every code the layer can answer is listed there with two
+fields:
+
+- **`status`** — the HTTP status it answers with. One reason, one status, on
+  every route; a handler never picks its own.
+- **`kind`** — `'caller'` (4xx, the request is at fault) or `'ours'` (5xx, the
+  server is). `unavailable`, `database_error`, `create_failed`, `update_failed`
+  and `write_failed` are the `'ours'` codes.
+
+`getErrorStatus(reason)` in `server/utils/http.js` is the only reader, and it
+takes **no default status**. A reason the register does not know is a hole in
+our own vocabulary, not a malformed request: it throws outside production (so a
+test, a dev run or CI fails on it) and answers `500` in production. Adding a
+code means adding a register entry — there is nowhere else to mint one.
+
+`tests/storage-reason-vocabulary.test.js` is the gate. It parses every
+`{ ok: false, reason: '<literal>' }` under `server/storage/**` and
+`server/routes/api/**` and asserts membership, **with an empty allowlist**; it
+also refuses a code that is not a `snake_case` token, a `kind`/`status` pair
+that disagrees, a register entry nobody mints, and any `getErrorStatus(reason,
+<default>)` call.
+
 **Throws** — programmer errors (a missing scope, an impossible argument) and
 infrastructure failures raise. `toStorageContext()` throwing on an absent scope
 is the canonical case. A caller is not expected to catch these; they are bugs
@@ -228,6 +253,27 @@ or outages, not outcomes. The one softened edge is `withDbGuard(fallback, fn)`
 throwing when the pool is down — pass `null`/`[]` from a read and
 `{ ok: false, reason: 'unavailable' }` from a mutation, so the guard hands back
 that call kind's own failure shape.
+
+### Implementation status: the vocabulary (as of 2026-08-22)
+
+**The register is in place and the gate is green with an empty allowlist**
+(B104 PR 1). Before it, `ERROR_STATUS_MAP` in `server/utils/http.js` covered 23
+of the 89 codes the layer mints and the other 66 fell through to a `400`
+default — so `createSlideCollection` answering `create_failed` because its
+insert returned nothing reached the client as _"your request was malformed"_,
+and never showed up on a dashboard watching 5xx. Two shape defects went with the
+default: three `reason`s were English sentences (`'No device id provided'`),
+which the envelope puts on the wire as the machine code clients branch on, and
+five were `camelCase` (`bad_slideIndex`, `missing_questionId`). All eight are
+now tokens from the register.
+
+Two things the register deliberately did **not** do in that cut, both tracked
+under B104: the 25 `badRequest(res, <reason>)` sites and 51 hand-written
+`reason === '…'` branches in `server/routes/**` still bypass `getErrorStatus`
+(PR 2), and the surviving synonym sets — `slug_exists`/`slug_taken`/
+`variant_exists`, `key_id_required`/`api_key_id_required`, and the five
+`invalid_*` spellings D48 names (`invalid`, `invalid_id`, `invalid_params`,
+`invalid_fields`, `invalid_name`) — are still separate codes (PR 3, D48).
 
 ### Implementation status: failure shapes (as of 2026-08-21)
 
@@ -272,8 +318,9 @@ down reads `unavailable`. The follow routes map those through
 now a 404 rather than a 400, and a database outage a 503 rather than a 400. Both
 are only reachable on a race — the handlers pre-check live-ness and the current
 slide — and both are the honest status for what happened.
-`tests/storage-call-convention.test.js` pins the three retired spellings to zero
-under `server/storage/**`.
+Those three spellings cannot come back: they are not in the `REASONS` register,
+so the vocabulary gate refuses them (it superseded the flat blocklist that used
+to live in `tests/storage-call-convention.test.js`).
 
 One known gap sits outside the shape itself: several facades let a malformed
 caller id reach PostgreSQL, which raises `22P02` on a `uuid` column instead of

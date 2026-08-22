@@ -43,6 +43,13 @@ Always go through the shared surface — do not hand-roll `serveJson(res, status
 | `methodNotAllowed(res, allowed)`    | 405    | `method_not_allowed` (sets `Allow`) |
 
 For a storage `reason` code, use `jsonError(res, getErrorStatus(reason), reason, message?)`.
+`getErrorStatus` reads the closed `REASONS` register in
+[`server/storage/reasons.js`](../../server/storage/reasons.js), which states one
+status and one `kind` (`'caller'` 4xx / `'ours'` 5xx) per code. It takes **no**
+second argument: an unknown reason is a hole in our vocabulary, not a malformed
+request, so it throws outside production and answers 500 in production —
+`getErrorStatus(reason, 500)` is the retired form, and
+`tests/storage-reason-vocabulary.test.js` refuses it (B104).
 Thrown `AppError`s serialize via `toJSON()` into the same envelope (the code
 defaults from the HTTP status, see `codeForStatus`); the top-level handler and
 `withErrorHandler` emit it too.
