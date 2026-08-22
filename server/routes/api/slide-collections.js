@@ -8,8 +8,8 @@
  */
 
 import {
-  badRequest,
-  forbidden,
+  getErrorStatus,
+  jsonError,
   methodNotAllowed,
   serveJson,
   unauthorized,
@@ -50,10 +50,19 @@ function organizationMutateGuard(authedUser) {
   };
 }
 
+/**
+ * Answer a failed collection mutation in the canonical envelope. The reason is
+ * the machine code and its `REASONS` entry is the status, so the three-way
+ * not_found/forbidden/else ladder this replaced is gone: `not_found` is a 404
+ * and `forbidden` a 403 because the register says so, not because this route
+ * happened to spell them out.
+ *
+ * @param {import('node:http').ServerResponse} res
+ * @param {string} reason
+ * @returns {true}
+ */
 function mutationError(res, reason) {
-  if (reason === 'not_found') return notFound(res);
-  if (reason === 'forbidden') return forbidden(res, 'Not allowed');
-  return badRequest(res, reason);
+  return jsonError(res, getErrorStatus(reason), reason);
 }
 
 function actorEmail(authedUser) {
@@ -81,7 +90,7 @@ async function handlePersonalCreate({ storageScope, req, res, authedUser }) {
   const r = await createPersonalCollection(storageScope, email, body, {
     actorEmail: email,
   });
-  if (!r.ok) return badRequest(res, r.reason);
+  if (!r.ok) return mutationError(res, r.reason);
   serveJson(res, 201, r.item);
   return true;
 }
@@ -150,7 +159,7 @@ async function handleOrganizationCreate({
   const r = await createOrganizationCollection(storageScope, body, {
     actorEmail: email,
   });
-  if (!r.ok) return badRequest(res, r.reason);
+  if (!r.ok) return mutationError(res, r.reason);
   serveJson(res, 201, r.item);
   return true;
 }

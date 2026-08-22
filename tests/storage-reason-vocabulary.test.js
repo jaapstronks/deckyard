@@ -31,6 +31,19 @@
  *     caller-vs-ours decision at the call site, which is precisely where it
  *     disagreed with itself.
  *
+ * Two more rules (PR 2) keep the routes from re-deciding what the register
+ * already decided:
+ *
+ *   - **no `badRequest(res, <reason>)`** — that form puts the snake_case reason
+ *     in the human `message` field under a `bad_request` code, the exact
+ *     inversion `docs/reference/api-error-format.md` forbids, and answers 400
+ *     for a failed insert. Hard zero, no exceptions.
+ *   - **no hand-written status ladder** — a `reason === '<code>'` branch that
+ *     picks a status. The branches that read a reason for something else (a
+ *     message, a payload, another vocabulary entirely) are listed in
+ *     `REASON_BRANCH_EXCEPTIONS` with why; the one real ladder still standing
+ *     is on the shrink-only `REASON_BRANCH_BURNDOWN`.
+ *
  * `shared/**` is in scope because `shared/slide-types/usage.js` mints
  * `invalid_usage` / `usage_too_long` and `createCustomSlideType` hands them
  * straight back, so they reach the wire as storage reasons like any other.
@@ -282,6 +295,128 @@ test('getErrorStatus takes no route-local default status', () => {
       'decision belongs to the REASONS register, not to the route: the old ' +
       '`getErrorStatus(reason, 500)` / `(reason, 400)` split is how the same ' +
       'reason answered two different statuses on two different routes.',
+  );
+});
+
+/**
+ * Hand-written `reason === '<code>'` branches that are **not** a route picking
+ * an HTTP status, keyed `<file> :: <code>` with why they stay.
+ *
+ * B104 PR 2 converted the status ladders — the six-line
+ * not_found/forbidden/else chains that ended in `badRequest(res, reason)` and
+ * flattened everything they did not name into a 400. What is left reads a
+ * reason for some other purpose, or belongs to a vocabulary that is not this
+ * one. Each is a decision, not a leftover; the burndown below is for leftovers.
+ */
+const REASON_BRANCH_EXCEPTIONS = new Map([
+  [
+    'server/routes/api/email-templates.js :: not_configured',
+    "the mail sender's own vocabulary (server/integrations/email/core.js), which maps to 501/502",
+  ],
+  [
+    'server/routes/api/leads.js :: not_configured',
+    'same mail-sender vocabulary; the dev branch echoes a token instead of claiming a mail went out',
+  ],
+  [
+    'server/routes/api/password-reset.js :: invalid_or_expired',
+    'picks display copy for the reset link; the status comes from the register',
+  ],
+  [
+    'server/routes/api/magic-link.js :: invalid_or_expired',
+    'picks a client-facing slug on a 200 body — a pre-envelope response shape, tracked separately',
+  ],
+  [
+    'server/routes/api/share-links/public.js :: revoked',
+    'adds the presentation id to the payload; the status is unaffected',
+  ],
+  [
+    'server/routes/api/presentations/slide-locks.js :: held',
+    'the documented soft-fail policy: only a real conflict is an HTTP error, everything else answers 200 so a single-operator backend does not log phantom 409s',
+  ],
+  [
+    'server/routes/api/presentations/versions.js :: session_end',
+    'the presentation-version audit trail, a different `reason` namespace entirely',
+  ],
+  [
+    'server/routes/public-api/v1/middleware.js :: unavailable',
+    'the public v1 surface picks its own envelope via sendV1Error',
+  ],
+]);
+
+/**
+ * Real status ladders still standing, shrink-only (the `eslint-suppressions.json`
+ * pattern): fixing one means deleting its line, and a new one fails the test.
+ *
+ * @type {string[]}
+ */
+const REASON_BRANCH_BURNDOWN = [
+  // The public /api/v1 surface answers 503-or-400 by hand. It is the same
+  // fall-through defect, but its statuses are pinned in docs/openapi.yaml, so
+  // moving them is an openapi change rather than an internal one.
+  'server/routes/public-api/v1/comments.js :: unavailable',
+];
+
+/** Every `<ident>.reason === '<code>'` branch under server/routes/**. */
+function scanReasonBranches() {
+  const found = [];
+  for (const file of walk(join(repoRoot, 'server/routes'))) {
+    const rel = relative(repoRoot, file).replace(/\\/g, '/');
+    readFileSync(file, 'utf8').replace(
+      /\breason === '([a-z_]+)'/g,
+      (_m, code) => found.push(`${rel} :: ${code}`),
+    );
+  }
+  return [...new Set(found)].sort();
+}
+
+test('no route flattens a storage reason into badRequest', () => {
+  const offenders = [];
+  for (const file of walk(join(repoRoot, 'server/routes'))) {
+    const rel = relative(repoRoot, file).replace(/\\/g, '/');
+    readFileSync(file, 'utf8')
+      .split('\n')
+      .forEach((line, i) => {
+        if (/badRequest\(\s*res,\s*[A-Za-z_$][\w$]*\.?reason\b/.test(line))
+          offenders.push(`${rel}:${i + 1}`);
+      });
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    'badRequest(res, <reason>) puts the snake_case reason in the human ' +
+      '`message` field under a `bad_request` code — the exact inversion ' +
+      'docs/reference/api-error-format.md forbids, and it answers 400 for a ' +
+      'failed insert. Use jsonError(res, getErrorStatus(reason), reason).',
+  );
+});
+
+test('no route maps a storage reason to a status by hand', () => {
+  const allowed = new Set([
+    ...REASON_BRANCH_EXCEPTIONS.keys(),
+    ...REASON_BRANCH_BURNDOWN,
+  ]);
+  const fresh = scanReasonBranches().filter((b) => !allowed.has(b));
+  assert.deepEqual(
+    fresh,
+    [],
+    'the status for a reason lives in the REASONS register, not in a route. ' +
+      'Answer with jsonError(res, getErrorStatus(reason), reason) and keep ' +
+      'display copy in a per-route message map (the INVITE_FAILURE_MESSAGES ' +
+      'pattern in routes/api/collaborators.js). If the branch reads a reason ' +
+      'for something other than a status, add it to REASON_BRANCH_EXCEPTIONS ' +
+      'with why.',
+  );
+});
+
+test('the reason-branch lists name only real branches', () => {
+  const present = new Set(scanReasonBranches());
+  const stale = [...REASON_BRANCH_EXCEPTIONS.keys(), ...REASON_BRANCH_BURNDOWN]
+    .filter((b) => !present.has(b))
+    .sort();
+  assert.deepEqual(
+    stale,
+    [],
+    'these branches are gone — delete their lines so the lists keep shrinking',
   );
 });
 

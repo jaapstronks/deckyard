@@ -268,10 +268,20 @@ which the envelope puts on the wire as the machine code clients branch on, and
 five were `camelCase` (`bad_slideIndex`, `missing_questionId`). All eight are
 now tokens from the register.
 
-Two things the register deliberately did **not** do in that cut, both tracked
-under B104: the 25 `badRequest(res, <reason>)` sites and 51 hand-written
-`reason === '…'` branches in `server/routes/**` still bypass `getErrorStatus`
-(PR 2), and the surviving synonym sets — `slug_exists`/`slug_taken`/
+**The call sites followed** (B104 PR 2). The 25 `badRequest(res, <reason>)`
+sites are gone — that form put the snake_case reason in the human `message`
+field under a `bad_request` code, the inversion
+[`api-error-format.md`](api-error-format.md) forbids — and so are the
+hand-written status ladders, the six-line not_found/forbidden/else chains that
+flattened every reason they did not name into a 400. Display copy moved to
+per-route message maps (the `INVITE_FAILURE_MESSAGES` pattern in
+`routes/api/collaborators.js`), where a status is not a thing a route can pick.
+Both are gated in `tests/storage-reason-vocabulary.test.js`: `badRequest` at a
+hard zero, the ladders against a documented exception list plus a shrink-only
+burndown holding the one that remains (the public `/api/v1` comments route,
+whose statuses are pinned in `docs/openapi.yaml`).
+
+Still open under B104: the surviving synonym sets — `slug_exists`/`slug_taken`/
 `variant_exists`, `key_id_required`/`api_key_id_required`, and the five
 `invalid_*` spellings D48 names (`invalid`, `invalid_id`, `invalid_params`,
 `invalid_fields`, `invalid_name`) — are still separate codes (PR 3, D48).

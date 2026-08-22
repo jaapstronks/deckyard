@@ -6,12 +6,43 @@
 import {
   serveJson,
   badRequest,
+  getErrorStatus,
+  jsonError,
   unauthorized,
   notFound,
   rateLimited,
   requireJsonBody,
   withErrorHandler,
 } from '../../utils/http.js';
+
+/**
+ * Human-readable text per admin user-mutation failure reason.
+ *
+ * The status is not here: it comes from the reason's `REASONS` entry
+ * (`server/storage/reasons.js`). The ladders this replaced ended in
+ * `badRequest(res, 'Failed to …')`, so `unavailable` — the pool being down —
+ * answered 400 and told the admin their request was malformed.
+ */
+const ADMIN_USER_FAILURE_MESSAGES = {
+  already_exists: 'A user with this email already exists',
+  already_activated: 'This user has already set up their account',
+};
+
+/**
+ * Answer a failed admin user mutation in the canonical envelope.
+ *
+ * @param {import('node:http').ServerResponse} res
+ * @param {string} reason
+ * @returns {true}
+ */
+function adminUserError(res, reason) {
+  return jsonError(
+    res,
+    getErrorStatus(reason),
+    reason,
+    ADMIN_USER_FAILURE_MESSAGES[reason],
+  );
+}
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { getClientIp, getOrgId } from '../../utils/context.js';
 import { dispatchRoutes } from '../../utils/router.js';
@@ -160,10 +191,7 @@ async function handleAdminUserCreate({
   const result = await createUser(ctx, { email, name, role });
 
   if (!result.ok) {
-    if (result.reason === 'already_exists') {
-      return badRequest(res, 'A user with this email already exists');
-    }
-    return badRequest(res, 'Failed to create user');
+    return adminUserError(res, result.reason);
   }
 
   // Log the event
@@ -254,10 +282,7 @@ async function handleAdminUserUpdate({ storageScope: ctx, req, res }, userId) {
   if (hasUserUpdates) {
     const result = await updateUser(ctx, userId, updates);
     if (!result.ok) {
-      if (result.reason === 'not_found') {
-        return notFound(res);
-      }
-      return badRequest(res, 'Failed to update user');
+      return adminUserError(res, result.reason);
     }
     resultUser = result.user;
   }
@@ -307,10 +332,7 @@ async function handleAdminUserDelete(
   const result = await deleteUser(ctx, userId);
 
   if (!result.ok) {
-    if (result.reason === 'not_found') {
-      return notFound(res);
-    }
-    return badRequest(res, 'Failed to delete user');
+    return adminUserError(res, result.reason);
   }
 
   // Log the event
@@ -335,13 +357,7 @@ async function handleAdminUserResendInvitation(
   const result = await resendInvitation(ctx, userId);
 
   if (!result.ok) {
-    if (result.reason === 'not_found') {
-      return notFound(res);
-    }
-    if (result.reason === 'already_activated') {
-      return badRequest(res, 'This user has already set up their account');
-    }
-    return badRequest(res, 'Failed to resend invitation');
+    return adminUserError(res, result.reason);
   }
 
   const targetUser = await getUserById(ctx, userId);

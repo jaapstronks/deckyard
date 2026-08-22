@@ -23,11 +23,42 @@ import { dispatchRoutes } from '../../utils/router.js';
 import {
   serveJson,
   badRequest,
+  getErrorStatus,
+  jsonError,
   requireJsonBody,
   withErrorHandler,
 } from '../../utils/http.js';
 import { parsePaginationParams } from '../../utils/request-validators.js';
 import { openSseStream, sseWrite } from '../../utils/sse.js';
+
+/**
+ * Human-readable text per notification-mutation failure reason.
+ *
+ * The status is deliberately not here: it comes from the `REASONS` register
+ * (`server/storage/reasons.js`) via `getErrorStatus()`. A reason without an
+ * entry sends no `message`, and the canonical envelope's `error` code carries
+ * the meaning on its own.
+ */
+const NOTIFICATION_FAILURE_MESSAGES = {
+  not_found: 'Notification not found',
+};
+
+/**
+ * Answer a failed notification mutation in the canonical envelope: the reason
+ * is the machine code, its register entry is the status.
+ *
+ * @param {import('node:http').ServerResponse} res
+ * @param {string} reason
+ * @returns {true}
+ */
+function notificationError(res, reason) {
+  return jsonError(
+    res,
+    getErrorStatus(reason),
+    reason,
+    NOTIFICATION_FAILURE_MESSAGES[reason],
+  );
+}
 
 // GET /api/notifications/events - SSE endpoint for real-time notifications
 async function handleNotificationEvents({
@@ -85,7 +116,7 @@ async function handleNotificationMarkRead({
   if (body?.all === true) {
     const result = await markAllAsRead(storageScope, userEmail);
     if (!result.ok) {
-      return badRequest(res, result.reason);
+      return notificationError(res, result.reason);
     }
     serveJson(res, 200, { ok: true, updatedCount: result.updatedCount });
     return true;
@@ -99,10 +130,7 @@ async function handleNotificationMarkRead({
 
   const result = await markAsRead(storageScope, notificationId, userEmail);
   if (!result.ok) {
-    if (result.reason === 'not_found') {
-      return badRequest(res, 'Notification not found');
-    }
-    return badRequest(res, result.reason);
+    return notificationError(res, result.reason);
   }
 
   serveJson(res, 200, { ok: true, notification: result.notification });
@@ -125,7 +153,7 @@ async function handleNotificationArchive({
   if (body?.all === true) {
     const result = await archiveAllNotifications(storageScope, userEmail);
     if (!result.ok) {
-      return badRequest(res, result.reason);
+      return notificationError(res, result.reason);
     }
     serveJson(res, 200, { ok: true, updatedCount: result.updatedCount });
     return true;
@@ -142,10 +170,7 @@ async function handleNotificationArchive({
     userEmail,
   );
   if (!result.ok) {
-    if (result.reason === 'not_found') {
-      return badRequest(res, 'Notification not found');
-    }
-    return badRequest(res, result.reason);
+    return notificationError(res, result.reason);
   }
 
   serveJson(res, 200, { ok: true, notification: result.notification });

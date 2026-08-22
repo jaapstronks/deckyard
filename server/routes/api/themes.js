@@ -15,12 +15,48 @@
 
 import {
   serveJson,
-  badRequest,
+  getErrorStatus,
+  jsonError,
   notFound,
   requireJsonBody,
   forbidden,
   withErrorHandler,
 } from '../../utils/http.js';
+
+/**
+ * Human-readable text per theme-mutation failure reason.
+ *
+ * Status is not here — it comes from the reason's `REASONS` entry
+ * (`server/storage/reasons.js`). The two copies of this map that used to sit
+ * inline in the create and update handlers ended in `badRequest(...)`, so
+ * `unavailable` shipped its honest message *"Database unavailable"* under a
+ * `400 bad_request` envelope. It is a 503 now.
+ */
+const THEME_FAILURE_MESSAGES = {
+  not_found: 'Theme not found',
+  invalid_label: 'Invalid theme label',
+  invalid_slug: 'Invalid theme slug',
+  invalid_colors: 'Invalid color configuration',
+  invalid_fonts: 'Invalid font configuration',
+  slug_exists: 'A theme with this slug already exists',
+  unavailable: 'Database unavailable',
+};
+
+/**
+ * Answer a failed theme mutation in the canonical envelope.
+ *
+ * @param {import('node:http').ServerResponse} res
+ * @param {string} reason
+ * @returns {true}
+ */
+function themeError(res, reason) {
+  return jsonError(
+    res,
+    getErrorStatus(reason),
+    reason,
+    THEME_FAILURE_MESSAGES[reason],
+  );
+}
 import {
   listThemeIds,
   listCoreThemeIds,
@@ -230,15 +266,7 @@ async function handleCustomThemeCreate({ storageScope, req, res, authedUser }) {
   const result = await createTheme(storageScope, parsed.body);
 
   if (!result.ok) {
-    const messages = {
-      invalid_label: 'Invalid theme label',
-      invalid_slug: 'Invalid theme slug',
-      invalid_colors: 'Invalid color configuration',
-      invalid_fonts: 'Invalid font configuration',
-      slug_exists: 'A theme with this slug already exists',
-      unavailable: 'Database unavailable',
-    };
-    return badRequest(res, messages[result.reason] || 'Failed to create theme');
+    return themeError(res, result.reason);
   }
 
   serveJson(res, 201, result.theme);
@@ -258,7 +286,7 @@ async function handleCustomThemeClearDefault({
   const result = await setDefaultTheme(storageScope, null);
 
   if (!result.ok) {
-    return badRequest(res, 'Failed to clear default theme');
+    return themeError(res, result.reason);
   }
 
   serveJson(res, 200, { success: true });
@@ -292,18 +320,7 @@ async function handleCustomThemeUpdate(
   const result = await updateTheme(storageScope, themeId, parsed.body);
 
   if (!result.ok) {
-    if (result.reason === 'not_found') {
-      return notFound(res, 'Theme not found');
-    }
-    const messages = {
-      invalid_label: 'Invalid theme label',
-      invalid_slug: 'Invalid theme slug',
-      invalid_colors: 'Invalid color configuration',
-      invalid_fonts: 'Invalid font configuration',
-      slug_exists: 'A theme with this slug already exists',
-      unavailable: 'Database unavailable',
-    };
-    return badRequest(res, messages[result.reason] || 'Failed to update theme');
+    return themeError(res, result.reason);
   }
 
   clearCustomThemeCache(themeId);
@@ -323,10 +340,7 @@ async function handleCustomThemeDelete(
   const result = await deleteTheme(storageScope, themeId);
 
   if (!result.ok) {
-    if (result.reason === 'not_found') {
-      return notFound(res, 'Theme not found');
-    }
-    return badRequest(res, 'Failed to delete theme');
+    return themeError(res, result.reason);
   }
 
   clearCustomThemeCache(themeId);
@@ -346,10 +360,7 @@ async function handleCustomThemeSetDefault(
   const result = await setDefaultTheme(storageScope, themeId);
 
   if (!result.ok) {
-    if (result.reason === 'not_found') {
-      return notFound(res, 'Theme not found');
-    }
-    return badRequest(res, 'Failed to set default theme');
+    return themeError(res, result.reason);
   }
 
   serveJson(res, 200, { success: true });

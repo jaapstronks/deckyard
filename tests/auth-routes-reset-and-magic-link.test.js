@@ -619,7 +619,10 @@ test('reset-password rejects a spent or expired token and records the failure', 
     },
   );
 
-  assert.equal(res.status, 400);
+  // 401, not 400: a spent or expired reset token is a credential that does not
+  // hold, and the REASONS register states that once for every route (B104).
+  assert.equal(res.status, 401);
+  assert.equal(res.body?.error, 'invalid_or_expired');
   assert.ok(auditTypes().includes('password_reset_failed'));
 });
 

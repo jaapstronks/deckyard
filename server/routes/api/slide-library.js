@@ -1,10 +1,10 @@
 import {
   badRequest,
-  forbidden,
+  getErrorStatus,
+  jsonError,
   methodNotAllowed,
   serveJson,
   unauthorized,
-  notFound,
   requireJsonBody,
   withErrorHandler,
 } from '../../utils/http.js';
@@ -39,6 +39,20 @@ const log = createLogger('slide-library');
 function cleanThemeId(v) {
   const s = typeof v === 'string' ? v.trim() : '';
   return s.slice(0, 80);
+}
+
+/**
+ * Answer a failed slide-library mutation in the canonical envelope. The reason
+ * is the machine code and its `REASONS` entry decides the status, which is what
+ * retired the not_found/forbidden/else ladders this file used to repeat at six
+ * call sites — each of them flattening every other reason to a 400.
+ *
+ * @param {import('node:http').ServerResponse} res
+ * @param {string} reason
+ * @returns {true}
+ */
+function mutationError(res, reason) {
+  return jsonError(res, getErrorStatus(reason), reason);
 }
 
 function actorEmail(authedUser) {
@@ -98,7 +112,7 @@ async function handlePersonalCreate({ storageScope, req, res, authedUser }) {
   const r = await createPersonalLibraryItem(storageScope, email, body, {
     actorEmail: email,
   });
-  if (!r.ok) return badRequest(res, r.reason);
+  if (!r.ok) return mutationError(res, r.reason);
   serveJson(res, 201, r.item);
   return true;
 }
@@ -115,8 +129,7 @@ async function handlePersonalUpdate(
   const r = await updatePersonalLibraryItem(storageScope, email, id, body, {
     actorEmail: email,
   });
-  if (!r.ok)
-    return r.reason === 'not_found' ? notFound(res) : badRequest(res, r.reason);
+  if (!r.ok) return mutationError(res, r.reason);
   serveJson(res, 200, r.item);
   return true;
 }
@@ -128,7 +141,9 @@ async function handlePersonalDelete({ storageScope, res, authedUser }, id) {
     actorEmail(authedUser),
     id,
   );
-  if (!r.ok) return notFound(res);
+  // Every failure used to flatten to 404 here, `unavailable` included; the
+  // reason now decides, so a pool that is down answers 503.
+  if (!r.ok) return mutationError(res, r.reason);
   serveJson(res, 200, { ok: true });
   return true;
 }
@@ -170,7 +185,7 @@ async function handleOrganizationCreate({
   const r = await createOrganizationLibraryItem(storageScope, body, {
     actorEmail: email,
   });
-  if (!r.ok) return badRequest(res, r.reason);
+  if (!r.ok) return mutationError(res, r.reason);
 
   // Generate preview image for the slide library item
   let previewUrl = null;
@@ -233,11 +248,7 @@ async function handleOrganizationUpdate(
         return matchesIdentity(authedUser, { userId: item?.createdBy?.id });
       },
     });
-    if (!r.ok) {
-      if (r.reason === 'not_found') return notFound(res);
-      if (r.reason === 'forbidden') return forbidden(res, 'Not allowed');
-      return badRequest(res, r.reason);
-    }
+    if (!r.ok) return mutationError(res, r.reason);
     serveJson(res, 200, r.item);
     return true;
   }
@@ -245,8 +256,7 @@ async function handleOrganizationUpdate(
   const r = await updateOrganizationLibraryItem(storageScope, id, body, {
     actorEmail: email,
   });
-  if (!r.ok)
-    return r.reason === 'not_found' ? notFound(res) : badRequest(res, r.reason);
+  if (!r.ok) return mutationError(res, r.reason);
   serveJson(res, 200, r.item);
   return true;
 }
@@ -262,11 +272,7 @@ async function handleOrganizationDelete({ storageScope, res, authedUser }, id) {
       return matchesIdentity(authedUser, { userId: item?.createdBy?.id });
     },
   });
-  if (!r.ok) {
-    if (r.reason === 'not_found') return notFound(res);
-    if (r.reason === 'forbidden') return forbidden(res, 'Not allowed');
-    return badRequest(res, r.reason);
-  }
+  if (!r.ok) return mutationError(res, r.reason);
   serveJson(res, 200, { ok: true });
   return true;
 }

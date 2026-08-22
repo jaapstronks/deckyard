@@ -24,10 +24,12 @@ import {
 import { withPresentationAuth } from '../../../utils/route-middleware.js';
 import { dispatchRoutes } from '../../../utils/router.js';
 import {
-  serveJson,
-  notFound,
   badRequest,
+  getErrorStatus,
+  jsonError,
+  notFound,
   requireJsonBody,
+  serveJson,
 } from '../../../utils/http.js';
 import {
   validatePermission,
@@ -102,7 +104,7 @@ async function handleShareLinkCreate(
   });
 
   if (!result.ok) {
-    return badRequest(res, result.reason);
+    return jsonError(res, getErrorStatus(result.reason), result.reason);
   }
 
   const shareUrl = buildShareUrl(req, result.shareLink.token);
@@ -169,7 +171,7 @@ async function handleShareLinksRevokeAll(
     authedUser?.email,
   );
   if (!result.ok) {
-    return badRequest(res, result.reason);
+    return jsonError(res, getErrorStatus(result.reason), result.reason);
   }
 
   serveJson(res, 200, { ok: true, count: result.count });
@@ -212,8 +214,7 @@ async function handleShareLinkRevoke(
     { message },
   );
   if (!result.ok) {
-    if (result.reason === 'not_found') return notFound(res);
-    return badRequest(res, result.reason);
+    return jsonError(res, getErrorStatus(result.reason), result.reason);
   }
 
   serveJson(res, 200, { ok: true });
@@ -255,8 +256,7 @@ async function handleShareLinkUpdate(
   });
 
   if (!result.ok) {
-    if (result.reason === 'not_found') return notFound(res);
-    return badRequest(res, result.reason);
+    return jsonError(res, getErrorStatus(result.reason), result.reason);
   }
 
   serveJson(res, 200, result.shareLink);

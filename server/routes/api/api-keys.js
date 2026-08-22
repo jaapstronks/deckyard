@@ -18,13 +18,13 @@ import {
 } from '../../storage/api-keys.js';
 import { getUsageHistory, getTodayUsage } from '../../storage/api-usage.js';
 import {
-  serveJson,
+  badRequest,
   getErrorStatus,
   jsonError,
   methodNotAllowed,
   notFound,
-  badRequest,
   requireJsonBody,
+  serveJson,
   withErrorHandler,
 } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
@@ -35,7 +35,7 @@ async function handleApiKeyList({ storageScope, res, url, authedUser }) {
   const result = await listApiKeys(storageScope, { includeRevoked });
 
   if (!result.ok) {
-    return badRequest(res, result.reason || 'Failed to list API keys');
+    return jsonError(res, getErrorStatus(result.reason), result.reason);
   }
 
   serveJson(res, 200, {
