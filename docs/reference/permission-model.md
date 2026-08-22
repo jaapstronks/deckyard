@@ -246,7 +246,7 @@ flagged `unrestricted`. On that instance there is nobody to tell them apart
 from, so `matchesIdentity` answers yes for every stamp — stated outright rather
 than routed through an address comparison. The **dev bypass**
 (`AUTH_DEV_BYPASS`) is a real database user: `server/auth/dev-bypass.js`
-resolves `dev@local` to a `users` row (creating it on first use) when the
+resolves `dev@local.test` to a `users` row (creating it on first use) when the
 session is built, so it needs no exception.
 
 Machine clients (public API keys, MCP sessions) hold an address and no id, so

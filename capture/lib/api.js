@@ -117,7 +117,7 @@ export const CAPTURE_ACCOUNT_NAME = 'Milan de Groot';
  * The editor chrome names whoever owns the deck — the author chip beside the
  * title, the avatar in the corner, the initials on a presence dot — and falls
  * back to the local part of the address when no profile name is stored. On a
- * capture run that address is the dev bypass's `dev@local`, so an unset name
+ * capture run that address is the dev bypass's `dev@local.test`, so an unset name
  * puts "Dev" in the frame of every shot that shows the app around a deck.
  *
  * This is the account's own profile field, the same one the settings screen

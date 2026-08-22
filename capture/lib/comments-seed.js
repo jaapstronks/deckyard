@@ -9,7 +9,7 @@
  * `authorName` is `authedUser.name`, never a body field, and rightly so; a
  * comments API that let the caller name someone else would be an
  * impersonation hole. The capture run is authenticated by `AUTH_DEV_BYPASS`,
- * which pins one hard-coded identity (`Dev <dev@local>`) for every request in
+ * which pins one hard-coded identity (`Dev <dev@local.test>`) for every request in
  * the process. So over REST every comment in the shot is by the same "Dev",
  * and a shot of one person talking to themselves under a debug name is not the
  * picture the collaboration section is making.

@@ -93,7 +93,7 @@ export function createEditorTopbar({
     getUserProfileAsync(ownerId)
       .then((profile) => {
         // Pass the resolved name along, not just the image: the initials were
-        // derived from the address ("dev@local" → "DE"), so without this the
+        // derived from the address ("dev@local.test" → "DE"), so without this the
         // chip keeps showing e-mail initials next to the profile's real name.
         if (profile?.imageUrl || profile?.name) {
           updateAvatar(authorAvatar, {

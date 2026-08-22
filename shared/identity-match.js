@@ -46,7 +46,7 @@
  * server/utils/presentation-authz/presentations.js gates the same way).
  *
  * The development bypass (`AUTH_DEV_BYPASS`) *is* a database user: it resolves
- * `dev@local` to a real `users` row on session build (server/auth/dev-bypass.js),
+ * `dev@local.test` to a real `users` row on session build (server/auth/dev-bypass.js),
  * precisely so it needs no exception here.
  *
  * The functions here are pure: they read the objects handed to them and touch no

@@ -21,8 +21,20 @@ import { getDefaultOrganizationId } from '../config/database.js';
 import { withDbGuard } from '../storage/utils/db-guard.js';
 import { nowIso } from '../utils/normalize.js';
 
-/** The address the development bypass acts under. */
-export const DEV_BYPASS_EMAIL = 'dev@local';
+/**
+ * The address the development bypass acts under.
+ *
+ * The domain carries a TLD on purpose. `validateEmail`
+ * (`server/utils/secure-tokens.js`) requires a dot in the domain, so a
+ * single-label `dev@local` was rejected by every surface that validates an
+ * address — `createApiKey` among them, which made the public API surface
+ * untestable on a bypass machine. `.test` is reserved by RFC 2606, so the
+ * address stays synthetic and never resolves.
+ *
+ * Existing dev databases carry the old row; the one-line repair is in
+ * `docs/developer/dev-setup.md` § The dev-bypass identity.
+ */
+export const DEV_BYPASS_EMAIL = 'dev@local.test';
 
 /**
  * In-process memo of the resolution, so the lookup happens once rather than on
@@ -60,7 +72,7 @@ export function resetDevBypassUserCache() {
 }
 
 /**
- * Look up `dev@local`, inserting the row when it is not there yet.
+ * Look up `dev@local.test`, inserting the row when it is not there yet.
  * @returns {Promise<string|null>}
  */
 async function ensureDevBypassUserId() {
