@@ -62,9 +62,6 @@ import { createPresenterConsoleToggle } from './console-toggle.js';
 import { buildPresenterTopbar } from './topbar.js';
 
 export async function renderPresenter(root, id, { nav } = {}) {
-  // Make presentation ID globally available for lead capture forms
-  window.__PRESENTATION_ID__ = id;
-
   const startUrl = new URL(location.href);
   const { activeLang, langQs } = readDeckLangFromUrl(startUrl);
   let pres = await api(`/api/presentations/${id}${langQs}`);

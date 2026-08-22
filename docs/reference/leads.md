@@ -1,6 +1,13 @@
 # Lead capture & privacy
 
-The lead-capture slide collects a viewer's **name and e-mail address** on a
+> **Being removed (D50 / B119).** The `lead-capture-slide` type and its client
+> runtime are gone as of the first PR of the strip, so nothing in the product
+> creates a lead any more. The endpoints, storage, retention sweep and
+> self-service flow described below are still live and go in the second PR;
+> this page goes with them. It is kept for one PR so the surface that is still
+> mounted stays documented — read it as a record, not as a contract.
+
+The lead-capture slide collected a viewer's **name and e-mail address** on a
 published deck — anonymous visitor PII, the same category of data as
 [analytics](analytics-privacy.md), plus an outbound export path
 ([the `lead.submitted` webhook](webhooks.md)). This doc covers what is
@@ -10,17 +17,16 @@ erased, and the honest state of the GDPR self-service flow. Written
 
 ## Purpose & scope
 
-A deck author drops a `lead-capture-slide` into a published deck; a visitor
-who fills it in leaves their name and e-mail with explicit consent. The
+A deck author dropped a `lead-capture-slide` into a published deck; a visitor
+who filled it in left their name and e-mail with explicit consent. The
 subsystem is DB-only (`lead_submissions` table; file-mode storage answers
 empty/no-op) and instance-spanning on submit: the visitor has no session, so
 the public submit path deliberately looks the deck up across organizations.
 
 ## Module map
 
-- `shared/slide-types/types/lead-capture-slide.js` — the slide type;
-  `client/lib/slide-runtime/lead-capture-runtime.js` posts the form from the
-  public viewer.
+- The slide type and its client runtime are **removed** — see
+  `shared/slide-types/removed.js`. Nothing posts to the routes below.
 - `server/routes/api/leads.js` — the whole route surface: the
   public submit, the public token-gated GDPR self-service, the per-deck reads,
   the admin delete, and the in-memory GDPR token store.

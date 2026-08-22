@@ -4,7 +4,7 @@
 
 # Slide-type inventory
 
-Deckyard ships **34** built-in slide types (33 active, 1 deprecated but still rendered for existing decks). A fork may add more under `custom/slide-types/`; those are not counted here.
+Deckyard ships **33** built-in slide types (33 active, 0 deprecated but still rendered for existing decks). A fork may add more under `custom/slide-types/`; those are not counted here.
 
 This table is generated from the registry so the count and the list cannot
 drift from the code. To change it, add or remove a type in
@@ -16,42 +16,41 @@ ship, tier 3 is fork and org types (absent from this table by definition).
 **Fallback** is the tier-1 contract a core-profile-only reader should use.
 See [`slide-type-tiers.md`](./slide-type-tiers.md).
 
-| Type                   | Label                   | Status     | Tier | Fallback        |
-| ---------------------- | ----------------------- | ---------- | ---- | --------------- |
-| `title-slide`          | Title slide             | Active     | 1    | —               |
-| `chapter-title-slide`  | Section title           | Active     | 1    | —               |
-| `content-slide`        | Text slide              | Active     | 1    | —               |
-| `table-slide`          | Table                   | Active     | 1    | —               |
-| `list-slide`           | List                    | Active     | 1    | —               |
-| `kpi-metrics-slide`    | KPI                     | Active     | 2    | `list-slide`    |
-| `image-text-slide`     | Image + text            | Active     | 1    | —               |
-| `video-slide`          | Video                   | Active     | 2    | `content-slide` |
-| `team-cards-slide`     | Image blocks            | Active     | 2    | `list-slide`    |
-| `logo-wall-slide`      | Logo wall               | Active     | 2    | `image-slide`   |
-| `icon-card-grid-slide` | Icon cards              | Active     | 2    | `list-slide`    |
-| `payoff-slide`         | Payoff                  | Active     | 2    | `end-slide`     |
-| `quote-slide`          | Quote                   | Active     | 1    | —               |
-| `image-slide`          | Image slide             | Active     | 1    | —               |
-| `embed-slide`          | Embed                   | Active     | 2    | `content-slide` |
-| `countdown-slide`      | Countdown timer         | Active     | 2    | `content-slide` |
-| `poll-slide`           | Poll                    | Active     | 2    | `list-slide`    |
-| `likert-slide`         | Likert (agree/disagree) | Active     | 2    | `list-slide`    |
-| `likert-slider-slide`  | Likert slider (1–10)    | Active     | 2    | `content-slide` |
-| `feedback-slide`       | Feedback                | Active     | 2    | `content-slide` |
-| `lead-capture-slide`   | Lead Capture            | Deprecated | 2    | `content-slide` |
-| `follow-invite-slide`  | Follow-along invite     | Active     | 2    | `content-slide` |
-| `chart-slide`          | Chart                   | Active     | 2    | `table-slide`   |
-| `text-blocks-slide`    | Text blocks             | Active     | 2    | `list-slide`    |
-| `comparison-slide`     | Comparison              | Active     | 2    | `table-slide`   |
-| `process-slide`        | Process                 | Active     | 2    | `list-slide`    |
-| `timeline-slide`       | Timeline                | Active     | 2    | `list-slide`    |
-| `matrix-slide`         | Matrix                  | Active     | 2    | `table-slide`   |
-| `funnel-slide`         | Funnel                  | Active     | 2    | `list-slide`    |
-| `pyramid-slide`        | Pyramid                 | Active     | 2    | `list-slide`    |
-| `cycle-slide`          | Cycle                   | Active     | 2    | `list-slide`    |
-| `gallery-slide`        | Gallery                 | Active     | 2    | `image-slide`   |
-| `custom-html-slide`    | Custom HTML             | Active     | 2    | `content-slide` |
-| `end-slide`            | End / Contact           | Active     | 1    | —               |
+| Type                   | Label                   | Status | Tier | Fallback        |
+| ---------------------- | ----------------------- | ------ | ---- | --------------- |
+| `title-slide`          | Title slide             | Active | 1    | —               |
+| `chapter-title-slide`  | Section title           | Active | 1    | —               |
+| `content-slide`        | Text slide              | Active | 1    | —               |
+| `table-slide`          | Table                   | Active | 1    | —               |
+| `list-slide`           | List                    | Active | 1    | —               |
+| `kpi-metrics-slide`    | KPI                     | Active | 2    | `list-slide`    |
+| `image-text-slide`     | Image + text            | Active | 1    | —               |
+| `video-slide`          | Video                   | Active | 2    | `content-slide` |
+| `team-cards-slide`     | Image blocks            | Active | 2    | `list-slide`    |
+| `logo-wall-slide`      | Logo wall               | Active | 2    | `image-slide`   |
+| `icon-card-grid-slide` | Icon cards              | Active | 2    | `list-slide`    |
+| `payoff-slide`         | Payoff                  | Active | 2    | `end-slide`     |
+| `quote-slide`          | Quote                   | Active | 1    | —               |
+| `image-slide`          | Image slide             | Active | 1    | —               |
+| `embed-slide`          | Embed                   | Active | 2    | `content-slide` |
+| `countdown-slide`      | Countdown timer         | Active | 2    | `content-slide` |
+| `poll-slide`           | Poll                    | Active | 2    | `list-slide`    |
+| `likert-slide`         | Likert (agree/disagree) | Active | 2    | `list-slide`    |
+| `likert-slider-slide`  | Likert slider (1–10)    | Active | 2    | `content-slide` |
+| `feedback-slide`       | Feedback                | Active | 2    | `content-slide` |
+| `follow-invite-slide`  | Follow-along invite     | Active | 2    | `content-slide` |
+| `chart-slide`          | Chart                   | Active | 2    | `table-slide`   |
+| `text-blocks-slide`    | Text blocks             | Active | 2    | `list-slide`    |
+| `comparison-slide`     | Comparison              | Active | 2    | `table-slide`   |
+| `process-slide`        | Process                 | Active | 2    | `list-slide`    |
+| `timeline-slide`       | Timeline                | Active | 2    | `list-slide`    |
+| `matrix-slide`         | Matrix                  | Active | 2    | `table-slide`   |
+| `funnel-slide`         | Funnel                  | Active | 2    | `list-slide`    |
+| `pyramid-slide`        | Pyramid                 | Active | 2    | `list-slide`    |
+| `cycle-slide`          | Cycle                   | Active | 2    | `list-slide`    |
+| `gallery-slide`        | Gallery                 | Active | 2    | `image-slide`   |
+| `custom-html-slide`    | Custom HTML             | Active | 2    | `content-slide` |
+| `end-slide`            | End / Contact           | Active | 1    | —               |
 
 ## Declared, not built
 

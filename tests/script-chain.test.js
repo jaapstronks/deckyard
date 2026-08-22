@@ -85,14 +85,10 @@ test('order is runtime, then body, then the DOM sweep', () => {
   // after it would leave the new markup unhighlighted.
   const out = buildScriptChain({
     runtime: 'stage',
-    leadCapture: true,
     body: 'const marker = 1;',
   });
   assert.ok(out.indexOf('function attachStageScale') < out.indexOf('marker'));
-  assert.ok(out.indexOf('marker') < out.indexOf('initLeadCaptureForms'));
-  assert.ok(
-    out.indexOf('initLeadCaptureForms') < out.indexOf('Prism.highlightElement'),
-  );
+  assert.ok(out.indexOf('marker') < out.indexOf('Prism.highlightElement'));
 });
 
 test('a chain is a script element with a scope of its own', () => {
@@ -107,20 +103,17 @@ test('a chain is a script element with a scope of its own', () => {
 
 test('every assembled block is syntactically valid JavaScript', () => {
   for (const runtime of SCRIPT_RUNTIMES) {
-    for (const leadCapture of [false, true]) {
-      const html = buildScriptChain({
-        runtime,
-        leadCapture,
-        body: 'const bodyMarker = 1;',
-      });
-      const source = html
-        .replace(/^<script[^>]*>/, '')
-        .replace(/<\/script>$/, '');
-      assert.doesNotThrow(
-        () => new vm.Script(source, { filename: `${runtime}/${leadCapture}` }),
-        `runtime=${runtime} leadCapture=${leadCapture} does not parse`,
-      );
-    }
+    const html = buildScriptChain({
+      runtime,
+      body: 'const bodyMarker = 1;',
+    });
+    const source = html
+      .replace(/^<script[^>]*>/, '')
+      .replace(/<\/script>$/, '');
+    assert.doesNotThrow(
+      () => new vm.Script(source, { filename: runtime }),
+      `runtime=${runtime} does not parse`,
+    );
   }
 });
 
