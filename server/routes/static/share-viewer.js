@@ -105,8 +105,8 @@ export async function handleShareLink({ repoRoot, req, res, url, clientDir }) {
     html = html.replace('</head>', `  ${ogHeadHtml}\n</head>`);
   }
 
-  html = await injectSeoDebugAnalytics(html, { req, url, repoRoot });
+  const shell = await injectSeoDebugAnalytics(html, { req, url, repoRoot });
   ensureSandboxCookie(req, res);
-  serveShellHtml(res, html);
+  serveShellHtml(res, shell);
   return true;
 }

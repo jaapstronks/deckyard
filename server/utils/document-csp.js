@@ -1,6 +1,9 @@
 /**
- * The render-path Content-Security-Policy: the no-third-party-origins rule,
- * stated to the browser instead of only to the test suite.
+ * The Content-Security-Policy: the no-third-party-origins rule, stated to the
+ * browser instead of only to the test suite. One policy source for every
+ * surface — the nine render paths carry it as a `<meta>`, the served surfaces
+ * (`/p/…`, `/embed/…`) and the app shell (`/`, the editor, the share-link
+ * viewer) as a response header.
  *
  * `docs/reference/no-third-party-origins.md` says a document Deckyard renders
  * resolves everything against this server or carries it inside itself. Two
@@ -104,10 +107,10 @@ export const THIRD_PARTY_ORIGINS = Object.freeze([
  * documents can carry, so the three header-only directives are simply out of
  * reach here.
  *
- * The two surfaces this server *serves* — `/p/…` and `/embed/…` — do have
- * somewhere to put a header, and since D53(i) they set one:
- * {@link buildDocumentCspHeader} gives them the same policy plus the
- * `frame-ancestors` the meta cannot carry.
+ * The surfaces this server *serves* do have somewhere to put a header, and
+ * they set one: `/p/…` and `/embed/…` via {@link buildDocumentCspHeader}
+ * (D53(i)), the app shell via {@link buildAppShellCspHeader} (D53(ii)) —
+ * the same policy plus the `frame-ancestors` the meta cannot carry.
  *
  * @type {Readonly<Record<string, string>>}
  */
@@ -197,14 +200,24 @@ export function documentCspDirectives() {
 }
 
 /**
+ * Serialize `{ directive: [source, …] }` to one header/meta value.
+ *
+ * @param {Record<string, string[]>} directives
+ * @returns {string}
+ */
+function serializeCsp(directives) {
+  return Object.entries(directives)
+    .map(([directive, sources]) => `${directive} ${sources.join(' ')}`)
+    .join('; ');
+}
+
+/**
  * The policy as one header/meta value.
  *
  * @returns {string}
  */
 export function buildDocumentCsp() {
-  return Object.entries(documentCspDirectives())
-    .map(([directive, sources]) => `${directive} ${sources.join(' ')}`)
-    .join('; ');
+  return serializeCsp(documentCspDirectives());
 }
 
 /**
@@ -258,4 +271,64 @@ export function buildDocumentCspHeader({ frameAncestors } = {}) {
     );
   }
   return `${buildDocumentCsp()}; frame-ancestors ${value}`;
+}
+
+/**
+ * The app-shell policy, as `{ directive: [source, …] }` (D53(ii) / B124).
+ *
+ * The shell — `/`, the auth pages, the editor and presenter routes, the
+ * share-link viewer — is the surface the session cookie lives on, and until
+ * B124 it carried no policy at all. It is the **document policy with two
+ * deltas**, not a second policy source:
+ *
+ * - **`script-src` gains the analytics origins.** External analytics is an
+ *   app-surface feature (`server/analytics/head.js` injects the operator's
+ *   configured provider into this head), and each provider loads its tag from
+ *   an operator-chosen origin the static list cannot know. The origins come
+ *   from `analyticsScriptOrigins()` — the same provider walk that emits the
+ *   HTML — so the allowlist and the injected tags cannot drift apart.
+ * - **Nothing else widens.** The editor reaches the same third-party set as a
+ *   rendered document: the font seam for theme/font previews, Bunny's
+ *   player.js for video slides (`ensureBunnyPlayerJs` runs in the app too).
+ *   The collab WebSocket (`wss://<host>/collab`) rides `connect-src 'self'`,
+ *   which matches same-origin ws/wss per CSP3 — verified in Chromium,
+ *   Firefox and WebKit.
+ *
+ * `'unsafe-inline'` stays, same decision as the render paths and for the
+ * same reason: this policy is a host allowlist, not an inline-XSS defence.
+ * A nonce is unattainable here anyway — the analytics escape hatch
+ * (`ANALYTICS_HEAD_HTML`) injects operator HTML this server cannot rewrite,
+ * and one nonce in `script-src` makes browsers *ignore* `'unsafe-inline'`,
+ * so a partial nonce breaks every un-nonced fragment rather than merely not
+ * covering it. Inline-injection defence stays where it is: escaping
+ * discipline plus DOMPurify (docs/reference/html-escaping.md).
+ *
+ * @param {Object} [options]
+ * @param {string[]} [options.analyticsScriptOrigins] - External script
+ *   origins from `analyticsScriptOrigins()` in server/analytics/head.js.
+ * @returns {Record<string, string[]>}
+ */
+export function appShellCspDirectives({ analyticsScriptOrigins = [] } = {}) {
+  const directives = documentCspDirectives();
+  directives['script-src'] = [
+    ...directives['script-src'],
+    ...analyticsScriptOrigins,
+  ];
+  return directives;
+}
+
+/**
+ * The app-shell policy as a response header.
+ *
+ * Header-only: the shell is served, never downloaded or `setContent()`-ed,
+ * so unlike the render paths it needs no meta form — and the header can carry
+ * `frame-ancestors`. That value is fixed at `'none'`: `security-headers.js`
+ * sends `X-Frame-Options: DENY` on every shell route, and the CSP must say
+ * the same thing, not quietly widen framing where it wins (the #919 rule).
+ *
+ * @param {Object} [options] - See {@link appShellCspDirectives}.
+ * @returns {string} The full policy, ready for `Content-Security-Policy`.
+ */
+export function buildAppShellCspHeader(options = {}) {
+  return `${serializeCsp(appShellCspDirectives(options))}; frame-ancestors 'none'`;
 }

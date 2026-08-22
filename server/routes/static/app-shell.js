@@ -3,7 +3,11 @@ import fs from 'node:fs/promises';
 import { sandboxAppSeoHeadHtml } from '../../utils/sandbox-seo.js';
 import { isClientDebugLogEnabled } from '../../utils/debug-log.js';
 import { getAppSettings } from '../../storage/settings.js';
-import { analyticsHeadHtml } from '../../analytics/head.js';
+import {
+  analyticsHeadHtml,
+  analyticsScriptOrigins,
+} from '../../analytics/head.js';
+import { buildAppShellCspHeader } from '../../utils/document-csp.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
 import { ensureSandboxUser } from '../../auth/sandbox.js';
 import { isRssFeedEnabled, isMultiOrgEnabled } from '../../config/features.js';
@@ -41,9 +45,16 @@ export async function readIndexHtml(clientDir) {
  * Inject the head fragments common to every app-shell response: sandbox SEO/OG
  * tags, the client debug flag, and analytics. Shared by the app index and the
  * share-link viewer so both stay in sync.
+ *
+ * Returns the shell's CSP header value alongside the HTML, because the two
+ * are coupled here: the analytics fragment this function injects loads its
+ * tag script from an operator-configured origin, and the policy must name
+ * exactly that origin. Computing both from the same settings read is what
+ * keeps them from drifting.
+ *
  * @param {string} html
  * @param {{ req: import('http').IncomingMessage, url: URL, repoRoot: string }} ctx
- * @returns {Promise<string>}
+ * @returns {Promise<{ html: string, csp: string }>}
  */
 export async function injectSeoDebugAnalytics(html, { req, url, repoRoot }) {
   // Sandbox SEO + OG tags (root indexed, internal SPA routes noindex).
@@ -71,15 +82,19 @@ export async function injectSeoDebugAnalytics(html, { req, url, repoRoot }) {
       'app shell boot: external analytics config is instance-level',
     ),
   );
-  const analytics = analyticsHeadHtml({
+  const analyticsOptions = {
     context: 'app',
     sandbox: sandboxEnabled(),
     settings: appSettings,
-  });
+  };
+  const analytics = analyticsHeadHtml(analyticsOptions);
   if (analytics) {
     html = html.replace('</head>', `  ${analytics}</head>`);
   }
-  return html;
+  const csp = buildAppShellCspHeader({
+    analyticsScriptOrigins: analyticsScriptOrigins(analyticsOptions),
+  });
+  return { html, csp };
 }
 
 /**
@@ -96,11 +111,19 @@ export function ensureSandboxCookie(req, res) {
   }
 }
 
-/** Send an app-shell HTML response (never cached). */
-export function serveShellHtml(res, html) {
+/**
+ * Send an app-shell HTML response (never cached).
+ * @param {import('http').ServerResponse} res
+ * @param {{ html: string, csp: string }} shell - From injectSeoDebugAnalytics;
+ *   the CSP is required so no shell 200 can go out without its policy.
+ */
+export function serveShellHtml(res, { html, csp }) {
   res.writeHead(200, {
     'Content-Type': 'text/html; charset=utf-8',
     'Cache-Control': 'no-store',
+    // Header-only (the shell is served, never downloaded), and the only
+    // carrier of frame-ancestors — see buildAppShellCspHeader.
+    'Content-Security-Policy': csp,
   });
   // IMPORTANT: App UI must be theme-independent. Do not inject theme vars into the app shell.
   res.end(html);
@@ -143,10 +166,10 @@ export async function injectFeedDiscovery(html, repoRoot) {
  */
 export async function serveAppIndex({ repoRoot, req, res, url, clientDir }) {
   let html = await readIndexHtml(clientDir);
-  html = await injectSeoDebugAnalytics(html, { req, url, repoRoot });
-  html = await injectFeedDiscovery(html, repoRoot);
+  const shell = await injectSeoDebugAnalytics(html, { req, url, repoRoot });
+  html = await injectFeedDiscovery(shell.html, repoRoot);
   ensureSandboxCookie(req, res);
-  serveShellHtml(res, html);
+  serveShellHtml(res, { html, csp: shell.csp });
 }
 
 /**

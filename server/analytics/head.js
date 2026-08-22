@@ -25,6 +25,44 @@ function joinUrl(base, path) {
   return `${b}/${p}`;
 }
 
+/** The origin GA4 and GTM load their tag script from. */
+const GOOGLE_TAG_ORIGIN = 'https://www.googletagmanager.com';
+
+/**
+ * The origin of a provider base URL, for the CSP `script-src` allowlist.
+ * Returns '' for anything `new URL` refuses — the provider builder refused
+ * such a value too (isEmbeddableUrl), so no HTML references it either.
+ * @param {string} url
+ * @returns {string}
+ */
+function originOf(url) {
+  try {
+    return new URL(String(url || '')).origin;
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Script origins named by static `<script src="…">` tags in the operator's
+ * custom head HTML. A script the snippet inserts *dynamically* (the
+ * Matomo/GTM createElement pattern) is invisible to this scan — an operator
+ * whose raw-HTML snippet does that declares the origin in
+ * `server/utils/document-csp.js` (the fork seam) or uses a preset provider,
+ * which report their origins themselves.
+ * @param {string} html
+ * @returns {string[]}
+ */
+function customSnippetScriptOrigins(html) {
+  return [
+    ...String(html || '').matchAll(
+      /<script\b[^>]*\bsrc\s*=\s*["']?(https?:\/\/[^"'\s>]+)/gi,
+    ),
+  ]
+    .map((m) => originOf(m[1]))
+    .filter(Boolean);
+}
+
 // ============================================================
 // Provider HTML generators
 // ============================================================
@@ -137,36 +175,39 @@ function buildGtmHtml({ containerId }) {
 }
 
 /**
- * Build a string of HTML tags to inject into <head>.
+ * The enabled providers, each as the head HTML it emits plus the external
+ * origins that HTML loads *code* from. One walk of the enablement/priority
+ * branches feeds both `analyticsHeadHtml` and `analyticsScriptOrigins`, so
+ * the CSP allowlist and the emitted tags cannot drift apart (the B102
+ * lesson: one computation, two projections).
  *
- * This intentionally stays dependency-free and "preset-based":
- * - Prefer simple env-based config (GTM / Matomo / Plausible / Umami / GA4)
- * - Provide an escape hatch for custom HTML snippets (raw or base64)
- * - Optionally accept settings object from admin UI (overrides env vars)
- *
- * Priority order: settings → env vars → disabled
- *
- * NOTE: A raw HTML snippet is inherently powerful. Treat env vars as
- * operator-controlled input (not user-provided) and document accordingly.
+ * Priority order per provider: settings → env vars → disabled.
  *
  * @param {Object} options
  * @param {string} options.context - 'app' | 'published' | 'embed' | 'export'
  * @param {boolean} options.sandbox - Whether running in sandbox mode
  * @param {Object} options.settings - Optional app settings object (analytics.externalProviders)
+ * @returns {Array<{html: string, scriptOrigins: string[]}>}
  */
-export function analyticsHeadHtml({
+function collectAnalyticsHead({
   context = 'app', // 'app' | 'published' | 'embed' | 'export'
   sandbox = false,
   settings = null,
 } = {}) {
-  if (envBool('DISABLE_ANALYTICS', false)) return '';
-  if (sandbox && !envBool('ANALYTICS_ALLOW_IN_SANDBOX', false)) return '';
+  if (envBool('DISABLE_ANALYTICS', false)) return [];
+  if (sandbox && !envBool('ANALYTICS_ALLOW_IN_SANDBOX', false)) return [];
   if (context === 'embed' && !envBool('ANALYTICS_INCLUDE_EMBEDS', false))
-    return '';
+    return [];
   if (context === 'export' && !envBool('ANALYTICS_INCLUDE_EXPORTS', false))
-    return '';
+    return [];
 
-  const out = [];
+  const entries = [];
+  // A provider whose values failed validation builds '' — skip it entirely,
+  // so a refused provider contributes neither a blank line nor an origin.
+  const push = (html, scriptOrigins) => {
+    if (html)
+      entries.push({ html, scriptOrigins: scriptOrigins.filter(Boolean) });
+  };
   const providers = settings?.analytics?.externalProviders || null;
 
   // Escape hatch: custom snippet (env vars only, not UI-configurable)
@@ -174,13 +215,16 @@ export function analyticsHeadHtml({
   const customRaw = envStr('ANALYTICS_HEAD_HTML');
   const custom = customB64 || customRaw;
   if (custom) {
-    out.push(`<!-- Analytics: custom head HTML -->\n${custom}`);
+    push(
+      `<!-- Analytics: custom head HTML -->\n${custom}`,
+      customSnippetScriptOrigins(custom),
+    );
   }
 
   // Google Tag Manager (GTM) - env vars only
   const gtmId = envStr('GTM_CONTAINER_ID');
   if (gtmId) {
-    out.push(buildGtmHtml({ containerId: gtmId }));
+    push(buildGtmHtml({ containerId: gtmId }), [GOOGLE_TAG_ORIGIN]);
   }
 
   // Matomo: settings → env vars
@@ -191,21 +235,23 @@ export function analyticsHeadHtml({
     matomoSettings?.siteId
   ) {
     // Use settings-based config
-    out.push(
+    const url = matomoSettings.url.replace(/\/+$/, '');
+    push(
       buildMatomoHtml({
-        url: matomoSettings.url.replace(/\/+$/, ''),
+        url,
         siteId: matomoSettings.siteId,
         disableCookies: matomoSettings.disableCookies !== false,
         requireConsent: matomoSettings.requireConsent === true,
         trackLinks: true,
       }),
+      [originOf(url)],
     );
   } else {
     // Fall back to env vars
     const matomoUrl = envStr('MATOMO_URL').replace(/\/+$/, '');
     const matomoSiteId = envStr('MATOMO_SITE_ID');
     if (matomoUrl && matomoSiteId) {
-      out.push(
+      push(
         buildMatomoHtml({
           url: matomoUrl,
           siteId: matomoSiteId,
@@ -213,6 +259,7 @@ export function analyticsHeadHtml({
           requireConsent: envBool('MATOMO_REQUIRE_CONSENT', false),
           trackLinks: envBool('MATOMO_TRACK_LINKS', true),
         }),
+        [originOf(matomoUrl)],
       );
     }
   }
@@ -221,22 +268,18 @@ export function analyticsHeadHtml({
   const plausibleSettings = providers?.plausible;
   if (plausibleSettings?.enabled && plausibleSettings?.domain) {
     // Use settings-based config
-    out.push(
-      buildPlausibleHtml({
-        domain: plausibleSettings.domain,
-        url: plausibleSettings.url || '',
-      }),
-    );
+    const url = plausibleSettings.url || '';
+    push(buildPlausibleHtml({ domain: plausibleSettings.domain, url }), [
+      originOf(url || 'https://plausible.io'),
+    ]);
   } else {
     // Fall back to env vars
     const plausibleDomain = envStr('PLAUSIBLE_DOMAIN');
     if (plausibleDomain) {
-      out.push(
-        buildPlausibleHtml({
-          domain: plausibleDomain,
-          url: envStr('PLAUSIBLE_URL'),
-        }),
-      );
+      const url = envStr('PLAUSIBLE_URL');
+      push(buildPlausibleHtml({ domain: plausibleDomain, url }), [
+        originOf(url || 'https://plausible.io'),
+      ]);
     }
   }
 
@@ -244,22 +287,18 @@ export function analyticsHeadHtml({
   const umamiSettings = providers?.umami;
   if (umamiSettings?.enabled && umamiSettings?.websiteId) {
     // Use settings-based config
-    out.push(
-      buildUmamiHtml({
-        websiteId: umamiSettings.websiteId,
-        url: umamiSettings.url || '',
-      }),
-    );
+    const url = umamiSettings.url || '';
+    push(buildUmamiHtml({ websiteId: umamiSettings.websiteId, url }), [
+      originOf(url || 'https://cloud.umami.is'),
+    ]);
   } else {
     // Fall back to env vars
     const umamiWebsiteId = envStr('UMAMI_WEBSITE_ID');
     if (umamiWebsiteId) {
-      out.push(
-        buildUmamiHtml({
-          websiteId: umamiWebsiteId,
-          url: envStr('UMAMI_URL'),
-        }),
-      );
+      const url = envStr('UMAMI_URL');
+      push(buildUmamiHtml({ websiteId: umamiWebsiteId, url }), [
+        originOf(url || 'https://cloud.umami.is'),
+      ]);
     }
   }
 
@@ -267,25 +306,53 @@ export function analyticsHeadHtml({
   const ga4Settings = providers?.googleAnalytics;
   if (ga4Settings?.enabled && ga4Settings?.measurementId) {
     // Use settings-based config
-    out.push(
-      buildGa4Html({
-        measurementId: ga4Settings.measurementId,
-      }),
-    );
+    push(buildGa4Html({ measurementId: ga4Settings.measurementId }), [
+      GOOGLE_TAG_ORIGIN,
+    ]);
   } else {
     // Fall back to env vars
     const ga4MeasurementId = envStr('GA4_MEASUREMENT_ID');
     if (ga4MeasurementId) {
-      out.push(
-        buildGa4Html({
-          measurementId: ga4MeasurementId,
-        }),
-      );
+      push(buildGa4Html({ measurementId: ga4MeasurementId }), [
+        GOOGLE_TAG_ORIGIN,
+      ]);
     }
   }
 
-  // A provider whose values failed validation contributes '' — drop those so
-  // a refused provider leaves no blank line behind.
-  const emitted = out.filter(Boolean);
+  return entries;
+}
+
+/**
+ * Build a string of HTML tags to inject into <head>.
+ *
+ * This intentionally stays dependency-free and "preset-based":
+ * - Prefer simple env-based config (GTM / Matomo / Plausible / Umami / GA4)
+ * - Provide an escape hatch for custom HTML snippets (raw or base64)
+ * - Optionally accept settings object from admin UI (overrides env vars)
+ *
+ * NOTE: A raw HTML snippet is inherently powerful. Treat env vars as
+ * operator-controlled input (not user-provided) and document accordingly.
+ *
+ * @param {Object} [options] - See {@link collectAnalyticsHead}.
+ * @returns {string}
+ */
+export function analyticsHeadHtml(options = {}) {
+  const emitted = collectAnalyticsHead(options).map((entry) => entry.html);
   return emitted.length ? emitted.join('\n') + '\n' : '';
+}
+
+/**
+ * The external origins the emitted analytics HTML loads script from, for the
+ * app-shell CSP's `script-src` (server/utils/document-csp.js,
+ * buildAppShellCspHeader). Empty whenever {@link analyticsHeadHtml} emits
+ * nothing, by construction: both are projections of the same provider walk.
+ *
+ * @param {Object} [options] - See {@link collectAnalyticsHead}.
+ * @returns {string[]} Deduplicated origins, e.g. ['https://plausible.io'].
+ */
+export function analyticsScriptOrigins(options = {}) {
+  const origins = collectAnalyticsHead(options).flatMap(
+    (entry) => entry.scriptOrigins,
+  );
+  return [...new Set(origins)];
 }
