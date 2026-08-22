@@ -129,8 +129,8 @@ regardless — the paths need scripts and same-origin).
 
 ### The served surfaces also send a header (D53(i))
 
-`/p/…` and `/embed/…` are the two surfaces this server hands back over HTTP, so
-they are the two that _can_ set a header — and since D53(i) they do, via
+`/p/…` and `/embed/…` are surfaces this server hands back over HTTP, so they
+_can_ set a header — and since D53(i) they do, via
 `buildDocumentCspHeader({ frameAncestors })`. It is the same policy the
 document already carries as a meta, plus the one directive a meta is specified
 to ignore. **The gain is consistency, not coverage**: every directive the meta
@@ -143,6 +143,7 @@ answers and neither is a safe default for the other:
 | ---------- | ----------------- | --------------------------------------- |
 | `/p/…`     | `'none'`          | `DENY`                                  |
 | `/embed/…` | `*`               | omitted, on purpose                     |
+| app shell  | `'none'`          | `DENY`                                  |
 
 **The two columns must agree.** Where a browser understands both,
 `frame-ancestors` wins, so a looser CSP value would widen framing on modern
@@ -150,16 +151,48 @@ browsers while the older header still denied it elsewhere — a change of
 behaviour wearing a consistency change's clothes. `tests/served-surface-csp-header.test.js`
 pins the pair.
 
-## The four gates
+### The app shell sends one too (D53(ii))
+
+The shell — `/`, the auth pages, the editor and presenter routes, the
+share-link viewer — is the surface the session cookie lives on, and it
+carried no policy at all until B124. It is served, never downloaded or
+`setContent()`-ed, so it needs no meta form: the header from
+`buildAppShellCspHeader()` is its only carrier, set by `serveShellHtml()` on
+every shell 200.
+
+The policy is the **document policy plus the analytics origins** — not a
+second policy source. External analytics is an app-surface feature whose tag
+loads from an operator-chosen origin the static list cannot know, so
+`script-src` extends with `analyticsScriptOrigins()` from
+`server/analytics/head.js`: the same provider walk that emits the head HTML
+also reports the origins, and a provider that is refused (invalid id, bad
+URL) contributes neither. Nothing else widens — the editor reaches the same
+third-party set a rendered document does (the font seam for theme previews,
+Bunny's player.js for video slides), and the collab WebSocket rides
+`connect-src 'self'`, which matches same-origin `ws`/`wss` per CSP3
+(verified in Chromium, Firefox and WebKit).
+
+**`'unsafe-inline'` is the recorded answer to the B124 design question**, for
+the same reason the render paths carry it: this policy is a host allowlist,
+not an inline-XSS defence. A nonce is unattainable on this surface — the
+analytics escape hatch (`ANALYTICS_HEAD_HTML`) injects operator HTML the
+server cannot rewrite, and a single nonce in `script-src` makes browsers
+_ignore_ `'unsafe-inline'`, so a partial nonce breaks every un-nonced
+fragment rather than merely not covering it. Inline-injection defence stays
+where it already lives: escaping discipline plus DOMPurify
+(`docs/reference/html-escaping.md`).
+
+## The five gates
 
 All must stay green, and they fail differently on purpose:
 
-| Gate                                      | Checks                                                                                                                                                                                                                   |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `tests/no-third-party-origins.test.js`    | **The source.** Greps every `.js` under `server/`, `client/` (minus `client/vendor/`) and `shared/` for an asset-CDN URL, against an allowlist that carries a reason per entry. Fails the day a new offender is written. |
-| `tests/export-third-party-cdn.test.js`    | **The output.** Builds every path in the render-path register (`server/render-paths.js`) from a deck with a code block and a formula, and asserts each document names no host outside a small allowlist.                 |
-| `tests/export-csp.test.js`                | **The policy.** Every path emits it, before anything loadable, identically; the code directives name exactly the declared origins and no wildcard; the omitted directives carry a reason.                                |
-| `tests/served-surface-csp-header.test.js` | **The header.** `/p/…` and `/embed/…` send the same policy as a response header plus `frame-ancestors`, and that value agrees with the `X-Frame-Options` the same response carries.                                      |
+| Gate                                      | Checks                                                                                                                                                                                                                                      |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tests/no-third-party-origins.test.js`    | **The source.** Greps every `.js` under `server/`, `client/` (minus `client/vendor/`) and `shared/` for an asset-CDN URL, against an allowlist that carries a reason per entry. Fails the day a new offender is written.                    |
+| `tests/export-third-party-cdn.test.js`    | **The output.** Builds every path in the render-path register (`server/render-paths.js`) from a deck with a code block and a formula, and asserts each document names no host outside a small allowlist.                                    |
+| `tests/export-csp.test.js`                | **The policy.** Every path emits it, before anything loadable, identically; the code directives name exactly the declared origins and no wildcard; the omitted directives carry a reason.                                                   |
+| `tests/served-surface-csp-header.test.js` | **The header.** `/p/…` and `/embed/…` send the same policy as a response header plus `frame-ancestors`, and that value agrees with the `X-Frame-Options` the same response carries.                                                         |
+| `tests/app-shell-csp-header.test.js`      | **The shell.** The app-shell header is the document policy plus the analytics origins and `frame-ancestors 'none'`, the origins are a projection of the emitted analytics HTML, and both shell routes serve through the CSP-bearing writer. |
 
 The output gate strips the policy meta before reading hosts: a policy names
 every origin a document _may_ reach, and permitting is the opposite of fetching.
