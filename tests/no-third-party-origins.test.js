@@ -66,23 +66,6 @@ const ALLOWED = [
     reason: 'same Swagger UI shell — the script half of it.',
   },
   {
-    file: 'server/render/pdf-to-images.js',
-    url: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
-    count: 1,
-    reason:
-      'PDF import parses an *uploaded* file in headless Chrome, and hands that ' +
-      'browser a hardcoded third-party script to do it — the same page that ' +
-      'inlines remote images through the SSRF guard so no user-supplied URL ' +
-      'reaches Chrome. Being vendored under client/vendor/pdfjs/ is decided ' +
-      '(D46) and is the second PR of B102; this entry goes with it.',
-  },
-  {
-    file: 'server/render/pdf-to-images.js',
-    url: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',
-    count: 1,
-    reason: 'same import path — the worker half of it.',
-  },
-  {
     file: 'client/lib/slide-runtime/ensure-hls.js',
     url: 'https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js',
     count: 1,
@@ -176,7 +159,7 @@ test('the vendored copies are what the exempt directory holds', async () => {
   // self-hosted answer, not an exception to it. If it stopped existing the
   // gate above would still pass while every export broke.
   const vendored = await readdir(path.join(repoRoot, 'client', 'vendor'));
-  for (const name of ['prism', 'katex', 'dompurify']) {
+  for (const name of ['prism', 'katex', 'dompurify', 'pdfjs']) {
     assert.ok(
       vendored.includes(name),
       `client/vendor/${name} is missing — run npm ci (postinstall vendors it)`,
