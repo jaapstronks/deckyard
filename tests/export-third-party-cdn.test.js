@@ -90,10 +90,24 @@ const carriesPrism = (html) =>
 const carriesKatex = (html) =>
   /\/client\/vendor\/katex\//.test(html) || /KaTeX_Main/.test(html);
 
+/**
+ * Drop the Content-Security-Policy meta before reading hosts.
+ *
+ * The policy names every origin a document may reach — that is what a policy
+ * is — so scanning it back would report each allowed host as if the document
+ * had fetched from it. Permitting is the opposite of fetching, and
+ * `tests/export-csp.test.js` is what holds the policy's own list honest.
+ */
+const withoutCsp = (html) =>
+  String(html).replace(
+    /<meta http-equiv="Content-Security-Policy"[^>]*>/gi,
+    '',
+  );
+
 /** Every distinct host an `http(s)://` URL in the document points at. */
 function hostsIn(html) {
   const hosts = new Set();
-  for (const m of String(html).matchAll(/https?:\/\/([a-z0-9.-]+)/gi)) {
+  for (const m of withoutCsp(html).matchAll(/https?:\/\/([a-z0-9.-]+)/gi)) {
     hosts.add(m[1].toLowerCase());
   }
   return [...hosts];
@@ -154,8 +168,12 @@ test('no render path reaches a third-party origin', async (t) => {
           'renders must resolve everything against this server or carry it ' +
           'inline (docs/reference/no-third-party-origins.md)',
       );
-      // Belt and braces: the CDN spellings this gate was written for.
-      assert.doesNotMatch(html, /https?:\/\/[^"'\s)]*(cdn|jsdelivr|unpkg)/i);
+      // Belt and braces: the CDN spellings this gate was written for. Same
+      // strip — the policy names cdn.jsdelivr.net in order to permit hls.js.
+      assert.doesNotMatch(
+        withoutCsp(html),
+        /https?:\/\/[^"'\s)]*(cdn|jsdelivr|unpkg)/i,
+      );
     });
   }
 });

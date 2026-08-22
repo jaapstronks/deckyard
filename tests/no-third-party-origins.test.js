@@ -66,6 +66,19 @@ const ALLOWED = [
     reason: 'same Swagger UI shell — the script half of it.',
   },
   {
+    file: 'server/utils/document-csp.js',
+    url: 'https://cdn.jsdelivr.net',
+    count: 1,
+    reason:
+      'the render-path CSP names this origin in order to *permit* it, which ' +
+      'is the opposite of fetching from it: the policy is what stops every ' +
+      'other host. It is here so the two lists cannot drift — vendoring ' +
+      'hls.js deletes this entry, the ensure-hls one below, and the ' +
+      'THIRD_PARTY_ORIGINS entry, in one commit. ' +
+      'tests/export-csp.test.js asserts the policy names no CDN this ' +
+      'allowlist has stopped allowing.',
+  },
+  {
     file: 'client/lib/slide-runtime/ensure-hls.js',
     url: 'https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js',
     count: 1,
