@@ -24,11 +24,11 @@ import { canWritePresentation } from '../../../utils/presentation-authz.js';
 import { dispatchRoutes } from '../../../utils/router.js';
 import {
   badRequest,
-  getErrorStatus,
   jsonError,
   notFound,
   requireJsonBody,
   serveJson,
+  storageError,
   unauthorized,
 } from '../../../utils/http.js';
 import { buildShareUrl } from '../../../utils/request-url.js';
@@ -74,7 +74,7 @@ async function handleGuestPreRegister(
   );
 
   if (!result.ok) {
-    jsonError(res, getErrorStatus(result.reason), result.reason);
+    storageError(res, result);
     return true;
   }
 
@@ -155,7 +155,7 @@ async function handleGuestRemove(
 
   const result = await removeGuest(storageScope, guestId);
   if (!result.ok) {
-    return jsonError(res, getErrorStatus(result.reason), result.reason);
+    return storageError(res, result);
   }
 
   serveJson(res, 200, { ok: true, deleted: result.deleted });

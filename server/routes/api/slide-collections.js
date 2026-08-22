@@ -8,13 +8,12 @@
  */
 
 import {
-  getErrorStatus,
-  jsonError,
   methodNotAllowed,
-  serveJson,
-  unauthorized,
   notFound,
   requireJsonBody,
+  serveJson,
+  storageError,
+  unauthorized,
   withErrorHandler,
 } from '../../utils/http.js';
 import {
@@ -58,11 +57,11 @@ function organizationMutateGuard(authedUser) {
  * happened to spell them out.
  *
  * @param {import('node:http').ServerResponse} res
- * @param {string} reason
+ * @param {{reason: string, field?: string}} result
  * @returns {true}
  */
-function mutationError(res, reason) {
-  return jsonError(res, getErrorStatus(reason), reason);
+function mutationError(res, result) {
+  return storageError(res, result);
 }
 
 function actorEmail(authedUser) {
@@ -90,7 +89,7 @@ async function handlePersonalCreate({ storageScope, req, res, authedUser }) {
   const r = await createPersonalCollection(storageScope, email, body, {
     actorEmail: email,
   });
-  if (!r.ok) return mutationError(res, r.reason);
+  if (!r.ok) return mutationError(res, r);
   serveJson(res, 201, r.item);
   return true;
 }
@@ -119,7 +118,7 @@ async function handlePersonalUpdate(
   const r = await updatePersonalCollection(storageScope, email, id, body, {
     actorEmail: email,
   });
-  if (!r.ok) return mutationError(res, r.reason);
+  if (!r.ok) return mutationError(res, r);
   serveJson(res, 200, r.item);
   return true;
 }
@@ -159,7 +158,7 @@ async function handleOrganizationCreate({
   const r = await createOrganizationCollection(storageScope, body, {
     actorEmail: email,
   });
-  if (!r.ok) return mutationError(res, r.reason);
+  if (!r.ok) return mutationError(res, r);
   serveJson(res, 201, r.item);
   return true;
 }
@@ -186,7 +185,7 @@ async function handleOrganizationUpdate(
     actorEmail: actorEmail(authedUser),
     allowMutate: organizationMutateGuard(authedUser),
   });
-  if (!r.ok) return mutationError(res, r.reason);
+  if (!r.ok) return mutationError(res, r);
   serveJson(res, 200, r.item);
   return true;
 }
@@ -197,7 +196,7 @@ async function handleOrganizationDelete({ storageScope, res, authedUser }, id) {
     actorEmail: actorEmail(authedUser),
     allowMutate: organizationMutateGuard(authedUser),
   });
-  if (!r.ok) return mutationError(res, r.reason);
+  if (!r.ok) return mutationError(res, r);
   serveJson(res, 200, { ok: true });
   return true;
 }

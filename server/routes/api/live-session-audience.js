@@ -30,13 +30,12 @@ import { updateSlideNotes } from '../../storage/presentations/slide-notes.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
 import {
   badRequest,
-  getErrorStatus,
-  jsonError,
   methodNotAllowed,
   notFound,
   rateLimited,
   requireJsonBody,
   serveJson,
+  storageError,
   withErrorHandler,
 } from '../../utils/http.js';
 
@@ -231,10 +230,9 @@ async function handleSessionNotesWrite(
   });
 
   if (!result.ok) {
-    return jsonError(
+    return storageError(
       res,
-      getErrorStatus(result.reason),
-      result.reason,
+      result,
       SLIDE_NOTE_FAILURE_MESSAGES[result.reason],
     );
   }

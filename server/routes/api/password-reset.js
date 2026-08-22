@@ -15,12 +15,11 @@ import {
   setSessionCookie,
 } from '../../auth/auth.js';
 import {
-  serveJson,
   badRequest,
-  getErrorStatus,
-  jsonError,
-  unauthorized,
   requireJsonBody,
+  serveJson,
+  storageError,
+  unauthorized,
   withErrorHandler,
 } from '../../utils/http.js';
 import { getString, getTrimmedString } from '../../utils/request-validators.js';
@@ -37,10 +36,10 @@ import { t } from '../../i18n/index.js';
  * apart without matching on display copy.
  *
  * @param {import('node:http').ServerResponse} res
- * @param {string} reason
+ * @param {{reason: string, field?: string}} result
  * @returns {true}
  */
-function passwordValidationError(res, reason) {
+function passwordValidationError(res, result) {
   const messages = {
     too_short: t(
       'api.error.passwordTooShort',
@@ -48,11 +47,11 @@ function passwordValidationError(res, reason) {
     ),
     too_long: t('api.error.passwordTooLong', 'Password is too long'),
   };
-  return jsonError(
+  return storageError(
     res,
-    getErrorStatus(reason),
-    reason,
-    messages[reason] || t('api.error.passwordInvalid', 'Password is invalid'),
+    result,
+    messages[result.reason] ||
+      t('api.error.passwordInvalid', 'Password is invalid'),
   );
 }
 import { getClientIp, createStorageScope } from '../../utils/context.js';
@@ -264,7 +263,7 @@ async function handleResetPassword({ repoRoot, req, res }) {
   // Validate password
   const pwValidation = validatePassword(password);
   if (!pwValidation.ok) {
-    return passwordValidationError(res, pwValidation.reason);
+    return passwordValidationError(res, pwValidation);
   }
 
   const ipAddress = getClientIp(req);
@@ -286,10 +285,9 @@ async function handleResetPassword({ repoRoot, req, res }) {
     // `invalid_or_expired` is a credential that does not hold, so the register
     // answers 401 rather than the 400 this ternary used to send under a
     // `bad_request` code.
-    return jsonError(
+    return storageError(
       res,
-      getErrorStatus(consumeResult.reason),
-      consumeResult.reason,
+      consumeResult,
       consumeResult.reason === 'invalid_or_expired'
         ? t(
             'api.error.resetLinkExpired',
@@ -374,7 +372,7 @@ async function handleChangePassword({ repoRoot, req, res }) {
   // Validate new password
   const pwValidation = validatePassword(newPassword);
   if (!pwValidation.ok) {
-    return passwordValidationError(res, pwValidation.reason);
+    return passwordValidationError(res, pwValidation);
   }
 
   const ipAddress = getClientIp(req);

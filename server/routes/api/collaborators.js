@@ -26,13 +26,12 @@ import { sendCollaboratorInviteEmail } from '../../integrations/brevo.js';
 import { canManageCollaborators } from '../../utils/presentation-authz.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import {
-  serveJson,
-  notFound,
-  unauthorized,
   badRequest,
+  notFound,
   requireJsonBody,
-  jsonError,
-  getErrorStatus,
+  serveJson,
+  storageError,
+  unauthorized,
   withErrorHandler,
 } from '../../utils/http.js';
 import { validatePermission } from '../../utils/request-validators.js';
@@ -302,10 +301,9 @@ async function handleCollaboratorAdd(
       // states which is which — no route-local default is involved any more.
       // The batch branch below has always reported the reason factually per
       // address; single mode did not.
-      return jsonError(
+      return storageError(
         res,
-        getErrorStatus(singleResult.reason),
-        singleResult.reason,
+        singleResult,
         INVITE_FAILURE_MESSAGES[singleResult.reason],
       );
     }
@@ -400,7 +398,7 @@ async function handleCollaboratorRemove(
   );
 
   if (!result.ok) {
-    return jsonError(res, getErrorStatus(result.reason), result.reason);
+    return storageError(res, result);
   }
 
   // Log the revocation the way a grant is logged (non-blocking): a grant
@@ -466,7 +464,7 @@ async function handleCollaboratorUpdate(
   );
 
   if (!result.ok) {
-    return jsonError(res, getErrorStatus(result.reason), result.reason);
+    return storageError(res, result);
   }
 
   // Log the permission change symmetrically with grant and revoke

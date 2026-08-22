@@ -4,12 +4,11 @@
 
 import {
   badRequest,
-  getErrorStatus,
-  jsonError,
   notFound,
   rateLimited,
   requireJsonBody,
   serveJson,
+  storageError,
 } from '../../../utils/http.js';
 import { norm, validateDateRange } from '../../../utils/normalize.js';
 import { parsePaginationParams } from '../../../utils/request-validators.js';
@@ -185,12 +184,7 @@ export async function handleCreateReport(ctx, presentationId) {
   });
 
   if (!result.ok) {
-    return jsonError(
-      res,
-      getErrorStatus(result.reason),
-      result.reason || 'internal_error',
-      'Failed to create report',
-    );
+    return storageError(res, result, 'Failed to create report');
   }
 
   return (serveJson(res, 200, result.report), true);
@@ -266,12 +260,7 @@ export async function handleUpdateReport(ctx, presentationId, reportId) {
   const result = await updateAnalyticsReport(ctx.storageScope, reportId, body);
 
   if (!result.ok) {
-    return jsonError(
-      res,
-      getErrorStatus(result.reason),
-      result.reason || 'internal_error',
-      'Failed to update report',
-    );
+    return storageError(res, result, 'Failed to update report');
   }
 
   return (serveJson(res, 200, { ok: true }), true);
@@ -298,12 +287,7 @@ export async function handleDeleteReport(ctx, presentationId, reportId) {
   const result = await deleteAnalyticsReport(ctx.storageScope, reportId);
 
   if (!result.ok) {
-    return jsonError(
-      res,
-      getErrorStatus(result.reason),
-      result.reason || 'internal_error',
-      'Failed to delete report',
-    );
+    return storageError(res, result, 'Failed to delete report');
   }
 
   return (serveJson(res, 200, { ok: true }), true);
@@ -330,12 +314,7 @@ export async function handleRegenerateToken(ctx, presentationId, reportId) {
   const result = await regenerateShareToken(ctx.storageScope, reportId);
 
   if (!result.ok) {
-    return jsonError(
-      res,
-      getErrorStatus(result.reason),
-      result.reason || 'internal_error',
-      'Failed to regenerate token',
-    );
+    return storageError(res, result, 'Failed to regenerate token');
   }
 
   return (serveJson(res, 200, { shareToken: result.shareToken }), true);

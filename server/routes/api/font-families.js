@@ -14,13 +14,12 @@
 
 import {
   badRequest,
-  getErrorStatus,
-  jsonError,
   methodNotAllowed,
-  serveJson,
-  unauthorized,
   notFound,
   requireJsonBody,
+  serveJson,
+  storageError,
+  unauthorized,
   withErrorHandler,
 } from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
@@ -39,7 +38,6 @@ import { getMediaProvider } from '../../media/index.js';
 import { canManage } from '../../utils/route-middleware.js';
 
 const ERROR_MESSAGES = {
-  invalid_name: 'Invalid font family name.',
   invalid_slug: 'Invalid font family slug.',
   invalid_source:
     'Invalid font source. Must be upload, adobe, monotype, or google.',
@@ -48,10 +46,22 @@ const ERROR_MESSAGES = {
   invalid_style: 'Invalid font style. Must be normal or italic.',
   invalid_format: 'Invalid font format. Must be woff2 or woff.',
   slug_exists: 'A font family with this slug already exists.',
-  variant_exists: 'A variant with this weight and style already exists.',
+  already_exists: 'A variant with this weight and style already exists.',
   not_found: 'Font family not found.',
   unavailable: 'Database unavailable.',
-  invalid_id: 'Invalid font family ID.',
+};
+
+/**
+ * Human-readable text per `field` when the reason is `invalid`.
+ *
+ * D48 collapsed the generic `invalid_*` spellings into one `invalid` carrying a
+ * `field`, so the copy that used to hang off `invalid_id` / `invalid_name` /
+ * `invalid_fields` hangs off the field name instead. The field also reaches the
+ * client as `details.field`, which is more than the old suffix gave it.
+ */
+const INVALID_FIELD_MESSAGES = {
+  name: 'Invalid font family name.',
+  id: 'Invalid font family ID.',
 };
 
 /**
@@ -64,11 +74,15 @@ const ERROR_MESSAGES = {
  * unavailable."* — into a 400.
  *
  * @param {import('node:http').ServerResponse} res
- * @param {string} reason
+ * @param {{reason: string, field?: string}} result
  * @returns {true}
  */
-function fontFamilyError(res, reason) {
-  return jsonError(res, getErrorStatus(reason), reason, ERROR_MESSAGES[reason]);
+function fontFamilyError(res, result) {
+  // No reason guard around the field lookup: `field` only ever rides on
+  // `invalid`, and the vocabulary gate is what keeps that true.
+  const message =
+    INVALID_FIELD_MESSAGES[result.field] || ERROR_MESSAGES[result.reason];
+  return storageError(res, result, message);
 }
 
 // Max upload size: 5MB
@@ -97,7 +111,7 @@ async function handleFontFamilyCreate({ storageScope, req, res, authedUser }) {
   const result = await createFontFamily(storageScope, body);
 
   if (!result.ok) {
-    return fontFamilyError(res, result.reason);
+    return fontFamilyError(res, result);
   }
   serveJson(res, 201, result.fontFamily);
   return true;
@@ -162,7 +176,7 @@ async function handleFontFamilyImportAdobe({
   });
 
   if (!result.ok) {
-    return fontFamilyError(res, result.reason);
+    return fontFamilyError(res, result);
   }
 
   // Add variants if provided
@@ -251,7 +265,7 @@ async function handleFontFamilyUploadVariant(
   });
 
   if (!result.ok) {
-    return fontFamilyError(res, result.reason);
+    return fontFamilyError(res, result);
   }
 
   // Variant changes affect themes that embed this font family
@@ -271,7 +285,7 @@ async function handleFontFamilyRemoveVariant(
   const result = await removeFontVariant(storageScope, variantId);
 
   if (!result.ok) {
-    return fontFamilyError(res, result.reason);
+    return fontFamilyError(res, result);
   }
 
   // Clean up uploaded file from media provider using storage key
@@ -317,7 +331,7 @@ async function handleFontFamilyUpdate(
 
   const result = await updateFontFamily(storageScope, familyId, body);
   if (!result.ok) {
-    return fontFamilyError(res, result.reason);
+    return fontFamilyError(res, result);
   }
   // Font changes can affect any theme referencing this font family
   clearCustomThemeCache();
@@ -333,7 +347,7 @@ async function handleFontFamilyDelete(
   if (!canManage(authedUser)) return unauthorized(res);
   const result = await deleteFontFamily(storageScope, familyId);
   if (!result.ok) {
-    return fontFamilyError(res, result.reason);
+    return fontFamilyError(res, result);
   }
 
   // Clean up uploaded files from media provider using storage keys

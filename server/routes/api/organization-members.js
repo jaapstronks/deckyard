@@ -4,14 +4,13 @@
  */
 
 import {
-  serveJson,
   badRequest,
-  getErrorStatus,
-  jsonError,
-  unauthorized,
   forbidden,
   notFound,
   requireJsonBody,
+  serveJson,
+  storageError,
+  unauthorized,
   withErrorHandler,
 } from '../../utils/http.js';
 
@@ -26,12 +25,12 @@ import {
  * than when you are removing a member.
  *
  * @param {import('node:http').ServerResponse} res
- * @param {string} reason
+ * @param {{reason: string, field?: string}} result
  * @param {Record<string, string>} [messages]
  * @returns {true}
  */
-function memberError(res, reason, messages = {}) {
-  return jsonError(res, getErrorStatus(reason), reason, messages[reason]);
+function memberError(res, result, messages = {}) {
+  return storageError(res, result, messages[result.reason]);
 }
 import { dispatchRoutes } from '../../utils/router.js';
 import { isMultiOrgEnabled } from '../../config/features.js';
@@ -208,7 +207,7 @@ async function handleMemberInvite(
   });
 
   if (!memberResult.ok) {
-    return memberError(res, memberResult.reason, {
+    return memberError(res, memberResult, {
       already_member: 'This user is already a member',
     });
   }
@@ -344,7 +343,7 @@ async function handleMemberRoleUpdate(
   const result = await updateMemberRole(targetMembership.membershipId, newRole);
 
   if (!result.ok) {
-    return memberError(res, result.reason, {
+    return memberError(res, result, {
       last_owner: 'Transfer ownership before changing the owner’s role',
     });
   }
@@ -410,7 +409,7 @@ async function handleMemberRemove(
   const result = await removeMember(targetMembership.membershipId);
 
   if (!result.ok) {
-    return memberError(res, result.reason, {
+    return memberError(res, result, {
       last_owner: 'Cannot remove the last owner',
     });
   }

@@ -22,12 +22,11 @@ import {
 } from '../../storage/feedback.js';
 import {
   badRequest,
-  getErrorStatus,
-  jsonError,
   methodNotAllowed,
   notFound,
   requireJsonBody,
   serveJson,
+  storageError,
   withErrorHandler,
 } from '../../utils/http.js';
 
@@ -455,12 +454,7 @@ async function handleLiveSessionControlCommand(
     // `disabled` used to answer 401, which asks the presenter to authenticate
     // for a session they are already authenticated on; the register makes it a
     // 409 — the session refuses the transition.
-    return jsonError(
-      res,
-      getErrorStatus(result.reason),
-      result.reason,
-      CONTROL_FAILURE_MESSAGES[result.reason],
-    );
+    return storageError(res, result, CONTROL_FAILURE_MESSAGES[result.reason]);
   }
   serveJson(res, 200, { ok: true });
   return true;

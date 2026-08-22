@@ -14,12 +14,11 @@
  */
 
 import {
-  serveJson,
-  getErrorStatus,
-  jsonError,
+  forbidden,
   notFound,
   requireJsonBody,
-  forbidden,
+  serveJson,
+  storageError,
   withErrorHandler,
 } from '../../utils/http.js';
 
@@ -46,16 +45,11 @@ const THEME_FAILURE_MESSAGES = {
  * Answer a failed theme mutation in the canonical envelope.
  *
  * @param {import('node:http').ServerResponse} res
- * @param {string} reason
+ * @param {{reason: string, field?: string}} result
  * @returns {true}
  */
-function themeError(res, reason) {
-  return jsonError(
-    res,
-    getErrorStatus(reason),
-    reason,
-    THEME_FAILURE_MESSAGES[reason],
-  );
+function themeError(res, result) {
+  return storageError(res, result, THEME_FAILURE_MESSAGES[result.reason]);
 }
 import {
   listThemeIds,
@@ -266,7 +260,7 @@ async function handleCustomThemeCreate({ storageScope, req, res, authedUser }) {
   const result = await createTheme(storageScope, parsed.body);
 
   if (!result.ok) {
-    return themeError(res, result.reason);
+    return themeError(res, result);
   }
 
   serveJson(res, 201, result.theme);
@@ -286,7 +280,7 @@ async function handleCustomThemeClearDefault({
   const result = await setDefaultTheme(storageScope, null);
 
   if (!result.ok) {
-    return themeError(res, result.reason);
+    return themeError(res, result);
   }
 
   serveJson(res, 200, { success: true });
@@ -320,7 +314,7 @@ async function handleCustomThemeUpdate(
   const result = await updateTheme(storageScope, themeId, parsed.body);
 
   if (!result.ok) {
-    return themeError(res, result.reason);
+    return themeError(res, result);
   }
 
   clearCustomThemeCache(themeId);
@@ -340,7 +334,7 @@ async function handleCustomThemeDelete(
   const result = await deleteTheme(storageScope, themeId);
 
   if (!result.ok) {
-    return themeError(res, result.reason);
+    return themeError(res, result);
   }
 
   clearCustomThemeCache(themeId);
@@ -360,7 +354,7 @@ async function handleCustomThemeSetDefault(
   const result = await setDefaultTheme(storageScope, themeId);
 
   if (!result.ok) {
-    return themeError(res, result.reason);
+    return themeError(res, result);
   }
 
   serveJson(res, 200, { success: true });

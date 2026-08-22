@@ -261,6 +261,37 @@ export function getErrorStatus(reason) {
   return 500;
 }
 
+/**
+ * Answer a failed storage call in the canonical envelope — the one form a route
+ * uses.
+ *
+ * The reason is the machine code, its `REASONS` entry the status, and an
+ * optional `field` rides along as `details.field`. That last part is why this
+ * exists rather than a bare
+ * `jsonError(res, getErrorStatus(reason), reason, message)`: D48 collapsed the
+ * five generic `invalid_*` spellings into one `invalid` plus a `field`, and a
+ * route that spread the reason by hand would drop the field on the floor.
+ *
+ * `message` stays the route's business — which copy a person reads depends on
+ * the surface, and the per-route message maps (the `INVITE_FAILURE_MESSAGES`
+ * pattern in `routes/api/collaborators.js`) are where that lives. The status
+ * never is.
+ *
+ * @param {import('node:http').ServerResponse} res
+ * @param {{reason: string, field?: string}} result - A storage `{ ok: false, … }` result.
+ * @param {string} [message] - Human-readable text for display.
+ * @param {Object} [opts]
+ * @param {Object} [opts.headers] - Extra response headers.
+ * @returns {true}
+ */
+export function storageError(res, result, message, { headers } = {}) {
+  const reason = result?.reason;
+  return jsonError(res, getErrorStatus(reason), reason, message, {
+    details: result?.field ? { field: result.field } : undefined,
+    headers,
+  });
+}
+
 export function methodNotAllowed(res, allowed) {
   return jsonError(res, 405, 'method_not_allowed', 'Method not allowed', {
     headers: { Allow: allowed.join(', ') },

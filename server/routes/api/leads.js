@@ -5,11 +5,11 @@
 
 import {
   badRequest,
-  getErrorStatus,
   jsonError,
   notFound,
   requireJsonBody,
   serveJson,
+  storageError,
   unauthorized,
   withErrorHandler,
 } from '../../utils/http.js';
@@ -29,16 +29,11 @@ const LEAD_FAILURE_MESSAGES = {
  * Answer a failed lead mutation in the canonical envelope.
  *
  * @param {import('node:http').ServerResponse} res
- * @param {string} reason
+ * @param {{reason: string, field?: string}} result
  * @returns {true}
  */
-function leadError(res, reason) {
-  return jsonError(
-    res,
-    getErrorStatus(reason),
-    reason,
-    LEAD_FAILURE_MESSAGES[reason],
-  );
+function leadError(res, result) {
+  return storageError(res, result, LEAD_FAILURE_MESSAGES[result.reason]);
 }
 import { dispatchRoutes } from '../../utils/router.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
@@ -158,7 +153,7 @@ async function handleLeadSubmit({ repoRoot, req, res }) {
   });
 
   if (!result.ok) {
-    return (leadError(res, result.reason), true);
+    return (leadError(res, result), true);
   }
 
   // Fire webhook (async, don't wait)
@@ -402,7 +397,7 @@ async function handleDeleteLead(ctx, leadId) {
 
   const result = await anonymizeLead(leadId);
   if (!result.ok) {
-    return (leadError(res, result.reason), true);
+    return (leadError(res, result), true);
   }
 
   serveJson(res, 200, { ok: true });

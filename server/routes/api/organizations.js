@@ -5,14 +5,13 @@
 
 import { updateSessionOrganization } from '../../auth/auth.js';
 import {
-  serveJson,
   badRequest,
-  getErrorStatus,
-  jsonError,
-  unauthorized,
   forbidden,
   notFound,
   requireJsonBody,
+  serveJson,
+  storageError,
+  unauthorized,
   withErrorHandler,
 } from '../../utils/http.js';
 
@@ -32,15 +31,14 @@ const ORGANIZATION_FAILURE_MESSAGES = {
  * Answer a failed organization mutation in the canonical envelope.
  *
  * @param {import('node:http').ServerResponse} res
- * @param {string} reason
+ * @param {{reason: string, field?: string}} result
  * @returns {true}
  */
-function organizationError(res, reason) {
-  return jsonError(
+function organizationError(res, result) {
+  return storageError(
     res,
-    getErrorStatus(reason),
-    reason,
-    ORGANIZATION_FAILURE_MESSAGES[reason],
+    result,
+    ORGANIZATION_FAILURE_MESSAGES[result.reason],
   );
 }
 import { getTrimmedString } from '../../utils/request-validators.js';
@@ -115,7 +113,7 @@ async function handleOrgCreate({ req, res, userId }) {
   });
 
   if (!result.ok) {
-    return organizationError(res, result.reason);
+    return organizationError(res, result);
   }
 
   serveJson(res, 201, {
@@ -204,7 +202,7 @@ async function handleOrgUpdate({ req, res, userId }, orgId) {
   const result = await updateOrganization(orgId, updates);
 
   if (!result.ok) {
-    return organizationError(res, result.reason);
+    return organizationError(res, result);
   }
 
   serveJson(res, 200, { ok: true, organization: result.organization });
@@ -226,7 +224,7 @@ async function handleOrgDelete({ res, userId }, orgId) {
   const result = await deleteOrganization(orgId);
 
   if (!result.ok) {
-    return organizationError(res, result.reason);
+    return organizationError(res, result);
   }
 
   serveJson(res, 200, { ok: true });
