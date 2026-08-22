@@ -71,15 +71,28 @@ and docs alike:
    describes the codebase; it does not justify the contract. When most
    surfaces are inconsistent, the inconsistency is the defect to fix, not the
    precedent to follow.
-5. **The promises start when the badge comes off.** From that moment the
+5. **A half-built feature is stripped, not parked.** A feature that never ran
+   in production, was never really exercised, and needs substantial surrounding
+   machinery to be honest — consent, retention, erasure, notification — is not
+   improved by leaving it in place behind a `deprecated` flag. Remove it, and
+   write the plan for doing it properly as a separate, deliberate project.
+   Parking keeps the maintenance surface, the half-shape and the wrong
+   assumptions; stripping keeps only the lesson. The plan is the deliverable
+   that replaces the code, and it is not optional — "strip and forget" loses
+   what the attempt taught.
+6. **The promises start when the badge comes off.** From that moment the
    [evolution rule](./deck-format.md#evolution-rule) binds absolutely and
    MAJOR means MAJOR. The beta window is the one chance to correct structure
    cheaply, and it is spent deliberately.
 
 Adopted 2026-08-01, triggered by the type-id one-spelling decision (an early
 draft argued for keeping three spellings because most write paths already
-tolerated them — the exact reasoning rule 4 forbids). This section is the
-anchor other docs, `CLAUDE.md` rituals and review checklists point at.
+tolerated them — the exact reasoning rule 4 forbids). Rule 5 was added
+2026-08-22, triggered by the lead-capture decision: a feature parked in
+July 2026 "until consent is wired" was still parked in August, still carrying a
+GDPR self-service page, a retention job, a webhook event and two runtimes for
+something no deck had ever used. This section is the anchor other docs,
+`CLAUDE.md` rituals and review checklists point at.
 
 ## Merges are not releases
 
