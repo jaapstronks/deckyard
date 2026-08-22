@@ -3,6 +3,7 @@ import { escapeHtml } from '../../../shared/slide-types/helpers.js';
 import { getPresentation } from '../../storage/presentations/index.js';
 import { getPublishedById } from '../../storage/published/index.js';
 import { buildStandaloneHtml } from '../../export/html.js';
+import { buildDocumentCspHeader } from '../../utils/document-csp.js';
 import { buildReaderHtml } from '../../export/reader.js';
 import { loadThemeAssets } from '../../utils/themes.js';
 import { buildMergedSlideTypes } from '../../utils/custom-slide-type-runtime.js';
@@ -86,6 +87,13 @@ export async function handlePublishedReader({ repoRoot, req, res, url }) {
   res.writeHead(200, {
     'Content-Type': 'text/html; charset=utf-8',
     'Cache-Control': 'no-store',
+    // The document already carries this policy as a meta; the header adds the
+    // one directive a meta cannot: `frame-ancestors`. `'none'` mirrors the
+    // `X-Frame-Options: DENY` that security-headers.js already sets here, so
+    // the two agree instead of the (winning) CSP quietly widening framing.
+    'Content-Security-Policy': buildDocumentCspHeader({
+      frameAncestors: "'none'",
+    }),
   });
   res.end(html);
   return true;
@@ -271,6 +279,13 @@ export async function handlePublishedPage({ repoRoot, req, res, url }) {
   res.writeHead(200, {
     'Content-Type': 'text/html; charset=utf-8',
     'Cache-Control': 'no-store',
+    // The document already carries this policy as a meta; the header adds the
+    // one directive a meta cannot: `frame-ancestors`. `'none'` mirrors the
+    // `X-Frame-Options: DENY` that security-headers.js already sets here, so
+    // the two agree instead of the (winning) CSP quietly widening framing.
+    'Content-Security-Policy': buildDocumentCspHeader({
+      frameAncestors: "'none'",
+    }),
   });
   res.end(html);
   return true;

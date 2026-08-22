@@ -102,8 +102,12 @@ export const THIRD_PARTY_ORIGINS = Object.freeze([
  * downloaded, four paths are handed to `page.setContent()`, and the MCP
  * previews are strings returned over stdio. The meta form is what those
  * documents can carry, so the three header-only directives are simply out of
- * reach here — the served surfaces (`/p/…`, embeds) set their own headers, and
- * that is where `frame-ancestors` belongs.
+ * reach here.
+ *
+ * The two surfaces this server *serves* — `/p/…` and `/embed/…` — do have
+ * somewhere to put a header, and since D53(i) they set one:
+ * {@link buildDocumentCspHeader} gives them the same policy plus the
+ * `frame-ancestors` the meta cannot carry.
  *
  * @type {Readonly<Record<string, string>>}
  */
@@ -214,4 +218,44 @@ export function buildDocumentCsp() {
  */
 export function documentCspMeta() {
   return `<meta http-equiv="Content-Security-Policy" content="${buildDocumentCsp()}" />`;
+}
+
+/**
+ * The same policy as a **response header**, for the two surfaces this server
+ * actually serves over HTTP (D53(i)).
+ *
+ * The gain is consistency, not coverage: the documents these routes hand back
+ * already carry the meta form, so every directive the meta can express is
+ * already in force. What the header adds is `frame-ancestors`, which a `<meta>`
+ * policy is specified to ignore — see {@link HEADER_ONLY_DIRECTIVES}. It is
+ * also what makes this module's claim true: the docblock has said "the served
+ * surfaces set their own headers, and that is where `frame-ancestors` belongs"
+ * since #912, and until now nothing did.
+ *
+ * `frameAncestors` is required rather than defaulted, because the two callers
+ * want opposite answers and neither is a safe fallback for the other: a
+ * published deck must not be framed, an embed exists to be framed.
+ *
+ * **It must agree with `X-Frame-Options`**, which
+ * `server/utils/security-headers.js` already sets globally (`DENY` everywhere
+ * except `/embed/`). Where a browser understands both, `frame-ancestors` wins,
+ * so a looser value here would quietly widen framing on modern browsers only —
+ * a change of behaviour dressed as a consistency fix. `'none'` mirrors `DENY`;
+ * the embed's `*` mirrors the header being omitted there.
+ *
+ * @param {Object} options
+ * @param {string} options.frameAncestors - The `frame-ancestors` source list,
+ *   e.g. `"'none'"` for a published deck or `'*'` for an embed.
+ * @returns {string} The full policy, ready for `Content-Security-Policy`.
+ */
+export function buildDocumentCspHeader({ frameAncestors } = {}) {
+  const value = String(frameAncestors || '').trim();
+  if (!value) {
+    throw new Error(
+      'buildDocumentCspHeader needs an explicit frameAncestors — the served ' +
+        "surfaces disagree ('none' for /p/…, '*' for /embed/…) and there is no " +
+        'safe default (server/utils/document-csp.js).',
+    );
+  }
+  return `${buildDocumentCsp()}; frame-ancestors ${value}`;
 }

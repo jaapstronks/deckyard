@@ -1,4 +1,5 @@
 import { notFound } from '../../utils/http.js';
+import { buildDocumentCspHeader } from '../../utils/document-csp.js';
 import { escapeHtml } from '../../../shared/slide-types/helpers.js';
 import { getPresentation } from '../../storage/presentations/index.js';
 import { getPublishedById } from '../../storage/published/index.js';
@@ -106,6 +107,13 @@ export async function handleEmbed({ repoRoot, req, res, url }) {
     res.writeHead(200, {
       'Content-Type': 'text/html; charset=utf-8',
       'Cache-Control': 'no-store',
+      // The document already carries this policy as a meta; the header adds
+      // `frame-ancestors`, which a meta is specified to ignore. `*` because
+      // being framed anywhere is the whole point of this surface — the same
+      // reason security-headers.js omits X-Frame-Options for /embed/.
+      'Content-Security-Policy': buildDocumentCspHeader({
+        frameAncestors: '*',
+      }),
     });
     res.end(html);
     return true;
@@ -132,6 +140,13 @@ export async function handleEmbed({ repoRoot, req, res, url }) {
     res.writeHead(200, {
       'Content-Type': 'text/html; charset=utf-8',
       'Cache-Control': 'no-store',
+      // The document already carries this policy as a meta; the header adds
+      // `frame-ancestors`, which a meta is specified to ignore. `*` because
+      // being framed anywhere is the whole point of this surface — the same
+      // reason security-headers.js omits X-Frame-Options for /embed/.
+      'Content-Security-Policy': buildDocumentCspHeader({
+        frameAncestors: '*',
+      }),
     });
     res.end(`<!doctype html>
 <html lang="en">
