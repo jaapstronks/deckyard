@@ -374,6 +374,34 @@ reads. Unset falls back to the design system's own `10px` / `18px` / `24px`.
 
 ---
 
+## Type size
+
+```json
+{
+  "cssVars": {
+    "--t-slide-text-scale": "1.1"
+  }
+}
+```
+
+One multiplier on the entire slide type scale: every `--slide-text-*` step, and
+with them every semantic role (`--slide-font-size-title`, `-heading`, `-body`,
+…). `1` is the design-system default and leaving it unset means `1`.
+
+It moves **type only**. The spacing scale and the component sizes are not
+touched, so a deck at `1.1` keeps its rhythm rather than looking zoomed — and,
+for the same reason, a large step can overflow a layout that was drawn for the
+default. Database themes offer a narrow band of named steps
+(`config.typography.textScale`: `compact` `0.9` · `normal` `1` · `large` `1.1`);
+a file theme sets the number and owns the result.
+
+The scale it multiplies is fluid: `--slide-text-*` is derived from the slide's
+own box, so it is exactly the historical px value on the 1600×900 reference
+canvas and proportional on any other. A theme never sets per-role px sizes —
+that would re-couple every theme to every role.
+
+---
+
 ## Override locks
 
 A theme can declare that a brand property is **not** overridable per slide:

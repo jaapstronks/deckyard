@@ -48,6 +48,18 @@ export const RADIUS_SCALES = {
  */
 export const SHADOW_SCALES = { none: '0', soft: '1', strong: '1.8' };
 
+/**
+ * Type-size presets → `--t-slide-text-scale`, a multiplier on the whole slide
+ * type scale (client/styles/slides/00-tokens.css § TYPOGRAPHY SCALE).
+ *
+ * Deliberately a narrow band, not an open number: the scale moves type without
+ * moving the spacing and component scales, so a large step still has to fit the
+ * boxes the design system drew. `normal` is the design-system default; a theme
+ * that needs a value outside the band can still set the token raw through
+ * `cssVarOverrides`.
+ */
+export const TEXT_SCALES = { compact: '0.9', normal: '1', large: '1.1' };
+
 // Brand properties a theme can lock against per-slide overrides. Defined in
 // shared/theme-locks.js next to the enforcement, so the schema can never accept
 // a lock that nothing honours. Re-exported because callers treat this module as
@@ -115,6 +127,9 @@ function sanitizeSurfaces(raw) {
 function sanitizeTypography(raw) {
   if (!raw || typeof raw !== 'object') return null;
   const out = {};
+  if (raw.textScale !== undefined) {
+    out.textScale = enumOr(raw.textScale, Object.keys(TEXT_SCALES), 'normal');
+  }
   if (raw.headingTransform !== undefined) {
     out.headingTransform = enumOr(
       raw.headingTransform,

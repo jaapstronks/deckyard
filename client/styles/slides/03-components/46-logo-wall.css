@@ -77,14 +77,21 @@
 .slide-logo-wall[data-logo-count='10'],
 .slide-logo-wall[data-logo-count='11'],
 .slide-logo-wall[data-logo-count='12'] {
-  padding: var(--slide-space-12);
+  /* The inline half of this inset feeds the fluid type unit, so it is stated
+     as --slide-padding rather than written into the shorthand — see
+     00-tokens.css § THE FLUID BASIS. */
+  --slide-padding: var(--slide-space-12);
 }
 
 /* 13+ logos: fluid columns (renderer sets --lw-cols/--lw-rows inline).
    Cells share the row width instead of using fixed sizes, so any count up
    to the cap lays out without per-count CSS. */
 .slide-logo-wall.is-fluid {
-  padding: var(--slide-space-10) var(--slide-space-12) var(--slide-space-12);
+  /* The inline half of this inset feeds the fluid type unit, so it is stated
+     as --slide-padding rather than written into the shorthand — see
+     00-tokens.css § THE FLUID BASIS. */
+  --slide-padding: var(--slide-space-12);
+  padding: var(--slide-space-10) var(--slide-padding) var(--slide-padding);
 }
 
 .slide-logo-wall.is-fluid .logo-wall-grid {

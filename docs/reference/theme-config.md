@@ -36,6 +36,7 @@ anything the editor does not cover.
   },
 
   "typography": {
+    "textScale": "compact" | "normal" | "large",  // → --t-slide-text-scale
     "headingTransform": "none" | "uppercase" | "lowercase" | "capitalize",
     "headingWeight": 100–900,              // rounded to the nearest 100
     "letterSpacing": "0.02em",
@@ -110,6 +111,25 @@ does equal `soft` here: nothing is emitted and the stylesheet reads
 
 `@media print` still nulls all five shadows regardless — Chromium's print
 rasterizer paints blurred shadows as solid grey boxes.
+
+### typography.textScale
+
+| `typography.textScale` | `--t-slide-text-scale`         |
+| ---------------------- | ------------------------------ |
+| `compact`              | `0.9`                          |
+| `normal`               | `1` — same as leaving it unset |
+| `large`                | `1.1`                          |
+
+One multiplier on the whole slide type scale — every `--slide-text-*` step and
+therefore every semantic role derived from them. It moves **type only**: the
+spacing and component scales stay where they are, so a scaled deck keeps its
+rhythm instead of becoming a zoom. Like shadow, unset equals `normal`: nothing
+is emitted and the stylesheet reads `var(--t-slide-text-scale, 1)`.
+
+The band is deliberately narrow. Slide layouts are drawn against fixed boxes,
+so a step that is large enough to be useful is also large enough to overflow
+them; a theme that genuinely needs a value outside the band can still set
+`--t-slide-text-scale` raw through `cssVarOverrides`, and owns the result.
 
 ## Validation
 

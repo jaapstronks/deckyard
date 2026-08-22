@@ -116,6 +116,22 @@ test('typography config overrides the hardcoded heading defaults', () => {
   assert.equal(built.cssVars['--t-heading-weight'], '400');
 });
 
+test('typography config drives the slide text scale', () => {
+  const built = buildThemeConfig({
+    ...baseRow(),
+    config: { typography: { textScale: 'large' } },
+  });
+
+  assert.equal(built.cssVars['--t-slide-text-scale'], '1.1');
+});
+
+test('no text-scale token is emitted when typography is unconfigured', () => {
+  // Absent means "leave the design-system scale alone", not "textScale: normal".
+  // The stylesheet's `var(--t-slide-text-scale, 1)` is what makes that safe.
+  const built = buildThemeConfig({ ...baseRow(), config: {} });
+  assert.equal(built.cssVars['--t-slide-text-scale'], undefined);
+});
+
 test('slideBackgrounds close the documented DB/file parity gap', () => {
   // DB themes previously had no way to express named background variants at
   // all — the builder emitted no `slideBackgrounds` key.
