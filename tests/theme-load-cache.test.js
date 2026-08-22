@@ -39,13 +39,17 @@ const dbTheme = () => ({
 });
 
 let served = dbTheme();
+let fetches = 0;
 // Response-like enough for api(): the layer reads status and content-type.
-globalThis.fetch = async () => ({
-  ok: true,
-  status: 200,
-  headers: { get: () => 'application/json; charset=utf-8' },
-  json: async () => structuredClone(served),
-});
+globalThis.fetch = async () => {
+  fetches += 1;
+  return {
+    ok: true,
+    status: 200,
+    headers: { get: () => 'application/json; charset=utf-8' },
+    json: async () => structuredClone(served),
+  };
+};
 
 const { loadThemeById, invalidateTheme, clearThemeCache } =
   await import('../client/lib/theme/theme.js');
@@ -136,4 +140,48 @@ test('clearThemeCache drops every theme', async () => {
   const a = await loadThemeById(UUID);
   clearThemeCache();
   assert.notEqual(await loadThemeById(UUID), a);
+});
+
+// ---------------------------------------------------------------------------
+// The preload entrance
+// ---------------------------------------------------------------------------
+//
+// `GET /api/themes/custom/:id/config` is behind the login gate, so the three
+// anonymous surfaces (share viewer, follow audience, notes companion) cannot
+// call it at all: they receive the theme with the deck payload their token
+// authorizes and hand it in here. This is one loader with a second entrance,
+// not a second loader — the preloaded config still gets normalized, cached and
+// style-injected exactly like a fetched one.
+
+test('a preloaded config is used instead of the fetch the anonymous surfaces cannot make', async () => {
+  clearThemeCache();
+  const before = fetches;
+
+  const theme = await loadThemeById(UUID, {
+    config: { ...dbTheme(), label: 'From the payload' },
+  });
+
+  assert.equal(theme.label, 'From the payload');
+  assert.equal(fetches, before, 'no request went out');
+});
+
+test('a preloaded theme is cached and injects its styles like a fetched one', async () => {
+  clearThemeCache();
+  const theme = await loadThemeById(UUID, { config: dbTheme() });
+
+  assert.ok(document.getElementById(`theme-fonts-${UUID}`));
+  assert.ok(document.getElementById(`theme-slide-bgs-${UUID}`));
+  assert.equal(
+    await loadThemeById(UUID),
+    theme,
+    'the cache answers the next caller, config or not',
+  );
+});
+
+test('without a config the loader still fetches — that is the authenticated path', async () => {
+  clearThemeCache();
+  const before = fetches;
+  const theme = await loadThemeById(UUID);
+  assert.equal(fetches, before + 1);
+  assert.equal(theme.label, 'Acme');
 });

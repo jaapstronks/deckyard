@@ -26,6 +26,7 @@ import {
   getLiveSession,
 } from '../../storage/live-sessions/index.js';
 import { getPresentation } from '../../storage/presentations/index.js';
+import { customThemeConfig } from '../../utils/themes.js';
 import { updateSlideNotes } from '../../storage/presentations/slide-notes.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
 import {
@@ -158,6 +159,11 @@ async function handleSessionDeck({ repoRoot, res }, sessionId) {
     presentationId: pres.id,
     title: typeof pres.title === 'string' ? pres.title : '',
     theme: pres.theme || '',
+    // A database theme resolves through a route behind the login gate, so the
+    // companion — which may have no account at all — saw a 401 and rendered
+    // the deck unbranded. It rides along here for the same reason the deck
+    // does (server/utils/themes.js § customThemeConfig); null for a built-in.
+    themeConfig: await customThemeConfig(repoRoot, pres.theme),
     // The one canonical answer to "what language is this deck" — i18n.active
     // before dominant before pres.lang (see shared/i18n-utils.js). The payload
     // carries the resolved value so the companion never re-derives it from a

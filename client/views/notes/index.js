@@ -67,7 +67,10 @@ export async function renderNotes(root, sessionId, { user } = {}) {
   const fetchDeck = () =>
     api(`/api/live-sessions/${encodeURIComponent(sessionId)}/deck`);
   let pres = normalizePresentation(await fetchDeck());
-  let theme = await loadThemeById(pres?.theme);
+  // The session deck carries its own theme config: the companion may have no
+  // account, and the login-gated theme route answers it 401 (which used to
+  // render the deck unbranded).
+  let theme = await loadThemeById(pres?.theme, { config: pres?.themeConfig });
 
   title.textContent = pres.title || t('notes.speakerNotes', 'Speaker notes');
 
@@ -125,7 +128,7 @@ export async function renderNotes(root, sessionId, { user } = {}) {
 
   const refreshPresentation = async () => {
     pres = normalizePresentation(await fetchDeck());
-    theme = await loadThemeById(pres?.theme);
+    theme = await loadThemeById(pres?.theme, { config: pres?.themeConfig });
     title.textContent = pres.title || t('notes.speakerNotes', 'Speaker notes');
     render();
   };

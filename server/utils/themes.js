@@ -115,6 +115,27 @@ export async function loadThemeAssets(repoRoot, rawThemeId, ctx = null) {
  * @returns {Promise<Object>} Theme configuration
  */
 async function loadCustomTheme(themeId, ctx, repoRoot) {
+  const theme = await loadCustomThemeRecord(themeId, ctx, repoRoot);
+  if (theme) return theme;
+
+  // Fall back to default theme
+  return loadThemeAssets(repoRoot, DEFAULT_THEME);
+}
+
+/**
+ * The database theme itself, or null when there is none.
+ *
+ * Split out of `loadCustomTheme` because the two callers want opposite things
+ * from a miss: a render path needs *some* theme to draw with (the default),
+ * while `customThemeConfig` below has to be able to say "this deck has no
+ * database theme" so the client keeps its own built-in loading path.
+ *
+ * @param {string} themeId - UUID of the custom theme
+ * @param {Object|null} ctx - Context object (for org ID)
+ * @param {string|null} repoRoot - Repository root
+ * @returns {Promise<Object|null>} Normalized theme config, or null
+ */
+async function loadCustomThemeRecord(themeId, ctx, repoRoot) {
   // Check cache first
   if (customThemeCache.has(themeId)) {
     return customThemeCache.get(themeId);
@@ -158,8 +179,43 @@ async function loadCustomTheme(themeId, ctx, repoRoot) {
     log.warn(`Error loading custom theme ${themeId}:`, err.message);
   }
 
-  // Fall back to default theme
-  return loadThemeAssets(repoRoot, DEFAULT_THEME);
+  return null;
+}
+
+/**
+ * The theme config that rides along on an anonymous deck payload.
+ *
+ * A deck on a **database** theme rendered unbranded for every anonymous
+ * viewer: the client resolves a UUID theme through
+ * `GET /api/themes/custom/:id/config`, which sits behind the login gate, so
+ * the share viewer, the follow-along audience and the notes companion all
+ * caught a 401 and silently fell back to a blank theme.
+ *
+ * The fix follows the deck (`POST /api/share/:token/verify`,
+ * `GET /api/live-sessions/:id/deck`): the theme travels with the payload the
+ * capability already authorizes, rather than through a second, id-addressed
+ * route opened up to the world. Opening the config route would re-introduce
+ * exactly the pattern those endpoints were built to remove — a UUID being
+ * hard to guess is not an authorization story.
+ *
+ * Built-in themes return null on purpose: they are static files under
+ * `/themes/`, already reachable by anyone, and the client loads (and caches)
+ * them itself. Only database themes need the ride.
+ *
+ * What goes over the wire is `buildThemeConfig`'s projection — the same
+ * derived render config the authenticated route serves, not the stored row —
+ * so no ownership, organization or authorship stamp leaves with it.
+ *
+ * @param {string|null} repoRoot
+ * @param {string} rawThemeId - `presentation.theme` as stored
+ * @returns {Promise<Object|null>} Theme config, or null for a built-in theme
+ */
+export async function customThemeConfig(repoRoot, rawThemeId) {
+  const id = String(rawThemeId || '')
+    .trim()
+    .toLowerCase();
+  if (!UUID_RE.test(id)) return null;
+  return loadCustomThemeRecord(id, null, repoRoot);
 }
 
 /**

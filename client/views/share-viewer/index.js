@@ -168,8 +168,13 @@ export async function renderShareViewer(root, token) {
         throw new Error(t('share.error.notFound', 'Link Not Found'));
       }
 
-      // Load theme
-      theme = await loadThemeById(presentation.theme);
+      // The theme rides on the same verify payload as the deck: a database
+      // theme is otherwise resolved through a login-gated route, which left an
+      // anonymous viewer looking at an unbranded deck. Built-ins send no
+      // config and load from /themes/ as usual.
+      theme = await loadThemeById(presentation.theme, {
+        config: presentation.themeConfig,
+      });
 
       // Initialize analytics tracking
       if (isAnalyticsEnabled(presentation)) {
