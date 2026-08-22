@@ -71,9 +71,13 @@ test('the bypass identity can create an API key', async () => {
   );
 
   const result = await createApiKey(
-    singleOrganizationScope(process.cwd(), 'tests/dev-bypass-identity.test.js', {
-      actorEmail: DEV_BYPASS_EMAIL,
-    }),
+    singleOrganizationScope(
+      process.cwd(),
+      'tests/dev-bypass-identity.test.js',
+      {
+        actorEmail: DEV_BYPASS_EMAIL,
+      },
+    ),
     { name: 'Dev key', ownerEmail: DEV_BYPASS_EMAIL },
   );
 

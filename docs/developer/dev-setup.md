@@ -252,7 +252,7 @@ worked on a bypass machine. `.test` is reserved by RFC 2606 and never
 resolves.
 
 **If your dev database predates the change**, it holds a `dev@local` row and
-the bypass will create a *second* user beside it, at which point your decks
+the bypass will create a _second_ user beside it, at which point your decks
 look like they vanished. One statement repairs it:
 
 ```sql
