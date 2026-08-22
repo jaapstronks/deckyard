@@ -86,6 +86,41 @@ export function cloneSlidesForInsert(
 }
 
 /**
+ * Where a copy lands when it goes in "after" the slide at `afterIdx`: past
+ * that slide *and* past everything nested under it.
+ *
+ * `afterIdx + 1` on its own drops the new slides between a parent and its own
+ * children. The nesting still renders correctly — the parent link is what makes
+ * a child a child — but the deck order, and with it the numbering, interleaves:
+ * parent, pasted, child, child.
+ *
+ * A parent and its children are a contiguous block in deck order, so walking
+ * forward while the cursor is still inside that block is the whole rule. It is
+ * recursive by construction: a grandchild's parent has already joined the block,
+ * so it extends it too. The editor caps nesting at one level
+ * (`slide-list.js`, `moveSlide`), but a deck built through the API or an import
+ * is not bound by that, and this must not care.
+ *
+ * @param {Array<Object>} slides - deck slides, in order
+ * @param {number} afterIdx - index of the slide being inserted after
+ * @returns {number} the index to splice at
+ */
+export function insertIndexAfterSubtree(slides, afterIdx) {
+  const rows = Array.isArray(slides) ? slides : [];
+  const root = rows[afterIdx];
+  // No anchor, or an anchor no child could name: nothing can be nested under it.
+  if (!root || root.id == null) return Math.min(afterIdx + 1, rows.length);
+
+  const subtree = new Set([root.id]);
+  let idx = afterIdx + 1;
+  while (idx < rows.length && subtree.has(rows[idx]?.parentId)) {
+    if (rows[idx].id != null) subtree.add(rows[idx].id);
+    idx += 1;
+  }
+  return idx;
+}
+
+/**
  * Paste the slide clipboard into a deck, after the selected slide.
  *
  * The whole paste: read the clipboard, clone, insert, select the first pasted
@@ -95,6 +130,9 @@ export function cloneSlidesForInsert(
  * Clipboard slides carry their source `id` and `parentId` (see
  * slide-clipboard.js), so a parent copied together with its children keeps them
  * nested here; a child copied without its parent lands at the top level.
+ *
+ * "After the selected slide" means after its whole subtree — see
+ * {@link insertIndexAfterSubtree}.
  *
  * @param {Object} opts
  * @param {Object} opts.pres - the presentation, mutated
@@ -127,7 +165,8 @@ export function pasteSlidesFromClipboard({
   let insertIdx = slides.length;
   if (afterSlideId) {
     const afterIdx = slides.findIndex((x) => x.id === afterSlideId);
-    insertIdx = afterIdx >= 0 ? afterIdx + 1 : slides.length;
+    insertIdx =
+      afterIdx >= 0 ? insertIndexAfterSubtree(slides, afterIdx) : slides.length;
   }
 
   const newSlides = cloneSlidesForInsert(clipboardSlides, {

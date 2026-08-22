@@ -30,8 +30,11 @@ globalThis.localStorage = dom.window.localStorage;
 const { SLIDE_TYPES } = await import('../shared/slide-types.js');
 const { INSTANCE_KEY_SOURCE_NAMES, applyInstanceKeyRekey, slideInstanceKeys } =
   await import('../shared/slide-types/instance-keys.js');
-const { cloneSlidesForInsert, pasteSlidesFromClipboard } =
-  await import('../client/lib/slide-authoring/clone-slides.js');
+const {
+  cloneSlidesForInsert,
+  insertIndexAfterSubtree,
+  pasteSlidesFromClipboard,
+} = await import('../client/lib/slide-authoring/clone-slides.js');
 const { copySlides, getClipboardSlides, getClipboardCount } =
   await import('../client/lib/slide-authoring/slide-clipboard.js');
 
@@ -306,6 +309,85 @@ test('pasteSlidesFromClipboard: one routine for the paste bar and Ctrl+V', () =>
     calls.map(([name]) => name),
     ['clearMulti', 'select', 'dirtyRefreshAll', 'multiChanged', 'toast'],
   );
+});
+
+test('pasteSlidesFromClipboard: a paste under a parent lands after its children', () => {
+  // The insert-after-selection rule used to be `afterIdx + 1`, which put the
+  // pasted slides *between* a parent and its own children: the nesting still
+  // rendered (the parent link is what makes a child a child), but the deck
+  // order — and the numbering the author reads — interleaved.
+  globalThis.localStorage.clear();
+  copySlides([{ id: 'x', type: 'content-slide', content: { title: 'X' } }]);
+
+  const pres = {
+    id: 'deck-7',
+    slides: [
+      { id: 'p', type: 'content-slide', content: {} },
+      { id: 'c1', parentId: 'p', type: 'content-slide', content: {} },
+      { id: 'c2', parentId: 'p', type: 'content-slide', content: {} },
+      { id: 'after', type: 'content-slide', content: {} },
+    ],
+  };
+  pasteSlidesFromClipboard({
+    pres,
+    slideTypes: SLIDE_TYPES,
+    getSelectedSlideId: () => 'p',
+    editorState: { dirtyRefreshAll: () => {} },
+    t: (_key, fallback) => fallback,
+  });
+
+  const pasted = pres.slides.find((s) => s.content?.title === 'X');
+  assert.deepEqual(
+    pres.slides.map((s) => s.id),
+    ['p', 'c1', 'c2', pasted.id, 'after'],
+    'the copy lands after the whole group, not inside it',
+  );
+  assert.equal(pasted.parentId, null, 'and as a sibling of the parent');
+});
+
+test('insertIndexAfterSubtree: the walk is the subtree, not the next row', () => {
+  const flat = [{ id: 'a' }, { id: 'b' }, { id: 'c' }];
+  assert.equal(
+    insertIndexAfterSubtree(flat, 0),
+    1,
+    'a leaf inserts right after',
+  );
+  assert.equal(
+    insertIndexAfterSubtree(flat, 2),
+    3,
+    'the last slide inserts at the end',
+  );
+
+  const nested = [
+    { id: 'p' },
+    { id: 'c1', parentId: 'p' },
+    { id: 'g1', parentId: 'c1' },
+    { id: 'c2', parentId: 'p' },
+    { id: 'next' },
+  ];
+  // The editor caps nesting at one level, but an API-built or imported deck is
+  // not bound by that, so a grandchild has to extend the block as well.
+  assert.equal(
+    insertIndexAfterSubtree(nested, 0),
+    4,
+    'past children and grandchildren',
+  );
+  assert.equal(
+    insertIndexAfterSubtree(nested, 1),
+    3,
+    'a child takes its own grandchild with it',
+  );
+  assert.equal(
+    insertIndexAfterSubtree(nested, 3),
+    4,
+    'a childless child inserts right after',
+  );
+
+  // Degenerate anchors must not swallow the deck: an id-less row can be named
+  // by no child, so nothing is nested under it.
+  assert.equal(insertIndexAfterSubtree(nested, 99), 5);
+  assert.equal(insertIndexAfterSubtree([{}, { id: 'x' }], 0), 1);
+  assert.equal(insertIndexAfterSubtree(null, 0), 0);
 });
 
 test('pasteSlidesFromClipboard: an empty clipboard changes nothing', () => {
