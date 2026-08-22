@@ -241,7 +241,11 @@ describe('checkActorAccess — edge cases', () => {
     assert.equal(checkActorAccess({}), false);
   });
 
-  it('creator (createdBy) counts as owner', () => {
+  it('the creator stamp alone does not carry write (D49)', () => {
+    // `created_by` is create-only, so a creator-inclusive write grant is one
+    // no transfer can take away. The creator keeps authorship and sight; a
+    // previous owner who needs to keep editing gets a collaborator row, which
+    // is exactly what the transfer flow offers.
     const created = {
       id: 'c1',
       ownerId: '33333333-3333-4333-8333-333333333333',
@@ -255,6 +259,16 @@ describe('checkActorAccess — edge cases', () => {
         actor: { email: OTHER },
         actorUserId: OTHER_ID,
         access: 'write',
+      }),
+      false,
+    );
+    // Reading is untouched: sight is not power over the object.
+    assert.equal(
+      checkActorAccess({
+        pres: created,
+        actor: { email: OTHER },
+        actorUserId: OTHER_ID,
+        access: 'read',
       }),
       true,
     );
