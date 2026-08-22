@@ -104,7 +104,7 @@ test('every <style> block comes after every <link>', () => {
 
 test('a pre-indented head fragment keeps its shape', () => {
   // Callers hand in blocks indented to wherever they sit in their own source
-  // (buildPrismKatexCdnTags used to hand back four-space-indented tags). The
+  // (buildPrismKatexTags used to hand back four-space-indented tags). The
   // chain owns indentation, so the block is dedented and re-indented as one.
   const html = buildDocumentHead({
     lang: 'nl',

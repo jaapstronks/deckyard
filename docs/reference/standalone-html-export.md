@@ -133,31 +133,45 @@ The one exception is **external** managed fonts (Adobe / Monotype / Google via
 
 ## Third-party requests
 
-Everything above is inlined, so the only things a reader's browser can fetch
-from someone else's server are the three optional runtime libraries. All three
-are conditional — a deck with no code, no math and no video makes **zero**
-third-party requests:
+There are none. Prism and KaTeX come from `client/vendor/` (pinned by
+`package-lock.json`, hashed in a manifest) and the two contexts reach them
+differently: a published `/p/` page **links** `/client/vendor/…`, so the browser
+caches the files across decks; a downloaded file has no origin to resolve that
+against, so it carries them **inline**. `buildPrismKatexTags({ …needs, mode })`
+in `server/utils/prism-katex.js` is the single place that decides. The rule, its
+carve-outs and the two gates that hold it up:
+`docs/reference/no-third-party-origins.md`.
 
-| Library           | Loaded when                                          | Emitted by                                                            |
-| ----------------- | ---------------------------------------------------- | --------------------------------------------------------------------- |
-| Prism (jsDelivr)  | a slide renders a `.md-code-block`                   | `detectPrismKatexNeeds` → `buildPrismKatexCdnTags` (`prism-katex.js`) |
-| KaTeX (jsDelivr)  | a slide renders `.md-math-block` / `.md-math-inline` | same                                                                  |
-| Bunny `player.js` | the reader reaches a slide with a Bunny video iframe | `ensureBunnyPlayerJs()` in the page runtime                           |
+Both libraries stay conditional — a deck with no code and no math carries
+neither:
+
+| Library           | Loaded when                                          | Emitted by                                                         |
+| ----------------- | ---------------------------------------------------- | ------------------------------------------------------------------ |
+| Prism             | a slide renders a `.md-code-block`                   | `detectPrismKatexNeeds` → `buildPrismKatexTags` (`prism-katex.js`) |
+| KaTeX             | a slide renders `.md-math-block` / `.md-math-inline` | same                                                               |
+| Bunny `player.js` | the reader reaches a slide with a Bunny video iframe | `ensureBunnyPlayerJs()` in the page runtime — a lazy loader        |
 
 Detection reads the **rendered slide HTML**, not the deck model, so it can't
 drift from what the init script queries and it covers custom slide types for
 free. Prism additionally loads only the language packs the deck uses
 (`language-*` classes), resolved through an alias/dependency map; languages the
-default Prism bundle already contains (markup, CSS, JavaScript) and unknown
-languages get no extra script.
+base bundle already contains (markup, CSS, JavaScript) and unknown languages get
+no extra script.
+
+An inlined KaTeX brings its fontset with it, base64'd into the stylesheet
+(~400 KB): its relative `url(fonts/…)` references resolve against nothing in an
+origin-less document, and KaTeX's layout assumes its own glyph metrics, so the
+alternative is a visibly wrong formula rather than a differently styled one.
+That cost lands only on decks that carry math.
 
 Bunny is not detected at build time at all: the eager `<script>` tag in the head
 was redundant with the runtime's own lazy `ensureBunnyPlayerJs()`, which is what
 the live app has always used. The same applies to the embed runtime
 (`server/utils/embed-html/template.js`).
 
-The render paths that rasterize a deck server-side (PNG, PDF, print) still load
-the fixed default set; they run in headless Chrome, not in a reader's browser.
+The render paths that rasterize a deck server-side (PNG, PDF, print) inline what
+the deck needs, for the same reason a download does: `page.setContent()` gives
+Chrome a document with no origin.
 
 ## Verifying
 

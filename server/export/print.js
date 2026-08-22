@@ -6,7 +6,10 @@ import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { sandboxWatermarkText } from '../config/sandbox.js';
 import { escapeHtml, isProbablyUrl } from '../utils/html-utils.js';
-import { buildPrismKatexCdnTags } from '../utils/prism-katex.js';
+import {
+  buildPrismKatexTags,
+  detectPrismKatexNeeds,
+} from '../utils/prism-katex.js';
 import { buildScriptChain } from '../utils/script-chain.js';
 import { loadExportCssBundle } from './css-bundle.js';
 import { buildCssChain } from '../utils/css-chain.js';
@@ -323,10 +326,15 @@ export async function buildPrintHtml(
     })
     .join('\n');
 
+  // Served as a `*-print.html` attachment by the public API as well as fed to
+  // headless Chrome, and neither has an origin to resolve /client/vendor/
+  // against — so the vendored copies travel inside the document.
+  const highlightNeeds = detectPrismKatexNeeds(slidesHtml);
+
   return `${buildDocumentHead({
     lang: docLang,
     title: rawTitle,
-    head: [buildPrismKatexCdnTags()],
+    head: [buildPrismKatexTags({ ...highlightNeeds, mode: 'inlined' })],
     styles: [
       buildCssChain(
         repoRoot,
@@ -353,7 +361,7 @@ export async function buildPrintHtml(
       ${wmText ? `<div class="print-watermark" style="margin: 0 0 14px;">${wmText}</div>` : ''}
       ${slidesHtml}
     </main>
-    ${buildScriptChain()}
+    ${buildScriptChain({ needs: highlightNeeds })}
   </body>
 </html>`;
 }

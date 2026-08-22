@@ -144,8 +144,8 @@ function compact(items) {
  * Strip a fragment's common leading indentation.
  *
  * Callers assemble their extra head markup as template literals indented to
- * wherever they sit in the source (`buildPrismKatexCdnTags` hands back several
- * tags already indented four spaces). Pasting that into an indented list
+ * wherever they sit in the source (`buildPrismKatexTags` hands back several
+ * tags, once indented four spaces). Pasting that into an indented list
  * indents it twice. Removing the common prefix and letting the caller re-indent
  * keeps relative structure while landing the block where it belongs.
  *

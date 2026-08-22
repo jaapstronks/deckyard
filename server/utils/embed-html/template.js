@@ -4,10 +4,7 @@ import { repoRoot as defaultRepoRoot } from '../../config/paths.js';
 import { buildCssChain } from '../css-chain.js';
 import { buildDocumentHead } from '../head-chain.js';
 import { buildScriptChain } from '../script-chain.js';
-import {
-  buildPrismKatexCdnTags,
-  detectPrismKatexNeeds,
-} from '../prism-katex.js';
+import { buildPrismKatexTags, detectPrismKatexNeeds } from '../prism-katex.js';
 
 /**
  * The embed shell's own CSS: iframe-friendly chrome around the deck, no app
@@ -371,7 +368,13 @@ export function renderEmbedHtmlDocument({
     htmlAttrs: { 'data-theme': docThemeId },
     title: title || 'Presentation',
     robots: 'noindex,nofollow',
-    head: [extraHead, extraFontHtml, buildPrismKatexCdnTags(highlightNeeds)],
+    head: [
+      extraHead,
+      extraFontHtml,
+      // The embed is served by this server, so it links the vendored copies
+      // and the browser caches them across decks.
+      buildPrismKatexTags({ ...highlightNeeds, mode: 'linked' }),
+    ],
     stylesheets: [
       '/assets/fonts/google/fonts.css',
       '/client/styles/embed.css',

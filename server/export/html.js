@@ -7,7 +7,7 @@ import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { resolveDeckLang } from '../../shared/i18n-utils.js';
 import { escapeHtml, embedImgSrcDataUrls } from '../utils/html-utils.js';
 import {
-  buildPrismKatexCdnTags,
+  buildPrismKatexTags,
   detectPrismKatexNeeds,
 } from '../utils/prism-katex.js';
 import { buildScriptChain } from '../utils/script-chain.js';
@@ -544,11 +544,12 @@ export async function buildStandaloneHtml(
   const extraHead = String(headHtml || '');
   const extraTopbar = String(topbarRightHtml || '');
 
-  // Prism/KaTeX are the only third-party CDN requests this page can make, so
-  // they are emitted only when the rendered slides actually contain a code
-  // block or math — and Prism only loads the language packs this deck uses.
-  // A deck with neither loads nothing from a CDN at all, which is the point:
-  // the same builder serves every published /p/ page, not just downloads.
+  // Prism/KaTeX come from client/vendor/, and only when the rendered slides
+  // actually contain a code block or math — Prism then loads just the language
+  // packs this deck uses. The two contexts reach the same bytes differently:
+  // a published /p/ page is served by this server, so it links them and the
+  // browser caches them across decks; a downloaded file has no origin to
+  // resolve `/client/vendor/…` against, so it carries them inline.
   const highlightNeeds = detectPrismKatexNeeds(slidesHtml);
 
   return `${buildDocumentHead({
@@ -559,7 +560,10 @@ export async function buildStandaloneHtml(
       extraHead,
       externalFontCssLinks,
       externalFontScripts,
-      buildPrismKatexCdnTags(highlightNeeds),
+      buildPrismKatexTags({
+        ...highlightNeeds,
+        mode: context === 'published' ? 'linked' : 'inlined',
+      }),
     ],
     styles: [
       buildCssChain(
