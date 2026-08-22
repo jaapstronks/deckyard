@@ -35,6 +35,7 @@ const {
   getEffectivePermission,
   canResolveComment,
   canDeleteComment,
+  isOwner,
   isOwnerOrCreator,
   matchesIdentity,
   hasIdentity,
@@ -125,6 +126,16 @@ describe('identity-match — the rule itself', () => {
     assert.equal(isOwnerOrCreator(creator, dualKeyDeck), true);
     assert.equal(isOwnerOrCreator(stranger, dualKeyDeck), false);
     assert.equal(isOwnerOrCreator(owner, null), false);
+  });
+  it('isOwner reads the owner stamp and stops there', () => {
+    // The narrow question, for the one grant a hand-over must be able to take
+    // away (D43; canTransferOwnership). Same id rule, one stamp fewer.
+    assert.equal(isOwner(owner, dualKeyDeck), true);
+    assert.equal(isOwner(creator, dualKeyDeck), false);
+    assert.equal(isOwner(stranger, dualKeyDeck), false);
+    assert.equal(isOwner(emailTwin, dualKeyDeck), false);
+    assert.equal(isOwner(renamedOwner, dualKeyDeck), true);
+    assert.equal(isOwner(owner, null), false);
   });
 });
 

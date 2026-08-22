@@ -25,7 +25,8 @@ import { ALL_PERMISSIONS } from '../../../../../shared/constants/permissions.js'
  * @param {Object} options.pres - Presentation object
  * @param {string} options.currentUserEmail - Current user's email
  * @param {Object} options.toast - Toast notification service
- * @param {boolean} [options.isOwner] - Whether current user is the owner
+ * @param {boolean} [options.canTransfer] - Whether the current user may hand
+ *   the deck over (the owner stamp only — see the share modal's mirror)
  * @param {HTMLElement} options.modalRoot - Root element for nested modals
  * @param {Array} [options.openOverlayClosers] - Overlay closers array
  * @returns {Object} { element, loadCollaborators, detach }
@@ -36,7 +37,7 @@ export function createCollaboratorsSection({
   pres,
   currentUserEmail,
   toast,
-  isOwner,
+  canTransfer,
   modalRoot,
   openOverlayClosers,
 }) {
@@ -169,8 +170,8 @@ export function createCollaboratorsSection({
     });
     info.append(emailEl, badge);
 
-    // Transfer ownership button (only for owner)
-    if (isOwner) {
+    // Transfer ownership button (only for the owner)
+    if (canTransfer) {
       const transferBtn = h('button', {
         class: 'btn btn-secondary btn-sm',
         text: t('share.collaborators.transferOwnership', 'Transfer'),

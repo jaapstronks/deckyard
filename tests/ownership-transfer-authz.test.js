@@ -8,11 +8,12 @@
  * path maps to a handler *name*, and nothing about what the handler does.
  *
  * The rule: **transfer is an owner-only act.** `canTransferOwnership` grants to
- * the owner, the creator and the unrestricted operator, and to nobody else — no
- * collaborator rung reaches it, not even `admin`, and an instance admin is not
- * a grant either. That last one is the same design B114 pinned on the guest
- * surface: `isAdmin` is a flag on the actor, `isUnrestricted` is the operator
- * bypass, and only the second one opens ownership-scoped gates.
+ * the owner stamp and the unrestricted operator, and to nobody else — not the
+ * creator (D43: the grant has to be one the hand-over can take away), and no
+ * collaborator rung reaches it, not even `admin`. An instance admin is not a
+ * grant either; that is the same design B114 pinned on the guest surface:
+ * `isAdmin` is a flag on the actor, `isUnrestricted` is the operator bypass,
+ * and only the second one opens ownership-scoped gates.
  *
  * The endpoint is singular. The B115 item speaks of "transfer/claim endpoints";
  * there is no claim endpoint — `POST /api/presentations/:id/transfer-ownership`
@@ -347,17 +348,14 @@ test('the new owner is notified, and the deck records the transfer', async () =>
   assert.equal(transferred.data.newOwner, HEIR.email);
 });
 
-test('handing the deck over does NOT cost the previous owner the transfer right', async () => {
-  // **Named as a finding, not endorsed** (see the PR description). The grant
-  // that authorized the act survives the act: `canTransferOwnership` is
-  // `isOwnerOrCreator`, and the transfer rewrites only the *owner* pair —
-  // `created_by`/`created_by_user_id` are create-only by construction
-  // (server/storage/presentations/index.js:944). So the person who made the
-  // deck keeps every owner-scoped power over it forever, including taking it
-  // straight back, and `keepAsCollaborator:false` does not change that.
-  //
-  // This cell pins what the code does today so the behaviour cannot change
-  // unnoticed; whether it is the behaviour we want is a product question.
+test('handing the deck over costs the giver the transfer right', async () => {
+  // The rule D43 settled: the grant that authorizes the act does not survive
+  // the act. `canTransferOwnership` reads the *owner* stamp alone, and the
+  // transfer rewrites exactly that pair — `created_by`/`created_by_user_id`
+  // are create-only by construction (server/storage/presentations/index.js).
+  // Were the decider `isOwnerOrCreator`, the person who made the deck would
+  // keep every owner-scoped power over it forever, including taking it
+  // straight back; this cell is what stops that regressing in silence.
   const pres = await seed();
   await call('POST', transferPath(pres.id), {
     as: OWNER,
@@ -369,18 +367,22 @@ test('handing the deck over does NOT cost the previous owner the transfer right'
     as: OWNER,
     body: { newOwnerEmail: OWNER.email },
   });
-  assert.equal(res.statusCode, 200, 'the creator claims the deck back');
+  assert.equal(
+    res.statusCode,
+    401,
+    'the creator stamp does not let the giver claim the deck back',
+  );
   await assertStillOwnedBy(
     pres.id,
-    OWNER,
-    'and the hand-over is undone by the person who gave it away',
+    HEIR,
+    'and the hand-over stands (refusal asserted in the store, not the code)',
   );
 });
 
 test('the new owner may transfer on, on the strength of ownership alone', async () => {
-  // The other half of the same rule: the heir is nobody's creator here, so this
-  // proves the *owner* key grants on its own rather than the cell above passing
-  // because both keys happen to name one person.
+  // The other half of the same rule: the heir is nobody's creator here, so
+  // this proves the *owner* stamp grants on its own — the cell above proves
+  // the creator stamp does not.
   const pres = await seed();
   await call('POST', transferPath(pres.id), {
     as: OWNER,

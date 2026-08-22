@@ -826,14 +826,18 @@ describe('canGuestEditComment / canGuestDeleteComment — own comment only', () 
 // --- The remaining deciders -------------------------------------------------
 
 describe('canTransferOwnership', () => {
-  it('owner and creator may hand the deck over; nobody else may', () => {
+  it('the owner may hand the deck over; the creator may not, nor anyone else', () => {
+    // The one decider that reads the owner stamp *alone* (D43). Every other
+    // ownership-scoped gate takes `isOwnerOrCreator`; this one cannot, because
+    // `created_by` is never rewritten and a creator-inclusive grant would
+    // outlive the hand-over it authorized.
     assert.equal(
       canTransferOwnership({ user: OWNER, pres: privateDeck }),
       true,
     );
     assert.equal(
       canTransferOwnership({ user: CREATOR, pres: privateDeck }),
-      true,
+      false,
     );
     assert.equal(
       canTransferOwnership({ user: OTHER, pres: privateDeck }),

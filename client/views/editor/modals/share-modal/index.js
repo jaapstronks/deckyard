@@ -12,7 +12,7 @@
  */
 
 import { t } from '../../../../lib/ui-i18n.js';
-import { isOwnerOrCreator } from '../../../../../shared/identity-match.js';
+import { isOwner } from '../../../../../shared/identity-match.js';
 import { createModal } from '../../../../lib/dom/modal.js';
 import { createSegmented } from '../../../../lib/dom/segmented.js';
 import { getFeatures } from '../../../../lib/state/features.js';
@@ -91,11 +91,13 @@ export function openShareModal({
   });
   const close = () => modal.close();
 
-  // Owner check drives the transfer-ownership affordance in collaborators. It
-  // is decided on the stable user id, like the server's — an address is not an
-  // identity (shared/identity-match.js). The emails below stay: inviting a
-  // collaborator is an email mechanism, and the owner's address is displayed.
-  const isOwner = isOwnerOrCreator(currentUser, pres);
+  // Drives the transfer-ownership affordance in collaborators, mirroring the
+  // server's `canTransferOwnership`: decided on the stable user id, and on the
+  // **owner** stamp only since D43 — a creator who has handed the deck over is
+  // refused by the server, so the button would be an affordance that 401s. The
+  // emails below stay: inviting a collaborator is an email mechanism, and the
+  // owner's address is displayed.
+  const canTransfer = isOwner(currentUser, pres);
 
   // --- Organization tab (labelled "Workspace" in the UI) ---
   const visibility = createVisibilitySection({
@@ -122,7 +124,7 @@ export function openShareModal({
     pres,
     currentUserEmail,
     toast,
-    isOwner,
+    canTransfer,
     modalRoot: root,
     openOverlayClosers,
   });

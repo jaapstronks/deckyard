@@ -148,6 +148,10 @@ export function matchesIdentity(user, stamp = {}) {
  * rights, and every decider that asked "is this their deck?" repeated both
  * comparisons. They are one question, so they are one function.
  *
+ * One decider deliberately does *not* ask this question: ownership transfer
+ * keys on the owner stamp alone ({@link isOwner}), because the creator stamp
+ * is never rewritten and would otherwise outlive the hand-over (D43).
+ *
  * @param {Object} [user] - The acting user
  * @param {Object} [pres] - The presentation
  * @returns {boolean}
@@ -162,4 +166,24 @@ export function isOwnerOrCreator(user, pres) {
     // key: the `users.id` in both.
     matchesIdentity(user, { userId: pres.createdBy?.id })
   );
+}
+
+/**
+ * Whether an actor is the person the deck's **owner** stamp names.
+ *
+ * Narrower than {@link isOwnerOrCreator} on purpose: this asks who holds the
+ * deck *now*, not who ever held it. The creator stamp is create-only — nothing
+ * rewrites `created_by` — so a decider that consults it grants a power the
+ * person cannot lose by handing the deck over. That is right for the grants
+ * that read as an author's mark (locking a slide, moderating its comments) and
+ * wrong for the one grant that disposes of the deck itself: ownership transfer
+ * (D43). Hence two functions rather than a flag.
+ *
+ * @param {Object} [user] - The acting user
+ * @param {Object} [pres] - The presentation
+ * @returns {boolean}
+ */
+export function isOwner(user, pres) {
+  if (!pres || typeof pres !== 'object') return false;
+  return matchesIdentity(user, { userId: pres.ownerId });
 }
