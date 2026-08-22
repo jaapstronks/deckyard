@@ -14,7 +14,8 @@
  *     other inside one tag.
  *   - Adding anything head-shaped (a CSP, an OG tag, a `theme-color`) meant
  *     editing twelve templates and getting all twelve right, with no test that
- *     could say which one was missed.
+ *     could say which one was missed. The CSP is no longer hypothetical: it is
+ *     emitted here, once, for every path (`server/utils/document-csp.js`).
  *
  * `buildDocumentHead()` is the single place that opening lives. It takes what a
  * path actually differs in — its title, its extra tags, its stylesheets — and
@@ -29,6 +30,7 @@
 
 import { escapeHtml } from './html-utils.js';
 import { getDocDir } from './doc-lang.js';
+import { documentCspMeta } from './document-csp.js';
 
 const INDENT = '    ';
 
@@ -45,6 +47,12 @@ const INDENT = '    ';
  * @param {string} [options.description] - Raw meta description; escaped here.
  * @param {string} [options.robots] - `<meta name="robots">` content, e.g.
  *   `'noindex,nofollow'`. Omitted when empty.
+ * @param {boolean} [options.csp=true] - Emit the render-path
+ *   Content-Security-Policy meta (`server/utils/document-csp.js`). On by
+ *   default and for every path: an opt-in is a thing to forget, and this is the
+ *   head-shaped addition the module header predicted. Pass `false` only for a
+ *   document that is demonstrably not a render path, with the reason at the
+ *   call site.
  * @param {boolean} [options.viewport=true] - Emit the responsive viewport meta.
  * @param {Array<string|null|undefined|false>} [options.head] - Raw HTML
  *   fragments to place after the metas, in order (external font tags, Prism/
@@ -65,6 +73,7 @@ export function buildDocumentHead({
   title = '',
   description = '',
   robots = '',
+  csp = true,
   viewport = true,
   head = [],
   stylesheets = [],
@@ -84,7 +93,11 @@ export function buildDocumentHead({
   // Everything from <meta charset> to the last tag before the first <style>.
   // Indented as a block below, relative indentation preserved, so a caller can
   // hand in a pre-formatted fragment without it landing ragged.
+  // Charset first (it must land in the first 1024 bytes), then the policy: a
+  // CSP meta governs only what follows it, so anything that loads has to come
+  // after.
   const lines = ['<meta charset="utf-8" />'];
+  if (csp) lines.push(documentCspMeta());
   if (viewport) {
     lines.push(
       '<meta name="viewport" content="width=device-width, initial-scale=1" />',

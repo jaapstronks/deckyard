@@ -219,7 +219,13 @@ test('a deck without code or math loads neither library', async (t) => {
   // fixed head for any deck pass `detectPrismKatexNeeds()` too.
   for (const p of RENDER_PATHS) {
     await t.test(p.name, async () => {
-      const html = await p.build(repoRoot, plain, {});
+      // The CSP meta names cdn.jsdelivr.net to *permit* hls.js, which the
+      // runtime injects only for a stream that needs one. Permitting is not
+      // loading, and this test is about what a plain deck loads.
+      const html = (await p.build(repoRoot, plain, {})).replace(
+        /<meta http-equiv="Content-Security-Policy"[^>]*>/gi,
+        '',
+      );
       assert.doesNotMatch(html, /cdn\.jsdelivr\.net/);
       assert.doesNotMatch(html, /\/client\/vendor\/(?:prism|katex)\//);
       assert.doesNotMatch(html, /Prism\.languages\.markup=/);
