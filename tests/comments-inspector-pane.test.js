@@ -64,7 +64,7 @@ function makePanel({ onRequestClose } = {}) {
     toast: { error: () => {} },
     presentationId: 'p1',
     pres: { id: 'p1', slides: [{ id: 's1' }] },
-    user: { email: 'dev@local' },
+    user: { email: 'dev@local.test' },
     getSelectedSlideId: () => 's1',
     onRequestClose,
   });

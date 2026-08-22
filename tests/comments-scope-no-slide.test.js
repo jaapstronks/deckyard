@@ -75,7 +75,7 @@ function makePanel({ selectedSlideId = null, slides = [] } = {}) {
     toast: { error: () => {} },
     presentationId: 'p1',
     pres: { id: 'p1', slides },
-    user: { email: 'dev@local' },
+    user: { email: 'dev@local.test' },
     getSelectedSlideId: () => selectedSlideId,
   });
   document.body.append(panel.panelEl);

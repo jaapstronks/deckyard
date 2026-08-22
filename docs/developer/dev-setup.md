@@ -242,6 +242,28 @@ DATABASE_SSL=false
 DATABASE_SSL_REJECT_UNAUTHORIZED=false
 ```
 
+### The dev-bypass identity
+
+`AUTH_DEV_BYPASS=true` signs every request in as one real database user,
+`dev@local.test` (`server/auth/dev-bypass.js`), created on first use. The
+address used to be `dev@local`; a single-label domain fails `validateEmail`,
+so nothing that validates an address — creating an API key, most of all —
+worked on a bypass machine. `.test` is reserved by RFC 2606 and never
+resolves.
+
+**If your dev database predates the change**, it holds a `dev@local` row and
+the bypass will create a *second* user beside it, at which point your decks
+look like they vanished. One statement repairs it:
+
+```sql
+UPDATE users SET email = 'dev@local.test' WHERE email = 'dev@local';
+```
+
+Run it before starting the server on the new build. The row keeps its
+`users.id`, which is the only key identity matching uses
+(`shared/identity-match.js`), so everything stamped with it stays yours. A
+fresh dev database needs nothing.
+
 ### AUTH_DEV_BYPASS in Production
 
 If you see this error:

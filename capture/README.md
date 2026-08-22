@@ -125,7 +125,7 @@ flagged for review — the same drift mechanism the registry uses for source dep
     UI locale's is `en`.
   - `setDisplayName(api, CAPTURE_ACCOUNT_NAME)` for who the account is. The
     editor names the deck's owner beside the title, falling back to the local
-    part of the address — which under `AUTH_DEV_BYPASS` is `dev@local`, so an
+    part of the address — which under `AUTH_DEV_BYPASS` is `dev@local.test`, so an
     unpinned run puts "Dev" in the frame.
 
 ## Marketing shots

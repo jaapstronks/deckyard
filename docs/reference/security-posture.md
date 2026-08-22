@@ -103,7 +103,7 @@ only. It is refused unless `NODE_ENV` is explicitly `development`, so a leftover
 silently grant anonymous admin.
 
 The bypass session carries a real `users.id`: `dev-bypass.js` resolves
-`dev@local` once per process and **creates that row on first use**, because
+`dev@local.test` once per process and **creates that row on first use**, because
 ownership is keyed on the id and on nothing else
 (`shared/identity-match.js`). The row is an ordinary admin user with no password
 — it is only ever reached through the bypass, which cannot be on outside
