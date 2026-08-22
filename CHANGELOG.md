@@ -4,6 +4,23 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.25.0](https://github.com/jaapstronks/deckyard/compare/v1.24.0...v1.25.0) (2026-08-22)
+
+
+### Added
+
+* **security:** put a CSP header on the app shell ([#921](https://github.com/jaapstronks/deckyard/issues/921)) ([baa259e](https://github.com/jaapstronks/deckyard/commit/baa259e5cc7d6e1f2f8001e2fb5a3f2c3f2aca44))
+* **share:** give the guest verification failure a visible answer ([#927](https://github.com/jaapstronks/deckyard/issues/927)) ([d5cca70](https://github.com/jaapstronks/deckyard/commit/d5cca707d0445198fb437dcfacb3eaa5cab4241d))
+
+
+### Fixed
+
+* **auth:** give the dev bypass a valid address (dev@local.test) ([#924](https://github.com/jaapstronks/deckyard/issues/924)) ([f9e73cd](https://github.com/jaapstronks/deckyard/commit/f9e73cdd941acda962b3aaed6a05d020b09b4e65))
+* **editor:** paste under a parent lands after its children, not inside ([#928](https://github.com/jaapstronks/deckyard/issues/928)) ([af535fe](https://github.com/jaapstronks/deckyard/commit/af535fe45ab3eaa418767368f9c76d24a91b4987))
+* **share:** key guest-join error copy on the machine code and drop the duplicate email guard ([#923](https://github.com/jaapstronks/deckyard/issues/923)) ([378a484](https://github.com/jaapstronks/deckyard/commit/378a4843d399ad3a6c4055b8ab5b8479a399c634))
+* **share:** serve the deck with verify so an anonymous link works ([#926](https://github.com/jaapstronks/deckyard/issues/926)) ([ad79d0c](https://github.com/jaapstronks/deckyard/commit/ad79d0cb2524fe30ae2eb6164c23fc47fd860772))
+* **theme:** let anonymous viewers see the deck's own theme ([#929](https://github.com/jaapstronks/deckyard/issues/929)) ([24421bc](https://github.com/jaapstronks/deckyard/commit/24421bc4ed719c377433e34e1bc26f219c496677))
+
 ## [1.24.0](https://github.com/jaapstronks/deckyard/compare/v1.23.0...v1.24.0) (2026-08-22)
 
 
