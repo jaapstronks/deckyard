@@ -6,7 +6,10 @@
  * module imports below, so it holds no state from the editor-form closure.
  */
 import { debugLog } from '../../../lib/util/debug.js';
-import { cloneSlidesForInsert } from '../../../lib/slide-authoring/clone-slides.js';
+import {
+  cloneSlidesForInsert,
+  insertIndexAfterSubtree,
+} from '../../../lib/slide-authoring/clone-slides.js';
 import { h, installDismissOnOutside } from '../../../lib/dom.js';
 import { createDropdown } from '../../../lib/dom/dropdown.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
@@ -318,8 +321,14 @@ export function buildHeaderActions({
           slideTypes: SLIDE_TYPES,
           presentationId: pres?.id || '',
         });
+        // Past the source's children too: the copy is a top-level slide of
+        // its own, so landing it between a parent and its children would
+        // interleave the numbering.
         pres.slides.splice(
-          pres.slides.findIndex((s) => s.id === slide.id) + 1,
+          insertIndexAfterSubtree(
+            pres.slides,
+            pres.slides.findIndex((s) => s.id === slide.id),
+          ),
           0,
           clone,
         );
