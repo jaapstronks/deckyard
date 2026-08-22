@@ -30,23 +30,14 @@ import { updateSlideNotes } from '../../storage/presentations/slide-notes.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
 import {
   badRequest,
-  getErrorStatus,
-  jsonError,
   methodNotAllowed,
   notFound,
   rateLimited,
   requireJsonBody,
   serveJson,
+  storageError,
   withErrorHandler,
 } from '../../utils/http.js';
-
-/**
- * Human-readable text per slide-note write failure. The status is the reason's
- * `REASONS` entry (`server/storage/reasons.js`), not a route-local ladder.
- */
-const SLIDE_NOTE_FAILURE_MESSAGES = {
-  slide_not_found: 'Slide not found',
-};
 import { dispatchRoutes } from '../../utils/router.js';
 import { getOptionalString } from '../../utils/request-validators.js';
 import {
@@ -55,6 +46,14 @@ import {
 } from '../../utils/rate-limit.js';
 import { openSseStream } from '../../utils/sse.js';
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
+
+/**
+ * Human-readable text per slide-note write failure. The status is the reason's
+ * `REASONS` entry (`server/storage/reasons.js`), not a route-local ladder.
+ */
+const SLIDE_NOTE_FAILURE_MESSAGES = {
+  slide_not_found: 'Slide not found',
+};
 
 /**
  * Why a companion read may skip the organization filter: the session id it came
@@ -231,10 +230,9 @@ async function handleSessionNotesWrite(
   });
 
   if (!result.ok) {
-    return jsonError(
+    return storageError(
       res,
-      getErrorStatus(result.reason),
-      result.reason,
+      result,
       SLIDE_NOTE_FAILURE_MESSAGES[result.reason],
     );
   }

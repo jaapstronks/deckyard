@@ -4,35 +4,15 @@
  */
 
 import {
-  serveJson,
   badRequest,
-  getErrorStatus,
-  jsonError,
-  unauthorized,
   forbidden,
   notFound,
   requireJsonBody,
+  serveJson,
+  storageError,
+  unauthorized,
   withErrorHandler,
 } from '../../utils/http.js';
-
-/**
- * Answer a failed membership mutation in the canonical envelope.
- *
- * The status comes from the reason's `REASONS` entry, never from this route:
- * the ladders this replaced ended in `badRequest(res, 'Failed to …')`, so a
- * database outage (`unavailable`) reported as the caller's malformed request.
- * `messages` supplies display copy per reason where the wording is specific to
- * the call site — `last_owner` reads differently when you are changing a role
- * than when you are removing a member.
- *
- * @param {import('node:http').ServerResponse} res
- * @param {string} reason
- * @param {Record<string, string>} [messages]
- * @returns {true}
- */
-function memberError(res, reason, messages = {}) {
-  return jsonError(res, getErrorStatus(reason), reason, messages[reason]);
-}
 import { dispatchRoutes } from '../../utils/router.js';
 import { isMultiOrgEnabled } from '../../config/features.js';
 import { normalizeEmail } from '../../utils/normalize.js';
@@ -55,6 +35,25 @@ import { getUserByEmailGlobal } from '../../storage/identity.js';
 import { sendUserInvitationEmail } from '../../integrations/brevo.js';
 import { getEmailDefaultLocale } from '../../storage/email-templates.js';
 import { createLogger } from '../../utils/logger.js';
+
+/**
+ * Answer a failed membership mutation in the canonical envelope.
+ *
+ * The status comes from the reason's `REASONS` entry, never from this route:
+ * the ladders this replaced ended in `badRequest(res, 'Failed to …')`, so a
+ * database outage (`unavailable`) reported as the caller's malformed request.
+ * `messages` supplies display copy per reason where the wording is specific to
+ * the call site — `last_owner` reads differently when you are changing a role
+ * than when you are removing a member.
+ *
+ * @param {import('node:http').ServerResponse} res
+ * @param {{reason: string, field?: string}} result
+ * @param {Record<string, string>} [messages]
+ * @returns {true}
+ */
+function memberError(res, result, messages = {}) {
+  return storageError(res, result, messages[result.reason]);
+}
 const log = createLogger('organization-members');
 
 // ============================================================
@@ -208,7 +207,7 @@ async function handleMemberInvite(
   });
 
   if (!memberResult.ok) {
-    return memberError(res, memberResult.reason, {
+    return memberError(res, memberResult, {
       already_member: 'This user is already a member',
     });
   }
@@ -344,7 +343,7 @@ async function handleMemberRoleUpdate(
   const result = await updateMemberRole(targetMembership.membershipId, newRole);
 
   if (!result.ok) {
-    return memberError(res, result.reason, {
+    return memberError(res, result, {
       last_owner: 'Transfer ownership before changing the owner’s role',
     });
   }
@@ -410,7 +409,7 @@ async function handleMemberRemove(
   const result = await removeMember(targetMembership.membershipId);
 
   if (!result.ok) {
-    return memberError(res, result.reason, {
+    return memberError(res, result, {
       last_owner: 'Cannot remove the last owner',
     });
   }

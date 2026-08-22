@@ -25,11 +25,10 @@ import { withPresentationAuth } from '../../../utils/route-middleware.js';
 import { dispatchRoutes } from '../../../utils/router.js';
 import {
   badRequest,
-  getErrorStatus,
-  jsonError,
   notFound,
   requireJsonBody,
   serveJson,
+  storageError,
 } from '../../../utils/http.js';
 import {
   validatePermission,
@@ -104,7 +103,7 @@ async function handleShareLinkCreate(
   });
 
   if (!result.ok) {
-    return jsonError(res, getErrorStatus(result.reason), result.reason);
+    return storageError(res, result);
   }
 
   const shareUrl = buildShareUrl(req, result.shareLink.token);
@@ -171,7 +170,7 @@ async function handleShareLinksRevokeAll(
     authedUser?.email,
   );
   if (!result.ok) {
-    return jsonError(res, getErrorStatus(result.reason), result.reason);
+    return storageError(res, result);
   }
 
   serveJson(res, 200, { ok: true, count: result.count });
@@ -214,7 +213,7 @@ async function handleShareLinkRevoke(
     { message },
   );
   if (!result.ok) {
-    return jsonError(res, getErrorStatus(result.reason), result.reason);
+    return storageError(res, result);
   }
 
   serveJson(res, 200, { ok: true });
@@ -256,7 +255,7 @@ async function handleShareLinkUpdate(
   });
 
   if (!result.ok) {
-    return jsonError(res, getErrorStatus(result.reason), result.reason);
+    return storageError(res, result);
   }
 
   serveJson(res, 200, result.shareLink);

@@ -144,14 +144,14 @@ function mintedLiterals(node) {
  * Every reason code minted in an `{ ok: false, … }` object literal under the
  * scanned roots, as `{ code, where }`.
  *
- * Both `reason` and `code` are read: storage answers `{ ok: false, reason }`,
- * and the share-access validators in `routes/api/analytics-track.js` answer
- * `{ ok: false, code, message }` from the same vocabulary. Objects without a
- * literal `ok: false` are skipped — `reason` is also a column on the
+ * Only `reason` is read, because after B104 PR 3 that is the only spelling: the
+ * share-access validators in `routes/api/analytics-track.js` answered
+ * `{ ok: false, code, message }` from the same vocabulary until then. Objects
+ * without a literal `ok: false` are skipped — `reason` is also a column on the
  * presentation-version audit trail (`'pre_merge'`, `'snapshot'`), a different
  * namespace that never reaches an HTTP status.
  *
- * @returns {{code: string, where: string}[]}
+ * @returns {{code: string, field?: string, where: string}[]}
  */
 function scanMintedReasons() {
   const minted = [];
@@ -171,11 +171,21 @@ function scanMintedReasons() {
           const isFailure =
             okProp?.value.type === 'Literal' && okProp.value.value === false;
           if (isFailure) {
+            const fieldProp = props.find((p) => propName(p) === 'field');
+            const field =
+              fieldProp && fieldProp.value.type === 'Literal'
+                ? String(fieldProp.value.value)
+                : fieldProp
+                  ? '<dynamic>'
+                  : undefined;
             for (const prop of props) {
-              const name = propName(prop);
-              if (name !== 'reason' && name !== 'code') continue;
+              if (propName(prop) !== 'reason') continue;
               for (const code of mintedLiterals(prop.value)) {
-                minted.push({ code, where: `${rel}:${prop.loc.start.line}` });
+                minted.push({
+                  code,
+                  field,
+                  where: `${rel}:${prop.loc.start.line}`,
+                });
               }
             }
           }
@@ -330,6 +340,10 @@ const REASON_BRANCH_EXCEPTIONS = new Map([
     'adds the presentation id to the payload; the status is unaffected',
   ],
   [
+    'server/routes/api/presentations/slide-locks.js :: unavailable',
+    'the release path: "nothing to release because there is no lock backend" is a no-op, not a server error, so editor teardown does not log a 500 on file storage',
+  ],
+  [
     'server/routes/api/presentations/slide-locks.js :: held',
     'the documented soft-fail policy: only a real conflict is an HTTP error, everything else answers 200 so a single-operator backend does not log phantom 409s',
   ],
@@ -356,13 +370,17 @@ const REASON_BRANCH_BURNDOWN = [
   'server/routes/public-api/v1/comments.js :: unavailable',
 ];
 
-/** Every `<ident>.reason === '<code>'` branch under server/routes/**. */
+/**
+ * Every `<ident>.reason === '<code>'` / `!== '<code>'` branch under
+ * `server/routes/**`. Both directions: a negated test picks a status just as
+ * effectively as a positive one — the slide-lock release path is that shape.
+ */
 function scanReasonBranches() {
   const found = [];
   for (const file of walk(join(repoRoot, 'server/routes'))) {
     const rel = relative(repoRoot, file).replace(/\\/g, '/');
     readFileSync(file, 'utf8').replace(
-      /\breason === '([a-z_]+)'/g,
+      /\breason [!=]== '([a-z_]+)'/g,
       (_m, code) => found.push(`${rel} :: ${code}`),
     );
   }
@@ -417,6 +435,64 @@ test('the reason-branch lists name only real branches', () => {
     stale,
     [],
     'these branches are gone — delete their lines so the lists keep shrinking',
+  );
+});
+
+test('field rides only on invalid', () => {
+  const misplaced = scanMintedReasons()
+    .filter(({ code, field }) => field !== undefined && code !== 'invalid')
+    .map(({ code, field, where }) => `${where}: ${code} + field=${field}`)
+    .sort();
+
+  assert.deepEqual(
+    misplaced,
+    [],
+    '`field` says *which* input was bad, which is only a question `invalid` ' +
+      'raises — D48 collapsed the generic `invalid_*` spellings into one ' +
+      '`invalid` carrying a field. Every other reason already names its own ' +
+      'meaning, and a field there would be a second, quieter vocabulary. ' +
+      'Route helpers read `result.field` without checking the reason first ' +
+      '(routes/api/font-families.js), so this rule is what keeps that safe.',
+  );
+});
+
+test('every field is a snake_case token', () => {
+  const malformed = [
+    ...new Set(
+      scanMintedReasons()
+        .map(({ field }) => field)
+        .filter((f) => f !== undefined),
+    ),
+  ]
+    .filter((f) => !/^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/.test(f))
+    .sort();
+  assert.deepEqual(
+    malformed,
+    [],
+    'a field is a literal snake_case token: it reaches the client as ' +
+      '`details.field` and is keyed on in route message maps, so it cannot be ' +
+      'computed at the mint site.',
+  );
+});
+
+test('a route answers a storage failure through storageError()', () => {
+  const offenders = [];
+  for (const file of walk(join(repoRoot, 'server/routes'))) {
+    const rel = relative(repoRoot, file).replace(/\\/g, '/');
+    readFileSync(file, 'utf8')
+      .split('\n')
+      .forEach((line, i) => {
+        if (/jsonError\(\s*res,\s*getErrorStatus\(/.test(line))
+          offenders.push(`${rel}:${i + 1}`);
+      });
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    'storageError(res, result, message?) is the one form. Spreading the ' +
+      'result by hand — jsonError(res, getErrorStatus(r.reason), r.reason) — ' +
+      'drops `details.field` on the floor, which is exactly the information ' +
+      'D48 traded the `invalid_*` suffixes for.',
   );
 });
 

@@ -1,11 +1,10 @@
 import {
   badRequest,
-  getErrorStatus,
-  jsonError,
   methodNotAllowed,
   notFound,
   requireJsonBody,
   serveJson,
+  storageError,
   unauthorized,
   withErrorHandler,
 } from '../../utils/http.js';
@@ -50,7 +49,7 @@ async function handleQuestionRemove(
     removedBy: authedUser.email || 'moderator',
   });
   if (!result.ok) {
-    return jsonError(res, getErrorStatus(result.reason), result.reason);
+    return storageError(res, result);
   }
   serveJson(res, 200, { ok: true });
   return true;

@@ -12,13 +12,12 @@
 
 import {
   badRequest,
-  getErrorStatus,
-  jsonError,
   methodNotAllowed,
-  serveJson,
-  unauthorized,
   notFound,
   requireJsonBody,
+  serveJson,
+  storageError,
+  unauthorized,
   withErrorHandler,
 } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
@@ -38,16 +37,27 @@ import { canManage } from '../../utils/route-middleware.js';
 const ERROR_MESSAGES = {
   invalid_label: 'Invalid slide type label.',
   invalid_slug: 'Invalid slide type slug.',
-  invalid_fields: 'Invalid field definitions.',
   invalid_usage: 'Usage rules must be text.',
   usage_too_long: `Usage rules are too long (max ${USAGE_MAX_LENGTH} characters).`,
   slug_exists: 'A slide type with this slug already exists.',
   not_found: 'Slide type not found.',
   unavailable: 'Database unavailable.',
-  invalid_id: 'Invalid slide type ID.',
   invalid_order: 'Invalid slide type order.',
   order_mismatch:
     'The order does not list exactly the current slide types. Reload and try again.',
+};
+
+/**
+ * Human-readable text per `field` when the reason is `invalid`.
+ *
+ * D48 collapsed the generic `invalid_*` spellings into one `invalid` carrying a
+ * `field`, so the copy that used to hang off `invalid_id` / `invalid_name` /
+ * `invalid_fields` hangs off the field name instead. The field also reaches the
+ * client as `details.field`, which is more than the old suffix gave it.
+ */
+const INVALID_FIELD_MESSAGES = {
+  fields: 'Invalid field definitions.',
+  id: 'Invalid slide type ID.',
 };
 
 /**
@@ -60,11 +70,15 @@ const ERROR_MESSAGES = {
  * unavailable."* — into a 400.
  *
  * @param {import('node:http').ServerResponse} res
- * @param {string} reason
+ * @param {{reason: string, field?: string}} result
  * @returns {true}
  */
-function slideTypeError(res, reason) {
-  return jsonError(res, getErrorStatus(reason), reason, ERROR_MESSAGES[reason]);
+function slideTypeError(res, result) {
+  // No reason guard around the field lookup: `field` only ever rides on
+  // `invalid`, and the vocabulary gate is what keeps that true.
+  const message =
+    INVALID_FIELD_MESSAGES[result.field] || ERROR_MESSAGES[result.reason];
+  return storageError(res, result, message);
 }
 
 // GET /api/custom-slide-types - List all (org-scoped)
@@ -90,7 +104,7 @@ async function handleCustomSlideTypeCreate({
   const result = await createCustomSlideType(storageScope, body);
 
   if (!result.ok) {
-    return slideTypeError(res, result.reason);
+    return slideTypeError(res, result);
   }
   serveJson(res, 201, result.customSlideType);
   return true;
@@ -113,7 +127,7 @@ async function handleCustomSlideTypeReorder({
 
   const result = await reorderCustomSlideTypes(storageScope, body.order);
   if (!result.ok) {
-    return slideTypeError(res, result.reason);
+    return slideTypeError(res, result);
   }
   serveJson(res, 200, { customSlideTypes: result.customSlideTypes });
   return true;
@@ -170,7 +184,7 @@ async function handleCustomSlideTypeDuplicate(
   });
 
   if (!result.ok) {
-    return slideTypeError(res, result.reason);
+    return slideTypeError(res, result);
   }
   serveJson(res, 201, result.customSlideType);
   return true;
@@ -202,7 +216,7 @@ async function handleCustomSlideTypeUpdate(
 
   const result = await updateCustomSlideType(storageScope, typeId, body);
   if (!result.ok) {
-    return slideTypeError(res, result.reason);
+    return slideTypeError(res, result);
   }
   serveJson(res, 200, result.customSlideType);
   return true;
@@ -216,7 +230,7 @@ async function handleCustomSlideTypeDelete(
   if (!canManage(authedUser)) return unauthorized(res);
   const result = await deleteCustomSlideType(storageScope, typeId);
   if (!result.ok) {
-    return slideTypeError(res, result.reason);
+    return slideTypeError(res, result);
   }
   serveJson(res, 200, { ok: true });
   return true;

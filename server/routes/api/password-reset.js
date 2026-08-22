@@ -15,52 +15,20 @@ import {
   setSessionCookie,
 } from '../../auth/auth.js';
 import {
-  serveJson,
   badRequest,
-  getErrorStatus,
-  jsonError,
-  unauthorized,
   requireJsonBody,
+  serveJson,
+  storageError,
+  unauthorized,
   withErrorHandler,
 } from '../../utils/http.js';
 import { getString, getTrimmedString } from '../../utils/request-validators.js';
 import { t } from '../../i18n/index.js';
-
-/**
- * Answer a failed password validation in the canonical envelope: the reason is
- * the machine code, its `REASONS` entry the status, and the translated text the
- * human `message`.
- *
- * `validatePassword` answers `too_short` or `too_long`; the ternary this
- * replaced folded `too_long` into a generic "Password is invalid" and shipped
- * every case as `error: 'bad_request'`, so a client could not tell the two
- * apart without matching on display copy.
- *
- * @param {import('node:http').ServerResponse} res
- * @param {string} reason
- * @returns {true}
- */
-function passwordValidationError(res, reason) {
-  const messages = {
-    too_short: t(
-      'api.error.passwordTooShort',
-      'Password is too short (minimum 8 characters)',
-    ),
-    too_long: t('api.error.passwordTooLong', 'Password is too long'),
-  };
-  return jsonError(
-    res,
-    getErrorStatus(reason),
-    reason,
-    messages[reason] || t('api.error.passwordInvalid', 'Password is invalid'),
-  );
-}
 import { getClientIp, createStorageScope } from '../../utils/context.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { sendPasswordResetEmail } from '../../integrations/brevo.js';
 import { normalizeEmail } from '../../utils/normalize.js';
 import { createLogger } from '../../utils/logger.js';
-const log = createLogger('password-reset');
 import {
   createResetToken,
   validateResetToken,
@@ -74,6 +42,37 @@ import {
   hasDatabaseCredentials,
 } from '../../storage/password-reset.js';
 import { getUserByEmailGlobal } from '../../storage/identity.js';
+
+/**
+ * Answer a failed password validation in the canonical envelope: the reason is
+ * the machine code, its `REASONS` entry the status, and the translated text the
+ * human `message`.
+ *
+ * `validatePassword` answers `too_short` or `too_long`; the ternary this
+ * replaced folded `too_long` into a generic "Password is invalid" and shipped
+ * every case as `error: 'bad_request'`, so a client could not tell the two
+ * apart without matching on display copy.
+ *
+ * @param {import('node:http').ServerResponse} res
+ * @param {{reason: string, field?: string}} result
+ * @returns {true}
+ */
+function passwordValidationError(res, result) {
+  const messages = {
+    too_short: t(
+      'api.error.passwordTooShort',
+      'Password is too short (minimum 8 characters)',
+    ),
+    too_long: t('api.error.passwordTooLong', 'Password is too long'),
+  };
+  return storageError(
+    res,
+    result,
+    messages[result.reason] ||
+      t('api.error.passwordInvalid', 'Password is invalid'),
+  );
+}
+const log = createLogger('password-reset');
 
 /**
  * Build the reset URL from the token and request.
@@ -264,7 +263,7 @@ async function handleResetPassword({ repoRoot, req, res }) {
   // Validate password
   const pwValidation = validatePassword(password);
   if (!pwValidation.ok) {
-    return passwordValidationError(res, pwValidation.reason);
+    return passwordValidationError(res, pwValidation);
   }
 
   const ipAddress = getClientIp(req);
@@ -286,10 +285,9 @@ async function handleResetPassword({ repoRoot, req, res }) {
     // `invalid_or_expired` is a credential that does not hold, so the register
     // answers 401 rather than the 400 this ternary used to send under a
     // `bad_request` code.
-    return jsonError(
+    return storageError(
       res,
-      getErrorStatus(consumeResult.reason),
-      consumeResult.reason,
+      consumeResult,
       consumeResult.reason === 'invalid_or_expired'
         ? t(
             'api.error.resetLinkExpired',
@@ -374,7 +372,7 @@ async function handleChangePassword({ repoRoot, req, res }) {
   // Validate new password
   const pwValidation = validatePassword(newPassword);
   if (!pwValidation.ok) {
-    return passwordValidationError(res, pwValidation.reason);
+    return passwordValidationError(res, pwValidation);
   }
 
   const ipAddress = getClientIp(req);

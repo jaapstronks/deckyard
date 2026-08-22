@@ -23,6 +23,14 @@
  *   direction only by accident: it states the intent, and the gate in
  *   `tests/storage-reason-vocabulary.test.js` holds the two consistent.
  *
+ * ## `field`
+ *
+ * A result may carry `field` next to `reason`:
+ * `{ ok: false, reason: 'invalid', field: 'id' }`. It says *which* input was
+ * bad, and `storageError()` puts it on the wire as `details.field`. It belongs
+ * to `invalid` — that is what D48 collapsed the generic `invalid_*` spellings
+ * into — and the gate refuses it on any other reason.
+ *
  * ## Adding one
  *
  * Reach for the layer-wide vocabulary first — `not_found`, `invalid`,
@@ -69,14 +77,15 @@ export const REASONS = Object.freeze(
     // Two shapes, one status: the resource is already in the requested state
     // (a second vote, an invite that already went out), or it refuses the
     // transition (a closed poll, a lock someone else holds, the last owner).
+    // One spelling per uniqueness collision (D48): `variant_exists` folded
+    // into `already_exists`, `slug_taken` into `slug_exists` — the latter
+    // stays a code of its own because a UI acts on "pick another slug".
     already_exists: { status: 409, kind: 'caller' },
     already_activated: { status: 409, kind: 'caller' },
     already_invited: { status: 409, kind: 'caller' },
     already_member: { status: 409, kind: 'caller' },
     already_voted: { status: 409, kind: 'caller' },
     slug_exists: { status: 409, kind: 'caller' },
-    slug_taken: { status: 409, kind: 'caller' },
-    variant_exists: { status: 409, kind: 'caller' },
     closed: { status: 409, kind: 'caller' },
     disabled: { status: 409, kind: 'caller' },
     held: { status: 409, kind: 'caller' },
@@ -124,21 +133,24 @@ export const REASONS = Object.freeze(
     invalid_or_revoked: { status: 401, kind: 'caller' },
 
     // ─── 400 Bad Request: the input is malformed or incomplete ──────────────
+    // The one code for "your input is bad". `invalid_id`,
+    // `invalid_name`, `invalid_fields` and `invalid_params` were four more
+    // spellings of it; the first three now ride as `field` on the result
+    // (`{ ok: false, reason: 'invalid', field: 'id' }`) and reach the client as
+    // `details.field`, which is strictly more than the suffix carried. The
+    // remaining `invalid_<thing>` codes stay: they name a domain concept a UI
+    // acts on, not a second spelling of this one.
     invalid: { status: 400, kind: 'caller' },
     invalid_category: { status: 400, kind: 'caller' },
     invalid_colors: { status: 400, kind: 'caller' },
     invalid_contact: { status: 400, kind: 'caller' },
     invalid_email: { status: 400, kind: 'caller' },
-    invalid_fields: { status: 400, kind: 'caller' },
     invalid_fonts: { status: 400, kind: 'caller' },
     invalid_format: { status: 400, kind: 'caller' },
-    invalid_id: { status: 400, kind: 'caller' },
     invalid_label: { status: 400, kind: 'caller' },
     invalid_level: { status: 400, kind: 'caller' },
-    invalid_name: { status: 400, kind: 'caller' },
     invalid_new_owner: { status: 400, kind: 'caller' },
     invalid_order: { status: 400, kind: 'caller' },
-    invalid_params: { status: 400, kind: 'caller' },
     invalid_permission: { status: 400, kind: 'caller' },
     invalid_permissions: { status: 400, kind: 'caller' },
     invalid_presentation: { status: 400, kind: 'caller' },
@@ -150,7 +162,6 @@ export const REASONS = Object.freeze(
     invalid_style: { status: 400, kind: 'caller' },
     invalid_weight: { status: 400, kind: 'caller' },
     api_key_id_required: { status: 400, kind: 'caller' },
-    key_id_required: { status: 400, kind: 'caller' },
     name_required: { status: 400, kind: 'caller' },
     slide_type_required: { status: 400, kind: 'caller' },
     missing_author: { status: 400, kind: 'caller' },

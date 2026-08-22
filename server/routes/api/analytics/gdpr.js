@@ -8,10 +8,9 @@ import {
   SECURITY_EVENTS,
 } from '../../../analytics/helpers.js';
 import {
-  getErrorStatus,
-  jsonError,
   rateLimited,
   serveJson,
+  storageError,
   unauthorized,
 } from '../../../utils/http.js';
 import { AUTH_RATE_LIMITS } from '../../../config/rate-limits.js';
@@ -51,12 +50,7 @@ export async function handleExportMyData(ctx) {
   const result = await exportUserAnalyticsData({ email: authedUser.email });
 
   if (!result.ok) {
-    return jsonError(
-      res,
-      getErrorStatus(result.reason),
-      result.reason || 'internal_error',
-      'Failed to export data',
-    );
+    return storageError(res, result, 'Failed to export data');
   }
 
   return (serveJson(res, 200, result.data), true);
@@ -93,12 +87,7 @@ export async function handleDeleteMyData(ctx) {
   const result = await deleteUserAnalyticsData({ email: authedUser.email });
 
   if (!result.ok) {
-    return jsonError(
-      res,
-      getErrorStatus(result.reason),
-      result.reason || 'internal_error',
-      'Failed to delete data',
-    );
+    return storageError(res, result, 'Failed to delete data');
   }
 
   return (

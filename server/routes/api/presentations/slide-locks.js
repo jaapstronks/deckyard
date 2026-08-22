@@ -5,10 +5,10 @@
  */
 
 import {
-  getErrorStatus,
   jsonError,
   methodNotAllowed,
   serveJson,
+  storageError,
 } from '../../../utils/http.js';
 import {
   acquireSlideLock,
@@ -293,11 +293,7 @@ export async function handleSlideLocksReleaseAll(
   // "Nothing to release because there is no lock backend" is a no-op, not a
   // server error — otherwise editor teardown logs a 500 on file storage.
   if (!result.ok && result.reason !== 'unavailable') {
-    return jsonError(
-      res,
-      getErrorStatus(result.reason),
-      result.reason || 'internal_error',
-    );
+    return storageError(res, result);
   }
   serveJson(res, 200, result);
   return true;

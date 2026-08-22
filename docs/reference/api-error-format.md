@@ -20,8 +20,10 @@ The internal `/api/*` routes return errors in one canonical envelope:
   it, A7.19-C7g).
 - **`message`** — optional human-readable text for display. Safe to show a user;
   never contains stack traces or internal detail (500s stay generic).
-- **`details`** — optional structured extra (e.g. `{ field: 'email' }`). Omitted
-  when absent.
+- **`details`** — optional structured extra. `{ field: '<name>' }` is the
+  standing case: a storage `invalid` says _which_ input was bad there rather
+  than in the code, which is what D48 collapsed the `invalid_*` spellings into.
+  Omitted when absent.
 
 This unified one envelope that used to have two shapes living side by side: prose
 in `error` (from the `http.js` helpers) versus `{ ok:false, error:'code' }` (from
@@ -42,14 +44,19 @@ Always go through the shared surface — do not hand-roll `serveJson(res, status
 | `serverError(res, msg)`             | 500    | `internal_error`                    |
 | `methodNotAllowed(res, allowed)`    | 405    | `method_not_allowed` (sets `Allow`) |
 
-For a storage `reason` code, use `jsonError(res, getErrorStatus(reason), reason, message?)`.
+For a storage `reason` code, use **`storageError(res, result, message?)`** — it
+reads `result.reason` for the code and the status, and puts an optional
+`result.field` on the wire as `details.field`. Spreading the result by hand
+(`jsonError(res, getErrorStatus(result.reason), result.reason)`) drops the field,
+so `tests/storage-reason-vocabulary.test.js` refuses that form under
+`server/routes/**`.
 `getErrorStatus` reads the closed `REASONS` register in
 [`server/storage/reasons.js`](../../server/storage/reasons.js), which states one
 status and one `kind` (`'caller'` 4xx / `'ours'` 5xx) per code. It takes **no**
 second argument: an unknown reason is a hole in our vocabulary, not a malformed
 request, so it throws outside production and answers 500 in production —
-`getErrorStatus(reason, 500)` is the retired form, and
-`tests/storage-reason-vocabulary.test.js` refuses it (B104).
+`getErrorStatus(reason, 500)` is the retired form, and the same test refuses it
+(B104).
 Thrown `AppError`s serialize via `toJSON()` into the same envelope (the code
 defaults from the HTTP status, see `codeForStatus`); the top-level handler and
 `withErrorHandler` emit it too.

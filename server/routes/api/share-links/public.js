@@ -28,13 +28,14 @@ import {
 import { parseCookies } from '../../../utils/cookies.js';
 import { dispatchRoutes } from '../../../utils/router.js';
 import {
-  serveJson,
   badRequest,
   forbidden,
   getErrorStatus,
   jsonError,
   rateLimited,
   requireJsonBody,
+  serveJson,
+  storageError,
 } from '../../../utils/http.js';
 import { getTrimmedString } from '../../../utils/request-validators.js';
 import { canCommentWithShareLink } from '../../../utils/presentation-authz/share-links.js';
@@ -63,6 +64,8 @@ async function handleShareValidate({ repoRoot, req, res }, token) {
 
   if (!result.ok) {
     const status = getErrorStatus(result.reason);
+    // Read directly rather than through storageError(): this branch builds its
+    // own body (the revoked link carries the deck's title back to the viewer).
 
     // For revoked links, include additional info and trigger notification
     if (result.reason === 'revoked' && result.presentationId) {
@@ -133,7 +136,7 @@ async function handleShareVerify({ req, res }, token) {
   // guest-verification limit next door (storage/share-links/guests.js).
   const validation = await validateShareLink(token);
   if (!validation.ok) {
-    jsonError(res, getErrorStatus(validation.reason), validation.reason);
+    storageError(res, validation);
     return true;
   }
   if (validation.requiresPassword) {
@@ -147,7 +150,7 @@ async function handleShareVerify({ req, res }, token) {
   const result = await verifyShareLinkAccess(token, body?.password);
 
   if (!result.ok) {
-    jsonError(res, getErrorStatus(result.reason), result.reason);
+    storageError(res, result);
     return true;
   }
 
@@ -169,7 +172,7 @@ async function handleShareGuestRequest({ repoRoot, req, res }, token) {
   // Validate share link first
   const validation = await validateShareLink(token);
   if (!validation.ok) {
-    jsonError(res, getErrorStatus(validation.reason), validation.reason);
+    storageError(res, validation);
     return true;
   }
 
@@ -198,7 +201,7 @@ async function handleShareGuestRequest({ repoRoot, req, res }, token) {
   );
 
   if (!result.ok) {
-    jsonError(res, getErrorStatus(result.reason), result.reason);
+    storageError(res, result);
     return true;
   }
 

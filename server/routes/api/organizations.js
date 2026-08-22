@@ -5,44 +5,15 @@
 
 import { updateSessionOrganization } from '../../auth/auth.js';
 import {
-  serveJson,
   badRequest,
-  getErrorStatus,
-  jsonError,
-  unauthorized,
   forbidden,
   notFound,
   requireJsonBody,
+  serveJson,
+  storageError,
+  unauthorized,
   withErrorHandler,
 } from '../../utils/http.js';
-
-/**
- * Human-readable text per organization-mutation failure reason.
- *
- * Status comes from the reason's `REASONS` entry (`server/storage/reasons.js`),
- * not from here — the ladders this replaced ended in
- * `badRequest(res, 'Failed to …')`, so a database outage answered 400.
- */
-const ORGANIZATION_FAILURE_MESSAGES = {
-  slug_taken: 'An organization with this slug already exists',
-  cannot_delete_default: 'The default organization cannot be deleted',
-};
-
-/**
- * Answer a failed organization mutation in the canonical envelope.
- *
- * @param {import('node:http').ServerResponse} res
- * @param {string} reason
- * @returns {true}
- */
-function organizationError(res, reason) {
-  return jsonError(
-    res,
-    getErrorStatus(reason),
-    reason,
-    ORGANIZATION_FAILURE_MESSAGES[reason],
-  );
-}
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { isMultiOrgEnabled } from '../../config/features.js';
@@ -57,6 +28,33 @@ import {
   isDefaultOrganization,
 } from '../../storage/user-organizations/index.js';
 import { getUserByEmailGlobal } from '../../storage/identity.js';
+
+/**
+ * Human-readable text per organization-mutation failure reason.
+ *
+ * Status comes from the reason's `REASONS` entry (`server/storage/reasons.js`),
+ * not from here — the ladders this replaced ended in
+ * `badRequest(res, 'Failed to …')`, so a database outage answered 400.
+ */
+const ORGANIZATION_FAILURE_MESSAGES = {
+  slug_exists: 'An organization with this slug already exists',
+  cannot_delete_default: 'The default organization cannot be deleted',
+};
+
+/**
+ * Answer a failed organization mutation in the canonical envelope.
+ *
+ * @param {import('node:http').ServerResponse} res
+ * @param {{reason: string, field?: string}} result
+ * @returns {true}
+ */
+function organizationError(res, result) {
+  return storageError(
+    res,
+    result,
+    ORGANIZATION_FAILURE_MESSAGES[result.reason],
+  );
+}
 
 // ============================================================
 // HELPERS
@@ -115,7 +113,7 @@ async function handleOrgCreate({ req, res, userId }) {
   });
 
   if (!result.ok) {
-    return organizationError(res, result.reason);
+    return organizationError(res, result);
   }
 
   serveJson(res, 201, {
@@ -204,7 +202,7 @@ async function handleOrgUpdate({ req, res, userId }, orgId) {
   const result = await updateOrganization(orgId, updates);
 
   if (!result.ok) {
-    return organizationError(res, result.reason);
+    return organizationError(res, result);
   }
 
   serveJson(res, 200, { ok: true, organization: result.organization });
@@ -226,7 +224,7 @@ async function handleOrgDelete({ res, userId }, orgId) {
   const result = await deleteOrganization(orgId);
 
   if (!result.ok) {
-    return organizationError(res, result.reason);
+    return organizationError(res, result);
   }
 
   serveJson(res, 200, { ok: true });

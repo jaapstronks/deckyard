@@ -11,13 +11,12 @@
  */
 
 import {
-  getErrorStatus,
-  jsonError,
-  methodNotAllowed,
-  serveJson,
-  unauthorized,
   badRequest,
+  methodNotAllowed,
   requireJsonBody,
+  serveJson,
+  storageError,
+  unauthorized,
 } from '../../../utils/http.js';
 import { withPresentationReadAuth } from '../../../utils/route-middleware.js';
 import {
@@ -77,11 +76,7 @@ export async function handlePresentationSubscription(
     level,
   );
   if (!result.ok) {
-    return jsonError(
-      res,
-      getErrorStatus(result.reason),
-      result.reason || 'internal_error',
-    );
+    return storageError(res, result);
   }
 
   serveJson(res, 200, { ok: true, level: result.level });

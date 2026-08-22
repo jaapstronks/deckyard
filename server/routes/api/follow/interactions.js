@@ -1,11 +1,10 @@
 import {
   badRequest,
-  getErrorStatus,
-  jsonError,
   methodNotAllowed,
   notFound,
-  serveJson,
   requireJsonBody,
+  serveJson,
+  storageError,
 } from '../../../utils/http.js';
 import { getFollowStateForPresentation } from '../../../storage/live-sessions/index.js';
 import { getString } from '../../../utils/request-validators.js';
@@ -370,9 +369,7 @@ export async function handleFollowInteractionVote(
           },
         );
   if (!result.ok) {
-    jsonError(res, getErrorStatus(result.reason), result.reason, undefined, {
-      headers: extraHeaders,
-    });
+    storageError(res, result, undefined, { headers: extraHeaders });
     return true;
   }
 
@@ -435,9 +432,7 @@ export async function handleFollowInteractionFeedback(
     },
   );
   if (!result.ok) {
-    jsonError(res, getErrorStatus(result.reason), result.reason, undefined, {
-      headers: extraHeaders,
-    });
+    storageError(res, result, undefined, { headers: extraHeaders });
     return true;
   }
   serveJson(

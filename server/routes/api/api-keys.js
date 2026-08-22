@@ -19,12 +19,11 @@ import {
 import { getUsageHistory, getTodayUsage } from '../../storage/api-usage.js';
 import {
   badRequest,
-  getErrorStatus,
-  jsonError,
   methodNotAllowed,
   notFound,
   requireJsonBody,
   serveJson,
+  storageError,
   withErrorHandler,
 } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
@@ -35,7 +34,7 @@ async function handleApiKeyList({ storageScope, res, url, authedUser }) {
   const result = await listApiKeys(storageScope, { includeRevoked });
 
   if (!result.ok) {
-    return jsonError(res, getErrorStatus(result.reason), result.reason);
+    return storageError(res, result);
   }
 
   serveJson(res, 200, {
@@ -161,10 +160,9 @@ async function handleApiKeyRevoke({ storageScope, res, authedUser }, keyId) {
       not_found_or_already_revoked: 'API key not found or already revoked',
       unavailable: 'Database unavailable',
     };
-    return jsonError(
+    return storageError(
       res,
-      getErrorStatus(result.reason),
-      result.reason,
+      result,
       messages[result.reason] || 'Failed to revoke API key',
     );
   }

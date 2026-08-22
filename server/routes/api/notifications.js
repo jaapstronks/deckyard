@@ -21,11 +21,10 @@ import {
 import { addClient, removeClient } from '../../services/notification-events.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import {
-  serveJson,
   badRequest,
-  getErrorStatus,
-  jsonError,
   requireJsonBody,
+  serveJson,
+  storageError,
   withErrorHandler,
 } from '../../utils/http.js';
 import { parsePaginationParams } from '../../utils/request-validators.js';
@@ -48,15 +47,14 @@ const NOTIFICATION_FAILURE_MESSAGES = {
  * is the machine code, its register entry is the status.
  *
  * @param {import('node:http').ServerResponse} res
- * @param {string} reason
+ * @param {{reason: string, field?: string}} result
  * @returns {true}
  */
-function notificationError(res, reason) {
-  return jsonError(
+function notificationError(res, result) {
+  return storageError(
     res,
-    getErrorStatus(reason),
-    reason,
-    NOTIFICATION_FAILURE_MESSAGES[reason],
+    result,
+    NOTIFICATION_FAILURE_MESSAGES[result.reason],
   );
 }
 
@@ -116,7 +114,7 @@ async function handleNotificationMarkRead({
   if (body?.all === true) {
     const result = await markAllAsRead(storageScope, userEmail);
     if (!result.ok) {
-      return notificationError(res, result.reason);
+      return notificationError(res, result);
     }
     serveJson(res, 200, { ok: true, updatedCount: result.updatedCount });
     return true;
@@ -130,7 +128,7 @@ async function handleNotificationMarkRead({
 
   const result = await markAsRead(storageScope, notificationId, userEmail);
   if (!result.ok) {
-    return notificationError(res, result.reason);
+    return notificationError(res, result);
   }
 
   serveJson(res, 200, { ok: true, notification: result.notification });
@@ -153,7 +151,7 @@ async function handleNotificationArchive({
   if (body?.all === true) {
     const result = await archiveAllNotifications(storageScope, userEmail);
     if (!result.ok) {
-      return notificationError(res, result.reason);
+      return notificationError(res, result);
     }
     serveJson(res, 200, { ok: true, updatedCount: result.updatedCount });
     return true;
@@ -170,7 +168,7 @@ async function handleNotificationArchive({
     userEmail,
   );
   if (!result.ok) {
-    return notificationError(res, result.reason);
+    return notificationError(res, result);
   }
 
   serveJson(res, 200, { ok: true, notification: result.notification });

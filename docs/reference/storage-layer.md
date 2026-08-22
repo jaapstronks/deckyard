@@ -208,13 +208,18 @@ one field to branch and one to use.
 `reason` is a short snake_case token, drawn from the layer-wide vocabulary
 before a domain-specific one is minted:
 
-| `reason`      | Means                                                            |
-| ------------- | ---------------------------------------------------------------- |
-| `not_found`   | The target row does not exist (or is not visible in this scope). |
-| `invalid`     | The caller's input is malformed — blank id, unparseable field.   |
-| `forbidden`   | The row exists but this scope may not change it.                 |
-| `conflict`    | Another writer got there first, or a uniqueness rule bites.      |
-| `unavailable` | The database is not reachable; the `withDbGuard` fallback.       |
+| `reason`         | Means                                                            |
+| ---------------- | ---------------------------------------------------------------- |
+| `not_found`      | The target row does not exist (or is not visible in this scope). |
+| `invalid`        | The caller's input is malformed — blank id, unparseable field.   |
+| `forbidden`      | The row exists but this scope may not change it.                 |
+| `already_exists` | A uniqueness rule bites: that row, slug or variant is taken.     |
+| `unavailable`    | The database is not reachable; the `withDbGuard` fallback.       |
+
+A result may carry **`field`** next to `reason` to say _which_ input was bad:
+`{ ok: false, reason: 'invalid', field: 'id' }`. It belongs to `invalid` and
+nothing else — every other reason already names its own meaning — and
+`storageError()` puts it on the wire as `details.field`.
 
 Domain-specific reasons are fine where they carry information a route or UI
 acts on (`slug_exists`, `last_owner`, `limit_exceeded`, `expired`). What is not
@@ -257,8 +262,8 @@ that call kind's own failure shape.
 
 ### Implementation status: the vocabulary (as of 2026-08-22)
 
-**The register is in place and the gate is green with an empty allowlist**
-(B104 PR 1). Before it, `ERROR_STATUS_MAP` in `server/utils/http.js` covered 23
+**The vocabulary is closed, the gate is green with an empty allowlist, and no
+route decides a status any more** (B104, PRs 1–3). Before it, `ERROR_STATUS_MAP` in `server/utils/http.js` covered 23
 of the 91 codes the layer mints and the other 68 fell through to a `400`
 default — so `createSlideCollection` answering `create_failed` because its
 insert returned nothing reached the client as _"your request was malformed"_,
@@ -281,10 +286,24 @@ hard zero, the ladders against a documented exception list plus a shrink-only
 burndown holding the one that remains (the public `/api/v1` comments route,
 whose statuses are pinned in `docs/openapi.yaml`).
 
-Still open under B104: the surviving synonym sets — `slug_exists`/`slug_taken`/
-`variant_exists`, `key_id_required`/`api_key_id_required`, and the five
-`invalid_*` spellings D48 names (`invalid`, `invalid_id`, `invalid_params`,
-`invalid_fields`, `invalid_name`) — are still separate codes (PR 3, D48).
+**The synonyms collapsed last** (B104 PR 3, D48). Seven codes left the register:
+`slug_taken` was a spelling of `slug_exists` and `variant_exists` one of
+`already_exists`; `key_id_required` of `api_key_id_required`; and `invalid_id`,
+`invalid_name`, `invalid_fields` and `invalid_params` were four more ways of
+saying `invalid`.
+The first three now ride as `field` on the result, which is strictly more than
+the suffix carried — a client reads `details.field` instead of parsing a code —
+and `invalid_params` guarded several arguments at once, so it said nothing
+`invalid` does not. The remaining `invalid_<thing>` codes stay: `invalid_email`,
+`invalid_slug`, `invalid_permission` and their kin name a domain concept a UI
+acts on, not a second spelling of "your input is bad".
+
+That cut also gave the routes one emitter, `storageError(res, result, message?)`
+in `server/utils/http.js`. A route that spread the result by hand would drop
+`details.field`, so the gate refuses `jsonError(res, getErrorStatus(…), …)` under
+`server/routes/**`. The share-access validators in `routes/api/analytics-track.js`
+answered `{ ok: false, code, message }` until then; they say `reason` now, since
+one meaning gets one field name.
 
 ### Implementation status: failure shapes (as of 2026-08-21)
 

@@ -22,22 +22,13 @@ import {
 } from '../../storage/feedback.js';
 import {
   badRequest,
-  getErrorStatus,
-  jsonError,
   methodNotAllowed,
   notFound,
   requireJsonBody,
   serveJson,
+  storageError,
   withErrorHandler,
 } from '../../utils/http.js';
-
-/**
- * Human-readable text per remote-control failure. The status is the reason's
- * `REASONS` entry (`server/storage/reasons.js`).
- */
-const CONTROL_FAILURE_MESSAGES = {
-  disabled: 'Remote control is disabled for this session',
-};
 import {
   findSlideById,
   getOptionCountForSlide,
@@ -49,6 +40,14 @@ import {
   getString,
   getOptionalBoolean,
 } from '../../utils/request-validators.js';
+
+/**
+ * Human-readable text per remote-control failure. The status is the reason's
+ * `REASONS` entry (`server/storage/reasons.js`).
+ */
+const CONTROL_FAILURE_MESSAGES = {
+  disabled: 'Remote control is disabled for this session',
+};
 
 /**
  * Presenter-only live-session routes.
@@ -455,12 +454,7 @@ async function handleLiveSessionControlCommand(
     // `disabled` used to answer 401, which asks the presenter to authenticate
     // for a session they are already authenticated on; the register makes it a
     // 409 — the session refuses the transition.
-    return jsonError(
-      res,
-      getErrorStatus(result.reason),
-      result.reason,
-      CONTROL_FAILURE_MESSAGES[result.reason],
-    );
+    return storageError(res, result, CONTROL_FAILURE_MESSAGES[result.reason]);
   }
   serveJson(res, 200, { ok: true });
   return true;
