@@ -14,8 +14,8 @@ test('a normal type is insertable', () => {
 test('deprecated types are never insertable (hidden from picker + AI)', () => {
   assert.equal(
     isInsertableSlideType({
-      type: 'lead-capture-slide',
-      def: { label: 'Lead capture', deprecated: true },
+      type: 'parked-slide',
+      def: { label: 'Parked type', deprecated: true },
     }),
     false,
   );
@@ -112,30 +112,27 @@ test('content-columns-slide is removed: off the registry, and a stored slide deg
   assert.match(html, /Cols/);
 });
 
-test('lead-capture-slide is parked: deprecated + not insertable, still renders', () => {
-  // Parked (not superseded) pending the cookie-consent banner that would grant
-  // the marketing consent its form is gated on. Uses the same deprecated
-  // contract as the archived types: hidden from picker + AI, stored decks render.
-  const def = SLIDE_TYPES['lead-capture-slide'];
-  assert.ok(def, 'type stays registered so stored/forked decks keep rendering');
+test('lead-capture-slide is removed: off the registry, and a stored slide degrades safely', () => {
+  // Stripped rather than revived (D50, beta stance rule 5): parked as
+  // `deprecated: true` on 2026-07-24 pending a consent mechanism that never
+  // arrived. No successor — no core type carries a submitting form — so a
+  // stored deck degrades to the archived-slide placeholder, which names the
+  // type and keeps its content visible rather than throwing. The form itself
+  // is gone, which is the breaking half of the removal.
   assert.equal(
-    def.deprecated,
-    true,
-    'marked deprecated (parked pending cookie-consent)',
+    SLIDE_TYPES['lead-capture-slide'],
+    undefined,
+    'no longer registered',
   );
-  assert.equal(
-    isInsertableSlideType({ type: 'lead-capture-slide', def }),
-    false,
-    'hidden from every insertion path (picker + AI)',
-  );
-  // A stored lead-capture slide still renders via the kept render path.
-  const html = def.renderHtml(
-    { title: 'Stay in touch', thankYouTitle: 'Thanks', privacyText: 'I agree' },
-    { id: 's1', type: 'lead-capture-slide' },
-    {},
-  );
+  const html = renderSlideHtml({
+    type: 'lead-capture-slide',
+    content: { title: 'Stay in touch', thankYouTitle: 'Thanks' },
+  });
   assert.match(html, /class="slide/);
-  assert.match(html, /lead-capture-form/);
+  assert.match(html, /slide-unresolved/);
+  assert.match(html, /lead-capture-slide/);
+  assert.match(html, /Stay in touch/);
+  assert.doesNotMatch(html, /lead-capture-form/);
 });
 
 test('theme exclusion still applies to a theme file written with the legacy alias', () => {

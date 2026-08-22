@@ -297,8 +297,6 @@
   "analytics.viewsNeededForEngagement": "Gdy widzowie zaczną oglądać Twoją prezentację, zobaczysz, które slajdy przyciągają najwięcej uwagi.",
   "analytics.noViewersYet": "Brak widzów jeszcze",
   "analytics.shareToGetViewers": "Gdy ludzie obejrzą Twoją prezentację, ich sesje pojawią się tutaj.",
-  "analytics.noLeadsYet": "Brak pozyskanych leadów jeszcze",
-  "analytics.addLeadCaptureHint": "Dodaj slajd pozyskiwania leadów do swojej prezentacji, aby zacząć zbierać dane kontaktowe od widzów.",
   "comments.filter.title": "Filtruj komentarze",
   "comments.filter.status": "Status",
   "comments.filter.type": "Typ",

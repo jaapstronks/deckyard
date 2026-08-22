@@ -19,7 +19,6 @@ import likertSliderSlide from './types/likert-slider-slide.js';
 import followInviteSlide from './types/follow-invite-slide.js';
 import chartSlide from './types/chart-slide.js';
 import feedbackSlide from './types/feedback-slide.js';
-import leadCaptureSlide from './types/lead-capture-slide.js';
 import tableSlide from './types/table-slide.js';
 import kpiMetricsSlide from './types/kpi-metrics-slide.js';
 import textBlocksSlide from './types/text-blocks-slide.js';
@@ -211,7 +210,6 @@ const CORE_SLIDE_TYPES = {
   'likert-slide': likertSlide,
   'likert-slider-slide': likertSliderSlide,
   'feedback-slide': feedbackSlide,
-  'lead-capture-slide': leadCaptureSlide,
   'follow-invite-slide': followInviteSlide,
   'chart-slide': chartSlide,
   'text-blocks-slide': textBlocksSlide,

@@ -172,9 +172,6 @@ export async function createEditorController({
     ? orgSettings.disabledSlideTypes
     : [];
 
-  // Make presentation ID globally available for lead capture forms (preview mode)
-  window.__PRESENTATION_ID__ = id;
-
   // ============================================================
   // EDITOR STATE
   // ============================================================

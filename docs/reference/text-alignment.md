@@ -44,9 +44,8 @@ A field declares `role` only when it differs from the safe default.
 `shared/slide-types/text-roles.js`. Almost always `left`, and then nobody
 declares it. It is a declaration because a handful of types centre in their own
 slide CSS: `end-slide` centres its whole `.slide-inner`, `funnel-slide` centres
-a stage's description, `pyramid-slide` centres a level's label and text,
-`text-blocks-slide` centres a row heading, `lead-capture-slide` centres its
-header.
+a stage's description, `pyramid-slide` centres a level's label and text, and
+`text-blocks-slide` centres a row heading.
 
 Without the declaration the panel had no way to see any of that. It reported
 "Left" over visibly centred text, and clicking "Left" changed nothing — `left`

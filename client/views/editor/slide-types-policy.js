@@ -38,9 +38,10 @@ export function isInsertableSlideType({
   if (!t) return false;
   if (!def || typeof def !== 'object') return false;
 
-  // Deprecated types (e.g. lead-capture-slide, parked pending cookie-consent)
-  // are hidden from every insertion path — picker and AI — but existing slides
-  // keep rendering, since rendering doesn't go through this gate.
+  // Deprecated types are hidden from every insertion path — picker and AI —
+  // but existing slides keep rendering, since rendering doesn't go through this
+  // gate. Rung 1 of the deprecation ladder; no core type sits there right now
+  // (docs/reference/slide-type-removal.md).
   if (def.deprecated) return false;
 
   // The raw-HTML escape-hatch slide is only insertable by capability holders.

@@ -156,8 +156,8 @@ test(
   async () => {
     // The family bound, not a single symptom. Every slide type below sets a blurred
     // shadow outside the `--slide-shadow-*` tokens and therefore needs its own
-    // `@media print` rule: poll and lead-capture already had one, the timeline did
-    // not, and the video placeholder's `.vpdf-screen`/`.vpdf-base` live in the
+    // `@media print` rule: poll already had one, the timeline did not, and the
+    // video placeholder's `.vpdf-screen`/`.vpdf-base` live in the
     // export CSS itself (`PDF_DOC_CSS` in server/export/pdf-slides.js). A new type
     // that repeats the pattern fails here rather than in someone's Preview.
     const theme = await loadThemeAssets(repoRoot, 'amethyst');
@@ -171,11 +171,6 @@ test(
           id: 'p',
           type: 'poll-slide',
           content: { question: 'Welke kant op?' },
-        },
-        {
-          id: 'l',
-          type: 'lead-capture-slide',
-          content: { title: 'Blijf op de hoogte' },
         },
         ...timelineDeck().slides,
       ],

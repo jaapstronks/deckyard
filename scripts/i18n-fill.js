@@ -50,7 +50,6 @@ const PREFIX_TO_FILE = {
   imageLibrary: 'list',
   imagekit: 'settings',
   language: 'common',
-  leadCapture: 'common',
   list: 'list',
   login: 'auth',
   magicLogin: 'auth',

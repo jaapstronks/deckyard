@@ -38,9 +38,6 @@ import { createVideoLayer } from '../../lib/slide-runtime/video-layer.js';
 import { buildFollowLayout } from './layout.js';
 
 export async function renderFollow(root, presentationId) {
-  // Make presentation ID globally available for lead capture forms
-  window.__PRESENTATION_ID__ = presentationId;
-
   const startUrl = new URL(location.href);
   let lang = normalizeLang(startUrl.searchParams.get('lang')) || 'nl';
   let meta = { dominantLang: null, availableLangs: [] };

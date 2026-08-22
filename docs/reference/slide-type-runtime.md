@@ -29,17 +29,12 @@ type's definition; served out through `/api/slide-types`.
 | `live`    | the audience answers, and the session collects and aggregates      | poll, likert, likert-slider, feedback |
 
 The line is drawn at **session state**, not at "has behaviour", which is what
-makes the three edge cases fall out of the definition instead of being argued
-one at a time:
+makes the edge cases fall out of the definition instead of being argued one at a
+time:
 
 - **`countdown-slide` is `timed`, not `live`.** A clock, no audience, no session
   state — the timer runs entirely in the presenting window
   (`client/lib/slide-runtime/countdown-runtime.js`).
-- **`lead-capture-slide` is `static`,** even though it plainly collects
-  something from the room. Its submissions go to lead storage over their own
-  endpoint and never reach the session. Widening `live` to mean "collects
-  something from a human" would drop it inside four submission guards that have
-  no code path for it, one of them security-adjacent.
 - **`follow-invite-slide` is `static`.** The join code it renders is a render
   input the session hands over (`ctx.followCodes`), not state the session keeps
   for that slide.
@@ -51,10 +46,9 @@ things, which is exactly the ambiguity the facet exists to remove.
 ### The near-miss axis
 
 `runtime` is **not** "does this type mount a client runtime". That question has
-one consumer (`client/lib/slide-runtime/slide-render.js`, whose three mounts are
-follow-invite, lead-capture and countdown) and cuts the set differently — two of
-those three are `static` here. One question, one facet; the other one keeps its
-short hand-written list and its inventory entry.
+one consumer (`client/lib/slide-runtime/slide-render.js`, whose two mounts are
+follow-invite and countdown) and cuts the set differently — follow-invite is
+`static` here and countdown is `timed`. One question, one facet.
 
 ## The sub-declaration a `live` type carries
 

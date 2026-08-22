@@ -211,19 +211,6 @@ const TEMPLATE_I18N_MAP = {
       'This link expires in 24 hours.',
     ],
   },
-  leadNotification: {
-    subject: ['email.leadNotification.subject', 'New lead from "{presTitle}"'],
-    greeting: ['email.common.greetingAnonymous', 'Hi there,'],
-    body: [
-      'email.leadNotification.body',
-      'A new lead was captured from your presentation <strong>{presTitle}</strong>:',
-    ],
-    buttonLabel: ['email.leadNotification.button', 'View All Leads'],
-    footer: [
-      'email.leadNotification.footer',
-      'You received this notification because you have lead email notifications enabled.',
-    ],
-  },
 };
 
 /**
@@ -432,12 +419,6 @@ export async function generatePreview(
     guestVerification: {
       name: 'Alex',
       presTitle: 'Q4 Marketing Strategy',
-    },
-    leadNotification: {
-      presTitle: 'Q4 Marketing Strategy',
-      leadName: 'Sam Johnson',
-      leadEmail: 'sam.johnson@example.com',
-      submittedAt: 'Jan 24, 2026, 2:35 PM',
     },
   };
 

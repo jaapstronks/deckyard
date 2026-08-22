@@ -127,7 +127,6 @@ export function defaultAppSettings() {
       interactionPollClosedUrl: '',
       interactionFeedbackSubmittedUrl: '',
       interactionLikertClosedUrl: '',
-      leadSubmittedUrl: '',
       // Optional HMAC-SHA256 signing secret. Empty = deliveries are unsigned.
       // When set, every delivery carries an `x-sb-signature` header (B81).
       signingSecret: '',
@@ -194,10 +193,6 @@ export function defaultAppSettings() {
       bundled: { enabled: false },
       unsplash: { enabled: false },
       giphy: { enabled: false },
-    },
-    // Lead capture settings
-    leads: {
-      retentionDays: 365, // GDPR retention period (1-730 days)
     },
   };
 }
@@ -387,7 +382,6 @@ export async function getAppSettings(scope) {
     interactionLikertClosedUrl: normalizeWebhookUrl(
       wh?.interactionLikertClosedUrl,
     ),
-    leadSubmittedUrl: normalizeWebhookUrl(wh?.leadSubmittedUrl),
     signingSecret: normalizeWebhookSecret(wh?.signingSecret),
   };
   const notif =
@@ -492,12 +486,6 @@ export async function getAppSettings(scope) {
     giphy: { enabled: giphyObj?.enabled === true },
   };
 
-  // Lead capture settings
-  const leadsObj = obj?.leads && typeof obj.leads === 'object' ? obj.leads : {};
-  const leads = {
-    retentionDays: normalizePositiveInt(leadsObj?.retentionDays, 365, 1, 730),
-  };
-
   return {
     ...defaults,
     supportedSlideLangs: supportedSlideLangs.length
@@ -512,7 +500,6 @@ export async function getAppSettings(scope) {
     defaultThemeId,
     analytics,
     stockMedia,
-    leads,
   };
 }
 
@@ -548,7 +535,6 @@ export async function writeAppSettings(scope, next) {
         interactionLikertClosedUrl: normalizeWebhookUrl(
           nextWh?.interactionLikertClosedUrl,
         ),
-        leadSubmittedUrl: normalizeWebhookUrl(nextWh?.leadSubmittedUrl),
         signingSecret: normalizeWebhookSecret(nextWh?.signingSecret),
       }
     : null;
@@ -676,21 +662,6 @@ export async function writeAppSettings(scope, next) {
     };
   }
 
-  // Lead capture settings
-  const nextLeads =
-    next?.leads && typeof next.leads === 'object' ? next.leads : null;
-  let leads = null;
-  if (nextLeads) {
-    leads = {
-      retentionDays: normalizePositiveInt(
-        nextLeads?.retentionDays ?? prev.leads?.retentionDays,
-        365,
-        1,
-        730,
-      ),
-    };
-  }
-
   const merged = {
     ...prev,
     ...(supportedSlideLangs.length ? { supportedSlideLangs } : null),
@@ -703,7 +674,6 @@ export async function writeAppSettings(scope, next) {
     ...(defaultThemeId !== null ? { defaultThemeId } : null),
     ...(analytics ? { analytics } : null),
     ...(stockMedia ? { stockMedia } : null),
-    ...(leads ? { leads } : null),
   };
   await withDbGuard(null, async (db) => {
     await db
@@ -735,7 +705,6 @@ export function defaultUserSettings() {
     notifications: {
       emailEnabled: true, // Receive email notifications (channel master switch)
       slackEnabled: true, // Receive Slack/webhook notifications (channel master switch)
-      leadEmails: true, // Receive email when leads are captured
       // Default subscription level for decks without a per-deck override
       // (watching | participating | mentions_only | mute)
       defaultLevel: 'participating',
@@ -857,7 +826,6 @@ async function loadUserSettings(key, userId) {
     // Default to true if not explicitly set to false
     emailEnabled: notif?.emailEnabled !== false,
     slackEnabled: notif?.slackEnabled !== false,
-    leadEmails: notif?.leadEmails !== false,
     defaultLevel: normalizeSubscriptionLevel(notif?.defaultLevel),
     emailByType: normalizeEmailByType(notif?.emailByType),
   };
@@ -941,8 +909,6 @@ export async function writeUserSettings(scope, email, next) {
         slackEnabled:
           (nextNotif?.slackEnabled ?? prev.notifications?.slackEnabled) !==
           false,
-        leadEmails:
-          (nextNotif?.leadEmails ?? prev.notifications?.leadEmails) !== false,
         defaultLevel: normalizeSubscriptionLevel(
           nextNotif?.defaultLevel ?? prev.notifications?.defaultLevel,
         ),

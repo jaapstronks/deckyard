@@ -156,109 +156,6 @@ function attachStageScale() {
 }`;
 
 /**
- * Lead-capture form submission for the `lead-capture` slide type.
- *
- * One caller today (the standalone/published export — it is the only render
- * path with a live form in it), but it lives here because it is *runtime*: the
- * alternative is a second place where a render path writes its own script, and
- * that is the thing this module exists to prevent.
- *
- * ## Why this diverges from client/lib/slide-runtime/lead-capture-runtime.js
- *
- * The canonical runtime gates submission on `hasMarketingConsent()` — the
- * cookie-consent banner's marketing category. **This copy deliberately does
- * not, and that is the whole of the difference** (B103, decided as D47: *the
- * form is the consent*).
- *
- * The reasoning: a banner is a mechanism for consenting to *storage on the
- * visitor's device*, and this form stores nothing on anyone's device until it
- * has already been submitted. What it needs consent for is the processing of a
- * name and an address, and the form asks for exactly that, in the open, with a
- * required checkbox whose text the author writes. That text travels with the
- * submission as `consentText` and is stored beside the lead as the consent
- * record — `POST /api/leads` refuses a submission without it. On a standalone
- * download there is no banner to gate on in the first place, so importing the
- * gate would not add a consent step, it would remove the form.
- *
- * So: the checkbox *is* the consent here, and the author's obligation is that
- * its text names the processing (`privacyText`, a required field — see its
- * helpText in shared/slide-types/types/lead-capture-slide.js). The two
- * runtimes are pinned against one shared consent assertion in
- * tests/lead-capture-consent-parity.test.js, which also pins this divergence
- * as deliberate rather than letting it read as an omission.
- *
- * Everything else here tracks the canonical runtime, error texts included:
- * they are read off the same `data-error-*` attributes the slide type renders,
- * so a Dutch deck fails in Dutch.
- */
-const LEAD_CAPTURE_RUNTIME = `${SLIDE_RUNTIME_BANNER}
-function initLeadCaptureForms() {
-  const forms = document.querySelectorAll('.slide-lead-capture [data-lead-form="1"]');
-  for (const form of forms) {
-    const slideEl = form.closest('.slide-lead-capture');
-    if (!slideEl) continue;
-    const slideId = slideEl.dataset.slideId || '';
-    const formState = slideEl.querySelector('[data-lead-state="form"]');
-    const thankYouState = slideEl.querySelector('[data-lead-state="thankyou"]');
-    const errorEl = slideEl.querySelector('[data-lead-error="1"]');
-
-    // Same attributes the canonical runtime reads, with the same fallbacks:
-    // the slide type renders the author's (localised) strings onto the slide
-    // element, so nothing here needs a language of its own.
-    const i18n = {
-      enterName: slideEl.dataset.errorEnterName || 'Please enter your name.',
-      validEmail: slideEl.dataset.errorValidEmail || 'Please enter a valid email address.',
-      acceptTerms: slideEl.dataset.errorAcceptTerms || 'Please accept the privacy terms.',
-      generic: slideEl.dataset.errorGeneric || 'Something went wrong. Please try again.',
-    };
-
-    // Check if already submitted
-    const storageKey = 'lead_submitted_' + slideId;
-    if (localStorage.getItem(storageKey) === 'true') {
-      if (formState) formState.hidden = true;
-      if (thankYouState) thankYouState.hidden = false;
-      continue;
-    }
-
-    form.addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const formData = new FormData(form);
-      const name = (formData.get('name') || '').trim();
-      const email = (formData.get('email') || '').trim();
-      const consentChecked = form.querySelector('input[name="consent"]');
-      const consentText = formData.get('consentText') || '';
-      const privacyUrl = formData.get('privacyUrl') || '';
-
-      // Validation. The consent checkbox is this runtime's whole consent step
-      // (see the module comment above): no checkbox ticked, no submission.
-      if (!name) { if (errorEl) errorEl.textContent = i18n.enterName; return; }
-      if (!email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) { if (errorEl) errorEl.textContent = i18n.validEmail; return; }
-      if (consentChecked && !consentChecked.checked) { if (errorEl) errorEl.textContent = i18n.acceptTerms; return; }
-      if (errorEl) errorEl.textContent = '';
-
-      try {
-        const presentationId = window.__PRESENTATION_ID__ || '';
-        const response = await fetch('/api/leads', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ presentationId, slideId, name, email, consentGiven: true, consentText, privacyUrl })
-        });
-        if (!response.ok) {
-          const data = await response.json().catch(() => ({}));
-          throw new Error(data.error || 'Submission failed');
-        }
-        localStorage.setItem(storageKey, 'true');
-        if (formState) formState.hidden = true;
-        if (thankYouState) thankYouState.hidden = false;
-      } catch (err) {
-        if (errorEl) errorEl.textContent = err.message || i18n.generic;
-      }
-    });
-  }
-}
-initLeadCaptureForms();`;
-
-/**
  * Assemble the `<script>` a render path carries.
  *
  * Order is fixed and is the whole contract: shared runtime first (so the body
@@ -269,8 +166,6 @@ initLeadCaptureForms();`;
  * @param {Object} [options]
  * @param {'stage'|'none'} [options.runtime='none'] - Which shared runtime to
  *   include. See {@link SCRIPT_RUNTIMES}.
- * @param {boolean} [options.leadCapture=false] - Include the lead-capture form
- *   handler.
  * @param {{prism: boolean, katex: boolean}|null} [options.needs] - What the
  *   rendered slides actually contain, from `detectPrismKatexNeeds()`. Omitted
  *   means "assume both". `{prism: false, katex: false}` emits no initialiser,
@@ -284,7 +179,6 @@ initLeadCaptureForms();`;
  */
 export function buildScriptChain({
   runtime = 'none',
-  leadCapture = false,
   needs = undefined,
   body = '',
   module = false,
@@ -298,7 +192,6 @@ export function buildScriptChain({
   const parts = [];
   if (runtime === 'stage') parts.push(STAGE_RUNTIME);
   if (String(body || '').trim()) parts.push(dedent(String(body)));
-  if (leadCapture) parts.push(LEAD_CAPTURE_RUNTIME);
 
   const init = buildPrismKatexInitScript(needs ?? {});
   if (init) parts.push(`${SLIDE_RUNTIME_BANNER}\n${dedent(init)}`);

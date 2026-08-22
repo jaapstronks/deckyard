@@ -204,10 +204,10 @@ test('legacy hiddenSlideTypes folds into slideTypes.exclude, deduped, and is dro
 test('a theme carrying only the legacy alias still ends up excluded', () => {
   const out = normalizeTheme({
     ...baseTheme(),
-    hiddenSlideTypes: ['lead-capture-slide'],
+    hiddenSlideTypes: ['poll-slide'],
   });
 
-  assert.deepEqual(out.slideTypes.exclude, ['lead-capture-slide']);
+  assert.deepEqual(out.slideTypes.exclude, ['poll-slide']);
   assert.ok(!('hiddenSlideTypes' in out));
 });
 

@@ -52,13 +52,6 @@ export const SLIDE_COPY = {
     followMethodsLabel: 'Meekijk methodes',
     qrCodeLabel: 'QR-code',
     accessCodeLabel: 'Toegangscode',
-
-    // Lead capture slide
-    leadCaptureSubmitting: 'Versturen...',
-    leadCaptureSuccess: 'Gelukt!',
-    leadCaptureError: 'Er is iets misgegaan. Probeer het opnieuw.',
-    leadCaptureCookieRequired:
-      'Schakel marketing cookies in om dit formulier te versturen.',
   },
   'en-GB': {
     // Poll slide
@@ -102,13 +95,6 @@ export const SLIDE_COPY = {
     followMethodsLabel: 'Follow along methods',
     qrCodeLabel: 'QR code',
     accessCodeLabel: 'Access code',
-
-    // Lead capture slide
-    leadCaptureSubmitting: 'Submitting...',
-    leadCaptureSuccess: 'Success!',
-    leadCaptureError: 'Something went wrong. Please try again.',
-    leadCaptureCookieRequired:
-      'Please enable marketing cookies to submit this form.',
   },
 };
 

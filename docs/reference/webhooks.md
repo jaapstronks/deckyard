@@ -1,6 +1,6 @@
 # Outgoing webhooks
 
-Deckyard POSTs a JSON payload to an admin-configured URL when one of eight
+Deckyard POSTs a JSON payload to an admin-configured URL when one of seven
 events happens. Written 2026-08-05 against HEAD.
 
 This is the only outbound integration seam that is not a named service: no
@@ -46,7 +46,6 @@ Fire sites (each names the event it fires):
 | `presentation.published`              | `server/routes/api/publish.js`                  |
 | `slide.added_to_organization_library` | `server/routes/api/slide-library.js`            |
 | `comment.created`                     | `server/services/comment-notifications.js`      |
-| `lead.submitted`                      | `server/routes/api/leads.js`                    |
 | `interaction.poll_closed`             | `server/storage/interactions.js`                |
 | `interaction.likert_closed`           | `server/storage/interactions.js`                |
 | `interaction.feedback_submitted`      | `server/storage/feedback.js`                    |
@@ -61,7 +60,7 @@ one string key per event, defaulting to `''` (= disabled):
 presentationMovedToOrganizationUrl   slideAddedToOrganizationLibraryUrl
 presentationPublishedUrl             commentCreatedUrl
 interactionPollClosedUrl             interactionLikertClosedUrl
-interactionFeedbackSubmittedUrl      leadSubmittedUrl
+interactionFeedbackSubmittedUrl
 ```
 
 plus one non-URL key, `signingSecret` (default `''`): the optional HMAC-SHA256
@@ -163,13 +162,6 @@ live session, where the acting party is the audience.
 }
 ```
 
-**Lead** — `lead.submitted` has its own builder and its own shape: `event`,
-`createdAt`, `presentation` (`id`, `title`, `editUrl`), `slide.id`, and `lead`
-(`name`, `email`, `submittedAt`). It carries a visitor's name and email address,
-which makes this the one webhook that ships personal data of a non-user off the
-instance — see [`leads.md`](leads.md) for what the lead capture stores and how
-it is retained and erased.
-
 ## Flows
 
 ### 1. Configure
@@ -238,9 +230,9 @@ staging/production distinction beyond running separate instances.
   comment, adding a slide to the organization shelf), and the webhook is a side effect
   of that decision.
 - **Payload exposure.** The receiver gets whatever the payload holds regardless
-  of who may read the deck: title, description, theme, visibility, the actor's email
-  and name, and for `lead.submitted` a visitor's name and email. Configuring a
-  webhook is therefore an act of data export, and should be read that way.
+  of who may read the deck: title, description, theme, visibility, and the
+  actor's email and name. Configuring a webhook is therefore an act of data
+  export, and should be read that way.
 - **Multi-organization**: nothing in the payload names an organization, so a
   receiver cannot tell which organization an event came from on an instance holding
   more than one.
@@ -250,12 +242,12 @@ staging/production distinction beyond running separate instances.
 Normative target: **one delivery path, one guard, every event configurable in
 the admin UI.** Where the code stands, as of 2026-08-17 (B81):
 
-- **The transport and the guard are canonical.** Every one of the eight events
+- **The transport and the guard are canonical.** Every one of the seven events
   goes through the same `postJson`, so the SSRF guard, the timeout, the redirect
   refusal and the optional signature cannot be bypassed by adding an event.
 - **Every event is configurable in the admin UI.** `admin-webhooks-section.js`
-  defines one text field per event, `lead.submitted` included (B72) — no event is
-  wired in the backend while invisible in the UI.
+  defines one text field per event (B72) — no event is wired in the backend
+  while invisible in the UI.
 - **Deliveries can be signed (opt-in).** Set `webhooks.signingSecret` and every
   delivery carries `x-sb-signature: sha256=<hmac>` over the request body, so a
   receiver can verify the POST came from this instance. Left empty, deliveries

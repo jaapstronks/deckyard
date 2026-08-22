@@ -42,6 +42,3 @@ export {
   sendWeeklyDigestEmail,
   sendTeamDigestEmail,
 } from './senders-digests.js';
-
-// Lead capture emails
-export { maybeSendLeadNotification } from './senders-leads.js';
