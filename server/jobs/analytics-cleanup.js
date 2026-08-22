@@ -14,10 +14,6 @@ import {
   anonymizeOldIpAddresses,
 } from '../storage/analytics/view-sessions.js';
 import { deleteOldSlideViews } from '../storage/analytics/slide-views.js';
-import {
-  anonymizeExpiredLeads,
-  anonymizeOldLeadIpAddresses,
-} from '../storage/leads.js';
 import { getAnalyticsRetention } from '../storage/settings.js';
 import { crossOrganizationScope } from '../storage/scope.js';
 import { createLogger } from '../utils/logger.js';
@@ -33,7 +29,7 @@ const log = createLogger('analytics-cleanup');
  * @param {Object} [overrides]
  * @param {number} [overrides.retentionDays] - Days to retain raw session data
  * @param {number} [overrides.ipAnonymizationDays] - Days before IP anonymization
- * @returns {Promise<{deletedSessions: number, deletedSlideViews: number, anonymizedIps: number, anonymizedLeads: number, anonymizedLeadIps: number}>}
+ * @returns {Promise<{deletedSessions: number, deletedSlideViews: number, anonymizedIps: number}>}
  */
 async function runAnalyticsCleanup(overrides = {}) {
   const retention = await getAnalyticsRetention(
@@ -71,22 +67,12 @@ async function runAnalyticsCleanup(overrides = {}) {
   const sessionsResult = await deleteOldViewSessions(deletionDate);
   log.info(`Deleted ${sessionsResult.deleted} view sessions`);
 
-  // Anonymize expired leads (based on per-lead retention_expires_at)
-  const leadsResult = await anonymizeExpiredLeads();
-  log.info(`Anonymized ${leadsResult.anonymized} expired leads`);
-
-  // Anonymize old lead IP addresses (same policy as view sessions)
-  const leadIpsResult = await anonymizeOldLeadIpAddresses(ipAnonymizationDate);
-  log.info(`Anonymized ${leadIpsResult.anonymized} lead IP addresses`);
-
   log.info(`Cleanup complete`);
 
   return {
     deletedSessions: sessionsResult.deleted,
     deletedSlideViews: slideViewsResult.deleted,
     anonymizedIps: ipResult.anonymized,
-    anonymizedLeads: leadsResult.anonymized,
-    anonymizedLeadIps: leadIpsResult.anonymized,
   };
 }
 
@@ -133,9 +119,6 @@ if (process.argv[1]?.endsWith('analytics-cleanup.js')) {
         `Deleted ${result.deletedSessions} sessions and ${result.deletedSlideViews} slide views`,
       );
       console.log(`Anonymized ${result.anonymizedIps} IP addresses`);
-      console.log(
-        `Anonymized ${result.anonymizedLeads} expired leads and ${result.anonymizedLeadIps} lead IP addresses`,
-      );
       process.exit(0);
     })
     .catch((err) => {

@@ -69,8 +69,6 @@ test('opt-out covers deprecated types and the ai:false flag', () => {
   const resolved = resolveAgentSlideTypes({});
   // A capability-gated escape hatch: live, but not for agents.
   assert.equal(resolved['custom-html-slide'], undefined);
-  // A deprecated type stays renderable but is never offered.
-  assert.equal(resolved['lead-capture-slide'], undefined);
 });
 
 test('an undocumented registered type is still offered, flagged documented:false', () => {

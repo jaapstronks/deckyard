@@ -122,6 +122,29 @@ export const REMOVED_SLIDE_TYPES = {
         'cites this removal as the worked example of a slide-type retirement that is NOT a breaking change',
     },
   },
+  'lead-capture-slide': {
+    removed: '2026-08-22, D50 — the lead-capture strip (B119)',
+    successor: null,
+    reason:
+      'a name/email form on a slide, parked as `deprecated: true` on ' +
+      '2026-07-24 because the marketing consent it gated on was never wired ' +
+      'in. Stripped rather than revived (beta stance rule 5): the feature ' +
+      'never ran in production, was barely tested, and dragged a whole ' +
+      'privacy apparatus behind it (lead storage, GDPR self-service tokens, ' +
+      'a retention job, a notification e-mail, a `lead.submitted` webhook). ' +
+      'Collecting visitor details is meant to return as a designed feature — ' +
+      'the plan replaces the code, it does not preserve it.',
+    // No conversion migration: no core type carries a submitting form, so the
+    // render contract (unresolved.js) degrades stored decks to an archived
+    // slide with every field still visible. The deck scan on 2026-08-22 found
+    // no deck on the type; a stored slide loses its form, which is the
+    // breaking half of this removal and is called out in the release notes.
+    migration: null,
+    allowedReferences: {
+      'tests/slide-types-policy.test.js':
+        'asserts the type is off the registry and a stored slide degrades safely',
+    },
+  },
   'lijstje-slide': {
     removed: '2026-07-30, rung 3 of the list consolidation (DB migration 056)',
     successor: 'list-slide',

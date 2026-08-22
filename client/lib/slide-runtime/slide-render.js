@@ -3,7 +3,6 @@ import { SLIDE_TYPES as BUNDLED_SLIDE_TYPES } from '../../../shared/slide-types.
 import { getRemovedSlideType } from '../../../shared/slide-types/removed.js';
 import { initFollowInviteSlides } from './follow-invite-runtime.js';
 import { initKpiMetricsSlides } from './kpi-metrics-runtime.js';
-import { initLeadCaptureSlides } from './lead-capture-runtime.js';
 import { initCountdownSlides } from './countdown-runtime.js';
 import { initTimelineSlides } from './timeline-runtime.js';
 import { initContentSlideAutoFit } from './content-slide-autofit.js';
@@ -412,12 +411,6 @@ export function renderSlideElement(
   } else if (mode !== 'thumb') {
     cleanups.push(initFollowInviteSlides(el));
   }
-  // Initialize lead capture slides - interactive in all modes except pure thumbnails in editor
-  // Share viewer uses 'thumb' mode for styling but needs interactivity
-  if (slide?.type === 'lead-capture-slide') {
-    cleanups.push(initLeadCaptureSlides(el, { interactive: true }));
-  }
-
   // Countdown timer: presenter-driven in present/follow, static in thumbnails.
   if (slide?.type === 'countdown-slide') {
     cleanups.push(

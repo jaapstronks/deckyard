@@ -416,72 +416,6 @@ export function createAdminTab({ user }) {
   ]);
   stockMediaCard.append(stockMediaHint, stockMediaOptions);
 
-  // Lead capture card. `leads.retentionDays` is a top-level setting distinct
-  // from engagement analytics (a different data subject), so it gets its own
-  // card rather than riding inside "Engagement Insights". The server already
-  // normalizes and enforces it (1–730 days, default 365); this only exposes it.
-  const leadsCard = h('div', { class: 'stack editor-card' });
-  leadsCard.append(
-    h('div', {
-      class: 'field-label',
-      text: t('settings.admin.leads.title', 'Lead capture'),
-    }),
-  );
-  const leadsHint = h('div', {
-    class: 'help',
-    text: t(
-      'settings.admin.leads.hint',
-      'How long lead-capture form submissions are kept before they are anonymized.',
-    ),
-  });
-  const leadsRetentionSelect = h(
-    'select',
-    {
-      class: 'form-input',
-      'aria-label': t(
-        'settings.admin.leads.retentionDays',
-        'Keep lead data for',
-      ),
-    },
-    [
-      h('option', {
-        value: '30',
-        text: t('settings.admin.analytics.daysOption', '{n} days', { n: 30 }),
-      }),
-      h('option', {
-        value: '90',
-        text: t('settings.admin.analytics.daysOption', '{n} days', { n: 90 }),
-      }),
-      h('option', {
-        value: '180',
-        text: t('settings.admin.analytics.daysOption', '{n} days', { n: 180 }),
-      }),
-      h('option', {
-        value: '365',
-        text: t(
-          'settings.admin.analytics.daysOptionDefault',
-          '{n} days (default)',
-          { n: 365 },
-        ),
-      }),
-      h('option', {
-        value: '730',
-        text: t('settings.admin.analytics.daysOption', '{n} days', { n: 730 }),
-      }),
-    ],
-  );
-  const leadsRetentionField = h('label', { class: 'field-row' }, [
-    h('span', {
-      class: 'field-row-label',
-      text: t('settings.admin.leads.retentionDays', 'Keep lead data for'),
-    }),
-    leadsRetentionSelect,
-  ]);
-  leadsCard.append(
-    leadsHint,
-    h('div', { class: 'stack gap-3' }, [leadsRetentionField]),
-  );
-
   // Save button
   const actions = h('div', {
     class: 'row is-end',
@@ -499,7 +433,6 @@ export function createAdminTab({ user }) {
     senderCard,
     sessionCard,
     analyticsCard,
-    leadsCard,
     stockMediaCard,
   ]);
 
@@ -519,7 +452,6 @@ export function createAdminTab({ user }) {
     analyticsEnabledCheck,
     retentionSessionSelect,
     retentionIpSelect,
-    leadsRetentionSelect,
     unsplashEnabledCheck,
     giphyEnabledCheck,
   ];
@@ -571,14 +503,6 @@ export function createAdminTab({ user }) {
       retentionIpSelect.value = String(
         analytics?.retention?.ipAnonymizationDays || 7,
       );
-
-      // Lead capture retention (top-level `leads` key). Fall back to the default
-      // if the stored value isn't one of the offered options.
-      const leadsDays = String(app?.leads?.retentionDays || 365);
-      leadsRetentionSelect.value = leadsDays;
-      if (leadsRetentionSelect.value !== leadsDays) {
-        leadsRetentionSelect.value = '365';
-      }
 
       // Stock media settings
       const stockMedia = app?.stockMedia || {};
@@ -649,9 +573,6 @@ export function createAdminTab({ user }) {
             sessionDataDays: parseInt(retentionSessionSelect.value, 10) || 90,
             ipAnonymizationDays: parseInt(retentionIpSelect.value, 10) || 7,
           },
-        },
-        leads: {
-          retentionDays: parseInt(leadsRetentionSelect.value, 10) || 365,
         },
         stockMedia: {
           bundled: { enabled: bundledEnabledCheck.checked },

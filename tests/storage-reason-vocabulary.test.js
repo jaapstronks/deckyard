@@ -325,10 +325,6 @@ const REASON_BRANCH_EXCEPTIONS = new Map([
     "the mail sender's own vocabulary (server/integrations/email/core.js), which maps to 501/502",
   ],
   [
-    'server/routes/api/leads.js :: not_configured',
-    'same mail-sender vocabulary; the dev branch echoes a token instead of claiming a mail went out',
-  ],
-  [
     'server/routes/api/password-reset.js :: invalid_or_expired',
     'picks display copy for the reset link; the status comes from the register',
   ],

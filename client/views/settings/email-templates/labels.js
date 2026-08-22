@@ -45,10 +45,6 @@ export function getTemplateLabel(type) {
       'settings.admin.emailTemplates.types.guestVerification',
       'Guest Verification',
     ),
-    leadNotification: t(
-      'settings.admin.emailTemplates.types.leadNotification',
-      'Lead Notification',
-    ),
   };
   return labels[type] || type;
 }

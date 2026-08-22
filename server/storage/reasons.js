@@ -160,7 +160,6 @@ export const REASONS = Object.freeze(
     missing_text: { status: 400, kind: 'caller' },
     missing_voter: { status: 400, kind: 'caller' },
     bad_action: { status: 400, kind: 'caller' },
-    consent_required: { status: 400, kind: 'caller' },
     no_updates: { status: 400, kind: 'caller' },
     too_long: { status: 400, kind: 'caller' },
     too_short: { status: 400, kind: 'caller' },
