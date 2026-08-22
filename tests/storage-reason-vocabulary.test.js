@@ -3,8 +3,9 @@
  *
  * `server/storage/reasons.js` is the one place a storage `reason` code is
  * minted. This file is what makes that true rather than aspirational: it parses
- * every `{ ok: false, reason: '<literal>' }` under `server/storage/**` and
- * `server/routes/api/**` and asserts the code is in `REASONS`. **The allowlist is
+ * every `{ ok: false, reason: '<literal>' }` under `server/storage/**`,
+ * `server/routes/api/**` and `shared/**` and asserts the code is in `REASONS`.
+ * **The allowlist is
  * empty and stays empty** — there is no burndown here, because there is nothing
  * left to burn down. A new code is added to the register or it does not exist.
  *
@@ -30,13 +31,28 @@
  *     caller-vs-ours decision at the call site, which is precisely where it
  *     disagreed with itself.
  *
- * **Out of scope: `server/routes/public-api/**`.** The public `/api/v1/*`
- * surface has its own openapi-documented error schema, produced through
- * `sendV1Error`, and never passes a reason through `getErrorStatus`
- * (`docs/reference/api-error-format.md` § Scope). Its one `{ ok: false, reason }`
- * — `missing_auth` in `v1/middleware.js` — is an internal
- * "the response is already sent" signal between middleware and handler, not a
- * code that reaches a client.
+ * `shared/**` is in scope because `shared/slide-types/usage.js` mints
+ * `invalid_usage` / `usage_too_long` and `createCustomSlideType` hands them
+ * straight back, so they reach the wire as storage reasons like any other.
+ *
+ * **Four namespaces are deliberately out of scope**, because they answer to
+ * something other than `getErrorStatus`:
+ *
+ *   - `server/routes/public-api/**` — the public `/api/v1/*` surface has its own
+ *     openapi-documented schema, produced through `sendV1Error`
+ *     (`docs/reference/api-error-format.md` § Scope). Its one
+ *     `{ ok: false, reason: 'missing_auth' }` is an internal "the response is
+ *     already sent" signal between middleware and handler.
+ *   - `server/integrations/email/core.js` — the mail sender's own
+ *     `not_configured` / `upstream`, which its callers map to 501 / 502.
+ *   - `server/utils/sse-limiter.js` — `global` / `per-ip` name *which* limit
+ *     bit, not an HTTP outcome.
+ *   - `server/services/access-notifications.js` and `server/mcp/sse.js` — both
+ *     fire-and-forget; neither reason reaches a response.
+ *
+ * A `reason` column also exists on the presentation-version audit trail
+ * (`'pre_merge'`, `'snapshot'`, `'session_end'`). The scanner never sees it: it
+ * only reads objects with a literal `ok: false`.
  *
  * Run with: node --test tests/storage-reason-vocabulary.test.js
  */
@@ -51,7 +67,7 @@ import { fileURLToPath } from 'node:url';
 import { REASONS, reasonCodes } from '../server/storage/reasons.js';
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
-const SCANNED_ROOTS = ['server/storage', 'server/routes/api'];
+const SCANNED_ROOTS = ['server/storage', 'server/routes/api', 'shared'];
 
 /**
  * Codes minted outside the register that this gate tolerates.

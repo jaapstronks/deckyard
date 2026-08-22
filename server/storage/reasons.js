@@ -7,7 +7,7 @@
  * here**, with the HTTP status it answers and whose fault it names.
  *
  * Before this register the statuses lived in an `ERROR_STATUS_MAP` that covered
- * 23 of the 89 codes the layer actually mints; the other 66 fell through to a
+ * 23 of the 91 codes the layer actually mints; the other 68 fell through to a
  * `400` default, so `create_failed` — our insert returning nothing — reached
  * the client as *"your request was malformed"* and never showed up on a
  * dashboard watching 5xx. The default is gone: an unknown reason is our
@@ -163,6 +163,10 @@ export const REASONS = Object.freeze(
     no_updates: { status: 400, kind: 'caller' },
     too_long: { status: 400, kind: 'caller' },
     too_short: { status: 400, kind: 'caller' },
+    // Minted by the shared usage validator (shared/slide-types/usage.js) and
+    // handed straight back by createCustomSlideType / updateCustomSlideType.
+    invalid_usage: { status: 400, kind: 'caller' },
+    usage_too_long: { status: 400, kind: 'caller' },
     user_not_found: { status: 400, kind: 'caller' },
   }),
 );

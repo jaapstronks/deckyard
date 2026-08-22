@@ -243,7 +243,7 @@ function throwOnUnknownReason() {
  * the only reader. There is **no default status**: a reason the register does
  * not know is our vocabulary failing, not the caller's request, so it answers
  * 500 (and throws outside production). The old `defaultStatus = 400` is exactly
- * how 66 codes came to report server faults as malformed requests.
+ * how 68 codes came to report server faults as malformed requests.
  *
  * @param {string} reason - Error reason code
  * @returns {number} HTTP status code

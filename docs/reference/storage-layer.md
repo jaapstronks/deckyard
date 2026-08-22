@@ -239,8 +239,9 @@ test, a dev run or CI fails on it) and answers `500` in production. Adding a
 code means adding a register entry — there is nowhere else to mint one.
 
 `tests/storage-reason-vocabulary.test.js` is the gate. It parses every
-`{ ok: false, reason: '<literal>' }` under `server/storage/**` and
-`server/routes/api/**` and asserts membership, **with an empty allowlist**; it
+`{ ok: false, reason: '<literal>' }` under `server/storage/**`,
+`server/routes/api/**` and `shared/**` and asserts membership, **with an empty
+allowlist**; it
 also refuses a code that is not a `snake_case` token, a `kind`/`status` pair
 that disagrees, a register entry nobody mints, and any `getErrorStatus(reason,
 <default>)` call.
@@ -258,7 +259,7 @@ that call kind's own failure shape.
 
 **The register is in place and the gate is green with an empty allowlist**
 (B104 PR 1). Before it, `ERROR_STATUS_MAP` in `server/utils/http.js` covered 23
-of the 89 codes the layer mints and the other 66 fell through to a `400`
+of the 91 codes the layer mints and the other 68 fell through to a `400`
 default — so `createSlideCollection` answering `create_failed` because its
 insert returned nothing reached the client as _"your request was malformed"_,
 and never showed up on a dashboard watching 5xx. Two shape defects went with the
