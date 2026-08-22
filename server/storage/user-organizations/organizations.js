@@ -58,7 +58,7 @@ export async function createOrganization(data) {
       .trim();
 
     if (!slug || slug.length < 2) {
-      return { ok: false, reason: 'invalid_slug' };
+      return { ok: false, reason: 'invalid', field: 'slug' };
     }
 
     // Check if slug already exists

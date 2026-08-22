@@ -27,20 +27,23 @@ describe('reorderCustomSlideTypes input validation', () => {
     for (const bad of [undefined, null, [], 'a,b', {}]) {
       const res = await reorderCustomSlideTypes(CTX, bad);
       assert.equal(res.ok, false, `accepted ${JSON.stringify(bad)}`);
-      assert.equal(res.reason, 'invalid_order');
+      assert.equal(res.reason, 'invalid');
+      assert.equal(res.field, 'order');
     }
   });
 
   it('rejects duplicate ids (a move that listed one type twice)', async () => {
     const res = await reorderCustomSlideTypes(CTX, ['a', 'b', 'a']);
     assert.equal(res.ok, false);
-    assert.equal(res.reason, 'invalid_order');
+    assert.equal(res.reason, 'invalid');
+    assert.equal(res.field, 'order');
   });
 
   it('rejects blank ids', async () => {
     const res = await reorderCustomSlideTypes(CTX, ['a', '  ', 'b']);
     assert.equal(res.ok, false);
-    assert.equal(res.reason, 'invalid_order');
+    assert.equal(res.reason, 'invalid');
+    assert.equal(res.field, 'order');
   });
 });
 

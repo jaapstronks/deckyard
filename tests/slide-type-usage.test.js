@@ -97,11 +97,12 @@ test('validateUsage rejects on the authoring path instead of silently shortening
   // them to different messages.
   assert.deepEqual(validateUsage({ text: 'x' }), {
     ok: false,
-    reason: 'invalid_usage',
+    reason: 'invalid',
+    field: 'usage',
   });
   assert.deepEqual(
     validateUsage(() => 'x'),
-    { ok: false, reason: 'invalid_usage' },
+    { ok: false, reason: 'invalid', field: 'usage' },
   );
 
   // Absent means "no rule", which is valid and stays null rather than ''.

@@ -49,7 +49,7 @@ export async function setSubscription(scope, presentationId, userEmail, level) {
   const email = normalizeEmail(userEmail);
   if (!pid || !email) return { ok: false, reason: 'invalid' };
   if (level !== null && !SUBSCRIPTION_LEVELS.includes(level)) {
-    return { ok: false, reason: 'invalid_level' };
+    return { ok: false, reason: 'invalid', field: 'level' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {

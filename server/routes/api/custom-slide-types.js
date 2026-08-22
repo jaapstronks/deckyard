@@ -35,14 +35,10 @@ import { SLIDE_TYPE_CATALOG } from '../../utils/ai/slide-catalog/definitions.js'
 import { canManage } from '../../utils/route-middleware.js';
 
 const ERROR_MESSAGES = {
-  invalid_label: 'Invalid slide type label.',
-  invalid_slug: 'Invalid slide type slug.',
-  invalid_usage: 'Usage rules must be text.',
   usage_too_long: `Usage rules are too long (max ${USAGE_MAX_LENGTH} characters).`,
   slug_exists: 'A slide type with this slug already exists.',
   not_found: 'Slide type not found.',
   unavailable: 'Database unavailable.',
-  invalid_order: 'Invalid slide type order.',
   order_mismatch:
     'The order does not list exactly the current slide types. Reload and try again.',
 };
@@ -58,6 +54,10 @@ const ERROR_MESSAGES = {
 const INVALID_FIELD_MESSAGES = {
   fields: 'Invalid field definitions.',
   id: 'Invalid slide type ID.',
+  label: 'Invalid slide type label.',
+  slug: 'Invalid slide type slug.',
+  usage: 'Usage rules must be text.',
+  order: 'Invalid slide type order.',
 };
 
 /**

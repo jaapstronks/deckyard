@@ -63,10 +63,21 @@ const log = createLogger('collaborators');
  */
 const INVITE_FAILURE_MESSAGES = {
   user_not_found: 'User not found in organization',
-  invalid_permission: 'Unsupported permission',
-  invalid_email: 'Invalid email address',
   database_error: 'Failed to add collaborator',
   unavailable: 'Collaborator storage is unavailable',
+};
+
+/**
+ * Human-readable text per `field` when the reason is `invalid`.
+ *
+ * D48 collapsed four generic `invalid_*` spellings into one `invalid` carrying
+ * a `field`; D52 collapsed the rest, so the copy that used to hang off the
+ * suffix hangs off the field name instead. The field also reaches the client as
+ * `details.field`, which is more than the suffix gave it.
+ */
+const INVALID_FIELD_MESSAGES = {
+  permission: 'Unsupported permission',
+  email: 'Invalid email address',
 };
 
 // GET /api/presentations/shared-with-me - List presentations shared with current user
@@ -296,7 +307,7 @@ async function handleCollaboratorAdd(
     const singleResult = results[0];
     if (!singleResult.ok) {
       // The reason decides the status. The reasons on this path are a mix
-      // of "your request" (`user_not_found`, `invalid_permission`) and "our
+      // of "your request" (`user_not_found`, `invalid`) and "our
       // side" (`database_error`, `unavailable`), and the REASONS register
       // states which is which — no route-local default is involved any more.
       // The batch branch below has always reported the reason factually per
@@ -304,7 +315,8 @@ async function handleCollaboratorAdd(
       return storageError(
         res,
         singleResult,
-        INVITE_FAILURE_MESSAGES[singleResult.reason],
+        INVALID_FIELD_MESSAGES[singleResult.field] ||
+          INVITE_FAILURE_MESSAGES[singleResult.reason],
       );
     }
     serveJson(res, 201, {

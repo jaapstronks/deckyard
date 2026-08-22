@@ -54,7 +54,8 @@ describe('archiveAllNotifications (no-DB contract)', () => {
   it('requires an email', async () => {
     assert.deepStrictEqual(await archiveAllNotifications(ORG, ''), {
       ok: false,
-      reason: 'invalid_email',
+      reason: 'invalid',
+      field: 'email',
     });
   });
 

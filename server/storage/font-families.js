@@ -114,17 +114,17 @@ export async function createFontFamily(scope, data) {
 
   let slug = data?.slug ? String(data.slug).trim() : generateSlug(name);
   if (!isValidSlug(slug)) {
-    return { ok: false, reason: 'invalid_slug' };
+    return { ok: false, reason: 'invalid', field: 'slug' };
   }
 
   const source = String(data?.source || 'upload').trim();
   if (!VALID_SOURCES.includes(source)) {
-    return { ok: false, reason: 'invalid_source' };
+    return { ok: false, reason: 'invalid', field: 'source' };
   }
 
   const category = String(data?.category || 'sans-serif').trim();
   if (!VALID_CATEGORIES.includes(category)) {
-    return { ok: false, reason: 'invalid_category' };
+    return { ok: false, reason: 'invalid', field: 'category' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
@@ -203,7 +203,7 @@ export async function updateFontFamily(scope, familyId, updates) {
     if ('slug' in updates) {
       const slug = String(updates.slug || '').trim();
       if (!isValidSlug(slug)) {
-        return { ok: false, reason: 'invalid_slug' };
+        return { ok: false, reason: 'invalid', field: 'slug' };
       }
       const existingSlug = await db
         .selectFrom('font_families')
@@ -221,7 +221,7 @@ export async function updateFontFamily(scope, familyId, updates) {
     if ('category' in updates) {
       const category = String(updates.category || '').trim();
       if (!VALID_CATEGORIES.includes(category)) {
-        return { ok: false, reason: 'invalid_category' };
+        return { ok: false, reason: 'invalid', field: 'category' };
       }
       updateData.category = category;
     }
@@ -366,17 +366,17 @@ export async function addFontVariant(scope, familyId, variantData) {
 
   const weight = Number(variantData?.weight) || 400;
   if (weight < 100 || weight > 900 || weight % 100 !== 0) {
-    return { ok: false, reason: 'invalid_weight' };
+    return { ok: false, reason: 'invalid', field: 'weight' };
   }
 
   const style = String(variantData?.style || 'normal').trim();
   if (!VALID_STYLES.includes(style)) {
-    return { ok: false, reason: 'invalid_style' };
+    return { ok: false, reason: 'invalid', field: 'style' };
   }
 
   const format = String(variantData?.format || 'woff2').trim();
   if (!VALID_FORMATS.includes(format)) {
-    return { ok: false, reason: 'invalid_format' };
+    return { ok: false, reason: 'invalid', field: 'format' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
