@@ -379,6 +379,44 @@ test('handing the deck over costs the giver the transfer right', async () => {
   );
 });
 
+test('a complete hand-over costs the giver every power over the deck (D49)', async () => {
+  // The rule D49 settled, end to end. `keepAsCollaborator: false` leaves the
+  // previous owner holding nothing but the creator stamp — and that stamp is
+  // authorship, not control. Before D49 it still granted write, delete,
+  // visibility and collaborator management, which made the transfer UI's
+  // promise ("you will become a collaborator with edit access") false in the
+  // one case where it mattered: the person who declined the collaborator row
+  // kept more than the row would have given them.
+  const pres = await seed();
+  await call('POST', transferPath(pres.id), {
+    as: OWNER,
+    body: { newOwnerEmail: HEIR.email, keepAsCollaborator: false },
+  });
+  await assertStillOwnedBy(pres.id, HEIR, 'the deck did change hands');
+  await invalidatePermission(pres.id, OWNER.email);
+
+  const del = await call('DELETE', `/api/presentations/${pres.id}`, {
+    as: OWNER,
+  });
+  assert.equal(
+    del.res.statusCode,
+    401,
+    'the creator stamp does not let the giver delete the deck',
+  );
+  assert.ok(
+    await getPresentation(testScope(), pres.id),
+    'and the refusal reached the store, not just the status code',
+  );
+
+  const vis = await call('PATCH', `/api/presentations/${pres.id}/visibility`, {
+    as: OWNER,
+    body: { visibility: 'organization' },
+  });
+  assert.equal(vis.res.statusCode, 401, 'nor change who may see it');
+  const after = await getPresentation(testScope(), pres.id);
+  assert.equal(after.visibility, 'private', 'the deck is still private');
+});
+
 test('the new owner may transfer on, on the strength of ownership alone', async () => {
   // The other half of the same rule: the heir is nobody's creator here, so
   // this proves the *owner* stamp grants on its own — the cell above proves

@@ -384,16 +384,6 @@ export const INVENTORY = {
   // Ten entries left this section when the `runtime` facet landed: nine that
   // hand-rolled the live-interaction set plus the presenter's deck controller,
   // which answered the same question a tenth way. They ask the type now.
-  'client/lib/slide-runtime/slide-render.js': {
-    kind: specific,
-    why:
-      'The three types that mount runtime behaviour after render: follow-invite, ' +
-      'lead-capture and countdown. A closed set by construction — a type without ' +
-      'a runtime hook needs no entry. Note this is *not* the `runtime` facet: ' +
-      'that one is about what the session does for a slide, and cuts the set ' +
-      'differently (these three are static, static and timed). One consumer, one ' +
-      'near-miss axis, deliberately not folded in.',
-  },
   'server/mcp/tools.js': {
     kind: specific,
     why:

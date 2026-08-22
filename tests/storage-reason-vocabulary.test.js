@@ -41,12 +41,13 @@
  *   - **no hand-written status ladder** — a `reason === '<code>'` branch that
  *     picks a status. The branches that read a reason for something else (a
  *     message, a payload, another vocabulary entirely) are listed in
- *     `REASON_BRANCH_EXCEPTIONS` with why; the one real ladder still standing
- *     is on the shrink-only `REASON_BRANCH_BURNDOWN`.
+ *     `REASON_BRANCH_EXCEPTIONS` with why; `REASON_BRANCH_BURNDOWN` is
+ *     shrink-only and, since D52(b), empty.
  *
  * `shared/**` is in scope because `shared/slide-types/usage.js` mints
- * `invalid_usage` / `usage_too_long` and `createCustomSlideType` hands them
- * straight back, so they reach the wire as storage reasons like any other.
+ * `invalid` (with `field: 'usage'`) / `usage_too_long` and
+ * `createCustomSlideType` hands them straight back, so they reach the wire as
+ * storage reasons like any other.
  *
  * **Four namespaces are deliberately out of scope**, because they answer to
  * something other than `getErrorStatus`:
@@ -324,16 +325,12 @@ const REASON_BRANCH_EXCEPTIONS = new Map([
     "the mail sender's own vocabulary (server/integrations/email/core.js), which maps to 501/502",
   ],
   [
-    'server/routes/api/leads.js :: not_configured',
-    'same mail-sender vocabulary; the dev branch echoes a token instead of claiming a mail went out',
-  ],
-  [
     'server/routes/api/password-reset.js :: invalid_or_expired',
     'picks display copy for the reset link; the status comes from the register',
   ],
   [
     'server/routes/api/magic-link.js :: invalid_or_expired',
-    'picks a client-facing slug on a 200 body — a pre-envelope response shape, tracked separately',
+    'picks a client-facing slug on a 200 body. Deliberate, not a leftover: D52(c) decided the soft-fail page shape stays — the branch chooses copy, never a status (record: docs/plans/done/decisions.md § Beslist 2026-08-22, D52)',
   ],
   [
     'server/routes/api/share-links/public.js :: revoked',
@@ -364,10 +361,11 @@ const REASON_BRANCH_EXCEPTIONS = new Map([
  * @type {string[]}
  */
 const REASON_BRANCH_BURNDOWN = [
-  // The public /api/v1 surface answers 503-or-400 by hand. It is the same
-  // fall-through defect, but its statuses are pinned in docs/openapi.yaml, so
-  // moving them is an openapi change rather than an internal one.
-  'server/routes/public-api/v1/comments.js :: unavailable',
+  // Empty, and that is the state to hold. The last entry —
+  // `public-api/v1/comments.js :: unavailable`, a hand-rolled 503-or-400 —
+  // went in D52(b): the status now comes from `getErrorStatus`, and the
+  // openapi op grew the `'500'` response that made the move honest. A new
+  // line here is a regression, not a to-do.
 ];
 
 /**

@@ -138,8 +138,8 @@ export async function canActorAccessPresentation(pres, actor, access = 'read') {
 /**
  * Async check: may an actor delete a presentation?
  *
- * Deletion is owner/creator-only and consults no collaborator row, so this is
- * the ownership decider with the actor's identity resolved — the machine-client
+ * Deletion is owner-only and consults no collaborator row, so this is the
+ * ownership decider with the actor's identity resolved — the machine-client
  * counterpart of the editor route's canDeletePresentation.
  *
  * @param {Object} pres - The presentation object

@@ -298,7 +298,8 @@ test('pre-register with an unusable address is refused by the store', async () =
     body: { email: 'not-an-address', sendInvitation: false },
   });
   assert.equal(res.statusCode, 400);
-  assert.equal(jsonBody(res).error, 'invalid_email');
+  assert.equal(jsonBody(res).error, 'invalid');
+  assert.equal(jsonBody(res).details?.field, 'email');
 });
 
 // ===========================================================================

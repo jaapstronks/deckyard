@@ -283,20 +283,32 @@ per-route message maps (the `INVITE_FAILURE_MESSAGES` pattern in
 `routes/api/collaborators.js`), where a status is not a thing a route can pick.
 Both are gated in `tests/storage-reason-vocabulary.test.js`: `badRequest` at a
 hard zero, the ladders against a documented exception list plus a shrink-only
-burndown holding the one that remains (the public `/api/v1` comments route,
-whose statuses are pinned in `docs/openapi.yaml`).
+burndown that is now **empty** — the last entry, the public `/api/v1` comments
+route, went in D52(b): it reads `getErrorStatus()` and the openapi op grew the
+`'500'` response that made the move honest.
 
-**The synonyms collapsed last** (B104 PR 3, D48). Seven codes left the register:
-`slug_taken` was a spelling of `slug_exists` and `variant_exists` one of
-`already_exists`; `key_id_required` of `api_key_id_required`; and `invalid_id`,
-`invalid_name`, `invalid_fields` and `invalid_params` were four more ways of
-saying `invalid`.
+**The synonyms collapsed last** (B104 PR 3, D48; finished in D52). Seven codes
+left the register first: `slug_taken` was a spelling of `slug_exists` and
+`variant_exists` one of `already_exists`; `key_id_required` of
+`api_key_id_required`; and `invalid_id`, `invalid_name`, `invalid_fields` and
+`invalid_params` were four more ways of saying `invalid`.
 The first three now ride as `field` on the result, which is strictly more than
 the suffix carried — a client reads `details.field` instead of parsing a code —
 and `invalid_params` guarded several arguments at once, so it said nothing
-`invalid` does not. The remaining `invalid_<thing>` codes stay: `invalid_email`,
-`invalid_slug`, `invalid_permission` and their kin name a domain concept a UI
-acts on, not a second spelling of "your input is bad".
+`invalid` does not.
+
+D48 stopped there, on the argument that the remaining `invalid_<thing>` codes
+"name a domain concept a UI acts on". **D52 measured that argument and it did
+not hold**: not one route or client branched on a status per code, and the
+display copy that keyed on them moved to the same `field` map the first four
+already used. So the other 21 — `invalid_email`, `invalid_slug`,
+`invalid_permission` and their kin — collapsed too. **`invalid` is now the only
+code for "your input is bad", and it always carries a `field`.**
+
+The four **401** codes are deliberately not part of this: `invalid_password`,
+`invalid_token`, `invalid_or_expired` and `invalid_or_revoked` say the
+credential does not hold, which is a different answer at a different status,
+not a second spelling of malformed input.
 
 That cut also gave the routes one emitter, `storageError(res, result, message?)`
 in `server/utils/http.js`. A route that spread the result by hand would drop

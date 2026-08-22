@@ -66,14 +66,6 @@ const WEBHOOK_CONFIGS = [
     hintKey: 'settings.admin.webhooks.feedbackSubmitted.hint',
     hint: 'Event: interaction.feedback_submitted',
   },
-  {
-    key: 'leadSubmitted',
-    settingsKey: 'leadSubmittedUrl',
-    titleKey: 'settings.admin.webhooks.leadSubmitted.title',
-    title: 'When a lead is submitted',
-    hintKey: 'settings.admin.webhooks.leadSubmitted.hint',
-    hint: 'Event: lead.submitted',
-  },
 ];
 
 /**

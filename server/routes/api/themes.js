@@ -61,12 +61,24 @@ import {
  */
 const THEME_FAILURE_MESSAGES = {
   not_found: 'Theme not found',
-  invalid_label: 'Invalid theme label',
-  invalid_slug: 'Invalid theme slug',
-  invalid_colors: 'Invalid color configuration',
-  invalid_fonts: 'Invalid font configuration',
   slug_exists: 'A theme with this slug already exists',
   unavailable: 'Database unavailable',
+};
+
+/**
+ * Human-readable text per `field` when the reason is `invalid`.
+ *
+ * D48 collapsed four generic `invalid_*` spellings into one `invalid` carrying
+ * a `field`; D52 collapsed the rest, so the copy that used to hang off the
+ * suffix hangs off the field name instead. The field also reaches the client as
+ * `details.field`, which is more than the suffix gave it.
+ */
+const INVALID_FIELD_MESSAGES = {
+  label: 'Invalid theme label',
+  slug: 'Invalid theme slug',
+  colors: 'Invalid color configuration',
+  fonts: 'Invalid font configuration',
+  id: 'Invalid theme ID',
 };
 
 /**
@@ -77,7 +89,12 @@ const THEME_FAILURE_MESSAGES = {
  * @returns {true}
  */
 function themeError(res, result) {
-  return storageError(res, result, THEME_FAILURE_MESSAGES[result.reason]);
+  // No reason guard around the field lookup: `field` only ever rides on
+  // `invalid`, and the vocabulary gate is what keeps that true.
+  const message =
+    INVALID_FIELD_MESSAGES[result.field] ||
+    THEME_FAILURE_MESSAGES[result.reason];
+  return storageError(res, result, message);
 }
 
 /**

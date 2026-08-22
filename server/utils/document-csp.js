@@ -170,8 +170,9 @@ export function documentCspDirectives() {
     'img-src': ["'self'", 'data:', 'blob:', 'https:'],
     'media-src': ["'self'", 'data:', 'blob:', 'https:'],
 
-    // `'self'` is the lead-capture POST to /api/leads on a published deck.
-    // `https:` is the HLS manifest a stream fetches from wherever it lives.
+    // `'self'` is the analytics tracking script posting to /api/track/* on a
+    // published deck. `https:` is the HLS manifest a stream fetches from
+    // wherever it lives.
     'connect-src': ["'self'", 'https:'],
 
     // Content too, not code: a framed document runs in its own cross-origin

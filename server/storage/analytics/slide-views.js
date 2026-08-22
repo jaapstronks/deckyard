@@ -63,7 +63,7 @@ export async function transitionToSlide(data) {
 
   // Validate slide index using centralized validation
   if (!isValidSlideIndex(slideIndex)) {
-    return { ok: false, reason: 'invalid_slide_index' };
+    return { ok: false, reason: 'invalid', field: 'slide_index' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {

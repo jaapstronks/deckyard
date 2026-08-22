@@ -100,16 +100,29 @@ Above the ladder sit two positions that are not levels because they are not
 handed out per deck:
 
 - **Owner / creator** — the identity stamped on the deck
-  (`ownerId`/`ownerEmail`, `createdById`/`createdBy`). Both stamps grant the
-  same author-level rights, which is why one function answers for both
-  (`isOwnerOrCreator`). This is the only position that can delete the deck or
-  lock slides against collaborators.
-  **The one place the two stamps part ways is ownership transfer**: it reads
-  the owner stamp alone (`isOwner`), because `created_by` is never rewritten
-  and a creator-inclusive grant would let the person who made a deck take it
-  straight back after handing it over. Everything else the creator stamp
-  carries is an author's mark — slide locks, comment moderation — and those
-  keep reading the pair.
+  (`ownerId`/`ownerEmail`, `createdById`/`createdBy`). Two stamps, and they
+  answer two different questions (D43, D49):
+
+  | Question                                                                                                          | Reads              | Deciders                                                                                                                                                                                   |
+  | ----------------------------------------------------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+  | **Power over the object** — writing it, deleting it, changing who may see it, handing out access, handing it over | `isOwner`          | `canWritePresentation`, `canDeletePresentation`, `canChangePresentationVisibility`, `canManageCollaborators`, `canTransferOwnership`, `getEffectivePermission`                             |
+  | **Authorship and sight** — who made it, who may see it, whose mark it carries                                     | `isOwnerOrCreator` | `canReadPresentation`, `canCommentOnPresentation`, `isPresentationAuthor` (slide locks), the two comment-moderation deciders, the "my decks" filter, trash, bulk export, the v1 middleware |
+
+  The line follows from one fact: **`created_by` is create-only by
+  construction** (`server/storage/presentations/index.js` never rewrites it).
+  A creator-inclusive grant is therefore one that nothing can ever take away —
+  exactly wrong for a power that is supposed to be transferable, and exactly
+  right for a fact about the past. Before D49 the creator stamp still carried
+  write, delete, visibility and collaborator management, which made the
+  transfer dialog's promise ("you will become a collaborator with edit access")
+  false in the one case where it mattered: a previous owner who declined the
+  collaborator row kept strictly more than the row would have given them.
+
+  `getEffectivePermission` sits on the power side because it picks the UI
+  (editor vs viewer) and so has to answer the same as `canWritePresentation`;
+  a creator-inclusive `edit` there would open an editor whose every save the
+  server refuses.
+
 - **The unrestricted operator** — `user.unrestricted`, set only for the
   anonymous admin of an auth-disabled install (`AUTH_ENABLED=false`,
   `server/auth/auth.js`). There is nobody to protect decks from, so every
@@ -182,7 +195,9 @@ Every deck-level decider consults the same grants in the same order. Taking
    `isSameOrganization(user, pres)` → grant. This is the only grant that rests
    on "we are in the same organization"; it is what makes an organization deck
    readable by colleagues who were never invited.
-4. **Ownership** — `isOwnerOrCreator(user, pres)` → grant.
+4. **Ownership** — `isOwner(user, pres)` for the power deciders,
+   `isOwnerOrCreator(user, pres)` for the authorship and sight ones (see
+   _Owner / creator_ above) → grant.
 5. **Collaborator row** — a permission at or above the level the operation
    needs → grant.
 6. Otherwise refuse.
@@ -194,16 +209,16 @@ Where the deciders differ from that shape, they differ deliberately:
   read-only for guests (curated seed content), and `isViewOnly` makes a deck
   read-only for everyone who is not its owner.
 - **`canDeletePresentation`**, **`canTransferOwnership`** and
-  **`isPresentationAuthor`** consult ownership only. No collaborator level reaches them, `admin` included.
-  `canTransferOwnership` is the narrow one: the owner stamp, not the pair (see
-  _Owner / creator_ above).
-- **`canManageCollaborators`** grants to owner/creator or an `admin`
+  **`isPresentationAuthor`** consult ownership only. No collaborator level
+  reaches them, `admin` included. The first two read the owner stamp; only
+  `isPresentationAuthor` reads the pair (see _Owner / creator_ above).
+- **`canManageCollaborators`** grants to the owner or an `admin`
   collaborator. Note what is _absent_: the organization grant. Being in the deck's
   organization lets you edit it; it does not let you hand out access to it.
 - **`canChangePresentationVisibility`** is a transition check, not a level check:
   same-visibility is a no-op and always allowed; the instance `isAdmin` may make any
   transition; sandbox mode refuses every transition (no guest-to-guest
-  sharing); otherwise only owner/creator, and only `private → organization`.
+  sharing); otherwise only the owner, and only `private → organization`.
   `organization → private` is admin-only.
 - **`getEffectivePermission`** is the client's answer, not a gate: it returns
   `edit | comment | view` for the editor to pick a UI, and is delivered as

@@ -124,7 +124,7 @@ export async function isRateLimitedByIp(ipAddress) {
 export async function createResetToken(email, info) {
   const normalized = normalizeEmail(email);
   if (!normalized || !isValidEmail(normalized)) {
-    return { ok: false, reason: 'invalid_email' };
+    return { ok: false, reason: 'invalid', field: 'email' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
@@ -261,7 +261,7 @@ export async function setUserPassword(scope, email, password) {
   toStorageContext(scope, 'setUserPassword');
   const normalized = normalizeEmail(email);
   if (!normalized) {
-    return { ok: false, reason: 'invalid_email' };
+    return { ok: false, reason: 'invalid', field: 'email' };
   }
 
   const validation = validatePassword(password);

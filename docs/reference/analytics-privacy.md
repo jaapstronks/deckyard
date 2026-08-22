@@ -16,9 +16,10 @@ analytics-privacy work (decisions recorded in `docs/plans/done/decisions.md`
 [`tenant-isolation.md`](tenant-isolation.md); the wider data-subject-rights
 surface for logged-in people is the GDPR export/erase endpoint below.
 
-Analytics is one of **two** anonymous-visitor-PII surfaces: the lead-capture
-slide stores a visitor's name and e-mail with its own retention and GDPR
-flow — see [`leads.md`](leads.md).
+Analytics is the **only** anonymous-visitor-PII surface Deckyard has. Lead
+capture — a slide that stored a visitor's name and e-mail with its own
+retention and GDPR flow — was stripped on 2026-08-22 (D50); its erase path,
+retention window and tokens were separate from these and went with it.
 
 ## Module map
 

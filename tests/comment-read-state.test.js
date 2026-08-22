@@ -132,7 +132,11 @@ describe('markThreadsRead (no-DB contract)', () => {
     const r = await markThreadsRead(CTX, '', [
       '11111111-1111-1111-1111-111111111111',
     ]);
-    assert.deepStrictEqual(r, { ok: false, reason: 'invalid_presentation' });
+    assert.deepStrictEqual(r, {
+      ok: false,
+      reason: 'invalid',
+      field: 'presentation_id',
+    });
   });
 
   it('is a cheap no-op without an acting user (guests)', async () => {

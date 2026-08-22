@@ -27,7 +27,7 @@ import {
 // ============================================================
 
 /**
- * @typedef {'userInvitation' | 'activationReminder' | 'collaboratorInvite' | 'guestInvitation' | 'passwordReset' | 'magicLink' | 'commentNotification' | 'guestVerification' | 'leadNotification'} TemplateType
+ * @typedef {'userInvitation' | 'activationReminder' | 'collaboratorInvite' | 'guestInvitation' | 'passwordReset' | 'magicLink' | 'commentNotification' | 'guestVerification'} TemplateType
  * Valid email template type identifiers.
  */
 

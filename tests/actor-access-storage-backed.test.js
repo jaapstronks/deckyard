@@ -195,8 +195,11 @@ test('canActorDeletePresentation — the owner deletes their own deck', async ()
   );
 });
 
-test('canActorDeletePresentation — the creator may delete what they authored', async () => {
-  assert.equal(await canActorDeletePresentation(deck('d2'), CREATOR), true);
+test('canActorDeletePresentation — the creator stamp alone does not carry delete', async () => {
+  // D49: deleting is power over the object, and `created_by` is create-only,
+  // so a creator-inclusive grant is one no transfer can revoke. Authorship
+  // (slide locks, comment moderation) still reads the pair.
+  assert.equal(await canActorDeletePresentation(deck('d2'), CREATOR), false);
 });
 
 test('canActorDeletePresentation — another user of the instance may not', async () => {

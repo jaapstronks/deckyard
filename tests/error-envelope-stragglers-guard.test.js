@@ -91,7 +91,6 @@ test('comment failure reasons map to the intended statuses', () => {
   // Caller-side input reasons are 400 — now by a REASONS entry, not by a
   // fall-through default (B104).
   assert.equal(getErrorStatus('invalid'), 400);
-  assert.equal(getErrorStatus('invalid_presentation'), 400);
   // A missing parent comment is as absent as a missing comment: 404, where it
   // used to inherit the 400 default.
   assert.equal(getErrorStatus('parent_not_found'), 404);

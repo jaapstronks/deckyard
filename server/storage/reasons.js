@@ -133,34 +133,22 @@ export const REASONS = Object.freeze(
     invalid_or_revoked: { status: 401, kind: 'caller' },
 
     // ─── 400 Bad Request: the input is malformed or incomplete ──────────────
-    // The one code for "your input is bad". `invalid_id`,
-    // `invalid_name`, `invalid_fields` and `invalid_params` were four more
-    // spellings of it; the first three now ride as `field` on the result
-    // (`{ ok: false, reason: 'invalid', field: 'id' }`) and reach the client as
-    // `details.field`, which is strictly more than the suffix carried. The
-    // remaining `invalid_<thing>` codes stay: they name a domain concept a UI
-    // acts on, not a second spelling of this one.
+    // **The** code for "your input is bad", and the only one. Every
+    // `invalid_<thing>` spelling — 25 of them across two rounds — now rides as
+    // `field` on the result (`{ ok: false, reason: 'invalid', field: 'slug' }`)
+    // and reaches the client as `details.field`, which is strictly more than
+    // the suffix carried.
+    //
+    // D48 collapsed the four generic ones (`invalid_id`, `invalid_name`,
+    // `invalid_fields`, `invalid_params`). D52 finished the job: the argument
+    // that the rest "name a domain concept a UI acts on" did not survive
+    // measurement — not one route or client branched on any of them, so the
+    // suffix was a second vocabulary nobody read. The four **401** codes below
+    // (`invalid_password`, `invalid_token`, `invalid_or_expired`,
+    // `invalid_or_revoked`) are deliberately not part of this: they say the
+    // credential does not hold, not that the input is malformed, and they carry
+    // a different status.
     invalid: { status: 400, kind: 'caller' },
-    invalid_category: { status: 400, kind: 'caller' },
-    invalid_colors: { status: 400, kind: 'caller' },
-    invalid_contact: { status: 400, kind: 'caller' },
-    invalid_email: { status: 400, kind: 'caller' },
-    invalid_fonts: { status: 400, kind: 'caller' },
-    invalid_format: { status: 400, kind: 'caller' },
-    invalid_label: { status: 400, kind: 'caller' },
-    invalid_level: { status: 400, kind: 'caller' },
-    invalid_new_owner: { status: 400, kind: 'caller' },
-    invalid_order: { status: 400, kind: 'caller' },
-    invalid_permission: { status: 400, kind: 'caller' },
-    invalid_permissions: { status: 400, kind: 'caller' },
-    invalid_presentation: { status: 400, kind: 'caller' },
-    invalid_registration_mode: { status: 400, kind: 'caller' },
-    invalid_role: { status: 400, kind: 'caller' },
-    invalid_slide_index: { status: 400, kind: 'caller' },
-    invalid_slug: { status: 400, kind: 'caller' },
-    invalid_source: { status: 400, kind: 'caller' },
-    invalid_style: { status: 400, kind: 'caller' },
-    invalid_weight: { status: 400, kind: 'caller' },
     api_key_id_required: { status: 400, kind: 'caller' },
     name_required: { status: 400, kind: 'caller' },
     slide_type_required: { status: 400, kind: 'caller' },
@@ -172,13 +160,13 @@ export const REASONS = Object.freeze(
     missing_text: { status: 400, kind: 'caller' },
     missing_voter: { status: 400, kind: 'caller' },
     bad_action: { status: 400, kind: 'caller' },
-    consent_required: { status: 400, kind: 'caller' },
     no_updates: { status: 400, kind: 'caller' },
     too_long: { status: 400, kind: 'caller' },
     too_short: { status: 400, kind: 'caller' },
     // Minted by the shared usage validator (shared/slide-types/usage.js) and
     // handed straight back by createCustomSlideType / updateCustomSlideType.
-    invalid_usage: { status: 400, kind: 'caller' },
+    // Its sibling for "not a string" is `invalid` + `field: 'usage'`; this one
+    // stays because "too long" is a different answer, not a second spelling.
     usage_too_long: { status: 400, kind: 'caller' },
     user_not_found: { status: 400, kind: 'caller' },
   }),
