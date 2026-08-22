@@ -163,14 +163,11 @@ const STANDALONE_CSS = `
  * `runtime: 'stage'` (server/utils/script-chain.js).
  *
  * @param {Object} options
- * @param {string} options.presentationId - Baked in for the lead-capture POST
  * @param {string} options.autoAdvanceJson - Pre-serialised auto-advance config
  * @returns {string} JavaScript source
  */
-function deckRuntimeJs({ presentationId, autoAdvanceJson }) {
+function deckRuntimeJs({ autoAdvanceJson }) {
   return `
-        // Presentation ID for lead capture forms
-        window.__PRESENTATION_ID__ = ${JSON.stringify(presentationId)};
         // Auto-advance / loop config baked in at render time. URL params can override.
         window.__DECK_AUTO_ADVANCE__ = ${autoAdvanceJson};
 
@@ -421,7 +418,6 @@ export async function buildStandaloneHtml(
     theme = null,
     watermark = null,
     context = 'export',
-    presentationId = '',
     slideTypes = null,
     description = null,
   } = {},
@@ -634,12 +630,8 @@ export async function buildStandaloneHtml(
     </div>
     ${buildScriptChain({
       runtime: 'stage',
-      leadCapture: true,
       needs: highlightNeeds,
-      body: deckRuntimeJs({
-        presentationId: presentationId || pres?.id || '',
-        autoAdvanceJson,
-      }),
+      body: deckRuntimeJs({ autoAdvanceJson }),
     })}
   </body>
 </html>`;

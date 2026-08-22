@@ -127,9 +127,6 @@ export const TYPE_CSS = {
     { tier: '03-components', file: '15-follow-invite.css' },
   ],
   'feedback-slide': [{ tier: '03-components', file: '16-feedback.css' }],
-  'lead-capture-slide': [
-    { tier: '03-components', file: '17-lead-capture.css' },
-  ],
   'countdown-slide': [{ tier: '03-components', file: '18-countdown.css' }],
   // Filename says 10, but this has always loaded after 18-countdown.css.
   // The cascade position is 19; the filename is not touched (that would be a

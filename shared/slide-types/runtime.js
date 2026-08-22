@@ -16,30 +16,25 @@
  * ## The vocabulary
  *
  * - `static` — the session does nothing for it. The slide may still have
- *   client-side behaviour of its own (a lead-capture form that posts, a QR that
- *   refreshes): that is the slide's business, not the session's.
+ *   client-side behaviour of its own (a QR that refreshes, a form that posts):
+ *   that is the slide's business, not the session's.
  * - `timed` — the presenter drives a clock on the slide. The timer state lives
  *   in the presenting window; the session neither holds nor aggregates it.
  * - `live` — the audience answers, and the session collects and aggregates
  *   those answers as state the presenter opens and closes.
  *
  * The line is deliberately drawn at *session state*, not at "has behaviour", so
- * the three edge cases fall out of the definition instead of being argued one
- * by one:
+ * the edge cases fall out of the definition instead of being argued one by one:
  *
  * - `countdown-slide` is `timed`, not `live`: a clock, no audience, no session.
- * - `lead-capture-slide` is `static`: it collects, but into permanent lead
- *   storage over its own endpoint, never into the session. Widening `live` to
- *   mean "collects something from a human" would drop it inside four submission
- *   guards that have no code path for it, one of them security-adjacent.
  * - `follow-invite-slide` is `static`: it renders the join code the session
  *   issued, which is a render input, not state the session keeps for the slide.
  *
  * What this facet is **not** is "does the type mount a client runtime". That
  * question has one consumer (`client/lib/slide-runtime/slide-render.js`, whose
- * three mounts are follow-invite, lead-capture and countdown) and cuts the set
- * differently. One near-miss axis, named here so the next reader does not have
- * to rediscover that it is a different question.
+ * two mounts are follow-invite and countdown) and cuts the set differently. One
+ * near-miss axis, named here so the next reader does not have to rediscover
+ * that it is a different question.
  *
  * ## The sub-declaration
  *

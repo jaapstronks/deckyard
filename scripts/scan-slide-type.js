@@ -12,9 +12,9 @@
  * render-only fallback.
  *
  * Usage:
- *   node scripts/scan-slide-type.js [slide-type] [--dir <path>] [--json]
+ *   node scripts/scan-slide-type.js <slide-type> [--dir <path>] [--json]
  *
- *   slide-type   defaults to `lead-capture-slide`
+ *   slide-type   required — the type to scan for
  *   --dir        deck directory (default: server/data/presentations)
  *   --json       machine-readable output instead of the human report
  *
@@ -31,7 +31,7 @@ import path from 'node:path';
 
 function parseArgs(argv) {
   const args = argv.slice(2);
-  let type = 'lead-capture-slide';
+  let type = '';
   let dir = path.join('server', 'data', 'presentations');
   let json = false;
   for (let i = 0; i < args.length; i += 1) {
@@ -66,6 +66,13 @@ function allSlides(pres) {
 
 async function main() {
   const { type, dir, json } = parseArgs(process.argv);
+
+  if (!type) {
+    console.error(
+      'Usage: node scripts/scan-slide-type.js <slide-type> [--dir <path>] [--json]',
+    );
+    process.exit(2);
+  }
 
   let files;
   try {
