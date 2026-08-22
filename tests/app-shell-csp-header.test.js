@@ -141,7 +141,6 @@ describe('the analytics origins are a projection of the emitted HTML', () => {
 
   it('an enabled provider yields its script origin alongside its HTML', () => {
     const options = {
-      context: 'app',
       settings: settingsWith({
         plausible: { enabled: true, domain: 'decks.example.com' },
         matomo: {
@@ -159,7 +158,7 @@ describe('the analytics origins are a projection of the emitted HTML', () => {
   });
 
   it('no providers → no origins, so the header collapses to the document policy', () => {
-    const options = { context: 'app', settings: settingsWith({}) };
+    const options = { settings: settingsWith({}) };
     assert.equal(analyticsHeadHtml(options), '');
     assert.deepEqual(analyticsScriptOrigins(options), []);
   });
@@ -169,7 +168,6 @@ describe('the analytics origins are a projection of the emitted HTML', () => {
     // refuses — the origin must be refused with it, or the policy would
     // allowlist a host no tag actually loads from.
     const options = {
-      context: 'app',
       settings: settingsWith({
         matomo: {
           enabled: true,
@@ -185,7 +183,7 @@ describe('the analytics origins are a projection of the emitted HTML', () => {
   it('the custom-HTML escape hatch contributes its static script origins', () => {
     process.env.ANALYTICS_HEAD_HTML =
       '<script defer src="https://tag.example.net/t.js"></script>';
-    const options = { context: 'app', settings: null };
+    const options = { settings: null };
     assert.match(analyticsHeadHtml(options), /tag\.example\.net/);
     assert.deepEqual(analyticsScriptOrigins(options), [
       'https://tag.example.net',

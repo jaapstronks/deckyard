@@ -15,9 +15,7 @@ import {
   projectPresentationForLang,
   resolveLangModeFromPresOrUrl,
 } from '../../utils/i18n.js';
-import { analyticsHeadHtml } from '../../analytics/head.js';
 import { generateTrackingScriptHtml } from '../../analytics/tracking-script.js';
-import { getAppSettings } from '../../storage/settings.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
 
 /**
@@ -223,18 +221,6 @@ export async function handlePublishedPage({ repoRoot, req, res, url }) {
 
     ${jsonLdScript}
     `.trim();
-  const publishedSettings = await getAppSettings(
-    crossOrganizationScope(
-      repoRoot,
-      'published deck page: analytics config is instance-level',
-    ),
-  );
-  const analytics = analyticsHeadHtml({
-    context: 'published',
-    sandbox: sandboxNoindex,
-    settings: publishedSettings,
-  });
-
   const hasOther = hasLangVersion(pres, otherLang(modeLang));
   const switchHtml = hasOther
     ? (() => {
@@ -269,7 +255,7 @@ export async function handlePublishedPage({ repoRoot, req, res, url }) {
   const slideTypes = await buildMergedSlideTypes({ organizationId: orgId });
 
   const html = await buildStandaloneHtml(repoRoot, projected, {
-    headHtml: `${headHtml}\n${analytics}\n${trackingScript}`.trim(),
+    headHtml: `${headHtml}\n${trackingScript}`.trim(),
     topbarRightHtml: `${switchHtml}${readerLinkHtml}`,
     theme,
     slideTypes,

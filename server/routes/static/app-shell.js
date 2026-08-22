@@ -83,7 +83,6 @@ export async function injectSeoDebugAnalytics(html, { req, url, repoRoot }) {
     ),
   );
   const analyticsOptions = {
-    context: 'app',
     sandbox: sandboxEnabled(),
     settings: appSettings,
   };
