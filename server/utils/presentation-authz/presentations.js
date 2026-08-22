@@ -17,6 +17,7 @@ import {
 } from '../../../shared/constants/permissions.js';
 import {
   hasIdentity,
+  isOwner,
   isOwnerOrCreator,
 } from '../../../shared/identity-match.js';
 
@@ -172,13 +173,23 @@ export function canChangePresentationVisibility({
 
 /**
  * Check if a user can transfer ownership of a presentation.
- * Only the owner/creator can transfer ownership.
+ *
+ * The **owner** stamp alone, plus the auth-off operator — not the creator
+ * (D43). Transfer is the act of ceasing to hold the deck, so the grant that
+ * authorizes it has to be one the act can take away. `created_by` is
+ * create-only by construction (server/storage/presentations/index.js), so a
+ * creator-inclusive check would leave the person who made a deck able to take
+ * it straight back forever, whatever they agreed to when they handed it over.
+ *
+ * The creator's other powers are untouched: authorship (slide locks) and
+ * comment moderation still read the pair — see
+ * docs/reference/permission-model.md.
  */
 export function canTransferOwnership({ user, pres } = {}) {
   if (isUnrestricted(user)) return true;
   if (!pres || typeof pres !== 'object') return false;
   if (!hasIdentity(user)) return false;
-  return isOwnerOrCreator(user, pres);
+  return isOwner(user, pres);
 }
 
 /**

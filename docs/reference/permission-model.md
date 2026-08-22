@@ -102,8 +102,14 @@ handed out per deck:
 - **Owner / creator** — the identity stamped on the deck
   (`ownerId`/`ownerEmail`, `createdById`/`createdBy`). Both stamps grant the
   same author-level rights, which is why one function answers for both
-  (`isOwnerOrCreator`). This is the only position that can delete the deck,
-  transfer it, or lock slides against collaborators.
+  (`isOwnerOrCreator`). This is the only position that can delete the deck or
+  lock slides against collaborators.
+  **The one place the two stamps part ways is ownership transfer**: it reads
+  the owner stamp alone (`isOwner`), because `created_by` is never rewritten
+  and a creator-inclusive grant would let the person who made a deck take it
+  straight back after handing it over. Everything else the creator stamp
+  carries is an author's mark — slide locks, comment moderation — and those
+  keep reading the pair.
 - **The unrestricted operator** — `user.unrestricted`, set only for the
   anonymous admin of an auth-disabled install (`AUTH_ENABLED=false`,
   `server/auth/auth.js`). There is nobody to protect decks from, so every
@@ -189,6 +195,8 @@ Where the deciders differ from that shape, they differ deliberately:
   read-only for everyone who is not its owner.
 - **`canDeletePresentation`**, **`canTransferOwnership`** and
   **`isPresentationAuthor`** consult ownership only. No collaborator level reaches them, `admin` included.
+  `canTransferOwnership` is the narrow one: the owner stamp, not the pair (see
+  _Owner / creator_ above).
 - **`canManageCollaborators`** grants to owner/creator or an `admin`
   collaborator. Note what is _absent_: the organization grant. Being in the deck's
   organization lets you edit it; it does not let you hand out access to it.

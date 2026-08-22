@@ -11,6 +11,7 @@
 
 // Identity matching — the one place ownership stamps are compared
 export {
+  isOwner,
   isOwnerOrCreator,
   matchesIdentity,
   hasIdentity,
