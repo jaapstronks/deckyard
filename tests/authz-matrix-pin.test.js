@@ -172,14 +172,16 @@ describe('canReadPresentation — organization deck', () => {
 });
 
 describe('canWritePresentation — private deck', () => {
-  it('owner and creator can write', () => {
+  it('the owner can write; the creator alone cannot', () => {
+    // D49: power over the object is the owner stamp alone. The creator keeps
+    // authorship and sight, not control — see permission-model.md.
     assert.equal(
       canWritePresentation({ user: OWNER, pres: privateDeck }),
       true,
     );
     assert.equal(
       canWritePresentation({ user: CREATOR, pres: privateDeck }),
-      true,
+      false,
     );
   });
   it('collaborator: edit/admin can write, view/comment cannot', () => {
@@ -261,14 +263,16 @@ describe('canWritePresentation — view-only and organization', () => {
 });
 
 describe('canDeletePresentation', () => {
-  it('only owner and creator can delete — not collaborators, organization members, or admins', () => {
+  it('only the owner can delete — not the creator, collaborators, organization members, or admins', () => {
+    // D49: power over the object is the owner stamp alone. The creator keeps
+    // authorship and sight, not control — see permission-model.md.
     assert.equal(
       canDeletePresentation({ user: OWNER, pres: privateDeck }),
       true,
     );
     assert.equal(
       canDeletePresentation({ user: CREATOR, pres: privateDeck }),
-      true,
+      false,
     );
     assert.equal(
       canDeletePresentation({
@@ -306,7 +310,9 @@ describe('canChangePresentationVisibility', () => {
       true,
     );
   });
-  it('private → organization: owner and creator yes, unrelated user no', () => {
+  it('private → organization: the owner yes, the creator alone no, unrelated user no', () => {
+    // D49: power over the object is the owner stamp alone. The creator keeps
+    // authorship and sight, not control — see permission-model.md.
     assert.equal(
       canChangePresentationVisibility({
         user: OWNER,
@@ -321,7 +327,7 @@ describe('canChangePresentationVisibility', () => {
         pres: privateDeck,
         nextVisibility: 'organization',
       }),
-      true,
+      false,
     );
     assert.equal(
       canChangePresentationVisibility({
@@ -387,14 +393,16 @@ describe('canChangePresentationVisibility', () => {
 });
 
 describe('canManageCollaborators', () => {
-  it('owner and creator can manage', () => {
+  it('the owner can manage; the creator alone cannot', () => {
+    // D49: power over the object is the owner stamp alone. The creator keeps
+    // authorship and sight, not control — see permission-model.md.
     assert.equal(
       canManageCollaborators({ user: OWNER, pres: privateDeck }),
       true,
     );
     assert.equal(
       canManageCollaborators({ user: CREATOR, pres: privateDeck }),
-      true,
+      false,
     );
   });
   it('only an admin-level collaborator can manage; edit and below cannot', () => {
@@ -508,14 +516,17 @@ describe('isPresentationAuthor', () => {
 });
 
 describe('getEffectivePermission', () => {
-  it('owner and creator get edit', () => {
+  it('the owner gets edit; the creator alone gets view', () => {
+    // This function picks the UI (editor vs viewer), so it has to answer the
+    // same as canWritePresentation. A creator-inclusive 'edit' here would open
+    // an editor whose every save the server refuses (D49).
     assert.equal(
       getEffectivePermission({ user: OWNER, pres: privateDeck }),
       'edit',
     );
     assert.equal(
       getEffectivePermission({ user: CREATOR, pres: privateDeck }),
-      'edit',
+      'view',
     );
   });
   it('a collaborator falls through to their raw permission verbatim', () => {
