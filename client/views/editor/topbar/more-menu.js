@@ -50,9 +50,47 @@ export function createEditorTopbarMoreMenu({
     }
   };
 
-  const btnTranslateOther = h('button', {
-    class: 'dropdown-item',
-    type: 'button',
+  /**
+   * The dropdown's close function. Declared before the items because each item
+   * closes the menu, and `createDropdown` — which hands the function back —
+   * needs the items to exist first. The handlers only run after both halves
+   * are wired, so the closure sees the real function by the time it is called.
+   *
+   * @type {() => void}
+   */
+  let closeMore = () => {};
+
+  /**
+   * A dropdown item: one button, one click handler, closing the menu **before**
+   * it runs the action.
+   *
+   * The close used to be bolted on afterwards, by reading `btn.onclick` and
+   * reassigning it. That never worked: `h()` wires an `onclick:` prop through
+   * `addEventListener`, so the property was always `null`, the wrapper had no
+   * previous handler to call, and the two handlers ran in registration
+   * order — action first, close second, the exact inverse of what the comment
+   * above it claimed (B117, same assumption class as B116).
+   *
+   * Closing first is the deliberate order. Several of these actions open a
+   * modal, navigate away, or tear down the editor tree; running `closeMore()`
+   * after that means touching an element that may be gone, which is why the
+   * old wrapper needed a try/catch to survive itself.
+   *
+   * @param {Object} attrs - `h()` attributes; `onclick` is the item's action.
+   * @returns {HTMLButtonElement}
+   */
+  const menuItem = ({ onclick, class: className, ...attrs }) =>
+    h('button', {
+      class: className || 'dropdown-item',
+      type: 'button',
+      ...attrs,
+      onclick: (e) => {
+        closeMore();
+        return onclick?.(e);
+      },
+    });
+
+  const btnTranslateOther = menuItem({
     text: t('editor.more.translate', 'Translate'),
     title: t(
       'editor.more.translate.title',
@@ -62,16 +100,12 @@ export function createEditorTopbarMoreMenu({
   });
   btnTranslateOther.style.display = canTranslate ? '' : 'none';
 
-  const btnVersions = h('button', {
-    class: 'dropdown-item',
-    type: 'button',
+  const btnVersions = menuItem({
     text: t('editor.more.versions', 'Versions…'),
     onclick: () => run(onVersions),
   });
 
-  const btnDuplicateDeck = h('button', {
-    class: 'dropdown-item',
-    type: 'button',
+  const btnDuplicateDeck = menuItem({
     text: t('editor.more.duplicateDeck', 'Duplicate deck…'),
     title: t(
       'editor.more.duplicateDeck.title',
@@ -127,9 +161,8 @@ export function createEditorTopbarMoreMenu({
     },
   });
 
-  const btnMoveToTrash = h('button', {
+  const btnMoveToTrash = menuItem({
     class: 'dropdown-item is-danger',
-    type: 'button',
     text: t('editor.more.trash', 'Move to trash…'),
     title: t('editor.more.trash.title', 'Move this presentation to trash.'),
     onclick: async () => {
@@ -163,9 +196,7 @@ export function createEditorTopbarMoreMenu({
     },
   });
 
-  const btnSubscription = h('button', {
-    class: 'dropdown-item',
-    type: 'button',
+  const btnSubscription = menuItem({
     text: t('editor.more.subscription', 'Deck notifications…'),
     title: t(
       'editor.more.subscription.title',
@@ -176,47 +207,38 @@ export function createEditorTopbarMoreMenu({
 
   // Utilities demoted from their own topbar icons (2026-07-16 chrome
   // re-org): still one click away, without crowding the deck-action zone.
-  const btnAnalyze = h('button', {
-    class: 'dropdown-item',
-    type: 'button',
+  const btnAnalyze = menuItem({
     text: t('editor.analyze', 'AI Analysis'),
     onclick: () => run(onAnalyze),
   });
 
-  const btnSettings = h('button', {
-    class: 'dropdown-item',
-    type: 'button',
+  const btnSettings = menuItem({
     text: t('common.settings', 'Settings'),
     onclick: () => run(onOpenSettings),
   });
 
-  const btnShortcuts = h('button', {
-    class: 'dropdown-item',
-    type: 'button',
+  const btnShortcuts = menuItem({
     text: `${t('editor.shortcuts.title', 'Keyboard shortcuts')} (?)`,
     onclick: () => run(onShowShortcuts),
   });
 
   // Mirror of the deck-grid topbar button; CSS shows it only at widths
   // where the bar hides that button.
-  const btnOverview = h('button', {
+  const btnOverview = menuItem({
     class: 'dropdown-item topbar-overflow-item-lg',
-    type: 'button',
     text: t('editor.deckGrid.open', 'Slide overview'),
     onclick: () => run(onOpenOverview),
   });
 
   // Responsive overflow items - visible only at narrow widths (CSS hides on desktop)
-  const btnThemeToggle = h('button', {
+  const btnThemeToggle = menuItem({
     class: 'dropdown-item topbar-overflow-item',
-    type: 'button',
     text: t('common.toggleTheme', 'Toggle dark/light mode'),
     onclick: () => run(onToggleTheme),
   });
 
-  const btnLogout = h('button', {
+  const btnLogout = menuItem({
     class: 'dropdown-item is-danger',
-    type: 'button',
     text: t('common.signOut', 'Sign out'),
     onclick: async () => {
       try {
@@ -232,7 +254,7 @@ export function createEditorTopbarMoreMenu({
   // against stopPropagation()).
   const {
     details: moreDetails,
-    close: closeMore,
+    close: closeDropdown,
     detach: detachMore,
   } = createDropdown({
     triggerClass: 'ghost-icon-btn',
@@ -258,30 +280,7 @@ export function createEditorTopbarMoreMenu({
     ],
   });
   detachers.push(detachMore);
-
-  // Ensure menu items close the dropdown before executing actions.
-  const closeMoreOnClick = (btn) => {
-    const prev = btn.onclick;
-    btn.onclick = (e) => {
-      try {
-        closeMore();
-      } catch {
-        // ignore
-      }
-      return prev?.(e);
-    };
-  };
-  closeMoreOnClick(btnOverview);
-  closeMoreOnClick(btnAnalyze);
-  closeMoreOnClick(btnTranslateOther);
-  closeMoreOnClick(btnVersions);
-  closeMoreOnClick(btnDuplicateDeck);
-  closeMoreOnClick(btnSubscription);
-  closeMoreOnClick(btnSettings);
-  closeMoreOnClick(btnShortcuts);
-  closeMoreOnClick(btnThemeToggle);
-  closeMoreOnClick(btnMoveToTrash);
-  closeMoreOnClick(btnLogout);
+  closeMore = closeDropdown;
 
   // Warm the notes session or other actions can happen outside; keep module focused.
   // (No-op here.)

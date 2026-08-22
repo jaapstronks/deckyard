@@ -41,8 +41,9 @@ function mountMenu(props) {
       (b) => b.textContent.trim().startsWith(label),
     );
     assert.ok(btn, `no menu item labelled ${label}`);
-    // A real event: `h()` wires `onclick:` through addEventListener, so calling
-    // the `.onclick` property would only run the close-the-dropdown wrapper.
+    // A real event: `h()` wires `onclick:` through addEventListener, so the
+    // `.onclick` property is null and calling it would do nothing at all.
+    // `tests/editor-more-menu-close-order.test.js` pins that (B117).
     btn.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
   };
   return { menu, click, errors };
