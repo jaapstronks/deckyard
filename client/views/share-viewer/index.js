@@ -196,11 +196,13 @@ export async function renderShareViewer(root, token) {
   }
 
   /**
-   * Release everything renderViewer() binds. It re-runs after a guest joins
-   * the discussion (which wipes shell and rebuilds), so without this each
-   * pass stacked another document-level keydown handler on top of the last —
-   * two handlers sharing currentSlideIndex means one arrow press advances two
-   * slides and double-counts the view in analytics.
+   * Release everything renderViewer() binds — the teardown half of this view.
+   *
+   * `cleanup()` calls it when the route unmounts, and renderViewer() calls it
+   * before binding anything, so a second pass can never stack a second
+   * document-level keydown handler on top of the first: two handlers sharing
+   * currentSlideIndex means one arrow press advances two slides and
+   * double-counts the view in analytics.
    */
   function detachViewerListeners() {
     if (keydownHandler) {
@@ -230,12 +232,6 @@ export async function renderShareViewer(root, token) {
       getCurrentSlideId: () => {
         const slides = presentation.slides || [];
         return slides[currentSlideIndex]?.id || null;
-      },
-      onGuestJoined: async () => {
-        // Refresh guest session and re-render
-        await checkGuestSession(token);
-        shell.innerHTML = '';
-        renderViewer();
       },
       analyticsTracker,
       onAnalyticsErased: () => {

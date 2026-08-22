@@ -63,19 +63,20 @@ function getGuestErrorMessage(errorCode) {
 
 /**
  * Render the guest join/verification prompt.
+ *
+ * The prompt's whole result is an email: submitting swaps the form for the
+ * "check your inbox" panel and closes. Joining actually completes when the
+ * guest clicks the link in that mail, which comes back as a redirect
+ * (`?guest_verified=true`) and rebuilds the view from scratch — so there is no
+ * moment at which a success callback could tell the viewer anything it does
+ * not already learn on that reload. It used to take one anyway, never called
+ * it, and the whole chain behind it was dead.
+ *
  * @param {HTMLElement} shell - Container element
  * @param {string} token - Share token
- * @param {string} permission - Share link permission
- * @param {Function} onSuccess - Callback when verification email is sent
  * @param {string} [prefillEmail] - Optional email to pre-fill the input
  */
-export function renderGuestJoinPrompt(
-  shell,
-  token,
-  permission,
-  onSuccess,
-  prefillEmail,
-) {
+export function renderGuestJoinPrompt(shell, token, prefillEmail) {
   const modal = h('div', {
     class: 'share-viewer-modal share-viewer-guest-modal',
   });
