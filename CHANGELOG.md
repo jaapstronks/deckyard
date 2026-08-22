@@ -4,6 +4,69 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.23.0](https://github.com/jaapstronks/deckyard/compare/v1.22.0...v1.23.0) (2026-08-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* **api:** a storage reason answers the status its register entry states, not 400-by-default. `parent_not_found` is 404, `own_question` is 403, and the `'ours'` codes are 5xx. Eight codes were renamed to snake_case tokens; none of them had a client branch.
+* **api:** a storage reason answers the status its register entry states, not 400-by-default. `parent_not_found` is 404, `own_question` is 403, and the `'ours'` codes are 5xx. Eight codes were renamed to snake_case tokens; none of them had a client branch.
+* **api:** a storage reason answers the status its register entry states, not 400-by-default. `parent_not_found` is 404, `own_question` is 403, and the `'ours'` codes are 5xx. Eight codes were renamed to snake_case tokens; none of them had a client branch.
+* **export:** the `<title>` of a print, PDF-slides or PNG-export document is now the deck title alone. Anything scraping those documents by title suffix will stop matching.
+* **authz:** a creator who has transferred a deck away can no longer transfer it back. POST /api/presentations/:id/transfer-ownership answers 401 for an actor who holds only the creator stamp.
+* **identity:** comments and slide locks name people with { id, displayName } (A1/D22) ([#850](https://github.com/jaapstronks/deckyard/issues/850))
+* **identity:** name creators and trashers with { id, displayName } (A1/D22) ([#849](https://github.com/jaapstronks/deckyard/issues/849))
+* **identity:** retire the e-mail fallback in identity matching (A1/D22) ([#848](https://github.com/jaapstronks/deckyard/issues/848))
+* **identity:** `/api/v1/slide-library` returns `createdById` (the stable user id) instead of `createdBy` (the creator's email address), which was disclosed to any API key with library read access. The rest of the public v1 surface is unchanged — it already exposed ids only.
+* **locks:** the `/api/presentations/:id/lock/*` routes, the `presentation_locks` / `lock_requests` tables and the `USE_DB_LOCKS` env var are removed.
+* **media:** the media provider's env names changed. `MEDIA_STORAGE_MODE=scaleway` becomes `=s3`, and `SCW_ACCESS_KEY`/`SCW_SECRET_KEY`/`SCW_BUCKET`/`SCW_REGION`/`SCW_ENDPOINT`/`SCW_CDN_URL` become `S3_ACCESS_KEY`/`S3_SECRET_KEY`/`S3_BUCKET`/`S3_REGION`/`S3_ENDPOINT`/`S3_PUBLIC_URL`. The old names are still read until the first release after 2026-11-01 — only when their `S3_*` counterpart is unset, and every one that is read prints a boot warning naming its replacement (the B68 shape, no silent alias). For an untouched legacy install only, an unset endpoint is still derived as https://s3.<SCW_REGION>.scw.cloud; with the new names, `S3_ENDPOINT` is mandatory and `MEDIA_STORAGE_MODE=s3` refuses to boot without it.
+
+### Added
+
+* **api:** collapse the reason synonyms into one spelling each (D48) ([#910](https://github.com/jaapstronks/deckyard/issues/910)) ([9c2776a](https://github.com/jaapstronks/deckyard/commit/9c2776afa9643edcdab8d221f9c9c17a604c11b6))
+* **api:** mint every storage reason from one REASONS register ([#908](https://github.com/jaapstronks/deckyard/issues/908)) ([07448f8](https://github.com/jaapstronks/deckyard/commit/07448f85a6165621f6e56605b470e84a4e38d750))
+* **fork:** serve custom/styles/ and route fork fonts through the seam ([#873](https://github.com/jaapstronks/deckyard/issues/873)) ([46865a8](https://github.com/jaapstronks/deckyard/commit/46865a8e55c013a8ada22fb44bf939c75cd84e6c))
+* **identity:** comments and slide locks name people with { id, displayName } (A1/D22) ([#850](https://github.com/jaapstronks/deckyard/issues/850)) ([f434b3d](https://github.com/jaapstronks/deckyard/commit/f434b3d7f72070d58b62250afaa2d15d9ced978d))
+* **security:** emit a Content-Security-Policy from every render path ([#912](https://github.com/jaapstronks/deckyard/issues/912)) ([f34932b](https://github.com/jaapstronks/deckyard/commit/f34932b4578b4d5c3ebd059ac28809c25ebbf00f))
+* **server:** one head chain for every render path, and one language resolver ([#890](https://github.com/jaapstronks/deckyard/issues/890)) ([caa1bfe](https://github.com/jaapstronks/deckyard/commit/caa1bfec69a9bd234936e05b81908baa977e93a7))
+* **server:** one script chain, and code blocks that highlight everywhere ([#891](https://github.com/jaapstronks/deckyard/issues/891)) ([b685f01](https://github.com/jaapstronks/deckyard/commit/b685f01f70eaa2fb69db3694e0387bd29a8ea0c4))
+* **server:** register every render path and give the reader the fork CSS seam ([#889](https://github.com/jaapstronks/deckyard/issues/889)) ([926f9b9](https://github.com/jaapstronks/deckyard/commit/926f9b945f36508c0b0d3ee4f14c552dcd83db12))
+* **slide-types:** gate `sample` as a companion and fill the seven gaps (A5) ([09d8f4e](https://github.com/jaapstronks/deckyard/commit/09d8f4edb88b2dd8922062deceec822584a74237))
+
+
+### Fixed
+
+* **api:** answer every storage reason through the register, not per route ([#909](https://github.com/jaapstronks/deckyard/issues/909)) ([1f70903](https://github.com/jaapstronks/deckyard/commit/1f70903151b01305ddd3668caf111e6bff6ac732))
+* **authz:** transfer ownership keys on the owner stamp, not the creator ([#901](https://github.com/jaapstronks/deckyard/issues/901)) ([de54c8d](https://github.com/jaapstronks/deckyard/commit/de54c8d8341ab241410c01338b0aa8559706f2c1))
+* **client:** hand Escape back to the overlay and move the mobile modal rules to the base layer ([#888](https://github.com/jaapstronks/deckyard/issues/888)) ([735c13e](https://github.com/jaapstronks/deckyard/commit/735c13e3cea0d38c031f7bcca1883fbfbd9fc79d))
+* **client:** move the generic .modal-content to the base layer and let Escape peel one overlay ([#884](https://github.com/jaapstronks/deckyard/issues/884)) ([e172027](https://github.com/jaapstronks/deckyard/commit/e172027b7d9fb65e4d6b6382a9ec0263e1b1f8f8))
+* **css:** give form-input-sm/-xs a base definition ([#900](https://github.com/jaapstronks/deckyard/issues/900)) ([f1293fc](https://github.com/jaapstronks/deckyard/commit/f1293fcd74470364afd190d51a8c20f6b00d9e27))
+* **docs:** repair the reference claims that were wrong, and gate the four shapes that rot ([#893](https://github.com/jaapstronks/deckyard/issues/893)) ([16aea2f](https://github.com/jaapstronks/deckyard/commit/16aea2f1365b3f8395b088ac3cc04db5329ff4f3))
+* **editor:** "Add as second slide" puts the invite second ([#869](https://github.com/jaapstronks/deckyard/issues/869)) ([fde0af7](https://github.com/jaapstronks/deckyard/commit/fde0af7abcccaf7e0e6fffbb753f2d9166033ed3))
+* **editor:** call the more-menu's on* handlers in one shape ([#905](https://github.com/jaapstronks/deckyard/issues/905)) ([c7cfa49](https://github.com/jaapstronks/deckyard/commit/c7cfa49f86bd58bcdd750b0c1b2e0d96b7152599))
+* **editor:** copied slides keep their nesting and re-derive instance ids ([#855](https://github.com/jaapstronks/deckyard/issues/855)) ([5726fac](https://github.com/jaapstronks/deckyard/commit/5726fac3b50882f874000158a1086786ac7ffaf5))
+* **editor:** wire each more-menu item once, closing before it acts ([#911](https://github.com/jaapstronks/deckyard/issues/911)) ([2864ff0](https://github.com/jaapstronks/deckyard/commit/2864ff0d002f18d07f7aeee2b4ecc944f69c4523))
+* **export:** make the lead-capture consent divergence deliberate and localised ([#903](https://github.com/jaapstronks/deckyard/issues/903)) ([0b8ac1b](https://github.com/jaapstronks/deckyard/commit/0b8ac1b4de258bc57b870b7a1cf10a4dd2710c69))
+* **export:** title a download with the deck name, and pin the reader's theme boundary ([#902](https://github.com/jaapstronks/deckyard/issues/902)) ([1946662](https://github.com/jaapstronks/deckyard/commit/1946662c93723032ef039d3dce3870e7e45af75c))
+* **i18n:** one key, one English fallback, one ellipsis glyph ([#876](https://github.com/jaapstronks/deckyard/issues/876)) ([51046cc](https://github.com/jaapstronks/deckyard/commit/51046cc5a52e786b98b5d62184c57fc4ce1a9c57))
+* **i18n:** stop the markdown import buttons from saying "Import JSON" ([#887](https://github.com/jaapstronks/deckyard/issues/887)) ([a6cdab4](https://github.com/jaapstronks/deckyard/commit/a6cdab4bac08f7c5772bc58ab955e59a0fc27148))
+* **mcp:** install the stdout redirect before import-time logging (A5) ([21fd501](https://github.com/jaapstronks/deckyard/commit/21fd501c21e07f6636867263a2c71adfee26f59b))
+* **security:** close the last two CodeQL alerts — one Notion error handler, data: reasoning in css-filter (B100) ([abf6413](https://github.com/jaapstronks/deckyard/commit/abf64131575db31cbce3fe06f081938a0b3fe854))
+* **security:** serve Prism/KaTeX from the vendored copies in every render path ([#906](https://github.com/jaapstronks/deckyard/issues/906)) ([5486c67](https://github.com/jaapstronks/deckyard/commit/5486c67577153683ce9b27d647ecdc5f45db6fab))
+* **security:** triage the open CodeQL alerts — host-match helper, crypto ids, workflow permissions (B100) ([f4879bc](https://github.com/jaapstronks/deckyard/commit/f4879bc15e7491846fbcde22bcaa3f42454ac4b0))
+* **security:** validate analytics provider ids instead of escaping them ([#875](https://github.com/jaapstronks/deckyard/issues/875)) ([5dae9c9](https://github.com/jaapstronks/deckyard/commit/5dae9c9fadc33a1b38784a83a21207edbb0603b3))
+* **security:** vendor pdf.js instead of loading it from cdnjs into headless Chrome ([#907](https://github.com/jaapstronks/deckyard/issues/907)) ([20cbb2c](https://github.com/jaapstronks/deckyard/commit/20cbb2c6496094df028a8377dce563840286363e))
+* **server:** write every SSE frame through sseWrite() ([#885](https://github.com/jaapstronks/deckyard/issues/885)) ([68379e9](https://github.com/jaapstronks/deckyard/commit/68379e95d8920abce5c049a60bfdcb9b6c061c7f))
+
+
+### Changed
+
+* **identity:** name creators and trashers with { id, displayName } (A1/D22) ([#849](https://github.com/jaapstronks/deckyard/issues/849)) ([9917ec2](https://github.com/jaapstronks/deckyard/commit/9917ec296d3971f3589274dfd356fab5c0410444))
+* **identity:** name people with { id, displayName }, not their address (A1/D22) ([#847](https://github.com/jaapstronks/deckyard/issues/847)) ([5197fe5](https://github.com/jaapstronks/deckyard/commit/5197fe563a3f53a332e841b68f3437dfbff7df4c))
+* **identity:** retire the e-mail fallback in identity matching (A1/D22) ([#848](https://github.com/jaapstronks/deckyard/issues/848)) ([2521e51](https://github.com/jaapstronks/deckyard/commit/2521e519c3c9c8b01fd85020e9e4fc0b2f913008))
+* **locks:** strip the presentation-level lock surface, drop its tables (B96, D40) ([1c17283](https://github.com/jaapstronks/deckyard/commit/1c17283e95711f9e2d08dcdd7ad32e4d8eb0c135))
+* **media:** rename the scaleway media provider to s3 and its env to S3_* (B98) ([a1224f9](https://github.com/jaapstronks/deckyard/commit/a1224f96ff87b7230d92246bdc3f68c326b5edae))
+
 ## [1.22.0](https://github.com/jaapstronks/deckyard/compare/v1.21.0...v1.22.0) (2026-08-19)
 
 
