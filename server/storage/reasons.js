@@ -77,8 +77,9 @@ export const REASONS = Object.freeze(
     // Two shapes, one status: the resource is already in the requested state
     // (a second vote, an invite that already went out), or it refuses the
     // transition (a closed poll, a lock someone else holds, the last owner).
-    // One code for "that already exists", whatever the row is: `slug_taken`
-    // and `variant_exists` were spellings of it (D48).
+    // One spelling per uniqueness collision (D48): `variant_exists` folded
+    // into `already_exists`, `slug_taken` into `slug_exists` — the latter
+    // stays a code of its own because a UI acts on "pick another slug".
     already_exists: { status: 409, kind: 'caller' },
     already_activated: { status: 409, kind: 'caller' },
     already_invited: { status: 409, kind: 'caller' },
@@ -132,7 +133,7 @@ export const REASONS = Object.freeze(
     invalid_or_revoked: { status: 401, kind: 'caller' },
 
     // ─── 400 Bad Request: the input is malformed or incomplete ──────────────
-    // The one code for "your input does not deug". `invalid_id`,
+    // The one code for "your input is bad". `invalid_id`,
     // `invalid_name`, `invalid_fields` and `invalid_params` were four more
     // spellings of it; the first three now ride as `field` on the result
     // (`{ ok: false, reason: 'invalid', field: 'id' }`) and reach the client as

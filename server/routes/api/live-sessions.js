@@ -29,14 +29,6 @@ import {
   storageError,
   withErrorHandler,
 } from '../../utils/http.js';
-
-/**
- * Human-readable text per remote-control failure. The status is the reason's
- * `REASONS` entry (`server/storage/reasons.js`).
- */
-const CONTROL_FAILURE_MESSAGES = {
-  disabled: 'Remote control is disabled for this session',
-};
 import {
   findSlideById,
   getOptionCountForSlide,
@@ -48,6 +40,14 @@ import {
   getString,
   getOptionalBoolean,
 } from '../../utils/request-validators.js';
+
+/**
+ * Human-readable text per remote-control failure. The status is the reason's
+ * `REASONS` entry (`server/storage/reasons.js`).
+ */
+const CONTROL_FAILURE_MESSAGES = {
+  disabled: 'Remote control is disabled for this session',
+};
 
 /**
  * Presenter-only live-session routes.

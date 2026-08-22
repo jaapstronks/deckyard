@@ -24,6 +24,24 @@ import {
 } from '../../utils/http.js';
 import { getString, getTrimmedString } from '../../utils/request-validators.js';
 import { t } from '../../i18n/index.js';
+import { getClientIp, createStorageScope } from '../../utils/context.js';
+import { dispatchRoutes } from '../../utils/router.js';
+import { sendPasswordResetEmail } from '../../integrations/brevo.js';
+import { normalizeEmail } from '../../utils/normalize.js';
+import { createLogger } from '../../utils/logger.js';
+import {
+  createResetToken,
+  validateResetToken,
+  consumeResetToken,
+  setUserPassword,
+  verifyUserPassword,
+  validatePassword,
+  isRateLimitedByEmail,
+  isRateLimitedByIp,
+  logAuthEvent,
+  hasDatabaseCredentials,
+} from '../../storage/password-reset.js';
+import { getUserByEmailGlobal } from '../../storage/identity.js';
 
 /**
  * Answer a failed password validation in the canonical envelope: the reason is
@@ -54,25 +72,7 @@ function passwordValidationError(res, result) {
       t('api.error.passwordInvalid', 'Password is invalid'),
   );
 }
-import { getClientIp, createStorageScope } from '../../utils/context.js';
-import { dispatchRoutes } from '../../utils/router.js';
-import { sendPasswordResetEmail } from '../../integrations/brevo.js';
-import { normalizeEmail } from '../../utils/normalize.js';
-import { createLogger } from '../../utils/logger.js';
 const log = createLogger('password-reset');
-import {
-  createResetToken,
-  validateResetToken,
-  consumeResetToken,
-  setUserPassword,
-  verifyUserPassword,
-  validatePassword,
-  isRateLimitedByEmail,
-  isRateLimitedByIp,
-  logAuthEvent,
-  hasDatabaseCredentials,
-} from '../../storage/password-reset.js';
-import { getUserByEmailGlobal } from '../../storage/identity.js';
 
 /**
  * Build the reset URL from the token and request.

@@ -21,6 +21,34 @@ import {
   storageError,
   withErrorHandler,
 } from '../../utils/http.js';
+import {
+  listThemeIds,
+  listCoreThemeIds,
+  loadThemeAssets,
+  clearCustomThemeCache,
+} from '../../utils/themes.js';
+import { sandboxEnabled } from '../../config/sandbox.js';
+import { dispatchRoutes } from '../../utils/router.js';
+import { canManage } from '../../utils/route-middleware.js';
+import {
+  listThemes,
+  getThemeRecord,
+  createTheme,
+  updateTheme,
+  deleteTheme,
+  setDefaultTheme,
+} from '../../storage/themes.js';
+import {
+  CURATED_FONTS,
+  getFontsByCategory,
+} from '../../../shared/theme-fonts.js';
+import { buildThemeConfig } from '../../utils/theme-builder.js';
+import { listAllFontFamiliesWithVariants } from '../../storage/font-families.js';
+import { getAppSettings, getDefaultThemeId } from '../../storage/settings.js';
+import {
+  getOptionalString,
+  getOptionalObject,
+} from '../../utils/request-validators.js';
 
 /**
  * Human-readable text per theme-mutation failure reason.
@@ -51,34 +79,6 @@ const THEME_FAILURE_MESSAGES = {
 function themeError(res, result) {
   return storageError(res, result, THEME_FAILURE_MESSAGES[result.reason]);
 }
-import {
-  listThemeIds,
-  listCoreThemeIds,
-  loadThemeAssets,
-  clearCustomThemeCache,
-} from '../../utils/themes.js';
-import { sandboxEnabled } from '../../config/sandbox.js';
-import { dispatchRoutes } from '../../utils/router.js';
-import { canManage } from '../../utils/route-middleware.js';
-import {
-  listThemes,
-  getThemeRecord,
-  createTheme,
-  updateTheme,
-  deleteTheme,
-  setDefaultTheme,
-} from '../../storage/themes.js';
-import {
-  CURATED_FONTS,
-  getFontsByCategory,
-} from '../../../shared/theme-fonts.js';
-import { buildThemeConfig } from '../../utils/theme-builder.js';
-import { listAllFontFamiliesWithVariants } from '../../storage/font-families.js';
-import { getAppSettings, getDefaultThemeId } from '../../storage/settings.js';
-import {
-  getOptionalString,
-  getOptionalObject,
-} from '../../utils/request-validators.js';
 
 /**
  * Check if user can manage themes.

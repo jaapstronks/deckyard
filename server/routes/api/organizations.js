@@ -14,6 +14,20 @@ import {
   unauthorized,
   withErrorHandler,
 } from '../../utils/http.js';
+import { getTrimmedString } from '../../utils/request-validators.js';
+import { dispatchRoutes } from '../../utils/router.js';
+import { isMultiOrgEnabled } from '../../config/features.js';
+import {
+  listUserOrganizations,
+  getOrganizationById,
+  createOrganization,
+  updateOrganization,
+  deleteOrganization,
+  getMembership,
+  hasOrganizationRole,
+  isDefaultOrganization,
+} from '../../storage/user-organizations/index.js';
+import { getUserByEmailGlobal } from '../../storage/identity.js';
 
 /**
  * Human-readable text per organization-mutation failure reason.
@@ -23,7 +37,7 @@ import {
  * `badRequest(res, 'Failed to …')`, so a database outage answered 400.
  */
 const ORGANIZATION_FAILURE_MESSAGES = {
-  slug_taken: 'An organization with this slug already exists',
+  slug_exists: 'An organization with this slug already exists',
   cannot_delete_default: 'The default organization cannot be deleted',
 };
 
@@ -41,20 +55,6 @@ function organizationError(res, result) {
     ORGANIZATION_FAILURE_MESSAGES[result.reason],
   );
 }
-import { getTrimmedString } from '../../utils/request-validators.js';
-import { dispatchRoutes } from '../../utils/router.js';
-import { isMultiOrgEnabled } from '../../config/features.js';
-import {
-  listUserOrganizations,
-  getOrganizationById,
-  createOrganization,
-  updateOrganization,
-  deleteOrganization,
-  getMembership,
-  hasOrganizationRole,
-  isDefaultOrganization,
-} from '../../storage/user-organizations/index.js';
-import { getUserByEmailGlobal } from '../../storage/identity.js';
 
 // ============================================================
 // HELPERS

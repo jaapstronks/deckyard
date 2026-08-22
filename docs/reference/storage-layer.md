@@ -287,9 +287,10 @@ burndown holding the one that remains (the public `/api/v1` comments route,
 whose statuses are pinned in `docs/openapi.yaml`).
 
 **The synonyms collapsed last** (B104 PR 3, D48). Seven codes left the register:
-`slug_taken` and `variant_exists` were spellings of `already_exists`;
-`key_id_required` of `api_key_id_required`; and `invalid_id`, `invalid_name`,
-`invalid_fields` and `invalid_params` were four more ways of saying `invalid`.
+`slug_taken` was a spelling of `slug_exists` and `variant_exists` one of
+`already_exists`; `key_id_required` of `api_key_id_required`; and `invalid_id`,
+`invalid_name`, `invalid_fields` and `invalid_params` were four more ways of
+saying `invalid`.
 The first three now ride as `field` on the result, which is strictly more than
 the suffix carried — a client reads `details.field` instead of parsing a code —
 and `invalid_params` guarded several arguments at once, so it said nothing

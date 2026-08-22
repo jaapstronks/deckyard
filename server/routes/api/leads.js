@@ -13,28 +13,6 @@ import {
   unauthorized,
   withErrorHandler,
 } from '../../utils/http.js';
-
-/**
- * Human-readable text per lead-mutation failure reason. The status is the
- * reason's `REASONS` entry (`server/storage/reasons.js`); the calls this
- * replaced put the snake_case reason itself in the human `message` field under
- * a `bad_request` code — the exact inversion `docs/reference/api-error-format.md`
- * forbids.
- */
-const LEAD_FAILURE_MESSAGES = {
-  invalid_email: 'Invalid email address',
-};
-
-/**
- * Answer a failed lead mutation in the canonical envelope.
- *
- * @param {import('node:http').ServerResponse} res
- * @param {{reason: string, field?: string}} result
- * @returns {true}
- */
-function leadError(res, result) {
-  return storageError(res, result, LEAD_FAILURE_MESSAGES[result.reason]);
-}
 import { dispatchRoutes } from '../../utils/router.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { getClientIp, allowRequest } from '../../utils/rate-limit.js';
@@ -73,6 +51,28 @@ import {
   consumeGdprToken,
   deleteExpiredGdprTokens,
 } from '../../storage/gdpr-tokens.js';
+
+/**
+ * Human-readable text per lead-mutation failure reason. The status is the
+ * reason's `REASONS` entry (`server/storage/reasons.js`); the calls this
+ * replaced put the snake_case reason itself in the human `message` field under
+ * a `bad_request` code — the exact inversion `docs/reference/api-error-format.md`
+ * forbids.
+ */
+const LEAD_FAILURE_MESSAGES = {
+  invalid_email: 'Invalid email address',
+};
+
+/**
+ * Answer a failed lead mutation in the canonical envelope.
+ *
+ * @param {import('node:http').ServerResponse} res
+ * @param {{reason: string, field?: string}} result
+ * @returns {true}
+ */
+function leadError(res, result) {
+  return storageError(res, result, LEAD_FAILURE_MESSAGES[result.reason]);
+}
 
 // GDPR verification tokens live in the `gdpr_verification_tokens` DB table
 // (see server/storage/gdpr-tokens.js) — durable across restarts and scale-out,
