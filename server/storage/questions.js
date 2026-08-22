@@ -360,7 +360,7 @@ export async function upvoteQuestion(
   const sid = String(sessionId || '').trim();
   const qid = String(questionId || '').trim();
   const vid = normalizeActorId(voterId);
-  if (!qid) return { ok: false, reason: 'missing_questionId' };
+  if (!qid) return { ok: false, reason: 'missing_question_id' };
   if (!vid) return { ok: false, reason: 'missing_voter' };
 
   const q = await getQuestion(scope, sid, qid);
@@ -433,7 +433,7 @@ export async function cancelQuestion(
   const sid = String(sessionId || '').trim();
   const qid = String(questionId || '').trim();
   const aid = normalizeActorId(authorId);
-  if (!qid) return { ok: false, reason: 'missing_questionId' };
+  if (!qid) return { ok: false, reason: 'missing_question_id' };
   if (!aid) return { ok: false, reason: 'missing_author' };
 
   const q = await getQuestion(scope, sid, qid);
@@ -469,7 +469,7 @@ export async function removeQuestion(
   toStorageContext(scope, 'removeQuestion');
   const sid = String(sessionId || '').trim();
   const qid = String(questionId || '').trim();
-  if (!qid) return { ok: false, reason: 'missing_questionId' };
+  if (!qid) return { ok: false, reason: 'missing_question_id' };
 
   const q = await getQuestion(scope, sid, qid);
   if (!q) return { ok: false, reason: 'not_found' };
@@ -507,7 +507,7 @@ export async function promoteQuestion(
   toStorageContext(scope, 'promoteQuestion');
   const sid = String(sessionId || '').trim();
   const qid = String(questionId || '').trim();
-  if (!qid) return { ok: false, reason: 'missing_questionId' };
+  if (!qid) return { ok: false, reason: 'missing_question_id' };
 
   const q = await getQuestion(scope, sid, qid);
   if (!q) return { ok: false, reason: 'not_found' };

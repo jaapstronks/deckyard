@@ -58,9 +58,9 @@ const log = createLogger('collaborators');
  * `already_exists` has always done. Adding a message here stays free: clients
  * branch on the code, not on the display text.
  *
- * The status per reason is not here: it comes from the shared
- * `getErrorStatus()` table in `utils/http.js`, so one reason has one status
- * across every route that answers it.
+ * The status per reason is not here: it comes from the `REASONS` register
+ * (`server/storage/reasons.js`) via `getErrorStatus()`, so one reason has one
+ * status across every route that answers it.
  */
 const INVITE_FAILURE_MESSAGES = {
   user_not_found: 'User not found in organization',
@@ -296,16 +296,15 @@ async function handleCollaboratorAdd(
     // Single mode response (backward compatible)
     const singleResult = results[0];
     if (!singleResult.ok) {
-      // The reason decides the status, and an unmapped reason defaults to
-      // 500 rather than 400: the reasons on this path are a mix of "your
-      // request" (`user_not_found`, `invalid_permission`) and "our side"
-      // (`database_error`, `unavailable`), so a 400 fallthrough silently
-      // blames the caller for a failed insert. The batch branch below has
-      // always reported the reason factually per address; single mode did
-      // not.
+      // The reason decides the status. The reasons on this path are a mix
+      // of "your request" (`user_not_found`, `invalid_permission`) and "our
+      // side" (`database_error`, `unavailable`), and the REASONS register
+      // states which is which — no route-local default is involved any more.
+      // The batch branch below has always reported the reason factually per
+      // address; single mode did not.
       return jsonError(
         res,
-        getErrorStatus(singleResult.reason, 500),
+        getErrorStatus(singleResult.reason),
         singleResult.reason,
         INVITE_FAILURE_MESSAGES[singleResult.reason],
       );

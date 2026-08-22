@@ -187,7 +187,7 @@ export async function handleCreateReport(ctx, presentationId) {
   if (!result.ok) {
     return jsonError(
       res,
-      getErrorStatus(result.reason, 500),
+      getErrorStatus(result.reason),
       result.reason || 'internal_error',
       'Failed to create report',
     );
@@ -268,7 +268,7 @@ export async function handleUpdateReport(ctx, presentationId, reportId) {
   if (!result.ok) {
     return jsonError(
       res,
-      getErrorStatus(result.reason, 500),
+      getErrorStatus(result.reason),
       result.reason || 'internal_error',
       'Failed to update report',
     );
@@ -300,7 +300,7 @@ export async function handleDeleteReport(ctx, presentationId, reportId) {
   if (!result.ok) {
     return jsonError(
       res,
-      getErrorStatus(result.reason, 500),
+      getErrorStatus(result.reason),
       result.reason || 'internal_error',
       'Failed to delete report',
     );
@@ -332,7 +332,7 @@ export async function handleRegenerateToken(ctx, presentationId, reportId) {
   if (!result.ok) {
     return jsonError(
       res,
-      getErrorStatus(result.reason, 500),
+      getErrorStatus(result.reason),
       result.reason || 'internal_error',
       'Failed to regenerate token',
     );

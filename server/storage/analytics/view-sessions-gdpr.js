@@ -50,7 +50,7 @@ export async function exportUserAnalyticsData({ email }) {
   const normalizedEmail = email?.toLowerCase()?.trim();
 
   if (!normalizedEmail) {
-    return { ok: false, reason: 'No identifier provided' };
+    return { ok: false, reason: 'invalid' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
@@ -130,7 +130,7 @@ export async function deleteUserAnalyticsData({ email }) {
   const normalizedEmail = email?.toLowerCase()?.trim();
 
   if (!normalizedEmail) {
-    return { ok: false, reason: 'No identifier provided' };
+    return { ok: false, reason: 'invalid' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) =>
@@ -168,7 +168,7 @@ export async function deleteUserAnalyticsData({ email }) {
 export async function eraseAnalyticsDataForDevice({ deviceId } = {}) {
   const id = typeof deviceId === 'string' ? deviceId.trim() : '';
   if (!id) {
-    return { ok: false, reason: 'No device id provided' };
+    return { ok: false, reason: 'invalid' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) =>
@@ -199,7 +199,7 @@ export async function eraseAnalyticsDataForDevice({ deviceId } = {}) {
 export async function eraseAnalyticsDataForSession({ sessionId } = {}) {
   const id = typeof sessionId === 'string' ? sessionId.trim() : '';
   if (!id) {
-    return { ok: false, reason: 'No session id provided' };
+    return { ok: false, reason: 'invalid' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) =>

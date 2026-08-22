@@ -357,7 +357,7 @@ async function handleTrackSessionStart({ req, res, url, repoRoot }) {
   if (!result.ok) {
     return jsonError(
       res,
-      getErrorStatus(result.reason, 500),
+      getErrorStatus(result.reason),
       result.reason || 'internal_error',
       'Failed to create session',
     );
@@ -435,7 +435,7 @@ async function handleTrackSessionHeartbeat({ req, res, url, repoRoot }) {
   if (!result.ok) {
     return jsonError(
       res,
-      getErrorStatus(result.reason, 500),
+      getErrorStatus(result.reason),
       result.reason || 'internal_error',
       'Failed to update session',
     );
@@ -498,7 +498,7 @@ async function handleTrackSessionEnd({ req, res, url, repoRoot }) {
   if (!result.ok) {
     return jsonError(
       res,
-      getErrorStatus(result.reason, 500),
+      getErrorStatus(result.reason),
       result.reason || 'internal_error',
       'Failed to end session',
     );
@@ -586,7 +586,7 @@ async function handleTrackSlideView({ req, res, url, repoRoot }) {
   if (!result.ok) {
     return jsonError(
       res,
-      getErrorStatus(result.reason, 500),
+      getErrorStatus(result.reason),
       result.reason || 'internal_error',
       'Failed to record slide view',
     );
@@ -681,7 +681,7 @@ async function handleTrackMyDataErase({ req, res, url, repoRoot }) {
   if (!result.ok) {
     return jsonError(
       res,
-      getErrorStatus(result.reason, 500),
+      getErrorStatus(result.reason),
       result.reason || 'internal_error',
       'Failed to erase data',
     );
