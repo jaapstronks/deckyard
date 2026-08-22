@@ -9,15 +9,12 @@ import {
   buildEmbedHtml,
   parseEmbedOptionsFromUrl,
 } from '../../utils/embed-html.js';
-import { sandboxEnabled } from '../../config/sandbox.js';
 import {
   hasLangVersion,
   otherLang,
   projectPresentationForLang,
   resolveLangModeFromPresOrUrl,
 } from '../../utils/i18n.js';
-import { analyticsHeadHtml } from '../../analytics/head.js';
-import { getAppSettings } from '../../storage/settings.js';
 import { log } from './log.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
 
@@ -78,17 +75,6 @@ export async function handleEmbed({ repoRoot, req, res, url }) {
   const theme = await loadThemeAssets(repoRoot, pres?.theme);
   const modeLang = resolveLangModeFromPresOrUrl(pres, url);
   const projected = projectPresentationForLang(pres, modeLang);
-  const embedSettings = await getAppSettings(
-    crossOrganizationScope(
-      repoRoot,
-      'embed page: analytics config is instance-level',
-    ),
-  );
-  const analytics = analyticsHeadHtml({
-    context: 'embed',
-    sandbox: sandboxEnabled(),
-    settings: embedSettings,
-  });
   const embedOrgId = pres?.organizationId;
   const embedSlideTypes = await buildMergedSlideTypes({
     organizationId: embedOrgId,
@@ -100,7 +86,6 @@ export async function handleEmbed({ repoRoot, req, res, url }) {
       theme,
       lang: modeLang,
       hasOtherLang: hasLangVersion(pres, otherLang(modeLang)),
-      headHtml: analytics,
       slideTypes: embedSlideTypes,
       ...opts,
     });

@@ -87,6 +87,30 @@ These are decisions, not leftovers. Each is documented where it lives:
 - **The Swagger UI shell** at `/api/v1/docs` loads swagger-ui-dist from
   jsDelivr. It is developer documentation, not a render path.
 
+## A published deck and an embed are first-party-only
+
+`/p/…` and `/embed/…` talk to **this server and nobody else**, beyond the
+carve-outs above. That is the rule, not a consequence of the current code.
+
+External analytics is therefore an **app-shell feature**: the operator's own
+surface, where the operator is the visitor. It used to be injected into the
+published page and the embed as well, behind `ANALYTICS_INCLUDE_EMBEDS` /
+`ANALYTICS_INCLUDE_EXPORTS`; the document CSP those pages carry has blocked
+every such tag since the policy landed, and D56 (2026-08-22) settled that the
+block is the **wanted** end state rather than a bug. The injection and both
+gates are gone; `analyticsHeadHtml()` has one caller left, the shell.
+
+The trade is deliberate and it costs something: an operator who wants their own
+Plausible on their own published decks cannot have it. Three things decided it.
+A published deck is where *strangers* land, and unlike the shell there is no
+consent seam left on it (D47/D50). Widening the policy could not be done at the
+header alone — a browser enforces every policy it is given, so the document meta
+would have to widen too, and that meta is shared with seven render paths that
+must not get the widening. And the surface is already measured: the inline
+`/api/track/*` tracker (`server/analytics/tracking-script.js`) is first-party,
+covered by `connect-src 'self'`, and has a retention policy and a GDPR erase
+route — which no third-party tag on that page would have.
+
 ## The policy: telling the browser, not just the test suite
 
 Both gates below are ours, and both are advisory where it counts. A host that

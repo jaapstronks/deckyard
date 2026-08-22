@@ -183,23 +183,24 @@ function buildGtmHtml({ containerId }) {
  *
  * Priority order per provider: settings → env vars → disabled.
  *
+ * **The app shell is the only surface this feeds.** A published deck and an
+ * embed talk to this server and nothing else (D56; see
+ * docs/reference/no-third-party-origins.md § *A published deck and an embed
+ * are first-party-only*), so there is no context to switch on: external
+ * analytics is an operator-surface feature. What used to be
+ * `context: 'published' | 'embed' | 'export'` — and the
+ * `ANALYTICS_INCLUDE_EMBEDS` / `ANALYTICS_INCLUDE_EXPORTS` gates in front of
+ * them — is gone. Visitor measurement on a published deck is the first-party
+ * `/api/track/*` path instead, which has a retention and an erasure story.
+ *
  * @param {Object} options
- * @param {string} options.context - 'app' | 'published' | 'embed' | 'export'
  * @param {boolean} options.sandbox - Whether running in sandbox mode
  * @param {Object} options.settings - Optional app settings object (analytics.externalProviders)
  * @returns {Array<{html: string, scriptOrigins: string[]}>}
  */
-function collectAnalyticsHead({
-  context = 'app', // 'app' | 'published' | 'embed' | 'export'
-  sandbox = false,
-  settings = null,
-} = {}) {
+function collectAnalyticsHead({ sandbox = false, settings = null } = {}) {
   if (envBool('DISABLE_ANALYTICS', false)) return [];
   if (sandbox && !envBool('ANALYTICS_ALLOW_IN_SANDBOX', false)) return [];
-  if (context === 'embed' && !envBool('ANALYTICS_INCLUDE_EMBEDS', false))
-    return [];
-  if (context === 'export' && !envBool('ANALYTICS_INCLUDE_EXPORTS', false))
-    return [];
 
   const entries = [];
   // A provider whose values failed validation builds '' — skip it entirely,

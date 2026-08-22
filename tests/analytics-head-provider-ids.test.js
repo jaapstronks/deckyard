@@ -1,9 +1,10 @@
 /**
  * Third-party analytics identifiers cannot break out of the head markup (B101).
  *
- * `analyticsHeadHtml()` lands on the app shell, on **every published deck** and
- * on **every embed**, so an admin-writable provider id that escapes its quoting
- * context is stored XSS against anonymous visitors. The Matomo `siteId` did
+ * `analyticsHeadHtml()` lands on the app shell — since D56 its only caller, a
+ * published deck and an embed being first-party-only — so an admin-writable
+ * provider id that escapes its quoting context is stored XSS against everyone
+ * who opens the operator's own surface. The Matomo `siteId` did
  * exactly that: it was HTML-escaped by a helper that did not escape `'`, and
  * then interpolated into `_paq.push(['setSiteId', '…'])` — inside a `<script>`,
  * where HTML entities are not decoded anyway.
@@ -42,8 +43,6 @@ const HOSTILE = [
 const ANALYTICS_ENV = [
   'DISABLE_ANALYTICS',
   'ANALYTICS_ALLOW_IN_SANDBOX',
-  'ANALYTICS_INCLUDE_EMBEDS',
-  'ANALYTICS_INCLUDE_EXPORTS',
   'ANALYTICS_HEAD_HTML',
   'ANALYTICS_HEAD_HTML_B64',
   'GTM_CONTAINER_ID',
@@ -79,7 +78,6 @@ afterEach(() => {
 /** Head HTML for a settings-configured provider block. */
 function headFor(externalProviders) {
   return analyticsHeadHtml({
-    context: 'app',
     settings: { analytics: { externalProviders } },
   });
 }
@@ -169,23 +167,23 @@ describe('analytics head: provider ids are validated, not escaped', () => {
     process.env.MATOMO_URL = 'https://m.example.com';
     process.env.MATOMO_SITE_ID = "1',alert(1),'";
     assert.equal(
-      analyticsHeadHtml({ context: 'app' }).includes('setSiteId'),
+      analyticsHeadHtml().includes('setSiteId'),
       false,
     );
 
     process.env.MATOMO_SITE_ID = '1';
-    assert.match(analyticsHeadHtml({ context: 'app' }), /setSiteId/);
+    assert.match(analyticsHeadHtml(), /setSiteId/);
 
     process.env.GTM_CONTAINER_ID = "GTM-1',alert(1),'";
     assert.equal(
-      analyticsHeadHtml({ context: 'app' }).includes('alert(1)'),
+      analyticsHeadHtml().includes('alert(1)'),
       false,
     );
 
     process.env.PLAUSIBLE_DOMAIN = 'a.example.com';
     process.env.PLAUSIBLE_URL = "https://p.example.com/'+alert(1)+'";
     assert.equal(
-      analyticsHeadHtml({ context: 'app' }).includes('data-domain'),
+      analyticsHeadHtml().includes('data-domain'),
       false,
     );
   });

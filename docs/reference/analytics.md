@@ -29,8 +29,11 @@ Helpers and config (`server/analytics/`, 3 modules):
   `applyDateFilters`.
 - `server/analytics/head.js` — `analyticsHeadHtml()`: the **third-party** web
   analytics snippet (GTM, Plausible, Umami, Matomo, Google Analytics, or a raw
-  custom snippet) injected into a page head. Unrelated to Deckyard's own view
-  tracking beyond the shared name.
+  custom snippet) injected into the **app shell head, and nowhere else**. A
+  published deck and an embed are first-party-only
+  ([`no-third-party-origins.md`](no-third-party-origins.md)); their visitor
+  measurement is the `/api/track/*` path below. Unrelated to Deckyard's own
+  view tracking beyond the shared name.
 - `server/analytics/tracking-script.js` — `generateTrackingScriptHtml()`: the
   inline tracker for pages served outside the SPA (`/p/<publishId>` and embeds),
   which calls the same `/api/track/*` endpoints the SPA tracker uses.
@@ -187,11 +190,10 @@ sourceType, sourceId?, deviceId?, viewerType?, viewerEmail?}`. The handler
 | `ANALYTICS_IP_ANONYMIZATION_DAYS`    | 7         | **Seeds** the default IP-nulling age; `settings.analytics.retention.ipAnonymizationDays` overrides it.   |
 | `AUTH_SECRET`                        | —         | Keys the per-deck device label HMAC.                                                                     |
 
-Third-party head snippet (`analytics/head.js`), separate from the above:
-`DISABLE_ANALYTICS`, `ANALYTICS_ALLOW_IN_SANDBOX`, `ANALYTICS_INCLUDE_EMBEDS`,
-`ANALYTICS_INCLUDE_EXPORTS`, `ANALYTICS_HEAD_HTML` / `ANALYTICS_HEAD_HTML_B64`,
-`GTM_CONTAINER_ID`, `PLAUSIBLE_DOMAIN`/`PLAUSIBLE_URL`,
-`UMAMI_WEBSITE_ID`/`UMAMI_URL`. Umami, Plausible, Matomo and Google Analytics
+Third-party head snippet (`analytics/head.js`), separate from the above and
+app-shell-only: `DISABLE_ANALYTICS`, `ANALYTICS_ALLOW_IN_SANDBOX`,
+`ANALYTICS_HEAD_HTML` / `ANALYTICS_HEAD_HTML_B64`, `GTM_CONTAINER_ID`,
+`PLAUSIBLE_DOMAIN`/`PLAUSIBLE_URL`, `UMAMI_WEBSITE_ID`/`UMAMI_URL`. Umami, Plausible, Matomo and Google Analytics
 are also configurable from the settings UI
 (`settings.analytics.externalProviders`), which overrides the env vars.
 
