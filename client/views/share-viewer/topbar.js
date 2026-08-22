@@ -24,7 +24,6 @@ import { createEraseMyDataButton } from '../../lib/format/analytics-erase-button
  * @param {string} opts.prefillEmail - email to pre-fill in the guest join form.
  * @param {HTMLElement} opts.shell - viewer shell (guest-join prompt renders into it).
  * @param {() => string|null} opts.getCurrentSlideId - live current slide id.
- * @param {() => (void | Promise<void>)} opts.onGuestJoined - re-render after a guest joins.
  * @param {Object|null} [opts.analyticsTracker] - live tracker, for the "forget me" control.
  * @param {() => void} [opts.onAnalyticsErased] - called after the viewer erases their data.
  * @returns {{ topbar: HTMLElement, commentsSection: object|null,
@@ -41,7 +40,6 @@ export function buildShareViewerTopbar({
   prefillEmail,
   shell,
   getCurrentSlideId,
-  onGuestJoined,
   analyticsTracker = null,
   onAnalyticsErased,
 }) {
@@ -116,15 +114,7 @@ export function buildShareViewerTopbar({
     } else {
       // Show join button
       openJoinPrompt = () => {
-        renderGuestJoinPrompt(
-          shell,
-          token,
-          shareLink.permission,
-          async () => {
-            await onGuestJoined();
-          },
-          prefillEmail,
-        );
+        renderGuestJoinPrompt(shell, token, prefillEmail);
       };
       const joinBtn = h('button', {
         class: 'btn btn-secondary share-viewer-join-btn',
