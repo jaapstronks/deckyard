@@ -12,7 +12,6 @@ import { createViewerList } from './viewer-list.js';
 import { createDatePicker } from './date-picker.js';
 import { createReportModal } from './report-modal.js';
 import { createRealtimeViewer } from './realtime-viewer.js';
-import { createLeadsTab } from './leads-tab.js';
 
 /**
  * Render the analytics dashboard for a presentation.
@@ -34,7 +33,6 @@ export async function renderAnalytics(root, presentationId, { nav } = {}) {
   let overview = null;
   let slideMetrics = null;
   let sessions = null;
-  let leads = null;
   let realtimeConnection = null;
 
   // Show skeleton loading state
@@ -118,14 +116,11 @@ export async function renderAnalytics(root, presentationId, { nav } = {}) {
     if (dateRange.until) params.set('until', dateRange.until);
 
     try {
-      [overview, slideMetrics, sessions, leads] = await Promise.all([
+      [overview, slideMetrics, sessions] = await Promise.all([
         api(`/api/presentations/${presentationId}/analytics?${params}`),
         api(`/api/presentations/${presentationId}/analytics/slides?${params}`),
         api(
           `/api/presentations/${presentationId}/analytics/sessions?${params}&limit=10`,
-        ),
-        api(`/api/presentations/${presentationId}/leads?limit=50`).catch(
-          () => ({ leads: [], total: 0 }),
         ),
       ]);
     } catch {
@@ -138,7 +133,6 @@ export async function renderAnalytics(root, presentationId, { nav } = {}) {
       };
       slideMetrics = { slides: [] };
       sessions = { sessions: [], total: 0 };
-      leads = { leads: [], total: 0 };
     }
   }
 
@@ -231,14 +225,6 @@ export async function renderAnalytics(root, presentationId, { nav } = {}) {
     });
     content.append(viewerList.el);
 
-    // Leads tab
-    const leadsTab = createLeadsTab({
-      presentationId,
-      leads: leads?.leads || [],
-      total: leads?.total || 0,
-    });
-    content.append(leadsTab.el);
-
     shell.append(topbar, content);
 
     // Store references for updates
@@ -246,7 +232,6 @@ export async function renderAnalytics(root, presentationId, { nav } = {}) {
     shell._timeline = timeline;
     shell._heatmap = heatmap;
     shell._viewerList = viewerList;
-    shell._leadsTab = leadsTab;
   }
 
   function updateDashboard() {
@@ -254,7 +239,6 @@ export async function renderAnalytics(root, presentationId, { nav } = {}) {
     shell._timeline?.update(overview?.viewsByDay || []);
     shell._heatmap?.update(slideMetrics?.slides || []);
     shell._viewerList?.update(sessions?.sessions || [], sessions?.total || 0);
-    shell._leadsTab?.update(leads?.leads || [], leads?.total || 0);
   }
 
   function openReportModal() {

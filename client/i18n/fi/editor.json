@@ -297,8 +297,6 @@
   "analytics.viewsNeededForEngagement": "Kun katsojat alkavat katsoa esitystäsi, näet mitkä diat saavat eniten huomiota.",
   "analytics.noViewersYet": "Ei katsojia vielä",
   "analytics.shareToGetViewers": "Kun ihmiset katsovat esitystäsi, heidän istuntonsa näkyvät täällä.",
-  "analytics.noLeadsYet": "Ei kerättyjä liidejä vielä",
-  "analytics.addLeadCaptureHint": "Lisää liidien keräysdia esitykseesi aloittaaksesi yhteystietojen keräämisen katsojilta.",
   "comments.filter.title": "Suodata kommentteja",
   "comments.filter.status": "Tila",
   "comments.filter.type": "Tyyppi",

@@ -11,7 +11,7 @@
  * - the delivered request: `x-sb-event`, content-type, user-agent,
  *   `redirect: 'error'`;
  * - the exact top-level payload shape per builder (common, slide-library,
- *   interaction, lead) and the load-bearing values inside;
+ *   interaction) and the load-bearing values inside;
  * - best-effort semantics: a dead or refusing receiver never rejects the
  *   `maybeFire…` call.
  *
@@ -32,7 +32,7 @@ const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { testScope } = await import('./helpers/storage-scope.js');
 const { writeAppSettings } = await import('../server/storage/settings.js');
-const { maybeFireWebhook, maybeFireLeadWebhook, maybeFireInteractionWebhook } =
+const { maybeFireWebhook, maybeFireInteractionWebhook } =
   await import('../server/utils/webhooks.js');
 
 const REPO_ROOT = '/tmp/webhook-contract-tests';
@@ -47,7 +47,6 @@ const URLS = {
   interactionPollClosedUrl: 'http://203.0.114.5/poll',
   interactionLikertClosedUrl: 'http://203.0.114.6/likert',
   interactionFeedbackSubmittedUrl: 'http://203.0.114.7/feedback',
-  leadSubmittedUrl: 'http://203.0.114.8/lead',
 };
 
 const REQ = { headers: { host: 'decks.example.test' } };
@@ -346,56 +345,6 @@ describe('interaction.* payload shape', () => {
   }
 });
 
-// ─── lead payload ──────────────────────────────────────────────────────────
-
-describe('lead.submitted payload shape', () => {
-  it('carries the visitor PII block — the one payload shipping non-user personal data', async () => {
-    await maybeFireLeadWebhook(REPO_ROOT, REQ, {
-      presentation: { id: 'pres-1', title: 'Quarterly' },
-      slideId: 'slide-7',
-      lead: {
-        name: 'Visitor V',
-        email: 'visitor@example.org',
-        submittedAt: '2026-08-16T10:00:00.000Z',
-      },
-    });
-    await settle();
-
-    const { url, payload, options } = delivered();
-    assert.equal(url, URLS.leadSubmittedUrl);
-    assert.equal(options.headers['x-sb-event'], 'lead.submitted');
-    assert.deepEqual(Object.keys(payload).sort(), [
-      'createdAt',
-      'event',
-      'lead',
-      'presentation',
-      'slide',
-    ]);
-    assert.equal(payload.event, 'lead.submitted');
-    assert.deepEqual(payload.presentation, {
-      id: 'pres-1',
-      title: 'Quarterly',
-      editUrl: 'http://decks.example.test/app/pres-1',
-    });
-    assert.deepEqual(payload.slide, { id: 'slide-7' });
-    assert.deepEqual(payload.lead, {
-      name: 'Visitor V',
-      email: 'visitor@example.org',
-      submittedAt: '2026-08-16T10:00:00.000Z',
-    });
-  });
-
-  it('does not fire without a lead', async () => {
-    await maybeFireLeadWebhook(REPO_ROOT, REQ, {
-      presentation: { id: 'pres-1', title: 'T' },
-      slideId: 'slide-7',
-      lead: null,
-    });
-    await settle();
-    assert.equal(fetchCalls.length, 0);
-  });
-});
-
 // ─── best-effort fire ──────────────────────────────────────────────────────
 
 describe('best-effort fire', () => {
@@ -495,30 +444,10 @@ describe('HMAC signing', () => {
     assert.equal(options.headers['x-sb-event'], 'presentation.published');
   });
 
-  it('signs lead and interaction deliveries too', async () => {
+  it('signs interaction deliveries too', async () => {
     await writeAppSettings(testScope(REPO_ROOT), {
       webhooks: { ...URLS, signingSecret: SECRET },
     });
-
-    stubFetch();
-    await maybeFireLeadWebhook(REPO_ROOT, REQ, {
-      presentation: { id: 'pres-1', title: 'T' },
-      slideId: 'slide-7',
-      lead: {
-        name: 'V',
-        email: 'v@example.org',
-        submittedAt: '2026-08-16T10:00:00.000Z',
-      },
-    });
-    await settle();
-    const lead = delivered();
-    assert.equal(
-      lead.options.headers['x-sb-signature'],
-      'sha256=' +
-        createHmac('sha256', SECRET)
-          .update(lead.options.body, 'utf8')
-          .digest('hex'),
-    );
 
     stubFetch();
     await maybeFireInteractionWebhook(REPO_ROOT, {

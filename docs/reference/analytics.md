@@ -15,9 +15,7 @@ and the retention job. It deliberately does **not** restate the privacy design â
 what is stored per viewer, the per-deck device label, the two erase routes and
 the GDPR Article 11 reasoning live in
 [`analytics-privacy.md`](analytics-privacy.md), which is the normative document
-for that half. Lead capture (`server/storage/leads.js`,
-`server/routes/api/leads.js`) is a separate feature that happens to share the
-cleanup job; it is not covered here.
+for that half.
 
 ## Module map
 

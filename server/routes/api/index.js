@@ -64,7 +64,6 @@ import { handleProfile } from './profile.js';
 import { handleNotifications } from './notifications.js';
 import { handleAnalyticsTrack } from './analytics-track.js';
 import { handleAnalytics, handleAnalyticsReportPublic } from './analytics.js';
-import { handleLeadsPublic, handleLeads } from './leads.js';
 import { handleTags } from './tags.js';
 import { handleStockMedia } from './stock-media.js';
 import { handleApiKeys } from './api-keys.js';
@@ -171,7 +170,6 @@ export async function handleApi({ repoRoot, req, res, url }) {
   if (await handleSharePublic({ repoRoot, req, res, url })) return;
   if (await handleAnalyticsTrack({ repoRoot, req, res, url })) return;
   if (await handleAnalyticsReportPublic({ repoRoot, req, res, url })) return;
-  if (await handleLeadsPublic({ repoRoot, req, res, url })) return;
 
   // Sandbox mode: auto-provision a per-visitor guest session (cookie) and treat as authenticated.
   // This keeps per-visitor presentation isolation without a login screen.
@@ -237,7 +235,6 @@ export async function handleApi({ repoRoot, req, res, url }) {
   if (flags.enableLiveData && (await handleDataSources(ctx))) return;
   if (await handleActivity(ctx)) return;
   if (await handleAnalytics(ctx)) return;
-  if (await handleLeads(ctx)) return;
   if (await handleTags(ctx)) return;
   if (await handleStockMedia(ctx)) return;
   if (await handleJobs(ctx)) return;

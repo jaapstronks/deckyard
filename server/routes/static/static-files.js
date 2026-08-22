@@ -33,26 +33,6 @@ export function handleGo({ req, res, url, clientDir }) {
 }
 
 /**
- * GDPR self-service landing page (`/my-data`) — the friendly HTML the lead
- * verification email links to. A static asset kept out of the SPA router, like
- * `/go`; the page itself calls `GET`/`DELETE /api/leads/my-data` with the
- * `email` + `token` query params carried over from the email link.
- * @param {StaticContext} ctx
- * @returns {boolean} true if handled.
- */
-export function handleMyData({ req, res, url, clientDir }) {
-  if (
-    (url.pathname === '/my-data' || url.pathname === '/my-data/') &&
-    req.method === 'GET'
-  ) {
-    const fsPath = path.join(clientDir, 'my-data.html');
-    serveFile(res, fsPath);
-    return true;
-  }
-  return false;
-}
-
-/**
  * The fork CSS seam (`custom/styles/*.css`) as one stylesheet.
  *
  * Server-built documents inline the seam through `buildCssChain`; the app

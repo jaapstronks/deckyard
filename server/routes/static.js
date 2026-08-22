@@ -3,7 +3,6 @@ import { handleFeed } from './feed.js';
 import {
   handleCustomStyles,
   handleGo,
-  handleMyData,
   handleStaticFiles,
 } from './static/static-files.js';
 import { handleEmbed } from './static/embed.js';
@@ -34,7 +33,6 @@ export async function handleStatic(ctx) {
   }
 
   if (handleGo(ctx)) return;
-  if (handleMyData(ctx)) return;
   if (await handleEmbed(ctx)) return;
   if (await handlePublishedReader(ctx)) return;
   if (await handlePublishedPage(ctx)) return;
