@@ -120,6 +120,14 @@ export default {
       required: false,
       maxItems: MAX_ROWS,
       editor: 'table-grid',
+      // What the semantic projection needs to render these rows as a real
+      // <table> instead of a bullet list — the `tabular` structure contract
+      // (shared/slide-types/structure.js). Declared rather than branched on by
+      // name, so an external reader gets the same three facts through
+      // /api/slide-types.
+      columnCountKey: 'colCount',
+      headerRowKey: 'headerRow',
+      captionKey: 'caption',
       itemFields: Array.from({ length: MAX_COLS }, (_v, idx) => ({
         key: `c${idx + 1}`,
         label: `C${idx + 1}`,

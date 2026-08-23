@@ -280,7 +280,7 @@ export const FIELD_TYPES = {
     label: 'Tabular text',
     description:
       'Tabular text stored as a CSV/TSV string. Editor renders a chart-type-aware grid with a "Raw CSV" toggle (`client/views/editor/fields/csv-grid.js`); serialises to exactly the string the parser eats. Treated as a per-language, collaborative text field everywhere `markdown` is. Used by the chart `data` field.',
-    docExtra: '`maxLength`, `required`',
+    docExtra: '`maxLength`, `required`, `encodingKeys`',
     valueKind: 'string',
     validate: validateText,
   },
@@ -341,7 +341,7 @@ export const FIELD_TYPES = {
     description:
       'Repeating list of structured objects, each shaped by `itemFields`',
     docExtra:
-      '`minItems`, `maxItems`, `itemFields`, `itemDefaults`, `itemDefaultsByLang`, `required`',
+      '`minItems`, `maxItems`, `itemFields`, `itemDefaults`, `itemDefaultsByLang`, `required`, `ordered`, `relationField`, `relationLabels`, `columnCountKey`, `headerRowKey`, `captionKey`',
     valueKind: 'objectArray',
     validate: validateItems,
   },

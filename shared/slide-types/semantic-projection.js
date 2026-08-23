@@ -12,10 +12,34 @@
  * The canvas view remains the presentation surface; this is the portable,
  * readable one (WCAG 1.4.10 reflow, real heading hierarchy, landmarks — the
  * document shell is added by the server wrapper in server/export/reader.js).
+ *
+ * ## This module is the reference reader
+ *
+ * `SLIDE_STRUCTURE_CONTRACTS` (structure.js) publishes, per `structure`, what a
+ * reader that does not know the *type* may rely on — the normative half of the
+ * conformance claim in `docs/reference/deck-conformance.md`. This projection is
+ * the only reader we ship, so it is that contract's worked example and must
+ * obey it: `tabular` becomes a real `<table>` (rows are the item array, columns
+ * are the item keys), `dataset` decodes its payload to rows and names the
+ * encoding it drops. It used to project both as bullet lists, which is the
+ * cheapest possible way to make a published contract untrue.
+ *
+ * Two consequences worth stating:
+ *  - **No per-type branch.** Everything the table/caption projection needs is
+ *    declared on the field (`columnCountKey`, `headerRowKey`, `captionKey`,
+ *    `encodingKeys`) and therefore travels through `/api/slide-types` to any
+ *    other reader. A `if (type === 'table-slide')` here would be a rule only we
+ *    can follow.
+ *  - **`visibleWhen` is honoured.** A field the type itself declares inactive
+ *    (a bar chart's legend labels, a pie chart's axis names) is not part of the
+ *    slide's meaning; the editor and the canvas already skip it, and a third
+ *    surface that disagreed was how dead values reached the reader as prose.
  */
 
 import { markdownToSafeHtml } from '../markdown.js';
 import { escapeHtml, pickAltText, normalizeUrl, safeHref } from './helpers.js';
+import { slideStructure } from './structure.js';
+import { isFieldVisible } from './field-visibility.js';
 
 // Content keys that are presentation config, not readable content: the global
 // per-slide background/logo/a11y-override fields. The a11y fields are surfaced
@@ -135,8 +159,13 @@ function resolveImageA11y(fieldKey, content, headingText) {
   return { alt, decorative, caption };
 }
 
-/** Parse a simple CSV string into a semantic <table> (first row = header). */
-function renderCsvTable(csv) {
+/**
+ * Parse a simple CSV string into a semantic <table> (first row = header).
+ * @param {string} csv
+ * @param {string} [caption] - `<caption>` text; for a `dataset` payload this is
+ *   the encoding the decoded rows no longer carry (see {@link encodingCaption}).
+ */
+function renderCsvTable(csv, caption = '') {
   const rows = String(csv || '')
     .replace(/\r\n/g, '\n')
     .split('\n')
@@ -145,6 +174,7 @@ function renderCsvTable(csv) {
     .map((r) => r.split(',').map((c) => c.trim()));
   if (!rows.length) return '';
   const [head, ...body] = rows;
+  const cap = caption ? `<caption>${escapeHtml(caption)}</caption>` : '';
   const thead = `<thead><tr>${head
     .map((c) => `<th scope="col">${escapeHtml(c)}</th>`)
     .join('')}</tr></thead>`;
@@ -156,7 +186,124 @@ function renderCsvTable(csv) {
         )
         .join('')}</tbody>`
     : '';
-  return `<table class="reader-table">${thead}${tbody}</table>`;
+  return `<table class="reader-table">${cap}${thead}${tbody}</table>`;
+}
+
+/**
+ * The caption for a `dataset` payload: the sibling fields its `encodingKeys`
+ * names, each as "<declared label>: <value>".
+ *
+ * The dataset contract tells a reader to decode the payload to rows and "lose
+ * only the visual encoding" — which is only honest if the encoding is named
+ * somewhere. It is built from the fields' own declared labels, so there is no
+ * copy here to translate or to drift: a chart says "Chart type: bar. X label:
+ * Year." because that is what its own schema calls those slots.
+ *
+ * Keys the type currently declares inactive (`visibleWhen`) are already gone by
+ * the time this runs — a pie chart names no axes.
+ *
+ * @param {string[]} keys - the csv field's `encodingKeys`
+ * @param {Map<string, object>} visibleByKey - visible fields, by key
+ * @param {object} content
+ * @returns {string}
+ */
+function encodingCaption(keys, visibleByKey, content) {
+  const parts = [];
+  for (const key of Array.isArray(keys) ? keys : []) {
+    const field = visibleByKey.get(key);
+    const value = str(content?.[key]);
+    if (!field || !value) continue;
+    const label = str(field.label) || key;
+    parts.push(`${label}: ${value}`);
+  }
+  return parts.length ? `${parts.join('. ')}.` : '';
+}
+
+/**
+ * Project a `tabular` type's row array as a real <table> — the shape its
+ * structure contract promises ("read the item array as rows and each item's
+ * keys as columns").
+ *
+ * Three optional declarations on the items field keep this free of per-type
+ * knowledge, and travel to other readers through `/api/slide-types`:
+ *  - `columnCountKey` — a sibling content key bounding how many of the declared
+ *    `itemFields` are live columns, so cells beyond a shrunk table's width stay
+ *    out of the reader exactly as they stay off the canvas.
+ *  - `headerRowKey` — a sibling enum whose value `'off'` means the first row is
+ *    data. Declaring the key at all means the type has a header row by default.
+ *  - `captionKey` — a sibling string that becomes the `<caption>` (and is then
+ *    consumed, so it does not also render as a loose paragraph).
+ *
+ * Without any of the three: every declared column, no header row, no caption.
+ *
+ * @param {object} field - the `items` field
+ * @param {object} content
+ * @param {object} defaults - the type's `defaults`, for unset sibling keys
+ * @returns {string}
+ */
+function renderRowTable(field, content, defaults) {
+  const rows = Array.isArray(content?.[field.key]) ? content[field.key] : [];
+  if (!rows.length) return '';
+  const declared = Array.isArray(field.itemFields)
+    ? field.itemFields.filter((f) => f && !f.hidden)
+    : [];
+  if (!declared.length) return '';
+
+  const countKey = str(field.columnCountKey);
+  const rawCount = countKey
+    ? Number.parseInt(str(content?.[countKey]) || str(defaults?.[countKey]), 10)
+    : NaN;
+  const columns = Number.isFinite(rawCount)
+    ? declared.slice(0, Math.max(0, Math.min(rawCount, declared.length)))
+    : declared;
+  if (!columns.length) return '';
+
+  const headerKey = str(field.headerRowKey);
+  const headerValue = headerKey
+    ? str(content?.[headerKey]) || str(defaults?.[headerKey]) || 'on'
+    : '';
+  const hasHeader = !!headerKey && headerValue !== 'off';
+
+  const cell = (row, col, tag) => {
+    const attr = tag === 'th' ? ' scope="col"' : '';
+    return `<${tag}${attr}>${cellHtml(col, row)}</${tag}>`;
+  };
+  const bodyRows = hasHeader ? rows.slice(1) : rows;
+  const thead = hasHeader
+    ? `<thead><tr>${columns
+        .map((col) => cell(rows[0], col, 'th'))
+        .join('')}</tr></thead>`
+    : '';
+  const tbody = bodyRows.length
+    ? `<tbody>${bodyRows
+        .map(
+          (row) =>
+            `<tr>${columns.map((col) => cell(row, col, 'td')).join('')}</tr>`,
+        )
+        .join('')}</tbody>`
+    : '';
+  if (!thead && !tbody) return '';
+  const captionText = str(content?.[str(field.captionKey)]);
+  const cap = captionText
+    ? `<caption>${escapeHtml(captionText)}</caption>`
+    : '';
+  return `<table class="reader-table">${cap}${thead}${tbody}</table>`;
+}
+
+/**
+ * One table cell's inner HTML. A cell is phrasing content, so the block wrapper
+ * the same field type gets elsewhere (`<p>`, `<pre>`) is wrong here: a string
+ * cell is escaped text and a markdown cell keeps its inline rendering.
+ * @param {{key: string, type?: string}} col
+ * @param {object} row
+ * @returns {string}
+ */
+function cellHtml(col, row) {
+  const value = str(row?.[col.key]);
+  if (!value) return '';
+  return col.type === 'markdown'
+    ? markdownToSafeHtml(value)
+    : escapeHtml(value);
 }
 
 /**
@@ -375,7 +522,13 @@ export function renderSlideBodySemanticHtml(
 ) {
   const content =
     slide?.content && typeof slide.content === 'object' ? slide.content : {};
-  const fields = Array.isArray(def?.fields) ? def.fields : [];
+  const defaults =
+    def?.defaults && typeof def.defaults === 'object' ? def.defaults : {};
+  // A field the type declares inactive right now is not part of the slide's
+  // meaning — the form and the canvas both skip it, and so does the reader.
+  const fields = (Array.isArray(def?.fields) ? def.fields : []).filter((f) =>
+    isFieldVisible(f, content, defaults),
+  );
   const parts = [];
 
   const summary = str(content.a11ySummary);
@@ -419,10 +572,46 @@ export function renderSlideBodySemanticHtml(
     );
   }
 
+  // The structure contract, where it asks for more than the field vocabulary
+  // alone gives (structure.js / docs/reference/deck-conformance.md).
+  const structure = slideStructure(def);
+  const visibleByKey = new Map(fields.map((f) => [f.key, f]));
+  const structuredHtmlByKey = new Map();
+  for (const field of fields) {
+    if (!field) continue;
+    // `tabular`: the single item array is rows × columns, not a bullet list.
+    if (structure === 'tabular' && field.type === 'items') {
+      structuredHtmlByKey.set(
+        field.key,
+        renderRowTable(field, content, defaults),
+      );
+      const captionKey = str(field.captionKey);
+      if (captionKey) consumed.add(captionKey);
+      const countKey = str(field.columnCountKey);
+      if (countKey) consumed.add(countKey);
+      continue;
+    }
+    // `dataset`: decode the payload to rows and name the encoding that is lost.
+    if (field.type === 'csv' && Array.isArray(field.encodingKeys)) {
+      structuredHtmlByKey.set(
+        field.key,
+        renderCsvTable(
+          content?.[field.key],
+          encodingCaption(field.encodingKeys, visibleByKey, content),
+        ),
+      );
+      for (const key of field.encodingKeys) consumed.add(key);
+    }
+  }
+
   for (const field of fields) {
     if (!field || field.key === headingKey) continue;
     if (groupHtmlByAnchor.has(field.key)) {
       parts.push(groupHtmlByAnchor.get(field.key));
+      continue;
+    }
+    if (structuredHtmlByKey.has(field.key)) {
+      parts.push(structuredHtmlByKey.get(field.key));
       continue;
     }
     if (consumed.has(field.key)) continue;

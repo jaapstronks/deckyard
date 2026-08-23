@@ -165,6 +165,28 @@ Two consequences worth stating outright:
   degradation (decode, then treat as tabular) instead of leaving the reader to
   invent one.
 
+### The worked example: our own reader
+
+`shared/slide-types/semantic-projection.js` — the projection behind the reader
+export and `/p/…?reader` — is the only reader Deckyard ships, so it is this
+table's worked example. Until #933 it was not: `tabular` and `dataset` both came
+out as bullet lists of rows, which is the cheapest possible way to make a
+published contract untrue. It now renders `tabular` as a real `<table>` (rows are
+the item array, columns are the item keys) and captions a decoded `dataset` with
+the encoding it drops.
+
+What that needed is **declared on the field, not branched on by type name** —
+`columnCountKey`, `headerRowKey`, `captionKey` on the rows array, `encodingKeys`
+on the payload — so it travels through `/api/slide-types` and a second
+implementation can follow the same three facts. A `if (type === 'table-slide')`
+in the projection would have been a rule only we can obey, which is the opposite
+of what a structure contract is for.
+
+The projection also honours `visibleWhen`: a field the type declares inactive
+right now (a bar chart's legend labels, a pie chart's axis names) is not part of
+the slide's meaning. The editor and the canvas already skipped it; a third
+surface that disagreed was how dead values reached the reader as prose.
+
 ## Level 2 — core-profile conformance
 
 Level 2 adds the nine tier-1 types and their field contracts:
