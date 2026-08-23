@@ -85,6 +85,13 @@ export default {
       type: 'csv', // the csv-grid widget (field-editors.js) is this type's base editor
       required: true,
       maxLength: 20000,
+      // The `dataset` contract tells a reader to decode this payload to rows
+      // and lose "only the visual encoding" — which is honest only if the
+      // encoding is named. These siblings describe it; the projection captions
+      // the decoded table with their declared labels instead of dropping them
+      // in as anonymous paragraphs. `visibleWhen` still applies, so a pie chart
+      // names no axes.
+      encodingKeys: ['chartType', 'xLabel', 'yLabel'],
     },
     // The per-type display toggles, two-up where a chart type has two (see
     // form-layout.js).

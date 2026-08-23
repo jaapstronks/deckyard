@@ -461,3 +461,197 @@ describe('relation-aware collection projection (text-blocks arrows)', () => {
     assert.ok(!/reader-relation/.test(html), html);
   });
 });
+
+describe('the structure contract: tabular projects to a real <table>', () => {
+  // `SLIDE_STRUCTURE_CONTRACTS.tabular` promises a reader "read the item array
+  // as rows and each item's keys as columns". Before this, the projection sent
+  // a table slide out as a bullet list of rows with ten paragraphs under each —
+  // a published contract made untrue by our own reference reader.
+  const tabular = (fieldExtra = {}) => ({
+    structure: 'tabular',
+    defaults: { colCount: '3', headerRow: 'on' },
+    fields: [
+      { key: 'title', type: 'string' },
+      { key: 'caption', type: 'string' },
+      { key: 'headerRow', type: 'enum' },
+      { key: 'colCount', type: 'enum', hidden: true },
+      {
+        key: 'rows',
+        type: 'items',
+        itemFields: [
+          { key: 'c1', type: 'string' },
+          { key: 'c2', type: 'string' },
+          { key: 'c3', type: 'string' },
+        ],
+        ...fieldExtra,
+      },
+    ],
+  });
+  const rows = [
+    { c1: 'Year', c2: 'Revenue', c3: 'Profit' },
+    { c1: '2024', c2: '10', c3: '2' },
+  ];
+
+  it('renders rows as <tr> and the first row as <th scope="col">', () => {
+    const html = body(
+      { content: { title: 'T', rows } },
+      tabular({ headerRowKey: 'headerRow' }),
+      { headingKey: 'title' },
+    );
+    assert.ok(/<table class="reader-table">/.test(html), html);
+    assert.ok(/<th scope="col">Year<\/th>/.test(html), html);
+    assert.ok(/<tbody><tr><td>2024<\/td>/.test(html), html);
+    assert.ok(!/reader-items/.test(html), html);
+  });
+
+  it('treats the first row as data when the header key says off', () => {
+    const html = body(
+      { content: { title: 'T', headerRow: 'off', rows } },
+      tabular({ headerRowKey: 'headerRow' }),
+      { headingKey: 'title' },
+    );
+    assert.ok(!/<thead/.test(html), html);
+    assert.ok(/<td>Year<\/td>/.test(html), html);
+  });
+
+  it('bounds the columns by the declared count key, so stale cells stay out', () => {
+    const stale = [
+      { c1: 'A', c2: 'B', c3: 'LEAK' },
+      { c1: 'C', c2: 'D', c3: 'LEAK' },
+    ];
+    const html = body(
+      { content: { title: 'T', colCount: '2', rows: stale } },
+      tabular({ columnCountKey: 'colCount' }),
+      { headingKey: 'title' },
+    );
+    assert.ok(!/LEAK/.test(html), html);
+    assert.ok(/<td>A<\/td><td>B<\/td>/.test(html), html);
+  });
+
+  it('uses the declared caption key as <caption>, not as a loose paragraph', () => {
+    const html = body(
+      { content: { title: 'T', caption: 'In thousands', rows } },
+      tabular({ captionKey: 'caption', headerRowKey: 'headerRow' }),
+      { headingKey: 'title' },
+    );
+    assert.ok(/<caption>In thousands<\/caption>/.test(html), html);
+    assert.ok(!/<p>In thousands<\/p>/.test(html), html);
+  });
+
+  it('renders a markdown cell inline, without a block <p> wrapper', () => {
+    const def = tabular();
+    def.fields[4].itemFields[0].type = 'markdown';
+    const html = body(
+      { content: { title: 'T', rows: [{ c1: '**bold**', c2: 'plain' }] } },
+      def,
+      { headingKey: 'title' },
+    );
+    assert.ok(/<td><strong>bold<\/strong><\/td>/.test(html), html);
+    assert.ok(!/<td><p/.test(html), html);
+  });
+
+  it('falls back to every declared column with no header when nothing is declared', () => {
+    const html = body({ content: { title: 'T', rows } }, tabular(), {
+      headingKey: 'title',
+    });
+    assert.ok(!/<thead/.test(html), html);
+    assert.ok(
+      /<td>Year<\/td><td>Revenue<\/td><td>Profit<\/td>/.test(html),
+      html,
+    );
+  });
+});
+
+describe('the structure contract: a dataset names the encoding it drops', () => {
+  // `SLIDE_STRUCTURE_CONTRACTS.dataset` tells a reader to decode the payload to
+  // rows and lose "only the visual encoding" — honest only if that encoding is
+  // named. The caption is built from the fields' own declared labels, so there
+  // is no reader-side copy to drift.
+  const dataset = {
+    structure: 'dataset',
+    fields: [
+      { key: 'title', type: 'string' },
+      { key: 'chartType', label: 'Chart type', type: 'enum' },
+      {
+        key: 'data',
+        type: 'csv',
+        encodingKeys: ['chartType', 'xLabel', 'yLabel'],
+      },
+      {
+        key: 'xLabel',
+        label: 'X label',
+        type: 'string',
+        visibleWhen: { field: 'chartType', in: ['bar'] },
+      },
+      { key: 'yLabel', label: 'Y label', type: 'string' },
+    ],
+  };
+
+  it('captions the decoded table with the encoding fields', () => {
+    const html = body(
+      {
+        content: {
+          title: 'T',
+          chartType: 'bar',
+          data: 'Year,Rev\n2024,10',
+          xLabel: 'Year',
+          yLabel: 'EUR',
+        },
+      },
+      dataset,
+      { headingKey: 'title' },
+    );
+    assert.ok(
+      /<caption>Chart type: bar\. X label: Year\. Y label: EUR\.<\/caption>/.test(
+        html,
+      ),
+      html,
+    );
+    // …and never twice: the encoding fields are consumed by the caption.
+    assert.ok(!/<p>Year<\/p>/.test(html), html);
+    assert.ok(!/<p>EUR<\/p>/.test(html), html);
+  });
+});
+
+describe('fields the type declares inactive do not project', () => {
+  // The editor and the canvas both honour `visibleWhen`; a third surface that
+  // did not was how a bar chart's legend labels reached the reader as prose.
+  const def = {
+    fields: [
+      { key: 'title', type: 'string' },
+      { key: 'chartType', type: 'enum' },
+      {
+        key: 'seriesLabel',
+        type: 'string',
+        visibleWhen: { field: 'chartType', in: ['line'] },
+      },
+    ],
+  };
+
+  it('skips a field whose condition is unmet', () => {
+    const html = body(
+      { content: { title: 'T', chartType: 'bar', seriesLabel: 'LEAK' } },
+      def,
+      { headingKey: 'title' },
+    );
+    assert.equal(html, '');
+  });
+
+  it('keeps it when the condition holds', () => {
+    const html = body(
+      { content: { title: 'T', chartType: 'line', seriesLabel: 'Revenue' } },
+      def,
+      { headingKey: 'title' },
+    );
+    assert.ok(/<p>Revenue<\/p>/.test(html), html);
+  });
+
+  it('resolves an unset driver against the type defaults', () => {
+    const html = body(
+      { content: { title: 'T', seriesLabel: 'LEAK' } },
+      { ...def, defaults: { chartType: 'bar' } },
+      { headingKey: 'title' },
+    );
+    assert.equal(html, '');
+  });
+});
