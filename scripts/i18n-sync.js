@@ -2,10 +2,19 @@
 /**
  * i18n Sync Script
  *
- * Synchronizes all language files with English (reference).
- * Missing keys are filled with English values as placeholders.
+ * Synchronizes all language files with English (reference): prunes
+ * `slideType.*` keys the registry no longer produces, then fills the keys a
+ * locale is missing with their English values as placeholders.
  *
- * Usage: node scripts/i18n-sync.js
+ * Split in two halves on purpose. `planSync()` only reads — it returns the
+ * complete list of edits the run would make — and `applyPlan()` is the only
+ * thing that touches disk. `--dry-run` runs the first half and prints it, so
+ * "what would this do?" is answerable without a working copy to clean up
+ * afterwards (the fill half wants to write thousands of keys per locale).
+ *
+ * Usage:
+ *   node scripts/i18n-sync.js              # prune + fill, writing to disk
+ *   node scripts/i18n-sync.js --dry-run    # report the same plan, write nothing
  */
 
 import fs from 'fs';
@@ -46,6 +55,9 @@ const ALL_LOCALES = [
   'sv',
   'no',
 ];
+
+/** How many key names a dry-run prints per file before summarizing the rest. */
+const DRY_RUN_KEY_SAMPLE = 10;
 
 function loadJson(filePath) {
   try {
@@ -93,132 +105,211 @@ export function liveSlideTypeI18nKeys() {
 }
 
 /**
- * Remove `slideType.*` keys the registry no longer produces.
+ * @typedef {object} SyncFileEdit
+ * @property {string} locale       locale directory the file lives in
+ * @property {string} module       module basename, without `.json`
+ * @property {string} filePath     absolute path to the file
+ * @property {string[]} pruned     `slideType.*` keys the registry no longer produces
+ * @property {string[]} filled     keys copied in from English
+ * @property {object} data         the file's contents with both edits applied
+ */
+
+/**
+ * @typedef {object} SyncPlan
+ * @property {SyncFileEdit[]} edits  one entry per file that would change
+ * @property {number} totalPruned    keys removed across all files
+ * @property {number} totalFilled    keys added across all files
+ * @property {string[]} skippedModules modules with no English source to fill from
+ */
+
+/**
+ * Compute every edit a sync would make, without touching disk.
  *
+ * Prune before fill, and both in memory: filling copies English into each
+ * locale, so a dead key left in English would be handed straight back to every
+ * locale the prune just cleaned.
+ *
+ * **The prune** removes `slideType.*` keys the registry no longer produces.
  * Nothing else deletes them: `i18n-fill` only ever adds, `i18n-validate` only
- * flags keys *missing* from English, and the audit's orphan check skips the whole
- * `slideType.` family as runtime-built. So a field, option or type that leaves
- * the registry strands its translations in every locale forever. The registry is
- * the authority on which keys are real; anything under `slideType.` that it does
- * not generate is dead and pruned here — including from English, which drifts the
- * same way (the fill step merges into the existing file rather than replacing it).
- *
- * Scoped to the `slideType.` namespace on purpose: keys like
+ * flags keys *missing* from English, and the audit's orphan check skips the
+ * whole `slideType.` family as runtime-built. So a field, option or type that
+ * leaves the registry strands its translations in every locale forever. The
+ * registry is the authority on which keys are real; anything under `slideType.`
+ * that it does not generate is dead — including in English, which drifts the
+ * same way (the fill step merges into the existing file rather than replacing
+ * it). Scoped to the `slideType.` namespace on purpose: keys like
  * `editor.slideTypeDesc.<type>` are runtime-built fallbacks a locale may hold
  * without English (the picker resolves them against the authoring default), so a
- * blanket "not in English" prune would delete live translations.
+ * blanket "not in English" prune would delete live translations. The valid set
+ * is `liveSlideTypeI18nKeys()`, which keeps fork types — see there for why
+ * excluding them would silently delete a fork's translations (#499).
  *
- * The valid set is `liveSlideTypeI18nKeys()`, which keeps fork types — see there
- * for why excluding them would silently delete a fork's translations (#499).
- *
- * @returns {number} total keys removed across all locales
+ * @returns {SyncPlan} the edits, keyed per file
  */
-function pruneOrphanedSlideTypeKeys() {
+export function planSync() {
   const valid = liveSlideTypeI18nKeys();
-  let totalPruned = 0;
+  /** @type {Map<string, SyncFileEdit>} */
+  const edits = new Map();
+  /** locale/module → contents as they stand after the prune */
+  const loaded = new Map();
+  const skippedModules = [];
 
-  for (const lang of ALL_LOCALES) {
+  const editFor = (locale, moduleName, filePath, data) => {
+    const id = `${locale}/${moduleName}`;
+    let edit = edits.get(id);
+    if (!edit) {
+      edit = {
+        locale,
+        module: moduleName,
+        filePath,
+        pruned: [],
+        filled: [],
+        data,
+      };
+      edits.set(id, edit);
+    }
+    return edit;
+  };
+
+  // Prune pass — every locale on disk, English included.
+  for (const locale of ALL_LOCALES) {
     for (const moduleName of MODULES) {
-      const modulePath = path.join(I18N_DIR, lang, `${moduleName}.json`);
-      const data = loadJson(modulePath);
+      const filePath = path.join(I18N_DIR, locale, `${moduleName}.json`);
+      const data = loadJson(filePath);
       if (!data) continue;
+      loaded.set(`${locale}/${moduleName}`, data);
 
       const dead = Object.keys(data).filter(
         (k) => k.startsWith('slideType.') && !valid.has(k),
       );
       if (dead.length === 0) continue;
 
-      // Delete in place and keep the file's existing order: a prune should be a
-      // clean set of removed lines, not a whole-file re-sort (en/it/pl/fi are not
-      // stored in this script's sort order, and re-sorting them here would bury
-      // the deletions under hundreds of moved lines).
       for (const k of dead) delete data[k];
-      saveJson(modulePath, data);
-      console.log(
-        `${lang}/${moduleName}.json: -${dead.length} orphaned slideType key(s)`,
-      );
-      totalPruned += dead.length;
+      editFor(locale, moduleName, filePath, data).pruned.push(...dead);
     }
   }
 
-  console.log(`\nTotal orphaned slideType keys pruned: ${totalPruned}`);
-  return totalPruned;
-}
-
-function main() {
-  console.log(
-    'i18n Sync - Prune orphaned slide-type keys, then fill missing keys with English\n',
-  );
-
-  // Prune first: filling copies English into each locale, so a dead key left in
-  // English would be handed straight back to every locale we just cleaned.
-  pruneOrphanedSlideTypeKeys();
-
-  console.log('\nFilling missing keys with English\n');
-
-  let totalAdded = 0;
-
+  // Fill pass — English (post-prune) into the fill-target locales.
   for (const moduleName of MODULES) {
-    const enPath = path.join(I18N_DIR, 'en', `${moduleName}.json`);
-    const enData = loadJson(enPath);
-
+    const enData = loaded.get(`en/${moduleName}`);
     if (!enData) {
-      console.log(`Skipping ${moduleName}: no English source`);
+      skippedModules.push(moduleName);
       continue;
     }
-
     const enKeys = Object.keys(enData);
 
-    for (const lang of LANGUAGES) {
-      const langPath = path.join(I18N_DIR, lang, `${moduleName}.json`);
-      const langData = loadJson(langPath) || {};
+    for (const locale of LANGUAGES) {
+      const id = `${locale}/${moduleName}`;
+      const filePath = path.join(I18N_DIR, locale, `${moduleName}.json`);
+      const data = loaded.get(id) || {};
+      loaded.set(id, data);
 
-      let addedCount = 0;
-      for (const key of enKeys) {
-        if (langData[key] === undefined) {
-          langData[key] = enData[key];
-          addedCount++;
-        }
-      }
+      const missing = enKeys.filter((k) => data[k] === undefined);
+      if (missing.length === 0) continue;
 
-      if (addedCount > 0) {
-        saveJson(langPath, sortKeys(langData));
-        console.log(`${lang}/${moduleName}.json: +${addedCount} keys`);
-        totalAdded += addedCount;
-      }
+      for (const k of missing) data[k] = enData[k];
+      editFor(locale, moduleName, filePath, data).filled.push(...missing);
     }
   }
 
-  console.log(`\nTotal keys added: ${totalAdded}`);
+  const list = [...edits.values()];
+  return {
+    edits: list,
+    totalPruned: list.reduce((n, e) => n + e.pruned.length, 0),
+    totalFilled: list.reduce((n, e) => n + e.filled.length, 0),
+    skippedModules,
+  };
+}
 
-  // Regenerate index.json files for each language
-  console.log('\nRegenerating index.json files...');
+/**
+ * Write a plan's edits to disk.
+ *
+ * A file that only lost keys keeps its existing order: a prune should read as a
+ * clean set of removed lines, not a whole-file re-sort (en/it/pl/fi are not
+ * stored in this script's sort order, and re-sorting them here would bury the
+ * deletions under hundreds of moved lines). A file that gained keys is sorted,
+ * because the new keys have to land somewhere deterministic.
+ *
+ * @param {SyncPlan} plan
+ * @returns {void}
+ */
+export function applyPlan(plan) {
+  for (const edit of plan.edits) {
+    saveJson(
+      edit.filePath,
+      edit.filled.length ? sortKeys(edit.data) : edit.data,
+    );
+  }
+}
 
-  const sharedPath = path.join(I18N_DIR, 'shared.json');
-  const shared = loadJson(sharedPath) || {};
+function formatKeys(keys) {
+  const shown = keys.slice(0, DRY_RUN_KEY_SAMPLE);
+  const rest = keys.length - shown.length;
+  return (
+    shown.map((k) => `      ${k}`).join('\n') +
+    (rest > 0 ? `\n      … ${rest} more` : '')
+  );
+}
 
-  for (const lang of ['en', ...LANGUAGES]) {
-    const langDir = path.join(I18N_DIR, lang);
-    const merged = { ...shared };
-
-    for (const moduleName of MODULES) {
-      const modulePath = path.join(langDir, `${moduleName}.json`);
-      const moduleData = loadJson(modulePath);
-      if (moduleData) {
-        Object.assign(merged, moduleData);
-      }
+function reportPlan(plan, { dryRun }) {
+  for (const edit of plan.edits) {
+    const parts = [];
+    if (edit.pruned.length)
+      parts.push(`-${edit.pruned.length} orphaned slideType key(s)`);
+    if (edit.filled.length)
+      parts.push(`+${edit.filled.length} key(s) from English`);
+    console.log(`${edit.locale}/${edit.module}.json: ${parts.join(', ')}`);
+    if (dryRun && edit.pruned.length) {
+      console.log('    pruned:');
+      console.log(formatKeys(edit.pruned));
     }
-
-    const indexPath = path.join(langDir, 'index.json');
-    saveJson(indexPath, sortKeys(merged));
-    console.log(`${lang}/index.json: ${Object.keys(merged).length} keys`);
+    if (dryRun && edit.filled.length) {
+      console.log('    filled:');
+      console.log(formatKeys(edit.filled));
+    }
   }
 
-  console.log('\nDone!');
+  for (const moduleName of plan.skippedModules) {
+    console.log(`Skipping ${moduleName}: no English source`);
+  }
+
+  console.log(
+    `\n${plan.edits.length} file(s) ${dryRun ? 'would change' : 'changed'}: ` +
+      `${plan.totalPruned} orphaned slideType key(s) pruned, ` +
+      `${plan.totalFilled} key(s) filled with English.`,
+  );
+}
+
+function main(argv = process.argv.slice(2)) {
+  const dryRun = argv.includes('--dry-run');
+  const unknown = argv.filter((a) => a !== '--dry-run');
+  if (unknown.length > 0) {
+    console.error(`Unknown argument(s): ${unknown.join(' ')}`);
+    console.error('Usage: node scripts/i18n-sync.js [--dry-run]');
+    process.exit(1);
+  }
+
+  console.log(
+    dryRun
+      ? 'i18n Sync (dry run) - nothing is written; this is what would change\n'
+      : 'i18n Sync - Prune orphaned slide-type keys, then fill missing keys with English\n',
+  );
+
+  const plan = planSync();
+  if (!dryRun) applyPlan(plan);
+  reportPlan(plan, { dryRun });
+
+  if (dryRun) {
+    console.log(
+      '\nDry run: no files were touched. Re-run without --dry-run to apply.',
+    );
+  } else {
+    console.log('\nDone!');
+  }
 }
 
 // Run the full sync only when invoked directly, not when imported for the prune
-// helper (importing must not rewrite every locale file).
+// helper or the plan (importing must not rewrite every locale file).
 if (process.argv[1] === __filename) {
   main();
 }
