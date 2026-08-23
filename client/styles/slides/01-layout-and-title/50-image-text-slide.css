@@ -38,7 +38,7 @@
 /* Corner layout: the image sits only in the top corner and the area under it
    stays empty air. Both cells live in the top row; the bottom row is
    deliberately unused breathing room, so this variant fits little text
-   (auto-density steps the body down when it overflows). These rules come
+   (pick the density field's "Small" if the copy does not fit). These rules come
    after the width rules on purpose: a corner slide keeps its imageWidth
    value, and the later corner rules must win the same-specificity fight. */
 .slide-image-text.is-layout-corner .split {
@@ -282,8 +282,8 @@
    Unlike the content slide this balances the columns: the split is an
    explicit toggle, so short bodies must visibly divide instead of all
    landing in the left column (which would make the toggle look inert).
-   Overflow still spills sideways into a cut-off extra column, which the
-   auto-fit runtime detects via scrollWidth; clip it at the box edge. */
+   Overflow would otherwise spill sideways into a cut-off extra column; clip
+   it at the box edge instead. */
 .slide-image-text.is-text-cols-2 .copy .body {
   columns: 2;
   column-gap: var(--slide-space-16);

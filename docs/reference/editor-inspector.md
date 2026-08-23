@@ -319,8 +319,8 @@ theme that never defined it falls back to the default text colour (the
 `currentColor` fallback in the `tf-color-brand-*` CSS), not a broken colour.
 
 **Size scale (`tf-size-sm/lg`).** A plain `em` multiplier would _replace_ the
-px font-sizes several types set (content body 28/25/22px per density) with a
-fraction of the parent size, shrinking rather than scaling. Instead `tf-size-*`
+font-size a type sets for that element (the content body's per-density step,
+say) with a fraction of the parent size, shrinking rather than scaling. Instead `tf-size-*`
 only set a `--tf-size-scale` custom property on the field element (`sm` 0.85,
 `lg` 1.2, `md` = no class → fallback 1), and each primary text element
 expresses its `font-size` as `calc(<base> * var(--tf-size-scale, 1))`, rolled

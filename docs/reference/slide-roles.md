@@ -461,24 +461,6 @@ occurrence:
   tile, not text-scale steps; snapping them up to the nearest display step
   reintroduces overflow at the denser counts. Marked in place with an
   `allowlist:` comment;
-- **auto-fit body ladder rungs** — the base `font-size` inside the
-  `calc(<px> * var(--tf-size-scale, 1))` expressions on the content-slide and
-  image-text-slide bodies (`30-content.css`, `10-image-text.css`). Unlike the
-  `--tf-size-scale` multiplier below, these are the number it multiplies. They
-  are a **continuous fit ladder**, not display sizes: `content-slide-autofit.js`
-  steps a one-column body through 36 → 31 → 28 (a two-column body through
-  28 → 25 → 22) until the copy clears the box, and the image-text base tracks the
-  text column's width (28px for a half image, 32px for a narrow one, each with
-  its own compact rung). The rung ratios (≈1.11–1.16) are deliberately finer
-  than the display scale (≈1.17–1.21), so snapping them to scale steps either
-  collapses two rungs onto one — breaking the shrink step the runtime relies on
-  (25 and 22 both round to `md`; 31 has no step between `lg` 28 and `xl` 34) —
-  or forces a rung _up_ (36 → 44, 32 → 34), which reintroduces overflow at the
-  denser fills. Measured: a one-column body of five paragraphs lands on the 31px
-  medium rung with 3px of clearance — 34px would overflow it, 28px would erase
-  the step. Kept as raw px so the ladder reads as one uniform mechanism and stays
-  free to use the inter-step values the scale does not have. Marked in place with
-  an `allowlist:` comment;
 - the `--tf-size-scale` **multiplier** of the text-style controls — the S/M/L
   factor itself (`97-text-styles.css`), not the base size it scales (that is the
   ladder-rung category above);

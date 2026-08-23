@@ -266,11 +266,10 @@ export default {
       label: 'Text size',
       type: 'enum',
       required: false,
-      // 'auto' shrinks to the compact size only when the body overflows;
-      // 'comfortable' forces the larger size; 'compact' forces the smaller size.
+      // 'auto' keeps the default sizing; 'compact' steps the copy down one
+      // size so more of it fits. Same vocabulary as list-slide's density field.
       options: [
         { value: 'auto', label: 'Auto' },
-        { value: 'comfortable', label: 'Large' },
         { value: 'compact', label: 'Small' },
       ],
     },
@@ -375,7 +374,13 @@ export default {
   // Legacy-to-canonical fold, run by the editor on open
   // (shared/slide-types/normalize-content.js): the flat `image` migrates into
   // images[0] and the slide-level alt/focus/imageFit fold into the items.
-  normalizeContent: ensureImageTextImages,
+  // Density 'comfortable' was retired with the shrink layer — it only ever
+  // meant "do not shrink me", which is now the only behaviour — so stored
+  // decks fold to 'auto' and the strict enum validation stops seeing it.
+  normalizeContent(content) {
+    ensureImageTextImages(content);
+    if (content?.density === 'comfortable') content.density = 'auto';
+  },
   defaultsByLang: {
     nl: {
       image: '',
@@ -466,14 +471,10 @@ export default {
         : '';
     const imgBg =
       content?.imageBackground === 'match' ? 'is-image-bg-match' : '';
-    const rawDensity = content?.density;
-    const density =
-      rawDensity === 'comfortable' || rawDensity === 'compact'
-        ? rawDensity
-        : 'auto';
-    // 'compact' forces the small size up front. 'auto' starts comfortable
-    // and the runtime adds is-compact if the body overflows.
-    const densityClass = density === 'compact' ? ' is-compact' : '';
+    // 'compact' takes the smaller copy size; anything else (including the
+    // retired 'comfortable', which only ever meant "do not shrink me") is the
+    // default size.
+    const densityClass = content?.density === 'compact' ? ' is-compact' : '';
     const caption = content?.caption
       ? `<figcaption class="caption" data-inline-field="caption" dir="auto">${escapeHtml(
           content.caption,
@@ -531,7 +532,7 @@ export default {
     const mediaCount = cells > 1 ? ` data-count="${cells}"` : '';
     const actionsHtml = renderActionsHtml(content?.actions);
     return `
-        <div class="slide slide-image-text ${bg} ${width} ${imgBg}${layoutClass}${textColsClass}${densityClass}" data-density="${density}">
+        <div class="slide slide-image-text ${bg} ${width} ${imgBg}${layoutClass}${textColsClass}${densityClass}">
           <div class="slide-inner">
             <div class="split ${side}">
               <div class="media${mediaMulti}"${mediaCount} data-morph-role="image">

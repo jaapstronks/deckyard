@@ -35,13 +35,13 @@ shared height (`--team-orig-photo-h`, a small boost over the per-count
 the rendered image width. This alone satisfies gaps 1 and 3 and is the
 **no-JS fallback** (static/server render): correct, just not optimally filled.
 
-### JS justify pass (`client/lib/slide-runtime/team-cards-autofit.js`, `justifyOriginal`)
+### JS justify pass (`client/lib/slide-runtime/team-cards-justify.js`, `justifyOriginal`)
 
-Runs inside the existing team-cards auto-fit runtime (client-side only, not in
-thumbnail mode). It reads each image's intrinsic aspect ratio (so it re-runs on
-image `load`) and packs the images into rows greedily, picking each row's
-height so the row spans the full slide width — a classic "justified gallery".
-It then pins each card's width to its rendered image width, which:
+Runs client-side only, not in thumbnail mode. It reads each image's intrinsic
+aspect ratio (so it re-runs on image `load`) and packs the images into rows
+greedily, picking each row's height so the row spans the full slide width — a
+classic "justified gallery". It then pins each card's width to its rendered
+image width, which:
 
 - keeps a long caption wrapping to the image width instead of widening the card
   past its image (which would also desync the packing from where flexbox
@@ -49,9 +49,9 @@ It then pins each card's width to its rendered image width, which:
 - makes a handful of wide screenshots fill a single full-width row (gap 2).
 
 The last, partial row is left at the max height rather than stretched, so a
-lone trailing image stays a sensible size. After justifying, the runtime's
-normal overflow pass uniformly scales the whole grid down if the taller,
-filled layout now exceeds the slide height.
+lone trailing image stays a sensible size. A set that still overflows the slide
+after justifying clips at the slide edge — there is no shrink-to-fit pass
+(removed with the rest of the slide shrink layer).
 
 ## Why not route screenshots to the Gallery slide?
 
