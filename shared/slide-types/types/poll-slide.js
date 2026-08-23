@@ -1,24 +1,17 @@
-import { bgClass, escapeHtml, nonEmpty, BACKGROUND_FIELD } from '../helpers.js';
+import {
+  bgClass,
+  escapeHtml,
+  liveInteractionOptions,
+  BACKGROUND_FIELD,
+} from '../helpers.js';
 import { getSlideCopy } from '../slide-copy.js';
-
-function optionsFromContent(content) {
-  // Keep the source field key with each option so inline-edit paths stay
-  // correct even when a middle option is empty.
-  const out = [];
-  for (let i = 1; i <= 4; i += 1) {
-    const key = `option${i}`;
-    const v = nonEmpty(content?.[key]);
-    if (v) out.push({ key, text: v });
-  }
-  return out;
-}
 
 function letterForIdx(i) {
   return ['A', 'B', 'C', 'D'][i] || '?';
 }
 
 export default {
-  structure: 'fixed-collection',
+  structure: 'collection',
   fallback: 'list-slide',
   runtime: 'live',
   interaction: 'poll',
@@ -37,32 +30,25 @@ export default {
       maxLength: 200,
     },
     {
-      key: 'option1',
-      label: 'Answer A',
-      type: 'string',
+      // The `options[]` array every live type carries — see
+      // shared/slide-types/runtime.js § the live content contract. Two to four:
+      // the renderer letters them A..D, so a fifth has no name.
+      key: 'options',
+      label: 'Answers',
+      type: 'items',
       required: true,
-      maxLength: 120,
-    },
-    {
-      key: 'option2',
-      label: 'Answer B',
-      type: 'string',
-      required: true,
-      maxLength: 120,
-    },
-    {
-      key: 'option3',
-      label: 'Answer C',
-      type: 'string',
-      required: false,
-      maxLength: 120,
-    },
-    {
-      key: 'option4',
-      label: 'Answer D',
-      type: 'string',
-      required: false,
-      maxLength: 120,
+      minItems: 2,
+      maxItems: 4,
+      itemDefaults: { text: '' },
+      itemFields: [
+        {
+          key: 'text',
+          label: 'Answer',
+          type: 'string',
+          required: true,
+          maxLength: 120,
+        },
+      ],
     },
     BACKGROUND_FIELD,
     {
@@ -96,10 +82,7 @@ export default {
       // pollId is injected at slide creation time (client + shared newSlide)
       pollId: '',
       question: 'Wat vind jij?',
-      option1: 'Optie A',
-      option2: 'Optie B',
-      option3: '',
-      option4: '',
+      options: [{ text: 'Optie A' }, { text: 'Optie B' }],
       background: 'lime',
       onClose: 'stay',
       onCloseTarget: '',
@@ -108,10 +91,7 @@ export default {
       // pollId is injected at slide creation time (client + shared newSlide)
       pollId: '',
       question: 'What do you think?',
-      option1: 'Option A',
-      option2: 'Option B',
-      option3: '',
-      option4: '',
+      options: [{ text: 'Option A' }, { text: 'Option B' }],
       background: 'lime',
       onClose: 'stay',
       onCloseTarget: '',
@@ -122,17 +102,14 @@ export default {
     // pollId is injected at slide creation time (client + shared newSlide)
     pollId: '',
     question: 'What do you think?',
-    option1: 'Option A',
-    option2: 'Option B',
-    option3: '',
-    option4: '',
+    options: [{ text: 'Option A' }, { text: 'Option B' }],
     background: 'lime',
     onClose: 'stay',
     onCloseTarget: '',
   },
   renderHtml: (content, _slide, ctx = {}) => {
     const bg = bgClass(content?.background);
-    const options = optionsFromContent(content);
+    const options = liveInteractionOptions(content);
     const copy = getSlideCopy(ctx?.lang);
     const followCodes =
       ctx && typeof ctx === 'object' ? ctx.followCodes || null : null;
@@ -143,11 +120,11 @@ export default {
 
     const optsHtml = options
       .map(
-        (t, i) => `
-          <li class="poll-option">
+        (text, i) => `
+          <li class="poll-option" data-inline-item="options" data-inline-item-index="${i}">
             <div class="poll-option-inner on-surface-light">
               <span class="poll-letter" aria-hidden="true">${letterForIdx(i)}</span>
-              <span class="poll-text" data-inline-field="${t.key}" dir="auto">${escapeHtml(t.text)}</span>
+              <span class="poll-text" data-inline-field="options.${i}.text" dir="auto">${escapeHtml(text)}</span>
             </div>
           </li>
         `,
@@ -156,7 +133,7 @@ export default {
 
     const barsHtml = options
       .map(
-        (t, i) => `
+        (_text, i) => `
           <div class="poll-bar-row" data-poll-bar-row="${i}">
             <div class="poll-bar-name">${escapeHtml(letterForIdx(i))}</div>
             <div class="poll-bar-track" aria-hidden="true">

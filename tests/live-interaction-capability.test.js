@@ -48,16 +48,20 @@ test('exactly the four interaction types are live, with their protocol kind', ()
   }
 });
 
-test('option counts per live type are unchanged', () => {
+test('option counts per live type are the length of the authored array', () => {
+  // Since schema v9 both authored types carry one `options[]` array and the
+  // count is simply its length — no compaction, because an array has no holes
+  // to close (the flat `option1..N` slots did, which is what made a blanked
+  // answer re-point live votes).
   const poll = {
-    content: { option1: 'a', option2: 'b', option3: '', option4: 'd' },
+    content: { options: [{ text: 'a' }, { text: 'b' }, { text: 'd' }] },
   };
   assert.equal(getOptionCountForSlide('poll-slide', poll), 3);
 
   const likert = {
-    content: Object.fromEntries(
-      Array.from({ length: 7 }, (_v, i) => [`option${i + 1}`, `o${i + 1}`]),
-    ),
+    content: {
+      options: Array.from({ length: 7 }, (_v, i) => ({ text: `o${i + 1}` })),
+    },
   };
   assert.equal(getOptionCountForSlide('likert-slide', likert), 7);
 

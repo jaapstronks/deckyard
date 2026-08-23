@@ -515,17 +515,9 @@ export function createInlineEditor({
   function insertGhosts(root, def, descriptor) {
     const slide = getSlide?.();
     if (!slide) return;
-    // Ghosts sharing a `group` show only the first empty one - sequential
-    // fields (option1..option10) get a single "+ Option N" instead of a chip
-    // per empty slot.
-    const seenGroups = new Set();
     for (const g of descriptor.ghosts || []) {
       const value = getByPath(slide.content, g.field);
       if (!isEmptyValue(value)) continue;
-      if (g.group) {
-        if (seenGroups.has(g.group)) continue;
-        seenGroups.add(g.group);
-      }
       const meta = fieldMetaForPath(def, g.field);
       // Shared ghost sets (HEADER_GHOSTS) may name fields a type doesn't have.
       if (!meta || !meta.key) continue;

@@ -482,9 +482,11 @@ Multiple choice voting (2-4 options).
   "type": "poll-slide",
   "content": {
     "question": "Which approach do you prefer?",
-    "option1": "Option A",
-    "option2": "Option B",
-    "option3": "Option C"
+    "options": [
+      { "text": "Option A" },
+      { "text": "Option B" },
+      { "text": "Option C" }
+    ]
   }
 }
 
@@ -495,8 +497,11 @@ Labeled scale ratings.
   "type": "likert-slide",
   "content": {
     "question": "How satisfied are you with the current process?",
-    "option1": "Very dissatisfied",
-    "option2": "Very satisfied"
+    "options": [
+      { "text": "Very dissatisfied" },
+      { "text": "Neutral" },
+      { "text": "Very satisfied" }
+    ]
   }
 }
 

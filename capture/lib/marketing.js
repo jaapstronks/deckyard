@@ -116,7 +116,7 @@ export async function startLiveSession(
  * @param {object} spec
  * @param {string} spec.deckId
  * @param {string} spec.slideId
- * @param {number[]} spec.votes Vote count per option, index 0 = option1.
+ * @param {number[]} spec.votes Vote count per option, index 0 = options[0].
  * @returns {Promise<number>} total votes cast
  */
 export async function seedPollVotes(base, { deckId, slideId, votes }) {

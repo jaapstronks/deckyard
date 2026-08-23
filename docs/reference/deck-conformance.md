@@ -160,6 +160,9 @@ Two consequences worth stating outright:
 - **`collection` and `fixed-collection` differ only in whether the count is
   meaning.** That is exactly why they are separate: a reader may reflow a list
   of six into two columns, and may not turn a four-quadrant matrix into three.
+  The line is the _type's_ count, not the author's: a poll with three answers is
+  a `collection`, because two and four are equally valid polls — it is the
+  quadrant count of a matrix that stops being a matrix when you change it.
 - **`dataset` is the one structure whose payload the registry cannot check.**
   The contract says so with a `null` rather than pretending, and it names the
   degradation (decode, then treat as tabular) instead of leaving the reader to

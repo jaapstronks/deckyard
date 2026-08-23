@@ -250,7 +250,7 @@ test('Q&A is suppressed while an interactive slide is current', async () => {
     slides: [
       {
         type: 'poll-slide',
-        content: { question: 'Pick', option1: 'A', option2: 'B' },
+        content: { question: 'Pick', options: [{ text: 'A' }, { text: 'B' }] },
       },
     ],
     slideType: 'poll-slide',
@@ -453,7 +453,7 @@ test('voting on a deck that is not live is refused (400)', async () => {
     slides: [
       {
         type: 'poll-slide',
-        content: { question: 'Q', option1: 'A', option2: 'B' },
+        content: { question: 'Q', options: [{ text: 'A' }, { text: 'B' }] },
       },
     ],
   });
@@ -470,11 +470,11 @@ test('voting on a slide other than the current one is refused (400)', async () =
     slides: [
       {
         type: 'poll-slide',
-        content: { question: 'Q', option1: 'A', option2: 'B' },
+        content: { question: 'Q', options: [{ text: 'A' }, { text: 'B' }] },
       },
       {
         type: 'poll-slide',
-        content: { question: 'Q2', option1: 'C', option2: 'D' },
+        content: { question: 'Q2', options: [{ text: 'C' }, { text: 'D' }] },
       },
     ],
     currentSlide: 0,
@@ -541,7 +541,7 @@ test('interaction state on a deck that is not live carries no state and does not
     slides: [
       {
         type: 'poll-slide',
-        content: { question: 'Q', option1: 'A', option2: 'B' },
+        content: { question: 'Q', options: [{ text: 'A' }, { text: 'B' }] },
       },
     ],
   });
@@ -562,11 +562,11 @@ test('interaction state for a slide other than the current one is refused (400)'
     slides: [
       {
         type: 'poll-slide',
-        content: { question: 'Q', option1: 'A', option2: 'B' },
+        content: { question: 'Q', options: [{ text: 'A' }, { text: 'B' }] },
       },
       {
         type: 'poll-slide',
-        content: { question: 'Q2', option1: 'C', option2: 'D' },
+        content: { question: 'Q2', options: [{ text: 'C' }, { text: 'D' }] },
       },
     ],
     currentSlide: 0,
@@ -584,7 +584,7 @@ test('interaction state with no slide id at all is refused (400)', async () => {
     slides: [
       {
         type: 'poll-slide',
-        content: { question: 'Q', option1: 'A', option2: 'B' },
+        content: { question: 'Q', options: [{ text: 'A' }, { text: 'B' }] },
       },
     ],
     slideType: 'poll-slide',
@@ -654,7 +654,7 @@ test('feedback on a current slide that is not a feedback slide is refused (400)'
     slides: [
       {
         type: 'poll-slide',
-        content: { question: 'Q', option1: 'A', option2: 'B' },
+        content: { question: 'Q', options: [{ text: 'A' }, { text: 'B' }] },
       },
     ],
     slideType: 'poll-slide',

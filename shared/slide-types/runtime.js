@@ -45,6 +45,22 @@
  * declares its `interaction` kind. It is not a second facet: it is the contract
  * the `live` value implies, and it is meaningless on any other value.
  *
+ * ## The content contract
+ *
+ * A `live` type whose audience picks from a list carries **one `options[]`
+ * array of `{ text }` items**, and an option's index is its identity: the
+ * letter or scale number the slide draws, the results bar, the reader
+ * projection and the `option_index` a vote is stored under
+ * (`server/storage/interactions.js`) are the same number. `liveInteractionOptions()`
+ * in `helpers.js` is the one reader; `feedback` collects free text and carries
+ * no array at all.
+ *
+ * Until schema v9 the two authored types spelled that list as flat
+ * `option1..option4` / `option1..option10` scalars and every reader had to
+ * compact away the holes a numbered family can have — which meant blanking the
+ * second answer of a running poll silently re-pointed every vote cast on the
+ * third. The array has no holes, so nothing compacts anywhere.
+ *
  * ## What it costs in truthfulness
  *
  * `structure` was the first facet because it is derivable: the field schema

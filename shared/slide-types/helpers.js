@@ -552,6 +552,31 @@ export function getCollectionItems(content, key = 'items') {
 }
 
 /**
+ * The authored answer texts of a live-interaction slide, in stored order.
+ *
+ * The read half of the live content contract (see
+ * shared/slide-types/runtime.js § *The content contract*): a `live` type whose
+ * audience picks from a list carries one `options[]` array of `{ text }`, and
+ * an option's **index is its identity** — the rendered letter or scale number,
+ * the results bar, the reader projection, and the `option_index` a vote is
+ * stored under (`server/storage/interactions.js`) are all the same number.
+ *
+ * Deliberately positional and unfiltered. The flat `option1..optionN` families
+ * this replaced had to skip empty slots, because a numbered family can have
+ * holes; that made blanking the second answer mid-session silently re-point
+ * every vote already cast on the third. An array has no holes — the author
+ * removes a card instead of emptying it — so nothing here compacts.
+ *
+ * @param {object} [content] - slide content object
+ * @returns {string[]} one entry per stored option, `''` for a blank one
+ */
+export function liveInteractionOptions(content) {
+  return getCollectionItems(content, 'options').map((o) =>
+    o && typeof o === 'object' && o.text != null ? String(o.text) : '',
+  );
+}
+
+/**
  * Resolve a raw per-card `link` value into an anchor descriptor, or `null`.
  *
  * Shared across clickable card/tile slide types (icon-card-grid, logo-wall, …).

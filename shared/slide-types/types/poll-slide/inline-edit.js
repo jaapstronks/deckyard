@@ -11,12 +11,19 @@
 
 /** @type {Object} InlineDescriptor for poll-slide. */
 export const inlineEdit = {
-  ghosts: [1, 2, 3, 4].map((n) => ({
-    field: `option${n}`,
-    group: 'options',
-    anchors: [{ sel: '.poll-options', pos: 'append', chip: 'bottom-start' }],
-  })),
-  formText: ['question', 'option1', 'option2', 'option3', 'option4'],
+  // Since schema v9 the answers are one `options[]` array, so add/remove is the
+  // generic card affordance driven by minItems/maxItems — not the four grouped
+  // ghost chips the flat `option1..4` slots needed.
+  cards: {
+    field: 'options',
+    container: '.poll-options',
+    itemSelector: '.poll-option',
+    addLabelKey: 'editor.inline.addAnswer',
+    addLabel: 'Add answer',
+    removeLabelKey: 'editor.inline.removeAnswer',
+    removeLabel: 'Remove answer',
+  },
+  formText: ['question', 'options'],
 };
 
 /**
