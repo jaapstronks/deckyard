@@ -50,7 +50,6 @@ export const MAX_LENGTHS = {
   'items.title': 80,
   'items.text': 120,
   // card types (icon-card-grid, team-cards)
-  cardLabel: 40,
   cardBody: 800,
   // text-blocks-slide
   blockTitle: 80,
