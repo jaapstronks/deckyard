@@ -7,30 +7,29 @@ import {
   BACKGROUND_FIELD,
   clampInt,
   getCollectionItems,
-  getCollectionKey,
 } from '../helpers.js';
 
-function stageHtml(stage, idx, total, colKey = 'items') {
+function stageHtml(stage, idx, total) {
   const label = typeof stage?.label === 'string' ? stage.label.trim() : '';
   const value = typeof stage?.value === 'string' ? stage.value.trim() : '';
   const text = typeof stage?.text === 'string' ? stage.text.trim() : '';
   const stageNum = idx + 1;
 
   const labelHtml = label
-    ? `<div class="stage-label" data-inline-field="${colKey}.${idx}.label" dir="auto">${escapeHtml(label)}</div>`
+    ? `<div class="stage-label" data-inline-field="items.${idx}.label" dir="auto">${escapeHtml(label)}</div>`
     : '';
   const valueHtml = value
-    ? `<div class="stage-value" data-inline-field="${colKey}.${idx}.value" dir="auto">${escapeHtml(value)}</div>`
+    ? `<div class="stage-value" data-inline-field="items.${idx}.value" dir="auto">${escapeHtml(value)}</div>`
     : '';
   const textHtml = text
-    ? `<div class="stage-text" data-inline-field="${colKey}.${idx}.text" dir="auto">${escapeHtml(text)}</div>`
+    ? `<div class="stage-text" data-inline-field="items.${idx}.text" dir="auto">${escapeHtml(text)}</div>`
     : '';
 
   // Calculate width percentage for funnel effect (narrowing from top to bottom)
   const widthPercent = 100 - (idx / Math.max(total - 1, 1)) * 40;
 
   return `
-    <li class="funnel-stage" data-stage="${stageNum}" style="--stage-width: ${widthPercent}%;" data-inline-item="${colKey}" data-inline-item-index="${idx}">
+    <li class="funnel-stage" data-stage="${stageNum}" style="--stage-width: ${widthPercent}%;" data-inline-item="items" data-inline-item-index="${idx}">
       <div class="stage-bar on-surface-lime">
         <div class="stage-content">
           ${labelHtml}
@@ -116,46 +115,6 @@ export default {
         },
       ],
     },
-    // DEPRECATED: Remove after April 2026
-    {
-      key: 'stages',
-      label: 'Stages (legacy)',
-      type: 'items',
-      required: false,
-      hidden: true,
-      minItems: 3,
-      maxItems: 6,
-      itemDefaults: {
-        label: 'Stage',
-        value: '',
-        text: '',
-      },
-      itemFields: [
-        {
-          key: 'label',
-          label: 'Stage label',
-          type: 'string',
-          required: true,
-          maxLength: 60,
-        },
-        {
-          key: 'value',
-          label: 'Value/metric',
-          type: 'string',
-          required: false,
-          maxLength: 30,
-        },
-        {
-          key: 'text',
-          label: 'Description',
-          type: 'string',
-          required: false,
-          maxLength: 120,
-          // `.slide-funnel .stage-text` is centred (90-funnel-slide.css).
-          defaultAlign: 'center',
-        },
-      ],
-    },
     BACKGROUND_FIELD,
   ],
   defaultsByLang: {
@@ -211,14 +170,12 @@ export default {
     const hasBottom = hasBottomSubheading(content);
     const hasHeader = !!(title || subheadingHtml);
 
-    // DEPRECATED: 'stages' fallback - Remove after April 2026
-    const stages = getCollectionItems(content, 'items', ['stages']).slice(0, 6);
-    const colKey = getCollectionKey(content, 'items', ['stages']);
+    const stages = getCollectionItems(content, 'items').slice(0, 6);
     const count = clampInt(stages.length, 3, 6, 4);
 
     const stagesHtml = stages
       .slice(0, count)
-      .map((stage, idx) => stageHtml(stage, idx, count, colKey))
+      .map((stage, idx) => stageHtml(stage, idx, count))
       .join('');
 
     return `

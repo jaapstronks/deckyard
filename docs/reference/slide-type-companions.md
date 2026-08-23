@@ -237,12 +237,15 @@ guard exists for `custom-html-slide`) and no future type can be "missing" from
 it; three or more is where a module stops being about a type and becomes a table
 _of_ types.
 
+Counts as measured on 2026-08-23 (24 entries; the table below had drifted from
+the inventory it describes, so it is restated from a count rather than edited):
+
 | Kind        | Count | What it means                                                                                   |
 | ----------- | ----- | ----------------------------------------------------------------------------------------------- |
-| `table`     | 16    | a row per eligible type; must name a companion, which gates it both ways                        |
-| `sparse`    | 13    | intentionally partial (repair rules, conversion pairs, the CSS map); only staleness is a defect |
+| `sparse`    | 12    | intentionally partial (repair rules, conversion pairs, the CSS map); only staleness is a defect |
 | `specific`  | 5     | a closed set of types that behave differently; not a table                                      |
-| `generated` | 1     | produced by a script from per-type sources, so it cannot drift                                  |
+| `generated` | 3     | produced by a script from per-type sources, so it cannot drift                                  |
+| `table`     | 3     | a row per eligible type; must name a companion, which gates it both ways                        |
 | `source`    | 1     | the registry — the list every other list derives from                                           |
 
 `specific` was 15 at the first reading. Ten of those entries left when the

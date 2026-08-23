@@ -7,19 +7,18 @@ import {
   BACKGROUND_FIELD,
   clampInt,
   getCollectionItems,
-  getCollectionKey,
 } from '../helpers.js';
 
-function stageHtml(stage, idx, total, colKey = 'items') {
+function stageHtml(stage, idx, total) {
   const label = typeof stage?.label === 'string' ? stage.label.trim() : '';
   const text = typeof stage?.text === 'string' ? stage.text.trim() : '';
   const stageNum = idx + 1;
 
   const labelHtml = label
-    ? `<div class="cycle-label" data-inline-field="${colKey}.${idx}.label" dir="auto">${escapeHtml(label)}</div>`
+    ? `<div class="cycle-label" data-inline-field="items.${idx}.label" dir="auto">${escapeHtml(label)}</div>`
     : '';
   const textHtml = text
-    ? `<div class="cycle-text" data-inline-field="${colKey}.${idx}.text" dir="auto">${escapeHtml(text)}</div>`
+    ? `<div class="cycle-text" data-inline-field="items.${idx}.text" dir="auto">${escapeHtml(text)}</div>`
     : '';
 
   // Calculate position angle for circular arrangement
@@ -27,7 +26,7 @@ function stageHtml(stage, idx, total, colKey = 'items') {
   const angle = angleOffset + (idx / total) * 360;
 
   return `
-    <li class="cycle-stage" data-stage="${stageNum}" style="--stage-angle: ${angle}deg; --stage-index: ${idx};" data-inline-item="${colKey}" data-inline-item-index="${idx}">
+    <li class="cycle-stage" data-stage="${stageNum}" style="--stage-angle: ${angle}deg; --stage-index: ${idx};" data-inline-item="items" data-inline-item-index="${idx}">
       <div class="stage-node">
         <div class="stage-number">${stageNum}</div>
       </div>
@@ -124,36 +123,6 @@ export default {
         },
       ],
     },
-    // DEPRECATED: Remove after April 2026
-    {
-      key: 'stages',
-      label: 'Stages (legacy)',
-      type: 'items',
-      required: false,
-      hidden: true,
-      minItems: 3,
-      maxItems: 6,
-      itemDefaults: {
-        label: 'Stage',
-        text: '',
-      },
-      itemFields: [
-        {
-          key: 'label',
-          label: 'Stage label',
-          type: 'string',
-          required: true,
-          maxLength: 40,
-        },
-        {
-          key: 'text',
-          label: 'Description',
-          type: 'string',
-          required: false,
-          maxLength: 80,
-        },
-      ],
-    },
     BACKGROUND_FIELD,
   ],
   defaultsByLang: {
@@ -220,14 +189,12 @@ export default {
       ? `<div class="cycle-center on-surface-mist"><span class="center-label" data-inline-field="centerLabel" dir="auto">${escapeHtml(centerLabel)}</span></div>`
       : '<div class="cycle-center on-surface-mist"></div>';
 
-    // DEPRECATED: 'stages' fallback - Remove after April 2026
-    const stages = getCollectionItems(content, 'items', ['stages']).slice(0, 6);
-    const colKey = getCollectionKey(content, 'items', ['stages']);
+    const stages = getCollectionItems(content, 'items').slice(0, 6);
     const count = clampInt(stages.length, 3, 6, 4);
 
     const stagesHtml = stages
       .slice(0, count)
-      .map((stage, idx) => stageHtml(stage, idx, count, colKey))
+      .map((stage, idx) => stageHtml(stage, idx, count))
       .join('');
 
     // Generate arrows between stages

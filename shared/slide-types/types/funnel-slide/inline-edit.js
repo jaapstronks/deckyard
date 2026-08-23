@@ -27,11 +27,10 @@ export const inlineEdit = {
   ],
   cards: {
     field: 'items',
-    fieldAliases: ['stages'],
     container: '.funnel-container',
     itemSelector: '.funnel-stage',
   },
-  formText: [...HEADER_TEXT, 'items', 'stages'],
+  formText: [...HEADER_TEXT, 'items'],
 };
 
 /**

@@ -547,46 +547,23 @@ export function getCardTitle(content, cardIndex) {
 }
 
 /**
- * Get collection items with back-compat support for legacy field names.
+ * A slide's repeating-item collection, or an empty array.
+ *
+ * There is one key per collection. This used to take a list of legacy fallback
+ * spellings (`steps`, `stages`) and a companion `getCollectionKey()` that told
+ * renderers WHICH of them a slide happened to store — a second accepted shape
+ * that also had to be threaded through the inline editor and skipped in the
+ * form. Schema migration v6 -> v7 folds those keys into `items` at read time,
+ * so the question "which key holds the collection?" no longer has two answers
+ * and neither the fallback nor its plumbing survives.
+ *
  * @param {object} content - Slide content object
- * @param {string} primaryKey - Primary key to check first (e.g., 'items')
- * @param {string[]} fallbackKeys - Fallback keys to check (e.g., ['steps', 'stages'])
+ * @param {string} [key='items'] - the collection's content key
  * @returns {Array} Array of items or empty array
  */
-export function getCollectionItems(
-  content,
-  primaryKey = 'items',
-  fallbackKeys = [],
-) {
-  // DEPRECATED: fallbackKeys support - Remove after April 2026
-  const arr = content?.[getCollectionKey(content, primaryKey, fallbackKeys)];
+export function getCollectionItems(content, key = 'items') {
+  const arr = content?.[key];
   return Array.isArray(arr) ? arr : [];
-}
-
-/**
- * Which content key `getCollectionItems` reads from. Renderers use this to emit
- * `data-inline-field` paths that point at the array actually rendered (legacy
- * decks may still store `steps`/`stages`), and the inline editor uses the same
- * key to write back to that array.
- * @param {object} content - Slide content object
- * @param {string} primaryKey - Primary key to check first (e.g., 'items')
- * @param {string[]} fallbackKeys - Fallback keys to check (e.g., ['steps'])
- * @returns {string} The key holding the rendered collection
- */
-export function getCollectionKey(
-  content,
-  primaryKey = 'items',
-  fallbackKeys = [],
-) {
-  if (Array.isArray(content?.[primaryKey]) && content[primaryKey].length > 0) {
-    return primaryKey;
-  }
-  for (const key of fallbackKeys) {
-    if (Array.isArray(content?.[key]) && content[key].length > 0) {
-      return key;
-    }
-  }
-  return primaryKey;
 }
 
 /**

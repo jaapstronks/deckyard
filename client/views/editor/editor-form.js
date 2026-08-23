@@ -7,14 +7,12 @@ import { isOrgDisabledSlideType } from './slide-types-policy.js';
 import { buildDataSourceIndicator } from './data-source-panel.js';
 import { icon } from '../../lib/dom/icons.js';
 import { buildHeaderActions } from './editor-form/header-actions.js';
-import { getInlineDescriptor } from './inline-edit/descriptors.js';
 import { createLayoutSwitcherChip } from './layout-switcher.js';
 import {
   getInspectorKeepKeys,
   renderInspectorExtrasByType,
 } from './editor-form/inspector-form.js';
 import { renderTextElementCard } from './editor-form/text-element-card.js';
-import { getCollectionKey } from '../../../shared/slide-types/helpers.js';
 import { fieldFormRows } from '../../../shared/slide-types/form-layout.js';
 import { normalizeSlideContent } from '../../../shared/slide-types/normalize-content.js';
 import {
@@ -434,22 +432,6 @@ export function createRerenderEditor({
       ? null
       : getInspectorKeepKeys(slide.type, def);
 
-    // Legacy alias collections (items/steps/stages): the schema carries both
-    // keys but the renderer reads exactly one (getCollectionKey). Skip the
-    // inactive ones — a second "Stages" editor that edits an array the slide
-    // never renders is a trap.
-    const cardsCfg = getInlineDescriptor(slide.type, def)?.cards;
-    const inactiveCollectionKeys = new Set();
-    if (cardsCfg?.fieldAliases?.length) {
-      const activeKey = getCollectionKey(
-        slide.content,
-        cardsCfg.field,
-        cardsCfg.fieldAliases,
-      );
-      for (const k of [cardsCfg.field, ...cardsCfg.fieldAliases]) {
-        if (k !== activeKey) inactiveCollectionKeys.add(k);
-      }
-    }
     // Migrate-on-edit: fold a title slide's legacy bgImage into the canonical
     // slideBgImage before the background controls read it, so the shared picker
     // shows the (now single) background and the legacy render fallback stops
@@ -524,11 +506,6 @@ export function createRerenderEditor({
       // Slide-wide background fields have their own surfaces (colour group +
       // image section), built below.
       if (isBackgroundFieldKey(key)) {
-        used.add(key);
-        return;
-      }
-      // Inactive legacy alias collection (the renderer reads the other key).
-      if (inactiveCollectionKeys.has(key)) {
         used.add(key);
         return;
       }

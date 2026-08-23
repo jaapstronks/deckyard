@@ -24,7 +24,20 @@ import {
 } from './field-groups.js';
 
 /** The schema version every freshly written deck is stamped with. */
-export const CURRENT_SCHEMA_VERSION = 6;
+export const CURRENT_SCHEMA_VERSION = 7;
+
+/**
+ * The one legacy collection key each type stored before `items` — the v6 -> v7
+ * fold's whole input. Written out here rather than declared on the types,
+ * because a migration is a record of a shape that no longer exists: leaving a
+ * `legacyKeys` declaration behind would keep the second spelling alive in the
+ * schema it is supposed to remove.
+ */
+const LEGACY_COLLECTION_KEYS = {
+  'process-slide': 'steps',
+  'funnel-slide': 'stages',
+  'cycle-slide': 'stages',
+};
 
 /** Type + group the v4 -> v5 quote-alignment fold reads its target key from. */
 const QUOTE_SLIDE_TYPE = 'quote-slide';
@@ -191,6 +204,42 @@ export const SCHEMA_MIGRATIONS = [
         if (!Object.keys(fieldStyle).length) delete styles[field.key];
       }
       if (!Object.keys(styles).length) delete content.textStyles;
+    }
+    return pres;
+  },
+
+  // v6 -> v7: fold the legacy collection aliases into `items`. process-slide
+  // stored its steps under `steps`, funnel- and cycle-slide theirs under
+  // `stages`, before all three moved to the canonical `items`. The read side
+  // has carried a fallback ever since (`getCollectionItems(content, 'items',
+  // ['steps'])`), marked "Remove after April 2026" and still in place in
+  // August — a second accepted spelling for one collection, with no end date.
+  // This is that end date: the array moves once, the legacy key is dropped,
+  // and the fallback, the hidden field declarations and the editor's
+  // `fieldAliases` plumbing all go with it.
+  //
+  // Render-equivalent: the fallback only ever fired when `items` was absent or
+  // empty, which is exactly when this step moves the value into it. A slide
+  // that already has a populated `items` keeps it and the stale alias key is
+  // still removed — it was unreachable on every surface. Idempotent: a slide
+  // without the legacy key is untouched.
+  (pres) => {
+    const slides = Array.isArray(pres?.slides) ? pres.slides : [];
+    for (const slide of slides) {
+      if (!slide || typeof slide.type !== 'string') continue;
+      const legacyKey = LEGACY_COLLECTION_KEYS[slide.type];
+      if (!legacyKey) continue;
+      const content = slide.content;
+      if (!content || typeof content !== 'object') continue;
+      if (!Object.prototype.hasOwnProperty.call(content, legacyKey)) continue;
+      const legacy = content[legacyKey];
+      const canonical = content.items;
+      const canonicalEmpty =
+        !Array.isArray(canonical) || canonical.length === 0;
+      if (canonicalEmpty && Array.isArray(legacy) && legacy.length > 0) {
+        content.items = legacy;
+      }
+      delete content[legacyKey];
     }
     return pres;
   },
