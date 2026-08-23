@@ -36,7 +36,7 @@
  *    surface that disagreed was how dead values reached the reader as prose.
  */
 
-import { markdownToSafeHtml } from '../markdown.js';
+import { markdownToSafeHtml, inlineMarkdownToSafeHtml } from '../markdown.js';
 import { escapeHtml, pickAltText, normalizeUrl, safeHref } from './helpers.js';
 import { slideStructure } from './structure.js';
 import { isFieldVisible } from './field-visibility.js';
@@ -302,7 +302,7 @@ function cellHtml(col, row) {
   const value = str(row?.[col.key]);
   if (!value) return '';
   return col.type === 'markdown'
-    ? markdownToSafeHtml(value)
+    ? inlineMarkdownToSafeHtml(value)
     : escapeHtml(value);
 }
 

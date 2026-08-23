@@ -538,6 +538,18 @@ describe('the structure contract: tabular projects to a real <table>', () => {
     assert.ok(!/<p>In thousands<\/p>/.test(html), html);
   });
 
+  it('renders a markdown cell inline, without a block <p> wrapper', () => {
+    const def = tabular();
+    def.fields[4].itemFields[0].type = 'markdown';
+    const html = body(
+      { content: { title: 'T', rows: [{ c1: '**bold**', c2: 'plain' }] } },
+      def,
+      { headingKey: 'title' },
+    );
+    assert.ok(/<td><strong>bold<\/strong><\/td>/.test(html), html);
+    assert.ok(!/<td><p/.test(html), html);
+  });
+
   it('falls back to every declared column with no header when nothing is declared', () => {
     const html = body({ content: { title: 'T', rows } }, tabular(), {
       headingKey: 'title',
