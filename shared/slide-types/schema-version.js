@@ -24,7 +24,7 @@ import {
 } from './field-groups.js';
 
 /** The schema version every freshly written deck is stamped with. */
-export const CURRENT_SCHEMA_VERSION = 7;
+export const CURRENT_SCHEMA_VERSION = 8;
 
 /**
  * The one legacy collection key each type stored before `items` — the v6 -> v7
@@ -38,6 +38,177 @@ const LEGACY_COLLECTION_KEYS = {
   'funnel-slide': 'stages',
   'cycle-slide': 'stages',
 };
+
+/**
+ * The legacy numbered slot families the v7 -> v8 fold reads — the last three
+ * types that carried a flat `card1Name` / `logo1Image` family beside their
+ * canonical array. Each entry records the array the slots move into, the
+ * numbered prefix and the count key that bounded them, and how the slot
+ * suffixes map onto item keys.
+ *
+ * Written out here rather than declared on the types, for the same reason the
+ * v6 -> v7 table is: a migration is a record of a shape that no longer exists,
+ * and a `legacySlots` declaration left on the type would keep the second
+ * spelling alive in the schema this step removes.
+ *
+ * The per-family knobs are not preferences — each one pins what that type's own
+ * read fallback did, so the fold is render-equivalent:
+ *  - `presence`: which item keys made a slot count as filled (a slot with only
+ *    an alt text or a focus point was skipped by the resolver, so it is skipped
+ *    here too);
+ *  - `countFallback`: what an absent count key meant (team-cards and logo-wall
+ *    fell back to one slot, icon-card-grid to the full grid of six);
+ *  - `scanBeyondCount`: team-cards and logo-wall deliberately scanned past the
+ *    count for populated slots ("be forgiving"), icon-card-grid did not;
+ *  - `trimStrings` / `keepInteriorBlanks`: icon-card-grid trimmed every value
+ *    and kept blank slots inside the count (a blank card still occupied a cell),
+ *    trailing blanks aside — see the fold below.
+ *
+ * @type {Record<string, {arrayKey: string, prefix: string, countKey: string,
+ *   maxSlots: number, keys: Record<string,string>, presence: string[],
+ *   itemDefaults?: Record<string, any>, countFallback: number,
+ *   scanBeyondCount: boolean, trimStrings?: boolean,
+ *   keepInteriorBlanks?: boolean}>}
+ */
+const LEGACY_SLOT_FAMILIES = {
+  'team-cards-slide': {
+    arrayKey: 'members',
+    prefix: 'card',
+    countKey: 'cardCount',
+    maxSlots: 25,
+    keys: {
+      Image: 'image',
+      Alt: 'alt',
+      ImageFocusX: 'imageFocusX',
+      ImageFocusY: 'imageFocusY',
+      Name: 'name',
+      Byline: 'byline',
+      Linkedin: 'linkedin',
+    },
+    presence: ['image', 'name', 'byline'],
+    // `resolveMembers` read focus with `?? 50`: a slot without a focus point
+    // centres its crop. The item carries that explicitly.
+    itemDefaults: { imageFocusX: 50, imageFocusY: 50 },
+    countFallback: 1,
+    scanBeyondCount: true,
+  },
+  'logo-wall-slide': {
+    arrayKey: 'logos',
+    prefix: 'logo',
+    countKey: 'logoCount',
+    maxSlots: 12,
+    keys: { Image: 'image', Name: 'name', Alt: 'alt', Link: 'link' },
+    presence: ['image', 'name'],
+    countFallback: 1,
+    scanBeyondCount: true,
+  },
+  'icon-card-grid-slide': {
+    arrayKey: 'items',
+    prefix: 'card',
+    countKey: 'cardCount',
+    maxSlots: 6,
+    keys: { Icon: 'icon', Title: 'title', Body: 'body', Link: 'link' },
+    presence: ['icon', 'title', 'body'],
+    countFallback: 6,
+    scanBeyondCount: false,
+    trimStrings: true,
+    keepInteriorBlanks: true,
+  },
+};
+
+/**
+ * Every stored key that belongs to a family's flat form: its count key plus
+ * `${prefix}${n}${suffix}` for every declared slot suffix.
+ * @param {typeof LEGACY_SLOT_FAMILIES[string]} family
+ * @param {object} content
+ * @returns {string[]}
+ */
+function legacySlotKeys(family, content) {
+  const suffixes = Object.keys(family.keys);
+  const out = [];
+  if (Object.prototype.hasOwnProperty.call(content, family.countKey))
+    out.push(family.countKey);
+  for (const key of Object.keys(content)) {
+    if (!key.startsWith(family.prefix)) continue;
+    const m = key.slice(family.prefix.length).match(/^(\d+)(.+)$/);
+    if (!m) continue;
+    const n = Number(m[1]);
+    if (!(n >= 1 && n <= family.maxSlots)) continue;
+    if (!suffixes.includes(m[2])) continue;
+    out.push(key);
+  }
+  return out;
+}
+
+/**
+ * Fold one family's numbered slots into the item array its type reads today,
+ * reproducing that type's own read fallback exactly.
+ * @param {typeof LEGACY_SLOT_FAMILIES[string]} family
+ * @param {object} content
+ * @returns {Array<object>}
+ */
+function foldLegacySlots(family, content) {
+  const { prefix, keys, presence, maxSlots, itemDefaults = {} } = family;
+  const suffixes = Object.entries(keys);
+  const presenceSuffixes = suffixes
+    .filter(([, itemKey]) => presence.includes(itemKey))
+    .map(([suffix]) => suffix);
+  const slotValue = (n, suffix) => content[`${prefix}${n}${suffix}`];
+
+  const declared = Number(content[family.countKey]);
+  const valid = Number.isFinite(declared) && declared > 0;
+  const count = Math.max(
+    1,
+    Math.min(maxSlots, valid ? declared : family.countFallback),
+  );
+
+  // "Be forgiving": team-cards and logo-wall walked every declared slot and
+  // took the highest populated one, so content stored past the count still
+  // rendered. icon-card-grid was hard-bounded by its count.
+  let scanCount = count;
+  if (family.scanBeyondCount) {
+    for (let n = 1; n <= maxSlots; n += 1) {
+      if (presenceSuffixes.some((suffix) => str(slotValue(n, suffix))))
+        scanCount = Math.max(scanCount, n);
+    }
+  }
+
+  const out = [];
+  for (let n = 1; n <= scanCount; n += 1) {
+    const item = {};
+    for (const [suffix, itemKey] of suffixes) {
+      const raw = slotValue(n, suffix);
+      if (typeof raw === 'number') {
+        item[itemKey] = raw;
+        continue;
+      }
+      const v = raw == null ? '' : String(raw);
+      item[itemKey] = family.trimStrings ? v.trim() : v;
+    }
+    for (const [itemKey, fallback] of Object.entries(itemDefaults))
+      if (item[itemKey] === '') item[itemKey] = fallback;
+    const filled = presence.some((k) => str(item[k]));
+    if (filled || family.keepInteriorBlanks) out.push(item);
+  }
+
+  // A trailing blank slot is a slot the canonical array simply does not have.
+  // Only `keepInteriorBlanks` families can produce one, and for those this is
+  // the same trim the editor's `ensure` knob has been committing on every
+  // legacy deck it opened.
+  while (out.length && !presence.some((k) => str(out[out.length - 1][k])))
+    out.pop();
+  return out;
+}
+
+/**
+ * A stored value as a trimmed string — the emptiness test every one of the
+ * three read fallbacks used.
+ * @param {any} v
+ * @returns {string}
+ */
+function str(v) {
+  return v == null ? '' : String(v).trim();
+}
 
 /** Type + group the v4 -> v5 quote-alignment fold reads its target key from. */
 const QUOTE_SLIDE_TYPE = 'quote-slide';
@@ -240,6 +411,49 @@ export const SCHEMA_MIGRATIONS = [
         content.items = legacy;
       }
       delete content[legacyKey];
+    }
+    return pres;
+  },
+
+  // v7 -> v8: fold the last three legacy numbered slot families into their
+  // canonical arrays. team-cards stored `card1Name`…`card25Linkedin`,
+  // icon-card-grid `card1Icon`…`card6Link`, logo-wall `logo1Image`…`logo12Link`
+  // — around 250 field declarations mirroring `members[]` / `items[]` /
+  // `logos[]`, each family bounded by a count enum (`cardCount`, `logoCount`).
+  // The read side carried a per-type fallback for them, the editor's `ensure`
+  // knob folded them on first mount, and — worst of the three — the `defaults`
+  // of team-cards and icon-card-grid *seeded* the flat form, so a freshly
+  // created slide stored the legacy shape until someone touched it. A deck
+  // could therefore hold both spellings at once, which is why the projection's
+  // repeating-group bridge was never the answer: it would have projected such a
+  // deck twice.
+  //
+  // This is the end date. Per slide: if the canonical array already holds
+  // entries it wins untouched — the flat slots were unreachable on every
+  // surface, since all three resolvers preferred the array — and the legacy
+  // keys are dropped. Otherwise the slots fold into the array by the same rule
+  // that type's own fallback used (see LEGACY_SLOT_FAMILIES for the per-family
+  // knobs and why each one is what it is), and then the legacy keys are
+  // dropped. Nothing is lost: a slot the resolver ignored rendered nowhere.
+  //
+  // Idempotent: a slide with no key from the family is untouched, and after one
+  // run there is no such key left.
+  (pres) => {
+    const slides = Array.isArray(pres?.slides) ? pres.slides : [];
+    for (const slide of slides) {
+      if (!slide || typeof slide.type !== 'string') continue;
+      const family = LEGACY_SLOT_FAMILIES[slide.type];
+      if (!family) continue;
+      const content = slide.content;
+      if (!content || typeof content !== 'object') continue;
+      const stored = legacySlotKeys(family, content);
+      if (!stored.length) continue;
+      const canonical = content[family.arrayKey];
+      if (!Array.isArray(canonical) || canonical.length === 0) {
+        const folded = foldLegacySlots(family, content);
+        if (folded.length) content[family.arrayKey] = folded;
+      }
+      for (const key of stored) delete content[key];
     }
     return pres;
   },
