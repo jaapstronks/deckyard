@@ -761,3 +761,48 @@ test('validatePresentation rejects an out-of-range schemaVersion', () => {
   assert.equal(future.ok, false);
   assert.ok(future.errors.some((e) => /newer than this build/.test(e)));
 });
+
+test('the import seam runs the funnel: a pre-fold export keeps its cards', async () => {
+  // Imports (JSON, .deck bundle, MCP, markdown, AI output) never pass through
+  // the storage read funnel, and the portable format carries no schemaVersion.
+  // Without the funnel at the import seam, the array-seeding defaults of
+  // team-cards / icon-card-grid would shadow a pre-fold deck's numbered slots
+  // (unknown keys merge BESIDE the default array), and the next storage read
+  // would then delete the slots as "unreachable" — silently replacing real
+  // content with placeholders.
+  const { deckToPresentationParts } =
+    await import('../shared/slide-types/deck.js');
+  const parts = deckToPresentationParts({
+    title: 'Old export',
+    slides: [
+      {
+        // The published spelling: canonical reverse-DNS ids, folded to the
+        // registry key by the v3 -> v4 step before v7 -> v8 matches on it.
+        type: 'eu.deckyard.slide.icon-card-grid',
+        content: { cardCount: '2', card1Title: 'Real one', card2Title: 'Two' },
+      },
+      {
+        type: 'team-cards-slide',
+        content: { cardCount: '1', card1Name: 'Ada', card1Byline: 'Eng' },
+      },
+      {
+        type: 'logo-wall-slide',
+        content: { logoCount: '1', logo1Name: 'Acme', logo1Image: '/a.png' },
+      },
+    ],
+  });
+  const [grid, team, wall] = parts.slides.map((s) => s.content);
+  assert.deepEqual(
+    grid.items.map((c) => c.title),
+    ['Real one', 'Two'],
+  );
+  assert.equal('card1Title' in grid, false);
+  assert.deepEqual(
+    team.members.map((m) => m.name),
+    ['Ada'],
+  );
+  assert.deepEqual(
+    wall.logos.map((l) => l.name),
+    ['Acme'],
+  );
+});

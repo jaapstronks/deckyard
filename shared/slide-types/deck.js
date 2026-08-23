@@ -9,6 +9,7 @@ import {
 import { tryParseTypeId } from './type-id.js';
 import { unresolvedSlideAsMarkdown } from './unresolved.js';
 import { DECK_FORMAT_ID } from './deck-format-id.js';
+import { migratePresentation } from './schema-version.js';
 
 // --------
 // Portable deck format (for export/import)
@@ -71,7 +72,18 @@ export function deckToPresentationParts(
   { theme: themeConfig = null } = {},
 ) {
   // Accept either the full object or a raw slides array (super simple use-case).
-  const deck = Array.isArray(input) ? { slides: input } : input || {};
+  // An imported deck is a read of unknown vintage, so it goes through the same
+  // migration funnel as a stored one. The portable format carries no
+  // `schemaVersion` (a deck exported today left the funnel already current),
+  // so a hand-kept or pre-fold export runs the full chain and its legacy
+  // shapes (numbered slot families, `steps`/`stages`, …) fold into the
+  // canonical arrays HERE — before the per-slide default merge below, whose
+  // array-seeding defaults would otherwise shadow the legacy keys and win on
+  // the next storage read. On a clone: the funnel migrates in place, and the
+  // caller's object is not ours to rewrite.
+  const deck = migratePresentation(
+    structuredClone(Array.isArray(input) ? { slides: input } : input || {}),
+  );
   const title =
     typeof deck.title === 'string' && deck.title.trim()
       ? deck.title.trim()
