@@ -516,6 +516,49 @@ The DB-backed path validates each field down to `key`, `type`, `label` plus
 `minItems`/`maxItems`. An `images` field authored there therefore always renders
 unbounded and without presets.
 
+#### Where a DB-backed type is registered
+
+The two surfaces also differ in _where the type lives at runtime_, and that is
+what decides which code can see it:
+
+| Declared in                               | Registry                              | Scope             |
+| ----------------------------------------- | ------------------------------------- | ----------------- |
+| a core type or `custom/slide-types/*.js`  | `SLIDE_TYPES`, built once at boot     | the whole process |
+| Settings → Slide Types (stored in the DB) | built per request from the org's rows | one organization  |
+
+A published DB-backed type is stored and referenced as **`custom-<slug>`**
+(`customSlideTypeKey()` in `server/utils/custom-slide-type-runtime.js` — the one
+place that derives the key). It cannot be in `SLIDE_TYPES`: that map is the same
+for every request, and this type belongs to one organization.
+
+So any server code that resolves a `slides[].type` must say _whose_ registry it
+means. There is exactly one builder for that —
+**`buildMergedSlideTypes(scope)`** — and the resolvers take the map as an
+argument (`resolveSlideTypeName(ref, slideTypes)`,
+`getSlideType(ref, slideTypes)`). Every org-aware path uses it, reads and writes
+alike: the export pipeline, the published and embed viewers, the thumbnail and
+single-slide renderers, and — since B129 — the storage **write seam**
+(`normalizeSlides`), which the presentations facade feeds one org registry per
+write. Before that, the editor let you insert a published custom type and every
+autosave answered `400 Unknown slide type "custom-…"`.
+
+Two rules follow, and both are load-bearing:
+
+- **No second, more tolerant route for `custom-` ids.** A type nothing in the
+  organization's registry answers to is a 400, exactly as for any other unknown
+  spelling. Unpublished types and another organization's types are unknown here.
+- **Reaching for bare `SLIDE_TYPES` on an org-scoped path is the bug.** The
+  default argument is there for callers that genuinely have no organization
+  (schema migrations, the shared client bundle), not as a shortcut.
+
+Not yet org-aware, and deliberately out of B129's scope because they need a
+design answer rather than plumbing: the public API's per-slide write
+(`server/routes/public-api/v1/slides.js`, which also needs `newSlide()` to
+accept a registry) and the AI/MCP strict validator
+(`server/utils/ai/validate-slides/strict.js`, whose per-type Zod schemas and
+item requirements have no answer for a type whose fields are a database row).
+Both still reject `custom-<slug>`.
+
 ### Form layout (`formLayout`)
 
 The editor renders `fields[]` in declaration order, one field per line. A field

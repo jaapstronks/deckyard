@@ -6,6 +6,21 @@
  *
  * Custom types with templates get a compiled renderHtml function.
  * Custom types without templates fall back to their baseType's renderer.
+ *
+ * ## One registry per organization
+ *
+ * `SLIDE_TYPES` is the process-wide registry: core plus whatever a fork put in
+ * `custom/slide-types/`. It is the same map for every request, so it cannot
+ * hold an org's DB-backed types. {@link buildMergedSlideTypes} is the seam that
+ * answers "which types does *this* organization have" — and it is the only one.
+ * Every server path that resolves a `slides[].type` against anything other than
+ * bare `SLIDE_TYPES` takes its map from here, reads and writes alike: the
+ * storage write seam (`normalizeSlides`), the export pipeline, the published /
+ * embed viewers, the thumbnail and single-slide renderers.
+ *
+ * Building the map is cheap on purpose — a template is compiled on first
+ * render, not on construction — so the write path, which only needs to know
+ * whether a key exists, pays a lookup and not a compile (B129).
  */
 
 import { SLIDE_TYPES } from '../../shared/slide-types.js';
@@ -35,9 +50,13 @@ export function toRuntimeSlideType(ct) {
   };
 
   if (ct.template) {
-    // Compile the safe template into a renderHtml function
-    const render = compileTemplate(ct.template);
+    // Compiled on first render, not here: `buildMergedSlideTypes` also builds
+    // the registry the storage write seam validates against, and a deck save
+    // has no business compiling every published template in the org just to
+    // learn that a type key exists.
+    let render = null;
     def.renderHtml = (content, slide, ctx) => {
+      render ??= compileTemplate(ct.template);
       // Inject custom CSS as a scoped <style> block
       const cssBlock = ct.css ? `<style>${filterCssText(ct.css)}</style>` : '';
       // Sanitize the compiled template output before it reaches innerHTML and
@@ -75,10 +94,36 @@ export function toRuntimeSlideType(ct) {
 }
 
 /**
- * Build a merged slide types map that includes both core and custom types.
- * Used by server-side rendering (exports, previews, share viewer).
+ * The registry key a DB-backed custom slide type is stored and resolved under.
  *
- * @param {Object} ctx - Context with organizationId
+ * `custom-` prefixes the org's own slug so a builder-UI type can never shadow a
+ * registered one. This is the single derivation of that key: the editor's
+ * `/api/slide-types` response, the render registry and the storage write seam
+ * all have to agree on the exact string a slide stores, and three copies of one
+ * template literal is three ways for them to drift.
+ *
+ * @param {{ slug: string }} ct - Custom slide type record from the database
+ * @returns {string}
+ */
+export function customSlideTypeKey(ct) {
+  return `custom-${ct?.slug}`;
+}
+
+/**
+ * Build the slide-type registry for one organization: core and file-based
+ * types, plus that org's **published** custom types under their
+ * {@link customSlideTypeKey}.
+ *
+ * This is the map every org-aware path resolves against — see the module note
+ * on why there is exactly one of them. It is org-scoped by construction, so it
+ * is built per request and never cached across organizations.
+ *
+ * A failed load leaves the core registry intact rather than throwing: on a read
+ * path that degrades a custom slide to the unknown-type fallback, and on the
+ * write path it degrades to the pre-B129 behaviour (a 400) — both are better
+ * than a 500, and neither persists anything wrong.
+ *
+ * @param {Object} ctx - Context with organizationId (a storage scope qualifies)
  * @returns {Promise<Object>} Merged slide types map
  */
 export async function buildMergedSlideTypes(ctx) {
@@ -87,8 +132,7 @@ export async function buildMergedSlideTypes(ctx) {
   try {
     const customTypes = await listPublishedCustomSlideTypes(ctx);
     for (const ct of customTypes) {
-      const typeKey = `custom-${ct.slug}`;
-      merged[typeKey] = toRuntimeSlideType(ct);
+      merged[customSlideTypeKey(ct)] = toRuntimeSlideType(ct);
     }
   } catch (err) {
     log.warn('Failed to load custom slide types:', err.message || err);

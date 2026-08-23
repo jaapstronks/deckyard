@@ -22,9 +22,18 @@ import { normalizeRevealStyle } from '../../../../shared/reveal-style.js';
  *
  * @param {string} repoRoot - Repository root path (for theme loading)
  * @param {Object} body - Request body with title, lang, theme, settings, ownerEmail
+ * @param {Object} [opts]
+ * @param {Record<string, object>} [opts.slideTypes] - the organization's slide
+ *   type registry. A deck can be created *with* slides (library insert, import,
+ *   agent payload), and those go through the same write seam, so the org's
+ *   DB-backed custom types have to be resolvable here as well (B129).
  * @returns {Promise<Object>} Fully prepared presentation object
  */
-export async function prepareNewPresentation(repoRoot, body) {
+export async function prepareNewPresentation(
+  repoRoot,
+  body,
+  { slideTypes } = {},
+) {
   const title =
     typeof body?.title === 'string' && body.title.trim()
       ? body.title.trim()
@@ -257,7 +266,7 @@ export async function prepareNewPresentation(repoRoot, body) {
           },
         },
   };
-  normalizeI18n(pres);
+  normalizeI18n(pres, { slideTypes });
 
   // The slides came from somewhere else — a library item, another deck, an
   // agent's payload — so the content keys a type declares as instance-bound are

@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 
 import {
+  SLIDE_TYPES,
   resolveSlideTypeName,
   getSlideTypeId,
   getSlideType,
@@ -37,18 +38,41 @@ const EXAMPLE_CANONICAL_ID =
  * where their value comes from, so this seam does not name a type to know that
  * a poll needs an id.
  *
+ * ## Which registry it validates against (B129)
+ *
+ * "Registered" is an organization-scoped question, not a process-wide one: an
+ * org's DB-backed custom slide types (Settings → Slide Types) are as registered
+ * as a core one, and are stored under `custom-<slug>`. They live in a table, so
+ * they are not and cannot be in the in-process `SLIDE_TYPES` map — which is why
+ * this seam takes its registry as an argument instead of reaching for the
+ * module-level one. The caller that knows the organization (the presentations
+ * facade) builds it with `buildMergedSlideTypes`, the same builder every
+ * server-side read path already uses. Without it, the editor happily inserted a
+ * published custom type and every subsequent autosave answered 400.
+ *
+ * There is no second, more tolerant route for `custom-*` ids: one registry, one
+ * resolver, one 400 for a type nothing answers to.
+ *
  * @param {Array<object>} slides
  * @param {object} [opts]
  * @param {string} [opts.presentationId] - the deck being written. Needed for
  *   `presentation-id` keys, which cache it; omit it and those keys are left
  *   alone rather than blanked.
+ * @param {Record<string, object>} [opts.slideTypes] - the registry to validate
+ *   against. Defaults to the process-wide `SLIDE_TYPES`, which is right for a
+ *   caller that has no organization; every organization-scoped write hands in
+ *   that org's registry (`buildMergedSlideTypes`) so its DB-backed custom types
+ *   resolve here too. See the note above.
  * @returns {Array<object>}
  * @throws {ValidationError} 400 when a slide names an unresolvable type.
  */
-export function normalizeSlides(slides, { presentationId = '' } = {}) {
+export function normalizeSlides(
+  slides,
+  { presentationId = '', slideTypes = SLIDE_TYPES } = {},
+) {
   if (!Array.isArray(slides)) return [];
   return slides.map((s, index) => {
-    const type = resolveSlideTypeName(s?.type);
+    const type = resolveSlideTypeName(s?.type, slideTypes);
     if (!type) {
       throw new ValidationError(
         `Unknown slide type ${JSON.stringify(s?.type ?? null)} at slide ${index}: ` +
@@ -64,7 +88,7 @@ export function normalizeSlides(slides, { presentationId = '' } = {}) {
     };
     // Instance keys, from the type's declaration. Copied first so the write
     // lands on this slide's own content object rather than the caller's.
-    const def = getSlideType(type);
+    const def = getSlideType(type, slideTypes);
     if (Object.keys(slideInstanceKeys(def)).length) {
       normalized.content = {
         ...(s?.content && typeof s.content === 'object' ? s.content : {}),
