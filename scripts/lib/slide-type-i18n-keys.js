@@ -1,6 +1,7 @@
 /**
  * The one generator that turns the live slide-type registry into its `slideType.*`
- * i18n keys — labels, field labels/placeholders/help, item fields, and options.
+ * i18n keys — labels, field labels/placeholders/help, options, and the same again
+ * for every level of nested `itemFields`.
  *
  * `i18n-sync.js` reads the registry through it to prune locale keys the registry
  * no longer produces. It is the only reader since B94 retired `i18n-extract.js`,
@@ -50,29 +51,28 @@ function slideTypeUiStrings(slideTypes) {
     if (!out.has(k)) out.set(k, String(def ?? ''));
   };
 
-  for (const [type, def] of Object.entries(slideTypes || {})) {
-    add(def?.labelKey || `slideType.${type}.label`, def?.label || type);
-
-    for (const f of Array.isArray(def?.fields) ? def.fields : []) {
+  /**
+   * Walk one level of field declarations, then recurse into `itemFields`.
+   *
+   * `fields[]` and `itemFields[]` are the same declaration shape (field-types.js
+   * validates them against one registry), so they get one walk: an item field
+   * carries options like any other, and an `items` field nested inside an item
+   * (text-blocks' `rows[].blocks[]`) keeps descending. Walking only the outer
+   * level is what made the prune propose deleting live keys in #938/#939.
+   *
+   * @param {string} base - key prefix, e.g. `slideType.<type>.field`
+   * @param {Array<Object>} fields - `fields[]` or `itemFields[]`
+   */
+  const walkFields = (base, fields) => {
+    for (const f of Array.isArray(fields) ? fields : []) {
       const fk = String(f?.key || '').trim();
       if (!fk) continue;
-      const base = `slideType.${type}.field.${fk}`;
-      add(f.labelKey || `${base}.label`, f?.label || fk);
+      const fbase = `${base}.${fk}`;
+      add(f.labelKey || `${fbase}.label`, f?.label || fk);
       if (typeof f?.placeholder === 'string')
-        add(f.placeholderKey || `${base}.placeholder`, f.placeholder);
+        add(f.placeholderKey || `${fbase}.placeholder`, f.placeholder);
       if (typeof f?.helpText === 'string')
-        add(f.helpTextKey || `${base}.help`, f.helpText);
-
-      for (const it of Array.isArray(f?.itemFields) ? f.itemFields : []) {
-        const ik = String(it?.key || '').trim();
-        if (!ik) continue;
-        const ibase = `${base}.item.${ik}`;
-        add(it.labelKey || `${ibase}.label`, it?.label || ik);
-        if (typeof it?.placeholder === 'string')
-          add(it.placeholderKey || `${ibase}.placeholder`, it.placeholder);
-        if (typeof it?.helpText === 'string')
-          add(it.helpTextKey || `${ibase}.help`, it.helpText);
-      }
+        add(f.helpTextKey || `${fbase}.help`, f.helpText);
 
       for (const raw of Array.isArray(f?.options) ? f.options : []) {
         const opt = normalizeOption(raw);
@@ -84,7 +84,15 @@ function slideTypeUiStrings(slideTypes) {
         if (opt.titleKey) add(opt.titleKey, opt.title);
         if (opt.ariaLabelKey) add(opt.ariaLabelKey, opt.ariaLabel);
       }
+
+      if (Array.isArray(f?.itemFields))
+        walkFields(`${fbase}.item`, f.itemFields);
     }
+  };
+
+  for (const [type, def] of Object.entries(slideTypes || {})) {
+    add(def?.labelKey || `slideType.${type}.label`, def?.label || type);
+    walkFields(`slideType.${type}.field`, def?.fields);
   }
   return out;
 }
