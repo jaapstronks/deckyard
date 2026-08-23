@@ -1,10 +1,21 @@
 /**
- * Multiple images field renderer (for logos, etc.)
+ * The `images` field renderer — a flat collection of image URLs.
+ *
+ * No core slide type declares `images` any more (logo-wall moved to `items` in
+ * the v7 -> v8 sweep, #938). It stays because `images` is a declared field type
+ * in `shared/slide-types/field-types.js` and one of the six the custom-slide-type
+ * editor offers, so a DB-backed or file-based custom type can declare it today.
+ * That makes this the renderer for *custom* collections, and it is written for
+ * that: the partner-logo preset list is one optional preset source, not the
+ * subject.
+ *
+ * The value is a `stringArray` — URLs and nothing else — so there is nowhere on
+ * this field to record alt text. The picker therefore does not auto-fill it
+ * here; a type that wants per-image alt declares `items` with an `alt`
+ * sub-field, which is what logo-wall and gallery now do.
  */
 import { t } from '../../../../lib/ui-i18n.js';
 import { toast } from '../../../../lib/dom/toast.js';
-import { createIndexedAltSetter } from './alt-utils.js';
-import { applyAltFromPick } from '../../media/apply-pick.js';
 import { h } from '../../../../lib/dom.js';
 
 /**
@@ -19,8 +30,6 @@ export function createFieldImages(ctx) {
     readFileAsDataUrl,
     features,
     pres,
-    normalizeLang,
-    otherLang,
     markDirty,
     scheduleUiRefresh,
     rerenderEditor,
@@ -59,43 +68,48 @@ export function createFieldImages(ctx) {
     const normalizedPresets = normalizeUrlList(presetUrls);
     const presetSet = new Set(normalizedPresets);
 
-    // Presets section
-    const presets = h('div', { class: 'stack is-field' });
-    presets.append(
-      h('div', {
-        class: 'help',
-        text: t('editor.images.presets.logos', 'Preset logos'),
-      }),
-    );
-    for (const url of normalizedPresets) {
-      const row = h('label', { class: 'row' });
-      const cb = h('input', { type: 'checkbox' });
-      cb.checked = set.has(url);
-      cb.addEventListener('change', () => {
-        const next = new Set(
-          Array.isArray(slide.content?.[field.key])
-            ? slide.content[field.key]
-            : [],
-        );
-        if (cb.checked) next.add(url);
-        else next.delete(url);
-        let arr = Array.from(next);
-        if (maxItems) arr = arr.slice(0, maxItems);
-        onChange(arr);
-      });
-      const thumb = h('img', { src: url, class: 'editor-logo-thumb-sm' });
-      const name = url.split('/').pop() || url;
-      row.append(cb, thumb, h('div', { class: 'help', text: name }));
-      presets.append(row);
+    // Presets — only when a preset source actually supplied some.
+    // `presetSource: 'partnerlogos'` is the one source there is; without it the
+    // list is empty and a bare "Preset logos" heading is pure chrome. Same
+    // guard shape as `single-image.js`'s backgrounds block.
+    if (normalizedPresets.length) {
+      const presets = h('div', { class: 'stack is-field' });
+      presets.append(
+        h('div', {
+          class: 'help',
+          text: t('editor.images.presets.logos', 'Preset logos'),
+        }),
+      );
+      for (const url of normalizedPresets) {
+        const row = h('label', { class: 'row' });
+        const cb = h('input', { type: 'checkbox' });
+        cb.checked = set.has(url);
+        cb.addEventListener('change', () => {
+          const next = new Set(
+            Array.isArray(slide.content?.[field.key])
+              ? slide.content[field.key]
+              : [],
+          );
+          if (cb.checked) next.add(url);
+          else next.delete(url);
+          let arr = Array.from(next);
+          if (maxItems) arr = arr.slice(0, maxItems);
+          onChange(arr);
+        });
+        const thumb = h('img', { src: url, class: 'editor-logo-thumb-sm' });
+        const name = url.split('/').pop() || url;
+        row.append(cb, thumb, h('div', { class: 'help', text: name }));
+        presets.append(row);
+      }
+      wrap.append(presets);
     }
-    wrap.append(presets);
 
     // Current selection preview + remove
     const selected = h('div', { class: 'stack is-field' });
     selected.append(
       h('div', {
         class: 'help',
-        text: t('editor.images.selectedLogos', 'Selected logos'),
+        text: t('editor.images.selected', 'Selected images'),
       }),
     );
     if (!current.length) {
@@ -152,17 +166,6 @@ export function createFieldImages(ctx) {
           class: 'btn btn-secondary',
           text: t('editor.images.addFromLibrary', 'Add from library…'),
           onclick: () => {
-            const activeLang = normalizeLang?.(pres?.i18n?.active) || 'nl';
-            const other =
-              typeof otherLang === 'function' ? otherLang(activeLang) : null;
-            const setAltForLogoIndex = createIndexedAltSetter({
-              slide,
-              pres,
-              normalizeLang,
-              activeLang,
-              fieldPrefix: 'logo',
-            });
-
             openImagePicker({
               title: t('editor.images.libraryTitle', 'Images'),
               docId: pres?.id || '',
@@ -189,16 +192,9 @@ export function createFieldImages(ctx) {
                 );
                 onChange(maxItems ? deduped.slice(0, maxItems) : deduped);
 
-                // Auto-fill alt for newly added logo
+                // Redraw so the new URL shows up in the selection list, which
+                // this renderer builds once per render.
                 if (!wasPresent) {
-                  const idx = deduped.indexOf(url);
-                  applyAltFromPick({
-                    picked,
-                    activeLang,
-                    otherLang: other,
-                    setAltForLang: (lang, alt) =>
-                      setAltForLogoIndex(lang, idx, alt),
-                  });
                   markDirty?.();
                   rerenderEditor?.();
                   scheduleUiRefresh?.();
@@ -211,7 +207,7 @@ export function createFieldImages(ctx) {
       wrap.append(addFromPicker);
     }
 
-    // Upload custom logos
+    // Upload an image of your own
     const up = h('div', { class: 'stack is-field' });
     up.append(
       h('div', {
@@ -226,7 +222,7 @@ export function createFieldImages(ctx) {
                 'editor.images.uploadsDisabled',
                 'Uploads are disabled; use the library.',
               )
-          : t('editor.images.uploadCustom', 'Upload custom logo'),
+          : t('editor.images.uploadCustom', 'Upload an image'),
       }),
     );
     if (!uploadsDisabled && api && typeof readFileAsDataUrl === 'function') {
@@ -253,6 +249,10 @@ export function createFieldImages(ctx) {
               new Set(next.filter((u) => typeof u === 'string' && u.trim())),
             );
             onChange(maxItems ? deduped.slice(0, maxItems) : deduped);
+            // The selection list is built once per render, so an upload only
+            // becomes visible after the form is redrawn (the picker path above
+            // does the same).
+            rerenderEditor?.();
           } catch (e) {
             toast.error(e);
           } finally {

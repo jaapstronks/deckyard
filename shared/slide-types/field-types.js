@@ -316,8 +316,9 @@ export const FIELD_TYPES = {
   image: {
     label: 'Image',
     description: 'Image picker (stores a URL/reference string)',
-    docExtra:
-      "`presetSource` (`'backgrounds'` or `'partnerlogos'`), `required`",
+    // `presetSource` only reads `'backgrounds'` here; the partner-logo preset
+    // list belongs to the `images` field, which is the one that renders it.
+    docExtra: "`presetSource` (`'backgrounds'`), `required`",
     valueKind: 'string',
     validate: validateImage,
   },
@@ -331,8 +332,9 @@ export const FIELD_TYPES = {
   },
   images: {
     label: 'Images',
-    description: 'Multiple images (gallery), stored as an array of URL strings',
-    docExtra: '`maxItems`, `required`',
+    description:
+      'Multiple images (gallery), stored as an array of URL strings. No core type declares it since logo-wall moved to `items` (v7 -> v8); it stays as an extension point — one of the six types the custom-slide-type editor offers. URLs only: a collection that needs per-image alt text or a caption declares `items` with its own sub-fields instead.',
+    docExtra: "`maxItems`, `required`, `presetSource` (`'partnerlogos'`)",
     valueKind: 'stringArray',
     validate: validateImages,
   },

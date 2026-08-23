@@ -1,6 +1,13 @@
 /**
  * Alt text management utilities for image fields
  * Handles updating alt text in both active and other language buffers
+ *
+ * One setter, one write target: the alt key a field declares. The former
+ * `createIndexedAltSetter` wrote numbered `logo{N}Alt` keys; the v7 -> v8 sweep
+ * (#938) retired the last type declaring those, and since the setter only wrote
+ * a key already present on the slide it had become a guaranteed no-op. Alt text
+ * for a collection now lives on the item (`logos[].alt`), reached through this
+ * setter with the item's own field key.
  */
 
 /**
@@ -41,53 +48,6 @@ export function createAltSetter({
     tgt.content =
       tgt.content && typeof tgt.content === 'object' ? tgt.content : {};
     tgt.content[fieldKey] = typeof alt === 'string' ? alt : '';
-  };
-}
-
-/**
- * Create an indexed alt setter for numbered multi-image fields
- * @param {Object} options - Configuration options
- * @param {Object} options.slide - The slide object
- * @param {Object} options.pres - The presentation object
- * @param {Function} options.normalizeLang - Language normalizer function
- * @param {string} options.activeLang - The active language
- * @param {string} options.fieldPrefix - The prefix for the field key (e.g., 'logo')
- * @returns {Function} A function that sets alt text for a given language and index
- */
-export function createIndexedAltSetter({
-  slide,
-  pres,
-  normalizeLang,
-  activeLang,
-  fieldPrefix,
-}) {
-  return (lang, idx, alt) => {
-    const l = normalizeLang?.(lang);
-    if (!l) return;
-    const key = `${fieldPrefix}${idx + 1}Alt`;
-
-    // Only set if that key exists on the slide content (opt-in).
-    if (
-      !slide?.content ||
-      typeof slide.content !== 'object' ||
-      !(key in slide.content)
-    ) {
-      return;
-    }
-
-    if (l === activeLang) {
-      slide.content[key] = typeof alt === 'string' ? alt : '';
-      return;
-    }
-
-    const ver = pres?.i18n?.versions?.[l];
-    const slides = Array.isArray(ver?.slides) ? ver.slides : null;
-    if (!slides) return;
-    const tgt = slides.find((s) => s?.id === slide?.id);
-    if (!tgt) return;
-    tgt.content =
-      tgt.content && typeof tgt.content === 'object' ? tgt.content : {};
-    tgt.content[key] = typeof alt === 'string' ? alt : '';
   };
 }
 
