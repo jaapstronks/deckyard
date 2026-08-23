@@ -45,7 +45,7 @@ export function createAltSetter({
 }
 
 /**
- * Create an indexed alt setter for multi-image fields (e.g., logo1Alt, logo2Alt)
+ * Create an indexed alt setter for numbered multi-image fields
  * @param {Object} options - Configuration options
  * @param {Object} options.slide - The slide object
  * @param {Object} options.pres - The presentation object

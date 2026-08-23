@@ -156,8 +156,16 @@ const iconCardGridSlideSchema = z
   .object({
     title: requiredTitleSchema,
     subheading: subheadingSchema,
-    cardCount: z.enum(['1', '2', '3', '4', '5', '6']),
-    // Dynamic card fields validated separately
+    items: z
+      .array(
+        z.object({
+          icon: z.string().max(40).optional(),
+          title: z.string().max(80),
+          body: z.string().max(700).optional(),
+        }),
+      )
+      .min(1)
+      .max(6),
   })
   .passthrough();
 
@@ -165,7 +173,7 @@ const iconCardGridSlideSchema = z
 // rows[] is the canonical shape (post-A0.4): an agent authors the array, which
 // carries up to 4 rows. The legacy numbered mirror below (row1Count, ...) is
 // FROZEN at 3 rows and optional — a 4-row slide exists only in rows[] form.
-// Mirrors how cardStack/teamCards/logoWall accept their items[]: the array is
+// Mirrors how teamCards/logoWall accept their arrays: the array is
 // validated here, the numbered fields stay optional and pass through. Before
 // this, row1Count was required and rows[] unknown, so every array-canonical
 // slide (including each new one, whose defaults are rows[]-only) failed refine
@@ -281,7 +289,7 @@ const videoSlideSchema = z
   })
   .passthrough();
 
-// Team Cards Slide — accepts both members[] and legacy card{N} fields
+// Team Cards Slide
 const teamCardsSlideSchema = z
   .object({
     title: titleSchema,
@@ -296,15 +304,11 @@ const teamCardsSlideSchema = z
         }),
       )
       .min(1)
-      .max(25)
-      .optional(),
-    cardCount: z
-      .enum(Array.from({ length: 25 }, (_v, i) => String(i + 1)))
-      .optional(),
+      .max(25),
   })
   .passthrough();
 
-// Logo Wall Slide — accepts both logos[] and legacy logo{N} fields
+// Logo Wall Slide
 const logoWallSlideSchema = z
   .object({
     title: titleSchema,
@@ -317,11 +321,9 @@ const logoWallSlideSchema = z
         }),
       )
       .min(1)
-      .max(12)
-      .optional(),
-    logoCount: z
-      .enum(['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'])
-      .optional(),
+      // The array's own cap (the type declares maxItems: 30); the old 12 was
+      // the legacy numbered family's ceiling, which no longer exists.
+      .max(30),
   })
   .passthrough();
 

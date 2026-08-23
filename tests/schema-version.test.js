@@ -700,6 +700,52 @@ test('v7->v8 leaves other types alone, writes no empty array, and is idempotent'
   assert.deepEqual(twice.slides[0].content, once.slides[0].content);
 });
 
+/**
+ * Numbered field families that are NOT a mirror of a canonical array, with why
+ * each one is allowed to stay. A numbered key beside an `items` field is the
+ * shape v7 -> v8 removed; a numbered key on a type that has no array is a
+ * fixed-arity design question, not a second spelling of one collection.
+ */
+const ALLOWED_NUMBERED_FIELDS = {
+  'text-blocks-slide':
+    'the rows[]/blocks[] mirror, hidden and frozen at 3 rows — its own cleanup (the fold landed in v1 -> v2)',
+  'chart-slide':
+    'series1Label/series2Label: two fixed series on a chart, no array behind them',
+  'end-slide':
+    'social1/social2 label+url: two fixed slots, no array behind them',
+};
+
+test('gate: no slide type carries a numbered slot family beside its canonical array', () => {
+  // The point of the v7 -> v8 step: after it, the flat spelling of a collection
+  // exists only as a migration record. A type that grows a `card7Title` /
+  // `logo3Image` back beside its items[] is a second accepted shape for one
+  // collection, which is exactly what this step removed.
+  const offenders = [];
+  for (const [name, def] of Object.entries(SLIDE_TYPES)) {
+    const fields = Array.isArray(def?.fields) ? def.fields : [];
+    for (const field of fields) {
+      if (typeof field?.key !== 'string') continue;
+      if (!/^[a-z]+\d+[A-Z]/.test(field.key)) continue;
+      if (ALLOWED_NUMBERED_FIELDS[name]) continue;
+      offenders.push(`${name}.${field.key}`);
+    }
+  }
+  assert.deepEqual(offenders, []);
+
+  // And every allowance is still earned: none of them sits beside an items[]
+  // field it could be mirroring — except text-blocks, whose mirror is `hidden`
+  // and therefore invisible to the projection and the form.
+  for (const name of Object.keys(ALLOWED_NUMBERED_FIELDS)) {
+    if (name === 'text-blocks-slide') continue;
+    const fields = SLIDE_TYPES[name]?.fields || [];
+    assert.equal(
+      fields.some((f) => f?.type === 'items'),
+      false,
+      `${name} has both a numbered family and an items[] field`,
+    );
+  }
+});
+
 test('validatePresentation rejects an out-of-range schemaVersion', () => {
   const base = newPresentation({});
 

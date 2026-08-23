@@ -45,14 +45,13 @@ export const STRUCTURE_VALIDATORS = {
 
   'icon-card-grid-slide': (content) => {
     const issues = [];
-    if (!content.cardCount) {
-      issues.push('Missing cardCount');
+    if (!Array.isArray(content.items) || content.items.length === 0) {
+      issues.push('Missing items[]');
     } else {
-      const count = parseInt(content.cardCount, 10);
-      for (let i = 1; i <= count; i++) {
-        if (!content[`card${i}Title`]) issues.push(`Missing card${i}Title`);
-        if (!content[`card${i}Body`]) issues.push(`Missing card${i}Body`);
-      }
+      content.items.forEach((item, i) => {
+        if (!item?.title) issues.push(`items[${i}] missing title`);
+        if (!item?.body) issues.push(`items[${i}] missing body`);
+      });
     }
     return issues;
   },
@@ -100,42 +99,26 @@ export const STRUCTURE_VALIDATORS = {
 
   'team-cards-slide': (content) => {
     const issues = [];
-    if (Array.isArray(content.members) && content.members.length > 0) {
-      // New format: validate members[]
-      for (let i = 0; i < content.members.length; i++) {
-        if (!content.members[i]?.name)
-          issues.push(`Missing members[${i}].name`);
-      }
-    } else if (content.cardCount) {
-      // Legacy format
-      const count = parseInt(content.cardCount, 10);
-      for (let i = 1; i <= count; i++) {
-        if (!content[`card${i}Name`]) issues.push(`Missing card${i}Name`);
-      }
+    if (!Array.isArray(content.members) || content.members.length === 0) {
+      issues.push('Missing members[]');
     } else {
-      issues.push('Missing members[] or cardCount');
+      content.members.forEach((member, i) => {
+        if (!member?.name) issues.push(`members[${i}] missing name`);
+      });
     }
     return issues;
   },
 
   'logo-wall-slide': (content) => {
     const issues = [];
-    // Canonical logos[] or the legacy numbered logo{N} fields; a logo needs at
-    // least a name or an image to render as anything.
-    if (Array.isArray(content.logos) && content.logos.length > 0) {
+    // A logo needs at least a name or an image to render as anything.
+    if (!Array.isArray(content.logos) || content.logos.length === 0) {
+      issues.push('Missing logos[]');
+    } else {
       content.logos.forEach((logo, i) => {
         if (!logo?.name && !logo?.image)
           issues.push(`logos[${i}] missing name or image`);
       });
-    } else if (content.logoCount) {
-      const count = parseInt(content.logoCount, 10);
-      for (let i = 1; i <= count; i++) {
-        if (!content[`logo${i}Name`] && !content[`logo${i}Image`]) {
-          issues.push(`Missing logo${i}Name or logo${i}Image`);
-        }
-      }
-    } else {
-      issues.push('Missing logos[] or logoCount');
     }
     return issues;
   },

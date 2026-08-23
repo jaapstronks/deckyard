@@ -68,7 +68,7 @@ export function truncateContentFields(type, content) {
       'authorTitle',
     );
 
-  // Array items (list, timeline, metrics)
+  // Array items (list, timeline, metrics, icon cards)
   if (Array.isArray(fixed.items)) {
     fixed.items = fixed.items.map((item, idx) => {
       if (!item || typeof item !== 'object') return item;
@@ -87,6 +87,27 @@ export function truncateContentFields(type, content) {
         time: item.time
           ? truncate(item.time, MAX_LENGTHS['items.time'], `items[${idx}].time`)
           : item.time,
+        // icon-card-grid's card body — the cap the numbered `card{N}Body`
+        // family carried before the v7 -> v8 fold moved it into items[].
+        body: item.body
+          ? truncate(item.body, MAX_LENGTHS.cardBody, `items[${idx}].body`)
+          : item.body,
+      };
+    });
+  }
+
+  // Image blocks (team-cards), which store their card text in members[].
+  if (Array.isArray(fixed.members)) {
+    fixed.members = fixed.members.map((member, idx) => {
+      if (!member || typeof member !== 'object') return member;
+      return {
+        ...member,
+        name: member.name
+          ? truncate(member.name, 80, `members[${idx}].name`)
+          : member.name,
+        byline: member.byline
+          ? truncate(member.byline, 120, `members[${idx}].byline`)
+          : member.byline,
       };
     });
   }
@@ -126,22 +147,6 @@ export function truncateContentFields(type, content) {
       }
       return fixedRow;
     });
-  }
-
-  // Card fields (icon-card-grid, team-cards)
-  for (let i = 1; i <= 6; i++) {
-    const bodyKey = `card${i}Body`;
-    const titleKey = `card${i}Title`;
-    const nameKey = `card${i}Name`;
-    const bylineKey = `card${i}Byline`;
-
-    if (fixed[bodyKey])
-      fixed[bodyKey] = truncate(fixed[bodyKey], MAX_LENGTHS.cardBody, bodyKey);
-    if (fixed[titleKey])
-      fixed[titleKey] = truncate(fixed[titleKey], MAX_LENGTHS.title, titleKey);
-    if (fixed[nameKey]) fixed[nameKey] = truncate(fixed[nameKey], 80, nameKey);
-    if (fixed[bylineKey])
-      fixed[bylineKey] = truncate(fixed[bylineKey], 120, bylineKey);
   }
 
   // Text-blocks row fields

@@ -259,21 +259,9 @@ Rules:
 - ${langRule}
 - Return ONLY valid JSON, no markdown or explanation`,
       user: (slide) => {
-        const items = (slide.content?.items || [])
+        const cardText = (slide.content?.items || [])
           .map((it) => `- [${it.icon}] ${it.title}: ${it.body}`)
           .join('\n');
-        const legacy = !slide.content?.items;
-        let cardText = items;
-        if (legacy) {
-          const count = Number(slide.content?.cardCount || 4);
-          const cards = [];
-          for (let i = 1; i <= count; i++) {
-            cards.push(
-              `- ${slide.content?.[`card${i}Title`] || ''}: ${slide.content?.[`card${i}Body`] || ''}`,
-            );
-          }
-          cardText = cards.join('\n');
-        }
         return `Convert this icon cards slide to a list slide:
 
 Title: ${slide.content?.title || ''}

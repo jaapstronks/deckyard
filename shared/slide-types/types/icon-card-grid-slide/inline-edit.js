@@ -14,16 +14,13 @@
  */
 
 import { HEADER_GHOSTS, HEADER_TEXT } from '../../inline-edit-common.js';
-import { ensureIconCards, syncIconCardsToNumbered } from './cards.js';
+import { ensureIconCards } from './cards.js';
 
 /** @type {Object} InlineDescriptor for icon-card-grid-slide. */
 export const inlineEdit = {
   ghosts: HEADER_GHOSTS,
-  // Dual-model (items[] or legacy cardCount + numbered card{n}*): canonicalize
-  // to items[] on mount so add/remove/reorder work from the canvas like
-  // team-cards / logo-wall. Without this, legacy decks stayed in numbered mode
-  // (renderer emitted no data-inline-item-index) and cards were only editable
-  // via the bulk modal.
+  // Materialize items[] on mount so add/remove/reorder work from the canvas
+  // like team-cards / logo-wall.
   ensure: ensureIconCards,
   cards: {
     field: 'items',
@@ -34,22 +31,10 @@ export const inlineEdit = {
     removeLabelKey: 'editor.inline.removeCard',
     removeLabel: 'Remove card',
   },
-  // Clicking a card's icon opens the icon-picker modal in-slide. The write
-  // lands on whichever path the renderer emitted (items.N.icon or the
-  // legacy card{i}Icon); in items-mode the numbered mirror is re-synced,
-  // the same contract the side form and phase-3 inspector follow. The
-  // items[] guard matters: syncing a legacy deck (no items[]) would wipe
-  // its numbered fields.
+  // Clicking a card's icon opens the icon-picker modal in-slide; the write
+  // lands on the items.N.icon path the renderer emitted.
   icons: {
     selector: '.icon-card-icon[data-inline-icon]',
-    afterWrite: (slide) => {
-      if (
-        Array.isArray(slide?.content?.items) &&
-        slide.content.items.length > 0
-      ) {
-        syncIconCardsToNumbered(slide);
-      }
-    },
   },
   // Card editors stay in the form: they carry link + reorder controls.
   formText: HEADER_TEXT,
@@ -57,9 +42,8 @@ export const inlineEdit = {
 
 /**
  * Fields the inspector keeps rendering even though the inline layer covers the
- * rest of the slide. `cardCount` is deliberately absent: card count is
- * items[]-driven and managed by the side form's add/remove, so the raw enum is
- * no longer an inspector control.
+ * rest of the slide. Card count is items[]-driven and managed by the side
+ * form's add/remove, so there is no count control here.
  * @type {string[]}
  */
 export const inspectorKeeps = ['layout'];

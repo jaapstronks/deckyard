@@ -497,8 +497,9 @@ export function createRerenderEditor({
       const f = fieldByKey.get(key);
       if (!f) return;
       // Hidden fields are carried data, not editor surface; deprecated fields
-      // are legacy mirrors (numbered card1Title…, count enums) kept for old
-      // decks — the canonical array is the edited shape. Neither renders.
+      // are legacy mirrors (text-blocks' numbered row/block keys, count enums)
+      // kept for old decks — the canonical array is the edited shape. Neither
+      // renders.
       if (f.hidden || f.deprecated) {
         used.add(key);
         return;

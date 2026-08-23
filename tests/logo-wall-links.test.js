@@ -13,6 +13,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert';
 
 import { renderSlideHtml } from '../shared/slide-types/presentation.js';
+import { migratePresentation } from '../shared/slide-types/schema-version.js';
 
 function render(logos, ctx = {}) {
   return renderSlideHtml(
@@ -74,19 +75,25 @@ describe('logo-wall per-logo links', () => {
     assert.doesNotMatch(html, /has-link/);
   });
 
-  it('reads the link from legacy numbered fields', () => {
-    const html = renderSlideHtml(
-      {
-        type: 'logo-wall-slide',
-        content: {
-          title: 'Partners',
-          logoCount: '1',
-          logo1Name: 'Legacy',
-          logo1Link: 'https://legacy.example',
+  it('keeps a link stored in the legacy numbered form through the v7 -> v8 fold', () => {
+    // The numbered family is gone from the type; a deck that still carries it
+    // is folded once at read time, and the per-logo link has to survive that.
+    const deck = migratePresentation({
+      schemaVersion: 7,
+      slides: [
+        {
+          type: 'logo-wall-slide',
+          content: {
+            title: 'Partners',
+            logoCount: '1',
+            logo1Name: 'Legacy',
+            logo1Link: 'https://legacy.example',
+          },
         },
-      },
-      { mode: 'present' },
-    );
+      ],
+    });
+    const html = renderSlideHtml(deck.slides[0], { mode: 'present' });
+    assert.equal(deck.slides[0].content.logos.length, 1);
     assert.match(html, /href="https:\/\/legacy\.example"/);
   });
 });

@@ -186,8 +186,8 @@ export function injectTextStyles(html, content, typeOrFields = null) {
       : DEFAULT_ALIGN;
     const cls = textStyleClasses(styles[key], { allowedAligns, defaultAlign });
     if (!cls) continue;
-    // The `"` after the key anchors the match, so `card1` never matches
-    // `card1Body`; `data-morph-role="body"` never matches field `body`.
+    // The `"` after the key anchors the match, so `subheading` never matches
+    // `subheading2`; `data-morph-role="body"` never matches field `body`.
     const tagRe = new RegExp(
       `<([a-zA-Z][\\w-]*)\\b([^>]*\\bdata-inline-field="${escapeRegExp(key)}"[^>]*)>`,
       'g',

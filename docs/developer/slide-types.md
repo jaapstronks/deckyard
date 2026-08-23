@@ -340,8 +340,8 @@ otherwise.
 ```javascript
 fields: [
   { key: 'title', type: 'string', maxLength: 120 },
-  // Legacy mirror of items[] — kept for stored decks, never authored fresh.
-  { key: 'card1Title', type: 'string', deprecated: true },
+  // Legacy mirror of rows[] — kept for stored decks, never authored fresh.
+  { key: 'row1Block1Title', type: 'string', deprecated: true },
   // Live and editable, but not something an agent should invent.
   { key: 'bunnyLibraryId', type: 'string', ai: false },
   // helpText travels with the field and becomes the schema's `description`.

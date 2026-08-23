@@ -14,6 +14,9 @@ await initSanitizer();
 
 const { slideHeading, renderSlideBodySemanticHtml } =
   await import('../shared/slide-types/semantic-projection.js');
+const { SLIDE_TYPES } = await import('../shared/slide-types.js');
+const { migratePresentation } =
+  await import('../shared/slide-types/schema-version.js');
 
 const body = (slide, def, opts) =>
   renderSlideBodySemanticHtml(slide, def, opts);
@@ -269,94 +272,106 @@ describe('count-/order-aware collection projection', () => {
     assert.ok(!/<ol/.test(uh), uh);
   });
 
-  it('projects a flat repeating group bounded by its count, grouped per slot', () => {
-    const def = {
-      repeatingGroups: [
-        {
-          countKey: 'cardCount',
-          prefix: 'card',
-          slotFields: ['Title', 'Body'],
-          ordered: false,
-        },
-      ],
-      fields: [
-        { key: 'cardCount', type: 'enum' },
-        { key: 'card1Title', type: 'string' },
-        { key: 'card1Body', type: 'markdown' },
-        { key: 'card2Title', type: 'string' },
-        { key: 'card2Body', type: 'markdown' },
-        { key: 'card3Title', type: 'string' },
-        { key: 'card3Body', type: 'markdown' },
-      ],
-    };
-    const html = body(
-      {
-        content: {
-          cardCount: '2',
-          card1Title: 'One',
-          card1Body: 'first',
-          card2Title: 'Two',
-          card2Body: 'second',
-          card3Title: 'LEAK',
-          card3Body: 'should not appear',
-        },
-      },
-      def,
-    );
-    // stale slot 3 (beyond cardCount=2) must not leak
-    assert.ok(!/LEAK/.test(html), html);
-    // title + body stay grouped in one <li>, title becomes the block heading
-    assert.ok(/<li class="reader-item"><h3>One<\/h3>/.test(html), html);
-    assert.ok(/first/.test(html) && /second/.test(html), html);
-    // the raw count enum and numbered slot fields never render as loose nodes
-    assert.ok(!/card1Title|cardCount/.test(html), html);
+  it('projects no core type as a flat numbered slot family any more', () => {
+    // The projection used to carry a migration bridge (`repeatingGroups`) for
+    // the numbered `card1Title` / `logo1Image` families. No core type ever
+    // declared it, and the v7 -> v8 schema fold moved the last three families
+    // into their arrays, so the bridge went with them: a deck carrying BOTH
+    // shapes would have projected its cards twice.
+    for (const [name, def] of Object.entries(SLIDE_TYPES)) {
+      assert.equal(
+        'repeatingGroups' in def,
+        false,
+        `${name} declares repeatingGroups`,
+      );
+    }
   });
+});
 
-  it('does not surface a hidden slot field (deprecated card label)', () => {
-    const def = {
-      repeatingGroups: [
-        {
-          countKey: 'cardCount',
-          prefix: 'card',
-          slotFields: ['Title', 'Label', 'Body'],
-        },
-      ],
-      fields: [
-        { key: 'cardCount', type: 'enum' },
-        { key: 'card1Title', type: 'string' },
-        { key: 'card1Label', type: 'string', hidden: true },
-        { key: 'card1Body', type: 'markdown' },
-      ],
-    };
-    const html = body(
+describe('the legacy numbered slot families project exactly once', () => {
+  // The "done when" of the v7 -> v8 fold: a deck stored in the old numbered
+  // form, one stored in the array form, and one carrying BOTH (which the
+  // seeded defaults made common) must all read the same in the reader — one
+  // block per card, no loose paragraphs, no doubling.
+  const FAMILIES = [
+    [
+      'team-cards-slide',
+      { cardCount: '2', card1Name: 'Ada', card1Byline: 'Eng', card2Name: 'Bo' },
       {
-        content: {
-          cardCount: '1',
-          card1Title: 'T',
-          card1Label: 'HIDDENLABEL',
-          card1Body: 'b',
-        },
+        members: [
+          { name: 'Ada', byline: 'Eng' },
+          { name: 'Bo', byline: '' },
+        ],
       },
-      def,
-    );
-    assert.ok(!/HIDDENLABEL/.test(html), html);
-    assert.ok(/<h3>T<\/h3>/.test(html), html);
-  });
+      ['Ada', 'Eng', 'Bo'],
+    ],
+    [
+      'logo-wall-slide',
+      { logoCount: '2', logo1Name: 'Acme', logo2Name: 'Beta' },
+      { logos: [{ name: 'Acme' }, { name: 'Beta' }] },
+      ['Acme', 'Beta'],
+    ],
+    [
+      'icon-card-grid-slide',
+      {
+        cardCount: '2',
+        card1Icon: 'rocket',
+        card1Title: 'One',
+        card1Body: 'first',
+        card2Title: 'Two',
+      },
+      {
+        items: [
+          { icon: 'rocket', title: 'One', body: 'first' },
+          { title: 'Two' },
+        ],
+      },
+      ['One', 'first', 'Two'],
+    ],
+  ];
 
-  it('falls back to all declared slots when the count field is missing', () => {
-    const def = {
-      repeatingGroups: [
-        { countKey: 'cardCount', prefix: 'card', slotFields: ['Title'] },
-      ],
-      fields: [
-        { key: 'cardCount', type: 'enum' },
-        { key: 'card1Title', type: 'string' },
-        { key: 'card2Title', type: 'string' },
-      ],
-    };
-    const html = body({ content: { card1Title: 'A', card2Title: 'B' } }, def);
-    assert.ok(/A/.test(html) && /B/.test(html), html);
-  });
+  const project = (type, content) => {
+    const deck = migratePresentation({
+      schemaVersion: 7,
+      slides: [{ type, content }],
+    });
+    const slide = deck.slides[0];
+    const def = SLIDE_TYPES[type];
+    const { key: headingKey, text: headingText } = slideHeading(slide, def);
+    return renderSlideBodySemanticHtml(slide, def, { headingKey, headingText });
+  };
+  const occurrences = (html, needle) => html.split(needle).length - 1;
+
+  for (const [type, flat, array, probes] of FAMILIES) {
+    it(`${type}: old form, array form and both-at-once all read the same`, () => {
+      const shapes = {
+        'old form': structuredClone(flat),
+        'array form': structuredClone(array),
+        'both forms': { ...structuredClone(flat), ...structuredClone(array) },
+      };
+      const rendered = Object.entries(shapes).map(([label, content]) => [
+        label,
+        project(type, content),
+      ]);
+      for (const [label, html] of rendered) {
+        for (const probe of probes)
+          assert.equal(
+            occurrences(html, probe),
+            1,
+            `${type} (${label}) projects "${probe}" ${occurrences(html, probe)}x`,
+          );
+        // No count enum, no numbered slot key, no icon name as prose.
+        assert.ok(
+          !/card\d|logo\d|cardCount|logoCount|rocket/.test(html),
+          `${type} (${label}) leaked a legacy key: ${html}`,
+        );
+        // One block per card, not loose paragraphs.
+        assert.match(html, /<ul class="reader-items">/);
+      }
+      const [first, ...rest] = rendered.map(([, html]) => html);
+      for (const html of rest) assert.equal(html, first);
+    });
+  }
 });
 
 describe('url field projection', () => {

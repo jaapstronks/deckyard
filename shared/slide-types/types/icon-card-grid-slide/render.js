@@ -31,16 +31,11 @@ export default function renderHtml(content, _slide, ctx) {
   // Both layouts support up to 6: cards is 3 rows of 2; tiles is a single row
   // for 1-4 and wraps to two rows of three for 5-6 (see the tiles CSS).
   const maxCards = MAX_CARDS;
-  // items[] is the source of truth when present: cardCount is a stale
-  // legacy mirror there (inline add/remove only mutates the array), so
-  // counting it would keep rendering an empty slot after a card removal.
-  const useItems = Array.isArray(content?.items) && content.items.length > 0;
-  let count = useItems
-    ? Math.max(1, Math.min(maxCards, filledItemCount(content.items)))
-    : Math.max(
-        1,
-        Math.min(maxCards, Number(content?.cardCount || maxCards) || maxCards),
-      );
+  // items[] carries its own length: trailing blanks are trimmed so a removed
+  // card does not keep drawing an empty slot. The floor of one keeps an empty
+  // grid clickable rather than blank.
+  const items = Array.isArray(content?.items) ? content.items : [];
+  let count = Math.max(1, Math.min(maxCards, filledItemCount(items)));
   // A bottom subheading eats a row of vertical space in the cards layout, so
   // cap at 4 (2 rows) to keep everything on the slide.
   if (hasBottom && layout === 'cards') count = Math.min(count, 4);
@@ -49,19 +44,16 @@ export default function renderHtml(content, _slide, ctx) {
   const bottomSubheadingHtml = renderBottomSubheadingHtml(content);
 
   const resolved = resolveCards(content, count);
-  // Inline-edit paths must point at the data source resolveCards() used
-  // (useItems above).
   const cards = [];
   for (let i = 1; i <= maxCards; i += 1) {
     const isEmpty = i > count;
     const card = resolved[i - 1] || {};
-    const titlePath = useItems ? `items.${i - 1}.title` : `card${i}Title`;
-    const bodyPath = useItems ? `items.${i - 1}.body` : `card${i}Body`;
-    const iconPath = useItems ? `items.${i - 1}.icon` : `card${i}Icon`;
-    const itemAttrs =
-      !isEmpty && useItems
-        ? ` data-inline-item="items" data-inline-item-index="${i - 1}"`
-        : '';
+    const titlePath = `items.${i - 1}.title`;
+    const bodyPath = `items.${i - 1}.body`;
+    const iconPath = `items.${i - 1}.icon`;
+    const itemAttrs = isEmpty
+      ? ''
+      : ` data-inline-item="items" data-inline-item-index="${i - 1}"`;
     const iconName = card.icon || '';
     const iconSrc = iconUrl(iconName);
     const title = card.title || '';

@@ -12,6 +12,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert';
 
 import { renderSlideHtml } from '../shared/slide-types/presentation.js';
+import { migratePresentation } from '../shared/slide-types/schema-version.js';
 
 function render(cards, ctx = {}) {
   return renderSlideHtml(
@@ -19,7 +20,6 @@ function render(cards, ctx = {}) {
       type: 'icon-card-grid-slide',
       content: {
         title: 'Deck',
-        cardCount: String(cards.length),
         items: cards,
       },
     },
@@ -134,20 +134,26 @@ describe('icon-card-grid per-card links', () => {
     assert.doesNotMatch(html, /has-link/);
   });
 
-  it('reads the link from legacy numbered fields', () => {
-    const html = renderSlideHtml(
-      {
-        type: 'icon-card-grid-slide',
-        content: {
-          title: 'Deck',
-          cardCount: '1',
-          card1Title: 'Legacy',
-          card1Body: 'x',
-          card1Link: 'https://legacy.example',
+  it('keeps a link stored in the legacy numbered form through the v7 -> v8 fold', () => {
+    // The numbered family is gone from the type; a deck that still carries it
+    // is folded once at read time, and the per-card link has to survive that.
+    const deck = migratePresentation({
+      schemaVersion: 7,
+      slides: [
+        {
+          type: 'icon-card-grid-slide',
+          content: {
+            title: 'Deck',
+            cardCount: '1',
+            card1Title: 'Legacy',
+            card1Body: 'x',
+            card1Link: 'https://legacy.example',
+          },
         },
-      },
-      { mode: 'present' },
-    );
+      ],
+    });
+    const html = renderSlideHtml(deck.slides[0], { mode: 'present' });
+    assert.equal(deck.slides[0].content.items.length, 1);
     assert.match(html, /href="https:\/\/legacy\.example"/);
   });
 });

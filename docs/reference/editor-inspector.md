@@ -431,19 +431,18 @@ rather than getting a home of its own.
 Two shorthands the keeps-model JSDoc in `inspector-form.js` still refers to,
 both in the safe direction:
 
-- table `colCount`, team-cards `cardCount` and logo-wall `logoCount` are
-  derived mirrors managed by their editors/arrays and were never rendered
-  as form controls; the inspector does not resurrect them (their ops live
-  in the table editor / card add-remove, in bulk modal + wysiwyg).
+- table `colCount` is a derived mirror managed by its editor and was never
+  rendered as a form control; the inspector does not resurrect it (its ops
+  live in the table editor). team-cards' `cardCount` and logo-wall's
+  `logoCount` were the same kind of deviation until the schema v7 -> v8 fold
+  removed both keys outright — card count is now the array's own length.
 - gallery and icon-card-grid keep their `layout` enum (enums are inspector
-  material by definition); icon-card-grid `cardCount` is driven by
+  material by definition); icon-card-grid's card count is driven by
   add/remove, not a control.
 
 Known residue (fields that keep a form-only or dedicated-surface home,
-deliberately): logo-wall add/remove logos (form), card-stack and
-content-columns numbered schemas (no array migration yet), chart data
-(dedicated markdown modal), table-modal slide-view entry points (open
-follow-up).
+deliberately): logo-wall add/remove logos (form), chart data (dedicated
+markdown modal), table-modal slide-view entry points (open follow-up).
 
 ## Responsive model
 
