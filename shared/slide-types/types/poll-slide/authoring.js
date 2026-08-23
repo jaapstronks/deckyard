@@ -43,10 +43,12 @@ export default {
   sample: {
     pollId: 'sample-poll',
     question: 'What do you think?',
-    option1: 'Strongly agree',
-    option2: 'Somewhat agree',
-    option3: 'Neutral',
-    option4: 'Disagree',
+    options: [
+      { text: 'Strongly agree' },
+      { text: 'Somewhat agree' },
+      { text: 'Neutral' },
+      { text: 'Disagree' },
+    ],
     background: 'lime',
   },
 };

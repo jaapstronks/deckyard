@@ -47,7 +47,7 @@ each type's definition; served out through `/api/slide-types`.
 | ------------------ | ----------------------------------------------------------- | ---------------------------------------------------- |
 | `singleton`        | a fixed set of scalar slots                                 | title, content, quote, image-text, video, comparison |
 | `collection`       | _n_ items of one repeated shape, _n_ is the author's choice | list, process, timeline, funnel, gallery, team-cards |
-| `fixed-collection` | exactly _n_ items; the count is part of the meaning         | matrix (4 quadrants), poll, likert                   |
+| `fixed-collection` | exactly _n_ items; the count is part of the meaning         | matrix (4 quadrants)                                 |
 | `tabular`          | rows × columns                                              | table                                                |
 | `dataset`          | data points plus an encoding                                | chart                                                |
 | `chrome`           | no content fields at all                                    | payoff, follow-invite                                |
@@ -149,7 +149,14 @@ down in the test rather than silently distorting the facet.
 
 ### What the facet found
 
-Five types whose declaration contradicts their schema. They sit in an explicit
+Two types whose declaration contradicts their schema — it was five when the
+facet landed. `poll-slide` and `likert-slide` left the list with schema v9,
+which folded their flat `option1..N` slots into one `options[]` array and
+corrected the declaration to `collection`: the count is bounded (2–4 answers,
+2–10 scale points) but it is the author's, so `fixed-collection`, which means
+`minItems === maxItems`, was the wrong bucket in both directions. `matrix-slide`
+is now its only member, which is what a structure whose count really is fixed by
+the type looks like. They sit in an explicit
 `BURNDOWN` map in the test — the gate is on from day one for everything new, and
 the existing violations are a shrinking list rather than a reason to weaken the
 rule (the pattern `eslint-suppressions.json` established). Recording them is the
@@ -159,12 +166,20 @@ point: this is what the facet was built to make visible.
 | ------------------ | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | `image-text-slide` | declared `singleton`, carries `images[0-3]`                                    | the `duo` tile is a second contract; the cut (image-text strictly one image, plural cases to the image collection) is a product decision |
 | `quote-slide`      | declared `singleton`, carries `quotes[0-2]` beside scalar `quote`/`authorName` | one type, two representations — the legacy-mirror disease; fix by retiring one side                                                      |
-| `poll-slide`       | declared `fixed-collection`, carries `option1..option4` as scalars             | never got the `items[]` migration the other collections did                                                                              |
-| `likert-slide`     | same, `option1..option10`                                                      | as poll-slide                                                                                                                            |
 
-Assertion 3's `SIGNATURE_BURNDOWN` is now empty: its one pair was the List type
-registered under both `list-slide` and a Dutch alias, and rung 3 of the list
-consolidation removed the alias, so no two core types share a field signature.
+Assertion 3's `SIGNATURE_BURNDOWN` has one pair, and it is a finding the v9 fold
+**revealed** rather than created: `poll-slide` and `likert-slide` now offer the
+author exactly the same slots — `question`, one `options[]` of `{ text }`, and
+the `onClose` pair. Before the fold their key sets differed only because likert
+carried six more numbered scalars, which is legacy-mirror noise, not a contract.
+What actually separates them lives on another facet: `interaction` (one choice
+out of a set vs a point on an ordered scale), which drives a different aggregate
+and, through `ordered`, a different reader projection. The signature is
+deliberately coarse and sees none of that. So either the gate should learn that
+a live type is identified by its interaction kind too, or likert is poll's
+second render and the two should merge — open, and recorded in the burndown with
+that question attached. (Its previous entry, the List type registered under both
+`list-slide` and a Dutch alias, went at rung 3 of the list consolidation.)
 
 Assertion 4 adds one type, in `VARIANT_BURNDOWN`:
 

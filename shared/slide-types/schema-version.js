@@ -24,7 +24,7 @@ import {
 } from './field-groups.js';
 
 /** The schema version every freshly written deck is stamped with. */
-export const CURRENT_SCHEMA_VERSION = 8;
+export const CURRENT_SCHEMA_VERSION = 9;
 
 /**
  * The one legacy collection key each type stored before `items` — the v6 -> v7
@@ -113,6 +113,42 @@ const LEGACY_SLOT_FAMILIES = {
     scanBeyondCount: false,
     trimStrings: true,
     keepInteriorBlanks: true,
+  },
+};
+
+/**
+ * The flat option slots the v8 -> v9 fold reads — the last legacy numbered
+ * family, and the only one whose identity is load-bearing at *runtime* rather
+ * than only on render: an audience vote is stored as an `option_index`
+ * (`server/storage/interactions.js`), and that index has always been the
+ * position in the *compacted* list of non-empty options, because a numbered
+ * family can have holes.
+ *
+ * So the fold compacts exactly the way both readers did — `optionsFromContent`
+ * on the type and `pollOptionsFromSlide`/`likertOptionsFromSlide` on the server
+ * agreed on `nonEmpty`-and-drop — and every already-cast vote keeps pointing at
+ * the answer it was cast on. After the fold the array has no holes, so nothing
+ * compacts anywhere and the index is simply the position.
+ *
+ * Written out here rather than declared on the types, for the same reason the
+ * v6 -> v7 and v7 -> v8 tables are: a migration is a record of a shape that no
+ * longer exists.
+ *
+ * @type {Record<string, {arrayKey: string, prefix: string, maxSlots: number,
+ *   itemKey: string}>}
+ */
+const LEGACY_OPTION_SLOTS = {
+  'poll-slide': {
+    arrayKey: 'options',
+    prefix: 'option',
+    maxSlots: 4,
+    itemKey: 'text',
+  },
+  'likert-slide': {
+    arrayKey: 'options',
+    prefix: 'option',
+    maxSlots: 10,
+    itemKey: 'text',
   },
 };
 
@@ -452,6 +488,54 @@ export const SCHEMA_MIGRATIONS = [
       if (!Array.isArray(canonical) || canonical.length === 0) {
         const folded = foldLegacySlots(family, content);
         if (folded.length) content[family.arrayKey] = folded;
+      }
+      for (const key of stored) delete content[key];
+    }
+    return pres;
+  },
+
+  // v8 -> v9: fold poll-slide's `option1..option4` and likert-slide's
+  // `option1..option10` into one canonical `options[]` array of `{ text }`.
+  // These were the last flat numbered family, and the reason they outlived the
+  // v7 -> v8 sweep is that its regex looks for a capitalised suffix
+  // (`card1Title`): a bare `option1` slipped through. They were also the two
+  // types whose declared `structure` contradicted their schema — both said
+  // `fixed-collection`, which means one item array, while carrying scalars.
+  //
+  // Render-equivalent by construction: both readers (the type's own
+  // `optionsFromContent` and the server's `pollOptionsFromSlide` /
+  // `likertOptionsFromSlide`) took the non-empty slots in order and dropped the
+  // holes, so the folded array is exactly the list every surface already saw —
+  // which is what keeps a stored `option_index` pointing at the same answer
+  // (see LEGACY_OPTION_SLOTS).
+  //
+  // As in v7 -> v8: a populated canonical array wins untouched and the legacy
+  // keys are dropped either way. Idempotent — after one run no slot key is
+  // left, and a slide that never had one is untouched.
+  (pres) => {
+    const slides = Array.isArray(pres?.slides) ? pres.slides : [];
+    for (const slide of slides) {
+      if (!slide || typeof slide.type !== 'string') continue;
+      const family = LEGACY_OPTION_SLOTS[slide.type];
+      if (!family) continue;
+      const content = slide.content;
+      if (!content || typeof content !== 'object') continue;
+      const stored = [];
+      const folded = [];
+      for (let n = 1; n <= family.maxSlots; n += 1) {
+        const key = `${family.prefix}${n}`;
+        if (!Object.prototype.hasOwnProperty.call(content, key)) continue;
+        stored.push(key);
+        const text = str(content[key]);
+        if (text) folded.push({ [family.itemKey]: text });
+      }
+      if (!stored.length) continue;
+      const canonical = content[family.arrayKey];
+      if (
+        (!Array.isArray(canonical) || canonical.length === 0) &&
+        folded.length
+      ) {
+        content[family.arrayKey] = folded;
       }
       for (const key of stored) delete content[key];
     }

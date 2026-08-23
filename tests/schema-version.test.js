@@ -700,50 +700,212 @@ test('v7->v8 leaves other types alone, writes no empty array, and is idempotent'
   assert.deepEqual(twice.slides[0].content, once.slides[0].content);
 });
 
+/** A deck at v8, one slide of `type`, holding the flat option slots. */
+function deckAtV8(type, content) {
+  const deck = legacyDeck();
+  deck.schemaVersion = 8;
+  deck.slides = [
+    { id: randomUUID(), type, parentId: null, content, visibility: {} },
+  ];
+  return deck;
+}
+
+test('v8->v9 folds the flat option slots into one options[] array', () => {
+  const poll = migratePresentation(
+    deckAtV8('poll-slide', {
+      question: 'Pick',
+      option1: 'A',
+      option2: 'B',
+      option3: '',
+      option4: '',
+      background: 'lime',
+    }),
+  ).slides[0].content;
+  assert.deepEqual(poll.options, [{ text: 'A' }, { text: 'B' }]);
+  for (const n of [1, 2, 3, 4]) assert.equal(`option${n}` in poll, false);
+  assert.equal(poll.question, 'Pick');
+  assert.equal(poll.background, 'lime');
+
+  const likert = migratePresentation(
+    deckAtV8('likert-slide', {
+      question: 'Agree?',
+      option1: 'No',
+      option2: 'Meh',
+      option3: 'Yes',
+      option4: '',
+      option5: '',
+      option6: '',
+      option7: '',
+      option8: '',
+      option9: '',
+      option10: '',
+    }),
+  ).slides[0].content;
+  assert.deepEqual(likert.options, [
+    { text: 'No' },
+    { text: 'Meh' },
+    { text: 'Yes' },
+  ]);
+  for (let n = 1; n <= 10; n += 1) assert.equal(`option${n}` in likert, false);
+});
+
+test('v8->v9 closes a hole exactly where every reader already closed it', () => {
+  // The vote store keys an answer by `option_index`, and that index has always
+  // been the position in the COMPACTED list: both the renderer and the follow
+  // API dropped empty slots. So a deck with a hole folds to the same list the
+  // audience was looking at, and a vote cast on "C" still points at "C".
+  const content = migratePresentation(
+    deckAtV8('poll-slide', {
+      question: 'Pick',
+      option1: 'A',
+      option2: '   ',
+      option3: 'C',
+      option4: 'D',
+    }),
+  ).slides[0].content;
+  assert.deepEqual(content.options, [
+    { text: 'A' },
+    { text: 'C' },
+    { text: 'D' },
+  ]);
+});
+
+test('v8->v9 keeps a populated options[] and still drops the flat slots', () => {
+  const content = migratePresentation(
+    deckAtV8('poll-slide', {
+      options: [{ text: 'Canonical' }],
+      option1: 'Stale',
+      option2: 'Also stale',
+    }),
+  ).slides[0].content;
+  assert.deepEqual(content.options, [{ text: 'Canonical' }]);
+  assert.equal('option1' in content, false);
+  assert.equal('option2' in content, false);
+});
+
+test('v8->v9 leaves other types alone, writes no empty array, and is idempotent', () => {
+  const other = migratePresentation(
+    deckAtV8('content-slide', { title: 'Kept', option1: 'not mine' }),
+  ).slides[0].content;
+  assert.equal(other.option1, 'not mine');
+
+  const blank = migratePresentation(
+    deckAtV8('poll-slide', { question: 'Q', option1: '', option2: '' }),
+  ).slides[0].content;
+  assert.equal('options' in blank, false);
+  assert.equal('option1' in blank, false);
+
+  const once = migratePresentation(
+    deckAtV8('likert-slide', { option1: 'A', option2: 'B' }),
+  );
+  const twice = migratePresentation(structuredClone(once));
+  assert.deepEqual(twice.slides[0].content, once.slides[0].content);
+});
+
+test('v8->v9 is render-equivalent for the surfaces that read the options', async () => {
+  // The two readers the fold has to reproduce: the type's own renderHtml and
+  // the follow API's option list. Both used to compact; after the fold neither
+  // does, and the result must be identical.
+  const { getOptionCountForSlide, optionsFromSlide } =
+    await import('../server/utils/interaction-helpers.js');
+  const deck = migratePresentation(
+    deckAtV8('poll-slide', {
+      question: 'Pick',
+      option1: 'A',
+      option2: '',
+      option3: 'C',
+    }),
+  );
+  const slide = deck.slides[0];
+  assert.deepEqual(optionsFromSlide(slide), ['A', 'C']);
+  assert.equal(getOptionCountForSlide('poll-slide', slide), 2);
+
+  const html = SLIDE_TYPES['poll-slide'].renderHtml(slide.content, slide, {});
+  assert.match(html, /data-inline-field="options\.0\.text"[^>]*>A</);
+  assert.match(html, /data-inline-field="options\.1\.text"[^>]*>C</);
+  assert.equal(/data-poll-bar-row="2"/.test(html), false);
+});
+
 /**
- * Numbered field families that are NOT a mirror of a canonical array, with why
- * each one is allowed to stay. A numbered key beside an `items` field is the
- * shape v7 -> v8 removed; a numbered key on a type that has no array is a
+ * Numbered field keys that are NOT a mirror of a canonical array, with why each
+ * one is allowed to stay. A numbered key beside an `items` field is the shape
+ * v7 -> v8 and v8 -> v9 removed; a numbered key that has no array behind it is a
  * fixed-arity design question, not a second spelling of one collection.
+ *
+ * `keys: null` allows a whole family and is the heavier claim — only
+ * text-blocks holds one, and only because its mirror is its own open cleanup.
+ * Everywhere else the allowance names the exact keys, so a type keeps its gate
+ * for every key it did not earn an exception for.
  */
 const ALLOWED_NUMBERED_FIELDS = {
-  'text-blocks-slide':
-    'the rows[]/blocks[] mirror, hidden and frozen at 3 rows — its own cleanup (the fold landed in v1 -> v2)',
-  'chart-slide':
-    'series1Label/series2Label: two fixed series on a chart, no array behind them',
-  'end-slide':
-    'social1/social2 label+url: two fixed slots, no array behind them',
+  'text-blocks-slide': {
+    keys: null,
+    reason:
+      'the rows[]/blocks[] mirror, frozen at 3 rows — its own cleanup (the fold landed in v1 -> v2)',
+  },
+  'team-cards-slide': {
+    keys: ['subheading2'],
+    reason:
+      "the right column's own subheading in the `split` text position: a second heading slot, not a second member",
+  },
+  'chart-slide': {
+    keys: ['series1Label', 'series2Label'],
+    reason: 'two fixed series on a chart, no array behind them',
+  },
+  'end-slide': {
+    keys: ['social1Label', 'social1Url', 'social2Label', 'social2Url'],
+    reason: 'two fixed social slots, no array behind them',
+  },
 };
 
+/** The numbered-slot spelling: a lowercase prefix, a number, an optional suffix. */
+const NUMBERED_KEY_RE = /^[a-z]+\d+([A-Z].*)?$/;
+
 test('gate: no slide type carries a numbered slot family beside its canonical array', () => {
-  // The point of the v7 -> v8 step: after it, the flat spelling of a collection
-  // exists only as a migration record. A type that grows a `card7Title` /
-  // `logo3Image` back beside its items[] is a second accepted shape for one
-  // collection, which is exactly what this step removed.
+  // The point of the v7 -> v8 and v8 -> v9 steps: after them, the flat spelling
+  // of a collection exists only as a migration record. A type that grows a
+  // `card7Title` / `logo3Image` / `option5` back beside its array is a second
+  // accepted shape for one collection, which is exactly what they removed.
   const offenders = [];
   for (const [name, def] of Object.entries(SLIDE_TYPES)) {
+    const allowed = ALLOWED_NUMBERED_FIELDS[name];
     const fields = Array.isArray(def?.fields) ? def.fields : [];
     for (const field of fields) {
       if (typeof field?.key !== 'string') continue;
-      if (!/^[a-z]+\d+[A-Z]/.test(field.key)) continue;
-      if (ALLOWED_NUMBERED_FIELDS[name]) continue;
+      if (!NUMBERED_KEY_RE.test(field.key)) continue;
+      if (
+        allowed &&
+        (allowed.keys === null || allowed.keys.includes(field.key))
+      )
+        continue;
       offenders.push(`${name}.${field.key}`);
     }
   }
   assert.deepEqual(offenders, []);
 
-  // And every allowance is still earned: none of them sits beside an items[]
-  // field it could be mirroring — except text-blocks, whose mirror is `hidden`
-  // and therefore invisible to the projection and the form.
-  for (const name of Object.keys(ALLOWED_NUMBERED_FIELDS)) {
-    if (name === 'text-blocks-slide') continue;
-    const fields = SLIDE_TYPES[name]?.fields || [];
-    assert.equal(
-      fields.some((f) => f?.type === 'items'),
-      false,
-      `${name} has both a numbered family and an items[] field`,
+  // And every allowance is still earned: a named key that left the type is rot,
+  // the same rule the structure burndown and the removal record already follow.
+  const stale = [];
+  for (const [name, allowed] of Object.entries(ALLOWED_NUMBERED_FIELDS)) {
+    assert.ok(
+      allowed.reason.length > 40,
+      `${name}: an allowance needs a real reason`,
     );
+    const keys = new Set(
+      (SLIDE_TYPES[name]?.fields || []).map((f) => f?.key).filter(Boolean),
+    );
+    if (allowed.keys === null) {
+      if (![...keys].some((k) => NUMBERED_KEY_RE.test(k))) stale.push(name);
+      continue;
+    }
+    for (const key of allowed.keys)
+      if (!keys.has(key)) stale.push(`${name}.${key}`);
   }
+  assert.deepEqual(
+    stale,
+    [],
+    `these allowances name a field the type no longer has — drop them:\n${stale.join('\n')}`,
+  );
 });
 
 test('validatePresentation rejects an out-of-range schemaVersion', () => {
@@ -804,5 +966,37 @@ test('the import seam runs the funnel: a pre-fold export keeps its cards', async
   assert.deepEqual(
     wall.logos.map((l) => l.name),
     ['Acme'],
+  );
+});
+
+test('the import seam folds a pre-v9 poll export into options[]', async () => {
+  // Same seam, same reason as the cards above: the portable format carries no
+  // schemaVersion, and poll/likert now seed an `options[]` array by default —
+  // so without the funnel an imported pre-fold poll would keep the placeholder
+  // answers beside its real, unreachable `option1..4`.
+  const { deckToPresentationParts } =
+    await import('../shared/slide-types/deck.js');
+  const parts = deckToPresentationParts({
+    title: 'Old export',
+    slides: [
+      {
+        type: 'eu.deckyard.slide.poll',
+        content: { question: 'Pick', option1: 'A', option2: 'B', option3: '' },
+      },
+      {
+        type: 'likert-slide',
+        content: { question: 'Agree?', option1: 'No', option2: 'Yes' },
+      },
+    ],
+  });
+  const [poll, likert] = parts.slides.map((s) => s.content);
+  assert.deepEqual(
+    poll.options.map((o) => o.text),
+    ['A', 'B'],
+  );
+  assert.equal('option1' in poll, false);
+  assert.deepEqual(
+    likert.options.map((o) => o.text),
+    ['No', 'Yes'],
   );
 });

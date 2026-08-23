@@ -32,10 +32,8 @@ import {
 import {
   findSlideById,
   getOptionCountForSlide,
-  pollOptionsFromSlide,
-  pollQuestionFromSlide,
-  likertOptionsFromSlide,
-  likertQuestionFromSlide,
+  optionsFromSlide,
+  questionFromSlide,
   slider10InteractionFromSlide,
   feedbackInteractionFromSlide,
 } from '../../../utils/interaction-helpers.js';
@@ -100,20 +98,20 @@ export async function handleFollowInteractionsCurrent(
       : null;
   const feedback =
     type === 'feedback' ? feedbackInteractionFromSlide(slide) : null;
+  // Poll and likert now carry the same `options[]` array (the live content
+  // contract in shared/slide-types/runtime.js), so the kind no longer picks a
+  // reader — only the slider's fixed stops and feedback's absence of options
+  // are still special.
   const options = slider
     ? slider.options
-    : type === 'likert'
-      ? likertOptionsFromSlide(slide)
-      : type === 'poll'
-        ? pollOptionsFromSlide(slide)
-        : [];
+    : type === 'likert' || type === 'poll'
+      ? optionsFromSlide(slide)
+      : [];
   const question = slider
     ? slider.question
     : feedback
       ? feedback.question
-      : type === 'likert'
-        ? likertQuestionFromSlide(slide)
-        : pollQuestionFromSlide(slide);
+      : questionFromSlide(slide);
   const optionCount = type === 'feedback' ? 0 : options.length;
 
   // Ensure a session-scoped interaction exists even before the first vote.

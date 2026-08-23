@@ -82,12 +82,6 @@ const BURNDOWN = {
     'The same legacy-mirror disease as team-cards: one type, two ' +
     'representations. Resolve by retiring one side, not by calling it a ' +
     'collection.',
-  'poll-slide':
-    'Declared fixed-collection, carries option1..option4 as scalars. Never got ' +
-    'the items[] migration the other collections did.',
-  'likert-slide':
-    'Declared fixed-collection, carries option1..option10 as scalars. Same as ' +
-    'poll-slide.',
 };
 
 // --- assertion 1: completeness --------------------------------------------
@@ -248,9 +242,19 @@ function fieldSignature(def) {
  * entry to go. Same discipline as the structure burndown above.
  */
 const SIGNATURE_BURNDOWN = {
-  // Empty: the one entry (the List type under a Dutch alias and `list-slide`)
-  // was retired at rung 3 of the list consolidation, so no two core types share
-  // a field signature any more.
+  'likert-slide == poll-slide':
+    'Revealed, not created, by the schema v9 fold: both offer `question` + one ' +
+    '`options[]` of `{ text }` + the onClose pair, and until v9 their key sets ' +
+    'differed only because likert carried six more numbered scalars — the ' +
+    'legacy-mirror noise, not a contract. What separates them is a different ' +
+    'facet: `interaction` (poll = one choice out of a set, likert = a point on ' +
+    'an ordered scale), which drives a different aggregate (bars vs a ' +
+    'distribution) and a different reader projection (<ul> vs <ol>, via ' +
+    '`ordered`). The signature is deliberately coarse and does not see any of ' +
+    'that. Two honest answers: either the gate should learn that a live type ' +
+    "is identified by its interaction kind too, or likert is poll's second " +
+    'render and the pair should merge. Open — see the reflowable-presentation ' +
+    'brief, cluster 2.',
 };
 
 test('no two slide types offer the same field signature', () => {
@@ -292,10 +296,13 @@ test('no two slide types offer the same field signature', () => {
       `SIGNATURE_BURNDOWN:\n${stale.join('\n')}`,
   );
 
-  // A signature map that collapsed to nothing would pass vacuously.
+  // A signature map that collapsed to nothing would pass vacuously. Counted
+  // over the types rather than the buckets: a real clash removes a bucket, and
+  // a floor on buckets would then read a *finding* as a broken probe.
+  const signed = [...bySignature.values()].reduce((n, ns) => n + ns.length, 0);
   assert.ok(
-    bySignature.size > 30,
-    `expected a signature per non-chrome type, got ${bySignature.size}`,
+    signed > 30,
+    `expected a signature per non-chrome type, got ${signed}`,
   );
 });
 

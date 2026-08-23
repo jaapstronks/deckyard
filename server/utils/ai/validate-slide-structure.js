@@ -18,6 +18,26 @@
  */
 
 /**
+ * The structural check both authored live types share: a question, and at least
+ * two non-blank options in the canonical `options[]` array.
+ * @param {'poll'|'likert'} kind - named in the issue text
+ * @returns {(content: object) => string[]}
+ */
+function liveOptionIssues(kind) {
+  return (content) => {
+    const issues = [];
+    if (!content.question) issues.push('Missing question');
+    const options = Array.isArray(content.options)
+      ? content.options.filter((o) => String(o?.text || '').trim())
+      : [];
+    if (options.length < 2) {
+      issues.push(`${kind} has ${options.length} options, need at least 2`);
+    }
+    return issues;
+  };
+}
+
+/**
  * Per-type structural validators. Each takes the slide content and returns an
  * array of issue messages (empty when the structure is sound). Keyed by type
  * name so `STRUCTURE_VALIDATED_TYPES` is derivable and cannot drift from the
@@ -226,36 +246,13 @@ export const STRUCTURE_VALIDATORS = {
     return issues;
   },
 
-  'poll-slide': (content) => {
-    const issues = [];
-    if (!content.question) issues.push('Missing question');
-    const options = Array.isArray(content.options)
-      ? content.options.filter(Boolean)
-      : [
-          content.option1,
-          content.option2,
-          content.option3,
-          content.option4,
-        ].filter(Boolean);
-    if (options.length < 2) {
-      issues.push(`poll has ${options.length} options, need at least 2`);
-    }
-    return issues;
-  },
-
-  'likert-slide': (content) => {
-    const issues = [];
-    if (!content.question) issues.push('Missing question');
-    const options = Array.isArray(content.options)
-      ? content.options.filter(Boolean)
-      : Array.from({ length: 10 }, (_v, i) => content[`option${i + 1}`]).filter(
-          Boolean,
-        );
-    if (options.length < 2) {
-      issues.push(`likert has ${options.length} options, need at least 2`);
-    }
-    return issues;
-  },
+  // Poll and likert share the live content contract — one `options[]` array of
+  // `{ text }` (shared/slide-types/runtime.js) — so they share a check. The
+  // flat `option1..N` branch this used to carry beside it was the second
+  // accepted spelling schema v9 folded away; an agent that still emits it now
+  // gets told it authored no options rather than having them silently accepted.
+  'poll-slide': liveOptionIssues('poll'),
+  'likert-slide': liveOptionIssues('likert'),
 };
 
 /**

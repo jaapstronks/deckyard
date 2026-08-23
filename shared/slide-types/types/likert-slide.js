@@ -1,21 +1,13 @@
-import { bgClass, escapeHtml, nonEmpty, BACKGROUND_FIELD } from '../helpers.js';
+import {
+  bgClass,
+  escapeHtml,
+  liveInteractionOptions,
+  BACKGROUND_FIELD,
+} from '../helpers.js';
 import { getSlideCopy } from '../slide-copy.js';
 
-function optionsFromContent(content) {
-  const c = content && typeof content === 'object' ? content : {};
-  // Keep the source field key with each option so inline-edit paths stay
-  // correct even when a middle option is empty.
-  const out = [];
-  for (let i = 1; i <= 10; i += 1) {
-    const key = `option${i}`;
-    const v = nonEmpty(c?.[key]);
-    if (v) out.push({ key, text: v });
-  }
-  return out;
-}
-
 export default {
-  structure: 'fixed-collection',
+  structure: 'collection',
   fallback: 'list-slide',
   runtime: 'live',
   interaction: 'likert',
@@ -29,74 +21,29 @@ export default {
       maxLength: 200,
     },
     {
-      key: 'option1',
-      label: 'Label 1',
-      type: 'string',
+      // The `options[]` array every live type carries — see
+      // shared/slide-types/runtime.js § the live content contract. `ordered`
+      // because a scale IS its order: "disagree" sits between "strongly
+      // disagree" and "neutral", which is what the axis draws and what the
+      // reader projects as an <ol>. Ten is the ceiling the vote store clamps
+      // to (`MAX_OPTIONS`, server/storage/interaction-slides.js).
+      key: 'options',
+      label: 'Scale labels',
+      type: 'items',
+      ordered: true,
       required: true,
-      maxLength: 120,
-    },
-    {
-      key: 'option2',
-      label: 'Label 2',
-      type: 'string',
-      required: true,
-      maxLength: 120,
-    },
-    {
-      key: 'option3',
-      label: 'Label 3',
-      type: 'string',
-      required: false,
-      maxLength: 120,
-    },
-    {
-      key: 'option4',
-      label: 'Label 4',
-      type: 'string',
-      required: false,
-      maxLength: 120,
-    },
-    {
-      key: 'option5',
-      label: 'Label 5',
-      type: 'string',
-      required: false,
-      maxLength: 120,
-    },
-    {
-      key: 'option6',
-      label: 'Label 6',
-      type: 'string',
-      required: false,
-      maxLength: 120,
-    },
-    {
-      key: 'option7',
-      label: 'Label 7',
-      type: 'string',
-      required: false,
-      maxLength: 120,
-    },
-    {
-      key: 'option8',
-      label: 'Label 8',
-      type: 'string',
-      required: false,
-      maxLength: 120,
-    },
-    {
-      key: 'option9',
-      label: 'Label 9',
-      type: 'string',
-      required: false,
-      maxLength: 120,
-    },
-    {
-      key: 'option10',
-      label: 'Label 10',
-      type: 'string',
-      required: false,
-      maxLength: 120,
+      minItems: 2,
+      maxItems: 10,
+      itemDefaults: { text: '' },
+      itemFields: [
+        {
+          key: 'text',
+          label: 'Label',
+          type: 'string',
+          required: true,
+          maxLength: 120,
+        },
+      ],
     },
     BACKGROUND_FIELD,
     {
@@ -128,32 +75,26 @@ export default {
   defaultsByLang: {
     nl: {
       question: 'In hoeverre ben je het hiermee eens?',
-      option1: 'Helemaal mee oneens',
-      option2: 'Mee oneens',
-      option3: 'Neutraal',
-      option4: 'Mee eens',
-      option5: 'Helemaal mee eens',
-      option6: '',
-      option7: '',
-      option8: '',
-      option9: '',
-      option10: '',
+      options: [
+        { text: 'Helemaal mee oneens' },
+        { text: 'Mee oneens' },
+        { text: 'Neutraal' },
+        { text: 'Mee eens' },
+        { text: 'Helemaal mee eens' },
+      ],
       background: 'lime',
       onClose: 'stay',
       onCloseTarget: '',
     },
     'en-GB': {
       question: 'How much do you agree with this statement?',
-      option1: 'Strongly disagree',
-      option2: 'Disagree',
-      option3: 'Neutral',
-      option4: 'Agree',
-      option5: 'Strongly agree',
-      option6: '',
-      option7: '',
-      option8: '',
-      option9: '',
-      option10: '',
+      options: [
+        { text: 'Strongly disagree' },
+        { text: 'Disagree' },
+        { text: 'Neutral' },
+        { text: 'Agree' },
+        { text: 'Strongly agree' },
+      ],
       background: 'lime',
       onClose: 'stay',
       onCloseTarget: '',
@@ -162,34 +103,31 @@ export default {
   // Back-compat fallback
   defaults: {
     question: 'How much do you agree with this statement?',
-    option1: 'Strongly disagree',
-    option2: 'Disagree',
-    option3: 'Neutral',
-    option4: 'Agree',
-    option5: 'Strongly agree',
-    option6: '',
-    option7: '',
-    option8: '',
-    option9: '',
-    option10: '',
+    options: [
+      { text: 'Strongly disagree' },
+      { text: 'Disagree' },
+      { text: 'Neutral' },
+      { text: 'Agree' },
+      { text: 'Strongly agree' },
+    ],
     background: 'lime',
     onClose: 'stay',
     onCloseTarget: '',
   },
   renderHtml: (content, _slide, ctx = {}) => {
     const bg = bgClass(content?.background);
-    const options = optionsFromContent(content);
+    const options = liveInteractionOptions(content);
     const copy = getSlideCopy(ctx?.lang);
     const n = Math.max(2, Math.min(10, options.length || 0));
     const denom = Math.max(1, n - 1);
 
     const optsHtml = options
       .map(
-        (t, i) => `
-          <li class="likert-option">
+        (text, i) => `
+          <li class="likert-option" data-inline-item="options" data-inline-item-index="${i}">
             <div class="likert-option-inner on-surface-light">
               <span class="likert-num" aria-hidden="true">${i + 1}</span>
-              <span class="likert-text" data-inline-field="${t.key}" dir="auto">${escapeHtml(t.text)}</span>
+              <span class="likert-text" data-inline-field="options.${i}.text" dir="auto">${escapeHtml(text)}</span>
             </div>
           </li>
         `,
@@ -198,7 +136,7 @@ export default {
 
     const axisHtml = options
       .map(
-        (_t, i) =>
+        (_text, i) =>
           `<div class="likert-axis-tick" aria-hidden="true" style="--i:${i};">${
             i + 1
           }</div>`,

@@ -41,8 +41,14 @@ export default {
    * `defaults` on the definition).
    */
   sample: {
-    statement: 'Rate your experience',
-    labels: ['Poor', 'Fair', 'Good', 'Very Good', 'Excellent'],
+    question: 'Rate your experience',
+    options: [
+      { text: 'Poor' },
+      { text: 'Fair' },
+      { text: 'Good' },
+      { text: 'Very good' },
+      { text: 'Excellent' },
+    ],
     background: 'lime',
   },
 };

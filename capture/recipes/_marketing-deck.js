@@ -420,10 +420,12 @@ const SLIDE_SPECS = [
     nl: {
       pollId: '',
       question: 'Waar zetten we de investering van papa en mama op in?',
-      option1: 'Een spandoek met ons logo',
-      option2: 'Flyers voor de hele wijk',
-      option3: 'Eerst nog even aan het recept werken',
-      option4: 'Shirtsponsoring bij het buurttoernooi',
+      options: [
+        { text: 'Een spandoek met ons logo' },
+        { text: 'Flyers voor de hele wijk' },
+        { text: 'Eerst nog even aan het recept werken' },
+        { text: 'Shirtsponsoring bij het buurttoernooi' },
+      ],
       background: 'lime',
       onClose: 'stay',
       onCloseTarget: '',
@@ -431,10 +433,12 @@ const SLIDE_SPECS = [
     'en-GB': {
       pollId: '',
       question: 'Where do we put the investment from mum and dad?',
-      option1: 'A banner with our logo',
-      option2: 'Flyers for the whole neighbourhood',
-      option3: 'Work on the recipe first',
-      option4: 'Shirt sponsorship at the local tournament',
+      options: [
+        { text: 'A banner with our logo' },
+        { text: 'Flyers for the whole neighbourhood' },
+        { text: 'Work on the recipe first' },
+        { text: 'Shirt sponsorship at the local tournament' },
+      ],
       background: 'lime',
       onClose: 'stay',
       onCloseTarget: '',
@@ -672,7 +676,7 @@ function expiresInDays(days) {
  * The vote distribution seeded for the poll shot: 47 votes, clearly uneven,
  * with the "work on the recipe first" option winning. A poll where every bar
  * is the same height proves as little as a poll with no votes at all.
- * Index matches option1..option4.
+ * Index matches the stored `options[]` order.
  * @type {number[]}
  */
 export const MARKETING_POLL_VOTES = [6, 4, 31, 6];

@@ -3,7 +3,10 @@
  * Consolidates duplicate functions from live-sessions.js, follow/interactions.js, and follow/helpers.js
  */
 
-import { nonEmpty } from '../../shared/slide-types/helpers.js';
+import {
+  liveInteractionOptions,
+  nonEmpty,
+} from '../../shared/slide-types/helpers.js';
 import { liveInteractionKind } from '../../shared/slide-types/runtime.js';
 
 // `isInteractiveSlideType()` used to live here as a hard-coded list of four
@@ -22,69 +25,28 @@ function getSlideContent(slide) {
 }
 
 /**
- * Get poll options from a poll slide
- * @param {Object} slide - Poll slide object
- * @returns {string[]} Array of option strings (non-empty only)
+ * The authored options of a live slide, in stored order.
+ *
+ * One function for poll and likert alike: since schema v9 both carry the same
+ * `options[]` array (the live content contract in
+ * shared/slide-types/runtime.js), so the two hand-written readers that walked
+ * `option1..option4` and `option1..option10` are one call to the shared reader.
+ * Positional and unfiltered — the index is the option's identity, and it is the
+ * `option_index` a vote is stored under.
+ *
+ * @param {Object} slide - a poll or likert slide object
+ * @returns {string[]} Array of option strings
  */
-export function pollOptionsFromSlide(slide) {
-  const c = getSlideContent(slide);
-  return [
-    nonEmpty(c.option1),
-    nonEmpty(c.option2),
-    nonEmpty(c.option3),
-    nonEmpty(c.option4),
-  ].filter(Boolean);
+export function optionsFromSlide(slide) {
+  return liveInteractionOptions(getSlideContent(slide));
 }
 
 /**
- * Get poll option count from a poll slide
- * @param {Object} slide - Poll slide object
- * @returns {number} Number of non-empty options
- */
-function pollOptionCountFromSlide(slide) {
-  return pollOptionsFromSlide(slide).length;
-}
-
-/**
- * Get poll question from a poll slide
- * @param {Object} slide - Poll slide object
+ * Get the question of a live slide
+ * @param {Object} slide - a live slide object
  * @returns {string} Question text or empty string
  */
-export function pollQuestionFromSlide(slide) {
-  const c = getSlideContent(slide);
-  return nonEmpty(c.question);
-}
-
-/**
- * Get likert options from a likert slide (up to 10 options)
- * @param {Object} slide - Likert slide object
- * @returns {string[]} Array of option strings (non-empty only)
- */
-export function likertOptionsFromSlide(slide) {
-  const c = getSlideContent(slide);
-  const out = [];
-  for (let i = 1; i <= 10; i += 1) {
-    const v = nonEmpty(c[`option${i}`]);
-    if (v) out.push(v);
-  }
-  return out;
-}
-
-/**
- * Get likert option count from a likert slide
- * @param {Object} slide - Likert slide object
- * @returns {number} Number of non-empty options
- */
-function likertOptionCountFromSlide(slide) {
-  return likertOptionsFromSlide(slide).length;
-}
-
-/**
- * Get likert question from a likert slide
- * @param {Object} slide - Likert slide object
- * @returns {string} Question text or empty string
- */
-export function likertQuestionFromSlide(slide) {
+export function questionFromSlide(slide) {
   const c = getSlideContent(slide);
   return nonEmpty(c.question);
 }
@@ -154,11 +116,9 @@ export function findSlideById(pres, slideId) {
 export function getOptionCountForSlide(slideType, slide) {
   if (!slide) return 0;
   const kind = liveInteractionKind(slideType);
-  if (kind === 'likert') {
-    return slideType === 'likert-slider-slide'
-      ? likertSliderOptionCountFromSlide(slide)
-      : likertOptionCountFromSlide(slide);
-  }
-  if (kind === 'poll') return pollOptionCountFromSlide(slide);
+  if (kind === 'likert' && slideType === 'likert-slider-slide')
+    return likertSliderOptionCountFromSlide(slide);
+  if (kind === 'likert' || kind === 'poll')
+    return optionsFromSlide(slide).length;
   return 0;
 }
