@@ -228,11 +228,9 @@ export function coverageFor(type) {
   const formText = Array.isArray(descriptor?.formText)
     ? descriptor.formText
     : [];
-  const aliases = descriptor?.cards?.fieldAliases || [];
   const covered = new Set([
     ...formText,
     ...(keeps || []),
-    ...aliases,
     ...descriptorElementKeys(descriptor, def),
     ...layoutChipKeys(def),
   ]);
@@ -281,9 +279,6 @@ function cardsCell(d, def) {
   if (!cards) return NONE;
   const field = String(cards.field);
   const notes = [];
-  if (cards.fieldAliases?.length) {
-    notes.push(`alias ${cards.fieldAliases.map((a) => `\`${a}\``).join(', ')}`);
-  }
   if (cards.child?.field) notes.push(`two-level → \`${cards.child.field}\``);
   const schema = (def?.fields || []).find((f) => f.key === field);
   if (

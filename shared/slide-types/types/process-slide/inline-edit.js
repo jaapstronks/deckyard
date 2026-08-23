@@ -27,7 +27,6 @@ export const inlineEdit = {
   // process stacks them downward, so the add button follows the direction.
   cards: {
     field: 'items',
-    fieldAliases: ['steps'],
     container: '.process-container',
     itemSelector: '.process-step',
     addPlacement: (slide) =>
@@ -35,7 +34,7 @@ export const inlineEdit = {
         ? 'bottom-center'
         : 'right-center',
   },
-  formText: [...HEADER_TEXT, 'items', 'steps'],
+  formText: [...HEADER_TEXT, 'items'],
 };
 
 /**

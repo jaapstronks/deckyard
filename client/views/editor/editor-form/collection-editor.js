@@ -121,9 +121,7 @@ export function createCollectionEditor({
 
   // Per-type button copy, from the same declaration the canvas reads.
   const cardsCfg =
-    descriptor?.cards &&
-    (descriptor.cards.field === field.key ||
-      descriptor.cards.fieldAliases?.includes?.(field.key))
+    descriptor?.cards && descriptor.cards.field === field.key
       ? descriptor.cards
       : null;
   const addLabelKey = labels?.addLabelKey || cardsCfg?.addLabelKey || '';
