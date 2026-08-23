@@ -89,7 +89,7 @@ body {
 .reader-gallery .reader-figure { flex: 1 1 12rem; margin: 0; }
 .reader-table { border-collapse: collapse; width: 100%; display: block; overflow-x: auto; }
 .reader-table th, .reader-table td { border: 1px solid rgba(0,0,0,0.15); padding: 0.35rem 0.5rem; text-align: left; }
-.reader-table caption { caption-side: top; text-align: left; font-size: 0.9rem; opacity: 0.75; margin-bottom: 0.3rem; }
+.reader-table caption { display: block; text-align: left; font-size: 0.9rem; opacity: 0.75; margin-bottom: 0.3rem; }
 .reader-code { overflow-x: auto; background: rgba(0,0,0,0.05); padding: 0.6rem 0.75rem; border-radius: 6px; }
 .reader-archived { opacity: 0.75; font-style: italic; }
 .reader-fields { margin: 0.75rem 0; }
