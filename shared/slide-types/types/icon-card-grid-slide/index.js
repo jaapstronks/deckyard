@@ -90,6 +90,10 @@ export default {
       itemFields: [
         // `editor:` marks the widget exception beyond string/image (icon
         // picker); the closed vocabulary lands in editor-behaviour step 4.
+        // `presentational`: the value is an icon NAME ("rocket"), a lookup key
+        // into the icon set — not text. Without the declaration it is simply
+        // the card's first string field, so the reader made it the card's
+        // <h3> and pushed the real title down to a paragraph.
         {
           key: 'icon',
           label: 'Icon',
@@ -97,6 +101,7 @@ export default {
           required: false,
           maxLength: 40,
           editor: 'icon-picker',
+          presentational: true,
         },
         {
           key: 'title',
@@ -138,6 +143,7 @@ export default {
           required: false,
           maxLength: 40,
           deprecated: true,
+          presentational: true,
         },
         {
           key: `card${i}Title`,

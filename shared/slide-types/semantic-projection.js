@@ -34,6 +34,11 @@
  *    (a bar chart's legend labels, a pie chart's axis names) is not part of the
  *    slide's meaning; the editor and the canvas already skip it, and a third
  *    surface that disagreed was how dead values reached the reader as prose.
+ *  - **`presentational: true` is honoured.** Some fields hold a *string* that is
+ *    not document text: an icon name, a video library id, a JSON blob of zoom
+ *    coordinates. The `type` alone cannot say so — they are all `string` — so
+ *    the field says it, once, and every reader (ours and any other) gets the
+ *    same answer instead of each guessing from the key name.
  */
 
 import { markdownToSafeHtml, inlineMarkdownToSafeHtml } from '../markdown.js';
@@ -64,6 +69,32 @@ const PRESENTATIONAL_FIELD_TYPES = new Set([
   'number',
   'boolean',
 ]);
+
+/**
+ * Does this field hold no readable document content?
+ *
+ * Two ways to be presentational, and they answer different questions. The
+ * TYPE covers the fields whose whole vocabulary is configuration (an enum, a
+ * colour, a number). The per-field `presentational: true` covers the ones the
+ * type cannot: a `string` that stores an icon name, an infrastructure id or a
+ * serialized coordinate list is a `string` like any other, so only the field
+ * itself can say that its value is machine data rather than something a reader
+ * should be read aloud.
+ *
+ * It is a projection-side declaration only: the field still renders in the
+ * editor, still validates, and is still offered to agents unless it separately
+ * says `ai: false`. "Not document text" is not the same claim as "not editable"
+ * (`hidden`) or "not part of the contract" (`deprecated`).
+ *
+ * @param {{type?: string, presentational?: boolean}} field
+ * @returns {boolean}
+ */
+function isPresentationalField(field) {
+  return (
+    field?.presentational === true ||
+    PRESENTATIONAL_FIELD_TYPES.has(field?.type)
+  );
+}
 
 // Ordered fallback of common "title" content keys, mirroring the notes/label
 // resolvers, used when a type has no explicit labelField.
@@ -135,6 +166,31 @@ function imageSiblingKeys(fieldKey) {
     `${fieldKey}Role`,
     'imageRole',
   ];
+}
+
+/**
+ * The keys an object's `image` fields fold into their `<figure>` and that must
+ * therefore not project a second time as loose text.
+ *
+ * Runs over slide content and over one item object alike: an item with an
+ * `image` + `alt` pair is the same shape as a slide with one, so it earns the
+ * same treatment. Before this ran per item, a team card's alt text was both the
+ * figure's `alt` and the card's `<h3>` (it is the first string field declared),
+ * and a gallery caption appeared under the picture *and* beside it.
+ *
+ * @param {Array<{key?: string, type?: string}>} fields - `fields[]` / `itemFields[]`
+ * @param {object} obj - the object those fields describe
+ * @returns {Set<string>}
+ */
+function imageConsumedKeys(fields, obj) {
+  const consumed = new Set();
+  for (const field of Array.isArray(fields) ? fields : []) {
+    if (field?.type !== 'image') continue;
+    for (const key of imageSiblingKeys(field.key)) {
+      if (obj && key in obj) consumed.add(key);
+    }
+  }
+  return consumed;
 }
 
 /**
@@ -245,7 +301,7 @@ function renderRowTable(field, content, defaults) {
   const rows = Array.isArray(content?.[field.key]) ? content[field.key] : [];
   if (!rows.length) return '';
   const declared = Array.isArray(field.itemFields)
-    ? field.itemFields.filter((f) => f && !f.hidden)
+    ? field.itemFields.filter((f) => f && !f.hidden && !f.presentational)
     : [];
   if (!declared.length) return '';
 
@@ -324,23 +380,40 @@ function renderItemList(blocks, ordered = false) {
 
 /**
  * Render one repeating-item (`items` field) as a small block: its first
- * non-empty string becomes an <h3>, the rest of its fields project by type.
+ * non-empty *readable* string becomes an <h3>, the rest of its fields project
+ * by type.
+ *
+ * "Readable" is doing real work in that sentence. A field the item's own image
+ * consumes (`alt`, `caption`) and a field the type declares `presentational`
+ * (an icon name) are both strings, and taking the first one regardless is how
+ * cards ended up headed "rocket" and team members headed by their own alt text.
+ * Both exclusions are declarations, not a list of key names to skip.
  */
 function renderItemBlock(item, itemFields) {
   if (!item || typeof item !== 'object' || !Array.isArray(itemFields))
     return '';
+  const consumed = imageConsumedKeys(itemFields, item);
   const parts = [];
   let headingKey = null;
   const firstString = itemFields.find(
-    (f) => f?.type === 'string' && !f.hidden && str(item[f.key]),
+    (f) =>
+      f?.type === 'string' &&
+      !f.hidden &&
+      !f.presentational &&
+      !consumed.has(f.key) &&
+      str(item[f.key]),
   );
+  let headingText = '';
   if (firstString) {
     headingKey = firstString.key;
-    parts.push(`<h3>${escapeHtml(str(item[firstString.key]))}</h3>`);
+    headingText = str(item[firstString.key]);
+    parts.push(`<h3>${escapeHtml(headingText)}</h3>`);
   }
   for (const f of itemFields) {
-    if (!f || f.key === headingKey || f.hidden) continue;
-    parts.push(renderFieldValue(f, item, ''));
+    if (!f || f.key === headingKey || f.hidden || consumed.has(f.key)) continue;
+    // The item's own heading is the alt fallback for its image — a card's name
+    // describes its portrait far better than the filename guess does.
+    parts.push(renderFieldValue(f, item, headingText));
   }
   const inner = parts.filter(Boolean).join('\n');
   return inner ? `<li class="reader-item">${inner}</li>` : '';
@@ -354,7 +427,7 @@ function renderItemBlock(item, itemFields) {
 function renderFieldValue(field, content, headingText) {
   if (!field || field.hidden) return '';
   if (NON_CONTENT_GLOBAL_KEYS.has(field.key)) return '';
-  if (PRESENTATIONAL_FIELD_TYPES.has(field.type)) return '';
+  if (isPresentationalField(field)) return '';
 
   const value = content?.[field.key];
   switch (field.type) {
@@ -481,7 +554,12 @@ function projectRepeatingGroup(group, content, fields) {
     // Carry the declared `hidden` flag so a deprecated/hidden slot field (e.g.
     // a legacy numbered mirror field) is skipped by renderItemBlock rather than
     // surfacing in the reader.
-    return { key: suffix, type: decl?.type || 'string', hidden: decl?.hidden };
+    return {
+      key: suffix,
+      type: decl?.type || 'string',
+      hidden: decl?.hidden,
+      presentational: decl?.presentational,
+    };
   });
   // Upper bound: how many slots the schema actually declares.
   let maxSlots = 0;
@@ -537,15 +615,9 @@ export function renderSlideBodySemanticHtml(
 
   // An image field folds its sibling alt/caption/role keys INTO the <figure>,
   // so those sibling string fields must not also render as standalone
-  // paragraphs. Pre-collect the keys an image field consumes.
-  const consumed = new Set();
-  for (const field of fields) {
-    if (field?.type === 'image') {
-      for (const k of imageSiblingKeys(field.key)) {
-        if (k in content) consumed.add(k);
-      }
-    }
-  }
+  // paragraphs. Pre-collect the keys an image field consumes (the same pass
+  // runs per item inside renderItemBlock).
+  const consumed = imageConsumedKeys(fields, content);
 
   // Flat repeating groups (numbered card/row groups): project the whole group
   // at its count-field position and consume the count + every numbered slot field, so
