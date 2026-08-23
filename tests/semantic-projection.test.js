@@ -655,3 +655,161 @@ describe('fields the type declares inactive do not project', () => {
     assert.equal(html, '');
   });
 });
+
+describe('a field the type declares presentational is not document text', () => {
+  // The type-level rule (enum/colour/number/boolean) cannot reach these: an
+  // icon name, an infrastructure id and a serialized coordinate list are all
+  // `string`, so only the field itself can say its value is machine data.
+  it('skips a presentational string on the slide', () => {
+    const def = {
+      fields: [
+        { key: 'title', type: 'string' },
+        { key: 'libraryId', type: 'string', presentational: true },
+        { key: 'note', type: 'string' },
+      ],
+    };
+    const html = body(
+      { content: { title: 'T', libraryId: '366590', note: 'Real text' } },
+      def,
+      { headingKey: 'title' },
+    );
+    assert.ok(!html.includes('366590'), html);
+    assert.ok(html.includes('<p>Real text</p>'), html);
+  });
+
+  it('skips a presentational item field, and never makes it the <h3>', () => {
+    const def = {
+      fields: [
+        {
+          key: 'items',
+          type: 'items',
+          itemFields: [
+            { key: 'icon', type: 'string', presentational: true },
+            { key: 'title', type: 'string' },
+            { key: 'body', type: 'markdown' },
+          ],
+        },
+      ],
+    };
+    const html = body(
+      {
+        content: { items: [{ icon: 'rocket', title: 'Speed', body: 'Fast.' }] },
+      },
+      def,
+    );
+    assert.ok(html.includes('<h3>Speed</h3>'), html);
+    assert.ok(!html.includes('rocket'), html);
+  });
+
+  it('leaves a presentational column out of a tabular projection', () => {
+    const def = {
+      structure: 'tabular',
+      fields: [
+        {
+          key: 'rows',
+          type: 'items',
+          itemFields: [
+            { key: 'a', type: 'string' },
+            { key: 'sortKey', type: 'string', presentational: true },
+          ],
+        },
+      ],
+    };
+    const html = body({ content: { rows: [{ a: 'A', sortKey: '007' }] } }, def);
+    assert.ok(html.includes('<table'), html);
+    assert.ok(!html.includes('007'), html);
+  });
+});
+
+describe('an item folds its own image siblings into the <figure>', () => {
+  // Slide-level content has always done this; items did not, so a card's alt
+  // text was both the figure's `alt` and — being the first declared string —
+  // the card's own <h3>.
+  const def = {
+    fields: [
+      {
+        key: 'members',
+        type: 'items',
+        itemFields: [
+          { key: 'image', type: 'image' },
+          { key: 'alt', type: 'string' },
+          { key: 'name', type: 'string' },
+          { key: 'byline', type: 'string' },
+        ],
+      },
+    ],
+  };
+
+  it('does not repeat the alt text as a paragraph or a heading', () => {
+    const html = body(
+      {
+        content: {
+          members: [
+            {
+              image: 'https://example.com/p.jpg',
+              alt: 'Ada at her desk',
+              name: 'Ada Lovelace',
+              byline: 'Engineer',
+            },
+          ],
+        },
+      },
+      def,
+    );
+    assert.ok(html.includes('<h3>Ada Lovelace</h3>'), html);
+    assert.ok(html.includes('alt="Ada at her desk"'), html);
+    assert.ok(!html.includes('<p>Ada at her desk</p>'), html);
+    assert.ok(!html.includes('<h3>Ada at her desk</h3>'), html);
+    assert.ok(html.includes('<p>Engineer</p>'), html);
+  });
+
+  it('folds an item caption into <figcaption> instead of beside the picture', () => {
+    const galleryDef = {
+      fields: [
+        {
+          key: 'images',
+          type: 'items',
+          itemFields: [
+            { key: 'src', type: 'image' },
+            { key: 'caption', type: 'string' },
+            { key: 'alt', type: 'string' },
+          ],
+        },
+      ],
+    };
+    const html = body(
+      {
+        content: {
+          images: [
+            {
+              src: 'https://example.com/1.jpg',
+              caption: 'Sunrise over the bay',
+              alt: 'The bay at dawn',
+            },
+          ],
+        },
+      },
+      galleryDef,
+    );
+    assert.ok(
+      html.includes('<figcaption>Sunrise over the bay</figcaption>'),
+      html,
+    );
+    assert.ok(!html.includes('<p>Sunrise over the bay</p>'), html);
+    assert.ok(!html.includes('<h3>'), html);
+  });
+
+  it("uses the item's own heading as the alt fallback", () => {
+    const html = body(
+      {
+        content: {
+          members: [
+            { image: 'https://example.com/x9f2.jpg', name: 'Alan Turing' },
+          ],
+        },
+      },
+      def,
+    );
+    assert.ok(html.includes('alt="Alan Turing"'), html);
+  });
+});

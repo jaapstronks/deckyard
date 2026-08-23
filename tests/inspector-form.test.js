@@ -275,6 +275,10 @@ const RENDER_PRECONDITIONS = {
     { content: { chartType: 'pie' } },
     { content: { chartType: 'line' } },
   ],
+  // The target slide only means something in the "go to specific slide" mode;
+  // the default ('stay') hides it, as it should.
+  'poll-slide': [{ content: { onClose: 'goto' } }],
+  'likert-slide': [{ content: { onClose: 'goto' } }],
 };
 
 test('every inspector-keep field renders (no config field is bulk-modal-only)', () => {

@@ -358,6 +358,29 @@ fields: [
 field for the same reason `deprecated: true` does. Everything else — including
 layout and background enums — is part of the contract.
 
+### Saying a field holds no readable text (`presentational`)
+
+The semantic projection skips `enum`, `color`, `number` and `boolean` fields
+outright: their whole vocabulary is configuration, so the `type` already answers
+"is this document text?". Some `string` fields are configuration too — an icon
+name (`'rocket'`), an infrastructure id, a serialized list of zoom
+coordinates — and there the type cannot answer. The field says so itself:
+
+```javascript
+{ key: 'icon', type: 'string', editor: 'icon-picker', presentational: true }
+```
+
+A presentational field never projects into the reader view, and inside an
+`items[]` entry it is also skipped when picking the item's `<h3>` — without the
+declaration an icon-card's first string field is its icon name, so the reader
+headed every card "rocket" and demoted the real title to a paragraph.
+
+It is a **projection-side** declaration only. The field still renders in the
+editor, still validates, and is still offered to agents unless it separately
+says `ai: false`. "Not document text" is a different claim from "not editable"
+(`hidden: true`) and from "not part of the contract" (`deprecated: true`); a
+field may make more than one of them.
+
 ---
 
 ## Theme-Specific Slide Types

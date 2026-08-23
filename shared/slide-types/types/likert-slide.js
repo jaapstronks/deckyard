@@ -116,7 +116,13 @@ export default {
       type: 'string',
       required: false,
       maxLength: 100,
-      helpText: 'Only used when "Go to specific slide" is selected.',
+      // The condition used to live in prose ("Only used when …"), which meant
+      // the form showed a dead control in the other two modes and the reader
+      // printed its value as a paragraph. Declared, both surfaces agree; and a
+      // slide id is machine data even when the field IS live, hence
+      // `presentational`.
+      visibleWhen: { field: 'onClose', in: ['goto'] },
+      presentational: true,
     },
   ],
   defaultsByLang: {

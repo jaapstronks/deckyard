@@ -231,6 +231,10 @@ export default {
       type: 'string',
       required: false,
       visibleWhen: { field: 'zoomSteps', in: ['custom'] },
+      // A serialized coordinate list: presentation choreography, not text.
+      // `visibleWhen` already keeps it out of the reader while zoom is off;
+      // this keeps the JSON blob out of it while zoom is on.
+      presentational: true,
       maxLength: 500,
       helpText: 'Custom positions as JSON array. X/Y are percentages (0-100).',
       helpCopyExample:
