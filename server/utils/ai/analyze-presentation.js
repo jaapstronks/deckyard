@@ -97,19 +97,12 @@ Return ONLY valid JSON:
         "type": "icon-card-grid-slide",
         "content": {
           "title": "Our Four Pillars",
-          "cardCount": "4",
-          "card1Icon": "lightbulb",
-          "card1Title": "Innovation",
-          "card1Body": "Driving creative solutions",
-          "card2Icon": "users",
-          "card2Title": "Collaboration",
-          "card2Body": "Working together effectively",
-          "card3Icon": "target",
-          "card3Title": "Focus",
-          "card3Body": "Staying on track",
-          "card4Icon": "rocket-launch",
-          "card4Title": "Growth",
-          "card4Body": "Scaling our impact"
+          "items": [
+            { "icon": "lightbulb", "title": "Innovation", "body": "Driving creative solutions" },
+            { "icon": "users", "title": "Collaboration", "body": "Working together effectively" },
+            { "icon": "target", "title": "Focus", "body": "Staying on track" },
+            { "icon": "rocket-launch", "title": "Growth", "body": "Scaling our impact" }
+          ]
         }
       }
     },

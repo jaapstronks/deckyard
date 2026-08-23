@@ -3,6 +3,16 @@ import assert from 'node:assert/strict';
 import { SLIDE_TYPES } from '../shared/slide-types.js';
 import { ensureLogos } from '../shared/slide-types/types/logo-wall-slide.js';
 import { ensureMembers } from '../shared/slide-types/types/team-cards-slide.js';
+import { migratePresentation } from '../shared/slide-types/schema-version.js';
+
+/** Fold one v7 slide's legacy numbered slots into its canonical array. */
+function foldedContent(type, content) {
+  const deck = migratePresentation({
+    schemaVersion: 7,
+    slides: [{ type, content }],
+  });
+  return deck.slides[0].content;
+}
 
 /**
  * Empty-slot media affordances (editor-UI track, phase 1c): empty image slots
@@ -26,10 +36,12 @@ test('image-text: empty placeholder and filled image both carry data-inline-phot
   assert.ok(!filled.includes('image-placeholder'));
 });
 
-test('logo-wall: legacy numbered deck is inline-clickable (no logos[] gate)', () => {
+test('logo-wall: a deck stored in the legacy numbered form is inline-clickable after the fold', () => {
   const def = SLIDE_TYPES['logo-wall-slide'];
-  // A deck backed only by the legacy numbered fields (no logos[] array).
-  const content = { logoCount: '1', logo1Name: 'Acme' };
+  const content = foldedContent('logo-wall-slide', {
+    logoCount: '1',
+    logo1Name: 'Acme',
+  });
   const html = def.renderHtml(content, {}, { mode: 'edit' });
   assert.match(
     html,
@@ -81,15 +93,14 @@ test('logo-wall: a filled logo carries data-inline-photo + item index', () => {
   assert.match(html, /data-inline-item-index="1"/);
 });
 
-test('ensureLogos migrates legacy numbered fields into logos[]', () => {
-  const content = {
+test('ensureLogos leaves a populated logos[] untouched', () => {
+  const content = foldedContent('logo-wall-slide', {
     logoCount: '2',
     logo1Name: 'A',
     logo1Image: '/a.png',
     logo2Name: 'B',
-  };
+  });
   ensureLogos(content);
-  assert.ok(Array.isArray(content.logos));
   assert.equal(content.logos.length, 2);
   assert.equal(content.logos[0].image, '/a.png');
   assert.equal(content.logos[1].name, 'B');
@@ -105,9 +116,13 @@ test('ensureLogos seeds one empty slot for a genuinely empty wall', () => {
   assert.deepEqual(content.logos, [{ image: '', name: '', alt: '', link: '' }]);
 });
 
-test('team-cards: legacy numbered deck emits members[] paths + clickable photo', () => {
+test('team-cards: a deck stored in the legacy numbered form emits members[] paths after the fold', () => {
   const def = SLIDE_TYPES['team-cards-slide'];
-  const content = { cardCount: '1', card1Name: 'Ada', card1Byline: 'Engineer' };
+  const content = foldedContent('team-cards-slide', {
+    cardCount: '1',
+    card1Name: 'Ada',
+    card1Byline: 'Engineer',
+  });
   const html = def.renderHtml(content);
   assert.match(
     html,
@@ -120,11 +135,15 @@ test('team-cards: legacy numbered deck emits members[] paths + clickable photo',
   );
 });
 
-test('ensureMembers folds legacy cards into members[]; empty stays []', () => {
-  const legacy = { cardCount: '1', card1Name: 'Ada', card1Byline: 'Engineer' };
-  ensureMembers(legacy);
-  assert.equal(legacy.members.length, 1);
-  assert.equal(legacy.members[0].name, 'Ada');
+test('ensureMembers keeps a populated members[]; empty stays []', () => {
+  const folded = foldedContent('team-cards-slide', {
+    cardCount: '1',
+    card1Name: 'Ada',
+    card1Byline: 'Engineer',
+  });
+  ensureMembers(folded);
+  assert.equal(folded.members.length, 1);
+  assert.equal(folded.members[0].name, 'Ada');
 
   const empty = { title: 'Team' };
   ensureMembers(empty);

@@ -149,13 +149,16 @@ describe('injectTextStyles', () => {
 
   it('only touches the matching field, not similarly-named ones', () => {
     const html =
-      '<div data-inline-field="card1" class="a">1</div>' +
-      '<div data-inline-field="card1Body" class="b">1b</div>';
+      '<div data-inline-field="subheading" class="a">1</div>' +
+      '<div data-inline-field="subheading2" class="b">1b</div>';
     const out = injectTextStyles(html, {
-      textStyles: { card1: { align: 'right' } },
+      textStyles: { subheading: { align: 'right' } },
     });
-    assert.match(out, /data-inline-field="card1" class="a tf-align-right"/);
-    assert.doesNotMatch(out, /card1Body[^>]*tf-align-right/);
+    assert.match(
+      out,
+      /data-inline-field="subheading" class="a tf-align-right"/,
+    );
+    assert.doesNotMatch(out, /subheading2[^>]*tf-align-right/);
   });
 
   it('does not match a value that only appears in another attribute', () => {

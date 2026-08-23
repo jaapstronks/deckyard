@@ -9,22 +9,18 @@
  *    in the element tab; with none, every card renders in a collapsed "Card
  *    icons & links" group so the Slide tab still leads with the at-a-glance
  *    settings.
- * 2. Every write goes through `syncIconCardsToNumbered` to keep the legacy
- *    numbered mirrors (card1Icon…) in step — a per-type invariant no generic
- *    per-item renderer knows about.
- * 3. The declarative form would be a generic per-item settings card driven by
+ * 2. The declarative form would be a generic per-item settings card driven by
  *    `itemFields` (the card-equivalent of image-element-card.js). That is a
- *    real concept, but it needs the icon picker, the card-link field AND a
- *    write-through hook in the closed vocabulary — for exactly one declarant
- *    today. A vocabulary of one is more expensive than this exception; promote
- *    it when a second card-type appears.
+ *    real concept, but it needs both the icon picker and the card-link field
+ *    in the closed vocabulary — for exactly one declarant today. A vocabulary
+ *    of one is more expensive than this exception; promote it when a second
+ *    card-type appears.
  *
  * The card numbering ("1. Title") and the collapsible are deliberate UX and
  * stay as they are.
  */
 import { t } from '../../../../lib/ui-i18n.js';
 import { fieldCardLink } from '../../fields/card-link-field.js';
-import { syncIconCardsToNumbered } from '../../../../../shared/slide-types/types/icon-card-grid-slide/cards.js';
 import { h } from '../../../../lib/dom.js';
 
 /**
@@ -84,7 +80,6 @@ export function renderIconCardExtras(ctx) {
           item.icon || '',
           (v) => {
             items[idx].icon = v;
-            syncIconCardsToNumbered(slide);
             markDirty?.();
             scheduleUiRefresh?.();
           },
@@ -98,7 +93,6 @@ export function renderIconCardExtras(ctx) {
         slides: deckSlides,
         onChange: (v) => {
           items[idx].link = v;
-          syncIconCardsToNumbered(slide);
           markDirty?.();
           scheduleUiRefresh?.();
         },

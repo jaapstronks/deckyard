@@ -27,83 +27,52 @@ function normalizeLinkedinUrl(raw) {
 }
 
 /**
- * Resolve members from either the new `members[]` array or legacy numbered fields.
- * Returns an array of { image, alt, imageFocusX, imageFocusY, name, byline } objects.
+ * Normalize `members[]` into the shape the renderer reads: every declared item
+ * key present, focus points defaulted to the centre.
+ *
+ * Until the v7 -> v8 schema fold this also carried a second branch for the flat
+ * `card1Name`…`card25Linkedin` family. That family no longer exists — stored
+ * decks are folded once at read time (`shared/slide-types/schema-version.js`),
+ * so `members[]` is the only shape there is.
+ *
+ * @param {Object} content
+ * @returns {Array<{image: string, alt: string, imageFocusX: number,
+ *   imageFocusY: number, name: string, byline: string, linkedin: string}>}
  */
 function resolveMembers(content) {
-  // New format: members[]
-  if (Array.isArray(content?.members) && content.members.length > 0) {
-    return content.members.map((m) => ({
-      image: m.image || '',
-      alt: m.alt || '',
-      imageFocusX: m.imageFocusX ?? 50,
-      imageFocusY: m.imageFocusY ?? 50,
-      name: m.name || '',
-      byline: m.byline || '',
-      linkedin: m.linkedin || '',
-    }));
-  }
-
-  // Legacy format: card{N}Name, card{N}Byline, etc.
-  const count = Math.max(
-    1,
-    Math.min(MAX_CARDS, Number(content?.cardCount) || 1),
-  );
-  // Be forgiving: scan beyond cardCount for populated cards
-  let maxUsedIdx = 0;
-  for (let i = 1; i <= MAX_CARDS; i++) {
-    if (
-      content?.[`card${i}Image`] ||
-      content?.[`card${i}Name`] ||
-      content?.[`card${i}Byline`]
-    ) {
-      maxUsedIdx = i;
-    }
-  }
-  const scanCount = Math.max(count, maxUsedIdx);
-
-  const members = [];
-  for (let i = 1; i <= scanCount; i++) {
-    const image = content?.[`card${i}Image`] || '';
-    const name = content?.[`card${i}Name`] || '';
-    const byline = content?.[`card${i}Byline`] || '';
-    if (image || name || byline) {
-      members.push({
-        image,
-        alt: content?.[`card${i}Alt`] || '',
-        imageFocusX: content?.[`card${i}ImageFocusX`] ?? 50,
-        imageFocusY: content?.[`card${i}ImageFocusY`] ?? 50,
-        name,
-        byline,
-        linkedin: content?.[`card${i}Linkedin`] || '',
-      });
-    }
-  }
-  return members;
+  if (!Array.isArray(content?.members)) return [];
+  return content.members.slice(0, MAX_CARDS).map((m) => ({
+    image: m?.image || '',
+    alt: m?.alt || '',
+    imageFocusX: m?.imageFocusX ?? 50,
+    imageFocusY: m?.imageFocusY ?? 50,
+    name: m?.name || '',
+    byline: m?.byline || '',
+    linkedin: m?.linkedin || '',
+  }));
 }
 
 /**
  * Canonicalize an "Image blocks" slide to the array form (editor-only,
- * idempotent). Mirrors `ensureLogos` / `ensureImageTextImages`: the read side
- * (`resolveMembers`) folds legacy numbered fields and the preferred `members[]`
- * array into one view; this mutating helper materializes `members[]` so the
- * inline media popover and card affordances have a stable, mutable array to
- * write to. Never called from `renderHtml` (which stays pure): the inline
- * editor runs it via the descriptor's `ensure` knob.
+ * idempotent). Mirrors `ensureLogos` / `ensureImageTextImages`: it materializes
+ * `members[]` so the inline media popover and card affordances have a stable,
+ * mutable array to write to. Never called from `renderHtml` (which stays pure):
+ * the inline editor runs it via the descriptor's `ensure` knob.
+ *
+ * When there is genuinely nothing, it leaves an empty array (not a seeded empty
+ * member): the renderer skips all-empty members, so a seed would be an
+ * invisible orphan — the inline "+ Add block" affordance provides the first
+ * block instead.
  * @param {Object} content
  * @returns {Object} the same content object
  */
 export function ensureMembers(content) {
   if (!content || typeof content !== 'object') return content;
-  if (Array.isArray(content.members) && content.members.length > 0) {
-    if (content.members.length > MAX_CARDS) content.members.length = MAX_CARDS;
+  if (!Array.isArray(content.members)) {
+    content.members = [];
     return content;
   }
-  // Fold the legacy numbered fields into members[]. When there is genuinely
-  // nothing, leave an empty array (not a seeded empty member): the renderer
-  // skips all-empty members, so a seed would be an invisible orphan - the
-  // inline "+ Add block" affordance provides the first block instead.
-  content.members = resolveMembers(content);
+  if (content.members.length > MAX_CARDS) content.members.length = MAX_CARDS;
   return content;
 }
 
@@ -142,9 +111,8 @@ export default {
       maxLength: 220,
     },
 
-    // New format: members[] array (preferred for AI generation). Declared
-    // before the layout enums so the editor's definition-order form leads
-    // with content (the blocks), settings after.
+    // Declared before the layout enums so the editor's definition-order form
+    // leads with content (the blocks), settings after.
     {
       key: 'members',
       label: 'Members',
@@ -182,9 +150,8 @@ export default {
         // labels also drive the in-slide inline "+ …" ghost chips.
         { key: 'image', type: 'image', label: 'Photo' },
         // Declared because the renderer reads it (see resolveMembers) and
-        // itemDefaults seeds it — it was only ever missing here, which made the
-        // definition an incomplete description of the block. gallery-slide's
-        // images[] declares its `alt` the same way.
+        // itemDefaults seeds it. gallery-slide's images[] declares its `alt`
+        // the same way.
         { key: 'alt', type: 'string', label: 'Photo alt text', maxLength: 180 },
         { key: 'name', type: 'string', label: 'Title', maxLength: 80 },
         { key: 'byline', type: 'string', label: 'Caption', maxLength: 120 },
@@ -238,83 +205,12 @@ export default {
       required: false,
       options: ['', '1', '2', '3', '4', '5'],
     },
-    {
-      key: 'cardCount',
-      label: 'Number of cards',
-      type: 'enum',
-      required: false,
-      options: Array.from({ length: MAX_CARDS }, (_v, i) => String(i + 1)),
-      deprecated: true,
-    },
-
-    // Legacy 1..12 cards: image + name + byline + optional explicit alt (author intent) + focus.
-    // `ai: false` + `deprecated: true` on the whole block (applied below):
-    // these mirror members[], and an agent offered both shapes will sooner or
-    // later fill the one the editor treats as the fallback. `deprecated` also
-    // keeps them out of the published JSON Schema, so the contract shows
-    // members[] rather than 175 numbered keys. Same call icon-card-grid-slide
-    // makes for its card{N}* fields.
-    ...Array.from({ length: MAX_CARDS }, (_v, idx) => {
-      const i = idx + 1;
-      return [
-        {
-          key: `card${i}Image`,
-          label: `Card ${i} photo`,
-          type: 'image',
-          required: false,
-        },
-        {
-          key: `card${i}Alt`,
-          label: `Card ${i} photo alt text (optional)`,
-          type: 'string',
-          required: false,
-          maxLength: 180,
-        },
-        {
-          key: `card${i}ImageFocusX`,
-          label: `Card ${i} image focus X`,
-          type: 'number',
-          required: false,
-          min: 0,
-          max: 100,
-          step: 1,
-        },
-        {
-          key: `card${i}ImageFocusY`,
-          label: `Card ${i} image focus Y`,
-          type: 'number',
-          required: false,
-          min: 0,
-          max: 100,
-          step: 1,
-        },
-        {
-          key: `card${i}Name`,
-          label: `Card ${i} name`,
-          type: 'string',
-          required: false,
-          maxLength: 80,
-        },
-        {
-          key: `card${i}Byline`,
-          label: `Card ${i} byline`,
-          type: 'string',
-          required: false,
-          maxLength: 120,
-        },
-        {
-          key: `card${i}Linkedin`,
-          label: `Card ${i} LinkedIn URL`,
-          type: 'string',
-          required: false,
-          maxLength: 300,
-        },
-      ];
-    })
-      .flat()
-      .map((field) => ({ ...field, ai: false, deprecated: true })),
   ],
 
+  // A fresh slide opens with one block, so the canvas has something to click.
+  // It is seeded in `members[]` — the numbered `card1*` keys this used to write
+  // are gone (v7 -> v8), and seeding the flat form was how a brand-new slide
+  // ended up stored in the legacy shape in the first place.
   defaults: {
     title: '',
     subheading: '',
@@ -326,10 +222,17 @@ export default {
     showPhotoFrame: 'off',
     columnSplit: '',
     subheading2: '',
-    cardCount: '1',
-    card1Image: '',
-    card1Name: 'Title',
-    card1Byline: 'Caption',
+    members: [
+      {
+        image: '',
+        alt: '',
+        imageFocusX: 50,
+        imageFocusY: 50,
+        name: 'Title',
+        byline: 'Caption',
+        linkedin: '',
+      },
+    ],
   },
 
   renderHtml: (content) => {
@@ -362,10 +265,10 @@ export default {
     const columnSplit = clampInt(content?.columnSplit || 0, 0, 5, 0);
     const hasSplit = columnSplit > 0;
 
-    // Inline-edit paths always target members[] (the canonical array). The
-    // inline editor's `ensure` knob (ensureMembers) materializes members[] from
-    // any legacy numbered deck before decorating, so the paths are always live
-    // in edit mode; on present/export the attributes are inert.
+    // Inline-edit paths target members[] — the only shape there is. The inline
+    // editor's `ensure` knob (ensureMembers) guarantees the array exists before
+    // decorating, so the paths are always live in edit mode; on present/export
+    // the attributes are inert.
 
     // Helper to build a single card HTML from a member object
     const buildCard = (member, idx) => {

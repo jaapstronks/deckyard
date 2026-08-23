@@ -65,13 +65,13 @@ function renderQuoteSlide(slide) {
 function renderIconCardGridSlide(slide, lang) {
   const t = getPrintTranslations(lang);
   const c = slide && typeof slide === 'object' ? slide.content : {};
-  const count = Math.max(1, Math.min(6, Number(c?.cardCount || 6) || 6));
+  const items = Array.isArray(c?.items) ? c.items.slice(0, 6) : [];
   const cards = [];
-  for (let i = 1; i <= count; i += 1) {
-    const iconName = String(c?.[`card${i}Icon`] || '').trim();
+  for (const item of items) {
+    const iconName = String(item?.icon || '').trim();
     const iconSrc = iconUrl(iconName);
-    const title = String(c?.[`card${i}Title`] || '').trim();
-    const body = String(c?.[`card${i}Body`] || '').trim();
+    const title = String(item?.title || '').trim();
+    const body = String(item?.body || '').trim();
     if (!iconName && !title && !body) continue;
     cards.push(`<section class="print-icon-card">
       <div class="print-icon-card-head">

@@ -21,7 +21,6 @@ function render(cards, ctx = {}) {
       type: 'icon-card-grid-slide',
       content: {
         title: 'Deck',
-        cardCount: String(cards.length),
         items: cards,
       },
     },

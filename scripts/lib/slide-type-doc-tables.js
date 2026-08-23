@@ -265,10 +265,10 @@ function ghostKeys(d) {
 
 /**
  * The cards cell: which array the add/remove/reorder affordances write to, plus
- * the qualifiers that change what a reader can expect — a legacy alias, a nested
- * second level, a fixed-size collection (no add/remove renders when
- * `minItems === maxItems`), and the dual-model guard that keeps affordances off
- * a deck still using numbered fields.
+ * the qualifiers that change what a reader can expect — a nested second level, a
+ * fixed-size collection (no add/remove renders when `minItems === maxItems`),
+ * and the dual-model guard that keeps affordances off a deck still using
+ * numbered fields.
  *
  * @param {Object|null} d - inline descriptor
  * @param {Object} def - composed slide-type definition

@@ -150,7 +150,7 @@ export async function generateSlidesToAppendFromRawContent(
     '- Use card slides when the content naturally forms 4–6 items of the SAME kind (phases, goals, challenges, pillars, principles, workstreams).',
     'PRIORITY (very important):',
     '- Prefer icon-card-grid-slide for ANY section with 4–6 parallel items.',
-    '- STRONG RULE: if a section contains exactly 6 parallel items, you MUST represent it as an icon-card-grid-slide (cardCount:"6").',
+    '- STRONG RULE: if a section contains exactly 6 parallel items, you MUST represent it as an icon-card-grid-slide (items[] with 6 cards).',
     '- Each icon-card-grid-slide card MUST use an allowed icon value (pick from the list below).',
     '',
     'Allowed icon values for icon-card-grid-slide (pick from this list only):',

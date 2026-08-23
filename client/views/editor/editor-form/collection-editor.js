@@ -50,11 +50,10 @@ import { h } from '../../../lib/dom.js';
  * (`cards.addLabelKey` etc.) — the same declaration the canvas affordances
  * read, so the two surfaces cannot drift.
  *
- * Legacy numbered mirrors (card1Title…, logo1Image…) are NOT synced here. The
- * canonical array is the one written surface — the same contract the inline
- * (canvas) editor already applies; renderers and the semantic projection
- * prefer the array. The mirrors survive read-only until their deprecation
- * cleanup removes them.
+ * The canonical array is the one written surface — the same contract the inline
+ * (canvas) editor applies. text-blocks still carries a legacy numbered mirror
+ * (`row1Block1Title`…), which is NOT synced here either; every other type's
+ * mirror went with the v7 -> v8 schema fold.
  */
 
 // One collapsed-state store for every collection list; keys are scoped by

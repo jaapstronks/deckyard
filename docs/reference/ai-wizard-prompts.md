@@ -230,29 +230,22 @@ Grid of 1-6 cards with icons. Excellent for parallel concepts!
   "content": {
     "title": "Our Strategic Pillars",
     "subtitle": "Building for the future",
-    "cardCount": "4",
-    "card1Icon": "lightbulb",
-    "card1Title": "Innovation",
-    "card1Body": "Driving creative solutions through research",
-    "card2Icon": "users",
-    "card2Title": "Collaboration",
-    "card2Body": "Working together across all teams",
-    "card3Icon": "target",
-    "card3Title": "Focus",
-    "card3Body": "Prioritizing what truly matters",
-    "card4Icon": "rocket-launch",
-    "card4Title": "Growth",
-    "card4Body": "Scaling our impact continuously"
+    "items": [
+      { "icon": "lightbulb", "title": "Innovation", "body": "Driving creative solutions through research" },
+      { "icon": "users", "title": "Collaboration", "body": "Working together across all teams" },
+      { "icon": "target", "title": "Focus", "body": "Prioritizing what truly matters" },
+      { "icon": "rocket-launch", "title": "Growth", "body": "Scaling our impact continuously" }
+    ]
   }
 }
 
 Fields:
 - title: Required, max 120 chars
 - subtitle: Optional, max 200 chars
-- cardCount: "1" to "6" (4-6 recommended for visual balance)
-- card{N}Icon: Icon name (see list below)
-- card{N}Title: Card title
-- card{N}Body: Card description (1-2 sentences)
+- items: 1 to 6 cards (4-6 recommended for visual balance)
+- items[].icon: Icon name (see list below)
+- items[].title: Card title
+- items[].body: Card description (1-2 sentences)
 
 Available icons:
 user, users, users-three, handshake, link, arrow-right, arrow-up, trend-up,
@@ -453,13 +446,11 @@ Display team members (1-6 people).
   "content": {
     "title": "Leadership Team",
     "subtitle": "Meet our experts",
-    "cardCount": "3",
-    "card1Name": "Jane Smith",
-    "card1Byline": "CEO",
-    "card2Name": "John Doe",
-    "card2Byline": "CTO",
-    "card3Name": "Alice Johnson",
-    "card3Byline": "COO"
+    "members": [
+      { "name": "Jane Smith", "byline": "CEO" },
+      { "name": "John Doe", "byline": "CTO" },
+      { "name": "Alice Johnson", "byline": "COO" }
+    ]
   }
 }
 
@@ -471,11 +462,12 @@ Display partner/sponsor logos (1-12).
   "content": {
     "title": "Our Partners",
     "subtitle": "Organizations we work with",
-    "logoCount": "4",
-    "logo1Name": "Partner A",
-    "logo2Name": "Partner B",
-    "logo3Name": "Partner C",
-    "logo4Name": "Partner D"
+    "logos": [
+      { "name": "Partner A" },
+      { "name": "Partner B" },
+      { "name": "Partner C" },
+      { "name": "Partner D" }
+    ]
   }
 }
 

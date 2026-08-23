@@ -521,6 +521,231 @@ test('v6->v7 leaves other types alone and is idempotent', () => {
   assert.deepEqual(twice.slides[0].content, once.slides[0].content);
 });
 
+/** A deck at v7, one slide of `type`, holding the legacy numbered form. */
+function deckAtV7(type, content) {
+  const deck = legacyDeck();
+  deck.schemaVersion = 7;
+  deck.slides = [
+    { id: randomUUID(), type, parentId: null, content, visibility: {} },
+  ];
+  return deck;
+}
+
+test('v7->v8 folds each legacy numbered slot family into its canonical array', () => {
+  const cases = [
+    [
+      'team-cards-slide',
+      { cardCount: '2', card1Name: 'Ada', card1Byline: 'Eng', card2Name: 'Bo' },
+      'members',
+      [
+        {
+          image: '',
+          alt: '',
+          imageFocusX: 50,
+          imageFocusY: 50,
+          name: 'Ada',
+          byline: 'Eng',
+          linkedin: '',
+        },
+        {
+          image: '',
+          alt: '',
+          imageFocusX: 50,
+          imageFocusY: 50,
+          name: 'Bo',
+          byline: '',
+          linkedin: '',
+        },
+      ],
+    ],
+    [
+      'logo-wall-slide',
+      {
+        logoCount: '2',
+        logo1Name: 'Acme',
+        logo1Image: '/a.png',
+        logo2Name: 'B',
+      },
+      'logos',
+      [
+        { image: '/a.png', name: 'Acme', alt: '', link: '' },
+        { image: '', name: 'B', alt: '', link: '' },
+      ],
+    ],
+    [
+      'icon-card-grid-slide',
+      {
+        cardCount: '2',
+        card1Icon: 'target',
+        card1Title: 'One',
+        card2Title: 'Two',
+      },
+      'items',
+      [
+        { icon: 'target', title: 'One', body: '', link: '' },
+        { icon: '', title: 'Two', body: '', link: '' },
+      ],
+    ],
+  ];
+  for (const [type, legacy, arrayKey, expected] of cases) {
+    const legacyKeys = Object.keys(legacy);
+    const content = migratePresentation(deckAtV7(type, legacy)).slides[0]
+      .content;
+    assert.deepEqual(content[arrayKey], expected, type);
+    for (const key of legacyKeys)
+      assert.equal(key in content, false, `${type} keeps ${key}`);
+  }
+});
+
+test('v7->v8 keeps a populated canonical array and still drops the flat slots', () => {
+  // The `defaults` of team-cards and icon-card-grid seeded the flat form, so a
+  // deck could hold BOTH shapes at once. All three read fallbacks preferred the
+  // array, so the slots were already unreachable: the fold must not double them
+  // into the array, only remove them.
+  const content = migratePresentation(
+    deckAtV7('team-cards-slide', {
+      cardCount: '1',
+      card1Name: 'Title',
+      card1Byline: 'Caption',
+      members: [{ name: 'Real', byline: 'Cap' }],
+    }),
+  ).slides[0].content;
+  assert.deepEqual(content.members, [{ name: 'Real', byline: 'Cap' }]);
+  assert.equal('cardCount' in content, false);
+  assert.equal('card1Name' in content, false);
+});
+
+test("v7->v8 reproduces each family's own read rule, not one shared guess", () => {
+  // team-cards / logo-wall scanned PAST the count for populated slots ("be
+  // forgiving"), and skipped a slot that carried nothing the resolver looked at
+  // (an alt text alone was never a member).
+  const forgiving = migratePresentation(
+    deckAtV7('team-cards-slide', {
+      cardCount: '1',
+      card1Name: 'A',
+      card2Alt: 'alt only',
+      card3Name: 'C',
+    }),
+  ).slides[0].content;
+  assert.deepEqual(
+    forgiving.members.map((m) => m.name),
+    ['A', 'C'],
+  );
+
+  // icon-card-grid was hard-bounded by its count: a stale slot beyond it was
+  // hidden on the canvas and must not survive the fold.
+  const bounded = migratePresentation(
+    deckAtV7('icon-card-grid-slide', {
+      cardCount: '2',
+      card1Title: 'One',
+      card2Title: 'Two',
+      card3Title: 'LEAK',
+    }),
+  ).slides[0].content;
+  assert.deepEqual(
+    bounded.items.map((c) => c.title),
+    ['One', 'Two'],
+  );
+});
+
+test('v7->v8 trims trailing blank icon-card slots — the one shape change it makes', () => {
+  // The single non-render-equivalent case in the whole fold, and a deliberate
+  // one: `cardCount: '6'` with three cards filled rendered three real cards
+  // plus three placeholder-titled ghosts. items[] has no such slot, and the
+  // editor's own `ensure` knob has been committing exactly this trim on every
+  // legacy grid it opened, so the canonical form is three cards. Interior
+  // blanks stay — those occupy a real cell between two filled ones.
+  const trimmed = migratePresentation(
+    deckAtV7('icon-card-grid-slide', {
+      cardCount: '6',
+      card1Title: 'One',
+      card2Title: 'Two',
+      card3Title: 'Three',
+    }),
+  ).slides[0].content;
+  assert.equal(trimmed.items.length, 3);
+
+  const interior = migratePresentation(
+    deckAtV7('icon-card-grid-slide', {
+      cardCount: '3',
+      card1Title: 'One',
+      card3Title: 'Three',
+    }),
+  ).slides[0].content;
+  assert.deepEqual(
+    interior.items.map((c) => c.title),
+    ['One', '', 'Three'],
+  );
+});
+
+test('v7->v8 leaves other types alone, writes no empty array, and is idempotent', () => {
+  const other = migratePresentation(
+    deckAtV7('gallery-slide', { cardCount: '2', card1Name: 'Not mine' }),
+  ).slides[0].content;
+  assert.equal(other.cardCount, '2');
+  assert.equal(other.card1Name, 'Not mine');
+
+  // Nothing to fold: the count key goes, but no empty `logos: []` is invented.
+  const empty = migratePresentation(
+    deckAtV7('logo-wall-slide', { logoCount: '3', title: 'Partners' }),
+  ).slides[0].content;
+  assert.equal('logoCount' in empty, false);
+  assert.equal('logos' in empty, false);
+  assert.equal(empty.title, 'Partners');
+
+  const once = migratePresentation(
+    deckAtV7('logo-wall-slide', { logoCount: '1', logo1Name: 'Acme' }),
+  );
+  const twice = migratePresentation(structuredClone(once));
+  assert.deepEqual(twice.slides[0].content, once.slides[0].content);
+});
+
+/**
+ * Numbered field families that are NOT a mirror of a canonical array, with why
+ * each one is allowed to stay. A numbered key beside an `items` field is the
+ * shape v7 -> v8 removed; a numbered key on a type that has no array is a
+ * fixed-arity design question, not a second spelling of one collection.
+ */
+const ALLOWED_NUMBERED_FIELDS = {
+  'text-blocks-slide':
+    'the rows[]/blocks[] mirror, hidden and frozen at 3 rows — its own cleanup (the fold landed in v1 -> v2)',
+  'chart-slide':
+    'series1Label/series2Label: two fixed series on a chart, no array behind them',
+  'end-slide':
+    'social1/social2 label+url: two fixed slots, no array behind them',
+};
+
+test('gate: no slide type carries a numbered slot family beside its canonical array', () => {
+  // The point of the v7 -> v8 step: after it, the flat spelling of a collection
+  // exists only as a migration record. A type that grows a `card7Title` /
+  // `logo3Image` back beside its items[] is a second accepted shape for one
+  // collection, which is exactly what this step removed.
+  const offenders = [];
+  for (const [name, def] of Object.entries(SLIDE_TYPES)) {
+    const fields = Array.isArray(def?.fields) ? def.fields : [];
+    for (const field of fields) {
+      if (typeof field?.key !== 'string') continue;
+      if (!/^[a-z]+\d+[A-Z]/.test(field.key)) continue;
+      if (ALLOWED_NUMBERED_FIELDS[name]) continue;
+      offenders.push(`${name}.${field.key}`);
+    }
+  }
+  assert.deepEqual(offenders, []);
+
+  // And every allowance is still earned: none of them sits beside an items[]
+  // field it could be mirroring — except text-blocks, whose mirror is `hidden`
+  // and therefore invisible to the projection and the form.
+  for (const name of Object.keys(ALLOWED_NUMBERED_FIELDS)) {
+    if (name === 'text-blocks-slide') continue;
+    const fields = SLIDE_TYPES[name]?.fields || [];
+    assert.equal(
+      fields.some((f) => f?.type === 'items'),
+      false,
+      `${name} has both a numbered family and an items[] field`,
+    );
+  }
+});
+
 test('validatePresentation rejects an out-of-range schemaVersion', () => {
   const base = newPresentation({});
 
@@ -535,4 +760,49 @@ test('validatePresentation rejects an out-of-range schemaVersion', () => {
   const future = validatePresentation({ ...base, schemaVersion: 99 });
   assert.equal(future.ok, false);
   assert.ok(future.errors.some((e) => /newer than this build/.test(e)));
+});
+
+test('the import seam runs the funnel: a pre-fold export keeps its cards', async () => {
+  // Imports (JSON, .deck bundle, MCP, markdown, AI output) never pass through
+  // the storage read funnel, and the portable format carries no schemaVersion.
+  // Without the funnel at the import seam, the array-seeding defaults of
+  // team-cards / icon-card-grid would shadow a pre-fold deck's numbered slots
+  // (unknown keys merge BESIDE the default array), and the next storage read
+  // would then delete the slots as "unreachable" — silently replacing real
+  // content with placeholders.
+  const { deckToPresentationParts } =
+    await import('../shared/slide-types/deck.js');
+  const parts = deckToPresentationParts({
+    title: 'Old export',
+    slides: [
+      {
+        // The published spelling: canonical reverse-DNS ids, folded to the
+        // registry key by the v3 -> v4 step before v7 -> v8 matches on it.
+        type: 'eu.deckyard.slide.icon-card-grid',
+        content: { cardCount: '2', card1Title: 'Real one', card2Title: 'Two' },
+      },
+      {
+        type: 'team-cards-slide',
+        content: { cardCount: '1', card1Name: 'Ada', card1Byline: 'Eng' },
+      },
+      {
+        type: 'logo-wall-slide',
+        content: { logoCount: '1', logo1Name: 'Acme', logo1Image: '/a.png' },
+      },
+    ],
+  });
+  const [grid, team, wall] = parts.slides.map((s) => s.content);
+  assert.deepEqual(
+    grid.items.map((c) => c.title),
+    ['Real one', 'Two'],
+  );
+  assert.equal('card1Title' in grid, false);
+  assert.deepEqual(
+    team.members.map((m) => m.name),
+    ['Ada'],
+  );
+  assert.deepEqual(
+    wall.logos.map((l) => l.name),
+    ['Acme'],
+  );
 });

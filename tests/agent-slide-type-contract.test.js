@@ -136,8 +136,8 @@ test('every offered core type resolves a schema out of its own fields', () => {
 test('a field opts out of the agent contract three ways', () => {
   const schema = deriveAgentSchema([
     { key: 'live', type: 'string' },
-    // Legacy mirrors of a structured array: the agent authors items[], never
-    // card3Title. `hidden` is the same marker semantic-projection.js reads.
+    // Legacy mirrors of a structured array: the agent authors rows[], never
+    // row1Block1Title. `hidden` is the same marker the projection reads.
     { key: 'legacyHidden', type: 'string', hidden: true },
     { key: 'legacyDeprecated', type: 'string', deprecated: true },
     // Live and editable, but withheld — same key and meaning as the type-level

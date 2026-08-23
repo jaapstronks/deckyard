@@ -38,9 +38,10 @@ import { renderImageElementCard } from './image-element-card.js';
  * no enum/boolean/number field may be left with the bulk modal as its only home.
  *
  * Documented deviations from the audit table's shorthand (see the reference
- * doc): table colCount, team-cards cardCount and logo-wall logoCount are
- * derived mirrors managed by their editors/arrays and were never rendered as
- * form controls, so they are not resurrected. Keys handled by the shared
+ * doc): table colCount is a derived mirror managed by its editor and was never
+ * rendered as a form control, so it is not resurrected. (team-cards' cardCount
+ * and logo-wall's logoCount were the same kind of deviation until the v7 -> v8
+ * fold removed both keys outright.) Keys handled by the shared
  * Background/Accessibility sections are not listed either.
  *
  * Re-exported for the companion matrix (tests/slide-type-companion-coverage.js),

@@ -15,6 +15,18 @@
  *   node scripts/migrate-slides.js [--dry-run] [--dir path/to/decks]
  *
  * By default, reads from the data directory. Use --dry-run to preview changes.
+ *
+ * FROZEN. This is a historical one-off, written against the schema of its day,
+ * and it must not learn about new types (`tests/helpers/slide-type-name-branching.js`
+ * records that rule). Migrations 3-6 have since been superseded by the ordered
+ * `schemaVersion` funnel in `shared/slide-types/schema-version.js`, which folds
+ * the numbered families at read time on every deck and every store: text-blocks
+ * in v1 -> v2, and icon-card-grid / team-cards / logo-wall in v7 -> v8. Only
+ * migration 1 (card-stack -> icon-card-grid) has no equivalent there, because
+ * the two types never shared a lossless field schema — see
+ * `shared/slide-types/removed.js`. Note that migration 1 still writes the
+ * numbered `card{N}*` form icon-card-grid no longer declares: a deck it touches
+ * needs its `schemaVersion` left below 8 so the funnel folds it on the next read.
  */
 
 import { readdir, readFile, writeFile } from 'node:fs/promises';

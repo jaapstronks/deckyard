@@ -12,7 +12,7 @@ const TITLE_KEYS = new Set(['title', 'heading', 'tagline']);
  *
  * Matching on substrings rather than exact names is deliberate: several slide
  * types use flat numbered keys (`row1Color`, `arrow1`, `row2Enabled`,
- * `card3Icon`) rather than nested objects. An exact-name blocklist misses
+ * `series1Label`) rather than nested objects. An exact-name blocklist misses
  * those, and their values ("yellow", "down", "yes") then read as slide prose --
  * which made the judge penalize decks for text no audience ever sees.
  */

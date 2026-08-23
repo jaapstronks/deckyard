@@ -21,69 +21,38 @@ const HEADER_BLOCK = alignGroup('header-block', 'headerAlign', {
 });
 import { getSlideCopy } from '../slide-copy.js';
 
-// Cap for the logos[] array. The legacy numbered fields (logo{N}*) stay at 12:
-// they predate logos[], and logoCount is a strictly validated enum — walls
-// beyond 12 logos exist only in the array format.
+/** Cap for the logos[] array. */
 export const MAX_LOGOS = 30;
-const LEGACY_MAX = 12;
-
-function clampInt(n, min, max) {
-  const v = Number(n);
-  if (!Number.isFinite(v)) return min;
-  return Math.max(min, Math.min(max, Math.trunc(v)));
-}
 
 /**
- * Resolve logos from either the new `logos[]` array or legacy numbered fields.
- * Returns an array of { image, name, alt } objects.
+ * Normalize `logos[]` into the shape the renderer reads.
+ *
+ * Until the v7 -> v8 schema fold this also carried a second branch for the flat
+ * `logo1Image`…`logo12Link` family (capped at 12, where `logoCount` was a
+ * strictly validated enum). That family no longer exists — stored decks are
+ * folded once at read time (`shared/slide-types/schema-version.js`), so
+ * `logos[]` is the only shape there is.
+ *
+ * @param {Object} content
+ * @returns {Array<{image: string, name: string, alt: string, link: string}>}
  */
 function resolveLogos(content) {
-  // New format: logos[]
-  if (Array.isArray(content?.logos) && content.logos.length > 0) {
-    return content.logos.slice(0, MAX_LOGOS).map((l) => ({
-      image: l.image || '',
-      name: l.name || '',
-      alt: l.alt || '',
-      link: l.link || '',
-    }));
-  }
-
-  // Legacy format: logo{N}Image, logo{N}Name, etc.
-  const count = clampInt(content?.logoCount || 1, 1, LEGACY_MAX);
-  let maxUsedIdx = 0;
-  for (let i = 1; i <= LEGACY_MAX; i++) {
-    if (content?.[`logo${i}Image`] || content?.[`logo${i}Name`]) {
-      maxUsedIdx = i;
-    }
-  }
-  const scanCount = Math.max(count, maxUsedIdx);
-
-  const logos = [];
-  for (let i = 1; i <= scanCount; i++) {
-    const image = content?.[`logo${i}Image`] || '';
-    const name = content?.[`logo${i}Name`] || '';
-    if (image || name) {
-      logos.push({
-        image,
-        name,
-        alt: content?.[`logo${i}Alt`] || '',
-        link: content?.[`logo${i}Link`] || '',
-      });
-    }
-  }
-  return logos;
+  if (!Array.isArray(content?.logos)) return [];
+  return content.logos.slice(0, MAX_LOGOS).map((l) => ({
+    image: l?.image || '',
+    name: l?.name || '',
+    alt: l?.alt || '',
+    link: l?.link || '',
+  }));
 }
 
 /**
  * Canonicalize a logo wall to the array form (editor-only, idempotent).
  *
- * The read side (`resolveLogos`) folds the legacy numbered fields and the
- * preferred `logos[]` array into one view; this mutating helper materializes
- * `logos[]` so the inline media popover and card affordances have a stable,
- * mutable array to write to. Never called from `renderHtml` (which stays pure):
- * the inline editor runs it via the descriptor's `ensure` knob, on a legacy
- * deck this converts the numbered fields into `logos[]` the first time the deck
- * is opened for editing. Mirrors `ensureImageTextImages`.
+ * Materializes `logos[]` so the inline media popover and card affordances have
+ * a stable, mutable array to write to. Never called from `renderHtml` (which
+ * stays pure): the inline editor runs it via the descriptor's `ensure` knob.
+ * Mirrors `ensureImageTextImages`.
  * @param {Object} content
  * @returns {Object} the same content object
  */
@@ -93,11 +62,9 @@ export function ensureLogos(content) {
     if (content.logos.length > MAX_LOGOS) content.logos.length = MAX_LOGOS;
     return content;
   }
-  const folded = resolveLogos(content);
   // Guarantee one slot so an empty wall still offers a clickable "add a first
   // logo" cell on the canvas.
-  content.logos =
-    folded.length > 0 ? folded : [{ image: '', name: '', alt: '', link: '' }];
+  content.logos = [{ image: '', name: '', alt: '', link: '' }];
   return content;
 }
 
@@ -130,16 +97,6 @@ export default {
     },
     BACKGROUND_FIELD,
     {
-      key: 'logoCount',
-      label: 'Number of logos',
-      type: 'enum',
-      required: false,
-      options: Array.from({ length: LEGACY_MAX }, (_v, i) => String(i + 1)),
-      deprecated: true,
-    },
-
-    // New format: logos[] array (preferred for AI generation)
-    {
       key: 'logos',
       label: 'Logos',
       type: 'items',
@@ -166,58 +123,17 @@ export default {
         },
       ],
     },
-
-    // Legacy 1..12 logos: image + (optional) name + optional explicit alt (author intent).
-    // `ai: false` + `deprecated: true` on the whole block (applied below):
-    // these mirror logos[], and an agent offered both shapes will sooner or
-    // later fill the fallback one. `deprecated` also keeps them out of the
-    // published JSON Schema, so the contract shows logos[] and not the
-    // numbered mirror.
-    ...Array.from({ length: LEGACY_MAX }, (_v, idx) => {
-      const i = idx + 1;
-      return [
-        {
-          key: `logo${i}Image`,
-          label: `Logo ${i} image`,
-          type: 'image',
-          required: false,
-        },
-        {
-          key: `logo${i}Name`,
-          label: `Logo ${i} name`,
-          type: 'string',
-          required: false,
-          maxLength: 80,
-        },
-        {
-          key: `logo${i}Alt`,
-          label: `Logo ${i} alt text`,
-          type: 'string',
-          required: false,
-          maxLength: 180,
-        },
-        {
-          key: `logo${i}Link`,
-          label: `Logo ${i} link`,
-          type: 'string',
-          required: false,
-          maxLength: 500,
-          deprecated: true,
-        },
-      ];
-    })
-      .flat()
-      .map((field) => ({ ...field, ai: false, deprecated: true })),
   ],
 
+  // A fresh wall opens with one (empty) logo cell, so the canvas has something
+  // to click. Seeded in `logos[]` — the numbered `logo1*` keys this used to
+  // write are gone (v7 -> v8).
   defaults: {
     headerAlign: 'left',
     title: '',
     subheading: '',
     background: 'mist',
-    logoCount: '1',
-    logo1Image: '',
-    logo1Name: 'Logo',
+    logos: [{ image: '', name: 'Logo', alt: '', link: '' }],
   },
 
   renderHtml: (content, _slide, ctx) => {

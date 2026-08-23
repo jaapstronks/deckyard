@@ -150,10 +150,12 @@ test('itemFields are filtered the same way', () => {
   assert.deepEqual(schema.items.required, ['label']);
 });
 
-test('team-cards publishes members[], not its 175 numbered mirror keys', () => {
-  // The concrete leak this filter closes: `fields[]` is the editor's list and
-  // carries card1Image…card25Linkedin beside members[]. Publishing those under
-  // `properties` stated the legacy representation as the contract.
+test('team-cards publishes members[] and nothing numbered beside it', () => {
+  // The concrete leak this filter closed: `fields[]` is the editor's list, and
+  // it carried card1Image…card25Linkedin beside members[]. Publishing those
+  // under `properties` stated the legacy representation as the contract. The
+  // family itself is gone since schema v7 -> v8; this pins that the published
+  // contract is the array, whatever `fields[]` grows next.
   const schema = slideTypeContentSchema(
     'team-cards-slide',
     SLIDE_TYPES['team-cards-slide'],

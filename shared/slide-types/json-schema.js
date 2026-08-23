@@ -77,9 +77,9 @@ function contentDefKey(typeName) {
  * Whether a field belongs in the *published* contract.
  *
  * A definition's `fields[]` is the editor's list, and it deliberately carries
- * shapes we no longer want anyone to build on: the legacy numbered mirrors of
- * an `items[]` array (`card1Name`…`card25Linkedin`), their counters, and the
- * hidden slots the dual-write still reads. Those keys keep *parsing* - the
+ * shapes we no longer want anyone to build on: the legacy numbered mirror of a
+ * structured array (`row1Block1Title`…), its counters, and the hidden slots the
+ * dual-write still reads. Those keys keep *parsing* - the
  * schema stays lenient (`additionalProperties: true`), so stored decks that
  * carry them still validate - but publishing them under `properties` states
  * them as the contract, which is the opposite of what `deprecated`/`hidden`

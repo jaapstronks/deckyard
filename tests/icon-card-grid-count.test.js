@@ -1,10 +1,10 @@
 /**
  * Tests for how icon-card-grid-slide derives its card count.
  *
- * When items[] is in use it is the source of truth: cardCount is a stale
- * legacy mirror there (inline add/remove only mutates the array). Counting
- * cardCount kept rendering an empty ghost card after an inline card removal.
- * Without items[], cardCount still drives the legacy numbered fields.
+ * items[] is the only source: its length, with trailing blanks trimmed, is the
+ * count. The legacy `cardCount` enum and its numbered card{N}* family went with
+ * the v7 -> v8 schema fold — a stored deck is folded once at read time, so a
+ * stale count can no longer draw a ghost card after an inline removal.
  *
  * Run with: node --test tests/icon-card-grid-count.test.js
  */
@@ -60,11 +60,10 @@ describe('icon-card-grid card count', () => {
     assert.match(html, /data-inline-field="items\.2\.title"/);
   });
 
-  it('items[] wins over a stale higher cardCount (post-removal state)', () => {
+  it('draws one empty cell per unused slot in the six-cell grid', () => {
     const html = render(
       {
         title: 'Deck',
-        cardCount: '6',
         items: Array.from({ length: 5 }, (_, i) => ({
           icon: 'target',
           title: `Card ${i + 1}`,
@@ -78,11 +77,10 @@ describe('icon-card-grid card count', () => {
     assert.match(html, /data-card-count="5"/);
   });
 
-  it('items[] wins over a stale lower cardCount (post-add state)', () => {
+  it('counts every filled item, with no separate count to fall out of step', () => {
     const html = render(
       {
         title: 'Deck',
-        cardCount: '2',
         items: Array.from({ length: 4 }, (_, i) => ({
           icon: 'target',
           title: `Card ${i + 1}`,
@@ -95,25 +93,19 @@ describe('icon-card-grid card count', () => {
     assert.match(html, /data-card-count="4"/);
   });
 
-  it('legacy numbered content still follows cardCount', () => {
+  it('ignores a stray legacy cardCount that survived on some import', () => {
+    // The fold removes the key, but the renderer must not consult it either:
+    // reading a count beside the array is exactly the drift this removed.
     const html = render(
       {
         title: 'Deck',
-        cardCount: '3',
-        card1Icon: 'target',
-        card1Title: 'A',
-        card1Body: 'x',
-        card2Icon: 'target',
-        card2Title: 'B',
-        card2Body: 'x',
-        card3Icon: 'target',
-        card3Title: 'C',
-        card3Body: 'x',
+        cardCount: '6',
+        items: [{ title: 'Only one', body: 'x' }],
       },
       { mode: 'present' },
     );
-    assert.equal(countCards(html, FILLED), 3);
-    assert.equal(countCards(html, EMPTY), 3);
+    assert.equal(countCards(html, FILLED), 1);
+    assert.match(html, /data-card-count="1"/);
   });
 
   it('a bottom subheading still caps the cards layout at 4', () => {
@@ -134,60 +126,19 @@ describe('icon-card-grid card count', () => {
 });
 
 // ensureIconCards is the inline editor's `ensure` knob: it materializes items[]
-// from a legacy numbered deck so the canvas add/remove/reorder affordances have
-// a stable array to write to (mirrors ensureMembers / ensureLogos).
-describe('ensureIconCards migration', () => {
-  it('folds legacy numbered fields into items[], bounded by cardCount', () => {
-    const content = {
-      cardCount: '3',
-      card1Icon: 'a',
-      card1Title: 'One',
-      card1Body: 'first',
-      card1Link: '#2',
-      card2Icon: 'b',
-      card2Title: 'Two',
-      card2Body: 'second',
-      card3Icon: 'c',
-      card3Title: 'Three',
-      card3Body: 'third',
-      // beyond cardCount: must not leak into items[]
-      card4Title: 'LEAK',
-    };
-    ensureIconCards(content);
-    assert.equal(content.items.length, 3);
-    assert.deepEqual(content.items[0], {
-      icon: 'a',
-      title: 'One',
-      body: 'first',
-      link: '#2',
-    });
-    assert.equal(content.items[2].title, 'Three');
-    assert.ok(
-      !content.items.some((c) => c.title === 'LEAK'),
-      'stale slot leaked',
-    );
-  });
-
-  it('trims trailing blank slots so no invisible orphan items are seeded', () => {
-    const content = {
-      cardCount: '6',
-      card1Title: 'Only one',
-      card1Body: 'x',
-    };
-    ensureIconCards(content);
-    assert.equal(content.items.length, 1);
-  });
-
-  it('leaves an empty array when there is genuinely nothing to fold', () => {
-    const content = { cardCount: '6' };
+// so the canvas add/remove/reorder affordances have a stable array to write to
+// (mirrors ensureMembers / ensureLogos). Folding a legacy numbered deck was its
+// other job until the v7 -> v8 schema step took that over.
+describe('ensureIconCards', () => {
+  it('materializes an empty array when nothing is stored', () => {
+    const content = { title: 'Deck' };
     ensureIconCards(content);
     assert.deepEqual(content.items, []);
   });
 
-  it('is idempotent and never overwrites an existing items[] deck', () => {
+  it('leaves an existing items[] deck exactly as it was', () => {
     const content = {
       items: [{ icon: 'x', title: 'Keep', body: 'me', link: '' }],
-      card1Title: 'IGNORED',
     };
     ensureIconCards(content);
     assert.equal(content.items.length, 1);

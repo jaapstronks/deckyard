@@ -91,7 +91,7 @@ export function isAgentOptOut(def) {
  *
  * Three markers, in order of how often they apply:
  *  - `deprecated: true` / `hidden: true` — the legacy numbered slots
- *    (`card3Title`, `logo7Image`, `row2Block1Body`) that mirror a structured
+ *    (`row2Block1Body` and its text-blocks siblings) that mirror a structured
  *    array the agent already gets. `semantic-projection.js` reads `hidden` the
  *    same way, so this is the existing vocabulary rather than a new one.
  *  - `ai: false` — "this field is not offered to agents" for a live, editable

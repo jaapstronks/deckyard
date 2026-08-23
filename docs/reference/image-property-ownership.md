@@ -78,28 +78,30 @@ rule exists to stop exactly this.
 | image-slide                      | S                  | `alt` (+`altNl`/`altEn`)                                               | `content` (`image-slide.js:242-252`)                                                                                               |
 | image-text                       | **I** (was S+I) ✅ | item `alt` canonical                                                   | folded to `images[i]` on edit (step 2); slide `alt`/`altNl`/`altEn` are read-only fallbacks (item alt is translated as an itemKey) |
 | content-columns                  | N                  | `col{n}Alt`                                                            | per column                                                                                                                         |
-| gallery / team-cards / logo-wall | I                  | `images[i]`/`members[i]`/`logos[i]`.`alt`                              | item (+ numbered mirror synced)                                                                                                    |
+| gallery / team-cards / logo-wall | I                  | `images[i]`/`members[i]`/`logos[i]`.`alt`                              | item (the numbered mirrors went with schema v7 -> v8)                                                                              |
 | quote                            | **S + I** 🚩       | primary `authorImage{n}Alt` (flat) + extras `quotes[i].authorImageAlt` | flat for portraits 1-2 `quote-slide.js:85-99`; item for extra quotes `:108-118`                                                    |
 
 ### role, background, structural layout, media collection
 
-| Property                    | image-slide                                                         | image-text                                                | content-columns    | gallery           | team-cards                      | logo-wall                     | quote                                                   |
-| --------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------- | ------------------ | ----------------- | ------------------------------- | ----------------------------- | ------------------------------------------------------- |
-| `imageRole` (a11y exposure) | S `content`                                                         | S `content` (all cells)                                   | —                  | —                 | —                               | —                             | —                                                       |
-| `background` (slide bg)     | S                                                                   | S (+ `imageBackground` = _different_ axis: image-area bg) | S                  | S                 | S                               | S                             | S                                                       |
-| **structural `layout`**     | ❌ none (legacy `layout` was fit; split into `fit`+`bleed`, step 3) | S `split/corner/duo/rows` (toolbar chip)                  | ❌ (`columnCount`) | S `layout` (grid) | —                               | —                             | —                                                       |
-| media collection            | flat `image`                                                        | **`images[]`** (legacy flat → item 0)                     | flat `col{n}Image` | `images[]`        | `members[]` (+`card{n}` mirror) | `logos[]` (+`logo{n}` mirror) | flat `authorImage{n}` + item `quotes[i].authorImage` 🚩 |
+| Property                    | image-slide                                                         | image-text                                                | content-columns    | gallery           | team-cards  | logo-wall | quote                                                   |
+| --------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------- | ------------------ | ----------------- | ----------- | --------- | ------------------------------------------------------- |
+| `imageRole` (a11y exposure) | S `content`                                                         | S `content` (all cells)                                   | —                  | —                 | —           | —         | —                                                       |
+| `background` (slide bg)     | S                                                                   | S (+ `imageBackground` = _different_ axis: image-area bg) | S                  | S                 | S           | S         | S                                                       |
+| **structural `layout`**     | ❌ none (legacy `layout` was fit; split into `fit`+`bleed`, step 3) | S `split/corner/duo/rows` (toolbar chip)                  | ❌ (`columnCount`) | S `layout` (grid) | —           | —         | —                                                       |
+| media collection            | flat `image`                                                        | **`images[]`** (legacy flat → item 0)                     | flat `col{n}Image` | `images[]`        | `members[]` | `logos[]` | flat `authorImage{n}` + item `quotes[i].authorImage` 🚩 |
 
 `imageRole` and `background` are **uniformly slide-level** — they do not exhibit
 the smell. Only `fit`, `focus`, `alt` (and the portrait `image` in quote) do.
 
 ### Numbered ↔ array duality (a related, separate smell)
 
-`team-cards` (`members[]`), `logo-wall` (`logos[]`), `icon-card-grid`
-(`items[]`) and `text-blocks` (`rows[]`) each keep a legacy numbered mirror
-(`card{n}`, `logo{n}`, `row{n}`). Render reads the **array first**; the
-inspector writes the array and syncs the numbered mirror — so they agree, array
-canonical (`ensureMembers` `descriptors.js:578`, `ensureLogos` `:638`).
+`text-blocks` (`rows[]`) is the last type that still keeps a legacy numbered
+mirror (`row{n}`). `team-cards` (`members[]`), `logo-wall` (`logos[]`) and
+`icon-card-grid` (`items[]`) each kept one too until the **schema v7 -> v8**
+step folded the numbered slots into the array once, at read time, and removed
+the keys — array canonical, with nothing left to sync (`ensureMembers` /
+`ensureLogos` / `ensureIconCards` now only materialize the array for the
+inline editor).
 `text-blocks` is the asymmetric case (since A0.4): the `rows[]` array carries
 **up to 4 rows**, but the numbered mirror is **frozen at 3** (`row1/2/3` is the
 whole vocabulary). A 4th row exists only in array form — it round-trips through
