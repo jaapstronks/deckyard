@@ -130,18 +130,11 @@ export function truncateContentFields(type, content) {
 
   // Card fields (icon-card-grid, team-cards)
   for (let i = 1; i <= 6; i++) {
-    const labelKey = `card${i}Label`;
     const bodyKey = `card${i}Body`;
     const titleKey = `card${i}Title`;
     const nameKey = `card${i}Name`;
     const bylineKey = `card${i}Byline`;
 
-    if (fixed[labelKey])
-      fixed[labelKey] = truncate(
-        fixed[labelKey],
-        MAX_LENGTHS.cardLabel,
-        labelKey,
-      );
     if (fixed[bodyKey])
       fixed[bodyKey] = truncate(fixed[bodyKey], MAX_LENGTHS.cardBody, bodyKey);
     if (fixed[titleKey])
