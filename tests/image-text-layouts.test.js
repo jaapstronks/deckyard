@@ -48,11 +48,10 @@ test('render: layout corner adds is-layout-corner and keeps the split DOM', () =
   const html = DEF.renderHtml(slide({ layout: 'corner' }).content);
   assert.match(html, /is-layout-corner/);
   // Same DOM skeleton as split: media + copy inside .split, so inline-edit
-  // descriptors, morph roles and the autofit runtime keep working.
+  // descriptors and morph roles keep working.
   assert.match(html, /class="split /);
   assert.match(html, /class="media"/);
   assert.match(html, /class="copy"/);
-  assert.match(html, /data-density="auto"/);
 });
 
 test('render: corner mirrors through imageSide like the splits', () => {

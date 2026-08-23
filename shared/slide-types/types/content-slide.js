@@ -43,11 +43,10 @@ export default {
       label: 'Text size',
       type: 'enum',
       required: false,
-      // 'auto' shrinks to the compact size only when the body overflows;
-      // 'comfortable' forces the larger size; 'compact' forces the smaller size.
+      // 'auto' keeps the default sizing; 'compact' steps the body down one
+      // size so more copy fits. Same vocabulary as list-slide's density field.
       options: [
         { value: 'auto', label: 'Auto' },
-        { value: 'comfortable', label: 'Large' },
         { value: 'compact', label: 'Small' },
       ],
     },
@@ -184,18 +183,14 @@ export default {
     const bg = bgClass(content?.background);
     const layout =
       content?.layout === 'one-column' ? 'is-one-col' : 'is-two-col';
-    const rawDensity = content?.density;
-    const density =
-      rawDensity === 'comfortable' || rawDensity === 'compact'
-        ? rawDensity
-        : 'auto';
-    // 'compact' forces the small size up front. 'auto' starts comfortable
-    // and the runtime adds is-compact if the body overflows.
-    const densityClass = density === 'compact' ? ' is-compact' : '';
+    // 'compact' takes the smaller body size; anything else (including the
+    // retired 'comfortable', which only ever meant "do not shrink me") is the
+    // default size.
+    const densityClass = content?.density === 'compact' ? ' is-compact' : '';
     const subheading = renderSubheadingHtml(content, 'subheading', 'subtitle');
     const actionsHtml = renderActionsHtml(content?.actions);
     return `
-        <div class="slide slide-content ${layout}${densityClass} ${bg}" data-density="${density}">
+        <div class="slide slide-content ${layout}${densityClass} ${bg}">
           <div class="slide-inner">
             <h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${escapeHtml(content?.title)}</h2>
             ${subheading}

@@ -26,53 +26,36 @@
 
 .slide-content .body {
   font-family: var(--font-body);
-  /* Comfortable default for two-column layouts. The auto-fit runtime steps
-     down through is-fit-medium → is-compact (or the density field forces a
-     size) when the body would overflow. Every density step multiplies by
+  /* Default body size for two-column layouts; the density field's "Small"
+     (is-compact) steps it down. Every density step multiplies by
      --tf-size-scale (per-field S/M/L, default 1) so the field scale composes
-     on top of whichever density size is active.
-     allowlist: auto-fit body ladder rung — the two-column ladder (28 → 25 → 22)
-     and one-column ladder (36 → 31 → 28) below are a continuous fit mechanism
-     stepped by content-slide-autofit.js, finer than the display scale; snapping
-     them collapses or raises a rung and changes which deck lands where. See
-     slide-roles.md § The allowlist. */
-  font-size: calc(28px * var(--tf-size-scale, 1));
+     on top of whichever density size is active. */
+  font-size: calc(var(--slide-text-lg) * var(--tf-size-scale, 1));
   line-height: var(--slide-leading-normal);
   columns: 2;
   column-gap: var(--slide-space-16);
   column-fill: auto; /* fill left column first, then flow to right */
   flex: 1;
   min-height: 0;
-  /* Safety net: if even the smallest fitted size can't contain the content
-     (e.g. Large floored at medium), clip cleanly at the box edge rather than
-     spilling a cut-off extra column across the slide. */
+  /* A body with more copy than the box holds clips at the box edge rather than
+     spilling a cut-off extra column across the slide. Overflow is the author's
+     signal to trim the copy or pick the smaller size. */
   overflow: hidden;
 }
 
-/* Medium step: between the comfortable default and the compact size. The
-   auto-fit runtime uses this as the first step down, and as the floor for the
-   forced "Large" (comfortable) density so it never shrinks to the small size. */
-.slide-content.is-fit-medium .body {
-  font-size: calc(25px * var(--tf-size-scale, 1));
-}
-
 .slide-content.is-compact .body {
-  font-size: calc(22px * var(--tf-size-scale, 1));
+  font-size: calc(var(--slide-text-md) * var(--tf-size-scale, 1));
 }
 
 .slide-content.is-one-col .body {
   columns: 1;
   column-gap: 0;
   /* One-column content is typically used for “big type” slides. */
-  font-size: calc(36px * var(--tf-size-scale, 1));
-}
-
-.slide-content.is-one-col.is-fit-medium .body {
-  font-size: calc(31px * var(--tf-size-scale, 1));
+  font-size: calc(var(--slide-text-xl) * var(--tf-size-scale, 1));
 }
 
 .slide-content.is-one-col.is-compact .body {
-  font-size: calc(28px * var(--tf-size-scale, 1));
+  font-size: calc(var(--slide-text-lg) * var(--tf-size-scale, 1));
 }
 
 /* In single-column mode, keep text line-length comfortable (tables are excluded). */
@@ -101,14 +84,8 @@
   margin: var(--slide-space-6) 0 var(--slide-space-3);
   color: var(--slide-on-surface);
 }
-.slide-content.is-fit-medium .body .md-subheading {
-  font-size: var(--slide-text-lg);
-  margin: var(--slide-space-5) 0 var(--slide-space-3);
-}
 .slide-content.is-compact .body .md-subheading {
-  /* ladder rung: compact stays under the is-fit-medium rung, which is the
-     ratio-larger step (lg) itself (slide-roles.md) */
-  font-size: var(--slide-text-md);
+  font-size: var(--slide-text-lg);
   margin: var(--slide-space-5) 0 var(--slide-space-3);
 }
 .slide-content .body .md-subheading:first-child {

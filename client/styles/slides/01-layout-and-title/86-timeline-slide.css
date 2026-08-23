@@ -302,23 +302,14 @@
   transform: translateX(-50%);
 }
 
-/* Title. Font-size is the *ceiling*; client-side initTimelineSlides() may shrink it
-   down to --timeline-title-min-px for cards whose title still wraps after the
-   card has grown to its max-width. overflow-wrap stays as the last-resort fallback
-   for truly absurd single words.
-
-   The ceiling *is* the card title role, so the responsive tier below moves the
-   runtime's ceiling with it by setting the role on the card. The runtime reads
-   these two through getComputedStyle(), which substitutes the var() — it sees
-   the resolved px either way. */
+/* Title. The size *is* the card title role, so the responsive tier below moves
+   it with the card. A timeline never gains an extra row, so cards have vertical
+   headroom above and below the track: a long title wraps to two or three lines
+   at a readable size, and overflow-wrap stays as the last-resort fallback for
+   truly absurd single words. */
 .slide-timeline .timeline-title {
-  --timeline-title-max-px: var(--slide-font-size-card-title);
-  /* Floor is deliberately high: the card has vertical room for 2-3 wrapped
-     lines, so long titles should wrap at a readable size rather than shrink. */
-  --timeline-title-min-px: var(--slide-text-sm);
-  --timeline-title-max-lines: 3;
   font-family: var(--font-heading);
-  font-size: var(--timeline-title-max-px);
+  font-size: var(--slide-font-size-card-title);
   line-height: var(--slide-leading-snug);
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);

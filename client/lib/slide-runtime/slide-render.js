@@ -4,9 +4,7 @@ import { getRemovedSlideType } from '../../../shared/slide-types/removed.js';
 import { initFollowInviteSlides } from './follow-invite-runtime.js';
 import { initKpiMetricsSlides } from './kpi-metrics-runtime.js';
 import { initCountdownSlides } from './countdown-runtime.js';
-import { initTimelineSlides } from './timeline-runtime.js';
-import { initContentSlideAutoFit } from './content-slide-autofit.js';
-import { initTeamCardsAutoFit } from './team-cards-autofit.js';
+import { initTeamCardsJustify } from './team-cards-justify.js';
 import { applyThemeVarsToElement } from '../theme/theme.js';
 import { api as defaultApi } from '../api.js';
 import { h } from '../dom.js';
@@ -391,12 +389,10 @@ export function renderSlideElement(
   initCodeAndMath(el);
   if (mode === 'present' || mode === 'follow')
     cleanups.push(initKpiMetricsSlides(el));
-  cleanups.push(initTimelineSlides(el));
-  // Density='auto' content slides shrink to compact when their body overflows.
-  // Skip in pure thumbnail mode: tiny render sizes make measurement noisy
-  // and dynamic adjustment isn't visually useful at thumb scale.
-  if (mode !== 'thumb') cleanups.push(initContentSlideAutoFit(el));
-  if (mode !== 'thumb') cleanups.push(initTeamCardsAutoFit(el));
+  // Uncropped image-blocks get justified rows. Skip in pure thumbnail mode:
+  // tiny render sizes make the measurement noisy and the CSS shared-height
+  // fallback reads fine at thumb scale.
+  if (mode !== 'thumb') cleanups.push(initTeamCardsJustify(el));
   if (slide?.type === 'follow-invite-slide') {
     // Follow-invite slides look blank without QR rendering. For thumbnails we render once
     // without resize/copy handlers to avoid leaking listeners across many thumbnails.
