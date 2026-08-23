@@ -65,6 +65,9 @@ export default {
       // account, and an invented one silently yields an empty player. Agents
       // supply `source` and inherit the configured library.
       ai: false,
+      // The same sentence, said to the reader: an account number is not
+      // document text, so the reader view must not print it as a paragraph.
+      presentational: true,
     },
   ],
   defaults: {

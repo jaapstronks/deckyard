@@ -187,6 +187,12 @@ right now (a bar chart's legend labels, a pie chart's axis names) is not part of
 the slide's meaning. The editor and the canvas already skipped it; a third
 surface that disagreed was how dead values reached the reader as prose.
 
+The same goes for `presentational: true`: a `string` field whose value is
+machine data rather than document text — an icon name, an infrastructure id, a
+serialized coordinate list — says so once, on the field, and travels through
+`/api/slide-types` like the declarations above. A reader that skipped such
+fields by key name would be guessing; this one follows the declaration.
+
 ## Level 2 — core-profile conformance
 
 Level 2 adds the nine tier-1 types and their field contracts:
