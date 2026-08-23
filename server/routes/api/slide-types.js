@@ -23,6 +23,7 @@ import {
 } from '../../../shared/slide-types/inline-edit-companions.js';
 import { slideInstanceKeys } from '../../../shared/slide-types/instance-keys.js';
 import { listPublishedCustomSlideTypes } from '../../storage/custom-slide-types.js';
+import { customSlideTypeKey } from '../../utils/custom-slide-type-runtime.js';
 import { dispatchRoutes } from '../../utils/router.js';
 
 /**
@@ -178,9 +179,10 @@ async function handleSlideTypeList({ storageScope, res, authedUser }) {
   try {
     const customTypes = await listPublishedCustomSlideTypes(storageScope);
     for (const ct of customTypes) {
-      // Use "custom-<slug>" as the type key to avoid collisions with core types
-      const typeKey = `custom-${ct.slug}`;
-      meta[typeKey] = {
+      // "custom-<slug>", from the one place that derives it: what the editor
+      // stores in `slides[].type` has to be the exact key the storage write
+      // seam and the render registry resolve (B129).
+      meta[customSlideTypeKey(ct)] = {
         label: ct.label,
         fields: ct.fields,
         defaults: ct.defaults,

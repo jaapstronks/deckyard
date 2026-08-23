@@ -38,6 +38,7 @@ import { validatePresentationSize } from '../../utils/presentation-limits.js';
 import { fireAndForget } from '../../utils/fire-and-forget.js';
 import { invalidatePresentationCache } from './cache.js';
 import { migratePresentation } from '../../../shared/slide-types/schema-version.js';
+import { buildMergedSlideTypes } from '../../utils/custom-slide-type-runtime.js';
 import { createLogger } from '../../utils/logger.js';
 const log = createLogger('presentations');
 
@@ -94,8 +95,13 @@ export async function createPresentation(storageScope, body) {
   // outside sandbox mode.
   await assertSandboxQuotaForCreate(ctx, body?.ownerEmail);
 
-  // Prepare the full presentation object (with slides, i18n, etc.) before storing
-  const preparedPresentation = await prepareNewPresentation(repoRoot, body);
+  // Prepare the full presentation object (with slides, i18n, etc.) before storing.
+  // A create may carry slides (library insert, import, agent payload), and those
+  // pass the same write seam, so it gets the same organization registry an
+  // update does — see the note on `slideTypes` below.
+  const preparedPresentation = await prepareNewPresentation(repoRoot, body, {
+    slideTypes: await buildMergedSlideTypes(storageScope),
+  });
 
   // Validate size limits before creating
   const validation = validatePresentationSize(preparedPresentation);
@@ -248,14 +254,25 @@ async function updatePresentationUncached(storageScope, id, body, opts) {
   // unpublish, say) erase them. The store treats `undefined` as "leave
   // this column alone", so the key has to stay absent to get there.
   const normalized = { ...body };
+  // Which slide types count as registered is an organization question: the
+  // org's published DB-backed custom types (`custom-<slug>`) are as valid as a
+  // core one, and cannot live in the process-wide registry. The seam takes the
+  // map as an argument, so the facade — which knows the organization — builds
+  // it here, with the same builder every server-side read path uses. Costs one
+  // indexed SELECT, and only on a write that actually carries slides (B129).
+  const touchesSlides = normalized.slides !== undefined || !!normalized.i18n;
+  const slideTypes = touchesSlides
+    ? await buildMergedSlideTypes(storageScope)
+    : undefined;
   if (normalized.slides !== undefined) {
     // `id` rather than `body.id`: the deck being written is the one the route
     // addressed, and a `presentation-id` instance key caches exactly that.
     normalized.slides = normalizeSlides(normalized.slides, {
       presentationId: id,
+      slideTypes,
     });
   }
-  normalizeI18n(normalized);
+  normalizeI18n(normalized, { slideTypes });
 
   // Validate size limits before updating (unless bypassed)
   if (!opts?.skipLimitCheck) {

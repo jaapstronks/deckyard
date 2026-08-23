@@ -180,7 +180,19 @@ function missingTranslationCount(fromVer, toVer) {
   return missing;
 }
 
-export function normalizeI18n(pres) {
+/**
+ * Normalize a deck's i18n block in place: fill in the dominant version, keep
+ * every language version's slides through the write seam, and recompute the
+ * translation-progress counters.
+ *
+ * @param {object} pres - the deck being written
+ * @param {object} [opts]
+ * @param {Record<string, object>} [opts.slideTypes] - the organization's slide
+ *   type registry, forwarded to `normalizeSlides` so a DB-backed custom type
+ *   resolves in every language version too (B129). Omitted falls back to the
+ *   process-wide registry.
+ */
+export function normalizeI18n(pres, { slideTypes } = {}) {
   if (!pres || typeof pres !== 'object') return;
   const raw = pres.i18n;
   if (!raw || typeof raw !== 'object') return;
@@ -239,7 +251,10 @@ export function normalizeI18n(pres) {
     v.title = typeof v.title === 'string' ? v.title : '';
     // The write seam fills in each type's declared instance keys, which is
     // where the follow-invite slide's `presentationId` comes from.
-    v.slides = normalizeSlides(v.slides, { presentationId: pres.id });
+    v.slides = normalizeSlides(v.slides, {
+      presentationId: pres.id,
+      slideTypes,
+    });
     // Strip the stored per-version language keys — the version's own language
     // is the answer.
     v.slides = normalizeFollowInviteSlides(v.slides);
