@@ -86,7 +86,7 @@
   /* Geometry. --card-w is the *minimum* (preferred) card width;
      --card-max-w is the cap when content (long titles) needs more room.
      Cards size to max-content between these bounds so long single words
-     get extra width before the JS auto-shrink kicks in. */
+     get extra width before overflow-wrap has to break them. */
   /* Base gap for counts the per-count blocks below do not cover (1, and 9+). */
   --timeline-gap: var(--slide-space-4);
   --marker-size: 20px;

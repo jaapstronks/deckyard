@@ -374,7 +374,13 @@ export default {
   // Legacy-to-canonical fold, run by the editor on open
   // (shared/slide-types/normalize-content.js): the flat `image` migrates into
   // images[0] and the slide-level alt/focus/imageFit fold into the items.
-  normalizeContent: ensureImageTextImages,
+  // Density 'comfortable' was retired with the shrink layer — it only ever
+  // meant "do not shrink me", which is now the only behaviour — so stored
+  // decks fold to 'auto' and the strict enum validation stops seeing it.
+  normalizeContent(content) {
+    ensureImageTextImages(content);
+    if (content?.density === 'comfortable') content.density = 'auto';
+  },
   defaultsByLang: {
     nl: {
       image: '',

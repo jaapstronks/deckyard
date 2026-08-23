@@ -516,3 +516,29 @@ test('layoutTextColumns declaration is consistent with the schema, JSON-safe', (
     'content-slide uses its layout enum instead',
   );
 });
+
+test('normalizeContent folds the retired density "comfortable" to auto', () => {
+  // The shrink layer took 'comfortable' with it (#932): it only ever meant
+  // "do not shrink me", which is now the only behaviour. renderHtml already
+  // reads a stored 'comfortable' as the default size; this fold makes the
+  // stored value converge on edit so the strict enum validation
+  // (field-types.js validateEnum, deck.js) stops seeing the retired value.
+  for (const def of [DEF, CONTENT_DEF]) {
+    const content = { ...structuredClone(def.defaults), density: 'comfortable' };
+    def.normalizeContent(content);
+    assert.equal(content.density, 'auto', `${def.name || 'type'} folds to auto`);
+    // Idempotent, and 'compact' is left alone.
+    def.normalizeContent(content);
+    assert.equal(content.density, 'auto');
+    const compact = { ...structuredClone(def.defaults), density: 'compact' };
+    def.normalizeContent(compact);
+    assert.equal(compact.density, 'compact');
+  }
+  // The render side stays tolerant of not-yet-migrated decks: a stored
+  // 'comfortable' renders at the default size, not compact.
+  const html = DEF.renderHtml({
+    ...structuredClone(DEF.defaults),
+    density: 'comfortable',
+  });
+  assert.ok(!html.includes('is-compact'));
+});

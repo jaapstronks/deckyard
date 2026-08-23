@@ -179,6 +179,14 @@ export default {
     background: 'lime',
     actions: [],
   },
+  // Legacy-to-canonical fold, run by the editor on open
+  // (shared/slide-types/normalize-content.js): 'comfortable' was retired with
+  // the shrink layer — it only ever meant "do not shrink me", which is now the
+  // only behaviour — so stored decks fold to 'auto' and the strict enum
+  // validation stops seeing the retired value.
+  normalizeContent(content) {
+    if (content?.density === 'comfortable') content.density = 'auto';
+  },
   renderHtml: (content) => {
     const bg = bgClass(content?.background);
     const layout =
