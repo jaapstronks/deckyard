@@ -82,8 +82,7 @@ Apply it at the recurring moments:
 
 - **DOM**: `h()` from `client/lib/dom.js` — no raw `document.createElement`.
 - **Strings**: `t(key, fallback)` from `client/lib/ui-i18n.js` for all
-  user-facing copy; translations in `client/i18n/<locale>/<component>.json`
-  (`client/i18n/en.json` is a stale build artifact, ignore it).
+  user-facing copy; translations in `client/i18n/<locale>/<component>.json`.
 - **Feedback**: `toast` from `client/lib/dom/toast.js`. No `alert()`.
 - **Confirmations**: `confirmModal` / `createTextInput` from
   `client/lib/dom/modal.js`. No native `confirm()`/`prompt()` in new code.
