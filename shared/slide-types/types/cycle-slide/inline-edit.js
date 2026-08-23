@@ -31,11 +31,10 @@ export const inlineEdit = {
   ],
   cards: {
     field: 'items',
-    fieldAliases: ['stages'],
     container: '.cycle-container',
     itemSelector: '.cycle-stage',
   },
-  formText: [...HEADER_TEXT, 'centerLabel', 'items', 'stages'],
+  formText: [...HEADER_TEXT, 'centerLabel', 'items'],
 };
 
 /**

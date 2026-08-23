@@ -311,6 +311,16 @@ export const INVENTORY = {
       'type — which is why rung 3 of the list consolidation had to rekey the ' +
       'List stylesheet from the retired Dutch alias to `list-slide`.',
   },
+  'shared/slide-types/schema-version.js': {
+    kind: specific,
+    gate: 'tests/schema-version.test.js',
+    why:
+      'Migration steps naming the types whose stored shape they fold — the ' +
+      'v6 -> v7 alias fold names the three that stored a collection under ' +
+      '`steps`/`stages`. A migration is a record of a shape that no longer ' +
+      'exists, so its list is closed by history: a type published after the ' +
+      'step can never belong in it, and nothing here goes stale.',
+  },
   'shared/slide-types/convert.js': {
     kind: sparse,
     why:

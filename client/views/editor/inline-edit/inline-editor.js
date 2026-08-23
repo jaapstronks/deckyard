@@ -39,7 +39,6 @@ import { uploadFile } from '../image-library/upload.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createBasicFields } from '../fields/basic.js';
-import { getCollectionKey } from '../../../../shared/slide-types/helpers.js';
 import { resolveItemDefaults } from '../../../../shared/slide-types/item-defaults.js';
 import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
 import { markdownToSafeHtml } from '../../../../shared/markdown.js';
@@ -554,11 +553,7 @@ export function createInlineEditor({
     const slide = getSlide?.();
     if (!slide) return;
     for (const g of descriptor.itemGhosts || []) {
-      const listKey = getCollectionKey(
-        slide.content,
-        g.list,
-        descriptor.cards?.fieldAliases || [],
-      );
+      const listKey = g.list;
       const arr = getByPath(slide.content, listKey);
       if (!Array.isArray(arr)) continue;
       for (const itemEl of root.querySelectorAll(g.item)) {
@@ -740,12 +735,7 @@ export function createInlineEditor({
     if (!slide) return;
     const listField =
       (def.fields || []).find((f) => f.key === cards.field) || {};
-    // Write to the same array the renderer reads (legacy `steps`/`stages` decks).
-    const fieldKey = getCollectionKey(
-      slide.content,
-      cards.field,
-      cards.fieldAliases || [],
-    );
+    const fieldKey = cards.field;
     const arr = Array.isArray(getByPath(slide.content, fieldKey))
       ? getByPath(slide.content, fieldKey)
       : [];

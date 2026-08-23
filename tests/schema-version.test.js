@@ -466,6 +466,61 @@ test('validatePresentation accepts a freshly stamped deck', () => {
   assert.equal(ok, true, `unexpected errors: ${errors.join(', ')}`);
 });
 
+/** A deck at v6 with one slide of `type`, content `content`. */
+function deckAtV6(type, content) {
+  const deck = legacyDeck();
+  deck.schemaVersion = 6;
+  deck.slides = [
+    { id: randomUUID(), type, parentId: null, content, visibility: {} },
+  ];
+  return deck;
+}
+
+test('v6->v7 folds a legacy `steps`/`stages` array into items[] and drops the key', () => {
+  // The read fallback these three types carried since the items[] migration
+  // ("Remove after April 2026") only ever fired when `items` was absent or
+  // empty — exactly the case this step moves the value into it, so the fold is
+  // render-equivalent by construction.
+  for (const [type, legacyKey] of [
+    ['process-slide', 'steps'],
+    ['funnel-slide', 'stages'],
+    ['cycle-slide', 'stages'],
+  ]) {
+    const legacy = [{ title: 'One' }, { title: 'Two' }];
+    const out = migratePresentation(deckAtV6(type, { [legacyKey]: legacy }));
+    const content = out.slides[0].content;
+    assert.deepEqual(content.items, legacy, type);
+    assert.equal(legacyKey in content, false, `${type} keeps ${legacyKey}`);
+  }
+});
+
+test('v6->v7 keeps a populated items[] and still drops the stale alias', () => {
+  // With both stored, the renderer read `items` and the alias was unreachable
+  // on every surface — carrying it forward would only preserve a trap.
+  const out = migratePresentation(
+    deckAtV6('process-slide', {
+      items: [{ title: 'Canonical' }],
+      steps: [{ title: 'Stale' }],
+    }),
+  );
+  const content = out.slides[0].content;
+  assert.deepEqual(content.items, [{ title: 'Canonical' }]);
+  assert.equal('steps' in content, false);
+});
+
+test('v6->v7 leaves other types alone and is idempotent', () => {
+  const other = migratePresentation(
+    deckAtV6('timeline-slide', { steps: [{ title: 'Not mine' }] }),
+  );
+  assert.deepEqual(other.slides[0].content.steps, [{ title: 'Not mine' }]);
+
+  const once = migratePresentation(
+    deckAtV6('cycle-slide', { stages: [{ label: 'A' }] }),
+  );
+  const twice = migratePresentation(structuredClone(once));
+  assert.deepEqual(twice.slides[0].content, once.slides[0].content);
+});
+
 test('validatePresentation rejects an out-of-range schemaVersion', () => {
   const base = newPresentation({});
 

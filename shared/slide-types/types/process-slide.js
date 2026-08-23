@@ -7,20 +7,19 @@ import {
   BACKGROUND_FIELD,
   clampInt,
   getCollectionItems,
-  getCollectionKey,
 } from '../helpers.js';
 
-function stepHtml(step, idx, total, direction, colKey = 'items') {
+function stepHtml(step, idx, total, direction) {
   const title = typeof step?.title === 'string' ? step.title.trim() : '';
   const text = typeof step?.text === 'string' ? step.text.trim() : '';
   const stepNum = idx + 1;
   const isLast = idx === total - 1;
 
   const titleHtml = title
-    ? `<div class="step-title" data-inline-field="${colKey}.${idx}.title" dir="auto">${escapeHtml(title)}</div>`
+    ? `<div class="step-title" data-inline-field="items.${idx}.title" dir="auto">${escapeHtml(title)}</div>`
     : '';
   const textHtml = text
-    ? `<div class="step-text" data-inline-field="${colKey}.${idx}.text" dir="auto">${escapeHtml(text)}</div>`
+    ? `<div class="step-text" data-inline-field="items.${idx}.text" dir="auto">${escapeHtml(text)}</div>`
     : '';
 
   // Arrow between steps (not after the last one)
@@ -29,7 +28,7 @@ function stepHtml(step, idx, total, direction, colKey = 'items') {
     : '';
 
   return `
-    <li class="process-step" data-step="${stepNum}" data-inline-item="${colKey}" data-inline-item-index="${idx}">
+    <li class="process-step" data-step="${stepNum}" data-inline-item="items" data-inline-item-index="${idx}">
       <div class="step-number" aria-hidden="true">${stepNum}</div>
       <div class="step-content">
         ${titleHtml}
@@ -117,40 +116,6 @@ export default {
         },
       ],
     },
-    // DEPRECATED: Remove after April 2026
-    {
-      key: 'steps',
-      label: 'Steps (legacy)',
-      type: 'items',
-      required: false,
-      hidden: true,
-      minItems: 3,
-      maxItems: 7,
-      itemDefaults: {
-        title: 'New step',
-        text: '',
-      },
-      itemFields: [
-        {
-          key: 'title',
-          label: 'Step title',
-          type: 'string',
-          required: true,
-          maxLength: 60,
-          // Sits in a row next to the step-number badge; block alignment would
-          // detach it from the marker. See text-roles.js.
-          role: 'list-item',
-        },
-        {
-          key: 'text',
-          label: 'Step description',
-          type: 'string',
-          required: false,
-          maxLength: 200,
-          role: 'list-item',
-        },
-      ],
-    },
     BACKGROUND_FIELD,
   ],
   defaultsByLang: {
@@ -211,9 +176,7 @@ export default {
 
     const direction =
       content?.direction === 'vertical' ? 'vertical' : 'horizontal';
-    // DEPRECATED: 'steps' fallback - Remove after April 2026
-    const steps = getCollectionItems(content, 'items', ['steps']).slice(0, 7);
-    const colKey = getCollectionKey(content, 'items', ['steps']);
+    const steps = getCollectionItems(content, 'items').slice(0, 7);
     const count = clampInt(steps.length, 3, 7, 4);
 
     // Determine layout mode: 5+ items get multi-row (horizontal) or multi-column (vertical)
@@ -227,7 +190,7 @@ export default {
 
     const stepsHtml = steps
       .slice(0, count)
-      .map((step, idx) => stepHtml(step, idx, count, direction, colKey))
+      .map((step, idx) => stepHtml(step, idx, count, direction))
       .join('');
 
     return `

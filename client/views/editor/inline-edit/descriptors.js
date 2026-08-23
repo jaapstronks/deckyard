@@ -34,11 +34,10 @@
  *     not the column. The spawned edit still goes into `within`.
  *   cards: repeatable-items affordances (add/remove) driven by the schema's
  *     minItems / maxItems / itemDefaults.
- *       { field, fieldAliases?, container, itemSelector, removeAnchor?,
+ *       { field, container, itemSelector, removeAnchor?,
  *         removePlacement?, addAnchor?, addPlacement?, addLabelKey?, addLabel?,
  *         removeLabelKey?, removeLabel?, child? }
- *     `fieldAliases` lists legacy collection keys (`steps`, `stages`) so edits
- *     write to the array the renderer actually reads. `removeAnchor` is an
+ *     `removeAnchor` is an
  *     optional selector inside the item element to pin the remove × to, for
  *     items whose element is a full-height layout column while the visible
  *     card is transform-positioned within it (timeline); `removePlacement`
@@ -126,7 +125,7 @@
  * @property {(content:Object)=>Object} [ensure]
  * @property {Array<Object>} [ghosts]
  * @property {Array<Object>} [itemGhosts]
- * @property {{field:string, fieldAliases?:string[], container:string, itemSelector:string}} [cards]
+ * @property {{field:string, container:string, itemSelector:string}} [cards]
  * @property {{list?:string, photoSelector:string, imageField:string, altField:string, extraFields?:Array<Object>}} [media]
  * @property {{xField:string, yField:string, cropMode:(slide:Object, idx:number)=>('cover'|'contain'), containSelector?:string}} [focus]
  *   Draggable focal-point handle on filled images. Resolves the write target
