@@ -71,7 +71,7 @@ function warn(msg) {
 /**
  * Duplicate keys, found over the raw text because `JSON.parse` keeps only the
  * last of a repeated key and so erases the very evidence of the bug. The i18n
- * files are flat, one-key-per-line maps (as `i18n:merge`/`i18n:sync` emit them),
+ * files are flat, one-key-per-line maps (as `i18n:sync`/`i18n:fill` emit them),
  * so a leading `"key":` on a line reliably marks a top-level key. Keys are
  * compared by their raw source text — locale keys are plain dotted identifiers
  * with no escapes, so a repeat is byte-identical.
@@ -181,27 +181,17 @@ function main() {
       }
     }
 
-    // Validate index.json
+    // index.json is a dead artifact from the pre-modularization layout:
+    // client/lib/ui-i18n.js fetches the per-module files directly and nothing
+    // reads the merged file. Nothing writes one any more either (B130 removed
+    // the three generators), so one on disk is a leftover from an older
+    // checkout — report it so it gets deleted rather than committed.
     const indexPath = path.join(I18N_DIR, lang, 'index.json');
     if (fs.existsSync(indexPath)) {
-      const { data: indexData } = loadJson(indexPath);
-      if (indexData) {
-        const indexKeys = Object.keys(indexData).length;
-        const expectedKeys =
-          langKeys.size + (shared ? Object.keys(shared).length : 0);
-        console.log(`  index.json: ${indexKeys} keys`);
-
-        if (indexKeys !== expectedKeys) {
-          warn(
-            `${lang}/index.json key count (${indexKeys}) doesn't match modules + shared (${expectedKeys})`,
-          );
-        }
-      }
+      warn(
+        `${lang}/index.json: stale artifact, nothing reads or writes it — delete it`,
+      );
     }
-    // No `else`: index.json is a leftover from the pre-modularization layout.
-    // No locale ships one and client/lib/ui-i18n.js fetches the per-module
-    // files directly, so its absence is not an error — it is only checked for
-    // consistency when a locale happens to still have one.
 
     // Check for missing keys (compared to English)
     if (lang !== 'en') {
