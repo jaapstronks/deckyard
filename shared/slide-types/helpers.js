@@ -532,21 +532,6 @@ export function cryptoUuid() {
 }
 
 /**
- * Get card title with back-compat support for legacy 'cardNLabel' field.
- * @param {object} content - Slide content object
- * @param {number} cardIndex - Card index (1-based)
- * @returns {string} Trimmed card title or empty string
- */
-export function getCardTitle(content, cardIndex) {
-  // DEPRECATED: cardNLabel fallback - Remove after April 2026
-  return String(
-    content?.[`card${cardIndex}Title`] ||
-      content?.[`card${cardIndex}Label`] ||
-      '',
-  ).trim();
-}
-
-/**
  * A slide's repeating-item collection, or an empty array.
  *
  * There is one key per collection. This used to take a list of legacy fallback
