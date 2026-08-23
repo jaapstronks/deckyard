@@ -524,9 +524,16 @@ test('normalizeContent folds the retired density "comfortable" to auto', () => {
   // stored value converge on edit so the strict enum validation
   // (field-types.js validateEnum, deck.js) stops seeing the retired value.
   for (const def of [DEF, CONTENT_DEF]) {
-    const content = { ...structuredClone(def.defaults), density: 'comfortable' };
+    const content = {
+      ...structuredClone(def.defaults),
+      density: 'comfortable',
+    };
     def.normalizeContent(content);
-    assert.equal(content.density, 'auto', `${def.name || 'type'} folds to auto`);
+    assert.equal(
+      content.density,
+      'auto',
+      `${def.name || 'type'} folds to auto`,
+    );
     // Idempotent, and 'compact' is left alone.
     def.normalizeContent(content);
     assert.equal(content.density, 'auto');
