@@ -446,11 +446,11 @@ enforces the same rule on write). Used by the built-in Custom HTML slide.
 
 ### Media Fields
 
-| Type     | Description                                                                                                                                                                                                                                                      | Extra Properties                                     |
-| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| `image`  | Image picker                                                                                                                                                                                                                                                     | `presetSource` (`'backgrounds'` or `'partnerlogos'`) |
-| `images` | Multiple images (gallery)                                                                                                                                                                                                                                        | `maxCount`                                           |
-| `url`    | A hyperlink target (http(s), mailto, or root-/protocol-relative). Validated + allowlisted (`javascript:`/`data:` rejected via `safeHref`); projects as an `<a href>` in the reader/reflow view. Not translatable, so link targets are never sent to translation. | `maxLength`, `required`, `placeholder`, `helpText`   |
+| Type     | Description                                                                                                                                                                                                                                                      | Extra Properties                                   |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `image`  | Image picker                                                                                                                                                                                                                                                     | `presetSource` (`'backgrounds'`)                   |
+| `images` | Multiple images (gallery), stored as an array of URL strings. No core type declares it — it is an extension point for custom types (see below).                                                                                                                  | `maxItems`, `presetSource` (`'partnerlogos'`)      |
+| `url`    | A hyperlink target (http(s), mailto, or root-/protocol-relative). Validated + allowlisted (`javascript:`/`data:` rejected via `safeHref`); projects as an `<a href>` in the reader/reflow view. Not translatable, so link targets are never sent to translation. | `maxLength`, `required`, `placeholder`, `helpText` |
 
 ### Structured Fields
 
@@ -470,7 +470,8 @@ content.
 
 ### Preset Sources
 
-For image fields, `presetSource` controls which presets appear:
+`presetSource` controls which presets appear. Each field type reads exactly one
+source — they are not interchangeable:
 
 ```javascript
 {
@@ -480,11 +481,40 @@ For image fields, `presetSource` controls which presets appear:
 }
 
 {
-  key: 'logo',
-  type: 'image',
-  presetSource: 'partnerlogos',  // Shows partner logo presets
+  key: 'partners',
+  type: 'images',
+  presetSource: 'partnerlogos',  // Shows the partner logo presets as checkboxes
 }
 ```
+
+Without a `presetSource` the field simply shows no preset section.
+
+### The `images` field type
+
+`images` holds a flat array of image URLs and nothing else — no alt text, no
+caption. No core slide type declares it (logo-wall moved to `items` in the
+v7 → v8 sweep), so it exists as an **extension point**: it is one of the six
+field types the custom-slide-type editor offers, and a file-based custom type
+may declare it too.
+
+Pick it when the content genuinely is "a bag of images". A collection that needs
+anything _about_ each image — alt text, a name, a link — declares `items` with
+those sub-fields instead, which is what `logo-wall-slide` and `gallery-slide`
+now do.
+
+**What each authoring surface can declare** differs, so the extra properties in
+the table above are not reachable everywhere:
+
+| Declared in                               | `maxItems` | `presetSource` |
+| ----------------------------------------- | ---------- | -------------- |
+| a core type or `custom/slide-types/*.js`  | yes        | yes            |
+| Settings → Slide Types (stored in the DB) | no         | no             |
+
+The DB-backed path validates each field down to `key`, `type`, `label` plus
+`required`/`placeholder`/`helpText` (`validateFields` in
+`server/storage/custom-slide-types.js`), and only its `items` branch keeps
+`minItems`/`maxItems`. An `images` field authored there therefore always renders
+unbounded and without presets.
 
 ### Form layout (`formLayout`)
 
