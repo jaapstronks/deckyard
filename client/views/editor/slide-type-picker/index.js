@@ -534,11 +534,7 @@ export function createSlideTypePicker({
         }
       }
       if (nowPinned) {
-        addToStrip(
-          'pinned',
-          t('editor.slideTypeGroup.pinned', 'Pinned'),
-          type,
-        );
+        addToStrip('pinned', t('editor.slideTypeGroup.pinned', 'Pinned'), type);
         removeFromStrip('frequent', type);
       } else {
         removeFromStrip('pinned', type);
@@ -697,10 +693,7 @@ export function createSlideTypePicker({
       toggle.append(
         h('span', {
           class: 'ps-surface-label',
-          text: t(
-            'editor.slideTypePicker.surface.label',
-            'Preview background',
-          ),
+          text: t('editor.slideTypePicker.surface.label', 'Preview background'),
         }),
       );
 

@@ -14,6 +14,7 @@
  *  5. every fallback spells the en/ value for its key — one key, one English
  *     string, wherever it is written down
  *  6. an ellipsis is the single glyph `…`, in code and in every locale
+ *  7. en/ holds every key any other locale holds — the reference is a superset
  *
  * Run with: node --test tests/i18n-coverage.test.js
  */
@@ -173,6 +174,35 @@ describe('i18n coverage', () => {
       [],
       'Descriptor pairs are spelled `<x>Key: …, <x>: …` — rename the `<x>Default` half:\n' +
         offenders.map((o) => `  ${o.replace(repoRoot + '/', '')}`).join('\n'),
+    );
+  });
+
+  it('en/ holds every key any other locale holds', async () => {
+    // en/ is the reference: it settles a key's English *and*, since B137, which
+    // module file the key lives in. A key a locale translates while en/ has
+    // never heard of it is therefore drift in the reference itself — either
+    // English is missing a string it owns, or the key is dead and the locale is
+    // carrying a translation of nothing. `i18n-fill.js en` closes the first case
+    // (it seeds from the registry for the runtime-built families); the second
+    // has to be deleted by hand, which is what this failure asks for.
+    const locales = (await fs.readdir(i18nDir, { withFileTypes: true }))
+      .filter((e) => e.isDirectory())
+      .map((e) => e.name)
+      .filter((name) => name !== 'en');
+    const en = await loadLocale(i18nDir, 'en');
+    const extra = [];
+    for (const locale of locales) {
+      for (const key of Object.keys(await loadLocale(i18nDir, locale))) {
+        if (!(key in en)) extra.push(`client/i18n/${locale}/  ${key}`);
+      }
+    }
+    assert.deepStrictEqual(
+      extra.sort(),
+      [],
+      `${extra.length} key(s) exist in a locale but not in en/.\n` +
+        'Run `node scripts/i18n-fill.js en` to add the ones the code still\n' +
+        'uses; delete the rest from the locale — they render nothing:\n' +
+        extra.join('\n'),
     );
   });
 

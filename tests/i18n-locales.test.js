@@ -166,3 +166,27 @@ test('no stray top-level file survives in client/i18n/', () => {
     .sort();
   assert.deepEqual(loose, ['manifest.json']);
 });
+
+test('every locale file lists its keys in sorted order', () => {
+  // `i18n-fill.js` and `i18n-sync.js` both write sorted, so an unsorted file
+  // gets reordered wholesale the first time a tool touches it and the real
+  // change disappears into a few hundred lines of churn. en/ and nl/ are the
+  // hand-edited pair, so they are the two that drifted; the machine-written
+  // locales were already sorted.
+  const offenders = [];
+  for (const locale of LOCALE_IDS) {
+    for (const moduleName of MODULES) {
+      const file = path.join(i18nDir, locale, `${moduleName}.json`);
+      if (!fs.existsSync(file)) continue;
+      const keys = Object.keys(JSON.parse(fs.readFileSync(file, 'utf8')));
+      const sorted = [...keys].sort();
+      if (keys.join('\n') !== sorted.join('\n'))
+        offenders.push(`client/i18n/${locale}/${moduleName}.json`);
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `${offenders.length} locale file(s) are not key-sorted:\n${offenders.join('\n')}`,
+  );
+});
