@@ -24,11 +24,11 @@
  * server decides what to allow, and the two disagreeing is how a user gets
  * shown a button whose request is refused (or, worse, is refused a button
  * whose request would have been allowed). The role ladder itself is not
- * restated here — `hasOrganizationRole()` in
- * server/storage/user-organizations/memberships.js is the one implementation.
+ * restated on either side — both import `hasOrganizationRole()` from
+ * `shared/organization-role.js`, the one implementation.
  */
 
-import { hasOrganizationRole } from '../storage/user-organizations/index.js';
+import { hasOrganizationRole } from '../../shared/organization-role.js';
 
 /**
  * Whether the user is an admin *of the organization they are acting in*.
