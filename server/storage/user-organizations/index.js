@@ -3,14 +3,14 @@
  *
  * Facade that preserves the historical import surface. The implementation is
  * split by domain:
- * - `user-organizations/memberships.js`: organization roles, designer capability,
- *   and membership CRUD (add/remove/list members, roles, ownership transfer).
+ * - `user-organizations/memberships.js`: designer capability and membership
+ *   CRUD (add/remove/list members, roles, ownership transfer). The role ladder
+ *   itself is not storage — it lives in `shared/organization-role.js`, which
+ *   client and server both import.
  * - `user-organizations/organizations.js`: organization CRUD.
  */
 
 export {
-  WORKSPACE_ROLES,
-  hasOrganizationRole,
   hasDesignerCapability,
   updateMemberDesigner,
   getMembership,

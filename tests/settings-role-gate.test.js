@@ -38,8 +38,10 @@ globalThis.Element = dom.window.Element;
 globalThis.CustomEvent = dom.window.CustomEvent;
 globalThis.Event = dom.window.Event;
 
-const { isOrganizationAdmin, getOrganizationRole, hasOrganizationRole } =
+const { isOrganizationAdmin, getOrganizationRole } =
   await import('../client/lib/user/organization-role.js');
+const { WORKSPACE_ROLES, hasOrganizationRole } =
+  await import('../shared/organization-role.js');
 const { createSettingsSidebar } =
   await import('../client/views/settings/settings-sidebar.js');
 
@@ -121,39 +123,50 @@ test('an unknown role is treated as no role at all', () => {
   );
 });
 
-test('hasOrganizationRole ranks the roles like the server does', () => {
+test('the shared ladder ranks the roles', () => {
   assert.equal(hasOrganizationRole('owner', 'admin'), true);
   assert.equal(hasOrganizationRole('admin', 'admin'), true);
   assert.equal(hasOrganizationRole('member', 'admin'), false);
   assert.equal(hasOrganizationRole(null, 'member'), false);
 });
 
-test('the client ladder is still the server ladder', async () => {
-  // organization-role.js copies WORKSPACE_ROLES because the client cannot import
-  // from server/. A copy drifts, and this one drifts *open*: a role the client
-  // does not recognise reads as "no role", which falls back to the bare isAdmin
-  // check the gate exists to narrow. So pin the mirror rather than the comment.
-  const { WORKSPACE_ROLES, hasOrganizationRole: serverHasRole } =
-    await import('../server/storage/user-organizations/memberships.js');
+test('there is one ladder, and the client reads that one', async () => {
+  // Before B157 this test compared two implementations pair by pair, because
+  // the client kept its own copy of WORKSPACE_ROLES and it drifted *open*: a
+  // role the client did not recognise read as "no role", which falls back to
+  // the bare isAdmin check the gate exists to narrow. There is one ladder now
+  // (shared/organization-role.js), so what needs pinning is that nobody
+  // declares a second one — a fresh copy would pass any value comparison.
+  const { readFile } = await import('node:fs/promises');
+  const { fileURLToPath } = await import('node:url');
+  const root = fileURLToPath(new URL('..', import.meta.url));
+  const declarations = [];
+  for (const file of [
+    'shared/organization-role.js',
+    'client/lib/user/organization-role.js',
+    'server/utils/organization-role.js',
+    'server/storage/user-organizations/memberships.js',
+    'client/views/settings/organization-members/permissions.js',
+    'client/views/settings/organization-profile/permissions.js',
+  ]) {
+    const source = await readFile(root + file, 'utf8');
+    if (/(?:const|let|var)\s+WORKSPACE_ROLES\s*=/.test(source)) {
+      declarations.push(file);
+    }
+  }
+  assert.deepEqual(
+    declarations,
+    ['shared/organization-role.js'],
+    'the role ladder is declared outside shared/organization-role.js',
+  );
 
+  // The role names the client recognises are the ladder's, not a subset.
   for (const role of WORKSPACE_ROLES) {
     assert.equal(
       getOrganizationRole({ organizationRole: role }),
       role,
-      `the client does not know the membership role "${role}" — update ` +
-        'WORKSPACE_ROLES in client/lib/user/organization-role.js',
+      `the client does not know the membership role "${role}"`,
     );
-  }
-
-  // Same ranking for every pair, not just the ones the gate happens to ask for.
-  for (const role of WORKSPACE_ROLES) {
-    for (const required of WORKSPACE_ROLES) {
-      assert.equal(
-        hasOrganizationRole(role, required),
-        serverHasRole(role, required),
-        `client and server disagree on whether "${role}" satisfies "${required}"`,
-      );
-    }
   }
 });
 
