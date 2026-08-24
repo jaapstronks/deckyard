@@ -11,10 +11,10 @@ import {
   requirePermission,
   v1MethodNotAllowed,
   withV1ErrorHandler,
-  parsePaginationParams,
   apiSuccess,
   apiError,
 } from './middleware.js';
+import { parsePaginationParams } from '../../../utils/request-validators.js';
 
 // ============================================================
 // ROUTE HANDLERS
@@ -197,7 +197,7 @@ async function handleImageLibrary(ctx) {
   const category = (url.searchParams.get('category') || '')
     .trim()
     .toLowerCase();
-  const { limit, offset } = parsePaginationParams(url);
+  const { limit, offset } = parsePaginationParams(url.searchParams);
 
   const all = await listImageLibrary(storageScope);
   const items = Array.isArray(all) ? all : [];

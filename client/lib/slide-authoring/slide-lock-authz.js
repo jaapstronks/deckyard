@@ -8,6 +8,7 @@
  */
 
 import { isOwnerOrCreator } from '../../../shared/identity-match.js';
+import { isOrganizationAdmin } from '../user/organization-role.js';
 
 /**
  * Check if a user is the author of a presentation.
@@ -20,7 +21,7 @@ import { isOwnerOrCreator } from '../../../shared/identity-match.js';
  */
 export function isPresentationAuthor(user, pres) {
   if (!pres || typeof pres !== 'object') return false;
-  if (user?.isAdmin) return true;
+  if (isOrganizationAdmin(user)) return true;
   return isOwnerOrCreator(user, pres);
 }
 

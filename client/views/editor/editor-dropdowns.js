@@ -5,6 +5,7 @@
 
 import { setupShareDropdown } from './share-dropdown.js';
 import { setupExportDropdown } from './export-dropdown.js';
+import { isOrganizationAdmin } from '../../lib/user/organization-role.js';
 
 /**
  * Create and configure editor dropdowns (share + export)
@@ -54,7 +55,7 @@ export function createEditorDropdowns({
     editorState,
     currentUser: user,
     currentUserEmail: user?.email,
-    isAdmin: user?.isAdmin,
+    isAdmin: isOrganizationAdmin(user),
   });
 
   const detach = () => {

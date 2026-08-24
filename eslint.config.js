@@ -155,6 +155,28 @@ const overlayClassRestriction = {
     'docs/developer/linting.md).',
 };
 
+// `user.isAdmin` is the **instance-wide** role from `users.role`; it says
+// nothing about the organization the session is currently in. Reading it raw
+// for a UI gate means an admin of organization A keeps every destructive
+// affordance the moment they switch to organization B — exactly what
+// `isOrganizationAdmin()` in client/lib/user/organization-role.js exists to
+// close (B144). Ten gates read it raw against four that used the helper, so
+// the drift was the majority, not the exception.
+//
+// MemberExpression only, so the shapes that are *not* a gate stay legal:
+// `{ isAdmin }` destructuring, a jsdoc `@param {boolean} isAdmin`, and a
+// prop-threading `isAdmin: isOrganizationAdmin(user)` all pass. The one
+// exemption is organization-role.js itself, where the helper reads the
+// instance flag before narrowing it.
+const instanceAdminRestriction = {
+  selector: "MemberExpression[property.name='isAdmin']",
+  message:
+    'Gate UI on isOrganizationAdmin(user) from ' +
+    'client/lib/user/organization-role.js, not on the raw instance-wide ' +
+    '`user.isAdmin` — the latter follows an admin into workspaces where they ' +
+    'are a plain member (B144, docs/developer/linting.md).',
+};
+
 // A background promise whose rejection lands in an empty `.catch(() => {})`
 // is the one failure you cannot debug: no log line, no stack, no trace that
 // anything went wrong. `fireAndForget(promise, label)`
@@ -251,6 +273,7 @@ export default [
         'error',
         ...clientRestrictedSyntax,
         overlayClassRestriction,
+        instanceAdminRestriction,
       ],
     },
   },
@@ -262,7 +285,26 @@ export default [
   {
     files: ['client/lib/dom/modal.js'],
     rules: {
-      'no-restricted-syntax': ['error', ...clientRestrictedSyntax],
+      'no-restricted-syntax': [
+        'error',
+        ...clientRestrictedSyntax,
+        instanceAdminRestriction,
+      ],
+    },
+  },
+
+  // organization-role.js is where the instance flag is *allowed* to be read:
+  // isOrganizationAdmin() starts from `user.isAdmin` and narrows it with the
+  // membership role. Every other client restriction stays in force (rule
+  // entries replace per rule name, hence the re-statement).
+  {
+    files: ['client/lib/user/organization-role.js'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...clientRestrictedSyntax,
+        overlayClassRestriction,
+      ],
     },
   },
 

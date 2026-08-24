@@ -109,12 +109,23 @@ export function createEmailTemplatesPanel({ user }) {
     class: 'field-label',
     text: t('settings.admin.emailTemplates.preview', 'Preview'),
   });
-  const previewContent = h('div', {
-    class: 'email-preview-content',
+  // An iframe, not a div: `buildPreviewHtml()` returns a whole document
+  // (`<!DOCTYPE html><html><head>…<body style="…">`), and assigning that to
+  // `innerHTML` makes the parser throw away the wrapper — including the
+  // `<body style>` carrying EMAIL_STYLES.body — and render the remains under
+  // the settings page's own cascade. So the old preview was not showing the
+  // email. `sandbox=""` (every restriction on: no scripts, no forms, no
+  // same-origin, no top-level navigation) is what makes rendering it verbatim
+  // safe without a sanitizer stripping the markup the templates are made of.
+  const previewFrame = h('iframe', {
+    class: 'email-preview-frame',
+    sandbox: '',
+    referrerpolicy: 'no-referrer',
+    title: t('settings.admin.emailTemplates.preview', 'Preview'),
     style:
-      'border: 1px solid var(--border-color); border-radius: 4px; padding: 16px; background: white; max-height: 400px; overflow: auto;',
+      'border: 1px solid var(--border-color); border-radius: 4px; background: white; width: 100%; height: 400px; display: block;',
   });
-  previewContainer.append(previewTitle, previewContent);
+  previewContainer.append(previewTitle, previewFrame);
 
   // Action buttons
   const actions = h('div', {
@@ -174,7 +185,7 @@ export function createEmailTemplatesPanel({ user }) {
     testBtn,
     saveBtn,
     previewContainer,
-    previewContent,
+    previewFrame,
   };
 
   const state = createState(elements);

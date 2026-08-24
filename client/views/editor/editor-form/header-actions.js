@@ -23,6 +23,7 @@ import { convertSlideWithConfirm } from '../convert-slide-action.js';
 import { openJsonDebugModal } from '../modals/json-debug-modal.js';
 import { openSaveToLibraryModal } from '../modals/save-to-library-modal.js';
 import { readPreferredLlmVendor } from '../../../lib/net/llm-vendor.js';
+import { isOrganizationAdmin } from '../../../lib/user/organization-role.js';
 import { icon } from '../../../lib/dom/icons.js';
 
 /**
@@ -337,7 +338,7 @@ export function buildHeaderActions({
       },
     }),
     // Admin-only: View/edit raw JSON
-    user?.isAdmin
+    isOrganizationAdmin(user)
       ? h('button', {
           class: 'dropdown-item',
           type: 'button',

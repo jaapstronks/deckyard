@@ -17,11 +17,11 @@ import {
   withV1ErrorHandler,
   getPresentationWithAccess,
   readApiV1Body,
-  parsePaginationParams,
   apiSuccess,
   apiCreated,
   apiError,
 } from './middleware.js';
+import { parsePaginationParams } from '../../../utils/request-validators.js';
 import { getNonNegativeNumber } from '../../../utils/request-validators.js';
 
 /**
@@ -58,7 +58,7 @@ async function handleList(ctx) {
   if (!requirePermission(ctx, 'read')) return true;
 
   const themeId = url.searchParams.get('themeId') || '';
-  const { limit, offset } = parsePaginationParams(url);
+  const { limit, offset } = parsePaginationParams(url.searchParams);
 
   const { items: allItems } = await listOrganizationLibrary(storageScope, {
     themeId,
