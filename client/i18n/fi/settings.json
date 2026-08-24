@@ -614,7 +614,7 @@
   "settings.slideTypes.fields.type.markdown": "Markdown",
   "settings.slideTypes.fields.type.string": "Merkkijono",
   "settings.slideTypes.fields.typeLabel": "Tyyppi",
-  "settings.slideTypes.group.basic": "Perus",
+  "settings.slideTypes.group.basic": "Perusdiat",
   "settings.slideTypes.group.data": "Data",
   "settings.slideTypes.group.interaction": "Vuorovaikutus",
   "settings.slideTypes.group.layouts": "Asettelut",

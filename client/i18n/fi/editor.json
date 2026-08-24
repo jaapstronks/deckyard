@@ -735,7 +735,7 @@
   "editor.slideTypeDesc.icon-card-grid-slide": "Kortit, joissa on kuvake ja nimike",
   "editor.slideTypeDesc.image-slide": "Yksi koko dian täyttävä kuva",
   "editor.slideTypeDesc.image-text-slide": "Kuva tekstin vierellä",
-  "editor.slideTypeDesc.kpi-metrics-slide": "Suuria lukuja ja niiden muutokset",
+  "editor.slideTypeDesc.kpi-metrics-slide": "Suuret luvut muutoksineen",
   "editor.slideTypeDesc.likert-slide": "Arvio samaa mieltä / eri mieltä",
   "editor.slideTypeDesc.likert-slider-slide": "Arvio liukusäätimellä 1–10",
   "editor.slideTypeDesc.list-slide": "Luettelo luettelomerkein tai numeroin",

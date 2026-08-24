@@ -619,7 +619,7 @@
   "settings.slideTypes.group.interaction": "Interaktion",
   "settings.slideTypes.group.layouts": "Layouter",
   "settings.slideTypes.group.media": "Media",
-  "settings.slideTypes.group.other": "Övrigt",
+  "settings.slideTypes.group.other": "Övriga",
   "settings.slideTypes.help.bgClass": "Gör ett bakgrundsval till motsvarande bakgrundsklass på sliden.",
   "settings.slideTypes.help.each": "Upprepar blocket för varje post i ett items-fält.",
   "settings.slideTypes.help.esc": "Fältets värde, HTML-escapat.",
