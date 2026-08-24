@@ -9,8 +9,21 @@
       "count": 1
     }
   },
+  "client/app.js": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
   "client/embed-sdk.js": {
+    "no-restricted-syntax": {
+      "count": 6
+    },
     "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "client/go.js": {
+    "no-restricted-syntax": {
       "count": 1
     }
   },
@@ -19,8 +32,58 @@
       "count": 1
     }
   },
+  "client/lib/collab/live-doc-binder.js": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "client/lib/collab/presence-session.js": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "client/lib/collab/textarea-merge.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
   "client/lib/comments/mention-autocomplete.js": {
     "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "client/lib/dom.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "client/lib/dom/head-assets.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/lib/dom/in-view.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/lib/dom/modal.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "client/lib/dom/pointer-sortable.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/lib/dom/toast.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/lib/format/analytics-tracker.js": {
+    "no-restricted-syntax": {
       "count": 1
     }
   },
@@ -29,13 +92,128 @@
       "count": 1
     }
   },
+  "client/lib/net/present-channel.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
   "client/lib/net/reconnect.js": {
     "no-useless-assignment": {
       "count": 1
     }
   },
+  "client/lib/net/sse.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
   "client/lib/net/stock-media.js": {
     "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "client/lib/qa/questions-feed.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/lib/slide-collections/collections-bar.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/lib/slide-library/edit-modal.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/lib/slide-library/picker.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "client/lib/slide-runtime/countdown-runtime.js": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "client/lib/slide-runtime/follow-invite-runtime.js": {
+    "no-restricted-syntax": {
+      "count": 10
+    }
+  },
+  "client/lib/slide-runtime/kpi-metrics-runtime.js": {
+    "no-restricted-syntax": {
+      "count": 7
+    }
+  },
+  "client/lib/slide-runtime/prism-katex-loader.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/lib/slide-runtime/slide-render.js": {
+    "no-restricted-syntax": {
+      "count": 12
+    }
+  },
+  "client/lib/slide-runtime/team-cards-justify.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "client/lib/slide-runtime/video-layer.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "client/lib/state/maintenance.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/lib/state/undo-manager.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/lib/theme/theme.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "client/lib/theme/ui-mode.js": {
+    "no-restricted-syntax": {
+      "count": 5
+    }
+  },
+  "client/lib/ui-i18n.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "client/lib/user/notification-bell.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "client/lib/user/user-menu.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "client/lib/util/clipboard.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/lib/util/debug.js": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "client/views/analytics/report-modal.js": {
+    "no-restricted-syntax": {
       "count": 1
     }
   },
@@ -49,23 +227,110 @@
       "count": 1
     }
   },
+  "client/views/editor/ai-added-highlight.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/editor/ai-append.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
   "client/views/editor/bootstrap.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    },
     "no-useless-assignment": {
       "count": 2
     }
   },
+  "client/views/editor/comments-panel-sse.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "client/views/editor/comments-panel.js": {
+    "no-restricted-syntax": {
+      "count": 5
+    }
+  },
   "client/views/editor/deck-grid.js": {
+    "no-restricted-syntax": {
+      "count": 6
+    },
     "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "client/views/editor/deck-review-openers.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/editor/editor-cleanup.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/editor/editor-controller.js": {
+    "no-restricted-syntax": {
+      "count": 25
+    }
+  },
+  "client/views/editor/editor-form.js": {
+    "no-restricted-syntax": {
       "count": 1
     }
   },
   "client/views/editor/editor-form/background-section.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    },
     "no-useless-assignment": {
       "count": 1
     }
   },
+  "client/views/editor/editor-lifecycle.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "client/views/editor/export-dropdown.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/editor/fields/background.js": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "client/views/editor/fields/csv-grid.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
   "client/views/editor/fields/icon-picker-modal.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    },
     "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "client/views/editor/find-shortcut.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/editor/if-match-revision.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/editor/image-library/detail.js": {
+    "no-restricted-syntax": {
       "count": 1
     }
   },
@@ -74,29 +339,543 @@
       "count": 1
     }
   },
+  "client/views/editor/image-library/picker.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "client/views/editor/imagekit-picker.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "client/views/editor/inline-edit/focus-drag.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "client/views/editor/inline-edit/inline-editor.js": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "client/views/editor/inline-edit/markdown-modal.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/editor/layout-switcher.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "client/views/editor/live-edits/index.js": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "client/views/editor/modals/analyze-modal.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/editor/modals/description-modal.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "client/views/editor/modals/json-debug-modal.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/editor/modals/preview-lightbox.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "client/views/editor/modals/save-to-library-modal.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/editor/modals/settings-modal/toggles.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/editor/modals/slide-type-modal.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/editor/modals/title-modal.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "client/views/editor/modals/translate-field-modal.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/editor/modals/translate-slide-modal.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/editor/notes-strip.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "client/views/editor/presence/presence-ui.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/editor/publish-export/publish-modal.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "client/views/editor/publish-export/publish.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/editor/remote-refresh.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/editor/responsive-drawers.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/editor/save-manager.js": {
+    "no-restricted-syntax": {
+      "count": 6
+    }
+  },
+  "client/views/editor/search-focus.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "client/views/editor/share-dropdown.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "client/views/editor/slide-list.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "client/views/editor/slide-list/context-menu.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/editor/slide-list/drag-handlers.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/editor/slide-list/insert-row.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/editor/slide-list/nested-helpers.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/editor/slide-list/render-item.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/editor/slide-lock-manager.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
   "client/views/editor/slide-type-picker-keyboard.js": {
     "no-useless-assignment": {
       "count": 1
     }
   },
+  "client/views/editor/slide-type-picker/index.js": {
+    "no-restricted-syntax": {
+      "count": 5
+    }
+  },
   "client/views/editor/slide-type-picker/library-strip.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    },
     "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "client/views/editor/slide-type-picker/peek.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "client/views/editor/slide-update-handler.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "client/views/editor/slide-url.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/editor/slides-panel.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "client/views/editor/title-controller.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "client/views/editor/topbar.js": {
+    "no-restricted-syntax": {
+      "count": 7
+    }
+  },
+  "client/views/editor/topbar/language-mode.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/editor/topbar/more-menu.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/follow/i18n.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/follow/index.js": {
+    "no-restricted-syntax": {
+      "count": 7
+    }
+  },
+  "client/views/follow/interactions.js": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "client/views/follow/interactions/storage.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/follow/layout.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "client/views/follow/qa.js": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "client/views/follow/render-slide.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/follow/translating-poll.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "client/views/list/bulk-action-bar.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/list/index.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "client/views/list/modals/creation-view/content-compose.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/list/modals/creation-view/index.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/list/modals/creation-view/library-compose.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/list/onboarding-checklist.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/list/presentation-card.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "client/views/list/theme-picker-row.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/list/view-routing.js": {
+    "no-restricted-syntax": {
       "count": 1
     }
   },
   "client/views/list/views/home-view.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    },
     "no-useless-assignment": {
       "count": 2
     }
   },
+  "client/views/list/views/sandbox-examples.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/login.js": {
+    "no-restricted-syntax": {
+      "count": 6
+    }
+  },
+  "client/views/magic-login.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/notes-join.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "client/views/notes/index.js": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "client/views/notes/session-sse.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "client/views/present-window.js": {
+    "no-restricted-syntax": {
+      "count": 6
+    }
+  },
+  "client/views/presenter/chrome-autohide.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/presenter/console-timer.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "client/views/presenter/console-toggle.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "client/views/presenter/console.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "client/views/presenter/edge-hint.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "client/views/presenter/fullscreen.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
   "client/views/presenter/index.js": {
+    "no-restricted-syntax": {
+      "count": 9
+    },
     "no-useless-assignment": {
       "count": 1
+    }
+  },
+  "client/views/presenter/interaction-controls.js": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "client/views/presenter/interactions.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "client/views/presenter/session-state.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "client/views/presenter/session.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "client/views/presenter/stage-scaffold.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/presenter/stage-scale.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "client/views/presenter/start-curtain.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "client/views/presenter/tools-menu.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/presenter/translate-fill.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/settings/admin-users/add-modal.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/settings/admin-users/edit-modal.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/settings/api-keys/create-modal.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/settings/api-keys/mcp-connect.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/settings/index.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/settings/organization-members/invite-modal.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/settings/organization-profile/delete-modal.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/settings/slide-type-editor/preview.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/settings/tabs/admin-tab.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/settings/tabs/export-tab.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "client/views/settings/tabs/integrations-tab.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/settings/tabs/themes-tab.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/settings/theme-editor/index.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/settings/theme-editor/preview.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/share-viewer/guest-join.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/share-viewer/index.js": {
+    "no-restricted-syntax": {
+      "count": 2
     }
   },
   "client/views/share-viewer/topbar.js": {
     "no-useless-assignment": {
       "count": 1
+    }
+  },
+  "client/views/viewer/viewer-controller.js": {
+    "no-restricted-syntax": {
+      "count": 8
+    }
+  },
+  "client/views/viewer/viewer-preview.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "client/views/viewer/viewer-slides-panel.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/viewer/viewer-topbar.js": {
+    "no-restricted-syntax": {
+      "count": 2
     }
   },
   "scripts/download-google-fonts.js": {
@@ -114,8 +893,18 @@
       "count": 1
     }
   },
+  "server/collab/mount.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
   "server/config/env.js": {
     "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/db/migrate.js": {
+    "no-restricted-syntax": {
       "count": 1
     }
   },
@@ -124,13 +913,89 @@
       "count": 3
     }
   },
+  "server/export/bulk-export.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "server/export/gradient-raster.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "server/export/image-measure.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "server/export/video-helpers.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "server/jobs/digest-email.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "server/jobs/queue/workers/bulk-export-worker.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "server/mcp/sse.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "server/mcp/tools.js": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
   "server/media/bundled-gradients.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    },
     "no-useless-assignment": {
       "count": 1
     }
   },
+  "server/render/deck-thumbnail.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
   "server/render/pdf.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    },
     "preserve-caught-error": {
+      "count": 1
+    }
+  },
+  "server/render/png.js": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "server/routes/api/activity.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "server/routes/api/ai/shared.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "server/routes/api/ai/wizard-v2-stream.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "server/routes/api/analytics/realtime.js": {
+    "no-restricted-syntax": {
       "count": 1
     }
   },
@@ -139,9 +1004,69 @@
       "count": 1
     }
   },
+  "server/routes/api/auth.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "server/routes/api/follow/events.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "server/routes/api/follow/questions-events.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "server/routes/api/follow/status-ticker.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "server/routes/api/font-families.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "server/routes/api/index.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "server/routes/api/live-sessions.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
   "server/routes/api/notion/subjects.js": {
     "no-useless-assignment": {
       "count": 3
+    }
+  },
+  "server/routes/api/presentations/comments-list.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "server/routes/api/presentations/comments-shared.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "server/routes/api/presentations/import-deck.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "server/routes/api/presentations/import-json.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "server/routes/api/presentations/import-markdown.js": {
+    "no-restricted-syntax": {
+      "count": 1
     }
   },
   "server/routes/api/presentations/popular.js": {
@@ -149,9 +1074,79 @@
       "count": 1
     }
   },
+  "server/routes/api/presentations/presentation.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "server/routes/api/presentations/restore.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "server/routes/api/presentations/search.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "server/routes/api/presentations/thumbnail.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "server/routes/api/settings.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "server/routes/api/slide-types.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "server/routes/api/themes.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "server/routes/public-api/v1/middleware.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "server/routes/public-api/v1/slides.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "server/routes/static/app-shell.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "server/routes/static/embed.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "server/routes/static/share-viewer.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
   "server/routes/static/static-files.js": {
     "no-useless-assignment": {
       "count": 1
+    }
+  },
+  "server/sandbox/examples.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "server/server.js": {
+    "no-restricted-syntax": {
+      "count": 3
     }
   },
   "server/services/comment-subscriptions.js": {
@@ -164,13 +1159,106 @@
       "count": 1
     }
   },
+  "server/storage/api-keys.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "server/storage/feedback.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "server/storage/font-families.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "server/storage/interactions.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "server/storage/live-sessions/close.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "server/storage/live-sessions/control.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "server/storage/live-sessions/sessions.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "server/storage/live-sessions/sse.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "server/storage/presentations/crud/factory.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "server/storage/presentations/i18n.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "server/storage/presentations/index.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "server/storage/presentations/ownership.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "server/storage/questions.js": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "server/utils/ai/refine-slides.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
   "server/utils/ai/revise-outline.js": {
     "no-useless-assignment": {
       "count": 1
     }
   },
+  "server/utils/ai/slide-catalog/index.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "server/utils/ai/validation-logging.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "server/utils/author-overlay.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
   "server/utils/convert-file/pdf-parser.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    },
     "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/utils/convert-file/pptx-parser.js": {
+    "no-restricted-syntax": {
       "count": 1
     }
   },
@@ -179,13 +1267,26 @@
       "count": 3
     }
   },
+  "server/utils/debug-log.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
   "server/utils/embed-fonts.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    },
     "preserve-caught-error": {
       "count": 3
     }
   },
   "server/utils/embed-html/index.js": {
     "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/utils/http.js": {
+    "no-restricted-syntax": {
       "count": 1
     }
   },
@@ -205,7 +1306,40 @@
     }
   },
   "server/utils/notion/pages.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    },
     "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/utils/openai/translate.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "server/utils/puppeteer-browser.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "server/utils/sandbox-og-image.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "server/utils/sse-limiter.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "server/utils/sse.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "server/utils/themes.js": {
+    "no-restricted-syntax": {
       "count": 1
     }
   },

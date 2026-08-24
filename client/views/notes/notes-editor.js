@@ -92,6 +92,10 @@ export function createNotesEditor({ api, sessionId, ui, onSaved } = {}) {
    * Save `value` as the notes of `targetSlideId`. Takes both explicitly so a
    * flush triggered by a slide change still writes to the slide the text was
    * typed on.
+   *
+   * Never rejects: every failure is caught below and surfaced via toast and
+   * status line, so fire-and-forget callers call it bare, without `void` or
+   * a `.catch` (B150).
    */
   const save = async (targetSlideId, value) => {
     if (!targetSlideId || destroyed) return;
@@ -134,7 +138,7 @@ export function createNotesEditor({ api, sessionId, ui, onSaved } = {}) {
     timer = setTimeout(() => {
       timer = null;
       if (notesTextarea.value !== stored)
-        void save(targetSlideId, notesTextarea.value);
+        save(targetSlideId, notesTextarea.value);
     }, AUTOSAVE_DELAY_MS);
   };
 
@@ -153,7 +157,7 @@ export function createNotesEditor({ api, sessionId, ui, onSaved } = {}) {
 
   notesSaveBtn.addEventListener('click', () => {
     clearTimer();
-    void save(slideId, notesTextarea.value);
+    save(slideId, notesTextarea.value);
   });
 
   notesCancelBtn.addEventListener('click', () => {
@@ -166,7 +170,7 @@ export function createNotesEditor({ api, sessionId, ui, onSaved } = {}) {
 
   notesEditBtn.addEventListener('click', () => {
     if (editing) {
-      void flush().then(() => {
+      flush().then(() => {
         editing = false;
         setStatus('');
         applyEditingState();
@@ -204,7 +208,7 @@ export function createNotesEditor({ api, sessionId, ui, onSaved } = {}) {
 
     // The slide changed. Anything unsaved belongs to the previous slide, so
     // write it there before adopting the new one.
-    if (isDirty()) void save(slideId, notesTextarea.value);
+    if (isDirty()) save(slideId, notesTextarea.value);
     clearTimer();
 
     slideId = nextId;
@@ -227,7 +231,7 @@ export function createNotesEditor({ api, sessionId, ui, onSaved } = {}) {
         ? { id: slideId, value: notesTextarea.value }
         : null;
       clearTimer();
-      if (pending) void save(pending.id, pending.value);
+      if (pending) save(pending.id, pending.value);
       destroyed = true;
     },
   };

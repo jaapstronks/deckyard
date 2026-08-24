@@ -249,36 +249,50 @@ leaves alone (whole-token).
 [`tests/overlay-closers-gate.test.js`](../../tests/overlay-closers-gate.test.js)
 pins each restricted shape, the legal look-alikes, and that the client is clean.
 
-### `no-restricted-syntax` on empty `.catch(() => {})` — no silent rejections
+### `no-restricted-syntax` on empty catches — no silent failures
 
-Scoped to `server/**`, this rule rejects a `.catch()` whose callback body is
-empty. A background promise that drops its rejection into `() => {}` produces
-the one failure you cannot debug: no log line, no stack, nothing that says
-anything went wrong. It hid v1 request/AI-usage tracking failures and every
-live-session broadcast error (B106).
+Scoped to `server/**` **and** `client/**` (widened to the client by B150),
+two selectors reject the silent swallow in both its shapes:
 
-Two accepted forms, both named:
+- **`.catch(() => {})`** — a background promise that drops its rejection into
+  an empty callback produces the one failure you cannot debug: no log line,
+  no stack, nothing that says anything went wrong. It hid v1 request/AI-usage
+  tracking failures and every live-session broadcast error (B106).
+- **`try { … } catch {}`** — the synchronous twin. When the gate reached the
+  client, ~270 of 849 client catch sites swallowed without a stated reason —
+  and a client-side failure is exactly what a bug report cannot reconstruct.
+
+Accepted forms, all named:
 
 - [`fireAndForget(promise, label)`](../../server/utils/fire-and-forget.js) —
-  the default. Keeps an unhandled rejection from killing the process (Node's
-  `--unhandled-rejections=throw`) and leaves a labelled `log.error` behind.
+  the server default. Keeps an unhandled rejection from killing the process
+  (Node's `--unhandled-rejections=throw`) and leaves a labelled `log.error`
+  behind.
 - `ignoreRejection` — the deliberate opposite, for a rejection that is an
   expected _and_ frequent outcome where a log line would be noise (today: two
   Puppeteer request-interception calls on a page that closed mid-flight).
   Named rather than anonymous so every silent swallow is one `grep` away.
+- [`disposeAll([...])`](../../client/lib/dom/disposal.js) — the client
+  disposal/teardown form. Runs every disposer best-effort, in order, and
+  records each failure through `debugLog` instead of a per-handle empty catch.
+- A catch body that records the failure —
+  [`debugLog(label, err)`](../../client/lib/util/debug.js) on the client — or
+  handles it, or an inline `eslint-disable` with the reason after `--`.
 
 The **allowlist is empty**, `server/config/**` included — it is exempt from the
-env-accessor rules in the same block, so the empty-catch selector is re-stated
-for it (flat-config rule entries replace per rule name rather than merge).
+env-accessor rules in the same block, so the selectors are re-stated for it
+(flat-config rule entries replace per rule name rather than merge).
 
 The rule's honest boundary: it reads the AST, where a comment is not a
-statement, so `.catch(() => { /* why */ })` counts as empty. That is deliberate
-— a comment does not survive into a log.
+statement, so `.catch(() => { /* why */ })` and `catch { /* ignore */ }` count
+as empty. That is deliberate — a comment does not survive into a log, and a
+bare "ignore" states no reason.
 
 ### `no-restricted-syntax` on `void someCall()` — no unguarded rejections
 
-The other half of the same gate, also scoped to `server/**`. The empty-catch
-rule above catches the _silent_ swallow; this one catches the _absent_ catch.
+The other half of the same gate, with the same `server/**` + `client/**`
+scope. The empty-catch rules above catch the _silent_ swallow; this one
+catches the _absent_ catch.
 
 `void doThing()` reads as a deliberate decision and is the opposite of one: it
 discards the promise without attaching anything, so a rejection is unhandled —
@@ -292,12 +306,14 @@ which writes to open SSE responses and returns `undefined`. There was no promise
 to discard, so the operator said "deliberately un-awaited" about something that
 was never awaitable.
 
-Three accepted outcomes, in order of how often they apply:
+Accepted outcomes, in order of how often they apply:
 
-- `fireAndForget(promise, label)` — the default, same primitive as above.
+- `fireAndForget(promise, label)` — the server default, same primitive as
+  above. On the client, a `.catch` that records the failure (`debugLog`).
 - `.catch(ignoreRejection)` — expected _and_ frequent rejections only.
-- **Nothing at all** — when the callee is synchronous. Drop the `void`; a bare
-  expression statement is the honest spelling.
+- **Nothing at all** — when the callee is synchronous, or async but handles
+  every rejection itself (the notes autosave documents exactly that). Drop
+  the `void`; a bare expression statement is the honest spelling.
 
 The **allowlist is empty**, `server/config/**` included. `void 0` and other
 non-call operands are untouched: the selector requires a `CallExpression`
@@ -346,6 +362,15 @@ pre-existing violations. Rather than fix ~400 things in the setup change (huge,
 unreviewable) or downgrade the rules to warnings (no regression protection),
 those existing violations are recorded in
 [`eslint-suppressions.json`](../../eslint-suppressions.json).
+
+The same move recurs when a gate widens: B150 (empty catches + `void` on
+`client/**`, plus the `try {} catch {}` selector everywhere) baselined the
+~490 pre-existing silent catches it surfaced as `no-restricted-syntax`
+suppressions after burning down the presenter teardown cluster. One caveat
+that count carries: suppressions match per file + rule name, so a file with
+suppressed `no-restricted-syntax` entries can absorb that many violations of
+_any_ restricted-syntax selector. The burndown shrinking to zero is what
+closes that gap.
 
 What this buys:
 

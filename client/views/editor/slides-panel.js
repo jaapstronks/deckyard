@@ -8,6 +8,7 @@ import { t } from '../../lib/ui-i18n.js';
 import { newId } from '../../lib/util/id.js';
 import { createSlideLibraryPicker } from './slide-library-picker.js';
 import { toast } from '../../lib/dom/toast.js';
+import { debugLog } from '../../lib/util/debug.js';
 import { isInsertableSlideType } from './slide-types-policy.js';
 import { sortByPinnedThenName } from '../../lib/slide-library/search.js';
 import { createSlidesPanelResize } from './slides-panel-resize.js';
@@ -401,12 +402,10 @@ export function createSlidesPanel({
   const recordLibraryUsage = (item) => {
     const id = String(item?.id || '').trim();
     if (!id) return;
-    try {
-      void api('/api/slide-library/usage', {
-        method: 'POST',
-        body: JSON.stringify({ items: [{ type: 'slide', id }] }),
-      }).catch(() => {});
-    } catch {}
+    api('/api/slide-library/usage', {
+      method: 'POST',
+      body: JSON.stringify({ items: [{ type: 'slide', id }] }),
+    }).catch((err) => debugLog('[slides-panel] library-usage ping failed', err));
   };
 
   const insertFromLibraryItem = (item, { afterSlideId } = {}) => {

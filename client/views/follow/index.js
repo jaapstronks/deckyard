@@ -7,6 +7,7 @@
  */
 
 import { api } from '../../lib/api.js';
+import { disposeAll } from '../../lib/dom/disposal.js';
 import { attachThumbScaleContain } from '../../lib/slide-runtime/thumb-scale.js';
 import { cleanupSlideRuntimes } from '../../lib/slide-runtime/slide-render.js';
 import { normalizeLang } from '../../lib/format/i18n.js';
@@ -482,9 +483,7 @@ export async function renderFollow(root, presentationId) {
 
   return () => {
     document.documentElement.classList.remove('is-follow');
-    try {
-      uiMode.detach?.();
-    } catch {}
+    disposeAll([() => uiMode.detach?.()]);
     cleanupSlideRuntimes(slideWrap);
     try {
       detachThumb();
