@@ -137,21 +137,31 @@ test('there is one ladder, and the client reads that one', async () => {
   // the bare isAdmin check the gate exists to narrow. There is one ladder now
   // (shared/organization-role.js), so what needs pinning is that nobody
   // declares a second one — a fresh copy would pass any value comparison.
-  const { readFile } = await import('node:fs/promises');
+  const { readFile, readdir } = await import('node:fs/promises');
   const { fileURLToPath } = await import('node:url');
+  const path = await import('node:path');
   const root = fileURLToPath(new URL('..', import.meta.url));
+  const files = [];
+  async function collect(dir) {
+    for (const entry of await readdir(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) await collect(full);
+      else if (entry.name.endsWith('.js')) files.push(full);
+    }
+  }
+  // The whole runtime tree, not a hand-picked list: a fresh copy of the
+  // ladder is most likely to appear in a file that did not exist when the
+  // list was written. client/vendor/ is vendored third-party code.
+  await collect(path.join(root, 'shared'));
+  await collect(path.join(root, 'server'));
+  await collect(path.join(root, 'client'));
   const declarations = [];
-  for (const file of [
-    'shared/organization-role.js',
-    'client/lib/user/organization-role.js',
-    'server/utils/organization-role.js',
-    'server/storage/user-organizations/memberships.js',
-    'client/views/settings/organization-members/permissions.js',
-    'client/views/settings/organization-profile/permissions.js',
-  ]) {
-    const source = await readFile(root + file, 'utf8');
+  for (const file of files) {
+    const rel = path.relative(root, file).split(path.sep).join('/');
+    if (rel.startsWith('client/vendor/')) continue;
+    const source = await readFile(file, 'utf8');
     if (/(?:const|let|var)\s+WORKSPACE_ROLES\s*=/.test(source)) {
-      declarations.push(file);
+      declarations.push(rel);
     }
   }
   assert.deepEqual(
