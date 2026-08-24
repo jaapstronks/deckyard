@@ -617,7 +617,7 @@
   "settings.slideTypes.group.basic": "Base",
   "settings.slideTypes.group.data": "Données",
   "settings.slideTypes.group.interaction": "Interaction",
-  "settings.slideTypes.group.layouts": "Dispositions",
+  "settings.slideTypes.group.layouts": "Mises en page",
   "settings.slideTypes.group.media": "Médias",
   "settings.slideTypes.group.other": "Autres",
   "settings.slideTypes.help.bgClass": "Transforme un choix d'arrière-plan en classe d'arrière-plan correspondante pour la diapositive.",

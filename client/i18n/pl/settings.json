@@ -619,7 +619,7 @@
   "settings.slideTypes.group.interaction": "Interakcja",
   "settings.slideTypes.group.layouts": "Układy",
   "settings.slideTypes.group.media": "Multimedia",
-  "settings.slideTypes.group.other": "Inne",
+  "settings.slideTypes.group.other": "Pozostałe",
   "settings.slideTypes.help.bgClass": "Zamienia wybór tła na odpowiadającą mu klasę tła slajdu.",
   "settings.slideTypes.help.each": "Powtarza blok dla każdej pozycji pola typu elementy.",
   "settings.slideTypes.help.esc": "Wartość pola z zabezpieczonym kodem HTML.",
