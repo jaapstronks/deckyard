@@ -162,7 +162,7 @@
   "share.revoke.description.trash": "Questo sposterà la presentazione nel cestino. I collaboratori non avranno più accesso.",
   "share.revoke.messageHelp": "Questo messaggio verra mostrato a chiunque tenti di accedere.",
   "share.revoke.messageLabel": "Messaggio (facoltativo)",
-  "share.revoke.messagePlaceholder": "Fai sapere il motivo…",
+  "share.revoke.messagePlaceholder": "Faccia sapere il motivo…",
   "share.revoke.modalTitle.collaborator": "Rimuovi collaboratore",
   "share.revoke.modalTitle.shareLink": "Revoca link di condivisione",
   "share.revoke.modalTitle.trash": "Sposta nel cestino",
