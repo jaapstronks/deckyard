@@ -81,7 +81,7 @@
   "presenter.console.targetLabel": "Mål (minutter)",
   "presenter.console.targetPlaceholder": "f.eks. 20",
   "presenter.console.targetSet": "Mål {time}",
-  "presenter.console.targetTitle": "Måltid i minutter (f.eks. 20 eller 20:00). Den medgåtte tiden blir rød når målet overskrides.",
+  "presenter.console.targetTitle": "Tidsmål i minutter (f.eks. 20 eller 20:00). Den medgåtte tiden blir rød når målet overskrides.",
   "presenter.console.title": "Presentatørkonsoll",
   "presenter.console.toggle": "Konsoll",
   "presenter.console.toggleTitle": "Presentatørkonsoll: notater, neste lysbilde og medgått tid på din egen skjerm",

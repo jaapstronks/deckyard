@@ -18,7 +18,7 @@
   "imageLibrary.altText": "Alternativ tekst (tilgjengelighet)",
   "imageLibrary.changeImage": "Bytt bilde",
   "imageLibrary.count": "{count} elementer",
-  "imageLibrary.creditAutoFill": "Automatisk fyll bildetekst med 'Foto: <fotograf>' (kun hvis bildetekst er tom)",
+  "imageLibrary.creditAutoFill": "Fyll automatisk ut bildetekst med 'Foto: <fotograf>' (kun hvis bildeteksten er tom)",
   "imageLibrary.delete.confirm": "Slette dette bildet fra biblioteket? Den opplastede filen blir IKKE slettet; eksisterende lysbilder som bruker URL-en, virker fortsatt.",
   "imageLibrary.delete.deleted": "Slettet.",
   "imageLibrary.delete.deleting": "Sletter…",
