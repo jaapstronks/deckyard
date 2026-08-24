@@ -263,8 +263,8 @@
   "viewer.addComment": "Kommentera",
   "viewer.addComment.title": "Visa och lägg till kommentarer",
   "viewer.comments": "Kommentarer",
-  "viewer.nav.next": "Nästa bild",
-  "viewer.nav.prev": "Föregående bild",
-  "viewer.noSlides": "Inga bilder",
+  "viewer.nav.next": "Nästa slide",
+  "viewer.nav.prev": "Föregående slide",
+  "viewer.noSlides": "Inga slides",
   "viewer.slides.title": "Slides"
 }
