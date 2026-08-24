@@ -157,7 +157,7 @@
   "share.revoke.confirm.collaborator": "Poista",
   "share.revoke.confirm.shareLink": "Peruuta",
   "share.revoke.confirm.trash": "Siirrä roskakoriin",
-  "share.revoke.description.collaborator": "Tämä poistaa käyttäjän {name} yhteistyökumppanina. Hänellä ei ole enää pääsyä tähän esitykseen.",
+  "share.revoke.description.collaborator": "Tämä poistaa käyttäjän {name} yhteistyökumppanien joukosta. Hänellä ei ole enää pääsyä tähän esitykseen.",
   "share.revoke.description.shareLink": "Tämä peruuttaa jakolinkin. Kukaan tämän linkin haltija ei pääse enää esitykseen.",
   "share.revoke.description.trash": "Tämä siirtää esityksen roskakoriin. Yhteistyökumppaneilla ei ole enää pääsyä.",
   "share.revoke.messageHelp": "Tämä viesti näytetään kaikille, jotka yrittävät käyttää linkkiä.",
