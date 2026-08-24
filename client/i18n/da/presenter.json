@@ -147,7 +147,7 @@
   "presenter.timesUp": "Tiden er gået",
   "presenter.tools.audienceBadge": "Til dit publikum",
   "presenter.tools.audienceCompanion": "Publikumsvisning",
-  "presenter.tools.audienceHint": "Offentlig følg med-visning (slides + Q&A + interaktioner). Kan trygt deles med alle.",
+  "presenter.tools.audienceHint": "Offentlig følg-med-visning (slides + Q&A + interaktioner). Kan trygt deles med alle.",
   "presenter.tools.button": "Værktøjer",
   "presenter.tools.copyAudiencePrompt": "Kopiér linket til publikumsvisningen:",
   "presenter.tools.copyLink": "Kopiér link",
@@ -160,5 +160,5 @@
   "presenter.tools.presenterCompanion": "Præsentatorvisning",
   "presenter.tools.presenterHint": "Visning med talernoter, til dig på en anden enhed.",
   "presenter.tools.presenterWarn": "Dette link kan styre din live præsentation. Send det ikke til dit publikum; brug publikumslinket nedenfor.",
-  "presenter.tools.title": "Værktøjer til sessionen (noter / kopiér link / følg med-kode)"
+  "presenter.tools.title": "Værktøjer til sessionen (noter / kopiér link / følg-med-kode)"
 }
