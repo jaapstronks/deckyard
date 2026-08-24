@@ -14,7 +14,7 @@ import {
  *
  * `client/i18n/<locale>/slide-types.json` carries a `slideType.<id>.*` namespace
  * per slide type. Nothing prunes those keys when a type leaves the registry, and
- * `i18n:validate` treats orphan keys as non-fatal — so a removed type's strings
+ * `i18n:audit` skips the whole `slideType.` family as runtime-built — so a removed type's strings
  * ship in twelve locales forever unless someone remembers to delete them. That is
  * exactly what the split-partner removal did (#480): six keys × twelve locales
  * survived it, and only manual review caught them (#481).
@@ -68,7 +68,7 @@ test('no locale carries slide-type i18n keys for a type that no longer exists', 
   assert.deepEqual(
     orphans,
     [],
-    'orphaned slide-type i18n namespaces (delete the keys, then `npm run i18n:validate`):\n' +
+    'orphaned slide-type i18n namespaces (delete the keys, or `npm run i18n:sync`):\n' +
       orphans.join('\n'),
   );
 });

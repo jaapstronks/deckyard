@@ -211,7 +211,7 @@ Then, in rough dependency order:
 8. **Check for orphaned field keys.** A field key only that type declared leaves
    generic plumbing pointing at nothing (`bgCustomColor` after freeform). Either
    remove the plumbing or note in a comment that no core type declares it.
-9. **Verify**: `npm test`, `npm run lint`, `npm run i18n:validate`.
+9. **Verify**: `npm test`, `npm run lint`.
 
 ### What you do _not_ have to do
 
@@ -222,9 +222,9 @@ Then, in rough dependency order:
   `SLIDE_TYPES` and does not look at `deprecated`, so an archived type keeps its
   label and field keys in every locale. Split-partner still had six keys × 12
   locales when it was removed. **Every removal touches the 12 locale files**:
-  delete the type's `slideType.<type>.*` keys, then `npm run i18n:validate`.
-  `i18n:validate` still treats orphans as non-fatal, but
-  `tests/slide-type-i18n-orphans.test.js` (added 2026-07-30) now **fails** the
+  delete the type's `slideType.<type>.*` keys (`npm run i18n:sync` prunes them,
+  since the registry is the authority on which `slideType.*` keys are real).
+  `tests/slide-type-i18n-orphans.test.js` (added 2026-07-30) **fails** the
   moment a `slideType.<id>.*` namespace names a type that has left the registry,
   reporting the locale and the id — so a forgotten prune is caught in the test
   suite instead of shipping forever. (`client/i18n/en.json` is a stale build

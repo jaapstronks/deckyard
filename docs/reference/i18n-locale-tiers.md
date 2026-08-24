@@ -58,11 +58,11 @@ the ten locales stay, we are just honest about what "supported" covers.
 `client/i18n/manifest.json`; all three are there so no script keeps a list of
 its own (B132 found four hand-kept spellings that had drifted apart).
 
-| Field              | Means                                                                                                                                                                                      |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `locales[].tier`   | The promise above. Drives the coverage gate and the picker's grouping.                                                                                                                     |
-| `reference`        | The locale the English source text lives in (`en`). It is what every `t(key, fallback)` fallback says, what `i18n-sync` fills the other eleven from, and what `i18n-validate` compares to. |
-| `modules[].loader` | Which loader reads that module file — see below.                                                                                                                                           |
+| Field              | Means                                                                                                                                                                                                                       |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `locales[].tier`   | The promise above. Drives the coverage gate and the picker's grouping.                                                                                                                                                      |
+| `reference`        | The locale the English source text lives in (`en`). It is what every `t(key, fallback)` fallback says, what `i18n-sync` fills the other eleven from, and what `tests/i18n-coverage.test.js` compares every other locale to. |
+| `modules[].loader` | Which loader reads that module file — see below.                                                                                                                                                                            |
 
 Two loaders exist:
 

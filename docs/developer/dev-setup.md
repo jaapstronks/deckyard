@@ -100,7 +100,6 @@ NOTION_FEATURE=true
 | `npm run db:import`                       | Import file data into PostgreSQL                                                            |
 | `npm run i18n:audit`                      | Find hardcoded copy that bypasses `t()`, and orphan keys                                    |
 | `npm run i18n:sync`                       | Sync missing keys across locales (`-- --dry-run` to preview)                                |
-| `npm run i18n:validate`                   | Validate translation files                                                                  |
 
 ---
 
@@ -302,7 +301,6 @@ chmod 755 server/uploads
 ```bash
 node scripts/i18n-fill.js en          # write missing EN keys from fallbacks
 node scripts/i18n-fill.js --report nl # dump missing NL keys for translation
-npm run i18n:validate                 # validate all translation files
 ```
 
 Only `en` and `nl` are gated; the other ten locales fall back to English by
