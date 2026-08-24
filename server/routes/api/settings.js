@@ -16,8 +16,8 @@ import {
   getOrganizationById,
   updateOrganization,
   getMembershipByEmail,
-  hasOrganizationRole,
 } from '../../storage/user-organizations/index.js';
+import { hasOrganizationRole } from '../../../shared/organization-role.js';
 import { getOrgSettings } from '../../utils/org-settings.js';
 import { canManage } from '../../utils/route-middleware.js';
 import { isMultiOrgEnabled } from '../../config/features.js';

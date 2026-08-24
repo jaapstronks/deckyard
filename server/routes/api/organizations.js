@@ -24,9 +24,9 @@ import {
   updateOrganization,
   deleteOrganization,
   getMembership,
-  hasOrganizationRole,
   isDefaultOrganization,
 } from '../../storage/user-organizations/index.js';
+import { hasOrganizationRole } from '../../../shared/organization-role.js';
 import { getUserByEmailGlobal } from '../../storage/identity.js';
 
 /**

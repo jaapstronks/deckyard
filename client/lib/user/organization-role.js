@@ -18,24 +18,17 @@
  * admin who is not an instance admin would be shown tabs whose API answers
  * 403. So the gate is the conjunction, and the membership role only ever
  * *narrows* what the instance role already allows.
+ *
+ * The ladder those roles form is not restated here: it lives in
+ * `shared/organization-role.js` and the server gate
+ * (`server/utils/organization-role.js`) imports the same one, so the two
+ * halves cannot rank a role differently.
  */
 
-/** Membership roles, weakest first. */
-const WORKSPACE_ROLES = ['member', 'admin', 'owner'];
-
-/**
- * Whether a membership role is at least the required level.
- * Mirrors `hasOrganizationRole()` in
- * server/storage/user-organizations/memberships.js.
- * @param {string|null|undefined} role - Membership role
- * @param {string} required - Minimum role
- * @returns {boolean}
- */
-export function hasOrganizationRole(role, required) {
-  const level = WORKSPACE_ROLES.indexOf(role);
-  const requiredLevel = WORKSPACE_ROLES.indexOf(required);
-  return level >= 0 && requiredLevel >= 0 && level >= requiredLevel;
-}
+import {
+  WORKSPACE_ROLES,
+  hasOrganizationRole,
+} from '../../../shared/organization-role.js';
 
 /**
  * The user's membership role in the organization they are currently in, or

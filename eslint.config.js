@@ -69,6 +69,16 @@ const nodeBuiltinImports = [
   message: `Import Node builtins with the node: prefix — 'node:${name}'.`,
 }));
 
+// The subpath spellings ('fs/promises', 'timers/promises', …) resolve bare
+// too, and `paths` matches exact specifiers only — without this a bare
+// subpath import would slip past the rule the list above exists to enforce.
+const nodeBuiltinImportPatterns = [
+  {
+    group: nodeBuiltinImports.map(({ name }) => `${name}/*`),
+    message: "Import Node builtins with the node: prefix — 'node:<name>/…'.",
+  },
+];
+
 const clientRestrictedSyntax = [
   {
     selector: "CallExpression[callee.name='t'][arguments.length<2]",
@@ -551,6 +561,7 @@ export default [
                 '(A7.19 B2).',
             },
           ],
+          patterns: nodeBuiltinImportPatterns,
         },
       ],
     },
@@ -562,7 +573,10 @@ export default [
   {
     files: ['server/utils/ai/schemas/**/*.js'],
     rules: {
-      'no-restricted-imports': ['error', { paths: nodeBuiltinImports }],
+      'no-restricted-imports': [
+        'error',
+        { paths: nodeBuiltinImports, patterns: nodeBuiltinImportPatterns },
+      ],
     },
   },
 
