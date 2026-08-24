@@ -121,22 +121,55 @@ async function mergeIntoLocale(locale, entries) {
   return byFile.size;
 }
 
-async function missingFor(locale) {
+/**
+ * Every key a locale still needs, as key -> English source string.
+ *
+ * Two sources, because neither is complete on its own:
+ *
+ *  1. the static `t()` call sites, which carry the English fallback; and
+ *  2. `en/` itself, which is the settled English wording *and* the only place
+ *     the runtime-built families are written down at all. `slideType.*`,
+ *     `editor.textStyle.*`, `editor.layoutVariant.*` and
+ *     `editor.inline.add*`/`remove*` are assembled from template literals, so
+ *     `extractUsedKeys` cannot see them — yet each one has a fixed English
+ *     string in `en/` and is therefore perfectly translatable. Reporting only
+ *     source 1 made the tool answer "0 missing" for a locale that was 272 keys
+ *     short (B136).
+ *
+ * For the `en` target there is nothing to seed from, so only source 1 applies:
+ * materializing en/ *from* en/ would be circular.
+ *
+ * @param {string} locale
+ * @returns {Promise<Record<string, string>>}
+ */
+export async function missingFor(locale) {
   const used = await extractUsedKeys(clientDir);
   const dict = await loadLocale(i18nDir, locale);
+  const en = locale === 'en' ? {} : await loadLocale(i18nDir, 'en');
   /** @type {Record<string, string>} */
   const missing = {};
+  /** @param {string} key @param {unknown} english */
+  const want = (key, english) => {
+    if (key.startsWith('follow.')) return; // scoped loader, not the global dict
+    if (typeof dict[key] === 'string') return;
+    if (typeof english !== 'string') return; // no English source to work from
+    missing[key] = english;
+  };
   for (const [key, { fallback }] of used) {
-    if (isDynamicKey(key)) continue;
-    if (typeof dict[key] === 'string') continue;
-    if (key.startsWith('follow.')) continue; // scoped loader, not the global dict
-    if (fallback == null) continue; // no English source to work from
-    missing[key] = fallback;
+    // A runtime-built key is still translatable once en/ has settled on a
+    // string for it; skip it only while en/ has nothing to translate from.
+    if (isDynamicKey(key) && typeof en[key] !== 'string') continue;
+    want(key, en[key] ?? fallback);
   }
+  for (const [key, english] of Object.entries(en)) want(key, english);
   return missing;
 }
 
-const [mode, ...rest] = process.argv.slice(2);
+const isCli =
+  process.argv[1] &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+const [mode, ...rest] = isCli ? process.argv.slice(2) : [];
 
 if (mode === '--report') {
   const locale = rest[0];
@@ -158,7 +191,7 @@ if (mode === '--report') {
   console.log(
     `Wrote ${Object.keys(missing).length} EN keys across ${n} file(s)`,
   );
-} else {
+} else if (isCli) {
   console.error(
     'Usage: i18n-fill.js en | --report <locale> | --apply <locale> <file.json>',
   );
