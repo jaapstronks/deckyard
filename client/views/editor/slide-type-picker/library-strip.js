@@ -14,6 +14,7 @@
 import { renderSlideElement } from '../../../lib/slide-runtime/slide-render.js';
 import { applyThumbScale } from './thumbnails.js';
 import { h } from '../../../lib/dom.js';
+import { t } from '../../../lib/ui-i18n.js';
 
 const LIBRARY_STRIP_TOTAL = 8;
 
@@ -40,7 +41,6 @@ const splitLibraryBudget = (pCount, oCount) => {
  * off the async load and returns immediately.
  * @param {object} ctx
  * @param {HTMLElement} ctx.typesWrap - grid container to prepend the strip into
- * @param {Function} ctx.tr - translator (key, fallback)
  * @param {object|null} ctx.theme - resolved theme for thumbnail rendering
  * @param {Function} ctx.labelFor - (type) => resolved label
  * @param {string} [ctx.afterSlideId] - insert anchor for a picked library item
@@ -54,7 +54,6 @@ const splitLibraryBudget = (pCount, oCount) => {
 export function mountLibraryStrip(ctx) {
   const {
     typesWrap,
-    tr,
     theme,
     labelFor,
     afterSlideId,
@@ -142,14 +141,14 @@ export function mountLibraryStrip(ctx) {
     if (pShow) {
       groups.push({
         shelf: 'personal',
-        label: tr('editor.slideTypeGroup.libraryPersonal', 'Personal library'),
+        label: t('editor.slideTypeGroup.libraryPersonal', 'Personal library'),
         items: personal.slice(0, pShow),
       });
     }
     if (oShow) {
       groups.push({
         shelf: 'organization',
-        label: tr('editor.slideTypeGroup.libraryTeam', 'Team library'),
+        label: t('editor.slideTypeGroup.libraryTeam', 'Team library'),
         items: organization.slice(0, oShow),
       });
     }
@@ -162,7 +161,7 @@ export function mountLibraryStrip(ctx) {
       const seeAll = h('button', {
         class: 'ps-lib-strip-seeall',
         type: 'button',
-        text: tr('editor.slideTypePicker.seeAll', 'See all'),
+        text: t('editor.slideTypePicker.seeAll', 'See all'),
         onclick: () => {
           try {
             onSeeAllLibrary(g.shelf);
