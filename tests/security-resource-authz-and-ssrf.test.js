@@ -1,5 +1,6 @@
 /**
- * Security-audit cluster 4 regression tests (H4, MH1, MH2).
+ * Per-resource authorization and outbound SSRF — security regression tests
+ * (audit findings H4, MH1, MH2).
  *
  * H4  — live-session control has no per-resource authz
  *       (server/routes/api/live-sessions.js). Creating/resuming a session,
@@ -24,7 +25,7 @@
  *       or a user who can write one deck could act on another (private) deck's
  *       link and read its viewer-PII access log.
  *
- * Run with: node --test tests/security-audit-cluster4.test.js
+ * Run with: node --test tests/security-resource-authz-and-ssrf.test.js
  */
 
 import test from 'node:test';

@@ -1,5 +1,6 @@
 /**
- * Security-audit cluster 6 regression tests (M2, M3).
+ * Client-IP resolution and follow-code entropy — security regression tests
+ * (audit findings M2, M3).
  *
  * M2 — X-Forwarded-For spoofing (server/utils/rate-limit.js getClientIp). Behind
  *      a trusted proxy the client IP must be read from the RIGHT of the XFF list
@@ -11,7 +12,7 @@
  *      (server/storage/follow-codes.js). Now a CSPRNG (crypto.randomInt) over a
  *      larger keyspace, drawn from the unambiguous alphabet only.
  *
- * Run with: node --test tests/security-audit-cluster6.test.js
+ * Run with: node --test tests/security-client-ip-and-code-entropy.test.js
  */
 
 import test from 'node:test';

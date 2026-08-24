@@ -13,7 +13,7 @@
  * unknown path — neither reaches a real handler. `GET /api/notion/status` is
  * the one always-on, storage-free handler, so it is invoked end-to-end.
  *
- * Run with: node --test tests/c8-routes-notion-dispatch.test.js
+ * Run with: node --test tests/route-dispatch-notion.test.js
  */
 
 import test from 'node:test';

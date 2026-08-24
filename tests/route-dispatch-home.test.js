@@ -11,7 +11,7 @@
  * All assertions are storage-free: the 405 catch-all only calls
  * methodNotAllowed, and the GET row's auth guard 401s before any storage read.
  *
- * Run with: node --test tests/c8-routes-home-dispatch.test.js
+ * Run with: node --test tests/route-dispatch-home.test.js
  */
 
 import test from 'node:test';

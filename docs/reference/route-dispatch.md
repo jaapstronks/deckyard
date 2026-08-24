@@ -10,7 +10,7 @@ one per module.
 > **Implementation status (2026-08).** Complete. The shared dispatcher and the
 > two named context typedefs are the norm (A7.19 C8, #674/#675), every `/api/*`
 > route module dispatches through a `ROUTES` table (fase 2, #677–#691), and the
-> guard test `tests/c8-route-dispatch-guard.test.js` fails any hand-written
+> guard test `tests/route-dispatch-guard.test.js` fails any hand-written
 > path compare in `server/routes/**` outside the exempt trees (the separately
 > versioned `public-api/` and the non-API `static` viewers) — with **no
 > per-file allowlist**. The table is not a target anymore; it is the single
@@ -185,7 +185,7 @@ with the right method and a wrong one**, without invoking storage. The pattern
 
 ## The closing gate (fase 3)
 
-The guard test (`tests/c8-route-dispatch-guard.test.js`) fails on any
+The guard test (`tests/route-dispatch-guard.test.js`) fails on any
 `url.pathname === …` / `.match(…)` / `.startsWith(…)` in `server/routes/**`
 outside a `ROUTES` table. The burndown allowlist it shipped with is gone:
 outside the exempt trees there are no exceptions. That gate is what keeps the

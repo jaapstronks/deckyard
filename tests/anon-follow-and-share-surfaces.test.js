@@ -14,7 +14,7 @@
  * B114 added the four handlers this file did not reach when it was written —
  * `handleFollowCancel`, `handleFollowInteractionState` and
  * `handleFollowInteractionFeedback` — which were left with only their
- * `c8-routes-follow-dispatch` shape row: a table proving a path maps to a
+ * `route-dispatch-follow` shape row: a table proving a path maps to a
  * handler *name*, and nothing about what the handler does.
  *
  * The handlers run against the real storage layer on the in-memory database
