@@ -13,49 +13,23 @@ import {
   PRISM_BASE_COMPONENTS,
   resolvePrismComponents,
 } from '../../../shared/prism-languages.js';
+import { ensureScript, ensureStylesheet } from '../dom/head-assets.js';
 
 const PRISM_BASE = '/client/vendor/prism';
 const KATEX_BASE = '/client/vendor/katex';
 
-/** @type {Map<string, Promise<void>>} one promise per injected URL */
-const loaded = new Map();
-
-function loadOnce(url, create) {
-  let p = loaded.get(url);
-  if (!p) {
-    p = new Promise((resolve, reject) => {
-      const el = create();
-      el.addEventListener('load', () => resolve(), { once: true });
-      el.addEventListener(
-        'error',
-        () => reject(new Error(`Failed to load ${url}`)),
-        { once: true },
-      );
-      document.head.append(el);
-    });
-    loaded.set(url, p);
-  }
-  return p;
-}
+/** One head-asset id per vendor URL, so the dedupe key is the URL. */
+const assetId = (url) => `pk-${url.replace(/[^a-z0-9]+/gi, '-')}`;
 
 function loadScript(url) {
-  return loadOnce(url, () => {
-    const s = document.createElement('script');
-    s.src = url;
-    // Deliberately not async-ordered by the browser: callers await each script
-    // before injecting the next, because Prism components are plain scripts
-    // that need their dependencies (and the core) evaluated first.
-    return s;
-  });
+  // Deliberately not marked async: callers await each script before injecting
+  // the next, because Prism components are plain scripts that need their
+  // dependencies (and the core) evaluated first.
+  return ensureScript({ id: assetId(url), src: url });
 }
 
 function loadStylesheet(url) {
-  return loadOnce(url, () => {
-    const l = document.createElement('link');
-    l.rel = 'stylesheet';
-    l.href = url;
-    return l;
-  });
+  return ensureStylesheet({ id: assetId(url), href: url });
 }
 
 let prismCorePromise = null;

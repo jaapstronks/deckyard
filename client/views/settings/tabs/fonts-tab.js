@@ -10,6 +10,10 @@ import { toast } from '../../../lib/dom/toast.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
 import { createFontEditor } from '../font-editor/index.js';
 import { createEmptyState } from '../../../lib/dom/empty-state.js';
+import {
+  ensureManagedFontPreview,
+  googleFontFamily,
+} from '../../../lib/theme/font-assets.js';
 
 const SOURCE_LABELS = {
   upload: 'Upload',
@@ -191,70 +195,20 @@ export function createFontsTab({ user } = {}) {
 
   // ─── Load font preview for a card ─────────────────────────
   function loadFontPreview(family, previewEl) {
-    if (family.source === 'upload') {
-      // Inject @font-face rules for uploaded variants
-      if (Array.isArray(family.variants) && family.variants.length > 0) {
-        const styleId = `font-preview-upload-${family.id}`;
-        if (!document.getElementById(styleId)) {
-          const rules = family.variants
-            .filter((v) => v.url)
-            .map(
-              (v) => `@font-face {
-  font-family: '${family.name}';
-  src: url('${v.url}') format('${v.format || 'woff2'}');
-  font-weight: ${v.weight || 400};
-  font-style: ${v.style || 'normal'};
-  font-display: swap;
-}`,
-            )
-            .join('\n');
-          if (rules) {
-            const style = document.createElement('style');
-            style.id = styleId;
-            style.textContent = rules;
-            document.head.appendChild(style);
-          }
-        }
-      }
-      previewEl.style.fontFamily = `'${family.name}', ${family.category || 'sans-serif'}`;
-    } else if (family.source === 'adobe') {
-      const projectId = family.sourceConfig?.projectId;
-      if (projectId) {
-        const linkId = `typekit-preview-${projectId}`;
-        if (!document.getElementById(linkId)) {
-          const link = document.createElement('link');
-          link.id = linkId;
-          link.rel = 'stylesheet';
-          link.href = `https://use.typekit.net/${projectId}.css`;
-          document.head.appendChild(link);
-        }
-        previewEl.style.fontFamily = `'${family.name}', ${family.category || 'sans-serif'}`;
-      }
-    } else if (family.source === 'google') {
-      const spec = family.sourceConfig?.spec || family.name;
-      const familyName = spec.split(':')[0].trim();
-      const linkId = `gf-preview-${familyName.replace(/\s+/g, '-').toLowerCase()}`;
-      if (!document.getElementById(linkId)) {
-        const link = document.createElement('link');
-        link.id = linkId;
-        link.rel = 'stylesheet';
-        link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(familyName)}:wght@400;600;700&display=swap`;
-        document.head.appendChild(link);
-      }
-      previewEl.style.fontFamily = `'${familyName}', ${family.category || 'sans-serif'}`;
-    } else if (family.source === 'monotype') {
-      const projectId = family.sourceConfig?.projectId;
-      if (projectId) {
-        const scriptId = `monotype-preview-${projectId}`;
-        if (!document.getElementById(scriptId)) {
-          const script = document.createElement('script');
-          script.id = scriptId;
-          script.src = `https://fast.fonts.net/jsapi/${projectId}.js`;
-          document.head.appendChild(script);
-        }
-        previewEl.style.fontFamily = `'${family.name}', ${family.category || 'sans-serif'}`;
-      }
-    }
+    // The provider assets (and their dedupe ids) live in
+    // client/lib/theme/font-assets.js — this only names the card's preview font.
+    ensureManagedFontPreview(family);
+    const hasAsset =
+      family.source === 'upload' ||
+      family.source === 'google' ||
+      ((family.source === 'adobe' || family.source === 'monotype') &&
+        !!family.sourceConfig?.projectId);
+    if (!hasAsset) return;
+    const name =
+      family.source === 'google'
+        ? googleFontFamily(family.sourceConfig?.spec || family.name)
+        : family.name;
+    previewEl.style.fontFamily = `'${name}', ${family.category || 'sans-serif'}`;
   }
 
   // ─── Open editor with full family data ────────────────────

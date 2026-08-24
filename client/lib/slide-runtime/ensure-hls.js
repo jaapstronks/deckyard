@@ -7,42 +7,21 @@
  * entry leave `THIRD_PARTY_ORIGINS`, so the render-path CSP's `script-src` no
  * longer holds a hole open for a library most decks never touch (D51(a)).
  *
- * Follows the same promise-cached pattern as ensureBunnyPlayerJs() in
+ * Injection and the promise cache are ensureScript() from
+ * client/lib/dom/head-assets.js, the same as ensureBunnyPlayerJs() in
  * slide-render.js.
  */
 
-let hlsPromise = null;
+import { ensureScript } from '../dom/head-assets.js';
 
 export function ensureHlsJs() {
+  // A tag from an earlier page state may already have finished loading, in
+  // which case there is no load event left to wait for — the global is the
+  // only reliable "already there" signal.
   if (globalThis.Hls) return Promise.resolve();
-  if (hlsPromise) return hlsPromise;
-  hlsPromise = new Promise((resolve, reject) => {
-    const existing = document.querySelector('script[data-hls-loader="1"]');
-    if (existing) {
-      // Script tag exists but may have already finished loading before we attached listeners.
-      if (globalThis.Hls) {
-        resolve();
-        return;
-      }
-      existing.addEventListener('load', () => resolve(), { once: true });
-      existing.addEventListener(
-        'error',
-        () => reject(new Error('Failed to load hls.js')),
-        { once: true },
-      );
-      return;
-    }
-    const s = document.createElement('script');
-    s.src = '/client/vendor/hls/hls.min.js';
-    s.async = true;
-    s.dataset.hlsLoader = '1';
-    s.addEventListener('load', () => resolve(), { once: true });
-    s.addEventListener(
-      'error',
-      () => reject(new Error('Failed to load hls.js')),
-      { once: true },
-    );
-    document.head.append(s);
+  return ensureScript({
+    id: 'hls-js',
+    src: '/client/vendor/hls/hls.min.js',
+    async: true,
   });
-  return hlsPromise;
 }

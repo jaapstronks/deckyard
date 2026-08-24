@@ -1,3 +1,4 @@
+import { h } from '../dom.js';
 import { storage } from '../storage.js';
 
 const STORAGE_KEY = 'ps-ui-mode'; // 'system' | 'light' | 'dark'
@@ -44,12 +45,7 @@ function setThemeColorMeta(resolved) {
   try {
     const meta =
       document.querySelector('meta[name="theme-color"]') ||
-      (() => {
-        const m = document.createElement('meta');
-        m.setAttribute('name', 'theme-color');
-        document.head.append(m);
-        return m;
-      })();
+      document.head.appendChild(h('meta', { name: 'theme-color' }));
     meta.setAttribute('content', next);
   } catch {
     // ignore

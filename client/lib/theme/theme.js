@@ -1,4 +1,5 @@
 import { api } from '../api.js';
+import { ensureStyle } from '../dom/head-assets.js';
 import { DEFAULT_THEME_ID } from '../../../shared/constants/themes.js';
 import { THEMES as BUILTIN_THEMES } from '../../../shared/slide-types/registry.js';
 import { slideBackgroundsCssText } from '../../../shared/theme-slide-backgrounds.js';
@@ -243,12 +244,7 @@ export function injectThemeFontFaces(theme, key = null) {
     );
   }
 
-  if (rules.length) {
-    const style = document.createElement('style');
-    style.id = styleId;
-    style.textContent = rules.join('\n');
-    document.head.appendChild(style);
-  }
+  ensureStyle({ id: styleId, css: rules.join('\n') });
 }
 
 /**
@@ -262,12 +258,10 @@ export function injectThemeSlideBgStyles(theme, key = null) {
     return;
   const styleId = bgStyleId(key || theme.id);
   if (document.getElementById(styleId)) return;
-  const css = slideBackgroundsCssText(theme.slideBackgrounds);
-  if (!css) return;
-  const style = document.createElement('style');
-  style.id = styleId;
-  style.textContent = css;
-  document.head.appendChild(style);
+  ensureStyle({
+    id: styleId,
+    css: slideBackgroundsCssText(theme.slideBackgrounds),
+  });
 }
 
 export function applyThemeVarsToElement(el, theme) {

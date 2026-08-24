@@ -230,6 +230,38 @@ const instanceAdminRestriction = {
     'are a plain member (B144, docs/developer/linting.md).',
 };
 
+// `h()` from client/lib/dom.js is CLAUDE.md's first frontend rule, and the one
+// client convention that had no mechanical backing: `h` was imported in 302
+// files while `document.createElement` survived in 14, mostly as one
+// head-asset recipe written five times over (B150). Where the gate is missing,
+// a second form grows — and here the second form had already drifted on the
+// detail that matters, the `id` the dedupe hangs on, so the same Google font
+// stylesheet was fetched twice under two spellings of the same name.
+//
+// The head-asset recipe now lives in client/lib/dom/head-assets.js
+// (ensureStyle/ensureStylesheet/ensureScript) and the font-provider table in
+// client/lib/theme/font-assets.js. Everything else builds elements with `h()`,
+// including `<canvas>`: `h('canvas', { width, height })` sets the same
+// reflected content attributes the two offscreen-canvas sites used to assign.
+//
+// Boundary: `document.createElementNS` is untouched. `h()` itself calls it for
+// SVG tags, and slide-runtime/likert.js builds SVG through a local `svgEl()`
+// helper for the shape attributes h() does not model. Exempt files (each with
+// its own re-statement block below): client/lib/dom.js, where the factory
+// lives, and client/embed-sdk.js, the standalone IIFE served to third-party
+// pages, which has no module graph to import from.
+const createElementRestriction = {
+  selector:
+    "CallExpression[callee.object.name='document']" +
+    "[callee.property.name='createElement']",
+  message:
+    'Build elements with h() from client/lib/dom.js. Head assets ' +
+    '(<style>/<link>/<script> in document.head) go through ensureStyle/' +
+    'ensureStylesheet/ensureScript in client/lib/dom/head-assets.js, and the ' +
+    'three font providers through client/lib/theme/font-assets.js (B150, ' +
+    'docs/developer/linting.md).',
+};
+
 // A background promise whose rejection lands in an empty `.catch(() => {})`
 // is the one failure you cannot debug: no log line, no stack, no trace that
 // anything went wrong. `fireAndForget(promise, label)`
@@ -327,6 +359,7 @@ export default [
         ...clientRestrictedSyntax,
         overlayClassRestriction,
         instanceAdminRestriction,
+        createElementRestriction,
       ],
     },
   },
@@ -342,6 +375,7 @@ export default [
         'error',
         ...clientRestrictedSyntax,
         instanceAdminRestriction,
+        createElementRestriction,
       ],
     },
   },
@@ -357,6 +391,24 @@ export default [
         'error',
         ...clientRestrictedSyntax,
         overlayClassRestriction,
+        createElementRestriction,
+      ],
+    },
+  },
+
+  // The two files that are allowed to call `document.createElement`: dom.js is
+  // where `h()` is implemented, and embed-sdk.js is the standalone IIFE served
+  // to third-party pages — it has no imports at all, by design. Every other
+  // client restriction stays in force (rule entries replace per rule name,
+  // hence the re-statement).
+  {
+    files: ['client/lib/dom.js', 'client/embed-sdk.js'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...clientRestrictedSyntax,
+        overlayClassRestriction,
+        instanceAdminRestriction,
       ],
     },
   },
