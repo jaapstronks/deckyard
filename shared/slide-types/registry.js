@@ -67,6 +67,32 @@ export const GLOBAL_SLIDE_FIELD_KEYS = [
   'slideLogo',
 ];
 
+/**
+ * One enum option of a global slide field, carrying its single shared i18n key.
+ *
+ * The option's `title` and `ariaLabel` are derived from its label, so all
+ * three key slots point at the same key — one text, one key. The key arrives
+ * as a full literal (never assembled from parts) so the i18n audit's
+ * orphan check can see every reference by exact match.
+ *
+ * @param {string} key - shared i18n key, e.g. `editor.slideField.slideLogo.option.none`
+ * @param {string} value - stored enum value
+ * @param {string} label - English default
+ * @returns {Object}
+ */
+function sharedOption(key, value, label) {
+  return { value, label, labelKey: key, titleKey: key, ariaLabelKey: key };
+}
+
+// Both a11y fields share the placeholder text "Optional" — same text, same key.
+const OPTIONAL_PLACEHOLDER_KEY = 'editor.slideField.optionalPlaceholder';
+
+// The global fields below declare explicit `editor.slideField.*` i18n keys, so
+// their editor copy is ONE key per text instead of a generated
+// `slideType.<type>.field.<key>…` copy per registered type: an explicit `*Key`
+// wins both in addUiI18nKeysToSlideType() and in the key walker
+// (scripts/lib/slide-type-i18n-keys.js), so the per-type keys are never minted
+// for these fields (B140).
 function withGlobalSlideFields(def) {
   const d = def && typeof def === 'object' ? def : {};
   const fields = Array.isArray(d.fields) ? d.fields : [];
@@ -76,8 +102,11 @@ function withGlobalSlideFields(def) {
     extra.push({
       key: 'a11yTitle',
       type: 'string',
+      labelKey: 'editor.slideField.a11yTitle.label',
       label: 'Accessibility title',
+      placeholderKey: OPTIONAL_PLACEHOLDER_KEY,
       placeholder: 'Optional',
+      helpTextKey: 'editor.slideField.a11yTitle.help',
       helpText:
         'Optional. Screen readers announce this when the slide becomes active. Prefer a short, descriptive phrase.',
       maxLength: 140,
@@ -87,8 +116,11 @@ function withGlobalSlideFields(def) {
     extra.push({
       key: 'a11ySummary',
       type: 'string',
+      labelKey: 'editor.slideField.a11ySummary.label',
       label: 'Accessibility summary',
+      placeholderKey: OPTIONAL_PLACEHOLDER_KEY,
       placeholder: 'Optional',
+      helpTextKey: 'editor.slideField.a11ySummary.help',
       helpText:
         'Optional extra context for screen readers (announced after the title). Keep it brief.',
       maxLength: 280,
@@ -101,9 +133,11 @@ function withGlobalSlideFields(def) {
     extra.push({
       key: 'slideBgImage',
       type: 'image',
+      labelKey: 'editor.slideField.slideBgImage.label',
       label: 'Background image',
       required: false,
       presetSource: 'backgrounds',
+      helpTextKey: 'editor.slideField.slideBgImage.help',
       helpText:
         'Optional. Fills the whole slide behind the content. Large images are resized automatically; use the focus control to pick which part stays visible when cropped.',
     });
@@ -112,11 +146,20 @@ function withGlobalSlideFields(def) {
     extra.push({
       key: 'slideBgFit',
       type: 'enum',
+      labelKey: 'editor.slideField.slideBgFit.label',
       label: 'Background fit',
       required: false,
       options: [
-        { value: 'cover', label: 'Fill (crop)' },
-        { value: 'contain', label: 'Fit (no crop)' },
+        sharedOption(
+          'editor.slideField.slideBgFit.option.cover',
+          'cover',
+          'Fill (crop)',
+        ),
+        sharedOption(
+          'editor.slideField.slideBgFit.option.contain',
+          'contain',
+          'Fit (no crop)',
+        ),
       ],
     });
   }
@@ -124,6 +167,7 @@ function withGlobalSlideFields(def) {
     extra.push({
       key: 'slideBgFocusX',
       type: 'number',
+      labelKey: 'editor.slideField.slideBgFocusX.label',
       label: 'Background focus X',
       required: false,
     });
@@ -132,6 +176,7 @@ function withGlobalSlideFields(def) {
     extra.push({
       key: 'slideBgFocusY',
       type: 'number',
+      labelKey: 'editor.slideField.slideBgFocusY.label',
       label: 'Background focus Y',
       required: false,
     });
@@ -140,16 +185,42 @@ function withGlobalSlideFields(def) {
     extra.push({
       key: 'slideBgOverlay',
       type: 'enum',
+      labelKey: 'editor.slideField.slideBgOverlay.label',
       label: 'Background overlay',
       required: false,
       options: [
-        { value: 'auto', label: 'Auto (only if needed)' },
-        { value: 'none', label: 'None' },
-        { value: 'light', label: 'Light scrim' },
-        { value: 'dark', label: 'Dark scrim' },
-        { value: 'gradient-top', label: 'Gradient (top)' },
-        { value: 'gradient-bottom', label: 'Gradient (bottom)' },
+        sharedOption(
+          'editor.slideField.slideBgOverlay.option.auto',
+          'auto',
+          'Auto (only if needed)',
+        ),
+        sharedOption(
+          'editor.slideField.slideBgOverlay.option.none',
+          'none',
+          'None',
+        ),
+        sharedOption(
+          'editor.slideField.slideBgOverlay.option.light',
+          'light',
+          'Light scrim',
+        ),
+        sharedOption(
+          'editor.slideField.slideBgOverlay.option.dark',
+          'dark',
+          'Dark scrim',
+        ),
+        sharedOption(
+          'editor.slideField.slideBgOverlay.option.gradient-top',
+          'gradient-top',
+          'Gradient (top)',
+        ),
+        sharedOption(
+          'editor.slideField.slideBgOverlay.option.gradient-bottom',
+          'gradient-bottom',
+          'Gradient (bottom)',
+        ),
       ],
+      helpTextKey: 'editor.slideField.slideBgOverlay.help',
       helpText:
         'Auto adds a subtle scrim only when the image is too busy for readable text. Gradient options darken one edge behind the text.',
     });
@@ -158,13 +229,27 @@ function withGlobalSlideFields(def) {
     extra.push({
       key: 'slideBgText',
       type: 'enum',
+      labelKey: 'editor.slideField.slideBgText.label',
       label: 'Text colour',
       required: false,
       options: [
-        { value: 'auto', label: 'Auto (detect)' },
-        { value: 'light', label: 'Light' },
-        { value: 'dark', label: 'Dark' },
+        sharedOption(
+          'editor.slideField.slideBgText.option.auto',
+          'auto',
+          'Auto (detect)',
+        ),
+        sharedOption(
+          'editor.slideField.slideBgText.option.light',
+          'light',
+          'Light',
+        ),
+        sharedOption(
+          'editor.slideField.slideBgText.option.dark',
+          'dark',
+          'Dark',
+        ),
       ],
+      helpTextKey: 'editor.slideField.slideBgText.help',
       helpText:
         'Auto picks the theme text colour with the best contrast for the background image. Light/dark force it. (Legacy "default" is treated as the theme default.)',
     });
@@ -175,12 +260,18 @@ function withGlobalSlideFields(def) {
     extra.push({
       key: 'slideLogo',
       type: 'enum',
+      labelKey: 'editor.slideField.slideLogo.label',
       label: 'Theme logo',
       required: false,
       options: [
-        { value: 'none', label: 'Off' },
-        { value: 'top-right', label: 'Top right' },
+        sharedOption('editor.slideField.slideLogo.option.none', 'none', 'Off'),
+        sharedOption(
+          'editor.slideField.slideLogo.option.top-right',
+          'top-right',
+          'Top right',
+        ),
       ],
+      helpTextKey: 'editor.slideField.slideLogo.help',
       helpText: 'Show the active theme logo in a corner of this slide.',
     });
   }
