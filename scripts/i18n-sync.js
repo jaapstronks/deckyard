@@ -235,21 +235,19 @@ export function planSync() {
 /**
  * Write a plan's edits to disk.
  *
- * A file that only lost keys keeps its existing order: a prune should read as a
- * clean set of removed lines, not a whole-file re-sort (en/it/pl/fi are not
- * stored in this script's sort order, and re-sorting them here would bury the
- * deletions under hundreds of moved lines). A file that gained keys is sorted,
- * because the new keys have to land somewhere deterministic.
+ * Every file is written sorted. This used to be conditional — a prune kept the
+ * file's existing order so the diff would read as a clean set of removed lines
+ * rather than a whole-file re-sort — because en/it/pl/fi were not stored in
+ * this script's order. Since B138 they are: `tests/i18n-locales.test.js` fails
+ * on any locale file whose keys are unsorted, so sorting a pruned file moves
+ * nothing and the branch guarded a case that can no longer exist.
  *
  * @param {SyncPlan} plan
  * @returns {void}
  */
 export function applyPlan(plan) {
   for (const edit of plan.edits) {
-    saveJson(
-      edit.filePath,
-      edit.filled.length ? sortKeys(edit.data) : edit.data,
-    );
+    saveJson(edit.filePath, sortKeys(edit.data));
   }
 }
 
