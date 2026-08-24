@@ -5,14 +5,39 @@ import {
   createSSEConnection,
   LONG_LIVED_STREAM,
 } from '../lib/net/sse-connection.js';
+import { isOrganizationAdmin } from '../lib/user/organization-role.js';
+
+/**
+ * The screen a non-moderator gets instead of the live question list.
+ * @returns {HTMLElement} The app shell to append.
+ */
+function renderAccessDenied() {
+  const shell = h('div', { class: 'app-shell' });
+  const panel = h('div', { class: 'panel moderate-panel' });
+  panel.append(
+    h('h2', { text: t('moderate.title', 'Q&A moderator') }),
+    h('div', {
+      class: 'help',
+      text: t(
+        'moderate.adminRequired',
+        'Moderator access requires admin login',
+      ),
+    }),
+  );
+  shell.append(panel);
+  return shell;
+}
 
 export async function renderModerate(root, presentationId, { user } = {}) {
   const pid = String(presentationId || '').trim();
   if (!pid) throw new Error(t('moderate.missingId', 'Missing presentationId'));
-  if (!user?.isAdmin)
-    throw new Error(
-      t('moderate.adminRequired', 'Moderator access requires admin login'),
-    );
+  // Not a throw: app.js turns one into renderFatal(), which shows a stack trace
+  // under a "Something went wrong" heading. Being in the wrong workspace is not
+  // a crash, so it gets a plain refusal instead.
+  if (!isOrganizationAdmin(user)) {
+    root.append(renderAccessDenied());
+    return () => {};
+  }
 
   const shell = h('div', { class: 'app-shell' });
   const panel = h('div', { class: 'panel moderate-panel' });

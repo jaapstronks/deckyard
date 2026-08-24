@@ -11,6 +11,7 @@ import {
   isOwnerOrCreator,
   matchesIdentity,
 } from '../../../shared/identity-match.js';
+import { isOrganizationAdmin } from '../user/organization-role.js';
 
 /**
  * Check if the user is the presentation owner (can resolve/reopen comments).
@@ -21,7 +22,7 @@ import {
  */
 export function isCommentOwner(user, pres) {
   if (!user) return false;
-  return Boolean(user.isAdmin) || isOwnerOrCreator(user, pres);
+  return isOrganizationAdmin(user) || isOwnerOrCreator(user, pres);
 }
 
 /**
@@ -37,7 +38,7 @@ export function isCommentOwner(user, pres) {
 export function isCommentAuthor(user, comment) {
   if (!user || !comment) return false;
   return (
-    Boolean(user.isAdmin) ||
+    isOrganizationAdmin(user) ||
     matchesIdentity(user, { userId: comment.author?.id })
   );
 }
