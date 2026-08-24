@@ -47,8 +47,12 @@ export function clearSessionLocaleOverride() {
   sessionParamLocale = null;
 }
 
-// Component files that make up the full translation dictionary
-const I18N_COMPONENTS = [
+// Component files that make up the full translation dictionary — the `ui`-loader
+// modules in client/i18n/manifest.json. Kept as a literal rather than read from
+// the manifest so a failed manifest fetch degrades the language *picker* only,
+// never the dictionary itself; tests/i18n-locales.test.js pins the two lists
+// against each other so they cannot drift.
+export const I18N_COMPONENTS = [
   'auth',
   'common',
   'editor',

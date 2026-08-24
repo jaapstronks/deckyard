@@ -31,7 +31,7 @@ import {
   findLegacyDescriptorPairs,
   collectFallbackSites,
 } from '../scripts/i18n-keys.js';
-import { TIER_1 } from '../scripts/i18n-tiers.js';
+import { TIER_1 } from '../scripts/i18n-locales.js';
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),

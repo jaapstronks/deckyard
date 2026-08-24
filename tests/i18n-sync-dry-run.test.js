@@ -12,6 +12,13 @@
  * — so it floated untracked in every working copy. The generators are gone;
  * this test pins that a full sync does not resurrect one.
  *
+ * B132 added a third contract to pin here: the plan's *scope*. Both halves of
+ * the sync used to iterate hand-kept lists (a fill list of 8 locales, a prune
+ * list of 12, a module list without `follow`); they now derive from
+ * `client/i18n/manifest.json`. `planSync()` reports the matrix it covered, so
+ * the asymmetry that survives — prune everything, fill only the `ui` modules of
+ * the non-reference locales — is asserted rather than re-derived.
+ *
  * Run with: node --test tests/i18n-sync-dry-run.test.js
  */
 
@@ -24,6 +31,13 @@ import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 
 import { planSync } from '../scripts/i18n-sync.js';
+import {
+  FILL_LOCALES,
+  LOCALE_IDS,
+  MODULES,
+  REFERENCE_LOCALE,
+  UI_MODULES,
+} from '../scripts/i18n-locales.js';
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -117,4 +131,62 @@ test('no locale ships a merged index.json, and nothing generates one', () => {
     [],
     'a sync would write an index.json again',
   );
+});
+
+test('the plan covers the manifest matrix, not a list of its own', () => {
+  const { scope } = planSync();
+
+  assert.deepEqual(scope.locales, LOCALE_IDS);
+  assert.deepEqual(scope.modules, MODULES);
+  assert.deepEqual(scope.fillLocales, FILL_LOCALES);
+  assert.deepEqual(scope.fillModules, UI_MODULES);
+  assert.equal(scope.reference, REFERENCE_LOCALE);
+
+  // The prune is the total half: every locale on disk, `follow.json` and the
+  // reference locale included. A dead slideType key is dead wherever it sits,
+  // and narrowing this half is what stranded it/pl/fi's orphans before B132.
+  assert.ok(scope.modules.includes('follow'));
+  assert.ok(scope.locales.includes(REFERENCE_LOCALE));
+});
+
+test('a fill never targets the reference locale or a deck-loader module', () => {
+  const filled = planSync().edits.filter((e) => e.filled.length > 0);
+
+  // Filling the reference from itself is a no-op at best; the guard is that
+  // FILL_LOCALES excludes it, and this is where that shows.
+  assert.deepEqual(
+    filled.filter((e) => e.locale === REFERENCE_LOCALE).map((e) => e.filePath),
+    [],
+    'the reference locale was filled from itself',
+  );
+
+  // `follow.json` is resolved against the *deck* language, which only ever
+  // lands on a Tier-1 locale — copying English into the other ten would write
+  // files no loader can reach.
+  const offModule = filled
+    .filter((e) => !UI_MODULES.includes(e.module))
+    .map((e) => `${e.locale}/${e.module}.json`);
+  assert.deepEqual(
+    offModule,
+    [],
+    'a non-ui module was filled with English placeholders',
+  );
+
+  const offLocale = filled
+    .filter((e) => !FILL_LOCALES.includes(e.locale))
+    .map((e) => `${e.locale}/${e.module}.json`);
+  assert.deepEqual(offLocale, [], 'a locale outside the fill set was filled');
+});
+
+test('every planned edit names a manifest locale and module', () => {
+  for (const edit of planSync().edits) {
+    assert.ok(
+      LOCALE_IDS.includes(edit.locale),
+      `${edit.locale}/${edit.module}.json is not a shipped locale`,
+    );
+    assert.ok(
+      MODULES.includes(edit.module),
+      `${edit.locale}/${edit.module}.json is not a manifest module`,
+    );
+  }
 });
