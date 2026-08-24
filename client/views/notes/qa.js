@@ -1,11 +1,12 @@
 import { debugLog } from '../../lib/util/debug.js';
 import { t } from '../../lib/ui-i18n.js';
-import {
-  createSSEConnection,
-  LONG_LIVED_STREAM,
-} from '../../lib/net/sse-connection.js';
 import { h } from '../../lib/dom.js';
 import { isOrganizationAdmin } from '../../lib/user/organization-role.js';
+import {
+  createQuestionsFeed,
+  promoteQuestion,
+  removeQuestion,
+} from '../../lib/qa/index.js';
 
 export function createNotesQaController({
   api,
@@ -17,14 +18,12 @@ export function createNotesQaController({
   flashHint,
 } = {}) {
   let questions = [];
-  const expanded = new Set();
   let qaEnabled = true;
-  let qaRefreshTid = null;
+  const expanded = new Set();
 
   const renderQuestions = () => {
     qaBody.innerHTML = '';
-    const q = Array.isArray(questions) ? questions : [];
-    if (!q.length) {
+    if (!questions.length) {
       qaBody.append(
         h('div', {
           class: 'help',
@@ -33,17 +32,9 @@ export function createNotesQaController({
       );
       return;
     }
-    for (const item of q) {
-      const qid = String(item?.id || '').trim();
-      const originalText = String(
-        item?.original?.text || item?.text || '',
-      ).trim();
-      const isPromoted = String(item?.status || '') === 'promoted';
-
-      // Questions are not auto-translated (for now). Always show original text.
-      const displayText = originalText;
-      const authorName = String(item?.authorName || '').trim();
-      const upvotes = Math.max(0, Number(item?.upvotes || 0) || 0);
+    for (const item of questions) {
+      const qid = item.id;
+      const displayText = item.text;
       const row = h('div', { class: 'notes-qa-item' });
       const isLong = displayText.length > 140 || displayText.includes('\n');
       const isExpanded = qid && expanded.has(qid);
@@ -53,11 +44,11 @@ export function createNotesQaController({
       });
       const who = h('div', {
         class: 'help notes-qa-who',
-        text: authorName ? authorName : t('qa.anonymous', 'Anonymous'),
+        text: item.authorName || t('qa.anonymous', 'Anonymous'),
       });
       const votes = h('div', {
         class: 'help notes-qa-votes',
-        text: `▲ ${upvotes}`,
+        text: `▲ ${item.upvotes}`,
       });
       metaLeft.append(who, votes);
       const actions = h('div', {
@@ -91,7 +82,7 @@ export function createNotesQaController({
       if (isOrganizationAdmin(user)) {
         const presId = getPresentationId?.() || '';
         const afterSlideIndex = Number(getPresenterSlideIndex?.() ?? 0) || 0;
-        if (isPromoted) {
+        if (item.isPromoted) {
           footer.append(
             h('div', {
               class: 'help notes-qa-pill',
@@ -99,64 +90,44 @@ export function createNotesQaController({
             }),
           );
         } else {
-          const addNextBtn = h('button', {
-            class: 'btn btn-secondary',
-            text: t('qa.addNextSlide', 'Add next slide'),
-            onclick: async () => {
-              if (!qid) return;
-              addNextBtn.disabled = true;
-              try {
-                await api(
-                  `/api/moderate/${encodeURIComponent(
-                    presId,
-                  )}/questions/${encodeURIComponent(qid)}/promote`,
-                  {
-                    method: 'POST',
-                    body: JSON.stringify({
-                      position: 'next',
-                      afterSlideIndex,
-                    }),
-                  },
-                );
-                flashHint?.(t('qa.addedToDeck', 'Added to deck'));
-                refresh().catch((e) =>
-                  debugLog('[notes][qa] refresh after promote failed', e),
-                );
-              } catch (e) {
-                addNextBtn.disabled = false;
-                flashHint?.(t('qa.addFailed', 'Failed to add.'));
-                debugLog('[notes][qa] promote-next failed', { qid, e });
-              }
-            },
-          });
-          const addEndBtn = h('button', {
-            class: 'btn btn-secondary',
-            text: t('qa.addToEnd', 'Add to end'),
-            onclick: async () => {
-              if (!qid) return;
-              addEndBtn.disabled = true;
-              try {
-                await api(
-                  `/api/moderate/${encodeURIComponent(
-                    presId,
-                  )}/questions/${encodeURIComponent(qid)}/promote`,
-                  {
-                    method: 'POST',
-                    body: JSON.stringify({ position: 'end' }),
-                  },
-                );
-                flashHint?.(t('qa.addedToDeck', 'Added to deck'));
-                refresh().catch((e) =>
-                  debugLog('[notes][qa] refresh after promote failed', e),
-                );
-              } catch (e) {
-                addEndBtn.disabled = false;
-                flashHint?.(t('qa.addFailed', 'Failed to add.'));
-                debugLog('[notes][qa] promote-end failed', { qid, e });
-              }
-            },
-          });
-          actions.append(addNextBtn, addEndBtn);
+          /**
+           * A promote button that reports through the presenter's hint line.
+           * @param {string} label - Button copy
+           * @param {Object} options - Passed to promoteQuestion
+           * @returns {HTMLElement}
+           */
+          const promoteBtn = (label, options) => {
+            const btn = h('button', {
+              class: 'btn btn-secondary',
+              text: label,
+              onclick: async () => {
+                if (!qid) return;
+                btn.disabled = true;
+                try {
+                  await promoteQuestion(api, presId, qid, options);
+                  flashHint?.(t('qa.addedToDeck', 'Added to deck'));
+                  feed
+                    .refresh()
+                    .catch((e) =>
+                      debugLog('[notes][qa] refresh after promote failed', e),
+                    );
+                } catch (e) {
+                  btn.disabled = false;
+                  flashHint?.(t('qa.addFailed', 'Failed to add.'));
+                  debugLog('[notes][qa] promote failed', { qid, options, e });
+                }
+              },
+            });
+            return btn;
+          };
+
+          actions.append(
+            promoteBtn(t('qa.addNextSlide', 'Add next slide'), {
+              position: 'next',
+              afterSlideIndex,
+            }),
+            promoteBtn(t('qa.addToEnd', 'Add to end'), { position: 'end' }),
+          );
         }
       }
 
@@ -169,18 +140,13 @@ export function createNotesQaController({
             if (!qid) return;
             removeBtn.disabled = true;
             try {
-              await api(
-                `/api/moderate/${encodeURIComponent(
-                  presId,
-                )}/questions/${encodeURIComponent(qid)}/remove`,
-                { method: 'POST', body: JSON.stringify({}) },
-              );
+              await removeQuestion(api, presId, qid);
             } catch {
               removeBtn.disabled = false;
             }
           },
         });
-        if (!isPromoted) actions.append(removeBtn);
+        if (!item.isPromoted) actions.append(removeBtn);
       }
 
       header.append(metaLeft, actions);
@@ -189,103 +155,36 @@ export function createNotesQaController({
     }
   };
 
-  const refresh = async () => {
-    try {
-      const presId = getPresentationId?.() || '';
-      const resp = await api(
-        `/api/follow/${encodeURIComponent(presId)}/questions`,
-      );
-      qaEnabled = resp?.capabilities ? !!resp.capabilities.canUseQa : true;
-      qaWrap.style.display = qaEnabled ? '' : 'none';
-      questions =
-        qaEnabled && resp?.status === 'live' && Array.isArray(resp?.questions)
-          ? resp.questions
-          : [];
+  const feed = createQuestionsFeed({
+    api,
+    getPresentationId,
+    logTag: 'notes][qa',
+    onQuestions: (next) => {
+      // A disabled Q&A shows nothing even if a payload still carries questions:
+      // capabilities are reported before the list, so this is the second half
+      // of the same decision, not a race with it.
+      questions = qaEnabled ? next : [];
       renderQuestions();
-    } catch (e) {
-      debugLog('[notes][qa] refresh failed', e);
+    },
+    onCapabilities: (capabilities) => {
+      qaEnabled = !!capabilities.canUseQa;
+      qaWrap.style.display = qaEnabled ? '' : 'none';
+      if (!qaEnabled) {
+        questions = [];
+        renderQuestions();
+      }
+    },
+    // A failed re-read says nothing about whether Q&A is on, so the panel comes
+    // back rather than staying hidden on the strength of a stale capability.
+    onRefreshError: () => {
       qaEnabled = true;
       qaWrap.style.display = '';
-      questions = [];
-      renderQuestions();
-    }
+    },
+  });
+
+  return {
+    refresh: () => feed.refresh(),
+    connect: () => feed.connect(),
+    destroy: () => feed.stop(),
   };
-
-  // Reopening on error is owned by the SSE helper so the pending retry dies
-  // with destroy(); a bare setTimeout here outlived the view and resurrected
-  // the stream into a detached controller. Built lazily so the presentation id
-  // is read at connect time, matching the previous per-open evaluation.
-  let qaStream = null;
-
-  const buildStream = () => {
-    const presId = getPresentationId?.() || '';
-    return createSSEConnection({
-      url: `/api/follow/${encodeURIComponent(presId)}/questions/events`,
-      events: ['questions', 'status', 'close'],
-      onEvent: (ev) => {
-        switch (ev.type) {
-          case 'questions': {
-            try {
-              const data = JSON.parse(ev.data || '{}');
-              questions = Array.isArray(data?.questions) ? data.questions : [];
-              renderQuestions();
-            } catch (e) {
-              debugLog('[notes][qa] bad questions event', {
-                data: ev?.data,
-                e,
-              });
-            }
-            break;
-          }
-          case 'status': {
-            try {
-              const data = JSON.parse(ev.data || '{}');
-              if (data?.capabilities) {
-                const canUseQa = !!data.capabilities.canUseQa;
-                qaEnabled = canUseQa;
-                qaWrap.style.display = canUseQa ? '' : 'none';
-                if (!canUseQa) {
-                  questions = [];
-                  renderQuestions();
-                }
-              }
-            } catch (e) {
-              debugLog('[notes][qa] bad status event', { data: ev?.data, e });
-            }
-            break;
-          }
-          case 'close':
-            // Server-side end of stream: close for good, don't reopen.
-            qaStream?.disconnect();
-            break;
-        }
-      },
-      ...LONG_LIVED_STREAM,
-    });
-  };
-
-  const connect = () => {
-    if (!qaStream) qaStream = buildStream();
-    qaStream.connect();
-
-    // Start polling fallback (for robustness if SSE misses events)
-    if (!qaRefreshTid) {
-      qaRefreshTid = setInterval(() => {
-        refresh().catch(() => {});
-      }, 8000);
-      qaRefreshTid.unref?.();
-    }
-  };
-
-  const destroy = () => {
-    qaStream?.stop();
-    if (qaRefreshTid) {
-      try {
-        clearInterval(qaRefreshTid);
-      } catch {}
-      qaRefreshTid = null;
-    }
-  };
-
-  return { refresh, connect, destroy };
 }

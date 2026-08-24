@@ -1,10 +1,14 @@
 import { debugLog } from '../../lib/util/debug.js';
 import { promptModal } from '../../lib/dom/modal.js';
-import {
-  createSSEConnection,
-  LONG_LIVED_STREAM,
-} from '../../lib/net/sse-connection.js';
 import { h } from '../../lib/dom.js';
+import {
+  askQuestion,
+  cancelQuestion,
+  createQuestionsFeed,
+  normalizeQuestion,
+  rankQuestions,
+  upvoteQuestion,
+} from '../../lib/qa/index.js';
 
 export function createFollowQaController({
   api,
@@ -31,7 +35,6 @@ export function createFollowQaController({
   } = questionsApi || {};
 
   let qaBusy = false;
-  let qaRefreshTid = null;
   let questions = [];
   let capabilities = null;
 
@@ -48,39 +51,18 @@ export function createFollowQaController({
   const renderQuestions = () => {
     qaList.innerHTML = '';
     const copy = getCopy?.() || {};
-    const q = Array.isArray(questions) ? [...questions] : [];
-    // Ensure ranked order client-side too (in case of optimistic inserts).
-    q.sort((a, b) => {
-      const ap = String(a?.status || '') === 'promoted';
-      const bp = String(b?.status || '') === 'promoted';
-      if (ap !== bp) return ap ? -1 : 1;
-      const au = Math.max(0, Number(a?.upvotes || 0) || 0);
-      const bu = Math.max(0, Number(b?.upvotes || 0) || 0);
-      if (bu !== au) return bu - au;
-      const at = Number(a?.createdAt || 0) || 0;
-      const bt = Number(b?.createdAt || 0) || 0;
-      return at - bt;
-    });
-    qaHint.textContent = q.length ? `${q.length}` : '';
-    if (!q.length) {
+    qaHint.textContent = questions.length ? `${questions.length}` : '';
+    if (!questions.length) {
       qaList.append(h('div', { class: 'help', text: copy.qaEmpty }));
       return;
     }
     const myIds = new Set(getMyQuestionIds?.(presentationId) || []);
-    for (const item of q) {
-      const qid = String(item?.id || '');
-      const originalText = String(
-        item?.original?.text || item?.text || '',
-      ).trim();
-      // Questions are not auto-translated (for now). Always show original text.
-      const displayText = originalText;
-      const authorName = String(item?.authorName || '').trim();
-      const isPromoted = String(item?.status || '') === 'promoted';
-      const upvotes = Math.max(0, Number(item?.upvotes || 0) || 0);
+    for (const item of questions) {
+      const qid = item.id;
       const actions = h('div', { class: 'follow-qa-actions' });
       const votes = h('div', {
         class: 'follow-qa-votes',
-        text: String(upvotes),
+        text: String(item.upvotes),
       });
       const upvoteBtn = h('button', {
         class: 'btn btn-secondary',
@@ -88,19 +70,11 @@ export function createFollowQaController({
         title: copy.qaUpvote || 'Upvote',
         onclick: async () => {
           if (!qid || qaBusy) return;
-          if (isPromoted) return;
+          if (item.isPromoted) return;
           if (hasUpvoted?.(presentationId, qid)) return;
           qaBusy = true;
           try {
-            await api(
-              `/api/follow/${encodeURIComponent(
-                presentationId,
-              )}/questions/${encodeURIComponent(qid)}/upvote`,
-              {
-                method: 'POST',
-                body: JSON.stringify({}),
-              },
-            );
+            await upvoteQuestion(api, presentationId, qid);
             markUpvoted?.(presentationId, qid);
             renderQuestions();
           } catch (e) {
@@ -110,7 +84,7 @@ export function createFollowQaController({
           }
         },
       });
-      if (isPromoted || hasUpvoted?.(presentationId, qid))
+      if (item.isPromoted || hasUpvoted?.(presentationId, qid))
         upvoteBtn.disabled = true;
 
       actions.append(votes, upvoteBtn);
@@ -122,18 +96,10 @@ export function createFollowQaController({
           title: copy.qaCancel || 'Cancel my question',
           onclick: async () => {
             if (!qid || qaBusy) return;
-            if (isPromoted) return;
+            if (item.isPromoted) return;
             qaBusy = true;
             try {
-              await api(
-                `/api/follow/${encodeURIComponent(
-                  presentationId,
-                )}/questions/${encodeURIComponent(qid)}/cancel`,
-                {
-                  method: 'POST',
-                  body: JSON.stringify({}),
-                },
-              );
+              await cancelQuestion(api, presentationId, qid);
               removeMyQuestionId?.(presentationId, qid);
             } catch (e) {
               debugLog('[follow][qa] cancel failed', { qid, e });
@@ -142,26 +108,28 @@ export function createFollowQaController({
             }
           },
         });
-        if (isPromoted) cancelBtn.disabled = true;
+        if (item.isPromoted) cancelBtn.disabled = true;
         actions.append(cancelBtn);
       }
 
       qaList.append(
         h('div', { class: 'follow-qa-item' }, [
           h('div', { class: 'follow-qa-item-top' }, [
-            h('div', { class: 'follow-qa-text', text: displayText }),
+            // Questions are not auto-translated (for now). Always show the
+            // original text — which is what questionText() resolves to.
+            h('div', { class: 'follow-qa-text', text: item.text }),
             actions,
           ]),
-          isPromoted
+          item.isPromoted
             ? h('div', {
                 class: 'help follow-qa-promoted',
                 text: copy.qaPromoted,
               })
             : null,
-          authorName
+          item.authorName
             ? h('div', {
                 class: 'help follow-qa-author',
-                text: `— ${authorName}`,
+                text: `— ${item.authorName}`,
               })
             : null,
         ]),
@@ -169,75 +137,26 @@ export function createFollowQaController({
     }
   };
 
-  const refreshQuestionsIfLive = async () => {
-    try {
-      const resp = await api(
-        `/api/follow/${encodeURIComponent(presentationId)}/questions`,
-      );
-      if (resp?.capabilities && onCapabilities)
-        onCapabilities(resp.capabilities);
-      if (resp?.status !== 'live') {
-        questions = [];
-        renderQuestions();
-        return false;
-      }
-      questions = Array.isArray(resp?.questions) ? resp.questions : [];
+  const feed = createQuestionsFeed({
+    api,
+    getPresentationId: () => presentationId,
+    logTag: 'follow][qa',
+    onQuestions: (next) => {
+      questions = next;
       renderQuestions();
-      return true;
-    } catch (e) {
-      debugLog('[follow][qa] refresh failed', e);
-      questions = [];
-      renderQuestions();
-      return false;
-    }
-  };
-
-  // Some browsers/mobile contexts silently drop SSE when backgrounded, so the
-  // stream reopens on error — the helper owns the pending retry and cancels it
-  // on stop(). A bare setTimeout here would survive destroy() and resurrect the
-  // stream after the view is gone.
-  const qaStream = createSSEConnection({
-    url: `/api/follow/${encodeURIComponent(presentationId)}/questions/events`,
-    events: ['questions', 'status', 'close'],
-    onEvent: (ev) => {
-      switch (ev.type) {
-        case 'questions': {
-          try {
-            const data = JSON.parse(ev.data || '{}');
-            questions = Array.isArray(data?.questions) ? data.questions : [];
-            renderQuestions();
-          } catch (e) {
-            debugLog('[follow][qa] bad questions event', { data: ev?.data, e });
-          }
-          break;
-        }
-        case 'status': {
-          try {
-            const data = JSON.parse(ev.data || '{}');
-            if (data?.capabilities && onCapabilities)
-              onCapabilities(data.capabilities);
-            if (data?.status !== 'live') {
-              questions = [];
-              renderQuestions();
-            }
-          } catch (e) {
-            debugLog('[follow][qa] bad status event', { data: ev?.data, e });
-          }
-          break;
-        }
-        case 'close':
-          // Server-side end of stream: close for good, don't reopen.
-          qaStream.disconnect();
-          break;
-      }
     },
-    ...LONG_LIVED_STREAM,
+    onCapabilities: (next) => onCapabilities?.(next),
   });
+
+  const refreshQuestionsIfLive = async () => {
+    const { live } = await feed.refresh();
+    return live;
+  };
 
   const connectQa = () => {
     // If Q&A is currently disabled, don't connect (setCapabilities will reconnect when enabled).
     if (capabilities && capabilities.canUseQa === false) return;
-    qaStream.connect();
+    feed.connect();
   };
 
   const setCapabilities = (next) => {
@@ -249,13 +168,7 @@ export function createFollowQaController({
 
     // When disabled, stop background activity (SSE + polling) to avoid wasted connections.
     if (!canUseQa) {
-      qaStream.stop();
-      if (qaRefreshTid) {
-        try {
-          clearInterval(qaRefreshTid);
-        } catch {}
-        qaRefreshTid = null;
-      }
+      feed.stop();
       questions = [];
       renderQuestions();
       return;
@@ -263,12 +176,6 @@ export function createFollowQaController({
 
     // Enabled: ensure SSE + polling are running.
     connectQa();
-    if (!qaRefreshTid) {
-      qaRefreshTid = setInterval(() => {
-        refreshQuestionsIfLive().catch(() => {});
-      }, 8000);
-      qaRefreshTid.unref?.();
-    }
   };
 
   const wireAskButton = () => {
@@ -280,30 +187,18 @@ export function createFollowQaController({
       qaBusy = true;
       qaAskBtn.disabled = true;
       try {
-        const authorName = getQaName?.();
-        const lang = getLang?.();
-        const resp = await api(
-          `/api/follow/${encodeURIComponent(presentationId)}/questions`,
-          {
-            method: 'POST',
-            body: JSON.stringify({ authorName, lang, text }),
-          },
-        );
-        const qid = String(resp?.question?.id || '').trim();
-        if (qid) addMyQuestionId?.(presentationId, qid);
+        const resp = await askQuestion(api, presentationId, {
+          authorName: getQaName?.(),
+          lang: getLang?.(),
+          text,
+        });
+        const created = normalizeQuestion(resp?.question);
+        if (created.id) {
+          addMyQuestionId?.(presentationId, created.id);
 
-        // Optimistic insert so it appears immediately above the input.
-        const created =
-          resp?.question && typeof resp.question === 'object'
-            ? resp.question
-            : null;
-        if (created && String(created.id || '').trim()) {
-          const exists = (Array.isArray(questions) ? questions : []).some(
-            (x) => String(x?.id || '') === String(created.id || ''),
-          );
-          if (!exists) {
-            questions = Array.isArray(questions) ? questions : [];
-            questions.push(created);
+          // Optimistic insert so it appears immediately above the input.
+          if (!questions.some((x) => x.id === created.id)) {
+            questions = rankQuestions([...questions, created]);
             renderQuestions();
             try {
               qaList.scrollTop = 0;
@@ -341,13 +236,7 @@ export function createFollowQaController({
   };
 
   const destroy = () => {
-    qaStream.stop();
-    if (qaRefreshTid) {
-      try {
-        clearInterval(qaRefreshTid);
-      } catch {}
-      qaRefreshTid = null;
-    }
+    feed.stop();
   };
 
   // init wiring
