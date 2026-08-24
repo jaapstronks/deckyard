@@ -14,10 +14,8 @@
  *   - **the owner** may `DELETE` it → the danger zone exists
  */
 
-import {
-  hasOrganizationRole,
-  getOrganizationRole,
-} from '../../../lib/user/organization-role.js';
+import { hasOrganizationRole } from '../../../../shared/organization-role.js';
+import { getOrganizationRole } from '../../../lib/user/organization-role.js';
 
 /**
  * Whether the viewer may change the organization's profile fields.

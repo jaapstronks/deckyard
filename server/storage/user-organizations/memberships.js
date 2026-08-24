@@ -6,30 +6,7 @@
 import { sql } from 'kysely';
 import { nowIso, normalizeEmail } from '../../utils/normalize.js';
 import { withDbGuard } from '../utils/db-guard.js';
-
-// ============================================================
-// WORKSPACE-LEVEL ROLES
-// ============================================================
-
-/**
- * Organization roles in order of increasing privileges.
- * - member: Regular user, can view and edit content
- * - admin: Can manage members and organization settings
- * - owner: Billing contact, full control, can delete organization
- */
-export const WORKSPACE_ROLES = ['member', 'admin', 'owner'];
-
-/**
- * Check if a role has at least the specified permission level.
- * @param {string} userRole - User's role
- * @param {string} requiredRole - Required minimum role
- * @returns {boolean}
- */
-export function hasOrganizationRole(userRole, requiredRole) {
-  const userLevel = WORKSPACE_ROLES.indexOf(userRole);
-  const requiredLevel = WORKSPACE_ROLES.indexOf(requiredRole);
-  return userLevel >= 0 && requiredLevel >= 0 && userLevel >= requiredLevel;
-}
+import { WORKSPACE_ROLES } from '../../../shared/organization-role.js';
 
 // ============================================================
 // DESIGNER CAPABILITY

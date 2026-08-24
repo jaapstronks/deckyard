@@ -27,9 +27,11 @@ import {
   updateMemberDesigner,
   removeMember,
   transferOwnership,
+} from '../../storage/user-organizations/index.js';
+import {
   hasOrganizationRole,
   WORKSPACE_ROLES,
-} from '../../storage/user-organizations/index.js';
+} from '../../../shared/organization-role.js';
 import { createUser } from '../../storage/users.js';
 import { getUserByEmailGlobal } from '../../storage/identity.js';
 import { sendUserInvitationEmail } from '../../integrations/brevo.js';
