@@ -11,6 +11,7 @@ import {
   normalizeTranslationLang,
   normalizeLang,
   TRANSLATION_LANGS,
+  TRANSLATION_LANG_LABELS,
 } from '../../../storage/presentations/i18n.js';
 import {
   requirePermission,
@@ -198,31 +199,10 @@ async function handleListLanguages(ctx) {
   await apiSuccess(ctx, {
     languages: TRANSLATION_LANGS.map((code) => ({
       code,
-      label: getLangLabel(code),
+      label: TRANSLATION_LANG_LABELS[code],
     })),
   });
   return true;
-}
-
-/**
- * Get human-readable label for a language code.
- */
-function getLangLabel(code) {
-  const labels = {
-    nl: 'Dutch',
-    'en-GB': 'English (British)',
-    de: 'German',
-    fr: 'French',
-    es: 'Spanish',
-    pt: 'Portuguese',
-    it: 'Italian',
-    pl: 'Polish',
-    fi: 'Finnish',
-    da: 'Danish',
-    sv: 'Swedish',
-    no: 'Norwegian',
-  };
-  return labels[code] || code;
 }
 
 // ============================================================

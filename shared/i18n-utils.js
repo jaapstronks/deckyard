@@ -4,14 +4,24 @@
  */
 
 /**
- * All supported language codes for translation.
- * Based on client/i18n/manifest.json locales.
- * Note: 'en' is normalized to 'en-GB' for backwards compatibility.
+ * The deck translation targets: every language a deck can be translated into.
+ *
+ * This is the **deck** axis, not the UI-locale axis. It is keyed `en-GB` (the
+ * canonical spelling of English for a deck), while `client/i18n/manifest.json`
+ * keys the interface locale `en`. The two lists happen to name the same twelve
+ * languages today, but they answer different questions — "what can a deck be
+ * translated into" versus "what can the interface be shown in" — so this one is
+ * spelled out here rather than derived from the manifest.
+ *
+ * This array is the single source for that list. Everything else that needs it
+ * (the storage facade, the public API, the LLM prompt labels) derives from it;
+ * `tests/deck-translation-langs.test.js` pins those derivations.
+ *
+ * @type {readonly string[]}
  */
-const ALL_TRANSLATION_LANGS = new Set([
+export const TRANSLATION_LANGS = Object.freeze([
   'nl', // Dutch
-  'en-GB', // British English (canonical)
-  'en', // English (alias for en-GB)
+  'en-GB', // British English (canonical spelling of English on the deck axis)
   'de', // German
   'fr', // French
   'es', // Spanish
@@ -23,6 +33,44 @@ const ALL_TRANSLATION_LANGS = new Set([
   'sv', // Swedish
   'no', // Norwegian
 ]);
+
+/**
+ * English display names for the deck translation targets.
+ *
+ * One map, two readers: the public API returns these verbatim as the `label` of
+ * a language, and the LLM prompt builder upper-cases them. Keys are exactly
+ * `TRANSLATION_LANGS` — no aliases, no extras.
+ *
+ * @type {Readonly<Record<string, string>>}
+ */
+export const TRANSLATION_LANG_LABELS = Object.freeze({
+  nl: 'Dutch',
+  'en-GB': 'British English',
+  de: 'German',
+  fr: 'French',
+  es: 'Spanish',
+  pt: 'Portuguese',
+  it: 'Italian',
+  pl: 'Polish',
+  fi: 'Finnish',
+  da: 'Danish',
+  sv: 'Swedish',
+  no: 'Norwegian',
+});
+
+/**
+ * Input aliases accepted on the deck axis, normalized away on the way in.
+ *
+ * `en` is the interface-locale spelling of English; callers that know Deckyard
+ * from the UI side reach for it. It is accepted as *input* only — nothing is
+ * ever stored or returned under an alias, so there is exactly one spelling of
+ * English in the data.
+ *
+ * @type {Readonly<Record<string, string>>}
+ */
+const TRANSLATION_LANG_ALIASES = Object.freeze({ en: 'en-GB' });
+
+const TRANSLATION_LANG_SET = new Set(TRANSLATION_LANGS);
 
 /**
  * Legacy two-language set for presentation dominant/active language.
@@ -41,15 +89,16 @@ export function normalizeLang(v) {
 }
 
 /**
- * Normalize a language code for translation.
- * Accepts all 12 supported languages plus 'en' (normalized to 'en-GB').
+ * Normalize a language code to a deck translation target, or null.
+ * Accepts every code in `TRANSLATION_LANGS` plus the aliases in
+ * `TRANSLATION_LANG_ALIASES`; returns the canonical spelling.
  * @param {*} v - Language code to normalize
- * @returns {string|null} Normalized language code or null
+ * @returns {string|null} Canonical language code, or null when unsupported
  */
 export function normalizeTranslationLang(v) {
-  if (!ALL_TRANSLATION_LANGS.has(v)) return null;
-  // Normalize 'en' to 'en-GB' for consistency
-  return v === 'en' ? 'en-GB' : v;
+  if (Object.hasOwn(TRANSLATION_LANG_ALIASES, v))
+    return TRANSLATION_LANG_ALIASES[v];
+  return TRANSLATION_LANG_SET.has(v) ? v : null;
 }
 
 /**

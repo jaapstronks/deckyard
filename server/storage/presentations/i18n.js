@@ -5,33 +5,27 @@ import {
   normalizeTranslationLang,
   otherLang,
   isNonEmptyString,
+  TRANSLATION_LANGS,
+  TRANSLATION_LANG_LABELS,
 } from '../../../shared/i18n-utils.js';
 
-export { normalizeLang, normalizeTranslationLang, otherLang };
+/**
+ * Server-side facade for the shared i18n vocabulary. `TRANSLATION_LANGS` and
+ * `TRANSLATION_LANG_LABELS` are re-exported, not redefined — `shared/i18n-utils.js`
+ * is the single source for the deck translation targets.
+ */
+export {
+  normalizeLang,
+  normalizeTranslationLang,
+  otherLang,
+  TRANSLATION_LANGS,
+  TRANSLATION_LANG_LABELS,
+};
 
 /**
  * Presentation dominant/active languages (legacy two-language system).
  */
 export const SUPPORTED_LANGS = ['nl', 'en-GB'];
-
-/**
- * All supported translation target languages.
- * Includes all 12 i18n languages from client/i18n/manifest.json.
- */
-export const TRANSLATION_LANGS = [
-  'nl', // Dutch
-  'en-GB', // British English
-  'de', // German
-  'fr', // French
-  'es', // Spanish
-  'pt', // Portuguese
-  'it', // Italian
-  'pl', // Polish
-  'fi', // Finnish
-  'da', // Danish
-  'sv', // Swedish
-  'no', // Norwegian
-];
 
 export function translateKeysForSlideType(type) {
   const def = SLIDE_TYPES?.[type];
