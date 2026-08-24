@@ -274,30 +274,6 @@ export async function readApiV1Body(ctx, req, { requireObject = false } = {}) {
   return { ok: true, body };
 }
 
-/**
- * Parse pagination parameters from URL search params.
- * @param {URL} url - The request URL object
- * @param {Object} [options] - Optional configuration
- * @param {number} [options.defaultLimit=50] - Default limit if not specified
- * @param {number} [options.maxLimit=100] - Maximum allowed limit
- * @returns {{limit: number, offset: number}} - Parsed pagination parameters
- */
-export function parsePaginationParams(url, options = {}) {
-  const { defaultLimit = 50, maxLimit = 100 } = options;
-  const limit = Math.min(
-    maxLimit,
-    Math.max(
-      1,
-      parseInt(url.searchParams.get('limit') || String(defaultLimit), 10),
-    ),
-  );
-  const offset = Math.max(
-    0,
-    parseInt(url.searchParams.get('offset') || '0', 10),
-  );
-  return { limit, offset };
-}
-
 // ============================================================
 // RATE LIMITING
 // ============================================================
