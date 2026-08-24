@@ -4,6 +4,37 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.26.0](https://github.com/jaapstronks/deckyard/compare/v1.25.0...v1.26.0) (2026-08-24)
+
+
+### Added
+
+* **i18n:** give i18n-sync a --dry-run and retire the unread index.json ([#943](https://github.com/jaapstronks/deckyard/issues/943)) ([69c7c74](https://github.com/jaapstronks/deckyard/commit/69c7c744929c44bc1210d7e8ac066ee0ba41b8a2))
+* **reader:** project tabular and dataset slides per their structure contract ([#933](https://github.com/jaapstronks/deckyard/issues/933)) ([324a77f](https://github.com/jaapstronks/deckyard/commit/324a77f53cb568ed567850f673bbad14b3ecb868))
+* **reader:** stop projecting configuration and duplicated alt text as prose ([#936](https://github.com/jaapstronks/deckyard/issues/936)) ([3267d93](https://github.com/jaapstronks/deckyard/commit/3267d930a05f637e027d7f647bab09d52c6d0c7b))
+* **slide-types:** fold poll and likert options into one array (schema v8 → v9) ([#939](https://github.com/jaapstronks/deckyard/issues/939)) ([b55270a](https://github.com/jaapstronks/deckyard/commit/b55270ab0f86b3859027808319b01c579851fa9a))
+
+
+### Fixed
+
+* **editor:** finish the `images` field as an extension point, drop its dead alt path (B126) ([#941](https://github.com/jaapstronks/deckyard/issues/941)) ([1d4f6bb](https://github.com/jaapstronks/deckyard/commit/1d4f6bb9f8fafb4822b8914a6660e02c515d95dd))
+* **i18n:** complete the Danish translation (B133 8/11) ([#953](https://github.com/jaapstronks/deckyard/issues/953)) ([731bcc4](https://github.com/jaapstronks/deckyard/commit/731bcc4a8fe5be8f2d0f4c97347f6dfb530d24f3))
+* **i18n:** complete the Finnish translation (B133 7/11) ([#952](https://github.com/jaapstronks/deckyard/issues/952)) ([73e2129](https://github.com/jaapstronks/deckyard/commit/73e21293431619a05050affecbf78f27ba09a6e9))
+* **i18n:** complete the French translation (B133 2/11) ([#947](https://github.com/jaapstronks/deckyard/issues/947)) ([89e7774](https://github.com/jaapstronks/deckyard/commit/89e77748c8b40c131591aafad0577cad3de829b5))
+* **i18n:** complete the German translation (B133 1/11) ([#946](https://github.com/jaapstronks/deckyard/issues/946)) ([1a21dbd](https://github.com/jaapstronks/deckyard/commit/1a21dbd129436a3e3ffcb81767d2617f0af7dad4))
+* **i18n:** complete the Italian translation (B133 5/11) ([#950](https://github.com/jaapstronks/deckyard/issues/950)) ([bbb3014](https://github.com/jaapstronks/deckyard/commit/bbb301413307a87afaacea85a03d01373745f322))
+* **i18n:** complete the Norwegian translation (B133 10/11) ([#955](https://github.com/jaapstronks/deckyard/issues/955)) ([b4a4d64](https://github.com/jaapstronks/deckyard/commit/b4a4d6409aac6f32858a26531aaae0928b72f1fe))
+* **i18n:** complete the Polish translation (B133 6/11) ([#951](https://github.com/jaapstronks/deckyard/issues/951)) ([a7f14ac](https://github.com/jaapstronks/deckyard/commit/a7f14accbfe69bab8f6bdb5ac004a0f0ba36620e))
+* **i18n:** complete the Portuguese translation (B133 4/11) ([#949](https://github.com/jaapstronks/deckyard/issues/949)) ([0d4e3a4](https://github.com/jaapstronks/deckyard/commit/0d4e3a4e2afe83cdeb1a249c95fa5a16eba7ecb8))
+* **i18n:** complete the Spanish translation (B133 3/11) ([#948](https://github.com/jaapstronks/deckyard/issues/948)) ([6edf536](https://github.com/jaapstronks/deckyard/commit/6edf53687e75571a44efe5741fc29dc3d78879c3))
+* **i18n:** complete the Swedish translation (B133 9/11) ([#954](https://github.com/jaapstronks/deckyard/issues/954)) ([296bd47](https://github.com/jaapstronks/deckyard/commit/296bd478a85628b43106c89b56f0f09e92c31659))
+* **i18n:** derive every tooling locale/module list from the manifest (B132) ([#944](https://github.com/jaapstronks/deckyard/issues/944)) ([d70670c](https://github.com/jaapstronks/deckyard/commit/d70670c3964fdcd0c0bbb7fb651be08f905581ea))
+* **i18n:** give the deck translation targets one source (B135) ([#945](https://github.com/jaapstronks/deckyard/issues/945)) ([4151c99](https://github.com/jaapstronks/deckyard/commit/4151c997b8997f71228611e39498da8e8af7cb29))
+* **i18n:** one key, one module file — and en/ decides which (B137) ([#957](https://github.com/jaapstronks/deckyard/issues/957)) ([752eb06](https://github.com/jaapstronks/deckyard/commit/752eb06cfc58ad77f6c916c9a685d3506b851ebd))
+* **i18n:** report the runtime-built keys a locale still needs (B136) ([#956](https://github.com/jaapstronks/deckyard/issues/956)) ([98d66f4](https://github.com/jaapstronks/deckyard/commit/98d66f4b08b2f8bbd0e68999378d0dba953912c0))
+* **i18n:** walk item fields and nested itemFields when deriving live keys (B128) ([#940](https://github.com/jaapstronks/deckyard/issues/940)) ([d8f3d2d](https://github.com/jaapstronks/deckyard/commit/d8f3d2d320686cf1bc41f8ffede221de76792817))
+* **slide-types:** validate deck saves against the organization's registry (B129) ([#942](https://github.com/jaapstronks/deckyard/issues/942)) ([26b9cc2](https://github.com/jaapstronks/deckyard/commit/26b9cc20b7c0f12cad47192a448f158899e50b45))
+
 ## [1.25.0](https://github.com/jaapstronks/deckyard/compare/v1.24.0...v1.25.0) (2026-08-23)
 
 
