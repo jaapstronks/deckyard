@@ -31,93 +31,83 @@ import { slideTypeUiStrings } from './lib/slide-type-i18n-keys.js';
 import { LOCALE_IDS, REFERENCE_LOCALE } from './lib/i18n-locales.js';
 
 /**
- * Fallback routing for a key `en/` has never seen, by prefix. `en/` itself is
- * the primary answer (see `fileFor`); this table only decides where a brand-new
- * prefix lands, and `common` catches the rest.
- *
- * It used to be the *only* answer, which is how locale files drifted apart:
- * `analytics.*` routes here to `common`, while `en/` keeps those keys in
- * `editor.json`, so every applied translation landed in a different file than
- * its English source (B137).
+ * @typedef {object} EnIndex
+ * @property {Map<string, string>} byKey     key -> the module `en/` files it in
+ * @property {Map<string, string>} byPrefix  first key segment -> the module
+ *   holding most of `en/`'s keys under it
  */
-const PREFIX_TO_FILE = {
-  access: 'common',
-  activity: 'presenter',
-  admin: 'settings',
-  analytics: 'common',
-  app: 'common',
-  appearance: 'common',
-  comments: 'editor',
-  common: 'common',
-  cookies: 'common',
-  dashboard: 'common',
-  dataSource: 'editor',
-  editor: 'editor',
-  export: 'common',
-  follow: 'follow',
-  fonts: 'settings',
-  forgotPassword: 'auth',
-  imageLibrary: 'list',
-  imagekit: 'settings',
-  language: 'common',
-  list: 'list',
-  login: 'auth',
-  magicLogin: 'auth',
-  mediaLibrary: 'list',
-  mentions: 'editor',
-  moderate: 'share',
-  notes: 'presenter',
-  notesJoin: 'presenter',
-  notifications: 'common',
-  presentWindow: 'presenter',
-  presenter: 'presenter',
-  qa: 'editor',
-  resetPassword: 'auth',
-  settings: 'settings',
-  share: 'share',
-  shareViewer: 'share',
-  shortcuts: 'common',
-  slideLibrary: 'list',
-  slideType: 'slide-types',
-  stockMedia: 'common',
-  subscription: 'editor',
-  tags: 'list',
-  userAutocomplete: 'common',
-  viewer: 'common',
-  visibility: 'editor',
-};
 
 /**
- * key -> component basename, as `en/` files them. Built once per run; `en/` is
- * the reference locale, so "where the English string lives" is the only
- * definition of a key's home that cannot drift.
- * @returns {Promise<Map<string, string>>}
+ * Where `en/` files things, read once per run.
+ *
+ * `en/` is the reference locale, so "where the English string lives" is the
+ * only definition of a key's home that cannot drift — for a key that exists.
+ * For a key `en/` has never seen there has to be a second answer, and until
+ * B147 that was `PREFIX_TO_FILE`, 44 hand-kept lines. It had already drifted:
+ * `organization` was missing, so a brand-new `organization.*` key routed to
+ * `common` while `en/` filed its 81 existing organization keys in
+ * `settings.json` — the exact B137 failure the top of `fileFor` was added to
+ * fix, one level up. Three of its rows (`cookies`, `export`, `shareViewer`)
+ * named prefixes with no `en/` key at all.
+ *
+ * So the second answer is derived from the same pass as the first: the module
+ * where most of `en/`'s keys under this prefix already live. Measured against
+ * the table it replaced, that reproduces 41 of the 44 rows exactly, drops the
+ * three dead ones, and adds the seven prefixes the table had fallen behind on.
+ * A prefix genuinely split across modules (`analytics` is 75 `common` to 6
+ * `editor`) resolves to the majority, ties by module name so a run is
+ * deterministic.
+ *
+ * @returns {Promise<EnIndex>}
  */
-async function enFileIndex() {
+export async function enFileIndex() {
   /** @type {Map<string, string>} */
-  const index = new Map();
+  const byKey = new Map();
+  /** @type {Map<string, Map<string, number>>} prefix -> module -> key count */
+  const tally = new Map();
   let files;
   try {
     files = await fs.readdir(path.join(i18nDir, 'en'));
   } catch {
-    return index;
+    return { byKey, byPrefix: new Map() };
   }
   for (const name of files) {
     if (!name.endsWith('.json')) continue;
     const comp = name.slice(0, -'.json'.length);
     const dict = await readComponent('en', comp);
-    for (const key of Object.keys(dict)) index.set(key, comp);
+    for (const key of Object.keys(dict)) {
+      byKey.set(key, comp);
+      const prefix = key.split('.')[0];
+      if (!tally.has(prefix)) tally.set(prefix, new Map());
+      const counts = tally.get(prefix);
+      counts.set(comp, (counts.get(comp) || 0) + 1);
+    }
   }
-  return index;
+  /** @type {Map<string, string>} */
+  const byPrefix = new Map();
+  for (const [prefix, counts] of tally) {
+    const [winner] = [...counts].sort(
+      (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
+    )[0];
+    byPrefix.set(prefix, winner);
+  }
+  return { byKey, byPrefix };
 }
 
 /**
+ * Which module file a key belongs in.
+ *
+ * `en/` answers directly for a key it already holds; for a new key it answers
+ * by prefix (see `enFileIndex`). `common` catches a prefix `en/` has never seen
+ * in any form — a genuinely new namespace, which lands somewhere valid and gets
+ * a real home the moment `en/` has one key under it.
+ *
  * @param {string} key
- * @param {Map<string, string>} enIndex - key -> component, from `en/`
+ * @param {EnIndex} enIndex
  * @returns {string} component file basename
  */
-function fileFor(key, enIndex) {
-  return enIndex.get(key) || PREFIX_TO_FILE[key.split('.')[0]] || 'common';
+export function fileFor(key, { byKey, byPrefix }) {
+  return byKey.get(key) || byPrefix.get(key.split('.')[0]) || 'common';
 }
 
 /** Write a dict back to disk with stable key ordering. */
