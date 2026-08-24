@@ -151,7 +151,7 @@
   "presenter.tools.button": "Työkalut",
   "presenter.tools.copyAudiencePrompt": "Kopioi yleisön seurantanäkymän linkki:",
   "presenter.tools.copyLink": "Kopioi linkki",
-  "presenter.tools.copyPresenterConfirmBody": "Kuka tahansa, jolla on tämä linkki, näkee puhujan muistiinpanot ja voi kaukosäätimen käyttöönoton jälkeen ohjata elävää esitystä. Avaa se vain omalla laitteella. Diojen jakamiseen yleisölle käytetään ”Yleisön seurantanäkymä” -linkkiä.",
+  "presenter.tools.copyPresenterConfirmBody": "Kuka tahansa, jolla on tämä linkki, näkee puhujan muistiinpanot ja voi kaukosäätimen käyttöönoton jälkeen ohjata elävää esitystä. Avaa se vain omalla laitteella. Diojen jakamiseen yleisölle käytetään ”Yleisön seurantanäkymä”-linkkiä.",
   "presenter.tools.copyPresenterConfirmBtn": "Kopioi esittäjän linkki",
   "presenter.tools.copyPresenterConfirmTitle": "Kopioidaanko esittäjän linkki?",
   "presenter.tools.copyPresenterPrompt": "Kopioi esittäjän seurantanäkymän linkki:",
