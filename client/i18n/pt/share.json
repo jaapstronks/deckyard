@@ -173,7 +173,7 @@
   "share.verifying": "A verificar…",
   "share.visibility.everyoneDesc": "Aparece no espaço de trabalho partilhado para todos os membros.",
   "share.visibility.everyoneTitle": "Todos no seu espaço de trabalho",
-  "share.visibility.privateDesc": "Fica privada; só você e as pessoas que convidar em baixo a podem ver.",
+  "share.visibility.privateDesc": "Fica privada; visível apenas para si e para as pessoas que convidar em baixo.",
   "share.visibility.privateLocked": "Só um administrador a pode tirar do espaço de trabalho.",
   "share.visibility.privateTitle": "Só as pessoas que convidar",
   "share.visibility.title": "Quem a pode encontrar no seu espaço de trabalho?"
