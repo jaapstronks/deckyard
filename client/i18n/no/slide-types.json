@@ -185,7 +185,7 @@
   "slideType.embed-slide.field.title.label": "Tittel",
   "slideType.embed-slide.label": "Innbygging",
   "slideType.end-slide.field.body.label": "Brødtekst (Markdown)",
-  "slideType.end-slide.field.contactEmail.label": "Email",
+  "slideType.end-slide.field.contactEmail.label": "E-post",
   "slideType.end-slide.field.contactName.label": "Kontaktpersonens navn",
   "slideType.end-slide.field.contactPhone.label": "Telefon",
   "slideType.end-slide.field.contactUrl.label": "Nettsted",
