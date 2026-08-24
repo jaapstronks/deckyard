@@ -7,13 +7,21 @@ here.
 
 ## The two tiers
 
-| Tier                | Locales                                                    | Promise                                                                                                                                                                                                                                             |
-| ------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **1 — supported**   | `nl`, `en`                                                 | Complete and **gated**. Every key the code uses exists in both, and `npm test` fails if one drifts. No release ships with a Tier-1 gap.                                                                                                             |
-| **2 — best effort** | `de`, `fr`, `es`, `pt`, `it`, `pl`, `fi`, `da`, `sv`, `no` | Present and useful, **not gated**. A missing key falls back to the inline English string in the `t(key, fallback)` call, so an incomplete Tier-2 locale degrades to English rather than breaking. Tooling reports the gap; it does not block on it. |
+| Tier                | Locales                                                    | Promise                                                                                                                                                                                                                                                          |
+| ------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1 — supported**   | `nl`, `en`                                                 | Complete and **gated**. Every key the code uses exists in both, and `npm test` fails if one drifts. No release ships with a Tier-1 gap.                                                                                                                          |
+| **2 — best effort** | `de`, `fr`, `es`, `pt`, `it`, `pl`, `fi`, `da`, `sv`, `no` | Present and useful, **completeness not gated**. A missing key falls back to the inline English string in the `t(key, fallback)` call, so an incomplete Tier-2 locale degrades to English rather than breaking. Tooling reports the gap; it does not block on it. |
 
 `nl` is the default UI locale; `en` is the reference — the fallback baked into
 every `t()` call is the English string, so English is what a Tier-2 gap shows.
+
+**The tier governs completeness, and nothing else.** Whatever a locale _does_
+ship is live the moment a user picks it in the language menu, so the checks on
+the strings that are there run over all twelve: no empty values, and `{var}`
+placeholders matching the reference. Neither of those degrades to English — an
+empty value renders nothing at all, and a dropped `{var}` renders a literal
+`{name}` or silently loses the value — so "falls back to English" is no
+argument for leaving them ungated.
 
 ## Why tiering instead of removing locales
 
@@ -31,8 +39,10 @@ the ten locales stay, we are just honest about what "supported" covers.
   `client/i18n/manifest.json`. `scripts/i18n-locales.js` reads it and exports
   `TIER_1` / `TIER_2` / `tierOf(id)` for Node-side tooling; the browser reads the
   same field straight off the fetched manifest.
-- **The gate:** `tests/i18n-coverage.test.js` derives its required-locales list
-  from `TIER_1`, so it blocks on `nl` + `en` only. `tests/i18n-locales.test.js`
+- **The gates:** `tests/i18n-coverage.test.js` derives its _completeness_ list
+  from `TIER_1`, so "every key the code uses exists" blocks on `nl` + `en` only.
+  Its empty-value and placeholder-parity checks derive from `LOCALE_IDS` and
+  block on all twelve, per the paragraph above. `tests/i18n-locales.test.js`
   keeps the manifest, this document and the picker from disagreeing.
 - **Missing fallbacks:** the one way Tier-2's graceful degradation can break is a
   `t()` call written without its English fallback argument — then a missing key

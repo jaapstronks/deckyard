@@ -8,7 +8,8 @@
  *
  * The checks:
  *  1. every static t() key used in client/ exists in both nl/ and en/
- *  2. {var} placeholders match between en/ and nl/ for shared keys
+ *  2. {var} placeholders match between en/ and every other locale for shared
+ *     keys, and no locale ships an empty value
  *  3. follow.* keys are not reachable through the global t() (see below)
  *  4. descriptor pairs use the one surviving spelling, `<x>Key` / `<x>`
  *  5. every fallback spells the en/ value for its key — one key, one English
@@ -32,7 +33,11 @@ import {
   findLegacyDescriptorPairs,
   collectFallbackSites,
 } from '../scripts/i18n-keys.js';
-import { TIER_1 } from '../scripts/i18n-locales.js';
+import {
+  LOCALE_IDS,
+  REFERENCE_LOCALE,
+  TIER_1,
+} from '../scripts/i18n-locales.js';
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -42,9 +47,18 @@ const clientDir = path.join(repoRoot, 'client');
 const i18nDir = path.join(clientDir, 'i18n');
 
 /**
- * Locales that must be complete: Tier 1. Tier-2 locales fall back to the inline
- * English `t()` string and are not gated — see docs/reference/i18n-locale-tiers.md.
- * Read from the manifest so this list has one source, not two.
+ * Locales that must be *complete*: Tier 1. Tier-2 locales fall back to the
+ * inline English `t()` string for a key they lack, so a missing key degrades to
+ * English instead of breaking — see docs/reference/i18n-locale-tiers.md. Read
+ * from the manifest so this list has one source, not two.
+ *
+ * Completeness is the only thing the tier governs. The two checks below —
+ * no empty values, placeholders matching the reference — are about the strings
+ * a locale *does* ship, and a Tier-2 locale ships those to real users the
+ * moment they pick it in the language menu. An empty value renders nothing at
+ * all (worse than the English fallback, which at least says something), and a
+ * dropped `{var}` renders a literal placeholder or silently loses the number.
+ * Neither degrades gracefully, so both run over every shipped locale.
  */
 const REQUIRED_LOCALES = TIER_1;
 
@@ -77,36 +91,53 @@ describe('i18n coverage', () => {
             .join('\n'),
       );
     });
+  }
 
+  for (const locale of LOCALE_IDS) {
     it(`${locale}/ has no empty values`, async () => {
       const dict = await loadLocale(i18nDir, locale);
       const empty = Object.keys(dict).filter((k) => !String(dict[k]).trim());
       assert.deepStrictEqual(
         empty.sort(),
         [],
-        `Empty translation values in ${locale}/`,
+        `${empty.length} empty translation value(s) in client/i18n/${locale}/.\n` +
+          'An empty string is not "untranslated" — it renders nothing, where a\n' +
+          'missing key would have fallen back to the English t() string. Delete\n' +
+          'the key or translate it:\n' +
+          empty
+            .slice(0, 20)
+            .map((k) => `  ${k}`)
+            .join('\n'),
       );
     });
   }
 
-  it('nl and en agree on {var} placeholders', async () => {
-    const en = await loadLocale(i18nDir, 'en');
-    const nl = await loadLocale(i18nDir, 'nl');
-    const mismatched = [];
-    for (const key of Object.keys(en)) {
-      if (typeof nl[key] !== 'string') continue;
-      const a = placeholders(en[key]);
-      const b = placeholders(nl[key]);
-      if (a.join(',') !== b.join(',')) {
-        mismatched.push(`${key}: en{${a.join(',')}} vs nl{${b.join(',')}}`);
+  for (const locale of LOCALE_IDS.filter((id) => id !== REFERENCE_LOCALE)) {
+    it(`${locale}/ agrees with ${REFERENCE_LOCALE}/ on {var} placeholders`, async () => {
+      const reference = await loadLocale(i18nDir, REFERENCE_LOCALE);
+      const dict = await loadLocale(i18nDir, locale);
+      const mismatched = [];
+      for (const key of Object.keys(reference)) {
+        if (typeof dict[key] !== 'string') continue;
+        const a = placeholders(reference[key]);
+        const b = placeholders(dict[key]);
+        if (a.join(',') !== b.join(',')) {
+          mismatched.push(
+            `${key}: ${REFERENCE_LOCALE}{${a.join(',')}} vs ${locale}{${b.join(',')}}`,
+          );
+        }
       }
-    }
-    assert.deepStrictEqual(
-      mismatched.sort(),
-      [],
-      'Placeholder mismatch between en and nl',
-    );
-  });
+      assert.deepStrictEqual(
+        mismatched.sort(),
+        [],
+        `${mismatched.length} key(s) in client/i18n/${locale}/ carry different\n` +
+          `{var} placeholders than client/i18n/${REFERENCE_LOCALE}/. A dropped one\n` +
+          'renders a literal `{name}` or silently loses the value; an invented one\n' +
+          'never gets substituted:\n' +
+          mismatched.join('\n'),
+      );
+    });
+  }
 
   it('follow.* keys are not used through the global t()', async () => {
     // client/i18n/<locale>/follow.json is loaded by the scoped loader in
