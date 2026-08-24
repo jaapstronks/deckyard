@@ -216,10 +216,11 @@ Where the deciders differ from that shape, they differ deliberately:
   collaborator. Note what is _absent_: the organization grant. Being in the deck's
   organization lets you edit it; it does not let you hand out access to it.
 - **`canChangePresentationVisibility`** is a transition check, not a level check:
-  same-visibility is a no-op and always allowed; the instance `isAdmin` may make any
+  same-visibility is a no-op and always allowed; an admin may make any
   transition; sandbox mode refuses every transition (no guest-to-guest
   sharing); otherwise only the owner, and only `private → organization`.
-  `organization → private` is admin-only.
+  `organization → private` is admin-only. "Admin" here is the **organization**
+  admin — see _Admin means admin of the organization you are in_ below.
 - **`getEffectivePermission`** is the client's answer, not a gate: it returns
   `edit | comment | view` for the editor to pick a UI, and is delivered as
   `_userPermission` on `GET /api/presentations/:id`. A view-only organization deck
@@ -322,9 +323,35 @@ the usual mistake:
 3. **Instance and organization roles** — `isAdmin` (instance) and the
    organization role. These govern admin _screens_ and organization
    membership, and they deliberately do **not** grant deck read or write:
-   an instance admin can change a deck's visibility and moderate its comments, but
+   an admin can change a deck's visibility and moderate its comments, but
    `canReadPresentation` never consults `isAdmin`. Organization roles are in
    `tenant-isolation.md` § _The organization UI_.
+
+### Admin means admin of the organization you are in
+
+Every admin bypass in this document reads
+`isOrganizationAdmin()` (`server/utils/organization-role.js`), not the bare
+`isAdmin` flag. The two are not the same question:
+
+- `isAdmin` comes from `users.role` and is **instance-wide**.
+- `organizationRole` (`owner` / `admin` / `member`) is the membership role in
+  the organization the session is currently acting in, resolved once per
+  request in `server/auth/auth.js`.
+
+The gate is the **conjunction**, and the membership role only ever _narrows_
+what the instance role already allows: an instance admin who switched into a
+workspace where they are a plain member does not carry their admin bypasses in
+with them, and an organization owner who is not an instance admin gains
+nothing. Without a membership role — single-workspace instances, the dev
+bypass, the sandbox, and the machine surfaces that resolve a `users.id` and no
+role — the answer is exactly the old `isAdmin` check, so those installs are
+unchanged.
+
+The same rule decides what the UI renders
+(`client/lib/user/organization-role.js`). Both halves are pinned in
+`tests/organization-admin-gates.test.js`, including a case-for-case comparison
+of the two implementations — a client that hides a control the server would
+allow is as much a defect as the reverse.
 
 Two consequences worth stating explicitly:
 
