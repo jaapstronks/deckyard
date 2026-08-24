@@ -339,10 +339,10 @@ Every admin bypass in this document reads
   request in `server/auth/auth.js`.
 
 The gate is the **conjunction**, and the membership role only ever _narrows_
-what the instance role already allows: an instance admin who switched into a
-workspace where they are a plain member does not carry their admin bypasses in
-with them, and an organization owner who is not an instance admin gains
-nothing. Without a membership role — single-workspace instances, the dev
+what the instance role already allows: an instance admin who switched into an
+organization where they are a plain member does not carry their admin bypasses
+in with them, and an organization owner who is not an instance admin gains
+nothing. Without a membership role — single-organization instances, the dev
 bypass, the sandbox, and the machine surfaces that resolve a `users.id` and no
 role — the answer is exactly the old `isAdmin` check, so those installs are
 unchanged.

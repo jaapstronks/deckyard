@@ -148,6 +148,14 @@ test('the gate: instance admin is necessary, active-org admin narrows it', () =>
   // No membership to read: exactly the old check.
   assert.equal(isOrganizationAdmin(ADMIN_NO_MEMBERSHIP), true);
   assert.equal(isOrganizationAdmin({ isAdmin: true }), true);
+
+  // A role outside the ladder cannot be minted (createMembership defaults to
+  // `member`, updateMemberRole validates) — but if one ever appears, it reads
+  // as "no membership role": the old isAdmin answer, same as the client.
+  assert.equal(
+    isOrganizationAdmin({ isAdmin: true, organizationRole: 'superadmin' }),
+    true,
+  );
   assert.equal(isOrganizationAdmin({ isAdmin: false }), false);
   assert.equal(isOrganizationAdmin(null), false);
   assert.equal(isOrganizationAdmin(undefined), false);
@@ -165,6 +173,7 @@ test('the gate holds the same rule as the client helper', async () => {
     ORG_OWNER_NOT_INSTANCE_ADMIN,
     { isAdmin: true },
     { isAdmin: false, organizationRole: 'admin' },
+    { isAdmin: true, organizationRole: 'superadmin' },
     null,
   ]) {
     assert.equal(
