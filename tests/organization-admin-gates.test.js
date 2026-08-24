@@ -164,6 +164,9 @@ test('the gate: instance admin is necessary, active-org admin narrows it', () =>
 test('the gate holds the same rule as the client helper', async () => {
   // Two files, one rule. If they diverge, a user is shown a control whose
   // request is refused — or refused a control whose request would be allowed.
+  // Since B157 both read the ranking from shared/organization-role.js, so what
+  // is still written twice — and still compared here — is the conjunction of
+  // the instance flag with the membership role.
   const client = await import('../client/lib/user/organization-role.js');
   for (const user of [
     ADMIN_HERE,
