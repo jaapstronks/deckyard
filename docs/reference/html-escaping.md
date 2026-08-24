@@ -68,25 +68,30 @@ write is safe only if it falls into one of them.
 | Round-trip / parse buffers         | `inline-edit/inline-editor.js` restore (`el.innerHTML` captured then restored), `slide-authoring/markdown-serialize.js` scratch div | Restores the element's own prior trusted DOM, or parses into a **detached** node never attached to the page     |
 | Slide-render contract boundary     | `lib/slide-runtime/slide-render.js` parsing `renderSlideHtml()` output                                                              | Per **`AGENTS.md`**, escaping is the slide-type's responsibility at render time; this is the sanctioned handoff |
 | Self-escaping renderer             | `modals/json-debug-modal.js` `renderSchemaAsHtml()`                                                                                 | Escapes `& < >` before applying its mini-markdown transforms                                                    |
-| Intentional trusted HTML           | `settings/email-templates/actions.js` template preview                                                                              | Server-generated, admin-only; rendered verbatim by design (re-verified, see below)                              |
 
-The last row is the only one whose safety rests on an authorization claim rather
-than on escaping, so it was re-checked in full (2026-08-04):
+There used to be an eleventh row — "intentional trusted HTML", the
+`settings/email-templates/actions.js` preview — and it was the only one whose
+safety rested on an authorization claim rather than on escaping. **B154 retired
+it**: the preview now renders in a `sandbox=""` iframe through `srcdoc`, so no
+category is carrying an authorization argument any more.
 
-- `POST /api/admin/email-templates/:type/preview` is gated on `user.isAdmin`
-  before any branch dispatches — `server/routes/api/email-templates.js:55-63`,
-  covering every path under `/api/admin/email-templates`. `isAdmin` here is the
-  instance-wide role, not an organization role.
-- `buildPreviewHtml()` escapes the greeting (via `emailWrapper`), the button
-  label and URL (via `emailButton`) and the footer. Exactly one field, `body`,
-  is interpolated raw — deliberately, because the shipped defaults themselves
-  contain markup (`<strong>{inviter}</strong>`). Its `{placeholder}` values in
-  preview mode are hard-coded sample data.
-- The only writer of `body` is `PUT /api/admin/email-templates/:type/:locale`,
-  behind the same instance-admin gate, into an instance-global store. Writer and
-  reader therefore hold identical privilege. That is what distinguishes this from
-  the comment `author_email` leak, where an unprivileged guest wrote into a
-  privileged reader's view — the shape that made _that_ one a real vector.
+The argument that retired it was not primarily the security one. The old verdict
+(re-verified 2026-08-04) was sound as far as it went: the preview route is gated
+on instance `isAdmin`, `buildPreviewHtml()` escapes everything except `body`,
+and `body`'s only writer is the same instance-admin gate — writer and reader
+hold identical privilege, which is what distinguished it from the comment
+`author_email` leak where an unprivileged guest wrote into a privileged reader's
+view.
+
+What settled it is that the `<div>` was **rendering the wrong thing**.
+`buildPreviewHtml()` returns a whole document (`<!DOCTYPE html><html><head>…
+<body style="…">`), and the parser discards that wrapper on the way into an
+element — including the `<body style>` carrying `EMAIL_STYLES.body`. The preview
+inherited the settings page's cascade instead of the email's. An iframe is what
+a preview of a standalone document *is*; the sandbox comes free with it.
+
+`tests/email-preview-sandboxed.test.js` pins the frame, the empty `sandbox`
+attribute, and that the directory writes no markup through `innerHTML`.
 
 ## The gate
 
@@ -98,10 +103,11 @@ allowlist with a written verdict.
 
 The allowlist is grouped by the argument that justifies each entry:
 
-- **`USER_TEXT_SITES`** — the six places where the value derives from text a
+- **`USER_TEXT_SITES`** — the five places where the value derives from text a
   person typed, and escaping or sanitizing is the only thing making them safe.
-  A seventh entry is a security decision; a separate assertion pins the count at
-  six so growing it is a visible, reviewable edit.
+  A sixth entry is a security decision; a separate assertion pins the count at
+  five so growing it is a visible, reviewable edit. (It was six until B154 moved
+  the email-template preview into a sandboxed iframe.)
 - **`INDIRECT_STATIC_SITES`** — icon-map lookups and static-SVG ternaries: no
   runtime data, only a literal the mechanical rule cannot see past.
 - **`DOM_ROUNDTRIP_SITES`** — detached parse buffers, the cancel-edit restore,

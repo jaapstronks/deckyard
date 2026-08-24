@@ -23,7 +23,7 @@ import {
  * @returns {Object} Action functions
  */
 export function createActions(state, elements, rebuildUI) {
-  const { previewContainer, previewContent, defaultLocaleSelect } = elements;
+  const { previewContainer, previewFrame, defaultLocaleSelect } = elements;
 
   /**
    * Load template data from server.
@@ -169,7 +169,10 @@ export function createActions(state, elements, rebuildUI) {
         Object.keys(fields).length > 0 ? fields : null,
       );
       if (resp?.preview?.htmlContent) {
-        previewContent.innerHTML = resp.preview.htmlContent;
+        // srcdoc into a sandbox="" frame: the document renders exactly as the
+        // mail client will see it, in an opaque origin that cannot reach this
+        // page, its cookies or its DOM.
+        previewFrame.srcdoc = resp.preview.htmlContent;
         previewContainer.style.display = '';
       }
     } catch (err) {
