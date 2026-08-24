@@ -71,7 +71,7 @@
   "share.guest.emailPlaceholder": "su@correo.com",
   "share.guest.emailRequired": "El correo electrónico es obligatorio",
   "share.guest.emailSent": "¡Revise su correo!",
-  "share.guest.emailSentHelp": "Enviamos un enlace de verificación a <strong>{email}</strong>. Haz clic en el enlace para comenzar a comentar.",
+  "share.guest.emailSentHelp": "Enviamos un enlace de verificación a <strong>{email}</strong>. Haga clic en el enlace para comenzar a comentar.",
   "share.guest.error.generic": "Algo salió mal. Por favor, inténtalo de nuevo.",
   "share.guest.error.invalidEmail": "Por favor, ingresa una dirección de correo válida.",
   "share.guest.error.linkExpired": "Este enlace compartido ha expirado.",
