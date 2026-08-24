@@ -3,7 +3,7 @@
   "access.denied.message": "Du har ikke tilgang til denne presentasjonen. Hvis du mener du burde ha tilgang, kontakt eieren.",
   "access.denied.title": "Tilgang nektet",
   "access.notFound.backToHome": "Tilbake til forsiden",
-  "access.notFound.message": "Denne presentasjonen finnes ikke eller er slettet. Vennligst sjekk lenken.",
+  "access.notFound.message": "Denne presentasjonen finnes ikke eller er slettet. Sjekk lenken.",
   "access.notFound.title": "Presentasjon ikke funnet",
   "ai.generationFailed": "Genereringen mislyktes",
   "ai.streamIncomplete": "Strømmen ble avsluttet før den var ferdig",
