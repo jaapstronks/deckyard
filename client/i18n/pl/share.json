@@ -1,7 +1,7 @@
 {
   "moderate.addedToDeck": "Dodano do prezentacji",
   "moderate.adminRequired": "Dostęp moderatora wymaga logowania jako administrator",
-  "moderate.count": "{n} pytan",
+  "moderate.count": "Pytań: {n}",
   "moderate.help": "Usuń pytania, na które udzielono odpowiedzi lub które są nieodpowiednie. Lista jest aktualizowana na żywo i sortowana według głosów.",
   "moderate.missingId": "Brak parametru presentationId",
   "moderate.noLive": "Brak aktywnej sesji.",

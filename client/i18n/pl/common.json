@@ -82,7 +82,7 @@
   "analytics.views": "Wyświetlenia",
   "analytics.viewsOverTime": "Wyświetlenia w czasie",
   "analytics.when": "Kiedy",
-  "app.fatal.help": "Aplikacja napotkała błąd podczas ładowania. Jeśli właśnie włączyłeś uwierzytelnianie, sprawdź czy plik `.env` serwera zawiera `AUTH_SECRET` i wartość `AUTH_ADMIN_EMAIL`.",
+  "app.fatal.help": "Aplikacja napotkała błąd podczas ładowania. Jeśli uwierzytelnianie zostało właśnie włączone, sprawdź, czy plik `.env` serwera zawiera `AUTH_SECRET` i wartość `AUTH_ADMIN_EMAIL`.",
   "app.fatal.title": "Coś poszło nie tak",
   "appearance.dark": "Ciemny",
   "appearance.label": "Wygląd",
