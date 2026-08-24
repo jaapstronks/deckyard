@@ -38,17 +38,19 @@ describe('mergeSlideTypes', () => {
   });
 
   it('honours an explicit override:true (custom wins)', () => {
-    const log = mock.method(console, 'log', () => {});
+    // On stderr, like the refusal above: importing the registry must not write
+    // to the stdout of a tool that treats it as a data contract.
+    const warn = mock.method(console, 'warn', () => {});
     const merged = mergeSlideTypes(core, {
       'title-slide': { label: 'Fork title', override: true },
     });
     assert.equal(merged['title-slide'].label, 'Fork title');
     assert.equal(merged['title-slide'].override, true);
     assert.ok(
-      log.mock.calls.length >= 1,
+      warn.mock.calls.length >= 1,
       'an intentional-override note is logged',
     );
-    log.mock.restore();
+    warn.mock.restore();
   });
 
   it('does not mutate the core map', () => {

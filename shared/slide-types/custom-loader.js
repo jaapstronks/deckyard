@@ -75,7 +75,10 @@ export async function loadCustomSlideTypes() {
       }
 
       customTypes[typeName] = def;
-      console.log(`[custom-loader] Loaded custom slide type: ${typeName}`);
+      // stderr, not stdout: this module is imported by tools whose stdout is a
+      // data contract (`i18n-fill.js --report` emits JSON there), and a fork
+      // installed locally would otherwise corrupt output that is clean in CI.
+      console.warn(`[custom-loader] Loaded custom slide type: ${typeName}`);
     } catch (err) {
       console.error(`[custom-loader] Error loading ${file}:`, err.message);
     }
