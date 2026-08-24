@@ -307,9 +307,7 @@ export function createVisualThemePicker({
       }
     }
     if (rules.length) {
-      const style = document.createElement('style');
-      style.textContent = rules.join('\n');
-      wrap.prepend(style);
+      wrap.prepend(h('style', { text: rules.join('\n') }));
     }
   }
 

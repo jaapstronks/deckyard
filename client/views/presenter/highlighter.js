@@ -12,6 +12,8 @@
  *   - Escape: Disable highlighter (handled in presenter.js)
  */
 
+import { h } from '../../lib/dom.js';
+
 const DEFAULT_LASER_RADIUS = 12;
 const LASER_TRAIL_LENGTH = 12;
 const LASER_TRAIL_DECAY = 0.08; // opacity step per trail point
@@ -70,8 +72,7 @@ export function createPresenterHighlighter({
   let animationId = null;
 
   // Create canvas overlay
-  const canvas = document.createElement('canvas');
-  canvas.className = 'presenter-highlighter-canvas';
+  const canvas = h('canvas', { class: 'presenter-highlighter-canvas' });
   canvas.style.cssText = `
     position: absolute;
     inset: 0;

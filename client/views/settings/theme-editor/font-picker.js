@@ -6,63 +6,14 @@
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import {
+  ensureGoogleFontPreview,
+  ensureGoogleFontPreviews,
+  ensureManagedFontPreview,
+} from '../../../lib/theme/font-assets.js';
+import {
   CURATED_FONTS,
   getFontsByCategory as getSharedFontsByCategory,
 } from '../../../../shared/theme-fonts.js';
-
-// Track which fonts have been loaded
-const loadedFonts = new Set();
-let allFontsLoaded = false;
-
-/**
- * Load a Google Font dynamically.
- * @param {string} family - Font family name
- */
-function loadGoogleFont(family) {
-  if (!family || loadedFonts.has(family)) return;
-
-  loadedFonts.add(family);
-
-  // Check DOM to avoid duplicates from other modules (e.g. fonts-tab)
-  const linkId = `gf-preview-${family.replace(/\s+/g, '-').toLowerCase()}`;
-  if (document.getElementById(linkId)) return;
-
-  const link = document.createElement('link');
-  link.id = linkId;
-  link.rel = 'stylesheet';
-  link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(family)}:wght@400;600;700&display=swap`;
-  document.head.appendChild(link);
-}
-
-/**
- * Load all fonts at once (for better UX when dropdown is opened).
- */
-function loadAllFonts() {
-  if (allFontsLoaded) return;
-  allFontsLoaded = true;
-
-  // Load fonts in batches to avoid too many parallel requests
-  const families = CURATED_FONTS.map((f) => f.family).filter(
-    (f) => !loadedFonts.has(f),
-  );
-
-  // Google Fonts allows combining multiple families in one request
-  const familyParams = families
-    .map((f) => `family=${encodeURIComponent(f)}:wght@400;600;700`)
-    .join('&');
-
-  if (familyParams) {
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = `https://fonts.googleapis.com/css2?${familyParams}&display=swap`;
-    document.head.appendChild(link);
-
-    // Mark all as loaded
-    for (const family of families) {
-      loadedFonts.add(family);
-    }
-  }
-}
 
 // Group fonts by category (re-export from shared module)
 const getFontsByCategory = getSharedFontsByCategory;
@@ -73,76 +24,6 @@ const CATEGORY_LABELS = {
   display: 'Display',
   monospace: 'Monospace',
 };
-
-/**
- * Load a managed font for preview in the browser.
- * Injects the appropriate CSS <link> or <script> depending on source.
- */
-function loadManagedFontPreview(managedFont) {
-  if (!managedFont) return;
-
-  const config = managedFont.sourceConfig || {};
-
-  switch (managedFont.source) {
-    case 'upload':
-      // Inject @font-face rules for uploaded variants
-      if (Array.isArray(managedFont.variants)) {
-        const styleId = `managed-font-${managedFont.id}`;
-        if (document.getElementById(styleId)) return;
-        const rules = managedFont.variants
-          .filter((v) => v.url)
-          .map(
-            (v) => `@font-face {
-  font-family: '${managedFont.name}';
-  src: url('${v.url}') format('${v.format || 'woff2'}');
-  font-weight: ${v.weight || 400};
-  font-style: ${v.style || 'normal'};
-  font-display: swap;
-}`,
-          )
-          .join('\n');
-        if (rules) {
-          const style = document.createElement('style');
-          style.id = styleId;
-          style.textContent = rules;
-          document.head.appendChild(style);
-        }
-      }
-      break;
-
-    case 'adobe':
-      if (config.projectId) {
-        const linkId = `typekit-${config.projectId}`;
-        if (!document.getElementById(linkId)) {
-          const link = document.createElement('link');
-          link.id = linkId;
-          link.rel = 'stylesheet';
-          link.href = `https://use.typekit.net/${config.projectId}.css`;
-          document.head.appendChild(link);
-        }
-      }
-      break;
-
-    case 'monotype':
-      if (config.projectId) {
-        const scriptId = `monotype-${config.projectId}`;
-        if (!document.getElementById(scriptId)) {
-          const script = document.createElement('script');
-          script.id = scriptId;
-          script.src = `https://fast.fonts.net/jsapi/${config.projectId}.js`;
-          document.head.appendChild(script);
-        }
-      }
-      break;
-
-    case 'google': {
-      const spec = config.spec || managedFont.name;
-      const family = spec.split(':')[0].trim();
-      loadGoogleFont(family);
-      break;
-    }
-  }
-}
 
 /**
  * Filter managed fonts by context.
@@ -208,7 +89,7 @@ export function createFontPicker({
           currentFamilyId = mf.id;
           currentSource = mf.source;
           updatePreview(mf.name);
-          loadManagedFontPreview(mf);
+          ensureManagedFontPreview(mf);
           if (onChange) onChange(mf.name, mf.id);
         }
       } else {
@@ -219,8 +100,9 @@ export function createFontPicker({
       }
     },
     onfocus: () => {
-      // Load all curated fonts when user opens the dropdown
-      loadAllFonts();
+      // Load every curated font when the user opens the dropdown — one
+      // combined request, not one per family.
+      ensureGoogleFontPreviews(CURATED_FONTS.map((f) => f.family));
     },
   });
 
@@ -285,7 +167,7 @@ export function createFontPicker({
   );
 
   function updatePreview(fontFamily) {
-    loadGoogleFont(fontFamily);
+    ensureGoogleFontPreview(fontFamily);
     preview.style.fontFamily = `'${fontFamily}', sans-serif`;
   }
 
@@ -293,11 +175,11 @@ export function createFontPicker({
   if (currentFamilyId) {
     const mf = filteredManaged.find((f) => f.id === currentFamilyId);
     if (mf) {
-      loadManagedFontPreview(mf);
+      ensureManagedFontPreview(mf);
       updatePreview(mf.name);
     }
   } else {
-    loadGoogleFont(value);
+    ensureGoogleFontPreview(value);
     updatePreview(value);
   }
 
@@ -322,7 +204,7 @@ export function createFontPicker({
         const mf = filteredManaged.find((f) => f.id === fId);
         if (mf) {
           currentSource = mf.source;
-          loadManagedFontPreview(mf);
+          ensureManagedFontPreview(mf);
           updatePreview(mf.name);
         }
       } else {

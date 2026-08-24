@@ -19,6 +19,7 @@ import {
   contrastRatioFromLuminance,
 } from '../theme/color-utils.js';
 import { WCAG_THRESHOLDS } from '../../../shared/contrast.js';
+import { h } from '../dom.js';
 
 const SAMPLE_SIZE = 32; // downscaled sampling canvas edge, px
 // Per-pixel pass threshold. Titles over a background image are large text, so
@@ -53,9 +54,7 @@ export async function detectBgTextContrast(
     return { ok: false };
   }
 
-  const canvas = document.createElement('canvas');
-  canvas.width = SAMPLE_SIZE;
-  canvas.height = SAMPLE_SIZE;
+  const canvas = h('canvas', { width: SAMPLE_SIZE, height: SAMPLE_SIZE });
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) return { ok: false };
 

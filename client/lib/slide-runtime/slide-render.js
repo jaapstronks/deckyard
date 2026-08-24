@@ -9,6 +9,7 @@ import { applyThemeVarsToElement } from '../theme/theme.js';
 import { api as defaultApi } from '../api.js';
 import { h } from '../dom.js';
 import { ensurePrism, ensureKatex } from './prism-katex-loader.js';
+import { ensureScript } from '../dom/head-assets.js';
 
 /**
  * Trigger Prism.js syntax highlighting on code blocks within an element.
@@ -182,39 +183,17 @@ async function serverRenderSlide({ slide, presentationId, mode, api }) {
   return html;
 }
 
-let bunnyPlayerJsPromise = null;
 const playerMap = new WeakMap();
 function ensureBunnyPlayerJs() {
+  // A tag from an earlier page state may already have finished loading, in
+  // which case there is no load event left to wait for — the global is the
+  // only reliable "already there" signal.
   if (globalThis.playerjs?.Player) return Promise.resolve();
-  if (bunnyPlayerJsPromise) return bunnyPlayerJsPromise;
-  bunnyPlayerJsPromise = new Promise((resolve, reject) => {
-    const existing = document.querySelector('script[data-bunny-playerjs="1"]');
-    if (existing) {
-      existing.addEventListener('load', () => resolve(), {
-        once: true,
-      });
-      existing.addEventListener(
-        'error',
-        () => reject(new Error('Failed to load Player.js')),
-        { once: true },
-      );
-      return;
-    }
-    const s = document.createElement('script');
-    s.src = 'https://assets.mediadelivery.net/playerjs/player-0.1.0.min.js';
-    s.async = true;
-    s.dataset.bunnyPlayerjs = '1';
-    s.addEventListener('load', () => resolve(), {
-      once: true,
-    });
-    s.addEventListener(
-      'error',
-      () => reject(new Error('Failed to load Player.js')),
-      { once: true },
-    );
-    document.head.append(s);
+  return ensureScript({
+    id: 'bunny-playerjs',
+    src: 'https://assets.mediadelivery.net/playerjs/player-0.1.0.min.js',
+    async: true,
   });
-  return bunnyPlayerJsPromise;
 }
 
 function initVideoEmbeds(rootEl) {

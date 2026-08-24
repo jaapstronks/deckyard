@@ -179,6 +179,44 @@ spelling.
 each restricted shape, both legal look-alikes, and that the client is clean —
 so a plain `npm test` catches a reintroduction without the lint pass having run.
 
+### `no-restricted-syntax` on `document.createElement` — one element factory, one head-asset recipe
+
+Scoped to `client/**`, this rule rejects `document.createElement(...)`. Elements
+are built with `h()`; head assets — a `<style>`, `<link rel=stylesheet>` or
+`<script>` in `document.head` — go through
+[`client/lib/dom/head-assets.js`](../../client/lib/dom/head-assets.js)
+(`ensureStyle` / `ensureStylesheet` / `ensureScript`), and the three third-party
+font providers through
+[`client/lib/theme/font-assets.js`](../../client/lib/theme/font-assets.js).
+
+`h()` from `client/lib/dom.js` is the first frontend rule in `CLAUDE.md` and was
+the last one with no mechanical backing: `h` imported in 302 files against 26
+surviving `document.createElement` sites in 14 (B150). The survivors were
+largely **one recipe written five times** — create the tag, set a property or
+two, dedupe on an `id`, append to the head — and the copies had drifted on the
+one detail that has to agree, the id. The same Google stylesheet was requested
+as `gf-preview-<slug>` by two modules and `google-font-preview-<slug>` by a
+third, so the "already in the DOM?" check missed and the browser fetched it
+twice. Deriving the id in one place is what makes the dedupe real.
+
+`<canvas>` is **not** an exception: `h('canvas', { width, height })` sets the
+same reflected content attributes the two offscreen-canvas sites used to assign
+directly.
+
+Boundary: **`document.createElementNS` is untouched**. `h()` itself calls it for
+SVG tags, and `client/lib/slide-runtime/likert.js` builds SVG through a local
+`svgEl()` helper for the shape attributes `h()` does not model.
+
+Two files are exempt, each with its own re-statement block in the config:
+[`client/lib/dom.js`](../../client/lib/dom.js), where the factory is
+implemented, and [`client/embed-sdk.js`](../../client/embed-sdk.js), the
+standalone IIFE served to third-party pages — it has no imports at all, by
+design.
+
+[`tests/create-element-gate.test.js`](../../tests/create-element-gate.test.js)
+pins each restricted shape, the two legal look-alikes, the exact exemption list,
+and that the client is clean.
+
 ### `no-restricted-syntax` on `overlayClosers` — one overlay register
 
 Scoped to `client/**`, this rule rejects the identifiers `overlayClosers` and

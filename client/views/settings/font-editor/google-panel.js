@@ -5,6 +5,10 @@
 
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
+import {
+  ensureGoogleFontPreview,
+  googleFontFamily,
+} from '../../../lib/theme/font-assets.js';
 
 /**
  * Create the Google Fonts panel.
@@ -61,20 +65,9 @@ export function createGooglePanel({ sourceConfig = {}, onChange }) {
   );
 
   function loadPreview() {
-    const spec = specInput.value.trim();
-    if (!spec) return;
-    const family = spec.split(':')[0].trim();
+    const family = googleFontFamily(specInput.value.trim());
     if (!family) return;
-
-    // Load Google Font for preview
-    const linkId = `google-font-preview-${family.replace(/\s+/g, '-').toLowerCase()}`;
-    if (!document.getElementById(linkId)) {
-      const link = document.createElement('link');
-      link.id = linkId;
-      link.rel = 'stylesheet';
-      link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(family)}:wght@400;600;700&display=swap`;
-      document.head.appendChild(link);
-    }
+    ensureGoogleFontPreview(family);
     preview.style.fontFamily = `'${family}', sans-serif`;
   }
 
