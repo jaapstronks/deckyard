@@ -261,7 +261,9 @@ export function mergeSlideTypes(core, custom) {
       continue; // core wins; the shadow is refused, not applied silently
     }
     if (shadowsCore) {
-      console.log(
+      // stderr for the same reason as the custom loader's banner: importing the
+      // registry must not write to a tool's stdout.
+      console.warn(
         `[registry] Custom slide type "${name}" intentionally overrides core (override:true).`,
       );
     }

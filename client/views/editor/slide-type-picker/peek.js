@@ -17,6 +17,7 @@ import {
 } from '../../../lib/slide-runtime/slide-render.js';
 import { createOverlay } from '../../../lib/dom/modal.js';
 import { h } from '../../../lib/dom.js';
+import { t } from '../../../lib/ui-i18n.js';
 
 /**
  * Open the peek lightbox for a slide type (or curated preset variant).
@@ -24,7 +25,6 @@ import { h } from '../../../lib/dom.js';
  * @param {HTMLElement} _anchorBtn - unused; the overlay restores focus itself
  * @param {object|null} preset - curated preset variant, or null for the base type
  * @param {object} ctx
- * @param {Function} ctx.tr - translator (key, fallback)
  * @param {object|null} ctx.theme - resolved theme for the preview render
  * @param {Function} ctx.labelFor - (type) => resolved label
  * @param {Function} ctx.presetLabelFor - (preset) => resolved variant label
@@ -36,7 +36,6 @@ import { h } from '../../../lib/dom.js';
  */
 export function openTypePeek(type, _anchorBtn, preset, ctx) {
   const {
-    tr,
     theme,
     labelFor,
     presetLabelFor,
@@ -100,7 +99,7 @@ export function openTypePeek(type, _anchorBtn, preset, ctx) {
   const insertBtn = h('button', {
     class: 'btn btn-primary',
     type: 'button',
-    text: tr('editor.slideTypePicker.insertThis', 'Insert slide'),
+    text: t('editor.slideTypePicker.insertThis', 'Insert slide'),
     onclick: () => {
       close();
       onPick(type, preset);
@@ -109,7 +108,7 @@ export function openTypePeek(type, _anchorBtn, preset, ctx) {
   const closeBtn = h('button', {
     class: 'btn btn-secondary',
     type: 'button',
-    text: tr('common.close', 'Close'),
+    text: t('common.close', 'Close'),
     onclick: () => close(),
   });
   const actions = h('div', { class: 'ps-type-peek-actions' }, [

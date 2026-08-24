@@ -82,14 +82,13 @@ export function createSlideTypePicker({
 } = {}) {
   // NOTE: UI translations use app locale (not slide language mode).
   // Keep fallbacks in English.
-  const tr = t;
 
   // Tooltip/caption description for a type (falls back to '' when none). The
   // English fallback is resolved from the type's own declaration on the
   // /api/slide-types response (SLIDE_TYPES), so a fork type's description shows
   // too; the app-locale translation still layers on top.
   const descFor = (type) =>
-    tr(
+    t(
       `editor.slideTypeDesc.${type}`,
       slideTypeDescription(type, SLIDE_TYPES?.[type]) || '',
     );
@@ -140,7 +139,7 @@ export function createSlideTypePicker({
   };
 
   // Resolved (translated) label for a preset variant.
-  const presetLabelFor = (preset) => tr(preset.labelKey, preset.label);
+  const presetLabelFor = (preset) => t(preset.labelKey, preset.label);
 
   // Content overrides used only for a preset's thumbnail/peek render (falls back
   // to its insert overrides). Lets a variant show richer sample content in the
@@ -227,7 +226,7 @@ export function createSlideTypePicker({
 
   const labelFor = (type) => {
     const def = SLIDE_TYPES?.[type];
-    return tr(def?.labelKey || `slideType.${type}.label`, def?.label || type);
+    return t(def?.labelKey || `slideType.${type}.label`, def?.label || type);
   };
 
   const renderSlideTypePicker = (
@@ -252,7 +251,6 @@ export function createSlideTypePicker({
     // Shared context for the peek lightbox (./peek.js). onPick is render-scoped;
     // the rest are stable factory helpers.
     const peekCtx = {
-      tr,
       theme,
       labelFor,
       presetLabelFor,
@@ -317,8 +315,8 @@ export function createSlideTypePicker({
 
     const pinLabelFor = (pinned) =>
       pinned
-        ? tr('editor.slideTypePicker.unpin', 'Unpin')
-        : tr('editor.slideTypePicker.pin', 'Pin to top');
+        ? t('editor.slideTypePicker.unpin', 'Unpin')
+        : t('editor.slideTypePicker.pin', 'Pin to top');
 
     // A tile is a wrap holding the (button) card plus an overlay pin button as a
     // sibling — never a button nested in a button. The wrap is the grid item and
@@ -379,7 +377,7 @@ export function createSlideTypePicker({
       pinBtn.append(icon('pin', { size: 14 }));
 
       // Peek button (top-left): enlarge the preview before inserting.
-      const peekLabel = tr('editor.slideTypePicker.peek', 'Enlarge preview');
+      const peekLabel = t('editor.slideTypePicker.peek', 'Enlarge preview');
       const peekBtn = h('button', {
         class: 'ps-type-peek-btn',
         type: 'button',
@@ -536,11 +534,7 @@ export function createSlideTypePicker({
         }
       }
       if (nowPinned) {
-        addToStrip(
-          'pinned',
-          tr('editor.slideTypeGroup.pinned', 'Pinned'),
-          type,
-        );
+        addToStrip('pinned', t('editor.slideTypeGroup.pinned', 'Pinned'), type);
         removeFromStrip('frequent', type);
       } else {
         removeFromStrip('pinned', type);
@@ -557,11 +551,11 @@ export function createSlideTypePicker({
       class: 'form-input ps-picker-search-input',
       type: 'search',
       value: searchQuery,
-      placeholder: tr(
+      placeholder: t(
         'editor.slideTypePicker.searchPlaceholder',
         'Search slide types…',
       ),
-      'aria-label': tr(
+      'aria-label': t(
         'editor.slideTypePicker.searchPlaceholder',
         'Search slide types…',
       ),
@@ -576,7 +570,7 @@ export function createSlideTypePicker({
     const viewToggle = h('div', {
       class: 'ps-view-toggle',
       role: 'radiogroup',
-      'aria-label': tr('editor.slideTypePicker.view.label', 'Thumbnail style'),
+      'aria-label': t('editor.slideTypePicker.view.label', 'Thumbnail style'),
     });
     // Abstract wireframe vs. a real rendered slide — the two view modes.
     const VIEW_ICON = { schematic: 'layout-template', preview: 'image' };
@@ -601,11 +595,11 @@ export function createSlideTypePicker({
     viewToggle.append(
       makeViewBtn(
         'schematic',
-        tr('editor.slideTypePicker.view.schematic', 'Schematic'),
+        t('editor.slideTypePicker.view.schematic', 'Schematic'),
       ),
       makeViewBtn(
         'preview',
-        tr('editor.slideTypePicker.view.preview', 'Preview'),
+        t('editor.slideTypePicker.view.preview', 'Preview'),
       ),
     );
     controls.append(viewToggle);
@@ -678,18 +672,18 @@ export function createSlideTypePicker({
 
     if (offeredSurfaces.length >= 2) {
       const surfaceLabelFor = (s) =>
-        tr(
+        t(
           `editor.slideTypePicker.surface.${s}`,
           { lime: 'Lime', mist: 'Mist', dark: 'Dark' }[s] || s,
         );
-      const autoLabel = tr(
+      const autoLabel = t(
         'editor.slideTypePicker.surface.auto',
         "Each type's own background",
       );
       const toggle = h('div', {
         class: 'ps-surface-toggle',
         role: 'radiogroup',
-        'aria-label': tr(
+        'aria-label': t(
           'editor.slideTypePicker.surface.label',
           'Preview background',
         ),
@@ -699,10 +693,7 @@ export function createSlideTypePicker({
       toggle.append(
         h('span', {
           class: 'ps-surface-label',
-          text: tr(
-            'editor.slideTypePicker.surface.label',
-            'Preview background',
-          ),
+          text: t('editor.slideTypePicker.surface.label', 'Preview background'),
         }),
       );
 
@@ -752,7 +743,7 @@ export function createSlideTypePicker({
     const noResults = h('div', { class: 'ps-picker-no-results', hidden: true });
     const noResultsText = h('div', {
       class: 'ps-picker-no-results-text',
-      text: tr(
+      text: t(
         'editor.slideTypePicker.noResults',
         'No slide types match your search.',
       ),
@@ -763,7 +754,7 @@ export function createSlideTypePicker({
       const aiHatch = h('button', {
         class: 'btn btn-ai ps-picker-ai-hatch',
         type: 'button',
-        text: tr(
+        text: t(
           'editor.slideTypePicker.buildWithAi',
           'Describe it and let AI build it',
         ),
@@ -868,24 +859,32 @@ export function createSlideTypePicker({
     // Curated groups in display order. `basic` is special-cased because the
     // theme may prepend its own types to it; every other shelf is purely the
     // declarations, ordered by the hint in ./data.js.
+    //
+    // Spelled as `titleKey` / `title` descriptor pairs, not tuples: that is the
+    // one shape the i18n extractor reads (scripts/i18n-keys.js), so these five
+    // shelf names count as used keys and `i18n-fill.js en` materializes them.
+    // As tuples they were invisible, which is half of why en/ lacked them (B138).
     const GROUP_TITLES = {
-      basic: ['editor.slideTypeGroup.basic', 'Basic'],
-      media: ['editor.slideTypeGroup.media', 'Media'],
-      layouts: ['editor.slideTypeGroup.layouts', 'Layouts'],
-      data: ['editor.slideTypeGroup.data', 'Data'],
-      interaction: ['editor.slideTypeGroup.interaction', 'Interaction'],
+      basic: { titleKey: 'editor.slideTypeGroup.basic', title: 'Basic' },
+      media: { titleKey: 'editor.slideTypeGroup.media', title: 'Media' },
+      layouts: { titleKey: 'editor.slideTypeGroup.layouts', title: 'Layouts' },
+      data: { titleKey: 'editor.slideTypeGroup.data', title: 'Data' },
+      interaction: {
+        titleKey: 'editor.slideTypeGroup.interaction',
+        title: 'Interaction',
+      },
     };
     const curatedGroups = [
       ...PICKER_GROUP_KEYS.map((key) => ({
         key,
-        title: tr(...GROUP_TITLES[key]),
+        title: t(GROUP_TITLES[key].titleKey, GROUP_TITLES[key].title),
         defs: (key === 'basic' ? basicDefs : groupDefs(key)).filter((d) =>
           allowed(d.type),
         ),
       })),
       {
         key: 'custom',
-        title: tr('editor.slideTypeGroup.custom', 'Custom'),
+        title: t('editor.slideTypeGroup.custom', 'Custom'),
         defs: customDefs,
       },
     ];
@@ -898,7 +897,7 @@ export function createSlideTypePicker({
       renderAddGroup(
         typesWrap,
         'pinned',
-        tr('editor.slideTypeGroup.pinned', 'Pinned'),
+        t('editor.slideTypeGroup.pinned', 'Pinned'),
         pinnedTypes.map((type) => ({ type })),
       );
     }
@@ -922,7 +921,7 @@ export function createSlideTypePicker({
       renderAddGroup(
         typesWrap,
         'frequent',
-        tr('editor.slideTypeGroup.frequent', 'Frequently used'),
+        t('editor.slideTypeGroup.frequent', 'Frequently used'),
         frequentTypes.map((type) => ({ type })),
       );
     }
@@ -970,7 +969,7 @@ export function createSlideTypePicker({
       renderAddGroup(
         typesWrap,
         'other',
-        tr('editor.slideTypeGroup.other', 'Other'),
+        t('editor.slideTypeGroup.other', 'Other'),
         otherDefs,
       );
     }
@@ -1004,7 +1003,6 @@ export function createSlideTypePicker({
     ) {
       mountLibraryStrip({
         typesWrap,
-        tr,
         theme,
         labelFor,
         afterSlideId,

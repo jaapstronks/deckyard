@@ -36,6 +36,11 @@ export function normalizeOption(opt) {
 /**
  * Every `slideType.*` key the registry produces, mapped to its English default.
  *
+ * Exported because `i18n-fill.js` needs the *values*, not just the key set:
+ * these keys are built from template literals at the call site, so the static
+ * extractor never sees an English fallback for them and `en/` could not be
+ * materialized from code alone (B138).
+ *
  * A field/option that declares an explicit `*Key` reuses that key verbatim
  * (some options localise through a hand-picked key rather than the generated
  * one); everything else follows the `slideType.<type>.field.<key>…` convention.
@@ -43,7 +48,7 @@ export function normalizeOption(opt) {
  * @param {Record<string, {label?: string, labelKey?: string, fields?: Array}>} slideTypes - `SLIDE_TYPES`
  * @returns {Map<string, string>} key → English default
  */
-function slideTypeUiStrings(slideTypes) {
+export function slideTypeUiStrings(slideTypes) {
   const out = new Map();
   const add = (key, def) => {
     const k = String(key || '').trim();
