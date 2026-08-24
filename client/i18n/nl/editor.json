@@ -685,7 +685,7 @@
   "editor.slideField.a11yTitle.help": "Optioneel. Schermlezers spreken dit uit wanneer de slide actief wordt. Kies een korte, beschrijvende frase.",
   "editor.slideField.a11yTitle.label": "Toegankelijkheidstitel",
   "editor.slideField.optionalPlaceholder": "Optioneel",
-  "editor.slideField.slideBgFit.label": "Achtergrond passend maken",
+  "editor.slideField.slideBgFit.label": "Achtergrond passend",
   "editor.slideField.slideBgFit.option.contain": "Passen (niet bijsnijden)",
   "editor.slideField.slideBgFit.option.cover": "Vullen (bijsnijden)",
   "editor.slideField.slideBgFocusX.label": "Achtergrondfocus X",
