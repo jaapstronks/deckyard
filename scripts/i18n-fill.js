@@ -27,8 +27,14 @@ const clientDir = path.join(repoRoot, 'client');
 const i18nDir = path.join(clientDir, 'i18n');
 
 /**
- * Which component file a key belongs in, derived from where its prefix already
- * lives in en/. Falls back to `common` for genuinely new prefixes.
+ * Fallback routing for a key `en/` has never seen, by prefix. `en/` itself is
+ * the primary answer (see `fileFor`); this table only decides where a brand-new
+ * prefix lands, and `common` catches the rest.
+ *
+ * It used to be the *only* answer, which is how locale files drifted apart:
+ * `analytics.*` routes here to `common`, while `en/` keeps those keys in
+ * `editor.json`, so every applied translation landed in a different file than
+ * its English source (B137).
  */
 const PREFIX_TO_FILE = {
   access: 'common',
@@ -77,9 +83,37 @@ const PREFIX_TO_FILE = {
   visibility: 'editor',
 };
 
-/** @param {string} key @returns {string} component file basename */
-function fileFor(key) {
-  return PREFIX_TO_FILE[key.split('.')[0]] || 'common';
+/**
+ * key -> component basename, as `en/` files them. Built once per run; `en/` is
+ * the reference locale, so "where the English string lives" is the only
+ * definition of a key's home that cannot drift.
+ * @returns {Promise<Map<string, string>>}
+ */
+async function enFileIndex() {
+  /** @type {Map<string, string>} */
+  const index = new Map();
+  let files;
+  try {
+    files = await fs.readdir(path.join(i18nDir, 'en'));
+  } catch {
+    return index;
+  }
+  for (const name of files) {
+    if (!name.endsWith('.json')) continue;
+    const comp = name.slice(0, -'.json'.length);
+    const dict = await readComponent('en', comp);
+    for (const key of Object.keys(dict)) index.set(key, comp);
+  }
+  return index;
+}
+
+/**
+ * @param {string} key
+ * @param {Map<string, string>} enIndex - key -> component, from `en/`
+ * @returns {string} component file basename
+ */
+function fileFor(key, enIndex) {
+  return enIndex.get(key) || PREFIX_TO_FILE[key.split('.')[0]] || 'common';
 }
 
 /** Write a dict back to disk with stable key ordering. */
@@ -112,8 +146,9 @@ async function readComponent(locale, comp) {
 async function mergeIntoLocale(locale, entries) {
   /** @type {Map<string, Record<string,string>>} */
   const byFile = new Map();
+  const enIndex = await enFileIndex();
   for (const [key, value] of Object.entries(entries)) {
-    const comp = fileFor(key);
+    const comp = fileFor(key, enIndex);
     if (!byFile.has(comp)) byFile.set(comp, await readComponent(locale, comp));
     byFile.get(comp)[key] = value;
   }
