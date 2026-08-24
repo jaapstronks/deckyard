@@ -16,13 +16,14 @@ import {
   isOwnerOrCreator,
   matchesIdentity,
 } from '../../../shared/identity-match.js';
+import { isOrganizationAdmin } from '../organization-role.js';
 
 /**
  * Check if a user can resolve/reopen a comment.
  * Only admin or owner/creator of the presentation can resolve comments.
  */
 export function canResolveComment({ user, pres } = {}) {
-  if (user?.isAdmin) return true;
+  if (isOrganizationAdmin(user)) return true;
   if (!hasIdentity(user)) return false;
   return isOwnerOrCreator(user, pres);
 }
@@ -37,7 +38,7 @@ export function canResolveComment({ user, pres } = {}) {
  * {@link canGuestEditComment} instead.
  */
 export function canEditComment({ user, comment } = {}) {
-  if (user?.isAdmin) return true;
+  if (isOrganizationAdmin(user)) return true;
   return matchesIdentity(user, { userId: comment?.author?.id });
 }
 

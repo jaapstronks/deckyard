@@ -25,6 +25,7 @@
 
 import { sandboxEnabled } from '../../config/sandbox.js';
 import { isMultiOrgEnabled } from '../../config/features.js';
+import { isOrganizationAdmin } from '../organization-role.js';
 import {
   canComment,
   canWrite,
@@ -173,8 +174,9 @@ export function canChangePresentationVisibility({
   const to = normalizePresentationVisibility(nextVisibility);
   if (from === to) return true;
 
-  // Admins can always change visibility
-  if (user?.isAdmin) return true;
+  // Admins can always change visibility — admin of the organization the deck
+  // lives in, not merely of the instance (utils/organization-role.js).
+  if (isOrganizationAdmin(user)) return true;
 
   // Sandbox stance: prevent user-to-user sharing
   if (sandboxEnabled()) return false;

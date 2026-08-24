@@ -15,6 +15,7 @@ import { getSlideLocks } from '../../slide-locks.js';
 import { isPresentationAuthor } from '../../../utils/presentation-authz.js';
 import { matchesIdentity } from '../../../../shared/identity-match.js';
 import { isCollabLiveEditsEnabled } from '../../../config/features.js';
+import { isOrganizationAdmin } from '../../../utils/organization-role.js';
 
 /**
  * Canonicalize a JSON value: sort object keys so key order never counts as
@@ -175,7 +176,10 @@ export async function enforceSlideLocks({
  * @param {Object} opts.existing - Stored presentation (slides, i18n, owner fields)
  * @param {Array} opts.nextSlides - Normalized slides about to be written (post-merge)
  * @param {Object} [opts.nextI18nVersions] - Candidate i18n.versions (normalized)
- * @param {Object} [opts.user] - Acting user ({ id, email, isAdmin }) when known
+ * @param {Object} [opts.user] - Acting user ({ id, email, isAdmin,
+ *   organizationRole }) when known. The admin half of the author test is the
+ *   *organization* admin (utils/organization-role.js), so the membership role
+ *   has to travel with the user or the check narrows to the id alone.
  * @param {string|null} [opts.actorUserId] - Acting `users.id`, when the caller
  *   has no full user object (machine surfaces: API key owner, MCP session)
  * @param {boolean} [opts.bypassLockCheck] - Internal write, skip enforcement
@@ -201,7 +205,7 @@ export async function enforceSlideWritePolicy({
   const effectiveUser = user || (actorUserId ? { id: actorUserId } : null);
   const isAuthor =
     isPresentationAuthor({ user: effectiveUser, pres: existing }) ||
-    !!effectiveUser?.isAdmin;
+    isOrganizationAdmin(effectiveUser);
 
   // Author lock validation: only authors can change lockedByAuthor on
   // slides. Checked on the canonical (dominant-buffer) slides only: a flag
