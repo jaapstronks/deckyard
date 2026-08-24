@@ -37,7 +37,7 @@ import {
   MODULES,
   REFERENCE_LOCALE,
   UI_MODULES,
-} from '../scripts/i18n-locales.js';
+} from '../scripts/lib/i18n-locales.js';
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -96,9 +96,9 @@ test('i18n-sync --dry-run does not touch a single locale file', () => {
   assert.match(output, /no files were touched/);
 });
 
-test('planSync() reports the edits it would make without writing them', () => {
+test('planSync() reports the edits it would make without writing them', async () => {
   const before = fingerprintI18nTree();
-  const plan = planSync();
+  const plan = await planSync();
   const after = fingerprintI18nTree();
 
   for (const [file, hash] of before) {
@@ -115,7 +115,7 @@ test('planSync() reports the edits it would make without writing them', () => {
   }
 });
 
-test('no locale ships a merged index.json, and nothing generates one', () => {
+test('no locale ships a merged index.json, and nothing generates one', async () => {
   const stale = [...fingerprintI18nTree().keys()].filter((f) =>
     f.endsWith(`${path.sep}index.json`),
   );
@@ -125,7 +125,7 @@ test('no locale ships a merged index.json, and nothing generates one', () => {
     'index.json is a dead artifact (B130) — nothing reads or writes it',
   );
 
-  const planned = planSync().edits.map((e) => e.filePath);
+  const planned = (await planSync()).edits.map((e) => e.filePath);
   assert.deepEqual(
     planned.filter((f) => path.basename(f) === 'index.json'),
     [],
@@ -133,8 +133,8 @@ test('no locale ships a merged index.json, and nothing generates one', () => {
   );
 });
 
-test('the plan covers the manifest matrix, not a list of its own', () => {
-  const { scope } = planSync();
+test('the plan covers the manifest matrix, not a list of its own', async () => {
+  const { scope } = await planSync();
 
   assert.deepEqual(scope.locales, LOCALE_IDS);
   assert.deepEqual(scope.modules, MODULES);
@@ -149,8 +149,8 @@ test('the plan covers the manifest matrix, not a list of its own', () => {
   assert.ok(scope.locales.includes(REFERENCE_LOCALE));
 });
 
-test('a fill never targets the reference locale or a deck-loader module', () => {
-  const filled = planSync().edits.filter((e) => e.filled.length > 0);
+test('a fill never targets the reference locale or a deck-loader module', async () => {
+  const filled = (await planSync()).edits.filter((e) => e.filled.length > 0);
 
   // Filling the reference from itself is a no-op at best; the guard is that
   // FILL_LOCALES excludes it, and this is where that shows.
@@ -178,8 +178,8 @@ test('a fill never targets the reference locale or a deck-loader module', () => 
   assert.deepEqual(offLocale, [], 'a locale outside the fill set was filled');
 });
 
-test('every planned edit names a manifest locale and module', () => {
-  for (const edit of planSync().edits) {
+test('every planned edit names a manifest locale and module', async () => {
+  for (const edit of (await planSync()).edits) {
     assert.ok(
       LOCALE_IDS.includes(edit.locale),
       `${edit.locale}/${edit.module}.json is not a shipped locale`,

@@ -36,7 +36,7 @@ the ten locales stay, we are just honest about what "supported" covers.
 ## Where this is enforced
 
 - **Machine source of truth:** the `tier` field on each locale in
-  `client/i18n/manifest.json`. `scripts/i18n-locales.js` reads it and exports
+  `client/i18n/manifest.json`. `scripts/lib/i18n-locales.js` reads it and exports
   `TIER_1` / `TIER_2` / `tierOf(id)` for Node-side tooling; the browser reads the
   same field straight off the fetched manifest.
 - **The gates:** `tests/i18n-coverage.test.js` derives its _completeness_ list

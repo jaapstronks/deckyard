@@ -18,7 +18,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { missingFor } from '../scripts/i18n-fill.js';
-import { loadLocale } from '../scripts/i18n-keys.js';
+import { loadLocale } from '../scripts/lib/i18n-fs.js';
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),

@@ -23,47 +23,22 @@
  *   node scripts/i18n-sync.js --dry-run    # report the same plan, write nothing
  */
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import path from 'node:path';
 
 import { SLIDE_TYPES } from '../shared/slide-types.js';
 import { slideTypeUiKeys } from './lib/slide-type-i18n-keys.js';
+import { I18N_DIR, readJson, writeJson } from './lib/i18n-fs.js';
+import { isCli } from './lib/is-cli.js';
 import {
   FILL_LOCALES,
   LOCALE_IDS,
   MODULES,
   REFERENCE_LOCALE,
   UI_MODULES,
-} from './i18n-locales.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const I18N_DIR = path.join(__dirname, '..', 'client', 'i18n');
+} from './lib/i18n-locales.js';
 
 /** How many key names a dry-run prints per file before summarizing the rest. */
 const DRY_RUN_KEY_SAMPLE = 10;
-
-function loadJson(filePath) {
-  try {
-    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
-  } catch (e) {
-    return null;
-  }
-}
-
-function saveJson(filePath, data) {
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2) + '\n');
-}
-
-function sortKeys(obj) {
-  const sorted = {};
-  for (const key of Object.keys(obj).sort()) {
-    sorted[key] = obj[key];
-  }
-  return sorted;
-}
 
 /**
  * The set of `slideType.*` keys the live registry currently produces — the
@@ -140,9 +115,9 @@ export function liveSlideTypeI18nKeys() {
  * is `liveSlideTypeI18nKeys()`, which keeps fork types — see there for why
  * excluding them would silently delete a fork's translations (#499).
  *
- * @returns {SyncPlan} the edits, keyed per file
+ * @returns {Promise<SyncPlan>} the edits, keyed per file
  */
-export function planSync() {
+export async function planSync() {
   const valid = liveSlideTypeI18nKeys();
   /** @type {Map<string, SyncFileEdit>} */
   const edits = new Map();
@@ -173,7 +148,7 @@ export function planSync() {
   for (const locale of LOCALE_IDS) {
     for (const moduleName of MODULES) {
       const filePath = path.join(I18N_DIR, locale, `${moduleName}.json`);
-      const data = loadJson(filePath);
+      const data = await readJson(filePath);
       if (!data) continue;
       loaded.set(`${locale}/${moduleName}`, data);
 
@@ -243,11 +218,11 @@ export function planSync() {
  * nothing and the branch guarded a case that can no longer exist.
  *
  * @param {SyncPlan} plan
- * @returns {void}
+ * @returns {Promise<void>}
  */
-export function applyPlan(plan) {
+export async function applyPlan(plan) {
   for (const edit of plan.edits) {
-    saveJson(edit.filePath, sortKeys(edit.data));
+    await writeJson(edit.filePath, edit.data);
   }
 }
 
@@ -296,7 +271,7 @@ function reportPlan(plan, { dryRun }) {
   );
 }
 
-function main(argv = process.argv.slice(2)) {
+async function main(argv = process.argv.slice(2)) {
   const dryRun = argv.includes('--dry-run');
   const unknown = argv.filter((a) => a !== '--dry-run');
   if (unknown.length > 0) {
@@ -311,8 +286,8 @@ function main(argv = process.argv.slice(2)) {
       : 'i18n Sync - Prune orphaned slide-type keys, then fill missing keys with English\n',
   );
 
-  const plan = planSync();
-  if (!dryRun) applyPlan(plan);
+  const plan = await planSync();
+  if (!dryRun) await applyPlan(plan);
   reportPlan(plan, { dryRun });
 
   if (dryRun) {
@@ -326,6 +301,6 @@ function main(argv = process.argv.slice(2)) {
 
 // Run the full sync only when invoked directly, not when imported for the prune
 // helper or the plan (importing must not rewrite every locale file).
-if (process.argv[1] === __filename) {
-  main();
+if (isCli(import.meta.url)) {
+  await main();
 }

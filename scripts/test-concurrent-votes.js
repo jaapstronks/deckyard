@@ -13,8 +13,8 @@
  *   node scripts/test-concurrent-votes.js my-presentation 15
  */
 
-import http from 'http';
-import https from 'https';
+import http from 'node:http';
+import https from 'node:https';
 
 import { liveInteractionKind } from '../shared/slide-types/runtime.js';
 

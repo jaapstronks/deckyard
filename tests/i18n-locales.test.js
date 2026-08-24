@@ -28,7 +28,7 @@ import {
   TIER_2,
   UI_MODULES,
   tierOf,
-} from '../scripts/i18n-locales.js';
+} from '../scripts/lib/i18n-locales.js';
 import { I18N_COMPONENTS } from '../client/lib/ui-i18n.js';
 
 const repoRoot = path.resolve(
