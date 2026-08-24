@@ -3,7 +3,7 @@
  *
  * docs/reference/webhooks.md calls the payload shapes "the contract" an
  * external integrator writes against, but until now no test pinned them: the
- * SSRF side is covered (security-audit-cluster7) and settings migration is
+ * SSRF side is covered (security-low-severity-hardening) and settings migration is
  * covered, while the shapes themselves — and the `x-sb-event` header and the
  * best-effort fire — were only enforced by the doc. This file pins, per event:
  *

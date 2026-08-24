@@ -1,5 +1,5 @@
 /**
- * Security-audit cluster 5 regression tests (MH3).
+ * Public SSE connection caps — security regression tests (audit finding MH3).
  *
  * MH3 — unbounded public SSE connections (DoS). The follow/questions/
  *       live-session events streams are unauthenticated and long-lived;
@@ -12,7 +12,7 @@
  * M4 (dependency advisory bumps) is verified out-of-band via `npm audit`, not in
  * this file.
  *
- * Run with: node --test tests/security-audit-cluster5.test.js
+ * Run with: node --test tests/security-sse-connection-caps.test.js
  */
 
 import test from 'node:test';

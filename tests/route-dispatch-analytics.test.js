@@ -17,7 +17,7 @@
  * fall-through without reaching a handler (the authed entry runs a rate-limit
  * check before dispatch, so its routing is asserted structurally only).
  *
- * Run with: node --test tests/c8-routes-analytics-dispatch.test.js
+ * Run with: node --test tests/route-dispatch-analytics.test.js
  */
 
 import test from 'node:test';

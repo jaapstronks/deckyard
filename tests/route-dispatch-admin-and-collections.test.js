@@ -1,5 +1,6 @@
 /**
- * A7.19 C8 fase 2 — batch 4 route-table migration.
+ * A7.19 C8 fase 2 — route-table migration for the admin, organization and
+ * collection modules (batch 4).
  *
  * Eight modules, mixing the documented forms (docs/reference/route-dispatch.md):
  * `slide-collections` and `custom-slide-types` sent explicit 405s per path
@@ -14,7 +15,7 @@
  * 405/401/403 behaviour is asserted by invoking the entry function — which for
  * a wrong method or failing guard never reaches a real storage handler.
  *
- * Run with: node --test tests/c8-routes-batch-4-dispatch.test.js
+ * Run with: node --test tests/route-dispatch-admin-and-collections.test.js
  */
 
 import test from 'node:test';

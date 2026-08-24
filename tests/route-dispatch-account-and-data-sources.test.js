@@ -1,5 +1,6 @@
 /**
- * A7.19 C8 fase 2 — batch 2 route-table migration.
+ * A7.19 C8 fase 2 — route-table migration for the account and data-source
+ * modules: `settings`, `users`, `data-sources` and `activity` (batch 2).
  *
  * These four modules mix the two documented forms (docs/reference/route-dispatch.md):
  * `/search`, `/providers` fall through on a method mismatch (Form A), while the
@@ -12,7 +13,7 @@
  * 405/401 behaviour is asserted by invoking the entry (or the catch-all row)
  * with a wrong method — which never reaches a real storage handler.
  *
- * Run with: node --test tests/c8-routes-batch-2-dispatch.test.js
+ * Run with: node --test tests/route-dispatch-account-and-data-sources.test.js
  */
 
 import test from 'node:test';

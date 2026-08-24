@@ -4,7 +4,7 @@
  * `server/routes/api/share-links/guests.js` is the authenticated half of the
  * guest surface: it decides who may add, list, remove and re-invite the people
  * a share link lets in. Until now the module's only coverage was the
- * `c8-routes-share-links-dispatch` shape test — a table that proves a path maps
+ * `route-dispatch-share-links` shape test — a table that proves a path maps
  * to a handler *name*, and nothing about what the handler does. Four endpoints
  * repeat the same authorization check, which is four places to get it right and
  * four places to get it wrong.

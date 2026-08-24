@@ -248,7 +248,7 @@ stands, as of 2026-08-17:
   passed only `{ req, res, url, authedUser, repoRoot }` to the import handlers,
   so `storageScope` arrived `undefined` and `createPresentation(undefined, …)`
   threw. The route-table dispatch (#686) forwards the full context, and
-  `tests/c8-routes-notion-dispatch.test.js` pins that the exact `storageScope`
+  `tests/route-dispatch-notion.test.js` pins that the exact `storageScope`
   reaches the import handler (#784).
 - **Four endpoints have no caller.** `fetch`, `subjects`, `compose` and
   `suggest` are not called from any client module; only `status`,

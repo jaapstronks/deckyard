@@ -1,5 +1,7 @@
 /**
- * A7.19 C8 fase 2 — batch 1 route-table migration.
+ * A7.19 C8 fase 2 — route-table migration for the five authoring-support
+ * modules the editor reaches around one deck: `assets`, `collaborators`,
+ * `publish`, `slide-types` and `tags` (migrated together as batch 1).
  *
  * These modules moved from a hand-written `if (pathname === … && method === …)`
  * chain to a declarative `ROUTES` table dispatched through `dispatchRoutes`.
@@ -11,7 +13,7 @@
  * through). Wrong-method dispatch is storage-free: a method mismatch never
  * reaches the real handler.
  *
- * Run with: node --test tests/c8-routes-batch-1-dispatch.test.js
+ * Run with: node --test tests/route-dispatch-deck-authoring.test.js
  */
 
 import test from 'node:test';

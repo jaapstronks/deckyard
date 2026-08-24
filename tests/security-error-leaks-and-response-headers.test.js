@@ -1,5 +1,6 @@
 /**
- * Security-audit cluster 3 regression tests (H6, H7, H8).
+ * Error-message leaks and response headers — security regression tests
+ * (audit findings H6, H7, H8).
  *
  * H6 — the unauthenticated /embed/:publishId render-failure page leaked the
  *      server error message + full stack (`server/routes/static.js`). Gated
@@ -10,7 +11,7 @@
  *      X-Frame-Options / X-Content-Type-Options / Referrer-Policy (and HSTS
  *      over HTTPS), keeping /embed/* frameable.
  *
- * Run with: node --test tests/security-audit-cluster3.test.js
+ * Run with: node --test tests/security-error-leaks-and-response-headers.test.js
  */
 
 import test from 'node:test';

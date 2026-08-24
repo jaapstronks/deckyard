@@ -1,5 +1,5 @@
 /**
- * A7.19 C8 fase 2 — the closing migrations behind the root dispatcher
+ * A7.19 C8 fase 2 — the tables mounted directly by the root dispatcher
  * (`routes/api/index.js`), reviewed as security-sensitive:
  *
  * - the maintenance endpoint moves to a `MAINTENANCE_ROUTES` table
@@ -14,7 +14,7 @@
  * All assertions here are storage-free: the maintenance handler reads
  * config only, and every refusal path returns before a storage call.
  *
- * Run with: node --test tests/c8-routes-gate-close-dispatch.test.js
+ * Run with: node --test tests/route-dispatch-root-mounts.test.js
  */
 
 import test from 'node:test';

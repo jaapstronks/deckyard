@@ -1,5 +1,6 @@
 /**
- * Security-audit cluster 2 regression tests (H5, M1).
+ * Slide-template injection — security regression tests (audit findings
+ * H5, M1).
  *
  * H5 — stored XSS via a custom slide-type template `{{raw}}` token. The
  *      compiled render output was injected without sanitization, so a benign
@@ -11,7 +12,7 @@
  *      link helper emitted `<a href="…">` with no protocol allow-list. Fixed by
  *      restricting to http(s)/mailto (and closed downstream by H5's sanitize).
  *
- * Run with: node --test tests/security-audit-cluster2.test.js
+ * Run with: node --test tests/security-slide-template-xss.test.js
  */
 
 import test, { before } from 'node:test';

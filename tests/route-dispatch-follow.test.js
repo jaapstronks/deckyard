@@ -17,7 +17,7 @@
  * The follow-codes 401/405 paths return before any storage call, so those
  * are invoked end-to-end.
  *
- * Run with: node --test tests/c8-routes-follow-dispatch.test.js
+ * Run with: node --test tests/route-dispatch-follow.test.js
  */
 
 import test from 'node:test';

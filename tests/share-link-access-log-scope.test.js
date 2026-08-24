@@ -24,7 +24,7 @@
  *      presentation and then binds the link id to it through
  *      `getShareLinkById`, which *is* organization-filtered. A link belonging
  *      to another organization does not resolve there, so it never reaches the
- *      log. `tests/security-audit-cluster4.test.js` (MH2) pins the deck half of
+ *      log. `tests/security-resource-authz-and-ssrf.test.js` (MH2) pins the deck half of
  *      that gate; this file pins the organization half, and a source-level guard
  *      refuses any call site that passes a scope to the access log again.
  *

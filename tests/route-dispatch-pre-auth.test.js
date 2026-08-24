@@ -14,7 +14,7 @@
  * storage) is reached. The fifth family this file covered, leads, went with
  * the lead-capture strip (B119).
  *
- * Run with: node --test tests/c8-routes-pre-auth-dispatch.test.js
+ * Run with: node --test tests/route-dispatch-pre-auth.test.js
  */
 
 import test from 'node:test';

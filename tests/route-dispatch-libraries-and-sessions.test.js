@@ -1,5 +1,6 @@
 /**
- * A7.19 C8 fase 2 — batch 5 route-table migration.
+ * A7.19 C8 fase 2 — route-table migration for the library, theming and
+ * live-session modules (batch 5).
  *
  * Seven modules (docs/reference/route-dispatch.md): `themes` is all Form A
  * with per-route designer guards; `api-keys` mirrors its original 405 tail as
@@ -15,7 +16,7 @@
  * 405/401 behaviour is asserted by invoking the entry function — which for a
  * wrong method or failing guard never reaches a real storage handler.
  *
- * Run with: node --test tests/c8-routes-batch-5-dispatch.test.js
+ * Run with: node --test tests/route-dispatch-libraries-and-sessions.test.js
  */
 
 import test from 'node:test';
