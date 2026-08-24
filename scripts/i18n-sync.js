@@ -6,6 +6,12 @@
  * `slideType.*` keys the registry no longer produces, then fills the keys a
  * locale is missing with their English values as placeholders.
  *
+ * Scope comes from `client/i18n/manifest.json` by way of `i18n-locales.js`:
+ * the prune sweeps every locale × every module, the fill copies the reference
+ * locale's `ui` modules into every other locale. Nothing here keeps its own
+ * spelling of those lists — see i18n-locales.js for what the four hand-kept
+ * ones cost.
+ *
  * Split in two halves on purpose. `planSync()` only reads — it returns the
  * complete list of edits the run would make — and `applyPlan()` is the only
  * thing that touches disk. `--dry-run` runs the first half and prints it, so
@@ -23,38 +29,18 @@ import { fileURLToPath } from 'url';
 
 import { SLIDE_TYPES } from '../shared/slide-types.js';
 import { slideTypeUiKeys } from './lib/slide-type-i18n-keys.js';
+import {
+  FILL_LOCALES,
+  LOCALE_IDS,
+  MODULES,
+  REFERENCE_LOCALE,
+  UI_MODULES,
+} from './i18n-locales.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const I18N_DIR = path.join(__dirname, '..', 'client', 'i18n');
-const LANGUAGES = ['nl', 'de', 'fr', 'es', 'pt', 'da', 'sv', 'no'];
-const MODULES = [
-  'common',
-  'auth',
-  'editor',
-  'list',
-  'share',
-  'settings',
-  'presenter',
-  'slide-types',
-];
-// Every locale on disk, not just the fill targets: it/pl/fi ship translations
-// but never sat in LANGUAGES, so their orphaned slideType keys went unpruned too.
-const ALL_LOCALES = [
-  'en',
-  'nl',
-  'de',
-  'fr',
-  'es',
-  'pt',
-  'it',
-  'pl',
-  'fi',
-  'da',
-  'sv',
-  'no',
-];
 
 /** How many key names a dry-run prints per file before summarizing the rest. */
 const DRY_RUN_KEY_SAMPLE = 10;
@@ -119,7 +105,17 @@ export function liveSlideTypeI18nKeys() {
  * @property {SyncFileEdit[]} edits  one entry per file that would change
  * @property {number} totalPruned    keys removed across all files
  * @property {number} totalFilled    keys added across all files
- * @property {string[]} skippedModules modules with no English source to fill from
+ * @property {string[]} skippedModules modules with no reference source to fill from
+ * @property {SyncScope} scope       the locale/module matrix the plan covers
+ */
+
+/**
+ * @typedef {object} SyncScope
+ * @property {string[]} locales      locales the prune sweeps
+ * @property {string[]} modules      modules the prune sweeps
+ * @property {string[]} fillLocales  locales the fill writes into
+ * @property {string[]} fillModules  modules the fill writes
+ * @property {string} reference      locale the fill copies from
  */
 
 /**
@@ -171,8 +167,10 @@ export function planSync() {
     return edit;
   };
 
-  // Prune pass — every locale on disk, English included.
-  for (const locale of ALL_LOCALES) {
+  // Prune pass — every locale × every module, the reference included. A dead
+  // `slideType.*` key is dead wherever it sits, `follow.json` and the reference
+  // locale's own files included, so this half is not narrowed by loader.
+  for (const locale of LOCALE_IDS) {
     for (const moduleName of MODULES) {
       const filePath = path.join(I18N_DIR, locale, `${moduleName}.json`);
       const data = loadJson(filePath);
@@ -189,25 +187,28 @@ export function planSync() {
     }
   }
 
-  // Fill pass — English (post-prune) into the fill-target locales.
-  for (const moduleName of MODULES) {
-    const enData = loaded.get(`en/${moduleName}`);
-    if (!enData) {
+  // Fill pass — the reference locale (post-prune) into every other locale.
+  // Narrowed to the `ui` modules: a `deck` module is resolved against the deck
+  // language, which only ever lands on a Tier-1 locale, so filling the other
+  // ten would write files no loader can reach.
+  for (const moduleName of UI_MODULES) {
+    const referenceData = loaded.get(`${REFERENCE_LOCALE}/${moduleName}`);
+    if (!referenceData) {
       skippedModules.push(moduleName);
       continue;
     }
-    const enKeys = Object.keys(enData);
+    const referenceKeys = Object.keys(referenceData);
 
-    for (const locale of LANGUAGES) {
+    for (const locale of FILL_LOCALES) {
       const id = `${locale}/${moduleName}`;
       const filePath = path.join(I18N_DIR, locale, `${moduleName}.json`);
       const data = loaded.get(id) || {};
       loaded.set(id, data);
 
-      const missing = enKeys.filter((k) => data[k] === undefined);
+      const missing = referenceKeys.filter((k) => data[k] === undefined);
       if (missing.length === 0) continue;
 
-      for (const k of missing) data[k] = enData[k];
+      for (const k of missing) data[k] = referenceData[k];
       editFor(locale, moduleName, filePath, data).filled.push(...missing);
     }
   }
@@ -218,6 +219,16 @@ export function planSync() {
     totalPruned: list.reduce((n, e) => n + e.pruned.length, 0),
     totalFilled: list.reduce((n, e) => n + e.filled.length, 0),
     skippedModules,
+    // Reported, not just used: the scope is the whole point of the manifest
+    // being the source, so a dry run states it and the tests assert on it
+    // rather than re-deriving what the loops above happened to iterate.
+    scope: {
+      locales: [...LOCALE_IDS],
+      modules: [...MODULES],
+      fillLocales: [...FILL_LOCALES],
+      fillModules: [...UI_MODULES],
+      reference: REFERENCE_LOCALE,
+    },
   };
 }
 
@@ -252,6 +263,13 @@ function formatKeys(keys) {
 }
 
 function reportPlan(plan, { dryRun }) {
+  const { locales, modules, fillLocales, fillModules, reference } = plan.scope;
+  console.log(
+    `Scope (client/i18n/manifest.json): pruning ${locales.length} locale(s) × ` +
+      `${modules.length} module(s); filling ${fillLocales.length} locale(s) × ` +
+      `${fillModules.length} module(s) from ${reference}.\n`,
+  );
+
   for (const edit of plan.edits) {
     const parts = [];
     if (edit.pruned.length)

@@ -1,4 +1,5 @@
 {
+  "reference": "en",
   "locales": [
     { "id": "en", "label": "English", "tier": 1 },
     { "id": "nl", "label": "Nederlands", "tier": 1 },
@@ -12,5 +13,16 @@
     { "id": "da", "label": "Dansk", "tier": 2 },
     { "id": "sv", "label": "Svenska", "tier": 2 },
     { "id": "no", "label": "Norsk", "tier": 2 }
+  ],
+  "modules": [
+    { "id": "auth", "loader": "ui" },
+    { "id": "common", "loader": "ui" },
+    { "id": "editor", "loader": "ui" },
+    { "id": "follow", "loader": "deck" },
+    { "id": "list", "loader": "ui" },
+    { "id": "presenter", "loader": "ui" },
+    { "id": "settings", "loader": "ui" },
+    { "id": "share", "loader": "ui" },
+    { "id": "slide-types", "loader": "ui" }
   ]
 }

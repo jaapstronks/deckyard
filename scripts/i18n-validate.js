@@ -8,8 +8,15 @@
  *   pasted 22 keys twice into editor.json parsed clean and this script said
  *   PASSED — the files were quietly corrupt. Detected over the raw lines below,
  *   not the parsed object, which is the only place the duplicate survives.)
- * - Missing keys (compared to English reference)
+ * - Missing keys (compared to the reference locale)
  * - Empty values
+ *
+ * Scope — which locales, which module files — comes from
+ * `client/i18n/manifest.json` by way of `i18n-locales.js`, so this script and
+ * `i18n-sync.js` cannot check different sets of files. `follow.json` is
+ * included: it is a `deck`-loader module rather than one of `ui-i18n.js`'s
+ * `I18N_COMPONENTS`, but a syntax error or a duplicate key breaks it exactly
+ * the same way.
  *
  * Line counts are reported but never enforced: these are generated key/value
  * maps, so length carries no complexity signal. See docs/developer/i18n.md.
@@ -22,40 +29,12 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+import { LOCALE_IDS, MODULES, REFERENCE_LOCALE } from './i18n-locales.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const I18N_DIR = path.join(__dirname, '..', 'client', 'i18n');
-// Keep in sync with client/i18n/manifest.json (it/fi/pl were shipped but never
-// added here, so they went unvalidated).
-const LANGUAGES = [
-  'en',
-  'nl',
-  'de',
-  'fr',
-  'es',
-  'pt',
-  'it',
-  'pl',
-  'fi',
-  'da',
-  'sv',
-  'no',
-];
-// `follow` is intentionally absent from I18N_COMPONENTS in client/lib/ui-i18n.js
-// (it is loaded per deck language by client/views/follow/i18n.js), but the files
-// still exist per locale and should be validated like any other module.
-const MODULES = [
-  'common',
-  'auth',
-  'editor',
-  'list',
-  'share',
-  'settings',
-  'presenter',
-  'slide-types',
-  'follow',
-];
 
 let hasErrors = false;
 
@@ -96,9 +75,9 @@ export function findDuplicateKeys(content) {
   return duplicates;
 }
 
-// English module files are loaded twice (once as the reference, once in the
-// per-locale loop); check each path for duplicates only the first time so a hit
-// is reported once, not twice.
+// The reference locale's module files are loaded twice (once as the reference,
+// once in the per-locale loop); check each path for duplicates only the first
+// time so a hit is reported once, not twice.
 const dupChecked = new Set();
 
 function loadJson(filePath) {
@@ -127,32 +106,23 @@ function countLines(content) {
 function main() {
   console.log('i18n Validation\n');
 
-  // Validate shared.json
-  const sharedPath = path.join(I18N_DIR, 'shared.json');
-  const { data: shared, content: sharedContent } = loadJson(sharedPath);
-  if (shared) {
-    console.log(
-      `shared.json: ${Object.keys(shared).length} keys, ${countLines(sharedContent)} lines`,
-    );
-  }
-
-  // Load English as reference
-  const enData = {};
+  // Load the reference locale
+  const referenceData = {};
   for (const moduleName of MODULES) {
-    const enPath = path.join(I18N_DIR, 'en', `${moduleName}.json`);
-    const { data } = loadJson(enPath);
+    const refPath = path.join(I18N_DIR, REFERENCE_LOCALE, `${moduleName}.json`);
+    const { data } = loadJson(refPath);
     if (data) {
-      Object.assign(enData, data);
+      Object.assign(referenceData, data);
     }
   }
 
-  const enKeys = new Set(Object.keys(enData));
+  const referenceKeys = new Set(Object.keys(referenceData));
   console.log(
-    `\nEnglish reference: ${enKeys.size} keys (across all modules)\n`,
+    `Reference locale ${REFERENCE_LOCALE}: ${referenceKeys.size} keys (across all modules)\n`,
   );
 
   // Validate each language
-  for (const lang of LANGUAGES) {
+  for (const lang of LOCALE_IDS) {
     console.log(`${lang.toUpperCase()}:`);
     let langKeys = new Set();
 
@@ -193,13 +163,13 @@ function main() {
       );
     }
 
-    // Check for missing keys (compared to English)
-    if (lang !== 'en') {
-      const missingKeys = [...enKeys].filter(
-        (k) => !langKeys.has(k) && (!shared || !shared[k]),
-      );
+    // Check for missing keys (compared to the reference locale)
+    if (lang !== REFERENCE_LOCALE) {
+      const missingKeys = [...referenceKeys].filter((k) => !langKeys.has(k));
       if (missingKeys.length > 0) {
-        warn(`${lang}: ${missingKeys.length} keys missing compared to English`);
+        warn(
+          `${lang}: ${missingKeys.length} keys missing compared to ${REFERENCE_LOCALE}`,
+        );
       }
     }
 
