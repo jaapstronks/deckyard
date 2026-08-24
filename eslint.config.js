@@ -522,10 +522,7 @@ export default [
   {
     files: ['server/config/**/*.js'],
     rules: {
-      'no-restricted-syntax': [
-        'error',
-        ...serverSilentFailureRules,
-      ],
+      'no-restricted-syntax': ['error', ...serverSilentFailureRules],
     },
   },
 
