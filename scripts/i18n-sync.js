@@ -101,9 +101,8 @@ export function liveSlideTypeI18nKeys() {
  * locale the prune just cleaned.
  *
  * **The prune** removes `slideType.*` keys the registry no longer produces.
- * Nothing else deletes them: `i18n-fill` only ever adds, `i18n-validate` only
- * flags keys *missing* from English, and the audit's orphan check skips the
- * whole `slideType.` family as runtime-built. So a field, option or type that
+ * Nothing else deletes them: `i18n-fill` only ever adds, and the audit's orphan
+ * check skips the whole `slideType.` family as runtime-built. So a field, option or type that
  * leaves the registry strands its translations in every locale forever. The
  * registry is the authority on which keys are real; anything under `slideType.`
  * that it does not generate is dead — including in English, which drifts the

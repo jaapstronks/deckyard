@@ -1,7 +1,7 @@
 /**
  * i18n duplicate-key gate — within a file, and across the files of one locale.
  *
- * `scripts/i18n-validate.js` used to validate the *parsed* object, so a repeated
+ * The retired `i18n-validate` script validated the *parsed* object, so a repeated
  * key was invisible: `JSON.parse` keeps the last occurrence and silently drops
  * the rest. A fork-merge once pasted 22 keys twice into editor.json; the files
  * were quietly corrupt (last-wins), yet the validator reported PASSED.
@@ -19,7 +19,7 @@
  * it from growing back, and pins that every key lives in the module `en/`
  * files it in.
  *
- * Run with: node --test tests/i18n-validate-duplicate-keys.test.js
+ * Run with: node --test tests/i18n-duplicate-keys.test.js
  */
 
 import { describe, it } from 'node:test';
@@ -28,7 +28,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { findDuplicateKeys } from '../scripts/i18n-validate.js';
+import { findDuplicateKeys } from '../scripts/lib/i18n-fs.js';
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),

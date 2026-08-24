@@ -11,7 +11,9 @@
  *
  * Async throughout, deliberately: `i18n-sync.js` was the last synchronous
  * script and a second, sync-flavoured copy of these four functions is exactly
- * the shape this module exists to remove.
+ * the shape this module exists to remove. `findDuplicateKeys()` is the one
+ * exception in kind rather than in shape: it reads a locale file's *raw text*,
+ * because that is the only place a repeated JSON key survives.
  *
  * @module scripts/lib/i18n-fs
  */
@@ -126,4 +128,32 @@ export async function loadLocale(i18nDir, locale) {
     if (dict) Object.assign(merged, dict);
   }
   return merged;
+}
+
+/**
+ * Duplicate keys, found over the raw text because `JSON.parse` keeps only the
+ * last of a repeated key and so erases the very evidence of the bug. The i18n
+ * files are flat, one-key-per-line maps (as `i18n:sync`/`i18n:fill` emit them),
+ * so a leading `"key":` on a line reliably marks a top-level key. Keys are
+ * compared by their raw source text — locale keys are plain dotted identifiers
+ * with no escapes, so a repeat is byte-identical.
+ * @param {string} content - the file's raw text
+ * @returns {Array<{key: string, line: number, firstLine: number}>}
+ */
+export function findDuplicateKeys(content) {
+  const keyRe = /^\s*"((?:\\.|[^"\\])*)"\s*:/;
+  const firstSeen = new Map();
+  const duplicates = [];
+  const lines = content.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const match = keyRe.exec(lines[i]);
+    if (!match) continue;
+    const key = match[1];
+    if (firstSeen.has(key)) {
+      duplicates.push({ key, line: i + 1, firstLine: firstSeen.get(key) });
+    } else {
+      firstSeen.set(key, i + 1);
+    }
+  }
+  return duplicates;
 }

@@ -205,7 +205,7 @@ async function keysHeldByAnyLocale() {
  * key could live in a locale forever while `en/` never learned it existed, and
  * `i18n-fill.js en` had no way to add it — 62 keys sat in `nl/` alone (B138).
  * A key with no English source anywhere is deliberately *not* invented here: it
- * is dead, and `i18n-validate.js` names it so it can be deleted.
+ * is dead, and `tests/i18n-coverage.test.js` names it so it can be deleted.
  *
  * @param {string} locale
  * @returns {Promise<Record<string, string>>}

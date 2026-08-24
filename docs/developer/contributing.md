@@ -292,7 +292,8 @@ bodies is a second place the contract can drift from `docs/openapi.yaml`.
    they fall back to English until someone translates them, and `i18n:sync`
    seeds them with the English string so the gap is visible. See
    [i18n.md](i18n.md) and `docs/reference/i18n-locale-tiers.md`
-3. Run `npm run i18n:validate` to check for issues
+3. Run `npm test` — the i18n gates (coverage, duplicates, module homes,
+   empty values, placeholders) run as part of the suite
 
 (The runtime loads the modular `<locale>/<component>.json` files directly;
 there is no merged build step.)
