@@ -17,7 +17,11 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { CORE_SLIDE_TYPE_DEFS } from '../shared/slide-types/registry.js';
+import { SLIDE_TYPE_DESCRIPTION } from '../shared/slide-types/authoring-companions.js';
 import { extractUsedKeys, loadLocale, isDynamicKey } from './i18n-keys.js';
+import { slideTypeUiStrings } from './lib/slide-type-i18n-keys.js';
+import { LOCALE_IDS, REFERENCE_LOCALE } from './i18n-locales.js';
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -157,6 +161,51 @@ async function mergeIntoLocale(locale, entries) {
 }
 
 /**
+ * The English a runtime-built key family carries in code, key -> string.
+ *
+ * `extractUsedKeys` only sees `t('literal', 'fallback')`; the picker and the
+ * field renderer build their keys from template literals and resolve the
+ * English from the registry instead — `slideTypeDescription()` for a type's
+ * picker blurb, the field/option declarations for `slideType.*`. So for these
+ * families the registry *is* the call-site fallback, and it is the only place
+ * `en/` can be materialized from.
+ *
+ * Read from **core** definitions (`CORE_SLIDE_TYPE_DEFS`, `SLIDE_TYPE_DESCRIPTION`),
+ * never the merged registry: `en/` is a tracked artifact, so a fork type
+ * installed in `custom/slide-types/` must not be able to change what this
+ * command writes — the same rule the generated reference docs follow.
+ *
+ * @returns {Map<string, string>} key -> English string
+ */
+function registryEnglish() {
+  const out = slideTypeUiStrings(CORE_SLIDE_TYPE_DEFS);
+  for (const [type, description] of Object.entries(SLIDE_TYPE_DESCRIPTION))
+    out.set(`editor.slideTypeDesc.${type}`, description);
+  return out;
+}
+
+/**
+ * Every key some locale translates, across all of them.
+ *
+ * `en/` is the reference: it decides a key's wording *and* (since B137) which
+ * module file it lives in. A key a locale holds while `en/` does not is
+ * therefore reference drift — either English is missing a string it owns, or
+ * the key is dead and the locale is carrying a translation of nothing. Both
+ * want to be visible, so the `en` target seeds from this set.
+ *
+ * @returns {Promise<Set<string>>}
+ */
+async function keysHeldByAnyLocale() {
+  const keys = new Set();
+  for (const locale of LOCALE_IDS) {
+    if (locale === REFERENCE_LOCALE) continue;
+    for (const key of Object.keys(await loadLocale(i18nDir, locale)))
+      keys.add(key);
+  }
+  return keys;
+}
+
+/**
  * Every key a locale still needs, as key -> English source string.
  *
  * Two sources, because neither is complete on its own:
@@ -171,8 +220,14 @@ async function mergeIntoLocale(locale, entries) {
  *     source 1 made the tool answer "0 missing" for a locale that was 272 keys
  *     short (B136).
  *
- * For the `en` target there is nothing to seed from, so only source 1 applies:
- * materializing en/ *from* en/ would be circular.
+ * The `en` target cannot use source 2 — materializing en/ *from* en/ would be
+ * circular — so it gets a third instead: **every key another locale already
+ * translates**, valued from the registry (`registryEnglish`). That is what
+ * makes the reference a superset by construction. Without it, a runtime-built
+ * key could live in a locale forever while `en/` never learned it existed, and
+ * `i18n-fill.js en` had no way to add it — 62 keys sat in `nl/` alone (B138).
+ * A key with no English source anywhere is deliberately *not* invented here: it
+ * is dead, and `i18n-validate.js` names it so it can be deleted.
  *
  * @param {string} locale
  * @returns {Promise<Record<string, string>>}
@@ -197,6 +252,10 @@ export async function missingFor(locale) {
     want(key, en[key] ?? fallback);
   }
   for (const [key, english] of Object.entries(en)) want(key, english);
+  if (locale === 'en') {
+    const registry = registryEnglish();
+    for (const key of await keysHeldByAnyLocale()) want(key, registry.get(key));
+  }
   return missing;
 }
 
