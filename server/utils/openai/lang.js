@@ -1,32 +1,20 @@
 import {
   normalizeLang,
   normalizeTranslationLang,
+  TRANSLATION_LANG_LABELS,
 } from '../../../shared/i18n-utils.js';
 
 export { normalizeLang, normalizeTranslationLang };
 
 /**
- * Language labels for LLM translation prompts.
- * Uses full language names for clarity in AI prompts.
+ * Language label for LLM translation prompts: the shared English name, upper-cased
+ * for emphasis in the prompt. Aliases (`en`) resolve to their canonical code first.
+ * @param {*} v - Language code
+ * @returns {string} Upper-cased language name, or 'UNKNOWN'
  */
-const LANG_LABELS = {
-  nl: 'DUTCH',
-  'en-GB': 'BRITISH ENGLISH',
-  en: 'BRITISH ENGLISH',
-  de: 'GERMAN',
-  fr: 'FRENCH',
-  es: 'SPANISH',
-  pt: 'PORTUGUESE',
-  it: 'ITALIAN',
-  pl: 'POLISH',
-  fi: 'FINNISH',
-  da: 'DANISH',
-  sv: 'SWEDISH',
-  no: 'NORWEGIAN',
-};
-
 export function labelForLang(v) {
-  return LANG_LABELS[v] || 'UNKNOWN';
+  const code = normalizeTranslationLang(v);
+  return code ? TRANSLATION_LANG_LABELS[code].toUpperCase() : 'UNKNOWN';
 }
 
 export function detectDeckLanguage(rawContent) {
