@@ -265,6 +265,42 @@ The **allowlist is empty**, `server/config/**` included. `void 0` and other
 non-call operands are untouched: the selector requires a `CallExpression`
 operand.
 
+### `no-restricted-syntax` on `.isAdmin` — the workspace-scoped admin gate
+
+Scoped to `client/**`, this rule rejects any member access named `isAdmin`.
+
+Two role systems meet on the user object and they are not the same thing.
+`user.isAdmin` comes from `users.role` and is **instance-wide**;
+`user.organizationRole` is the membership role in the organization the session
+is currently in, and only exists in multi-workspace mode. Gating UI on the
+instance flag alone means an admin of organization A keeps every destructive
+affordance the moment they switch to organization B — the delete button on a
+shared image, the Q&A remove button, the raw-JSON editor, the moderator route.
+
+[`isOrganizationAdmin(user)`](../../client/lib/user/organization-role.js) is the
+conjunction: instance admin **and**, where a membership exists, `admin` or
+`owner` of the active organization. Without a membership role it collapses to
+the old check, so single-workspace instances (and the dev bypass and the
+sandbox) are unchanged.
+
+The helper predates the rule and was losing: at the time the gate went up, four
+call sites used it against **ten** that read `.isAdmin` raw (B144). The rule is
+what makes the helper the default rather than the minority.
+
+Restricted as a **MemberExpression** rather than a bare identifier, because the
+name is legitimate in every other shape: `{ isAdmin }` destructuring, a jsdoc
+`@param {boolean} isAdmin`, and prop-threading
+(`isAdmin: isOrganizationAdmin(user)`) all pass. Only the read off an object —
+which is always a gate — is rejected.
+
+The allowlist is exactly one file: `organization-role.js`, where the helper
+reads the instance flag in order to narrow it.
+
+Server-side `.isAdmin` reads are **out of scope and correct**: instance-scoped
+APIs (admin users, email, integrations, API keys, analytics) check the instance
+role on purpose. Where a server route is organization-scoped but still gates on
+the instance flag, that is a separate defect from this rule.
+
 ### The suppressions baseline (burndown)
 
 The first run surfaced **397 `no-unused-vars`** and **10 `no-useless-escape`**

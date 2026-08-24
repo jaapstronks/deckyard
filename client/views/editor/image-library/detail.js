@@ -8,6 +8,7 @@ import {
   createFieldWrap,
 } from './utils.js';
 import { h } from '../../../lib/dom.js';
+import { isOrganizationAdmin } from '../../../lib/user/organization-role.js';
 
 /**
  * Creates the image library detail view component
@@ -36,7 +37,7 @@ export function createImageLibraryDetail({
   let activeDetailId = '';
 
   const deleteFromLibrary = async (it) => {
-    if (!user?.isAdmin) return;
+    if (!isOrganizationAdmin(user)) return;
     const id = String(it?.id || '').trim();
     if (!id) return;
 
@@ -488,7 +489,7 @@ export function createImageLibraryDetail({
     ]);
 
     const btnDelete =
-      user?.isAdmin && it?.id
+      isOrganizationAdmin(user) && it?.id
         ? h('button', {
             class: 'btn btn-danger',
             type: 'button',

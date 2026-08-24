@@ -5,6 +5,7 @@ import {
   LONG_LIVED_STREAM,
 } from '../../lib/net/sse-connection.js';
 import { h } from '../../lib/dom.js';
+import { isOrganizationAdmin } from '../../lib/user/organization-role.js';
 
 export function createNotesQaController({
   api,
@@ -87,7 +88,7 @@ export function createNotesQaController({
         footer.append(expandBtn);
       }
 
-      if (user?.isAdmin) {
+      if (isOrganizationAdmin(user)) {
         const presId = getPresentationId?.() || '';
         const afterSlideIndex = Number(getPresenterSlideIndex?.() ?? 0) || 0;
         if (isPromoted) {
@@ -159,7 +160,7 @@ export function createNotesQaController({
         }
       }
 
-      if (user?.isAdmin) {
+      if (isOrganizationAdmin(user)) {
         const presId = getPresentationId?.() || '';
         const removeBtn = h('button', {
           class: 'btn btn-secondary',
