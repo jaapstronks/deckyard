@@ -30,16 +30,12 @@
  * Exit code: 0 if valid, 1 if errors found
  */
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import fs from 'node:fs';
+import path from 'node:path';
 
-import { LOCALE_IDS, MODULES, REFERENCE_LOCALE } from './i18n-locales.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const I18N_DIR = path.join(__dirname, '..', 'client', 'i18n');
+import { I18N_DIR, REPO_ROOT } from './lib/i18n-fs.js';
+import { isCli } from './lib/is-cli.js';
+import { LOCALE_IDS, MODULES, REFERENCE_LOCALE } from './lib/i18n-locales.js';
 
 let hasErrors = false;
 
@@ -90,7 +86,7 @@ function loadJson(filePath) {
     const content = fs.readFileSync(filePath, 'utf8');
     if (!dupChecked.has(filePath)) {
       dupChecked.add(filePath);
-      const rel = path.relative(path.join(__dirname, '..'), filePath);
+      const rel = path.relative(REPO_ROOT, filePath);
       for (const dup of findDuplicateKeys(content)) {
         error(
           `${rel}:${dup.line}: Duplicate key "${dup.key}" (first defined at line ${dup.firstLine})`,
@@ -234,6 +230,6 @@ function main() {
 
 // Run the full validation only when invoked directly (`node scripts/...`), not
 // when imported for its helpers — importing must not trigger process.exit.
-if (process.argv[1] === __filename) {
+if (isCli(import.meta.url)) {
   main();
 }

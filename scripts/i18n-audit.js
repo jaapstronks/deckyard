@@ -26,36 +26,32 @@
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import {
   extractUsedKeys,
-  loadLocale,
   collectKeyLiteralRefs,
   isRuntimeBuiltKey,
-} from './i18n-keys.js';
+} from './lib/i18n-keys.js';
+import {
+  CLIENT_DIR as clientDir,
+  I18N_DIR as i18nDir,
+  REPO_ROOT as repoRoot,
+  loadLocale,
+  walkJs,
+} from './lib/i18n-fs.js';
+import { isCli } from './lib/is-cli.js';
 import { SLIDE_TYPE_AUTHORING } from '../shared/slide-types/authoring.js';
-
-const repoRoot = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '..',
-);
-const clientDir = path.join(repoRoot, 'client');
 const slideTypesTypesDir = path.join(
   repoRoot,
   'shared',
   'slide-types',
   'types',
 );
-const i18nDir = path.join(clientDir, 'i18n');
 const ALLOWLIST_PATH = path.join(
   repoRoot,
   'scripts',
   'i18n-audit-allowlist.json',
 );
-
-/** Directories under client/ that never contain app copy. */
-const IGNORE_DIRS = new Set(['vendor', 'styles', 'i18n']);
 
 /**
  * `h()` option props whose value is rendered to the user as copy.
@@ -152,18 +148,6 @@ function hasSiblingI18nKey(src, index) {
     }
   }
   return /\b\w+Key\s*:/.test(src.slice(open, close));
-}
-
-async function* walkJs(dir) {
-  for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      if (IGNORE_DIRS.has(entry.name)) continue;
-      yield* walkJs(full);
-    } else if (entry.name.endsWith('.js')) {
-      yield full;
-    }
-  }
 }
 
 /**
@@ -357,11 +341,6 @@ async function main() {
   return failed ? 1 : 0;
 }
 
-// pathToFileURL, not a template literal: the repo path may contain spaces,
-// which import.meta.url percent-encodes and a raw `file://${argv[1]}` does not.
-if (
-  process.argv[1] &&
-  import.meta.url === pathToFileURL(process.argv[1]).href
-) {
+if (isCli(import.meta.url)) {
   process.exitCode = await main();
 }

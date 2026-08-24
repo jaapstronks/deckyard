@@ -15,20 +15,20 @@
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import { CORE_SLIDE_TYPE_DEFS } from '../shared/slide-types/registry.js';
 import { SLIDE_TYPE_DESCRIPTION } from '../shared/slide-types/authoring-companions.js';
-import { extractUsedKeys, loadLocale, isDynamicKey } from './i18n-keys.js';
+import { extractUsedKeys, isDynamicKey } from './lib/i18n-keys.js';
+import {
+  CLIENT_DIR as clientDir,
+  I18N_DIR as i18nDir,
+  loadLocale,
+  readJson,
+  writeJson,
+} from './lib/i18n-fs.js';
+import { isCli } from './lib/is-cli.js';
 import { slideTypeUiStrings } from './lib/slide-type-i18n-keys.js';
-import { LOCALE_IDS, REFERENCE_LOCALE } from './i18n-locales.js';
-
-const repoRoot = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '..',
-);
-const clientDir = path.join(repoRoot, 'client');
-const i18nDir = path.join(clientDir, 'i18n');
+import { LOCALE_IDS, REFERENCE_LOCALE } from './lib/i18n-locales.js';
 
 /**
  * Fallback routing for a key `en/` has never seen, by prefix. `en/` itself is
@@ -122,24 +122,12 @@ function fileFor(key, enIndex) {
 
 /** Write a dict back to disk with stable key ordering. */
 async function writeComponent(locale, comp, dict) {
-  const sorted = Object.fromEntries(
-    Object.keys(dict)
-      .sort()
-      .map((k) => [k, dict[k]]),
-  );
-  const file = path.join(i18nDir, locale, `${comp}.json`);
-  await fs.writeFile(file, `${JSON.stringify(sorted, null, 2)}\n`, 'utf8');
+  await writeJson(path.join(i18nDir, locale, `${comp}.json`), dict);
 }
 
 /** Load one component file (missing file -> empty). */
 async function readComponent(locale, comp) {
-  try {
-    return JSON.parse(
-      await fs.readFile(path.join(i18nDir, locale, `${comp}.json`), 'utf8'),
-    );
-  } catch {
-    return {};
-  }
+  return (await readJson(path.join(i18nDir, locale, `${comp}.json`))) || {};
 }
 
 /**
@@ -259,11 +247,9 @@ export async function missingFor(locale) {
   return missing;
 }
 
-const isCli =
-  process.argv[1] &&
-  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+const runAsCli = isCli(import.meta.url);
 
-const [mode, ...rest] = isCli ? process.argv.slice(2) : [];
+const [mode, ...rest] = runAsCli ? process.argv.slice(2) : [];
 
 if (mode === '--report') {
   const locale = rest[0];
@@ -285,7 +271,7 @@ if (mode === '--report') {
   console.log(
     `Wrote ${Object.keys(missing).length} EN keys across ${n} file(s)`,
   );
-} else if (isCli) {
+} else if (runAsCli) {
   console.error(
     'Usage: i18n-fill.js en | --report <locale> | --apply <locale> <file.json>',
   );

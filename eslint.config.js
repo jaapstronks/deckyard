@@ -26,6 +26,59 @@ import importX from 'eslint-plugin-import-x';
 // merge per rule name: the overlay-gate burndown block below must re-state
 // these when it drops the overlay-class restriction, and a drifted copy would
 // silently un-gate t()/fetch()/control-class for those files.
+// Node builtins are imported with the `node:` prefix, always.
+//
+// Both spellings resolve, which is exactly why the repo grew both: four i18n
+// scripts wrote `node:fs`, two wrote `fs`, and side by side the difference
+// looked like it meant something. It does not — it is a second spelling for one
+// meaning, the shape B147 exists to remove. The prefix is also the unambiguous
+// one: `fs` is a package name a dependency could take, `node:fs` cannot be
+// anything else.
+//
+// Listed rather than derived from `module.builtinModules` so the rule reads as
+// a decision and a new entry is a deliberate line in a diff. Hoisted into a
+// const because flat-config rule entries replace rather than merge per rule
+// name: the zod block below restates these alongside its own path, and the
+// schemas directory it exempts needs its own copy.
+const nodeBuiltinImports = [
+  'assert',
+  'buffer',
+  'child_process',
+  'crypto',
+  'dns',
+  'events',
+  'fs',
+  'http',
+  'https',
+  'net',
+  'os',
+  'path',
+  'perf_hooks',
+  'process',
+  'querystring',
+  'readline',
+  'stream',
+  'timers',
+  'tls',
+  'url',
+  'util',
+  'worker_threads',
+  'zlib',
+].map((name) => ({
+  name,
+  message: `Import Node builtins with the node: prefix — 'node:${name}'.`,
+}));
+
+// The subpath spellings ('fs/promises', 'timers/promises', …) resolve bare
+// too, and `paths` matches exact specifiers only — without this a bare
+// subpath import would slip past the rule the list above exists to enforce.
+const nodeBuiltinImportPatterns = [
+  {
+    group: nodeBuiltinImports.map(({ name }) => `${name}/*`),
+    message: "Import Node builtins with the node: prefix — 'node:<name>/…'.",
+  },
+];
+
 const clientRestrictedSyntax = [
   {
     selector: "CallExpression[callee.name='t'][arguments.length<2]",
@@ -498,6 +551,7 @@ export default [
         'error',
         {
           paths: [
+            ...nodeBuiltinImports,
             {
               name: 'zod',
               message:
@@ -507,7 +561,21 @@ export default [
                 '(A7.19 B2).',
             },
           ],
+          patterns: nodeBuiltinImportPatterns,
         },
+      ],
+    },
+  },
+
+  // The directory the zod block exempts still gets the node: prefix rule; a
+  // flat-config block that does not match leaves the rule unset rather than
+  // inherited.
+  {
+    files: ['server/utils/ai/schemas/**/*.js'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        { paths: nodeBuiltinImports, patterns: nodeBuiltinImportPatterns },
       ],
     },
   },

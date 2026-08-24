@@ -27,13 +27,10 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
-const repoRoot = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '..',
-);
-const MANIFEST_PATH = path.join(repoRoot, 'client', 'i18n', 'manifest.json');
+import { I18N_DIR } from './i18n-fs.js';
+
+const MANIFEST_PATH = path.join(I18N_DIR, 'manifest.json');
 const REL = 'client/i18n/manifest.json';
 
 /** The loaders a module file can belong to. See MODULES below. */

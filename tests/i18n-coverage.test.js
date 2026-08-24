@@ -28,16 +28,16 @@ import { fileURLToPath } from 'node:url';
 
 import {
   extractUsedKeys,
-  loadLocale,
   isDynamicKey,
   findLegacyDescriptorPairs,
   collectFallbackSites,
-} from '../scripts/i18n-keys.js';
+} from '../scripts/lib/i18n-keys.js';
+import { loadLocale } from '../scripts/lib/i18n-fs.js';
 import {
   LOCALE_IDS,
   REFERENCE_LOCALE,
   TIER_1,
-} from '../scripts/i18n-locales.js';
+} from '../scripts/lib/i18n-locales.js';
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -81,7 +81,7 @@ describe('i18n coverage', () => {
         missing.sort(),
         [],
         `${missing.length} key(s) used in code but missing from client/i18n/${locale}/.\n` +
-          `Add them (see scripts/i18n-keys.js). First few:\n` +
+          `Add them (see scripts/lib/i18n-keys.js). First few:\n` +
           missing
             .slice(0, 20)
             .map(
@@ -190,7 +190,7 @@ describe('i18n coverage', () => {
 
   it('descriptor pairs use one spelling (no <x>Default beside <x>Key)', async () => {
     // B94 folded the `<x>Key` / `<x>Default` spelling into the bare
-    // `<x>Key` / `<x>` one and narrowed DESCRIPTOR_PAIR in scripts/i18n-keys.js
+    // `<x>Key` / `<x>` one and narrowed DESCRIPTOR_PAIR in scripts/lib/i18n-keys.js
     // to match only the survivor. Re-introducing `<x>Default` makes those keys
     // invisible to the coverage check above — which is exactly how six webhook
     // keys went missing before #831 — so it fails here instead.

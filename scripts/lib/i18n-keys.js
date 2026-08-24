@@ -2,9 +2,12 @@
  * Shared t() key extraction.
  *
  * Scans client/ for `t('key', 'English fallback')` call sites and returns the
- * static keys with their fallbacks. Used by both `scripts/i18n-validate.js`-style
- * tooling and `tests/i18n-coverage.test.js`, so the drift guard and the fill
- * tooling always agree on what "a key the code uses" means.
+ * static keys with their fallbacks. Used by the i18n scripts and by
+ * `tests/i18n-coverage.test.js`, so the drift guard and the fill tooling
+ * always agree on what "a key the code uses" means.
+ *
+ * The tree walk and the locale loading live in `./i18n-fs.js`; this module is
+ * only about what counts as a key.
  *
  * Only *statically literal* keys are returned. Some call sites build keys at
  * runtime (e.g. `t(`slideType.${type}.label`, …)` in slide-library/controls.js);
@@ -33,10 +36,8 @@
  */
 
 import fs from 'node:fs/promises';
-import path from 'node:path';
 
-/** Directories under client/ that never contain app copy. */
-const IGNORE_DIRS = new Set(['vendor', 'styles', 'i18n']);
+import { walkJs } from './i18n-fs.js';
 
 /**
  * Key families that are constructed dynamically and therefore cannot be
@@ -84,24 +85,6 @@ export function isRuntimeBuiltKey(key) {
 // t('k', 'A "quoted" phrase') both extract correctly.
 const T_CALL =
   /\bt\(\s*(['"])([\w.-]+)\1\s*(?:,\s*(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)"))?/g;
-
-/**
- * Walk a directory tree yielding .js file paths.
- * @param {string} dir
- * @returns {AsyncGenerator<string>}
- */
-async function* walkJs(dir) {
-  const entries = await fs.readdir(dir, { withFileTypes: true });
-  for (const entry of entries) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      if (IGNORE_DIRS.has(entry.name)) continue;
-      yield* walkJs(full);
-    } else if (entry.name.endsWith('.js')) {
-      yield full;
-    }
-  }
-}
 
 // <x>Key: '<key>', <x>: '<English fallback>' — a descriptor-table entry whose
 // two halves are handed to t() elsewhere. The prefix backreference is what
@@ -273,29 +256,6 @@ export async function collectKeyLiteralRefs(dirs) {
     }
   }
   return refs;
-}
-
-/**
- * Load a locale's merged dictionary from client/i18n/<locale>/*.json.
- * @param {string} i18nDir - absolute path to client/i18n/
- * @param {string} locale
- * @returns {Promise<Record<string, string>>}
- */
-export async function loadLocale(i18nDir, locale) {
-  const dir = path.join(i18nDir, locale);
-  const merged = Object.create(null);
-  let files = [];
-  try {
-    files = await fs.readdir(dir);
-  } catch {
-    return merged;
-  }
-  for (const name of files) {
-    if (!name.endsWith('.json')) continue;
-    const raw = await fs.readFile(path.join(dir, name), 'utf8');
-    Object.assign(merged, JSON.parse(raw));
-  }
-  return merged;
 }
 
 /**
