@@ -24,11 +24,11 @@ import {
   canAccessPresentation,
   getPresentationWithAccess,
   readApiV1Body,
-  parsePaginationParams,
   apiSuccess,
   apiCreated,
   apiError,
 } from './middleware.js';
+import { parsePaginationParams } from '../../../utils/request-validators.js';
 
 // ============================================================
 // HELPER FUNCTIONS
@@ -139,7 +139,7 @@ async function handleList(ctx) {
     filtered = filtered.filter((p) => p?.isViewOnly === true);
   }
 
-  const { limit, offset } = parsePaginationParams(url);
+  const { limit, offset } = parsePaginationParams(url.searchParams);
 
   // Apply pagination
   const total = filtered.length;

@@ -274,6 +274,28 @@ test('GET /slide-library lists team items of the own organization only', async (
   assert.deepEqual(item.tags, [{ id: 'tag-1', name: 'intro' }]);
 });
 
+test('GET /slide-library survives a non-numeric ?limit (B143)', async () => {
+  // The v1 copy of parsePaginationParams clamped without a NaN guard, so
+  // `?limit=abc` produced `slice(NaN, NaN)` — an empty page with
+  // `pagination.limit: null` in the envelope. The shared parser defaults.
+  await installDb();
+  const ctx = makeCtx('GET', '/api/v1/slide-library?limit=abc&offset=nope');
+  assert.equal(await handleSlideLibrary(ctx), true);
+
+  assert.equal(ctx.res.statusCode, 200);
+  assert.deepEqual(
+    ctx.res.body.items.map((it) => it.id),
+    ['item-team'],
+    'garbage pagination must not swallow the page',
+  );
+  assert.deepEqual(ctx.res.body.pagination, {
+    total: 1,
+    limit: 50,
+    offset: 0,
+    hasMore: false,
+  });
+});
+
 test('GET /slide-library without the read permission is refused with 403', async () => {
   await installDb();
   const ctx = makeCtx('GET', '/api/v1/slide-library', {
