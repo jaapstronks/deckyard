@@ -3,7 +3,7 @@
   "access.denied.message": "Du har inte behörighet att se denna presentation. Om du anser att du borde ha åtkomst, kontakta ägaren.",
   "access.denied.title": "Åtkomst nekad",
   "access.notFound.backToHome": "Tillbaka till startsidan",
-  "access.notFound.message": "Denna presentation finns inte eller har tagits bort. Vänligen kontrollera länken.",
+  "access.notFound.message": "Denna presentation finns inte eller har tagits bort. Kontrollera länken.",
   "access.notFound.title": "Presentation hittades inte",
   "ai.generationFailed": "Genereringen misslyckades",
   "ai.streamIncomplete": "Strömmen avslutades innan den var klar",

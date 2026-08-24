@@ -147,7 +147,7 @@
   "presenter.timesUp": "Tiden är ute",
   "presenter.tools.audienceBadge": "Till din publik",
   "presenter.tools.audienceCompanion": "Publikvy",
-  "presenter.tools.audienceHint": "Publik följ med-vy (slides + Q&A + interaktioner). Går att dela med alla.",
+  "presenter.tools.audienceHint": "Publik följ-med-vy (slides + Q&A + interaktioner). Går att dela med alla.",
   "presenter.tools.button": "Verktyg",
   "presenter.tools.copyAudiencePrompt": "Kopiera länken till publikvyn:",
   "presenter.tools.copyLink": "Kopiera länken",
@@ -160,5 +160,5 @@
   "presenter.tools.presenterCompanion": "Presentatörsvy",
   "presenter.tools.presenterHint": "Vy med talaranteckningar, för dig på en andra enhet.",
   "presenter.tools.presenterWarn": "Den här länken kan styra din livepresentation. Skicka den inte till publiken; använd publiklänken nedan.",
-  "presenter.tools.title": "Verktyg för sessionen (anteckningar / kopiera länk / följ med-kod)"
+  "presenter.tools.title": "Verktyg för sessionen (anteckningar / kopiera länk / följ-med-kod)"
 }

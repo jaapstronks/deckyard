@@ -801,7 +801,7 @@
   "editor.textBlocks.row3": "Rivi 3",
   "editor.textStyle.align": "Tasaus",
   "editor.textStyle.align.center": "Keskelle",
-  "editor.textStyle.align.groupOwned": "Tämä teksti liikkuu koko lohkon mukana. Aseta tasaus työkalurivin Layout-valikosta.",
+  "editor.textStyle.align.groupOwned": "Tämä teksti liikkuu koko lohkon mukana. Aseta tasaus työkalurivin Asettelu-valikosta.",
   "editor.textStyle.align.left": "Vasemmalle",
   "editor.textStyle.align.right": "Oikealle",
   "editor.textStyle.color": "Tekstin väri",

@@ -120,7 +120,7 @@
   "presenter.persistentDrawOff": "Tegninger: tones ut",
   "presenter.persistentDrawOn": "Tegninger: blir stående",
   "presenter.projector.open": "Andre skjerm",
-  "presenter.projector.openTitle": "Åpner den rene presentasjonen i et andre vindu for projektoren og lar konsollen bli værende på denne skjermen",
+  "presenter.projector.openTitle": "Åpner den rene presentasjonen i et annet vindu for projektoren og lar konsollen bli værende på denne skjermen",
   "presenter.shortcuts.autoAdvance": "Slå automatisk bytte på/av",
   "presenter.shortcuts.clear": "Tøm tegningene",
   "presenter.shortcuts.collapse": "Slå sammen trinn / ett trinn tilbake",
@@ -147,7 +147,7 @@
   "presenter.timesUp": "Tiden er ute",
   "presenter.tools.audienceBadge": "Til publikum",
   "presenter.tools.audienceCompanion": "Publikumsvisning",
-  "presenter.tools.audienceHint": "Offentlig følg med-visning (lysbilder + Q&A + interaksjoner). Trygt å dele med alle.",
+  "presenter.tools.audienceHint": "Offentlig følg-med-visning (lysbilder + Q&A + interaksjoner). Trygt å dele med alle.",
   "presenter.tools.button": "Verktøy",
   "presenter.tools.copyAudiencePrompt": "Kopier lenken til publikumsvisningen:",
   "presenter.tools.copyLink": "Kopier lenken",
@@ -160,5 +160,5 @@
   "presenter.tools.presenterCompanion": "Presentatørvisning",
   "presenter.tools.presenterHint": "Visning med talernotater, til deg på en annen enhet.",
   "presenter.tools.presenterWarn": "Denne lenken kan styre direktepresentasjonen din. Ikke send den til publikum; bruk publikumslenken nedenfor.",
-  "presenter.tools.title": "Verktøy for økten (notater / kopier lenke / følg med-kode)"
+  "presenter.tools.title": "Verktøy for økten (notater / kopier lenke / følg-med-kode)"
 }
