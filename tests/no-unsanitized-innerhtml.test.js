@@ -52,7 +52,7 @@ const SKIP_DIRS = new Set(['vendor']);
 // ---------------------------------------------------------------------------
 
 /**
- * **Group 1 — user-authored text.** The six sites where the value derives from
+ * **Group 1 — user-authored text.** The five sites where the value derives from
  * something a person typed. Escaping or sanitizing is the only thing making
  * them safe, so each verdict names the mechanism. A sixth entry here is a
  * security decision, not a chore: the count is pinned by a test below.
