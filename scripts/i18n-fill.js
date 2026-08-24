@@ -7,9 +7,15 @@
  * translation, so this script only reports their gaps and merges translations
  * back in.
  *
+ * Reading is the default, `--apply` writes, `--json` is machine output — the
+ * vocabulary every i18n script shares (scripts/lib/cli-args.js). `--report`
+ * was this script's private word for the read half and a bare `en` was its
+ * private word for a write; both are gone.
+ *
  * Usage:
- *   node scripts/i18n-fill.js en                 # write missing EN keys from code fallbacks
- *   node scripts/i18n-fill.js --report <locale>  # emit missing keys as JSON on stdout
+ *   node scripts/i18n-fill.js <locale>                       # what is missing, for a human
+ *   node scripts/i18n-fill.js <locale> --json                # the same, as the translator hand-off
+ *   node scripts/i18n-fill.js --apply en                     # write missing EN keys from code fallbacks
  *   node scripts/i18n-fill.js --apply <locale> <file.json>   # merge translations in
  */
 
@@ -27,6 +33,7 @@ import {
   writeJson,
 } from './lib/i18n-fs.js';
 import { isCli } from './lib/is-cli.js';
+import { parseArgs } from './lib/cli-args.js';
 import { slideTypeUiStrings } from './lib/slide-type-i18n-keys.js';
 import { LOCALE_IDS, REFERENCE_LOCALE } from './lib/i18n-locales.js';
 
@@ -237,33 +244,75 @@ export async function missingFor(locale) {
   return missing;
 }
 
-const runAsCli = isCli(import.meta.url);
+const USAGE =
+  'node scripts/i18n-fill.js <locale> [--json] | --apply <locale> [file.json]';
 
-const [mode, ...rest] = runAsCli ? process.argv.slice(2) : [];
+/**
+ * The CLI half. Kept behind `isCli` so importing this module for `missingFor`
+ * (tests, other tooling) neither parses arguments nor writes anything.
+ * @returns {Promise<void>}
+ */
+async function main(argv) {
+  const { flags, positional } = parseArgs(argv, {
+    usage: USAGE,
+    flags: ['--apply', '--json'],
+    maxPositional: 2,
+  });
+  const apply = flags.has('--apply');
+  const [locale, file] = positional;
 
-if (mode === '--report') {
-  const locale = rest[0];
-  if (!locale) throw new Error('--report needs a locale');
-  process.stdout.write(
-    `${JSON.stringify(await missingFor(locale), null, 2)}\n`,
-  );
-} else if (mode === '--apply') {
-  const [locale, file] = rest;
-  if (!locale || !file) throw new Error('--apply needs <locale> <file.json>');
-  const entries = JSON.parse(await fs.readFile(file, 'utf8'));
-  const n = await mergeIntoLocale(locale, entries);
+  const fail = (message) => {
+    console.error(message);
+    console.error(`Usage: ${USAGE}`);
+    process.exit(1);
+  };
+
+  if (!locale) fail('Which locale?');
+  if (!LOCALE_IDS.includes(locale))
+    fail(`Not a shipped locale: ${locale} (see client/i18n/manifest.json)`);
+
+  if (!apply) {
+    if (file) fail(`Unexpected argument: ${file} — a file is for --apply`);
+    const missing = await missingFor(locale);
+    if (flags.has('--json')) {
+      process.stdout.write(`${JSON.stringify(missing, null, 2)}\n`);
+    } else {
+      const keys = Object.keys(missing);
+      console.log(
+        `${locale}/ is missing ${keys.length} key(s) that have an English source.`,
+      );
+      for (const key of keys.slice(0, 20)) console.log(`  ${key}`);
+      if (keys.length > 20) console.log(`  … ${keys.length - 20} more`);
+      if (keys.length)
+        console.log(`\nRe-run with --json for the full set to translate.`);
+    }
+    return;
+  }
+
+  if (flags.has('--json')) fail('--json describes the report, not --apply');
+
+  if (file) {
+    const entries = JSON.parse(await fs.readFile(file, 'utf8'));
+    const n = await mergeIntoLocale(locale, entries);
+    console.log(
+      `Merged ${Object.keys(entries).length} keys into ${n} ${locale}/ file(s)`,
+    );
+    return;
+  }
+
+  // No file: the only locale that can be written from the code itself is the
+  // reference one, whose English *is* the t() fallbacks. Every other locale
+  // needs a translation to merge.
+  if (locale !== REFERENCE_LOCALE)
+    fail(
+      `--apply ${locale} needs a file: only ${REFERENCE_LOCALE}/ can be ` +
+        'materialized from the code fallbacks.',
+    );
+  const missing = await missingFor(locale);
+  const n = await mergeIntoLocale(locale, missing);
   console.log(
-    `Merged ${Object.keys(entries).length} keys into ${n} ${locale}/ file(s)`,
+    `Wrote ${Object.keys(missing).length} ${locale.toUpperCase()} keys across ${n} file(s)`,
   );
-} else if (mode === 'en') {
-  const missing = await missingFor('en');
-  const n = await mergeIntoLocale('en', missing);
-  console.log(
-    `Wrote ${Object.keys(missing).length} EN keys across ${n} file(s)`,
-  );
-} else if (runAsCli) {
-  console.error(
-    'Usage: i18n-fill.js en | --report <locale> | --apply <locale> <file.json>',
-  );
-  process.exit(1);
 }
+
+if (isCli(import.meta.url)) await main(process.argv.slice(2));

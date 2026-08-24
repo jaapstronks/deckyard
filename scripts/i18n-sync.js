@@ -14,13 +14,18 @@
  *
  * Split in two halves on purpose. `planSync()` only reads — it returns the
  * complete list of edits the run would make — and `applyPlan()` is the only
- * thing that touches disk. `--dry-run` runs the first half and prints it, so
- * "what would this do?" is answerable without a working copy to clean up
- * afterwards (the fill half wants to write thousands of keys per locale).
+ * thing that touches disk. The default run is the first half, so "what would
+ * this do?" is answerable without a working copy to clean up afterwards (the
+ * fill half wants to write thousands of keys per locale).
+ *
+ * Reading is the default and `--apply` writes — the vocabulary every i18n
+ * script shares, see scripts/lib/cli-args.js. This script used to invert it
+ * (write by default, `--dry-run` to hold back), which meant the safe run was
+ * the one you had to remember.
  *
  * Usage:
- *   node scripts/i18n-sync.js              # prune + fill, writing to disk
- *   node scripts/i18n-sync.js --dry-run    # report the same plan, write nothing
+ *   node scripts/i18n-sync.js              # report the plan, write nothing
+ *   node scripts/i18n-sync.js --apply      # prune + fill, writing to disk
  */
 
 import path from 'node:path';
@@ -29,6 +34,7 @@ import { SLIDE_TYPES } from '../shared/slide-types.js';
 import { slideTypeUiKeys } from './lib/slide-type-i18n-keys.js';
 import { I18N_DIR, readJson, writeJson } from './lib/i18n-fs.js';
 import { isCli } from './lib/is-cli.js';
+import { parseArgs } from './lib/cli-args.js';
 import {
   FILL_LOCALES,
   LOCALE_IDS,
@@ -37,7 +43,7 @@ import {
   UI_MODULES,
 } from './lib/i18n-locales.js';
 
-/** How many key names a dry-run prints per file before summarizing the rest. */
+/** How many key names a plan prints per file before summarizing the rest. */
 const DRY_RUN_KEY_SAMPLE = 10;
 
 /**
@@ -194,7 +200,7 @@ export async function planSync() {
     totalFilled: list.reduce((n, e) => n + e.filled.length, 0),
     skippedModules,
     // Reported, not just used: the scope is the whole point of the manifest
-    // being the source, so a dry run states it and the tests assert on it
+    // being the source, so a plan states it and the tests assert on it
     // rather than re-deriving what the loops above happened to iterate.
     scope: {
       locales: [...LOCALE_IDS],
@@ -234,7 +240,7 @@ function formatKeys(keys) {
   );
 }
 
-function reportPlan(plan, { dryRun }) {
+function reportPlan(plan, { apply }) {
   const { locales, modules, fillLocales, fillModules, reference } = plan.scope;
   console.log(
     `Scope (client/i18n/manifest.json): pruning ${locales.length} locale(s) × ` +
@@ -249,11 +255,11 @@ function reportPlan(plan, { dryRun }) {
     if (edit.filled.length)
       parts.push(`+${edit.filled.length} key(s) from English`);
     console.log(`${edit.locale}/${edit.module}.json: ${parts.join(', ')}`);
-    if (dryRun && edit.pruned.length) {
+    if (!apply && edit.pruned.length) {
       console.log('    pruned:');
       console.log(formatKeys(edit.pruned));
     }
-    if (dryRun && edit.filled.length) {
+    if (!apply && edit.filled.length) {
       console.log('    filled:');
       console.log(formatKeys(edit.filled));
     }
@@ -264,37 +270,33 @@ function reportPlan(plan, { dryRun }) {
   }
 
   console.log(
-    `\n${plan.edits.length} file(s) ${dryRun ? 'would change' : 'changed'}: ` +
+    `\n${plan.edits.length} file(s) ${apply ? 'changed' : 'would change'}: ` +
       `${plan.totalPruned} orphaned slideType key(s) pruned, ` +
       `${plan.totalFilled} key(s) filled with English.`,
   );
 }
 
 async function main(argv = process.argv.slice(2)) {
-  const dryRun = argv.includes('--dry-run');
-  const unknown = argv.filter((a) => a !== '--dry-run');
-  if (unknown.length > 0) {
-    console.error(`Unknown argument(s): ${unknown.join(' ')}`);
-    console.error('Usage: node scripts/i18n-sync.js [--dry-run]');
-    process.exit(1);
-  }
+  const { flags } = parseArgs(argv, {
+    usage: 'node scripts/i18n-sync.js [--apply]',
+    flags: ['--apply'],
+  });
+  const apply = flags.has('--apply');
 
   console.log(
-    dryRun
-      ? 'i18n Sync (dry run) - nothing is written; this is what would change\n'
-      : 'i18n Sync - Prune orphaned slide-type keys, then fill missing keys with English\n',
+    apply
+      ? 'i18n Sync - Prune orphaned slide-type keys, then fill missing keys with English\n'
+      : 'i18n Sync - nothing is written; this is what --apply would change\n',
   );
 
   const plan = await planSync();
-  if (!dryRun) await applyPlan(plan);
-  reportPlan(plan, { dryRun });
+  if (apply) await applyPlan(plan);
+  reportPlan(plan, { apply });
 
-  if (dryRun) {
-    console.log(
-      '\nDry run: no files were touched. Re-run without --dry-run to apply.',
-    );
-  } else {
+  if (apply) {
     console.log('\nDone!');
+  } else {
+    console.log('\nNo files were touched. Re-run with --apply to write.');
   }
 }
 

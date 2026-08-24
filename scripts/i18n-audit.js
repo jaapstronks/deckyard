@@ -18,6 +18,10 @@
  * side of that list is empty — the 268-key backlog was pruned to zero — so any
  * new orphan is a real leftover, not a number to grow.
  *
+ * Read-only: this script never writes, so it has no `--apply`. `--json` is the
+ * machine half of the shared vocabulary (scripts/lib/cli-args.js); without it
+ * the output is for a human.
+ *
  * Usage:
  *   node scripts/i18n-audit.js              # human report, non-zero exit on new findings
  *   node scripts/i18n-audit.js --json       # machine-readable
@@ -40,6 +44,7 @@ import {
   walkJs,
 } from './lib/i18n-fs.js';
 import { isCli } from './lib/is-cli.js';
+import { parseArgs } from './lib/cli-args.js';
 import { SLIDE_TYPE_AUTHORING } from '../shared/slide-types/authoring.js';
 const slideTypesTypesDir = path.join(
   repoRoot,
@@ -276,10 +281,13 @@ export async function collectHardcodedHits() {
   ];
 }
 
-async function main() {
-  const args = process.argv.slice(2);
-  const asJson = args.includes('--json');
-  const showOrphans = args.includes('--orphans');
+async function main(argv = process.argv.slice(2)) {
+  const { flags } = parseArgs(argv, {
+    usage: 'node scripts/i18n-audit.js [--json] [--orphans]',
+    flags: ['--json', '--orphans'],
+  });
+  const asJson = flags.has('--json');
+  const showOrphans = flags.has('--orphans');
 
   const allow = await readAllowlist();
   const allowed = allow.hardcoded || {};

@@ -78,7 +78,7 @@ That distinction is the whole reason `i18n-sync`'s two halves have different
 scopes: it **prunes** every locale × every module (a dead `slideType.*` key is
 dead wherever it sits) but only **fills** the `ui` modules of the non-reference
 locales (copying English into a `deck` module for the other ten would write
-files no loader can reach). `tests/i18n-sync-dry-run.test.js` asserts both.
+files no loader can reach). `tests/i18n-sync-plan.test.js` asserts both.
 
 There is deliberately **no per-locale fill opt-out**. The eight-of-twelve fill
 list this replaced looked like policy — "don't stuff the hand-translated ones

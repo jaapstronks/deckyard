@@ -222,7 +222,7 @@ Then, in rough dependency order:
   `SLIDE_TYPES` and does not look at `deprecated`, so an archived type keeps its
   label and field keys in every locale. Split-partner still had six keys × 12
   locales when it was removed. **Every removal touches the 12 locale files**:
-  delete the type's `slideType.<type>.*` keys (`npm run i18n:sync` prunes them,
+  delete the type's `slideType.<type>.*` keys (`npm run i18n:sync:apply` prunes them,
   since the registry is the authority on which `slideType.*` keys are real).
   `tests/slide-type-i18n-orphans.test.js` (added 2026-07-30) **fails** the
   moment a `slideType.<id>.*` namespace names a type that has left the registry,
