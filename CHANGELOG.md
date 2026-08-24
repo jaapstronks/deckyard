@@ -4,6 +4,38 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.27.0](https://github.com/jaapstronks/deckyard/compare/v1.26.0...v1.27.0) (2026-08-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* **i18n:** one flag vocabulary across the i18n scripts (B147) ([#976](https://github.com/jaapstronks/deckyard/issues/976))
+* **i18n:** retire i18n-validate.js — every check it made is a test (B147) ([#975](https://github.com/jaapstronks/deckyard/issues/975))
+
+### Fixed
+
+* **api:** one pagination parser, so ?limit=abc no longer empties the page (B143) ([#964](https://github.com/jaapstronks/deckyard/issues/964)) ([7aef42f](https://github.com/jaapstronks/deckyard/commit/7aef42fdf94d4927647cb02ce98804b22fc6c839))
+* **client:** gate the ten admin affordances on the active workspace (B144) ([#965](https://github.com/jaapstronks/deckyard/issues/965)) ([f9e9c8b](https://github.com/jaapstronks/deckyard/commit/f9e9c8b53a65a27af7397d36f01b2cf9fb5ff005))
+* **client:** one owner for the audience-question surface, so all three Q&A views read the same field (B153) ([#966](https://github.com/jaapstronks/deckyard/issues/966)) ([a0c79a8](https://github.com/jaapstronks/deckyard/commit/a0c79a8ba7aff8e63d9f6632b0eff48ed17eb601))
+* **i18n:** make en/ a superset of every locale, and fill the 62 keys nl/ had alone (B138) ([#958](https://github.com/jaapstronks/deckyard/issues/958)) ([166a35b](https://github.com/jaapstronks/deckyard/commit/166a35bb617f00084811fff2dcdfba97aaa909de))
+* **i18n:** one shared editor.slideField.* key per global slide field (B140) ([aa85870](https://github.com/jaapstronks/deckyard/commit/aa85870536f04b38d6dfaa88b809385403c875c1))
+* **i18n:** sweep the copy nits the B133 review left in six locales ([#959](https://github.com/jaapstronks/deckyard/issues/959)) ([8ba5871](https://github.com/jaapstronks/deckyard/commit/8ba5871cc6b07435101d0e7a3f2e8434a5d536b3))
+* **i18n:** translate the 29 editor.slideField.* keys into the ten fill-locales (B141) ([#963](https://github.com/jaapstronks/deckyard/issues/963)) ([1c10686](https://github.com/jaapstronks/deckyard/commit/1c10686cda970630c609a1c56f5f1f619a509cb3))
+* **i18n:** translate the 60 B138 keys into the ten fill-locales (B139) ([a92cce1](https://github.com/jaapstronks/deckyard/commit/a92cce1ae5d92de5f4ce660cf168106f1579bf48))
+
+
+### Security
+
+* **authz:** scope the five admin bypasses to the active organization ([#970](https://github.com/jaapstronks/deckyard/issues/970)) ([80d2638](https://github.com/jaapstronks/deckyard/commit/80d26384669e87503fbc725742dfca4bb5c14205))
+* **settings:** render the email-template preview in a sandboxed frame (B154) ([#967](https://github.com/jaapstronks/deckyard/issues/967)) ([0f98a51](https://github.com/jaapstronks/deckyard/commit/0f98a513d63e34e037afe71bb2b2863f78d9ba9d))
+
+
+### Changed
+
+* **i18n:** one flag vocabulary across the i18n scripts (B147) ([#976](https://github.com/jaapstronks/deckyard/issues/976)) ([bbb3ec3](https://github.com/jaapstronks/deckyard/commit/bbb3ec35076866c5513263aff8844ab06634015c))
+* **i18n:** retire i18n-validate.js — every check it made is a test (B147) ([#975](https://github.com/jaapstronks/deckyard/issues/975)) ([b5dfe61](https://github.com/jaapstronks/deckyard/commit/b5dfe61f751fde97738dbcf2b92da38af645f30d))
+* pin the next release to 1.27.0 while the beta badge is up ([d223025](https://github.com/jaapstronks/deckyard/commit/d223025c6283c2de4964d2a26d6e6a9a71a5014a))
+
 ## [1.26.0](https://github.com/jaapstronks/deckyard/compare/v1.25.0...v1.26.0) (2026-08-24)
 
 
