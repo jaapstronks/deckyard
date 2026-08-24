@@ -1,5 +1,6 @@
 /**
- * A7.19 C8 fase 2 — batch 3 route-table migration.
+ * A7.19 C8 fase 2 — route-table migration for `convert`, `questions` and
+ * `profile` (batch 3).
  *
  * convert (three exact Form A paths), questions (two POST-only regex paths that
  * sent an explicit 405), and profile (module prefix + email guard, own-image
@@ -10,7 +11,7 @@
  * preserved 405s and the module guards are asserted by invoking the entry with
  * a wrong method / missing auth, which never reaches a real storage handler.
  *
- * Run with: node --test tests/c8-routes-batch-3-dispatch.test.js
+ * Run with: node --test tests/route-dispatch-convert-profile-questions.test.js
  */
 
 import test from 'node:test';

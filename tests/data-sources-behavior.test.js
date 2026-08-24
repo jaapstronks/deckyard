@@ -5,7 +5,7 @@
  * binding-level SSRF refusal on the csv-url sink.
  *
  * The existing coverage was dispatch-smoke only (routing + 401/405 in
- * c8-routes-batch-2-dispatch, error typing in notion-datasource-app-error);
+ * route-dispatch-account-and-data-sources, error typing in notion-datasource-app-error);
  * nothing exercised what a refresh actually does to slide content, and the
  * csv-url SSRF guard was only covered at the ssrf-guard unit level — not at
  * the seam where a user-supplied dataSource config reaches it. These tests

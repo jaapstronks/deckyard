@@ -6,7 +6,7 @@
  * tests/anon-follow-and-share-surfaces.test.js; this module is what a person on
  * the stage side may do to what the audience wrote: remove a question, or
  * promote it to a slide in the live deck. Until now the module's only coverage
- * was the `c8-routes-batch-3-dispatch` shape test, which proves a path maps to a
+ * was the `route-dispatch-convert-profile-questions` shape test, which proves a path maps to a
  * handler name and nothing about who may call it.
  *
  * The two endpoints deliberately do **not** share one gate, and that is the

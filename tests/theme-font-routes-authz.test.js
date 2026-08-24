@@ -7,7 +7,7 @@
  * families. Their storage and the `canManage`/`isDesigner` capability resolution
  * are tested elsewhere (`tests/change-theme-gated.test.js`,
  * `tests/designer-capability-org-scope*.test.js`), and the dispatch wiring +
- * guard short-circuit has `tests/c8-routes-batch-5-dispatch.test.js`. What was
+ * guard short-circuit has `tests/route-dispatch-libraries-and-sessions.test.js`. What was
  * untested is the handlers' own contract: happy-path CRUD over a real storage
  * scope, the read/write authorization split, and the per-reason 400/404s.
  *
@@ -24,7 +24,7 @@
  *      (`unauthorized`). That asymmetry is a known pre-existing inconsistency —
  *      a beta-doctrine tidy-up candidate, logged in
  *      briefs/test-coverage-gaps.md — not a designed contract.
- *      `c8-routes-batch-5-dispatch` pins it at the guard; pinning it here at
+ *      `route-dispatch-libraries-and-sessions` pins it at the guard; pinning it here at
  *      the handler contract keeps the eventual convergence from silently
  *      changing one surface's status code without the other.
  *

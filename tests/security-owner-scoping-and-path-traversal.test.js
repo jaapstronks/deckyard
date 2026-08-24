@@ -1,5 +1,6 @@
 /**
- * Security-audit cluster 1 regression tests (H1, H2, H3).
+ * Owner scoping and path traversal — security regression tests
+ * (audit findings H1, H2, H3).
  *
  * H1 — arbitrary server file read via image-field path traversal on export
  *      (server/utils/html-utils.js). A user-controlled `/assets/../../.env`
@@ -10,7 +11,7 @@
  *      (server/routes/api/jobs.js). A foreign owner (or a result with no owner
  *      stamp) must get 404, not another user's rendered deck.
  *
- * Run with: node --test tests/security-audit-cluster1.test.js
+ * Run with: node --test tests/security-owner-scoping-and-path-traversal.test.js
  */
 
 import test from 'node:test';

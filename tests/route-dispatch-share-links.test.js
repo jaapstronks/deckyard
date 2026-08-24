@@ -14,7 +14,7 @@
  * arguments. Fall-through is asserted by invoking the entry functions with a
  * wrong method and an unknown path — neither reaches a real handler.
  *
- * Run with: node --test tests/c8-routes-share-links-dispatch.test.js
+ * Run with: node --test tests/route-dispatch-share-links.test.js
  */
 
 import test from 'node:test';

@@ -137,7 +137,7 @@ rejects before any fetch — and pinned by
 
 - `tests/data-sources-behavior.test.js` — behavior: per-provider happy paths,
   the binding engine, frozen mode, and the binding-level SSRF refusals.
-- `tests/c8-routes-batch-2-dispatch.test.js` — dispatch: routing, 401, 405.
+- `tests/route-dispatch-account-and-data-sources.test.js` — dispatch: routing, 401, 405.
 - `tests/notion-datasource-app-error.test.js` — error typing (400/501, no
   upstream payloads in the envelope).
 - `docs/developer/live-data-sources-testing.md` — the manual end-to-end smoke

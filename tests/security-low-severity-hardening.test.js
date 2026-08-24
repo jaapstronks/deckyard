@@ -1,5 +1,6 @@
 /**
- * Security-audit cluster 7 regression tests (LOW batch: L2, L4, L5, L6, L7, L8).
+ * Low-severity hardening — six unrelated fixes, security regression tests
+ * (audit findings L2, L4, L5, L6, L7, L8).
  *
  * L2 — no log redaction. redactSecret keeps only a short prefix; follow-code
  *      values and session tokens are no longer logged in full.
@@ -12,7 +13,7 @@
  * L8 — public analytics report checked the dead `settings.visibility` field
  *      instead of `scope`; source-verified below.
  *
- * Run with: node --test tests/security-audit-cluster7.test.js
+ * Run with: node --test tests/security-low-severity-hardening.test.js
  */
 
 import test from 'node:test';

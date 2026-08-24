@@ -1,5 +1,6 @@
 /**
- * A7.19 C8 fase 2 — batch 6 route-table migration.
+ * A7.19 C8 fase 2 — route-table migration for the upload, media and export
+ * modules (batch 6).
  *
  * Seven modules (docs/reference/route-dispatch.md): `media` and
  * `slide-library` are Form B throughout (explicit 405s per path group);
@@ -12,7 +13,7 @@
  * 405/401/403 behaviour is asserted by invoking the entry function — which for
  * a wrong method or failing guard never reaches a real storage handler.
  *
- * Run with: node --test tests/c8-routes-batch-6-dispatch.test.js
+ * Run with: node --test tests/route-dispatch-uploads-and-exports.test.js
  */
 
 import test from 'node:test';

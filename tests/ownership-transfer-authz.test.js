@@ -4,8 +4,8 @@
  * `server/routes/api/presentations/ownership.js` carries the heaviest write a
  * deck has: it moves the deck out of one person's hands into another's, and
  * the mover loses the very grant that let them move it. Until now the module's
- * only coverage was `c8-routes-presentations-dispatch` — a table that proves a
- * path maps to a handler *name*, and nothing about what the handler does.
+ * only coverage was dispatch shape — a table proving a path maps to a handler
+ * *name*, and nothing about what the handler does.
  *
  * The rule: **transfer is an owner-only act.** `canTransferOwnership` grants to
  * the owner stamp and the unrestricted operator, and to nobody else — not the

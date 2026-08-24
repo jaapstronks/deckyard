@@ -1,5 +1,6 @@
 /**
- * Security-audit cluster 8 regression tests (LOW batch: L1, L3). Final cluster.
+ * Password hashing and the AUTH_SECRET floor — security regression tests
+ * (audit findings L1, L3).
  *
  * L1 — scrypt cost + weak password policy.
  *      - Two byte-identical scrypt implementations unified into one shared,
@@ -17,7 +18,7 @@
  *      - The sync getUserFromRequest takes no authz decision (no callers);
  *        source-verified below.
  *
- * Run with: node --test tests/security-audit-cluster8.test.js
+ * Run with: node --test tests/security-password-hashing-and-auth-secret.test.js
  */
 
 import test from 'node:test';

@@ -29,7 +29,7 @@
  * a genuinely deliberate exception ever becomes necessary, reintroduce a
  * reasoned allowlist entry in this file and defend it in review.
  *
- * Run with: node --test tests/c8-route-dispatch-guard.test.js
+ * Run with: node --test tests/route-dispatch-guard.test.js
  */
 
 import test from 'node:test';
