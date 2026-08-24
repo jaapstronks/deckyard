@@ -532,7 +532,7 @@
   "settings.mcp.title": "Collegamento tramite API / MCP",
   "settings.notifications.defaultLevel": "Livello predefinito per deck",
   "settings.notifications.defaultLevel.help": "Vale per i deck senza impostazione propria. Le @menzioni dirette arrivano sempre.",
-  "settings.notifications.emailByType": "Inviami e-mail per",
+  "settings.notifications.emailByType": "Inviami email per",
   "settings.notifications.emailCommentCreated": "Nuovi commenti",
   "settings.notifications.emailCommentMention": "Menzioni",
   "settings.notifications.emailCommentReply": "Risposte ai suoi commenti",
