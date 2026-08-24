@@ -52,10 +52,15 @@ const SKIP_DIRS = new Set(['vendor']);
 // ---------------------------------------------------------------------------
 
 /**
- * **Group 1 — user-authored text.** The six sites where the value derives from
+ * **Group 1 — user-authored text.** The five sites where the value derives from
  * something a person typed. Escaping or sanitizing is the only thing making
- * them safe, so each verdict names the mechanism. A seventh entry here is a
+ * them safe, so each verdict names the mechanism. A sixth entry here is a
  * security decision, not a chore: the count is pinned by a test below.
+ *
+ * It was six until B154 retired the email-template preview: that entry was the
+ * only one whose safety rested on an authorization claim rather than on
+ * escaping, and it now renders into a `sandbox=""` iframe instead of this
+ * document (tests/email-preview-sandboxed.test.js).
  */
 const USER_TEXT_SITES = [
   {
@@ -94,20 +99,6 @@ const USER_TEXT_SITES = [
     reason:
       'Self-escaping renderer: renderSchemaAsHtml() escapes & < > before ' +
       'applying its mini-markdown transforms, so no raw value reaches the sink.',
-  },
-  {
-    file: 'client/views/settings/email-templates/actions.js',
-    rhs: 'resp.preview.htmlContent',
-    reason:
-      'Intentional trusted HTML — an email-template preview, rendered verbatim ' +
-      'by design (the shipped defaults contain markup). Re-verified 2026-08-04: ' +
-      'POST /api/admin/email-templates/:type/preview is gated on user.isAdmin ' +
-      'before any branch dispatches (server/routes/api/email-templates.js:55-63), ' +
-      'buildPreviewHtml() escapes greeting, buttonLabel, footer and the button ' +
-      'URL, and the only raw field (body) is written by the same instance-admin ' +
-      'gate on PUT :type/:locale. Writer and reader hold identical privilege, so ' +
-      'this is not the guest-writes-into-admin-view shape of the comment ' +
-      'author_email leak.',
   },
 ];
 
@@ -487,12 +478,13 @@ test('the allowlist has no stale entries', () => {
   );
 });
 
-test('exactly six innerHTML sites carry user-authored text', () => {
-  // A tripwire, not a tautology: the number is the finding of the B8 sweep
-  // (docs/reference/html-escaping.md). Growing it means someone decided a
-  // seventh place may render user text as markup — that should be an explicit,
-  // reviewable edit here, not a quiet allowlist append.
-  assert.equal(USER_TEXT_SITES.length, 6);
+test('exactly five innerHTML sites carry user-authored text', () => {
+  // A tripwire, not a tautology: the number started at six with the B8 sweep
+  // (docs/reference/html-escaping.md) and came down by one when B154 moved the
+  // email-template preview into a sandboxed iframe. Growing it means someone
+  // decided a sixth place may render user text as markup — that should be an
+  // explicit, reviewable edit here, not a quiet allowlist append.
+  assert.equal(USER_TEXT_SITES.length, 5);
 });
 
 test('the scanner classifies contexts, literals and interpolation correctly', () => {
