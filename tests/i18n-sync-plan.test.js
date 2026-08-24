@@ -1,10 +1,11 @@
 /**
  * `i18n:sync` writes a lot: the fill half hands ~2k English keys to every
  * target locale, so before B130 there was no way to see what a run would do
- * without doing it and then cleaning the working copy up by hand. The contract
- * that makes `--dry-run` worth anything is a negative one — *it touches
- * nothing* — and a negative is exactly the kind of contract that decays
- * silently, so it is pinned here rather than left to the reviewer to re-check.
+ * without doing it and then cleaning the working copy up by hand. B147 made
+ * that the *default* — the plan is what a bare run prints, and `--apply` is
+ * what writes it. The contract is a negative one — *a run without `--apply`
+ * touches nothing* — and a negative is exactly the kind of contract that
+ * decays silently, so it is pinned here rather than left to the reviewer.
  *
  * The other half of B130: nothing generates `client/i18n/<locale>/index.json`
  * any more. It was a merged artifact the runtime never read (`ui-i18n.js`
@@ -19,7 +20,7 @@
  * the asymmetry that survives — prune everything, fill only the `ui` modules of
  * the non-reference locales — is asserted rather than re-derived.
  *
- * Run with: node --test tests/i18n-sync-dry-run.test.js
+ * Run with: node --test tests/i18n-sync-plan.test.js
  */
 
 import test from 'node:test';
@@ -75,10 +76,10 @@ function fingerprintI18nTree() {
   return seen;
 }
 
-test('i18n-sync --dry-run does not touch a single locale file', () => {
+test('i18n-sync without --apply does not touch a single locale file', () => {
   const before = fingerprintI18nTree();
 
-  const output = execFileSync(process.execPath, [syncScript, '--dry-run'], {
+  const output = execFileSync(process.execPath, [syncScript], {
     cwd: repoRoot,
     encoding: 'utf8',
   });
@@ -88,12 +89,12 @@ test('i18n-sync --dry-run does not touch a single locale file', () => {
   assert.deepEqual(
     [...after.keys()].sort(),
     [...before.keys()].sort(),
-    'dry run added or removed files under client/i18n/',
+    'a plan-only run added or removed files under client/i18n/',
   );
   for (const [file, hash] of before) {
-    assert.equal(after.get(file), hash, `dry run rewrote ${file}`);
+    assert.equal(after.get(file), hash, `a plan-only run rewrote ${file}`);
   }
-  assert.match(output, /no files were touched/);
+  assert.match(output, /No files were touched/);
 });
 
 test('planSync() reports the edits it would make without writing them', async () => {
