@@ -62,7 +62,6 @@
   "comments.title": "Reacties",
   "comments.unknownAuthor": "Onbekend",
   "comments.unread": "Nieuwe activiteit",
-  "common.close": "Sluiten",
   "dataSource.bindings": "Veldkoppelingen",
   "dataSource.bindings.hint": "Koppel brondata aan velden van de slide. Gebruik row[0].PropertyName voor databases, of A1/B2 voor CSV-cellen.",
   "dataSource.connect": "Koppelen",
@@ -972,5 +971,11 @@
   "visibility.skipInPresentationDesc": "Alleen verbergen in presentatiemodus",
   "visibility.title": "Slide zichtbaarheid",
   "visibility.visible": "Zichtbaar",
-  "visibility.visibleDesc": "Overal tonen"
+  "visibility.visibleDesc": "Overal tonen",
+  "analytics.noSlideEngagement": "Geen gegevens over slidebetrokkenheid",
+  "analytics.noViewersYet": "Nog geen kijkers",
+  "analytics.noViewsYet": "Nog geen weergaven",
+  "analytics.shareToGetViewers": "Zodra mensen je presentatie bekijken, verschijnen hun sessies hier.",
+  "analytics.shareToGetViews": "Deel je presentatie om hier weergavestatistieken te zien.",
+  "analytics.viewsNeededForEngagement": "Zodra kijkers je presentatie bekijken, zie je welke slides de meeste aandacht krijgen."
 }

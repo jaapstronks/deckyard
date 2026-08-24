@@ -1,5 +1,5 @@
 /**
- * i18n duplicate-key gate.
+ * i18n duplicate-key gate — within a file, and across the files of one locale.
  *
  * `scripts/i18n-validate.js` used to validate the *parsed* object, so a repeated
  * key was invisible: `JSON.parse` keeps the last occurrence and silently drops
@@ -10,6 +10,14 @@
  * still exists — and reports each with its file line and the line it first
  * appeared on. This pins that behaviour and guards the live locale files so a
  * future merge can't reintroduce the same silent corruption.
+ *
+ * The same defect has a second shape one level up: `ui-i18n.js` merges every
+ * module file into one dictionary, so a key filed in *two* module files of one
+ * locale is last-wins in exactly the same way — one of the two copies is dead,
+ * and editing it changes nothing. `common.close` sat in both `common.json` and
+ * `editor.json` in all twelve locales until B137; the second block here keeps
+ * it from growing back, and pins that every key lives in the module `en/`
+ * files it in.
  *
  * Run with: node --test tests/i18n-validate-duplicate-keys.test.js
  */
@@ -82,6 +90,63 @@ describe('live locale files', () => {
         [],
         `${dups.length} duplicate key(s) in client/i18n/${rel} — JSON.parse keeps only ` +
           'the last, so the extras are silently dropped. Remove them.',
+      );
+    });
+  }
+});
+
+describe('one key, one module file', () => {
+  const locales = fs
+    .readdirSync(i18nDir)
+    .filter((entry) => fs.statSync(path.join(i18nDir, entry)).isDirectory());
+
+  /** @param {string} locale @returns {Map<string, string>} key -> module basename */
+  const homes = (locale) => {
+    const map = new Map();
+    const dupes = [];
+    for (const name of fs.readdirSync(path.join(i18nDir, locale)).sort()) {
+      if (!name.endsWith('.json')) continue;
+      const mod = name.slice(0, -'.json'.length);
+      const data = JSON.parse(
+        fs.readFileSync(path.join(i18nDir, locale, name), 'utf8'),
+      );
+      for (const key of Object.keys(data)) {
+        if (map.has(key))
+          dupes.push(`${key} (${map.get(key)}.json + ${mod}.json)`);
+        else map.set(key, mod);
+      }
+    }
+    return { map, dupes };
+  };
+
+  for (const locale of locales) {
+    it(`${locale}/ files each key in exactly one module`, () => {
+      assert.deepStrictEqual(
+        homes(locale).dupes,
+        [],
+        `client/i18n/${locale}/ files a key in two modules; ui-i18n.js merges ` +
+          'them, so one copy is dead weight. Keep the one en/ uses.',
+      );
+    });
+  }
+
+  const reference = homes('en').map;
+
+  for (const locale of locales) {
+    if (locale === 'en') continue;
+    it(`${locale}/ files every shared key where en/ does`, () => {
+      const misfiled = [...homes(locale).map]
+        .filter(
+          ([key, mod]) => reference.has(key) && reference.get(key) !== mod,
+        )
+        .map(
+          ([key, mod]) => `${key}: ${mod}.json → ${reference.get(key)}.json`,
+        );
+      assert.deepStrictEqual(
+        misfiled,
+        [],
+        `client/i18n/${locale}/ keeps keys in a different module than en/. ` +
+          'i18n-fill.js routes to the en/ file (B137); move these to match.',
       );
     });
   }

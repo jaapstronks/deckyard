@@ -9,6 +9,11 @@
  *   PASSED — the files were quietly corrupt. Detected over the raw lines below,
  *   not the parsed object, which is the only place the duplicate survives.)
  * - Missing keys (compared to the reference locale)
+ * - Keys the locale has and the reference locale does not (drift the other
+ *   way: an orphan is a string nobody can see in English)
+ * - The same key filed in two module files of one locale (the runtime merges
+ *   the modules, so a cross-file repeat is the in-file duplicate one level up:
+ *   invisible, and one of the two copies is dead)
  * - Empty values
  *
  * Scope — which locales, which module files — comes from
@@ -121,10 +126,22 @@ function main() {
     `Reference locale ${REFERENCE_LOCALE}: ${referenceKeys.size} keys (across all modules)\n`,
   );
 
+  // en/ files a key in exactly one module; that is the reference for where a
+  // key belongs, and `i18n-fill.js` routes new keys there (B137).
+  const referenceHome = new Map();
+  for (const moduleName of MODULES) {
+    const refPath = path.join(I18N_DIR, REFERENCE_LOCALE, `${moduleName}.json`);
+    const { data } = loadJson(refPath);
+    for (const key of Object.keys(data || {}))
+      if (!referenceHome.has(key)) referenceHome.set(key, moduleName);
+  }
+
   // Validate each language
   for (const lang of LOCALE_IDS) {
     console.log(`${lang.toUpperCase()}:`);
     let langKeys = new Set();
+    /** @type {Map<string, string>} key -> the module that first defined it */
+    const keyHome = new Map();
 
     for (const moduleName of MODULES) {
       const modulePath = path.join(I18N_DIR, lang, `${moduleName}.json`);
@@ -142,8 +159,15 @@ function main() {
         `  ${moduleName}.json: ${keyCount} keys, ${countLines(content)} lines`,
       );
 
-      // Check for empty values
+      // Check for empty values, and for a key filed in two modules at once
       for (const [key, value] of Object.entries(data)) {
+        if (keyHome.has(key)) {
+          error(
+            `${lang}/${moduleName}.json: "${key}" is also in ${lang}/${keyHome.get(key)}.json — one key, one module file`,
+          );
+        } else {
+          keyHome.set(key, moduleName);
+        }
         langKeys.add(key);
         if (typeof value === 'string' && value.trim() === '') {
           warn(`${lang}/${moduleName}.json: Empty value for "${key}"`);
@@ -171,6 +195,28 @@ function main() {
           `${lang}: ${missingKeys.length} keys missing compared to ${REFERENCE_LOCALE}`,
         );
       }
+      // Drift the other way: a key only this locale has renders nothing at all
+      // in English, because the fallback chain ends at the reference locale.
+      const orphanKeys = [...langKeys].filter((k) => !referenceKeys.has(k));
+      if (orphanKeys.length > 0) {
+        warn(
+          `${lang}: ${orphanKeys.length} keys ${REFERENCE_LOCALE} does not have: ${orphanKeys.slice(0, 5).join(', ')}${orphanKeys.length > 5 ? ', …' : ''}`,
+        );
+      }
+    }
+
+    // A key that exists in the reference locale belongs in the same module
+    // file here; anything else drifts the locale directories apart.
+    const misfiled = [...keyHome].filter(
+      ([key, mod]) => referenceHome.has(key) && referenceHome.get(key) !== mod,
+    );
+    if (misfiled.length > 0) {
+      warn(
+        `${lang}: ${misfiled.length} keys filed in a different module than ${REFERENCE_LOCALE}: ${misfiled
+          .slice(0, 3)
+          .map(([k, m]) => `${k} (${m} → ${referenceHome.get(k)})`)
+          .join('; ')}${misfiled.length > 3 ? '; …' : ''}`,
+      );
     }
 
     console.log('');

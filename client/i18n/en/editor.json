@@ -68,7 +68,6 @@
   "comments.title": "Comments",
   "comments.unknownAuthor": "Unknown",
   "comments.unread": "New activity",
-  "common.close": "Close",
   "dataSource.bindings": "Field bindings",
   "dataSource.bindings.hint": "Map source data to slide fields. Use row[0].PropertyName for databases, or A1/B2 for CSV cells.",
   "dataSource.connect": "Connect",
