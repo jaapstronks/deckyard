@@ -14,6 +14,7 @@ import assert from 'node:assert/strict';
 import {
   getBackgroundPresets,
   pickBackgroundPreset,
+  seedAutoBackgroundPreset,
 } from '../shared/theme-background-presets.js';
 import {
   newSlide,
@@ -51,6 +52,54 @@ test('pickBackgroundPreset returns empty without a theme or presets', () => {
   assert.equal(pickBackgroundPreset(null), '');
   assert.equal(pickBackgroundPreset(undefined), '');
   assert.equal(pickBackgroundPreset({}), '');
+});
+
+test('seedAutoBackgroundPreset seeds the canonical key, only for opted-in types', () => {
+  const def = { autoBackgroundPreset: true };
+  const seeded = seedAutoBackgroundPreset({}, def, themeWithPresets);
+  assert.ok(PRESETS.includes(seeded.slideBgImage));
+  assert.ok(!('bgImage' in seeded), 'never writes the legacy key');
+
+  // No flag → no-op; no theme/presets → no key invented.
+  assert.deepEqual(seedAutoBackgroundPreset({}, {}, themeWithPresets), {});
+  assert.deepEqual(seedAutoBackgroundPreset({}, def, themeWithout), {});
+});
+
+test('seedAutoBackgroundPreset never overwrites an existing or cleared background', () => {
+  const def = { autoBackgroundPreset: true };
+  // A canonical key already on the content wins — including an author's
+  // deliberate empty string ("cleared"), which must not be re-seeded.
+  assert.deepEqual(
+    seedAutoBackgroundPreset(
+      { slideBgImage: '/mine.jpg' },
+      def,
+      themeWithPresets,
+    ),
+    { slideBgImage: '/mine.jpg' },
+  );
+  assert.deepEqual(
+    seedAutoBackgroundPreset({ slideBgImage: '' }, def, themeWithPresets),
+    { slideBgImage: '' },
+  );
+});
+
+test('seedAutoBackgroundPreset never stacks a preset on a legacy background', () => {
+  const def = { autoBackgroundPreset: true };
+  // Un-migrated content (e.g. a pre-fold slide-library item) keeps its own
+  // image — it renders via the fallback and folds on first edit, mirroring the
+  // deck-import stance below.
+  assert.deepEqual(
+    seedAutoBackgroundPreset({ bgImage: '/mine.jpg' }, def, themeWithPresets),
+    { bgImage: '/mine.jpg' },
+  );
+  // ...but a present-and-empty legacy key (a fork type's field default) does
+  // not block seeding a fresh slide.
+  const fresh = seedAutoBackgroundPreset(
+    { bgImage: '' },
+    def,
+    themeWithPresets,
+  );
+  assert.ok(PRESETS.includes(fresh.slideBgImage));
 });
 
 test('newSlide without a theme creates a title slide with no background', () => {

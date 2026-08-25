@@ -61,6 +61,15 @@ export function seedAutoBackgroundPreset(content, def, theme) {
   if (Object.prototype.hasOwnProperty.call(content, 'slideBgImage')) {
     return content;
   }
+  // Never stack a preset on top of a legacy background either: un-migrated
+  // content (e.g. a pre-fold slide-library item) with a non-empty `bgImage`
+  // still renders it via the read-only fallback and folds into `slideBgImage`
+  // on first edit — the same stance as the deck-import seed in deck.js. A
+  // legacy key that is merely present-but-empty (a fork type's field default)
+  // does not block seeding.
+  if (typeof content.bgImage === 'string' && content.bgImage.trim()) {
+    return content;
+  }
   const preset = pickBackgroundPreset(theme);
   if (preset) content.slideBgImage = preset;
   return content;
