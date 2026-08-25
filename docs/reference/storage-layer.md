@@ -78,9 +78,12 @@ into camelCase API objects inline (there is no shared `mappers.js` module).
 **The folder shape is the contract, and it is enforced.** A bare file
 (`server/storage/tags.js`) is an undecomposed store; a folder's barrel
 (`server/storage/share-links/index.js`) is the seam over a decomposed one, and
-consumers never import a concern file directly. `tests/storage-module-layout.test.js` fails on the two shapes that
-break that reading — a folder holding nothing but an `index.js`, and a
-multi-file folder with no `index.js` — with no allowlist (A7.36, D57).
+consumers never import a concern file directly.
+`tests/server-module-layout.test.js` fails on the two shapes that break that
+reading — a folder holding nothing but an `index.js`, and a multi-file folder
+with no `index.js` — with no allowlist (A7.36, D57). A third rule in the same
+file covers all of `server/`: no eponymous wrapper `P/X.js` beside a folder
+`P/X/`.
 
 ## Data model
 

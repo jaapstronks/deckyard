@@ -111,8 +111,10 @@ format` writes, `npm run format:check` gates in CI next to `npm run lint`.
     writes Postgres through the adapter; the call convention (scope-first,
     validated) is pinned in `docs/reference/storage-scope.md` and enforced by
     `tests/storage-call-convention.test.js`. The _shape_ is enforced too:
-    `tests/storage-module-layout.test.js` fails on a folder holding nothing but
-    an `index.js`, and on a multi-file folder without one — no allowlist.
+    `tests/server-module-layout.test.js` fails on a folder holding nothing but
+    an `index.js`, and on a multi-file folder without one — no allowlist. The
+    same file enforces the eponymous-wrapper rule above across all of
+    `server/`: no `P/X.js` beside a folder `P/X/`.
 
 - **Separation of concerns**
   - **Shared slide type modules**: describe schema + defaults + **pure HTML rendering** (no DOM side effects, no fetch, no timers).

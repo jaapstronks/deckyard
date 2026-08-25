@@ -65,8 +65,9 @@ const {
 } = await import('../server/utils/presentation-authz/index.js');
 
 // `isSameOrganization` is the one decider the barrel does not re-export, and
-// the share-link decider is not in the barrel at all (see the exhaustiveness
-// section at the foot of this file). Both are imported from their modules.
+// the corpus for that gate is the module files, not the barrel (see the
+// exhaustiveness section at the foot of this file). Both are imported from
+// their modules, so a decider the barrel omits is still counted.
 const { isSameOrganization } =
   await import('../server/utils/presentation-authz/presentations.js');
 const { canCommentWithShareLink } =
@@ -936,9 +937,11 @@ describe('isUnrestricted', () => {
 // missing is a list, not an obligation.
 //
 // The corpus is the authz layer itself, `server/utils/presentation-authz/`,
-// deliberately *not* the `presentation-authz/index.js` barrel: the barrel does not
-// re-export `share-links.js` at all, and scanning it would have reproduced the
-// exact blind spot this gate exists to close.
+// deliberately *not* the `presentation-authz/index.js` barrel: for a long time
+// the barrel did not re-export `share-links.js` at all, and scanning it would
+// have reproduced the exact blind spot this gate exists to close. The barrel is
+// complete again (A7.36 PR 3) — but "complete today" is not a gate, so the scan
+// keeps reading the modules.
 //
 // `shared/identity-match.js` sits outside the corpus on purpose — it is shared
 // with the client and pinned cell-by-cell in tests/authz-identity-key.test.js.

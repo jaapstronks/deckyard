@@ -95,7 +95,7 @@ before(async () => {
     await import('../server/storage/live-sessions/index.js');
   const { testScope } = await import('./helpers/storage-scope.js');
   const { handleApi } = await import('../server/routes/api/index.js');
-  const { handleStatic } = await import('../server/routes/static.js');
+  const { handleStatic } = await import('../server/routes/static/index.js');
   const { CLIENT_DIR, SHARED_PUBLIC_DIRS, repoRoot } =
     await import('../server/config/paths.js');
   const { applySecurityHeaders } =

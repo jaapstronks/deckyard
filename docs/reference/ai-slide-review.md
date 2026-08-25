@@ -71,8 +71,8 @@ both arrays map 1:1 by index).
 After AI deck generation the editor opens `ai-deck-review-modal.js`
 (`?aiReview=1`, stripped from the URL so refresh doesn't reopen it). Wizard V2
 routes re-attach `_aiReasoning`/`_aiAlternatives` before saving
-(`reattachAiMeta` in `server/routes/api/ai.js`), so the review grid can show
-them after the editor loads the deck.
+(`reattachAiMeta` in `server/routes/api/ai/shared.js`), so the review grid can
+show them after the editor loads the deck.
 
 - **Section refine**: select one or more tiles (the revision spans first→last
   selected, gaps included), describe a change, "Adjust section" →
