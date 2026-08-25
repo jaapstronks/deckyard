@@ -83,7 +83,11 @@ export default {
       label: 'Accent',
       type: 'enum',
       required: false,
-      options: ['none', 'highlight-best', 'highlight-risk'],
+      options: [
+        { value: 'none', label: 'None' },
+        { value: 'highlight-best', label: 'Highlight best' },
+        { value: 'highlight-risk', label: 'Highlight risk' },
+      ],
       formLayout: 'pair',
     },
     {
@@ -91,7 +95,10 @@ export default {
       label: 'Count-up animation',
       type: 'enum',
       required: false,
-      options: ['off', 'on'],
+      options: [
+        { value: 'off', label: 'Off' },
+        { value: 'on', label: 'On' },
+      ],
       formLayout: 'pair',
     },
     {

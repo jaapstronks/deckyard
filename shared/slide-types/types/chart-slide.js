@@ -77,7 +77,11 @@ export default {
       label: 'Chart type',
       type: 'enum',
       required: true,
-      options: ['bar', 'line', 'pie'],
+      options: [
+        { value: 'bar', label: 'Bar' },
+        { value: 'line', label: 'Line' },
+        { value: 'pie', label: 'Pie' },
+      ],
     },
     {
       key: 'data',
@@ -100,7 +104,14 @@ export default {
       label: 'Pie labels',
       type: 'enum',
       required: false,
-      options: ['none', 'value', '%', 'both'],
+      // '%' is the glyph itself, identical in every locale: a bare string, so
+      // no key is minted for it (shared/ui-i18n-keys.js).
+      options: [
+        { value: 'none', label: 'None' },
+        { value: 'value', label: 'Value' },
+        '%',
+        { value: 'both', label: 'Both' },
+      ],
       formLayout: 'pair',
       visibleWhen: { field: 'chartType', in: ['pie'] },
     },
@@ -109,7 +120,10 @@ export default {
       label: 'Legend',
       type: 'enum',
       required: false,
-      options: ['yes', 'no'],
+      options: [
+        { value: 'yes', label: 'Yes' },
+        { value: 'no', label: 'No' },
+      ],
       formLayout: 'pair',
       visibleWhen: { field: 'chartType', in: ['pie', 'line'] },
     },
@@ -118,7 +132,10 @@ export default {
       label: 'Show values',
       type: 'enum',
       required: false,
-      options: ['yes', 'no'],
+      options: [
+        { value: 'yes', label: 'Yes' },
+        { value: 'no', label: 'No' },
+      ],
       formLayout: 'pair',
       visibleWhen: { field: 'chartType', in: ['bar'] },
     },

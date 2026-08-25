@@ -29,7 +29,11 @@ export const ACTIONS_FIELD = {
       label: 'Style',
       type: 'enum',
       required: false,
-      options: ['primary', 'secondary', 'outline'],
+      options: [
+        { value: 'primary', label: 'Primary' },
+        { value: 'secondary', label: 'Secondary' },
+        { value: 'outline', label: 'Outline' },
+      ],
     },
   ],
 };

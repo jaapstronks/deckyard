@@ -55,14 +55,19 @@ export default {
       label: 'Aspect ratio',
       type: 'enum',
       required: false,
-      options: ['16:9', '4:3', '1:1', 'auto'],
+      // The ratios are notation, not copy — bare strings, so no key is minted
+      // for them (shared/ui-i18n-keys.js). 'auto' is a word and gets a label.
+      options: ['16:9', '4:3', '1:1', { value: 'auto', label: 'Auto' }],
     },
     {
       key: 'sandbox',
       label: 'Sandbox mode',
       type: 'enum',
       required: false,
-      options: ['restricted', 'permissive'],
+      options: [
+        { value: 'restricted', label: 'Restricted' },
+        { value: 'permissive', label: 'Permissive' },
+      ],
       helpText:
         "'restricted' blocks scripts and forms; only raise it to 'permissive' " +
         'when the embedded page is interactive and the author asked for it.',

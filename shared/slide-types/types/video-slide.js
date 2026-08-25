@@ -41,7 +41,10 @@ export default {
       label: 'Autoplay',
       type: 'enum',
       required: false,
-      options: ['off', 'on'],
+      options: [
+        { value: 'off', label: 'Off' },
+        { value: 'on', label: 'On' },
+      ],
     },
     {
       key: 'watchUrl',

@@ -82,7 +82,10 @@ export default {
       label: 'Header row',
       type: 'enum',
       required: false,
-      options: ['on', 'off'],
+      options: [
+        { value: 'on', label: 'On' },
+        { value: 'off', label: 'Off' },
+      ],
       formLayout: 'pair',
     },
     { ...TABLE_STYLE_FIELD, formLayout: 'pair' },
@@ -107,7 +110,10 @@ export default {
       label: 'Animate by cell',
       type: 'enum',
       required: false,
-      options: ['off', 'on'],
+      options: [
+        { value: 'off', label: 'Off' },
+        { value: 'on', label: 'On' },
+      ],
     },
     {
       // The cell rows. `editor: 'table-grid'` (field-editors.js) swaps the

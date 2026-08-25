@@ -30,7 +30,10 @@ export const BACKGROUND_FIELD = {
   label: 'Background',
   type: 'enum',
   required: false,
-  options: ['lime', 'mist'],
+  options: [
+    { value: 'lime', label: 'Lime' },
+    { value: 'mist', label: 'Mist' },
+  ],
 };
 
 /**
