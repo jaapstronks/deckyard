@@ -13,6 +13,7 @@ import {
   sandboxWatermarkHtml,
 } from '../utils/sandbox-watermark.js';
 import {
+  embedLocalCssUrls,
   readTextIfExists,
   toDataUrlIfLocal,
   imageFieldKeysForType,
@@ -59,7 +60,19 @@ export async function loadExportCssBundle(repoRoot, theme, watermark) {
     readCustomStylesCss(repoRoot),
   );
 
-  const themeVarsCss = themeVarsCssText(theme);
+  // Theme vars go through the same local-`url()` embed pass as the page
+  // markup. The export document reaches Chrome through `setContent()`, so it
+  // has no base URL and a root-relative path resolves to nothing; `pagesHtml`
+  // has been embedded for a while, but this block is assembled separately and
+  // never passed by. Any theme var holding a local asset — `--t-logo-url`, or
+  // a `slideBackgrounds` variant whose value is artwork — therefore rendered
+  // empty in every PDF and PNG. One pass here covers pdf-slides, png-slides,
+  // html, print and render/png, which all share this bundle.
+  const themeVarsCss = await embedLocalCssUrls(
+    repoRoot,
+    themeVarsCssText(theme),
+    { includeClient: true },
+  );
   const wmOn = sandboxWatermarkEnabled(watermark);
   const wmCss = wmOn ? sandboxWatermarkCss() : '';
   const wmHtml = wmOn ? sandboxWatermarkHtml() : '';

@@ -255,6 +255,36 @@ test('only slide-background vars are candidates', () => {
   assert.equal(found.has('--t-slide-gradient-bg'), false);
 });
 
+test('a gradient stacked over artwork is left alone', () => {
+  // A variant whose design IS a photo with a legibility scrim on top. The
+  // raster page runs offline, so rasterizing this would drop the url() and
+  // rewrite the var to its bare fallback colour — the artwork gone, silently,
+  // and only in the export. Reported by the CIIIC fork, 2026-08-25.
+  const css = `.ps-theme {
+  --t-slide-bg-international: linear-gradient(90deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%), url('/custom/themes/x/assets/bg.png') center / cover no-repeat, #13393a;
+  --t-slide-bg-calm: radial-gradient(circle at 50% 50%, rgba(1,2,3,0.5) 0%, rgba(1,2,3,0) 70%), #06090b;
+}`;
+  const found = findGradientBgVars(css);
+  assert.deepEqual([...found.keys()], ['--t-slide-bg-calm']);
+});
+
+test('a declaration holding a data URL is read whole, in either quote style', () => {
+  // A data URL contains `;`, so a naive value pattern cuts the declaration in
+  // half. This module writes double quotes for its own bitmaps;
+  // `embedLocalCssUrls` — which now runs over this CSS — writes single ones.
+  for (const q of ['"', "'"]) {
+    const css = `.ps-theme {
+  --t-slide-bg-art: linear-gradient(90deg, rgba(0,0,0,0.6), transparent), url(${q}data:image/png;base64,AAAA;BBBB${q}) center / cover, #101010;
+}`;
+    const found = findGradientBgVars(css);
+    assert.equal(
+      found.size,
+      0,
+      `artwork in ${q}-quotes must still be recognised as artwork`,
+    );
+  }
+});
+
 test('var resolution refuses to guess', () => {
   assert.equal(
     resolveCssVars('circle at var(--g1x) 10%', { '--g1x': '62%' }),
