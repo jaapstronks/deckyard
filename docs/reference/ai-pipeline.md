@@ -240,9 +240,9 @@ Honest gaps:
   prompts, different validation depth and different output quality. The
   "new presentation" modal still calls v1 while the stream path calls v2. One
   canonical path is the target; two is the current state.
-- **`slide-type-catalog.js` and `utils/ai.js` are compatibility shims.** Both
-  exist only to re-export; new code imports `slide-catalog/` and the specific
-  `openai/*` module directly.
+- **`utils/openai/` has no seam.** The v1 modules are imported one by one
+  (`openai/deck.js`, `openai/append.js`, …); unlike `utils/ai/` there is no
+  `index.js` barrel over them, so no single import tells you what v1 offers.
 - **Token usage is observable but not recorded.** `usage.js` publishes per-call
   counts, and with no subscriber in the server they are discarded — there is no
   spend log, no per-org accounting and no budget enforcement.
