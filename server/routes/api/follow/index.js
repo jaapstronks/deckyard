@@ -9,24 +9,24 @@
  * the old branch order exactly.
  */
 
-import { dispatchRoutes } from '../../utils/router.js';
-import { notFound, withErrorHandler } from '../../utils/http.js';
-import { isUuid } from '../../utils/uuid.js';
-import { handleFollowState } from './follow/state.js';
+import { dispatchRoutes } from '../../../utils/router.js';
+import { notFound, withErrorHandler } from '../../../utils/http.js';
+import { isUuid } from '../../../utils/uuid.js';
+import { handleFollowState } from './state.js';
 import {
   handleFollowCancel,
   handleFollowQuestions,
   handleFollowUpvote,
-} from './follow/questions.js';
-import { handleFollowQuestionsEvents } from './follow/questions-events.js';
-import { handleFollowPresentation } from './follow/presentation.js';
-import { handleFollowEvents } from './follow/events.js';
+} from './questions.js';
+import { handleFollowQuestionsEvents } from './questions-events.js';
+import { handleFollowPresentation } from './presentation.js';
+import { handleFollowEvents } from './events.js';
 import {
   handleFollowInteractionsCurrent,
   handleFollowInteractionState,
   handleFollowInteractionVote,
   handleFollowInteractionFeedback,
-} from './follow/interactions.js';
+} from './interactions.js';
 
 /**
  * Every row captures the presentation id as its first segment, and the storage
@@ -48,7 +48,7 @@ const requireUuidId = (handler) => {
   return wrapped;
 };
 
-/** @type {import('../../utils/router.js').Route[]} */
+/** @type {import('../../../utils/router.js').Route[]} */
 export const ROUTES = [
   {
     pattern: /^\/api\/follow\/([^/]+)\/state$/,
@@ -98,7 +98,7 @@ export const ROUTES = [
 
 /**
  * Handle public follow endpoints.
- * @param {import('../../utils/context.js').PublicContext} ctx
+ * @param {import('../../../utils/context.js').PublicContext} ctx
  */
 export const handleFollowPublic = withErrorHandler('follow', (ctx) =>
   dispatchRoutes(ROUTES, ctx),

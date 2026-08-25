@@ -61,7 +61,7 @@ The conversion step:
 The routes (`server/routes/api/notion/`, 7 modules, ~770 lines) behind one
 dispatcher:
 
-- `server/routes/api/notion.js` — the dispatcher: status, fetch and publish
+- `server/routes/api/notion/index.js` — the dispatcher: status, fetch and publish
   always; import and stream-import always; subjects, compose and suggest only
   when the `enableNotion` flag is on.
 - `server/routes/api/notion/status.js` — `GET /api/notion/status`.

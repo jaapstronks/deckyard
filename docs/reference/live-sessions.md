@@ -53,9 +53,9 @@ Routes:
   all behind deck-write.
 - `server/routes/api/live-session-audience.js` (~267 lines) — **public**
   capability-based routes (the session id is the authorization).
-- `server/routes/api/follow.js` + `server/routes/api/follow/` (`state.js`,
+- `server/routes/api/follow/` — a seam in `index.js` over `state.js`,
   `events.js`, `presentation.js`, `interactions.js`, `questions.js`,
-  `questions-events.js`, `status-ticker.js`, `helpers.js`) — the audience
+  `questions-events.js`, `status-ticker.js` and `helpers.js` — the audience
   follow-along layer, keyed by presentation id.
 
 SSE helpers:

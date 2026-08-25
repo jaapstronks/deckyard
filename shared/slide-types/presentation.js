@@ -6,6 +6,10 @@ import {
   escapeHtml,
 } from './helpers.js';
 import { seedAutoBackgroundPreset } from '../theme-background-presets.js';
+import {
+  SLIDE_BG_ID_RE,
+  slideBackgroundContrastClass,
+} from '../theme-slide-backgrounds.js';
 import { applyLocksToContent } from '../theme-locks.js';
 import { SLIDE_TYPES, THEMES, getSlideType } from './registry.js';
 import { validateVisibility } from '../slide-visibility.js';
@@ -171,17 +175,23 @@ function resolveBgOverlayVariant(content, textClass) {
   return autoScrim ? 'auto' : '';
 }
 
+// The slide's background image as a usable URL, or '' when there is none (no
+// value, or nothing left after sanitizing). Shared so the variant-contrast
+// pass below tests for an image the same way the injector does.
+function resolveSlideBgImageUrl(content) {
+  const raw =
+    typeof content?.slideBgImage === 'string'
+      ? content.slideBgImage.trim()
+      : '';
+  return raw ? sanitizeBgUrl(raw) : '';
+}
+
 // Inject an optional per-slide background image as a layer behind the slide
 // content. Works on the output of any slide type's renderHtml() by adding a
 // marker class to the root .slide element and inserting the layer as its first
 // child, so the feature is available everywhere without per-type changes.
 function injectSlideBackground(html, content) {
-  const raw =
-    typeof content?.slideBgImage === 'string'
-      ? content.slideBgImage.trim()
-      : '';
-  if (!raw) return html;
-  const url = sanitizeBgUrl(raw);
+  const url = resolveSlideBgImageUrl(content);
   if (!url) return html;
   const fit = content?.slideBgFit === 'contain' ? 'contain' : 'cover';
   const focusX = clampPercent(content?.slideBgFocusX, 50);
@@ -205,6 +215,38 @@ function injectSlideBackground(html, content) {
     },
   );
   return injected ? out : html;
+}
+
+// Publish the luminance a theme background variant already declares about its
+// own ground (see slideBackgroundContrastClass), as a class on the root .slide
+// element. Same wrapper-level seam as the background image and the logo, so it
+// covers every slide type — core and custom — without per-type code.
+//
+// Two guards keep the class honest:
+// - A background image IS the ground the text sits on, so when the image path
+//   resolved a contrast class of its own, that answer wins: it is about what
+//   the viewer actually sees, not about the colour underneath it.
+// - The class is only added when the type honoured the background, i.e. its
+//   output really carries `slide-bg-<id>`. A type that ignores the field (or
+//   overrides it with its own default) has a different ground than the stored
+//   value claims.
+function injectVariantContrastClass(html, content, ctx) {
+  if (resolveSlideBgImageUrl(content) && resolveBgTextClass(content)) {
+    return html;
+  }
+  const id = String(content?.background || '')
+    .trim()
+    .toLowerCase();
+  if (!SLIDE_BG_ID_RE.test(id)) return html;
+  // Ids are slug-safe by the test above; the lookahead stops `brand` from
+  // matching a rendered `slide-bg-brand-1`.
+  if (!new RegExp(`slide-bg-${id}(?![a-z0-9-])`).test(html)) return html;
+  const cls = slideBackgroundContrastClass(ctx?.theme?.slideBackgrounds, id);
+  if (!cls) return html;
+  return html.replace(
+    /<div\b([^>]*?)\bclass="(slide(?:\s[^"]*)?)"([^>]*)>/,
+    (_m, pre, classes, post) => `<div${pre}class="${classes} ${cls}"${post}>`,
+  );
 }
 
 // Inject an optional per-slide theme logo into a corner of the slide. The logo
@@ -343,6 +385,9 @@ export function renderSlideHtml(slide, ctx = {}) {
   // stored value counts as an override worth emitting a class for.
   out = injectTextStyles(out, content, def);
   out = injectSlideBackground(out, content);
+  // After the image pass: the image is the ground when there is one, so it
+  // gets first claim on the slide's contrast class.
+  out = injectVariantContrastClass(out, content, ctx);
   out = injectSlideLogo(out, content, ctx);
   // Non-editable output artifacts (export/embed/published/render) opt in to
   // dropping editor-only inline-edit hooks — pure noise there. Must run AFTER

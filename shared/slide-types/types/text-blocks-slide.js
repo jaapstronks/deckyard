@@ -219,14 +219,21 @@ export default {
           label: 'Color',
           type: 'enum',
           required: false,
-          options: ['yellow', 'black'],
+          options: [
+            { value: 'yellow', label: 'Yellow' },
+            { value: 'black', label: 'Black' },
+          ],
         },
         {
           key: 'arrow',
           label: 'Arrow after row',
           type: 'enum',
           required: false,
-          options: ['none', 'down', 'up'],
+          options: [
+            { value: 'none', label: 'None' },
+            { value: 'down', label: 'Down ↓' },
+            { value: 'up', label: 'Up ↑' },
+          ],
         },
         {
           key: 'blocks',

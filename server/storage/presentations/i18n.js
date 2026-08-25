@@ -1,5 +1,5 @@
-import { SLIDE_TYPES } from '../../../shared/slide-schemas.js';
 import { normalizeSlides } from './slides.js';
+import { translatableKeysForType } from '../../../shared/slide-types/text-fields.js';
 import {
   normalizeLang,
   normalizeTranslationLang,
@@ -27,17 +27,8 @@ export {
  */
 export const SUPPORTED_LANGS = ['nl', 'en-GB'];
 
-export function translateKeysForSlideType(type) {
-  const def = SLIDE_TYPES?.[type];
-  if (!def || !Array.isArray(def.fields)) return [];
-  return def.fields
-    .filter(
-      (f) =>
-        f && (f.type === 'string' || f.type === 'markdown' || f.type === 'csv'),
-    )
-    .map((f) => f.key)
-    .filter((k) => typeof k === 'string' && k.trim());
-}
+/** @see shared/slide-types/text-fields.js — the one text-field vocabulary. */
+export const translateKeysForSlideType = translatableKeysForType;
 
 export function pickVersion(pres, lang) {
   const l = normalizeLang(lang);

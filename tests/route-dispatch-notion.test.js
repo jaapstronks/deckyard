@@ -23,7 +23,7 @@ import {
   ROUTES,
   GATED_ROUTES,
   handleNotion,
-} from '../server/routes/api/notion.js';
+} from '../server/routes/api/notion/index.js';
 
 function select(routes, method, pathname) {
   for (const route of routes) {

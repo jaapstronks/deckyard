@@ -153,7 +153,23 @@ export function createLiveDocBinder({
   function writeTextField(container, key, value, lang) {
     const entry = container.get(key);
     if (!(entry instanceof Y.Map)) {
-      container.set(key, codec.buildTextFieldForLang(value, lang));
+      // A plain value where the schema now says text. This is a doc that was
+      // bootstrapped while `hidden` still classified a field as plain — the
+      // legacy `text-blocks-slide` mirrors, before the classifier moved to
+      // `shared/slide-types/text-fields.js`. Such a doc holds ONE string that
+      // every language currently displays, so seed every language from it and
+      // then patch the active one. Seeding only the active language would
+      // turn a wrong-but-present translation into an empty one, and
+      // `onStoreDocument` would write that emptiness into the durable deck.
+      const seed = typeof entry === 'string' ? entry : null;
+      if (seed === null) {
+        container.set(key, codec.buildTextFieldForLang(value, lang));
+        return;
+      }
+      const m = new Y.Map();
+      for (const l of codec.getDocLangs(doc)) m.set(l, new Y.Text(seed));
+      m.set(lang, new Y.Text(value));
+      container.set(key, m);
       return;
     }
     const yt = entry.get(lang);

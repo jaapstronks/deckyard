@@ -1,5 +1,9 @@
 import { t } from '../../lib/ui-i18n.js';
 import { slideFingerprint } from '../../../shared/slide-fingerprint.js';
+import {
+  translatableItemKeysForType,
+  translatableKeysForType as translatableKeysForSlideType,
+} from '../../../shared/slide-types/text-fields.js';
 
 // Session idle timeout: create session-end snapshot after 5 minutes of no edits
 const SESSION_IDLE_TIMEOUT_MS = 5 * 60 * 1000;
@@ -141,37 +145,12 @@ export function createSaveManager({
     }, 1500);
   };
 
-  const translatableKeysForType = (type) => {
-    const def = SLIDE_TYPES?.[type];
-    const fields = Array.isArray(def?.fields) ? def.fields : [];
-    return fields
-      .filter(
-        (f) =>
-          f &&
-          (f.type === 'string' || f.type === 'markdown' || f.type === 'csv'),
-      )
-      .map((f) => String(f.key || '').trim())
-      .filter(Boolean);
-  };
+  const translatableKeysForType = (type) =>
+    translatableKeysForSlideType(type, SLIDE_TYPES);
 
-  /**
-   * Translatable per-item text keys for a type's 'items' fields:
-   * Map<fieldKey, string[]>. Mirrors the server's itemsFieldsForSlideType.
-   */
-  const itemTextKeysForType = (type) => {
-    const def = SLIDE_TYPES?.[type];
-    const fields = Array.isArray(def?.fields) ? def.fields : [];
-    const map = new Map();
-    for (const f of fields) {
-      if (!f || f.type !== 'items' || !Array.isArray(f.itemFields)) continue;
-      const keys = f.itemFields
-        .filter((x) => x && (x.type === 'string' || x.type === 'markdown'))
-        .map((x) => String(x.key || '').trim())
-        .filter(Boolean);
-      if (keys.length) map.set(String(f.key || ''), keys);
-    }
-    return map;
-  };
+  /** Translatable per-item text keys for a type's `items` fields. */
+  const itemTextKeysForType = (type) =>
+    translatableItemKeysForType(type, SLIDE_TYPES);
 
   const ensureLangVersion = (lang) => {
     const l = normalizeLang(lang);

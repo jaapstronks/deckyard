@@ -56,7 +56,7 @@ const { listActivityEvents } =
 const { invalidatePermission } =
   await import('../server/storage/cache/permission-cache.js');
 const { handlePresentations } =
-  await import('../server/routes/api/presentations.js');
+  await import('../server/routes/api/presentations/index.js');
 
 // --- The people -------------------------------------------------------------
 // Ownership keys on `users.id` (D22), so a seeded row and the session acting on

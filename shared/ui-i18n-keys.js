@@ -1,3 +1,25 @@
+/**
+ * The i18n key annotations the slide-type registry stamps on a definition —
+ * the one place that decides WHICH `slideType.*` keys exist.
+ *
+ * The rule for options (B145): **an option contributes a key only for copy it
+ * actually declares.** A bare-string option (`options: ['contain', 'cover']`)
+ * normalizes to `label === value`, so its "English default" would be the
+ * storage token — and minting a key for it asks eleven translators to
+ * translate a CSS keyword. That is exactly what happened: 234 keys and 942
+ * translated strings, of which `contain` became fr `contenir` ("to hold").
+ *
+ * So a bare string means "display the value, it is not copy" (a column count,
+ * an aspect ratio, a legacy field that never renders), and copy means an
+ * object that says so: `{ value: 'contain', label: 'Fit (no crop)' }`. The
+ * key walker (scripts/lib/slide-type-i18n-keys.js) already assumed this and
+ * its skip branch had silently gone unreachable; the two agree again.
+ *
+ * `title`/`ariaLabel` only earn their own key when they say something the
+ * label does not — otherwise the UI falls back to the translated label
+ * (client/views/editor/fields/option-copy.js), one text, one key.
+ */
+
 function safeKeyPart(v) {
   const s = String(v || '').trim();
   if (!s) return '';
@@ -8,7 +30,16 @@ function safeKeyPart(v) {
     .replaceAll(/^-+|-+$/g, '');
 }
 
-function normalizeOption(opt) {
+/**
+ * Fold an option (string shorthand or object) into the four shapes every
+ * surface reads. The one definition: the registry stamps keys through it, the
+ * key walker reads English defaults from it and the editor renders from it, so
+ * "what does this option say?" cannot drift between them.
+ *
+ * @param {string|Object} opt
+ * @returns {{value: string, label: string, title: string, ariaLabel: string, labelKey?: string, titleKey?: string, ariaLabelKey?: string}}
+ */
+export function normalizeOption(opt) {
   if (typeof opt === 'string') {
     const v = String(opt);
     return { value: v, label: v, title: v, ariaLabel: v };
@@ -23,15 +54,35 @@ function normalizeOption(opt) {
   return { value: '', label: '', title: '', ariaLabel: '' };
 }
 
+/**
+ * Whether an option's `title`/`ariaLabel` slot says something of its own —
+ * declared on the raw option, and different from both the label it would
+ * otherwise inherit and the storage token.
+ *
+ * @param {string|Object} raw - the option as declared
+ * @param {string} slot - 'title' or 'ariaLabel'
+ * @param {{value: string, label: string}} opt - the normalized option
+ * @returns {boolean}
+ */
+function declaresOwn(raw, slot, opt) {
+  if (!raw || typeof raw !== 'object') return false;
+  const v = raw[slot];
+  if (typeof v !== 'string') return false;
+  const s = v.trim();
+  return !!s && s !== opt.label && s !== opt.value;
+}
+
 function addKeysToOption(base, raw) {
   const opt = normalizeOption(raw);
-  const id =
-    safeKeyPart(opt.value || opt.label) || safeKeyPart(opt.label) || 'option';
+  const id = safeKeyPart(opt.value || opt.label) || 'option';
   const next = { ...opt };
-  if (!next.labelKey) next.labelKey = `${base}.option.${id}.label`;
-  if (typeof next.title === 'string' && !next.titleKey)
+  // Copy, not a token: the resolved label says something the stored value
+  // does not. A bare string or `{ value: 'x', label: 'x' }` mints nothing.
+  if (!next.labelKey && next.label && next.label !== next.value)
+    next.labelKey = `${base}.option.${id}.label`;
+  if (!next.titleKey && declaresOwn(raw, 'title', next))
     next.titleKey = `${base}.option.${id}.title`;
-  if (typeof next.ariaLabel === 'string' && !next.ariaLabelKey)
+  if (!next.ariaLabelKey && declaresOwn(raw, 'ariaLabel', next))
     next.ariaLabelKey = `${base}.option.${id}.ariaLabel`;
   return next;
 }

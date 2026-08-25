@@ -136,9 +136,19 @@ export function buildExportStyleContent(bundle, extraCss = []) {
     [
       bundle.fontCss,
       stripFontFacesFromCss(bundle.chromeCss),
-      bundle.themeVarsCss,
       bundle.themeCss,
       stripFontFacesFromCss(bundle.slidesCss),
+      // After the slide stylesheets, matching the embed (`styles:` block after
+      // the linked slides.css) and the client (runtime-injected into <head>).
+      // No `--t-*` is ever DEFINED in client/styles — they are only consumed —
+      // so the vars block is order-independent. The generated
+      // `.slide.slide-bg-<id>` variant rules are not: they share two-class
+      // specificity with `.slide.has-slide-bg-light-text` in 00-base.css, and a
+      // variant's authored textColor/linkColor must outrank that generic
+      // luminance default. Sitting before slides.css made this the one path
+      // where the default won — screen/export drift on any variant slide that
+      // also carried a contrast class.
+      bundle.themeVarsCss,
       // Anchor the slide's base font to the theme, not the export chrome. The
       // export <body> carries `font-family: var(--ps-font-sans)` (an app-chrome
       // token → 'Inter', …); slide text that sets no family of its own would

@@ -153,7 +153,10 @@ export default {
       label: 'Image position',
       type: 'enum',
       required: false,
-      options: ['left', 'right'],
+      options: [
+        { value: 'left', label: 'Left' },
+        { value: 'right', label: 'Right' },
+      ],
       formLayout: 'pair',
     },
     {

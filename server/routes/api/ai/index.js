@@ -1,13 +1,13 @@
-import { dispatchRoutes } from '../../utils/router.js';
-import { withErrorHandler } from '../../utils/http.js';
-import { handleAiVendors } from './ai/vendors.js';
-import { handleAiWizard } from './ai/wizard.js';
-import { handleAiWizardV2Stream } from './ai/wizard-v2-stream.js';
-import { handleAiAppendSlides } from './ai/append-slides.js';
-import { handleAiRefineSection } from './ai/refine-section.js';
-import { handleAiConvertSlide } from './ai/convert-slide.js';
-import { handleAiCompressDeck } from './ai/compress-deck.js';
-import { handleAiIterate } from './ai/iterate.js';
+import { dispatchRoutes } from '../../../utils/router.js';
+import { withErrorHandler } from '../../../utils/http.js';
+import { handleAiVendors } from './vendors.js';
+import { handleAiWizard } from './wizard.js';
+import { handleAiWizardV2Stream } from './wizard-v2-stream.js';
+import { handleAiAppendSlides } from './append-slides.js';
+import { handleAiRefineSection } from './refine-section.js';
+import { handleAiConvertSlide } from './convert-slide.js';
+import { handleAiCompressDeck } from './compress-deck.js';
+import { handleAiIterate } from './iterate.js';
 
 /**
  * Declarative route table for `/api/ai/*`, dispatched through the shared
@@ -15,7 +15,7 @@ import { handleAiIterate } from './ai/iterate.js';
  * significant (unlike the presentations dispatcher). Each handler owns its
  * request parsing, AI orchestration and persistence.
  *
- * @type {import('../../utils/router.js').Route[]}
+ * @type {import('../../../utils/router.js').Route[]}
  */
 const ROUTES = [
   { method: 'GET', pattern: '/api/ai/vendors', handler: handleAiVendors },
@@ -50,7 +50,7 @@ const ROUTES = [
 
 /**
  * Dispatch `/api/ai/*` requests to the matching handler.
- * @param {import('./ai/shared.js').AiContext} ctx
+ * @param {import('./shared.js').AiContext} ctx
  * @returns {Promise<boolean>} true if a route handled the request.
  */
 export const handleAi = withErrorHandler('ai', (ctx) =>

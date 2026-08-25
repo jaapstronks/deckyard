@@ -20,11 +20,17 @@
 // client/styles/slides/01-layout-and-title/00-base.css), so per-variant
 // contrast reaches every component without per-slide-type CSS.
 //
+// `textColor` is not only a colour: it declares how light or dark the ground
+// is. `slideBackgroundContrastClass()` below publishes that declaration as the
+// same `has-slide-bg-light-text` / `-dark-text` class the background-image path
+// emits, so CSS can select on the luminance instead of inferring it from a
+// background NAME. `renderSlideHtml` puts it on the slide root.
+//
 // The editor's background picker (client/views/editor/fields/background.js)
 // appends these entries to the base lime/mist options; swatches resolve via
 // the existing `--t-slide-bg-<id>` convention.
 
-import { pickTextColorForBg } from './color-utils.js';
+import { hexToRgb, pickTextColorForBg } from './color-utils.js';
 
 /** Valid variant ids: css-class-safe slugs. */
 export const SLIDE_BG_ID_RE = /^[a-z0-9][a-z0-9-]{0,31}$/;
@@ -177,4 +183,40 @@ export function slideBackgroundsCssText(entries) {
     rules.push(`.slide.slide-bg-${e.id} {\n${lines.join('\n')}\n}`);
   }
   return rules.join('\n');
+}
+
+/**
+ * The luminance a variant declares about its own ground, as the slide-level
+ * contrast class the rest of the CSS already keys on.
+ *
+ * Setting `textColor` is not only a colour choice: it is a statement that this
+ * ground needs light (or dark) text, which is the same as saying how light or
+ * dark the ground is. Until now that statement only reached the four token
+ * redirects in {@link slideBackgroundsCssText}; per-slide-type CSS had to infer
+ * it from the background NAME instead (`.slide-bg-calm` meant "dark ground",
+ * `.slide-bg-lime` meant "light ground"), a contract written down nowhere that
+ * no new variant could join. Publishing the class puts the statement in the
+ * markup, where a selector can reach it.
+ *
+ * The light/dark reading matches the `--slide-on-inverted` decision above: a
+ * text colour that a WHITE pole reads better against is itself dark, so the
+ * ground under it is light. An unparseable colour (a `var()`, an `rgba()`
+ * string) declares nothing — better no class than a guessed one.
+ *
+ * @param {ReturnType<typeof normalizeSlideBackgrounds>} entries
+ * @param {string} id - the slide's `background` value
+ * @returns {'has-slide-bg-light-text'|'has-slide-bg-dark-text'|''}
+ */
+export function slideBackgroundContrastClass(entries, id) {
+  const v = String(id || '')
+    .trim()
+    .toLowerCase();
+  if (!SLIDE_BG_ID_RE.test(v)) return '';
+  const entry = (Array.isArray(entries) ? entries : []).find(
+    (e) => e && e.id === v,
+  );
+  if (!entry?.textColor || !hexToRgb(entry.textColor)) return '';
+  return pickTextColorForBg(entry.textColor) === '#ffffff'
+    ? 'has-slide-bg-dark-text'
+    : 'has-slide-bg-light-text';
 }
