@@ -2,8 +2,9 @@
 /**
  * i18n fill helper.
  *
- * Every t() call carries an English fallback, so English can be materialized
- * mechanically: the fallback *is* the English string. Other locales need real
+ * Every t() call carries an English fallback and every slide-type field
+ * declaration carries its English label, so English can be materialized
+ * mechanically: the code *is* the English string. Other locales need real
  * translation, so this script only reports their gaps and merges translations
  * back in.
  *
@@ -170,47 +171,36 @@ function registryEnglish() {
 }
 
 /**
- * Every key some locale translates, across all of them.
- *
- * `en/` is the reference: it decides a key's wording *and* (since B137) which
- * module file it lives in. A key a locale holds while `en/` does not is
- * therefore reference drift — either English is missing a string it owns, or
- * the key is dead and the locale is carrying a translation of nothing. Both
- * want to be visible, so the `en` target seeds from this set.
- *
- * @returns {Promise<Set<string>>}
- */
-async function keysHeldByAnyLocale() {
-  const keys = new Set();
-  for (const locale of LOCALE_IDS) {
-    if (locale === REFERENCE_LOCALE) continue;
-    for (const key of Object.keys(await loadLocale(i18nDir, locale)))
-      keys.add(key);
-  }
-  return keys;
-}
-
-/**
  * Every key a locale still needs, as key -> English source string.
  *
- * Two sources, because neither is complete on its own:
+ * Three sources, because no one of them is complete:
  *
- *  1. the static `t()` call sites, which carry the English fallback; and
- *  2. `en/` itself, which is the settled English wording *and* the only place
- *     the runtime-built families are written down at all. `slideType.*`,
- *     `editor.textStyle.*`, `editor.layoutVariant.*` and
- *     `editor.inline.add*`/`remove*` are assembled from template literals, so
- *     `extractUsedKeys` cannot see them — yet each one has a fixed English
- *     string in `en/` and is therefore perfectly translatable. Reporting only
- *     source 1 made the tool answer "0 missing" for a locale that was 272 keys
- *     short (B136).
+ *  1. the static `t()` call sites, which carry the English fallback;
+ *  2. `en/` itself, which is the settled English wording for every key it
+ *     already holds; and
+ *  3. the **slide-type registry declarations** (`registryEnglish`), which are
+ *     where a field/option/type writes its key down in the first place — as a
+ *     `labelKey`/`label` pair, or implicitly through the
+ *     `slideType.<type>.field.…` convention.
  *
- * The `en` target cannot use source 2 — materializing en/ *from* en/ would be
- * circular — so it gets a third instead: **every key another locale already
- * translates**, valued from the registry (`registryEnglish`). That is what
- * makes the reference a superset by construction. Without it, a runtime-built
- * key could live in a locale forever while `en/` never learned it existed, and
- * `i18n-fill.js en` had no way to add it — 62 keys sat in `nl/` alone (B138).
+ * Source 3 is the one that closes the loop, and it took three bugs to get here.
+ * Source 1 alone made the tool answer "0 missing" for a locale that was 272
+ * keys short, because `slideType.*`, `editor.textStyle.*`,
+ * `editor.layoutVariant.*` and `editor.inline.add*`/`remove*` are assembled
+ * from template literals and `extractUsedKeys` cannot see them (B136). Adding
+ * source 2 fixed that for every locale *except* the reference — materializing
+ * `en/` from `en/` is circular — so `en` got a narrow substitute: keys some
+ * *other* locale already translated, valued from the registry (B138). That
+ * substitute only ever proposed keys a locale had already heard of, which is
+ * how eighteen `editor.slideField.*` keys declared in `shared/slide-types/`
+ * lived in no locale at all while this script reported "missing 0" (B166/B168).
+ *
+ * Reading the registry directly subsumes it: a declared key is proposed the
+ * moment it is declared, for every locale, whether or not anything else has
+ * ever seen it. The registry is also the *authority* on the English for the
+ * keys it declares, so it is folded in last; `en/` still wins for any locale
+ * being filled from the reference (`en[key] ?? english`).
+ *
  * A key with no English source anywhere is deliberately *not* invented here: it
  * is dead, and `tests/i18n-coverage.test.js` names it so it can be deleted.
  *
@@ -237,10 +227,7 @@ export async function missingFor(locale) {
     want(key, en[key] ?? fallback);
   }
   for (const [key, english] of Object.entries(en)) want(key, english);
-  if (locale === 'en') {
-    const registry = registryEnglish();
-    for (const key of await keysHeldByAnyLocale()) want(key, registry.get(key));
-  }
+  for (const [key, english] of registryEnglish()) want(key, en[key] ?? english);
   return missing;
 }
 
