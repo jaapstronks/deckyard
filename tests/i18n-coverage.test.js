@@ -16,6 +16,9 @@
  *     string, wherever it is written down
  *  6. an ellipsis is the single glyph `…`, in code and in every locale
  *  7. en/ holds every key any other locale holds — the reference is a superset
+ *  8. every key the slide-type registry *declares* exists in nl/ and en/ too —
+ *     the keys check 1 cannot see, because they are written down in
+ *     `shared/slide-types/` rather than at a `t()` call site
  *
  * Run with: node --test tests/i18n-coverage.test.js
  */
@@ -38,6 +41,9 @@ import {
   REFERENCE_LOCALE,
   TIER_1,
 } from '../scripts/lib/i18n-locales.js';
+import { CORE_SLIDE_TYPE_DEFS } from '../shared/slide-types/registry.js';
+import { addUiI18nKeysToSlideType } from '../shared/ui-i18n-keys.js';
+import { slideTypeUiKeys } from '../scripts/lib/slide-type-i18n-keys.js';
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -62,8 +68,46 @@ const i18nDir = path.join(clientDir, 'i18n');
  */
 const REQUIRED_LOCALES = TIER_1;
 
+/**
+ * The burndown for check 8: `"<locale>  <key>"` rows the gate tolerates today.
+ *
+ * Same shape as `tests/slide-type-shared-copy-burndown.json` and
+ * `eslint-suppressions.json` (A7.20): it may only ever *shrink*, and a stale
+ * row fails just as loudly as a new gap, so the list cannot quietly become a
+ * permanent exemption. It is seeded with the `slideType.*` keys `nl/` has never
+ * translated — pre-existing debt this gate made visible, not something it
+ * introduced. The shared `editor.slideField.*` namespace enters at zero.
+ */
+const REGISTRY_BURNDOWN_PATH = path.join(
+  repoRoot,
+  'tests',
+  'i18n-registry-key-burndown.json',
+);
+
 const used = await extractUsedKeys(clientDir);
 const staticKeys = [...used.keys()].filter((k) => !isDynamicKey(k));
+
+/**
+ * Every (locale, key) pair a Tier-1 locale is missing, for keys the slide-type
+ * registry declares.
+ *
+ * Pure so the negative self-tests below can drive it with a hand-built registry
+ * and hand-built dictionaries — the gate is only worth having if it demonstrably
+ * catches the thing it was written for.
+ *
+ * @param {Iterable<string>} keys - registry-declared keys (`slideTypeUiKeys`)
+ * @param {Record<string, Record<string, unknown>>} dicts - locale id -> dictionary
+ * @returns {string[]} sorted `"<locale>  <key>"` rows
+ */
+export function detectUntranslatedRegistryKeys(keys, dicts) {
+  const rows = [];
+  for (const [locale, dict] of Object.entries(dicts)) {
+    for (const key of keys) {
+      if (typeof dict[key] !== 'string') rows.push(`${locale}  ${key}`);
+    }
+  }
+  return rows.sort();
+}
 
 /** @param {string} s @returns {string[]} sorted {var} names in a string */
 function placeholders(s) {
@@ -248,6 +292,125 @@ describe('i18n coverage', () => {
         `client/i18n/${locale}/ contains invalid JSON`,
       );
     }
+  });
+});
+
+describe('i18n registry-declared keys', () => {
+  // Check 8. `extractUsedKeys` scans client/ for `t()` call sites and descriptor
+  // pairs; a slide-type field that points at a shared key writes that key down
+  // in shared/slide-types/ instead, where nothing was looking. That is how
+  // eighteen `editor.slideField.*` keys ended up declared in code, carrying an
+  // English `label` fallback, and present in *no* locale — while
+  // `i18n-fill.js en` reported "missing 0 key(s)" and this file stayed green
+  // (B166/B168).
+  //
+  // The registry walk in scripts/lib/slide-type-i18n-keys.js already answers
+  // "which keys does a type own?" for the prune and the fill. Reading it here
+  // too means there is one canonical list of declared keys, not a second one
+  // kept by hand.
+  //
+  // **Core only** — `CORE_SLIDE_TYPE_DEFS`, not the merged registry: a fork type
+  // in custom/slide-types/ must not be able to fail this repo's CI, the same
+  // rule i18n-fill.js and the generated reference docs follow.
+  const declared = slideTypeUiKeys(CORE_SLIDE_TYPE_DEFS);
+
+  /** @returns {Promise<string[]>} */
+  const found = async () => {
+    /** @type {Record<string, Record<string, unknown>>} */
+    const dicts = {};
+    for (const locale of REQUIRED_LOCALES)
+      dicts[locale] = await loadLocale(i18nDir, locale);
+    return detectUntranslatedRegistryKeys(declared, dicts);
+  };
+
+  it('every key the slide-type registry declares exists in nl/ and en/', async () => {
+    const burndown = new Set(
+      JSON.parse(await fs.readFile(REGISTRY_BURNDOWN_PATH, 'utf8')),
+    );
+    const gaps = (await found()).filter((row) => !burndown.has(row));
+    assert.deepStrictEqual(
+      gaps,
+      [],
+      `${gaps.length} key(s) declared in shared/slide-types/ have no value in a\n` +
+        'Tier-1 locale. `node scripts/i18n-fill.js --apply en` writes the English\n' +
+        'ones from the declaration; the rest need a translation. Do not add a\n' +
+        'line to tests/i18n-registry-key-burndown.json — it only shrinks:\n' +
+        gaps
+          .slice(0, 20)
+          .map((row) => `  ${row}`)
+          .join('\n'),
+    );
+  });
+
+  it('the burndown only shrinks: every row is still a live gap', async () => {
+    const burndown = JSON.parse(
+      await fs.readFile(REGISTRY_BURNDOWN_PATH, 'utf8'),
+    );
+    const present = new Set(await found());
+    const stale = burndown.filter((row) => !present.has(row));
+    assert.deepStrictEqual(
+      stale,
+      [],
+      `${stale.length} row(s) in tests/i18n-registry-key-burndown.json are no\n` +
+        'longer gaps — delete them so the list keeps burning down:\n' +
+        stale.map((row) => `  ${row}`).join('\n'),
+    );
+  });
+
+  it('the burndown is sorted and free of duplicates', async () => {
+    const burndown = JSON.parse(
+      await fs.readFile(REGISTRY_BURNDOWN_PATH, 'utf8'),
+    );
+    assert.deepStrictEqual([...burndown].sort(), burndown, 'keep it sorted');
+    assert.strictEqual(
+      new Set(burndown).size,
+      burndown.length,
+      'no duplicate rows',
+    );
+  });
+
+  it('detector flags a shared field key no locale defines', () => {
+    // The B166 shape exactly: a field pointing at an `editor.slideField.*` key
+    // that lives only in the declaration.
+    const declaredHere = slideTypeUiKeys({
+      ghost: addUiI18nKeysToSlideType('ghost', {
+        fields: [
+          {
+            key: 'title',
+            type: 'string',
+            label: 'Title',
+            labelKey: 'editor.slideField.ghost.label',
+          },
+        ],
+      }),
+    });
+    assert.deepStrictEqual(
+      detectUntranslatedRegistryKeys(declaredHere, {
+        en: { 'slideType.ghost.label': 'Ghost' },
+        nl: { 'slideType.ghost.label': 'Spook' },
+      }),
+      [
+        'en  editor.slideField.ghost.label',
+        'nl  editor.slideField.ghost.label',
+      ],
+    );
+  });
+
+  it('detector passes a key both Tier-1 locales define', () => {
+    const declaredHere = slideTypeUiKeys({
+      ghost: addUiI18nKeysToSlideType('ghost', {
+        label: 'Ghost',
+        labelKey: 'slideType.ghost.label',
+        fields: [],
+      }),
+    });
+    assert.deepStrictEqual(
+      detectUntranslatedRegistryKeys(declaredHere, {
+        en: { 'slideType.ghost.label': 'Ghost' },
+        nl: { 'slideType.ghost.label': 'Spook' },
+      }),
+      [],
+    );
   });
 });
 
