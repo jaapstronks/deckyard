@@ -24,7 +24,7 @@ ydoc
       notes: Y.Map<lang, Y.Text>
       content: Y.Map
         <plain field>: LWW value           // enums, numbers, images, …
-        <text field>:  Y.Map<lang, Y.Text> // string + markdown fields
+        <text field>:  Y.Map<lang, Y.Text> // string/markdown/csv fields
         <items field>: Y.Array<Y.Map>      // items/rows/cards, recursive
 ```
 
@@ -45,15 +45,24 @@ collab store.)
 always a lang→Y.Text map, a nested Y.Array is always an items list, anything
 else is a plain value. Projecting the doc back to JSON therefore needs no
 schema. Only the JSON→doc bootstrap consults `SLIDE_TYPES` to classify
-fields: `string`/`markdown` fields (top-level and in `itemFields`,
-recursively) are per-language text — the same classification the i18n
-translate pipeline uses, except that `hidden` fields (machine ids,
-deprecated legacy fields) are deliberately kept plain where the translate
-pipeline does not filter them. Legacy decks whose versions diverge in such
-plain fields normalize to the dominant value **with a warning** at
-bootstrap.
-Unknown slide types fall back to all-plain (LWW) with no data loss on
-round-trip.
+fields, through the one text-field vocabulary in
+[`shared/slide-types/text-fields.js`](../../shared/slide-types/text-fields.js):
+a field is per-language text when its type is `string`, `markdown` or `csv`,
+top-level and in `itemFields`, recursively. `hidden` is not consulted — it
+answers "does the inspector show this field", not "is this text a human
+wrote", and using it here collapsed `text-blocks-slide`'s numbered prose
+mirror to the dominant language until 2026-08-25. Legacy decks whose versions
+diverge in a _plain_ field (a key the schema no longer knows) normalize to the
+dominant value **with a warning** at bootstrap. Unknown slide types fall back
+to all-plain (LWW) with no data loss on round-trip.
+
+Docs already persisted in `presentation_ydocs.state` are not re-classified on
+load, so a deck edited only through collab can still hold such a field as one
+plain string. The binder handles that on the first local edit: it seeds every
+language from the value it finds before patching the active one, so the
+non-dominant version is never blanked (`writeTextField` in
+`client/lib/collab/live-doc-binder.js`). Any non-collab save drops the binary
+and re-bootstraps under the current rule.
 
 **There is no third kind of field.** The one concrete case that raised the
 question — `follow-invite-slide` writing `sourceLang`/`targetLang` per language

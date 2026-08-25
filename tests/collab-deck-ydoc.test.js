@@ -16,10 +16,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import * as Y from 'yjs';
-import {
-  createDeckYdocCodec,
-  textFieldSpecForType,
-} from '../shared/collab/deck-ydoc.js';
+import { createDeckYdocCodec } from '../shared/collab/deck-ydoc.js';
+import { textFieldSpecForType } from '../shared/slide-types/text-fields.js';
 import { SLIDE_TYPES } from '../shared/slide-types.js';
 
 const codec = createDeckYdocCodec(Y);
@@ -354,10 +352,9 @@ describe('divergent versions are normalized with warnings, not corrupted', () =>
     assert.equal(projected.i18n.versions['en-GB'].slides.length, 2);
   });
 
-  it('warns when a plain (e.g. hidden/deprecated) field diverges between versions', () => {
+  it('warns when a plain field diverges between versions', () => {
     const pres = normalizeTopLevel(twoLangDeck());
-    // `variant` is an enum (plain LWW); legacy decks can have diverged here,
-    // as can deprecated `hidden` fields, which are also kept plain.
+    // `variant` is an enum (plain LWW); legacy decks can have diverged here.
     pres.i18n.versions['en-GB'].slides[0].content.variant = 'bullets';
     const { projected, warnings } = roundTrip(pres);
     assert.equal(warnings.length, 1);
@@ -369,6 +366,40 @@ describe('divergent versions are normalized with warnings, not corrupted', () =>
       projected.i18n.versions['en-GB'].slides[0].content.variant,
       'numbers',
       'dominant wins',
+    );
+  });
+
+  it('keeps a hidden prose mirror per language instead of collapsing it', () => {
+    // Regression: `hidden` used to classify a field as "machine value, one per
+    // deck", which collapsed `text-blocks-slide`'s numbered mirror of
+    // translatable prose to the dominant language on the first collab edit.
+    // Reported by the CIIIC fork against a real bilingual deck.
+    const hiddenTextKey = SLIDE_TYPES['text-blocks-slide'].fields.find(
+      (f) => f.hidden === true && f.type === 'string',
+    )?.key;
+    assert.ok(hiddenTextKey, 'fixture assumes a hidden string field exists');
+
+    const pres = normalizeTopLevel(twoLangDeck());
+    for (const [lang, version] of Object.entries(pres.i18n.versions)) {
+      version.slides.push({
+        id: 's-blocks',
+        type: 'text-blocks-slide',
+        content: { [hiddenTextKey]: lang === 'nl' ? 'Kopje' : 'Heading' },
+        notes: '',
+      });
+    }
+    pres.slides = pres.i18n.versions.nl.slides;
+
+    const { projected, warnings } = roundTrip(pres);
+    assert.deepStrictEqual(warnings, []);
+    assert.equal(
+      projected.i18n.versions.nl.slides[2].content[hiddenTextKey],
+      'Kopje',
+    );
+    assert.equal(
+      projected.i18n.versions['en-GB'].slides[2].content[hiddenTextKey],
+      'Heading',
+      'the English mirror must survive the round-trip',
     );
   });
 

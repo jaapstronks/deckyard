@@ -24,8 +24,8 @@
  * nested Y.Map is always a lang→Y.Text map, a nested Y.Array is always an
  * items list, anything else is a plain value. Projection back to JSON
  * therefore needs no schema; only the JSON→doc bootstrap consults
- * SLIDE_TYPES to classify fields (string/markdown = per-language text,
- * mirroring the i18n translate pipeline; `hidden` fields stay plain).
+ * SLIDE_TYPES to classify fields, through the one shared classifier in
+ * `shared/slide-types/text-fields.js`.
  *
  * The legacy JSON format is preserved at this boundary: the projection
  * rebuilds `i18n.versions[lang].slides` arrays (and top-level title/slides
@@ -44,6 +44,10 @@
  */
 
 import { SLIDE_TYPES } from '../slide-types.js';
+import {
+  emptyTextFieldSpec,
+  textFieldSpecForType,
+} from '../slide-types/text-fields.js';
 
 /** Slide-level keys with dedicated handling (everything else is plain LWW). */
 const SLIDE_SPECIAL_KEYS = new Set(['id', 'type', 'content', 'notes']);
@@ -59,27 +63,7 @@ function deepClone(v) {
   return v === undefined ? undefined : JSON.parse(JSON.stringify(v));
 }
 
-/**
- * Build the translatable-text spec for a list of schema fields, recursively:
- * `{ textKeys: Set<string>, items: Map<fieldKey, spec> }`.
- * string/markdown fields are per-language text (same classification as the
- * i18n translate pipeline); `hidden` fields (machine ids etc.) stay plain.
- */
-function specForFields(fields) {
-  const spec = { textKeys: new Set(), items: new Map() };
-  for (const f of Array.isArray(fields) ? fields : []) {
-    const key = typeof f?.key === 'string' ? f.key.trim() : '';
-    if (!key || f.hidden === true) continue;
-    if (f.type === 'string' || f.type === 'markdown' || f.type === 'csv')
-      spec.textKeys.add(key);
-    else if (f.type === 'items' && Array.isArray(f.itemFields)) {
-      spec.items.set(key, specForFields(f.itemFields));
-    }
-  }
-  return spec;
-}
-
-const EMPTY_SPEC = { textKeys: new Set(), items: new Map() };
+const EMPTY_SPEC = emptyTextFieldSpec();
 
 /**
  * Minimal Y.Text patch: keep the common prefix/suffix, replace the middle.
@@ -159,19 +143,6 @@ function jsonEq(a, b) {
   if (a === b) return true;
   if (a === undefined || b === undefined) return false;
   return JSON.stringify(a) === JSON.stringify(b);
-}
-
-/**
- * Translatable-text spec for a slide type (recursive over items fields).
- * Unknown types get an empty spec: every field is treated as plain LWW.
- * @param {string} type - Slide type name
- * @param {Object} [slideTypes] - Slide-type registry (defaults to SLIDE_TYPES)
- * @returns {{textKeys: Set<string>, items: Map<string, Object>}}
- */
-export function textFieldSpecForType(type, slideTypes = SLIDE_TYPES) {
-  const def = slideTypes?.[type];
-  if (!def || !Array.isArray(def.fields)) return EMPTY_SPEC;
-  return specForFields(def.fields);
 }
 
 /**
@@ -333,11 +304,10 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
       }
       if (content[key] !== undefined) {
         ycontent.set(key, deepClone(content[key]));
-        // Plain values normalize to the dominant version. Legacy decks
-        // can diverge here (e.g. deprecated `hidden` fields, which the
-        // translate pipeline does copy per language but this codec
-        // deliberately keeps plain) — surface it instead of silently
-        // dropping the other version's value.
+        // Plain values normalize to the dominant version. Legacy decks can
+        // diverge here on a key the schema does not know (a field dropped
+        // from the type, a hand-edited deck) — surface it instead of
+        // silently dropping the other version's value.
         const dominantJson = JSON.stringify(content[key]);
         for (const { lang: peerLang, slide: peer } of matches) {
           const pv = peer?.content?.[key];
