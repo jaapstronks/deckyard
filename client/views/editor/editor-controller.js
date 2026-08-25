@@ -71,7 +71,7 @@ import { createCommentsApi } from './comments-api.js';
 import { createEditorTitleController } from './title-controller.js';
 import { attachEditorFindShortcut } from './find-shortcut.js';
 import { attachEditorShortcutsHelp } from './shortcuts.js';
-import { translatableKeysForType } from './translatable.js';
+import { translatableKeysForType } from '../../../shared/slide-types/text-fields.js';
 import { focusSearchHitInEditor } from './search-focus.js';
 import { createResponsiveDrawers } from './responsive-drawers.js';
 import { createEditorStateUpdater } from '../../lib/state/editor-state.js';
@@ -531,7 +531,7 @@ export async function createEditorController({
   };
 
   const translatableKeysForSlideType = (type) =>
-    translatableKeysForType({ SLIDE_TYPES, type });
+    translatableKeysForType(type, SLIDE_TYPES);
 
   // Consolidated state updater
   const editorState = createEditorStateUpdater({

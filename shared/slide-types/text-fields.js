@@ -2,11 +2,12 @@
  * The text-field vocabulary: which slide-type fields hold prose a human wrote,
  * and what follows from that.
  *
- * Seven copies of this rule used to exist — the collab codec, the server
- * translate pipeline, the translation-status reader, the storage i18n facade,
- * the deck coercion pass, the AI description builder and two editor modules —
- * and they disagreed in three ways: whether `hidden` fields count, whether
- * `csv` counts inside an items field, and whether items are walked at all.
+ * Eight modules used to carry this rule between them, in eleven separate
+ * predicate expressions — the collab codec, the server translate pipeline, the
+ * translation-status reader, the storage i18n facade, the deck coercion pass,
+ * the AI description builder and two editor modules — and they disagreed in
+ * three ways: whether `hidden` fields count, whether `csv` counts inside an
+ * items field, and whether items are walked at all.
  * The disagreement was not cosmetic: the collab codec treated `hidden` as
  * "machine value, one per deck", which collapsed `text-blocks-slide`'s
  * numbered mirror of translatable prose to the dominant language on the first
@@ -28,7 +29,7 @@
  *   wrote". Every hidden text field in the registry today is a legacy mirror
  *   of prose.
  *
- * `tests/text-field-vocabulary-gate.test.js` keeps copy number eight from
+ * `tests/text-field-vocabulary-gate.test.js` keeps copy number nine from
  * growing back.
  *
  * @module shared/slide-types/text-fields
@@ -75,11 +76,16 @@ export function textFieldSpec(fields) {
   return spec;
 }
 
-/** Spec for a type with no fields: every value is plain. */
-export const EMPTY_TEXT_FIELD_SPEC = Object.freeze({
-  textKeys: new Set(),
-  items: new Map(),
-});
+/**
+ * Spec for a type with no fields: every value is plain. A fresh object each
+ * time — a shared singleton would hand the same mutable `Set` and `Map` to
+ * every unknown type, and `Object.freeze` on the wrapper would not protect
+ * them.
+ * @returns {{textKeys: Set<string>, items: Map<string, Object>}}
+ */
+export function emptyTextFieldSpec() {
+  return { textKeys: new Set(), items: new Map() };
+}
 
 /**
  * Text spec for a slide type (recursive over items fields). Unknown types get
@@ -90,7 +96,7 @@ export const EMPTY_TEXT_FIELD_SPEC = Object.freeze({
  */
 export function textFieldSpecForType(type, slideTypes = SLIDE_TYPES) {
   const def = slideTypes?.[type];
-  if (!def || !Array.isArray(def.fields)) return EMPTY_TEXT_FIELD_SPEC;
+  if (!def || !Array.isArray(def.fields)) return emptyTextFieldSpec();
   return textFieldSpec(def.fields);
 }
 

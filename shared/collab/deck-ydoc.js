@@ -45,13 +45,9 @@
 
 import { SLIDE_TYPES } from '../slide-types.js';
 import {
-  EMPTY_TEXT_FIELD_SPEC,
+  emptyTextFieldSpec,
   textFieldSpecForType,
 } from '../slide-types/text-fields.js';
-
-// The codec's field classification is the shared text-field vocabulary; it is
-// re-exported here because the collab tests and binder read it off the codec.
-export { textFieldSpecForType };
 
 /** Slide-level keys with dedicated handling (everything else is plain LWW). */
 const SLIDE_SPECIAL_KEYS = new Set(['id', 'type', 'content', 'notes']);
@@ -67,7 +63,7 @@ function deepClone(v) {
   return v === undefined ? undefined : JSON.parse(JSON.stringify(v));
 }
 
-const EMPTY_SPEC = EMPTY_TEXT_FIELD_SPEC;
+const EMPTY_SPEC = emptyTextFieldSpec();
 
 /**
  * Minimal Y.Text patch: keep the common prefix/suffix, replace the middle.

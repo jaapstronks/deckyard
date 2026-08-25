@@ -16,7 +16,7 @@ import {
 import { confirmModal, createModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types.js';
-import { translatableKeysForType } from '../translatable.js';
+import { translatableKeysForType } from '../../../../shared/slide-types/text-fields.js';
 import { h } from '../../../lib/dom.js';
 
 /**
@@ -329,7 +329,7 @@ export function createLanguageMode({
     );
     for (const s of Array.isArray(src.slides) ? src.slides : []) {
       if (!s || typeof s !== 'object') continue;
-      const keys = translatableKeysForType({ SLIDE_TYPES, type: s.type });
+      const keys = translatableKeysForType(s.type, SLIDE_TYPES);
       if (!keys.length) continue;
       const tgtContent = tgtById.get(s.id)?.content || {};
       for (const k of keys) {

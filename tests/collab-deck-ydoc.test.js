@@ -16,10 +16,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import * as Y from 'yjs';
-import {
-  createDeckYdocCodec,
-  textFieldSpecForType,
-} from '../shared/collab/deck-ydoc.js';
+import { createDeckYdocCodec } from '../shared/collab/deck-ydoc.js';
+import { textFieldSpecForType } from '../shared/slide-types/text-fields.js';
 import { SLIDE_TYPES } from '../shared/slide-types.js';
 
 const codec = createDeckYdocCodec(Y);

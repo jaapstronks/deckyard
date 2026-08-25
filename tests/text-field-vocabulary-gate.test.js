@@ -1,10 +1,11 @@
 /**
  * The text-field vocabulary gate.
  *
- * "Which slide-type fields hold prose" had eight implementations: the collab
- * codec, the server translate pipeline, the translation-status reader, the
- * storage i18n facade, the deck coercion pass, the AI description builder and
- * two editor modules. They disagreed on `hidden`, on `csv` inside items, and
+ * "Which slide-type fields hold prose" was spelled out in eight modules, in
+ * eleven separate predicate expressions: the collab codec, the server
+ * translate pipeline, the translation-status reader, the storage i18n facade,
+ * the deck coercion pass, the AI description builder and two editor modules.
+ * They disagreed on `hidden`, on `csv` inside items, and
  * on whether items were walked at all — and the collab codec's disagreement
  * silently destroyed the non-dominant language of any deck holding a
  * `text-blocks-slide` (reported by the CIIIC fork, 2026-08-25).
@@ -39,19 +40,31 @@ const SKIP_DIRS = new Set([
 ]);
 
 /**
- * A single `type === '<text type>'` comparison. Only an expression covering
- * all THREE text types enumerates the vocabulary; covering two of them is a
- * narrower question (`string || markdown` asks "does this field have a
- * maxLength", `string || markdown || number` asks which widget to render) and
- * stays allowed.
+ * One text-type string literal. Matching the LITERAL rather than a particular
+ * operator is what makes the gate hold: an earlier draft keyed on
+ * `type === '…'` and missed five idiomatic ways to write the same set —
+ * `['string','markdown','csv'].includes(f.type)`, a `Set(...).has(...)`, a
+ * three-`case` switch, the negated `!==` chain (literally the shape that lived
+ * in `description.js` before this was consolidated), and a chain over a local
+ * alias of `f.type`.
  */
-const COMPARISON = /type===(['"])(string|markdown|csv)\1/g;
+const TEXT_TYPE_LITERAL = /(['"])(string|markdown|csv)\1/g;
 
+/**
+ * Whether one expression names all three text types. Two of them is a
+ * narrower question — `string || markdown` asks "does this field have a
+ * maxLength", `string || markdown || number` asks which widget to render —
+ * and stays allowed.
+ * @param {string} squashed - Source with whitespace removed
+ * @returns {boolean}
+ */
 function enumeratesVocabulary(squashed) {
-  // Statement/block delimiters bound one expression well enough: the copies
-  // all lived in a single `filter` predicate or a single `if` condition.
+  // Statement/block delimiters bound one expression well enough: every copy
+  // lived in a single `filter` predicate, `if` condition or switch body.
   for (const segment of squashed.split(/[;{}]/)) {
-    const types = new Set([...segment.matchAll(COMPARISON)].map((m) => m[2]));
+    const types = new Set(
+      [...segment.matchAll(TEXT_TYPE_LITERAL)].map((m) => m[2]),
+    );
     if (types.size === 3) return true;
   }
   return false;
@@ -90,13 +103,38 @@ test('only text-fields.js enumerates the text-field types', () => {
   );
 });
 
-test('the gate catches the shape it is meant to catch', () => {
-  const copy =
-    "fields.filter((f) => f.type === 'string' || f.type === 'markdown' || f.type === 'csv')";
-  assert.ok(
-    enumeratesVocabulary(copy.replace(/\s+/g, '')),
-    'the classic three-way copy must trip the gate',
-  );
+test('the gate catches every idiomatic way to rewrite the set', () => {
+  const copies = [
+    [
+      'the classic || chain',
+      "fields.filter((f) => f.type === 'string' || f.type === 'markdown' || f.type === 'csv')",
+    ],
+    [
+      'an array includes',
+      "if (['string', 'markdown', 'csv'].includes(f.type)) keep(f);",
+    ],
+    [
+      'a Set has',
+      "const TEXT = new Set(['string', 'markdown', 'csv']); if (TEXT.has(f.type)) keep(f);",
+    ],
+    [
+      'the negated chain',
+      "if (f.type !== 'string' && f.type !== 'markdown' && f.type !== 'csv') continue;",
+    ],
+    [
+      'a chain over a local alias',
+      "const t = f.type; if (t === 'string' || t === 'markdown' || t === 'csv') keep(f);",
+    ],
+    [
+      'a three-case switch',
+      "switch (f.type) { case 'string': case 'markdown': case 'csv': keep(f); }",
+    ],
+  ];
+  for (const [label, code] of copies)
+    assert.ok(
+      enumeratesVocabulary(code.replace(/\s+/g, '')),
+      `${label} must trip the gate`,
+    );
 });
 
 test('narrower type questions are not enumerations', () => {
