@@ -280,6 +280,24 @@ test('the slide root is read for its variant and its own custom properties', () 
   assert.equal(slideBgVariant('<div class="slide slide-content"></div>'), null);
 });
 
+test('the contrast classes are not mistaken for a variant', () => {
+  // `has-slide-bg-light-text` ends in `slide-bg-light-text`. A substring search
+  // reads that as a variant no theme declares, and the slide's real gradient
+  // then escapes rasterization — seconds per page back in the PDF.
+  assert.equal(
+    slideBgVariant(
+      '<div class="slide slide-content slide-bg-calm has-slide-bg-light-text">x</div>',
+    ),
+    'calm',
+  );
+  assert.equal(
+    slideBgVariant(
+      '<div class="slide slide-content has-slide-bg has-slide-bg-cover has-slide-bg-dark-text">x</div>',
+    ),
+    null,
+  );
+});
+
 // ---------------------------------------------------------------------------
 // Pseudo-element layers (`::before` / `::after`)
 //

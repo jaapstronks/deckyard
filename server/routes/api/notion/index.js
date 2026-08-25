@@ -1,27 +1,92 @@
 /**
- * Notion API route handlers.
+ * Notion API route handlers: the seam over `server/routes/api/notion/`.
  *
- * This module provides the main entry point for Notion-related API endpoints.
- * The handlers are split into logical groups:
- * - status.js - Status/capability detection
- * - fetch.js - Fetch and publish endpoints
- * - import.js - Import and stream-import endpoints
- * - subjects.js - Subjects and compose endpoints (feature-gated)
- * - suggest.js - Suggest endpoint (feature-gated)
- * - utils.js - Shared utility functions
+ * Two declarative tables (always-available and feature-gated) dispatched
+ * through the shared {@link dispatchRoutes}; the concern modules underneath
+ * are reached only from here:
+ * - `status.js` - Status/capability detection
+ * - `fetch.js` - Fetch and publish endpoints
+ * - `import.js` - Import and stream-import endpoints
+ * - `subjects.js` - Subjects and compose endpoints (feature-gated)
+ * - `suggest.js` - Suggest endpoint (feature-gated)
+ * - `utils.js` - Shared utility functions
  */
+import { dispatchRoutes } from '../../../utils/router.js';
+import { withErrorHandler } from '../../../utils/http.js';
+import { getFeatureFlags } from '../../../config/flags-snapshot.js';
+import { handleNotionStatus } from './status.js';
+import { handleNotionFetch, handleNotionPublish } from './fetch.js';
+import { handleNotionImport, handleNotionImportStream } from './import.js';
+import { handleNotionSubjects, handleNotionCompose } from './subjects.js';
+import { handleNotionSuggest } from './suggest.js';
 
-// Status handler
-export { handleNotionStatus } from './status.js';
+/**
+ * Always-available Notion routes (A7.19 C8). Status is unconditional; the
+ * fetch/publish/import handlers each self-gate on `notionEnabled()` (Notion is
+ * *configured*) and 501 when it is not. Order mirrors the previous delegating
+ * chain exactly; method mismatch falls through (the chain had no 405).
+ *
+ * @type {import('../../../utils/router.js').Route[]}
+ */
+export const ROUTES = [
+  { method: 'GET', pattern: '/api/notion/status', handler: handleNotionStatus },
+  { method: 'POST', pattern: '/api/notion/fetch', handler: handleNotionFetch },
+  {
+    method: 'POST',
+    pattern: '/api/notion/publish',
+    handler: handleNotionPublish,
+  },
+  {
+    method: 'POST',
+    pattern: '/api/notion/import',
+    handler: handleNotionImport,
+  },
+  {
+    method: 'POST',
+    pattern: '/api/notion/import/stream',
+    handler: handleNotionImportStream,
+  },
+];
 
-// Fetch and publish handlers
-export { handleNotionFetch, handleNotionPublish } from './fetch.js';
+/**
+ * Feature-gated Notion routes: reached only when the `enableNotion` feature
+ * flag is on. Kept in a second table so the flag check stays a single
+ * module-wide guard in the entry function (route-dispatch.md § module-wide
+ * guards belong in the entry function), exactly where the old chain returned
+ * early before trying subjects/compose/suggest.
+ *
+ * @type {import('../../../utils/router.js').Route[]}
+ */
+export const GATED_ROUTES = [
+  {
+    method: 'POST',
+    pattern: '/api/notion/subjects',
+    handler: handleNotionSubjects,
+  },
+  {
+    method: 'POST',
+    pattern: '/api/notion/compose',
+    handler: handleNotionCompose,
+  },
+  {
+    method: 'POST',
+    pattern: '/api/notion/suggest',
+    handler: handleNotionSuggest,
+  },
+];
 
-// Import handlers
-export { handleNotionImport, handleNotionImportStream } from './import.js';
+/**
+ * Handle Notion API requests.
+ * @param {import('../../../utils/context.js').AuthedContext} ctx
+ * @returns {Promise<boolean>} true if a route handled the request.
+ */
+export const handleNotion = withErrorHandler('notion', async (ctx) => {
+  const handled = await dispatchRoutes(ROUTES, ctx);
+  if (handled) return true;
 
-// Subject and compose handlers (feature-gated)
-export { handleNotionSubjects, handleNotionCompose } from './subjects.js';
+  // Feature-gated endpoints: keep code shipped, but disabled unless explicitly enabled.
+  const flags = getFeatureFlags();
+  if (!flags?.enableNotion) return false;
 
-// Suggest handler (feature-gated)
-export { handleNotionSuggest } from './suggest.js';
+  return dispatchRoutes(GATED_ROUTES, ctx);
+});

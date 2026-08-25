@@ -3,7 +3,7 @@
  * (audit findings H6, H7, H8).
  *
  * H6 — the unauthenticated /embed/:publishId render-failure page leaked the
- *      server error message + full stack (`server/routes/static.js`). Gated
+ *      server error message + full stack (`server/routes/static/index.js`). Gated
  *      behind non-production now.
  * H7 — the JSON/markdown import endpoints returned `err.message` + `err.stack`
  *      in the 500 body (effectively public in sandbox/demo mode). Now generic.

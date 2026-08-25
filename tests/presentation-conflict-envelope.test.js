@@ -33,7 +33,7 @@ const { initializeStorage, __resetStorageForTests } =
 const { createPresentation, createPresentationVersion } =
   await import('../server/storage/presentations/index.js');
 const { handlePresentations } =
-  await import('../server/routes/api/presentations.js');
+  await import('../server/routes/api/presentations/index.js');
 
 const OWNER = 'owner@example.com';
 // A revision that will never match a freshly-seeded deck (revision 1), so the

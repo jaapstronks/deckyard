@@ -1,6 +1,6 @@
 /**
  * The shared route dispatcher (A7.19 C8 fase 1). `dispatchRoutes(ROUTES, ctx)`
- * is the matcher extracted verbatim from routes/api/presentations.js so that
+ * is the matcher extracted verbatim from routes/api/presentations/index.js so that
  * presentations.js and ai.js — and later the ~60 other route modules — share
  * one first-match form instead of hand-rolling a loop each.
  *

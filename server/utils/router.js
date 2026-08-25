@@ -7,7 +7,7 @@
  * against `docs/openapi.yaml` and the MCP tool list programmatically.
  *
  * Extracted verbatim from the matcher that grew inside
- * `routes/api/presentations.js` — the behaviour is unchanged, only shared.
+ * `routes/api/presentations/index.js` — the behaviour is unchanged, only shared.
  */
 
 /**

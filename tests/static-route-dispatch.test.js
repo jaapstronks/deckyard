@@ -13,7 +13,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import os from 'node:os';
 
-const { handleStatic } = await import('../server/routes/static.js');
+const { handleStatic } = await import('../server/routes/static/index.js');
 const { handleStaticFiles } =
   await import('../server/routes/static/static-files.js');
 

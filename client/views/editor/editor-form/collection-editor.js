@@ -7,6 +7,7 @@ import { fieldCardLink } from '../fields/card-link-field.js';
 import { renderImageFitField } from '../fields/image-fit.js';
 import { getInlineDescriptor } from '../inline-edit/descriptors.js';
 import { fieldEditor } from '../../../../shared/slide-types/field-editors.js';
+import { optionCopy } from '../fields/option-copy.js';
 import { resolveItemDefaults } from '../../../../shared/slide-types/item-defaults.js';
 import {
   fieldFormLayout,
@@ -410,16 +411,8 @@ export function createCollectionEditor({
         }
 
         if (f.type === 'enum' && typeof fieldEnum === 'function') {
-          // Resolve stamped option labelKeys here — the enum renderer shows
-          // `option.label` verbatim.
           const options = (Array.isArray(f.options) ? f.options : []).map(
-            (o) =>
-              o && typeof o === 'object' && o.labelKey
-                ? {
-                    ...o,
-                    label: t(o.labelKey, o.label ?? String(o.value ?? '')),
-                  }
-                : o,
+            optionCopy,
           );
           pushWidget(
             k,

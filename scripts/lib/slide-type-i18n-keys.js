@@ -13,25 +13,7 @@
  * which is exactly what lets the sync step delete its orphaned translations.
  */
 
-/**
- * Fold an option (string shorthand or object) into the four shapes the editor
- * reads. Mirrors the normalisation the field renderer applies at runtime, so the
- * generated keys line up with what the UI actually asks for.
- * @param {string|Object} opt
- * @returns {{value: string, label: string, title: string, ariaLabel: string, labelKey?: string, titleKey?: string, ariaLabelKey?: string}}
- */
-export function normalizeOption(opt) {
-  if (typeof opt === 'string')
-    return { value: opt, label: opt, title: opt, ariaLabel: opt };
-  if (opt && typeof opt === 'object') {
-    const value = String(opt.value ?? '');
-    const label = String(opt.label ?? opt.title ?? value);
-    const title = String(opt.title ?? opt.label ?? value);
-    const ariaLabel = String(opt.ariaLabel ?? opt.label ?? title ?? value);
-    return { ...opt, value, label, title, ariaLabel };
-  }
-  return { value: '', label: '', title: '', ariaLabel: '' };
-}
+import { normalizeOption } from '../../shared/ui-i18n-keys.js';
 
 /**
  * Every `slideType.*` key the registry produces, mapped to its English default.
@@ -81,9 +63,12 @@ export function slideTypeUiStrings(slideTypes) {
 
       for (const raw of Array.isArray(f?.options) ? f.options : []) {
         const opt = normalizeOption(raw);
-        // An option only contributes keys when it names them explicitly — the
-        // generated fallbacks below are the option *value*, which is a machine
-        // token, not copy.
+        // An option only contributes keys when it names them explicitly. The
+        // registry decides that (shared/ui-i18n-keys.js): it stamps a key only
+        // for copy the option actually declares, so a bare-string option — the
+        // machine token — reaches here keyless and is skipped. This branch went
+        // unreachable once the registry stamped every option; B145 made the two
+        // agree again.
         if (!(opt?.labelKey || opt?.titleKey || opt?.ariaLabelKey)) continue;
         if (opt.labelKey) add(opt.labelKey, opt.label);
         if (opt.titleKey) add(opt.titleKey, opt.title);
