@@ -320,7 +320,6 @@ export async function buildSlidesPdfHtml(
   // Public base URL for the video-slide "watch online" deep-link (empty when no
   // APP_URL/DOMAIN is configured; the resolver then falls back to provider URLs).
   const baseUrl = getAppBaseUrl();
-  const css = await loadExportCssBundle(repoRoot, theme, watermark);
 
   const rawTitle = pres.title || 'Presentation';
   const title = escapeHtml(rawTitle);
@@ -337,6 +336,15 @@ export async function buildSlidesPdfHtml(
   // fetched + recompressed only once. Also dedupes in-flight fetches.
   const embedCache = new Map();
   const embedStartedAt = Date.now();
+
+  // Loaded here rather than at the top of the function so the theme's own
+  // assets ride the same transform and cache as every other image: a theme
+  // background is full-bleed and is otherwise the single largest thing on the
+  // slide, and it would have been the one image embedded at full resolution.
+  const css = await loadExportCssBundle(repoRoot, theme, watermark, {
+    transform: imageTransform,
+    cache: embedCache,
+  });
 
   // Embed uploads referenced as field values. embedRemote inlines remote
   // http(s) images through the SSRF guard (or strips them) so no user-supplied

@@ -362,6 +362,43 @@ export async function embedLocalCssUrls(
  * @param {Map<string, Promise<string>>} [opts.cache] - Shared per-run embed cache.
  * @returns {Promise<string>}
  */
+/**
+ * Neutralize every `url(...)` in a stylesheet for a self-contained export:
+ * remote targets go through the SSRF guard (inlined, or blanked so nothing is
+ * fetched), local ones become data URLs because the document reaches Chrome
+ * through `setContent()` and has no base URL to resolve against.
+ *
+ * Both halves, always: a stylesheet that is handed to headless Chrome with a
+ * live remote `url()` is a server-side fetch of a user-supplied address, and a
+ * root-relative path that survives resolves to nothing. This is the CSS-text
+ * counterpart of what {@link embedImgSrcDataUrls} does for markup, extracted
+ * so the theme-vars block can take the same pass — it is assembled separately
+ * from the page markup, and used to take none at all.
+ *
+ * @param {string} repoRoot
+ * @param {string} cssText
+ * @param {Object} [opts]
+ * @param {boolean} [opts.includeClient] - Also inline `/client/` paths.
+ * @param {Function} [opts.transform] - Optional image-bytes transform.
+ * @param {Map<string, Promise<string>>} [opts.cache] - Shared per-run embed cache.
+ * @returns {Promise<string>}
+ */
+export async function embedCssUrlsForExport(
+  repoRoot,
+  cssText,
+  { includeClient = false, transform = null, cache = null } = {},
+) {
+  const remoteEmbedded = await embedRemoteCssUrls(repoRoot, cssText, {
+    transform,
+    cache,
+  });
+  return embedLocalCssUrls(repoRoot, remoteEmbedded, {
+    includeClient,
+    transform,
+    cache,
+  });
+}
+
 async function embedRemoteCssUrls(
   repoRoot,
   html,
