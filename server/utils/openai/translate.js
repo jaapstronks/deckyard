@@ -1,4 +1,7 @@
-import { SLIDE_TYPES } from '../../../shared/slide-types.js';
+import {
+  translatableItemKeysForType,
+  translatableKeysForType,
+} from '../../../shared/slide-types/text-fields.js';
 import { getLlmConfig } from '../llm/config.js';
 import { LlmError } from '../llm/error.js';
 import { requestChatCompletionContent } from '../llm/index.js';
@@ -29,42 +32,24 @@ try {
 
 /**
  * Get top-level translatable keys for a slide type.
- * Returns keys for fields with type 'string' or 'markdown'.
+ * @param {string} type - Slide type name
+ * @returns {string[]}
  */
 function translateKeysForSlideType(type) {
-  const def = SLIDE_TYPES?.[type];
-  if (!def || !Array.isArray(def.fields)) return [];
-  return def.fields
-    .filter(
-      (f) =>
-        f && (f.type === 'string' || f.type === 'markdown' || f.type === 'csv'),
-    )
-    .map((f) => f.key)
-    .filter((k) => typeof k === 'string' && k.trim());
+  return translatableKeysForType(type);
 }
 
 /**
- * Get items fields info for a slide type.
- * Returns an array of { key, itemKeys } for each 'items' field,
- * where itemKeys are the translatable keys within each item.
+ * Get items fields info for a slide type: `{ key, itemKeys }` for each
+ * `items` field that carries translatable text.
+ * @param {string} type - Slide type name
+ * @returns {{key: string, itemKeys: string[]}[]}
  */
 function itemsFieldsForSlideType(type) {
-  const def = SLIDE_TYPES?.[type];
-  if (!def || !Array.isArray(def.fields)) return [];
-  return def.fields
-    .filter((f) => f && f.type === 'items' && Array.isArray(f.itemFields))
-    .map((f) => ({
-      key: f.key,
-      itemKeys: f.itemFields
-        .filter(
-          (itemField) =>
-            itemField &&
-            (itemField.type === 'string' || itemField.type === 'markdown'),
-        )
-        .map((itemField) => itemField.key)
-        .filter((k) => typeof k === 'string' && k.trim()),
-    }))
-    .filter((info) => info.itemKeys.length > 0);
+  return [...translatableItemKeysForType(type)].map(([key, itemKeys]) => ({
+    key,
+    itemKeys,
+  }));
 }
 
 export async function translatePresentationStrings(

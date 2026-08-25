@@ -1,11 +1,14 @@
+import { translatableKeysForType as keysForType } from '../../../shared/slide-types/text-fields.js';
+
+/**
+ * Top-level translatable keys for a slide type, with the registry injected so
+ * the editor uses exactly the registry it rendered with. The rule itself lives
+ * in `shared/slide-types/text-fields.js`.
+ * @param {Object} args
+ * @param {Object} args.SLIDE_TYPES - Slide-type registry
+ * @param {string} args.type - Slide type name
+ * @returns {string[]}
+ */
 export function translatableKeysForType({ SLIDE_TYPES, type } = {}) {
-  const def = SLIDE_TYPES?.[type];
-  const fields = Array.isArray(def?.fields) ? def.fields : [];
-  return fields
-    .filter(
-      (f) =>
-        f && (f.type === 'string' || f.type === 'markdown' || f.type === 'csv'),
-    )
-    .map((f) => String(f.key || '').trim())
-    .filter(Boolean);
+  return keysForType(type, SLIDE_TYPES);
 }

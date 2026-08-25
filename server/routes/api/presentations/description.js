@@ -10,6 +10,7 @@ import {
 import { getOptionalString } from '../../../utils/request-validators.js';
 import { canReadPresentation } from '../../../utils/presentation-authz/index.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types.js';
+import { isTextField } from '../../../../shared/slide-types/text-fields.js';
 import { getLlmConfig } from '../../../utils/llm/config.js';
 import { requestChatCompletionContent } from '../../../utils/llm/index.js';
 import { extractJsonObject } from '../../../utils/openai/json.js';
@@ -41,7 +42,7 @@ function extractSlideText(slide) {
     if (shouldIgnoreTextKey(key)) continue;
     const val = content[key];
 
-    if (f.type === 'string' || f.type === 'markdown' || f.type === 'csv') {
+    if (isTextField(f)) {
       if (typeof val === 'string' && val.trim()) parts.push(val.trim());
       continue;
     }
@@ -53,7 +54,7 @@ function extractSlideText(slide) {
         for (const itf of itemFields) {
           if (!itf || typeof itf.key !== 'string') continue;
           if (shouldIgnoreTextKey(itf.key)) continue;
-          if (itf.type !== 'string' && itf.type !== 'markdown') continue;
+          if (!isTextField(itf)) continue;
           const iv = it[itf.key];
           if (typeof iv === 'string' && iv.trim()) parts.push(iv.trim());
         }

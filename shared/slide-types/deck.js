@@ -1,4 +1,5 @@
 import { cryptoUuid } from './helpers.js';
+import { isTextField } from './text-fields.js';
 import { pickBackgroundPreset } from '../theme-background-presets.js';
 import { resolveSlideBgImage } from './legacy-bg-image.js';
 import {
@@ -175,11 +176,7 @@ function normalizeDeckSlide(raw, theme = null) {
       }
       continue;
     }
-    if (
-      field.type === 'string' ||
-      field.type === 'markdown' ||
-      field.type === 'csv'
-    ) {
+    if (isTextField(field)) {
       if (typeof v !== 'string') continue;
       const t = v;
       if (field.required && !t.trim()) continue; // don't blank required fields
