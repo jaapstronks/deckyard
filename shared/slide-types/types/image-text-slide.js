@@ -5,6 +5,7 @@ import {
   objectPositionStyleAttrFromFocus,
   pickAltText,
   BACKGROUND_FIELD,
+  IMAGE_ROLE_FIELD,
 } from '../helpers.js';
 import { getSlideCopy } from '../slide-copy.js';
 import { markdownToSafeHtml } from '../../markdown.js';
@@ -137,39 +138,7 @@ export default {
       required: false,
       maxLength: 180,
     },
-    {
-      key: 'imageRole',
-      label: 'Image role',
-      labelKey: 'editor.slideField.imageRole.label',
-      type: 'enum',
-      required: false,
-      // One of the few options whose three slots really do say three different
-      // things, so it declares three keys rather than going through
-      // sharedOption(). They are shared keys all the same: image-text-slide and
-      // image-slide offer the identical choice (D60).
-      options: [
-        {
-          value: 'content',
-          label: 'Meaningful (needs alt text)',
-          labelKey: 'editor.slideField.imageRole.option.content.label',
-          title: 'This image conveys information and should have alt text.',
-          titleKey: 'editor.slideField.imageRole.option.content.title',
-          ariaLabel: 'Meaningful image',
-          ariaLabelKey: 'editor.slideField.imageRole.option.content.ariaLabel',
-        },
-        {
-          value: 'decorative',
-          label: 'Decorative (no alt)',
-          labelKey: 'editor.slideField.imageRole.option.decorative.label',
-          title:
-            'This image is decorative; it will be hidden from screen readers.',
-          titleKey: 'editor.slideField.imageRole.option.decorative.title',
-          ariaLabel: 'Decorative image',
-          ariaLabelKey:
-            'editor.slideField.imageRole.option.decorative.ariaLabel',
-        },
-      ],
-    },
+    IMAGE_ROLE_FIELD,
     {
       key: 'imageSide',
       label: 'Image position',

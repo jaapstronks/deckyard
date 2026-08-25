@@ -121,6 +121,93 @@ export const BACKGROUND_FIELD_EXTENDED = {
   ],
 };
 
+/**
+ * Standard image-role field: does this picture carry meaning, or is it decor?
+ *
+ * Type-independent (D60), and the two types that ask it — image-slide and
+ * image-text-slide — offer the identical choice, so it is one declaration
+ * rather than two verbatim copies. One of the few options whose three slots
+ * really do say three different things, so it declares three keys per option
+ * rather than going through sharedOption().
+ */
+export const IMAGE_ROLE_FIELD = {
+  key: 'imageRole',
+  label: 'Image role',
+  labelKey: 'editor.slideField.imageRole.label',
+  type: 'enum',
+  required: false,
+  options: [
+    {
+      value: 'content',
+      label: 'Meaningful (needs alt text)',
+      labelKey: 'editor.slideField.imageRole.option.content.label',
+      title: 'This image conveys information and should have alt text.',
+      titleKey: 'editor.slideField.imageRole.option.content.title',
+      ariaLabel: 'Meaningful image',
+      ariaLabelKey: 'editor.slideField.imageRole.option.content.ariaLabel',
+    },
+    {
+      value: 'decorative',
+      label: 'Decorative (no alt)',
+      labelKey: 'editor.slideField.imageRole.option.decorative.label',
+      title: 'This image is decorative; it will be hidden from screen readers.',
+      titleKey: 'editor.slideField.imageRole.option.decorative.title',
+      ariaLabel: 'Decorative image',
+      ariaLabelKey: 'editor.slideField.imageRole.option.decorative.ariaLabel',
+    },
+  ],
+};
+
+/**
+ * What an interactive slide does once its round closes — shared by the two
+ * audience-input types (poll, likert), which offer the identical choice.
+ *
+ * Pairs with ON_CLOSE_TARGET_FIELD: spread both, in that order.
+ */
+export const ON_CLOSE_FIELD = {
+  key: 'onClose',
+  label: 'When closed',
+  labelKey: 'editor.slideField.onClose.label',
+  type: 'enum',
+  required: false,
+  options: [
+    sharedOption(
+      'editor.slideField.onClose.option.stay',
+      'stay',
+      'Stay on slide',
+    ),
+    sharedOption(
+      'editor.slideField.onClose.option.next',
+      'next',
+      'Go to next slide',
+    ),
+    sharedOption(
+      'editor.slideField.onClose.option.goto',
+      'goto',
+      'Go to specific slide',
+    ),
+  ],
+};
+
+/**
+ * The destination for ON_CLOSE_FIELD's `goto` mode.
+ *
+ * The condition used to live in prose ("Only used when …"), which meant the
+ * form showed a dead control in the other two modes and the reader printed its
+ * value as a paragraph. Declared, both surfaces agree; and a slide id is
+ * machine data even when the field IS live, hence `presentational`.
+ */
+export const ON_CLOSE_TARGET_FIELD = {
+  key: 'onCloseTarget',
+  label: 'Target slide ID',
+  labelKey: 'editor.slideField.onCloseTarget.label',
+  type: 'string',
+  required: false,
+  maxLength: 100,
+  visibleWhen: { field: 'onClose', in: ['goto'] },
+  presentational: true,
+};
+
 function inferAltFromUrl(urlOrPath) {
   const raw = String(urlOrPath || '').trim();
   if (!raw) return '';
