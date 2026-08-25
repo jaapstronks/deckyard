@@ -1,4 +1,5 @@
 import { prefersReducedMotion } from '../../lib/dom/motion.js';
+import { disposeAll } from '../../lib/dom/disposal.js';
 
 function retriggerCssAnimation(el, { preClass, animClass } = {}) {
   if (!el || !el.classList) return;
@@ -38,12 +39,12 @@ function typeTextInElement(
       : String(el.textContent || '');
   if (el.dataset) el.dataset.fullText = fullText;
 
+  // No guard needed here: runTypeCleanups runs every cleanup through
+  // disposeAll, which is the best-effort boundary.
   const cleanup = () => {
-    try {
-      if (el.dataset?.fullText != null)
-        el.textContent = String(el.dataset.fullText);
-      el.style.minHeight = '';
-    } catch {}
+    if (el.dataset?.fullText != null)
+      el.textContent = String(el.dataset.fullText);
+    el.style.minHeight = '';
   };
   if (typeof registerCleanup === 'function') registerCleanup(cleanup);
 
@@ -64,14 +65,10 @@ function typeTextInElement(
     if (n >= len) {
       if (typeof setTimeoutSafe === 'function') {
         setTimeoutSafe(() => {
-          try {
-            el.style.minHeight = '';
-          } catch {}
+          el.style.minHeight = '';
         }, 0);
       } else {
-        try {
-          el.style.minHeight = '';
-        } catch {}
+        el.style.minHeight = '';
       }
       return;
     }
@@ -91,32 +88,18 @@ export function createPresenterAnimator() {
 
   const runTypeCleanups = () => {
     if (raf) {
-      try {
-        cancelAnimationFrame(raf);
-      } catch {}
+      cancelAnimationFrame(raf);
       raf = null;
     }
-    for (const fn of typeCleanups) {
-      try {
-        fn();
-      } catch {}
-    }
+    disposeAll(typeCleanups);
     typeCleanups = [];
   };
 
   const cancel = () => {
-    if (raf) {
-      try {
-        cancelAnimationFrame(raf);
-      } catch {}
-    }
+    if (raf) cancelAnimationFrame(raf);
     raf = null;
 
-    for (const t of timeouts) {
-      try {
-        clearTimeout(t);
-      } catch {}
-    }
+    for (const t of timeouts) clearTimeout(t);
     timeouts.clear();
 
     runTypeCleanups();
@@ -129,9 +112,7 @@ export function createPresenterAnimator() {
   const setTimeoutSafe = (fn, ms) => {
     const id = setTimeout(() => {
       timeouts.delete(id);
-      try {
-        fn();
-      } catch {}
+      disposeAll([fn]);
     }, ms);
     timeouts.add(id);
     return id;

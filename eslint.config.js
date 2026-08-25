@@ -79,6 +79,99 @@ const nodeBuiltinImportPatterns = [
   },
 ];
 
+// --- The silent-failure gate (B106/B111, extended to the client by B150) ---
+//
+// A failure that lands in an empty catch is the one thing you cannot debug:
+// no log line, no stack, no trace that anything went wrong. On the server
+// that risks an invisible broken background job; on the client it is worse —
+// a client-side failure in a beta product is exactly what a bug report cannot
+// reconstruct, and at the point this gate arrived ~270 of 849 client catch
+// sites swallowed without a stated reason.
+//
+// Three shapes of the same swallow, hence three selectors:
+//   1. `.catch(() => {})` — the silent *promise* swallow.
+//   2. `try { … } catch {}` — the silent *sync* swallow. The selector matches
+//      on the AST, so a comment-only body (`catch { /* ignore */ }`) is still
+//      empty: a bare "ignore" states no reason, which is the drift this gate
+//      exists to stop. A real reason is a body that records the failure, or
+//      an eslint-disable with a reason after the `--` separator.
+//   3. `void doThing()` — the *absent* catch: discards the promise without
+//      attaching anything, so a rejection is unhandled. (On the server,
+//      under Node's default --unhandled-rejections=throw, that kills the
+//      process — strictly worse than hiding the error. It was also a false
+//      signal half the time: 16 of the 50 sites B111 retired applied `void`
+//      to a synchronous call, where there was no promise to discard.)
+//
+// The selectors are shared between the two variants below so the two sides
+// cannot drift apart on what counts as a swallow; only the remedy in the
+// message differs, because the helpers live in different trees
+// (server/utils/fire-and-forget.js vs client/lib/dom/disposal.js +
+// client/lib/util/debug.js). Hoisted into consts because flat-config rule
+// entries replace rather than merge per rule name: the exemption blocks
+// below re-state their rule lists, and a drifted copy would un-gate this.
+const emptyPromiseCatchSelector =
+  "CallExpression[callee.property.name='catch']" +
+  '[arguments.0.body.body.length=0]';
+const emptyTryCatchSelector = 'CatchClause > BlockStatement[body.length=0]';
+const voidCallSelector = "UnaryExpression[operator='void'] > CallExpression";
+
+const serverSilentFailureRules = [
+  {
+    selector: emptyPromiseCatchSelector,
+    message:
+      'Empty .catch(() => {}) swallows the rejection without a trace. Use ' +
+      'fireAndForget(promise, label) from server/utils/fire-and-forget.js, or ' +
+      'give the catch a body that says why the failure is ignorable (B106).',
+  },
+  {
+    selector: emptyTryCatchSelector,
+    message:
+      'An empty catch {} (a comment-only body counts as empty) swallows the ' +
+      'failure without a trace. Give the catch a body that records the ' +
+      'failure or handles it, or an eslint-disable with the reason after ' +
+      '`--` (B106/B150).',
+  },
+  {
+    selector: voidCallSelector,
+    message:
+      'void doThing() discards a promise without a catch — an unhandled ' +
+      'rejection can kill the process. Use fireAndForget(promise, label) from ' +
+      'server/utils/fire-and-forget.js (or .catch(ignoreRejection) where the ' +
+      'rejection is expected and frequent). If the callee is synchronous, ' +
+      'drop the `void` — there is no promise to discard (B111).',
+  },
+];
+
+const clientSilentFailureRules = [
+  {
+    selector: emptyPromiseCatchSelector,
+    message:
+      'Empty .catch(() => {}) swallows the rejection without a trace. Give ' +
+      'the catch a body that records the failure — debugLog(label, err) from ' +
+      'client/lib/util/debug.js at minimum — or says why it is ignorable ' +
+      '(B106/B150).',
+  },
+  {
+    selector: emptyTryCatchSelector,
+    message:
+      'An empty catch {} (a comment-only body counts as empty) leaves a ' +
+      'client failure with no trace — the one thing a bug report cannot ' +
+      'reconstruct. For disposal/teardown, call disposeAll([...]) from ' +
+      'client/lib/dom/disposal.js; otherwise give the catch a body that ' +
+      'records the failure (debugLog from client/lib/util/debug.js) or an ' +
+      'eslint-disable with the reason after `--` (B150).',
+  },
+  {
+    selector: voidCallSelector,
+    message:
+      'void doThing() discards a promise without a catch, so the rejection ' +
+      'surfaces as an unhandled rejection with no context. Attach a .catch ' +
+      'that records the failure (debugLog from client/lib/util/debug.js). ' +
+      'If the callee is synchronous, drop the `void` — there is no promise ' +
+      'to discard (B111/B150).',
+  },
+];
+
 const clientRestrictedSyntax = [
   {
     selector: "CallExpression[callee.name='t'][arguments.length<2]",
@@ -187,6 +280,7 @@ const clientRestrictedSyntax = [
       'document). createOverlay registers itself, so overlays need nothing; ' +
       'a hand-rolled popover calls registerOverlayCloser(el, close) (A7.33).',
   },
+  ...clientSilentFailureRules,
 ];
 
 // One overlay vocabulary (A7.16 cluster 1). Overlays are built by
@@ -260,52 +354,6 @@ const createElementRestriction = {
     'ensureStylesheet/ensureScript in client/lib/dom/head-assets.js, and the ' +
     'three font providers through client/lib/theme/font-assets.js (B150, ' +
     'docs/developer/linting.md).',
-};
-
-// A background promise whose rejection lands in an empty `.catch(() => {})`
-// is the one failure you cannot debug: no log line, no stack, no trace that
-// anything went wrong. `fireAndForget(promise, label)`
-// (server/utils/fire-and-forget.js) does the same job — it stops the
-// unhandled rejection from killing the process — and leaves a labelled log
-// line behind (B106). Where a swallow is genuinely correct, say so with a
-// non-empty catch body that logs or comments why.
-//
-// Hoisted into a const because flat-config rule entries replace rather than
-// merge per rule name: the `server/config/**` block below re-states it after
-// dropping the env restrictions, and a drifted copy would un-gate it there.
-const emptyCatchRestriction = {
-  selector:
-    "CallExpression[callee.property.name='catch']" +
-    '[arguments.0.body.body.length=0]',
-  message:
-    'Empty .catch(() => {}) swallows the rejection without a trace. Use ' +
-    'fireAndForget(promise, label) from server/utils/fire-and-forget.js, or ' +
-    'give the catch a body that says why the failure is ignorable (B106).',
-};
-
-// The other half of the same gate (B111). `emptyCatchRestriction` above catches
-// the *silent* swallow; this one catches the *absent* catch. `void doThing()`
-// reads as a deliberate decision and is the opposite: it discards the promise
-// without attaching anything, so a rejection is unhandled — and under Node's
-// default `--unhandled-rejections=throw` that takes the process down, which is
-// strictly worse than hiding the error.
-//
-// It was also a false signal half the time: 16 of the 50 sites this rule
-// retired applied `void` to a *synchronous* call, where there was no promise to
-// discard at all.
-//
-// The allowlist is empty on purpose. A background promise gets
-// `fireAndForget(promise, label)`; one whose rejection is both expected and
-// frequent gets `.catch(ignoreRejection)` — both from
-// server/utils/fire-and-forget.js. A synchronous call needs no operator.
-const voidCallRestriction = {
-  selector: "UnaryExpression[operator='void'] > CallExpression",
-  message:
-    'void doThing() discards a promise without a catch — an unhandled ' +
-    'rejection can kill the process. Use fireAndForget(promise, label) from ' +
-    'server/utils/fire-and-forget.js (or .catch(ignoreRejection) where the ' +
-    'rejection is expected and frequent). If the callee is synchronous, drop ' +
-    'the `void` — there is no promise to discard (B111).',
 };
 
 export default [
@@ -463,8 +511,7 @@ export default [
             'Do not alias or destructure process.env — read each variable via ' +
             'envStr/envBool/envInt/envList from server/config/utils.js (B64).',
         },
-        emptyCatchRestriction,
-        voidCallRestriction,
+        ...serverSilentFailureRules,
       ],
     },
   },
@@ -475,11 +522,7 @@ export default [
   {
     files: ['server/config/**/*.js'],
     rules: {
-      'no-restricted-syntax': [
-        'error',
-        emptyCatchRestriction,
-        voidCallRestriction,
-      ],
+      'no-restricted-syntax': ['error', ...serverSilentFailureRules],
     },
   },
 

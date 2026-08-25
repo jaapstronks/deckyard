@@ -100,15 +100,16 @@ test('server/config/** is covered too', async () => {
   assert.equal(hits.length, 1);
 });
 
-test('the client is not covered', async () => {
-  // Deliberate scope: the browser has no process to kill, and an unhandled
-  // rejection there is a console line. If that changes, widen the rule rather
-  // than assuming it already applies.
+test('the client is covered too (B150)', async () => {
+  // Widened by B150. The browser has no process to kill, but a discarded
+  // rejection there is exactly the silent client failure the gate exists to
+  // stop — same selector, client-flavored remedy (debugLog instead of
+  // fireAndForget).
   const hits = await lintProbe(
     'export function f() {\n  void doThing();\n}\n',
     'client/views/void-gate-probe.js',
   );
-  assert.deepEqual(hits, []);
+  assert.equal(hits.length, 1);
 });
 
 /** Walk `server/` for files with a `void <call>()` statement in them. */

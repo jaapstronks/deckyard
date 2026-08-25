@@ -3,6 +3,8 @@ import { isLiveSlideType } from '../../../shared/slide-types/runtime.js';
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 import { morphTransition } from './morph-engine.js';
 import { h } from '../../lib/dom.js';
+import { disposeAll } from '../../lib/dom/disposal.js';
+import { debugLog } from '../../lib/util/debug.js';
 
 export function filterPresentSlides(presentation) {
   return (presentation?.slides || []).filter((s) => {
@@ -206,17 +208,13 @@ export function createPresenterDeckController({
   let pulseTid = null;
   const pulseStepComplete = (section) => {
     if (!section) return;
-    try {
-      if (pulseTid) clearTimeout(pulseTid);
-    } catch {}
+    if (pulseTid) clearTimeout(pulseTid);
     section.classList.remove('sb-step-complete');
     // Force reflow so re-adding the class restarts the animation.
     void section.offsetWidth;
     section.classList.add('sb-step-complete');
     pulseTid = setTimeout(() => {
-      try {
-        section.classList.remove('sb-step-complete');
-      } catch {}
+      section.classList.remove('sb-step-complete');
       pulseTid = null;
     }, 520);
   };
@@ -288,12 +286,8 @@ export function createPresenterDeckController({
     const preset = String(stageWrap?.dataset?.slideTransition || '').trim();
 
     // Cancel any in-flight morph transition.
-    if (typeof morphTransitionCancel === 'function') {
-      try {
-        morphTransitionCancel();
-      } catch {}
-      morphTransitionCancel = null;
-    }
+    disposeAll([morphTransitionCancel]);
+    morphTransitionCancel = null;
 
     // Morph transition: FLIP-based element morphing between slides.
     if (preset === 'morph' && nextIdx !== idx && stageWrap) {
@@ -332,13 +326,7 @@ export function createPresenterDeckController({
     // instead of instantly switching which slide is "active".
     if (preset === 'cube' && nextIdx !== idx && stageWrap) {
       // Cancel any in-flight cube transition.
-      if (typeof cubeTransitionCancel === 'function') {
-        try {
-          cubeTransitionCancel();
-        } catch {
-          // ignore
-        }
-      }
+      disposeAll([cubeTransitionCancel]);
       cubeTransitionCancel = null;
 
       const dir = nextIdx > idx ? 'next' : 'prev';
@@ -390,25 +378,15 @@ export function createPresenterDeckController({
       stageWrap.addEventListener('transitionend', onEnd);
       const tid = setTimeout(() => finish(), 900);
       cubeTransitionCancel = () => {
-        try {
-          clearTimeout(tid);
-        } catch {}
-        try {
-          stageWrap.removeEventListener('transitionend', onEnd);
-        } catch {}
-        try {
-          stageWrap.classList.remove('is-cube-animating');
-          delete stageWrap.dataset.cubePhase;
-          delete stageWrap.dataset.cubeDir;
-        } catch {}
+        clearTimeout(tid);
+        stageWrap.removeEventListener('transitionend', onEnd);
+        stageWrap.classList.remove('is-cube-animating');
+        delete stageWrap.dataset.cubePhase;
+        delete stageWrap.dataset.cubeDir;
       };
 
       requestAnimationFrame(() => {
-        try {
-          stageWrap.dataset.cubePhase = 'go';
-        } catch {
-          // ignore
-        }
+        stageWrap.dataset.cubePhase = 'go';
       });
 
       return;
@@ -587,8 +565,10 @@ export function createPresenterDeckController({
         : -1;
       idx = nextIdx >= 0 ? nextIdx : clamp(idx);
       show(idx);
-    } catch {
-      // ignore
+    } catch (err) {
+      // Keep presenting on the deck we already have; the next SSE refresh
+      // retries. Recorded so a stale deck is diagnosable.
+      debugLog('[presenter] refreshDeck failed', err);
     }
   };
 

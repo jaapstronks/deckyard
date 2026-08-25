@@ -1,5 +1,6 @@
 import { api } from '../../lib/api.js';
 import { h } from '../../lib/dom.js';
+import { disposeAll } from '../../lib/dom/disposal.js';
 import { attachThumbScale } from '../../lib/slide-runtime/thumb-scale.js';
 import {
   cleanupSlideRuntimes,
@@ -275,9 +276,7 @@ export async function renderNotes(root, sessionId, { user } = {}) {
   return () => {
     sse.stop();
     notesEditor.destroy();
-    try {
-      uiMode.detach?.();
-    } catch {}
+    disposeAll([() => uiMode.detach?.()]);
     cleanupSlideRuntimes(previewWrap);
     cleanupSlideRuntimes(nextPreviewWrap);
     try {
@@ -287,9 +286,7 @@ export async function renderNotes(root, sessionId, { user } = {}) {
       detachNextThumb();
     } catch {}
     document.documentElement.classList.remove('is-notes');
-    try {
-      detachSwipe?.();
-    } catch {}
+    disposeAll([detachSwipe]);
     qaCtl.destroy();
   };
 }

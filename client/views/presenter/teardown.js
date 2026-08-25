@@ -13,7 +13,14 @@
  * this closure is built (the keyboard handler opens/closes it at runtime), so
  * it is read through a getter; every other handle is stable by the time the
  * view finishes mounting.
+ *
+ * Every step runs through `disposeAll` (client/lib/dom/disposal.js): one
+ * broken handle must not abort the rest of the unmount, and each failure is
+ * recorded via debugLog instead of vanishing in a per-handle empty catch
+ * (B150).
  */
+
+import { disposeAll } from '../../lib/dom/disposal.js';
 
 /**
  * @param {object} handles
@@ -43,68 +50,44 @@ export function createPresenterTeardown({
   keepAliveTid,
 }) {
   return () => {
-    animator.cancel();
-    try {
-      const section = stage?.querySelector?.('.deck-slide.is-active') || null;
-      if (section) pauseVideoEmbeds(section);
-    } catch {}
-    cleanupSlideRuntimes(stage);
-    try {
-      stage.innerHTML = '';
-    } catch {}
-    try {
-      detachKeys?.();
-    } catch {}
-    try {
-      detachSwipe?.();
-    } catch {}
-    document.removeEventListener('fullscreenchange', syncFullscreenClass);
-    document.documentElement.classList.remove('is-fullscreen');
-    if (typeof closeSessionEvents === 'function') closeSessionEvents();
-    // Null the captured handle so a double unmount doesn't re-close the
-    // session — mirrors the original inline teardown's guard.
-    closeSessionEvents = null;
-    toolsMenu.cleanup();
-    try {
-      detachStageScale?.();
-    } catch {}
-    try {
-      chromeAutoHide?.destroy?.();
-    } catch {}
-    try {
-      startCurtain?.dismiss?.();
-    } catch {}
-    try {
-      highlighter?.destroy?.();
-    } catch {}
-    try {
-      autoAdvance?.destroy?.();
-    } catch {}
-    try {
-      presenterConsole?.destroy?.();
-    } catch {}
-    try {
-      window.removeEventListener('pagehide', handlePageHide);
-    } catch {}
-    try {
-      presentChannel.close();
-    } catch {}
-    try {
-      getShortcutsOverlay()?.close?.();
-    } catch {}
-    videoLayer.destroy();
-    edgeHintCtl.destroy();
-    if (keepAliveTid) {
-      try {
-        clearInterval(keepAliveTid);
-      } catch {}
-      keepAliveTid = null;
-    }
-    if (document.fullscreenElement) {
-      try {
-        const p = document.exitFullscreen && document.exitFullscreen();
-        if (p?.catch) p.catch(() => {});
-      } catch {}
-    }
+    disposeAll([
+      () => animator.cancel(),
+      () => {
+        const section = stage?.querySelector?.('.deck-slide.is-active') || null;
+        if (section) pauseVideoEmbeds(section);
+      },
+      () => cleanupSlideRuntimes(stage),
+      () => {
+        stage.innerHTML = '';
+      },
+      detachKeys,
+      detachSwipe,
+      () =>
+        document.removeEventListener('fullscreenchange', syncFullscreenClass),
+      () => document.documentElement.classList.remove('is-fullscreen'),
+      () => {
+        if (typeof closeSessionEvents === 'function') closeSessionEvents();
+        // Null the captured handle so a double unmount doesn't re-close the
+        // session — mirrors the original inline teardown's guard.
+        closeSessionEvents = null;
+      },
+      () => toolsMenu.cleanup(),
+      detachStageScale,
+      () => chromeAutoHide?.destroy?.(),
+      () => startCurtain?.dismiss?.(),
+      () => highlighter?.destroy?.(),
+      () => autoAdvance?.destroy?.(),
+      () => presenterConsole?.destroy?.(),
+      () => window.removeEventListener('pagehide', handlePageHide),
+      () => presentChannel.close(),
+      () => getShortcutsOverlay()?.close?.(),
+      () => videoLayer.destroy(),
+      () => edgeHintCtl.destroy(),
+      () => {
+        if (keepAliveTid) clearInterval(keepAliveTid);
+        keepAliveTid = null;
+      },
+      () => (document.fullscreenElement ? document.exitFullscreen() : null),
+    ]);
   };
 }

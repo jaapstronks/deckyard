@@ -8,6 +8,7 @@
  */
 
 import { h } from '../../lib/dom.js';
+import { disposeAll } from '../../lib/dom/disposal.js';
 import { spinner } from '../../lib/dom/spinner.js';
 import { api } from '../../lib/api.js';
 import { loadThemeById } from '../../lib/theme/theme.js';
@@ -416,9 +417,7 @@ export async function renderShareViewer(root, token) {
     cleanupSlideRuntimes(shell);
     videoLayer?.destroy();
     videoLayer = null;
-    try {
-      autoAdvanceInstance?.destroy?.();
-    } catch {}
+    disposeAll([() => autoAdvanceInstance?.destroy?.()]);
     autoAdvanceInstance = null;
     // Clean up analytics tracker
     if (analyticsTracker) {
