@@ -1,6 +1,7 @@
 // Shared helpers used by slide type registry + renderers.
 
 import { SLIDE_BG_ID_RE } from '../theme-slide-backgrounds.js';
+import { sharedOption } from '../ui-i18n-keys.js';
 import { hostMatches, hostMatchesAny } from '../url-host.js';
 
 export function escapeHtml(s) {
@@ -24,15 +25,22 @@ export function nonEmpty(s) {
 /**
  * Standard background field definition for slide types.
  * Use this constant instead of duplicating the field definition.
+ *
+ * One object literal, spread into 26 slide types — so without explicit keys it
+ * mints 26 copies of "Background" and 26 of each option, and eleven translators
+ * translate the same three words 78 times. The `editor.slideField.*` keys make
+ * it one key per text: the field is type-independent, which is what that
+ * namespace means since D60 (see registry.js).
  */
 export const BACKGROUND_FIELD = {
   key: 'background',
   label: 'Background',
+  labelKey: 'editor.slideField.background.label',
   type: 'enum',
   required: false,
   options: [
-    { value: 'lime', label: 'Lime' },
-    { value: 'mist', label: 'Mist' },
+    sharedOption('editor.slideField.background.option.lime', 'lime', 'Lime'),
+    sharedOption('editor.slideField.background.option.mist', 'mist', 'Mist'),
   ],
 };
 
@@ -50,12 +58,13 @@ export const BACKGROUND_FIELD = {
 export const TABLE_STYLE_FIELD = {
   key: 'tableStyle',
   label: 'Table style',
+  labelKey: 'editor.slideField.tableStyle.label',
   type: 'enum',
   required: false,
   options: [
-    { value: 'plain', label: 'Plain' },
-    { value: 'panel', label: 'Panel' },
-    { value: 'soft', label: 'Soft' },
+    sharedOption('editor.slideField.tableStyle.option.plain', 'plain', 'Plain'),
+    sharedOption('editor.slideField.tableStyle.option.panel', 'panel', 'Panel'),
+    sharedOption('editor.slideField.tableStyle.option.soft', 'soft', 'Soft'),
   ],
 };
 
@@ -75,20 +84,40 @@ export function tableStyleClass(style) {
 /**
  * Extended background field with additional theme colors.
  * Use for slide types that support more background options.
+ *
+ * Shares `lime`/`mist` with BACKGROUND_FIELD by pointing at the same keys —
+ * same text, same key, whichever of the two constants a type spreads.
  */
 export const BACKGROUND_FIELD_EXTENDED = {
   key: 'background',
   label: 'Background',
+  labelKey: 'editor.slideField.background.label',
   type: 'enum',
   required: false,
   options: [
-    { value: 'lime', label: 'Lime' },
-    { value: 'mist', label: 'Mist' },
-    { value: 'dark', label: 'Dark' },
-    { value: 'accent', label: 'Accent' },
-    { value: 'brand-1', label: 'Brand 1' },
-    { value: 'brand-2', label: 'Brand 2' },
-    { value: 'custom', label: 'Custom color' },
+    sharedOption('editor.slideField.background.option.lime', 'lime', 'Lime'),
+    sharedOption('editor.slideField.background.option.mist', 'mist', 'Mist'),
+    sharedOption('editor.slideField.background.option.dark', 'dark', 'Dark'),
+    sharedOption(
+      'editor.slideField.background.option.accent',
+      'accent',
+      'Accent',
+    ),
+    sharedOption(
+      'editor.slideField.background.option.brand-1',
+      'brand-1',
+      'Brand 1',
+    ),
+    sharedOption(
+      'editor.slideField.background.option.brand-2',
+      'brand-2',
+      'Brand 2',
+    ),
+    sharedOption(
+      'editor.slideField.background.option.custom',
+      'custom',
+      'Custom color',
+    ),
   ],
 };
 

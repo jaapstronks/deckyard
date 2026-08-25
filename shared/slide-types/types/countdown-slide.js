@@ -52,6 +52,7 @@ export default {
     {
       key: 'title',
       label: 'Title',
+      labelKey: 'editor.slideField.title.label',
       type: 'string',
       required: false,
       maxLength: 120,

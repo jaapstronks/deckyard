@@ -17,6 +17,7 @@ import { alignGroup, groupAlignClass } from '../field-groups.js';
  */
 const HEADER_BLOCK = alignGroup('header-block', 'headerAlign', {
   label: 'Header alignment',
+  labelKey: 'editor.slideField.headerAlign.label',
   schematicKind: 'logos',
 });
 import { getSlideCopy } from '../slide-copy.js';
@@ -82,6 +83,7 @@ export default {
     {
       key: 'title',
       label: 'Title',
+      labelKey: 'editor.slideField.title.label',
       type: 'string',
       required: false,
       maxLength: 120,
@@ -90,6 +92,7 @@ export default {
     {
       key: 'subheading',
       label: 'Subheading',
+      labelKey: 'editor.slideField.subheading.label',
       type: 'string',
       required: false,
       maxLength: 220,

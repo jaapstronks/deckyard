@@ -14,6 +14,7 @@ export default {
     {
       key: 'title',
       label: 'Title',
+      labelKey: 'editor.slideField.title.label',
       type: 'string',
       required: true,
       maxLength: 120,
@@ -21,6 +22,7 @@ export default {
     {
       key: 'body',
       label: 'Body (Markdown)',
+      labelKey: 'editor.slideField.body.label',
       type: 'markdown',
       required: false,
       maxLength: 500,

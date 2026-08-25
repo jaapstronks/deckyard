@@ -50,6 +50,7 @@ export default {
     {
       key: 'title',
       label: 'Title',
+      labelKey: 'editor.slideField.title.label',
       type: 'string',
       required: true,
       maxLength: 120,
@@ -57,6 +58,7 @@ export default {
     {
       key: 'subheading',
       label: 'Subheading',
+      labelKey: 'editor.slideField.subheading.label',
       type: 'string',
       required: false,
       maxLength: 200,
@@ -64,6 +66,7 @@ export default {
     {
       key: 'bottomSubheading',
       label: 'Bottom subheading',
+      labelKey: 'editor.slideField.bottomSubheading.label',
       type: 'string',
       required: false,
       maxLength: 200,
@@ -71,6 +74,7 @@ export default {
     {
       key: 'items',
       label: 'Stages',
+      labelKey: 'editor.slideField.stages.label',
       type: 'items',
       // Funnel stages are an ordered progression (top to bottom). Projects to <ol>.
       ordered: true,
@@ -93,6 +97,7 @@ export default {
         {
           key: 'label',
           label: 'Stage label',
+          labelKey: 'editor.slideField.stageLabel.label',
           type: 'string',
           required: true,
           maxLength: 60,
@@ -107,6 +112,7 @@ export default {
         {
           key: 'text',
           label: 'Description',
+          labelKey: 'editor.slideField.description.label',
           type: 'string',
           required: false,
           maxLength: 120,

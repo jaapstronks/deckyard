@@ -11,6 +11,7 @@ export default {
     {
       key: 'question',
       label: 'Question',
+      labelKey: 'editor.slideField.question.label',
       type: 'string',
       required: true,
       maxLength: 200,

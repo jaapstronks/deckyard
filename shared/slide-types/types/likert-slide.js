@@ -5,6 +5,7 @@ import {
   BACKGROUND_FIELD,
 } from '../helpers.js';
 import { getSlideCopy } from '../slide-copy.js';
+import { sharedOption } from '../../ui-i18n-keys.js';
 
 export default {
   structure: 'collection',
@@ -49,17 +50,31 @@ export default {
     {
       key: 'onClose',
       label: 'When closed',
+      labelKey: 'editor.slideField.onClose.label',
       type: 'enum',
       required: false,
       options: [
-        { value: 'stay', label: 'Stay on slide' },
-        { value: 'next', label: 'Go to next slide' },
-        { value: 'goto', label: 'Go to specific slide' },
+        sharedOption(
+          'editor.slideField.onClose.option.stay',
+          'stay',
+          'Stay on slide',
+        ),
+        sharedOption(
+          'editor.slideField.onClose.option.next',
+          'next',
+          'Go to next slide',
+        ),
+        sharedOption(
+          'editor.slideField.onClose.option.goto',
+          'goto',
+          'Go to specific slide',
+        ),
       ],
     },
     {
       key: 'onCloseTarget',
       label: 'Target slide ID',
+      labelKey: 'editor.slideField.onCloseTarget.label',
       type: 'string',
       required: false,
       maxLength: 100,

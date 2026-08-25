@@ -31,7 +31,7 @@ import pyramidSlide from './types/pyramid-slide.js';
 import cycleSlide from './types/cycle-slide.js';
 import gallerySlide from './types/gallery-slide.js';
 import customHtmlSlide from './types/custom-html-slide.js';
-import { addUiI18nKeysToSlideType } from '../ui-i18n-keys.js';
+import { addUiI18nKeysToSlideType, sharedOption } from '../ui-i18n-keys.js';
 import { DEFAULT_THEME_ID } from '../constants/themes.js';
 import {
   CORE_NAMESPACE,
@@ -67,23 +67,6 @@ export const GLOBAL_SLIDE_FIELD_KEYS = [
   'slideLogo',
 ];
 
-/**
- * One enum option of a global slide field, carrying its single shared i18n key.
- *
- * The option's `title` and `ariaLabel` are derived from its label, so all
- * three key slots point at the same key — one text, one key. The key arrives
- * as a full literal (never assembled from parts) so the i18n audit's
- * orphan check can see every reference by exact match.
- *
- * @param {string} key - shared i18n key, e.g. `editor.slideField.slideLogo.option.none`
- * @param {string} value - stored enum value
- * @param {string} label - English default
- * @returns {Object}
- */
-function sharedOption(key, value, label) {
-  return { value, label, labelKey: key, titleKey: key, ariaLabelKey: key };
-}
-
 // Both a11y fields share the placeholder text "Optional" — same text, same key.
 const OPTIONAL_PLACEHOLDER_KEY = 'editor.slideField.optionalPlaceholder';
 
@@ -93,6 +76,15 @@ const OPTIONAL_PLACEHOLDER_KEY = 'editor.slideField.optionalPlaceholder';
 // wins both in addUiI18nKeysToSlideType() and in the key walker
 // (scripts/lib/slide-type-i18n-keys.js), so the per-type keys are never minted
 // for these fields (B140).
+//
+// `editor.slideField.*` is the namespace for a **type-independent field**, not
+// only for a global one (D60). The registry's globals were merely the first
+// tenants; the shared field constants (BACKGROUND_FIELD, TABLE_STYLE_FIELD,
+// ACTIONS_FIELD, alignGroup()'s enum) and the field labels that repeat verbatim
+// across types (`title`, `subheading`, `caption`, …) live there too. Whether a
+// field is injected here or declared by each type is a registry implementation
+// detail; it is not a difference in what the copy MEANS, and only a difference
+// in meaning earns its own namespace (B146).
 function withGlobalSlideFields(def) {
   const d = def && typeof def === 'object' ? def : {};
   const fields = Array.isArray(d.fields) ? d.fields : [];

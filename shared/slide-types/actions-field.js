@@ -1,18 +1,25 @@
 import { escapeHtml } from './helpers.js';
+import { sharedOption } from '../ui-i18n-keys.js';
 
 /**
  * Shared actions field definition for slide types.
  * Allows adding CTA buttons to slides.
+ *
+ * Type-independent, so its copy lives under `editor.slideField.*` (D60): the
+ * two types that spread it today would otherwise mint two copies of all seven
+ * strings, and the third type to want CTA buttons a third.
  */
 export const ACTIONS_FIELD = {
   key: 'actions',
   label: 'Action buttons',
+  labelKey: 'editor.slideField.actions.label',
   type: 'items',
   maxItems: 3,
   itemFields: [
     {
       key: 'label',
       label: 'Button label',
+      labelKey: 'editor.slideField.actions.item.label.label',
       type: 'string',
       required: true,
       maxLength: 40,
@@ -20,6 +27,7 @@ export const ACTIONS_FIELD = {
     {
       key: 'url',
       label: 'URL',
+      labelKey: 'editor.slideField.actions.item.url.label',
       type: 'string',
       required: true,
       maxLength: 500,
@@ -27,12 +35,25 @@ export const ACTIONS_FIELD = {
     {
       key: 'style',
       label: 'Style',
+      labelKey: 'editor.slideField.actions.item.style.label',
       type: 'enum',
       required: false,
       options: [
-        { value: 'primary', label: 'Primary' },
-        { value: 'secondary', label: 'Secondary' },
-        { value: 'outline', label: 'Outline' },
+        sharedOption(
+          'editor.slideField.actions.item.style.option.primary',
+          'primary',
+          'Primary',
+        ),
+        sharedOption(
+          'editor.slideField.actions.item.style.option.secondary',
+          'secondary',
+          'Secondary',
+        ),
+        sharedOption(
+          'editor.slideField.actions.item.style.option.outline',
+          'outline',
+          'Outline',
+        ),
       ],
     },
   ],

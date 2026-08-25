@@ -15,6 +15,7 @@ import {
   ensureImageTextImages,
   IMAGE_TEXT_IMAGE_DEFAULTS,
 } from './image-text-slide/images.js';
+import { sharedOption } from '../../ui-i18n-keys.js';
 
 export default {
   structure: 'singleton',
@@ -27,6 +28,7 @@ export default {
     {
       key: 'title',
       label: 'Title',
+      labelKey: 'editor.slideField.title.label',
       type: 'string',
       required: true,
       maxLength: 120,
@@ -34,6 +36,7 @@ export default {
     {
       key: 'body',
       label: 'Body (Markdown)',
+      labelKey: 'editor.slideField.body.label',
       type: 'markdown',
       // Long-form prose beside the image: same as content-slide.
       toolbar: ['heading'],
@@ -48,6 +51,7 @@ export default {
       // (ensureImageTextImages).
       key: 'image',
       label: 'Image',
+      labelKey: 'editor.slideField.image.label',
       type: 'image',
       hidden: true,
       required: false,
@@ -59,6 +63,7 @@ export default {
     {
       key: 'images',
       label: 'Images',
+      labelKey: 'editor.slideField.images.label',
       type: 'items',
       required: false,
       minItems: 0,
@@ -69,6 +74,7 @@ export default {
         {
           key: 'alt',
           label: 'Alt text',
+          labelKey: 'editor.slideField.alt.label',
           type: 'string',
           required: false,
           maxLength: 180,
@@ -91,6 +97,7 @@ export default {
           // resolve it through the inline descriptor. Same as gallery.
           key: 'focusX',
           label: 'Focus X',
+          labelKey: 'editor.slideField.focusX.label',
           type: 'number',
           hidden: true,
           required: false,
@@ -101,6 +108,7 @@ export default {
         {
           key: 'focusY',
           label: 'Focus Y',
+          labelKey: 'editor.slideField.focusY.label',
           type: 'number',
           hidden: true,
           required: false,
@@ -113,6 +121,7 @@ export default {
     {
       key: 'caption',
       label: 'Caption',
+      labelKey: 'editor.slideField.caption.label',
       type: 'string',
       required: false,
       maxLength: 160,
@@ -122,6 +131,7 @@ export default {
       // per-image alt is the edited one, so this never renders as a control.
       key: 'alt',
       label: 'Alt text',
+      labelKey: 'editor.slideField.alt.label',
       type: 'string',
       hidden: true,
       required: false,
@@ -130,21 +140,33 @@ export default {
     {
       key: 'imageRole',
       label: 'Image role',
+      labelKey: 'editor.slideField.imageRole.label',
       type: 'enum',
       required: false,
+      // One of the few options whose three slots really do say three different
+      // things, so it declares three keys rather than going through
+      // sharedOption(). They are shared keys all the same: image-text-slide and
+      // image-slide offer the identical choice (D60).
       options: [
         {
           value: 'content',
           label: 'Meaningful (needs alt text)',
+          labelKey: 'editor.slideField.imageRole.option.content.label',
           title: 'This image conveys information and should have alt text.',
+          titleKey: 'editor.slideField.imageRole.option.content.title',
           ariaLabel: 'Meaningful image',
+          ariaLabelKey: 'editor.slideField.imageRole.option.content.ariaLabel',
         },
         {
           value: 'decorative',
           label: 'Decorative (no alt)',
+          labelKey: 'editor.slideField.imageRole.option.decorative.label',
           title:
             'This image is decorative; it will be hidden from screen readers.',
+          titleKey: 'editor.slideField.imageRole.option.decorative.title',
           ariaLabel: 'Decorative image',
+          ariaLabelKey:
+            'editor.slideField.imageRole.option.decorative.ariaLabel',
         },
       ],
     },
@@ -176,6 +198,7 @@ export default {
     {
       key: 'layout',
       label: 'Layout',
+      labelKey: 'editor.slideField.layout.label',
       type: 'enum',
       required: false,
       options: [
@@ -243,6 +266,7 @@ export default {
       // normalizeContent. Carried data, never a control.
       key: 'focusX',
       label: 'Focus X',
+      labelKey: 'editor.slideField.focusX.label',
       type: 'number',
       hidden: true,
       required: false,
@@ -255,6 +279,7 @@ export default {
     {
       key: 'focusY',
       label: 'Focus Y',
+      labelKey: 'editor.slideField.focusY.label',
       type: 'number',
       hidden: true,
       required: false,
@@ -267,13 +292,18 @@ export default {
     {
       key: 'density',
       label: 'Text size',
+      labelKey: 'editor.slideField.density.label',
       type: 'enum',
       required: false,
       // 'auto' keeps the default sizing; 'compact' steps the copy down one
       // size so more of it fits. Same vocabulary as list-slide's density field.
       options: [
-        { value: 'auto', label: 'Auto' },
-        { value: 'compact', label: 'Small' },
+        sharedOption('editor.slideField.density.option.auto', 'auto', 'Auto'),
+        sharedOption(
+          'editor.slideField.density.option.compact',
+          'compact',
+          'Small',
+        ),
       ],
     },
     BACKGROUND_FIELD,

@@ -64,6 +64,7 @@ export default {
     {
       key: 'title',
       label: 'Title',
+      labelKey: 'editor.slideField.title.label',
       type: 'string',
       required: false,
       maxLength: 120,
@@ -71,6 +72,7 @@ export default {
     {
       key: 'subheading',
       label: 'Subheading',
+      labelKey: 'editor.slideField.subheading.label',
       type: 'string',
       required: false,
       maxLength: 200,
@@ -78,6 +80,7 @@ export default {
     {
       key: 'bottomSubheading',
       label: 'Bottom subheading',
+      labelKey: 'editor.slideField.bottomSubheading.label',
       type: 'string',
       required: false,
       maxLength: 200,
@@ -85,6 +88,7 @@ export default {
     {
       key: 'layout',
       label: 'Layout',
+      labelKey: 'editor.slideField.layout.label',
       type: 'enum',
       required: false,
       options: [
@@ -96,6 +100,7 @@ export default {
     {
       key: 'images',
       label: 'Images',
+      labelKey: 'editor.slideField.images.label',
       type: 'items',
       required: true,
       minItems: 2,
@@ -110,6 +115,7 @@ export default {
         {
           key: 'src',
           label: 'Image URL',
+          labelKey: 'editor.slideField.imageUrl.label',
           type: 'image',
           required: true,
         },
@@ -118,6 +124,7 @@ export default {
         {
           key: 'focusX',
           label: 'Focus X',
+          labelKey: 'editor.slideField.focusX.label',
           type: 'number',
           required: false,
           min: 0,
@@ -128,6 +135,7 @@ export default {
         {
           key: 'focusY',
           label: 'Focus Y',
+          labelKey: 'editor.slideField.focusY.label',
           type: 'number',
           required: false,
           min: 0,
@@ -138,6 +146,7 @@ export default {
         {
           key: 'caption',
           label: 'Caption',
+          labelKey: 'editor.slideField.caption.label',
           type: 'string',
           required: false,
           maxLength: 100,
@@ -145,6 +154,7 @@ export default {
         {
           key: 'alt',
           label: 'Alt text',
+          labelKey: 'editor.slideField.alt.label',
           type: 'string',
           required: false,
           maxLength: 200,

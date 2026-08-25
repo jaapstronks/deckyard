@@ -64,6 +64,7 @@ export default {
     {
       key: 'title',
       label: 'Title',
+      labelKey: 'editor.slideField.title.label',
       type: 'string',
       required: true,
       maxLength: 120,
@@ -71,6 +72,7 @@ export default {
     {
       key: 'caption',
       label: 'Caption',
+      labelKey: 'editor.slideField.caption.label',
       type: 'string',
       required: false,
       maxLength: 240,
@@ -122,6 +124,7 @@ export default {
       // sibling `colCount` and `headerRow` keys.
       key: 'rows',
       label: 'Rows',
+      labelKey: 'editor.slideField.rows.label',
       type: 'items',
       required: false,
       maxItems: MAX_ROWS,
