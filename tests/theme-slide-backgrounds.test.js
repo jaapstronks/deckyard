@@ -3,11 +3,16 @@ import assert from 'node:assert/strict';
 
 import {
   normalizeSlideBackgrounds,
+  slideBackgroundContrastClass,
   slideBackgroundCssVars,
   slideBackgroundsCssText,
 } from '../shared/theme-slide-backgrounds.js';
 import { bgClass, bgClassExtended } from '../shared/slide-types/helpers.js';
-import { newSlide, validateSlide } from '../shared/slide-types/presentation.js';
+import {
+  newSlide,
+  renderSlideHtml,
+  validateSlide,
+} from '../shared/slide-types/presentation.js';
 
 test('normalizeSlideBackgrounds keeps valid entries and fills defaults', () => {
   const out = normalizeSlideBackgrounds([
@@ -172,5 +177,113 @@ test('validateSlide accepts theme variant ids for the background field only', ()
   assert.equal(
     validateSlide(slide).filter((e) => e.includes('background')).length,
     1,
+  );
+});
+
+const CONTRAST_ENTRIES = normalizeSlideBackgrounds([
+  { id: 'calm', value: '#140a26', textColor: '#ffffff' },
+  { id: 'paper', value: '#f6f3ec', textColor: '#171512' },
+  { id: 'plain', value: '#cccccc' },
+  { id: 'tokenised', value: '#333333', textColor: 'var(--t-color-text-light)' },
+]);
+
+test('slideBackgroundContrastClass reads the luminance a variant declares', () => {
+  // A light textColor is a statement that the ground under it is dark.
+  assert.equal(
+    slideBackgroundContrastClass(CONTRAST_ENTRIES, 'calm'),
+    'has-slide-bg-light-text',
+  );
+  assert.equal(
+    slideBackgroundContrastClass(CONTRAST_ENTRIES, ' Paper '),
+    'has-slide-bg-dark-text',
+  );
+  // No textColor is no declaration, and neither is one we cannot read.
+  assert.equal(slideBackgroundContrastClass(CONTRAST_ENTRIES, 'plain'), '');
+  assert.equal(slideBackgroundContrastClass(CONTRAST_ENTRIES, 'tokenised'), '');
+  assert.equal(slideBackgroundContrastClass(CONTRAST_ENTRIES, 'nope'), '');
+  assert.equal(slideBackgroundContrastClass(CONTRAST_ENTRIES, ''), '');
+  assert.equal(slideBackgroundContrastClass(null, 'calm'), '');
+});
+
+test('the class it reports matches the --slide-on-inverted the generator emits', () => {
+  // Both answers come from the same question — how light the variant's own
+  // text is — so they may never disagree: the base class in 00-base.css sets
+  // --slide-on-inverted too, on a slide the generated rule also matches.
+  const css = slideBackgroundsCssText(CONTRAST_ENTRIES);
+  for (const [id, pole] of [
+    ['calm', 'var(--slide-on-light)'],
+    ['paper', 'var(--slide-on-dark)'],
+  ]) {
+    const rule = css.slice(css.indexOf(`.slide.slide-bg-${id}`));
+    assert.ok(
+      rule.includes(`--slide-on-inverted: ${pole};`),
+      `${id} must pair its inverted plane with ${pole}`,
+    );
+    assert.equal(
+      slideBackgroundContrastClass(CONTRAST_ENTRIES, id),
+      pole === 'var(--slide-on-light)'
+        ? 'has-slide-bg-light-text'
+        : 'has-slide-bg-dark-text',
+    );
+  }
+});
+
+const contrastTheme = { slideBackgrounds: CONTRAST_ENTRIES };
+
+function renderWith(content, ctx = {}) {
+  const slide = newSlide({ type: 'content-slide' });
+  Object.assign(slide.content, content);
+  return renderSlideHtml(slide, { theme: contrastTheme, ...ctx });
+}
+
+test('renderSlideHtml publishes a variant luminance on the slide root', () => {
+  assert.match(
+    renderWith({ background: 'calm' }),
+    /class="slide[^"]*\bslide-bg-calm\b[^"]*\bhas-slide-bg-light-text\b/,
+  );
+  assert.match(
+    renderWith({ background: 'paper' }),
+    /class="slide[^"]*\bhas-slide-bg-dark-text\b/,
+  );
+});
+
+test('a variant that declares no luminance gets no class', () => {
+  for (const background of ['plain', 'tokenised', 'lime', 'mist', '']) {
+    assert.doesNotMatch(
+      renderWith({ background }),
+      /has-slide-bg-(light|dark)-text/,
+      `background "${background}" must not claim a luminance`,
+    );
+  }
+  // No theme in context is no answer either — that is today's behaviour.
+  assert.doesNotMatch(
+    renderSlideHtml(
+      Object.assign(newSlide({ type: 'content-slide' }), {
+        content: { background: 'calm' },
+      }),
+      {},
+    ),
+    /has-slide-bg-(light|dark)-text/,
+  );
+});
+
+test('a background image outranks the variant it covers', () => {
+  // The image IS the ground the text sits on, so its own answer wins.
+  const forced = renderWith({
+    background: 'calm',
+    slideBgImage: '/uploads/photo.jpg',
+    slideBgText: 'dark',
+  });
+  assert.match(forced, /has-slide-bg-dark-text/);
+  assert.doesNotMatch(forced, /has-slide-bg-light-text/);
+
+  // An image with no contrast answer of its own leaves the variant's standing.
+  assert.match(
+    renderWith({
+      background: 'calm',
+      slideBgImage: '/uploads/photo.jpg',
+      slideBgText: 'default',
+    }),
+    /has-slide-bg-light-text/,
   );
 });

@@ -36,7 +36,10 @@ export default {
       labelKey: 'editor.field.textColumns',
       type: 'enum',
       required: false,
-      options: ['two-column', 'one-column'],
+      options: [
+        { value: 'two-column', label: 'Two columns' },
+        { value: 'one-column', label: 'One column' },
+      ],
     },
     {
       key: 'density',

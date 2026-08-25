@@ -4,7 +4,7 @@
  * Every `/api/follow/:id/...` row queries Postgres `uuid` columns with the id
  * verbatim (present_sessions, presentations), so a non-uuid id used to 500
  * out of the uuid parser (22P02) before any reason mapping. The guard in
- * `routes/api/follow.js` answers `404 not_found` instead, before storage is
+ * `routes/api/follow/index.js` answers `404 not_found` instead, before storage is
  * touched — pinned here by running the handler with no database at all: a
  * guard that let the id through would surface as a different response.
  *
@@ -14,7 +14,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
 
-import { handleFollowPublic } from '../server/routes/api/follow.js';
+import { handleFollowPublic } from '../server/routes/api/follow/index.js';
 import { isUuid, UUID_RE } from '../server/utils/uuid.js';
 
 /** Minimal ServerResponse stand-in that records status and body. */

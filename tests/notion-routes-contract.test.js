@@ -1,7 +1,7 @@
 /**
  * The Notion-import route layer (test-coverage gap map, B40 — surface 9).
  *
- * `server/routes/api/notion.js` (+ the `notion/` handlers) is the Notion fetch/
+ * `server/routes/api/notion/index.js` (+ the `notion/` handlers) is the Notion fetch/
  * publish/import surface. The storage beneath it is exercised elsewhere; the
  * route layer — how the routes behave when Notion is not configured, and what
  * they validate before touching the network — was not.
@@ -53,7 +53,7 @@ const { createStorageScope } = await import('../server/utils/context.js');
 const { invalidatePermission } =
   await import('../server/storage/cache/permission-cache.js');
 const { resetRateLimitBuckets } = await import('../server/utils/rate-limit.js');
-const { handleNotion } = await import('../server/routes/api/notion.js');
+const { handleNotion } = await import('../server/routes/api/notion/index.js');
 
 // ---------------------------------------------------------------------------
 // The cast

@@ -32,6 +32,9 @@ export {
   isUnrestricted,
 } from './presentations.js';
 
+// Share link permissions
+export { canCommentWithShareLink } from './share-links.js';
+
 // Comment permissions
 export {
   canResolveComment,

@@ -39,7 +39,7 @@ import {
   storageError,
 } from '../../../utils/http.js';
 import { getTrimmedString } from '../../../utils/request-validators.js';
-import { canCommentWithShareLink } from '../../../utils/presentation-authz/share-links.js';
+import { canCommentWithShareLink } from '../../../utils/presentation-authz/index.js';
 import {
   buildRequestUrl,
   shouldUseSecureCookies,

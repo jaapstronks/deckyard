@@ -1,35 +1,35 @@
-import { badRequest, withErrorHandler } from '../../utils/http.js';
-import { dispatchRoutes } from '../../utils/router.js';
-import { handlePresentationsList } from './presentations/list.js';
-import { handlePopularPresentations } from './presentations/popular.js';
-import { handlePresentationsSearch } from './presentations/search.js';
-import { handlePresentationsCreate } from './presentations/create.js';
-import { handlePresentationsImportJson } from './presentations/import-json.js';
-import { handlePresentationsImportDeck } from './presentations/import-deck.js';
-import { handlePresentationsImportMarkdown } from './presentations/import-markdown.js';
-import { handlePresentationVisibility } from './presentations/visibility.js';
+import { badRequest, withErrorHandler } from '../../../utils/http.js';
+import { dispatchRoutes } from '../../../utils/router.js';
+import { handlePresentationsList } from './list.js';
+import { handlePopularPresentations } from './popular.js';
+import { handlePresentationsSearch } from './search.js';
+import { handlePresentationsCreate } from './create.js';
+import { handlePresentationsImportJson } from './import-json.js';
+import { handlePresentationsImportDeck } from './import-deck.js';
+import { handlePresentationsImportMarkdown } from './import-markdown.js';
+import { handlePresentationVisibility } from './visibility.js';
 import {
   handlePresentationItem,
   handlePresentationRevision,
-} from './presentations/presentation.js';
-import { handlePresentationDuplicate } from './presentations/duplicate.js';
-import { handlePresentationDescriptionGenerate } from './presentations/description.js';
-import { handlePresentationTranslateFields } from './presentations/translate-fields.js';
-import { handlePresentationTranslateMissing } from './presentations/translate-missing.js';
-import { handlePresentationTranslate } from './presentations/translate.js';
+} from './presentation.js';
+import { handlePresentationDuplicate } from './duplicate.js';
+import { handlePresentationDescriptionGenerate } from './description.js';
+import { handlePresentationTranslateFields } from './translate-fields.js';
+import { handlePresentationTranslateMissing } from './translate-missing.js';
+import { handlePresentationTranslate } from './translate.js';
 import {
   handlePresentationVersions,
   handlePresentationVersionItem,
   handlePresentationVersionExport,
   handlePresentationVersionCompareAi,
   handlePresentationSessionEnd,
-} from './presentations/versions.js';
-import { handlePresentationRestoreVersion } from './presentations/restore.js';
+} from './versions.js';
+import { handlePresentationRestoreVersion } from './restore.js';
 import {
   handlePresentationsTrashList,
   handlePresentationRestore,
   handlePresentationPermanentDelete,
-} from './presentations/trash.js';
+} from './trash.js';
 import {
   handlePresentationCommentsList,
   handlePresentationCommentsCreate,
@@ -43,14 +43,14 @@ import {
   handlePresentationCommentsMarkRead,
   handlePresentationCommentCounts,
   handlePresentationCommentEvents,
-} from './presentations/comments.js';
-import { handlePresentationImportSlidesAsImages } from './presentations/import-slides-as-images.js';
-import { handlePresentationSubscription } from './presentations/subscription.js';
-import { handlePresentationAnalyze } from './presentations/analyze.js';
-import { handlePresentationTags } from './tags.js';
-import { handleOwnershipTransfer } from './presentations/ownership.js';
-import { handleRenderSlide } from './presentations/render-slide.js';
-import { handlePresentationThumbnail } from './presentations/thumbnail.js';
+} from './comments.js';
+import { handlePresentationImportSlidesAsImages } from './import-slides-as-images.js';
+import { handlePresentationSubscription } from './subscription.js';
+import { handlePresentationAnalyze } from './analyze.js';
+import { handlePresentationTags } from '../tags.js';
+import { handleOwnershipTransfer } from './ownership.js';
+import { handleRenderSlide } from './render-slide.js';
+import { handlePresentationThumbnail } from './thumbnail.js';
 import {
   handleSlideLocksList,
   handleSlideLockStatus,
@@ -58,19 +58,16 @@ import {
   handleSlideLockRefresh,
   handleSlideLockRelease,
   handleSlideLocksReleaseAll,
-} from './presentations/slide-locks.js';
-import {
-  handleAnalyzeThemeChange,
-  handleChangeTheme,
-} from './presentations/change-theme.js';
+} from './slide-locks.js';
+import { handleAnalyzeThemeChange, handleChangeTheme } from './change-theme.js';
 
 /**
  * This module is mounted after the auth gate, so every handler here receives an
  * {@link AuthedContext} and the routes are declared in the shared {@link Route}
  * form dispatched by {@link dispatchRoutes}.
  *
- * @typedef {import('../../utils/context.js').AuthedContext} AuthedContext
- * @typedef {import('../../utils/router.js').Route} Route
+ * @typedef {import('../../../utils/context.js').AuthedContext} AuthedContext
+ * @typedef {import('../../../utils/router.js').Route} Route
  */
 
 // ── Adapters for the few handlers whose call shape differs from

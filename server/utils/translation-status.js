@@ -1,4 +1,4 @@
-import { SLIDE_TYPES } from '../../shared/slide-types.js';
+import { translatableKeysForType } from '../../shared/slide-types/text-fields.js';
 import {
   normalizeLang,
   otherLang,
@@ -7,17 +7,7 @@ import {
 
 export { normalizeLang, otherLang };
 
-function translateKeysForSlideType(type) {
-  const def = SLIDE_TYPES?.[type];
-  if (!def || !Array.isArray(def.fields)) return [];
-  return def.fields
-    .filter(
-      (f) =>
-        f && (f.type === 'string' || f.type === 'markdown' || f.type === 'csv'),
-    )
-    .map((f) => f.key)
-    .filter((k) => typeof k === 'string' && k.trim());
-}
+const translateKeysForSlideType = translatableKeysForType;
 
 function buildSlideIndex(slides) {
   const arr = Array.isArray(slides) ? slides : [];

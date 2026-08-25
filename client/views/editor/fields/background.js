@@ -1,22 +1,15 @@
 import { getUiLocale, t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom.js';
+import { optionCopy } from './option-copy.js';
 
 export function createBackgroundFields({ theme } = {}) {
   const themeVars =
     theme?.cssVars && typeof theme.cssVars === 'object' ? theme.cssVars : {};
 
-  const normalizeOption = (o) => {
-    if (typeof o === 'string') {
-      const v = String(o);
-      return { value: v, label: v };
-    }
-    if (o && typeof o === 'object') {
-      const value = String(o.value ?? '');
-      const label = String(o.label ?? o.title ?? value);
-      return { ...o, value, label };
-    }
-    return { value: '', label: '' };
-  };
+  // The picker reads its option copy through the one resolver every enum
+  // surface uses, so a background option's label arrives translated instead of
+  // as the stored token (B145).
+  const normalizeOption = optionCopy;
 
   const themeLabelForValue = (value) => {
     // Optional theme feature: allow naming background options.
