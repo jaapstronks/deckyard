@@ -255,6 +255,67 @@ test('only slide-background vars are candidates', () => {
   assert.equal(found.has('--t-slide-gradient-bg'), false);
 });
 
+test('a gradient stacked over an image is left alone, whatever names it', () => {
+  // A variant whose design IS a photo with a legibility scrim on top. The
+  // raster page runs offline, so rasterizing this would drop the image and
+  // rewrite the var to its bare fallback colour — the artwork gone, silently,
+  // and only in the export. Reported by the CIIIC fork, 2026-08-25.
+  // `image-set()` is here because matching only the spelling `url(` would
+  // leave the same bug one spelling over.
+  const images = [
+    "url('/custom/themes/x/assets/bg.png') center / cover no-repeat",
+    'image-set("/custom/themes/x/assets/bg.png" 1x, "/x@2x.png" 2x)',
+  ];
+  for (const image of images) {
+    const css = `.ps-theme {
+  --t-slide-bg-international: linear-gradient(90deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%), ${image}, #13393a;
+  --t-slide-bg-calm: radial-gradient(circle at 50% 50%, rgba(1,2,3,0.5) 0%, rgba(1,2,3,0) 70%), #06090b;
+}`;
+    const found = findGradientBgVars(css);
+    assert.deepEqual(
+      [...found.keys()],
+      ['--t-slide-bg-calm'],
+      `a background built with ${image.slice(0, 12)}… must not be rasterized`,
+    );
+  }
+});
+
+test('an inlined data URL does not disturb the declaration after it', () => {
+  // What the bundle now hands this module: a variant whose local artwork has
+  // been inlined, so the value carries `url('data:…;base64,…')` with a `;`
+  // inside it. The declaration itself is skipped (it holds an image), but the
+  // scan must still arrive at the next one intact.
+  for (const q of ['"', "'"]) {
+    const css = `.ps-theme {
+  --t-slide-bg-art: radial-gradient(circle at 50% 50%, rgba(1,2,3,0.5), transparent), url(${q}data:image/png;base64,AAAA;BBBB${q}) center / cover;
+  --t-slide-bg-calm: radial-gradient(circle at 20% 30%, rgba(9,9,9,0.4), transparent), #06090b;
+}`;
+    const found = findGradientBgVars(css);
+    assert.deepEqual(
+      [...found.keys()],
+      ['--t-slide-bg-calm'],
+      `a ${q}-quoted data URL must leave the next declaration reachable`,
+    );
+    assert.equal(
+      found.get('--t-slide-bg-calm'),
+      'radial-gradient(circle at 20% 30%, rgba(9,9,9,0.4), transparent), #06090b',
+      'and that declaration must be captured whole',
+    );
+  }
+});
+
+test('the value of a rasterizable candidate is captured whole', () => {
+  // The other half of the same parser question, on a value with no url() at
+  // all: the captured text is what gets resolved and rendered, so a cut here
+  // would rasterize a different gradient than the theme declared.
+  const value =
+    'radial-gradient(circle at 62% 18%, rgba(1,2,3,0.5) 0%, rgba(1,2,3,0) 70%), #06090b';
+  const found = findGradientBgVars(
+    `.ps-theme {\n  --t-slide-bg-calm: ${value};\n}`,
+  );
+  assert.equal(found.get('--t-slide-bg-calm'), value);
+});
+
 test('var resolution refuses to guess', () => {
   assert.equal(
     resolveCssVars('circle at var(--g1x) 10%', { '--g1x': '62%' }),

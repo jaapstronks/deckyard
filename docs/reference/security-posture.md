@@ -51,8 +51,9 @@ access), so a `file://` reference in slide content will not load regardless.
 ## SSRF guard on server-side image fetches
 
 **Where:** `server/utils/ssrf-guard.js`; applied on the export/render path via the
-`embedRemote` option of `server/utils/html-utils.js` and from
-`server/export/pdf-slides.js`.
+`embedRemote` option of `server/utils/html-utils.js`, from
+`server/export/pdf-slides.js`, and over the theme-vars block in
+`server/export/css-bundle.js`.
 
 A slide can carry a user-controlled image URL. On export/render the server (or
 headless Chrome, via inlined images) may fetch that URL, so an unguarded fetch is
@@ -64,6 +65,16 @@ IPv4-mapped forms). Remote `http(s)` images referenced as field values, in
 `<img src>`, and in CSS `url()` backgrounds are each inlined through this guard or
 stripped, so no user-supplied URL reaches headless Chrome at `setContent` time.
 Fetches are also size- and time-capped as a memory-DoS bound.
+
+A **theme** is user-supplied too, and it takes a different route into the same
+document: a `slideBackgrounds` variant value is free-form CSS any authenticated
+user can set in the theme editor, and it lands in the generated theme-vars
+block rather than in the page markup. That block is assembled separately from
+`pagesHtml` and used to take no embed pass at all, so a `url(http://…)` there
+reached Chrome live. `loadExportCssBundle()` now runs it through the same guard
+unconditionally — every caller either hands the result to `setContent()` or
+ships it as a self-contained `.html`, so there is no path that wants the other
+answer. Pinned by `tests/export-theme-var-assets.test.js`.
 
 **Deliberately not covered:** full DNS-rebinding protection. The guard validates
 resolved addresses and then fetches by hostname, which re-resolves — an attacker

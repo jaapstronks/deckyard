@@ -13,6 +13,7 @@ import {
   sandboxWatermarkHtml,
 } from '../utils/sandbox-watermark.js';
 import {
+  embedCssUrlsForExport,
   readTextIfExists,
   toDataUrlIfLocal,
   imageFieldKeysForType,
@@ -27,9 +28,22 @@ import { mapLimit, exportEmbedConcurrency } from '../utils/map-limit.js';
  * @param {string} repoRoot - Repository root path
  * @param {Object|null} theme - Theme object
  * @param {*} watermark - Watermark config (or null)
+ * @param {Object} [opts]
+ * @param {Function} [opts.transform] - Image-bytes transform for inlined theme
+ *   assets. A theme background is full-bleed, so the flat cap fits; without
+ *   this the largest image on the slide would be the one image embedded at
+ *   full resolution.
+ * @param {Map<string, Promise<string>>} [opts.cache] - Shared per-run embed
+ *   cache, so an asset used both in a theme var and on a slide is fetched and
+ *   recompressed once.
  * @returns {Promise<Object>} CSS bundle
  */
-export async function loadExportCssBundle(repoRoot, theme, watermark) {
+export async function loadExportCssBundle(
+  repoRoot,
+  theme,
+  watermark,
+  { transform = null, cache = null } = {},
+) {
   // `chromeCss` is the viewer/export chrome entrypoint (export.css), NOT the
   // editor's app.css. An exported deck is a viewer: it needs slide CSS + theme
   // + a thin presenter/toolbar chrome layer, never the ~620 KB of editor-only
@@ -59,7 +73,33 @@ export async function loadExportCssBundle(repoRoot, theme, watermark) {
     readCustomStylesCss(repoRoot),
   );
 
-  const themeVarsCss = themeVarsCssText(theme);
+  // Theme vars take the same `url()` pass as the page markup. The export
+  // document reaches Chrome through `setContent()`, so it has no base URL:
+  // `pagesHtml` has been embedded for a while, but this block is assembled
+  // separately and never passed by. Two consequences, one per half of the
+  // pass:
+  //
+  //   - a LOCAL path resolved to nothing, so any theme var holding an asset —
+  //     `--t-logo-url`, or a `slideBackgrounds` variant whose value is artwork
+  //     — rendered empty in every PDF and PNG;
+  //   - a REMOTE URL stayed live, and a theme's variant value is free-form
+  //     text any authenticated user can set in the theme editor, so it reached
+  //     headless Chrome as a server-side fetch of an attacker-chosen address.
+  //     `docs/reference/security-posture.md` § SSRF guard states that no
+  //     user-supplied URL reaches Chrome at `setContent` time; until now that
+  //     was true of the markup and not of this block.
+  //
+  // Unconditional on purpose: every caller of this bundle either hands the
+  // result to `setContent()` or ships it as a self-contained `.html`, and both
+  // want the same answer. A flag here would only be a way to get it wrong.
+  // `includeClient` stays off — a theme var has no legitimate `/client/`
+  // target, and leaving it on would let a theme inline arbitrary client-tree
+  // bytes into every export.
+  const themeVarsCss = await embedCssUrlsForExport(
+    repoRoot,
+    themeVarsCssText(theme),
+    { transform, cache },
+  );
   const wmOn = sandboxWatermarkEnabled(watermark);
   const wmCss = wmOn ? sandboxWatermarkCss() : '';
   const wmHtml = wmOn ? sandboxWatermarkHtml() : '';
