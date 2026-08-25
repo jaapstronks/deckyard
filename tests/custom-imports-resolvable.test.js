@@ -1,5 +1,6 @@
 /**
- * Every relative import in `custom/` resolves to a file that exists.
+ * Every relative import in `custom/` resolves to a file that exists, and names
+ * an export that file actually has.
  *
  * This is the fork's half of the import-resolve gate. `import-x/no-unresolved`
  * (in `eslint.config.js`) covers `client/`, `server/`, `shared/`, `scripts/`,
@@ -14,15 +15,27 @@
  * when `client/lib/` was split into sub-folders and a fork's `client/app.js`
  * still imported `./lib/branding.js` (fork-upgrade finding B1).
  *
- * Upstream `custom/` is empty, so the real scan finds nothing to reject. Two
+ * Resolving the file is not enough, which the v1.10 → v1.27 fork upgrade
+ * proved: `shared/slide-types/helpers.js` resolved perfectly while the `esc`
+ * the fork imported from it had been renamed to `escapeHtml`. The custom
+ * loader catches the throw and logs it, so the app boots with the fork's title
+ * slide simply *absent* — on a deck that uses it the failure presents as "our
+ * title slide is gone", not as an error, and in a 550-commit merge that reads
+ * as something you broke yourself. So the named-import check below asks the
+ * second question: does the module export the name. Barrels are followed
+ * through `export * from './…'`, since that is how `shared/` publishes most of
+ * what a custom type imports.
+ *
+ * Upstream `custom/` is empty, so the real scans find nothing to reject. Two
  * things keep that from reading as a pass:
  *
  * 1. The "the scan would notice files" assertion — the walk works and the
  *    drop-in directories are where they should be.
- * 2. The **self-test** at the bottom, which runs `brokenImportsIn()` over a
- *    throwaway temp tree holding one import that resolves and one that does not,
- *    and asserts it names exactly the broken one. That is what makes this file a
- *    gate rather than a promise: the resolution logic executes on every run,
+ * 2. The **self-tests** at the bottom, which run the same functions over
+ *    throwaway temp trees built to make them fail — a moved module, a renamed
+ *    export, a renamed export behind a barrel, a default that isn't there —
+ *    and assert they name exactly the broken ones. That is what makes this
+ *    file a gate rather than a promise: the logic executes on every run,
  *    upstream included, on input designed to make it fail.
  *
  * The fork lane exercises the real path too: `tests/fixtures/fork-slide-types/`
@@ -79,6 +92,11 @@ function resolveRelative(specifier, fromDir) {
   return fs.existsSync(base) && fs.statSync(base).isFile() ? base : null;
 }
 
+/** A specifier that names a file rather than a package. */
+function isRelative(n) {
+  return Boolean(n) && (n.startsWith('.') || n.startsWith('/'));
+}
+
 /**
  * @param {string} file absolute path
  * @returns {Promise<string[]>} the relative specifiers it imports
@@ -90,8 +108,110 @@ async function relativeImportsOf(file) {
       .map((i) => i.n)
       // `n` is undefined for a dynamic import with a computed specifier, and a
       // specifier that does not start with `.` or `/` is a package.
-      .filter((n) => n && (n.startsWith('.') || n.startsWith('/')))
+      .filter(isRelative)
   );
+}
+
+/** The `{ … }` clause of an import/export statement, or null when it has none. */
+function braceClause(statement) {
+  const open = statement.indexOf('{');
+  const close = statement.indexOf('}', open + 1);
+  return open === -1 || close === -1 ? null : statement.slice(open + 1, close);
+}
+
+/**
+ * The names a statement binds FROM the module it names — `{ a, b as c }` binds
+ * `a` and `b`, a default import binds `default`. A namespace import
+ * (`* as ns`) binds nothing checkable: the whole module object is the binding,
+ * and reading a missing property off it is a runtime `undefined`, not a load
+ * failure, so it is out of scope here.
+ * @param {string} statement - Source text of one import/export statement
+ * @returns {string[]}
+ */
+function importedNames(statement) {
+  const names = [];
+  const clause = braceClause(statement);
+  if (clause) {
+    for (const part of clause.split(',')) {
+      const name = part
+        .trim()
+        .split(/\s+as\s+/)[0]
+        .trim();
+      if (name) names.push(name);
+    }
+  }
+  // A default binding sits between `import` and the first `{` or `from`.
+  const head = /^\s*import\s+([^{;]*?)\s*(?:,|from\b)/.exec(statement);
+  const bare = head?.[1]?.trim();
+  if (bare && !bare.startsWith('*') && !bare.startsWith('{'))
+    names.push('default');
+  return names;
+}
+
+/**
+ * Every name a module provides, following `export * from './…'` chains.
+ * A star re-export from a PACKAGE is not followed — whether it is installed is
+ * npm's business, same boundary `resolveRelative` draws — and makes the answer
+ * `null`, meaning "cannot be sure", which suppresses reporting.
+ * @param {string} file - absolute path
+ * @param {Set<string>} [seen] - cycle guard
+ * @returns {Set<string>|null} exported names, or null when unknowable
+ */
+function exportedNamesOf(file, seen = new Set()) {
+  if (seen.has(file)) return new Set();
+  seen.add(file);
+  const src = fs.readFileSync(file, 'utf8');
+  const [imports, exports] = parseModule(src, file);
+  const names = new Set(exports.map((e) => e.n));
+  for (const imp of imports) {
+    // `ss`..`se` spans the whole statement, which is how a star re-export is
+    // told apart from a plain import of the same module.
+    if (!/^export\s*\*/.test(src.slice(imp.ss, imp.se))) continue;
+    if (!isRelative(imp.n)) return null;
+    const target = resolveRelative(imp.n, path.dirname(file));
+    if (!target) continue; // already reported by the resolve check
+    const inner = exportedNamesOf(target, seen);
+    if (!inner) return null;
+    for (const n of inner) names.add(n);
+  }
+  return names;
+}
+
+/**
+ * Named imports that resolve to a module which does not export them.
+ *
+ * The resolve check above only proves the FILE is there. `helpers.js` resolved
+ * perfectly while the fork's `esc` had been renamed to `escapeHtml` — the
+ * custom loader caught the throw, logged it, and the app booted with the
+ * fork's title slide simply absent. On a deck that used it the failure
+ * presents as "our title slide is gone", not as an error.
+ *
+ * @param {string[]} files absolute paths
+ * @param {string} root what the report paths are relative to
+ * @returns {Promise<string[]>} `file → specifier: name` per missing export
+ */
+async function missingNamedImportsIn(files, root) {
+  const missing = [];
+  for (const file of files) {
+    const src = fs.readFileSync(file, 'utf8');
+    const [imports] = parseModule(src, file);
+    for (const imp of imports) {
+      if (!isRelative(imp.n)) continue;
+      const statement = src.slice(imp.ss, imp.se);
+      // A dynamic import binds nothing at load time; its names are read off
+      // the resolved namespace object at runtime.
+      if (imp.d > -1) continue;
+      const target = resolveRelative(imp.n, path.dirname(file));
+      if (!target) continue; // the resolve check owns this one
+      const provided = exportedNamesOf(target);
+      if (!provided) continue;
+      for (const name of importedNames(statement)) {
+        if (provided.has(name)) continue;
+        missing.push(`${path.relative(root, file)} → ${imp.n}: ${name}`);
+      }
+    }
+  }
+  return missing;
 }
 
 /**
@@ -140,6 +260,86 @@ test('every relative import in custom/ resolves to a file that exists', async ()
       'A core module probably moved. Check the release notes for the version ' +
       'you are upgrading to.',
   );
+});
+
+test('every named import in custom/ names a real export', async () => {
+  const missing = await missingNamedImportsIn(FILES, REPO_ROOT);
+  assert.deepEqual(
+    missing,
+    [],
+    'these imports name exports that do not exist — the module fails to load ' +
+      `at runtime, and the custom loader swallows it:\n  ${missing.join('\n  ')}\n\n` +
+      'A core export was probably renamed. Check the release notes for the ' +
+      'version you are upgrading to.',
+  );
+});
+
+test('the export check rejects what it should — hermetic self-test', async () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'deckyard-named-imports-'));
+  try {
+    // A rename exactly like the one that broke the fork: the file still
+    // resolves, the name does not.
+    fs.writeFileSync(
+      path.join(tmp, 'helpers.js'),
+      'export function escapeHtml(s) {\n  return s;\n}\nexport default 1;\n',
+    );
+    fs.writeFileSync(
+      path.join(tmp, 'renamed.js'),
+      "import { esc } from './helpers.js';\nexport default esc;\n",
+    );
+    fs.writeFileSync(
+      path.join(tmp, 'fine.js'),
+      "import def, { escapeHtml as e } from './helpers.js';\nexport default [def, e];\n",
+    );
+    // A barrel that only re-exports: the name lives one hop away.
+    fs.writeFileSync(
+      path.join(tmp, 'barrel.js'),
+      "export * from './helpers.js';\n",
+    );
+    fs.writeFileSync(
+      path.join(tmp, 'via-barrel.js'),
+      "import { escapeHtml } from './barrel.js';\nexport default escapeHtml;\n",
+    );
+    fs.writeFileSync(
+      path.join(tmp, 'via-barrel-missing.js'),
+      "import { esc } from './barrel.js';\nexport default esc;\n",
+    );
+    // A namespace import binds the module object, not a name — unknowable
+    // here, and a missing property is `undefined` at use, not a load failure.
+    fs.writeFileSync(
+      path.join(tmp, 'namespace.js'),
+      "import * as all from './helpers.js';\nexport default all;\n",
+    );
+
+    assert.deepEqual(
+      (await missingNamedImportsIn(jsFilesUnder(tmp), tmp)).sort(),
+      [
+        'renamed.js → ./helpers.js: esc',
+        'via-barrel-missing.js → ./barrel.js: esc',
+      ],
+      'exactly the two renamed imports, including the one behind a barrel',
+    );
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('a default import of a module with no default export is caught', async () => {
+  const tmp = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'deckyard-default-import-'),
+  );
+  try {
+    fs.writeFileSync(path.join(tmp, 'named-only.js'), 'export const a = 1;\n');
+    fs.writeFileSync(
+      path.join(tmp, 'wants-default.js'),
+      "import thing from './named-only.js';\nexport default thing;\n",
+    );
+    assert.deepEqual(await missingNamedImportsIn(jsFilesUnder(tmp), tmp), [
+      'wants-default.js → ./named-only.js: default',
+    ]);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
 });
 
 test('the resolver rejects what it should — a hermetic self-test on a temp tree', async () => {
