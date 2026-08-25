@@ -64,6 +64,7 @@ ships:
 | CSS breakpoints                                               | `docs/reference/css-breakpoints.md`                                        |
 | Which `!important` are by design                              | `docs/reference/css-important.md`                                          |
 | Renaming a class a slide type emits                           | `docs/reference/slide-type-css-contract.md`                                |
+| CSS that survives PDF/PNG export                              | `docs/reference/export-safe-css.md`                                        |
 | Internationalization                                          | `docs/developer/i18n.md`                                                   |
 | REST API                                                      | `docs/developer/api.md` + `docs/openapi.yaml`                              |
 | MCP server                                                    | `docs/reference/mcp-server.md`                                             |
@@ -169,6 +170,7 @@ nothing is discoverable only by `ls`.
 | [`reflowable-html-export.md`](reference/reflowable-html-export.md) | Reflowable "reader" export                                                                     |
 | [`bulk-export.md`](reference/bulk-export.md)                       | Bulk export / backup                                                                           |
 | [`publishing.md`](reference/publishing.md)                         | Publish/unpublish, the public deck pages and embed, and the RSS/Atom/JSON feed                 |
+| [`export-safe-css.md`](reference/export-safe-css.md)               | Which CSS constructions survive PDF/PNG, and which break quietly                               |
 | [`pdf-export-performance.md`](reference/pdf-export-performance.md) | What makes a PDF export heavy, and how to measure it                                           |
 | [`no-third-party-origins.md`](reference/no-third-party-origins.md) | Why a rendered document loads nothing from someone else's host, and the two gates that hold it |
 
