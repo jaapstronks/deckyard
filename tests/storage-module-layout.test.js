@@ -61,7 +61,9 @@ function storeFolders() {
     .map((entry) => ({
       name: entry.name,
       files: fs
-        .readdirSync(path.join(storageRoot, entry.name), { withFileTypes: true })
+        .readdirSync(path.join(storageRoot, entry.name), {
+          withFileTypes: true,
+        })
         .filter((f) => f.isFile())
         .map((f) => f.name),
     }));

@@ -22,10 +22,7 @@
  * A single core is the beta-stance fix: no second publish path that "also works".
  */
 
-import {
-  newPublishId,
-  upsertPublishedEntry,
-} from '../storage/published.js';
+import { newPublishId, upsertPublishedEntry } from '../storage/published.js';
 import { updatePresentation } from '../storage/presentations/index.js';
 import { getUserSettings } from '../storage/settings.js';
 import { pickOgImageUrlFromPresentation } from '../render/og-image.js';
