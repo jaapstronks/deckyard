@@ -130,6 +130,31 @@ Two things this list deliberately does _not_ make breaking:
   patched a specific file has to reconcile — that is what forking costs, and it is
   not a version signal.
 
+### Wire changes are never titled `refactor:`
+
+The changelog is generated from commit titles (release-please), and
+`refactor:` commits are dropped from it. So the title is not a description of
+the diff — it is a routing decision about whether the change reaches the
+changelog. The rule (decided 2026-08-25, after the 1.17–1.25 note backfill):
+
+**A commit that changes any public contract — a webhook event name, an API or
+MCP parameter, a response status, an export artifact's shape — is titled
+`feat:` or `fix:` (with a `!`/`BREAKING CHANGE:` footer when breaking), even
+when the diff is internally refactor-shaped.** `refactor:` is reserved for
+changes with no observable effect on any of the surfaces above.
+
+This was learned the expensive way: the webhook rename (#829), the MCP
+`scope` → `ownership` argument (#798), the shelf-axis rename in the bulk-export
+ZIP (#806/#827), two retracted wizard endpoints (#835) and the follow-API's
+status-code change (#830) were all titled `refactor:` and all fell out of the
+changelog; the public notes had to be reconstructed from briefings.
+
+Related, same lesson: a release briefing describes what a migration does by
+reading **the migration and the PR body**, never by inferring from the
+changelog line — the 1.24.0 briefing claimed migration 080 deletes slides when
+it only drops two lead-capture tables and the slide degrades to the
+archived-slide placeholder.
+
 ### Renamed slide-type classes go in the release notes
 
 The class names a slide type renders are a **public contract**, on the same
