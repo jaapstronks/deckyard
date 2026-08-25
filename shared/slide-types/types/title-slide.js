@@ -1,5 +1,5 @@
 import { bgClass, escapeHtml, BACKGROUND_FIELD } from '../helpers.js';
-import { resolveTitleSlideBackground } from './title-slide/background.js';
+import { resolveSlideBgImage } from '../legacy-bg-image.js';
 import {
   TITLE_LAYOUTS,
   DEFAULT_TITLE_LAYOUT,
@@ -64,7 +64,7 @@ export default {
     // (added by withGlobalSlideFields, rendered by injectSlideBackground). The
     // title type used to carry its own `bgImage`/`bgAlt` pair — now a read-only
     // render fallback for un-migrated decks, folded into `slideBgImage` on edit
-    // (see title-slide/background.js).
+    // (see ../legacy-bg-image.js).
     //
     // Background colour and logo corner are two compact controls that read as
     // one "chrome" choice, so they share a form row (see form-layout.js). The
@@ -126,7 +126,7 @@ export default {
     // drawn ONLY for un-migrated decks (source === 'legacy'); when canonical,
     // the shared layer already paints it and readability comes from
     // slideBgText/overlay — so we must draw nothing to avoid a double image.
-    const resolvedBg = resolveTitleSlideBackground(content);
+    const resolvedBg = resolveSlideBgImage(content);
     const legacyBg = resolvedBg.source === 'legacy' ? resolvedBg.image : '';
     const bgAlt = resolvedBg.source === 'legacy' ? resolvedBg.alt : '';
     const bgImgHtml = legacyBg

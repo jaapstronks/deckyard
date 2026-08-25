@@ -13,7 +13,8 @@
  *
  * ## Both stores, on purpose
  *
- * `scripts/migrate-slides.js` and `scripts/migrate-title-bg.js` are file-only.
+ * `scripts/migrate-slides.js` and `scripts/migrate-legacy-bg-image.js` are
+ * file-only.
  * slides.ciiic.nl runs on Postgres, so a file-only script would migrate nothing
  * where it matters. This one covers both backends and picks by `STORAGE_MODE`
  * unless told otherwise.

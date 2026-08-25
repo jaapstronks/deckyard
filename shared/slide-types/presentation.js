@@ -5,7 +5,7 @@ import {
   cryptoUuid,
   escapeHtml,
 } from './helpers.js';
-import { pickBackgroundPreset } from '../theme-background-presets.js';
+import { seedAutoBackgroundPreset } from '../theme-background-presets.js';
 import { applyLocksToContent } from '../theme-locks.js';
 import { SLIDE_TYPES, THEMES, getSlideType } from './registry.js';
 import { validateVisibility } from '../slide-visibility.js';
@@ -82,7 +82,7 @@ export function newPresentation({
  * @param {string} opts.type - slide type id
  * @param {string|null} [opts.parentId] - parent slide id, or null for top-level
  * @param {Object} [opts.theme] - the active theme. Types declaring
- *   `autoBackgroundPreset` take their background image from
+ *   `autoBackgroundPreset` take their `slideBgImage` from
  *   `theme.backgroundPresets`; without a theme (or without presets) the slide
  *   is created with no background image.
  */
@@ -97,14 +97,9 @@ export function newSlide({ type, parentId = null, theme = null }) {
     notes: '',
     visibility: {}, // Empty = all false = visible everywhere (backward compatible)
   };
-  // If slide type has autoBackgroundPreset, pick a random background from presets
-  if (def.autoBackgroundPreset) {
-    const bgImage =
-      typeof slide.content.bgImage === 'string'
-        ? slide.content.bgImage.trim()
-        : '';
-    if (!bgImage) slide.content.bgImage = pickBackgroundPreset(theme);
-  }
+  // Types declaring autoBackgroundPreset get a random theme background on the
+  // canonical key (see seedAutoBackgroundPreset — one helper, both callers).
+  seedAutoBackgroundPreset(slide.content, def, theme);
   if (type === 'poll-slide') {
     const pollId =
       typeof slide.content.pollId === 'string'

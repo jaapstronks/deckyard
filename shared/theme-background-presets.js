@@ -36,3 +36,32 @@ export function pickBackgroundPreset(theme) {
   if (!presets.length) return '';
   return presets[Math.floor(Math.random() * presets.length)];
 }
+
+/**
+ * Seed a new slide's background from the theme presets, for types declaring
+ * `autoBackgroundPreset`. Writes the CANONICAL `slideBgImage` key — the one
+ * the shared background layer paints and the inspector's Background section
+ * edits. A no-op for types without the flag, and never overwrites a background
+ * the caller already put on the content (including an author's deliberate
+ * empty string).
+ *
+ * One helper because the two callers (server-side `newSlide`, the editor's
+ * insert path) used to disagree: both wrote the legacy `bgImage` key, but only
+ * one of them gated on the key already existing — so the same type got a random
+ * photo from one surface and a flat slide from the other.
+ *
+ * @param {Object} content - slide content, mutated in place
+ * @param {Object} [def] - the slide type definition
+ * @param {Object} [theme] - the active theme
+ * @returns {Object} the same content object
+ */
+export function seedAutoBackgroundPreset(content, def, theme) {
+  if (!content || typeof content !== 'object') return content;
+  if (!def?.autoBackgroundPreset) return content;
+  if (Object.prototype.hasOwnProperty.call(content, 'slideBgImage')) {
+    return content;
+  }
+  const preset = pickBackgroundPreset(theme);
+  if (preset) content.slideBgImage = preset;
+  return content;
+}
