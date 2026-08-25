@@ -90,7 +90,7 @@ before(async () => {
   const { createShareLink } =
     await import('../server/storage/share-links/index.js');
   const { upsertPublishedEntry, newPublishId } =
-    await import('../server/storage/published/index.js');
+    await import('../server/storage/published.js');
   const { createLiveSession, updateLiveSessionState } =
     await import('../server/storage/live-sessions/index.js');
   const { testScope } = await import('./helpers/storage-scope.js');

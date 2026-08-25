@@ -2,7 +2,7 @@ import { createPresentation } from '../../../storage/presentations/index.js';
 import { serveJson, requireJsonBody } from '../../../utils/http.js';
 import { getTrimmedString } from '../../../utils/request-validators.js';
 import { recordPresentationCreated } from '../../../services/activity-events.js';
-import { recordSlideLibraryUsage } from '../../../storage/slide-library-usage/index.js';
+import { recordSlideLibraryUsage } from '../../../storage/slide-library-usage.js';
 import { fireAndForget } from '../../../utils/fire-and-forget.js';
 
 /**

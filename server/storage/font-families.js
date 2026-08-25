@@ -18,18 +18,18 @@
 import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
 import { nowIso } from '../utils/normalize.js';
-import { withDbGuard } from './utils/db-guard.js';
 import {
   NO_DISPLAY_NAMES,
   resolveNamesForAddresses,
   toStoredActorIdentity,
 } from './display-identity.js';
 import {
+  withDbGuard,
   parseJson,
   generateSlug,
   isValidSlug,
   getUserIdByEmail,
-} from './utils/helpers.js';
+} from './utils/index.js';
 
 const VALID_SOURCES = ['upload', 'adobe', 'monotype', 'google'];
 const VALID_CATEGORIES = ['sans-serif', 'serif', 'display', 'monospace'];

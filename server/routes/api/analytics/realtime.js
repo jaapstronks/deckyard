@@ -4,7 +4,7 @@
 
 import { withPresentationAuth } from '../../../utils/route-middleware.js';
 import { ANALYTICS_CONFIG } from '../../../analytics/helpers.js';
-import { getActiveViewerCount } from '../../../storage/analytics/view-sessions.js';
+import { getActiveViewerCount } from '../../../storage/analytics/index.js';
 import { openSseStream, sseWrite } from '../../../utils/sse.js';
 import { createLogger } from '../../../utils/logger.js';
 const log = createLogger('realtime');

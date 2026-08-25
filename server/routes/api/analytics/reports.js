@@ -26,13 +26,11 @@ import {
   updateAnalyticsReport,
   deleteAnalyticsReport,
   regenerateShareToken,
-} from '../../../storage/analytics/reports.js';
-import {
   getPresentationAnalyticsOverview,
   getDetailedSlideEngagement,
   getInteractionHeatmapData,
   getViewerJourneyData,
-} from '../../../storage/analytics/aggregations.js';
+} from '../../../storage/analytics/index.js';
 
 /**
  * Generate report data based on type.

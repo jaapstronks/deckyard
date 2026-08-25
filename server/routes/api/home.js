@@ -31,12 +31,12 @@ import { dispatchRoutes } from '../../utils/router.js';
 import { parsePaginationParams } from '../../utils/request-validators.js';
 import { getPopularPresentations } from './presentations/popular.js';
 import { getEnrichedActivity } from './activity.js';
-import { listOrganizationLibrary } from '../../storage/slide-library/index.js';
-import { listSlideLibraryUsage } from '../../storage/slide-library-usage/index.js';
+import { listOrganizationLibrary } from '../../storage/slide-library.js';
+import { listSlideLibraryUsage } from '../../storage/slide-library-usage.js';
 import {
   listPersonalCollections,
   listOrganizationCollections,
-} from '../../storage/collections/index.js';
+} from '../../storage/collections.js';
 
 /**
  * Build the activity filter opts from the request, mirroring `/api/activity`.

@@ -303,7 +303,7 @@ test('the presentation cache refuses a bare repoRoot, like the facade does', asy
 // fails on validation rather than somewhere inside a query.
 
 const smallFacades = {
-  'slide-library/index.js': [
+  'slide-library.js': [
     ['listPersonalLibrary', (fn) => fn('/srv', 'a@b.c')],
     [
       'createPersonalLibraryItem',
@@ -328,14 +328,14 @@ const smallFacades = {
     ['getTagsForSlideLibraryItems', (fn) => fn(['item-1'], {})],
     ['setTagsForSlideLibraryItem', (fn) => fn('item-1', ['tag'], {})],
   ],
-  'slide-library-usage/index.js': [
+  'slide-library-usage.js': [
     ['listSlideLibraryUsage', (fn) => fn('/srv', 'a@b.c')],
     [
       'recordSlideLibraryUsage',
       (fn) => fn('/srv', 'a@b.c', [{ type: 'slide', id: 'x' }]),
     ],
   ],
-  'published/index.js': [
+  'published.js': [
     ['getPublishedIndex', (fn) => fn('/srv')],
     ['getPublishedById', (fn) => fn('/srv', 'pub-1')],
     [
@@ -346,7 +346,7 @@ const smallFacades = {
     ['updatePublishedSlug', (fn) => fn('/srv', 'pub-1', 'slug')],
     ['listPublishedForFeed', (fn) => fn('/srv')],
   ],
-  'tags/index.js': [
+  'tags.js': [
     // The old shape took no scope at all, hence the missing first argument.
     ['listTags', (fn) => fn()],
     ['getTagsForPresentation', (fn) => fn('deck-1')],
@@ -361,7 +361,7 @@ const smallFacades = {
     ['setYDocState', (fn) => fn('/srv', 'deck-1', new Uint8Array([1]))],
     ['deleteYDocState', (fn) => fn('/srv', 'deck-1')],
   ],
-  'collections/index.js': [
+  'collections.js': [
     ['listPersonalCollections', (fn) => fn('/srv', 'a@b.c')],
     ['getPersonalCollection', (fn) => fn('/srv', 'a@b.c', 'col-1')],
     ['createPersonalCollection', (fn) => fn('/srv', 'a@b.c', { name: 'x' })],
@@ -373,7 +373,7 @@ const smallFacades = {
     ['updateOrganizationCollection', (fn) => fn('/srv', 'col-1', {})],
     ['deleteOrganizationCollection', (fn) => fn('/srv', 'col-1', {})],
   ],
-  'image-library/index.js': [
+  'image-library.js': [
     ['listImageLibrary', (fn) => fn('/srv')],
     ['getImageLibraryItem', (fn) => fn('/srv', 'img-1')],
     ['createImageLibraryItem', (fn) => fn('/srv', { url: '/uploads/x.png' })],

@@ -1,5 +1,5 @@
 import { listPresentations } from '../../../storage/presentations/index.js';
-import { getTagsForPresentations } from '../../../storage/tags/index.js';
+import { getTagsForPresentations } from '../../../storage/tags.js';
 import { serveJson } from '../../../utils/http.js';
 import {
   normalizePresentationVisibility,
@@ -8,7 +8,7 @@ import {
   isOwnerOrCreator,
 } from '../../../utils/presentation-authz.js';
 import { resolveThemeThumbBg } from '../../../utils/themes.js';
-import { withDbGuard } from '../../../storage/utils/db-guard.js';
+import { withDbGuard } from '../../../storage/utils/index.js';
 import { getOrgId } from '../../../utils/context.js';
 
 // Filter for what appears in a user's collection (not authorization).

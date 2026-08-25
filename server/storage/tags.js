@@ -14,10 +14,10 @@
  * indirection); the shapes below are the storage contract for tags.
  */
 
-import { getDb } from '../../db/client.js';
-import { getOrgId } from '../../utils/context.js';
-import { ValidationError } from '../../utils/errors.js';
-import { resolveScope } from '../scope.js';
+import { getDb } from '../db/client.js';
+import { getOrgId } from '../utils/context.js';
+import { ValidationError } from '../utils/errors.js';
+import { resolveScope } from './scope.js';
 
 /** @returns {string} current ISO timestamp */
 function now() {
@@ -26,7 +26,7 @@ function now() {
 
 /**
  * List all tags of the storageScope's organization.
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} storageScope
  * @returns {Promise<Array<{id: string, name: string, count: number}>>}
  */
 export async function listTags(storageScope) {
@@ -56,7 +56,7 @@ export async function listTags(storageScope) {
 
 /**
  * Get tags for a specific presentation.
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} storageScope
  * @param {string} presentationId - Presentation ID
  * @returns {Promise<Array<{id: string, name: string}>>}
  */
@@ -82,7 +82,7 @@ export async function getTagsForPresentation(storageScope, presentationId) {
 
 /**
  * Get tags for multiple presentations at once (for list views).
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} storageScope
  * @param {string[]} presentationIds - Array of presentation IDs
  * @returns {Promise<Map<string, Array<{id: string, name: string}>>>}
  */
@@ -125,7 +125,7 @@ export async function getTagsForPresentations(storageScope, presentationIds) {
 /**
  * Set tags for a presentation (replaces existing tags).
  * Creates new tags if they don't exist.
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} storageScope
  * @param {string} presentationId - Presentation ID
  * @param {string[]} tagNames - Array of tag names
  * @returns {Promise<Array<{id: string, name: string}>>}
@@ -211,7 +211,7 @@ export async function setTagsForPresentation(
 
 /**
  * Create a new tag in the storageScope's organization (if it doesn't exist).
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} storageScope
  * @param {string} name - Tag name
  * @returns {Promise<{id: string, name: string}>}
  */
@@ -253,7 +253,7 @@ export async function createTag(storageScope, name) {
 
 /**
  * Delete a tag from the storageScope's organization (and all its associations).
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} storageScope
  * @param {string} tagId - Tag ID
  * @returns {Promise<boolean>}
  */
@@ -273,7 +273,7 @@ export async function deleteTag(storageScope, tagId) {
 
 /**
  * Search tags by prefix (for autocomplete).
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} storageScope
  * @param {string} prefix - Search prefix
  * @param {number} [limit=10] - Max results
  * @returns {Promise<Array<{id: string, name: string, count: number}>>}

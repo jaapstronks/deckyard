@@ -37,7 +37,7 @@
 import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
 import { norm, nowIso, normalizeEmail } from '../utils/normalize.js';
-import { withDbGuard } from './utils/db-guard.js';
+import { withDbGuard } from './utils/index.js';
 import { isValidPermission } from '../../shared/constants/permissions.js';
 import { resolveDisplayNames, toDisplayIdentity } from './display-identity.js';
 import { resolveIdentityByEmail } from './identity-resolver.js';

@@ -17,7 +17,7 @@
  */
 
 import { norm } from '../../utils/normalize.js';
-import { withDbGuard } from '../utils/db-guard.js';
+import { withDbGuard } from '../utils/index.js';
 
 /**
  * Log access to a share link.

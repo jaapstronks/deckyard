@@ -25,7 +25,7 @@
 import {
   newPublishId,
   upsertPublishedEntry,
-} from '../storage/published/index.js';
+} from '../storage/published.js';
 import { updatePresentation } from '../storage/presentations/index.js';
 import { getUserSettings } from '../storage/settings.js';
 import { pickOgImageUrlFromPresentation } from '../render/og-image.js';

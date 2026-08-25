@@ -2,13 +2,13 @@
  * Slide collections against real PostgreSQL, through the storage facade.
  *
  * The PostgreSQL counterpart of tests/slide-collections-storage.test.js. Same
- * facade (server/storage/collections/index.js), same concerns — personal
+ * facade (server/storage/collections.js), same concerns — personal
  * CRUD + ordered membership, personal shelf isolation, team create/list and the
  * creator/admin mutate guard — but on the backend PR G keeps.
  *
  * One real difference the file backend could not show: `slide_collection_items`
  * foreign-keys `slide_library_id`, and the facade *filters membership to slide
- * ids that actually exist in the org* (server/storage/collections/index.js
+ * ids that actually exist in the org* (server/storage/collections.js
  * `filterExistingSlideIds`). The file suite passed bare `'s1'` strings that were
  * stored verbatim; here membership is seeded slide-library uuids, and a final
  * test pins the FK guard the fake-db never models.
@@ -41,7 +41,7 @@ import {
   createOrganizationCollection,
   updateOrganizationCollection,
   deleteOrganizationCollection,
-} from '../../server/storage/collections/index.js';
+} from '../../server/storage/collections.js';
 
 const storageScope = testScope();
 const ALICE = 'alice@example.com';

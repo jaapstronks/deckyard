@@ -5,7 +5,7 @@
 
 import { getLlmConfig } from '../utils/llm/config.js';
 import { requestChatCompletionContent } from '../utils/llm/index.js';
-import { formatDuration } from '../storage/analytics/weekly-summary.js';
+import { formatDuration } from '../storage/analytics/index.js';
 import { createLogger } from '../utils/logger.js';
 
 const log = createLogger('digest-generation');

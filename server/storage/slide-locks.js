@@ -10,7 +10,7 @@ import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
 import { norm, nowIso, isoAfter } from '../utils/normalize.js';
 import { matchesIdentity } from '../../shared/identity-match.js';
-import { withDbGuard } from './utils/db-guard.js';
+import { withDbGuard } from './utils/index.js';
 import {
   NO_DISPLAY_NAMES,
   resolveDisplayNames,

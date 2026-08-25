@@ -14,9 +14,9 @@
  * the adapter indirection); getDb() throws on an uninitialized database.
  */
 
-import { getDb, sql } from '../../db/client.js';
-import { getOrgId } from '../../utils/context.js';
-import { toStorageContext } from '../scope.js';
+import { getDb, sql } from '../db/client.js';
+import { getOrgId } from '../utils/context.js';
+import { toStorageContext } from './scope.js';
 
 const ITEM_TYPES = new Set(['slide', 'collection']);
 
@@ -48,7 +48,7 @@ function normalizeUsageItems(input) {
 
 /**
  * List the current user's usage records (set of used {itemType, itemId}).
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} storageScope
  * @param {string} userEmail
  * @returns {Promise<{ items: Array<object> }>}
  */
@@ -90,7 +90,7 @@ export async function listSlideLibraryUsage(storageScope, userEmail) {
 
 /**
  * Record usage of one or more library items for a user.
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} storageScope
  * @param {string} userEmail
  * @param {Array<{ type: 'slide'|'collection', id: string }>} items
  * @returns {Promise<{ ok: boolean, recorded: number }>}

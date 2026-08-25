@@ -191,7 +191,7 @@ async function handleImageLibrary(ctx) {
 
   // Dynamic import to avoid circular dependencies
   const { listImageLibrary } =
-    await import('../../../storage/image-library/index.js');
+    await import('../../../storage/image-library.js');
 
   const search = (url.searchParams.get('search') || '').trim().toLowerCase();
   const category = (url.searchParams.get('category') || '')

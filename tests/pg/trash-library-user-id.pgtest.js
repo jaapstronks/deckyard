@@ -49,11 +49,11 @@ import {
 import {
   createOrganizationLibraryItem,
   getOrganizationLibraryItem,
-} from '../../server/storage/slide-library/index.js';
+} from '../../server/storage/slide-library.js';
 import {
   createOrganizationCollection,
   getOrganizationCollection,
-} from '../../server/storage/collections/index.js';
+} from '../../server/storage/collections.js';
 import {
   isOwnerOrCreator,
   matchesIdentity,

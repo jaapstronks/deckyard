@@ -5,17 +5,8 @@
 
 import crypto from 'node:crypto';
 import { norm, nowIso, durationSinceSeconds } from '../../utils/normalize.js';
-import { withDbGuard } from '../utils/db-guard.js';
+import { withDbGuard } from '../utils/index.js';
 import { ANALYTICS_CONFIG, applyDateFilters } from '../../analytics/helpers.js';
-
-// Re-export GDPR functions from dedicated module
-export {
-  exportUserAnalyticsData,
-  deleteUserAnalyticsData,
-  eraseAnalyticsDataForDevice,
-  eraseAnalyticsDataForSession,
-  anonymizeOldIpAddresses,
-} from './view-sessions-gdpr.js';
 
 // ============================================================
 // CONSTANTS

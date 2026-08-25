@@ -3,7 +3,7 @@
  * Handles publish/unpublish operations for presentations.
  */
 
-import { removePublishedEntry } from '../../../storage/published/index.js';
+import { removePublishedEntry } from '../../../storage/published.js';
 import { updatePresentation } from '../../../storage/presentations/index.js';
 import {
   publishPresentation,

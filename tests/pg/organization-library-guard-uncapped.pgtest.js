@@ -41,7 +41,7 @@ import {
   listOrganizationLibrary,
   setOrganizationLibraryItemTrashed,
   deleteOrganizationLibraryItem,
-} from '../../server/storage/slide-library/index.js';
+} from '../../server/storage/slide-library.js';
 import { getDefaultOrganizationId } from '../../server/config/database.js';
 
 const ORG = getDefaultOrganizationId();

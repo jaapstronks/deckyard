@@ -45,11 +45,11 @@ import {
   deleteImageLibraryItem,
   getImageLibraryItem,
   updateImageLibraryItem,
-} from '../../server/storage/image-library/index.js';
+} from '../../server/storage/image-library.js';
 import {
   removePublishedEntry,
   upsertPublishedEntry,
-} from '../../server/storage/published/index.js';
+} from '../../server/storage/published.js';
 
 const storageScope = testScope();
 const ALICE = 'alice@example.test';

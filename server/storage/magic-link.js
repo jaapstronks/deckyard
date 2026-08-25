@@ -18,7 +18,7 @@ import {
   hashToken,
   isValidEmail,
 } from '../utils/secure-tokens.js';
-import { withDbGuard } from './utils/db-guard.js';
+import { withDbGuard } from './utils/index.js';
 
 // ============================================================
 // CONSTANTS

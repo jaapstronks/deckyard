@@ -7,7 +7,7 @@ import { getOrgId } from '../../utils/context.js';
 import { norm, normalizeEmail, nowIso } from '../../utils/normalize.js';
 import { parseMentions } from '../../../shared/comment-mentions.js';
 import { toStorageContext } from '../scope.js';
-import { withDbGuard } from '../utils/db-guard.js';
+import { withDbGuard } from '../utils/index.js';
 import { listPresentations } from './index.js';
 import { listPresentationsSharedWithUser } from '../collaborators.js';
 import { resolveIdentityByEmail } from '../identity-resolver.js';

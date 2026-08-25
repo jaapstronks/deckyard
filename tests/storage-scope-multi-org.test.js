@@ -294,7 +294,7 @@ test('an entry point with no organization refuses to guess once there are severa
 
 test('the published index is per organization', async () => {
   const { getPublishedIndex } =
-    await import('../server/storage/published/index.js');
+    await import('../server/storage/published.js');
   const alpha = await getPublishedIndex({ organizationId: ORG_A });
   const beta = await getPublishedIndex({ organizationId: ORG_B });
   assert.deepEqual(Object.keys(alpha), ['pub-alpha']);
@@ -307,7 +307,7 @@ test('the published index is per organization', async () => {
 
 test('a publish id still resolves across organizations, because it is the token', async () => {
   const { getPublishedById } =
-    await import('../server/storage/published/index.js');
+    await import('../server/storage/published.js');
   const scope = crossOrganizationScope(
     null,
     'published deck: the publish id is the authorization',
@@ -322,7 +322,7 @@ test('a publish id still resolves across organizations, because it is the token'
 
 test('the image library is per organization', async () => {
   const { listImageLibrary, getImageLibraryItem } =
-    await import('../server/storage/image-library/index.js');
+    await import('../server/storage/image-library.js');
   const alpha = await listImageLibrary({ organizationId: ORG_A });
   const beta = await listImageLibrary({ organizationId: ORG_B });
   assert.deepEqual(
@@ -342,7 +342,7 @@ test('the image library is per organization', async () => {
 
 test('the team slide library is per organization', async () => {
   const { listOrganizationLibrary, getOrganizationLibraryItem } =
-    await import('../server/storage/slide-library/index.js');
+    await import('../server/storage/slide-library.js');
   const { items: alpha } = await listOrganizationLibrary({
     organizationId: ORG_A,
   });
@@ -372,7 +372,7 @@ test('the team slide library is per organization', async () => {
 
 test('team collections are per organization', async () => {
   const { listOrganizationCollections } =
-    await import('../server/storage/collections/index.js');
+    await import('../server/storage/collections.js');
   const { items: alpha } = await listOrganizationCollections({
     organizationId: ORG_A,
   });
@@ -394,7 +394,7 @@ test('tags are per organization', async () => {
   // counts and the database double has no GROUP BY. The per-deck lookup exercises
   // the same organization filter on the same tables.
   const { getTagsForPresentation } =
-    await import('../server/storage/tags/index.js');
+    await import('../server/storage/tags.js');
 
   assert.deepEqual(
     (await getTagsForPresentation({ organizationId: ORG_A }, 'deck-alpha')).map(

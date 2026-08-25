@@ -17,7 +17,7 @@ import {
   withErrorHandler,
 } from '../../utils/http.js';
 import { getAppSettings } from '../../storage/settings.js';
-import { createImageLibraryItem } from '../../storage/image-library/index.js';
+import { createImageLibraryItem } from '../../storage/image-library.js';
 import { writeUploadedFile } from '../../storage/uploads.js';
 import {
   isUnsplashConfigured,

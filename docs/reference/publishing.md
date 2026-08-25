@@ -35,7 +35,7 @@ Publish / unpublish:
   unpublish, rename the slug, regenerate the preview image.
 - `server/routes/public-api/v1/publishing.js` — the machine-client
   equivalents: publish, publish status, unpublish.
-- `server/storage/published/index.js` — the storage facade:
+- `server/storage/published.js` — the storage facade:
   `newPublishId`, `getPublishedById`, `upsertPublishedEntry`,
   `removePublishedEntry`, `updatePublishedSlug`, `getPublishedIndex`,
   `listPublishedForFeed`.

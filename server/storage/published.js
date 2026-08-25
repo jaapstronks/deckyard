@@ -13,11 +13,11 @@
  */
 
 import crypto from 'node:crypto';
-import { safeSlug } from '../../utils/slug.js';
-import { getDb } from '../../db/client.js';
-import { getOrgId } from '../../utils/context.js';
-import { getPresentation } from '../presentations/index.js';
-import { crossOrganizationScope, resolveScope, repoRootOf } from '../scope.js';
+import { safeSlug } from '../utils/slug.js';
+import { getDb } from '../db/client.js';
+import { getOrgId } from '../utils/context.js';
+import { getPresentation } from './presentations/index.js';
+import { crossOrganizationScope, resolveScope, repoRootOf } from './scope.js';
 
 /** @returns {string} current ISO timestamp */
 function now() {
@@ -157,7 +157,7 @@ export function newPublishId() {
 
 /**
  * The publish index of the storageScope's organization, keyed by publish id.
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} storageScope
  * @returns {Promise<Object>}
  */
 export async function getPublishedIndex(storageScope) {
@@ -186,7 +186,7 @@ export async function getPublishedIndex(storageScope) {
  * authorization, and public viewer/embed routes have no session to take an
  * organization from.
  *
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} storageScope
  * @param {string} publishId
  * @returns {Promise<Object|null>}
  */
@@ -210,7 +210,7 @@ export async function getPublishedById(storageScope, publishId) {
 
 /**
  * Create or update the publish entry of a deck in the storageScope's organization.
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} storageScope
  * @param {{publishId: string, presentationId: string, title?: string, ogImageUrl?: string}} entry
  * @returns {Promise<Object>}
  */
@@ -248,7 +248,7 @@ export async function upsertPublishedEntry(
 
 /**
  * Unpublish: drop the publish entry within the storageScope's organization.
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} storageScope
  * @param {string} publishId
  * @returns {Promise<{ok: true}|{ok: false, reason: string}>}
  *   `invalid` for a blank id, `not_found` when no such entry exists here.
@@ -264,7 +264,7 @@ export async function removePublishedEntry(storageScope, publishId) {
 
 /**
  * Rename the public slug of a publish entry in the storageScope's organization.
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} storageScope
  * @param {string} publishId
  * @param {string} nextSlug
  * @returns {Promise<Object>}
@@ -304,7 +304,7 @@ export async function updatePublishedSlug(storageScope, publishId, nextSlug) {
  * one; the per-deck read is then addressed by publish id and deliberately
  * unscoped (see {@link getPublishedById}).
  *
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} storageScope
  * @param {Object} [opts]
  * @param {number} [opts.limit=50] - Maximum items to return
  * @returns {Array} Enriched published presentation records

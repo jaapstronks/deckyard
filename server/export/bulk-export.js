@@ -11,11 +11,11 @@ import {
   listPresentationVersions,
   getPresentationVersion,
 } from '../storage/presentations/index.js';
-import { listImageLibrary } from '../storage/image-library/index.js';
+import { listImageLibrary } from '../storage/image-library.js';
 import {
   listPersonalLibrary,
   listOrganizationLibrary,
-} from '../storage/slide-library/index.js';
+} from '../storage/slide-library.js';
 import { listThemes } from '../storage/themes.js';
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';

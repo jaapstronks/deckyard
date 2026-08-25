@@ -110,7 +110,9 @@ format` writes, `npm run format:check` gates in CI next to `npm run lint`.
     over concern modules (`X/list.js`, `X/crud.js`, …). All of it reads and
     writes Postgres through the adapter; the call convention (scope-first,
     validated) is pinned in `docs/reference/storage-scope.md` and enforced by
-    `tests/storage-call-convention.test.js`.
+    `tests/storage-call-convention.test.js`. The *shape* is enforced too:
+    `tests/storage-module-layout.test.js` fails on a folder holding nothing but
+    an `index.js`, and on a multi-file folder without one — no allowlist.
 
 - **Separation of concerns**
   - **Shared slide type modules**: describe schema + defaults + **pure HTML rendering** (no DOM side effects, no fetch, no timers).

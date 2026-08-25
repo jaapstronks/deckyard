@@ -3,7 +3,8 @@
  *
  * `server/routes/api/analytics/gdpr.js` exposes two endpoints on
  * `/api/analytics/my-data` — `GET` (right to access / export) and `DELETE`
- * (right to erasure) — over `server/storage/analytics/view-sessions-gdpr.js`.
+ * (right to erasure) — over `server/storage/analytics/view-sessions-gdpr.js`
+ * (reached through the folder seam `server/storage/analytics/index.js`).
  *
  * Three rules carry this surface and are stated here as assertions:
  *
@@ -59,7 +60,7 @@ const { AUTH_RATE_LIMITS } = await import('../server/config/rate-limits.js');
 const { handleExportMyData, handleDeleteMyData } =
   await import('../server/routes/api/analytics/gdpr.js');
 const { exportUserAnalyticsData, deleteUserAnalyticsData } =
-  await import('../server/storage/analytics/view-sessions.js');
+  await import('../server/storage/analytics/index.js');
 
 const ORG_A = 'org-aaaa';
 const ORG_B = 'org-bbbb';

@@ -32,7 +32,7 @@ import {
 import { seedDefaultOrganization, seedPresentation } from './helpers/seed.js';
 import { testScope } from '../helpers/storage-scope.js';
 import { getImageLibraryUsage } from '../../server/storage/image-library-usage.js';
-import { upsertPublishedEntry } from '../../server/storage/published/index.js';
+import { upsertPublishedEntry } from '../../server/storage/published.js';
 
 const storageScope = testScope();
 

@@ -17,7 +17,7 @@ import { AUTH_RATE_LIMITS } from '../../../config/rate-limits.js';
 import {
   exportUserAnalyticsData,
   deleteUserAnalyticsData,
-} from '../../../storage/analytics/view-sessions.js';
+} from '../../../storage/analytics/index.js';
 
 /**
  * GET /api/analytics/my-data - Export user's own analytics data (GDPR).

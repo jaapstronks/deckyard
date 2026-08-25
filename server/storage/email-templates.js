@@ -15,7 +15,7 @@
 
 import { sql } from 'kysely';
 import { toStorageContext } from './scope.js';
-import { withDbGuard } from './utils/db-guard.js';
+import { withDbGuard } from './utils/index.js';
 import {
   SUPPORTED_LOCALES as SHARED_SUPPORTED_LOCALES,
   DEFAULT_LOCALE as SHARED_DEFAULT_LOCALE,

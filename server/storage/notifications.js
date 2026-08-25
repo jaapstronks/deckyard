@@ -7,7 +7,7 @@ import { sql } from 'kysely';
 import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
 import { nowIso, normalizeEmail } from '../utils/normalize.js';
-import { withDbGuard } from './utils/db-guard.js';
+import { withDbGuard } from './utils/index.js';
 import {
   resolveDisplayNames,
   toStoredActorIdentity,

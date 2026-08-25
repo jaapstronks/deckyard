@@ -26,7 +26,7 @@ import { notifyLiveSessionInteractionState } from './live-sessions/index.js';
 import { maybeFireInteractionWebhook } from '../utils/webhooks.js';
 import { fireAndForget } from '../utils/fire-and-forget.js';
 import { repoRootOf, toStorageContext } from './scope.js';
-import { withDbGuard } from './utils/db-guard.js';
+import { withDbGuard } from './utils/index.js';
 import {
   ensureInteractionSlide,
   getInteractionSlide,

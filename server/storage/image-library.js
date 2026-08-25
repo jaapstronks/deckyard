@@ -11,9 +11,9 @@
  * indirection); getDb() throws on an uninitialized database.
  */
 
-import { getDb, sql } from '../../db/client.js';
-import { getOrgId } from '../../utils/context.js';
-import { resolveScope, toStorageContext } from '../scope.js';
+import { getDb, sql } from '../db/client.js';
+import { getOrgId } from '../utils/context.js';
+import { resolveScope, toStorageContext } from './scope.js';
 
 /** @returns {string} current ISO timestamp */
 function now() {
@@ -234,7 +234,7 @@ async function removeFavorite(imageId, userEmail, ctx) {
 
 /**
  * List the image library of the storageScope's organization.
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} storageScope
  * @returns {Promise<Array<Object>>}
  */
 export async function listImageLibrary(storageScope) {
@@ -244,7 +244,7 @@ export async function listImageLibrary(storageScope) {
 
 /**
  * Fetch one image library item within the storageScope's organization.
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} storageScope
  * @param {string} id
  * @returns {Promise<Object|null>}
  */
@@ -255,7 +255,7 @@ export async function getImageLibraryItem(storageScope, id) {
 
 /**
  * Add an image to the storageScope's organization library.
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} storageScope
  * @param {Object} input
  * @returns {Promise<Object>}
  */
@@ -266,7 +266,7 @@ export async function createImageLibraryItem(storageScope, input) {
 
 /**
  * Patch an image library item within the storageScope's organization.
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} storageScope
  * @param {string} id
  * @param {Object} patch
  * @returns {Promise<{ok: true, image: Object}|{ok: false, reason: string}>}
@@ -279,7 +279,7 @@ export async function updateImageLibraryItem(storageScope, id, patch) {
 
 /**
  * Delete an image library item within the storageScope's organization.
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} storageScope
  * @param {string} id
  * @returns {Promise<{ok: true}|{ok: false, reason: string}>}
  *   `not_found` when no such image lives in this organization.
@@ -291,7 +291,7 @@ export async function deleteImageLibraryItem(storageScope, id) {
 
 /**
  * Get all favorite image IDs for a user.
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} storageScope
  * @param {string} userEmail - User's email
  * @returns {Promise<string[]>} Array of image IDs
  */
@@ -302,7 +302,7 @@ export async function getImageFavorites(storageScope, userEmail) {
 
 /**
  * Toggle favorite status for an image.
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} storageScope
  * @param {string} imageId - Image ID
  * @param {string} userEmail - User's email
  * @returns {Promise<boolean>} New favorite status (true if now favorited)

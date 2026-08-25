@@ -2,7 +2,7 @@
  * Tags storage against real PostgreSQL, through the storage facade.
  *
  * The PostgreSQL counterpart of tests/tags-storage.test.js (which drove the
- * same `server/storage/tags/index.js` facade against the file adapter). This is
+ * same `server/storage/tags.js` facade against the file adapter). This is
  * the coverage that must survive the file adapter's removal (PR G): the tag
  * round-trip the editor and list views depend on —
  * - set/get tags for a presentation (case-insensitive dedup, blank drop)
@@ -39,7 +39,7 @@ import {
   createTag,
   deleteTag,
   searchTags,
-} from '../../server/storage/tags/index.js';
+} from '../../server/storage/tags.js';
 import crypto from 'node:crypto';
 
 // The facade refuses to invent an organization, so the test states the one it

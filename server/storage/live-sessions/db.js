@@ -27,7 +27,7 @@
 
 import { TTL_MS } from './constants.js';
 import { sessions } from './state.js';
-import { withDbGuard } from '../utils/db-guard.js';
+import { withDbGuard } from '../utils/index.js';
 import { fireAndForget } from '../../utils/fire-and-forget.js';
 
 /** Debounce window for persisting a mutated session. */

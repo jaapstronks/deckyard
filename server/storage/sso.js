@@ -17,7 +17,7 @@ import { toStorageContext } from './scope.js';
 import { getUserByEmailGlobal } from './identity.js';
 import { nowIso, normalizeEmail } from '../utils/normalize.js';
 import { sessionVersion } from '../utils/session-version.js';
-import { withDbGuard } from './utils/db-guard.js';
+import { withDbGuard } from './utils/index.js';
 import { envStr } from '../config/utils.js';
 import { invalidateDisplayNames } from './display-identity.js';
 

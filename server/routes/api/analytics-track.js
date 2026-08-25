@@ -42,11 +42,9 @@ import {
   eraseAnalyticsDataForDevice,
   eraseAnalyticsDataForSession,
   VIEWER_TYPES,
-} from '../../storage/analytics/view-sessions.js';
-import {
   transitionToSlide,
   endAllSlideViewsForSession,
-} from '../../storage/analytics/slide-views.js';
+} from '../../storage/analytics/index.js';
 import { getFollowStateForPresentation } from '../../storage/live-sessions/follow-state.js';
 import { createLogger } from '../../utils/logger.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
