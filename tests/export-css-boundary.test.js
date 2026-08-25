@@ -89,3 +89,31 @@ test('the export chrome CSS stays small (regression ceiling)', async () => {
       'thin viewer bundle (<60 KB); a jump this large means editor CSS crept in',
   );
 });
+
+test('a theme variant outranks the generic luminance default in exports', async () => {
+  // `.slide.slide-bg-<id>` (generated, in themeVarsCss) and
+  // `.slide.has-slide-bg-light-text` (00-base.css, in slidesCss) both sit at
+  // two-class specificity on the same element, so source order decides which
+  // colours a variant slide gets. The variant's authored textColor/linkColor
+  // must win — that is what the embed and the client already do, and an export
+  // that disagrees is screen/export drift.
+  const bundle = await loadExportCssBundle(
+    repoRoot,
+    {
+      id: 'test',
+      slideBackgrounds: [
+        { id: 'testvariant', value: '#140a26', textColor: '#ffffff' },
+      ],
+    },
+    null,
+  );
+  const style = buildExportStyleContent(bundle);
+  const variantAt = style.indexOf('.slide.slide-bg-testvariant');
+  const baseAt = style.indexOf('.slide.has-slide-bg-light-text');
+  assert.ok(variantAt > 0, 'the generated variant rule must reach the export');
+  assert.ok(baseAt > 0, 'the base luminance rule must reach the export');
+  assert.ok(
+    variantAt > baseAt,
+    'theme vars must be laid down after the slide stylesheets',
+  );
+});

@@ -28,7 +28,8 @@ per-slide-type code.
 - `textColor` (optional) — when set, the variant redirects the slide's
   `--color-text` / `--color-text-muted` tokens so all slide text flips to this
   colour (the same mechanism as background-image contrast, see
-  `slide-background-contrast.md`).
+  `slide-background-contrast.md`). It is also a **statement about the ground**,
+  not only a colour — see below.
 - `textColorMuted` (optional, needs `textColor`) — explicit muted colour;
   defaults to a 70% `color-mix` of `textColor`.
 - `linkColor` (optional, needs `textColor`) — explicit `--color-link` for the
@@ -40,6 +41,38 @@ per-slide-type code.
 
 The default `brand` theme (and `amethyst`) ships a `calm` variant
 as a living example.
+
+## What `textColor` declares
+
+Choosing a light `textColor` says the ground under it is dark; choosing a dark
+one says it is light. That is a fact about the variant, and other CSS needs it:
+a card that is white on a light ground has to become glass on a dark one, a
+table header has to invert its tint, a KPI tile needs a border it does not need
+otherwise.
+
+So a variant with a readable `textColor` also gets the slide-level contrast
+class the background-image path uses — `has-slide-bg-light-text` on a dark
+ground, `has-slide-bg-dark-text` on a light one — put on the root `.slide`
+element by `renderSlideHtml`. **Select on that class**, never on a background
+name: `.slide-bg-calm` happening to be dark is a property of one theme's palette
+and no contract at all.
+
+Three rules keep it honest:
+
+- **No `textColor`, no class.** A variant that does not flip its text has
+  declared nothing, and a guess would be worse than silence. The same goes for a
+  `textColor` we cannot read as a colour (a `var()`, an `rgba()` string).
+- **A background image wins.** An image is the ground the text sits on, so its
+  own answer (authored, or sampled at edit time) outranks the variant's.
+- **The colours stay the variant's.** The generic class in `00-base.css` carries
+  a default text/link colour; the generated `.slide.slide-bg-<id>` rule
+  overrides it, because it is laid down after the slide stylesheets in every
+  path (client injection, embed, export, MCP preview).
+
+Retrofitting the per-slide-type CSS that still keys on `.slide-bg-lime` /
+`.slide-bg-calm` / `.slide-bg-dark` onto this class is tracked separately — see
+`docs/plans/TODO.md`. Until that lands, a variant gets correct slide-level
+contrast but not every per-type treatment.
 
 ## How it works
 
@@ -60,7 +93,10 @@ normalizers use it:
 3. **Class emission** — `bgClass()` / `bgClassExtended()`
    (`shared/slide-types/helpers.js`) map any safe slug to `slide-bg-<slug>`.
    An id the active theme doesn't define is an inert class: the slide falls
-   back to its default background.
+   back to its default background. `renderSlideHtml` then adds the luminance
+   class (`slideBackgroundContrastClass`) at the wrapper seam, next to the
+   background-image and logo injections — so it covers every slide type, custom
+   ones included, and only when the type honoured the background field.
 4. **Editor picker** — `client/views/editor/fields/background.js` appends
    variants to the base options; swatches resolve via the existing
    `--t-slide-bg-<id>` convention (gradients render as swatch backgrounds).

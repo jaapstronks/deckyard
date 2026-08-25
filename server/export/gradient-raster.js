@@ -260,10 +260,18 @@ export function findGradientBgVars(themeVarsCss) {
  * @returns {string|null} The variant id (`calm`), not the class.
  */
 export function slideBgVariant(slideHtml) {
-  const m = /class="[^"]*\bslide-bg-([a-z0-9-]+)\b/.exec(
-    String(slideHtml || ''),
-  );
-  return m ? m[1] : null;
+  // Matched as a whole class token, not as a substring: the slide root also
+  // carries the contrast classes (`has-slide-bg-light-text`, `has-slide-bg`),
+  // and a `\bslide-bg-` search finds `slide-bg-light-text` inside the first of
+  // them — naming a variant that no theme declares, so the slide's real
+  // gradient silently escapes rasterization.
+  const attr = /class="([^"]*)"/.exec(String(slideHtml || ''));
+  if (!attr) return null;
+  for (const cls of attr[1].split(/\s+/)) {
+    const m = /^slide-bg-([a-z0-9-]+)$/.exec(cls);
+    if (m) return m[1];
+  }
+  return null;
 }
 
 /**
