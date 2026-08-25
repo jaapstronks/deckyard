@@ -2,9 +2,10 @@
  * The audience-question surface has one owner (B153).
  *
  * `/api/follow/:id/questions/events` was subscribed to from several views —
- * the follow page, the presenter's notes panel — and each copy re-derived the
- * model. They had drifted on the field that matters most: which of
- * `item?.original?.text` and `item?.text` carries what was asked.
+ * the follow page, the presenter's notes panel, and a moderator route since
+ * retired (B156) — and each copy re-derived the model. They had drifted on the
+ * field that matters most: which of `item?.original?.text` and `item?.text`
+ * carries what was asked.
  *
  * Today those agree, because `publicQuestion()` in server/storage/questions.js
  * fills both from the same column and labels `text` "Back-compat". The

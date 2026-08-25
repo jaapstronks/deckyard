@@ -2,8 +2,9 @@
  * The audience question model — one shape, one text accessor, one ranking.
  *
  * The views that render the live question list (the follow page, the
- * presenter's notes panel) each used to read the wire object itself, and they
- * disagreed on which field carried the text (B153).
+ * presenter's notes panel — plus a moderator route since retired, B156) each
+ * used to read the wire object itself, and they disagreed on which field
+ * carried the text (B153).
  *
  * `publicQuestion()` in server/storage/questions.js labels `text` as
  * "Back-compat: `text` is the original text" and sets `original.text` from the
