@@ -27,7 +27,7 @@ import { sql } from 'kysely';
 import { normalizeLang } from '../utils/i18n.js';
 import { sseWrite } from '../utils/sse.js';
 import { toStorageContext } from './scope.js';
-import { withDbGuard } from './utils/db-guard.js';
+import { withDbGuard } from './utils/index.js';
 import { UUID_RE } from '../utils/uuid.js';
 import { fireAndForget } from '../utils/fire-and-forget.js';
 

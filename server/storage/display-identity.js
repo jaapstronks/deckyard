@@ -52,7 +52,7 @@
  */
 
 import { displayNameFromEmail } from '../../shared/display-name.js';
-import { withDbGuard } from './utils/db-guard.js';
+import { withDbGuard } from './utils/index.js';
 
 /**
  * A person as a response names them.

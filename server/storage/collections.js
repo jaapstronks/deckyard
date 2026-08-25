@@ -19,15 +19,15 @@
  * indirection); getDb() throws on an uninitialized database.
  */
 
-import { getDb } from '../../db/client.js';
-import { getOrgId } from '../../utils/context.js';
-import { resolveIdentityByEmail } from '../identity-resolver.js';
-import { toStorageContext } from '../scope.js';
+import { getDb } from '../db/client.js';
+import { getOrgId } from '../utils/context.js';
+import { resolveIdentityByEmail } from './identity-resolver.js';
+import { toStorageContext } from './scope.js';
 import {
   resolveDisplayNames,
   toDisplayIdentity,
   NO_DISPLAY_NAMES,
-} from '../display-identity.js';
+} from './display-identity.js';
 
 /** @returns {string} current ISO timestamp */
 function now() {
@@ -42,7 +42,7 @@ function cleanName(input) {
  * Map a slide_collections row to the facade's API object.
  * @param {object} row - Database row from slide_collections
  * @param {string[]} [slideIds] - Ordered member slide-library ids
- * @param {import('../display-identity.js').DisplayNameLookup} [lookup] -
+ * @param {import('./display-identity.js').DisplayNameLookup} [lookup] -
  *   Resolved display names; omitted derives them from the stored address.
  * @returns {object}
  */
@@ -502,7 +502,7 @@ export async function deleteOrganizationCollection(
 /**
  * Resolve the display names a batch of collection rows needs.
  * @param {Array<Object>} rows - Raw `slide_collections` rows.
- * @returns {Promise<import('../display-identity.js').DisplayNameLookup>}
+ * @returns {Promise<import('./display-identity.js').DisplayNameLookup>}
  */
 async function collectionDisplayNames(rows) {
   return resolveDisplayNames(

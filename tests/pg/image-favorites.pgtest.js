@@ -7,7 +7,7 @@
  * cascaded away when its image is deleted.
  *
  * B79/D34 folded the favorites logic into the facade
- * (server/storage/image-library/index.js); the granular add/is/remove helpers
+ * (server/storage/image-library.js); the granular add/is/remove helpers
  * are now private. `toggleImageFavorite` read-guards duplicates, so the
  * `insert … ON CONFLICT DO NOTHING` inside the private `addFavorite` is a
  * concurrency guard (two racing toggles) that is not serially reachable through
@@ -33,7 +33,7 @@ import { testScope } from '../helpers/storage-scope.js';
 import {
   getImageFavorites,
   toggleImageFavorite,
-} from '../../server/storage/image-library/index.js';
+} from '../../server/storage/image-library.js';
 
 const storageScope = testScope();
 const ALICE = 'alice@example.com';

@@ -135,11 +135,11 @@ const PERMITTED_ADDRESSES = new Map([
     'the owner of an organization-visible deck, to colleagues in that org',
   ],
   [
-    'server/storage/slide-library/index.js :: ownerEmail',
+    'server/storage/slide-library.js :: ownerEmail',
     'a personal-shelf library item is listed only to the person who owns it',
   ],
   [
-    'server/storage/collections/index.js :: ownerEmail',
+    'server/storage/collections.js :: ownerEmail',
     'a personal collection is listed only to the person who owns it',
   ],
   // ── analytics and audit over things you own ──────────────────────────────

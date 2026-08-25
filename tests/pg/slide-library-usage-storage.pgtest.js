@@ -2,7 +2,7 @@
  * Per-user slide-library usage against real PostgreSQL, through the facade.
  *
  * The PostgreSQL counterpart of tests/slide-library-usage-storage.test.js. Same
- * facade (server/storage/slide-library-usage/index.js), same round-trip:
+ * facade (server/storage/slide-library-usage.js), same round-trip:
  * - recording slide + collection usage and reading back the used set
  * - de-duplication of a repeated ref within one call (single row)
  * - useCount increment + firstUsedAt stability across calls
@@ -32,7 +32,7 @@ import { testScope } from '../helpers/storage-scope.js';
 import {
   listSlideLibraryUsage,
   recordSlideLibraryUsage,
-} from '../../server/storage/slide-library-usage/index.js';
+} from '../../server/storage/slide-library-usage.js';
 
 const storageScope = testScope();
 const ALICE = 'alice@example.com';

@@ -4,7 +4,7 @@
  */
 
 import { sql } from 'kysely';
-import { withDbGuard } from './utils/db-guard.js';
+import { withDbGuard } from './utils/index.js';
 import { TIER_LIMITS } from './api-keys.js';
 
 // ============================================================

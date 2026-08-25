@@ -11,7 +11,7 @@ import {
   isoBefore,
   normalizeEmail,
 } from '../../utils/normalize.js';
-import { withDbGuard } from '../utils/db-guard.js';
+import { withDbGuard } from '../utils/index.js';
 import { canComment } from '../../../shared/constants/permissions.js';
 import { generateGuestToken } from './index.js';
 import {

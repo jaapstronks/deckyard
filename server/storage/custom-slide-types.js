@@ -18,18 +18,18 @@
 import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
 import { nowIso } from '../utils/normalize.js';
-import { withDbGuard } from './utils/db-guard.js';
 import {
   NO_DISPLAY_NAMES,
   resolveNamesForAddresses,
   toStoredActorIdentity,
 } from './display-identity.js';
 import {
+  withDbGuard,
   parseJson,
   generateSlug,
   isValidSlug,
   getUserIdByEmail,
-} from './utils/helpers.js';
+} from './utils/index.js';
 import { validateUsage } from '../../shared/slide-types/usage.js';
 
 // Valid field types for custom slide types

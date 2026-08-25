@@ -9,7 +9,7 @@ import {
   getTopPresentations,
   getSourceBreakdown,
   getPresentationsWithAnalytics,
-} from '../../../storage/analytics/dashboard.js';
+} from '../../../storage/analytics/index.js';
 
 const VALID_PERIODS = ['7d', '30d', '90d', '12m'];
 const VALID_SORTS = ['views', 'duration', 'completion', 'recent'];

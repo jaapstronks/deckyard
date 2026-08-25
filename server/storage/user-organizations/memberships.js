@@ -5,7 +5,7 @@
 
 import { sql } from 'kysely';
 import { nowIso, normalizeEmail } from '../../utils/normalize.js';
-import { withDbGuard } from '../utils/db-guard.js';
+import { withDbGuard } from '../utils/index.js';
 import { WORKSPACE_ROLES } from '../../../shared/organization-role.js';
 
 // ============================================================

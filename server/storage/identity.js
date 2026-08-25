@@ -19,7 +19,7 @@
  */
 
 import { normalizeEmail } from '../utils/normalize.js';
-import { withDbGuard } from './utils/db-guard.js';
+import { withDbGuard } from './utils/index.js';
 import { isMultiOrgEnabled } from '../config/features.js';
 import { getDefaultOrganizationId } from '../config/database.js';
 import { listUserOrganizations } from './user-organizations/index.js';

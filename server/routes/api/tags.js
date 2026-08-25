@@ -16,7 +16,7 @@ import {
   deleteTag,
   getTagsForPresentation,
   setTagsForPresentation,
-} from '../../storage/tags/index.js';
+} from '../../storage/tags.js';
 import {
   serveJson,
   badRequest,

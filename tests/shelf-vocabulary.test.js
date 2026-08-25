@@ -75,7 +75,7 @@ const CHECKS = [
     // deleted adapters/postgres/slides.js (+ its mapSlideLibraryRow, which left
     // mappers.js), so this file now carries the where('shelf') /
     // no-where('scope') and shelf:row.shelf mapper guards the adapter used to.
-    file: 'server/storage/slide-library/index.js',
+    file: 'server/storage/slide-library.js',
     forbidden: [
       { label: 'shelf option/field spelled scope (use shelf)', re: /\bscope:/ },
       {
@@ -103,7 +103,7 @@ const CHECKS = [
     // deleted adapters/postgres/collections.js (+ its mapSlideCollectionRow,
     // which left mappers.js), so this file now carries the where('shelf') /
     // no-where('scope') and shelf:row.shelf mapper guards the adapter used to.
-    file: 'server/storage/collections/index.js',
+    file: 'server/storage/collections.js',
     forbidden: [
       { label: 'shelf option/field spelled scope (use shelf)', re: /\bscope:/ },
       {
@@ -405,11 +405,11 @@ test('shelf vocabulary: identifiers say Organization, never Team (B90)', () => {
 test('the canonical Organization identifiers are present, so the scan cannot pass vacuously', () => {
   const required = [
     [
-      'server/storage/slide-library/index.js',
+      'server/storage/slide-library.js',
       /export async function listOrganizationLibrary\b/,
     ],
     [
-      'server/storage/collections/index.js',
+      'server/storage/collections.js',
       /export async function listOrganizationCollections\b/,
     ],
     ['server/export/bulk-export.js', /slide-library\/organization\.json/],

@@ -89,7 +89,7 @@ ordered `slideIds[]`, timestamps.
 
 - **Storage**: migration `046_slide_collections.js` (`slide_collections` +
   ordered `slide_collection_items`) with the Postgres `withCollections` mixin.
-  Facade `server/storage/collections/index.js` applies the personal-owner and
+  Facade `server/storage/collections.js` applies the personal-owner and
   organization-shelf guards.
 - **API:** `/api/slide-collections` (GET/POST/PATCH/DELETE + reorder), same
   shelf/authz conventions as `server/routes/api/slide-library.js` (the shared
@@ -123,7 +123,7 @@ organization rules. `isViewOnly` is a separate, still-supported concept.
 
 A library item stores per-language content under `i18n.versions[<lang>].content`,
 and every hop of the compose path carries it: `mapSlideLibraryRow`
-(`server/storage/slide-library/index.js`) returns `i18n` on the item, the
+(`server/storage/slide-library.js`) returns `i18n` on the item, the
 internal `/api/slide-library` routes serve that object as-is,
 `buildSlidesFromLibraryItems` (`client/lib/slide-library/compose.js`) forwards
 each available language as `contentByLang`, and `prepareNewPresentation`

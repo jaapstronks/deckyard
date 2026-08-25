@@ -12,7 +12,7 @@ favourites) lives in the `image_library` table, per organization. Uploading is a
 provider concern; finding an image again is a library concern.
 
 This document covers the server side: the provider seam (`server/media/`), the
-library store (`server/storage/image-library/`), the stock-media bridges
+library store (`server/storage/image-library.js`), the stock-media bridges
 (Unsplash, Giphy, bundled gradients) and the routes on top. The _client_ side —
 how the editor picks an image and which providers the chooser offers — is
 [`image-picker-seam.md`](image-picker-seam.md); the gradient source is
@@ -51,7 +51,7 @@ Media providers (`server/media/`, 7 modules):
 
 Library store:
 
-- `server/storage/image-library/index.js` — the scoped facade:
+- `server/storage/image-library.js` — the scoped facade:
   `listImageLibrary`, `getImageLibraryItem`, `createImageLibraryItem`,
   `updateImageLibraryItem`, `deleteImageLibraryItem`, `getImageFavorites`,
   `toggleImageFavorite`. Every function takes a storage scope, never a bare

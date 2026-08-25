@@ -6,7 +6,7 @@
 import { getDefaultOrganizationId } from '../config/database.js';
 import { getOrganizationById } from '../storage/user-organizations/index.js';
 import { getOrgSettings } from '../utils/org-settings.js';
-import { listPublishedForFeed } from '../storage/published/index.js';
+import { listPublishedForFeed } from '../storage/published.js';
 import { buildFeed } from '../utils/rss-feed.js';
 import { isRssFeedEnabled, isMultiOrgEnabled } from '../config/features.js';
 import { createLogger } from '../utils/logger.js';

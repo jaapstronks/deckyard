@@ -10,7 +10,7 @@
 import { getDb, sql } from '../db/client.js';
 import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
-import { getPublishedIndex } from './published/index.js';
+import { getPublishedIndex } from './published.js';
 
 /**
  * The title to show for a deck: its dominant language version's title when it

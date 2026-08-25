@@ -2,7 +2,7 @@ import {
   removePublishedEntry,
   updatePublishedSlug,
   upsertPublishedEntry,
-} from '../../storage/published/index.js';
+} from '../../storage/published.js';
 import { updatePresentation } from '../../storage/presentations/index.js';
 import {
   serveJson,

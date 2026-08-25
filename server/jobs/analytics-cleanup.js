@@ -12,8 +12,8 @@
 import {
   deleteOldViewSessions,
   anonymizeOldIpAddresses,
-} from '../storage/analytics/view-sessions.js';
-import { deleteOldSlideViews } from '../storage/analytics/slide-views.js';
+  deleteOldSlideViews,
+} from '../storage/analytics/index.js';
 import { getAnalyticsRetention } from '../storage/settings.js';
 import { crossOrganizationScope } from '../storage/scope.js';
 import { createLogger } from '../utils/logger.js';

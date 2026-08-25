@@ -37,7 +37,7 @@
  * looks it up from the possessed token and hands it here.
  */
 
-import { withDbGuard } from '../utils/db-guard.js';
+import { withDbGuard } from '../utils/index.js';
 
 /**
  * Export all analytics data for one person (GDPR right of access).

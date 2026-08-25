@@ -4,7 +4,7 @@
 
 import { sql } from 'kysely';
 import { norm } from '../../utils/normalize.js';
-import { withDbGuard } from '../utils/db-guard.js';
+import { withDbGuard } from '../utils/index.js';
 import { applyDateFilters } from '../../analytics/helpers.js';
 
 // ============================================================

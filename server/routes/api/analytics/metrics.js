@@ -9,13 +9,13 @@ import {
 import { withPresentationAuth } from '../../../utils/route-middleware.js';
 import { publicDeviceLabel } from '../../../analytics/helpers.js';
 import { badRequest, serveJson } from '../../../utils/http.js';
-import { getViewSessionsForPresentation } from '../../../storage/analytics/view-sessions.js';
 import {
+  getViewSessionsForPresentation,
   getPresentationAnalyticsOverview,
   getDetailedSlideEngagement,
   getInteractionHeatmapData,
   getViewerJourneyData,
-} from '../../../storage/analytics/aggregations.js';
+} from '../../../storage/analytics/index.js';
 
 /**
  * GET /api/presentations/:id/analytics - Get overview metrics.

@@ -56,7 +56,7 @@
  */
 
 import { sql } from 'kysely';
-import { withDbGuard } from './utils/db-guard.js';
+import { withDbGuard } from './utils/index.js';
 
 /**
  * The dual keys this pass verifies: one entry per (id column, e-mail column)

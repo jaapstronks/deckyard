@@ -27,7 +27,7 @@ import {
   createOrganizationCollection,
   updateOrganizationCollection,
   deleteOrganizationCollection,
-} from '../../storage/collections/index.js';
+} from '../../storage/collections.js';
 import { matchesIdentity } from '../../../shared/identity-match.js';
 import { dispatchRoutes } from '../../utils/router.js';
 

@@ -19,8 +19,8 @@ how the scope threads org-isolation through every call. It does not re-document 
 
 ## Module map
 
-`server/storage/` holds **80 `.js` files** — 31 top-level facades/helpers and
-the rest under 13 subdirectories. Rather than list all 80, this is the shape;
+`server/storage/` holds **82 `.js` files** — 37 top-level facades/helpers and
+the rest under 8 subdirectories. Rather than list all 82, this is the shape;
 each path resolves.
 
 **The seam (read these first):**
@@ -44,23 +44,19 @@ each path resolves.
   `ownership.js`, `i18n.js`, `slide-notes.js`, `sandbox.js`, `sandbox-quota.js`,
   `cache.js`, `comments.js`, `subscriptions.js`, `ydocs.js`,
   `snapshot-identity.js`.
-- `server/storage/published/` — published-deck facade; `getPublishedById` is the
-  one deliberately cross-org read.
 - `server/storage/share-links/` — token share links (`crud.js`, `guests.js`,
   `access-log.js`).
 - `server/storage/live-sessions/` — live present/follow sessions (`sessions.js`,
   `sse.js`, `control.js`, `state.js`, `close.js`, `db.js`). See
   [`live-sessions.md`](live-sessions.md).
-- `server/storage/slide-library/`, `server/storage/slide-library-usage/`,
-  `server/storage/collections/` — the reusable-slide shelf and its usage/id sets.
-- `server/storage/image-library/` — per-org images + per-user favorites.
-- `server/storage/tags/` — per-organization tags.
 - `server/storage/user-organizations/` — memberships/roles (`memberships.js`) and
   organization CRUD (`organizations.js`).
 - `server/storage/analytics/` — dashboard/aggregation/report/view-session
-  storage (incl. the GDPR view-session path).
+  storage (incl. the GDPR view-session path), behind an `index.js` barrel.
 - `server/storage/cache/` — `permission-cache.js`.
-- `server/storage/utils/` — `db-guard.js` (`withDbGuard`), `helpers.js`.
+- `server/storage/utils/` — not a store: the cross-store helpers behind one
+  `index.js` seam (`withDbGuard` from `db-guard.js`, `parseJson` /
+  `generateSlug` / `isValidSlug` / `getUserIdByEmail` from `helpers.js`).
 - `server/storage/identity-resolver.js` /
   `server/storage/identity-verification.js` — map an external identifier to a
   stable `users.id`, and check that every dual key still agrees (see
@@ -71,10 +67,20 @@ each path resolves.
 `api-usage.js`, `access-attempts.js`), presentation-adjacent
 (`slide-locks.js`), collaboration/live (`collaborators.js`, `notifications.js`,
 `activity-events.js`, `feedback.js`, `leads.js`, `questions.js`,
-`interactions.js`, `follow-codes.js`), and content
+`interactions.js`, `follow-codes.js`), content
 (`themes.js`, `font-families.js`, `custom-slide-types.js`, `settings.js`,
-`email-templates.js`, `uploads.js`). Each facade maps its own snake_case rows
+`email-templates.js`, `uploads.js`), publishing (`published.js` — the one
+deliberately cross-org read, `getPublishedById`), and the reusable-content
+shelf (`slide-library.js`, `slide-library-usage.js`, `collections.js`,
+`image-library.js`, `tags.js`). Each facade maps its own snake_case rows
 into camelCase API objects inline (there is no shared `mappers.js` module).
+
+**The folder shape is the contract, and it is enforced.** A bare file
+(`server/storage/tags.js`) is an undecomposed store; a folder's barrel
+(`server/storage/share-links/index.js`) is the seam over a decomposed one, and
+consumers never import a concern file directly. `tests/storage-module-layout.test.js` fails on the two shapes that
+break that reading — a folder holding nothing but an `index.js`, and a
+multi-file folder with no `index.js` — with no allowlist (A7.36, D57).
 
 ## Data model
 

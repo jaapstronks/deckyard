@@ -22,9 +22,9 @@ import {
 import { seedDefaultOrganization } from './helpers/seed.js';
 import { testScope } from '../helpers/storage-scope.js';
 import { handleHome } from '../../server/routes/api/home.js';
-import { createOrganizationLibraryItem } from '../../server/storage/slide-library/index.js';
-import { createOrganizationCollection } from '../../server/storage/collections/index.js';
-import { recordSlideLibraryUsage } from '../../server/storage/slide-library-usage/index.js';
+import { createOrganizationLibraryItem } from '../../server/storage/slide-library.js';
+import { createOrganizationCollection } from '../../server/storage/collections.js';
+import { recordSlideLibraryUsage } from '../../server/storage/slide-library-usage.js';
 
 const storageScope = testScope();
 const USER = 'user@example.com';

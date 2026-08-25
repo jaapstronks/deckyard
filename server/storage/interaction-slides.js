@@ -22,7 +22,7 @@
  * can never outlive its session (the cascade collects it).
  */
 
-import { withDbGuard } from './utils/db-guard.js';
+import { withDbGuard } from './utils/index.js';
 
 /** Hard ceiling on authored options, matching the file format's clamp. */
 export const MAX_OPTIONS = 10;

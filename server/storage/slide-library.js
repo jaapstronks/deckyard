@@ -14,17 +14,17 @@
  * indirection); getDb() throws on an uninitialized database.
  */
 
-import { getDb, sql } from '../../db/client.js';
-import { getOrgId } from '../../utils/context.js';
-import { resolveIdentityByEmail } from '../identity-resolver.js';
-import { toStorageContext } from '../scope.js';
+import { getDb, sql } from '../db/client.js';
+import { getOrgId } from '../utils/context.js';
+import { resolveIdentityByEmail } from './identity-resolver.js';
+import { toStorageContext } from './scope.js';
 import {
   resolveDisplayNames,
   toDisplayIdentity,
   toStoredActorIdentity,
   NO_DISPLAY_NAMES,
-} from '../display-identity.js';
-import { nowIso } from '../../utils/normalize.js';
+} from './display-identity.js';
+import { nowIso } from '../utils/normalize.js';
 
 /**
  * Serialize a JSONB value for PostgreSQL.
@@ -39,7 +39,7 @@ function jsonb(value) {
 /**
  * Map a slide_library row to the facade's API object.
  * @param {object} row - Database row
- * @param {import('../display-identity.js').DisplayNameLookup} [lookup] -
+ * @param {import('./display-identity.js').DisplayNameLookup} [lookup] -
  *   Resolved display names; omitted derives them from the stored address.
  * @returns {object}
  */
@@ -584,7 +584,7 @@ export async function setTagsForSlideLibraryItem(
 /**
  * Resolve the display names a batch of library rows needs.
  * @param {Array<Object>} rows - Raw `slide_library` rows.
- * @returns {Promise<import('../display-identity.js').DisplayNameLookup>}
+ * @returns {Promise<import('./display-identity.js').DisplayNameLookup>}
  */
 async function libraryDisplayNames(rows) {
   return resolveDisplayNames(

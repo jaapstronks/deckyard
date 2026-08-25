@@ -6,7 +6,7 @@ import { getDb } from '../../db/client.js';
 import { getOrgId } from '../../utils/context.js';
 import { toStorageContext } from '../scope.js';
 import { norm, nowIso } from '../../utils/normalize.js';
-import { withDbGuard } from '../utils/db-guard.js';
+import { withDbGuard } from '../utils/index.js';
 import { isValidShareLinkPermission } from '../../../shared/constants/permissions.js';
 import { generateShareToken, hashPassword, verifyPassword } from './index.js';
 import {

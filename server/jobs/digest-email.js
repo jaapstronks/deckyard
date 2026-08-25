@@ -10,7 +10,7 @@ import {
   getWeeklyAnalyticsForUser,
   getTeamWeeklyAnalytics,
   getUsersWithDigestDay,
-} from '../storage/analytics/weekly-summary.js';
+} from '../storage/analytics/index.js';
 import {
   generateDigestWithAI,
   generateTeamDigestWithAI,

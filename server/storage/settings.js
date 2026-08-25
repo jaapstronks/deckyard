@@ -39,7 +39,7 @@
 
 import { sql } from 'kysely';
 import { toStorageContext } from './scope.js';
-import { withDbGuard } from './utils/db-guard.js';
+import { withDbGuard } from './utils/index.js';
 import { invalidateDisplayNames } from './display-identity.js';
 import { resolveIdentityByEmail } from './identity-resolver.js';
 import {

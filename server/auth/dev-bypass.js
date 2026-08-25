@@ -18,7 +18,7 @@
  */
 
 import { getDefaultOrganizationId } from '../config/database.js';
-import { withDbGuard } from '../storage/utils/db-guard.js';
+import { withDbGuard } from '../storage/utils/index.js';
 import { nowIso } from '../utils/normalize.js';
 
 /**

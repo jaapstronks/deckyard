@@ -14,7 +14,7 @@ import {
 import {
   getTagsForPresentations,
   getTagsForPresentation,
-} from '../../../storage/tags/index.js';
+} from '../../../storage/tags.js';
 import { normalizeEmail } from '../../../utils/normalize.js';
 import { canonicalSlideType } from '../../../../shared/slide-types.js';
 import {

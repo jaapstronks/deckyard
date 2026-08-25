@@ -19,7 +19,7 @@
 
 import crypto from 'node:crypto';
 import { toStorageContext } from './scope.js';
-import { withDbGuard } from './utils/db-guard.js';
+import { withDbGuard } from './utils/index.js';
 
 // Follow codes are guessable live-session handles: a valid one resolves to a
 // presenter's live follow URL. Use a CSPRNG (not Math.random, which is
