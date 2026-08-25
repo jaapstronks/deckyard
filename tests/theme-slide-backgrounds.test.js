@@ -215,13 +215,12 @@ test('the class it reports matches the --slide-on-inverted the generator emits',
     ['paper', 'var(--slide-on-dark)'],
   ]) {
     const rule = css.slice(css.indexOf(`.slide.slide-bg-${id}`));
-    const cls = slideBackgroundContrastClass(CONTRAST_ENTRIES, id);
-    assert.match(
-      rule,
-      new RegExp(`--slide-on-inverted: ${pole.replace(/[()]/g, '\\$&')};`),
+    assert.ok(
+      rule.includes(`--slide-on-inverted: ${pole};`),
+      `${id} must pair its inverted plane with ${pole}`,
     );
     assert.equal(
-      cls,
+      slideBackgroundContrastClass(CONTRAST_ENTRIES, id),
       pole === 'var(--slide-on-light)'
         ? 'has-slide-bg-light-text'
         : 'has-slide-bg-dark-text',
