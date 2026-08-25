@@ -3,9 +3,10 @@ import {
   escapeHtml,
   liveInteractionOptions,
   BACKGROUND_FIELD,
+  ON_CLOSE_FIELD,
+  ON_CLOSE_TARGET_FIELD,
 } from '../helpers.js';
 import { getSlideCopy } from '../slide-copy.js';
-import { sharedOption } from '../../ui-i18n-keys.js';
 
 function letterForIdx(i) {
   return ['A', 'B', 'C', 'D'][i] || '?';
@@ -53,45 +54,8 @@ export default {
       ],
     },
     BACKGROUND_FIELD,
-    {
-      key: 'onClose',
-      label: 'When closed',
-      labelKey: 'editor.slideField.onClose.label',
-      type: 'enum',
-      required: false,
-      options: [
-        sharedOption(
-          'editor.slideField.onClose.option.stay',
-          'stay',
-          'Stay on slide',
-        ),
-        sharedOption(
-          'editor.slideField.onClose.option.next',
-          'next',
-          'Go to next slide',
-        ),
-        sharedOption(
-          'editor.slideField.onClose.option.goto',
-          'goto',
-          'Go to specific slide',
-        ),
-      ],
-    },
-    {
-      key: 'onCloseTarget',
-      label: 'Target slide ID',
-      labelKey: 'editor.slideField.onCloseTarget.label',
-      type: 'string',
-      required: false,
-      maxLength: 100,
-      // The condition used to live in prose ("Only used when …"), which meant
-      // the form showed a dead control in the other two modes and the reader
-      // printed its value as a paragraph. Declared, both surfaces agree; and a
-      // slide id is machine data even when the field IS live, hence
-      // `presentational`.
-      visibleWhen: { field: 'onClose', in: ['goto'] },
-      presentational: true,
-    },
+    ON_CLOSE_FIELD,
+    ON_CLOSE_TARGET_FIELD,
   ],
   defaultsByLang: {
     nl: {
