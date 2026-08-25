@@ -6,7 +6,7 @@ import { createLogger } from '../utils/logger.js';
 import { getPresentation } from '../storage/presentations/index.js';
 import { normalizeLang, projectPresentationForLang } from '../utils/i18n.js';
 import { loadThemeAssets } from '../utils/themes.js';
-import { canReadPresentation } from '../utils/presentation-authz.js';
+import { canReadPresentation } from '../utils/presentation-authz/index.js';
 import { getCollaboratorPermission } from '../storage/collaborators.js';
 import {
   addJob,

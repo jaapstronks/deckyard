@@ -18,7 +18,7 @@ import {
   separateSlidesForProcessing,
 } from '../../server/utils/ai/generate-outline.js';
 import { refineAllSlideGroups } from '../../server/utils/ai/refine-slides.js';
-import { validateAndFixRefinedSlides } from '../../server/utils/ai/validate-slides.js';
+import { validateAndFixRefinedSlides } from '../../server/utils/ai/validate-slides/index.js';
 import { assembleDeck } from '../../server/utils/ai/generate-deck-v2.js';
 import { reviseOutline } from '../../server/utils/ai/revise-outline.js';
 

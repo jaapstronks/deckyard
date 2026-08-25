@@ -13,7 +13,7 @@ import {
   canActorAccessPresentation,
   hasIdentity,
   isOwnerOrCreator,
-} from '../../../utils/presentation-authz.js';
+} from '../../../utils/presentation-authz/index.js';
 import { resolveIdentityByEmail } from '../../../storage/identity-resolver.js';
 import {
   incrementUsage,

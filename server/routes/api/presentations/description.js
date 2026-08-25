@@ -8,7 +8,7 @@ import {
   requireJsonBody,
 } from '../../../utils/http.js';
 import { getOptionalString } from '../../../utils/request-validators.js';
-import { canReadPresentation } from '../../../utils/presentation-authz.js';
+import { canReadPresentation } from '../../../utils/presentation-authz/index.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types.js';
 import { getLlmConfig } from '../../../utils/llm/config.js';
 import { requestChatCompletionContent } from '../../../utils/llm/index.js';

@@ -14,7 +14,7 @@ import { createStorageScope } from '../utils/context.js';
 import {
   canReadPresentation,
   canWritePresentation,
-} from '../utils/presentation-authz.js';
+} from '../utils/presentation-authz/index.js';
 import {
   ForbiddenError,
   NotFoundError,

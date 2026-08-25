@@ -8,7 +8,7 @@
 import { getPresentation } from '../../../storage/presentations/index.js';
 import { transferPresentationOwnership } from '../../../storage/presentations/ownership.js';
 import { listUsers } from '../../../storage/users.js';
-import { canTransferOwnership } from '../../../utils/presentation-authz.js';
+import { canTransferOwnership } from '../../../utils/presentation-authz/index.js';
 import {
   methodNotAllowed,
   notFound,

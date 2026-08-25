@@ -23,7 +23,7 @@ import { getTrimmedString } from '../../../utils/request-validators.js';
 import {
   canReadPresentation,
   canWritePresentation,
-} from '../../../utils/presentation-authz.js';
+} from '../../../utils/presentation-authz/index.js';
 import { logError, logDebug } from '../../../utils/logger.js';
 
 // Throttle session-end snapshots to prevent duplicates from rapid beacon delivery

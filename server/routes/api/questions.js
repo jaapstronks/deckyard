@@ -22,7 +22,7 @@ import {
 import { getCollaboratorPermission } from '../../storage/collaborators.js';
 import { normalizeLang } from '../../utils/translation-status.js';
 import { notifyLiveSessionDeckUpdated } from '../../storage/live-sessions/index.js';
-import { canWritePresentation } from '../../utils/presentation-authz.js';
+import { canWritePresentation } from '../../utils/presentation-authz/index.js';
 import { isOrganizationAdmin } from '../../utils/organization-role.js';
 import { dispatchRoutes } from '../../utils/router.js';
 

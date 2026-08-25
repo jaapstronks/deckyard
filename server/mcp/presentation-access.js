@@ -17,7 +17,7 @@ import { getPresentation } from '../storage/presentations/index.js';
 import {
   canActorAccessPresentation,
   canActorDeletePresentation,
-} from '../utils/presentation-authz.js';
+} from '../utils/presentation-authz/index.js';
 
 /**
  * Load a presentation by id and enforce the owner's access to it.

@@ -11,7 +11,7 @@ import {
 } from '../../../analytics/helpers.js';
 import { AUTH_RATE_LIMITS } from '../../../config/rate-limits.js';
 import { getAnalyticsReportByToken } from '../../../storage/analytics/index.js';
-import { normalizePresentationVisibility } from '../../../utils/presentation-authz.js';
+import { normalizePresentationVisibility } from '../../../utils/presentation-authz/index.js';
 import { crossOrganizationScope } from '../../../storage/scope.js';
 import {
   badRequest,

@@ -12,7 +12,7 @@
 
 import { LockedError, ValidationError } from '../../../utils/errors.js';
 import { getSlideLocks } from '../../slide-locks.js';
-import { isPresentationAuthor } from '../../../utils/presentation-authz.js';
+import { isPresentationAuthor } from '../../../utils/presentation-authz/index.js';
 import { matchesIdentity } from '../../../../shared/identity-match.js';
 import { isCollabLiveEditsEnabled } from '../../../config/features.js';
 import { isOrganizationAdmin } from '../../../utils/organization-role.js';

@@ -21,7 +21,7 @@ import { refineAllSlideGroups } from '../../../utils/ai/refine-slides.js';
 import {
   validateAndFixRefinedSlides,
   validateSlideCount,
-} from '../../../utils/ai/validate-slides.js';
+} from '../../../utils/ai/validate-slides/index.js';
 import { getDisplayNameForUser } from '../../../utils/user-name.js';
 import { sseWrite, sseError, openSseStream } from '../../../utils/sse.js';
 import {

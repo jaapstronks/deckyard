@@ -13,7 +13,7 @@ import {
   diffAppliedFixes,
   validateAndFixRefinedSlides,
   RawSlideValidationError,
-} from '../server/utils/ai/validate-slides.js';
+} from '../server/utils/ai/validate-slides/index.js';
 
 describe('validateRefinedSlidesStrict', () => {
   it('accepts a valid title + team-cards deck', () => {

@@ -63,8 +63,8 @@ Pipeline (`server/utils/ai/`, 42 modules). The top level:
   slide.
 - `server/utils/ai/compare-versions.js` — human-readable diff
   summaries between two deck versions.
-- `server/utils/ai/validate-slides.js` + `server/utils/ai/validate-slides/`
-  (8 modules) — the repair stage: `checks.js`, `constants.js` (item counts, max
+- `server/utils/ai/validate-slides/` (an `index.js` barrel over 8 modules) —
+  the repair stage: `checks.js`, `constants.js` (item counts, max
   lengths), `fields.js` (valid/unknown field keys), `fix.js` (404 lines, the
   non-throwing repair pipeline), `fixers.js` (per-type repairs),
   `strict.js` (throwing validation for raw output), `truncate.js`, `logging.js`.
@@ -92,11 +92,10 @@ Pipeline (`server/utils/ai/`, 42 modules). The top level:
 - `server/utils/ai/validation-logging.js` — small, production-safe
   validation-event logs (unknown fields, schema issues) plus the admin readers.
 
-Legacy single-prompt path (`server/utils/openai/`, 8 modules):
-`server/utils/ai.js` is a 9-line re-export of `openai/deck.js` (`wizard`),
-`openai/append.js`, `openai/translate.js` and `openai/convert-slide.js`;
-`openai/json.js`, `lang.js`, `prompt.js` and `slide-types-prompt.js` support
-them. This is the **v1** generation route — one prompt, no outline phase — still
+Legacy single-prompt path (`server/utils/openai/`, 8 modules): call sites
+import `openai/deck.js` (`wizard`), `openai/append.js`, `openai/translate.js`
+and `openai/convert-slide.js` directly; `openai/json.js`, `lang.js`,
+`prompt.js` and `slide-types-prompt.js` support them. This is the **v1** generation route — one prompt, no outline phase — still
 live behind `POST /api/ai/wizard`.
 
 Routes (`server/routes/api/ai/`, 9 modules + a 38-line dispatcher):

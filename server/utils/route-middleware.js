@@ -18,7 +18,7 @@ import {
   canDeletePresentation,
   canManageCollaborators,
   canCommentOnPresentation,
-} from './presentation-authz.js';
+} from './presentation-authz/index.js';
 import { isMultiOrgEnabled } from '../config/features.js';
 import { getGuestBySessionToken } from '../storage/share-links/index.js';
 import { parseCookies } from './cookies.js';

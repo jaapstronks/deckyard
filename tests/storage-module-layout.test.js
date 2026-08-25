@@ -30,8 +30,10 @@
  * **There is no allowlist**, on purpose. The previous scan found four of these
  * and they were still here at the next one; a burndown list would have carried
  * them a third time. The third rule the brief names — a tracked `P/X.js` beside
- * a folder `P/X/` — lands with A7.36 PR 2/3, which is what removes the seven
- * eponymous wrappers that would otherwise fail it on arrival.
+ * a folder `P/X/` — still waits for A7.36 PR 3: PR 2 removed the seven
+ * eponymous re-export shims, but the three form-A route modules (`ai/`,
+ * `follow/`, `presentations/`) keep their `X.js` until PR 3 moves the tables
+ * into `X/index.js`, and the rule lands there with them.
  *
  * Not covered by either rule: a folder holding exactly one file that is *not*
  * `index.js` (`cache/permission-cache.js` today). Same disease as rule 1 —

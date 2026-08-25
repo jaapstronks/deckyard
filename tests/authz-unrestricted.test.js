@@ -19,7 +19,7 @@ import {
   canDeletePresentation,
   canCommentOnPresentation,
   getEffectivePermission,
-} from '../server/utils/presentation-authz.js';
+} from '../server/utils/presentation-authz/index.js';
 import { belongsInCollection } from '../server/routes/api/presentations/list.js';
 
 const OPERATOR = {

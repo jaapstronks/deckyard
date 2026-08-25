@@ -53,7 +53,7 @@ const { isCommentOwner } =
 const { isPresentationAuthor: clientIsAuthor, isSlideLockedForUser } =
   await import('../client/lib/slide-authoring/slide-lock-authz.js');
 const { isPresentationAuthor: serverIsAuthor } =
-  await import('../server/utils/presentation-authz.js');
+  await import('../server/utils/presentation-authz/index.js');
 
 const passwordHash = await hashPassword('correct-horse-battery');
 

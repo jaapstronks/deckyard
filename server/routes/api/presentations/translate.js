@@ -4,7 +4,7 @@ import {
 } from '../../../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
 import { getFeatureFlags } from '../../../config/flags-snapshot.js';
-import { translatePresentationStrings } from '../../../utils/ai.js';
+import { translatePresentationStrings } from '../../../utils/openai/translate.js';
 import {
   badRequest,
   methodNotAllowed,
@@ -13,7 +13,7 @@ import {
   unauthorized,
   requireJsonBody,
 } from '../../../utils/http.js';
-import { canWritePresentation } from '../../../utils/presentation-authz.js';
+import { canWritePresentation } from '../../../utils/presentation-authz/index.js';
 import {
   normalizeTranslationLang,
   normalizeLang,

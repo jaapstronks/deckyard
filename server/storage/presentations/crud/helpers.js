@@ -2,7 +2,7 @@
  * CRUD helper functions - validation, error creation, and merge utilities.
  */
 
-import { normalizePresentationVisibility } from '../../../utils/presentation-authz.js';
+import { normalizePresentationVisibility } from '../../../utils/presentation-authz/index.js';
 import { normalizeEmail } from '../../../utils/normalize.js';
 import { ConflictError } from '../../../utils/errors.js';
 import { slideFingerprint } from '../../../../shared/slide-fingerprint.js';

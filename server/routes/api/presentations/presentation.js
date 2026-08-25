@@ -11,7 +11,7 @@ import {
   jsonError,
   requireJsonBody,
 } from '../../../utils/http.js';
-import { getEffectivePermission } from '../../../utils/presentation-authz.js';
+import { getEffectivePermission } from '../../../utils/presentation-authz/index.js';
 import {
   withPresentationAuth,
   canEditCustomHtml,

@@ -7,10 +7,8 @@ import {
   createPresentation,
   updatePresentation,
 } from '../../../storage/presentations/index.js';
-import {
-  generateDeckJsonFromRawContent,
-  generateSlidesToAppendFromRawContent,
-} from '../../../utils/ai.js';
+import { generateDeckJsonFromRawContent } from '../../../utils/openai/deck.js';
+import { generateSlidesToAppendFromRawContent } from '../../../utils/openai/append.js';
 import { getLlmStatus } from '../../../utils/llm/config.js';
 import {
   deckToPresentationParts,

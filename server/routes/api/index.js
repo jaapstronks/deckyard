@@ -50,7 +50,7 @@ import { handleUploads } from './uploads.js';
 import { handleExports } from './export.js';
 import { handleBulkExport } from './bulk-export.js';
 import { handlePublish } from './publish.js';
-import { handleShareLinks, handleSharePublic } from './share-links.js';
+import { handleShareLinks, handleSharePublic } from './share-links/index.js';
 import { handleQuestions } from './questions.js';
 import { handleSettings } from './settings.js';
 import { handleSlideLibrary } from './slide-library.js';
@@ -63,7 +63,10 @@ import { handleUsers } from './users.js';
 import { handleProfile } from './profile.js';
 import { handleNotifications } from './notifications.js';
 import { handleAnalyticsTrack } from './analytics-track.js';
-import { handleAnalytics, handleAnalyticsReportPublic } from './analytics.js';
+import {
+  handleAnalytics,
+  handleAnalyticsReportPublic,
+} from './analytics/index.js';
 import { handleTags } from './tags.js';
 import { handleStockMedia } from './stock-media.js';
 import { handleApiKeys } from './api-keys.js';

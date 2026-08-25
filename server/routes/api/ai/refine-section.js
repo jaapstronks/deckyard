@@ -12,7 +12,7 @@ import {
   getStringArray,
 } from '../../../utils/request-validators.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
-import { validateAndFixRefinedSlides } from '../../../utils/ai/validate-slides.js';
+import { validateAndFixRefinedSlides } from '../../../utils/ai/validate-slides/index.js';
 import { refineSectionWithAi } from '../../../utils/ai/refine-section.js';
 import { loadSlideTypeContext } from './shared.js';
 

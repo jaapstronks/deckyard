@@ -8,7 +8,7 @@ import {
   separateSlidesForProcessing,
 } from '../ai/generate-outline.js';
 import { refineAllSlideGroups } from '../ai/refine-slides.js';
-import { validateAndFixRefinedSlides } from '../ai/validate-slides.js';
+import { validateAndFixRefinedSlides } from '../ai/validate-slides/index.js';
 import { createSessionLogger, generateSessionId } from '../ai/logging.js';
 import { cryptoUuid } from '../../../shared/slide-types/helpers.js';
 import { DECK_FORMAT_ID } from '../../../shared/slide-types/deck-format-id.js';

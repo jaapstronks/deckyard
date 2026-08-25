@@ -62,7 +62,7 @@ const {
   canGuestComment,
   canGuestEditComment,
   canGuestDeleteComment,
-} = await import('../server/utils/presentation-authz.js');
+} = await import('../server/utils/presentation-authz/index.js');
 
 // `isSameOrganization` is the one decider the barrel does not re-export, and
 // the share-link decider is not in the barrel at all (see the exhaustiveness
@@ -936,7 +936,7 @@ describe('isUnrestricted', () => {
 // missing is a list, not an obligation.
 //
 // The corpus is the authz layer itself, `server/utils/presentation-authz/`,
-// deliberately *not* the `presentation-authz.js` barrel: the barrel does not
+// deliberately *not* the `presentation-authz/index.js` barrel: the barrel does not
 // re-export `share-links.js` at all, and scanning it would have reproduced the
 // exact blind spot this gate exists to close.
 //

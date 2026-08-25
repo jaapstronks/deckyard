@@ -24,7 +24,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { singleOrganizationScope } from '../storage/scope.js';
 import { resolveIdentityByEmail } from '../storage/identity-resolver.js';
-import { isOwnerOrCreator } from '../utils/presentation-authz.js';
+import { isOwnerOrCreator } from '../utils/presentation-authz/index.js';
 
 /**
  * Simple concurrency limiter.

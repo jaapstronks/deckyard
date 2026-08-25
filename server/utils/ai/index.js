@@ -35,7 +35,7 @@ export {
   validateSlideCount,
   getRecentValidationLogs,
   getUnknownFields,
-} from './validate-slides.js';
+} from './validate-slides/index.js';
 
 export { analyzeForCompression, applyCompression } from './compress-deck.js';
 

@@ -8,7 +8,7 @@ import { buildMergedSlideTypes } from '../../utils/custom-slide-type-runtime.js'
 import {
   buildEmbedHtml,
   parseEmbedOptionsFromUrl,
-} from '../../utils/embed-html.js';
+} from '../../utils/embed-html/index.js';
 import {
   hasLangVersion,
   otherLang,

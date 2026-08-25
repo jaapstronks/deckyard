@@ -3,7 +3,7 @@ import {
   updatePresentation,
 } from '../../../storage/presentations/index.js';
 import { getFeatureFlags } from '../../../config/flags-snapshot.js';
-import { translatePresentationStringsFillMissing } from '../../../utils/ai.js';
+import { translatePresentationStringsFillMissing } from '../../../utils/openai/translate.js';
 import {
   methodNotAllowed,
   notFound,
@@ -19,7 +19,7 @@ import {
   otherLang,
   pickVersion,
 } from '../../../utils/translation-status.js';
-import { canWritePresentation } from '../../../utils/presentation-authz.js';
+import { canWritePresentation } from '../../../utils/presentation-authz/index.js';
 
 // In-process translation job lock (prevents double-spending tokens)
 const missingTranslationJobs = new Map();

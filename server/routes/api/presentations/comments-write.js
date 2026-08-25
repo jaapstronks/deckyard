@@ -20,7 +20,7 @@ import {
   canGuestComment,
   canGuestEditComment,
   canGuestDeleteComment,
-} from '../../../utils/presentation-authz.js';
+} from '../../../utils/presentation-authz/index.js';
 import {
   getComment,
   getCommentAuthorEmail,

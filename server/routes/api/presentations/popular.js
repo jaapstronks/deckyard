@@ -7,7 +7,7 @@ import { getOrgId } from '../../../utils/context.js';
 import { serveJson, unauthorized } from '../../../utils/http.js';
 import { withDbGuard } from '../../../storage/utils/index.js';
 import { getTagsForPresentations } from '../../../storage/tags.js';
-import { canReadPresentation } from '../../../utils/presentation-authz.js';
+import { canReadPresentation } from '../../../utils/presentation-authz/index.js';
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
 import {
   resolveDisplayNames,
