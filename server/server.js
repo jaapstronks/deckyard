@@ -10,7 +10,7 @@ import { ssoConfigError } from './config/sso.js';
 import { storageModeError } from './config/database.js';
 import { publicUrlWarnings, envStr, envBool, envInt } from './config/utils.js';
 import { handleApi } from './routes/api/index.js';
-import { handleStatic } from './routes/static.js';
+import { handleStatic } from './routes/static/index.js';
 import { getFeatureFlags } from './config/flags-snapshot.js';
 import { allowRequest, getClientIp } from './utils/rate-limit.js';
 import { rateLimited } from './utils/http.js';

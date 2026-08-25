@@ -98,10 +98,10 @@ and `openai/convert-slide.js` directly; `openai/json.js`, `lang.js`,
 `prompt.js` and `slide-types-prompt.js` support them. This is the **v1** generation route — one prompt, no outline phase — still
 live behind `POST /api/ai/wizard`.
 
-Routes (`server/routes/api/ai/`, 9 modules + a 38-line dispatcher):
+Routes (`server/routes/api/ai/`, 9 concern modules behind an `index.js` seam):
 
-- `server/routes/api/ai.js` — a declarative exact-path table; every route is a
-  fixed method + pathname.
+- `server/routes/api/ai/index.js` — the seam: a declarative exact-path table;
+  every route is a fixed method + pathname.
 - `server/routes/api/ai/shared.js` — the `AiContext` typedef and the
   shared helpers: `loadSlideTypeContext` (org disabled + custom types),
   `loadAiThemeContext` (backgrounds, brand colours, presets),

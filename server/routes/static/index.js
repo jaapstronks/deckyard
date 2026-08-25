@@ -1,18 +1,15 @@
-import { notFound } from '../utils/http.js';
-import { handleFeed } from './feed.js';
+import { notFound } from '../../utils/http.js';
+import { handleFeed } from '../feed.js';
 import {
   handleCustomStyles,
   handleGo,
   handleStaticFiles,
-} from './static/static-files.js';
-import { handleEmbed } from './static/embed.js';
-import {
-  handlePublishedReader,
-  handlePublishedPage,
-} from './static/published.js';
-import { handleSandboxOg } from './static/sandbox-og.js';
-import { handleShareLink } from './static/share-viewer.js';
-import { handleAppRoutes } from './static/app-shell.js';
+} from './static-files.js';
+import { handleEmbed } from './embed.js';
+import { handlePublishedReader, handlePublishedPage } from './published.js';
+import { handleSandboxOg } from './sandbox-og.js';
+import { handleShareLink } from './share-viewer.js';
+import { handleAppRoutes } from './app-shell.js';
 
 /**
  * Terminal router for everything that is not `/api/*`: public/published pages,
@@ -21,7 +18,7 @@ import { handleAppRoutes } from './static/app-shell.js';
  * is significant and mirrors the original if-chain (specific published/embed
  * routes before the generic static-dir and app-shell fallbacks).
  *
- * @param {import('./static/static-files.js').StaticContext} ctx
+ * @param {import('./static-files.js').StaticContext} ctx
  */
 export async function handleStatic(ctx) {
   const { repoRoot, req, res, url } = ctx;

@@ -11,7 +11,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-const { handleAi } = await import('../server/routes/api/ai.js');
+const { handleAi } = await import('../server/routes/api/ai/index.js');
 
 function makeCtx(method, pathname, resSink = {}) {
   const res = {

@@ -26,7 +26,7 @@ import assert from 'node:assert/strict';
 import {
   ROUTES as FOLLOW_ROUTES,
   handleFollowPublic,
-} from '../server/routes/api/follow.js';
+} from '../server/routes/api/follow/index.js';
 import {
   ROUTES as CODE_ROUTES,
   handleFollowCodes,
