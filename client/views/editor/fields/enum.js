@@ -1,5 +1,6 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom.js';
+import { optionCopy } from './option-copy.js';
 
 /**
  * The translated visible label for an enum field. Enum fields resolve their
@@ -34,25 +35,6 @@ export function createEnumFields({ fieldSelect } = {}) {
       'aria-hidden': 'true',
     });
 
-  const normalizeOption = (o) => {
-    if (typeof o === 'string') {
-      return {
-        value: o,
-        label: o,
-        title: o,
-        ariaLabel: o,
-      };
-    }
-    if (o && typeof o === 'object') {
-      const value = String(o.value ?? '');
-      const label = String(o.label ?? o.title ?? value);
-      const title = String(o.title ?? o.label ?? value);
-      const ariaLabel = String(o.ariaLabel ?? o.label ?? title ?? value);
-      return { ...o, value, label, title, ariaLabel };
-    }
-    return { value: '', label: '', title: '', ariaLabel: '' };
-  };
-
   const enumButtonContent = (field, optionValue, optionLabel) => {
     const key = String(field?.key || '');
     if (key === 'background') {
@@ -77,17 +59,10 @@ export function createEnumFields({ fieldSelect } = {}) {
       return h('span', { text: optionLabel ?? optionValue });
     }
     if (key === 'autoplay') {
-      if (optionValue === 'on')
-        return h('span', {
-          class: 'sb-toggle-text',
-          text: t('common.on', 'On'),
-        });
-      if (optionValue === 'off')
-        return h('span', {
-          class: 'sb-toggle-text',
-          text: t('common.off', 'Off'),
-        });
-      return h('span', { class: 'sb-toggle-text', text: String(optionValue) });
+      return h('span', {
+        class: 'sb-toggle-text',
+        text: optionLabel ?? optionValue,
+      });
     }
     if (key === 'lang') {
       return h('span', {
@@ -107,7 +82,7 @@ export function createEnumFields({ fieldSelect } = {}) {
         isHalf ? ' is-half' : ''
       }`,
       role: 'radiogroup',
-      'aria-label': field?.label || field?.key || 'Options',
+      'aria-label': enumFieldLabel(field) || field?.key || 'Options',
     });
 
     const setActive = (opt) => {
@@ -120,26 +95,12 @@ export function createEnumFields({ fieldSelect } = {}) {
     };
 
     for (const raw of options) {
-      const opt = normalizeOption(raw);
+      const opt = optionCopy(raw);
       const btn = h('button', {
         type: 'button',
         class: 'sb-segmented-btn',
-        title:
-          key === 'autoplay'
-            ? opt.value === 'on'
-              ? 'On'
-              : opt.value === 'off'
-                ? 'Off'
-                : String(opt.title ?? opt.label ?? opt.value)
-            : String(opt.title ?? opt.label ?? opt.value),
-        'aria-label':
-          key === 'autoplay'
-            ? opt.value === 'on'
-              ? 'On'
-              : opt.value === 'off'
-                ? 'Off'
-                : String(opt.ariaLabel ?? opt.title ?? opt.label ?? opt.value)
-            : String(opt.ariaLabel ?? opt.title ?? opt.label ?? opt.value),
+        title: opt.title,
+        'aria-label': opt.ariaLabel,
         'aria-pressed': String(value ?? '') === opt.value ? 'true' : 'false',
         onclick: () => {
           setActive(opt.value);
@@ -179,7 +140,12 @@ export function createEnumFields({ fieldSelect } = {}) {
     if (options.length > 0 && options.length <= 6) {
       return fieldSegmented(field, v, options, onChange);
     }
-    return fieldSelect(enumFieldLabel(field), v, options, onChange);
+    return fieldSelect(
+      enumFieldLabel(field),
+      v,
+      options.map(optionCopy),
+      onChange,
+    );
   };
 
   // A responsive row of fields. Columns are no longer fixed: `.field-grid` is a

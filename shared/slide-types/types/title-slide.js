@@ -76,7 +76,10 @@ export default {
       label: 'Logo corner',
       type: 'enum',
       required: false,
-      options: ['left', 'right'],
+      options: [
+        { value: 'left', label: 'Left' },
+        { value: 'right', label: 'Right' },
+      ],
       formLayout: 'pair',
     },
     // Last, because it has no primary home in the form: the toolbar "Layout"

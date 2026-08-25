@@ -100,16 +100,12 @@ export function alignGroup(id, alignKey, opts = {}) {
     defaultAlign: align[0],
     alignClass: opts.alignClass || DEFAULT_ALIGN_CLASS,
   };
-  const field = {
-    key: alignKey,
-    label: opts.label || 'Block alignment',
-    type: 'enum',
-    required: false,
-    options: [...align],
-  };
   // One tile per offered value. Deliberately NOT an inspector keep (see
   // inspector-form.js): the toolbar "Layout" chip is the block's only control,
-  // the convention the structural `layout` enums already follow.
+  // the convention the structural `layout` enums already follow. The bulk-edit
+  // modal does render the enum, so the two surfaces read their copy from the
+  // same `editor.layoutVariant.block*` key — one text, one key, no per-type
+  // mint of the raw `left`/`center` token (B145).
   const TILE = {
     left: {
       id: 'block-left',
@@ -126,6 +122,17 @@ export function alignGroup(id, alignKey, opts = {}) {
       labelKey: 'editor.layoutVariant.blockRight',
       label: 'Right',
     },
+  };
+  const field = {
+    key: alignKey,
+    label: opts.label || 'Block alignment',
+    type: 'enum',
+    required: false,
+    options: align.map((value) =>
+      TILE[value]
+        ? { value, label: TILE[value].label, labelKey: TILE[value].labelKey }
+        : value,
+    ),
   };
   const variants = align.map((value) => ({
     ...TILE[value],
