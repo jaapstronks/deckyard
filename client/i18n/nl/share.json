@@ -1,12 +1,4 @@
 {
-  "moderate.addedToDeck": "Toegevoegd aan deck",
-  "moderate.adminRequired": "Moderatortoegang vereist dat je als beheerder inlogt",
-  "moderate.count": "{n} vragen",
-  "moderate.help": "Verwijder vragen die zijn beantwoord of ongepast zijn. De lijst is live en gesorteerd op upvotes.",
-  "moderate.missingId": "presentationId ontbreekt",
-  "moderate.noLive": "Geen live sessie.",
-  "moderate.none": "Geen vragen.",
-  "moderate.title": "Q&A moderator",
   "share.collaborators.alreadyExists": "Een of meer gebruikers zijn al medewerker",
   "share.collaborators.empty": "Nog geen medewerkers",
   "share.collaborators.help": "Nodig teamleden uit om samen te werken aan deze presentatie.",

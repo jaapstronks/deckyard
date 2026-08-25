@@ -1,12 +1,4 @@
 {
-  "moderate.addedToDeck": "Dodano do prezentacji",
-  "moderate.adminRequired": "Dostęp moderatora wymaga logowania jako administrator",
-  "moderate.count": "Pytań: {n}",
-  "moderate.help": "Usuń pytania, na które udzielono odpowiedzi lub które są nieodpowiednie. Lista jest aktualizowana na żywo i sortowana według głosów.",
-  "moderate.missingId": "Brak parametru presentationId",
-  "moderate.noLive": "Brak aktywnej sesji.",
-  "moderate.none": "Brak pytan.",
-  "moderate.title": "Moderator Q&A",
   "share.collaborators.alreadyExists": "Jeden lub więcej użytkowników jest już współpracownikami",
   "share.collaborators.empty": "Brak współpracowników",
   "share.collaborators.help": "Zaproś członków zespołu do współpracy nad tą prezentacją.",

@@ -1,12 +1,4 @@
 {
-  "moderate.addedToDeck": "Tilføjet til præsentation",
-  "moderate.adminRequired": "Moderatoradgang kræver login som administrator",
-  "moderate.count": "{n} spørgsmål",
-  "moderate.help": "Fjern spørgsmål, der er blevet besvaret eller er upassende. Listen er live og sorteret efter stemmer.",
-  "moderate.missingId": "presentationId mangler",
-  "moderate.noLive": "Ingen live-session.",
-  "moderate.none": "Ingen spørgsmål.",
-  "moderate.title": "Q&A-moderator",
   "share.collaborators.alreadyExists": "En eller flere brugere er allerede samarbejdspartnere",
   "share.collaborators.empty": "Ingen samarbejdspartnere endnu",
   "share.collaborators.help": "Inviter teammedlemmer til at samarbejde om denne præsentation.",

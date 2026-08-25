@@ -1,12 +1,4 @@
 {
-  "moderate.addedToDeck": "Lisätty esitykseen",
-  "moderate.adminRequired": "Moderaattorin käyttö vaatii kirjautumisen järjestelmänvalvojana",
-  "moderate.count": "{n} kysymystä",
-  "moderate.help": "Poista kysymykset, joihin on vastattu tai jotka ovat sopimattomia. Lista päivittyy reaaliajassa ja on järjestetty äänien mukaan.",
-  "moderate.missingId": "presentationId puuttuu",
-  "moderate.noLive": "Ei aktiivista istuntoa.",
-  "moderate.none": "Ei kysymyksiä.",
-  "moderate.title": "Q&A-moderaattori",
   "share.collaborators.alreadyExists": "Yksi tai useampi käyttäjä on jo yhteistyökumppani",
   "share.collaborators.empty": "Ei vielä yhteistyökumppaneita",
   "share.collaborators.help": "Kutsu tiimin jäseniä tekemään yhteistyötä tässä esityksessä.",

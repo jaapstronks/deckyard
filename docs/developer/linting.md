@@ -329,7 +329,7 @@ Two role systems meet on the user object and they are not the same thing.
 is currently in, and only exists in multi-workspace mode. Gating UI on the
 instance flag alone means an admin of organization A keeps every destructive
 affordance the moment they switch to organization B — the delete button on a
-shared image, the Q&A remove button, the raw-JSON editor, the moderator route.
+shared image, the Q&A remove button, the raw-JSON editor.
 
 [`isOrganizationAdmin(user)`](../../client/lib/user/organization-role.js) is the
 conjunction: instance admin **and**, where a membership exists, `admin` or

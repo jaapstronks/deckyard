@@ -1,12 +1,4 @@
 {
-  "moderate.addedToDeck": "Lagt til i presentasjon",
-  "moderate.adminRequired": "Moderatortilgang krever innlogging som administrator",
-  "moderate.count": "{n} spørsmål",
-  "moderate.help": "Fjern spørsmål som er besvart eller upassende. Listen er live og sortert etter stemmer.",
-  "moderate.missingId": "presentationId mangler",
-  "moderate.noLive": "Ingen live-økt.",
-  "moderate.none": "Ingen spørsmål.",
-  "moderate.title": "Q&A-moderator",
   "share.collaborators.alreadyExists": "Én eller flere brukere er allerede samarbeidspartnere",
   "share.collaborators.empty": "Ingen samarbeidspartnere ennå",
   "share.collaborators.help": "Inviter teammedlemmer til å samarbeide om denne presentasjonen.",

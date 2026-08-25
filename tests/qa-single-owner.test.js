@@ -1,17 +1,16 @@
 /**
  * The audience-question surface has one owner (B153).
  *
- * `/api/follow/:id/questions/events` was subscribed to three times — the follow
- * page, the presenter's notes panel, the moderator route — and each copy
- * re-derived the model. They had drifted on the field that matters most: follow
- * and notes read `item?.original?.text || item?.text`, moderate read only
- * `item?.text`.
+ * `/api/follow/:id/questions/events` was subscribed to from several views —
+ * the follow page, the presenter's notes panel — and each copy re-derived the
+ * model. They had drifted on the field that matters most: which of
+ * `item?.original?.text` and `item?.text` carries what was asked.
  *
  * Today those agree, because `publicQuestion()` in server/storage/questions.js
  * fills both from the same column and labels `text` "Back-compat". The
  * divergence is latent, not live — and it stops being latent the moment `text`
  * carries anything but the original (the `texts` map next to it exists for
- * exactly that), at which point the moderator would be deleting a question
+ * exactly that), at which point a moderator would be deleting a question
  * whose text they never saw.
  *
  * This file pins the consolidation: `client/lib/qa/` owns the accessor, the
@@ -117,7 +116,7 @@ test('the question mutation paths are built in exactly one place', () => {
 // ---------------------------------------------------------------------------
 
 test('questionText prefers the original over the back-compat alias', () => {
-  // The case the three views disagreed about.
+  // The case the views disagreed about.
   assert.equal(
     questionText({ text: 'a translation', original: { text: 'as asked' } }),
     'as asked',

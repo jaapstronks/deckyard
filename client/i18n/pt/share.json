@@ -1,12 +1,4 @@
 {
-  "moderate.addedToDeck": "Adicionado ao deck",
-  "moderate.adminRequired": "O acesso de moderação exige sessão iniciada como administrador",
-  "moderate.count": "{n} perguntas",
-  "moderate.help": "Remova perguntas que já foram respondidas ou são inapropriadas. A lista está ao vivo e ordenada por votos positivos.",
-  "moderate.missingId": "Falta o presentationId",
-  "moderate.noLive": "Sem sessão ao vivo.",
-  "moderate.none": "Sem perguntas.",
-  "moderate.title": "Moderador de perguntas",
   "share.collaborators.alreadyExists": "Um ou mais utilizadores já são colaboradores",
   "share.collaborators.empty": "Ainda sem colaboradores",
   "share.collaborators.help": "Convide membros da equipa para colaborar nesta apresentação.",
