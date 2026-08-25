@@ -235,9 +235,13 @@ export async function buildSlidePreviewHtml(
       buildPrismKatexTags({ ...highlightNeeds, mode: 'inlined' }),
     ],
     styles: [
+      // themeVars after baseCss: its generated `.slide.slide-bg-<id>` rules
+      // share specificity with 00-base's `.slide.has-slide-bg-light-text`, and
+      // a variant's authored colours must outrank that generic default. See
+      // the note in server/export/css-bundle.js.
       buildCssChain(repoRoot, [
-        themeVars,
         baseCss,
+        themeVars,
         GRADIENT_OFF_CSS,
         PREVIEW_CHROME_CSS,
       ]),
@@ -295,9 +299,10 @@ export async function buildSingleSlidePreviewHtml(
       buildPrismKatexTags({ ...highlightNeeds, mode: 'inlined' }),
     ],
     styles: [
+      // Same ordering reason as the list preview above.
       buildCssChain(repoRoot, [
-        themeVars,
         baseCss,
+        themeVars,
         GRADIENT_OFF_CSS,
         SINGLE_PREVIEW_CHROME_CSS,
       ]),
