@@ -36,8 +36,8 @@ ladder in `shared/constants/permissions.js`, and the deck-level grants in
 The deciders (`server/utils/presentation-authz/`, 5 modules, 604 lines), fronted
 by one barrel:
 
-- `server/utils/presentation-authz.js` — the barrel every call site imports;
-  re-exports the deciders plus the identity helpers from `shared/`.
+- `server/utils/presentation-authz/index.js` — the barrel every call site
+  imports; re-exports the deciders plus the identity helpers from `shared/`.
 - `server/utils/presentation-authz/presentations.js` — the deck-level deciders:
   read, write, delete, visibility change, force-unlock, ownership transfer,
   authorship, collaborator management, commenting, and the effective level.

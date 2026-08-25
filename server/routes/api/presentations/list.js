@@ -6,7 +6,7 @@ import {
   isUnrestricted,
   hasIdentity,
   isOwnerOrCreator,
-} from '../../../utils/presentation-authz.js';
+} from '../../../utils/presentation-authz/index.js';
 import { resolveThemeThumbBg } from '../../../utils/themes.js';
 import { withDbGuard } from '../../../storage/utils/index.js';
 import { getOrgId } from '../../../utils/context.js';

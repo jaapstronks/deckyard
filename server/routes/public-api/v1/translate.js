@@ -4,7 +4,7 @@
  */
 
 import { updatePresentation } from '../../../storage/presentations/index.js';
-import { translatePresentationStrings } from '../../../utils/ai.js';
+import { translatePresentationStrings } from '../../../utils/openai/translate.js';
 import { fireAndForget } from '../../../utils/fire-and-forget.js';
 import { getFeatureFlags } from '../../../config/flags-snapshot.js';
 import {

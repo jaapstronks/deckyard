@@ -12,7 +12,7 @@
 import { getPresentation } from '../../../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
 import { loadThemeAssets } from '../../../utils/themes.js';
-import { canReadPresentation } from '../../../utils/presentation-authz.js';
+import { canReadPresentation } from '../../../utils/presentation-authz/index.js';
 import { renderSlideHtml } from '../../../../shared/slide-types.js';
 import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';

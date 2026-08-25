@@ -21,7 +21,7 @@ import {
 import {
   canActorCommentOnPresentation,
   canResolveComment,
-} from '../../../utils/presentation-authz.js';
+} from '../../../utils/presentation-authz/index.js';
 import {
   buildSlideSnapshot,
   enrichCommentsWithSlideContext,

@@ -4,7 +4,7 @@ import {
   getTrimmedString,
 } from '../../../utils/request-validators.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
-import { generateDeckJsonFromRawContent } from '../../../utils/ai.js';
+import { generateDeckJsonFromRawContent } from '../../../utils/openai/deck.js';
 import { getDisplayNameForUser } from '../../../utils/user-name.js';
 import {
   sandboxDefaultThemeId,

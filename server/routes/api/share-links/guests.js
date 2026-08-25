@@ -20,7 +20,7 @@ import {
   markInvitationSent,
 } from '../../../storage/share-links/index.js';
 import { sendGuestInvitationEmail } from '../../../integrations/brevo.js';
-import { canWritePresentation } from '../../../utils/presentation-authz.js';
+import { canWritePresentation } from '../../../utils/presentation-authz/index.js';
 import { dispatchRoutes } from '../../../utils/router.js';
 import {
   badRequest,

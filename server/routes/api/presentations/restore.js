@@ -12,7 +12,7 @@ import {
   unauthorized,
   jsonError,
 } from '../../../utils/http.js';
-import { canWritePresentation } from '../../../utils/presentation-authz.js';
+import { canWritePresentation } from '../../../utils/presentation-authz/index.js';
 import { parseIfMatchRevision } from './helpers.js';
 
 export async function handlePresentationRestoreVersion(

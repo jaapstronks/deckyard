@@ -2,7 +2,7 @@
  * Zod Schemas for Refined Slide Content
  *
  * These schemas validate the content structure of Phase 2 AI output.
- * They complement existing validation in validate-slides.js but provide
+ * They complement existing validation in validate-slides/index.js but provide
  * stricter type checking with detailed error messages.
  *
  * Usage:

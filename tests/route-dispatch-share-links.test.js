@@ -25,7 +25,7 @@ import {
   PUBLIC_ROUTES,
   handleShareLinks,
   handleSharePublic,
-} from '../server/routes/api/share-links.js';
+} from '../server/routes/api/share-links/index.js';
 
 function select(routes, method, pathname) {
   for (const route of routes) {

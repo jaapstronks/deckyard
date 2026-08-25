@@ -19,7 +19,7 @@ import {
   requireJsonBody,
 } from '../../../utils/http.js';
 import { sseWrite, sseError, openSseStream } from '../../../utils/sse.js';
-import { canWritePresentation } from '../../../utils/presentation-authz.js';
+import { canWritePresentation } from '../../../utils/presentation-authz/index.js';
 import { getString } from '../../../utils/request-validators.js';
 import { createLogger } from '../../../utils/logger.js';
 const log = createLogger('import-slides-as-images');

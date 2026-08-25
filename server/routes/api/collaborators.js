@@ -23,7 +23,7 @@ import {
 } from '../../storage/collaborators.js';
 import { listUsers } from '../../storage/users.js';
 import { sendCollaboratorInviteEmail } from '../../integrations/brevo.js';
-import { canManageCollaborators } from '../../utils/presentation-authz.js';
+import { canManageCollaborators } from '../../utils/presentation-authz/index.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import {
   badRequest,

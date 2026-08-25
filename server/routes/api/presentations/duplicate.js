@@ -10,7 +10,7 @@ import {
   unauthorized,
   requireJsonBody,
 } from '../../../utils/http.js';
-import { canReadPresentation } from '../../../utils/presentation-authz.js';
+import { canReadPresentation } from '../../../utils/presentation-authz/index.js';
 
 export async function handlePresentationDuplicate(
   { repoRoot, storageScope, req, res, authedUser } = {},

@@ -1,7 +1,7 @@
 import { getPresentation } from '../../../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
 import { getFeatureFlags } from '../../../config/flags-snapshot.js';
-import { translateFieldMap } from '../../../utils/ai.js';
+import { translateFieldMap } from '../../../utils/openai/translate.js';
 import {
   methodNotAllowed,
   notFound,
@@ -14,7 +14,7 @@ import {
   getOptionalObject,
 } from '../../../utils/request-validators.js';
 import { normalizeLang, otherLang } from '../../../utils/translation-status.js';
-import { canReadPresentation } from '../../../utils/presentation-authz.js';
+import { canReadPresentation } from '../../../utils/presentation-authz/index.js';
 
 export async function handlePresentationTranslateFields(
   { repoRoot, storageScope, req, res, authedUser } = {},

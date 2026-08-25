@@ -39,7 +39,7 @@ const {
   isOwnerOrCreator,
   matchesIdentity,
   hasIdentity,
-} = await import('../server/utils/presentation-authz.js');
+} = await import('../server/utils/presentation-authz/index.js');
 
 const { belongsInCollection } =
   await import('../server/routes/api/presentations/list.js');

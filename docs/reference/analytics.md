@@ -81,8 +81,6 @@ Routes:
 /api/analytics/reports/:token`, the only unauthenticated read.
 - `server/routes/api/analytics/gdpr.js` — `GET`/`DELETE
 /api/analytics/my-data`.
-- `server/routes/api/analytics.js` — a compatibility re-export of
-  `analytics/index.js`.
 
 Job:
 

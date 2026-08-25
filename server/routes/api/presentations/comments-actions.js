@@ -16,7 +16,7 @@ import {
   storageError,
   unauthorized,
 } from '../../../utils/http.js';
-import { canResolveComment } from '../../../utils/presentation-authz.js';
+import { canResolveComment } from '../../../utils/presentation-authz/index.js';
 import {
   getComment,
   resolveComment,

@@ -14,7 +14,7 @@ import {
 import {
   canChangePresentationVisibility,
   isPresentationAuthor,
-} from '../../../utils/presentation-authz.js';
+} from '../../../utils/presentation-authz/index.js';
 import { maybeFireWebhook } from '../../../utils/webhooks.js';
 import { parseIfMatchRevision } from './helpers.js';
 import { getOptionalBoolean } from '../../../utils/request-validators.js';

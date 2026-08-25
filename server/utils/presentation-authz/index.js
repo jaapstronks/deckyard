@@ -1,12 +1,12 @@
 /**
- * Presentation authorization functions.
- *
- * This module re-exports all authorization functions from their domain-specific files:
- * - presentation-authz/share-links.js: Share link permissions
- * - presentation-authz/presentations.js: Core presentation permissions
- * - presentation-authz/comments.js: Comment permissions
- * - presentation-authz/guests.js: Guest permissions
- * - shared/identity-match.js: Who an actor is (keyed on `users.id`), shared with the client
+ * Presentation authorization — the seam over the domain-specific modules here:
+ * - `share-links.js`: Share link permissions
+ * - `presentations.js`: Core presentation permissions
+ * - `comments.js`: Comment permissions
+ * - `guests.js`: Guest permissions
+ * - `actor-access.js`: Machine-client access (public API, MCP)
+ * - `../../../shared/identity-match.js`: Who an actor is (keyed on `users.id`),
+ *   shared with the client
  */
 
 // Identity matching — the one place ownership stamps are compared
@@ -15,7 +15,7 @@ export {
   isOwnerOrCreator,
   matchesIdentity,
   hasIdentity,
-} from '../../shared/identity-match.js';
+} from '../../../shared/identity-match.js';
 
 // Core presentation permissions
 export {
@@ -30,21 +30,21 @@ export {
   getEffectivePermission,
   isPresentationAuthor,
   isUnrestricted,
-} from './presentation-authz/presentations.js';
+} from './presentations.js';
 
 // Comment permissions
 export {
   canResolveComment,
   canEditComment,
   canDeleteComment,
-} from './presentation-authz/comments.js';
+} from './comments.js';
 
 // Guest permissions
 export {
   canGuestComment,
   canGuestEditComment,
   canGuestDeleteComment,
-} from './presentation-authz/guests.js';
+} from './guests.js';
 
 // Actor-based access (machine clients: public API, MCP)
 export {
@@ -54,4 +54,4 @@ export {
   canActorResolveComment,
   checkActorCommentAccess,
   canActorCommentOnPresentation,
-} from './presentation-authz/actor-access.js';
+} from './actor-access.js';

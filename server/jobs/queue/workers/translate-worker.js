@@ -11,7 +11,7 @@ import {
   getPresentation,
   updatePresentation,
 } from '../../../storage/presentations/index.js';
-import { translatePresentationStrings } from '../../../utils/ai.js';
+import { translatePresentationStrings } from '../../../utils/openai/translate.js';
 import {
   normalizeTranslationLang,
   normalizeLang,

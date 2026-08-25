@@ -15,7 +15,7 @@ import {
   badRequest,
   requireJsonBody,
 } from '../../../utils/http.js';
-import { canWritePresentation } from '../../../utils/presentation-authz.js';
+import { canWritePresentation } from '../../../utils/presentation-authz/index.js';
 import { getString } from '../../../utils/request-validators.js';
 import { loadThemeAssets, resolveThemeId } from '../../../utils/themes.js';
 import {

@@ -13,7 +13,7 @@ import { getLlmConfig } from '../llm/config.js';
 import { requestChatCompletionContent } from '../llm/index.js';
 import { extractJsonObject, safeJsonParse } from '../openai/json.js';
 import { buildPhase2CatalogPrompt } from './slide-type-catalog.js';
-import { validateAndFixSlide } from './validate-slides.js';
+import { validateAndFixSlide } from './validate-slides/index.js';
 import { prompts } from './prompts/index.js';
 
 /**

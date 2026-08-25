@@ -24,7 +24,7 @@ import {
   trackExportRequest,
   apiError,
 } from './middleware.js';
-import { canActorAccessPresentation } from '../../../utils/presentation-authz.js';
+import { canActorAccessPresentation } from '../../../utils/presentation-authz/index.js';
 import { getRateLimitHeaders } from '../../../storage/api-usage.js';
 
 // ============================================================

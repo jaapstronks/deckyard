@@ -10,8 +10,8 @@ import {
   deckToPresentationParts,
   presentationToDeck,
 } from '../../../../shared/slide-types.js';
-import { generateSlidesToAppendFromRawContent } from '../../../utils/ai.js';
-import { validateAndFixRefinedSlides } from '../../../utils/ai/validate-slides.js';
+import { generateSlidesToAppendFromRawContent } from '../../../utils/openai/append.js';
+import { validateAndFixRefinedSlides } from '../../../utils/ai/validate-slides/index.js';
 import { loadSlideTypeContext } from './shared.js';
 
 /**

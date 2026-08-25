@@ -10,7 +10,7 @@ import {
   getTrimmedString,
   getLang,
 } from '../../../utils/request-validators.js';
-import { convertSlideWithAi } from '../../../utils/ai.js';
+import { convertSlideWithAi } from '../../../utils/openai/convert-slide.js';
 
 /**
  * POST /api/ai/convert-slide — convert a slide to a different type using AI.

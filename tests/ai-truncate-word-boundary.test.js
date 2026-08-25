@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { validateAndFixRefinedSlides } from '../server/utils/ai/validate-slides.js';
+import { validateAndFixRefinedSlides } from '../server/utils/ai/validate-slides/index.js';
 
 /**
  * Truncation runs inside slide validation, so drive it through a slide rather

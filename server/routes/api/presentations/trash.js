@@ -15,7 +15,7 @@ import {
   forbidden,
   badRequest,
 } from '../../../utils/http.js';
-import { canDeletePresentation } from '../../../utils/presentation-authz.js';
+import { canDeletePresentation } from '../../../utils/presentation-authz/index.js';
 import {
   isOwnerOrCreator,
   matchesIdentity,

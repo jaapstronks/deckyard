@@ -15,7 +15,7 @@ import {
 import { refineAllSlideGroups } from './refine-slides.js';
 import { reviseOutline } from './revise-outline.js';
 import { createSessionLogger, generateSessionId } from './logging.js';
-import { validateAndFixRefinedSlides } from './validate-slides.js';
+import { validateAndFixRefinedSlides } from './validate-slides/index.js';
 import { cryptoUuid } from '../../../shared/slide-types/helpers.js';
 import { DECK_FORMAT_ID } from '../../../shared/slide-types/deck-format-id.js';
 import { createLogger } from '../logger.js';

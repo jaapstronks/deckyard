@@ -31,7 +31,7 @@ import {
 import {
   canActorCommentOnPresentation,
   canActorResolveComment,
-} from '../utils/presentation-authz.js';
+} from '../utils/presentation-authz/index.js';
 import {
   buildSlideSnapshot,
   enrichCommentsWithSlideContext,
@@ -62,14 +62,14 @@ import {
   validateRefinedSlidesStrict,
   diffAppliedFixes,
   RawSlideValidationError,
-} from '../utils/ai/validate-slides.js';
+} from '../utils/ai/validate-slides/index.js';
 import { iteratePresentation } from '../utils/ai/iterate-deck.js';
 import {
   analyzeForCompression,
   applyCompression,
 } from '../utils/ai/compress-deck.js';
 import { analyzePresentation } from '../utils/ai/analyze-presentation.js';
-import { convertSlideWithAi } from '../utils/ai.js';
+import { convertSlideWithAi } from '../utils/openai/convert-slide.js';
 import { generateSlidesToAppendFromRawContent } from '../utils/openai/append.js';
 import {
   listThemeIds,

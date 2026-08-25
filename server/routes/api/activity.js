@@ -18,7 +18,7 @@ import {
 } from '../../storage/activity-events.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { getPresentation } from '../../storage/presentations/index.js';
-import { canReadPresentation } from '../../utils/presentation-authz.js';
+import { canReadPresentation } from '../../utils/presentation-authz/index.js';
 import { getCollaboratorPermission } from '../../storage/collaborators.js';
 
 // GET /api/activity - List activity events
