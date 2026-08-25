@@ -44,8 +44,6 @@ export function route() {
   if (jm) return { name: 'notesJoin', sessionId: jm[1] };
   const fm = p.match(/^\/follow\/([^/]+)$/);
   if (fm) return { name: 'follow', presentationId: fm[1] };
-  const mm = p.match(/^\/moderate\/([^/]+)$/);
-  if (mm) return { name: 'moderate', presentationId: mm[1] };
   const sm = p.match(/^\/s\/([^/]+)$/);
   if (sm) return { name: 'share', token: sm[1] };
   const am = p.match(/^\/analytics\/([^/]+)$/);

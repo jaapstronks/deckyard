@@ -1,17 +1,17 @@
 /**
  * The audience question model — one shape, one text accessor, one ranking.
  *
- * Three views render the same live question list (the follow page, the
- * presenter's notes panel, the moderator route) and each used to read the wire
- * object itself. They disagreed: follow and notes read
- * `item?.original?.text || item?.text`, moderate read only `item?.text` (B153).
+ * The views that render the live question list (the follow page, the
+ * presenter's notes panel — plus a moderator route since retired, B156) each
+ * used to read the wire object itself, and they disagreed on which field
+ * carried the text (B153).
  *
  * `publicQuestion()` in server/storage/questions.js labels `text` as
  * "Back-compat: `text` is the original text" and sets `original.text` from the
- * same column, so the two agree *today* — the divergence is latent, not live.
- * It stops being latent the moment `text` starts carrying anything but the
- * original (the `texts` map next to it exists for exactly that), and then the
- * moderator would be deleting a question whose text they never saw. One
+ * same column, so the readings agree *today* — the divergence is latent, not
+ * live. It stops being latent the moment `text` starts carrying anything but
+ * the original (the `texts` map next to it exists for exactly that), and then
+ * a moderator would be deleting a question whose text they never saw. One
  * accessor removes the question.
  *
  * Normalizing here also means a view never re-derives `upvotes`, `isPromoted`

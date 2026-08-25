@@ -1,12 +1,4 @@
 {
-  "moderate.addedToDeck": "Zum Deck hinzugefügt",
-  "moderate.adminRequired": "Für den Moderationszugang ist eine Admin-Anmeldung erforderlich",
-  "moderate.count": "{n} Fragen",
-  "moderate.help": "Entfernen Sie Fragen, die beantwortet wurden oder unangemessen sind. Die Liste ist live und nach Upvotes sortiert.",
-  "moderate.missingId": "presentationId fehlt",
-  "moderate.noLive": "Keine Live-Sitzung.",
-  "moderate.none": "Keine Fragen.",
-  "moderate.title": "Q&A-Moderator",
   "share.collaborators.alreadyExists": "Ein oder mehrere Benutzer sind bereits Mitwirkende",
   "share.collaborators.empty": "Noch keine Mitwirkenden",
   "share.collaborators.help": "Laden Sie Teammitglieder ein, um an dieser Präsentation mitzuarbeiten.",

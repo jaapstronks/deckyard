@@ -578,35 +578,6 @@
   opacity: 0.95;
 }
 
-/* Moderate panel */
-.moderate-panel {
-  max-width: 820px;
-  margin: 40px auto;
-}
-
-.moderate-list {
-  margin-top: 14px;
-}
-
-.moderate-question {
-  padding: var(--ps-space-3) var(--ps-space-4);
-  border-radius: var(--ps-radius-xl);
-  border: 1px solid hsl(var(--app-border-default));
-  background: hsl(var(--app-bg-elevated));
-}
-
-.moderate-question-text {
-  line-height: 1.35;
-  white-space: pre-wrap;
-}
-
-.moderate-badge {
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: hsl(var(--app-accent-soft));
-  border: 1px solid hsl(var(--app-accent-primary) / 0.28);
-}
-
 /* ============================================================
    SLIDE LIBRARY VIEW (in list/overview page)
    ============================================================ */

@@ -1,12 +1,4 @@
 {
-  "moderate.addedToDeck": "Ajouté au deck",
-  "moderate.adminRequired": "L'accès modérateur demande une connexion administrateur",
-  "moderate.count": "{n} questions",
-  "moderate.help": "Supprimez les questions qui ont été répondues ou qui sont inappropriées. La liste est en direct et triée par votes positifs.",
-  "moderate.missingId": "presentationId manquant",
-  "moderate.noLive": "Pas de session en direct.",
-  "moderate.none": "Aucune question.",
-  "moderate.title": "Modérateur Q&R",
   "share.collaborators.alreadyExists": "Un ou plusieurs utilisateurs sont déjà collaborateurs",
   "share.collaborators.empty": "Aucun collaborateur pour le moment",
   "share.collaborators.help": "Invitez des membres de l'équipe à collaborer sur cette présentation.",

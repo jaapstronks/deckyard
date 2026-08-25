@@ -27,7 +27,6 @@ import { renderMagicLogin } from './views/magic-login.js';
 import { renderNotes } from './views/notes.js';
 import { renderNotesJoin } from './views/notes-join.js';
 import { renderFollow } from './views/follow.js';
-import { renderModerate } from './views/moderate.js';
 import { renderShareViewer } from './views/share-viewer.js';
 import { renderSettings } from './views/settings.js';
 import { renderAnalytics } from './views/analytics/index.js';
@@ -281,10 +280,6 @@ async function render() {
     }
     if (r.name === 'presentWindow') {
       await mount(renderPresentWindow(root, r.id, { nav, user }));
-      return;
-    }
-    if (r.name === 'moderate') {
-      await mount(renderModerate(root, r.presentationId, { nav, user }));
       return;
     }
     if (r.name === 'analytics') {

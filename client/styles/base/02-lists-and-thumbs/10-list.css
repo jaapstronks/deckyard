@@ -2,7 +2,7 @@
 
 /* App chrome scope boundary:
    These primitives are intentionally NOT global anymore; they only apply inside
-   app shells (editor/list/moderate) and app-only standalone shells (notes/follow/presenter)
+   app shells (editor/list) and app-only standalone shells (notes/follow/presenter)
    as well as modals which are mounted outside `.app-shell`. */
 :where(
     .app-shell,

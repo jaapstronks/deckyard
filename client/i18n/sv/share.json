@@ -1,12 +1,4 @@
 {
-  "moderate.addedToDeck": "Tillagd i presentation",
-  "moderate.adminRequired": "Moderatoråtkomst kräver inloggning som administratör",
-  "moderate.count": "{n} frågor",
-  "moderate.help": "Ta bort frågor som har besvarats eller är olämpliga. Listan är live och sorterad efter röster.",
-  "moderate.missingId": "presentationId saknas",
-  "moderate.noLive": "Ingen live-session.",
-  "moderate.none": "Inga frågor.",
-  "moderate.title": "Q&A-moderator",
   "share.collaborators.alreadyExists": "En eller flera användare är redan medarbetare",
   "share.collaborators.empty": "Inga medarbetare ännu",
   "share.collaborators.help": "Bjud in teammedlemmar att samarbeta om denna presentation.",

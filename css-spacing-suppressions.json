@@ -26,7 +26,7 @@
   },
   "client/styles/base/01-core/31-list-layout.css": {
     "tokenisable-spacing": {
-      "count": 12
+      "count": 8
     }
   },
   "client/styles/base/01-core/32-list-cards.css": {

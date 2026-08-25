@@ -1,12 +1,4 @@
 {
-  "moderate.addedToDeck": "Aggiunto al mazzo",
-  "moderate.adminRequired": "L'accesso da moderatore richiede il login come amministratore",
-  "moderate.count": "{n} domande",
-  "moderate.help": "Rimuova le domande a cui è già stato risposto o non appropriate. L'elenco è in tempo reale e ordinato per voti.",
-  "moderate.missingId": "presentationId mancante",
-  "moderate.noLive": "Nessuna sessione attiva.",
-  "moderate.none": "Nessuna domanda.",
-  "moderate.title": "Moderatore Q&A",
   "share.collaborators.alreadyExists": "Uno o più utenti sono già collaboratori",
   "share.collaborators.empty": "Ancora nessun collaboratore",
   "share.collaborators.help": "Invita i membri del team a collaborare su questa presentazione.",

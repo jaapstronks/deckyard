@@ -1,12 +1,10 @@
 /**
- * The three Q&A views render the same question (B153).
+ * The Q&A views render the same question (B153).
  *
- * The follow page, the presenter's notes panel and the moderator route each
- * render the live question list, and each used to read the wire object itself.
- * Follow and notes read `item?.original?.text || item?.text`; moderate read
- * only `item?.text`. This drives all three against one payload whose two text
- * fields differ and asserts they land on the same string — the assertion that
- * would have failed before the consolidation, and the one that keeps the
+ * The follow page and the presenter's notes panel both render the live
+ * question list, and each used to read the wire object itself rather than one
+ * accessor. This drives both against one payload whose two text fields differ
+ * and asserts they land on the same string — the assertion that keeps a
  * moderator from deleting a question whose text they never saw.
  *
  * Rendering only: none of these tests connects an SSE stream (the views are fed
@@ -40,7 +38,7 @@ const { createFollowQaController } =
   await import('../client/views/follow/qa.js');
 const { createNotesQaController } = await import('../client/views/notes/qa.js');
 
-// The question the three views disagreed about: `text` is the documented
+// The question the views disagreed about: `text` is the documented
 // back-compat alias, `original.text` is what was actually asked.
 const ASKED = 'How does the licence work?';
 const ALIAS = 'Hoe werkt de licentie?';
@@ -115,33 +113,6 @@ test('the presenter notes panel renders the same question text', async () => {
   assert.equal(qaBody.querySelector('.notes-qa-body').textContent, ASKED);
   assert.equal(qaBody.querySelector('.notes-qa-who').textContent, 'Ada');
   controller.destroy();
-});
-
-test('the moderator route renders the same question text', async () => {
-  // renderModerate imports api() rather than taking it, so the transport is
-  // stubbed one level down. The view is the subject here, not the network layer.
-  const responses = [PAYLOAD];
-  dom.window.fetch = async () => ({
-    ok: true,
-    status: 200,
-    headers: { get: () => 'application/json' },
-    json: async () => responses[0],
-    text: async () => JSON.stringify(responses[0]),
-  });
-  globalThis.fetch = dom.window.fetch;
-
-  const { renderModerate } = await import('../client/views/moderate.js');
-  const root = el();
-  const detach = await renderModerate(root, 'deck-1', {
-    user: { isAdmin: true },
-  });
-
-  assert.equal(
-    root.querySelector('.moderate-question-text').textContent,
-    ASKED,
-    'the moderator must see what the audience sees',
-  );
-  detach?.();
 });
 
 test('an unauthored question falls back to the back-compat alias everywhere', async () => {
