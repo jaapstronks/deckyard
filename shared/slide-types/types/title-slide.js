@@ -25,6 +25,7 @@ import { alignGroup, groupAlignClass } from '../field-groups.js';
  */
 const TITLE_BLOCK = alignGroup('title-block', 'titleBlockAlign', {
   label: 'Title block alignment',
+  labelKey: 'editor.slideField.titleBlockAlign.label',
 });
 
 export default {
@@ -36,6 +37,7 @@ export default {
     {
       key: 'title',
       label: 'Title',
+      labelKey: 'editor.slideField.title.label',
       type: 'string',
       required: true,
       maxLength: 120,

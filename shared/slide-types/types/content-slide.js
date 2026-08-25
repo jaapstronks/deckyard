@@ -6,6 +6,7 @@ import {
 } from '../helpers.js';
 import { markdownToSafeHtml } from '../../markdown.js';
 import { ACTIONS_FIELD, renderActionsHtml } from '../actions-field.js';
+import { sharedOption } from '../../ui-i18n-keys.js';
 
 export default {
   structure: 'singleton',
@@ -15,6 +16,7 @@ export default {
     {
       key: 'title',
       label: 'Title',
+      labelKey: 'editor.slideField.title.label',
       type: 'string',
       required: true,
       maxLength: 120,
@@ -22,6 +24,7 @@ export default {
     {
       key: 'subheading',
       label: 'Subheading',
+      labelKey: 'editor.slideField.subheading.label',
       type: 'string',
       required: false,
       maxLength: 200,
@@ -31,31 +34,47 @@ export default {
       // (renderHtml maps it to is-one-col/is-two-col). The toolbar "Layout"
       // chip owns the structural variant choice, so this inspector control is
       // labelled "Text columns" - reserving the word "Layout" for the chip.
+      // Copy only this type uses, so it keeps its generated per-type key: the
+      // `editor.slideField.*` namespace is for type-INDEPENDENT copy (D60), and
+      // `editor.field.*` was a one-key third spelling of the same idea (B146).
       key: 'layout',
       label: 'Text columns',
-      labelKey: 'editor.field.textColumns',
       type: 'enum',
       required: false,
       options: [
-        { value: 'two-column', label: 'Two columns' },
-        { value: 'one-column', label: 'One column' },
+        sharedOption(
+          'editor.slideField.layout.option.two-column',
+          'two-column',
+          'Two columns',
+        ),
+        sharedOption(
+          'editor.slideField.layout.option.one-column',
+          'one-column',
+          'One column',
+        ),
       ],
     },
     {
       key: 'density',
       label: 'Text size',
+      labelKey: 'editor.slideField.density.label',
       type: 'enum',
       required: false,
       // 'auto' keeps the default sizing; 'compact' steps the body down one
       // size so more copy fits. Same vocabulary as list-slide's density field.
       options: [
-        { value: 'auto', label: 'Auto' },
-        { value: 'compact', label: 'Small' },
+        sharedOption('editor.slideField.density.option.auto', 'auto', 'Auto'),
+        sharedOption(
+          'editor.slideField.density.option.compact',
+          'compact',
+          'Small',
+        ),
       ],
     },
     {
       key: 'body',
       label: 'Body (Markdown)',
+      labelKey: 'editor.slideField.body.label',
       type: 'markdown',
       // Long-form prose: the heading button earns its place here (see
       // shared/slide-types/field-behaviour.js for why it is off by default).

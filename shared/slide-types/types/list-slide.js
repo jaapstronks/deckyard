@@ -5,6 +5,7 @@ import {
   BACKGROUND_FIELD,
 } from '../helpers.js';
 import { alignGroup, groupAlignClass } from '../field-groups.js';
+import { sharedOption } from '../../ui-i18n-keys.js';
 
 /**
  * Title and subheading are one header block. The title box spans the slide
@@ -16,6 +17,7 @@ import { alignGroup, groupAlignClass } from '../field-groups.js';
  */
 const HEADER_BLOCK = alignGroup('header-block', 'headerAlign', {
   label: 'Header alignment',
+  labelKey: 'editor.slideField.headerAlign.label',
   schematicKind: 'bullets',
 });
 
@@ -223,6 +225,7 @@ export default {
     {
       key: 'title',
       label: 'Title',
+      labelKey: 'editor.slideField.title.label',
       type: 'string',
       required: true,
       maxLength: 120,
@@ -231,6 +234,7 @@ export default {
     {
       key: 'subheading',
       label: 'Subheading',
+      labelKey: 'editor.slideField.subheading.label',
       type: 'string',
       required: false,
       maxLength: 160,
@@ -254,27 +258,45 @@ export default {
     {
       key: 'layout',
       label: 'Layout',
+      labelKey: 'editor.slideField.layout.label',
       type: 'enum',
       required: false,
       options: [
         { value: 'auto', label: 'Auto (fit)' },
-        { value: 'one-column', label: 'One column' },
-        { value: 'two-column', label: 'Two columns' },
+        sharedOption(
+          'editor.slideField.layout.option.one-column',
+          'one-column',
+          'One column',
+        ),
+        sharedOption(
+          'editor.slideField.layout.option.two-column',
+          'two-column',
+          'Two columns',
+        ),
       ],
       formLayout: 'pair',
     },
     {
       key: 'density',
       label: 'Text size',
+      labelKey: 'editor.slideField.density.label',
       type: 'enum',
       required: false,
       // 'auto' keeps the default sizing; 'comfortable' scales titles and text
       // up to fill sparse slides (few items); 'compact' shrinks them so many
       // items still fit on one slide.
       options: [
-        { value: 'auto', label: 'Auto' },
-        { value: 'comfortable', label: 'Large' },
-        { value: 'compact', label: 'Small' },
+        sharedOption('editor.slideField.density.option.auto', 'auto', 'Auto'),
+        sharedOption(
+          'editor.slideField.density.option.comfortable',
+          'comfortable',
+          'Large',
+        ),
+        sharedOption(
+          'editor.slideField.density.option.compact',
+          'compact',
+          'Small',
+        ),
       ],
     },
     BACKGROUND_FIELD,
@@ -290,6 +312,7 @@ export default {
         {
           key: 'title',
           label: 'Title',
+          labelKey: 'editor.slideField.title.label',
           type: 'string',
           required: true,
           maxLength: 80,

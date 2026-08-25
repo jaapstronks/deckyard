@@ -44,6 +44,8 @@
  * this module is that pattern made declarative.
  */
 
+import { sharedOption } from '../ui-i18n-keys.js';
+
 import { resolveFieldDef } from './field-lookup.js';
 
 /** Alignment vocabulary a group may offer (mirrors TEXT_ALIGN_VALUES). */
@@ -83,6 +85,8 @@ const DEFAULT_ALIGN_CLASS = 'is-align';
  * @param {string} alignKey - content field that stores the block's alignment
  * @param {Object} [opts]
  * @param {string} [opts.label] - admin label for the enum field
+ * @param {string} [opts.labelKey] - shared i18n key when that label is one
+ *   several types share verbatim; omit for a label only this type uses
  * @param {string[]} [opts.align] - offered values (default left/centre)
  * @param {string} [opts.alignClass] - root-class prefix (default `is-align`)
  * @param {string} [opts.schematicKind] - archetype the layout tiles draw
@@ -130,10 +134,16 @@ export function alignGroup(id, alignKey, opts = {}) {
     required: false,
     options: align.map((value) =>
       TILE[value]
-        ? { value, label: TILE[value].label, labelKey: TILE[value].labelKey }
+        ? sharedOption(TILE[value].labelKey, value, TILE[value].label)
         : value,
     ),
   };
+  // A block label that repeats verbatim across types ("Header alignment" on
+  // four) is type-independent copy and takes a shared `editor.slideField.*`
+  // key (D60); a type that says something of its own leaves `labelKey` off and
+  // mints its own. Passed in rather than derived from the label so the key is
+  // a full literal at the call site — see sharedOption() in ui-i18n-keys.js.
+  if (opts.labelKey) field.labelKey = opts.labelKey;
   const variants = align.map((value) => ({
     ...TILE[value],
     set: { [alignKey]: value },

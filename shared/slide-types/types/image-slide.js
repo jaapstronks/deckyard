@@ -25,6 +25,7 @@ export default {
     {
       key: 'title',
       label: 'Title',
+      labelKey: 'editor.slideField.title.label',
       type: 'string',
       required: false,
       maxLength: 80,
@@ -32,6 +33,7 @@ export default {
     {
       key: 'subheading',
       label: 'Subheading',
+      labelKey: 'editor.slideField.subheading.label',
       type: 'string',
       required: false,
       maxLength: 140,
@@ -39,6 +41,7 @@ export default {
     {
       key: 'bottomSubheading',
       label: 'Bottom subheading',
+      labelKey: 'editor.slideField.bottomSubheading.label',
       type: 'string',
       required: false,
       maxLength: 200,
@@ -46,6 +49,7 @@ export default {
     {
       key: 'image',
       label: 'Image',
+      labelKey: 'editor.slideField.image.label',
       type: 'image',
       // Allow creating a new image slide without selecting an image yet.
       // Rendering/export already handle missing images gracefully.
@@ -58,27 +62,40 @@ export default {
     {
       key: 'imageRole',
       label: 'Image role',
+      labelKey: 'editor.slideField.imageRole.label',
       type: 'enum',
       required: false,
+      // One of the few options whose three slots really do say three different
+      // things, so it declares three keys rather than going through
+      // sharedOption(). They are shared keys all the same: image-text-slide and
+      // image-slide offer the identical choice (D60).
       options: [
         {
           value: 'content',
           label: 'Meaningful (needs alt text)',
+          labelKey: 'editor.slideField.imageRole.option.content.label',
           title: 'This image conveys information and should have alt text.',
+          titleKey: 'editor.slideField.imageRole.option.content.title',
           ariaLabel: 'Meaningful image',
+          ariaLabelKey: 'editor.slideField.imageRole.option.content.ariaLabel',
         },
         {
           value: 'decorative',
           label: 'Decorative (no alt)',
+          labelKey: 'editor.slideField.imageRole.option.decorative.label',
           title:
             'This image is decorative; it will be hidden from screen readers.',
+          titleKey: 'editor.slideField.imageRole.option.decorative.title',
           ariaLabel: 'Decorative image',
+          ariaLabelKey:
+            'editor.slideField.imageRole.option.decorative.ariaLabel',
         },
       ],
     },
     {
       key: 'alt',
       label: 'Alt text',
+      labelKey: 'editor.slideField.alt.label',
       type: 'string',
       required: false,
       maxLength: 180,
@@ -89,6 +106,7 @@ export default {
     {
       key: 'caption',
       label: 'Caption',
+      labelKey: 'editor.slideField.caption.label',
       type: 'string',
       required: false,
       maxLength: 160,
@@ -100,6 +118,7 @@ export default {
       // arrangement gallery already had.
       key: 'focusX',
       label: 'Focus X',
+      labelKey: 'editor.slideField.focusX.label',
       type: 'number',
       hidden: true,
       required: false,
@@ -112,6 +131,7 @@ export default {
     {
       key: 'focusY',
       label: 'Focus Y',
+      labelKey: 'editor.slideField.focusY.label',
       type: 'number',
       hidden: true,
       required: false,
@@ -158,6 +178,7 @@ export default {
       // (ensureImageSlideImage).
       key: 'layout',
       label: 'Layout',
+      labelKey: 'editor.slideField.layout.label',
       type: 'enum',
       hidden: true,
       required: false,

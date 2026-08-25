@@ -16,6 +16,7 @@ const LAYOUTS = ['top', 'center', 'bottom'];
  */
 const TITLE_BLOCK = alignGroup('title-block', 'titleBlockAlign', {
   label: 'Title block alignment',
+  labelKey: 'editor.slideField.titleBlockAlign.label',
   schematicKind: 'section',
 });
 
@@ -30,6 +31,7 @@ export default {
     {
       key: 'title',
       label: 'Title',
+      labelKey: 'editor.slideField.title.label',
       type: 'string',
       group: 'title-block',
       required: true,
@@ -38,6 +40,7 @@ export default {
     {
       key: 'subheading',
       label: 'Subheading',
+      labelKey: 'editor.slideField.subheading.label',
       type: 'string',
       required: false,
       maxLength: 160,
@@ -46,6 +49,7 @@ export default {
     {
       key: 'layout',
       label: 'Layout',
+      labelKey: 'editor.slideField.layout.label',
       type: 'enum',
       required: false,
       // Note: values are persisted in decks; keep them stable.

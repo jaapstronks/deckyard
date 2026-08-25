@@ -22,6 +22,7 @@ export default {
     {
       key: 'title',
       label: 'Title',
+      labelKey: 'editor.slideField.title.label',
       type: 'string',
       required: true,
       maxLength: 120,
@@ -29,6 +30,7 @@ export default {
     {
       key: 'subheading',
       label: 'Subheading',
+      labelKey: 'editor.slideField.subheading.label',
       type: 'string',
       required: false,
       maxLength: 200,
@@ -36,6 +38,7 @@ export default {
     {
       key: 'layout',
       label: 'Layout',
+      labelKey: 'editor.slideField.layout.label',
       type: 'enum',
       required: false,
       options: [
@@ -46,6 +49,7 @@ export default {
     {
       key: 'bottomSubheading',
       label: 'Bottom subheading',
+      labelKey: 'editor.slideField.bottomSubheading.label',
       type: 'string',
       required: false,
       maxLength: 200,
@@ -91,6 +95,7 @@ export default {
         {
           key: 'title',
           label: 'Title',
+          labelKey: 'editor.slideField.title.label',
           type: 'string',
           required: false,
           maxLength: 80,

@@ -20,6 +20,31 @@
  * (client/views/editor/fields/option-copy.js), one text, one key.
  */
 
+/**
+ * One enum option that carries a single shared i18n key in all three slots.
+ *
+ * The **only** way to build an option triple. The option's `title` and
+ * `ariaLabel` are derived from its label, so all three key slots point at the
+ * same key — one text, one key. A field that hand-rolls `labelKey`/`titleKey`/
+ * `ariaLabelKey` on an option is how the same English string ends up under
+ * three keys and in front of eleven translators three times.
+ *
+ * The key arrives as a full literal (never assembled from parts) so the i18n
+ * audit's orphan check can see every reference by exact match.
+ *
+ * Lives here rather than in the registry because the shared field constants
+ * (`shared/slide-types/helpers.js`) need it too, and the registry imports
+ * *them* — see the D60 note on `editor.slideField.*` in registry.js.
+ *
+ * @param {string} key - shared i18n key, e.g. `editor.slideField.slideLogo.option.none`
+ * @param {string} value - stored enum value
+ * @param {string} label - English default
+ * @returns {Object}
+ */
+export function sharedOption(key, value, label) {
+  return { value, label, labelKey: key, titleKey: key, ariaLabelKey: key };
+}
+
 function safeKeyPart(v) {
   const s = String(v || '').trim();
   if (!s) return '';
