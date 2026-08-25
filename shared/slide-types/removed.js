@@ -189,8 +189,6 @@ export const REMOVED_SLIDE_TYPES = {
     allowedReferences: {
       'server/db/migrations/020_rename_subtitle_to_subheading.js':
         'a past migration that renamed subtitle→subheading across several title types; it must keep naming this one to stay a faithful record of what it did',
-      'scripts/migrate-title-bg.js':
-        'a one-off migration whose comment notes this type was deliberately out of its scope',
       'tests/slide-types-policy.test.js':
         'asserts the type is off the registry and a stored slide degrades safely',
       'docs/reference/slide-type-removal.md':

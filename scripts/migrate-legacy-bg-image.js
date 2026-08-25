@@ -1,28 +1,29 @@
 #!/usr/bin/env node
 
 /**
- * Title-slide background migration (bgImage → slideBgImage).
+ * Legacy background migration (bgImage → slideBgImage).
  *
- * Folds every stored `title-slide`'s legacy `bgImage`/`bgAlt` into the
- * canonical `slideBgImage`, reproducing the old `.has-bg` look via the generic
- * controls (slideBgText: 'light' + slideBgOverlay: 'gradient-bottom'). Uses the
- * SAME authority as migrate-on-edit (`ensureTitleSlideBackground`), so a deck
- * migrated by this script is byte-identical to one migrated by opening it in
- * the editor. Idempotent — safe to run repeatedly.
+ * Folds every stored slide's legacy `bgImage`/`bgAlt` into the canonical
+ * `slideBgImage`, reproducing the old `.has-bg` look via the generic controls
+ * (slideBgText: 'light' + slideBgOverlay: 'gradient-bottom'). Uses the SAME
+ * authority as migrate-on-edit (`ensureSlideBgImage`), so a deck migrated by
+ * this script is byte-identical to one migrated by opening it in the editor.
+ * Idempotent — safe to run repeatedly.
  *
- * Scope: only the core `title-slide` type. `split-partner-title-slide` (being
- * archived) and the custom `ciiic-title-slide` (draws its own bgImage) are left
- * untouched on purpose.
+ * Scope: every slide type, not just the core `title-slide` this script started
+ * out on. The pair is a content legacy any type could declare — the contributor
+ * doc taught forks to — and a fork type still carrying it renders its own
+ * picker beside the shared Background section until the fold has run.
  *
  * Usage:
- *   node scripts/migrate-title-bg.js [--dry-run] [--dir path/to/decks]
+ *   node scripts/migrate-legacy-bg-image.js [--dry-run] [--dir path/to/decks]
  *
  * Defaults to the file-based deck store (data/decks). Use --dry-run first.
  */
 
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { ensureTitleSlideBackground } from '../shared/slide-types/types/title-slide/background.js';
+import { ensureSlideBgImage } from '../shared/slide-types/legacy-bg-image.js';
 
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
@@ -35,14 +36,14 @@ let modifiedDecks = 0;
 let slidesMigrated = 0;
 
 /**
- * Migrate a single title slide's content in place. Returns true when the
- * content changed (a legacy bgImage was present and got folded).
+ * Migrate a single slide's content in place. Returns true when the content
+ * changed (a legacy bgImage/bgAlt was present and got folded).
  * @param {Object} slide
  * @returns {boolean}
  */
 function migrateSlide(slide) {
   const before = JSON.stringify(slide.content || {});
-  ensureTitleSlideBackground(slide.content || {});
+  ensureSlideBgImage(slide.content || {});
   return JSON.stringify(slide.content || {}) !== before;
 }
 
@@ -59,8 +60,7 @@ async function processFile(filePath) {
 
   let modified = false;
   for (const slide of deck.slides) {
-    if (!slide || slide.type !== 'title-slide') continue;
-    if (!slide.content || typeof slide.content !== 'object') continue;
+    if (!slide?.content || typeof slide.content !== 'object') continue;
     if (migrateSlide(slide)) {
       slidesMigrated++;
       modified = true;
@@ -94,11 +94,11 @@ async function walkDir(dir) {
 }
 
 console.log(
-  `${dryRun ? '[DRY RUN] ' : ''}Migrating title backgrounds in: ${dataDir}`,
+  `${dryRun ? '[DRY RUN] ' : ''}Migrating legacy backgrounds in: ${dataDir}`,
 );
 await walkDir(dataDir);
 console.log(`\nResults:`);
 console.log(`  Decks scanned:            ${totalDecks}`);
 console.log(`  Decks modified:           ${modifiedDecks}`);
-console.log(`  title slides migrated:    ${slidesMigrated}`);
+console.log(`  Slides migrated:          ${slidesMigrated}`);
 if (dryRun) console.log(`\n  [DRY RUN] No files were modified.`);

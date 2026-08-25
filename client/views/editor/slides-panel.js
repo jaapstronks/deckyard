@@ -3,7 +3,7 @@ import { openSlideLibraryModal as openSlideLibraryModalImpl } from './modals/sli
 import { openFollowInviteSuggestModal } from './modals/follow-invite-suggest-modal.js';
 import { createSlideTypePicker } from './slide-type-picker.js';
 import { deepClone, makeNewSlide } from './editor-utils.js';
-import { pickBackgroundPreset } from '../../../shared/theme-background-presets.js';
+import { seedAutoBackgroundPreset } from '../../../shared/theme-background-presets.js';
 import { t } from '../../lib/ui-i18n.js';
 import { newId } from '../../lib/util/id.js';
 import { createSlideLibraryPicker } from './slide-library-picker.js';
@@ -224,15 +224,10 @@ export function createSlidesPanel({
   drawerEl.append(drawerHeader, drawerBody);
 
   const maybeAssignRandomBg = (slide) => {
-    // If slide type has autoBackgroundPreset, pick a random background from theme.
-    const def = SLIDE_TYPES?.[slide?.type];
-    if (!def?.autoBackgroundPreset) return;
-    if (!slide?.content || typeof slide.content !== 'object') return;
-    if (!('bgImage' in slide.content)) return;
-    const current = String(slide.content?.bgImage || '').trim();
-    if (current) return;
-    const preset = pickBackgroundPreset(theme);
-    if (preset) slide.content.bgImage = preset;
+    // Types declaring autoBackgroundPreset get a random theme background on the
+    // canonical key. Same helper as newSlide(), so a slide inserted here and
+    // one created server-side come out identical.
+    seedAutoBackgroundPreset(slide?.content, SLIDE_TYPES?.[slide?.type], theme);
   };
 
   const insertSlideObject = (s, { afterSlideId, parentId = null } = {}) => {

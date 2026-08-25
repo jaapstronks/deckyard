@@ -108,13 +108,8 @@ export default {
   fields: [
     { key: 'title', label: 'Title', type: 'string', required: true },
     { key: 'subheading', label: 'Subheading', type: 'string' },
-    {
-      key: 'bgImage',
-      label: 'Background image',
-      type: 'image',
-      presetSource: 'backgrounds', // Shows theme background presets
-    },
-    { key: 'bgAlt', label: 'Alt text', type: 'string' },
+    // No background-image field: `slideBgImage` (plus fit/focus/overlay/text)
+    // is added to every type automatically. See "Background images" below.
     {
       key: 'background',
       label: 'Background color',
@@ -126,8 +121,6 @@ export default {
   defaults: {
     title: 'New title',
     subheading: '',
-    bgImage: '',
-    bgAlt: '',
     background: 'lime',
   },
 
@@ -452,6 +445,32 @@ enforces the same rule on write). Used by the built-in Custom HTML slide.
 | `images` | Multiple images (gallery), stored as an array of URL strings. No core type declares it — it is an extension point for custom types (see below).                                                                                                                  | `maxItems`, `presetSource` (`'partnerlogos'`)      |
 | `url`    | A hyperlink target (http(s), mailto, or root-/protocol-relative). Validated + allowlisted (`javascript:`/`data:` rejected via `safeHref`); projects as an `<a href>` in the reader/reflow view. Not translatable, so link targets are never sent to translation. | `maxLength`, `required`, `placeholder`, `helpText` |
 
+### Background images: never declare your own
+
+A slide-wide background image is **not** a field you add. Every registered type
+gets `slideBgImage` — plus `slideBgFit`, `slideBgFocusX/Y`, `slideBgOverlay`,
+`slideBgText` and `slideLogo` — from `withGlobalSlideFields()`, and
+`renderSlideHtml()` paints it as a layer behind your markup
+(`injectSlideBackground`). You get the library/upload picker, the theme's
+background presets, the crop-focus grid, the scrim and the automatic
+light/dark text contrast for free, and your `renderHtml` never sees it.
+
+Types used to carry their own `bgImage`/`bgAlt` pair, and earlier versions of
+this page showed that in the examples. Declaring it now buys you a **second**
+"Background image" control in the inspector, right next to the shared
+Background section, and two images competing on the slide. So:
+
+- Declare nothing for a slide-wide photo. It is already there.
+- `bgImage`/`bgAlt` are a read-only render fallback for un-migrated decks.
+  Opening such a slide in the editor folds them onto `slideBgImage`
+  (`shared/slide-types/legacy-bg-image.js`); `node
+scripts/migrate-legacy-bg-image.js` does the same in bulk.
+- Do declare an `image` field for an image that is _content_ — a portrait, a
+  chart, one cell of a grid. That is a different thing from the backdrop.
+
+`autoBackgroundPreset: true` still works and seeds `slideBgImage` from
+`theme.backgroundPresets` on a newly created slide.
+
 ### Structured Fields
 
 | Type    | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Extra Properties                                                                                                                                                                        |
@@ -475,7 +494,7 @@ source — they are not interchangeable:
 
 ```javascript
 {
-  key: 'bgImage',
+  key: 'coverImage',
   type: 'image',
   presetSource: 'backgrounds',  // Shows theme.backgroundPresets
 }
@@ -634,7 +653,7 @@ display toggles and axis/series labels are the canonical use.
 | ---------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `themeId`              | string  | Tie this slide type to a specific theme                                                                                                                                                                                                                                                  |
 | `labelField`           | string  | Which content field to use as the slide label (default: checks for `title`)                                                                                                                                                                                                              |
-| `autoBackgroundPreset` | boolean | Auto-assign random background from theme presets when creating new slides                                                                                                                                                                                                                |
+| `autoBackgroundPreset` | boolean | Seed `slideBgImage` from `theme.backgroundPresets` when a slide of this type is created                                                                                                                                                                                                  |
 | `sampleContent`        | object  | Sample content for the slide type picker thumbnail                                                                                                                                                                                                                                       |
 | `defaultsByLang`       | object  | Localized default content: `{ nl: {...}, 'en-GB': {...} }`                                                                                                                                                                                                                               |
 | `ai`                   | object  | AI wizard metadata (see AI Wizard Integration section)                                                                                                                                                                                                                                   |
@@ -901,12 +920,7 @@ export default {
     },
     { key: 'body', label: 'Body', type: 'markdown' },
     { key: 'ctaText', label: 'CTA Button Text', type: 'string', maxLength: 30 },
-    {
-      key: 'bgImage',
-      type: 'image',
-      label: 'Background',
-      presetSource: 'backgrounds',
-    },
+    // The slide-wide photo is the global `slideBgImage` — do not declare one.
     {
       key: 'background',
       type: 'enum',
@@ -920,18 +934,14 @@ export default {
     subheadline: '',
     body: '',
     ctaText: 'Learn More',
-    bgImage: '',
     background: 'lime',
   },
 
   renderHtml: (content, slide, ctx) => {
     const bg = bgClass(content?.background || 'lime');
-    const bgStyle = content?.bgImage
-      ? `background-image: url('${esc(content.bgImage)}'); background-size: cover;`
-      : '';
 
     return `
-      <div class="slide slide-acme-hero ${bg}" style="${bgStyle}">
+      <div class="slide slide-acme-hero ${bg}">
         <div class="slide-inner">
           <h1 class="hero-headline">${esc(content?.headline)}</h1>
           ${content?.subheadline ? `<p class="hero-subheadline">${esc(content.subheadline)}</p>` : ''}

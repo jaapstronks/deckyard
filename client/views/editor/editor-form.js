@@ -19,7 +19,7 @@ import {
   describeUnresolvedType,
   unresolvedNotes,
 } from '../../../shared/slide-types/unresolved.js';
-import { ensureTitleSlideBackground } from '../../../shared/slide-types/types/title-slide/background.js';
+import { ensureSlideBgImage } from '../../../shared/slide-types/legacy-bg-image.js';
 import {
   elementAppliesToSlide,
   elementTabLabel,
@@ -432,12 +432,16 @@ export function createRerenderEditor({
       ? null
       : getInspectorKeepKeys(slide.type, def);
 
-    // Migrate-on-edit: fold a title slide's legacy bgImage into the canonical
-    // slideBgImage before the background controls read it, so the shared picker
-    // shows the (now single) background and the legacy render fallback stops
-    // firing. Idempotent; inspector mode only (the bulk modal never renders bg).
-    if (!contentOnly && slide?.type === 'title-slide') {
-      ensureTitleSlideBackground(slide.content);
+    // Migrate-on-edit: fold a legacy bgImage into the canonical slideBgImage
+    // before the background controls read it, so the shared picker shows the
+    // (now single) background and the legacy render fallback stops firing.
+    // Type-agnostic on purpose: the pair is a content legacy any type could
+    // declare, and a fork type that still does would otherwise render its own
+    // picker next to the shared Background section. Idempotent, and a no-op on
+    // content without the pair; inspector mode only (the bulk modal never
+    // renders background controls).
+    if (!contentOnly) {
+      ensureSlideBgImage(slide.content);
     }
 
     // Deck slides (minus the current one) for in-deck card-link pickers, in

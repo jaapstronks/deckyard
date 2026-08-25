@@ -41,7 +41,8 @@ const RUN_BY_HAND = {
   'migrate-data-to-postgres.js': 'one-time SQLite → Postgres move, per install',
   'migrate-lijstje-slide.js': 'one-time slide-type rename, exercised by tests',
   'migrate-slides.js': 'one-time slide-shape migration, per install',
-  'migrate-title-bg.js': 'one-time title-background migration, per install',
+  'migrate-legacy-bg-image.js':
+    'one-time legacy-background migration (bgImage → slideBgImage), per install',
   'restore-orphaned-presentations.js': 'incident recovery, run when needed',
 };
 

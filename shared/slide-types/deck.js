@@ -1,6 +1,6 @@
 import { cryptoUuid } from './helpers.js';
 import { pickBackgroundPreset } from '../theme-background-presets.js';
-import { resolveTitleSlideBackground } from './types/title-slide/background.js';
+import { resolveSlideBgImage } from './legacy-bg-image.js';
 import {
   canonicalSlideType,
   getSlideType,
@@ -208,7 +208,7 @@ function normalizeDeckSlide(raw, theme = null) {
     // background at all (canonical or legacy). An imported deck that still
     // carries a legacy bgImage is left as-is — it renders via the fallback and
     // migrates on edit — so we never stack a preset on top of it.
-    if (resolveTitleSlideBackground(content).source === 'none') {
+    if (resolveSlideBgImage(content).source === 'none') {
       const preset = pickBackgroundPreset(theme);
       if (preset) content.slideBgImage = preset;
     }
