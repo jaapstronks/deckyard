@@ -9,8 +9,12 @@
  * surface, is what makes minting a key mean something.
  *
  * `title`/`ariaLabel` fall back to the translated LABEL rather than the raw
- * one: an option only carries its own title/aria key when it says something
- * the label does not, so without one the tooltip is the label — translated.
+ * one: a registry option only carries its own title/aria key when it says
+ * something the label does not, so without one the tooltip is the label —
+ * translated. The exception is an option composed at runtime rather than by
+ * the registry (the `image-fit` widget builds its own already-translated
+ * list): it has no keys at all, so a title or aria it declares itself is copy
+ * that would otherwise be dropped.
  */
 import { t } from '../../../lib/ui-i18n.js';
 import { normalizeOption } from '../../../../shared/ui-i18n-keys.js';
@@ -22,9 +26,12 @@ import { normalizeOption } from '../../../../shared/ui-i18n-keys.js';
 export function optionCopy(raw) {
   const opt = normalizeOption(raw);
   const label = opt.labelKey ? t(opt.labelKey, opt.label) : opt.label;
-  const title = opt.titleKey ? t(opt.titleKey, opt.title) : label;
+  const own = (slot) => (opt[slot] && opt[slot] !== opt.label ? opt[slot] : '');
+  const title = opt.titleKey
+    ? t(opt.titleKey, opt.title)
+    : own('title') || label;
   const ariaLabel = opt.ariaLabelKey
     ? t(opt.ariaLabelKey, opt.ariaLabel)
-    : title;
+    : own('ariaLabel') || label;
   return { ...opt, label, title, ariaLabel };
 }

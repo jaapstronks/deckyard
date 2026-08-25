@@ -28,6 +28,7 @@ import { fileURLToPath } from 'node:url';
 
 import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 import { addUiI18nKeysToSlideType } from '../shared/ui-i18n-keys.js';
+import { optionCopy } from '../client/views/editor/fields/option-copy.js';
 import { loadLocale } from '../scripts/lib/i18n-fs.js';
 import { LOCALE_IDS } from '../scripts/lib/i18n-locales.js';
 
@@ -159,4 +160,39 @@ test('the locale gate actually fires on a token', () => {
   assert.deepEqual(bad, [
     'slideType.acme-slide.field.fit.option.contain.label',
   ]);
+});
+
+// --- the reader side: what the editor actually renders ------------------
+
+test('optionCopy translates the minted label and falls back for the rest', () => {
+  const opt = optionCopy({
+    value: 'contain',
+    label: 'Fit (no crop)',
+    labelKey: 'slideType.acme.field.fit.option.contain.label',
+  });
+  // No locale is loaded in the test process, so `t` returns the English
+  // default — the point here is the chain, not the translation.
+  assert.equal(opt.label, 'Fit (no crop)');
+  assert.equal(opt.title, 'Fit (no crop)');
+  assert.equal(opt.ariaLabel, 'Fit (no crop)');
+});
+
+test('optionCopy keeps a runtime option own title, and names it by its label', () => {
+  // The `image-fit` widget composes its options itself, already translated,
+  // so they carry no keys: a title it declares is copy, not a fallback.
+  const opt = optionCopy({
+    value: '',
+    label: 'Default · Fill (crop)',
+    title: 'Follow the slide type default',
+  });
+  assert.equal(opt.title, 'Follow the slide type default');
+  assert.equal(opt.ariaLabel, 'Default · Fill (crop)');
+});
+
+test('optionCopy leaves a bare-string option as its own token', () => {
+  const opt = optionCopy('16:9');
+  assert.deepEqual(
+    { label: opt.label, title: opt.title, ariaLabel: opt.ariaLabel },
+    { label: '16:9', title: '16:9', ariaLabel: '16:9' },
+  );
 });
