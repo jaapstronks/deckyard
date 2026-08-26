@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  mergeBackgroundOptions,
   normalizeSlideBackgrounds,
   slideBackgroundContrastClass,
   slideBackgroundCssVars,
@@ -178,6 +179,47 @@ test('validateSlide accepts theme variant ids for the background field only', ()
     validateSlide(slide).filter((e) => e.includes('background')).length,
     1,
   );
+});
+
+test('mergeBackgroundOptions extends a field’s own options with the theme’s', () => {
+  const entries = normalizeSlideBackgrounds([
+    { id: 'calm', value: '#140a26', textColor: '#ffffff' },
+    { id: 'paper', label: 'Paper', value: '#f6f3ec' },
+  ]);
+
+  // A type's declared options come first, in declaration order — countdown's
+  // extended set is why this may not be hardcoded to lime/mist anywhere.
+  assert.deepEqual(
+    mergeBackgroundOptions(
+      [
+        { value: 'lime', label: 'Color 1' },
+        { value: 'dark', label: 'Dark' },
+      ],
+      entries,
+    ).map((o) => o.value),
+    ['lime', 'dark', 'calm', 'paper'],
+  );
+
+  // A variant an option already names is not offered twice, and the option's
+  // label (the translated one) is the one that survives.
+  const dup = mergeBackgroundOptions(
+    [{ value: 'calm', label: 'Kalm' }],
+    entries,
+  );
+  assert.deepEqual(
+    dup.map((o) => `${o.value}:${o.label}`),
+    ['calm:Kalm', 'paper:Paper'],
+  );
+
+  // Missing halves degrade to the other half, never to a crash.
+  assert.deepEqual(
+    mergeBackgroundOptions(null, entries).map((o) => o.value),
+    ['calm', 'paper'],
+  );
+  assert.deepEqual(mergeBackgroundOptions([{ value: 'lime' }], null), [
+    { value: 'lime', label: '' },
+  ]);
+  assert.deepEqual(mergeBackgroundOptions([{ label: 'nameless' }], null), []);
 });
 
 const CONTRAST_ENTRIES = normalizeSlideBackgrounds([

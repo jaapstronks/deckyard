@@ -1,5 +1,6 @@
 import { getUiLocale, t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom.js';
+import { mergeBackgroundOptions } from '../../../../shared/theme-slide-backgrounds.js';
 import { optionCopy } from './option-copy.js';
 
 export function createBackgroundFields({ theme } = {}) {
@@ -59,30 +60,16 @@ export function createBackgroundFields({ theme } = {}) {
     return raw || null;
   };
 
-  // Theme-defined background variants (theme.slideBackgrounds, normalized in
-  // client/lib/theme.js) extend every background picker. Swatches resolve via
-  // the existing `--t-slide-bg-<id>` convention below.
-  const themeVariantOptions = () => {
-    const list = Array.isArray(theme?.slideBackgrounds)
-      ? theme.slideBackgrounds
-      : [];
-    return list.map((e) => ({
-      value: String(e.id),
-      label: String(e.label || e.id),
-    }));
-  };
-
   const fieldBackground = (field, value, onChange) => {
+    // Theme-defined background variants (theme.slideBackgrounds, normalized in
+    // client/lib/theme.js) extend every background picker. The merge lives in
+    // shared/ because the theme:preview contact sheet walks the same set.
+    // Swatches resolve via the existing `--t-slide-bg-<id>` convention below.
     const rawOptions = Array.isArray(field?.options) ? field.options : [];
-    const seen = new Set();
-    const options = [
-      ...rawOptions.map(normalizeOption),
-      ...themeVariantOptions(),
-    ].filter((o) => {
-      if (!o?.value || seen.has(o.value)) return false;
-      seen.add(o.value);
-      return true;
-    });
+    const options = mergeBackgroundOptions(
+      rawOptions.map(normalizeOption),
+      theme?.slideBackgrounds,
+    );
     const values = options.map((o) => o.value);
 
     const v = String(value ?? '');

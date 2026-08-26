@@ -125,6 +125,46 @@ export function slideBackgroundCssVars(entries) {
 }
 
 /**
+ * The backgrounds one slide type actually offers under one theme: the options
+ * its `background` field declares, extended with every variant the theme ships.
+ *
+ * The merge order and the dedupe-by-value rule are the picker's
+ * (`client/views/editor/fields/background.js`), and they live here because a
+ * second surface now asks the same question — the `theme:preview` contact sheet
+ * walks exactly this set per type. A type's own options are not always
+ * lime/mist: `countdown-slide` declares seven, and a fork's custom type declares
+ * its own. Any harness that hardcodes the pair renders a matrix the editor
+ * would never offer.
+ *
+ * Labels pass through untouched: the picker feeds translated ones in, the
+ * contact sheet only reads `value`.
+ *
+ * @param {Array<{value: string, label?: string}>} fieldOptions - the
+ *   `background` field's declared options, already label-resolved by the caller
+ * @param {ReturnType<typeof normalizeSlideBackgrounds>} entries - the theme's
+ *   normalized variants
+ * @returns {Array<{value: string, label: string}>} deduped, declaration order
+ */
+export function mergeBackgroundOptions(fieldOptions, entries) {
+  const variants = (Array.isArray(entries) ? entries : []).map((e) => ({
+    value: String(e?.id ?? ''),
+    label: String(e?.label || e?.id || ''),
+  }));
+  const seen = new Set();
+  const out = [];
+  for (const o of [
+    ...(Array.isArray(fieldOptions) ? fieldOptions : []),
+    ...variants,
+  ]) {
+    const value = String(o?.value ?? '');
+    if (!value || seen.has(value)) continue;
+    seen.add(value);
+    out.push({ value, label: String(o?.label ?? '') });
+  }
+  return out;
+}
+
+/**
  * Generated CSS rules for normalized variants. Injected client-side per theme
  * (`injectThemeSlideBgStyles` in client/lib/theme.js) and appended to the
  * export theme CSS (`themeVarsCssText` in server/utils/themes.js).

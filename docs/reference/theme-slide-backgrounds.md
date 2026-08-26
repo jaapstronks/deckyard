@@ -103,6 +103,12 @@ normalizers use it:
 5. **Validation** — `validateSlide` accepts any safe slug for the
    `background` field (validation has no theme context).
 
+The picker's option set (a type's declared options extended with the theme's
+variants, deduped) is `mergeBackgroundOptions` in
+`shared/theme-slide-backgrounds.js`, so the `npm run theme:preview` contact
+sheet walks exactly the matrix the editor offers — see
+[theme-config.md § Checking a theme](theme-config.md#checking-a-theme).
+
 ## Boundaries / follow-ups
 
 - The AI schemas still only suggest `lime`/`mist`; variants are an authoring
