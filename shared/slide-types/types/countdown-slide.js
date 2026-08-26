@@ -116,7 +116,7 @@ export default {
       required: false,
       maxLength: 60,
       helpText:
-        'Shown big when the timer hits zero, e.g. "Tijd!". Leave empty for none.',
+        'Shown big when the timer hits zero, e.g. "Time!". Leave empty for none.',
     },
     BACKGROUND_FIELD_EXTENDED,
   ],

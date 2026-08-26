@@ -84,7 +84,7 @@ export default {
   fields: [
     {
       key: 'title',
-      label: 'Title (optional)',
+      label: 'Title',
       type: 'string',
       required: false,
       maxLength: 120,

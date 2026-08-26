@@ -19,6 +19,9 @@
  *  8. every key the slide-type registry *declares* exists in nl/ and en/ too —
  *     the keys check 1 cannot see, because they are written down in
  *     `shared/slide-types/` rather than at a `t()` call site
+ *  9. and the English it declares for such a key *is* the en/ value — check 5
+ *     for the registry, so a declaration and a locale file cannot spell one
+ *     meaning two ways
  *
  * Run with: node --test tests/i18n-coverage.test.js
  */
@@ -43,7 +46,10 @@ import {
 } from '../scripts/lib/i18n-locales.js';
 import { CORE_SLIDE_TYPE_DEFS } from '../shared/slide-types/registry.js';
 import { addUiI18nKeysToSlideType } from '../shared/ui-i18n-keys.js';
-import { slideTypeUiKeys } from '../scripts/lib/slide-type-i18n-keys.js';
+import {
+  slideTypeUiKeys,
+  slideTypeUiStrings,
+} from '../scripts/lib/slide-type-i18n-keys.js';
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -106,6 +112,29 @@ export function detectUntranslatedRegistryKeys(keys, dicts) {
     for (const key of keys) {
       if (typeof dict[key] !== 'string') rows.push(`${locale}  ${key}`);
     }
+  }
+  return rows.sort();
+}
+
+/**
+ * Every registry-declared English string that disagrees with the en/ value for
+ * its key — check 9.
+ *
+ * Pure for the same reason as the detector above: the negative self-tests drive
+ * it with a hand-built registry, so the gate is shown to catch what it is for.
+ *
+ * @param {Map<string, string>} declared - key -> declared English (`slideTypeUiStrings`)
+ * @param {Record<string, unknown>} en - the en/ dictionary
+ * @returns {string[]} sorted report rows, one per drifted key
+ */
+export function detectRegistryEnglishDrift(declared, en) {
+  const rows = [];
+  for (const [key, english] of declared) {
+    if (typeof en[key] !== 'string' || en[key] === english) continue;
+    rows.push(
+      `${key}\n      declaration: ${JSON.stringify(english)}\n` +
+        `      en/:         ${JSON.stringify(en[key])}`,
+    );
   }
   return rows.sort();
 }
@@ -355,6 +384,74 @@ describe('i18n registry-declared keys', () => {
       `${stale.length} row(s) in tests/i18n-registry-key-burndown.json are no\n` +
         'longer gaps — delete them so the list keeps burning down:\n' +
         stale.map((row) => `  ${row}`).join('\n'),
+    );
+  });
+
+  // Check 9. Check 8 asks whether the key has *a* value; this asks whether the
+  // English next to it is *the* value. A field declares `label: 'Centre label'`
+  // while en/ says "Center label" and both are shipped English for one key —
+  // the same defect check 5 gates at `t()` call sites, one surface further out.
+  // B168 measured four of these; the registry was the last place English could
+  // be written down a second time without anything noticing.
+  //
+  // en/ is the reference, so the declaration is what moves when they disagree —
+  // unless the *key* is the mistake, in which case the fix is to stop declaring
+  // it (the imageRole `ariaLabel` slots repeated their label in all 12 locales
+  // and simply went away).
+  it('every English the registry declares is the en/ value for its key', async () => {
+    const declaredStrings = slideTypeUiStrings(CORE_SLIDE_TYPE_DEFS);
+    assert.ok(
+      declaredStrings.size > 0,
+      'no declared strings — did the registry walk move?',
+    );
+    const en = await loadLocale(i18nDir, REFERENCE_LOCALE);
+    const drifted = detectRegistryEnglishDrift(declaredStrings, en);
+    assert.deepStrictEqual(
+      drifted,
+      [],
+      `${drifted.length} registry declaration(s) disagree with client/i18n/en/.\n` +
+        'Pick one English and write it in both places — or, if the declaration\n' +
+        'means something the label does not, give it its own key rather than a\n' +
+        'second English string under the shared one:\n' +
+        drifted.join('\n'),
+    );
+  });
+
+  it('drift detector flags a declaration that disagrees with en/', () => {
+    const declaredHere = slideTypeUiStrings({
+      ghost: addUiI18nKeysToSlideType('ghost', {
+        label: 'Ghost',
+        labelKey: 'slideType.ghost.label',
+        fields: [{ key: 'centre', type: 'string', label: 'Centre label' }],
+      }),
+    });
+    assert.deepStrictEqual(
+      detectRegistryEnglishDrift(declaredHere, {
+        'slideType.ghost.label': 'Ghost',
+        'slideType.ghost.field.centre.label': 'Center label',
+      }),
+      [
+        'slideType.ghost.field.centre.label\n' +
+          '      declaration: "Centre label"\n' +
+          '      en/:         "Center label"',
+      ],
+    );
+  });
+
+  it('drift detector passes a declaration en/ spells the same way', () => {
+    const declaredHere = slideTypeUiStrings({
+      ghost: addUiI18nKeysToSlideType('ghost', {
+        label: 'Ghost',
+        labelKey: 'slideType.ghost.label',
+        fields: [{ key: 'centre', type: 'string', label: 'Center label' }],
+      }),
+    });
+    assert.deepStrictEqual(
+      detectRegistryEnglishDrift(declaredHere, {
+        'slideType.ghost.label': 'Ghost',
+        'slideType.ghost.field.centre.label': 'Center label',
+      }),
+      [],
     );
   });
 

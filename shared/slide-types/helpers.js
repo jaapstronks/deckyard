@@ -126,9 +126,13 @@ export const BACKGROUND_FIELD_EXTENDED = {
  *
  * Type-independent (D60), and the two types that ask it — image-slide and
  * image-text-slide — offer the identical choice, so it is one declaration
- * rather than two verbatim copies. One of the few options whose three slots
- * really do say three different things, so it declares three keys per option
- * rather than going through sharedOption().
+ * rather than two verbatim copies. One of the few options whose `title` really
+ * does say something the label does not — a full sentence of explanation — so
+ * it declares that key per option rather than going through sharedOption().
+ * The `ariaLabel` slot stays undeclared: the visible label *is* the accessible
+ * name (option-copy.js falls back to it), and an aria-label that repeats it
+ * costs every translator a second string, while one that differs breaks
+ * "speak what you see" for voice control (WCAG 2.5.3).
  */
 export const IMAGE_ROLE_FIELD = {
   key: 'imageRole',
@@ -143,8 +147,6 @@ export const IMAGE_ROLE_FIELD = {
       labelKey: 'editor.slideField.imageRole.option.content.label',
       title: 'This image conveys information and should have alt text.',
       titleKey: 'editor.slideField.imageRole.option.content.title',
-      ariaLabel: 'Meaningful image',
-      ariaLabelKey: 'editor.slideField.imageRole.option.content.ariaLabel',
     },
     {
       value: 'decorative',
@@ -152,8 +154,6 @@ export const IMAGE_ROLE_FIELD = {
       labelKey: 'editor.slideField.imageRole.option.decorative.label',
       title: 'This image is decorative; it will be hidden from screen readers.',
       titleKey: 'editor.slideField.imageRole.option.decorative.title',
-      ariaLabel: 'Decorative image',
-      ariaLabelKey: 'editor.slideField.imageRole.option.decorative.ariaLabel',
     },
   ],
 };
