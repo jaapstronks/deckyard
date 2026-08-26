@@ -568,7 +568,7 @@
   "settings.slideTypes.createSuccess": "Typ slajdu utworzony.",
   "settings.slideTypes.createType": "Utwórz typ slajdu",
   "settings.slideTypes.css": "Własny CSS",
-  "settings.slideTypes.cssHint": "Ograniczony zakresem CSS wstrzykiwany w kontekst renderowania slajdu.",
+  "settings.slideTypes.cssHint": "CSS o ograniczonym zasięgu, wstrzykiwany w kontekst renderowania slajdu.",
   "settings.slideTypes.curation": "Dobór typów slajdów",
   "settings.slideTypes.curationDescription": "Określa, które podstawowe typy slajdów są dostępne dla nowych slajdów. Wyłączenie typu ukrywa go w selektorze, ale nie wpływa na istniejące slajdy.",
   "settings.slideTypes.customTypes": "Własne typy slajdów",
