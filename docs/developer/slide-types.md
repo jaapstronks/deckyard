@@ -464,7 +464,8 @@ Background section, and two images competing on the slide. So:
 - `bgImage`/`bgAlt` are a read-only render fallback for un-migrated decks.
   Opening such a slide in the editor folds them onto `slideBgImage`
   (`shared/slide-types/legacy-bg-image.js`); `node
-scripts/migrate-legacy-bg-image.js` does the same in bulk.
+scripts/migrate-legacy-bg-image.js` does the same in bulk, on either storage
+  backend and including every language version (`--dry-run` first).
 - Do declare an `image` field for an image that is _content_ — a portrait, a
   chart, one cell of a grid. That is a different thing from the backdrop.
 

@@ -13,11 +13,11 @@
  *
  * ## Both stores, on purpose
  *
- * `scripts/migrate-slides.js` and `scripts/migrate-legacy-bg-image.js` are
- * file-only.
- * slides.ciiic.nl runs on Postgres, so a file-only script would migrate nothing
- * where it matters. This one covers both backends and picks by `STORAGE_MODE`
- * unless told otherwise.
+ * `scripts/migrate-slides.js` is file-only. slides.ciiic.nl runs on Postgres, so
+ * a file-only script would migrate nothing where it matters. This one covers
+ * both backends and picks by `STORAGE_MODE` unless told otherwise, and
+ * `migrate-legacy-bg-image.js` now does the same through the shared
+ * `scripts/lib/pg-json-rewrite.js`.
  *
  * Surfaces that hold a slide's `type` (the Postgres list matches what
  * `server/db/migrations/030_migrate_agenda_timeline_to_timeline.js` touched,
@@ -64,6 +64,10 @@ import { readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+import {
+  readExistingColumns,
+  rewriteJsonColumns,
+} from './lib/pg-json-rewrite.js';
 import { loadDotEnv } from '../server/config/env.js';
 import { isPostgresMode } from '../server/config/database.js';
 import { dataDir } from '../server/config/storage-paths.js';
@@ -220,49 +224,12 @@ const PG_JSON_TARGETS = [
   { table: 'presentation_comments', columns: ['slide_snapshot'] },
 ];
 
-const PG_BATCH_SIZE = 200;
-
-/**
- * pg returns jsonb as parsed values, but a column can also come back as text on
- * some driver configurations. Normalize both to a JS value.
- * @param {*} raw
- * @returns {*}
- */
-function parseMaybeJson(raw) {
-  if (typeof raw !== 'string') return raw;
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return raw;
-  }
-}
-
-/**
- * Read which of the targeted columns actually exist.
- *
- * Checked per *column*, not per table: `slide_snapshot` (migration 041) and
- * `slide_library.i18n` (049) arrived later than the tables holding them, so an
- * install that has not run those migrations must report "absent" rather than
- * fail the whole run on a missing column.
- *
- * @param {import('kysely').Kysely<any>} db
- * @returns {Promise<Set<string>>} `"table.column"` keys that exist.
- */
-async function readExistingColumns(db) {
-  const rows = await db
-    .selectFrom('information_schema.columns')
-    .select(['table_name', 'column_name'])
-    .where('table_schema', '=', 'public')
-    .execute();
-  return new Set(rows.map((r) => `${r.table_name}.${r.column_name}`));
-}
-
 /**
  * Rewrite the old type across every Postgres surface that stores a slide.
  *
- * Rows are read in id-ordered batches and only written back when the walk
- * actually changed something, so a re-run touches no rows and bumps no
- * timestamps.
+ * The batched read-rewrite-write loop is `scripts/lib/pg-json-rewrite.js`,
+ * shared with `migrate-legacy-bg-image.js`; what is this migration's own is the
+ * target list and the pure rewrite handed to it.
  *
  * @param {import('kysely').Kysely<any>} db
  * @param {{dryRun?: boolean}} [opts]
@@ -270,59 +237,15 @@ async function readExistingColumns(db) {
  */
 export async function migratePostgres(db, opts = {}) {
   const dryRun = Boolean(opts.dryRun);
+  // A second catalog read next to the helper's own: the scalar column below is
+  // not a rewrite target, and threading the set through the shared API to save
+  // one information_schema query in a one-time script is not worth the seam.
   const existing = await readExistingColumns(db);
-  const results = [];
-
-  for (const { table, columns } of PG_JSON_TARGETS) {
-    const present = columns.filter((c) => existing.has(`${table}.${c}`));
-    const result = {
-      table,
-      present: present.length > 0,
-      rowsScanned: 0,
-      rowsModified: 0,
-      slidesRenamed: 0,
-    };
-    results.push(result);
-    if (!result.present) continue;
-
-    let offset = 0;
-    for (;;) {
-      const rows = await db
-        .selectFrom(table)
-        .select(['id', ...present])
-        .orderBy('id')
-        .limit(PG_BATCH_SIZE)
-        .offset(offset)
-        .execute();
-      if (!rows.length) break;
-      offset += rows.length;
-      result.rowsScanned += rows.length;
-
-      for (const row of rows) {
-        /** @type {Record<string, string>} */
-        const updates = {};
-        let renamed = 0;
-        for (const column of present) {
-          const parsed = parseMaybeJson(row[column]);
-          const { value, count } = renameSlideTypeDeep(parsed);
-          if (!count) continue;
-          renamed += count;
-          updates[column] = JSON.stringify(value);
-        }
-        if (!renamed) continue;
-
-        result.rowsModified += 1;
-        result.slidesRenamed += renamed;
-        if (!dryRun) {
-          await db
-            .updateTable(table)
-            .set(updates)
-            .where('id', '=', row.id)
-            .execute();
-        }
-      }
-    }
-  }
+  const results = (
+    await rewriteJsonColumns(db, PG_JSON_TARGETS, renameSlideTypeDeep, {
+      dryRun,
+    })
+  ).map(({ hits, ...rest }) => ({ ...rest, slidesRenamed: hits }));
 
   // slide_library.slide_type is a scalar column, not JSON.
   const libraryResult = {
