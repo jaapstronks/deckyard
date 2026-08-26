@@ -8,7 +8,7 @@
  */
 
 import { isOwnerOrCreator } from '../../../shared/identity-match.js';
-import { isOrganizationAdmin } from '../user/organization-role.js';
+import { isOrganizationAdmin } from '../../../shared/organization-role.js';
 
 /**
  * Check if a user is the author of a presentation.

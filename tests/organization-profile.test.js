@@ -100,7 +100,7 @@ const { renderOrganizationProfilePanel } =
 const { showDeleteOrganizationModal } =
   await import('../client/views/settings/organization-profile/delete-modal.js');
 const { isOrganizationAdmin, canSeeMemberList, isOrganizationMember } =
-  await import('../client/lib/user/organization-role.js');
+  await import('../shared/organization-role.js');
 const { createSettingsSidebar } =
   await import('../client/views/settings/settings-sidebar.js');
 

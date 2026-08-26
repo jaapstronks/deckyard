@@ -17,8 +17,10 @@
  * id and email is globally unique on an instance.
  */
 
-import { hasOrganizationRole } from '../../../../shared/organization-role.js';
-import { getOrganizationRole } from '../../../lib/user/organization-role.js';
+import {
+  hasOrganizationRole,
+  getOrganizationRole,
+} from '../../../../shared/organization-role.js';
 
 /**
  * Whether a member row is the signed-in person.

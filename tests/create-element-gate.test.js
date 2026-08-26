@@ -86,7 +86,6 @@ test('gate: exactly two files are exempt', async () => {
   for (const file of [
     'client/lib/dom/modal.js',
     'client/lib/dom/head-assets.js',
-    'client/lib/user/organization-role.js',
     'client/lib/theme/font-assets.js',
   ]) {
     const messages = await lintProbe(code, file);

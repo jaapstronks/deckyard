@@ -417,7 +417,7 @@ export async function getUserFromRequestAsync(req, ctx) {
       // The role held in *this* organization (owner/admin/member), as opposed
       // to the instance-wide `isAdmin` above. Null in single-organization mode,
       // where there is only one organization and no membership to read. The
-      // UI gates admin surfaces on both; see client/lib/user/organization-role.js.
+      // UI gates admin surfaces on both; see shared/organization-role.js.
       organizationRole,
       // The raw `is_designer` flag on that same membership row. Carried so
       // designer-capability resolution can reuse the row already read here

@@ -331,7 +331,7 @@ instance flag alone means an admin of organization A keeps every destructive
 affordance the moment they switch to organization B — the delete button on a
 shared image, the Q&A remove button, the raw-JSON editor.
 
-[`isOrganizationAdmin(user)`](../../client/lib/user/organization-role.js) is the
+[`isOrganizationAdmin(user)`](../../shared/organization-role.js) is the
 conjunction: instance admin **and**, where a membership exists, `admin` or
 `owner` of the active organization. Without a membership role it collapses to
 the old check, so single-workspace instances (and the dev bypass and the
@@ -347,8 +347,12 @@ name is legitimate in every other shape: `{ isAdmin }` destructuring, a jsdoc
 (`isAdmin: isOrganizationAdmin(user)`) all pass. Only the read off an object —
 which is always a gate — is rejected.
 
-The allowlist is exactly one file: `organization-role.js`, where the helper
-reads the instance flag in order to narrow it.
+The rule covers `client/**` **and `shared/**`**: the helper moved to
+`shared/organization-role.js` in B171, and a rule that stopped at the client
+tree would have left the raw flag freely readable in exactly the place the
+gate now lives. The allowlist is exactly one file:
+`shared/organization-role.js`, where the helper reads the instance flag in
+order to narrow it.
 
 Server-side `.isAdmin` reads are **out of scope and correct**: instance-scoped
 APIs (admin users, email, integrations, API keys, analytics) check the instance

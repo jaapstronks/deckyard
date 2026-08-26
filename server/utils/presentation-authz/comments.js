@@ -16,7 +16,7 @@ import {
   isOwnerOrCreator,
   matchesIdentity,
 } from '../../../shared/identity-match.js';
-import { isOrganizationAdmin } from '../organization-role.js';
+import { isOrganizationAdmin } from '../../../shared/organization-role.js';
 
 /**
  * Check if a user can resolve/reopen a comment.

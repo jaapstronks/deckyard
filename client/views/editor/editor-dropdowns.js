@@ -5,7 +5,7 @@
 
 import { setupShareDropdown } from './share-dropdown.js';
 import { setupExportDropdown } from './export-dropdown.js';
-import { isOrganizationAdmin } from '../../lib/user/organization-role.js';
+import { isOrganizationAdmin } from '../../../shared/organization-role.js';
 
 /**
  * Create and configure editor dropdowns (share + export)

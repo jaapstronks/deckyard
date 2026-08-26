@@ -330,7 +330,7 @@ the usual mistake:
 ### Admin means admin of the organization you are in
 
 Every admin bypass in this document reads
-`isOrganizationAdmin()` (`server/utils/organization-role.js`), not the bare
+`isOrganizationAdmin()` (`shared/organization-role.js`), not the bare
 `isAdmin` flag. The two are not the same question:
 
 - `isAdmin` comes from `users.role` and is **instance-wide**.
@@ -347,11 +347,13 @@ bypass, the sandbox, and the machine surfaces that resolve a `users.id` and no
 role — the answer is exactly the old `isAdmin` check, so those installs are
 unchanged.
 
-The same rule decides what the UI renders
-(`client/lib/user/organization-role.js`). Both halves are pinned in
-`tests/organization-admin-gates.test.js`, including a case-for-case comparison
-of the two implementations — a client that hides a control the server would
-allow is as much a defect as the reverse.
+The same rule decides what the UI renders, and it is the same declaration
+doing it: the client imports `shared/organization-role.js` too (B171). It used
+to be written out twice, once per half, with a case-for-case comparison in
+`tests/organization-admin-gates.test.js` standing guard — a client that hides a
+control the server would allow is as much a defect as the reverse. That test
+now pins the stronger property: `isOrganizationAdmin()` is declared exactly
+once in the whole runtime tree, so the two halves cannot answer differently.
 
 Two consequences worth stating explicitly:
 

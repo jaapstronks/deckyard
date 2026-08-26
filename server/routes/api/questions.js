@@ -23,7 +23,7 @@ import { getCollaboratorPermission } from '../../storage/collaborators.js';
 import { normalizeLang } from '../../utils/translation-status.js';
 import { notifyLiveSessionDeckUpdated } from '../../storage/live-sessions/index.js';
 import { canWritePresentation } from '../../utils/presentation-authz/index.js';
-import { isOrganizationAdmin } from '../../utils/organization-role.js';
+import { isOrganizationAdmin } from '../../../shared/organization-role.js';
 import { dispatchRoutes } from '../../utils/router.js';
 
 // POST /api/moderate/:presentationId/questions/:questionId/remove — moderator removes a question
@@ -36,7 +36,7 @@ async function handleQuestionRemove(
   // "Moderator path" is intended for coworkers; require admin to avoid
   // accidental abuse. Admin *of the workspace this deck lives in* — an
   // instance admin who is a plain member of the active organization is not a
-  // moderator here (utils/organization-role.js).
+  // moderator here (shared/organization-role.js).
   if (!isOrganizationAdmin(authedUser))
     return unauthorized(res, 'Admin required');
 

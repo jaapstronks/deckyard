@@ -13,8 +13,8 @@
  * checks still read the bare `isAdmin`, so the button was hidden and the
  * request behind it still succeeded. This file pins the server half.
  *
- * The rule, in `server/utils/organization-role.js` and mirroring
- * `client/lib/user/organization-role.js` so the two cannot drift:
+ * The rule, in `shared/organization-role.js` — one declaration for both
+ * halves of the stack since B171, so there is nothing left to drift:
  *
  *   1. instance admin stays **necessary** — an organization owner who is not
  *      an instance admin gains nothing;
@@ -62,8 +62,7 @@ const { createQuestion, listQuestions } =
 const { handleQuestions } = await import('../server/routes/api/questions.js');
 const { handleImageLibrary } =
   await import('../server/routes/api/image-library.js');
-const { isOrganizationAdmin } =
-  await import('../server/utils/organization-role.js');
+const { isOrganizationAdmin } = await import('../shared/organization-role.js');
 const { canResolveComment, canEditComment } =
   await import('../server/utils/presentation-authz/comments.js');
 const { canChangePresentationVisibility } =
@@ -161,30 +160,49 @@ test('the gate: instance admin is necessary, active-org admin narrows it', () =>
   assert.equal(isOrganizationAdmin(undefined), false);
 });
 
-test('the gate holds the same rule as the client helper', async () => {
-  // Two files, one rule. If they diverge, a user is shown a control whose
-  // request is refused — or refused a control whose request would be allowed.
-  // Since B157 both read the ranking from shared/organization-role.js, so what
-  // is still written twice — and still compared here — is the conjunction of
-  // the instance flag with the membership role.
-  const client = await import('../client/lib/user/organization-role.js');
-  for (const user of [
-    ADMIN_HERE,
-    OWNER_HERE,
-    ADMIN_ELSEWHERE,
-    ADMIN_NO_MEMBERSHIP,
-    ORG_OWNER_NOT_INSTANCE_ADMIN,
-    { isAdmin: true },
-    { isAdmin: false, organizationRole: 'admin' },
-    { isAdmin: true, organizationRole: 'superadmin' },
-    null,
-  ]) {
-    assert.equal(
-      isOrganizationAdmin(user),
-      client.isOrganizationAdmin(user),
-      `server and client disagree for ${JSON.stringify(user)}`,
-    );
+test('there is one gate, and both halves read that one', async () => {
+  // Before B171 this test compared two implementations case by case, because
+  // the conjunction of the instance flag with the membership role was written
+  // out twice — once for the UI, once for authorization — and a pair that
+  // disagrees shows a user a control whose request is refused (or refuses one
+  // whose request would have been allowed). There is one declaration now, so
+  // what needs pinning is that nobody writes a second: a fresh copy would
+  // satisfy any value comparison on the day it was made and drift after.
+  const { readFile, readdir } = await import('node:fs/promises');
+  const { fileURLToPath } = await import('node:url');
+  const path = await import('node:path');
+  const root = fileURLToPath(new URL('..', import.meta.url));
+  const files = [];
+  async function collect(dir) {
+    for (const entry of await readdir(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) await collect(full);
+      else if (entry.name.endsWith('.js')) files.push(full);
+    }
   }
+  // The whole runtime tree, not a hand-picked list: a second gate is most
+  // likely to appear in a file that did not exist when the list was written.
+  // client/vendor/ is vendored third-party code.
+  await collect(path.join(root, 'shared'));
+  await collect(path.join(root, 'server'));
+  await collect(path.join(root, 'client'));
+  const declarations = [];
+  for (const file of files) {
+    const rel = path.relative(root, file).split(path.sep).join('/');
+    if (rel.startsWith('client/vendor/')) continue;
+    const source = await readFile(file, 'utf8');
+    if (
+      /function\s+isOrganizationAdmin\s*\(/.test(source) ||
+      /(?:const|let|var)\s+isOrganizationAdmin\s*=/.test(source)
+    ) {
+      declarations.push(rel);
+    }
+  }
+  assert.deepEqual(
+    declarations,
+    ['shared/organization-role.js'],
+    'isOrganizationAdmin() is declared outside shared/organization-role.js',
+  );
 });
 
 // ===========================================================================
