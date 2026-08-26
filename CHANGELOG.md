@@ -4,6 +4,26 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.27.1](https://github.com/jaapstronks/deckyard/compare/v1.27.0...v1.27.1) (2026-08-26)
+
+
+### Fixed
+
+* **collab:** stop collapsing hidden prose mirrors to one language ([#986](https://github.com/jaapstronks/deckyard/issues/986)) ([0373682](https://github.com/jaapstronks/deckyard/commit/0373682218ebc7647cdc57f79dbefb593442e4c3))
+* **editor:** one background-image control per slide, for every type ([#981](https://github.com/jaapstronks/deckyard/issues/981)) ([38a8094](https://github.com/jaapstronks/deckyard/commit/38a80947f2f05e48d550d0ae12e93c545e15bf77))
+* **i18n:** gate the keys slide-type declarations own (B168) ([5e1104d](https://github.com/jaapstronks/deckyard/commit/5e1104d7ebcb50f2f6bc64fe96512e66f3000538))
+* **i18n:** give every type-independent slide field one shared key (B146) ([#991](https://github.com/jaapstronks/deckyard/issues/991)) ([8b49611](https://github.com/jaapstronks/deckyard/commit/8b4961187f558c1d434a7ef224ffd1a40256d989))
+* **i18n:** stop minting machine tokens as translatable option copy (B145) ([#985](https://github.com/jaapstronks/deckyard/issues/985)) ([60d8aa3](https://github.com/jaapstronks/deckyard/commit/60d8aa39cac38ec0532d469efe945036b2d10522))
+* **i18n:** translate the 154 untranslated slideType.* keys in nl/ (B173) ([6d2df53](https://github.com/jaapstronks/deckyard/commit/6d2df539e3ca329a90928a65deb4ec0dcb6674e6))
+* **i18n:** translate the 18 unfilled shared slide-field keys (B166) ([14341b3](https://github.com/jaapstronks/deckyard/commit/14341b3fe6f6da1375bd9c8932b0b22676c6c09e))
+* **i18n:** translate the 66 new option labels in the eleven fill locales (B158) ([cdb4f65](https://github.com/jaapstronks/deckyard/commit/cdb4f65427c2911427fe11eb5fd1ab547d48d49e))
+* **themes:** let a background variant declare how dark its ground is (B159) ([#989](https://github.com/jaapstronks/deckyard/issues/989)) ([4aeaef6](https://github.com/jaapstronks/deckyard/commit/4aeaef678ce27954aa9c7cb47c43a928a4fbc8e7))
+
+
+### Security
+
+* **export:** let a theme variant's artwork reach PDF, and stop its URL reaching Chrome ([#988](https://github.com/jaapstronks/deckyard/issues/988)) ([41924d9](https://github.com/jaapstronks/deckyard/commit/41924d9847f9fa613156cb3fc44ae175500a9a75))
+
 ## [1.27.0](https://github.com/jaapstronks/deckyard/compare/v1.26.0...v1.27.0) (2026-08-24)
 
 
