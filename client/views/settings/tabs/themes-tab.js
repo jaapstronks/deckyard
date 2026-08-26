@@ -61,7 +61,7 @@ export function createThemesTab({ user }) {
     class: 'help',
     text: t(
       'settings.themes.workspace.hint',
-      'Set the theme new presentations start with, and which themes appear in the picker up front. Hidden themes stay reachable behind "Show all themes".',
+      'Set the theme new presentations start with, and which themes can be picked. An unchecked theme is not offered anywhere.',
     ),
   });
 
@@ -86,7 +86,7 @@ export function createThemesTab({ user }) {
     class: 'help',
     text: t(
       'settings.themes.workspace.visibleHint',
-      'Check the themes shown up front. The default theme is always visible. With everything checked, new themes are visible automatically.',
+      'Check the themes people can choose. The default theme is always available, and a presentation already using an unchecked theme keeps it. With everything checked, new themes are available automatically.',
     ),
   });
   const visibleList = h('div', { class: 'themes-visible-list stack' });
@@ -189,15 +189,26 @@ export function createThemesTab({ user }) {
   /** Load themes + app settings into the workspace controls. */
   async function loadWorkspaceControls() {
     try {
+      // `?all=1` skips the allowlist filter every other picker gets: this card
+      // is where the allowlist is edited, and a theme it cannot see is a theme
+      // that can never be checked back on.
       const [themesResp, app] = await Promise.all([
-        api('/api/themes'),
+        api('/api/themes?all=1'),
         fetchAppSettings(),
       ]);
       allThemes = Array.isArray(themesResp?.themes) ? themesResp.themes : [];
       const defaultThemeId = String(
         app?.defaultThemeId || themesResp?.defaultThemeId || '',
       );
-      renderWorkspaceControls(defaultThemeId, app?.enabledThemes || []);
+      // The response carries the *effective* allowlist (app setting, else the
+      // ENABLED_THEMES env fallback), so the checkboxes show what is really in
+      // force rather than only what this instance stored.
+      renderWorkspaceControls(
+        defaultThemeId,
+        Array.isArray(themesResp?.enabledThemes)
+          ? themesResp.enabledThemes
+          : app?.enabledThemes || [],
+      );
     } catch (err) {
       toast.error(err);
     }

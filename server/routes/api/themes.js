@@ -1,7 +1,9 @@
 /**
  * Themes API routes.
  *
- * GET /api/themes - List all themes (system + custom)
+ * GET /api/themes - List the themes this workspace offers (system + custom),
+ *   filtered by the `enabledThemes` allowlist. `?current=<id>` keeps a deck's
+ *   own theme in the list; `?all=1` (managers only) skips the filter.
  * GET /api/themes/fonts - List available fonts for custom themes
  * GET /api/themes/custom - List custom themes only
  * POST /api/themes/custom/preview-config - Build a theme from an unsaved draft
@@ -44,7 +46,10 @@ import {
 } from '../../../shared/theme-fonts.js';
 import { buildThemeConfig } from '../../utils/theme-builder.js';
 import { listAllFontFamiliesWithVariants } from '../../storage/font-families.js';
-import { getAppSettings, getDefaultThemeId } from '../../storage/settings.js';
+import {
+  getDefaultThemeId,
+  getEnabledThemeIds,
+} from '../../storage/settings.js';
 import {
   getOptionalString,
   getOptionalObject,
@@ -112,8 +117,14 @@ function canManageThemes(authedUser) {
   return canManage(authedUser);
 }
 
-// GET /api/themes - List all themes (system + custom)
-async function handleThemeList({ repoRoot, storageScope, res, authedUser }) {
+// GET /api/themes - List the themes this workspace offers
+async function handleThemeList({
+  repoRoot,
+  storageScope,
+  url,
+  res,
+  authedUser,
+}) {
   // Load system themes from filesystem. Sandbox is a public, neutral
   // playground, so it lists only the built-in core themes (never filesystem
   // custom/branded ones under custom/themes) — and, when present, narrows to
@@ -168,27 +179,46 @@ async function handleThemeList({ repoRoot, storageScope, res, authedUser }) {
     return String(a.label).localeCompare(String(b.label));
   });
 
-  // Annotate with the organization picker allowlist + default so the creation
-  // picker can show a default-visible subset and hide the rest behind a
-  // "Show all themes" toggle. An empty allowlist means every theme is shown.
-  const [{ enabledThemes }, defaultThemeId] = await Promise.all([
-    getAppSettings(storageScope),
+  // Enforce the organization allowlist (D70). `enabledThemes` has one meaning:
+  // a theme outside it is not offered anywhere, so the filter lives here rather
+  // than as an annotation each picker is free to soften. An empty allowlist
+  // means none is configured — every theme is offered.
+  const [allowlist, defaultThemeId] = await Promise.all([
+    getEnabledThemeIds(storageScope),
     getDefaultThemeId(storageScope),
   ]);
-  const allowlist = Array.isArray(enabledThemes) ? enabledThemes : [];
-  const allowSet = new Set(allowlist.map((id) => String(id).toLowerCase()));
+  const allowSet = new Set(allowlist);
+  // The default theme is always offered, or a workspace could allowlist itself
+  // out of the theme its own new decks get.
+  allowSet.add(String(defaultThemeId).toLowerCase());
 
-  for (const theme of allThemes) {
-    const idLower = String(theme.id).toLowerCase();
-    // The default theme is always visible; an empty allowlist shows all.
-    theme.enabled =
-      allowSet.size === 0 ||
-      allowSet.has(idLower) ||
-      idLower === String(defaultThemeId).toLowerCase();
-  }
+  // `?current=<id>` keeps one extra theme in the list: the theme a deck is
+  // already on. A deck that predates a withdrawal keeps rendering and keeps
+  // showing its own selection instead of silently reading as something else.
+  // No validation beyond casing and a length cap: the value is only ever a
+  // lookup key into the theme list, so an unknown id widens the allowlist by
+  // exactly nothing.
+  const current = String(url?.searchParams?.get('current') || '')
+    .trim()
+    .toLowerCase()
+    .slice(0, 64);
+  if (current) allowSet.add(current);
+
+  // `?all=1` returns the unfiltered list for the Settings → Themes allowlist
+  // editor, which cannot offer a checkbox for a theme it can't see. Only for
+  // users who may manage themes — otherwise it is the leak D70 closes.
+  const wantsAll =
+    url?.searchParams?.get('all') === '1' && canManageThemes(authedUser);
+
+  const themes =
+    wantsAll || allowlist.length === 0
+      ? allThemes
+      : allThemes.filter((theme) =>
+          allowSet.has(String(theme.id).toLowerCase()),
+        );
 
   serveJson(res, 200, {
-    themes: allThemes,
+    themes,
     defaultThemeId,
     enabledThemes: allowlist,
   });

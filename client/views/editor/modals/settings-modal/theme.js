@@ -49,7 +49,13 @@ export function buildThemeSection({
     return { el: wrap };
   }
 
-  const currentTheme = String(pres.themeId || DEFAULT_THEME_ID).trim();
+  // `theme` is the deck's own spelling everywhere else on the client
+  // (`save-manager.js`, `ai-append.js`) and on the wire. This section read
+  // `themeId`, a name nothing writes, so it always fell through to the default
+  // and the select pre-selected the wrong theme. Harmless while every theme was
+  // listed; with the allowlist enforced it would drop a deck's own theme from
+  // its own picker.
+  const currentTheme = String(pres.theme || DEFAULT_THEME_ID).trim();
   const themeSelector = createAndPopulateThemeSelect({
     api,
     initialTheme: currentTheme,
@@ -69,7 +75,7 @@ export function buildThemeSection({
           onNavigateToSlide?.(slideIndex);
         },
         onThemeChanged: (updatedPres) => {
-          pres.themeId = updatedPres.themeId;
+          pres.theme = updatedPres.theme;
           if (Array.isArray(updatedPres.slides)) {
             pres.slides = updatedPres.slides;
           }
@@ -80,7 +86,7 @@ export function buildThemeSection({
 
       // If cancelled or same theme, reset selector to current value
       if (!result?.ok) {
-        themeSelector.setTheme(pres.themeId || DEFAULT_THEME_ID);
+        themeSelector.setTheme(pres.theme || DEFAULT_THEME_ID);
       }
     },
   });

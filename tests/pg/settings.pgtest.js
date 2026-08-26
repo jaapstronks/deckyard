@@ -29,6 +29,7 @@ import {
   getUserSettings,
   writeUserSettings,
   getDefaultThemeId,
+  getEnabledThemeIds,
   defaultAppSettings,
   defaultUserSettings,
 } from '../../server/storage/settings.js';
@@ -104,6 +105,27 @@ pgDescribe('settings storage (real PostgreSQL)', () => {
     s = await getAppSettings(testScope());
     assert.equal(s.defaultThemeId, '');
     assert.equal(await getDefaultThemeId(testScope()), DEFAULT_THEME_ID);
+  });
+
+  it('prefers a stored theme allowlist over the ENABLED_THEMES env seam', async () => {
+    // Same precedence as defaultThemeId/DEFAULT_THEME: what an admin clicked
+    // wins over what the fork shipped as configuration, and an empty stored
+    // list means "not configured here", so the env seam applies again.
+    process.env.ENABLED_THEMES = 'midnight';
+    try {
+      await writeAppSettings(testScope(), {
+        enabledThemes: ['amethyst', 'clicknl'],
+      });
+      assert.deepEqual(await getEnabledThemeIds(testScope()), [
+        'amethyst',
+        'clicknl',
+      ]);
+
+      await writeAppSettings(testScope(), { enabledThemes: [] });
+      assert.deepEqual(await getEnabledThemeIds(testScope()), ['midnight']);
+    } finally {
+      delete process.env.ENABLED_THEMES;
+    }
   });
 
   it('drops a third-party analytics id that is not spelled like an id', async () => {

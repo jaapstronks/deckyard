@@ -293,6 +293,17 @@ Create or edit `.env`:
 DEFAULT_THEME=your-org
 ```
 
+To limit which themes people can pick at all, add the allowlist alongside it.
+It is enforced server-side, so an id left out is offered by no picker:
+
+```bash
+ENABLED_THEMES=your-org,editorial
+```
+
+Leave it unset to offer every theme. Admins can override it per instance in
+Settings → Themes; see `docs/reference/deck-creation-and-reuse.md` § Theme
+default and the allowlist.
+
 ### Step 5: Commit Your Customizations
 
 ```bash
