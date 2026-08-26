@@ -4,6 +4,19 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.28.0](https://github.com/jaapstronks/deckyard/compare/v1.27.2...v1.28.0) (2026-08-26)
+
+
+### Added
+
+* **themes:** a theme:preview contact sheet for every slide type (B162) ([#1002](https://github.com/jaapstronks/deckyard/issues/1002)) ([8b08af7](https://github.com/jaapstronks/deckyard/commit/8b08af746d1bd204da270980b6d3380ad8ef657c))
+
+
+### Fixed
+
+* **i18n:** carry the D66 terminology decisions into the locales ([#1005](https://github.com/jaapstronks/deckyard/issues/1005)) ([9565a3a](https://github.com/jaapstronks/deckyard/commit/9565a3abdfd5309e46dc306782dde06ec8f766d4))
+* **scripts:** migrate legacy backgrounds on Postgres and in language versions (B175) ([#1000](https://github.com/jaapstronks/deckyard/issues/1000)) ([22cba7a](https://github.com/jaapstronks/deckyard/commit/22cba7a6907270466c12a02e2e7f74a086f6e222))
+
 ## [1.27.2](https://github.com/jaapstronks/deckyard/compare/v1.27.1...v1.27.2) (2026-08-26)
 
 
