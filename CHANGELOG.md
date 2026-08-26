@@ -4,6 +4,15 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.27.2](https://github.com/jaapstronks/deckyard/compare/v1.27.1...v1.27.2) (2026-08-26)
+
+
+### Fixed
+
+* **editor:** refresh the images selection list in place, not by redraw (B169) ([#997](https://github.com/jaapstronks/deckyard/issues/997)) ([7013aa5](https://github.com/jaapstronks/deckyard/commit/7013aa530caecc5b5e666e860417138920aef5ba))
+* **i18n:** one English per key between the registry and en/ (B174) ([#996](https://github.com/jaapstronks/deckyard/issues/996)) ([ba7c5c6](https://github.com/jaapstronks/deckyard/commit/ba7c5c617b68d0a7abf3b999ac4013d1f15eac4c))
+* **themes:** enforce the enabledThemes allowlist in every picker (B176) ([#999](https://github.com/jaapstronks/deckyard/issues/999)) ([58c4e21](https://github.com/jaapstronks/deckyard/commit/58c4e2160d43147c16990c12f54e5d02d48577c4))
+
 ## [1.27.1](https://github.com/jaapstronks/deckyard/compare/v1.27.0...v1.27.1) (2026-08-26)
 
 
