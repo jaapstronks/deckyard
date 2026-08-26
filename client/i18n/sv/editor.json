@@ -209,7 +209,7 @@
   "editor.color.preset.white": "Vit",
   "editor.comments": "Kommentarer",
   "editor.companion": "Companion",
-  "editor.companion.title": "Öppna Companion med talaranteckningar på din telefon (QR-kod).",
+  "editor.companion.title": "Öppna talarantecknings-companion på din telefon (QR-kod).",
   "editor.conflict.copyMine": "Kopiera min version (JSON)",
   "editor.conflict.copyPrompt": "Kopiera din version nedan (Ctrl/Cmd+C):",
   "editor.conflict.help": "Ladda om för att få den senaste versionen. Om du är orolig för att förlora dina ändringar: kopiera din version som JSON först.",

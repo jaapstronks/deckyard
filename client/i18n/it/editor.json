@@ -957,7 +957,7 @@
   "editor.translate.disabled": "La traduzione è disabilitata (solo una lingua abilitata).",
   "editor.translate.done": "Traduzione pronta.",
   "editor.translate.missingBtn": "Traduci con l'IA",
-  "editor.translate.modalHelp": "Attenda. Potrà continuare a usare l'editor al termine della traduzione.",
+  "editor.translate.modalHelp": "Attendi. Potrai continuare a usare l'editor al termine della traduzione.",
   "editor.translate.modalTitle": "Traduzione…",
   "editor.translate.noSourceText": "Nessun testo sorgente trovato da tradurre in questa slide.",
   "editor.translate.overwrite": "Sovrascrivi la traduzione",
