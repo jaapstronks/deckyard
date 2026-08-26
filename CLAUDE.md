@@ -29,6 +29,26 @@ Three planning horizons, three files:
 > sibling and run its `setup-symlink.sh`. Repo:
 > `github.com/jaapstronks/deckyard-planning` (private).
 
+## Werkwijze en handoff
+
+Deze repo volgt de universele werkwijze (skill `werkwijze` in `~/.claude`);
+de drie planning-horizonnen hierboven zijn er de deckyard-instantie van.
+
+- **Handoff**: `/handoff` leest `docs/plans/HANDOFF.md` en voert 'm uit als
+  sessie-opdracht. Elke werk-afrondende sessie **overschrijft** dat bestand
+  met de volgende opdracht en sluit het antwoord af met de sluitregel
+  (`/handoff` + sessiesoort + model). Volledige regels:
+  `docs/plans/handoff-systematiek.md`.
+- **Rollen**: Fable brieft/reviewt/merget; Opus voert één item/PR per sessie
+  uit en merget nooit zelf.
+- **Ritmes**: `merge-housekeeping` (repo-eigen skill) per gedelegeerde merge;
+  `reorg-audit` bij de drift-drempel; `tighten-scan` (repo-eigen skill) op
+  aanvraag.
+
+Afwijkingen van de universele werkwijze: plans leven in de private
+`deckyard-planning`-sibling (OSS-repo), en de repo-eigen `merge-housekeeping`
+en `tighten-scan` shadowen de generieke skills — bewust.
+
 ## The course: beta doctrine (apply at every ritual)
 
 Deckyard is in beta with a near-zero installed base (one fork, ours). The
