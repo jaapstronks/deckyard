@@ -74,9 +74,10 @@ const REQUIRED_LOCALES = TIER_1;
  * Same shape as `tests/slide-type-shared-copy-burndown.json` and
  * `eslint-suppressions.json` (A7.20): it may only ever *shrink*, and a stale
  * row fails just as loudly as a new gap, so the list cannot quietly become a
- * permanent exemption. It is seeded with the `slideType.*` keys `nl/` has never
- * translated — pre-existing debt this gate made visible, not something it
- * introduced. The shared `editor.slideField.*` namespace enters at zero.
+ * permanent exemption. It was seeded with the `slideType.*` keys `nl/` had
+ * never translated — pre-existing debt this gate made visible, not something it
+ * introduced. The shared `editor.slideField.*` namespace entered at zero, and
+ * since B173 the list itself is empty: every declared key has a Tier-1 value.
  */
 const REGISTRY_BURNDOWN_PATH = path.join(
   repoRoot,
