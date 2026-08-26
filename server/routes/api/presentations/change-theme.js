@@ -23,32 +23,11 @@ import {
   convertSlideToType,
 } from '../../../../shared/slide-types/convert.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types/registry.js';
+import { getThemeSlideTypeConfig } from '../../../../shared/slide-types/policy.js';
+import { cleanStr } from '../../../../shared/string-utils.js';
 import { createLogger } from '../../../utils/logger.js';
 import { DEFAULT_THEME_ID } from '../../../../shared/constants/themes.js';
 const log = createLogger('change-theme');
-
-/**
- * Get theme slide type configuration (server-side version).
- * Mirrors the client-side getThemeSlideTypeConfig from slide-types-policy.js
- * @param {Object} theme - Theme object
- * @returns {Object} { exclude: Set, include: Set }
- */
-function getThemeSlideTypeConfig(theme) {
-  // `newTheme` comes from loadThemeAssets(), which normalizes, so `slideTypes.exclude`
-  // is the whole story here — the legacy `hiddenSlideTypes` alias is folded away
-  // in normalizeTheme().
-  const st =
-    theme?.slideTypes && typeof theme.slideTypes === 'object'
-      ? theme.slideTypes
-      : {};
-  const excludeArr = Array.isArray(st.exclude) ? st.exclude : [];
-  const includeArr = Array.isArray(st.include) ? st.include : [];
-
-  return {
-    exclude: new Set(excludeArr),
-    include: new Set(includeArr),
-  };
-}
 
 /**
  * Check if a slide type is compatible with a theme.
@@ -63,10 +42,10 @@ function checkSlideTypeCompatibility(slideType, newTheme) {
   }
 
   const { exclude, include } = getThemeSlideTypeConfig(newTheme);
-  const newThemeId = String(newTheme?.id || '').trim();
+  const newThemeId = cleanStr(newTheme?.id);
 
   // Check if slide type has a theme-specific binding
-  const slideThemeId = String(typeDef?.themeId || '').trim();
+  const slideThemeId = cleanStr(typeDef?.themeId);
   if (slideThemeId && slideThemeId !== newThemeId) {
     return { compatible: false, reason: 'theme_specific' };
   }

@@ -3,7 +3,7 @@ import { renderSlideFormByType } from './editor-form/slide-form-router.js';
 import { buildDeckSlideOptions } from './fields/card-link-field.js';
 import { t } from '../../lib/ui-i18n.js';
 import { toast as defaultToast } from '../../lib/dom/toast.js';
-import { isOrgDisabledSlideType } from './slide-types-policy.js';
+import { isOrgDisabledSlideType } from '../../../shared/slide-types/policy.js';
 import { buildDataSourceIndicator } from './data-source-panel.js';
 import { icon } from '../../lib/dom/icons.js';
 import { buildHeaderActions } from './editor-form/header-actions.js';

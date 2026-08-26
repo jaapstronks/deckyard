@@ -20,7 +20,7 @@
 
 import { icon } from '../../../lib/dom/icons.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { isInsertableSlideType } from '../slide-types-policy.js';
+import { isInsertableSlideType } from '../../../../shared/slide-types/policy.js';
 import {
   renderSlideElement,
   cleanupSlideRuntimes,

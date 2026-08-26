@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isInsertableSlideType } from '../client/views/editor/slide-types-policy.js';
+import { isInsertableSlideType } from '../shared/slide-types/policy.js';
 import { SLIDE_TYPES, renderSlideHtml } from '../shared/slide-types.js';
 import { normalizeTheme } from '../shared/theme-normalize.js';
 

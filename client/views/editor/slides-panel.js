@@ -9,7 +9,7 @@ import { newId } from '../../lib/util/id.js';
 import { createSlideLibraryPicker } from './slide-library-picker.js';
 import { toast } from '../../lib/dom/toast.js';
 import { debugLog } from '../../lib/util/debug.js';
-import { isInsertableSlideType } from './slide-types-policy.js';
+import { isInsertableSlideType } from '../../../shared/slide-types/policy.js';
 import { sortByPinnedThenName } from '../../lib/slide-library/search.js';
 import { createSlidesPanelResize } from './slides-panel-resize.js';
 import { createSlidesPanelActions } from './slides-panel-actions.js';
