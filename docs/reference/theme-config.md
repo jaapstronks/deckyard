@@ -179,6 +179,40 @@ An empty config leaves the derived theme byte-identical. Every row predating the
 column reads as `{}`, which is what makes the migration safe on a live install;
 `tests/theme-builder-config.test.js` pins that against a fixture.
 
+## Checking a theme
+
+The theme editor's live preview covers a handful of slide types against the
+draft you are editing — the right scope for a side panel, and not enough to
+sign off a theme. To see the whole matrix:
+
+```sh
+npm run theme:preview <theme-id>
+```
+
+`scripts/theme-preview.js` writes `tmp/theme-preview/<theme-id>/index.html`: one
+tile per (slide type × background), grouped by type, plus a WCAG table for the
+theme's flat background variants. It resolves a **file** theme in
+`custom/themes/<id>/theme.json` as readily as a built-in one — the editor's
+draft-preview route does not — and it renders every tile through
+`renderSlideToPngBuffer`, the same CSS bundle and `setContent` chain a PDF or
+PNG export runs, so a tile is what an export produces rather than a lookalike.
+
+It walks each type against the backgrounds that type declares plus the theme's
+own variants (`countdown-slide` declares seven of its own), and skips types the
+theme excludes or that belong to another theme. Read it as a sheet, not a gate:
+the failures it exists to catch — a logo drifting off-position, text landing on
+the bright edge of an artwork background — are visual, and no assertion sees
+them.
+
+The WCAG table is scoped to what is honestly measurable. A variant whose
+`textColor` sits on a solid or gradient ground has a computable ratio; artwork
+grounds and non-hex colours are reported as **not measured** rather than scored,
+because a per-pixel worst case needs the rendered PNG sampled under the text
+box. That sampler, and turning the sheet into a build gate, are follow-ups.
+
+Output goes to the gitignored `tmp/`. The run needs the same Chrome the export
+chain uses, and no server or database.
+
 ## Override locks
 
 `locks` declares, per brand property, whether a slide may override the theme:

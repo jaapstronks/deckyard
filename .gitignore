@@ -33,6 +33,9 @@ yarn-error.log*
 # Generated assets (downloaded via postinstall)
 assets/fonts/google/
 
+# Local tool output (theme:preview contact sheets and the like)
+tmp/
+
 # ============================================
 # Fork Customization Directories
 # ============================================
