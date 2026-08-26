@@ -111,7 +111,7 @@ const { showInviteModal } =
 const { renderOrganizationMembersPanel } =
   await import('../client/views/settings/organization-members/panel.js');
 const { isOrganizationAdmin, canSeeMemberList, isOrganizationMember } =
-  await import('../client/lib/user/organization-role.js');
+  await import('../shared/organization-role.js');
 const { createSettingsSidebar } =
   await import('../client/views/settings/settings-sidebar.js');
 

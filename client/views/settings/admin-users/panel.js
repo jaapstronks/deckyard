@@ -9,7 +9,7 @@ import { renderUsersList } from './user-list.js';
 import { showAddModal } from './add-modal.js';
 import { showEditModal } from './edit-modal.js';
 import { fetchUsers } from './actions.js';
-import { isOrganizationAdmin } from '../../../lib/user/organization-role.js';
+import { isOrganizationAdmin } from '../../../../shared/organization-role.js';
 
 /**
  * Render the admin users panel.

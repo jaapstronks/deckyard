@@ -23,7 +23,7 @@ import { dispatchRoutes } from '../../utils/router.js';
 import { generateImageAltTexts } from '../../utils/llm/alt-text.js';
 import { listSandboxMedia } from '../../sandbox/media.js';
 import { getDataUrl } from '../../utils/request-validators.js';
-import { isOrganizationAdmin } from '../../utils/organization-role.js';
+import { isOrganizationAdmin } from '../../../shared/organization-role.js';
 
 // /api/image-library - Shared image library (shared across users).
 // The enableImageLibrary flag answers 404 before the method decision, so the
@@ -238,7 +238,7 @@ async function handleImageItem(
       return methodNotAllowed(res, ['GET']);
     // The library is organization-scoped, so the delete is too: an instance
     // admin who is a plain member of the active organization may not throw
-    // away its images (utils/organization-role.js).
+    // away its images (shared/organization-role.js).
     if (!isOrganizationAdmin(authedUser))
       return unauthorized(res, 'Admin required');
     const deleted = await deleteImageLibraryItem(storageScope, imageId);

@@ -11,7 +11,7 @@ import {
   isOwnerOrCreator,
   matchesIdentity,
 } from '../../../shared/identity-match.js';
-import { isOrganizationAdmin } from '../user/organization-role.js';
+import { isOrganizationAdmin } from '../../../shared/organization-role.js';
 
 /**
  * Check if the user is the presentation owner (can resolve/reopen comments).

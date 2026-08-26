@@ -1,7 +1,7 @@
 import { debugLog } from '../../lib/util/debug.js';
 import { t } from '../../lib/ui-i18n.js';
 import { h } from '../../lib/dom.js';
-import { isOrganizationAdmin } from '../../lib/user/organization-role.js';
+import { isOrganizationAdmin } from '../../../shared/organization-role.js';
 import {
   createQuestionsFeed,
   promoteQuestion,

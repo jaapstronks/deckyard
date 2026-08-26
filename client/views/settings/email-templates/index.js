@@ -20,7 +20,7 @@ import {
   buildForm,
 } from './builders.js';
 import { createActions } from './actions.js';
-import { isOrganizationAdmin } from '../../../lib/user/organization-role.js';
+import { isOrganizationAdmin } from '../../../../shared/organization-role.js';
 
 /**
  * Create the email templates panel.

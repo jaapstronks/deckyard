@@ -15,7 +15,7 @@ import { getSlideLocks } from '../../slide-locks.js';
 import { isPresentationAuthor } from '../../../utils/presentation-authz/index.js';
 import { matchesIdentity } from '../../../../shared/identity-match.js';
 import { isCollabLiveEditsEnabled } from '../../../config/features.js';
-import { isOrganizationAdmin } from '../../../utils/organization-role.js';
+import { isOrganizationAdmin } from '../../../../shared/organization-role.js';
 
 /**
  * Canonicalize a JSON value: sort object keys so key order never counts as
@@ -178,7 +178,7 @@ export async function enforceSlideLocks({
  * @param {Object} [opts.nextI18nVersions] - Candidate i18n.versions (normalized)
  * @param {Object} [opts.user] - Acting user ({ id, email, isAdmin,
  *   organizationRole }) when known. The admin half of the author test is the
- *   *organization* admin (utils/organization-role.js), so the membership role
+ *   *organization* admin (shared/organization-role.js), so the membership role
  *   has to travel with the user or the check narrows to the id alone.
  * @param {string|null} [opts.actorUserId] - Acting `users.id`, when the caller
  *   has no full user object (machine surfaces: API key owner, MCP session)

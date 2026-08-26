@@ -8,11 +8,12 @@
  * to organization B — the delete button on a shared image, the Q&A remove
  * button, the raw-JSON slide editor, the moderator route.
  *
- * `isOrganizationAdmin()` in client/lib/user/organization-role.js is the
- * conjunction, and it was losing: four call sites against ten raw `.isAdmin`
- * reads. This file pins the ESLint rule that makes the helper the default, and
- * the helper's own semantics — in particular that a single-workspace instance
- * (no membership role) is unchanged by any of it.
+ * `isOrganizationAdmin()` in shared/organization-role.js is the conjunction,
+ * and it was losing: four call sites against ten raw `.isAdmin` reads. This
+ * file pins the ESLint rule that makes the helper the default, and the
+ * helper's own semantics — in particular that a single-workspace instance (no
+ * membership role) is unchanged by any of it. Since B171 the helper lives in
+ * `shared/`, so the rule covers that tree too and the exemption moved with it.
  *
  * Run with: node --test tests/organization-admin-gate.test.js
  */
@@ -22,7 +23,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { isOrganizationAdmin } from '../client/lib/user/organization-role.js';
+import { isOrganizationAdmin } from '../shared/organization-role.js';
 
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -76,7 +77,7 @@ test('gate: the shapes that are not a gate stay legal', async () => {
     // Destructuring — the name arrives as a binding, not a read off a user.
     'export const f = ({ isAdmin }) => isAdmin;\n',
     // Prop-threading the already-narrowed answer down to a child view.
-    "import { isOrganizationAdmin } from '../lib/user/organization-role.js';\n" +
+    "import { isOrganizationAdmin } from '../../shared/organization-role.js';\n" +
       'export const f = (user) => ({ isAdmin: isOrganizationAdmin(user) });\n',
     // A jsdoc mention.
     '/**\n * @param {boolean} isAdmin - Whether the user is an admin\n * @returns {boolean}\n */\n' +
@@ -93,7 +94,7 @@ test('gate: the shapes that are not a gate stay legal', async () => {
 
 test('gate: the canonical helper is importable and unrestricted', async () => {
   const messages = await lintProbe(
-    "import { isOrganizationAdmin } from '../lib/user/organization-role.js';\n" +
+    "import { isOrganizationAdmin } from '../../shared/organization-role.js';\n" +
       'export const f = (user) => (isOrganizationAdmin(user) ? 1 : 0);\n',
     PROBE,
   );
@@ -104,7 +105,7 @@ test('gate: organization-role.js is the one allowed reader', async () => {
   assert.deepEqual(
     await lintProbe(
       'export const f = (user) => Boolean(user?.isAdmin);\n',
-      'client/lib/user/organization-role.js',
+      'shared/organization-role.js',
     ),
     [],
     'the helper narrows the instance flag, so it must be able to read it',
@@ -118,12 +119,22 @@ test('gate: organization-role.js is the one allowed reader', async () => {
     ).length >= 1,
     'no second exemption — modal.js re-states the client restrictions',
   );
+  assert.ok(
+    (
+      await lintProbe(
+        'export const f = (user) => Boolean(user?.isAdmin);\n',
+        'shared/admin-gate-probe.js',
+      )
+    ).length >= 1,
+    'the rule follows the helper into shared/ — the exemption is the file, ' +
+      'not the tree it moved into (B171)',
+  );
 });
 
 test('gate: the client is clean — the burndown is finished', async () => {
   const { ESLint } = await import('eslint');
   const eslint = new ESLint({ cwd: repoRoot });
-  const results = await eslint.lintFiles(['client']);
+  const results = await eslint.lintFiles(['client', 'shared']);
   const hits = results.flatMap((r) =>
     r.messages
       .filter(

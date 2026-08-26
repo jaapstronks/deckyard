@@ -8,7 +8,7 @@ import {
   createFieldWrap,
 } from './utils.js';
 import { h } from '../../../lib/dom.js';
-import { isOrganizationAdmin } from '../../../lib/user/organization-role.js';
+import { isOrganizationAdmin } from '../../../../shared/organization-role.js';
 
 /**
  * Creates the image library detail view component

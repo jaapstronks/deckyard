@@ -23,7 +23,7 @@ import { getOrgSettings } from './org-settings.js';
  *
  * In multi-organization mode it must not: designer capability is held *per
  * organization*, the same way the membership role is (see
- * client/lib/user/organization-role.js). An instance-wide admin who is a plain
+ * shared/organization-role.js). An instance-wide admin who is a plain
  * member of the organization they switched into gets designer capability only
  * if that membership says so — via `is_designer`, via being its owner, or via
  * the organization's `adminsAreDesigners` setting.

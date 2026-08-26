@@ -306,20 +306,22 @@ const overlayClassRestriction = {
 // nothing about the organization the session is currently in. Reading it raw
 // for a UI gate means an admin of organization A keeps every destructive
 // affordance the moment they switch to organization B — exactly what
-// `isOrganizationAdmin()` in client/lib/user/organization-role.js exists to
-// close (B144). Ten gates read it raw against four that used the helper, so
-// the drift was the majority, not the exception.
+// `isOrganizationAdmin()` in shared/organization-role.js exists to close
+// (B144). Ten gates read it raw against four that used the helper, so the
+// drift was the majority, not the exception.
 //
 // MemberExpression only, so the shapes that are *not* a gate stay legal:
 // `{ isAdmin }` destructuring, a jsdoc `@param {boolean} isAdmin`, and a
 // prop-threading `isAdmin: isOrganizationAdmin(user)` all pass. The one
 // exemption is organization-role.js itself, where the helper reads the
-// instance flag before narrowing it.
+// instance flag before narrowing it — and since B171 that file sits in
+// `shared/`, so the gate covers `shared/**` too rather than leaving the
+// helper's new home outside the rule it enforces.
 const instanceAdminRestriction = {
   selector: "MemberExpression[property.name='isAdmin']",
   message:
     'Gate UI on isOrganizationAdmin(user) from ' +
-    'client/lib/user/organization-role.js, not on the raw instance-wide ' +
+    'shared/organization-role.js, not on the raw instance-wide ' +
     '`user.isAdmin` — the latter follows an admin into workspaces where they ' +
     'are a plain member (B144, docs/developer/linting.md).',
 };
@@ -428,21 +430,6 @@ export default [
     },
   },
 
-  // organization-role.js is where the instance flag is *allowed* to be read:
-  // isOrganizationAdmin() starts from `user.isAdmin` and narrows it with the
-  // membership role. Every other client restriction stays in force (rule
-  // entries replace per rule name, hence the re-statement).
-  {
-    files: ['client/lib/user/organization-role.js'],
-    rules: {
-      'no-restricted-syntax': [
-        'error',
-        ...clientRestrictedSyntax,
-        overlayClassRestriction,
-        createElementRestriction,
-      ],
-    },
-  },
 
   // The two files that are allowed to call `document.createElement`: dom.js is
   // where `h()` is implemented, and embed-sdk.js is the standalone IIFE served
@@ -557,6 +544,10 @@ export default [
 
   // Shared modules run in both environments; give them both global sets so
   // no-undef does not false-positive on env-specific references.
+  //
+  // The instance-admin gate rides along: `isOrganizationAdmin()` moved here in
+  // B171, and a rule that stopped at `client/**` would have left the raw flag
+  // readable in exactly the tree the helper now lives in.
   {
     files: ['shared/**/*.js'],
     languageOptions: {
@@ -566,6 +557,19 @@ export default [
         ...globals.browser,
         ...globals.node,
       },
+    },
+    rules: {
+      'no-restricted-syntax': ['error', instanceAdminRestriction],
+    },
+  },
+
+  // shared/organization-role.js is where the instance flag is *allowed* to be
+  // read: isOrganizationAdmin() starts from `user.isAdmin` and narrows it with
+  // the membership role.
+  {
+    files: ['shared/organization-role.js'],
+    rules: {
+      'no-restricted-syntax': 'off',
     },
   },
 

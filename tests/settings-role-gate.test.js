@@ -38,10 +38,12 @@ globalThis.Element = dom.window.Element;
 globalThis.CustomEvent = dom.window.CustomEvent;
 globalThis.Event = dom.window.Event;
 
-const { isOrganizationAdmin, getOrganizationRole } =
-  await import('../client/lib/user/organization-role.js');
-const { WORKSPACE_ROLES, hasOrganizationRole } =
-  await import('../shared/organization-role.js');
+const {
+  isOrganizationAdmin,
+  getOrganizationRole,
+  WORKSPACE_ROLES,
+  hasOrganizationRole,
+} = await import('../shared/organization-role.js');
 const { createSettingsSidebar } =
   await import('../client/views/settings/settings-sidebar.js');
 
