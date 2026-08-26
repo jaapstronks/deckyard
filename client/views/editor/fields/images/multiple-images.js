@@ -24,16 +24,7 @@ import { h } from '../../../../lib/dom.js';
  * @returns {Function} Field renderer function
  */
 export function createFieldImages(ctx) {
-  const {
-    api,
-    openImagePicker,
-    readFileAsDataUrl,
-    features,
-    pres,
-    markDirty,
-    scheduleUiRefresh,
-    rerenderEditor,
-  } = ctx;
+  const { api, openImagePicker, readFileAsDataUrl, features, pres } = ctx;
 
   const flags = features && typeof features === 'object' ? features : {};
   const uploadsDisabled = !flags.enableUploads;
@@ -51,6 +42,12 @@ export function createFieldImages(ctx) {
   const normalizeUrlList = (arr) =>
     (Array.isArray(arr) ? arr : []).map(normalizeUrl).filter(Boolean);
 
+  /** The list with `url` appended, blanks dropped and duplicates collapsed. */
+  const withUrl = (list, url) =>
+    Array.from(
+      new Set([...list, url].filter((u) => typeof u === 'string' && u.trim())),
+    );
+
   return function fieldImages(slide, field, presetUrls, onChange) {
     const wrap = h('div', { class: 'stack is-field' });
     wrap.append(
@@ -61,12 +58,15 @@ export function createFieldImages(ctx) {
     );
 
     const maxItems = Number(field?.maxItems || 0) || null;
-    const current = Array.isArray(slide.content?.[field.key])
-      ? slide.content[field.key]
-      : [];
-    const set = new Set(current);
+    const readValue = () =>
+      Array.isArray(slide.content?.[field.key]) ? slide.content[field.key] : [];
     const normalizedPresets = normalizeUrlList(presetUrls);
     const presetSet = new Set(normalizedPresets);
+
+    // Every checkbox by the URL it stands for, so `renderSelected()` can set
+    // them from the stored value instead of trusting the click that got here.
+    /** @type {Map<string, HTMLInputElement>} */
+    const presetBoxes = new Map();
 
     // Presets — only when a preset source actually supplied some.
     // `presetSource: 'partnerlogos'` is the one source there is; without it the
@@ -83,19 +83,14 @@ export function createFieldImages(ctx) {
       for (const url of normalizedPresets) {
         const row = h('label', { class: 'row' });
         const cb = h('input', { type: 'checkbox' });
-        cb.checked = set.has(url);
+        cb.checked = readValue().includes(url);
         cb.addEventListener('change', () => {
-          const next = new Set(
-            Array.isArray(slide.content?.[field.key])
-              ? slide.content[field.key]
-              : [],
-          );
+          const next = new Set(readValue());
           if (cb.checked) next.add(url);
           else next.delete(url);
-          let arr = Array.from(next);
-          if (maxItems) arr = arr.slice(0, maxItems);
-          onChange(arr);
+          commit(Array.from(next));
         });
+        presetBoxes.set(url, cb);
         const thumb = h('img', { src: url, class: 'editor-logo-thumb-sm' });
         const name = url.split('/').pop() || url;
         row.append(cb, thumb, h('div', { class: 'help', text: name }));
@@ -104,52 +99,86 @@ export function createFieldImages(ctx) {
       wrap.append(presets);
     }
 
-    // Current selection preview + remove
+    // Current selection preview + remove. The rows live in a container of
+    // their own so a value change refills *that* and leaves the checkboxes
+    // above standing — redrawing the whole field would move focus off the
+    // checkbox a keyboard user just toggled (D65).
     const selected = h('div', { class: 'stack is-field' });
+    const selectedRows = h('div', { class: 'stack' });
     selected.append(
       h('div', {
         class: 'help',
         text: t('editor.images.selected', 'Selected images'),
       }),
+      selectedRows,
     );
-    if (!current.length) {
-      selected.append(
-        h('div', {
-          class: 'help',
-          text: t('editor.images.noneSelected', 'None selected'),
-        }),
+    wrap.append(selected);
+
+    /**
+     * One row in the selection list: the image, its URL, and the way to drop
+     * it — a preset says "uncheck above", anything else gets a Delete button.
+     * @param {string} url
+     * @returns {HTMLElement}
+     */
+    function selectedRow(url) {
+      const row = h('div', { class: 'row' });
+      row.append(
+        h('img', { src: url, class: 'editor-logo-thumb-md' }),
+        h('div', { class: 'help', text: url }),
       );
-    } else {
-      for (const url of current) {
-        const isPreset = presetSet.has(url);
-        const row = h('div', { class: 'row' });
-        row.append(
-          h('img', { src: url, class: 'editor-logo-thumb-md' }),
-          h('div', { class: 'help', text: url }),
-        );
-        if (isPreset) {
-          row.append(
-            h('div', {
+      row.append(
+        presetSet.has(url)
+          ? h('div', {
               class: 'help',
               text: t(
                 'editor.images.presetHint',
                 'Preset (uncheck above to remove)',
               ),
-            }),
-          );
-        } else {
-          row.append(
-            h('button', {
+            })
+          : h('button', {
               class: 'btn btn-danger',
               text: t('common.delete', 'Delete'),
-              onclick: () => onChange(current.filter((u) => u !== url)),
+              onclick: () => commit(readValue().filter((u) => u !== url)),
             }),
-          );
-        }
-        selected.append(row);
-      }
+      );
+      return row;
     }
-    wrap.append(selected);
+
+    /**
+     * Refill the selection list, then bring the checkboxes back in step with
+     * it the way `collection-editor.js` updates its count pill: imperatively,
+     * at the tail, without rebuilding the control. Reading the *stored* value
+     * rather than the intended one is what keeps a `maxItems` clip honest — a
+     * checkbox whose URL did not make the cut unchecks itself again.
+     */
+    function renderSelected() {
+      const urls = readValue();
+      selectedRows.innerHTML = '';
+      if (!urls.length) {
+        selectedRows.append(
+          h('div', {
+            class: 'help',
+            text: t('editor.images.noneSelected', 'None selected'),
+          }),
+        );
+      } else {
+        for (const url of urls) selectedRows.append(selectedRow(url));
+      }
+      for (const [url, cb] of presetBoxes) cb.checked = urls.includes(url);
+    }
+
+    /**
+     * The one way this field writes: clip to `maxItems`, hand the array up
+     * (`onChange` marks dirty and schedules the preview refresh), then redraw
+     * from what was actually stored.
+     * @param {string[]} arr
+     */
+    function commit(arr) {
+      onChange(maxItems ? arr.slice(0, maxItems) : arr);
+      renderSelected();
+    }
+
+    renderSelected();
 
     // Add from the image picker (one seam over all configured providers)
     if (hasPicker) {
@@ -180,25 +209,7 @@ export function createFieldImages(ctx) {
                 const url =
                   typeof picked?.url === 'string' ? picked.url.trim() : '';
                 if (!url) return;
-                const next = Array.isArray(slide.content?.[field.key])
-                  ? slide.content[field.key].slice()
-                  : [];
-                const wasPresent = next.includes(url);
-                next.push(url);
-                const deduped = Array.from(
-                  new Set(
-                    next.filter((u) => typeof u === 'string' && u.trim()),
-                  ),
-                );
-                onChange(maxItems ? deduped.slice(0, maxItems) : deduped);
-
-                // Redraw so the new URL shows up in the selection list, which
-                // this renderer builds once per render.
-                if (!wasPresent) {
-                  markDirty?.();
-                  rerenderEditor?.();
-                  scheduleUiRefresh?.();
-                }
+                commit(withUrl(readValue(), url));
               },
             });
           },
@@ -241,18 +252,7 @@ export function createFieldImages(ctx) {
             const url =
               typeof uploaded?.url === 'string' ? uploaded.url.trim() : '';
             if (!url) throw new Error('Upload failed');
-            const next = Array.isArray(slide.content?.[field.key])
-              ? slide.content[field.key].slice()
-              : [];
-            next.push(url);
-            const deduped = Array.from(
-              new Set(next.filter((u) => typeof u === 'string' && u.trim())),
-            );
-            onChange(maxItems ? deduped.slice(0, maxItems) : deduped);
-            // The selection list is built once per render, so an upload only
-            // becomes visible after the form is redrawn (the picker path above
-            // does the same).
-            rerenderEditor?.();
+            commit(withUrl(readValue(), url));
           } catch (e) {
             toast.error(e);
           } finally {

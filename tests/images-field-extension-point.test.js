@@ -50,12 +50,20 @@ const IMAGES_DIR = path.join(
 
 /**
  * Render the field for a one-field custom type, with a picker that yields
- * `picked` the moment the "Add from library…" button is clicked.
- * @param {{presets?: string[], content?: Object, picked?: Object}} opts
+ * `picked` the moment the "Add from library…" button is clicked. The node is
+ * attached to the document so `document.activeElement` means something.
+ * @param {{presets?: string[], content?: Object, picked?: Object,
+ *   maxItems?: number}} opts
  */
-function renderImagesField({ presets = [], content = {}, picked } = {}) {
+function renderImagesField({
+  presets = [],
+  content = {},
+  picked,
+  maxItems,
+} = {}) {
   const slide = { id: 's1', type: 'custom-partners-slide', content };
   const field = { key: 'partners', type: 'images', label: 'Partners' };
+  if (maxItems) field.maxItems = maxItems;
 
   const openImagePicker = (opts) => {
     if (picked) opts.onPick(picked);
@@ -79,8 +87,15 @@ function renderImagesField({ presets = [], content = {}, picked } = {}) {
   const node = renderer(slide, field, presets, (arr) => {
     slide.content[field.key] = arr;
   });
+  document.body.replaceChildren(node);
   return { node, slide, rerendered: () => rerendered };
 }
+
+/** The URLs the "Selected images" list currently shows, in order. */
+const selectedUrls = (node) =>
+  Array.from(node.querySelectorAll('img.editor-logo-thumb-md')).map(
+    (img) => img.getAttribute('src') || '',
+  );
 
 // ---------------------------------------------------------------------------
 // The extension point is declared, so the renderer has a reason to exist.
@@ -182,4 +197,112 @@ test('presetSource: partnerlogos still renders its checkboxes', () => {
   });
   assert.ok(textOf(node).includes('Preset logos'), 'the heading renders');
   assert.equal(node.querySelectorAll('input[type="checkbox"]').length, 1);
+});
+
+// ---------------------------------------------------------------------------
+// B169 / D65 — the selection list follows the value in place: no staleness,
+// and no focus theft, because the checkbox section is never rebuilt.
+// ---------------------------------------------------------------------------
+
+const A = 'https://cdn.example/partner-a.svg';
+const B = 'https://cdn.example/partner-b.svg';
+
+/** Toggle a checkbox the way a user does, event and all. */
+const toggle = (cb, checked) => {
+  cb.checked = checked;
+  cb.dispatchEvent(new dom.window.Event('change'));
+};
+
+test('checking a preset shows it in the selection list right away', () => {
+  const { node, slide, rerendered } = renderImagesField({
+    presets: [A, B],
+    content: { partners: [] },
+  });
+  assert.deepEqual(selectedUrls(node), [], 'nothing selected to begin with');
+
+  const [cbA] = node.querySelectorAll('input[type="checkbox"]');
+  toggle(cbA, true);
+
+  assert.deepEqual(slide.content.partners, [A], 'the value took the URL');
+  assert.deepEqual(
+    selectedUrls(node),
+    [A],
+    'and the list shows it without waiting for another render',
+  );
+  assert.equal(rerendered(), 0, 'the whole editor is not redrawn for this');
+});
+
+// This one passed before the fix too, for the wrong reason: the old renderer
+// kept focus by never refreshing anything. It is here as the guard on *this*
+// fix — the moment a refresh reaches for the checkbox section, it fails.
+test('checking a preset leaves focus on the checkbox', () => {
+  const { node } = renderImagesField({
+    presets: [A, B],
+    content: { partners: [] },
+  });
+  const [, cbB] = node.querySelectorAll('input[type="checkbox"]');
+  cbB.focus();
+  assert.equal(document.activeElement, cbB, 'the keyboard user is on cbB');
+
+  toggle(cbB, true);
+
+  assert.equal(
+    document.activeElement,
+    cbB,
+    'still on cbB after the list refilled — the checkbox section is untouched',
+  );
+});
+
+test('unchecking a preset drops its row and restores the empty state', () => {
+  const { node, slide } = renderImagesField({
+    presets: [A],
+    content: { partners: [A] },
+  });
+  const [cbA] = node.querySelectorAll('input[type="checkbox"]');
+  assert.equal(cbA.checked, true, 'a stored preset renders checked');
+
+  toggle(cbA, false);
+
+  assert.deepEqual(slide.content.partners, []);
+  assert.deepEqual(selectedUrls(node), []);
+  assert.ok(
+    textOf(node).includes('None selected'),
+    'the empty-state line comes back',
+  );
+});
+
+test('a maxItems clip unchecks the preset that did not make the cut', () => {
+  const { node, slide } = renderImagesField({
+    presets: [A, B],
+    content: { partners: [A] },
+    maxItems: 1,
+  });
+  const [, cbB] = node.querySelectorAll('input[type="checkbox"]');
+  toggle(cbB, true);
+
+  assert.deepEqual(slide.content.partners, [A], 'the clip kept the first URL');
+  assert.deepEqual(selectedUrls(node), [A], 'the list agrees with the value');
+  assert.equal(
+    cbB.checked,
+    false,
+    'and the checkbox re-reads the stored value instead of its own click',
+  );
+});
+
+test('picking from the library shows the new URL without an editor redraw', () => {
+  const { node, rerendered } = renderImagesField({
+    content: { partners: [] },
+    picked: { url: 'https://cdn.example/acme.png' },
+  });
+  const addBtn = Array.from(node.querySelectorAll('button')).find((b) =>
+    b.textContent.includes('Add from library'),
+  );
+  addBtn.click();
+
+  assert.deepEqual(selectedUrls(node), ['https://cdn.example/acme.png']);
+  assert.equal(
+    rerendered(),
+    0,
+    'the picker path refills the list instead of rebuilding the form',
+  );
 });
