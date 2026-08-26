@@ -62,8 +62,7 @@ const { createQuestion, listQuestions } =
 const { handleQuestions } = await import('../server/routes/api/questions.js');
 const { handleImageLibrary } =
   await import('../server/routes/api/image-library.js');
-const { isOrganizationAdmin } =
-  await import('../shared/organization-role.js');
+const { isOrganizationAdmin } = await import('../shared/organization-role.js');
 const { canResolveComment, canEditComment } =
   await import('../server/utils/presentation-authz/comments.js');
 const { canChangePresentationVisibility } =

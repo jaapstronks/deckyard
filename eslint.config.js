@@ -430,7 +430,6 @@ export default [
     },
   },
 
-
   // The two files that are allowed to call `document.createElement`: dom.js is
   // where `h()` is implemented, and embed-sdk.js is the standalone IIFE served
   // to third-party pages — it has no imports at all, by design. Every other
