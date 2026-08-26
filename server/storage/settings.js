@@ -146,9 +146,9 @@ export function defaultAppSettings() {
     },
     // Session duration in days (falls back to 30 if not set)
     sessionDurationDays: 30,
-    // Enabled theme IDs (empty = all themes enabled). Governs the subset of
-    // themes shown by default in the creation theme picker; the rest sit behind
-    // a "Show all themes" toggle.
+    // Enabled theme IDs (empty = fall back to the ENABLED_THEMES env var, then
+    // "all themes enabled"). The allowlist is hard: a theme outside it is not
+    // offered by any picker. Resolve via getEnabledThemeIds().
     enabledThemes: [],
     // Organization default theme ID (empty = fall back to the DEFAULT_THEME env
     // var, then the built-in default). Resolve via getDefaultThemeId().
@@ -1117,6 +1117,34 @@ export async function getDefaultThemeId(scope) {
     normalizeThemeId(envStr('DEFAULT_THEME')) ||
     DEFAULT_THEME_ID
   );
+}
+
+/**
+ * Resolve the organization theme allowlist.
+ *
+ * Precedence mirrors {@link getDefaultThemeId}: the admin-configured
+ * `enabledThemes` app setting wins, then the `ENABLED_THEMES` env var
+ * (comma-separated fork seam), then an empty list. Empty means "no allowlist
+ * configured", which is the same thing as "every theme is allowed" — a
+ * configured allowlist is hard, so an empty one has to mean all rather than
+ * none, or a fresh install would offer no themes at all.
+ *
+ * @param {import('./scope.js').StorageScope} scope
+ * @returns {Promise<string[]>} Lowercased theme IDs; empty = no allowlist.
+ */
+export async function getEnabledThemeIds(scope) {
+  toStorageContext(
+    scope,
+    'getEnabledThemeIds',
+    {},
+    { allowCrossOrganization: true },
+  );
+  const settings = await getAppSettings(scope);
+  const stored = Array.isArray(settings.enabledThemes)
+    ? settings.enabledThemes
+    : [];
+  const source = stored.length ? stored : envStr('ENABLED_THEMES').split(',');
+  return [...new Set(source.map(normalizeThemeId).filter(Boolean))];
 }
 
 /**

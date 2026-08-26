@@ -16,7 +16,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 
-const { defaultAppSettings, getDefaultThemeId } =
+const { defaultAppSettings, getDefaultThemeId, getEnabledThemeIds } =
   await import('../server/storage/settings.js');
 const { crossOrganizationScope } = await import('../server/storage/scope.js');
 const scope = crossOrganizationScope(
@@ -46,5 +46,37 @@ describe('getDefaultThemeId fallback precedence (empty store)', () => {
   it('falls back to the built-in default when nothing is set', async () => {
     delete process.env.DEFAULT_THEME;
     assert.strictEqual(await getDefaultThemeId(scope), DEFAULT_THEME_ID);
+  });
+});
+
+describe('getEnabledThemeIds fallback precedence (empty store)', () => {
+  it('falls back to the ENABLED_THEMES env var (fork seam)', async () => {
+    process.env.ENABLED_THEMES = 'ciiic, Editorial ,,brand';
+    try {
+      assert.deepStrictEqual(await getEnabledThemeIds(scope), [
+        'ciiic',
+        'editorial',
+        'brand',
+      ]);
+    } finally {
+      delete process.env.ENABLED_THEMES;
+    }
+  });
+
+  it('drops ids that are not theme ids at all', async () => {
+    process.env.ENABLED_THEMES = 'brand,../../etc/passwd,ok-2';
+    try {
+      assert.deepStrictEqual(await getEnabledThemeIds(scope), [
+        'brand',
+        'ok-2',
+      ]);
+    } finally {
+      delete process.env.ENABLED_THEMES;
+    }
+  });
+
+  it('is empty when nothing is set — no allowlist, so every theme is offered', async () => {
+    delete process.env.ENABLED_THEMES;
+    assert.deepStrictEqual(await getEnabledThemeIds(scope), []);
   });
 });

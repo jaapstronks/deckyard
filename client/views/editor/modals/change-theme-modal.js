@@ -313,8 +313,10 @@ export async function analyzeAndApplyThemeChange({
   onNavigateToSlide,
   onThemeChanged,
 } = {}) {
-  // Skip if same theme
-  const currentThemeId = String(pres.themeId || DEFAULT_THEME_ID).trim();
+  // Skip if same theme. `theme` is the deck's own spelling on the wire and
+  // everywhere else on the client; `themeId` was a name nothing writes, so this
+  // guard compared against the default instead of the deck's actual theme.
+  const currentThemeId = String(pres.theme || DEFAULT_THEME_ID).trim();
   if (currentThemeId === newThemeId) {
     return { ok: false, reason: 'same_theme' };
   }

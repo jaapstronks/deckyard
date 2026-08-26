@@ -101,15 +101,42 @@ ordered `slideIds[]`, timestamps.
   tray in order (deselectable), then Create composes via
   `createDeckFromLibraryItems`.
 
-## Theme default
+## Theme default and the allowlist
 
-The theme picker defaults to an organization-configured default theme; non-default
-themes sit behind a "Show all themes" toggle governed by the `enabledThemes`
-allowlist. `GET /api/themes` honours the allowlist and returns a resolved
-`defaultThemeId` (app settings + the `DEFAULT_THEME` env seam, via
-`getDefaultThemeId`). Admins set the default and the visible subset in the
-Themes settings tab. Forks (e.g. CIIIC) default to their own theme through
-`DEFAULT_THEME` + the allowlist.
+Two organization settings govern which themes are on offer, both edited in the
+Themes settings tab and both resolved server-side:
+
+- **`defaultThemeId`** — the theme new decks start with. Precedence:
+  app setting, then the `DEFAULT_THEME` env var, then the built-in default
+  (`getDefaultThemeId`, `server/storage/settings.js`).
+- **`enabledThemes`** — the allowlist of themes that may be picked. Same
+  precedence shape: app setting, then the comma-separated `ENABLED_THEMES` env
+  var, then empty (`getEnabledThemeIds`). **Empty means no allowlist is
+  configured, so every theme is offered.**
+
+The allowlist is **hard**: `GET /api/themes` does not return a theme outside it,
+so all three pickers that read the endpoint — the creation grid, the editor's
+deck-settings theme select, and the "start from a theme" row on Home — offer the
+same set. There is no client-side toggle that reveals the rest.
+
+Two themes stay in the response regardless of the allowlist:
+
+- the resolved **default theme**, so an organization cannot allowlist itself out
+  of the theme its own new decks get;
+- the theme named by **`?current=<id>`**. Pickers editing a deck pass the theme
+  it is on, so a deck that predates a withdrawal keeps rendering and keeps
+  showing its own selection. The two picker helpers in
+  `client/lib/theme/theme-select.js` add the parameter automatically.
+
+`?all=1` returns the unfiltered list and is honoured only for users who may
+manage themes. It exists for one caller: the Themes settings tab, which cannot
+offer a checkbox for a theme it is not allowed to see.
+
+Forks (e.g. CIIIC) ship both seams as configuration: `DEFAULT_THEME` for the
+starting theme, `ENABLED_THEMES` for the allowlist. Note the consequence of the
+precedence: while `ENABLED_THEMES` is set, saving the settings tab with every
+theme checked stores an empty app setting, which hands control back to the env
+var rather than opening everything up.
 
 ## Starter kits (removed)
 
