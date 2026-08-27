@@ -35,6 +35,7 @@
     "db:migrate:status": "node server/db/migrate.js status",
     "db:import": "node scripts/migrate-data-to-postgres.js",
     "i18n:audit": "node scripts/i18n-audit.js",
+    "i18n:anchors": "node scripts/i18n-anchor-report.js",
     "i18n:sync": "node scripts/i18n-sync.js",
     "i18n:sync:apply": "node scripts/i18n-sync.js --apply",
     "start": "node server/server.js",
