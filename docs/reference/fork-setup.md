@@ -53,6 +53,10 @@ custom/styles/*
 !custom/styles/.gitkeep
 custom/ai/*
 !custom/ai/.gitkeep
+custom/scripts/*
+!custom/scripts/.gitkeep
+custom/fonts.js
+custom/google-fonts.lock.json
 ```
 
 ### Step 3: Add Your Custom Content
@@ -115,6 +119,60 @@ custom/ai/*
 4. **Optionally add your own CSS** in `custom/styles/` (see the next section)
 
 5. **Optionally tune AI generation** in `custom/ai/` (see below)
+
+6. **Optionally add curated fonts** in `custom/fonts.js` (see below)
+
+7. **Optionally add your own scripts** in `custom/scripts/`
+
+### Add your own curated fonts (`custom/fonts.js`)
+
+The font picker offers a curated set of self-hosted Google Fonts. Upstream's set
+is `CURATED_FONTS` in `shared/theme-fonts.js`, pinned file-by-file in
+`scripts/google-fonts.lock.json` — both core files, and editing the first
+without the second makes `npm install` fail. Your families go in your own pair
+instead:
+
+```js
+// custom/fonts.js
+export default [
+  {
+    family: 'League Spartan',
+    category: 'sans-serif',
+    weights: [400, 500, 700],
+  },
+];
+```
+
+`category` is one of `sans-serif`, `serif`, `display`, `monospace`; `weights` are
+the Google Fonts weights you want self-hosted. Then resolve and pin them:
+
+```bash
+node scripts/download-google-fonts.js --update-lock
+```
+
+That writes `custom/google-fonts.lock.json` — your half of the pin, in the same
+format and with the same URL + SHA-256 guarantee as upstream's. Commit both
+files. From then on your families are curated fonts like any other: valid in a
+theme, downloaded by `postinstall`, embedded in exports.
+
+Two things this deliberately does _not_ do. It does not touch upstream's list or
+upstream's lockfile, so a font addition survives every merge untouched. And it is
+server-side only — the in-browser font picker shows upstream's set. Your font
+reaches a deck through the theme that names it, whose `@font-face` rules are
+generated from your pins.
+
+Self-hosted faces that are not on Google Fonts stay a `custom/styles/fonts.css`
+job (see above); this seam is specifically the curated-Google-Fonts list.
+
+### Add your own scripts (`custom/scripts/`)
+
+`tests/scripts-reachable-gate.test.js` requires every file in `scripts/` to be
+named in `package.json`, a workflow, or the docs — it exists because an unused
+core script silently rotted for months. That ledger is upstream's, and a fork
+script dropped in `scripts/` had no way past the gate except an edit to it.
+
+Put fork scripts in `custom/scripts/` instead. The gate does not scan that tree,
+so nothing is required of you there and no core file changes.
 
 ### Write your own CSS (`custom/styles/`)
 
