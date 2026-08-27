@@ -12,12 +12,10 @@ import {
   updatePresentation,
 } from '../../../storage/presentations/index.js';
 import { translatePresentationStrings } from '../../../utils/openai/translate.js';
-import {
-  normalizeTranslationLang,
-  normalizeLang,
-} from '../../../storage/presentations/i18n.js';
+import { normalizeLang } from '../../../storage/presentations/i18n.js';
 import { jobScope } from '../../../storage/scope.js';
 import { createLogger } from '../../../utils/logger.js';
+import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
 
 const log = createLogger('translate-worker');
 
@@ -97,9 +95,8 @@ async function processTranslateJob(job) {
 
   // Validate languages
   const fromLang =
-    normalizeTranslationLang(from) || normalizeLang(pres.i18n.active) || 'nl';
-  const toLang =
-    normalizeTranslationLang(to) || (fromLang === 'nl' ? 'en-GB' : 'nl');
+    normalizeLang(from) || normalizeLang(pres.i18n.active) || DEFAULT_DECK_LANG;
+  const toLang = normalizeLang(to) || (fromLang === 'nl' ? 'en-GB' : 'nl');
 
   if (fromLang === toLang) {
     throw new Error('Source and target languages must be different');
@@ -112,7 +109,9 @@ async function processTranslateJob(job) {
 
   // Ensure source version exists
   const dominant =
-    normalizeLang(pres.i18n.dominant) || normalizeLang(fromLang) || 'nl';
+    normalizeLang(pres.i18n.dominant) ||
+    normalizeLang(fromLang) ||
+    DEFAULT_DECK_LANG;
   pres.i18n.dominant = dominant;
 
   if (normalizeLang(fromLang)) {

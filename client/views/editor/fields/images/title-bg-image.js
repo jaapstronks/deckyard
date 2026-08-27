@@ -6,6 +6,7 @@ import { getBackgroundPresets } from '../../../../lib/theme/theme.js';
 import { createAltSetter } from './alt-utils.js';
 import { applyAltFromPick, applyPickMeta } from '../../media/apply-pick.js';
 import { h } from '../../../../lib/dom.js';
+import { DEFAULT_DECK_LANG } from '../../../../../shared/i18n-utils.js';
 
 /**
  * Create a title background image field renderer
@@ -60,7 +61,8 @@ export function createFieldTitleBgImage(ctx) {
           class: 'btn btn-secondary',
           text: t('editor.image.chooseOrUpload', 'Choose / upload…'),
           onclick: () => {
-            const activeLang = normalizeLang?.(pres?.i18n?.active) || 'nl';
+            const activeLang =
+              normalizeLang?.(pres?.i18n?.active) || DEFAULT_DECK_LANG;
             const other =
               typeof otherLang === 'function' ? otherLang(activeLang) : null;
             const setBgAltForLang = createAltSetter({

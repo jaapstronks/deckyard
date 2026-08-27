@@ -4,33 +4,33 @@ import {
   pickVersion,
 } from '../../utils/translation-status.js';
 import {
+  DEFAULT_DECK_LANG,
   normalizeLang,
-  normalizeTranslationLang,
   otherLang,
   TRANSLATION_LANGS,
   TRANSLATION_LANG_LABELS,
 } from '../../../shared/i18n-utils.js';
 
 /**
- * Server-side facade for the shared i18n vocabulary. `TRANSLATION_LANGS` and
- * `TRANSLATION_LANG_LABELS` are re-exported, not redefined — `shared/i18n-utils.js`
- * is the single source for the deck translation targets. `pickVersion` comes
- * from `server/utils/translation-status.js` for the same reason: this file
- * carried a byte-for-byte copy of it.
+ * Server-side facade for the shared i18n vocabulary. Everything here is
+ * re-exported, not redefined — `shared/i18n-utils.js` is the single definition
+ * site for the deck-language axis (D61). `pickVersion` comes from
+ * `server/utils/translation-status.js` for the same reason: this file carried a
+ * byte-for-byte copy of it.
+ *
+ * This file used to add a two-value `SUPPORTED_LANGS` of its own — the one the
+ * other four re-declarations copied. It is gone: the axis is
+ * `TRANSLATION_LANGS`, and a deck version in any of its languages is normalized
+ * on the way through.
  */
 export {
+  DEFAULT_DECK_LANG,
   normalizeLang,
-  normalizeTranslationLang,
   otherLang,
   pickVersion,
   TRANSLATION_LANGS,
   TRANSLATION_LANG_LABELS,
 };
-
-/**
- * Presentation dominant/active languages (legacy two-language system).
- */
-export const SUPPORTED_LANGS = ['nl', 'en-GB'];
 
 /**
  * Normalize existing follow-invite slides: strip the per-version language keys
@@ -105,11 +105,11 @@ export function normalizeI18n(pres, { slideTypes } = {}) {
     i18n.versions && typeof i18n.versions === 'object' ? i18n.versions : {};
   i18n.versions = versionsIn;
 
-  const cleanLang = (v) => (v === 'nl' || v === 'en-GB' ? v : null);
   const dominant =
-    cleanLang(i18n.dominant) ||
-    (versionsIn.nl ? 'nl' : versionsIn['en-GB'] ? 'en-GB' : 'nl');
-  const active = cleanLang(i18n.active) || null;
+    normalizeLang(i18n.dominant) ||
+    TRANSLATION_LANGS.find((l) => versionsIn[l]) ||
+    DEFAULT_DECK_LANG;
+  const active = normalizeLang(i18n.active) || null;
 
   i18n.dominant = dominant;
   if (active) i18n.active = active;
@@ -147,8 +147,8 @@ export function normalizeI18n(pres, { slideTypes } = {}) {
     };
   }
 
-  // Normalize all known language versions.
-  for (const lang of SUPPORTED_LANGS) {
+  // Normalize every language version the deck carries.
+  for (const lang of TRANSLATION_LANGS) {
     const v = i18n.versions?.[lang];
     if (!v || typeof v !== 'object') continue;
     v.title = typeof v.title === 'string' ? v.title : '';
@@ -164,7 +164,10 @@ export function normalizeI18n(pres, { slideTypes } = {}) {
   }
 
   // Track missing translation fields (computed, lightweight).
-  // This is informational only and is recomputed whenever the presentation is saved/translated.
+  // This is informational only and is recomputed whenever the presentation is
+  // saved/translated. The counters are still NL↔EN-shaped (`missingNlToEnGb`),
+  // a stored key set that predates the open axis (D61) — widening them to a
+  // per-pair map is deck-data surgery, tracked separately as B182.
   try {
     const nowIso = new Date().toISOString();
     const nl = i18n.versions?.nl;

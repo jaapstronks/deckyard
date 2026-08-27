@@ -28,6 +28,10 @@ import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { convertMarkdownText } from '../../../utils/markdown-import/index.js';
 import { loadThemeAssets, resolveThemeId } from '../../../utils/themes.js';
 import { createLogger } from '../../../utils/logger.js';
+import {
+  DEFAULT_DECK_LANG,
+  normalizeLang,
+} from '../../../../shared/i18n-utils.js';
 const log = createLogger('import-markdown');
 
 export async function handlePresentationsImportMarkdown({
@@ -48,7 +52,7 @@ export async function handlePresentationsImportMarkdown({
     return true;
   }
 
-  const lang = body?.lang === 'nl' || body?.lang === 'en-GB' ? body.lang : 'nl';
+  const lang = normalizeLang(body?.lang) || DEFAULT_DECK_LANG;
   const theme = getTrimmedString(body, 'theme') || undefined;
 
   log.info('[import-markdown] Language:', lang);

@@ -17,6 +17,10 @@ import {
   getConvertibleSlideTypes,
   getConversionLossyKeys,
 } from '../../../shared/slide-types.js';
+import {
+  DEFAULT_DECK_LANG,
+  normalizeLang,
+} from '../../../shared/i18n-utils.js';
 
 /**
  * Human label for a slide type (i18n key with definition-label fallback).
@@ -86,7 +90,7 @@ export async function convertSlideWithConfirm({
   }
 
   try {
-    const lang = pres?.i18n?.active === 'en-GB' ? 'en-GB' : 'nl';
+    const lang = normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG;
     // Conversions that gain a background image (chapter-title → title) take it
     // from the theme's own presets. Resolved here rather than threaded through
     // every caller, so all three entry points behave identically; loadThemeById

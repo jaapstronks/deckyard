@@ -36,6 +36,10 @@ import {
   apiCreated,
   apiError,
 } from './middleware.js';
+import {
+  DEFAULT_DECK_LANG,
+  normalizeLang,
+} from '../../../../shared/i18n-utils.js';
 
 // ============================================================
 // VALIDATION HELPERS
@@ -48,7 +52,7 @@ function getAiParams(body) {
   return {
     raw: String(body?.raw || '').trim(),
     vendor: body?.vendor || null,
-    lang: ['en-GB', 'nl'].includes(body?.lang) ? body.lang : null,
+    lang: normalizeLang(body?.lang),
     theme: body?.theme || null,
   };
 }
@@ -128,7 +132,10 @@ async function handleWizard(ctx) {
 
     // Build i18n structure for the active language
     const activeLang =
-      created?.i18n?.active || created?.i18n?.dominant || lang || 'nl';
+      created?.i18n?.active ||
+      created?.i18n?.dominant ||
+      lang ||
+      DEFAULT_DECK_LANG;
     const updatedI18n = {
       ...created.i18n,
       versions: {
@@ -192,7 +199,7 @@ async function handleAppendSlides(ctx) {
   }
 
   const vendor = body?.vendor || null;
-  const lang = ['en-GB', 'nl'].includes(body?.lang) ? body.lang : null;
+  const lang = normalizeLang(body?.lang);
 
   // Optional existing deck/presentation for context
   const deckInput = getOptionalObject(body, 'deck');

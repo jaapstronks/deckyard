@@ -86,7 +86,11 @@ import {
   buildSlidePreviewHtml,
   buildSingleSlidePreviewHtml,
 } from './preview.js';
-import { resolveDeckLang } from '../../shared/i18n-utils.js';
+import {
+  DEFAULT_DECK_LANG,
+  resolveDeckLang,
+  TRANSLATION_LANGS,
+} from '../../shared/i18n-utils.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { fireAndForget } from '../utils/fire-and-forget.js';
 
@@ -260,9 +264,8 @@ export function registerTools(
         },
         lang: {
           type: 'string',
-          description:
-            'Language for the example content: "nl" or "en-GB" (default: "nl")',
-          enum: ['nl', 'en-GB'],
+          description: `Language for the example content, one of ${TRANSLATION_LANGS.join(', ')} (default: ${DEFAULT_DECK_LANG})`,
+          enum: [...TRANSLATION_LANGS],
         },
       },
     },
@@ -442,9 +445,8 @@ export function registerTools(
         },
         lang: {
           type: 'string',
-          description:
-            'Language: "nl" or "en-GB" (auto-detected if not provided)',
-          enum: ['nl', 'en-GB'],
+          description: `Language, one of ${TRANSLATION_LANGS.join(', ')} (auto-detected if not provided)`,
+          enum: [...TRANSLATION_LANGS],
         },
         speaker: {
           type: 'string',
@@ -580,8 +582,8 @@ export function registerTools(
         },
         lang: {
           type: 'string',
-          description: 'Language: "nl" or "en-GB" (default: "nl")',
-          enum: ['nl', 'en-GB'],
+          description: `Language, one of ${TRANSLATION_LANGS.join(', ')} (default: ${DEFAULT_DECK_LANG})`,
+          enum: [...TRANSLATION_LANGS],
         },
         ownerEmail: {
           type: 'string',

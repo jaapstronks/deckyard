@@ -8,6 +8,7 @@ import { t } from '../../lib/ui-i18n.js';
 import { getPermissionLabel } from '../../lib/permission-labels.js';
 import { h } from '../../lib/dom.js';
 import { nav } from '../../lib/state/router.js';
+import { normalizeLang } from '../../../shared/i18n-utils.js';
 
 export function createViewerTopbar({
   pres,
@@ -109,9 +110,8 @@ export function createViewerTopbar({
     text: t('editor.present', 'Present'),
     onclick: () => {
       const u = new URL(`/present/${id}`, location.origin);
-      if (pres?.i18n?.active === 'nl' || pres?.i18n?.active === 'en-GB') {
-        u.searchParams.set('lang', pres.i18n.active);
-      }
+      const deckLang = normalizeLang(pres?.i18n?.active);
+      if (deckLang) u.searchParams.set('lang', deckLang);
       window.open(u.pathname + u.search, '_blank', 'noopener,noreferrer');
     },
   });

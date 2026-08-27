@@ -1,10 +1,9 @@
 import {
   normalizeLang,
-  normalizeTranslationLang,
   TRANSLATION_LANG_LABELS,
 } from '../../../shared/i18n-utils.js';
 
-export { normalizeLang, normalizeTranslationLang };
+export { normalizeLang };
 
 /**
  * Language label for LLM translation prompts: the shared English name, upper-cased
@@ -13,7 +12,7 @@ export { normalizeLang, normalizeTranslationLang };
  * @returns {string} Upper-cased language name, or 'UNKNOWN'
  */
 export function labelForLang(v) {
-  const code = normalizeTranslationLang(v);
+  const code = normalizeLang(v);
   return code ? TRANSLATION_LANG_LABELS[code].toUpperCase() : 'UNKNOWN';
 }
 

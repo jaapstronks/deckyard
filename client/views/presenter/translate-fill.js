@@ -1,3 +1,5 @@
+import { otherLang, resolveDeckLang } from '../../../shared/i18n-utils.js';
+
 export function ensureOtherLanguageFollowAlong({
   api,
   presentationId,
@@ -7,26 +9,17 @@ export function ensureOtherLanguageFollowAlong({
 } = {}) {
   try {
     if (!translatePill) return;
-    const srcLang =
-      activeLang ||
-      (pres?.i18n?.active === 'nl' || pres?.i18n?.active === 'en-GB'
-        ? pres.i18n.active
-        : pres?.i18n?.dominant === 'nl' || pres?.i18n?.dominant === 'en-GB'
-          ? pres.i18n.dominant
-          : null) ||
-      null;
-    const other =
-      srcLang === 'en-GB' ? 'nl' : srcLang === 'nl' ? 'en-GB' : null;
+    const srcLang = activeLang || resolveDeckLang(pres) || null;
+    const other = otherLang(srcLang);
     const prog =
       pres?.i18n?.progress && typeof pres.i18n.progress === 'object'
         ? pres.i18n.progress
         : null;
+    // The stored progress counters are still NL↔EN-shaped; `otherLang` only
+    // answers inside that pair, so a null `other` short-circuits everything
+    // below and no other branch is reachable (B182).
     const missing =
-      other === 'en-GB'
-        ? prog?.missingNlToEnGb
-        : other === 'nl'
-          ? prog?.missingEnGbToNl
-          : null;
+      other === 'en-GB' ? prog?.missingNlToEnGb : prog?.missingEnGbToNl;
     const hasOther =
       !!other &&
       pres?.i18n?.versions &&

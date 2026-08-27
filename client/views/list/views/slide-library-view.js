@@ -7,6 +7,7 @@ import { toast } from '../../../lib/dom/toast.js';
 import { getFeatures } from '../../../lib/state/features.js';
 import { createSandboxLibraryExplainer } from './sandbox-library-explainer.js';
 import { nav } from '../../../lib/state/router.js';
+import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
 
 /**
  * Create the slide library view (lazy-loaded)
@@ -77,7 +78,9 @@ export function createSlideLibraryView({ api }) {
       // Dominant language: the picker's active language (single-slide "Use"
       // path forwards it via _selectedLang), else fall back to the picker state.
       const selectedLang =
-        items[0]?._selectedLang || picker?.getActiveLang?.() || 'nl';
+        items[0]?._selectedLang ||
+        picker?.getActiveLang?.() ||
+        DEFAULT_DECK_LANG;
       // Use the theme of the first item; with none known the server picks
       // the default (sandbox-aware), so no client-side fallback here.
       const theme = items[0]?.themeId || null;
@@ -144,7 +147,7 @@ export function createSlideLibraryView({ api }) {
         api,
         allowInsert: false, // Browse-only mode
         showLanguageSwitch: true, // Enable language switching in browse mode
-        initialLang: 'nl', // Default to Dutch
+        initialLang: DEFAULT_DECK_LANG,
         onCopySlide: copySlide,
         onNewPresentation: createNewPresentation,
         onAddToCollection: (item, shelf) =>

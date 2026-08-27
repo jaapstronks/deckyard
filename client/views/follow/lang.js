@@ -4,6 +4,7 @@ import {
 } from '../../lib/format/lang-selector.js';
 import { spinner } from '../../lib/dom/spinner.js';
 import { h } from '../../lib/dom.js';
+import { DEFAULT_SUPPORTED_DECK_LANGS } from '../../../shared/i18n-utils.js';
 
 /**
  * Render language selection UI for follow-along view.
@@ -18,7 +19,7 @@ export function renderFollowLangButtons({
 } = {}) {
   langWrap.innerHTML = '';
   const avail = Array.isArray(availableLangs) ? availableLangs : [];
-  const langsToShow = avail.length >= 2 ? avail : ['nl', 'en-GB'];
+  const langsToShow = avail.length >= 2 ? avail : DEFAULT_SUPPORTED_DECK_LANGS;
 
   // Hide if only one language
   if (langsToShow.length < 2) {

@@ -2,6 +2,7 @@ import { createModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { readPreferredLlmVendor } from '../../../lib/net/llm-vendor.js';
 import { h } from '../../../lib/dom.js';
+import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
 
 export async function openTranslateSlideModal({
   slideId,
@@ -22,7 +23,7 @@ export async function openTranslateSlideModal({
 } = {}) {
   const sid = String(slideId || '').trim();
   if (!sid) return;
-  const targetLang = normalizeLang?.(pres?.i18n?.active) || 'nl';
+  const targetLang = normalizeLang?.(pres?.i18n?.active) || DEFAULT_DECK_LANG;
   const sourceLang = otherLang?.(targetLang);
   if (!sourceLang) {
     toast?.info(

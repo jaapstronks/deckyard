@@ -15,6 +15,7 @@ import {
 } from '../../../utils/request-validators.js';
 import { normalizeLang, otherLang } from '../../../utils/translation-status.js';
 import { canReadPresentation } from '../../../utils/presentation-authz/index.js';
+import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
 
 export async function handlePresentationTranslateFields(
   { repoRoot, storageScope, req, res, authedUser } = {},
@@ -47,7 +48,7 @@ export async function handlePresentationTranslateFields(
     normalizeLang(body?.from) ||
     normalizeLang(pres?.i18n?.active) ||
     normalizeLang(pres?.i18n?.dominant) ||
-    'nl';
+    DEFAULT_DECK_LANG;
   const to = normalizeLang(body?.to) || otherLang(from);
   const fields = getOptionalObject(body, 'fields') || {};
 

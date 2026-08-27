@@ -18,6 +18,7 @@
  */
 
 import { initPresentationI18n, normalizeSlideNotes } from './bootstrap.js';
+import { normalizeLang } from '../../../shared/i18n-utils.js';
 
 // Wake signals arrive in bursts (visibilitychange + focus fire together);
 // one probe per window is plenty.
@@ -83,11 +84,8 @@ export function createRemoteRefresh({
       }
 
       // Nothing dirty: silently adopt the server state.
-      const active = pres?.i18n?.active;
-      const langParam =
-        active === 'nl' || active === 'en-GB'
-          ? `?lang=${encodeURIComponent(active)}`
-          : '';
+      const active = normalizeLang(pres?.i18n?.active);
+      const langParam = active ? `?lang=${encodeURIComponent(active)}` : '';
       const fresh = await api(`/api/presentations/${id}${langParam}`);
       if (!fresh || !Array.isArray(fresh.slides)) return;
       // The user may have started typing during the fetch — leave the local

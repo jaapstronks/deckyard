@@ -16,6 +16,7 @@ import { createNotesSessionSse } from './session-sse.js';
 import { buildNotesLayout } from './layout.js';
 import { createNotesControls } from './controls.js';
 import { attachSwipeNavigation } from '../../lib/dom/swipe-nav.js';
+import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
 
 /**
  * Render the speaker-notes companion view: a live-following mirror of the
@@ -104,7 +105,7 @@ export async function renderNotes(root, sessionId, { user } = {}) {
   // --- Q&A (optional) ---
   // The session deck carries the deck-level language hint rather than the whole
   // i18n block (translation jobs are none of the companion's business).
-  const uiLang = normalizeLang(pres?.lang) || 'nl';
+  const uiLang = normalizeLang(pres?.lang) || DEFAULT_DECK_LANG;
   const qaCtl = createNotesQaController({
     api,
     qaWrap,

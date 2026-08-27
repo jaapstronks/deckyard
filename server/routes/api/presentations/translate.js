@@ -14,10 +14,8 @@ import {
   forbidden,
 } from '../../../utils/http.js';
 import { canWritePresentation } from '../../../utils/presentation-authz/index.js';
-import {
-  normalizeTranslationLang,
-  normalizeLang,
-} from '../../../storage/presentations/i18n.js';
+import { normalizeLang } from '../../../storage/presentations/i18n.js';
+import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
 
 export async function handlePresentationTranslate(
   { repoRoot, storageScope, req, res, authedUser } = {},
@@ -53,14 +51,14 @@ export async function handlePresentationTranslate(
 
   // Resolve source language: use body.from if valid, else fall back to pres active/dominant
   const from =
-    normalizeTranslationLang(body?.from) ||
+    normalizeLang(body?.from) ||
     normalizeLang(pres.i18n.active) ||
     normalizeLang(pres.i18n.dominant) ||
-    'nl';
+    DEFAULT_DECK_LANG;
 
   // Resolve target language: use body.to if valid, else default to opposite of source
   const to =
-    normalizeTranslationLang(body?.to) ||
+    normalizeLang(body?.to) ||
     (from === 'nl' ? 'en-GB' : from === 'en-GB' ? 'nl' : 'en-GB');
 
   // Validate that from and to are different
@@ -74,7 +72,9 @@ export async function handlePresentationTranslate(
   // Ensure from-version exists (back-compat: store current top-level as the dominant version).
   // dominant/active only support nl/en-GB, so we only set them if 'from' is a legacy language.
   const dominant =
-    normalizeLang(pres.i18n.dominant) || normalizeLang(from) || 'nl';
+    normalizeLang(pres.i18n.dominant) ||
+    normalizeLang(from) ||
+    DEFAULT_DECK_LANG;
   pres.i18n.dominant = dominant;
   // Only update active if 'from' is a legacy language (nl/en-GB)
   if (normalizeLang(from)) {

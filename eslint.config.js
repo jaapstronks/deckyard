@@ -463,6 +463,78 @@ const createElementRestriction = {
     'docs/developer/linting.md).',
 };
 
+// --- The deck-language literal ratchet (B149/D61) ---
+//
+// The deck-language axis has one definition site — `TRANSLATION_LANGS` in
+// `shared/i18n-utils.js` — and one membership test, `normalizeLang()`. Before
+// D61 it was a two-value enum declared in five places with a sixth hardcode,
+// and **206** bare `'nl'` / `'en-GB'` literals across 62 client files answered
+// "is this a language" and "what is the default" privately, each free to
+// disagree with the accessor and with each other.
+//
+// A literal cannot say which of the two it means, so both are restricted and
+// the remedies are named in the message. The burndown took the axis-shaped
+// ones (defaults, membership tests, re-declarations, `?lang=` validation) to
+// 51 in 23 files; `deckLangLiteralAllowlist` below names what is left and why,
+// and it may only shrink.
+//
+// Whole-token by construction — the selector matches the string literal value
+// exactly, so `nl-NL`, `en-GB-oxendict` in a locale tag, or the substring in a
+// class name are untouched. Note this restricts the *deck* axis: `'nl'` as a
+// **UI locale** (`client/i18n/nl/`) is a different vocabulary that happens to
+// share a spelling, which is why the UI-locale modules sit on the allowlist
+// rather than being rewritten.
+const deckLangLiteralRestriction = {
+  selector: "Literal[value='nl'], Literal[value='en-GB']",
+  message:
+    'Do not spell a deck language inline. Use `normalizeLang()` to test ' +
+    'membership, `DEFAULT_DECK_LANG` for the fallback, `TRANSLATION_LANGS` to ' +
+    'iterate and `DEFAULT_SUPPORTED_DECK_LANGS` for the shipped subset — all ' +
+    'from shared/i18n-utils.js. The axis has one definition site (B149/D61, ' +
+    'docs/developer/linting.md).',
+};
+
+// Files that still carry bare deck-language literals, with the reason each is
+// not burned down yet. **This list may only shrink** —
+// `tests/deck-language-axis.test.js` fails when an entry stops matching a real
+// literal, so a file that is cleaned up cannot quietly stay exempt.
+//
+// Two reasons appear, and only two:
+//   * *bilingual chrome* — the editor's fixed NL⇄EN toggle, the paired alt-text
+//     inputs, the translate modals and their hand-written NL/EN copy. Widening
+//     these to N languages is a UI design job, not a rename: B182.
+//   * *UI-locale axis* — `'nl'` there is a locale directory
+//     (`client/i18n/nl/`), a different vocabulary that shares a spelling.
+const deckLangLiteralAllowlist = [
+  // bilingual chrome (B182)
+  'client/views/editor/ai-append.js',
+  'client/views/editor/editor-form/render-field.js',
+  'client/views/editor/editor-form/slide-forms/follow-invite.js',
+  'client/views/editor/image-library/detail.js',
+  'client/views/editor/image-library/upload.js',
+  'client/views/editor/imagekit-picker.js',
+  'client/views/editor/media/apply-pick.js',
+  'client/views/editor/modals/translate-field-modal.js',
+  'client/views/editor/modals/translate-slide-modal.js',
+  'client/views/editor/publish-export/publish-modal.js',
+  'client/views/editor/topbar/language-mode.js',
+  'client/views/presenter/follow-codes-pill.js',
+  'client/views/presenter/translate-fill.js',
+  // the axis↔locale seam: these name `en-GB` precisely because it is the one
+  // code the two axes spell differently
+  'client/views/follow/i18n.js',
+  'client/views/editor/slide-type-sample-content.js',
+  'client/views/list/views/sandbox-examples.js',
+  // UI-locale axis, not the deck axis
+  'client/lib/ui-i18n.js',
+  'client/views/editor/editor-form/text-element-card.js',
+  'client/views/editor/fields/background.js',
+  'client/views/settings/tabs/integrations-tab.js',
+  'client/views/settings/tabs/preferences-tab.js',
+  // the standalone embed IIFE: no imports at all by design
+  'client/embed-sdk.js',
+];
+
 export default [
   {
     // Vendored bundles, generated assets, data dirs, gitignored drop-ins, and
@@ -516,6 +588,26 @@ export default [
         instanceAdminRestriction,
         createElementRestriction,
         teardownKeyRestriction,
+        deckLangLiteralRestriction,
+      ],
+    },
+  },
+
+  // The deck-language burndown allowlist: same client rule set, minus the
+  // literal ratchet. Placed after the base client block so it wins for these
+  // files, and before the three single-file blocks below so those keep their
+  // own exemptions (rule entries replace rather than merge per rule name,
+  // hence the re-statement).
+  {
+    files: deckLangLiteralAllowlist,
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...clientRestrictedSyntax,
+        overlayClassRestriction,
+        instanceAdminRestriction,
+        createElementRestriction,
+        teardownKeyRestriction,
       ],
     },
   },
@@ -533,6 +625,7 @@ export default [
         instanceAdminRestriction,
         createElementRestriction,
         teardownKeyRestriction,
+        deckLangLiteralRestriction,
       ],
     },
   },
@@ -549,6 +642,7 @@ export default [
         overlayClassRestriction,
         instanceAdminRestriction,
         teardownKeyRestriction,
+        deckLangLiteralRestriction,
       ],
     },
   },

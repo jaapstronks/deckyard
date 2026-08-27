@@ -1,30 +1,42 @@
 // Follow-view chrome i18n.
 //
 // The audience-facing follow chrome (topbar, Q&A, interaction prompts,
-// translating messages) is keyed by the *deck* language (nl / en-GB), which
-// the audience switches live via the lang buttons. That axis is distinct from
-// the global UI locale that `ui-i18n.js` `t()` drives, so this module keeps a
-// small scoped loader: it reads the same modular `follow.json` files (single
-// source of truth) but resolves them against the deck language instead of the
-// persisted UI locale, without touching the global dictionary.
+// translating messages) is keyed by the *deck* language, which the audience
+// switches live via the lang buttons. That axis is distinct from the global UI
+// locale that `ui-i18n.js` `t()` drives, so this module keeps a small scoped
+// loader: it reads the same modular `follow.json` files (single source of
+// truth) but resolves them against the deck language instead of the persisted
+// UI locale, without touching the global dictionary.
 //
 // Strings live in /client/i18n/<locale>/follow.json. English fallbacks are
 // inline (matching the app-wide t(key, englishFallback) convention) so the
 // chrome degrades gracefully if a file fails to load.
 
 import { normalizeLang } from '../../lib/format/i18n.js';
+import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
 
 /** @type {Map<string, Record<string, string>>} */
 const dictCache = new Map();
 
 /**
- * Map a deck language to the i18n locale directory. Decks support nl + en-GB;
- * the i18n files use `en` (not `en-GB`), and everything else defaults to nl.
+ * Map a deck language to its i18n locale directory.
+ *
+ * The two axes name the same twelve languages and differ in exactly one key:
+ * the deck axis spells English `en-GB`, the locale manifest spells it `en`.
+ * Every other code is identical, so the mapping is that one rename plus a
+ * fallback for a deck that names no language.
+ *
+ * This used to collapse everything that was not `en-GB` to `nl`, because the
+ * deck axis was a two-value enum — which is why ten of the twelve
+ * `client/i18n/<locale>/follow.json` files existed but were never fetched
+ * (D62). With the axis open (D61) a Finnish deck gets Finnish follow chrome.
+ *
  * @param {string} lang
  * @returns {string}
  */
 function deckLangToLocale(lang) {
-  return normalizeLang(lang) === 'en-GB' ? 'en' : 'nl';
+  const l = normalizeLang(lang) || DEFAULT_DECK_LANG;
+  return l === 'en-GB' ? 'en' : l;
 }
 
 async function loadDict(locale) {
@@ -62,7 +74,7 @@ function interpolate(str, vars) {
  * Build the follow-view copy object for a deck language. Returns the same shape
  * the follow controllers already consume (`copy.qaTitle`, `copy.interactionOpen`,
  * `copy.translatingWithProgress(info)`, …), sourced from the modular i18n files.
- * @param {string} lang - deck language ('nl' | 'en-GB')
+ * @param {string} lang - a deck language (any code on the deck axis)
  * @returns {Promise<Object>}
  */
 export async function createFollowCopy(lang) {

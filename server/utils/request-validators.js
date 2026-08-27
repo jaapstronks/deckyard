@@ -6,6 +6,7 @@
 import { validateDateRange } from './normalize.js';
 import { badRequest } from './http.js';
 import { isValidPermission as _isValidPermission } from '../../shared/constants/permissions.js';
+import { normalizeLang } from '../../shared/i18n-utils.js';
 
 /**
  * Extract a required string field from the request body.
@@ -44,27 +45,31 @@ export function getTrimmedString(body, key) {
 }
 
 /**
- * Extract and validate a language field.
- * Only accepts 'nl' or 'en-GB'.
+ * Extract and validate a deck-language field, or null.
+ *
+ * Membership is `normalizeLang()` from `shared/i18n-utils.js` — the one test on
+ * the deck-language axis. This used to hardcode `val === 'nl' || val ===
+ * 'en-GB'`, the sixth spelling of a list that was declared in five other places
+ * (D61); a request naming any other axis language was silently dropped here
+ * while the storage layer would have stored it.
+ *
  * @param {object} body - Request body
  * @param {string} [key='lang'] - Field name
- * @returns {'nl'|'en-GB'|null}
+ * @returns {string|null}
  */
 export function getLang(body, key = 'lang') {
-  const val = body?.[key];
-  return val === 'nl' || val === 'en-GB' ? val : null;
+  return normalizeLang(body?.[key]);
 }
 
 /**
- * Extract and validate a language field with 'auto' option.
- * Returns 'auto' if not 'nl' or 'en-GB'.
+ * Extract and validate a deck-language field, falling back to `'auto'`.
+ * Same membership test as `getLang()`; `'auto'` means "detect it".
  * @param {object} body - Request body
  * @param {string} [key='lang'] - Field name
- * @returns {'nl'|'en-GB'|'auto'}
+ * @returns {string}
  */
 export function getLangOrAuto(body, key = 'lang') {
-  const val = body?.[key];
-  return val === 'nl' || val === 'en-GB' ? val : 'auto';
+  return normalizeLang(body?.[key]) || 'auto';
 }
 
 /**
@@ -156,7 +161,7 @@ export function getStringArray(body, key, { trim = false } = {}) {
 /**
  * Extract common AI endpoint parameters.
  * @param {object} body - Request body
- * @returns {{ raw: string, vendor: string|null, lang: 'nl'|'en-GB'|null, theme: string|null, settings: object|null }}
+ * @returns {{ raw: string, vendor: string|null, lang: string|null, theme: string|null, settings: object|null }}
  */
 export function getAiParams(body) {
   return {
@@ -171,7 +176,7 @@ export function getAiParams(body) {
 /**
  * Extract common file conversion parameters.
  * @param {object} body - Request body
- * @returns {{ dataUrl: string, filename: string, vendor: string|null, lang: 'nl'|'en-GB'|'auto', theme: string }}
+ * @returns {{ dataUrl: string, filename: string, vendor: string|null, lang: string, theme: string }}
  */
 export function getConvertParams(body) {
   return {

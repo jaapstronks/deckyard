@@ -1,3 +1,5 @@
+import { DEFAULT_DECK_LANG, normalizeLang } from '../../shared/i18n-utils.js';
+
 /**
  * RTL (Right-to-Left) language codes.
  * These languages render text from right to left.
@@ -15,9 +17,7 @@ const RTL_LANGS = new Set(['ar', 'he', 'fa', 'ur']);
  * @returns {string|null} Normalized language code or null
  */
 function normalizeDocLang(v) {
-  if (v === 'nl' || v === 'en-GB') return v;
-  if (RTL_LANGS.has(v)) return v;
-  return null;
+  return normalizeLang(v) || (RTL_LANGS.has(v) ? v : null);
 }
 
 /**
@@ -51,5 +51,5 @@ export function resolveDocLangFromPresentation(pres) {
     if (v === 'en') return 'en-GB';
   }
 
-  return 'nl';
+  return DEFAULT_DECK_LANG;
 }

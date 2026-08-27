@@ -20,6 +20,7 @@ import {
   pickVersion,
 } from '../../../utils/translation-status.js';
 import { canWritePresentation } from '../../../utils/presentation-authz/index.js';
+import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
 
 // In-process translation job lock (prevents double-spending tokens)
 const missingTranslationJobs = new Map();
@@ -50,7 +51,7 @@ export async function handlePresentationTranslateMissing(
     normalizeLang(body?.from) ||
     normalizeLang(pres.i18n.active) ||
     normalizeLang(pres.i18n.dominant) ||
-    'nl';
+    DEFAULT_DECK_LANG;
   const to = normalizeLang(body?.to) || otherLang(from);
   const mode = body?.mode === 'background' ? 'background' : 'wait';
 

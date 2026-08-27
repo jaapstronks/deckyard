@@ -34,7 +34,8 @@ const JSON_SCHEMA_DIALECT = 'https://json-schema.org/draft/2020-12/schema';
  * grandfathered forms: language, optional extended-language, script, region,
  * variants, singleton extensions and private use.
  *
- * The published schema used to carry `enum: ['nl', 'en-GB']` here. That is the
+ * The published schema used to carry a two-value `enum` here — Dutch and
+ * British English only. That is the
  * same origin story as the type set — Deckyard was abstracted out of a Dutch
  * organisation's fork — and a universal presentation format that admits only
  * Dutch and British English is not a universal presentation format.

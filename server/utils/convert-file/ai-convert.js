@@ -14,6 +14,10 @@ import { cryptoUuid } from '../../../shared/slide-types/helpers.js';
 import { DECK_FORMAT_ID } from '../../../shared/slide-types/deck-format-id.js';
 import { firstSlideIsTitle } from './helpers.js';
 import { createLogger } from '../logger.js';
+import {
+  DEFAULT_DECK_LANG,
+  normalizeLang,
+} from '../../../shared/i18n-utils.js';
 
 const log = createLogger('convert-file');
 
@@ -55,13 +59,9 @@ export async function convertWithAi(formattedContent, options = {}) {
   log.info(`Phase 1 complete: ${outline.slides.length} slides outlined`);
 
   // Get the detected language for use in Phase 2 (if lang was 'auto')
-  const detectedLang = outline.metadata?.detectedLang || 'nl';
+  const detectedLang = outline.metadata?.detectedLang;
   const effectiveLang =
-    lang === 'nl' || lang === 'en-GB'
-      ? lang
-      : detectedLang === 'en'
-        ? 'en-GB'
-        : 'nl';
+    normalizeLang(lang) || normalizeLang(detectedLang) || DEFAULT_DECK_LANG;
 
   // Call onOutlineComplete immediately when outline is ready
   // This allows the caller to send status messages to the client early
@@ -204,8 +204,8 @@ export async function convertWithAi(formattedContent, options = {}) {
     ? true // Used image+title from first slide
     : !firstSlideIsTitle(firstSlideContent, outline); // Added automatic title
 
-  // Normalize to deck language format: 'nl' or 'en-GB'
-  const deckLang = effectiveLang === 'en-GB' ? 'en-GB' : 'nl';
+  // Already canonical: `effectiveLang` came out of normalizeLang().
+  const deckLang = effectiveLang;
 
   // Add generation metadata
   deck._generationMeta = {

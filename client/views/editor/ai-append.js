@@ -12,6 +12,7 @@ import { openModal } from '../../lib/dom/modal.js';
 import { openAiBatchReviewModal } from './modals/ai-batch-review-modal.js';
 import { highlightAiInsertedSlides } from './ai-added-highlight.js';
 import { h } from '../../lib/dom.js';
+import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
 
 export function openAiAppendWizard({
   root,
@@ -28,7 +29,7 @@ export function openAiAppendWizard({
   SLIDE_TYPES = null,
   onReviewInserted = null,
 } = {}) {
-  const langMode = normalizeLang(pres?.i18n?.active) || 'nl';
+  const langMode = normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG;
 
   const ta = h('textarea', {
     class: 'form-input form-textarea-lg',

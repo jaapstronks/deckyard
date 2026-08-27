@@ -6,6 +6,7 @@ import { attachThumbScale } from '../../../lib/slide-runtime/thumb-scale.js';
 import { loadThemeById } from '../../../lib/theme/theme.js';
 import { h } from '../../../lib/dom.js';
 import { nav } from '../../../lib/state/router.js';
+import { normalizeLang } from '../../../../shared/i18n-utils.js';
 
 /**
  * Sandbox "Example presentations" shelf.
@@ -57,8 +58,9 @@ export function createSandboxExamplesSection({ api, detachThumbs }) {
     if (busy) return;
     busy = true;
     try {
-      const raw = example?.deck?.lang;
-      const lang = raw === 'en-GB' ? 'en-GB' : raw === 'nl' ? 'nl' : 'en-GB';
+      // Sandbox examples are authored in English; a deck that names its own
+      // axis language keeps it.
+      const lang = normalizeLang(example?.deck?.lang) || 'en-GB';
       const created = await api('/api/presentations/import/json', {
         method: 'POST',
         body: JSON.stringify({ deck: example.deck, lang }),

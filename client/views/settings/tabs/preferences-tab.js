@@ -34,6 +34,7 @@ import { createUserNotificationsSection } from '../sections/index.js';
 import { disableForSandbox } from '../sandbox-disable.js';
 import { createColorPicker } from '../theme-editor/color-picker.js';
 import { nav } from '../../../lib/state/router.js';
+import { DEFAULT_SUPPORTED_DECK_LANGS } from '../../../../shared/i18n-utils.js';
 
 /**
  * Create the preferences tab component.
@@ -113,7 +114,7 @@ export function createPreferencesTab({ user }) {
     const langs =
       Array.isArray(supportedList) && supportedList.length > 0
         ? supportedList
-        : ['nl', 'en-GB'];
+        : DEFAULT_SUPPORTED_DECK_LANGS;
 
     useDropdownForLang = langs.length > 2;
 

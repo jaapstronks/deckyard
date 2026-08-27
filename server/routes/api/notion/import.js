@@ -24,6 +24,7 @@ import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { handleNotionError } from './utils.js';
 import { createLogger } from '../../../utils/logger.js';
 import { sseWrite, sseError, openSseStream } from '../../../utils/sse.js';
+import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
 const log = createLogger('import');
 
 /**
@@ -87,7 +88,7 @@ export async function handleNotionImport({
     // Create the presentation from the deck
     const parts = deckToPresentationParts(deck);
     const effectiveLang =
-      deck.lang || deck._generationMeta?.effectiveLang || 'nl';
+      deck.lang || deck._generationMeta?.effectiveLang || DEFAULT_DECK_LANG;
 
     const created = await createPresentation(storageScope, {
       title: parts.title || deck.title || 'Imported from Notion',
@@ -283,7 +284,7 @@ export async function handleNotionImportStream({
     // Create the presentation
     const parts = deckToPresentationParts(deck);
     const effectiveLang =
-      deck.lang || deck._generationMeta?.effectiveLang || 'nl';
+      deck.lang || deck._generationMeta?.effectiveLang || DEFAULT_DECK_LANG;
 
     const created = await createPresentation(storageScope, {
       title: parts.title || deck.title || 'Imported from Notion',

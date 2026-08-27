@@ -27,7 +27,7 @@ import { h } from '../../../lib/dom.js';
  * @typedef {Object} PickedImage  Normalized, provider-agnostic pick.
  * @property {string} url                       Required image URL.
  * @property {string} [alt]                     Single alt seed (provider had no per-language map).
- * @property {Object<string,string>} [alts]     Per-language alt map (e.g. { nl, 'en-GB' }).
+ * @property {Object<string,string>} [alts]     Alt text keyed by deck language.
  * @property {string} [caption]                 Resolved caption/credit string, if any.
  * @property {string[]} [tags]                  Free-form tags.
  * @property {string} [providerId]              Opaque provider file id (e.g. ImageKit fileId).

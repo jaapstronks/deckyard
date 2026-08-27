@@ -3,9 +3,8 @@
  * Handles state for the slide library picker (cache, loading, selection, filters)
  */
 
-import { normalizeLang } from '../../../shared/i18n-utils.js';
-
-const SUPPORTED_LANGS = ['nl', 'en-GB'];
+import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
+import { normalizeLang } from '../format/i18n.js';
 
 /**
  * Create state management for the slide library picker
@@ -18,14 +17,14 @@ const SUPPORTED_LANGS = ['nl', 'en-GB'];
 export function createSlideLibraryState({
   initialShelf = 'organization',
   initialQuery = '',
-  initialLang = 'nl',
+  initialLang = DEFAULT_DECK_LANG,
 } = {}) {
   let activeShelf =
     initialShelf === 'organization' ? 'organization' : 'personal';
   let activeView = 'library'; // library | trash
   let activeTypeFilter = ''; // empty = all types
   let activeTagFilter = []; // selected tag names for filtering
-  let activeLang = normalizeLang(initialLang) || 'nl';
+  let activeLang = normalizeLang(initialLang) || DEFAULT_DECK_LANG;
   let q = String(initialQuery || '');
 
   /** @type {{ personal: any[], organization: any[] }} */
@@ -148,7 +147,5 @@ export function createSlideLibraryState({
       activeTagFilter = [];
       selectedItems.clear();
     },
-
-    SUPPORTED_LANGS,
   };
 }

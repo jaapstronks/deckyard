@@ -54,6 +54,7 @@ import { fetchMySettings } from '../../lib/net/settings.js';
 import { createVideoLayer } from '../../lib/slide-runtime/video-layer.js';
 import { createPresentChannel } from '../../lib/net/present-channel.js';
 import { readDeckLangFromUrl } from './present-lang.js';
+import { readDeckLangParam } from '../../lib/format/i18n.js';
 import { createPresenterAutoAdvanceUi } from './auto-advance-ui.js';
 import { createPresenterTeardown } from './teardown.js';
 import { resolveRevealStyle } from '../../../shared/reveal-style.js';
@@ -61,6 +62,7 @@ import { createStepIndicatorRenderer } from './step-indicator.js';
 import { createPresenterConsoleToggle } from './console-toggle.js';
 import { buildPresenterTopbar } from './topbar.js';
 import { nav } from '../../lib/state/router.js';
+import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
 
 export async function renderPresenter(root, id) {
   const startUrl = new URL(location.href);
@@ -72,7 +74,7 @@ export async function renderPresenter(root, id) {
     activeLang ||
     normalizeLang(pres?.i18n?.active) ||
     normalizeLang(pres?.i18n?.dominant) ||
-    'nl';
+    DEFAULT_DECK_LANG;
   normalizeNotesStrings(pres);
   const shell = h('div', { class: 'presenter-shell' });
   let sessionId = null;
@@ -170,10 +172,10 @@ export async function renderPresenter(root, id) {
 
   const animator = createPresenterAnimator();
   const goToEditor = () => {
-    const lang = startUrl.searchParams.get('lang');
+    const lang = readDeckLangParam(startUrl);
     const slideId = deckCtl?.getState?.()?.current?.id || '';
     const u = new URL(`/app/${id}`, location.origin);
-    if (lang === 'nl' || lang === 'en-GB') u.searchParams.set('lang', lang);
+    if (lang) u.searchParams.set('lang', lang);
     if (slideId) u.searchParams.set('slideId', slideId);
     const dest = u.pathname + u.search;
     // Prefer SPA navigation; fallback to hard navigation (works even in a fresh tab).

@@ -14,9 +14,13 @@ import { isTextField } from '../../../../shared/slide-types/text-fields.js';
 import { getLlmConfig } from '../../../utils/llm/config.js';
 import { requestChatCompletionContent } from '../../../utils/llm/index.js';
 import { extractJsonObject } from '../../../utils/openai/json.js';
+import {
+  DEFAULT_DECK_LANG,
+  normalizeLang,
+} from '../../../../shared/i18n-utils.js';
 
 function normalizeLangHint(v) {
-  return v === 'en-GB' ? 'en-GB' : 'nl';
+  return normalizeLang(v) || DEFAULT_DECK_LANG;
 }
 
 function shouldIgnoreTextKey(key) {

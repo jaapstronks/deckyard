@@ -101,9 +101,13 @@ test('resolveDeckLang reads the deck, in the documented order', () => {
 test('resolveDeckLang answers null rather than guessing', () => {
   // Null is the point: a caller cannot mistake "the deck says nothing" for a
   // real language, and getSlideCopy applies the documented default instead.
-  for (const pres of [undefined, null, {}, { lang: '' }, { lang: 'de' }]) {
+  for (const pres of [undefined, null, {}, { lang: '' }, { lang: 'klingon' }]) {
     assert.equal(resolveDeckLang(pres), null);
   }
+  // …but a language *on the axis* is an answer, not a guess. Before D61 this
+  // list held `{ lang: 'de' }`, because the axis was `nl`/`en-GB` and German
+  // was as unreadable as Klingon.
+  assert.equal(resolveDeckLang({ lang: 'de' }), 'de');
 });
 
 test('no slide type carries its own language fallback', () => {

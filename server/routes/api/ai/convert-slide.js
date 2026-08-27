@@ -11,6 +11,7 @@ import {
   getLang,
 } from '../../../utils/request-validators.js';
 import { convertSlideWithAi } from '../../../utils/openai/convert-slide.js';
+import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
 
 /**
  * POST /api/ai/convert-slide — convert a slide to a different type using AI.
@@ -32,7 +33,7 @@ export const handleAiConvertSlide = withErrorHandler(
     }
 
     const vendor = getOptionalString(body, 'vendor');
-    const lang = getLang(body) || 'nl';
+    const lang = getLang(body) || DEFAULT_DECK_LANG;
 
     const converted = await convertSlideWithAi(slide, toType, {
       vendor,

@@ -16,6 +16,10 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { readPreferredLlmVendor } from '../../../lib/net/llm-vendor.js';
 import { h } from '../../../lib/dom.js';
+import {
+  DEFAULT_DECK_LANG,
+  normalizeLang,
+} from '../../../../shared/i18n-utils.js';
 
 /**
  * @param {object} ctx
@@ -78,7 +82,7 @@ export function buildAiIteratePanel({
 
     try {
       const vendor = readPreferredLlmVendor() || null;
-      const lang = pres?.i18n?.active === 'en-GB' ? 'en-GB' : 'nl';
+      const lang = normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG;
 
       // This panel edits one slide: tell the server which slide so refine
       // scopes to it (faster) unless the command names another slide.

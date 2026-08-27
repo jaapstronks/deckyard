@@ -11,6 +11,7 @@ import { getDb, sql } from '../db/client.js';
 import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
 import { getPublishedIndex } from './published.js';
+import { normalizeLang } from '../../shared/i18n-utils.js';
 
 /**
  * The title to show for a deck: its dominant language version's title when it
@@ -19,10 +20,7 @@ import { getPublishedIndex } from './published.js';
  * @returns {string}
  */
 function pickTitle(pres) {
-  const dominant =
-    pres?.i18n?.dominant === 'nl' || pres?.i18n?.dominant === 'en-GB'
-      ? pres.i18n.dominant
-      : null;
+  const dominant = normalizeLang(pres?.i18n?.dominant);
   if (
     dominant &&
     pres?.i18n?.versions &&

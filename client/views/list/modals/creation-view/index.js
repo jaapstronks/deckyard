@@ -26,6 +26,10 @@ import { createContentCompose } from './content-compose.js';
 import { createImportCompose } from './import-compose.js';
 import { handleEmpty } from '../new-presentation/handlers.js';
 import { h } from '../../../../lib/dom.js';
+import {
+  DEFAULT_DECK_LANG,
+  normalizeLang,
+} from '../../../../../shared/i18n-utils.js';
 
 export function openCreationView({
   api,
@@ -440,7 +444,7 @@ export function openCreationView({
     switch (mode) {
       case 'library':
         await library.compose({
-          lang: langSelect.getLang() === 'en-GB' ? 'en-GB' : 'nl',
+          lang: normalizeLang(langSelect.getLang()) || DEFAULT_DECK_LANG,
           theme: themeSelect.getTheme(),
           close,
           setBusy,

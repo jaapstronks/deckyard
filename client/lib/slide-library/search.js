@@ -3,7 +3,10 @@
  */
 
 import { lower } from '../../../shared/string-utils.js';
-import { normalizeLang } from '../../../shared/i18n-utils.js';
+import {
+  DEFAULT_DECK_LANG,
+  normalizeLang,
+} from '../../../shared/i18n-utils.js';
 
 /**
  * Sort items by pinned/favorite status, then by name.
@@ -166,6 +169,6 @@ export function hasContentForLang(item, lang) {
   if (!l) return false;
   // If item has i18n versions, check if the requested lang exists
   if (item?.i18n?.versions?.[l]?.content) return true;
-  // If no i18n, assume it's in the dominant/default language (nl)
-  return l === 'nl' || l === (item?.i18n?.dominant || 'nl');
+  // If no i18n, assume it's in the item's dominant language, else the default.
+  return l === (normalizeLang(item?.i18n?.dominant) || DEFAULT_DECK_LANG);
 }

@@ -376,8 +376,8 @@ export function createEditorTopbar({
       const slideId = idx >= 0 ? pres.slides[idx].id : null;
       const u = new URL(`/present/${id}`, location.origin);
       if (slideId) u.searchParams.set('slideId', slideId);
-      if (pres?.i18n?.active === 'nl' || pres?.i18n?.active === 'en-GB')
-        u.searchParams.set('lang', pres.i18n.active);
+      const deckLang = normalizeLang(pres?.i18n?.active);
+      if (deckLang) u.searchParams.set('lang', deckLang);
       window.open(u.pathname + u.search, '_blank', 'noopener,noreferrer');
 
       try {

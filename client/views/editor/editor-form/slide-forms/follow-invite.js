@@ -1,5 +1,8 @@
 import { t } from '../../../../lib/ui-i18n.js';
-import { resolveDeckLang } from '../../../../../shared/i18n-utils.js';
+import {
+  DEFAULT_DECK_LANG,
+  resolveDeckLang,
+} from '../../../../../shared/i18n-utils.js';
 import { h } from '../../../../lib/dom.js';
 
 export function renderFollowInviteForm({
@@ -20,7 +23,7 @@ export function renderFollowInviteForm({
   // which was the *other* language — the fields said "(Engels)" while editing
   // the Dutch invite. Those keys are gone; the renderer's own resolution
   // (resolveDeckLang, active version first) is the answer.
-  const copyLang = resolveDeckLang(pres) || 'nl';
+  const copyLang = resolveDeckLang(pres) || DEFAULT_DECK_LANG;
   const copyLangLabel = copyLang === 'en-GB' ? 'Engels' : 'Nederlands';
 
   const expl = h('div', {

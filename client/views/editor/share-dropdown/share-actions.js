@@ -8,6 +8,7 @@
 import { normalizeLang } from '../../../lib/format/i18n.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
 
 /**
  * Handle publishing to Notion.
@@ -29,7 +30,7 @@ export async function handleNotionPublish({ api, toast, pres }) {
     return;
   }
 
-  const lang = normalizeLang(pres?.i18n?.active) || 'nl';
+  const lang = normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG;
   const embedUrl = `${location.origin}/embed/${publishId}${slug ? `-${slug}` : ''}?lang=${encodeURIComponent(lang)}`;
   const title = pres?.title || '';
 
