@@ -47,7 +47,7 @@ import { mergeBackgroundOptions } from '../shared/theme-slide-backgrounds.js';
 import { escapeHtml } from '../shared/slide-types/helpers.js';
 import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 import { newSlide } from '../shared/slide-types/presentation.js';
-import { isInsertableSlideType } from '../client/views/editor/slide-types-policy.js';
+import { isInsertableSlideType } from '../shared/slide-types/policy.js';
 import { renderSlideToPngBuffer } from '../server/render/png.js';
 import { loadThemeAssets, listThemeIds } from '../server/utils/themes.js';
 import { closePuppeteerBrowser } from '../server/utils/puppeteer-browser.js';

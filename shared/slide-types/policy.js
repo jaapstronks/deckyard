@@ -1,9 +1,23 @@
-import { cleanStr, uniqStrings } from '../../../shared/string-utils.js';
+/**
+ * Slide-type policy: which types may be inserted, and how a theme narrows the
+ * set. Pure decision logic with no DOM and no I/O, shared by the editor
+ * (picker, slides panel, form), the theme-preview script and the server's
+ * theme-change compatibility analysis — all three used to answer this
+ * question in their own words (B177).
+ */
 
+import { cleanStr, uniqStrings } from '../string-utils.js';
+
+/**
+ * Read a theme's slide-type visibility sets.
+ * @param {Object} [theme] - Normalized theme
+ * @returns {{ exclude: Set<string>, include: Set<string> }}
+ */
 export function getThemeSlideTypeConfig(theme) {
-  // Themes reaching here are normalized (client/lib/theme/theme.js runs every
-  // load through normalizeTheme), so `slideTypes.exclude` is the whole story —
-  // the legacy `hiddenSlideTypes` alias is folded away there.
+  // Themes reaching here are normalized — the client runs every load through
+  // normalizeTheme (client/lib/theme/theme.js) and the server through
+  // loadThemeAssets (server/utils/themes.js) — so `slideTypes.exclude` is the
+  // whole story; the legacy `hiddenSlideTypes` alias is folded away there.
   const st =
     theme?.slideTypes && typeof theme.slideTypes === 'object'
       ? theme.slideTypes
