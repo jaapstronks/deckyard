@@ -52,6 +52,15 @@ row differs by how the viewer arrived:
 | **Logged-in** (a Deckyard account, e.g. a guest who verified their email to comment) | `viewer_email`                                                                                                    | `DELETE /api/analytics/my-data`, authenticated — see below                  |
 | **Anonymous** (share link or follow, no account)                                     | `device_id` — a random 32-hex value the _browser_ generates and keeps in `localStorage` (`ps.analytics.deviceId`) | `POST /api/track/my-data/erase`, proving possession of a live session token |
 
+The **live follow session records only the first of those two rows**: the
+audience view (`client/views/follow/index.js`) probes `/api/auth/me` before it
+starts a tracker and, for a viewer with an account, starts none at all. The
+audience of an internal deck is colleagues, and their attention is not the
+presenter's to measure — a signed-in follower is therefore absent from the
+deck's analytics rather than present under `viewer_email`. Share links, embeds
+and published pages do not make that distinction. Pinned by
+`tests/follow-audience-smoke.test.js`.
+
 Also stored: `ip_address` (anonymized on a schedule, below), a truncated
 `user_agent`, timings, and the slides visited. There is **no** cross-organization
 identity: a view session inherits its organization from the presentation it belongs

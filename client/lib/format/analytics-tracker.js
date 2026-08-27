@@ -256,6 +256,12 @@ export function createAnalyticsTracker({
   function startHeartbeat() {
     if (heartbeatInterval) return;
     heartbeatInterval = setInterval(heartbeat, HEARTBEAT_INTERVAL_MS);
+    // No-op in the browser (`unref` is Node's), and the same line the other
+    // long-lived client timers carry (`views/follow/index.js`,
+    // `lib/qa/questions-feed.js`): outside a browser a live interval holds the
+    // process open, so a jsdom test that reaches this tracker hangs instead of
+    // finishing.
+    heartbeatInterval.unref?.();
   }
 
   /**
