@@ -42,6 +42,15 @@ export const SLIDE_COPY = {
     imagePlaceholder: 'Afbeelding',
     logoPlaceholder: 'Logo',
 
+    // Callout slide — the eyebrow an unlabelled callout falls back to, per
+    // variant. An author who fills `label` overrides it (a definition usually
+    // puts the term there).
+    calloutInsight: 'Kernpunt',
+    calloutWarning: 'Let op',
+    calloutDefinition: 'Definitie',
+    calloutNote: 'Noot',
+    calloutTip: 'Tip',
+
     // Chart slide
     chartLegendLabel: 'Legenda',
 
@@ -84,6 +93,15 @@ export const SLIDE_COPY = {
     // Empty image placeholder (editor canvas only)
     imagePlaceholder: 'Image',
     logoPlaceholder: 'Logo',
+
+    // Callout slide — the eyebrow an unlabelled callout falls back to, per
+    // variant. An author who fills `label` overrides it (a definition usually
+    // puts the term there).
+    calloutInsight: 'Key insight',
+    calloutWarning: 'Warning',
+    calloutDefinition: 'Definition',
+    calloutNote: 'Note',
+    calloutTip: 'Tip',
 
     // Chart slide
     chartLegendLabel: 'Legend',

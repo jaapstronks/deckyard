@@ -186,6 +186,14 @@
 .sb-segmented {
   display: inline-flex;
   align-items: center;
+  /* Wrap onto a second row rather than overflowing whatever holds the control.
+     The size intent (`is-field-wide`/`is-field-full`) gives a 3+ option control
+     its own line, which is enough for short labels but not for five word-length
+     ones: callout-slide's five kinds measured 351px of buttons in a 299px
+     inspector column, and the last one was simply clipped off the panel. This
+     used to be scoped to `.field-grid` only — a narrower spelling of the same
+     rule, which left every control outside a responsive row overflowing. */
+  flex-wrap: wrap;
   /* In the editor, segmented controls often sit inside `.stack` (a flex column with
      default `align-items: stretch`), which would otherwise stretch them full-width.
      Make them shrink-wrap by default. */
@@ -204,15 +212,6 @@
 /* Editor forms: ensure segmented controls don't stretch to full width inside stacks/grids. */
 .editor-form .sb-segmented {
   align-self: flex-start;
-}
-
-/* Safety net: in a responsive row a segmented control keeps its compact
-   `fit-content` width (see .sb-segmented above), but if a very narrow column
-   can't hold all its buttons on one line, wrap them onto a second row rather
-   than overflowing onto a neighbour. Size intent (is-field-wide/full) already
-   gives 3+ option controls their own line, so this rarely fires. */
-.field-grid .sb-segmented {
-  flex-wrap: wrap;
 }
 
 .sb-segmented-btn {

@@ -4,7 +4,7 @@
 
 # Slide-type inventory
 
-Deckyard ships **33** built-in slide types (33 active, 0 deprecated but still rendered for existing decks). A fork may add more under `custom/slide-types/`; those are not counted here.
+Deckyard ships **34** built-in slide types (34 active, 0 deprecated but still rendered for existing decks). A fork may add more under `custom/slide-types/`; those are not counted here.
 
 This table is generated from the registry so the count and the list cannot
 drift from the code. To change it, add or remove a type in
@@ -21,6 +21,7 @@ See [`slide-type-tiers.md`](./slide-type-tiers.md).
 | `title-slide`          | Title slide             | Active | 1    | —               |
 | `chapter-title-slide`  | Section title           | Active | 1    | —               |
 | `content-slide`        | Text slide              | Active | 1    | —               |
+| `callout-slide`        | Callout                 | Active | 2    | `content-slide` |
 | `table-slide`          | Table                   | Active | 1    | —               |
 | `list-slide`           | List                    | Active | 1    | —               |
 | `kpi-metrics-slide`    | KPI                     | Active | 2    | `list-slide`    |

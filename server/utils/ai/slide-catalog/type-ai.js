@@ -2,6 +2,10 @@
 // Run `node scripts/generate-slide-ai-aggregator.js` to regenerate.
 // Source of truth: the `ai.js` in each shared/slide-types/types/<name>/.
 
+import {
+  ai as calloutSlideAi,
+  aiExamples as calloutSlideAiExamples,
+} from '../../../../shared/slide-types/types/callout-slide/ai.js';
 import { ai as chapterTitleSlideAi } from '../../../../shared/slide-types/types/chapter-title-slide/ai.js';
 import {
   ai as chartSlideAi,
@@ -108,6 +112,7 @@ import { ai as videoSlideAi } from '../../../../shared/slide-types/types/video-s
  * @type {Readonly<Record<string, Object>>}
  */
 export const SLIDE_TYPE_AI = Object.freeze({
+  'callout-slide': calloutSlideAi,
   'chapter-title-slide': chapterTitleSlideAi,
   'chart-slide': chartSlideAi,
   'comparison-slide': comparisonSlideAi,
@@ -150,6 +155,7 @@ export const SLIDE_TYPE_AI = Object.freeze({
  * @type {Readonly<Record<string, Array<Object>>>}
  */
 export const SLIDE_TYPE_AI_EXAMPLES = Object.freeze({
+  'callout-slide': calloutSlideAiExamples,
   'chart-slide': chartSlideAiExamples,
   'comparison-slide': comparisonSlideAiExamples,
   'content-slide': contentSlideAiExamples,

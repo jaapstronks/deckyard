@@ -2,6 +2,7 @@
 // Run `node scripts/generate-slide-authoring-aggregator.js` to regenerate.
 // Source of truth: the `authoring.js` in each shared/slide-types/types/<name>/.
 
+import calloutSlideAuthoring from './types/callout-slide/authoring.js';
 import chapterTitleSlideAuthoring from './types/chapter-title-slide/authoring.js';
 import chartSlideAuthoring from './types/chart-slide/authoring.js';
 import comparisonSlideAuthoring from './types/comparison-slide/authoring.js';
@@ -51,6 +52,7 @@ import videoSlideAuthoring from './types/video-slide/authoring.js';
  * @type {Record<string, Object>}
  */
 export const SLIDE_TYPE_AUTHORING = {
+  'callout-slide': calloutSlideAuthoring,
   'chapter-title-slide': chapterTitleSlideAuthoring,
   'chart-slide': chartSlideAuthoring,
   'comparison-slide': comparisonSlideAuthoring,

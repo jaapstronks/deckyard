@@ -2,6 +2,7 @@
 // Run `node scripts/generate-slide-inline-edit-aggregator.js` to regenerate.
 // Source of truth: the `inline-edit.js` in each shared/slide-types/types/<name>/.
 
+import * as calloutSlide from './types/callout-slide/inline-edit.js';
 import * as chapterTitleSlide from './types/chapter-title-slide/inline-edit.js';
 import * as chartSlide from './types/chart-slide/inline-edit.js';
 import * as comparisonSlide from './types/comparison-slide/inline-edit.js';
@@ -45,6 +46,7 @@ import * as videoSlide from './types/video-slide/inline-edit.js';
  * @type {Readonly<Record<string, Record<string, unknown>>>}
  */
 const MODULES = Object.freeze({
+  'callout-slide': calloutSlide,
   'chapter-title-slide': chapterTitleSlide,
   'chart-slide': chartSlide,
   'comparison-slide': comparisonSlide,

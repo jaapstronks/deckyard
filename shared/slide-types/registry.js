@@ -1,3 +1,4 @@
+import calloutSlide from './types/callout-slide/index.js';
 import chapterTitleSlide from './types/chapter-title-slide.js';
 import contentSlide from './types/content-slide.js';
 import iconCardGridSlide from './types/icon-card-grid-slide/index.js';
@@ -278,6 +279,7 @@ const CORE_SLIDE_TYPES = {
   'title-slide': titleSlide,
   'chapter-title-slide': chapterTitleSlide,
   'content-slide': contentSlide,
+  'callout-slide': calloutSlide,
   'table-slide': tableSlide,
   'list-slide': listSlide,
   'kpi-metrics-slide': kpiMetricsSlide,

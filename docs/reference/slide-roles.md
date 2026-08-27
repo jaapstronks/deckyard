@@ -310,6 +310,33 @@ bundle:
 | series palette                     | `--slide-chart-{0..7}` ← `--t-chart-{0..7}` (numbered accent colours; the only series palette)                                                                                                                                                                                                                                                               |
 | brand slots                        | `--slide-brand-{1..3}` ← `--t-color-brand-{1..3}` (filled from the theme's `brandColors`; an explicit slot wins), falling back to the accent when the theme declares no brand palette — countdown paints these as backgrounds, so the slot must always resolve to a visible colour                                                                           |
 | gradient layer                     | `--slide-gradient-bg` / `--slide-gradient-opacity` ← `--t-slide-gradient-bg` / `--t-gradient-enabled`                                                                                                                                                                                                                                                        |
+| semantic status                    | `--slide-color-{danger,positive,caution,informative,neutral,helpful}` — slide-internal, no theme feed. See below                                                                                                                                                                                                                                             |
+
+### Semantic status is a role, not a type family
+
+Six colours in `00-tokens.css` carry MEANING rather than brand: `danger`,
+`positive`, `caution`, `informative`, `neutral`, `helpful`. `danger` came first
+(form errors, KPI risk accents, code-error styling, inline code); the callout
+family needed the other five and they were minted as one role family rather than
+as five per-type tokens.
+
+Two properties make them roles:
+
+- **Named for the meaning, not for a slide type.** `--t-callout-<variant>-*`
+  would have been exactly the per-type theme family the seam below removes
+  everywhere else — a theme would have to learn a slide type's name to restyle
+  it. Anything that has to say "good / careful / aside" reads the same token:
+  `callout-slide`'s five variants today, `comparison-slide`'s pros-cons
+  treatment and the aside insets next.
+- **Slide-internal, like `danger` always was.** There is no `--t-*` feed, on
+  purpose: a semantic palette is not brand, and a theme that retints "warning"
+  away from amber is changing what the slide _means_. The hues are the standard
+  admonition set, picked to read on both slide surfaces.
+
+A carrier derives its tint and edge from the tone with `color-mix` (see
+`31-callout-slide.css`, `88-matrix-slide.css`) rather than storing a second and
+third colour per tone, and lightens the tone toward the light pole on a dark
+ground — the same accent-agnostic move `--slide-link-on-dark` makes.
 
 The contextual rebinding mechanism in `00-patterns.css` (a surface class
 rebinds the text role for everything inside it) is correct and stays, including

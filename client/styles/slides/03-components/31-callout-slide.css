@@ -1,0 +1,147 @@
+/* callout-slide — the admonition family.
+   One panel, five variants. Everything that differs per variant is one
+   custom property: `--callout-tone`, set by the modifier class and read by the
+   accent bar, the icon and the eyebrow. The tones are the semantic status
+   ROLES from 00-tokens.css, not per-type theme tokens — see
+   docs/reference/slide-roles.md § Colour roles, and the note beside
+   `--slide-color-danger` for why this family is slide-internal. */
+
+.slide-callout {
+  --callout-tone: var(--slide-color-positive);
+  /* The panel tint and its edge are derived from the tone rather than stored,
+     so they follow it on any ground and no variant needs a second colour.
+     Same pattern as matrix-slide's cell tints. */
+  --callout-surface: color-mix(in srgb, var(--callout-tone) 10%, transparent);
+  --callout-edge: color-mix(in srgb, var(--callout-tone) 24%, transparent);
+}
+
+.slide-callout--insight {
+  --callout-tone: var(--slide-color-positive);
+}
+.slide-callout--warning {
+  --callout-tone: var(--slide-color-caution);
+}
+.slide-callout--definition {
+  --callout-tone: var(--slide-color-informative);
+}
+.slide-callout--note {
+  --callout-tone: var(--slide-color-neutral);
+}
+.slide-callout--tip {
+  --callout-tone: var(--slide-color-helpful);
+}
+
+/* A dark ground swallows a saturated mid-tone, so lighten whatever the tone is
+   toward the light pole — tone-agnostic, exactly how --slide-link-on-dark
+   handles the same problem for links. `has-slide-bg-light-text` is the one
+   luminance spelling (00-base.css § THE ONE LUMINANCE SPELLING). */
+.slide.has-slide-bg-light-text.slide-callout {
+  --callout-tone: color-mix(in srgb, var(--slide-color-positive) 45%, #ffffff);
+}
+.slide.has-slide-bg-light-text.slide-callout--warning {
+  --callout-tone: color-mix(in srgb, var(--slide-color-caution) 45%, #ffffff);
+}
+.slide.has-slide-bg-light-text.slide-callout--definition {
+  --callout-tone: color-mix(
+    in srgb,
+    var(--slide-color-informative) 45%,
+    #ffffff
+  );
+}
+.slide.has-slide-bg-light-text.slide-callout--note {
+  --callout-tone: color-mix(in srgb, var(--slide-color-neutral) 45%, #ffffff);
+}
+.slide.has-slide-bg-light-text.slide-callout--tip {
+  --callout-tone: color-mix(in srgb, var(--slide-color-helpful) 45%, #ffffff);
+}
+
+/* The slide is one block, centred on both axes: the whole point of the type is
+   that nothing else competes with it. */
+.slide-callout .slide-inner {
+  justify-content: center;
+  align-items: center;
+}
+
+.slide-callout .callout-panel {
+  width: 100%;
+  max-width: 72%;
+  box-sizing: border-box;
+  padding: var(--slide-space-10) var(--slide-space-12);
+  /* The accent bar IS the admonition affordance: a reader recognises the shape
+     before reading the eyebrow. */
+  border-inline-start: var(--slide-space-2) solid var(--callout-tone);
+  border-block: 1px solid var(--callout-edge); /* allowlist: sub-step hairline — a panel edge, not a rhythm gap */
+  border-inline-end: 1px solid var(--callout-edge); /* allowlist: sub-step hairline — a panel edge, not a rhythm gap */
+  border-start-end-radius: var(--slide-radius-md);
+  border-end-end-radius: var(--slide-radius-md);
+  background: var(--callout-surface);
+}
+
+.slide-callout .callout-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--slide-space-3);
+  margin: 0 0 var(--slide-space-5);
+  color: var(--callout-tone);
+  font-family: var(--font-caption);
+  font-size: var(--slide-font-size-label);
+  line-height: var(--slide-leading-snug);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Tinted by the container `color` through a CSS mask rather than an <img>: an
+   <img>-loaded SVG is an isolated document and never inherits the host colour.
+   Same seam as icon-card-grid's card icons. */
+.slide-callout .callout-icon {
+  flex: none;
+  width: var(--slide-space-6);
+  height: var(--slide-space-6);
+  background: currentColor;
+  -webkit-mask: var(--callout-icon-url) center / contain no-repeat;
+  mask: var(--callout-icon-url) center / contain no-repeat;
+}
+
+.slide-callout .callout-label {
+  /* `dfn` italicises by default in every UA stylesheet; the eyebrow is a label,
+     and the definition variant is already marked by its own colour and glyph. */
+  font-style: normal;
+}
+
+.slide-callout .callout-body {
+  font-family: var(--font-body);
+  line-height: var(--slide-leading-snug);
+  /* A reading measure, in the body's own size. It only binds at the small band,
+     where a full-width line would otherwise run past a comfortable length; the
+     two larger bands are already narrower than the cap. */
+  max-width: 26em;
+}
+
+/* Three size bands, chosen from the body length in renderHtml
+   (calloutBodyBand) so a one-line takeaway fills the slide and the 600-char
+   maximum still fits. --tf-size-scale (per-field S/M/L, default 1) composes on
+   top of whichever band is active, as everywhere else. */
+.slide-callout.is-body-lg .callout-body {
+  font-size: calc(var(--slide-text-3xl) * var(--tf-size-scale, 1));
+}
+.slide-callout.is-body-md .callout-body {
+  font-size: calc(var(--slide-text-2xl) * var(--tf-size-scale, 1));
+}
+.slide-callout.is-body-sm .callout-body {
+  font-size: calc(var(--slide-text-xl) * var(--tf-size-scale, 1));
+}
+
+.slide-callout .callout-body > :first-child {
+  margin-top: 0;
+}
+.slide-callout .callout-body > :last-child {
+  margin-bottom: 0;
+}
+
+.slide-callout .callout-source {
+  margin: var(--slide-space-5) 0 0;
+  font-family: var(--font-caption);
+  font-size: var(--slide-font-size-caption);
+  line-height: var(--slide-leading-normal);
+  color: var(--slide-on-surface-muted);
+}

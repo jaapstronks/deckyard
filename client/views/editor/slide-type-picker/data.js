@@ -154,6 +154,42 @@ export const SLIDE_TYPE_PRESETS = {
   // it expecting two separate fields. That layout stays reachable in the editor
   // via the layout switcher (content-slide's layoutVariants), which is where the
   // "I explicitly want two columns" use case lives.
+  // The five callout kinds are a `variant` enum on one type (so the ~40-type
+  // list does not balloon), and presets are what keep them findable: an author
+  // looking for "a warning slide" searches the picker, not a dropdown inside a
+  // slide they have not inserted yet.
+  'callout-slide': [
+    {
+      id: 'insight',
+      labelKey: 'editor.slideTypePreset.callout.insight',
+      label: 'Key insight',
+      content: { variant: 'insight' },
+    },
+    {
+      id: 'warning',
+      labelKey: 'editor.slideTypePreset.callout.warning',
+      label: 'Warning',
+      content: { variant: 'warning' },
+    },
+    {
+      id: 'definition',
+      labelKey: 'editor.slideTypePreset.callout.definition',
+      label: 'Definition',
+      content: { variant: 'definition' },
+    },
+    {
+      id: 'note',
+      labelKey: 'editor.slideTypePreset.callout.note',
+      label: 'Note',
+      content: { variant: 'note' },
+    },
+    {
+      id: 'tip',
+      labelKey: 'editor.slideTypePreset.callout.tip',
+      label: 'Tip',
+      content: { variant: 'tip' },
+    },
+  ],
   'list-slide': [
     {
       id: 'bullets',
