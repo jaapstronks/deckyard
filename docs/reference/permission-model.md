@@ -80,6 +80,11 @@ operation is allowed — are `client/lib/comments/comment-authz.js`,
 `client/lib/slide-authoring/slide-lock-authz.js` and the owner gate of
 `client/views/editor/modals/share-modal/index.js`.
 
+That list is a checklist, and `tests/client-authz-mirror-coverage.test.js`
+reads it: every path this paragraph backticks must exist and must be imported
+by at least one test. Add a mirror here and it needs a test before CI is green;
+reword the paragraph and keep the backticked paths, or the gate stops parsing.
+
 ## The ladder
 
 Four levels, ordered, defined once in `shared/constants/permissions.js`:
