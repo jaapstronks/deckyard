@@ -40,8 +40,9 @@ import { storage } from '../../lib/storage.js';
 import { createTopbar } from './topbar.js';
 import { loadPresentationList } from './data.js';
 import { LOCAL_STORAGE_KEY_VIEW, resolveInitialView } from './view-routing.js';
+import { nav } from '../../lib/state/router.js';
 
-export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
+export async function renderList(root, { user, openSlideLibrary } = {}) {
   const features = getFeatures() || {};
   const shell = h('div', {
     class: 'app-shell has-sidebar',
@@ -69,7 +70,6 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
     openCreationView({
       api,
       root,
-      nav,
       readLangMode,
       getSupportedLangs,
       writeLangMode,
@@ -86,7 +86,6 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   const { el: topbar, searchInput: topbarSearchInput } = createTopbar({
     features,
     api,
-    nav,
     user,
     detachers,
     onSearch: (query) => handleSearch(query),
@@ -165,7 +164,6 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
 
   const { renderCard } = createCardRenderer({
     api,
-    nav,
     onDeckDuplicated: (created) => onDeckDuplicated?.(created),
     onTrashRefresh: () => trashViewObj.refresh(),
     detachThumbs,
@@ -186,7 +184,6 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
 
   const activityFeed = createActivityFeed({
     api,
-    onNavigate: (path) => nav?.(path),
     onUnreadCountChange: (count) => {
       unreadCount = count;
       sidebar.updateBadge(count);
@@ -201,7 +198,6 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
 
   const homeViewObj = createHomeView({
     api,
-    nav,
     renderCard,
     setView,
     allByDate,
@@ -230,7 +226,6 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
 
   const slideLibraryViewObj = createSlideLibraryView({
     api,
-    nav,
   });
 
   // Search view
@@ -271,7 +266,7 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
     selectionState,
     api,
     isTrashView: () => currentView === 'trash',
-    onBulkDelete: () => nav?.('/app'),
+    onBulkDelete: () => nav('/app'),
     onBulkRestore: () => trashViewObj.refresh(),
   });
   shell.append(bulkActionBar.el);

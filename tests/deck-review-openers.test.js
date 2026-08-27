@@ -56,7 +56,6 @@ function setup(pres) {
     theme: {},
     SLIDE_TYPES: {},
     editorState: {},
-    nav: {},
     setSelectedSlideId: (id) => calls.selected.push(id),
     rerenderSlideList: () => calls.rerenders.push('list'),
     rerenderEditor: () => calls.rerenders.push('editor'),

@@ -21,6 +21,7 @@ import {
   handlePasteMarkdown,
 } from '../new-presentation/handlers.js';
 import { h } from '../../../../lib/dom.js';
+import { nav } from '../../../../lib/state/router.js';
 
 /**
  * @param {object} opts
@@ -167,7 +168,7 @@ export function createImportCompose({ onChange }) {
   // Import warnings render inline in their sub-panel, turning Create into "Open".
   const makeWarningShower = (
     panel_,
-    { setStatus, setBusy, btnAction, close, nav },
+    { setStatus, setBusy, btnAction, close },
   ) => {
     return ({ warnings, navUrl }) => {
       panel_.innerHTML = '';
@@ -194,7 +195,7 @@ export function createImportCompose({ onChange }) {
       btnAction.onclick = (e) => {
         e.preventDefault();
         close();
-        nav?.(navUrl);
+        nav(navUrl);
       };
     };
   };

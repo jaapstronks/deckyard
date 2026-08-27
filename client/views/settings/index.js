@@ -26,6 +26,7 @@ import {
   createSlideTypesTab,
   createApiKeysTab,
 } from './tabs/index.js';
+import { nav } from '../../lib/state/router.js';
 
 const DEFAULT_TAB = 'account';
 const DESIGNER_TABS = ['fonts', 'themes', 'slide-types'];
@@ -106,11 +107,10 @@ function setTabHash(tab) {
  * Render the settings page.
  * @param {HTMLElement} root - Root element
  * @param {Object} options
- * @param {Function} options.nav - Navigation function
  * @param {Object} options.user - Current user
  * @returns {Function|null} Cleanup function
  */
-export async function renderSettingsPage(root, { nav, user } = {}) {
+export async function renderSettingsPage(root, { user } = {}) {
   // Admin tabs follow the role held in the *active* organization, not the
   // instance-wide flag: switching to an organization where you are a plain
   // member must take the admin surfaces with it. See shared/organization-role.js.
@@ -142,7 +142,7 @@ export async function renderSettingsPage(root, { nav, user } = {}) {
     class: 'btn btn-secondary btn-icon',
     'aria-label': t('common.back', 'Back'),
     title: t('common.back', 'Back'),
-    onclick: () => nav?.('/app'),
+    onclick: () => nav('/app'),
   });
   const backIcon = h('span', { text: '\u2190' }); // ←
   backBtn.append(backIcon);
@@ -179,7 +179,7 @@ export async function renderSettingsPage(root, { nav, user } = {}) {
 
   // Always visible
   addTab('account', createAccountTab({ user }));
-  addTab('preferences', createPreferencesTab({ user, nav }));
+  addTab('preferences', createPreferencesTab({ user }));
   addTab('export', createExportTab({ user }));
 
   // Designer tabs

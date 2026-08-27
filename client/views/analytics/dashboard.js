@@ -11,15 +11,15 @@ import { createDashboardCards } from './dashboard-cards.js';
 import { createDashboardChart } from './dashboard-chart.js';
 import { createTopPresentations } from './top-presentations.js';
 import { createEmptyState } from '../../lib/dom/empty-state.js';
+import { nav } from '../../lib/state/router.js';
 
 /**
  * Render the combined analytics dashboard.
  * @param {HTMLElement} root - Root element
  * @param {Object} options - Options
- * @param {Function} options.nav - Navigation function
  * @returns {Promise<Function>} Cleanup function
  */
-export async function renderDashboard(root, { nav } = {}) {
+export async function renderDashboard(root) {
   document.documentElement.classList.add('is-analytics');
 
   // Create page wrapper with topbar
@@ -34,8 +34,7 @@ export async function renderDashboard(root, { nav } = {}) {
         class: 'dashboard-back-btn',
         onclick: (e) => {
           e.preventDefault();
-          if (nav) nav('/');
-          else window.location.href = '/';
+          nav('/');
         },
       },
       [
@@ -139,7 +138,6 @@ export async function renderDashboard(root, { nav } = {}) {
     const bottomRow = h('div', { class: 'dashboard-bottom-row' }, [
       createTopPresentations({
         presentations: dashboardData.topPresentations,
-        nav,
       }),
       createSourceBreakdown(),
     ]);

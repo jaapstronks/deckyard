@@ -33,15 +33,15 @@ import {
 import { createUserNotificationsSection } from '../sections/index.js';
 import { disableForSandbox } from '../sandbox-disable.js';
 import { createColorPicker } from '../theme-editor/color-picker.js';
+import { nav } from '../../../lib/state/router.js';
 
 /**
  * Create the preferences tab component.
  * @param {Object} options
  * @param {Object} options.user - Current user
- * @param {Function} options.nav - Navigation function
  * @returns {Object} { el, load }
  */
-export function createPreferencesTab({ user, nav }) {
+export function createPreferencesTab({ user }) {
   const container = h('div', {
     class: 'settings-tab-view',
     id: 'settings-tab-preferences',
@@ -633,9 +633,7 @@ export function createPreferencesTab({ user, nav }) {
       await setUiLocale(finalLocale);
 
       // Re-render current route (important if UI locale changed).
-      nav?.(
-        location.pathname + (location.search || '') + (location.hash || ''),
-      );
+      nav(location.pathname + (location.search || '') + (location.hash || ''));
     } catch (e) {
       toast.error(e, { id: 'settings-save' });
     } finally {

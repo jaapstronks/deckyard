@@ -295,6 +295,36 @@ const clientRestrictedSyntax = [
       "`import { h } from '…/lib/dom.js'`. It has one implementation and " +
       'threading it by hand is what A7.33 removed from ~200 files.',
   },
+  // Same shape, same singleton: `nav` is one exported function in
+  // `client/lib/state/router.js`, and it travelled as an option through 55
+  // files to reach 54 call sites in four spellings at once — `nav?.(x)`,
+  // `if (typeof nav === 'function') nav(x)`, `if (nav) nav(x)` and bare
+  // `nav(x)`. The optional chaining was not caution, it was the tell: three
+  // of the threading paths in `app.js` handed `{ nav }` to views that never
+  // destructured it, so `nav?.` was covering for a wire that was already cut
+  // (B150). Everything imports it now, so `nav` arriving as an argument is
+  // the fifth spelling starting over.
+  //
+  // Parameter- and destructuring-shaped rather than a whole-token identifier
+  // ban, because `nav` is also a legitimate *local* name for a `<nav>`
+  // element (`const nav = h('nav', …)` in list/sidebar.js, share-viewer and
+  // bulk-edit-modal). Those are plain declarators and stay legal; only taking
+  // or passing `nav` — the thing that can mean nothing but the router — is
+  // restricted. The allowlist is empty: `router.js` declares it as a function
+  // declaration, never a parameter.
+  {
+    selector:
+      ":function > Identifier.params[name='nav']," +
+      ":function > ObjectPattern.params > Property[key.name='nav']," +
+      ":function > AssignmentPattern.params > ObjectPattern > Property[key.name='nav']," +
+      "VariableDeclarator > ObjectPattern.id > Property[key.name='nav']," +
+      "ObjectExpression > Property[key.name='nav'][shorthand=true]",
+    message:
+      'Import `nav` from client/lib/state/router.js instead of taking or ' +
+      "passing it: `import { nav } from '…/lib/state/router.js'`. It is a " +
+      'module singleton and threading it by hand is what B150 removed from ' +
+      '55 files.',
+  },
   // The other half of A7.33: the overlay-closer set. It used to be the
   // optional 4th positional argument of openModal/confirmModal/promptModal and
   // travelled as ~200 pass-through lines through 55 files — and being

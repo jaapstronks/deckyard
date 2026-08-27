@@ -13,13 +13,13 @@ import { renderSlideElement } from '../../../lib/slide-runtime/slide-render.js';
 import { attachThumbScale } from '../../../lib/slide-runtime/thumb-scale.js';
 import { loadThemeById } from '../../../lib/theme/theme.js';
 import { h } from '../../../lib/dom.js';
+import { nav } from '../../../lib/state/router.js';
 
 /**
  * Create the home view with recent presentations and activity preview
  *
  * @param {object} opts
  * @param {Function} opts.api - API client
- * @param {Function} opts.nav - Navigation function
  * @param {Function} opts.renderCard - Card renderer function
  * @param {Function} opts.setView - View switcher function
  * @param {Array} opts.allByDate - All presentations sorted by date
@@ -35,7 +35,6 @@ import { h } from '../../../lib/dom.js';
  */
 export function createHomeView({
   api,
-  nav,
   renderCard,
   setView,
   allByDate,
@@ -52,7 +51,6 @@ export function createHomeView({
   // null for existing or dismissed users; persists progress so it survives the
   // jump from empty Home to populated Home.
   const onboardingChecklist = createOnboardingChecklist({
-    nav,
     allByDate,
     onCreate,
     api,
@@ -79,7 +77,7 @@ export function createHomeView({
           primaryLabel: t('sandbox.home.create', 'New presentation'),
           onPrimary: onCreate,
         }),
-        createSandboxExamplesSection({ api, nav, detachThumbs }),
+        createSandboxExamplesSection({ api, detachThumbs }),
       );
     } else {
       homeView.append(
@@ -235,7 +233,7 @@ export function createHomeView({
     // / the activity rail — a throwaway guest has no library, no popularity
     // signal, and no collaborators, so those sections are permanently empty.
     homeMain.append(
-      createSandboxExamplesSection({ api, nav, detachThumbs }),
+      createSandboxExamplesSection({ api, detachThumbs }),
       homeRecentSection,
     );
     homeColumns.append(homeMain);
@@ -318,7 +316,7 @@ export function createHomeView({
       } else {
         for (const bundle of bundles) {
           homeActivityList.append(
-            renderActivityPreviewItem(nav, bundle, detachThumbs),
+            renderActivityPreviewItem(bundle, detachThumbs),
           );
         }
         homeActivitySection.append(homeActivityList);
@@ -650,16 +648,15 @@ function bundleActivityEvents(events) {
 /**
  * Render a single (possibly bundled) activity preview item.
  *
- * @param {Function} nav
  * @param {{event: object, count: number}} bundle
  * @param {Array<Function>} [detachThumbs] - collector for thumb cleanup fns
  */
-function renderActivityPreviewItem(nav, { event, count }, detachThumbs) {
+function renderActivityPreviewItem({ event, count }, detachThumbs) {
   const item = h('div', {
     class: 'home-activity-item',
     onclick: () => {
       if (event.presentationId) {
-        nav?.(`/app/${event.presentationId}`);
+        nav(`/app/${event.presentationId}`);
       }
     },
   });

@@ -25,12 +25,12 @@ import { createUserMenu } from '../../lib/user/user-menu.js';
 import { createNotificationBell } from '../../lib/user/notification-bell.js';
 import { icon } from '../../lib/dom/icons.js';
 import { h } from '../../lib/dom.js';
+import { nav } from '../../lib/state/router.js';
 
 export function createEditorTopbar({
   api,
   toast,
   root,
-  nav,
   pres,
   theme,
   id,
@@ -259,7 +259,6 @@ export function createEditorTopbar({
 
   const userMenu = createUserMenu({
     user,
-    nav,
     onLogout: () => logout(),
   });
   detachers.push(userMenu.detach);
@@ -270,7 +269,6 @@ export function createEditorTopbar({
 
   const notificationBell = createNotificationBell({
     api,
-    onNavigate: (path) => nav?.(path),
   });
   detachers.push(notificationBell.detach);
 
@@ -287,7 +285,6 @@ export function createEditorTopbar({
     requestSave,
     isDirty,
     onError,
-    nav,
     onTranslateOther: languageMode.translateOtherLanguage,
     canTranslate: languageMode.canTranslate(),
     onVersions: () =>
@@ -322,7 +319,7 @@ export function createEditorTopbar({
     type: 'button',
     title: t('editor.analytics', 'Analytics'),
     'aria-label': t('editor.analytics', 'Analytics'),
-    onclick: () => nav?.(`/analytics/${id}`),
+    onclick: () => nav(`/analytics/${id}`),
   });
   btnAnalytics.append(icon('chart-column', { size: 16 }));
 
@@ -477,7 +474,7 @@ export function createEditorTopbar({
     class: 'ghost-icon-btn topbar-back-btn',
     'aria-label': t('common.back', 'Back'),
     title: t('common.back', 'Back'),
-    onclick: () => nav?.('/app'),
+    onclick: () => nav('/app'),
   });
   backBtn.append(icon('arrow-left', { size: 16 }));
 

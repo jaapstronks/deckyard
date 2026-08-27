@@ -4,8 +4,9 @@ import { t } from '../lib/ui-i18n.js';
 import { me } from '../lib/user/auth.js';
 import { spinner } from '../lib/dom/spinner.js';
 import { authShell } from './auth-shell.js';
+import { nav } from '../lib/state/router.js';
 
-export async function renderMagicLogin(root, { nav } = {}) {
+export async function renderMagicLogin(root) {
   const url = new URL(location.href);
   const returnToRaw = url.searchParams.get('returnTo') || '';
   const returnTo =
@@ -46,7 +47,7 @@ export async function renderMagicLogin(root, { nav } = {}) {
     });
     loginLink.onclick = (e) => {
       e.preventDefault();
-      nav?.('/login');
+      nav('/login');
     };
     card.append(loginLink);
     return;
@@ -88,9 +89,9 @@ export async function renderMagicLogin(root, { nav } = {}) {
       // Verify session and navigate
       try {
         await me();
-        setTimeout(() => nav?.(returnTo), 500);
+        setTimeout(() => nav(returnTo), 500);
       } catch {
-        nav?.(returnTo);
+        nav(returnTo);
       }
     } else {
       // Token invalid or expired
@@ -117,7 +118,7 @@ export async function renderMagicLogin(root, { nav } = {}) {
       });
       loginLink.onclick = (e) => {
         e.preventDefault();
-        nav?.('/login');
+        nav('/login');
       };
       card.append(loginLink);
     }
@@ -142,7 +143,7 @@ export async function renderMagicLogin(root, { nav } = {}) {
     });
     loginLink.onclick = (e) => {
       e.preventDefault();
-      nav?.('/login');
+      nav('/login');
     };
     card.append(loginLink);
   }

@@ -5,6 +5,7 @@ import { renderSlideElement } from '../../../lib/slide-runtime/slide-render.js';
 import { attachThumbScale } from '../../../lib/slide-runtime/thumb-scale.js';
 import { loadThemeById } from '../../../lib/theme/theme.js';
 import { h } from '../../../lib/dom.js';
+import { nav } from '../../../lib/state/router.js';
 
 /**
  * Sandbox "Example presentations" shelf.
@@ -18,11 +19,10 @@ import { h } from '../../../lib/dom.js';
  *
  * @param {object} opts
  * @param {Function} opts.api - API client
- * @param {Function} opts.nav - Navigation function
  * @param {Array<Function>} [opts.detachThumbs] - collector for thumb cleanup fns
  * @returns {HTMLElement} the section element (loads its content asynchronously)
  */
-export function createSandboxExamplesSection({ api, nav, detachThumbs }) {
+export function createSandboxExamplesSection({ api, detachThumbs }) {
   const section = h('div', {
     class: 'presentation-section sandbox-examples',
     'data-section': 'sandbox-examples',
@@ -64,7 +64,7 @@ export function createSandboxExamplesSection({ api, nav, detachThumbs }) {
         body: JSON.stringify({ deck: example.deck, lang }),
       });
       if (created?.id) {
-        nav?.(
+        nav(
           `/app/${created.id}?lang=${encodeURIComponent(created.lang || lang)}`,
         );
       } else {
