@@ -1,6 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isInsertableSlideType } from '../shared/slide-types/policy.js';
+import {
+  isInsertableSlideType,
+  getThemeSlideTypeConfig,
+} from '../shared/slide-types/policy.js';
 import { SLIDE_TYPES, renderSlideHtml } from '../shared/slide-types.js';
 import { normalizeTheme } from '../shared/theme-normalize.js';
 
@@ -206,5 +209,25 @@ test('custom-html requires the capability', () => {
       canEditCustomHtml: true,
     }),
     true,
+  );
+});
+
+test('exclude/include entries are normalized: a stray space still excludes', () => {
+  // The one behaviour change of the B177 fold: the server used to take the
+  // theme's exclude/include arrays raw, so `" quote-slide"` hid the type in
+  // the editor while the theme-change analysis called it compatible. The fold
+  // resolved that toward the normalizing side — this pins it there. If this
+  // starts failing, a reader grew a raw read path again.
+  const { exclude } = getThemeSlideTypeConfig({
+    slideTypes: { exclude: [' quote-slide', 'quote-slide ', ''] },
+  });
+  assert.deepEqual([...exclude], ['quote-slide'], 'trimmed and deduped');
+  assert.equal(
+    isInsertableSlideType({
+      type: 'quote-slide',
+      def: { label: 'Quote' },
+      theme: { id: 'x', slideTypes: { exclude: [' quote-slide'] } },
+    }),
+    false,
   );
 });
