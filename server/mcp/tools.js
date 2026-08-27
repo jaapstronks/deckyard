@@ -291,7 +291,7 @@ export function registerTools(
         globalOptions: GLOBAL_SLIDE_OPTIONS,
       };
     },
-    { readOnly: true },
+    { readOnly: true, permission: 'read' },
   );
 
   // ─── list_presentations ─────────────────────────────────────────────────
@@ -379,7 +379,7 @@ export function registerTools(
         ownership: validOwnership,
       };
     },
-    { readOnly: true },
+    { readOnly: true, permission: 'read' },
   );
 
   // ─── get_presentation ───────────────────────────────────────────────────
@@ -415,7 +415,7 @@ export function registerTools(
         slideCount: pres.slides?.length || 0,
       };
     },
-    { readOnly: true },
+    { readOnly: true, permission: 'read' },
   );
 
   // ─── create_presentation ────────────────────────────────────────────────
@@ -533,6 +533,7 @@ export function registerTools(
       if (presentUrl) result.presentUrl = presentUrl;
       return result;
     },
+    { permission: 'ai' },
   );
 
   // ─── create_presentation_from_slides ────────────────────────────────────
@@ -728,6 +729,7 @@ export function registerTools(
       if (validation === 'fix') result.appliedFixes = appliedFixes;
       return result;
     },
+    { permission: 'write' },
   );
 
   // ─── update_slide ───────────────────────────────────────────────────────
@@ -789,6 +791,7 @@ export function registerTools(
         content: slide.content,
       };
     },
+    { permission: 'write' },
   );
 
   // ─── add_slide ──────────────────────────────────────────────────────────
@@ -851,6 +854,7 @@ export function registerTools(
         totalSlides: pres.slides.length,
       };
     },
+    { permission: 'write' },
   );
 
   // ─── convert_slide ──────────────────────────────────────────────────────
@@ -911,6 +915,7 @@ export function registerTools(
         content: slide.content,
       };
     },
+    { permission: 'ai' },
   );
 
   // ─── iterate_presentation ───────────────────────────────────────────────
@@ -972,6 +977,7 @@ export function registerTools(
         totalSlides: pres.slides.length,
       };
     },
+    { permission: 'ai' },
   );
 
   // ─── validate_presentation ──────────────────────────────────────────────
@@ -1019,7 +1025,7 @@ export function registerTools(
         isValid: warnings.length === 0,
       };
     },
-    { readOnly: true },
+    { readOnly: true, permission: 'read' },
   );
 
   // ─── list_themes ────────────────────────────────────────────────────────
@@ -1051,7 +1057,7 @@ export function registerTools(
 
       return { themes };
     },
-    { readOnly: true },
+    { readOnly: true, permission: 'read' },
   );
 
   // ─── delete_presentation ────────────────────────────────────────────────
@@ -1092,6 +1098,7 @@ export function registerTools(
       });
       return { deleted: true, id: presentationId };
     },
+    { permission: 'write' },
   );
 
   // ─── remove_slide ───────────────────────────────────────────────────────
@@ -1136,6 +1143,7 @@ export function registerTools(
         totalSlides: pres.slides.length,
       };
     },
+    { permission: 'write' },
   );
 
   // ─── reorder_slides ─────────────────────────────────────────────────────
@@ -1181,6 +1189,7 @@ export function registerTools(
         to: toIndex,
       };
     },
+    { permission: 'write' },
   );
 
   // ─── append_slides ──────────────────────────────────────────────────────
@@ -1265,6 +1274,7 @@ export function registerTools(
         })),
       };
     },
+    { permission: 'ai' },
   );
 
   // ─── compress_presentation ──────────────────────────────────────────────
@@ -1328,6 +1338,7 @@ export function registerTools(
         slidesAfter: apply ? pres.slides.length : undefined,
       };
     },
+    { permission: 'ai' },
   );
 
   // ─── analyze_presentation ───────────────────────────────────────────────
@@ -1373,7 +1384,7 @@ export function registerTools(
         })),
       };
     },
-    { readOnly: true },
+    { readOnly: true, permission: 'ai' },
   );
 
   // ─── duplicate_presentation ─────────────────────────────────────────────
@@ -1413,6 +1424,7 @@ export function registerTools(
       if (url) result.editUrl = url;
       return result;
     },
+    { permission: 'write' },
   );
 
   // ─── get_presentation_url ───────────────────────────────────────────────
@@ -1451,7 +1463,7 @@ export function registerTools(
         presentUrl: presentationUrl(presentationId, 'present'),
       };
     },
-    { readOnly: true },
+    { readOnly: true, permission: 'read' },
   );
 
   // ─── export_presentation ────────────────────────────────────────────────
@@ -1516,10 +1528,15 @@ export function registerTools(
         note: 'Open this URL in a browser signed in to Deckyard to download the file. PDF/PPTX/PNG are rendered on demand and may take a few seconds for large decks.',
       };
     },
-    { readOnly: true },
+    { readOnly: true, permission: 'export' },
   );
 
   // ─── preview_slide ──────────────────────────────────────────────────────
+  //
+  // Both preview tools require `read`, not `export`: they render content the
+  // key can already fetch with get_presentation, and they produce no file and
+  // no download. The `export` permission guards the export endpoints and their
+  // daily budget, which a preview does not spend.
 
   server.tool(
     'preview_slide',
@@ -1557,7 +1574,7 @@ export function registerTools(
       // Return HTML directly as text — Claude Desktop will render it as an artifact
       return html;
     },
-    { readOnly: true },
+    { readOnly: true, permission: 'read' },
   );
 
   // ─── preview_presentation ───────────────────────────────────────────────
@@ -1612,7 +1629,7 @@ export function registerTools(
       // Return HTML directly as text — Claude Desktop will render it as an artifact
       return html;
     },
-    { readOnly: true },
+    { readOnly: true, permission: 'read' },
   );
 
   // ─── list_comments ──────────────────────────────────────────────────────
@@ -1700,7 +1717,7 @@ export function registerTools(
         total: enriched.length,
       };
     },
-    { readOnly: true },
+    { readOnly: true, permission: 'comments:read' },
   );
 
   // ─── list_recent_comments ───────────────────────────────────────────────
@@ -1804,7 +1821,7 @@ export function registerTools(
         ownerFilter: owner || null,
       };
     },
-    { readOnly: true },
+    { readOnly: true, permission: 'comments:read' },
   );
 
   // ─── comment write tools (shared plumbing) ──────────────────────────────
@@ -1941,6 +1958,7 @@ export function registerTools(
         { presentationId, body, slideId: slideId || null },
         context,
       ),
+    { permission: 'comments:write' },
   );
 
   // ─── reply_to_comment ───────────────────────────────────────────────────
@@ -1980,6 +1998,7 @@ export function registerTools(
 
       return createCommentAsActor({ presentationId, body, parentId }, context);
     },
+    { permission: 'comments:write' },
   );
 
   // ─── set_comment_status ─────────────────────────────────────────────────
@@ -2071,6 +2090,7 @@ export function registerTools(
 
       return { ok: true, comment: result.comment };
     },
+    { permission: 'comments:write' },
   );
 
   // ─── custom tools (fork extension seam) ─────────────────────────────────

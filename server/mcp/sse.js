@@ -6,8 +6,9 @@
  * - GET  /mcp  → SSE stream for server-initiated messages (future)
  * - DELETE /mcp → Close session
  *
- * Authentication via Bearer token (Deckyard API keys: dk_live_*).
- * Rate limiting and usage tracking via existing API key infrastructure.
+ * Authentication via Bearer token (Deckyard API keys: dk_live_*). The key is
+ * revalidated on every request; its permissions and quota are enforced per
+ * tool call in ./authorization.js, against the same counters `/api/v1` uses.
  *
  * This module exports a handler function to be mounted on the main
  * Deckyard HTTP server — no separate process needed.
@@ -32,9 +33,11 @@ const sessions = new Map();
  * @typedef {Object} Session
  * @property {string} id
  * @property {string} ownerEmail
- * @property {string} keyId - API key ID for rate limiting
- * @property {string[]} permissions
- * @property {string} tier
+ * @property {string} keyId - API key ID this session was opened with; the
+ *   session only remembers who it belongs to. Permissions, tier and quota are
+ *   read off the freshly validated key on every request, so a key that is
+ *   downgraded or revoked loses its reach immediately instead of at session
+ *   expiry.
  * @property {number} createdAt
  * @property {number} lastActiveAt
  * @property {import('node:http').ServerResponse|null} sseResponse - Active SSE stream (if any)
@@ -48,8 +51,6 @@ function createSession(apiKey) {
     // A machine client acts in the organization its key belongs to.
     organizationId: apiKey.organizationId ?? null,
     keyId: apiKey.id,
-    permissions: apiKey.permissions,
-    tier: apiKey.tier || 'free',
     createdAt: Date.now(),
     lastActiveAt: Date.now(),
     sseResponse: null,
@@ -303,11 +304,16 @@ async function handlePost(server, req, res, basePath) {
     session = null;
   }
 
-  // Build per-request context for tool handlers
+  // Build per-request context for tool handlers. The acting key is carried
+  // whole so the scope/quota gate in ./authorization.js judges the key that
+  // authenticated *this* request, not a copy frozen at session start.
   const context = {
     ownerEmail: session?.ownerEmail || auth.apiKey.ownerEmail,
-    permissions: session?.permissions || auth.apiKey.permissions,
-    tier: session?.tier || auth.apiKey.tier || 'free',
+    apiKey: {
+      id: auth.apiKey.id,
+      tier: auth.apiKey.tier || 'free',
+      permissions: auth.apiKey.permissions,
+    },
     transport: 'sse',
   };
 

@@ -9,6 +9,7 @@ import {
   MaintenanceWriteError,
   assertWritable,
 } from '../config/maintenance.js';
+import { enforceToolPolicy, isToolVisible } from './authorization.js';
 
 const PROTOCOL_VERSION = '2024-11-05';
 const SERVER_NAME = 'deckyard';
@@ -28,6 +29,24 @@ export function jsonRpcError(id, code, message, data) {
   const error = { code, message };
   if (data !== undefined) error.data = data;
   return JSON.stringify({ jsonrpc: '2.0', id, error });
+}
+
+/**
+ * Create a failed tool result.
+ *
+ * A tool that refuses (policy) or throws (execution) answers protocol-cleanly:
+ * a successful JSON-RPC response carrying `isError`, not a JSON-RPC error and
+ * not an HTTP status — see `docs/reference/api-error-format.md` § 401 versus 403.
+ *
+ * @param {string|number} id - JSON-RPC request id
+ * @param {string} message - Human-readable reason, shown to the calling agent
+ * @returns {string} JSON-RPC response string
+ */
+function toolError(id, message) {
+  return jsonRpcResponse(id, {
+    content: [{ type: 'text', text: `Error: ${message}` }],
+    isError: true,
+  });
 }
 
 /**
@@ -110,8 +129,19 @@ export class McpServer {
    *   are treated as writes and refused while maintenance is active — fail
    *   closed, so a new (or fork-registered custom) tool that forgets the flag
    *   is blocked rather than slipping past the write-gate.
+   * @param {string} [options.permission] - The API-key permission this tool
+   *   needs, from `AVAILABLE_PERMISSIONS` (`server/storage/api-keys.js`) — the
+   *   same one its `/api/v1` counterpart requires, so a key means the same
+   *   thing on both transports. Fail closed as well: a keyed caller cannot
+   *   reach a tool that declares no permission (see ./authorization.js).
    */
-  tool(name, description, inputSchema, handler, { readOnly = false } = {}) {
+  tool(
+    name,
+    description,
+    inputSchema,
+    handler,
+    { readOnly = false, permission = null } = {},
+  ) {
     const { inputSchema: schema, handler: wrapped } = withPresentationIdAlias(
       inputSchema,
       handler,
@@ -122,6 +152,7 @@ export class McpServer {
       inputSchema: schema,
       handler: wrapped,
       readOnly,
+      permission,
     });
   }
 
@@ -162,7 +193,7 @@ export class McpServer {
         return this._handleInitialize(id, params);
 
       case 'tools/list':
-        return this._handleToolsList(id);
+        return this._handleToolsList(id, context);
 
       case 'tools/call':
         return this._handleToolsCall(id, params, context);
@@ -200,9 +231,12 @@ export class McpServer {
     });
   }
 
-  _handleToolsList(id) {
+  _handleToolsList(id, context) {
     const tools = [];
     for (const tool of this.tools.values()) {
+      // Don't advertise what this key may not call — the enforcing gate is
+      // _handleToolsCall; this only keeps the menu honest.
+      if (!isToolVisible(tool, context)) continue;
       const entry = {
         name: tool.name,
         description: tool.description,
@@ -227,6 +261,14 @@ export class McpServer {
 
     const tool = this.tools.get(name);
 
+    // Permission + quota gate — the MCP spelling of v1's requirePermission and
+    // its rate limiters, so one API key may do the same things on both
+    // transports and spends one set of counters doing them (./authorization.js).
+    const policy = await enforceToolPolicy(tool, context);
+    if (!policy.ok) {
+      return toolError(id, policy.message);
+    }
+
     // Maintenance write-gate — the same choke-point the HTTP API dispatcher
     // goes through (server/routes/api/index.js). A mutating tool call is a
     // write; refuse it protocol-cleanly (a tool error result, not a raw 503)
@@ -236,15 +278,10 @@ export class McpServer {
         assertWritable();
       } catch (err) {
         if (!(err instanceof MaintenanceWriteError)) throw err;
-        return jsonRpcResponse(id, {
-          content: [
-            {
-              type: 'text',
-              text: `Error: ${err.message} Writes are refused until maintenance ends; retry in ${err.retryAfter} seconds. Read tools keep working.`,
-            },
-          ],
-          isError: true,
-        });
+        return toolError(
+          id,
+          `${err.message} Writes are refused until maintenance ends; retry in ${err.retryAfter} seconds. Read tools keep working.`,
+        );
       }
     }
 
@@ -262,15 +299,7 @@ export class McpServer {
         ],
       });
     } catch (err) {
-      return jsonRpcResponse(id, {
-        content: [
-          {
-            type: 'text',
-            text: `Error: ${err.message}`,
-          },
-        ],
-        isError: true,
-      });
+      return toolError(id, err.message);
     }
   }
 
