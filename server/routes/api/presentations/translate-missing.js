@@ -38,8 +38,7 @@ export async function handlePresentationTranslateMissing(
   const vendor = getOptionalString(body, 'vendor');
   const pres = await getPresentation(storageScope, id);
   if (!pres) return notFound(res);
-  if (!canWritePresentation({ user: authedUser, pres }))
-    return forbidden(res);
+  if (!canWritePresentation({ user: authedUser, pres })) return forbidden(res);
 
   pres.i18n = pres.i18n && typeof pres.i18n === 'object' ? pres.i18n : {};
   pres.i18n.versions =

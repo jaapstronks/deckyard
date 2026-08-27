@@ -38,8 +38,7 @@ async function handleQuestionRemove(
   // accidental abuse. Admin *of the workspace this deck lives in* — an
   // instance admin who is a plain member of the active organization is not a
   // moderator here (shared/organization-role.js).
-  if (!isOrganizationAdmin(authedUser))
-    return forbidden(res, 'Admin required');
+  if (!isOrganizationAdmin(authedUser)) return forbidden(res, 'Admin required');
 
   const state = await getFollowStateForPresentation(
     storageScope,

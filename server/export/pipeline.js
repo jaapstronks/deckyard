@@ -1,11 +1,6 @@
 import { safeFilename } from '../utils/filename.js';
 import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
-import {
-  jsonError,
-  notFound,
-  serveJson,
-  forbidden,
-} from '../utils/http.js';
+import { jsonError, notFound, serveJson, forbidden } from '../utils/http.js';
 import { isAppError } from '../utils/errors.js';
 import { createLogger } from '../utils/logger.js';
 import { getPresentation } from '../storage/presentations/index.js';

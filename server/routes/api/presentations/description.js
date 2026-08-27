@@ -88,8 +88,7 @@ export async function handlePresentationDescriptionGenerate(
 
   const pres = await getPresentation(storageScope, id);
   if (!pres) return notFound(res);
-  if (!canReadPresentation({ user: authedUser, pres }))
-    return forbidden(res);
+  if (!canReadPresentation({ user: authedUser, pres })) return forbidden(res);
 
   const lang = normalizeLangHint(
     (pres?.i18n && typeof pres.i18n === 'object' && pres.i18n.active) ||

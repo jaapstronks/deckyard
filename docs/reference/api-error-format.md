@@ -60,7 +60,7 @@ Concretely: an authorization guard that asks _"may this caller do X?"_ answers
 `forbidden(res)`, never `unauthorized(res)`. The single login gate in
 `server/routes/api/index.js` answers 401 for anyone with no identity, so every
 guard below it is judging a caller who is already identified. Only the routes
-mounted *above* that gate (login, password reset, magic link, SSO, and the
+mounted _above_ that gate (login, password reset, magic link, SSO, and the
 public audience endpoints) produce a 401 of their own.
 
 The same split holds on the other two surfaces. The public `/api/v1` layer

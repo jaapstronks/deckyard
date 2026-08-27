@@ -11,11 +11,7 @@
 
 import { getPresentation } from '../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../storage/collaborators.js';
-import {
-  notFound,
-  badRequest,
-  forbidden,
-} from './http.js';
+import { notFound, badRequest, forbidden } from './http.js';
 import {
   canReadPresentation,
   canWritePresentation,

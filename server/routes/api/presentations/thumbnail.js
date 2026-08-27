@@ -30,11 +30,7 @@ import {
   scheduleThumbnailWarm,
   warmOnSaveEnabled,
 } from '../../../render/thumbnail-warm-queue.js';
-import {
-  methodNotAllowed,
-  notFound,
-  forbidden,
-} from '../../../utils/http.js';
+import { methodNotAllowed, notFound, forbidden } from '../../../utils/http.js';
 
 /**
  * Warm the deck-grid thumbnail cache for a presentation (fire-and-forget).
