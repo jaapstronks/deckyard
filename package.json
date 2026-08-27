@@ -23,6 +23,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "audit": "node scripts/audit-codebase.js",
+    "new:slide-type": "node scripts/new-slide-type.js",
     "gen:slide-authoring": "node scripts/generate-slide-authoring-aggregator.js",
     "gen:slide-ai": "node scripts/generate-slide-ai-aggregator.js",
     "gen:slide-inline-edit": "node scripts/generate-slide-inline-edit-aggregator.js",

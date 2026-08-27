@@ -92,6 +92,24 @@ const NAMESPACE_RE = new RegExp(`^${NAMESPACE_SRC}$`);
 const VERSION_RE = new RegExp(`^${VERSION_SRC}$`);
 
 /**
+ * Whether `ns` is a usable namespace: a kebab segment (`acme`) or a reverse-DNS
+ * authority (`nl.example.slide`).
+ *
+ * Exported because the grammar had a second spelling: `registry.js` carried its
+ * own `NAMESPACE_SEGMENT_RE` with the same source, to decide whether a fork's
+ * declared `namespace` earns a canonical id or falls back to `custom`. Two
+ * regexes for one rule is one that will drift; this module owns the grammar, so
+ * the predicate lives here and the registry and the definition validator both
+ * ask it.
+ *
+ * @param {string} ns
+ * @returns {boolean}
+ */
+export function isValidNamespace(ns) {
+  return typeof ns === 'string' && NAMESPACE_RE.test(ns);
+}
+
+/**
  * The whole grammar as a single JSON-Schema-compatible `pattern`, for the
  * published deck schema's `slide.type`.
  *

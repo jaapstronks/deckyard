@@ -81,12 +81,35 @@ back on import.
 
 ## Quick Start: Adding a Custom Slide Type
 
+### 0. Or let the scaffolder write it
+
+```sh
+npm run new:slide-type -- acme-hero-slide
+```
+
+It asks for a label and a field list (both have working defaults), writes
+`custom/slide-types/acme-hero-slide.js` and a scoped stylesheet stub in
+`custom/styles/`, and then **validates what it wrote** before reporting success
+— so a scaffolded type is valid on creation, with the import path, the field
+vocabulary and the defaults already right. Useful flags:
+
+| Flag                                      | What it does                           |
+| ----------------------------------------- | -------------------------------------- |
+| `--label "Acme hero"`                     | the name shown in the picker           |
+| `--fields "heading:string,body:markdown"` | the initial field list                 |
+| `--theme-id acme-corp`                    | bind the type to a theme               |
+| `--namespace acme`                        | claim a fork namespace for the type id |
+| `--no-css`                                | skip the stylesheet stub               |
+| `--yes`                                   | never prompt (scripts, CI)             |
+
+The rest of this section is the same thing by hand.
+
 ### 1. Create the slide type file
 
 Create `custom/slide-types/my-title-slide.js`:
 
 ```javascript
-import { bgClass, esc } from '../shared/slide-types/helpers.js';
+import { bgClass, escapeHtml } from '../../shared/slide-types/helpers.js';
 
 export default {
   themeId: 'my-theme', // Optional: tie to a specific theme
@@ -129,8 +152,8 @@ export default {
     return `
       <div class="slide slide-my-title ${bg}">
         <div class="slide-inner">
-          <h1>${esc(content?.title)}</h1>
-          <p>${esc(content?.subheading)}</p>
+          <h1>${escapeHtml(content?.title)}</h1>
+          <p>${escapeHtml(content?.subheading)}</p>
         </div>
       </div>
     `;
@@ -140,17 +163,54 @@ export default {
 
 ### 2. Add CSS (optional)
 
-There is no separate stylesheet seam for custom types yet: everything under
-`client/styles/slides/` is core-owned and its aggregators are generated, so a
-fork-added file there would be tracked, unloaded, and a merge conflict waiting
-to happen. Instead, put the type's styles inline in `renderHtml` — a `<style>`
-element scoped to your type's own class. Inline styles travel with the type
-through every render path (editor preview, presenter, exports) without
-patching core files.
+Put it in **`custom/styles/`**, the fork CSS seam. Files there are read in
+filename order (`00-…` before `10-…`) and concatenated after all core CSS, on
+every render path — the editor, the presenter, exports, embeds — so a rule
+there can override anything without a core-file patch. There is no `@import`
+to add: the directory is globbed. See `server/utils/css-chain.js`.
+
+Do **not** add a file under `client/styles/slides/`: that tree is core-owned,
+its aggregators are generated, and a fork-added file there is a merge conflict
+waiting to happen.
+
+Nest every selector under your type's own root class, so the stylesheet cannot
+reach deck chrome or another type's slides:
+
+```css
+/* custom/styles/10-acme-hero-slide.css */
+.slide-acme-hero .slide-inner {
+  gap: 0.5em;
+}
+```
+
+Styles that must travel with the type even outside this install (a type you
+ship elsewhere) still belong inline in `renderHtml`, in a `<style>` element
+scoped to the same class.
 
 ### 3. Restart the server
 
 Your new slide type appears in the editor slide picker.
+
+**The loader validates every file it imports.** `validateSlideTypeDefinition()`
+(`shared/slide-types/validate-definition.js`) checks the definition — not a
+slide's content, the _schema itself_ — and prints a per-file report at startup:
+
+- **Errors** mean the type is **refused**: it does not enter the registry, and
+  the report says why. A missing or non-function `renderHtml`, a `field.type`
+  outside the declared vocabulary, an `enum` with no options, duplicate field
+  keys, a function value inside `inline`. Each of
+  these used to load fine and fail per slide at render time — in front of an
+  audience — so it now fails at boot instead. One bad file is skipped; the
+  server keeps serving every other deck.
+- **Warnings** leave the type registered but say what is being ignored: a field
+  shadowing a global one, an invalid `namespace` (it falls back to `custom`), a
+  `labelField` naming nothing (the outline label falls back), a default for a
+  field that does not exist, a required field without a default, an `ai` block
+  that will be dropped.
+
+The same function runs in `npm test`
+(`tests/custom-slide-type-validity.test.js`), so a fork can validate its types
+in CI without booting a server.
 
 ### 4. Its companions elsewhere
 
@@ -743,11 +803,11 @@ renderHtml: (content, slide, ctx) => `
 ### Security: Always Escape User Content
 
 ```javascript
-import { esc } from '../shared/slide-types/helpers.js';
-import { markdownToSafeHtml } from '../shared/markdown.js';
+import { escapeHtml } from '../../shared/slide-types/helpers.js';
+import { markdownToSafeHtml } from '../../shared/markdown.js';
 
 renderHtml: (content) => `
-  <h1>${esc(content?.title)}</h1>
+  <h1>${escapeHtml(content?.title)}</h1>
   <div class="body">${markdownToSafeHtml(content?.body)}</div>
 `;
 ```
@@ -889,8 +949,8 @@ All `custom/` directories are gitignored in the OSS repo. They persist through u
 `custom/slide-types/acme-hero-slide.js`:
 
 ```javascript
-import { bgClass, esc } from '../shared/slide-types/helpers.js';
-import { markdownToSafeHtml } from '../shared/markdown.js';
+import { bgClass, escapeHtml } from '../../shared/slide-types/helpers.js';
+import { markdownToSafeHtml } from '../../shared/markdown.js';
 
 export default {
   // Tie to Acme theme
@@ -944,10 +1004,10 @@ export default {
     return `
       <div class="slide slide-acme-hero ${bg}">
         <div class="slide-inner">
-          <h1 class="hero-headline">${esc(content?.headline)}</h1>
-          ${content?.subheadline ? `<p class="hero-subheadline">${esc(content.subheadline)}</p>` : ''}
+          <h1 class="hero-headline">${escapeHtml(content?.headline)}</h1>
+          ${content?.subheadline ? `<p class="hero-subheadline">${escapeHtml(content.subheadline)}</p>` : ''}
           ${content?.body ? `<div class="hero-body">${markdownToSafeHtml(content.body)}</div>` : ''}
-          ${content?.ctaText ? `<button class="hero-cta">${esc(content.ctaText)}</button>` : ''}
+          ${content?.ctaText ? `<button class="hero-cta">${escapeHtml(content.ctaText)}</button>` : ''}
         </div>
       </div>
     `;

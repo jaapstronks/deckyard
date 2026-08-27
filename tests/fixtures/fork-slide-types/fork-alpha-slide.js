@@ -17,6 +17,10 @@
  * Keep the fields renderable-as-settings (string/enum, no `inline`): the audit
  * asserts every kept field surfaces somewhere in the inspector DOM, so a
  * bulk-modal-only field here would be a fixture bug, not a real finding.
+ *
+ * The bareness stops at `renderHtml`: every file-JS type needs one, and
+ * `tests/custom-slide-type-validity.test.js` asserts these fixtures validate
+ * clean, so a fixture without it would model a shape the loader refuses.
  */
 
 export default {
@@ -31,4 +35,10 @@ export default {
     },
   ],
   defaults: { heading: '', accent: 'calm' },
+  // Minimal but present: a definition without `renderHtml` registers and then
+  // renders the archived-slide placeholder for every slide of the type, which
+  // is exactly the silent break `validateSlideTypeDefinition()` now refuses.
+  // Kept content-free so this fixture stays import-free (escaping a content
+  // value needs `escapeHtml` — see payoff-slide.js, which owns that job).
+  renderHtml: () => '<div class="slide fork-alpha"></div>',
 };

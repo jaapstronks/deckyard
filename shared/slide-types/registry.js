@@ -38,6 +38,7 @@ import {
   SLIDE_NAME_SUFFIX,
   canonicalTypeName,
   formatCanonicalId,
+  isValidNamespace,
   tryParseTypeId,
 } from './type-id.js';
 
@@ -45,8 +46,9 @@ import {
 // authority (`nl.ciiic.slide`); anything else falls back to the generic
 // `custom` namespace so a malformed declaration can't produce an invalid type
 // id. Declaring an authority is what earns a fork a canonical reverse-DNS id
-// instead of the slash form — see formatCanonicalId().
-const NAMESPACE_SEGMENT_RE = /^[a-z0-9][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*)*$/;
+// instead of the slash form — see formatCanonicalId(). The grammar itself is
+// type-id.js's (isValidNamespace); this file used to carry a second copy of the
+// same regex.
 const DEFAULT_CUSTOM_NAMESPACE = 'custom';
 
 // Detect if we're running in Node.js (has process.versions.node)
@@ -314,7 +316,12 @@ const CORE_SLIDE_TYPES = {
 let customTypes = {};
 if (isNode) {
   const { loadCustomSlideTypes } = await import('./custom-loader.js');
-  customTypes = await loadCustomSlideTypes();
+  // GLOBAL_SLIDE_FIELD_KEYS travels as an argument rather than an import: the
+  // loader is reached from here mid-evaluation, so importing back would be a
+  // cycle. See validate-definition.js.
+  customTypes = await loadCustomSlideTypes({
+    globalFieldKeys: GLOBAL_SLIDE_FIELD_KEYS,
+  });
 }
 
 /**
@@ -487,7 +494,7 @@ function slideTypeIdentityFor(name) {
   if (custom && isAppliedCustom) {
     const declared =
       typeof custom.namespace === 'string' ? custom.namespace : '';
-    const namespace = NAMESPACE_SEGMENT_RE.test(declared)
+    const namespace = isValidNamespace(declared)
       ? declared
       : DEFAULT_CUSTOM_NAMESPACE;
     return {
