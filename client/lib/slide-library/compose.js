@@ -6,10 +6,11 @@
  * view and the creation view's "From the library" panel go through here so the
  * two paths can't drift again.
  *
- * Library items carry per-language content under `i18n.versions[lang].content`
- * (nl + en-GB). We forward every available language as `contentByLang` so the
- * server can build one i18n version per language — a composed deck keeps both
- * languages instead of collapsing to whichever the picker happened to show.
+ * Library items carry per-language content under `i18n.versions[lang].content`,
+ * in any language of the deck axis. We forward every available language as
+ * `contentByLang` so the server can build one i18n version per language — a
+ * composed deck keeps them all instead of collapsing to whichever the picker
+ * happened to show.
  *
  * The item's content is forwarded as it is stored: a content key that belongs
  * to the slide *instance* rather than to the item (a `pollId`, a follow-invite's
@@ -19,7 +20,11 @@
  * posts `slides[]` straight to the API.
  */
 
-const SUPPORTED_LANGS = ['nl', 'en-GB'];
+import {
+  DEFAULT_DECK_LANG,
+  normalizeLang,
+  TRANSLATION_LANGS,
+} from '../../../shared/i18n-utils.js';
 
 /**
  * Build the `slides[]` payload from library items, preserving per-language
@@ -33,7 +38,7 @@ export function buildSlidesFromLibraryItems(items) {
     const versions = item?.i18n?.versions;
     const contentByLang = {};
     if (versions && typeof versions === 'object') {
-      for (const lang of SUPPORTED_LANGS) {
+      for (const lang of TRANSLATION_LANGS) {
         const c = versions[lang]?.content;
         if (c && typeof c === 'object') contentByLang[lang] = c;
       }
@@ -42,7 +47,7 @@ export function buildSlidesFromLibraryItems(items) {
     const flat =
       item?.content && typeof item.content === 'object'
         ? item.content
-        : contentByLang.nl || contentByLang['en-GB'] || {};
+        : TRANSLATION_LANGS.map((l) => contentByLang[l]).find(Boolean) || {};
     const slide = { type: item?.slideType, content: flat };
     if (Object.keys(contentByLang).length) slide.contentByLang = contentByLang;
     return slide;
@@ -71,7 +76,7 @@ export function createDeckFromLibraryItems({
   api,
   items,
   title,
-  lang = 'nl',
+  lang = DEFAULT_DECK_LANG,
   theme = null,
   sourceCollectionId = null,
 }) {
@@ -82,7 +87,7 @@ export function createDeckFromLibraryItems({
   const payload = {
     title,
     slides,
-    lang: lang === 'en-GB' ? 'en-GB' : 'nl',
+    lang: normalizeLang(lang) || DEFAULT_DECK_LANG,
   };
   const themeId = String(theme || '').trim();
   if (themeId) payload.theme = themeId;

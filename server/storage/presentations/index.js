@@ -40,6 +40,7 @@ import { invalidatePresentationCache } from './cache.js';
 import { migratePresentation } from '../../../shared/slide-types/schema-version.js';
 import { buildMergedSlideTypes } from '../../utils/custom-slide-type-runtime.js';
 import { createLogger } from '../../utils/logger.js';
+import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
 const log = createLogger('presentations');
 
 // Only the single-deck read may skip the organization filter, and only for a
@@ -813,7 +814,7 @@ async function createPresentationRow(data, ctx) {
       title: data.title || 'Untitled',
       description: data.description || null,
       theme: data.theme || 'default',
-      lang: data.lang || 'nl',
+      lang: data.lang || DEFAULT_DECK_LANG,
       visibility: 'private',
       revision: 1,
       settings: jsonb(data.settings || {}),
@@ -1273,7 +1274,7 @@ async function duplicatePresentationRow(id, ctx) {
     }
   }
 
-  const lang = existing.i18n?.dominant || existing.lang || 'nl';
+  const lang = existing.i18n?.dominant || existing.lang || DEFAULT_DECK_LANG;
   const prefix = lang === 'en-GB' ? 'Copy of ' : 'Kopie van ';
   const newTitle = prefix + existing.title;
 

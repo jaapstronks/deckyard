@@ -5,6 +5,7 @@ import { t } from '../../lib/ui-i18n.js';
 import { icon as uiIcon } from '../../lib/dom/icons.js';
 import { showEditorLoadingSkeleton } from './loading-skeleton.js';
 import { nav } from '../../lib/state/router.js';
+import { deckLangQuery } from '../../lib/format/i18n.js';
 
 export async function renderEditor(root, id, { user } = {}) {
   // Long decks take a while to fetch + mount; show the layout skeleton
@@ -13,11 +14,7 @@ export async function renderEditor(root, id, { user } = {}) {
 
   // Fetch presentation to check permission level
   const url = new URL(location.href);
-  const initialLang = url.searchParams.get('lang');
-  const langParam =
-    initialLang === 'nl' || initialLang === 'en-GB'
-      ? `?lang=${encodeURIComponent(initialLang)}`
-      : '';
+  const langParam = deckLangQuery(url);
 
   let pres;
   try {

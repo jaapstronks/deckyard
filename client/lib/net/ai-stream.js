@@ -13,7 +13,7 @@ import { t } from '../ui-i18n.js';
  * @param {Object} options
  * @param {Function} options.api - API fetch function
  * @param {string} options.raw - Raw content to convert
- * @param {string} options.lang - Language mode ('nl' or 'en-GB')
+ * @param {string} options.lang - Deck language mode (a `TRANSLATION_LANGS` code)
  * @param {string} options.theme - Theme ID
  * @param {string} options.vendor - LLM vendor (optional)
  * @param {string} options.targetLength - Target length: 'auto', '5min', '10min', '20min', '30min' (optional)

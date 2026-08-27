@@ -6,6 +6,7 @@ import {
 import { t } from '../../../lib/ui-i18n.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
 import { openDescriptionModal } from '../modals/description-modal.js';
+import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
 
 /**
  * Build modal data from existing published presentation data.
@@ -15,7 +16,8 @@ export function buildPublishModalData({ pres, activeLang = null } = {}) {
   const publishId = pres?.published?.id || '';
   const slug = pres?.published?.slug || '';
 
-  const currentLang = activeLang || normalizeLang(pres?.i18n?.active) || 'nl';
+  const currentLang =
+    activeLang || normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG;
   const other = otherLang(currentLang);
   const hasOther = hasLangVersion(pres, other);
 
@@ -193,7 +195,8 @@ export async function doPublish({
     body: JSON.stringify({}),
   });
 
-  const currentLang = activeLang || normalizeLang(pres?.i18n?.active) || 'nl';
+  const currentLang =
+    activeLang || normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG;
   const other = otherLang(currentLang);
   const hasOther = hasLangVersion(pres, other);
 

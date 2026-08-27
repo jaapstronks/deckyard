@@ -10,7 +10,7 @@ import { LlmError } from '../llm/error.js';
 import { requestChatCompletionContent } from '../llm/index.js';
 import { ValidationError } from '../errors.js';
 import { extractJsonObject } from './json.js';
-import { labelForLang, normalizeTranslationLang } from './lang.js';
+import { labelForLang, normalizeLang } from './lang.js';
 
 // Optional: load ciiic-translation-rules if available (CIIIC fork only).
 //
@@ -57,8 +57,8 @@ export async function translatePresentationStrings(
   presentation,
   { from, to, existingTarget = null, fillMissing = false, vendor = null } = {},
 ) {
-  const fromLang = normalizeTranslationLang(from);
-  const toLang = normalizeTranslationLang(to);
+  const fromLang = normalizeLang(from);
+  const toLang = normalizeLang(to);
   if (!fromLang || !toLang || fromLang === toLang) {
     throw new ValidationError('Invalid translation language pair.');
   }
@@ -238,8 +238,8 @@ export async function translateShortText(
   text,
   { from, to, vendor = null } = {},
 ) {
-  const fromLang = normalizeTranslationLang(from);
-  const toLang = normalizeTranslationLang(to);
+  const fromLang = normalizeLang(from);
+  const toLang = normalizeLang(to);
   if (!fromLang || !toLang || fromLang === toLang) {
     throw new ValidationError('Invalid translation language pair.');
   }
@@ -290,8 +290,8 @@ export async function translateFieldMap(
   fields,
   { from, to, vendor = null } = {},
 ) {
-  const fromLang = normalizeTranslationLang(from);
-  const toLang = normalizeTranslationLang(to);
+  const fromLang = normalizeLang(from);
+  const toLang = normalizeLang(to);
   if (!fromLang || !toLang || fromLang === toLang) {
     throw new ValidationError('Invalid translation language pair.');
   }
@@ -360,8 +360,8 @@ export async function translatePresentationStringsFillMissing(
   { sourcePresentation, targetPresentation, missing = [] } = {},
   { from, to, vendor = null } = {},
 ) {
-  const fromLang = normalizeTranslationLang(from);
-  const toLang = normalizeTranslationLang(to);
+  const fromLang = normalizeLang(from);
+  const toLang = normalizeLang(to);
   if (!fromLang || !toLang || fromLang === toLang) {
     throw new ValidationError('Invalid translation language pair.');
   }

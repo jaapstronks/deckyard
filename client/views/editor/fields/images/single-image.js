@@ -5,6 +5,7 @@ import { t } from '../../../../lib/ui-i18n.js';
 import { createAltSetter } from './alt-utils.js';
 import { applyAltFromPick, applyPickMeta } from '../../media/apply-pick.js';
 import { h } from '../../../../lib/dom.js';
+import { DEFAULT_DECK_LANG } from '../../../../../shared/i18n-utils.js';
 
 /**
  * Create a single image field renderer
@@ -88,7 +89,8 @@ export function createFieldImage(ctx) {
           class: 'btn btn-secondary',
           text: t('editor.image.chooseOrUpload', 'Choose / upload…'),
           onclick: () => {
-            const activeLang = normalizeLang?.(pres?.i18n?.active) || 'nl';
+            const activeLang =
+              normalizeLang?.(pres?.i18n?.active) || DEFAULT_DECK_LANG;
             const other =
               typeof otherLang === 'function' ? otherLang(activeLang) : null;
             const setAltForLang = createAltSetter({

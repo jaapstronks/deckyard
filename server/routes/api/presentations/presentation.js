@@ -33,6 +33,7 @@ import {
 } from '../../../services/comment-events.js';
 import { scheduleDeckThumbnailWarm } from './thumbnail.js';
 import { fireAndForget } from '../../../utils/fire-and-forget.js';
+import { normalizeLang } from '../../../../shared/i18n-utils.js';
 
 /**
  * GET /api/presentations/:id/revision — lightweight revision probe.
@@ -92,9 +93,9 @@ export async function handlePresentationItem(
     // Fetch tags for the presentation
     const tags = await getTagsForPresentation(storageScope, id);
 
-    const lang = url.searchParams.get('lang');
+    const lang = normalizeLang(url.searchParams.get('lang'));
     if (
-      (lang === 'nl' || lang === 'en-GB') &&
+      lang &&
       pres?.i18n?.versions &&
       typeof pres.i18n.versions === 'object' &&
       pres.i18n.versions?.[lang]

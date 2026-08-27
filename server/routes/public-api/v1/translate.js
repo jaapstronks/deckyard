@@ -8,7 +8,6 @@ import { translatePresentationStrings } from '../../../utils/openai/translate.js
 import { fireAndForget } from '../../../utils/fire-and-forget.js';
 import { getFeatureFlags } from '../../../config/flags-snapshot.js';
 import {
-  normalizeTranslationLang,
   normalizeLang,
   TRANSLATION_LANGS,
   TRANSLATION_LANG_LABELS,
@@ -24,6 +23,7 @@ import {
   apiSuccess,
   apiError,
 } from './middleware.js';
+import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
 
 // ============================================================
 // ROUTE HANDLERS
@@ -65,7 +65,7 @@ async function handleTranslate(ctx, presentationId) {
   if (!ok) return true;
 
   // Validate target language
-  const targetLang = normalizeTranslationLang(body?.targetLang);
+  const targetLang = normalizeLang(body?.targetLang);
   if (!targetLang) {
     await apiError(
       ctx,
@@ -84,10 +84,10 @@ async function handleTranslate(ctx, presentationId) {
 
   // Resolve source language
   const sourceLang =
-    normalizeTranslationLang(body?.sourceLang) ||
+    normalizeLang(body?.sourceLang) ||
     normalizeLang(pres.i18n.active) ||
     normalizeLang(pres.i18n.dominant) ||
-    'nl';
+    DEFAULT_DECK_LANG;
 
   // Validate source != target
   if (sourceLang === targetLang) {
@@ -101,7 +101,9 @@ async function handleTranslate(ctx, presentationId) {
 
   // Ensure source version exists
   const dominant =
-    normalizeLang(pres.i18n.dominant) || normalizeLang(sourceLang) || 'nl';
+    normalizeLang(pres.i18n.dominant) ||
+    normalizeLang(sourceLang) ||
+    DEFAULT_DECK_LANG;
   pres.i18n.dominant = dominant;
 
   // Only update active if source is a legacy language

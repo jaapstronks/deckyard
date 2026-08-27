@@ -125,9 +125,11 @@ The same leniency applies to the two fields that used to close the schema:
   in _every_ spelling of its id (so writing the canonical form never costs a
   slide its content contract), and an unknown type matches no `if` branch, so no
   content contract is demanded of it.
-- **`lang` is any well-formed BCP 47 tag**, not `nl` or `en-GB`. Which languages
-  a given implementation _authors_ in is its own product choice — Deckyard's
-  editor still normalizes to two — but the format has no business deciding it.
+- **`lang` is any well-formed BCP 47 tag**, not a fixed shortlist. Which
+  languages a given implementation _authors_ in is its own product choice —
+  Deckyard's own axis is the twelve of `TRANSLATION_LANGS`
+  ([`shared/i18n-utils.js`](../../shared/i18n-utils.js)) — but the format has no
+  business deciding it.
 
 What a reader owes for an unknown type, and what it may claim once it does,
 is [`deck-conformance.md`](./deck-conformance.md).

@@ -1,4 +1,8 @@
 import { storage } from '../../lib/storage.js';
+import {
+  DEFAULT_DECK_LANG,
+  normalizeLang,
+} from '../../../shared/i18n-utils.js';
 
 export function createSlidesCollapsedPreference({
   storageKey = 'ps:slides-collapsed',
@@ -81,15 +85,13 @@ export function initPresentationI18n({ pres, initialLang } = {}) {
       ? pres.i18n.versions
       : {};
 
-  if (pres.i18n.active !== 'nl' && pres.i18n.active !== 'en-GB') {
+  if (!normalizeLang(pres.i18n.active)) {
     pres.i18n.active =
-      initialLang === 'nl' || initialLang === 'en-GB'
-        ? initialLang
-        : pres.i18n.dominant === 'nl' || pres.i18n.dominant === 'en-GB'
-          ? pres.i18n.dominant
-          : 'nl';
+      normalizeLang(initialLang) ||
+      normalizeLang(pres.i18n.dominant) ||
+      DEFAULT_DECK_LANG;
   }
-  if (pres.i18n.dominant !== 'nl' && pres.i18n.dominant !== 'en-GB') {
+  if (!normalizeLang(pres.i18n.dominant)) {
     pres.i18n.dominant = pres.i18n.active;
   }
 

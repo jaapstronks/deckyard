@@ -18,7 +18,7 @@ let dict = Object.create(null);
 let dictLoadedFor = null;
 let manifestCache = null;
 
-// A `?lang=` URL param names an explicit, per-session UI locale. When
+// A `?locale=` URL param names an explicit, per-session UI locale. When
 // present and valid it takes priority over the stored/server preference for the
 // whole SPA session. Set once by resolveInitialUiLocale() at bootstrap; its
 // consumers (app.js render, settings preferences tab) read it back to keep the
@@ -26,11 +26,11 @@ let manifestCache = null;
 let sessionParamLocale = null;
 
 /**
- * The per-session UI-locale override from a `?lang=` URL param, or
+ * The per-session UI-locale override from a `?locale=` URL param, or
  * null when the session was not deep-linked with a valid locale. Lets callers
  * give the URL param priority over a stored server preference — chiefly the
  * sandbox guest, whose default `uiLocale` is English and would otherwise clobber
- * `?lang=nl`.
+ * `?locale=nl`.
  * @returns {string|null}
  */
 export function getSessionLocaleOverride() {
@@ -89,12 +89,22 @@ function writeUiLocale(locale) {
 
 // The query-string key that carries a UI-locale hint. Lets an external origin
 // (e.g. deckyard.eu) deep-link into the app or the sandbox in a chosen
-// language: `sandbox.deckyard.eu/?lang=en`. `lang` is the only spelling.
-const UI_LOCALE_PARAM_KEY = 'lang';
+// interface language: `sandbox.deckyard.eu/?locale=en`.
+//
+// It used to be `lang`, shared with the deck-language axis — one key, two
+// vocabularies, validated against two different lists by seven different
+// modules. `?lang=nl` was valid in both, so a shared editor link set the deck
+// language *and* switched the recipient's entire interface to Dutch, while
+// `?lang=en-GB` was silently dropped here because the manifest keys English
+// `en`. D61 split them: `?lang=` stays the deck language (the older meaning,
+// and the one already inside shared links), the interface moved here. `?ui=`
+// was the first proposal and was rejected — `?ui=min` already means something
+// else.
+const UI_LOCALE_PARAM_KEY = 'locale';
 
 /**
  * Read a normalized UI-locale hint from a URL query string. Returns the
- * well-formed `?lang=` value, or null when absent/malformed.
+ * well-formed `?locale=` value, or null when absent/malformed.
  * `search` defaults to the current `window.location.search`; pass it explicitly
  * (e.g. in tests) to parse an arbitrary query string.
  * @param {string} [search]
@@ -119,7 +129,7 @@ export function readUiLocaleParam(search) {
 }
 
 /**
- * Resolve which locale to apply at first paint. A `?lang=` URL param
+ * Resolve which locale to apply at first paint. A `?locale=` URL param
  * wins over the stored preference *only* when it names a locale the manifest
  * knows (same bar as the settings picker), so a bogus tag can't blank the
  * dictionary. A valid param is persisted so it survives a reload within the
@@ -130,7 +140,7 @@ export function readUiLocaleParam(search) {
  *
  * The URL param therefore takes priority for the whole session — chiefly the
  * sandbox guest, whose default `uiLocale` is English and would otherwise clobber
- * a deep-linked `?lang=nl`. An unknown/malformed value is silently ignored.
+ * a deep-linked `?locale=nl`. An unknown/malformed value is silently ignored.
  * @param {string} [search]
  * @returns {Promise<string>}
  */

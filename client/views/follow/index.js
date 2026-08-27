@@ -10,7 +10,8 @@ import { api } from '../../lib/api.js';
 import { disposeAll } from '../../lib/dom/disposal.js';
 import { attachThumbScaleContain } from '../../lib/slide-runtime/thumb-scale.js';
 import { cleanupSlideRuntimes } from '../../lib/slide-runtime/slide-render.js';
-import { normalizeLang } from '../../lib/format/i18n.js';
+import { readDeckLangParam } from '../../lib/format/i18n.js';
+import { DEFAULT_DECK_LANG, otherLang } from '../../../shared/i18n-utils.js';
 import {
   createAnalyticsTracker,
   isAnalyticsEnabled,
@@ -40,7 +41,7 @@ import { buildFollowLayout } from './layout.js';
 
 export async function renderFollow(root, presentationId) {
   const startUrl = new URL(location.href);
-  let lang = normalizeLang(startUrl.searchParams.get('lang')) || 'nl';
+  let lang = readDeckLangParam(startUrl) || DEFAULT_DECK_LANG;
   let meta = { dominantLang: null, availableLangs: [] };
   let copy = await createFollowCopy(lang);
 
@@ -141,11 +142,13 @@ export async function renderFollow(root, presentationId) {
   const getTranslatingLang = () => {
     const ts = meta?.translationStatus;
     if (!ts) return null;
-    const otherLang = lang === 'nl' ? 'en-GB' : 'nl';
-    const status = ts[otherLang];
+    // Bilingual-only: the translating banner names "the other" language, which
+    // is a question with an answer only inside the NL/EN pair (B182).
+    const other = otherLang(lang);
+    const status = other && ts[other];
     if (!status) return null;
     if (status.complete) return null;
-    return otherLang;
+    return other;
   };
 
   const renderLangButtons = () => {

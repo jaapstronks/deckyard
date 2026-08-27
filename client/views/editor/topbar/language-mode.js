@@ -18,6 +18,7 @@ import { t } from '../../../lib/ui-i18n.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types.js';
 import { translatableKeysForType } from '../../../../shared/slide-types/text-fields.js';
 import { h } from '../../../lib/dom.js';
+import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
 
 /**
  * Create the language mode switcher component.
@@ -129,7 +130,7 @@ export function createLanguageMode({
   // swallows its own tooltip), so a click that can't work explains itself
   // instead of disappearing under the busy modal's backdrop.
   const syncLangUi = () => {
-    const a = normalizeLang(pres?.i18n?.active) || 'nl';
+    const a = normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG;
     btnNl.classList.toggle('is-active', a === 'nl');
     btnEn.classList.toggle('is-active', a === 'en-GB');
     btnNl.disabled = !supportedLangs.has('nl') || translateBusy;
@@ -352,7 +353,7 @@ export function createLanguageMode({
    * other language as the source. Manually translated fields are untouched.
    */
   const translateMissingForActive = async ({ onStatus } = {}) => {
-    const to = normalizeLang(pres.i18n.active) || 'nl';
+    const to = normalizeLang(pres.i18n.active) || DEFAULT_DECK_LANG;
     const from = otherLang(to);
     if (!from) {
       onStatus?.({
@@ -426,7 +427,7 @@ export function createLanguageMode({
    * Full-deck translate into the other language (the topbar menu action).
    */
   const translateOtherLanguage = async ({ onStatus } = {}) => {
-    const from = normalizeLang(pres.i18n.active) || 'nl';
+    const from = normalizeLang(pres.i18n.active) || DEFAULT_DECK_LANG;
     const to = otherLang(from);
     if (!to) {
       onStatus?.({
@@ -597,6 +598,7 @@ export function createLanguageMode({
       translateOtherLanguage({ onStatus: toastStatus }),
     translateMissingForActive: () =>
       translateMissingForActive({ onStatus: toastStatus }),
-    canTranslate: () => !!otherLang(normalizeLang(pres?.i18n?.active) || 'nl'),
+    canTranslate: () =>
+      !!otherLang(normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG),
   };
 }

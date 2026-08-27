@@ -2,7 +2,10 @@ import { debugLog } from '../../../lib/util/debug.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { normalizeLang, otherLang } from '../../../lib/format/i18n.js';
-import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
+import {
+  DEFAULT_DECK_LANG,
+  resolveDeckLang,
+} from '../../../../shared/i18n-utils.js';
 import { getRecommendedImageFit } from '../image-library/utils.js';
 import { createCsvGridEditor } from '../fields/csv-grid.js';
 import { createTableGridEditor } from '../fields/table-grid.js';
@@ -29,7 +32,9 @@ const LANG_SHORT = { nl: 'NL', 'en-GB': 'EN' };
  * "fill from other language" button renders at all.
  */
 function otherLangFieldValue({ pres, slideId, key }) {
-  const sourceLang = otherLang(normalizeLang(pres?.i18n?.active) || 'nl');
+  const sourceLang = otherLang(
+    normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG,
+  );
   if (!sourceLang) return { sourceLang: null, value: '' };
   const srcVersion = pres?.i18n?.versions?.[sourceLang];
   const srcSlide = Array.isArray(srcVersion?.slides)

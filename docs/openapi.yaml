@@ -297,7 +297,7 @@ paths:
                   example: 'default'
                 language:
                   type: string
-                  enum: [en-GB, nl]
+                  enum: [nl, en-GB, de, fr, es, pt, it, pl, fi, da, sv, 'no']
                   description: Primary language
                   default: en-GB
                 slides:
@@ -1243,7 +1243,7 @@ paths:
           description: Export language version
           schema:
             type: string
-            enum: [en-GB, nl]
+            enum: [nl, en-GB, de, fr, es, pt, it, pl, fi, da, sv, 'no']
       responses:
         '200':
           description: JSON export
@@ -1277,7 +1277,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [en-GB, nl]
+            enum: [nl, en-GB, de, fr, es, pt, it, pl, fi, da, sv, 'no']
       responses:
         '200':
           description: HTML export
@@ -1311,7 +1311,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [en-GB, nl]
+            enum: [nl, en-GB, de, fr, es, pt, it, pl, fi, da, sv, 'no']
         - name: scale
           in: query
           description: Image scale factor (1-3)
@@ -1356,7 +1356,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [en-GB, nl]
+            enum: [nl, en-GB, de, fr, es, pt, it, pl, fi, da, sv, 'no']
       responses:
         '200':
           description: Print-ready HTML
@@ -1442,7 +1442,7 @@ paths:
                   description: AI vendor to use (openai, anthropic, mistral)
                 lang:
                   type: string
-                  enum: [en-GB, nl]
+                  enum: [nl, en-GB, de, fr, es, pt, it, pl, fi, da, sv, 'no']
                   description: Target language
                 theme:
                   type: string
@@ -1510,7 +1510,7 @@ paths:
                   description: AI vendor to use
                 lang:
                   type: string
-                  enum: [en-GB, nl]
+                  enum: [nl, en-GB, de, fr, es, pt, it, pl, fi, da, sv, 'no']
                 deck:
                   type: object
                   description: Existing deck for context

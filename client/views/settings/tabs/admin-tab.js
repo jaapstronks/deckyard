@@ -25,6 +25,8 @@ import {
   DEFAULT_AI_NAME,
   DEFAULT_AI_EMAIL,
 } from '../../../../shared/constants/ai.js';
+import { TRANSLATION_LANGS } from '../../../../shared/i18n-utils.js';
+import { getLangDisplayName } from '../../../lib/format/lang-selector.js';
 
 /**
  * Create the admin tab component.
@@ -73,10 +75,20 @@ export function createAdminTab({ user }) {
     ),
   });
 
+  // One checkbox per deck language, built from the axis
+  // (`TRANSLATION_LANGS`). This was two fixed `Nederlands (NL)` /
+  // `English (EN-GB)` boxes, which is why nothing else could ever be switched
+  // on however configurable the accessor claimed to be (D61).
   const langOptions = h('div', { class: 'admin-checkbox-list' });
-  const { el: chkNl } = labeledCheckbox({ text: 'Nederlands (NL)' });
-  const { el: chkEn } = labeledCheckbox({ text: 'English (EN-GB)' });
-  langOptions.append(chkNl, chkEn);
+  /** @type {Record<string, HTMLInputElement>} */
+  const langChecks = {};
+  for (const code of TRANSLATION_LANGS) {
+    const { el } = labeledCheckbox({
+      text: `${getLangDisplayName(code)} (${code})`,
+    });
+    langChecks[code] = el.querySelector('input');
+    langOptions.append(el);
+  }
   langCard.append(langHint, langOptions);
 
   // AI Assistant Identity card
@@ -436,8 +448,7 @@ export function createAdminTab({ user }) {
   let loaded = false;
 
   const allInputs = [
-    chkNl.querySelector('input'),
-    chkEn.querySelector('input'),
+    ...Object.values(langChecks),
     aiNameInput,
     aiEmailInput,
     senderEmailInput,
@@ -468,9 +479,8 @@ export function createAdminTab({ user }) {
         ? app.supportedSlideLangs
         : getSupportedLangs();
 
-      chkNl.querySelector('input').checked = supportedSlideLangs.includes('nl');
-      chkEn.querySelector('input').checked =
-        supportedSlideLangs.includes('en-GB');
+      for (const [code, input] of Object.entries(langChecks))
+        input.checked = supportedSlideLangs.includes(code);
 
       // AI assistant identity
       aiNameInput.value = app?.aiAssistant?.name || '';
@@ -546,9 +556,10 @@ export function createAdminTab({ user }) {
     setBusy(true);
 
     try {
-      const nextSupported = [];
-      if (chkNl.querySelector('input').checked) nextSupported.push('nl');
-      if (chkEn.querySelector('input').checked) nextSupported.push('en-GB');
+      // Axis order, so the first enabled language is a stable default.
+      const nextSupported = TRANSLATION_LANGS.filter(
+        (code) => langChecks[code]?.checked,
+      );
 
       const updatedApp = await updateAppSettings({
         supportedSlideLangs: nextSupported,

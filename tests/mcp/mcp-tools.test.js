@@ -11,6 +11,7 @@ import assert from 'node:assert';
 
 import { McpServer } from '../../server/mcp/protocol.js';
 import { registerTools } from '../../server/mcp/tools.js';
+import { TRANSLATION_LANGS } from '../../shared/i18n-utils.js';
 
 // ============================================================================
 // Tool Registration Tests
@@ -301,9 +302,10 @@ describe('MCP Tool Schemas', () => {
     registerTools(server, {});
     const tool = server.tools.get('get_slide_types');
     assert.ok('lang' in tool.inputSchema.properties);
+    // The enum is the deck-language axis, not a copy of it: the three MCP
+    // schemas each spelled out the legacy `['nl','en-GB']` pair (B149/D61).
     assert.deepStrictEqual(tool.inputSchema.properties.lang.enum, [
-      'nl',
-      'en-GB',
+      ...TRANSLATION_LANGS,
     ]);
 
     const { types, exampleLang } = await tool.handler({ lang: 'nl' });

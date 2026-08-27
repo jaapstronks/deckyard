@@ -28,6 +28,7 @@ import { createSlideLibraryState } from './state.js';
 import { createSlideLibraryApi } from './api.js';
 import { createSlideLibraryModals } from './modals.js';
 import { createSlideLibraryControls } from './controls.js';
+import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
 
 export function createSlideLibraryPicker({
   api,
@@ -38,7 +39,7 @@ export function createSlideLibraryPicker({
   allowInsert = true,
   initialShelf = 'organization',
   initialQuery = '',
-  initialLang = 'nl',
+  initialLang = DEFAULT_DECK_LANG,
   showLanguageSwitch = false,
   onCopySlide = null,
   onNewPresentation = null,

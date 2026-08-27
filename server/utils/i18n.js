@@ -1,4 +1,8 @@
-import { normalizeLang, otherLang } from '../../shared/i18n-utils.js';
+import {
+  DEFAULT_DECK_LANG,
+  normalizeLang,
+  otherLang,
+} from '../../shared/i18n-utils.js';
 import { pickVersion } from './translation-status.js';
 
 export { normalizeLang, otherLang };
@@ -22,7 +26,7 @@ export function resolveLangModeFromPresOrUrl(pres, url) {
   if (d) return d;
   const p = normalizeLang(pres?.lang);
   if (p) return p;
-  return 'nl';
+  return DEFAULT_DECK_LANG;
 }
 
 export function projectPresentationForLang(pres, lang) {

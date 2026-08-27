@@ -3,8 +3,11 @@ import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createTagEditor } from '../../list/tag-editor.js';
 import { h } from '../../../lib/dom.js';
-
-const SUPPORTED_LANGS = ['nl', 'en-GB'];
+import { getLangDisplayName } from '../../../lib/format/lang-selector.js';
+import {
+  DEFAULT_DECK_LANG,
+  TRANSLATION_LANGS,
+} from '../../../../shared/i18n-utils.js';
 
 /**
  * Get content for a slide in a specific language version of the presentation.
@@ -51,12 +54,12 @@ function hasTextContent(content) {
 }
 
 /**
- * Get language display name
+ * Get language display name — the axis-keyed native label
+ * (`shared/i18n-utils.js`), so a deck saved in Finnish reads "Suomi" here
+ * rather than `fi`. This used to be a two-branch `if` over `nl`/`en-GB`.
  */
 function getLangLabel(lang) {
-  if (lang === 'nl') return t('language.nl', 'Dutch');
-  if (lang === 'en-GB') return t('language.enGB', 'English');
-  return lang;
+  return getLangDisplayName(lang);
 }
 
 /**
@@ -88,11 +91,12 @@ export function openSaveToLibraryModal({
 
   // Detect available language versions for this slide
   const slideId = slide?.id;
-  const currentLang = pres?.i18n?.active || pres?.i18n?.dominant || 'nl';
+  const currentLang =
+    pres?.i18n?.active || pres?.i18n?.dominant || DEFAULT_DECK_LANG;
   const availableLangs = [];
   const langContents = {};
 
-  for (const lang of SUPPORTED_LANGS) {
+  for (const lang of TRANSLATION_LANGS) {
     const content = getSlideContentForLang(pres, slideId, lang);
     if (content && hasTextContent(content)) {
       availableLangs.push(lang);

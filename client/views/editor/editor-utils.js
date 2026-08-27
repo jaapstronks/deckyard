@@ -2,6 +2,7 @@
 import { newId } from '../../lib/util/id.js';
 import { t } from '../../lib/ui-i18n.js';
 import { applyInstanceKeyDefaults } from '../../../shared/slide-types/instance-keys.js';
+import { normalizeLang } from '../../../shared/i18n-utils.js';
 
 // Scroll locking for overlay modals (ref-counted; safe for nested modals).
 let sbScrollLockCount = 0;
@@ -81,8 +82,8 @@ export function deepClone(v) {
  * @param {string} type - slide-type name; must exist in `slideTypes`
  * @param {Object} slideTypes - the type registry (`/api/slide-types` metadata)
  * @param {Object} [options]
- * @param {string} [options.lang] - deck language ('nl' / 'en-GB' seed
- *   `defaultsByLang`; anything else falls back to `defaults`)
+ * @param {string} [options.lang] - deck language; seeds `defaultsByLang`,
+ *   anything off-axis falls back to `defaults`
  * @param {string} [options.presentationId] - id of the deck the slide is
  *   being inserted into
  * @returns {{id: string, type: string, content: Object, notes: string}}
@@ -91,7 +92,7 @@ export function makeNewSlide(type, slideTypes, { lang, presentationId } = {}) {
   const def = slideTypes?.[type];
   if (!def) throw new Error(`Unknown slide type: ${type}`);
   const id = newId();
-  const l = lang === 'nl' || lang === 'en-GB' ? lang : null;
+  const l = normalizeLang(lang);
   const langDefaults =
     l &&
     def?.defaultsByLang &&

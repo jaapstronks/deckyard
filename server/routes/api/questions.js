@@ -26,6 +26,10 @@ import { notifyLiveSessionDeckUpdated } from '../../storage/live-sessions/index.
 import { canWritePresentation } from '../../utils/presentation-authz/index.js';
 import { isOrganizationAdmin } from '../../../shared/organization-role.js';
 import { dispatchRoutes } from '../../utils/router.js';
+import {
+  DEFAULT_DECK_LANG,
+  TRANSLATION_LANGS,
+} from '../../../shared/i18n-utils.js';
 
 // POST /api/moderate/:presentationId/questions/:questionId/remove — moderator removes a question
 async function handleQuestionRemove(
@@ -100,7 +104,7 @@ async function handleQuestionPromote(
   const q = await getQuestion(storageScope, state.sessionId, questionId);
   if (!q) return notFound(res);
 
-  const dominant = normalizeLang(pres?.i18n?.dominant) || 'nl';
+  const dominant = normalizeLang(pres?.i18n?.dominant) || DEFAULT_DECK_LANG;
   const texts = q.texts && typeof q.texts === 'object' ? q.texts : {};
   const originalText = String(q.text || '').trim();
 
@@ -162,7 +166,7 @@ async function handleQuestionPromote(
 
   insertAt(nextPres.slides, insertIndex, makeSlide(dominant));
 
-  for (const lang of ['nl', 'en-GB']) {
+  for (const lang of TRANSLATION_LANGS) {
     const v = nextPres.i18n.versions?.[lang];
     if (!v || typeof v !== 'object') continue;
     const slides = Array.isArray(v.slides) ? [...v.slides] : [];

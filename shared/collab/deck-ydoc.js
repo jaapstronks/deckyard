@@ -48,6 +48,7 @@ import {
   emptyTextFieldSpec,
   textFieldSpecForType,
 } from '../slide-types/text-fields.js';
+import { DEFAULT_DECK_LANG } from '../i18n-utils.js';
 
 /** Slide-level keys with dedicated handling (everything else is plain LWW). */
 const SLIDE_SPECIAL_KEYS = new Set(['id', 'type', 'content', 'notes']);
@@ -110,7 +111,7 @@ function resolveVersions(pres) {
   const fallbackLang =
     (typeof pres?.lang === 'string' && pres.lang) ||
     (hasI18n && typeof pres.i18n.dominant === 'string' && pres.i18n.dominant) ||
-    'nl';
+    DEFAULT_DECK_LANG;
   const dominant =
     (hasI18n &&
     typeof pres.i18n.dominant === 'string' &&
@@ -479,7 +480,7 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
   /** @param {Object} doc @returns {string} The dominant language. */
   function getDocDominant(doc) {
     const d = doc.getMap('meta').get('dominant');
-    return typeof d === 'string' && d ? d : 'nl';
+    return typeof d === 'string' && d ? d : DEFAULT_DECK_LANG;
   }
 
   /**

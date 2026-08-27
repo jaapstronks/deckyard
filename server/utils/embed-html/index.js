@@ -16,7 +16,7 @@ import {
 } from '../sandbox-watermark.js';
 import { DEFAULT_THEME_ID } from '../../../shared/constants/themes.js';
 import { resolveDocLangFromPresentation } from '../doc-lang.js';
-import { resolveDeckLang } from '../../../shared/i18n-utils.js';
+import { normalizeLang, resolveDeckLang } from '../../../shared/i18n-utils.js';
 
 export function buildEmbedHtml(
   repoRoot,
@@ -103,7 +103,7 @@ export function buildEmbedHtml(
       allowedOrigins: Array.isArray(allowedOrigins) ? allowedOrigins : [],
       langSwitch: !!langSwitch,
     },
-    lang: lang === 'nl' || lang === 'en-GB' ? lang : null,
+    lang: normalizeLang(lang),
     hasOtherLang: !!hasOtherLang,
   };
 

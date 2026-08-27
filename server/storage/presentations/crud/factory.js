@@ -5,6 +5,11 @@
 import { newPresentation } from '../../../../shared/slide-schemas.js';
 import { cryptoUuid } from '../../../../shared/slide-types/helpers.js';
 import { normalizeI18n } from '../i18n.js';
+import {
+  DEFAULT_DECK_LANG,
+  normalizeLang,
+  TRANSLATION_LANGS,
+} from '../../../../shared/i18n-utils.js';
 import { attachSandboxMeta } from '../sandbox.js';
 import {
   sandboxDefaultThemeId,
@@ -38,8 +43,7 @@ export async function prepareNewPresentation(
     typeof body?.title === 'string' && body.title.trim()
       ? body.title.trim()
       : 'Naamloze presentatie';
-  const initialLang =
-    body?.lang === 'nl' || body?.lang === 'en-GB' ? body.lang : 'nl';
+  const initialLang = normalizeLang(body?.lang) || DEFAULT_DECK_LANG;
   const requestedTheme =
     typeof body?.theme === 'string' && body.theme.trim()
       ? body.theme.trim()
@@ -77,7 +81,6 @@ export async function prepareNewPresentation(
   // lands at the top level rather than pointing at a slide of some other deck.
   // Content is deep-copied first — the rekey pass below writes into it, and two
   // slides of one request may well name the same object.
-  const SUPPORTED_LANGS = ['nl', 'en-GB'];
   const providedSlidesRaw =
     Array.isArray(body?.slides) && body.slides.length > 0 ? body.slides : null;
 
@@ -120,7 +123,7 @@ export async function prepareNewPresentation(
     const langSet = new Set();
     for (const s of base) {
       if (!s.contentByLang) continue;
-      for (const l of SUPPORTED_LANGS) {
+      for (const l of TRANSLATION_LANGS) {
         if (s.contentByLang[l] && typeof s.contentByLang[l] === 'object')
           langSet.add(l);
       }

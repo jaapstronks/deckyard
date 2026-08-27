@@ -6,6 +6,8 @@
 import { t } from '../ui-i18n.js';
 import { cleanStr } from '../../../shared/string-utils.js';
 import { h } from '../dom.js';
+import { getSupportedLangs } from '../format/i18n.js';
+import { getLangShortLabel } from '../format/lang-selector.js';
 
 /**
  * Create UI control renderers for the slide library
@@ -83,10 +85,10 @@ export function createSlideLibraryControls({
           });
         },
       });
-    seg.append(
-      mkBtn('nl', t('language.nl.short', 'NL')),
-      mkBtn('en-GB', t('language.enGB.short', 'EN')),
-    );
+    // The workspace's enabled deck languages, in axis order — two fixed NL/EN
+    // buttons before D61.
+    for (const code of getSupportedLangs())
+      seg.append(mkBtn(code, getLangShortLabel(code)));
     mount.append(seg);
   };
 

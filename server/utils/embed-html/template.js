@@ -5,6 +5,10 @@ import { buildCssChain } from '../css-chain.js';
 import { buildDocumentHead } from '../head-chain.js';
 import { buildScriptChain } from '../script-chain.js';
 import { buildPrismKatexTags, detectPrismKatexNeeds } from '../prism-katex.js';
+import {
+  TRANSLATION_LANGS,
+  normalizeLang,
+} from '../../../shared/i18n-utils.js';
 
 /**
  * The embed shell's own CSS: iframe-friendly chrome around the deck, no app
@@ -115,7 +119,12 @@ const EMBED_RUNTIME_JS = `
       const totalSlides = Math.max(0, Number(boot.totalSlides || 0) || 0);
       const options = boot.options && typeof boot.options === 'object' ? boot.options : {};
       const hasOtherLang = !!boot.hasOtherLang;
-      const lang = boot.lang === 'nl' || boot.lang === 'en-GB' ? boot.lang : null;
+      // boot is server-produced and already normalized against the deck axis
+      // (see buildEmbedHtml); boot.langs carries that axis so the switch below
+      // can validate an embedder's postMessage without a second copy of the
+      // list living in this inlined script (B149/D61).
+      const deckLangs = Array.isArray(boot.langs) ? boot.langs : [];
+      const lang = typeof boot.lang === 'string' && boot.lang ? boot.lang : null;
       let controls = options.controls !== false;
       let loop = !!options.loop;
       let allowFullscreen = options.allowFullscreen !== false;
@@ -237,7 +246,7 @@ const EMBED_RUNTIME_JS = `
 
       // Optional language switch: reload iframe with ?lang=... while preserving other embed options.
       function setEmbedLang(next) {
-        const l = next === 'nl' || next === 'en-GB' ? next : null;
+        const l = deckLangs.includes(next) ? next : null;
         if (!l) return;
         try {
           const u = new URL(location.href);
@@ -347,7 +356,8 @@ export function renderEmbedHtmlDocument({
     totalSlides: safeTotalSlides,
     options:
       boot?.options && typeof boot.options === 'object' ? boot.options : {},
-    lang: boot?.lang === 'nl' || boot?.lang === 'en-GB' ? boot.lang : null,
+    lang: normalizeLang(boot?.lang),
+    langs: [...TRANSLATION_LANGS],
     hasOtherLang: !!boot?.hasOtherLang,
   };
   const bootJson = JSON.stringify(safeBoot, null, 0);

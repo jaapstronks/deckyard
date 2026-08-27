@@ -11,6 +11,10 @@ import { createMessageRotator } from '../../../../lib/dom/status-message-rotator
 import { processSSEStream } from '../../../../lib/net/sse.js';
 import { readFileAsDataUrl } from '../../../../lib/util/file.js';
 import { nav } from '../../../../lib/state/router.js';
+import {
+  DEFAULT_DECK_LANG,
+  normalizeLang,
+} from '../../../../../shared/i18n-utils.js';
 
 /**
  * Handle empty presentation creation
@@ -30,7 +34,7 @@ export async function handleEmpty({
     focusTitle?.();
     return;
   }
-  const lang = langMode === 'en-GB' ? 'en-GB' : 'nl';
+  const lang = normalizeLang(langMode) || DEFAULT_DECK_LANG;
   setBusy(true);
   setStatus(t('list.newPresentation.creating', 'Creating…'));
   try {
@@ -199,7 +203,7 @@ export async function handleConvertFile({
   setBusy(true);
   setStatus(t('list.fileConverter.reading', 'Reading file…'));
 
-  const lang = langMode === 'en-GB' ? 'en-GB' : 'nl';
+  const lang = normalizeLang(langMode) || DEFAULT_DECK_LANG;
 
   let dataUrl;
   try {
@@ -369,11 +373,7 @@ export async function handleImportJson({
 
     // Use the language from the deck if available, otherwise fall back to langMode
     const lang =
-      deck?.lang === 'en-GB' || deck?.lang === 'nl'
-        ? deck.lang
-        : langMode === 'en-GB'
-          ? 'en-GB'
-          : 'nl';
+      normalizeLang(deck?.lang) || normalizeLang(langMode) || DEFAULT_DECK_LANG;
 
     const created = await api('/api/presentations/import/json', {
       method: 'POST',
@@ -422,7 +422,7 @@ export async function handleImportMarkdown({
       return;
     }
 
-    const lang = langMode === 'en-GB' ? 'en-GB' : 'nl';
+    const lang = normalizeLang(langMode) || DEFAULT_DECK_LANG;
 
     const created = await api('/api/presentations/import/markdown', {
       method: 'POST',
@@ -474,7 +474,7 @@ export async function handlePasteMarkdown({
   setStatus(t('list.newPresentation.importing', 'Importing…'));
 
   try {
-    const lang = langMode === 'en-GB' ? 'en-GB' : 'nl';
+    const lang = normalizeLang(langMode) || DEFAULT_DECK_LANG;
 
     const created = await api('/api/presentations/import/markdown', {
       method: 'POST',
@@ -590,7 +590,9 @@ export async function handleNotion({
             rotator.stop();
             const result = data;
             const detectedLang =
-              result.detectedLang || result.presentation?.lang || 'nl';
+              normalizeLang(result.detectedLang) ||
+              normalizeLang(result.presentation?.lang) ||
+              DEFAULT_DECK_LANG;
             loadingModal.update(t('common.done', 'Done'));
             loadingModal.setProgress(100);
             await new Promise((r) => setTimeout(r, 800));
@@ -635,7 +637,9 @@ export async function handleNotion({
 
       if (result.success && result.presentation) {
         const detectedLang =
-          result.detectedLang || result.presentation?.lang || 'nl';
+          normalizeLang(result.detectedLang) ||
+          normalizeLang(result.presentation?.lang) ||
+          DEFAULT_DECK_LANG;
         loadingModal.update(t('common.done', 'Done'));
         loadingModal.setProgress(100);
         await new Promise((r) => setTimeout(r, 800));

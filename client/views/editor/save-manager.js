@@ -6,6 +6,7 @@ import {
   translatableKeysForType as translatableKeysForSlideType,
   valueAtPath,
 } from '../../../shared/slide-types/text-fields.js';
+import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
 
 // Session idle timeout: create session-end snapshot after 5 minutes of no edits
 const SESSION_IDLE_TIMEOUT_MS = 5 * 60 * 1000;
@@ -174,7 +175,7 @@ export function createSaveManager({
   };
 
   const syncOtherLanguageStructureForSave = () => {
-    const from = normalizeLang(pres?.i18n?.active) || 'nl';
+    const from = normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG;
     const to = otherLang(from);
     ensureLangVersion(from);
     // Only keep structure in sync if the target language version exists.
@@ -429,10 +430,7 @@ export function createSaveManager({
     saveInFlight = (async () => {
       // Ensure server knows which language buffer is currently in pres.title/slides.
       pres.i18n = pres.i18n && typeof pres.i18n === 'object' ? pres.i18n : {};
-      pres.i18n.active =
-        pres.i18n.active === 'nl' || pres.i18n.active === 'en-GB'
-          ? pres.i18n.active
-          : 'nl';
+      pres.i18n.active = normalizeLang(pres.i18n.active) || DEFAULT_DECK_LANG;
       // Single mode: keep dominant in sync for list previews/back-compat.
       pres.i18n.dominant = pres.i18n.active;
 

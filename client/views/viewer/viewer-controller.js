@@ -14,6 +14,7 @@ import { api } from '../../lib/api.js';
 import { initPresentationI18n } from '../editor/bootstrap.js';
 import { syncSlideIdInUrl } from '../editor/slide-url.js';
 import { attachSwipeNavigation } from '../../lib/dom/swipe-nav.js';
+import { readDeckLangParam } from '../../lib/format/i18n.js';
 
 export async function createViewerController({
   root,
@@ -28,7 +29,7 @@ export async function createViewerController({
 
   // Handle i18n initialization
   const startUrl = new URL(location.href);
-  const initialLang = startUrl.searchParams.get('lang');
+  const initialLang = readDeckLangParam(startUrl);
   initPresentationI18n({ pres, initialLang });
 
   // Load theme

@@ -6,44 +6,35 @@
 
 import { t } from '../ui-i18n.js';
 import { h } from '../dom.js';
-
-/**
- * Language display names mapping.
- * Maps language codes to their display labels.
- */
-const LANG_DISPLAY_NAMES = {
-  nl: 'Nederlands',
-  'en-GB': 'English',
-  en: 'English',
-  de: 'Deutsch',
-  fr: 'Français',
-  es: 'Español',
-  it: 'Italiano',
-  pt: 'Português',
-};
+import {
+  DEFAULT_SUPPORTED_DECK_LANGS,
+  normalizeLang,
+  TRANSLATION_LANG_NATIVE_LABELS,
+} from '../../../shared/i18n-utils.js';
 
 /**
  * Get the short label for a language (for toggle buttons).
+ *
+ * Derived, not tabulated: the primary subtag upper-cased is `NL`, `EN`, `FI`,
+ * `SV` — the same answer a hand-written map gave for the eight codes it
+ * happened to list, and a right answer for the four it did not.
+ * @param {string} code
+ * @returns {string}
  */
 export function getLangShortLabel(code) {
-  const map = {
-    nl: 'NL',
-    'en-GB': 'EN',
-    en: 'EN',
-    de: 'DE',
-    fr: 'FR',
-    es: 'ES',
-    it: 'IT',
-    pt: 'PT',
-  };
-  return map[code] || code.toUpperCase().slice(0, 2);
+  return String(code || '')
+    .split('-')[0]
+    .toUpperCase();
 }
 
 /**
- * Get the display name for a language.
+ * Get the native display name for a language, from the one axis-keyed map in
+ * `shared/i18n-utils.js`. Falls back to the code for anything off-axis.
+ * @param {string} code
+ * @returns {string}
  */
 export function getLangDisplayName(code) {
-  return LANG_DISPLAY_NAMES[code] || code;
+  return TRANSLATION_LANG_NATIVE_LABELS[normalizeLang(code) ?? code] || code;
 }
 
 /**
@@ -69,7 +60,7 @@ export function createLangSelector({
 } = {}) {
   const supportedList = Array.isArray(getSupportedLangs?.())
     ? getSupportedLangs()
-    : ['nl', 'en-GB'];
+    : [...DEFAULT_SUPPORTED_DECK_LANGS];
   const supported = new Set(supportedList);
 
   // `initialLang` is a *derived* default (see resolveInitialDeckLang), so it is
@@ -78,7 +69,7 @@ export function createLangSelector({
   // dropdown change below persists.
   let langMode = supported.has(initialLang) ? initialLang : readLangMode();
   if (!supported.has(langMode)) {
-    langMode = supportedList[0] || 'nl';
+    langMode = supportedList[0] || DEFAULT_SUPPORTED_DECK_LANGS[0];
     writeLangMode(langMode);
   }
 

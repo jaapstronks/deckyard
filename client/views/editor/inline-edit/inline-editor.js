@@ -40,7 +40,10 @@ import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createBasicFields } from '../fields/basic.js';
 import { resolveItemDefaults } from '../../../../shared/slide-types/item-defaults.js';
-import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
+import {
+  DEFAULT_DECK_LANG,
+  resolveDeckLang,
+} from '../../../../shared/i18n-utils.js';
 import { markdownToSafeHtml } from '../../../../shared/markdown.js';
 import {
   serializeMarkdownDom,
@@ -1256,7 +1259,7 @@ export function createInlineEditor({
     const target = resolveMediaTarget(photoEl);
     if (!target) return;
     const { slide, idx, member, imageField, altField } = target;
-    const activeLang = normalizeLang?.(pres?.i18n?.active) || 'nl';
+    const activeLang = normalizeLang?.(pres?.i18n?.active) || DEFAULT_DECK_LANG;
     openImagePicker({
       title: t('editor.image.libraryTitle', 'Library: choose an image'),
       docId: pres?.id || '',

@@ -31,6 +31,10 @@ import { writeUploadedFile } from '../../../storage/uploads.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { rewriteBundleRefs } from '../../../../shared/slide-types/deck-assets.js';
 import { loadThemeAssets, resolveThemeId } from '../../../utils/themes.js';
+import {
+  DEFAULT_DECK_LANG,
+  normalizeLang,
+} from '../../../../shared/i18n-utils.js';
 
 export async function handlePresentationsImportDeck({
   repoRoot,
@@ -55,7 +59,7 @@ export async function handlePresentationsImportDeck({
   }
 
   const { manifest, deck, assets } = bundle;
-  const lang = manifest?.lang === 'en-GB' ? 'en-GB' : 'nl';
+  const lang = normalizeLang(manifest?.lang) || DEFAULT_DECK_LANG;
 
   // Re-hydrate each asset into /uploads/ and build bundle-ref -> upload-url map.
   // The human name is recovered from the manifest's `sources` (the separate

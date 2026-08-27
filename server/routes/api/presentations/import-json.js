@@ -6,6 +6,10 @@ import { serveJson, requireJsonBody } from '../../../utils/http.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { loadThemeAssets, resolveThemeId } from '../../../utils/themes.js';
 import { createLogger } from '../../../utils/logger.js';
+import {
+  DEFAULT_DECK_LANG,
+  normalizeLang,
+} from '../../../../shared/i18n-utils.js';
 const log = createLogger('import-json');
 
 // Error handling lives in the `withErrorHandler` wrapper on the presentations
@@ -25,7 +29,7 @@ export async function handlePresentationsImportJson({
   const body = parsed.body;
 
   const deck = body?.deck || body;
-  const lang = body?.lang === 'nl' || body?.lang === 'en-GB' ? body.lang : 'nl';
+  const lang = normalizeLang(body?.lang) || DEFAULT_DECK_LANG;
   log.info('[import-json] Language:', lang);
   log.info('[import-json] Deck title:', deck?.title);
   log.info(

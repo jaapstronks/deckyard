@@ -5,6 +5,7 @@ import {
 import { getFeatureFlags } from '../../../config/flags-snapshot.js';
 import { translatePresentationStringsFillMissing } from '../../../utils/openai/translate.js';
 import {
+  badRequest,
   methodNotAllowed,
   notFound,
   serveJson,
@@ -20,6 +21,7 @@ import {
   pickVersion,
 } from '../../../utils/translation-status.js';
 import { canWritePresentation } from '../../../utils/presentation-authz/index.js';
+import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
 
 // In-process translation job lock (prevents double-spending tokens)
 const missingTranslationJobs = new Map();
@@ -50,8 +52,12 @@ export async function handlePresentationTranslateMissing(
     normalizeLang(body?.from) ||
     normalizeLang(pres.i18n.active) ||
     normalizeLang(pres.i18n.dominant) ||
-    'nl';
+    DEFAULT_DECK_LANG;
   const to = normalizeLang(body?.to) || otherLang(from);
+  // Off the NL/EN pair `otherLang()` has no answer (D61): without this guard a
+  // null `to` would persist a stuck "running" job under the key "null" before
+  // the translator rejects the pair.
+  if (!to) return badRequest(res, 'A target language ("to") is required.');
   const mode = body?.mode === 'background' ? 'background' : 'wait';
 
   // Ensure from-version exists.

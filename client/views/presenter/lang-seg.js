@@ -4,6 +4,7 @@ import {
 } from '../../lib/format/lang-selector.js';
 import { t } from '../../lib/ui-i18n.js';
 import { h } from '../../lib/dom.js';
+import { DEFAULT_SUPPORTED_DECK_LANGS } from '../../../shared/i18n-utils.js';
 
 /**
  * Create presenter language selector.
@@ -17,12 +18,12 @@ import { h } from '../../lib/dom.js';
 export function createPresenterLangSeg({
   modeLang,
   getCurrentSlideId,
-  supportedLangs = ['nl', 'en-GB'],
+  supportedLangs = DEFAULT_SUPPORTED_DECK_LANGS,
 } = {}) {
   const langs =
     Array.isArray(supportedLangs) && supportedLangs.length > 0
       ? supportedLangs
-      : ['nl', 'en-GB'];
+      : DEFAULT_SUPPORTED_DECK_LANGS;
 
   // Hide if only one language
   if (langs.length < 2) {

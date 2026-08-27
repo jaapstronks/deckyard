@@ -17,6 +17,10 @@ import {
   publishEmbedToNotionPage,
 } from '../../../utils/notion/index.js';
 import { handleNotionError } from './utils.js';
+import {
+  DEFAULT_DECK_LANG,
+  normalizeLang,
+} from '../../../../shared/i18n-utils.js';
 
 /**
  * Handle POST /api/notion/fetch
@@ -76,7 +80,7 @@ export async function handleNotionPublish({ req, res }) {
   const pageId = getTrimmedString(body, 'pageId') || '';
   const embedUrl = getTrimmedString(body, 'embedUrl') || '';
   const title = getTrimmedString(body, 'title') || '';
-  const lang = body?.lang === 'en-GB' ? 'en-GB' : 'nl';
+  const lang = normalizeLang(body?.lang) || DEFAULT_DECK_LANG;
 
   if (!pageId) {
     return badRequest(

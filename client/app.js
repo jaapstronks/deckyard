@@ -227,10 +227,10 @@ async function render() {
       if (Array.isArray(appSettings?.supportedSlideLangs))
         setSupportedLangs(appSettings.supportedSlideLangs);
       const mySettings = await fetchMySettings();
-      // A `?lang=` URL param is an explicit per-session choice and
+      // A `?locale=` URL param is an explicit per-session choice and
       // takes priority over the saved server preference for the whole session,
       // so we don't clobber it here (chiefly the sandbox guest, whose default
-      // uiLocale is 'en' and would otherwise override a deep-linked ?lang=nl).
+      // uiLocale is 'en' and would otherwise override a deep-linked ?locale=nl).
       if (
         !getSessionLocaleOverride() &&
         typeof mySettings?.uiLocale === 'string' &&
@@ -295,7 +295,7 @@ async function render() {
 async function bootstrap() {
   initUiMode();
   try {
-    // A `?lang=` URL param (validated against the manifest) wins over
+    // A `?locale=` URL param (validated against the manifest) wins over
     // the stored preference and is persisted inside resolveInitialUiLocale, so
     // an external origin can deep-link into a language — chiefly the anonymous
     // sandbox session. setUiLocale stays persist:false: resolve already wrote.

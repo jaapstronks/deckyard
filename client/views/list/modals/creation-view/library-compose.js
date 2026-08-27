@@ -409,7 +409,7 @@ export function createLibraryCompose({
   // preserving both languages via the shared compose helper).
   //
   // @param {object} ctx
-  // @param {string} ctx.lang - deck language ('en-GB' | 'nl').
+  // @param {string} ctx.lang - deck language (a `TRANSLATION_LANGS` code).
   // @param {string} ctx.theme - theme id.
   // @param {Function} ctx.nav - router navigate.
   // @param {Function} ctx.close - close the creation view.

@@ -24,6 +24,7 @@ import {
   SUPPORTED_EXTENSIONS,
   SUPPORTED_MIME_TYPES,
 } from '../../utils/convert-file/index.js';
+import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
 
 // POST /api/convert - Convert a file to a presentation
 async function handleConvertFile({ storageScope, req, res, authedUser }) {
@@ -100,7 +101,7 @@ async function handleConvertFile({ storageScope, req, res, authedUser }) {
 
     // Use the detected/effective language from the deck, not the original request
     const effectiveLang =
-      deck.lang || deck._generationMeta?.effectiveLang || 'nl';
+      deck.lang || deck._generationMeta?.effectiveLang || DEFAULT_DECK_LANG;
 
     const created = await createPresentation(storageScope, {
       title: parts.title || deck.title || 'Converted Presentation',
@@ -379,7 +380,7 @@ async function handleConvertStream({ storageScope, req, res, authedUser }) {
 
     // Use the detected/effective language from the deck, not the original request
     const effectiveLang =
-      deck.lang || deck._generationMeta?.effectiveLang || 'nl';
+      deck.lang || deck._generationMeta?.effectiveLang || DEFAULT_DECK_LANG;
 
     const created = await createPresentation(storageScope, {
       title: parts.title || deck.title || 'Converted Presentation',

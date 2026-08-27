@@ -5,6 +5,8 @@
  * guided workflows for common presentation tasks.
  */
 
+import { DEFAULT_DECK_LANG } from '../../shared/i18n-utils.js';
+
 /**
  * Register all Deckyard prompts on an McpServer instance
  *
@@ -86,7 +88,7 @@ ${content}`,
       },
     ],
     async ({ title, data, language }) => {
-      const lang = language || 'nl';
+      const lang = language || DEFAULT_DECK_LANG;
       return {
         messages: [
           {

@@ -9,7 +9,7 @@ import { copyToClipboardWithPromptFallback } from '../../lib/util/clipboard.js';
  * the copy button are returned for the caller to hand onward.
  *
  * @param {object} ctx
- * @param {string} ctx.modeLang - active presenter language ('nl' | 'en-GB' | …)
+ * @param {string} ctx.modeLang - active presenter deck language
  * @returns {{
  *   el: HTMLElement,
  *   copyBtn: HTMLButtonElement,

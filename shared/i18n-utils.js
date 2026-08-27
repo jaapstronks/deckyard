@@ -4,18 +4,29 @@
  */
 
 /**
- * The deck translation targets: every language a deck can be translated into.
+ * The deck-language axis: every language a deck can be written, stored and
+ * translated into. **One open list, one definition site** — decision D61.
  *
  * This is the **deck** axis, not the UI-locale axis. It is keyed `en-GB` (the
  * canonical spelling of English for a deck), while `client/i18n/manifest.json`
  * keys the interface locale `en`. The two lists happen to name the same twelve
  * languages today, but they answer different questions — "what can a deck be
- * translated into" versus "what can the interface be shown in" — so this one is
+ * written in" versus "what can the interface be shown in" — so this one is
  * spelled out here rather than derived from the manifest.
  *
- * This array is the single source for that list. Everything else that needs it
- * (the storage facade, the public API, the LLM prompt labels) derives from it;
- * `tests/deck-translation-langs.test.js` pins those derivations.
+ * Until D61 the axis was a two-value enum (`['nl','en-GB']`) declared in five
+ * places, with a sixth hardcode in `getLang()` and an accessor
+ * (`client/lib/format/i18n.js`) whose setter filtered its own input back down
+ * to that pair — an axis that advertised configurability and forbade it. The
+ * `.deck` format already promises any BCP-47 tag
+ * (`shared/slide-types/json-schema.js`), so the pair was a leftover, not a
+ * contract. It is now this list, and only this list: nothing re-declares it,
+ * and `normalizeLang()` is the only membership test.
+ *
+ * Everything that needs it (the storage facade, the public API, the LLM prompt
+ * labels, the client accessor) derives from it;
+ * `tests/deck-translation-langs.test.js` pins those derivations and
+ * `tests/deck-language-axis.test.js` pins that there is one definition site.
  *
  * @type {readonly string[]}
  */
@@ -35,7 +46,7 @@ export const TRANSLATION_LANGS = Object.freeze([
 ]);
 
 /**
- * English display names for the deck translation targets.
+ * English display names for the deck languages.
  *
  * One map, two readers: the public API returns these verbatim as the `label` of
  * a language, and the LLM prompt builder upper-cases them. Keys are exactly
@@ -59,6 +70,33 @@ export const TRANSLATION_LANG_LABELS = Object.freeze({
 });
 
 /**
+ * Native display names for the deck languages — what a picker shows.
+ *
+ * Sibling of `TRANSLATION_LANG_LABELS`: same keys, same axis, different reader.
+ * The English map answers the public API and the LLM prompt ("translate into
+ * Finnish"); this one answers a human choosing their own language, who expects
+ * to read "Suomi". Both live here because both are keyed by the axis, and a
+ * partial copy of this map in `client/lib/format/lang-selector.js` was missing
+ * five of the twelve — those fell back to the raw code in the picker (D61).
+ *
+ * @type {Readonly<Record<string, string>>}
+ */
+export const TRANSLATION_LANG_NATIVE_LABELS = Object.freeze({
+  nl: 'Nederlands',
+  'en-GB': 'English',
+  de: 'Deutsch',
+  fr: 'Français',
+  es: 'Español',
+  pt: 'Português',
+  it: 'Italiano',
+  pl: 'Polski',
+  fi: 'Suomi',
+  da: 'Dansk',
+  sv: 'Svenska',
+  no: 'Norsk',
+});
+
+/**
  * Input aliases accepted on the deck axis, normalized away on the way in.
  *
  * `en` is the interface-locale spelling of English; callers that know Deckyard
@@ -73,41 +111,73 @@ const TRANSLATION_LANG_ALIASES = Object.freeze({ en: 'en-GB' });
 const TRANSLATION_LANG_SET = new Set(TRANSLATION_LANGS);
 
 /**
- * Legacy two-language set for presentation dominant/active language.
- * Used for backwards compatibility with existing presentations.
+ * The language a deck falls back to when nothing else names one.
+ *
+ * The first entry of the axis, not a second literal: "the default" and "the
+ * axis" cannot drift apart if the default is read off the list. Every
+ * `|| 'nl'` in the client and server used to answer this question privately
+ * — ~40 of them, each free to disagree (D61).
+ *
+ * @type {string}
  */
-const KNOWN_LANGS = new Set(['nl', 'en-GB']);
+export const DEFAULT_DECK_LANG = TRANSLATION_LANGS[0];
 
 /**
- * Normalize a language code to a known presentation language or null.
- * Only accepts 'nl' or 'en-GB' (the two legacy presentation languages).
+ * The deck languages a fresh instance has switched on.
+ *
+ * The axis says what a deck *may* be written in; an instance decides which of
+ * those its authors actually get (`appSettings.supportedSlideLangs`, admin
+ * settings). This is the out-of-the-box answer, and it is deliberately narrower
+ * than the axis: Deckyard ships bilingual NL/EN, and an instance that wants
+ * Finnish switches it on. Both the server default and the client's
+ * pre-boot value read it here, so "what is on by default" cannot differ
+ * between the two sides (D61).
+ *
+ * @type {readonly string[]}
+ */
+export const DEFAULT_SUPPORTED_DECK_LANGS = Object.freeze(['nl', 'en-GB']);
+
+/**
+ * Normalize a value to a deck language, or null.
+ *
+ * The **one** membership test on the deck-language axis. Accepts every code in
+ * `TRANSLATION_LANGS` plus the input aliases in `TRANSLATION_LANG_ALIASES`, and
+ * returns the canonical spelling — so `en` comes back as `en-GB` and nothing is
+ * ever stored under an alias.
+ *
+ * Until D61 this accepted `nl`/`en-GB` and nothing else, while a second
+ * normalizer (`normalizeLang`) accepted all twelve: one axis, two
+ * answers, depending on which import a module happened to reach for. They are
+ * the same function now.
+ *
  * @param {*} v - Language code to normalize
- * @returns {'nl'|'en-GB'|null}
+ * @returns {string|null} Canonical language code, or null when off-axis
  */
 export function normalizeLang(v) {
-  return KNOWN_LANGS.has(v) ? v : null;
-}
-
-/**
- * Normalize a language code to a deck translation target, or null.
- * Accepts every code in `TRANSLATION_LANGS` plus the aliases in
- * `TRANSLATION_LANG_ALIASES`; returns the canonical spelling.
- * @param {*} v - Language code to normalize
- * @returns {string|null} Canonical language code, or null when unsupported
- */
-export function normalizeTranslationLang(v) {
   if (Object.hasOwn(TRANSLATION_LANG_ALIASES, v))
     return TRANSLATION_LANG_ALIASES[v];
   return TRANSLATION_LANG_SET.has(v) ? v : null;
 }
 
 /**
- * Get the other language in a two-language system.
+ * The other language of a *bilingual* deck, or null.
+ *
+ * Narrow by construction, and deliberately not the axis: this answers "the
+ * editor shows an NL⇄EN toggle — which one is the other side?", which is only
+ * a question at all when a deck has exactly two languages. On the open axis
+ * (D61) "the other of twelve" has no answer, so an off-pair language gets
+ * `null` and the caller has to name its target explicitly rather than be
+ * handed a guess. The bilingual editor chrome that this serves (the two fixed
+ * NL/EN buttons, the translate modals) is a two-language UI awaiting an
+ * N-language successor — B182.
+ *
  * @param {*} lang - Current language
- * @returns {'nl'|'en-GB'}
+ * @returns {'nl'|'en-GB'|null}
  */
 export function otherLang(lang) {
-  return lang === 'en-GB' ? 'nl' : 'en-GB';
+  if (lang === 'en-GB') return 'nl';
+  if (lang === 'nl') return 'en-GB';
+  return null;
 }
 
 /**
@@ -139,7 +209,7 @@ export function otherLang(lang) {
  * `server/utils/doc-lang.js`.
  *
  * @param {Object} [pres] - a presentation
- * @returns {'nl'|'en-GB'|null}
+ * @returns {string|null}
  */
 export function resolveDeckLang(pres) {
   return (

@@ -457,6 +457,52 @@ APIs (admin users, email, integrations, API keys, analytics) check the instance
 role on purpose. Where a server route is organization-scoped but still gates on
 the instance flag, that is a separate defect from this rule.
 
+### `no-restricted-syntax` on `'nl'` / `'en-GB'` — one deck-language axis
+
+Scoped to `client/**`, this rule rejects the two legacy deck-language codes as
+bare string literals.
+
+The **deck-language axis** — what language a deck can be written, stored and
+translated into — is one open list, `TRANSLATION_LANGS` in
+[`shared/i18n-utils.js`](../../shared/i18n-utils.js), with one membership test,
+`normalizeLang()`. It did not used to be. It was a two-value enum
+(`['nl','en-GB']`) declared in **five** places, with a sixth hardcode in
+`getLang()` and a seventh as a `Set` in the deck-settings picker, above an
+accessor (`getSupportedLangs`/`setSupportedLangs`) whose setter filtered its own
+input back down to that pair — so the configurability the admin UI advertised
+could never work. Around it sat **206** bare literals in 62 client files, each
+answering "is this a language?" or "what is the default?" privately.
+
+The remedies, all from `shared/i18n-utils.js`:
+
+| you were writing                      | write instead                        |
+| ------------------------------------- | ------------------------------------ |
+| `x === 'nl' \|\| x === 'en-GB'`       | `normalizeLang(x)`                   |
+| `x \|\| 'nl'`                         | `x \|\| DEFAULT_DECK_LANG`           |
+| `for (const l of ['nl','en-GB'])`     | `for (const l of TRANSLATION_LANGS)` |
+| `['nl','en-GB']` as a shipped default | `DEFAULT_SUPPORTED_DECK_LANGS`       |
+
+A literal cannot say which axis it means, so **both** codes are restricted and
+the selector matches the string value exactly — `nl-NL`, a `class:` token
+containing `nl`, and `en-GB-oxendict` are untouched.
+
+Note the rule is about the **deck** axis. `'nl'` as a **UI locale**
+(`client/i18n/nl/`, twelve manifest locales, tier-gated) is a different
+vocabulary that happens to share a spelling; those modules sit on the allowlist
+rather than being rewritten. The two axes also stopped sharing a query key:
+`?lang=` is the deck language, `?locale=` is the interface (D61) — before the
+split, a shared editor link carrying `?lang=nl` switched the recipient's whole
+interface to Dutch.
+
+`deckLangLiteralAllowlist` in `eslint.config.js` names the files that still
+carry literals, each under one of two reasons: **bilingual chrome** (the fixed
+NL⇄EN toggle, the paired alt-text inputs, the translate modals — widening those
+to N languages is a UI design job, tracked separately) and **UI-locale axis**.
+The list may only shrink: `tests/deck-language-axis.test.js` fails when an entry
+stops matching a real literal, so a cleaned-up file cannot quietly keep its
+exemption. That same test pins the other two gates — one definition site for the
+axis, one client module reading `?lang=`.
+
 ### The suppressions baseline (burndown)
 
 The first run surfaced **397 `no-unused-vars`** and **10 `no-useless-escape`**

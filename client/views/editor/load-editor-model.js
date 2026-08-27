@@ -8,6 +8,7 @@ import {
   loadSlideTypes,
   normalizeSlideNotes,
 } from './bootstrap.js';
+import { deckLangQuery, readDeckLangParam } from '../../lib/format/i18n.js';
 
 export async function loadEditorModel({
   id,
@@ -18,11 +19,8 @@ export async function loadEditorModel({
   if (!id) throw new Error('loadEditorModel: id is required');
 
   const url = startUrl || new URL(location.href);
-  const initialLang = url.searchParams.get('lang');
-  const langParam =
-    initialLang === 'nl' || initialLang === 'en-GB'
-      ? `?lang=${encodeURIComponent(initialLang)}`
-      : '';
+  const initialLang = readDeckLangParam(url);
+  const langParam = deckLangQuery(url);
 
   // The route handler already fetched the presentation for its permission
   // check (same id + lang): accept it via initialPres so long decks aren't

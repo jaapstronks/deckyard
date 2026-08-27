@@ -8,6 +8,7 @@ import {
 } from '../../../utils/org-slide-types.js';
 import { loadThemeAssets, resolveThemeId } from '../../../utils/themes.js';
 import { createLogger } from '../../../utils/logger.js';
+import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
 
 /** Shared logger for all AI route handlers. */
 export const log = createLogger('ai');
@@ -120,7 +121,10 @@ export async function createPresentationWithI18n(
   });
 
   const activeLang =
-    created?.i18n?.active || created?.i18n?.dominant || lang || 'nl';
+    created?.i18n?.active ||
+    created?.i18n?.dominant ||
+    lang ||
+    DEFAULT_DECK_LANG;
   const updatedI18n = {
     ...created.i18n,
     versions: {

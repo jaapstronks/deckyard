@@ -48,6 +48,10 @@ import {
 } from '../../shared/constants/ai.js';
 import { getAppName } from '../config/branding.js';
 import { envStr } from '../config/utils.js';
+import {
+  DEFAULT_SUPPORTED_DECK_LANGS,
+  normalizeLang,
+} from '../../shared/i18n-utils.js';
 import { DEFAULT_THEME_ID } from '../../shared/constants/themes.js';
 import { SUBSCRIPTION_LEVELS } from './presentations/subscriptions.js';
 import {
@@ -93,9 +97,16 @@ async function resolveSettingsUserId(key) {
   return resolution?.userId ?? null;
 }
 
+/**
+ * Normalize one entry of `supportedSlideLangs` against the deck-language axis.
+ * The axis is `TRANSLATION_LANGS` in `shared/i18n-utils.js`; this used to be a
+ * seventh hardcode of the old `nl`/`en-GB` pair, which is why the admin toggle
+ * could never enable anything else (D61).
+ * @param {*} v
+ * @returns {string|null}
+ */
 export function normalizeSupportedLang(v) {
-  // NOTE: Foundation: keep language codes conservative for now (matches existing client i18n).
-  return v === 'nl' || v === 'en-GB' ? v : null;
+  return normalizeLang(v);
 }
 
 export function normalizeUiLocale(v) {
@@ -118,7 +129,7 @@ export function normalizeSupportedLangList(arr) {
 
 export function defaultAppSettings() {
   return {
-    supportedSlideLangs: ['nl', 'en-GB'],
+    supportedSlideLangs: [...DEFAULT_SUPPORTED_DECK_LANGS],
     webhooks: {
       presentationMovedToOrganizationUrl: '',
       slideAddedToOrganizationLibraryUrl: '',

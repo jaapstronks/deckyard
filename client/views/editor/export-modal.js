@@ -26,6 +26,8 @@ import {
 } from '../../lib/format/i18n.js';
 import { createSegmented } from '../../lib/dom/segmented.js';
 import { buildExportUrl } from './publish-export/urls.js';
+import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
+import { getLangShortLabel } from '../../lib/format/lang-selector.js';
 
 const LUCIDE = (name) => `/client/vendor/lucide-icons/${name}.svg`;
 
@@ -333,7 +335,7 @@ function buildFormatRow(fmt, { id, getLang, title }) {
  * @returns {Object} Modal API
  */
 export function openExportModal({ pres, id, root }) {
-  const activeLang = normalizeLang(pres?.i18n?.active) || 'nl';
+  const activeLang = normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG;
   const other = otherLang(activeLang);
   const hasOther = other && hasLangVersion(pres, other);
   const title = pres?.title || pres?.meta?.title || 'export';
@@ -356,10 +358,12 @@ export function openExportModal({ pres, id, root }) {
     const seg = createSegmented({
       ariaLabel: t('editor.export.langLabel', 'Language'),
       value: activeLang,
-      segments: [
-        { value: 'nl', label: 'NL' },
-        { value: 'en', label: 'EN' },
-      ],
+      // The two languages this deck actually has, in axis spelling. The
+      // segments were `nl`/`en` before D61 — `en` is the alias, so the English
+      // segment never matched an `en-GB` active language.
+      segments: [activeLang, other]
+        .filter(Boolean)
+        .map((code) => ({ value: code, label: getLangShortLabel(code) })),
       onSelect: (val) => {
         currentLang = val;
       },

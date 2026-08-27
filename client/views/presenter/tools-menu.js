@@ -2,6 +2,10 @@ import { t } from '../../lib/ui-i18n.js';
 import { confirmModal } from '../../lib/dom/modal.js';
 import { h } from '../../lib/dom.js';
 import { disposeAll } from '../../lib/dom/disposal.js';
+import {
+  DEFAULT_DECK_LANG,
+  normalizeLang,
+} from '../../../shared/i18n-utils.js';
 
 export function createPresenterToolsMenu({
   modeLang,
@@ -166,7 +170,7 @@ export function createPresenterToolsMenu({
       if (!sessionPresId) return;
       closeTools();
       const u = new URL(`/follow/${sessionPresId}`, location.origin);
-      u.searchParams.set('lang', modeLang === 'en-GB' ? 'en-GB' : 'nl');
+      u.searchParams.set('lang', normalizeLang(modeLang) || DEFAULT_DECK_LANG);
       window.open(u.toString(), '_blank');
     },
   });
@@ -181,7 +185,7 @@ export function createPresenterToolsMenu({
       if (!sessionPresId) return;
       closeTools();
       const u = new URL(`/follow/${sessionPresId}`, location.origin);
-      u.searchParams.set('lang', modeLang === 'en-GB' ? 'en-GB' : 'nl');
+      u.searchParams.set('lang', normalizeLang(modeLang) || DEFAULT_DECK_LANG);
       await copyText?.(
         t(
           'presenter.tools.copyAudiencePrompt',

@@ -17,7 +17,7 @@ import YAML from 'yaml';
 import {
   TRANSLATION_LANGS,
   TRANSLATION_LANG_LABELS,
-  normalizeTranslationLang,
+  normalizeLang,
 } from '../shared/i18n-utils.js';
 import * as storageI18n from '../server/storage/presentations/i18n.js';
 import { labelForLang } from '../server/utils/openai/lang.js';
@@ -44,7 +44,7 @@ test('every target normalizes to itself and carries exactly one label', () => {
     [...TRANSLATION_LANGS].sort(),
   );
   for (const code of TRANSLATION_LANGS) {
-    assert.equal(normalizeTranslationLang(code), code);
+    assert.equal(normalizeLang(code), code);
     assert.ok(TRANSLATION_LANG_LABELS[code], `${code} has an English label`);
     assert.equal(
       labelForLang(code),
@@ -55,11 +55,11 @@ test('every target normalizes to itself and carries exactly one label', () => {
 });
 
 test('en is the only alias, and it resolves to the canonical spelling', () => {
-  assert.equal(normalizeTranslationLang('en'), 'en-GB');
+  assert.equal(normalizeLang('en'), 'en-GB');
   assert.equal(labelForLang('en'), 'BRITISH ENGLISH');
   for (const bogus of ['EN', 'en-US', 'nl-NL', 'xx', '', null, undefined, 42]) {
     assert.equal(
-      normalizeTranslationLang(bogus),
+      normalizeLang(bogus),
       null,
       `${String(bogus)} is not a translation target`,
     );

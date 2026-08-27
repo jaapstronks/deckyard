@@ -17,6 +17,11 @@ import { injectTextStyles } from './text-styles.js';
 import { validateFieldValue } from './field-types.js';
 import { CURRENT_SCHEMA_VERSION } from './schema-version.js';
 import { renderUnresolvedSlideHtml } from './unresolved.js';
+import {
+  DEFAULT_DECK_LANG,
+  TRANSLATION_LANGS,
+  normalizeLang,
+} from '../i18n-utils.js';
 
 export function newPresentation({
   title = 'Untitled presentation',
@@ -45,7 +50,7 @@ export function newPresentation({
     created: now,
     modified: now,
     theme,
-    lang: lang === 'en-GB' ? 'en-GB' : 'nl',
+    lang: normalizeLang(lang) || DEFAULT_DECK_LANG,
     settings: {
       qaEnabled: true,
       // Presenter stepping ("Tekst stap voor stap"): hide/reveal fragments while presenting.
@@ -440,8 +445,10 @@ export function validatePresentation(pres, opts = {}) {
         `Presentation.schemaVersion ${sv} is newer than this build supports (max ${CURRENT_SCHEMA_VERSION})`,
       );
   }
-  if (pres.lang != null && pres.lang !== 'nl' && pres.lang !== 'en-GB')
-    errors.push('Presentation.lang must be "nl" or "en-GB"');
+  if (pres.lang != null && !normalizeLang(pres.lang))
+    errors.push(
+      `Presentation.lang must be one of: ${TRANSLATION_LANGS.join(', ')}`,
+    );
   if (pres.theme && !allowedThemes.includes(pres.theme))
     errors.push(
       `Presentation.theme must be one of: ${allowedThemes.join(', ')}`,

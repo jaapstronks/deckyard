@@ -25,6 +25,10 @@ import { openSaveToLibraryModal } from '../modals/save-to-library-modal.js';
 import { readPreferredLlmVendor } from '../../../lib/net/llm-vendor.js';
 import { isOrganizationAdmin } from '../../../../shared/organization-role.js';
 import { icon } from '../../../lib/dom/icons.js';
+import {
+  DEFAULT_DECK_LANG,
+  normalizeLang,
+} from '../../../../shared/i18n-utils.js';
 
 /**
  * Build the header actions dropdown menu
@@ -205,7 +209,8 @@ export function buildHeaderActions({
             );
 
             try {
-              const lang = pres?.i18n?.active === 'en-GB' ? 'en-GB' : 'nl';
+              const lang =
+                normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG;
               const vendor = readPreferredLlmVendor() || null;
 
               const resp = await api('/api/ai/convert-slide', {

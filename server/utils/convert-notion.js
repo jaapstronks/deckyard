@@ -30,6 +30,7 @@ import {
 } from '../media/index.js';
 import { safeFetchRemoteImage } from './ssrf-guard.js';
 import { createLogger } from './logger.js';
+import { DEFAULT_DECK_LANG } from '../../shared/i18n-utils.js';
 
 const log = createLogger('convert-notion');
 
@@ -320,7 +321,7 @@ async function convertWithAi(formattedContent, options = {}) {
       ? lang
       : outline.metadata?.detectedLang ||
         outline.metadata?.requestedLang ||
-        'nl';
+        DEFAULT_DECK_LANG;
 
   log.info(
     `Outline generated: ${outline.slides.length} slides planned, lang=${effectiveLang}`,

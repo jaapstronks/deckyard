@@ -1,5 +1,6 @@
 import { escapeHtml } from '../helpers.js';
 import { normalizeLang } from '../../i18n-utils.js';
+import { DEFAULT_DECK_LANG } from '../../i18n-utils.js';
 
 const COPY = {
   nl: {
@@ -61,7 +62,7 @@ export default {
   renderHtml: (content, slide, ctx = {}) => {
     const presId = String(content?.presentationId || '').trim();
     // Derived, never read from the slide: this is the invite for *this* version.
-    const lang = normalizeLang(ctx?.lang) || 'nl';
+    const lang = normalizeLang(ctx?.lang) || DEFAULT_DECK_LANG;
     const base = COPY[lang] || COPY.nl;
     const customTitle =
       typeof content?.customTitle === 'string'
