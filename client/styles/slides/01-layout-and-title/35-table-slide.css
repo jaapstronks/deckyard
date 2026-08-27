@@ -91,10 +91,15 @@
 .slide-table .md-table--plain {
   /* intentionally empty */
 }
-/* On the dark calm background a fully transparent plain header is
-   indistinguishable from the body; give it a faint tint. Light backgrounds
-   keep the historical transparent look. */
-.slide-bg-calm .md-table--plain {
+/* On a dark ground a fully transparent plain header is indistinguishable from
+   the body; give it a faint tint. Light grounds keep the historical
+   transparent look.
+
+   Keyed on the luminance the ground declares, never on a background name: a
+   theme variant with a light `textColor` says its ground is dark
+   (theme-slide-backgrounds.md), and so does a background image with light
+   text. Both land here without this file learning their names. */
+.has-slide-bg-light-text .md-table--plain {
   --table-header-bg: rgba(255, 255, 255, 0.08);
 }
 

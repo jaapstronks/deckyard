@@ -97,9 +97,11 @@
   border: 1px solid var(--kpi-tile-border);
 }
 
-/* On the dark calm surface a filled tile sits too close to the background to
-   read as its own block, so give every tile a rim in its own text colour. */
-.slide-bg-calm.slide-kpi-metrics .kpi-metric {
+/* On a dark ground a filled tile sits too close to the background to read as
+   its own block, so give every tile a rim in its own text colour. Keyed on the
+   luminance the ground declares (theme-slide-backgrounds.md), not on a
+   background name. */
+.has-slide-bg-light-text.slide-kpi-metrics .kpi-metric {
   border-color: color-mix(in srgb, var(--kpi-tile-fg) 26%, transparent);
 }
 

@@ -19,11 +19,16 @@
   );
 }
 
-/* Dark backgrounds: elevated glass card + the accent role. (The documented
+/* Dark ground: elevated glass card + the accent role. (The documented
    --t-slide-bg-calm-accent hook was never emitted by any theme or generator —
-   a phantom token; variants theme their text/link, not a private accent.) */
-.slide-timeline.slide-bg-calm,
-.slide-timeline.slide-bg-dark {
+   a phantom token; variants theme their text/link, not a private accent.)
+
+   Keyed on the luminance the ground declares (theme-slide-backgrounds.md), so
+   every dark variant gets this, and a background image with light text does
+   too — white cards under white text was the defect. It used to name
+   `.slide-bg-calm` (one theme's variant id) and `.slide-bg-dark` (a background
+   this type never offers: only countdown-slide ships the extended field). */
+.slide-timeline.has-slide-bg-light-text {
   --timeline-card-surface: rgba(255, 255, 255, 0.1);
   --timeline-card-border: rgba(255, 255, 255, 0.18);
   --timeline-card-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
@@ -41,8 +46,7 @@
    PDFKit) renders as a filled bounding box: a hard dark rectangle around every
    card. Same selector as the definition above → wins in print. */
 @media print {
-  .slide-timeline.slide-bg-calm,
-  .slide-timeline.slide-bg-dark {
+  .slide-timeline.has-slide-bg-light-text {
     --timeline-card-shadow: none;
   }
 }
@@ -343,14 +347,14 @@
   ); /* TODO: between --slide-opacity-subtle (0.08) and --slide-opacity-light (0.12) */
 }
 
-/* Dark backgrounds: lift the track + connector off the dark surface. */
-.slide-timeline.slide-bg-calm .timeline-track,
-.slide-timeline.slide-bg-dark .timeline-track {
+/* Dark ground: lift the track + connector off it. Laid down after the lime
+   rules above on purpose — a lime slide carrying a dark background image has
+   both classes, and the image is the ground the hairlines sit on. */
+.slide-timeline.has-slide-bg-light-text .timeline-track {
   background: rgba(255, 255, 255, 0.16);
 }
 
-.slide-timeline.slide-bg-calm .timeline-connector,
-.slide-timeline.slide-bg-dark .timeline-connector {
+.slide-timeline.has-slide-bg-light-text .timeline-connector {
   background: rgba(255, 255, 255, 0.2);
 }
 
