@@ -89,7 +89,7 @@ export async function loadCustomFonts(coreFonts = []) {
   let declared;
   try {
     const mod = await import(pathToFileURL(CUSTOM_FONTS_FILE).href);
-    declared = mod.default ?? mod.CUSTOM_FONTS;
+    declared = mod.default;
   } catch (err) {
     // stderr, not stdout: this module is reached from tools whose stdout is a
     // data contract, the same constraint shared/slide-types/custom-loader.js has.
