@@ -383,10 +383,51 @@ curl -X POST https://your-deckyard.com/mcp \
   -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"list_presentations","arguments":{}}}'
 ```
 
+### Permissions and quota
+
+`/mcp` and `/api/v1` authenticate with the same `dk_live_*` keys, so a key may
+do the same things on both. Every tool declares the one API-key permission it
+requires — the same one its v1 counterpart requires — and the dispatch refuses
+a call outside it:
+
+| Permission       | Tools                                                                                                                                                                |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `read`           | `get_slide_types`, `list_presentations`, `get_presentation`, `get_presentation_url`, `list_themes`, `validate_presentation`, `preview_slide`, `preview_presentation` |
+| `write`          | `create_presentation_from_slides`, `add_slide`, `update_slide`, `remove_slide`, `reorder_slides`, `duplicate_presentation`, `delete_presentation`                    |
+| `ai`             | `create_presentation`, `append_slides`, `convert_slide`, `iterate_presentation`, `compress_presentation`, `analyze_presentation`                                     |
+| `export`         | `export_presentation`                                                                                                                                                |
+| `comments:read`  | `list_comments`, `list_recent_comments`                                                                                                                              |
+| `comments:write` | `add_comment`, `reply_to_comment`, `set_comment_status`                                                                                                              |
+
+A refusal is a JSON-RPC tool error naming the missing permission
+(`API key lacks required permission: write`), not an HTTP status — see
+[`api-error-format.md`](api-error-format.md) § 401 versus 403. `tools/list`
+also hides the tools the key may not call, so an agent is not offered a menu it
+cannot order from.
+
+The two previewing tools require `read`, not `export`: they render content the
+key can already fetch with `get_presentation` and produce no file.
+
+Quota is shared, not per transport. A tool call spends the same per-minute
+bucket and the same daily AI/export limits as a v1 request with the same key,
+and lands in the same usage counters — switching transport does not reset a
+limit. Limits per tier (free/pro/enterprise) live in `TIER_LIMITS`
+(`server/storage/api-keys.js`).
+
+The bucket and the request counter are spent before the permission is checked,
+exactly as on v1: a refused call costs the caller what an accepted one costs,
+so calling out-of-scope tools is not a cheap way to keep the server busy.
+
+**stdio is not gated this way.** A local stdio server is launched by whoever
+owns the machine and talks to the database directly; there is no key to judge,
+so authorization happens at launch. The permission and quota gate applies to
+keyed requests, i.e. the SSE transport.
+
+The pinned permission table and the gate that fails on a tool declaring none:
+`tests/mcp/mcp-tool-permissions.test.js`.
+
 ### Security
 
-- API-key permissions gate access: `read`, `write`, `ai`, `export`
-- Rate limiting via existing API key tiers (free/pro/enterprise)
 - Sessions expire after 30 minutes of inactivity
 - Each session is bound to its API key owner — cross-key access is denied
 - Per-deck authorization: tools use the same collaborator-aware

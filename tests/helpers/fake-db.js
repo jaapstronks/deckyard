@@ -140,11 +140,13 @@ function isRawExpression(value) {
 /**
  * Evaluate a `sql` template against the row it updates.
  *
- * Two shapes are understood: `<column> ± <number>` (the `revision + 1` write)
- * and `now()` (the server-clock timestamp `writeUserSettings` stamps on
+ * Three shapes are understood: `<column> ± <number>` (the `revision + 1`
+ * write), `now()` (the server-clock timestamp `writeUserSettings` stamps on
  * `updated_at`), which resolves to an ISO string as PostgreSQL's `now()` would
- * to a timestamp. Anything else throws, so an unmodelled expression fails the
- * test instead of landing in a row as a builder object.
+ * to a timestamp, and `COALESCE(<table>.<column>, 0) ± $n` — the counter
+ * upsert `incrementUsage` runs on every API/MCP request. Anything else throws,
+ * so an unmodelled expression fails the test instead of landing in a row as a
+ * builder object.
  *
  * @param {*} value - Raw expression from a SET object
  * @param {Object} row - Row being updated
@@ -164,6 +166,23 @@ function evaluateRawExpression(value, row, column) {
     const base = Number(row[operand]) || 0;
     return operator === '+' ? base + Number(amount) : base - Number(amount);
   }
+  // `COALESCE(<table>.<column>, 0) ± $n` — the ON CONFLICT counter bump. The
+  // amount rides in as a bound parameter, so it is read off `node.parameters`
+  // rather than out of the SQL text.
+  const coalesced = text.match(
+    /^coalesce\(\s*(?:"?[a-z_]+"?\.)?"?([a-z_]+)"?\s*,\s*0\s*\)\s*([+-])$/i,
+  );
+  const params = node.parameters || [];
+  if (coalesced && params.length === 1) {
+    const [, operand, operator] = coalesced;
+    const raw = params[0];
+    const amount = Number(typeof raw === 'object' && raw ? raw.value : raw);
+    if (Number.isFinite(amount)) {
+      const base = Number(row[operand]) || 0;
+      return operator === '+' ? base + amount : base - amount;
+    }
+  }
+
   throw new Error(
     `fake-db: unsupported sql expression for "${column}": ${text}`,
   );
