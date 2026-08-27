@@ -69,10 +69,26 @@ Three rules keep it honest:
   overrides it, because it is laid down after the slide stylesheets in every
   path (client injection, embed, export, MCP preview).
 
-Retrofitting the per-slide-type CSS that still keys on `.slide-bg-lime` /
-`.slide-bg-calm` / `.slide-bg-dark` onto this class is tracked separately — see
-`docs/plans/TODO.md`. Until that lands, a variant gets correct slide-level
-contrast but not every per-type treatment.
+### A background name in a selector means a colour
+
+Per-slide-type CSS does still select on `.slide-bg-lime`, and that is correct:
+those rules are about the lime **colour**, not about luminance. A step
+indicator, a funnel bar and a pyramid level all paint `var(--slide-bg-lime)`,
+so on a lime slide they would vanish into the ground and swap to the accent;
+the hairline nudges (track, connector, divider, cycle ring) are tuned to that
+one tint. Read `.slide-bg-lime` as "the ground is that colour" and every one of
+them says what it means.
+
+The rules that were about luminance — the timeline's glass cards, the plain
+table header tint, the KPI tile rim — keyed on `.slide-bg-calm` and
+`.slide-bg-dark` and now key on `has-slide-bg-light-text`. So a dark variant
+gets all three whatever it is called, and a slide carrying a dark background
+image gets them too (white cards under white text was the defect).
+
+`tests/slide-bg-luminance-contract.test.js` holds the line: core CSS may name a
+**built-in** background (`lime`, `mist`, `dark`, `accent`, …) and never a theme
+variant. `calm` is amethyst's and brand's data; its darkness is a property of
+those palettes, and core CSS that knows about it has reached into a theme.
 
 ## How it works
 

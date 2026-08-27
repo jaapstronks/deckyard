@@ -253,6 +253,17 @@
 }
 
 /* Optional: readable text on background images.
+
+   THE ONE LUMINANCE SPELLING. `has-slide-bg-light-text` means "this ground is
+   dark" and `-dark-text` means "this ground is light", wherever the answer came
+   from: a background image (authored or sampled), or a theme background variant
+   whose `textColor` declares it (docs/reference/theme-slide-backgrounds.md).
+   Per-slide-type CSS that needs to know how light the ground is selects on
+   these classes and nothing else. A `.slide-bg-<name>` selector may only mean
+   "the ground is that colour" — a clash to dodge, or a tint to nudge — never
+   "the ground is dark", because that is a property of one theme's palette and
+   no contract at all. `tests/slide-bg-luminance-contract.test.js` gates it.
+
    The light/dark variants redirect the slide's --slide-on-surface / --slide-on-surface-muted
    tokens to the theme's house-style contrast colours
    (--t-text-color-light / --t-text-color-dark, falling back to white /

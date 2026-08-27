@@ -7,6 +7,7 @@ import {
   renderBottomSubheadingHtml,
   hasBottomSubheading,
   bgClass,
+  BACKGROUND_FIELD,
   nonEmpty,
   objectPositionStyleAttrFromFocus,
   imagePlaceholderHtml,
@@ -165,17 +166,7 @@ export default {
         },
       ],
     },
-    {
-      key: 'background',
-      label: 'Background',
-      type: 'enum',
-      required: false,
-      options: [
-        { value: 'mist', label: 'Mist' },
-        { value: 'lime', label: 'Lime' },
-        { value: 'calm', label: 'Calm' },
-      ],
-    },
+    BACKGROUND_FIELD,
     {
       key: 'textPosition',
       label: 'Text position',
