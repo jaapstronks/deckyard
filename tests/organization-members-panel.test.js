@@ -209,7 +209,7 @@ test('every member carries a role', async () => {
     container.querySelectorAll('.admin-user-role-badge'),
   ).map((b) => b.textContent);
   assert.ok(badges.includes('Owner'));
-  assert.ok(badges.includes('Admin'));
+  assert.ok(badges.includes('Administrator'));
   assert.ok(badges.includes('Member'));
 });
 

@@ -23,7 +23,7 @@
   "share.collaborators.title": "Workspace-Benutzer einladen",
   "share.collaborators.transferOwnership": "Übertragen",
   "share.collaborators.transferOwnershipConfirm": "Eigentum dieser Präsentation an {email} übertragen?\n\nSie werden Mitwirkender mit Bearbeitungszugriff.",
-  "share.collaborators.transferOwnershipPlaceholder": "name@example.com",
+  "share.collaborators.transferOwnershipPlaceholder": "name@beispiel.de",
   "share.collaborators.transferOwnershipPrompt": "Geben Sie die E-Mail des neuen Eigentümers ein (muss ein bestehender Mitwirkender mit Bearbeitungszugriff sein):\n\nBerechtigte Benutzer: {users}",
   "share.collaborators.transferOwnershipTitle": "Eigentum an einen anderen Benutzer übertragen",
   "share.create.button": "Link erstellen",

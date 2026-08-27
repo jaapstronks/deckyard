@@ -280,7 +280,7 @@
   "settings.admin.emailTemplates.hint": "Personalizza i modelli email inviati dal sistema. Le modifiche sovrascrivono i valori predefiniti.",
   "settings.admin.emailTemplates.locales.da": "Dansk",
   "settings.admin.emailTemplates.locales.de": "Deutsch",
-  "settings.admin.emailTemplates.locales.en": "English",
+  "settings.admin.emailTemplates.locales.en": "Inglese",
   "settings.admin.emailTemplates.locales.es": "Español",
   "settings.admin.emailTemplates.locales.fr": "Français",
   "settings.admin.emailTemplates.locales.nl": "Nederlands",

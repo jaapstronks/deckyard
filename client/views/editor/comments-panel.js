@@ -483,7 +483,7 @@ export function createCommentsPanel({
   // Status + type live in one compact filter menu next to the scope switch
   // (they refine the list; scope decides what the list is about).
   const STATUS_OPTIONS = [
-    { value: 'open', label: () => t('comments.filter.open', 'Open') },
+    { value: 'open', label: () => t('comments.filter.open', 'Unresolved') },
     {
       value: 'resolved',
       label: () => t('comments.filter.resolved', 'Resolved'),

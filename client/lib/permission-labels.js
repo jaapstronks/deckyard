@@ -18,7 +18,7 @@ const LABELS = {
   view: { key: 'share.permission.view', fallback: 'View only' },
   comment: { key: 'share.permission.comment', fallback: 'Can comment' },
   edit: { key: 'share.permission.edit', fallback: 'Can edit' },
-  admin: { key: 'share.permission.admin', fallback: 'Admin' },
+  admin: { key: 'share.permission.admin', fallback: 'Administrator' },
 };
 
 /** @type {Record<string, { key: string, fallback: string }>} */

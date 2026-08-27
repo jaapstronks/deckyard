@@ -280,7 +280,7 @@
   "settings.admin.emailTemplates.hint": "Tilpass e-postmalene systemet sender. Endringer går foran standardene i koden.",
   "settings.admin.emailTemplates.locales.da": "Dansk",
   "settings.admin.emailTemplates.locales.de": "Deutsch",
-  "settings.admin.emailTemplates.locales.en": "English",
+  "settings.admin.emailTemplates.locales.en": "Engelsk",
   "settings.admin.emailTemplates.locales.es": "Español",
   "settings.admin.emailTemplates.locales.fr": "Français",
   "settings.admin.emailTemplates.locales.nl": "Nederlands",

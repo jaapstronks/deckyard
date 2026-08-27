@@ -225,7 +225,7 @@ export async function renderDashboard(root, { nav } = {}) {
       },
       {
         key: 'embed',
-        label: t('dashboard.source.embed', 'Embed'),
+        label: t('dashboard.source.embed', 'Embedded'),
         value: breakdown.embed || 0,
       },
     ].filter((s) => s.value > 0);
