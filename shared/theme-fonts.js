@@ -3,7 +3,17 @@
  * These fonts are pre-bundled on the server for privacy (no client requests to Google).
  */
 
-export const CURATED_FONTS = [
+// Node has a fork seam the browser does not (see below); the same detection
+// `shared/slide-types/registry.js` uses to fold in `custom/slide-types/`.
+const isNode = typeof process !== 'undefined' && process.versions?.node;
+
+/**
+ * The families upstream ships and pins in `scripts/google-fonts.lock.json`.
+ *
+ * Kept separate from {@link CURATED_FONTS} so the two halves of the seam stay
+ * legible: this is core's list and core's lock, and a fork adds to neither.
+ */
+const CORE_CURATED_FONTS = [
   // Sans-serif - Clean, modern fonts suitable for body text and headings
   { family: 'Inter', category: 'sans-serif', weights: [400, 500, 600, 700] },
   { family: 'Figtree', category: 'sans-serif', weights: [400, 500, 600, 700] },
@@ -84,6 +94,44 @@ export const CURATED_FONTS = [
     weights: [400, 500, 600, 700],
   },
 ];
+
+/**
+ * Families a fork declared in `custom/fonts.js`, validated. Empty upstream, and
+ * empty in the browser — the loader is Node-only, exactly like the custom
+ * slide-type loader. See `shared/custom-fonts-loader.js` for why the seam is a
+ * pair (`custom/fonts.js` + `custom/google-fonts.lock.json`) rather than an
+ * edit to core's two files.
+ * @type {Array<{family: string, category: string, weights: number[]}>}
+ */
+let customFonts = [];
+if (isNode) {
+  const { loadCustomFonts } = await import('./custom-fonts-loader.js');
+  customFonts = await loadCustomFonts(CORE_CURATED_FONTS);
+}
+
+/**
+ * Every curated family this process knows: core's, then the fork's.
+ *
+ * Consumers derive validation, the font picker, `@font-face` generation and the
+ * download plan from this one list, so a fork family is a first-class curated
+ * font — that is what makes the seam worth having over a second parallel list.
+ */
+export const CURATED_FONTS = [...CORE_CURATED_FONTS, ...customFonts];
+
+/**
+ * The fork's families by name. The downloader and the lock gate use it to route
+ * each family to the lockfile that owns it; empty upstream.
+ * @type {string[]}
+ */
+export const CUSTOM_FONT_FAMILIES = customFonts.map((f) => f.family);
+
+/**
+ * @param {string} family - Font family name
+ * @returns {boolean} whether this family came from the fork seam
+ */
+export function isCustomFont(family) {
+  return CUSTOM_FONT_FAMILIES.includes(family);
+}
 
 /**
  * Default fonts for new themes

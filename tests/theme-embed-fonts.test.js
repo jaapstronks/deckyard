@@ -11,6 +11,13 @@
  * This does. Adding a weight to `CURATED_FONTS`, refreshing the pin, or
  * changing how faces are merged now fails here until the theme files are
  * regenerated with it.
+ *
+ * It reads `themes/` — the five shipped archetypes — and both halves of the font
+ * pin. A **fork** theme is not checked here and is not meant to be: it lives in
+ * `custom/themes/<id>/theme.json`, is discovered from disk, and its curated
+ * families come from `custom/fonts.js`. Every failure below says so, because the
+ * previous wording sent forks to core's enum and core's lockfile instead
+ * (B163).
  */
 
 import test from 'node:test';
@@ -20,7 +27,21 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { getFontByFamily } from '../shared/theme-fonts.js';
+import {
+  CUSTOM_FONTS_FILE_REL,
+  CUSTOM_FONTS_LOCK_REL,
+} from '../shared/custom-fonts-loader.js';
 import { curatedEmbedFonts } from '../server/utils/curated-font-embed.js';
+
+/**
+ * Where a fork's theme and a fork's fonts actually go. Appended to every failure
+ * here: this gate is about `themes/`, and a fork that reads it as "core is where
+ * my theme belongs" pays for that misread in merge conflicts.
+ */
+const SEAM_HINT =
+  'This gate covers the shipped themes in themes/. A fork theme belongs in ' +
+  `custom/themes/<id>/theme.json, and its curated families in ${CUSTOM_FONTS_FILE_REL} ` +
+  `(pinned in ${CUSTOM_FONTS_LOCK_REL}). See docs/reference/fork-setup.md.`;
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -72,7 +93,8 @@ test("every theme's curated embedFonts match curatedEmbedFonts()", () => {
   assert.deepEqual(
     drift,
     [],
-    `theme embedFonts drifted from the curated font set:\n${drift.join('\n')}`,
+    `theme embedFonts drifted from the curated font set:\n${drift.join('\n')}\n` +
+      SEAM_HINT,
   );
 });
 
@@ -92,23 +114,29 @@ test('a theme embeds every family its heading and body fonts name', () => {
     }
   }
 
-  assert.deepEqual(missing, [], missing.join('\n'));
+  assert.deepEqual(missing, [], `${missing.join('\n')}\n${SEAM_HINT}`);
 });
 
 test('no curated embedFonts entry names a file the lock does not pin', async () => {
   // Paths are repo-relative and gitignored until postinstall runs, so this
   // checks the *pin*, not the disk: every path a theme names must be one the
   // lockfile knows about.
-  const lock = JSON.parse(
-    await fs.readFile(
-      path.join(repoRoot, 'scripts', 'google-fonts.lock.json'),
-      'utf8',
+  // Both halves of the pin: a fork theme that names a fork family is pinned in
+  // the fork's lock, and reading only upstream's would report it as stray.
+  const locks = await Promise.all(
+    ['scripts/google-fonts.lock.json', CUSTOM_FONTS_LOCK_REL].map((rel) =>
+      fs
+        .readFile(path.join(repoRoot, rel), 'utf8')
+        .then(JSON.parse)
+        .catch(() => null),
     ),
   );
   const pinnedPaths = new Set();
-  for (const [, entry] of Object.entries(lock.fonts)) {
-    for (const file of entry.files) {
-      pinnedPaths.add(`assets/fonts/google/${entry.slug}/${file.file}`);
+  for (const lock of locks.filter(Boolean)) {
+    for (const [, entry] of Object.entries(lock.fonts)) {
+      for (const file of entry.files) {
+        pinnedPaths.add(`assets/fonts/google/${entry.slug}/${file.file}`);
+      }
     }
   }
 
@@ -120,5 +148,5 @@ test('no curated embedFonts entry names a file the lock does not pin', async () 
     }
   }
 
-  assert.deepEqual(stray, [], stray.join('\n'));
+  assert.deepEqual(stray, [], `${stray.join('\n')}\n${SEAM_HINT}`);
 });

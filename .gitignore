@@ -54,7 +54,11 @@ custom/styles/*
 !custom/styles/.gitkeep
 custom/ai/*
 !custom/ai/.gitkeep
+custom/scripts/*
+!custom/scripts/.gitkeep
 custom/mcp-tools.js
+custom/fonts.js
+custom/google-fonts.lock.json
 
 # Playwright MCP screenshots
 .playwright-mcp/
