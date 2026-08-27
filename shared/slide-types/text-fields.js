@@ -24,6 +24,11 @@
  *   rule.
  * - **A text field is translatable, and nothing else is.** Translation is a
  *   consequence of the type, not a second classification.
+ * - The **walk** is shared, not just the vocabulary: `mapItemTexts` matches two
+ *   language versions item by item at every level, so the translate merge, the
+ *   editor's save-time language sync and the missing-translation scan cannot
+ *   drift apart on how deep a text field may sit (B164 — they had, and
+ *   `text-blocks-slide` `rows[].blocks[]` was never translated).
  * - `hidden` is deliberately **not** consulted. It answers "does the inspector
  *   show this field", which is a different question from "is this text a human
  *   wrote". Every hidden text field in the registry today is a legacy mirror
@@ -111,16 +116,102 @@ export function translatableKeysForType(type, slideTypes = SLIDE_TYPES) {
 }
 
 /**
- * Translatable per-item text keys for a type's `items` fields, as
- * `Map<fieldKey, string[]>`. Items fields with no text keys are omitted.
+ * Value at a `['rows', 0, 'blocks', 1, 'title']` path inside a slide content
+ * object. Missing links yield `undefined` rather than throwing, so a call site
+ * can ask the other language for a path its version does not have yet.
+ * @param {*} root - Object or array to read from
+ * @param {Array<string|number>} path - Alternating keys and indices
+ * @returns {*}
+ */
+export function valueAtPath(root, path) {
+  let cur = root;
+  for (const step of Array.isArray(path) ? path : []) {
+    if (cur === null || cur === undefined) return undefined;
+    cur = cur[step];
+  }
+  return cur;
+}
+
+/**
+ * Rebuild one `items` array so every text field below it — at **any** nesting
+ * depth — comes from `resolve`, while item count, order and all non-text
+ * values follow `srcArr`.
+ *
+ * This is the one place the per-index match between two language versions is
+ * made. It used to be spelled out per call site and only one level deep, so
+ * `text-blocks-slide`'s `rows[].blocks[].title/body` was invisible to the
+ * translate pipeline while the collab codec (`textFieldSpec`, two screens up)
+ * already walked it recursively. One recursion, three callers.
+ *
+ * A read-only scan is the same walk: pass a `resolve` that records the path
+ * and returns `undefined`, and discard the rebuilt array.
+ *
+ * @param {*} srcArr - Source-language array; decides item count and order
+ * @param {{textKeys: Set<string>, items: Map<string, Object>}} spec - Spec for this items field
+ * @param {Object} opts
+ * @param {(path: Array<string|number>, srcValue: *) => (string|undefined)} opts.resolve -
+ *   Value to write for one text field; `undefined` keeps what the base item
+ *   already holds (the source value when no `base` was given)
+ * @param {*} [opts.base] - Parallel array whose non-text values survive instead
+ *   of the source's. Supplying it at all makes the base win: an item the base
+ *   lacks starts empty, so a target version never inherits source-language prose.
+ * @param {Array<string|number>} [opts.path] - Path of this array inside the slide content
+ * @returns {Array}
+ */
+export function mapItemTexts(srcArr, spec, { resolve, base, path = [] } = {}) {
+  const src = Array.isArray(srcArr) ? srcArr : [];
+  const baseArr = Array.isArray(base) ? base : null;
+  const hasBase = base !== undefined && base !== null;
+  return src.map((srcItem, i) => {
+    const srcObj = srcItem && typeof srcItem === 'object' ? srcItem : null;
+    const baseObj =
+      baseArr?.[i] && typeof baseArr[i] === 'object' ? baseArr[i] : null;
+    // A primitive item carries no fields to match: hand it back untouched.
+    if (!srcObj && !hasBase) return srcItem;
+    const out = structuredClone(hasBase ? baseObj || {} : srcObj);
+    const itemPath = [...path, i];
+    for (const key of spec.textKeys) {
+      const v = resolve([...itemPath, key], srcObj?.[key]);
+      if (typeof v === 'string') out[key] = v;
+    }
+    for (const [key, sub] of spec.items) {
+      if (!Array.isArray(srcObj?.[key])) continue;
+      out[key] = mapItemTexts(srcObj[key], sub, {
+        resolve,
+        // `?? []` keeps "the base wins" true all the way down: a nested array
+        // the base has not grown yet must still start empty, not inherit the
+        // source language's prose.
+        base: hasBase ? (baseObj?.[key] ?? []) : undefined,
+        path: [...itemPath, key],
+      });
+    }
+    return out;
+  });
+}
+
+function itemsFieldsJson(spec) {
+  const out = [];
+  for (const [key, sub] of spec.items) {
+    const itemKeys = [...sub.textKeys];
+    const itemsFields = itemsFieldsJson(sub);
+    // An items field with no prose anywhere below it has nothing to say.
+    if (!itemKeys.length && !itemsFields.length) continue;
+    const entry = { key, itemKeys };
+    if (itemsFields.length) entry.itemsFields = itemsFields;
+    out.push(entry);
+  }
+  return out;
+}
+
+/**
+ * A type's translatable `items` fields as plain JSON, for prompts and wire
+ * formats: `[{ key, itemKeys, itemsFields? }]`, recursive. `itemsFields` is
+ * present only where a nested items field carries text, so the common flat
+ * type keeps its flat shape.
  * @param {string} type - Slide type name
  * @param {Object} [slideTypes] - Slide-type registry (forks/tests override)
- * @returns {Map<string, string[]>}
+ * @returns {{key: string, itemKeys: string[], itemsFields?: Object[]}[]}
  */
-export function translatableItemKeysForType(type, slideTypes = SLIDE_TYPES) {
-  const map = new Map();
-  for (const [key, spec] of textFieldSpecForType(type, slideTypes).items) {
-    if (spec.textKeys.size) map.set(key, [...spec.textKeys]);
-  }
-  return map;
+export function translatableItemsFieldsForType(type, slideTypes = SLIDE_TYPES) {
+  return itemsFieldsJson(textFieldSpecForType(type, slideTypes));
 }

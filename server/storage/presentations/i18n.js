@@ -1,10 +1,12 @@
 import { normalizeSlides } from './slides.js';
-import { translatableKeysForType } from '../../../shared/slide-types/text-fields.js';
+import {
+  computeMissingTranslation,
+  pickVersion,
+} from '../../utils/translation-status.js';
 import {
   normalizeLang,
   normalizeTranslationLang,
   otherLang,
-  isNonEmptyString,
   TRANSLATION_LANGS,
   TRANSLATION_LANG_LABELS,
 } from '../../../shared/i18n-utils.js';
@@ -12,12 +14,15 @@ import {
 /**
  * Server-side facade for the shared i18n vocabulary. `TRANSLATION_LANGS` and
  * `TRANSLATION_LANG_LABELS` are re-exported, not redefined — `shared/i18n-utils.js`
- * is the single source for the deck translation targets.
+ * is the single source for the deck translation targets. `pickVersion` comes
+ * from `server/utils/translation-status.js` for the same reason: this file
+ * carried a byte-for-byte copy of it.
  */
 export {
   normalizeLang,
   normalizeTranslationLang,
   otherLang,
+  pickVersion,
   TRANSLATION_LANGS,
   TRANSLATION_LANG_LABELS,
 };
@@ -26,72 +31,6 @@ export {
  * Presentation dominant/active languages (legacy two-language system).
  */
 export const SUPPORTED_LANGS = ['nl', 'en-GB'];
-
-/** @see shared/slide-types/text-fields.js — the one text-field vocabulary. */
-export const translateKeysForSlideType = translatableKeysForType;
-
-export function pickVersion(pres, lang) {
-  const l = normalizeLang(lang);
-  if (
-    l &&
-    pres?.i18n?.versions &&
-    typeof pres.i18n.versions === 'object' &&
-    pres.i18n.versions?.[l]
-  ) {
-    const v = pres.i18n.versions[l];
-    return {
-      title: typeof v?.title === 'string' ? v.title : '',
-      slides: Array.isArray(v?.slides) ? v.slides : [],
-    };
-  }
-  return {
-    title: typeof pres?.title === 'string' ? pres.title : '',
-    slides: Array.isArray(pres?.slides) ? pres.slides : [],
-  };
-}
-
-function buildSlideIndex(slides) {
-  const arr = Array.isArray(slides) ? slides : [];
-  const byId = new Map();
-  for (let i = 0; i < arr.length; i += 1) {
-    const s = arr[i];
-    if (s && typeof s === 'object' && typeof s.id === 'string' && s.id)
-      byId.set(s.id, s);
-  }
-  return { arr, byId };
-}
-
-export function computeMissingCount({ source, target } = {}) {
-  let count = 0;
-  if (isNonEmptyString(source?.title) && !isNonEmptyString(target?.title))
-    count += 1;
-
-  const srcIdx = buildSlideIndex(source?.slides);
-  const tgtIdx = buildSlideIndex(target?.slides);
-  for (let i = 0; i < srcIdx.arr.length; i += 1) {
-    const s = srcIdx.arr[i];
-    if (!s || typeof s !== 'object') continue;
-    const type = typeof s.type === 'string' ? s.type : '';
-    const keys = translateKeysForSlideType(type);
-    if (!keys.length) continue;
-
-    const srcContent =
-      s.content && typeof s.content === 'object' ? s.content : {};
-    const t =
-      (typeof s.id === 'string' && s.id && tgtIdx.byId.get(s.id)) ||
-      tgtIdx.arr[i] ||
-      null;
-    const tgtContent =
-      t?.content && typeof t.content === 'object' ? t.content : {};
-
-    for (const k of keys) {
-      const sv = srcContent[k];
-      const tv = tgtContent[k];
-      if (isNonEmptyString(sv) && !isNonEmptyString(tv)) count += 1;
-    }
-  }
-  return count;
-}
 
 /**
  * Normalize existing follow-invite slides: strip the per-version language keys
@@ -130,39 +69,18 @@ function normalizeFollowInviteSlides(slides) {
   return arr;
 }
 
+/**
+ * Deck-level translation-progress counter. Delegates to the one missing-scan
+ * in `server/utils/translation-status.js`: this file used to carry two more
+ * copies of the same walk (one of them dead, both top-level only), so a deck
+ * whose only untranslated prose sat in `rows[].blocks[]` counted as complete.
+ * @param {Object} fromVer - Source language version (`{title, slides}`)
+ * @param {Object} toVer - Target language version
+ * @returns {number}
+ */
 function missingTranslationCount(fromVer, toVer) {
-  const srcTitle = typeof fromVer?.title === 'string' ? fromVer.title : '';
-  const tgtTitle = typeof toVer?.title === 'string' ? toVer.title : '';
-  let missing = 0;
-  if (srcTitle.trim() && !tgtTitle.trim()) missing += 1;
-
-  const srcSlides = Array.isArray(fromVer?.slides) ? fromVer.slides : [];
-  const tgtSlides = Array.isArray(toVer?.slides) ? toVer.slides : [];
-  const tgtById = new Map(
-    tgtSlides
-      .filter((s) => s && typeof s === 'object' && typeof s.id === 'string')
-      .map((s) => [s.id, s]),
-  );
-
-  for (const src of srcSlides) {
-    if (!src || typeof src !== 'object') continue;
-    const srcId = typeof src.id === 'string' ? src.id : '';
-    const tgt = srcId ? tgtById.get(srcId) : null;
-    const srcContent =
-      src?.content && typeof src.content === 'object' ? src.content : {};
-    const tgtContent =
-      tgt?.content && typeof tgt.content === 'object' ? tgt.content : {};
-    const keys = translateKeysForSlideType(src?.type);
-    for (const k of keys) {
-      const a = srcContent?.[k];
-      const b = tgtContent?.[k];
-      if (typeof a === 'string' && a.trim()) {
-        if (!(typeof b === 'string' && b.trim())) missing += 1;
-      }
-    }
-  }
-
-  return missing;
+  return computeMissingTranslation({ source: fromVer, target: toVer })
+    .missingCount;
 }
 
 /**

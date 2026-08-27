@@ -1,8 +1,10 @@
 import { t } from '../../lib/ui-i18n.js';
 import { slideFingerprint } from '../../../shared/slide-fingerprint.js';
 import {
-  translatableItemKeysForType,
+  mapItemTexts,
+  textFieldSpecForType,
   translatableKeysForType as translatableKeysForSlideType,
+  valueAtPath,
 } from '../../../shared/slide-types/text-fields.js';
 
 // Session idle timeout: create session-end snapshot after 5 minutes of no edits
@@ -148,9 +150,8 @@ export function createSaveManager({
   const translatableKeysForType = (type) =>
     translatableKeysForSlideType(type, SLIDE_TYPES);
 
-  /** Translatable per-item text keys for a type's `items` fields. */
-  const itemTextKeysForType = (type) =>
-    translatableItemKeysForType(type, SLIDE_TYPES);
+  /** Recursive text spec for a type: top-level keys plus nested items fields. */
+  const textSpecForType = (type) => textFieldSpecForType(type, SLIDE_TYPES);
 
   const ensureLangVersion = (lang) => {
     const l = normalizeLang(lang);
@@ -221,35 +222,27 @@ export function createSaveManager({
         srcSlide?.content && typeof srcSlide.content === 'object'
           ? srcSlide.content
           : {};
-      const itemTextKeys = itemTextKeysForType(srcSlide?.type);
+      const spec = textSpecForType(srcSlide?.type);
+      // Read the target's own texts off the pre-merge copy: the loop writes
+      // into `base.content` as it goes.
+      const existingContent = structuredClone(base.content);
       for (const [k, v] of Object.entries(srcContent)) {
         if (translatable.has(k)) continue;
         // 'items' arrays are structural (count/order/icons follow the source)
-        // but their text subfields are per-language: keep the target's own
-        // texts where present, blank them where absent. A wholesale copy here
-        // used to overwrite translated item texts on every save - and made
-        // fresh versions look "already translated" to fillMissing.
-        const textKeys = itemTextKeys.get(k);
-        if (textKeys && Array.isArray(v)) {
-          const existingArr = Array.isArray(base.content[k])
-            ? base.content[k]
-            : [];
-          base.content[k] = v.map((srcItem, i) => {
-            const merged =
-              srcItem && typeof srcItem === 'object'
-                ? structuredClone(srcItem)
-                : srcItem;
-            if (!merged || typeof merged !== 'object') return merged;
-            const ex =
-              existingArr[i] && typeof existingArr[i] === 'object'
-                ? existingArr[i]
-                : null;
-            for (const ik of textKeys) {
-              const tv = ex?.[ik];
-              if (typeof tv === 'string' && tv.trim()) merged[ik] = tv;
-              else if (typeof merged[ik] === 'string') merged[ik] = '';
-            }
-            return merged;
+        // but their text subfields are per-language, at every nesting level:
+        // keep the target's own texts where present, blank them where absent.
+        // A wholesale copy here used to overwrite translated item texts on
+        // every save - and made fresh versions look "already translated" to
+        // fillMissing.
+        const itemSpec = spec.items.get(k);
+        if (itemSpec && Array.isArray(v)) {
+          base.content[k] = mapItemTexts(v, itemSpec, {
+            path: [k],
+            resolve: (path, srcValue) => {
+              const tv = valueAtPath(existingContent, path);
+              if (typeof tv === 'string' && tv.trim()) return tv;
+              return typeof srcValue === 'string' ? '' : undefined;
+            },
           });
           continue;
         }
