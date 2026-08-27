@@ -32,7 +32,8 @@ import {
  */
 function roleLabel(role) {
   if (role === 'owner') return t('organization.members.roleOwner', 'Owner');
-  if (role === 'admin') return t('organization.members.roleAdmin', 'Administrator');
+  if (role === 'admin')
+    return t('organization.members.roleAdmin', 'Administrator');
   return t('organization.members.roleMember', 'Member');
 }
 

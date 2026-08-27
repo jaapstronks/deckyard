@@ -36,7 +36,8 @@ import { invitableRoles } from './permissions.js';
  * @returns {string}
  */
 function roleLabel(role) {
-  if (role === 'admin') return t('organization.members.roleAdmin', 'Administrator');
+  if (role === 'admin')
+    return t('organization.members.roleAdmin', 'Administrator');
   return t('organization.members.roleMember', 'Member');
 }
 
