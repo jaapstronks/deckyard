@@ -172,6 +172,46 @@ const clientSilentFailureRules = [
   },
 ];
 
+// `shared/**` runs in BOTH environments, so the remedy differs from the two
+// sets above: it cannot reach for server/utils/fire-and-forget.js or
+// client/lib/dom/disposal.js — neither import resolves on the other side.
+// What shared/ does have is `console`, which is what its existing traces use
+// (registry.js's shadow warnings, sanitize.js, custom-loader.js), plus the
+// option that removed most of this tree's burndown: stop throwing in the
+// first place. parseUrl() in shared/url-host.js is that shape — a throwing
+// parser converted to a `null` return once, so ten call sites branch instead
+// of catching.
+const sharedSilentFailureRules = [
+  {
+    selector: emptyPromiseCatchSelector,
+    message:
+      'Empty .catch(() => {}) swallows the rejection without a trace. Give ' +
+      'the catch a body that records the failure (console.warn with a ' +
+      '`[module]` prefix, as shared/slide-types/registry.js does) or says ' +
+      'why it is ignorable — shared/ runs in both environments, so the ' +
+      'server and client fire-and-forget helpers are not available (B178).',
+  },
+  {
+    selector: emptyTryCatchSelector,
+    message:
+      'An empty catch {} (a comment-only body counts as empty) swallows the ' +
+      'failure without a trace. Prefer removing the throw: wrap the ' +
+      'throwing call in a helper that returns a sentinel, the way parseUrl() ' +
+      'in shared/url-host.js does for new URL(). Otherwise give the catch a ' +
+      'body that records the failure (console.warn) or an eslint-disable ' +
+      'with the reason after `--` (B178).',
+  },
+  {
+    selector: voidCallSelector,
+    message:
+      'void doThing() discards a promise without a catch — an unhandled ' +
+      'rejection kills the process on the server side and surfaces without ' +
+      'context on the client. Attach a .catch that records the failure. If ' +
+      'the callee is synchronous, drop the `void` — there is no promise to ' +
+      'discard (B111/B178).',
+  },
+];
+
 const clientRestrictedSyntax = [
   {
     selector: "CallExpression[callee.name='t'][arguments.length<2]",
@@ -544,9 +584,14 @@ export default [
   // Shared modules run in both environments; give them both global sets so
   // no-undef does not false-positive on env-specific references.
   //
-  // The instance-admin gate rides along: `isOrganizationAdmin()` moved here in
-  // B171, and a rule that stopped at `client/**` would have left the raw flag
-  // readable in exactly the tree the helper now lives in.
+  // Two gates ride along. The instance-admin one because
+  // `isOrganizationAdmin()` moved here in B171, and a rule that stopped at
+  // `client/**` would have left the raw flag readable in exactly the tree the
+  // helper now lives in. The silent-failure one for the same reason
+  // generalized: `client/**` and `server/**` have been gated since
+  // B106/B111/B150, so every module that moved into `shared/` (B171, B177)
+  // fell out of the gate on arrival — the tree was the one hole in a rule
+  // that covers the whole app (B178).
   {
     files: ['shared/**/*.js'],
     languageOptions: {
@@ -558,17 +603,24 @@ export default [
       },
     },
     rules: {
-      'no-restricted-syntax': ['error', instanceAdminRestriction],
+      'no-restricted-syntax': [
+        'error',
+        instanceAdminRestriction,
+        ...sharedSilentFailureRules,
+      ],
     },
   },
 
   // shared/organization-role.js is where the instance flag is *allowed* to be
   // read: isOrganizationAdmin() starts from `user.isAdmin` and narrows it with
-  // the membership role.
+  // the membership role. The exemption is for that rule only — re-stated
+  // rather than switched 'off', because flat-config entries replace per rule
+  // name, so `'off'` here would have dropped the silent-failure rules for
+  // this file too (the same drift the hoisted selectors above guard against).
   {
     files: ['shared/organization-role.js'],
     rules: {
-      'no-restricted-syntax': 'off',
+      'no-restricted-syntax': ['error', ...sharedSilentFailureRules],
     },
   },
 

@@ -2,7 +2,7 @@
 
 import { SLIDE_BG_ID_RE } from '../theme-slide-backgrounds.js';
 import { sharedOption } from '../ui-i18n-keys.js';
-import { hostMatches, hostMatchesAny } from '../url-host.js';
+import { hostMatches, hostMatchesAny, parseUrl } from '../url-host.js';
 
 export function escapeHtml(s) {
   return String(s || '')
@@ -211,14 +211,12 @@ export const ON_CLOSE_TARGET_FIELD = {
 function inferAltFromUrl(urlOrPath) {
   const raw = String(urlOrPath || '').trim();
   if (!raw) return '';
-  try {
-    const u = new URL(raw.startsWith('//') ? `https:${raw}` : raw);
-    const base = decodeURIComponent(u.pathname.split('/').pop() || '');
-    return humanizeFilename(base);
-  } catch {
-    const base = raw.split('?')[0].split('#')[0].split('/').pop() || '';
-    return humanizeFilename(base);
-  }
+  const u = parseUrl(raw);
+  // A bare path (`img/photo.png`) is not a URL; take the last segment by hand.
+  const base = u
+    ? decodeURIComponent(u.pathname.split('/').pop() || '')
+    : raw.split('?')[0].split('#')[0].split('/').pop() || '';
+  return humanizeFilename(base);
 }
 
 function humanizeFilename(filename) {
@@ -288,38 +286,35 @@ function looksLikeUuid(s) {
 export function youtubeEmbedUrl(input) {
   const raw = String(input || '').trim();
   if (!raw) return '';
-  try {
-    const u = new URL(raw.startsWith('//') ? `https:${raw}` : raw);
-    const host = u.hostname;
-    if (hostMatches(host, 'youtu.be')) {
-      const id = u.pathname.replace(/^\//, '').trim();
-      if (!id) return '';
+  const u = parseUrl(raw);
+  if (!u) return '';
+  const host = u.hostname;
+  if (hostMatches(host, 'youtu.be')) {
+    const id = u.pathname.replace(/^\//, '').trim();
+    if (!id) return '';
+    return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(
+      id,
+    )}?rel=0&modestbranding=1`;
+  }
+  if (hostMatchesAny(host, ['youtube.com', 'youtube-nocookie.com'])) {
+    const v = u.searchParams.get('v');
+    if (v) {
       return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(
-        id,
+        v,
       )}?rel=0&modestbranding=1`;
     }
-    if (hostMatchesAny(host, ['youtube.com', 'youtube-nocookie.com'])) {
-      const v = u.searchParams.get('v');
-      if (v) {
-        return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(
-          v,
-        )}?rel=0&modestbranding=1`;
-      }
-      const m = u.pathname.match(/\/embed\/([^/]+)/);
-      if (m?.[1]) {
-        return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(
-          m[1],
-        )}?rel=0&modestbranding=1`;
-      }
-      const s = u.pathname.match(/\/shorts\/([^/]+)/);
-      if (s?.[1]) {
-        return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(
-          s[1],
-        )}?rel=0&modestbranding=1`;
-      }
+    const m = u.pathname.match(/\/embed\/([^/]+)/);
+    if (m?.[1]) {
+      return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(
+        m[1],
+      )}?rel=0&modestbranding=1`;
     }
-  } catch {
-    // ignore
+    const s = u.pathname.match(/\/shorts\/([^/]+)/);
+    if (s?.[1]) {
+      return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(
+        s[1],
+      )}?rel=0&modestbranding=1`;
+    }
   }
   return '';
 }
@@ -327,22 +322,17 @@ export function youtubeEmbedUrl(input) {
 export function vimeoEmbedUrl(input) {
   const raw = String(input || '').trim();
   if (!raw) return '';
-  try {
-    const u = new URL(raw.startsWith('//') ? `https:${raw}` : raw);
-    const host = u.hostname;
-    if (hostMatches(host, 'vimeo.com')) {
-      let id = '';
-      const m1 = u.pathname.match(/\/video\/(\d+)/);
-      if (m1?.[1]) id = m1[1];
-      else {
-        const m2 = u.pathname.match(/\/(\d+)/);
-        if (m2?.[1]) id = m2[1];
-      }
-      if (!id) return '';
-      return `https://player.vimeo.com/video/${encodeURIComponent(id)}`;
+  const u = parseUrl(raw);
+  if (u && hostMatches(u.hostname, 'vimeo.com')) {
+    let id = '';
+    const m1 = u.pathname.match(/\/video\/(\d+)/);
+    if (m1?.[1]) id = m1[1];
+    else {
+      const m2 = u.pathname.match(/\/(\d+)/);
+      if (m2?.[1]) id = m2[1];
     }
-  } catch {
-    // ignore
+    if (!id) return '';
+    return `https://player.vimeo.com/video/${encodeURIComponent(id)}`;
   }
   return '';
 }
@@ -350,24 +340,23 @@ export function vimeoEmbedUrl(input) {
 export function appendQuery(url, params) {
   const raw = String(url || '').trim();
   if (!raw) return '';
-  try {
-    const u = new URL(raw.startsWith('//') ? `https:${raw}` : raw);
+  const u = parseUrl(raw);
+  if (u) {
     for (const [k, v] of Object.entries(params || {})) {
       if (v == null) continue;
       u.searchParams.set(k, String(v));
     }
     return u.toString();
-  } catch {
-    // Fallback: only append if it doesn't already have a query string.
-    const qs = Object.entries(params || {})
-      .filter(([, v]) => v != null)
-      .map(
-        ([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`,
-      )
-      .join('&');
-    if (!qs) return raw;
-    return raw.includes('?') ? `${raw}&${qs}` : `${raw}?${qs}`;
   }
+  // Not a URL (a bare path, say): append textually, and only once.
+  const qs = Object.entries(params || {})
+    .filter(([, v]) => v != null)
+    .map(
+      ([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`,
+    )
+    .join('&');
+  if (!qs) return raw;
+  return raw.includes('?') ? `${raw}&${qs}` : `${raw}?${qs}`;
 }
 
 export function bunnyEmbedUrlFromInput(input, { libraryId = '366590' } = {}) {
@@ -377,18 +366,14 @@ export function bunnyEmbedUrlFromInput(input, { libraryId = '366590' } = {}) {
   // If user pasted the Bunny "play" URL, convert it to an embed URL.
   // Example: https://iframe.mediadelivery.net/play/366590/<uuid>
   if (/iframe\.mediadelivery\.net\/play\//i.test(raw)) {
-    try {
-      const u = new URL(raw.startsWith('//') ? `https:${raw}` : raw);
-      const m = u.pathname.match(/\/play\/(\d+)\/([0-9a-f-]{36})/i);
-      if (m?.[1] && m?.[2]) {
-        const lib = m[1];
-        const id = m[2];
-        return `https://iframe.mediadelivery.net/embed/${encodeURIComponent(
-          lib,
-        )}/${encodeURIComponent(id)}`;
-      }
-    } catch {
-      // ignore
+    const u = parseUrl(raw);
+    const m = u?.pathname.match(/\/play\/(\d+)\/([0-9a-f-]{36})/i);
+    if (m?.[1] && m?.[2]) {
+      const lib = m[1];
+      const id = m[2];
+      return `https://iframe.mediadelivery.net/embed/${encodeURIComponent(
+        lib,
+      )}/${encodeURIComponent(id)}`;
     }
   }
 

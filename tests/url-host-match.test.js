@@ -12,7 +12,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { hostMatches, hostMatchesAny } from '../shared/url-host.js';
+import { hostMatches, hostMatchesAny, parseUrl } from '../shared/url-host.js';
 import { detectStreamProvider } from '../shared/video-stream-providers.js';
 import {
   youtubeEmbedUrl,
@@ -20,6 +20,29 @@ import {
 } from '../shared/slide-types/helpers.js';
 import { parseVideoSource } from '../server/export/video-helpers.js';
 import { extractPageId } from '../server/utils/notion/parser.js';
+
+test('parseUrl returns null instead of throwing on non-URLs', () => {
+  // The reason the helper exists: every caller wants "not a URL, carry on",
+  // and expressing that with try/catch is what put ten empty catches in
+  // shared/ (B178).
+  assert.equal(parseUrl('not a url'), null);
+  assert.equal(parseUrl(''), null);
+  assert.equal(parseUrl('   '), null);
+  assert.equal(parseUrl(null), null);
+  assert.equal(parseUrl(undefined), null);
+  assert.equal(parseUrl(42), null);
+  // A bare path has no scheme, so it is not a URL either — the callers that
+  // accept one (inferAltFromUrl, appendQuery) handle it on the null branch.
+  assert.equal(parseUrl('img/photo.png'), null);
+});
+
+test('parseUrl parses absolute and protocol-relative input', () => {
+  assert.equal(parseUrl('https://youtu.be/abc').hostname, 'youtu.be');
+  // Protocol-relative input throws in `new URL()` without a base; the helper
+  // normalises it to https first, as every call site used to do by hand.
+  assert.equal(parseUrl('//youtu.be/abc').protocol, 'https:');
+  assert.equal(parseUrl('  https://vimeo.com/123  ').pathname, '/123');
+});
 
 test('hostMatches accepts the domain itself and its subdomains', () => {
   assert.equal(hostMatches('youtube.com', 'youtube.com'), true);
