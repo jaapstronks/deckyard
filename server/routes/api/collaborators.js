@@ -33,6 +33,7 @@ import {
   storageError,
   unauthorized,
   withErrorHandler,
+  forbidden,
 } from '../../utils/http.js';
 import { validatePermission } from '../../utils/request-validators.js';
 import { createNotification } from '../../storage/notifications.js';
@@ -120,7 +121,7 @@ async function handleCollaboratorAdd(
   if (
     !canManageCollaborators({ user: authedUser, pres, collaboratorPermission })
   ) {
-    return unauthorized(res);
+    return forbidden(res);
   }
 
   const jsonResult = await requireJsonBody(req, res);
@@ -354,7 +355,7 @@ async function handleCollaboratorList(
   if (
     !canManageCollaborators({ user: authedUser, pres, collaboratorPermission })
   ) {
-    return unauthorized(res);
+    return forbidden(res);
   }
 
   const collaborators = await listCollaborators(presentationId);
@@ -392,7 +393,7 @@ async function handleCollaboratorRemove(
   if (
     !canManageCollaborators({ user: authedUser, pres, collaboratorPermission })
   ) {
-    return unauthorized(res);
+    return forbidden(res);
   }
 
   // Parse optional message from request body
@@ -459,7 +460,7 @@ async function handleCollaboratorUpdate(
   if (
     !canManageCollaborators({ user: authedUser, pres, collaboratorPermission })
   ) {
-    return unauthorized(res);
+    return forbidden(res);
   }
 
   const jsonResult = await requireJsonBody(req, res);

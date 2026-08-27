@@ -11,9 +11,9 @@ import {
   serveJson,
   methodNotAllowed,
   notFound,
-  unauthorized,
   badRequest,
   requireJsonBody,
+  forbidden,
 } from '../../../utils/http.js';
 import { canWritePresentation } from '../../../utils/presentation-authz/index.js';
 import { getString } from '../../../utils/request-validators.js';
@@ -96,7 +96,7 @@ export async function handleAnalyzeThemeChange(
 
   // Only users with edit permission can analyze theme changes
   if (!canWritePresentation({ user: authedUser, pres })) {
-    return unauthorized(res);
+    return forbidden(res);
   }
 
   // Parse request body
@@ -192,7 +192,7 @@ export async function handleChangeTheme(
 
   // Only users with edit permission can change theme
   if (!canWritePresentation({ user: authedUser, pres })) {
-    return unauthorized(res);
+    return forbidden(res);
   }
 
   // Parse request body

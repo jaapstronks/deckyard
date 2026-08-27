@@ -7,8 +7,8 @@ import { getPresentation } from '../../../storage/presentations/index.js';
 import {
   methodNotAllowed,
   notFound,
-  unauthorized,
   requireJsonBody,
+  forbidden,
 } from '../../../utils/http.js';
 import { canWritePresentation } from '../../../utils/presentation-authz/index.js';
 import { createComment } from '../../../storage/presentations/comments.js';
@@ -51,7 +51,7 @@ export async function handlePresentationAnalyze(
 
   // Only users with edit permission can trigger analysis
   if (!canWritePresentation({ user: authedUser, pres })) {
-    return unauthorized(res);
+    return forbidden(res);
   }
 
   // Optional category filter. An absent body means "analyze everything"; a

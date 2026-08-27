@@ -279,7 +279,7 @@ test('route denies a non-owner on a private deck', async () => {
   );
   assert.equal(
     res.statusCode,
-    401,
+    403,
     'private deck thumbnails require read access',
   );
 });

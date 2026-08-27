@@ -222,12 +222,12 @@ test('an anonymous caller may not remove a question (401)', async () => {
   assert.equal((await visibleQuestions(sessionId)).length, 1);
 });
 
-test('a signed-in stranger may not remove a question (401)', async () => {
+test('a signed-in stranger may not remove a question (403)', async () => {
   const { pres, sessionId, questionId } = await seed();
   const { res } = await call('POST', removePath(pres.id, questionId), {
     as: STRANGER,
   });
-  assert.equal(res.statusCode, 401);
+  assert.equal(res.statusCode, 403);
   assert.equal((await visibleQuestions(sessionId)).length, 1);
 });
 
@@ -239,7 +239,7 @@ test('even the deck owner may not remove a question — removal is admin-only', 
   const { res } = await call('POST', removePath(pres.id, questionId), {
     as: OWNER,
   });
-  assert.equal(res.statusCode, 401);
+  assert.equal(res.statusCode, 403);
   assert.equal(jsonBody(res).message, 'Admin required');
   assert.equal((await visibleQuestions(sessionId)).length, 1);
 });
@@ -322,14 +322,14 @@ test('an anonymous caller may not promote a question (401)', async () => {
   );
 });
 
-test('a signed-in stranger may not promote into someone else’s deck (401)', async () => {
+test('a signed-in stranger may not promote into someone else’s deck (403)', async () => {
   const { pres, questionId } = await seed();
   const before = (await getPresentation(testScope(), pres.id)).slides.length;
   const { res } = await call('POST', promotePath(pres.id, questionId), {
     as: STRANGER,
     body: {},
   });
-  assert.equal(res.statusCode, 401);
+  assert.equal(res.statusCode, 403);
   assert.equal(
     (await getPresentation(testScope(), pres.id)).slides.length,
     before,
@@ -346,7 +346,7 @@ test('an instance admin may not promote into someone else’s deck either', asyn
     as: ADMIN,
     body: {},
   });
-  assert.equal(res.statusCode, 401);
+  assert.equal(res.statusCode, 403);
   assert.equal(
     (await getPresentation(testScope(), pres.id)).slides.length,
     before,

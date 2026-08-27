@@ -21,6 +21,7 @@ import {
   storageError,
   unauthorized,
   withErrorHandler,
+  forbidden,
 } from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { dispatchRoutes } from '../../utils/router.js';
@@ -102,7 +103,7 @@ async function handleFontFamilyList({ storageScope, res, authedUser }) {
 
 // POST /api/font-families - Create (designer only)
 async function handleFontFamilyCreate({ storageScope, req, res, authedUser }) {
-  if (!canManage(authedUser)) return unauthorized(res);
+  if (!canManage(authedUser)) return forbidden(res);
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
@@ -118,7 +119,7 @@ async function handleFontFamilyCreate({ storageScope, req, res, authedUser }) {
 
 // POST /api/font-families/discover-adobe - Discover Adobe Fonts (designer only)
 async function handleFontFamilyDiscoverAdobe({ req, res, authedUser }) {
-  if (!canManage(authedUser)) return unauthorized(res);
+  if (!canManage(authedUser)) return forbidden(res);
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
@@ -155,7 +156,7 @@ async function handleFontFamilyImportAdobe({
   res,
   authedUser,
 }) {
-  if (!canManage(authedUser)) return unauthorized(res);
+  if (!canManage(authedUser)) return forbidden(res);
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
@@ -200,7 +201,7 @@ async function handleFontFamilyUploadVariant(
   { storageScope, req, res, authedUser },
   familyId,
 ) {
-  if (!canManage(authedUser)) return unauthorized(res);
+  if (!canManage(authedUser)) return forbidden(res);
 
   // Verify family exists
   const family = await getFontFamily(storageScope, familyId);
@@ -279,7 +280,7 @@ async function handleFontFamilyRemoveVariant(
   familyId,
   variantId,
 ) {
-  if (!canManage(authedUser)) return unauthorized(res);
+  if (!canManage(authedUser)) return forbidden(res);
 
   const result = await removeFontVariant(storageScope, variantId);
 
@@ -323,7 +324,7 @@ async function handleFontFamilyUpdate(
   { storageScope, req, res, authedUser },
   familyId,
 ) {
-  if (!canManage(authedUser)) return unauthorized(res);
+  if (!canManage(authedUser)) return forbidden(res);
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
@@ -343,7 +344,7 @@ async function handleFontFamilyDelete(
   { storageScope, res, authedUser },
   familyId,
 ) {
-  if (!canManage(authedUser)) return unauthorized(res);
+  if (!canManage(authedUser)) return forbidden(res);
   const result = await deleteFontFamily(storageScope, familyId);
   if (!result.ok) {
     return fontFamilyError(res, result);

@@ -295,10 +295,9 @@ test('questions: an admin who is a plain member here cannot remove a question', 
     removePath(pres.id, questionId),
     { as: ADMIN_ELSEWHERE },
   );
-  // The refusal shape is the one this route already used for a non-admin: 401
-  // `Admin required`, not 403. Widening the gate is this change; restating the
-  // status code is not.
-  assert.equal(res.statusCode, 401);
+  // The refusal shape is the one D68 prescribes for a signed-in caller who
+  // lacks the permission: 403 `Admin required`.
+  assert.equal(res.statusCode, 403);
   assert.match(String(res.body), /Admin required/);
 
   const still = await listQuestions(testScope(), sessionId);
@@ -341,7 +340,7 @@ test('questions: single-workspace is unchanged (no membership role)', async () =
 //
 // The gate runs before `deleteImageLibraryItem`, so an unknown image id
 // separates the two outcomes cleanly without seeding a row: refused callers
-// get 401 at the gate, admitted ones reach the storage read and get 404.
+// get 403 at the gate, admitted ones reach the storage read and get 404.
 
 const IMAGE_PATH = '/api/image-library/00000000-0000-0000-0000-00000000f00d';
 
@@ -349,7 +348,7 @@ test('image-library: an admin who is a plain member here cannot delete an image'
   const { res } = await call(handleImageLibrary, 'DELETE', IMAGE_PATH, {
     as: ADMIN_ELSEWHERE,
   });
-  assert.equal(res.statusCode, 401);
+  assert.equal(res.statusCode, 403);
   assert.match(String(res.body), /Admin required/);
 });
 

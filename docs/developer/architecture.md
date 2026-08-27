@@ -121,7 +121,7 @@ export async function handleSlideLockAcquire(
     res,
     permission: 'write',
   });
-  if (!pres) return true; // 404/401 already sent
+  if (!pres) return true; // 404/403 already sent
 
   // Handle the request…
   return true;

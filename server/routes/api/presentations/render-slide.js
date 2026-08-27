@@ -20,9 +20,9 @@ import {
   methodNotAllowed,
   notFound,
   serveJson,
-  unauthorized,
   badRequest,
   requireJsonBody,
+  forbidden,
 } from '../../../utils/http.js';
 import {
   getOptionalObject,
@@ -46,7 +46,7 @@ export async function handleRenderSlide(
   if (
     !canReadPresentation({ user: authedUser, pres, collaboratorPermission })
   ) {
-    return unauthorized(res);
+    return forbidden(res);
   }
 
   const jsonResult = await requireJsonBody(req, res);

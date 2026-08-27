@@ -11,7 +11,7 @@ import {
   requireJsonBody,
   serveJson,
   storageError,
-  unauthorized,
+  forbidden,
 } from '../../../utils/http.js';
 import {
   canReadPresentation,
@@ -115,7 +115,7 @@ export async function handlePresentationCommentsCreate(
         presentationId: id,
       })
     ) {
-      return unauthorized(res);
+      return forbidden(res);
     }
 
     commenterEmail = guestInfo.guest.email;
@@ -233,7 +233,7 @@ export async function handlePresentationCommentUpdate(
     comment,
   });
   if (!canEdit) {
-    return unauthorized(res);
+    return forbidden(res);
   }
 
   const parsed = await requireJsonBody(req, res);
@@ -322,7 +322,7 @@ export async function handlePresentationCommentDelete(
     comment,
   });
   if (!canDelete) {
-    return unauthorized(res);
+    return forbidden(res);
   }
 
   const result = await deleteComment(storageScope, commentId);

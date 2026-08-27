@@ -19,6 +19,7 @@ import {
   storageError,
   unauthorized,
   withErrorHandler,
+  forbidden,
 } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import {
@@ -96,7 +97,7 @@ async function handleCustomSlideTypeCreate({
   res,
   authedUser,
 }) {
-  if (!canManage(authedUser)) return unauthorized(res);
+  if (!canManage(authedUser)) return forbidden(res);
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
@@ -119,7 +120,7 @@ async function handleCustomSlideTypeReorder({
   res,
   authedUser,
 }) {
-  if (!canManage(authedUser)) return unauthorized(res);
+  if (!canManage(authedUser)) return forbidden(res);
 
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
@@ -138,7 +139,7 @@ async function handleCustomSlideTypeDuplicate(
   { storageScope, req, res, authedUser },
   sourceId,
 ) {
-  if (!canManage(authedUser)) return unauthorized(res);
+  if (!canManage(authedUser)) return forbidden(res);
 
   const parsed = await requireJsonBody(req, res, { allowEmpty: true });
   if (!parsed.ok) return true;
@@ -209,7 +210,7 @@ async function handleCustomSlideTypeUpdate(
   { storageScope, req, res, authedUser },
   typeId,
 ) {
-  if (!canManage(authedUser)) return unauthorized(res);
+  if (!canManage(authedUser)) return forbidden(res);
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
@@ -227,7 +228,7 @@ async function handleCustomSlideTypeDelete(
   { storageScope, res, authedUser },
   typeId,
 ) {
-  if (!canManage(authedUser)) return unauthorized(res);
+  if (!canManage(authedUser)) return forbidden(res);
   const result = await deleteCustomSlideType(storageScope, typeId);
   if (!result.ok) {
     return slideTypeError(res, result);

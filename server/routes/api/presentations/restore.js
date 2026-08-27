@@ -9,8 +9,8 @@ import {
   methodNotAllowed,
   notFound,
   serveJson,
-  unauthorized,
   jsonError,
+  forbidden,
 } from '../../../utils/http.js';
 import { canWritePresentation } from '../../../utils/presentation-authz/index.js';
 import { parseIfMatchRevision } from './helpers.js';
@@ -35,7 +35,7 @@ export async function handlePresentationRestoreVersion(
   }
 
   if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission }))
-    return unauthorized(res);
+    return forbidden(res);
 
   // If-Match required for everyone, admins included (escape hatch removed).
   const expectedRevision = parseIfMatchRevision(req);

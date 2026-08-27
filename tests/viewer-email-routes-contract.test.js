@@ -21,7 +21,7 @@
  *      slug is *supplied* and wrong — and that difference is pinned.
  *   2. **Sending email is admin-only and honest about not being configured.** The
  *      email-template routes refuse a non-authenticated (401) and a
- *      non-admin (401) caller before dispatch; the test-send validates the
+ *      non-admin (403) caller before dispatch; the test-send validates the
  *      template type and locale; and with no `BREVO_API_KEY` it answers 501
  *      `email_not_configured` rather than pretending a message went out.
  *
@@ -360,7 +360,7 @@ test('the email-template routes refuse an unauthenticated caller with a 401', as
   assert.match(res.body.message, /Authentication required/);
 });
 
-test('the email-template routes refuse a non-admin caller with a 401', async () => {
+test('the email-template routes refuse a non-admin caller with a 403', async () => {
   seed();
   const { res } = await callEmail(
     'GET',
@@ -368,7 +368,7 @@ test('the email-template routes refuse a non-admin caller with a 401', async () 
     { as: PLAIN },
   );
 
-  assert.equal(res.statusCode, 401);
+  assert.equal(res.statusCode, 403);
   assert.match(res.body.message, /Admin access required/);
 });
 

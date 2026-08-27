@@ -567,7 +567,7 @@ test('nobody else may add a collaborator', async () => {
       },
     );
 
-    assert.equal(res.status, 401, `${key ?? 'anonymous'}: ${why}`);
+    assert.equal(res.status, 403, `${key ?? 'anonymous'}: ${why}`);
     assert.equal(
       rowFor('deck-owned', ACTORS.newcomer.email),
       undefined,
@@ -590,7 +590,7 @@ test('an organization deck does not make every colleague a collaborator manager'
 
   assert.equal(
     res.status,
-    401,
+    403,
     'organization visibility grants reading and writing, never handing the deck to someone new',
   );
   assert.equal(rowFor('deck-organization', ACTORS.newcomer.email), undefined);
@@ -997,7 +997,7 @@ test('nobody else may read the collaborator list', async () => {
         as: actor(key),
       },
     );
-    assert.equal(res.status, 401, `${key ?? 'anonymous'}: ${why}`);
+    assert.equal(res.status, 403, `${key ?? 'anonymous'}: ${why}`);
     assert.equal(res.body.collaborators, undefined, 'and learns no addresses');
   }
 });
@@ -1119,7 +1119,7 @@ test('nobody but the owner or an admin may revoke', async () => {
       { as: actor(key) },
     );
 
-    assert.equal(res.status, 401, `${key ?? 'anonymous'}: ${why}`);
+    assert.equal(res.status, 403, `${key ?? 'anonymous'}: ${why}`);
     assert.equal(
       rowFor('deck-owned', ACTORS.admin.email).revoked_at,
       null,
@@ -1246,7 +1246,7 @@ test('nobody but the owner or an admin may change a permission', async () => {
       { as: actor(key), body: { permission: 'admin' } },
     );
 
-    assert.equal(res.status, 401, `${key ?? 'anonymous'}: ${why}`);
+    assert.equal(res.status, 403, `${key ?? 'anonymous'}: ${why}`);
     assert.equal(
       rowFor('deck-owned', ACTORS.viewer.email).permission,
       'view',
@@ -1263,7 +1263,7 @@ test('an editor cannot promote themselves to admin', async () => {
     { as: ACTORS.editor, body: { permission: 'admin' } },
   );
 
-  assert.equal(res.status, 401);
+  assert.equal(res.status, 403);
   assert.equal(rowFor('deck-owned', ACTORS.editor.email).permission, 'edit');
 });
 

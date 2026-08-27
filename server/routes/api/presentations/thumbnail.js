@@ -33,7 +33,7 @@ import {
 import {
   methodNotAllowed,
   notFound,
-  unauthorized,
+  forbidden,
 } from '../../../utils/http.js';
 
 /**
@@ -120,7 +120,7 @@ export async function handlePresentationThumbnail(
   if (
     !canReadPresentation({ user: authedUser, pres, collaboratorPermission })
   ) {
-    return unauthorized(res);
+    return forbidden(res);
   }
 
   const theme = await loadThemeAssets(repoRoot, pres?.theme);

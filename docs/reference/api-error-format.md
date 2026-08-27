@@ -44,6 +44,31 @@ Always go through the shared surface — do not hand-roll `serveJson(res, status
 | `serverError(res, msg)`             | 500    | `internal_error`                    |
 | `methodNotAllowed(res, allowed)`    | 405    | `method_not_allowed` (sets `Allow`) |
 
+### 401 versus 403: who you are, versus what you may do
+
+One rule, no exceptions (D68):
+
+- **401 `unauthorized`** — there is no valid identity. No session cookie, an
+  expired or unparseable one, a session that resolves to no user, a missing or
+  invalid API key, wrong credentials on a login. The fix is to authenticate.
+- **403 `forbidden`** — the identity is fine, the permission is not. Every
+  `canRead…` / `canWrite…` / `canManage…` / `isAdmin` / `isOrganizationAdmin`
+  refusal, every role and collaborator-ladder refusal, and a feature that is
+  switched off for this instance. Authenticating again changes nothing.
+
+Concretely: an authorization guard that asks _"may this caller do X?"_ answers
+`forbidden(res)`, never `unauthorized(res)`. The single login gate in
+`server/routes/api/index.js` answers 401 for anyone with no identity, so every
+guard below it is judging a caller who is already identified. Only the routes
+mounted *above* that gate (login, password reset, magic link, SSO, and the
+public audience endpoints) produce a 401 of their own.
+
+The same split holds on the other two surfaces. The public `/api/v1` layer
+sends 401 only for a missing/invalid API key and 403 for a key that lacks the
+permission or the deck. MCP over SSE sends HTTP 401 only when the bearer key
+does not validate and 403 when a session belongs to a different key owner;
+per-deck refusals there are JSON-RPC tool errors, not HTTP statuses.
+
 For a storage `reason` code, use **`storageError(res, result, message?)`** — it
 reads `result.reason` for the code and the status, and puts an optional
 `result.field` on the wire as `details.field`. Spreading the result by hand

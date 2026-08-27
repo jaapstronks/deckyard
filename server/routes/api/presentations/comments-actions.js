@@ -14,7 +14,7 @@ import {
   requireJsonBody,
   serveJson,
   storageError,
-  unauthorized,
+  forbidden,
 } from '../../../utils/http.js';
 import { canResolveComment } from '../../../utils/presentation-authz/index.js';
 import {
@@ -67,7 +67,7 @@ export async function handlePresentationCommentResolve(
 
   // Only owner/admin can resolve
   if (!canResolveComment({ user: authedUser, pres, comment })) {
-    return unauthorized(res);
+    return forbidden(res);
   }
 
   const result = await resolveComment(storageScope, commentId, {
@@ -130,7 +130,7 @@ export async function handlePresentationCommentReopen(
 
   // Only owner/admin can reopen
   if (!canResolveComment({ user: authedUser, pres, comment })) {
-    return unauthorized(res);
+    return forbidden(res);
   }
 
   const result = await reopenComment(storageScope, commentId);
@@ -193,7 +193,7 @@ export async function handlePresentationCommentDismiss(
 
   // Only owner/admin can dismiss (same as resolve)
   if (!canResolveComment({ user: authedUser, pres, comment })) {
-    return unauthorized(res);
+    return forbidden(res);
   }
 
   const result = await dismissComment(storageScope, commentId, {
@@ -248,7 +248,7 @@ export async function handlePresentationCommentApply(
 
   // Only owner/admin can apply suggestions
   if (!canResolveComment({ user: authedUser, pres, comment })) {
-    return unauthorized(res);
+    return forbidden(res);
   }
 
   // Verify comment has proposedSlide data

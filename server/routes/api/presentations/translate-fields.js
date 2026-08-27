@@ -6,8 +6,8 @@ import {
   methodNotAllowed,
   notFound,
   serveJson,
-  unauthorized,
   requireJsonBody,
+  forbidden,
 } from '../../../utils/http.js';
 import {
   getOptionalString,
@@ -41,7 +41,7 @@ export async function handlePresentationTranslateFields(
   }
 
   if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission }))
-    return unauthorized(res);
+    return forbidden(res);
 
   const from =
     normalizeLang(body?.from) ||

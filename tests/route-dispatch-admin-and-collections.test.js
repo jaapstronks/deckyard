@@ -310,7 +310,7 @@ test('admin-users: routes resolve to their named handlers', () => {
   );
 });
 
-test('admin-users: module guards — foreign prefix falls through, non-admin 401s', async () => {
+test('admin-users: module guards — foreign prefix falls through, non-admin 403s', async () => {
   const foreign = ctx('GET', '/api/admin/other');
   assert.equal(await handleAdminUsers(foreign.ctx), false);
 
@@ -320,7 +320,7 @@ test('admin-users: module guards — foreign prefix falls through, non-admin 401
 
   const nonAdmin = ctx('GET', '/api/admin/users');
   await handleAdminUsers(nonAdmin.ctx);
-  assert.equal(nonAdmin.res.statusCode, 401, 'non-admin → 401');
+  assert.equal(nonAdmin.res.statusCode, 403, 'non-admin → 403');
 });
 
 test('admin-users: a wrong method falls through (Form A, admin)', async () => {
@@ -350,7 +350,7 @@ test('admin-ai-logs: module guards and Form A fall-through', async () => {
 
   const nonAdmin = ctx('GET', '/api/admin/ai-logs');
   await handleAdminAiLogs(nonAdmin.ctx);
-  assert.equal(nonAdmin.res.statusCode, 401, 'non-admin → 401');
+  assert.equal(nonAdmin.res.statusCode, 403, 'non-admin → 403');
 
   assert.equal(select(AI_ROUTES, 'POST', '/api/admin/ai-logs'), null);
   const wrongMethod = ctx('POST', '/api/admin/ai-logs', admin);
@@ -421,16 +421,16 @@ test('custom-slide-types: a wrong method 405s with the pinned Allow list', async
   }
 });
 
-test('custom-slide-types: /reorder keeps method-before-guard (405 beats 401), designer guard still 401s on PUT', async () => {
+test('custom-slide-types: /reorder keeps method-before-guard (405 beats 403), designer guard still 403s on PUT', async () => {
   // Wrong method by a non-designer: the original checked the method first.
   const wrongMethod = ctx('POST', '/api/custom-slide-types/reorder');
   await handleCustomSlideTypes(wrongMethod.ctx);
-  assert.equal(wrongMethod.res.statusCode, 405, 'wrong method → 405, not 401');
+  assert.equal(wrongMethod.res.statusCode, 405, 'wrong method → 405, not 403');
 
-  // Right method without the designer capability: 401 before any storage call.
+  // Right method without the designer capability: 403 before any storage call.
   const nonDesigner = ctx('PUT', '/api/custom-slide-types/reorder');
   await handleCustomSlideTypes(nonDesigner.ctx);
-  assert.equal(nonDesigner.res.statusCode, 401, 'PUT without canManage → 401');
+  assert.equal(nonDesigner.res.statusCode, 403, 'PUT without canManage → 403');
 });
 
 test('custom-slide-types: /duplicate falls through on a wrong method (Form A)', async () => {
@@ -506,7 +506,7 @@ test('email-templates: module guards and Form A fall-through', async () => {
 
   const nonAdmin = ctx('GET', '/api/admin/email-templates');
   await handleEmailTemplates(nonAdmin.ctx);
-  assert.equal(nonAdmin.res.statusCode, 401, 'non-admin → 401');
+  assert.equal(nonAdmin.res.statusCode, 403, 'non-admin → 403');
 
   assert.equal(select(ET_ROUTES, 'DELETE', '/api/admin/email-templates'), null);
   const wrongMethod = ctx('DELETE', '/api/admin/email-templates', admin);

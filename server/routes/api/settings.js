@@ -4,6 +4,7 @@ import {
   unauthorized,
   requireJsonBody,
   withErrorHandler,
+  forbidden,
 } from '../../utils/http.js';
 import { getStringArray } from '../../utils/request-validators.js';
 import {
@@ -69,7 +70,7 @@ async function handleAppSettingsGet({ storageScope, res, authedUser }) {
 
 // PUT /api/settings/app (admin only)
 async function handleAppSettingsPut({ storageScope, req, res, authedUser }) {
-  if (!authedUser?.isAdmin) return unauthorized(res);
+  if (!authedUser?.isAdmin) return forbidden(res);
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
@@ -122,9 +123,9 @@ async function handleOrgSettingsPatch({ req, res, authedUser }) {
   // admin or owner of the active organization. Single-organization is
   // unchanged — there is no membership to read and none is asked for.
   if (hasAdminKeys && !(await canWriteOrgAdminKeys(authedUser, orgId))) {
-    return unauthorized(res);
+    return forbidden(res);
   }
-  if (hasDesignerKeys && !isDesigner) return unauthorized(res);
+  if (hasDesignerKeys && !isDesigner) return forbidden(res);
 
   const org = await getOrganizationById(orgId);
   const currentSettings = getOrgSettings(org);

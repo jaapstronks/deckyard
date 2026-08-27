@@ -439,7 +439,7 @@ test('an anonymous visitor cannot comment', async () => {
 
   assert.equal(
     res.statusCode,
-    401,
+    403,
     'no session and no guest grant means no commenting',
   );
   assert.equal(comments().length, 3, 'nothing was written');
@@ -458,9 +458,9 @@ test('an anonymous visitor cannot edit, delete or resolve', async () => {
     args: [DECK, 'cm-open'],
   });
 
-  assert.equal(edit.res.statusCode, 401);
-  assert.equal(del.res.statusCode, 401);
-  assert.equal(resolve.res.statusCode, 401);
+  assert.equal(edit.res.statusCode, 403);
+  assert.equal(del.res.statusCode, 403);
+  assert.equal(resolve.res.statusCode, 403);
   assert.equal(
     commentById('cm-open').body,
     'Body of cm-open',
@@ -516,7 +516,7 @@ test('the deck owner may not edit someone else’s comment', async () => {
 
   assert.equal(
     res.statusCode,
-    401,
+    403,
     'editing is author-only, even for the owner',
   );
   assert.equal(
@@ -545,7 +545,7 @@ test('a same-org member who is not the author may not edit', async () => {
     args: [DECK, 'cm-open'],
   });
 
-  assert.equal(res.statusCode, 401);
+  assert.equal(res.statusCode, 403);
 });
 
 test('editing a comment that does not exist is a 404', async () => {
@@ -603,7 +603,7 @@ test('a same-org member who is neither author nor owner may not delete', async (
     args: [DECK, 'cm-open'],
   });
 
-  assert.equal(res.statusCode, 401);
+  assert.equal(res.statusCode, 403);
   assert.ok(commentById('cm-open'), 'the comment survives a refused delete');
 });
 
@@ -639,7 +639,7 @@ test('the author may not resolve their own comment', async () => {
     args: [DECK, 'cm-open'],
   });
 
-  assert.equal(res.statusCode, 401, 'resolving is owner/admin, not the author');
+  assert.equal(res.statusCode, 403, 'resolving is owner/admin, not the author');
   assert.equal(commentById('cm-open').status, 'open');
 });
 
@@ -650,7 +650,7 @@ test('a plain member may not resolve a comment', async () => {
     args: [DECK, 'cm-open'],
   });
 
-  assert.equal(res.statusCode, 401);
+  assert.equal(res.statusCode, 403);
 });
 
 test('an admin can resolve a comment', async () => {
@@ -689,7 +689,7 @@ test('the owner can reopen a resolved comment; the author cannot', async () => {
     as: ACTORS.author,
     args: [DECK, 'cm-resolved'],
   });
-  assert.equal(refused.res.statusCode, 401);
+  assert.equal(refused.res.statusCode, 403);
 
   const ok = await call(handlePresentationCommentReopen, 'POST', {
     as: ACTORS.owner,
@@ -705,7 +705,7 @@ test('the owner can dismiss an AI suggestion; a member cannot', async () => {
     as: ACTORS.member,
     args: [DECK, 'cm-ai'],
   });
-  assert.equal(refused.res.statusCode, 401);
+  assert.equal(refused.res.statusCode, 403);
 
   const ok = await call(handlePresentationCommentDismiss, 'POST', {
     as: ACTORS.owner,
@@ -760,7 +760,7 @@ test('a non-owner may not apply a suggestion', async () => {
     args: [DECK, 'cm-ai'],
   });
 
-  assert.equal(res.statusCode, 401);
+  assert.equal(res.statusCode, 403);
 });
 
 // ===========================================================================
@@ -855,7 +855,7 @@ test("a guest can edit and delete their own comment, and nobody else's", async (
     args: [DECK, 'cm-open'],
     ...asGuest,
   });
-  assert.equal(other.res.statusCode, 401, "someone else's: not editable");
+  assert.equal(other.res.statusCode, 403, "someone else's: not editable");
 
   const del = await call(handlePresentationCommentDelete, 'DELETE', {
     args: [DECK, mine],

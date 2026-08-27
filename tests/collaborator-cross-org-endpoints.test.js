@@ -125,7 +125,7 @@ test.after(() => {
 /**
  * A stored deck. No slides on purpose: the thumbnail route then has nothing to
  * rasterize and lands on its deterministic `thumbnail_pending` 404, which is
- * the answer this file needs to be able to tell apart from a 401.
+ * the answer this file needs to be able to tell apart from a 403.
  *
  * @param {string} organizationId - The organization that owns the deck.
  * @returns {Object}
@@ -283,7 +283,7 @@ const ENDPOINTS = [
     granted: 200,
   },
   // A slideless deck has nothing to rasterize, so the authorized answer here is
-  // the route's own "nothing to show yet" 404 — distinct from its 401.
+  // the route's own "nothing to show yet" 404 — distinct from its 403.
   { name: 'the thumbnail', handler: handlePresentationThumbnail, granted: 404 },
   {
     name: 'duplicating the deck',
@@ -314,13 +314,13 @@ for (const { name, handler, granted, method } of ENDPOINTS) {
   test(`${name}: a colleague holding no row is refused`, async () => {
     await seed();
     const { status } = await call(handler, COLLEAGUE, { method });
-    assert.equal(status, 401);
+    assert.equal(status, 403);
   });
 
   test(`${name}: a revoked row grants nothing`, async () => {
     await seed({ revoked: true });
     const { status } = await call(handler, COLLABORATOR, { method });
-    assert.equal(status, 401);
+    assert.equal(status, 403);
   });
 }
 
@@ -436,7 +436,7 @@ test('inviting onto a deck that does not exist is refused rather than guessed at
 
 test('a deck in another organization is absent on every endpoint, row or no row', async () => {
   // The storage scope filters on the session's organization before any
-  // collaborator row is consulted, so this is 404 (absent) rather than 401
+  // collaborator row is consulted, so this is 404 (absent) rather than 403
   // (forbidden) — and the collaborator row does not turn into a way around the
   // organization filter. The uniformity is the assertion.
   await seed({ deckOrg: AWAY_ORG, rowOrg: AWAY_ORG });

@@ -17,7 +17,7 @@
  *   1. **A deck's analytics inherit the deck's authorization.** Every
  *      per-presentation reader and every report route loads the deck through
  *      `withPresentationAuth` first: a missing deck is a 404, a deck the caller
- *      cannot read is a 401, and *managing reports is writing* — creating,
+ *      cannot read is a 403, and *managing reports is writing* — creating,
  *      updating, deleting or re-tokenising a report needs write access, which a
  *      view-only collaborator does not have even though they may read the same
  *      deck's metrics. The org dashboards additionally refuse an
@@ -532,7 +532,7 @@ for (const [name, handler] of READERS) {
     assert.equal(res.body.error, 'not_found');
   });
 
-  test(`${name} is a 401 for someone who cannot read the deck`, async () => {
+  test(`${name} is a 403 for someone who cannot read the deck`, async () => {
     await seed();
     const { res } = await call(
       handler,
@@ -546,10 +546,10 @@ for (const [name, handler] of READERS) {
 
     assert.equal(
       res.statusCode,
-      401,
+      403,
       'a same-org non-collaborator has no read access to a private deck',
     );
-    assert.equal(res.body.error, 'unauthorized');
+    assert.equal(res.body.error, 'forbidden');
   });
 }
 
@@ -626,7 +626,7 @@ test('list reports returns the deck’s reports for a reader', async () => {
   ]);
 });
 
-test('list reports is a 401 for someone who cannot read the deck', async () => {
+test('list reports is a 403 for someone who cannot read the deck', async () => {
   await seed();
   const { res } = await call(
     handleListReports,
@@ -638,7 +638,7 @@ test('list reports is a 401 for someone who cannot read the deck', async () => {
     },
   );
 
-  assert.equal(res.statusCode, 401);
+  assert.equal(res.statusCode, 403);
 });
 
 test('get report returns one report for a reader', async () => {
@@ -773,7 +773,7 @@ test('creating a report needs write access, not merely read', async () => {
     },
   );
 
-  assert.equal(res.statusCode, 401, 'managing reports is writing');
+  assert.equal(res.statusCode, 403, 'managing reports is writing');
 });
 
 test('create rejects a body missing required fields with a 400', async () => {
@@ -867,7 +867,7 @@ test('updating a report needs write access', async () => {
     },
   );
 
-  assert.equal(res.statusCode, 401);
+  assert.equal(res.statusCode, 403);
 });
 
 test('update renames a report for a writer', async () => {
@@ -925,7 +925,7 @@ test('deleting a report needs write access', async () => {
     },
   );
 
-  assert.equal(res.statusCode, 401);
+  assert.equal(res.statusCode, 403);
   assert.ok(reportById('r-1'), 'the report survives a refused delete');
 });
 
@@ -955,7 +955,7 @@ test('regenerating the share token needs write access', async () => {
     { as: ACTORS.viewer, args: ['deck-owned', 'r-priv'] },
   );
 
-  assert.equal(res.statusCode, 401);
+  assert.equal(res.statusCode, 403);
 });
 
 test('regenerate mints a fresh token for a writer', async () => {

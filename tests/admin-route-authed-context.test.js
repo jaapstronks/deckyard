@@ -102,7 +102,7 @@ test('the admin capability is read off the context: a non-admin user is refused'
 
   assert.equal(
     ctx.res.statusCode,
-    401,
+    403,
     'the isAdmin flag on the context gates the route',
   );
 });

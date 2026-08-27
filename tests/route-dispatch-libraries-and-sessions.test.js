@@ -287,10 +287,10 @@ test('font-families: the Adobe and variant paths fall through on a wrong method 
   assert.equal(await handleFontFamilies(c), false);
 });
 
-test('font-families: designer guard 401s on a mutation before storage', async () => {
+test('font-families: designer guard 403s on a mutation before storage', async () => {
   const nonDesigner = ctx('POST', '/api/font-families');
   await handleFontFamilies(nonDesigner.ctx);
-  assert.equal(nonDesigner.res.statusCode, 401, 'POST without canManage → 401');
+  assert.equal(nonDesigner.res.statusCode, 403, 'POST without canManage → 403');
 });
 
 // ─── stock-media (public status row + fall-through auth guard + authed rows) ───

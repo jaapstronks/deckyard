@@ -26,6 +26,7 @@ import {
   unauthorized,
   requireJsonBody,
   withErrorHandler,
+  forbidden,
 } from '../../utils/http.js';
 import { getString } from '../../utils/request-validators.js';
 import { t } from '../../i18n/index.js';
@@ -56,7 +57,7 @@ async function handleAuthConfig({ res }) {
 
 /** POST /api/auth/dev-login */
 async function handleDevLogin({ req, res }) {
-  if (!devAuthBypassEnabled()) return unauthorized(res, 'Dev bypass disabled');
+  if (!devAuthBypassEnabled()) return forbidden(res, 'Dev bypass disabled');
   // If auth isn't enabled, /api/auth/me already returns an admin user, but
   // setting a session cookie makes the client path identical.
   if (authEnabled()) setSessionCookie(req, res, devBypassUser());

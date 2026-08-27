@@ -9,6 +9,7 @@ import {
   notFound,
   badRequest,
   withErrorHandler,
+  forbidden,
 } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import {
@@ -132,7 +133,7 @@ export const handleAdminAiLogs = withErrorHandler('admin-ai-logs', (ctx) => {
 
   // All admin routes require admin role
   if (!ctx.authedUser.isAdmin) {
-    return unauthorized(ctx.res, 'Admin access required');
+    return forbidden(ctx.res, 'Admin access required');
   }
 
   return dispatchRoutes(ROUTES, ctx);
