@@ -33,8 +33,9 @@
  * The price is that the stub must be honest about the shape
  * `sse-connection.js` uses — `addEventListener` per event type, the `onopen`
  * and `onerror` properties, `close()` — so `FakeEventSource` below carries
- * exactly that surface and nothing else, and its `open`/`emit` methods are the
- * test-side driver.
+ * that surface (plus `removeEventListener`/`readyState`, which the real
+ * EventSource also has) and nothing that the real one lacks; its `open`/`emit`
+ * methods are the test-side driver.
  *
  * Transport is the only other fake: `globalThis.fetch` serves the follow API
  * from an in-test scenario object and the locale JSON from disk.
@@ -122,7 +123,7 @@ dom.window.navigator.sendBeacon = (url) => {
  *
  * Shaped after what `client/lib/net/sse-connection.js` actually uses, and
  * nothing more: per-type `addEventListener`, the `onopen`/`onerror` properties,
- * and `close()`. Tests drive it through the `open`/`emit`/`fail` helpers.
+ * and `close()`. Tests drive it through the `open`/`emit` helpers.
  */
 class FakeEventSource {
   /** @type {FakeEventSource[]} Every stream opened since the last mount. */
