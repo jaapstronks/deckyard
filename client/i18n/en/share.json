@@ -126,7 +126,7 @@
   "share.passwordHelp": "This presentation is password protected. Enter the password to continue.",
   "share.passwordPlaceholder": "Enter password",
   "share.passwordRequired": "Password Required",
-  "share.permission.admin": "Admin",
+  "share.permission.admin": "Administrator",
   "share.permission.adminDescription": "Can edit and manage collaborators",
   "share.permission.comment": "Can comment",
   "share.permission.commentDescription": "Can view and add comments",

@@ -45,7 +45,7 @@ export function buildTransitionsSection({ pres, markDirty, requestSave }) {
     h('option', { value: 'fade', text: t('editor.transitions.fade', 'Fade') }),
     h('option', {
       value: 'slide',
-      text: t('editor.transitions.slide', 'Slide'),
+      text: t('editor.transitions.slide', 'Slide in'),
     }),
     h('option', { value: 'push', text: t('editor.transitions.push', 'Push') }),
     h('option', {

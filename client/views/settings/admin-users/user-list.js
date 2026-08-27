@@ -30,7 +30,7 @@ function renderUserCard(u, currentUser, onEdit, onRefresh) {
     class: `admin-user-role-badge ${u.role === 'admin' ? 'is-admin' : ''}`,
     text:
       u.role === 'admin'
-        ? t('admin.users.roleAdmin', 'Admin')
+        ? t('admin.users.roleAdmin', 'Administrator')
         : t('admin.users.roleUser', 'User'),
   });
   emailRow.append(emailText, roleBadge);

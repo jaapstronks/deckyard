@@ -201,7 +201,7 @@ export async function showEditModal(targetUser, onSuccess) {
     }),
     h('option', {
       value: 'admin',
-      text: t('admin.users.roleAdmin', 'Admin'),
+      text: t('admin.users.roleAdmin', 'Administrator'),
       selected: targetUser.role === 'admin',
     }),
   );

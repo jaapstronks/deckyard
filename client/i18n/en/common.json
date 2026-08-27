@@ -161,7 +161,7 @@
   "dashboard.period.7d": "Last 7 days",
   "dashboard.period.90d": "Last 90 days",
   "dashboard.periodLabel": "Time period",
-  "dashboard.source.embed": "Embed",
+  "dashboard.source.embed": "Embedded",
   "dashboard.source.empty": "No data yet",
   "dashboard.source.follow": "Workspace",
   "dashboard.source.published": "Published",

@@ -280,7 +280,7 @@
   "settings.admin.emailTemplates.hint": "Personalice las plantillas de correo que envía el sistema. Los cambios sustituyen a los valores por defecto del código.",
   "settings.admin.emailTemplates.locales.da": "Dansk",
   "settings.admin.emailTemplates.locales.de": "Deutsch",
-  "settings.admin.emailTemplates.locales.en": "English",
+  "settings.admin.emailTemplates.locales.en": "Inglés",
   "settings.admin.emailTemplates.locales.es": "Español",
   "settings.admin.emailTemplates.locales.fr": "Français",
   "settings.admin.emailTemplates.locales.nl": "Nederlands",

@@ -23,7 +23,7 @@
   "share.collaborators.title": "Inviter brukere i arbeidsområdet",
   "share.collaborators.transferOwnership": "Overfør",
   "share.collaborators.transferOwnershipConfirm": "Overføre eierskap av denne presentasjonen til {email}?\n\nDu blir samarbeidspartner med redigeringstilgang.",
-  "share.collaborators.transferOwnershipPlaceholder": "name@example.com",
+  "share.collaborators.transferOwnershipPlaceholder": "navn@eksempel.no",
   "share.collaborators.transferOwnershipPrompt": "Skriv inn e-posten til den nye eieren (må være en eksisterende samarbeidspartner med redigeringstilgang):\n\nKvalifiserte brukere: {users}",
   "share.collaborators.transferOwnershipTitle": "Overfør eierskap til en annen bruker",
   "share.create.button": "Opprett lenke",

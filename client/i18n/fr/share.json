@@ -23,7 +23,7 @@
   "share.collaborators.title": "Inviter des utilisateurs de l'espace de travail",
   "share.collaborators.transferOwnership": "Transférer",
   "share.collaborators.transferOwnershipConfirm": "Transférer la propriété de cette présentation à {email} ?\n\nVous deviendrez collaborateur avec accès en modification.",
-  "share.collaborators.transferOwnershipPlaceholder": "name@example.com",
+  "share.collaborators.transferOwnershipPlaceholder": "nom@exemple.fr",
   "share.collaborators.transferOwnershipPrompt": "Entrez l'e-mail du nouveau propriétaire (doit être un collaborateur existant avec accès en modification) :\n\nUtilisateurs éligibles : {users}",
   "share.collaborators.transferOwnershipTitle": "Transférer la propriété à un autre utilisateur",
   "share.create.button": "Créer un lien",

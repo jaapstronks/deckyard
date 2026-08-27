@@ -23,7 +23,7 @@
   "share.collaborators.title": "Bjud in arbetsyteanvändare",
   "share.collaborators.transferOwnership": "Överför",
   "share.collaborators.transferOwnershipConfirm": "Överför ägarskapet för denna presentation till {email}?\n\nDu blir medarbetare med redigeringsbehörighet.",
-  "share.collaborators.transferOwnershipPlaceholder": "name@example.com",
+  "share.collaborators.transferOwnershipPlaceholder": "namn@exempel.se",
   "share.collaborators.transferOwnershipPrompt": "Ange e-post för den nya ägaren (måste vara en befintlig medarbetare med redigeringsbehörighet):\n\nBerättigade användare: {users}",
   "share.collaborators.transferOwnershipTitle": "Överför ägarskap till en annan användare",
   "share.create.button": "Skapa länk",
