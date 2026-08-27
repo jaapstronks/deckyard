@@ -133,33 +133,17 @@
   text-decoration-color: transparent;
 }
 
-/* Verdict badge */
+/* Verdict badge.
+   The chip itself is the shared `.slide-badge` partial (00-patterns.css), so
+   this type styles only its PLACEMENT. The two rules that used to live here —
+   a lime fill hard-coded "to ensure contrast on any theme", plus an accent
+   override for when the slide itself is lime — were a hand-rolled version of
+   the emphasis role, which is contrast-guaranteed on every ground by the theme
+   colour contract and needs no per-background special case. */
 .slide-comparison .comparison-verdict {
   text-align: center;
   padding-top: var(--slide-space-5);
   margin-top: auto;
-}
-
-.slide-comparison .comparison-verdict .badge {
-  display: inline-block;
-  padding: var(--slide-space-3) var(--slide-space-8);
-  font-family: var(--font-body);
-  font-size: var(--slide-text-md);
-  font-weight: 500;
-  line-height: var(--slide-leading-snug);
-  /* Use lime for badge to ensure contrast on any theme */
-  background: var(--slide-bg-lime, #e2fe52);
-  /* The verdict sits on the badge, not on the slide. */
-  --slide-on-surface: var(--slide-on-lime);
-  color: var(--slide-on-surface);
-  border-radius: var(--slide-radius-sm);
-  box-shadow: var(--slide-shadow-md);
-}
-
-/* On lime background, use accent color for badge to stand out */
-.slide-comparison.slide-bg-lime .comparison-verdict .badge {
-  background: var(--slide-accent, #375c5d);
-  color: var(--slide-on-accent);
 }
 
 /* When verdict is present, bottom subheading sits below it */
@@ -207,7 +191,7 @@
     font-size: var(--slide-text-md);
   }
 
-  .slide-comparison .comparison-verdict .badge {
+  .slide-comparison .comparison-verdict .slide-badge {
     font-size: var(--slide-text-base);
     padding: var(--slide-space-3) var(--slide-space-6);
   }

@@ -203,14 +203,113 @@
   color: var(--slide-text-light-muted);
 }
 
-/* Date/label styling */
-.slide-label {
+/* =========================================================================
+   PARTIALS — the shared inline elements
+   =========================================================================
+   The CSS half of `shared/slide-types/partials.js`. Every rule here styles a
+   class one of those functions emits, and nothing else emits them — so this
+   block and that module are one thing in two files, and a type that wants an
+   eyebrow, a chip or a coloured run composes the partial instead of spelling a
+   fourth `.sfi-card-kicker` / `.badge` / `.kpi-delta` of its own.
+
+   It replaces the speculative `.slide-label` that stood here: same intent (the
+   caption-scale uppercase label), but with a renderer behind it. `eyebrow` is
+   the name the token itself uses — `--slide-font-size-label` is documented in
+   00-tokens.css as "kickers, eyebrows, axis labels".
+
+   THE TONE SEAM. Colour comes from `--slide-tone`, set by a modifier class and
+   read by the base rule — the same shape `callout-slide` uses for
+   `--callout-tone`. Two consequences that are the whole point:
+
+     - the tones are the semantic status ROLES from 00-tokens.css, so a partial
+       never mints a colour and a theme never learns a slide type's name
+       (slide-roles.md § Semantic status is a role, not a type family);
+     - a type whose partial must read against something other than the slide
+       rebinds `--slide-tone` locally rather than shipping a second class. The
+       KPI tile is the live case: its deltas mix against the tile fill, not the
+       slide, and it says so in three lines instead of its own delta rules.
+
+   This file loads before every tier (slides.css), so ANY per-type rule wins on
+   cascade order alone — a partial is a starting point a type may always
+   overrule, never a rule it has to fight. */
+
+/* An eyebrow: the small standing label above a heading. */
+.slide-eyebrow {
+  margin: 0;
   font-family: var(--font-caption, var(--font-body));
-  font-size: var(--slide-text-sm);
-  line-height: var(--slide-leading-tight);
-  letter-spacing: 0.03em;
+  font-size: var(--slide-font-size-label);
+  line-height: var(--slide-leading-snug);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--slide-on-surface-muted, rgba(11, 11, 11, 0.6));
+  color: var(--slide-tone, var(--slide-on-surface-muted));
+}
+
+/* A badge: a short status or label chip.
+   The base chip fills itself with the `emphasis` role — the accent-fed pair a
+   type emphasises with, whose contrast the theme colour contract guarantees on
+   any ground. The text sits on the CHIP, not on the slide, so the chip rebinds
+   `--slide-on-surface` for anything nested in it (nested-surfaces.md). */
+.slide-badge {
+  --slide-tone: var(--slide-emphasis);
+  --slide-on-tone: var(--slide-on-emphasis);
+
+  display: inline-block;
+  padding: var(--slide-space-3) var(--slide-space-8);
+  font-family: var(--font-body);
+  font-size: var(--slide-text-md);
+  font-weight: 500;
+  line-height: var(--slide-leading-snug);
+  background: var(--slide-tone);
+  --slide-on-surface: var(--slide-on-tone);
+  color: var(--slide-on-surface);
+  border-radius: var(--slide-radius-sm);
+  box-shadow: var(--slide-shadow-md);
+}
+
+/* A highlight: a coloured run inside a line. Colour only — no weight, no
+   background — because it sits inside running text and anything heavier
+   competes with the line it is part of. Untoned it inherits, which is why a
+   type can wrap a run unconditionally and let the tone decide. */
+.slide-highlight {
+  color: var(--slide-tone, currentColor);
+}
+
+/* The tone vocabulary, shared by both coloured partials. `default` is the
+   base rule above and has no class. */
+.slide-badge--positive,
+.slide-highlight--positive {
+  --slide-tone: var(--slide-color-positive);
+}
+.slide-badge--danger,
+.slide-highlight--danger {
+  --slide-tone: var(--slide-color-danger);
+}
+.slide-badge--caution,
+.slide-highlight--caution {
+  --slide-tone: var(--slide-color-caution);
+}
+.slide-badge--informative,
+.slide-highlight--informative {
+  --slide-tone: var(--slide-color-informative);
+}
+.slide-badge--neutral,
+.slide-highlight--neutral {
+  --slide-tone: var(--slide-color-neutral);
+}
+.slide-badge--helpful,
+.slide-highlight--helpful {
+  --slide-tone: var(--slide-color-helpful);
+}
+
+/* Every semantic tone is a mid-dark fill, so a toned chip takes the light pole
+   for its text. Only the base chip reads the emphasis pair's own contrast. */
+.slide-badge--positive,
+.slide-badge--danger,
+.slide-badge--caution,
+.slide-badge--informative,
+.slide-badge--neutral,
+.slide-badge--helpful {
+  --slide-on-tone: var(--slide-text-light);
 }
 
 /* =========================================================================

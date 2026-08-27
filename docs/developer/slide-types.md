@@ -97,6 +97,7 @@ vocabulary and the defaults already right. Useful flags:
 | ----------------------------------------- | -------------------------------------- |
 | `--label "Acme hero"`                     | the name shown in the picker           |
 | `--fields "heading:string,body:markdown"` | the initial field list                 |
+| `--fields "status:enum(draft\|live)"`     | an enum spells its options inline      |
 | `--theme-id acme-corp`                    | bind the type to a theme               |
 | `--namespace acme`                        | claim a fork namespace for the type id |
 | `--no-css`                                | skip the stylesheet stub               |
@@ -777,6 +778,69 @@ sense against the markup that was actually drawn. This order flipped on
 2026-07-31 ([#507](https://github.com/jaapstronks/deckyard/pull/507)); before
 that the core map won, because an override's markup never reached the browser.
 See [`../reference/slide-type-directory.md`](../reference/slide-type-directory.md#the-aggregator-seam-rule).
+
+---
+
+## Building blocks: the shared partials
+
+`shared/slide-types/partials.js` holds the small elements every deck needs and
+no type should re-spell. Import them next to `escapeHtml`; each returns an HTML
+string, or `''` when there is nothing to render, so a call drops straight into a
+template literal with no branch of its own:
+
+```javascript
+import { escapeHtml } from '../../shared/slide-types/helpers.js';
+import {
+  badgeHtml,
+  eyebrowHtml,
+  highlightHtml,
+} from '../../shared/slide-types/partials.js';
+```
+
+| Partial                     | What it is                               | Renders                          |
+| --------------------------- | ---------------------------------------- | -------------------------------- |
+| `eyebrowHtml(text, opts)`   | the small standing label above a heading | `<p class="slide-eyebrow">`      |
+| `badgeHtml(text, opts)`     | a short status or label chip             | `<span class="slide-badge">`     |
+| `highlightHtml(text, opts)` | a coloured run inside a line             | `<span class="slide-highlight">` |
+
+Three properties are the whole reason to reach for one:
+
+- **They are styled from theme tokens**, in `client/styles/slides/00-patterns.css`.
+  A partial looks designed on every theme with no CSS of your own, and a fork
+  restyles it by overriding tokens rather than by shipping rules. That file loads
+  before every per-type stylesheet, so any rule of yours still wins.
+- **`field` opts into inline editing.** Pass a `data-inline-field` path and the
+  element becomes click-to-editable on the canvas — you supply the matching
+  `inline` descriptor entry (see below), and no core file changes:
+
+  ```javascript
+  eyebrowHtml(content?.kicker, { field: 'kicker' });
+  badgeHtml(content?.status, { field: 'status' });
+  ```
+
+- **`tone` names a meaning, never a colour.** The vocabulary is
+  `default` plus the six semantic status roles — `positive`, `danger`,
+  `caution`, `informative`, `neutral`, `helpful` — which resolve to the
+  `--slide-color-*` tokens the callout family also reads. `default` is the base
+  treatment: a filled emphasis chip for a badge, the inherited text colour for a
+  highlight. An unrecognised tone falls back to `default` rather than emitting a
+  class nothing styles.
+
+  ```javascript
+  badgeHtml(content?.verdict, { tone: 'positive' }); // "this is the good option"
+  highlightHtml('-4%', { tone: 'danger' }); // a delta that went the wrong way
+  ```
+
+When a partial has to read against something other than the slide — a chip on a
+coloured tile, say — rebind `--slide-tone` from your own stylesheet instead of
+adding a second class. `kpi-metrics-slide` is the live example: its deltas mix
+against the tile fill, and it says so in three lines.
+
+**Call-to-action buttons are not here.** `renderActionsHtml()` in
+`shared/slide-types/actions-field.js` already is that partial: spread
+`ACTIONS_FIELD` into your `fields[]` and render the result, and you get the
+`primary`/`secondary`/`outline` button vocabulary `content-slide` and
+`image-text-slide` use.
 
 ---
 

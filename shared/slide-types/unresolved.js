@@ -31,6 +31,7 @@
  */
 
 import { escapeHtml } from './helpers.js';
+import { eyebrowHtml } from './partials.js';
 import { getRemovedSlideType } from './removed.js';
 import { SLIDE_TYPES } from './registry.js';
 
@@ -279,7 +280,7 @@ export function renderUnresolvedSlideHtml(slide) {
   return `
       <div class="slide slide-unresolved" data-slide-type="${escapeHtml(info.type)}" data-unresolved-state="${escapeHtml(info.state)}">
         <div class="slide-inner">
-          <p class="unresolved-kicker">${info.state === 'removed' ? 'Archived slide type' : 'Unavailable slide type'}</p>
+          ${eyebrowHtml(info.state === 'removed' ? 'Archived slide type' : 'Unavailable slide type')}
           <div class="heading">${escapeHtml(heading.text)}</div>
           ${notes}
           ${list}

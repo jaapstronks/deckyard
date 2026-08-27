@@ -108,10 +108,17 @@ test('the scaffoldable types are a subset of the declared vocabulary', () => {
   );
 });
 
+/** `enum` is the one scaffoldable type whose spec carries more than a name. */
+function specFor(type, key) {
+  return type === 'enum' ? `${key}:enum(first|second)` : `${key}:${type}`;
+}
+
 test('every scaffoldable field type produces a valid definition', async () => {
-  const spec = SCAFFOLDABLE_FIELD_TYPES.map((t, i) => `f${i}${t}:${t}`).join(
+  const keys = SCAFFOLDABLE_FIELD_TYPES.map((t, i) => `f${i}${t}`);
+  const spec = SCAFFOLDABLE_FIELD_TYPES.map((t, i) => specFor(t, keys[i])).join(
     ',',
   );
+  const keyFor = (type) => keys[SCAFFOLDABLE_FIELD_TYPES.indexOf(type)];
   const { fields, errors } = parseFields(spec);
   assert.deepEqual(errors, []);
   assert.equal(fields.length, SCAFFOLDABLE_FIELD_TYPES.length);
@@ -134,8 +141,38 @@ test('every scaffoldable field type produces a valid definition', async () => {
   assert.equal(def.themeId, 'acme-theme');
   assert.equal(def.namespace, 'acme');
   // A number default must be 0, not '' — an empty string fails number validation.
-  assert.equal(def.defaults.f3number, 0);
-  assert.equal(def.defaults.f0boolean, false);
+  assert.equal(def.defaults[keyFor('number')], 0);
+  assert.equal(def.defaults[keyFor('boolean')], false);
+  // Same reasoning for an enum: '' is not in the vocabulary, so the default has
+  // to be a real option or every inserted slide starts invalid.
+  assert.equal(def.defaults[keyFor('enum')], 'first');
+});
+
+test('an enum renders through the shared badge partial', async () => {
+  const { fields, errors } = parseFields('status:enum(draft|live)');
+  assert.deepEqual(errors, []);
+  assert.deepEqual(fields, [
+    { key: 'status', type: 'enum', options: ['draft', 'live'] },
+  ]);
+
+  const src = moduleSource({
+    name: 'chip-slide',
+    label: 'Chip',
+    fields,
+    themeId: null,
+    namespace: null,
+  });
+  assert.match(
+    src,
+    /import \{ badgeHtml \} from '\.\.\/\.\.\/shared\/slide-types\/partials\.js';/,
+  );
+  // Nothing else is imported: an unused `escapeHtml` would be a lint error in
+  // the fork's own repo.
+  assert.ok(!src.includes('escapeHtml'));
+
+  const def = await importGenerated('chip-slide', src);
+  const html = def.renderHtml({ status: 'live' });
+  assert.match(html, /<span class="slide-badge" data-inline-field="status"/);
 });
 
 test('parseFields refuses what the scaffold cannot write', () => {
@@ -156,6 +193,11 @@ test('parseFields refuses what the scaffold cannot write', () => {
     /not a usable field key/,
   );
   assert.match(parseFields('').errors.join(' '), /no fields given/);
+  // A bare `enum` is not a wrong type, it is an incomplete one — so it gets the
+  // message that says how to finish it, not the "cannot write" one.
+  assert.match(parseFields('a:enum').errors.join(' '), /no options/);
+  assert.match(parseFields('a:enum()').errors.join(' '), /no options/);
+  assert.match(parseFields('a:enum(  |  )').errors.join(' '), /no options/);
 });
 
 test('the CSS stub nests every selector under the type root', () => {

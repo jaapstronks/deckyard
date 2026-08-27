@@ -21,7 +21,8 @@
  *
  *   <name>          registry key + filename, kebab-case (e.g. `acme-hero-slide`)
  *   --label <text>  human label in the picker (default: derived from the name)
- *   --fields <list> comma-separated `key:type` pairs
+ *   --fields <list> comma-separated `key:type` pairs; an enum spells its
+ *                   options inline (`status:enum(draft|live)`)
  *                   (default: `heading:string,body:markdown`)
  *   --theme-id <id> bind the type to a theme
  *   --namespace <n> fork namespace (`acme` or `nl.example.slide`)
@@ -62,21 +63,32 @@ const NAME_RE = /^[a-z0-9][a-z0-9-]*$/;
 /**
  * The field types the template can emit a default and a renderer line for.
  *
- * A strict subset of `FIELD_TYPE_NAMES` — `enum` needs options, `items` needs
- * an `itemFields` schema and `csv`/`code`/`color`/`images` need a renderer
- * decision this scaffold has no basis for. Asking for one of those is not an
- * error in the field type, so the message says so and points at the full
- * vocabulary. `tests/new-slide-type-scaffold.test.js` pins that this list stays
- * a subset of the declared types.
+ * A strict subset of `FIELD_TYPE_NAMES` — `items` needs an `itemFields` schema
+ * and `csv`/`code`/`color`/`images` need a renderer decision this scaffold has
+ * no basis for. Asking for one of those is not an error in the field type, so
+ * the message says so and points at the full vocabulary.
+ * `tests/new-slide-type-scaffold.test.js` pins that this list stays a subset of
+ * the declared types.
+ *
+ * `enum` was excluded for a fixable reason — it needs `options`, which
+ * `key:type` cannot express — so the grammar grew a place to put them
+ * (`status:enum(draft|live)`). It is worth the extra parsing because an enum is
+ * the field a scaffolded type is most likely to want and the one with the most
+ * obvious rendering: a closed set of short values is a status chip, which is
+ * `badgeHtml` from the shared partials.
  */
 export const SCAFFOLDABLE_FIELD_TYPES = [
   'boolean',
+  'enum',
   'image',
   'markdown',
   'number',
   'string',
   'url',
 ];
+
+/** `status:enum(draft|live)` → the type and its options. */
+const ENUM_SPEC_RE = /^enum\(([^)]*)\)$/;
 
 /**
  * Parse `process.argv` into the scaffolder's options.
@@ -140,7 +152,15 @@ export function parseFields(spec) {
   for (const raw of String(spec).split(',')) {
     const entry = raw.trim();
     if (!entry) continue;
-    const [key, type = 'string'] = entry.split(':').map((s) => s.trim());
+    const [key, rawType = 'string'] = entry.split(':').map((s) => s.trim());
+    const enumSpec = ENUM_SPEC_RE.exec(rawType);
+    const type = enumSpec ? 'enum' : rawType;
+    const options = enumSpec
+      ? enumSpec[1]
+          .split('|')
+          .map((o) => o.trim())
+          .filter(Boolean)
+      : null;
     if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(key)) {
       errors.push(`"${key}" is not a usable field key (letters and digits)`);
       continue;
@@ -164,17 +184,32 @@ export function parseFields(spec) {
       );
       continue;
     }
+    if (type === 'enum' && !options?.length) {
+      errors.push(
+        `"${key}" is an enum with no options; spell them out as ` +
+          `${key}:enum(first|second) — an enum without options is exactly what ` +
+          `the definition validator refuses`,
+      );
+      continue;
+    }
     seen.add(key);
-    fields.push({ key, type });
+    fields.push(options ? { key, type, options } : { key, type });
   }
   if (!fields.length && !errors.length) errors.push('no fields given');
   return { fields, errors };
 }
 
-/** The empty value a field of this type starts at. */
-function defaultFor(type) {
+/**
+ * The value a field starts at.
+ *
+ * An enum starts at its first option rather than `''`: an empty string is not
+ * in the vocabulary, so a blank default would make every freshly inserted slide
+ * fail content validation on a field the author never touched.
+ */
+function defaultFor({ type, options }) {
   if (type === 'number') return '0';
   if (type === 'boolean') return 'false';
+  if (type === 'enum') return `'${options[0]}'`;
   return "''";
 }
 
@@ -184,9 +219,19 @@ function defaultFor(type) {
  * Every text-ish value goes through `escapeHtml`, and each element carries
  * `data-inline-field` so the type is one `inline` descriptor away from being
  * click-to-edit in the canvas.
+ *
+ * An `enum` renders through the shared `badgeHtml` partial rather than a
+ * hand-rolled chip: a closed vocabulary of short values IS a status chip, and
+ * pointing the scaffold at `partials.js` for it is the difference between a
+ * forker finding the library and spelling a fourth `.my-badge` of their own.
+ * The partial also brings the empty case (`''`, not an empty element), so the
+ * line needs no branch.
  */
 function renderLineFor({ key, type }) {
   const val = `content?.${key}`;
+  if (type === 'enum') {
+    return `          \${badgeHtml(${val}, { field: '${key}' })}`;
+  }
   if (type === 'image') {
     return `          \${${val} ? \`<img class="hero-image" src="\${escapeHtml(${val})}" alt="" />\` : ''}`;
   }
@@ -212,18 +257,37 @@ export function moduleSource({ name, label, fields, themeId, namespace }) {
   // `.slide-comparison`). canonicalTypeName() owns that rule.
   const rootClass = `slide-${canonicalTypeName(name)}`;
   const fieldLines = fields
-    .map(
-      (f) =>
-        `    {\n      key: '${f.key}',\n      type: '${f.type}',\n      label: '${labelFromKey(f.key)}',\n    },`,
-    )
+    .map((f) => {
+      const optionLine = f.options
+        ? `\n      options: [${f.options.map((o) => `'${o}'`).join(', ')}],`
+        : '';
+      return (
+        `    {\n      key: '${f.key}',\n      type: '${f.type}',` +
+        `\n      label: '${labelFromKey(f.key)}',${optionLine}\n    },`
+      );
+    })
     .join('\n');
   const defaultLines = fields
-    .map((f) => `    ${f.key}: ${defaultFor(f.type)},`)
+    .map((f) => `    ${f.key}: ${defaultFor(f)},`)
     .join('\n');
   const textish = fields.filter((f) =>
     ['string', 'markdown', 'text'].includes(f.type),
   );
   const labelField = (textish[0] || fields[0]).key;
+  // Only import what the generated body actually calls: an unused import is a
+  // lint error in the fork's own repo the moment they run eslint.
+  const usesBadge = fields.some((f) => f.type === 'enum');
+  const usesEscape = fields.some((f) => f.type !== 'enum');
+  const imports = [
+    usesEscape
+      ? "import { escapeHtml } from '../../shared/slide-types/helpers.js';"
+      : null,
+    usesBadge
+      ? "import { badgeHtml } from '../../shared/slide-types/partials.js';"
+      : null,
+  ]
+    .filter(Boolean)
+    .join('\n');
 
   return `/**
  * ${label} — a fork-local slide type.
@@ -235,9 +299,16 @@ export function moduleSource({ name, label, fields, themeId, namespace }) {
  *
  * The import path is two levels up: this file's runtime home is
  * \`custom/slide-types/\`, two below the repo root.
+ *
+ * \`shared/slide-types/partials.js\` holds the shared inline elements —
+ * \`eyebrowHtml\` (a small standing label), \`badgeHtml\` (a status chip) and
+ * \`highlightHtml\` (a coloured run inside a line). Each returns an HTML string
+ * or \`''\`, takes a \`field\` to become click-to-editable, and is styled from
+ * theme tokens, so composing one is how this type looks designed on every theme
+ * without shipping any colour of its own.
  */
 
-import { escapeHtml } from '../../shared/slide-types/helpers.js';
+${imports}
 
 export default {
   label: '${label}',${namespace ? `\n  namespace: '${namespace}',` : ''}${themeId ? `\n  themeId: '${themeId}',` : ''}
