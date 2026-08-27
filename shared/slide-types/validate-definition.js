@@ -225,11 +225,17 @@ export function validateSlideTypeDefinition(def, name, options = {}) {
   const known = new Set([...keys, ...globals]);
 
   // --- labelField ------------------------------------------------------------
+  // A warning, not an error: every consumer falls back when the key names
+  // nothing (editor-utils and semantic-projection both fall through to the
+  // heuristic resolvers), so the type renders fine — only the outline label
+  // degrades. Refusing a renderable type here would be stricter than the
+  // error contract above.
   if (def.labelField !== undefined && def.labelField !== null) {
     if (!isNonEmpty(def.labelField) || !known.has(def.labelField)) {
-      errors.push(
+      warnings.push(
         `${who}: \`labelField\` ${JSON.stringify(def.labelField)} does not ` +
-          `name a field of this type`,
+          `name a field of this type, so it is ignored and the outline label ` +
+          `falls back to the built-in resolvers`,
       );
     }
   }

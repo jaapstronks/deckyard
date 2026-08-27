@@ -198,14 +198,15 @@ slide's content, the _schema itself_ — and prints a per-file report at startup
 - **Errors** mean the type is **refused**: it does not enter the registry, and
   the report says why. A missing or non-function `renderHtml`, a `field.type`
   outside the declared vocabulary, an `enum` with no options, duplicate field
-  keys, a `labelField` naming nothing, a function value inside `inline`. Each of
+  keys, a function value inside `inline`. Each of
   these used to load fine and fail per slide at render time — in front of an
   audience — so it now fails at boot instead. One bad file is skipped; the
   server keeps serving every other deck.
 - **Warnings** leave the type registered but say what is being ignored: a field
   shadowing a global one, an invalid `namespace` (it falls back to `custom`), a
-  default for a field that does not exist, a required field without a default,
-  an `ai` block that will be dropped.
+  `labelField` naming nothing (the outline label falls back), a default for a
+  field that does not exist, a required field without a default, an `ai` block
+  that will be dropped.
 
 The same function runs in `npm test`
 (`tests/custom-slide-type-validity.test.js`), so a fork can validate its types

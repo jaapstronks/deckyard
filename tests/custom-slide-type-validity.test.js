@@ -215,11 +215,6 @@ const MALFORMED = [
     'duplicate item field key',
   ],
   [
-    'labelField naming nothing',
-    validDef({ labelField: 'nope' }),
-    '`labelField`',
-  ],
-  [
     'function inside inline',
     validDef({
       inline: { cards: { field: 'heading', addPlacement: () => 'x' } },
@@ -315,6 +310,14 @@ const WARNING_CASES = [
     'a default for a field that does not exist',
     validDef({ defaults: { heading: '', ghost: 1 } }),
     'has no field `ghost`',
+    {},
+  ],
+  [
+    // Not an error: editor-utils and semantic-projection both fall back to the
+    // heuristic outline-label resolvers, so the type renders untouched.
+    'a labelField naming nothing',
+    validDef({ labelField: 'nope' }),
+    'falls back to the built-in resolvers',
     {},
   ],
   [
