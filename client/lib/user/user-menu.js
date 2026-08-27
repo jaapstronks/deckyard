@@ -13,17 +13,17 @@ import { createOrganizationSection } from './organization-switcher.js';
 import { storage } from '../storage.js';
 import { t } from '../ui-i18n.js';
 import { getHelpUrl } from '../theme/branding.js';
+import { nav } from '../state/router.js';
 
 /**
  * Create a user menu dropdown.
  *
  * @param {Object} options
  * @param {Object} options.user - Current user object { email, name?, organizationId? }
- * @param {Function} options.nav - Navigation function
  * @param {Function} [options.onLogout] - Optional custom logout handler
  * @returns {{ el: HTMLElement, detach: Function }}
  */
-export function createUserMenu({ user, nav, onLogout } = {}) {
+export function createUserMenu({ user, onLogout } = {}) {
   const detachers = [];
 
   const email = user?.email || '';
@@ -104,7 +104,7 @@ export function createUserMenu({ user, nav, onLogout } = {}) {
     text: t('common.settings', 'Settings'),
     onclick: () => {
       details.open = false;
-      nav?.('/settings');
+      nav('/settings');
     },
   });
   menuItems.push(btnSettings);
@@ -146,7 +146,7 @@ export function createUserMenu({ user, nav, onLogout } = {}) {
         }
         // Clear view preference so next login starts fresh on 'home'
         storage.remove('ps:presentation-list-view');
-        nav?.('/login');
+        nav('/login');
       },
     });
     menuItems.push(btnLogout);

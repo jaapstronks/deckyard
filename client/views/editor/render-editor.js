@@ -4,8 +4,9 @@ import { h } from '../../lib/dom.js';
 import { t } from '../../lib/ui-i18n.js';
 import { icon as uiIcon } from '../../lib/dom/icons.js';
 import { showEditorLoadingSkeleton } from './loading-skeleton.js';
+import { nav } from '../../lib/state/router.js';
 
-export async function renderEditor(root, id, { nav, user } = {}) {
+export async function renderEditor(root, id, { user } = {}) {
   // Long decks take a while to fetch + mount; show the layout skeleton
   // immediately so the page never sits blank (removed on every exit path).
   const hideSkeleton = showEditorLoadingSkeleton(root);
@@ -25,12 +26,12 @@ export async function renderEditor(root, id, { nav, user } = {}) {
     hideSkeleton();
     // Handle permission denied errors with a nice page
     if (err.statusCode === 401 || err.statusCode === 403) {
-      renderPermissionDenied(root, nav);
+      renderPermissionDenied(root);
       return () => {};
     }
     // Handle not found
     if (err.statusCode === 404) {
-      renderNotFound(root, nav);
+      renderNotFound(root);
       return () => {};
     }
     // Re-throw other errors to be handled by the app shell
@@ -47,7 +48,6 @@ export async function renderEditor(root, id, { nav, user } = {}) {
       const controller = await createViewerController({
         root,
         id,
-        nav,
         user,
         permission,
         pres,
@@ -63,7 +63,6 @@ export async function renderEditor(root, id, { nav, user } = {}) {
     const controller = await createEditorController({
       root,
       id,
-      nav,
       user,
       initialPres: pres,
     });
@@ -76,7 +75,7 @@ export async function renderEditor(root, id, { nav, user } = {}) {
 /**
  * Render a permission denied page.
  */
-function renderPermissionDenied(root, nav) {
+function renderPermissionDenied(root) {
   const shell = h('div', { class: 'access-error-shell' });
 
   const card = h('div', { class: 'access-error-card' });
@@ -101,7 +100,7 @@ function renderPermissionDenied(root, nav) {
   const backBtn = h('button', {
     class: 'btn btn-primary',
     text: t('access.denied.backToHome', 'Back to Home'),
-    onclick: () => nav?.('/app'),
+    onclick: () => nav('/app'),
   });
 
   actions.append(backBtn);
@@ -113,7 +112,7 @@ function renderPermissionDenied(root, nav) {
 /**
  * Render a not found page.
  */
-function renderNotFound(root, nav) {
+function renderNotFound(root) {
   const shell = h('div', { class: 'access-error-shell' });
 
   const card = h('div', { class: 'access-error-card' });
@@ -138,7 +137,7 @@ function renderNotFound(root, nav) {
   const backBtn = h('button', {
     class: 'btn btn-primary',
     text: t('access.notFound.backToHome', 'Back to Home'),
-    onclick: () => nav?.('/app'),
+    onclick: () => nav('/app'),
   });
 
   actions.append(backBtn);

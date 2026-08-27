@@ -9,6 +9,7 @@ import { createAvatar } from '../../lib/user/avatar.js';
 import { getUserProfile } from '../../lib/user/user-profiles.js';
 import { icon } from '../../lib/dom/icons.js';
 import { hexToRgb, getRelativeLuminance } from '../../../shared/color-utils.js';
+import { nav } from '../../lib/state/router.js';
 
 // Safety-net window: if a card's thumbnail hasn't reached any terminal state
 // within this long, force one. Comfortably longer than the single onerror
@@ -24,7 +25,6 @@ const THUMB_SETTLE_TIMEOUT_MS = 8000;
  */
 export function createCardRenderer({
   api,
-  nav,
   onDeckDuplicated,
   onTrashRefresh,
   detachThumbs,
@@ -60,8 +60,8 @@ export function createCardRenderer({
             displayName: displayNameFromEmail(p?.ownerEmail || ''),
           };
 
-  const openPresentation = (id) => nav?.(`/app/${id}`);
-  const openPresenter = (id) => nav?.(`/present/${id}`);
+  const openPresentation = (id) => nav(`/app/${id}`);
+  const openPresenter = (id) => nav(`/present/${id}`);
 
   /**
    * Render a presentation card
@@ -329,7 +329,7 @@ export function createCardRenderer({
                   'color: inherit; text-decoration: underline; cursor: pointer;',
                 onclick: (ev) => {
                   ev.preventDefault();
-                  nav?.(`/app/${p.id}`);
+                  nav(`/app/${p.id}`);
                 },
               }),
             ]);
@@ -444,7 +444,7 @@ export function createCardRenderer({
           )
             return;
           await api(`/api/presentations/${p.id}`, { method: 'DELETE' });
-          nav?.('/app');
+          nav('/app');
         },
       });
       menu.append(menuPresent, menuDuplicate);

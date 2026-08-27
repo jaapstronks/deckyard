@@ -3,6 +3,7 @@ import { t } from '../../../lib/ui-i18n.js';
 import { icon } from '../../../lib/dom/icons.js';
 import { createDropdown } from '../../../lib/dom/dropdown.js';
 import { h } from '../../../lib/dom.js';
+import { nav } from '../../../lib/state/router.js';
 
 export function createEditorTopbarMoreMenu({
   root,
@@ -13,7 +14,6 @@ export function createEditorTopbarMoreMenu({
   requestSave,
   isDirty,
   onError,
-  nav,
   onTranslateOther,
   canTranslate = true,
   onVersions,
@@ -154,7 +154,7 @@ export function createEditorTopbarMoreMenu({
           t('editor.more.duplicateDeck.done', 'Duplicated. Opening copy…'),
           { id: 'duplicate-deck', durationMs: 1800 },
         );
-        nav?.(`/app/${created.id}`);
+        nav(`/app/${created.id}`);
       } catch (e) {
         toast.error(e, { id: 'duplicate-deck' });
       }
@@ -189,7 +189,7 @@ export function createEditorTopbarMoreMenu({
           id: 'move-to-trash',
           durationMs: 1800,
         });
-        nav?.('/app');
+        nav('/app');
       } catch (e) {
         toast.error(e, { id: 'move-to-trash' });
       }
@@ -246,7 +246,7 @@ export function createEditorTopbarMoreMenu({
       } catch (e) {
         console.error('Logout failed:', e);
       }
-      nav?.('/login');
+      nav('/login');
     },
   });
 

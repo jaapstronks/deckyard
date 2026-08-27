@@ -4,6 +4,7 @@ import { login, me } from '../lib/user/auth.js';
 import { t } from '../lib/ui-i18n.js';
 import { createBusyManager } from '../lib/dom/busy.js';
 import { authShell } from './auth-shell.js';
+import { nav } from '../lib/state/router.js';
 
 /**
  * Human-readable message for an SSO error code returned via ?error=sso_...
@@ -41,7 +42,7 @@ function ssoErrorMessage(code) {
   );
 }
 
-export async function renderLogin(root, { nav } = {}) {
+export async function renderLogin(root) {
   const url = new URL(location.href);
   const returnToRaw = url.searchParams.get('returnTo') || '';
   const returnTo =
@@ -258,7 +259,7 @@ export async function renderLogin(root, { nav } = {}) {
       } catch {
         /* sessionStorage may not be available */
       }
-      nav?.(returnTo);
+      nav(returnTo);
     } catch (err) {
       status.textContent = String(err?.message || err);
       status.className = 'auth-status is-error';
@@ -283,7 +284,7 @@ export async function renderLogin(root, { nav } = {}) {
       } catch {
         /* sessionStorage may not be available */
       }
-      nav?.(returnTo);
+      nav(returnTo);
     } catch (err) {
       status.textContent = String(err?.message || err);
       status.className = 'auth-status is-error';
@@ -298,7 +299,7 @@ export async function renderLogin(root, { nav } = {}) {
   });
   forgotLink.onclick = (e) => {
     e.preventDefault();
-    nav?.('/forgot-password');
+    nav('/forgot-password');
   };
 
   // Button row: sign in button + forgot password link
@@ -337,7 +338,7 @@ export async function renderLogin(root, { nav } = {}) {
   try {
     const u = await me();
     if (u) {
-      nav?.(returnTo);
+      nav(returnTo);
       return;
     }
   } catch {

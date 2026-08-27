@@ -2,6 +2,7 @@ import { h } from '../lib/dom.js';
 import qrcode from '../vendor/qrcode-generator.js';
 import { t } from '../lib/ui-i18n.js';
 import { copyToClipboardWithPromptFallback } from '../lib/util/clipboard.js';
+import { nav } from '../lib/state/router.js';
 
 function renderQrToCanvas(canvas, text, { pad = 12 } = {}) {
   const qr = qrcode(0, 'M');
@@ -30,7 +31,7 @@ function renderQrToCanvas(canvas, text, { pad = 12 } = {}) {
   }
 }
 
-export async function renderNotesJoin(root, sessionId, { nav } = {}) {
+export async function renderNotesJoin(root, sessionId) {
   const u = new URL(`/notes/${sessionId}`, location.origin);
   const url = u.toString();
 
@@ -71,8 +72,7 @@ export async function renderNotesJoin(root, sessionId, { nav } = {}) {
     text: t('notesJoin.open', 'Open companion'),
     onclick: () => {
       const dest = u.pathname + u.search;
-      if (typeof nav === 'function') nav(dest);
-      else location.href = dest;
+      nav(dest);
     },
   });
   const backBtn = h('button', {
@@ -82,8 +82,7 @@ export async function renderNotesJoin(root, sessionId, { nav } = {}) {
       try {
         window.close();
       } catch {}
-      if (typeof nav === 'function') nav('/app');
-      else location.href = '/app';
+      nav('/app');
     },
   });
 

@@ -60,8 +60,9 @@ import { resolveRevealStyle } from '../../../shared/reveal-style.js';
 import { createStepIndicatorRenderer } from './step-indicator.js';
 import { createPresenterConsoleToggle } from './console-toggle.js';
 import { buildPresenterTopbar } from './topbar.js';
+import { nav } from '../../lib/state/router.js';
 
-export async function renderPresenter(root, id, { nav } = {}) {
+export async function renderPresenter(root, id) {
   const startUrl = new URL(location.href);
   const { activeLang, langQs } = readDeckLangFromUrl(startUrl);
   let pres = await api(`/api/presentations/${id}${langQs}`);
@@ -176,8 +177,7 @@ export async function renderPresenter(root, id, { nav } = {}) {
     if (slideId) u.searchParams.set('slideId', slideId);
     const dest = u.pathname + u.search;
     // Prefer SPA navigation; fallback to hard navigation (works even in a fresh tab).
-    if (typeof nav === 'function') nav(dest);
-    else location.href = dest;
+    nav(dest);
   };
   const fullscreenCtl = createPresenterFullscreenController({ shell });
   const syncFullscreenClass = fullscreenCtl.syncFullscreenClass;

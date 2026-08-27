@@ -8,6 +8,7 @@ import { formatRelativeTime } from '../../lib/format/format-time.js';
 import { icon } from '../../lib/dom/icons.js';
 import { createEmptyState } from '../../lib/dom/empty-state.js';
 import { h } from '../../lib/dom.js';
+import { nav } from '../../lib/state/router.js';
 
 /**
  * Get initials from a name or email.
@@ -125,10 +126,9 @@ function getEventIcon(eventType) {
 /**
  * Create a single activity item element.
  * @param {Object} event - Activity event
- * @param {Function} onNavigate - Navigation callback
  * @returns {HTMLElement} Activity item element
  */
-function createActivityItem(event, onNavigate) {
+function createActivityItem(event) {
   const item = h('div', { class: 'activity-item' });
 
   // Avatar
@@ -184,8 +184,8 @@ function createActivityItem(event, onNavigate) {
     text: `"${presentationTitle}"`,
     onclick: (e) => {
       e.preventDefault();
-      if (event.presentationId && onNavigate) {
-        onNavigate(`/app/${event.presentationId}`);
+      if (event.presentationId) {
+        nav(`/app/${event.presentationId}`);
       }
     },
   });
@@ -233,8 +233,8 @@ function createActivityItem(event, onNavigate) {
   // Click handler for the whole item
   item.addEventListener('click', (e) => {
     if (e.target.tagName === 'A') return; // Don't double-handle link clicks
-    if (event.presentationId && onNavigate) {
-      onNavigate(`/app/${event.presentationId}`);
+    if (event.presentationId) {
+      nav(`/app/${event.presentationId}`);
     }
   });
 
@@ -245,11 +245,10 @@ function createActivityItem(event, onNavigate) {
  * Create the activity feed view component.
  * @param {Object} options
  * @param {Function} options.api - API function
- * @param {Function} options.onNavigate - Navigation callback
  * @param {Function} options.onUnreadCountChange - Callback when unread count changes
  * @returns {Object} { el, load, refresh }
  */
-export function createActivityFeed({ api, onNavigate, onUnreadCountChange }) {
+export function createActivityFeed({ api, onUnreadCountChange }) {
   const el = h('div', { class: 'sidebar-view', 'data-view': 'activity' });
 
   // Header
@@ -360,7 +359,7 @@ export function createActivityFeed({ api, onNavigate, onUnreadCountChange }) {
     }
 
     for (const event of events) {
-      feed.append(createActivityItem(event, onNavigate));
+      feed.append(createActivityItem(event));
     }
 
     // Show load more if there are more events

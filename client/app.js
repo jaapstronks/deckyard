@@ -156,33 +156,33 @@ async function render() {
 
   try {
     if (r.name === 'login') {
-      await mount(renderLogin(root, { nav }));
+      await mount(renderLogin(root));
       return;
     }
 
     if (r.name === 'forgotPassword') {
-      await mount(renderForgotPassword(root, { nav }));
+      await mount(renderForgotPassword(root));
       return;
     }
 
     if (r.name === 'resetPassword') {
-      await mount(renderResetPassword(root, { nav }));
+      await mount(renderResetPassword(root));
       return;
     }
 
     if (r.name === 'magicLogin') {
-      await mount(renderMagicLogin(root, { nav }));
+      await mount(renderMagicLogin(root));
       return;
     }
 
     // Public routes (no auth)
     if (r.name === 'follow') {
-      await mount(renderFollow(root, r.presentationId, { nav }));
+      await mount(renderFollow(root, r.presentationId));
       return;
     }
 
     if (r.name === 'share') {
-      await mount(renderShareViewer(root, r.token, { nav }));
+      await mount(renderShareViewer(root, r.token));
       return;
     }
 
@@ -199,13 +199,13 @@ async function render() {
     // affordances to an admin — it just answers null for a visitor here.
     if (r.name === 'notes') {
       await mount(
-        renderNotes(root, r.sessionId, { nav, user: await getMeCached() }),
+        renderNotes(root, r.sessionId, { user: await getMeCached() }),
       );
       return;
     }
 
     if (r.name === 'notesJoin') {
-      await mount(renderNotesJoin(root, r.sessionId, { nav }));
+      await mount(renderNotesJoin(root, r.sessionId));
       return;
     }
 
@@ -249,13 +249,12 @@ async function render() {
     if (myGen !== renderGen) return;
 
     if (r.name === 'list') {
-      await mount(renderList(root, { nav, user }));
+      await mount(renderList(root, { user }));
       return;
     }
     if (r.name === 'slideLibrary') {
       await mount(
         renderList(root, {
-          nav,
           user,
           openSlideLibrary: { shelf: r.shelf, slideId: r.slideId },
         }),
@@ -263,27 +262,27 @@ async function render() {
       return;
     }
     if (r.name === 'settings') {
-      await mount(renderSettings(root, { nav, user }));
+      await mount(renderSettings(root, { user }));
       return;
     }
     if (r.name === 'insights') {
-      await mount(renderDashboard(root, { nav, user }));
+      await mount(renderDashboard(root, { user }));
       return;
     }
     if (r.name === 'edit') {
-      await mount(renderEditor(root, r.id, { nav, user }));
+      await mount(renderEditor(root, r.id, { user }));
       return;
     }
     if (r.name === 'present') {
-      await mount(renderPresenter(root, r.id, { nav, user }));
+      await mount(renderPresenter(root, r.id, { user }));
       return;
     }
     if (r.name === 'presentWindow') {
-      await mount(renderPresentWindow(root, r.id, { nav, user }));
+      await mount(renderPresentWindow(root, r.id, { user }));
       return;
     }
     if (r.name === 'analytics') {
-      await mount(renderAnalytics(root, r.presentationId, { nav, user }));
+      await mount(renderAnalytics(root, r.presentationId, { user }));
       return;
     }
   } catch (err) {

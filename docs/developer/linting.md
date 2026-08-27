@@ -262,6 +262,44 @@ pins each retired key, the canonical pair, the third-party `.destroy()`
 boundary, the un-gated `close`/`stop`, that the exemption is exactly one file
 and is not stale, and that the client is clean.
 
+### `no-restricted-syntax` on the `nav` parameter — one router singleton
+
+Scoped to `client/**`, this rule rejects `nav` arriving as a **parameter**, as a
+**destructured property** (in a parameter or out of a context object), or as a
+**shorthand `{ nav }`** handed to someone else. The only accepted form is
+`import { nav } from '…/lib/state/router.js'`.
+
+`nav` is one export of
+[`client/lib/state/router.js`](../../client/lib/state/router.js) — a module
+singleton that pushes history state and re-renders. Exactly one file imported
+it, `client/app.js`; from there it was threaded as an option through 55 modules
+to reach 54 call sites, sometimes four levels deep, in four spellings at once:
+`nav?.(x)` (54), `if (typeof nav === 'function') nav(x)` (3), `if (nav) nav(x)`
+(1) and bare `nav(x)` (1). A fifth alias, `onNavigate: (path) => nav?.(path)`,
+wrapped the same function for the notification bell and activity feed (B150).
+
+The optional chaining was the tell, not caution. `app.js` handed `{ nav }` to
+`renderFollow`, `renderShareViewer` and `renderPresentWindow`, none of which
+destructured it — the defensive `nav?.` was covering for a wire that had
+already been cut, and the two `else` fallbacks behind it
+(`location.href = dest`) were dead code that no call site could reach.
+
+Restricted as a parameter/destructuring shape rather than a whole-token
+identifier ban (the `overlayClosers` treatment), because `nav` is also a
+legitimate **local** name for a `<nav>` element — `const nav = h('nav', …)` in
+`views/list/sidebar.js`, `views/share-viewer/index.js` and
+`views/editor/bulk-edit-modal.js`. Those are plain declarators and stay legal;
+only taking or passing `nav`, where it can mean nothing but the router, is
+restricted. `navigator` and `navUrl` are untouched by construction
+(`[name='nav']` / `[key.name='nav']`).
+
+The **allowlist is empty**, `router.js` included: `nav` is a function
+_declaration_ there, never a parameter.
+
+[`tests/nav-parameter-gate.test.js`](../../tests/nav-parameter-gate.test.js)
+pins each restricted shape, both legal look-alikes, the empty allowlist, and
+that the client is clean.
+
 ### `no-restricted-syntax` on `overlayClosers` — one overlay register
 
 Scoped to `client/**`, this rule rejects the identifiers `overlayClosers` and

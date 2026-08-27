@@ -12,16 +12,16 @@ import { createViewerList } from './viewer-list.js';
 import { createDatePicker } from './date-picker.js';
 import { createReportModal } from './report-modal.js';
 import { createRealtimeViewer } from './realtime-viewer.js';
+import { nav } from '../../lib/state/router.js';
 
 /**
  * Render the analytics dashboard for a presentation.
  * @param {HTMLElement} root - Root element
  * @param {string} presentationId - The presentation ID
  * @param {Object} options - Options
- * @param {Function} options.nav - Navigation function
  * @returns {Promise<Function>} Cleanup function
  */
-export async function renderAnalytics(root, presentationId, { nav } = {}) {
+export async function renderAnalytics(root, presentationId) {
   document.documentElement.classList.add('is-analytics');
 
   const shell = h('div', { class: 'analytics-shell' });
@@ -96,7 +96,7 @@ export async function renderAnalytics(root, presentationId, { nav } = {}) {
         h('button', {
           class: 'btn btn-secondary',
           text: t('common.back', 'Back'),
-          onclick: () => nav?.('/app'),
+          onclick: () => nav('/app'),
         }),
       ]),
     );
@@ -143,7 +143,7 @@ export async function renderAnalytics(root, presentationId, { nav } = {}) {
         class: 'btn btn-secondary btn-icon',
         text: '←',
         title: t('common.back', 'Back'),
-        onclick: () => nav?.(`/app/${presentationId}`),
+        onclick: () => nav(`/app/${presentationId}`),
       }),
       h('div', { class: 'analytics-title' }, [
         h('span', { text: t('analytics.title', 'Presentation Analytics') }),

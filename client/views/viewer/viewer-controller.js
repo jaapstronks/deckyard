@@ -18,7 +18,6 @@ import { attachSwipeNavigation } from '../../lib/dom/swipe-nav.js';
 export async function createViewerController({
   root,
   id,
-  nav,
   user,
   permission,
   pres,
@@ -75,7 +74,6 @@ export async function createViewerController({
 
   // Topbar
   const topbarApi = createViewerTopbar({
-    nav,
     pres,
     id,
     permission,

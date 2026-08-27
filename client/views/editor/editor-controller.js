@@ -91,7 +91,6 @@ import { createReadOnlyController } from './read-only-controller.js';
 export async function createEditorController({
   root,
   id,
-  nav,
   user,
   initialPres = null,
 } = {}) {
@@ -597,7 +596,6 @@ export async function createEditorController({
     theme,
     SLIDE_TYPES,
     editorState,
-    nav,
     setSelectedSlideId: setSelectedSlideIdWithLock,
     rerenderSlideList: () => rerenderSlideList(),
     rerenderEditor: () => rerenderEditor(),
@@ -613,7 +611,6 @@ export async function createEditorController({
     api,
     toast,
     root,
-    nav,
     pres,
     theme,
     id,
@@ -824,7 +821,6 @@ export async function createEditorController({
     renderSlideElement: (s, opts) =>
       renderSlideElement(s, { ...(opts || {}), lang: resolveDeckLang(pres) }),
     getSelectedSlideId: () => selectedSlideId,
-    nav,
     commentsApi,
     user,
     // Positioned-marker click: open the rail on the comments pane and

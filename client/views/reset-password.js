@@ -3,8 +3,9 @@ import { h } from '../lib/dom.js';
 import { t } from '../lib/ui-i18n.js';
 import { createBusyManager } from '../lib/dom/busy.js';
 import { authShell } from './auth-shell.js';
+import { nav } from '../lib/state/router.js';
 
-export async function renderResetPassword(root, { nav } = {}) {
+export async function renderResetPassword(root) {
   const { shell, card, subtitle } = authShell({
     title: t('resetPassword.title', 'Set a new password'),
     subtitle: t('resetPassword.validating', 'Validating…'),
@@ -32,7 +33,7 @@ export async function renderResetPassword(root, { nav } = {}) {
     });
     loginLink.onclick = (e) => {
       e.preventDefault();
-      nav?.('/login');
+      nav('/login');
     };
     form.append(loginLink);
     return;
@@ -64,7 +65,7 @@ export async function renderResetPassword(root, { nav } = {}) {
       });
       forgotLink.onclick = (e) => {
         e.preventDefault();
-        nav?.('/forgot-password');
+        nav('/forgot-password');
       };
       form.append(forgotLink);
       return;
@@ -154,7 +155,7 @@ export async function renderResetPassword(root, { nav } = {}) {
         });
         loginLink.onclick = (e) => {
           e.preventDefault();
-          nav?.('/login');
+          nav('/login');
         };
 
         form.append(successMsg, loginLink);
@@ -191,7 +192,7 @@ export async function renderResetPassword(root, { nav } = {}) {
     });
     loginLink.onclick = (e) => {
       e.preventDefault();
-      nav?.('/login');
+      nav('/login');
     };
     form.append(loginLink);
   }

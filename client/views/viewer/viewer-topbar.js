@@ -7,9 +7,9 @@ import { createUiModeSwitcher } from '../ui-mode-switcher.js';
 import { t } from '../../lib/ui-i18n.js';
 import { getPermissionLabel } from '../../lib/permission-labels.js';
 import { h } from '../../lib/dom.js';
+import { nav } from '../../lib/state/router.js';
 
 export function createViewerTopbar({
-  nav,
   pres,
   id,
   permission,
@@ -24,7 +24,7 @@ export function createViewerTopbar({
     'aria-label': t('common.back', 'Back'),
     title: t('common.back', 'Back'),
     text: '\u2190',
-    onclick: () => nav?.('/app'),
+    onclick: () => nav('/app'),
   });
 
   // Title (read-only, no edit button)

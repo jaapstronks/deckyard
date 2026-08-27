@@ -21,7 +21,6 @@ import { openAiDeckReviewModal } from './modals/ai-deck-review-modal.js';
  * @param {object} ctx.theme - active theme
  * @param {object} ctx.SLIDE_TYPES - slide-type registry
  * @param {object} ctx.editorState - shared editor state (AI review only)
- * @param {object} ctx.nav - router nav (AI review only)
  * @param {Function} ctx.setSelectedSlideId - lock-aware slide selection
  * @param {Function} ctx.rerenderSlideList - repaint the slide list (late-bound indirection)
  * @param {Function} ctx.rerenderEditor - repaint the editor form (late-bound indirection)
@@ -36,7 +35,6 @@ export function createDeckReviewOpeners({
   theme,
   SLIDE_TYPES,
   editorState,
-  nav,
   setSelectedSlideId,
   rerenderSlideList,
   rerenderEditor,
@@ -86,7 +84,6 @@ export function createDeckReviewOpeners({
       editorState,
       onJumpToSlide: jumpToSlide,
       postGeneration,
-      nav,
     });
   };
 

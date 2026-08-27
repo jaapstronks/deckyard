@@ -71,7 +71,6 @@ test('single organization: no organization section and no /api/organizations req
 
   const menu = createUserMenu({
     user: { email: 'jaap@example.com', name: 'Jaap', organizationId: 'org-a' },
-    nav: () => {},
   });
   document.body.append(menu.el);
   await settle();
