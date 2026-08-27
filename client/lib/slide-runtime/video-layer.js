@@ -240,7 +240,7 @@ export function createVideoLayer({ containerEl, getCurrentSlide }) {
     el.dataset.visible = 'false';
   }
 
-  function destroy() {
+  function detach() {
     destroyPlayer();
     try {
       el.remove();
@@ -249,5 +249,5 @@ export function createVideoLayer({ containerEl, getCurrentSlide }) {
     }
   }
 
-  return { setConfig, updatePosition, show, hide, destroy, el };
+  return { setConfig, updatePosition, show, hide, detach, el };
 }

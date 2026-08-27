@@ -269,5 +269,5 @@ export function createVisibilitySection({
 
   render();
 
-  return { element: section, refresh: render };
+  return { el: section, refresh: render };
 }

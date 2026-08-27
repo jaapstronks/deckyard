@@ -41,7 +41,7 @@ export function createSlideLockManager({
   if (!api || !presentationId) {
     return {
       init: () => {},
-      destroy: () => {},
+      detach: () => {},
       onSlideSelected: () => {},
       getLocks: () => ({}),
       isLockedByOther: () => false,
@@ -379,7 +379,7 @@ export function createSlideLockManager({
   /**
    * Clean up and release resources.
    */
-  const destroy = async () => {
+  const detach = async () => {
     stopped = true;
     if (refreshTimer) {
       clearInterval(refreshTimer);
@@ -390,7 +390,7 @@ export function createSlideLockManager({
 
   return {
     init,
-    destroy,
+    detach,
     onSlideSelected,
     getLocks: () => ({ ...locks }),
     getLockedByOthers: () => Array.from(lockedByOthers),

@@ -120,7 +120,7 @@ export function createPresenterConsoleTimer({ onTick } = {}) {
     emit();
   };
 
-  const destroy = () => {
+  const detach = () => {
     stopInterval();
   };
 
@@ -131,7 +131,7 @@ export function createPresenterConsoleTimer({ onTick } = {}) {
     reset,
     setTargetSeconds,
     getState,
-    destroy,
+    detach,
   };
 }
 

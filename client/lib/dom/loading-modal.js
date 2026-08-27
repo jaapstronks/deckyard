@@ -142,6 +142,6 @@ export function showLoadingModal({
     setProgress,
     setTitle,
     close,
-    element: backdrop,
+    el: backdrop,
   };
 }

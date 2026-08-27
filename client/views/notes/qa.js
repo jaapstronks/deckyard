@@ -185,6 +185,6 @@ export function createNotesQaController({
   return {
     refresh: () => feed.refresh(),
     connect: () => feed.connect(),
-    destroy: () => feed.stop(),
+    detach: () => feed.stop(),
   };
 }

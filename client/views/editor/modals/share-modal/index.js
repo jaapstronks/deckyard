@@ -128,7 +128,7 @@ export function openShareModal({
   const organizationPanel = h(
     'div',
     { class: 'share-tab-panel', 'data-tab': 'organization' },
-    [visibility.element, collaborators.element],
+    [visibility.el, collaborators.el],
   );
 
   // --- Link tab ---
@@ -140,7 +140,7 @@ export function openShareModal({
     modalRoot: root,
   });
   const linkPanel = h('div', { class: 'share-tab-panel', 'data-tab': 'link' }, [
-    shareLinks.element,
+    shareLinks.el,
   ]);
 
   // --- Publish tab ---
@@ -167,7 +167,7 @@ export function openShareModal({
     : null;
   const publishPanel = publish
     ? h('div', { class: 'share-tab-panel', 'data-tab': 'publish' }, [
-        publish.element,
+        publish.el,
       ])
     : null;
 

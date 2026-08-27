@@ -102,24 +102,24 @@ function mount(inviteFailure) {
     isOwner: true,
     modalRoot: document.body,
   });
-  document.body.append(section.element);
+  document.body.append(section.el);
   return { section, toasts };
 }
 
 /** Type a query, pick the single result, then press Invite. */
 async function inviteOne(section) {
-  const input = section.element.querySelector('.user-autocomplete input');
+  const input = section.el.querySelector('.user-autocomplete input');
   input.value = 'sarah';
   input.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
   await afterDebounce();
 
-  const item = section.element.querySelector(
+  const item = section.el.querySelector(
     `.user-autocomplete-item[data-email="${INVITEE.email}"]`,
   );
   assert.ok(item, 'the autocomplete offered the invitee');
   item.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
 
-  const addBtn = [...section.element.querySelectorAll('button')].find((b) =>
+  const addBtn = [...section.el.querySelectorAll('button')].find((b) =>
     b.classList.contains('btn-primary'),
   );
   assert.ok(addBtn, 'the invite button is present');

@@ -144,7 +144,7 @@ export function createPasswordSection() {
   );
 
   return {
-    element: card,
+    el: card,
     setDisabled: (disabled) => {
       // Note: This doesn't affect the password change operation,
       // only external disable requests (e.g., when saving other settings)

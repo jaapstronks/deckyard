@@ -878,7 +878,7 @@ export async function createEditorController({
     let presenceClosed = false;
     cleanup.register('presence', () => {
       presenceClosed = true;
-      presenceHandle?.destroy?.();
+      presenceHandle?.detach?.();
       presenceHandle = null;
     });
     import('./presence/index.js')
@@ -924,7 +924,7 @@ export async function createEditorController({
               onUndoStateChanged: () => syncTopbarUndo(),
             });
             cleanup.register('liveEdits', () => {
-              liveEdits?.destroy();
+              liveEdits?.detach();
               liveEdits = null;
             });
           },
@@ -1140,7 +1140,7 @@ export async function createEditorController({
         if (cleanupSSE) cleanup.register('slideLockSSE', cleanupSSE);
       })
       .catch(() => {});
-    cleanup.register('slideLockManager', () => slideLockManager.destroy());
+    cleanup.register('slideLockManager', () => slideLockManager.detach());
 
     // Acquire lock on initial slide
     if (selectedSlideId) {
@@ -1165,7 +1165,7 @@ export async function createEditorController({
       rerenderPreview: () => rerenderPreview(),
       saveManager,
     });
-    cleanup.register('slideUpdateHandler', () => slideUpdateHandler.destroy());
+    cleanup.register('slideUpdateHandler', () => slideUpdateHandler.detach());
   }
 
   // Wake-up staleness guard: a tab that slept through remote saves checks the
@@ -1465,7 +1465,7 @@ export async function createEditorController({
     // single data surface the inspector's "Edit data…" reaches.
     onEditChartData: () => openChartData(),
   });
-  cleanup.register('inlineEditor', inlineEditor.destroy);
+  cleanup.register('inlineEditor', inlineEditor.detach);
 
   // Custom (non-bundled) slide types render a placeholder synchronously and
   // get their real DOM from the server afterwards — re-apply the inline-edit

@@ -117,7 +117,7 @@ test('the legacy doc really does hold the mirror as one plain value', () => {
     projected.i18n.versions['en-GB'].slides[0].content[MIRROR_KEY],
     'Kopje',
   );
-  binder.destroy();
+  binder.detach();
 });
 
 test('editing a legacy plain mirror does not empty the other language', () => {
@@ -137,7 +137,7 @@ test('editing a legacy plain mirror does not empty the other language', () => {
     'Kopje',
     'the other language keeps what it was displaying — never blanked',
   );
-  binder.destroy();
+  binder.detach();
 });
 
 test('editing from the non-dominant language seeds the dominant one', () => {
@@ -156,7 +156,7 @@ test('editing from the non-dominant language seeds the dominant one', () => {
     'Kopje',
     'the dominant language keeps its text',
   );
-  binder.destroy();
+  binder.detach();
 });
 
 test('a doc bootstrapped under the current rule is unaffected', () => {
@@ -186,5 +186,5 @@ test('a doc bootstrapped under the current rule is unaffected', () => {
     'Heading',
     'a per-language doc keeps its real translation',
   );
-  binder.destroy();
+  binder.detach();
 });

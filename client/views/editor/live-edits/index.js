@@ -326,7 +326,7 @@ export function initEditorLiveEdits({
       return ready ? binder.projectLanguage(lang) : null;
     },
     isReady: () => ready,
-    destroy() {
+    detach() {
       if (destroyed) return;
       destroyed = true;
       if (renderTimer) clearTimeout(renderTimer);
@@ -347,7 +347,7 @@ export function initEditorLiveEdits({
         'compositionend',
         onNotesCompositionEnd,
       );
-      binder.destroy();
+      binder.detach();
     },
   };
 }

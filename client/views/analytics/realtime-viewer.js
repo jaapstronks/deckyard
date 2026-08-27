@@ -80,7 +80,7 @@ export function createRealtimeViewer({ presentationId }) {
     el.classList.toggle('has-viewers', count > 0);
   }
 
-  function destroy() {
+  function detach() {
     connection?.stop();
     connection = null;
   }
@@ -88,5 +88,5 @@ export function createRealtimeViewer({ presentationId }) {
   // Initial connection
   connect();
 
-  return { el, destroy };
+  return { el, detach };
 }

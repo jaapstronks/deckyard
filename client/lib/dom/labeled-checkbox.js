@@ -59,11 +59,11 @@ export function labeledCheckbox({
 
   const body = content != null ? content : h('span', { text: text ?? '' });
   const children = Array.isArray(body) ? [input, ...body] : [input, body];
-  const element = h('label', { class: className, ...labelAttrs }, children);
+  const el = h('label', { class: className, ...labelAttrs }, children);
 
   if (onChange) {
     input.addEventListener('change', () => onChange(!!input.checked));
   }
 
-  return { element, input };
+  return { el, input };
 }

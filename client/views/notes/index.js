@@ -198,14 +198,17 @@ export async function renderNotes(root, sessionId, { user } = {}) {
     }
   };
 
-  const localGo = (nextIdx, { detach } = {}) => {
-    if (detach) setFollow(false);
+  // `unfollow` is the user browsing away from the presenter's slide, not a
+  // teardown — it is the one place the word `detach` used to mean something
+  // else entirely (B150).
+  const localGo = (nextIdx, { unfollow } = {}) => {
+    if (unfollow) setFollow(false);
     viewSlideIndex = nextIdx;
     render();
   };
 
-  previewPrevBtn.onclick = () => localGo(viewSlideIndex - 1, { detach: true });
-  previewNextBtn.onclick = () => localGo(viewSlideIndex + 1, { detach: true });
+  previewPrevBtn.onclick = () => localGo(viewSlideIndex - 1, { unfollow: true });
+  previewNextBtn.onclick = () => localGo(viewSlideIndex + 1, { unfollow: true });
 
   refollowBtn.onclick = () => {
     viewSlideIndex = presenterSlideIndex;
@@ -222,8 +225,8 @@ export async function renderNotes(root, sessionId, { user } = {}) {
 
   // Swipe navigation (local browse only; does not control desktop)
   const detachSwipe = attachSwipeNavigation(shell, {
-    onPrev: () => localGo(viewSlideIndex - 1, { detach: true }),
-    onNext: () => localGo(viewSlideIndex + 1, { detach: true }),
+    onPrev: () => localGo(viewSlideIndex - 1, { unfollow: true }),
+    onNext: () => localGo(viewSlideIndex + 1, { unfollow: true }),
   });
 
   // SSE: follow presenter state + reflect controlEnabled
@@ -275,7 +278,7 @@ export async function renderNotes(root, sessionId, { user } = {}) {
 
   return () => {
     sse.stop();
-    notesEditor.destroy();
+    notesEditor.detach();
     disposeAll([() => uiMode.detach?.()]);
     cleanupSlideRuntimes(previewWrap);
     cleanupSlideRuntimes(nextPreviewWrap);
@@ -287,6 +290,6 @@ export async function renderNotes(root, sessionId, { user } = {}) {
     } catch {}
     document.documentElement.classList.remove('is-notes');
     disposeAll([detachSwipe]);
-    qaCtl.destroy();
+    qaCtl.detach();
   };
 }

@@ -346,7 +346,7 @@ export function openImageLibraryPicker({
         text: t('imageLibrary.upload', '+ Upload'),
         onclick: () => {
           // Scroll to upload section
-          uploadComponent.element.scrollIntoView({ behavior: 'smooth' });
+          uploadComponent.el.scrollIntoView({ behavior: 'smooth' });
         },
       });
 
@@ -358,7 +358,7 @@ export function openImageLibraryPicker({
     toolbar,
     sectionHeader,
     gridComponent.grid,
-    uploadComponent.element,
+    uploadComponent.el,
   );
 
   // Handle external section clicks (Unsplash/Giphy)
@@ -369,10 +369,10 @@ export function openImageLibraryPicker({
     externalView.innerHTML = '';
 
     if (section === SECTIONS.UNSPLASH && unsplashComponent) {
-      externalView.append(unsplashComponent.element);
+      externalView.append(unsplashComponent.el);
       unsplashComponent.focus();
     } else if (section === SECTIONS.GIPHY && giphyComponent) {
-      externalView.append(giphyComponent.element);
+      externalView.append(giphyComponent.el);
       giphyComponent.init?.();
       giphyComponent.focus();
     }
@@ -541,7 +541,7 @@ export function openImageLibraryPicker({
       // Replace sidebar in DOM
       const oldSidebar = modal.modal.querySelector('.media-lib-sidebar');
       if (oldSidebar) {
-        oldSidebar.replaceWith(sidebarComponent.element);
+        oldSidebar.replaceWith(sidebarComponent.el);
       }
 
       sidebarComponent.render();
@@ -570,10 +570,10 @@ export function openImageLibraryPicker({
   mainContent.append(libraryView, externalView);
 
   // Assemble layout
-  layout.append(sidebarComponent.element, mainContent);
+  layout.append(sidebarComponent.el, mainContent);
 
   // Assemble modal
-  modal.append(status, mobileNav, layout, detailComponent.element);
+  modal.append(status, mobileNav, layout, detailComponent.el);
   if (allowCaptionCredit) modal.append(creditRow);
 
   // Mount and initialize

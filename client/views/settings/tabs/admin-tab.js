@@ -74,8 +74,8 @@ export function createAdminTab({ user }) {
   });
 
   const langOptions = h('div', { class: 'admin-checkbox-list' });
-  const { element: chkNl } = labeledCheckbox({ text: 'Nederlands (NL)' });
-  const { element: chkEn } = labeledCheckbox({ text: 'English (EN-GB)' });
+  const { el: chkNl } = labeledCheckbox({ text: 'Nederlands (NL)' });
+  const { el: chkEn } = labeledCheckbox({ text: 'English (EN-GB)' });
   langOptions.append(chkNl, chkEn);
   langCard.append(langHint, langOptions);
 
@@ -242,7 +242,7 @@ export function createAdminTab({ user }) {
   // detailed-opt-in and external-viewer toggles gated a distinction the data
   // never carried; they were removed with the internal/external chain
   // (done/decisions.md § analytics-privacy-naden).
-  const { element: analyticsEnabledLabel, input: analyticsEnabledCheck } =
+  const { el: analyticsEnabledLabel, input: analyticsEnabledCheck } =
     labeledCheckbox({
       text: t('settings.admin.analytics.enabled', 'Enable engagement insights'),
       checked: true,
@@ -369,7 +369,7 @@ export function createAdminTab({ user }) {
 
   // Bundled gradients toggle. No key to check, so no status span: the assets
   // ship with the app and are always "configured".
-  const { element: bundledLabel, input: bundledEnabledCheck } = labeledCheckbox(
+  const { el: bundledLabel, input: bundledEnabledCheck } = labeledCheckbox(
     {
       text: t('settings.admin.stockMedia.bundled', 'Enable bundled gradients'),
     },
@@ -384,7 +384,7 @@ export function createAdminTab({ user }) {
 
   // Unsplash toggle
   const unsplashStatusSpan = h('span', { class: 'help stock-media-status' });
-  const { element: unsplashLabel, input: unsplashEnabledCheck } =
+  const { el: unsplashLabel, input: unsplashEnabledCheck } =
     labeledCheckbox({
       content: [
         h('span', {
@@ -399,7 +399,7 @@ export function createAdminTab({ user }) {
 
   // Giphy toggle
   const giphyStatusSpan = h('span', { class: 'help stock-media-status' });
-  const { element: giphyLabel, input: giphyEnabledCheck } = labeledCheckbox({
+  const { el: giphyLabel, input: giphyEnabledCheck } = labeledCheckbox({
     content: [
       h('span', {
         text: t('settings.admin.stockMedia.giphy', 'Enable Giphy GIFs'),

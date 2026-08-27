@@ -82,8 +82,8 @@ test('presence: two clients on the same deck see each other', async (t) => {
     url,
   });
   t.after(async () => {
-    alice.destroy();
-    bob.destroy();
+    alice.detach();
+    bob.detach();
     await shutdownCollab();
     await new Promise((resolve) => server.close(resolve));
   });
@@ -104,7 +104,7 @@ test('presence: two clients on the same deck see each other', async (t) => {
   await waitFor(() => bob.getPeers()[0]?.focus?.fieldPath === 'items.0.title');
 
   // Disconnect cleans up presence for the remaining peer (no stale entries).
-  bob.destroy();
+  bob.detach();
   await waitFor(() => alice.getPeers().length === 0);
 });
 
@@ -119,7 +119,7 @@ test('presence: unknown document is rejected', async (t) => {
   // Destroy the (reconnect-looping) client before closing the server, or
   // server.close() waits forever on the live socket.
   t.after(async () => {
-    session.destroy();
+    session.detach();
     await shutdownCollab();
     await new Promise((resolve) => server.close(resolve));
   });

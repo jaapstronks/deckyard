@@ -96,7 +96,7 @@ test('the follow page renders the question as asked', async () => {
   assert.equal(text, ASKED);
   assert.equal(qaList.querySelector('.follow-qa-votes').textContent, '2');
   assert.match(qaList.querySelector('.follow-qa-author').textContent, /Ada/);
-  controller.destroy();
+  controller.detach();
 });
 
 test('the presenter notes panel renders the same question text', async () => {
@@ -112,7 +112,7 @@ test('the presenter notes panel renders the same question text', async () => {
   await controller.refresh();
   assert.equal(qaBody.querySelector('.notes-qa-body').textContent, ASKED);
   assert.equal(qaBody.querySelector('.notes-qa-who').textContent, 'Ada');
-  controller.destroy();
+  controller.detach();
 });
 
 test('an unauthored question falls back to the back-compat alias everywhere', async () => {
@@ -139,7 +139,7 @@ test('an unauthored question falls back to the back-compat alias everywhere', as
   });
   await follow.refreshQuestionsIfLive();
   assert.equal(qaList.querySelector('.follow-qa-text').textContent, ALIAS);
-  follow.destroy();
+  follow.detach();
 
   const qaBody = el();
   const notes = createNotesQaController({
@@ -151,7 +151,7 @@ test('an unauthored question falls back to the back-compat alias everywhere', as
   });
   await notes.refresh();
   assert.equal(qaBody.querySelector('.notes-qa-body').textContent, ALIAS);
-  notes.destroy();
+  notes.detach();
 });
 
 test('a disabled Q&A hides the notes panel and drops the list', async () => {
@@ -172,5 +172,5 @@ test('a disabled Q&A hides the notes panel and drops the list', async () => {
   await notes.refresh();
   assert.equal(qaWrap.style.display, 'none');
   assert.equal(qaBody.querySelector('.notes-qa-body'), null);
-  notes.destroy();
+  notes.detach();
 });

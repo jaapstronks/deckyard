@@ -58,7 +58,7 @@ export function openAiBatchReviewModal({
       'Close the review and discard the generated slides? Nothing has been added to the deck yet.',
     ),
     onClose: (result) => {
-      grid?.teardown();
+      grid?.detach();
       if (!result?.accepted) onDiscard?.();
     },
   });

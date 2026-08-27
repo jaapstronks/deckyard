@@ -592,7 +592,7 @@ export function createImageLibraryDetail({
   const getActiveId = () => activeDetailId;
 
   return {
-    element: detailWrap,
+    el: detailWrap,
     show,
     hide,
     getActiveId,

@@ -489,11 +489,11 @@ export async function renderFollow(root, presentationId) {
       detachThumb();
     } catch {}
     detachThumb = () => {};
-    sse?.destroy?.();
+    sse?.detach?.();
     sse = null;
-    qa?.destroy?.();
+    qa?.detach?.();
     qa = null;
-    interactions?.destroy?.();
+    interactions?.detach?.();
     interactions = null;
     if (stateRefreshTid) {
       try {
@@ -502,10 +502,10 @@ export async function renderFollow(root, presentationId) {
       stateRefreshTid = null;
     }
     stopTranslatingPoll();
-    videoLayer.destroy();
+    videoLayer.detach();
     // Clean up analytics tracker
     if (analyticsTracker) {
-      analyticsTracker.destroy();
+      analyticsTracker.detach();
       analyticsTracker = null;
     }
   };

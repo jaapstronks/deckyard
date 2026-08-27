@@ -145,7 +145,7 @@ export function createUserNotificationsSection() {
   });
 
   return {
-    element: card,
+    el: card,
     setDisabled: (disabled) => {
       emailCheckboxInput.disabled = disabled;
       slackCheckboxInput.disabled = disabled;

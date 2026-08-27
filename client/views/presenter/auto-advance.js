@@ -210,7 +210,7 @@ export function createAutoAdvance({
     /**
      * Clean up. Call on teardown.
      */
-    destroy() {
+    detach() {
       cancelRaf();
       state = 'stopped';
     },

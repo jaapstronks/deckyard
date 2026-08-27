@@ -71,18 +71,18 @@ export function createPresenterTeardown({
         // session — mirrors the original inline teardown's guard.
         closeSessionEvents = null;
       },
-      () => toolsMenu.cleanup(),
+      () => toolsMenu.detach(),
       detachStageScale,
-      () => chromeAutoHide?.destroy?.(),
+      () => chromeAutoHide?.detach?.(),
       () => startCurtain?.dismiss?.(),
-      () => highlighter?.destroy?.(),
-      () => autoAdvance?.destroy?.(),
-      () => presenterConsole?.destroy?.(),
+      () => highlighter?.detach?.(),
+      () => autoAdvance?.detach?.(),
+      () => presenterConsole?.detach?.(),
       () => window.removeEventListener('pagehide', handlePageHide),
       () => presentChannel.close(),
       () => getShortcutsOverlay()?.close?.(),
-      () => videoLayer.destroy(),
-      () => edgeHintCtl.destroy(),
+      () => videoLayer.detach(),
+      () => edgeHintCtl.detach(),
       () => {
         if (keepAliveTid) clearInterval(keepAliveTid);
         keepAliveTid = null;

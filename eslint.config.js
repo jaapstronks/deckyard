@@ -386,6 +386,41 @@ const instanceAdminRestriction = {
 // its own re-statement block below): client/lib/dom.js, where the factory
 // lives, and client/embed-sdk.js, the standalone IIFE served to third-party
 // pages, which has no module graph to import from.
+// One teardown word and one element word (B150). A client factory hands back a
+// handle: the DOM node it built, and the function that unwires it again. Both
+// halves had grown a second spelling — `detach` 24 / `destroy` 17 / `teardown`
+// 4 / `cleanup` 1 for the disposer, `el` 121 / `element` 29 for the node — and
+// inside a single directory, `views/editor/modals/share-modal/`, one section
+// returned `{ element, detach }` while its siblings returned `{ el, detach }`.
+//
+// `detach` wins on plurality and because it is the exact antonym of the verb
+// that already names the other half of the lifecycle: `attachThumbScale`,
+// `attachSwipeNavigation`, `attachMentions`, `attachStageScale` — plus the
+// `detachers` array idiom the views already collect into. `el` wins 121 to 29.
+//
+// Key-shaped, not a whole-token identifier ban, because both words are
+// legitimate elsewhere: `element` as a local variable or a DOM-spec noun, and
+// `.destroy()` as a *third-party* method — yjs's UndoManager and
+// WebsocketProvider and hls.js all expose one, and those calls are their
+// vocabulary, not ours. A MemberExpression is not a Property, so the selector
+// leaves them alone by construction.
+//
+// `close` and `stop` are deliberately NOT gated: `close` is a user action on a
+// modal (37 sites) and `stop` names halting a stream or timer. Both mean
+// something a caller can undo; a teardown does not.
+const teardownKeyRestriction = {
+  selector:
+    "Property[key.name='destroy'][computed=false]," +
+    "Property[key.name='teardown'][computed=false]," +
+    "Property[key.name='cleanup'][computed=false]," +
+    "Property[key.name='element'][computed=false]",
+  message:
+    'One teardown word and one element word: a client factory returns ' +
+    '`{ el, detach }`. `destroy` / `teardown` / `cleanup` and `element` are ' +
+    'retired spellings (B150). A third-party `.destroy()` call is a member ' +
+    'access, not a key, and is unaffected.',
+};
+
 const createElementRestriction = {
   selector:
     "CallExpression[callee.object.name='document']" +
@@ -450,6 +485,7 @@ export default [
         overlayClassRestriction,
         instanceAdminRestriction,
         createElementRestriction,
+        teardownKeyRestriction,
       ],
     },
   },
@@ -466,17 +502,36 @@ export default [
         ...clientRestrictedSyntax,
         instanceAdminRestriction,
         createElementRestriction,
+        teardownKeyRestriction,
       ],
     },
   },
 
-  // The two files that are allowed to call `document.createElement`: dom.js is
-  // where `h()` is implemented, and embed-sdk.js is the standalone IIFE served
-  // to third-party pages — it has no imports at all, by design. Every other
-  // client restriction stays in force (rule entries replace per rule name,
-  // hence the re-statement).
+  // dom.js is where `h()` is implemented, so it is allowed to call
+  // `document.createElement`. Every other client restriction stays in force
+  // (rule entries replace per rule name, hence the re-statement).
   {
-    files: ['client/lib/dom.js', 'client/embed-sdk.js'],
+    files: ['client/lib/dom.js'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...clientRestrictedSyntax,
+        overlayClassRestriction,
+        instanceAdminRestriction,
+        teardownKeyRestriction,
+      ],
+    },
+  },
+
+  // embed-sdk.js is the standalone IIFE served to third-party pages: no
+  // imports at all by design (hence `document.createElement`), and the handle
+  // it returns is a **public contract** — `destroy()` sits beside `next()`,
+  // `prev()`, `goToSlide()` and `getState()` in an embed-SDK vocabulary that
+  // an external page wrote against. Renaming it to `detach` would break every
+  // embedder to make one file agree with an internal convention it does not
+  // participate in, so the teardown-key gate is off here — and only here.
+  {
+    files: ['client/embed-sdk.js'],
     rules: {
       'no-restricted-syntax': [
         'error',

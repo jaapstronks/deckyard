@@ -747,38 +747,38 @@ function createFormElement(
   wrapperClass,
   { validate, onChange } = {},
 ) {
-  const element = h(elementType, elementAttrs);
+  const el = h(elementType, elementAttrs);
   const status = h('div', { class: 'help modal-status', text: '' });
 
   const doValidate = () => {
-    const v = String(element.value || '').trim();
+    const v = String(el.value || '').trim();
     const error = validate?.(v);
     status.textContent = error || '';
     return !error;
   };
 
-  element.addEventListener('input', () => {
+  el.addEventListener('input', () => {
     doValidate();
-    onChange?.(element.value);
+    onChange?.(el.value);
   });
 
   const wrap = h('div', { class: wrapperClass });
-  wrap.append(element, status);
+  wrap.append(el, status);
 
   return {
     wrap,
-    element,
+    el,
     status,
-    getValue: () => String(element.value || '').trim(),
+    getValue: () => String(el.value || '').trim(),
     setValue: (v) => {
-      element.value = v;
+      el.value = v;
       doValidate();
     },
     validate: doValidate,
     focus: () => {
       try {
-        element.focus();
-        element.select();
+        el.focus();
+        el.select();
       } catch {
         // ignore
       }
@@ -816,8 +816,8 @@ export function createTextInput({
     'modal-text-input',
     { validate, onChange },
   );
-  // Rename element to input for backwards compatibility
-  return { ...result, input: result.element };
+  // Alias `el` as `input` — the historical name at these call sites.
+  return { ...result, input: result.el };
 }
 
 /**
@@ -852,6 +852,6 @@ export function createTextArea({
     'modal-textarea',
     { validate, onChange },
   );
-  // Rename element to textarea for backwards compatibility
-  return { ...result, textarea: result.element };
+  // Alias `el` as `textarea` — the historical name at these call sites.
+  return { ...result, textarea: result.el };
 }

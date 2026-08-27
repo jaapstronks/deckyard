@@ -191,7 +191,7 @@ export function createPreferencesTab({ user, nav }) {
   });
 
   // Allow view attribution toggle
-  const { element: allowAttributionLabel, input: allowAttributionCheck } =
+  const { el: allowAttributionLabel, input: allowAttributionCheck } =
     labeledCheckbox({
       text: t(
         'settings.privacy.allowAttribution',
@@ -207,7 +207,7 @@ export function createPreferencesTab({ user, nav }) {
   });
 
   // Disable all tracking toggle
-  const { element: disableTrackingLabel, input: disableTrackingCheck } =
+  const { el: disableTrackingLabel, input: disableTrackingCheck } =
     labeledCheckbox({
       text: t(
         'settings.privacy.disableTracking',
@@ -247,7 +247,7 @@ export function createPreferencesTab({ user, nav }) {
   });
 
   // Digest enabled toggle
-  const { element: digestEnabledLabel, input: digestEnabledCheck } =
+  const { el: digestEnabledLabel, input: digestEnabledCheck } =
     labeledCheckbox({
       text: t('settings.digest.enabled', 'Receive weekly digest emails'),
       checked: true,
@@ -365,7 +365,7 @@ export function createPreferencesTab({ user, nav }) {
   thicknessLabel.append(thicknessRow);
 
   // Persistent draw toggle
-  const { element: persistentDrawLabel, input: persistentDrawCheck } =
+  const { el: persistentDrawLabel, input: persistentDrawCheck } =
     labeledCheckbox({
       text: t(
         'settings.highlighter.persistentDraw',
@@ -404,7 +404,7 @@ export function createPreferencesTab({ user, nav }) {
   const cards = h('div', { class: 'settings-tab-cards' }, [
     uiLocaleCard,
     langCard,
-    userNotifications.element,
+    userNotifications.el,
     privacyCard,
     digestCard,
     highlighterCard,

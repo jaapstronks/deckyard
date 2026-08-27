@@ -487,7 +487,7 @@ export function createCollaboratorsSection({
   });
 
   return {
-    element: section,
+    el: section,
     loadCollaborators,
     detach: () => {
       autocomplete?.detach();

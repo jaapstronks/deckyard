@@ -109,10 +109,10 @@ test('editor binder: two clients over a live mount', async (t) => {
   const b = await makeClient('bob@example.com');
 
   t.after(async () => {
-    a.binder.destroy();
-    b.binder.destroy();
-    a.session.destroy();
-    b.session.destroy();
+    a.binder.detach();
+    b.binder.detach();
+    a.session.detach();
+    b.session.detach();
     await shutdownCollab();
     await new Promise((resolve) => server.close(resolve));
   });

@@ -175,11 +175,11 @@ export function createSelectionToolbar({
   const ro = new ResizeObserver(update);
   ro.observe(thumb);
 
-  function destroy() {
+  function detach() {
     document.removeEventListener('selectionchange', update);
     ro.disconnect();
     el.remove();
   }
 
-  return { update, destroy, el };
+  return { update, detach, el };
 }

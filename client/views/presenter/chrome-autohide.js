@@ -16,7 +16,7 @@
  * @returns {{ destroy: () => void }}
  */
 export function createChromeAutoHide({ shell, idleMs = 2600 } = {}) {
-  if (!shell) return { destroy() {} };
+  if (!shell) return { detach() {} };
 
   let tid = null;
   const isFullscreen = () => !!document.fullscreenElement;
@@ -69,7 +69,7 @@ export function createChromeAutoHide({ shell, idleMs = 2600 } = {}) {
   reveal();
 
   return {
-    destroy() {
+    detach() {
       clearTid();
       document.removeEventListener('mousemove', onActivity);
       document.removeEventListener('keydown', onActivity);

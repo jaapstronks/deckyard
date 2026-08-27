@@ -111,7 +111,7 @@ export function createInlineEditor({
     return {
       refresh() {},
       isEditing: () => false,
-      destroy() {},
+      detach() {},
       openMediaByIndex() {},
     };
 
@@ -409,7 +409,7 @@ export function createInlineEditor({
     if (!editing) return;
     const { el, path, meta, original, isNew, cancel, rich, originalHtml } =
       editing;
-    editing.toolbar?.destroy();
+    editing.toolbar?.detach();
     el.removeEventListener('keydown', onEditKeydown);
     el.removeEventListener('input', onEditInput);
     el.removeEventListener('paste', onRichPaste);
@@ -1660,20 +1660,20 @@ export function createInlineEditor({
     return !!editing || mdModal.isOpen();
   }
 
-  function destroy() {
+  function detach() {
     thumb.removeEventListener('click', onThumbClickCapture, true);
     thumb.removeEventListener('dblclick', onThumbDblClick, true);
     thumb.removeEventListener('pointermove', onThumbPointerMove);
     thumb.removeEventListener('pointerleave', onThumbPointerLeave);
     if (repositionRaf) cancelAnimationFrame(repositionRaf);
-    overlay.destroy();
-    coach.destroy();
+    overlay.detach();
+    coach.detach();
     cancelCommitRerender();
     mdModal.dismiss();
     restoreThumbTitle();
     if (editing) {
       try {
-        editing.toolbar?.destroy();
+        editing.toolbar?.detach();
         editing.el.removeEventListener('keydown', onEditKeydown);
         editing.el.removeEventListener('input', onEditInput);
         editing.el.removeEventListener('paste', onRichPaste);
@@ -1688,7 +1688,7 @@ export function createInlineEditor({
     }
   }
 
-  return { refresh, isEditing, destroy, openMediaByIndex };
+  return { refresh, isEditing, detach, openMediaByIndex };
 }
 
 // --------------------------------------------------------------------

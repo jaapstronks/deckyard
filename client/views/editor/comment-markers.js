@@ -137,7 +137,7 @@ export function createCommentMarkers({
     renderMarkers();
   }
 
-  function destroy() {
+  function detach() {
     containerEl.removeEventListener('click', handleContainerClick);
     markersContainer?.remove();
     containerEl.classList.remove('is-add-comment-mode');
@@ -151,6 +151,6 @@ export function createCommentMarkers({
     isInAddMode,
     refresh,
     reattach: ensureAttached,
-    destroy,
+    detach,
   };
 }

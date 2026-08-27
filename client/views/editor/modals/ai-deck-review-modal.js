@@ -55,7 +55,7 @@ export function openAiDeckReviewModal({
       'Each slide shows why its type was picked. Click a slide for a closer look; tick one or more to revise that section as a group.',
     ),
     modalClass: 'modal-ai-review',
-    onClose: () => grid?.teardown(),
+    onClose: () => grid?.detach(),
   });
 
   const status = h('div', { class: 'help ui-status-line' });

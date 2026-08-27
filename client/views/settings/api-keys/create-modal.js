@@ -187,7 +187,7 @@ export function showCreateModal(onSuccess) {
   ];
 
   for (const permission of permissions) {
-    const { element: checkRow } = labeledCheckbox({
+    const { el: checkRow } = labeledCheckbox({
       className: 'api-key-permission-checkbox',
       checked: permission.defaultChecked,
       inputAttrs: {

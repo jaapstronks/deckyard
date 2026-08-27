@@ -418,7 +418,7 @@ export function createShareLinksSection({
   wrapper.append(header, helpText, createSection, linksSection);
 
   return {
-    element: wrapper,
+    el: wrapper,
     loadShareLinks,
   };
 }

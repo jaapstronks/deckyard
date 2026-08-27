@@ -89,8 +89,8 @@ test('live edits: bootstrap, concurrent edits converge, JSON persists', async (t
     url,
   });
   t.after(async () => {
-    alice.destroy();
-    bob.destroy();
+    alice.detach();
+    bob.detach();
     await shutdownCollab();
     await new Promise((resolve) => server.close(resolve));
   });

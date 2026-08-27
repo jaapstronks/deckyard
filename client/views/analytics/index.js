@@ -252,7 +252,7 @@ export async function renderAnalytics(root, presentationId, { nav } = {}) {
 
   function cleanup() {
     document.documentElement.classList.remove('is-analytics');
-    realtimeConnection?.destroy?.();
+    realtimeConnection?.detach?.();
   }
 
   return cleanup;
