@@ -112,6 +112,59 @@ test('the client is covered too (B150)', async () => {
   assert.equal(hits.length, 1);
 });
 
+/** All `no-restricted-syntax` hits for a probe file, regardless of message. */
+async function lintProbeAll(code, relPath) {
+  const { ESLint } = await import('eslint');
+  const eslint = new ESLint({ cwd: repoRoot });
+  const [result] = await eslint.lintText(code, {
+    filePath: path.join(repoRoot, relPath),
+  });
+  return result.messages.filter((m) => m.ruleId === 'no-restricted-syntax');
+}
+
+test('shared/ is covered too (B178)', async (t) => {
+  // The gate hung on `client/**` and `server/**`, so every module that moved
+  // into `shared/` — isOrganizationAdmin() in B171, the slide-type policy in
+  // B177 — fell out of it on arrival, silently. All three selectors apply
+  // there now, with a remedy that works in both environments.
+  const SHARED_PROBE = 'shared/silent-failure-gate-probe.js';
+  const cases = [
+    ['a discarded promise', 'export function f() {\n  void doThing();\n}\n'],
+    [
+      'an empty .catch',
+      'export function f() {\n  doThing().catch(() => {});\n}\n',
+    ],
+    [
+      'a comment-only catch',
+      'export function f() {\n  try {\n    doThing();\n  } catch {\n    // ignore\n  }\n}\n',
+    ],
+  ];
+  for (const [label, code] of cases) {
+    await t.test(label, async () => {
+      const hits = await lintProbeAll(code, SHARED_PROBE);
+      assert.equal(hits.length, 1, `${label} should be restricted in shared/`);
+    });
+  }
+});
+
+test('the shared/organization-role.js exemption is scoped to one rule', async () => {
+  // That file is where `user.isAdmin` may be read raw, and its block used to
+  // switch `no-restricted-syntax` off wholesale. Flat-config entries replace
+  // per rule name, so "off" also dropped the silent-failure rules for it —
+  // the same drift the hoisted selectors guard against elsewhere.
+  const probe = 'shared/organization-role.js';
+  const admin = await lintProbeAll(
+    'export function f(user) {\n  return user.isAdmin;\n}\n',
+    probe,
+  );
+  assert.deepEqual(admin, [], 'the instance-admin read must stay legal here');
+  const swallow = await lintProbeAll(
+    'export function f() {\n  try {\n    doThing();\n  } catch {\n    // ignore\n  }\n}\n',
+    probe,
+  );
+  assert.equal(swallow.length, 1, 'the silent-failure gate still applies');
+});
+
 /** Walk `server/` for files with a `void <call>()` statement in them. */
 async function findVoidCalls(dir, acc = []) {
   for (const entry of await readdir(dir, { withFileTypes: true })) {

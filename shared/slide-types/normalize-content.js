@@ -62,8 +62,16 @@ export function normalizeSlideContent(type, def, content) {
   }
   try {
     fn(content);
-  } catch {
+  } catch (err) {
     // A broken migration must not block editing; resolvers read legacy values.
+    // It is still a bug in the type, though, so it leaves a trace instead of
+    // none — console is the one recorder shared/ has in both environments
+    // (same reason as the registry's shadow warnings).
+    console.warn(
+      `[slide-types] normalizeContent for "${type}" threw; keeping the ` +
+        `slide's stored values.`,
+      err,
+    );
   }
   return content;
 }

@@ -251,8 +251,9 @@ pins each restricted shape, the legal look-alikes, and that the client is clean.
 
 ### `no-restricted-syntax` on empty catches — no silent failures
 
-Scoped to `server/**` **and** `client/**` (widened to the client by B150),
-two selectors reject the silent swallow in both its shapes:
+Scoped to `server/**`, `client/**` **and `shared/**`** (widened to the client
+by B150, to shared by B178), two selectors reject the silent swallow in both
+its shapes:
 
 - **`.catch(() => {})`** — a background promise that drops its rejection into
   an empty callback produces the one failure you cannot debug: no log line,
@@ -278,6 +279,20 @@ Accepted forms, all named:
 - A catch body that records the failure —
   [`debugLog(label, err)`](../../client/lib/util/debug.js) on the client — or
   handles it, or an inline `eslint-disable` with the reason after `--`.
+- **Not throwing in the first place** — the shared form, and the one that
+  retired most of that tree's burndown. `new URL()` is a throwing parser, so
+  nine of `shared/`'s ten empty catches were a `try` around "not a URL, carry
+  on". [`parseUrl()`](../../shared/url-host.js) converts the throw to a `null`
+  return once, and the call sites branch instead of catching (B178).
+
+`shared/**` runs in **both** environments, so neither `fireAndForget` nor
+`disposeAll` is importable there: its remedy is a sentinel-returning helper as
+above, or `console.warn` with a `[module]` prefix — the trace its registry and
+sanitizer already use. Its rule set is therefore stated separately, and the
+`shared/organization-role.js` exemption (which may read `user.isAdmin` raw)
+**re-states** the silent-failure rules rather than switching
+`no-restricted-syntax` off, for the same replace-not-merge reason as
+`server/config/**` below.
 
 The **allowlist is empty**, `server/config/**` included — it is exempt from the
 env-accessor rules in the same block, so the selectors are re-stated for it
@@ -290,8 +305,8 @@ bare "ignore" states no reason.
 
 ### `no-restricted-syntax` on `void someCall()` — no unguarded rejections
 
-The other half of the same gate, with the same `server/**` + `client/**`
-scope. The empty-catch rules above catch the _silent_ swallow; this one
+The other half of the same gate, with the same `server/**` + `client/**` +
+`shared/**` scope. The empty-catch rules above catch the _silent_ swallow; this one
 catches the _absent_ catch.
 
 `void doThing()` reads as a deliberate decision and is the opposite of one: it

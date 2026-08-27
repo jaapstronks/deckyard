@@ -2,16 +2,7 @@
  * Video stream provider detection, embed URL building, and position presets.
  * Shared between client and server (ESM).
  */
-import { hostMatches, hostMatchesAny } from './url-host.js';
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/** Normalize protocol-relative URLs to absolute https. */
-function toAbsoluteUrl(raw) {
-  return raw.startsWith('//') ? `https:${raw}` : raw;
-}
+import { hostMatches, hostMatchesAny, parseUrl } from './url-host.js';
 
 // ---------------------------------------------------------------------------
 // Provider detection
@@ -71,13 +62,10 @@ export function detectStreamProvider(input) {
   if (/\.m3u8(\?|$)/i.test(raw)) return 'hls';
   if (/\.mpd(\?|$)/i.test(raw)) return 'dash';
 
-  try {
-    const u = new URL(toAbsoluteUrl(raw));
-    for (const p of PROVIDERS) {
-      if (p.match(u)) return p.id;
-    }
-  } catch {
-    // Not a valid URL
+  const u = parseUrl(raw);
+  if (!u) return null;
+  for (const p of PROVIDERS) {
+    if (p.match(u)) return p.id;
   }
 
   return null;
@@ -88,35 +76,29 @@ export function detectStreamProvider(input) {
 // ---------------------------------------------------------------------------
 
 function extractYouTubeId(raw) {
-  try {
-    const u = new URL(toAbsoluteUrl(raw));
-    const host = u.hostname;
-    if (hostMatches(host, 'youtu.be')) {
-      return u.pathname.replace(/^\//, '').split('/')[0] || '';
-    }
-    if (hostMatchesAny(host, ['youtube.com', 'youtube-nocookie.com'])) {
-      const v = u.searchParams.get('v');
-      if (v) return v;
-      const m = u.pathname.match(/\/(?:embed|shorts|live)\/([^/?]+)/);
-      if (m?.[1]) return m[1];
-    }
-  } catch {
-    // ignore
+  const u = parseUrl(raw);
+  if (!u) return '';
+  const host = u.hostname;
+  if (hostMatches(host, 'youtu.be')) {
+    return u.pathname.replace(/^\//, '').split('/')[0] || '';
+  }
+  if (hostMatchesAny(host, ['youtube.com', 'youtube-nocookie.com'])) {
+    const v = u.searchParams.get('v');
+    if (v) return v;
+    const m = u.pathname.match(/\/(?:embed|shorts|live)\/([^/?]+)/);
+    if (m?.[1]) return m[1];
   }
   return '';
 }
 
 function extractVimeoId(raw) {
-  try {
-    const u = new URL(toAbsoluteUrl(raw));
-    if (hostMatches(u.hostname, 'vimeo.com')) {
-      const m1 = u.pathname.match(/\/video\/(\d+)/);
-      if (m1?.[1]) return m1[1];
-      const m2 = u.pathname.match(/\/(\d+)/);
-      if (m2?.[1]) return m2[1];
-    }
-  } catch {
-    // ignore
+  const u = parseUrl(raw);
+  if (!u) return '';
+  if (hostMatches(u.hostname, 'vimeo.com')) {
+    const m1 = u.pathname.match(/\/video\/(\d+)/);
+    if (m1?.[1]) return m1[1];
+    const m2 = u.pathname.match(/\/(\d+)/);
+    if (m2?.[1]) return m2[1];
   }
   return '';
 }
@@ -126,44 +108,34 @@ function extractVimeoId(raw) {
  * Handles both /play/{lib}/{id} and /embed/{lib}/{id} URL forms.
  */
 function extractBunnyIds(raw) {
-  try {
-    const u = new URL(toAbsoluteUrl(raw));
-    // https://iframe.mediadelivery.net/play/{libraryId}/{videoId}
-    // https://iframe.mediadelivery.net/embed/{libraryId}/{videoId}
-    // https://video.bunnycdn.com/play/{libraryId}/{videoId}
-    const m = u.pathname.match(/\/(?:play|embed)\/(\d+)\/([0-9a-f-]{36})/i);
-    if (m?.[1] && m?.[2]) return { libraryId: m[1], videoId: m[2] };
-  } catch {
-    // ignore
-  }
+  const u = parseUrl(raw);
+  if (!u) return null;
+  // https://iframe.mediadelivery.net/play/{libraryId}/{videoId}
+  // https://iframe.mediadelivery.net/embed/{libraryId}/{videoId}
+  // https://video.bunnycdn.com/play/{libraryId}/{videoId}
+  const m = u.pathname.match(/\/(?:play|embed)\/(\d+)\/([0-9a-f-]{36})/i);
+  if (m?.[1] && m?.[2]) return { libraryId: m[1], videoId: m[2] };
   return null;
 }
 
 function extractCloudflareId(raw) {
-  try {
-    const u = new URL(toAbsoluteUrl(raw));
-    // https://customer-<x>.cloudflarestream.com/<videoId>/...
-    // https://watch.videodelivery.net/<videoId>
-    // https://iframe.videodelivery.net/<videoId>
-    const m = u.pathname.match(/^\/([a-z0-9]{32})/i);
-    if (m?.[1]) return m[1];
-  } catch {
-    // ignore
-  }
+  const u = parseUrl(raw);
+  if (!u) return '';
+  // https://customer-<x>.cloudflarestream.com/<videoId>/...
+  // https://watch.videodelivery.net/<videoId>
+  // https://iframe.videodelivery.net/<videoId>
+  const m = u.pathname.match(/^\/([a-z0-9]{32})/i);
+  if (m?.[1]) return m[1];
   return '';
 }
 
 function extractMuxPlaybackId(raw) {
-  try {
-    const u = new URL(toAbsoluteUrl(raw));
-    // https://stream.mux.com/<playbackId>.m3u8
-    // https://stream.mux.com/<playbackId>
-    const seg = u.pathname.replace(/^\//, '').split('/')[0] || '';
-    return seg.replace(/\.[^.]+$/, '') || '';
-  } catch {
-    // ignore
-  }
-  return '';
+  const u = parseUrl(raw);
+  if (!u) return '';
+  // https://stream.mux.com/<playbackId>.m3u8
+  // https://stream.mux.com/<playbackId>
+  const seg = u.pathname.replace(/^\//, '').split('/')[0] || '';
+  return seg.replace(/\.[^.]+$/, '') || '';
 }
 
 /**

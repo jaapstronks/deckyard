@@ -1,5 +1,5 @@
 /**
- * Host matching for URL allow-lists.
+ * URL parsing and host matching for URL allow-lists.
  *
  * The naive form of this check is `hostname.endsWith('youtube.com')`, which is
  * a substring test, not a host test: `notyoutube.com` and
@@ -7,6 +7,36 @@
  * through {@link hostMatches} instead, which accepts the domain itself and its
  * subdomains and nothing else.
  */
+
+/**
+ * Parse a user-supplied URL string, or `null` when it is not a URL.
+ *
+ * `new URL()` is a throwing parser, so every call site that accepts pasted
+ * input wrapped it in a `try`/`catch` whose only job was "not a URL, carry
+ * on" — eleven of them across `shared/`, nine with an empty body that the
+ * silent-failure gate (B106/B111/B150) rightly reads as a swallow. There is
+ * nothing to record here: an unparseable string is the ordinary case for a
+ * field a human types into, not a failure. So the throw is converted once,
+ * here, and the call sites branch on `null` instead.
+ *
+ * Protocol-relative input (`//host/path`) is normalized to `https:` first,
+ * because `new URL('//youtu.be/x')` throws without a base — every caller in
+ * this repo did that normalization itself, in two spellings.
+ *
+ * @param {unknown} input - URL string; non-strings and blanks yield `null`.
+ * @returns {URL|null} The parsed URL, or `null` when it does not parse.
+ */
+export function parseUrl(input) {
+  const raw = String(input ?? '').trim();
+  if (!raw) return null;
+  try {
+    return new URL(raw.startsWith('//') ? `https:${raw}` : raw);
+  } catch {
+    // Unparseable input is the expected case for a pasted field, not an
+    // error to report: `null` is the answer, and callers branch on it.
+    return null;
+  }
+}
 
 /**
  * Does `hostname` equal `domain`, or is it a subdomain of it?
