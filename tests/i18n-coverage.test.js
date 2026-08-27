@@ -22,6 +22,9 @@
  *  9. and the English it declares for such a key *is* the en/ value — check 5
  *     for the registry, so a declaration and a locale file cannot spell one
  *     meaning two ways
+ * 10. no locale spells one English concept two ways — the anchor invariant the
+ *     whole B133-B141 translation series leaned on, graded against
+ *     scripts/i18n-anchor-allowlist.json
  *
  * Run with: node --test tests/i18n-coverage.test.js
  */
@@ -50,6 +53,12 @@ import {
   slideTypeUiKeys,
   slideTypeUiStrings,
 } from '../scripts/lib/slide-type-i18n-keys.js';
+import {
+  UNREVIEWED,
+  allowlistRows,
+  anchorRowKey,
+  detectAnchorDrift,
+} from '../scripts/lib/i18n-anchors.js';
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -577,6 +586,211 @@ describe('i18n fallback consistency', () => {
       [],
       `${offenders.length} string(s) spell an ellipsis as three dots — use …:\n` +
         offenders.join('\n'),
+    );
+  });
+});
+
+describe('i18n anchor consistency', () => {
+  // Check 10. Checks 5 and 9 pin one *English* string per key. This pins one
+  // *translation* per English string: if en/ says the same thing under two
+  // keys, the two keys mean the same thing, so a locale that spells them
+  // differently has two words for one meaning.
+  //
+  // That invariant carried the whole B133–B141 translation series and had no
+  // mechanical representation at all, which is how nl ended up shipping
+  // `Export` beside `Exporteren`, de `Workspace` beside `Arbeitsbereich`, and
+  // fi `7 päivää` beside `7 paivaa` — the same word, typed once without its
+  // diacritics. 499 such pairs were live when this gate was written (B148).
+  //
+  // The gate does not pretend the whole 499 is drift. Some of it is grammar
+  // (fr `Sombre`/`Sombres` agrees with its noun) and some is English on
+  // purpose (`Mist` is a colour-slot name, not an untranslated string). The
+  // detector cannot tell those from a mistake — only a translator can — so
+  // every live pair sits in scripts/i18n-anchor-allowlist.json with a reason,
+  // and the reasons that still say "unreviewed" are the debt this burns down.
+  //
+  // What the gate buys today is the ratchet: a new key reusing an existing
+  // English string must match the form already in use, or someone has to write
+  // down why it does not. Without it the next translation round is hand work
+  // with the same blind spot.
+  const ANCHOR_ALLOWLIST_PATH = path.join(
+    repoRoot,
+    'scripts',
+    'i18n-anchor-allowlist.json',
+  );
+
+  /**
+   * How many rows were still unjudged when the gate landed (B148, 2026-08-27).
+   *
+   * The other burndowns in this suite keep themselves honest with a stale-row
+   * check alone; this one needs a number too, because its reconcile step
+   * (`i18n-anchor-report.js --apply`) can add rows. The ceiling is what stops
+   * that from being a way to launder new drift into the list. It moves in one
+   * direction: down, as rows are judged or fixed — and the equality check below
+   * forces this constant to follow, so paid-down debt never turns into headroom
+   * a later `--apply` could spend on new drift.
+   */
+  const UNREVIEWED_BASELINE = 499;
+
+  /** @returns {Promise<import('../scripts/lib/i18n-anchors.js').AnchorFinding[]>} */
+  const found = async () => {
+    const reference = await loadLocale(i18nDir, REFERENCE_LOCALE);
+    /** @type {Record<string, Record<string, string>>} */
+    const dicts = {};
+    for (const locale of LOCALE_IDS) {
+      if (locale === REFERENCE_LOCALE) continue;
+      dicts[locale] = await loadLocale(i18nDir, locale);
+    }
+    return detectAnchorDrift(reference, dicts);
+  };
+
+  /** @returns {Promise<Map<string, {forms: string[], reason: string}>>} */
+  const allowed = async () =>
+    allowlistRows(JSON.parse(await fs.readFile(ANCHOR_ALLOWLIST_PATH, 'utf8')));
+
+  it('no locale spells one English concept two ways', async () => {
+    const rows = await allowed();
+    const unlisted = (await found()).filter((f) => {
+      const entry = rows.get(anchorRowKey(f));
+      return !entry || JSON.stringify(entry.forms) !== JSON.stringify(f.forms);
+    });
+    assert.deepStrictEqual(
+      unlisted.map(anchorRowKey),
+      [],
+      `${unlisted.length} (locale, concept) pair(s) are spelled more than one\n` +
+        'way and are not on the allowlist. Pick the form already in use — or,\n' +
+        'if both are right (grammatical agreement, or one of them is English on\n' +
+        'purpose), add the row to scripts/i18n-anchor-allowlist.json with the\n' +
+        'reason. `node scripts/i18n-anchor-report.js` shows them ranked:\n' +
+        unlisted
+          .slice(0, 20)
+          .map(
+            (f) =>
+              `  ${f.locale}  ${JSON.stringify(f.concept)}  ->  ` +
+              f.forms.map((x) => JSON.stringify(x)).join(' | '),
+          )
+          .join('\n'),
+    );
+  });
+
+  it('the allowlist only shrinks: every row is still a live pair', async () => {
+    const live = new Map((await found()).map((f) => [anchorRowKey(f), f]));
+    const stale = [...(await allowed())]
+      .filter(([row, entry]) => {
+        const finding = live.get(row);
+        if (!finding) return true;
+        // The forms are part of the row: allowing "Sombre | Sombres" is not
+        // allowing whatever pair replaces it.
+        return JSON.stringify(finding.forms) !== JSON.stringify(entry.forms);
+      })
+      .map(([row]) => row);
+    assert.deepStrictEqual(
+      stale,
+      [],
+      `${stale.length} row(s) in scripts/i18n-anchor-allowlist.json no longer\n` +
+        'describe live drift — the translation changed, or the concept is\n' +
+        'consistent now. Run `node scripts/i18n-anchor-report.js --apply` to\n' +
+        'drop them so the list keeps burning down:\n' +
+        stale
+          .slice(0, 20)
+          .map((row) => `  ${row}`)
+          .join('\n'),
+    );
+  });
+
+  it('the unreviewed backlog does not grow', async () => {
+    const unreviewed = [...(await allowed()).values()].filter((entry) =>
+      entry.reason.startsWith(UNREVIEWED),
+    );
+    assert.ok(
+      unreviewed.length <= UNREVIEWED_BASELINE,
+      `${unreviewed.length} unreviewed row(s) in ` +
+        `scripts/i18n-anchor-allowlist.json, up from ${UNREVIEWED_BASELINE}.\n` +
+        'A new pair needs a decision, not a seat on the backlog: fix the\n' +
+        'translation, or state why both forms are correct.',
+    );
+    assert.strictEqual(
+      unreviewed.length,
+      UNREVIEWED_BASELINE,
+      `${unreviewed.length} unreviewed row(s), below the baseline of ` +
+        `${UNREVIEWED_BASELINE}. Good — now lower UNREVIEWED_BASELINE in this\n` +
+        'test to match, so the paid-down debt cannot be spent on new drift\n' +
+        'later.',
+    );
+  });
+
+  it('every allowlist row carries a reason', async () => {
+    const silent = [...(await allowed())]
+      .filter(([, entry]) => !entry.reason.trim())
+      .map(([row]) => row);
+    assert.deepStrictEqual(
+      silent,
+      [],
+      'A row without a reason is a mute button, not a burndown:\n' +
+        silent.map((row) => `  ${row}`).join('\n'),
+    );
+  });
+
+  it('the allowlist is sorted and free of duplicate forms', async () => {
+    const raw = JSON.parse(await fs.readFile(ANCHOR_ALLOWLIST_PATH, 'utf8'));
+    const keys = Object.keys(raw.anchors);
+    assert.deepStrictEqual([...keys].sort(), keys, 'keep it sorted');
+    for (const [row, entry] of Object.entries(raw.anchors)) {
+      assert.deepStrictEqual(
+        [...entry.forms].sort(),
+        entry.forms,
+        `${row}: forms must be sorted`,
+      );
+      assert.strictEqual(
+        new Set(entry.forms).size,
+        entry.forms.length,
+        `${row}: duplicate form`,
+      );
+      assert.ok(entry.forms.length >= 2, `${row}: needs at least two forms`);
+    }
+  });
+
+  it('detector flags a locale that spells one concept two ways', () => {
+    // The nl `Export`/`Exporteren` shape exactly: one English string under two
+    // keys, two Dutch words.
+    assert.deepStrictEqual(
+      detectAnchorDrift(
+        { 'a.export': 'Export', 'b.export': 'Export', 'c.only': 'Only' },
+        {
+          nl: { 'a.export': 'Export', 'b.export': 'Exporteren', 'c.only': 'X' },
+        },
+      ),
+      [
+        {
+          locale: 'nl',
+          concept: 'Export',
+          forms: ['Export', 'Exporteren'],
+          keys: ['a.export', 'b.export'],
+        },
+      ],
+    );
+  });
+
+  it('detector passes a locale that uses one form throughout', () => {
+    assert.deepStrictEqual(
+      detectAnchorDrift(
+        { 'a.export': 'Export', 'b.export': 'Export' },
+        { nl: { 'a.export': 'Exporteren', 'b.export': 'Exporteren' } },
+      ),
+      [],
+    );
+  });
+
+  it('detector ignores a key the locale has not translated', () => {
+    // A missing key renders the English t() fallback — a coverage gap, which
+    // checks 1 and 8 own. Counting it as a second form would report every
+    // partially translated concept as drift.
+    assert.deepStrictEqual(
+      detectAnchorDrift(
+        { 'a.export': 'Export', 'b.export': 'Export' },
+        { de: { 'a.export': 'Exportieren' } },
+      ),
+      [],
     );
   });
 });

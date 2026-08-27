@@ -1,0 +1,2130 @@
+{
+  "_README": [
+    "Accepted (locale, concept) pairs for the anchor gate in",
+    "tests/i18n-coverage.test.js — places where one locale spells one English",
+    "concept more than one way. Every row carries its live forms and a reason.",
+    "",
+    "This is a burndown, not a mute button. A reason starting with",
+    "\"unreviewed\" marks a row nobody has judged yet: those must reach zero, and",
+    "the gate fails if their number grows. A judged row says why two forms are",
+    "correct — grammatical agreement, or one form being English on purpose — and",
+    "stays.",
+    "",
+    "The \"forms\" array pins what was allowed. Change either translation and the",
+    "row stops matching, so the gate asks again instead of silently covering the",
+    "new pair. Rows for drift that no longer exists fail as stale.",
+    "",
+    "Run `node scripts/i18n-anchor-report.js` for the ranked report, or with",
+    "--apply to add newly drifted rows and drop stale ones (reasons are never",
+    "rewritten)."
+  ],
+  "anchors": {
+    "da  Add to team library": {
+      "forms": ["Tilføj til team-bibliotek", "Tilføj til teamets bibliotek"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Admin": {
+      "forms": ["Admin", "Administrator"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Alt text": {
+      "forms": ["Alt-tekst", "Alternativ tekst"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Bar chart showing views over time": {
+      "forms": [
+        "Søjlediagram der viser visninger over tid",
+        "Søjlediagram over visninger over tid"
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Cancel": {
+      "forms": ["Annuller", "Annullér"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Center": {
+      "forms": ["Centreret", "Midten"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Changes applied": {
+      "forms": ["Ændringer anvendt", "Ændringerne er anvendt"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Clear search": {
+      "forms": ["Ryd søgning", "Ryd søgningen"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Completion": {
+      "forms": ["Fuldførelse", "Gennemførsel"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Conversion failed.": {
+      "forms": ["Konvertering mislykkedes.", "Konverteringen mislykkedes."],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Custom": {
+      "forms": ["Brugerdefineret", "Egne"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Dark": {
+      "forms": ["Mørk", "Mørke"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Dismiss": {
+      "forms": ["Afvis", "Luk"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Drag to reorder": {
+      "forms": ["Træk for at omorganisere", "Træk for at ændre rækkefølgen"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Duplicate": {
+      "forms": ["Dublér", "Duplikér"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Embed": {
+      "forms": ["Indlejret", "Indlejring"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Engagement Insights": {
+      "forms": ["Engagement Indsigt", "Indsigt i engagement"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  English": {
+      "forms": ["Engelsk", "English"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Export": {
+      "forms": ["Eksport", "Eksportér"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Fill (crop)": {
+      "forms": ["Udfyld (beskær)", "Udfyld (med beskæring)"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Image URL": {
+      "forms": ["Billed-URL", "Billedets URL"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Image position": {
+      "forms": ["Billedets placering", "Billedposition"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Invite": {
+      "forms": ["Inviter", "Invitér"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Light": {
+      "forms": ["Lys", "Lyse"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Mist": {
+      "forms": ["Dis", "Mist"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Move \"{title}\" to trash?": {
+      "forms": [
+        "Flyt \"{title}\" til papirkurven?",
+        "Slet \"{title}\"? Dette kan ikke fortrydes."
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Move to trash": {
+      "forms": ["Flyt til papirkurven", "Slet"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Open": {
+      "forms": ["Åbn", "Åbne"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Preview": {
+      "forms": ["Forhåndsvis", "Forhåndsvisning"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Publish": {
+      "forms": ["Publicér", "Udgiv"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Published": {
+      "forms": ["Offentliggjort", "Publiceret", "Udgivet"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Reading file…": {
+      "forms": ["Læser filen…", "Læser fil…"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Search slides": {
+      "forms": ["Søg i slides", "Søg slides"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Share": {
+      "forms": ["Del", "Delingslinks"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Slide": {
+      "forms": ["Glid", "Slide"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Slide library": {
+      "forms": ["Slide-bibliotek", "Slidebibliotek"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Square": {
+      "forms": ["Firkantet", "Kvadratisk", "Skarp"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Total Views": {
+      "forms": ["Samlede visninger", "Visninger i alt"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  Unpublish": {
+      "forms": ["Afpublicér", "Fjern udgivelsen"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  name@example.com": {
+      "forms": ["name@example.com", "navn@eksempel.dk"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  {count}d ago": {
+      "forms": ["for {count} d siden", "{count}d siden"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "da  {count}h ago": {
+      "forms": ["for {count} t siden", "{count}t siden"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Admin": {
+      "forms": ["Admin", "Administrator"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Alt text": {
+      "forms": ["Alt-Text", "Alternativtext"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Apply": {
+      "forms": ["Anwenden", "Übernehmen"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Bar chart showing views over time": {
+      "forms": [
+        "Balkendiagramm der Aufrufe im Zeitverlauf",
+        "Balkendiagramm mit Aufrufen im Zeitverlauf"
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Center": {
+      "forms": ["Mitte", "Zentriert"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Clear": {
+      "forms": ["Leeren", "Zurücksetzen"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Clear search": {
+      "forms": ["Suche löschen", "Suche zurücksetzen"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Conversion failed.": {
+      "forms": ["Konvertierung fehlgeschlagen.", "Umwandlung fehlgeschlagen."],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Custom": {
+      "forms": ["Benutzerdefiniert", "Eigene", "Eigene Einstellung"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Embed": {
+      "forms": ["Einbettung", "Eingebettet"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Engagement Insights": {
+      "forms": ["Engagement-Einblicke", "Interaktions-Insights"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  English": {
+      "forms": ["Englisch", "English"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Export": {
+      "forms": ["Export", "Exportieren"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Fill (crop)": {
+      "forms": ["Ausfüllen (Beschnitt)", "Füllen (mit Beschnitt)"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Generating…": {
+      "forms": ["Wird erstellt…", "Wird erzeugt…", "Wird generiert…"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Grid": {
+      "forms": ["Raster", "Tabelle"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Image fit": {
+      "forms": ["Bildanpassung", "Bildeinpassung"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Label": {
+      "forms": ["Beschriftung", "Bezeichnung"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Loading…": {
+      "forms": ["Lädt…", "Wird geladen…"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Mist": {
+      "forms": ["Mist", "Nebel"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Move \"{title}\" to trash?": {
+      "forms": [
+        "„{title}“ in den Papierkorb verschieben?",
+        "„{title}“ löschen? Dies kann nicht rückgängig gemacht werden."
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Move to trash": {
+      "forms": ["In den Papierkorb verschieben", "Löschen"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Next": {
+      "forms": ["Als Nächstes", "Weiter"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  None": {
+      "forms": ["Keine", "Keins"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Open": {
+      "forms": ["Offen", "Öffnen"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Owner": {
+      "forms": ["Eigentümer", "Eigentümer/in"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Primary": {
+      "forms": ["Primär", "Primärfarbe"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Search": {
+      "forms": ["Suche", "Suchen"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Share": {
+      "forms": ["Freigabelinks", "Teilen"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Slide": {
+      "forms": ["Folie", "Gleiten"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Something went wrong": {
+      "forms": ["Etwas ist schief gelaufen", "Etwas ist schiefgelaufen"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Something went wrong. Please try again.": {
+      "forms": [
+        "Etwas ist schief gelaufen. Bitte versuchen Sie es erneut.",
+        "Etwas ist schiefgelaufen. Bitte erneut versuchen."
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Square": {
+      "forms": ["Eckig", "Quadratisch"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Theme": {
+      "forms": ["Design", "Theme"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Total Views": {
+      "forms": ["Aufrufe gesamt", "Gesamtaufrufe"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Weight": {
+      "forms": ["Schriftstärke", "Stärke"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  Workspace": {
+      "forms": ["Arbeitsbereich", "Workspace"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  {count}d ago": {
+      "forms": ["vor {count} T", "vor {count} T."],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "de  {count}h ago": {
+      "forms": ["vor {count} Std", "vor {count} Std."],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Add to team library": {
+      "forms": [
+        "Agregar a biblioteca del equipo",
+        "Añadir a la biblioteca del equipo"
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Admin": {
+      "forms": ["Administración", "Administrador"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  All": {
+      "forms": ["Todas", "Todo", "Todos"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Bar chart showing views over time": {
+      "forms": [
+        "Gráfico de barras con las vistas a lo largo del tiempo",
+        "Gráfico de barras de vistas en el tiempo"
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Clear search": {
+      "forms": ["Borrar la búsqueda", "Limpiar búsqueda"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Copied!": {
+      "forms": ["¡Copiada!", "¡Copiado!"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Copy link": {
+      "forms": ["Copiar el enlace", "Copiar enlace"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Custom": {
+      "forms": ["Personalizada", "Personalizado", "Personalizados"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Dark": {
+      "forms": ["Oscuro", "Oscuros"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Default": {
+      "forms": ["Por defecto", "Predeterminado"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Display name": {
+      "forms": ["Nombre para mostrar", "Nombre visible"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Drag to reorder": {
+      "forms": ["Arrastrar para reordenar", "Arrastre para reordenar"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Email": {
+      "forms": ["Correo", "Correo electrónico"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Email address": {
+      "forms": ["Dirección de correo", "Dirección de correo electrónico"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Embed": {
+      "forms": ["Contenido insertado", "Incrustado", "Insertado"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Engagement Insights": {
+      "forms": ["Datos de interacción", "Estadísticas de Engagement"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  English": {
+      "forms": ["English", "Inglés"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Export": {
+      "forms": ["Exportación", "Exportar"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Grid": {
+      "forms": ["Cuadrícula", "Tabla"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Image URL": {
+      "forms": ["URL de imagen", "URL de la imagen"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Image fit": {
+      "forms": ["Ajuste de imagen", "Ajuste de la imagen"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Image position": {
+      "forms": ["Posición de imagen", "Posición de la imagen"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Light": {
+      "forms": ["Claro", "Claros"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Mist": {
+      "forms": ["Bruma", "Mist"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Move \"{title}\" to trash?": {
+      "forms": [
+        "¿Eliminar «{title}»? Esto no se puede deshacer.",
+        "¿Mover «{title}» a la papelera?"
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Move to trash": {
+      "forms": ["Eliminar", "Mover a la papelera"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Open": {
+      "forms": ["Abiertos", "Abrir"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Placeholder": {
+      "forms": ["Marcador de posición", "Texto de ejemplo"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Please enter a valid email address.": {
+      "forms": [
+        "Introduzca una dirección de correo válida.",
+        "Por favor, ingresa una dirección de correo válida."
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Published": {
+      "forms": ["Publicada", "Publicado"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Reading file…": {
+      "forms": ["Leyendo archivo…", "Leyendo el archivo…"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Remove": {
+      "forms": ["Eliminar", "Quitar"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Remove row": {
+      "forms": ["Eliminar fila", "Quitar la fila"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Search": {
+      "forms": ["Buscar", "Búsqueda"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Share": {
+      "forms": ["Compartir", "Enlaces compartidos"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Slide": {
+      "forms": ["Deslizar", "Diapositiva"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Something went wrong": {
+      "forms": ["Algo ha ido mal", "Algo salió mal"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Something went wrong. Please try again.": {
+      "forms": [
+        "Algo ha ido mal. Inténtelo de nuevo.",
+        "Algo salió mal. Por favor, inténtalo de nuevo."
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Square": {
+      "forms": ["Cuadrada", "Recto"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  This share link has expired.": {
+      "forms": [
+        "Este enlace compartido ha caducado.",
+        "Este enlace compartido ha expirado."
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Unique Viewers": {
+      "forms": ["Espectadores únicos", "Visitantes únicos"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "es  Views Over Time": {
+      "forms": ["Vistas a lo largo del tiempo", "Vistas en el tiempo"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  30 days": {
+      "forms": ["30 paivaa", "30 päivää"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  7 days": {
+      "forms": ["7 paivaa", "7 päivää"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Add to team library": {
+      "forms": ["Lisää tiimikirjastoon", "Lisää tiimin kirjastoon"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Admin": {
+      "forms": ["Hallinta", "Yllapitaja", "Ylläpitäjä"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Anonymous": {
+      "forms": ["Anonyymi", "Nimetön"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Apply": {
+      "forms": ["Käytä", "Ota käyttöön"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Background": {
+      "forms": ["Tausta", "Taustaväri"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Bar chart showing views over time": {
+      "forms": [
+        "Pylväskaavio katseluista ajan mittaan",
+        "Pylväskaavio katselukerroista ajan mittaan"
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Body": {
+      "forms": ["Leipäteksti", "Sisältö"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Center": {
+      "forms": ["Keskelle", "Keskellä"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Collapse": {
+      "forms": ["Supista", "Tiivistä"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Completion": {
+      "forms": ["Loppuun katsotut", "Valmistuminen"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Custom": {
+      "forms": ["Mukautettu", "Omat"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Dark": {
+      "forms": ["Tumma", "Tummat"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Dismiss": {
+      "forms": ["Hylkää", "Sulje"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Duplicate": {
+      "forms": ["Kopioi", "Monista"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Embed": {
+      "forms": ["Upotettu", "Upotus"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Engagement Insights": {
+      "forms": [
+        "Sitoutumisanalyysi",
+        "Sitoutumisen analyysi",
+        "Sitoutumistilastot"
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  English": {
+      "forms": ["Englanti", "English"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Export": {
+      "forms": ["Vie", "Vienti"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Fill (crop)": {
+      "forms": ["Täytä (rajaa)", "Täytä (rajaus)"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Fonts": {
+      "forms": ["Fontit", "Kirjasimet"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Image URL": {
+      "forms": ["Kuvan URL", "Kuvan URL-osoite"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Italic": {
+      "forms": ["Kursiivi", "Kursivointi"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Label": {
+      "forms": ["Selite", "Tunniste"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Left": {
+      "forms": ["Vasemmalla", "Vasemmalle", "Vasen"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Light": {
+      "forms": ["Vaalea", "Vaaleat"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Mist": {
+      "forms": ["Mist", "Usva"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Move \"{title}\" to trash?": {
+      "forms": [
+        "Siirretäänkö \"{title}\" roskakoriin?",
+        "Siirretäänkö ”{title}” roskakoriin?"
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Never expires": {
+      "forms": ["Ei vanhene", "Ei vanhene koskaan"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Open": {
+      "forms": ["Avaa", "Avoimet"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Placeholder": {
+      "forms": ["Ohjeteksti kentässä", "Paikkamerkki"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Please enter a title.": {
+      "forms": ["Anna otsikko.", "Syötä otsikko."],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Primary": {
+      "forms": ["Ensisijainen", "Pääväri"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Reset": {
+      "forms": ["Nollaa", "Palauta"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Revoke": {
+      "forms": ["Kumoa", "Peruuta"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Right": {
+      "forms": ["Oikea", "Oikealla", "Oikealle"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Search slides": {
+      "forms": ["Hae dioista", "Hae dioja"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Sending…": {
+      "forms": ["Lahetetaan…", "Lähetetään…"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Share": {
+      "forms": ["Jaa", "Jakolinkit"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Slide": {
+      "forms": ["Dia", "Liu'uta"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Slug": {
+      "forms": ["Slug", "Tunniste"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Square": {
+      "forms": ["Neliö", "Suora"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Total Views": {
+      "forms": ["Katselukertoja yhteensä", "Katselut yhteensä"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Unique Viewers": {
+      "forms": ["Yksilöityjä katsojia", "Yksilölliset katsojat"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Unpublish": {
+      "forms": ["Peru julkaisu", "Peruuta julkaisu"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Uploading…": {
+      "forms": ["Ladataan…", "Lähetetään…"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Views": {
+      "forms": ["Katselukerrat", "Katselut"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Views Over Time": {
+      "forms": ["Katselukerrat ajan mittaan", "Katselut ajan mittaan"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  Weight": {
+      "forms": ["Paksuus", "Vahvuus"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fi  name@example.com": {
+      "forms": ["name@example.com", "nimi@esimerkki.fi"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Admin": {
+      "forms": ["Admin", "Administrateur"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  All": {
+      "forms": ["Tous", "Tout", "Toutes"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Bar chart showing views over time": {
+      "forms": [
+        "Diagramme en barres des vues dans le temps",
+        "Graphique à barres des vues dans le temps"
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Body": {
+      "forms": ["Corps", "Corps du message"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Copied!": {
+      "forms": ["Copié !", "Copiée !"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Custom": {
+      "forms": ["Personnalisé", "Personnalisée", "Personnalisés"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Dark": {
+      "forms": ["Sombre", "Sombres"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Drag to reorder": {
+      "forms": ["Faites glisser pour réorganiser", "Glisser pour réorganiser"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Embed": {
+      "forms": ["Intégration", "Intégré"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Engagement Insights": {
+      "forms": ["Aperçu de l'engagement", "Aperçus d'engagement"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  English": {
+      "forms": ["Anglais", "English"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Export": {
+      "forms": ["Export", "Exporter"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Grid": {
+      "forms": ["Grille", "Tableau"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Image fit": {
+      "forms": ["Ajustement de l'image", "Ajustement image"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Image position": {
+      "forms": ["Position de l'image", "Position image"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Insert slide": {
+      "forms": ["Insérer la diapositive", "Insérer une diapositive"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Light": {
+      "forms": ["Clair", "Clairs"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Mist": {
+      "forms": ["Brume", "Mist"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Move \"{title}\" to trash?": {
+      "forms": [
+        "Mettre « {title} » à la corbeille ?",
+        "Supprimer « {title} » ? Cette action est irréversible."
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Move to trash": {
+      "forms": ["Mettre à la corbeille", "Supprimer"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Next": {
+      "forms": ["Suivant", "Suivante"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Normal": {
+      "forms": ["Normal", "Normale"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Open": {
+      "forms": ["Ouverts", "Ouvrir"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Placeholder": {
+      "forms": ["Espace réservé", "Texte indicatif"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Please enter a valid email address.": {
+      "forms": [
+        "Veuillez entrer une adresse e-mail valide.",
+        "Veuillez saisir une adresse e-mail valide."
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Primary": {
+      "forms": ["Couleur principale", "Principal"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Published": {
+      "forms": ["Publié", "Publiée"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Remove": {
+      "forms": ["Retirer", "Supprimer"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Search": {
+      "forms": ["Recherche", "Rechercher"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Share": {
+      "forms": ["Liens de partage", "Partager"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Sign in": {
+      "forms": ["Connexion", "Se connecter"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Slide": {
+      "forms": ["Diapositive", "Glissement"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Soft": {
+      "forms": ["Douce", "Doux"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Someone": {
+      "forms": ["Quelqu'un", "Quelqu’un"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Something went wrong": {
+      "forms": ["Une erreur est survenue", "Une erreur s'est produite"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Something went wrong. Please try again.": {
+      "forms": [
+        "Une erreur est survenue. Veuillez réessayer.",
+        "Une erreur s'est produite. Veuillez réessayer."
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Square": {
+      "forms": ["Carré", "Carrée", "Droit"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Unique Viewers": {
+      "forms": ["Spectateurs uniques", "Visiteurs uniques"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Uploading…": {
+      "forms": ["Envoi…", "Téléversement en cours…"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Admin": {
+      "forms": ["Amministratore", "Amministrazione"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  All": {
+      "forms": ["Tutte", "Tutti", "Tutto"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Center": {
+      "forms": ["Al centro", "Centro"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Conversion failed.": {
+      "forms": ["Conversione fallita.", "Conversione non riuscita."],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Copied!": {
+      "forms": ["Copiata!", "Copiato!"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Copy link": {
+      "forms": ["Copia il link", "Copia link"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Creating…": {
+      "forms": ["Creazione in corso…", "Creazione…"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Custom": {
+      "forms": ["Personalizzate", "Personalizzato"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Dark": {
+      "forms": ["Scuri", "Scuro"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Dismiss": {
+      "forms": ["Chiudi", "Ignora"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Embed": {
+      "forms": ["Incorporamento", "Incorporato"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Engagement Insights": {
+      "forms": [
+        "Analisi del coinvolgimento",
+        "Analisi engagement",
+        "Statistiche di Coinvolgimento"
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  English": {
+      "forms": ["English", "Inglese"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Export": {
+      "forms": ["Esporta", "Esportazione"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Fonts": {
+      "forms": ["Caratteri", "Font"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Image URL": {
+      "forms": ["URL dell'immagine", "URL immagine"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Image fit": {
+      "forms": ["Adattamento dell'immagine", "Adattamento immagine"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Image position": {
+      "forms": ["Posizione dell'immagine", "Posizione immagine"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Insert slide": {
+      "forms": ["Inserisci la slide", "Inserisci una slide"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Left": {
+      "forms": ["A sinistra", "Sinistra"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Light": {
+      "forms": ["Chiari", "Chiaro"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Mist": {
+      "forms": ["Mist", "Nebbia"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Never expires": {
+      "forms": ["Nessuna scadenza", "Non scade mai"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  New": {
+      "forms": ["Nuova", "Nuovo"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Next": {
+      "forms": ["Successiva", "Successivi"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  No presentations yet.": {
+      "forms": [
+        "Ancora nessuna presentazione.",
+        "Nessuna presentazione ancora."
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Open": {
+      "forms": ["Aperti", "Apri"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Open presentation": {
+      "forms": ["Apri la presentazione", "Apri presentazione"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Placeholder": {
+      "forms": ["Segnaposto", "Testo segnaposto"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Please enter a name.": {
+      "forms": ["Inserire un nome.", "Inserisci un nome."],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Remove row": {
+      "forms": ["Rimuovi la riga", "Rimuovi riga"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Reset": {
+      "forms": ["Azzera", "Ripristina"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Right": {
+      "forms": ["A destra", "Destra"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Save changes": {
+      "forms": ["Salva le modifiche", "Salva modifiche"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Saved": {
+      "forms": ["Salvate", "Salvato"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Search slides": {
+      "forms": ["Cerca slide", "Cerca tra le slide"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Sending…": {
+      "forms": ["Invio in corso…", "Invio…"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Share": {
+      "forms": ["Condividi", "Link di condivisione"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Slide": {
+      "forms": ["Scorri", "Slide"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Slide library": {
+      "forms": ["Libreria di slide", "Libreria slide"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Soft": {
+      "forms": ["Morbida", "Morbido"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Something went wrong. Please try again.": {
+      "forms": [
+        "Qualcosa è andato storto. Riprova.",
+        "Si è verificato un errore. Riprova."
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Square": {
+      "forms": ["Quadrata", "Quadrato", "Squadrato"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  This share link has expired.": {
+      "forms": [
+        "Questo link di condivisione e scaduto.",
+        "Questo link di condivisione è scaduto."
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Unique Viewers": {
+      "forms": ["Spettatori unici", "Visitatori unici"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Unpublish": {
+      "forms": ["Annulla la pubblicazione", "Annulla pubblicazione"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Weight": {
+      "forms": ["Peso", "Spessore"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  name@example.com": {
+      "forms": ["name@example.com", "nome@esempio.it"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  {count}d ago": {
+      "forms": ["{count} g fa", "{count}g fa"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  {count}h ago": {
+      "forms": ["{count} h fa", "{count}h fa"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Add tags…": {
+      "forms": ["Labels toevoegen…", "Tags toevoegen…"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Add to team library": {
+      "forms": [
+        "Toevoegen aan team bibliotheek",
+        "Toevoegen aan teambibliotheek"
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Admin": {
+      "forms": ["Beheer", "Beheerder"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  All": {
+      "forms": ["Alle", "Alles"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Alt text": {
+      "forms": ["Alt-tekst", "Alt-tekst (optioneel)"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Body": {
+      "forms": ["Inhoud", "Tekst"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Can comment": {
+      "forms": ["Kan reageren", "Mag reageren"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Can edit": {
+      "forms": ["Kan bewerken", "Mag bewerken"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Caption": {
+      "forms": ["Bijschrift", "Onderschrift"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Clear search": {
+      "forms": ["Zoekopdracht wissen", "Zoekveld leegmaken"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Conversion failed.": {
+      "forms": ["Converteren mislukt.", "Omzetten mislukt."],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Copy": {
+      "forms": ["Kopieer", "Kopiëren"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Corner image": {
+      "forms": ["Hoekafbeelding", "Hoekbeeld"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Custom": {
+      "forms": ["Aangepast", "Eigen"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Data Export": {
+      "forms": ["Data-export", "Gegevensexport"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Delete": {
+      "forms": ["Verwijder", "Verwijderen"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Description": {
+      "forms": ["Beschrijving", "Omschrijving"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Dismiss": {
+      "forms": ["Negeren", "Sluiten"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Drag to reorder": {
+      "forms": [
+        "Sleep om te herordenen",
+        "Sleep om te herschikken",
+        "Sleep om te verplaatsen"
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Dutch": {
+      "forms": ["Nederlands", "Nederlandse"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Embed": {
+      "forms": ["Embed", "Ingesloten", "Insluiten"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Engagement Insights": {
+      "forms": ["Engagement Inzichten", "Engagement-inzichten"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  English": {
+      "forms": ["Engels", "Engelse", "English"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Enlarge preview": {
+      "forms": ["Vergroot voorbeeld", "Voorbeeld vergroten"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Export": {
+      "forms": ["Export", "Exporteren"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Fill (crop)": {
+      "forms": ["Vullen (bijsnijden)", "Vullend (crop)"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Fit (no crop)": {
+      "forms": ["Passen (niet bijsnijden)", "Passend (geen crop)"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Generating…": {
+      "forms": ["Bezig met genereren…", "Genereren…"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Grid": {
+      "forms": ["Raster", "Tabel"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Image fit": {
+      "forms": ["Afbeelding passend", "Uitsnede"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Image focus (crop)": {
+      "forms": ["Beeldfocus (crop)", "Beeldfocus (uitsnede)"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Image position": {
+      "forms": ["Afbeelding-positie", "Beeldpositie"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Import": {
+      "forms": ["Importeer", "Importeren"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Layout": {
+      "forms": ["Indeling", "Layout"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Leave": {
+      "forms": ["Afsluiten", "Verlaten"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Link \"{text}\" to:": {
+      "forms": [
+        "\"{text}\" linken naar:",
+        "Maak van \"{text}\" een link naar:"
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Logos": {
+      "forms": ["Logo's", "Logo’s"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Members": {
+      "forms": ["Blokken", "Leden"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  New": {
+      "forms": ["Nieuw", "Nieuw maken"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Notifications": {
+      "forms": ["Meldingen", "Notificaties"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Open": {
+      "forms": ["Open", "Openen"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Please enter a valid email address.": {
+      "forms": [
+        "Voer een geldig e-mailadres in.",
+        "Vul een geldig e-mailadres in."
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Reading file…": {
+      "forms": ["Bestand inlezen…", "Bestand lezen…"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Reset": {
+      "forms": ["Reset", "Resetten"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Restore": {
+      "forms": ["Herstel", "Herstellen"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Save to library": {
+      "forms": ["Bewaren in bibliotheek", "Opslaan in beeldbank"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Search": {
+      "forms": ["Zoek", "Zoeken"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Search slides": {
+      "forms": ["Slides zoeken", "Zoek in slides"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Select slide": {
+      "forms": ["Selecteer slide", "Slide selecteren"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Sending…": {
+      "forms": ["Versturen…", "Verzenden…"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Share": {
+      "forms": ["Deellinks", "Delen"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Show this help": {
+      "forms": ["Deze hulp tonen", "Toon deze hulp"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Square": {
+      "forms": ["Recht", "Vierkant"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Style": {
+      "forms": ["Stijl", "Type"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Tags": {
+      "forms": ["Labels", "Tags"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Tools": {
+      "forms": ["Gereedschap", "Tools"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Two beside text": {
+      "forms": ["Duo naast", "Twee naast tekst"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Unpublish": {
+      "forms": ["Depubliceren", "Publicatie ongedaan maken"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Untitled": {
+      "forms": ["Naamloos", "Zonder titel"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  Workspace": {
+      "forms": ["Werkruimte", "Workspace"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "nl  {count}d ago": {
+      "forms": ["{count} d geleden", "{count} dagen geleden"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Add to team library": {
+      "forms": ["Legg til i team-bibliotek", "Legg til i teamets bibliotek"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Admin": {
+      "forms": ["Admin", "Administrator"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Alt text": {
+      "forms": ["Alt-tekst", "Alternativ tekst"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Bar chart showing views over time": {
+      "forms": [
+        "Søylediagram over visninger over tid",
+        "Søylediagram som viser visninger over tid"
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Center": {
+      "forms": ["Midten", "Midtstilt"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Clear search": {
+      "forms": ["Tøm søk", "Tøm søket"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Completion": {
+      "forms": ["Fullføring", "Fullført"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Conversion failed.": {
+      "forms": ["Konvertering mislyktes.", "Konverteringen mislyktes."],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Copy link": {
+      "forms": ["Kopier lenke", "Kopier lenken"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Custom": {
+      "forms": ["Egendefinert", "Egne"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Dark": {
+      "forms": ["Mørk", "Mørke", "Mørkt"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Dismiss": {
+      "forms": ["Avvis", "Lukk"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Drag to reorder": {
+      "forms": ["Dra for å endre rekkefølgen", "Dra for å omorganisere"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Embed": {
+      "forms": ["Innbygging", "Innebygd"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Engagement Insights": {
+      "forms": ["Engasjementsinnsikt", "Innsikt i engasjement"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  English": {
+      "forms": ["Engelsk", "English"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Export": {
+      "forms": ["Eksport", "Eksporter"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Fill (crop)": {
+      "forms": ["Fyll (beskjær)", "Fyll (med beskjæring)"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Generating…": {
+      "forms": ["Genererer…", "Lager…"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Image URL": {
+      "forms": ["Bilde-URL", "Bildets URL"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Image position": {
+      "forms": ["Bildeposisjon", "Bildets plassering"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Insert slide": {
+      "forms": ["Sett inn lysbilde", "Sett inn lysbildet"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Light": {
+      "forms": ["Lys", "Lyse", "Lyst"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Loading…": {
+      "forms": ["Laster inn…", "Laster…"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Mist": {
+      "forms": ["Dis", "Mist"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Move \"{title}\" to trash?": {
+      "forms": [
+        "Flytte «{title}» til papirkurven?",
+        "Slett «{title}»? Dette kan ikke angres."
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Move to trash": {
+      "forms": ["Flytt til papirkurven", "Slett"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  No results.": {
+      "forms": ["Ingen resultater.", "Ingen treff."],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Preview": {
+      "forms": ["Forhåndsvis", "Forhåndsvisning"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Reading file…": {
+      "forms": ["Leser filen…", "Leser fil…"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Recent": {
+      "forms": ["Nyeste", "Nylige"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Reset": {
+      "forms": ["Nullstill", "Tilbakestill"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Revoke": {
+      "forms": ["Tilbakekall", "Trekk tilbake"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Search slides": {
+      "forms": ["Søk i lysbilder", "Søk lysbilder"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Share": {
+      "forms": ["Del", "Delingslenker"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Slide": {
+      "forms": ["Glid", "Lysbilde"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Slide library": {
+      "forms": ["Lysbilde-bibliotek", "Lysbildebibliotek"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Square": {
+      "forms": ["Firkantet", "Kvadratisk", "Skarp"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  This share link has expired.": {
+      "forms": [
+        "Denne delingslenken er utløpt.",
+        "Denne delingslenken har utløpt."
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  Total Views": {
+      "forms": ["Totale visninger", "Visninger totalt"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  name@example.com": {
+      "forms": ["name@example.com", "navn@eksempel.no"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  {count}d ago": {
+      "forms": ["for {count} d siden", "{count}d siden"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "no  {count}h ago": {
+      "forms": ["for {count} t siden", "{count}t siden"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Admin": {
+      "forms": ["Administracja", "Administrator"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  All": {
+      "forms": ["Wszystkie", "Wszystko"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Anonymous": {
+      "forms": ["Anonimowo", "Anonimowy"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Center": {
+      "forms": ["Do środka", "Środek"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Custom": {
+      "forms": ["Niestandardowy", "Własne"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Dark": {
+      "forms": ["Ciemne", "Ciemny"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Default": {
+      "forms": ["Domyślnie", "Domyślny"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Dismiss": {
+      "forms": ["Odrzuć", "Zamknij"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Display name": {
+      "forms": ["Nazwa wyświetlana", "Wyświetlana nazwa"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Draft": {
+      "forms": ["Szkic", "Wersja robocza"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Embed": {
+      "forms": ["Osadzenie", "Osadzone"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Engagement Insights": {
+      "forms": ["Analiza zaangażowania", "Statystyki Zaangażowania"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  English": {
+      "forms": ["Angielski", "English"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Export": {
+      "forms": ["Eksport", "Eksportuj"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Fonts": {
+      "forms": ["Czcionki", "Kroje pisma"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Image URL": {
+      "forms": ["Adres URL obrazu", "URL obrazu"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Invite": {
+      "forms": ["Zapros", "Zaproś"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Layout": {
+      "forms": ["Uklad", "Układ"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Leave": {
+      "forms": ["Opuść", "Wyjdź"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Left": {
+      "forms": ["Do lewej", "Lewo"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Light": {
+      "forms": ["Jasne", "Jasny"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Load more": {
+      "forms": ["Wczytaj więcej", "Załaduj więcej"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Max items": {
+      "forms": ["Maksymalna liczba elementów", "Maksymalna liczba pozycji"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Mist": {
+      "forms": ["Mgła", "Mist"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Name": {
+      "forms": ["Imię i nazwisko", "Nazwa"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Never logged in": {
+      "forms": ["Nigdy nie zalogowany", "Nigdy się nie logował"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  New": {
+      "forms": ["Nowa", "Nowy"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Next": {
+      "forms": ["Dalej", "Następne"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  No presentations yet.": {
+      "forms": ["Brak jeszcze prezentacji.", "Brak prezentacji."],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Normal": {
+      "forms": ["Normalny", "Zwykły"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Off": {
+      "forms": ["Wył", "Wyłączone"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  On": {
+      "forms": ["Wł", "Włączone"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Open": {
+      "forms": ["Otwarte", "Otwórz"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Original": {
+      "forms": ["Oryginalny", "Oryginał"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Password": {
+      "forms": ["Haslo", "Hasło"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Please enter a name.": {
+      "forms": ["Podaj nazwę.", "Wprowadź nazwę."],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Publish": {
+      "forms": ["Opublikuj", "Publikuj"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Published": {
+      "forms": ["Opublikowane", "Opublikowano", "Opublikowany"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Remove": {
+      "forms": ["Usun", "Usuń"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Reset": {
+      "forms": ["Przywróć", "Zeruj"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Right": {
+      "forms": ["Do prawej", "Prawo"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Search slides": {
+      "forms": ["Szukaj slajdów", "Szukaj w slajdach"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Searching…": {
+      "forms": ["Szukanie…", "Wyszukiwanie…"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Sending…": {
+      "forms": ["Wysylanie…", "Wysyłanie…"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Share": {
+      "forms": ["Linki do udostępnienia", "Udostępnij"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Soft": {
+      "forms": ["Miękki", "Miękkie"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Square": {
+      "forms": ["Kwadrat", "Kwadratowy", "Proste"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  Total Views": {
+      "forms": ["Łączna liczba wyświetleń", "Łączne wyświetlenia"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  name@example.com": {
+      "forms": ["imie@przyklad.pl", "name@example.com"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pl  {count} presentations": {
+      "forms": ["prezentacji: {count}", "{count} prezentacji"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Admin": {
+      "forms": ["Administrador", "Administração"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  All": {
+      "forms": ["Todas", "Todos", "Tudo"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Bar chart showing views over time": {
+      "forms": [
+        "Gráfico de barras com as visualizações ao longo do tempo",
+        "Gráfico de barras de visualizações ao longo do tempo"
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Clear search": {
+      "forms": ["Limpar a pesquisa", "Limpar pesquisa"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Copied!": {
+      "forms": ["Copiada!", "Copiado!"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Copy link": {
+      "forms": ["Copiar ligação", "Copiar o link"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Custom": {
+      "forms": ["Personalizada", "Personalizado", "Personalizados"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Dark": {
+      "forms": ["Escuro", "Escuros"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Default": {
+      "forms": ["Por omissão", "Predefinido"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Display name": {
+      "forms": ["Nome a apresentar", "Nome de exibição"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Drag to reorder": {
+      "forms": ["Arrastar para reordenar", "Arraste para reordenar"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Embed": {
+      "forms": ["Incorporado", "Incorporação"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Engagement Insights": {
+      "forms": ["Dados de interação", "Estatísticas de Engagement"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  English": {
+      "forms": ["English", "Inglês"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Export": {
+      "forms": ["Exportar", "Exportação"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Go to login": {
+      "forms": ["Ir para login", "Ir para o início de sessão"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Grid": {
+      "forms": ["Grade", "Tabela"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Image fit": {
+      "forms": ["Ajuste da imagem", "Ajuste de imagem"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Light": {
+      "forms": ["Claro", "Claros"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Mist": {
+      "forms": ["Mist", "Névoa"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Move \"{title}\" to trash?": {
+      "forms": [
+        "Eliminar «{title}»? Isto não pode ser desfeito.",
+        "Mover «{title}» para a reciclagem?"
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Move to trash": {
+      "forms": ["Eliminar", "Mover para a reciclagem"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Off": {
+      "forms": ["Desativado", "Desligado"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  On": {
+      "forms": ["Ativado", "Ligado"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Open": {
+      "forms": ["Abertos", "Abrir"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Placeholder": {
+      "forms": ["Marcador de posição", "Texto de exemplo"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Please enter a valid email address.": {
+      "forms": [
+        "Introduza um endereço de e-mail válido.",
+        "Por favor, introduza um endereço de e-mail válido."
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Published": {
+      "forms": ["Publicada", "Publicado"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Reading file…": {
+      "forms": ["A ler ficheiro…", "A ler o ficheiro…"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Remove row": {
+      "forms": ["Remover a linha", "Remover linha"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Search": {
+      "forms": ["Pesquisa", "Pesquisar"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Share": {
+      "forms": ["Links de partilha", "Partilhar"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Slide": {
+      "forms": ["Deslizar", "Diapositivo"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Something went wrong. Please try again.": {
+      "forms": [
+        "Algo correu mal. Por favor, tente novamente.",
+        "Algo correu mal. Tente novamente."
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Square": {
+      "forms": ["Quadrada", "Reto"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  Unique Viewers": {
+      "forms": ["Espectadores únicos", "Visitantes únicos"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "pt  {count} selected": {
+      "forms": ["{count} selecionadas", "{count} selecionados"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Add to team library": {
+      "forms": ["Lägg till i team-bibliotek", "Lägg till i teamets bibliotek"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Admin": {
+      "forms": ["Admin", "Administratör"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Alt text": {
+      "forms": ["Alt-text", "Alternativtext"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Bar chart showing views over time": {
+      "forms": [
+        "Stapeldiagram som visar visningar över tid",
+        "Stapeldiagram över visningar över tid"
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Center": {
+      "forms": ["Centrerat", "Mitten"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Clear search": {
+      "forms": ["Rensa sökning", "Rensa sökningen"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Completion": {
+      "forms": ["Slutförande", "Slutförda"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Conversion failed.": {
+      "forms": ["Konvertering misslyckades.", "Konverteringen misslyckades."],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Copied!": {
+      "forms": ["Kopierad!", "Kopierat!"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Copy link": {
+      "forms": ["Kopiera länk", "Kopiera länken"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Custom": {
+      "forms": ["Anpassad", "Egna"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Dark": {
+      "forms": ["Mörk", "Mörka", "Mörkt"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Delete": {
+      "forms": ["Radera", "Ta bort"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Dismiss": {
+      "forms": ["Avvisa", "Stäng"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Drag to reorder": {
+      "forms": ["Dra för att omordna", "Dra för att ändra ordningen"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Embed": {
+      "forms": ["Inbäddad", "Inbäddning"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Engagement Insights": {
+      "forms": ["Engagemangsinsikter", "Insikter om engagemang"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  English": {
+      "forms": ["Engelska", "English"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Export": {
+      "forms": ["Export", "Exportera"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Fill (crop)": {
+      "forms": ["Fyll (beskär)", "Fyll (med beskärning)"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Generating…": {
+      "forms": ["Genererar…", "Skapar…"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Image URL": {
+      "forms": ["Bild-URL", "Bildens URL"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Image position": {
+      "forms": ["Bildens placering", "Bildposition"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Insert slide": {
+      "forms": ["Infoga slide", "Infoga sliden"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Light": {
+      "forms": ["Ljus", "Ljusa", "Ljust"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Load more": {
+      "forms": ["Läs in fler", "Läs in mer"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Loading…": {
+      "forms": ["Laddar…", "Läser in…"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Mist": {
+      "forms": ["Dimma", "Mist"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Move \"{title}\" to trash?": {
+      "forms": [
+        "Flytta \"{title}\" till papperskorgen?",
+        "Radera \"{title}\"? Detta kan inte ångras."
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Move to trash": {
+      "forms": ["Flytta till papperskorgen", "Radera"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Never expires": {
+      "forms": ["Går aldrig ut", "Utgår aldrig"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Preview": {
+      "forms": ["Förhandsgranska", "Förhandsgranskning"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Reading file…": {
+      "forms": ["Läser filen…", "Läser fil…"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Reset": {
+      "forms": ["Nollställ", "Återställ"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Search slides": {
+      "forms": ["Sök bland slides", "Sök slides"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Share": {
+      "forms": ["Dela", "Delningslänkar"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Slide": {
+      "forms": ["Glid", "Slide"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Slide library": {
+      "forms": ["Slide-bibliotek", "Slidebibliotek"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Square": {
+      "forms": ["Fyrkantig", "Kvadratisk", "Skarp"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  This share link has expired.": {
+      "forms": [
+        "Den här delningslänken har gått ut.",
+        "Denna delningslänk har gått ut."
+      ],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Total Views": {
+      "forms": ["Totala visningar", "Visningar totalt"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  name@example.com": {
+      "forms": ["name@example.com", "namn@exempel.se"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  this presentation": {
+      "forms": ["den här presentationen", "denna presentation"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  {count}d ago": {
+      "forms": ["för {count} d sedan", "{count}d sedan"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  {count}h ago": {
+      "forms": ["för {count} tim sedan", "{count}h sedan"],
+      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    }
+  }
+}
