@@ -92,9 +92,11 @@ Matches the editor's existing language-sync semantics:
 - Decks without an `i18n` block stay single-language (`pres.lang`); the
   projection does not invent an `i18n` block for them.
 
-Improvement over today: nested item texts (e.g. `text-blocks-slide`
-`rows[].blocks[].title/body`) are per-language in the doc, while the current
-editor sync overwrites them with the source language on every save.
+Nested item texts (e.g. `text-blocks-slide` `rows[].blocks[].title/body`) are
+per-language in the doc — and, since B164, in the editor sync and the translate
+pipeline too: `mapItemTexts` in `shared/slide-types/text-fields.js` is the one
+recursion all of them walk, so the codec and the JSON pipeline no longer
+disagree about how deep a text field can sit.
 
 ## Projection (doc → JSON)
 

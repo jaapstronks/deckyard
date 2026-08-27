@@ -1,6 +1,9 @@
 import {
-  translatableItemKeysForType,
+  mapItemTexts,
+  textFieldSpecForType,
+  translatableItemsFieldsForType,
   translatableKeysForType,
+  valueAtPath,
 } from '../../../shared/slide-types/text-fields.js';
 import { getLlmConfig } from '../llm/config.js';
 import { LlmError } from '../llm/error.js';
@@ -40,16 +43,14 @@ function translateKeysForSlideType(type) {
 }
 
 /**
- * Get items fields info for a slide type: `{ key, itemKeys }` for each
- * `items` field that carries translatable text.
+ * Get items fields info for a slide type: `{ key, itemKeys, itemsFields? }`
+ * for each `items` field that carries translatable text, at any depth. This is
+ * the shape the model sees as `slideMeta.itemsFields`.
  * @param {string} type - Slide type name
- * @returns {{key: string, itemKeys: string[]}[]}
+ * @returns {{key: string, itemKeys: string[], itemsFields?: Object[]}[]}
  */
 function itemsFieldsForSlideType(type) {
-  return [...translatableItemKeysForType(type)].map(([key, itemKeys]) => ({
-    key,
-    itemKeys,
-  }));
+  return translatableItemsFieldsForType(type);
 }
 
 export async function translatePresentationStrings(
@@ -98,7 +99,7 @@ export async function translatePresentationStrings(
     '- Keep slide count, order, ids, and types EXACTLY the same.',
     '- Do NOT change any non-text values: URLs, icon names, enums like layout/background/imageSide, booleans, numbers.',
     '- Only translate string fields that are explicitly listed per slide in slideMeta.translateKeys and the top-level "title".',
-    '- For array fields listed in slideMeta.itemsFields, translate only the specified itemKeys within each array item.',
+    '- For array fields listed in slideMeta.itemsFields, translate only the specified itemKeys within each array item; an entry may carry its own itemsFields for a nested array, which follows the same rule at that level.',
     '- Preserve markdown structure in body fields (lists, headings, links).',
     '- Keep array item count and order EXACTLY the same.',
     '',
@@ -179,7 +180,7 @@ export async function translatePresentationStrings(
       src?.content && typeof src.content === 'object' ? src.content : {};
     const nextContent = { ...srcContent };
     const keys = translateKeysForSlideType(src?.type);
-    const itemsFields = itemsFieldsForSlideType(src?.type);
+    const spec = textFieldSpecForType(src?.type);
     const tContent =
       t?.content && typeof t.content === 'object' ? t.content : null;
     const existing = targetById.get(src.id);
@@ -202,42 +203,23 @@ export async function translatePresentationStrings(
       nextContent[k] = v;
     }
 
-    // Handle items arrays (e.g., items, metrics, levels, cells, images)
-    for (const { key: arrKey, itemKeys } of itemsFields) {
-      const srcArr = Array.isArray(srcContent?.[arrKey])
-        ? srcContent[arrKey]
-        : [];
-      const tArr = Array.isArray(tContent?.[arrKey]) ? tContent[arrKey] : [];
-      const existingArr = Array.isArray(existingContent?.[arrKey])
-        ? existingContent[arrKey]
-        : [];
-
-      // Merge translated items - preserve all source fields, only update translatable keys
-      const mergedArr = srcArr.map((srcItem, idx) => {
-        const tItem =
-          tArr[idx] && typeof tArr[idx] === 'object' ? tArr[idx] : {};
-        const existingItem =
-          existingArr[idx] && typeof existingArr[idx] === 'object'
-            ? existingArr[idx]
-            : {};
-        const mergedItem = { ...srcItem };
-
-        for (const itemKey of itemKeys) {
-          const v = tItem[itemKey];
-          if (typeof v !== 'string') continue;
+    // Handle items arrays (e.g., items, metrics, levels, cells, images) and
+    // their nested items arrays: `mapItemTexts` walks to the bottom, so
+    // `rows[].blocks[].title` is matched per index like any other text field.
+    for (const [arrKey, itemSpec] of spec.items) {
+      if (!Array.isArray(srcContent?.[arrKey])) continue;
+      nextContent[arrKey] = mapItemTexts(srcContent[arrKey], itemSpec, {
+        path: [arrKey],
+        // Source fields survive by default; only text keys are replaced.
+        resolve: (path) => {
           if (fillMissing) {
-            const cur = existingItem[itemKey];
-            if (typeof cur === 'string' && cur.trim()) {
-              mergedItem[itemKey] = cur;
-              continue;
-            }
+            const cur = valueAtPath(existingContent, path);
+            if (typeof cur === 'string' && cur.trim()) return cur;
           }
-          mergedItem[itemKey] = v;
-        }
-        return mergedItem;
+          const v = valueAtPath(tContent, path);
+          return typeof v === 'string' ? v : undefined;
+        },
       });
-
-      nextContent[arrKey] = mergedArr;
     }
 
     return {
@@ -411,7 +393,7 @@ export async function translatePresentationStringsFillMissing(
     '- Keep slide count, order, ids, and types EXACTLY the same as the TARGET presentation.',
     '- Only fill in MISSING/EMPTY target strings for the requested fields. Do NOT overwrite any non-empty target strings.',
     '- Do NOT change any non-text values: URLs, icon names, enums like layout/background/imageSide, booleans, numbers.',
-    '- For array fields listed in slideMeta.itemsFields, translate only the specified itemKeys within each array item.',
+    '- For array fields listed in slideMeta.itemsFields, translate only the specified itemKeys within each array item; an entry may carry its own itemsFields for a nested array, which follows the same rule at that level.',
     '- Preserve markdown structure in body fields (lists, headings, links).',
     '- Keep array item count and order EXACTLY the same.',
     '',
@@ -521,7 +503,7 @@ export async function translatePresentationStringsFillMissing(
         : {};
     const nextContent = { ...tgtContent };
     const keys = translateKeysForSlideType(tSlide?.type);
-    const itemsFields = itemsFieldsForSlideType(tSlide?.type);
+    const spec = textFieldSpecForType(tSlide?.type);
     const outContent =
       out?.content && typeof out.content === 'object' ? out.content : null;
 
@@ -533,40 +515,21 @@ export async function translatePresentationStringsFillMissing(
       if (typeof v === 'string') nextContent[k] = v;
     }
 
-    // Handle items arrays (e.g., items, metrics, levels, cells, images)
-    for (const { key: arrKey, itemKeys } of itemsFields) {
-      const srcArr = Array.isArray(srcContent?.[arrKey])
-        ? srcContent[arrKey]
-        : [];
-      const tgtArr = Array.isArray(tgtContent?.[arrKey])
-        ? tgtContent[arrKey]
-        : [];
-      const outArr = Array.isArray(outContent?.[arrKey])
-        ? outContent[arrKey]
-        : [];
-
-      // Merge translated items - preserve all target fields, only fill missing keys
-      const mergedArr = srcArr.map((srcItem, itemIdx) => {
-        const tgtItem =
-          tgtArr[itemIdx] && typeof tgtArr[itemIdx] === 'object'
-            ? tgtArr[itemIdx]
-            : {};
-        const outItem =
-          outArr[itemIdx] && typeof outArr[itemIdx] === 'object'
-            ? outArr[itemIdx]
-            : {};
-        const mergedItem = { ...tgtItem };
-
-        for (const itemKey of itemKeys) {
-          const cur = mergedItem[itemKey];
-          if (typeof cur === 'string' && cur.trim()) continue; // don't overwrite
-          const v = outItem[itemKey];
-          if (typeof v === 'string') mergedItem[itemKey] = v;
-        }
-        return mergedItem;
+    // Handle items arrays and their nested items arrays. The target array is
+    // the base here (this pass fills blanks, it does not restructure), while
+    // item count and order still follow the source.
+    for (const [arrKey, itemSpec] of spec.items) {
+      if (!Array.isArray(srcContent?.[arrKey])) continue;
+      nextContent[arrKey] = mapItemTexts(srcContent[arrKey], itemSpec, {
+        path: [arrKey],
+        base: Array.isArray(tgtContent?.[arrKey]) ? tgtContent[arrKey] : [],
+        resolve: (path) => {
+          const cur = valueAtPath(tgtContent, path);
+          if (typeof cur === 'string' && cur.trim()) return undefined; // don't overwrite
+          const v = valueAtPath(outContent, path);
+          return typeof v === 'string' ? v : undefined;
+        },
       });
-
-      nextContent[arrKey] = mergedArr;
     }
 
     return {
