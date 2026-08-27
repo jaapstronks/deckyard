@@ -10,8 +10,8 @@ import {
   methodNotAllowed,
   notFound,
   serveJson,
-  unauthorized,
   requireJsonBody,
+  forbidden,
 } from '../../../utils/http.js';
 import { canWritePresentation } from '../../../utils/presentation-authz/index.js';
 import {
@@ -43,7 +43,7 @@ export async function handlePresentationTranslate(
   }
 
   if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission }))
-    return unauthorized(res);
+    return forbidden(res);
 
   pres.i18n = pres.i18n && typeof pres.i18n === 'object' ? pres.i18n : {};
   pres.i18n.versions =

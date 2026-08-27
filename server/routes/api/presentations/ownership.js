@@ -13,10 +13,10 @@ import {
   methodNotAllowed,
   notFound,
   serveJson,
-  unauthorized,
   badRequest,
   requireJsonBody,
   jsonError,
+  forbidden,
 } from '../../../utils/http.js';
 import { normalizeEmail } from '../../../utils/normalize.js';
 import {
@@ -44,7 +44,7 @@ export async function handleOwnershipTransfer(
   // Transfer is owner-scoped: `canTransferOwnership` never consults the
   // collaborator ladder, so there is nothing to fetch for it.
   if (!canTransferOwnership({ user: authedUser, pres })) {
-    return unauthorized(res);
+    return forbidden(res);
   }
 
   const jsonResult = await requireJsonBody(req, res);

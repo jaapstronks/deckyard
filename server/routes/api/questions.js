@@ -7,6 +7,7 @@ import {
   storageError,
   unauthorized,
   withErrorHandler,
+  forbidden,
 } from '../../utils/http.js';
 import { getFollowStateForPresentation } from '../../storage/live-sessions/index.js';
 import crypto from 'node:crypto';
@@ -37,8 +38,7 @@ async function handleQuestionRemove(
   // accidental abuse. Admin *of the workspace this deck lives in* — an
   // instance admin who is a plain member of the active organization is not a
   // moderator here (shared/organization-role.js).
-  if (!isOrganizationAdmin(authedUser))
-    return unauthorized(res, 'Admin required');
+  if (!isOrganizationAdmin(authedUser)) return forbidden(res, 'Admin required');
 
   const state = await getFollowStateForPresentation(
     storageScope,
@@ -81,7 +81,7 @@ async function handleQuestionPromote(
   }
 
   if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission }))
-    return unauthorized(res);
+    return forbidden(res);
 
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;

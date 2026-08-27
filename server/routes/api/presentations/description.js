@@ -4,8 +4,8 @@ import {
   methodNotAllowed,
   notFound,
   serveJson,
-  unauthorized,
   requireJsonBody,
+  forbidden,
 } from '../../../utils/http.js';
 import { getOptionalString } from '../../../utils/request-validators.js';
 import { canReadPresentation } from '../../../utils/presentation-authz/index.js';
@@ -88,8 +88,7 @@ export async function handlePresentationDescriptionGenerate(
 
   const pres = await getPresentation(storageScope, id);
   if (!pres) return notFound(res);
-  if (!canReadPresentation({ user: authedUser, pres }))
-    return unauthorized(res);
+  if (!canReadPresentation({ user: authedUser, pres })) return forbidden(res);
 
   const lang = normalizeLangHint(
     (pres?.i18n && typeof pres.i18n === 'object' && pres.i18n.active) ||

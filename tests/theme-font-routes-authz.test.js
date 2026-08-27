@@ -18,15 +18,12 @@
  *      updating, deleting, setting a default or previewing a draft needs
  *      `canManage` (designer, or — single-org — an admin). A plain member is
  *      refused every mutation.
- *   2. **The two modules refuse a non-manager differently.** A theme mutation
- *      without the capability is a **403** (`forbidden`, "Admin access
- *      required"); the identical denial on a font family is a **401**
- *      (`unauthorized`). That asymmetry is a known pre-existing inconsistency —
- *      a beta-doctrine tidy-up candidate, logged in
- *      briefs/test-coverage-gaps.md — not a designed contract.
- *      `route-dispatch-libraries-and-sessions` pins it at the guard; pinning it here at
- *      the handler contract keeps the eventual convergence from silently
- *      changing one surface's status code without the other.
+ *   2. **Both modules refuse a non-manager the same way: 403 `forbidden`.**
+ *      The caller is signed in; what they lack is permission, not a session
+ *      (D68). Font mutations used to answer 401 here where the identical theme
+ *      denial answered 403 — that asymmetry is gone.
+ *      `route-dispatch-libraries-and-sessions` pins it at the guard; pinning it
+ *      here at the handler contract keeps the two surfaces converged.
  *
  * Feasibility note (opt-out, logged in briefs/test-coverage-gaps.md): three
  * font-family paths cross a boundary this recipe cannot drive — `discover-adobe`
@@ -381,7 +378,7 @@ test('setting a default on a missing theme is a 404', async () => {
 });
 
 // ===========================================================================
-// font-families.js — reads need a session, mutations need canManage (401 on deny)
+// font-families.js — reads need a session, mutations need canManage (403 on deny)
 // ===========================================================================
 
 test('listing font families needs a session', async () => {
@@ -396,7 +393,7 @@ test('listing font families needs a session', async () => {
   assert.ok(Array.isArray(member.res.body.fontFamilies));
 });
 
-test('a designer can create a font family; a member gets a 401 (not 403)', async () => {
+test('a designer can create a font family; a member gets a 403', async () => {
   seed();
   const denied = await call(handleFontFamilies, 'POST', '/api/font-families', {
     as: ACTORS.member,
@@ -404,10 +401,10 @@ test('a designer can create a font family; a member gets a 401 (not 403)', async
   });
   assert.equal(
     denied.res.statusCode,
-    401,
-    'font mutations deny with unauthorized — the known asymmetry with themes (see header rule 2)',
+    403,
+    'font mutations deny with forbidden, same as themes (see header rule 2)',
   );
-  assert.equal(denied.res.body.error, 'unauthorized');
+  assert.equal(denied.res.body.error, 'forbidden');
 
   const created = await call(handleFontFamilies, 'POST', '/api/font-families', {
     as: ACTORS.designer,
@@ -458,7 +455,7 @@ test('reading, updating and deleting a font family by id', async () => {
       body: { name: 'Renamed Serif' },
     },
   );
-  assert.equal(memberUpdate.res.statusCode, 401);
+  assert.equal(memberUpdate.res.statusCode, 403);
   const update = await call(
     handleFontFamilies,
     'PUT',
@@ -477,7 +474,7 @@ test('reading, updating and deleting a font family by id', async () => {
     `/api/font-families/${id}`,
     { as: ACTORS.member },
   );
-  assert.equal(memberDelete.res.statusCode, 401);
+  assert.equal(memberDelete.res.statusCode, 403);
   const del = await call(
     handleFontFamilies,
     'DELETE',
@@ -506,7 +503,7 @@ test('importing an Adobe family creates it without a font file', async () => {
       body: { projectId: 'abc123', familyName: 'Acumin' },
     },
   );
-  assert.equal(denied.res.statusCode, 401);
+  assert.equal(denied.res.statusCode, 403);
 
   const missing = await call(
     handleFontFamilies,
@@ -549,7 +546,7 @@ test('the Adobe discovery route gates and validates before it reaches the networ
   );
   assert.equal(
     denied.res.statusCode,
-    401,
+    403,
     'the canManage gate runs before any fetch',
   );
 
@@ -603,7 +600,7 @@ test('the file-upload variant route is gated before it reaches the media provide
   );
   assert.equal(
     denied.res.statusCode,
-    401,
+    403,
     'the canManage gate runs before the media provider is touched',
   );
 
@@ -630,5 +627,5 @@ test('removing a variant is designer-gated', async () => {
       as: ACTORS.member,
     },
   );
-  assert.equal(res.statusCode, 401);
+  assert.equal(res.statusCode, 403);
 });

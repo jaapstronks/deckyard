@@ -177,7 +177,8 @@ nothing itself:
    (cached).
 3. Apply the decider for the requested permission
    (`read` → `canReadPresentation`, `write` → `canWritePresentation`,
-   `delete`, `manage`). `false` → **401**.
+   `delete`, `manage`). `false` → **403** — the caller is past the login gate,
+   so what they lack is permission, not a session (D68).
 4. Return the presentation.
 
 `withPresentationReadAuth` is the same with one extra rung: if the

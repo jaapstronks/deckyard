@@ -7,7 +7,7 @@
  *       pushing live state, opening/closing interactions, driving remote
  *       control, and exporting audience feedback are all presenter actions and
  *       must require write permission on the backing presentation. A logged-in
- *       non-owner must get 401 — otherwise a public follow-code resolves to a
+ *       non-owner must get 403 — otherwise a public follow-code resolves to a
  *       presentationId, then to the live sessionId, then to full control of
  *       someone else's deck plus audience-PII export. Audience reads (state GET,
  *       SSE) stay capability-based.
@@ -213,7 +213,7 @@ async function callLiveSessions({ root, method, pathname, body, authedUser }) {
 // H4 — live-session per-resource authorization
 // ============================================================================
 
-test('H4: a non-owner cannot create/resume a live session (401)', async () => {
+test('H4: a non-owner cannot create/resume a live session (403)', async () => {
   await withTempRoot(async (root) => {
     seedPresentation('deck-a', { ownerEmail: OWNER.email });
     const { res } = await callLiveSessions({
@@ -223,7 +223,7 @@ test('H4: a non-owner cannot create/resume a live session (401)', async () => {
       body: { presentationId: 'deck-a' },
       authedUser: FOREIGN,
     });
-    assert.equal(res.statusCode, 401);
+    assert.equal(res.statusCode, 403);
   });
 });
 
@@ -242,7 +242,7 @@ test('H4: the owner can create a live session (201)', async () => {
   });
 });
 
-test('H4: a non-owner cannot enable remote control on a live session (401)', async () => {
+test('H4: a non-owner cannot enable remote control on a live session (403)', async () => {
   await withTempRoot(async (root) => {
     seedPresentation('deck-c', { ownerEmail: OWNER.email });
     seedSession(root, 'sess-c', 'deck-c');
@@ -252,7 +252,7 @@ test('H4: a non-owner cannot enable remote control on a live session (401)', asy
       pathname: '/api/live-sessions/sess-c/control/enable',
       authedUser: FOREIGN,
     });
-    assert.equal(res.statusCode, 401);
+    assert.equal(res.statusCode, 403);
     sessions.delete('sess-c');
   });
 });
@@ -272,7 +272,7 @@ test('H4: the owner can enable remote control (200)', async () => {
   });
 });
 
-test('H4: a non-owner cannot push live slide state (401)', async () => {
+test('H4: a non-owner cannot push live slide state (403)', async () => {
   await withTempRoot(async (root) => {
     seedPresentation('deck-e', { ownerEmail: OWNER.email });
     seedSession(root, 'sess-e', 'deck-e');
@@ -283,12 +283,12 @@ test('H4: a non-owner cannot push live slide state (401)', async () => {
       body: { presentationId: 'deck-e', slideId: 's1', slideIndex: 0 },
       authedUser: FOREIGN,
     });
-    assert.equal(res.statusCode, 401);
+    assert.equal(res.statusCode, 403);
     sessions.delete('sess-e');
   });
 });
 
-test('H4: a non-owner cannot export audience feedback CSV (401, no PII leaked)', async () => {
+test('H4: a non-owner cannot export audience feedback CSV (403, no PII leaked)', async () => {
   await withTempRoot(async (root) => {
     seedPresentation('deck-f', {
       ownerEmail: OWNER.email,
@@ -301,7 +301,7 @@ test('H4: a non-owner cannot export audience feedback CSV (401, no PII leaked)',
       pathname: '/api/live-sessions/sess-f/feedback/fb1.csv',
       authedUser: FOREIGN,
     });
-    assert.equal(res.statusCode, 401);
+    assert.equal(res.statusCode, 403);
     assert.ok(
       !/deviceId/.test(res.body()),
       'no feedback CSV emitted to a non-owner',

@@ -125,7 +125,7 @@ No dedicated feature flag gates custom slide types. Two conditions apply:
 
 Every mutating route (`POST`/`PUT`/`DELETE`/duplicate/reorder) checks
 `canManage` (`server/utils/route-middleware.js`), i.e. designer or admin
-capability resolved via `server/utils/designer.js`; non-designers get `401`.
+capability resolved via `server/utils/designer.js`; non-designers get `403`.
 Reads are org-scoped. Tenancy is the `organization_id` FK plus the
 per-organization unique slug index; the general isolation rules (R1–R3) are in
 [`tenant-isolation.md`](tenant-isolation.md), not repeated here.

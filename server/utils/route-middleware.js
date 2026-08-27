@@ -11,7 +11,7 @@
 
 import { getPresentation } from '../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../storage/collaborators.js';
-import { notFound, unauthorized, badRequest } from './http.js';
+import { notFound, badRequest, forbidden } from './http.js';
 import {
   canReadPresentation,
   canWritePresentation,
@@ -143,7 +143,7 @@ export function customHtmlEditViolation(prevSlides, nextSlides, allowed) {
  *
  * @example
  * const { canRead, guestInfo } = await checkPresentationReadAccess({ req, authedUser, pres });
- * if (!canRead) return unauthorized(res);
+ * if (!canRead) return forbidden(res);
  */
 export async function checkPresentationReadAccess({ req, authedUser, pres }) {
   // Fetch collaborator permission if the user is authenticated
@@ -271,7 +271,7 @@ export async function withPresentationAuth({
   }
 
   if (!checkFn({ user: authedUser, pres, collaboratorPermission })) {
-    unauthorized(res);
+    forbidden(res);
     return null;
   }
 
@@ -325,7 +325,7 @@ export async function withPresentationReadAuth({
   const { canRead, guestInfo, collaboratorPermission } =
     await checkPresentationReadAccess({ req, authedUser, pres });
   if (!canRead) {
-    unauthorized(res);
+    forbidden(res);
     return { pres: null, guestInfo: null, collaboratorPermission: null };
   }
 
@@ -362,7 +362,7 @@ export async function withPresentationCommentAuth({
   const { canComment, guestInfo, collaboratorPermission } =
     await checkPresentationCommentAccess({ req, authedUser, pres });
   if (!canComment) {
-    unauthorized(res);
+    forbidden(res);
     return { pres: null, guestInfo: null, collaboratorPermission: null };
   }
 

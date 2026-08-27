@@ -14,7 +14,7 @@
  * a collaborator holding `edit`, and nobody else. A `comment` collaborator can
  * leave notes all over the deck and still may not hand out access to it, and an
  * anonymous caller who happens to know a linkId gets nothing. Every refusal is
- * a 401 that never touches the guest store, which is asserted directly rather
+ * a 403 that never touches the guest store, which is asserted directly rather
  * than inferred from the status code.
  *
  * House shape (as in tests/comments-routes-authz.test.js and
@@ -262,24 +262,24 @@ test('an instance admin is not a write grant on someone else’s deck', async ()
     as: ADMIN,
     body: { email: 'byadmin@example.com', sendInvitation: false },
   });
-  assert.equal(res.statusCode, 401);
+  assert.equal(res.statusCode, 403);
   assert.deepEqual(await listGuestsForShareLink(testScope(), d.linkId), []);
 });
 
 for (const [actor, who] of REFUSED) {
-  test(`pre-register is refused for ${who} (401), and stores nothing`, async () => {
+  test(`pre-register is refused for ${who} (403), and stores nothing`, async () => {
     const d = await seed();
     const { res } = await call('POST', guestsPath(d), {
       as: actor,
       body: { email: 'sneaky@example.com', sendInvitation: false },
     });
-    assert.equal(res.statusCode, 401);
+    assert.equal(res.statusCode, 403);
     const stored = await listGuestsForShareLink(testScope(), d.linkId);
     assert.deepEqual(stored, [], 'the refused write never reached the store');
   });
 }
 
-test('pre-register on a deck that does not exist is a 404, not a 401', async () => {
+test('pre-register on a deck that does not exist is a 404, not a 403', async () => {
   // Absent before unauthorized: the deck is fetched first, so a wrong id cannot
   // be used to probe which decks exist by watching the status flip.
   const d = await seed();
@@ -321,14 +321,14 @@ test('the owner lists the guests on a link', async () => {
 });
 
 for (const [actor, who] of REFUSED) {
-  test(`listing guests is refused for ${who} (401), and leaks no addresses`, async () => {
+  test(`listing guests is refused for ${who} (403), and leaks no addresses`, async () => {
     const d = await seed();
     await call('POST', guestsPath(d), {
       as: OWNER,
       body: { email: 'private@example.com', sendInvitation: false },
     });
     const { res } = await call('GET', guestsPath(d), { as: actor });
-    assert.equal(res.statusCode, 401);
+    assert.equal(res.statusCode, 403);
     assert.doesNotMatch(
       String(res.body || ''),
       /private@example\.com/,
@@ -360,7 +360,7 @@ test('the owner removes a guest, and the guest is gone', async () => {
 });
 
 for (const [actor, who] of REFUSED) {
-  test(`removing a guest is refused for ${who} (401), and the guest stays`, async () => {
+  test(`removing a guest is refused for ${who} (403), and the guest stays`, async () => {
     const d = await seed();
     const created = jsonBody(
       (
@@ -375,7 +375,7 @@ for (const [actor, who] of REFUSED) {
       `${guestsPath(d)}/${created.guest.id}`,
       { as: actor },
     );
-    assert.equal(res.statusCode, 401);
+    assert.equal(res.statusCode, 403);
     const stored = await listGuestsForShareLink(testScope(), d.linkId);
     assert.deepEqual(
       stored.map((g) => g.email),
@@ -390,7 +390,7 @@ for (const [actor, who] of REFUSED) {
 // ===========================================================================
 
 for (const [actor, who] of REFUSED) {
-  test(`resending an invitation is refused for ${who} (401)`, async () => {
+  test(`resending an invitation is refused for ${who} (403)`, async () => {
     const d = await seed();
     const created = jsonBody(
       (
@@ -405,7 +405,7 @@ for (const [actor, who] of REFUSED) {
       `${guestsPath(d)}/${created.guest.id}/resend`,
       { as: actor },
     );
-    assert.equal(res.statusCode, 401);
+    assert.equal(res.statusCode, 403);
   });
 }
 

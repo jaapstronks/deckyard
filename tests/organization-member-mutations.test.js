@@ -562,14 +562,14 @@ test('an instance admin who is a plain member cannot write organization settings
     await patchOrgSettings(instanceAdmin('mia@example.com'), {
       adminsAreDesigners: false,
     }),
-    401,
+    403,
     'the instance flag stops at the edge of an organization someone only belongs to',
   );
   assert.equal(
     await patchOrgSettings(instanceAdmin('mia@example.com'), {
       rss: { enabled: true },
     }),
-    401,
+    403,
   );
 });
 
@@ -604,7 +604,7 @@ test('the membership narrows the instance role, it does not replace it', async (
       },
       { adminsAreDesigners: false },
     ),
-    401,
+    403,
   );
 });
 

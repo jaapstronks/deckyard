@@ -7,8 +7,8 @@ import {
   methodNotAllowed,
   notFound,
   serveJson,
-  unauthorized,
   requireJsonBody,
+  forbidden,
 } from '../../../utils/http.js';
 import { canReadPresentation } from '../../../utils/presentation-authz/index.js';
 
@@ -31,7 +31,7 @@ export async function handlePresentationDuplicate(
   }
 
   if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission }))
-    return unauthorized(res);
+    return forbidden(res);
 
   // For now we only support simple server-side duplication. Keep request body as a
   // forward-compatible hook for future options (e.g. scope override for admins).

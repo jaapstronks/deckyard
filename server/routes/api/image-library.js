@@ -17,6 +17,7 @@ import {
   unauthorized,
   requireJsonBody,
   withErrorHandler,
+  forbidden,
 } from '../../utils/http.js';
 import { getFeatureFlags } from '../../config/flags-snapshot.js';
 import { dispatchRoutes } from '../../utils/router.js';
@@ -82,7 +83,7 @@ async function handleGenerateAltsPreview({ repoRoot, req, res, authedUser }) {
   if (flags.demoMode || flags.sandboxMode)
     return methodNotAllowed(res, ['GET']);
   if (!authedUser) return unauthorized(res, 'Login required');
-  if (!flags.aiAltText) return unauthorized(res, 'AI alt text is not enabled');
+  if (!flags.aiAltText) return forbidden(res, 'AI alt text is not enabled');
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
@@ -128,7 +129,7 @@ async function handleItemGenerateAlts(
   if (flags.demoMode || flags.sandboxMode)
     return methodNotAllowed(res, ['GET']);
   if (!authedUser) return unauthorized(res, 'Login required');
-  if (!flags.aiAltText) return unauthorized(res, 'AI alt text is not enabled');
+  if (!flags.aiAltText) return forbidden(res, 'AI alt text is not enabled');
   const item = await getImageLibraryItem(storageScope, imageId);
   if (!item) return notFound(res);
   const parsed = await requireJsonBody(req, res);
@@ -240,7 +241,7 @@ async function handleImageItem(
     // admin who is a plain member of the active organization may not throw
     // away its images (shared/organization-role.js).
     if (!isOrganizationAdmin(authedUser))
-      return unauthorized(res, 'Admin required');
+      return forbidden(res, 'Admin required');
     const deleted = await deleteImageLibraryItem(storageScope, imageId);
     if (!deleted.ok) return notFound(res);
     serveJson(res, 200, { ok: true });

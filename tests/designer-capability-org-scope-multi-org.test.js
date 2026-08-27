@@ -329,7 +329,7 @@ test('the organization settings route does not carry a third copy of the bypass'
       },
       { disabledSlideTypes: ['title-slide'] },
     ),
-    401,
+    403,
     'an instance admin who is a plain member cannot disable slide types there',
   );
 });

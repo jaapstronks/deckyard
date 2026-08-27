@@ -369,7 +369,7 @@ test('handing the deck over costs the giver the transfer right', async () => {
   });
   assert.equal(
     res.statusCode,
-    401,
+    403,
     'the creator stamp does not let the giver claim the deck back',
   );
   await assertStillOwnedBy(
@@ -400,7 +400,7 @@ test('a complete hand-over costs the giver every power over the deck (D49)', asy
   });
   assert.equal(
     del.res.statusCode,
-    401,
+    403,
     'the creator stamp does not let the giver delete the deck',
   );
   assert.ok(
@@ -412,7 +412,7 @@ test('a complete hand-over costs the giver every power over the deck (D49)', asy
     as: OWNER,
     body: { visibility: 'organization' },
   });
-  assert.equal(vis.res.statusCode, 401, 'nor change who may see it');
+  assert.equal(vis.res.statusCode, 403, 'nor change who may see it');
   const after = await getPresentation(testScope(), pres.id);
   assert.equal(after.visibility, 'private', 'the deck is still private');
 });
@@ -440,13 +440,13 @@ test('the new owner may transfer on, on the strength of ownership alone', async 
 // ===========================================================================
 
 for (const [actor, who] of REFUSED) {
-  test(`transfer is refused for ${who} (401), and the deck does not move`, async () => {
+  test(`transfer is refused for ${who} (403), and the deck does not move`, async () => {
     const pres = await seed();
     const { res } = await call('POST', transferPath(pres.id), {
       as: actor,
       body: { newOwnerEmail: STRANGER.email },
     });
-    assert.equal(res.statusCode, 401);
+    assert.equal(res.statusCode, 403);
     await assertStillOwnedBy(
       pres.id,
       OWNER,
@@ -455,7 +455,7 @@ for (const [actor, who] of REFUSED) {
   });
 }
 
-test('transfer on a deck that does not exist is a 404, not a 401', async () => {
+test('transfer on a deck that does not exist is a 404, not a 403', async () => {
   // Absent before unauthorized: the deck is fetched first, so a wrong id cannot
   // be used to probe which decks exist by watching the status flip.
   await seed();

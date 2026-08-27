@@ -48,8 +48,9 @@ info:
     - `200` - Success
     - `201` - Created
     - `400` - Bad Request
-    - `401` - Unauthorized
-    - `403` - Forbidden
+    - `401` - Unauthorized (no valid API key: missing, malformed or revoked)
+    - `403` - Forbidden (the key is valid but lacks the permission, or has no
+      access to this presentation)
     - `404` - Not Found
     - `405` - Method Not Allowed (the `Allow` header lists the accepted methods)
     - `413` - Payload Too Large (request body over the configured size cap)
@@ -2319,14 +2320,20 @@ components:
             $ref: '#/components/schemas/Error'
 
     Unauthorized:
-      description: Unauthorized - Invalid or missing API key
+      description: >-
+        Unauthorized - no valid credential. The API key is missing, malformed
+        or revoked. Authenticating with a valid key is what changes the answer;
+        a valid key that simply lacks the permission gets 403, never 401.
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
 
     Forbidden:
-      description: Forbidden - Insufficient permissions
+      description: >-
+        Forbidden - the credential is valid but not allowed: the key lacks the
+        required permission, or the caller has no (write) access to this
+        presentation. Retrying with the same key will not help.
       content:
         application/json:
           schema:

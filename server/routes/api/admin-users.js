@@ -12,6 +12,7 @@ import {
   storageError,
   unauthorized,
   withErrorHandler,
+  forbidden,
 } from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { getClientIp, getOrgId } from '../../utils/context.js';
@@ -456,7 +457,7 @@ export const handleAdminUsers = withErrorHandler('admin-users', (ctx) => {
   }
 
   if (!ctx.authedUser.isAdmin) {
-    return unauthorized(ctx.res, 'Admin access required');
+    return forbidden(ctx.res, 'Admin access required');
   }
 
   return dispatchRoutes(ROUTES, ctx);

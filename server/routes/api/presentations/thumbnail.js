@@ -30,11 +30,7 @@ import {
   scheduleThumbnailWarm,
   warmOnSaveEnabled,
 } from '../../../render/thumbnail-warm-queue.js';
-import {
-  methodNotAllowed,
-  notFound,
-  unauthorized,
-} from '../../../utils/http.js';
+import { methodNotAllowed, notFound, forbidden } from '../../../utils/http.js';
 
 /**
  * Warm the deck-grid thumbnail cache for a presentation (fire-and-forget).
@@ -120,7 +116,7 @@ export async function handlePresentationThumbnail(
   if (
     !canReadPresentation({ user: authedUser, pres, collaboratorPermission })
   ) {
-    return unauthorized(res);
+    return forbidden(res);
   }
 
   const theme = await loadThemeAssets(repoRoot, pres?.theme);

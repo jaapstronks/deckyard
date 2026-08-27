@@ -16,8 +16,8 @@ import {
   noContent,
   notFound,
   serveJson,
-  unauthorized,
   requireJsonBody,
+  forbidden,
 } from '../../../utils/http.js';
 import { getTrimmedString } from '../../../utils/request-validators.js';
 import {
@@ -47,7 +47,7 @@ export async function handlePresentationVersions(
   }
 
   if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission }))
-    return unauthorized(res);
+    return forbidden(res);
 
   if (req.method === 'GET') {
     const versions = await listPresentationVersions(storageScope, id);
@@ -59,7 +59,7 @@ export async function handlePresentationVersions(
     if (
       !canWritePresentation({ user: authedUser, pres, collaboratorPermission })
     )
-      return unauthorized(res);
+      return forbidden(res);
     const parsed = await requireJsonBody(req, res, { allowEmpty: true });
     if (!parsed.ok) return true;
     const body = parsed.body;
@@ -117,7 +117,7 @@ export async function handlePresentationVersionItem(
   if (
     !canReadPresentation({ user: authedUser, pres, collaboratorPermission })
   ) {
-    return unauthorized(res);
+    return forbidden(res);
   }
 
   const version = await getPresentationVersion(storageScope, id, versionId);
@@ -165,7 +165,7 @@ export async function handlePresentationVersionExport(
   if (
     !canReadPresentation({ user: authedUser, pres, collaboratorPermission })
   ) {
-    return unauthorized(res);
+    return forbidden(res);
   }
 
   const version = await getPresentationVersion(storageScope, id, versionId);
@@ -244,7 +244,7 @@ export async function handlePresentationVersionCompareAi(
   if (
     !canReadPresentation({ user: authedUser, pres, collaboratorPermission })
   ) {
-    return unauthorized(res);
+    return forbidden(res);
   }
 
   const version = await getPresentationVersion(storageScope, id, versionId);
@@ -308,7 +308,7 @@ export async function handlePresentationSessionEnd(
   if (
     !canWritePresentation({ user: authedUser, pres, collaboratorPermission })
   ) {
-    return unauthorized(res);
+    return forbidden(res);
   }
 
   try {

@@ -10,6 +10,7 @@ import {
   unauthorized,
   jsonError,
   requireJsonBody,
+  forbidden,
 } from '../../../utils/http.js';
 import {
   canChangePresentationVisibility,
@@ -45,7 +46,7 @@ export async function handlePresentationVisibility(
       nextVisibility,
     })
   )
-    return unauthorized(res);
+    return forbidden(res);
 
   // Handle isViewOnly flag (only when sharing to the organization)
   let nextIsViewOnly = existing.isViewOnly || false;
@@ -53,7 +54,7 @@ export async function handlePresentationVisibility(
   if (isViewOnly !== null) {
     // Only owner/creator can toggle view-only status
     if (!isPresentationAuthor({ user: authedUser, pres: existing })) {
-      return unauthorized(res, 'Only the owner can set view-only status');
+      return forbidden(res, 'Only the owner can set view-only status');
     }
     // View-only requires organization visibility
     if (isViewOnly && nextVisibility !== 'organization') {

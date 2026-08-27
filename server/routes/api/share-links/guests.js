@@ -29,7 +29,7 @@ import {
   requireJsonBody,
   serveJson,
   storageError,
-  unauthorized,
+  forbidden,
 } from '../../../utils/http.js';
 import { buildShareUrl } from '../../../utils/request-url.js';
 import { createLogger } from '../../../utils/logger.js';
@@ -59,7 +59,7 @@ async function handleGuestPreRegister(
   if (
     !canWritePresentation({ user: authedUser, pres, collaboratorPermission })
   ) {
-    return unauthorized(res);
+    return forbidden(res);
   }
 
   const jsonResult = await requireJsonBody(req, res);
@@ -129,7 +129,7 @@ async function handleGuestList(
   if (
     !canWritePresentation({ user: authedUser, pres, collaboratorPermission })
   ) {
-    return unauthorized(res);
+    return forbidden(res);
   }
 
   const guests = await listGuestsForShareLink(storageScope, linkId);
@@ -150,7 +150,7 @@ async function handleGuestRemove(
   if (
     !canWritePresentation({ user: authedUser, pres, collaboratorPermission })
   ) {
-    return unauthorized(res);
+    return forbidden(res);
   }
 
   const result = await removeGuest(storageScope, guestId);
@@ -175,7 +175,7 @@ async function handleGuestResend(
   if (
     !canWritePresentation({ user: authedUser, pres, collaboratorPermission })
   ) {
-    return unauthorized(res);
+    return forbidden(res);
   }
 
   // Get the guest
