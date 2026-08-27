@@ -479,7 +479,7 @@
   "editor.jsonDebug.parseError": "JSON-fout: {message}",
   "editor.lang.disabledByAdmin": "Deze taal staat uit in de beheerinstellingen.",
   "editor.lang.dutch": "Nederlandse",
-  "editor.lang.english": "Engels",
+  "editor.lang.english": "Engelse",
   "editor.lang.notNow": "Niet nu, ik schrijf zelf",
   "editor.lang.switchAborted": "Kon niet opslaan; taalwissel afgebroken.",
   "editor.lang.versionCreatedInvite": "De {lang} versie is net aangemaakt en heeft nog geen teksten. Automatisch laten vertalen? Velden die je zelf invult worden nooit overschreven.",
