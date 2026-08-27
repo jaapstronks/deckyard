@@ -3,8 +3,9 @@ import { h } from '../lib/dom.js';
 import { t } from '../lib/ui-i18n.js';
 import { createBusyManager } from '../lib/dom/busy.js';
 import { authShell } from './auth-shell.js';
+import { nav } from '../lib/state/router.js';
 
-export async function renderForgotPassword(root, { nav } = {}) {
+export async function renderForgotPassword(root) {
   const { shell, card } = authShell({
     title: t('forgotPassword.title', 'Reset your password'),
     subtitle: t(
@@ -35,7 +36,7 @@ export async function renderForgotPassword(root, { nav } = {}) {
 
   backLink.onclick = (e) => {
     e.preventDefault();
-    nav?.('/login');
+    nav('/login');
   };
 
   const busyManager = createBusyManager({

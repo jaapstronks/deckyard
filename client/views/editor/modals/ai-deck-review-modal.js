@@ -17,6 +17,7 @@ import { createDeckGridView } from '../deck-grid.js';
 import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
 import { createAiReviewAnnotations } from '../ai-review-annotations.js';
 import { h } from '../../../lib/dom.js';
+import { nav } from '../../../lib/state/router.js';
 
 /**
  * @param {Object} options
@@ -29,7 +30,6 @@ import { h } from '../../../lib/dom.js';
  * @param {Function} [options.onJumpToSlide] - (slideId) => void
  * @param {boolean} [options.postGeneration] - Just-generated deck: offer
  *   "Discard deck" (delete + navigate back)
- * @param {Function} [options.nav] - Router navigate (for discard)
  */
 export function openAiDeckReviewModal({
   root,
@@ -40,7 +40,6 @@ export function openAiDeckReviewModal({
   editorState,
   onJumpToSlide,
   postGeneration = false,
-  nav,
 } = {}) {
   let grid = null;
   let busy = false;
@@ -267,7 +266,7 @@ export function openAiDeckReviewModal({
             method: 'DELETE',
           });
           modalApi.close();
-          nav?.('/app');
+          nav('/app');
         } catch (e) {
           status.textContent = String(e?.message || e);
           setBusy(false);

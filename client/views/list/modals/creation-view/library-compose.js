@@ -21,6 +21,7 @@ import { createSlideLibraryPicker } from '../../../../lib/slide-library/index.js
 import { createDeckFromLibraryItems } from '../../../../lib/slide-library/compose.js';
 import { createCollectionsApi } from '../../../../lib/slide-collections/api.js';
 import { h } from '../../../../lib/dom.js';
+import { nav } from '../../../../lib/state/router.js';
 
 /**
  * @param {object} opts
@@ -413,7 +414,7 @@ export function createLibraryCompose({
   // @param {Function} ctx.nav - router navigate.
   // @param {Function} ctx.close - close the creation view.
   // @param {(v: boolean) => void} ctx.setBusy - toggle host busy state.
-  const compose = async ({ lang, theme, nav, close, setBusy }) => {
+  const compose = async ({ lang, theme, close, setBusy }) => {
     const items = orderedSelectedItems();
     if (!items.length) {
       setStatus(
@@ -440,7 +441,7 @@ export function createLibraryCompose({
           libraryMode === 'collections' ? activeCollectionId : null,
       });
       close();
-      nav?.(`/app/${created.id}?lang=${encodeURIComponent(lang)}`);
+      nav(`/app/${created.id}?lang=${encodeURIComponent(lang)}`);
     } catch (e) {
       setStatus(String(e?.message || e));
       setBusy(false);

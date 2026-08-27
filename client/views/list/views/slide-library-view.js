@@ -6,16 +6,16 @@ import { createCollectionsBar } from '../../../lib/slide-collections/collections
 import { toast } from '../../../lib/dom/toast.js';
 import { getFeatures } from '../../../lib/state/features.js';
 import { createSandboxLibraryExplainer } from './sandbox-library-explainer.js';
+import { nav } from '../../../lib/state/router.js';
 
 /**
  * Create the slide library view (lazy-loaded)
  *
  * @param {object} opts
  * @param {Function} opts.api - API client
- * @param {Function} opts.nav - Navigation function
  * @returns {object} - { el, load, refresh, openSlide }
  */
-export function createSlideLibraryView({ api, nav }) {
+export function createSlideLibraryView({ api }) {
   const view = h('div', { class: 'sidebar-view', 'data-view': 'slideLibrary' });
   const title = h('h2', {
     class: 'presentation-grid-title',
@@ -105,7 +105,7 @@ export function createSlideLibraryView({ api, nav }) {
       toast.success(msg);
 
       if (result?.id) {
-        nav?.(`/app/${result.id}`);
+        nav(`/app/${result.id}`);
       }
     } catch (e) {
       toast.error(

@@ -10,6 +10,7 @@ import { showLoadingModal } from '../../../../lib/dom/loading-modal.js';
 import { createMessageRotator } from '../../../../lib/dom/status-message-rotator.js';
 import { processSSEStream } from '../../../../lib/net/sse.js';
 import { readFileAsDataUrl } from '../../../../lib/util/file.js';
+import { nav } from '../../../../lib/state/router.js';
 
 /**
  * Handle empty presentation creation
@@ -20,7 +21,6 @@ export async function handleEmpty({
   langMode,
   themeId,
   close,
-  nav,
   setBusy,
   setStatus,
   focusTitle,
@@ -47,7 +47,7 @@ export async function handleEmpty({
       }),
     });
     close();
-    nav?.(`/app/${created.id}?lang=${encodeURIComponent(lang)}`);
+    nav(`/app/${created.id}?lang=${encodeURIComponent(lang)}`);
   } catch (e) {
     setStatus(String(e?.message || e));
     setBusy(false);
@@ -64,7 +64,6 @@ export async function handlePasteText({
   langMode,
   themeId,
   close,
-  nav,
   setBusy,
   setStatus,
   hideBackdrop,
@@ -145,7 +144,7 @@ export async function handlePasteText({
     loadingModal.close();
     close();
     // aiReview=1 opens the whole-deck review grid on top of the editor.
-    nav?.(`/app/${created.id}?lang=${encodeURIComponent(langMode)}&aiReview=1`);
+    nav(`/app/${created.id}?lang=${encodeURIComponent(langMode)}&aiReview=1`);
   } catch (e) {
     rotator.stop();
     // Fallback to V1
@@ -168,9 +167,7 @@ export async function handlePasteText({
       await new Promise((r) => setTimeout(r, 800));
       loadingModal.close();
       close();
-      nav?.(
-        `/app/${created.id}?lang=${encodeURIComponent(langMode)}&aiReview=1`,
-      );
+      nav(`/app/${created.id}?lang=${encodeURIComponent(langMode)}&aiReview=1`);
     } catch (fallbackError) {
       loadingModal.close();
       showBackdrop?.();
@@ -190,7 +187,6 @@ export async function handleConvertFile({
   langMode,
   themeId,
   close,
-  nav,
   setBusy,
   setStatus,
   hideBackdrop,
@@ -278,7 +274,7 @@ export async function handleConvertFile({
             await new Promise((r) => setTimeout(r, 800));
             loadingModal.close();
             close();
-            nav?.(
+            nav(
               `/app/${result.presentation.id}?lang=${encodeURIComponent(lang)}`,
             );
           },
@@ -321,9 +317,7 @@ export async function handleConvertFile({
         await new Promise((r) => setTimeout(r, 800));
         loadingModal.close();
         close();
-        nav?.(
-          `/app/${result.presentation.id}?lang=${encodeURIComponent(lang)}`,
-        );
+        nav(`/app/${result.presentation.id}?lang=${encodeURIComponent(lang)}`);
       } else {
         loadingModal.close();
         showBackdrop?.();
@@ -350,7 +344,6 @@ export async function handleImportJson({
   selectedFile,
   langMode,
   close,
-  nav,
   setBusy,
   setStatus,
 }) {
@@ -390,7 +383,7 @@ export async function handleImportJson({
     // Use the language from the response (which reflects the actual presentation language)
     const navLang = created?.lang || lang;
     close();
-    nav?.(`/app/${created.id}?lang=${encodeURIComponent(navLang)}`);
+    nav(`/app/${created.id}?lang=${encodeURIComponent(navLang)}`);
   } catch (e) {
     console.error('[handleImportJson] Error:', e);
     setStatus(String(e?.message || e));
@@ -407,7 +400,6 @@ export async function handleImportMarkdown({
   langMode,
   themeId,
   close,
-  nav,
   setBusy,
   setStatus,
   showWarnings,
@@ -447,7 +439,7 @@ export async function handleImportMarkdown({
     }
 
     close();
-    nav?.(navUrl);
+    nav(navUrl);
   } catch (e) {
     setStatus(String(e?.message || e));
     setBusy(false);
@@ -463,7 +455,6 @@ export async function handlePasteMarkdown({
   langMode,
   themeId,
   close,
-  nav,
   setBusy,
   setStatus,
   focusTextarea,
@@ -500,7 +491,7 @@ export async function handlePasteMarkdown({
     }
 
     close();
-    nav?.(navUrl);
+    nav(navUrl);
   } catch (e) {
     setStatus(String(e?.message || e));
     setBusy(false);
@@ -516,7 +507,6 @@ export async function handleNotion({
   notionUrl,
   themeId,
   close,
-  nav,
   setBusy,
   setStatus,
   hideBackdrop,
@@ -606,7 +596,7 @@ export async function handleNotion({
             await new Promise((r) => setTimeout(r, 800));
             loadingModal.close();
             close();
-            nav?.(
+            nav(
               `/app/${result.presentation.id}?lang=${encodeURIComponent(detectedLang)}`,
             );
           },
@@ -651,7 +641,7 @@ export async function handleNotion({
         await new Promise((r) => setTimeout(r, 800));
         loadingModal.close();
         close();
-        nav?.(
+        nav(
           `/app/${result.presentation.id}?lang=${encodeURIComponent(detectedLang)}`,
         );
       } else {

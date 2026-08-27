@@ -16,20 +16,12 @@ import { h } from '../../lib/dom.js';
  * @param {object} options
  * @param {object} options.features - Feature flags
  * @param {Function} options.api - API client
- * @param {Function} options.nav - Navigation function
  * @param {object} options.user - Current user
  * @param {Array} options.detachers - Array to push cleanup functions
  * @param {Function} options.onSearch - Search callback
  * @returns {object} { el, searchInput }
  */
-export function createTopbar({
-  features,
-  api,
-  nav,
-  user,
-  detachers,
-  onSearch,
-}) {
+export function createTopbar({ features, api, user, detachers, onSearch }) {
   const isSandbox = !!features?.sandboxMode;
   const brandLogo = isSandbox
     ? '/assets/images/deckyard-mark.svg'
@@ -82,12 +74,11 @@ export function createTopbar({
   // Notification bell
   const notificationBell = createNotificationBell({
     api,
-    onNavigate: (path) => nav?.(path),
   });
   detachers.push(notificationBell.detach);
 
   // User menu (settings + sign out)
-  const userMenu = createUserMenu({ user, nav });
+  const userMenu = createUserMenu({ user });
   detachers.push(userMenu.detach);
 
   topbarContent.append(

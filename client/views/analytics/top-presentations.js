@@ -6,15 +6,15 @@ import { h } from '../../lib/dom.js';
 import { t } from '../../lib/ui-i18n.js';
 import { formatDuration } from '../../lib/format/analytics-format.js';
 import { createEmptyState } from '../../lib/dom/empty-state.js';
+import { nav } from '../../lib/state/router.js';
 
 /**
  * Create top presentations table.
  * @param {Object} options
  * @param {Array} options.presentations - Top presentations data
- * @param {Function} options.nav - Navigation function
  * @returns {HTMLElement}
  */
-export function createTopPresentations({ presentations, nav }) {
+export function createTopPresentations({ presentations }) {
   const card = h('div', { class: 'dashboard-card dashboard-top-card' }, [
     h('h3', {
       class: 'dashboard-card-title',
@@ -67,7 +67,7 @@ export function createTopPresentations({ presentations, nav }) {
           text: pres.title || 'Untitled',
           onclick: (e) => {
             e.preventDefault();
-            nav?.(`/analytics/${pres.id}`);
+            nav(`/analytics/${pres.id}`);
           },
         }),
       ]),

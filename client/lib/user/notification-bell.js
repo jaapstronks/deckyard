@@ -12,6 +12,7 @@ import {
 import { t } from '../ui-i18n.js';
 import { createAvatar } from './avatar.js';
 import { getUserProfile, prefetchProfiles } from './user-profiles.js';
+import { nav } from '../state/router.js';
 
 /**
  * Accessible label for a notification list item. Each shape is one full
@@ -39,10 +40,9 @@ function notificationLabel(notif) {
  * Create a notification bell component.
  * @param {Object} options
  * @param {Function} options.api - API call function
- * @param {Function} [options.onNavigate] - Callback to navigate to a URL
  * @returns {Object} { el, detach }
  */
-export function createNotificationBell({ api, onNavigate }) {
+export function createNotificationBell({ api }) {
   let isOpen = false;
   let notifications = [];
   let unreadCount = 0;
@@ -459,26 +459,17 @@ export function createNotificationBell({ api, onNavigate }) {
     // Navigate to action URL
     if (notif.actionUrl) {
       closeDropdown();
-      if (onNavigate) {
-        // Extract relative path from actionUrl, keeping the query string
-        // (comment notifications anchor to a slide via ?slideId=).
-        try {
-          const url = new URL(notif.actionUrl, window.location.origin);
-          onNavigate(url.pathname + url.search);
-        } catch {
-          onNavigate(notif.actionUrl);
-        }
-      } else {
-        window.location.href = notif.actionUrl;
+      // Extract relative path from actionUrl, keeping the query string
+      // (comment notifications anchor to a slide via ?slideId=).
+      try {
+        const url = new URL(notif.actionUrl, window.location.origin);
+        nav(url.pathname + url.search);
+      } catch {
+        nav(notif.actionUrl);
       }
     } else if (notif.presentationId) {
       closeDropdown();
-      const path = `/app/${notif.presentationId}`;
-      if (onNavigate) {
-        onNavigate(path);
-      } else {
-        window.location.href = path;
-      }
+      nav(`/app/${notif.presentationId}`);
     }
   }
 

@@ -30,7 +30,6 @@ import { h } from '../../../../lib/dom.js';
 export function openCreationView({
   api,
   root,
-  nav,
   readLangMode,
   writeLangMode,
   getSupportedLangs,
@@ -432,7 +431,6 @@ export function openCreationView({
       api,
       root,
       close,
-      nav,
       setBusy,
       setStatus,
       hideBackdrop: () => modal.hide(),
@@ -444,7 +442,6 @@ export function openCreationView({
         await library.compose({
           lang: langSelect.getLang() === 'en-GB' ? 'en-GB' : 'nl',
           theme: themeSelect.getTheme(),
-          nav,
           close,
           setBusy,
         });
