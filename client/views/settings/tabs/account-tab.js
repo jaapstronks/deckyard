@@ -202,7 +202,7 @@ export function createAccountTab({ user }) {
 
   const cards = h('div', { class: 'settings-tab-cards' }, [
     profileCard,
-    passwordSection.element,
+    passwordSection.el,
   ]);
 
   container.append(title, cards);

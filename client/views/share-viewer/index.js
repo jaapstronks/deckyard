@@ -415,13 +415,13 @@ export async function renderShareViewer(root, token) {
     document.documentElement.classList.remove('is-share-viewer');
     detachViewerListeners();
     cleanupSlideRuntimes(shell);
-    videoLayer?.destroy();
+    videoLayer?.detach();
     videoLayer = null;
-    disposeAll([() => autoAdvanceInstance?.destroy?.()]);
+    disposeAll([() => autoAdvanceInstance?.detach?.()]);
     autoAdvanceInstance = null;
     // Clean up analytics tracker
     if (analyticsTracker) {
-      analyticsTracker.destroy();
+      analyticsTracker.detach();
       analyticsTracker = null;
     }
   }

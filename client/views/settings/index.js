@@ -174,7 +174,7 @@ export async function renderSettingsPage(root, { user } = {}) {
   const addTab = (key, tab) => {
     tabs[key] = tab.el;
     if (tab.load) tabLoaders[key] = tab.load;
-    if (tab.destroy) tabDestroyers.push(tab.destroy);
+    if (tab.detach) tabDestroyers.push(tab.detach);
   };
 
   // Always visible

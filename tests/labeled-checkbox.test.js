@@ -25,14 +25,14 @@ const { labeledCheckbox } =
   await import('../client/lib/dom/labeled-checkbox.js');
 
 test('default builds label.admin-checkbox-item > input[type=checkbox] + span', () => {
-  const { element, input } = labeledCheckbox({ text: 'Enable X' });
-  assert.equal(element.tagName, 'LABEL');
-  assert.equal(element.className, 'admin-checkbox-item');
-  assert.equal(element.children[0], input);
+  const { el, input } = labeledCheckbox({ text: 'Enable X' });
+  assert.equal(el.tagName, 'LABEL');
+  assert.equal(el.className, 'admin-checkbox-item');
+  assert.equal(el.children[0], input);
   assert.equal(input.tagName, 'INPUT');
   assert.equal(input.type, 'checkbox');
   assert.equal(input.checked, false);
-  const span = element.children[1];
+  const span = el.children[1];
   assert.equal(span.tagName, 'SPAN');
   assert.equal(span.textContent, 'Enable X');
 });
@@ -43,11 +43,11 @@ test('checked sets the property, not just the attribute', () => {
 });
 
 test('className keeps each surface visual (the class is a parameter)', () => {
-  const { element } = labeledCheckbox({
+  const { el } = labeledCheckbox({
     text: 'Designer',
     className: 'form-checkbox-row',
   });
-  assert.equal(element.className, 'form-checkbox-row');
+  assert.equal(el.className, 'form-checkbox-row');
 });
 
 test('content overrides text and is appended after the input', () => {
@@ -55,24 +55,24 @@ test('content overrides text and is appended after the input', () => {
   title.textContent = 'AI';
   const desc = document.createElement('span');
   desc.textContent = 'Use AI features';
-  const { element, input } = labeledCheckbox({
+  const { el, input } = labeledCheckbox({
     className: 'api-key-permission-checkbox',
     content: [title, desc],
     text: 'ignored when content is given',
   });
-  assert.equal(element.className, 'api-key-permission-checkbox');
-  assert.deepEqual([...element.children], [input, title, desc]);
+  assert.equal(el.className, 'api-key-permission-checkbox');
+  assert.deepEqual([...el.children], [input, title, desc]);
 });
 
 test('inputAttrs and labelAttrs pass through (id/for/value/data-*)', () => {
-  const { element, input } = labeledCheckbox({
+  const { el, input } = labeledCheckbox({
     text: 'Versions',
     inputAttrs: { id: 'export-opt-v', value: 'v' },
     labelAttrs: { for: 'export-opt-v' },
   });
   assert.equal(input.id, 'export-opt-v');
   assert.equal(input.getAttribute('value'), 'v');
-  assert.equal(element.getAttribute('for'), 'export-opt-v');
+  assert.equal(el.getAttribute('for'), 'export-opt-v');
 });
 
 test('onChange fires with the current checked state', () => {

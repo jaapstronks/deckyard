@@ -540,7 +540,7 @@ export function createFollowInteractionController({
     setSlideContext,
     onInteractionStateEvent,
     refreshCurrent,
-    destroy: () => {
+    detach: () => {
       if (mountEl) mountEl.innerHTML = '';
     },
   };

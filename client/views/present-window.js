@@ -171,7 +171,7 @@ export async function renderPresentWindow(root, id) {
   return () => {
     animator.cancel();
     try {
-      highlighter.destroy();
+      highlighter.detach();
     } catch {
       // ignore
     }

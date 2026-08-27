@@ -13,7 +13,7 @@ export function createEdgeHint(edgeHintEl, { durationMs = 900 } = {}) {
     }, durationMs);
   };
 
-  const destroy = () => {
+  const detach = () => {
     try {
       if (tid) clearTimeout(tid);
     } catch {}
@@ -23,5 +23,5 @@ export function createEdgeHint(edgeHintEl, { durationMs = 900 } = {}) {
     } catch {}
   };
 
-  return { show, destroy };
+  return { show, detach };
 }

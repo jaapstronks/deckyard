@@ -160,6 +160,7 @@ format` writes, `npm run format:check` gates in CI next to `npm run lint`.
   - Slides can have runtime behavior. The slide mounting pipeline (`client/lib/slide-runtime/slide-render.js`) supports cleanup via `__sbCleanup`.
   - If you add any runtime side-effects (EventSource, timers, window listeners, observers), you must return a cleanup function and ensure it’s called when slide DOM is replaced.
   - Teardown is best-effort: run disposal handles through `disposeAll([...])` from `client/lib/dom/disposal.js` instead of per-handle `try { x?.(); } catch {}` — one broken handle must not abort the rest, and failures are recorded via `debugLog` (B150).
+  - A client factory returns **`{ el, detach }`** — the node it built and the function that unwires it. `destroy` / `teardown` / `cleanup` and `element` are retired spellings, gated in `eslint.config.js` (B150). `close` and `stop` still mean what they say: a user action on a modal, and halting a stream or timer.
 
 ---
 

@@ -111,6 +111,8 @@ Apply it at the recurring moments:
   `client/lib/dom/modal.js`. No native `confirm()`/`prompt()` in new code.
 - **Modals**: follow the `client/lib/dom/modal.js` helpers (focus trap and
   aria wiring come free).
+- **Lifecycle**: a factory returns `{ el, detach }` — not `destroy`/`teardown`/
+  `cleanup`, not `element`. Run disposal through `disposeAll()`.
 - **CSS**: reuse `.editor-card`, `.field-label`, `.help`, `.btn`/`.btn-primary`/
   `.btn-danger`, `.row`/`.stack`, `.is-between` — check existing views before
   adding classes.

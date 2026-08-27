@@ -77,7 +77,7 @@ export function createDeckGridView({
   let closePeek = null;
   const selectedIds = new Set();
 
-  const teardown = () => {
+  const detach = () => {
     for (const o of observers) {
       try {
         o.disconnect();
@@ -471,7 +471,7 @@ export function createDeckGridView({
   };
 
   const render = () => {
-    teardown();
+    detach();
     el.innerHTML = '';
 
     const slides = (typeof getSlides === 'function' ? getSlides() : []) || [];
@@ -518,7 +518,7 @@ export function createDeckGridView({
   return {
     el,
     render,
-    teardown,
+    detach,
     getSelectedIds: () => Array.from(selectedIds),
     clearSelection: () => {
       selectedIds.clear();

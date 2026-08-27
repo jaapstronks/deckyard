@@ -109,7 +109,7 @@ export function createImageLibraryUpload({
   const addWrap = h('div', { class: 'stack image-lib-upload' });
 
   if (!user) {
-    return { element: addWrap };
+    return { el: addWrap };
   }
 
   if (uploadsDisabled) {
@@ -131,7 +131,7 @@ export function createImageLibraryUpload({
             ),
       }),
     );
-    return { element: addWrap };
+    return { el: addWrap };
   }
 
   let newUrl = '';
@@ -506,5 +506,5 @@ export function createImageLibraryUpload({
     actionsSection,
   );
 
-  return { element: addWrap };
+  return { el: addWrap };
 }

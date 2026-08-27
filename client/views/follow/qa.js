@@ -235,7 +235,7 @@ export function createFollowQaController({
     syncQaNameBtn();
   };
 
-  const destroy = () => {
+  const detach = () => {
     feed.stop();
   };
 
@@ -248,7 +248,7 @@ export function createFollowQaController({
     refreshQuestionsIfLive,
     renderQuestions,
     syncQaNameBtn,
-    destroy,
+    detach,
     connectQa,
   };
 }

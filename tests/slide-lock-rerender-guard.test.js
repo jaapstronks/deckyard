@@ -75,7 +75,7 @@ test('a second identical lock event produces zero onLocksChanged calls', async (
   });
   assert.equal(getCalls(), afterFirst, 'byte-identical repeat is a no-op');
 
-  await mgr.destroy();
+  await mgr.detach();
 });
 
 test('a lock refresh that only advances expiresAt is suppressed', async () => {
@@ -104,7 +104,7 @@ test('a lock refresh that only advances expiresAt is suppressed', async () => {
   });
   assert.equal(getCalls(), afterFirst, 'expiresAt-only churn is suppressed');
 
-  await mgr.destroy();
+  await mgr.detach();
 });
 
 test('a real lock take and release each notify (indicator appears and disappears)', async () => {
@@ -129,5 +129,5 @@ test('a real lock take and release each notify (indicator appears and disappears
   dispatchLock('slide:unlocked', { slideId: 's2' });
   assert.equal(getCalls(), afterTake + 1, 'redundant unlock is a no-op');
 
-  await mgr.destroy();
+  await mgr.detach();
 });

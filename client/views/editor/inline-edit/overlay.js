@@ -398,7 +398,7 @@ export function createInlineOverlay({ thumb }) {
     if (owner) setActiveOwner(owner);
   });
 
-  function destroy() {
+  function detach() {
     ro.disconnect();
     layer.remove();
   }
@@ -411,6 +411,6 @@ export function createInlineOverlay({ thumb }) {
     focusPoint,
     reposition,
     ensureAttached,
-    destroy,
+    detach,
   };
 }

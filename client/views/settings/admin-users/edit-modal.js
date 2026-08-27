@@ -207,7 +207,7 @@ export async function showEditModal(targetUser, onSuccess) {
   );
 
   // Designer capability toggle
-  const { element: designerRow, input: designerCheckbox } = labeledCheckbox({
+  const { el: designerRow, input: designerCheckbox } = labeledCheckbox({
     text: t('admin.users.designerCapability', 'Designer'),
     className: 'form-checkbox-row',
     checked: Boolean(targetUser.isExplicitDesigner),

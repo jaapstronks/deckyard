@@ -284,7 +284,7 @@ export function createMediaLibrarySidebar({
   };
 
   return {
-    element: sidebar,
+    el: sidebar,
     render: renderSidebar,
   };
 }

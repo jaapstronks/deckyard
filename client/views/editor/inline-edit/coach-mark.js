@@ -87,9 +87,9 @@ export function createInlineCoachMark({ stage } = {}) {
     remove();
   }
 
-  function destroy() {
+  function detach() {
     remove();
   }
 
-  return { maybeShow, dismiss, destroy };
+  return { maybeShow, dismiss, detach };
 }

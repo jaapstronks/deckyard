@@ -211,8 +211,8 @@ export function createPresenterConsole({ theme, presentationId } = {}) {
       : `<p class="help">${t('notes.noNotes', 'No notes for this slide.')}</p>`;
   };
 
-  const destroy = () => {
-    timer.destroy();
+  const detach = () => {
+    timer.detach();
     try {
       detachThumb?.();
     } catch {
@@ -221,5 +221,5 @@ export function createPresenterConsole({ theme, presentationId } = {}) {
     cleanupSlideRuntimes(nextThumb);
   };
 
-  return { el, update, startTimer: () => timer.start(), destroy };
+  return { el, update, startTimer: () => timer.start(), detach };
 }

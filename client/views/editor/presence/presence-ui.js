@@ -441,7 +441,7 @@ export function createPresenceUI({
 
   return {
     refresh: scheduleRefresh,
-    destroy() {
+    detach() {
       for (const d of detachers) {
         try {
           d();

@@ -74,7 +74,7 @@ export function createExportTab({ user }) {
         text: description,
       }),
     ]);
-    const { element: item, input } = labeledCheckbox({
+    const { el: item, input } = labeledCheckbox({
       content: text,
       inputAttrs: { id },
       labelAttrs: { for: id },
@@ -476,10 +476,10 @@ export function createExportTab({ user }) {
 
   // The job poll (2s) and the notification stream both outlive the DOM, so the
   // settings view runs this when it unmounts.
-  const destroy = () => {
+  const detach = () => {
     stopPolling();
     disconnectSSE();
   };
 
-  return { el: container, load, destroy };
+  return { el: container, load, detach };
 }

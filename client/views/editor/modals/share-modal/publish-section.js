@@ -214,5 +214,5 @@ export function createPublishSection({
 
   render();
 
-  return { element: section, refresh: render };
+  return { el: section, refresh: render };
 }

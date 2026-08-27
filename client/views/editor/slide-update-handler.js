@@ -173,7 +173,7 @@ export function createSlideUpdateHandler({
   window.addEventListener('sse:presentation-updated', handleEvent);
 
   return {
-    destroy() {
+    detach() {
       window.removeEventListener('sse:presentation-updated', handleEvent);
       if (debounceTimer) {
         clearTimeout(debounceTimer);

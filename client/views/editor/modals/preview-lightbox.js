@@ -52,7 +52,7 @@ export function createPreviewLightbox({
           rerenderPreviewLightbox = null;
           hidePopup();
           hideCommentDetail();
-          commentMarkers?.destroy?.();
+          commentMarkers?.detach?.();
           detachBigThumbScale();
         } finally {
           try {

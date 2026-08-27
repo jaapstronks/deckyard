@@ -253,7 +253,7 @@ export function createPresenterToolsMenu({
     el: toolsWrap,
     closeTools,
     syncEnabled,
-    cleanup: () => {
+    detach: () => {
       disposeAll([detachToolsUi]);
       detachToolsUi = () => {};
     },

@@ -49,9 +49,9 @@ export function initEditorPresence({
     setViewSlide: (slideId) => session.setViewSlide(slideId),
     /** The underlying session — phase 2's live-edits binder shares its provider/doc. */
     session,
-    destroy() {
-      ui.destroy();
-      session.destroy();
+    detach() {
+      ui.detach();
+      session.detach();
     },
   };
 }

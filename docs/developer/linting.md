@@ -217,6 +217,51 @@ design.
 pins each restricted shape, the two legal look-alikes, the exact exemption list,
 and that the client is clean.
 
+### `no-restricted-syntax` on handle keys — one teardown word, one element word
+
+Scoped to `client/**`, this rule rejects `destroy`, `teardown`, `cleanup` and
+`element` as **object-literal or destructuring keys**. A client factory hands
+back one shape: `{ el, detach }` — the DOM node it built, and the function that
+unwires it again.
+
+Both halves of that handle had grown a second spelling. The disposer was
+`detach` 24 times, `destroy` 17, `teardown` 4 and `cleanup` 1 — 46 sites, four
+names, one meaning. The node was `el` 121 times and `element` 29. Inside a
+single directory, `views/editor/modals/share-modal/`, `collaborators-section.js`
+returned `{ element, detach }` while every sibling returned `{ el, detach }`
+(B150).
+
+`detach` wins on plurality, and because it is the exact antonym of the verb
+that already names the other half of the lifecycle: `attachThumbScale`,
+`attachSwipeNavigation`, `attachMentions`, `attachStageScale`, plus the
+`detachers` arrays the views already collect disposers into. `el` wins 121 to
+29 and matches `h()`'s own vocabulary.
+
+**Key-shaped, not a whole-token identifier ban** — this is the boundary that
+makes the rule safe. `.destroy()` is also a _third-party_ method: yjs's
+`UndoManager` and `WebsocketProvider` and hls.js all expose one, and those
+three call sites are their vocabulary, not ours. A `MemberExpression` is not a
+`Property`, so the selector leaves them alone by construction rather than by
+allowlist. Likewise `element` stays legal as a local variable or a DOM-spec
+noun.
+
+`close` (37 sites) and `stop` (4) are deliberately **not** gated. Both name
+something a caller can undo — a user action on a modal, halting a stream or a
+timer — which a teardown is not.
+
+**One file is exempt**: [`client/embed-sdk.js`](../../client/embed-sdk.js). The
+handle it returns is a public contract, and its `destroy()` sits beside
+`next()`, `prev()`, `goToSlide()` and `getState()` in an embed-SDK vocabulary
+an external page wrote against. Renaming it would break every embedder to make
+one file agree with an internal convention it does not participate in. That
+exemption is a separate config block, so `client/lib/dom.js` — its neighbour in
+the `createElement` exemption — does not inherit it.
+
+[`tests/teardown-vocabulary-gate.test.js`](../../tests/teardown-vocabulary-gate.test.js)
+pins each retired key, the canonical pair, the third-party `.destroy()`
+boundary, the un-gated `close`/`stop`, that the exemption is exactly one file
+and is not stale, and that the client is clean.
+
 ### `no-restricted-syntax` on the `nav` parameter — one router singleton
 
 Scoped to `client/**`, this rule rejects `nav` arriving as a **parameter**, as a

@@ -261,7 +261,7 @@ export function createGiphySearch({ api, onSelect, setStatus, setBusy }) {
   };
 
   return {
-    element: container,
+    el: container,
     focus: () => searchInput.focus(),
     init,
   };

@@ -76,7 +76,7 @@ export function createAnalyticsTracker({
   let heartbeatInterval = null;
   let isActive = true;
   let isStarted = false;
-  let isDestroyed = false;
+  let isDetached = false;
 
   const deviceId = getDeviceId();
 
@@ -166,7 +166,7 @@ export function createAnalyticsTracker({
    * @returns {Promise<boolean>} True if session started successfully
    */
   async function start() {
-    if (isStarted || isDestroyed) return false;
+    if (isStarted || isDetached) return false;
 
     // Session start is critical - use retry logic
     const result = await sendTrack(
@@ -187,7 +187,7 @@ export function createAnalyticsTracker({
     // live. destroy() already ran its teardown, so wiring the heartbeat and
     // the three global listeners here would strand them for the whole tab.
     // Close the session we just opened instead of abandoning it server-side.
-    if (isDestroyed) {
+    if (isDetached) {
       if (result?.sessionToken) {
         sendBeacon('/api/track/session/end', {
           sessionToken: result.sessionToken,
@@ -224,7 +224,7 @@ export function createAnalyticsTracker({
    * @param {number} [slideIndex] - The slide index
    */
   function trackSlide(slideId, slideIndex = 0) {
-    if (!isStarted || isDestroyed || !sessionToken) return;
+    if (!isStarted || isDetached || !sessionToken) return;
 
     currentSlideId = slideId;
     currentSlideIndex = slideIndex;
@@ -241,7 +241,7 @@ export function createAnalyticsTracker({
    * Send heartbeat to keep session alive.
    */
   function heartbeat() {
-    if (!isStarted || isDestroyed || !sessionToken || !isActive) return;
+    if (!isStarted || isDetached || !sessionToken || !isActive) return;
 
     sendTrack('/api/track/session/heartbeat', {
       sessionToken,
@@ -287,7 +287,7 @@ export function createAnalyticsTracker({
    * Handle page unload - end session via beacon.
    */
   function handleUnload() {
-    if (!isStarted || isDestroyed || !sessionToken) return;
+    if (!isStarted || isDetached || !sessionToken) return;
 
     sendBeacon('/api/track/session/end', {
       sessionToken,
@@ -299,9 +299,9 @@ export function createAnalyticsTracker({
   /**
    * Destroy the tracker and end the session.
    */
-  function destroy() {
-    if (isDestroyed) return;
-    isDestroyed = true;
+  function detach() {
+    if (isDetached) return;
+    isDetached = true;
 
     // Clean up event listeners
     document.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -336,7 +336,7 @@ export function createAnalyticsTracker({
    *   has not resolved yet) or the erase request failed.
    */
   async function erase() {
-    if (isDestroyed || !isStarted || !sessionToken) return null;
+    if (isDetached || !isStarted || !sessionToken) return null;
 
     const result = await sendTrack('/api/track/my-data/erase', {
       sessionToken,
@@ -348,7 +348,7 @@ export function createAnalyticsTracker({
     if (!result?.ok) return result;
 
     // Tear down like destroy(), but skip the end beacon: the rows are deleted.
-    isDestroyed = true;
+    isDetached = true;
     document.removeEventListener('visibilitychange', handleVisibilityChange);
     window.removeEventListener('beforeunload', handleUnload);
     window.removeEventListener('pagehide', handleUnload);
@@ -374,13 +374,13 @@ export function createAnalyticsTracker({
    * @returns {boolean}
    */
   function isTracking() {
-    return isStarted && !isDestroyed;
+    return isStarted && !isDetached;
   }
 
   return {
     start,
     trackSlide,
-    destroy,
+    detach,
     erase,
     getSessionToken,
     isTracking,

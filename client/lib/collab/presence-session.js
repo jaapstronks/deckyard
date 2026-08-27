@@ -88,7 +88,7 @@ export function createPresenceSession({
 
   const peerListeners = new Set();
   const statusListeners = new Set();
-  let destroyed = false;
+  let detached = false;
 
   /** Remote peers with a valid presence state (one entry per client/tab). */
   const getPeers = () => {
@@ -132,26 +132,26 @@ export function createPresenceSession({
 
   // Best-effort teardown so peers see us leave immediately instead of after
   // the awareness timeout.
-  const onPageHide = () => destroy();
+  const onPageHide = () => detach();
   if (typeof window !== 'undefined')
     window.addEventListener('pagehide', onPageHide);
 
   function setViewSlide(slideId) {
-    if (destroyed) return;
+    if (detached) return;
     awareness.setLocalStateField('view', slideId ? { slideId } : null);
   }
 
   function setFocusField(slideId, fieldPath) {
-    if (destroyed) return;
+    if (detached) return;
     awareness.setLocalStateField(
       'focus',
       slideId && fieldPath ? { slideId, fieldPath } : null,
     );
   }
 
-  function destroy() {
-    if (destroyed) return;
-    destroyed = true;
+  function detach() {
+    if (detached) return;
+    detached = true;
     if (typeof window !== 'undefined')
       window.removeEventListener('pagehide', onPageHide);
     try {
@@ -183,7 +183,7 @@ export function createPresenceSession({
       statusListeners.add(fn);
       return () => statusListeners.delete(fn);
     },
-    destroy,
+    detach,
     /** Exposed for tests/phase 2. */
     _provider: provider,
   };

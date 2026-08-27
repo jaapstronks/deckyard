@@ -54,7 +54,7 @@ export function createPresenterHighlighter({
       clearDrawings: () => {},
       applyRemoteEvent: () => {},
       emitSnapshot: () => {},
-      destroy: () => {},
+      detach: () => {},
     };
   }
 
@@ -492,7 +492,7 @@ export function createPresenterHighlighter({
     }
   };
 
-  const destroy = () => {
+  const detach = () => {
     if (animationId) {
       cancelAnimationFrame(animationId);
       animationId = null;
@@ -547,6 +547,6 @@ export function createPresenterHighlighter({
     clearDrawings,
     applyRemoteEvent,
     emitSnapshot,
-    destroy,
+    detach,
   };
 }

@@ -872,7 +872,7 @@ export function createLiveDocBinder({
     return projected;
   }
 
-  function destroy() {
+  function detach() {
     if (destroyed) return;
     destroyed = true;
     if (attached) {
@@ -899,7 +899,7 @@ export function createLiveDocBinder({
     canUndo: () => !!undoManager && undoManager.undoStack.length > 0,
     canRedo: () => !!undoManager && undoManager.redoStack.length > 0,
     projectLanguage,
-    destroy,
+    detach,
     /** Exposed for tests. */
     _origin: origin,
   };

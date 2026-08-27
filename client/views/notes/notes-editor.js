@@ -223,7 +223,7 @@ export function createNotesEditor({ api, sessionId, ui, onSaved } = {}) {
     setSlide,
     isDirty,
     flush,
-    destroy: () => {
+    detach: () => {
       // Leaving the view with an unsaved buffer would silently drop it, so send
       // it on the way out. Fire-and-forget: teardown is synchronous, and a save
       // that loses the race is no worse than not trying.

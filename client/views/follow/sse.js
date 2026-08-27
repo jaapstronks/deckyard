@@ -98,7 +98,7 @@ export function createFollowSse({
 
   return {
     connect: connection.connect,
-    destroy: connection.stop,
+    detach: connection.stop,
     /**
      * True when the SSE stream is connected and has delivered an event
      * recently (the server pushes a `status` event every 2s, so a healthy
