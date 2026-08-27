@@ -339,9 +339,29 @@
   --slide-surface-white: rgba(255, 255, 255, 0.8);
   --slide-surface-white-solid: rgba(255, 255, 255, 0.95);
 
-  /* Status colors — a single danger red used by form errors, KPI risk
-     accents, code-error styling and inline code. A theme can retint it. */
+  /* Status colors — the one axis where colour carries MEANING rather than
+     brand: good, careful, aside. `danger` came first (form errors, KPI risk
+     accents, code-error styling, inline code); the callout family needed four
+     more of the same kind, so the one colour became a small family instead of
+     five per-type tokens.
+
+     They are ROLES, not a type family. `--t-callout-<variant>-*` would have
+     been exactly the per-type theme family slide-roles.md § The theme seam
+     removed everywhere else — a theme would have to learn a slide type's name
+     to restyle it. These are named for the meaning, so anything that has to
+     say "good / careful / aside" reads the same token: the callout variants
+     today, comparison's pros-cons treatment and the aside insets next.
+
+     Slide-internal, like `danger` always was: no `--t-*` feed, because a
+     semantic palette is not brand and a theme that retints "warning" away from
+     amber is changing what the slide MEANS. The hues are the standard
+     admonition set, picked to sit on both slide surfaces. */
   --slide-color-danger: #c53030;
+  --slide-color-positive: #2f7a4f; /* it worked, it holds, the takeaway */
+  --slide-color-caution: #a5620a; /* stop and read this one */
+  --slide-color-informative: #5b4bb8; /* a term pinned down, a reference */
+  --slide-color-neutral: #4a5a63; /* an aside; deliberately the quiet one */
+  --slide-color-helpful: #0f766e; /* practical advice, a shortcut */
 
   /* =========================================================================
      CODE / SYNTAX HIGHLIGHTING

@@ -137,6 +137,7 @@ export const TYPE_CSS = {
   'chapter-title-slide': [
     { tier: '03-components', file: '30-chapter-title.css' },
   ],
+  'callout-slide': [{ tier: '03-components', file: '31-callout-slide.css' }],
   'team-cards-slide': [{ tier: '03-components', file: '45-team-cards.css' }],
   'logo-wall-slide': [
     { tier: '02-content-and-media', file: '72-logo-wall-links.css' },

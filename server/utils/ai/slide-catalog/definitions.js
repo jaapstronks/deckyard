@@ -58,6 +58,7 @@ export const CATALOG_ORDER = Object.freeze([
   // Content, plainest first — the prompt tells the model to prefer these.
   'content-slide',
   'list-slide',
+  'callout-slide',
   'image-text-slide',
   'image-slide',
   'gallery-slide',

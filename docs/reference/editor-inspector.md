@@ -377,7 +377,7 @@ routing, not of this table - the widgets are the open half of the same
 consolidation.
 
 Not repeated per row, because they are the same for all
-<!--gen:slide-type-count-->33<!--/gen:slide-type-count--> types: `slideBgImage`,
+<!--gen:slide-type-count-->34<!--/gen:slide-type-count--> types: `slideBgImage`,
 
 `slideBgFit`, `slideBgFocusX/Y`, `slideBgOverlay`, `slideBgText`, `slideLogo`
 (Background image section), `a11yTitle`/`a11ySummary` (Accessibility) and the
@@ -395,6 +395,7 @@ rather than getting a home of its own.
 | `title-slide`          | `title`, `subheading`, `meta`                                                                            | –                      | `logoCorner`                                                                                          |
 | `chapter-title-slide`  | `title`, `subheading`                                                                                    | –                      | `layout`                                                                                              |
 | `content-slide`        | `title`, `subheading`, `body`                                                                            | –                      | `layout`, `density`, `actions`                                                                        |
+| `callout-slide`        | `label`, `body`, `source`                                                                                | –                      | `variant`                                                                                             |
 | `table-slide`          | `title`, `caption`                                                                                       | `rows`                 | `headerRow`, `tableStyle`, `animateByCell`, `cornerCell`                                              |
 | `list-slide`           | `title`, `subheading`, `items`                                                                           | –                      | `variant`, `layout`, `density`                                                                        |
 | `kpi-metrics-slide`    | `title`, `subheading`, `bottomSubheading`                                                                | `metrics`              | `accent`, `countUp`                                                                                   |

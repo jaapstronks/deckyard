@@ -112,6 +112,18 @@ const quoteSlideSchema = z.object({
   authorTitle: z.string().max(120).optional(),
 });
 
+// Callout Slide - one idea with a stated promise about how to read it. The
+// variant is required because it IS the type's semantics; `label` is optional
+// (the renderer falls back to the per-variant eyebrow) except in spirit for
+// `definition`, where it carries the term.
+const calloutSlideSchema = z.object({
+  variant: z.enum(['insight', 'warning', 'definition', 'note', 'tip']),
+  label: z.string().max(80).optional(),
+  body: z.string().min(1).max(600),
+  source: z.string().max(160).optional(),
+  background: backgroundSchema,
+});
+
 // Payoff Slide (closing) - displays only theme logo, no content fields
 const payoffSlideSchema = z.object({}).passthrough();
 
@@ -481,6 +493,7 @@ const SLIDE_SCHEMAS = {
   'quote-slide': quoteSlideSchema,
   'payoff-slide': payoffSlideSchema,
   'content-slide': contentSlideSchema,
+  'callout-slide': calloutSlideSchema,
   'list-slide': listSlideSchema,
   'timeline-slide': timelineSlideSchema,
   'kpi-metrics-slide': kpiMetricsSlideSchema,
