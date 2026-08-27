@@ -318,6 +318,18 @@ missing is listed under _What is not done yet_ below.
   bound to the instance — so it takes the single organization and refuses to guess
   once an instance holds several.
 
+  MCP-over-SSE reads that organization off the key that authenticated **this**
+  request, alongside the permissions and tier the scope/quota gate judges, and
+  puts it on the per-request context (`server/mcp/sse.js`). The session
+  deliberately does not remember one: a key moved to another organization loses
+  its old reach on the next call rather than at session expiry. That is what
+  makes `storageScopeOf()` in `server/mcp/tools.js` take the SSE branch instead
+  of `singleOrganizationScope()` — the stdio branch, which under
+  multi-organization refuses to guess and would fail every remote MCP call.
+  Pinned by `tests/mcp/mcp-sse-tenancy.test.js` (two organizations, key in the
+  non-default one; all three assertions fail when the context drops the
+  organization again).
+
   **The authorization check follows the same organization as the storage scope.**
   It did not, for a while: `checkActorAccess` built its actor with the
   organization read off _the presentation being checked_, which made the

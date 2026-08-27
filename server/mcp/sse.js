@@ -34,10 +34,10 @@ const sessions = new Map();
  * @property {string} id
  * @property {string} ownerEmail
  * @property {string} keyId - API key ID this session was opened with; the
- *   session only remembers who it belongs to. Permissions, tier and quota are
- *   read off the freshly validated key on every request, so a key that is
- *   downgraded or revoked loses its reach immediately instead of at session
- *   expiry.
+ *   session only remembers who it belongs to. Organization, permissions, tier
+ *   and quota are read off the freshly validated key on every request, so a key
+ *   that is downgraded or revoked loses its reach immediately instead of at
+ *   session expiry.
  * @property {number} createdAt
  * @property {number} lastActiveAt
  * @property {import('node:http').ServerResponse|null} sseResponse - Active SSE stream (if any)
@@ -48,8 +48,6 @@ function createSession(apiKey) {
   const session = {
     id: randomUUID(),
     ownerEmail: apiKey.ownerEmail,
-    // A machine client acts in the organization its key belongs to.
-    organizationId: apiKey.organizationId ?? null,
     keyId: apiKey.id,
     createdAt: Date.now(),
     lastActiveAt: Date.now(),
@@ -309,6 +307,10 @@ async function handlePost(server, req, res, basePath) {
   // authenticated *this* request, not a copy frozen at session start.
   const context = {
     ownerEmail: session?.ownerEmail || auth.apiKey.ownerEmail,
+    // The organization this call acts in — read off the acting key, like its
+    // permissions and tier, so ./tools.js scopes storage to it instead of
+    // falling through to the single-organization guess meant for stdio.
+    organizationId: auth.apiKey.organizationId ?? null,
     apiKey: {
       id: auth.apiKey.id,
       tier: auth.apiKey.tier || 'free',
