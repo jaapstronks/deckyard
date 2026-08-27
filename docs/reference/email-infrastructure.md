@@ -122,6 +122,16 @@ not, and that result is discarded by most call sites.
   `POST …/:type/preview` (interpolated preview, nothing sent),
   `POST …/:type/test` (send a real test message). Writes are filtered to the
   type's declared fields.
+- **Escaping** — the rule is _escape once, at the point of insertion_. A
+  template's `body` is admin-authored HTML and is inserted into the wrapper
+  unescaped; `greeting`, `buttonLabel` and `footer` are escaped whole by
+  `emailWrapper` / `emailButton` / the muted paragraph, so they are interpolated
+  raw. Placeholder **values** — a deck title, a commenter's name, a comment body
+  — are escaped in every field, so the raw `body` is not a route in for anything
+  a user typed. The `subject` header and the `text/plain` half are not HTML
+  sinks and carry raw values; the action URL is escaped into its `href` and into
+  the copy-paste footer, identically in both. Pinned by
+  `tests/email-template-escaping.test.js`.
 - **Digest** — `scheduleDigestEmailJob()` starts in `server/server.js` and runs
   **daily**, sending only to users whose configured `digest.dayOfWeek` matches
   today (default Monday). It pulls the week's numbers from
