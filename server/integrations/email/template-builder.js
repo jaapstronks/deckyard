@@ -57,9 +57,13 @@ export async function trySendCustomTemplate({
     const resolved = await resolveTemplate(repoRoot, templateType, locale);
     if (!resolved.isCustom) return null;
 
+    // A mail subject is a plain-text header, not an HTML sink — the code
+    // defaults interpolate it through the translator, which escapes nothing.
+    // Escaping here is what put `&#039;` in front of every O'Brien.
     const subject = interpolatePlaceholders(
       resolved.fields.subject || '',
       vars,
+      false,
     );
     const { htmlContent, textContent } = buildFromResolvedTemplate(
       resolved.fields,
@@ -92,10 +96,27 @@ export async function trySendCustomTemplate({
  * @returns {{ htmlContent: string, textContent: string }}
  */
 export function buildFromResolvedTemplate(fields, vars, actionUrl) {
-  const greeting = interpolatePlaceholders(fields.greeting || '', vars);
+  // Escape exactly once, at the point of insertion. `emailWrapper`,
+  // `emailButton` and the muted paragraph below each escape their whole string,
+  // so these three are interpolated raw — pre-escaping them here escaped the
+  // escape, and a recipient called O'Brien read `O&#039;Brien` in the greeting.
+  // `body` is the exception: it is admin-authored markup and goes in unescaped,
+  // so a value interpolated into it has to be escaped here or nowhere.
+  const greeting = interpolatePlaceholders(fields.greeting || '', vars, false);
   const body = interpolatePlaceholders(fields.body || '', vars);
-  const buttonLabel = interpolatePlaceholders(fields.buttonLabel || '', vars);
-  const footer = interpolatePlaceholders(fields.footer || '', vars);
+  // The text/plain half is not an HTML sink either, so it takes raw values
+  // throughout: strip the admin's markup first, then interpolate.
+  const bodyText = interpolatePlaceholders(
+    stripTags(fields.body || ''),
+    vars,
+    false,
+  );
+  const buttonLabel = interpolatePlaceholders(
+    fields.buttonLabel || '',
+    vars,
+    false,
+  );
+  const footer = interpolatePlaceholders(fields.footer || '', vars, false);
 
   const htmlContent = emailWrapper({
     greeting,
@@ -110,7 +131,7 @@ export function buildFromResolvedTemplate(fields, vars, actionUrl) {
   const textContent = `
 ${greeting}
 
-${stripTags(body)}
+${bodyText}
 
 ${actionUrl}
 

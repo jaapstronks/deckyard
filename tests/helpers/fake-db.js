@@ -89,6 +89,9 @@ export const JSONB_COLUMNS = {
   app_settings: ['settings'],
   user_settings: ['settings'],
   auth_audit_log: ['metadata'],
+  // Migration 058: an admin's template override is a jsonb bag holding only
+  // the fields they actually changed.
+  email_templates: ['fields'],
   presentations: ['settings', 'i18n', 'slides', 'published', 'sandbox'],
   presentation_versions: ['presentation_data'],
   present_sessions: ['state', 'follow_codes'],
