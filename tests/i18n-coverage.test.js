@@ -626,7 +626,9 @@ describe('i18n anchor consistency', () => {
    * check alone; this one needs a number too, because its reconcile step
    * (`i18n-anchor-report.js --apply`) can add rows. The ceiling is what stops
    * that from being a way to launder new drift into the list. It moves in one
-   * direction: down, as rows are judged or fixed.
+   * direction: down, as rows are judged or fixed — and the equality check below
+   * forces this constant to follow, so paid-down debt never turns into headroom
+   * a later `--apply` could spend on new drift.
    */
   const UNREVIEWED_BASELINE = 499;
 
@@ -706,6 +708,14 @@ describe('i18n anchor consistency', () => {
         `scripts/i18n-anchor-allowlist.json, up from ${UNREVIEWED_BASELINE}.\n` +
         'A new pair needs a decision, not a seat on the backlog: fix the\n' +
         'translation, or state why both forms are correct.',
+    );
+    assert.strictEqual(
+      unreviewed.length,
+      UNREVIEWED_BASELINE,
+      `${unreviewed.length} unreviewed row(s), below the baseline of ` +
+        `${UNREVIEWED_BASELINE}. Good — now lower UNREVIEWED_BASELINE in this\n` +
+        'test to match, so the paid-down debt cannot be spent on new drift\n' +
+        'later.',
     );
   });
 
