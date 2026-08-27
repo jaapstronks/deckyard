@@ -207,8 +207,10 @@ export async function renderNotes(root, sessionId, { user } = {}) {
     render();
   };
 
-  previewPrevBtn.onclick = () => localGo(viewSlideIndex - 1, { unfollow: true });
-  previewNextBtn.onclick = () => localGo(viewSlideIndex + 1, { unfollow: true });
+  previewPrevBtn.onclick = () =>
+    localGo(viewSlideIndex - 1, { unfollow: true });
+  previewNextBtn.onclick = () =>
+    localGo(viewSlideIndex + 1, { unfollow: true });
 
   refollowBtn.onclick = () => {
     viewSlideIndex = presenterSlideIndex;

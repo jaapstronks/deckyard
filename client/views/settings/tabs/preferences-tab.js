@@ -247,11 +247,12 @@ export function createPreferencesTab({ user, nav }) {
   });
 
   // Digest enabled toggle
-  const { el: digestEnabledLabel, input: digestEnabledCheck } =
-    labeledCheckbox({
+  const { el: digestEnabledLabel, input: digestEnabledCheck } = labeledCheckbox(
+    {
       text: t('settings.digest.enabled', 'Receive weekly digest emails'),
       checked: true,
-    });
+    },
+  );
 
   // Digest day of week
   const digestDaySelect = h(

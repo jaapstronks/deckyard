@@ -369,11 +369,9 @@ export function createAdminTab({ user }) {
 
   // Bundled gradients toggle. No key to check, so no status span: the assets
   // ship with the app and are always "configured".
-  const { el: bundledLabel, input: bundledEnabledCheck } = labeledCheckbox(
-    {
-      text: t('settings.admin.stockMedia.bundled', 'Enable bundled gradients'),
-    },
-  );
+  const { el: bundledLabel, input: bundledEnabledCheck } = labeledCheckbox({
+    text: t('settings.admin.stockMedia.bundled', 'Enable bundled gradients'),
+  });
   const bundledHint = h('div', {
     class: 'help',
     text: t(
@@ -384,18 +382,14 @@ export function createAdminTab({ user }) {
 
   // Unsplash toggle
   const unsplashStatusSpan = h('span', { class: 'help stock-media-status' });
-  const { el: unsplashLabel, input: unsplashEnabledCheck } =
-    labeledCheckbox({
-      content: [
-        h('span', {
-          text: t(
-            'settings.admin.stockMedia.unsplash',
-            'Enable Unsplash photos',
-          ),
-        }),
-        unsplashStatusSpan,
-      ],
-    });
+  const { el: unsplashLabel, input: unsplashEnabledCheck } = labeledCheckbox({
+    content: [
+      h('span', {
+        text: t('settings.admin.stockMedia.unsplash', 'Enable Unsplash photos'),
+      }),
+      unsplashStatusSpan,
+    ],
+  });
 
   // Giphy toggle
   const giphyStatusSpan = h('span', { class: 'help stock-media-status' });
