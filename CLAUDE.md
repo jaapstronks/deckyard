@@ -34,11 +34,14 @@ Three planning horizons, three files:
 Deze repo volgt de universele werkwijze (skill `werkwijze` in `~/.claude`);
 de drie planning-horizonnen hierboven zijn er de deckyard-instantie van.
 
-- **Handoff**: `/handoff` leest `docs/plans/HANDOFF.md` en voert 'm uit als
-  sessie-opdracht. Elke werk-afrondende sessie **overschrijft** dat bestand
-  met de volgende opdracht en sluit het antwoord af met de sluitregel
-  (`/handoff` + sessiesoort + model). Volledige regels:
-  `docs/plans/handoff-systematiek.md`.
+- **Handoff**: `/handoff` leest het lane-bestand van deze machine —
+  `docs/plans/handoff/dev.md` (dev-server) of `handoff/mbp.md` (MacBook) —
+  en voert 'm uit als sessie-opdracht; het gedeelde doorgeefblok +
+  terugkeer-check staan in `handoff/queue.md`. Elke werk-afrondende sessie
+  **overschrijft het eigen lane-bestand** met de volgende opdracht en sluit
+  het antwoord af met de sluitregel (`/handoff` + sessiesoort + model).
+  Cross-machine doorgeven gaat via `queue.md` met een lane-tag (`→ mbp` /
+  `→ dev`). Volledige regels: `docs/plans/handoff-systematiek.md` § Lanes.
 - **Rollen**: Fable brieft/reviewt/merget; Opus voert één item/PR per sessie
   uit en merget nooit zelf.
 - **Ritmes**: `merge-housekeeping` (repo-eigen skill) per gedelegeerde merge;
