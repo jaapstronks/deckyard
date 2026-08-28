@@ -94,7 +94,8 @@ export default {
       background: 'mist',
     },
   },
-  // Back-compat fallback (used when the language is unknown).
+  // The language-less seed: what every path with no deck language clones.
+  // Key-identical to the maps above; see `defaults` in validate-definition.js.
   defaults: {
     variant: DEFAULT_CALLOUT_VARIANT,
     label: '',

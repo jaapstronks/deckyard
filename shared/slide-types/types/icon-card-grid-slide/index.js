@@ -193,9 +193,11 @@ export default {
       ],
     },
   },
-  // Back-compat fallback. Seeded in `items[]` — the numbered `card1*`…`card6*`
-  // keys these used to write are gone (v7 -> v8), and seeding the flat form was
-  // how a brand-new grid ended up stored in the legacy shape in the first place.
+  // The language-less seed: what every path with no deck language clones.
+  // Key-identical to the maps above; see `defaults` in validate-definition.js.
+  // Seeded in `items[]` — the numbered `card1*`…`card6*` keys these used to
+  // write are gone (v7 -> v8), and seeding the flat form was how a brand-new
+  // grid ended up stored in the legacy shape in the first place.
   defaults: {
     title: 'New title',
     subheading: 'Optional subtitle',

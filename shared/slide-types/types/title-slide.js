@@ -112,9 +112,11 @@ export default {
       titleBlockAlign: 'left',
     },
   },
-  // Back-compat fallback. `titleBlockAlign` is listed so activeLayoutVariantId
-  // resolves the left tile as active on decks authored before the field
-  // existed, instead of showing no tile selected.
+  // The language-less seed: what every path with no deck language clones.
+  // Key-identical to the maps above; see `defaults` in validate-definition.js.
+  // `titleBlockAlign` is listed so activeLayoutVariantId resolves the left tile
+  // as active on decks authored before the field existed, instead of showing no
+  // tile selected.
   defaults: {
     title: 'New title',
     subheading: '',

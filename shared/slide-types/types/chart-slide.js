@@ -216,12 +216,7 @@ export default {
     },
   },
   /**
-   * The language-less seed. `defaultsByLang` wins wherever a deck language is
-   * known (convert.js, editor-utils.js); this map is what the paths that have
-   * no language — `newSlide()` in deck.js, presentation.js, the enum repair in
-   * deck.js — actually clone. So it is a live surface, not an archive, and it
-   * has to carry the same *keys* as the `en-GB` map above; only the copy may
-   * differ.
+   * The language-less seed (`defaults` in validate-definition.js).
    *
    * It had drifted: `subtitle: ''` for a field the type never declared (the
    * pre-rename spelling of `subheading`, see 00-patterns.css), while the two
