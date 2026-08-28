@@ -82,8 +82,14 @@ const CONSUMED_SOURCE_KEYS = {
       'focusY',
     ],
   },
+  'image-slide': {
+    // The subheading is folded into the target's title/body below, because
+    // image-text has no subheading field of its own. It travels, so it must
+    // not warn.
+    'image-text-slide': ['subheading'],
+  },
   'list-slide': {
-    'content-slide': ['subtitle', 'variant', 'items'],
+    'content-slide': ['variant', 'items'],
   },
 };
 
@@ -286,32 +292,35 @@ export function convertSlideToType(
 
     // Title + body requirements:
     // - image-text requires title + body.
-    // - image-slide title/subtitle are optional; move subtitle into body.
+    // - image-slide title/subheading are optional, and image-text has no
+    //   subheading field, so the subheading moves into the body.
     const srcTitle = nonEmptyString(from?.title) ? from.title.trim() : '';
-    const srcSubtitle = nonEmptyString(from?.subtitle)
-      ? from.subtitle.trim()
+    const srcSubheading = nonEmptyString(from?.subheading)
+      ? from.subheading.trim()
       : '';
     const srcCaption = nonEmptyString(from?.caption) ? from.caption.trim() : '';
     if (srcTitle) to.title = srcTitle;
     else if (srcCaption) to.title = srcCaption.slice(0, 120);
-    else if (srcSubtitle) to.title = srcSubtitle.slice(0, 120);
+    else if (srcSubheading) to.title = srcSubheading.slice(0, 120);
     else to.title = 'Image';
 
-    // Prefer subtitle as body; fall back to caption; otherwise keep it valid but minimal.
-    if (srcSubtitle) to.body = srcSubtitle;
+    // Prefer subheading as body; fall back to caption; otherwise keep it valid but minimal.
+    if (srcSubheading) to.body = srcSubheading;
     else if (srcCaption) to.body = srcCaption;
     else to.body = '- ';
   }
 
   // list -> content (either name of the List type)
   if (isListType(fromType) && targetType === 'content-slide') {
-    const subtitle =
-      typeof from?.subtitle === 'string' ? from.subtitle.trim() : '';
     const items = Array.isArray(from?.items) ? from.items : [];
     const variant = from?.variant === 'numbers' ? 'numbers' : 'bullets';
 
+    // Both types declare `subheading`, so it carries as itself instead of
+    // being flattened into the body's first line.
+    if (nonEmptyString(from?.subheading) && typeof to.subheading === 'string')
+      to.subheading = from.subheading;
+
     const lines = [];
-    if (subtitle) lines.push(subtitle);
     for (let i = 0; i < Math.min(8, items.length); i += 1) {
       const it = items[i];
       const title = typeof it?.title === 'string' ? it.title.trim() : '';

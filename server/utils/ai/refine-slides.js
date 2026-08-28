@@ -193,7 +193,7 @@ function createFallbackSlide(originalSlide) {
       type: 'chapter-title-slide',
       content: {
         title: lines[0] || 'Section',
-        subtitle: lines[1] || '',
+        subheading: lines[1] || '',
       },
       reasoning: 'Fallback: Phase 2 failed, created basic chapter slide',
       presenterNotes,

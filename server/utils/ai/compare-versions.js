@@ -75,8 +75,8 @@ For a modified slide:
 function summarizeSlideContent(slide) {
   const parts = [];
   if (slide.content?.title) parts.push(`Title: "${slide.content.title}"`);
-  if (slide.content?.subtitle)
-    parts.push(`Subtitle: "${slide.content.subtitle}"`);
+  if (slide.content?.subheading)
+    parts.push(`Subheading: "${slide.content.subheading}"`);
   if (slide.content?.body) {
     const body = String(slide.content.body).slice(0, 200);
     parts.push(

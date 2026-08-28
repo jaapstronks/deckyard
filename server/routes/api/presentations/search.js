@@ -32,9 +32,9 @@ function extractSlideText(slide) {
   // Extract common text fields from slide content
   const content = slide.content;
 
-  // Title and subtitle
+  // Title and subheading
   if (content.title) texts.push(content.title);
-  if (content.subtitle) texts.push(content.subtitle);
+  if (content.subheading) texts.push(content.subheading);
 
   // Body text (various formats)
   if (content.body) texts.push(content.body);
