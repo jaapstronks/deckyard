@@ -123,25 +123,6 @@
   cursor: grabbing;
 }
 
-/* Subtle index badge on drag handle */
-.item-index-badge {
-  position: absolute;
-  bottom: -2px;
-  right: -4px;
-  font-size: 9px;
-  font-weight: 600;
-  line-height: 1;
-  color: hsl(var(--app-text-tertiary));
-  pointer-events: none;
-}
-
-/* Inline title input in block/card headers */
-.item-inline-title {
-  flex: 1;
-  font-weight: 500;
-  min-width: 0;
-}
-
 /* Title preview in collapsed card headers */
 .item-title-preview {
   text-transform: none;
@@ -494,32 +475,6 @@
   background: hsl(var(--app-text-secondary) / 0.48);
 }
 
-/* Icons: toggle */
-.sb-icon.sb-icon-toggle-on::before,
-.sb-icon.sb-icon-toggle-off::before {
-  content: '';
-  position: absolute;
-  inset: 4px;
-  border-radius: 999px;
-  background: hsl(var(--app-text-secondary) / 0.2);
-}
-.sb-icon.sb-icon-toggle-on::after,
-.sb-icon.sb-icon-toggle-off::after {
-  content: '';
-  position: absolute;
-  top: 5px;
-  bottom: 5px;
-  width: 8px;
-  border-radius: 999px;
-  background: hsl(var(--app-bg-overlay));
-}
-.sb-icon.sb-icon-toggle-on::after {
-  right: 6px;
-}
-.sb-icon.sb-icon-toggle-off::after {
-  left: 6px;
-}
-
 .field-label {
   display: block;
   margin-bottom: var(--ps-space-1);
@@ -720,12 +675,6 @@
   content: '⚠ ';
 }
 
-.editor-form-header-left {
-  align-items: center;
-  gap: var(--ps-space-3);
-  flex-wrap: wrap;
-}
-
 /* Collapse control for the inspector rail. The header row it used to live in
    (an "INSPECTOR" title beside the already-active Inspector pane tab, ~57px)
    was dropped in the 2026-07-26 declutter; the button stays, because it has to
@@ -799,13 +748,6 @@
   margin-left: auto;
 }
 
-/* Title/subheading row: always single column. The edit panel is a fixed narrow
-   column (~320px) regardless of viewport width, so a 2-col split here just
-   cramps both fields — keying it off viewport width was the bug. */
-.editor-title-row {
-  grid-template-columns: 1fr !important;
-}
-
 .editor-callout {
   padding: var(--ps-space-2-5);
   border-radius: 12px;
@@ -833,10 +775,6 @@
 
 .help.is-mt-8 {
   margin-top: var(--ps-space-2);
-}
-
-.help.is-mb-16 {
-  margin-bottom: var(--ps-space-4);
 }
 
 .editor-img-preview {
@@ -964,30 +902,6 @@
   transform: rotate(-90deg);
 }
 
-/* Collapsible row content */
-.row-collapsible-content {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ps-space-3);
-}
-
-/* Text blocks list container */
-.text-blocks-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ps-space-3);
-}
-
-/* Block header with drag handle */
-.block-header {
-  align-items: center;
-  margin-bottom: var(--ps-space-1);
-}
-
-.block-header .block-label {
-  margin-bottom: 0;
-}
-
 /* Smaller field labels for stacked fields */
 .field-label-sm {
   font-size: var(--ps-text-sm);
@@ -996,49 +910,8 @@
   margin-bottom: var(--ps-space-1);
 }
 
-/* Field stack spacing */
-.field-stack {
-  gap: var(--ps-space-1);
-}
-
-/* Nested block card styling */
-.text-blocks-list .block-fields {
-  padding: var(--ps-space-3);
-  background: hsl(var(--app-bg-elevated));
-  border: 1px solid hsl(var(--app-border-subtle));
-  border-radius: var(--ps-radius-md);
-}
-
-/* Image blocks list container */
-.image-blocks-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ps-space-3);
-}
-
 /* Collapsible block content */
 .block-collapsible-content {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ps-space-3);
-}
-
-/* Gallery images list container */
-.gallery-images-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ps-space-3);
-}
-
-/* Icon cards list container */
-.icon-cards-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ps-space-3);
-}
-
-/* Four cards list container */
-.four-cards-list {
   display: flex;
   flex-direction: column;
   gap: var(--ps-space-3);
