@@ -13,8 +13,7 @@ export async function renderEditor(root, id, { user } = {}) {
   const hideSkeleton = showEditorLoadingSkeleton(root);
 
   // Fetch presentation to check permission level
-  const url = new URL(location.href);
-  const langParam = deckLangQuery(url);
+  const langParam = deckLangQuery();
 
   let pres;
   try {

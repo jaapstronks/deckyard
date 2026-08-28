@@ -19,6 +19,7 @@ import { SLIDE_TYPES } from '../../../../shared/slide-types.js';
 import { translatableKeysForType } from '../../../../shared/slide-types/text-fields.js';
 import { h } from '../../../lib/dom.js';
 import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
+import { setQueryParams } from '../../../lib/state/router.js';
 
 /**
  * Create the language mode switcher component.
@@ -93,13 +94,7 @@ export function createLanguageMode({
   const setUrlLangParam = (lang) => {
     const next = normalizeLang(lang);
     if (!next) return;
-    try {
-      const u = new URL(location.href);
-      u.searchParams.set('lang', next);
-      history.replaceState(null, '', u.toString());
-    } catch {
-      // ignore
-    }
+    setQueryParams({ lang: next });
   };
 
   // Every status reported here becomes a visible toast. An empty message is

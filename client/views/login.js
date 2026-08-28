@@ -4,7 +4,7 @@ import { login, me } from '../lib/user/auth.js';
 import { t } from '../lib/ui-i18n.js';
 import { createBusyManager } from '../lib/dom/busy.js';
 import { authShell } from './auth-shell.js';
-import { nav } from '../lib/state/router.js';
+import { nav, queryParam } from '../lib/state/router.js';
 
 /**
  * Human-readable message for an SSO error code returned via ?error=sso_...
@@ -43,15 +43,14 @@ function ssoErrorMessage(code) {
 }
 
 export async function renderLogin(root) {
-  const url = new URL(location.href);
-  const returnToRaw = url.searchParams.get('returnTo') || '';
+  const returnToRaw = queryParam('returnTo') || '';
   const returnTo =
     returnToRaw.startsWith('/') && !returnToRaw.startsWith('//')
       ? returnToRaw
       : '/app';
 
   // Extract email from URL params (direct or from returnTo) for pre-filling
-  let prefillEmail = url.searchParams.get('email') || '';
+  let prefillEmail = queryParam('email') || '';
   if (!prefillEmail && returnToRaw) {
     try {
       // Check if returnTo contains an email parameter
@@ -63,7 +62,7 @@ export async function renderLogin(root) {
   }
   prefillEmail = prefillEmail.trim();
 
-  const errorCode = url.searchParams.get('error') || '';
+  const errorCode = queryParam('error') || '';
 
   const { shell, card, subtitle } = authShell({
     title: t('login.title', 'Sign in'),

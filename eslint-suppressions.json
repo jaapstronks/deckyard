@@ -270,7 +270,7 @@
   },
   "client/views/editor/editor-controller.js": {
     "no-restricted-syntax": {
-      "count": 25
+      "count": 24
     }
   },
   "client/views/editor/editor-form.js": {
@@ -527,11 +527,6 @@
       "count": 3
     }
   },
-  "client/views/editor/slide-url.js": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "client/views/editor/slides-panel.js": {
     "no-restricted-syntax": {
       "count": 3
@@ -547,11 +542,6 @@
       "count": 7
     }
   },
-  "client/views/editor/topbar/language-mode.js": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "client/views/editor/topbar/more-menu.js": {
     "no-restricted-syntax": {
       "count": 1
@@ -564,7 +554,7 @@
   },
   "client/views/follow/index.js": {
     "no-restricted-syntax": {
-      "count": 7
+      "count": 6
     }
   },
   "client/views/follow/interactions.js": {

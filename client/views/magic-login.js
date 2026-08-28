@@ -4,11 +4,10 @@ import { t } from '../lib/ui-i18n.js';
 import { me } from '../lib/user/auth.js';
 import { spinner } from '../lib/dom/spinner.js';
 import { authShell } from './auth-shell.js';
-import { nav } from '../lib/state/router.js';
+import { nav, queryParam } from '../lib/state/router.js';
 
 export async function renderMagicLogin(root) {
-  const url = new URL(location.href);
-  const returnToRaw = url.searchParams.get('returnTo') || '';
+  const returnToRaw = queryParam('returnTo') || '';
   const returnTo =
     returnToRaw.startsWith('/') && !returnToRaw.startsWith('//')
       ? returnToRaw
@@ -27,7 +26,7 @@ export async function renderMagicLogin(root) {
   root.append(shell);
 
   // Get token from URL
-  const token = url.searchParams.get('token');
+  const token = queryParam('token');
 
   if (!token) {
     spinnerEl.remove();

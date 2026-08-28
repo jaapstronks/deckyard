@@ -1,4 +1,5 @@
 import { storage } from '../storage.js';
+import { queryString } from '../state/router.js';
 import {
   DEFAULT_DECK_LANG,
   DEFAULT_SUPPORTED_DECK_LANGS,
@@ -126,13 +127,7 @@ const DECK_LANG_PARAM_KEY = 'lang';
 export function readDeckLangParam(source) {
   let qs = source;
   if (qs instanceof URL) qs = qs.search;
-  if (qs == null) {
-    try {
-      qs = window.location.search;
-    } catch {
-      qs = '';
-    }
-  }
+  if (qs == null) qs = queryString();
   let params;
   try {
     params = new URLSearchParams(qs || '');

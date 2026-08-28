@@ -6,7 +6,13 @@ if (typeof window !== 'undefined' && window.DOMPurify) {
   globalThis.DOMPurify = window.DOMPurify;
 }
 
-import { route, nav, setRenderer, startRouter } from './lib/state/router.js';
+import {
+  currentUrl,
+  nav,
+  route,
+  setRenderer,
+  startRouter,
+} from './lib/state/router.js';
 import { meWithMeta } from './lib/user/auth.js';
 import { setFeatures } from './lib/state/features.js';
 import { syncSandboxBanner } from './views/shared/sandbox-banner.js';
@@ -211,7 +217,7 @@ async function render() {
 
     const user = await getMeCached();
     if (!user) {
-      const returnTo = `${location.pathname}${location.search || ''}`;
+      const returnTo = currentUrl();
       return nav(`/login?returnTo=${encodeURIComponent(returnTo)}`);
     }
 

@@ -87,6 +87,7 @@ import { createSlideUpdateHandler } from './slide-update-handler.js';
 import { createRemoteRefresh } from './remote-refresh.js';
 import { onMaintenanceChange } from '../../lib/state/maintenance.js';
 import { createReadOnlyController } from './read-only-controller.js';
+import { queryParam, setQueryParams } from '../../lib/state/router.js';
 
 export async function createEditorController({
   root,
@@ -156,15 +157,8 @@ export async function createEditorController({
     api('/api/settings/organization').catch(() => ({})),
   ]);
 
-  const {
-    startUrl,
-    pres,
-    theme,
-    SLIDE_TYPES,
-    PARTNER_LOGOS,
-    BACKGROUNDS,
-    newTitleKey,
-  } = editorModel;
+  const { pres, theme, SLIDE_TYPES, PARTNER_LOGOS, BACKGROUNDS, newTitleKey } =
+    editorModel;
 
   const orgSettings = orgSettingsData?.settings || {};
   const disabledSlideTypes = Array.isArray(orgSettings.disabledSlideTypes)
@@ -175,10 +169,7 @@ export async function createEditorController({
   // EDITOR STATE
   // ============================================================
 
-  const initialSlideId =
-    startUrl?.searchParams?.get?.('slideId') ||
-    startUrl?.searchParams?.get?.('s') ||
-    '';
+  const initialSlideId = queryParam('slideId') || queryParam('s') || '';
   const shouldScrollSelectionOnLoad = !!initialSlideId;
 
   let selectedSlideId = pres.slides?.[0]?.id || null;
@@ -1551,18 +1542,8 @@ export async function createEditorController({
 
   // Fresh AI-generated deck: open the whole-deck review grid on top of the
   // editor. The flag is stripped from the URL so a refresh doesn't reopen it.
-  if (startUrl?.searchParams?.get?.('aiReview') === '1') {
-    try {
-      const cleanUrl = new URL(location.href);
-      cleanUrl.searchParams.delete('aiReview');
-      history.replaceState(
-        history.state,
-        '',
-        cleanUrl.pathname + cleanUrl.search,
-      );
-    } catch {
-      /* ignore */
-    }
+  if (queryParam('aiReview') === '1') {
+    setQueryParams({ aiReview: null });
     requestAnimationFrame(() => openAiDeckReview({ postGeneration: true }));
   }
 

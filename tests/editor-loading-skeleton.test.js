@@ -79,7 +79,6 @@ test('loadEditorModel skips the presentation fetch when initialPres is given', a
   const model = await loadEditorModel({
     id: 'test-id',
     api: fakeApi,
-    startUrl: new URL('http://localhost/app/test-id'),
     initialPres,
   });
 
@@ -103,7 +102,6 @@ test('loadEditorModel still fetches when initialPres is absent', async () => {
   await loadEditorModel({
     id: 'test-id',
     api: fakeApi,
-    startUrl: new URL('http://localhost/app/test-id'),
   });
 
   assert.ok(

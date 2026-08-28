@@ -13,14 +13,12 @@ import { deckLangQuery, readDeckLangParam } from '../../lib/format/i18n.js';
 export async function loadEditorModel({
   id,
   api = defaultApi,
-  startUrl = null,
   initialPres = null,
 } = {}) {
   if (!id) throw new Error('loadEditorModel: id is required');
 
-  const url = startUrl || new URL(location.href);
-  const initialLang = readDeckLangParam(url);
-  const langParam = deckLangQuery(url);
+  const initialLang = readDeckLangParam();
+  const langParam = deckLangQuery();
 
   // The route handler already fetched the presentation for its permission
   // check (same id + lang): accept it via initialPres so long decks aren't
@@ -38,15 +36,11 @@ export async function loadEditorModel({
       loadEditorAssets({ api }),
     ]);
 
-  const { newTitleKey } = initNewDeckTitlePromptFlag({
-    startUrl: url,
-    id,
-  });
+  const { newTitleKey } = initNewDeckTitlePromptFlag({ id });
   initPresentationI18n({ pres, initialLang });
   normalizeSlideNotes(pres);
 
   return {
-    startUrl: url,
     initialLang,
     pres,
     theme,

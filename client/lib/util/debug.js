@@ -1,3 +1,5 @@
+import { queryString } from '../state/router.js';
+
 function truthyEnv(v) {
   const s = String(v || '')
     .trim()
@@ -18,7 +20,7 @@ function isDebugLogEnabled() {
   // - ?debugLog=1
   // - localStorage.DEBUG_LOG=1
   try {
-    const qs = new URLSearchParams(globalThis.location?.search || '');
+    const qs = new URLSearchParams(queryString());
     if (truthyEnv(qs.get('debugLog'))) return true;
   } catch {
     // ignore
