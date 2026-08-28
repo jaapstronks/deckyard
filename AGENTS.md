@@ -263,7 +263,7 @@ format` writes, `npm run format:check` gates in CI next to `npm run lint`.
   - `renderHtml()` must return a single root `.slide` element with a `.slide-inner` child.
   - Use `esc()` for string fields; use `markdownToSafeHtml()` for markdown fields.
   - Prefer semantic class naming: `slide-<name>` and predictable child classes.
-    Modifiers use the BEM double-dash: `.slide-card--accent`, `.slide-action--primary`
+    Modifiers use the BEM double-dash: `.slide-badge--danger`, `.slide-action--primary`
     (not flat `.slide-action-primary`). The block/element stays single-dash
     (`.slide-action`), variants get `--`.
   - Keep `renderHtml()` **pure**: no DOM reads/writes, no network, no timers.
