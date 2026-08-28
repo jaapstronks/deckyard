@@ -80,6 +80,11 @@ export const inlineEdit = {
  * intentionally absent since datamodel step 2b: fit is a per-image ImageRef
  * property (images manager / "This image"), no longer a writable slide-level
  * setting.
+ *
+ * `asideVariant` / `asideText`: the aside inset (shared/slide-types/aside-field.js).
+ * Its body is click-to-edit on the canvas once it exists, but only once — the
+ * inspector is where an author picks the kind, and that choice is what makes
+ * the text field appear at all.
  * @type {string[]}
  */
 export const inspectorKeeps = [
@@ -90,6 +95,8 @@ export const inspectorKeeps = [
   'imageWidth',
   'imageBackground',
   'actions',
+  'asideVariant',
+  'asideText',
 ];
 
 /**

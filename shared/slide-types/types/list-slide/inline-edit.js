@@ -42,6 +42,17 @@ export const inlineEdit = {
 /**
  * Fields the inspector keeps rendering even though the inline layer covers the
  * rest of the slide.
+ *
+ * `asideVariant` / `asideText`: the aside inset (shared/slide-types/aside-field.js).
+ * Its body is click-to-edit on the canvas once it exists, but only once — the
+ * inspector is where an author picks the kind, and that choice is what makes
+ * the text field appear at all.
  * @type {string[]}
  */
-export const inspectorKeeps = ['variant', 'layout', 'density'];
+export const inspectorKeeps = [
+  'variant',
+  'layout',
+  'density',
+  'asideVariant',
+  'asideText',
+];

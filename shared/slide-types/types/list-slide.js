@@ -5,6 +5,11 @@ import {
   BACKGROUND_FIELD,
 } from '../helpers.js';
 import { alignGroup, groupAlignClass } from '../field-groups.js';
+import {
+  ASIDE_DEFAULTS,
+  ASIDE_FIELDS,
+  renderAsideHtml,
+} from '../aside-field.js';
 import { sharedOption } from '../../ui-i18n-keys.js';
 
 /**
@@ -299,6 +304,7 @@ export default {
         ),
       ],
     },
+    ...ASIDE_FIELDS,
     BACKGROUND_FIELD,
     {
       key: 'items',
@@ -354,6 +360,7 @@ export default {
         },
         { title: 'Derde punt', text: 'Hou dit compact' },
       ],
+      ...ASIDE_DEFAULTS,
       background: 'lime',
     },
     'en-GB': {
@@ -374,6 +381,7 @@ export default {
         },
         { title: 'Third point', text: 'Keep this compact' },
       ],
+      ...ASIDE_DEFAULTS,
       background: 'lime',
     },
   },
@@ -396,9 +404,10 @@ export default {
       },
       { title: 'Third point', text: 'Keep this compact' },
     ],
+    ...ASIDE_DEFAULTS,
     background: 'lime',
   },
-  renderHtml: (content) => {
+  renderHtml: (content, _slide, ctx) => {
     const bg = bgClass(content?.background);
     const variant =
       content?.variant === 'numbers' ? 'is-numbers' : 'is-bullets';
@@ -493,6 +502,9 @@ export default {
       listHtml = `<${listTag} class="lijst">${itemsHtml}</${listTag}>`;
     }
 
+    // Under the list, never between items: an aside comments on the list as a
+    // whole, and a box wedged into the run would read as a fourth item.
+    const asideHtml = renderAsideHtml(content, ctx);
     const alignClass = groupAlignClass(HEADER_BLOCK.group, content);
     return `
       <div class="slide slide-lijstje ${variant} ${layout}${densityClass}${fillClass} ${bg}${
@@ -502,6 +514,7 @@ export default {
           <h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${escapeHtml(content?.title)}</h2>
           ${subheading}
           ${listHtml}
+          ${asideHtml}
         </div>
       </div>
     `;

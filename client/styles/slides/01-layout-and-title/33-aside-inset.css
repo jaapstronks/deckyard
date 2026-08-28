@@ -1,0 +1,123 @@
+/* The ASIDE INSET — the admonition family's within-slide shape.
+
+   Output of a shared renderer (`renderAsideHtml()` in
+   shared/slide-types/aside-field.js), not of a slide type, so it keeps its own
+   sheet the way `.md-table` and `.slide-action` do — three host types render it
+   today (content, list, image+text) and none of them owns it
+   (docs/reference/slide-type-directory.md § What counts as a type's CSS).
+
+   Cascade slot: right after 32-markdown-and-actions.css, the other shared
+   render output, and before every per-type sheet from 35 up — so a host type
+   that has to nudge the inset in its own layout can, without a specificity
+   fight.
+
+   THE TONE SEAM. Colour comes from `--slide-tone`, set by the variant class
+   and read by the accent, the icon, the eyebrow — the same property
+   00-patterns.css documents for the badge and the highlight, so composing
+   `eyebrowHtml()` already gets the word coloured with no rule here. The tones
+   are the semantic status ROLES from 00-tokens.css; the callout SLIDE maps its
+   five variants to the same family, which is what makes the two shapes read as
+   one system without sharing a single treatment rule. */
+
+.slide-aside {
+  /* The quiet default, for the kind an inset takes when it says nothing louder. */
+  --slide-tone: var(--slide-color-neutral);
+  /* Tint and edge derive from the tone rather than being stored, so they follow
+     it on any ground and a variant never needs a second colour. Same pattern as
+     the callout panel and matrix-slide's cell tints. */
+  --slide-aside-surface: color-mix(in srgb, var(--slide-tone) 9%, transparent);
+  --slide-aside-edge: color-mix(in srgb, var(--slide-tone) 22%, transparent);
+
+  box-sizing: border-box;
+  margin: var(--slide-space-6) 0 0;
+  padding: var(--slide-space-4) var(--slide-space-5);
+  /* Narrower than the body it annotates: an inset that runs the full measure
+     stops reading as an aside and starts reading as more body. */
+  max-width: 46em;
+  /* The accent edge IS the admonition affordance — a reader recognises the
+     shape before reading the word. Thinner than the callout slide's bar,
+     because this block is a footnote, not the point of the slide. */
+  border-inline-start: var(--slide-space-1) solid var(--slide-tone);
+  border-block: 1px solid var(--slide-aside-edge); /* allowlist: sub-step hairline — a panel edge, not a rhythm gap */
+  border-inline-end: 1px solid var(--slide-aside-edge); /* allowlist: sub-step hairline — a panel edge, not a rhythm gap */
+  border-start-end-radius: var(--slide-radius-sm);
+  border-end-end-radius: var(--slide-radius-sm);
+  background: var(--slide-aside-surface);
+}
+
+/* The inset sits with the sentence it annotates, not at the foot of the slide.
+   `content-slide`'s body takes `flex: 1` so a short one still fills its box —
+   which is right for the CTA row after it (a call to action closes the slide)
+   and exactly wrong for a footnote: it stranded the inset against the bottom
+   edge, most of a slide below the bullet it was commenting on. So when there
+   IS an aside the filler gives up its claim; with no aside the rule does not
+   match and the layout is the one every existing deck already has.
+
+   `image-text-slide` needs no counterpart — its copy column never stretched
+   the body — and `list-slide`'s own fill mechanism already leaves the inset
+   directly under the last item. */
+.slide-content .slide-inner:has(> .slide-aside) > .body {
+  flex: 0 1 auto;
+}
+
+.slide-aside--note {
+  --slide-tone: var(--slide-color-neutral);
+}
+.slide-aside--tip {
+  --slide-tone: var(--slide-color-helpful);
+}
+.slide-aside--warning {
+  --slide-tone: var(--slide-color-caution);
+}
+
+/* A dark ground swallows a saturated mid-tone, so lighten whatever the tone is
+   toward the light pole — tone-agnostic, exactly how --slide-link-on-dark
+   handles the same problem for links. `has-slide-bg-light-text` is the one
+   luminance spelling (00-base.css § THE ONE LUMINANCE SPELLING). */
+.slide.has-slide-bg-light-text .slide-aside--note {
+  --slide-tone: color-mix(in srgb, var(--slide-color-neutral) 45%, #ffffff);
+}
+.slide.has-slide-bg-light-text .slide-aside--tip {
+  --slide-tone: color-mix(in srgb, var(--slide-color-helpful) 45%, #ffffff);
+}
+.slide.has-slide-bg-light-text .slide-aside--warning {
+  --slide-tone: color-mix(in srgb, var(--slide-color-caution) 45%, #ffffff);
+}
+
+/* Icon and word on one line. The word is `.slide-eyebrow` from the partials
+   library, which already carries the caption scale, the tracking and the tone —
+   so all this row owns is the glyph beside it. */
+.slide-aside .slide-aside-head {
+  display: flex;
+  align-items: center;
+  gap: var(--slide-space-2);
+  margin: 0 0 var(--slide-space-3);
+}
+
+/* Tinted through a CSS mask rather than an <img>: an <img>-loaded SVG is an
+   isolated document and never inherits the host colour. Same seam as the
+   callout panel and icon-card-grid. */
+.slide-aside .slide-aside-icon {
+  flex: none;
+  width: var(--slide-space-5);
+  height: var(--slide-space-5);
+  background: var(--slide-tone);
+  -webkit-mask: var(--slide-aside-icon-url) center / contain no-repeat;
+  mask: var(--slide-aside-icon-url) center / contain no-repeat;
+}
+
+/* One step below the body on every host, so the inset reads as commentary on
+   the text rather than a competing block of it. */
+.slide-aside .slide-aside-body {
+  font-family: var(--font-body);
+  font-size: calc(var(--slide-text-base) * var(--tf-size-scale, 1));
+  line-height: var(--slide-leading-normal);
+  color: var(--slide-on-surface-muted);
+}
+
+.slide-aside .slide-aside-body > :first-child {
+  margin-top: 0;
+}
+.slide-aside .slide-aside-body > :last-child {
+  margin-bottom: 0;
+}

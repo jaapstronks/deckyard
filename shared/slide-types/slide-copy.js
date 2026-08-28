@@ -42,14 +42,16 @@ export const SLIDE_COPY = {
     imagePlaceholder: 'Afbeelding',
     logoPlaceholder: 'Logo',
 
-    // Callout slide — the eyebrow an unlabelled callout falls back to, per
-    // variant. An author who fills `label` overrides it (a definition usually
-    // puts the term there).
-    calloutInsight: 'Kernpunt',
-    calloutWarning: 'Let op',
-    calloutDefinition: 'Definitie',
-    calloutNote: 'Noot',
-    calloutTip: 'Tip',
+    // Admonitions — the eyebrow word for each kind of contrast block, shared
+    // by callout-slide (a whole slide) and the aside inset (a block within
+    // one), so the two say the same word for the same promise. On a callout an
+    // author who fills `label` overrides it (a definition usually puts the term
+    // there); an inset has no label field and always shows the word.
+    admonitionInsight: 'Kernpunt',
+    admonitionWarning: 'Let op',
+    admonitionDefinition: 'Definitie',
+    admonitionNote: 'Noot',
+    admonitionTip: 'Tip',
 
     // Chart slide
     chartLegendLabel: 'Legenda',
@@ -94,14 +96,12 @@ export const SLIDE_COPY = {
     imagePlaceholder: 'Image',
     logoPlaceholder: 'Logo',
 
-    // Callout slide — the eyebrow an unlabelled callout falls back to, per
-    // variant. An author who fills `label` overrides it (a definition usually
-    // puts the term there).
-    calloutInsight: 'Key insight',
-    calloutWarning: 'Warning',
-    calloutDefinition: 'Definition',
-    calloutNote: 'Note',
-    calloutTip: 'Tip',
+    // Admonitions — see the note on the Dutch table above.
+    admonitionInsight: 'Key insight',
+    admonitionWarning: 'Warning',
+    admonitionDefinition: 'Definition',
+    admonitionNote: 'Note',
+    admonitionTip: 'Tip',
 
     // Chart slide
     chartLegendLabel: 'Legend',

@@ -349,8 +349,8 @@
      been exactly the per-type theme family slide-roles.md § The theme seam
      removed everywhere else — a theme would have to learn a slide type's name
      to restyle it. These are named for the meaning, so anything that has to
-     say "good / careful / aside" reads the same token: the callout variants
-     and comparison's pros-cons treatment today, the aside insets next.
+     say "good / careful / aside" reads the same token: the callout
+     variants, comparison's pros-cons treatment, and the aside inset.
 
      Slide-internal, like `danger` always was: no `--t-*` feed, because a
      semantic palette is not brand and a theme that retints "warning" away from

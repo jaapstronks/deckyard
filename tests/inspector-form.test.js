@@ -279,6 +279,12 @@ const RENDER_PRECONDITIONS = {
   // the default ('stay') hides it, as it should.
   'poll-slide': [{ content: { onClose: 'goto' } }],
   'likert-slide': [{ content: { onClose: 'goto' } }],
+  // The aside's text field only means something once a kind is chosen; the
+  // default ('none') hides it, which is what makes "Aside" read as one control
+  // instead of an always-present empty box (shared/slide-types/aside-field.js).
+  'content-slide': [{ content: { asideVariant: 'note' } }],
+  'list-slide': [{ content: { asideVariant: 'note' } }],
+  'image-text-slide': [{ content: { asideVariant: 'note' } }],
 };
 
 test('every inspector-keep field renders (no config field is bulk-modal-only)', () => {
