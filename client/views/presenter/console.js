@@ -33,7 +33,7 @@ const TARGET_STORAGE_KEY = 'deckyard:presenterConsoleTargetSeconds';
  *   el: HTMLElement,
  *   update: (state: { current: any, next: any, idx: number, total: number }) => void,
  *   startTimer: () => void,
- *   destroy: () => void,
+ *   detach: () => void,
  * }}
  */
 export function createPresenterConsole({ theme, presentationId, lang } = {}) {

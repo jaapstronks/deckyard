@@ -33,7 +33,8 @@ globalThis.CustomEvent = dom.window.CustomEvent;
 globalThis.getComputedStyle = dom.window.getComputedStyle;
 globalThis.requestAnimationFrame =
   dom.window.requestAnimationFrame || ((cb) => setTimeout(cb, 0));
-globalThis.cancelAnimationFrame = dom.window.cancelAnimationFrame || clearTimeout;
+globalThis.cancelAnimationFrame =
+  dom.window.cancelAnimationFrame || clearTimeout;
 globalThis.ResizeObserver =
   dom.window.ResizeObserver ||
   class {
@@ -42,12 +43,10 @@ globalThis.ResizeObserver =
     disconnect() {}
   };
 
-const { createPresenterConsole } = await import(
-  '../client/views/presenter/console.js'
-);
-const { SLIDE_COPY, DEFAULT_SLIDE_COPY_LANG } = await import(
-  '../shared/slide-types/slide-copy.js'
-);
+const { createPresenterConsole } =
+  await import('../client/views/presenter/console.js');
+const { SLIDE_COPY, DEFAULT_SLIDE_COPY_LANG } =
+  await import('../shared/slide-types/slide-copy.js');
 const { resolveDeckLang } = await import('../shared/i18n-utils.js');
 
 const calloutSlide = {
