@@ -475,7 +475,7 @@ const createElementRestriction = {
 // A literal cannot say which of the two it means, so both are restricted and
 // the remedies are named in the message. The burndown took the axis-shaped
 // ones (defaults, membership tests, re-declarations, `?lang=` validation) to
-// 51 in 23 files; `deckLangLiteralAllowlist` below names what is left and why,
+// roughly fifty in 22 files; `deckLangLiteralAllowlist` below names what is left and why,
 // and it may only shrink.
 //
 // Whole-token by construction — the selector matches the string literal value
