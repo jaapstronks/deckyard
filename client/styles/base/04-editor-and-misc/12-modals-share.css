@@ -447,11 +447,6 @@
   flex-wrap: wrap;
 }
 
-.share-user-select {
-  flex: 2;
-  min-width: 180px;
-}
-
 .share-collaborator-permission {
   flex: 1;
   min-width: 120px;

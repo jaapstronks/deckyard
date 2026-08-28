@@ -32,8 +32,7 @@
   cursor: default;
 }
 
-.editor-shell.is-read-only .slides-panel .btn,
-.editor-shell.is-read-only .slide-list-actions {
+.editor-shell.is-read-only .slides-panel .btn {
   opacity: 0.5;
   pointer-events: none;
 }

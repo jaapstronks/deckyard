@@ -1,84 +1,15 @@
 /* ============================================================
    PRESENTATION LIST - LAYOUT & STRUCTURE
-   Grid layout, sections, filter tabs, topbar
+   Grid layout, sections, topbar
    ============================================================ */
 
 .list {
   /* base list styles live in `02-lists-and-thumbs.css` */
 }
 
-/* Presentation list screen: use the page background; cards provide elevation (Lovable). */
-.presentation-list-panel {
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  padding: 0;
-}
-
 .presentation-grid-content {
   flex: 1;
   padding: 0 0 var(--ps-space-8);
-}
-
-/* Filter tabs (Lovable) */
-.presentation-filter-tabs {
-  display: flex;
-  align-items: center;
-  gap: var(--ps-space-2);
-  margin-bottom: var(--ps-space-5);
-  padding-bottom: var(--ps-space-4);
-  border-bottom: 1px solid hsl(var(--app-border-subtle));
-}
-
-.presentation-filter-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ps-space-2);
-  padding: var(--ps-space-2) var(--ps-space-4);
-  font-family: inherit;
-  font-size: var(--ps-text-sm);
-  font-weight: 500;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--ps-radius-full);
-  cursor: pointer;
-  color: hsl(var(--app-text-secondary));
-  transition: all var(--ps-transition-fast);
-}
-
-.presentation-filter-tab:hover {
-  color: hsl(var(--app-text-primary));
-  background: hsl(var(--app-bg-hover));
-}
-
-.presentation-filter-tab.is-active {
-  background: hsl(var(--app-accent-soft));
-  color: hsl(var(--app-accent-text));
-  border-color: hsl(var(--app-accent-primary) / 0.3);
-}
-
-.presentation-filter-tab:focus-visible {
-  outline: 2px solid hsl(var(--app-accent-primary));
-  outline-offset: 2px;
-}
-
-.presentation-filter-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 var(--ps-space-1);
-  font-size: var(--ps-text-xs);
-  font-weight: 600;
-  background: hsl(var(--app-bg-sunken));
-  border-radius: var(--ps-radius-full);
-  color: hsl(var(--app-text-tertiary));
-}
-
-.presentation-filter-tab.is-active .presentation-filter-count {
-  background: hsl(var(--app-accent-primary) / 0.15);
-  color: hsl(var(--app-accent-text));
 }
 
 /* Sections.

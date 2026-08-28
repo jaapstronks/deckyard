@@ -352,20 +352,6 @@
 }
 
 /* ============================================================
-   CURATION ROW: Duplicate button for core types
-   ============================================================ */
-
-.slide-type-curation-row .btn-duplicate-core {
-  opacity: 0;
-  transition: opacity 0.15s ease;
-  flex-shrink: 0;
-}
-
-.slide-type-curation-row:hover .btn-duplicate-core {
-  opacity: 1;
-}
-
-/* ============================================================
    CONTEXT MENU
    ============================================================ */
 

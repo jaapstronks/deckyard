@@ -273,7 +273,16 @@
   display: inline;
 }
 
-/* KaTeX error styling - show raw LaTeX on error */
+/* KaTeX error styling - show raw LaTeX on error.
+
+   `lint:deadcss` reports `.katex-error` as unreferenced. It is a false
+   positive, and a known limitation rather than a mystery: the class is written
+   by vendored KaTeX (`client/vendor/katex/katex.min.js`, in the
+   `throwOnError: false` branch), and that file is one 300 KB line dense with
+   regex literals. The harvester's quoted-string pass walks quotes left to right
+   and desyncs on regex literals — the failure mode its own comment describes —
+   so the `"katex-error"` literal in there never reaches the evidence set.
+   Keep this rule; see B190. */
 .slide .md-math-block .katex-error,
 .slide .md-math-inline .katex-error {
   color: var(--slide-color-danger);

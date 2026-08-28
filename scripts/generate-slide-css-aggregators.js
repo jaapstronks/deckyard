@@ -186,7 +186,6 @@ export const SHARED_CSS = [
   { tier: '03-components', file: '82-auto-advance.css' },
   { tier: '03-components', file: '85-presenter-start.css' },
   { tier: '03-components', file: '90-presenter-edge-hint.css' },
-  { tier: '03-components', file: '95-export-scale.css' },
   { tier: '03-components', file: '97-text-styles.css' },
 ];
 

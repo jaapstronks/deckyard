@@ -128,10 +128,6 @@
    COLLECTION MODALS
    ============================================================ */
 
-.collection-scope-select {
-  align-self: flex-start;
-}
-
 /* Manage members list */
 .collection-members-list {
   display: flex;
