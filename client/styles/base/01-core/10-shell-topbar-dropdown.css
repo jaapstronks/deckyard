@@ -33,11 +33,6 @@
   z-index: var(--z-sticky);
 }
 
-.topbar .title-input {
-  flex: 1;
-  min-width: 0;
-}
-
 .topbar-spacer {
   flex: 1;
   min-width: 0;

@@ -90,10 +90,6 @@
   color: hsl(var(--app-accent-text));
 }
 
-.settings-sidebar-tab-icon {
-  font-size: 1.1em;
-}
-
 .settings-sidebar-tab-label {
   flex: 1;
 }
@@ -413,26 +409,10 @@
   grid-column: 1 / -1;
 }
 
-.badge-warning {
-  display: inline-block;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: hsl(var(--app-warning-bg, 45 100% 90%));
-  color: hsl(var(--app-warning-text, 30 100% 25%));
-  font-size: var(--ps-text-xs);
-  font-weight: 500;
-}
-
 /* Password status */
 .password-status {
   min-height: 18px;
   color: hsl(var(--app-text-error, 0 70% 50%));
-}
-
-/* Forgot password link on login */
-.forgot-password-link {
-  font-size: 0.9em;
-  margin-top: 8px;
 }
 
 /* Settings modal two-column grid */

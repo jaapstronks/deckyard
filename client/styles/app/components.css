@@ -132,16 +132,6 @@
   flex-shrink: 0;
 }
 
-/* Logout: present but intentionally de-emphasized (rarely used). */
-.btn-logout {
-  opacity: 0.72;
-  font-size: var(--ps-text-xs);
-  padding: var(--ps-space-2) var(--ps-space-3);
-}
-.btn-logout:hover:not(:disabled) {
-  opacity: 0.9;
-}
-
 .form-input {
   width: 100%;
   box-sizing: border-box;
