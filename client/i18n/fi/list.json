@@ -256,7 +256,6 @@
   "list.trash.loadError": "Roskakorin lataus epäonnistui.",
   "list.trash.loading": "Ladataan…",
   "list.trash.title": "Roskakori",
-  "list.untitled": "Nimetön",
   "list.visibility.private": "Yksityinen",
   "list.visibility.published": "Julkaistu",
   "list.visibility.shared": "Jaettu {count} henkilön kanssa",

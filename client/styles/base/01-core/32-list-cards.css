@@ -41,14 +41,24 @@
   border: none;
   border-radius: 0;
   border-bottom: 1px solid hsl(var(--app-border-subtle));
+  margin-bottom: 0;
   /* No "frame" around the preview inside the card. */
   background: transparent;
-  margin-bottom: 0;
 }
 
-/* Skeleton shimmer while a card's thumbnail is deferred (off-screen) or its
-   slide is still rendering. The .thumb keeps its 16/9 box, so the shimmer fills
-   it without layout shift. Cleared once the slide DOM is appended. */
+/* Cheap fallback when no raster exists yet: a flat field in the deck's theme
+   color (set inline) over a neutral surface, and no text — the deck title is
+   already on the card. Lives here, at card specificity, because the placeholder
+   state exists only on deck cards and must outrank the transparent frame. */
+.list-item.presentation-card .thumb.is-placeholder {
+  background: hsl(var(--app-bg-base));
+}
+
+/* Skeleton shimmer while a card's thumbnail request is still in flight (or the
+   card hasn't scrolled into view yet, so no request has been made). The .thumb
+   keeps its 16/9 box, so the shimmer fills it without layout shift. Cleared as
+   soon as the card reaches a terminal state: raster, placeholder or "no
+   slides". */
 .list-item.presentation-card .thumb.is-loading {
   background: linear-gradient(
     90deg,

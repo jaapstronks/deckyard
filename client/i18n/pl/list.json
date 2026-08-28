@@ -256,7 +256,6 @@
   "list.trash.loadError": "Nie udało się załadować kosza.",
   "list.trash.loading": "Ładowanie…",
   "list.trash.title": "Kosz",
-  "list.untitled": "Bez tytułu",
   "list.visibility.private": "Prywatne",
   "list.visibility.published": "Opublikowane",
   "list.visibility.shared": "Udostępnione {count} osobom",
