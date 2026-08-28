@@ -12,6 +12,24 @@ import { ensurePrism, ensureKatex } from './prism-katex-loader.js';
 import { ensureScript } from '../dom/head-assets.js';
 
 /**
+ * "This surface has no deck, so there is no language to pass."
+ *
+ * The value is `null` — the same thing `resolveDeckLang()` answers for a deck
+ * that says nothing — but the name is the point. Leaving `lang` out of a mount
+ * call is not neutral: the slide silently falls back to
+ * `DEFAULT_SLIDE_COPY_LANG` (`docs/reference/slide-copy-language.md`), which is
+ * right for a sample slide and wrong for a deck, and the two are
+ * indistinguishable at the call site. Sample and preview surfaces — the theme
+ * picker, the theme-editor preview, sandbox examples, curation thumbnails, the
+ * slide-type picker's own specimens — say so with this constant, and
+ * `tests/slide-copy-language.test.js` fails any call site that says nothing at
+ * all.
+ *
+ * @type {null}
+ */
+export const NO_DECK_LANG = null;
+
+/**
  * Trigger Prism.js syntax highlighting on code blocks within an element.
  */
 function highlightCodeBlocks(rootEl) {

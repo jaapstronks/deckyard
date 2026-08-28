@@ -22,6 +22,7 @@ import { icon } from '../../../lib/dom/icons.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { isInsertableSlideType } from '../../../../shared/slide-types/policy.js';
 import {
+  NO_DECK_LANG,
   renderSlideElement,
   cleanupSlideRuntimes,
 } from '../../../lib/slide-runtime/slide-render.js';
@@ -201,7 +202,11 @@ export function createSlideTypePicker({
         content: sampleContentFor(type, thumbWrap.__presetContent || null),
         notes: '',
       };
-      const el = renderSlideElement(slide, { mode: 'thumb', theme });
+      const el = renderSlideElement(slide, {
+        mode: 'thumb',
+        theme,
+        lang: NO_DECK_LANG,
+      });
       thumbWrap.append(el);
       // Scale to fill now (element is laid out), then keep it in sync on resize.
       applyThumbScale(thumbWrap);

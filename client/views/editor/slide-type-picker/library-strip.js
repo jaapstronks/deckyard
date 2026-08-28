@@ -12,6 +12,7 @@
  */
 
 import { renderSlideElement } from '../../../lib/slide-runtime/slide-render.js';
+import { contentLang } from '../../../lib/slide-library/search.js';
 import { applyThumbScale } from './thumbnails.js';
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
@@ -83,7 +84,9 @@ export function mountLibraryStrip(ctx) {
               : {},
           notes: '',
         },
-        { mode: 'thumb', theme },
+        // The tile shows `item.content`, so it speaks the item's own
+        // language — not the deck the picker is about to insert it into.
+        { mode: 'thumb', theme, lang: contentLang(item) },
       );
       thumbWrap.append(el);
       applyThumbScale(thumbWrap);

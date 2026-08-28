@@ -1,6 +1,9 @@
 import { h } from '../../../../lib/dom.js';
 import { icon } from '../../../../lib/dom/icons.js';
-import { renderSlideElement } from '../../../../lib/slide-runtime/slide-render.js';
+import {
+  NO_DECK_LANG,
+  renderSlideElement,
+} from '../../../../lib/slide-runtime/slide-render.js';
 import { getSampleContent } from '../../../editor/slide-type-sample-content.js';
 import { SLIDE_TYPES as BUNDLED_SLIDE_TYPES } from '../../../../../shared/slide-types.js';
 
@@ -59,7 +62,11 @@ export function createCurationThumbnail(
 
   const thumbWrap = h('div', { class: `${className} thumb` });
   try {
-    const el = renderSlideElement(slide, { mode: 'thumb', theme });
+    const el = renderSlideElement(slide, {
+      mode: 'thumb',
+      theme,
+      lang: NO_DECK_LANG,
+    });
     thumbWrap.append(el);
   } catch {
     thumbWrap.classList.add('is-error');

@@ -16,7 +16,10 @@ import { createNotesSessionSse } from './session-sse.js';
 import { buildNotesLayout } from './layout.js';
 import { createNotesControls } from './controls.js';
 import { attachSwipeNavigation } from '../../lib/dom/swipe-nav.js';
-import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
+import {
+  DEFAULT_DECK_LANG,
+  resolveDeckLang,
+} from '../../../shared/i18n-utils.js';
 
 /**
  * Render the speaker-notes companion view: a live-following mirror of the
@@ -141,7 +144,14 @@ export async function renderNotes(root, sessionId, { user } = {}) {
     viewSlideIndex = idx;
     const slide = slides[idx];
 
-    mountSlideInto(previewWrap, slide, { theme, presentationId: pres?.id });
+    // One resolve per render, handed to both thumbs: the current slide and the
+    // "up next" thumb are the same deck, so they cannot disagree about it.
+    const deckLang = resolveDeckLang(pres);
+    mountSlideInto(previewWrap, slide, {
+      theme,
+      presentationId: pres?.id,
+      lang: deckLang,
+    });
 
     // "Up next" thumbnail: the slide after the current view, or an end marker.
     const nextSlide = slides[idx + 1] || null;
@@ -149,6 +159,7 @@ export async function renderNotes(root, sessionId, { user } = {}) {
       mountSlideInto(nextPreviewWrap, nextSlide, {
         theme,
         presentationId: pres?.id,
+        lang: deckLang,
       });
       nextPreviewWrap.classList.remove('is-empty');
       nextLabel.textContent = t(

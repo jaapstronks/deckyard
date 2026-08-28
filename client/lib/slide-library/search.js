@@ -159,6 +159,26 @@ export function getContentForLang(item, lang) {
 }
 
 /**
+ * The language `item.content` is written in.
+ *
+ * `getContentForLang()` answers "which content for this language"; this is the
+ * other direction — "which language is this content". The two are a pair: a
+ * surface that renders `item.content` (the base version, what the edit modal
+ * and the insert-picker's library strip show) must tell the slide renderer
+ * which language that is, or the built-in copy of an interactive type falls
+ * back to `DEFAULT_SLIDE_COPY_LANG` (`docs/reference/slide-copy-language.md`).
+ *
+ * Answers `null` rather than guessing when the item names no language, exactly
+ * as `resolveDeckLang()` does for a deck.
+ *
+ * @param {Object} item
+ * @returns {string|null}
+ */
+export function contentLang(item) {
+  return normalizeLang(item?.i18n?.dominant) || null;
+}
+
+/**
  * Check if an item has content for a specific language.
  * @param {Object} item
  * @param {string} lang

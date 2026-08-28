@@ -15,7 +15,10 @@
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { api } from '../../../lib/api.js';
-import { renderSlideElement } from '../../../lib/slide-runtime/slide-render.js';
+import {
+  NO_DECK_LANG,
+  renderSlideElement,
+} from '../../../lib/slide-runtime/slide-render.js';
 import { attachThumbScaleContain } from '../../../lib/slide-runtime/thumb-scale.js';
 import { injectThemeFontFaces } from '../../../lib/theme/theme.js';
 
@@ -100,7 +103,11 @@ export function createThemePreview() {
     for (const slide of sampleSlides()) {
       let slideEl;
       try {
-        slideEl = renderSlideElement(slide, { mode: 'thumb', theme });
+        slideEl = renderSlideElement(slide, {
+          mode: 'thumb',
+          theme,
+          lang: NO_DECK_LANG,
+        });
       } catch {
         continue;
       }

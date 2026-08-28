@@ -54,13 +54,18 @@ export function createSandboxExamplesSection({ api, detachThumbs }) {
 
   let busy = false;
 
+  // Sandbox examples are authored in English; a deck that names its own axis
+  // language keeps it. One answer, read by both the import below and the
+  // thumbnail — the preview a guest clicks must speak the language of the deck
+  // that click creates.
+  const exampleLang = (example) =>
+    normalizeLang(example?.deck?.lang) || 'en-GB';
+
   async function useExample(example) {
     if (busy) return;
     busy = true;
     try {
-      // Sandbox examples are authored in English; a deck that names its own
-      // axis language keeps it.
-      const lang = normalizeLang(example?.deck?.lang) || 'en-GB';
+      const lang = exampleLang(example);
       const created = await api('/api/presentations/import/json', {
         method: 'POST',
         body: JSON.stringify({ deck: example.deck, lang }),
@@ -94,7 +99,13 @@ export function createSandboxExamplesSection({ api, detachThumbs }) {
     (async () => {
       try {
         const theme = await loadThemeById(example.theme);
-        thumb.append(renderSlideElement(first, { mode: 'thumb', theme }));
+        thumb.append(
+          renderSlideElement(first, {
+            mode: 'thumb',
+            theme,
+            lang: exampleLang(example),
+          }),
+        );
       } catch {
         // A thumb that fails to render just stays blank — never break the shelf.
       }

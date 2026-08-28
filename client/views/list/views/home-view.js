@@ -779,6 +779,9 @@ function renderActivityThumb(event, detachThumbs) {
           mode: 'thumb',
           theme,
           presentationId: event.presentationId,
+          // Rides along with the theme on the activity event; null when the
+          // deck names no language, same as resolveDeckLang would answer.
+          lang: event.slideLang ?? null,
         }),
       );
     } catch {

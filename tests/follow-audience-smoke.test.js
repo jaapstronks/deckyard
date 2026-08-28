@@ -300,6 +300,10 @@ async function fakeFetch(input, init = {}) {
         theme: 'default',
         slides: structuredClone(SLIDES),
         settings: { analyticsEnabled: scenario.analyticsEnabled },
+        // The route stamps the language of the slides it serves, so the view
+        // can read it with resolveDeckLang like every other render surface
+        // (server/routes/api/follow/presentation.js).
+        lang: scenario.deckLang,
       },
       meta: { dominantLang: 'nl', availableLangs: ['nl'] },
       capabilities: scenario.capabilities,
@@ -426,6 +430,8 @@ async function mountFollow(overrides = {}) {
     // analytics rows turn it on deliberately.
     analyticsEnabled: false,
     user: null,
+    // The deck the SLIDES above are written in.
+    deckLang: 'nl',
     ...overrides,
   };
 
@@ -560,6 +566,45 @@ test('a live deck renders the audience chrome, the current slide and the Q&A str
   );
 
   detach();
+});
+
+test('the slide on the stage speaks the deck language, not the default', async () => {
+  // The interactive types render copy of their own — "Meekijken + stemmen",
+  // "Live resultaten" — and read it from the language the mount call is given
+  // (docs/reference/slide-copy-language.md). The audience view passed none, so
+  // every Dutch deck showed English poll copy to its audience. The deck's
+  // language now rides on the payload and this is the surface it feeds.
+  const { detach } = await mountFollow();
+  // The poll slide itself, not the interaction card: no dominant interaction,
+  // so the stage mounts the slide.
+  await pushSlide({
+    slideId: 's-poll',
+    slideIndex: 1,
+    slideType: 'poll-slide',
+    capabilities: { canUseQa: true },
+  });
+
+  const stage = () => $('.follow-slide')?.textContent || '';
+  assert.match(stage(), /Meekijken \+ stemmen/, 'a Dutch deck renders Dutch');
+  assert.doesNotMatch(stage(), /Follow along \+ vote/);
+  detach();
+
+  // The same deck served in English — the switcher's case, which refetches the
+  // deck rather than reloading the page.
+  const second = await mountFollow({ deckLang: 'en-GB' });
+  await pushSlide({
+    slideId: 's-poll',
+    slideIndex: 1,
+    slideType: 'poll-slide',
+    capabilities: { canUseQa: true },
+  });
+  assert.match(
+    stage(),
+    /Follow along \+ vote/,
+    'an English deck renders English',
+  );
+  assert.doesNotMatch(stage(), /Meekijken \+ stemmen/);
+  second.detach();
 });
 
 test('the anonymous audience only ever addresses the follow surface', async () => {
