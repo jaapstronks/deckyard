@@ -818,94 +818,6 @@ img.analytics-viewer-badge {
   }
 }
 
-/* Leads Tab */
-.analytics-leads-container {
-  overflow-x: auto;
-}
-
-.analytics-leads-actions {
-  display: flex;
-  gap: var(--ps-space-2);
-}
-
-.analytics-leads-count {
-  font-weight: normal;
-  color: hsl(var(--app-text-secondary));
-}
-
-.analytics-lead-row {
-  display: grid;
-  grid-template-columns: 1.5fr 2fr 140px 80px;
-  gap: var(--ps-space-3);
-  padding: var(--ps-space-2-5) 0;
-  border-bottom: 1px solid hsl(var(--app-border-default));
-  align-items: center;
-}
-
-.analytics-lead-row:last-child {
-  border-bottom: none;
-}
-
-.analytics-lead-header {
-  font-weight: 600;
-  font-size: 12px;
-  color: hsl(var(--app-text-secondary));
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.analytics-lead-cell {
-  font-size: var(--ps-text-sm);
-  min-width: 0;
-}
-
-.analytics-lead-name {
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.analytics-lead-email {
-  color: hsl(var(--app-accent-text));
-  text-decoration: none;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: block;
-}
-
-.analytics-lead-email:hover {
-  text-decoration: underline;
-}
-
-.analytics-lead-date {
-  color: hsl(var(--app-text-secondary));
-}
-
-.analytics-lead-date-full {
-  display: none;
-  font-size: var(--ps-text-xs);
-  color: hsl(var(--app-text-secondary));
-}
-
-.analytics-lead-row:hover .analytics-lead-date-full {
-  display: block;
-}
-
-.analytics-lead-row:hover .analytics-lead-date:not(.analytics-lead-date-full) {
-  display: none;
-}
-
-.analytics-lead-delete {
-  opacity: 0;
-  transition: opacity 0.15s ease;
-}
-
-.analytics-lead-row:hover .analytics-lead-delete {
-  opacity: 1;
-}
-
 /* Enhanced Empty States */
 /* Skeleton Loading */
 .analytics-skeleton {
@@ -1055,11 +967,6 @@ img.analytics-viewer-badge {
     grid-template-columns: 2fr 1fr 80px 80px 100px;
     font-size: 12px;
   }
-
-  .analytics-lead-row {
-    grid-template-columns: 1.5fr 2fr 120px 60px;
-    font-size: 12px;
-  }
 }
 
 /* Mobile Responsiveness - Small Mobile (480px) */
@@ -1156,46 +1063,6 @@ img.analytics-viewer-badge {
 
   .analytics-viewer-name::before {
     display: none;
-  }
-
-  /* Mobile card layout for leads table */
-  .analytics-leads-container {
-    overflow-x: visible;
-  }
-
-  .analytics-lead-header {
-    display: none;
-  }
-
-  .analytics-lead-row {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ps-space-1-5);
-    padding: var(--ps-space-3) 0;
-  }
-
-  .analytics-lead-cell {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .analytics-lead-cell::before {
-    content: attr(data-label);
-    font-size: var(--ps-text-xs);
-    font-weight: 600;
-    color: hsl(var(--app-text-secondary));
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-  }
-
-  .analytics-lead-cell-name::before,
-  .analytics-lead-cell-actions::before {
-    display: none;
-  }
-
-  .analytics-lead-delete {
-    opacity: 1;
   }
 
   /* Date picker mobile */
