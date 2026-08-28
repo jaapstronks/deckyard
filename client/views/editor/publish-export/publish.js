@@ -81,10 +81,6 @@ export function primaryLangLinks(data) {
  * Build modal data from existing published presentation data.
  * Used when opening the "manage published" modal without re-publishing.
  */
-/**
- * Build modal data from existing published presentation data.
- * Used when opening the "manage published" modal without re-publishing.
- */
 export function buildPublishModalData({ pres, activeLang = null } = {}) {
   const publishId = pres?.published?.id || '';
   const slug = pres?.published?.slug || '';

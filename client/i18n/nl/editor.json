@@ -488,6 +488,7 @@
   "editor.lang.switchAborted": "Kon niet opslaan; taalwissel afgebroken.",
   "editor.lang.versionCreatedInvite": "De {lang} versie is net aangemaakt en heeft nog geen teksten. Automatisch laten vertalen? Velden die je zelf invult worden nooit overschreven.",
   "editor.lang.versionIncompleteInvite": "Deze {lang} versie heeft nog onvertaalde teksten. Automatisch laten vertalen? Velden die je zelf hebt ingevuld worden nooit overschreven.",
+  "editor.lang.versionNotLoaded": "De {lang}-versie kon niet worden geladen.",
   "editor.langMode.title": "Taalmodus (bewerken + presenteren)",
   "editor.layoutSwitcher.chip": "Layout",
   "editor.layoutSwitcher.imageLeft": "Beeld links",

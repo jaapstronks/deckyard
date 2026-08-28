@@ -236,3 +236,81 @@ test('a language with no version yet is created on the spot', async () => {
   // keep the test runner's event loop alive until it fires.
   popover.querySelectorAll('.lang-popover-btn')[1].click();
 });
+
+test('a version the deck has stays switchable when admin disabled its language', async () => {
+  // The admin subset gates *adding*; a version that exists is always editable,
+  // otherwise the menu lists a language it then refuses (B182 in a new shape).
+  setSupportedLangs(['nl', 'en-GB']);
+  const pres = makeTrilingualPres();
+  const controller = mount({
+    pres,
+    api: async () => ({
+      title: 'Deck',
+      slides: [titleSlide('s1', 'Eins'), titleSlide('s2', 'Zwei')],
+      theme: null,
+      revision: 2,
+      i18n: {
+        active: 'de',
+        dominant: 'nl',
+        versions: structuredClone(pres.i18n.versions),
+      },
+    }),
+  });
+
+  const german = [...controller.el.querySelectorAll('.lang-menu-item')].find(
+    (b) => b.querySelector('.lang-menu-name')?.textContent === 'Deutsch',
+  );
+  assert.ok(german, 'the German version is listed');
+  german.click();
+  await flush();
+  assert.equal(pres.i18n.active, 'de');
+});
+
+test('a load that does not carry the version fails visibly and leaves the model alone', async () => {
+  setSupportedLangs(['nl', 'en-GB', 'de', 'fr']);
+  const pres = makeTrilingualPres();
+  const errors = [];
+  const controller = createLanguageMode({
+    root: document.body,
+    pres,
+    id: 'p1',
+    // A projection without the requested version (a buffer that has not
+    // reached the live doc yet).
+    api: async () => ({
+      title: 'Deck',
+      slides: pres.slides,
+      theme: null,
+      revision: 2,
+      i18n: {
+        active: 'nl',
+        dominant: 'nl',
+        versions: { nl: pres.i18n.versions.nl },
+      },
+    }),
+    requestSave: async () => {},
+    isDirty: () => false,
+    markDirty: () => {},
+    normalizeLang,
+    getSelectedSlideId: () => null,
+    setSelectedSlideId: () => {},
+    editorState: { refreshAll: () => {} },
+    topbarTitleEl: null,
+    toast: {
+      info: () => {},
+      success: () => {},
+      error: (msg) => errors.push(msg),
+    },
+  });
+  document.body.replaceChildren(controller.el);
+
+  const german = [...controller.el.querySelectorAll('.lang-menu-item')].find(
+    (b) => b.querySelector('.lang-menu-name')?.textContent === 'Deutsch',
+  );
+  german.click();
+  await flush();
+
+  assert.equal(errors.length, 1, 'one error toast');
+  assert.match(errors[0], /Deutsch/);
+  assert.equal(pres.i18n.active, 'nl', 'active did not move');
+  assert.equal(pres.i18n.dominant, 'nl');
+});

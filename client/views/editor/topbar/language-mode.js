@@ -323,6 +323,21 @@ export function createLanguageMode({
           `/api/presentations/${id}?lang=${encodeURIComponent(next)}`,
         );
       }
+      // A load that does not carry the version is a failed switch, not a
+      // partial one: the live-doc projection returns a deck even when the
+      // version is absent (a just-created buffer that has not reached the
+      // doc yet), and adopting it would leave `active` pointing at slides in
+      // another language - which the next save would then sync as if they
+      // were this version's own.
+      if (!refreshed?.i18n?.versions?.[next]) {
+        throw new Error(
+          t(
+            'editor.lang.versionNotLoaded',
+            'The {lang} version could not be loaded.',
+            { lang: getLangDisplayName(next) },
+          ),
+        );
+      }
       pres.i18n = refreshed.i18n;
       pres.title = refreshed.title;
       pres.slides = refreshed.slides;
@@ -365,7 +380,10 @@ export function createLanguageMode({
   const runLanguageSwitch = async (nextLang, { onStatus } = {}) => {
     const next = normalizeLang(nextLang);
     if (!next) return;
-    if (!isSupportedLang(next) && next !== pres?.i18n?.active) {
+    // The admin subset gates which versions can be *added*; a version the
+    // deck already has is always editable, or the menu would list a language
+    // it then refuses (the B182 defect in a new shape).
+    if (!isSupportedLang(next) && !pres?.i18n?.versions?.[next]) {
       onStatus?.({
         level: 'info',
         msg: t(
@@ -749,7 +767,10 @@ export function createLanguageMode({
   return {
     el: langMenuWrapper,
     syncLangUi,
-    detach: langMenu.detach,
+    detach: () => {
+      hideLangPopover();
+      langMenu.detach();
+    },
     translateOtherLanguage: () =>
       translateOtherLanguage({ onStatus: toastStatus }),
     translateMissingForActive: () =>

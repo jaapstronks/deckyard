@@ -488,6 +488,7 @@
   "editor.lang.switchAborted": "Could not save; language switch aborted.",
   "editor.lang.versionCreatedInvite": "The {lang} version was just created and has no texts yet. Translate them automatically? Fields you fill in yourself are never overwritten.",
   "editor.lang.versionIncompleteInvite": "This {lang} version still has untranslated texts. Translate them automatically? Fields you filled in yourself are never overwritten.",
+  "editor.lang.versionNotLoaded": "The {lang} version could not be loaded.",
   "editor.langMode.title": "Language mode (edit + present)",
   "editor.layoutSwitcher.chip": "Layout",
   "editor.layoutSwitcher.imageLeft": "Image left",

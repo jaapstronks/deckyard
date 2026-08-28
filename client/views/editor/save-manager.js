@@ -277,6 +277,9 @@ export function createSaveManager({
 
     for (const to of existingVersionLangs(pres)) {
       if (to === from) continue;
+      // `existingVersionLangs` normalizes; only mirror into a version stored
+      // under that exact key, so an alias key can never spawn a blank twin.
+      if (!pres.i18n.versions[to]) continue;
       syncStructureInto(from, to);
     }
   };
