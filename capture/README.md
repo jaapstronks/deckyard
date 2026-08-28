@@ -121,8 +121,8 @@ flagged for review — the same drift mechanism the registry uses for source dep
   frame 0.9974, and the residual is VP9 encoder noise on text edges rather than
   a time offset — the same comparison one frame apart scores 0.9772. The MP4s
   are not byte-identical and will not become so; the encoder is not
-  deterministic. The recipe field is `reducedMotion`, and
-  `resolveReducedMotion()` owns the default.
+  deterministic. The preference follows the recipe's `kind` and nothing else
+  (`resolveReducedMotion()`); it is deliberately not a per-recipe field.
 - **Fixed sample content** from `recipes/_sample-content.js` — one shared,
   PII-free deck so seeded shots are visually stable across runs and machines.
   Marketing shots use the richer `recipes/_marketing-deck.js` instead: same

@@ -74,12 +74,14 @@ test('a screenshot recipe still needs output and registryPath', () => {
   assert.deepEqual(problems, ['missing "output"', 'missing "registryPath"']);
 });
 
-test('reduced motion defaults per kind, and a recipe may override', () => {
+test('reduced motion follows the kind, and nothing else', () => {
   assert.equal(resolveReducedMotion({ id: 'a' }), 'reduce');
   assert.equal(resolveReducedMotion(base()), 'no-preference');
+  // Not a recipe knob: a stray field must not become a second place where this
+  // decision lives.
   assert.equal(
     resolveReducedMotion({ ...base(), reducedMotion: 'reduce' }),
-    'reduce',
+    'no-preference',
   );
 });
 

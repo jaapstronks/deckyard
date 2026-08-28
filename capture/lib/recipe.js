@@ -31,12 +31,11 @@
  *                                   live poll, say. Mutually exclusive with `fullPage`.
  * @property {(api: import('./api.js').ApiClient, ctx: object) => Promise<void>} [cleanup]
  *                                   Optional teardown after the shot.
- * @property {'screenshot' | 'video'} [kind] Defaults to `screenshot`.
- * @property {'reduce' | 'no-preference'} [reducedMotion]
- *                                   Overrides the media feature the page is
- *                                   opened with. Defaults to `reduce` for a
- *                                   screenshot and `no-preference` for a video —
- *                                   see {@link resolveReducedMotion}.
+ * @property {'screenshot' | 'video'} [kind] Defaults to `screenshot`. The kind
+ *                                   also decides the motion preference the
+ *                                   page is opened with — see
+ *                                   {@link resolveReducedMotion}; it is not a
+ *                                   per-recipe knob.
  */
 
 /**
@@ -105,7 +104,11 @@ export function isVideoRecipe(recipe) {
 /**
  * Which `prefers-reduced-motion` a recipe's page is opened with.
  *
- * The default flips per kind, and that flip is a real weakening rather than a
+ * Derived from the kind alone, deliberately not a recipe field: a screenshot
+ * with animations on can only catch a mid-transition frame, and a clip with
+ * them off shows nothing — so there is no recipe for which the other value is
+ * right, and a per-recipe override would only be a second place for this
+ * decision to drift. The flip itself is a real weakening rather than a
  * convenience: forcing `reduce` is what keeps a screenshot from catching a
  * mid-transition frame, but for video it switches off precisely the app
  * animations the clip exists to show — the panel sliding in, the slide
@@ -116,9 +119,7 @@ export function isVideoRecipe(recipe) {
  * @returns {'reduce' | 'no-preference'}
  */
 export function resolveReducedMotion(recipe) {
-  return (
-    recipe.reducedMotion ?? (isVideoRecipe(recipe) ? 'no-preference' : 'reduce')
-  );
+  return isVideoRecipe(recipe) ? 'no-preference' : 'reduce';
 }
 
 /**
