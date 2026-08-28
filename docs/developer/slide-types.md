@@ -753,6 +753,16 @@ the type's default when unset. A malformed declaration degrades to _visible_ —
 hiding a field on a parse error would orphan its data. The chart type's
 display toggles and axis/series labels are the canonical use.
 
+`visibleWhen` is also **the** Deckyard form for "a choice plus a dependent
+field": one flat enum that includes an explicit off value, plus one flat field
+gated on the choice — `onClose`/`onCloseTarget` (`helpers.js`) and
+`asideVariant`/`asideText` (`aside-field.js`) are the two instances. Do not
+model that shape as a nested object instead: `field.type` is a closed
+vocabulary with no `object` in it on purpose, and a second form for the same
+concept is exactly the drift the beta stance rules out. If a future field
+genuinely needs nested structure, that is a change to the field system and
+gets its own proposal — not a one-off shape smuggled in under a feature.
+
 ---
 
 ## Extension Properties Reference

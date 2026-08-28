@@ -81,10 +81,6 @@ documented under `docs/reference/` and `docs/developer/`._
 - **Forker slide-type toolkit** — a scaffolder and validator for the file-JS
   custom-slide-type seam, plus a reusable building-block layer (eyebrow,
   highlight, badge, CTA) that core and custom types both compose.
-- **Editorial slide types** — a themed callout family (key-insight / warning /
-  definition / note / tip) plus comparison sub-variants (versus / before-after /
-  pros-cons / tradeoff), each shipping with matching AI-catalog / MCP logic so
-  agents reach for the right block.
 
 ## Later — directional
 
