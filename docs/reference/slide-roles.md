@@ -233,9 +233,10 @@ re-opening that record rather than reading it.
 There is no shared card base — each card pattern owns its own box. A
 `.slide-card` once stood in `00-patterns.css` claiming to be one, but nothing
 ever rendered it; it went out with the rest of that file's speculative pattern
-layer. What `00-patterns.css` holds now is only classes a shared renderer emits:
-the partials (`shared/slide-types/partials.js`, gated by
-`tests/slide-partials.test.js`) and the image placeholder.
+layer. What `00-patterns.css` holds now is only classes something renders: the
+partials (`shared/slide-types/partials.js`, gated by
+`tests/slide-partials.test.js`), the image placeholder, and the `.slide
+.subtitle` alias that `chapter-title-slide` and `logo-wall-slide` still emit.
 
 ## Spacing roles
 
