@@ -9,6 +9,47 @@ import {
 import { badgeHtml } from '../partials.js';
 import { markdownToSafeHtml } from '../../markdown.js';
 
+/**
+ * The four treatments, in picker order: the default first.
+ *
+ * A treatment is STYLING over one fixed layout — the schema, the DOM and the
+ * morph roles are identical for all four, which is why this is an enum field
+ * and a modifier class rather than four types or a `layoutVariants` entry.
+ * `versus` is the neutral duel the type has always rendered; the other three
+ * say something the neutral form cannot (a direction, a valence, a set of
+ * criteria).
+ */
+export const COMPARISON_VARIANTS = Object.freeze([
+  'versus',
+  'before-after',
+  'pros-cons',
+  'tradeoff',
+]);
+
+/** The treatment an unset or unrecognised value resolves to. */
+export const DEFAULT_COMPARISON_VARIANT = 'versus';
+
+/**
+ * Map a treatment to its modifier class.
+ *
+ * `versus` deliberately emits NOTHING: it is the look `.slide-comparison`
+ * already had, so a `--versus` modifier would be a second spelling for one
+ * meaning and every deck written before this field existed would change its
+ * markup for a class that styles nothing. Same call `cornerCell` makes in
+ * table-slide — absent/unknown renders the historical form byte for byte.
+ *
+ * @param {unknown} value - `content.variant` as stored
+ * @returns {string} a modifier class, or '' for the default treatment
+ */
+export function comparisonVariantClass(value) {
+  const v = typeof value === 'string' ? value.trim() : '';
+  return v &&
+    v !== DEFAULT_COMPARISON_VARIANT &&
+    COMPARISON_VARIANTS.includes(v)
+    ? `slide-comparison--${v}`
+    : '';
+}
+
 export default {
   structure: 'singleton',
   // Two labelled columns with a body each is two-dimensional content, even
@@ -78,6 +119,22 @@ export default {
       maxLength: 100,
       placeholder: 'Optional badge text',
     },
+    {
+      key: 'variant',
+      label: 'Treatment',
+      type: 'enum',
+      required: false,
+      // Spelled out rather than derived from COMPARISON_VARIANTS: an option is
+      // copy only when it declares a label (shared/ui-i18n-keys.js), and these
+      // four are words a reader picks from, not storage tokens. The pair is
+      // pinned against the vocabulary in tests/comparison-slide.test.js.
+      options: [
+        { value: 'versus', label: 'Versus' },
+        { value: 'before-after', label: 'Before / after' },
+        { value: 'pros-cons', label: 'Pros / cons' },
+        { value: 'tradeoff', label: 'Trade-off' },
+      ],
+    },
     BACKGROUND_FIELD,
   ],
   defaultsByLang: {
@@ -90,6 +147,7 @@ export default {
       rightTitle: 'Optie B',
       rightBody: '- Voordeel 1\n- Voordeel 2\n- Voordeel 3',
       verdict: '',
+      variant: DEFAULT_COMPARISON_VARIANT,
       background: 'mist',
     },
     'en-GB': {
@@ -101,6 +159,7 @@ export default {
       rightTitle: 'Option B',
       rightBody: '- Advantage 1\n- Advantage 2\n- Advantage 3',
       verdict: '',
+      variant: DEFAULT_COMPARISON_VARIANT,
       background: 'mist',
     },
   },
@@ -113,6 +172,7 @@ export default {
     rightTitle: 'Option B',
     rightBody: '- Advantage 1\n- Advantage 2\n- Advantage 3',
     verdict: '',
+    variant: DEFAULT_COMPARISON_VARIANT,
     background: 'mist',
   },
   renderHtml: (content) => {
@@ -155,8 +215,13 @@ export default {
       ? `<div class="comparison-verdict">${badgeHtml(verdict, { field: 'verdict' })}</div>`
       : '';
 
+    // The treatment is one modifier class on the root, and the default emits
+    // none — see comparisonVariantClass().
+    const variantClass = comparisonVariantClass(content?.variant);
+    const variantMod = variantClass ? ` ${variantClass}` : '';
+
     return `
-      <div class="slide slide-comparison ${bg}${hasHeader ? ' has-header' : ''}${hasBottom ? ' has-bottom-subheading' : ''}${verdict ? ' has-verdict' : ''}">
+      <div class="slide slide-comparison${variantMod} ${bg}${hasHeader ? ' has-header' : ''}${hasBottom ? ' has-bottom-subheading' : ''}${verdict ? ' has-verdict' : ''}">
         <div class="slide-inner">
           ${hasHeader ? `<div class="header">${title}${subheadingHtml}</div>` : ''}
           <div class="comparison-split">

@@ -197,6 +197,145 @@
   }
 }
 
+/* ==========================================================================
+   TREATMENTS — the `variant` field
+   ==========================================================================
+   A treatment is STYLING over one fixed layout: same schema, same DOM, same
+   morph roles (shared/slide-types/types/comparison-slide.js). `versus` is
+   everything above — it emits no modifier class at all, so a deck written
+   before the field existed renders byte for byte unchanged.
+
+   This section sits BELOW the responsive tier on purpose. A treatment that
+   restyles a property the tier also sets (the side title's size, in `tradeoff`)
+   has the same specificity, so source order is what decides. */
+
+/* --- before-after: the comparison has a direction ------------------------ */
+
+/* The "before" is the state being left behind, so it recedes — muted ink
+   rather than opacity, which would also dim the column against a textured
+   background instead of only quietening its text. The "after" is untouched:
+   the contrast is what carries the reading, and brightening a column past the
+   theme's own ink would mean minting a colour this type has no business
+   owning. */
+.slide-comparison--before-after .comparison-side.left,
+.slide-comparison--before-after .comparison-side.left .side-title,
+.slide-comparison--before-after .comparison-side.left .body .md-subheading {
+  color: var(--slide-on-surface-muted);
+}
+
+.slide-comparison--before-after .comparison-side.left .body ul li::marker {
+  color: var(--slide-on-surface-muted);
+}
+
+/* The divider becomes the gesture: the rule thins and grows an arrowhead at
+   its midpoint, so the pair reads left → right rather than left | right. The
+   head draws in muted INK, not in the rule's own colour: the rule is a
+   separator and drops to a hairline tint on some grounds, while the head is
+   the whole affordance of this treatment and has to survive them. Physical
+   left/right, like every other rule in this file — the two columns are placed
+   by `.left`/`.right`, not by writing direction. */
+.slide-comparison--before-after .comparison-divider {
+  position: relative;
+  width: 2px;
+}
+
+.slide-comparison--before-after .comparison-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--slide-space-6);
+  height: var(--slide-space-6);
+  border-top: 4px solid var(--slide-on-surface-muted);
+  border-right: 4px solid var(--slide-on-surface-muted);
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+/* --- pros-cons: the two sides have a valence ----------------------------- */
+
+/* The tones are the semantic status ROLES from 00-tokens.css — the same family
+   callout-slide reads — not comparison-specific colours: "good" and "bad" mean
+   the same thing wherever a slide says them (docs/reference/slide-roles.md
+   § Semantic status is a role, not a type family). */
+.slide-comparison--pros-cons {
+  --comparison-pro-tone: var(--slide-color-positive);
+  --comparison-con-tone: var(--slide-color-danger);
+}
+
+/* A dark ground swallows a saturated mid-tone, so lighten whatever the tone is
+   toward the light pole — the same accent-agnostic move `--slide-link-on-dark`
+   and `.slide-callout` already make. */
+.slide.has-slide-bg-light-text.slide-comparison--pros-cons {
+  --comparison-pro-tone: color-mix(
+    in srgb,
+    var(--slide-color-positive) 45%,
+    #ffffff
+  );
+  --comparison-con-tone: color-mix(
+    in srgb,
+    var(--slide-color-danger) 45%,
+    #ffffff
+  );
+}
+
+.slide-comparison--pros-cons .comparison-side.left .side-title {
+  color: var(--comparison-pro-tone);
+}
+
+.slide-comparison--pros-cons .comparison-side.right .side-title {
+  color: var(--comparison-con-tone);
+}
+
+/* The bullet carries the valence. Top level only: a nested list is detail
+   *under* a pro, not a second pro, so it keeps the ordinary marker. */
+.slide-comparison--pros-cons .comparison-side .body > ul {
+  list-style: none;
+  margin-left: 0;
+}
+
+.slide-comparison--pros-cons .comparison-side .body > ul > li {
+  position: relative;
+  padding-left: 1.6em;
+}
+
+.slide-comparison--pros-cons .comparison-side .body > ul > li::before {
+  position: absolute;
+  left: 0;
+  line-height: inherit;
+}
+
+.slide-comparison--pros-cons .comparison-side.left .body > ul > li::before {
+  content: '\2713'; /* ✓ */
+  color: var(--comparison-pro-tone);
+}
+
+.slide-comparison--pros-cons .comparison-side.right .body > ul > li::before {
+  content: '\2717'; /* ✗ */
+  color: var(--comparison-con-tone);
+}
+
+/* --- tradeoff: two columns of criteria, not two contenders --------------- */
+
+/* The versus framing is exactly what this treatment drops. The rule between
+   the columns falls back to a hairline so it separates without opposing, and
+   the column names stop being headings that compete for the eye: they become
+   the quiet label the eyebrow role already is elsewhere, so what the audience
+   reads is the criteria under them. */
+.slide-comparison--tradeoff .comparison-divider {
+  width: 1px;
+  background: var(--slide-border-light);
+}
+
+.slide-comparison--tradeoff .side-title {
+  font-family: var(--font-caption);
+  font-size: var(--slide-font-size-label);
+  line-height: var(--slide-leading-snug);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--slide-on-surface-muted);
+  margin-bottom: var(--slide-space-4);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .slide-comparison .body a {
     transition: none;

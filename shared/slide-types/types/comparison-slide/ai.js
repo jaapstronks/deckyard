@@ -24,13 +24,27 @@ export const ai = {
   description: `
       Side-by-side comparison of two options/concepts.
       Each side has title and body (Markdown bullets). Optional verdict badge.
-      Use for A vs B, pros vs cons, before vs after.
+
+      The 'variant' field picks the TREATMENT — the same two columns, styled to
+      say what kind of comparison this is. It changes nothing about the fields:
+
+      - versus       — the neutral duel, two options weighed evenly (default)
+      - before-after — a change over time; put the old state left, the new
+                       state right, because the left column reads as the one
+                       being left behind
+      - pros-cons    — one subject's upsides against its downsides; the left
+                       column is the pros and the right the cons, and the
+                       bullets become ✓ / ✗
+      - tradeoff     — two options read off against criteria rather than pitted
+                       against each other ("A is faster, B is simpler")
+
+      Leave 'variant' out for an ordinary A-vs-B slide.
     `,
   bestFor: [
     'A vs B comparisons (products, approaches)',
-    'Pros and cons analysis',
-    'Before vs after transformations',
-    'Option evaluation and decision support',
+    'Pros and cons analysis (variant: pros-cons, pros on the left)',
+    'Before vs after transformations (variant: before-after, before on the left)',
+    'Option evaluation and decision support (variant: tradeoff)',
   ],
   notFor: [
     'More than 2 options (use table-slide or icon-card-grid-slide)',
@@ -47,6 +61,7 @@ export const aiExamples = [
   {
     _variation: 'Pros and cons comparison',
     title: 'Build vs Buy Decision',
+    variant: 'pros-cons',
     leftTitle: 'Build In-House',
     leftBody:
       '- Full customization possible\n- Complete ownership of IP\n- Higher upfront investment\n- Longer time to market\n- Requires dedicated team',
@@ -59,12 +74,26 @@ export const aiExamples = [
   {
     _variation: 'Before and after transformation',
     title: 'Digital Transformation Impact',
+    variant: 'before-after',
     leftTitle: 'Before',
     leftBody:
       '- Manual data entry\n- Paper-based workflows\n- Siloed departments\n- 2-week processing time\n- High error rate (15%)',
     rightTitle: 'After',
     rightBody:
       '- Automated pipelines\n- Digital-first processes\n- Connected systems\n- Same-day processing\n- Near-zero errors (<1%)',
+    background: 'mist',
+  },
+  {
+    _variation: 'Two options read off against criteria',
+    title: 'Postgres or SQLite',
+    variant: 'tradeoff',
+    leftTitle: 'Postgres',
+    leftBody:
+      '- Concurrency: many writers\n- Operations: a server to run\n- Scale: grows with the team',
+    rightTitle: 'SQLite',
+    rightBody:
+      '- Concurrency: one writer\n- Operations: a file to copy\n- Scale: one machine',
+    verdict: 'SQLite until the second writer',
     background: 'mist',
   },
 ];

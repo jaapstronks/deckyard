@@ -27,7 +27,8 @@ export default {
    * Extra search terms (incl. Dutch) folded into the picker's search haystack.
    * Never displayed.
    */
-  aliases: 'versus vs pros cons vergelijking',
+  aliases:
+    'versus vs pros cons voor tegen before after voor na tradeoff afweging vergelijking',
 
   /**
    * Abstract glyph for the picker's schematic view mode. JSON-safe spec read by
