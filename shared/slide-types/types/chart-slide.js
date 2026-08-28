@@ -215,11 +215,31 @@ export default {
       background: 'lime',
     },
   },
-  // Back-compat fallback
+  /**
+   * The language-less seed. `defaultsByLang` wins wherever a deck language is
+   * known (convert.js, editor-utils.js); this map is what the paths that have
+   * no language — `newSlide()` in deck.js, presentation.js, the enum repair in
+   * deck.js — actually clone. So it is a live surface, not an archive, and it
+   * has to carry the same *keys* as the `en-GB` map above; only the copy may
+   * differ.
+   *
+   * It had drifted: `subtitle: ''` for a field the type never declared (the
+   * pre-rename spelling of `subheading`, see 00-patterns.css), while the two
+   * header fields it does declare were missing. Nothing read the orphan —
+   * `getSubheadingText()` looks at `subheading` only, and `.chart-subtitle`
+   * left the stylesheet in #1049 — so it seeded an inert key on every chart
+   * slide born through the language-less path. Dropping it is not a migration:
+   * decks that already carry the key keep it (deck.js preserves unknown keys),
+   * it just stops being handed to new slides. Adding `subheading` and
+   * `bottomSubheading` is render-identical to their absence — both helpers
+   * treat `''` and missing the same — and makes this path agree with the
+   * per-language ones.
+   */
   defaults: {
     headerAlign: 'left',
     title: 'New chart',
-    subtitle: '',
+    subheading: '',
+    bottomSubheading: '',
     chartType: 'bar',
     data: 'Label,Value\nA,10\nB,25\nC,15',
     xLabel: '',

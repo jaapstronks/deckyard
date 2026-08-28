@@ -11,7 +11,8 @@
  *     — `custom/slide-types/` is gitignored, so they are the only committed
  *     examples) validate clean;
  *  2. every **core** definition validates without errors, so a core type can no
- *     longer regress into a shape a fork would be refused for;
+ *     longer regress into a shape a fork would be refused for, and none of them
+ *     defaults a key it never declares;
  *  3. a table of **malformed** definitions each produces the error it should;
  *  4. every core type carries its canonical `.slide-<name>` root — the class a
  *     fork's stylesheet nests under — bar two recorded legacies.
@@ -119,6 +120,32 @@ test('every core slide type validates without errors', () => {
     // raw definitions, where the warning means what it says.
     const report = validateSlideTypeDefinition(def, name);
     if (report.errors.length) offenders.push(...report.errors);
+  }
+  assert.deepEqual(offenders, []);
+});
+
+/**
+ * The one warning that is a gate for core, not advice.
+ *
+ * A default for a key the type never declares is invisible: no form shows it,
+ * no renderer reads it, and it is copied into every slide the type ever seeds.
+ * `chart-slide` carried `subtitle: ''` — the pre-rename spelling of
+ * `subheading` — from the initial release until this test existed, because the
+ * validator only ever runs on FORK types (`custom-loader.js`); nothing pointed
+ * it at core. So core drifted into exactly the shape a fork is warned for.
+ *
+ * Warnings stay advisory for the sweep above (a fork's type may reasonably
+ * carry some), but this one gets asserted for core because it has no benign
+ * reading: it is the tolerance-drift the beta stance calls blocking — a second
+ * spelling for one meaning, kept alive by a default nobody reads.
+ */
+test('no core slide type defaults a key it does not declare', () => {
+  const offenders = [];
+  for (const [name, def] of Object.entries(CORE_SLIDE_TYPE_DEFS)) {
+    const report = validateSlideTypeDefinition(def, name);
+    offenders.push(
+      ...report.warnings.filter((w) => /` has no field `/.test(w)),
+    );
   }
   assert.deepEqual(offenders, []);
 });
