@@ -33,7 +33,7 @@ import {
 } from './deck-controller.js';
 import { attachPresenterKeys } from './keys.js';
 import { attachSwipeNavigation } from '../../lib/dom/swipe-nav.js';
-import { ensureOtherLanguageFollowAlong } from './translate-fill.js';
+import { ensureFollowAlongTranslations } from './translate-fill.js';
 import {
   applyLikertInteractionStateToStage,
   applyPollInteractionStateToStage,
@@ -725,12 +725,12 @@ export async function renderPresenter(root, id) {
     // Ignore: presenter works without notes session
   }
 
-  // Background: ensure the other-language follow-along can render (fill missing only; preserve any manual translations).
-  ensureOtherLanguageFollowAlong({
+  // Background: ensure every language the follow-along audience may pick can
+  // render (fill missing only; preserve any manual translations).
+  ensureFollowAlongTranslations({
     api,
     presentationId: id,
     pres,
-    activeLang,
     translatePill,
   });
 

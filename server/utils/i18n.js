@@ -3,7 +3,7 @@ import {
   normalizeLang,
   otherLang,
 } from '../../shared/i18n-utils.js';
-import { pickVersion } from './translation-status.js';
+import { pickVersion } from '../../shared/i18n-progress.js';
 
 export { normalizeLang, otherLang };
 

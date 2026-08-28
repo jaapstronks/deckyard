@@ -160,5 +160,7 @@
   "presenter.tools.presenterCompanion": "Presenter companion",
   "presenter.tools.presenterHint": "Speaker notes view, for you on a second device.",
   "presenter.tools.presenterWarn": "This link can control your live deck. Do not send it to your audience; use the audience link below.",
-  "presenter.tools.title": "Session tools (notes / copy link / follow code)"
+  "presenter.tools.title": "Session tools (notes / copy link / follow code)",
+  "presenter.translateFill.done": "Translations ready",
+  "presenter.translateFill.running": "Translating ({langs})…"
 }

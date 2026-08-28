@@ -11,7 +11,7 @@ import { disposeAll } from '../../lib/dom/disposal.js';
 import { attachThumbScaleContain } from '../../lib/slide-runtime/thumb-scale.js';
 import { cleanupSlideRuntimes } from '../../lib/slide-runtime/slide-render.js';
 import { readDeckLangParam } from '../../lib/format/i18n.js';
-import { DEFAULT_DECK_LANG, otherLang } from '../../../shared/i18n-utils.js';
+import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
 import {
   createAnalyticsTracker,
   isAnalyticsEnabled,
@@ -139,16 +139,18 @@ export async function renderFollow(root, presentationId) {
     mountEraseButton();
   };
 
+  // The language the spinner in the picker names: the first version other than
+  // the one on screen that is not finished yet. The server reports a status per
+  // existing version, so this is no longer "the other one of the pair" — a deck
+  // with three versions gets an honest answer for the third (D72).
   const getTranslatingLang = () => {
     const ts = meta?.translationStatus;
-    if (!ts) return null;
-    // Bilingual-only: the translating banner names "the other" language, which
-    // is a question with an answer only inside the NL/EN pair (B182).
-    const other = otherLang(lang);
-    const status = other && ts[other];
-    if (!status) return null;
-    if (status.complete) return null;
-    return other;
+    if (!ts || typeof ts !== 'object') return null;
+    for (const [code, status] of Object.entries(ts)) {
+      if (code === lang) continue;
+      if (status && !status.complete) return code;
+    }
+    return null;
   };
 
   const renderLangButtons = () => {

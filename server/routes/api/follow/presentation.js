@@ -3,12 +3,14 @@ import { getFollowStateForPresentation } from '../../../storage/live-sessions/in
 import { getPresentation } from '../../../storage/presentations/index.js';
 import {
   computeMissingTranslation,
-  normalizeLang,
-  otherLang,
   pickVersion,
-} from '../../../utils/translation-status.js';
+} from '../../../../shared/i18n-progress.js';
 import { crossOrganizationScope } from '../../../storage/scope.js';
-import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
+import {
+  normalizeLang,
+  resolveDeckLang,
+  translationSourceFor,
+} from '../../../../shared/i18n-utils.js';
 import { customThemeConfig } from '../../../utils/themes.js';
 import {
   computeAudienceCapabilitiesFromState,
@@ -53,13 +55,17 @@ export async function handleFollowPresentation(
       pres?.i18n?.versions &&
       typeof pres.i18n.versions === 'object' &&
       !!pres.i18n.versions?.[lang];
-    const srcLang = otherLang(lang);
-    const missing = hasVersion
-      ? computeMissingTranslation({
-          source: pickVersion(pres, srcLang),
-          target: pickVersion(pres, lang),
-        }).missingCount
-      : null;
+    // The source is the dominant version, whatever `lang` is — "the other one"
+    // only had an answer inside the NL/EN pair, so an incomplete German version
+    // used to measure itself against the deck's top-level fields (D72).
+    const srcLang = translationSourceFor(pres, lang);
+    const missing =
+      hasVersion && srcLang
+        ? computeMissingTranslation({
+            source: pickVersion(pres, srcLang),
+            target: pickVersion(pres, lang),
+          }).missingCount
+        : null;
     if (!hasVersion || (typeof missing === 'number' && missing > 0)) {
       serveJson(res, 200, {
         ...state,

@@ -3,6 +3,7 @@ import { getCollaboratorPermission } from '../../../storage/collaborators.js';
 import { getFeatureFlags } from '../../../config/flags-snapshot.js';
 import { translateFieldMap } from '../../../utils/openai/translate.js';
 import {
+  badRequest,
   methodNotAllowed,
   notFound,
   serveJson,
@@ -13,9 +14,11 @@ import {
   getOptionalString,
   getOptionalObject,
 } from '../../../utils/request-validators.js';
-import { normalizeLang, otherLang } from '../../../utils/translation-status.js';
 import { canReadPresentation } from '../../../utils/presentation-authz/index.js';
-import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
+import {
+  DEFAULT_DECK_LANG,
+  normalizeLang,
+} from '../../../../shared/i18n-utils.js';
 
 export async function handlePresentationTranslateFields(
   { repoRoot, storageScope, req, res, authedUser } = {},
@@ -49,7 +52,11 @@ export async function handlePresentationTranslateFields(
     normalizeLang(pres?.i18n?.active) ||
     normalizeLang(pres?.i18n?.dominant) ||
     DEFAULT_DECK_LANG;
-  const to = normalizeLang(body?.to) || otherLang(from);
+  // `to` is required. It used to fall back to `otherLang(from)`, which is null
+  // off the NL/EN pair — the request then reached the translator with no target
+  // language at all instead of being refused here (D72).
+  const to = normalizeLang(body?.to);
+  if (!to) return badRequest(res, 'A target language ("to") is required.');
   const fields = getOptionalObject(body, 'fields') || {};
 
   const translations = await translateFieldMap(fields, { from, to, vendor });
