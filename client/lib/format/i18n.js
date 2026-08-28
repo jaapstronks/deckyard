@@ -4,7 +4,6 @@ import {
   DEFAULT_DECK_LANG,
   DEFAULT_SUPPORTED_DECK_LANGS,
   normalizeLang as sharedNormalizeLang,
-  otherLang as sharedOtherLang,
 } from '../../../shared/i18n-utils.js';
 
 /**
@@ -56,23 +55,6 @@ export function normalizeLang(v) {
 
 export function defaultLang() {
   return supportedLangs[0] || DEFAULT_DECK_LANG;
-}
-
-/**
- * The other language of a bilingual workspace, or null — the enabled-subset
- * view of `otherLang()` in `shared/i18n-utils.js`. Null whenever the pair
- * cannot be named: fewer than two languages enabled, an off-axis input, or a
- * language outside the NL/EN pair the bilingual editor chrome is built on
- * (B182).
- * @param {*} lang
- * @returns {string|null}
- */
-export function otherLang(lang) {
-  const l = normalizeLang(lang);
-  if (!l) return null;
-  if (supportedLangs.length < 2) return null;
-  const other = sharedOtherLang(l);
-  return other && supportedSet.has(other) ? other : null;
 }
 
 export function hasLangVersion(pres, lang) {

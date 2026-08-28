@@ -478,8 +478,6 @@
   "editor.items.removeN": "Poista kohde {n}",
   "editor.jsonDebug.parseError": "JSON-virhe: {message}",
   "editor.lang.disabledByAdmin": "Tämä kieli on poistettu käytöstä ylläpidon asetuksissa.",
-  "editor.lang.dutch": "Hollanti",
-  "editor.lang.english": "Englanti",
   "editor.lang.notNow": "Ei nyt, kirjoitan itse",
   "editor.lang.switchAborted": "Tallennus ei onnistunut; kielen vaihto keskeytettiin.",
   "editor.lang.versionCreatedInvite": "{lang}-versio luotiin juuri, eikä siinä ole vielä tekstejä. Käännetäänkö ne automaattisesti? Itse täytettyjä kenttiä ei koskaan korvata.",

@@ -1019,10 +1019,6 @@
       "forms": ["Engagement Inzichten", "Engagement-inzichten"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "nl  English": {
-      "forms": ["Engels", "Engelse"],
-      "reason": "Grammatical agreement: Engelse is the attributive form in “De {lang} versie…” (editor.lang.english, matching editor.lang.dutch = Nederlandse); Engels is the bare language name in the email-template locale list."
-    },
     "nl  Enlarge preview": {
       "forms": ["Vergroot voorbeeld", "Voorbeeld vergroten"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."

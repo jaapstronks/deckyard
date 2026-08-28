@@ -478,8 +478,6 @@
   "editor.items.removeN": "Rimuovi l'elemento {n}",
   "editor.jsonDebug.parseError": "Errore JSON: {message}",
   "editor.lang.disabledByAdmin": "Questa lingua è disattivata nelle impostazioni di amministrazione.",
-  "editor.lang.dutch": "Olandese",
-  "editor.lang.english": "Inglese",
   "editor.lang.notNow": "Non ora, la scrivo io",
   "editor.lang.switchAborted": "Salvataggio non riuscito; cambio di lingua annullato.",
   "editor.lang.versionCreatedInvite": "La versione in {lang} è appena stata creata e non contiene ancora testi. Tradurli automaticamente? I campi che compili tu non vengono mai sovrascritti.",

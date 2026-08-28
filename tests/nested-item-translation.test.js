@@ -338,7 +338,6 @@ test("saving keeps the other language's nested texts and blanks the rest", async
     id: pres.id,
     SLIDE_TYPES: NESTED_TYPES,
     normalizeLang: (l) => (l === 'nl' || l === 'en-GB' ? l : null),
-    otherLang: (l) => (l === 'nl' ? 'en-GB' : 'nl'),
     getSelectedSlideId: () => SLIDE_ID,
   });
   mgr.markDirty({ slideId: SLIDE_ID });

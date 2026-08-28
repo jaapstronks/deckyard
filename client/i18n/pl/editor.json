@@ -478,8 +478,6 @@
   "editor.items.removeN": "Usuń element {n}",
   "editor.jsonDebug.parseError": "Błąd JSON: {message}",
   "editor.lang.disabledByAdmin": "Ten język jest wyłączony w ustawieniach administratora.",
-  "editor.lang.dutch": "Niderlandzki",
-  "editor.lang.english": "Angielski",
   "editor.lang.notNow": "Nie teraz, napiszę sam",
   "editor.lang.switchAborted": "Nie udało się zapisać; przełączanie języka przerwane.",
   "editor.lang.versionCreatedInvite": "Wersja {lang} została właśnie utworzona i nie zawiera jeszcze tekstów. Przetłumaczyć je automatycznie? Pola wypełnione samodzielnie nigdy nie są nadpisywane.",

@@ -50,7 +50,6 @@ export function createEditorTopbar({
   canRedo,
   onShowShortcuts,
   normalizeLang,
-  otherLang,
   topbarExportEl,
   topbarShareEl,
   syncShareUi,
@@ -171,7 +170,6 @@ export function createEditorTopbar({
     isDirty,
     markDirty,
     normalizeLang,
-    otherLang,
     getSelectedSlideId,
     setSelectedSlideId,
     editorState,
@@ -286,7 +284,7 @@ export function createEditorTopbar({
     isDirty,
     onError,
     onTranslateOther: languageMode.translateOtherLanguage,
-    canTranslate: languageMode.canTranslate(),
+    canTranslate: languageMode.canTranslate,
     onVersions: () =>
       openVersionsModalImpl({
         api,
@@ -497,6 +495,8 @@ export function createEditorTopbar({
     notificationBell.el,
     userMenu.el,
   ]);
+
+  detachers.push(languageMode.detach);
 
   // Warm the notes session in the background
   ensureNotesSession?.().catch(() => {});

@@ -478,8 +478,6 @@
   "editor.items.removeN": "Remover o item {n}",
   "editor.jsonDebug.parseError": "Erro de JSON: {message}",
   "editor.lang.disabledByAdmin": "Este idioma está desativado nas definições de administração.",
-  "editor.lang.dutch": "Neerlandês",
-  "editor.lang.english": "Inglês",
   "editor.lang.notNow": "Agora não, escrevo eu",
   "editor.lang.switchAborted": "Não foi possível guardar; mudança de idioma cancelada.",
   "editor.lang.versionCreatedInvite": "A versão em {lang} acabou de ser criada e ainda não tem textos. Traduzi-los automaticamente? Os campos que preencher nunca são substituídos.",

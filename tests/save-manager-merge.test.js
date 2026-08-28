@@ -44,7 +44,6 @@ function makeManager({ pres, apiImpl, onRemoteMerge, selectedSlideId = 'b' }) {
     id: pres.id,
     SLIDE_TYPES,
     normalizeLang: (l) => (l === 'nl' || l === 'en-GB' ? l : null),
-    otherLang: (l) => (l === 'nl' ? 'en-GB' : 'nl'),
     onRemoteMerge,
     getSelectedSlideId: () => selectedSlideId,
   });

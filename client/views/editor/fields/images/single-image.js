@@ -5,7 +5,10 @@ import { t } from '../../../../lib/ui-i18n.js';
 import { createAltSetter } from './alt-utils.js';
 import { applyAltFromPick, applyPickMeta } from '../../media/apply-pick.js';
 import { h } from '../../../../lib/dom.js';
-import { DEFAULT_DECK_LANG } from '../../../../../shared/i18n-utils.js';
+import {
+  DEFAULT_DECK_LANG,
+  translationSourceFor,
+} from '../../../../../shared/i18n-utils.js';
 
 /**
  * Create a single image field renderer
@@ -19,7 +22,6 @@ export function createFieldImage(ctx) {
     features,
     pres,
     normalizeLang,
-    otherLang,
     markDirty,
     scheduleUiRefresh,
     rerenderEditor,
@@ -91,8 +93,10 @@ export function createFieldImage(ctx) {
           onclick: () => {
             const activeLang =
               normalizeLang?.(pres?.i18n?.active) || DEFAULT_DECK_LANG;
-            const other =
-              typeof otherLang === 'function' ? otherLang(activeLang) : null;
+            // The version this one is translated from, so a picked alt text
+            // seeds the source buffer too. `otherLang()` had no answer once the
+            // deck left the NL/EN pair, and silently seeded nothing (B182).
+            const sourceLang = translationSourceFor(pres, activeLang);
             const setAltForLang = createAltSetter({
               slide,
               pres,
@@ -126,7 +130,7 @@ export function createFieldImage(ctx) {
                 applyAltFromPick({
                   picked,
                   activeLang,
-                  otherLang: other,
+                  sourceLang,
                   setAltForLang,
                 });
                 applyPickMeta({

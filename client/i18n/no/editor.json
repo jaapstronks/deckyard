@@ -478,8 +478,6 @@
   "editor.items.removeN": "Fjern element {n}",
   "editor.jsonDebug.parseError": "JSON-feil: {message}",
   "editor.lang.disabledByAdmin": "Dette språket er slått av i administratorinnstillingene.",
-  "editor.lang.dutch": "Nederlandsk",
-  "editor.lang.english": "Engelsk",
   "editor.lang.notNow": "Ikke nå, jeg skriver den selv",
   "editor.lang.switchAborted": "Klarte ikke å lagre; språkbyttet ble avbrutt.",
   "editor.lang.versionCreatedInvite": "{lang}-versjonen ble nettopp opprettet og har ingen tekster ennå. Skal de oversettes automatisk? Felt du fyller ut selv, blir aldri overskrevet.",

@@ -1,12 +1,81 @@
-import {
-  hasLangVersion,
-  normalizeLang,
-  otherLang,
-} from '../../../lib/format/i18n.js';
+import { normalizeLang } from '../../../lib/format/i18n.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
 import { openDescriptionModal } from '../modals/description-modal.js';
 import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
+import { existingVersionLangs } from '../../../../shared/i18n-progress.js';
+
+/**
+ * The public links, embed URL and two snippets for one language version.
+ *
+ * @typedef {Object} PublishLangLinks
+ * @property {string} lang - the deck language, in axis spelling
+ * @property {string} url - the public `/p/…` link
+ * @property {string} embedUrl - the `/embed/…` link
+ * @property {string} iframeSnippet - a ready-to-paste `<iframe>`
+ * @property {string} sdkSnippet - a ready-to-paste embed-SDK block
+ */
+
+/**
+ * Build the link set for every language version this deck actually has, the
+ * one being edited first.
+ *
+ * It used to build two — "this language" and `otherLang()`'s answer — so a deck
+ * with `nl`, `de` and `fr` published three versions and offered links to two of
+ * them (D72 #6). The order is deliberate: the current language leads, because
+ * that is the link the modal copies to the clipboard on open.
+ *
+ * @param {Object} opts
+ * @param {Object} opts.pres - the deck
+ * @param {string} opts.currentLang - the language being edited
+ * @param {string} opts.path - the public path (`/p/<publishId>-<slug>`)
+ * @param {string} opts.publishId
+ * @param {string} opts.slug
+ * @returns {PublishLangLinks[]}
+ */
+function buildLangLinks({ pres, currentLang, path, publishId, slug }) {
+  const others = existingVersionLangs(pres).filter((l) => l !== currentLang);
+  const embedUrlBase = `${location.origin}/embed/${publishId}-${slug}`;
+  return [currentLang, ...others].map((lang) => {
+    const q = encodeURIComponent(lang);
+    const url = `${location.origin}${path}?lang=${q}`;
+    const embedUrl = `${embedUrlBase}?lang=${q}`;
+    return {
+      lang,
+      url,
+      embedUrl,
+      iframeSnippet: `<iframe src="${embedUrl}&controls=1&ui=default&start=0" style="width:100%;aspect-ratio:16/9;border:0;" allowfullscreen></iframe>`,
+      sdkSnippet: `<div id="deck-embed"></div>
+<script src="${location.origin}/client/embed-sdk.js"></script>
+<script>
+  window.PresentationSystemEmbed.createDeckEmbed({
+    el: document.getElementById('deck-embed'),
+    publishId: '${publishId}',
+    options: {
+      baseUrl: '${location.origin}',
+      controls: true,
+      ui: 'default',
+      start: 0,
+      lang: '${lang}',
+      allowedOrigins: [window.location.origin],
+    },
+  });
+</script>`,
+    };
+  });
+}
+
+/**
+ * The link set of the language being edited — the one a "copy the public link"
+ * affordance means when it does not name a language.
+ *
+ * @param {{currentLang?: string, langs?: PublishLangLinks[]}} [data]
+ * @returns {PublishLangLinks|null}
+ */
+export function primaryLangLinks(data) {
+  const langs = Array.isArray(data?.langs) ? data.langs : [];
+  return langs.find((x) => x?.lang === data?.currentLang) || langs[0] || null;
+}
 
 /**
  * Build modal data from existing published presentation data.
@@ -18,72 +87,16 @@ export function buildPublishModalData({ pres, activeLang = null } = {}) {
 
   const currentLang =
     activeLang || normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG;
-  const other = otherLang(currentLang);
-  const hasOther = hasLangVersion(pres, other);
-
-  const path = `/p/${publishId}-${slug}`;
-  const url = `${location.origin}${path}?lang=${encodeURIComponent(currentLang)}`;
-  const urlOther = hasOther
-    ? `${location.origin}${path}?lang=${encodeURIComponent(other)}`
-    : '';
-
-  const embedUrlBase = `${location.origin}/embed/${publishId}-${slug}`;
-  const embedUrl = `${embedUrlBase}?lang=${encodeURIComponent(currentLang)}`;
-  const embedUrlOther = hasOther
-    ? `${embedUrlBase}?lang=${encodeURIComponent(other)}`
-    : '';
-
-  const iframeSnippet = `<iframe src="${embedUrl}&controls=1&ui=default&start=0" style="width:100%;aspect-ratio:16/9;border:0;" allowfullscreen></iframe>`;
-  const iframeSnippetOther = embedUrlOther
-    ? `<iframe src="${embedUrlOther}&controls=1&ui=default&start=0" style="width:100%;aspect-ratio:16/9;border:0;" allowfullscreen></iframe>`
-    : '';
-  const sdkSnippet = `<div id="deck-embed"></div>
-<script src="${location.origin}/client/embed-sdk.js"></script>
-<script>
-  window.PresentationSystemEmbed.createDeckEmbed({
-    el: document.getElementById('deck-embed'),
-    publishId: '${publishId}',
-    options: {
-      baseUrl: '${location.origin}',
-      controls: true,
-      ui: 'default',
-      start: 0,
-      lang: '${currentLang}',
-      allowedOrigins: [window.location.origin],
-    },
-  });
-</script>`;
-
-  const sdkSnippetOther = hasOther
-    ? `<div id="deck-embed"></div>
-<script src="${location.origin}/client/embed-sdk.js"></script>
-<script>
-  window.PresentationSystemEmbed.createDeckEmbed({
-    el: document.getElementById('deck-embed'),
-    publishId: '${publishId}',
-    options: {
-      baseUrl: '${location.origin}',
-      controls: true,
-      ui: 'default',
-      start: 0,
-      lang: '${other}',
-      allowedOrigins: [window.location.origin],
-    },
-  });
-</script>`
-    : '';
 
   return {
     currentLang,
-    otherLang: other,
-    url,
-    urlOther,
-    embedUrl,
-    embedUrlOther,
-    iframeSnippet,
-    iframeSnippetOther,
-    sdkSnippet,
-    sdkSnippetOther,
+    langs: buildLangLinks({
+      pres,
+      currentLang,
+      path: `/p/${publishId}-${slug}`,
+      publishId,
+      slug,
+    }),
   };
 }
 
@@ -197,73 +210,16 @@ export async function doPublish({
 
   const currentLang =
     activeLang || normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG;
-  const other = otherLang(currentLang);
-  const hasOther = hasLangVersion(pres, other);
-
-  const url = `${location.origin}${pub.path}?lang=${encodeURIComponent(
-    currentLang,
-  )}`;
-  const urlOther = hasOther
-    ? `${location.origin}${pub.path}?lang=${encodeURIComponent(other)}`
-    : '';
-
-  const embedUrlBase = `${location.origin}/embed/${pub.publishId}-${pub.slug}`;
-  const embedUrl = `${embedUrlBase}?lang=${encodeURIComponent(currentLang)}`;
-  const embedUrlOther = hasOther
-    ? `${embedUrlBase}?lang=${encodeURIComponent(other)}`
-    : '';
-
-  const iframeSnippet = `<iframe src="${embedUrl}&controls=1&ui=default&start=0" style="width:100%;aspect-ratio:16/9;border:0;" allowfullscreen></iframe>`;
-  const iframeSnippetOther = embedUrlOther
-    ? `<iframe src="${embedUrlOther}&controls=1&ui=default&start=0" style="width:100%;aspect-ratio:16/9;border:0;" allowfullscreen></iframe>`
-    : '';
-  const sdkSnippet = `<div id="deck-embed"></div>
-<script src="${location.origin}/client/embed-sdk.js"></script>
-<script>
-  window.PresentationSystemEmbed.createDeckEmbed({
-    el: document.getElementById('deck-embed'),
-    publishId: '${pub.publishId}',
-    options: {
-      baseUrl: '${location.origin}',
-      controls: true,
-      ui: 'default',
-      start: 0,
-      lang: '${currentLang}',
-      allowedOrigins: [window.location.origin],
-    },
-  });
-</script>`;
-
-  const sdkSnippetOther = hasOther
-    ? `<div id="deck-embed"></div>
-<script src="${location.origin}/client/embed-sdk.js"></script>
-<script>
-  window.PresentationSystemEmbed.createDeckEmbed({
-    el: document.getElementById('deck-embed'),
-    publishId: '${pub.publishId}',
-    options: {
-      baseUrl: '${location.origin}',
-      controls: true,
-      ui: 'default',
-      start: 0,
-      lang: '${other}',
-      allowedOrigins: [window.location.origin],
-    },
-  });
-</script>`
-    : '';
 
   openPublishModal?.({
     currentLang,
-    otherLang: other,
-    url,
-    urlOther,
-    embedUrl,
-    embedUrlOther,
-    iframeSnippet,
-    iframeSnippetOther,
-    sdkSnippet,
-    sdkSnippetOther,
+    langs: buildLangLinks({
+      pres,
+      currentLang,
+      path: pub.path,
+      publishId: pub.publishId,
+      slug: pub.slug,
+    }),
   });
 
   pres.published = pres.published || {};

@@ -1,10 +1,11 @@
 import { debugLog } from '../../../lib/util/debug.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
-import { normalizeLang, otherLang } from '../../../lib/format/i18n.js';
+import { normalizeLang } from '../../../lib/format/i18n.js';
 import {
   DEFAULT_DECK_LANG,
   resolveDeckLang,
+  translationSourceFor,
 } from '../../../../shared/i18n-utils.js';
 import { getRecommendedImageFit } from '../image-library/utils.js';
 import { createCsvGridEditor } from '../fields/csv-grid.js';
@@ -27,12 +28,17 @@ import { h } from '../../../lib/dom.js';
 const LANG_SHORT = { nl: 'NL', 'en-GB': 'EN' };
 
 /**
- * The other-language source value for a field, or '' when the other language
- * version doesn't exist / has nothing for this field. Drives whether the
- * "fill from other language" button renders at all.
+ * The source-language value for a field, or '' when that version doesn't exist
+ * / has nothing for this field. Drives whether the "fill from the source
+ * language" button renders at all.
+ *
+ * The source is the deck's own answer (`translationSourceFor`), not "the other
+ * one of two": on a deck whose active version is German, `otherLang()` returned
+ * null and the button never rendered at all (B182).
  */
-function otherLangFieldValue({ pres, slideId, key }) {
-  const sourceLang = otherLang(
+function sourceLangFieldValue({ pres, slideId, key }) {
+  const sourceLang = translationSourceFor(
+    pres,
     normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG,
   );
   if (!sourceLang) return { sourceLang: null, value: '' };
@@ -50,7 +56,7 @@ function translateLabelRightEl({ pres, onTranslateField, slideId, key }) {
   // Only offer the button when there is actually something to translate FROM:
   // a bare "Translate" next to an empty other-language field is dead UI and
   // its direction (which way does it translate?) is ambiguous.
-  const { sourceLang, value } = otherLangFieldValue({ pres, slideId, key });
+  const { sourceLang, value } = sourceLangFieldValue({ pres, slideId, key });
   if (!sourceLang || !value) return null;
   const langLabel = LANG_SHORT[sourceLang] || sourceLang;
   const preview = value.length > 90 ? `${value.slice(0, 90)}…` : value;

@@ -495,9 +495,11 @@ split, a shared editor link carrying `?lang=nl` switched the recipient's whole
 interface to Dutch.
 
 `deckLangLiteralAllowlist` in `eslint.config.js` names the files that still
-carry literals, each under one of two reasons: **bilingual chrome** (the fixed
-NL⇄EN toggle, the paired alt-text inputs, the translate modals — widening those
-to N languages is a UI design job, tracked separately) and **UI-locale axis**.
+carry literals, each under one of two reasons: **bilingual chrome** (the paired
+alt-text inputs, the translate modals, the viewer's fixed NL/EN link pair —
+widening those to N languages is a UI design job, tracked separately) and
+**UI-locale axis**. The editor's own NL⇄EN toggle used to head that list; it is
+a language menu over every version the deck has since B182 fase 2.
 The list may only shrink: `tests/deck-language-axis.test.js` fails when an entry
 stops matching a real literal, so a cleaned-up file cannot quietly keep its
 exemption. That same test pins the other two gates — one definition site for the

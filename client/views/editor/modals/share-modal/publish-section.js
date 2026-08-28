@@ -12,6 +12,7 @@
 import { t } from '../../../../lib/ui-i18n.js';
 import { confirmModal } from '../../../../lib/dom/modal.js';
 import { h } from '../../../../lib/dom.js';
+import { primaryLangLinks } from '../../publish-export/publish.js';
 
 /**
  * Create the publish section.
@@ -152,10 +153,11 @@ export function createPublishSection({
 
     // Published: show the public URL + management actions.
     const data = buildPublishModalData({ pres });
+    const publicUrl = primaryLangLinks(data)?.url || '';
     const urlInput = h('input', {
       class: 'form-input share-publish-url',
       readonly: true,
-      value: data.url || '',
+      value: publicUrl,
       'aria-label': t('share.publish.urlLabel', 'Public link'),
     });
     urlInput.addEventListener('focus', () => urlInput.select());
@@ -164,7 +166,7 @@ export function createPublishSection({
       type: 'button',
       text: t('common.copy', 'Copy'),
       onclick: async () => {
-        const ok = await copyToClipboard(data.url);
+        const ok = await copyToClipboard(publicUrl);
         if (ok)
           toast?.success?.(t('common.copied', 'Copied'), { durationMs: 1500 });
         urlInput.focus();

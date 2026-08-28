@@ -23,20 +23,26 @@
  *
  * Two provider shapes collapse here:
  * - `picked.alts` (a per-language map, e.g. the native library) wins: the
- *   active + other buffers are set from it.
+ *   active + source buffers are set from it.
  * - otherwise `picked.alt` (a single seed, e.g. ImageKit's altSeed) is applied
- *   to the active, English, and other buffers as a translation baseline.
+ *   to the active, English, and source buffers as a translation baseline.
+ *
+ * `sourceLang` is the version this deck's active language is translated FROM
+ * (`translationSourceFor`). It was called `otherLang` and fed by the bilingual
+ * "the other one of two" helper, which had no answer at all for a deck whose
+ * active version is German — so nothing was seeded (B182). Widening the seed to
+ * *every* language of the workspace subset is phase 5 of that item.
  *
  * @param {Object} opts
  * @param {PickedImage} opts.picked
  * @param {string} opts.activeLang
- * @param {string|null} [opts.otherLang]
+ * @param {string|null} [opts.sourceLang]
  * @param {(lang: string, alt: string) => void} opts.setAltForLang - language-scoped setter
  */
 export function applyAltFromPick({
   picked,
   activeLang,
-  otherLang,
+  sourceLang,
   setAltForLang,
 }) {
   if (typeof setAltForLang !== 'function' || !picked) return;
@@ -45,8 +51,8 @@ export function applyAltFromPick({
     picked.alts && typeof picked.alts === 'object' ? picked.alts : null;
   if (alts) {
     setAltForLang(activeLang, alts[activeLang] || '');
-    if (otherLang && otherLang !== activeLang)
-      setAltForLang(otherLang, alts[otherLang] || '');
+    if (sourceLang && sourceLang !== activeLang)
+      setAltForLang(sourceLang, alts[sourceLang] || '');
     return;
   }
 
@@ -55,7 +61,7 @@ export function applyAltFromPick({
   setAltForLang(activeLang, seed);
   // Seed the English buffer as a translation baseline (unless it is the active one).
   if (activeLang !== 'en-GB') setAltForLang('en-GB', seed);
-  if (otherLang && otherLang !== activeLang) setAltForLang(otherLang, seed);
+  if (sourceLang && sourceLang !== activeLang) setAltForLang(sourceLang, seed);
 }
 
 /**

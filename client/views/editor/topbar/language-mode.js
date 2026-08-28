@@ -1,28 +1,47 @@
 /**
- * Language mode switching component for the editor topbar.
+ * The deck's language menu in the editor topbar.
  *
- * Switching to a language version that doesn't exist yet is never blocked:
- * the version is created on the spot (structure-only, translatable fields
- * empty) and the user lands in it immediately. A non-blocking popover then
- * offers to AI-translate the missing texts - fields the user already filled
- * in by hand are left alone (the server's translate/missing endpoint only
- * fills empty translatable fields).
+ * **One menu per deck, for every n** (D72 #1). The trigger names the language
+ * being edited; opening it lists the versions this deck actually has — the
+ * source version marked, every other one with its translation status — and,
+ * under a separator, the workspace languages this deck has no version for yet.
+ *
+ * Choosing an existing version switches to it. Choosing one under "Add
+ * language" is the same switch: the version is created on the spot
+ * (structure-only, translatable fields empty) and the user lands in it
+ * immediately. A non-blocking popover then offers to AI-translate the missing
+ * texts - fields the user already filled in by hand are left alone (the
+ * server's translate/missing endpoint only fills empty translatable fields).
+ *
+ * What it replaces is a fixed NL/EN segmented control, built on the assumption
+ * that "the other language" is always nameable. It is not on the open deck-language
+ * axis, which is why a German version used to be viewable but not editable (B182).
  */
 
 import {
   getSupportedLangs,
   isSupportedLang,
 } from '../../../lib/format/i18n.js';
+import { getLangDisplayName } from '../../../lib/format/lang-selector.js';
 import { confirmModal, createModal } from '../../../lib/dom/modal.js';
+import { createDropdown } from '../../../lib/dom/dropdown.js';
+import { makeDropdownCaret } from '../../../lib/dom/icons.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { SLIDE_TYPES } from '../../../../shared/slide-types.js';
-import { translatableKeysForType } from '../../../../shared/slide-types/text-fields.js';
 import { h } from '../../../lib/dom.js';
-import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
+import {
+  DEFAULT_DECK_LANG,
+  translationSourceFor,
+} from '../../../../shared/i18n-utils.js';
+import {
+  computeMissingTranslation,
+  existingVersionLangs,
+  pickVersion,
+  translationProgress,
+} from '../../../../shared/i18n-progress.js';
 import { setQueryParams } from '../../../lib/state/router.js';
 
 /**
- * Create the language mode switcher component.
+ * Create the language menu component.
  *
  * @param {object} options
  * @param {HTMLElement} options.root - Root element for modals
@@ -33,13 +52,12 @@ import { setQueryParams } from '../../../lib/state/router.js';
  * @param {Function} options.isDirty - Check if dirty
  * @param {Function} options.markDirty - Mark presentation dirty
  * @param {Function} options.normalizeLang - Normalize language code
- * @param {Function} options.otherLang - Get other language
  * @param {Function} options.getSelectedSlideId - Get selected slide ID
  * @param {Function} options.setSelectedSlideId - Set selected slide ID
  * @param {object} options.editorState - Editor state updater utility
  * @param {HTMLElement} options.topbarTitleEl - Title element to update
  * @param {Function} options.toast - Toast notifications
- * @returns {object} Language mode controller
+ * @returns {object} Language menu controller
  */
 export function createLanguageMode({
   root,
@@ -50,7 +68,6 @@ export function createLanguageMode({
   isDirty,
   markDirty,
   normalizeLang,
-  otherLang,
   getSelectedSlideId,
   setSelectedSlideId,
   editorState,
@@ -64,7 +81,6 @@ export function createLanguageMode({
   collabLanguage = null,
 } = {}) {
   let translateBusy = false;
-  const supportedLangs = new Set(getSupportedLangs());
 
   /**
    * Best-effort display text for a thrown value. May legitimately come back
@@ -78,10 +94,21 @@ export function createLanguageMode({
     syncLangUi();
   };
 
-  const langLabel = (lang) =>
-    lang === 'nl'
-      ? t('editor.lang.dutch', 'Dutch')
-      : t('editor.lang.english', 'English');
+  const activeLang = () =>
+    normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG;
+
+  /**
+   * The languages the menu lists as existing versions.
+   *
+   * The active language is included even when its version buffer has not been
+   * written yet (the moment right after a switch), so the trigger and the list
+   * can never disagree about what is being edited.
+   */
+  const listedLangs = () => {
+    const active = activeLang();
+    const existing = existingVersionLangs(pres);
+    return existing.includes(active) ? existing : [active, ...existing];
+  };
 
   const ensureVersionBuffers = (lang) => {
     pres.i18n.versions =
@@ -119,24 +146,144 @@ export function createLanguageMode({
     else toast.info(msg, { id: 'editor-translate', durationMs });
   };
 
-  // Single place that derives the segmented control from state: which language
-  // is active, and whether a translation is running. While it runs the language
-  // buttons are disabled with the reason on the wrapper (a disabled button
-  // swallows its own tooltip), so a click that can't work explains itself
-  // instead of disappearing under the busy modal's backdrop.
+  /**
+   * One menu row for a language version the deck already has.
+   *
+   * The status half is the whole reason this is a menu and not the old toggle:
+   * the source version is named as such, and every other version carries the
+   * count of texts it is still missing (`translationProgress`, derived on read).
+   *
+   * Both halves are measured **from `progress.dominant` outwards**, and the row
+   * title says so in words. That matters because `dominant` is not the language
+   * the deck was authored in: `bootstrap.js`, `save-manager.js` and the switch
+   * below all keep it equal to the version being edited ("one language mode for
+   * both edit and present", pre-D72). So "source" reads as "the version you are
+   * editing", and a count is "texts that version has and this one does not" —
+   * true, but not the stable authored-original D72 #2 describes. Resolving that
+   * is a decision, not a rename; the direction is spelled out here so the number
+   * cannot be misread either way.
+   */
+  const versionItem = (lang, { active, progress }) => {
+    const isActive = lang === active;
+    const row = h('button', {
+      class: `dropdown-item lang-menu-item${isActive ? ' is-active' : ''}`,
+      type: 'button',
+      disabled: translateBusy,
+      onclick: () => {
+        closeMenu();
+        if (isActive) return;
+        switchLanguageMode(lang, { onStatus: toastStatus });
+      },
+    });
+    if (isActive) row.setAttribute('aria-current', 'true');
+    row.append(
+      h('span', { class: 'lang-menu-name', text: getLangDisplayName(lang) }),
+    );
+
+    if (lang === progress.dominant) {
+      row.append(
+        h('span', {
+          class: 'lang-menu-status',
+          text: t('editor.lang.sourceBadge', 'source'),
+          title: t(
+            'editor.lang.sourceBadgeTitle',
+            'Translations are measured from this version.',
+          ),
+        }),
+      );
+      return row;
+    }
+
+    const missing = progress.missing?.[lang];
+    if (typeof missing !== 'number') return row;
+    const source = getLangDisplayName(progress.dominant);
+    if (missing === 0) {
+      row.append(
+        h('span', {
+          class: 'lang-menu-status is-complete',
+          text: '✓',
+          title: t(
+            'editor.lang.completeTitle',
+            'Nothing the {source} version has is missing here.',
+            { source },
+          ),
+        }),
+      );
+    } else {
+      row.append(
+        h('span', {
+          class: 'lang-menu-status',
+          text: t('editor.lang.missingCount', '{n} missing', {
+            n: String(missing),
+          }),
+          title: t(
+            'editor.lang.missingCountTitle',
+            '{n} texts the {source} version has and this one does not.',
+            { n: String(missing), source },
+          ),
+        }),
+      );
+    }
+    return row;
+  };
+
+  /** One menu row under "Add language…": a workspace language with no version yet. */
+  const addItem = (lang) =>
+    h('button', {
+      class: 'dropdown-item lang-menu-item',
+      type: 'button',
+      disabled: translateBusy,
+      onclick: () => {
+        closeMenu();
+        switchLanguageMode(lang, { onStatus: toastStatus });
+      },
+      text: getLangDisplayName(lang),
+    });
+
+  /**
+   * Rebuild the menu from state. Called on every open and on every UI sync, so
+   * a version created (or filled) since the last look is listed as it is now.
+   */
+  const buildMenu = () => {
+    const active = activeLang();
+    const progress = translationProgress(pres);
+    const listed = listedLangs();
+    const items = listed.map((lang) => versionItem(lang, { active, progress }));
+
+    const addable = getSupportedLangs().filter((l) => !listed.includes(l));
+    if (addable.length) {
+      items.push(h('div', { class: 'dropdown-sep' }));
+      items.push(
+        h('div', {
+          class: 'dropdown-help',
+          text: t('editor.lang.addLanguage', 'Add language…'),
+        }),
+      );
+      for (const lang of addable) items.push(addItem(lang));
+    }
+    menu.replaceChildren(...items);
+  };
+
+  // Single place that derives the trigger from state: which language is active,
+  // and whether a translation is running. While it runs the menu is disabled
+  // with the reason on the trigger (a disabled control swallows its own
+  // tooltip), so a click that can't work explains itself instead of
+  // disappearing under the busy modal's backdrop.
   const syncLangUi = () => {
-    const a = normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG;
-    btnNl.classList.toggle('is-active', a === 'nl');
-    btnEn.classList.toggle('is-active', a === 'en-GB');
-    btnNl.disabled = !supportedLangs.has('nl') || translateBusy;
-    btnEn.disabled = !supportedLangs.has('en-GB') || translateBusy;
-    langSeg.setAttribute('aria-busy', translateBusy ? 'true' : 'false');
-    langSeg.title = translateBusy
+    langMenuLabel.textContent = getLangDisplayName(activeLang());
+    langMenu.summary.setAttribute(
+      'aria-busy',
+      translateBusy ? 'true' : 'false',
+    );
+    langMenu.summary.classList.toggle('is-disabled', translateBusy);
+    langMenu.summary.title = translateBusy
       ? t(
           'editor.translate.busyLangSwitch',
           'Translating… you can switch language again when it is done.',
         )
       : t('editor.langMode.title', 'Language mode (edit + present)');
+    if (translateBusy) closeMenu();
+    buildMenu();
   };
 
   // Apply server-enforced metadata after a server-side write (translate
@@ -174,6 +321,21 @@ export function createLanguageMode({
       if (!refreshed) {
         refreshed = await api?.(
           `/api/presentations/${id}?lang=${encodeURIComponent(next)}`,
+        );
+      }
+      // A load that does not carry the version is a failed switch, not a
+      // partial one: the live-doc projection returns a deck even when the
+      // version is absent (a just-created buffer that has not reached the
+      // doc yet), and adopting it would leave `active` pointing at slides in
+      // another language - which the next save would then sync as if they
+      // were this version's own.
+      if (!refreshed?.i18n?.versions?.[next]) {
+        throw new Error(
+          t(
+            'editor.lang.versionNotLoaded',
+            'The {lang} version could not be loaded.',
+            { lang: getLangDisplayName(next) },
+          ),
         );
       }
       pres.i18n = refreshed.i18n;
@@ -218,7 +380,10 @@ export function createLanguageMode({
   const runLanguageSwitch = async (nextLang, { onStatus } = {}) => {
     const next = normalizeLang(nextLang);
     if (!next) return;
-    if (!isSupportedLang(next) && next !== pres?.i18n?.active) {
+    // The admin subset gates which versions can be *added*; a version the
+    // deck already has is always editable, or the menu would list a language
+    // it then refuses (the B182 defect in a new shape).
+    if (!isSupportedLang(next) && !pres?.i18n?.versions?.[next]) {
       onStatus?.({
         level: 'info',
         msg: t(
@@ -236,6 +401,11 @@ export function createLanguageMode({
       });
       return;
     }
+
+    // The version this one will be translated FROM, read before the switch:
+    // `loadLanguageIntoView` moves `dominant` onto the language being opened,
+    // after which "where does its text come from" no longer has this answer.
+    const sourceLang = translationSourceFor(pres, next);
 
     // Create a missing version on the spot instead of blocking the switch.
     // Structure only: the save sync copies slide ids/layout and non-translatable
@@ -273,21 +443,24 @@ export function createLanguageMode({
     // right after creating the version, but also on later switches while the
     // version still has untranslated texts. Manual translations are never
     // overwritten, so the invite stays safe to accept at any time.
+    if (!sourceLang) return;
     if (justCreated) {
       showTranslateInvite(
         t(
           'editor.lang.versionCreatedInvite',
           'The {lang} version was just created and has no texts yet. Translate them automatically? Fields you fill in yourself are never overwritten.',
-          { lang: langLabel(next) },
+          { lang: getLangDisplayName(next) },
         ),
+        sourceLang,
       );
-    } else if (versionHasMissingTexts(next)) {
+    } else if (versionHasMissingTexts(next, sourceLang)) {
       showTranslateInvite(
         t(
           'editor.lang.versionIncompleteInvite',
           'This {lang} version still has untranslated texts. Translate them automatically? Fields you filled in yourself are never overwritten.',
-          { lang: langLabel(next) },
+          { lang: getLangDisplayName(next) },
         ),
+        sourceLang,
       );
     }
   };
@@ -298,7 +471,7 @@ export function createLanguageMode({
    * Nothing in this path may fail silently: the onclick handlers don't await
    * the returned promise, so without this catch a throw anywhere below (a
    * failed fetch, a version buffer the server didn't return) would vanish as an
-   * unhandled rejection and leave a dead-looking button behind.
+   * unhandled rejection and leave a dead-looking menu behind.
    */
   const switchLanguageMode = async (nextLang, { onStatus } = {}) => {
     try {
@@ -309,48 +482,36 @@ export function createLanguageMode({
   };
 
   /**
-   * Whether the given language version still has empty translatable fields for
-   * which the other language DOES have text (top-level string/markdown fields;
-   * a cheap client-side mirror of the server's missing-translation check).
+   * Whether `lang` still has empty translatable fields that `sourceLang` fills.
+   *
+   * The same scan the menu's status counts use, asked about one pair - the
+   * hand-rolled top-level-only mirror it replaces missed prose nested in
+   * `rows[].blocks[]` and reported such a version complete.
    */
-  const versionHasMissingTexts = (lang) => {
-    const from = otherLang(lang);
-    const src = pres?.i18n?.versions?.[from];
-    const tgt = pres?.i18n?.versions?.[lang];
-    if (!src || !tgt) return false;
-    const tgtById = new Map(
-      (Array.isArray(tgt.slides) ? tgt.slides : [])
-        .filter((s) => s && typeof s.id === 'string')
-        .map((s) => [s.id, s]),
+  const versionHasMissingTexts = (lang, sourceLang) => {
+    if (!sourceLang || sourceLang === lang) return false;
+    if (!pres?.i18n?.versions?.[lang] || !pres?.i18n?.versions?.[sourceLang])
+      return false;
+    return (
+      computeMissingTranslation({
+        source: pickVersion(pres, sourceLang),
+        target: pickVersion(pres, lang),
+      }).missingCount > 0
     );
-    for (const s of Array.isArray(src.slides) ? src.slides : []) {
-      if (!s || typeof s !== 'object') continue;
-      const keys = translatableKeysForType(s.type, SLIDE_TYPES);
-      if (!keys.length) continue;
-      const tgtContent = tgtById.get(s.id)?.content || {};
-      for (const k of keys) {
-        const sv = s.content?.[k];
-        const tv = tgtContent[k];
-        if (
-          typeof sv === 'string' &&
-          sv.trim() &&
-          !(typeof tv === 'string' && tv.trim())
-        ) {
-          return true;
-        }
-      }
-    }
-    return false;
   };
 
   /**
-   * AI-translate only the MISSING texts of the active language, using the
-   * other language as the source. Manually translated fields are untouched.
+   * AI-translate only the MISSING texts of the active language. Manually
+   * translated fields are untouched.
+   *
+   * @param {object} [opts]
+   * @param {string} [opts.from] - source version; defaults to the deck's own
+   *   answer for "what is this language translated from" (`translationSourceFor`).
    */
-  const translateMissingForActive = async ({ onStatus } = {}) => {
-    const to = normalizeLang(pres.i18n.active) || DEFAULT_DECK_LANG;
-    const from = otherLang(to);
-    if (!from) {
+  const translateMissingForActive = async ({ onStatus, from } = {}) => {
+    const to = activeLang();
+    const source = normalizeLang(from) || translationSourceFor(pres, to);
+    if (!source) {
       onStatus?.({
         level: 'info',
         msg: t(
@@ -389,11 +550,11 @@ export function createLanguageMode({
     const busyModal = openBusyModal();
     try {
       // fillMissing keeps every field the user already wrote by hand (top-level
-      // AND per-item texts) and only translates the empty ones from `from`.
+      // AND per-item texts) and only translates the empty ones from `source`.
       const resp = await api?.(`/api/presentations/${id}/translate`, {
         method: 'POST',
         body: JSON.stringify({
-          from,
+          from: source,
           to,
           overwrite: false,
           fillMissing: true,
@@ -419,35 +580,50 @@ export function createLanguageMode({
   };
 
   /**
-   * Full-deck translate into the other language (the topbar menu action).
+   * The languages a full-deck retranslate would write into: every version the
+   * deck has besides the one on screen.
+   *
+   * "The other language" had one answer while the chrome was bilingual; on the
+   * open axis the honest generalization is "all the others". Creating a version
+   * is deliberately NOT part of it any more — that is what the menu's "Add
+   * language…" does, and it comes with the fill-missing invite. So this action
+   * refreshes what exists and never invents a target (D72 #1).
+   */
+  const retranslateTargets = () => {
+    const active = activeLang();
+    return existingVersionLangs(pres).filter((l) => l !== active);
+  };
+
+  /**
+   * Full-deck retranslate of every other existing version (the ⋯ menu action).
+   * Overwrites: these versions exist, so there is nothing to create and the
+   * confirm names every one of them.
    */
   const translateOtherLanguage = async ({ onStatus } = {}) => {
-    const from = normalizeLang(pres.i18n.active) || DEFAULT_DECK_LANG;
-    const to = otherLang(from);
-    if (!to) {
+    const from = activeLang();
+    const targets = retranslateTargets();
+    if (!targets.length) {
       onStatus?.({
         level: 'info',
         msg: t(
-          'editor.translate.disabled',
-          'Translation is disabled (only one language enabled).',
+          'editor.translate.noOtherVersions',
+          'This deck has no other language version yet. Add one from the language menu.',
         ),
       });
       return;
     }
-    const overwrite = !!pres.i18n.versions?.[to];
-    if (overwrite) {
-      const ok = await confirmModal(root || document.body, {
-        title: t('editor.translate.overwrite', 'Overwrite translation'),
-        message: t(
-          'editor.translate.overwriteConfirm',
-          'The {lang} version already exists. Overwrite?',
-          { lang: to === 'nl' ? 'NL' : 'EN' },
-        ),
-        confirmLabel: t('editor.translate.overwrite', 'Overwrite translation'),
-        danger: true,
-      });
-      if (!ok) return;
-    }
+    const langList = targets.map(getLangDisplayName).join(', ');
+    const ok = await confirmModal(root || document.body, {
+      title: t('editor.translate.overwrite', 'Overwrite translation'),
+      message: t(
+        'editor.translate.overwriteConfirm',
+        'This replaces the existing translation of {lang}. Continue?',
+        { lang: langList },
+      ),
+      confirmLabel: t('editor.translate.overwrite', 'Overwrite translation'),
+      danger: true,
+    });
+    if (!ok) return;
     if (isDirty?.()) {
       onStatus?.({
         level: 'info',
@@ -472,18 +648,22 @@ export function createLanguageMode({
     setTranslateBusy(true);
     const busyModal = openBusyModal();
     try {
-      const resp = await api?.(`/api/presentations/${id}/translate`, {
-        method: 'POST',
-        body: JSON.stringify({
-          from,
-          to,
-          overwrite,
-          fillMissing: !overwrite,
-        }),
-      });
-      const updated = resp?.presentation;
-      if (updated?.i18n) pres.i18n = updated.i18n;
-      applyServerMeta(updated);
+      // Sequential on purpose: each call bumps the deck revision, so two in
+      // flight would race for it and the second would 409.
+      for (const to of targets) {
+        const resp = await api?.(`/api/presentations/${id}/translate`, {
+          method: 'POST',
+          body: JSON.stringify({
+            from,
+            to,
+            overwrite: true,
+            fillMissing: false,
+          }),
+        });
+        const updated = resp?.presentation;
+        if (updated?.i18n) pres.i18n = updated.i18n;
+        applyServerMeta(updated);
+      }
       // Live-edit mode: the server applied the translation to the live doc
       // (step-4 seam), so it syncs to every client — no local doc write here
       // (a duplicate write would double-insert the same text via the CRDT).
@@ -536,10 +716,14 @@ export function createLanguageMode({
     langPopoverDismiss,
   ]);
   let langPopoverTimeout = null;
+  // The version the invite offers to translate FROM, pinned when it is shown:
+  // by the time the button is clicked the deck's own source answer has moved on.
+  let langPopoverSource = null;
 
-  const showTranslateInvite = (msg) => {
+  const showTranslateInvite = (msg, sourceLang) => {
     if (langPopoverTimeout) clearTimeout(langPopoverTimeout);
     langPopoverMsg.textContent = msg;
+    langPopoverSource = sourceLang || null;
     langPopover.classList.add('is-visible');
     langPopoverTimeout = setTimeout(() => {
       langPopover.classList.remove('is-visible');
@@ -552,48 +736,45 @@ export function createLanguageMode({
   };
 
   langPopoverBtn.onclick = () => {
+    const from = langPopoverSource;
     hideLangPopover();
-    translateMissingForActive({ onStatus: toastStatus });
+    translateMissingForActive({ onStatus: toastStatus, from });
   };
   langPopoverDismiss.onclick = () => hideLangPopover();
 
   // UI elements
-  const langSegWrapper = h('div', { class: 'lang-seg-wrapper' });
+  const langMenuWrapper = h('div', { class: 'lang-menu-wrapper' });
+  const langMenuLabel = h('span', { class: 'lang-menu-label' });
   // Title is set by syncLangUi (it doubles as the busy explanation).
-  const langSeg = h('div', { class: 'sb-segmented is-toggle is-compact' });
-
-  const btnNl = h('button', {
-    class: 'sb-segmented-btn',
-    type: 'button',
-    text: 'NL',
-    onclick: () => switchLanguageMode('nl', { onStatus: toastStatus }),
+  const langMenu = createDropdown({
+    triggerClass: 'btn btn-secondary is-compact',
+    triggerContent: [langMenuLabel, makeDropdownCaret()],
+    detailsClass: 'lang-menu',
+    ariaLabel: t('editor.langMode.title', 'Language mode (edit + present)'),
+  });
+  const menu = langMenu.menu;
+  const closeMenu = langMenu.close;
+  // Rebuilt on every open: a version created or filled since the last look is
+  // listed as it is now, not as it was when the topbar was built.
+  langMenu.details.addEventListener('toggle', () => {
+    if (langMenu.details.open) buildMenu();
   });
 
-  const btnEn = h('button', {
-    class: 'sb-segmented-btn',
-    type: 'button',
-    text: 'EN',
-    onclick: () => switchLanguageMode('en-GB', { onStatus: toastStatus }),
-  });
+  langMenuWrapper.append(langMenu.el, langPopover);
 
-  langSeg.append(btnNl, btnEn);
-  langSegWrapper.append(langSeg, langPopover);
-
-  // Initialize button states. Visibility is fixed for the session (admin
-  // settings); active + disabled come from `syncLangUi`, the single derivation.
-  const active = normalizeLang(pres?.i18n?.active);
-  btnNl.hidden = !(supportedLangs.has('nl') || active === 'nl');
-  btnEn.hidden = !(supportedLangs.has('en-GB') || active === 'en-GB');
   syncLangUi();
 
   return {
-    el: langSegWrapper,
+    el: langMenuWrapper,
     syncLangUi,
+    detach: () => {
+      hideLangPopover();
+      langMenu.detach();
+    },
     translateOtherLanguage: () =>
       translateOtherLanguage({ onStatus: toastStatus }),
     translateMissingForActive: () =>
       translateMissingForActive({ onStatus: toastStatus }),
-    canTranslate: () =>
-      !!otherLang(normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG),
+    canTranslate: () => retranslateTargets().length > 0,
   };
 }

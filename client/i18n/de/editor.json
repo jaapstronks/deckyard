@@ -478,8 +478,6 @@
   "editor.items.removeN": "Eintrag {n} entfernen",
   "editor.jsonDebug.parseError": "JSON-Fehler: {message}",
   "editor.lang.disabledByAdmin": "Diese Sprache ist in den Admin-Einstellungen deaktiviert.",
-  "editor.lang.dutch": "Niederländisch",
-  "editor.lang.english": "Englisch",
   "editor.lang.notNow": "Jetzt nicht, ich schreibe es selbst",
   "editor.lang.switchAborted": "Speichern nicht möglich; Sprachwechsel abgebrochen.",
   "editor.lang.versionCreatedInvite": "Die Version {lang} wurde gerade erstellt und enthält noch keine Texte. Automatisch übersetzen? Felder, die Sie selbst ausfüllen, werden nie überschrieben.",
