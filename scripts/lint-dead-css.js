@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Advisory scanner for CSS class selectors that no source file references.
+// CI gate for CSS class selectors that no source file references.
 //
 // WHY THIS EXISTS
 // `lint:deadcode` counts unused JS *exports*; an orphaned CSS selector is
@@ -7,14 +7,17 @@
 // (e.g. #393 dropping the editor header row), the selector is left behind, green
 // in CI, seen by nobody. This is the CSS half of that blind spot.
 //
-// WHY IT IS ADVISORY, NOT A CI GATE (yet)
-// Class names here are not only written as literals — they are *composed*:
-// `slide-bg-${id}`, `is-${state}`, `tf-align-${x}`, and template-literal builds
-// in `renderHtml`. A naive scanner flags every composed class as dead and is
-// worse than nothing. So the bias is deliberately conservative: it errs towards
-// calling a class ALIVE, and only reports a selector it cannot account for.
-// Under-reporting is the intended failure mode; over-reporting is the one that
-// makes the tool untrustworthy. Promote to a gate only once the report is clean.
+// WHY IT IS A GATE NOW (it was advisory until B191)
+// It shipped report-only on purpose: class names here are not only written as
+// literals, they are *composed* — `slide-bg-${id}`, `is-${state}`,
+// `tf-align-${x}`, template-literal builds in `renderHtml` — and a naive scanner
+// that flags every composed name is worse than nothing. The bias is still
+// deliberately conservative: it errs towards calling a class ALIVE, and only
+// reports a selector it cannot account for. Under-reporting remains the intended
+// failure mode. What changed is that the report reached zero (B190 triaged the
+// backlog across #1041–#1050), and a clean report that nothing enforces goes
+// stale the week after. The survivors live in `dead-css-allowlist.json`, each
+// with a written reason — see ALLOWLIST below.
 //
 // A COMPOSED NAME MUST BE ASSEMBLABLE, NOT MERELY PREFIXED (the #1037 lesson)
 // The first version treated any static chunk preceding a `${` as a live prefix
@@ -34,12 +37,32 @@
 // chunk sitting *between* two holes is harvested as an infix and the name is
 // alive when both sides of it are values.
 //
+// VENDOR IS NOT SOURCE (the B191 decision)
+// `client/vendor/**` is excluded from the corpus. Those files are not our source,
+// and the harvester demonstrably desyncs on them: the quoted-string pass walks
+// quotes left to right and loses its place inside the 300 KB single line of
+// `katex.min.js`, so the `"katex-error"` literal in there never reached the
+// evidence set anyway. Half-reading vendor buys false confidence — a genuinely
+// dead selector could hide behind "vendor probably writes it". Classes we style
+// on behalf of vendored code are named explicitly in the allowlist instead, which
+// is also how the eight Prism token types (`.operator`, `.prolog`, …) stopped
+// being invisible.
+//
 // SCOPE IS TRACKED FILES, NOT THE WORKING TREE (the #413 lesson)
 // The gate measures `git ls-files`, not a filesystem walk. A class used only by
 // an untracked scratch file must still count as dead, otherwise "green for the
 // author" is not "green in CI".
 //
-// Run: npm run lint:deadcss   (report-only, always exits 0)
+// ALLOWLIST
+// `dead-css-allowlist.json` maps a class name to `{ kind, reason, see }`. Every
+// field is required and checked: a nameless entry, an unknown `kind` or an empty
+// `reason` fails the gate, because a bare list of names is exactly the tolerance
+// creep the allowlist exists to prevent. It is also stale-guarded in both
+// directions — an entry whose selector no longer exists, or whose selector the
+// harvester now accounts for, fails the gate. The list can therefore only shrink
+// by decision, never grow by neglect.
+//
+// Run: npm run lint:deadcss   (exits non-zero on any unaccounted selector)
 
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -95,7 +118,8 @@ const isValue = (text, evidence) =>
 /**
  * A tracked file is a *source* file (its literals may reference classes) when it
  * is a `.js`/`.html` under `client/`, `shared/` or `server/`. Stylesheets are
- * excluded by extension.
+ * excluded by extension, and so is `client/vendor/**` — see VENDOR IS NOT SOURCE
+ * in the header.
  *
  * `server/` counts because eighteen of its modules write class attributes
  * (export, embed, published pages, the PNG/PDF renderers) and because the enum
@@ -109,6 +133,7 @@ export const isSourceFile = (file) =>
   (file.startsWith('client/') ||
     file.startsWith('shared/') ||
     file.startsWith('server/')) &&
+  !file.startsWith('client/vendor/') &&
   (file.endsWith('.js') || file.endsWith('.html'));
 
 /**
@@ -380,7 +405,8 @@ export function isAlive(name, evidence) {
  * @param {string[]} opts.sourceFiles - Repo-relative source paths
  * @param {string[]} opts.cssFiles - Repo-relative CSS paths
  * @param {(p: string) => string} [opts.read] - File reader (injectable for tests)
- * @returns {{dead: Array<{name, file, line}>, totalClasses: number, evidence}}
+ * @returns {{dead: Array<{name, file, line}>, byName: Map<string, {name, file, line}>,
+ *   totalClasses: number, evidence: Evidence}}
  */
 export function scan({ sourceFiles, cssFiles, read = defaultRead }) {
   const evidence = emptyEvidence();
@@ -403,45 +429,177 @@ export function scan({ sourceFiles, cssFiles, read = defaultRead }) {
       a.line - b.line ||
       a.name.localeCompare(b.name),
   );
-  return { dead, totalClasses: byName.size, evidence };
+  return { dead, byName, totalClasses: byName.size, evidence };
 }
 
 const defaultRead = (rel) => fs.readFileSync(path.join(REPO_ROOT, rel), 'utf8');
 
-/** CLI entry: scan the tracked tree and print an advisory report. */
+/** Repo-relative path of the survivors allowlist. */
+export const ALLOWLIST_FILE = 'dead-css-allowlist.json';
+
+/**
+ * The two reasons a selector may outlive the harvester, and the only values
+ * `kind` accepts. Both name a writer *outside* the scanned corpus:
+ *
+ *   - `vendor-emitted` — a vendored library writes the class at runtime
+ *     (Prism's `class="token <type>"`, KaTeX's error span). `client/vendor/**`
+ *     is not source, so the harvester cannot and should not see these.
+ *   - `author-vocabulary` — deck content and fork stylesheets write the class.
+ *     The repo styles it on the author's behalf; that it has no in-repo user is
+ *     the normal case, not evidence of death.
+ *
+ * A third reason ("the scanner is confused") is deliberately absent: that is a
+ * scanner bug to fix, not a selector to excuse.
+ */
+export const ALLOWLIST_KINDS = new Set(['vendor-emitted', 'author-vocabulary']);
+
+/**
+ * @typedef {Object} AllowlistEntry
+ * @property {string} kind - One of {@link ALLOWLIST_KINDS}
+ * @property {string} reason - Why this selector has no in-corpus reference
+ * @property {string} see - Where the argument lives: the vendored file that
+ *   emits it, or the reference doc that defines the vocabulary
+ */
+
+/**
+ * Read and parse the allowlist.
+ * @param {(p: string) => string} [read] - File reader (injectable for tests)
+ * @returns {Record<string, AllowlistEntry>}
+ */
+export function readAllowlist(read = defaultRead) {
+  return JSON.parse(read(ALLOWLIST_FILE));
+}
+
+/**
+ * Hold the allowlist to its own terms.
+ *
+ * Three failure kinds, each of which fails the gate:
+ *
+ *   - `unexpected` — a dead selector nobody wrote a reason for. The report.
+ *   - `malformed` — an entry missing a field, or claiming an unknown `kind`.
+ *     A bare list of names is the tolerance creep the allowlist exists to
+ *     prevent, so an unreasoned entry is not a lesser sin than a dead selector.
+ *   - `stale` — the entry no longer describes reality, in either direction: its
+ *     selector is gone from the stylesheets (`selector-gone`), or the harvester
+ *     now accounts for it (`now-referenced`). Both mean *delete the entry*; the
+ *     gate stays green afterwards because there is nothing left to excuse. This
+ *     is what keeps the list shrinking by decision instead of growing by
+ *     neglect.
+ *
+ * @param {Object} opts
+ * @param {Array<{name: string, file: string, line: number}>} opts.dead - From {@link scan}
+ * @param {Map<string, {name, file, line}>} opts.byName - Every class the CSS declares
+ * @param {Record<string, AllowlistEntry>} opts.allowlist - From {@link readAllowlist}
+ * @returns {{unexpected: Array<{name, file, line}>,
+ *   malformed: Array<{name: string, problem: string}>,
+ *   stale: Array<{name: string, why: 'selector-gone'|'now-referenced'}>}}
+ */
+export function auditAllowlist({ dead, byName, allowlist }) {
+  const deadNames = new Set(dead.map((d) => d.name));
+  const unexpected = dead.filter((d) => !Object.hasOwn(allowlist, d.name));
+
+  const malformed = [];
+  const stale = [];
+  for (const [name, entry] of Object.entries(allowlist)) {
+    if (!entry || typeof entry !== 'object') {
+      malformed.push({ name, problem: 'entry is not an object' });
+      continue;
+    }
+    if (!ALLOWLIST_KINDS.has(entry.kind)) {
+      malformed.push({
+        name,
+        problem: `kind must be one of ${[...ALLOWLIST_KINDS].join(' | ')}, got ${JSON.stringify(entry.kind)}`,
+      });
+    }
+    for (const field of ['reason', 'see']) {
+      if (typeof entry[field] !== 'string' || entry[field].trim() === '') {
+        malformed.push({
+          name,
+          problem: `${field} is required and must be a non-empty string`,
+        });
+      }
+    }
+
+    if (!byName.has(name)) stale.push({ name, why: 'selector-gone' });
+    else if (!deadNames.has(name)) stale.push({ name, why: 'now-referenced' });
+  }
+
+  const byNameAsc = (a, b) => a.name.localeCompare(b.name);
+  return {
+    unexpected,
+    malformed: malformed.sort(byNameAsc),
+    stale: stale.sort(byNameAsc),
+  };
+}
+
+/** CLI entry: scan the tracked tree and gate on anything unaccounted for. */
 function main() {
   const all = trackedFiles();
   const sourceFiles = all.filter(isSourceFile);
   const cssFiles = all.filter(isCssFile);
-  const { dead, totalClasses } = scan({ sourceFiles, cssFiles });
+  const { dead, byName, totalClasses } = scan({ sourceFiles, cssFiles });
+  const allowlist = readAllowlist();
+  const { unexpected, malformed, stale } = auditAllowlist({
+    dead,
+    byName,
+    allowlist,
+  });
 
-  if (dead.length === 0) {
+  if (!unexpected.length && !malformed.length && !stale.length) {
     console.log(
-      `lint:deadcss — no unreferenced selectors across ${totalClasses} classes ` +
-        `in ${cssFiles.length} CSS files. ✅`,
+      `lint:deadcss — all ${totalClasses} CSS classes in ${cssFiles.length} files ` +
+        `are accounted for by ${sourceFiles.length} source files, ` +
+        `${Object.keys(allowlist).length} of them via ${ALLOWLIST_FILE}. ✅`,
     );
-    return;
+    return 0;
   }
 
-  console.log(
-    `lint:deadcss (advisory) — ${dead.length} of ${totalClasses} CSS classes look ` +
-      `unreferenced by ${sourceFiles.length} source files.\n` +
-      `Composed names (\`slide-bg-\${id}\`, \`\${base}--\${tone}\`) count as alive when\n` +
-      `the interpolated part is a value the source writes; a listed selector could\n` +
-      `not be assembled from any literal or composition. Verify before deleting —\n` +
-      `this is a hint, not a verdict.\n`,
-  );
-  for (const rec of dead) {
-    console.log(`  ${rec.file}:${rec.line}  .${rec.name}`);
+  if (unexpected.length) {
+    console.error(
+      `lint:deadcss — ${unexpected.length} of ${totalClasses} CSS classes are ` +
+        `referenced by none of the ${sourceFiles.length} source files.\n` +
+        `Composed names (\`slide-bg-\${id}\`, \`\${base}--\${tone}\`) count as alive when\n` +
+        `the interpolated part is a value the source writes; a listed selector could\n` +
+        `not be assembled from any literal or composition.\n`,
+    );
+    for (const rec of unexpected) {
+      console.error(`  ${rec.file}:${rec.line}  .${rec.name}`);
+    }
+    console.error(
+      `\nDelete the selector, or — if something outside the corpus writes it — add it\n` +
+        `to ${ALLOWLIST_FILE} with a kind (${[...ALLOWLIST_KINDS].join(' | ')}),\n` +
+        `a reason and a \`see\`. An entry without a written reason fails too.\n`,
+    );
   }
-  console.log(
-    `\n${dead.length} unreferenced selector(s). Report-only; exit 0.`,
-  );
+
+  if (malformed.length) {
+    console.error(
+      `${ALLOWLIST_FILE} — ${malformed.length} malformed entr(y/ies):`,
+    );
+    for (const m of malformed) console.error(`  .${m.name}: ${m.problem}`);
+    console.error('');
+  }
+
+  if (stale.length) {
+    console.error(
+      `${ALLOWLIST_FILE} — ${stale.length} stale entr(y/ies), delete them:`,
+    );
+    for (const st of stale) {
+      console.error(
+        st.why === 'selector-gone'
+          ? `  .${st.name}: no stylesheet declares this selector any more`
+          : `  .${st.name}: the source now references this selector; it needs no excuse`,
+      );
+    }
+    console.error('');
+  }
+
+  return 1;
 }
 
 if (
   process.argv[1] &&
   path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
 ) {
-  main();
+  process.exitCode = main();
 }

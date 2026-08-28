@@ -14,7 +14,7 @@ code, duplicate keys).
 | `npm run lint:fix`         | Auto-fix what ESLint can fix safely.                                                                             |
 | `npm run lint:deadcode`    | **Advisory** dead-exports + import-cycle discovery (runs `lint:deadexports` then the cycle config). Never gates. |
 | `npm run lint:deadexports` | **Advisory** unused-export discovery on its own (the Node scanner). Never gates.                                 |
-| `npm run lint:deadcss`     | **Advisory** unreferenced CSS-selector discovery. Never gates.                                                   |
+| `npm run lint:deadcss`     | A **gate**: fails on a CSS selector nothing references. CI runs it via `tests/dead-css-gate.test.js`.            |
 | `npm run format`           | Prettier, writes. Formatting is not a lint concern — see [Formatting](#formatting-prettier).                     |
 | `npm run format:check`     | Prettier, checks. A **gate**; CI runs it next to `npm run lint`.                                                 |
 
@@ -592,21 +592,25 @@ about that consumer; removing an entry there means coordinating with
 sweep pass. If a second external consumer ever appears, give it its own pinned
 list the same way.
 
-## The advisory pass (`npm run lint:deadcss`)
+## The dead-CSS gate (`npm run lint:deadcss`)
 
 Script: [`scripts/lint-dead-css.js`](../../scripts/lint-dead-css.js). Where
 `lint:deadcode` counts unused JS _exports_, this counts CSS class selectors that
 no source file references — the blind spot that let `.editor-form-header-left`
 survive a header-row removal (#393) unnoticed.
 
-**Also a triage tool, not a gate — and deliberately more conservative.** Class
-names here are _composed_ (`slide-bg-${id}`, `is-${state}`, `tf-align-${x}`,
-`renderHtml` template builds), so a naive scanner flags every composed class as
-dead and is worse than nothing. The scanner therefore errs towards **alive**: it
-harvests every class-shaped token from `client/**` + `shared/**` + `server/**`
-as "used" and reports a selector only when it cannot account for it.
-Under-reporting is the intended failure mode; over-reporting is the one that
-makes the tool untrustworthy.
+**A gate since B191, and deliberately conservative.** Class names here are
+_composed_ (`slide-bg-${id}`, `is-${state}`, `tf-align-${x}`, `renderHtml`
+template builds), so a naive scanner flags every composed class as dead and is
+worse than nothing. The scanner therefore errs towards **alive**: it harvests
+every class-shaped token from `client/**` + `shared/**` + `server/**` as "used"
+and reports a selector only when it cannot account for it. Under-reporting is the
+intended failure mode; over-reporting is the one that would make the gate
+untrustworthy.
+
+It shipped report-only on purpose and stayed that way while the backlog was
+triaged (#1041–#1050 took the report from ~124 to zero). A clean report that
+nothing enforces goes stale the week after, so the exit code is now real.
 
 **A composed name must be assemblable, not merely prefixed.** The first cut
 treated any static chunk before a `${` as a live prefix and absolved every name
@@ -637,6 +641,15 @@ the enum members that fill client-side holes live there —
 `analyze-category-${cat}` draws its categories from
 `server/utils/ai/analyze-presentation.js`.
 
+**`client/vendor/**` is not.** Vendored bundles are not our source, and the
+harvester demonstrably desyncs inside them: the quoted-string pass loses its
+place in the 300 KB single line of `katex.min.js`, so the `"katex-error"` literal
+in there never reached the evidence set anyway. Half-reading vendor buys false
+confidence — a genuinely dead selector can hide behind "vendor probably writes
+it". Excluding it is also what made the eight Prism token types (`.operator`,
+`.prolog`, …) visible: they were being absolved by the grammars, and are now
+named explicitly instead.
+
 **Tokens are cut on any non-`[\w-]` run, not on whitespace.** The two commonest
 ways a class is named here are `class="a b"` inside a larger string and
 `querySelector('.a .b')`; splitting on whitespace yields `class="a` and `.a`,
@@ -650,14 +663,44 @@ Two properties worth knowing:
 - **It measures `git ls-files`, not the working tree.** A class used only by an
   untracked scratch file still counts as dead — otherwise "green for the author"
   is not "green in CI" (the #413 lesson).
-- **It stays advisory (exit 0) until the report is clean.** Today it lists ~124
-  candidates; promote it to a gate only once those are triaged away. Each hit is
-  a _candidate_ — verify by hand (a fully dynamic `class` built from a variable
-  the scanner can't see is a false positive) before deleting. A class that is a
-  documented author-facing vocabulary rather than core markup reads as dead too:
-  the `on-surface-*` pair from
-  [`nested-surfaces.md`](../reference/nested-surfaces.md) is published for slide
-  authors but used by no core module.
+- **A hit is still a candidate, not a verdict.** Verify before deleting: a fully
+  dynamic `class` built from a variable the scanner cannot see is a false
+  positive, and so is a class written outside the corpus.
+
+### The survivors allowlist
+
+[`dead-css-allowlist.json`](../../dead-css-allowlist.json) maps a class name to
+`{ kind, reason, see }`. Only a writer **outside the scanned corpus** earns an
+entry, and there are exactly two:
+
+| `kind`              | Who writes the class              | Example                                                                               |
+| ------------------- | --------------------------------- | ------------------------------------------------------------------------------------- |
+| `vendor-emitted`    | a vendored library, at runtime    | Prism's `class="token operator"`, KaTeX's `.katex-error`                              |
+| `author-vocabulary` | deck content and fork stylesheets | the `on-surface-*` names from [`nested-surfaces.md`](../reference/nested-surfaces.md) |
+
+There is deliberately no third kind for "the scanner is confused" — that is a
+scanner bug to fix, not a selector to excuse.
+
+Every field is required and checked: an entry with an empty `reason`, a missing
+`see` or an unknown `kind` fails the gate, because a bare list of names is the
+tolerance creep the allowlist exists to prevent. The long argument for a survivor
+lives in a comment at the CSS rule itself; the entry points at it rather than
+duplicating it.
+
+The list is **stale-guarded in both directions**. An entry whose selector no
+longer exists, or whose selector the harvester now accounts for, fails the gate —
+in both cases the fix is to delete the entry, and the gate is green afterwards
+because there is nothing left to excuse. So the list can only shrink by decision,
+never grow by neglect.
+
+### Where it runs
+
+`tests/dead-css-gate.test.js` runs the same scan inside `npm test`, which is what
+CI runs — the same place the other CSS gates hang (`css-spacing-tokens`,
+`slide-css-tokens`), so a red mark reads as "a stylesheet grew an orphan" without
+opening the run. `npm run lint:deadcss` is the identical check as a standalone
+command, with a report you can read; `tests/lint-dead-css.test.js` unit-tests the
+scanner and the allowlist audit against an injected reader.
 
 ## Formatting (Prettier)
 
@@ -693,10 +736,10 @@ and the gitignored planning symlink (see `CLAUDE.md`).
     orphaned and cycles appear),
   - as part of the periodic reorganization audit (the deep-reconcile pass).
 
-  `npm run lint:deadcss` fits the same cadence and the same moments — run it
-  alongside `lint:deadcode` when hunting orphans after a UI removal or refactor.
+  `npm run lint:deadcss` no longer needs that cadence — it gates on every push
+  via `npm test`. Run it by hand only to read the report when the suite goes red.
 
-  Each run, also prune the burndown so it stays honest:
+  Each `lint:deadcode` run, also prune the burndown so it stays honest:
 
   ```sh
   npm run lint:deadcode          # triage the candidates + cycles
