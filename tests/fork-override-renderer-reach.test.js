@@ -148,8 +148,11 @@ test(
     );
     assert.doesNotMatch(
       markup,
-      /slide-payoff\b/,
-      "core's payoff markup must be gone: this is a replacement, not an addition",
+      /payoff-logo/,
+      "core's payoff markup must be gone: this is a replacement, not an " +
+        "addition. The marker is core's logo image, not the `slide-payoff` " +
+        'root class — an override keeps that, because it is the class every ' +
+        "stylesheet for this slide role nests under (see the fixture's header).",
     );
   },
 );

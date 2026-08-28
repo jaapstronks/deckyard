@@ -39,5 +39,5 @@ export default {
   defaults: { forkNote: '', forkTone: 'plain' },
   // See fork-alpha-slide.js: present because a type without `renderHtml` is a
   // type whose every slide renders the archived-slide placeholder.
-  renderHtml: () => '<div class="slide fork-beta"></div>',
+  renderHtml: () => '<div class="slide slide-fork-beta"></div>',
 };

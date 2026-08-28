@@ -12,7 +12,9 @@
  *     examples) validate clean;
  *  2. every **core** definition validates without errors, so a core type can no
  *     longer regress into a shape a fork would be refused for;
- *  3. a table of **malformed** definitions each produces the error it should.
+ *  3. a table of **malformed** definitions each produces the error it should;
+ *  4. every core type carries its canonical `.slide-<name>` root — the class a
+ *     fork's stylesheet nests under — bar two recorded legacies.
  *
  * Run with: node --test tests/custom-slide-type-validity.test.js
  */
@@ -36,6 +38,7 @@ import {
 } from '../shared/slide-types/registry.js';
 import {
   formatDefinitionReport,
+  slideRootClass,
   validateSlideTypeDefinition,
 } from '../shared/slide-types/validate-definition.js';
 
@@ -118,6 +121,50 @@ test('every core slide type validates without errors', () => {
     if (report.errors.length) offenders.push(...report.errors);
   }
   assert.deepEqual(offenders, []);
+});
+
+/**
+ * The two core types whose root class predates the convention. Both are class
+ * *contract* changes (`docs/reference/slide-type-css-contract.md`), so they
+ * belong in a release with notes, not in the commit that documented the rule —
+ * they are recorded here instead so the drift cannot grow quietly.
+ *
+ * Two-way honest, like the `UNSTYLED` table in the CSS-contract test: the sweep
+ * below fails when a type not listed here starts violating the convention, AND
+ * when a listed one is fixed and the entry is left behind.
+ */
+const ROOT_CLASS_LEGACIES = {
+  'title-slide':
+    'renamed to `.slide-title-universal` in v1.8.0 (the rename that made the ' +
+    'class contract a gate in the first place)',
+  'list-slide':
+    'renders `.slide-lijstje`, the Dutch name it was born with; see ' +
+    'tests/lijstje-slide-migration.test.js',
+};
+
+test('every core slide type carries its canonical root class', () => {
+  const offenders = [];
+  const fixed = [];
+  for (const [name, def] of Object.entries(CORE_SLIDE_TYPE_DEFS)) {
+    const warned = validateSlideTypeDefinition(def, name).warnings.some((w) =>
+      w.includes('does not carry'),
+    );
+    const known = Object.hasOwn(ROOT_CLASS_LEGACIES, name);
+    if (warned && !known)
+      offenders.push(`${name} (want ${slideRootClass(name)})`);
+    if (!warned && known) fixed.push(name);
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    'a core type must render `.slide-<canonical name>` as its root class — ' +
+      'that is the rule custom types are warned against',
+  );
+  assert.deepEqual(
+    fixed,
+    [],
+    'these types now comply: drop them from ROOT_CLASS_LEGACIES',
+  );
 });
 
 test('a well-formed definition reports nothing', () => {
@@ -321,6 +368,15 @@ const WARNING_CASES = [
     {},
   ],
   [
+    // The CSS-scoping convention: the root class is the only handle a fork's
+    // `custom/styles/*.css` has to nest under. A warning, not an error —
+    // a type that ships no CSS at all is a legitimate shape.
+    'a rendered root without the canonical class',
+    validDef({ renderHtml: () => '<div class="slide hero"></div>' }),
+    'does not carry `slide-fixture`',
+    {},
+  ],
+  [
     'a required field with no default',
     validDef({
       fields: [{ key: 'heading', type: 'string', required: true }],
@@ -353,14 +409,19 @@ test('`ai: false` is the supported opt-out, not a malformed ai block', () => {
 
 test('coreNames flags a name the registry would refuse', () => {
   const name = CORE_SLIDE_TYPE_NAMES[0];
-  const shadow = validateSlideTypeDefinition(validDef(), name, {
-    coreNames: CORE_SLIDE_TYPE_NAMES,
-  });
+  // Rendered under a core name, so its root has to wear that name's class or
+  // the scoping warning fires alongside the one under test.
+  const root = `<div class="slide ${slideRootClass(name)}"></div>`;
+  const shadow = validateSlideTypeDefinition(
+    validDef({ renderHtml: () => root }),
+    name,
+    { coreNames: CORE_SLIDE_TYPE_NAMES },
+  );
   assert.deepEqual(shadow.errors, []);
   assert.ok(shadow.warnings.some((w) => w.includes('override: true')));
 
   const deliberate = validateSlideTypeDefinition(
-    validDef({ override: true }),
+    validDef({ override: true, renderHtml: () => root }),
     name,
     { coreNames: CORE_SLIDE_TYPE_NAMES },
   );
