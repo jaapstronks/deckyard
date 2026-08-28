@@ -11,6 +11,7 @@ import {
   forbidden,
 } from '../../../utils/http.js';
 import { canReadPresentation } from '../../../utils/presentation-authz/index.js';
+import { withDeckCardFields } from '../../../utils/deck-card-fields.js';
 
 export async function handlePresentationDuplicate(
   { repoRoot, storageScope, req, res, authedUser } = {},
@@ -42,6 +43,14 @@ export async function handlePresentationDuplicate(
     actorEmail: authedUser?.email || null,
   });
   if (!created.ok) return notFound(res);
-  serveJson(res, 201, created.presentation);
+  // The client turns this straight into a card (toListItem), so it needs the
+  // same deck-card fields a list row carries — otherwise the freshly duplicated
+  // deck is the one card in the grid with a colorless placeholder.
+  const [item] = await withDeckCardFields(
+    repoRoot,
+    [created.presentation],
+    storageScope,
+  );
+  serveJson(res, 201, item);
   return true;
 }

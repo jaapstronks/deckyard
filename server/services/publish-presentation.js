@@ -31,7 +31,7 @@ import { generateAndSaveOgPreview } from '../render/preview-image.js';
 import { isMediaProviderInitialized } from '../media/index.js';
 import { sandboxEnabled } from '../config/sandbox.js';
 import { maybeFireWebhook } from '../utils/webhooks.js';
-import { warmDeckThumbnail } from '../routes/api/presentations/thumbnail.js';
+import { warmDeckThumbnail } from '../render/deck-thumbnail-warm.js';
 import { ForbiddenError } from '../utils/errors.js';
 import { createLogger } from '../utils/logger.js';
 

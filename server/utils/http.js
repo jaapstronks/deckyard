@@ -222,6 +222,47 @@ export function noContent(res) {
 }
 
 /**
+ * Whether the request's `If-None-Match` covers `etag`, per RFC 9110 §13.1.2:
+ * `*` matches anything we have, a comma-separated list matches on any member,
+ * and the weak prefix is ignored on both sides (weak comparison is what a
+ * conditional GET uses).
+ *
+ * One spelling for the whole server: the feed and the deck-grid thumbnails are
+ * both content-addressed and both answer conditional GETs, and two hand-rolled
+ * header comparisons is one more than the concept has.
+ *
+ * @param {import('node:http').IncomingMessage} req
+ * @param {string} etag - The entity tag we would send, quotes included.
+ * @returns {boolean}
+ */
+export function matchesIfNoneMatch(req, etag) {
+  const header = req?.headers?.['if-none-match'];
+  if (!header || !etag) return false;
+  const value = String(header).trim();
+  if (value === '*') return true;
+  const strip = (tag) => tag.trim().replace(/^W\//, '');
+  const target = strip(etag);
+  return value.split(',').some((candidate) => strip(candidate) === target);
+}
+
+/**
+ * Answer a conditional GET with `304 Not Modified`.
+ *
+ * A 304 carries no body, but it must repeat the headers that govern the cached
+ * response the client is about to reuse — the `ETag` it matched on and the
+ * `Cache-Control` that decides how long it may go on reusing it.
+ *
+ * @param {import('node:http').ServerResponse} res
+ * @param {Object} [headers] - Headers to repeat on the 304 (ETag, Cache-Control).
+ * @returns {true}
+ */
+export function notModified(res, headers = {}) {
+  res.writeHead(304, headers);
+  res.end();
+  return true;
+}
+
+/**
  * Whether an unknown `reason` must throw rather than answer 500.
  *
  * D48: an unknown reason is a hole in our own vocabulary, so it is loud where

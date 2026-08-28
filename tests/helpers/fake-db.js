@@ -10,7 +10,8 @@
  * It implements the query shapes the storage layer actually uses, not Kysely
  * as a whole:
  *   selectFrom / select / selectAll / distinctOn / innerJoin / leftJoin /
- *   where / orderBy / limit / offset / clearSelect / execute / executeTakeFirst,
+ *   where / groupBy / orderBy / limit / offset / clearSelect / execute /
+ *   executeTakeFirst,
  *   insertInto / values / returningAll / onConflict (doNothing + doUpdateSet),
  *   updateTable / set / returning / returningAll, deleteFrom / returning,
  *   and `db.fn.count()`.
@@ -547,6 +548,7 @@ export function createFakeDb(seed = {}) {
       predicates: [],
       projection: null,
       aggregates: [],
+      groupBy: [],
       orderBy: [],
       limit: null,
       offset: 0,
@@ -686,6 +688,7 @@ export function createFakeDb(seed = {}) {
           ...state,
           joins: [...state.joins],
           predicates: [...state.predicates],
+          groupBy: [...state.groupBy],
           orderBy: [...state.orderBy],
           projection: null,
           aggregates: [],
@@ -693,6 +696,17 @@ export function createFakeDb(seed = {}) {
         });
       },
       distinctOn() {
+        return builder;
+      },
+      /**
+       * GROUP BY, for the "count per key" reads (collaborators per deck).
+       * Only meaningful together with an aggregate: without one, SQL and this
+       * double would both just be projecting one row per group, which is what
+       * the ungrouped path already does.
+       */
+      groupBy(columns) {
+        const list = Array.isArray(columns) ? columns : [columns];
+        state.groupBy.push(...list.map(String));
         return builder;
       },
       where(columnOrCallback, op, value) {
@@ -722,6 +736,26 @@ export function createFakeDb(seed = {}) {
       },
       async execute() {
         const list = contexts();
+        if (state.aggregates.length && state.groupBy.length) {
+          // One row per distinct group, carrying that group's projection plus
+          // each aggregate computed over the group's own rows.
+          const groups = new Map();
+          for (const row of list) {
+            const key = JSON.stringify(
+              state.groupBy.map((column) => readColumn(row, column) ?? null),
+            );
+            const bucket = groups.get(key);
+            if (bucket) bucket.push(row);
+            else groups.set(key, [row]);
+          }
+          return [...groups.values()].map((rows) => {
+            const out = project(rows[0]);
+            for (const aggregate of state.aggregates) {
+              out[aggregate.alias] = aggregate.compute(rows);
+            }
+            return out;
+          });
+        }
         if (state.aggregates.length) {
           const out = {};
           for (const aggregate of state.aggregates) {

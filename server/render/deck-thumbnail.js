@@ -153,15 +153,27 @@ export async function readStaleThumbnail(repoRoot, prefix, exceptFilename) {
 }
 
 /**
- * Drop every cached raster for a deck except `keepFilename`.
- * Without this the cache dir grows by one file per slide-1 edit, forever.
+ * Drop this deck's cached rasters, optionally sparing the current one.
+ *
+ * Two callers, one rule — a raster only exists to be served for a deck that
+ * still exists, in the shape slide 1 currently has:
+ * - after a successful render, `keep` is the fresh file, so the cache dir stops
+ *   growing by one file per slide-1 edit;
+ * - after a permanent delete there is nothing left to keep, so every raster for
+ *   the id goes and no orphans survive the deck.
  *
  * @param {string} repoRoot
- * @param {string} prefix - Filesystem-safe deck id, from {@link thumbCacheKey}.
- * @param {string} keepFilename
+ * @param {string} deckId - Presentation id; sanitized to the cache prefix here.
+ * @param {Object} [options]
+ * @param {string|null} [options.keep] - Filename to spare, from {@link thumbCacheKey}.
  * @returns {Promise<void>}
  */
-export async function pruneOldThumbnails(repoRoot, prefix, keepFilename) {
+export async function pruneDeckThumbnails(
+  repoRoot,
+  deckId,
+  { keep = null } = {},
+) {
+  const prefix = sanitizeId(deckId);
   const dir = cacheDir(repoRoot);
   let names;
   try {
@@ -172,10 +184,7 @@ export async function pruneOldThumbnails(repoRoot, prefix, keepFilename) {
   await Promise.all(
     names
       .filter(
-        (n) =>
-          n.startsWith(`${prefix}-`) &&
-          n.endsWith('.webp') &&
-          n !== keepFilename,
+        (n) => n.startsWith(`${prefix}-`) && n.endsWith('.webp') && n !== keep,
       )
       .map((n) =>
         // Awaited, so not a fire-and-forget: a stale sibling that refuses to
@@ -287,7 +296,7 @@ export function requestThumbnailGeneration(
   theme,
   slideTypes,
 ) {
-  const { filename, prefix } = thumbCacheKey(presentation, theme);
+  const { filename } = thumbCacheKey(presentation, theme);
   if (inFlight.has(filename)) return inFlight.get(filename);
 
   const promise = (async () => {
@@ -302,7 +311,8 @@ export function requestThumbnailGeneration(
     }
     // Prune only after the fresh raster landed, so the stale-while-revalidate
     // path always has something to serve until the replacement exists.
-    if (ok) await pruneOldThumbnails(repoRoot, prefix, filename);
+    if (ok)
+      await pruneDeckThumbnails(repoRoot, presentation?.id, { keep: filename });
     return ok;
   })()
     .catch((err) => {

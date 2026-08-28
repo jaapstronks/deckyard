@@ -226,8 +226,13 @@ export function createCardRenderer({
     };
 
     const showThumbImage = () => {
-      // `?v=<revision>` busts the cache on every deck edit.
-      const thumbUrl = `/api/presentations/${p.id}/thumbnail?v=${p.revision || 1}`;
+      // No cache buster: the endpoint is content-addressed. It answers with an
+      // ETag derived from the raster's own cache key (deck + slide 1 + theme)
+      // and a `no-cache` directive, so the browser revalidates on every load and
+      // gets a bodiless 304 whenever slide 1 is unchanged. The old
+      // `?v=<revision>` re-downloaded the raster after *any* save, including the
+      // saves that never touched the slide the card shows.
+      const thumbUrl = `/api/presentations/${p.id}/thumbnail`;
       const img = h('img', {
         class: 'thumb-img is-pending',
         alt: '',
@@ -256,11 +261,14 @@ export function createCardRenderer({
         // The retry survives `settle()`: if the first 404 arrives late and the
         // safety net degrades the card first, the retry must still fire, or
         // the card is stuck on the placeholder until the next page load.
+        // `?r=` is the one buster that stays: re-assigning the identical `src`
+        // is not guaranteed to re-issue the request, and this URL has to be
+        // fetched again by definition — it is the retry.
         if (!retried) {
           retried = true;
           arm(
             () => {
-              img.src = `${thumbUrl}&r=${Date.now()}`;
+              img.src = `${thumbUrl}?r=${Date.now()}`;
             },
             2500,
             { survivesSettle: true },
@@ -687,8 +695,11 @@ export function toListItem(pres) {
     createdBy: p.createdBy || null,
     updatedBy: p.updatedBy || null,
     visibility: p.visibility || 'private',
-    revision: Number(p.revision) || 1,
     i18n: p.i18n || null,
+    // Resolved server-side (server/utils/deck-card-fields.js) and carried
+    // through, not recomputed: the theme's background is a file the client
+    // never reads.
+    thumbBg: p.thumbBg || null,
     tags: Array.isArray(p.tags) ? p.tags : [],
     hasSlides:
       !!first && typeof first.id === 'string' && typeof first.type === 'string',

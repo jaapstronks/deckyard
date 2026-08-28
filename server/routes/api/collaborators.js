@@ -49,6 +49,7 @@ import {
 import { normalizeEmail } from '../../utils/normalize.js';
 import { createLogger } from '../../utils/logger.js';
 import { fireAndForget } from '../../utils/fire-and-forget.js';
+import { withDeckCardFields } from '../../utils/deck-card-fields.js';
 const log = createLogger('collaborators');
 
 /**
@@ -82,7 +83,7 @@ const INVALID_FIELD_MESSAGES = {
 };
 
 // GET /api/presentations/shared-with-me - List presentations shared with current user
-async function handleSharedWithMe({ storageScope, res, authedUser }) {
+async function handleSharedWithMe({ repoRoot, storageScope, res, authedUser }) {
   if (!authedUser?.email) {
     return unauthorized(res);
   }
@@ -98,10 +99,14 @@ async function handleSharedWithMe({ storageScope, res, authedUser }) {
   const ids = presentations.map((p) => p.id);
   const firstSlidesMap = await getFirstSlidesForIds(storageScope, ids);
 
-  const presentationsWithSlides = presentations.map((p) => ({
-    ...p,
-    hasSlides: !!firstSlidesMap.get(p.id),
-  }));
+  const presentationsWithSlides = await withDeckCardFields(
+    repoRoot,
+    presentations.map((p) => ({
+      ...p,
+      hasSlides: !!firstSlidesMap.get(p.id),
+    })),
+    storageScope,
+  );
 
   serveJson(res, 200, { presentations: presentationsWithSlides });
   return true;

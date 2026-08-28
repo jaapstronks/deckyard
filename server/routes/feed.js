@@ -10,6 +10,7 @@ import { listPublishedForFeed } from '../storage/published.js';
 import { buildFeed } from '../utils/rss-feed.js';
 import { isRssFeedEnabled, isMultiOrgEnabled } from '../config/features.js';
 import { createLogger } from '../utils/logger.js';
+import { matchesIfNoneMatch, notModified } from '../utils/http.js';
 const log = createLogger('feed');
 
 const CONTENT_TYPES = {
@@ -107,11 +108,9 @@ export async function handleFeed({ repoRoot, req, res, url }) {
   const etag = `"feed-${format}-${latestModified}"`;
 
   // Support conditional requests
-  const ifNoneMatch = req.headers['if-none-match'];
-  if (ifNoneMatch === etag) {
-    res.writeHead(304);
-    res.end();
-    return true;
+  const cacheControl = 'public, max-age=300';
+  if (matchesIfNoneMatch(req, etag)) {
+    return notModified(res, { ETag: etag, 'Cache-Control': cacheControl });
   }
 
   let content;
@@ -126,7 +125,7 @@ export async function handleFeed({ repoRoot, req, res, url }) {
 
   res.writeHead(200, {
     'Content-Type': CONTENT_TYPES[format],
-    'Cache-Control': 'public, max-age=300',
+    'Cache-Control': cacheControl,
     ETag: etag,
   });
   res.end(content);

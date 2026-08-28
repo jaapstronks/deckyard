@@ -296,7 +296,7 @@ test('a retry still pending when the net fires survives it and can upgrade the c
     mock.timers.tick(500); // the retry's own due time
     assert.match(
       img.getAttribute('src') || '',
-      /&r=\d+$/,
+      /\?r=\d+$/,
       'the retry still re-requests after the net degraded the card',
     );
 
