@@ -42,13 +42,16 @@
   border-radius: 0;
   border-bottom: 1px solid hsl(var(--app-border-subtle));
   margin-bottom: 0;
+  /* No "frame" around the preview inside the card. */
+  background: transparent;
 }
 
-/* No "frame" around the preview inside the card — but not in the placeholder
-   state, whose whole job is to show a field colour. Scoped with `:not()` so it
-   doesn't outrank the lower-specificity `.thumb.is-placeholder` rule. */
-.list-item.presentation-card .thumb:not(.is-placeholder) {
-  background: transparent;
+/* Cheap fallback when no raster exists yet: a flat field in the deck's theme
+   color (set inline) over a neutral surface, and no text — the deck title is
+   already on the card. Lives here, at card specificity, because the placeholder
+   state exists only on deck cards and must outrank the transparent frame. */
+.list-item.presentation-card .thumb.is-placeholder {
+  background: hsl(var(--app-bg-base));
 }
 
 /* Skeleton shimmer while a card's thumbnail request is still in flight (or the

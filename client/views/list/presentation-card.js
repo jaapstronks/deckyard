@@ -163,18 +163,19 @@ export function createCardRenderer({
     // nothing else does.
     let settled = false;
     const cardTimers = new Set();
-    // Arm a timeout tracked in both the card's own set and the renderer-wide
-    // one, self-removing when it fires, so neither set outlives the timer. The
+    // Arm a timeout tracked in the renderer-wide set (cleared on detach) and,
+    // unless `survivesSettle`, in the card's own set (cleared by `settle()`).
+    // Self-removing when it fires, so neither set outlives the timer. The
     // unref keeps a leftover fallback timer from holding a Node process open in
     // tests (no-op in the browser, where setTimeout returns a number).
-    const arm = (fn, ms) => {
+    const arm = (fn, ms, { survivesSettle = false } = {}) => {
       const id = setTimeout(() => {
         cardTimers.delete(id);
         pendingThumbTimers.delete(id);
         fn();
       }, ms);
       if (typeof id?.unref === 'function') id.unref();
-      cardTimers.add(id);
+      if (!survivesSettle) cardTimers.add(id);
       pendingThumbTimers.add(id);
       return id;
     };
@@ -252,11 +253,18 @@ export function createCardRenderer({
         // A 404 means generation is likely still in flight — retry once, then
         // settle on the placeholder. The image stays in the box while it
         // retries, so a raster that lands after the placeholder still wins.
+        // The retry survives `settle()`: if the first 404 arrives late and the
+        // safety net degrades the card first, the retry must still fire, or
+        // the card is stuck on the placeholder until the next page load.
         if (!retried) {
           retried = true;
-          arm(() => {
-            img.src = `${thumbUrl}&r=${Date.now()}`;
-          }, 2500);
+          arm(
+            () => {
+              img.src = `${thumbUrl}&r=${Date.now()}`;
+            },
+            2500,
+            { survivesSettle: true },
+          );
           return;
         }
         showPlaceholder();

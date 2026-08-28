@@ -48,13 +48,6 @@
   opacity: 0;
 }
 
-/* Cheap fallback when no raster exists yet: a flat field in the deck's theme
-   color (set inline) over a neutral surface, and no text — the deck title is
-   already on the card. */
-.thumb.is-placeholder {
-  background: hsl(var(--app-bg-base));
-}
-
 .thumb-overlay {
   position: absolute;
   inset: 0;

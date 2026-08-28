@@ -265,6 +265,53 @@ test('a stuck card upgrades to the real thumbnail if it loads after the net fire
   }
 });
 
+test('a retry still pending when the net fires survives it and can upgrade the card', () => {
+  const io = installIOStub();
+  mock.timers.enable({ apis: ['setTimeout'] });
+  try {
+    const detachThumbs = [];
+    const { renderCard } = createCardRenderer({
+      api: async () => ({}),
+      nav: () => {},
+      detachThumbs,
+    });
+    const card = renderCard(baseDeck());
+    const thumb = card.querySelector('.thumb');
+
+    io.instances[0].fire([thumb]);
+    const img = thumb.querySelector('.thumb-img');
+    const firstSrc = img.getAttribute('src');
+
+    // A slow first 404: the 2500ms retry is now due *after* the net.
+    mock.timers.tick(3000);
+    img.onerror();
+    mock.timers.tick(SETTLE_MS - 3000); // net → placeholder
+    assert.equal(
+      thumb.classList.contains('is-placeholder'),
+      true,
+      'placeholder after net',
+    );
+    assert.equal(img.getAttribute('src'), firstSrc, 'retry not yet due');
+
+    mock.timers.tick(500); // the retry's own due time
+    assert.match(
+      img.getAttribute('src') || '',
+      /&r=\d+$/,
+      'the retry still re-requests after the net degraded the card',
+    );
+
+    img.onload();
+    assert.equal(
+      thumb.classList.contains('is-placeholder'),
+      false,
+      'late raster upgrades the card',
+    );
+  } finally {
+    mock.timers.reset();
+    io.restore();
+  }
+});
+
 test('detachThumbs does not grow per rendered card (bounded cleanup)', () => {
   const io = installIOStub();
   try {
