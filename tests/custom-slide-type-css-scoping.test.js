@@ -193,3 +193,13 @@ test('scopeCss recurses into conditional groups and leaves resource at-rules alo
 test('scopeCss does not double-prefix a selector already inside the scope', () => {
   assert.equal(scopeCss('.s .a { c: d }', '.s'), '.s .a { c: d }');
 });
+
+test('a selector that merely extends the scope class is contained, not passed through', () => {
+  // `.s-extra` is a different class than the scope `.s` — with real root
+  // classes that is another type's root, so a bare prefix match must not
+  // count as "already scoped".
+  assert.equal(scopeCss('.s-extra { c: d }', '.s'), '.s .s-extra { c: d }');
+  // A true boundary (compound or descendant on the scope itself) stays put.
+  assert.equal(scopeCss('.s.foo { c: d }', '.s'), '.s.foo { c: d }');
+  assert.equal(scopeCss('.s:hover { c: d }', '.s'), '.s:hover { c: d }');
+});

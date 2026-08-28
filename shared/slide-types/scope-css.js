@@ -75,7 +75,13 @@ function splitTopLevel(css) {
 function scopeSelector(sel, scope) {
   const s = sel.trim();
   if (!s) return '';
-  if (s.startsWith(scope)) return s;
+  // "Already scoped" needs a selector boundary after the scope, not a bare
+  // prefix match: with scope `.slide-custom-hero`, the selector
+  // `.slide-custom-hero-extra` names a *different* class (another type's
+  // root) and must be contained, not passed through.
+  if (s === scope || (s.startsWith(scope) && /^[\s.:#[>+~]/.test(s.slice(scope.length)))) {
+    return s;
+  }
   if (/^(:root|html|body)\b/.test(s)) {
     return s.replace(/^(:root|html|body)/, scope);
   }
