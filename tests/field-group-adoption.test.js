@@ -67,10 +67,7 @@ describe('title-slide renders the group alignment as one root class', () => {
 
   it('centre emits is-align-center on the slide root', () => {
     const html = render({ title: 'Hi', titleBlockAlign: 'center' });
-    assert.match(
-      html,
-      /class="slide slide-title-universal[^"]*\bis-align-center\b/,
-    );
+    assert.match(html, /class="slide slide-title[^"]*\bis-align-center\b/);
   });
 
   it('an unknown stored value falls back to the default', () => {

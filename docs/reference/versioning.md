@@ -166,6 +166,7 @@ title slide's `.slide-title` / `.title-*` / `.logo-*` family with
 `.slide-title-universal` and `tsu-*`, and only the new names carried CSS. A
 fork's own title slide still emitted the old ones and fell back to bare document
 flow — a full-bleed title became an inline image with the heading underneath.
+(The root class has since gone back to `.slide-title`; the `tsu-*` family stands.)
 Nothing that CI or an agent watches broke: no import failed, the HTML was valid,
 the suite was green, the site returned 200. A human found it hours after deploy.
 

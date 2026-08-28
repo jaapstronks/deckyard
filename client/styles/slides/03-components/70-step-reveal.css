@@ -6,7 +6,7 @@
 }
 .slide-kpi-metrics .kpi-metric,
 .slide-icon-card-grid .icon-card,
-.slide-lijstje .lijst-item,
+.slide-list .lijst-item,
 .slide-timeline .timeline-item,
 .slide-text-blocks .text-blocks-step,
 .slide-table .table-step-row,
@@ -31,7 +31,7 @@
   .icon-card,
 .deck-stage[data-step-mode='on'][data-slide-transition='none']
   .deck-slide:not(.sb-steps-ready)
-  .slide-lijstje
+  .slide-list
   .lijst-item,
 .deck-stage[data-step-mode='on'][data-slide-transition='none']
   .deck-slide:not(.sb-steps-ready)
@@ -57,7 +57,7 @@
 }
 
 /* Lijstje: collapse hidden items so step-by-step doesn't leave big blank gaps. */
-.slide-lijstje .lijst-item {
+.slide-list .lijst-item {
   max-height: 220px;
   overflow: hidden;
   transition:
@@ -68,7 +68,7 @@
     border-color 220ms ease,
     border-width 220ms ease;
 }
-.slide-lijstje .lijst-item.sb-step-hidden {
+.slide-list .lijst-item.sb-step-hidden {
   max-height: 0;
   padding-top: 0;
   padding-bottom: 0;
@@ -77,7 +77,7 @@
 @media (prefers-reduced-motion: reduce) {
   .slide-kpi-metrics .kpi-metric,
   .slide-icon-card-grid .icon-card,
-  .slide-lijstje .lijst-item,
+  .slide-list .lijst-item,
   .slide-timeline .timeline-item,
   .slide-text-blocks .text-blocks-step,
   .slide-table .table-step-row,

@@ -8,7 +8,8 @@
  * What happened: v1.8.0 replaced the title slide's class contract
  * (`.slide-title`, `.title-bar`, `.title-text`, `.title-logo`, `.logo-mark`,
  * `.logo-img`, `.subtitle` became `.slide-title-universal` plus the `tsu-*`
- * family). Only the new names carried CSS. A fork's own title slide emitted the
+ * family; the root class has since returned to `.slide-title`, the convention
+ * name). Only the new names carried CSS. A fork's own title slide emitted the
  * old ones and fell back to bare document flow — a full-bleed title slide became
  * an inline image with the heading under it. Nothing broke that CI or an agent
  * watches: no import failed, the HTML was valid, 2151 tests were green, the site

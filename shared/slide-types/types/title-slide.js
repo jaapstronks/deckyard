@@ -178,7 +178,7 @@ export default {
     // the markup they did before the group model.
     const alignClass = groupAlignClass(TITLE_BLOCK.group, content);
     return `
-        <div class="slide slide-title-universal ${bg}${
+        <div class="slide slide-title ${bg}${
           legacyBg ? ' has-bg' : ''
         } tsu-layout-${titleLayout} ${logoCorner === 'left' ? 'is-logo-left' : 'is-logo-right'}${
           alignClass ? ` ${alignClass}` : ''

@@ -151,46 +151,29 @@ test('no core slide type defaults a key it does not declare', () => {
 });
 
 /**
- * The two core types whose root class predates the convention. Both are class
- * *contract* changes (`docs/reference/slide-type-css-contract.md`), so they
- * belong in a release with notes, not in the commit that documented the rule —
- * they are recorded here instead so the drift cannot grow quietly.
+ * The convention holds for every core type, without exceptions.
  *
- * Two-way honest, like the `UNSTYLED` table in the CSS-contract test: the sweep
- * below fails when a type not listed here starts violating the convention, AND
- * when a listed one is fixed and the entry is left behind.
+ * It briefly did not: `title-slide` rendered `.slide-title-universal` (the
+ * v1.8.0 rename that made the class contract a gate in the first place) and
+ * `list-slide` rendered `.slide-lijstje`, the Dutch name it was born with.
+ * Both were parked in a `ROOT_CLASS_LEGACIES` allowlist here so the drift
+ * could not grow while the class-contract change waited for a release. Both
+ * were renamed to `.slide-title` / `.slide-list`, and the allowlist went with
+ * them — an empty tolerance table is an invitation to refill it.
  */
-const ROOT_CLASS_LEGACIES = {
-  'title-slide':
-    'renamed to `.slide-title-universal` in v1.8.0 (the rename that made the ' +
-    'class contract a gate in the first place)',
-  'list-slide':
-    'renders `.slide-lijstje`, the Dutch name it was born with; see ' +
-    'tests/lijstje-slide-migration.test.js',
-};
-
 test('every core slide type carries its canonical root class', () => {
   const offenders = [];
-  const fixed = [];
   for (const [name, def] of Object.entries(CORE_SLIDE_TYPE_DEFS)) {
     const warned = validateSlideTypeDefinition(def, name).warnings.some((w) =>
       w.includes('does not carry'),
     );
-    const known = Object.hasOwn(ROOT_CLASS_LEGACIES, name);
-    if (warned && !known)
-      offenders.push(`${name} (want ${slideRootClass(name)})`);
-    if (!warned && known) fixed.push(name);
+    if (warned) offenders.push(`${name} (want ${slideRootClass(name)})`);
   }
   assert.deepEqual(
     offenders,
     [],
     'a core type must render `.slide-<canonical name>` as its root class — ' +
       'that is the rule custom types are warned against',
-  );
-  assert.deepEqual(
-    fixed,
-    [],
-    'these types now comply: drop them from ROOT_CLASS_LEGACIES',
   );
 });
 
