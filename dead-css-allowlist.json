@@ -1,0 +1,57 @@
+{
+  "on-surface-dark": {
+    "kind": "author-vocabulary",
+    "reason": "One of the five nested-surface names authors write in deck content and fork stylesheets; three of the five happen to have an in-repo user, these two do not, and that says nothing about whether authors use them.",
+    "see": "docs/reference/nested-surfaces.md"
+  },
+  "on-surface-accent": {
+    "kind": "author-vocabulary",
+    "reason": "Author vocabulary, exactly like on-surface-dark: written by decks and forks, never by this repo's own markup. Removing it is a vocabulary decision, not a dead-code one.",
+    "see": "docs/reference/nested-surfaces.md"
+  },
+  "katex-error": {
+    "kind": "vendor-emitted",
+    "reason": "Written by vendored KaTeX in its throwOnError:false branch, so the raw LaTeX stays visible when a formula fails to parse.",
+    "see": "client/vendor/katex/katex.min.js"
+  },
+  "atrule": {
+    "kind": "vendor-emitted",
+    "reason": "Prism token type, emitted as class=\"token atrule\"; defined by the vendored css, scss and swift grammars.",
+    "see": "client/vendor/prism/components/prism-css.min.js"
+  },
+  "attr-name": {
+    "kind": "vendor-emitted",
+    "reason": "Prism token type, emitted as class=\"token attr-name\"; defined by the vendored markup, jsx and graphql grammars.",
+    "see": "client/vendor/prism/components/prism-markup.min.js"
+  },
+  "attr-value": {
+    "kind": "vendor-emitted",
+    "reason": "Prism token type, emitted as class=\"token attr-value\"; defined by the vendored markup, jsx and ini grammars.",
+    "see": "client/vendor/prism/components/prism-markup.min.js"
+  },
+  "builtin": {
+    "kind": "vendor-emitted",
+    "reason": "Prism token type, emitted as class=\"token builtin\"; defined by the vendored bash, python and ruby grammars.",
+    "see": "client/vendor/prism/components/prism-bash.min.js"
+  },
+  "class-name": {
+    "kind": "vendor-emitted",
+    "reason": "Prism token type, emitted as class=\"token class-name\"; defined by the vendored clike, javascript and c grammars.",
+    "see": "client/vendor/prism/components/prism-clike.min.js"
+  },
+  "entity": {
+    "kind": "vendor-emitted",
+    "reason": "Prism token type, emitted as class=\"token entity\"; defined by the vendored markup and bash grammars.",
+    "see": "client/vendor/prism/components/prism-markup.min.js"
+  },
+  "operator": {
+    "kind": "vendor-emitted",
+    "reason": "Prism token type, emitted as class=\"token operator\"; defined by the vendored clike, cpp and json grammars.",
+    "see": "client/vendor/prism/components/prism-clike.min.js"
+  },
+  "prolog": {
+    "kind": "vendor-emitted",
+    "reason": "Prism token type, emitted as class=\"token prolog\"; defined by the vendored markup and markdown grammars.",
+    "see": "client/vendor/prism/components/prism-markup.min.js"
+  }
+}

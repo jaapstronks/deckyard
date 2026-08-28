@@ -1,10 +1,13 @@
 /**
- * Unit tests for the advisory dead-CSS scanner (scripts/lint-dead-css.js).
+ * Unit tests for the dead-CSS scanner (scripts/lint-dead-css.js).
  *
- * The scanner's whole reason to be advisory is that class names are *composed*
- * (`slide-bg-${id}`, `is-${state}`), so the tests that matter most are the ones
- * pinning that a composed name is NOT reported dead. The scan is exercised with
+ * The scanner spent its first life report-only because class names here are
+ * *composed* (`slide-bg-${id}`, `is-${state}`), so the tests that matter most
+ * are still the ones pinning that a composed name is NOT reported dead — a false
+ * positive is what would make the gate untrustworthy. The scan is exercised with
  * an injected reader so no real files or git are touched.
+ *
+ * The gate over the real tree lives in tests/dead-css-gate.test.js.
  *
  * Run with: node --test tests/lint-dead-css.test.js
  */
@@ -12,8 +15,14 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-const { harvestSource, extractCssClasses, isAlive, isSourceFile, scan } =
-  await import('../scripts/lint-dead-css.js');
+const {
+  auditAllowlist,
+  extractCssClasses,
+  harvestSource,
+  isAlive,
+  isSourceFile,
+  scan,
+} = await import('../scripts/lint-dead-css.js');
 
 describe('harvestSource', () => {
   it('harvests class tokens from single/double-quoted strings', () => {
@@ -65,6 +74,18 @@ describe('isSourceFile', () => {
       false,
     );
     assert.equal(isSourceFile('tests/lint-dead-css.test.js'), false);
+  });
+
+  it('rejects vendored bundles', () => {
+    // Not our source, and the harvester desyncs inside minified single-line
+    // files — the `katex-error` case. Classes we style on a vendor's behalf are
+    // named in dead-css-allowlist.json instead.
+    assert.equal(isSourceFile('client/vendor/katex/katex.min.js'), false);
+    assert.equal(
+      isSourceFile('client/vendor/prism/components/prism-core.min.js'),
+      false,
+    );
+    assert.equal(isSourceFile('client/vendor/collab.js'), false);
   });
 });
 
@@ -271,5 +292,101 @@ describe('scan (end to end, injected reader)', () => {
       ['slide-draft-overlay'],
       'the one slide-* class no composition can produce is the only report',
     );
+  });
+});
+
+describe('auditAllowlist', () => {
+  const entry = (over = {}) => ({
+    kind: 'vendor-emitted',
+    reason: 'Written by a vendored library at runtime.',
+    see: 'client/vendor/x.js',
+    ...over,
+  });
+  /** The shape `scan()` returns, condensed to what the audit reads. */
+  const world = (deadNames, liveNames = []) => ({
+    dead: deadNames.map((name) => ({ name, file: 'x.css', line: 1 })),
+    byName: new Map(
+      [...deadNames, ...liveNames].map((name) => [
+        name,
+        { name, file: 'x.css', line: 1 },
+      ]),
+    ),
+  });
+
+  it('reports a dead selector nobody wrote a reason for', () => {
+    const { unexpected } = auditAllowlist({
+      ...world(['orphan', 'katex-error']),
+      allowlist: { 'katex-error': entry() },
+    });
+    assert.deepEqual(
+      unexpected.map((u) => u.name),
+      ['orphan'],
+    );
+  });
+
+  it('accepts an allowlisted dead selector', () => {
+    const audit = auditAllowlist({
+      ...world(['katex-error']),
+      allowlist: { 'katex-error': entry() },
+    });
+    assert.deepEqual(audit.unexpected, []);
+    assert.deepEqual(audit.malformed, []);
+    assert.deepEqual(audit.stale, []);
+  });
+
+  it('rejects an entry with no reason', () => {
+    // A bare list of names is exactly the tolerance the allowlist exists to
+    // prevent, so an unreasoned entry is not a lesser sin than a dead selector.
+    const { malformed } = auditAllowlist({
+      ...world(['katex-error']),
+      allowlist: { 'katex-error': entry({ reason: '   ' }) },
+    });
+    assert.equal(malformed.length, 1);
+    assert.match(malformed[0].problem, /reason is required/);
+  });
+
+  it('rejects an entry with an unknown kind', () => {
+    const { malformed } = auditAllowlist({
+      ...world(['katex-error']),
+      allowlist: { 'katex-error': entry({ kind: 'scanner-is-confused' }) },
+    });
+    assert.equal(malformed.length, 1);
+    assert.match(malformed[0].problem, /kind must be one of/);
+  });
+
+  it('rejects an entry missing `see`', () => {
+    const { malformed } = auditAllowlist({
+      ...world(['katex-error']),
+      allowlist: { 'katex-error': entry({ see: undefined }) },
+    });
+    assert.deepEqual(
+      malformed.map((m) => m.name),
+      ['katex-error'],
+    );
+  });
+
+  // The stale guard, both directions. Either way the fix is to delete the
+  // entry, and the gate is green afterwards because nothing needs excusing.
+  it('flags an entry whose selector no longer exists', () => {
+    const { stale } = auditAllowlist({
+      ...world([]),
+      allowlist: { 'made-up-selector': entry() },
+    });
+    assert.deepEqual(stale, [
+      { name: 'made-up-selector', why: 'selector-gone' },
+    ]);
+  });
+
+  it('flags an entry the source now references', () => {
+    const { stale } = auditAllowlist({
+      ...world([], ['katex-error']),
+      allowlist: { 'katex-error': entry() },
+    });
+    assert.deepEqual(stale, [{ name: 'katex-error', why: 'now-referenced' }]);
+  });
+
+  it('is green on an empty allowlist and an empty report', () => {
+    const audit = auditAllowlist({ ...world([], ['card']), allowlist: {} });
+    assert.deepEqual(audit, { unexpected: [], malformed: [], stale: [] });
   });
 });

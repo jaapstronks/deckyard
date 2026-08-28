@@ -204,7 +204,16 @@
   color: inherit;
 }
 
-/* Override Prism theme to match Catppuccin Mocha */
+/* Override Prism theme to match Catppuccin Mocha.
+
+   Every `.token.*` name below is Prism's, not ours: prism-core wraps each match
+   in `class="token <type>"` and the types are defined by the vendored grammars
+   under `client/vendor/prism/components/`, which are outside the `lint:deadcss`
+   corpus. Eight of them therefore have no in-repo reference and are carried as
+   `vendor-emitted` in `dead-css-allowlist.json`; the rest are green only because
+   their names happen to appear as ordinary strings elsewhere in the source. That
+   asymmetry is an accident of the harvester, not a distinction worth acting on —
+   the whole block styles vendor output. */
 .slide .md-code-block .token.comment,
 .slide .md-code-block .token.prolog,
 .slide .md-code-block .token.doctype,
@@ -275,14 +284,13 @@
 
 /* KaTeX error styling - show raw LaTeX on error.
 
-   `lint:deadcss` reports `.katex-error` as unreferenced. It is a false
-   positive, and a known limitation rather than a mystery: the class is written
-   by vendored KaTeX (`client/vendor/katex/katex.min.js`, in the
-   `throwOnError: false` branch), and that file is one 300 KB line dense with
-   regex literals. The harvester's quoted-string pass walks quotes left to right
-   and desyncs on regex literals — the failure mode its own comment describes —
-   so the `"katex-error"` literal in there never reaches the evidence set.
-   Keep this rule; see B190. */
+   `lint:deadcss` finds no reference to `.katex-error`, and never will: the class
+   is written by vendored KaTeX (`client/vendor/katex/katex.min.js`, in the
+   `throwOnError: false` branch), and `client/vendor/**` is not part of the
+   scanned corpus. It could not be read reliably even if it were — that file is
+   one 300 KB line dense with regex literals, and the harvester's quoted-string
+   pass desyncs on them. Keep this rule; it is carried as `vendor-emitted` in
+   `dead-css-allowlist.json`. See B190/B191. */
 .slide .md-math-block .katex-error,
 .slide .md-math-inline .katex-error {
   color: var(--slide-color-danger);

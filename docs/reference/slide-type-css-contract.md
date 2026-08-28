@@ -5,13 +5,14 @@ change a fork has to hear about, and `tests/slide-type-css-contract.test.js` is
 the gate that keeps the upstream half honest: **every class a core slide type
 emits must resolve to a CSS rule.**
 
-## Why this one is a gate and not an advisory
+## Why this direction is the exact one
 
-`npm run lint:deadcss` already walks the other direction — CSS selectors no
-source references — and it stays advisory because class names in this codebase
-are composed (`slide-bg-${id}`, `is-${state}`) and a naive scanner over-reports.
-This direction has no such problem: a rendered class is a literal string, so the
-question "does it have a rule?" has an exact answer.
+`npm run lint:deadcss` walks the other direction — CSS selectors no source
+references — and had to spend its first year report-only, because class names in
+this codebase are composed (`slide-bg-${id}`, `is-${state}`) and a naive scanner
+over-reports. It gates too now, but only behind a conservative assemblability
+rule and a reasoned allowlist. This direction needed neither: a rendered class is
+a literal string, so the question "does it have a rule?" has an exact answer.
 
 It is a gate because this is the failure that reached production.
 
