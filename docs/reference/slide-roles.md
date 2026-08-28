@@ -230,12 +230,12 @@ title/body-on-a-count-ladder shape and are deliberately left out: their ladders
 were just ratified value-by-value under the tie-break, and folding them in means
 re-opening that record rather than reading it.
 
-`.slide-card` in `00-patterns.css` is **not** the base of this pattern — nothing
-renders it (a dead-CSS candidate, tracked in the dead-code audit). Each card
-pattern owns its own box. It is not alone: most of that file was written as a
-speculative pattern layer with no renderer behind it. The partials block is the
-part that now has one — `shared/slide-types/partials.js` emits every class in
-it, and `tests/slide-partials.test.js` gates the pair.
+There is no shared card base — each card pattern owns its own box. A
+`.slide-card` once stood in `00-patterns.css` claiming to be one, but nothing
+ever rendered it; it went out with the rest of that file's speculative pattern
+layer. What `00-patterns.css` holds now is only classes a shared renderer emits:
+the partials (`shared/slide-types/partials.js`, gated by
+`tests/slide-partials.test.js`) and the image placeholder.
 
 ## Spacing roles
 
