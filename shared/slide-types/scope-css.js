@@ -79,7 +79,10 @@ function scopeSelector(sel, scope) {
   // prefix match: with scope `.slide-custom-hero`, the selector
   // `.slide-custom-hero-extra` names a *different* class (another type's
   // root) and must be contained, not passed through.
-  if (s === scope || (s.startsWith(scope) && /^[\s.:#[>+~]/.test(s.slice(scope.length)))) {
+  if (
+    s === scope ||
+    (s.startsWith(scope) && /^[\s.:#[>+~]/.test(s.slice(scope.length)))
+  ) {
     return s;
   }
   if (/^(:root|html|body)\b/.test(s)) {
