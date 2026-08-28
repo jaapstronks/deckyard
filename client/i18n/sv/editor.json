@@ -478,8 +478,6 @@
   "editor.items.removeN": "Ta bort post {n}",
   "editor.jsonDebug.parseError": "JSON-fel: {message}",
   "editor.lang.disabledByAdmin": "Det här språket är avstängt i administratörsinställningarna.",
-  "editor.lang.dutch": "Nederländska",
-  "editor.lang.english": "Engelska",
   "editor.lang.notNow": "Inte nu, jag skriver den själv",
   "editor.lang.switchAborted": "Det gick inte att spara; språkbytet avbröts.",
   "editor.lang.versionCreatedInvite": "{lang}-versionen skapades nyss och har ännu ingen text. Ska den översättas automatiskt? Fält som du fyller i själv skrivs aldrig över.",

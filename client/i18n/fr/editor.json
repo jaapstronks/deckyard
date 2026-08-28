@@ -478,8 +478,6 @@
   "editor.items.removeN": "Supprimer l'élément {n}",
   "editor.jsonDebug.parseError": "Erreur JSON : {message}",
   "editor.lang.disabledByAdmin": "Cette langue est désactivée dans les paramètres d'administration.",
-  "editor.lang.dutch": "Néerlandais",
-  "editor.lang.english": "Anglais",
   "editor.lang.notNow": "Pas maintenant, je l'écrirai moi-même",
   "editor.lang.switchAborted": "Impossible d'enregistrer ; changement de langue abandonné.",
   "editor.lang.versionCreatedInvite": "La version {lang} vient d'être créée et ne contient encore aucun texte. Les traduire automatiquement ? Les champs que vous remplissez vous-même ne sont jamais écrasés.",

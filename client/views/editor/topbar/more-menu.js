@@ -15,7 +15,10 @@ export function createEditorTopbarMoreMenu({
   isDirty,
   onError,
   onTranslateOther,
-  canTranslate = true,
+  // A predicate, not a boolean: whether there is another language version to
+  // retranslate changes while the menu exists (the language menu creates them),
+  // so it is asked again every time the menu opens.
+  canTranslate = () => true,
   onVersions,
   onLogout,
   // Responsive overflow item (shown at narrow widths via CSS)
@@ -94,11 +97,14 @@ export function createEditorTopbarMoreMenu({
     text: t('editor.more.translate', 'Translate'),
     title: t(
       'editor.more.translate.title',
-      'Create (or refresh) the other language version so follow-along and switching are ready.',
+      'Refresh every other language version of this deck from the one you are editing.',
     ),
     onclick: () => run(onTranslateOther),
   });
-  btnTranslateOther.style.display = canTranslate ? '' : 'none';
+  const syncTranslateItem = () => {
+    btnTranslateOther.style.display = canTranslate?.() ? '' : 'none';
+  };
+  syncTranslateItem();
 
   const btnVersions = menuItem({
     text: t('editor.more.versions', 'Versions…'),
@@ -281,6 +287,13 @@ export function createEditorTopbarMoreMenu({
   });
   detachers.push(detachMore);
   closeMore = closeDropdown;
+
+  // Re-ask the state-dependent items on every open. Without this the Translate
+  // item keeps the visibility it was built with, so a language added since the
+  // topbar was created leaves it hidden.
+  moreDetails.addEventListener('toggle', () => {
+    if (moreDetails.open) syncTranslateItem();
+  });
 
   // Warm the notes session or other actions can happen outside; keep module focused.
   // (No-op here.)

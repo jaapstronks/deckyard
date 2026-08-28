@@ -21,8 +21,6 @@
     "client/views/editor/export-modal.js :: Markdown": "Format name.",
     "client/views/editor/image-library/giphy-search.js :: Powered by GIPHY": "Required attribution string — GIPHY brand guidelines mandate the English wording.",
     "client/views/editor/image-library/unsplash-search.js :: Unsplash": "Brand name.",
-    "client/views/editor/topbar/language-mode.js :: EN": "Language tag, not prose.",
-    "client/views/editor/topbar/language-mode.js :: NL": "Language tag, not prose.",
     "client/views/settings/font-editor/google-panel.js :: Raleway:400,700": "Syntax example for the Google Fonts field.",
     "client/views/settings/font-editor/index.js :: Acme Sans": "Placeholder example of a font name.",
     "client/views/settings/slide-type-editor/index.js :: .my-slide {\\n  padding: 2em;\\n}": "CSS syntax example.",

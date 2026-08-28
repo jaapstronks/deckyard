@@ -2,7 +2,21 @@ import { t } from '../../../lib/ui-i18n.js';
 import { confirmModal, createModal } from '../../../lib/dom/modal.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { h } from '../../../lib/dom.js';
+import { getLangShortLabel } from '../../../lib/format/lang-selector.js';
+import { primaryLangLinks } from './publish.js';
 
+/**
+ * Show the public links and embed snippets of a published deck.
+ *
+ * `langs` is one entry per language version the deck has, the one being edited
+ * first (`buildLangLinks` in `publish.js`). It used to be a flat pair of
+ * "this language" and "the other language" fields, twelve in all, which is why
+ * a deck with three versions showed links to two of them (D72 #6).
+ *
+ * @param {Object} opts
+ * @param {string} opts.currentLang - the language being edited
+ * @param {import('./publish.js').PublishLangLinks[]} opts.langs
+ */
 export function openPublishModal({
   api,
   pres,
@@ -12,19 +26,12 @@ export function openPublishModal({
   copyToClipboard,
   syncPublishUi,
   currentLang,
-  otherLang: otherLangCode,
-  url,
-  urlOther,
-  embedUrl,
-  embedUrlOther,
-  iframeSnippet,
-  iframeSnippetOther,
-  sdkSnippet,
-  sdkSnippetOther,
+  langs = [],
 } = {}) {
+  const primary = primaryLangLinks({ currentLang, langs });
   if (!root) {
     // Back-compat (shouldn't happen in the editor): just open the public URL.
-    window.open(url, '_blank', 'noopener,noreferrer');
+    if (primary?.url) window.open(primary.url, '_blank', 'noopener,noreferrer');
     return;
   }
 
@@ -279,10 +286,6 @@ export function openPublishModal({
     ]);
   })();
 
-  const langLabel = currentLang === 'nl' ? 'NL' : 'EN';
-  const otherLabel =
-    otherLangCode === 'nl' ? 'NL' : otherLangCode === 'en-GB' ? 'EN' : '';
-
   const makeRow = ({ label, value, openHref, kind = 'input' } = {}) => {
     const wrap = h('div', { class: 'publish-row' });
     const labelEl = h('div', { class: 'publish-row-label', text: label });
@@ -364,14 +367,12 @@ export function openPublishModal({
     return wrap;
   };
 
-  const makeLangSection = ({
-    langShort,
-    urlVal,
-    embedUrlVal,
-    iframeVal,
-    sdkVal,
-    showAdvanced = false,
-  } = {}) => {
+  const makeLangSection = ({ lang, showAdvanced = false } = {}) => {
+    const langShort = getLangShortLabel(lang?.lang);
+    const urlVal = lang?.url || '';
+    const embedUrlVal = lang?.embedUrl || '';
+    const iframeVal = lang?.iframeSnippet || '';
+    const sdkVal = lang?.sdkSnippet || '';
     const section = h('div', { class: 'publish-lang' });
     section.append(h('div', { class: 'publish-lang-title', text: langShort }));
     section.append(
@@ -401,27 +402,8 @@ export function openPublishModal({
   };
 
   const main = h('div', { class: 'publish-sections' });
-  main.append(
-    makeLangSection({
-      langShort: langLabel,
-      urlVal: url,
-      embedUrlVal: embedUrl,
-      iframeVal: iframeSnippet,
-      sdkVal: sdkSnippet,
-      showAdvanced: false,
-    }),
-  );
-  if (urlOther) {
-    main.append(
-      makeLangSection({
-        langShort: otherLabel || '—',
-        urlVal: urlOther,
-        embedUrlVal: embedUrlOther,
-        iframeVal: iframeSnippetOther,
-        sdkVal: sdkSnippetOther,
-        showAdvanced: false,
-      }),
-    );
+  for (const lang of langs) {
+    main.append(makeLangSection({ lang, showAdvanced: false }));
   }
 
   const advanced = h('details', { class: 'publish-advanced' });
@@ -432,27 +414,8 @@ export function openPublishModal({
     }),
   );
   const advBody = h('div', { class: 'publish-advanced-body' });
-  advBody.append(
-    makeLangSection({
-      langShort: langLabel,
-      urlVal: url,
-      embedUrlVal: embedUrl,
-      iframeVal: iframeSnippet,
-      sdkVal: sdkSnippet,
-      showAdvanced: true,
-    }),
-  );
-  if (urlOther) {
-    advBody.append(
-      makeLangSection({
-        langShort: otherLabel || '—',
-        urlVal: urlOther,
-        embedUrlVal: embedUrlOther,
-        iframeVal: iframeSnippetOther,
-        sdkVal: sdkSnippetOther,
-        showAdvanced: true,
-      }),
-    );
+  for (const lang of langs) {
+    advBody.append(makeLangSection({ lang, showAdvanced: true }));
   }
   advanced.append(advBody);
 
@@ -464,5 +427,5 @@ export function openPublishModal({
   modal.show(root);
 
   // Convenience: copy the public URL on open, but never block the UI if it fails.
-  copyToClipboard(url).catch(() => {});
+  if (primary?.url) copyToClipboard(primary.url).catch(() => {});
 }

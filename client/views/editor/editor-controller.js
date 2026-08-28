@@ -54,7 +54,7 @@ import { openConflictModal as openConflictModalImpl } from './modals/conflict-mo
 import { openRemoteMergeModal } from './modals/remote-merge-modal.js';
 import { openAnalyzeModal as openAnalyzeModalImpl } from './modals/analyze-modal.js';
 import { createDeckReviewOpeners } from './deck-review-openers.js';
-import { normalizeLang, otherLang } from '../../lib/format/i18n.js';
+import { normalizeLang } from '../../lib/format/i18n.js';
 import { t } from '../../lib/ui-i18n.js';
 import {
   createNotesSessionEnsurer,
@@ -331,7 +331,6 @@ export async function createEditorController({
     id,
     SLIDE_TYPES,
     normalizeLang,
-    otherLang,
     onStatusChange: (status) => setSaveStatus(status),
     getSelectedSlideId: () => selectedSlideId,
     onConflict: (err) => {
@@ -630,7 +629,6 @@ export async function createEditorController({
     // Defined later in this controller; the button is only clickable afterwards.
     onShowShortcuts: () => shortcutsHelp.open(),
     normalizeLang,
-    otherLang,
     topbarExportEl: dropdowns.topbarExport,
     topbarShareEl: dropdowns.topbarShare,
     syncShareUi: dropdowns.syncShareUi,
@@ -1265,7 +1263,6 @@ export async function createEditorController({
     theme,
     pres,
     normalizeLang,
-    otherLang,
     openImagePicker,
     readFileAsDataUrl,
     markDirty,
@@ -1288,7 +1285,6 @@ export async function createEditorController({
       root,
       lockDocumentScroll,
       normalizeLang,
-      otherLang,
       translatableKeysForType: translatableKeysForSlideType,
       markDirty,
       // Late-bound: the real renderers are assigned further down, so pass

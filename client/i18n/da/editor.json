@@ -478,8 +478,6 @@
   "editor.items.removeN": "Fjern punkt {n}",
   "editor.jsonDebug.parseError": "JSON-fejl: {message}",
   "editor.lang.disabledByAdmin": "Dette sprog er slået fra i administratorindstillingerne.",
-  "editor.lang.dutch": "Hollandsk",
-  "editor.lang.english": "Engelsk",
   "editor.lang.notNow": "Ikke nu, jeg skriver den selv",
   "editor.lang.switchAborted": "Kunne ikke gemme; sprogskiftet blev afbrudt.",
   "editor.lang.versionCreatedInvite": "{lang}-versionen er lige oprettet og har endnu ingen tekster. Skal de oversættes automatisk? Felter, du selv udfylder, bliver aldrig overskrevet.",

@@ -133,8 +133,8 @@ before any exchange):
 The doc stores structure once with per-language texts; `pres` holds the
 active language buffer. The binder writes text changes into
 `Y.Map<lang, Y.Text>` at the active language, re-projects the other
-languages' version buffers after remote changes (so "From NL/EN" fill
-buttons stay fresh), and seeds `meta.langs` + the title when the editor
+languages' version buffers after remote changes (so the "From {source}"
+fill buttons stay fresh), and seeds `meta.langs` + the title when the editor
 creates a new language version on the spot.
 
 **`i18n.active` is per-client editor state and is never shared through the

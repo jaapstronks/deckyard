@@ -8,8 +8,13 @@
  *     error, decided to show it, and then showed nothing);
  *  2. a throw from the part of the switch that sits outside the inner
  *     try/catch reaches the user instead of becoming an unhandled rejection;
- *  3. while a translation runs the language buttons are disabled and say why,
+ *  3. while a translation runs the language menu is disabled and says why,
  *     rather than silently swallowing clicks under the busy modal's backdrop.
+ *
+ * The control they were reported against was a fixed NL/EN segmented toggle;
+ * it is a language menu over every version the deck has since B182 fase 2. The
+ * failure modes are the switch's, not the widget's, so they are pinned here in
+ * the menu's shape.
  *
  * Run with: node --test tests/language-switch-visible-failure.test.js
  */
@@ -40,8 +45,7 @@ globalThis.cancelAnimationFrame =
 globalThis.KeyboardEvent = dom.window.KeyboardEvent;
 globalThis.MouseEvent = dom.window.MouseEvent;
 
-const { normalizeLang, otherLang } =
-  await import('../client/lib/format/i18n.js');
+const { normalizeLang } = await import('../client/lib/format/i18n.js');
 const { createLanguageMode } =
   await import('../client/views/editor/topbar/language-mode.js');
 
@@ -63,6 +67,25 @@ function makePres() {
   };
 }
 
+/** Deck with both shipped versions, so a fill-missing job has a source. */
+function makeBilingualPres() {
+  return {
+    id: 'p1',
+    title: 'Deck',
+    slides: [],
+    theme: null,
+    revision: 1,
+    i18n: {
+      active: 'nl',
+      dominant: 'nl',
+      versions: {
+        nl: { title: 'Deck', slides: [] },
+        'en-GB': { title: 'Deck', slides: [] },
+      },
+    },
+  };
+}
+
 function mount({ api, pres = makePres() }) {
   const toasts = [];
   const record = (level) => (msg) => toasts.push({ level, msg });
@@ -75,7 +98,6 @@ function mount({ api, pres = makePres() }) {
     isDirty: () => false,
     markDirty: () => {},
     normalizeLang,
-    otherLang,
     getSelectedSlideId: () => null,
     setSelectedSlideId: () => {},
     editorState: { refreshAll: () => {} },
@@ -87,27 +109,34 @@ function mount({ api, pres = makePres() }) {
     },
   });
   document.body.replaceChildren(controller.el);
-  const [btnNl, btnEn] = controller.el.querySelectorAll('.sb-segmented-btn');
+  const items = () => [...controller.el.querySelectorAll('.lang-menu-item')];
+  /** The menu row for one language, by its native label. */
+  const item = (label) =>
+    items().find((b) =>
+      b.querySelector('.lang-menu-name')?.textContent === label
+        ? true
+        : b.textContent.trim() === label,
+    );
   return {
     controller,
     pres,
     toasts,
-    btnNl,
-    btnEn,
-    seg: controller.el.querySelector('.sb-segmented'),
+    items,
+    item,
+    trigger: controller.el.querySelector('.dropdown-trigger'),
   };
 }
 
 test('a rejection without a message still surfaces a toast', async () => {
   // The sharpest silent path: the message ends up empty, so the old
   // `if (!msg) return;` in toastStatus threw the only user-visible signal away.
-  const { toasts, btnEn } = mount({
+  const { toasts, item } = mount({
     api: async () => {
       throw '';
     },
   });
 
-  btnEn.click();
+  item('English').click();
   await flush();
 
   assert.equal(toasts.length, 1, 'exactly one toast');
@@ -122,8 +151,8 @@ test('a rejection without a message still surfaces a toast', async () => {
 test('a throw past the inner catch is caught by switchLanguageMode', async () => {
   // The server answers, but without the version buffer the switch then writes
   // into - a TypeError outside loadLanguageIntoView's try. Before the wrapping
-  // catch this vanished as an unhandled rejection and left a dead button.
-  const { toasts, btnEn } = mount({
+  // catch this vanished as an unhandled rejection and left a dead menu.
+  const { toasts, item } = mount({
     api: async () => ({
       i18n: { versions: {} },
       title: 'Deck',
@@ -132,7 +161,7 @@ test('a throw past the inner catch is caught by switchLanguageMode', async () =>
     }),
   });
 
-  btnEn.click();
+  item('English').click();
   await flush();
 
   const errors = toasts.filter((x) => x.level === 'error');
@@ -140,37 +169,64 @@ test('a throw past the inner catch is caught by switchLanguageMode', async () =>
   assert.ok(errors[0].msg.trim(), 'with a non-empty message');
 });
 
-test('language buttons are disabled with a reason while translating', async () => {
+test('the language menu is disabled with a reason while translating', async () => {
   let release;
-  const { toasts, btnNl, btnEn, seg, controller } = mount({
-    api: () =>
-      new Promise((resolve) => {
+  const api = (url) => {
+    if (String(url).includes('/translate'))
+      return new Promise((resolve) => {
         release = resolve;
-      }),
+      });
+    // The post-translate reload of the active version.
+    return Promise.resolve({
+      title: 'Deck',
+      slides: [],
+      theme: null,
+      revision: 3,
+      i18n: {
+        active: 'nl',
+        dominant: 'nl',
+        versions: {
+          nl: { title: 'Deck', slides: [] },
+          'en-GB': { title: 'Deck', slides: [] },
+        },
+      },
+    });
+  };
+  const { toasts, items, trigger, controller } = mount({
+    api,
+    pres: makeBilingualPres(),
   });
-  const idleTitle = seg.title;
+  const idleTitle = trigger.title;
 
-  assert.equal(btnEn.disabled, false, 'enabled while idle');
+  assert.ok(
+    items().every((b) => b.disabled === false),
+    'enabled while idle',
+  );
 
-  const running = controller.translateOtherLanguage();
+  const running = controller.translateMissingForActive();
   await flush();
 
-  assert.equal(btnNl.disabled, true, 'NL disabled while translating');
-  assert.equal(btnEn.disabled, true, 'EN disabled while translating');
-  assert.equal(seg.getAttribute('aria-busy'), 'true');
-  assert.notEqual(seg.title, idleTitle, 'the control explains why it is inert');
-  assert.match(seg.title, /translat/i);
+  assert.ok(
+    items().every((b) => b.disabled === true),
+    'every language row is disabled while translating',
+  );
+  assert.equal(trigger.getAttribute('aria-busy'), 'true');
+  assert.notEqual(
+    trigger.title,
+    idleTitle,
+    'the menu explains why it is inert',
+  );
+  assert.match(trigger.title, /translat/i);
 
   release({ presentation: { revision: 2 } });
   await running;
 
-  assert.equal(
-    btnEn.disabled,
-    false,
+  assert.ok(
+    items().every((b) => b.disabled === false),
     'released again when the translation ends',
   );
-  assert.equal(seg.getAttribute('aria-busy'), 'false');
-  assert.equal(seg.title, idleTitle, 'idle title restored');
+  assert.equal(trigger.getAttribute('aria-busy'), 'false');
+  assert.equal(trigger.title, idleTitle, 'idle title restored');
   assert.ok(
     toasts.some((x) => x.level === 'success'),
     'and the result is reported',

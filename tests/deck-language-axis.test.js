@@ -83,6 +83,46 @@ test('otherLang answers only inside the bilingual pair', () => {
   assert.equal(otherLang(null), null);
 });
 
+test('otherLang has no callers left outside the public viewer chrome', () => {
+  // B182 fase 2 removed the client accessor and every editor caller: "the other
+  // language" is now `translationSourceFor(pres, to)`, which answers for all
+  // twelve. What is left are the two static viewer routes that still render a
+  // fixed NL/EN link pair (phase 4) plus their server re-export. A new caller
+  // anywhere else is the bilingual assumption creeping back in.
+  const allowed = new Set([
+    'shared/i18n-utils.js',
+    'server/utils/i18n.js',
+    'server/routes/static/published.js',
+    'server/routes/static/embed.js',
+  ]);
+  // Comments stripped first: half these files explain in prose *why* they no
+  // longer call it, and a doc comment is not a caller.
+  const withoutComments = (src) =>
+    src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+  const callers = APP_SOURCES.filter((f) =>
+    /\botherLang\s*\(/.test(withoutComments(fs.readFileSync(f, 'utf8'))),
+  )
+    .map(rel)
+    .filter((f) => !allowed.has(f));
+  assert.deepEqual(
+    callers,
+    [],
+    'name the target explicitly (translationSourceFor) instead of asking for ' +
+      '"the other one" — otherLang() is null outside the NL/EN pair',
+  );
+
+  // And it is not re-exported to the client any more: the enabled-subset view
+  // in client/lib/format/i18n.js is gone with its last caller.
+  const clientI18n = fs.readFileSync(
+    path.join(repoRoot, 'client/lib/format/i18n.js'),
+    'utf8',
+  );
+  assert.ok(
+    !/export function otherLang|otherLang as /.test(clientI18n),
+    'client/lib/format/i18n.js must not re-export otherLang',
+  );
+});
+
 test('the axis is declared in exactly one module', () => {
   // Any array literal pairing the two legacy codes is a re-declaration of the
   // axis — that is the shape the five old copies had.

@@ -67,10 +67,12 @@ stays its own row under Documents.
 ## Language
 
 `export-modal.js` reads `pres.i18n.active` for the default language. When the
-deck has both language versions (`hasLangVersion`), an NL/EN segmented toggle
-appears and its value is appended as `?lang=` to every export URL. Single-
-language decks show no toggle. This replaces the dropdown's second, duplicated
-"Export ({other lang})" section.
+deck carries more than one language version (`existingVersionLangs`), a
+segmented control appears with one segment per version — the active language
+first — and its value is appended as `?lang=` to every export URL. Single-
+language decks show no control. This replaces the dropdown's second, duplicated
+"Export ({other lang})" section, and before B182 fase 2 it offered exactly two
+segments, so a deck with `nl`, `de` and `fr` could be exported in two of them.
 
 ## i18n
 

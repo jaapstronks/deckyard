@@ -21,7 +21,6 @@ import { openTranslateFieldModal as openTranslateFieldModalImpl } from './modals
  * @param {HTMLElement} ctx.root - editor root (overlay mount host)
  * @param {Function} ctx.lockDocumentScroll - scroll-lock helper
  * @param {Function} ctx.normalizeLang - language normalizer
- * @param {Function} ctx.otherLang - "the other" language resolver
  * @param {Function} ctx.translatableKeysForType - translatable-keys resolver (slide modal only)
  * @param {Function} ctx.markDirty - mark the model dirty
  * @param {Function} ctx.rerenderEditor - repaint the editor form (late-bound indirection)
@@ -38,7 +37,6 @@ export function createTranslateOpeners({
   root,
   lockDocumentScroll,
   normalizeLang,
-  otherLang,
   translatableKeysForType,
   markDirty,
   rerenderEditor,
@@ -56,7 +54,6 @@ export function createTranslateOpeners({
       root,
       lockDocumentScroll,
       normalizeLang,
-      otherLang,
       translatableKeysForType,
       markDirty,
       rerenderEditor,
@@ -76,7 +73,6 @@ export function createTranslateOpeners({
       root,
       lockDocumentScroll,
       normalizeLang,
-      otherLang,
       markDirty,
       rerenderEditor,
       rerenderPreview,

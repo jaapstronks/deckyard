@@ -2,7 +2,10 @@ import { createModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { readPreferredLlmVendor } from '../../../lib/net/llm-vendor.js';
 import { h } from '../../../lib/dom.js';
-import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
+import {
+  DEFAULT_DECK_LANG,
+  translationSourceFor,
+} from '../../../../shared/i18n-utils.js';
 
 export async function openTranslateSlideModal({
   slideId,
@@ -14,7 +17,6 @@ export async function openTranslateSlideModal({
   root,
   lockDocumentScroll,
   normalizeLang,
-  otherLang,
   translatableKeysForType,
   markDirty,
   rerenderEditor,
@@ -24,7 +26,10 @@ export async function openTranslateSlideModal({
   const sid = String(slideId || '').trim();
   if (!sid) return;
   const targetLang = normalizeLang?.(pres?.i18n?.active) || DEFAULT_DECK_LANG;
-  const sourceLang = otherLang?.(targetLang);
+  // The version this translation reads FROM: the dominant one, or - when the
+  // dominant version IS the target - whichever other version the deck carries.
+  // `otherLang()` answered this for a bilingual deck only (D72 #2).
+  const sourceLang = translationSourceFor(pres, targetLang);
   if (!sourceLang) {
     toast?.info(
       t(

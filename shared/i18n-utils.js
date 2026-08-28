@@ -163,13 +163,18 @@ export function normalizeLang(v) {
  * The other language of a *bilingual* deck, or null.
  *
  * Narrow by construction, and deliberately not the axis: this answers "the
- * editor shows an NL⇄EN toggle — which one is the other side?", which is only
+ * chrome shows an NL⇄EN toggle — which one is the other side?", which is only
  * a question at all when a deck has exactly two languages. On the open axis
  * (D61) "the other of twelve" has no answer, so an off-pair language gets
  * `null` and the caller has to name its target explicitly rather than be
- * handed a guess. The bilingual editor chrome that this serves (the two fixed
- * NL/EN buttons, the translate modals) is a two-language UI awaiting an
- * N-language successor — B182.
+ * handed a guess.
+ *
+ * **On its way out.** The editor chrome that this served now names its target
+ * — `translationSourceFor()` below answers the same question for all twelve
+ * languages (D72 #2). What is left are the two public-viewer surfaces that
+ * still render a fixed NL/EN link pair, `server/routes/static/published.js` and
+ * `.../embed.js`. Widening those is phase 4 of B182; this function goes with
+ * them, along with the `server/utils/i18n.js` re-export.
  *
  * @param {*} lang - Current language
  * @returns {'nl'|'en-GB'|null}

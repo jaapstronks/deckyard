@@ -19,14 +19,11 @@ import { t } from '../../lib/ui-i18n.js';
 import { openModal } from '../../lib/dom/modal.js';
 import { toast } from '../../lib/dom/toast.js';
 import { downloadBlob } from '../../lib/dom/download.js';
-import {
-  normalizeLang,
-  hasLangVersion,
-  otherLang,
-} from '../../lib/format/i18n.js';
+import { normalizeLang } from '../../lib/format/i18n.js';
 import { createSegmented } from '../../lib/dom/segmented.js';
 import { buildExportUrl } from './publish-export/urls.js';
 import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
+import { existingVersionLangs } from '../../../shared/i18n-progress.js';
 import { getLangShortLabel } from '../../lib/format/lang-selector.js';
 
 const LUCIDE = (name) => `/client/vendor/lucide-icons/${name}.svg`;
@@ -336,8 +333,9 @@ function buildFormatRow(fmt, { id, getLang, title }) {
  */
 export function openExportModal({ pres, id, root }) {
   const activeLang = normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG;
-  const other = otherLang(activeLang);
-  const hasOther = other && hasLangVersion(pres, other);
+  // Every other version this deck actually has, not "the other one": a deck
+  // with `nl`, `de` and `fr` offered exactly one of them for export before.
+  const otherLangs = existingVersionLangs(pres).filter((l) => l !== activeLang);
   const title = pres?.title || pres?.meta?.title || 'export';
 
   let currentLang = activeLang;
@@ -348,8 +346,8 @@ export function openExportModal({ pres, id, root }) {
     modalClass: 'export-modal',
   });
 
-  // Language toggle - only when the deck actually has both languages.
-  if (hasOther) {
+  // Language picker - only when the deck actually has more than one version.
+  if (otherLangs.length) {
     const langRow = h('div', { class: 'export-lang-row' });
     const label = h('span', {
       class: 'field-label',
@@ -358,12 +356,13 @@ export function openExportModal({ pres, id, root }) {
     const seg = createSegmented({
       ariaLabel: t('editor.export.langLabel', 'Language'),
       value: activeLang,
-      // The two languages this deck actually has, in axis spelling. The
-      // segments were `nl`/`en` before D61 — `en` is the alias, so the English
-      // segment never matched an `en-GB` active language.
-      segments: [activeLang, other]
-        .filter(Boolean)
-        .map((code) => ({ value: code, label: getLangShortLabel(code) })),
+      // The languages this deck actually has, in axis spelling. The segments
+      // were `nl`/`en` before D61 — `en` is the alias, so the English segment
+      // never matched an `en-GB` active language.
+      segments: [activeLang, ...otherLangs].map((code) => ({
+        value: code,
+        label: getLangShortLabel(code),
+      })),
       onSelect: (val) => {
         currentLang = val;
       },

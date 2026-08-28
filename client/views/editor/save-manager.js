@@ -7,6 +7,7 @@ import {
   valueAtPath,
 } from '../../../shared/slide-types/text-fields.js';
 import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
+import { existingVersionLangs } from '../../../shared/i18n-progress.js';
 
 // Session idle timeout: create session-end snapshot after 5 minutes of no edits
 const SESSION_IDLE_TIMEOUT_MS = 5 * 60 * 1000;
@@ -18,7 +19,6 @@ export function createSaveManager({
   id,
   SLIDE_TYPES,
   normalizeLang,
-  otherLang,
   onConflict,
   onRemoteMerge,
   onStatusChange,
@@ -174,20 +174,18 @@ export function createSaveManager({
     return true;
   };
 
-  const syncOtherLanguageStructureForSave = () => {
-    const from = normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG;
-    const to = otherLang(from);
-    ensureLangVersion(from);
-    // Only keep structure in sync if the target language version exists.
-    if (!pres?.i18n?.versions?.[to]) return;
+  /**
+   * Mirror the active version's slide structure into one other version.
+   *
+   * Structure only: ids, order, type and non-translatable content follow the
+   * source; every translatable string keeps the target's own text, or stays
+   * empty where the target has none.
+   *
+   * @param {string} from - the version being edited (already buffered)
+   * @param {string} to - an existing version to mirror into
+   */
+  const syncStructureInto = (from, to) => {
     ensureLangVersion(to);
-
-    // Keep current buffers stored in i18n.versions
-    pres.i18n.versions[from].title =
-      typeof pres.title === 'string' ? pres.title : '';
-    pres.i18n.versions[from].slides = Array.isArray(pres.slides)
-      ? pres.slides
-      : [];
 
     const srcSlides = pres.i18n.versions[from].slides;
     const tgtSlidesExisting = pres.i18n.versions[to].slides;
@@ -254,6 +252,33 @@ export function createSaveManager({
     });
 
     pres.i18n.versions[to].slides = nextTgtSlides;
+  };
+
+  /**
+   * Keep every other language version structurally in step with the one being
+   * edited, so a slide added or moved here lands in all of them.
+   *
+   * It syncs into **every existing version**, not into "the other" one: on the
+   * open deck-language axis a deck can carry three versions, and the bilingual
+   * form of this function silently left the third behind — a slide added in the
+   * Dutch version never reached the German one (D72 #4). Versions that do not
+   * exist are still not created here; that is the language menu's job.
+   */
+  const syncOtherLanguageStructureForSave = () => {
+    const from = normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG;
+    ensureLangVersion(from);
+
+    // Keep current buffers stored in i18n.versions
+    pres.i18n.versions[from].title =
+      typeof pres.title === 'string' ? pres.title : '';
+    pres.i18n.versions[from].slides = Array.isArray(pres.slides)
+      ? pres.slides
+      : [];
+
+    for (const to of existingVersionLangs(pres)) {
+      if (to === from) continue;
+      syncStructureInto(from, to);
+    }
   };
 
   const applyServerMeta = (updated) => {

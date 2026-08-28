@@ -543,9 +543,47 @@ summary.ghost-icon-btn::-webkit-details-marker {
   }
 }
 
-/* Language segment wrapper for popover positioning */
-.lang-seg-wrapper {
+/* Language menu wrapper: positioning context for the translate-invite popover */
+.lang-menu-wrapper {
   position: relative;
+}
+
+/* The trigger stays put while its label swaps between "Nederlands" and
+   "Português" - without a floor the topbar reflows on every language switch. */
+.lang-menu > .dropdown-trigger {
+  min-width: 7.5rem;
+  justify-content: space-between;
+}
+
+.lang-menu > .dropdown-trigger.is-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.lang-menu .dropdown-menu {
+  min-width: 15rem;
+}
+
+.lang-menu-item.is-active {
+  font-weight: 600;
+  background: hsl(var(--app-bg-hover));
+}
+
+/* Name left, status right: the status column is what makes this a menu rather
+   than a switcher - it answers "how far along is that version" in place. */
+.lang-menu-name {
+  flex: 1 1 auto;
+}
+
+.lang-menu-status {
+  flex: 0 0 auto;
+  margin-left: var(--ps-space-3);
+  font-size: var(--ps-text-xs);
+  color: hsl(var(--app-text-tertiary));
+}
+
+.lang-menu-status.is-complete {
+  color: hsl(var(--app-success));
 }
 
 .lang-popover {

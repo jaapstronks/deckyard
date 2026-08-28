@@ -475,8 +475,8 @@ const createElementRestriction = {
 // A literal cannot say which of the two it means, so both are restricted and
 // the remedies are named in the message. The burndown took the axis-shaped
 // ones (defaults, membership tests, re-declarations, `?lang=` validation) to
-// roughly fifty in 21 files; `deckLangLiteralAllowlist` below names what is left and why,
-// and it may only shrink.
+// roughly fifty in 21 files; `deckLangLiteralAllowlist` below names what is
+// left and why — 19 files now — and it may only shrink.
 //
 // Whole-token by construction — the selector matches the string literal value
 // exactly, so `nl-NL`, `en-GB-oxendict` in a locale tag, or the substring in a
@@ -500,9 +500,11 @@ const deckLangLiteralRestriction = {
 // literal, so a file that is cleaned up cannot quietly stay exempt.
 //
 // Two reasons appear, and only two:
-//   * *bilingual chrome* — the editor's fixed NL⇄EN toggle, the paired alt-text
-//     inputs, the translate modals and their hand-written NL/EN copy. Widening
-//     these to N languages is a UI design job, not a rename: B182.
+//   * *bilingual chrome* — the paired alt-text inputs, the translate modals and
+//     their hand-written NL/EN copy, the viewer's fixed NL/EN link pair.
+//     Widening these to N languages is a UI design job, not a rename: B182.
+//     (The editor's NL⇄EN toggle is gone — it is a language menu over every
+//     version the deck has since B182 fase 2.)
 //   * *UI-locale axis* — `'nl'` there is a locale directory
 //     (`client/i18n/nl/`), a different vocabulary that shares a spelling.
 const deckLangLiteralAllowlist = [
@@ -516,8 +518,6 @@ const deckLangLiteralAllowlist = [
   'client/views/editor/media/apply-pick.js',
   'client/views/editor/modals/translate-field-modal.js',
   'client/views/editor/modals/translate-slide-modal.js',
-  'client/views/editor/publish-export/publish-modal.js',
-  'client/views/editor/topbar/language-mode.js',
   'client/views/presenter/follow-codes-pill.js',
   // the axis↔locale seam: these name `en-GB` precisely because it is the one
   // code the two axes spell differently
