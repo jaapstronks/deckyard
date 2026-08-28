@@ -6,6 +6,11 @@ import {
 } from '../helpers.js';
 import { markdownToSafeHtml } from '../../markdown.js';
 import { ACTIONS_FIELD, renderActionsHtml } from '../actions-field.js';
+import {
+  ASIDE_DEFAULTS,
+  ASIDE_FIELDS,
+  renderAsideHtml,
+} from '../aside-field.js';
 import { sharedOption } from '../../ui-i18n-keys.js';
 
 export default {
@@ -82,6 +87,7 @@ export default {
       required: true,
       maxLength: 3000,
     },
+    ...ASIDE_FIELDS,
     BACKGROUND_FIELD,
     ACTIONS_FIELD,
   ],
@@ -174,6 +180,7 @@ export default {
       layout: 'one-column',
       density: 'auto',
       body: '- Eerste punt\n- Tweede punt',
+      ...ASIDE_DEFAULTS,
       background: 'lime',
       actions: [],
     },
@@ -185,6 +192,7 @@ export default {
       layout: 'one-column',
       density: 'auto',
       body: '- First point\n- Second point',
+      ...ASIDE_DEFAULTS,
       background: 'lime',
       actions: [],
     },
@@ -198,6 +206,7 @@ export default {
     layout: 'one-column',
     density: 'auto',
     body: '- First point\n- Second point',
+    ...ASIDE_DEFAULTS,
     background: 'lime',
     actions: [],
   },
@@ -209,7 +218,7 @@ export default {
   normalizeContent(content) {
     if (content?.density === 'comfortable') content.density = 'auto';
   },
-  renderHtml: (content) => {
+  renderHtml: (content, _slide, ctx) => {
     const bg = bgClass(content?.background);
     const layout =
       content?.layout === 'one-column' ? 'is-one-col' : 'is-two-col';
@@ -219,12 +228,16 @@ export default {
     const densityClass = content?.density === 'compact' ? ' is-compact' : '';
     const subheading = renderSubheadingHtml(content, 'subheading', 'subtitle');
     const actionsHtml = renderActionsHtml(content?.actions);
+    // Body-adjacent commentary, so it sits under the body and above the CTAs:
+    // an aside annotates what was just said, a call to action closes the slide.
+    const asideHtml = renderAsideHtml(content, ctx);
     return `
         <div class="slide slide-content ${layout}${densityClass} ${bg}">
           <div class="slide-inner">
             <h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${escapeHtml(content?.title)}</h2>
             ${subheading}
             <div class="body" data-morph-role="body" data-inline-field="body" data-inline-kind="markdown">${markdownToSafeHtml(content?.body || '')}</div>
+            ${asideHtml}
             ${actionsHtml}
           </div>
         </div>

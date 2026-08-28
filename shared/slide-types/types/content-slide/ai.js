@@ -27,6 +27,13 @@ export const ai = {
 
       Good for: general explanatory text, mixed content that doesn't fit other types.
       Layout: default is one-column. Only use two-column for dense content.
+
+      ASIDE (optional): a small contrast block inside the slide, for a caveat
+      or pointer that would clutter the body but does not deserve its own
+      slide. Set asideVariant to "note", "tip" or "warning" and put one or two
+      sentences in asideText; leave asideVariant "none" (the default) and there
+      is no aside. Something the audience must actually stop at belongs on a
+      callout-slide instead — an inset is a footnote, not a beat.
     `,
   bestFor: [
     'General explanatory text that does not fit other slide types',

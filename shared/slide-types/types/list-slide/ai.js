@@ -44,6 +44,13 @@ export const ai = {
 
       Use variant:"numbers" when order matters (steps, ranked items).
       Use variant:"bullets" when order doesn't matter (tips, points).
+
+      ASIDE (optional): a small contrast block inside the slide, for a caveat
+      or pointer that would clutter the body but does not deserve its own
+      slide. Set asideVariant to "note", "tip" or "warning" and put one or two
+      sentences in asideText; leave asideVariant "none" (the default) and there
+      is no aside. Something the audience must actually stop at belongs on a
+      callout-slide instead — an inset is a footnote, not a beat.
     `,
   bestFor: [
     'Tips, recommendations, or best practices',

@@ -168,6 +168,10 @@ export const SHARED_CSS = [
   // emitted by shared/markdown.js) plus the shared CTA buttons. Split out of the
   // former 30-content-and-tables.css, whose content-slide half is now 30-content.css.
   { tier: '01-layout-and-title', file: '32-markdown-and-actions.css' },
+  // The aside inset (`renderAsideHtml()` in shared/slide-types/aside-field.js):
+  // three host types render it and none of them owns it, so it is shared
+  // render output like the markdown pipeline's above.
+  { tier: '01-layout-and-title', file: '33-aside-inset.css' },
   // Tier 02 — the card-link overlay is a genuinely shared component
   // (cardLinkOverlayHtml helper; icon-card-grid and logo-wall both render it)
   { tier: '02-content-and-media', file: '70-card-links.css' },

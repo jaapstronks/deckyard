@@ -35,6 +35,17 @@ export const inlineEdit = {
  * rest of the slide.
  *
  * `actions`: CTA buttons (label/url/style) have no canvas surface — config.
+ *
+ * `asideVariant` / `asideText`: the aside inset (shared/slide-types/aside-field.js).
+ * Its body is click-to-edit on the canvas once it exists, but only once — the
+ * inspector is where an author picks the kind, and that choice is what makes
+ * the text field appear at all.
  * @type {string[]}
  */
-export const inspectorKeeps = ['layout', 'density', 'actions'];
+export const inspectorKeeps = [
+  'layout',
+  'density',
+  'actions',
+  'asideVariant',
+  'asideText',
+];

@@ -11,6 +11,11 @@ import { getSlideCopy } from '../slide-copy.js';
 import { markdownToSafeHtml } from '../../markdown.js';
 import { ACTIONS_FIELD, renderActionsHtml } from '../actions-field.js';
 import {
+  ASIDE_DEFAULTS,
+  ASIDE_FIELDS,
+  renderAsideHtml,
+} from '../aside-field.js';
+import {
   imageTextCellCount,
   resolveImageTextCell,
   ensureImageTextImages,
@@ -275,6 +280,7 @@ export default {
         ),
       ],
     },
+    ...ASIDE_FIELDS,
     BACKGROUND_FIELD,
     ACTIONS_FIELD,
   ],
@@ -399,6 +405,7 @@ export default {
       focusY: '',
       title: 'Nieuwe slide (split)',
       body: '- Punt één\n- Punt twee',
+      ...ASIDE_DEFAULTS,
       background: 'lime',
       actions: [],
     },
@@ -417,6 +424,7 @@ export default {
       focusY: '',
       title: 'New split slide',
       body: '- Point one\n- Point two',
+      ...ASIDE_DEFAULTS,
       background: 'lime',
       actions: [],
     },
@@ -437,6 +445,7 @@ export default {
     focusY: '',
     title: 'New split slide',
     body: '- Point one\n- Point two',
+    ...ASIDE_DEFAULTS,
     background: 'lime',
     actions: [],
   },
@@ -533,6 +542,9 @@ export default {
     const mediaMulti = cells > 1 ? ` is-multi` : '';
     const mediaCount = cells > 1 ? ` data-count="${cells}"` : '';
     const actionsHtml = renderActionsHtml(content?.actions);
+    // In the copy column, not over the image: the aside annotates the text it
+    // sits with, and every layout variant moves the picture around it.
+    const asideHtml = renderAsideHtml(content, ctx);
     return `
         <div class="slide slide-image-text ${bg} ${width} ${imgBg}${layoutClass}${textColsClass}${densityClass}">
           <div class="slide-inner">
@@ -547,6 +559,7 @@ export default {
                 <div class="body" data-morph-role="body" data-inline-field="body" data-inline-kind="markdown">${markdownToSafeHtml(
                   content?.body || '',
                 )}</div>
+                ${asideHtml}
                 ${actionsHtml}
               </div>
             </div>

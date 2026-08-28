@@ -114,14 +114,14 @@ describe('the eyebrow', () => {
   it('falls back to the per-variant copy in the deck language', () => {
     assert.ok(
       render({ variant: 'warning', body: 'Mind the queue.' }, 'en-GB').includes(
-        SLIDE_COPY['en-GB'].calloutWarning,
+        SLIDE_COPY['en-GB'].admonitionWarning,
       ),
     );
     assert.ok(
       render(
         { variant: 'warning', body: 'Let op de wachtrij.' },
         'nl',
-      ).includes(SLIDE_COPY.nl.calloutWarning),
+      ).includes(SLIDE_COPY.nl.admonitionWarning),
     );
   });
 
@@ -132,12 +132,12 @@ describe('the eyebrow', () => {
       body: 'x',
     });
     assert.ok(html.includes('Do not do this'));
-    assert.ok(!html.includes(SLIDE_COPY['en-GB'].calloutWarning));
+    assert.ok(!html.includes(SLIDE_COPY['en-GB'].admonitionWarning));
   });
 
   it('a whitespace-only label is not an override', () => {
     const html = render({ variant: 'tip', label: '   ', body: 'x' });
-    assert.ok(html.includes(SLIDE_COPY['en-GB'].calloutTip));
+    assert.ok(html.includes(SLIDE_COPY['en-GB'].admonitionTip));
   });
 });
 
