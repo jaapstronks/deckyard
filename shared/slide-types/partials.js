@@ -4,7 +4,7 @@
  * WHY THIS FILE EXISTS
  * The same three small elements were re-inlined per type, each with its own
  * class name and its own CSS rule: an eyebrow above a heading
- * (`.sfi-card-kicker`), a status chip (`.badge`), and a coloured run inside a
+ * (`.unresolved-kicker`), a status chip (`.badge`), and a coloured run inside a
  * line (`.kpi-delta`). A forker writing a fourth type had nothing to compose,
  * so the only way to get a badge was to invent a fourth spelling of one.
  *

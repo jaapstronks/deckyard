@@ -73,7 +73,7 @@ export default {
 
             <div class="sfi-methods" role="group" aria-label="${escapeHtml(copy.feedbackMethodsLabel)}">
               <div class="sfi-card on-surface-light">
-                <div class="sfi-card-kicker">${escapeHtml(copy.feedbackScan)}</div>
+                <div class="sfi-card-title">${escapeHtml(copy.feedbackScan)}</div>
                 <div class="sfi-qr-wrap">
                   <canvas class="sfi-qr" data-follow-qr="1" data-follow-url="${escapeHtml(
                     relFollowNl || relFollowEn,
@@ -82,7 +82,7 @@ export default {
               </div>
 
               <div class="sfi-card on-surface-light">
-                <div class="sfi-card-kicker">${escapeHtml(copy.feedbackOrGoTo)}</div>
+                <div class="sfi-card-title">${escapeHtml(copy.feedbackOrGoTo)}</div>
                 <div class="sfi-go" data-follow-go-url="1">/go</div>
                 <div class="sfi-code-row">
                   <div class="sfi-row-label">NL</div>

@@ -96,9 +96,7 @@ export default {
 
             <div class="sfi-methods" role="group" aria-label="${escapeHtml(base.followMethodsLabel)}">
               <div class="sfi-card on-surface-light">
-                <div class="sfi-card-kicker">${escapeHtml(
-                  base.methodScan,
-                )}</div>
+                <div class="sfi-card-title">${escapeHtml(base.methodScan)}</div>
                 <div class="sfi-qr-wrap">
                   <canvas class="sfi-qr" data-follow-qr="1" data-follow-url="${escapeHtml(
                     relFollow,
@@ -107,9 +105,7 @@ export default {
               </div>
 
               <div class="sfi-card on-surface-light">
-                <div class="sfi-card-kicker">${escapeHtml(
-                  base.methodType,
-                )}</div>
+                <div class="sfi-card-title">${escapeHtml(base.methodType)}</div>
                 <div class="sfi-go" data-follow-go-url="1">${escapeHtml(
                   goHref,
                 )}</div>
