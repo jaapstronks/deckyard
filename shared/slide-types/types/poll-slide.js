@@ -133,8 +133,8 @@ export default {
       followCodes?.nl || followCodes?.en
         ? `
           <div class="help poll-follow-codes">
-            <div><strong>NL</strong>: ${escapeHtml(followCodes?.nl || '')}</div>
-            <div><strong>EN</strong>: ${escapeHtml(followCodes?.en || '')}</div>
+            <div><strong>NL</strong>: <span data-follow-code="nl">${escapeHtml(followCodes?.nl || '')}</span></div>
+            <div><strong>EN</strong>: <span data-follow-code="en">${escapeHtml(followCodes?.en || '')}</span></div>
           </div>
         `
         : '';

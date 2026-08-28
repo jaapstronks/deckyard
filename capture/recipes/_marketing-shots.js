@@ -20,6 +20,7 @@ import {
   MARKETING_VIEWPORT,
   PRESENTER_SLIDE,
   dismissPresenterStartGate,
+  pinJoinCode,
   rewriteJoinOrigin,
   seedPollVotes,
   startLiveSession,
@@ -154,6 +155,9 @@ export function pollLiveShot(lang) {
         { timeout: 20_000 },
         MARKETING_POLL_VOTES.reduce((a, b) => a + b, 0),
       );
+      // The scan card beside the bars prints the session's two follow codes,
+      // minted per run. Pinned last, so nothing renders over them.
+      await pinJoinCode(page, MARKETING_PUBLIC_ORIGIN);
     },
   };
 }
@@ -223,8 +227,10 @@ export function joinScreenShot(lang) {
       );
       // Last, so the runtime cannot overwrite it: the slide would otherwise
       // advertise the capture box. See rewriteJoinOrigin for why this is not
-      // an APP_URL setting.
+      // an APP_URL setting, and pinJoinCode for why the code and its QR are
+      // substituted too.
       await rewriteJoinOrigin(page, MARKETING_PUBLIC_ORIGIN);
+      await pinJoinCode(page, MARKETING_PUBLIC_ORIGIN);
     },
   };
 }

@@ -316,6 +316,141 @@ export async function rewriteJoinOrigin(page, origin) {
 }
 
 /**
+ * The join codes every marketing shot is pinned to, keyed the way the session
+ * files them (`nl`/`en`, one per follow URL).
+ *
+ * Both are five letters from `CODE_ALPHABET` in `server/storage/follow-codes.js`
+ * — the reduced alphabet that drops the lookalikes — so a pinned code is
+ * shaped exactly like a minted one. `tests/capture-join-code-pin.test.js` pins
+ * that agreement, because a code the mint could never produce would read as a
+ * typo in a marketing shot.
+ *
+ * The words are the Dutch and English names for the thing this project is named
+ * after; there is no deeper meaning, and nothing resolves them. See
+ * {@link pinJoinCode} for why an unresolvable code is the honest choice.
+ */
+export const MARKETING_FOLLOW_CODES = { nl: 'HAVEN', en: 'WHARF' };
+
+/**
+ * Pin the join code — and the QR beside it — so a shot reproduces byte for byte.
+ *
+ * **Why this exists.** A follow code is minted per session, so two capture runs
+ * of the same recipe differ in the code region and in the QR that encodes the
+ * session. Measured on 2026-08-28 (capture/README.md § *What two runs on one
+ * host actually produce*): 8 of the 16 shots differed in exactly that region
+ * and nowhere else. Eight PNGs churning in every weekly refresh PR say nothing,
+ * and a signal that always fires gets ignored.
+ *
+ * **Why here rather than in the comparison.** The alternative was to loosen the
+ * refresh gate for these eight. That trades a precise signal for a blind spot
+ * in the shots that carry the live-session story — the ones most worth
+ * watching. So the non-determinism is removed at the source instead, in the
+ * same layer and the same after-render moment as {@link rewriteJoinOrigin}.
+ *
+ * **What it substitutes.** Every element the renderers mark with
+ * `data-follow-code="<nl|en>"` — the invite slide's code, the poll slide's two,
+ * the feedback slide's two — gets its language's pinned code. The marker exists
+ * for the same reason `data-follow-go-url` does: a capture hook that is not a
+ * style class and cannot be renamed by a CSS tidy-up.
+ *
+ * **The QR.** {@link rewriteJoinOrigin} deliberately leaves it alone, on the
+ * grounds that re-encoding would produce a scannable code pointing at a deck id
+ * that exists on nobody's deckyard.eu. That argument still holds, and this
+ * function does not contradict it: the QR is re-encoded to the *public `/go`
+ * page* — `https://deckyard.eu/go`, a page that genuinely exists — not to a
+ * fabricated deck URL. It therefore says the same thing as the text beside it
+ * ("go to deckyard.eu/go"), which is strictly more truthful than the localhost
+ * follow URL it encoded before, and it is deterministic. What remains untrue is
+ * that the pinned code is not live; typing it yields "code not found", which is
+ * the same untruth the printed code already carried and cannot be fixed from a
+ * capture box. A shot with a genuinely scannable, resolvable QR has to be taken
+ * on a real deckyard.eu instance.
+ *
+ * **Why it keeps enforcing.** `follow-invite-runtime.js` fills a `----`
+ * placeholder from an async `POST /api/follow-codes`, which can land *after*
+ * this call — that is how the editor-side shots (the invite thumbnail in the
+ * slide rail) get their code at all. A one-shot substitution would lose that
+ * race intermittently, which is the churn this function exists to remove, so
+ * each pinned element keeps a MutationObserver that re-applies the code for the
+ * rest of the page's life.
+ *
+ * @param {import('puppeteer-core').Page} page
+ * @param {string} origin e.g. "https://deckyard.eu"
+ * @returns {Promise<void>}
+ */
+export async function pinJoinCode(page, origin) {
+  const pinned = await page.evaluate(
+    async (codes, publicOrigin) => {
+      const base = String(publicOrigin).replace(/\/+$/, '');
+      const goUrl = `${base}/go`;
+
+      const marked = Array.from(
+        document.querySelectorAll('[data-follow-code]'),
+      );
+      for (const el of marked) {
+        const code = codes[el.dataset.followCode];
+        if (!code) continue;
+        const apply = () => {
+          if (el.textContent !== code) el.textContent = code;
+        };
+        apply();
+        new MutationObserver(apply).observe(el, {
+          childList: true,
+          characterData: true,
+          subtree: true,
+        });
+      }
+
+      // Only canvases the runtime actually drew. One it skipped has no follow
+      // URL to encode, and drawing it here would put a QR in the shot that the
+      // app does not show — inventing UI rather than pinning it.
+      const canvases = Array.from(
+        document.querySelectorAll('canvas[data-follow-qr="1"]'),
+      ).filter((canvas) => canvas.width > 0);
+      if (canvases.length) {
+        // The app's own renderer, not a second implementation of it: a QR the
+        // capture drew differently from the product would be a shot of
+        // something that does not ship. The specifier is not a path on this
+        // side of the wire — this body runs in the page, and the string is the
+        // URL the server publishes the module at.
+        // eslint-disable-next-line import-x/no-unresolved
+        const qr = await import('/client/lib/slide-runtime/poll.js');
+        const { renderQrToCanvas } = qr;
+        for (const canvas of canvases) {
+          // Also the source of truth for any later re-render (the runtime
+          // redraws on resize).
+          canvas.dataset.followUrl = goUrl;
+          const cardW =
+            Number(canvas.parentElement?.clientWidth || 0) ||
+            Number(canvas.getBoundingClientRect?.().width || 0) ||
+            0;
+          const maxPx = Math.min(
+            560,
+            Math.max(160, Math.floor((cardW || window.innerWidth) - 28)),
+          );
+          if (!renderQrToCanvas(canvas, goUrl, { maxPx })) {
+            return { codes: -1, qrs: -1 };
+          }
+        }
+      }
+
+      return { codes: marked.length, qrs: canvases.length };
+    },
+    MARKETING_FOLLOW_CODES,
+    origin,
+  );
+
+  if (pinned.codes < 0) {
+    throw new Error('Join-code pin could not redraw a follow QR canvas.');
+  }
+  if (!pinned.codes && !pinned.qrs) {
+    throw new Error(
+      'Join-code pin matched nothing — [data-follow-code] and the follow QR both moved.',
+    );
+  }
+}
+
+/**
  * Viewport every marketing shot uses: 1280×800 at 2× → a 2560×1600 PNG.
  *
  * Deliberately not the harness default (1440×900 @2x). Rule 6 of the shot list

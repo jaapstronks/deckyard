@@ -78,12 +78,17 @@ export function initFollowInviteSlides(rootEl, { enableResize = true } = {}) {
     if (canvas.dataset.followInit === '1') continue;
     canvas.dataset.followInit = '1';
 
-    const rel = String(canvas.dataset.followUrl || '').trim();
-    const url = absUrlFor(rel);
-    if (!url) continue;
+    // Read at init only to decide whether this canvas has a URL at all. Every
+    // *draw* re-reads the dataset (see `rerender`), because the attribute is
+    // the source of truth and can be changed after mount — the capture runner
+    // repoints it to a public URL, and a closure holding the mount-time value
+    // would silently redraw the old one on the next resize.
+    if (!absUrlFor(String(canvas.dataset.followUrl || '').trim())) continue;
 
     const rerender = () => {
       try {
+        const url = absUrlFor(String(canvas.dataset.followUrl || '').trim());
+        if (!url) return;
         const isFollowInviteQr = !!canvas?.classList?.contains?.('sfi-qr');
 
         // Ensure the canvas never visually exceeds its card width.
@@ -132,7 +137,10 @@ export function initFollowInviteSlides(rootEl, { enableResize = true } = {}) {
         canvas?.parentElement?.querySelector?.('[data-follow-url-text="1"]') ||
         null;
       const txt = local || wrap?.querySelector?.('[data-follow-url-text="1"]');
-      if (txt) txt.textContent = url;
+      if (txt)
+        txt.textContent = absUrlFor(
+          String(canvas.dataset.followUrl || '').trim(),
+        );
     } catch {}
 
     rerender();
