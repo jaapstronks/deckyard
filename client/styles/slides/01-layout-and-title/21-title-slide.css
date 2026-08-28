@@ -1,12 +1,12 @@
 /* =============================================================================
-   UNIVERSAL TITLE SLIDE
+   TITLE SLIDE
    ============================================================================
    Theme-agnostic title slide with flexible layout options.
    Uses design tokens from 00-tokens.css.
    Content positioned at bottom with gradient overlay for contrast.
    ============================================================================ */
 
-.slide-title-universal {
+.slide-title {
   /* The slide root carries no frame inset; stating it as --slide-padding (not
      `padding: 0`) keeps the fluid type unit correct — see 00-tokens.css
      § THE FLUID BASIS. */
@@ -19,7 +19,7 @@
   --tsu-pad-bottom: var(--slide-space-20);
 }
 
-.slide-title-universal .slide-inner {
+.slide-title .slide-inner {
   position: relative;
   width: 100%;
   height: 100%;
@@ -29,7 +29,7 @@
   justify-content: flex-end;
 }
 
-.slide-title-universal .slide-bg {
+.slide-title .slide-bg {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -39,7 +39,7 @@
 }
 
 /* Base gradient overlay - subtle theme-colored gradient from bottom */
-.slide-title-universal .tsu-overlay {
+.slide-title .tsu-overlay {
   display: block;
   position: absolute;
   inset: 0;
@@ -55,7 +55,7 @@
 }
 
 /* Background image variant: stronger gradient for readability */
-.slide-title-universal.has-bg .tsu-overlay {
+.slide-title.has-bg .tsu-overlay {
   background: linear-gradient(
     to top,
     rgba(0, 0, 0, 0.55) 0%,
@@ -69,7 +69,7 @@
    base rules above are weighted to the bottom (the default `bottom` layout);
    `top` flips them, `center` softens both ends since the text spans
    centre → bottom. */
-.slide-title-universal.tsu-layout-top .tsu-overlay {
+.slide-title.tsu-layout-top .tsu-overlay {
   background: linear-gradient(
     to bottom,
     color-mix(in srgb, var(--slide-on-surface) 12%, transparent) 0%,
@@ -77,7 +77,7 @@
     transparent 50%
   );
 }
-.slide-title-universal.tsu-layout-top.has-bg .tsu-overlay {
+.slide-title.tsu-layout-top.has-bg .tsu-overlay {
   background: linear-gradient(
     to bottom,
     rgba(0, 0, 0, 0.55) 0%,
@@ -86,7 +86,7 @@
     transparent 80%
   );
 }
-.slide-title-universal.tsu-layout-center .tsu-overlay {
+.slide-title.tsu-layout-center .tsu-overlay {
   background: linear-gradient(
     to top,
     color-mix(in srgb, var(--slide-on-surface) 10%, transparent) 0%,
@@ -95,7 +95,7 @@
     color-mix(in srgb, var(--slide-on-surface) 8%, transparent) 100%
   );
 }
-.slide-title-universal.tsu-layout-center.has-bg .tsu-overlay {
+.slide-title.tsu-layout-center.has-bg .tsu-overlay {
   background: linear-gradient(
     to top,
     rgba(0, 0, 0, 0.5) 0%,
@@ -105,25 +105,25 @@
   );
 }
 
-.slide-title-universal .tsu-logo {
+.slide-title .tsu-logo {
   position: absolute;
   top: 52px;
   z-index: 2;
 }
-.slide-title-universal.is-logo-left .tsu-logo {
+.slide-title.is-logo-left .tsu-logo {
   left: 56px;
 }
-.slide-title-universal.is-logo-right .tsu-logo {
+.slide-title.is-logo-right .tsu-logo {
   right: 56px;
 }
-.slide-title-universal .tsu-logo-img {
+.slide-title .tsu-logo-img {
   width: 150px;
   height: 44px;
   object-fit: contain;
   display: block;
 }
 
-.slide-title-universal .tsu-content {
+.slide-title .tsu-content {
   position: relative;
   z-index: 2;
   box-sizing: border-box;
@@ -152,34 +152,34 @@
    ============================================================================ */
 
 /* bottom (default): content hugs the bottom, meta below the primary block. */
-.slide-title-universal.tsu-layout-bottom .slide-inner {
+.slide-title.tsu-layout-bottom .slide-inner {
   justify-content: flex-end;
 }
-.slide-title-universal.tsu-layout-bottom .tsu-content {
+.slide-title.tsu-layout-bottom .tsu-content {
   padding-bottom: var(--tsu-pad-bottom);
 }
 
 /* top: content hugs the top. */
-.slide-title-universal.tsu-layout-top .slide-inner {
+.slide-title.tsu-layout-top .slide-inner {
   justify-content: flex-start;
 }
-.slide-title-universal.tsu-layout-top .tsu-content {
+.slide-title.tsu-layout-top .tsu-content {
   padding-top: var(--tsu-pad-bottom);
 }
 
 /* center: content fills the height; the primary block is vertically centred
    and the meta line is pinned to the bottom edge. */
-.slide-title-universal.tsu-layout-center .tsu-content {
+.slide-title.tsu-layout-center .tsu-content {
   height: 100%;
   padding-top: var(--tsu-pad-bottom);
   padding-bottom: var(--tsu-pad-bottom);
 }
-.slide-title-universal.tsu-layout-center .tsu-primary {
+.slide-title.tsu-layout-center .tsu-primary {
   margin-top: auto;
   margin-bottom: auto;
 }
 
-.slide-title-universal .title {
+.slide-title .title {
   font-family: var(--font-heading);
   font-size: var(--slide-text-4xl);
   line-height: var(--slide-leading-tight);
@@ -195,7 +195,7 @@
    against an inherited font-size — the old `.tsu-meta { max-width: 70ch }`
    computed against 14px and rendered the subtitle in under half the title
    width). */
-.slide-title-universal .tsu-subtitle {
+.slide-title .tsu-subtitle {
   margin: var(--slide-space-5) 0 0;
   max-width: 720px;
   font-family: var(--font-body);
@@ -208,7 +208,7 @@
 /* Meta: author · date · organisation, in the theme's label typography
    (caption font, uppercase, letterspaced, muted, small) — a distinct role
    from the prose subtitle. */
-.slide-title-universal .tsu-meta {
+.slide-title .tsu-meta {
   margin: var(--slide-space-6) 0 0;
   max-width: 720px;
   font-family: var(--font-caption, var(--font-body));
@@ -223,7 +223,7 @@
 }
 /* In the center layout the meta line is pinned to the bottom edge by the
    primary block's auto margins, so it needs no gap of its own. */
-.slide-title-universal.tsu-layout-center .tsu-meta {
+.slide-title.tsu-layout-center .tsu-meta {
   margin-top: 0;
 }
 
@@ -247,17 +247,17 @@
    it (three classes vs one class + one element).
    ============================================================================ */
 
-.slide-title-universal.is-align-center .tsu-content {
+.slide-title.is-align-center .tsu-content {
   margin-inline: auto;
   text-align: center;
 }
-.slide-title-universal.is-align-center .title,
-.slide-title-universal.is-align-center .tsu-subtitle,
-.slide-title-universal.is-align-center .tsu-meta {
+.slide-title.is-align-center .title,
+.slide-title.is-align-center .tsu-subtitle,
+.slide-title.is-align-center .tsu-meta {
   text-align: center;
 }
-.slide-title-universal.is-align-center .tsu-subtitle,
-.slide-title-universal.is-align-center .tsu-meta {
+.slide-title.is-align-center .tsu-subtitle,
+.slide-title.is-align-center .tsu-meta {
   margin-inline: auto;
 }
 
@@ -269,10 +269,10 @@
    `--slide-space-24` default regardless of logo corner. */
 
 /* Background-image variant: switch to light text for contrast */
-.slide-title-universal.has-bg .title {
+.slide-title.has-bg .title {
   color: var(--slide-text-light);
 }
-.slide-title-universal.has-bg .tsu-subtitle,
-.slide-title-universal.has-bg .tsu-meta {
+.slide-title.has-bg .tsu-subtitle,
+.slide-title.has-bg .tsu-meta {
   color: var(--slide-text-light-muted);
 }

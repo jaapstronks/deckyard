@@ -126,7 +126,7 @@ export const collectCardsForSlide = (section) => {
   // Treat the “Lijstje” slide items as step-able cards so they use the same
   // presenter/follow stepping system as the icon-card slides.
   const lijstItems = Array.from(
-    section.querySelectorAll('.slide-lijstje .lijst-item'),
+    section.querySelectorAll('.slide-list .lijst-item'),
   );
   if (lijstItems.length) return lijstItems;
   const timelineItems = Array.from(

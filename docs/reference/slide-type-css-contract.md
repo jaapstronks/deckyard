@@ -21,7 +21,9 @@ v1.8.0 replaced the title slide's class contract — `.slide-title`, `.title-bar
 `.slide-title-universal` plus the `tsu-*` family. Only the new names carried CSS.
 A fork's own `ciiic-title-slide.js` still emitted the old ones and fell back to
 bare document flow: a full-bleed title slide rendered as an inline image with the
-heading under it and the logo blown up across the bottom.
+heading under it and the logo blown up across the bottom. (The root class has
+since gone back to `.slide-title` — see _The root class is not a free
+choice_ below — but the `tsu-*` family and the rest of that rename stand.)
 
 Nothing that CI or an agent watches broke. No import failed. The slide produced
 valid HTML. The merge had 2151 green tests. The site returned 200. The difference
@@ -57,6 +59,28 @@ instead of being borrowed from image-slide.
 A class passes if it has a rule in `client/styles/**`, or if the rendered markup
 styles it in its own inline `<style>` block (the likely shape for a fork type
 that ships its own rules), or if it is listed in `UNSTYLED` with a reason.
+
+## The root class is not a free choice
+
+A slide type's root class is `.slide-<type name>` — `list-slide` renders
+`.slide-list`, `title-slide` renders `.slide-title`. It is the one class a fork
+can derive without reading the source, and
+`tests/custom-slide-type-validity.test.js` warns a custom type that picks
+something else.
+
+Two core types used to be exempt, and the exemption was recorded in a
+`ROOT_CLASS_LEGACIES` allowlist in that test so the drift could not grow while
+the class-contract change waited for a release. Both were renamed and the
+allowlist is gone:
+
+| Type          | Was                      | Is             |
+| ------------- | ------------------------ | -------------- |
+| `title-slide` | `.slide-title-universal` | `.slide-title` |
+| `list-slide`  | `.slide-lijstje`         | `.slide-list`  |
+
+Only the root class moved. The inner families are untouched: `tsu-*` on the
+title slide, and `.lijst` / `.lijst-item` / `.marker` on the list slide, which
+keep the Dutch names the type was born with.
 
 ## The `UNSTYLED` list
 

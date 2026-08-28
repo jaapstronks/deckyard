@@ -139,7 +139,7 @@ test('render: legacy deck draws its own slide-bg img + has-bg (unchanged look)',
     content: { title: 'Hello', bgImage: '/legacy.jpg', bgAlt: 'a photo' },
   });
   assert.match(html, /<img class="slide-bg" src="\/legacy.jpg" alt="a photo"/);
-  assert.match(html, /class="slide slide-title-universal[^"]*\shas-bg/);
+  assert.match(html, /class="slide slide-title[^"]*\shas-bg/);
   // The shared slideBgImage layer must NOT appear (no canonical image).
   assert.doesNotMatch(html, /slide-bg-layer/);
 });

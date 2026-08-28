@@ -72,9 +72,7 @@ export const TYPE_CSS = {
   // Tier 01 — layout and title
   'payoff-slide': [{ tier: '01-layout-and-title', file: '10-payoff.css' }],
   'end-slide': [{ tier: '01-layout-and-title', file: '11-end-slide.css' }],
-  'title-slide': [
-    { tier: '01-layout-and-title', file: '21-title-slide-universal.css' },
-  ],
+  'title-slide': [{ tier: '01-layout-and-title', file: '21-title-slide.css' }],
   'content-slide': [{ tier: '01-layout-and-title', file: '30-content.css' }],
   'table-slide': [{ tier: '01-layout-and-title', file: '35-table-slide.css' }],
   'image-slide': [{ tier: '01-layout-and-title', file: '40-image-slide.css' }],

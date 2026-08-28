@@ -104,7 +104,7 @@ describe('renameSlideTypeDeep', () => {
       ],
       // A value that merely mentions the name is not a type declaration.
       description: `superseded by ${OLD_TYPE}`,
-      cssClass: 'slide-lijstje',
+      cssClass: `theme-${OLD_TYPE}`,
     };
     const { value, count } = renameSlideTypeDeep(input);
     assert.equal(count, 0);

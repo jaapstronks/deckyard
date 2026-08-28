@@ -508,7 +508,7 @@ export default {
     const asideHtml = renderAsideHtml(content, ctx);
     const alignClass = groupAlignClass(HEADER_BLOCK.group, content);
     return `
-      <div class="slide slide-lijstje ${variant} ${layout}${densityClass}${fillClass} ${bg}${
+      <div class="slide slide-list ${variant} ${layout}${densityClass}${fillClass} ${bg}${
         alignClass ? ` ${alignClass}` : ''
       }">
         <div class="slide-inner">

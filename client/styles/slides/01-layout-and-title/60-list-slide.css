@@ -1,9 +1,10 @@
-/* List slide (CSS classes keep the historical `.slide-lijstje` / `.lijst`
-   names; the type id is `list-slide`). */
-.slide-lijstje .slide-inner {
+/* List slide. The root class follows the convention (`.slide-list` for type
+   `list-slide`); the inner `.lijst*` names are still the Dutch ones this
+   type was born with. */
+.slide-list .slide-inner {
   justify-content: flex-start;
 }
-.slide-lijstje .heading {
+.slide-list .heading {
   font-family: var(--font-heading);
   font-size: var(--slide-font-size-heading);
   line-height: var(--slide-leading-tight);
@@ -12,7 +13,7 @@
   text-transform: var(--heading-transform, none);
   font-synthesis: none;
 }
-.slide-lijstje .subheading {
+.slide-list .subheading {
   margin: 0 0 var(--slide-space-12);
   /* This is an intro/lead sentence (hero-description style), not a second
      title: use the body font, kept a touch larger than body text - like a
@@ -26,7 +27,7 @@
   text-transform: none;
   max-width: 70ch;
 }
-.slide-lijstje .lijst {
+.slide-list .lijst {
   /* .lijst / .lijst-col render as native <ul>/<ol> (one-col: .lijst is the
      list; two-col: each .lijst-col is). Neutralise UA list styling. */
   list-style: none;
@@ -46,10 +47,10 @@
 /* When there's no subheading the list follows the heading directly; the
    heading's small bottom margin alone crowds the first item against the title.
    The subheading (when present) supplies its own larger gap, so only pad here. */
-.slide-lijstje .heading + .lijst {
+.slide-list .heading + .lijst {
   margin-top: var(--slide-space-6);
 }
-.slide-lijstje .lijst-item {
+.slide-list .lijst-item {
   display: flex;
   gap: var(--slide-space-8); /* more horizontal room between marker and text */
   align-items: flex-start;
@@ -60,16 +61,16 @@
      fit, the 'auto' layout moves them to two columns instead. */
   flex-shrink: 0;
 }
-.slide-lijstje .lijst-item:first-child {
+.slide-list .lijst-item:first-child {
   padding-top: var(--slide-space-3); /* more room above the first item */
 }
-.slide-lijstje .lijst-item + .lijst-item {
+.slide-list .lijst-item + .lijst-item {
   border-top: 2px solid rgba(0, 0, 0, 0.18);
 }
-.slide-lijstje .marker {
+.slide-list .marker {
   flex: 0 0 auto;
 }
-.slide-lijstje.is-numbers .marker {
+.slide-list.is-numbers .marker {
   width: 46px;
   height: 46px;
   border-radius: var(--slide-radius-full);
@@ -90,20 +91,20 @@
    colour. See the marker note in 00-base.css. The numbered variant above keeps
    the raw accent on purpose — its number reads against the disc via
    --t-color-accent-contrast, and moving the disc would break that pair. */
-.slide-lijstje.is-bullets .marker {
+.slide-list.is-bullets .marker {
   width: 12px;
   height: 12px;
   border-radius: var(--slide-radius-full);
   background: var(--slide-marker-color, var(--slide-accent));
   margin-top: var(--slide-space-4); /* align with first line of text */
 }
-.slide-lijstje .lijst-item-body {
+.slide-list .lijst-item-body {
   min-width: 0;
   flex: 1;
 }
 /* Per-item title/text are em-relative to .lijst; multiplying by
    --tf-size-scale (per-field S/M/L, default 1) scales just the clicked item. */
-.slide-lijstje .item-title {
+.slide-list .item-title {
   font-family: var(--font-heading);
   font-size: calc(
     0.95em * var(--tf-size-scale, 1)
@@ -115,7 +116,7 @@
   letter-spacing: -0.01em;
   margin: 0 0 var(--slide-space-2);
 }
-.slide-lijstje .item-text {
+.slide-list .item-text {
   font-family: var(--font-body);
   font-size: calc(0.95em * var(--tf-size-scale, 1));
   line-height: var(--slide-leading-snug);
@@ -126,40 +127,40 @@
    item titles, to fill sparse slides (few items). 'Small' (is-compact) shrinks
    everything so many items still fit on one slide. Titles use em units off
    .lijst, so scaling the list font-size cascades to both title and text. */
-.slide-lijstje.is-comfortable .lijst {
+.slide-list.is-comfortable .lijst {
   font-size: var(--slide-text-lg);
 }
-.slide-lijstje.is-comfortable .item-title {
+.slide-list.is-comfortable .item-title {
   font-size: calc(
     1.18em * var(--tf-size-scale, 1)
   ); /* bigger titles are the main win for sparse slides */
   margin-bottom: var(--slide-space-2);
 }
-.slide-lijstje.is-comfortable .item-text {
+.slide-list.is-comfortable .item-text {
   font-size: calc(1em * var(--tf-size-scale, 1));
 }
-.slide-lijstje.is-comfortable .lijst-item {
+.slide-list.is-comfortable .lijst-item {
   padding: var(--slide-space-8) 0;
 }
-.slide-lijstje.is-comfortable.is-bullets .marker {
+.slide-list.is-comfortable.is-bullets .marker {
   margin-top: var(
     --slide-space-5
   ); /* keep bullet aligned with the taller title line */
 }
 
-.slide-lijstje.is-compact .lijst {
+.slide-list.is-compact .lijst {
   font-size: var(--slide-font-size-body);
 }
-.slide-lijstje.is-compact .item-title {
+.slide-list.is-compact .item-title {
   font-size: calc(0.9em * var(--tf-size-scale, 1));
 }
-.slide-lijstje.is-compact .item-text {
+.slide-list.is-compact .item-text {
   font-size: calc(0.9em * var(--tf-size-scale, 1));
 }
-.slide-lijstje.is-compact .lijst-item {
+.slide-list.is-compact .lijst-item {
   padding: var(--slide-space-4) 0;
 }
-.slide-lijstje.is-compact.is-bullets .marker {
+.slide-list.is-compact.is-bullets .marker {
   margin-top: var(--slide-space-3);
 }
 
@@ -175,7 +176,7 @@
    capacities in list-slide.js stay valid as-is. The renderer adds `is-fill`
    only from three rows per column up, and only while every row is a single
    line; both gates are explained there. */
-.slide-lijstje.is-fill .lijst-item {
+.slide-list.is-fill .lijst-item {
   flex-grow: 1;
   /* Centre the row's content in the height it just gained, so each divider
      sits midway between the two items it separates instead of hugging the one
@@ -184,22 +185,22 @@
 }
 /* The marker's top margin exists to drop the bullet onto the first line of a
    top-aligned item. Centred, it would push it below the text instead. */
-.slide-lijstje.is-fill.is-bullets .marker {
+.slide-list.is-fill.is-bullets .marker {
   margin-top: 0;
 }
-.slide-lijstje.is-fill.is-numbers .marker {
+.slide-list.is-fill.is-numbers .marker {
   margin-top: 0;
 }
 
 /* Two-column layout */
-.slide-lijstje.is-two-col .lijst {
+.slide-list.is-two-col .lijst {
   max-width: 100%;
   display: grid;
   grid-template-columns: 1fr 1fr;
   column-gap: var(--slide-space-16);
   row-gap: 0;
 }
-.slide-lijstje.is-two-col .lijst-col {
+.slide-list.is-two-col .lijst-col {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -208,10 +209,10 @@
   min-width: 0; /* Prevent grid blowout from content */
   max-width: 100%;
 }
-.slide-lijstje.is-two-col .lijst-item {
+.slide-list.is-two-col .lijst-item {
   border-top: 2px solid rgba(0, 0, 0, 0.18);
 }
-.slide-lijstje.is-two-col .lijst-col .lijst-item:first-child {
+.slide-list.is-two-col .lijst-col .lijst-item:first-child {
   border-top: none;
   padding-top: var(--slide-space-3);
 }
@@ -224,8 +225,8 @@
    does NOT move: its items are marker-anchored (role:'list-item'). The reason
    is the general one — see the marker-anchored-list rule in 00-base.css and
    docs/reference/text-alignment.md — so it is not restated here. */
-.slide-lijstje.is-align-center .heading,
-.slide-lijstje.is-align-center .subheading {
+.slide-list.is-align-center .heading,
+.slide-list.is-align-center .subheading {
   margin-inline: auto;
   text-align: center;
 }
