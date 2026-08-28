@@ -9,6 +9,7 @@
 // - Use simple {var} interpolation: t('list.count', '{count} presentations', { count })
 
 import { storage } from './storage.js';
+import { queryString } from './state/router.js';
 
 const LS_UI_LOCALE = 'ps-ui-locale';
 const DEFAULT_LOCALE = 'nl';
@@ -105,20 +106,14 @@ const UI_LOCALE_PARAM_KEY = 'locale';
 /**
  * Read a normalized UI-locale hint from a URL query string. Returns the
  * well-formed `?locale=` value, or null when absent/malformed.
- * `search` defaults to the current `window.location.search`; pass it explicitly
- * (e.g. in tests) to parse an arbitrary query string.
+ * `search` defaults to the router's view of the current query string; pass it
+ * explicitly (e.g. in tests) to parse an arbitrary query string.
  * @param {string} [search]
  * @returns {string|null}
  */
 export function readUiLocaleParam(search) {
   let qs = search;
-  if (qs == null) {
-    try {
-      qs = window.location.search;
-    } catch {
-      qs = '';
-    }
-  }
+  if (qs == null) qs = queryString();
   let params;
   try {
     params = new URLSearchParams(qs || '');

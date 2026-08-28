@@ -3,6 +3,7 @@ import {
   DEFAULT_DECK_LANG,
   normalizeLang,
 } from '../../../shared/i18n-utils.js';
+import { queryParam, setQueryParams } from '../../lib/state/router.js';
 
 export function createSlidesCollapsedPreference({
   storageKey = 'ps:slides-collapsed',
@@ -62,18 +63,18 @@ export function createCollapsedClassPreference({
   return { loadInitial, set, clearClass };
 }
 
-export function initNewDeckTitlePromptFlag({ startUrl, id } = {}) {
+export function initNewDeckTitlePromptFlag({ id } = {}) {
   const newTitleKey = `ps:new-title:${id}`;
-  const newFlag = startUrl?.searchParams?.get?.('new') === '1';
+  const newFlag = queryParam('new') === '1';
   if (!newFlag) return { newTitleKey, newFlag: false };
 
   try {
     sessionStorage.setItem(newTitleKey, '1');
-    startUrl.searchParams.delete('new');
-    history.replaceState(null, '', startUrl.toString());
   } catch {
     // ignore
   }
+  // Strip the flag so a refresh doesn't re-prompt for the title.
+  setQueryParams({ new: null });
 
   return { newTitleKey, newFlag: true };
 }

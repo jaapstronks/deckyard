@@ -61,15 +61,14 @@ import { resolveRevealStyle } from '../../../shared/reveal-style.js';
 import { createStepIndicatorRenderer } from './step-indicator.js';
 import { createPresenterConsoleToggle } from './console-toggle.js';
 import { buildPresenterTopbar } from './topbar.js';
-import { nav } from '../../lib/state/router.js';
+import { nav, queryParam } from '../../lib/state/router.js';
 import {
   DEFAULT_DECK_LANG,
   resolveDeckLang,
 } from '../../../shared/i18n-utils.js';
 
 export async function renderPresenter(root, id) {
-  const startUrl = new URL(location.href);
-  const { activeLang, langQs } = readDeckLangFromUrl(startUrl);
+  const { activeLang, langQs } = readDeckLangFromUrl();
   let pres = await api(`/api/presentations/${id}${langQs}`);
   setDocumentTitle(pres?.title);
   const theme = await loadThemeById(pres?.theme);
@@ -175,7 +174,7 @@ export async function renderPresenter(root, id) {
 
   const animator = createPresenterAnimator();
   const goToEditor = () => {
-    const lang = readDeckLangParam(startUrl);
+    const lang = readDeckLangParam();
     const slideId = deckCtl?.getState?.()?.current?.id || '';
     const u = new URL(`/app/${id}`, location.origin);
     if (lang) u.searchParams.set('lang', lang);
@@ -450,10 +449,7 @@ export async function renderPresenter(root, id) {
 
   const syncInteractionUi = () => interactionCtl.sync();
 
-  const startSlideId =
-    startUrl.searchParams.get('slideId') ||
-    startUrl.searchParams.get('s') ||
-    '';
+  const startSlideId = queryParam('slideId') || queryParam('s') || '';
   deckCtl.setPresentation(pres, {
     keepCurrentSlideId: startSlideId,
   });

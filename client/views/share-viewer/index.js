@@ -33,6 +33,7 @@ import { attachSwipeNavigation } from '../../lib/dom/swipe-nav.js';
 import { buildShareViewerTopbar } from './topbar.js';
 import { createGuestVerifyNotice } from './guest-verify-notice.js';
 import { setupShareAutoAdvance } from './auto-advance.js';
+import { queryParam, setQueryParams } from '../../lib/state/router.js';
 
 // Guest session state
 let guestSession = null;
@@ -48,8 +49,7 @@ export async function renderShareViewer(root, token) {
   document.documentElement.classList.add('is-share-viewer');
 
   // Extract email from URL for pre-filling guest join form
-  const urlParams = new URL(location.href).searchParams;
-  const prefillEmail = (urlParams.get('email') || '').trim();
+  const prefillEmail = (queryParam('email') || '').trim();
 
   const shell = h('div', { class: 'share-viewer-shell' });
   root.append(shell);
@@ -116,18 +116,19 @@ export async function renderShareViewer(root, token) {
     // Check for guest session
     await checkGuestSession(token);
 
-    // Handle URL parameters from verification redirect
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('guest_verified') === 'true') {
-      // Remove URL parameters
-      window.history.replaceState({}, '', window.location.pathname);
+    // Handle URL parameters from the verification redirect. Both flags are
+    // stripped in the same breath they are read, so a reload — or anything
+    // else that reads the querystring later — cannot raise the banner a second
+    // time. Only these two params are dropped; the rest of the share link
+    // (?email=, …) survives.
+    if (queryParam('guest_verified') === 'true') {
+      setQueryParams({ guest_verified: null });
     }
-    if (urlParams.get('guest_error')) {
-      // Held for renderViewer(), which puts it on screen. The parameter is
-      // stripped in the same breath so a reload — or anything else that reads
-      // the querystring later — cannot raise the banner a second time.
-      guestVerifyError = urlParams.get('guest_error');
-      window.history.replaceState({}, '', window.location.pathname);
+    const guestError = queryParam('guest_error');
+    if (guestError) {
+      // Held for renderViewer(), which puts it on screen.
+      guestVerifyError = guestError;
+      setQueryParams({ guest_error: null });
     }
 
     await renderDeck(verifyData.presentation);

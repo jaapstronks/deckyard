@@ -3,7 +3,7 @@ import { h } from '../lib/dom.js';
 import { t } from '../lib/ui-i18n.js';
 import { createBusyManager } from '../lib/dom/busy.js';
 import { authShell } from './auth-shell.js';
-import { nav } from '../lib/state/router.js';
+import { nav, queryParam } from '../lib/state/router.js';
 
 export async function renderResetPassword(root) {
   const { shell, card, subtitle } = authShell({
@@ -18,8 +18,7 @@ export async function renderResetPassword(root) {
   root.append(shell);
 
   // Get token from URL
-  const url = new URL(location.href);
-  const token = url.searchParams.get('token');
+  const token = queryParam('token');
 
   if (!token) {
     subtitle.textContent = t(

@@ -149,14 +149,15 @@ test('dismissing removes the banner and says so', () => {
 });
 
 test('the querystring cannot raise the banner a second time', () => {
-  // `replaceState` runs in the same breath as the read, so a reload of the
-  // landing URL is an ordinary share-viewer visit.
+  // The strip runs in the same breath as the read, so a reload of the landing
+  // URL is an ordinary share-viewer visit. Both halves go through the router
+  // (B183): `queryParam` reads, `setQueryParams({ guest_error: null })` drops.
   const src = fs.readFileSync(
     path.join(repoRoot, 'client/views/share-viewer/index.js'),
     'utf8',
   );
-  const block = src.slice(src.indexOf("urlParams.get('guest_error')"));
-  const stripAt = block.indexOf('replaceState');
+  const block = src.slice(src.indexOf("queryParam('guest_error')"));
+  const stripAt = block.indexOf('setQueryParams({ guest_error: null })');
   const renderAt = block.indexOf('guestVerifyError');
   assert.ok(stripAt > -1, 'the parameter is stripped');
   assert.ok(

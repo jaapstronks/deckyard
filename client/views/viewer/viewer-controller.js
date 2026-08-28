@@ -15,6 +15,7 @@ import { initPresentationI18n } from '../editor/bootstrap.js';
 import { syncSlideIdInUrl } from '../editor/slide-url.js';
 import { attachSwipeNavigation } from '../../lib/dom/swipe-nav.js';
 import { readDeckLangParam } from '../../lib/format/i18n.js';
+import { queryParam } from '../../lib/state/router.js';
 
 export async function createViewerController({
   root,
@@ -28,18 +29,14 @@ export async function createViewerController({
   if (!pres) throw new Error('createViewerController: pres is required');
 
   // Handle i18n initialization
-  const startUrl = new URL(location.href);
-  const initialLang = readDeckLangParam(startUrl);
+  const initialLang = readDeckLangParam();
   initPresentationI18n({ pres, initialLang });
 
   // Load theme
   const theme = await loadThemeById(pres?.theme);
 
   // Handle initial slide from URL
-  const initialSlideId =
-    startUrl.searchParams.get('slideId') ||
-    startUrl.searchParams.get('s') ||
-    '';
+  const initialSlideId = queryParam('slideId') || queryParam('s') || '';
   let selectedSlideId = pres.slides?.[0]?.id || null;
   if (initialSlideId && Array.isArray(pres?.slides)) {
     const exists = pres.slides.some((s) => s?.id === initialSlideId);

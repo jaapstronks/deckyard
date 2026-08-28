@@ -111,6 +111,12 @@ Apply it at the recurring moments:
   `client/lib/dom/modal.js`. No native `confirm()`/`prompt()` in new code.
 - **Modals**: follow the `client/lib/dom/modal.js` helpers (focus trap and
   aria wiring come free).
+- **URL state**: `client/lib/state/router.js` owns the whole current URL.
+  Read query params with `queryParam(key)` / `queryString()`, write them with
+  `setQueryParams({ key: value })` (`null` deletes; replaces, so no history
+  entry and no re-route), build a destination with `urlWithQuery(patch)` and
+  name the current page with `currentUrl()`. No `new URL(location.href)` or
+  `location.search` anywhere else — a guard test pins it.
 - **Lifecycle**: a factory returns `{ el, detach }` — not `destroy`/`teardown`/
   `cleanup`, not `element`. Run disposal through `disposeAll()`.
 - **CSS**: reuse `.editor-card`, `.field-label`, `.help`, `.btn`/`.btn-primary`/
