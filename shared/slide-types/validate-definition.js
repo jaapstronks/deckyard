@@ -346,6 +346,14 @@ export function validateSlideTypeDefinition(def, name, options = {}) {
   checkAi(def.ai, who, known, warnings);
 
   // --- defaults --------------------------------------------------------------
+  // `defaults` is the language-less seed, not an archive: the paths that have no
+  // deck language — `newSlide()` in deck.js, presentation.js, the enum repair in
+  // deck.js — clone it literally, while `defaultsByLang` wins wherever a
+  // language is known (convert.js, editor-utils.js). So it carries the same
+  // *keys* as the per-language maps and only the copy differs; the orphan-key
+  // check below is what holds that for core types
+  // (tests/custom-slide-type-validity.test.js).
+  //
   // A default may also seed an instance-bound key (`instanceKeys`, e.g.
   // `poll-slide.pollId`). Those are real content keys that deliberately have no
   // field — the clone/save helpers rewrite them, no form edits them — and
