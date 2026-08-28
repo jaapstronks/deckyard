@@ -1,12 +1,8 @@
 import { normalizeSlides } from './slides.js';
-import {
-  computeMissingTranslation,
-  pickVersion,
-} from '../../utils/translation-status.js';
+import { pickVersion } from '../../../shared/i18n-progress.js';
 import {
   DEFAULT_DECK_LANG,
   normalizeLang,
-  otherLang,
   TRANSLATION_LANGS,
   TRANSLATION_LANG_LABELS,
 } from '../../../shared/i18n-utils.js';
@@ -15,7 +11,7 @@ import {
  * Server-side facade for the shared i18n vocabulary. Everything here is
  * re-exported, not redefined — `shared/i18n-utils.js` is the single definition
  * site for the deck-language axis (D61). `pickVersion` comes from
- * `server/utils/translation-status.js` for the same reason: this file carried a
+ * `shared/i18n-progress.js` for the same reason: this file carried a
  * byte-for-byte copy of it.
  *
  * This file used to add a two-value `SUPPORTED_LANGS` of its own — the one the
@@ -26,7 +22,6 @@ import {
 export {
   DEFAULT_DECK_LANG,
   normalizeLang,
-  otherLang,
   pickVersion,
   TRANSLATION_LANGS,
   TRANSLATION_LANG_LABELS,
@@ -70,23 +65,15 @@ function normalizeFollowInviteSlides(slides) {
 }
 
 /**
- * Deck-level translation-progress counter. Delegates to the one missing-scan
- * in `server/utils/translation-status.js`: this file used to carry two more
- * copies of the same walk (one of them dead, both top-level only), so a deck
- * whose only untranslated prose sat in `rows[].blocks[]` counted as complete.
- * @param {Object} fromVer - Source language version (`{title, slides}`)
- * @param {Object} toVer - Target language version
- * @returns {number}
- */
-function missingTranslationCount(fromVer, toVer) {
-  return computeMissingTranslation({ source: fromVer, target: toVer })
-    .missingCount;
-}
-
-/**
- * Normalize a deck's i18n block in place: fill in the dominant version, keep
- * every language version's slides through the write seam, and recompute the
- * translation-progress counters.
+ * Normalize a deck's i18n block in place: fill in the dominant version and keep
+ * every language version's slides through the write seam.
+ *
+ * It does **not** write a progress counter. It used to stamp `i18n.progress`
+ * with two NL/EN-shaped numbers on every save — a cache of a scan that is
+ * cheap to run and free to disagree with the versions beside it, and one that
+ * had no answer for a third language. `translationProgress()` in
+ * `shared/i18n-progress.js` answers it where it is read instead (D72), and
+ * schema step v10 -> v11 drops the stored field.
  *
  * @param {object} pres - the deck being written
  * @param {object} [opts]
@@ -161,30 +148,6 @@ export function normalizeI18n(pres, { slideTypes } = {}) {
     // Strip the stored per-version language keys — the version's own language
     // is the answer.
     v.slides = normalizeFollowInviteSlides(v.slides);
-  }
-
-  // Track missing translation fields (computed, lightweight).
-  // This is informational only and is recomputed whenever the presentation is
-  // saved/translated. The counters are still NL↔EN-shaped (`missingNlToEnGb`),
-  // a stored key set that predates the open axis (D61) — widening them to a
-  // per-pair map is deck-data surgery, tracked separately as B182.
-  try {
-    const nowIso = new Date().toISOString();
-    const nl = i18n.versions?.nl;
-    const en = i18n.versions?.['en-GB'];
-    const progress = {
-      updatedAt: nowIso,
-      missingNlToEnGb: nl && en ? missingTranslationCount(nl, en) : null,
-      missingEnGbToNl: en && nl ? missingTranslationCount(en, nl) : null,
-    };
-    progress.hasIncomplete =
-      (typeof progress.missingNlToEnGb === 'number' &&
-        progress.missingNlToEnGb > 0) ||
-      (typeof progress.missingEnGbToNl === 'number' &&
-        progress.missingEnGbToNl > 0);
-    i18n.progress = progress;
-  } catch {
-    // ignore
   }
 
   // Always keep top-level title/slides aligned to the dominant language version.

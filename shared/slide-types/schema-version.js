@@ -24,7 +24,7 @@ import {
 } from './field-groups.js';
 
 /** The schema version every freshly written deck is stamped with. */
-export const CURRENT_SCHEMA_VERSION = 10;
+export const CURRENT_SCHEMA_VERSION = 11;
 
 /**
  * The one legacy collection key each type stored before `items` — the v6 -> v7
@@ -582,6 +582,24 @@ export const SCHEMA_MIGRATIONS = [
       if (legacy && !str(content.subheading)) content.subheading = legacy;
       delete content.subtitle;
     }
+    return pres;
+  },
+
+  // v10 -> v11: drop the stored `i18n.progress` block.
+  //
+  // It cached two numbers — `missingNlToEnGb` and `missingEnGbToNl` — that
+  // `normalizeI18n` recomputed on every write. A cache of a cheap pure scan is
+  // a second place the truth can live, and this one could only ever describe
+  // the NL/EN pair: a deck with a German version carried counters that said
+  // nothing about it. `translationProgress()` in `shared/i18n-progress.js`
+  // answers the question per existing version, where it is read (D72).
+  //
+  // Nothing reads the field any more, so this step only stops old decks from
+  // carrying a stale number around. Idempotent, and a deck without an i18n
+  // block is untouched.
+  (pres) => {
+    const i18n = pres?.i18n;
+    if (i18n && typeof i18n === 'object') delete i18n.progress;
     return pres;
   },
 ];

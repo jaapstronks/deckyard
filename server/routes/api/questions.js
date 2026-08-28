@@ -21,13 +21,13 @@ import {
   updatePresentation,
 } from '../../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../../storage/collaborators.js';
-import { normalizeLang } from '../../utils/translation-status.js';
 import { notifyLiveSessionDeckUpdated } from '../../storage/live-sessions/index.js';
 import { canWritePresentation } from '../../utils/presentation-authz/index.js';
 import { isOrganizationAdmin } from '../../../shared/organization-role.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import {
   DEFAULT_DECK_LANG,
+  normalizeLang,
   TRANSLATION_LANGS,
 } from '../../../shared/i18n-utils.js';
 

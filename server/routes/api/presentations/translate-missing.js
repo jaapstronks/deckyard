@@ -16,12 +16,13 @@ import { getOptionalString } from '../../../utils/request-validators.js';
 import {
   buildBlankTargetFromSource,
   computeMissingTranslation,
-  normalizeLang,
-  otherLang,
   pickVersion,
-} from '../../../utils/translation-status.js';
+} from '../../../../shared/i18n-progress.js';
 import { canWritePresentation } from '../../../utils/presentation-authz/index.js';
-import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
+import {
+  DEFAULT_DECK_LANG,
+  normalizeLang,
+} from '../../../../shared/i18n-utils.js';
 
 // In-process translation job lock (prevents double-spending tokens)
 const missingTranslationJobs = new Map();
@@ -53,10 +54,10 @@ export async function handlePresentationTranslateMissing(
     normalizeLang(pres.i18n.active) ||
     normalizeLang(pres.i18n.dominant) ||
     DEFAULT_DECK_LANG;
-  const to = normalizeLang(body?.to) || otherLang(from);
-  // Off the NL/EN pair `otherLang()` has no answer (D61): without this guard a
-  // null `to` would persist a stuck "running" job under the key "null" before
-  // the translator rejects the pair.
+  // `to` is required. It used to fall back to `otherLang(from)`, which is null
+  // off the NL/EN pair — a target the caller never named and the axis cannot
+  // guess. Naming it is the caller's job now (D72).
+  const to = normalizeLang(body?.to);
   if (!to) return badRequest(res, 'A target language ("to") is required.');
   const mode = body?.mode === 'background' ? 'background' : 'wait';
 

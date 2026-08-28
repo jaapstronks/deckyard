@@ -1,15 +1,24 @@
+/**
+ * Translation status of a deck: which language version to read, what is still
+ * missing in it, and the blank target a fill-job writes into.
+ *
+ * Shared, not server-only. It lived under `server/utils/translation-status.js`
+ * while the only reader was the API; the editor chrome now asks the same
+ * question ("how far along is the `de` version?"), and the answer may not be
+ * computed twice with two spellings. Its one dependency,
+ * `translatableKeysForType`, was already shared (B182/D72).
+ *
+ * The counters are **derived, never stored**. A deck used to carry
+ * `i18n.progress` — two NL/EN-shaped numbers written on every save — which is
+ * a cache of this module's output that could disagree with the versions beside
+ * it. Schema step v10 -> v11 drops it.
+ */
 import {
   mapItemTexts,
   textFieldSpecForType,
   valueAtPath,
-} from '../../shared/slide-types/text-fields.js';
-import {
-  normalizeLang,
-  otherLang,
-  isNonEmptyString,
-} from '../../shared/i18n-utils.js';
-
-export { normalizeLang, otherLang };
+} from './slide-types/text-fields.js';
+import { normalizeLang, isNonEmptyString } from './i18n-utils.js';
 
 function buildSlideIndex(slides) {
   const arr = Array.isArray(slides) ? slides : [];
@@ -22,6 +31,19 @@ function buildSlideIndex(slides) {
   return { arr, byId };
 }
 
+/**
+ * Scan one language version against another and list the text that is present
+ * in the source but empty in the target.
+ *
+ * Walks the deck title plus every declared text field and item text, at every
+ * nesting level — the same walk the translation merge uses, so a deck whose
+ * only untranslated prose sits in `rows[].blocks[]` is not reported complete.
+ *
+ * @param {Object} [args]
+ * @param {{title?: string, slides?: any[]}} [args.source] - the version read from
+ * @param {{title?: string, slides?: any[]}} [args.target] - the version written to
+ * @returns {{missingCount: number, missing: Array<Object>}}
+ */
 export function computeMissingTranslation({ source, target } = {}) {
   const srcTitle = source?.title;
   const tgtTitle = target?.title;
@@ -98,6 +120,17 @@ export function computeMissingTranslation({ source, target } = {}) {
   };
 }
 
+/**
+ * The `{title, slides}` of one language version of a deck.
+ *
+ * Falls back to the deck's top-level fields when the version is absent or the
+ * language is off-axis — those are kept aligned with the dominant version on
+ * every write (`normalizeI18n`), so the fallback is the dominant version.
+ *
+ * @param {Object} [pres] - a presentation
+ * @param {*} lang - the language version to read
+ * @returns {{title: string, slides: any[]}}
+ */
 export function pickVersion(pres, lang) {
   const l = normalizeLang(lang);
   if (
@@ -119,6 +152,16 @@ export function pickVersion(pres, lang) {
   };
 }
 
+/**
+ * A copy of a version with every translatable string emptied — the target a
+ * fill-job starts from when the language does not exist yet.
+ *
+ * Item texts are blanked at every level too: leaving them as the source's prose
+ * makes a fresh version look "already translated" to the missing-scan.
+ *
+ * @param {{title?: string, slides?: any[]}} source
+ * @returns {{title: string, slides: any[]}}
+ */
 export function buildBlankTargetFromSource(source) {
   const slides = Array.isArray(source?.slides) ? source.slides : [];
   const outSlides = slides.map((s, idx) => {
@@ -146,4 +189,59 @@ export function buildBlankTargetFromSource(source) {
     };
   });
   return { title: '', slides: outSlides };
+}
+
+/**
+ * The deck languages this deck actually has a version for, normalized and
+ * de-duplicated, in the order the versions were written.
+ *
+ * The one answer to "which languages does this deck offer" — the follow API's
+ * `availableLangs`, the editor's language menu and the progress scan all read
+ * it here. It used to be asked as `versions.nl` plus `versions['en-GB']`, which
+ * is why a German version was invisible to every surface but the viewer.
+ *
+ * @param {Object} [pres] - a presentation
+ * @returns {string[]}
+ */
+export function existingVersionLangs(pres) {
+  const versions =
+    pres?.i18n?.versions && typeof pres.i18n.versions === 'object'
+      ? pres.i18n.versions
+      : {};
+  const out = [];
+  for (const key of Object.keys(versions)) {
+    if (!versions[key] || typeof versions[key] !== 'object') continue;
+    const lang = normalizeLang(key);
+    if (lang && !out.includes(lang)) out.push(lang);
+  }
+  return out;
+}
+
+/**
+ * How far along every translation of a deck is, measured from the dominant
+ * version outwards.
+ *
+ * `missing[lang]` is the number of translatable strings the dominant version
+ * fills and `lang` does not, for **every existing version except the dominant
+ * one** — that is the whole question, and it is answered where it is read
+ * rather than cached on the deck (D72). The dominant version is the source, so
+ * it never appears in the map.
+ *
+ * @param {Object} [pres] - a presentation
+ * @returns {{dominant: string|null, missing: Record<string, number>}}
+ */
+export function translationProgress(pres) {
+  const dominant =
+    normalizeLang(pres?.i18n?.dominant) || normalizeLang(pres?.lang) || null;
+  const missing = {};
+  if (!dominant) return { dominant: null, missing };
+  const source = pickVersion(pres, dominant);
+  for (const lang of existingVersionLangs(pres)) {
+    if (lang === dominant) continue;
+    missing[lang] = computeMissingTranslation({
+      source,
+      target: pickVersion(pres, lang),
+    }).missingCount;
+  }
+  return { dominant, missing };
 }

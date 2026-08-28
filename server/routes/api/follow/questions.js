@@ -14,7 +14,7 @@ import {
   listQuestions,
   upvoteQuestion,
 } from '../../../storage/questions.js';
-import { normalizeLang } from '../../../utils/translation-status.js';
+import { normalizeLang } from '../../../../shared/i18n-utils.js';
 import {
   computeAudienceCapabilitiesFromState,
   ensureQaDeviceCookie,

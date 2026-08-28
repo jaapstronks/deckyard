@@ -475,7 +475,7 @@ const createElementRestriction = {
 // A literal cannot say which of the two it means, so both are restricted and
 // the remedies are named in the message. The burndown took the axis-shaped
 // ones (defaults, membership tests, re-declarations, `?lang=` validation) to
-// roughly fifty in 22 files; `deckLangLiteralAllowlist` below names what is left and why,
+// roughly fifty in 21 files; `deckLangLiteralAllowlist` below names what is left and why,
 // and it may only shrink.
 //
 // Whole-token by construction — the selector matches the string literal value
@@ -519,7 +519,6 @@ const deckLangLiteralAllowlist = [
   'client/views/editor/publish-export/publish-modal.js',
   'client/views/editor/topbar/language-mode.js',
   'client/views/presenter/follow-codes-pill.js',
-  'client/views/presenter/translate-fill.js',
   // the axis↔locale seam: these name `en-GB` precisely because it is the one
   // code the two axes spell differently
   'client/views/follow/i18n.js',
