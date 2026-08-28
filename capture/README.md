@@ -1,10 +1,14 @@
 # capture — deterministic docs screenshots
 
-This folder regenerates documentation screenshots **without hand-work**: it seeds
+This folder regenerates documentation artefacts **without hand-work**: it seeds
 known state via the REST API, drives the running dev server with Puppeteer, and
-writes a PNG to the exact path the docs expect. It is **Phase 0** of the
-screencast video factory — a screenshot is that same pipeline minus the video
-step, so the recipe format here is designed to carry a later video recipe too.
+writes either a PNG to the exact path the docs expect or a **video take** — a
+4K WebM plus the event log a composition derives its camera from.
+
+Both kinds are the same recipe format. A screenshot ends at `page.screenshot()`;
+a take reuses the same `state` / `navigate` / `waitFor` / `action` to reach the
+state the recording starts from, and adds a `record` block. See § Video
+recipes.
 
 The output lands in the sibling **deckyard-website** repo. A deckyard session
 _writes_ the PNGs but does **not** commit them there (workspace rule); a
@@ -18,16 +22,19 @@ deckyard-website session commits them and fills the registry `recipe` field
 NODE_ENV=development AUTH_DEV_BYPASS=true npm run start
 
 # terminal 2
-npm run capture -- --list                 # show known recipes
+npm run capture -- --list                 # show known recipes, both kinds
 npm run capture -- theme-editor-full      # one screenshot
-npm run capture -- --all                  # every recipe
+npm run capture -- --all                  # every screenshot recipe
 npm run capture -- editor-full --out /tmp/shots   # write elsewhere
+
+npm run capture -- --video form-drives-slide      # record one take
 ```
 
-Options: `--out <dir>` (output root; the recipe's `registryPath` is written
-relative to it — default `../deckyard-website`), `--base <url>` (dev server,
-default `http://localhost:4177`). Env equivalents: `CAPTURE_OUT_DIR`,
-`CAPTURE_BASE_URL`.
+Options: `--out <dir>` (output root — default `../deckyard-website` for
+screenshots, where the recipe's `registryPath` is written relative to it, and
+`../deckyard-video` for takes), `--base <url>` (dev server, default
+`http://localhost:4177`), `--video` (record `kind: 'video'` recipes instead of
+taking shots). Env equivalents: `CAPTURE_OUT_DIR`, `CAPTURE_BASE_URL`.
 
 The browser is the app's own `getPuppeteerBrowser()` (system Chrome/Chromium —
 the same one the PDF/PNG exporters use). No extra dependency, no browser
@@ -100,9 +107,22 @@ flagged for review — the same drift mechanism the registry uses for source dep
 
 ## Determinism conventions
 
-- **Fixed viewport** `1440×900 @2x` unless a recipe overrides it.
-- **Light color scheme + reduced motion** are forced on every page so captures
-  don't depend on the host OS appearance or catch a mid-transition frame.
+- **Fixed viewport** `1440×900 @2x` unless a recipe overrides it. Takes use
+  `1280×720 @3x` — see § Video recipes.
+- **Light color scheme** is forced on every page so captures don't depend on the
+  host OS appearance.
+- **Reduced motion is forced for screenshots and off for takes**, and that flip
+  is a real weakening rather than a convenience. `reduce` is what keeps a
+  screenshot from catching a mid-transition frame; for a clip it would switch
+  off precisely the app animations the clip exists to show — the panel sliding
+  in, the slide following the form. So a screenshot aims at pixel-identical and
+  **a take only aims at "the same to a frame or two"**. Measured on the first
+  take: two consecutive runs came out frame-aligned, mean SSIM 0.9992, worst
+  frame 0.9974, and the residual is VP9 encoder noise on text edges rather than
+  a time offset — the same comparison one frame apart scores 0.9772. The MP4s
+  are not byte-identical and will not become so; the encoder is not
+  deterministic. The preference follows the recipe's `kind` and nothing else
+  (`resolveReducedMotion()`); it is deliberately not a per-recipe field.
 - **Fixed sample content** from `recipes/_sample-content.js` — one shared,
   PII-free deck so seeded shots are visually stable across runs and machines.
   Marketing shots use the richer `recipes/_marketing-deck.js` instead: same
@@ -233,10 +253,101 @@ Two further limits, both worth knowing before trusting a re-run:
 3. Add the module to `recipes/index.js`.
 4. `npm run capture -- <id>` and eyeball the PNG.
 
-## Extending to video (Phase 1)
+## Video recipes
 
-The `state` + `navigate` + `action` + `viewport` fields already describe how to
-reach a UI state deterministically. A video recipe reuses them and adds a capture
-sequence (a scripted set of `action` steps recorded as WebM, later composed with
-Remotion) instead of a single `screenshot()`. Same registry, same reference
-mechanism — no rework.
+A take is a screenshot recipe plus a `record` block. It reuses `state` /
+`navigate` / `waitFor` / `action` unchanged — the recording starts where the
+screenshot would have been taken — and drops `output` / `registryPath` / `clip` /
+`fullPage`, which name one PNG in the website registry. The runner derives both
+output paths from the id.
+
+```js
+import { VIDEO_VIEWPORT } from '../lib/record.js';
+
+/** @type {import('../lib/recipe.js').VideoRecipe} */
+export default {
+  id: 'form-drives-slide',
+  kind: 'video',
+  viewport: VIDEO_VIEWPORT,
+
+  state: shot.state, // reused from the shot this take layers on
+  navigate: shot.navigate,
+  waitFor: shot.waitFor,
+  action: shot.action,
+
+  record: {
+    fps: 30,
+    async sequence(rec) {
+      await rec.hold(500);
+      await rec.type(TITLE_FIELD, 'Van kraam tot vaste klant', {
+        clear: true,
+        label: 'titel',
+      });
+      await rec.hold(500);
+      await rec.move(PREVIEW_HEADLINE, { label: 'slide' });
+      await rec.hold(900);
+    },
+  },
+};
+```
+
+`npm run capture -- --video form-drives-slide` writes two files under
+`--out` (default `../deckyard-video`):
+
+| file                       | what it is                                                  |
+| -------------------------- | ----------------------------------------------------------- |
+| `capture/takes/<id>.webm`  | the 4K master, VP9, no audio                                |
+| `capture/events/<id>.json` | every step the sequence drove, with timings and coordinates |
+
+They are two halves of one artefact: a take without its events is a video
+nobody can derive a camera from.
+
+### The recorder
+
+`rec` is built in `lib/record.js` and logs every call:
+
+| call                                  | what it does                                             |
+| ------------------------------------- | -------------------------------------------------------- |
+| `rec.hold(ms)`                        | holds still — the breath that makes an action legible    |
+| `rec.move(sel, {label})`              | travels the pointer onto an element over `MOVE_MS`       |
+| `rec.click(sel, {label})`             | travels, then clicks (logged as a `move` plus a `click`) |
+| `rec.type(sel, text, {label, clear})` | clicks in and types at a fixed `TYPE_CHAR_MS`            |
+
+An event is `{ t, tEnd, kind, x, y, selector, label }` with `t` in ms from the
+**first recorded frame** — `page.screencast()` resolves only once CDP has
+delivered that frame, so the clock starts where the video does. (The "~1 second
+of white frames" that dogs Playwright's `recordVideo` comes from the opposite:
+an encoder that starts at navigation.)
+
+Three things the recorder does on purpose:
+
+- **A `label` marks a zoom candidate.** The composition starts its move 200ms
+  _before_ the labelled event, so the camera anticipates rather than follows.
+  That lead is only possible because the cursor is a drawn layer — headless
+  Chrome draws no cursor, and one burned into the pixels could not be moved in
+  time.
+- **Coordinates come from `boundingBox()`, never from pixel positions.** A
+  restyle moves the button; the recipe still names the button, so the camera
+  follows instead of quietly framing the wrong thing.
+- **Every step is scheduled against an absolute deadline** measured from the
+  first frame. `hold(400)` means "be at t=400ms", not "sleep 400ms", so a slow
+  step is absorbed by the next wait instead of shifting the rest of the take.
+  When a step overruns, the run prints a `schedule slipped` warning — a take
+  that could not keep its own timing is not comparable with another run.
+
+### Why a take needs its own browser
+
+`page.screenshot()` honours the emulated `deviceScaleFactor`; a screencast does
+not. Puppeteer sizes the encoder from the host's _native_ pixel ratio, which is
+1 in headless Chrome — so an emulated 3× viewport records at 1×, silently, with
+no error and a video that looks fine until you zoom into it. The fix is
+`--force-device-scale-factor`, a **launch** flag, so `lib/browser.js` launches a
+second browser for recordings. It cannot go on the shared one: that is the app's
+own export browser, and forcing 3× there would triple every exported PDF and PNG.
+
+### Where the composition lives
+
+`deckyard-video` (private) reads these two files and renders the MP4. It is a
+separate repo for four reasons — Remotion is source-available rather than MIT,
+the music is licensed, launch copy predates publication, and 4K masters do not
+belong in an OSS repo's history. See `briefs/screencast-video-factory.md` § D4.
