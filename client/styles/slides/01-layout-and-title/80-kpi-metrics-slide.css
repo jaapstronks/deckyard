@@ -198,14 +198,20 @@
   border-top: 0;
 }
 
-.slide-kpi-metrics .kpi-delta {
-  color: var(--kpi-tile-fg);
+/* The delta is the shared `.slide-highlight` partial (00-patterns.css). It
+   would otherwise take the flat semantic status colour, which is the wrong
+   answer HERE: a delta reads against the TILE, not against the slide, and the
+   two mixes above are what keep it legible on every tile fill. So the tile
+   rebinds `--slide-tone` rather than the type shipping its own delta class —
+   the local-override seam the partial exists to make cheap. */
+.slide-kpi-metrics .kpi-metric .slide-highlight {
+  --slide-tone: var(--kpi-tile-fg);
 }
-.slide-kpi-metrics .kpi-delta.is-positive {
-  color: var(--kpi-delta-pos);
+.slide-kpi-metrics .kpi-metric .slide-highlight--positive {
+  --slide-tone: var(--kpi-delta-pos);
 }
-.slide-kpi-metrics .kpi-delta.is-negative {
-  color: var(--kpi-delta-neg);
+.slide-kpi-metrics .kpi-metric .slide-highlight--danger {
+  --slide-tone: var(--kpi-delta-neg);
 }
 
 /* Accent: highlight first metric tile */

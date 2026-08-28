@@ -6,6 +6,7 @@ import {
   hasBottomSubheading,
   BACKGROUND_FIELD,
 } from '../helpers.js';
+import { badgeHtml } from '../partials.js';
 import { markdownToSafeHtml } from '../../markdown.js';
 
 export default {
@@ -151,7 +152,7 @@ export default {
       : '';
 
     const verdictHtml = verdict
-      ? `<div class="comparison-verdict"><span class="badge" data-inline-field="verdict" dir="auto">${escapeHtml(verdict)}</span></div>`
+      ? `<div class="comparison-verdict">${badgeHtml(verdict, { field: 'verdict' })}</div>`
       : '';
 
     return `

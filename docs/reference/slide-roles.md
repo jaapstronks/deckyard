@@ -232,7 +232,10 @@ re-opening that record rather than reading it.
 
 `.slide-card` in `00-patterns.css` is **not** the base of this pattern — nothing
 renders it (a dead-CSS candidate, tracked in the dead-code audit). Each card
-pattern owns its own box.
+pattern owns its own box. It is not alone: most of that file was written as a
+speculative pattern layer with no renderer behind it. The partials block is the
+part that now has one — `shared/slide-types/partials.js` emits every class in
+it, and `tests/slide-partials.test.js` gates the pair.
 
 ## Spacing roles
 
@@ -326,7 +329,9 @@ Two properties make them roles:
   would have been exactly the per-type theme family the seam below removes
   everywhere else — a theme would have to learn a slide type's name to restyle
   it. Anything that has to say "good / careful / aside" reads the same token:
-  `callout-slide`'s five variants today, `comparison-slide`'s pros-cons
+  `callout-slide`'s five variants, the shared partials' `tone` vocabulary
+  (`shared/slide-types/partials.js` — one badge/highlight tone per role, so a
+  fork type never mints a colour either), and `comparison-slide`'s pros-cons
   treatment and the aside insets next.
 - **Slide-internal, like `danger` always was.** There is no `--t-*` feed, on
   purpose: a semantic palette is not brand, and a theme that retints "warning"
@@ -337,6 +342,13 @@ A carrier derives its tint and edge from the tone with `color-mix` (see
 `31-callout-slide.css`, `88-matrix-slide.css`) rather than storing a second and
 third colour per tone, and lightens the tone toward the light pole on a dark
 ground — the same accent-agnostic move `--slide-link-on-dark` makes.
+
+The tone is carried in a custom property the modifier class sets and the base
+rule reads (`--callout-tone` per type, `--slide-tone` for the shared partials).
+That is what makes a local override cheap: a type whose partial must read
+against something other than the slide rebinds the property rather than shipping
+a second class. `80-kpi-metrics-slide.css` is the live case — its deltas mix
+against the tile fill, not the slide.
 
 The contextual rebinding mechanism in `00-patterns.css` (a surface class
 rebinds the text role for everything inside it) is correct and stays, including

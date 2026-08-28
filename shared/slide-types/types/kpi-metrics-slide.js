@@ -8,6 +8,7 @@ import {
   hasBottomSubheading,
   BACKGROUND_FIELD,
 } from '../helpers.js';
+import { highlightHtml } from '../partials.js';
 import { alignGroup, groupAlignClass } from '../field-groups.js';
 
 /**
@@ -24,24 +25,32 @@ const HEADER_BLOCK = alignGroup('header-block', 'headerAlign', {
 
 /**
  * Detect positive/negative tone from note text.
- * If the note starts with +N or -N (number/percentage), apply colour.
- * Returns { tone, highlight, rest } where highlight is the coloured prefix.
+ *
+ * If the note starts with +N or -N (number/percentage), that prefix becomes a
+ * coloured run. The tone is a value from the shared partial vocabulary
+ * (`PARTIAL_TONES` in shared/slide-types/partials.js), not a class name of this
+ * type's own: a delta that means "it went up" reads the same `positive` role as
+ * every other slide element that means it.
+ *
+ * @param {unknown} noteRaw - the note as authored
+ * @returns {{tone: string, highlight: string, rest: string}} `highlight` is the
+ *   coloured prefix, `rest` the remainder of the note.
  */
 function parseNoteTone(noteRaw) {
   const n = String(noteRaw || '').trim();
-  if (!n) return { tone: '', highlight: '', rest: '' };
+  if (!n) return { tone: 'default', highlight: '', rest: '' };
   // Match leading +/-/− followed by digits/punctuation, up to first space
   const m = n.match(/^([+\-−][\d.,]+[%a-zA-Z]*)(\s+(.*))?$/);
-  if (!m) return { tone: '', highlight: '', rest: n };
+  if (!m) return { tone: 'default', highlight: '', rest: n };
   const prefix = m[1];
   const rest = (m[3] || '').trim();
   const first = prefix[0];
   const tone =
     first === '-' || first === '−'
-      ? 'is-negative'
+      ? 'danger'
       : first === '+'
-        ? 'is-positive'
-        : '';
+        ? 'positive'
+        : 'default';
   return { tone, highlight: prefix, rest };
 }
 
@@ -323,7 +332,7 @@ export default {
       const meta = effectiveNote
         ? `
               <div class="kpi-meta">
-                ${highlight ? `<span class="kpi-delta ${tone}">${escapeHtml(highlight)}</span>` : ''}
+                ${highlightHtml(highlight, { tone })}
                 ${rest ? `<span dir="auto">${escapeHtml(rest)}</span>` : ''}
               </div>
             `
