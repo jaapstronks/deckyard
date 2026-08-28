@@ -13,6 +13,7 @@
  *   node capture/run.js --all                 # capture every screenshot recipe
  *   node capture/run.js --list                # list known recipes
  *   node capture/run.js --video <id>          # record a clip instead of a shot
+ *   node capture/run.js --all --json          # machine-readable report on stdout
  *
  * Options:
  *   --out <dir>    Output directory root. Default: ../deckyard-website for
@@ -22,6 +23,10 @@
  *   --video        Record `kind: 'video'` recipes: a WebM master in
  *                  <out>/capture/takes/ and the event log the composition
  *                  derives its camera from in <out>/capture/events/.
+ *   --json         Report on stdout as JSON; progress goes to stderr. For a
+ *                  caller that has to know *which* recipes came out — the
+ *                  refresh pipeline re-baselines only the ids that captured,
+ *                  and "grep the log" is not a contract.
  *
  * A deckyard session writes the PNGs but does NOT commit them into
  * deckyard-website (workspace rule). Committing + filling the registry `recipe`
@@ -61,6 +66,7 @@ function parseArgs(argv) {
     all: false,
     list: false,
     video: false,
+    json: false,
     base: process.env.CAPTURE_BASE_URL || 'http://localhost:4177',
     out: null,
   };
@@ -69,6 +75,7 @@ function parseArgs(argv) {
     if (a === '--all') opts.all = true;
     else if (a === '--list') opts.list = true;
     else if (a === '--video') opts.video = true;
+    else if (a === '--json') opts.json = true;
     else if (a === '--out') opts.out = path.resolve(argv[(i += 1)]);
     else if (a === '--base') opts.base = argv[(i += 1)];
     else if (a.startsWith('--')) throw new Error(`Unknown option: ${a}`);
@@ -79,6 +86,42 @@ function parseArgs(argv) {
     process.env.CAPTURE_OUT_DIR ||
     (opts.video ? VIDEO_OUT_DEFAULT : SHOT_OUT_DEFAULT);
   return opts;
+}
+
+/**
+ * Progress writer.
+ *
+ * Under `--json` every progress line moves to stderr, because stdout is then
+ * the report: a caller that has to grep past a run log to find its result does
+ * not have a machine-readable contract, it has a text format with extra steps.
+ *
+ * @param {boolean} json whether the run reports as JSON
+ */
+function makeProgress(json) {
+  const stream = json ? process.stderr : process.stdout;
+  return {
+    write: (text) => stream.write(text),
+    line: (text = '') => stream.write(`${text}\n`),
+  };
+}
+
+/**
+ * Give stdout to the report and nothing else.
+ *
+ * This runner is not the only thing that talks: the custom slide-type loader
+ * warns on import, and `comments`' storage seeder logs its Postgres connection
+ * through the app's own logger — both on stdout, both from modules that have no
+ * idea a caller is parsing it. Routing this run's own output is therefore not
+ * enough; the console itself has to move. Under `--json` stdout is a data
+ * channel, so everything that speaks through `console` goes to stderr and the
+ * report is written straight to the descriptor.
+ */
+function claimStdoutForTheReport() {
+  const toStderr = (...args) => console.error(...args);
+  console.log = toStderr;
+  console.info = toStderr;
+  console.debug = toStderr;
+  console.warn = toStderr;
 }
 
 /**
@@ -207,15 +250,28 @@ async function captureOne(recipe, api, outRoot) {
 
 async function main() {
   const opts = parseArgs(process.argv.slice(2));
+  const progress = makeProgress(opts.json);
+  if (opts.json) claimStdoutForTheReport();
 
   if (opts.list) {
+    const listed = [];
     for (const r of RECIPES) {
       const hash = await hashRecipeGraph(recipeFsPath(r.id));
-      const target = isVideoRecipe(r)
-        ? `capture/takes/${r.id}.webm  (video)`
-        : r.registryPath;
-      // eslint-disable-next-line no-console
-      console.log(`${r.id.padEnd(24)} → ${target}  [recipe ${hash}]`);
+      const video = isVideoRecipe(r);
+      listed.push({
+        id: r.id,
+        kind: video ? 'video' : 'screenshot',
+        target: video ? `capture/takes/${r.id}.webm` : r.registryPath,
+        recipeHash: hash,
+      });
+    }
+    if (opts.json) {
+      process.stdout.write(`${JSON.stringify({ recipes: listed }, null, 2)}\n`);
+      return;
+    }
+    for (const r of listed) {
+      const target = r.kind === 'video' ? `${r.target}  (video)` : r.target;
+      progress.line(`${r.id.padEnd(24)} → ${target}  [recipe ${r.recipeHash}]`);
     }
     return;
   }
@@ -242,17 +298,17 @@ async function main() {
   const results = [];
   try {
     for (const recipe of selected) {
-      process.stdout.write(`• ${recipe.id} … `);
+      progress.write(`• ${recipe.id} … `);
+      let hash = null;
       try {
-        const hash = await hashRecipeGraph(recipeFsPath(recipe.id));
+        hash = await hashRecipeGraph(recipeFsPath(recipe.id));
         if (opts.video) {
           const { takePath, eventsPath, log } = await recordOne(
             recipe,
             api,
             opts.out,
           );
-          // eslint-disable-next-line no-console
-          console.log(
+          progress.line(
             `ok → ${path.relative(process.cwd(), takePath)}\n` +
               `    ${log.events.length} events over ${log.durationMs}ms → ` +
               `${path.relative(process.cwd(), eventsPath)}` +
@@ -261,42 +317,72 @@ async function main() {
                   'so this take is not comparable frame-for-frame with another run.'
                 : ''),
           );
-          results.push({ id: recipe.id, recipeHash: hash });
+          results.push({
+            id: recipe.id,
+            ok: true,
+            recipeHash: hash,
+            // Relative to `--out`, not absolute: the report travels between the
+            // host that captured and the repo that consumes it, and an absolute
+            // path is the one field that is guaranteed to be wrong there.
+            take: path.relative(opts.out, takePath),
+            events: path.relative(opts.out, eventsPath),
+            eventCount: log.events.length,
+            durationMs: log.durationMs,
+            slipped: Boolean(log.slipped),
+          });
           continue;
         }
         const outPath = await captureOne(recipe, api, opts.out);
-        // eslint-disable-next-line no-console
-        console.log(`ok → ${path.relative(process.cwd(), outPath)}`);
+        progress.line(`ok → ${path.relative(process.cwd(), outPath)}`);
         results.push({
           id: recipe.id,
-          registryPath: recipe.registryPath,
+          ok: true,
           recipeHash: hash,
+          registryPath: recipe.registryPath,
         });
       } catch (e) {
-        // eslint-disable-next-line no-console
-        console.log(`FAILED\n    ${e.message}`);
-        results.push({ id: recipe.id, error: e.message });
+        progress.line(`FAILED\n    ${e.message}`);
+        results.push({
+          id: recipe.id,
+          ok: false,
+          recipeHash: hash,
+          error: e.message,
+        });
       }
     }
   } finally {
     await closeBrowser();
   }
 
-  const failed = results.filter((r) => r.error);
-  // eslint-disable-next-line no-console
-  console.log(
+  const failed = results.filter((r) => !r.ok);
+  progress.line(
     `\n${results.length - failed.length}/${results.length} ` +
       `${opts.video ? 'recorded' : 'captured'}.` +
       (failed.length ? ` ${failed.length} failed.` : ''),
   );
-  if (!failed.length && !opts.video) {
-    // eslint-disable-next-line no-console
-    console.log(
+  if (opts.json) {
+    process.stdout.write(
+      `${JSON.stringify(
+        {
+          kind: opts.video ? 'video' : 'screenshot',
+          base: opts.base,
+          results,
+          summary: {
+            total: results.length,
+            ok: results.length - failed.length,
+            failed: failed.length,
+          },
+        },
+        null,
+        2,
+      )}\n`,
+    );
+  } else if (!failed.length && !opts.video) {
+    progress.line(
       '\nRegistry `recipe` references (for the deckyard-website session to fill in):',
     );
     for (const r of results) {
-      // eslint-disable-next-line no-console
-      console.log(
+      progress.line(
         `  ${r.registryPath}\n    recipe: { "id": "${r.id}", ` +
           `"module": "../deckyard/capture/recipes/${r.id}.js", "hash": "${r.recipeHash}" }`,
       );

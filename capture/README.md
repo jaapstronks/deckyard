@@ -28,13 +28,49 @@ npm run capture -- --all                  # every screenshot recipe
 npm run capture -- editor-full --out /tmp/shots   # write elsewhere
 
 npm run capture -- --video form-drives-slide      # record one take
+npm run capture -- --all --json           # the same run, reported as JSON
 ```
 
 Options: `--out <dir>` (output root — default `../deckyard-website` for
 screenshots, where the recipe's `registryPath` is written relative to it, and
 `../deckyard-video` for takes), `--base <url>` (dev server, default
 `http://localhost:4177`), `--video` (record `kind: 'video'` recipes instead of
-taking shots). Env equivalents: `CAPTURE_OUT_DIR`, `CAPTURE_BASE_URL`.
+taking shots), `--json` (report on stdout as JSON). Env equivalents:
+`CAPTURE_OUT_DIR`, `CAPTURE_BASE_URL`.
+
+`--json` exists because an automated caller has to know _which_ recipes came
+out, not just how many: the refresh pipeline re-baselines only the ids it
+captured, and a run where one recipe timed out must leave that entry's baseline
+alone. Under `--json` stdout carries nothing but the report — progress, the
+custom-type loader's warnings and the storage seeder's Postgres logs all move
+to stderr — so it can be piped straight into a parser.
+
+```jsonc
+{
+  "kind": "screenshot",
+  "base": "http://localhost:4177",
+  "results": [
+    {
+      "id": "editor-full",
+      "ok": true,
+      "recipeHash": "5d46…",
+      "registryPath": "public/images/screenshots/editor-full.png",
+    },
+    {
+      "id": "share-link-rules-nl",
+      "ok": false,
+      "recipeHash": "0a1b…",
+      "error": "Waiting for selector … failed",
+    },
+  ],
+  "summary": { "total": 17, "ok": 16, "failed": 1 },
+}
+```
+
+Paths in the report are relative to `--out`, not absolute: the report travels
+from the host that captured to the repo that consumes it, and an absolute path
+is the one field guaranteed to be wrong there. A take reports `take`, `events`,
+`eventCount`, `durationMs` and `slipped` instead of `registryPath`.
 
 The browser is the app's own `getPuppeteerBrowser()` (system Chrome/Chromium —
 the same one the PDF/PNG exporters use). No extra dependency, no browser
@@ -243,6 +279,33 @@ Two further limits, both worth knowing before trusting a re-run:
 - **`comments` needs the database, not just the dev server.** It is the only
   recipe that connects to Postgres itself (see `seedCommentThreads()` above), so
   it fails where the others would merely produce a thinner shot.
+
+### What two runs on one host actually produce
+
+Measured 2026-08-28 on macOS, two consecutive `--all` runs against the same
+server, compared byte-for-byte and then pixel-for-pixel:
+
+|                                | shots | what differs                                                                                                                                                                          |
+| ------------------------------ | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| byte-identical                 | 6     | —                                                                                                                                                                                     |
+| **the access code and its QR** | 8     | `join-screen-{nl,en}`, `poll-live-{nl,en}`, `presenter-view-{nl,en}`, `comments-{nl,en}`. Every other pixel matches; the diff is exactly the code region (and the QR that encodes it) |
+| sub-perceptual noise           | 2     | `editor-full` — 492 px, none differing by more than 3/255; `editor-form-en` — one pixel, by 1. Invisible with the difference boosted 60×                                              |
+
+So the honest claim is not "a screenshot is byte-reproducible". It is: **a
+screenshot is pixel-reproducible except for the per-session access code**, and
+byte-reproducible only for the shots that do not contain one. The 8 that do
+would churn in every automated refresh, saying nothing — which is the same
+"a signal that always fires gets ignored" failure the hash scoping avoids
+above. Pinning the code (and regenerating the QR for it) is the fix, in the same
+place `rewriteJoinOrigin()` already substitutes the human-readable URL; it is
+tracked as its own item rather than absorbed by loosening the comparison.
+
+Two runs also produced one failing recipe each, a different one each time
+(`presenter-view-nl` and `share-link-rules-nl`, both selector timeouts on a
+live-session shot). Roughly 1 in 17, and it is why an automated re-baseline has
+to be scoped to the recipes that actually came out: a run that re-baselines a
+recipe it could not capture is recording a claim about an artifact that is one
+week older than it says it is.
 
 ## Adding the next screenshot
 
