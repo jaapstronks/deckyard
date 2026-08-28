@@ -141,6 +141,8 @@ export default {
       background: 'mist',
     },
   },
+  // The language-less seed: what every path with no deck language clones.
+  // Key-identical to the maps above; see `defaults` in validate-definition.js.
   defaults: {
     title: "Maslow's hierarchy",
     subheading: '',

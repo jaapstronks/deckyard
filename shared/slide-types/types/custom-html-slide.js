@@ -170,6 +170,8 @@ export default {
     nl: { html: DEFAULT_HTML, css: DEFAULT_CSS, background: 'lime' },
     'en-GB': { html: DEFAULT_HTML, css: DEFAULT_CSS, background: 'lime' },
   },
+  // The language-less seed: what every path with no deck language clones.
+  // Key-identical to the maps above; see `defaults` in validate-definition.js.
   defaults: { html: DEFAULT_HTML, css: DEFAULT_CSS, background: 'lime' },
   renderHtml: (content, slide) => {
     const bg = bgClass(content?.background || 'lime');
