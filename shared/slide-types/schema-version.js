@@ -24,7 +24,7 @@ import {
 } from './field-groups.js';
 
 /** The schema version every freshly written deck is stamped with. */
-export const CURRENT_SCHEMA_VERSION = 9;
+export const CURRENT_SCHEMA_VERSION = 10;
 
 /**
  * The one legacy collection key each type stored before `items` — the v6 -> v7
@@ -538,6 +538,49 @@ export const SCHEMA_MIGRATIONS = [
         content[family.arrayKey] = folded;
       }
       for (const key of stored) delete content[key];
+    }
+    return pres;
+  },
+
+  // v9 -> v10: fold the pre-rename `subtitle` spelling into `subheading`.
+  //
+  // The rename shipped as a one-off SQL migration
+  // (`server/db/migrations/020_rename_subtitle_to_subheading.js`), which folded
+  // the stored rows once and then stopped being reachable. Import never touched
+  // it: `deckToPresentationParts` runs THIS funnel, so a deck exported before
+  // the rename — or hand-written against an old example — carried `subtitle`
+  // straight past every renamed type, which declares only `subheading`. The
+  // scattered readers that had been left behind to catch it (two conversion
+  // branches, an alt-text fallback, the search indexer, two AI prompts) are the
+  // "accepts both spellings" shape the beta stance rules out; folding here is
+  // what lets them go, and gives import the normalisation the database got.
+  //
+  // Scoped to types that declare `subheading` and NOT `subtitle`: on those the
+  // legacy key is unambiguously the old spelling of the field beside it. A
+  // custom type that declares `subtitle` for its own sake keeps it untouched
+  // (nothing is renamed out from under a fork), and a slide whose type is not
+  // registered is skipped entirely.
+  //
+  // As in v7 -> v8 and v8 -> v9: a populated canonical value wins untouched and
+  // the legacy key is dropped either way. Idempotent — after one run no
+  // `subtitle` is left on a folded type, and a slide that never had one is
+  // untouched.
+  (pres) => {
+    const slides = Array.isArray(pres?.slides) ? pres.slides : [];
+    for (const slide of slides) {
+      if (!slide || typeof slide.type !== 'string') continue;
+      const content = slide.content;
+      if (!content || typeof content !== 'object') continue;
+      if (!Object.prototype.hasOwnProperty.call(content, 'subtitle')) continue;
+      const def = getSlideType(slide.type);
+      if (!def) continue;
+      const declared = new Set(
+        (def.fields || []).map((f) => String(f?.key || '')),
+      );
+      if (!declared.has('subheading') || declared.has('subtitle')) continue;
+      const legacy = str(content.subtitle);
+      if (legacy && !str(content.subheading)) content.subheading = legacy;
+      delete content.subtitle;
     }
     return pres;
   },

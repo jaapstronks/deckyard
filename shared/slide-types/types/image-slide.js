@@ -296,7 +296,7 @@ export default {
         : pickAltText({
             explicit: altExplicit || altNl || altEn,
             src: content?.image,
-            fallbacks: [content?.caption, content?.title, content?.subtitle],
+            fallbacks: [content?.caption, content?.title, content?.subheading],
             hardFallback: 'Image',
           });
     const img = content?.image

@@ -826,6 +826,103 @@ test('v8->v9 is render-equivalent for the surfaces that read the options', async
   assert.equal(/data-poll-bar-row="2"/.test(html), false);
 });
 
+function deckAtV9(type, content) {
+  const deck = legacyDeck();
+  deck.schemaVersion = 9;
+  deck.slides = [
+    { id: randomUUID(), type, parentId: null, content, visibility: {} },
+  ];
+  return deck;
+}
+
+test('v9->v10 folds the legacy `subtitle` spelling into `subheading`', () => {
+  const content = migratePresentation(
+    deckAtV9('title-slide', { title: 'Kickoff', subtitle: 'welkom' }),
+  ).slides[0].content;
+  assert.equal(content.subheading, 'welkom');
+  assert.equal('subtitle' in content, false);
+});
+
+test('v9->v10 keeps a populated `subheading` and still drops the legacy key', () => {
+  const content = migratePresentation(
+    deckAtV9('list-slide', { subheading: 'canonical', subtitle: 'stale' }),
+  ).slides[0].content;
+  assert.equal(content.subheading, 'canonical');
+  assert.equal('subtitle' in content, false);
+});
+
+test('v9->v10 only touches types that declare `subheading` and not `subtitle`', () => {
+  // A type whose schema has no `subheading` at all: the key is not ours to
+  // rename, so it stays put as a forward-compatible unknown.
+  const noSubheading = migratePresentation(
+    deckAtV9('quote-slide', { quote: 'Q', subtitle: 'not mine' }),
+  ).slides[0].content;
+  assert.equal(noSubheading.subtitle, 'not mine');
+
+  // An unregistered type is skipped entirely — a fork's own key survives.
+  const unknown = migratePresentation(
+    deckAtV9('acme-hero-slide', { subtitle: 'a fork owns this' }),
+  ).slides[0].content;
+  assert.equal(unknown.subtitle, 'a fork owns this');
+});
+
+test('v9->v10 writes no empty subheading and is idempotent', () => {
+  const blank = migratePresentation(
+    deckAtV9('title-slide', { title: 'T', subtitle: '   ' }),
+  ).slides[0].content;
+  assert.equal('subtitle' in blank, false);
+  assert.equal(blank.subheading, undefined);
+
+  const once = migratePresentation(
+    deckAtV9('title-slide', { title: 'T', subtitle: 'welkom' }),
+  );
+  const twice = migratePresentation(structuredClone(once));
+  assert.deepEqual(twice.slides[0].content, once.slides[0].content);
+});
+
+test('gate: no type that declares `subheading` can carry a stored `subtitle`', () => {
+  // The point of the fold is that the legacy spelling stops existing after a
+  // read — that is what lets the readers that used to catch it go. Pin it for
+  // every type, not just the two sampled above, so a type added later inherits
+  // the guarantee instead of quietly reintroducing a second spelling.
+  const types = Object.entries(SLIDE_TYPES).filter(([, def]) => {
+    const declared = new Set(
+      (def.fields || []).map((f) => String(f?.key || '')),
+    );
+    return declared.has('subheading') && !declared.has('subtitle');
+  });
+  assert.ok(
+    types.length > 10,
+    `expected many subheading types, got ${types.length}`,
+  );
+  for (const [name] of types) {
+    const content = migratePresentation(deckAtV9(name, { subtitle: 'legacy' }))
+      .slides[0].content;
+    assert.equal('subtitle' in content, false, name);
+    assert.equal(content.subheading, 'legacy', name);
+  }
+});
+
+test('the import seam folds a pre-v10 export off the old `subtitle` spelling', async () => {
+  // The rename shipped as a one-off SQL migration, which the import path never
+  // runs: without the v9 -> v10 step a deck exported before it would keep an
+  // unreachable `subtitle` and render no subheading at all.
+  const { deckToPresentationParts } =
+    await import('../shared/slide-types/deck.js');
+  const parts = deckToPresentationParts({
+    title: 'Old export',
+    slides: [
+      {
+        type: 'eu.deckyard.slide.title',
+        content: { title: 'Kickoff', subtitle: 'welkom' },
+      },
+    ],
+  });
+  const content = parts.slides[0].content;
+  assert.equal(content.subheading, 'welkom');
+  assert.equal('subtitle' in content, false);
+});
+
 /**
  * Numbered field keys that are NOT a mirror of a canonical array, with why each
  * one is allowed to stay. A numbered key beside an `items` field is the shape

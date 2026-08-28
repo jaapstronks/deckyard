@@ -26,7 +26,7 @@ import { migratePresentation } from './schema-version.js';
 //   "title": "My deck",
 //   "theme": "default",
 //   "slides": [
-//     { "type": "eu.deckyard.slide.title", "content": { "title": "...", "subtitle": "", "background": "lime" } }
+//     { "type": "eu.deckyard.slide.title", "content": { "title": "...", "subheading": "", "background": "lime" } }
 //   ]
 // }
 //

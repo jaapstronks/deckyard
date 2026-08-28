@@ -27,11 +27,8 @@ export function summarizeDeckForPrompt(deck, { maxSlides = 60 } = {}) {
     const summaryBits = [];
     if (typeof c.title === 'string' && c.title.trim())
       summaryBits.push(`title="${truncateForPrompt(c.title, 120)}"`);
-    // Check both subheading (new) and subtitle (legacy) for backward compatibility
     const subheadingVal =
-      (typeof c.subheading === 'string' && c.subheading.trim()) ||
-      (typeof c.subtitle === 'string' && c.subtitle.trim()) ||
-      '';
+      (typeof c.subheading === 'string' && c.subheading.trim()) || '';
     if (subheadingVal)
       summaryBits.push(`subheading="${truncateForPrompt(subheadingVal, 120)}"`);
     if (typeof c.quote === 'string' && c.quote.trim())
