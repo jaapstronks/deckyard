@@ -630,11 +630,6 @@
   color: hsl(var(--app-accent-text));
 }
 
-.badge-secondary {
-  background: hsl(var(--app-bg-secondary));
-  color: hsl(var(--app-text-secondary));
-}
-
 /* Stock media status helper */
 .stock-media-status {
   font-weight: normal;

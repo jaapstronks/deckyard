@@ -56,17 +56,17 @@
   },
   "client/styles/base/02-lists-and-thumbs/33-slide-metadata.css": {
     "tokenisable-spacing": {
-      "count": 2
+      "count": 1
     }
   },
   "client/styles/base/02-lists-and-thumbs/34-slide-nesting.css": {
     "tokenisable-spacing": {
-      "count": 7
+      "count": 5
     }
   },
   "client/styles/base/02-lists-and-thumbs/35-slide-visibility.css": {
     "tokenisable-spacing": {
-      "count": 15
+      "count": 14
     }
   },
   "client/styles/base/02-lists-and-thumbs/40-insert-and-collapsed.css": {
@@ -231,7 +231,7 @@
   },
   "client/styles/base/04-editor-and-misc/85-settings.css": {
     "tokenisable-spacing": {
-      "count": 13
+      "count": 10
     }
   },
   "client/styles/base/04-editor-and-misc/86-admin-users.css": {
