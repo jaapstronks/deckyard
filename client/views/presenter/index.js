@@ -62,7 +62,10 @@ import { createStepIndicatorRenderer } from './step-indicator.js';
 import { createPresenterConsoleToggle } from './console-toggle.js';
 import { buildPresenterTopbar } from './topbar.js';
 import { nav } from '../../lib/state/router.js';
-import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
+import {
+  DEFAULT_DECK_LANG,
+  resolveDeckLang,
+} from '../../../shared/i18n-utils.js';
 
 export async function renderPresenter(root, id) {
   const startUrl = new URL(location.href);
@@ -264,7 +267,14 @@ export async function renderPresenter(root, id) {
   root.append(shell);
 
   // Presenter console rail: docked inside the deck, revealed by the toggle.
-  presenterConsole = createPresenterConsole({ theme, presentationId: id });
+  // Same language source as the stage (deck-controller's `mountSlides`): the
+  // console's next-slide thumb renders the same slide types and reads the same
+  // built-in copy, so it must not be left on the default language.
+  presenterConsole = createPresenterConsole({
+    theme,
+    presentationId: id,
+    lang: resolveDeckLang(pres),
+  });
   deck.append(presenterConsole.el);
 
   const videoLayer = createVideoLayer({
