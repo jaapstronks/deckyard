@@ -32,13 +32,6 @@
   font-synthesis: none;
   margin: 0;
 }
-.slide-chart .chart-subtitle {
-  margin-top: var(--slide-space-3);
-  font-size: var(--slide-text-lg);
-  line-height: var(--slide-leading-normal);
-  color: var(--slide-on-surface-muted);
-  max-width: 70ch;
-}
 .slide-chart .chart-area {
   flex: 1;
   min-height: 0;
@@ -177,7 +170,6 @@
   letter-spacing: 0.02em;
 }
 .slide-chart .chart-value,
-.slide-chart .chart-legend-text,
 .slide-chart .chart-pie-label {
   fill: currentColor;
   fill-opacity: 0.86;
