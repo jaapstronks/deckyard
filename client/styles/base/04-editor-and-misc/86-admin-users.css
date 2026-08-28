@@ -1,66 +1,6 @@
 /* Admin Users Management Styles */
 
 /* ============================================================
-   USER STATUS INDICATORS
-   ============================================================ */
-
-.status-indicators {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.status-group {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  cursor: help;
-}
-
-.status-dot--success {
-  background-color: hsl(var(--app-success));
-  box-shadow: 0 0 0 2px hsl(var(--app-success) / 0.2);
-}
-
-.status-dot--warning {
-  background-color: hsl(var(--app-warning));
-  box-shadow: 0 0 0 2px hsl(var(--app-warning) / 0.2);
-}
-
-.status-dot--danger {
-  background-color: hsl(var(--app-danger));
-  box-shadow: 0 0 0 2px hsl(var(--app-danger) / 0.2);
-}
-
-.status-dot--muted {
-  background-color: hsl(var(--app-text-tertiary, 0 0% 60%));
-  opacity: 0.5;
-}
-
-.status-label {
-  font-size: var(--ps-text-xs);
-  color: hsl(var(--app-text-secondary));
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-}
-
-/* Responsive: stack status indicators on smaller screens */
-@media (max-width: 768px) {
-  .status-indicators {
-    flex-direction: column;
-    gap: 4px;
-    align-items: flex-start;
-  }
-}
-
-/* ============================================================
    ADMIN USERS CARD-BASED LAYOUT
    ============================================================ */
 

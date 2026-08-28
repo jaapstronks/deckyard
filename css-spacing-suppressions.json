@@ -236,7 +236,7 @@
   },
   "client/styles/base/04-editor-and-misc/86-admin-users.css": {
     "tokenisable-spacing": {
-      "count": 6
+      "count": 3
     }
   },
   "client/styles/base/04-editor-and-misc/86-settings-api-keys.css": {
