@@ -211,12 +211,14 @@ renderHtml: (content) => `
 `;
 ```
 
-The codebase automates this exactly once: the custom-html slide compiles its
-author CSS under a per-slide root (`scopeCss` in
-`shared/slide-types/types/custom-html-slide.js`), so those selectors _cannot_
-escape. A hand-written stylesheet has no compiler in front of it, so the root
-class is the whole mechanism. (Types built in Settings > Slide Types are in
-the same boat: their CSS is security-filtered, not selector-scoped.)
+The codebase automates this wherever a _human pastes_ a stylesheet: both the
+custom-html slide and a type built in Settings > Slide Types have their CSS
+rewritten under the slide's root by one shared `scopeCss`
+(`shared/slide-types/scope-css.js`), so those selectors _cannot_ escape — see
+[`slide-type-css-contract.md`](../reference/slide-type-css-contract.md) §
+_Author CSS is scoped to the slide root_. A file-JS type is the exception, and
+deliberately so: its stylesheet is code you wrote in the repo, there is no
+compiler in front of it, and the root class is the whole mechanism.
 
 **Overriding a core type keeps core's class.** An `override: true` type
 replaces a renderer, not a slide role: a fork's `payoff-slide` still renders
