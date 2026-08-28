@@ -416,26 +416,49 @@ export function aiFillsFieldsShot(lang) {
     waitFor: '.app-shell.editor-shell .slides-add-btn',
 
     async action(page, ctx) {
-      // The stub has to be in place before the menu item is clicked: the modal
-      // only renders once the response is in hand.
-      await stubTranslateFields(page, ctx.target.content);
-      await editorReady(page);
-      await page.click('.slide-actions-btn');
-      await page.waitForSelector(
-        '.slide-actions-menu .slide-fill-translation-item',
-        {
-          visible: true,
-          timeout: 10_000,
-        },
-      );
-      await page.click('.slide-actions-menu .slide-fill-translation-item');
-      await page.waitForSelector(
-        '.modal.translate-slide-modal .translate-preview-list',
-        {
-          visible: true,
-          timeout: 15_000,
-        },
-      );
+      await aiFillsFieldsSetup(page, ctx);
+      await page.click(AI_FILLS_FIELDS_SELECTORS.menuButton);
+      await page.waitForSelector(AI_FILLS_FIELDS_SELECTORS.menuItem, {
+        visible: true,
+        timeout: 10_000,
+      });
+      await page.click(AI_FILLS_FIELDS_SELECTORS.menuItem);
+      await page.waitForSelector(AI_FILLS_FIELDS_SELECTORS.preview, {
+        visible: true,
+        timeout: 15_000,
+      });
     },
   };
+}
+
+/**
+ * The three elements the fill-from-translation flow runs through, named once.
+ *
+ * The shot clicks them to *arrive* at the preview; the take built on the same
+ * shape (`recipes/agent-fills-fields.js`) clicks them to *show* the arriving.
+ * Naming them here is what keeps those two from photographing different
+ * buttons after a rename.
+ */
+export const AI_FILLS_FIELDS_SELECTORS = {
+  menuButton: '.slide-actions-btn',
+  menuItem: '.slide-actions-menu .slide-fill-translation-item',
+  preview: '.modal.translate-slide-modal .translate-preview-list',
+};
+
+/**
+ * Everything the fill-from-translation shot needs *before* anything is clicked:
+ * the request stub in place and the editor past its skeleton.
+ *
+ * Split out of the shot's `action` so a take can start filming exactly here —
+ * with the app ready and the menu still closed — and drive the clicks itself.
+ * The stub has to be installed before the menu item is clicked: the modal only
+ * renders once the response is in hand.
+ *
+ * @param {import('puppeteer-core').Page} page
+ * @param {{ target: { content: object } }} ctx the shot's seed context
+ * @returns {Promise<void>}
+ */
+export async function aiFillsFieldsSetup(page, ctx) {
+  await stubTranslateFields(page, ctx.target.content);
+  await editorReady(page);
 }

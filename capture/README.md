@@ -291,6 +291,16 @@ export default {
 };
 ```
 
+Two takes exist, both layered on a marketing shot:
+
+| take                 | claim                      | built on             |
+| -------------------- | -------------------------- | -------------------- |
+| `form-drives-slide`  | a slide is a form          | `editor-form-nl`     |
+| `agent-fills-fields` | your agent builds the deck | `ai-fills-fields-nl` |
+
+The first is a typing clip, the second a click clip, so between them the
+recorder's whole vocabulary is exercised by something that ships.
+
 `npm run capture -- --video form-drives-slide` writes two files under
 `--out` (default `../deckyard-video`):
 
@@ -334,6 +344,35 @@ Three things the recorder does on purpose:
   step is absorbed by the next wait instead of shifting the rest of the take.
   When a step overruns, the run prints a `schedule slipped` warning — a take
   that could not keep its own timing is not comparable with another run.
+
+### Why a take needs a frame ticker
+
+`page.screencast()` is fed by `Page.screencastFrame`, and **Chromium only emits
+that event when the page composites a new frame.** A page that is changing —
+a caret blinking, text being typed, a hover moving — emits them continuously; a
+page that has settled emits none. So a change that lands while nothing else is
+moving can be coalesced away, and because the page is then static, no later
+frame ever replaces it: the take runs to full length, ends on a stale image,
+and reports no error.
+
+That is not a corner case, it is where clips put their payoff. The second take
+opens its fill-preview modal 10ms after a click, at the start of a `hold` —
+measured before the fix, it appeared in **zero** of the take's 134 frames while
+`page.screenshot()` immediately afterwards showed it.
+
+`recordTake()` therefore installs a 1×1 px element with a compositor-only
+animation (`opacity`, on its own layer) for the duration of the screencast, and
+removes it afterwards. It forces a frame every vsync, so any change is captured
+within a frame of happening. One CSS pixel at ~1% alpha in the bottom-left
+corner: present in the 4K master, invisible at any output resolution.
+
+### The last hold is slack
+
+The composition cuts a clip to a whole number of musical bars, so a take has to
+be at least as long as the bars it is spec'd for (2 bars = 4s at 120 BPM). Write
+the closing `rec.hold()` long enough to overshoot, and let the grid trim it —
+the alternative is a clip that runs out of film mid-bar. Both current takes are
+scripted a few hundred ms past their two bars.
 
 ### Why a take needs its own browser
 

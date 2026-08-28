@@ -62,12 +62,12 @@ export default {
       // A breath before anything moves. Without it the clip opens mid-action
       // and the viewer never sees the starting state it is about to change.
       await rec.hold(500);
-      await rec.type(TITLE_FIELD, NEW_TITLE, { clear: true, label: 'titel' });
+      await rec.type(TITLE_FIELD, NEW_TITLE, { clear: true, label: 'field' });
       await rec.hold(500);
       // The pointer travels to the headline it just rewrote. This is the beat
       // that makes the point — and it is a second zoom keyframe, so the camera
       // pans instead of sitting on the field while the payoff happens offscreen.
-      await rec.move(PREVIEW_HEADLINE, { label: 'slide' });
+      await rec.move(PREVIEW_HEADLINE, { label: 'preview' });
       await rec.hold(900);
     },
   },

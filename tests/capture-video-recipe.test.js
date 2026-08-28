@@ -23,7 +23,35 @@ import {
 } from '../capture/lib/recipe.js';
 import { RECIPES } from '../capture/recipes/index.js';
 import formDrivesSlide from '../capture/recipes/form-drives-slide.js';
+import agentFillsFields from '../capture/recipes/agent-fills-fields.js';
 import { editorFormShot } from '../capture/recipes/_marketing-shots.js';
+import { aiFillsFieldsShot } from '../capture/recipes/_features-shots.js';
+
+/** Every take, with the shot it is layered on. */
+const TAKES = [
+  { take: formDrivesSlide, shot: editorFormShot('nl') },
+  { take: agentFillsFields, shot: aiFillsFieldsShot('nl') },
+];
+
+/**
+ * Drive a take's sequence against a recorder that only remembers, so the
+ * shape of the choreography is testable without a browser.
+ * @param {import('../capture/lib/recipe.js').VideoRecipe} take
+ */
+async function replay(take) {
+  /** @type {Array<{kind: string, label?: string, selector?: string}>} */
+  const steps = [];
+  await take.record.sequence({
+    hold: async (ms) => void steps.push({ kind: 'hold', ms }),
+    move: async (selector, o = {}) =>
+      void steps.push({ kind: 'move', selector, ...o }),
+    click: async (selector, o = {}) =>
+      void steps.push({ kind: 'click', selector, ...o }),
+    type: async (selector, text, o = {}) =>
+      void steps.push({ kind: 'type', selector, text, ...o }),
+  });
+  return steps;
+}
 
 /** A minimal valid video recipe, to mutate per case. */
 const base = () => ({
@@ -111,23 +139,63 @@ test('the take is recorded at a 16:9 viewport, oversampled by scale', () => {
   assert.equal(height * deviceScaleFactor, 2160);
 });
 
-test('the sequence records a labelled step for the field and for the slide', async () => {
-  /** @type {Array<{kind: string, label?: string, selector?: string}>} */
-  const steps = [];
-  const rec = {
-    hold: async (ms) => void steps.push({ kind: 'hold', ms }),
-    move: async (selector, o = {}) =>
-      void steps.push({ kind: 'move', selector, ...o }),
-    click: async (selector, o = {}) =>
-      void steps.push({ kind: 'click', selector, ...o }),
-    type: async (selector, text, o = {}) =>
-      void steps.push({ kind: 'type', selector, text, ...o }),
-  };
-  await formDrivesSlide.record.sequence(rec);
-
+test('the first take moves the camera from the field to what it changed', async () => {
+  const steps = await replay(formDrivesSlide);
   const labels = steps.filter((s) => s.label).map((s) => s.label);
   // Two labels, so the camera moves from the field to what the field changed —
   // one label would leave the payoff happening off-frame.
-  assert.deepEqual(labels, ['titel', 'slide']);
-  assert.equal(steps[0].kind, 'hold', 'the clip opens on a still frame');
+  assert.deepEqual(labels, ['field', 'preview']);
+});
+
+test('the second take moves the camera from the menu to the preview', async () => {
+  const steps = await replay(agentFillsFields);
+  const labels = steps.filter((s) => s.label).map((s) => s.label);
+  assert.deepEqual(labels, ['menu', 'preview']);
+});
+
+test('every take opens on a hold and closes on one', async () => {
+  for (const { take } of TAKES) {
+    const steps = await replay(take);
+    assert.equal(
+      steps[0].kind,
+      'hold',
+      `${take.id} should open on a still frame`,
+    );
+    // The closing hold is the clip's slack: the composition cuts to a whole
+    // number of bars, so the last step has to be the one it is safe to trim.
+    assert.equal(
+      steps[steps.length - 1].kind,
+      'hold',
+      `${take.id} should end on a hold — that is what the bar grid trims`,
+    );
+  }
+});
+
+test('a label is a plain identifier, so the spec can key overrides on it', async () => {
+  for (const { take } of TAKES) {
+    for (const step of await replay(take)) {
+      if (!step.label) continue;
+      assert.match(
+        step.label,
+        /^[a-z][a-z0-9-]*$/,
+        `${take.id}: "${step.label}" is not a lower-case identifier`,
+      );
+    }
+  }
+});
+
+test('every take reuses its shot rather than restating how to reach the state', () => {
+  for (const { take, shot } of TAKES) {
+    const ctx = { deckId: 'deck-1', slideId: 'slide-1' };
+    assert.ok(isVideoRecipe(take), `${take.id} should be a video recipe`);
+    assert.equal(take.waitFor, shot.waitFor, take.id);
+    assert.deepEqual(take.localStorage, shot.localStorage, take.id);
+    assert.equal(take.navigate(ctx), shot.navigate(ctx), take.id);
+    // Identity cannot be asserted — the shot is a factory, so every call
+    // closes over its own functions. What is checkable is that the take has
+    // both halves at all: a take that seeded its own state would be free to
+    // drift away from the shot it claims to film.
+    assert.equal(typeof take.state, 'function', take.id);
+    assert.equal(typeof take.action, 'function', take.id);
+  }
 });

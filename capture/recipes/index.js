@@ -33,6 +33,7 @@ import aiFillsFieldsEn from './ai-fills-fields-en.js';
 // selects between the two kinds with `--video`. See capture/README.md § Video
 // recipes.
 import formDrivesSlide from './form-drives-slide.js';
+import agentFillsFields from './agent-fills-fields.js';
 
 /** @type {Array<import('../lib/recipe.js').Recipe | import('../lib/recipe.js').VideoRecipe>} */
 export const RECIPES = [
@@ -54,6 +55,7 @@ export const RECIPES = [
   aiFillsFieldsNl,
   aiFillsFieldsEn,
   formDrivesSlide,
+  agentFillsFields,
 ];
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
