@@ -29,7 +29,12 @@ import shareLinkRulesEn from './share-link-rules-en.js';
 import aiFillsFieldsNl from './ai-fills-fields-nl.js';
 import aiFillsFieldsEn from './ai-fills-fields-en.js';
 
-/** @type {import('../lib/recipe.js').Recipe[]} */
+// Video takes (`kind: 'video'`). Same registry, same hash mechanism; the runner
+// selects between the two kinds with `--video`. See capture/README.md § Video
+// recipes.
+import formDrivesSlide from './form-drives-slide.js';
+
+/** @type {Array<import('../lib/recipe.js').Recipe | import('../lib/recipe.js').VideoRecipe>} */
 export const RECIPES = [
   editorFull,
   slideTypePickerNew,
@@ -48,6 +53,7 @@ export const RECIPES = [
   shareLinkRulesEn,
   aiFillsFieldsNl,
   aiFillsFieldsEn,
+  formDrivesSlide,
 ];
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));

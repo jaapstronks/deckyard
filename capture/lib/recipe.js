@@ -4,9 +4,9 @@
  * builds on — has drifted.
  *
  * A recipe is a plain object describing how to deterministically reproduce one
- * screenshot. The SAME shape is intended to drive the later video factory — a
- * video recipe adds a capture sequence on top of the same state/navigate/action
- * fields (see capture/README.md).
+ * artefact. The SAME shape drives both kinds: a video recipe is a screenshot
+ * recipe plus a `record` block, reusing state/navigate/waitFor/action to reach
+ * the state the recording starts from (see capture/README.md § Video recipes).
  *
  * @typedef {object} Recipe
  * @property {string} id            Stable slug; matches the registry entry id sans "shot-".
@@ -31,6 +31,36 @@
  *                                   live poll, say. Mutually exclusive with `fullPage`.
  * @property {(api: import('./api.js').ApiClient, ctx: object) => Promise<void>} [cleanup]
  *                                   Optional teardown after the shot.
+ * @property {'screenshot' | 'video'} [kind] Defaults to `screenshot`.
+ * @property {'reduce' | 'no-preference'} [reducedMotion]
+ *                                   Overrides the media feature the page is
+ *                                   opened with. Defaults to `reduce` for a
+ *                                   screenshot and `no-preference` for a video —
+ *                                   see {@link resolveReducedMotion}.
+ */
+
+/**
+ * A recipe that records a clip instead of taking a shot.
+ *
+ * It carries no `output`/`registryPath`: those name one PNG in the website
+ * registry, and a take is not a published artefact — the runner derives
+ * `takes/<id>.webm` and `events/<id>.json` from the id, and what ships is the
+ * *rendered* MP4 from the composition repo.
+ *
+ * @typedef {Omit<Recipe, 'output' | 'registryPath' | 'clip' | 'fullPage'> & {
+ *   kind: 'video',
+ *   record: {
+ *     fps?: number,
+ *     sequence: (rec: Recorder) => Promise<void>,
+ *   },
+ * }} VideoRecipe
+ *
+ * @typedef {object} Recorder The object `record.sequence` drives. Built in
+ *   `lib/record.js`; every call is written to the event log.
+ * @property {(ms: number) => Promise<void>} hold
+ * @property {(selector: string, opts?: {label?: string}) => Promise<void>} move
+ * @property {(selector: string, opts?: {label?: string}) => Promise<void>} click
+ * @property {(selector: string, text: string, opts?: {label?: string, clear?: boolean}) => Promise<void>} type
  */
 
 import crypto from 'node:crypto';
@@ -64,17 +94,61 @@ export function resolveNavigate(recipe, ctx) {
 }
 
 /**
+ * `true` when the recipe records a clip rather than taking a shot.
+ * @param {Recipe | VideoRecipe} recipe
+ * @returns {boolean}
+ */
+export function isVideoRecipe(recipe) {
+  return recipe?.kind === 'video';
+}
+
+/**
+ * Which `prefers-reduced-motion` a recipe's page is opened with.
+ *
+ * The default flips per kind, and that flip is a real weakening rather than a
+ * convenience: forcing `reduce` is what keeps a screenshot from catching a
+ * mid-transition frame, but for video it switches off precisely the app
+ * animations the clip exists to show — the panel sliding in, the slide
+ * following the form. So a video take is reproducible to a frame or two, not
+ * pixel-identical. See capture/README.md § Determinism conventions.
+ *
+ * @param {Recipe | VideoRecipe} recipe
+ * @returns {'reduce' | 'no-preference'}
+ */
+export function resolveReducedMotion(recipe) {
+  return (
+    recipe.reducedMotion ?? (isVideoRecipe(recipe) ? 'no-preference' : 'reduce')
+  );
+}
+
+/**
  * Validate the minimal shape so a broken recipe fails with a clear message
  * rather than deep inside Puppeteer.
- * @param {Recipe} recipe
+ * @param {Recipe | VideoRecipe} recipe
  */
 export function validateRecipe(recipe) {
   const problems = [];
   if (!recipe || typeof recipe !== 'object') return ['recipe is not an object'];
   if (!recipe.id) problems.push('missing "id"');
+  if (!recipe.navigate) problems.push('missing "navigate"');
+  if (isVideoRecipe(recipe)) {
+    if (typeof recipe.record?.sequence !== 'function') {
+      problems.push('missing "record.sequence" function');
+    }
+    if (recipe.record?.fps !== undefined && !(recipe.record.fps > 0)) {
+      problems.push('"record.fps" must be a positive number');
+    }
+    // A take is not a registry artefact — the runner derives its paths from the
+    // id. Carrying these fields would imply a published PNG that never exists.
+    for (const field of ['output', 'registryPath', 'clip', 'fullPage']) {
+      if (recipe[field] !== undefined) {
+        problems.push(`"${field}" does not apply to a video recipe`);
+      }
+    }
+    return problems;
+  }
   if (!recipe.output) problems.push('missing "output"');
   if (!recipe.registryPath) problems.push('missing "registryPath"');
-  if (!recipe.navigate) problems.push('missing "navigate"');
   if (recipe.output && !recipe.registryPath?.endsWith(recipe.output)) {
     problems.push(
       `"output" (${recipe.output}) is not the basename of "registryPath" (${recipe.registryPath})`,
