@@ -31,7 +31,7 @@ import {
   broadcastToPresentation,
   PresentationEventTypes,
 } from '../../../services/comment-events.js';
-import { scheduleDeckThumbnailWarm } from './thumbnail.js';
+import { scheduleDeckThumbnailWarm } from '../../../render/deck-thumbnail-warm.js';
 import { fireAndForget } from '../../../utils/fire-and-forget.js';
 import { normalizeLang } from '../../../../shared/i18n-utils.js';
 

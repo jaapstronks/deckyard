@@ -38,7 +38,7 @@ import {
   warmOnSaveEnabled,
   WARM_DEBOUNCE_MS,
 } from '../server/render/thumbnail-warm-queue.js';
-import { scheduleDeckThumbnailWarm } from '../server/routes/api/presentations/thumbnail.js';
+import { scheduleDeckThumbnailWarm } from '../server/render/deck-thumbnail-warm.js';
 import {
   thumbCacheKey,
   firstSlideSignature,
@@ -490,8 +490,8 @@ test('after the warm ran, the next Home load is a cache hit instead of a miss', 
     );
     await flushPendingWarms();
 
-    // Now the Home load is a plain cache hit: the fresh bytes, and a long
-    // max-age instead of the 10s revalidate window a stale serve gets.
+    // Now the Home load is a plain cache hit: the fresh bytes, tagged with the
+    // *fresh* cache key rather than the previous raster's name.
     const res = fakeRes();
     await handlePresentationThumbnail(
       {
@@ -510,9 +510,9 @@ test('after the warm ran, the next Home load is a cache hit instead of a miss', 
       'the card shows the edit, not the old cover',
     );
     assert.equal(
-      res.headers['Cache-Control'],
-      'public, max-age=3600',
-      'served as fresh',
+      res.headers.ETag,
+      `"${filename}"`,
+      'served as fresh — the tag names the raster the deck now has',
     );
   });
 

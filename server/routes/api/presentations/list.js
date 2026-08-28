@@ -7,7 +7,7 @@ import {
   hasIdentity,
   isOwnerOrCreator,
 } from '../../../utils/presentation-authz/index.js';
-import { resolveThemeThumbBg } from '../../../utils/themes.js';
+import { withDeckCardFields } from '../../../utils/deck-card-fields.js';
 import { withDbGuard } from '../../../storage/utils/index.js';
 import { getOrgId } from '../../../utils/context.js';
 
@@ -56,28 +56,19 @@ export async function handlePresentationsList({
   const publishedSet = await getPublishedPresentationIds(presentationIds, ctx);
   const collaboratorCounts = await getCollaboratorCounts(presentationIds, ctx);
 
-  // Resolve each distinct theme's background color once, for the thumbnail
-  // placeholder shown until the rasterized PNG loads (theme loads are memoized).
-  const thumbBgByTheme = new Map();
-  await Promise.all(
-    [...new Set(filtered.map((p) => p.theme).filter(Boolean))].map(
-      async (themeId) => {
-        thumbBgByTheme.set(
-          themeId,
-          await resolveThemeThumbBg(repoRoot, themeId),
-        );
-      },
-    ),
+  // Attach tags, isPublished and collaboratorCount here — they are this route's
+  // own enrichment; the fields every deck-card producer owes the grid come from
+  // the shared mapper.
+  const withMetadata = await withDeckCardFields(
+    repoRoot,
+    filtered.map((p) => ({
+      ...p,
+      tags: tagsMap.get(p.id) || [],
+      isPublished: publishedSet.has(p.id),
+      collaboratorCount: collaboratorCounts.get(p.id) || 0,
+    })),
+    storageScope,
   );
-
-  // Attach tags, isPublished, collaboratorCount, and thumbBg to each presentation
-  const withMetadata = filtered.map((p) => ({
-    ...p,
-    tags: tagsMap.get(p.id) || [],
-    isPublished: publishedSet.has(p.id),
-    collaboratorCount: collaboratorCounts.get(p.id) || 0,
-    thumbBg: thumbBgByTheme.get(p.theme) || null,
-  }));
 
   serveJson(res, 200, withMetadata);
   return true;

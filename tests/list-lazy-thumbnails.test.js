@@ -299,7 +299,6 @@ test('the thumbnail image is in the document before its src is set', () => {
       id: 'deck-1',
       title: 'Deck one',
       theme: 'default',
-      revision: 7,
       modified: new Date().toISOString(),
       hasSlides: true,
     });
@@ -323,10 +322,10 @@ test('the thumbnail image is in the document before its src is set', () => {
       [true],
       'src assigned exactly once, with the image already in the document',
     );
-    assert.match(
+    assert.equal(
       img.assignments[0].value,
-      /^\/api\/presentations\/deck-1\/thumbnail\?v=7$/,
-      'requests the revisioned thumbnail endpoint',
+      '/api/presentations/deck-1/thumbnail',
+      'requests the bare, content-addressed thumbnail endpoint — no cache buster',
     );
     assert.equal(
       img.el.hasAttribute('loading'),

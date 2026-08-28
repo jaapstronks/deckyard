@@ -16,6 +16,8 @@ import {
   badRequest,
 } from '../../../utils/http.js';
 import { canDeletePresentation } from '../../../utils/presentation-authz/index.js';
+import { pruneDeckThumbnails } from '../../../render/deck-thumbnail.js';
+import { withDeckCardFields } from '../../../utils/deck-card-fields.js';
 import {
   isOwnerOrCreator,
   matchesIdentity,
@@ -49,7 +51,11 @@ export async function handlePresentationsTrashList({
     );
   });
 
-  serveJson(res, 200, filtered);
+  serveJson(
+    res,
+    200,
+    await withDeckCardFields(repoRoot, filtered, storageScope),
+  );
   return true;
 }
 
@@ -129,6 +135,12 @@ export async function handlePresentationPermanentDelete(
   if (!deleted) {
     return notFound(res);
   }
+
+  // The deck's rasters outlive nothing: this is the only path that ends a
+  // presentation for good, so it is the only place they can be cleaned up.
+  // Trashing deliberately does not — a card in the trash still shows its
+  // thumbnail, and a restore must not come back blank.
+  await pruneDeckThumbnails(repoRoot, id);
 
   serveJson(res, 200, { ok: true });
   return true;

@@ -13,6 +13,7 @@ import {
   resolveDisplayNames,
   toDisplayIdentity,
 } from '../../../storage/display-identity.js';
+import { withDeckCardFields } from '../../../utils/deck-card-fields.js';
 
 /**
  * Get popular presentations based on recent activity.
@@ -20,6 +21,7 @@ import {
  * sorted by recent activity (views, updates).
  */
 export async function handlePopularPresentations({
+  repoRoot,
   storageScope,
   res,
   authedUser,
@@ -29,8 +31,10 @@ export async function handlePopularPresentations({
   }
 
   // The organization comes from the request's storage scope, so this list stays
-  // inside the organization the session is working in.
+  // inside the organization the session is working in. `repoRoot` rides along
+  // because the deck-card fields need it to resolve each deck's theme.
   const ctx = {
+    repoRoot,
     user: authedUser,
     organizationId: storageScope?.organizationId,
   };
@@ -44,8 +48,9 @@ export async function handlePopularPresentations({
  * Fetch popular presentations from the database.
  * Uses activity_events to find presentations with recent activity.
  * Exported so the `/api/home` aggregation can reuse the exact same list.
- * @param {{ user: object, organizationId?: string }} ctx - Carries the session's
- *   organization; it doubles as the storage scope for the tag lookup.
+ * @param {{ repoRoot?: string, user: object, organizationId?: string }} ctx -
+ *   Carries the session's organization; it doubles as the storage scope for the
+ *   tag lookup and as the theme-resolution context for the deck-card fields.
  * @returns {Promise<object[]>}
  */
 export async function getPopularPresentations(ctx) {
@@ -223,7 +228,7 @@ async function formatPresentations(rows, ctx) {
     ]),
   );
 
-  return rows.map((row) => {
+  const items = rows.map((row) => {
     // Extract first slide from slides JSONB array
     const slides = Array.isArray(row.slides) ? row.slides : [];
     const first = slides[0] || null;
@@ -255,4 +260,6 @@ async function formatPresentations(rows, ctx) {
       lastActivity: row.last_activity || row.modified_at,
     };
   });
+
+  return withDeckCardFields(ctx?.repoRoot, items, ctx);
 }

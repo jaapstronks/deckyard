@@ -3,10 +3,10 @@
  *
  * Covers the Chrome-free logic: the cache identity (deterministic, invalidated
  * by slide 1 + theme but *not* by the deck revision), stale-while-revalidate,
- * pruning, the cache read + single-flight short-circuit, and
- * the route's auth gate / cache-hit serve / method guard. The actual headless
- * render (`renderSlideToPngBuffer`) is exercised by the PNG-export path and is
- * deliberately not invoked here.
+ * pruning, the cache read + single-flight short-circuit, and the route's auth
+ * gate / cache-hit serve / conditional-GET handling / method guard. The actual
+ * headless render (`renderSlideToPngBuffer`) is exercised by the PNG-export path
+ * and is deliberately not invoked here.
  *
  * Run with: node --test tests/deck-thumbnail.test.js
  */
@@ -22,7 +22,7 @@ import {
   thumbCacheKey,
   readCachedThumbnail,
   readStaleThumbnail,
-  pruneOldThumbnails,
+  pruneDeckThumbnails,
   requestThumbnailGeneration,
 } from '../server/render/deck-thumbnail.js';
 import { dataDir } from '../server/config/storage-paths.js';
@@ -38,8 +38,14 @@ const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage, __resetStorageForTests } =
   await import('../server/storage/lifecycle.js');
-const { createPresentation, getPresentation, updatePresentation } =
-  await import('../server/storage/presentations/index.js');
+const {
+  createPresentation,
+  getPresentation,
+  updatePresentation,
+  deletePresentation,
+} = await import('../server/storage/presentations/index.js');
+const { handlePresentationPermanentDelete } =
+  await import('../server/routes/api/presentations/trash.js');
 
 test.before(async () => {
   __setTestDb(
@@ -257,6 +263,99 @@ test('route serves a cached webp to the owner', async () => {
   assert.ok(res.body.equals(webp), 'serves the cached bytes verbatim');
 });
 
+// ── Route: conditional GET ──────────────────────────────────────────────────
+
+/**
+ * A deck with one cached raster on disk, plus the tag the route will hand out
+ * for it. The cache filename *is* `sha1(deck | slide 1 | theme)`, so the ETag
+ * needs nothing hashed on top of it.
+ */
+async function seedCachedDeck(repoRoot, title) {
+  const created = await createPresentation(testScope(), {
+    title,
+    ownerEmail: 'owner@example.com',
+    visibility: 'private',
+    slides: [{ id: 's1', type: 'title-slide', content: { title: 'Hi' } }],
+  });
+  const pres = await getPresentation(testScope(), created.id);
+  const theme = await loadThemeAssets(repoRoot, pres.theme);
+  const { filename } = thumbCacheKey(pres, theme);
+
+  const webp = await sharp({
+    create: { width: 800, height: 450, channels: 3, background: '#3355ff' },
+  })
+    .webp({ quality: 80 })
+    .toBuffer();
+  const dir = path.join(dataDir(repoRoot), 'deck-thumbs');
+  await fs.mkdir(dir, { recursive: true });
+  await fs.writeFile(path.join(dir, filename), webp);
+
+  return { id: created.id, webp, etag: `"${filename}"` };
+}
+
+/** GET the thumbnail as its owner, optionally conditionally. */
+function getThumbnail(repoRoot, id, headers = {}) {
+  const res = mockRes();
+  return handlePresentationThumbnail(
+    {
+      repoRoot,
+      storageScope: testScope(),
+      req: { method: 'GET', headers },
+      res,
+      authedUser: sessionFor('owner@example.com'),
+    },
+    id,
+  ).then(() => res);
+}
+
+test('a second request holding the current ETag gets a bodiless 304', async () => {
+  const repoRoot = await tmpRoot();
+  const deck = await seedCachedDeck(repoRoot, 'Conditional deck');
+
+  const first = await getThumbnail(repoRoot, deck.id);
+  assert.equal(first.statusCode, 200);
+  assert.equal(first.headers.ETag, deck.etag, 'the raster is tagged');
+  assert.equal(
+    first.headers['Cache-Control'],
+    'private, no-cache',
+    'the browser must revalidate — the URL no longer carries a buster',
+  );
+
+  const second = await getThumbnail(repoRoot, deck.id, {
+    'if-none-match': first.headers.ETag,
+  });
+  assert.equal(second.statusCode, 304);
+  assert.equal(second.body, undefined, '304 carries no body');
+  assert.equal(second.headers.ETag, deck.etag, '304 repeats the tag');
+  assert.equal(second.headers['Cache-Control'], 'private, no-cache');
+});
+
+test('a request holding a different ETag gets the bytes', async () => {
+  const repoRoot = await tmpRoot();
+  const deck = await seedCachedDeck(repoRoot, 'Changed deck');
+
+  const res = await getThumbnail(repoRoot, deck.id, {
+    'if-none-match': '"some-other-deck-0000000000000000.webp"',
+  });
+  assert.equal(res.statusCode, 200, 'a stale tag must not short-circuit');
+  assert.ok(res.body.equals(deck.webp));
+});
+
+test('If-None-Match matches inside a list and ignores the weak prefix', async () => {
+  const repoRoot = await tmpRoot();
+  const deck = await seedCachedDeck(repoRoot, 'List-header deck');
+
+  const inList = await getThumbnail(repoRoot, deck.id, {
+    'if-none-match': `"other.webp", ${deck.etag}`,
+  });
+  assert.equal(inList.statusCode, 304, 'any member of the list may match');
+
+  const weak = await getThumbnail(repoRoot, deck.id, {
+    'if-none-match': `W/${deck.etag}`,
+  });
+  assert.equal(weak.statusCode, 304, 'a conditional GET compares weakly');
+});
+
 test('route denies a non-owner on a private deck', async () => {
   const repoRoot = await tmpRoot();
   const created = await createPresentation(testScope(), {
@@ -355,7 +454,7 @@ test('readStaleThumbnail returns the newest other raster for the same deck', asy
   assert.equal(await readStaleThumbnail(repoRoot, 'deck-none', 'x.webp'), null);
 });
 
-test('pruneOldThumbnails keeps only the current raster for that deck', async () => {
+test('pruneDeckThumbnails keeps only the current raster for that deck', async () => {
   const repoRoot = await tmpRoot();
   const dir = path.join(dataDir(repoRoot), 'deck-thumbs');
   await fs.mkdir(dir, { recursive: true });
@@ -367,10 +466,39 @@ test('pruneOldThumbnails keeps only the current raster for that deck', async () 
     Buffer.from('untouched'),
   );
 
-  await pruneOldThumbnails(repoRoot, 'deck1', 'deck1-keep.webp');
+  await pruneDeckThumbnails(repoRoot, 'deck1', { keep: 'deck1-keep.webp' });
 
   const left = (await fs.readdir(dir)).sort();
   assert.deepEqual(left, ['deck1-keep.webp', 'deck2-other.webp']);
+});
+
+test('pruneDeckThumbnails without a keep drops every raster for that deck', async () => {
+  const repoRoot = await tmpRoot();
+  const dir = path.join(dataDir(repoRoot), 'deck-thumbs');
+  await fs.mkdir(dir, { recursive: true });
+  await fs.writeFile(path.join(dir, 'deck1-a.webp'), Buffer.from('gone'));
+  await fs.writeFile(path.join(dir, 'deck1-b.webp'), Buffer.from('gone'));
+  await fs.writeFile(
+    path.join(dir, 'deck2-other.webp'),
+    Buffer.from('untouched'),
+  );
+
+  await pruneDeckThumbnails(repoRoot, 'deck1');
+
+  assert.deepEqual(await fs.readdir(dir), ['deck2-other.webp']);
+});
+
+test('pruneDeckThumbnails sanitizes the deck id into the cache prefix', async () => {
+  const repoRoot = await tmpRoot();
+  const dir = path.join(dataDir(repoRoot), 'deck-thumbs');
+  await fs.mkdir(dir, { recursive: true });
+  // Same sanitization the cache key applies when it writes the file.
+  const { prefix } = thumbCacheKey({ id: 'deck/../weird id' }, null);
+  await fs.writeFile(path.join(dir, `${prefix}-x.webp`), Buffer.from('gone'));
+
+  await pruneDeckThumbnails(repoRoot, 'deck/../weird id');
+
+  assert.deepEqual(await fs.readdir(dir), []);
 });
 
 test('route serves the previous raster instead of 404 while the new one renders', async () => {
@@ -423,9 +551,64 @@ test('route serves the previous raster instead of 404 while the new one renders'
   assert.equal(res.statusCode, 200, 'stale beats a placeholder');
   assert.equal(res.headers['Content-Type'], 'image/webp');
   assert.ok(res.body.equals(webp));
-  assert.match(
-    res.headers['Cache-Control'],
-    /max-age=10\b/,
-    'stale is served with a short max-age so it revalidates quickly',
+  assert.equal(
+    res.headers.ETag,
+    `"${prefix}-0000000000000000.webp"`,
+    'the stale raster is tagged with its own name, not the fresh key — a 304 ' +
+      'must never present a one-edit-old raster as the current one',
+  );
+});
+
+// ── Deleting a deck takes its rasters with it ───────────────────────────────
+
+test("a permanent delete removes the deck's cached rasters", async () => {
+  const repoRoot = await tmpRoot();
+  const created = await createPresentation(testScope(), {
+    title: 'Doomed deck',
+    ownerEmail: 'owner@example.com',
+    visibility: 'private',
+    slides: [{ id: 's1', type: 'title-slide', content: { title: 'Bye' } }],
+  });
+  const pres = await getPresentation(testScope(), created.id);
+  const theme = await loadThemeAssets(repoRoot, pres.theme);
+  const { prefix, filename } = thumbCacheKey(pres, theme);
+
+  const dir = path.join(dataDir(repoRoot), 'deck-thumbs');
+  await fs.mkdir(dir, { recursive: true });
+  await fs.writeFile(path.join(dir, filename), Buffer.from('current'));
+  // A raster from an earlier slide-1 state is just as orphaned.
+  await fs.writeFile(
+    path.join(dir, `${prefix}-0000000000000000.webp`),
+    Buffer.from('previous'),
+  );
+  await fs.writeFile(path.join(dir, 'other-deck-x.webp'), Buffer.from('keep'));
+
+  // Trashing is not the end of a deck: its card still shows a thumbnail, and a
+  // restore must not come back blank.
+  await deletePresentation(testScope(), created.id, {
+    actorEmail: 'owner@example.com',
+  });
+  assert.equal(
+    (await fs.readdir(dir)).length,
+    3,
+    'the trash keeps the rasters',
+  );
+
+  const res = mockRes();
+  await handlePresentationPermanentDelete(
+    {
+      repoRoot,
+      storageScope: testScope(),
+      req: { method: 'DELETE' },
+      res,
+      authedUser: sessionFor('owner@example.com'),
+    },
+    created.id,
+  );
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(
+    await fs.readdir(dir),
+    ['other-deck-x.webp'],
+    "every raster for the deleted deck is gone, nobody else's is",
   );
 });

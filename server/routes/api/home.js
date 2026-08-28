@@ -87,7 +87,7 @@ export function buildActivityOpts(searchParams, email) {
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>} true if handled
  */
-async function handleHomeGet({ storageScope, res, url, authedUser }) {
+async function handleHomeGet({ repoRoot, storageScope, res, url, authedUser }) {
   const email = String(authedUser?.email || '')
     .trim()
     .toLowerCase();
@@ -107,6 +107,7 @@ async function handleHomeGet({ storageScope, res, url, authedUser }) {
     usage,
   ] = await Promise.all([
     getPopularPresentations({
+      repoRoot,
       user: authedUser,
       organizationId: storageScope?.organizationId,
     }).catch(() => []),
