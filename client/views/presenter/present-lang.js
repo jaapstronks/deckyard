@@ -8,14 +8,15 @@ import { deckLangQuery, readDeckLangParam } from '../../lib/format/i18n.js';
  * axis, D61), this file only names what the presenter and the projector window
  * both need. It used to re-validate the param inline against `nl`/`en-GB`.
  *
- * @param {URL} [url] Defaults to the current location.
+ * @param {URL|string} [source] A URL or query string; defaults to the router's
+ *   view of the current location.
  * @returns {{ activeLang: string|null, langQs: string }}
  *   `activeLang` is the URL's deck language when it names one, and `langQs` is
  *   the `?lang=…` suffix to append to API/route URLs (or `''`).
  */
-export function readDeckLangFromUrl(url = new URL(location.href)) {
+export function readDeckLangFromUrl(source) {
   return {
-    activeLang: readDeckLangParam(url),
-    langQs: deckLangQuery(url),
+    activeLang: readDeckLangParam(source),
+    langQs: deckLangQuery(source),
   };
 }

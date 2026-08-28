@@ -5,6 +5,7 @@ import {
 import { t } from '../../lib/ui-i18n.js';
 import { h } from '../../lib/dom.js';
 import { DEFAULT_SUPPORTED_DECK_LANGS } from '../../../shared/i18n-utils.js';
+import { urlWithQuery } from '../../lib/state/router.js';
 
 /**
  * Create presenter language selector.
@@ -34,11 +35,9 @@ export function createPresenterLangSeg({
   const navigateToLang = (code) => {
     if (modeLang === code) return;
     const currentId = getCurrentSlideId?.() || '';
-    const u = new URL(location.href);
-    u.searchParams.set('lang', code);
-    if (currentId) u.searchParams.set('slideId', currentId);
-    else u.searchParams.delete('slideId');
-    location.href = `${u.pathname}?${u.searchParams.toString()}`;
+    // A hard navigation on purpose: switching the presenting language reloads
+    // the deck rather than patching it in place.
+    location.href = urlWithQuery({ lang: code, slideId: currentId || null });
   };
 
   const useDropdown = langs.length > 2;

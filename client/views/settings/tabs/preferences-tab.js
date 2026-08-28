@@ -33,7 +33,7 @@ import {
 import { createUserNotificationsSection } from '../sections/index.js';
 import { disableForSandbox } from '../sandbox-disable.js';
 import { createColorPicker } from '../theme-editor/color-picker.js';
-import { nav } from '../../../lib/state/router.js';
+import { currentUrl, nav } from '../../../lib/state/router.js';
 import { DEFAULT_SUPPORTED_DECK_LANGS } from '../../../../shared/i18n-utils.js';
 
 /**
@@ -635,7 +635,7 @@ export function createPreferencesTab({ user }) {
       await setUiLocale(finalLocale);
 
       // Re-render current route (important if UI locale changed).
-      nav(location.pathname + (location.search || '') + (location.hash || ''));
+      nav(currentUrl());
     } catch (e) {
       toast.error(e, { id: 'settings-save' });
     } finally {

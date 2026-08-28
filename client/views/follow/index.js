@@ -38,10 +38,10 @@ import { applyCapabilitiesToStage, showFollowMessage } from './stage-ui.js';
 import { renderFollowSlide } from './render-slide.js';
 import { createVideoLayer } from '../../lib/slide-runtime/video-layer.js';
 import { buildFollowLayout } from './layout.js';
+import { setQueryParams } from '../../lib/state/router.js';
 
 export async function renderFollow(root, presentationId) {
-  const startUrl = new URL(location.href);
-  let lang = readDeckLangParam(startUrl) || DEFAULT_DECK_LANG;
+  let lang = readDeckLangParam() || DEFAULT_DECK_LANG;
   let meta = { dominantLang: null, availableLangs: [] };
   let copy = await createFollowCopy(lang);
 
@@ -170,13 +170,7 @@ export async function renderFollow(root, presentationId) {
         mountEraseButton();
         qa?.syncQaNameBtn?.();
         qa?.renderQuestions?.();
-        try {
-          const u = new URL(location.href);
-          u.searchParams.set('lang', lang);
-          history.replaceState(null, '', u.toString());
-        } catch {
-          // ignore
-        }
+        setQueryParams({ lang });
         pres = null;
         try {
           const ok = await refreshPresentationIfLive();
