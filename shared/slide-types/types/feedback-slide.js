@@ -86,13 +86,13 @@ export default {
                 <div class="sfi-go" data-follow-go-url="1">/go</div>
                 <div class="sfi-code-row">
                   <div class="sfi-row-label">NL</div>
-                  <div class="sfi-code" aria-label="${escapeHtml(copy.feedbackAccessCodeNlLabel)}">${escapeHtml(
+                  <div class="sfi-code" data-follow-code="nl" aria-label="${escapeHtml(copy.feedbackAccessCodeNlLabel)}">${escapeHtml(
                     followCodes?.nl || '----',
                   )}</div>
                 </div>
                 <div class="sfi-code-row">
                   <div class="sfi-row-label">EN</div>
-                  <div class="sfi-code" aria-label="${escapeHtml(copy.feedbackAccessCodeEnLabel)}">${escapeHtml(
+                  <div class="sfi-code" data-follow-code="en" aria-label="${escapeHtml(copy.feedbackAccessCodeEnLabel)}">${escapeHtml(
                     followCodes?.en || '----',
                   )}</div>
                 </div>

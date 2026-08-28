@@ -181,6 +181,47 @@ export function otherLang(lang) {
 }
 
 /**
+ * The language a translation into `to` should be read FROM.
+ *
+ * Every "the other language" question in the chrome is really this one, and it
+ * has an answer for all twelve languages where `otherLang()` had one for two:
+ * the **dominant version is the source**, because it is the version the deck is
+ * authored in and the only one guaranteed to be complete (D72). Translating
+ * *into* the dominant version is the exception — there the source is whatever
+ * version is being looked at, falling back to the first other version the deck
+ * has.
+ *
+ * Returns null when the deck has nothing to translate from: no other version
+ * exists, or the deck names no language at all. Callers must handle that rather
+ * than translate a language into itself.
+ *
+ * @param {Object} [pres] - a presentation
+ * @param {*} to - the language being translated into
+ * @returns {string|null}
+ */
+export function translationSourceFor(pres, to) {
+  const target = normalizeLang(to);
+  const dominant =
+    normalizeLang(pres?.i18n?.dominant) || normalizeLang(pres?.lang) || null;
+  if (dominant && dominant !== target) return dominant;
+
+  // Translating into the dominant version (or into nothing nameable): read from
+  // the version on screen, else from the first other version the deck carries.
+  const active = normalizeLang(pres?.i18n?.active);
+  if (active && active !== target) return active;
+  const versions =
+    pres?.i18n?.versions && typeof pres.i18n.versions === 'object'
+      ? pres.i18n.versions
+      : {};
+  for (const key of Object.keys(versions)) {
+    if (!versions[key] || typeof versions[key] !== 'object') continue;
+    const lang = normalizeLang(key);
+    if (lang && lang !== target) return lang;
+  }
+  return null;
+}
+
+/**
  * The language a deck is written in, as far as the deck itself says.
  *
  * This is the ONE place that answers "what language is this deck", and its

@@ -38,6 +38,7 @@ import { validatePresentationSize } from '../../utils/presentation-limits.js';
 import { fireAndForget } from '../../utils/fire-and-forget.js';
 import { invalidatePresentationCache } from './cache.js';
 import { migratePresentation } from '../../../shared/slide-types/schema-version.js';
+import { existingVersionLangs } from '../../../shared/i18n-progress.js';
 import { buildMergedSlideTypes } from '../../utils/custom-slide-type-runtime.js';
 import { createLogger } from '../../utils/logger.js';
 import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
@@ -719,15 +720,11 @@ async function listPresentationRows(ctx) {
       visibility: row.visibility,
       isViewOnly: !!row.isViewOnly,
       revision: row.revision,
-      i18n: i18n
-        ? {
-            dominant,
-            hasNl: !!i18n.versions?.nl,
-            hasEnGb: !!i18n.versions?.['en-GB'],
-            otherLang:
-              dominant === 'nl' ? 'en-GB' : dominant === 'en-GB' ? 'nl' : null,
-          }
-        : null,
+      // Which languages the deck has, as the open list it is. The summary used
+      // to carry `hasNl`/`hasEnGb`/`otherLang` beside the dominant language —
+      // three fields that could not describe a German version, and that no
+      // reader ever asked for (D72).
+      i18n: i18n ? { dominant, langs: existingVersionLangs({ i18n }) } : null,
       hasSlides: !!firstSlide,
     };
   });
@@ -1155,15 +1152,8 @@ async function listTrashedPresentationRows(ctx) {
       ),
       visibility: row.visibility,
       revision: row.revision,
-      i18n: i18n
-        ? {
-            dominant,
-            hasNl: !!i18n.versions?.nl,
-            hasEnGb: !!i18n.versions?.['en-GB'],
-            otherLang:
-              dominant === 'nl' ? 'en-GB' : dominant === 'en-GB' ? 'nl' : null,
-          }
-        : null,
+      // Same i18n summary shape as `listPresentationRows` (see there).
+      i18n: i18n ? { dominant, langs: existingVersionLangs({ i18n }) } : null,
       hasSlides: !!firstSlide,
     };
   });

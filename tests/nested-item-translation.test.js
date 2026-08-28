@@ -50,7 +50,7 @@ const {
   translatePresentationStringsFillMissing,
 } = await import('../server/utils/openai/translate.js');
 const { buildBlankTargetFromSource, computeMissingTranslation } =
-  await import('../server/utils/translation-status.js');
+  await import('../shared/i18n-progress.js');
 const { mapItemTexts, textFieldSpecForType, translatableItemsFieldsForType } =
   await import('../shared/slide-types/text-fields.js');
 

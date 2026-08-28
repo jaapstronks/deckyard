@@ -1,6 +1,10 @@
 import crypto from 'node:crypto';
 import { parseCookies } from '../../../utils/cookies.js';
-import { normalizeLang } from '../../../utils/translation-status.js';
+import { normalizeLang } from '../../../../shared/i18n-utils.js';
+import {
+  existingVersionLangs,
+  translationProgress,
+} from '../../../../shared/i18n-progress.js';
 import { isHttpsRequest } from '../../../utils/request-url.js';
 import { crossOrganizationScope } from '../../../storage/scope.js';
 import { liveInteractionKind } from '../../../../shared/slide-types/runtime.js';
@@ -86,40 +90,53 @@ export function ensureInteractionDeviceCookie(req) {
   return { id, setCookie: parts.join('; ') };
 }
 
+/**
+ * What the follow-along audience is told about a deck's languages.
+ *
+ * `availableLangs` is every version the deck actually has, and
+ * `translationStatus` has one entry per those versions — not a fixed NL/EN
+ * pair. It used to be exactly that pair, read off the stored `i18n.progress`
+ * counters: a deck with a German version advertised no German, and the
+ * language buttons could not offer what the viewer route would happily serve.
+ * The counters are derived now (`translationProgress`, D72).
+ *
+ * The dominant version is the translation source, so it is complete by
+ * definition and reported as such.
+ *
+ * @param {Object} pres - a presentation
+ * @param {Object} [opts]
+ * @param {boolean} [opts.includeTranslationStatus] - add the per-version status
+ * @returns {{dominantLang: string|null, availableLangs: string[],
+ *   translationStatus?: Record<string, {complete: boolean, missing: number|null,
+ *   jobStatus: string|null}>}}
+ */
 export function followMetaFromPresentation(
   pres,
   { includeTranslationStatus = false } = {},
 ) {
-  const dominant =
-    typeof pres?.i18n?.dominant === 'string' ? pres.i18n.dominant : null;
-  const versions =
-    pres?.i18n?.versions && typeof pres.i18n.versions === 'object'
-      ? pres.i18n.versions
-      : {};
-  const availableLangs = [];
-  if (versions?.nl) availableLangs.push('nl');
-  if (versions?.['en-GB']) availableLangs.push('en-GB');
+  const availableLangs = existingVersionLangs(pres);
 
   const result = {
-    dominantLang: normalizeLang(dominant),
+    dominantLang: normalizeLang(pres?.i18n?.dominant),
     availableLangs,
   };
 
   if (includeTranslationStatus) {
-    const translation = pres?.i18n?.translation || {};
-    const progress = pres?.i18n?.progress || {};
-    result.translationStatus = {
-      nl: {
-        complete: versions?.nl && (progress?.missingEnGbToNl ?? 0) === 0,
-        missing: progress?.missingEnGbToNl ?? null,
-        jobStatus: translation?.nl?.status || null,
-      },
-      'en-GB': {
-        complete: versions?.['en-GB'] && (progress?.missingNlToEnGb ?? 0) === 0,
-        missing: progress?.missingNlToEnGb ?? null,
-        jobStatus: translation?.['en-GB']?.status || null,
-      },
-    };
+    const translation =
+      pres?.i18n?.translation && typeof pres.i18n.translation === 'object'
+        ? pres.i18n.translation
+        : {};
+    const { dominant, missing } = translationProgress(pres);
+    const status = {};
+    for (const lang of availableLangs) {
+      const count = lang === dominant ? 0 : missing[lang];
+      status[lang] = {
+        complete: count === 0,
+        missing: typeof count === 'number' ? count : null,
+        jobStatus: translation?.[lang]?.status || null,
+      };
+    }
+    result.translationStatus = status;
   }
 
   return result;

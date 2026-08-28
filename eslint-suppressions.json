@@ -1179,11 +1179,6 @@
       "count": 3
     }
   },
-  "server/storage/presentations/i18n.js": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "server/storage/presentations/index.js": {
     "no-restricted-syntax": {
       "count": 1

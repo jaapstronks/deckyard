@@ -160,5 +160,7 @@
   "presenter.tools.presenterCompanion": "Presentator-companion",
   "presenter.tools.presenterHint": "Sprekersnotities-weergave, voor jou op een tweede apparaat.",
   "presenter.tools.presenterWarn": "Deze link kan je live deck besturen. Deel 'm niet met je publiek; gebruik daarvoor de publiekslink hieronder.",
-  "presenter.tools.title": "Sessietools (notities / link kopiëren / volgcode)"
+  "presenter.tools.title": "Sessietools (notities / link kopiëren / volgcode)",
+  "presenter.translateFill.done": "Vertalingen klaar",
+  "presenter.translateFill.running": "Vertalen ({langs})…"
 }
