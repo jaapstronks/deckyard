@@ -298,6 +298,68 @@ function createRecorder(page, t0) {
 }
 
 /**
+ * Id of the frame ticker, so the same element is installed and removed.
+ */
+const FRAME_TICKER_ID = '__capture-screencast-tick';
+
+/**
+ * Install a 1×1 px element whose compositor animation never stops.
+ *
+ * **This is not decoration; without it takes silently lose their payoff.**
+ * `page.screencast()` is fed by `Page.screencastFrame`, and Chromium only
+ * emits that event when the page produces a new compositor frame. A page that
+ * is *changing* (a caret blinking, text being typed, a hover moving) produces
+ * them continuously; a page that has just settled produces none. So a change
+ * that lands while nothing else is moving — a modal opening at the end of a
+ * `hold`, which is exactly where a clip puts its payoff — can be coalesced
+ * away, and because the page is then static no further frame is ever emitted.
+ * The recording ends on a stale image, at full length, with no error anywhere.
+ * Measured: the second take's fill-preview modal opened 10ms after its click
+ * and appeared in **zero** of the take's 134 frames, while `page.screenshot()`
+ * right after showed it.
+ *
+ * A compositor-only animation (opacity on its own layer) forces a frame every
+ * vsync, so every change is captured within a frame of happening. The element
+ * is one CSS pixel at ~1% alpha in the bottom-left corner: present in the
+ * master, invisible at any output resolution.
+ *
+ * @param {import('puppeteer-core').Page} page
+ * @param {string} id
+ */
+async function installFrameTicker(page, id) {
+  await page.evaluate((tickerId) => {
+    const style = document.createElement('style');
+    style.id = `${tickerId}-style`;
+    style.textContent =
+      `@keyframes ${tickerId} { from { opacity: 0.01 } to { opacity: 0.02 } }` +
+      `#${tickerId} { position: fixed; left: 0; bottom: 0; width: 1px;` +
+      ` height: 1px; background: #000; pointer-events: none;` +
+      ` z-index: 2147483647; will-change: opacity;` +
+      ` animation: ${tickerId} 0.5s linear infinite alternate }`;
+    document.head.appendChild(style);
+    const dot = document.createElement('div');
+    dot.id = tickerId;
+    document.body.appendChild(dot);
+  }, id);
+}
+
+/**
+ * Remove the frame ticker again, so nothing the recorder added outlives it.
+ * @param {import('puppeteer-core').Page} page
+ * @param {string} id
+ */
+async function removeFrameTicker(page, id) {
+  await page
+    .evaluate((tickerId) => {
+      document.getElementById(tickerId)?.remove();
+      document.getElementById(`${tickerId}-style`)?.remove();
+    }, id)
+    .catch(() => {
+      /* page already gone — nothing to clean up */
+    });
+}
+
+/**
  * Record one video recipe: start the screencast, run its sequence, stop, and
  * return the event log.
  *
@@ -312,6 +374,7 @@ function createRecorder(page, t0) {
 export async function recordTake(page, recipe, { takePath, viewport }) {
   const fps = recipe.record.fps ?? 30;
   await page.mouse.move(POINTER_ORIGIN.x, POINTER_ORIGIN.y);
+  await installFrameTicker(page, FRAME_TICKER_ID);
   const recorder = await page.screencast({
     path: /** @type {`${string}.webm`} */ (takePath),
     fps,
@@ -325,6 +388,7 @@ export async function recordTake(page, recipe, { takePath, viewport }) {
     await recipe.record.sequence(rec);
   } finally {
     await recorder.stop();
+    await removeFrameTicker(page, FRAME_TICKER_ID);
   }
   const { events, durationMs, slipped } = log();
   return {
