@@ -342,6 +342,15 @@
    accent on a lime slide — the swapping rule overrides `--surface-text` on the
    same selector that swaps `background`. The redirect stays owned here.
 
+   `lint:deadcss` reports `.on-surface-dark` and `.on-surface-accent` as
+   unreferenced. That is correct and intended: all five names are *author*
+   vocabulary, written in deck content and fork stylesheets rather than by this
+   repo's own markup. Three of them happen to have an in-repo user
+   (`on-surface-light` on the feedback/follow-invite/likert cards,
+   `on-surface-lime` on funnel and pyramid, `on-surface-mist` on cycle); the
+   other two do not, and that says nothing about whether authors use them.
+   Removing them is a vocabulary decision, not a dead-code one — see B190.
+
    See docs/reference/nested-surfaces.md.
    ============================================================================ */
 
