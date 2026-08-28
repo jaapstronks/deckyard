@@ -25,6 +25,10 @@ const TARGET_STORAGE_KEY = 'deckyard:presenterConsoleTargetSeconds';
  * @param {Object} opts
  * @param {Object} [opts.theme] Resolved theme for thumbnail rendering.
  * @param {string} [opts.presentationId] Presentation id (for slide runtimes).
+ * @param {string|null} [opts.lang] Deck language (`resolveDeckLang(pres)`). The
+ *   next-slide thumbnail is a render surface like the stage: without it every
+ *   `SLIDE_COPY` string in the thumb (admonition eyebrows, poll/likert/feedback
+ *   copy, the image placeholder) falls back to `DEFAULT_SLIDE_COPY_LANG`.
  * @returns {{
  *   el: HTMLElement,
  *   update: (state: { current: any, next: any, idx: number, total: number }) => void,
@@ -32,7 +36,7 @@ const TARGET_STORAGE_KEY = 'deckyard:presenterConsoleTargetSeconds';
  *   destroy: () => void,
  * }}
  */
-export function createPresenterConsole({ theme, presentationId } = {}) {
+export function createPresenterConsole({ theme, presentationId, lang } = {}) {
   // --- Timer block -------------------------------------------------------
   const clockEl = h('div', {
     class: 'presenter-console-clock',
@@ -185,6 +189,7 @@ export function createPresenterConsole({ theme, presentationId } = {}) {
         mode: 'thumb',
         theme,
         presentationId,
+        lang,
       });
       nextThumb.classList.remove('is-empty');
       nextMeta.textContent = t('notes.slideOf', 'Slide {current} / {total}', {
