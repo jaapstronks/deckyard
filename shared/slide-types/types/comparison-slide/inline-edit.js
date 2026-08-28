@@ -59,6 +59,10 @@ export const inlineEdit = {
 /**
  * Fields the inspector keeps rendering even though the inline layer covers the
  * rest of the slide.
+ *
+ * `variant`: the treatment is a styling choice over the whole slide and has no
+ * canvas surface — what it changes (the divider, the bullets, the weight of a
+ * column) is derived, never edited in place.
  * @type {string[]}
  */
-export const inspectorKeeps = [];
+export const inspectorKeeps = ['variant'];

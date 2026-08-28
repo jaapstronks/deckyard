@@ -332,7 +332,7 @@ Two properties make them roles:
   `callout-slide`'s five variants, the shared partials' `tone` vocabulary
   (`shared/slide-types/partials.js` — one badge/highlight tone per role, so a
   fork type never mints a colour either), and `comparison-slide`'s pros-cons
-  treatment and the aside insets next.
+  treatment — with the aside insets next.
 - **Slide-internal, like `danger` always was.** There is no `--t-*` feed, on
   purpose: a semantic palette is not brand, and a theme that retints "warning"
   away from amber is changing what the slide _means_. The hues are the standard
