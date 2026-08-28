@@ -121,14 +121,39 @@ Server-side: standalone HTML, PDF, PNG, PPTX, the handoff zip, the embed
 fragment, the custom-slide-type render route, and the MCP `preview_slide` /
 `preview_presentation` tools (`server/mcp/preview.js`).
 
-Sample and preview surfaces that have no deck — the theme picker, the theme
-editor preview, sandbox examples, curation thumbnails — deliberately pass
-nothing and get `DEFAULT_SLIDE_COPY_LANG`. Leaving `lang` out is not neutral, so
-anywhere a presentation is in hand it should be passed.
+Sample and preview surfaces have no deck to read — the theme picker, the theme
+editor preview, sandbox examples, curation thumbnails, the slide-type picker's
+own specimens. They say so, in one spelling: `lang: NO_DECK_LANG`, exported from
+`client/lib/slide-runtime/slide-render.js`. The value is `null` — the same thing
+`resolveDeckLang()` answers for a deck that says nothing — so the copy layer
+still applies `DEFAULT_SLIDE_COPY_LANG`; the name is what makes the choice
+visible. Leaving `lang` out is not neutral, and "a deck whose language nobody
+passed" and "a specimen with no deck" are indistinguishable at the call site
+unless one of them is written down.
 
-`tests/slide-copy-language.test.js` enforces that second sentence: it scans
-`client/`, `server/` and `shared/` and fails on any `renderSlideHtml` call whose
-options object has no `lang`. That gate exists because the two MCP preview tools
-were missed on the first pass — and with the per-type `|| 'nl'` gone, a missed
-call site no longer renders the _wrong_ language loudly; it renders the default
-quietly, which is harder to notice.
+Two surfaces answer from something other than a presentation, because that is
+what they hold:
+
+- the **audience view** reads `resolveDeckLang(pres)` like everything else, but
+  the deck it holds is a _picked_ version rather than the stored deck. The
+  follow route stamps `presentation.lang` with the language of the slides it
+  serves (`server/routes/api/follow/presentation.js`), which is also what makes
+  the live language switcher follow: the switcher refetches instead of
+  reloading, and the new payload names its own language.
+- the **slide library** renders an item, not a deck. `contentLang(item)`
+  (`client/lib/slide-library/search.js`) is `getContentForLang()`'s other
+  direction — which language _is_ this content — and answers `null` the same way
+  `resolveDeckLang` does.
+
+`tests/slide-copy-language.test.js` enforces all of this: it scans `client/`,
+`server/` and `shared/` and fails on any call to `renderSlideHtml`,
+`mountSlideInto` or `renderSlideElement` whose options object has no `lang` key.
+Presence, not truthiness — and deliberately no allowlist for the sample
+surfaces, so the decision stays at the call site instead of in the test. Only
+files that import the function from its own module are scanned, because the
+editor hands its render modules a same-named wrapper that injects the language
+for them. That gate exists because the two MCP preview tools were missed on the
+first pass, and the audience view, the notes companion and the viewer panel were
+missed one layer up through `mountSlideInto` — with the per-type `|| 'nl'` gone,
+a missed call site no longer renders the _wrong_ language loudly; it renders the
+default quietly, which is harder to notice.

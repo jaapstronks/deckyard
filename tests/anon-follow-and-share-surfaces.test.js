@@ -61,6 +61,8 @@ const {
   handleFollowInteractionVote,
   handleFollowInteractionFeedback,
 } = await import('../server/routes/api/follow/interactions.js');
+const { handleFollowPresentation } =
+  await import('../server/routes/api/follow/presentation.js');
 const { handleShareLink } =
   await import('../server/routes/static/share-viewer.js');
 const { getErrorStatus } = await import('../server/utils/http.js');
@@ -762,4 +764,90 @@ test('the share viewer ignores a non-GET request', async () => {
   const { token } = await seedShareLink('Any deck');
   const { handled } = await callShare({ token, method: 'POST' });
   assert.equal(handled, false, 'only GET is a share-viewer request');
+});
+
+// ---------------------------------------------------------------------------
+// The deck payload states its own language (presentation.js)
+// ---------------------------------------------------------------------------
+
+/**
+ * The audience view renders the slides this payload carries, and the built-in
+ * copy of an interactive type (poll, likert, feedback) reads the language it is
+ * given — `docs/reference/slide-copy-language.md`. Every other render surface
+ * asks `resolveDeckLang(pres)`; the audience cannot, because what it holds is a
+ * *picked* version, not the stored deck. So the route stamps the answer, and
+ * these two rows pin that it is the language of the slides actually served.
+ */
+async function callFollowPresentation(presentationId, { lang } = {}) {
+  const res = fakeRes();
+  const qs = lang ? `?lang=${encodeURIComponent(lang)}` : '';
+  const handled = await handleFollowPresentation(
+    {
+      repoRoot: REPO_ROOT,
+      req: fakeReq({ method: 'GET' }),
+      res,
+      url: new URL(
+        `/api/follow/${presentationId}/presentation${qs}`,
+        'http://example.com',
+      ),
+    },
+    presentationId,
+  );
+  return { res, handled, body: jsonBody(res) };
+}
+
+test('the follow payload names the language of the slides it serves', async () => {
+  const { pres } = await seedLiveDeck({
+    slides: [{ type: 'poll-slide', content: { question: 'Welke kleur?' } }],
+  });
+
+  const { body } = await callFollowPresentation(pres.id);
+  assert.equal(
+    body.presentation.lang,
+    'nl',
+    'a deck with no version requested serves its own language',
+  );
+});
+
+test('a requested language version is the language the payload states', async () => {
+  const { pres } = await seedLiveDeck({
+    slides: [{ type: 'poll-slide', content: { question: 'Welke kleur?' } }],
+  });
+  const nlSlides = pres.slides;
+  const enSlides = pres.slides.map((s) => ({
+    ...s,
+    content: { ...s.content, question: 'Which colour?' },
+  }));
+  await updatePresentation(
+    testScope(null, { actorEmail: OWNER }),
+    pres.id,
+    {
+      i18n: {
+        dominant: 'nl',
+        versions: {
+          nl: { title: 'Live deck', slides: nlSlides },
+          'en-GB': { title: 'Live deck', slides: enSlides },
+        },
+      },
+    },
+    { actorEmail: OWNER, user: { email: OWNER } },
+  );
+
+  const { body } = await callFollowPresentation(pres.id, { lang: 'en-GB' });
+  assert.equal(body.status, 'live', 'the English version is complete');
+  assert.equal(
+    body.presentation.slides[0].content.question,
+    'Which colour?',
+    'the English slides were served — otherwise the language below is vacuous',
+  );
+  assert.equal(
+    body.presentation.lang,
+    'en-GB',
+    'and the payload says so, so the audience view renders English poll copy',
+  );
+
+  // The same deck, no version asked for: the dominant language, not the last
+  // one requested.
+  const plain = await callFollowPresentation(pres.id);
+  assert.equal(plain.body.presentation.lang, 'nl');
 });

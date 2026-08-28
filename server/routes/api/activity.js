@@ -18,6 +18,7 @@ import {
 } from '../../storage/activity-events.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { getPresentation } from '../../storage/presentations/index.js';
+import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 import { canReadPresentation } from '../../utils/presentation-authz/index.js';
 import { getCollaboratorPermission } from '../../storage/collaborators.js';
 
@@ -271,6 +272,11 @@ async function enrichEventsWithPresentations(events, storageScope, authedUser) {
             content: slide.content || {},
           };
           enriched.themeId = pres.theme || null;
+          // The deck's language rides along with its theme: the rail renders
+          // this slide client-side, and an interactive type without a language
+          // falls back to DEFAULT_SLIDE_COPY_LANG
+          // (docs/reference/slide-copy-language.md).
+          enriched.slideLang = resolveDeckLang(pres);
         }
       }
 

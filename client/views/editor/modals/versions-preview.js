@@ -5,6 +5,7 @@
 
 import { createModal } from '../../../lib/dom/modal.js';
 import { renderSlideElement } from '../../../lib/slide-runtime/slide-render.js';
+import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
 import { formatDateTime } from '../../../lib/format/format.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom.js';
@@ -57,6 +58,9 @@ export function openVersionPreviewModal({
         `/api/presentations/${presentationId}/versions/${version.id}`,
       );
       const slides = versionData?.presentation?.slides || [];
+      // The snapshot's own language, not today's: a version predates any later
+      // language switch, and these thumbs render the version.
+      const snapshotLang = resolveDeckLang(versionData?.presentation);
 
       if (!slides.length) {
         status.textContent = t(
@@ -85,6 +89,7 @@ export function openVersionPreviewModal({
             mode: 'thumb',
             theme,
             presentationId,
+            lang: snapshotLang,
           });
           thumb.append(slideEl);
         } catch {

@@ -8,6 +8,7 @@ import {
   cleanupSlideRuntimes,
   mountSlideInto,
 } from '../../lib/slide-runtime/slide-render.js';
+import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 import { t } from '../../lib/ui-i18n.js';
 import { createEmptyState } from '../../lib/dom/empty-state.js';
 import { h } from '../../lib/dom.js';
@@ -90,7 +91,11 @@ export function createViewerPreview({
     // Render slide
     cleanupSlideRuntimes(slideWrap);
     if (slide) {
-      mountSlideInto(slideWrap, slide, { theme, presentationId: pres?.id });
+      mountSlideInto(slideWrap, slide, {
+        theme,
+        presentationId: pres?.id,
+        lang: resolveDeckLang(pres),
+      });
     } else {
       slideWrap.innerHTML = '';
       slideWrap.append(

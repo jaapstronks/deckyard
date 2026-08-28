@@ -8,6 +8,7 @@ import {
   pickVersion,
 } from '../../../utils/translation-status.js';
 import { crossOrganizationScope } from '../../../storage/scope.js';
+import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
 import { customThemeConfig } from '../../../utils/themes.js';
 import {
   computeAudienceCapabilitiesFromState,
@@ -91,6 +92,15 @@ export async function handleFollowPresentation(
       id: picked.id,
       title: picked.title,
       theme: picked.theme,
+      // The language these slides are actually in, so the audience view can
+      // ask `resolveDeckLang(pres)` like every other render surface instead of
+      // second-guessing from the query string. When a version was requested it
+      // was served (the branch above turned a missing one into "translating");
+      // otherwise these are `pres.slides`, whose language resolveDeckLang
+      // already names. Without it the built-in copy of poll, likert and
+      // feedback slides fell back to DEFAULT_SLIDE_COPY_LANG for every
+      // audience (docs/reference/slide-copy-language.md).
+      lang: lang || resolveDeckLang(pres),
       // A database theme resolves through a route behind the login gate, so
       // the audience — anonymous by definition — saw a 401 and followed along
       // on an unbranded deck. The theme rides on the payload the follow code

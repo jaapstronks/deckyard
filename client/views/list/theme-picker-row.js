@@ -6,7 +6,10 @@
 import { t } from '../../lib/ui-i18n.js';
 import { icon } from '../../lib/dom/icons.js';
 import { loadThemeById } from '../../lib/theme/theme.js';
-import { renderSlideElement } from '../../lib/slide-runtime/slide-render.js';
+import {
+  NO_DECK_LANG,
+  renderSlideElement,
+} from '../../lib/slide-runtime/slide-render.js';
 import { attachThumbScale } from '../../lib/slide-runtime/thumb-scale.js';
 import { h } from '../../lib/dom.js';
 
@@ -36,7 +39,11 @@ function createThemePreview(theme, detachCallbacks) {
   };
 
   try {
-    const slideEl = renderSlideElement(sampleSlide, { mode: 'thumb', theme });
+    const slideEl = renderSlideElement(sampleSlide, {
+      mode: 'thumb',
+      theme,
+      lang: NO_DECK_LANG,
+    });
     thumb.append(slideEl);
     // Attach scale observer for proper sizing
     const detach = attachThumbScale(thumb, { virtualWidth: 1600 });

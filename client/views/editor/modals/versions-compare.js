@@ -5,6 +5,7 @@
 
 import { createPromiseModal } from '../../../lib/dom/modal.js';
 import { renderSlideElement } from '../../../lib/slide-runtime/slide-render.js';
+import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
 import {
   computeSlideDiff,
   alignSlidesForComparison,
@@ -189,6 +190,11 @@ export function openVersionCompareModal({
       const snapshotSlides = versionData?.presentation?.slides || [];
       const currentSlides = currentPres?.slides || [];
 
+      // Each column speaks its own deck's language: a snapshot predates any
+      // later language switch, so the two can legitimately disagree.
+      const snapshotLang = resolveDeckLang(versionData?.presentation);
+      const currentLang = resolveDeckLang(currentPres);
+
       // Compute diff
       const diff = computeSlideDiff(currentSlides, snapshotSlides);
 
@@ -257,7 +263,7 @@ export function openVersionCompareModal({
       );
 
       // Helper to show enlarged slide preview
-      function showEnlargedSlide(slide, label) {
+      function showEnlargedSlide(slide, label, lang) {
         const overlay = h('div', { class: 'compare-lightbox' });
         const closeBtn = h('button', {
           class: 'compare-lightbox-close',
@@ -274,6 +280,7 @@ export function openVersionCompareModal({
             mode: 'thumb',
             theme,
             presentationId,
+            lang,
           });
           content.append(slideEl);
         } catch {
@@ -320,6 +327,7 @@ export function openVersionCompareModal({
                     n: i + 1,
                   },
                 ),
+                currentLang,
               ),
           });
           try {
@@ -327,6 +335,7 @@ export function openVersionCompareModal({
               mode: 'thumb',
               theme,
               presentationId,
+              lang: currentLang,
             });
             thumb.append(slideEl);
           } catch {
@@ -366,6 +375,7 @@ export function openVersionCompareModal({
                     n: i + 1,
                   },
                 ),
+                snapshotLang,
               ),
           });
           try {
@@ -373,6 +383,7 @@ export function openVersionCompareModal({
               mode: 'thumb',
               theme,
               presentationId,
+              lang: snapshotLang,
             });
             thumb.append(slideEl);
           } catch {

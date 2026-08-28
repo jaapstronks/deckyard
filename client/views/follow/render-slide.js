@@ -3,6 +3,7 @@ import {
   mountSlideInto,
 } from '../../lib/slide-runtime/slide-render.js';
 import { slideByIdOrIndex } from './slides.js';
+import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 import { h } from '../../lib/dom.js';
 import { applyStepVisibilityForMode } from '../presenter/step.js';
 
@@ -59,10 +60,15 @@ export function renderFollowSlide({
     return;
   }
 
+  // The audience can switch language mid-session, and the switcher refetches
+  // the deck rather than reloading the page. The payload states the language of
+  // the slides it carries (`server/routes/api/follow/presentation.js`), so this
+  // reads the deck like every other surface and follows the switch for free.
   const el = mountSlideInto(slideWrap, slide, {
     mode: 'follow',
     theme,
     presentationId: pres?.id,
+    lang: resolveDeckLang(pres),
   });
 
   // Apply presenter step state (if enabled) so follow-along matches "Tekst stap voor stap".

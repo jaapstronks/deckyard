@@ -7,6 +7,7 @@ import { t } from '../ui-i18n.js';
 import { toast } from '../dom/toast.js';
 import { createModal } from '../dom/modal.js';
 import { renderSlideElement } from '../slide-runtime/slide-render.js';
+import { contentLang } from './search.js';
 import { cleanStr } from '../../../shared/string-utils.js';
 import { SLIDE_TYPES } from '../../../shared/slide-types.js';
 import { h } from '../dom.js';
@@ -180,7 +181,12 @@ export function openEditModal({
     };
     const thTheme = await resolveThemeForItem(item);
     previewThumb.innerHTML = '';
-    const slideEl = renderSlideElement(slide, { theme: thTheme });
+    // The modal edits `item.content` — the base version — so the preview
+    // renders in the item's own language, not the library's browsing language.
+    const slideEl = renderSlideElement(slide, {
+      theme: thTheme,
+      lang: contentLang(item),
+    });
     previewThumb.appendChild(slideEl);
 
     // Scale the slide to fit the preview container
