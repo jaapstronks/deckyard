@@ -28,6 +28,8 @@ import { compileTemplate } from './slide-template-compiler.js';
 import { escapeHtml } from '../../shared/slide-types/helpers.js';
 import { sanitizeSlideHtmlSync } from '../../shared/sanitize.js';
 import { filterCssText } from '../../shared/css-filter.js';
+import { scopeCss } from '../../shared/slide-types/scope-css.js';
+import { slideRootClass } from '../../shared/slide-types/validate-definition.js';
 import { listPublishedCustomSlideTypes } from '../storage/custom-slide-types.js';
 import { createLogger } from './logger.js';
 
@@ -55,10 +57,9 @@ export function toRuntimeSlideType(ct) {
     // has no business compiling every published template in the org just to
     // learn that a type key exists.
     let render = null;
+    const rootClass = slideRootClass(customSlideTypeKey(ct));
     def.renderHtml = (content, slide, ctx) => {
       render ??= compileTemplate(ct.template);
-      // Inject custom CSS as a scoped <style> block
-      const cssBlock = ct.css ? `<style>${filterCssText(ct.css)}</style>` : '';
       // Sanitize the compiled template output before it reaches innerHTML and
       // the headless-export renderer. Template authoring is canManage-gated, but
       // the *content* the template interpolates ({{raw}} / {{markdown}}) is
@@ -67,9 +68,17 @@ export function toRuntimeSlideType(ct) {
       // otherwise be stored XSS reaching present mode, follow-along, the public
       // /p/ viewer and the server-side Puppeteer export. Mirrors the custom-html
       // slide (security-audit H5; also closes the {{markdown}} javascript: sink,
-      // M1). CSS is prepended separately because sanitizeSlideHtmlSync strips
-      // <style>.
-      return cssBlock + sanitizeSlideHtmlSync(render(content || {}));
+      // M1).
+      const html = sanitizeSlideHtmlSync(render(content || {}));
+      // Author CSS gets the security filter *and* the containment pass, the
+      // same pair the custom-html slide runs. Scoping happens after sanitizing
+      // because sanitizeSlideHtmlSync strips <style>, and the scope root has to
+      // exist on the markup before the block can name it (B189).
+      const scopedCss = ct.css
+        ? scopeCss(filterCssText(ct.css), `.${rootClass}`)
+        : '';
+      const styleBlock = scopedCss ? `<style>${scopedCss}</style>` : '';
+      return withScopeRoot(html, rootClass, styleBlock);
     };
   } else if (ct.baseType && SLIDE_TYPES[ct.baseType]) {
     // Fall back to the base type's renderer
@@ -91,6 +100,46 @@ export function toRuntimeSlideType(ct) {
   }
 
   return def;
+}
+
+/** HTML elements that cannot hold children, so they cannot host a <style>. */
+const VOID_TAGS =
+  /^(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)$/i;
+
+/**
+ * Give a rendered DB slide type's markup the scope root its CSS is written
+ * against: the root element carries `rootClass` and the `<style>` block is its
+ * first child.
+ *
+ * A DB template is free-form markup, so unlike a file-JS type there is nothing
+ * to warn at — the root class has to be *put* there, or the scoped selectors
+ * match nothing and the slide renders unstyled. The template's own outermost
+ * element is that root whenever it has one; only markup that opens with text or
+ * a void element gets a wrapper, and then the wrapper is a real `.slide` so the
+ * output keeps its single-root shape.
+ *
+ * That single root matters beyond CSS: `renderSlideElement` mounts
+ * `wrap.firstElementChild` and copies its class list, so markup whose first
+ * element was the `<style>` block — what this path emitted before B189 — mounted
+ * the stylesheet instead of the slide.
+ *
+ * @param {string} html - Sanitized template output
+ * @param {string} rootClass - e.g. `slide-custom-hero`
+ * @param {string} styleBlock - `<style>…</style>`, or '' when the type has no CSS
+ * @returns {string}
+ */
+function withScopeRoot(html, rootClass, styleBlock) {
+  const body = String(html || '');
+  const open = /^\s*<([a-zA-Z][\w-]*)\b[^>]*>/.exec(body);
+  if (open && !VOID_TAGS.test(open[1])) {
+    const tag = open[0];
+    const rest = body.slice(open.index + tag.length);
+    const withClass = /\sclass="/.test(tag)
+      ? tag.replace(/\sclass="([^"]*)"/, ` class="$1 ${rootClass}"`)
+      : tag.replace(/^<([a-zA-Z][\w-]*)/, `<$1 class="${rootClass}"`);
+    return body.slice(0, open.index) + withClass + styleBlock + rest;
+  }
+  return `<div class="slide ${rootClass}">${styleBlock}${body}</div>`;
 }
 
 /**

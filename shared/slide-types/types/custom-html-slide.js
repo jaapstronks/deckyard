@@ -13,8 +13,9 @@
  *   iframes/objects/embeds, forms, and external <link>/<style> are stripped.
  *   JavaScript is therefore never executed on any path (including Puppeteer,
  *   which *would* run scripts but receives none).
- * - The CSS is scoped to this slide's root so it cannot restyle the deck chrome,
- *   and is filtered for @import / expression() / </style> breakouts.
+ * - The CSS is scoped to this slide's root so it cannot restyle the deck chrome
+ *   (`scopeCss`, shared with the Settings > Slide Types path), and is filtered
+ *   for @import / expression() / </style> breakouts.
  * - Authoring the raw markup is gated to users with the canEditCustomHtml
  *   capability (enforced server-side in the write routes); everyone else can
  *   still view/present/export the rendered slide read-only.
@@ -23,98 +24,10 @@
 import { escapeHtml, bgClass, BACKGROUND_FIELD } from '../helpers.js';
 import { sanitizeSlideHtmlSync } from '../../sanitize.js';
 import { filterCssText } from '../../css-filter.js';
+import { scopeCss } from '../scope-css.js';
 
 const HTML_MAX = 20000;
 const CSS_MAX = 10000;
-
-/**
- * Split a CSS string into top-level { selector, body } blocks, where body keeps
- * any nested blocks intact (for @media / @supports / @container).
- * @param {string} css
- * @returns {Array<{ selector: string, body: string }>}
- */
-function splitTopLevel(css) {
-  const blocks = [];
-  let depth = 0;
-  let buf = '';
-  let selector = '';
-  for (let i = 0; i < css.length; i++) {
-    const c = css[i];
-    if (c === '{') {
-      if (depth === 0) {
-        selector = buf.trim();
-        buf = '';
-      } else {
-        buf += c;
-      }
-      depth++;
-    } else if (c === '}') {
-      depth--;
-      if (depth <= 0) {
-        if (selector || buf.trim()) blocks.push({ selector, body: buf });
-        buf = '';
-        selector = '';
-        depth = 0;
-      } else {
-        buf += c;
-      }
-    } else {
-      buf += c;
-    }
-  }
-  return blocks;
-}
-
-/**
- * Prefix a single selector with the slide scope, mapping root-ish selectors
- * (:root / html / body) onto the scope itself.
- * @param {string} sel
- * @param {string} scope
- * @returns {string}
- */
-function scopeSelector(sel, scope) {
-  const s = sel.trim();
-  if (!s) return '';
-  if (s.startsWith(scope)) return s;
-  if (/^(:root|html|body)\b/.test(s)) {
-    return s.replace(/^(:root|html|body)/, scope);
-  }
-  return `${scope} ${s}`;
-}
-
-/**
- * Scope author CSS under a per-slide selector so it can't bleed into the rest
- * of the deck. Best-effort: @keyframes / @font-face / @page are left untouched
- * (their bodies aren't selectors); @media / @supports / @container are recursed.
- * @param {string} css
- * @param {string} scope - e.g. '.custom-html-root[data-chr="<id>"]'
- * @returns {string}
- */
-function scopeCss(css, scope) {
-  return splitTopLevel(css)
-    .map(({ selector, body }) => {
-      if (selector.startsWith('@')) {
-        const low = selector.toLowerCase();
-        if (
-          low.startsWith('@media') ||
-          low.startsWith('@supports') ||
-          low.startsWith('@container')
-        ) {
-          return `${selector} {\n${scopeCss(body, scope)}\n}`;
-        }
-        // @keyframes, @font-face, @page, @charset, ... : not selector-scoped.
-        return `${selector} {${body}}`;
-      }
-      const scoped = selector
-        .split(',')
-        .map((part) => scopeSelector(part, scope))
-        .filter(Boolean)
-        .join(', ');
-      return scoped ? `${scoped} {${body}}` : '';
-    })
-    .filter(Boolean)
-    .join('\n');
-}
 
 const DEFAULT_HTML = `<div class="ch-center">
   <h2 class="ch-title">Custom HTML</h2>

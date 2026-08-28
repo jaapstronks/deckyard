@@ -82,6 +82,52 @@ Only the root class moved. The inner families are untouched: `tsu-*` on the
 title slide, and `.lijst` / `.lijst-item` / `.marker` on the list slide, which
 keep the Dutch names the type was born with.
 
+## Author CSS is scoped to the slide root
+
+Two surfaces let a human paste a stylesheet into a deck rather than write one in
+the repo: the **custom-html slide** (a `css` field on the slide) and a type built
+in **Settings > Slide Types** (a `css` column on the definition). Both inject it
+as a `<style>` block on a page that also carries the presenter, the editor and
+every other slide, so an unscoped `body { display: none }` is not a styling
+mistake — it is one deck author restyling everyone's chrome.
+
+Both run the same two passes, in this order:
+
+1. `filterCssText` (`shared/css-filter.js`) — the **security** half. No
+   `@import`, no `expression()`, no `</style>` breakout.
+2. `scopeCss` (`shared/slide-types/scope-css.js`) — the **containment** half.
+   Every selector is rewritten to sit under one root; `:root` / `html` / `body`
+   are remapped _onto_ that root rather than nested under it, because nesting
+   them would silently match nothing.
+
+There is one implementation because there is one meaning. The DB path used to
+run only the first pass — its CSS reached deck chrome — and the fix was to give
+it the mechanism the other path already had, not to write a second one (B189).
+
+**What each path scopes to.** The custom-html slide owns its whole markup, so it
+scopes to a per-slide root it renders itself
+(`.custom-html-root[data-chr="<slide id>"]`) and two custom-html slides in one
+deck cannot style each other. A DB type scopes to its **root class** — the same
+`slideRootClass()` derivation as everything else on this page, so the type
+`custom-hero` scopes to `.slide-custom-hero` — and the CSS therefore applies to
+every slide of that type, which is what a _type_'s stylesheet is for.
+
+A DB template is free-form markup, so unlike a file-JS type there is nothing to
+warn at: `toRuntimeSlideType` **puts** the root class on the template's outermost
+element and inserts the `<style>` block as its first child. Markup that opens
+with bare text or a void element has no element to carry it and gets a
+`<div class="slide slide-custom-…">` wrapper instead. Either way the output has
+exactly one root element — which the render path depends on for more than CSS:
+`renderSlideElement()` mounts `wrap.firstElementChild` and copies its class list,
+so while the `<style>` block came _first_, a DB type with CSS mounted its
+stylesheet in place of its slide.
+
+**What it does not scope.** `@keyframes`, `@font-face`, `@page` and `@charset`
+bodies are not selector lists and pass through untouched, so an animation name or
+a font family declared by one type is visible to the whole document. They declare
+resources, not the appearance of someone else's elements. `@media`, `@supports`
+and `@container` are recursed into.
+
 ## The `UNSTYLED` list
 
 Two kinds of entry, and they mean different things:
