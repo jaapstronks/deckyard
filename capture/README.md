@@ -272,10 +272,13 @@ drifted?" — not "would a re-run produce the same image?".
 
 Two further limits, both worth knowing before trusting a re-run:
 
-- **The join screen's access code is per-session**, so it differs on every run.
-  Everything else in these shots is deterministic — deliberately, including the
-  presenter console's stopwatch, which the recipe stops and zeroes because a
-  running clock would read differently in every capture.
+- **The join screen's access code is per-session**, so the shots that show one
+  pin it: `pinJoinCode()` substitutes a fixed code (and re-encodes the QR for
+  the public `/go` page) after render, next to `rewriteJoinOrigin()`. Everything
+  else in these shots is deterministic by the same kind of deliberate
+  intervention — including the presenter console's stopwatch, which the recipe
+  stops and zeroes because a running clock would read differently in every
+  capture.
 - **`comments` needs the database, not just the dev server.** It is the only
   recipe that connects to Postgres itself (see `seedCommentThreads()` above), so
   it fails where the others would merely produce a thinner shot.
@@ -283,29 +286,30 @@ Two further limits, both worth knowing before trusting a re-run:
 ### What two runs on one host actually produce
 
 Measured 2026-08-28 on macOS, two consecutive `--all` runs against the same
-server, compared byte-for-byte and then pixel-for-pixel:
+server, compared byte-for-byte and then pixel-for-pixel. The row that used to
+dominate this table — 8 shots differing in the access code and its QR — is gone
+since `pinJoinCode()` landed; what is left is host-level rendering noise:
 
-|                                | shots | what differs                                                                                                                                                                          |
-| ------------------------------ | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| byte-identical                 | 6     | —                                                                                                                                                                                     |
-| **the access code and its QR** | 8     | `join-screen-{nl,en}`, `poll-live-{nl,en}`, `presenter-view-{nl,en}`, `comments-{nl,en}`. Every other pixel matches; the diff is exactly the code region (and the QR that encodes it) |
-| sub-perceptual noise           | 2     | `editor-full` — 492 px, none differing by more than 3/255; `editor-form-en` — one pixel, by 1. Invisible with the difference boosted 60×                                              |
+|                      | shots | what differs                                                                                                                                     |
+| -------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| byte-identical       | 15    | includes all 8 that carry an access code: `join-screen-{nl,en}`, `poll-live-{nl,en}`, `presenter-view-{nl,en}`, `comments-{nl,en}`               |
+| sub-perceptual noise | 2     | `editor-form-en` — 119 px, none differing by more than 1/255. `slide-type-picker-new` — 89 px scattered over icon and glyph edges, one at 34/255 |
 
-So the honest claim is not "a screenshot is byte-reproducible". It is: **a
-screenshot is pixel-reproducible except for the per-session access code**, and
-byte-reproducible only for the shots that do not contain one. The 8 that do
-would churn in every automated refresh, saying nothing — which is the same
-"a signal that always fires gets ignored" failure the hash scoping avoids
-above. Pinning the code (and regenerating the QR for it) is the fix, in the same
-place `rewriteJoinOrigin()` already substitutes the human-readable URL; it is
-tracked as its own item rather than absorbed by loosening the comparison.
+So the honest claim is: **a screenshot is byte-reproducible except for
+antialiasing jitter the host decides.** That jitter is not per-recipe and does
+not stay put — the 2026-08-28 pre-pin run had it on `editor-full` (492 px) and
+`editor-form-en`, this one on `editor-form-en` and `slide-type-picker-new`. On
+`slide-type-picker-new` it is bistable rather than random: three consecutive
+runs gave state A, B, A. It predates the pin (that recipe shows no join code at
+all) and is tracked separately; a refresh gate has to tolerate it, which is a
+different thing from tolerating a code that changes on every run.
 
 Two runs also produced one failing recipe each, a different one each time
-(`presenter-view-nl` and `share-link-rules-nl`, both selector timeouts on a
-live-session shot). Roughly 1 in 17, and it is why an automated re-baseline has
-to be scoped to the recipes that actually came out: a run that re-baselines a
-recipe it could not capture is recording a claim about an artifact that is one
-week older than it says it is.
+(pre-pin: `presenter-view-nl` and `share-link-rules-nl`; post-pin:
+`presenter-view-en`, all selector timeouts on a live-session shot). Roughly 1 in
+17, and it is why an automated re-baseline has to be scoped to the recipes that
+actually came out: a run that re-baselines a recipe it could not capture is
+recording a claim about an artifact that is one week older than it says it is.
 
 ## Adding the next screenshot
 

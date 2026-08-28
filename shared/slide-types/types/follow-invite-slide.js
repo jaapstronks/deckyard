@@ -81,7 +81,12 @@ export default {
 
     // Get follow codes from context (when available during presentations)
     const followCodes = ctx?.followCodes || {};
-    const code = lang === 'nl' ? followCodes.nl : followCodes.en;
+    // The key the code is filed under, which is not `lang`: codes are minted
+    // per follow URL and there is one per language, keyed `nl`/`en`, while the
+    // render language is `nl`/`en-GB`. `data-follow-code` carries the key, so
+    // a reader of the DOM can tell which of the two codes it is looking at.
+    const codeLang = lang === 'nl' ? 'nl' : 'en';
+    const code = followCodes[codeLang];
 
     const goHref = '/go';
 
@@ -111,7 +116,7 @@ export default {
                 )}</div>
                 <div class="sfi-code-row">
                   <div class="sfi-row-label">${escapeHtml(base.codeLabel)}</div>
-                  <div class="sfi-code" aria-label="${escapeHtml(base.accessCodeLabel)}">${escapeHtml(
+                  <div class="sfi-code" data-follow-code="${codeLang}" aria-label="${escapeHtml(base.accessCodeLabel)}">${escapeHtml(
                     code || '----',
                   )}</div>
                 </div>

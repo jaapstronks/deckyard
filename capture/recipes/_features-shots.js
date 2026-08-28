@@ -23,6 +23,7 @@ import {
   MARKETING_VIEWPORT,
   PRESENTER_CONSOLE_TARGET_SECONDS,
   dismissPresenterStartGate,
+  pinJoinCode,
   rewriteJoinOrigin,
   seedPollVotes,
   stubTranslateFields,
@@ -176,6 +177,10 @@ export function presenterViewShot(lang) {
       // page.click scrolls its target into view; if anything overflowed after
       // all, that scroll would crop the frame. Pin the origin before the shot.
       await page.evaluate(() => window.scrollTo(0, 0));
+      // The poll slide on stage prints the session's two follow codes, which
+      // are minted per run. Pin them last, like the stopwatch above: this shot
+      // is a photograph, and everything in it has to be the same twice.
+      await pinJoinCode(page, MARKETING_PUBLIC_ORIGIN);
     },
   };
 }
@@ -258,8 +263,10 @@ export function commentsShot(lang) {
       // The slide rail renders the invite slide as a thumbnail, and that
       // thumbnail carries the same client-built join URL the join-screen shot
       // has to rewrite — small in frame, but it is still the capture box's
-      // address. Same substitution, same reason (see rewriteJoinOrigin).
+      // address. Same substitution, same reason (see rewriteJoinOrigin). The
+      // code in that thumbnail is minted per run, so it is pinned too.
       await rewriteJoinOrigin(page, MARKETING_PUBLIC_ORIGIN);
+      await pinJoinCode(page, MARKETING_PUBLIC_ORIGIN);
     },
 
     async cleanup() {
