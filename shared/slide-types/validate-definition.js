@@ -346,6 +346,16 @@ export function validateSlideTypeDefinition(def, name, options = {}) {
   checkAi(def.ai, who, known, warnings);
 
   // --- defaults --------------------------------------------------------------
+  // A default may also seed an instance-bound key (`instanceKeys`, e.g.
+  // `poll-slide.pollId`). Those are real content keys that deliberately have no
+  // field — the clone/save helpers rewrite them, no form edits them — and
+  // `defaults` is where a type declares one exists at all, so they are known
+  // here. Not folded into `known`: `ai.schema` or `inline` naming one is still
+  // a mistake, because neither surface can reach it.
+  const defaultsKnown = new Set(known);
+  if (isPlainObject(def.instanceKeys)) {
+    for (const key of Object.keys(def.instanceKeys)) defaultsKnown.add(key);
+  }
   for (const prop of ['defaults', 'defaultsByLang']) {
     const val = def[prop];
     if (val === undefined || val === null) continue;
@@ -362,7 +372,7 @@ export function validateSlideTypeDefinition(def, name, options = {}) {
         : [val];
     for (const map of maps) {
       for (const key of Object.keys(map)) {
-        if (!known.has(key)) {
+        if (!defaultsKnown.has(key)) {
           warnings.push(
             `${who}: \`${prop}\` has no field \`${key}\`, so that default is ` +
               `never applied`,
