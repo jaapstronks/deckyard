@@ -12,12 +12,27 @@
 // `slide-bg-${id}`, `is-${state}`, `tf-align-${x}`, and template-literal builds
 // in `renderHtml`. A naive scanner flags every composed class as dead and is
 // worse than nothing. So the bias is deliberately conservative: it errs towards
-// calling a class ALIVE (harvesting every string/template token as "used" and
-// treating any static chunk that precedes a `${` as a live prefix), and only
-// reports a selector when it appears NOWHERE — not as a literal, not as the
-// prefix of a composed name. Under-reporting is the intended failure mode;
-// over-reporting is the one that makes the tool untrustworthy. Promote to a gate
-// only once the report is clean.
+// calling a class ALIVE, and only reports a selector it cannot account for.
+// Under-reporting is the intended failure mode; over-reporting is the one that
+// makes the tool untrustworthy. Promote to a gate only once the report is clean.
+//
+// A COMPOSED NAME MUST BE ASSEMBLABLE, NOT MERELY PREFIXED (the #1037 lesson)
+// The first version treated any static chunk preceding a `${` as a live prefix
+// and rescued every name starting with it. That is an unbounded wildcard, and
+// `slideRootClass()` writes `` `slide-${canonicalTypeName(name)}` `` — so
+// `slide-` became a live prefix and the *entire slide layer* was declared alive
+// sight unseen. The dead half of `00-patterns.css` never reached the report.
+// The same loophole let junk tails (`c`, `n`, `v`, `row`) from unrelated
+// template literals whitelist whole families.
+//
+// So a prefix no longer rescues a name on its own: the *remainder* must be a
+// value the source actually writes — a harvested token, or a run of digits for
+// index holes like `chart-slice-${i % 8}`. A hole is filled with a value, and
+// the values in this codebase are enum members, sizes and states that appear as
+// literals somewhere. Two-hole builds (`` ` ${base}--${t}` `` in
+// `shared/slide-types/partials.js`) leave no usable prefix at all, so a static
+// chunk sitting *between* two holes is harvested as an infix and the name is
+// alive when both sides of it are values.
 //
 // SCOPE IS TRACKED FILES, NOT THE WORKING TREE (the #413 lesson)
 // The gate measures `git ls-files`, not a filesystem walk. A class used only by
@@ -39,14 +54,61 @@ const REPO_ROOT = path.resolve(
 const CLASS_TOKEN = /^-?[_a-zA-Z][_a-zA-Z0-9-]*$/;
 
 /**
+ * A static chunk between two holes counts as a composition joint only when it is
+ * a run of two or more separators (`--`, `__`). One `-` is the ordinary word
+ * joiner in every class name here, so accepting it would rescue any hyphenated
+ * selector whose two halves happen to appear as strings somewhere.
+ */
+const SEPARATOR_INFIX = /^[-_]{2,}$/;
+
+/** A hole that carries an index rather than a name: `chart-slice-${i % 8}`. */
+const INDEX_VALUE = /^\d+$/;
+
+/**
+ * @typedef {Object} Evidence
+ * @property {Set<string>} used - Class-shaped tokens the source writes; also the
+ *   vocabulary of values a `${}` hole can evaluate to.
+ * @property {Set<string>} prefixes - Static text directly before a hole.
+ * @property {Set<string>} infixes - Separator-only static text between two holes.
+ */
+
+/**
+ * A fresh, empty evidence accumulator.
+ * @returns {Evidence}
+ */
+export const emptyEvidence = () => ({
+  used: new Set(),
+  prefixes: new Set(),
+  infixes: new Set(),
+});
+
+/**
+ * Can a `${}` hole have produced this text? Either the source writes it as a
+ * literal somewhere, or it is an index.
+ * @param {string} text - The candidate hole content
+ * @param {Evidence} evidence - From {@link harvestSource}
+ * @returns {boolean}
+ */
+const isValue = (text, evidence) =>
+  text.length > 0 && (evidence.used.has(text) || INDEX_VALUE.test(text));
+
+/**
  * A tracked file is a *source* file (its literals may reference classes) when it
- * is a `.js`/`.html` under `client/` or `shared/`. Stylesheets are excluded by
- * extension.
+ * is a `.js`/`.html` under `client/`, `shared/` or `server/`. Stylesheets are
+ * excluded by extension.
+ *
+ * `server/` counts because eighteen of its modules write class attributes
+ * (export, embed, published pages, the PNG/PDF renderers) and because the enum
+ * members that fill client-side holes live there — `analyze-category-${cat}`
+ * draws its categories from `server/utils/ai/analyze-presentation.js`. Leaving
+ * it out made those composed names unaccountable.
  * @param {string} file - Repo-relative path
  * @returns {boolean}
  */
 export const isSourceFile = (file) =>
-  (file.startsWith('client/') || file.startsWith('shared/')) &&
+  (file.startsWith('client/') ||
+    file.startsWith('shared/') ||
+    file.startsWith('server/')) &&
   (file.endsWith('.js') || file.endsWith('.html'));
 
 /**
@@ -77,26 +139,32 @@ export function trackedFiles(cwd = REPO_ROOT) {
 /**
  * Harvest class-name evidence from a chunk of source text.
  *
- * Two kinds of evidence, both conservative:
+ * Three kinds of evidence, all conservative:
  *   - `used`: every class-shaped token inside a string or template literal.
  *     Tokens are cut on any non-`[\w-]` run, not on whitespace: the two commonest
  *     ways this codebase names a class are `class="a b"` inside a larger string
  *     and `querySelector('.a .b')`, and whitespace-splitting yields
  *     `class="table-step-row"` / `.table-step-row` — neither of which is a class
  *     token, so both classes read as dead. Non-class strings leak in too, which
- *     only ever marks a selector alive — the safe direction.
+ *     only ever marks a selector alive — the safe direction. This set doubles as
+ *     the *value vocabulary*: the things a `${}` hole can evaluate to.
  *   - `prefixes`: the last token of any static template chunk that sits directly
  *     before a `${` interpolation, e.g. `slide-bg-` in `` `slide-bg-${id}` ``.
- *     A selector starting with such a prefix is treated as composed, not dead.
+ *     A prefix is only half an argument — see {@link isAlive}, which requires
+ *     the remainder to be a value too.
+ *   - `infixes`: a static chunk that sits *between* two holes and is nothing but
+ *     separator characters, e.g. `--` in `` ` ${base}--${t}` ``. Such a build
+ *     leaves no usable prefix (the chunk before the first hole is whitespace),
+ *     so the separator itself is the evidence, and the name is composed when the
+ *     text on both sides of it is a value. A single `-` is excluded: it joins
+ *     almost every class name in the tree, so accepting it would whitelist any
+ *     hyphenated name whose halves happen to appear as strings.
  *
  * @param {string} text - Source file contents
- * @param {{used: Set<string>, prefixes: Set<string>}} acc - Accumulator to fill
- * @returns {{used: Set<string>, prefixes: Set<string>}}
+ * @param {Evidence} acc - Accumulator to fill
+ * @returns {Evidence}
  */
-export function harvestSource(
-  text,
-  acc = { used: new Set(), prefixes: new Set() },
-) {
+export function harvestSource(text, acc = emptyEvidence()) {
   // Quoted strings: 'x', "x". Group 2 is the (unescaped-enough) content.
   const quoted = /(['"])((?:\\.|(?!\1)[^\\\n])*)\1/g;
   for (let m; (m = quoted.exec(text));) {
@@ -133,6 +201,11 @@ export function harvestSource(
         // `class="slide-bg-`, which matches no selector.
         const tail = /[_a-zA-Z][\w-]*$/.exec(chunk)?.[0];
         if (tail) acc.prefixes.add(tail);
+      }
+      // A chunk with a hole on both sides that is pure separator: the joint of
+      // a `${base}--${tone}` build, which yields no prefix worth the name.
+      if (i > 0 && i < chunks.length - 1 && SEPARATOR_INFIX.test(chunk)) {
+        acc.infixes.add(chunk);
       }
     });
   }
@@ -253,19 +326,48 @@ export function extractCssClasses(text, file) {
 }
 
 /**
- * Decide whether a class name is referenced by the harvested source evidence.
+ * Decide whether a class name is accounted for by the harvested evidence.
+ *
+ * Four ways to be alive, in the order they are cheapest to check. The composed
+ * ones (2 and 3) both demand that the interpolated part is a *value* the source
+ * writes — a bare prefix match is not evidence, it is a wildcard, and that is
+ * how `slide-` once absolved the whole slide layer.
+ *
  * @param {string} name - CSS class name
- * @param {{used: Set<string>, prefixes: Set<string>}} evidence - From harvestSource
+ * @param {Evidence} evidence - From {@link harvestSource}
  * @returns {boolean}
  */
 export function isAlive(name, evidence) {
+  // 1. Written as a literal.
   if (evidence.used.has(name)) return true;
-  // Composed via a live prefix: `.slide-bg-red` under prefix `slide-bg-`.
+
+  // 2. Composed from a prefix and a value: `.slide-bg-red` from
+  //    `` `slide-bg-${id}` `` with `red` written somewhere.
   for (const p of evidence.prefixes) {
-    if (p && name.startsWith(p)) return true;
+    if (p && name.startsWith(p) && isValue(name.slice(p.length), evidence)) {
+      return true;
+    }
   }
-  // The class is itself the static base of a composed literal: `.card` when the
-  // source only ever writes `card-header` as a literal token.
+
+  // 3. Composed across a separator joint: `.slide-badge--danger` from
+  //    `` ` ${base}--${t}` `` with both `slide-badge` and `danger` written.
+  for (const sep of evidence.infixes) {
+    for (
+      let at = name.indexOf(sep);
+      at !== -1;
+      at = name.indexOf(sep, at + 1)
+    ) {
+      if (
+        isValue(name.slice(0, at), evidence) &&
+        isValue(name.slice(at + sep.length), evidence)
+      ) {
+        return true;
+      }
+    }
+  }
+
+  // 4. The class is itself the static base of a composed literal: `.card` when
+  //    the source only ever writes `card-header` as a literal token.
   for (const t of evidence.used) {
     if (t.startsWith(name + '-')) return true;
   }
@@ -281,7 +383,7 @@ export function isAlive(name, evidence) {
  * @returns {{dead: Array<{name, file, line}>, totalClasses: number, evidence}}
  */
 export function scan({ sourceFiles, cssFiles, read = defaultRead }) {
-  const evidence = { used: new Set(), prefixes: new Set() };
+  const evidence = emptyEvidence();
   for (const file of sourceFiles) harvestSource(read(file), evidence);
 
   const byName = new Map();
@@ -324,9 +426,10 @@ function main() {
   console.log(
     `lint:deadcss (advisory) — ${dead.length} of ${totalClasses} CSS classes look ` +
       `unreferenced by ${sourceFiles.length} source files.\n` +
-      `Composed names (\`slide-bg-\${id}\`, \`is-\${state}\`) are treated as alive; a\n` +
-      `listed selector appears nowhere as a literal or a composition prefix. Verify\n` +
-      `before deleting — this is a hint, not a verdict.\n`,
+      `Composed names (\`slide-bg-\${id}\`, \`\${base}--\${tone}\`) count as alive when\n` +
+      `the interpolated part is a value the source writes; a listed selector could\n` +
+      `not be assembled from any literal or composition. Verify before deleting —\n` +
+      `this is a hint, not a verdict.\n`,
   );
   for (const rec of dead) {
     console.log(`  ${rec.file}:${rec.line}  .${rec.name}`);

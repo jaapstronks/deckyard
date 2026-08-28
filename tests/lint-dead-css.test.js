@@ -12,7 +12,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-const { harvestSource, extractCssClasses, isAlive, scan } =
+const { harvestSource, extractCssClasses, isAlive, isSourceFile, scan } =
   await import('../scripts/lint-dead-css.js');
 
 describe('harvestSource', () => {
@@ -32,6 +32,39 @@ describe('harvestSource', () => {
     const ev = harvestSource('`btn is-${state}`');
     assert.ok(ev.used.has('btn'), 'the leading literal token is still used');
     assert.ok(ev.prefixes.has('is-'), 'only the token touching ${ is a prefix');
+  });
+
+  it('records a separator between two holes as a composition infix', () => {
+    // shared/slide-types/partials.js builds tone modifiers this way; the chunk
+    // before the first hole is whitespace, so there is no prefix to harvest.
+    const ev = harvestSource('return ` ${base}--${t}`;');
+    assert.ok(ev.infixes.has('--'));
+    assert.equal(ev.prefixes.size, 0, 'a whitespace chunk yields no prefix');
+  });
+
+  it('does not record a single hyphen as an infix', () => {
+    // `-` joins nearly every class name here; accepting it would let any
+    // hyphenated selector pass whenever both halves appear as strings.
+    const ev = harvestSource('`${a}-${b}`');
+    assert.equal(ev.infixes.has('-'), false);
+  });
+});
+
+describe('isSourceFile', () => {
+  it('accepts client, shared and server modules', () => {
+    assert.equal(isSourceFile('client/views/editor/index.js'), true);
+    assert.equal(isSourceFile('shared/slide-types/partials.js'), true);
+    // server/ writes class attributes (export, embed, published pages) and owns
+    // the enum members that fill client-side holes.
+    assert.equal(isSourceFile('server/utils/embed-html/template.js'), true);
+  });
+
+  it('rejects stylesheets and files outside the source tree', () => {
+    assert.equal(
+      isSourceFile('client/styles/base/01-core/05-avatar.css'),
+      false,
+    );
+    assert.equal(isSourceFile('tests/lint-dead-css.test.js'), false);
   });
 });
 
@@ -83,15 +116,23 @@ describe('extractCssClasses', () => {
 
 describe('isAlive', () => {
   const ev = {
-    used: new Set(['card', 'card-header']),
-    prefixes: new Set(['slide-bg-']),
+    used: new Set(['card', 'card-header', 'red', 'slide-badge', 'danger']),
+    prefixes: new Set(['slide-bg-', 'chart-slice-']),
+    infixes: new Set(['--']),
   };
 
   it('is alive when used as a literal', () => {
     assert.equal(isAlive('card', ev), true);
   });
-  it('is alive when it starts with a composition prefix', () => {
+  it('is alive when a prefix plus a written value spells it out', () => {
     assert.equal(isAlive('slide-bg-red', ev), true);
+  });
+  it('is alive when the hole carries an index', () => {
+    // `chart-slice-${i % 8}` — the value is a number, never a literal token.
+    assert.equal(isAlive('chart-slice-0', ev), true);
+  });
+  it('is alive when both sides of a separator joint are values', () => {
+    assert.equal(isAlive('slide-badge--danger', ev), true);
   });
   it('is alive when it is the static base of a composed literal', () => {
     // `.section` would be alive if the source writes `section-header`; here we
@@ -100,6 +141,29 @@ describe('isAlive', () => {
   });
   it('is dead when it appears nowhere', () => {
     assert.equal(isAlive('login-panel', ev), false);
+  });
+
+  // The #1037 lesson: a prefix on its own is a wildcard, not evidence. When
+  // `slideRootClass()` contributed `slide-` as a prefix, every `slide-*`
+  // selector in the tree was absolved and the whole slide layer went unchecked.
+  it('is dead when only the prefix matches and the remainder is unwritten', () => {
+    assert.equal(isAlive('slide-bg-chartreuse', ev), false);
+  });
+  it('is dead when a separator joint has an unwritten side', () => {
+    assert.equal(isAlive('slide-badge--chartreuse', ev), false);
+  });
+  it('does not let a bare prefix absolve a whole namespace', () => {
+    const slideEv = {
+      used: new Set(['image']),
+      prefixes: new Set(['slide-']),
+      infixes: new Set(),
+    };
+    assert.equal(
+      isAlive('slide-image', slideEv),
+      true,
+      'the root class is real',
+    );
+    assert.equal(isAlive('slide-draft-overlay', slideEv), false);
   });
 });
 
@@ -132,14 +196,24 @@ describe('harvestSource — classes embedded in markup and selectors', () => {
   it('takes the class-shaped tail as a composition prefix, not the whole word', () => {
     const ev = harvestSource('const el = `<div class="slide-bg-${id}">`;');
     assert.equal(ev.prefixes.has('slide-bg-'), true);
+  });
+
+  it('pairs the prefix with a value written elsewhere in the same file', () => {
+    const ev = harvestSource(
+      "const ids = ['red', 'mist'];\nconst el = `<div class=\"slide-bg-${id}\">`;",
+    );
     assert.equal(isAlive('slide-bg-red', ev), true);
+    assert.equal(isAlive('slide-bg-mist', ev), true);
+    assert.equal(isAlive('slide-bg-chartreuse', ev), false, 'never written');
   });
 });
 
 describe('scan (end to end, injected reader)', () => {
   it('reports only the genuinely unreferenced selector', () => {
     const files = {
-      'client/app.js': `h('div', { class: 'card' }); const c = \`slide-bg-\${id}\`;`,
+      'client/app.js':
+        `const tones = ['red'];\n` +
+        `h('div', { class: 'card' }); const c = \`slide-bg-\${id}\`;`,
       'client/styles/x.css': [
         '.card {}',
         '.slide-bg-red {}',
@@ -156,6 +230,46 @@ describe('scan (end to end, injected reader)', () => {
       dead.map((d) => d.name),
       ['orphan'],
       'card is a literal, slide-bg-red is composed-alive, only orphan is dead',
+    );
+  });
+
+  // The regression this scanner exists to catch, and the one it used to miss:
+  // `slideRootClass()` writes `` `slide-${canonicalTypeName(name)}` ``, so
+  // `slide-` was a live prefix and no `slide-*` selector could ever be reported.
+  it('reports a dead slide-* class without touching the live slide layer', () => {
+    const files = {
+      // The real composition sites, verbatim in spirit: a root class built from
+      // a type name, a tone modifier built from two holes, an indexed slice.
+      'shared/slide-types/validate-definition.js':
+        'export const slideRootClass = (name) => `slide-${canonicalTypeName(name)}`;',
+      'shared/slide-types/registry.js':
+        "export const TYPES = ['image', 'chart'];",
+      'shared/slide-types/partials.js':
+        "const TONES = ['danger'];\n" +
+        'const toneClass = (base, t) => ` ${base}--${t}`;\n' +
+        "const badge = () => toneClass('slide-badge', tone);",
+      'shared/slide-types/types/chart-slide.js':
+        'const slice = (i) => `<path class="chart-slice chart-slice-${i % 8}">`;',
+      'client/styles/slides/x.css': [
+        '.slide-image {}',
+        '.slide-chart {}',
+        '.slide-badge {}',
+        '.slide-badge--danger {}',
+        '.chart-slice {}',
+        '.chart-slice-0 {}',
+        '.chart-slice-7 {}',
+        '.slide-draft-overlay {}',
+      ].join('\n'),
+    };
+    const { dead } = scan({
+      sourceFiles: Object.keys(files).filter((f) => f.endsWith('.js')),
+      cssFiles: ['client/styles/slides/x.css'],
+      read: (f) => files[f],
+    });
+    assert.deepEqual(
+      dead.map((d) => d.name),
+      ['slide-draft-overlay'],
+      'the one slide-* class no composition can produce is the only report',
     );
   });
 });

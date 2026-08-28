@@ -603,11 +603,39 @@ survive a header-row removal (#393) unnoticed.
 names here are _composed_ (`slide-bg-${id}`, `is-${state}`, `tf-align-${x}`,
 `renderHtml` template builds), so a naive scanner flags every composed class as
 dead and is worse than nothing. The scanner therefore errs towards **alive**: it
-harvests every class-shaped token from `client/**` + `shared/**` as "used" and
-treats any static chunk preceding a `${` as a live prefix. It reports a
-selector only when it appears _nowhere_ — not as a literal, not as a composition
-prefix. Under-reporting is the intended failure mode; over-reporting is the one
-that makes the tool untrustworthy.
+harvests every class-shaped token from `client/**` + `shared/**` + `server/**`
+as "used" and reports a selector only when it cannot account for it.
+Under-reporting is the intended failure mode; over-reporting is the one that
+makes the tool untrustworthy.
+
+**A composed name must be assemblable, not merely prefixed.** The first cut
+treated any static chunk before a `${` as a live prefix and absolved every name
+starting with it. That is an unbounded wildcard, and `slideRootClass()` writes
+`` `slide-${canonicalTypeName(name)}` `` — so `slide-` became a live prefix and
+the **entire slide layer** was declared alive sight unseen. The dead half of
+`00-patterns.css` never reached the report; #1037 had to lean on grep and a
+render sweep instead. The same loophole let junk tails (`c`, `n`, `v`, `row`)
+harvested from unrelated template literals whitelist whole families. So a class
+counts as composed only when the interpolated part is a **value the source
+actually writes**:
+
+| Build                                  | Evidence   | Alive when                                   |
+| -------------------------------------- | ---------- | -------------------------------------------- |
+| `` `slide-bg-${id}` ``                 | prefix     | the remainder is a harvested token…          |
+| `` `chart-slice-${i % 8}` ``           | prefix     | …or a run of digits (an index hole)          |
+| `` ` ${base}--${t}` `` (`partials.js`) | infix `--` | both sides of the joint are harvested tokens |
+
+A two-hole build leaves no usable prefix at all (the chunk before the first hole
+is whitespace), so the separator between the holes is the evidence. Only runs of
+two or more separators count: a single `-` joins nearly every class in the tree,
+and accepting it would rescue any hyphenated selector whose halves happen to
+appear as strings somewhere.
+
+**`server/**` is in the corpus** because eighteen of its modules write class
+attributes (export, embed, published pages, the PNG/PDF renderers) and because
+the enum members that fill client-side holes live there —
+`analyze-category-${cat}` draws its categories from
+`server/utils/ai/analyze-presentation.js`.
 
 **Tokens are cut on any non-`[\w-]` run, not on whitespace.** The two commonest
 ways a class is named here are `class="a b"` inside a larger string and
@@ -622,10 +650,14 @@ Two properties worth knowing:
 - **It measures `git ls-files`, not the working tree.** A class used only by an
   untracked scratch file still counts as dead — otherwise "green for the author"
   is not "green in CI" (the #413 lesson).
-- **It stays advisory (exit 0) until the report is clean.** Today it lists ~83
+- **It stays advisory (exit 0) until the report is clean.** Today it lists ~124
   candidates; promote it to a gate only once those are triaged away. Each hit is
   a _candidate_ — verify by hand (a fully dynamic `class` built from a variable
-  the scanner can't see is a false positive) before deleting.
+  the scanner can't see is a false positive) before deleting. A class that is a
+  documented author-facing vocabulary rather than core markup reads as dead too:
+  the `on-surface-*` pair from
+  [`nested-surfaces.md`](../reference/nested-surfaces.md) is published for slide
+  authors but used by no core module.
 
 ## Formatting (Prettier)
 
