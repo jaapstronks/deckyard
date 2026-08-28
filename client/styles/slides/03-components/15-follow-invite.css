@@ -49,7 +49,7 @@
   box-shadow: var(--slide-shadow-lg);
 }
 
-.slide-follow-invite .sfi-card-kicker {
+.slide-follow-invite .sfi-card-title {
   font-size: var(--slide-font-size-card-title);
   font-weight: 900;
   letter-spacing: -0.01em;
