@@ -258,18 +258,6 @@
   line-height: var(--slide-leading-normal);
 }
 
-/* Optional QR inside poll-scan (legacy / future) */
-.slide-poll .poll-qr {
-  display: block;
-  width: 100%;
-  height: auto;
-  border-radius: var(--slide-radius-md);
-  background: #fff;
-  padding: var(--slide-space-3);
-  margin: var(--slide-space-5) auto 0;
-  box-sizing: border-box;
-}
-
 /* --- Likert slide --- */
 .slide-likert .slide-inner {
   justify-content: flex-start;
