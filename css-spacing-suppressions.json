@@ -304,11 +304,6 @@
       "count": 1
     }
   },
-  "client/styles/base/04-editor-and-misc/video-player.css": {
-    "tokenisable-spacing": {
-      "count": 1
-    }
-  },
   "client/styles/embed.css": {
     "tokenisable-spacing": {
       "count": 4
