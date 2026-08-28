@@ -256,7 +256,6 @@
   "list.trash.loadError": "Klarte ikke å laste inn papirkurven.",
   "list.trash.loading": "Laster inn…",
   "list.trash.title": "Papirkurv",
-  "list.untitled": "Uten tittel",
   "list.visibility.private": "Privat",
   "list.visibility.published": "Publisert",
   "list.visibility.shared": "Delt med {count} personer",

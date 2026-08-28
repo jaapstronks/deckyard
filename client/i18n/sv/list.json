@@ -256,7 +256,6 @@
   "list.trash.loadError": "Det gick inte att läsa in papperskorgen.",
   "list.trash.loading": "Läser in…",
   "list.trash.title": "Papperskorg",
-  "list.untitled": "Utan titel",
   "list.visibility.private": "Privat",
   "list.visibility.published": "Publicerad",
   "list.visibility.shared": "Delad med {count} personer",

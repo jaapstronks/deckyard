@@ -256,7 +256,6 @@
   "list.trash.loadError": "Impossibile caricare il cestino.",
   "list.trash.loading": "Caricamento…",
   "list.trash.title": "Cestino",
-  "list.untitled": "Senza titolo",
   "list.visibility.private": "Privato",
   "list.visibility.published": "Pubblicato",
   "list.visibility.shared": "Condiviso con {count} persone",

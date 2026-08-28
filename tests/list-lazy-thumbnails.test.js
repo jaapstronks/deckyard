@@ -8,6 +8,12 @@
  *   the loader, and does NOT fetch /api/presentations/:id per card (the list
  *   route ships a hasSlides flag). The thumbnail image loads only once the card
  *   scrolls into view; empty decks show "No slides yet" instead.
+ * - Once it does scroll into view, the <img> is in the document *before* its
+ *   `src` is assigned, and carries no `loading="lazy"`. A detached lazy image
+ *   never starts its fetch in Chromium — no request, no `load`, no `error` —
+ *   which is how every card silently fell through to the 8s safety net and the
+ *   onerror retry became unreachable code. The deferral is the shared
+ *   IntersectionObserver's job, not the attribute's.
  *
  * Run with: node --test tests/list-lazy-thumbnails.test.js
  */
@@ -240,6 +246,147 @@ test('renderCard shows "No slides yet" for an empty deck once in view', () => {
       null,
       'no image requested for an empty deck',
     );
+  } finally {
+    io.restore();
+  }
+});
+
+/**
+ * Spy on <img> creation, recording for every `src` assignment whether the
+ * element was already in the document at that moment. Redefining `src` as an
+ * own property is enough: the card assigns it as a property, and jsdom fetches
+ * nothing, so the attribute round-trip is a faithful stand-in.
+ */
+function captureImageSrcAssignments() {
+  const created = [];
+  const orig = document.createElement.bind(document);
+  document.createElement = (tag, ...rest) => {
+    const el = orig(tag, ...rest);
+    if (String(tag).toLowerCase() === 'img') {
+      const assignments = [];
+      Object.defineProperty(el, 'src', {
+        configurable: true,
+        get: () => el.getAttribute('src') || '',
+        set: (value) => {
+          assignments.push({ value: String(value), connected: el.isConnected });
+          el.setAttribute('src', String(value));
+        },
+      });
+      created.push({ el, assignments });
+    }
+    return el;
+  };
+  return {
+    last: () => created[created.length - 1] || null,
+    restore() {
+      document.createElement = orig;
+    },
+  };
+}
+
+test('the thumbnail image is in the document before its src is set', () => {
+  const io = installIOStub();
+  const images = captureImageSrcAssignments();
+  try {
+    const detachThumbs = [];
+    const { renderCard } = createCardRenderer({
+      api: async () => ({}),
+      nav: () => {},
+      detachThumbs,
+    });
+
+    const card = renderCard({
+      id: 'deck-1',
+      title: 'Deck one',
+      theme: 'default',
+      revision: 7,
+      modified: new Date().toISOString(),
+      hasSlides: true,
+    });
+    // Connected for real: in the app the observer only ever fires for cards
+    // that are in the document, and `isConnected` is what the browser's own
+    // "should I fetch this?" decision hangs on.
+    document.body.append(card);
+
+    const thumb = card.querySelector('.thumb');
+    io.instances[0].fire([thumb]);
+
+    const img = images.last();
+    assert.ok(img, 'an <img> was created for the thumbnail');
+    assert.equal(
+      img.el.parentElement,
+      thumb,
+      'the image lives in the thumb box',
+    );
+    assert.deepEqual(
+      img.assignments.map((a) => a.connected),
+      [true],
+      'src assigned exactly once, with the image already in the document',
+    );
+    assert.match(
+      img.assignments[0].value,
+      /^\/api\/presentations\/deck-1\/thumbnail\?v=7$/,
+      'requests the revisioned thumbnail endpoint',
+    );
+    assert.equal(
+      img.el.hasAttribute('loading'),
+      false,
+      'no loading="lazy" — a detached lazy image never issues its request',
+    );
+
+    card.remove();
+  } finally {
+    images.restore();
+    io.restore();
+  }
+});
+
+test('a loaded thumbnail clears the skeleton and reveals the raster', () => {
+  const io = installIOStub();
+  try {
+    const detachThumbs = [];
+    const { renderCard } = createCardRenderer({
+      api: async () => ({}),
+      nav: () => {},
+      detachThumbs,
+    });
+
+    const card = renderCard({
+      id: 'deck-1',
+      title: 'Deck one',
+      theme: 'default',
+      modified: new Date().toISOString(),
+      hasSlides: true,
+    });
+    const thumb = card.querySelector('.thumb');
+    io.instances[0].fire([thumb]);
+
+    const img = thumb.querySelector('.thumb-img');
+    assert.ok(img, 'image present while loading');
+    assert.equal(
+      img.classList.contains('is-pending'),
+      true,
+      'held invisible until it decodes',
+    );
+    assert.equal(
+      thumb.classList.contains('is-loading'),
+      true,
+      'shimmer still running',
+    );
+
+    img.onload();
+
+    assert.equal(
+      thumb.classList.contains('is-loading'),
+      false,
+      'shimmer cleared on load',
+    );
+    assert.equal(
+      img.classList.contains('is-pending'),
+      false,
+      'raster revealed',
+    );
+    assert.equal(thumb.querySelector('.thumb-img'), img, 'raster is the box');
   } finally {
     io.restore();
   }

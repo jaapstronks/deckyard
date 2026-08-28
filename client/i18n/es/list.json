@@ -256,7 +256,6 @@
   "list.trash.loadError": "No se pudo cargar la papelera.",
   "list.trash.loading": "Cargando…",
   "list.trash.title": "Papelera",
-  "list.untitled": "Sin título",
   "list.visibility.private": "Privada",
   "list.visibility.published": "Publicada",
   "list.visibility.shared": "Compartida con {count} personas",
