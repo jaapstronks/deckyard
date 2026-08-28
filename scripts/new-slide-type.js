@@ -40,13 +40,13 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { FIELD_TYPE_NAMES } from '../shared/slide-types/field-types.js';
-import { canonicalTypeName } from '../shared/slide-types/type-id.js';
 import {
   CORE_SLIDE_TYPE_NAMES,
   GLOBAL_SLIDE_FIELD_KEYS,
 } from '../shared/slide-types/registry.js';
 import {
   formatDefinitionReport,
+  slideRootClass,
   validateSlideTypeDefinition,
 } from '../shared/slide-types/validate-definition.js';
 
@@ -254,8 +254,9 @@ function renderLineFor({ key, type }) {
 export function moduleSource({ name, label, fields, themeId, namespace }) {
   // `acme-hero-slide` → `.slide-acme-hero`: the suffix is already in `slide`,
   // which is why every core type spells it that way (`comparison-slide` renders
-  // `.slide-comparison`). canonicalTypeName() owns that rule.
-  const rootClass = `slide-${canonicalTypeName(name)}`;
+  // `.slide-comparison`). slideRootClass() owns that rule, and the validator
+  // warns when a rendered root does not wear it.
+  const rootClass = slideRootClass(name);
   const fieldLines = fields
     .map((f) => {
       const optionLine = f.options
@@ -373,7 +374,7 @@ ${fields.map(renderLineFor).join('\n')}
  * @returns {string}
  */
 export function cssSource(name, label) {
-  const rootClass = `slide-${canonicalTypeName(name)}`;
+  const rootClass = slideRootClass(name);
   return `/* ${label} — every selector nested under the type's own root, so this
    file cannot restyle anything outside its slides. Colours come from theme
    tokens (--t-*), which is what makes the type look designed on every theme. */

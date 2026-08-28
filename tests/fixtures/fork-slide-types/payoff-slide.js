@@ -18,12 +18,19 @@
  * `structure`, `fallback`, `runtime`, empty `fields`) so it perturbs no
  * core-derived tracked artifact in the fork lane — the generated inventory doc,
  * the i18n key set, the inspector/structure/tier audits all see the same values
- * they see for core. The ONE thing that differs is `renderHtml`: it emits
- * `class="slide fork-payoff"` instead of core's `slide-payoff`, which is exactly
+ * they see for core. The ONE thing that differs is `renderHtml`: it adds a
+ * `fork-payoff` marker and drops core's `payoff-logo` image, which is exactly
  * the split this item closes — the fork renderer that used to reach only exports
  * now reaches the browser too. `payoff-slide` is also one of the three core
  * names with no core inline descriptor (the brief's "row 3"), so the override is
  * server-rendered end to end with no core client renderer standing in.
+ *
+ * It KEEPS core's `slide-payoff` root class. An override replaces a core type's
+ * renderer, not its identity: `slide-payoff` is the class every stylesheet for
+ * this slide role nests under (core's own, and the fork's `custom/styles/`
+ * rules that load after it), so dropping it would leave the fork with nothing
+ * to scope against — the convention the definition validator warns on. The
+ * marker that proves whose renderer ran is `fork-payoff`, alongside it.
  *
  * `override: true` is required or `mergeSlideTypes` refuses the shadow and keeps
  * core.
@@ -57,10 +64,11 @@ export default {
   runtime: 'static',
   fields: [],
   defaults: {},
-  // The fork's own renderer — the whole point. `slide fork-payoff` is a marker
-  // the client render path can prove it received (core emits `slide-payoff`).
+  // The fork's own renderer — the whole point. `fork-payoff` is a marker the
+  // client render path can prove it received; `slide-payoff` stays because an
+  // override inherits the role's class contract (see the header).
   renderHtml: () => `
-    <div class="slide fork-payoff">
+    <div class="slide slide-payoff fork-payoff">
       <div class="slide-inner">
         <p class="fork-payoff-mark">${escapeHtml(PAYOFF_MARK)}</p>
       </div>

@@ -10,10 +10,12 @@
  * silent all the way to the projector.
  *
  * This module closes that hole: it turns those runtime surprises into a
- * boot-time report and a test-time failure. It is pure and does no I/O, so it
+ * boot-time report and a test-time failure. It does no I/O of its own, so it
  * imports on both client and server the way `field-types.js` does, and the
  * scaffolder (`scripts/new-slide-type.js`) can run it on generated source
- * before writing anything.
+ * before writing anything. The one thing it does beyond reading the object is
+ * call the definition's OWN `renderHtml` on an empty sample, to check the root
+ * class the CSS-scoping convention rests on — see {@link slideRootClass}.
  *
  * ## What it deliberately does NOT check
  *
@@ -29,7 +31,7 @@
  */
 
 import { enumOptionValues, isKnownFieldType } from './field-types.js';
-import { isValidNamespace } from './type-id.js';
+import { canonicalTypeName, isValidNamespace } from './type-id.js';
 
 /**
  * The `ai.category` vocabulary read by the custom AI catalog loader
@@ -126,10 +128,78 @@ function checkField(field, path, out) {
 }
 
 /**
+ * The root class a slide type's `renderHtml` must put on its outermost element:
+ * `slide-` plus the canonical (suffix-free) type name, so `acme-hero-slide`
+ * renders `.slide-acme-hero` and `comparison-slide` renders `.slide-comparison`.
+ *
+ * That class is what a file-JS type's stylesheet nests under. The one place
+ * the codebase scopes author CSS mechanically is the custom-html slide
+ * (`scopeCss` in types/custom-html-slide.js); a fork's `custom/styles/*.css`
+ * is hand-written and concatenated after all core CSS on every render path —
+ * so without a root of its own, a selector there has nothing to be nested
+ * under and reaches deck chrome instead. One derivation, used by the
+ * scaffolder's stub, this check, and the docs.
+ *
+ * @param {string} name - the registry key (the bare filename for a file-JS type).
+ * @returns {string}
+ * @see docs/developer/slide-types.md § Add CSS
+ */
+export function slideRootClass(name) {
+  return `slide-${canonicalTypeName(String(name || '').trim())}`;
+}
+
+/** The first element tag in a chunk of markup, or `null`. */
+function firstTag(html) {
+  const m = /<([a-zA-Z][\w-]*)\b[^>]*>/.exec(html);
+  return m ? { tag: m[1], attrs: m[0] } : null;
+}
+
+/**
+ * Warn when a rendered sample's root element does not carry
+ * {@link slideRootClass}. A cheap string check, deliberately a warning: the
+ * slide renders fine without it, it is the fork's *stylesheet* that loses its
+ * anchor, and a type that ships no CSS at all is a legitimate shape.
+ *
+ * The sample is the type's own `defaults` — the nearest thing to real content
+ * a definition carries. A renderer that throws or returns a non-string on it is
+ * not reported here: whether empty content must render is a separate contract
+ * from which class the root wears.
+ *
+ * @param {object} def
+ * @param {string} who - the registry key, already trimmed.
+ * @param {{errors: string[], warnings: string[]}} out
+ */
+function checkRootClass(def, who, out) {
+  const sample = isPlainObject(def.defaults) ? def.defaults : {};
+  let html;
+  try {
+    html = def.renderHtml(sample, { type: who, content: sample }, {});
+  } catch {
+    return;
+  }
+  if (typeof html !== 'string' || !html.trim()) return;
+  const root = firstTag(html);
+  if (!root) return;
+  const classes = /\bclass\s*=\s*(?:"([^"]*)"|'([^']*)')/.exec(root.attrs);
+  const list = String(classes?.[1] ?? classes?.[2] ?? '').split(/\s+/);
+  const want = slideRootClass(who);
+  if (list.includes(want)) return;
+  out.warnings.push(
+    `${who}: the rendered root <${root.tag}> does not carry \`${want}\` ` +
+      `(it has ${classes ? JSON.stringify(classes[1] ?? classes[2]) : 'no class'}) ` +
+      `— every slide type scopes its CSS under that one root class, so ` +
+      `without it a stylesheet for this type has nothing to nest under and ` +
+      `its selectors reach deck chrome instead`,
+  );
+}
+
+/**
  * Validate a slide-type definition — the object a `custom/slide-types/*.js`
  * file default-exports, or a core type's definition.
  *
- * Pure: same input, same report, no I/O.
+ * Same input, same report. It calls `def.renderHtml` once on an empty sample
+ * for the root-class check; a definition whose renderer throws or returns a
+ * non-string on empty content simply skips that one check.
  *
  * @param {unknown} def - the definition to check.
  * @param {string} name - the registry key it would be registered under (the
@@ -169,6 +239,8 @@ export function validateSlideTypeDefinition(def, name, options = {}) {
       `${who}: \`renderHtml\` must be a function — without it the type ` +
         `registers but every slide of it fails to render`,
     );
+  } else {
+    checkRootClass(def, who, out);
   }
 
   // --- fields[] --------------------------------------------------------------

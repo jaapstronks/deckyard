@@ -40,5 +40,8 @@ export default {
   // is exactly the silent break `validateSlideTypeDefinition()` now refuses.
   // Kept content-free so this fixture stays import-free (escaping a content
   // value needs `escapeHtml` — see payoff-slide.js, which owns that job).
-  renderHtml: () => '<div class="slide fork-alpha"></div>',
+  // The root carries `slide-fork-alpha` — `slide-` plus the canonical
+  // (suffix-free) type name — because that class is the one handle a fork's
+  // `custom/styles/*.css` nests under; the validator warns without it.
+  renderHtml: () => '<div class="slide slide-fork-alpha"></div>',
 };

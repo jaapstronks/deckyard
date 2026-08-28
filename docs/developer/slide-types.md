@@ -174,15 +174,59 @@ Do **not** add a file under `client/styles/slides/`: that tree is core-owned,
 its aggregators are generated, and a fork-added file there is a merge conflict
 waiting to happen.
 
-Nest every selector under your type's own root class, so the stylesheet cannot
-reach deck chrome or another type's slides:
+#### The scoping rule
+
+Files in `custom/styles/` land in the same global stylesheet as everything
+else, so nothing but a convention stops `h2 { color: red }` there from
+restyling every slide in the deck. That convention is one rule, in two halves:
+
+1. **`renderHtml` renders a single root that carries `.slide-<canonical type
+name>`** — `slide-` plus the type's name with the `-slide` suffix removed,
+   because `slide` is already in the prefix. `acme-hero-slide` →
+   `.slide-acme-hero`; `comparison-slide` → `.slide-comparison`. The derivation
+   is `slideRootClass()` in `shared/slide-types/validate-definition.js`; the
+   scaffolder emits it, and the definition validator **warns** when a rendered
+   root does not wear it.
+2. **Every selector in the type's stylesheet is nested under that root.** No
+   bare element selectors, no `.slide-inner` on its own, no reaching for deck
+   chrome.
 
 ```css
 /* custom/styles/10-acme-hero-slide.css */
 .slide-acme-hero .slide-inner {
   gap: 0.5em;
 }
+
+.slide-acme-hero h2 {
+  color: var(--t-heading, var(--t-text));
+}
 ```
+
+```javascript
+// custom/slide-types/acme-hero-slide.js — the root the rules above hang on
+renderHtml: (content) => `
+  <div class="slide slide-acme-hero">
+    <div class="slide-inner">…</div>
+  </div>
+`;
+```
+
+The codebase automates this exactly once: the custom-html slide compiles its
+author CSS under a per-slide root (`scopeCss` in
+`shared/slide-types/types/custom-html-slide.js`), so those selectors _cannot_
+escape. A hand-written stylesheet has no compiler in front of it, so the root
+class is the whole mechanism. (Types built in Settings > Slide Types are in
+the same boat: their CSS is security-filtered, not selector-scoped.)
+
+**Overriding a core type keeps core's class.** An `override: true` type
+replaces a renderer, not a slide role: a fork's `payoff-slide` still renders
+`.slide-payoff`, because that is the class both core's stylesheet and the
+fork's own rules nest under. Add your own marker class beside it, don't drop
+it.
+
+Renaming a class a type emits is a contract change — see
+[`slide-type-css-contract.md`](../reference/slide-type-css-contract.md), the
+gate that keeps core's half honest.
 
 Styles that must travel with the type even outside this install (a type you
 ship elsewhere) still belong inline in `renderHtml`, in a `<style>` element
@@ -207,7 +251,9 @@ slide's content, the _schema itself_ — and prints a per-file report at startup
   shadowing a global one, an invalid `namespace` (it falls back to `custom`), a
   `labelField` naming nothing (the outline label falls back), a default for a
   field that does not exist, a required field without a default, an `ai` block
-  that will be dropped.
+  that will be dropped, and a rendered root without its `.slide-<name>` class
+  (the scoping rule above — the slide still renders, its stylesheet is what
+  loses its anchor).
 
 The same function runs in `npm test`
 (`tests/custom-slide-type-validity.test.js`), so a fork can validate its types
@@ -850,11 +896,14 @@ against the tile fill, and it says so in three lines.
 
 All `renderHtml()` functions must:
 
-1. Return a single root `.slide` element
+1. Return a single root `.slide` element, carrying `.slide-<canonical type
+name>` beside it — the class the type's CSS nests under
+   ([the scoping rule](#the-scoping-rule))
 2. Include a `.slide-inner` child for content
 3. Be **pure** (no DOM reads/writes, no timers, no fetch)
 
 ```javascript
+// custom/slide-types/my-type-slide.js
 renderHtml: (content, slide, ctx) => `
   <div class="slide slide-my-type slide-bg-${content?.background || 'lime'}">
     <div class="slide-inner">
