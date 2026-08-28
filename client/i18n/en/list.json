@@ -256,7 +256,6 @@
   "list.trash.loadError": "Failed to load trash.",
   "list.trash.loading": "Loading…",
   "list.trash.title": "Trash",
-  "list.untitled": "Untitled",
   "list.visibility.private": "Private",
   "list.visibility.published": "Published",
   "list.visibility.shared": "Shared with {count} people",

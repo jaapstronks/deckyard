@@ -256,7 +256,6 @@
   "list.trash.loadError": "Papierkorb konnte nicht geladen werden.",
   "list.trash.loading": "Wird geladen…",
   "list.trash.title": "Papierkorb",
-  "list.untitled": "Ohne Titel",
   "list.visibility.private": "Privat",
   "list.visibility.published": "Veröffentlicht",
   "list.visibility.shared": "Mit {count} Personen geteilt",

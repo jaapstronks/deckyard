@@ -8,15 +8,18 @@ import { t } from '../../lib/ui-i18n.js';
 import { createAvatar } from '../../lib/user/avatar.js';
 import { getUserProfile } from '../../lib/user/user-profiles.js';
 import { icon } from '../../lib/dom/icons.js';
-import { hexToRgb, getRelativeLuminance } from '../../../shared/color-utils.js';
 import { nav } from '../../lib/state/router.js';
 
 // Safety-net window: if a card's thumbnail hasn't reached any terminal state
-// within this long, force one. Comfortably longer than the single onerror
-// retry (2500ms + two image loads) so it never preempts a legitimately slow
-// generation, but short enough that a genuinely stuck shimmer doesn't outstay
-// its welcome.
-const THUMB_SETTLE_TIMEOUT_MS = 8000;
+// within this long, force one. It covers the cases the image's own events
+// can't: the IntersectionObserver callback never firing for a visible card, a
+// response that resolves neither `load` nor `error` (a 204, or a 200 whose
+// body won't decode), and a self-host without Chrome/sharp where generation
+// never completes. It is *not* the normal path — the request is issued the
+// moment the card scrolls in. Sits just past the single onerror retry
+// (2500ms + the second load) so it never preempts a retry that is still
+// running; a raster that lands later still upgrades the card.
+const THUMB_SETTLE_TIMEOUT_MS = 5000;
 
 /**
  * Creates a presentation card renderer with shared context
@@ -184,10 +187,21 @@ export function createCardRenderer({
       cardTimers.clear();
     };
 
+    // The raster currently in flight, if any. It lives in the box from the
+    // moment its `src` is set, so emptying the box must spare it: a card may
+    // degrade to the placeholder while its image is still loading, and that
+    // image must still be able to upgrade the card when it lands.
+    let pendingImg = null;
+    const clearThumbContent = () => {
+      for (const child of [...thumb.children]) {
+        if (child !== pendingImg) child.remove();
+      }
+    };
+
     const showEmpty = () => {
       settle();
       thumb.classList.remove('is-loading');
-      thumb.innerHTML = '';
+      clearThumbContent();
       thumb.append(
         h('div', {
           class: 'help thumb-overlay is-muted',
@@ -197,47 +211,47 @@ export function createCardRenderer({
     };
 
     // Cheap fallback while no raster exists (generation pending, disabled, or
-    // failed): the deck title on the theme's own background color (or a neutral
-    // surface when unknown). Deliberately not a live slide render — speed is
-    // the whole point of Fase B.
+    // failed): a flat field in the deck's own theme color, or a neutral surface
+    // when that is unknown. No text — the title is already on the card right
+    // below, and repeating it read as the final state rather than a pending
+    // one. Deliberately not a live slide render either: speed is the whole
+    // point of Fase B.
     const showPlaceholder = () => {
       settle();
       thumb.classList.remove('is-loading');
       thumb.classList.add('is-placeholder');
-      thumb.innerHTML = '';
-      const titleEl = h('div', {
-        class: 'thumb-placeholder-title',
-        text: p.title || t('list.untitled', 'Untitled'),
-      });
-      if (p.thumbBg) {
-        // Tint the card in the deck's theme color and pick a legible text color.
-        thumb.style.background = p.thumbBg;
-        titleEl.style.color = readableTextColor(p.thumbBg);
-      } else {
-        thumb.style.background = '';
-      }
-      thumb.append(titleEl);
+      clearThumbContent();
+      thumb.style.background = p.thumbBg || '';
     };
 
     const showThumbImage = () => {
       // `?v=<revision>` busts the cache on every deck edit.
       const thumbUrl = `/api/presentations/${p.id}/thumbnail?v=${p.revision || 1}`;
       const img = h('img', {
-        class: 'thumb-img',
+        class: 'thumb-img is-pending',
         alt: '',
-        loading: 'lazy',
         decoding: 'async',
       });
+      // Attach *before* assigning `src`, and without `loading="lazy"`. A
+      // detached lazy image never starts its fetch in Chromium — no request,
+      // no `load`, no `error` — so every card fell through to the safety net
+      // and the retry path below was unreachable. The lazy work is already
+      // done one level up by the shared IntersectionObserver (in-view.js,
+      // 400px rootMargin), which is what decides when this runs at all.
+      pendingImg = img;
+      thumb.append(img);
       let retried = false;
       img.onload = () => {
         settle();
         thumb.classList.remove('is-loading', 'is-placeholder');
-        thumb.innerHTML = '';
-        thumb.append(img);
+        thumb.style.background = '';
+        clearThumbContent();
+        img.classList.remove('is-pending');
       };
       img.onerror = () => {
         // A 404 means generation is likely still in flight — retry once, then
-        // settle on the placeholder.
+        // settle on the placeholder. The image stays in the box while it
+        // retries, so a raster that lands after the placeholder still wins.
         if (!retried) {
           retried = true;
           arm(() => {
@@ -596,20 +610,6 @@ export function createCardRenderer({
   };
 
   return { renderCard };
-}
-
-/**
- * Pick a legible text color (near-black or white) for a hex background, using
- * the WCAG relative-luminance threshold. Falls back to white on a bad input.
- * @param {string} hex - `#rgb` or `#rrggbb`
- * @returns {string}
- */
-function readableTextColor(hex) {
-  const rgb = hexToRgb(hex);
-  if (!rgb) return '#ffffff';
-  // 0.4 threshold + near-black label are tuned for the list card's coloured
-  // thumb backgrounds; kept distinct from the theme-wide 0.5 midpoint.
-  return getRelativeLuminance(rgb) > 0.4 ? '#111827' : '#ffffff';
 }
 
 /**

@@ -9,6 +9,12 @@
  * stuck in `.is-loading` forever. A safety-net timer now guarantees an end
  * state regardless of which path stalls.
  *
+ * The net is a net, not the normal path: for a while it was the *only* path
+ * that ever ran, because the image was created detached and lazy and so never
+ * issued its request at all. `tests/list-lazy-thumbnails.test.js` guards that
+ * invariant (img in the box before `src`); this file guards the fallback, and
+ * that a raster arriving after the net still upgrades the card.
+ *
  * Run with: node --test tests/list-thumb-settle.test.js
  */
 
@@ -74,22 +80,11 @@ function installIOStub() {
 const { createCardRenderer } =
   await import('../client/views/list/presentation-card.js');
 
-/** Capture <img> elements as they are created (they're only appended on load). */
-function captureImages() {
-  const imgs = [];
-  const orig = document.createElement.bind(document);
-  document.createElement = (tag, ...rest) => {
-    const el = orig(tag, ...rest);
-    if (String(tag).toLowerCase() === 'img') imgs.push(el);
-    return el;
-  };
-  return {
-    last: () => imgs[imgs.length - 1] || null,
-    restore() {
-      document.createElement = orig;
-    },
-  };
-}
+// Mirrors THUMB_SETTLE_TIMEOUT_MS in presentation-card.js. Kept as a local
+// constant rather than imported: the point of these tests is that *some*
+// bounded window exists, and a silent bump of that window should show up here
+// as a deliberate edit.
+const SETTLE_MS = 5000;
 
 const baseDeck = (overrides = {}) => ({
   id: 'deck-1',
@@ -121,7 +116,7 @@ test('a card whose IntersectionObserver never fires still settles (candidate a)'
       'shimmer while pending',
     );
 
-    mock.timers.tick(8000);
+    mock.timers.tick(SETTLE_MS);
 
     assert.equal(
       thumb.classList.contains('is-loading'),
@@ -133,9 +128,10 @@ test('a card whose IntersectionObserver never fires still settles (candidate a)'
       true,
       'landed on the placeholder',
     );
-    assert.ok(
-      thumb.querySelector('.thumb-placeholder-title'),
-      'placeholder title rendered',
+    assert.equal(
+      thumb.textContent.trim(),
+      '',
+      'placeholder is a bare field — the title lives on the card, not in it',
     );
   } finally {
     mock.timers.reset();
@@ -153,23 +149,23 @@ test('a thumbnail request that fires neither load nor error still settles (candi
       nav: () => {},
       detachThumbs,
     });
-    const images = captureImages();
     const card = renderCard(baseDeck());
     const thumb = card.querySelector('.thumb');
 
     // Load starts (image request issued) but jsdom fires no load/error event —
-    // the hung-response case. The <img> exists but is only appended on load, so
-    // we detect the request via the capture spy, not the DOM.
+    // the hung-response case.
     io.instances[0].fire([thumb]);
-    assert.ok(images.last(), 'image request was issued');
-    images.restore();
+    assert.ok(
+      thumb.querySelector('.thumb-img'),
+      'image request was issued from inside the box',
+    );
     assert.equal(
       thumb.classList.contains('is-loading'),
       true,
       'still loading before the net fires',
     );
 
-    mock.timers.tick(8000);
+    mock.timers.tick(SETTLE_MS);
 
     assert.equal(
       thumb.classList.contains('is-loading'),
@@ -180,6 +176,10 @@ test('a thumbnail request that fires neither load nor error still settles (candi
       thumb.classList.contains('is-placeholder'),
       true,
       'landed on the placeholder',
+    );
+    assert.ok(
+      thumb.querySelector('.thumb-img'),
+      'the in-flight raster stays in the box, so a late arrival can still win',
     );
   } finally {
     mock.timers.reset();
@@ -206,12 +206,12 @@ test('once a card settles, the safety net does not clobber the resolved state', 
       'empty-state overlay shown',
     );
 
-    mock.timers.tick(8000); // net fires but must be a no-op now
+    mock.timers.tick(SETTLE_MS); // net fires but must be a no-op now
 
     assert.ok(thumb.querySelector('.thumb-overlay'), 'empty state preserved');
     assert.equal(
-      thumb.querySelector('.thumb-placeholder-title'),
-      null,
+      thumb.classList.contains('is-placeholder'),
+      false,
       'not overwritten by placeholder',
     );
   } finally {
@@ -230,14 +230,12 @@ test('a stuck card upgrades to the real thumbnail if it loads after the net fire
       nav: () => {},
       detachThumbs,
     });
-    const images = captureImages();
     const card = renderCard(baseDeck());
     const thumb = card.querySelector('.thumb');
 
     io.instances[0].fire([thumb]);
-    const img = images.last();
-    images.restore();
-    mock.timers.tick(8000); // net → placeholder
+    const img = thumb.querySelector('.thumb-img');
+    mock.timers.tick(SETTLE_MS); // net → placeholder
     assert.equal(
       thumb.classList.contains('is-placeholder'),
       true,
@@ -255,6 +253,11 @@ test('a stuck card upgrades to the real thumbnail if it loads after the net fire
       thumb.querySelector('.thumb-img'),
       img,
       'real image swapped in',
+    );
+    assert.equal(
+      img.classList.contains('is-pending'),
+      false,
+      'the raster is revealed once it decodes',
     );
   } finally {
     mock.timers.reset();

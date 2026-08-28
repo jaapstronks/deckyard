@@ -206,7 +206,7 @@
   },
   "client/styles/base/04-editor-and-misc/40-thumb.css": {
     "tokenisable-spacing": {
-      "count": 2
+      "count": 1
     }
   },
   "client/styles/base/04-editor-and-misc/50-editor-responsive.css": {

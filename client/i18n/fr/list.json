@@ -256,7 +256,6 @@
   "list.trash.loadError": "Impossible de charger la corbeille.",
   "list.trash.loading": "Chargement…",
   "list.trash.title": "Corbeille",
-  "list.untitled": "Sans titre",
   "list.visibility.private": "Privée",
   "list.visibility.published": "Publiée",
   "list.visibility.shared": "Partagée avec {count} personnes",

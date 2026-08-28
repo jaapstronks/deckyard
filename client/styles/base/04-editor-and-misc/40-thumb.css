@@ -28,32 +28,31 @@
 }
 
 /* Deck-grid PNG thumbnail (Fase B): the raster fills the 16/9 box. It's exactly
-   16/9, so `cover` and `contain` are equivalent — no cropping. */
+   16/9, so `cover` and `contain` are equivalent — no cropping. Positioned, not
+   in flow, because the image is in the box from the moment its request starts
+   — it has to be, or the browser never issues that request — and must not
+   displace the shimmer or the placeholder it is still loading behind. */
 .thumb-img {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: opacity 120ms ease-out;
 }
 
-/* Cheap fallback when no raster exists yet: the deck title, centered. */
+/* Invisible until it decodes, so a half-painted or broken raster never flashes
+   over the state underneath. */
+.thumb-img.is-pending {
+  opacity: 0;
+}
+
+/* Cheap fallback when no raster exists yet: a flat field in the deck's theme
+   color (set inline) over a neutral surface, and no text — the deck title is
+   already on the card. */
 .thumb.is-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
-}
-
-.thumb-placeholder-title {
-  font-size: 0.8rem;
-  font-weight: 600;
-  line-height: 1.3;
-  text-align: center;
-  color: hsl(var(--app-text-secondary));
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  background: hsl(var(--app-bg-base));
 }
 
 .thumb-overlay {

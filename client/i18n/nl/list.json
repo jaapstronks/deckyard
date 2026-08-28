@@ -256,7 +256,6 @@
   "list.trash.loadError": "Kon prullenbak niet laden.",
   "list.trash.loading": "Laden…",
   "list.trash.title": "Prullenbak",
-  "list.untitled": "Zonder titel",
   "list.visibility.private": "Privé",
   "list.visibility.published": "Gepubliceerd",
   "list.visibility.shared": "Gedeeld met {count} personen",

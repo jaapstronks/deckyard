@@ -256,7 +256,6 @@
   "list.trash.loadError": "Papirkurven kunne ikke indlæses.",
   "list.trash.loading": "Indlæser…",
   "list.trash.title": "Papirkurv",
-  "list.untitled": "Uden titel",
   "list.visibility.private": "Privat",
   "list.visibility.published": "Offentliggjort",
   "list.visibility.shared": "Delt med {count} personer",
