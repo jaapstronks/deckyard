@@ -1152,10 +1152,7 @@ async function listTrashedPresentationRows(ctx) {
       ),
       visibility: row.visibility,
       revision: row.revision,
-      // Which languages the deck has, as the open list it is. The summary used
-      // to carry `hasNl`/`hasEnGb`/`otherLang` beside the dominant language —
-      // three fields that could not describe a German version, and that no
-      // reader ever asked for (D72).
+      // Same i18n summary shape as `listPresentationRows` (see there).
       i18n: i18n ? { dominant, langs: existingVersionLangs({ i18n }) } : null,
       hasSlides: !!firstSlide,
     };
