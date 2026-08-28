@@ -31,7 +31,7 @@
   },
   "client/styles/base/01-core/32-list-cards.css": {
     "tokenisable-spacing": {
-      "count": 15
+      "count": 12
     }
   },
   "client/styles/base/01-core/40-sidebar.css": {
