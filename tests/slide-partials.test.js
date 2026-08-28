@@ -147,7 +147,9 @@ test('every class a partial emits is styled in 00-patterns.css', () => {
   assert.ok(emitted.size >= 3);
   for (const cls of emitted) {
     assert.ok(
-      new RegExp(`\\.${cls.replace(/-/g, '\\-')}(?![\\w-])`).test(css),
+      new RegExp(
+        `\\.${cls.replace(/[.*+?^${}()|[\]\\-]/g, '\\$&')}(?![\\w-])`,
+      ).test(css),
       `.${cls} is emitted by a partial but has no rule in 00-patterns.css`,
     );
   }
