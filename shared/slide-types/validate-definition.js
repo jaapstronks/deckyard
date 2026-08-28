@@ -132,12 +132,13 @@ function checkField(field, path, out) {
  * `slide-` plus the canonical (suffix-free) type name, so `acme-hero-slide`
  * renders `.slide-acme-hero` and `comparison-slide` renders `.slide-comparison`.
  *
- * That class is what a file-JS type's stylesheet nests under. Core CSS is
- * generated per type and the DB template builder auto-scopes what it compiles,
- * but a fork's `custom/styles/*.css` is hand-written and concatenated after all
- * core CSS on every render path — so without a root of its own, a selector
- * there has nothing to be nested under and reaches deck chrome instead. One
- * derivation, used by the scaffolder's stub, this check, and the docs.
+ * That class is what a file-JS type's stylesheet nests under. The one place
+ * the codebase scopes author CSS mechanically is the custom-html slide
+ * (`scopeCss` in types/custom-html-slide.js); a fork's `custom/styles/*.css`
+ * is hand-written and concatenated after all core CSS on every render path —
+ * so without a root of its own, a selector there has nothing to be nested
+ * under and reaches deck chrome instead. One derivation, used by the
+ * scaffolder's stub, this check, and the docs.
  *
  * @param {string} name - the registry key (the bare filename for a file-JS type).
  * @returns {string}

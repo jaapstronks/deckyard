@@ -211,10 +211,12 @@ renderHtml: (content) => `
 `;
 ```
 
-This is the file-JS half of what the DB template builder does for you: types
-built in Settings > Slide Types have their CSS auto-scoped at compile time
-(`server/utils/slide-template-compiler.js`). A hand-written stylesheet has no
-compiler in front of it, so the root class is the whole mechanism.
+The codebase automates this exactly once: the custom-html slide compiles its
+author CSS under a per-slide root (`scopeCss` in
+`shared/slide-types/types/custom-html-slide.js`), so those selectors _cannot_
+escape. A hand-written stylesheet has no compiler in front of it, so the root
+class is the whole mechanism. (Types built in Settings > Slide Types are in
+the same boat: their CSS is security-filtered, not selector-scoped.)
 
 **Overriding a core type keeps core's class.** An `override: true` type
 replaces a renderer, not a slide role: a fork's `payoff-slide` still renders
