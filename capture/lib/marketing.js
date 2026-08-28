@@ -286,12 +286,14 @@ export const MARKETING_PUBLIC_ORIGIN =
  * list rules out.
  *
  * So the substitution happens here, after render, in the open: the
- * human-readable URL is swapped, and **the QR is left alone**. The QR still
- * encodes the capture instance's follow URL, so it does not agree with the text
- * beside it. That is deliberate — re-encoding it would produce a scannable code
- * pointing at a deck id that exists on nobody's deckyard.eu, which is a worse
- * lie than a decorative code. A shot with a genuinely scannable QR has to be
- * taken on a real deckyard.eu instance; nothing here can fake that.
+ * human-readable URL is swapped. **The QR is not this function's concern.**
+ * It must never be re-encoded to a *deck* URL — that would produce a scannable
+ * code pointing at a deck id that exists on nobody's deckyard.eu, a worse lie
+ * than a decorative code. {@link pinJoinCode}, which every shot calls right
+ * after this one, re-encodes it to the public `/go` page instead, so the QR
+ * says the same thing as the text this function writes. A shot with a
+ * genuinely resolvable QR has to be taken on a real deckyard.eu instance;
+ * nothing here can fake that.
  *
  * @param {import('puppeteer-core').Page} page
  * @param {string} origin e.g. "https://deckyard.eu"
