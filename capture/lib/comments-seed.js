@@ -35,25 +35,32 @@ import {
   createComment,
   resolveComment,
 } from '../../server/storage/presentations/comments.js';
+import { singleOrganizationScope } from '../../server/storage/scope.js';
 
 let initialized = false;
 
 /**
- * Context every seeded write runs in: the default organization, which is the
- * one `AUTH_DEV_BYPASS` pins requests to (`getUserFromRequest` →
- * `getDefaultOrganizationId()`), so a seeded comment lands in the same
- * organization the browser is looking at.
- * @returns {Promise<{repoRoot: string, actorEmail: string}>}
+ * The storage scope every seeded write runs under.
+ *
+ * The capture runner is an entry point bound to an instance, not to a session
+ * within it, so it takes the same scope as the other CLI entry points
+ * (`scripts/create-api-key.js`, the MCP stdio server):
+ * {@link singleOrganizationScope} resolves the configured default organization
+ * — which is the one `AUTH_DEV_BYPASS` pins requests to, so a seeded comment
+ * lands in the organization the browser is looking at — and throws on a
+ * multi-organization instance rather than guessing which one to write in.
+ *
+ * @returns {Promise<import('../../server/storage/scope.js').StorageScope>}
  */
 async function ensureStorage() {
   if (!initialized) {
     await loadDotEnv(repoRoot);
-    await initializeStorage(repoRoot);
+    await initializeStorage();
     initialized = true;
   }
-  // organizationId is deliberately left off: getOrgId() then falls back to
-  // getDefaultOrganizationId(), the same default the dev bypass resolves to.
-  return { repoRoot, actorEmail: 'capture@local' };
+  return singleOrganizationScope(repoRoot, 'capture/lib/comments-seed.js', {
+    actorEmail: 'capture@local',
+  });
 }
 
 /**
@@ -85,20 +92,16 @@ async function ensureStorage() {
  * @returns {Promise<string[]>} ids of the created top-level comments
  */
 export async function seedCommentThreads(presentationId, threads) {
-  const ctx = await ensureStorage();
+  const scope = await ensureStorage();
   const ids = [];
 
   for (const thread of threads) {
-    const created = await createComment(
-      presentationId,
-      {
-        email: thread.author.email,
-        name: thread.author.name,
-        body: thread.body,
-        slideId: thread.slideId,
-      },
-      ctx,
-    );
+    const created = await createComment(scope, presentationId, {
+      email: thread.author.email,
+      name: thread.author.name,
+      body: thread.body,
+      slideId: thread.slideId,
+    });
     if (!created?.ok) {
       throw new Error(
         `Seeding comment failed: ${created?.reason || 'unknown'} (${thread.body.slice(0, 40)}…)`,
@@ -107,17 +110,13 @@ export async function seedCommentThreads(presentationId, threads) {
     ids.push(created.comment.id);
 
     for (const reply of thread.replies || []) {
-      const repliedTo = await createComment(
-        presentationId,
-        {
-          email: reply.author.email,
-          name: reply.author.name,
-          body: reply.body,
-          slideId: thread.slideId,
-          parentId: created.comment.id,
-        },
-        ctx,
-      );
+      const repliedTo = await createComment(scope, presentationId, {
+        email: reply.author.email,
+        name: reply.author.name,
+        body: reply.body,
+        slideId: thread.slideId,
+        parentId: created.comment.id,
+      });
       if (!repliedTo?.ok) {
         throw new Error(
           `Seeding reply failed: ${repliedTo?.reason || 'unknown'} (${reply.body.slice(0, 40)}…)`,
@@ -128,11 +127,9 @@ export async function seedCommentThreads(presentationId, threads) {
     if (thread.resolved) {
       // Resolve last: resolveComment only matches an open comment, and the
       // replies have to exist before the thread is closed over them.
-      const done = await resolveComment(
-        created.comment.id,
-        { email: thread.author.email },
-        ctx,
-      );
+      const done = await resolveComment(scope, created.comment.id, {
+        email: thread.author.email,
+      });
       if (!done?.ok) {
         throw new Error(
           `Resolving seeded comment failed: ${done?.reason || 'unknown'}`,
