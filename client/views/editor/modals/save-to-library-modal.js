@@ -311,6 +311,13 @@ export function openSaveToLibraryModal({
             content: langContents[lang] || {},
           };
         }
+        // A library item's `dominant` answers a narrower question than a deck's:
+        // "which language is `item.content` written in" (`contentLang()` in
+        // client/lib/slide-library/search.js), and `payload.content` is the
+        // slide as it stands in the version on screen. So it is the *active*
+        // language here, not the deck's source — those two are no longer the
+        // same field (D74), and copying the deck's source would mislabel a
+        // slide saved while editing a translation.
         payload.i18n = {
           dominant: currentLang,
           versions: i18nVersions,

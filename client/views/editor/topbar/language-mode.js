@@ -154,14 +154,11 @@ export function createLanguageMode({
    * count of texts it is still missing (`translationProgress`, derived on read).
    *
    * Both halves are measured **from `progress.dominant` outwards**, and the row
-   * title says so in words. That matters because `dominant` is not the language
-   * the deck was authored in: `bootstrap.js`, `save-manager.js` and the switch
-   * below all keep it equal to the version being edited ("one language mode for
-   * both edit and present", pre-D72). So "source" reads as "the version you are
-   * editing", and a count is "texts that version has and this one does not" —
-   * true, but not the stable authored-original D72 #2 describes. Resolving that
-   * is a decision, not a rename; the direction is spelled out here so the number
-   * cannot be misread either way.
+   * title says so in words. `dominant` is the language the deck was written in
+   * and it stays put while you edit another version (D74), so "source" names a
+   * fixed version and a count is "texts the source has and this one does not" —
+   * a number with a stationary zero point. Moving the source is an explicit
+   * action of its own, not a side effect of opening a version.
    */
   const versionItem = (lang, { active, progress }) => {
     const isActive = lang === active;
@@ -348,8 +345,9 @@ export function createLanguageMode({
       return false;
     }
 
+    // Only `active` moves: the source version the counts are measured from is
+    // whatever the server just handed back in `refreshed.i18n.dominant` (D74).
     pres.i18n.active = next;
-    pres.i18n.dominant = next;
     pres.i18n.versions[next].title = pres.title;
     pres.i18n.versions[next].slides = pres.slides;
     if (topbarTitleEl) {
@@ -366,9 +364,9 @@ export function createLanguageMode({
     setUrlLangParam(next);
     editorState.refreshAll();
     syncLangUi();
-    // Live-edit mode: the switch itself (dominant, a just-created version)
-    // must reach the shared doc — the autosave path that used to persist it
-    // is inert with the flag on.
+    // Live-edit mode: the switch itself (a just-created version) must reach the
+    // shared doc — the autosave path that used to persist it is inert with the
+    // flag on.
     if (collabLanguage) markDirty?.();
     return true;
   };
@@ -402,9 +400,9 @@ export function createLanguageMode({
       return;
     }
 
-    // The version this one will be translated FROM, read before the switch:
-    // `loadLanguageIntoView` moves `dominant` onto the language being opened,
-    // after which "where does its text come from" no longer has this answer.
+    // The version this one will be translated FROM. Read before the switch so
+    // the answer is the deck as it stands, not as the reload leaves it: the
+    // load replaces `pres.i18n` wholesale with the server's block.
     const sourceLang = translationSourceFor(pres, next);
 
     // Create a missing version on the spot instead of blocking the switch.

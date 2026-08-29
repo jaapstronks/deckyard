@@ -237,6 +237,56 @@ test('a language with no version yet is created on the spot', async () => {
   popover.querySelectorAll('.lang-popover-btn')[1].click();
 });
 
+test('adding an empty version leaves the source where it was (D74)', async () => {
+  // The regression this pins: the switch used to move `i18n.dominant` onto the
+  // language being opened, so a version created empty a moment ago was labelled
+  // "source" and every written version was reported as missing all of its text.
+  // `dominant` is the language the deck was written in and only an explicit
+  // action moves it, so the brand-new version is the one with a count.
+  setSupportedLangs(['nl', 'en-GB', 'de', 'fr']);
+  const pres = makeTrilingualPres();
+  const controller = mount({
+    pres,
+    api: async () => ({
+      title: 'Deck',
+      slides: [],
+      theme: null,
+      revision: 2,
+      i18n: {
+        active: 'en-GB',
+        dominant: 'nl',
+        versions: { ...structuredClone(pres.i18n.versions), 'en-GB': {} },
+      },
+    }),
+  });
+
+  const english = [...controller.el.querySelectorAll('.lang-menu-item')].find(
+    (b) => b.textContent.trim() === 'English',
+  );
+  english.click();
+  await flush();
+
+  assert.equal(
+    pres.i18n.dominant,
+    'nl',
+    'the source did not follow the switch',
+  );
+  assert.deepEqual(readMenu(controller), [
+    ['Nederlands', 'source'],
+    ['Deutsch', '✓'],
+    ['Français', '1 missing'],
+    // Both slide titles the Dutch original fills are still blank here.
+    ['English', '2 missing'],
+  ]);
+
+  // Dismiss the translate invite: it holds a 15s auto-hide timer that would
+  // otherwise keep the test runner's event loop alive until it fires.
+  controller.el
+    .querySelector('.lang-popover')
+    .querySelectorAll('.lang-popover-btn')[1]
+    .click();
+});
+
 test('a version the deck has stays switchable when admin disabled its language', async () => {
   // The admin subset gates *adding*; a version that exists is always editable,
   // otherwise the menu lists a language it then refuses (B182 in a new shape).
