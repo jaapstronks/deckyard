@@ -123,8 +123,11 @@ and the KPI display sizes carry the values; roles bind meaning to a step:
 One step sits above the table: the title slide's cover title reads
 `--slide-text-5xl` directly, not the `Title` role. The role binds the _shared_
 title size — chapter titles, the end slide, the quote — while the cover is the
-one place a deck may carry its largest type. See `00-tokens.css` § Core scale
-tokens.
+one place a deck may carry its largest type. The step carries a content-driven
+multiplier (`--cover-scale`, set by the renderer from how much text the title
+block holds — the `--quote-scale` pattern): a short cover reads the full 5xl,
+the fullest legal block steps down to a floor of 0.8, which is exactly 4xl, so
+it never leaves the frame. See `00-tokens.css` § Core scale tokens.
 
 The two card rows are the only _contextual_ roles: a card re-declares them for
 its own density and the values above are what a card inherits when it declares
@@ -551,7 +554,8 @@ counted 12, spread over 7 types. The rule that closes the hole is a reading
 rule, not a parser one: **an arithmetic offset from a role token is a scale step
 the scale does not have yet** — write the step, or add it. `calc()` stays
 legitimate for the two things it cannot express otherwise, a scale multiplier
-(`--tf-size-scale`, `--quote-scale`) and `em`-relative sizing, and both are
+(`--tf-size-scale`, `--quote-scale`, `--cover-scale`) and `em`-relative
+sizing, and both are
 already allowlisted categories. A literal _inside_ such an expression is not
 covered by that allowlist: the multiplier is allowed, the number it multiplies
 is still a value on the axis.
