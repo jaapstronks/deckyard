@@ -73,8 +73,13 @@
   --slide-text-xl: calc(34 * var(--slide-text-unit)); /* Small headings */
   --slide-text-2xl: calc(44 * var(--slide-text-unit)); /* Section headings */
   --slide-text-3xl: calc(52 * var(--slide-text-unit)); /* Large headings */
-  --slide-text-4xl: calc(64 * var(--slide-text-unit)); /* Title slides */
-  --slide-text-5xl: calc(80 * var(--slide-text-unit)); /* Hero titles */
+  /* The top two steps split by role. 4xl is the shared title size: chapter
+     titles, the follow-invite and feedback headings, and the
+     --slide-font-size-title alias below (end slide, quote). 5xl belongs to
+     the deck's cover — the title slide is the one place allowed to carry the
+     largest type in the deck — and to the join code's display glyph. */
+  --slide-text-4xl: calc(64 * var(--slide-text-unit)); /* Shared title size */
+  --slide-text-5xl: calc(80 * var(--slide-text-unit)); /* The deck's cover */
 
   /* Semantic typography aliases */
   --slide-font-size-title: var(--slide-text-4xl);

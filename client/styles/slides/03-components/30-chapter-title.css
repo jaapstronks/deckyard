@@ -40,10 +40,10 @@
 }
 .slide-chapter-title .title {
   font-family: var(--font-heading);
-  /* Smaller type-scale than the title slide (64px): the chapter/section title
-     is a divider, not the deck's cover. --tf-size-scale (per-field S/M/L,
+  /* One step below the title slide's cover size: the chapter/section title is
+     a divider, not the deck's cover. --tf-size-scale (per-field S/M/L,
      default 1) still scales it when set. */
-  font-size: calc(var(--slide-text-3xl) * var(--tf-size-scale, 1));
+  font-size: calc(var(--slide-text-4xl) * var(--tf-size-scale, 1));
   line-height: var(--slide-leading-tight);
   letter-spacing: -0.02em;
   max-width: 34ch;

@@ -181,7 +181,9 @@
 
 .slide-title .title {
   font-family: var(--font-heading);
-  font-size: var(--slide-text-4xl);
+  /* The cover gets its own step, one above the shared title size: it is the
+     largest type in the deck by design (80px = 8.9% of the 900px canvas). */
+  font-size: var(--slide-text-5xl);
   line-height: var(--slide-leading-tight);
   letter-spacing: -0.02em;
   font-weight: var(--heading-weight, 600);
@@ -197,9 +199,12 @@
    width). */
 .slide-title .tsu-subtitle {
   margin: var(--slide-space-5) 0 0;
-  max-width: 720px;
+  /* Steps up with the title (34 -> 44px), so the cap steps up too: 720px at
+     44px would cut the measure to ~33 characters a line where it was ~42.
+     900px keeps the line length and stays inside .tsu-content's 1040px. */
+  max-width: 900px;
   font-family: var(--font-body);
-  font-size: var(--slide-text-xl);
+  font-size: var(--slide-text-2xl);
   line-height: var(--slide-leading-snug);
   color: var(--slide-on-surface-muted);
   text-wrap: pretty;
