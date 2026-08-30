@@ -5,11 +5,11 @@
       "title": {
         "rect": {
           "x": 96,
-          "y": 637.8,
+          "y": 608.2,
           "width": 1040,
-          "height": 70.4
+          "height": 88
         },
-        "fontSize": "64px",
+        "fontSize": "80px",
         "fontWeight": "700",
         "requestedFamily": "Bricolage Grotesque",
         "paintedFamilies": [

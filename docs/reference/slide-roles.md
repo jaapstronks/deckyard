@@ -120,6 +120,12 @@ and the KPI display sizes carry the values; roles bind meaning to a step:
 | Card title | `--slide-font-size-card-title` | `--slide-text-md`   |
 | Card body  | `--slide-font-size-card-body`  | `--slide-text-md`   |
 
+One step sits above the table: the title slide's cover title reads
+`--slide-text-5xl` directly, not the `Title` role. The role binds the _shared_
+title size — chapter titles, the end slide, the quote — while the cover is the
+one place a deck may carry its largest type. See `00-tokens.css` § Core scale
+tokens.
+
 The two card rows are the only _contextual_ roles: a card re-declares them for
 its own density and the values above are what a card inherits when it declares
 nothing. That, and which patterns count as cards, is the section below.
