@@ -74,7 +74,10 @@ describe('coverFontScale', () => {
       { title: X(500) }, // beyond maxLength — a hostile payload still clamps
     ]) {
       const s = coverFontScale(c);
-      assert.ok(s >= 0.8 && s <= 1, `out of band: ${s} for ${JSON.stringify(c)}`);
+      assert.ok(
+        s >= 0.8 && s <= 1,
+        `out of band: ${s} for ${JSON.stringify(c)}`,
+      );
     }
   });
 });
