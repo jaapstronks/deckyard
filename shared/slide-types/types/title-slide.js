@@ -1,4 +1,9 @@
-import { bgClass, escapeHtml, BACKGROUND_FIELD } from '../helpers.js';
+import {
+  bgClass,
+  escapeHtml,
+  styleAttrFromVars,
+  BACKGROUND_FIELD,
+} from '../helpers.js';
 import { resolveSlideBgImage } from '../legacy-bg-image.js';
 import {
   TITLE_LAYOUTS,
@@ -27,6 +32,40 @@ const TITLE_BLOCK = alignGroup('title-block', 'titleBlockAlign', {
   label: 'Title block alignment',
   labelKey: 'editor.slideField.titleBlockAlign.label',
 });
+
+/**
+ * Font scale for the cover's title and subtitle, chosen from how much text the
+ * block carries — the quoteFontScale pattern: short covers keep the full 5xl
+ * hero size, full ones step down so the block still fits the frame. One scale
+ * for title AND subtitle, so the hierarchy between them never shifts.
+ *
+ * Deterministic (character count, no DOM measurement), so the server, both
+ * export paths and every thumbnail agree. The title dominates the block's
+ * height — at 5xl it wraps around 24 characters a line where the 2xl subtitle
+ * wraps ~42 — so subtitle and meta enter the ramp at less than half weight.
+ *
+ * The floor is 0.8: exactly one type step (5xl → 4xl), the cover's size
+ * before it had its own step. Measured across six themes × three
+ * `titleLayout`s, the fullest legal block (120-char title, 160-char subtitle
+ * and meta) overflowed the frame at scale 1 and fits at the floor — at
+ * `textScale` 1 and 1.1 both.
+ *
+ * @param {Object} content - the slide's content (title/subheading/meta)
+ * @returns {number} multiplier for --slide-text-5xl / --slide-text-2xl
+ */
+export function coverFontScale(content) {
+  const len = (s) => (typeof s === 'string' ? s.trim().length : 0);
+  const weighted =
+    len(content?.title) + 0.4 * (len(content?.subheading) + len(content?.meta));
+  // Ramp: at/below LO nothing shrinks (a typical cover — 40-char title,
+  // 80-char subtitle — stays clear of it), at/above HI the floor applies
+  // (HI = the fullest legal block: 120 + 0.4 * (160 + 160)).
+  const LO = 100;
+  const HI = 248;
+  const MIN = 0.8;
+  const t = Math.max(0, Math.min(1, (weighted - LO) / (HI - LO)));
+  return Math.round((1 - (1 - MIN) * t) * 1000) / 1000;
+}
 
 export default {
   structure: 'singleton',
@@ -177,12 +216,13 @@ export default {
     // whole group). Empty for the default, so untouched decks render exactly
     // the markup they did before the group model.
     const alignClass = groupAlignClass(TITLE_BLOCK.group, content);
+    const styleVars = { '--cover-scale': coverFontScale(content) };
     return `
         <div class="slide slide-title ${bg}${
           legacyBg ? ' has-bg' : ''
         } tsu-layout-${titleLayout} ${logoCorner === 'left' ? 'is-logo-left' : 'is-logo-right'}${
           alignClass ? ` ${alignClass}` : ''
-        }">
+        }"${styleAttrFromVars(styleVars)}>
           <div class="slide-inner">
             ${bgImgHtml}
             <div class="tsu-overlay" aria-hidden="true"></div>
