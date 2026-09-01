@@ -2,6 +2,7 @@ import { createModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { readPreferredLlmVendor } from '../../../lib/net/llm-vendor.js';
 import { h } from '../../../lib/dom.js';
+import { getLangDisplayName } from '../../../lib/format/lang-selector.js';
 import {
   DEFAULT_DECK_LANG,
   translationSourceFor,
@@ -32,12 +33,22 @@ export async function openTranslateFieldModal({
   // `otherLang()` answered this for a bilingual deck only (D72 #2).
   const sourceLang = translationSourceFor(pres, targetLang);
   if (!sourceLang) {
-    toast?.info('Vertalen is uitgeschakeld (slechts één taal actief).', {
-      id: 'field-translate',
-      durationMs: 2400,
-    });
+    toast?.info(
+      t(
+        'editor.translate.disabled',
+        'Translation is disabled (only one language enabled).',
+      ),
+      {
+        id: 'field-translate',
+        durationMs: 2400,
+      },
+    );
     return;
   }
+  // Both languages are named by their own native label, so the copy reads the
+  // same for a `fr` version as for the `nl`/`en-GB` pair it used to hardcode.
+  const sourceLabel = getLangDisplayName(sourceLang);
+  const targetLabel = getLangDisplayName(targetLang);
   const slide = (pres?.slides || []).find((s) => s?.id === sid);
   if (!slide) return;
   const srcVersion = pres?.i18n?.versions?.[sourceLang];
@@ -46,9 +57,11 @@ export async function openTranslateFieldModal({
     : null;
   if (!srcSlide) {
     toast?.info(
-      sourceLang === 'nl'
-        ? 'Bronversie (NL) ontbreekt voor deze slide. Gebruik “Vertalen” om die te maken.'
-        : 'Source version (EN) is missing for this slide. Use “Vertalen” to create it.',
+      t(
+        'editor.translate.sourceSlideMissing',
+        'The {lang} version has no version of this slide yet. Use “Translate” to create it.',
+        { lang: sourceLabel },
+      ),
       { id: 'field-translate', durationMs: 2600 },
     );
     return;
@@ -66,10 +79,16 @@ export async function openTranslateFieldModal({
       : {};
   const srcText = typeof srcContent?.[k] === 'string' ? srcContent[k] : '';
   if (!String(srcText || '').trim()) {
-    toast?.info('Brontaal veld is leeg; niets om te vertalen.', {
-      id: 'field-translate',
-      durationMs: 1800,
-    });
+    toast?.info(
+      t(
+        'editor.translate.sourceFieldEmpty',
+        'The source field is empty; nothing to translate.',
+      ),
+      {
+        id: 'field-translate',
+        durationMs: 1800,
+      },
+    );
     return;
   }
 
@@ -97,10 +116,11 @@ export async function openTranslateFieldModal({
   const unlockScroll = lockDocumentScroll?.();
 
   const modal = createModal({
-    title:
-      targetLang === 'nl'
-        ? `Vul veld (vertaling) → NL`
-        : `Fill field (translation) → EN`,
+    title: t(
+      'editor.translate.fillFieldTitle',
+      'Fill field (translation) → {lang}',
+      { lang: targetLabel },
+    ),
     modalClass: 'translate-field-modal',
     onClose: () => {
       try {
@@ -114,10 +134,11 @@ export async function openTranslateFieldModal({
 
   const hint = h('div', {
     class: 'help modal-hint-lg',
-    text:
-      targetLang === 'nl'
-        ? `Vul alleen “${fieldLabel}” (NL) met een vertaling vanuit de andere taal.`
-        : `Fill only “${fieldLabel}” (EN) with a translation from the other language.`,
+    text: t(
+      'editor.translate.fillFieldHint',
+      'Fill only “{field}” ({target}) with a translation from {source}.',
+      { field: fieldLabel, target: targetLabel, source: sourceLabel },
+    ),
   });
 
   const card = h(
@@ -132,7 +153,9 @@ export async function openTranslateFieldModal({
       }),
       h('div', {
         class: 'help',
-        text: sourceLang === 'nl' ? 'NL (bron)' : 'EN (source)',
+        text: t('editor.translate.sourcePill', '{lang} (source)', {
+          lang: sourceLabel,
+        }),
       }),
       h('div', {
         class: 'is-pre-wrap',
@@ -140,11 +163,13 @@ export async function openTranslateFieldModal({
       }),
       h('div', {
         class: 'help is-mt-8',
-        text: targetLang === 'nl' ? 'NL (doel)' : 'EN (target)',
+        text: t('editor.translate.targetPill', '{lang} (target)', {
+          lang: targetLabel,
+        }),
       }),
       h('div', {
         class: 'is-pre-wrap',
-        text: translated || '—',
+        text: translated || t('common.emDash', '—'),
       }),
     ],
   );
@@ -165,7 +190,7 @@ export async function openTranslateFieldModal({
       rerenderPreview?.();
       await requestSave?.();
       close();
-      toast?.success('Veld gevuld.', {
+      toast?.success(t('editor.translate.fieldFilled', 'Field filled.'), {
         id: 'field-translate',
         durationMs: 1600,
       });

@@ -1,4 +1,5 @@
 import { normalizeLang } from '../../lib/format/i18n.js';
+import { getLangDisplayName } from '../../lib/format/lang-selector.js';
 import {
   fetchLlmStatus,
   labelForVendor,
@@ -106,16 +107,11 @@ export function openAiAppendWizard({
 
   const langHint = h('div', {
     class: 'help',
-    text:
-      langMode === 'nl'
-        ? t(
-            'editor.aiAppend.langHint.nl',
-            'Language mode: Dutch (AI output will be Dutch).',
-          )
-        : t(
-            'editor.aiAppend.langHint.en',
-            'Language mode: English (UK) (AI output will be English).',
-          ),
+    text: t(
+      'editor.aiAppend.langHint',
+      'Language mode: {lang} (AI output will be in {lang}).',
+      { lang: getLangDisplayName(langMode) },
+    ),
   });
   const help = h('div', {
     class: 'help modal-hint-lg',

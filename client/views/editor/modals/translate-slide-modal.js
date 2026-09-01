@@ -2,6 +2,7 @@ import { createModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { readPreferredLlmVendor } from '../../../lib/net/llm-vendor.js';
 import { h } from '../../../lib/dom.js';
+import { getLangDisplayName } from '../../../lib/format/lang-selector.js';
 import {
   DEFAULT_DECK_LANG,
   translationSourceFor,
@@ -43,6 +44,10 @@ export async function openTranslateSlideModal({
     );
     return;
   }
+  // Both languages are named by their own native label, so the copy reads the
+  // same for a `fr` version as for the `nl`/`en-GB` pair it used to hardcode.
+  const sourceLabel = getLangDisplayName(sourceLang);
+  const targetLabel = getLangDisplayName(targetLang);
   const slide = (pres?.slides || []).find((s) => s?.id === sid);
   if (!slide) return;
   const srcVersion = pres?.i18n?.versions?.[sourceLang];
@@ -51,9 +56,11 @@ export async function openTranslateSlideModal({
     : null;
   if (!srcSlide) {
     toast?.info(
-      sourceLang === 'nl'
-        ? 'Bronversie (NL) ontbreekt voor deze slide. Gebruik “Vertalen” om die te maken.'
-        : 'Source version (EN) is missing for this slide. Use “Vertalen” to create it.',
+      t(
+        'editor.translate.sourceSlideMissing',
+        'The {lang} version has no version of this slide yet. Use “Translate” to create it.',
+        { lang: sourceLabel },
+      ),
       { id: 'slide-translate', durationMs: 2600 },
     );
     return;
@@ -109,13 +116,11 @@ export async function openTranslateSlideModal({
   const unlockScroll = lockDocumentScroll?.();
 
   const modal = createModal({
-    title:
-      targetLang === 'nl'
-        ? t('editor.slide.fillTranslationToNl', 'Fill slide (translation) → NL')
-        : t(
-            'editor.slide.fillTranslationToEn',
-            'Fill slide (translation) → EN',
-          ),
+    title: t(
+      'editor.slide.fillTranslationTo',
+      'Fill slide (translation) → {lang}',
+      { lang: targetLabel },
+    ),
     modalClass: 'translate-slide-modal',
     onClose: () => {
       try {
@@ -129,16 +134,11 @@ export async function openTranslateSlideModal({
 
   const hint = h('div', {
     class: 'help modal-hint-lg',
-    text:
-      targetLang === 'nl'
-        ? t(
-            'editor.translate.previewNl',
-            'Preview of the translation. Click “Apply” to fill this (NL) slide from the other language.',
-          )
-        : t(
-            'editor.translate.previewEn',
-            'Preview of the translation. Click “Apply” to fill this (EN) slide from the other language.',
-          ),
+    text: t(
+      'editor.translate.preview',
+      'Preview of the translation. Click “Apply” to fill this ({target}) slide from {source}.',
+      { target: targetLabel, source: sourceLabel },
+    ),
   });
 
   const def = SLIDE_TYPES?.[slide?.type];
@@ -169,10 +169,9 @@ export async function openTranslateSlideModal({
           }),
           h('div', {
             class: 'help',
-            text:
-              sourceLang === 'nl'
-                ? t('editor.translate.sourceNl', 'NL (source)')
-                : t('editor.translate.sourceEn', 'EN (source)'),
+            text: t('editor.translate.sourcePill', '{lang} (source)', {
+              lang: sourceLabel,
+            }),
           }),
           h('div', {
             class: 'is-pre-wrap',
@@ -180,10 +179,9 @@ export async function openTranslateSlideModal({
           }),
           h('div', {
             class: 'help is-mt-8',
-            text:
-              targetLang === 'nl'
-                ? t('editor.translate.targetNl', 'NL (target)')
-                : t('editor.translate.targetEn', 'EN (target)'),
+            text: t('editor.translate.targetPill', '{lang} (target)', {
+              lang: targetLabel,
+            }),
           }),
           h('div', {
             class: 'is-pre-wrap',

@@ -3,6 +3,7 @@ import {
   DEFAULT_DECK_LANG,
   resolveDeckLang,
 } from '../../../../../shared/i18n-utils.js';
+import { getLangDisplayName } from '../../../../lib/format/lang-selector.js';
 import { h } from '../../../../lib/dom.js';
 
 export function renderFollowInviteForm({
@@ -22,9 +23,11 @@ export function renderFollowInviteForm({
   // with the version's own language. It used to read `content.targetLang`,
   // which was the *other* language — the fields said "(Engels)" while editing
   // the Dutch invite. Those keys are gone; the renderer's own resolution
-  // (resolveDeckLang, active version first) is the answer.
+  // (resolveDeckLang, active version first) is the answer. The label comes off
+  // the axis for the same reason: a `copyLang === 'en-GB' ? … : …` ternary
+  // called a French invite "Nederlands" (B182 fase 3).
   const copyLang = resolveDeckLang(pres) || DEFAULT_DECK_LANG;
-  const copyLangLabel = copyLang === 'en-GB' ? 'Engels' : 'Nederlands';
+  const copyLangLabel = getLangDisplayName(copyLang);
 
   const expl = h('div', {
     class: 'help editor-callout',
@@ -61,7 +64,9 @@ export function renderFollowInviteForm({
 
   form.append(
     fieldText(
-      `Titel (${copyLangLabel})`,
+      t('editor.followInvite.titleField', 'Title ({lang})', {
+        lang: copyLangLabel,
+      }),
       slide.content.customTitle || '',
       (v) => {
         slide.content.customTitle = v;
@@ -72,9 +77,11 @@ export function renderFollowInviteForm({
   );
   form.append(
     fieldTextarea(
-      `Tekst (${copyLangLabel})`,
+      t('editor.followInvite.bodyField', 'Text ({lang})', {
+        lang: copyLangLabel,
+      }),
       slide.content.customBody || '',
-      'Leeg laten = standaardtekst.',
+      t('editor.followInvite.bodyHelp', 'Leave empty for the default text.'),
       (v) => {
         slide.content.customBody = v;
         markDirty?.();
