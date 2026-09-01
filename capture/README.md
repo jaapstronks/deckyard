@@ -311,6 +311,51 @@ Two runs also produced one failing recipe each, a different one each time
 actually came out: a run that re-baselines a recipe it could not capture is
 recording a claim about an artifact that is one week older than it says it is.
 
+#### The rule the refresh follows: an artefact moves only when its baseline moves
+
+Decided 2026-09-01 (deckyard-planning D76). The jitter above never reaches the
+staleness gate, because the gate compares hashes, not pixels: an entry is
+`stale` when its source paths or its recipe graph changed, and nothing else
+makes it so. Where the jitter _did_ bite is one step later, in what
+`npm run refresh` (deckyard-video, `scripts/refresh.ts`) commits. `run.js --all`
+writes every recipe's PNG straight to its registry path, and the refresh then
+staged `public/images` wholesale — so a recipe that came back in its other
+state landed in the PR as an unexplained one-file diff under "Re-baselined 0
+entry(ies)", even on a week when nothing was stale. Once video entries carry a
+`path`, every MP4 would do the same every week, because the encoder is not
+deterministic (§ Determinism conventions).
+
+So the rule is not a pixel tolerance. It is the pipeline's own doctrine — a
+baseline is a claim that someone looked — applied to the artefacts as well as
+to the hashes:
+
+**An artefact is committed if and only if its registry entry is re-baselined in
+the same run.** The commit is exactly the re-baseline set: those entries'
+`path`s plus `registry.json`. Everything else that came back byte-different is
+restored to `HEAD` and _listed_, in the log and in the PR body, as "came back
+different, not committed". Two consequences worth saying out loud:
+
+- No threshold, no per-recipe exception, no image library. `slide-type-picker-new`
+  in state B on a week it is not stale is simply not part of the claim this run
+  makes; on the week it _is_ stale, whichever state came out becomes the
+  baseline, and that is fine — both are what this host renders.
+- The list of discarded artefacts is the honest residue. It should name the
+  known jitter recipes and nothing else. A recipe that keeps appearing there, or
+  a new one, is either a blind spot the hash cannot see (§ Known limits) or a
+  real change outside `sources` — and either way a human looks. That is the
+  signal the old churn PR carried by accident, kept on purpose.
+
+One explicit escape, said out loud the way the checker's `--update --all` is:
+moving to a different host (D3, dev-server-1 as the canonical recorder) changes
+every pixel without moving a single hash. That is the one run where the whole
+artefact set _is_ the claim, so the refresh takes a `--rebaseline-all` that
+re-baselines and commits everything, printing the same warning line the
+checker prints for `--all`.
+
+Implementation status: decided and briefed to deckyard-video; not yet built.
+Until it lands, a refresh PR can carry a jittered PNG with no re-baseline
+beside it, and a reviewer should read that as host noise, not as a change.
+
 ## Adding the next screenshot
 
 1. Copy an existing `recipes/<id>.js` and adjust `state` / `navigate` /
