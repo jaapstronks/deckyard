@@ -4,6 +4,11 @@
  * A limited, safe template format for custom slide types.
  * No eval, no arbitrary code execution. Only a fixed set of helpers.
  *
+ * Isomorphic on purpose: the compiler touches nothing but strings, and the
+ * Settings preview has to reach the same tokenizer the server render path
+ * reaches. A preview that re-implements the template language is a second
+ * renderer for one meaning — the drift B192 removed.
+ *
  * Supported syntax:
  *   {{esc field}}       - HTML-escaped string value
  *   {{raw field}}       - Raw string (for pre-sanitized HTML like markdown output)
@@ -16,7 +21,7 @@
  *   {{this.key}}        - Access item property inside {{#each}}
  */
 
-import { escapeHtml } from '../../shared/slide-types/helpers.js';
+import { escapeHtml } from './helpers.js';
 
 /**
  * Whether a markdown link URL uses a safe, navigable protocol. Anything else

@@ -644,6 +644,7 @@
   "settings.slideTypes.noCustomTypes": "Inga egna slidetyper ännu.",
   "settings.slideTypes.noCustomTypesHint": "Skapa en egen slidetyp och definiera din egen layout med fält, mallar och CSS.",
   "settings.slideTypes.preview": "Förhandsgranskning",
+  "settings.slideTypes.preview.error": "Förhandsgranskningen misslyckades",
   "settings.slideTypes.preview.noTemplate": "Ingen mall definierad",
   "settings.slideTypes.preview.title": "Förhandsgranskning av slidetypen",
   "settings.slideTypes.publish": "Publicera",

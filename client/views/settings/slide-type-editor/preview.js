@@ -1,11 +1,29 @@
 /**
  * Slide Type Preview Component
- * Live preview of a custom slide type's template rendering.
+ *
+ * Live preview of a custom slide type's template rendering. It compiles through
+ * the same seam the deck does — `createTemplateSlideRenderer` — so the markup
+ * and the scoped author CSS in this iframe are the markup and CSS
+ * `toRuntimeSlideType` produces for the very same definition; a test pins that
+ * equality (`tests/slide-type-preview-parity.test.js`).
+ *
+ * Until B192 this file carried its own regex mini-implementation of the
+ * template language and injected the author CSS unscoped into the iframe head,
+ * so a maker could get `{{#if}}` right in the preview and wrong in a deck, and
+ * a `body { … }` rule that the real path contains would restyle the preview.
+ *
+ * What the iframe still does *not* reproduce is the deck around the slide: no
+ * theme tokens, no deck stylesheet, just neutral chrome. The slide is what this
+ * screen is for; the theme is picked elsewhere.
  */
 
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { escapeHtml } from '../../../../shared/slide-types/helpers.js';
+import {
+  createTemplateSlideRenderer,
+  customSlideTypeRootClass,
+} from '../../../../shared/slide-types/custom-type-runtime.js';
 
 /**
  * Create a slide type preview component.
@@ -31,6 +49,7 @@ export function createSlideTypePreview() {
    * @param {Object} state
    * @param {string} [state.template] - HTML template
    * @param {string} [state.css] - Custom CSS
+   * @param {string} [state.slug] - Type slug; sets the CSS scope root
    * @param {Array} [state.fields] - Field definitions
    * @param {Object} [state.defaults] - Default values
    */
@@ -49,67 +68,37 @@ export function createSlideTypePreview() {
         : {};
 
     if (!template) {
-      writeIframe(buildPlaceholderHtml());
+      writeIframe(
+        buildMessageHtml(
+          t('settings.slideTypes.preview.noTemplate', 'No template defined'),
+        ),
+      );
       return;
     }
 
-    // Build sample data from defaults and field definitions
-    const sampleData = {};
-    for (const f of fields) {
-      const key = f.key;
-      if (defaults[key] != null) {
-        sampleData[key] = defaults[key];
-      } else {
-        sampleData[key] = getSampleValue(f);
-      }
+    let html;
+    try {
+      html = renderPreviewSlide({
+        template,
+        css,
+        slug: state?.slug,
+        fields,
+        defaults,
+      });
+    } catch (err) {
+      // The maker is the only one who ever sees this template, so the failure
+      // belongs on this screen rather than in a console they do not have open.
+      writeIframe(
+        buildMessageHtml(
+          `${t('settings.slideTypes.preview.error', 'Preview failed')}: ${
+            err?.message || err
+          }`,
+        ),
+      );
+      return;
     }
 
-    // Simple template rendering: replace placeholders
-    let html = template;
-
-    // Handle {{#if key}}...{{/if}}
-    html = html.replace(
-      /\{\{#if\s+(\w+)\}\}([\s\S]*?)\{\{\/if\}\}/g,
-      (_, key, content) => {
-        return sampleData[key] ? content : '';
-      },
-    );
-
-    // Handle {{#each key}}...{{/each}}
-    html = html.replace(
-      /\{\{#each\s+(\w+)\}\}([\s\S]*?)\{\{\/each\}\}/g,
-      (_, key, content) => {
-        const items = Array.isArray(sampleData[key]) ? sampleData[key] : [];
-        return items
-          .map((item) => {
-            let row = content;
-            if (item && typeof item === 'object') {
-              for (const [k, v] of Object.entries(item)) {
-                row = row.replace(
-                  new RegExp(`\\{\\{(?:esc\\s+)?${escapeRegExp(k)}\\}\\}`, 'g'),
-                  escapeHtml(String(v ?? '')),
-                );
-                row = row.replace(
-                  new RegExp(`\\{\\{markdown\\s+${escapeRegExp(k)}\\}\\}`, 'g'),
-                  String(v ?? ''),
-                );
-              }
-            }
-            return row;
-          })
-          .join('');
-      },
-    );
-
-    // Handle {{esc key}}, {{markdown key}}, {{key}}
-    html = html.replace(/\{\{(?:esc\s+)?(\w+)\}\}/g, (_, key) => {
-      return escapeHtml(String(sampleData[key] ?? ''));
-    });
-    html = html.replace(/\{\{markdown\s+(\w+)\}\}/g, (_, key) => {
-      return String(sampleData[key] ?? '');
-    });
-
-    writeIframe(buildSlideHtml(html, css));
+    writeIframe(buildSlideHtml(html));
   }
 
   function writeIframe(htmlContent) {
@@ -125,19 +114,26 @@ export function createSlideTypePreview() {
     }
   }
 
-  function buildPlaceholderHtml() {
+  function buildMessageHtml(message) {
     return `<!doctype html>
 <html><head><meta charset="utf-8">
 <style>
   body { margin: 0; display: flex; align-items: center; justify-content: center;
          height: 100vh; font-family: system-ui, sans-serif; color: #888;
          background: #f8f9fa; }
-  p { text-align: center; font-size: 14px; }
+  p { text-align: center; font-size: 14px; padding: 0 1em; }
 </style></head>
-<body><p>${escapeHtml(t('settings.slideTypes.preview.noTemplate', 'No template defined'))}</p></body></html>`;
+<body><p>${escapeHtml(message)}</p></body></html>`;
   }
 
-  function buildSlideHtml(bodyHtml, css) {
+  /**
+   * Neutral chrome around the rendered slide. The author's own CSS is *not*
+   * injected here — it travels inside `bodyHtml` as a scoped `<style>` block,
+   * exactly as it does in a deck.
+   * @param {string} bodyHtml - Output of the shared renderer
+   * @returns {string}
+   */
+  function buildSlideHtml(bodyHtml) {
     return `<!doctype html>
 <html><head><meta charset="utf-8">
 <style>
@@ -148,12 +144,59 @@ export function createSlideTypePreview() {
   img { max-width: 100%; height: auto; }
   h1, h2, h3 { margin: 0 0 0.5em; }
   p { margin: 0 0 0.5em; }
-  ${css}
 </style></head>
 <body>${bodyHtml}</body></html>`;
   }
 
   return { el: container, update };
+}
+
+/**
+ * The slide markup the preview shows for one draft definition — the whole of
+ * what this screen renders, minus the neutral iframe chrome.
+ *
+ * Exported so it can be pinned against `toRuntimeSlideType` without a DOM:
+ * `tests/slide-type-preview-parity.test.js` asserts the two produce byte-equal
+ * markup and CSS for the same definition. That equality *is* the feature; a
+ * preview drifting from the deck was the whole of B192.
+ *
+ * @param {Object} draft - The definition as the editor currently holds it
+ * @param {string} draft.template - Template source
+ * @param {string} [draft.css] - Author CSS, unfiltered and unscoped
+ * @param {string} [draft.slug] - Type slug; sets the CSS scope root
+ * @param {Array} [draft.fields] - Field definitions, for sample content
+ * @param {Object} [draft.defaults] - Default values, preferred over samples
+ * @returns {string} Slide markup with its scoped `<style>` block
+ */
+export function renderPreviewSlide({
+  template,
+  css,
+  slug,
+  fields = [],
+  defaults = {},
+}) {
+  const render = createTemplateSlideRenderer({
+    template,
+    css,
+    rootClass: customSlideTypeRootClass({ slug }),
+  });
+  return render(sampleContent(fields, defaults));
+}
+
+/**
+ * Stand-in slide content: the type's own defaults where it has them, a
+ * type-shaped placeholder where it does not.
+ * @param {Array} fields - Field definitions
+ * @param {Object} defaults - Default values
+ * @returns {Object}
+ */
+function sampleContent(fields, defaults) {
+  const content = {};
+  for (const f of fields) {
+    const key = f.key;
+    content[key] = defaults[key] != null ? defaults[key] : getSampleValue(f);
+  }
+  return content;
 }
 
 function getSampleValue(field) {
@@ -175,8 +218,4 @@ function getSampleValue(field) {
     default:
       return '';
   }
-}
-
-function escapeRegExp(str) {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

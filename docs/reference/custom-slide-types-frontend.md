@@ -25,13 +25,17 @@ Settings editor (`client/views/settings/slide-type-editor/`):
 - `client/views/settings/slide-type-editor/field-editor.js` — collapsible field
   list with reorder, type selection, and nested `items` sub-fields.
 - `client/views/settings/slide-type-editor/preview.js` — live 16:9 iframe
-  preview, rendered client-side with a 300ms debounce.
+  preview, rendered client-side with a 300ms debounce. It renders through
+  `createTemplateSlideRenderer` (`shared/slide-types/custom-type-runtime.js`),
+  the same seam the deck uses, so the markup and the scoped author CSS are the
+  deck's; `tests/slide-type-preview-parity.test.js` pins that equality. The
+  iframe supplies neutral chrome only — no theme tokens, no deck stylesheet.
 - `client/views/settings/slide-type-editor/io.js` — pure import/export helpers
   (no DOM): portable-definition extraction, envelope serialize/parse,
   client-side slug derivation and collision handling. Unit-tested.
 - `client/views/settings/slide-type-editor/template-help.js` — the template
   syntax reference, collapsed under the template field; mirrors the tokenizer in
-  `server/utils/slide-template-compiler.js`.
+  `shared/slide-types/template-compiler.js`.
 
 Settings tab (`client/views/settings/tabs/slide-types-tab/`):
 

@@ -644,6 +644,7 @@
   "settings.slideTypes.noCustomTypes": "Brak własnych typów slajdów.",
   "settings.slideTypes.noCustomTypesHint": "Utwórz własny typ slajdu, aby zdefiniować własny układ z polami, szablonami i CSS.",
   "settings.slideTypes.preview": "Podgląd",
+  "settings.slideTypes.preview.error": "Podgląd nie powiódł się",
   "settings.slideTypes.preview.noTemplate": "Nie zdefiniowano szablonu",
   "settings.slideTypes.preview.title": "Podgląd typu slajdu",
   "settings.slideTypes.publish": "Opublikuj",

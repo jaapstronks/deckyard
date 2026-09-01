@@ -644,6 +644,7 @@
   "settings.slideTypes.noCustomTypes": "Noch keine eigenen Folientypen.",
   "settings.slideTypes.noCustomTypesHint": "Erstellen Sie einen eigenen Folientyp, um Ihr eigenes Layout mit Feldern, Templates und CSS zu definieren.",
   "settings.slideTypes.preview": "Vorschau",
+  "settings.slideTypes.preview.error": "Vorschau fehlgeschlagen",
   "settings.slideTypes.preview.noTemplate": "Kein Template definiert",
   "settings.slideTypes.preview.title": "Vorschau des Folientyps",
   "settings.slideTypes.publish": "Veröffentlichen",

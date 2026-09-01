@@ -104,15 +104,13 @@ test('L5: filterCssText strips @import, defangs expression()/javascript:, escape
 });
 
 test('L5: the custom-type runtime and custom-html slide share one filter', async () => {
-  const runtime = await readSrc('../server/utils/custom-slide-type-runtime.js');
+  // The render moved to shared/ in B192 so the Settings preview reaches the
+  // same four steps; the filter went with it.
+  const runtime = await readSrc('../shared/slide-types/custom-type-runtime.js');
   const slide = await readSrc(
     '../shared/slide-types/types/custom-html-slide.js',
   );
-  assert.match(
-    runtime,
-    /filterCssText\(ct\.css\)/,
-    'runtime uses filterCssText',
-  );
+  assert.match(runtime, /filterCssText\(css\)/, 'runtime uses filterCssText');
   assert.doesNotMatch(
     runtime,
     /function sanitizeCss/,

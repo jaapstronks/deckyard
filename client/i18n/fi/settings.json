@@ -644,6 +644,7 @@
   "settings.slideTypes.noCustomTypes": "Ei vielä mukautettuja diatyyppejä.",
   "settings.slideTypes.noCustomTypesHint": "Luo mukautettu diatyyppi, jolla voi määrittää oman asettelun kenttineen, mallipohjineen ja CSS:ineen.",
   "settings.slideTypes.preview": "Esikatselu",
+  "settings.slideTypes.preview.error": "Esikatselu epäonnistui",
   "settings.slideTypes.preview.noTemplate": "Mallipohjaa ei ole määritetty",
   "settings.slideTypes.preview.title": "Diatyypin esikatselu",
   "settings.slideTypes.publish": "Julkaise",
