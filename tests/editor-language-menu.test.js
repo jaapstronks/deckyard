@@ -83,25 +83,41 @@ function makeTrilingualPres() {
   };
 }
 
-function mount({ pres, api = async () => ({}) } = {}) {
+function mount({
+  pres,
+  api = async () => ({}),
+  requestSave = async () => {},
+  isDirty = () => false,
+  markDirty = () => {},
+  toast = { info: () => {}, success: () => {}, error: () => {} },
+} = {}) {
   const controller = createLanguageMode({
     root: document.body,
     pres,
     id: 'p1',
     api,
-    requestSave: async () => {},
-    isDirty: () => false,
-    markDirty: () => {},
+    requestSave,
+    isDirty,
+    markDirty,
     normalizeLang,
     getSelectedSlideId: () => null,
     setSelectedSlideId: () => {},
     editorState: { refreshAll: () => {} },
     topbarTitleEl: null,
-    toast: { info: () => {}, success: () => {}, error: () => {} },
+    toast,
   });
   document.body.replaceChildren(controller.el);
   return controller;
 }
+
+/** The confirm modal's two action buttons, in DOM order [cancel, confirm]. */
+const modalActions = () => [
+  ...document.querySelectorAll('.modal-actions button'),
+];
+
+/** The "Make this the source version" row, or `undefined` when it is absent. */
+const sourceAction = (controller) =>
+  controller.el.querySelector('.lang-menu-action') ?? undefined;
 
 /** `[label, status]` for every row, in menu order, sections separated by `--`. */
 function readMenu(controller) {
@@ -277,6 +293,13 @@ test('adding an empty version leaves the source where it was (D74)', async () =>
     ['Français', '1 missing'],
     // Both slide titles the Dutch original fills are still blank here.
     ['English', '2 missing'],
+    // The version on screen is not the source, so the one action that moves
+    // the source is offered — including on a version this empty (B198). The
+    // confirmation is what guards it: pointing the source at an empty version
+    // blanks the list preview but destroys nothing, and moving it back
+    // restores what it showed.
+    '--',
+    ['Make this the source version', ''],
   ]);
 
   // Dismiss the translate invite: it holds a 15s auto-hide timer that would
@@ -363,4 +386,122 @@ test('a load that does not carry the version fails visibly and leaves the model 
   assert.match(errors[0], /Deutsch/);
   assert.equal(pres.i18n.active, 'nl', 'active did not move');
   assert.equal(pres.i18n.dominant, 'nl');
+});
+
+// ---------------------------------------------------------------------------
+// "Make this the source version" (B198) — the one action that moves `dominant`
+// ---------------------------------------------------------------------------
+
+/**
+ * The same deck with German on screen and the Dutch source missing one title.
+ *
+ * The gap is deliberate: measured from Dutch, German is complete, so only a
+ * source that actually moved can make the Dutch version report a count.
+ */
+function makeEditingGermanPres() {
+  const pres = makeTrilingualPres();
+  pres.i18n.versions.nl.slides[1].content.title = '';
+  pres.i18n.active = 'de';
+  pres.title = pres.i18n.versions.de.title;
+  pres.slides = pres.i18n.versions.de.slides;
+  return pres;
+}
+
+/**
+ * Mount `makeEditingGermanPres` behind a save manager that behaves like the
+ * real one: `markDirty` makes the deck dirty, `requestSave` cleans it again.
+ */
+function mountEditingGerman(pres) {
+  const calls = { markDirty: 0, saves: 0, saved: [] };
+  let dirty = false;
+  const controller = mount({
+    pres,
+    markDirty: () => {
+      calls.markDirty += 1;
+      dirty = true;
+    },
+    isDirty: () => dirty,
+    requestSave: async () => {
+      calls.saves += 1;
+      calls.saved.push(pres.i18n.dominant);
+      dirty = false;
+    },
+  });
+  return { controller, calls };
+}
+
+test('the version being edited can be made the source version', async () => {
+  setSupportedLangs(['nl', 'en-GB', 'de', 'fr']);
+  const pres = makeEditingGermanPres();
+  const { controller, calls } = mountEditingGerman(pres);
+
+  assert.deepEqual(readMenu(controller), [
+    ['Nederlands', 'source'],
+    ['Deutsch', '✓'],
+    // Measured from a Dutch version that leaves the second title empty, both
+    // translations are complete.
+    ['Français', '✓'],
+    '--',
+    ['Make this the source version', ''],
+    '--',
+    '# Add language…',
+    ['English', ''],
+  ]);
+
+  sourceAction(controller).click();
+  await flush();
+  const [, confirm] = modalActions();
+  assert.ok(confirm, 'the action confirms before it moves the source');
+  confirm.click();
+  await flush();
+
+  assert.equal(pres.i18n.dominant, 'de', 'the source moved');
+  assert.equal(pres.i18n.active, 'de', 'and the version on screen did not');
+  assert.equal(calls.markDirty, 1);
+  assert.deepEqual(
+    calls.saved,
+    ['de'],
+    'the move is saved once, with the new source in the payload',
+  );
+
+  assert.deepEqual(readMenu(controller), [
+    // The counts are re-measured from German: the title Dutch leaves empty is
+    // now a text the source has and Dutch does not.
+    ['Nederlands', '1 missing'],
+    ['Deutsch', 'source'],
+    ['Français', '1 missing'],
+    '--',
+    '# Add language…',
+    ['English', ''],
+  ]);
+  assert.equal(
+    sourceAction(controller),
+    undefined,
+    'and the action is gone now that this version is the source',
+  );
+});
+
+test('the source version itself does not offer the action', () => {
+  setSupportedLangs(['nl', 'en-GB', 'de', 'fr']);
+  const controller = mount({ pres: makeTrilingualPres() });
+  assert.equal(sourceAction(controller), undefined);
+});
+
+test('cancelling the confirmation leaves the source where it was', async () => {
+  setSupportedLangs(['nl', 'en-GB', 'de', 'fr']);
+  const pres = makeEditingGermanPres();
+  const { controller, calls } = mountEditingGerman(pres);
+  const before = readMenu(controller);
+
+  sourceAction(controller).click();
+  await flush();
+  const [cancel] = modalActions();
+  assert.ok(cancel, 'the confirmation is open');
+  cancel.click();
+  await flush();
+
+  assert.equal(pres.i18n.dominant, 'nl');
+  assert.equal(calls.markDirty, 0, 'nothing was marked dirty');
+  assert.equal(calls.saves, 0, 'and nothing was saved');
+  assert.deepEqual(readMenu(controller), before);
 });

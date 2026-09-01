@@ -177,6 +177,43 @@ test('the write seam keeps the deck preview and viewer default on the source', (
   );
 });
 
+test('the write seam honours an explicit source move (B198)', () => {
+  // The menu's "Make this the source version" writes one field and saves:
+  // `i18n.dominant` = the version on screen. Nothing else in the payload
+  // announces it, so the seam has to take the field at face value — and then
+  // the preview, the viewer default and every count follow it on their own.
+  // The one thing that must NOT follow is `pres.lang`: that is the document
+  // language the user picks in deck settings, and the seam only fills it in
+  // when it is missing.
+  const pres = makeDeckOpenedInGerman();
+  pres.lang = 'nl';
+  pres.i18n.dominant = 'de';
+
+  normalizeI18n(pres);
+
+  assert.equal(pres.i18n.dominant, 'de', 'the move was not repaired away');
+  assert.equal(
+    pres.i18n.versions.nl.slides[0].content.title,
+    'A nl',
+    'the version that was the source keeps its texts',
+  );
+  assert.equal(
+    pres.slides[0].content.title,
+    'A de',
+    'the deck preview and the viewer default follow the new source',
+  );
+  assert.equal(
+    pres.lang,
+    'nl',
+    'the document-language hint is set by hand and stays where it was',
+  );
+  assert.deepEqual(
+    translationProgress(pres).missing,
+    { nl: 0 },
+    'and the counts are measured from German now',
+  );
+});
+
 test('the write seam repairs a dangling dominant the way the bootstrap does', () => {
   // One repair for one malformed state, on both surfaces: a `dominant` naming
   // a version the deck does not carry resolves to the version being edited.

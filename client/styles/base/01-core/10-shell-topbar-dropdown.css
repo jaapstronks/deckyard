@@ -586,6 +586,14 @@ summary.ghost-icon-btn::-webkit-details-marker {
   color: hsl(var(--app-success));
 }
 
+/* "Make this the source version": an action about the list above it, not
+   another version in it - lighter than a version row so the list still reads
+   as the list. */
+.lang-menu-action {
+  font-size: var(--ps-text-sm);
+  color: hsl(var(--app-text-secondary));
+}
+
 .lang-popover {
   position: absolute;
   top: calc(100% + 8px);

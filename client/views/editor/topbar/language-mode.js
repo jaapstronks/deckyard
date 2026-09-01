@@ -13,6 +13,12 @@
  * texts - fields the user already filled in by hand are left alone (the
  * server's translate/missing endpoint only fills empty translatable fields).
  *
+ * Under the list, on a version that is not the source, sits the one action that
+ * moves the source: "Make this the source version" (B198). It is the only way
+ * `i18n.dominant` moves - nothing else does it as a side effect (D74) - so a
+ * deck begun in the wrong language can still say which version it is written
+ * in.
+ *
  * What it replaces is a fixed NL/EN segmented control, built on the assumption
  * that "the other language" is always nameable. It is not on the open deck-language
  * axis, which is why a German version used to be viewable but not editable (B182).
@@ -158,8 +164,8 @@ export function createLanguageMode({
    * and it stays put while you edit another version (D74), so "source" names a
    * fixed version and a count is "texts the source has and this one does not" —
    * a number with a stationary zero point. Moving the source is a deliberate
-   * action, never a side effect of opening a version; this menu does not offer
-   * that action yet.
+   * action, never a side effect of opening a version: the "Make this the source
+   * version" row below the list is the only thing that does it.
    */
   const versionItem = (lang, { active, progress }) => {
     const isActive = lang === active;
@@ -225,6 +231,108 @@ export function createLanguageMode({
     return row;
   };
 
+  /**
+   * Whether the deck can be told it is written in the version on screen.
+   *
+   * Two states have nothing to offer: the version being edited already *is* the
+   * source, and a version whose buffer has not been written yet (the moment
+   * between a switch and its load). The row is then absent rather than
+   * disabled - a greyed-out "make this the source" on the source itself would
+   * be a control describing the state it is already in.
+   */
+  const canMoveSourceHere = (active, dominant) =>
+    !!active &&
+    !!dominant &&
+    active !== dominant &&
+    !!pres?.i18n?.versions?.[active];
+
+  /**
+   * Point `i18n.dominant` at the version being edited.
+   *
+   * Everything downstream reads the move on its own: `translationProgress`
+   * re-measures every other version from here, the server's `normalizeI18n`
+   * keeps top-level `title`/`slides` on the new source (which is what the deck
+   * list preview and a viewer link without `?lang=` read), and the collab
+   * binder mirrors a changed `dominant` into the shared doc's `meta`. So this
+   * writes one field and saves - a second repair anywhere would be a second
+   * place the source could be decided.
+   */
+  const makeActiveTheSource = async ({ onStatus } = {}) => {
+    const next = activeLang();
+    const previous = normalizeLang(pres?.i18n?.dominant) || null;
+    if (!canMoveSourceHere(next, previous)) return;
+    if (translateBusy) {
+      onStatus?.({
+        level: 'info',
+        msg: t('editor.translate.busy', 'Translating…'),
+      });
+      return;
+    }
+
+    const lang = getLangDisplayName(next);
+    const current = getLangDisplayName(previous);
+    const ok = await confirmModal(root || document.body, {
+      title: t(
+        'editor.lang.makeSourceTitle',
+        'Make {lang} the source version',
+        {
+          lang,
+        },
+      ),
+      message: t(
+        'editor.lang.makeSourceConfirm',
+        'The deck is written in {lang} from now on: translation counts are measured from this version, and the deck list preview and a link without a language show it. Nothing is translated or overwritten, so {current} keeps its texts and gets a count of its own.',
+        { lang, current },
+      ),
+      confirmLabel: t(
+        'editor.lang.makeSourceConfirmBtn',
+        'Make source version',
+      ),
+    });
+    if (!ok) return;
+
+    pres.i18n.dominant = next;
+    markDirty?.();
+    syncLangUi();
+    if (isDirty?.()) {
+      await requestSave?.();
+      // requestSave reports its own failures; all that is left here is not
+      // claiming success over one.
+      if (isDirty?.()) return;
+    }
+    onStatus?.({
+      level: 'success',
+      msg: t(
+        'editor.lang.makeSourceDone',
+        '{lang} is now the source version.',
+        {
+          lang,
+        },
+      ),
+    });
+  };
+
+  /** The "Make this the source version" row, shown under the version list. */
+  const makeSourceItem = (active, dominant) =>
+    h('button', {
+      class: 'dropdown-item lang-menu-action',
+      type: 'button',
+      disabled: translateBusy,
+      title: t(
+        'editor.lang.makeSourceHint',
+        'Translations are measured from {current} now. Measure them from {lang} instead.',
+        {
+          current: getLangDisplayName(dominant),
+          lang: getLangDisplayName(active),
+        },
+      ),
+      onclick: () => {
+        closeMenu();
+        makeActiveTheSource({ onStatus: toastStatus });
+      },
+      text: t('editor.lang.makeSource', 'Make this the source version'),
+    });
+
   /** One menu row under "Add language…": a workspace language with no version yet. */
   const addItem = (lang) =>
     h('button', {
@@ -247,6 +355,13 @@ export function createLanguageMode({
     const progress = translationProgress(pres);
     const listed = listedLangs();
     const items = listed.map((lang) => versionItem(lang, { active, progress }));
+
+    // Directly under the list it belongs to: the row it moves the "source"
+    // badge onto is the one the eye just passed.
+    if (canMoveSourceHere(active, progress.dominant)) {
+      items.push(h('div', { class: 'dropdown-sep' }));
+      items.push(makeSourceItem(active, progress.dominant));
+    }
 
     const addable = getSupportedLangs().filter((l) => !listed.includes(l));
     if (addable.length) {
