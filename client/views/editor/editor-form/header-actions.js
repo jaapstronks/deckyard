@@ -279,7 +279,7 @@ export function buildHeaderActions({
       text: t('editor.slide.fillTranslation', 'Fill slide…'),
       title: t(
         'editor.slide.fillTranslation.title',
-        'Fill this slide from the other language (with preview).',
+        'Fill this slide from the source version (with preview).',
       ),
       onclick: async () => {
         actionsDetails.open = false;

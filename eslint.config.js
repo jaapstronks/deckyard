@@ -476,7 +476,7 @@ const createElementRestriction = {
 // the remedies are named in the message. The burndown took the axis-shaped
 // ones (defaults, membership tests, re-declarations, `?lang=` validation) to
 // roughly fifty in 21 files; `deckLangLiteralAllowlist` below names what is
-// left and why — 19 files now — and it may only shrink.
+// left and why — 14 files now — and it may only shrink.
 //
 // Whole-token by construction — the selector matches the string literal value
 // exactly, so `nl-NL`, `en-GB-oxendict` in a locale tag, or the substring in a
@@ -500,24 +500,19 @@ const deckLangLiteralRestriction = {
 // literal, so a file that is cleaned up cannot quietly stay exempt.
 //
 // Two reasons appear, and only two:
-//   * *bilingual chrome* — the paired alt-text inputs, the translate modals and
-//     their hand-written NL/EN copy, the viewer's fixed NL/EN link pair.
-//     Widening these to N languages is a UI design job, not a rename: B182.
-//     (The editor's NL⇄EN toggle is gone — it is a language menu over every
-//     version the deck has since B182 fase 2.)
+//   * *bilingual chrome* — the paired alt-text inputs and the viewer's fixed
+//     NL/EN link pair. Widening these to N languages is a UI design job, not a
+//     rename: B182. (The editor's NL⇄EN toggle is gone — it is a language menu
+//     over every version the deck has since B182 fase 2 — and the translate
+//     modals name their source and target off the axis since fase 3.)
 //   * *UI-locale axis* — `'nl'` there is a locale directory
 //     (`client/i18n/nl/`), a different vocabulary that shares a spelling.
 const deckLangLiteralAllowlist = [
   // bilingual chrome (B182)
-  'client/views/editor/ai-append.js',
-  'client/views/editor/editor-form/render-field.js',
-  'client/views/editor/editor-form/slide-forms/follow-invite.js',
   'client/views/editor/image-library/detail.js',
   'client/views/editor/image-library/upload.js',
   'client/views/editor/imagekit-picker.js',
   'client/views/editor/media/apply-pick.js',
-  'client/views/editor/modals/translate-field-modal.js',
-  'client/views/editor/modals/translate-slide-modal.js',
   'client/views/presenter/follow-codes-pill.js',
   // the axis↔locale seam: these name `en-GB` precisely because it is the one
   // code the two axes spell differently

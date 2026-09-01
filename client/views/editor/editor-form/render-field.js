@@ -23,9 +23,8 @@ import {
   isFieldVisible,
   visibilityDriverKeys,
 } from '../../../../shared/slide-types/field-visibility.js';
+import { getLangDisplayName } from '../../../lib/format/lang-selector.js';
 import { h } from '../../../lib/dom.js';
-
-const LANG_SHORT = { nl: 'NL', 'en-GB': 'EN' };
 
 /**
  * The source-language value for a field, or '' when that version doesn't exist
@@ -58,7 +57,10 @@ function translateLabelRightEl({ pres, onTranslateField, slideId, key }) {
   // its direction (which way does it translate?) is ambiguous.
   const { sourceLang, value } = sourceLangFieldValue({ pres, slideId, key });
   if (!sourceLang || !value) return null;
-  const langLabel = LANG_SHORT[sourceLang] || sourceLang;
+  // The version's own native name, the same label the language menu and the
+  // translate modals use. A two-letter map answered this for `nl`/`en-GB` and
+  // fell through to the raw code for the other ten (B182).
+  const langLabel = getLangDisplayName(sourceLang);
   const preview = value.length > 90 ? `${value.slice(0, 90)}…` : value;
   return h('button', {
     class: 'btn btn-secondary is-compact-sm is-pill',
