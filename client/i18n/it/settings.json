@@ -644,6 +644,7 @@
   "settings.slideTypes.noCustomTypes": "Ancora nessun tipo di slide personalizzato.",
   "settings.slideTypes.noCustomTypesHint": "Crea un tipo di slide personalizzato per definire un layout tutto tuo, con campi, template e CSS.",
   "settings.slideTypes.preview": "Anteprima",
+  "settings.slideTypes.preview.error": "Anteprima non riuscita",
   "settings.slideTypes.preview.noTemplate": "Nessun template definito",
   "settings.slideTypes.preview.title": "Anteprima del tipo di slide",
   "settings.slideTypes.publish": "Pubblica",

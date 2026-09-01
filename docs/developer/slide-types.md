@@ -656,7 +656,7 @@ what decides which code can see it:
 | Settings → Slide Types (stored in the DB) | built per request from the org's rows | one organization  |
 
 A published DB-backed type is stored and referenced as **`custom-<slug>`**
-(`customSlideTypeKey()` in `server/utils/custom-slide-type-runtime.js` — the one
+(`customSlideTypeKey()` in `shared/slide-types/custom-type-runtime.js` — the one
 place that derives the key). It cannot be in `SLIDE_TYPES`: that map is the same
 for every request, and this type belongs to one organization.
 

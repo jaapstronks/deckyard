@@ -644,6 +644,7 @@
   "settings.slideTypes.noCustomTypes": "Ainda não há tipos de diapositivo personalizados.",
   "settings.slideTypes.noCustomTypesHint": "Crie um tipo de diapositivo próprio para definir o seu próprio esquema com campos, modelo e CSS.",
   "settings.slideTypes.preview": "Pré-visualização",
+  "settings.slideTypes.preview.error": "A pré-visualização falhou",
   "settings.slideTypes.preview.noTemplate": "Não há nenhum modelo definido",
   "settings.slideTypes.preview.title": "Pré-visualização do tipo de diapositivo",
   "settings.slideTypes.publish": "Publicar",

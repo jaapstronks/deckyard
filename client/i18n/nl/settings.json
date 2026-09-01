@@ -644,6 +644,7 @@
   "settings.slideTypes.noCustomTypes": "Nog geen eigen slide-types.",
   "settings.slideTypes.noCustomTypesHint": "Maak een eigen slide-type om je eigen lay-out te bepalen met velden, sjablonen en CSS.",
   "settings.slideTypes.preview": "Voorbeeld",
+  "settings.slideTypes.preview.error": "Voorbeeld mislukt",
   "settings.slideTypes.preview.noTemplate": "Geen sjabloon gedefinieerd",
   "settings.slideTypes.preview.title": "Voorbeeld van slide-type",
   "settings.slideTypes.publish": "Publiceren",

@@ -644,6 +644,7 @@
   "settings.slideTypes.noCustomTypes": "Aún no hay tipos de diapositiva personalizados.",
   "settings.slideTypes.noCustomTypesHint": "Cree un tipo de diapositiva propio para definir su propio diseño con campos, plantilla y CSS.",
   "settings.slideTypes.preview": "Vista previa",
+  "settings.slideTypes.preview.error": "La vista previa ha fallado",
   "settings.slideTypes.preview.noTemplate": "No hay ninguna plantilla definida",
   "settings.slideTypes.preview.title": "Vista previa del tipo de diapositiva",
   "settings.slideTypes.publish": "Publicar",

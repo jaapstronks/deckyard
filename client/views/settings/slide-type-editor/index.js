@@ -490,6 +490,9 @@ export function createSlideTypeEditor({
     previewComponent.update({
       template: state.template,
       css: state.css,
+      // The slug decides the CSS scope root, so the preview scopes the author's
+      // stylesheet under the same class the deck will.
+      slug: state.slug,
       fields: state.fields,
       defaults: previewDefaults,
     });

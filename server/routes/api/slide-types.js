@@ -23,7 +23,7 @@ import {
 } from '../../../shared/slide-types/inline-edit-companions.js';
 import { slideInstanceKeys } from '../../../shared/slide-types/instance-keys.js';
 import { listPublishedCustomSlideTypes } from '../../storage/custom-slide-types.js';
-import { customSlideTypeKey } from '../../utils/custom-slide-type-runtime.js';
+import { customSlideTypeKey } from '../../../shared/slide-types/custom-type-runtime.js';
 import { dispatchRoutes } from '../../utils/router.js';
 
 /**

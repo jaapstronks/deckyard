@@ -644,6 +644,7 @@
   "settings.slideTypes.noCustomTypes": "No custom slide types yet.",
   "settings.slideTypes.noCustomTypesHint": "Create a custom slide type to define your own layout with fields, templates, and CSS.",
   "settings.slideTypes.preview": "Preview",
+  "settings.slideTypes.preview.error": "Preview failed",
   "settings.slideTypes.preview.noTemplate": "No template defined",
   "settings.slideTypes.preview.title": "Slide type preview",
   "settings.slideTypes.publish": "Publish",

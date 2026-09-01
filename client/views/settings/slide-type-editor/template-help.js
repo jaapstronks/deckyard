@@ -2,7 +2,7 @@
  * Template syntax reference for the custom slide type editor.
  *
  * The template language is a small fixed set of helpers with no eval (see
- * `server/utils/slide-template-compiler.js` — this list mirrors its tokenizer,
+ * `shared/slide-types/template-compiler.js` — this list mirrors its tokenizer,
  * so keep the two in step when a helper is added). Authors previously had a
  * single hint line naming four of the directives; `raw`, `bgClass`, `else`,
  * `this`/`this.key` and `@index` were undocumented in the UI.

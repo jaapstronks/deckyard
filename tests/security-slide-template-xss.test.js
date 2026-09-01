@@ -20,7 +20,7 @@ import assert from 'node:assert/strict';
 
 import { initSanitizer } from '../shared/sanitize.js';
 import { toRuntimeSlideType } from '../server/utils/custom-slide-type-runtime.js';
-import { renderTemplate } from '../server/utils/slide-template-compiler.js';
+import { renderTemplate } from '../shared/slide-types/template-compiler.js';
 
 // sanitizeSlideHtmlSync needs a pre-initialized DOMPurify (server does this at
 // startup via initSanitizer). Without it the fix falls back to escaping, which

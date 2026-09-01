@@ -644,6 +644,7 @@
   "settings.slideTypes.noCustomTypes": "Ingen egendefinerte lysbildetyper ennå.",
   "settings.slideTypes.noCustomTypesHint": "Opprett en egendefinert lysbildetype, og definer din egen layout med felter, maler og CSS.",
   "settings.slideTypes.preview": "Forhåndsvisning",
+  "settings.slideTypes.preview.error": "Forhåndsvisningen mislyktes",
   "settings.slideTypes.preview.noTemplate": "Ingen mal definert",
   "settings.slideTypes.preview.title": "Forhåndsvisning av lysbildetypen",
   "settings.slideTypes.publish": "Publiser",

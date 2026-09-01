@@ -47,8 +47,10 @@ const { createPresentation } =
   await import('../server/storage/presentations/index.js');
 const { handlePresentations } =
   await import('../server/routes/public-api/v1/presentations.js');
-const { customSlideTypeKey, buildMergedSlideTypes } =
+const { buildMergedSlideTypes } =
   await import('../server/utils/custom-slide-type-runtime.js');
+const { customSlideTypeKey } =
+  await import('../shared/slide-types/custom-type-runtime.js');
 
 /**
  * One `custom_slide_types` row. `template` is set on purpose: building the

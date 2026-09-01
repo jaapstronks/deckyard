@@ -644,6 +644,7 @@
   "settings.slideTypes.noCustomTypes": "Ingen brugerdefinerede slidetyper endnu.",
   "settings.slideTypes.noCustomTypesHint": "Opret en brugerdefineret slidetype, og definér dit eget layout med felter, skabeloner og CSS.",
   "settings.slideTypes.preview": "Forhåndsvisning",
+  "settings.slideTypes.preview.error": "Forhåndsvisning mislykkedes",
   "settings.slideTypes.preview.noTemplate": "Ingen skabelon defineret",
   "settings.slideTypes.preview.title": "Forhåndsvisning af slidetypen",
   "settings.slideTypes.publish": "Udgiv",
