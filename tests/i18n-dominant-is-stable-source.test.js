@@ -26,6 +26,7 @@ import assert from 'node:assert/strict';
 import { initPresentationI18n } from '../client/views/editor/bootstrap.js';
 import { createSaveManager } from '../client/views/editor/save-manager.js';
 import { normalizeI18n } from '../server/storage/presentations/i18n.js';
+import { projectPresentationForLang } from '../server/utils/i18n.js';
 import { followMetaFromPresentation } from '../server/routes/api/follow/helpers.js';
 import { translationProgress } from '../shared/i18n-progress.js';
 import { normalizeLang } from '../shared/i18n-utils.js';
@@ -174,6 +175,57 @@ test('the write seam keeps the deck preview and viewer default on the source', (
     'A de, herschreven',
     'while the edited version took the incoming buffers',
   );
+});
+
+test('the write seam repairs a dangling dominant the way the bootstrap does', () => {
+  // One repair for one malformed state, on both surfaces: a `dominant` naming
+  // a version the deck does not carry resolves to the version being edited.
+  // The server used to backfill `versions.nl` from the top-level buffers here —
+  // which hold the *German* text — and so stored a copy of the translation
+  // labelled as the source.
+  const pres = {
+    id: 'p4',
+    title: 'Dek',
+    slides: [slide('a', 'A de')],
+    i18n: { active: 'de', dominant: 'nl', versions: {} },
+  };
+  normalizeI18n(pres);
+
+  assert.equal(pres.i18n.dominant, 'de');
+  assert.deepEqual(Object.keys(pres.i18n.versions), ['de']);
+  assert.equal(pres.lang, 'de');
+});
+
+test('the write seam names the edited version as source when the deck names none', () => {
+  // Same rule as `initPresentationI18n`: without a stated source, the version
+  // being edited is the source — not the first version in the language axis.
+  const pres = {
+    id: 'p5',
+    title: 'Dek',
+    slides: [slide('a', 'A de')],
+    i18n: {
+      active: 'de',
+      versions: { nl: { title: 'Dek', slides: [slide('a', 'A nl')] } },
+    },
+  };
+  normalizeI18n(pres);
+
+  assert.equal(pres.i18n.dominant, 'de');
+  assert.equal(
+    pres.i18n.versions.nl.slides[0].content.title,
+    'A nl',
+    'the Dutch version is kept as a translation, not overwritten',
+  );
+});
+
+test('rendering a version for export or publish moves the language mode only', () => {
+  const pres = makeDeckOpenedInGerman();
+  const projected = projectPresentationForLang(pres, 'de');
+
+  assert.equal(projected.lang, 'de');
+  assert.equal(projected.i18n.active, 'de');
+  assert.equal(projected.i18n.dominant, 'nl', 'the source is not renamed');
+  assert.equal(projected.slides[0].content.title, 'A de');
 });
 
 test('the follow API and the menu status both measure from the source', () => {

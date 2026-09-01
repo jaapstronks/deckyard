@@ -92,11 +92,22 @@ export function normalizeI18n(pres, { slideTypes } = {}) {
     i18n.versions && typeof i18n.versions === 'object' ? i18n.versions : {};
   i18n.versions = versionsIn;
 
-  const dominant =
+  const active = normalizeLang(i18n.active) || null;
+
+  // `dominant` is the language the deck is written in and it stays put while
+  // another version is edited (D74). Two states have no source to point at:
+  // a deck that names none, and one whose `dominant` names a version it does
+  // not carry while `active` differs. Both resolve to the version being edited
+  // — the same repair the editor bootstrap makes — because top-level
+  // `title`/`slides` then hold *that* version's buffers, and backfilling
+  // `versions[dominant]` from them would manufacture a "source" that is a copy
+  // of a translation.
+  let dominant =
     normalizeLang(i18n.dominant) ||
+    active ||
     TRANSLATION_LANGS.find((l) => versionsIn[l]) ||
     DEFAULT_DECK_LANG;
-  const active = normalizeLang(i18n.active) || null;
+  if (active && active !== dominant && !versionsIn[dominant]) dominant = active;
 
   i18n.dominant = dominant;
   if (active) i18n.active = active;
@@ -120,14 +131,9 @@ export function normalizeI18n(pres, { slideTypes } = {}) {
   // 2. active === dominant (most common case, including AI wizard flow)
   // This ensures consistency when AI wizard creates a presentation (which sets up initial
   // i18n structure) and then immediately updates it with generated content.
-  // We avoid overwriting the dominant version when actively editing a different language.
+  // While a different language is being edited the dominant version is left
+  // alone; the repair above guarantees it exists.
   if (!active || active === dominant) {
-    i18n.versions[dominant] = {
-      title: typeof pres.title === 'string' ? pres.title : '',
-      slides: Array.isArray(pres.slides) ? pres.slides : [],
-    };
-  } else if (!i18n.versions[dominant]) {
-    // Backfill dominant version if missing and we're editing a different language
     i18n.versions[dominant] = {
       title: typeof pres.title === 'string' ? pres.title : '',
       slides: Array.isArray(pres.slides) ? pres.slides : [],

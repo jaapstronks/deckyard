@@ -157,8 +157,9 @@ export function createLanguageMode({
    * title says so in words. `dominant` is the language the deck was written in
    * and it stays put while you edit another version (D74), so "source" names a
    * fixed version and a count is "texts the source has and this one does not" —
-   * a number with a stationary zero point. Moving the source is an explicit
-   * action of its own, not a side effect of opening a version.
+   * a number with a stationary zero point. Moving the source is a deliberate
+   * action, never a side effect of opening a version; this menu does not offer
+   * that action yet.
    */
   const versionItem = (lang, { active, progress }) => {
     const isActive = lang === active;
