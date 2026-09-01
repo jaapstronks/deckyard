@@ -459,8 +459,10 @@ export function createSaveManager({
       // Ensure server knows which language buffer is currently in pres.title/slides.
       pres.i18n = pres.i18n && typeof pres.i18n === 'object' ? pres.i18n : {};
       pres.i18n.active = normalizeLang(pres.i18n.active) || DEFAULT_DECK_LANG;
-      // Single mode: keep dominant in sync for list previews/back-compat.
-      pres.i18n.dominant = pres.i18n.active;
+      // `dominant` is deliberately NOT touched here. Saving in a language does
+      // not make that language the deck's source (D74) — the server keeps
+      // top-level title/slides on the dominant version for the list preview and
+      // the viewer default, and leaves `dominant` alone while `active` differs.
 
       // Ensure slide additions/moves exist in the other language too (structure only).
       try {

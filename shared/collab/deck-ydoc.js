@@ -39,6 +39,14 @@
  * version are dropped (reported in `warnings`), diverging types follow the
  * dominant version, and per-language item texts are matched by index.
  *
+ * That still holds now that `dominant` no longer follows the version being
+ * edited (D74). Editing another version cannot make the dominant one lag in
+ * structure, because the editor's save sync mirrors slide adds, moves and
+ * non-translatable values from the *active* version into **every** existing
+ * version, the dominant one included — so by the time a deck reaches this
+ * bootstrap the versions already agree on structure, and reading it off the
+ * dominant version is a choice of which copy to read, not which one wins.
+ *
  * This module is shared between server (yjs from npm) and client (vendored
  * bundle), so the Y namespace is injected instead of imported.
  */

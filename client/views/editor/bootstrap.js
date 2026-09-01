@@ -92,12 +92,15 @@ export function initPresentationI18n({ pres, initialLang } = {}) {
       normalizeLang(pres.i18n.dominant) ||
       DEFAULT_DECK_LANG;
   }
+  // `dominant` is the language the deck is *written in* — the fixed point every
+  // translation count is measured from. It is filled in when the deck names
+  // none, and otherwise left exactly where it is: opening another version moves
+  // `active`, never the source (D74). `active` is the version being edited and
+  // presented both — the presenter reads it before `dominant` — so there is
+  // still one language mode, it is just not the same field as the source.
   if (!normalizeLang(pres.i18n.dominant)) {
     pres.i18n.dominant = pres.i18n.active;
   }
-
-  // Single source of truth: one "language mode" for both edit & present.
-  pres.i18n.dominant = pres.i18n.active;
 
   // Ensure the active version exists and references the current editable buffers.
   if (!pres.i18n.versions[pres.i18n.active]) {
@@ -109,11 +112,12 @@ export function initPresentationI18n({ pres, initialLang } = {}) {
     pres.i18n.versions[pres.i18n.active].title = pres.title;
     pres.i18n.versions[pres.i18n.active].slides = pres.slides;
   }
+  // A `dominant` naming a version the deck does not carry is not a source.
+  // Point it at the version being edited rather than backfilling it from these
+  // buffers: that would leave two versions sharing one slides array, and every
+  // edit to the active one would silently rewrite the source too.
   if (!pres.i18n.versions[pres.i18n.dominant]) {
-    pres.i18n.versions[pres.i18n.dominant] = {
-      title: pres.title,
-      slides: pres.slides,
-    };
+    pres.i18n.dominant = pres.i18n.active;
   }
 }
 

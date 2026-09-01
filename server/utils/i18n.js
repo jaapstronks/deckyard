@@ -38,10 +38,11 @@ export function projectPresentationForLang(pres, lang) {
     lang: l,
     title: v.title || pres.title,
     slides: Array.isArray(v.slides) && v.slides.length ? v.slides : pres.slides,
+    // Only the language mode moves: `dominant` is the language the deck is
+    // written in, and rendering a version does not change that (D74).
     i18n: {
       ...(pres?.i18n && typeof pres.i18n === 'object' ? pres.i18n : {}),
       active: l,
-      dominant: l,
     },
   };
 }
