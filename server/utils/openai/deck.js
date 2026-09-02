@@ -220,7 +220,7 @@ export async function generateDeckJsonFromRawContent(
     model,
     temperature: 0.2,
     responseFormat: { type: 'json_object' },
-    // Claude requires max_tokens; OpenAI ignores it.
+    // Binding on every vendor since B214; a whole deck needs the long budget.
     maxTokens: 12000,
     messages: [
       { role: 'system', content: system },
