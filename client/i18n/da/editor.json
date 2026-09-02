@@ -644,7 +644,6 @@
   "editor.slide.duration.help": "Lad feltet stå tomt for at bruge præsentationens standard ({default} s). Gælder kun denne slide.",
   "editor.slide.duration.label": "Slidens varighed (sekunder)",
   "editor.slide.fillTranslation": "Udfyld slide…",
-  "editor.slide.fillTranslation.title": "Udfyld denne slide fra det andet sprog (med forhåndsvisning).",
   "editor.slide.lock": "Lås slide",
   "editor.slide.moveTo": "Flyt til position…",
   "editor.slide.moveToEnd": "Flyt til slutningen",

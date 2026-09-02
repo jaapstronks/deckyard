@@ -654,7 +654,6 @@
   "editor.slide.duration.help": "Deixe vazio para usar o valor por omissão do deck ({default} s). Só afeta este diapositivo.",
   "editor.slide.duration.label": "Duração do diapositivo (segundos)",
   "editor.slide.fillTranslation": "Preencher diapositivo…",
-  "editor.slide.fillTranslation.title": "Preencher este diapositivo a partir do outro idioma (com pré-visualização).",
   "editor.slide.lock": "Bloquear diapositivo",
   "editor.slide.moveTo": "Mover para a posição…",
   "editor.slide.moveToEnd": "Mover para o fim",

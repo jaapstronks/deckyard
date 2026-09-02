@@ -653,7 +653,6 @@
   "editor.slide.duration.help": "La feltet stå tomt for å bruke standarden for presentasjonen ({default} s). Gjelder bare dette lysbildet.",
   "editor.slide.duration.label": "Lysbildets varighet (sekunder)",
   "editor.slide.fillTranslation": "Fyll lysbilde…",
-  "editor.slide.fillTranslation.title": "Fyll dette lysbildet fra det andre språket (med forhåndsvisning).",
   "editor.slide.lock": "Lås lysbilde",
   "editor.slide.moveTo": "Flytt til posisjon…",
   "editor.slide.moveToEnd": "Flytt til slutten",

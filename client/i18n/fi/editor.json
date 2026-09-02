@@ -658,7 +658,6 @@
   "editor.slide.duration.help": "Tyhjänä käytetään esityksen oletusta ({default} s). Koskee vain tätä diaa.",
   "editor.slide.duration.label": "Dian kesto (sekuntia)",
   "editor.slide.fillTranslation": "Täytä dia…",
-  "editor.slide.fillTranslation.title": "Täytä tämä dia toisesta kielestä (esikatselulla).",
   "editor.slide.lock": "Lukitse dia",
   "editor.slide.moveTo": "Siirrä paikkaan…",
   "editor.slide.moveToEnd": "Siirrä loppuun",
