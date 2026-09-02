@@ -331,7 +331,7 @@ export async function rewriteJoinOrigin(page, origin) {
  * after; there is no deeper meaning, and nothing resolves them. See
  * {@link pinJoinCode} for why an unresolvable code is the honest choice.
  */
-export const MARKETING_FOLLOW_CODES = { nl: 'HAVEN', en: 'WHARF' };
+export const MARKETING_FOLLOW_CODES = { nl: 'HAVEN', 'en-GB': 'WHARF' };
 
 /**
  * Pin the join code — and the QR beside it — so a shot reproduces byte for byte.
@@ -350,10 +350,12 @@ export const MARKETING_FOLLOW_CODES = { nl: 'HAVEN', en: 'WHARF' };
  * same layer and the same after-render moment as {@link rewriteJoinOrigin}.
  *
  * **What it substitutes.** Every element the renderers mark with
- * `data-follow-code="<nl|en>"` — the invite slide's code, the poll slide's two,
- * the feedback slide's two — gets its language's pinned code. The marker exists
- * for the same reason `data-follow-go-url` does: a capture hook that is not a
- * style class and cannot be renamed by a CSS tidy-up.
+ * `data-follow-code="<deck language>"` — the invite slide's code, and one per
+ * version on the poll and feedback slides — gets its language's pinned code.
+ * The key is the deck-axis spelling (`nl`, `en-GB`), the same one the mint
+ * files codes under since B182/D72 #6. The marker exists for the same reason
+ * `data-follow-go-url` does: a capture hook that is not a style class and
+ * cannot be renamed by a CSS tidy-up.
  *
  * **The QR.** {@link rewriteJoinOrigin} deliberately leaves it alone, on the
  * grounds that re-encoding would produce a scannable code pointing at a deck id

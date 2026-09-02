@@ -134,14 +134,12 @@ test('render follows ctx.lang, not the slide', () => {
     content: { presentationId: 'deck-1' },
   };
 
-  const nl = renderSlideHtml(slide, {
-    lang: 'nl',
-    followCodes: { nl: '1111', en: '2222' },
-  });
-  const en = renderSlideHtml(slide, {
-    lang: 'en-GB',
-    followCodes: { nl: '1111', en: '2222' },
-  });
+  // Codes are keyed by deck language, one per version the deck has (B182/D72
+  // #6) — the same spelling the render language uses, so the invite reads its
+  // own version's code directly.
+  const codes = { nl: '1111', 'en-GB': '2222' };
+  const nl = renderSlideHtml(slide, { lang: 'nl', followCodes: codes });
+  const en = renderSlideHtml(slide, { lang: 'en-GB', followCodes: codes });
 
   assert.match(
     nl,
@@ -164,7 +162,7 @@ test('render follows ctx.lang, not the slide', () => {
     'the QR target should carry the version language',
   );
   assert.match(nl, /1111/, 'the nl version should show the nl join code');
-  assert.match(en, /2222/, 'the en-GB version should show the en join code');
+  assert.match(en, /2222/, 'the en-GB version should show the en-GB join code');
 });
 
 test('a stale stored language on an unsaved deck is ignored at render', () => {

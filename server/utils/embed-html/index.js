@@ -31,7 +31,7 @@ export function buildEmbedHtml(
     allowFullscreen = true,
     allowedOrigins = [],
     lang = null,
-    hasOtherLang = false,
+    versionLangs = [],
     langSwitch = false,
     headHtml = '',
     watermark = null,
@@ -104,7 +104,12 @@ export function buildEmbedHtml(
       langSwitch: !!langSwitch,
     },
     lang: normalizeLang(lang),
-    hasOtherLang: !!hasOtherLang,
+    // The versions this deck actually has, so the switch offers those and not
+    // a fixed `NL EN` pair (B182/D72 #6). Normalized here rather than trusted:
+    // the value reaches an inlined script.
+    versionLangs: (Array.isArray(versionLangs) ? versionLangs : [])
+      .map(normalizeLang)
+      .filter((l, i, all) => l && all.indexOf(l) === i),
   };
 
   // Build external font link/script tags for managed fonts (Adobe, Monotype, Google)

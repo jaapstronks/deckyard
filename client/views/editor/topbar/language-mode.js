@@ -28,7 +28,6 @@ import {
   getSupportedLangs,
   isSupportedLang,
 } from '../../../lib/format/i18n.js';
-import { getLangDisplayName } from '../../../lib/format/lang-selector.js';
 import { confirmModal, createModal } from '../../../lib/dom/modal.js';
 import { createDropdown } from '../../../lib/dom/dropdown.js';
 import { makeDropdownCaret } from '../../../lib/dom/icons.js';
@@ -36,6 +35,7 @@ import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom.js';
 import {
   DEFAULT_DECK_LANG,
+  getLangDisplayName,
   translationSourceFor,
 } from '../../../../shared/i18n-utils.js';
 import {

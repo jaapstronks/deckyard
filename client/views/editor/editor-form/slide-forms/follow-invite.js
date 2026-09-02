@@ -1,9 +1,9 @@
 import { t } from '../../../../lib/ui-i18n.js';
 import {
   DEFAULT_DECK_LANG,
+  getLangDisplayName,
   resolveDeckLang,
 } from '../../../../../shared/i18n-utils.js';
-import { getLangDisplayName } from '../../../../lib/format/lang-selector.js';
 import { h } from '../../../../lib/dom.js';
 
 export function renderFollowInviteForm({

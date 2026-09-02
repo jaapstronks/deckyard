@@ -25,8 +25,10 @@ import {
   DEFAULT_AI_NAME,
   DEFAULT_AI_EMAIL,
 } from '../../../../shared/constants/ai.js';
-import { TRANSLATION_LANGS } from '../../../../shared/i18n-utils.js';
-import { getLangDisplayName } from '../../../lib/format/lang-selector.js';
+import {
+  getLangDisplayName,
+  TRANSLATION_LANGS,
+} from '../../../../shared/i18n-utils.js';
 
 /**
  * Create the admin tab component.

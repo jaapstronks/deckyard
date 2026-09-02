@@ -476,7 +476,7 @@ const createElementRestriction = {
 // the remedies are named in the message. The burndown took the axis-shaped
 // ones (defaults, membership tests, re-declarations, `?lang=` validation) to
 // roughly fifty in 21 files; `deckLangLiteralAllowlist` below names what is
-// left and why — 14 files now — and it may only shrink.
+// left and why — 12 files now — and it may only shrink.
 //
 // Whole-token by construction — the selector matches the string literal value
 // exactly, so `nl-NL`, `en-GB-oxendict` in a locale tag, or the substring in a
@@ -500,11 +500,13 @@ const deckLangLiteralRestriction = {
 // literal, so a file that is cleaned up cannot quietly stay exempt.
 //
 // Two reasons appear, and only two:
-//   * *bilingual chrome* — the paired alt-text inputs and the viewer's fixed
-//     NL/EN link pair. Widening these to N languages is a UI design job, not a
-//     rename: B182. (The editor's NL⇄EN toggle is gone — it is a language menu
-//     over every version the deck has since B182 fase 2 — and the translate
-//     modals name their source and target off the axis since fase 3.)
+//   * *bilingual chrome* — the paired alt-text inputs of the image library.
+//     Widening these to N languages is a UI design job, not a rename: B182
+//     fase 5. (The editor's NL⇄EN toggle is gone — it is a language menu over
+//     every version the deck has since fase 2 — the translate modals name
+//     their source and target off the axis since fase 3, and the public
+//     viewer, the embed and the follow codes follow the deck's versions since
+//     fase 4.)
 //   * *UI-locale axis* — `'nl'` there is a locale directory
 //     (`client/i18n/nl/`), a different vocabulary that shares a spelling.
 const deckLangLiteralAllowlist = [
@@ -513,7 +515,6 @@ const deckLangLiteralAllowlist = [
   'client/views/editor/image-library/upload.js',
   'client/views/editor/imagekit-picker.js',
   'client/views/editor/media/apply-pick.js',
-  'client/views/presenter/follow-codes-pill.js',
   // the axis↔locale seam: these name `en-GB` precisely because it is the one
   // code the two axes spell differently
   'client/views/follow/i18n.js',
@@ -525,8 +526,6 @@ const deckLangLiteralAllowlist = [
   'client/views/editor/fields/background.js',
   'client/views/settings/tabs/integrations-tab.js',
   'client/views/settings/tabs/preferences-tab.js',
-  // the standalone embed IIFE: no imports at all by design
-  'client/embed-sdk.js',
 ];
 
 export default [
@@ -656,6 +655,7 @@ export default [
         ...clientRestrictedSyntax,
         overlayClassRestriction,
         instanceAdminRestriction,
+        deckLangLiteralRestriction,
       ],
     },
   },

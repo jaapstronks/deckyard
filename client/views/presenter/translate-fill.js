@@ -1,5 +1,5 @@
 import {
-  TRANSLATION_LANG_NATIVE_LABELS,
+  getLangDisplayName,
   translationSourceFor,
 } from '../../../shared/i18n-utils.js';
 import { translationProgress } from '../../../shared/i18n-progress.js';
@@ -69,9 +69,7 @@ export function ensureFollowAlongTranslations({
       'presenter.translateFill.running',
       'Translating ({langs})…',
       {
-        langs: targets
-          .map((l) => TRANSLATION_LANG_NATIVE_LABELS[l] || l)
-          .join(', '),
+        langs: targets.map(getLangDisplayName).join(', '),
       },
     );
 

@@ -8,8 +8,7 @@ import { t } from '../ui-i18n.js';
 import { h } from '../dom.js';
 import {
   DEFAULT_SUPPORTED_DECK_LANGS,
-  normalizeLang,
-  TRANSLATION_LANG_NATIVE_LABELS,
+  getLangDisplayName,
 } from '../../../shared/i18n-utils.js';
 
 /**
@@ -25,16 +24,6 @@ export function getLangShortLabel(code) {
   return String(code || '')
     .split('-')[0]
     .toUpperCase();
-}
-
-/**
- * Get the native display name for a language, from the one axis-keyed map in
- * `shared/i18n-utils.js`. Falls back to the code for anything off-axis.
- * @param {string} code
- * @returns {string}
- */
-export function getLangDisplayName(code) {
-  return TRANSLATION_LANG_NATIVE_LABELS[normalizeLang(code) ?? code] || code;
 }
 
 /**
