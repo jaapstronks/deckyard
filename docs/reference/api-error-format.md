@@ -57,8 +57,8 @@ The internal `/api/*` routes return errors in one canonical envelope:
   | `sandbox_quota_exceeded` | 429    | `{ resource, limit, used }` with `resource` `decks` or `bytes`.                                                      |
 
   _Implementation status (2026-09-02):_ the location shape and the first
-  five payload shapes are what the code sends today. B208 adds the register
-  (`server/utils/error-details.js`) with an assertion on `jsonError()` and
+  five payload shapes are what the code sends today. B208 adds the register —
+  a new module in `server/utils/` — with an assertion on `jsonError()` and
   `AppError.toJSON()` that throws outside production, gives
   `sandbox_quota_exceeded` its one shape (it sends two), and moves the prose
   that the Notion 501s and `versions.js`'s `ai_unavailable` still put in
