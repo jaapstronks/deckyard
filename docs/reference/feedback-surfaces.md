@@ -176,9 +176,17 @@ validations went to the helper in PR 1, the 13 API refusals caught in a save
 handler in PR 2 — and no file spells the message element by hand any more: the
 last nineteen moved to `createInlineError()` in PR 3. A `*-error` class name
 now means exactly one thing, so the pages that were never messages were renamed
-after what they are: `access-notice-*` for the editor's denied/not-found page,
-`analytics-unavailable`, `shared-report-unavailable`, `dashboard-alert-banner`,
-`share-viewer-card-icon`.
+after what they are: `dashboard-alert-banner`, and — for the four views that
+each drew their own whole-page dead end — `access-notice-*`,
+`analytics-unavailable`, `shared-report-unavailable`, `share-viewer-card-icon`.
+Four spellings of one thing is the same drift one level up, so B213 folded them
+into one factory: `createPageUnavailable()` in
+[`client/lib/dom/page-unavailable.js`](../../client/lib/dom/page-unavailable.js),
+class family `.page-unavailable*`. **A whole-page state is not a sixth kind** —
+there is no message here, only a page saying what it is; the table above is
+about telling a user something _alongside_ what they are doing. Reach for it
+when the page has nothing else on it, and for `createInlineError()` the moment
+there is a form to refuse.
 
 The `toast.error` calls left in the refuse-and-return allowlist are a different
 shape: a modal that refuses to open, a menu item, a card action, a file dropped
