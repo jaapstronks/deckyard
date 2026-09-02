@@ -649,7 +649,6 @@
   "editor.slide.duration.help": "Leer lassen, um den Deck-Standard ({default} s) zu verwenden. Nur für diese Folie überschreiben.",
   "editor.slide.duration.label": "Foliendauer (Sekunden)",
   "editor.slide.fillTranslation": "Folie ausfüllen…",
-  "editor.slide.fillTranslation.title": "Diese Folie aus der anderen Sprache ausfüllen (mit Vorschau).",
   "editor.slide.lock": "Folie sperren",
   "editor.slide.moveTo": "An Position verschieben…",
   "editor.slide.moveToEnd": "Ans Ende verschieben",

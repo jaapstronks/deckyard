@@ -654,7 +654,6 @@
   "editor.slide.duration.help": "Puste pole oznacza wartość domyślną prezentacji ({default} s). Dotyczy tylko tego slajdu.",
   "editor.slide.duration.label": "Czas trwania slajdu (w sekundach)",
   "editor.slide.fillTranslation": "Wypełnij slajd…",
-  "editor.slide.fillTranslation.title": "Wypełnij ten slajd z innego języka (z podglądem).",
   "editor.slide.lock": "Zablokuj slajd",
   "editor.slide.moveTo": "Przenieś na pozycję…",
   "editor.slide.moveToEnd": "Przenieś na koniec",

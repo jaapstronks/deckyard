@@ -651,7 +651,6 @@
   "editor.slide.duration.help": "Lascia vuoto per usare il valore predefinito della presentazione ({default} s). Vale solo per questa slide.",
   "editor.slide.duration.label": "Durata della slide (secondi)",
   "editor.slide.fillTranslation": "Compila slide…",
-  "editor.slide.fillTranslation.title": "Compila questa slide dall'altra lingua (con anteprima).",
   "editor.slide.lock": "Blocca slide",
   "editor.slide.moveTo": "Sposta in posizione…",
   "editor.slide.moveToEnd": "Sposta alla fine",

@@ -639,7 +639,6 @@
   "editor.slide.duration.help": "Laissez vide pour utiliser la valeur par défaut du deck ({default} s). À ne modifier que pour cette diapositive.",
   "editor.slide.duration.label": "Durée de la diapositive (secondes)",
   "editor.slide.fillTranslation": "Remplir la diapositive…",
-  "editor.slide.fillTranslation.title": "Remplir cette diapositive depuis l'autre langue (avec aperçu).",
   "editor.slide.lock": "Verrouiller la diapositive",
   "editor.slide.moveTo": "Déplacer à la position…",
   "editor.slide.moveToEnd": "Déplacer à la fin",
