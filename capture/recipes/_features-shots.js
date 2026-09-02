@@ -69,6 +69,42 @@ async function editorReady(page) {
 }
 
 /**
+ * Open one tab of the share dialog and wait until its panel is really open.
+ *
+ * Clicking the strip once is not enough, and the reason is worth writing down.
+ * The dialog is vertically centred and grows as its two sections fetch — the
+ * collaborator list and the share links both load after `show()`. Measured
+ * here it goes from 621 to 726 px tall, which lifts the tab strip 53 px: more
+ * than the height of the segment being aimed at. Puppeteer clicks by
+ * coordinate, so a click dispatched across that reflow lands where the strip no
+ * longer is. The panel then stays hidden, and the *next* wait times out on the
+ * panel's content — reporting a missing link row for what was really a missed
+ * click, on a row that is sitting in the DOM the whole time.
+ *
+ * Clicking until the panel reports itself open aims at the settled layout and
+ * makes the recipe fail on the step that actually failed.
+ *
+ * @param {import('puppeteer-core').Page} page
+ * @param {'organization'|'link'|'publish'} tab
+ * @returns {Promise<void>}
+ */
+async function openShareTab(page, tab) {
+  for (let attempt = 1; attempt <= 5; attempt += 1) {
+    await page.click(`.share-tabs [data-value="${tab}"]`);
+    try {
+      await page.waitForSelector(
+        `.share-tab-panel[data-tab="${tab}"]:not([hidden])`,
+        { visible: true, timeout: 2_000 },
+      );
+      return;
+    } catch {
+      // The strip moved under the click; aim again at the current layout.
+    }
+  }
+  throw new Error(`Share dialog: the "${tab}" tab did not open after 5 clicks`);
+}
+
+/**
  * `presenter-view-{nl,en}` — the presenter's own screen during a talk: the
  * stage on the left, the console beside it with the timer, the next slide and
  * the speaker notes for the slide that is up.
@@ -332,7 +368,7 @@ export function shareLinkRulesShot(lang) {
         visible: true,
         timeout: 10_000,
       });
-      await page.click('.share-tabs [data-value="link"]');
+      await openShareTab(page, 'link');
       await page.waitForSelector(
         '.share-tab-panel[data-tab="link"] .share-link-item',
         {
