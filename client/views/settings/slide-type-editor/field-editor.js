@@ -6,53 +6,54 @@
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
+import { CUSTOM_TYPE_FIELD_TYPES } from '../../../../shared/slide-types/custom-field-definitions.js';
 
-// Labels are resolved through t() at render time (the dictionary is not loaded at import time).
-const FIELD_TYPES = [
-  {
-    value: 'string',
-    labelKey: 'settings.slideTypes.fields.type.string',
-    label: 'String',
-  },
-  {
-    value: 'markdown',
-    labelKey: 'settings.slideTypes.fields.type.markdown',
-    label: 'Markdown',
-  },
-  {
-    value: 'image',
-    labelKey: 'settings.slideTypes.fields.type.image',
-    label: 'Image',
-  },
-  {
-    value: 'images',
-    labelKey: 'settings.slideTypes.fields.type.images',
-    label: 'Images',
-  },
-  {
-    value: 'enum',
-    labelKey: 'settings.slideTypes.fields.type.enum',
-    label: 'Enum',
-  },
-  {
-    value: 'items',
-    labelKey: 'settings.slideTypes.fields.type.items',
-    label: 'Items (repeater)',
-  },
-];
+// The dropdown offers exactly the types the storage layer accepts, in that
+// module's order — a seventh option here would be a control for something no
+// save can keep. Labels are resolved through t() at render time (the dictionary
+// is not loaded at import time).
+const FIELD_TYPE_LABELS = {
+  string: ['settings.slideTypes.fields.type.string', 'String'],
+  markdown: ['settings.slideTypes.fields.type.markdown', 'Markdown'],
+  image: ['settings.slideTypes.fields.type.image', 'Image'],
+  images: ['settings.slideTypes.fields.type.images', 'Images'],
+  enum: ['settings.slideTypes.fields.type.enum', 'Enum'],
+  items: ['settings.slideTypes.fields.type.items', 'Items (repeater)'],
+};
 
 /**
  * Create a field list editor.
  * @param {Object} options
  * @param {Array} options.fields - Initial field definitions
  * @param {Function} options.onChange - Called with updated fields array
- * @returns {{ el: HTMLElement, update: Function }}
+ * @returns {{ el: HTMLElement, update: Function, showProblem: Function, clearProblem: Function }}
  */
 export function createFieldListEditor({ fields = [], onChange }) {
   const el = h('div', { class: 'field-list-editor' });
   let currentFields = structuredClone(fields);
+  /** @type {{index: number, itemIndex: number|null, message: string}|null} */
+  let problem = null;
+  // Which rows the user had expanded, keyed on the field object itself so a
+  // reorder or a removal carries the state with the row. A row is re-created on
+  // every render (a type change rebuilds the body), and a `<details>` that
+  // closes itself on change hides the very sub-editor the change just revealed —
+  // which is how an `items` field ends up saved with no item fields (B200).
+  const openRows = new WeakSet();
 
   function notify() {
+    // Any edit invalidates the located problem: it named a row that may no
+    // longer be the offending one. Cleared silently — the callers that also
+    // restructure the list call render() right after, and a re-render per
+    // keystroke would steal focus.
+    if (problem) {
+      problem = null;
+      for (const node of el.querySelectorAll('.field-list-item-error')) {
+        node.remove();
+      }
+      for (const node of el.querySelectorAll('.field-list-item.is-invalid')) {
+        node.classList.remove('is-invalid');
+      }
+    }
     onChange?.(structuredClone(currentFields));
   }
 
@@ -95,7 +96,16 @@ export function createFieldListEditor({ fields = [], onChange }) {
 
   function renderFieldRow(index) {
     const field = currentFields[index];
+    const rowProblem = problem?.index === index ? problem : null;
     const details = h('details', { class: 'field-list-item' });
+    // A row keeps the state the user left it in, and a located problem forces
+    // its row open — an error the user has to hunt for is barely an error.
+    details.open = openRows.has(field) || Boolean(rowProblem);
+    if (rowProblem) details.classList.add('is-invalid');
+    details.addEventListener('toggle', () => {
+      if (details.open) openRows.add(field);
+      else openRows.delete(field);
+    });
 
     // Summary row
     const summary = h('summary', { class: 'field-list-item-summary' });
@@ -192,6 +202,18 @@ export function createFieldListEditor({ fields = [], onChange }) {
     // Expanded body
     const body = h('div', { class: 'field-list-item-body' });
 
+    // The problem sits at the top of the body when it is this field's own; a
+    // nested one is shown by the sub-editor, at the sub-row it belongs to.
+    if (rowProblem && rowProblem.itemIndex == null) {
+      body.append(
+        h('div', {
+          class: 'field-list-item-error',
+          role: 'alert',
+          text: rowProblem.message,
+        }),
+      );
+    }
+
     // Key
     const keyRow = h('div', { class: 'field-list-field-row' });
     keyRow.append(
@@ -238,12 +260,13 @@ export function createFieldListEditor({ fields = [], onChange }) {
     // Type
     const typeRow = h('div', { class: 'field-list-field-row' });
     const typeSelect = h('select', { class: 'form-input form-input-sm' });
-    for (const ft of FIELD_TYPES) {
+    for (const value of CUSTOM_TYPE_FIELD_TYPES) {
+      const [key, fallback] = FIELD_TYPE_LABELS[value] || [null, value];
       typeSelect.append(
         h('option', {
-          value: ft.value,
-          text: t(ft.labelKey, ft.label),
-          selected: field.type === ft.value,
+          value,
+          text: key ? t(key, fallback) : fallback,
+          selected: field.type === value,
         }),
       );
     }
@@ -440,6 +463,13 @@ export function createFieldListEditor({ fields = [], onChange }) {
           notify();
         },
       });
+      if (rowProblem && rowProblem.itemIndex != null) {
+        nestedEditor.showProblem({
+          index: rowProblem.itemIndex,
+          itemIndex: null,
+          message: rowProblem.message,
+        });
+      }
 
       itemsSection.append(minRow, maxRow, nestedEditor.el);
       body.append(itemsSection);
@@ -451,11 +481,32 @@ export function createFieldListEditor({ fields = [], onChange }) {
 
   function update(newFields) {
     currentFields = structuredClone(newFields);
+    problem = null;
+    render();
+  }
+
+  /**
+   * Point at the field a rejected save named, and return the row's element so
+   * the caller can bring it into view.
+   * @param {{index: number, itemIndex: number|null, message: string}} next
+   * @returns {HTMLElement|null} the offending row, or null when the index does
+   *   not name one.
+   */
+  function showProblem(next) {
+    problem = next;
+    render();
+    return el.querySelector('.field-list-item.is-invalid');
+  }
+
+  /** Drop the located problem, if any. */
+  function clearProblem() {
+    if (!problem) return;
+    problem = null;
     render();
   }
 
   render();
-  return { el, update };
+  return { el, update, showProblem, clearProblem };
 }
 
 function createInput(value, onInput, attrs = {}) {

@@ -629,30 +629,31 @@ export function createSlideTypesTab({ user } = {}) {
     const editor = createSlideTypeEditor({
       slideType,
       coreTypes: slideTypeMeta,
+      // Deliberately no catch: a refused save is a state of the open form, and
+      // the editor shows it beside its own Save button. Toasting it here as
+      // well would be a second, shorter-lived spelling of the same fact — and
+      // the toast alone is what made the failure look like nothing happened
+      // (B200).
       onSave: async (data) => {
-        try {
-          if (slideType?.id) {
-            await api(`/api/custom-slide-types/${slideType.id}`, {
-              method: 'PUT',
-              body: JSON.stringify(data),
-            });
-            toast.success(
-              t('settings.slideTypes.updateSuccess', 'Slide type updated.'),
-            );
-          } else {
-            await api('/api/custom-slide-types', {
-              method: 'POST',
-              body: JSON.stringify(data),
-            });
-            toast.success(
-              t('settings.slideTypes.createSuccess', 'Slide type created.'),
-            );
-          }
-          await reloadCustomTypes();
-          closeEditor();
-        } catch (err) {
-          toast.error(err);
+        if (slideType?.id) {
+          await api(`/api/custom-slide-types/${slideType.id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+          });
+          toast.success(
+            t('settings.slideTypes.updateSuccess', 'Slide type updated.'),
+          );
+        } else {
+          await api('/api/custom-slide-types', {
+            method: 'POST',
+            body: JSON.stringify(data),
+          });
+          toast.success(
+            t('settings.slideTypes.createSuccess', 'Slide type created.'),
+          );
         }
+        await reloadCustomTypes();
+        closeEditor();
       },
       onCancel: closeEditor,
     });
