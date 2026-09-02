@@ -19,6 +19,10 @@ import * as Y from 'yjs';
 import { createDeckYdocCodec } from '../shared/collab/deck-ydoc.js';
 import { textFieldSpecForType } from '../shared/slide-types/text-fields.js';
 import { SLIDE_TYPES } from '../shared/slide-types.js';
+import {
+  CURRENT_SCHEMA_VERSION,
+  migratePresentation,
+} from '../shared/slide-types/schema-version.js';
 
 const codec = createDeckYdocCodec(Y);
 
@@ -141,6 +145,164 @@ function twoLangDeck() {
         },
       },
     },
+  };
+}
+
+/**
+ * The prose a legacy bilingual deck carries, per language. Every string here is
+ * translated — if one of them projects back empty, a translation was lost.
+ */
+const LEGACY_PROSE = {
+  nl: {
+    title: 'Oude vormen',
+    processTitle: 'Zo werkt het',
+    stepTitle: 'Verkennen',
+    stepText: 'Eerst kijken we rond.',
+    teamTitle: 'Ons team',
+    cardName: 'Ferry Hogeboom',
+    cardByline: 'Projectleider community & events',
+    cardAlt: 'Ferry kijkt lachend in de camera.',
+    logoTitle: 'Onze partners',
+    logoName: 'Hogeschool',
+    logoAlt: 'Het logo van de hogeschool.',
+    controlName: 'Ada Lovelace',
+    controlByline: 'Rekenkundige',
+    controlAlt: 'Ada in profiel.',
+    chapterTitle: 'Hoofdstuk twee',
+    chapterSub: 'Waar we nu staan',
+    pollQuestion: 'Wat vind je ervan?',
+    pollYes: 'Eens',
+    pollNo: 'Oneens',
+  },
+  'en-GB': {
+    title: 'Legacy shapes',
+    processTitle: 'How it works',
+    stepTitle: 'Explore',
+    stepText: 'First we look around.',
+    teamTitle: 'Our team',
+    cardName: 'Ferry Hogeboom',
+    cardByline: 'Community & events project lead',
+    cardAlt: 'Ferry smiles into the camera.',
+    logoTitle: 'Our partners',
+    logoName: 'University',
+    logoAlt: 'The university logo.',
+    controlName: 'Ada Lovelace',
+    controlByline: 'Mathematician',
+    controlAlt: 'Ada in profile.',
+    chapterTitle: 'Chapter two',
+    chapterSub: 'Where we stand',
+    pollQuestion: 'What do you think?',
+    pollYes: 'Agree',
+    pollNo: 'Disagree',
+  },
+};
+
+/** The slides of one language version of `legacyBilingualDeck()`. */
+function legacySlides(lang) {
+  const s = LEGACY_PROSE[lang];
+  return [
+    // v6 shape: the collection still lives under `steps`, never under `items`.
+    {
+      id: 's-process',
+      type: 'process-slide',
+      content: {
+        title: s.processTitle,
+        direction: 'horizontal',
+        steps: [{ title: s.stepTitle, text: s.stepText }],
+      },
+      notes: '',
+    },
+    // v7 shape: the numbered `card*` family, bounded by `cardCount`.
+    {
+      id: 's-team',
+      type: 'team-cards-slide',
+      content: {
+        title: s.teamTitle,
+        cardCount: 1,
+        card1Image: '/uploads/ferry.jpg',
+        card1Name: s.cardName,
+        card1Byline: s.cardByline,
+        card1Alt: s.cardAlt,
+      },
+      notes: '',
+    },
+    // v7 shape: the numbered `logo*` family, a second family in the same deck.
+    {
+      id: 's-logos',
+      type: 'logo-wall-slide',
+      content: {
+        title: s.logoTitle,
+        logoCount: 1,
+        logo1Image: '/uploads/hogeschool.svg',
+        logo1Name: s.logoName,
+        logo1Alt: s.logoAlt,
+      },
+      notes: '',
+    },
+    // Control: the same type, already folded into the canonical v8 array. The
+    // migration must leave it exactly as it is.
+    {
+      id: 's-control',
+      type: 'team-cards-slide',
+      content: {
+        title: s.teamTitle,
+        members: [
+          {
+            image: '/uploads/ada.jpg',
+            name: s.controlName,
+            byline: s.controlByline,
+            alt: s.controlAlt,
+            imageFocusX: 50,
+            imageFocusY: 50,
+          },
+        ],
+      },
+      notes: '',
+    },
+    // v8 shape: the bare `option1..` slots the v7 -> v8 regex let through.
+    {
+      id: 's-poll',
+      type: 'poll-slide',
+      content: {
+        question: s.pollQuestion,
+        option1: s.pollYes,
+        option2: s.pollNo,
+      },
+      notes: '',
+    },
+    // v9 shape: the pre-rename `subtitle`, on a type that declares `subheading`
+    // (#1040 measured 20 translated strings lost under this key).
+    {
+      id: 's-chapter',
+      type: 'chapter-title-slide',
+      content: { title: s.chapterTitle, subtitle: s.chapterSub },
+      notes: '',
+    },
+  ];
+}
+
+/**
+ * A bilingual deck as an install predating v8 actually stores it: no schema
+ * stamp, both language versions in the legacy shapes, and a top-level `slides`
+ * that is a *copy* of the dominant version — which is what a fresh JSON parse
+ * gives you, references and all (#1040).
+ */
+function legacyBilingualDeck() {
+  const versions = {
+    nl: { title: LEGACY_PROSE.nl.title, slides: legacySlides('nl') },
+    'en-GB': {
+      title: LEGACY_PROSE['en-GB'].title,
+      slides: legacySlides('en-GB'),
+    },
+  };
+  return {
+    id: 'deck-legacy',
+    title: versions.nl.title,
+    lang: 'nl',
+    theme: 'default',
+    visibility: 'private',
+    slides: structuredClone(versions.nl.slides),
+    i18n: { dominant: 'nl', active: 'nl', versions },
   };
 }
 
@@ -417,6 +579,115 @@ describe('divergent versions are normalized with warnings, not corrupted', () =>
       'quote-slide',
     );
   });
+});
+
+describe('legacy shapes survive the read path in every language (#1040)', () => {
+  // Regression, B211 part 1. `migratePresentation()` walked `pres.slides` only,
+  // so the v6 -> v8 folds never reached `i18n.versions[*].slides`. The dominant
+  // version came out with `items[]`/`members[]`/`logos[]`, the other one kept
+  // the legacy slots — and because the type declares neither, the codec filed
+  // them as "plain LWW value, one per deck" and the dominant language won. On
+  // the CIIIC fork that silently emptied 465 translated strings.
+  //
+  // The deck below is pinned rather than read off disk: the opportunistic
+  // "real local decks" check at the bottom of this file skips on CI, which is
+  // why this shipped green.
+
+  it('migrates every language version, not only the dominant one', () => {
+    const deck = migratePresentation(legacyBilingualDeck());
+
+    assert.equal(deck.schemaVersion, CURRENT_SCHEMA_VERSION);
+    for (const [lang, version] of Object.entries(deck.i18n.versions)) {
+      const prose = LEGACY_PROSE[lang];
+      const [process, team, logos, control, poll, chapter] = version.slides;
+
+      assert.deepStrictEqual(
+        process.content.items,
+        [{ title: prose.stepTitle, text: prose.stepText }],
+        `${lang}: v6 steps folded into items`,
+      );
+      assert.ok(!('steps' in process.content), `${lang}: legacy key dropped`);
+
+      assert.equal(team.content.members?.[0]?.name, prose.cardName);
+      assert.equal(team.content.members?.[0]?.byline, prose.cardByline);
+      assert.equal(team.content.members?.[0]?.alt, prose.cardAlt);
+      assert.ok(!('card1Name' in team.content), `${lang}: slot keys dropped`);
+
+      assert.equal(logos.content.logos?.[0]?.name, prose.logoName);
+      assert.equal(logos.content.logos?.[0]?.alt, prose.logoAlt);
+      assert.ok(!('logo1Name' in logos.content), `${lang}: slot keys dropped`);
+
+      // The control slide was already canonical and must come out untouched.
+      assert.deepStrictEqual(control.content.members, [
+        {
+          image: '/uploads/ada.jpg',
+          name: prose.controlName,
+          byline: prose.controlByline,
+          alt: prose.controlAlt,
+          imageFocusX: 50,
+          imageFocusY: 50,
+        },
+      ]);
+
+      assert.deepStrictEqual(
+        poll.content.options,
+        [{ text: prose.pollYes }, { text: prose.pollNo }],
+        `${lang}: v8 option slots folded into options[]`,
+      );
+      assert.ok(!('option1' in poll.content), `${lang}: option keys dropped`);
+
+      assert.equal(chapter.content.subheading, prose.chapterSub);
+      assert.ok(!('subtitle' in chapter.content), `${lang}: subtitle renamed`);
+
+      assert.ok(
+        !('schemaVersion' in version),
+        `${lang}: a version carries no stamp of its own — the deck does`,
+      );
+    }
+  });
+
+  // The two shapes a deck is in when it reaches the codec. As parsed from
+  // storage, top-level `slides` is a separate array; after `normalizeI18n` it
+  // *is* the dominant version's array. Before the fix each shape broke
+  // differently: the first left both versions legacy and warned five times, the
+  // second folded the dominant version only and lost the English prose in
+  // silence — the case reported in #1040.
+  const readShapes = {
+    'as parsed from storage': () => migratePresentation(legacyBilingualDeck()),
+    'as normalizeI18n leaves it in memory': () =>
+      migratePresentation(normalizeTopLevel(legacyBilingualDeck())),
+  };
+
+  for (const [shape, buildDeck] of Object.entries(readShapes)) {
+    it(`round-trips a migrated legacy deck losslessly, ${shape}`, () => {
+      const deck = normalizeTopLevel(buildDeck());
+      const { projected, warnings } = roundTrip(deck);
+
+      assert.deepStrictEqual(warnings, []);
+      for (const lang of ['nl', 'en-GB']) {
+        const prose = LEGACY_PROSE[lang];
+        const [process, team, logos, control, poll, chapter] =
+          projected.i18n.versions[lang].slides;
+
+        assert.equal(process.content.items[0].title, prose.stepTitle, lang);
+        assert.equal(process.content.items[0].text, prose.stepText, lang);
+        assert.equal(team.content.members[0].name, prose.cardName, lang);
+        assert.equal(team.content.members[0].byline, prose.cardByline, lang);
+        assert.equal(team.content.members[0].alt, prose.cardAlt, lang);
+        assert.equal(logos.content.logos[0].name, prose.logoName, lang);
+        assert.equal(logos.content.logos[0].alt, prose.logoAlt, lang);
+        assert.equal(
+          control.content.members[0].byline,
+          prose.controlByline,
+          lang,
+        );
+        assert.equal(poll.content.question, prose.pollQuestion, lang);
+        assert.equal(poll.content.options[0].text, prose.pollYes, lang);
+        assert.equal(poll.content.options[1].text, prose.pollNo, lang);
+        assert.equal(chapter.content.subheading, prose.chapterSub, lang);
+      }
+    });
+  }
 });
 
 describe('CRDT wire format', () => {
