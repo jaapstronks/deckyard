@@ -110,7 +110,13 @@ Apply it at the recurring moments:
 - **DOM**: `h()` from `client/lib/dom.js` — no raw `document.createElement`.
 - **Strings**: `t(key, fallback)` from `client/lib/ui-i18n.js` for all
   user-facing copy; translations in `client/i18n/<locale>/<component>.json`.
-- **Feedback**: `toast` from `client/lib/dom/toast.js`. No `alert()`.
+- **Feedback**: `toast` from `client/lib/dom/toast.js` for a _passing_
+  message — a confirmation, or the failure of an action that has no form on
+  screen to attach to. No `alert()`. A refusal of the form the user is filling
+  in is a state of that form, not a notification: it stays beside the control
+  or the Save button until the next attempt, names the field, and is not
+  toasted alongside (precedent: `client/views/settings/slide-type-editor/`,
+  #1072). The per-kind doctrine (place, lifetime, content, focus) is B202.
 - **Confirmations**: `confirmModal` / `createTextInput` from
   `client/lib/dom/modal.js`. No native `confirm()`/`prompt()` in new code.
 - **Modals**: follow the `client/lib/dom/modal.js` helpers (focus trap and
