@@ -104,6 +104,17 @@
 .has-slide-bg-light-text.slide-kpi-metrics .kpi-metric {
   border-color: color-mix(in srgb, var(--kpi-tile-fg) 26%, transparent);
 }
+/* On a background IMAGE the rim is not the problem: the fill is. A 45%-white
+   tile is a LIGHT surface, and a dark ground has already redirected
+   --kpi-tile-fg (== --slide-on-surface) to white — over a bright part of a photo
+   that composites to white-on-white, 1.0:1. The flat dark ground gets away with
+   it because 45% white over a near-black theme colour still lands mid-grey;
+   a photo carries no such guarantee. So on a photo the tile takes the same
+   scrim the timeline card takes (00-tokens.css § --slide-scrim-card), which is
+   the surface its already-white text was paired with all along. */
+.has-slide-bg.has-slide-bg-light-text.slide-kpi-metrics .kpi-metric {
+  --kpi-tile-bg: var(--slide-scrim-card);
+}
 
 .slide-kpi-metrics .kpi-grid[data-metric-count='1'] .kpi-metric {
   width: min(980px, 70%);

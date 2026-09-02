@@ -352,9 +352,14 @@ artefact set _is_ the claim, so the refresh takes a `--rebaseline-all` that
 re-baselines and commits everything, printing the same warning line the
 checker prints for `--all`.
 
-Implementation status: decided and briefed to deckyard-video; not yet built.
-Until it lands, a refresh PR can carry a jittered PNG with no re-baseline
-beside it, and a reviewer should read that as host noise, not as a change.
+Implementation status: built, in `deckyard-video` `scripts/refresh.ts`
+(PR #3). The commit is the re-baseline set plus `registry.json`; everything
+else that came back byte-different is restored to `HEAD` and named under
+"came back different, not committed" in both the run log and the PR body, so a
+reviewer reads the list rather than interpreting a diff. `--rebaseline-all` is
+the host-switch escape. In the same run the website checkout is brought to
+`origin/HEAD` before it branches, so a refresh no longer bases itself on the
+previous week's branch.
 
 ## Adding the next screenshot
 
