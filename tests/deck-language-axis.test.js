@@ -23,8 +23,8 @@ import {
   DEFAULT_DECK_LANG,
   DEFAULT_SUPPORTED_DECK_LANGS,
   TRANSLATION_LANGS,
+  getLangDisplayName,
   normalizeLang,
-  otherLang,
 } from '../shared/i18n-utils.js';
 
 const repoRoot = path.resolve(
@@ -71,55 +71,46 @@ test('normalizeLang is the one membership test, and it spans the axis', () => {
     assert.equal(normalizeLang(bogus), null, `${String(bogus)} is off-axis`);
 });
 
-test('otherLang answers only inside the bilingual pair', () => {
-  assert.equal(otherLang('nl'), 'en-GB');
-  assert.equal(otherLang('en-GB'), 'nl');
-  // "The other of twelve" has no answer, so the caller must name its target
-  // rather than be handed a guess (B182 widens the chrome that asks).
-  for (const code of TRANSLATION_LANGS.filter(
-    (c) => c !== 'nl' && c !== 'en-GB',
-  ))
-    assert.equal(otherLang(code), null, `otherLang(${code})`);
-  assert.equal(otherLang(null), null);
-});
-
-test('otherLang has no callers left outside the public viewer chrome', () => {
-  // B182 fase 2 removed the client accessor and every editor caller: "the other
-  // language" is now `translationSourceFor(pres, to)`, which answers for all
-  // twelve. What is left are the two static viewer routes that still render a
-  // fixed NL/EN link pair (phase 4) plus their server re-export. A new caller
-  // anywhere else is the bilingual assumption creeping back in.
-  const allowed = new Set([
-    'shared/i18n-utils.js',
-    'server/utils/i18n.js',
-    'server/routes/static/published.js',
-    'server/routes/static/embed.js',
-  ]);
-  // Comments stripped first: half these files explain in prose *why* they no
+test('otherLang is gone, and stays gone', () => {
+  // "The other of twelve" has no answer, so nothing may ask for one: every
+  // caller names its target (`translationSourceFor`) instead of being handed a
+  // guess. The last two — the viewer routes that rendered a fixed NL/EN link
+  // pair — went with B182 fase 4, and the function went with them (D72 #2).
+  // Comments stripped first: several files explain in prose *why* they no
   // longer call it, and a doc comment is not a caller.
   const withoutComments = (src) =>
     src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
-  const callers = APP_SOURCES.filter((f) =>
-    /\botherLang\s*\(/.test(withoutComments(fs.readFileSync(f, 'utf8'))),
-  )
-    .map(rel)
-    .filter((f) => !allowed.has(f));
+  const mentions = APP_SOURCES.filter((f) =>
+    /\botherLang\b/.test(withoutComments(fs.readFileSync(f, 'utf8'))),
+  ).map(rel);
   assert.deepEqual(
-    callers,
+    mentions,
     [],
     'name the target explicitly (translationSourceFor) instead of asking for ' +
-      '"the other one" — otherLang() is null outside the NL/EN pair',
+      '"the other one" — otherLang() no longer exists',
   );
+});
 
-  // And it is not re-exported to the client any more: the enabled-subset view
-  // in client/lib/format/i18n.js is gone with its last caller.
-  const clientI18n = fs.readFileSync(
-    path.join(repoRoot, 'client/lib/format/i18n.js'),
-    'utf8',
-  );
-  assert.ok(
-    !/export function otherLang|otherLang as /.test(clientI18n),
-    'client/lib/format/i18n.js must not re-export otherLang',
+test('the native label of a language has one definition site', () => {
+  // The map lives in shared/i18n-utils.js and so does its only reader, because
+  // the published page and the embed name languages too and the server cannot
+  // import the client's lang-selector (D77, B182 fase 4).
+  assert.equal(getLangDisplayName('nl'), 'Nederlands');
+  assert.equal(getLangDisplayName('de'), 'Deutsch');
+  // The alias normalizes on the way in, so both spellings of English answer.
+  assert.equal(getLangDisplayName('en'), 'English');
+  assert.equal(getLangDisplayName('en-GB'), 'English');
+  // Off-axis falls back to the code itself rather than to an empty label.
+  assert.equal(getLangDisplayName('zz'), 'zz');
+
+  const readers = APP_SOURCES.filter((f) =>
+    /TRANSLATION_LANG_NATIVE_LABELS/.test(fs.readFileSync(f, 'utf8')),
+  ).map(rel);
+  assert.deepEqual(
+    readers,
+    ['shared/i18n-utils.js'],
+    'read a native label with getLangDisplayName() — a second reader of the ' +
+      'map is how five of the twelve languages once fell back to a raw code',
   );
 });
 

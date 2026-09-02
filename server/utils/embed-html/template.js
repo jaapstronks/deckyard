@@ -6,7 +6,7 @@ import { buildDocumentHead } from '../head-chain.js';
 import { buildScriptChain } from '../script-chain.js';
 import { buildPrismKatexTags, detectPrismKatexNeeds } from '../prism-katex.js';
 import {
-  TRANSLATION_LANGS,
+  getLangDisplayName,
   normalizeLang,
 } from '../../../shared/i18n-utils.js';
 
@@ -118,12 +118,12 @@ const EMBED_RUNTIME_JS = `
       const publishId = String(boot.publishId || '');
       const totalSlides = Math.max(0, Number(boot.totalSlides || 0) || 0);
       const options = boot.options && typeof boot.options === 'object' ? boot.options : {};
-      const hasOtherLang = !!boot.hasOtherLang;
       // boot is server-produced and already normalized against the deck axis
-      // (see buildEmbedHtml); boot.langs carries that axis so the switch below
-      // can validate an embedder's postMessage without a second copy of the
-      // list living in this inlined script (B149/D61).
-      const deckLangs = Array.isArray(boot.langs) ? boot.langs : [];
+      // (see buildEmbedHtml); boot.versionLangs carries the versions THIS deck
+      // has, so the switch below offers exactly those and can validate a
+      // navigation without a second copy of any language list living in this
+      // inlined script (B149/D61, B182/D72 #6).
+      const versionLangs = Array.isArray(boot.versionLangs) ? boot.versionLangs : [];
       const lang = typeof boot.lang === 'string' && boot.lang ? boot.lang : null;
       let controls = options.controls !== false;
       let loop = !!options.loop;
@@ -146,8 +146,7 @@ const EMBED_RUNTIME_JS = `
       const btnNext = document.getElementById('btnNext');
       const btnFs = document.getElementById('btnFs');
       const progress = document.getElementById('progress');
-      const btnLangNl = document.getElementById('btnLangNl');
-      const btnLangEn = document.getElementById('btnLangEn');
+      const langBtns = Array.from(document.querySelectorAll('[data-embed-lang]'));
 
       attachStageScale();
 
@@ -246,7 +245,7 @@ const EMBED_RUNTIME_JS = `
 
       // Optional language switch: reload iframe with ?lang=... while preserving other embed options.
       function setEmbedLang(next) {
-        const l = deckLangs.includes(next) ? next : null;
+        const l = versionLangs.includes(next) ? next : null;
         if (!l) return;
         try {
           const u = new URL(location.href);
@@ -255,15 +254,16 @@ const EMBED_RUNTIME_JS = `
         } catch {}
       }
       function syncLangUi() {
-        if (!btnLangNl || !btnLangEn) return;
-        const show = langSwitch && hasOtherLang;
-        btnLangNl.style.display = show ? '' : 'none';
-        btnLangEn.style.display = show ? '' : 'none';
-        btnLangNl.classList.toggle('is-active', lang === 'nl');
-        btnLangEn.classList.toggle('is-active', lang === 'en-GB');
+        // The group is only rendered when the deck has more than one version,
+        // so there is nothing to show or hide on a single-language deck.
+        for (const btn of langBtns) {
+          btn.style.display = langSwitch ? '' : 'none';
+          btn.classList.toggle('is-active', lang === btn.dataset.embedLang);
+        }
       }
-      if (btnLangNl) btnLangNl.addEventListener('click', () => setEmbedLang('nl'));
-      if (btnLangEn) btnLangEn.addEventListener('click', () => setEmbedLang('en-GB'));
+      for (const btn of langBtns) {
+        btn.addEventListener('click', () => setEmbedLang(btn.dataset.embedLang));
+      }
       syncLangUi();
 
       // Keyboard navigation (works when iframe is focused)
@@ -357,10 +357,21 @@ export function renderEmbedHtmlDocument({
     options:
       boot?.options && typeof boot.options === 'object' ? boot.options : {},
     lang: normalizeLang(boot?.lang),
-    langs: [...TRANSLATION_LANGS],
-    hasOtherLang: !!boot?.hasOtherLang,
+    versionLangs: Array.isArray(boot?.versionLangs)
+      ? boot.versionLangs.map(normalizeLang).filter(Boolean)
+      : [],
   };
-  const bootJson = JSON.stringify(safeBoot, null, 0);
+  // A <script> block is raw text, so HTML entities inside it are never decoded.
+  // This payload used to go through escapeHtml(), which wrote `&quot;` into the
+  // JSON and made `JSON.parse()` fail on every embed ever served — the runtime
+  // then silently ran on its defaults: no slide count, no language switch, no
+  // allowed-origin list. Escaping only `<` is what the block actually needs
+  // (nothing else can end it) and it leaves the JSON valid, which is the same
+  // treatment the published page gives its JSON-LD.
+  const bootScriptJson = JSON.stringify(safeBoot, null, 0).replace(
+    /</g,
+    '\\u003c',
+  );
 
   const docThemeId = String(themeId || DEFAULT_THEME_ID);
   const themeVars = String(themeVarsCss || '');
@@ -373,6 +384,25 @@ export function renderEmbedHtmlDocument({
   // nor the initialiser, so a code block that highlighted in the download and
   // in /p/ rendered plain here — the one visible cost of six script assemblers.
   const highlightNeeds = detectPrismKatexNeeds(slidesHtml || '');
+
+  // One button per version the deck has, in the order the versions were
+  // written — not a fixed `NL EN` pair, which offered an English button on a
+  // deck that had no English version (B182/D72 #6). Below two versions there
+  // is nothing to switch between, so the group is left out entirely; the
+  // runtime still hides what is here unless `langSwitch` is on.
+  const langSwitchHtml =
+    safeBoot.versionLangs.length > 1
+      ? `<div class="sb-segmented" aria-label="Language">
+            ${safeBoot.versionLangs
+              .map(
+                (l) =>
+                  `<button data-embed-lang="${escapeHtml(l)}" class="sb-segmented-btn" type="button" lang="${escapeHtml(l)}">${escapeHtml(
+                    getLangDisplayName(l),
+                  )}</button>`,
+              )
+              .join('\n            ')}
+          </div>`
+      : '';
   return `${buildDocumentHead({
     lang: docLang,
     htmlAttrs: { 'data-theme': docThemeId },
@@ -405,10 +435,7 @@ export function renderEmbedHtmlDocument({
           <div id="progress" class="ps-embed-progress" aria-live="polite"></div>
         </div>
         <div class="row">
-          <div class="sb-segmented" style="width: 120px;" aria-label="Language">
-            <button id="btnLangNl" class="sb-segmented-btn" type="button">NL</button>
-            <button id="btnLangEn" class="sb-segmented-btn" type="button">EN</button>
-          </div>
+          ${langSwitchHtml}
           <button id="btnFs" class="btn btn-secondary" type="button" aria-label="Fullscreen">⛶</button>
         </div>
       </div>
@@ -424,7 +451,7 @@ export function renderEmbedHtmlDocument({
       </div>
     </div>
 
-    <script id="boot" type="application/json">${escapeHtml(bootJson)}</script>
+    <script id="boot" type="application/json">${bootScriptJson}</script>
     ${buildScriptChain({
       runtime: 'stage',
       module: true,

@@ -7,6 +7,7 @@ import {
   ON_CLOSE_TARGET_FIELD,
 } from '../helpers.js';
 import { getSlideCopy } from '../slide-copy.js';
+import { getLangDisplayName } from '../../i18n-utils.js';
 
 function letterForIdx(i) {
   return ['A', 'B', 'C', 'D'][i] || '?';
@@ -92,12 +93,18 @@ export default {
     const bg = bgClass(content?.background);
     const options = liveInteractionOptions(content);
     const copy = getSlideCopy(ctx?.lang);
+    // Keyed by deck language, one per version the deck has (B182/D72 #6): the
+    // slide prints every code the session minted rather than a fixed NL row
+    // above an EN one, which showed a German audience two codes for versions
+    // the deck did not have.
     const followCodes =
       ctx && typeof ctx === 'object' ? ctx.followCodes || null : null;
-    const joinHelp =
-      followCodes?.nl || followCodes?.en
-        ? copy.pollJoinHelpWithCodes
-        : copy.pollJoinHelpWithoutCodes;
+    const codeRows = Object.entries(followCodes || {}).filter(
+      ([, code]) => code,
+    );
+    const joinHelp = codeRows.length
+      ? copy.pollJoinHelpWithCodes
+      : copy.pollJoinHelpWithoutCodes;
 
     const optsHtml = options
       .map(
@@ -129,15 +136,22 @@ export default {
       )
       .join('');
 
-    const codesHtml =
-      followCodes?.nl || followCodes?.en
-        ? `
+    const codesHtml = codeRows.length
+      ? `
           <div class="help poll-follow-codes">
-            <div><strong>NL</strong>: <span data-follow-code="nl">${escapeHtml(followCodes?.nl || '')}</span></div>
-            <div><strong>EN</strong>: <span data-follow-code="en">${escapeHtml(followCodes?.en || '')}</span></div>
+            ${codeRows
+              .map(
+                ([codeLang, code]) =>
+                  `<div><strong lang="${escapeHtml(codeLang)}">${escapeHtml(
+                    getLangDisplayName(codeLang),
+                  )}</strong>: <span data-follow-code="${escapeHtml(codeLang)}">${escapeHtml(
+                    code,
+                  )}</span></div>`,
+              )
+              .join('\n            ')}
           </div>
         `
-        : '';
+      : '';
 
     return `
       <div class="slide slide-poll ${bg}" data-interaction="poll">

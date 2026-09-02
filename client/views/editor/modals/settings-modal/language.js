@@ -4,8 +4,10 @@ import {
   getSupportedLangs,
   normalizeLang,
 } from '../../../../lib/format/i18n.js';
-import { getLangDisplayName } from '../../../../lib/format/lang-selector.js';
-import { DEFAULT_DECK_LANG } from '../../../../../shared/i18n-utils.js';
+import {
+  DEFAULT_DECK_LANG,
+  getLangDisplayName,
+} from '../../../../../shared/i18n-utils.js';
 
 /**
  * Deck-level document language hint (HTML lang for public sharing/exports).

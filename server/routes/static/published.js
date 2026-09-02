@@ -10,11 +10,11 @@ import { buildMergedSlideTypes } from '../../utils/custom-slide-type-runtime.js'
 import { getAppName } from '../../config/branding.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
 import {
-  hasLangVersion,
-  otherLang,
   projectPresentationForLang,
   resolveLangModeFromPresOrUrl,
 } from '../../utils/i18n.js';
+import { getLangDisplayName } from '../../../shared/i18n-utils.js';
+import { existingVersionLangs } from '../../../shared/i18n-progress.js';
 import { generateTrackingScriptHtml } from '../../analytics/tracking-script.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
 
@@ -221,19 +221,29 @@ export async function handlePublishedPage({ repoRoot, req, res, url }) {
 
     ${jsonLdScript}
     `.trim();
-  const hasOther = hasLangVersion(pres, otherLang(modeLang));
-  const switchHtml = hasOther
-    ? (() => {
-        const nlHref = `${canonicalPath}?lang=nl`;
-        const enHref = `${canonicalPath}?lang=en-GB`;
-        return `
-            <div class="sb-segmented" style="width: 140px;" role="group" aria-label="Language">
-              <a class="sb-segmented-btn ${modeLang === 'nl' ? 'is-active' : ''}" href="${escapeHtml(nlHref)}" rel="nofollow">NL</a>
-              <a class="sb-segmented-btn ${modeLang === 'en-GB' ? 'is-active' : ''}" href="${escapeHtml(enHref)}" rel="nofollow">EN</a>
+  // One link per version the deck actually has, in the order the versions were
+  // written — not a fixed `NL EN` pair, which showed a Dutch deck an English
+  // link it had no version for and hid a German one it did (B182/D72 #6).
+  // Below two versions there is nothing to switch between, so the group is
+  // omitted rather than rendered with a single dead button.
+  const versionLangs = existingVersionLangs(pres);
+  const switchHtml =
+    versionLangs.length > 1
+      ? `
+            <div class="sb-segmented" role="group" aria-label="Language">
+              ${versionLangs
+                .map(
+                  (lang) =>
+                    `<a class="sb-segmented-btn${lang === modeLang ? ' is-active' : ''}" href="${escapeHtml(
+                      `${canonicalPath}?lang=${encodeURIComponent(lang)}`,
+                    )}" hreflang="${escapeHtml(lang)}" rel="nofollow">${escapeHtml(
+                      getLangDisplayName(lang),
+                    )}</a>`,
+                )
+                .join('\n              ')}
             </div>
-          `.trim();
-      })()
-    : '';
+          `.trim()
+      : '';
 
   // Visible link to the semantic reader view (discoverable a11y/no-JS surface).
   const readerLinkHtml = `<a class="presenter-help ps-reader-link" href="${escapeHtml(

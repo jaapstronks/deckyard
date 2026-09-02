@@ -1,5 +1,10 @@
 import { bgClass, escapeHtml, nonEmpty, BACKGROUND_FIELD } from '../helpers.js';
 import { getSlideCopy } from '../slide-copy.js';
+import {
+  DEFAULT_DECK_LANG,
+  getLangDisplayName,
+  normalizeLang,
+} from '../../i18n-utils.js';
 
 export default {
   structure: 'singleton',
@@ -53,12 +58,19 @@ export default {
       ctx && typeof ctx === 'object'
         ? String(ctx.presentationId || '').trim()
         : '';
-    const relFollowNl = presId
-      ? `/follow/${encodeURIComponent(presId)}?lang=nl`
+    // The QR points at the version being shown, not at a fixed Dutch-then-
+    // English pair: a German audience scanning it lands in German (B182/D72 #6).
+    const lang = normalizeLang(ctx?.lang) || DEFAULT_DECK_LANG;
+    const relFollow = presId
+      ? `/follow/${encodeURIComponent(presId)}?lang=${encodeURIComponent(lang)}`
       : '';
-    const relFollowEn = presId
-      ? `/follow/${encodeURIComponent(presId)}?lang=en-GB`
-      : '';
+    // One row per code the session minted — one per version the deck has —
+    // instead of a hardcoded NL row above an EN one. Outside a session nothing
+    // is minted yet, so a single `----` row for the version on screen stands
+    // in; `follow-invite-runtime.js` fills it from the QR's follow URL, which
+    // points at that same version.
+    const minted = Object.entries(followCodes).filter(([, code]) => code);
+    const codeRows = minted.length ? minted : [[lang, '----']];
 
     const question = nonEmpty(content?.question);
 
@@ -76,7 +88,7 @@ export default {
                 <div class="sfi-card-title">${escapeHtml(copy.feedbackScan)}</div>
                 <div class="sfi-qr-wrap">
                   <canvas class="sfi-qr" data-follow-qr="1" data-follow-url="${escapeHtml(
-                    relFollowNl || relFollowEn,
+                    relFollow,
                   )}" role="img" aria-label="${escapeHtml(copy.feedbackQrCodeLabel)}"></canvas>
                 </div>
               </div>
@@ -84,18 +96,19 @@ export default {
               <div class="sfi-card on-surface-light">
                 <div class="sfi-card-title">${escapeHtml(copy.feedbackOrGoTo)}</div>
                 <div class="sfi-go" data-follow-go-url="1">/go</div>
+                ${codeRows
+                  .map(
+                    ([codeLang, code]) => `
                 <div class="sfi-code-row">
-                  <div class="sfi-row-label">NL</div>
-                  <div class="sfi-code" data-follow-code="nl" aria-label="${escapeHtml(copy.feedbackAccessCodeNlLabel)}">${escapeHtml(
-                    followCodes?.nl || '----',
+                  <div class="sfi-row-label" lang="${escapeHtml(codeLang)}">${escapeHtml(
+                    getLangDisplayName(codeLang),
                   )}</div>
-                </div>
-                <div class="sfi-code-row">
-                  <div class="sfi-row-label">EN</div>
-                  <div class="sfi-code" data-follow-code="en" aria-label="${escapeHtml(copy.feedbackAccessCodeEnLabel)}">${escapeHtml(
-                    followCodes?.en || '----',
-                  )}</div>
-                </div>
+                  <div class="sfi-code" data-follow-code="${escapeHtml(codeLang)}" aria-label="${escapeHtml(
+                    `${copy.accessCodeLabel} ${getLangDisplayName(codeLang)}`,
+                  )}">${escapeHtml(code)}</div>
+                </div>`,
+                  )
+                  .join('')}
               </div>
             </div>
           </div>

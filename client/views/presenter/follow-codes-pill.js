@@ -13,13 +13,17 @@ import { copyToClipboardWithPromptFallback } from '../../lib/util/clipboard.js';
  * @returns {{
  *   el: HTMLElement,
  *   copyBtn: HTMLButtonElement,
- *   setCodes: (codes: { nl?: string, en?: string } | null) => void,
+ *   setCodes: (codes: Record<string, string> | null) => void,
  * }}
  */
 export function createPresenterFollowCodesPill({ modeLang }) {
   let codes = null;
+  // Codes are keyed by deck language, one per version the deck has (B182/D72
+  // #6), so the active language is a plain lookup. The fallback is the first
+  // code the session minted: a presenter who switched to a version that has no
+  // code yet still gets a working one rather than an empty pill.
   const pickCode = () =>
-    (modeLang === 'nl' ? codes?.nl : codes?.en) || codes?.nl || codes?.en || '';
+    codes?.[modeLang] || Object.values(codes || {}).find(Boolean) || '';
 
   const text = h('div', {
     class: 'presenter-followcodes-text',

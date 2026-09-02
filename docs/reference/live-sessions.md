@@ -106,8 +106,10 @@ ON DELETE CASCADE`, so closing a session cascades them away.
 
 - **Create** — presenter (deck-write) `POST /api/live-sessions
 {presentationId}`. `createLiveSession` reuses a non-expired session for that
-  deck (idempotent per deck) or mints a new UUID, mints per-language follow
-  codes, and answers `{ok: true, sessionId, joinPath, followCodes}` — the
+  deck (idempotent per deck) or mints a new UUID, mints one follow code per
+  language version the deck has (keyed by deck language — `nl`, `en-GB`, `de`;
+  a deck with no version block gets one code for its own language), and answers
+  `{ok: true, sessionId, joinPath, followCodes}` — the
   mutation shape ([`storage-layer.md`](storage-layer.md) § _Failure
   signalling_). The route unwraps it and serves
   `{sessionId, joinPath, followCodes}` with 201.

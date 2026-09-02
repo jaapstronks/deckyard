@@ -1,10 +1,10 @@
-import {
-  getLangShortLabel,
-  getLangDisplayName,
-} from '../../lib/format/lang-selector.js';
+import { getLangShortLabel } from '../../lib/format/lang-selector.js';
 import { t } from '../../lib/ui-i18n.js';
 import { h } from '../../lib/dom.js';
-import { DEFAULT_SUPPORTED_DECK_LANGS } from '../../../shared/i18n-utils.js';
+import {
+  DEFAULT_SUPPORTED_DECK_LANGS,
+  getLangDisplayName,
+} from '../../../shared/i18n-utils.js';
 import { urlWithQuery } from '../../lib/state/router.js';
 
 /**

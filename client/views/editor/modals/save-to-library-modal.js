@@ -3,9 +3,9 @@ import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createTagEditor } from '../../list/tag-editor.js';
 import { h } from '../../../lib/dom.js';
-import { getLangDisplayName } from '../../../lib/format/lang-selector.js';
 import {
   DEFAULT_DECK_LANG,
+  getLangDisplayName,
   TRANSLATION_LANGS,
 } from '../../../../shared/i18n-utils.js';
 

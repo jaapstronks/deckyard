@@ -1,21 +1,7 @@
-import {
-  DEFAULT_DECK_LANG,
-  normalizeLang,
-  otherLang,
-} from '../../shared/i18n-utils.js';
+import { DEFAULT_DECK_LANG, normalizeLang } from '../../shared/i18n-utils.js';
 import { pickVersion } from '../../shared/i18n-progress.js';
 
-export { normalizeLang, otherLang };
-
-export function hasLangVersion(pres, lang) {
-  const l = normalizeLang(lang);
-  if (!l) return false;
-  return !!(
-    pres?.i18n?.versions &&
-    typeof pres.i18n.versions === 'object' &&
-    pres.i18n.versions?.[l]
-  );
-}
+export { normalizeLang };
 
 export function resolveLangModeFromPresOrUrl(pres, url) {
   const q = normalizeLang(url?.searchParams?.get('lang'));

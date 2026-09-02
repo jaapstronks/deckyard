@@ -1,5 +1,4 @@
 import { normalizeLang } from '../../lib/format/i18n.js';
-import { getLangDisplayName } from '../../lib/format/lang-selector.js';
 import {
   fetchLlmStatus,
   labelForVendor,
@@ -13,7 +12,10 @@ import { openModal } from '../../lib/dom/modal.js';
 import { openAiBatchReviewModal } from './modals/ai-batch-review-modal.js';
 import { highlightAiInsertedSlides } from './ai-added-highlight.js';
 import { h } from '../../lib/dom.js';
-import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
+import {
+  DEFAULT_DECK_LANG,
+  getLangDisplayName,
+} from '../../../shared/i18n-utils.js';
 
 export function openAiAppendWizard({
   root,

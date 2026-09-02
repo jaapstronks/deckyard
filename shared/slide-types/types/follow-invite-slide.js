@@ -79,14 +79,14 @@ export default {
       ? `/follow/${encodeURIComponent(presId)}?lang=${encodeURIComponent(lang)}`
       : '';
 
-    // Get follow codes from context (when available during presentations)
+    // Get follow codes from context (when available during presentations).
+    // Keyed by deck language, one per version the deck has (B182/D72 #6), so
+    // the invite reads the code for the version it is rendering — the map used
+    // to be filed under `nl`/`en` while the render language was `nl`/`en-GB`,
+    // which is why the key needed translating. `data-follow-code` still
+    // carries it, so a reader of the DOM knows which code it is looking at.
     const followCodes = ctx?.followCodes || {};
-    // The key the code is filed under, which is not `lang`: codes are minted
-    // per follow URL and there is one per language, keyed `nl`/`en`, while the
-    // render language is `nl`/`en-GB`. `data-follow-code` carries the key, so
-    // a reader of the DOM can tell which of the two codes it is looking at.
-    const codeLang = lang === 'nl' ? 'nl' : 'en';
-    const code = followCodes[codeLang];
+    const code = followCodes[lang];
 
     const goHref = '/go';
 
@@ -116,7 +116,7 @@ export default {
                 )}</div>
                 <div class="sfi-code-row">
                   <div class="sfi-row-label">${escapeHtml(base.codeLabel)}</div>
-                  <div class="sfi-code" data-follow-code="${codeLang}" aria-label="${escapeHtml(base.accessCodeLabel)}">${escapeHtml(
+                  <div class="sfi-code" data-follow-code="${escapeHtml(lang)}" aria-label="${escapeHtml(base.accessCodeLabel)}">${escapeHtml(
                     code || '----',
                   )}</div>
                 </div>

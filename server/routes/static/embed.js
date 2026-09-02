@@ -10,11 +10,10 @@ import {
   parseEmbedOptionsFromUrl,
 } from '../../utils/embed-html/index.js';
 import {
-  hasLangVersion,
-  otherLang,
   projectPresentationForLang,
   resolveLangModeFromPresOrUrl,
 } from '../../utils/i18n.js';
+import { existingVersionLangs } from '../../../shared/i18n-progress.js';
 import { log } from './log.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
 
@@ -85,7 +84,7 @@ export async function handleEmbed({ repoRoot, req, res, url }) {
       publishId,
       theme,
       lang: modeLang,
-      hasOtherLang: hasLangVersion(pres, otherLang(modeLang)),
+      versionLangs: existingVersionLangs(pres),
       slideTypes: embedSlideTypes,
       ...opts,
     });

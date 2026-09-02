@@ -4,6 +4,7 @@ import { toast } from '../../../lib/dom/toast.js';
 import { normalizeLang } from '../../../lib/format/i18n.js';
 import {
   DEFAULT_DECK_LANG,
+  getLangDisplayName,
   resolveDeckLang,
   translationSourceFor,
 } from '../../../../shared/i18n-utils.js';
@@ -23,7 +24,6 @@ import {
   isFieldVisible,
   visibilityDriverKeys,
 } from '../../../../shared/slide-types/field-visibility.js';
-import { getLangDisplayName } from '../../../lib/format/lang-selector.js';
 import { h } from '../../../lib/dom.js';
 
 /**
