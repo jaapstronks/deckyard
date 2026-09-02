@@ -1141,11 +1141,12 @@ export function createInlineEditor({
    *  through the same dirty/save/rerender path as a popover pick. */
   async function handleDroppedImage(photoEl, file) {
     if (!file.type?.startsWith('image/')) {
-      // A drop onto the canvas has no form and no field to name, so the one
-      // carrier left is a toast (docs/reference/feedback-surfaces.md). Nothing
-      // broke and nothing was lost — the file was simply not taken — so it is
-      // a warning rather than an error.
-      toast.warning(
+      // A drop onto the canvas has no form and no field to name: the failure
+      // of an action without a form, whose carrier is `toast.error`
+      // (docs/reference/feedback-surfaces.md, the third kind) — the same shape
+      // as a file that is not a slide-type export. Not a `warning`: the
+      // doctrine has no kind that maps to it, and one carrier per kind.
+      toast.error(
         t('editor.inline.media.dropInvalid', 'That is not an image file.'),
       );
       return;

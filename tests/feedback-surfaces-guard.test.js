@@ -88,7 +88,7 @@ const TOAST_SITES = [
   // --- the server's sentence thrown away for generic copy (B205) ---
   {
     file: 'client/views/editor/inline-edit/inline-editor.js',
-    total: 1,
+    total: 2,
     discarded: 1,
   },
   {
@@ -158,13 +158,14 @@ const BURNDOWN = { refusals: 13, discarded: 24, background: 10 };
  * a refusal of the current action; B204 moves them to the inline helper.
  *
  * What is left after B204 PR 1 is the shape without a form to put a message
- * in: a modal that refuses to open at all (edit-modal), a menu item, a card
- * action. Those are failures of an action with no form on screen — the third
- * kind, whose carrier *is* a toast — so B205 settles their wording, not their
- * placement.
+ * in: a modal that refuses to open at all (edit-modal, json-debug-modal), a
+ * menu item, a card action, a file dropped on the canvas. Those are failures
+ * of an action with no form on screen — the third kind, whose carrier *is* a
+ * toast — so B205 settles their wording, not their placement.
  */
 const REFUSE_AND_RETURN = [
   { file: 'client/lib/slide-library/edit-modal.js', hits: 2 },
+  { file: 'client/views/editor/inline-edit/inline-editor.js', hits: 1 },
   { file: 'client/views/editor/modals/json-debug-modal.js', hits: 1 },
   { file: 'client/views/editor/topbar.js', hits: 1 },
   { file: 'client/views/editor/topbar/more-menu.js', hits: 1 },

@@ -165,8 +165,9 @@ The 16 local validations (a form that says no before anything is sent) are on
 the helper as of B204 PR 1; what the first row still counts is the API refusal
 caught in a save handler and toasted. What is left in the refuse-and-return
 allowlist after that PR is a different shape: a modal that refuses to open, a
-menu item, a card action — an action with no form on screen, whose carrier
-_is_ a toast.
+menu item, a card action, a file dropped on the canvas — an action with no
+form on screen, whose carrier _is_ `toast.error`. Not `toast.warning`: no
+kind maps to it, and the client has no call site for it.
 
 The counts are the allowlists in `tests/feedback-surfaces-guard.test.js`; each
 item lowers them and the test refuses a rise. Alongside: `toast.info` used as a
