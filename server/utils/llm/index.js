@@ -22,6 +22,7 @@ export async function requestChatCompletionContent({
       model,
       temperature,
       responseFormat,
+      maxTokens,
       messages,
     });
   }
@@ -41,6 +42,7 @@ export async function requestChatCompletionContent({
       model,
       temperature,
       responseFormat,
+      maxTokens,
       messages,
     });
   }
@@ -50,6 +52,7 @@ export async function requestChatCompletionContent({
       model,
       temperature,
       responseFormat,
+      maxTokens,
       messages,
     });
   }
@@ -59,6 +62,7 @@ export async function requestChatCompletionContent({
       model,
       temperature,
       responseFormat,
+      maxTokens,
       messages,
     });
   }
