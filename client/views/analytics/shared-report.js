@@ -45,7 +45,7 @@ export async function renderSharedReport(root, token) {
           : err.message || 'This report may have expired or been removed.';
     shell.innerHTML = '';
     shell.append(
-      h('div', { class: 'shared-report-error' }, [
+      h('div', { class: 'shared-report-unavailable' }, [
         h('h1', { text: t('analytics.reportError', 'Report Not Available') }),
         h('p', { text: message }),
       ]),

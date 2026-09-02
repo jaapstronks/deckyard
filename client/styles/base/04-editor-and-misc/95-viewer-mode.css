@@ -304,11 +304,15 @@
 }
 
 /* ============================================================
-   ACCESS ERROR PAGES
+   ACCESS NOTICE PAGES
    Permission denied and not found states.
    ============================================================ */
 
-.access-error-shell {
+/* The whole-page notice the editor renders instead of a deck it cannot show
+   (denied, not found). A page state, not a message element — hence no
+   `*-error` name: that vocabulary belongs to `createInlineError()`, and the
+   feedback-surfaces guard keeps it there. */
+.access-notice-shell {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -317,7 +321,7 @@
   background: hsl(var(--app-bg-base));
 }
 
-.access-error-card {
+.access-notice-card {
   width: 100%;
   max-width: 480px;
   padding: var(--ps-space-12) var(--ps-space-10);
@@ -328,46 +332,46 @@
   text-align: center;
 }
 
-.access-error-icon {
+.access-notice-icon {
   margin-bottom: var(--ps-space-5);
 }
 
-.access-error-title {
+.access-notice-title {
   margin: 0 0 var(--ps-space-4);
   font-size: 24px;
   font-weight: 700;
   color: hsl(var(--app-text-primary));
 }
 
-.access-error-message {
+.access-notice-message {
   margin: 0 0 var(--ps-space-8);
   font-size: 15px;
   line-height: 1.6;
   color: hsl(var(--app-text-secondary));
 }
 
-.access-error-actions {
+.access-notice-actions {
   display: flex;
   flex-direction: column;
   gap: var(--ps-space-3);
   align-items: center;
 }
 
-.access-error-actions .btn {
+.access-notice-actions .btn {
   min-width: 180px;
 }
 
 @media (max-width: 480px) {
-  .access-error-card {
+  .access-notice-card {
     padding: var(--ps-space-9) var(--ps-space-6);
     border-radius: 20px;
   }
 
-  .access-error-title {
+  .access-notice-title {
     font-size: 20px;
   }
 
-  .access-error-message {
+  .access-notice-message {
     font-size: var(--ps-text-base);
   }
 }

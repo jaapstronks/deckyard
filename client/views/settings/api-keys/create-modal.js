@@ -3,6 +3,7 @@
  */
 
 import { h } from '../../../lib/dom.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { labeledCheckbox } from '../../../lib/dom/labeled-checkbox.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
@@ -207,8 +208,12 @@ export function showCreateModal(onSuccess) {
 
   permissionsLabel.append(permissionsLabelText, permissionCheckboxes);
 
-  // Status message
+  // `status` carries progress only ("Deleting…", "Saving…"). A refusal is a
+  // state of this form, so it goes in the one element for that, beside the
+  // action and staying until the next attempt
+  // (docs/reference/feedback-surfaces.md).
   const status = h('div', { class: 'help modal-status', role: 'status' });
+  const refusal = createInlineError({ callout: true });
 
   const actions = createModalActions({
     cancelText: t('common.cancel', 'Cancel'),
@@ -218,7 +223,7 @@ export function showCreateModal(onSuccess) {
   });
   actions.wrap.classList.add('api-key-modal-buttons');
 
-  form.append(nameLabel, permissionsLabel, status, actions.wrap);
+  form.append(nameLabel, permissionsLabel, status, refusal.el, actions.wrap);
   modal.append(form);
   modal.show(document.body);
 
@@ -251,24 +256,33 @@ export function showCreateModal(onSuccess) {
   async function submit() {
     if (modal.isBusy()) return;
 
+    refusal.clear();
     const name = nameInput.value.trim();
     const selectedPermissions = Array.from(
       permissionCheckboxes.querySelectorAll('input[type="checkbox"]:checked'),
     ).map((cb) => cb.value);
 
     if (!name) {
-      status.textContent = t(
-        'settings.apiKeys.createModal.nameRequired',
-        'Please enter a key name.',
+      status.textContent = '';
+      refusal.show(
+        t(
+          'settings.apiKeys.createModal.nameRequired',
+          'Please enter a key name.',
+        ),
+        { control: nameInput },
       );
-      nameInput.focus();
       return;
     }
 
     if (selectedPermissions.length === 0) {
-      status.textContent = t(
-        'settings.apiKeys.createModal.permissionRequired',
-        'Please select at least one permission.',
+      status.textContent = '';
+      // The permission list is a group of checkboxes, not one control: the
+      // message names it without marking any single box invalid.
+      refusal.show(
+        t(
+          'settings.apiKeys.createModal.permissionRequired',
+          'Please select at least one permission.',
+        ),
       );
       return;
     }
@@ -299,9 +313,11 @@ export function showCreateModal(onSuccess) {
         onSuccess();
       });
     } else {
-      status.textContent =
+      status.textContent = '';
+      refusal.show(
         result.error ||
-        t('settings.apiKeys.createModal.error', 'Failed to create API key.');
+          t('settings.apiKeys.createModal.error', 'Failed to create API key.'),
+      );
       modal.setBusy(false);
       setDisabled(false);
     }

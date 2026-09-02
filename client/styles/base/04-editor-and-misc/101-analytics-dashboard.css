@@ -354,8 +354,8 @@
   font-weight: 500;
 }
 
-/* Error Banner */
-.dashboard-error-banner {
+/* The banner that carries a failed load (see dashboard.js). */
+.dashboard-alert-banner {
   display: flex;
   align-items: center;
   gap: var(--ps-space-3, 12px);
@@ -369,7 +369,7 @@
   margin-bottom: var(--ps-space-4, 16px);
 }
 
-.dashboard-error-icon {
+.dashboard-alert-icon {
   flex-shrink: 0;
 }
 

@@ -2,6 +2,7 @@ import { api } from '../lib/api.js';
 import { h } from '../lib/dom.js';
 import { t } from '../lib/ui-i18n.js';
 import { createBusyManager } from '../lib/dom/busy.js';
+import { createInlineError } from '../lib/dom/inline-error.js';
 import { authShell } from './auth-shell.js';
 import { nav, queryParam } from '../lib/state/router.js';
 
@@ -13,6 +14,7 @@ export async function renderResetPassword(root) {
 
   const form = h('div', { class: 'auth-form' });
   const status = h('div', { class: 'auth-status' });
+  const formError = createInlineError({ callout: true });
 
   card.append(form);
   root.append(shell);
@@ -102,25 +104,29 @@ export async function renderResetPassword(root) {
     const submit = async () => {
       if (busyManager.isBusy()) return;
 
+      formError.clear();
       const pw = password.value || '';
       const pwConfirm = confirmPassword.value || '';
 
       // Validate
       if (pw.length < 8) {
-        status.textContent = t(
-          'resetPassword.passwordTooShort',
-          'Password must be at least 8 characters.',
+        status.textContent = '';
+        formError.show(
+          t(
+            'resetPassword.passwordTooShort',
+            'Password must be at least 8 characters.',
+          ),
+          { control: password },
         );
-        status.className = 'auth-status is-error';
         return;
       }
 
       if (pw !== pwConfirm) {
-        status.textContent = t(
-          'resetPassword.passwordMismatch',
-          'Passwords do not match.',
+        status.textContent = '';
+        formError.show(
+          t('resetPassword.passwordMismatch', 'Passwords do not match.'),
+          { control: confirmPassword },
         );
-        status.className = 'auth-status is-error';
         return;
       }
 
@@ -159,10 +165,11 @@ export async function renderResetPassword(root) {
 
         form.append(successMsg, loginLink);
       } catch (err) {
-        status.textContent =
+        status.textContent = '';
+        formError.show(
           err.message ||
-          t('resetPassword.error', 'Something went wrong. Please try again.');
-        status.className = 'auth-status is-error';
+            t('resetPassword.error', 'Something went wrong. Please try again.'),
+        );
         busyManager.setBusy(false);
       }
     };
@@ -177,7 +184,7 @@ export async function renderResetPassword(root) {
       (ev) => ev.key === 'Enter' && submit(),
     );
 
-    form.append(password, confirmPassword, btn, status);
+    form.append(password, confirmPassword, btn, formError.el, status);
     password.focus();
   } catch (err) {
     subtitle.textContent = t(

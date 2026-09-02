@@ -4,6 +4,7 @@ import { errorText } from '../../../lib/api.js';
 import { readFileAsDataUrl } from '../../../lib/util/file.js';
 import { formatFileSize } from '../../../lib/format/format.js';
 import { h } from '../../../lib/dom.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 
 /**
  * Creates the "Import from file" tab content for the slide-type-modal.
@@ -111,11 +112,14 @@ export function createImportSlidesTab({
     btnImport,
   ]);
 
-  // Status message
+  // Progress and the "n slides imported" confirmation. A refusal (not a PDF,
+  // the import itself failed) is a state of this form and gets the inline
+  // element beside the button.
   const statusMessage = h('div', {
     class: 'import-slides-status help',
     hidden: true,
   });
+  const refusal = createInlineError({ callout: true });
 
   function showFile(file) {
     selectedFile = file;
@@ -125,6 +129,7 @@ export function createImportSlidesTab({
     fileInfo.hidden = false;
     btnImport.disabled = false;
     statusMessage.hidden = true;
+    refusal.clear();
   }
 
   function clearFile() {
@@ -139,6 +144,7 @@ export function createImportSlidesTab({
       'Import slides',
     );
     statusMessage.hidden = true;
+    refusal.clear();
   }
 
   function setProgress(current, total, message) {
@@ -147,10 +153,9 @@ export function createImportSlidesTab({
     progressText.textContent = message || `${pct}%`;
   }
 
-  function showStatus(message, isError = false) {
+  function showStatus(message) {
     statusMessage.textContent = message;
     statusMessage.hidden = false;
-    statusMessage.classList.toggle('is-error', isError);
   }
 
   async function startImport() {
@@ -270,10 +275,8 @@ export function createImportSlidesTab({
       }
     } catch (err) {
       console.error('[import-slides] Error:', err);
-      showStatus(
-        err.message || t('editor.import.failed', 'Import failed'),
-        true,
-      );
+      statusMessage.hidden = true;
+      refusal.show(err.message || t('editor.import.failed', 'Import failed'));
       onError?.(err);
     } finally {
       importing = false;
@@ -294,9 +297,9 @@ export function createImportSlidesTab({
         !file.type.includes('pdf') &&
         !file.name.toLowerCase().endsWith('.pdf')
       ) {
-        showStatus(
+        statusMessage.hidden = true;
+        refusal.show(
           t('editor.importSlides.error.notPdf', 'Please select a PDF file'),
-          true,
         );
         return;
       }
@@ -324,9 +327,9 @@ export function createImportSlidesTab({
         !file.type.includes('pdf') &&
         !file.name.toLowerCase().endsWith('.pdf')
       ) {
-        showStatus(
+        statusMessage.hidden = true;
+        refusal.show(
           t('editor.importSlides.error.notPdf', 'Please select a PDF file'),
-          true,
         );
         return;
       }
@@ -351,6 +354,7 @@ export function createImportSlidesTab({
     fileInfo,
     progressSection,
     actionsSection,
+    refusal.el,
     statusMessage,
   );
 

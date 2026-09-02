@@ -10,6 +10,7 @@ import { renderCommentBodyNodes } from '../../lib/comments/comment-body.js';
 import { createRichCommentInput } from '../../lib/comments/comment-rich-input.js';
 import { createCommentLinkButton } from '../../lib/comments/comment-toolbar.js';
 import { h } from '../../lib/dom.js';
+import { createInlineError } from '../../lib/dom/inline-error.js';
 
 /**
  * Create a comments section for the share viewer.
@@ -111,13 +112,17 @@ export function createShareViewerCommentsSection({
       const result = await commentsApi.listComments(opts);
       comments = result.comments || [];
       renderComments();
-    } catch (err) {
+    } catch {
+      // A list that did not load is a state of the list, not a refusal: the
+      // message sits where the comments would have been, politely.
+      const loadError = createInlineError({ live: 'polite' });
       list.innerHTML = '';
-      list.append(
-        h('div', {
-          class: 'share-viewer-comments-error',
-          text: t('comments.error.loadFailed', 'Failed to load comments'),
-        }),
+      list.append(loadError.el);
+      loadError.show(
+        t('comments.error.loadFailed', 'Failed to load comments'),
+        {
+          focus: false,
+        },
       );
     }
   }

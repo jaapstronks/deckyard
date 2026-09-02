@@ -3,6 +3,7 @@
  */
 
 import { h } from '../../../lib/dom.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { createModal, createModalActions } from '../../../lib/dom/modal.js';
 import { labeledCheckbox } from '../../../lib/dom/labeled-checkbox.js';
 import { t } from '../../../lib/ui-i18n.js';
@@ -224,7 +225,12 @@ export async function showEditModal(targetUser, onSuccess) {
     style: 'font-size: 11px; margin-top: 2px;',
   });
 
+  // `status` carries progress only ("Deleting…", "Saving…"). A refusal is a
+  // state of this form, so it goes in the one element for that, beside the
+  // action and staying until the next attempt
+  // (docs/reference/feedback-surfaces.md).
   const status = h('div', { class: 'help modal-status', role: 'status' });
+  const refusal = createInlineError({ callout: true });
 
   const actions = createModalActions({
     cancelText: t('common.cancel', 'Cancel'),
@@ -241,6 +247,7 @@ export async function showEditModal(targetUser, onSuccess) {
     designerRow,
     designerHelp,
     status,
+    refusal.el,
     actions.wrap,
   );
   modal.append(form);
@@ -278,6 +285,7 @@ export async function showEditModal(targetUser, onSuccess) {
     const role = roleSelect.value;
     const isDesigner = designerCheckbox.checked;
 
+    refusal.clear();
     modal.setBusy(true);
     setDisabled(true);
     status.textContent = t('admin.users.editModal.saving', 'Saving…');
@@ -293,11 +301,9 @@ export async function showEditModal(targetUser, onSuccess) {
       modal.setBusy(false);
       modal.close();
       onSuccess();
-    } catch (e) {
-      status.textContent = t(
-        'admin.users.editModal.error',
-        'Failed to update user.',
-      );
+    } catch {
+      status.textContent = '';
+      refusal.show(t('admin.users.editModal.error', 'Failed to update user.'));
       modal.setBusy(false);
       setDisabled(false);
     }

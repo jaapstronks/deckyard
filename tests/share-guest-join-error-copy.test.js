@@ -120,7 +120,9 @@ async function submitAgainst(body, status) {
   // The submit handler is async: let the stubbed fetch and its .json() settle.
   for (let i = 0; i < 5; i++) await new Promise((r) => setTimeout(r, 0));
 
-  const errorEl = shell.querySelector('.share-viewer-error');
+  // The refusal lives in the one inline element for it
+  // (docs/reference/feedback-surfaces.md), beside the button that was pressed.
+  const errorEl = shell.querySelector('.inline-error');
   const text = errorEl?.textContent || '';
   shell.remove();
   return text;

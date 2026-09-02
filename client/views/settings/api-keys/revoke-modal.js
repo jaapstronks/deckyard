@@ -3,6 +3,7 @@
  */
 
 import { h } from '../../../lib/dom.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { createModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
@@ -40,7 +41,12 @@ export function showRevokeModal(key, onSuccess) {
     ),
   });
 
+  // `status` carries progress only ("Deleting…", "Saving…"). A refusal is a
+  // state of this form, so it goes in the one element for that, beside the
+  // action and staying until the next attempt
+  // (docs/reference/feedback-surfaces.md).
   const status = h('div', { class: 'help modal-status', role: 'status' });
+  const refusal = createInlineError({ callout: true });
 
   const btnRevoke = h('button', {
     class: 'btn btn-danger',
@@ -59,7 +65,7 @@ export function showRevokeModal(key, onSuccess) {
   const btnRow = h('div', { class: 'row is-end modal-actions' });
   btnRow.append(btnCancel, btnRevoke);
 
-  modal.append(message, warning, status, btnRow);
+  modal.append(message, warning, status, refusal.el, btnRow);
   modal.show(document.body);
 
   return modal;
@@ -71,6 +77,7 @@ export function showRevokeModal(key, onSuccess) {
   async function submit() {
     if (modal.isBusy()) return;
 
+    refusal.clear();
     modal.setBusy(true);
     btnRevoke.disabled = true;
     btnCancel.disabled = true;
@@ -89,9 +96,11 @@ export function showRevokeModal(key, onSuccess) {
       modal.close();
       onSuccess();
     } else {
-      status.textContent =
+      status.textContent = '';
+      refusal.show(
         result.error ||
-        t('settings.apiKeys.revokeModal.error', 'Failed to revoke API key.');
+          t('settings.apiKeys.revokeModal.error', 'Failed to revoke API key.'),
+      );
       modal.setBusy(false);
       btnRevoke.disabled = false;
       btnCancel.disabled = false;

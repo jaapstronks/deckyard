@@ -6,6 +6,7 @@ import { api } from '../../lib/api.js';
 import { createModal } from '../../lib/dom/modal.js';
 import { t } from '../../lib/ui-i18n.js';
 import { h } from '../../lib/dom.js';
+import { createInlineError } from '../../lib/dom/inline-error.js';
 
 /**
  * Create and show report generation modal.
@@ -152,15 +153,12 @@ export function createReportModal({
   body.append(expirationGroup);
 
   // Status messages (above footer)
-  const errorEl = h('div', {
-    class: 'analytics-report-error',
-    style: 'display: none;',
-  });
+  const refusal = createInlineError({ callout: true });
   const successEl = h('div', {
     class: 'analytics-report-success',
     style: 'display: none;',
   });
-  body.append(errorEl, successEl);
+  body.append(refusal.el, successEl);
 
   // Footer
   const submitBtn = h('button', {
@@ -192,16 +190,18 @@ export function createReportModal({
   async function submit() {
     if (isSubmitting) return;
 
+    refusal.clear();
     const title = titleInput.value.trim();
     if (!title) {
-      showError(t('analytics.titleRequired', 'Please enter a title'));
+      refusal.show(t('analytics.titleRequired', 'Please enter a title'), {
+        control: titleInput,
+      });
       return;
     }
 
     isSubmitting = true;
     submitBtn.disabled = true;
     submitBtn.textContent = t('analytics.generating', 'Generating…');
-    errorEl.style.display = 'none';
 
     try {
       const result = await api(
@@ -225,7 +225,8 @@ export function createReportModal({
         throw new Error('Failed to create report');
       }
     } catch (err) {
-      showError(err.message || 'Failed to generate report');
+      // The route names no field, so the sentence stands beside the button.
+      refusal.show(err.message || 'Failed to generate report');
     } finally {
       isSubmitting = false;
       submitBtn.disabled = false;
@@ -233,15 +234,10 @@ export function createReportModal({
     }
   }
 
-  function showError(message) {
-    errorEl.textContent = message;
-    errorEl.style.display = 'block';
-  }
-
   function showSuccess(report) {
     successEl.innerHTML = '';
     successEl.style.display = 'block';
-    errorEl.style.display = 'none';
+    refusal.clear();
 
     successEl.append(
       h('div', { class: 'analytics-report-success-message' }, [

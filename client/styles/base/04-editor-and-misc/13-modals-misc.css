@@ -681,10 +681,6 @@
   padding: var(--ps-space-2);
 }
 
-.import-slides-status.is-error {
-  color: hsl(var(--app-danger));
-}
-
 /* ============================================
    Workspace Share Modal
    ============================================ */

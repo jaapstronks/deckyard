@@ -20,8 +20,8 @@
  *     cleanup; lower the number when you move a site. B204's refusals are at
  *     zero, which is why no file is listed for them any more.
  *  3. error classes — no `*-error` / `is-error` class applied outside the
- *     helper. The message idioms are B204's; the state markers (a thumb that
- *     failed to render) are not messages and stay.
+ *     helper. The message idioms were B204's and are all gone; the state
+ *     markers (a thumb that failed to render) are not messages and stay.
  *
  * A regex over source is a heuristic. What it cannot see — an API refusal
  * caught in a save handler and toasted, which looks like any other catch —
@@ -146,67 +146,17 @@ const REFUSE_AND_RETURN = [
 ];
 
 /**
- * Hand-rolled error classes. `message` idioms are text the user reads — B204
- * folds them into `createInlineError()`. `state` markers flag a thumb or card
- * that failed to render; they carry no sentence and are not this guard's
- * concern, listed so the count is exact.
+ * Hand-rolled error classes. Only `state` markers are left: a thumb or card
+ * that failed to render, which carries no sentence and is not this guard's
+ * concern — listed so the count is exact.
+ *
+ * The `message` idioms are gone (B204 PR 3). The nineteen files that spelled
+ * the message element by hand now reach for `createInlineError()`, and the
+ * handful that were never messages at all — a whole-page "not found", a
+ * dashboard banner, the icon of an error card — were renamed after what they
+ * are, so a `*-error` class name means one thing: the inline message element.
  */
 const ERROR_CLASS_IDIOMS = [
-  { file: 'client/views/analytics/dashboard.js', hits: 2, kind: 'message' },
-  { file: 'client/views/analytics/index.js', hits: 2, kind: 'message' },
-  { file: 'client/views/analytics/report-modal.js', hits: 1, kind: 'message' },
-  { file: 'client/views/analytics/shared-report.js', hits: 1, kind: 'message' },
-  {
-    file: 'client/views/editor/modals/import-slides-tab.js',
-    hits: 1,
-    kind: 'message',
-  },
-  {
-    file: 'client/views/editor/modals/share-modal/collaborators-section.js',
-    hits: 1,
-    kind: 'message',
-  },
-  {
-    file: 'client/views/editor/modals/share-modal/guest-management.js',
-    hits: 1,
-    kind: 'message',
-  },
-  {
-    file: 'client/views/editor/modals/share-modal/share-links-section.js',
-    hits: 1,
-    kind: 'message',
-  },
-  { file: 'client/views/editor/render-editor.js', hits: 12, kind: 'message' },
-  { file: 'client/views/forgot-password.js', hits: 2, kind: 'message' },
-  {
-    file: 'client/views/list/modals/creation-view/library-compose.js',
-    hits: 2,
-    kind: 'message',
-  },
-  {
-    file: 'client/views/list/views/slide-library-view.js',
-    hits: 1,
-    kind: 'message',
-  },
-  { file: 'client/views/list/views/trash-view.js', hits: 1, kind: 'message' },
-  { file: 'client/views/login.js', hits: 6, kind: 'message' },
-  { file: 'client/views/reset-password.js', hits: 3, kind: 'message' },
-  {
-    file: 'client/views/share-viewer/error-display.js',
-    hits: 2,
-    kind: 'message',
-  },
-  { file: 'client/views/share-viewer/guest-join.js', hits: 1, kind: 'message' },
-  {
-    file: 'client/views/share-viewer/password-form.js',
-    hits: 1,
-    kind: 'message',
-  },
-  {
-    file: 'client/views/share-viewer/viewer-comments.js',
-    hits: 1,
-    kind: 'message',
-  },
   { file: 'client/lib/slide-runtime/video-layer.js', hits: 1, kind: 'state' },
   { file: 'client/views/editor/deck-grid.js', hits: 3, kind: 'state' },
   {
