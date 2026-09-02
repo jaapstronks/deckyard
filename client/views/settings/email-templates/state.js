@@ -3,6 +3,8 @@
  * Manages panel state and provides state accessors.
  */
 
+import { DEFAULT_LOCALE } from '../../../../shared/constants/email-templates.js';
+
 /**
  * Create state management for the email templates panel.
  * @param {Object} elements - UI elements that need busy state management
@@ -66,6 +68,7 @@ export function createState(elements) {
   return {
     // Getters
     getData: () => data,
+    getDefaultLocale: () => data?.defaultLocale || DEFAULT_LOCALE,
     getCurrentType: () => currentType,
     getCurrentLocale: () => currentLocale,
     getFormInputs: () => formInputs,
@@ -74,6 +77,16 @@ export function createState(elements) {
     // Setters
     setData: (d) => {
       data = d;
+    },
+    /**
+     * Record the default locale the server now holds. The list payload
+     * already carries this field, so it stays the one record of the saved
+     * value — a successful save updates it in place rather than adding a
+     * second field that means the same thing.
+     * @param {string} locale - Locale the server confirmed
+     */
+    setDefaultLocale: (locale) => {
+      if (data) data.defaultLocale = locale;
     },
     setCurrentType: (type) => {
       currentType = type;

@@ -79,7 +79,12 @@ export function createActions(state, elements, rebuildUI) {
     defaultLocaleError.clear();
     try {
       state.setBusy(true);
-      await updateEmailDefaultLocale(locale);
+      const resp = await updateEmailDefaultLocale(locale);
+      // The server answers with the locale it now holds; recording it keeps
+      // the state the truth about what is saved. Without this the state stays
+      // on the value from page load, and every later reader of it is wrong —
+      // a refused change rolls back to it, and any rebuild re-selects it.
+      state.setDefaultLocale(resp?.defaultLocale || locale);
       toast.success(
         t(
           'settings.admin.emailTemplates.defaultLocaleSaved',
@@ -88,8 +93,7 @@ export function createActions(state, elements, rebuildUI) {
         { id: 'email-templates-save', durationMs: 2000 },
       );
     } catch (err) {
-      const data = state.getData();
-      defaultLocaleSelect.value = data?.defaultLocale || 'en';
+      defaultLocaleSelect.value = state.getDefaultLocale();
       // The select is the control that was refused, and the value has just
       // snapped back to what the server still holds — so the sentence belongs
       // underneath it, not in a toast that leaves the reversal unexplained.
