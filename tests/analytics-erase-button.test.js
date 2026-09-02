@@ -146,7 +146,8 @@ test('confirming erases, removes the button, and fires onErased', async () => {
     'onErased fired so a re-render will not rebuild it',
   );
   assert.equal(btn.isConnected, false, 'the button removed itself');
-  assert.ok(document.querySelector('.toast-stack'), 'a toast was shown');
+  // The stack and its live regions exist from boot on, so assert on the toast.
+  assert.ok(document.querySelector('.toast-stack .toast'), 'a toast was shown');
 });
 
 test('a failed erase leaves the button clickable again', async () => {

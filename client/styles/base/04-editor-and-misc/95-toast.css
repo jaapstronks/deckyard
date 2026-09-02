@@ -6,11 +6,18 @@
   z-index: var(--z-toast);
   display: flex;
   flex-direction: column;
-  gap: 10px;
   width: min(380px, calc(100vw - 24px));
   pointer-events: none;
 }
+/* One live region per politeness (see client/lib/dom/toast.js). Both exist
+   from boot on, so an empty one must take no space and add no gap — hence the
+   margin on .toast rather than a gap on the flex containers. */
+.toast-region {
+  display: flex;
+  flex-direction: column;
+}
 .toast {
+  margin-top: 10px;
   pointer-events: auto;
   display: flex;
   align-items: flex-start;
@@ -30,7 +37,7 @@
 }
 /* Leading status icon: gives each type a shape cue, so type is not
    signalled by colour alone (WCAG 1.4.1). Purely decorative — the toast
-   text is already announced via role="status". */
+   text is already announced by the live region it sits in. */
 .toast::before {
   content: 'ℹ';
   flex: none;
@@ -39,35 +46,49 @@
   font-weight: 700;
   color: hsl(var(--app-text-secondary, var(--app-text-primary)));
 }
+/* Kind colours ride the semantic token family (--app-success/-warning/-danger),
+   so a fork retunes the palette once instead of patching literals here. */
 .toast.toast-success {
-  border-color: hsl(142 71% 45% / 0.5);
+  border-color: hsl(var(--app-success) / 0.5);
   background:
-    linear-gradient(hsl(142 71% 45% / 0.1), hsl(142 71% 45% / 0.1)),
+    linear-gradient(
+      hsl(var(--app-success) / 0.1),
+      hsl(var(--app-success) / 0.1)
+    ),
     hsl(var(--app-bg-overlay) / 0.92);
 }
 .toast.toast-success::before {
   content: '✓';
-  color: hsl(142 60% 40%);
+  color: hsl(var(--app-success));
 }
 .toast.toast-warning {
-  border-color: hsl(38 92% 50% / 0.55);
+  border-color: hsl(var(--app-warning) / 0.55);
   background:
-    linear-gradient(hsl(38 92% 50% / 0.12), hsl(38 92% 50% / 0.12)),
+    linear-gradient(
+      hsl(var(--app-warning) / 0.12),
+      hsl(var(--app-warning) / 0.12)
+    ),
     hsl(var(--app-bg-overlay) / 0.92);
 }
 .toast.toast-warning::before {
   content: '⚠';
-  color: hsl(35 90% 45%);
+  color: hsl(var(--app-warning-text));
 }
 .toast.toast-error {
-  border-color: hsl(0 72% 51% / 0.6);
+  border-color: hsl(var(--app-danger) / 0.6);
   background:
-    linear-gradient(hsl(0 72% 51% / 0.1), hsl(0 72% 51% / 0.1)),
+    linear-gradient(hsl(var(--app-danger) / 0.1), hsl(var(--app-danger) / 0.1)),
     hsl(var(--app-bg-overlay) / 0.92);
 }
 .toast.toast-error::before {
   content: '✕';
-  color: hsl(0 68% 50%);
+  color: hsl(var(--app-danger));
+}
+/* The toast row is focusable and dismissable from the keyboard, so it needs a
+   visible focus ring of its own. */
+.toast:focus-visible {
+  outline: 2px solid hsl(var(--app-border-focus));
+  outline-offset: 2px;
 }
 .toast-text {
   flex: 1 1 auto;
