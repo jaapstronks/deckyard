@@ -198,7 +198,7 @@ test('the slide modal names both versions natively too', async (t) => {
     toast: noopToast,
     root: document.body,
     normalizeLang,
-    translatableKeysForType: () => ['title', 'subtitle'],
+    perLanguageKeysForSlide: () => ['title', 'subtitle'],
     api: async (_url, opts) => {
       sent = JSON.parse(opts.body);
       return { translations: { title: 'Bonjour', subtitle: 'Bienvenue' } };

@@ -439,27 +439,53 @@
   border-top: 1px solid hsl(var(--app-border-subtle));
 }
 
-/* Upload section */
+/* Upload section — first in the library view, above search and grid (B210). */
 .image-lib-upload {
-  margin-top: var(--ps-space-3-5);
-  padding-top: var(--ps-space-3-5);
-  border-top: 1px solid hsl(var(--app-border-subtle));
+  margin-bottom: var(--ps-space-4);
+  padding-bottom: var(--ps-space-4);
+  border-bottom: 1px solid hsl(var(--app-border-subtle));
+  flex-shrink: 0;
 }
 
-/* Dropzone - prominent upload area */
+/* Signed out, the component renders nothing — don't leave its rule behind as a
+   stray divider above the toolbar. */
+.image-lib-upload:empty {
+  display: none;
+}
+
+/* Both ways in, on one row: drop a file, or paste a URL. Stacked on narrow
+   screens, where the row would otherwise squeeze both halves. */
+.image-lib-entry {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--ps-space-4);
+  align-items: center;
+}
+
+@media (max-width: 640px) {
+  .image-lib-entry {
+    grid-template-columns: 1fr;
+    gap: var(--ps-space-3);
+  }
+}
+
+/* Dropzone - upload area. Laid out as a row rather than a tall block: it sits
+   above the grid now, so its height is what the first thumbnail row pays. */
 .image-lib-dropzone {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
-  gap: var(--ps-space-2);
-  padding: var(--ps-space-8) var(--ps-space-6);
-  margin-top: var(--ps-space-2-5);
+  gap: var(--ps-space-3);
+  padding: var(--ps-space-3) var(--ps-space-4);
   border: 2px dashed hsl(var(--app-border-default));
   border-radius: 12px;
   background: hsl(var(--app-bg-sunken));
   cursor: pointer;
   transition: all 0.15s ease;
+}
+
+.image-lib-dropzone-copy {
+  min-width: 0;
 }
 
 .image-lib-dropzone:hover {
@@ -470,10 +496,11 @@
 .image-lib-dropzone.is-dragover {
   border-color: hsl(var(--app-accent-primary));
   background: hsl(var(--app-accent-primary) / 0.08);
-  transform: scale(1.01);
 }
 
 .image-lib-dropzone-icon {
+  display: flex;
+  flex-shrink: 0;
   opacity: 0.5;
   color: hsl(var(--app-text-secondary));
 }
@@ -489,7 +516,9 @@
   opacity: 0.7;
 }
 
-/* Preview after upload */
+/* Preview after upload. It confirms *which* image was picked, nothing more —
+   kept short so the whole add-flow (entry, preview, details, buttons) fits one
+   screen now that the panel opens above the grid. */
 .image-lib-preview {
   margin-top: var(--ps-space-2-5);
 }
@@ -499,7 +528,7 @@
   width: 100%;
   max-width: 320px;
   height: auto;
-  max-height: 200px;
+  max-height: 140px;
   object-fit: contain;
   border-radius: 12px;
   border: 1px solid hsl(var(--app-border-default));
@@ -508,29 +537,6 @@
 
 .image-lib-change-row {
   margin-top: var(--ps-space-2);
-}
-
-/* URL toggle link */
-.image-lib-url-toggle {
-  display: inline-block;
-  margin-top: var(--ps-space-2-5);
-  padding: 0;
-  border: none;
-  background: none;
-  color: hsl(var(--app-text-secondary));
-  font-size: var(--ps-text-sm);
-  cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.image-lib-url-toggle:hover {
-  color: hsl(var(--app-text-primary));
-}
-
-/* URL section */
-.image-lib-url-section {
-  margin-top: var(--ps-space-2-5);
 }
 
 /* Metadata section */

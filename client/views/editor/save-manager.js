@@ -2,8 +2,8 @@ import { t } from '../../lib/ui-i18n.js';
 import { slideFingerprint } from '../../../shared/slide-fingerprint.js';
 import {
   mapItemTexts,
+  perLanguageKeys,
   textFieldSpecForType,
-  translatableKeysForType as translatableKeysForSlideType,
   valueAtPath,
 } from '../../../shared/slide-types/text-fields.js';
 import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
@@ -148,9 +148,6 @@ export function createSaveManager({
     }, 1500);
   };
 
-  const translatableKeysForType = (type) =>
-    translatableKeysForSlideType(type, SLIDE_TYPES);
-
   /** Recursive text spec for a type: top-level keys plus nested items fields. */
   const textSpecForType = (type) => textFieldSpecForType(type, SLIDE_TYPES);
 
@@ -177,9 +174,9 @@ export function createSaveManager({
   /**
    * Mirror the active version's slide structure into one other version.
    *
-   * Structure only: ids, order, type and non-translatable content follow the
-   * source; every translatable string keeps the target's own text, or stays
-   * empty where the target has none.
+   * Structure only: ids, order, type and machine values follow the source;
+   * every per-language string keeps the target's own text, or stays empty
+   * where the target has none.
    *
    * @param {string} from - the version being edited (already buffered)
    * @param {string} to - an existing version to mirror into
@@ -198,7 +195,6 @@ export function createSaveManager({
     const nextTgtSlides = srcSlides.map((srcSlide) => {
       const sid = String(srcSlide?.id || '');
       const existing = sid ? tgtById.get(sid) : null;
-      const translatable = new Set(translatableKeysForType(srcSlide?.type));
       const base =
         existing && typeof existing === 'object'
           ? structuredClone(existing)
@@ -225,8 +221,13 @@ export function createSaveManager({
       // Read the target's own texts off the pre-merge copy: the loop writes
       // into `base.content` as it goes.
       const existingContent = structuredClone(base.content);
+      // Which keys are this target's own, rather than the source's to mirror.
+      // The type answers for a declared key; for an undeclared one the stored
+      // value does, read across both versions — copying an undeclared string
+      // over is the same loss the collab codec used to produce (D79, #1040).
+      const perLang = perLanguageKeys(spec, srcContent, existingContent);
       for (const [k, v] of Object.entries(srcContent)) {
-        if (translatable.has(k)) continue;
+        if (perLang.has(k)) continue;
         // 'items' arrays are structural (count/order/icons follow the source)
         // but their text subfields are per-language, at every nesting level:
         // keep the target's own texts where present, blank them where absent.

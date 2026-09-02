@@ -77,6 +77,8 @@ export const REMOVED_SLIDE_TYPES = {
         'the standalone card-stack→icon-card-grid conversion for file-store installs and exports; it names both types by design',
       'tests/slide-types-policy.test.js':
         'asserts the type is off the registry and a stored slide degrades safely',
+      'tests/collab-deck-ydoc.test.js':
+        'the fixture for the undeclared-key rule (D79) needs a type that declares nothing at all — a removed one is exactly that, and it is what the fork actually stores',
       'docs/reference/slide-type-removal.md':
         'the render contract section uses this type as its worked example of an archived removal WITH a successor',
     },
