@@ -1097,3 +1097,58 @@ test('the import seam folds a pre-v9 poll export into options[]', async () => {
     ['No', 'Yes'],
   );
 });
+
+test('the chain runs over every language version, once each and idempotently', () => {
+  // B211 part 1 (#1040): only the deck carries a schemaVersion, so every
+  // version in `i18n.versions` is at the deck's version by definition and has
+  // to be folded by the same chain. `normalizeI18n` shares the dominant
+  // version's array with `pres.slides`, so that one must not be walked twice.
+  const version = (name) => ({
+    title: name,
+    slides: [
+      {
+        id: 's1',
+        type: 'team-cards-slide',
+        content: {
+          cardCount: 1,
+          card1Name: name,
+          card1Byline: `${name} byline`,
+        },
+        notes: '',
+      },
+    ],
+  });
+  const versions = { nl: version('nl'), 'en-GB': version('en') };
+  const deck = {
+    id: randomUUID(),
+    title: 'nl',
+    lang: 'nl',
+    i18n: { dominant: 'nl', active: 'nl', versions },
+  };
+  deck.slides = versions.nl.slides; // the shape normalizeI18n leaves in memory
+
+  const once = migratePresentation(deck);
+  assert.equal(once.schemaVersion, CURRENT_SCHEMA_VERSION);
+  for (const [lang, expected] of [
+    ['nl', 'nl'],
+    ['en-GB', 'en'],
+  ]) {
+    const members = once.i18n.versions[lang].slides[0].content.members;
+    assert.deepEqual(
+      members.map((m) => m.name),
+      [expected],
+    );
+    assert.deepEqual(
+      members.map((m) => m.byline),
+      [`${expected} byline`],
+    );
+  }
+  assert.equal(
+    once.slides,
+    once.i18n.versions.nl.slides,
+    'dominant stays shared',
+  );
+
+  const twice = migratePresentation(structuredClone(once));
+  assert.deepEqual(twice.i18n.versions, once.i18n.versions);
+});

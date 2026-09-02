@@ -258,6 +258,12 @@ const QUOTE_BLOCK_GROUP = 'quote-block';
  *    fresh parse from disk, and must return the deck);
  *  - never lose data.
  *
+ * A step is also handed a **language-version view** — `{ slides }` and nothing
+ * else — once per version in `i18n.versions` (see `migratePresentation`). So a
+ * step that folds slide content works unchanged, and a step that touches a
+ * deck-level block (`i18n`, `lang`, …) must tolerate its absence: on the view
+ * it is a no-op, because the deck-level run already handled it.
+ *
  * The invariant `SCHEMA_MIGRATIONS.length === CURRENT_SCHEMA_VERSION` is
  * enforced by tests, so bumping the version forces you to add a real step.
  *
@@ -616,10 +622,42 @@ export function schemaVersionOf(pres) {
 }
 
 /**
+ * Run the ordered chain from `from` up to `CURRENT_SCHEMA_VERSION` over one
+ * migration target — a whole deck, or the `{ slides }` view of one language
+ * version.
+ * @param {any} target
+ * @param {number} from
+ * @returns {any} the migrated target (the same object, unless a step replaced it)
+ */
+function runMigrationChain(target, from) {
+  let out = target;
+  for (let v = from; v < CURRENT_SCHEMA_VERSION; v += 1) {
+    const step = SCHEMA_MIGRATIONS[v];
+    if (typeof step === 'function') out = step(out) || out;
+  }
+  return out;
+}
+
+/**
  * Upgrade a deck to `CURRENT_SCHEMA_VERSION` in memory, running each ordered
  * migration step in turn. Idempotent: an already-current deck is returned with
  * only its stamp normalised. A deck from a *newer* version is left untouched
  * (we never downgrade); validation surfaces that separately.
+ *
+ * A translated deck stores its slides more than once: `pres.slides` holds the
+ * dominant language and `pres.i18n.versions[*].slides` every version, including
+ * the dominant one. Only the deck carries a `schemaVersion`, so the versions
+ * are at the deck's version by definition — and the chain therefore has to run
+ * over each of them too, or the non-dominant versions stay in the old shape
+ * forever. `normalizeI18n` only ever re-syncs the dominant version from the
+ * top-level buffers, so nothing else would heal them; the collab codec then
+ * reads the drift as "one value per deck" and the dominant language wins,
+ * silently losing translated prose (#1040).
+ *
+ * Same steps, same order, one pass each. A version whose `slides` array *is*
+ * `pres.slides` (which is what `normalizeI18n` leaves behind in memory for the
+ * dominant language) is migrated once, not twice.
+ *
  * @param {any} pres
  * @returns {any} the same object, migrated and stamped
  */
@@ -633,11 +671,31 @@ export function migratePresentation(pres) {
       pres.schemaVersion = CURRENT_SCHEMA_VERSION;
     return pres;
   }
-  let out = pres;
-  for (let v = from; v < CURRENT_SCHEMA_VERSION; v += 1) {
-    const step = SCHEMA_MIGRATIONS[v];
-    if (typeof step === 'function') out = step(out) || out;
-  }
+  const out = runMigrationChain(pres, from);
+  migrateLanguageVersions(out, from);
   out.schemaVersion = CURRENT_SCHEMA_VERSION;
   return out;
+}
+
+/**
+ * Run the same chain over every language version's slides, in place.
+ * @param {any} pres - the deck, already migrated at the top level
+ * @param {number} from - the version the deck (and therefore every version) was at
+ */
+function migrateLanguageVersions(pres, from) {
+  const versions = pres?.i18n?.versions;
+  if (!versions || typeof versions !== 'object') return;
+  // The dominant version usually shares its array with `pres.slides`; the steps
+  // are idempotent, but there is no reason to walk it a second time.
+  const done = new Set();
+  if (Array.isArray(pres.slides)) done.add(pres.slides);
+  for (const version of Object.values(versions)) {
+    if (!version || typeof version !== 'object') continue;
+    if (!Array.isArray(version.slides) || done.has(version.slides)) continue;
+    done.add(version.slides);
+    // A bare `{ slides }` view: a step that reads a deck-level block finds none
+    // and does nothing, which is right — the deck-level run covered it.
+    const migrated = runMigrationChain({ slides: version.slides }, from);
+    if (Array.isArray(migrated?.slides)) version.slides = migrated.slides;
+  }
 }
