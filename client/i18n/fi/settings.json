@@ -3,7 +3,6 @@
   "admin.jsonDebug.copy": "Kopioi JSON",
   "admin.jsonDebug.copyFailed": "Kopiointi epäonnistui",
   "admin.jsonDebug.copySchema": "Kopioi skeema",
-  "admin.jsonDebug.error.invalidJson": "Virheellinen JSON: {message}",
   "admin.jsonDebug.error.missingFields": "Dialla on oltava id ja type",
   "admin.jsonDebug.format": "Muotoile",
   "admin.jsonDebug.menuItem": "Näytä JSON (vianetsintä)",

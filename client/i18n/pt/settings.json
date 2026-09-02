@@ -3,7 +3,6 @@
   "admin.jsonDebug.copy": "Copiar JSON",
   "admin.jsonDebug.copyFailed": "Não foi possível copiar",
   "admin.jsonDebug.copySchema": "Copiar esquema",
-  "admin.jsonDebug.error.invalidJson": "JSON inválido: {message}",
   "admin.jsonDebug.error.missingFields": "O diapositivo tem de ter id e tipo",
   "admin.jsonDebug.format": "Formatar",
   "admin.jsonDebug.menuItem": "Ver JSON (depuração)",

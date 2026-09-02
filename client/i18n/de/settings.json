@@ -3,7 +3,6 @@
   "admin.jsonDebug.copy": "JSON kopieren",
   "admin.jsonDebug.copyFailed": "Kopieren fehlgeschlagen",
   "admin.jsonDebug.copySchema": "Schema kopieren",
-  "admin.jsonDebug.error.invalidJson": "Ungültiges JSON: {message}",
   "admin.jsonDebug.error.missingFields": "Folie braucht eine ID und einen Typ",
   "admin.jsonDebug.format": "Formatieren",
   "admin.jsonDebug.menuItem": "JSON anzeigen (Debug)",

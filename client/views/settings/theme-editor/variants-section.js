@@ -21,7 +21,7 @@
 
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { toast } from '../../../lib/dom/toast.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { createColorPicker } from './color-picker.js';
 import { createContrastBadge } from './contrast-badge.js';
 import {
@@ -277,7 +277,11 @@ export function createVariantsSection({ config, colors, onChange }) {
     },
   });
 
+  // The refusal of the add form, under the name field it names.
+  const addError = createInlineError();
+
   function add() {
+    addError.clear();
     const label = nameInput.value.trim();
     const id = slugifyVariantId(label);
     const problem = variantIdProblem(
@@ -285,12 +289,11 @@ export function createVariantsSection({ config, colors, onChange }) {
       list().map((entry) => entry.id),
     );
     if (problem) {
-      toast.error(problem);
-      nameInput.focus();
+      addError.show(problem, { control: nameInput });
       return;
     }
     if (list().length >= MAX_VARIANTS) {
-      toast.error(
+      addError.show(
         t(
           'settings.themes.config.variantsFull',
           'That is as many background options as a theme can hold.',
@@ -323,6 +326,7 @@ export function createVariantsSection({ config, colors, onChange }) {
         onclick: add,
       }),
     ]),
+    addError.el,
   );
 
   return { el };

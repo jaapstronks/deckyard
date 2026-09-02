@@ -3,7 +3,6 @@
   "admin.jsonDebug.copy": "Copier le JSON",
   "admin.jsonDebug.copyFailed": "Échec de la copie",
   "admin.jsonDebug.copySchema": "Copier le schéma",
-  "admin.jsonDebug.error.invalidJson": "JSON invalide : {message}",
   "admin.jsonDebug.error.missingFields": "La diapositive doit avoir un id et un type",
   "admin.jsonDebug.format": "Formater",
   "admin.jsonDebug.menuItem": "Voir le JSON (débogage)",

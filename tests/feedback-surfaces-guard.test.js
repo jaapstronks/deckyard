@@ -60,7 +60,7 @@ const TOAST_SITES = [
     total: 2,
     refusals: 1,
   },
-  { file: 'client/views/settings/tabs/account-tab.js', total: 6, refusals: 3 },
+  { file: 'client/views/settings/tabs/account-tab.js', total: 4, refusals: 1 },
   { file: 'client/views/settings/tabs/themes-tab.js', total: 8, refusals: 2 },
   {
     file: 'client/views/settings/tabs/analytics-tab.js',
@@ -79,46 +79,23 @@ const TOAST_SITES = [
     total: 6,
     refusals: 2,
   },
-  {
-    file: 'client/views/settings/font-editor/adobe-panel.js',
-    total: 3,
-    refusals: 1,
-  },
-  { file: 'client/views/settings/font-editor/index.js', total: 4, refusals: 3 },
-  {
-    file: 'client/views/settings/theme-editor/variants-section.js',
-    total: 2,
-    refusals: 2,
-  },
-  {
-    file: 'client/views/settings/theme-editor/index.js',
-    total: 3,
-    refusals: 3,
-  },
-  {
-    file: 'client/views/settings/theme-editor/backgrounds-section.js',
-    total: 3,
-    refusals: 2,
-  },
-  {
-    file: 'client/views/editor/inline-edit/inline-editor.js',
-    total: 2,
-    refusals: 1,
-    discarded: 1,
-  },
+  { file: 'client/views/settings/font-editor/index.js', total: 2, refusals: 1 },
   {
     file: 'client/views/editor/modals/save-to-library-modal.js',
     total: 1,
     refusals: 1,
   },
+  // --- the server's sentence thrown away for generic copy (B205) ---
+  {
+    file: 'client/views/editor/inline-edit/inline-editor.js',
+    total: 1,
+    discarded: 1,
+  },
   {
     file: 'client/views/editor/modals/json-debug-modal.js',
-    total: 5,
-    refusals: 2,
+    total: 3,
     discarded: 3,
   },
-  { file: 'client/views/editor/fields/table-grid.js', total: 1, refusals: 1 },
-  // --- the server's sentence thrown away for generic copy (B205) ---
   { file: 'client/lib/user/organization-switcher.js', total: 1, discarded: 1 },
   {
     file: 'client/lib/format/analytics-erase-button.js',
@@ -174,29 +151,24 @@ const TOAST_SITES = [
 ];
 
 /** The burndown as the TODO items state it; each PR lowers both. */
-const BURNDOWN = { refusals: 29, discarded: 24, background: 10 };
+const BURNDOWN = { refusals: 13, discarded: 24, background: 10 };
 
 /**
  * `toast.error` as the whole answer of a guard clause. Every one of these is
  * a refusal of the current action; B204 moves them to the inline helper.
+ *
+ * What is left after B204 PR 1 is the shape without a form to put a message
+ * in: a modal that refuses to open at all (edit-modal), a menu item, a card
+ * action. Those are failures of an action with no form on screen — the third
+ * kind, whose carrier *is* a toast — so B205 settles their wording, not their
+ * placement.
  */
 const REFUSE_AND_RETURN = [
   { file: 'client/lib/slide-library/edit-modal.js', hits: 2 },
-  { file: 'client/views/editor/fields/table-grid.js', hits: 1 },
-  { file: 'client/views/editor/inline-edit/inline-editor.js', hits: 1 },
-  { file: 'client/views/editor/modals/json-debug-modal.js', hits: 2 },
+  { file: 'client/views/editor/modals/json-debug-modal.js', hits: 1 },
   { file: 'client/views/editor/topbar.js', hits: 1 },
   { file: 'client/views/editor/topbar/more-menu.js', hits: 1 },
-  { file: 'client/views/settings/font-editor/adobe-panel.js', hits: 1 },
-  { file: 'client/views/settings/font-editor/index.js', hits: 2 },
-  { file: 'client/views/settings/tabs/account-tab.js', hits: 2 },
   { file: 'client/views/settings/tabs/slide-types-tab/index.js', hits: 1 },
-  {
-    file: 'client/views/settings/theme-editor/backgrounds-section.js',
-    hits: 1,
-  },
-  { file: 'client/views/settings/theme-editor/index.js', hits: 3 },
-  { file: 'client/views/settings/theme-editor/variants-section.js', hits: 2 },
 ];
 
 /**
@@ -212,11 +184,6 @@ const ERROR_CLASS_IDIOMS = [
   { file: 'client/views/analytics/shared-report.js', hits: 1, kind: 'message' },
   {
     file: 'client/views/editor/modals/import-slides-tab.js',
-    hits: 1,
-    kind: 'message',
-  },
-  {
-    file: 'client/views/editor/modals/json-debug-modal.js',
     hits: 1,
     kind: 'message',
   },

@@ -7,6 +7,7 @@ import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { api } from '../../../lib/api.js';
 import { toast } from '../../../lib/dom/toast.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
 import { createUploadPanel } from './upload-panel.js';
 import { createAdobePanel } from './adobe-panel.js';
@@ -105,6 +106,9 @@ export function createFontEditor({ fontFamily, onSave, onCancel, onDelete }) {
     text: t('common.save', 'Save'),
   });
   headerActions.append(cancelBtn, saveBtn);
+
+  // The refusal of this form, beside Save (docs/reference/feedback-surfaces.md).
+  const saveError = createInlineError({ callout: true });
 
   if (isEditing && onDelete) {
     const deleteBtn = h('button', {
@@ -305,18 +309,20 @@ export function createFontEditor({ fontFamily, onSave, onCancel, onDelete }) {
 
   // ─── Save Handler ─────────────────────────────────────────
   saveBtn.addEventListener('click', async () => {
+    saveError.clear();
+
     if (!state.name.trim()) {
-      toast.error(
+      saveError.show(
         t('fonts.errorNameRequired', 'Font family name is required.'),
+        { control: nameInput },
       );
-      nameInput.focus();
       return;
     }
 
     // For Adobe source with discover flow, the import button handles creation
     // This save is for upload, monotype, and google sources
     if (!isEditing && state.source === 'adobe') {
-      toast.error(
+      saveError.show(
         t(
           'fonts.adobeUseImport',
           'Use the "Discover Fonts" button above to import Adobe fonts.',
@@ -374,7 +380,7 @@ export function createFontEditor({ fontFamily, onSave, onCancel, onDelete }) {
   });
 
   // ─── Assemble ──────────────────────────────────────────────
-  el.append(header);
+  el.append(header, saveError.el);
   if (sourceSelector) el.append(sourceSelector);
   el.append(commonCard, panelsCard);
 

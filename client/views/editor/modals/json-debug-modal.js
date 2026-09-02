@@ -7,6 +7,7 @@
 
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { confirmModal, createModal } from '../../../lib/dom/modal.js';
 import { h } from '../../../lib/dom.js';
 
@@ -213,24 +214,27 @@ export function openJsonDebugModal({
   });
   jsonTextarea.value = JSON.stringify(slide, null, 2);
 
-  const jsonError = h('div', { class: 'json-debug-error help' });
-  jsonError.style.display = 'none';
+  /** What the JSON does not parse to, while it is being typed. */
+  const parseError = (e) =>
+    t('editor.jsonDebug.parseError', 'JSON error: {message}', {
+      message: e.message,
+    });
+
+  // A hint while typing, not a refusal of an attempt: polite, and it leaves
+  // focus in the textarea (docs/reference/feedback-surfaces.md). The control it
+  // names carries `aria-invalid`, which is what the red border follows.
+  const parseHint = createInlineError({ live: 'polite' });
+  // The refusal of Apply Changes, beside the button that was pressed.
+  const saveError = createInlineError({ callout: true });
 
   // Validate JSON as user types
   jsonTextarea.addEventListener('input', () => {
     hasUnsavedChanges = true;
     try {
       editedJson = JSON.parse(jsonTextarea.value);
-      jsonError.style.display = 'none';
-      jsonTextarea.classList.remove('is-invalid');
+      parseHint.clear();
     } catch (e) {
-      jsonError.textContent = t(
-        'editor.jsonDebug.parseError',
-        'JSON error: {message}',
-        { message: e.message },
-      );
-      jsonError.style.display = 'block';
-      jsonTextarea.classList.add('is-invalid');
+      parseHint.show(parseError(e), { control: jsonTextarea, focus: false });
       editedJson = null;
     }
   });
@@ -261,15 +265,9 @@ export function openJsonDebugModal({
     try {
       const parsed = JSON.parse(jsonTextarea.value);
       jsonTextarea.value = JSON.stringify(parsed, null, 2);
-      jsonError.style.display = 'none';
-      jsonTextarea.classList.remove('is-invalid');
+      parseHint.clear();
     } catch (e) {
-      jsonError.textContent = t(
-        'editor.jsonDebug.parseError',
-        'JSON error: {message}',
-        { message: e.message },
-      );
-      jsonError.style.display = 'block';
+      parseHint.show(parseError(e), { control: jsonTextarea, focus: false });
     }
   };
 
@@ -280,8 +278,8 @@ export function openJsonDebugModal({
   });
   resetBtn.onclick = () => {
     jsonTextarea.value = JSON.stringify(slide, null, 2);
-    jsonError.style.display = 'none';
-    jsonTextarea.classList.remove('is-invalid');
+    parseHint.clear();
+    saveError.clear();
     hasUnsavedChanges = false;
     editedJson = null;
   };
@@ -292,23 +290,26 @@ export function openJsonDebugModal({
     text: t('admin.jsonDebug.save', 'Apply Changes'),
   });
   saveBtn.onclick = async () => {
+    saveError.clear();
+
     if (!editedJson) {
       try {
         editedJson = JSON.parse(jsonTextarea.value);
+        parseHint.clear();
       } catch (e) {
-        toast.error(
-          t('admin.jsonDebug.error.invalidJson', 'Invalid JSON: {message}', {
-            message: e.message,
-          }),
-        );
+        // The hint under the textarea is where a parse error lives; re-showing
+        // it there lands focus on the JSON rather than saying the same
+        // sentence a second time beside the button.
+        parseHint.show(parseError(e), { control: jsonTextarea });
         return;
       }
     }
 
     // Validate basic structure
     if (!editedJson.id || !editedJson.type) {
-      toast.error(
+      saveError.show(
         t('admin.jsonDebug.error.missingFields', 'Slide must have id and type'),
+        { control: jsonTextarea },
       );
       return;
     }
@@ -359,7 +360,13 @@ export function openJsonDebugModal({
   };
 
   jsonActions.append(copyBtn, formatBtn, resetBtn, saveBtn);
-  jsonPanel.append(jsonInfo, jsonTextarea, jsonError, jsonActions);
+  jsonPanel.append(
+    jsonInfo,
+    jsonTextarea,
+    parseHint.el,
+    jsonActions,
+    saveError.el,
+  );
 
   // Schema tab content
   const schemaPanel = h('div', {

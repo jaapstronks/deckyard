@@ -1141,7 +1141,11 @@ export function createInlineEditor({
    *  through the same dirty/save/rerender path as a popover pick. */
   async function handleDroppedImage(photoEl, file) {
     if (!file.type?.startsWith('image/')) {
-      toast.error(
+      // A drop onto the canvas has no form and no field to name, so the one
+      // carrier left is a toast (docs/reference/feedback-surfaces.md). Nothing
+      // broke and nothing was lost — the file was simply not taken — so it is
+      // a warning rather than an error.
+      toast.warning(
         t('editor.inline.media.dropInvalid', 'That is not an image file.'),
       );
       return;
