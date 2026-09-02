@@ -17,8 +17,8 @@
  * server answered:
  *   - the published public viewer            (/p/:id-:slug, server-rendered)
  *   - the share-link viewer WITH a token     (/s/:token → the deck)
- *   - the share-link viewer WITHOUT a valid token (/s/:bogus → an error card,
- *     never a blank page and never a leaked deck)
+ *   - the share-link viewer WITHOUT a valid token (/s/:bogus → the shared
+ *     page-unavailable state, never a blank page and never a leaked deck)
  *   - the presenter view                     (/present/:id → the stage renders)
  *   - the follow (audience) view coupled to the presenter's live session
  *     (/follow/:id → the presenter's current slide, and it *tracks* a slide
@@ -321,10 +321,13 @@ test(
         null,
         'no deck slide should render for an unknown token',
       );
-      const hasErrorCard = await page.$('[class*="error"]');
+      // The shared whole-page state, not a class matching /error/: a page
+      // state carries no `*-error` name — that vocabulary belongs to
+      // createInlineError() (B213, and the feedback-surfaces guard).
+      const hasUnavailableCard = await page.$('.page-unavailable');
       assert.ok(
-        hasErrorCard,
-        'an error card should render for an unknown token',
+        hasUnavailableCard,
+        'the page-unavailable state should render for an unknown token',
       );
     } finally {
       await page.close();

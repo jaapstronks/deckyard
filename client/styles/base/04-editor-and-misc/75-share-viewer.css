@@ -160,7 +160,7 @@
   opacity: 0.85;
 }
 
-/* Card (password prompt, error) */
+/* Card (password prompt) */
 .share-viewer-card {
   max-width: 420px;
   margin: 80px auto;
@@ -180,25 +180,10 @@
   opacity: 0.85;
   line-height: 1.45;
 }
-.share-viewer-card--error {
-  border-color: hsl(var(--app-danger) / 0.35);
-}
-
-/* The card's own icon and subtitle. Named after the card, not after "error":
-   the `--error` modifier already carries that, and a `*-error` class outside
-   `createInlineError()` is what the feedback-surfaces guard refuses. */
-.share-viewer-card-icon {
-  margin-bottom: var(--ps-space-3);
-}
-
-.share-viewer-card-subtitle {
-  font-size: var(--ps-text-lg);
-  font-weight: 600;
-  opacity: 0.85;
-  margin-bottom: var(--ps-space-3);
-}
-
-/* Revocation message */
+/* Revocation message — the owner's own words on a revoked link, quoted inside
+   the shared `.page-unavailable` card (see client/lib/dom/page-unavailable.js).
+   Left-aligned against that card's centred copy: it is someone's sentence, not
+   ours. */
 .share-viewer-revocation-message {
   margin: var(--ps-space-4) 0 0;
   padding: var(--ps-space-3-5) var(--ps-space-4-5);
