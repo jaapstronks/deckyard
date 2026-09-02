@@ -14,24 +14,31 @@
  * delegates the rest (alt buffers, caption, provider id) to this helper.
  */
 
+import { getSupportedLangs } from '../../../lib/format/i18n.js';
+
 /**
  * @typedef {import('./picker-provider.js').PickedImage} PickedImage
  */
 
 /**
- * Seed alt text from a normalized pick into the relevant language buffers.
+ * Seed alt text from a normalized pick into every language buffer the deck has.
  *
- * Two provider shapes collapse here:
- * - `picked.alts` (a per-language map, e.g. the native library) wins: the
- *   active + source buffers are set from it.
- * - otherwise `picked.alt` (a single seed, e.g. ImageKit's altSeed) is applied
- *   to the active, English, and source buffers as a translation baseline.
+ * The alt text describes the *image*, so picking a new one invalidates every
+ * language's alt at once — the write target is the whole subset
+ * (`getSupportedLangs()` plus the active language, which a deck may hold
+ * outside the subset), not a pair. Two provider shapes collapse here:
+ * - `picked.alts` (a per-language map, e.g. the native library) wins: each
+ *   buffer takes its own language's entry, empty where the map has none.
+ * - otherwise `picked.alt` (a single seed, e.g. ImageKit's altSeed) fills every
+ *   buffer as a translation baseline.
+ *
+ * The setter is a no-op for a language this deck has no version of, so naming
+ * the subset costs nothing where the versions do not exist.
  *
  * `sourceLang` is the version this deck's active language is translated FROM
  * (`translationSourceFor`). It was called `otherLang` and fed by the bilingual
  * "the other one of two" helper, which had no answer at all for a deck whose
- * active version is German — so nothing was seeded (B182). Widening the seed to
- * *every* language of the workspace subset is phase 5 of that item.
+ * active version is German — so nothing was seeded (B182 fase 5).
  *
  * @param {Object} opts
  * @param {PickedImage} opts.picked
@@ -47,21 +54,20 @@ export function applyAltFromPick({
 }) {
   if (typeof setAltForLang !== 'function' || !picked) return;
 
+  const targets = new Set(getSupportedLangs());
+  if (activeLang) targets.add(activeLang);
+  if (sourceLang) targets.add(sourceLang);
+
   const alts =
     picked.alts && typeof picked.alts === 'object' ? picked.alts : null;
   if (alts) {
-    setAltForLang(activeLang, alts[activeLang] || '');
-    if (sourceLang && sourceLang !== activeLang)
-      setAltForLang(sourceLang, alts[sourceLang] || '');
+    for (const lang of targets) setAltForLang(lang, alts[lang] || '');
     return;
   }
 
   const seed = typeof picked.alt === 'string' ? picked.alt : '';
   if (!seed) return;
-  setAltForLang(activeLang, seed);
-  // Seed the English buffer as a translation baseline (unless it is the active one).
-  if (activeLang !== 'en-GB') setAltForLang('en-GB', seed);
-  if (sourceLang && sourceLang !== activeLang) setAltForLang(sourceLang, seed);
+  for (const lang of targets) setAltForLang(lang, seed);
 }
 
 /**

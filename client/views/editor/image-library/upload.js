@@ -7,6 +7,7 @@ import {
   getAllTags,
   installTagsAutocomplete,
   createFieldWrap,
+  createAltLangInputs,
 } from './utils.js';
 import { h } from '../../../lib/dom.js';
 
@@ -233,14 +234,7 @@ export function createImageLibraryUpload({
       'Photographer name (optional)',
     ),
   });
-  const inAltNl = h('input', {
-    class: 'form-input',
-    placeholder: t('imageLibrary.altNl', 'Alt text (NL)'),
-  });
-  const inAltEn = h('input', {
-    class: 'form-input',
-    placeholder: t('imageLibrary.altEn', 'Alt text (EN)'),
-  });
+  const altInputs = createAltLangInputs({ asPlaceholder: true });
 
   const getTagsArray = () =>
     String(inTags.value || '')
@@ -266,13 +260,11 @@ export function createImageLibraryUpload({
                 description: inDescription.value || '',
                 tags: getTagsArray(),
                 photographer: inPhotographer.value || '',
+                langs: altInputs.langs,
                 context: context || null,
               }),
             });
-            const a =
-              resp?.alts && typeof resp.alts === 'object' ? resp.alts : {};
-            inAltNl.value = String(a?.nl || '');
-            inAltEn.value = String(a?.['en-GB'] || '');
+            altInputs.write(resp?.alts);
             setStatus(t('imageLibrary.alt.generated', 'Generated.'));
           } catch (e) {
             setStatus(String(e?.message || e));
@@ -307,7 +299,7 @@ export function createImageLibraryUpload({
       ]),
       tagsDatalist,
       altHeader,
-      h('div', { class: 'image-lib-metadata-grid' }, [inAltNl, inAltEn]),
+      h('div', { class: 'image-lib-metadata-grid' }, altInputs.fields),
     ],
   );
 
@@ -327,7 +319,7 @@ export function createImageLibraryUpload({
             description: inDescription.value || '',
             tags: getTagsArray(),
             photographer: inPhotographer.value || '',
-            alts: { nl: inAltNl.value || '', 'en-GB': inAltEn.value || '' },
+            alts: altInputs.read(),
           }),
         });
         onItemCreated(created);
@@ -346,10 +338,7 @@ export function createImageLibraryUpload({
     text: t('imageLibrary.useWithoutSaving', 'Use without saving'),
     onclick: async () => {
       if (!newUrl) return;
-      const altNl = String(inAltNl.value || '').trim();
-      const altEn = String(inAltEn.value || '').trim();
-
-      if (!altNl && !altEn) {
+      if (altInputs.isEmpty()) {
         if (canAiAlt) {
           const genOk = await confirmModal(document.body, {
             title: t('imageLibrary.alt.missingTitle', 'Alt text missing'),
@@ -371,13 +360,11 @@ export function createImageLibraryUpload({
                   description: inDescription.value || '',
                   tags: getTagsArray(),
                   photographer: inPhotographer.value || '',
+                  langs: altInputs.langs,
                   context: context || null,
                 }),
               });
-              const a =
-                resp?.alts && typeof resp.alts === 'object' ? resp.alts : {};
-              inAltNl.value = String(a?.nl || '');
-              inAltEn.value = String(a?.['en-GB'] || '');
+              altInputs.write(resp?.alts);
               setStatus(t('imageLibrary.alt.generated', 'Generated.'));
             } catch (e) {
               setStatus(String(e?.message || e));
@@ -413,7 +400,7 @@ export function createImageLibraryUpload({
           description: inDescription.value || '',
           tags: getTagsArray(),
           photographer: inPhotographer.value || '',
-          alts: { nl: inAltNl.value || '', 'en-GB': inAltEn.value || '' },
+          alts: altInputs.read(),
         },
         { applyCaptionCredit: allowCaptionCredit && creditCb?.checked },
       );

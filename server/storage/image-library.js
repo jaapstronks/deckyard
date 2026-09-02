@@ -103,7 +103,10 @@ async function createImage(data, ctx) {
       description: data.description || '',
       photographer: data.photographer || '',
       tags: sql`${data.tags || []}::text[]`,
-      alts: jsonb(data.alts || { nl: '', 'en-GB': '' }),
+      // An open map keyed by deck language, empty when the caller supplied
+      // none — seeding a Dutch and an English key here made the pair look like
+      // the shape of the field, which it never was (B182 fase 5).
+      alts: jsonb(data.alts || {}),
       sources: sql`${data.sources || []}::text[]`,
       uploaded_by: data.uploadedBy || null,
     })
