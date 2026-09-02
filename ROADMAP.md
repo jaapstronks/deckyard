@@ -81,6 +81,11 @@ documented under `docs/reference/` and `docs/developer/`._
 - **Forker slide-type toolkit** — a scaffolder and validator for the file-JS
   custom-slide-type seam, plus a reusable building-block layer (eyebrow,
   highlight, badge, CTA) that core and custom types both compose.
+- **System clipboard interop for slides** — copy/paste of slides across
+  browsers, devices and Deckyard installs via the async Clipboard API: the
+  in-app buffer stays the fast path, with a web custom format
+  (`application/vnd.deckyard.slides+json`) plus a plain-text outline written
+  to the system clipboard as a progressive enhancement.
 
 ## Later — directional
 
