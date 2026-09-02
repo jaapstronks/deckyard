@@ -648,7 +648,6 @@
   "editor.slide.duration.help": "Lämna tomt för att använda presentationens standard ({default} s). Gäller bara den här sliden.",
   "editor.slide.duration.label": "Slidens längd (sekunder)",
   "editor.slide.fillTranslation": "Fyll slide…",
-  "editor.slide.fillTranslation.title": "Fyll denna slide från det andra språket (med förhandsgranskning).",
   "editor.slide.lock": "Lås slide",
   "editor.slide.moveTo": "Flytta till position…",
   "editor.slide.moveToEnd": "Flytta till slutet",
