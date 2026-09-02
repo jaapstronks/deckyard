@@ -4,6 +4,75 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.29.0](https://github.com/jaapstronks/deckyard/compare/v1.28.0...v1.29.0) (2026-09-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* **slide-types:** the slide-type root CSS classes `.slide-title-universal` (title-slide) and `.slide-lijstje` (list-slide) are renamed to `.slide-title` and `.slide-list`. Deckyard's own stylesheets move with them, so core themes are unaffected; a fork that styles either name against its own copy of the slide types must rename the rule. The `tsu-*` and `.lijst*` families are unchanged.
+* **slide-types:** the slide-type CSS class `.sfi-card-kicker` is renamed to `.sfi-card-title` (feedback-slide, follow-invite-slide). Deckyard's own stylesheet moves with it, so core themes are unaffected; a fork that styles this name against its own copy of the slide types must rename the rule.
+
+### Added
+
+* **capture:** a second take, and the frame ticker that makes takes trustworthy ([#1051](https://github.com/jaapstronks/deckyard/issues/1051)) ([3106ac2](https://github.com/jaapstronks/deckyard/commit/3106ac23a2139744d8f511709fc9577fee3406b6))
+* **capture:** record video takes from the recipe format that already exists ([#1039](https://github.com/jaapstronks/deckyard/issues/1039)) ([86151ef](https://github.com/jaapstronks/deckyard/commit/86151efffa4f6507f60ad3656111dbf558dafb5b))
+* **capture:** report a run as JSON, and measure what two runs agree on ([#1058](https://github.com/jaapstronks/deckyard/issues/1058)) ([a5acc7d](https://github.com/jaapstronks/deckyard/commit/a5acc7d0a0c8c77addec172b589815ec61de8036))
+* **feedback:** the kind of event decides the carrier, and a refusal is inline ([df04a27](https://github.com/jaapstronks/deckyard/commit/df04a278ba588d69f4f3c4d5a0b3e6825b72754f))
+* **i18n:** derive translation progress per language ([#1064](https://github.com/jaapstronks/deckyard/issues/1064)) ([9312df7](https://github.com/jaapstronks/deckyard/commit/9312df72606b2a418052dd35647d34531e4c2c0d))
+* **i18n:** gate anchor consistency — one concept, one word per locale (B148) ([#1012](https://github.com/jaapstronks/deckyard/issues/1012)) ([f368b05](https://github.com/jaapstronks/deckyard/commit/f368b0512fcf8a222ac17f7aca4cdce9266cd10b))
+* **i18n:** move a deck's source version from the language menu ([#1069](https://github.com/jaapstronks/deckyard/issues/1069)) ([05ef28d](https://github.com/jaapstronks/deckyard/commit/05ef28d2f02915d31ee4f0c98e12ec31cb9a077e))
+* **i18n:** one language menu per deck in the editor topbar ([#1065](https://github.com/jaapstronks/deckyard/issues/1065)) ([2f5fee5](https://github.com/jaapstronks/deckyard/commit/2f5fee593539310afcadd2e30665ebe09576f7ff))
+* **i18n:** the deck-language axis becomes one open list ([#1026](https://github.com/jaapstronks/deckyard/issues/1026)) ([62c5bae](https://github.com/jaapstronks/deckyard/commit/62c5bae42561d9e036585573276949d827c74659))
+* **i18n:** the deck's source version stays put while you edit a translation ([#1066](https://github.com/jaapstronks/deckyard/issues/1066)) ([5b17450](https://github.com/jaapstronks/deckyard/commit/5b174504260621fad5c0b992a232a6caee51cd30))
+* **i18n:** the translate modals name their source and target off the axis ([#1071](https://github.com/jaapstronks/deckyard/issues/1071)) ([078576c](https://github.com/jaapstronks/deckyard/commit/078576cb8a5f07603e4e42c41017f2d7795034cf))
+* **lint:** make lint:deadcss a gate behind a reasoned allowlist ([#1052](https://github.com/jaapstronks/deckyard/issues/1052)) ([63c5a90](https://github.com/jaapstronks/deckyard/commit/63c5a90804eaaa239d8a0ed710732f1375394637))
+* **list:** content-addressed deck thumbnails and one deck-card mapper ([#1036](https://github.com/jaapstronks/deckyard/issues/1036)) ([ffae871](https://github.com/jaapstronks/deckyard/commit/ffae871731eae217f548959ea39586062969b03b))
+* **slide-types:** a shared partials library for eyebrows, badges and highlights ([8255509](https://github.com/jaapstronks/deckyard/commit/8255509f6bec3fe5299e07881f990c78678dd61b))
+* **slide-types:** add callout-slide, the admonition family ([#1028](https://github.com/jaapstronks/deckyard/issues/1028)) ([5b88fd7](https://github.com/jaapstronks/deckyard/commit/5b88fd786e9e6cad74fb2440c9df16b9980cae43))
+* **slide-types:** aside insets — the within-slide contrast block ([#1032](https://github.com/jaapstronks/deckyard/issues/1032)) ([9ffb0d9](https://github.com/jaapstronks/deckyard/commit/9ffb0d964d3703dc40ea89b9f45963f624f8818d))
+* **slide-types:** comparison sub-variants — versus, before-after, pros-cons, tradeoff ([#1031](https://github.com/jaapstronks/deckyard/issues/1031)) ([0501c91](https://github.com/jaapstronks/deckyard/commit/0501c915ba05ed275e0da7fc5cde20f4734464f7))
+* **slide-types:** give the title slide its own type step (5xl) ([#1067](https://github.com/jaapstronks/deckyard/issues/1067)) ([0a6b3bf](https://github.com/jaapstronks/deckyard/commit/0a6b3bfd337e74900dbe37a6c83040cfd5701230))
+* **slide-types:** the CSS-scoping convention for file-JS types ([#1030](https://github.com/jaapstronks/deckyard/issues/1030)) ([54c8f32](https://github.com/jaapstronks/deckyard/commit/54c8f3253ba983d5dcdabfd83eff68de0387767b))
+* **slide-types:** validate custom slide-type definitions, and scaffold valid ones ([#1027](https://github.com/jaapstronks/deckyard/issues/1027)) ([828e618](https://github.com/jaapstronks/deckyard/commit/828e618cdc1d4c08ab75a360417bcc002e819659))
+* the viewer chrome and follow codes follow the deck's versions ([2b2e810](https://github.com/jaapstronks/deckyard/commit/2b2e81061035974e7c70e3d3d3b0f406cdf3999a))
+
+
+### Fixed
+
+* **api:** 403 for authenticated-but-forbidden callers (D68) ([#1010](https://github.com/jaapstronks/deckyard/issues/1010)) ([bf26dc3](https://github.com/jaapstronks/deckyard/commit/bf26dc3d0b29c9b17826f49a549fc0f069373757))
+* **capture:** pin the join code so marketing shots reproduce ([#1062](https://github.com/jaapstronks/deckyard/issues/1062)) ([43ed260](https://github.com/jaapstronks/deckyard/commit/43ed260a4417cd7d4b1a2afec73149a399a1c3c8))
+* **capture:** seed comment threads through a storage scope ([#1056](https://github.com/jaapstronks/deckyard/issues/1056)) ([c343d08](https://github.com/jaapstronks/deckyard/commit/c343d089c3a6aeb29895a98f28123a59dc7e4d96))
+* **chart-slide:** drop the orphan `subtitle` default and gate the shape ([1941bee](https://github.com/jaapstronks/deckyard/commit/1941bee9bf157ac382f7a52b4f824cb5a355e4f1))
+* **css:** key per-type dark-ground rules on luminance, not name (B165) ([#1015](https://github.com/jaapstronks/deckyard/issues/1015)) ([25d2b1c](https://github.com/jaapstronks/deckyard/commit/25d2b1c0a92a28e6c46ac38eee488fedaeba506f))
+* **email:** escape once, and cover recipient/template/locale (B151) ([#1019](https://github.com/jaapstronks/deckyard/issues/1019)) ([4d0f0ea](https://github.com/jaapstronks/deckyard/commit/4d0f0ea80422aec19d1f42bfc1c85f924a317547))
+* **embed:** the boot payload parses again - the JSON went through escapeHtml() into a raw-text script block, so every embed since 1.0.0 ran on defaults. Slide count, language switch, start/loop/ui and a configured allowedOrigins list now take effect (an empty list still allows all origins). ([2b2e810](https://github.com/jaapstronks/deckyard/commit/2b2e81061035974e7c70e3d3d3b0f406cdf3999a))
+* **fork:** give the gates fork seams and split the font lock (B163) ([4898191](https://github.com/jaapstronks/deckyard/commit/48981915d9c02d46a98599535617d1cbb27b053d))
+* **i18n:** resolve the B148 anchor decision round (cohorts 1-2) ([#1013](https://github.com/jaapstronks/deckyard/issues/1013)) ([1674059](https://github.com/jaapstronks/deckyard/commit/167405978bd5a91206d05b1ecb4f1eda66023331))
+* **i18n:** translate nested item texts (rows[].blocks[]) (B164) ([7e5e5e3](https://github.com/jaapstronks/deckyard/commit/7e5e5e3633256ffa0fe249ef514ef1b70f9e2f0c))
+* **lint:** a composed CSS class must be assemblable, not merely prefixed ([b652399](https://github.com/jaapstronks/deckyard/commit/b65239926c0839bcabbc018654a42581fd78bece))
+* **lint:** extend the silent-failure gate to shared/ and clear its burndown ([#1008](https://github.com/jaapstronks/deckyard/issues/1008)) ([566befb](https://github.com/jaapstronks/deckyard/commit/566befbe79205017cd632d7b6edfaf7c064cfb65))
+* **list:** make deck-card thumbnails actually load ([#1034](https://github.com/jaapstronks/deckyard/issues/1034)) ([ff55d36](https://github.com/jaapstronks/deckyard/commit/ff55d36120cc71194963b522894745f36b74986f))
+* **mcp:** scope an SSE call to the organization of its API key ([7fc6c6a](https://github.com/jaapstronks/deckyard/commit/7fc6c6ae0c2acf984c4840fe63c229549f508b47))
+* **presenter:** render the console's next-slide thumb in the deck language ([#1033](https://github.com/jaapstronks/deckyard/issues/1033)) ([a414e6d](https://github.com/jaapstronks/deckyard/commit/a414e6d365998968ec9434b7c30a921256d869d6))
+* **render:** every slide-mount call site states its deck language ([#1035](https://github.com/jaapstronks/deckyard/issues/1035)) ([3c000b0](https://github.com/jaapstronks/deckyard/commit/3c000b08194ebe295a0160d957f0ad57941a99b8))
+* **slide-types:** a refused save says which field, next to the button ([#1072](https://github.com/jaapstronks/deckyard/issues/1072)) ([6835ca0](https://github.com/jaapstronks/deckyard/commit/6835ca08409881e28a0acc683bdc5900d997367c))
+* **slide-types:** fold legacy `subtitle` in the migration funnel, drop its readers ([#1055](https://github.com/jaapstronks/deckyard/issues/1055)) ([9c59693](https://github.com/jaapstronks/deckyard/commit/9c59693df6d58c7c80297db59b67d43d6869a923))
+* **slide-types:** give title-slide and list-slide their convention root class ([857868d](https://github.com/jaapstronks/deckyard/commit/857868ddbefd8a49033a1f8e24a19baf3c172936))
+* **slide-types:** rename `.sfi-card-kicker` to `.sfi-card-title` ([#1060](https://github.com/jaapstronks/deckyard/issues/1060)) ([19153fc](https://github.com/jaapstronks/deckyard/commit/19153fc39e9bd2c6b7a13934f8bd3b914d0ac558))
+* **slide-types:** scope a DB slide type's CSS to its own root ([#1063](https://github.com/jaapstronks/deckyard/issues/1063)) ([8de1cdb](https://github.com/jaapstronks/deckyard/commit/8de1cdbd73c2785024aa7f044aa6a50cf8e36873))
+* **slide-types:** the cover steps down when its text will not fit ([#1068](https://github.com/jaapstronks/deckyard/issues/1068)) ([1ca4812](https://github.com/jaapstronks/deckyard/commit/1ca48123c9aa8f8e0ae018105672eb01481059ca))
+* **toast:** a failure announces as a failure, and Escape closes it ([#1073](https://github.com/jaapstronks/deckyard/issues/1073)) ([7b713fe](https://github.com/jaapstronks/deckyard/commit/7b713fe62b469325afc3201dcf3fc6b50572d8a6))
+
+
+### Security
+
+* **mcp:** gate tool calls on API-key permissions and quota ([#1024](https://github.com/jaapstronks/deckyard/issues/1024)) ([5d22d5a](https://github.com/jaapstronks/deckyard/commit/5d22d5a34924540c9d3d3dc31821c8a15bb3f154))
+
+
+### Changed
+
+* keep the next release in 1.x per the beta rule ([546ff61](https://github.com/jaapstronks/deckyard/commit/546ff61153c561b168d5de1afbade113bc1161bf))
+
 ## [1.28.0](https://github.com/jaapstronks/deckyard/compare/v1.27.2...v1.28.0) (2026-08-26)
 
 
