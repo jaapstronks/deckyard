@@ -263,7 +263,11 @@ function legacySlides(lang) {
     {
       id: 's-poll',
       type: 'poll-slide',
-      content: { question: s.pollQuestion, option1: s.pollYes, option2: s.pollNo },
+      content: {
+        question: s.pollQuestion,
+        option1: s.pollYes,
+        option2: s.pollNo,
+      },
       notes: '',
     },
     // v9 shape: the pre-rename `subtitle`, on a type that declares `subheading`
