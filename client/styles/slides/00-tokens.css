@@ -336,6 +336,18 @@
   --slide-overlay-medium: rgba(0, 0, 0, var(--slide-opacity-medium));
   --slide-overlay-strong: rgba(0, 0, 0, var(--slide-opacity-solid));
 
+  /* The card scrim: what a translucent surface has to become when the ground is
+     a background IMAGE instead of a flat colour. The overlays above are tints —
+     they assume something predictable behind them. A photo is not predictable,
+     so a surface that must carry text needs a fill chosen on contrast, not on
+     taste: this one keeps muted body text (the light text colour at
+     --slide-opacity-visible) at 4.78:1 against the worst case, a white pixel
+     directly behind the surface. Gated by tests/slide-photo-scrim.test.js —
+     lower the alpha and that test fails. Selected on
+     `.has-slide-bg.has-slide-bg-light-text`: the ground is a photo AND it is
+     dark. Flat dark theme grounds keep their glass treatment. */
+  --slide-scrim-card: rgba(0, 0, 0, var(--slide-opacity-strong));
+
   /* Text on dark backgrounds */
   --slide-text-light: rgba(255, 255, 255, 0.98);
   --slide-text-light-muted: rgba(255, 255, 255, var(--slide-opacity-prominent));

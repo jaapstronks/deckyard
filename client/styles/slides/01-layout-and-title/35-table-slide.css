@@ -102,6 +102,21 @@
 .has-slide-bg-light-text .md-table--plain {
   --table-header-bg: rgba(255, 255, 255, 0.08);
 }
+/* …but that tint presupposes the flat dark ground it was written for. On a
+   background IMAGE there is no such ground: 8% white is noise on noise, and it
+   is not only the header that suffers — every plain cell sits straight on the
+   photo, so a bright patch swallows a whole column. Raising just the header
+   band would fix the least broken part and leave a dark bar over an unreadable
+   table.
+
+   So the scrim goes under the whole table (00-tokens.css § --slide-scrim-card)
+   and the header keeps the tint above, unchanged: the scrim gives the plain
+   table exactly the flat dark ground that tint always assumed, and the header
+   separates from the body the same way it does on a dark theme variant. */
+.has-slide-bg.has-slide-bg-light-text .md-table--plain {
+  --table-bg: var(--slide-scrim-card);
+  --table-radius: var(--slide-radius-md);
+}
 
 /* panel — filled panel surface, emphasized header row + label column.
    The body is the mist surface, so its text is that surface's own answer

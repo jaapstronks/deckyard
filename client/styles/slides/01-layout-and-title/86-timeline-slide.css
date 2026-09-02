@@ -36,6 +36,24 @@
   --timeline-marker-ring: rgba(255, 255, 255, 0.85);
 }
 
+/* Photographic ground: the glass fill above has nothing predictable behind it,
+   so 10% white over a busy image is a card that is not a card — on
+   slides.ciiic.nl the titles were still legible and the description line was
+   not. The luminance class answers "how dark is the ground", never "is it a
+   texture"; `.has-slide-bg` is the second question (00-base.css § background
+   images), and both together are this case. Contrast, not taste: the scrim
+   token is sized so the muted description clears AA over a white pixel
+   (slide-photo-scrim.test.js). No backdrop-filter — this file already carries
+   one @media print exception for a Chrome rendering difference, and a blur that
+   the print path drops would take the readability with it.
+
+   Flat dark theme grounds (calm, midnight) keep the glass treatment above:
+   there the fill sits on a known colour and looks better for it. */
+.slide-timeline.has-slide-bg.has-slide-bg-light-text {
+  --timeline-card-surface: var(--slide-scrim-card);
+  --timeline-card-border: rgba(255, 255, 255, var(--slide-opacity-soft));
+}
+
 /* Print/PDF: drop the raw card shadow the same way the slide-shadow tokens are
    flattened in 00-tokens.css. The light variant above inherits that flattening
    for free (it uses var(--slide-shadow-card)); this dark variant sets its own
