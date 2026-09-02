@@ -168,6 +168,11 @@ const LEGACY_PROSE = {
     controlName: 'Ada Lovelace',
     controlByline: 'Rekenkundige',
     controlAlt: 'Ada in profiel.',
+    chapterTitle: 'Hoofdstuk twee',
+    chapterSub: 'Waar we nu staan',
+    pollQuestion: 'Wat vind je ervan?',
+    pollYes: 'Eens',
+    pollNo: 'Oneens',
   },
   'en-GB': {
     title: 'Legacy shapes',
@@ -184,6 +189,11 @@ const LEGACY_PROSE = {
     controlName: 'Ada Lovelace',
     controlByline: 'Mathematician',
     controlAlt: 'Ada in profile.',
+    chapterTitle: 'Chapter two',
+    chapterSub: 'Where we stand',
+    pollQuestion: 'What do you think?',
+    pollYes: 'Agree',
+    pollNo: 'Disagree',
   },
 };
 
@@ -247,6 +257,21 @@ function legacySlides(lang) {
           },
         ],
       },
+      notes: '',
+    },
+    // v8 shape: the bare `option1..` slots the v7 -> v8 regex let through.
+    {
+      id: 's-poll',
+      type: 'poll-slide',
+      content: { question: s.pollQuestion, option1: s.pollYes, option2: s.pollNo },
+      notes: '',
+    },
+    // v9 shape: the pre-rename `subtitle`, on a type that declares `subheading`
+    // (#1040 measured 20 translated strings lost under this key).
+    {
+      id: 's-chapter',
+      type: 'chapter-title-slide',
+      content: { title: s.chapterTitle, subtitle: s.chapterSub },
       notes: '',
     },
   ];
@@ -570,7 +595,7 @@ describe('legacy shapes survive the read path in every language (#1040)', () => 
     assert.equal(deck.schemaVersion, CURRENT_SCHEMA_VERSION);
     for (const [lang, version] of Object.entries(deck.i18n.versions)) {
       const prose = LEGACY_PROSE[lang];
-      const [process, team, logos, control] = version.slides;
+      const [process, team, logos, control, poll, chapter] = version.slides;
 
       assert.deepStrictEqual(
         process.content.items,
@@ -600,6 +625,16 @@ describe('legacy shapes survive the read path in every language (#1040)', () => 
         },
       ]);
 
+      assert.deepStrictEqual(
+        poll.content.options,
+        [{ text: prose.pollYes }, { text: prose.pollNo }],
+        `${lang}: v8 option slots folded into options[]`,
+      );
+      assert.ok(!('option1' in poll.content), `${lang}: option keys dropped`);
+
+      assert.equal(chapter.content.subheading, prose.chapterSub);
+      assert.ok(!('subtitle' in chapter.content), `${lang}: subtitle renamed`);
+
       assert.ok(
         !('schemaVersion' in version),
         `${lang}: a version carries no stamp of its own — the deck does`,
@@ -627,7 +662,7 @@ describe('legacy shapes survive the read path in every language (#1040)', () => 
       assert.deepStrictEqual(warnings, []);
       for (const lang of ['nl', 'en-GB']) {
         const prose = LEGACY_PROSE[lang];
-        const [process, team, logos, control] =
+        const [process, team, logos, control, poll, chapter] =
           projected.i18n.versions[lang].slides;
 
         assert.equal(process.content.items[0].title, prose.stepTitle, lang);
@@ -642,6 +677,10 @@ describe('legacy shapes survive the read path in every language (#1040)', () => 
           prose.controlByline,
           lang,
         );
+        assert.equal(poll.content.question, prose.pollQuestion, lang);
+        assert.equal(poll.content.options[0].text, prose.pollYes, lang);
+        assert.equal(poll.content.options[1].text, prose.pollNo, lang);
+        assert.equal(chapter.content.subheading, prose.chapterSub, lang);
       }
     });
   }

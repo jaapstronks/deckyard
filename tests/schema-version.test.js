@@ -1,10 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
+import fs from 'node:fs';
 
 import {
   CURRENT_SCHEMA_VERSION,
   SCHEMA_MIGRATIONS,
+  eachSlide,
   migratePresentation,
   schemaVersionOf,
 } from '../shared/slide-types/schema-version.js';
@@ -1151,4 +1153,48 @@ test('the chain runs over every language version, once each and idempotently', (
 
   const twice = migratePresentation(structuredClone(once));
   assert.deepEqual(twice.i18n.versions, once.i18n.versions);
+});
+
+test('a slide-level migration step walks eachSlide(), never pres.slides on its own', () => {
+  // The guard for #1040: a step that reads `pres.slides` directly migrates the
+  // dominant language only and leaves every other version in the old shape.
+  // `eachSlide()` is the one way to reach a deck's slides from a step.
+  const source = fs.readFileSync(
+    new URL('../shared/slide-types/schema-version.js', import.meta.url),
+    'utf8',
+  );
+  const start = source.indexOf('export const SCHEMA_MIGRATIONS = [');
+  const end = source.indexOf('\n];', start);
+  assert.ok(start > 0 && end > start, 'the migration table is where expected');
+  const table = source.slice(start, end);
+  assert.doesNotMatch(table, /pres\??\.slides\b/);
+  assert.equal(
+    (table.match(/eachSlide\(pres\)/g) || []).length,
+    8,
+    'every slide-level step (v1, v3-v9) walks eachSlide(pres)',
+  );
+});
+
+test('eachSlide yields every slide of every version, each object once', () => {
+  const shared = { id: 'shared', type: 'title-slide', content: {}, notes: '' };
+  const nlOnly = { id: 'nl', type: 'title-slide', content: {}, notes: '' };
+  const enOnly = { id: 'en', type: 'title-slide', content: {}, notes: '' };
+  const nl = [shared, nlOnly];
+  const deck = {
+    slides: nl,
+    i18n: {
+      versions: {
+        nl: { slides: nl }, // the dominant array shared with `slides`
+        'en-GB': { slides: [shared, enOnly, null, 'not a slide'] },
+        de: { slides: 'not an array' },
+        fr: null,
+      },
+    },
+  };
+  assert.deepEqual(
+    [...eachSlide(deck)].map((s) => s.id),
+    ['shared', 'nl', 'en'],
+  );
+  assert.deepEqual([...eachSlide({})], []);
+  assert.deepEqual([...eachSlide(null)], []);
 });
