@@ -66,7 +66,12 @@ export function sandboxMaxTotalBytes() {
  * via the AppError status, with a stable machine code clients can branch on.
  */
 export class SandboxQuotaError extends AppError {
-  /** @param {string} message @param {object} [details] */
+  /**
+   * @param {string} message
+   * @param {{resource: 'decks'|'bytes', limit: number, used: number}} [details]
+   *   Which cap was hit, and where the guest stands against it (the registered
+   *   payload for `sandbox_quota_exceeded`, `server/utils/error-details.js`).
+   */
   constructor(message, details = null) {
     super(message, 429, details, 'sandbox_quota_exceeded');
   }
@@ -137,16 +142,18 @@ export async function assertSandboxQuotaForCreate(scope, ownerEmail) {
   const maxBytes = sandboxMaxBytesPerGuest();
   const { deckCount, totalBytes } = await getSandboxUsageForOwner(scope, owner);
 
+  // One shape for both caps (D78): `resource` says which one was hit, so a
+  // client reads `limit`/`used` the same way either way.
   if (deckCount >= maxDecks) {
     throw new SandboxQuotaError(
       `Sandbox deck limit reached (${maxDecks} per guest). Delete a deck to make room.`,
-      { limit: maxDecks, deckCount },
+      { resource: 'decks', limit: maxDecks, used: deckCount },
     );
   }
   if (totalBytes >= maxBytes) {
     throw new SandboxQuotaError(
       'Sandbox storage limit reached. Delete a deck to make room.',
-      { limitBytes: maxBytes, totalBytes },
+      { resource: 'bytes', limit: maxBytes, used: totalBytes },
     );
   }
 }

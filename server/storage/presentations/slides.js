@@ -74,10 +74,13 @@ export function normalizeSlides(
   return slides.map((s, index) => {
     const type = resolveSlideTypeName(s?.type, slideTypes);
     if (!type) {
+      // No `details`: `bad_request` carries no payload (D78), and both facts
+      // are already in the sentence. A `slideIndex` here would be a second
+      // spelling of the location shape's `index`, which is the drift the
+      // register exists to stop (server/utils/error-details.js).
       throw new ValidationError(
         `Unknown slide type ${JSON.stringify(s?.type ?? null)} at slide ${index}: ` +
           `use a canonical type id such as ${EXAMPLE_CANONICAL_ID}`,
-        { slideIndex: index, type: s?.type ?? null },
       );
     }
     const normalized = {

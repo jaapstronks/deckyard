@@ -216,16 +216,15 @@ export async function handlePresentationVersionCompareAi(
     return methodNotAllowed(res, ['POST']);
   }
 
-  // Check if AI is available
+  // Check if AI is available. The cause is the sentence, not a payload:
+  // `ai_unavailable` carries no `details` (D78), and the client branches on
+  // the code alone (`versions-compare.js`).
   if (!isAiCompareAvailable()) {
     return jsonError(
       res,
       503,
       'ai_unavailable',
-      'AI comparison not available',
-      {
-        details: { reason: 'No LLM vendor configured' },
-      },
+      'AI comparison is not available: no LLM vendor is configured.',
     );
   }
 

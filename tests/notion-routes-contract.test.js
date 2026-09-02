@@ -54,6 +54,8 @@ const { invalidatePermission } =
   await import('../server/storage/cache/permission-cache.js');
 const { resetRateLimitBuckets } = await import('../server/utils/rate-limit.js');
 const { handleNotion } = await import('../server/routes/api/notion/index.js');
+const { NOTION_NOT_CONFIGURED_MESSAGE } =
+  await import('../server/utils/notion/index.js');
 
 // ---------------------------------------------------------------------------
 // The cast
@@ -315,6 +317,20 @@ test('notion import is a 501 when Notion is not configured', async () => {
 
   assert.equal(res.statusCode, 501);
   assert.equal(res.body.error, 'notion_not_configured');
+});
+
+test('the 501 says what to do in `message`, and carries no `details`', async () => {
+  // `notion_not_configured` is not in the `details` register (B208): the
+  // sentence is the whole answer, and it is spelled once, next to the switch.
+  await seed();
+  for (const path of ['/api/notion/fetch', '/api/notion/import']) {
+    const { res } = await call(handleNotion, 'POST', path, {
+      body: { url: 'https://www.notion.so/Some-Page-1234' },
+    });
+    assert.equal(res.body.message, NOTION_NOT_CONFIGURED_MESSAGE, path);
+    assert.ok(res.body.message.includes('NOTION_SECRET'), path);
+    assert.ok(!('details' in res.body), `${path} sends no details`);
+  }
 });
 
 test('a gated notion route (compose) is unreachable while the feature flag is off', async () => {

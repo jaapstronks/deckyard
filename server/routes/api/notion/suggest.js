@@ -4,7 +4,8 @@
  * Feature-gated endpoint.
  */
 
-import { badRequest, jsonError, serveJson } from '../../../utils/http.js';
+import { badRequest, serveJson } from '../../../utils/http.js';
+import { refuseNotionUnconfigured } from './utils.js';
 import {
   getPlainTextFromPage,
   notionEnabled,
@@ -17,12 +18,7 @@ import {
  * Feature-gated endpoint.
  */
 export async function handleNotionSuggest({ res }) {
-  if (!notionEnabled()) {
-    jsonError(res, 501, 'notion_not_configured', 'Notion not configured', {
-      details: 'Set NOTION_SECRET on the server to enable this feature.',
-    });
-    return true;
-  }
+  if (!notionEnabled()) return refuseNotionUnconfigured(res);
 
   const all = await searchRecentPages({ pageSize: 50 });
   const filtered = all;

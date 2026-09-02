@@ -215,6 +215,7 @@ pgDescribe('sandbox TTL sweep + quota (real PostgreSQL)', () => {
         assert.ok(err instanceof SandboxQuotaError);
         assert.equal(err.statusCode, 429);
         assert.equal(err.code, 'sandbox_quota_exceeded');
+        assert.equal(err.details?.resource, 'decks');
         assert.equal(err.details?.limit, 2);
         return true;
       },
@@ -233,7 +234,9 @@ pgDescribe('sandbox TTL sweep + quota (real PostgreSQL)', () => {
       (err) => {
         assert.ok(err instanceof SandboxQuotaError);
         assert.equal(err.code, 'sandbox_quota_exceeded');
-        assert.ok('limitBytes' in (err.details || {}));
+        assert.equal(err.details?.resource, 'bytes');
+        assert.ok(typeof err.details?.limit === 'number');
+        assert.ok(typeof err.details?.used === 'number');
         return true;
       },
     );

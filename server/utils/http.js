@@ -4,6 +4,7 @@ import { envInt } from '../config/utils.js';
 import { isAppError, getStatusCode, errorToResponse } from './errors.js';
 import { logError } from './logger.js';
 import { reasonEntry } from '../storage/reasons.js';
+import { assertErrorDetails } from './error-details.js';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -162,8 +163,13 @@ export function serveJson(res, status, obj, extraHeaders = {}) {
  * @param {number} status - HTTP status code.
  * @param {string} code - Machine-readable snake_case error code.
  * @param {string} [message] - Human-readable message (optional).
+ * `details` is typed by `code` (D78) — the register in
+ * [`error-details.js`](error-details.js) names the keys each code may send,
+ * and this is one of its two enforcement points (the other is
+ * `AppError.toJSON()`). A code outside the register sends no `details`.
+ *
  * @param {Object} [opts]
- * @param {*} [opts.details] - Structured extra detail (echoed as `details`).
+ * @param {Object} [opts.details] - The payload registered for `code` (echoed as `details`).
  * @param {Object} [opts.headers] - Extra response headers (e.g. Retry-After).
  * @returns {true}
  */
@@ -176,7 +182,10 @@ export function jsonError(
 ) {
   const body = { ok: false, error: code };
   if (message != null && message !== '') body.message = message;
-  if (details != null) body.details = details;
+  if (details != null) {
+    assertErrorDetails(code, details);
+    body.details = details;
+  }
   serveJson(res, status, body, headers || {});
   return true;
 }
