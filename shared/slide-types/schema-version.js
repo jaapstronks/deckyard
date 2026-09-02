@@ -251,12 +251,45 @@ const QUOTE_SLIDE_TYPE = 'quote-slide';
 const QUOTE_BLOCK_GROUP = 'quote-block';
 
 /**
+ * Every slide a migration step has to visit: the top-level `slides` and the
+ * slides of every language version in `i18n.versions`, each slide object once.
+ * `normalizeI18n` leaves the dominant version sharing its array with
+ * `pres.slides`, and a version may share slide objects with another; a slide
+ * reached twice is yielded once, so a step needs no idempotence of its own to
+ * be safe here. Anything that is not a slide array is skipped.
+ * @param {any} pres
+ * @returns {Generator<any, void, void>}
+ */
+export function* eachSlide(pres) {
+  const seen = new Set();
+  const arrays = [pres?.slides];
+  const versions = pres?.i18n?.versions;
+  if (versions && typeof versions === 'object')
+    for (const version of Object.values(versions)) arrays.push(version?.slides);
+  for (const slides of arrays) {
+    if (!Array.isArray(slides)) continue;
+    for (const slide of slides) {
+      if (!slide || typeof slide !== 'object' || seen.has(slide)) continue;
+      seen.add(slide);
+      yield slide;
+    }
+  }
+}
+
+/**
  * Ordered migration steps. `SCHEMA_MIGRATIONS[i]` migrates a deck FROM version
  * `i` TO version `i + 1` and must:
  *  - assume the deck is already at the source version;
  *  - be pure enough to run safely (it may mutate the passed object, which is a
  *    fresh parse from disk, and must return the deck);
  *  - never lose data.
+ *
+ * A deck stores its slides more than once when it is translated: `pres.slides`
+ * and every `pres.i18n.versions[*].slides`, all at the deck's one
+ * `schemaVersion`. A step that folds slide content therefore walks
+ * `eachSlide(pres)`, never `pres.slides` on its own — the versions are part of
+ * the deck it migrates (#1040; a guard test pins it). A step that touches a
+ * deck-level block (`i18n`, `lang`, …) reads the deck directly.
  *
  * The invariant `SCHEMA_MIGRATIONS.length === CURRENT_SCHEMA_VERSION` is
  * enforced by tests, so bumping the version forces you to add a real step.
@@ -281,8 +314,7 @@ export const SCHEMA_MIGRATIONS = [
   // removed in a later deprecation-window cleanup. Idempotent: a slide that
   // already has a populated `rows[]` is untouched.
   (pres) => {
-    const slides = Array.isArray(pres?.slides) ? pres.slides : [];
-    for (const slide of slides) {
+    for (const slide of eachSlide(pres)) {
       if (!slide || slide.type !== 'text-blocks-slide') continue;
       const content = slide.content;
       if (!content || typeof content !== 'object') continue;
@@ -313,8 +345,7 @@ export const SCHEMA_MIGRATIONS = [
   // type is left verbatim (a foreign/unknown type is never dropped). Idempotent:
   // a bare key resolves to itself, so a second run is a no-op.
   (pres) => {
-    const slides = Array.isArray(pres?.slides) ? pres.slides : [];
-    for (const slide of slides) {
+    for (const slide of eachSlide(pres)) {
       if (!slide || typeof slide.type !== 'string') continue;
       const key = resolveSlideTypeName(slide.type);
       if (key && key !== slide.type) slide.type = key;
@@ -346,8 +377,7 @@ export const SCHEMA_MIGRATIONS = [
     const alignKey = typeof group?.alignKey === 'string' ? group.alignKey : '';
     if (!alignKey) return pres;
     const offered = groupAlignValues(group);
-    const slides = Array.isArray(pres?.slides) ? pres.slides : [];
-    for (const slide of slides) {
+    for (const slide of eachSlide(pres)) {
       if (!slide || slide.type !== QUOTE_SLIDE_TYPE) continue;
       const content = slide.content;
       if (!content || typeof content !== 'object') continue;
@@ -383,8 +413,7 @@ export const SCHEMA_MIGRATIONS = [
   // registry, so a type that adopts a group later is swept by the same code.
   // Idempotent: a field without the legacy key is untouched.
   (pres) => {
-    const slides = Array.isArray(pres?.slides) ? pres.slides : [];
-    for (const slide of slides) {
+    for (const slide of eachSlide(pres)) {
       if (!slide || typeof slide.type !== 'string') continue;
       const def = getSlideType(slide.type);
       if (!def) continue;
@@ -431,8 +460,7 @@ export const SCHEMA_MIGRATIONS = [
   // still removed — it was unreachable on every surface. Idempotent: a slide
   // without the legacy key is untouched.
   (pres) => {
-    const slides = Array.isArray(pres?.slides) ? pres.slides : [];
-    for (const slide of slides) {
+    for (const slide of eachSlide(pres)) {
       if (!slide || typeof slide.type !== 'string') continue;
       const legacyKey = LEGACY_COLLECTION_KEYS[slide.type];
       if (!legacyKey) continue;
@@ -475,8 +503,7 @@ export const SCHEMA_MIGRATIONS = [
   // Idempotent: a slide with no key from the family is untouched, and after one
   // run there is no such key left.
   (pres) => {
-    const slides = Array.isArray(pres?.slides) ? pres.slides : [];
-    for (const slide of slides) {
+    for (const slide of eachSlide(pres)) {
       if (!slide || typeof slide.type !== 'string') continue;
       const family = LEGACY_SLOT_FAMILIES[slide.type];
       if (!family) continue;
@@ -513,8 +540,7 @@ export const SCHEMA_MIGRATIONS = [
   // keys are dropped either way. Idempotent — after one run no slot key is
   // left, and a slide that never had one is untouched.
   (pres) => {
-    const slides = Array.isArray(pres?.slides) ? pres.slides : [];
-    for (const slide of slides) {
+    for (const slide of eachSlide(pres)) {
       if (!slide || typeof slide.type !== 'string') continue;
       const family = LEGACY_OPTION_SLOTS[slide.type];
       if (!family) continue;
@@ -566,8 +592,7 @@ export const SCHEMA_MIGRATIONS = [
   // `subtitle` is left on a folded type, and a slide that never had one is
   // untouched.
   (pres) => {
-    const slides = Array.isArray(pres?.slides) ? pres.slides : [];
-    for (const slide of slides) {
+    for (const slide of eachSlide(pres)) {
       if (!slide || typeof slide.type !== 'string') continue;
       const content = slide.content;
       if (!content || typeof content !== 'object') continue;
@@ -620,6 +645,17 @@ export function schemaVersionOf(pres) {
  * migration step in turn. Idempotent: an already-current deck is returned with
  * only its stamp normalised. A deck from a *newer* version is left untouched
  * (we never downgrade); validation surfaces that separately.
+ *
+ * A translated deck stores its slides more than once: `pres.slides` holds the
+ * dominant language and `pres.i18n.versions[*].slides` every version, including
+ * the dominant one. Only the deck carries a `schemaVersion`, so the versions
+ * are at the deck's version by definition, and every step that folds slide
+ * content covers all of them through `eachSlide()`. Before it did (#1040) the
+ * non-dominant versions stayed in the old shape forever: `normalizeI18n` only
+ * ever re-syncs the dominant version from the top-level buffers, so nothing
+ * else healed them, and the collab codec then read the drift as "one value per
+ * deck" and let the dominant language win, silently losing translated prose.
+ *
  * @param {any} pres
  * @returns {any} the same object, migrated and stamped
  */
