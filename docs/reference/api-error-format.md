@@ -20,8 +20,16 @@ The internal `/api/*` routes return errors in one canonical envelope:
   it, A7.19-C7g).
 - **`message`** — optional human-readable text for display. Safe to show a user;
   never contains stack traces or internal detail (500s stay generic).
-- **`details`** — optional structured extra, omitted when absent. Its keys are
-  a closed set:
+- **`details`** — optional structured extra, omitted when absent. **Its shape
+  is decided by the code** (D78): `error` is the discriminator and `details`
+  the payload that code carries, so the envelope is a tagged union, not an
+  open bag. `details` is always a flat object, never a string or an array,
+  and never carries the sentence of the error — that is what `message` is
+  for. One register names the permitted keys per code; a code outside it
+  sends no `details` at all.
+
+  The **location shape** is what every storage refusal carries (any code in
+  `server/storage/reasons.js`, via `storageError()`):
 
   | Key         | Meaning                                                                                                                                                         |
   | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -30,22 +38,33 @@ The internal `/api/*` routes return errors in one canonical envelope:
   | `itemIndex` | Where inside that entry, for a nested list (an `items` field's `itemFields`).                                                                                   |
   | `reason`    | A snake_case sub-code for the problem at that location, for a client that wants to translate. `message` still carries the English sentence.                     |
 
-  `details` locates; it does not explain. Prose stays in `message`, and a
-  client that has no copy for a `reason` shows `message`. Anything a storage
-  result carries beyond these keys (a `where` label used to build the
-  sentence) stays server-side. Client side, the location drives the inline
-  refusal — see [`feedback-surfaces.md`](feedback-surfaces.md) § The envelope,
-  mirrored.
+  Anything a storage result carries beyond these keys (a `where` label used
+  to build the sentence) stays server-side. Client side, the location drives
+  the inline refusal — see [`feedback-surfaces.md`](feedback-surfaces.md)
+  § The envelope, mirrored.
 
-  _Implementation status (2026-09-02):_ every storage refusal goes through
-  `storageError()` and meets the table. Six internal routes still put
-  something else in `details`, and B208 folds them: a payload that is not a
-  location (`{ report }` on the three import routes, `{ lock }` on
-  `slide-locks.js`, the maintenance `state` on the 503), and prose where a
-  sentence belongs in `message` (the Notion routes' `'Set NOTION_SECRET …'`
-  string, and `versions.js`'s `{ reason: 'No LLM vendor configured' }`, which
-  collides with the sub-code key above). Until then a client may only rely
-  on the four keys for `storage`-originated errors.
+  The **payload shapes**, one per code. A domain object rides under the name
+  it has on the success body (`lock`, `report`, `holder`); loose facts ride
+  flat:
+
+  | Code                     | Status | `details`                                                                                                            |
+  | ------------------------ | ------ | -------------------------------------------------------------------------------------------------------------------- |
+  | `held`                   | 409    | `{ lock }` — the competing slide lock, as the acquire/list bodies name it.                                           |
+  | `conflict`               | 409    | `{ id, revision, modified, updatedBy }` — the server copy the stale `If-Match` lost against.                         |
+  | `locked`                 | 423    | `{ slideId, lockKind, holder? }` — which slide, author or concurrent lock, who holds it (named, not addressed; D22). |
+  | `conversion_failed`      | 422    | `{ report }` — the same conversion report the 201 body and the SSE stream carry.                                     |
+  | `maintenance`            | 503    | `{ active, reason, retryAfter }` — the same object `GET /api/maintenance` returns.                                   |
+  | `sandbox_quota_exceeded` | 429    | `{ resource, limit, used }` with `resource` `decks` or `bytes`.                                                      |
+
+  _Implementation status (2026-09-02):_ the location shape and the first
+  five payload shapes are what the code sends today. B208 adds the register
+  (`server/utils/error-details.js`) with an assertion on `jsonError()` and
+  `AppError.toJSON()` that throws outside production, gives
+  `sandbox_quota_exceeded` its one shape (it sends two), and moves the prose
+  that the Notion 501s and `versions.js`'s `ai_unavailable` still put in
+  `details` into `message`. Until that lands, a client may only rely on the
+  table for `storage`-originated errors and the four codes that already have
+  a reader. Brief: `docs/plans/briefs/error-envelope-details.md`.
 
 This unified one envelope that used to have two shapes living side by side: prose
 in `error` (from the `http.js` helpers) versus `{ ok:false, error:'code' }` (from
@@ -120,8 +139,9 @@ throws an `Error` with:
 - **`err.message`** — human text (`obj.message`, falling back to `error`/`details`).
   Safe to surface in a toast.
 - **`err.statusCode`** — the HTTP status.
-- **`err.details`** — structured detail, if any (`field`, `index`,
-  `itemIndex`, `reason` — see above).
+- **`err.details`** — structured detail, if any; its shape follows `err.code`
+  (the location keys for a storage refusal, a payload for the registered
+  codes — see above).
 
 ```js
 try {
