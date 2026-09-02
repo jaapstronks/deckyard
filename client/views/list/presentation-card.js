@@ -349,23 +349,14 @@ export function createCardRenderer({
             await api(`/api/presentations/${p.id}/restore`, {
               method: 'POST',
             });
-            // Show toast with link to open the restored presentation
-            const toastEl = h('span', {}, [
-              h('span', { text: t('list.restore.done', 'Restored.') + ' ' }),
-              h('a', {
-                href: `/app/${p.id}`,
-                text: t('list.restore.openLink', 'Open presentation'),
-                style:
-                  'color: inherit; text-decoration: underline; cursor: pointer;',
-                onclick: (ev) => {
-                  ev.preventDefault();
-                  nav(`/app/${p.id}`);
-                },
-              }),
-            ]);
-            toast.success(toastEl, {
+            // The way to a link is the `action` option: a DOM element handed in
+            // as the message used to be JSON-stringified to `{}` (B203).
+            toast.success(t('list.restore.done', 'Restored.'), {
               id: 'list-restore',
-              durationMs: 5000,
+              action: {
+                label: t('list.restore.openLink', 'Open presentation'),
+                onClick: () => nav(`/app/${p.id}`),
+              },
             });
             // Remove from trash list
             item.remove();
