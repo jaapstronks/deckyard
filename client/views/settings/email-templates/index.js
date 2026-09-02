@@ -210,7 +210,11 @@ export function createEmailTemplatesPanel({ user }) {
     const currentLocale = state.getCurrentLocale();
 
     buildTemplateOptions(templateSelect, currentType);
-    buildDefaultLocaleOptions(defaultLocaleSelect, data);
+    buildDefaultLocaleOptions(
+      defaultLocaleSelect,
+      data,
+      state.getDefaultLocale(),
+    );
     buildLocaleTabs(
       localeTabs,
       data,
