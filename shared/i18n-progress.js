@@ -15,6 +15,7 @@
  */
 import {
   mapItemTexts,
+  perLanguageKeys,
   textFieldSpecForType,
   valueAtPath,
 } from './slide-types/text-fields.js';
@@ -35,7 +36,7 @@ function buildSlideIndex(slides) {
  * Scan one language version against another and list the text that is present
  * in the source but empty in the target.
  *
- * Walks the deck title plus every declared text field and item text, at every
+ * Walks the deck title plus every per-language field and item text, at every
  * nesting level — the same walk the translation merge uses, so a deck whose
  * only untranslated prose sits in `rows[].blocks[]` is not reported complete.
  *
@@ -61,7 +62,6 @@ export function computeMissingTranslation({ source, target } = {}) {
     if (!s || typeof s !== 'object') continue;
     const type = typeof s.type === 'string' ? s.type : '';
     const spec = textFieldSpecForType(type);
-    if (!spec.textKeys.size && !spec.items.size) continue;
 
     const srcContent =
       s.content && typeof s.content === 'object' ? s.content : {};
@@ -74,7 +74,13 @@ export function computeMissingTranslation({ source, target } = {}) {
       t?.content && typeof t.content === 'object' ? t.content : {};
     const slideId = typeof s.id === 'string' ? s.id : '';
 
-    for (const k of spec.textKeys) {
+    // An undeclared string counts too: it is prose the type never declared
+    // (a renamed key, a retired type), and prose the target version lacks is
+    // a missing translation like any other (D79).
+    const perLang = perLanguageKeys(spec, srcContent, tgtContent);
+    if (!perLang.size && !spec.items.size) continue;
+
+    for (const k of perLang) {
       const sv = srcContent[k];
       const tv = tgtContent[k];
       if (isNonEmptyString(sv) && !isNonEmptyString(tv)) {
@@ -170,7 +176,10 @@ export function buildBlankTargetFromSource(source) {
     const srcContent =
       s?.content && typeof s.content === 'object' ? s.content : {};
     const nextContent = { ...srcContent };
-    for (const k of spec.textKeys) nextContent[k] = '';
+    // Undeclared strings are prose too, so they are blanked like any other:
+    // carrying the source's wording over makes the fresh version look
+    // translated to the missing-scan (D79).
+    for (const k of perLanguageKeys(spec, srcContent)) nextContent[k] = '';
     // Item texts are blanked too, at every level. Leaving them as the source's
     // prose makes a fresh version look "already translated" to fillMissing.
     for (const [arrKey, itemSpec] of spec.items) {

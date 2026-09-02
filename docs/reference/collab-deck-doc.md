@@ -51,10 +51,19 @@ a field is per-language text when its type is `string`, `markdown` or `csv`,
 top-level and in `itemFields`, recursively. `hidden` is not consulted — it
 answers "does the inspector show this field", not "is this text a human
 wrote", and using it here collapsed `text-blocks-slide`'s numbered prose
-mirror to the dominant language until 2026-08-25. Legacy decks whose versions
-diverge in a _plain_ field (a key the schema no longer knows) normalize to the
-dominant value **with a warning** at bootstrap. Unknown slide types fall back
-to all-plain (LWW) with no data loss on round-trip.
+mirror to the dominant language until 2026-08-25.
+
+For a key the type does **not** declare, the type cannot answer, so the
+**value** decides: a stored string is prose and is read per language, anything
+else is a machine value. `normalizeSlides` deliberately lets unknown keys
+through, and this is what that passthrough means for translation. An
+undeclared string that exists only in a non-dominant version is per-language
+too, so it survives. Legacy decks whose versions diverge in a _machine_ value
+(a number, an object, an array under a key the schema no longer knows)
+normalize to the dominant value **with a warning** at bootstrap; a string
+under such a key no longer warns, because each version simply keeps its own.
+Unknown slide types declare nothing at all, so every string on them is prose
+and everything else is plain (LWW), with no data loss on round-trip.
 
 Docs already persisted in `presentation_ydocs.state` are not re-classified on
 load, so a deck edited only through collab can still hold such a field as one

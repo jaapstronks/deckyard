@@ -18,7 +18,7 @@ export async function openTranslateSlideModal({
   root,
   lockDocumentScroll,
   normalizeLang,
-  translatableKeysForType,
+  perLanguageKeysForSlide,
   markDirty,
   rerenderEditor,
   rerenderPreview,
@@ -66,11 +66,16 @@ export async function openTranslateSlideModal({
     return;
   }
 
-  const keys = translatableKeysForType?.(slide?.type) || [];
   const srcContent =
     srcSlide?.content && typeof srcSlide.content === 'object'
       ? srcSlide.content
       : {};
+  const tgtContent =
+    slide?.content && typeof slide.content === 'object' ? slide.content : {};
+  // An undeclared string is prose in the source version too, so it belongs in
+  // the fields offered for translation (D79).
+  const keys =
+    perLanguageKeysForSlide?.(slide?.type, srcContent, tgtContent) || [];
   const fields = {};
   for (const k of keys) {
     const v = srcContent[k];

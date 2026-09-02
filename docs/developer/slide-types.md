@@ -554,6 +554,32 @@ enforces the same rule on write). Used by the built-in Custom HTML slide.
 | `images` | Multiple images (gallery), stored as an array of URL strings. No core type declares it — it is an extension point for custom types (see below).                                                                                                                  | `maxItems`, `presetSource` (`'partnerlogos'`)      |
 | `url`    | A hyperlink target (http(s), mailto, or root-/protocol-relative). Validated + allowlisted (`javascript:`/`data:` rejected via `safeHref`); projects as an `<a href>` in the reader/reflow view. Not translatable, so link targets are never sent to translation. | `maxLength`, `required`, `placeholder`, `helpText` |
 
+### Keys a type does not declare
+
+`normalizeSlides` lets an unknown content key through rather than throwing data
+away, so stored decks carry keys no type declares: a renamed field, a retired
+type, a hand-written deck. For those the type cannot answer "is this prose",
+so **the stored value answers**: a string is prose and is kept per language,
+anything else is a machine value and is kept once per deck (the dominant
+version's, with a warning when the versions disagree). Machine values are the
+ones that _are_ declared — an enum, an image path, a number — so the rule only
+ever meets remnants.
+
+That is one rule with one implementation: `isPerLanguageKey` /
+`perLanguageKeys` in
+[`shared/slide-types/text-fields.js`](../../shared/slide-types/text-fields.js),
+which the collab codec, the editor's save-time language sync, the translate
+pipeline and the progress scan all go through
+(`tests/text-field-vocabulary-gate.test.js` keeps it that way). It is not a
+reason to leave a field undeclared: an undeclared key gets no editor, no
+validation and no AI schema. Declaring every key your type stores stays the
+rule; this is what happens to the ones history left behind.
+
+A consequence worth knowing: an undeclared string missing from another
+language version counts as a missing translation, so a deck holding a retired
+type will not report 100% until that prose is translated or the dead slide is
+removed.
+
 ### Background images: never declare your own
 
 A slide-wide background image is **not** a field you add. Every registered type

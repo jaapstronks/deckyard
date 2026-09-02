@@ -314,10 +314,15 @@ test('applyPresentationToDoc: warnings for divergence, drops and languages', () 
   const doc = makeBootstrappedDoc(bilingualPres());
   const next = codec.projectDocToPresentation(doc);
 
-  // Diverging plain field between versions (dominant wins, with warning).
-  next.slides[0].content.textSize = 'large';
+  // Diverging plain field between versions (dominant wins, with warning). It
+  // has to be an undeclared NON-string: an undeclared string is prose, and
+  // each version keeps its own (D79) — asserted below.
+  next.slides[0].content.textSize = 3;
+  next.slides[0].content.legacyTagline = 'Zo doen wij dat';
   next.i18n.versions.nl.slides = next.slides;
-  next.i18n.versions['en-GB'].slides[0].content.textSize = 'compact';
+  next.i18n.versions['en-GB'].slides[0].content.textSize = 2;
+  next.i18n.versions['en-GB'].slides[0].content.legacyTagline =
+    'That is how we do it';
   // Slide that only exists in the non-dominant version (dropped, warned).
   next.i18n.versions['en-GB'].slides.push({
     id: 'ghost',
@@ -339,9 +344,19 @@ test('applyPresentationToDoc: warnings for divergence, drops and languages', () 
     ),
     'peer-only slide warning',
   );
+  assert.ok(
+    !warnings.some((w) => w.includes("plain field 'legacyTagline'")),
+    'an undeclared string is prose, not a diverging plain field',
+  );
+  const applied = codec.projectDocToPresentation(doc);
+  assert.equal(applied.slides[0].content.textSize, 3);
   assert.equal(
-    codec.projectDocToPresentation(doc).slides[0].content.textSize,
-    'large',
+    applied.i18n.versions.nl.slides[0].content.legacyTagline,
+    'Zo doen wij dat',
+  );
+  assert.equal(
+    applied.i18n.versions['en-GB'].slides[0].content.legacyTagline,
+    'That is how we do it',
   );
 
   // Removing a language version drops it (loudly) and cleans its texts.

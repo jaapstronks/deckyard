@@ -1,8 +1,8 @@
 import {
   mapItemTexts,
+  perLanguageKeys,
   textFieldSpecForType,
   translatableItemsFieldsForType,
-  translatableKeysForType,
   valueAtPath,
 } from '../../../shared/slide-types/text-fields.js';
 import { getLlmConfig } from '../llm/config.js';
@@ -34,12 +34,26 @@ try {
 }
 
 /**
- * Get top-level translatable keys for a slide type.
- * @param {string} type - Slide type name
+ * The top-level keys to translate on one stored slide: its type's text fields,
+ * plus any undeclared key whose stored value is prose. The undeclared ones are
+ * remnants (a renamed key, a retired type) and are read per language
+ * everywhere else, so leaving them out of the prompt would report them missing
+ * forever (D79).
+ * @param {Object} slide - Stored slide, in the language being read
+ * @param {...Object} [others] - The same slide in other language versions
  * @returns {string[]}
  */
-function translateKeysForSlideType(type) {
-  return translatableKeysForType(type);
+function translateKeysForSlide(slide, ...others) {
+  const type = typeof slide?.type === 'string' ? slide.type : '';
+  const contentOf = (s) =>
+    s?.content && typeof s.content === 'object' ? s.content : {};
+  return [
+    ...perLanguageKeys(
+      textFieldSpecForType(type),
+      contentOf(slide),
+      ...others.map(contentOf),
+    ),
+  ];
 }
 
 /**
@@ -84,7 +98,7 @@ export async function translatePresentationStrings(
   const slideMeta = srcSlides.map((s) => ({
     id: typeof s?.id === 'string' ? s.id : '',
     type: typeof s?.type === 'string' ? s.type : '',
-    translateKeys: translateKeysForSlideType(s?.type),
+    translateKeys: translateKeysForSlide(s, targetById.get(s?.id)),
     itemsFields: itemsFieldsForSlideType(s?.type),
   }));
 
@@ -173,17 +187,17 @@ export async function translatePresentationStrings(
       .map((s) => [s.id, s]),
   );
 
-  // Post-process: only accept translated values for known text fields.
+  // Post-process: only accept translated values for per-language fields.
   const mergedSlides = srcSlides.map((src) => {
     const t = outById.get(src.id);
     const srcContent =
       src?.content && typeof src.content === 'object' ? src.content : {};
     const nextContent = { ...srcContent };
-    const keys = translateKeysForSlideType(src?.type);
+    const existing = targetById.get(src.id);
+    const keys = translateKeysForSlide(src, existing);
     const spec = textFieldSpecForType(src?.type);
     const tContent =
       t?.content && typeof t.content === 'object' ? t.content : null;
-    const existing = targetById.get(src.id);
     const existingContent =
       existing?.content && typeof existing.content === 'object'
         ? existing.content
@@ -375,10 +389,16 @@ export async function translatePresentationStringsFillMissing(
 
   const { vendor: resolvedVendor, apiKey, model } = getLlmConfig({ vendor });
 
+  const tgtById = new Map(
+    tgtSlides
+      .filter((s) => s && typeof s === 'object' && typeof s.id === 'string')
+      .map((s) => [s.id, s]),
+  );
+
   const slideMeta = srcSlides.map((s) => ({
     id: typeof s?.id === 'string' ? s.id : '',
     type: typeof s?.type === 'string' ? s.type : '',
-    translateKeys: translateKeysForSlideType(s?.type),
+    translateKeys: translateKeysForSlide(s, tgtById.get(s?.id)),
     itemsFields: itemsFieldsForSlideType(s?.type),
   }));
 
@@ -502,7 +522,7 @@ export async function translatePresentationStringsFillMissing(
         ? srcSlide.content
         : {};
     const nextContent = { ...tgtContent };
-    const keys = translateKeysForSlideType(tSlide?.type);
+    const keys = translateKeysForSlide(tSlide, srcSlide);
     const spec = textFieldSpecForType(tSlide?.type);
     const outContent =
       out?.content && typeof out.content === 'object' ? out.content : null;

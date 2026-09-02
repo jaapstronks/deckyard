@@ -173,6 +173,11 @@ const LEGACY_PROSE = {
     pollQuestion: 'Wat vind je ervan?',
     pollYes: 'Eens',
     pollNo: 'Oneens',
+    stackTitle: 'Drie kaarten',
+    stackCardTitle: 'Eerste kaart',
+    stackCardBody: 'De kaart met het langste verhaal.',
+    quoteText: 'Wie het weet mag het zeggen.',
+    quoteSubtitle: 'Uit het jaarverslag',
   },
   'en-GB': {
     title: 'Legacy shapes',
@@ -194,6 +199,11 @@ const LEGACY_PROSE = {
     pollQuestion: 'What do you think?',
     pollYes: 'Agree',
     pollNo: 'Disagree',
+    stackTitle: 'Three cards',
+    stackCardTitle: 'First card',
+    stackCardBody: 'The card with the longest story.',
+    quoteText: 'Whoever knows may say so.',
+    quoteSubtitle: 'From the annual report',
   },
 };
 
@@ -276,6 +286,37 @@ function legacySlides(lang) {
       id: 's-chapter',
       type: 'chapter-title-slide',
       content: { title: s.chapterTitle, subtitle: s.chapterSub },
+      notes: '',
+    },
+    // A retired type: `card-stack-slide` is not in the register, so it
+    // declares nothing at all — not even `title`. Every key here is
+    // undeclared, and the value rule is the only thing that can tell the
+    // prose (`title`, `card1Title`, `card1Body`) from the machine value
+    // (`cardCount`, the same number in both versions). D79 / B211 part 2.
+    {
+      id: 's-stack',
+      type: 'card-stack-slide',
+      content: {
+        title: s.stackTitle,
+        cardCount: 2,
+        card1Title: s.stackCardTitle,
+        card1Body: s.stackCardBody,
+      },
+      notes: '',
+    },
+    // A registered type carrying `subtitle` — which it does not declare, and
+    // which the v9 -> v10 fold therefore leaves alone (it is scoped to types
+    // that declare `subheading`). Dead remnant, but prose. `legacyColumns`
+    // beside it is the machine value the versions disagree on: it stays one
+    // per deck, the dominant version wins, and that is warned about.
+    {
+      id: 's-quote',
+      type: 'quote-slide',
+      content: {
+        quote: s.quoteText,
+        subtitle: s.quoteSubtitle,
+        legacyColumns: lang === 'nl' ? 3 : 2,
+      },
       notes: '',
     },
   ];
@@ -663,10 +704,14 @@ describe('legacy shapes survive the read path in every language (#1040)', () => 
       const deck = normalizeTopLevel(buildDeck());
       const { projected, warnings } = roundTrip(deck);
 
-      assert.deepStrictEqual(warnings, []);
+      // The one machine value the versions disagree on, and nothing else: not
+      // the undeclared prose beside it, and not `cardCount`, which agrees.
+      assert.deepStrictEqual(warnings, [
+        "slide s-quote: plain field 'legacyColumns' differs in version 'en-GB' — dominant wins",
+      ]);
       for (const lang of ['nl', 'en-GB']) {
         const prose = LEGACY_PROSE[lang];
-        const [process, team, logos, control, poll, chapter] =
+        const [process, team, logos, control, poll, chapter, stack, quote] =
           projected.i18n.versions[lang].slides;
 
         assert.equal(process.content.items[0].title, prose.stepTitle, lang);
@@ -685,6 +730,19 @@ describe('legacy shapes survive the read path in every language (#1040)', () => 
         assert.equal(poll.content.options[0].text, prose.pollYes, lang);
         assert.equal(poll.content.options[1].text, prose.pollNo, lang);
         assert.equal(chapter.content.subheading, prose.chapterSub, lang);
+
+        // Undeclared strings, on a retired type and on a registered one:
+        // prose in every version, not one value per deck (D79).
+        assert.equal(stack.content.title, prose.stackTitle, lang);
+        assert.equal(stack.content.card1Title, prose.stackCardTitle, lang);
+        assert.equal(stack.content.card1Body, prose.stackCardBody, lang);
+        assert.equal(quote.content.subtitle, prose.quoteSubtitle, lang);
+        assert.equal(quote.content.quote, prose.quoteText, lang);
+
+        // Undeclared non-strings stay machine values: one per deck, the
+        // dominant version's.
+        assert.equal(stack.content.cardCount, 2, lang);
+        assert.equal(quote.content.legacyColumns, 3, lang);
       }
     });
   }
