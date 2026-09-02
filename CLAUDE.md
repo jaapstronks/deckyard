@@ -42,12 +42,12 @@ de drie planning-horizonnen hierboven zijn er de deckyard-instantie van.
   het antwoord af met de sluitregel (`/handoff` + sessiesoort + model).
   Cross-machine doorgeven gaat via `queue.md` met een lane-tag (`→ mbp` /
   `→ dev`). Volledige regels: `docs/plans/handoff-systematiek.md` § Lanes.
-- **Rollen**: Fable brieft en beslist; Opus voert één item/PR per sessie uit
-  en merget nooit de eigen PR. Deze repo is een **koersrepo**: het zwaartepunt
-  van de reviews ligt bij Fable, maar één escalatiesignaal is al genoeg en
-  zonder signaal mag Opus reviewen en mergen. Welk model een
-  review-en-merge-sessie krijgt volgt uit `werkwijze` § Modelkeuze per sessie;
-  de tiers en de zes signalen staan daar, niet hier.
+- **Rollen**: Fable brieft, beslist en reviewt; Opus voert één item/PR per
+  sessie uit en merget nooit de eigen PR. Een review-en-merge-sessie draait
+  op Fable — sinds 2 sep 2026 geldt dat in elke repo, en zijn de repo-tiers
+  en het reviewbudget ingetrokken. De canonieke tabel staat in `werkwijze`
+  § Modelkeuze per sessie; de zes oude escalatiesignalen leven daar verder
+  als checklist voor de reviewer, niet als modelschakelaar.
 - **Ritmes**: `merge-housekeeping` (repo-eigen skill) per gedelegeerde merge;
   `reorg-audit` bij de drift-drempel; `tighten-scan` (repo-eigen skill) op
   aanvraag.
