@@ -25,6 +25,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import {
+  isPerLanguageKey,
+  perLanguageKeys,
+  textFieldSpec,
+} from '../shared/slide-types/text-fields.js';
+
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 /** The one module allowed to enumerate the vocabulary. */
@@ -161,4 +167,117 @@ test('the canonical module is the one that holds the vocabulary', () => {
   assert.match(src, /TEXT_FIELD_TYPES/);
   for (const type of ['string', 'markdown', 'csv'])
     assert.ok(src.includes(`'${type}'`), `${type} must be listed`);
+});
+
+// ── the value rule (D79) ───────────────────────────────────────────────────
+//
+// The second half of the vocabulary: what an *undeclared* content key is. The
+// type cannot answer for a key it never declared, so the stored value does —
+// a string is prose, anything else is a machine value. Only this module may
+// spell that out, for the same reason the type set lives in one place: the
+// collab codec and the editor's save sync each carried their own answer, and
+// both answered "machine value", which emptied 465 translated strings on the
+// CIIIC fork (#1040).
+
+/**
+ * The spec members a re-implementation of the rule would have to read. A
+ * faithful copy needs `declaredKeys`; a sloppy one gets by on `textKeys` plus
+ * a `typeof` — and calls a declared enum's string prose. Since this rule
+ * landed, no module outside the canonical one reads either, so both are
+ * gated: a consumer asks `isPerLanguageKey` / `perLanguageKeys` and walks
+ * `spec.items`, nothing else.
+ */
+const RULE_MEMBERS = /\b(declaredKeys|textKeys)\b/;
+
+test('only text-fields.js decides what a content key is', () => {
+  const found = [];
+  for (const dir of SCAN_DIRS) {
+    const abs = path.join(repoRoot, dir);
+    if (!fs.existsSync(abs)) continue;
+    for (const file of jsFiles(abs)) {
+      const rel = path.relative(repoRoot, file).split(path.sep).join('/');
+      if (rel === CANONICAL) continue;
+      const m = fs.readFileSync(file, 'utf8').match(RULE_MEMBERS);
+      if (m) found.push(`${rel} (${m[1]})`);
+    }
+  }
+  assert.deepEqual(
+    found,
+    [],
+    "These modules read the spec's key sets themselves, which is how a " +
+      'second answer to "is this content key prose" gets written. Call ' +
+      `isPerLanguageKey / perLanguageKeys from ${CANONICAL} instead.`,
+  );
+});
+
+test('the value rule: declared answers by type, undeclared by value', () => {
+  const spec = textFieldSpec([
+    { key: 'title', type: 'string' },
+    { key: 'body', type: 'markdown' },
+    { key: 'accent', type: 'enum' },
+    { key: 'image', type: 'image' },
+    { key: 'items', type: 'items', itemFields: [{ key: 'text', type: 'csv' }] },
+  ]);
+
+  assert.equal(isPerLanguageKey(spec, 'title', 'Hallo'), true, 'declared text');
+  assert.equal(
+    isPerLanguageKey(spec, 'title', 42),
+    true,
+    'a declared text key stays text whatever it happens to hold',
+  );
+  assert.equal(
+    isPerLanguageKey(spec, 'accent', 'lime'),
+    false,
+    'declared enum',
+  );
+  assert.equal(
+    isPerLanguageKey(spec, 'items', []),
+    false,
+    'a declared items field is walked, not classified here',
+  );
+  assert.equal(
+    isPerLanguageKey(spec, 'legacyTagline', 'Zo doen wij dat'),
+    true,
+    'undeclared string is prose',
+  );
+  assert.equal(
+    isPerLanguageKey(spec, 'legacyColumns', 3),
+    false,
+    'undeclared number is a machine value',
+  );
+  assert.equal(
+    isPerLanguageKey(spec, 'legacyBlob', { a: 1 }),
+    false,
+    "undeclared object is a machine value: structure is the dominant version's",
+  );
+  assert.equal(
+    isPerLanguageKey(spec, 'legacyMixed', 'text', 7),
+    false,
+    'versions disagreeing on the kind of value make it a machine value',
+  );
+  assert.equal(
+    isPerLanguageKey(spec, 'ghost'),
+    false,
+    'a key no version holds is nothing at all',
+  );
+});
+
+test('perLanguageKeys reads every version, so a peer-only string survives', () => {
+  const spec = textFieldSpec([
+    { key: 'title', type: 'string' },
+    { key: 'accent', type: 'enum' },
+  ]);
+  const dominant = { title: 'Hallo', accent: 'lime', legacyColumns: 3 };
+  const peer = { title: 'Hello', accent: 'lime', legacyTagline: 'Our way' };
+
+  assert.deepEqual(
+    [...perLanguageKeys(spec, dominant, peer)].sort(),
+    ['legacyTagline', 'title'],
+    'the peer-only undeclared string counts, the number does not',
+  );
+  assert.deepEqual(
+    [...perLanguageKeys(spec)],
+    ['title'],
+    'with no content at all, the declared text keys are the answer',
+  );
 });

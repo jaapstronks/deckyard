@@ -71,7 +71,10 @@ import { createCommentsApi } from './comments-api.js';
 import { createEditorTitleController } from './title-controller.js';
 import { attachEditorFindShortcut } from './find-shortcut.js';
 import { attachEditorShortcutsHelp } from './shortcuts.js';
-import { translatableKeysForType } from '../../../shared/slide-types/text-fields.js';
+import {
+  perLanguageKeys,
+  textFieldSpecForType,
+} from '../../../shared/slide-types/text-fields.js';
 import { focusSearchHitInEditor } from './search-focus.js';
 import { createResponsiveDrawers } from './responsive-drawers.js';
 import { createEditorStateUpdater } from '../../lib/state/editor-state.js';
@@ -519,8 +522,9 @@ export async function createEditorController({
     }, 120);
   };
 
-  const translatableKeysForSlideType = (type) =>
-    translatableKeysForType(type, SLIDE_TYPES);
+  /** The per-language content keys of one slide, across the versions given. */
+  const perLanguageKeysForSlide = (type, ...contents) =>
+    perLanguageKeys(textFieldSpecForType(type, SLIDE_TYPES), ...contents);
 
   // Consolidated state updater
   const editorState = createEditorStateUpdater({
@@ -1285,7 +1289,7 @@ export async function createEditorController({
       root,
       lockDocumentScroll,
       normalizeLang,
-      translatableKeysForType: translatableKeysForSlideType,
+      perLanguageKeysForSlide,
       markDirty,
       // Late-bound: the real renderers are assigned further down, so pass
       // indirections that read the current binding at open time.

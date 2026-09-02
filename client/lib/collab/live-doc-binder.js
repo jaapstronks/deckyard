@@ -42,6 +42,7 @@
  */
 
 import { patchYText } from '../../../shared/collab/deck-ydoc.js';
+import { isPerLanguageKey } from '../../../shared/slide-types/text-fields.js';
 
 const SERVER_MANAGED_KEYS = new Set([
   'id',
@@ -178,9 +179,10 @@ export function createLiveDocBinder({
   }
 
   /**
-   * Diff a content (or item) map. `spec` is the translatable-field spec for
-   * this level ({textKeys, items}); `force` skips the equality short-circuit
-   * (used after a slide type change, when field classification shifted).
+   * Diff a content (or item) map. `spec` is the text-field spec for this
+   * level, as `text-fields.js` builds it; `force` skips the equality
+   * short-circuit (used after a slide type change, when field classification
+   * shifted).
    */
   function diffContentMap(
     ymap,
@@ -202,7 +204,10 @@ export function createLiveDocBinder({
         if (ymap.has(key)) ymap.delete(key);
         continue;
       }
-      if (spec.textKeys.has(key) && typeof newV === 'string') {
+      // Prose is per language, whether the type declares the key or not: an
+      // undeclared string written as a plain LWW value is the loss the codec
+      // used to produce, arriving through the live-edit path instead (D79).
+      if (typeof newV === 'string' && isPerLanguageKey(spec, key, newV)) {
         writeTextField(ymap, key, newV, lang);
         continue;
       }

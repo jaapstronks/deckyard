@@ -54,6 +54,7 @@
 import { SLIDE_TYPES } from '../slide-types.js';
 import {
   emptyTextFieldSpec,
+  perLanguageKeys,
   textFieldSpecForType,
 } from '../slide-types/text-fields.js';
 import { DEFAULT_DECK_LANG } from '../i18n-utils.js';
@@ -205,10 +206,17 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
   function buildItem(item, peers, spec) {
     if (!isPlainObject(item)) return deepClone(item);
     const m = new Y.Map();
+    // Classify across every version: an undeclared string that only a
+    // non-dominant version has is still prose, and must survive.
+    const perLang = perLanguageKeys(
+      spec,
+      item,
+      ...peers.list.map(({ item: peer }) => peer),
+    );
     const keys = new Set(Object.keys(item));
-    for (const k of spec.textKeys) keys.add(k); // union: peer-only texts survive
+    for (const k of perLang) keys.add(k); // union: peer-only texts survive
     for (const key of keys) {
-      if (spec.textKeys.has(key)) {
+      if (perLang.has(key)) {
         const values = {};
         if (typeof item[key] === 'string')
           values[peers.dominantLang] = item[key];
@@ -272,13 +280,18 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
     }
     ymap.set('notes', langTextMap(notesValues));
 
-    // Content: classify per schema; unknown keys stay plain.
+    // Content: a declared key is classified by its type, an undeclared one by
+    // its value — read across every version, so a peer-only string counts.
     const spec = textFieldSpecForType(slide.type, slideTypes);
     const content = isPlainObject(slide.content) ? slide.content : {};
+    const peerContents = matches.map(({ slide: peer }) =>
+      isPlainObject(peer.content) ? peer.content : {},
+    );
+    const perLang = perLanguageKeys(spec, content, ...peerContents);
     const ycontent = new Y.Map();
     const keys = new Set(Object.keys(content));
-    for (const k of spec.textKeys) {
-      // Union with schema text keys so a translation that only exists in
+    for (const k of perLang) {
+      // Union with the per-language keys so a translation that only exists in
       // a non-dominant version isn't dropped.
       if (
         matches.some(({ slide: peer }) => typeof textAt(peer, k) === 'string')
@@ -286,7 +299,7 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
         keys.add(k);
     }
     for (const key of keys) {
-      if (spec.textKeys.has(key)) {
+      if (perLang.has(key)) {
         const values = {};
         if (typeof content[key] === 'string') values[lang] = content[key];
         for (const { lang: peerLang, slide: peer } of matches) {
@@ -294,7 +307,7 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
           if (typeof v === 'string') values[peerLang] = v;
         }
         if (Object.keys(values).length) ycontent.set(key, langTextMap(values));
-        // Schema says text but the value isn't a string: keep as plain.
+        // The type declares text but no version stores a string: keep as plain.
         else if (content[key] !== undefined)
           ycontent.set(key, deepClone(content[key]));
         continue;
@@ -705,8 +718,11 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
     const domObj = isPlainObject(incByLang[dominant])
       ? incByLang[dominant]
       : {};
+    // Same classification as bootstrap, over the same set of versions: the
+    // type decides for a declared key, the value for an undeclared one.
+    const perLang = perLanguageKeys(spec, ...Object.values(incByLang));
     const keys = new Set(Object.keys(domObj));
-    for (const k of spec.textKeys) {
+    for (const k of perLang) {
       if (Object.keys(textValuesByLang(incByLang, k)).length) keys.add(k);
     }
     for (const k of ymap.keys()) keys.add(k);
@@ -717,7 +733,7 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
       if (baseView && !force && jsonEq(keyViewByLang(incByLang, key), baseView))
         continue;
 
-      const textValues = spec.textKeys.has(key)
+      const textValues = perLang.has(key)
         ? textValuesByLang(incByLang, key)
         : null;
       if (
