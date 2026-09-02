@@ -6,8 +6,30 @@
 import { badRequest, jsonError } from '../../../utils/http.js';
 import { isAppError } from '../../../utils/errors.js';
 import { createLogger } from '../../../utils/logger.js';
+import { NOTION_NOT_CONFIGURED_MESSAGE } from '../../../utils/notion/index.js';
 
 const log = createLogger('notion');
+
+/**
+ * Refuse a Notion route because the integration is switched off.
+ *
+ * Every Notion handler opens with `if (!notionEnabled()) return
+ * refuseNotionUnconfigured(res);` — one 501, one `notion_not_configured` code,
+ * one sentence (`NOTION_NOT_CONFIGURED_MESSAGE`). The sentence rides in
+ * `message`, never in `details`: `details` is typed by the code (D78) and this
+ * code carries no payload.
+ *
+ * @param {import('node:http').ServerResponse} res
+ * @returns {true}
+ */
+export function refuseNotionUnconfigured(res) {
+  return jsonError(
+    res,
+    501,
+    'notion_not_configured',
+    NOTION_NOT_CONFIGURED_MESSAGE,
+  );
+}
 
 /**
  * Normalize a name string for comparison.

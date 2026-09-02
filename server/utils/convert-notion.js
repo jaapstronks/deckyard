@@ -10,6 +10,7 @@ import {
   extractRichContentFromPage,
   formatNotionContentForAi,
   notionEnabled,
+  NOTION_NOT_CONFIGURED_MESSAGE,
 } from './notion/index.js';
 import {
   generateOutline,
@@ -70,9 +71,7 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
 
   // Check if Notion is configured
   if (!notionEnabled()) {
-    report.errors.push(
-      'Notion is not configured. Set NOTION_SECRET environment variable.',
-    );
+    report.errors.push(NOTION_NOT_CONFIGURED_MESSAGE);
     return { deck: null, report, pageId: null };
   }
 

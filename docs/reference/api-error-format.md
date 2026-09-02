@@ -43,28 +43,28 @@ The internal `/api/*` routes return errors in one canonical envelope:
   the inline refusal — see [`feedback-surfaces.md`](feedback-surfaces.md)
   § The envelope, mirrored.
 
-  The **payload shapes**, one per code. A domain object rides under the name
-  it has on the success body (`lock`, `report`, `holder`); loose facts ride
-  flat:
+  The **payload shapes**, one per code — the register is
+  [`server/utils/error-details.js`](../../server/utils/error-details.js), and
+  this table is its prose. A domain object rides under the name it has on the
+  success body (`lock`, `report`, `holder`); loose facts ride flat. The keys
+  are **permitted, not required** — a code sends the subset it has:
 
-  | Code                     | Status | `details`                                                                                                            |
-  | ------------------------ | ------ | -------------------------------------------------------------------------------------------------------------------- |
-  | `held`                   | 409    | `{ lock }` — the competing slide lock, as the acquire/list bodies name it.                                           |
-  | `conflict`               | 409    | `{ id, revision, modified, updatedBy }` — the server copy the stale `If-Match` lost against.                         |
-  | `locked`                 | 423    | `{ slideId, lockKind, holder? }` — which slide, author or concurrent lock, who holds it (named, not addressed; D22). |
-  | `conversion_failed`      | 422    | `{ report }` — the same conversion report the 201 body and the SSE stream carry.                                     |
-  | `maintenance`            | 503    | `{ active, reason, retryAfter }` — the same object `GET /api/maintenance` returns.                                   |
-  | `sandbox_quota_exceeded` | 429    | `{ resource, limit, used }` with `resource` `decks` or `bytes`.                                                      |
+  | Code                     | Status | `details`                                                                                                                                                                              |
+  | ------------------------ | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | `held`                   | 409    | `{ lock }` — the competing slide lock, as the acquire/list bodies name it.                                                                                                             |
+  | `conflict`               | 409    | `{ id, revision, modified, updatedBy?, conflictingSlides? }` — the server copy the stale `If-Match` lost against; the last names the slides the slide-level merge could not reconcile. |
+  | `locked`                 | 423    | `{ slideId, lockKind, holder? }` — which slide, author or concurrent lock, who holds it (named, not addressed; D22).                                                                   |
+  | `conversion_failed`      | 422    | `{ report }` — the same conversion report the 201 body and the SSE stream carry.                                                                                                       |
+  | `maintenance`            | 503    | `{ active, reason, retryAfter }` — the same object `GET /api/maintenance` returns.                                                                                                     |
+  | `sandbox_quota_exceeded` | 429    | `{ resource, limit, used }` with `resource` `decks` or `bytes`.                                                                                                                        |
 
-  _Implementation status (2026-09-02):_ the location shape and the first
-  five payload shapes are what the code sends today. B208 adds the register —
-  a new module in `server/utils/` — with an assertion on `jsonError()` and
-  `AppError.toJSON()` that throws outside production, gives
-  `sandbox_quota_exceeded` its one shape (it sends two), and moves the prose
-  that the Notion 501s and `versions.js`'s `ai_unavailable` still put in
-  `details` into `message`. Until that lands, a client may only rely on the
-  table for `storage`-originated errors and the four codes that already have
-  a reader. Brief: `docs/plans/briefs/error-envelope-details.md`.
+  The register is **enforced**, at the two emission points that know the code:
+  `jsonError()` and `AppError.toJSON()` both call `assertErrorDetails()` before
+  `details` goes on the wire. An unregistered code, an unregistered key, a
+  string or an array **throws outside production** and is let through unchanged
+  in production — the same posture `getErrorStatus` takes (B104), because a
+  contract slip made in development must never turn a running instance's 4xx
+  into a 500. Pinned by `tests/api-error-envelope.test.js`.
 
 This unified one envelope that used to have two shapes living side by side: prose
 in `error` (from the `http.js` helpers) versus `{ ok:false, error:'code' }` (from
@@ -136,7 +136,8 @@ defaults from the HTTP status, see `codeForStatus`); the top-level handler and
 throws an `Error` with:
 
 - **`err.code`** — the machine code (`obj.error`). Branch on this.
-- **`err.message`** — human text (`obj.message`, falling back to `error`/`details`).
+- **`err.message`** — human text (`obj.message`, falling back to `error` for the
+  prose stragglers).
   Safe to surface in a toast.
 - **`err.statusCode`** — the HTTP status.
 - **`err.details`** — structured detail, if any; its shape follows `err.code`

@@ -68,8 +68,11 @@ test('an unresolvable type is a 400, naming the canonical form', () => {
     /eu\.deckyard\.slide\.title/,
     'error names a canonical id',
   );
-  assert.equal(thrown.details.slideIndex, 0);
-  assert.equal(thrown.details.type, 'text-slide');
+  // Both facts ride in the sentence, not in `details` — `bad_request` carries
+  // no payload (D78, server/utils/error-details.js).
+  assert.match(thrown.message, /"text-slide"/, 'error quotes the type it got');
+  assert.match(thrown.message, /at slide 0/, 'error names the position');
+  assert.equal(thrown.details, null, 'no unregistered payload');
 });
 
 test('a missing type is a 400, not a silent pass-through', () => {

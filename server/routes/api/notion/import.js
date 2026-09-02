@@ -21,7 +21,7 @@ import {
   updatePresentation,
 } from '../../../storage/presentations/index.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
-import { handleNotionError } from './utils.js';
+import { handleNotionError, refuseNotionUnconfigured } from './utils.js';
 import { createLogger } from '../../../utils/logger.js';
 import { sseWrite, sseError, openSseStream } from '../../../utils/sse.js';
 import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
@@ -38,12 +38,7 @@ export async function handleNotionImport({
   authedUser,
   storageScope,
 }) {
-  if (!notionEnabled()) {
-    jsonError(res, 501, 'notion_not_configured', 'Notion not configured', {
-      details: 'Set NOTION_SECRET on the server to enable this feature.',
-    });
-    return true;
-  }
+  if (!notionEnabled()) return refuseNotionUnconfigured(res);
 
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
@@ -135,12 +130,7 @@ export async function handleNotionImportStream({
   authedUser,
   storageScope,
 }) {
-  if (!notionEnabled()) {
-    jsonError(res, 501, 'notion_not_configured', 'Notion not configured', {
-      details: 'Set NOTION_SECRET on the server to enable this feature.',
-    });
-    return true;
-  }
+  if (!notionEnabled()) return refuseNotionUnconfigured(res);
 
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
