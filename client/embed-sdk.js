@@ -53,9 +53,15 @@
 
     if (opt.ui != null) url.searchParams.set('ui', String(opt.ui));
 
-    // Language selection (optional): lets host pages embed a specific i18n version.
-    if (opt.lang === 'nl' || opt.lang === 'en-GB')
-      url.searchParams.set('lang', String(opt.lang));
+    // Language selection (optional): the host page names the version it wants.
+    // Passed through rather than checked against a list — the embed route
+    // normalizes `?lang=` against the deck axis and falls back to the deck's
+    // own language for anything it does not recognise, and this file has no
+    // imports by design, so a list here could only be a second copy that goes
+    // stale. It did: it knew two languages, which made a German version
+    // unrequestable from a host page (B182/D72 #6).
+    if (typeof opt.lang === 'string' && opt.lang.trim())
+      url.searchParams.set('lang', opt.lang.trim());
 
     // Optional UI: show language switch inside the embed iframe (default off).
     const langSwitch = toBool01(opt.langSwitch);

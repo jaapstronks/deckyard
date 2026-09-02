@@ -148,8 +148,15 @@ export async function renderPresentWindow(root, id) {
   channel.onCodes((codes) => {
     if (!codes || typeof codes !== 'object') return;
     // Only re-render when the codes actually change (avoid needless re-mounts).
-    const sig = `${codes.nl || ''}|${codes.en || ''}`;
-    if (sig === `${followCodes?.nl || ''}|${followCodes?.en || ''}`) return;
+    // The map is keyed by deck language and has one entry per version the deck
+    // has (B182/D72 #6), so the signature is the whole map, not two fixed keys
+    // — a change to a third version's code used to slip through unnoticed.
+    const sign = (m) =>
+      Object.keys(m || {})
+        .sort()
+        .map((k) => `${k}=${m[k] || ''}`)
+        .join('|');
+    if (sign(codes) === sign(followCodes)) return;
     followCodes = codes;
     const curId = deckCtl.getState()?.current?.id || '';
     deckCtl.setPresentation(pres, { keepCurrentSlideId: curId });

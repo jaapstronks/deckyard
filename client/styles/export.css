@@ -146,3 +146,47 @@ body {
 .row.is-end {
   justify-content: flex-end;
 }
+
+/* Segmented control — the published page's language switch, one button per
+   version the deck has (B182/D72 #6). Mirrors the rules in embed.css, where
+   the embed's own switch uses the same markup: both viewer shells keep their
+   own copy of the chrome they render, for the reason the .btn family above
+   states. Two deliberate differences from that copy: the lengths are written
+   as spacing tokens (embed.css predates that gate), and the published page
+   renders <a> rather than <button> — each version is a URL — so the link
+   defaults are reset alongside the button ones. */
+.sb-segmented {
+  display: inline-flex;
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-lg);
+  overflow: hidden;
+  background: hsl(var(--app-bg-sunken));
+  padding: var(--ps-space-0-5);
+  gap: var(--ps-space-0-5);
+}
+.sb-segmented-btn {
+  appearance: none;
+  border: 0;
+  margin: 0;
+  padding: var(--ps-space-1-5) var(--ps-space-2-5);
+  background: transparent;
+  color: hsl(var(--app-text-secondary));
+  font: 600 var(--ps-text-sm)/1 var(--ps-font-sans);
+  cursor: pointer;
+  border-radius: calc(var(--ps-radius-md) - 2px);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.sb-segmented-btn:hover {
+  background: hsl(var(--app-bg-hover));
+  color: hsl(var(--app-text-primary));
+}
+.sb-segmented-btn.is-active {
+  background: hsl(var(--app-bg-elevated));
+  color: hsl(var(--app-text-primary));
+  box-shadow: var(--app-shadow-sm);
+}
+.sb-segmented-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--app-accent-primary) / 0.4);
+}

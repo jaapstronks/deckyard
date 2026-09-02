@@ -71,21 +71,26 @@ test('the pinned marketing codes are shaped like minted follow codes', () => {
 });
 
 test('the pinned codes differ per language', () => {
-  // The poll slide prints both rows at once; one code under two languages would
+  // The poll slide prints every row at once; one code under two languages would
   // claim the two follow URLs are the same session.
-  assert.notEqual(MARKETING_FOLLOW_CODES.nl, MARKETING_FOLLOW_CODES.en);
+  const pinned = Object.values(MARKETING_FOLLOW_CODES);
+  assert.equal(new Set(pinned).size, pinned.length);
 });
 
 /** Every `data-follow-code` in `html`, as `{ key: text }`. */
 function markedCodes(html) {
   const found = {};
-  const re = /data-follow-code="([a-z-]+)"[^>]*>([^<]*)</g;
+  // The key is a deck language, so the pattern spans the axis spelling —
+  // `en-GB` carries a capital pair that a lower-case-only class would miss.
+  const re = /data-follow-code="([A-Za-z-]+)"[^>]*>([^<]*)</g;
   let m;
   while ((m = re.exec(html))) found[m[1]] = m[2].trim();
   return found;
 }
 
-const FOLLOW_CODES = { nl: 'AAAAA', en: 'BBBBB' };
+// Keyed by deck language, one per version — the shape the mint produces since
+// B182/D72 #6, and the shape every renderer below reads.
+const FOLLOW_CODES = { nl: 'AAAAA', 'en-GB': 'BBBBB' };
 
 test('follow-invite-slide marks its code with the language it belongs to', () => {
   const nl = followInviteSlide.renderHtml(
@@ -95,14 +100,12 @@ test('follow-invite-slide marks its code with the language it belongs to', () =>
   );
   assert.deepEqual(markedCodes(nl), { nl: 'AAAAA' });
 
-  // The render language is `en-GB`; the code is filed under `en`. The marker
-  // has to carry the key, not the render language.
   const en = followInviteSlide.renderHtml(
     { presentationId: 'p1' },
     {},
     { lang: 'en-GB', followCodes: FOLLOW_CODES },
   );
-  assert.deepEqual(markedCodes(en), { en: 'BBBBB' });
+  assert.deepEqual(markedCodes(en), { 'en-GB': 'BBBBB' });
 });
 
 test('poll-slide marks both codes it prints', () => {
@@ -111,7 +114,7 @@ test('poll-slide marks both codes it prints', () => {
     {},
     { lang: 'nl', followCodes: FOLLOW_CODES },
   );
-  assert.deepEqual(markedCodes(html), { nl: 'AAAAA', en: 'BBBBB' });
+  assert.deepEqual(markedCodes(html), { nl: 'AAAAA', 'en-GB': 'BBBBB' });
 });
 
 test('feedback-slide marks both codes it prints', () => {
@@ -120,7 +123,25 @@ test('feedback-slide marks both codes it prints', () => {
     {},
     { lang: 'nl', presentationId: 'p1', followCodes: FOLLOW_CODES },
   );
-  assert.deepEqual(markedCodes(html), { nl: 'AAAAA', en: 'BBBBB' });
+  assert.deepEqual(markedCodes(html), { nl: 'AAAAA', 'en-GB': 'BBBBB' });
+});
+
+test('a deck with a third version gets a third marked row', () => {
+  // The pair used to be hardcoded in both renderers, so a German version was
+  // unreachable from the poll and feedback slides even mid-session (B182/D72 #6).
+  const codes = { nl: 'AAAAA', 'en-GB': 'BBBBB', de: 'CCCCC' };
+  const poll = pollSlide.renderHtml(
+    { question: 'Q', options: [{ text: 'A' }] },
+    {},
+    { lang: 'nl', followCodes: codes },
+  );
+  assert.deepEqual(markedCodes(poll), codes);
+  const feedback = feedbackSlide.renderHtml(
+    { question: 'Q' },
+    {},
+    { lang: 'de', presentationId: 'p1', followCodes: codes },
+  );
+  assert.deepEqual(markedCodes(feedback), codes);
 });
 
 test('a slide with no session codes still marks the placeholder', () => {

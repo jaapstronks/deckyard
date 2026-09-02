@@ -1,5 +1,11 @@
 import { createFollowCode, FOLLOW_CODE_TTL_MS } from '../follow-codes.js';
+import { getPresentation } from '../presentations/index.js';
 import { toStorageContext } from '../scope.js';
+import {
+  DEFAULT_DECK_LANG,
+  resolveDeckLang,
+} from '../../../shared/i18n-utils.js';
+import { existingVersionLangs } from '../../../shared/i18n-progress.js';
 import { TTL_MS } from './constants.js';
 import { sessions } from './state.js';
 import {
@@ -20,25 +26,52 @@ function areFollowCodesExpired(session) {
 }
 
 /**
- * Mint a follow code per language for a deck.
+ * The languages a deck hands its audience a follow code for.
+ *
+ * The versions the deck actually has — a German version gets a German code,
+ * and a Dutch-only deck no longer advertises an English one it cannot serve
+ * (B182/D72 #6). A deck that carries no version block at all still has one
+ * language, and its audience still needs a code, so that single language is
+ * the answer there.
+ *
+ * @param {Object} [pres] - a presentation
+ * @returns {string[]}
+ */
+function followLangsForDeck(pres) {
+  const versions = existingVersionLangs(pres);
+  if (versions.length) return versions;
+  return [resolveDeckLang(pres) || DEFAULT_DECK_LANG];
+}
+
+/**
+ * Mint a follow code per language version of a deck, keyed by the deck
+ * language it belongs to (`nl`, `en-GB`, `de` — the axis spelling, which is
+ * also what `?lang=` and every renderer reads).
+ *
+ * The deck is read here rather than handed in because only this path needs it:
+ * creating or resuming a session usually reuses the codes it already has, and
+ * only a first mint or an expiry has to know which versions exist.
  *
  * A failure here is not fatal: the session is still usable, the audience just
  * has to follow the link instead of typing a code. A code is only omitted when
- * minting returned nothing (the database is unavailable), never faked.
+ * minting returned nothing (the database is unavailable), never faked — which
+ * is why the deck read sits inside the same guard as the mint.
  *
  * @param {import('../scope.js').StorageScope} scope
  * @param {string} presentationId
- * @returns {Promise<Object<string, string>>} Codes by language key.
+ * @returns {Promise<Object<string, string>>} Codes by deck language.
  */
 async function mintFollowCodes(scope, presentationId) {
   const followCodes = {};
   try {
-    const byLang = {
-      nl: `/follow/${encodeURIComponent(presentationId)}?lang=nl`,
-      en: `/follow/${encodeURIComponent(presentationId)}?lang=en-GB`,
-    };
-    for (const [lang, followUrl] of Object.entries(byLang)) {
-      const code = await createFollowCode(scope, followUrl);
+    const langs = followLangsForDeck(
+      await getPresentation(scope, presentationId),
+    );
+    for (const lang of langs) {
+      const code = await createFollowCode(
+        scope,
+        `/follow/${encodeURIComponent(presentationId)}?lang=${encodeURIComponent(lang)}`,
+      );
       if (code) followCodes[lang] = code;
     }
     // Don't log the code values: a live follow code resolves to a presenter's
@@ -78,7 +111,7 @@ function ensureCleanupTimer() {
  *
  * @param {import('../scope.js').StorageScope} scope
  * @param {{presentationId: string}} opts
- * @returns {Promise<{ok: true, sessionId: string, joinPath: string, followCodes: object}|{ok: false, reason: string}>}
+ * @returns {Promise<{ok: true, sessionId: string, joinPath: string, followCodes: Object<string, string>}|{ok: false, reason: string}>}
  */
 export async function createLiveSession(scope, { presentationId }) {
   toStorageContext(scope, 'createLiveSession');

@@ -26,15 +26,15 @@ import {
   invalidateSettingsCache,
   updateMySettings,
 } from '../../../lib/net/settings.js';
-import {
-  getLangShortLabel,
-  getLangDisplayName,
-} from '../../../lib/format/lang-selector.js';
+import { getLangShortLabel } from '../../../lib/format/lang-selector.js';
 import { createUserNotificationsSection } from '../sections/index.js';
 import { disableForSandbox } from '../sandbox-disable.js';
 import { createColorPicker } from '../theme-editor/color-picker.js';
 import { currentUrl, nav } from '../../../lib/state/router.js';
-import { DEFAULT_SUPPORTED_DECK_LANGS } from '../../../../shared/i18n-utils.js';
+import {
+  DEFAULT_SUPPORTED_DECK_LANGS,
+  getLangDisplayName,
+} from '../../../../shared/i18n-utils.js';
 
 /**
  * Create the preferences tab component.

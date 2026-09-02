@@ -160,41 +160,35 @@ export function normalizeLang(v) {
 }
 
 /**
- * The other language of a *bilingual* deck, or null.
+ * The native display name of a deck language — "Nederlands", "Deutsch".
  *
- * Narrow by construction, and deliberately not the axis: this answers "the
- * chrome shows an NL⇄EN toggle — which one is the other side?", which is only
- * a question at all when a deck has exactly two languages. On the open axis
- * (D61) "the other of twelve" has no answer, so an off-pair language gets
- * `null` and the caller has to name its target explicitly rather than be
- * handed a guess.
+ * The one reader of `TRANSLATION_LANG_NATIVE_LABELS`, so every surface that
+ * names a language names it the same way (D77): the editor's language menu,
+ * the translate modals' source pill, the presenter switcher and — since the
+ * viewer chrome stopped rendering a fixed `NL EN` pair (B182 fase 4) — the
+ * published page and the embed. It lives here rather than in the client's
+ * `lang-selector.js` because the server renders those last two.
  *
- * **On its way out.** The editor chrome that this served now names its target
- * — `translationSourceFor()` below answers the same question for all twelve
- * languages (D72 #2). What is left are the two public-viewer surfaces that
- * still render a fixed NL/EN link pair, `server/routes/static/published.js` and
- * `.../embed.js`. Widening those is phase 4 of B182; this function goes with
- * them, along with the `server/utils/i18n.js` re-export.
+ * Falls back to the code itself for anything off-axis, so a label is never
+ * empty.
  *
- * @param {*} lang - Current language
- * @returns {'nl'|'en-GB'|null}
+ * @param {*} code - a deck language code
+ * @returns {string}
  */
-export function otherLang(lang) {
-  if (lang === 'en-GB') return 'nl';
-  if (lang === 'nl') return 'en-GB';
-  return null;
+export function getLangDisplayName(code) {
+  return TRANSLATION_LANG_NATIVE_LABELS[normalizeLang(code) ?? code] || code;
 }
 
 /**
  * The language a translation into `to` should be read FROM.
  *
  * Every "the other language" question in the chrome is really this one, and it
- * has an answer for all twelve languages where `otherLang()` had one for two:
- * the **dominant version is the source**, because it is the version the deck is
- * authored in and the only one guaranteed to be complete (D72). Translating
- * *into* the dominant version is the exception — there the source is whatever
- * version is being looked at, falling back to the first other version the deck
- * has.
+ * has an answer for all twelve languages where the retired `otherLang()` had
+ * one for two: the **dominant version is the source**, because it is the
+ * version the deck is authored in and the only one guaranteed to be complete
+ * (D72). Translating *into* the dominant version is the exception — there the
+ * source is whatever version is being looked at, falling back to the first
+ * other version the deck has.
  *
  * Returns null when the deck has nothing to translate from: no other version
  * exists, or the deck names no language at all. Callers must handle that rather

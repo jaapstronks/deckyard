@@ -35,8 +35,6 @@ export const SLIDE_COPY = {
     feedbackScan: 'Scan',
     feedbackOrGoTo: 'Of ga naar',
     feedbackQrCodeLabel: 'QR-code',
-    feedbackAccessCodeNlLabel: 'Toegangscode NL',
-    feedbackAccessCodeEnLabel: 'Toegangscode EN',
 
     // Empty image placeholder (editor canvas only)
     imagePlaceholder: 'Afbeelding',
@@ -89,8 +87,6 @@ export const SLIDE_COPY = {
     feedbackScan: 'Scan',
     feedbackOrGoTo: 'Or go to',
     feedbackQrCodeLabel: 'QR code',
-    feedbackAccessCodeNlLabel: 'Access code NL',
-    feedbackAccessCodeEnLabel: 'Access code EN',
 
     // Empty image placeholder (editor canvas only)
     imagePlaceholder: 'Image',
