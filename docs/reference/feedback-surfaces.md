@@ -110,6 +110,15 @@ Styling: `.inline-error` (plain, under a field) and `.inline-error.is-callout`
 `.form-input[aria-invalid="true"]` — the attribute is the state, there is no
 wrapper class to keep in step.
 
+The polite form has one more job. A list or panel that did not load says so
+in its own place — `createInlineError({ live: 'polite' })` appended where the
+rows would have been, `show(message, { focus: false })` — and stays until the
+next load replaces it. That is the fourth kind, a state of the list, not a
+refusal of anything the user just did, so it must not take focus. It is the one
+in-place form for that state (the share modal's three lists, the viewer's
+comments, the trash and slide-library views); whether the fourth kind gets a
+carrier of its own beyond the save-chip and the banners is B206's call.
+
 ## Live regions and focus
 
 - The toast stack has two regions that exist from page load: `role="status"`

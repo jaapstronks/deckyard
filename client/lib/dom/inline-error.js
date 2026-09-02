@@ -65,7 +65,9 @@ function removeDescribedBy(control, id) {
  *   A refusal of an attempt (Save pressed, the form said no) is `assertive`:
  *   `role="alert"`. A hint that appears while the user is still typing, like
  *   the required-field flag on blur, is `polite`: `role="status"`, so it does
- *   not talk over the label of the field they just moved to.
+ *   not talk over the label of the field they just moved to. So is a list or
+ *   panel that did not load, shown in its place with `focus: false` — a state
+ *   of the list, not a refusal (docs/reference/feedback-surfaces.md).
  * @param {boolean} [opts.callout=false] - The form-level box beside the
  *   button, rather than the plain line under a field.
  * @param {string} [opts.id] - Element id; generated when absent. The id is what
