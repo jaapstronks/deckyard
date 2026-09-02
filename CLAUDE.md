@@ -110,13 +110,17 @@ Apply it at the recurring moments:
 - **DOM**: `h()` from `client/lib/dom.js` — no raw `document.createElement`.
 - **Strings**: `t(key, fallback)` from `client/lib/ui-i18n.js` for all
   user-facing copy; translations in `client/i18n/<locale>/<component>.json`.
-- **Feedback**: `toast` from `client/lib/dom/toast.js` for a _passing_
-  message — a confirmation, or the failure of an action that has no form on
-  screen to attach to. No `alert()`. A refusal of the form the user is filling
-  in is a state of that form, not a notification: it stays beside the control
-  or the Save button until the next attempt, names the field, and is not
-  toasted alongside (precedent: `client/views/settings/slide-type-editor/`,
-  #1072). The per-kind doctrine (place, lifetime, content, focus) is B202.
+- **Feedback**: the kind of event decides the carrier —
+  `docs/reference/feedback-surfaces.md` is the doctrine (five kinds: place,
+  lifetime, content, focus). `toast` from `client/lib/dom/toast.js` for a
+  _passing_ message: a confirmation, or the failure of an action that has no
+  form on screen. A refusal of the form the user is filling in is a state of
+  that form: `createInlineError()` from `client/lib/dom/inline-error.js`,
+  beside the control or the Save button, cleared at the start of the next
+  attempt, naming the field (`err.details.field`), never toasted alongside.
+  No `alert()`, no hand-rolled `*-error` class (the guard is
+  `tests/feedback-surfaces-guard.test.js`). Worked example:
+  `client/views/settings/slide-type-editor/`.
 - **Confirmations**: `confirmModal` / `createTextInput` from
   `client/lib/dom/modal.js`. No native `confirm()`/`prompt()` in new code.
 - **Modals**: follow the `client/lib/dom/modal.js` helpers (focus trap and

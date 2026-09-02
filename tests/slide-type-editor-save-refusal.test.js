@@ -65,9 +65,13 @@ function mount({ slideType, onSave }) {
     el: editor.el,
     save: () =>
       editor.el.querySelector('.slide-type-editor-header .btn-primary'),
-    error: () => editor.el.querySelector('.slide-type-editor-error'),
+    error: () => editor.el.querySelector('.inline-error.is-callout'),
+    input: (placeholder) =>
+      editor.el.querySelector(`.form-input[placeholder="${placeholder}"]`),
   };
 }
+
+const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 test('the shared rules refuse an items field with no item fields, and locate it', () => {
   const result = validateCustomFieldDefinitions([
@@ -134,10 +138,28 @@ test('Save does not post a definition the API would refuse, and names the field'
   const row = view.el.querySelector('.field-list-item.is-invalid');
   assert.ok(row, 'the offending row is marked');
   assert.equal(row.open, true, 'and opened, so the message is not hidden');
-  assert.match(
-    row.querySelector('.field-list-item-error').textContent,
-    /item fields/,
+  assert.match(row.querySelector('.inline-error').textContent, /item fields/);
+  assert.equal(
+    document.activeElement,
+    row.querySelector('summary'),
+    'focus lands on the row that has to change',
   );
+});
+
+test('a local refusal names the field: aria-invalid, described by the message, focused', async () => {
+  const view = mount({
+    slideType: { label: '', slug: '', fields: [] },
+    onSave: async () => {},
+  });
+  view.save().click();
+  await tick();
+
+  const name = view.input('My Custom Slide');
+  assert.equal(view.error().hidden, false);
+  assert.match(view.error().textContent, /name is required/i);
+  assert.equal(name.getAttribute('aria-invalid'), 'true');
+  assert.equal(name.getAttribute('aria-describedby'), view.error().id);
+  assert.equal(document.activeElement, name);
 });
 
 test('an API refusal reaches the screen instead of being swallowed', async () => {
@@ -154,11 +176,84 @@ test('an API refusal reaches the screen instead of being swallowed', async () =>
   });
 
   view.save().click();
-  await new Promise((resolve) => setTimeout(resolve, 0));
+  await tick();
 
   assert.equal(view.error().hidden, false);
   assert.equal(view.error().textContent, err.message);
   assert.equal(view.save().disabled, false, 'and the form is usable again');
+  assert.equal(
+    document.activeElement,
+    view.error(),
+    'no field named, so focus lands on the message',
+  );
+});
+
+test('an API refusal with details.field points at that control', async () => {
+  const err = new Error('Invalid slug.');
+  err.statusCode = 400;
+  err.code = 'invalid';
+  err.details = { field: 'slug' };
+
+  const view = mount({
+    slideType: definition([{ key: 'title', type: 'string', label: 'Title' }]),
+    onSave: async () => {
+      throw err;
+    },
+  });
+  view.save().click();
+  await tick();
+
+  const slug = view.input('my-custom-slide');
+  assert.equal(slug.getAttribute('aria-invalid'), 'true');
+  assert.equal(document.activeElement, slug);
+});
+
+test('an API refusal that locates a row opens and marks that row', async () => {
+  // The envelope's `details` (docs/reference/api-error-format.md): the storage
+  // layer inspected `fields` entry by entry and says which one.
+  const err = new Error('"Rows" › "Kind" is a dropdown with no options.');
+  err.statusCode = 400;
+  err.code = 'invalid';
+  err.details = {
+    field: 'fields',
+    index: 1,
+    itemIndex: 0,
+    reason: 'enum_without_options',
+  };
+
+  const view = mount({
+    slideType: definition([
+      { key: 'title', type: 'string', label: 'Title' },
+      {
+        key: 'rows',
+        type: 'items',
+        label: 'Rows',
+        itemFields: [{ key: 'kind', type: 'enum', label: 'Kind', options: [] }],
+      },
+    ]),
+    onSave: async () => {
+      throw err;
+    },
+  });
+  // The local check would catch this first; bypass it the way a rule the
+  // client does not know yet would — by making the local rules pass.
+  view.el
+    .querySelectorAll('.field-list-nested .code-textarea')
+    .forEach((area) => {
+      area.value = 'a\nb';
+      area.dispatchEvent(new dom.window.Event('input'));
+    });
+  view.save().click();
+  await tick();
+
+  const rows = view.el.querySelectorAll(':scope > * .field-list-item');
+  const row = rows[1];
+  assert.ok(
+    row.classList.contains('is-invalid'),
+    'the top-level row is marked',
+  );
+  assert.equal(row.open, true);
+  assert.equal(view.error().textContent, err.message);
 });
 
 test('the next attempt starts from a clean slate', async () => {
@@ -171,14 +266,14 @@ test('the next attempt starts from a clean slate', async () => {
   });
 
   view.save().click();
-  await new Promise((resolve) => setTimeout(resolve, 0));
+  await tick();
   assert.equal(view.error().hidden, false);
 
   // Give the repeater an item field the way the sub-editor does, then retry.
   const addButtons = view.el.querySelectorAll('.field-list-nested .btn');
   addButtons[addButtons.length - 1].click();
   view.save().click();
-  await new Promise((resolve) => setTimeout(resolve, 0));
+  await tick();
 
   assert.equal(posted, 1, 'the corrected definition is posted');
   assert.equal(view.error().hidden, true, 'and the refusal is gone');

@@ -40,7 +40,7 @@ test('an optional field is untouched by any of this', () => {
   const wrap = fieldText('Title', '', () => {});
   assert.equal(wrap.classList.contains('is-required'), false);
   assert.equal(wrap.querySelector('.field-required-mark'), null);
-  assert.equal(wrap.querySelector('.field-error'), null);
+  assert.equal(wrap.querySelector('.inline-error'), null);
 });
 
 test('a required field is marked before anything is typed, but not flagged', () => {
@@ -53,20 +53,36 @@ test('a required field is marked before anything is typed, but not flagged', () 
   );
   assert.equal(input.getAttribute('aria-required'), 'true');
   assert.equal(
-    wrap.classList.contains('is-invalid'),
+    input.hasAttribute('aria-invalid'),
     false,
     'quiet until visited',
   );
-  assert.equal(wrap.querySelector('.field-error').hidden, true);
+  const error = wrap.querySelector('.inline-error');
+  assert.equal(error.hidden, true);
+  assert.equal(
+    error.getAttribute('role'),
+    'status',
+    'a hint while typing is polite, not an alert',
+  );
 });
 
-test('leaving a required field empty flags it', () => {
+test('leaving a required field empty flags it, without moving focus', () => {
   const wrap = fieldText('Title', '', () => {}, { required: true });
+  document.body.append(wrap);
   const input = wrap.querySelector('input');
+  const elsewhere = h('button', { type: 'button', text: 'Next' });
+  document.body.append(elsewhere);
+  elsewhere.focus();
   blur(input);
-  assert.ok(wrap.classList.contains('is-invalid'));
   assert.equal(input.getAttribute('aria-invalid'), 'true');
-  assert.equal(wrap.querySelector('.field-error').hidden, false);
+  const error = wrap.querySelector('.inline-error');
+  assert.equal(error.hidden, false);
+  assert.equal(
+    input.getAttribute('aria-describedby'),
+    error.id,
+    'the control points at its message',
+  );
+  assert.equal(document.activeElement, elsewhere, 'focus stayed where it was');
 });
 
 test('whitespace does not count as filled in', () => {
@@ -74,24 +90,24 @@ test('whitespace does not count as filled in', () => {
   const input = wrap.querySelector('input');
   type(input, '   ');
   blur(input);
-  assert.ok(wrap.classList.contains('is-invalid'));
+  assert.equal(input.getAttribute('aria-invalid'), 'true');
 });
 
 test('the flag clears as soon as a value is typed, without another blur', () => {
   const wrap = fieldText('Title', '', () => {}, { required: true });
   const input = wrap.querySelector('input');
   blur(input);
-  assert.ok(wrap.classList.contains('is-invalid'));
+  assert.equal(input.getAttribute('aria-invalid'), 'true');
   type(input, 'Hello');
-  assert.equal(wrap.classList.contains('is-invalid'), false);
-  assert.equal(input.getAttribute('aria-invalid'), 'false');
-  assert.equal(wrap.querySelector('.field-error').hidden, true);
+  assert.equal(input.hasAttribute('aria-invalid'), false);
+  assert.equal(input.hasAttribute('aria-describedby'), false);
+  assert.equal(wrap.querySelector('.inline-error').hidden, true);
 });
 
 test('a field that already has a value is never flagged', () => {
   const wrap = fieldText('Title', 'Present', () => {}, { required: true });
   blur(wrap.querySelector('input'));
-  assert.equal(wrap.classList.contains('is-invalid'), false);
+  assert.equal(wrap.querySelector('input').hasAttribute('aria-invalid'), false);
 });
 
 test('markdown fields get the same treatment', () => {
@@ -99,7 +115,7 @@ test('markdown fields get the same treatment', () => {
   const ta = wrap.querySelector('textarea');
   assert.ok(wrap.querySelector('.field-required-mark'));
   blur(ta);
-  assert.ok(wrap.classList.contains('is-invalid'));
+  assert.equal(ta.getAttribute('aria-invalid'), 'true');
 });
 
 test("a read-only code field is not the author's to fill in, so it is not flagged", () => {
@@ -108,7 +124,7 @@ test("a read-only code field is not the author's to fill in, so it is not flagge
     readOnly: true,
   });
   assert.equal(wrap.classList.contains('is-required'), false);
-  assert.equal(wrap.querySelector('.field-error'), null);
+  assert.equal(wrap.querySelector('.inline-error'), null);
 });
 
 test('emptyRequiredFields finds the empty ones only', () => {

@@ -328,9 +328,32 @@ export function getErrorStatus(reason) {
 export function storageError(res, result, message, { headers } = {}) {
   const reason = result?.reason;
   return jsonError(res, getErrorStatus(reason), reason, message, {
-    details: result?.field ? { field: result.field } : undefined,
+    details: locateDetails(result),
     headers,
   });
+}
+
+/**
+ * The `details` a storage result puts on the wire: which input was bad
+ * (`field`), and — when the input is a list the storage layer inspected
+ * entry by entry — where in it (`index`, `itemIndex`) and why (`reason`, a
+ * snake_case sub-code a client can translate). `message` still carries the
+ * English sentence; `details` is what lets a client point at the row without
+ * parsing it. Shape and meaning: docs/reference/api-error-format.md.
+ * @param {{field?: string, fieldProblem?: {reason?: string, index?: number|null, itemIndex?: number|null}}|null|undefined} result
+ * @returns {Object|undefined} `undefined` when the result names no field.
+ */
+function locateDetails(result) {
+  if (!result?.field) return undefined;
+  const details = { field: result.field };
+  const problem = result.fieldProblem;
+  if (!problem) return details;
+  if (typeof problem.index === 'number') details.index = problem.index;
+  if (typeof problem.itemIndex === 'number') {
+    details.itemIndex = problem.itemIndex;
+  }
+  if (typeof problem.reason === 'string') details.reason = problem.reason;
+  return details;
 }
 
 export function methodNotAllowed(res, allowed) {

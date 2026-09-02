@@ -6,6 +6,7 @@
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { CUSTOM_TYPE_FIELD_TYPES } from '../../../../shared/slide-types/custom-field-definitions.js';
 
 // The dropdown offers exactly the types the storage layer accepts, in that
@@ -47,7 +48,7 @@ export function createFieldListEditor({ fields = [], onChange }) {
     // keystroke would steal focus.
     if (problem) {
       problem = null;
-      for (const node of el.querySelectorAll('.field-list-item-error')) {
+      for (const node of el.querySelectorAll('.inline-error')) {
         node.remove();
       }
       for (const node of el.querySelectorAll('.field-list-item.is-invalid')) {
@@ -203,15 +204,13 @@ export function createFieldListEditor({ fields = [], onChange }) {
     const body = h('div', { class: 'field-list-item-body' });
 
     // The problem sits at the top of the body when it is this field's own; a
-    // nested one is shown by the sub-editor, at the sub-row it belongs to.
+    // nested one is shown by the sub-editor, at the sub-row it belongs to. The
+    // row is a group, not a control, so the message stands on its own and the
+    // caller decides where focus lands (the row's summary).
     if (rowProblem && rowProblem.itemIndex == null) {
-      body.append(
-        h('div', {
-          class: 'field-list-item-error',
-          role: 'alert',
-          text: rowProblem.message,
-        }),
-      );
+      const rowError = createInlineError();
+      rowError.show(rowProblem.message, { focus: false });
+      body.append(rowError.el);
     }
 
     // Key

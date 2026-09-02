@@ -6,6 +6,7 @@
 
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { createFieldListEditor } from './field-editor.js';
 import { createTemplateHelp } from './template-help.js';
 import { createSlideTypePreview } from './preview.js';
@@ -136,22 +137,9 @@ export function createSlideTypeEditor({
   // The one place a refused save is reported. It sits beside Save and stays
   // until the next attempt, because the failure this replaced was a toast in the
   // far corner that had faded by the time anyone looked for it (B200) — and a
-  // refusal is a state of the form, not a passing notification.
-  const saveError = h('div', {
-    class: 'slide-type-editor-error',
-    role: 'alert',
-    hidden: true,
-  });
-
-  /**
-   * Show (or, with no message, clear) the editor-level save error.
-   * @param {string} [message]
-   */
-  function setSaveError(message) {
-    saveError.textContent = message || '';
-    saveError.hidden = !message;
-    if (message) saveError.scrollIntoView({ block: 'nearest' });
-  }
+  // refusal is a state of the form, not a passing notification
+  // (docs/reference/feedback-surfaces.md).
+  const saveError = createInlineError({ callout: true });
 
   // ============================================================
   // Left column: Form
@@ -527,51 +515,68 @@ export function createSlideTypeEditor({
   // ============================================================
   const main = h('div', { class: 'slide-type-editor-main' });
   main.append(formColumn, previewColumn);
-  container.append(header, saveError, main);
+  container.append(header, saveError.el, main);
 
   // ============================================================
   // Save handler
   // ============================================================
+
+  /** The input each `details.field` of an API refusal names. */
+  const controlFor = {
+    label: nameInput,
+    slug: slugInput,
+    defaults: defaultsArea,
+    template: templateArea,
+    css: cssArea,
+    usage: usageArea,
+  };
+
   /**
-   * Refuse the save: say why beside the button, and put the cursor where the
-   * fix is. One shape for every refusal, local or from the API.
+   * Refuse the save over a row of the field list: open and mark the row, put
+   * the sentence beside Save, and land focus on the row.
+   * @param {{index: number, itemIndex: number|null}} at
    * @param {string} message
-   * @param {HTMLElement} [focusEl]
    */
-  function refuseSave(message, focusEl) {
-    setSaveError(message);
-    focusEl?.focus();
+  function refuseFieldRow(at, message) {
+    const row = fieldEditor.showProblem({
+      index: at.index,
+      itemIndex: at.itemIndex ?? null,
+      message,
+    });
+    saveError.show(message, {
+      focus: row?.querySelector('summary') || undefined,
+    });
   }
 
   saveBtn.addEventListener('click', async () => {
-    setSaveError('');
+    saveError.clear();
     fieldEditor.clearProblem();
 
     // Validate
     if (!state.label.trim()) {
-      refuseSave(
+      saveError.show(
         t(
           'settings.slideTypes.errorNameRequired',
           'Slide type name is required.',
         ),
-        nameInput,
+        { control: nameInput },
       );
       return;
     }
 
     if (!isValidSlug(state.slug)) {
-      refuseSave(
+      saveError.show(
         t(
           'settings.slideTypes.errorInvalidSlug',
           'Invalid slug. Use lowercase letters, numbers, and hyphens.',
         ),
-        slugInput,
+        { control: slugInput },
       );
       return;
     }
 
     if (state.fields.length === 0) {
-      refuseSave(
+      saveError.show(
         t(
           'settings.slideTypes.errorFieldsRequired',
           'At least one field is required.',
@@ -585,14 +590,10 @@ export function createSlideTypeEditor({
     // list. The API check stays authoritative — this only shortens the loop.
     const fieldsResult = validateCustomFieldDefinitions(state.fields);
     if (!fieldsResult.ok) {
-      const message = fieldProblemMessage(fieldsResult.problem);
-      const row = fieldEditor.showProblem({
-        index: fieldsResult.problem.index,
-        itemIndex: fieldsResult.problem.itemIndex,
-        message,
-      });
-      refuseSave(message);
-      row?.scrollIntoView({ block: 'nearest' });
+      refuseFieldRow(
+        fieldsResult.problem,
+        fieldProblemMessage(fieldsResult.problem),
+      );
       return;
     }
 
@@ -600,12 +601,12 @@ export function createSlideTypeEditor({
     if (defaultsJson.trim()) {
       const parsed = tryParseJson(defaultsJson);
       if (!parsed) {
-        refuseSave(
+        saveError.show(
           t(
             'settings.slideTypes.errorInvalidDefaults',
             'Defaults JSON is invalid.',
           ),
-          defaultsArea,
+          { control: defaultsArea },
         );
         return;
       }
@@ -634,14 +635,22 @@ export function createSlideTypeEditor({
     } catch (err) {
       // `onSave` rejects with the API error; its message is the only account of
       // why the save was refused, so it lands in the same place a local refusal
-      // does rather than disappearing into a console.
-      setSaveError(
+      // does rather than disappearing into a console. `details` says which
+      // input (`field`) and, for the field list, which row (`index`,
+      // `itemIndex`), so the answer points at the control rather than at the
+      // whole form (docs/reference/api-error-format.md § details).
+      const message =
         err?.message ||
-          t(
-            'settings.slideTypes.errorSaveFailed',
-            'Could not save this slide type.',
-          ),
-      );
+        t(
+          'settings.slideTypes.errorSaveFailed',
+          'Could not save this slide type.',
+        );
+      const details = err?.details || {};
+      if (details.field === 'fields' && typeof details.index === 'number') {
+        refuseFieldRow(details, message);
+      } else {
+        saveError.show(message, { control: controlFor[details.field] || null });
+      }
     } finally {
       saveBtn.disabled = false;
       cancelBtn.disabled = false;
