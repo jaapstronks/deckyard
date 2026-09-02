@@ -58,11 +58,11 @@ the ten locales stay, we are just honest about what "supported" covers.
 `client/i18n/manifest.json`; all three are there so no script keeps a list of
 its own (B132 found four hand-kept spellings that had drifted apart).
 
-| Field              | Means                                                                                                                                                                                                                       |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `locales[].tier`   | The promise above. Drives the coverage gate and the picker's grouping.                                                                                                                                                      |
-| `reference`        | The locale the English source text lives in (`en`). It is what every `t(key, fallback)` fallback says, what `i18n-sync` fills the other eleven from, and what `tests/i18n-coverage.test.js` compares every other locale to. |
-| `modules[].loader` | Which loader reads that module file — see below.                                                                                                                                                                            |
+| Field              | Means                                                                                                                                                                                                                          |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `locales[].tier`   | The promise above. Drives the coverage gate and the picker's grouping.                                                                                                                                                         |
+| `reference`        | The locale the English source text lives in (`en`). It is what every `t(key, fallback)` fallback says, what `i18n-sync` measures a carbon copy against, and what `tests/i18n-coverage.test.js` compares every other locale to. |
+| `modules[].loader` | Which loader reads that module file — see below.                                                                                                                                                                               |
 
 Two loaders exist:
 
@@ -74,19 +74,43 @@ Two loaders exist:
   whose `deckLangToLocale()` resolves every deck language to `nl` or `en` — so a
   `deck` module is only ever read in Tier 1.
 
-That distinction is the whole reason `i18n-sync`'s two halves have different
-scopes: it **prunes** every locale × every module (a dead `slideType.*` key is
-dead wherever it sits) but only **fills** the `ui` modules of the non-reference
-locales (copying English into a `deck` module for the other ten would write
-files no loader can reach). `tests/i18n-sync-plan.test.js` asserts both.
+## An untranslated key is absent
 
-There is deliberately **no per-locale fill opt-out**. The eight-of-twelve fill
-list this replaced looked like policy — "don't stuff the hand-translated ones
-with English" — but all twelve are hand-translated, and the three it skipped
-(`it`, `pl`, `fi`) were the _most_ complete Tier-2 locales, a strict superset of
-the seven it filled. It was drift, so it is gone rather than promoted to a
-manifest flag. If a locale ever does need to sit out the fill, that is a new
-field with a stated reason.
+A Tier-2 gap is written down as **absence**, never as a copy of the English.
+That is the second half of `i18n-sync`: a **strip** that deletes every Tier-2
+value byte-identical to its `en/` one, gated at zero by
+`tests/i18n-coverage.test.js` (check 11).
+
+It costs nothing, because absence and an English copy render the same string.
+`t(key, fallback)` falls back to the call-site literal, and check 5 of the same
+suite pins every fallback on the `en/` value — so the copy was pure duplication.
+What it cost was truth: `i18n-sync` used to _write_ those copies (a fill of
+~1.8k keys a round), and they lied to two instruments. The anchor gate read a
+placeholder as a second spelling of a concept the locale translates elsewhere
+(280 findings in one round), and `missingFor()` in `scripts/i18n-fill.js`
+counted a filled key as translated, so the translator gap report said zero for a
+locale with hundreds of holes. D73 removed the fill rather than teach both
+instruments to recognise a placeholder.
+
+Both halves of `i18n-sync` are deletions now, and both sweep **every module** —
+a dead `slideType.*` key and a carbon copy are dead weight wherever they sit,
+`follow.json` included. Only the locale axis differs: the prune covers every
+locale, the strip only Tier 2. `tests/i18n-sync-plan.test.js` asserts that
+matrix.
+
+**Tier 1 is out of the strip by policy.** `nl` must stay complete, and a Dutch
+value equal to the English can be correct Dutch — "Export", "Status", "Design".
+Only a Tier-2 locale may express a gap by absence, and the tier is the whole of
+that rule: there is deliberately no per-locale opt-out list. The eight-of-twelve
+fill list that preceded it looked like policy — "don't stuff the hand-translated
+ones with English" — but all twelve are hand-translated, and the three it
+skipped (`it`, `pl`, `fi`) were the _most_ complete Tier-2 locales. It was
+drift. If a Tier-2 locale ever does need to sit out, that is a manifest field
+with a stated reason.
+
+To actually translate a locale rather than strip it, use
+`node scripts/i18n-fill.js <locale> --json` — the translator hand-off, which now
+reports the real gap.
 
 ## Adding or promoting a locale
 

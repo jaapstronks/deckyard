@@ -25,6 +25,8 @@
  * 10. no locale spells one English concept two ways — the anchor invariant the
  *     whole B133-B141 translation series leaned on, graded against
  *     scripts/i18n-anchor-allowlist.json
+ * 11. no Tier-2 locale ships a carbon copy of an en/ value — since D73 an
+ *     untranslated key is *absent*, not a copy of the English
  *
  * Run with: node --test tests/i18n-coverage.test.js
  */
@@ -46,6 +48,7 @@ import {
   LOCALE_IDS,
   REFERENCE_LOCALE,
   TIER_1,
+  TIER_2,
 } from '../scripts/lib/i18n-locales.js';
 import { CORE_SLIDE_TYPE_DEFS } from '../shared/slide-types/registry.js';
 import { addUiI18nKeysToSlideType } from '../shared/ui-i18n-keys.js';
@@ -144,6 +147,28 @@ export function detectRegistryEnglishDrift(declared, en) {
       `${key}\n      declaration: ${JSON.stringify(english)}\n` +
         `      en/:         ${JSON.stringify(en[key])}`,
     );
+  }
+  return rows.sort();
+}
+
+/**
+ * Every (locale, key) pair whose value is byte-identical to the reference's —
+ * check 11.
+ *
+ * Pure for the same reason as the two detectors above: the negative self-tests
+ * drive it with hand-built dictionaries, so the gate is shown to catch what it
+ * is for.
+ *
+ * @param {Record<string, unknown>} reference - the en/ dictionary
+ * @param {Record<string, Record<string, unknown>>} dicts - locale id -> dictionary
+ * @returns {string[]} sorted `"<locale>  <key>"` rows
+ */
+export function detectCarbonCopies(reference, dicts) {
+  const rows = [];
+  for (const [locale, dict] of Object.entries(dicts)) {
+    for (const [key, value] of Object.entries(dict)) {
+      if (value === reference[key]) rows.push(`${locale}  ${key}`);
+    }
   }
   return rows.sort();
 }
@@ -586,6 +611,80 @@ describe('i18n fallback consistency', () => {
       [],
       `${offenders.length} string(s) spell an ellipsis as three dots — use …:\n` +
         offenders.join('\n'),
+    );
+  });
+});
+
+describe('i18n carbon copies', () => {
+  // Check 11. `i18n-sync` used to *fill* a Tier-2 locale's missing keys with
+  // their English values as placeholders. That was a lie to two instruments:
+  // the anchor gate below read a placeholder as a second spelling of a concept
+  // the locale translates elsewhere (280 such findings in one sync round), and
+  // `missingFor()` in scripts/i18n-fill.js counted a filled key as translated,
+  // so the translator gap report said zero for a locale with hundreds of holes.
+  //
+  // D73 settled it: an untranslated key is **absent**. Absence costs nothing —
+  // `t(key, fallback)` renders the call-site fallback, and check 5 above pins
+  // every fallback on the en/ value, so a missing key renders byte-identical to
+  // the English copy that is no longer stored. This gate is the ratchet on that
+  // one canonical form, and it sits at **zero** rather than on a burndown: the
+  // 1.030 pre-existing copies were stripped in the same change that wrote it,
+  // so there is no debt for a list to hold.
+  //
+  // Tier 1 is out of scope by policy, not by oversight. `nl` must be complete,
+  // and a Dutch value equal to the English can be correct Dutch — "Export",
+  // "Status", "Design". Only Tier 2 may express a gap by absence.
+  it('no Tier-2 locale ships a value identical to its en/ one', async () => {
+    const reference = await loadLocale(i18nDir, REFERENCE_LOCALE);
+    /** @type {Record<string, Record<string, unknown>>} */
+    const dicts = {};
+    for (const locale of TIER_2)
+      dicts[locale] = await loadLocale(i18nDir, locale);
+
+    const copies = detectCarbonCopies(reference, dicts);
+    assert.deepStrictEqual(
+      copies,
+      [],
+      `${copies.length} Tier-2 value(s) are a carbon copy of client/i18n/` +
+        `${REFERENCE_LOCALE}/. Delete them — the key falls back to the same\n` +
+        'English string, and a copy makes an untranslated key look translated\n' +
+        'to the anchor gate and to `i18n-fill.js <locale>`. ' +
+        '`npm run i18n:sync -- --apply` strips them:\n' +
+        copies
+          .slice(0, 20)
+          .map((row) => `  ${row}`)
+          .join('\n'),
+    );
+  });
+
+  it('detector flags a Tier-2 value copied straight from en/', () => {
+    // The shape the fill produced: `de` translated one key and was handed the
+    // English for the other.
+    assert.deepStrictEqual(
+      detectCarbonCopies(
+        { 'a.export': 'Export', 'b.save': 'Save' },
+        { de: { 'a.export': 'Exportieren', 'b.save': 'Save' } },
+      ),
+      ['de  b.save'],
+    );
+  });
+
+  it('detector passes a locale that translates or omits, never copies', () => {
+    assert.deepStrictEqual(
+      detectCarbonCopies(
+        { 'a.export': 'Export', 'b.save': 'Save' },
+        { de: { 'a.export': 'Exportieren' } },
+      ),
+      [],
+    );
+  });
+
+  it('detector ignores a key the reference has never heard of', () => {
+    // Check 7 owns that case ("en/ holds every key any other locale holds").
+    // Reading it as a carbon copy would report one defect as two.
+    assert.deepStrictEqual(
+      detectCarbonCopies({}, { de: { 'a.ghost': 'Ghost' } }),
+      [],
     );
   });
 });

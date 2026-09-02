@@ -3,20 +3,32 @@
  * i18n Sync Script
  *
  * Synchronizes all language files with English (reference): prunes
- * `slideType.*` keys the registry no longer produces, then fills the keys a
- * locale is missing with their English values as placeholders.
+ * `slideType.*` keys the registry no longer produces, then strips the Tier-2
+ * values that are byte-identical to their English ones.
+ *
+ * The strip is the second half because of D73: **an untranslated key is
+ * absent.** `t(key, fallback)` renders the call-site fallback when a locale
+ * lacks a key, and check 5 of tests/i18n-coverage.test.js pins every fallback
+ * on the `en/` value — so a missing key renders exactly what an English copy
+ * of it would have rendered, minus the duplicated data. This script used to
+ * *write* those copies (the fill half, ~1.8k keys a round); they lied to two
+ * instruments. The anchor gate (B148) read a placeholder as a second spelling
+ * of a concept the locale translates elsewhere, and `missingFor()` in
+ * i18n-fill.js counted a filled key as translated, so the translator gap
+ * report said zero for a locale with hundreds of holes. One canonical form for
+ * "not translated yet", and it is absence.
  *
  * Scope comes from `client/i18n/manifest.json` by way of `i18n-locales.js`:
- * the prune sweeps every locale × every module, the fill copies the reference
- * locale's `ui` modules into every other locale. Nothing here keeps its own
- * spelling of those lists — see i18n-locales.js for what the four hand-kept
- * ones cost.
+ * both halves sweep every module, the prune over every locale and the strip
+ * over the Tier-2 ones. `nl` is Tier-1 — presence is mandatory there, and a
+ * value that happens to equal the English can be legitimate Dutch ("Export",
+ * "Status"). Nothing here keeps its own spelling of those lists — see
+ * i18n-locales.js for what the four hand-kept ones cost.
  *
  * Split in two halves on purpose. `planSync()` only reads — it returns the
  * complete list of edits the run would make — and `applyPlan()` is the only
  * thing that touches disk. The default run is the first half, so "what would
- * this do?" is answerable without a working copy to clean up afterwards (the
- * fill half wants to write thousands of keys per locale).
+ * this do?" is answerable without a working copy to clean up afterwards.
  *
  * Reading is the default and `--apply` writes — the vocabulary every i18n
  * script shares, see scripts/lib/cli-args.js. This script used to invert it
@@ -25,7 +37,7 @@
  *
  * Usage:
  *   node scripts/i18n-sync.js              # report the plan, write nothing
- *   node scripts/i18n-sync.js --apply      # prune + fill, writing to disk
+ *   node scripts/i18n-sync.js --apply      # prune + strip, writing to disk
  */
 
 import path from 'node:path';
@@ -36,11 +48,10 @@ import { I18N_DIR, readJson, writeJson } from './lib/i18n-fs.js';
 import { isCli } from './lib/is-cli.js';
 import { parseArgs } from './lib/cli-args.js';
 import {
-  FILL_LOCALES,
   LOCALE_IDS,
   MODULES,
   REFERENCE_LOCALE,
-  UI_MODULES,
+  TIER_2,
 } from './lib/i18n-locales.js';
 
 /** How many key names a plan prints per file before summarizing the rest. */
@@ -77,7 +88,7 @@ export function liveSlideTypeI18nKeys() {
  * @property {string} module       module basename, without `.json`
  * @property {string} filePath     absolute path to the file
  * @property {string[]} pruned     `slideType.*` keys the registry no longer produces
- * @property {string[]} filled     keys copied in from English
+ * @property {string[]} stripped   keys whose value was a carbon copy of English
  * @property {object} data         the file's contents with both edits applied
  */
 
@@ -85,26 +96,26 @@ export function liveSlideTypeI18nKeys() {
  * @typedef {object} SyncPlan
  * @property {SyncFileEdit[]} edits  one entry per file that would change
  * @property {number} totalPruned    keys removed across all files
- * @property {number} totalFilled    keys added across all files
- * @property {string[]} skippedModules modules with no reference source to fill from
+ * @property {number} totalStripped  carbon copies removed across all files
+ * @property {string[]} skippedModules modules with no reference to compare against
  * @property {SyncScope} scope       the locale/module matrix the plan covers
  */
 
 /**
  * @typedef {object} SyncScope
  * @property {string[]} locales      locales the prune sweeps
- * @property {string[]} modules      modules the prune sweeps
- * @property {string[]} fillLocales  locales the fill writes into
- * @property {string[]} fillModules  modules the fill writes
- * @property {string} reference      locale the fill copies from
+ * @property {string[]} modules      modules both halves sweep
+ * @property {string[]} stripLocales locales the strip removes carbon copies from
+ * @property {string} reference      locale a carbon copy is measured against
  */
 
 /**
  * Compute every edit a sync would make, without touching disk.
  *
- * Prune before fill, and both in memory: filling copies English into each
- * locale, so a dead key left in English would be handed straight back to every
- * locale the prune just cleaned.
+ * Prune before strip, and both in memory: the strip compares a locale's value
+ * against English, so it has to read the English the prune leaves behind — a
+ * dead key deleted from `en/` but still measured against its old value would
+ * survive the strip in every locale.
  *
  * **The prune** removes `slideType.*` keys the registry no longer produces.
  * Nothing else deletes them: `i18n-fill` only ever adds, and the audit's orphan
@@ -112,13 +123,20 @@ export function liveSlideTypeI18nKeys() {
  * leaves the registry strands its translations in every locale forever. The
  * registry is the authority on which keys are real; anything under `slideType.`
  * that it does not generate is dead — including in English, which drifts the
- * same way (the fill step merges into the existing file rather than replacing
- * it). Scoped to the `slideType.` namespace on purpose: keys like
+ * same way. Scoped to the `slideType.` namespace on purpose: keys like
  * `editor.slideTypeDesc.<type>` are runtime-built fallbacks a locale may hold
  * without English (the picker resolves them against the authoring default), so a
  * blanket "not in English" prune would delete live translations. The valid set
  * is `liveSlideTypeI18nKeys()`, which keeps fork types — see there for why
  * excluding them would silently delete a fork's translations (#499).
+ *
+ * **The strip** removes, from every Tier-2 locale, each key whose value is
+ * byte-identical to the English one — a carbon copy says "not translated yet"
+ * in the one form the tooling misreads, and absence says it in the form the
+ * runtime already handles (D73). It sweeps every module, like the prune: a
+ * carbon copy is dead weight wherever it sits, `follow.json` included, even
+ * though no loader reaches a Tier-2 `deck` module. Only the locale axis is
+ * narrowed, and `TIER_2` is where that narrowing is stated.
  *
  * @returns {Promise<SyncPlan>} the edits, keyed per file
  */
@@ -139,7 +157,7 @@ export async function planSync() {
         module: moduleName,
         filePath,
         pruned: [],
-        filled: [],
+        stripped: [],
         data,
       };
       edits.set(id, edit);
@@ -167,29 +185,29 @@ export async function planSync() {
     }
   }
 
-  // Fill pass — the reference locale (post-prune) into every other locale.
-  // Narrowed to the `ui` modules: a `deck` module is resolved against the deck
-  // language, which only ever lands on a Tier-1 locale, so filling the other
-  // ten would write files no loader can reach.
-  for (const moduleName of UI_MODULES) {
+  // Strip pass — the carbon copies of the reference (post-prune) out of every
+  // Tier-2 locale. Narrowed on the locale axis only: `nl` is Tier-1, where
+  // presence is mandatory and a value equal to the English can be real Dutch.
+  for (const moduleName of MODULES) {
     const referenceData = loaded.get(`${REFERENCE_LOCALE}/${moduleName}`);
     if (!referenceData) {
       skippedModules.push(moduleName);
       continue;
     }
-    const referenceKeys = Object.keys(referenceData);
 
-    for (const locale of FILL_LOCALES) {
+    for (const locale of TIER_2) {
       const id = `${locale}/${moduleName}`;
+      const data = loaded.get(id);
+      if (!data) continue;
+
+      const copies = Object.keys(data).filter(
+        (k) => data[k] === referenceData[k],
+      );
+      if (copies.length === 0) continue;
+
       const filePath = path.join(I18N_DIR, locale, `${moduleName}.json`);
-      const data = loaded.get(id) || {};
-      loaded.set(id, data);
-
-      const missing = referenceKeys.filter((k) => data[k] === undefined);
-      if (missing.length === 0) continue;
-
-      for (const k of missing) data[k] = referenceData[k];
-      editFor(locale, moduleName, filePath, data).filled.push(...missing);
+      for (const k of copies) delete data[k];
+      editFor(locale, moduleName, filePath, data).stripped.push(...copies);
     }
   }
 
@@ -197,7 +215,7 @@ export async function planSync() {
   return {
     edits: list,
     totalPruned: list.reduce((n, e) => n + e.pruned.length, 0),
-    totalFilled: list.reduce((n, e) => n + e.filled.length, 0),
+    totalStripped: list.reduce((n, e) => n + e.stripped.length, 0),
     skippedModules,
     // Reported, not just used: the scope is the whole point of the manifest
     // being the source, so a plan states it and the tests assert on it
@@ -205,8 +223,7 @@ export async function planSync() {
     scope: {
       locales: [...LOCALE_IDS],
       modules: [...MODULES],
-      fillLocales: [...FILL_LOCALES],
-      fillModules: [...UI_MODULES],
+      stripLocales: [...TIER_2],
       reference: REFERENCE_LOCALE,
     },
   };
@@ -221,6 +238,9 @@ export async function planSync() {
  * this script's order. Since B138 they are: `tests/i18n-locales.test.js` fails
  * on any locale file whose keys are unsorted, so sorting a pruned file moves
  * nothing and the branch guarded a case that can no longer exist.
+ *
+ * Only files that already exist are written: both halves are deletions, so a
+ * plan never names a path that is not on disk.
  *
  * @param {SyncPlan} plan
  * @returns {Promise<void>}
@@ -241,27 +261,27 @@ function formatKeys(keys) {
 }
 
 function reportPlan(plan, { apply }) {
-  const { locales, modules, fillLocales, fillModules, reference } = plan.scope;
+  const { locales, modules, stripLocales, reference } = plan.scope;
   console.log(
     `Scope (client/i18n/manifest.json): pruning ${locales.length} locale(s) × ` +
-      `${modules.length} module(s); filling ${fillLocales.length} locale(s) × ` +
-      `${fillModules.length} module(s) from ${reference}.\n`,
+      `${modules.length} module(s); stripping ${stripLocales.length} Tier-2 ` +
+      `locale(s) × ${modules.length} module(s) against ${reference}.\n`,
   );
 
   for (const edit of plan.edits) {
     const parts = [];
     if (edit.pruned.length)
       parts.push(`-${edit.pruned.length} orphaned slideType key(s)`);
-    if (edit.filled.length)
-      parts.push(`+${edit.filled.length} key(s) from English`);
+    if (edit.stripped.length)
+      parts.push(`-${edit.stripped.length} carbon copy of ${reference}`);
     console.log(`${edit.locale}/${edit.module}.json: ${parts.join(', ')}`);
     if (!apply && edit.pruned.length) {
       console.log('    pruned:');
       console.log(formatKeys(edit.pruned));
     }
-    if (!apply && edit.filled.length) {
-      console.log('    filled:');
-      console.log(formatKeys(edit.filled));
+    if (!apply && edit.stripped.length) {
+      console.log('    stripped:');
+      console.log(formatKeys(edit.stripped));
     }
   }
 
@@ -272,7 +292,7 @@ function reportPlan(plan, { apply }) {
   console.log(
     `\n${plan.edits.length} file(s) ${apply ? 'changed' : 'would change'}: ` +
       `${plan.totalPruned} orphaned slideType key(s) pruned, ` +
-      `${plan.totalFilled} key(s) filled with English.`,
+      `${plan.totalStripped} carbon copy of ${reference} stripped.`,
   );
 }
 
@@ -285,7 +305,7 @@ async function main(argv = process.argv.slice(2)) {
 
   console.log(
     apply
-      ? 'i18n Sync - Prune orphaned slide-type keys, then fill missing keys with English\n'
+      ? 'i18n Sync - Prune orphaned slide-type keys, then strip Tier-2 carbon copies of English\n'
       : 'i18n Sync - nothing is written; this is what --apply would change\n',
   );
 

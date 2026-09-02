@@ -18,7 +18,6 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
-  FILL_LOCALES,
   LOCALES,
   LOCALE_IDS,
   MODULES,
@@ -86,16 +85,19 @@ test('the reference locale is shipped, and is Tier 1', () => {
   assert.equal(tierOf(REFERENCE_LOCALE), 1);
 });
 
-test('the fill set is every locale except the reference', () => {
-  // Deliberately total: there is no per-locale opt-out, because the 8-of-12
-  // list this replaced was drift, not policy — it/pl/fi are hand-translated
-  // like the rest and were in fact the most complete Tier-2 locales. A future
-  // exclusion needs a manifest field with a stated reason, not a script list.
+test('the strip set is exactly Tier 2 — the reference and nl stay out', () => {
+  // Since D73 the second half of `i18n-sync` strips Tier-2 carbon copies of
+  // English, and the tier is the whole of that policy: no second list, and no
+  // per-locale opt-out. `FILL_LOCALES` (every locale but the reference) was
+  // the second list, and it swept `nl` in with the ten — which is Tier-1 and
+  // must stay complete. A future exclusion needs a manifest field with a
+  // stated reason, not a script list.
   assert.deepEqual(
-    [...FILL_LOCALES].sort(),
-    LOCALE_IDS.filter((id) => id !== REFERENCE_LOCALE).sort(),
+    [...TIER_2].sort(),
+    LOCALE_IDS.filter((id) => tierOf(id) === 2).sort(),
   );
-  assert.ok(!FILL_LOCALES.includes(REFERENCE_LOCALE));
+  assert.ok(!TIER_2.includes(REFERENCE_LOCALE));
+  assert.ok(!TIER_2.includes('nl'));
 });
 
 test('every module declares a known loader, and the ui set is the rest', () => {

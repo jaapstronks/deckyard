@@ -126,7 +126,6 @@
   "share.passwordHelp": "Denne presentasjonen er passordbeskyttet. Skriv inn passordet for å fortsette.",
   "share.passwordPlaceholder": "Skriv inn passord",
   "share.passwordRequired": "Passord kreves",
-  "share.permission.admin": "Administrator",
   "share.permission.adminDescription": "Kan redigere og administrere samarbeidspartnere",
   "share.permission.comment": "Kan kommentere",
   "share.permission.commentDescription": "Kan se og legge til kommentarer",

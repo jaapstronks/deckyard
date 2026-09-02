@@ -653,10 +653,6 @@
       "forms": ["Aperçu de l'engagement", "Aperçus d'engagement"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "fr  Export": {
-      "forms": ["Export", "Exporter"],
-      "reason": "Register, not drift: API-scope labels are nouns in fr (Lecture / Écriture / Export) while buttons conjugate the verb (Exporter). Both are correct for their surface."
-    },
     "fr  Grid": {
       "forms": ["Grille", "Tableau"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -691,10 +687,6 @@
     "fr  Next": {
       "forms": ["Suivant", "Suivante"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "fr  Normal": {
-      "forms": ["Normal", "Normale"],
-      "reason": "Grammatical agreement: Normal agrees with le poids (fonts.normal), Normale with l’échelle (textScale.normal)."
     },
     "fr  Placeholder": {
       "forms": ["Espace réservé", "Texte indicatif"],

@@ -1,11 +1,10 @@
 /**
- * `i18n:sync` writes a lot: the fill half hands ~2k English keys to every
- * target locale, so before B130 there was no way to see what a run would do
- * without doing it and then cleaning the working copy up by hand. B147 made
- * that the *default* — the plan is what a bare run prints, and `--apply` is
- * what writes it. The contract is a negative one — *a run without `--apply`
- * touches nothing* — and a negative is exactly the kind of contract that
- * decays silently, so it is pinned here rather than left to the reviewer.
+ * `i18n:sync` writes a lot: before B130 there was no way to see what a run
+ * would do without doing it and then cleaning the working copy up by hand.
+ * B147 made that the *default* — the plan is what a bare run prints, and
+ * `--apply` is what writes it. The contract is a negative one — *a run without
+ * `--apply` touches nothing* — and a negative is exactly the kind of contract
+ * that decays silently, so it is pinned here rather than left to the reviewer.
  *
  * The other half of B130: nothing generates `client/i18n/<locale>/index.json`
  * any more. It was a merged artifact the runtime never read (`ui-i18n.js`
@@ -17,8 +16,14 @@
  * the sync used to iterate hand-kept lists (a fill list of 8 locales, a prune
  * list of 12, a module list without `follow`); they now derive from
  * `client/i18n/manifest.json`. `planSync()` reports the matrix it covered, so
- * the asymmetry that survives — prune everything, fill only the `ui` modules of
- * the non-reference locales — is asserted rather than re-derived.
+ * the one asymmetry that survives — prune every locale, strip only the Tier-2
+ * ones — is asserted rather than re-derived.
+ *
+ * B193/D73 turned the second half over: the fill (English values written into
+ * every other locale as placeholders) became a **strip** (a Tier-2 value
+ * byte-identical to its English one is deleted). Both halves are now deletions,
+ * which is a contract of its own — a sync can no longer create a file, and
+ * `tests/i18n-coverage.test.js` gates that the strip leaves nothing behind.
  *
  * Run with: node --test tests/i18n-sync-plan.test.js
  */
@@ -33,11 +38,11 @@ import { execFileSync } from 'node:child_process';
 
 import { planSync } from '../scripts/i18n-sync.js';
 import {
-  FILL_LOCALES,
   LOCALE_IDS,
   MODULES,
   REFERENCE_LOCALE,
-  UI_MODULES,
+  TIER_1,
+  TIER_2,
 } from '../scripts/lib/i18n-locales.js';
 
 const repoRoot = path.resolve(
@@ -110,7 +115,7 @@ test('planSync() reports the edits it would make without writing them', async ()
   // the "N files would change" line the dry run prints.
   for (const edit of plan.edits) {
     assert.ok(
-      edit.pruned.length > 0 || edit.filled.length > 0,
+      edit.pruned.length > 0 || edit.stripped.length > 0,
       `${edit.locale}/${edit.module}.json is in the plan with nothing to do`,
     );
   }
@@ -139,44 +144,53 @@ test('the plan covers the manifest matrix, not a list of its own', async () => {
 
   assert.deepEqual(scope.locales, LOCALE_IDS);
   assert.deepEqual(scope.modules, MODULES);
-  assert.deepEqual(scope.fillLocales, FILL_LOCALES);
-  assert.deepEqual(scope.fillModules, UI_MODULES);
+  assert.deepEqual(scope.stripLocales, TIER_2);
   assert.equal(scope.reference, REFERENCE_LOCALE);
 
-  // The prune is the total half: every locale on disk, `follow.json` and the
-  // reference locale included. A dead slideType key is dead wherever it sits,
-  // and narrowing this half is what stranded it/pl/fi's orphans before B132.
+  // Both halves sweep every module on disk, `follow.json` included: a dead
+  // slideType key and a carbon copy of English are dead weight wherever they
+  // sit. Narrowing the prune by module is what stranded it/pl/fi's orphans
+  // before B132, and the strip is deliberately not narrowed either — which is
+  // why the scope has no per-half module list to disagree with itself.
   assert.ok(scope.modules.includes('follow'));
   assert.ok(scope.locales.includes(REFERENCE_LOCALE));
 });
 
-test('a fill never targets the reference locale or a deck-loader module', async () => {
-  const filled = (await planSync()).edits.filter((e) => e.filled.length > 0);
-
-  // Filling the reference from itself is a no-op at best; the guard is that
-  // FILL_LOCALES excludes it, and this is where that shows.
-  assert.deepEqual(
-    filled.filter((e) => e.locale === REFERENCE_LOCALE).map((e) => e.filePath),
-    [],
-    'the reference locale was filled from itself',
+test('a strip never touches the reference locale or a Tier-1 one', async () => {
+  const stripped = (await planSync()).edits.filter(
+    (e) => e.stripped.length > 0,
   );
 
-  // `follow.json` is resolved against the *deck* language, which only ever
-  // lands on a Tier-1 locale — copying English into the other ten would write
-  // files no loader can reach.
-  const offModule = filled
-    .filter((e) => !UI_MODULES.includes(e.module))
+  // Tier 1 is complete-or-the-build-fails, and a Dutch value that happens to
+  // equal the English can be real Dutch ("Export", "Status") — so `nl` and the
+  // reference itself both stay out. TIER_2 is the whole of that policy (D73).
+  const offLocale = stripped
+    .filter((e) => !TIER_2.includes(e.locale))
     .map((e) => `${e.locale}/${e.module}.json`);
   assert.deepEqual(
-    offModule,
+    offLocale,
     [],
-    'a non-ui module was filled with English placeholders',
+    'a Tier-1 locale had values stripped as carbon copies',
   );
+  assert.ok(TIER_1.includes(REFERENCE_LOCALE));
+});
 
-  const offLocale = filled
-    .filter((e) => !FILL_LOCALES.includes(e.locale))
-    .map((e) => `${e.locale}/${e.module}.json`);
-  assert.deepEqual(offLocale, [], 'a locale outside the fill set was filled');
+test('every edit a sync plans is a deletion — a file is never created', async () => {
+  // Both halves remove keys now (B193/D73). The fill half used to write a file
+  // into existence for a locale that lacked the module; nothing does, so a
+  // planned path is always a path already on disk.
+  for (const edit of (await planSync()).edits) {
+    assert.ok(
+      fs.existsSync(edit.filePath),
+      `${edit.filePath} is in the plan but does not exist`,
+    );
+    for (const key of [...edit.pruned, ...edit.stripped]) {
+      assert.ok(
+        !(key in edit.data),
+        `${edit.locale}/${edit.module}.json still holds ${key} after the plan`,
+      );
+    }
+  }
 });
 
 test('every planned edit names a manifest locale and module', async () => {

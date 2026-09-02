@@ -99,7 +99,7 @@ NOTION_FEATURE=true
 | `npm run db:migrate:status`               | Show migration status                                                                       |
 | `npm run db:import`                       | Import file data into PostgreSQL                                                            |
 | `npm run i18n:audit`                      | Find hardcoded copy that bypasses `t()`, and orphan keys                                    |
-| `npm run i18n:sync`                       | Report what syncing missing keys across locales would change                                |
+| `npm run i18n:sync`                       | Report what pruning dead keys and stripping Tier-2 copies of English would change           |
 | `npm run i18n:sync:apply`                 | Write that plan to disk                                                                     |
 
 ---

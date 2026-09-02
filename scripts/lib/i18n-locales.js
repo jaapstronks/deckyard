@@ -11,6 +11,7 @@
  * `it`/`pl`/`fi` ended up outside the fill set for no recoverable reason and
  * `follow.json` ended up outside the prune set. Everything below derives from
  * the manifest instead, so a locale or module is added in exactly one place.
+ * The fill list is gone entirely since D73 — there is no fill any more.
  *
  * The policy the `tier` field encodes (what a tier promises, why it exists) is
  * prose in docs/reference/i18n-locale-tiers.md.
@@ -19,7 +20,8 @@
  * fails otherwise (tests/i18n-coverage.test.js reads TIER_1 from here).
  * Tier 2 (the rest): best effort. Missing keys fall back to the inline English
  * `t(key, fallback)` string, so they degrade to English instead of breaking;
- * the tooling reports the gap but does not gate on it.
+ * the tooling reports the gap but does not gate on it. Absence is how a Tier-2
+ * gap is *written down* too (D73) — see TIER_2 below.
  *
  * Node-only (reads the file synchronously at import). The browser reads the
  * same fields straight off the fetched manifest.
@@ -47,8 +49,8 @@ const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
 
 /**
  * The manifest is load-bearing for every i18n script now, so a malformed one
- * must fail loudly at import rather than quietly narrow a prune or a fill to a
- * shorter list.
+ * must fail loudly at import rather than quietly narrow a prune or a strip to
+ * a shorter list.
  * @param {boolean} ok
  * @param {string} message
  */
@@ -73,8 +75,9 @@ export const LOCALES = manifest.locales.map((l) => {
 export const LOCALE_IDS = LOCALES.map((l) => l.id);
 
 /**
- * The locale the other eleven are filled from: its `t()` fallbacks are the
- * English source text, so it is the only locale nothing can be copied into.
+ * The locale the other eleven are measured against: its `t()` fallbacks are the
+ * English source text, so it is the only locale a value cannot be a carbon copy
+ * *of* — and the one a missing key everywhere else falls back to.
  */
 export const REFERENCE_LOCALE = String(manifest.reference || '');
 require_(
@@ -82,24 +85,20 @@ require_(
   `"reference" is ${JSON.stringify(manifest.reference)}, which is not a shipped locale`,
 );
 
-/**
- * The locales `i18n-sync` fills from the reference: every shipped locale except
- * the reference itself.
- *
- * There is deliberately no per-locale opt-out. The old 8-of-12 fill list looked
- * like policy — "don't stuff the hand-translated ones with English" — but all
- * twelve are hand-translated, and the three it skipped (`it`, `pl`, `fi`) are
- * the *most* complete of the ten Tier-2 locales, a strict superset of the seven
- * it filled. It was drift, not intent, so it is gone rather than promoted to a
- * manifest flag. If a locale ever does need to stay out of the fill, that is a
- * new field with a stated reason, not a silent list in a script.
- */
-export const FILL_LOCALES = LOCALE_IDS.filter((id) => id !== REFERENCE_LOCALE);
-
 /** Blocking locales — complete-or-the-build-fails. */
 export const TIER_1 = LOCALES.filter((l) => l.tier === 1).map((l) => l.id);
 
-/** Best-effort locales — reported, never gated; fall back to English. */
+/**
+ * Best-effort locales — reported, never gated; fall back to English.
+ *
+ * Also the scope of `i18n-sync`'s strip: a Tier-2 value byte-identical to its
+ * English one is a carbon copy, and since D73 the canonical form for "not
+ * translated yet" is absence, not a copy. The tier *is* the policy here, so
+ * there is no separate list to keep — `FILL_LOCALES` (every locale except the
+ * reference) was one, and it took `nl` with it, which is Tier-1 and must stay
+ * complete. If a Tier-2 locale ever needs to sit out, that is a manifest field
+ * with a stated reason, not a silent list in a script.
+ */
 export const TIER_2 = LOCALES.filter((l) => l.tier === 2).map((l) => l.id);
 
 /**
@@ -129,13 +128,14 @@ export const MODULE_DEFS = manifest.modules.map((m) => {
 export const MODULES = MODULE_DEFS.map((m) => m.id);
 
 /**
- * The modules `i18n-sync` fills — the `ui` ones only.
+ * The modules the global dictionary is built from — the `ui` ones only.
  *
- * A `deck` module is never resolved against an arbitrary UI locale, so copying
- * English into the other ten locales' copies would write files no loader can
- * reach. The prune still sweeps them (a dead key is dead wherever it sits);
- * only the fill is narrowed, and this is the one place that asymmetry is
- * stated.
+ * `tests/i18n-locales.test.js` pins this against `I18N_COMPONENTS` in
+ * `client/lib/ui-i18n.js`, which keeps its own literal on purpose so a failed
+ * manifest fetch cannot take the dictionary down with the language picker.
+ * That pin is the only consumer: neither half of `i18n-sync` narrows by
+ * loader any more, since a dead key and a carbon copy are both dead weight
+ * wherever they sit.
  */
 export const UI_MODULES = MODULE_DEFS.filter((m) => m.loader === 'ui').map(
   (m) => m.id,
