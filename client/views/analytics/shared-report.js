@@ -5,6 +5,7 @@
 import { api } from '../../lib/api.js';
 import { h } from '../../lib/dom.js';
 import { spinner } from '../../lib/dom/spinner.js';
+import { createPageUnavailable } from '../../lib/dom/page-unavailable.js';
 import { t } from '../../lib/ui-i18n.js';
 import {
   formatDuration,
@@ -39,16 +40,27 @@ export async function renderSharedReport(root, token) {
   } catch (err) {
     const message =
       err.statusCode === 404
-        ? 'Report not found or expired'
+        ? t(
+            'analytics.reportUnavailable.notFound',
+            'This report does not exist or has expired.',
+          )
         : err.statusCode
-          ? 'Failed to load report'
-          : err.message || 'This report may have expired or been removed.';
+          ? t(
+              'analytics.reportUnavailable.failed',
+              'The report could not be loaded.',
+            )
+          : err.message ||
+            t(
+              'analytics.reportUnavailable.generic',
+              'This report may have expired or been removed.',
+            );
     shell.innerHTML = '';
     shell.append(
-      h('div', { class: 'shared-report-unavailable' }, [
-        h('h1', { text: t('analytics.reportError', 'Report Not Available') }),
-        h('p', { text: message }),
-      ]),
+      createPageUnavailable({
+        icon: 'chart-column',
+        title: t('analytics.reportError', 'Report Not Available'),
+        message,
+      }),
     );
     return cleanup;
   }

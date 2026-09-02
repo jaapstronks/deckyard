@@ -12,6 +12,7 @@ import { createViewerList } from './viewer-list.js';
 import { createDatePicker } from './date-picker.js';
 import { createReportModal } from './report-modal.js';
 import { createRealtimeViewer } from './realtime-viewer.js';
+import { createPageUnavailable } from '../../lib/dom/page-unavailable.js';
 import { nav } from '../../lib/state/router.js';
 
 /**
@@ -88,17 +89,18 @@ export async function renderAnalytics(root, presentationId) {
   } catch (err) {
     shell.innerHTML = '';
     shell.append(
-      h('div', { class: 'analytics-unavailable' }, [
-        h('div', {
-          class: 'analytics-unavailable-text',
-          text: err.message || 'Failed to load presentation',
-        }),
-        h('button', {
-          class: 'btn btn-secondary',
-          text: t('common.back', 'Back'),
-          onclick: () => nav('/app'),
-        }),
-      ]),
+      createPageUnavailable({
+        icon: 'chart-column',
+        title: t('analytics.unavailable.title', 'Analytics Not Available'),
+        message:
+          err.message ||
+          t(
+            'analytics.unavailable.message',
+            'This presentation could not be loaded.',
+          ),
+        actionLabel: t('common.back', 'Back'),
+        onAction: () => nav('/app'),
+      }),
     );
     return cleanup;
   }
