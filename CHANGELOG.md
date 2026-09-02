@@ -4,6 +4,16 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.30.0](https://github.com/jaapstronks/deckyard/compare/v1.29.0...v1.30.0) (2026-09-02)
+
+
+### Added
+
+* **feedback:** a form that says no does so at the control, not in a toast ([#1077](https://github.com/jaapstronks/deckyard/issues/1077)) ([99743be](https://github.com/jaapstronks/deckyard/commit/99743be6d5984768e6be7c08471c47a15c4429b1))
+* **feedback:** an API that refuses a form says so at the form, not in a toast ([#1079](https://github.com/jaapstronks/deckyard/issues/1079)) ([29bf4ec](https://github.com/jaapstronks/deckyard/commit/29bf4ecac8909e957b410d687d29bef5ce2bdce8))
+* **feedback:** the last inline errors use the helper (B204 PR 3) ([#1082](https://github.com/jaapstronks/deckyard/issues/1082)) ([cb7ebeb](https://github.com/jaapstronks/deckyard/commit/cb7ebebcff9f4d0326af79bcd0ac40deb7e5996c))
+* **i18n:** the image library's alt text is one input per enabled language ([#1083](https://github.com/jaapstronks/deckyard/issues/1083)) ([d7667e5](https://github.com/jaapstronks/deckyard/commit/d7667e58aa469c9e63e7da169fb72d9f9f34f66a))
+
 ## [1.29.0](https://github.com/jaapstronks/deckyard/compare/v1.28.0...v1.29.0) (2026-09-02)
 
 
