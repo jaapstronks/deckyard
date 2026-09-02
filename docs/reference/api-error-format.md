@@ -37,6 +37,16 @@ The internal `/api/*` routes return errors in one canonical envelope:
   refusal — see [`feedback-surfaces.md`](feedback-surfaces.md) § The envelope,
   mirrored.
 
+  _Implementation status (2026-09-02):_ every storage refusal goes through
+  `storageError()` and meets the table. Six internal routes still put
+  something else in `details`, and B208 folds them: a payload that is not a
+  location (`{ report }` on the three import routes, `{ lock }` on
+  `slide-locks.js`, the maintenance `state` on the 503), and prose where a
+  sentence belongs in `message` (the Notion routes' `'Set NOTION_SECRET …'`
+  string, and `versions.js`'s `{ reason: 'No LLM vendor configured' }`, which
+  collides with the sub-code key above). Until then a client may only rely
+  on the four keys for `storage`-originated errors.
+
 This unified one envelope that used to have two shapes living side by side: prose
 in `error` (from the `http.js` helpers) versus `{ ok:false, error:'code' }` (from
 routes that echoed a storage `reason`).
