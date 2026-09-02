@@ -103,7 +103,9 @@ function literalKeys(text) {
   if (inner.includes('...')) return null; // a spread: not statically readable
   const keys = [];
   for (const part of splitArgs(inner)) {
-    const m = part.trim().match(/^(?:\/\/[^\n]*\n\s*)*['"]?([A-Za-z0-9_$]+)['"]?\s*:/);
+    const m = part
+      .trim()
+      .match(/^(?:\/\/[^\n]*\n\s*)*['"]?([A-Za-z0-9_$]+)['"]?\s*:/);
     if (m) keys.push(m[1]);
     else {
       const shorthand = part.trim().match(/^([A-Za-z0-9_$]+)$/);

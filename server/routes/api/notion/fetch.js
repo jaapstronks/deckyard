@@ -3,11 +3,7 @@
  * Handles fetching Notion pages and publishing embeds back to Notion.
  */
 
-import {
-  badRequest,
-  serveJson,
-  requireJsonBody,
-} from '../../../utils/http.js';
+import { badRequest, serveJson, requireJsonBody } from '../../../utils/http.js';
 import { getTrimmedString } from '../../../utils/request-validators.js';
 import {
   extractPageId,

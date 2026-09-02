@@ -4,11 +4,7 @@
  * These endpoints are feature-gated.
  */
 
-import {
-  badRequest,
-  serveJson,
-  requireJsonBody,
-} from '../../../utils/http.js';
+import { badRequest, serveJson, requireJsonBody } from '../../../utils/http.js';
 import { getTrimmedString } from '../../../utils/request-validators.js';
 import {
   getPlainTextFromPage,
