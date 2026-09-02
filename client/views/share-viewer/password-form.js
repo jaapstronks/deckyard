@@ -5,6 +5,7 @@
 import { api } from '../../lib/api.js';
 import { t } from '../../lib/ui-i18n.js';
 import { h } from '../../lib/dom.js';
+import { createInlineError } from '../../lib/dom/inline-error.js';
 
 /**
  * Render a password prompt for password-protected share links.
@@ -40,13 +41,10 @@ export function renderPasswordPrompt(shell, token, shareData, onSuccess) {
     class: 'btn btn-primary',
     text: t('share.unlock', 'Unlock'),
   });
-  const errorEl = h('div', {
-    class: 'share-viewer-error',
-    style: 'display: none;',
-  });
+  const refusal = createInlineError({ callout: true });
 
   form.append(input, submitBtn);
-  card.append(title, help, form, errorEl);
+  card.append(title, help, form, refusal.el);
   shell.append(card);
 
   input.focus();
@@ -57,7 +55,7 @@ export function renderPasswordPrompt(shell, token, shareData, onSuccess) {
 
     submitBtn.disabled = true;
     submitBtn.textContent = t('share.verifying', 'Verifying…');
-    errorEl.style.display = 'none';
+    refusal.clear();
 
     try {
       const data = await api(`/api/share/${encodeURIComponent(token)}/verify`, {
@@ -67,15 +65,16 @@ export function renderPasswordPrompt(shell, token, shareData, onSuccess) {
 
       onSuccess(data);
     } catch (err) {
-      errorEl.textContent =
-        err.code === 'invalid_password'
-          ? t('share.invalidPassword', 'Invalid password')
-          : err.message;
-      errorEl.style.display = 'block';
       submitBtn.disabled = false;
       submitBtn.textContent = t('share.unlock', 'Unlock');
       input.value = '';
-      input.focus();
+      // The helper lands focus back on the field it names.
+      refusal.show(
+        err.code === 'invalid_password'
+          ? t('share.invalidPassword', 'Invalid password')
+          : err.message,
+        { control: input },
+      );
     }
   });
 }

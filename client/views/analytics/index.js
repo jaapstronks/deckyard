@@ -88,9 +88,9 @@ export async function renderAnalytics(root, presentationId) {
   } catch (err) {
     shell.innerHTML = '';
     shell.append(
-      h('div', { class: 'analytics-error' }, [
+      h('div', { class: 'analytics-unavailable' }, [
         h('div', {
-          class: 'analytics-error-text',
+          class: 'analytics-unavailable-text',
           text: err.message || 'Failed to load presentation',
         }),
         h('button', {

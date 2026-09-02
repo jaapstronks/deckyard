@@ -18,6 +18,7 @@
  */
 
 import { h } from '../../../lib/dom.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { createModal } from '../../../lib/dom/modal.js';
 import { deleteOrganization } from './actions.js';
@@ -69,7 +70,12 @@ export function showDeleteOrganizationModal({
     input,
   );
 
+  // `status` carries progress only ("Deleting…", "Saving…"). A refusal is a
+  // state of this form, so it goes in the one element for that, beside the
+  // action and staying until the next attempt
+  // (docs/reference/feedback-surfaces.md).
   const status = h('div', { class: 'help modal-status', role: 'status' });
+  const refusal = createInlineError({ callout: true });
 
   const buttons = h('div', { class: 'row is-end is-mt-8 modal-actions' });
   const cancel = h('button', {
@@ -93,7 +99,7 @@ export function showDeleteOrganizationModal({
     confirm.disabled = input.value.trim().toLowerCase() !== name.toLowerCase();
   };
 
-  form.append(field, status, buttons);
+  form.append(field, status, refusal.el, buttons);
   modal.append(form);
   modal.show(root);
 
@@ -114,6 +120,7 @@ export function showDeleteOrganizationModal({
   async function submit() {
     if (modal.isBusy()) return;
 
+    refusal.clear();
     setDisabled(true);
     status.textContent = t('organization.profile.delete.working', 'Deleting…');
 
@@ -125,12 +132,14 @@ export function showDeleteOrganizationModal({
       // The server's own sentence is the specific one here — "Only the owner
       // can delete the organization", "The default organization cannot be
       // deleted" — and both are rules this dialog cannot restate better.
-      status.textContent =
+      status.textContent = '';
+      refusal.show(
         err?.message ||
-        t(
-          'organization.profile.delete.failed',
-          'Could not delete the organization.',
-        );
+          t(
+            'organization.profile.delete.failed',
+            'Could not delete the organization.',
+          ),
+      );
       setDisabled(false);
     }
   }

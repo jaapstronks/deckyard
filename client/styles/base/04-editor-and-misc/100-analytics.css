@@ -7,7 +7,7 @@
 }
 
 .analytics-loading,
-.analytics-error {
+.analytics-unavailable {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -20,7 +20,7 @@
   color: hsl(var(--app-text-secondary));
 }
 
-.analytics-error-text {
+.analytics-unavailable-text {
   color: hsl(var(--app-danger));
 }
 
@@ -569,13 +569,9 @@ img.analytics-viewer-badge {
   font-size: var(--ps-text-sm);
 }
 
-.analytics-report-error {
-  color: hsl(var(--app-danger));
+/* The report form's refusal: the shared callout, at the modal's smaller size. */
+.analytics-report-modal .inline-error.is-callout {
   font-size: var(--ps-text-sm);
-  padding: var(--ps-space-2-5) var(--ps-space-3);
-  background: hsl(var(--app-danger) / 0.1);
-  border-radius: var(--ps-radius-md);
-  border: 1px solid hsl(var(--app-danger) / 0.2);
 }
 
 .analytics-report-success {
@@ -652,12 +648,12 @@ img.analytics-viewer-badge {
   color: hsl(var(--app-text-secondary));
 }
 
-.shared-report-error {
+.shared-report-unavailable {
   text-align: center;
   padding: var(--ps-space-15) var(--ps-space-5);
 }
 
-.shared-report-error h1 {
+.shared-report-unavailable h1 {
   margin-bottom: var(--ps-space-4);
   color: hsl(var(--app-danger));
 }

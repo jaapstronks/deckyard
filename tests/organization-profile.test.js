@@ -421,6 +421,9 @@ function openDeleteDialog({
     modal,
     input: scope.querySelector('input'),
     status: scope.querySelector('.modal-status'),
+    // Progress lives in `.modal-status`; a refusal is a state of the form
+    // (docs/reference/feedback-surfaces.md).
+    refusal: scope.querySelector('.inline-error'),
     confirm: Array.from(scope.querySelectorAll('button')).find(
       (b) => b.textContent === 'Delete organization',
     ),
@@ -499,7 +502,7 @@ test('a refused delete stays in the dialog with the server sentence', async () =
     'the dialog stays open',
   );
   assert.match(
-    dialog.status.textContent,
+    dialog.refusal.textContent,
     /default organization cannot be deleted/i,
   );
 });

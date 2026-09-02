@@ -4,6 +4,7 @@
 
 import { api } from '../../../lib/api.js';
 import { h } from '../../../lib/dom.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { createModal, createModalActions } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
@@ -50,7 +51,12 @@ export function showAddModal(onSuccess) {
     }),
   ]);
 
+  // `status` carries progress only ("Deleting…", "Saving…"). A refusal is a
+  // state of this form, so it goes in the one element for that, beside the
+  // action and staying until the next attempt
+  // (docs/reference/feedback-surfaces.md).
   const status = h('div', { class: 'help modal-status', role: 'status' });
+  const refusal = createInlineError({ callout: true });
 
   const actions = createModalActions({
     cancelText: t('common.cancel', 'Cancel'),
@@ -65,6 +71,7 @@ export function showAddModal(onSuccess) {
     roleSelect,
     sendInviteCheck,
     status,
+    refusal.el,
     actions.wrap,
   );
   modal.append(form);
@@ -98,17 +105,21 @@ export function showAddModal(onSuccess) {
   async function submit() {
     if (modal.isBusy()) return;
 
+    refusal.clear();
     const email = emailInput.value.trim();
     const name = nameInput.value.trim();
     const role = roleSelect.value;
     const sendInvitation = sendInviteCheck.querySelector('input').checked;
 
     if (!email || !email.includes('@')) {
-      status.textContent = t(
-        'admin.users.addModal.invalidEmail',
-        'Please enter a valid email address.',
+      status.textContent = '';
+      refusal.show(
+        t(
+          'admin.users.addModal.invalidEmail',
+          'Please enter a valid email address.',
+        ),
+        { control: emailInput },
       );
-      emailInput.focus();
       return;
     }
 
@@ -140,12 +151,15 @@ export function showAddModal(onSuccess) {
       modal.close();
       onSuccess();
     } catch (e) {
-      status.textContent = e.message?.includes('exists')
-        ? t(
-            'admin.users.addModal.alreadyExists',
-            'A user with this email already exists.',
-          )
-        : t('admin.users.addModal.error', 'Failed to add user.');
+      status.textContent = '';
+      refusal.show(
+        e.message?.includes('exists')
+          ? t(
+              'admin.users.addModal.alreadyExists',
+              'A user with this email already exists.',
+            )
+          : t('admin.users.addModal.error', 'Failed to add user.'),
+      );
       modal.setBusy(false);
       setDisabled(false);
     }

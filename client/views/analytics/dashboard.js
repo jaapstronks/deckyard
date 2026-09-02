@@ -95,20 +95,22 @@ export async function renderDashboard(root) {
   function render() {
     shell.innerHTML = '';
 
-    // Show error banner if there was a load error
+    // A load that failed is a background failure: the banner carries the state
+    // where it applies and stays until the next load succeeds. Polite, not an
+    // alert — nothing the user was doing was interrupted.
     if (loadError) {
-      const errorBanner = h(
+      const banner = h(
         'div',
-        { class: 'dashboard-error-banner', role: 'alert' },
+        { class: 'dashboard-alert-banner', role: 'status' },
         [
           icon('circle-alert', {
             size: 18,
-            className: 'dashboard-error-icon',
+            className: 'dashboard-alert-icon',
           }),
           h('span', { text: loadError }),
         ],
       );
-      shell.append(errorBanner);
+      shell.append(banner);
     }
 
     // Header

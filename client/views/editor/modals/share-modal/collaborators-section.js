@@ -10,6 +10,7 @@ import {
   REVOKE_CONTEXT,
 } from '../revoke-message-modal.js';
 import { confirmModal, promptModal } from '../../../../lib/dom/modal.js';
+import { createInlineError } from '../../../../lib/dom/inline-error.js';
 import {
   getPermissionLabel,
   getPermissionDescription,
@@ -134,15 +135,14 @@ export function createCollaboratorsSection({
       renderCollaboratorsList();
       updateExcludeEmails();
     } catch {
+      // A list that did not load is a state of the list, not a refusal of
+      // something the user just did: polite, in place, and focus stays put.
+      const loadError = createInlineError({ live: 'polite' });
       list.innerHTML = '';
-      list.append(
-        h('div', {
-          class: 'share-collaborators-error',
-          text: t(
-            'share.collaborators.loadError',
-            'Failed to load collaborators',
-          ),
-        }),
+      list.append(loadError.el);
+      loadError.show(
+        t('share.collaborators.loadError', 'Failed to load collaborators'),
+        { focus: false },
       );
     }
   }

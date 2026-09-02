@@ -1,5 +1,6 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { createSlideLibraryPicker } from '../../../lib/slide-library/index.js';
 import { createDeckFromLibraryItems } from '../../../lib/slide-library/compose.js';
 import { createCollectionsBar } from '../../../lib/slide-collections/collections-bar.js';
@@ -164,15 +165,14 @@ export function createSlideLibraryView({ api }) {
       });
 
       await picker.renderSlideLibraryPicker(mount);
-    } catch (e) {
+    } catch {
+      // The view could not load: a state of the view, announced politely.
+      const loadError = createInlineError({ live: 'polite' });
       view.innerHTML = '';
-      view.append(
-        title,
-        hint,
-        h('div', {
-          class: 'help is-error',
-          text: t('slideLibrary.loadError', 'Failed to load slide library.'),
-        }),
+      view.append(title, hint, loadError.el);
+      loadError.show(
+        t('slideLibrary.loadError', 'Failed to load slide library.'),
+        { focus: false },
       );
     }
   }

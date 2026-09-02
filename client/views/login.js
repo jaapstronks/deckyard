@@ -3,6 +3,7 @@ import { h } from '../lib/dom.js';
 import { login, me } from '../lib/user/auth.js';
 import { t } from '../lib/ui-i18n.js';
 import { createBusyManager } from '../lib/dom/busy.js';
+import { createInlineError } from '../lib/dom/inline-error.js';
 import { authShell } from './auth-shell.js';
 import { nav, queryParam } from '../lib/state/router.js';
 
@@ -72,10 +73,12 @@ export async function renderLogin(root) {
   // ============================================================
   // Error banner (e.g. an SSO callback failure redirected here)
   // ============================================================
-  const errorBanner = h('div', { class: 'auth-status is-error', hidden: true });
+  // The refusal of the sign-in the user just attempted, only it happened at
+  // the identity provider and we came back with a code. Focus stays where the
+  // page puts it (the email field) — nothing to fix in this message.
+  const errorBanner = createInlineError({ callout: true });
   if (errorCode) {
-    errorBanner.textContent = ssoErrorMessage(errorCode);
-    errorBanner.hidden = false;
+    errorBanner.show(ssoErrorMessage(errorCode), { focus: false });
   }
 
   // ============================================================
@@ -139,9 +142,18 @@ export async function renderLogin(root) {
   });
   magicForm.append(magicEmail, magicBtn);
 
+  // The status line carries progress and the "check your inbox" confirmation;
+  // a refusal is a state of the form and gets the inline element.
   const magicStatus = h('div', { class: 'auth-magic-status' });
+  const magicError = createInlineError();
 
-  magicSection.append(magicHeader, magicHelp, magicForm, magicStatus);
+  magicSection.append(
+    magicHeader,
+    magicHelp,
+    magicForm,
+    magicError.el,
+    magicStatus,
+  );
 
   // ============================================================
   // Divider
@@ -172,6 +184,7 @@ export async function renderLogin(root) {
     autocomplete: 'current-password',
   });
   const status = h('div', { class: 'auth-status' });
+  const formError = createInlineError({ callout: true });
 
   const btn = h('button', {
     class: 'auth-btn',
@@ -195,13 +208,17 @@ export async function renderLogin(root) {
   // ============================================================
   const submitMagicLink = async () => {
     if (busyManager.isBusy()) return;
+    magicError.clear();
     const e = (magicEmail.value || '').trim();
     if (!e || !e.includes('@')) {
-      magicStatus.textContent = t(
-        'login.magicMissingEmail',
-        'Enter your email address.',
+      magicStatus.textContent = '';
+      magicStatus.className = 'auth-magic-status';
+      magicError.show(
+        t('login.magicMissingEmail', 'Enter your email address.'),
+        {
+          control: magicEmail,
+        },
       );
-      magicStatus.className = 'auth-magic-status is-error';
       return;
     }
     magicStatus.textContent = t('login.magicSending', 'Sending link…');
@@ -219,8 +236,10 @@ export async function renderLogin(root) {
       magicStatus.className = 'auth-magic-status is-success';
       magicEmail.value = '';
     } catch (err) {
-      magicStatus.textContent = String(err?.message || err);
-      magicStatus.className = 'auth-magic-status is-error';
+      magicStatus.textContent = '';
+      magicStatus.className = 'auth-magic-status';
+      // The route names no field, so the message stands on its own.
+      magicError.show(String(err?.message || err));
     } finally {
       busyManager.setBusy(false);
     }
@@ -237,14 +256,14 @@ export async function renderLogin(root) {
   // ============================================================
   const submit = async () => {
     if (busyManager.isBusy()) return;
+    formError.clear();
     const e = (email.value || '').trim();
     const p = password.value || '';
     if (!e || !p) {
-      status.textContent = t(
-        'login.missingFields',
-        'Enter email and password.',
-      );
-      status.className = 'auth-status is-error';
+      status.textContent = '';
+      formError.show(t('login.missingFields', 'Enter email and password.'), {
+        control: e ? password : email,
+      });
       return;
     }
     status.textContent = t('login.busy', 'Signing in…');
@@ -260,8 +279,8 @@ export async function renderLogin(root) {
       }
       nav(returnTo);
     } catch (err) {
-      status.textContent = String(err?.message || err);
-      status.className = 'auth-status is-error';
+      status.textContent = '';
+      formError.show(String(err?.message || err));
       busyManager.setBusy(false);
     }
   };
@@ -270,6 +289,7 @@ export async function renderLogin(root) {
 
   btnDev.onclick = async () => {
     if (busyManager.isBusy()) return;
+    formError.clear();
     status.textContent = t('login.devBusy', 'Dev login…');
     status.className = 'auth-status';
     busyManager.setBusy(true);
@@ -285,8 +305,8 @@ export async function renderLogin(root) {
       }
       nav(returnTo);
     } catch (err) {
-      status.textContent = String(err?.message || err);
-      status.className = 'auth-status is-error';
+      status.textContent = '';
+      formError.show(String(err?.message || err));
       busyManager.setBusy(false);
     }
   };
@@ -305,9 +325,16 @@ export async function renderLogin(root) {
   const btnRow = h('div', { class: 'auth-btn-row' });
   btnRow.append(btn, forgotLink);
 
-  form.append(email, password, btnRow, btnDev, status);
+  form.append(email, password, btnRow, btnDev, formError.el, status);
 
-  card.append(errorBanner, ssoSection, ssoDivider, magicSection, divider, form);
+  card.append(
+    errorBanner.el,
+    ssoSection,
+    ssoDivider,
+    magicSection,
+    divider,
+    form,
+  );
   root.append(shell);
 
   // Ask the server whether SSO is enabled / enforced and adjust the form.

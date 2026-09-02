@@ -5,6 +5,7 @@
 
 import { t } from '../../../../lib/ui-i18n.js';
 import { confirmModal } from '../../../../lib/dom/modal.js';
+import { createInlineError } from '../../../../lib/dom/inline-error.js';
 import { h } from '../../../../lib/dom.js';
 
 /**
@@ -64,14 +65,14 @@ export function createGuestManagementSection({
       );
       guests = resp?.guests || [];
       renderGuests();
-    } catch (e) {
+    } catch {
+      // See collaborators-section.js: the list says so itself, politely.
+      const loadError = createInlineError({ live: 'polite' });
       guestList.innerHTML = '';
-      guestList.append(
-        h('div', {
-          class: 'share-guest-error',
-          text: t('share.guests.loadError', 'Failed to load guests'),
-        }),
-      );
+      guestList.append(loadError.el);
+      loadError.show(t('share.guests.loadError', 'Failed to load guests'), {
+        focus: false,
+      });
     }
   }
 

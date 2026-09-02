@@ -1,5 +1,6 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 
 /**
  * Create the trash view (lazy-loaded)
@@ -60,16 +61,14 @@ export function createTrashView({ api, renderCard }) {
         trashView.append(trashList);
       }
     } catch {
+      // The view could not load: a state of the view, announced politely.
+      const loadError = createInlineError({ live: 'polite' });
       loaded = true;
       trashView.innerHTML = '';
-      trashView.append(
-        trashTitle,
-        trashHint,
-        h('div', {
-          class: 'help is-error',
-          text: t('list.trash.loadError', 'Failed to load trash.'),
-        }),
-      );
+      trashView.append(trashTitle, trashHint, loadError.el);
+      loadError.show(t('list.trash.loadError', 'Failed to load trash.'), {
+        focus: false,
+      });
     }
   }
 

@@ -110,6 +110,15 @@ Styling: `.inline-error` (plain, under a field) and `.inline-error.is-callout`
 `.form-input[aria-invalid="true"]` — the attribute is the state, there is no
 wrapper class to keep in step.
 
+The polite form has one more job. A list or panel that did not load says so
+in its own place — `createInlineError({ live: 'polite' })` appended where the
+rows would have been, `show(message, { focus: false })` — and stays until the
+next load replaces it. That is the fourth kind, a state of the list, not a
+refusal of anything the user just did, so it must not take focus. It is the one
+in-place form for that state (the share modal's three lists, the viewer's
+comments, the trash and slide-library views); whether the fourth kind gets a
+carrier of its own beyond the save-chip and the banners is B206's call.
+
 ## Live regions and focus
 
 - The toast stack has two regions that exist from page load: `role="status"`
@@ -152,24 +161,30 @@ not in a copy of its own.
 
 ## Implementation status (2026-09-02)
 
-The primitive and the helper meet the rules above. The call sites do not yet:
+The primitive and the helper meet the rules above. Two rows of call sites do
+not yet:
 
-| Burndown                                                               | Count    | Item |
-| ---------------------------------------------------------------------- | -------- | ---- |
-| Refusals of the form on screen reported in a `toast.error`             | 0        | B204 |
-| `catch` blocks that discard the server sentence for generic `t()` copy | 24       | B205 |
-| Background failures that expire in a toast                             | 10       | B206 |
-| Hand-rolled inline error classes (message idioms)                      | 19 files | B204 |
+| Burndown                                                               | Count   | Item |
+| ---------------------------------------------------------------------- | ------- | ---- |
+| Refusals of the form on screen reported in a `toast.error`             | 0       | B204 |
+| Hand-rolled inline error classes (message idioms)                      | 0 files | B204 |
+| `catch` blocks that discard the server sentence for generic `t()` copy | 24      | B205 |
+| Background failures that expire in a toast                             | 10      | B206 |
 
-No refusal of a form on screen is toasted any more: the 16 local validations
-went to the helper in B204 PR 1, and the 13 API refusals caught in a save
-handler followed in PR 2. What is left of B204 is the last row — the files that
-still spell the message element by hand instead of reaching for
-`createInlineError()`. The `toast.error` calls left in the refuse-and-return
-allowlist are a different shape: a modal that refuses to open, a menu item, a
-card action, a file dropped on the canvas — an action with no form on screen,
-whose carrier _is_ `toast.error`. Not `toast.warning`: no kind maps to it, and
-the client has no call site for it.
+B204 is done. No refusal of a form on screen is toasted any more — the 16 local
+validations went to the helper in PR 1, the 13 API refusals caught in a save
+handler in PR 2 — and no file spells the message element by hand any more: the
+last nineteen moved to `createInlineError()` in PR 3. A `*-error` class name
+now means exactly one thing, so the pages that were never messages were renamed
+after what they are: `access-notice-*` for the editor's denied/not-found page,
+`analytics-unavailable`, `shared-report-unavailable`, `dashboard-alert-banner`,
+`share-viewer-card-icon`.
+
+The `toast.error` calls left in the refuse-and-return allowlist are a different
+shape: a modal that refuses to open, a menu item, a card action, a file dropped
+on the canvas — an action with no form on screen, whose carrier _is_
+`toast.error`. Not `toast.warning`: no kind maps to it, and the client has no
+call site for it.
 
 The counts are the allowlists in `tests/feedback-surfaces-guard.test.js`; each
 item lowers them and the test refuses a rise. Alongside: `toast.info` used as a

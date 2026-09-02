@@ -21,6 +21,7 @@ import { createSlideLibraryPicker } from '../../../../lib/slide-library/index.js
 import { createDeckFromLibraryItems } from '../../../../lib/slide-library/compose.js';
 import { createCollectionsApi } from '../../../../lib/slide-collections/api.js';
 import { h } from '../../../../lib/dom.js';
+import { createInlineError } from '../../../../lib/dom/inline-error.js';
 import { nav } from '../../../../lib/state/router.js';
 
 /**
@@ -204,12 +205,14 @@ export function createLibraryCompose({
     try {
       await picker.renderSlideLibraryPicker(pickerMount);
     } catch {
+      // A source that did not load is a state of the panel, not a refusal of
+      // something the user just submitted: polite, in place, focus untouched.
+      const loadError = createInlineError({ live: 'polite' });
       pickerMount.innerHTML = '';
-      pickerMount.append(
-        h('div', {
-          class: 'help is-error',
-          text: t('slideLibrary.loadError', 'Failed to load slide library.'),
-        }),
+      pickerMount.append(loadError.el);
+      loadError.show(
+        t('slideLibrary.loadError', 'Failed to load slide library.'),
+        { focus: false },
       );
     }
   };
@@ -345,15 +348,15 @@ export function createLibraryCompose({
       const collections = await collectionsApi.listAll();
       renderCollectionsChooser(collections);
     } catch {
+      const loadError = createInlineError({ live: 'polite' });
       collectionsMount.innerHTML = '';
-      collectionsMount.append(
-        h('div', {
-          class: 'help is-error',
-          text: t(
-            'list.creationView.library.collectionsError',
-            'Failed to load collections.',
-          ),
-        }),
+      collectionsMount.append(loadError.el);
+      loadError.show(
+        t(
+          'list.creationView.library.collectionsError',
+          'Failed to load collections.',
+        ),
+        { focus: false },
       );
     }
   };

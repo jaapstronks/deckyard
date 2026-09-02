@@ -100,6 +100,17 @@
   cursor: not-allowed;
 }
 
+/* The refused field. `.form-input[aria-invalid]` in 03-controls-and-forms.css
+   does the same for the settings inputs; the auth card has its own control. */
+.auth-input[aria-invalid='true'] {
+  border-color: hsl(var(--app-danger) / 0.7);
+}
+
+.auth-input[aria-invalid='true']:focus {
+  border-color: hsl(var(--app-danger));
+  box-shadow: 0 0 0 3px hsl(var(--app-danger) / 0.15);
+}
+
 /* Auth Button - Primary action with gradient */
 .auth-btn {
   display: flex;
@@ -191,10 +202,6 @@
   color: hsl(var(--app-text-secondary));
   text-align: center;
   line-height: 1.4;
-}
-
-.auth-status.is-error {
-  color: hsl(var(--app-danger));
 }
 
 .auth-status.is-success {
@@ -352,10 +359,6 @@
 
 :root[data-ui-mode='dark'] .auth-magic-status.is-success {
   color: hsl(150 60% 60%);
-}
-
-.auth-magic-status.is-error {
-  color: hsl(var(--app-danger));
 }
 
 /* ============================================================

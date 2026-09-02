@@ -66,7 +66,7 @@ export function renderError(shell, errorCode, errorData = {}) {
       ),
   };
 
-  const icon = h('div', { class: 'share-viewer-error-icon' }, [
+  const icon = h('div', { class: 'share-viewer-card-icon' }, [
     uiIcon('circle-alert', { size: 48 }),
   ]);
   const title = h('h2', { text: errorInfo.title });
@@ -74,7 +74,7 @@ export function renderError(shell, errorCode, errorData = {}) {
   // Show presentation title if available
   if (errorData.presentationTitle) {
     const presTitle = h('div', {
-      class: 'share-viewer-error-presentation',
+      class: 'share-viewer-card-subtitle',
       text: `"${errorData.presentationTitle}"`,
     });
     card.append(icon, title, presTitle);

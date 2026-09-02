@@ -7,6 +7,7 @@ import { createOverlay } from '../../lib/dom/modal.js';
 import { t } from '../../lib/ui-i18n.js';
 import { escapeHtml } from '../../../shared/slide-types/helpers.js';
 import { h } from '../../lib/dom.js';
+import { createInlineError } from '../../lib/dom/inline-error.js';
 
 /**
  * Get human-readable guest error message.
@@ -133,17 +134,14 @@ export function renderGuestJoinPrompt(shell, token, prefillEmail) {
     text: t('share.guest.submit', 'Send Verification Email'),
   });
 
-  const errorEl = h('div', {
-    class: 'share-viewer-error',
-    style: 'display: none;',
-  });
+  const refusal = createInlineError({ callout: true });
   const successEl = h('div', {
     class: 'share-viewer-success',
     style: 'display: none;',
   });
 
   form.append(emailLabel, emailInput, nameLabel, nameInput, submitBtn);
-  modal.append(closeBtn, title, help, form, errorEl, successEl);
+  modal.append(closeBtn, title, help, form, refusal.el, successEl);
   overlay.show(shell);
 
   // Pre-fill email if provided
@@ -165,15 +163,16 @@ export function renderGuestJoinPrompt(shell, token, prefillEmail) {
     const email = emailInput.value.trim();
     const name = nameInput.value.trim();
 
+    refusal.clear();
     if (!email) {
-      errorEl.textContent = t('share.guest.emailRequired', 'Email is required');
-      errorEl.style.display = 'block';
+      refusal.show(t('share.guest.emailRequired', 'Email is required'), {
+        control: emailInput,
+      });
       return;
     }
 
     submitBtn.disabled = true;
     submitBtn.textContent = t('share.guest.sending', 'Sending…');
-    errorEl.style.display = 'none';
 
     try {
       await api(`/api/share/${encodeURIComponent(token)}/guest/request`, {
@@ -199,13 +198,13 @@ export function renderGuestJoinPrompt(shell, token, prefillEmail) {
       // Close after delay or user interaction
       setTimeout(() => overlay.close(), 8000);
     } catch (err) {
-      errorEl.textContent = getGuestErrorMessage(err.code);
-      errorEl.style.display = 'block';
       submitBtn.disabled = false;
       submitBtn.textContent = t(
         'share.guest.submit',
         'Send Verification Email',
       );
+      // The route names no field; the code decides the copy.
+      refusal.show(getGuestErrorMessage(err.code));
     }
   });
 }

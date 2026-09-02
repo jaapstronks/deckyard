@@ -72,26 +72,26 @@ export async function renderEditor(root, id, { user } = {}) {
  * Render a permission denied page.
  */
 function renderPermissionDenied(root) {
-  const shell = h('div', { class: 'access-error-shell' });
+  const shell = h('div', { class: 'access-notice-shell' });
 
-  const card = h('div', { class: 'access-error-card' });
+  const card = h('div', { class: 'access-notice-card' });
 
-  const icon = uiIcon('lock', { size: 64, className: 'access-error-icon' });
+  const icon = uiIcon('lock', { size: 64, className: 'access-notice-icon' });
 
   const title = h('h1', {
-    class: 'access-error-title',
+    class: 'access-notice-title',
     text: t('access.denied.title', 'Access Denied'),
   });
 
   const message = h('p', {
-    class: 'access-error-message',
+    class: 'access-notice-message',
     text: t(
       'access.denied.message',
       "You don't have permission to view this presentation. If you believe you should have access, please contact the presentation owner to request access.",
     ),
   });
 
-  const actions = h('div', { class: 'access-error-actions' });
+  const actions = h('div', { class: 'access-notice-actions' });
 
   const backBtn = h('button', {
     class: 'btn btn-primary',
@@ -109,26 +109,26 @@ function renderPermissionDenied(root) {
  * Render a not found page.
  */
 function renderNotFound(root) {
-  const shell = h('div', { class: 'access-error-shell' });
+  const shell = h('div', { class: 'access-notice-shell' });
 
-  const card = h('div', { class: 'access-error-card' });
+  const card = h('div', { class: 'access-notice-card' });
 
-  const icon = uiIcon('search', { size: 64, className: 'access-error-icon' });
+  const icon = uiIcon('search', { size: 64, className: 'access-notice-icon' });
 
   const title = h('h1', {
-    class: 'access-error-title',
+    class: 'access-notice-title',
     text: t('access.notFound.title', 'Presentation Not Found'),
   });
 
   const message = h('p', {
-    class: 'access-error-message',
+    class: 'access-notice-message',
     text: t(
       'access.notFound.message',
       "This presentation doesn't exist or may have been deleted. Please check the link and try again.",
     ),
   });
 
-  const actions = h('div', { class: 'access-error-actions' });
+  const actions = h('div', { class: 'access-notice-actions' });
 
   const backBtn = h('button', {
     class: 'btn btn-primary',

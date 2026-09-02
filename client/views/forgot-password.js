@@ -2,6 +2,7 @@ import { api } from '../lib/api.js';
 import { h } from '../lib/dom.js';
 import { t } from '../lib/ui-i18n.js';
 import { createBusyManager } from '../lib/dom/busy.js';
+import { createInlineError } from '../lib/dom/inline-error.js';
 import { authShell } from './auth-shell.js';
 import { nav } from '../lib/state/router.js';
 
@@ -22,6 +23,7 @@ export async function renderForgotPassword(root) {
     autocomplete: 'username',
   });
   const status = h('div', { class: 'auth-status' });
+  const formError = createInlineError({ callout: true });
 
   const btn = h('button', {
     class: 'auth-btn',
@@ -46,13 +48,14 @@ export async function renderForgotPassword(root) {
   const submit = async () => {
     if (busyManager.isBusy()) return;
 
+    formError.clear();
     const e = (email.value || '').trim();
     if (!e || !e.includes('@')) {
-      status.textContent = t(
-        'forgotPassword.invalidEmail',
-        'Please enter a valid email address.',
+      status.textContent = '';
+      formError.show(
+        t('forgotPassword.invalidEmail', 'Please enter a valid email address.'),
+        { control: email },
       );
-      status.className = 'auth-status is-error';
       return;
     }
 
@@ -82,10 +85,11 @@ export async function renderForgotPassword(root) {
       successMsg.style.marginBottom = 'var(--ps-space-4)';
       form.append(successMsg, backLink);
     } catch (err) {
-      status.textContent =
+      status.textContent = '';
+      formError.show(
         err.message ||
-        t('forgotPassword.error', 'Something went wrong. Please try again.');
-      status.className = 'auth-status is-error';
+          t('forgotPassword.error', 'Something went wrong. Please try again.'),
+      );
       busyManager.setBusy(false);
     }
   };
@@ -98,7 +102,7 @@ export async function renderForgotPassword(root) {
   const btnRow = h('div', { class: 'auth-btn-row' });
   btnRow.append(btn, backLink);
 
-  form.append(email, btnRow, status);
+  form.append(email, btnRow, formError.el, status);
   card.append(form);
   root.append(shell);
 

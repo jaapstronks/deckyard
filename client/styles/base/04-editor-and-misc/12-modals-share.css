@@ -235,10 +235,11 @@
   gap: var(--ps-space-2);
 }
 
-.share-links-error {
+/* A list that could not load says so in place: the shared `inline-error`
+   (polite), centred in the empty list the way the rows would have been. */
+.share-links-list > .inline-error {
   text-align: center;
   padding: var(--ps-space-4);
-  opacity: 0.65;
 }
 
 .share-link-item {
@@ -361,11 +362,9 @@
   gap: var(--ps-space-2);
 }
 
-.share-guest-error {
+.share-guest-list > .inline-error {
   text-align: center;
   padding: var(--ps-space-3);
-  font-size: var(--ps-text-sm);
-  opacity: 0.65;
 }
 
 .share-guest-row {
@@ -458,11 +457,9 @@
   gap: var(--ps-space-2);
 }
 
-.share-collaborators-error {
+.share-collaborators-list > .inline-error {
   text-align: center;
   padding: var(--ps-space-3);
-  font-size: var(--ps-text-sm);
-  opacity: 0.65;
 }
 
 .share-collaborator-item {

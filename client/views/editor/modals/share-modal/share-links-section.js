@@ -5,6 +5,7 @@
 
 import { t } from '../../../../lib/ui-i18n.js';
 import { icon } from '../../../../lib/dom/icons.js';
+import { createInlineError } from '../../../../lib/dom/inline-error.js';
 import { createGuestManagementSection } from './guest-management.js';
 import { getExpiresAt, formatExpiration } from './utils.js';
 import { getPermissionLabel } from '../../../../lib/permission-labels.js';
@@ -283,14 +284,14 @@ export function createShareLinksSection({
       );
       shareLinks = resp?.shareLinks || [];
       renderLinksList();
-    } catch (e) {
+    } catch {
+      // See collaborators-section.js: the list says so itself, politely.
+      const loadError = createInlineError({ live: 'polite' });
       linksList.innerHTML = '';
-      linksList.append(
-        h('div', {
-          class: 'share-links-error',
-          text: t('share.links.loadError', 'Failed to load links'),
-        }),
-      );
+      linksList.append(loadError.el);
+      loadError.show(t('share.links.loadError', 'Failed to load links'), {
+        focus: false,
+      });
     }
   }
 

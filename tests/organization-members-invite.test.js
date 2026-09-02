@@ -308,6 +308,9 @@ function openDialog(user, { invite, onInvited } = {}) {
     ),
     role: document.querySelector('.organization-invite-modal select'),
     status: document.querySelector('.organization-invite-modal .modal-status'),
+    // A refusal is not progress: it lives in the inline element beside the
+    // action, not in the status line (docs/reference/feedback-surfaces.md).
+    refusal: document.querySelector('.organization-invite-modal .inline-error'),
     submit: Array.from(
       document.querySelectorAll('.organization-invite-modal button'),
     ).find((b) => b.textContent === 'Send invitation'),
@@ -341,7 +344,12 @@ test('an address without an @ never reaches the server', async () => {
   dialog.submit.click();
   await settle();
 
-  assert.match(dialog.status.textContent, /valid email/i);
+  assert.match(dialog.refusal.textContent, /valid email/i);
+  assert.equal(
+    dialog.email.getAttribute('aria-invalid'),
+    'true',
+    'and it names the field it is about',
+  );
   assert.ok(
     document.querySelector('.organization-invite-modal'),
     'and the dialog stays open',
@@ -362,7 +370,7 @@ test('a refusal stays in the dialog, next to the field that caused it', async ()
   dialog.submit.click();
   await settle();
 
-  assert.match(dialog.status.textContent, /already a member/i);
+  assert.match(dialog.refusal.textContent, /already a member/i);
   assert.ok(
     document.querySelector('.organization-invite-modal'),
     'the dialog stays open',
@@ -388,7 +396,7 @@ test("a role refusal shows the server's own sentence, not a guess", async () => 
   dialog.submit.click();
   await settle();
 
-  assert.match(dialog.status.textContent, /Admins can only invite members/);
+  assert.match(dialog.refusal.textContent, /Admins can only invite members/);
 });
 
 test('a success closes the dialog and reports what happened', async () => {

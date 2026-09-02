@@ -24,6 +24,7 @@
  */
 
 import { h } from '../../../lib/dom.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createModal, createModalActions } from '../../../lib/dom/modal.js';
@@ -176,7 +177,12 @@ export function showInviteModal({
     );
   }
 
+  // `status` carries progress only ("Deleting…", "Saving…"). A refusal is a
+  // state of this form, so it goes in the one element for that, beside the
+  // action and staying until the next attempt
+  // (docs/reference/feedback-surfaces.md).
   const status = h('div', { class: 'help modal-status', role: 'status' });
+  const refusal = createInlineError({ callout: true });
 
   const actions = createModalActions({
     cancelText: t('common.cancel', 'Cancel'),
@@ -185,7 +191,14 @@ export function showInviteModal({
     onAction: () => submit(),
   });
 
-  form.append(emailField, nameField, roleField, status, actions.wrap);
+  form.append(
+    emailField,
+    nameField,
+    roleField,
+    status,
+    refusal.el,
+    actions.wrap,
+  );
   modal.append(form);
   modal.show(root);
 
@@ -206,13 +219,17 @@ export function showInviteModal({
   async function submit() {
     if (modal.isBusy()) return;
 
+    refusal.clear();
     const email = emailInput.value.trim();
     if (!email || !email.includes('@')) {
-      status.textContent = t(
-        'organization.members.invite.invalidEmail',
-        'Enter a valid email address.',
+      status.textContent = '';
+      refusal.show(
+        t(
+          'organization.members.invite.invalidEmail',
+          'Enter a valid email address.',
+        ),
+        { control: emailInput },
       );
-      emailInput.focus();
       return;
     }
 
@@ -230,7 +247,8 @@ export function showInviteModal({
       modal.close();
       onInvited?.(result);
     } catch (err) {
-      status.textContent = inviteErrorMessage(err);
+      status.textContent = '';
+      refusal.show(inviteErrorMessage(err));
       setDisabled(false);
     }
   }

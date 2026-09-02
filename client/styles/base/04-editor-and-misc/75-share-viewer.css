@@ -49,12 +49,6 @@
   flex-direction: column;
   gap: var(--ps-space-2-5);
 }
-.share-links-error {
-  padding: var(--ps-space-5);
-  text-align: center;
-  opacity: 0.65;
-  font-size: var(--ps-text-base);
-}
 .share-link-item {
   display: flex;
   justify-content: space-between;
@@ -190,13 +184,14 @@
   border-color: hsl(var(--app-danger) / 0.35);
 }
 
-/* Error icon */
-.share-viewer-error-icon {
+/* The card's own icon and subtitle. Named after the card, not after "error":
+   the `--error` modifier already carries that, and a `*-error` class outside
+   `createInlineError()` is what the feedback-surfaces guard refuses. */
+.share-viewer-card-icon {
   margin-bottom: var(--ps-space-3);
 }
 
-/* Error presentation title */
-.share-viewer-error-presentation {
+.share-viewer-card-subtitle {
   font-size: var(--ps-text-lg);
   font-weight: 600;
   opacity: 0.85;
@@ -229,12 +224,11 @@
 .share-viewer-password-form .form-input {
   min-width: 0;
 }
-.share-viewer-error {
+/* The refusal of the password / guest-join form: the shared callout, at the
+   surrounding text size. */
+.share-viewer-card > .inline-error.is-callout,
+.share-viewer-guest-modal > .inline-error.is-callout {
   margin-top: var(--ps-space-3);
-  padding: var(--ps-space-2-5) var(--ps-space-3-5);
-  border-radius: 10px;
-  background: hsl(var(--app-danger) / 0.12);
-  color: hsl(var(--app-danger));
   font-size: var(--ps-text-base);
 }
 
@@ -649,11 +643,11 @@
   padding-right: var(--ps-space-1);
 }
 
-.share-viewer-comments-error {
+/* The comment list that could not load says so where the threads would be. */
+.share-viewer-comments-list > .inline-error {
   padding: var(--ps-space-6) var(--ps-space-4);
   text-align: center;
   font-size: var(--ps-text-base);
-  color: hsl(var(--app-danger));
 }
 
 .share-viewer-comment-thread {
