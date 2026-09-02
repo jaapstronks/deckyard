@@ -994,3 +994,96 @@ table.csv-grid {
   font-size: var(--ps-text-sm);
   color: hsl(var(--app-text-tertiary));
 }
+
+/* Page-unavailable state (B213) -------------------------------------------
+   The one whole-page "this cannot be shown" block, built in
+   client/lib/dom/page-unavailable.js: the editor's access-denied and
+   not-found pages, the analytics dashboard, the shared report and the share
+   viewer all render this. It is a page state, not a message element — hence
+   no `*-error` name: that vocabulary belongs to `createInlineError()`, and
+   the feedback-surfaces guard keeps it there.
+
+   `min-height: 70vh` rather than `100vh`: the block sits in four different
+   containers, one of which (`.shared-report-shell`) already pads the page, so
+   a full-viewport child would push it into a scroll. 70vh centres the card at
+   the same height in all four — a flex-column parent (the share viewer's
+   shell) included, since the block does not grow. */
+
+.page-unavailable {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 70vh;
+  padding: var(--ps-space-10) var(--ps-space-5);
+  background: hsl(var(--app-bg-base));
+}
+
+.page-unavailable-card {
+  width: 100%;
+  max-width: 480px;
+  padding: var(--ps-space-12) var(--ps-space-10);
+  border-radius: 24px;
+  background: hsl(var(--app-bg-elevated));
+  border: 1px solid hsl(var(--app-border-default));
+  box-shadow: var(--app-shadow-lg);
+  text-align: center;
+}
+
+/* The message reserves room for the button below it; without one (the two
+   public pages have nowhere to send a visitor) that room is a hole. */
+.page-unavailable-card > :last-child {
+  margin-bottom: 0;
+}
+
+.page-unavailable-icon {
+  margin-bottom: var(--ps-space-5);
+  color: hsl(var(--app-text-tertiary));
+}
+
+.page-unavailable-title {
+  margin: 0 0 var(--ps-space-4);
+  font-size: 24px;
+  font-weight: 700;
+  color: hsl(var(--app-text-primary));
+}
+
+.page-unavailable-subtitle {
+  margin: 0 0 var(--ps-space-3);
+  font-size: var(--ps-text-lg);
+  font-weight: 600;
+  color: hsl(var(--app-text-secondary));
+}
+
+.page-unavailable-message {
+  margin: 0 0 var(--ps-space-8);
+  font-size: 15px;
+  line-height: 1.6;
+  color: hsl(var(--app-text-secondary));
+}
+
+.page-unavailable-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-3);
+  align-items: center;
+}
+
+.page-unavailable-actions .btn {
+  min-width: 180px;
+}
+
+@media (max-width: 480px) {
+  .page-unavailable-card {
+    padding: var(--ps-space-9) var(--ps-space-6);
+    border-radius: 20px;
+  }
+
+  .page-unavailable-title {
+    font-size: 20px;
+  }
+
+  .page-unavailable-message {
+    font-size: var(--ps-text-base);
+  }
+}

@@ -1,9 +1,14 @@
 /**
- * Error display component for share viewer.
+ * The share viewer's dead ends: a link that cannot be opened (not found,
+ * revoked, expired, used up, wrong password) and the generic load failure.
+ *
+ * A whole-page state, so it renders through the shared `createPageUnavailable`
+ * factory rather than a card of its own (B213). No way-back button: an
+ * anonymous visitor holding a share link has nowhere in the app to go.
  */
 
 import { t } from '../../lib/ui-i18n.js';
-import { icon as uiIcon } from '../../lib/dom/icons.js';
+import { createPageUnavailable } from '../../lib/dom/page-unavailable.js';
 import { h } from '../../lib/dom.js';
 
 /**
@@ -16,10 +21,6 @@ import { h } from '../../lib/dom.js';
  */
 export function renderError(shell, errorCode, errorData = {}) {
   shell.innerHTML = '';
-
-  const card = h('div', {
-    class: 'share-viewer-card share-viewer-card--error',
-  });
 
   const errorMessages = {
     not_found: {
@@ -66,34 +67,23 @@ export function renderError(shell, errorCode, errorData = {}) {
       ),
   };
 
-  const icon = h('div', { class: 'share-viewer-card-icon' }, [
-    uiIcon('circle-alert', { size: 48 }),
-  ]);
-  const title = h('h2', { text: errorInfo.title });
-
-  // Show presentation title if available
-  if (errorData.presentationTitle) {
-    const presTitle = h('div', {
-      class: 'share-viewer-card-subtitle',
-      text: `"${errorData.presentationTitle}"`,
-    });
-    card.append(icon, title, presTitle);
-  } else {
-    card.append(icon, title);
-  }
-
-  const message = h('p', { class: 'help', text: errorInfo.message });
-  card.append(message);
-
-  // Show custom revocation message in blockquote if provided
+  // The owner's own words on a revoked link, kept apart from our copy.
+  let extra = null;
   if (errorCode === 'revoked' && errorData.message) {
-    const blockquote = h('blockquote', {
-      class: 'share-viewer-revocation-message',
-    });
-    const messageText = h('p', { text: errorData.message });
-    blockquote.append(messageText);
-    card.append(blockquote);
+    extra = h('blockquote', { class: 'share-viewer-revocation-message' }, [
+      h('p', { text: errorData.message }),
+    ]);
   }
 
-  shell.append(card);
+  shell.append(
+    createPageUnavailable({
+      icon: 'circle-alert',
+      title: errorInfo.title,
+      subtitle: errorData.presentationTitle
+        ? `"${errorData.presentationTitle}"`
+        : null,
+      message: errorInfo.message,
+      extra,
+    }),
+  );
 }

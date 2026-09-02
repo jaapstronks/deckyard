@@ -6,8 +6,7 @@
   background: hsl(var(--app-bg-base));
 }
 
-.analytics-loading,
-.analytics-unavailable {
+.analytics-loading {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -18,10 +17,6 @@
 
 .analytics-loading-text {
   color: hsl(var(--app-text-secondary));
-}
-
-.analytics-unavailable-text {
-  color: hsl(var(--app-danger));
 }
 
 /* Topbar */
@@ -646,16 +641,6 @@ img.analytics-viewer-badge {
   min-height: 300px;
   gap: var(--ps-space-4);
   color: hsl(var(--app-text-secondary));
-}
-
-.shared-report-unavailable {
-  text-align: center;
-  padding: var(--ps-space-15) var(--ps-space-5);
-}
-
-.shared-report-unavailable h1 {
-  margin-bottom: var(--ps-space-4);
-  color: hsl(var(--app-danger));
 }
 
 .shared-report-header {
