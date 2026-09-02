@@ -141,6 +141,12 @@ format` writes, `npm run format:check` gates in CI next to `npm run lint`.
     from `api()`. See **`docs/reference/api-error-format.md`**; covered by
     `tests/api-error-envelope.test.js`. The public `/api/v1/*` surface keeps its
     own openapi-documented schema.
+  - **Where an error is shown is decided by its kind**, not per call site:
+    a refusal of the form on screen is inline (`createInlineError()`,
+    `client/lib/dom/inline-error.js`, marking `details.field`), an action
+    without a form toasts the caught error itself, a background failure
+    lives in a chip or banner. **`docs/reference/feedback-surfaces.md`**;
+    guarded by `tests/feedback-surfaces-guard.test.js`.
   - **SSE `error` events are not the envelope.** They carry
     `{ message:'<human>' }` (plus endpoint-specific extras like `report`) — no
     `ok`, and no `error` key. The `event: error` line is already the

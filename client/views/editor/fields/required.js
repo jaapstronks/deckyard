@@ -13,11 +13,14 @@
  *
  * Deliberately quiet: a field is only flagged once it has been visited and
  * left empty, so a freshly added slide is not a wall of red before anyone has
- * typed anything.
+ * typed anything. The flag is the shared inline error (`dom/inline-error.js`)
+ * in its polite form — a hint while typing, not a refusal of an attempt — and
+ * it never moves focus.
  */
 
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 
 /** Fields whose "emptiness" is not just an empty string. */
 function isEmptyValue(control) {
@@ -54,21 +57,24 @@ export function markFieldRequired({ wrap, control } = {}) {
     );
   }
 
-  const errorEl = h('div', {
-    class: 'field-error',
-    role: 'status',
-    text: t('editor.fields.required', 'This field is required.'),
-  });
-  errorEl.hidden = true;
-  wrap.append(errorEl);
+  const error = createInlineError({ live: 'polite' });
+  wrap.append(error.el);
 
   let visited = false;
 
   const refresh = () => {
     const invalid = visited && isEmptyValue(control);
-    wrap.classList.toggle('is-invalid', invalid);
-    control.setAttribute('aria-invalid', String(invalid));
-    errorEl.hidden = !invalid;
+    if (invalid) {
+      // Shown once per lapse, not per keystroke: re-showing would re-announce.
+      if (!error.shown) {
+        error.show(t('editor.fields.required', 'This field is required.'), {
+          control,
+          focus: false,
+        });
+      }
+    } else if (error.shown) {
+      error.clear();
+    }
   };
 
   // Blur is what marks the field visited: flagging while someone is still

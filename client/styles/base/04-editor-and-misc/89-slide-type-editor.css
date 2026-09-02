@@ -129,18 +129,6 @@
   color: hsl(var(--app-text-primary));
 }
 
-/* Refused save, shown beside the button that was pressed and kept until the
-   next attempt. */
-.slide-type-editor-error {
-  padding: var(--ps-space-3);
-  border: 1px solid hsl(var(--app-danger) / 0.4);
-  border-left-width: 3px;
-  border-radius: var(--ps-radius-md);
-  background: hsl(var(--app-danger) / 0.08);
-  color: hsl(var(--app-danger));
-  font-size: var(--ps-text-sm);
-}
-
 .slide-type-editor-main {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -192,16 +180,16 @@
   border-color: hsl(var(--app-border-default));
 }
 
+/* The row a refused save names (`inline-error`'s `mark`); the message itself
+   is the shared `.inline-error` at the top of the row's body. */
 .field-list-item.is-invalid {
   border-color: hsl(var(--app-danger) / 0.6);
 }
 
-.field-list-item-error {
+.field-list-item-body > .inline-error {
   padding: var(--ps-space-2);
   border-radius: var(--ps-radius-sm);
   background: hsl(var(--app-danger) / 0.08);
-  color: hsl(var(--app-danger));
-  font-size: var(--ps-text-sm);
 }
 
 .field-list-item-summary {

@@ -487,26 +487,46 @@
 
    A slide type can declare a field `required`; until now that only failed
    server-side on save, so the form gave no hint which field was missing. The
-   asterisk marks the field up front, and `.is-invalid` is set once the field
-   has been visited and left empty (see `editor/fields/required.js`) — never
-   before anyone has typed, so a new slide is not a wall of red. */
+   asterisk marks the field up front; the flag itself is an inline error set
+   once the field has been visited and left empty (see
+   `editor/fields/required.js`) — never before anyone has typed, so a new
+   slide is not a wall of red. */
 .field-required-mark {
   margin-left: var(--ps-space-0-5);
   color: hsl(var(--app-danger));
   font-weight: 700;
 }
 
-.field-error {
+/* The inline refusal — the one message element for "what you are doing now
+   was refused" (`client/lib/dom/inline-error.js`; the doctrine is
+   `docs/reference/feedback-surfaces.md`). Plain under a field; `.is-callout`
+   is the form-level box beside the button that was pressed. The control it
+   names carries `aria-invalid="true"`, and that attribute — not a class on
+   the wrapper — is what the border colour follows. */
+.inline-error {
   font-size: var(--ps-text-sm);
   color: hsl(var(--app-danger));
 }
 
-.is-field.is-invalid > .form-input,
-.is-field.is-invalid > .md-toolbar + .form-input {
+.inline-error.is-callout {
+  padding: var(--ps-space-3);
+  border: 1px solid hsl(var(--app-danger) / 0.4);
+  border-left-width: 3px;
+  border-radius: var(--ps-radius-md);
+  background: hsl(var(--app-danger) / 0.08);
+}
+
+/* Script-focused when no control is named, so the ring has to be visible. */
+.inline-error:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--ps-focus-ring-offset) hsl(var(--app-danger) / 0.25);
+}
+
+.form-input[aria-invalid='true'] {
   border-color: hsl(var(--app-danger) / 0.7);
 }
 
-.is-field.is-invalid > .form-input:focus {
+.form-input[aria-invalid='true']:focus {
   border-color: hsl(var(--app-danger));
   box-shadow: 0 0 0 var(--ps-focus-ring-offset) hsl(var(--app-danger) / 0.2);
 }

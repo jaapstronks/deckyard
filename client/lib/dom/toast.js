@@ -1,4 +1,5 @@
 import { h } from '../dom.js';
+import { reportMisuse } from '../util/dev-runtime.js';
 
 const DEFAULT_DURATION_MS = 3200;
 const ERROR_DURATION_MS = 5600;
@@ -25,9 +26,6 @@ const POLITENESS = {
   error: 'assertive',
 };
 
-/** Host names that mean "a developer is looking at this". */
-const DEV_HOSTS = new Set(['', 'localhost', '127.0.0.1', '[::1]', '::1']);
-
 let stackEl = null;
 /** @type {{polite: HTMLElement|null, assertive: HTMLElement|null}} */
 const regions = { polite: null, assertive: null };
@@ -36,33 +34,6 @@ const liveToasts = [];
 const byId = new Map();
 /** Per-toast timer and interaction bookkeeping. */
 const toastState = new WeakMap();
-
-/**
- * Whether this runtime is a development one — the client's counterpart to the
- * server's `NODE_ENV !== 'production'` guard (`getErrorStatus` in
- * `server/utils/http.js`). There is no bundler and no injected env flag on the
- * client, so the host is the signal: Deckyard is developed on localhost and
- * tested under jsdom (no host at all), and served to users from a real domain.
- * @returns {boolean} True outside production.
- */
-function isDevRuntime() {
-  try {
-    const loc = globalThis.window?.location ?? globalThis.location;
-    return DEV_HOSTS.has(String(loc?.hostname ?? ''));
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Report a programming error: loud in development, survivable in production.
- * @param {string} message - What the caller got wrong.
- */
-function reportMisuse(message) {
-  if (isDevRuntime()) throw new Error(message);
-  // eslint-disable-next-line no-console
-  console.error(message);
-}
 
 /**
  * Build the stack and its two live regions.

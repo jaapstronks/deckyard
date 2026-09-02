@@ -20,10 +20,32 @@ The internal `/api/*` routes return errors in one canonical envelope:
   it, A7.19-C7g).
 - **`message`** — optional human-readable text for display. Safe to show a user;
   never contains stack traces or internal detail (500s stay generic).
-- **`details`** — optional structured extra. `{ field: '<name>' }` is the
-  standing case: a storage `invalid` says _which_ input was bad there rather
-  than in the code, which is what D48 collapsed the `invalid_*` spellings into.
-  Omitted when absent.
+- **`details`** — optional structured extra, omitted when absent. Its keys are
+  a closed set:
+
+  | Key         | Meaning                                                                                                                                                         |
+  | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | `field`     | _Which_ input was bad. The standing case: a storage `invalid` says it here rather than in the code, which is what D48 collapsed the `invalid_*` spellings into. |
+  | `index`     | Where in a list-valued `field` (0-based). Present only when the storage layer inspected the list entry by entry.                                                |
+  | `itemIndex` | Where inside that entry, for a nested list (an `items` field's `itemFields`).                                                                                   |
+  | `reason`    | A snake_case sub-code for the problem at that location, for a client that wants to translate. `message` still carries the English sentence.                     |
+
+  `details` locates; it does not explain. Prose stays in `message`, and a
+  client that has no copy for a `reason` shows `message`. Anything a storage
+  result carries beyond these keys (a `where` label used to build the
+  sentence) stays server-side. Client side, the location drives the inline
+  refusal — see [`feedback-surfaces.md`](feedback-surfaces.md) § The envelope,
+  mirrored.
+
+  _Implementation status (2026-09-02):_ every storage refusal goes through
+  `storageError()` and meets the table. Six internal routes still put
+  something else in `details`, and B208 folds them: a payload that is not a
+  location (`{ report }` on the three import routes, `{ lock }` on
+  `slide-locks.js`, the maintenance `state` on the 503), and prose where a
+  sentence belongs in `message` (the Notion routes' `'Set NOTION_SECRET …'`
+  string, and `versions.js`'s `{ reason: 'No LLM vendor configured' }`, which
+  collides with the sub-code key above). Until then a client may only rely
+  on the four keys for `storage`-originated errors.
 
 This unified one envelope that used to have two shapes living side by side: prose
 in `error` (from the `http.js` helpers) versus `{ ok:false, error:'code' }` (from
@@ -70,10 +92,13 @@ does not validate and 403 when a session belongs to a different key owner;
 per-deck refusals there are JSON-RPC tool errors, not HTTP statuses.
 
 For a storage `reason` code, use **`storageError(res, result, message?)`** — it
-reads `result.reason` for the code and the status, and puts an optional
-`result.field` on the wire as `details.field`. Spreading the result by hand
-(`jsonError(res, getErrorStatus(result.reason), result.reason)`) drops the field,
-so `tests/storage-reason-vocabulary.test.js` refuses that form under
+reads `result.reason` for the code and the status, puts an optional
+`result.field` on the wire as `details.field`, and, when the result carries a
+located `fieldProblem` (`{ reason, index, itemIndex }`), adds those three as
+`details.index` / `details.itemIndex` / `details.reason` (null indexes are
+omitted; `tests/storage-error-details.test.js`). Spreading the result by hand
+(`jsonError(res, getErrorStatus(result.reason), result.reason)`) drops all of
+that, so `tests/storage-reason-vocabulary.test.js` refuses that form under
 `server/routes/**`.
 `getErrorStatus` reads the closed `REASONS` register in
 [`server/storage/reasons.js`](../../server/storage/reasons.js), which states one
@@ -95,16 +120,23 @@ throws an `Error` with:
 - **`err.message`** — human text (`obj.message`, falling back to `error`/`details`).
   Safe to surface in a toast.
 - **`err.statusCode`** — the HTTP status.
-- **`err.details`** — structured detail, if any.
+- **`err.details`** — structured detail, if any (`field`, `index`,
+  `itemIndex`, `reason` — see above).
 
 ```js
 try {
   await api('/api/share/abc/verify', { method: 'POST', body: { password } });
 } catch (err) {
-  if (err.code === 'invalid_password') showInlineError();
-  else toast.error(err.message);
+  if (err.code === 'invalid_password')
+    passwordError.show(err.message, { control });
+  else toast.error(err);
 }
 ```
+
+Which carrier an error belongs in — inline beside the control, a toast, a
+persistent chip — is not a per-call-site choice: the kind of event decides.
+The rules, the inline helper (`createInlineError()`), and the focus/ARIA
+contract are in [`feedback-surfaces.md`](feedback-surfaces.md).
 
 ## SSE error events
 
