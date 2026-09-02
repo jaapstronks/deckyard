@@ -316,7 +316,6 @@
   "slideLibrary.edit.nameRequired": "Podaj nazwę.",
   "slideLibrary.edit.noEditableFields": "Ten typ slajdu nie ma edytowalnych pól tekstowych.",
   "slideLibrary.edit.preview": "Podgląd",
-  "slideLibrary.edit.saveFailed": "Nie udało się zapisać slajdu.",
   "slideLibrary.edit.saved": "Slajd zapisany.",
   "slideLibrary.edit.title": "Edytuj slajd",
   "slideLibrary.edit.tooltip": "Edytuj treść slajdu",

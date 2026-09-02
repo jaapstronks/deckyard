@@ -1,6 +1,7 @@
 import { createModal, createModalActions } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { createTagEditor } from '../../list/tag-editor.js';
 import { h } from '../../../lib/dom.js';
 import {
@@ -263,20 +264,23 @@ export function openSaveToLibraryModal({
   const shelfField = h('div', { class: 'field' });
   shelfField.append(shelfLabel, shelfSegmented, shelfHint);
 
-  // Status message
+  // Progress only ("Saving…"). A refusal is not progress: it is a state of this
+  // form, so it goes in the one element for that, beside the action button and
+  // staying until the next attempt (docs/reference/feedback-surfaces.md).
   const status = h('div', { class: 'help modal-status', text: '' });
+  const saveError = createInlineError({ callout: true });
 
   // Actions
   let saving = false;
 
   const doSave = async () => {
+    saveError.clear();
     const name = String(nameInput.value || '').trim();
     if (!name) {
-      status.textContent = t(
-        'editor.slideLibrary.saveModal.nameRequired',
-        'Please enter a name.',
+      saveError.show(
+        t('editor.slideLibrary.saveModal.nameRequired', 'Please enter a name.'),
+        { control: nameInput },
       );
-      nameInput.focus();
       return;
     }
 
@@ -364,8 +368,11 @@ export function openSaveToLibraryModal({
         allowInsert: true,
       });
     } catch (e) {
-      status.textContent = String(e?.message || e);
-      toast.error(e);
+      status.textContent = '';
+      // One carrier, the server's sentence. This site had both: the same text
+      // under the form *and* in a toast over it. `/api/slide-library` names no
+      // `details.field`, so the callout carries it without marking a control.
+      saveError.show(String(e?.message || e));
     } finally {
       saving = false;
       actions.setDisabled(false);
@@ -390,7 +397,7 @@ export function openSaveToLibraryModal({
   // Build modal content
   modal.content.append(nameField, descField, tagsField);
   if (langField) modal.content.append(langField);
-  modal.content.append(shelfField, status, actions.wrap);
+  modal.content.append(shelfField, status, saveError.el, actions.wrap);
   modal.show(root);
 
   // Focus and select the name input

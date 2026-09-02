@@ -14,10 +14,11 @@
  *     guard clause (`if (…) { toast.error(…); return; }`). That shape *is* a
  *     refusal of the current action; the allowlist is the sites B204 moves to
  *     the helper.
- *  2. the ratchet — every file that still carries a refusal, a discarded server
- *     message or a background failure in a toast (the B204/B205/B206 burndown)
- *     is listed with its `toast.error` count. A rise means a new toast in a
- *     file under cleanup; lower the number when you move a site.
+ *  2. the ratchet — every file that still carries a discarded server message or
+ *     a background failure in a toast (the B205/B206 burndown) is listed with
+ *     its `toast.error` count. A rise means a new toast in a file under
+ *     cleanup; lower the number when you move a site. B204's refusals are at
+ *     zero, which is why no file is listed for them any more.
  *  3. error classes — no `*-error` / `is-error` class applied outside the
  *     helper. The message idioms are B204's; the state markers (a thumb that
  *     failed to render) are not messages and stay.
@@ -41,51 +42,23 @@ const repoRoot = path.join(here, '..');
 // ------------------------------------------------------------ the allowlists
 
 /**
- * Files that still report a refusal (B204), a discarded server message (B205)
- * or a background failure (B206) through `toast.error`. `total` is every
- * `toast.error(` call in the file, the other numbers say how many of those
- * belong to which burndown; the rest are legitimate pass-throughs. Inventory:
+ * Files that still report a discarded server message (B205) or a background
+ * failure (B206) through `toast.error`. `total` is every `toast.error(` call in
+ * the file, the other numbers say how many of those belong to which burndown;
+ * the rest are legitimate pass-throughs. Inventory:
  * docs/plans/briefs/feedback-surfaces.md (2026-09-02).
+ *
+ * `refusals` is at zero: B204 PR 2 moved the last thirteen — an API refusal
+ * caught in a save handler and toasted — to `createInlineError()`. The key
+ * stays in `BURNDOWN` so a new one has to be argued for rather than counted.
  */
 const TOAST_SITES = [
-  // --- refusals of the form on screen (B204) ---
+  // --- the server's sentence thrown away for generic copy (B205) ---
   {
     file: 'client/lib/slide-library/edit-modal.js',
-    total: 3,
-    refusals: 1,
+    total: 2,
     discarded: 2,
   },
-  {
-    file: 'client/views/settings/tabs/integrations-tab.js',
-    total: 2,
-    refusals: 1,
-  },
-  { file: 'client/views/settings/tabs/account-tab.js', total: 4, refusals: 1 },
-  { file: 'client/views/settings/tabs/themes-tab.js', total: 8, refusals: 2 },
-  {
-    file: 'client/views/settings/tabs/analytics-tab.js',
-    total: 2,
-    refusals: 1,
-  },
-  {
-    file: 'client/views/settings/tabs/preferences-tab.js',
-    total: 2,
-    refusals: 1,
-  },
-  { file: 'client/views/settings/tabs/email-tab.js', total: 2, refusals: 1 },
-  { file: 'client/views/settings/tabs/admin-tab.js', total: 2, refusals: 1 },
-  {
-    file: 'client/views/settings/email-templates/actions.js',
-    total: 6,
-    refusals: 2,
-  },
-  { file: 'client/views/settings/font-editor/index.js', total: 2, refusals: 1 },
-  {
-    file: 'client/views/editor/modals/save-to-library-modal.js',
-    total: 1,
-    refusals: 1,
-  },
-  // --- the server's sentence thrown away for generic copy (B205) ---
   {
     file: 'client/views/editor/inline-edit/inline-editor.js',
     total: 2,
@@ -151,7 +124,7 @@ const TOAST_SITES = [
 ];
 
 /** The burndown as the TODO items state it; each PR lowers both. */
-const BURNDOWN = { refusals: 13, discarded: 24, background: 10 };
+const BURNDOWN = { refusals: 0, discarded: 24, background: 10 };
 
 /**
  * `toast.error` as the whole answer of a guard clause. Every one of these is

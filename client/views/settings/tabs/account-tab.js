@@ -204,7 +204,12 @@ export function createAccountTab({ user }) {
     text: t('common.save', 'Save'),
   });
   profileActions.append(btnSaveProfile);
-  profileCard.append(profileActions);
+  // A refused save is a state of this form, so it stays beside Save until the
+  // next attempt (docs/reference/feedback-surfaces.md). `/api/settings/me`
+  // answers about the request as a whole and names no `details.field`, so
+  // there is no control to mark.
+  const profileError = createInlineError({ callout: true });
+  profileCard.append(profileError.el, profileActions);
 
   // Password section
   const passwordSection = createPasswordSection();
@@ -244,6 +249,7 @@ export function createAccountTab({ user }) {
 
   btnSaveProfile.addEventListener('click', async () => {
     if (busy) return;
+    profileError.clear();
     busy = true;
     btnSaveProfile.disabled = true;
     profileName.disabled = true;
@@ -257,7 +263,7 @@ export function createAccountTab({ user }) {
         durationMs: 1800,
       });
     } catch (e) {
-      toast.error(e, { id: 'settings-save' });
+      profileError.show(e.message);
     } finally {
       busy = false;
       btnSaveProfile.disabled = false;

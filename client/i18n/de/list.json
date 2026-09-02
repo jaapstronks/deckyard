@@ -308,7 +308,6 @@
   "slideLibrary.edit.nameRequired": "Bitte geben Sie einen Namen ein.",
   "slideLibrary.edit.noEditableFields": "Dieser Folientyp hat keine bearbeitbaren Textfelder.",
   "slideLibrary.edit.preview": "Vorschau",
-  "slideLibrary.edit.saveFailed": "Die Folie konnte nicht gespeichert werden.",
   "slideLibrary.edit.saved": "Folie gespeichert.",
   "slideLibrary.edit.title": "Folie bearbeiten",
   "slideLibrary.edit.tooltip": "Folieninhalt bearbeiten",

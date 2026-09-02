@@ -309,7 +309,6 @@
   "slideLibrary.edit.nameRequired": "Veuillez saisir un nom.",
   "slideLibrary.edit.noEditableFields": "Ce type de diapositive n'a aucun champ texte modifiable.",
   "slideLibrary.edit.preview": "Aperçu",
-  "slideLibrary.edit.saveFailed": "Impossible d'enregistrer la diapositive.",
   "slideLibrary.edit.saved": "Diapositive enregistrée.",
   "slideLibrary.edit.title": "Modifier la diapositive",
   "slideLibrary.edit.tooltip": "Modifier le contenu de la diapositive",

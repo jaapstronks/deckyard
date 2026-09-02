@@ -316,7 +316,6 @@
   "slideLibrary.edit.nameRequired": "Anna nimi.",
   "slideLibrary.edit.noEditableFields": "Tässä diatyypissä ei ole muokattavia tekstikenttiä.",
   "slideLibrary.edit.preview": "Esikatselu",
-  "slideLibrary.edit.saveFailed": "Dian tallennus epäonnistui.",
   "slideLibrary.edit.saved": "Dia tallennettu.",
   "slideLibrary.edit.title": "Muokkaa diaa",
   "slideLibrary.edit.tooltip": "Muokkaa dian sisältöä",

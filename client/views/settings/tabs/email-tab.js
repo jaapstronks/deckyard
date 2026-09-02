@@ -6,6 +6,7 @@
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { createEmailTemplatesPanel } from '../email-templates/index.js';
 import { createAdminNotificationsSection } from '../sections/index.js';
 import {
@@ -49,7 +50,12 @@ export function createEmailTab({ user }) {
     text: t('common.save', 'Save'),
   });
   notifActions.append(btnSaveNotif);
-  notificationsCard.append(notifActions);
+  // A refused save is a state of this form, so it stays beside Save until the
+  // next attempt (docs/reference/feedback-surfaces.md). The settings routes
+  // answer about the request as a whole — permission, a malformed body — and
+  // name no `details.field`, so there is no control to mark.
+  const notifError = createInlineError({ callout: true });
+  notificationsCard.append(notifError.el, notifActions);
 
   let busy = false;
   let loaded = false;
@@ -78,6 +84,7 @@ export function createEmailTab({ user }) {
 
   btnSaveNotif.addEventListener('click', async () => {
     if (busy) return;
+    notifError.clear();
     busy = true;
     btnSaveNotif.disabled = true;
     adminNotifications.setDisabled(true);
@@ -93,7 +100,7 @@ export function createEmailTab({ user }) {
         durationMs: 1800,
       });
     } catch (e) {
-      toast.error(e, { id: 'settings-save' });
+      notifError.show(e.message);
     } finally {
       busy = false;
       btnSaveNotif.disabled = false;

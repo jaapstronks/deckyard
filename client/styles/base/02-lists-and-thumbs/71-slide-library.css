@@ -848,6 +848,22 @@
   color: hsl(var(--app-text-secondary));
 }
 
+/* An empty status still absorbed the row's free space through its auto margin,
+   which left nothing for the refusal beside it. It carries progress text only,
+   so out of the row when it has none. */
+.ps-modal-footer .modal-status:empty {
+  display: none;
+}
+
+/* The refused save (`createInlineError({ callout: true })`) takes the width the
+   status left behind, so a long server sentence wraps instead of squeezing the
+   button it belongs to. */
+.ps-modal-footer > .inline-error.is-callout {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-right: auto;
+}
+
 /* Responsive: stack columns on smaller screens */
 @media (max-width: 768px) {
   .ps-lib-edit-body {

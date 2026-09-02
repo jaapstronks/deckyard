@@ -7,6 +7,7 @@ import { h } from '../../../lib/dom.js';
 import { labeledCheckbox } from '../../../lib/dom/labeled-checkbox.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 import {
   defaultLang,
   getSupportedLangs,
@@ -412,7 +413,13 @@ export function createPreferencesTab({ user }) {
     highlighterCard,
   ]);
 
-  container.append(title, cards, actions);
+  // A refused save is a state of this form, so it stays beside Save until the
+  // next attempt (docs/reference/feedback-surfaces.md). The settings routes
+  // answer about the request as a whole — permission, a malformed body — and
+  // name no `details.field`, so there is no control to mark.
+  const saveError = createInlineError({ callout: true });
+
+  container.append(title, cards, saveError.el, actions);
 
   // The weekly analytics digest emails a summary, which a sandbox guest (no
   // account, no email, throwaway decks) can't receive — grey it out with a
@@ -588,6 +595,7 @@ export function createPreferencesTab({ user }) {
 
   btnSave.addEventListener('click', async () => {
     if (busy) return;
+    saveError.clear();
     setBusy(true);
     try {
       // Use selectedOptions for more reliable value reading across browsers
@@ -637,7 +645,7 @@ export function createPreferencesTab({ user }) {
       // Re-render current route (important if UI locale changed).
       nav(currentUrl());
     } catch (e) {
-      toast.error(e, { id: 'settings-save' });
+      saveError.show(e.message);
     } finally {
       setBusy(false);
     }

@@ -11,6 +11,7 @@
 
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { createState } from './state.js';
 import {
   buildTemplateOptions,
@@ -66,6 +67,10 @@ export function createEmailTemplatesPanel({ user }) {
     style: 'width: auto;',
   });
   defaultLocaleRow.append(defaultLocaleLabel, defaultLocaleSelect);
+  // The select saves on change, so its refusal belongs under the select — not
+  // in a toast beside a Save button two cards down that had nothing to do with
+  // it (docs/reference/feedback-surfaces.md).
+  const defaultLocaleError = createInlineError();
 
   // Template selector
   const templateRow = h('div', {
@@ -163,15 +168,21 @@ export function createEmailTemplatesPanel({ user }) {
   rightActions.append(previewBtn, testBtn, saveBtn);
   actions.append(leftActions, rightActions);
 
+  // A refused save of the template form is a state of that form, so it sits
+  // beside Save and stays until the next attempt.
+  const saveError = createInlineError({ callout: true });
+
   panel.append(
     title,
     hint,
     defaultLocaleRow,
+    defaultLocaleError.el,
     templateRow,
     localeTabs,
     formContainer,
     placeholdersContainer,
     previewContainer,
+    saveError.el,
     actions,
   );
 
@@ -179,11 +190,13 @@ export function createEmailTemplatesPanel({ user }) {
   const elements = {
     templateSelect,
     defaultLocaleSelect,
+    defaultLocaleError,
     localeTabs,
     resetBtn,
     previewBtn,
     testBtn,
     saveBtn,
+    saveError,
     previewContainer,
     previewFrame,
   };
