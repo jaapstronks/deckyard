@@ -4,7 +4,7 @@
  */
 
 // Client exports
-export { notionEnabled } from './client.js';
+export { notionEnabled, NOTION_NOT_CONFIGURED_MESSAGE } from './client.js';
 
 // Parser exports
 export {

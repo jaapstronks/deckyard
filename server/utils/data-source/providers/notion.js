@@ -13,6 +13,7 @@ import {
   notionFetchJson,
   fetchAllBlockChildren,
   notionEnabled,
+  NOTION_NOT_CONFIGURED_MESSAGE,
 } from '../../notion/client.js';
 import {
   richTextToPlain,
@@ -25,7 +26,7 @@ import { AppError } from '../../errors.js';
  */
 async function queryDatabase(config) {
   if (!notionEnabled()) {
-    throw new AppError('Notion is not configured', 501);
+    throw new AppError(NOTION_NOT_CONFIGURED_MESSAGE, 501);
   }
 
   const { databaseId, filter, sorts } = config;
@@ -134,7 +135,7 @@ function extractRollupValue(rollup) {
  */
 async function fetchBlock(config) {
   if (!notionEnabled()) {
-    throw new AppError('Notion is not configured', 501);
+    throw new AppError(NOTION_NOT_CONFIGURED_MESSAGE, 501);
   }
 
   const { blockId, pageId } = config;

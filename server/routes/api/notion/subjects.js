@@ -6,7 +6,6 @@
 
 import {
   badRequest,
-  jsonError,
   serveJson,
   requireJsonBody,
 } from '../../../utils/http.js';
@@ -18,7 +17,11 @@ import {
   searchPages,
   searchRecentPages,
 } from '../../../utils/notion/index.js';
-import { looksLikeUsableDoc, pickKeywordForPage } from './utils.js';
+import {
+  looksLikeUsableDoc,
+  pickKeywordForPage,
+  refuseNotionUnconfigured,
+} from './utils.js';
 
 /**
  * Handle POST /api/notion/subjects
@@ -26,12 +29,7 @@ import { looksLikeUsableDoc, pickKeywordForPage } from './utils.js';
  * Feature-gated endpoint.
  */
 export async function handleNotionSubjects({ req, res }) {
-  if (!notionEnabled()) {
-    jsonError(res, 501, 'notion_not_configured', 'Notion not configured', {
-      details: 'Set NOTION_SECRET on the server to enable this feature.',
-    });
-    return true;
-  }
+  if (!notionEnabled()) return refuseNotionUnconfigured(res);
 
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
@@ -90,12 +88,7 @@ export async function handleNotionSubjects({ req, res }) {
  * Feature-gated endpoint.
  */
 export async function handleNotionCompose({ req, res }) {
-  if (!notionEnabled()) {
-    jsonError(res, 501, 'notion_not_configured', 'Notion not configured', {
-      details: 'Set NOTION_SECRET on the server to enable this feature.',
-    });
-    return true;
-  }
+  if (!notionEnabled()) return refuseNotionUnconfigured(res);
 
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;

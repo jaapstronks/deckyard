@@ -44,9 +44,12 @@
  */
 export function errorText(obj, fallback = '') {
   if (obj && typeof obj === 'object') {
+    // No `details` branch: `details` is typed by the code (D78) and is always
+    // an object — the register in `server/utils/error-details.js` refuses a
+    // string outside production. The `error`-as-prose branch stays: that is the
+    // separate straggler line (tests/error-envelope-stragglers-guard.test.js).
     const human =
       (typeof obj.message === 'string' && obj.message.trim() && obj.message) ||
-      (typeof obj.details === 'string' && obj.details.trim() && obj.details) ||
       (typeof obj.error === 'string' && obj.error.trim() && obj.error) ||
       null;
     if (human) return human;
@@ -85,7 +88,7 @@ export async function api(path, opts = {}) {
       if (obj && typeof obj === 'object') {
         // Canonical envelope: { ok:false, error:'<machine_code>', message:'<human>' }.
         // `error` is a stable code to branch on (err.code); `message` is display
-        // text. `errorText` falls back to `error`/`details` for legacy bodies.
+        // text. `errorText` falls back to `error` for the prose stragglers.
         const code = typeof obj.error === 'string' ? obj.error : null;
         const err = new Error(errorText(obj, `Request failed (${res.status})`));
         err.statusCode = res.status;

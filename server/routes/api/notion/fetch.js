@@ -6,7 +6,6 @@
 import {
   badRequest,
   serveJson,
-  jsonError,
   requireJsonBody,
 } from '../../../utils/http.js';
 import { getTrimmedString } from '../../../utils/request-validators.js';
@@ -16,7 +15,7 @@ import {
   notionEnabled,
   publishEmbedToNotionPage,
 } from '../../../utils/notion/index.js';
-import { handleNotionError } from './utils.js';
+import { handleNotionError, refuseNotionUnconfigured } from './utils.js';
 import {
   DEFAULT_DECK_LANG,
   normalizeLang,
@@ -28,12 +27,7 @@ import {
  * Available even if the feature flag is off, as long as Notion is configured.
  */
 export async function handleNotionFetch({ req, res }) {
-  if (!notionEnabled()) {
-    jsonError(res, 501, 'notion_not_configured', 'Notion not configured', {
-      details: 'Set NOTION_SECRET on the server to enable this feature.',
-    });
-    return true;
-  }
+  if (!notionEnabled()) return refuseNotionUnconfigured(res);
 
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
@@ -67,12 +61,7 @@ export async function handleNotionFetch({ req, res }) {
  * Expects { pageId, embedUrl, title?, lang? }
  */
 export async function handleNotionPublish({ req, res }) {
-  if (!notionEnabled()) {
-    jsonError(res, 501, 'notion_not_configured', 'Notion not configured', {
-      details: 'Set NOTION_SECRET on the server to enable this feature.',
-    });
-    return true;
-  }
+  if (!notionEnabled()) return refuseNotionUnconfigured(res);
 
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;

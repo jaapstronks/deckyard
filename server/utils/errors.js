@@ -2,6 +2,8 @@
  * Standardized error classes for consistent error handling.
  */
 
+import { assertErrorDetails } from './error-details.js';
+
 /**
  * Default machine-code per HTTP status, for the canonical error envelope
  * (`{ ok:false, error:'<code>', message:'<human>' }`). Subclasses may override
@@ -48,7 +50,14 @@ export class AppError extends Error {
     Error.captureStackTrace?.(this, this.constructor);
   }
 
+  /**
+   * Serialize into the canonical envelope. `details` is typed by `code` (D78);
+   * this is one of the register's two enforcement points, alongside
+   * `jsonError()` — see [`error-details.js`](error-details.js).
+   * @returns {{ok: false, error: string, message: string, details?: Object}}
+   */
   toJSON() {
+    if (this.details) assertErrorDetails(this.code, this.details);
     return {
       ok: false,
       error: this.code,

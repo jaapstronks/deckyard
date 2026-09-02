@@ -31,6 +31,10 @@ import {
   codeForStatus,
 } from '../server/utils/errors.js';
 import { buildTopLevelErrorBody } from '../server/utils/error-response.js';
+import {
+  assertErrorDetails,
+  PAYLOAD_KEYS,
+} from '../server/utils/error-details.js';
 
 /** Minimal ServerResponse stand-in that records status, headers and body. */
 class MockRes {
@@ -232,10 +236,137 @@ test('errorText falls back to a legacy prose-in-error body', async () => {
   assert.equal(errorText({ error: 'Invalid input' }), 'Invalid input');
 });
 
-test('errorText order is message > details > error, then fallback', async () => {
+test('errorText order is message > error, then fallback', async () => {
   const { errorText } = await import('../client/lib/api.js');
-  assert.equal(errorText({ details: 'd', error: 'e' }), 'd'); // details beats error
+  assert.equal(errorText({ message: 'm', error: 'e' }), 'm'); // message beats error
+  // No `details` branch (B208): `details` is a typed object, never the sentence.
+  assert.equal(errorText({ details: { field: 'title' }, error: 'e' }), 'e');
   assert.equal(errorText({}, 'nothing usable'), 'nothing usable');
   assert.equal(errorText(null, 'x'), 'x');
   assert.equal(errorText({ error: '   ' }, 'blank ignored'), 'blank ignored'); // whitespace-only skipped
+});
+
+// ---------------------------------------------------------------------------
+// The `details` register (B208 / D78)
+//
+// `error` is the discriminator, `details` the payload that code carries. The
+// register in `server/utils/error-details.js` names the keys per code; the two
+// emission points that know the code enforce it, throwing outside production.
+// ---------------------------------------------------------------------------
+
+test('every registered code passes with exactly its keys', () => {
+  const samples = {
+    held: { lock: { slideId: 's1' } },
+    conflict: { id: 'p1', revision: 4, modified: 'now', updatedBy: 'a@b.c' },
+    locked: { slideId: 's1', lockKind: 'author', holder: null },
+    conversion_failed: { report: { errors: [] } },
+    maintenance: { active: true, reason: 'upgrade', retryAfter: 30 },
+    sandbox_quota_exceeded: { resource: 'decks', limit: 2, used: 2 },
+  };
+  assert.deepEqual(
+    Object.keys(samples).sort(),
+    Object.keys(PAYLOAD_KEYS).sort(),
+    'the sample set covers the register — add a sample when you add a code',
+  );
+  for (const [code, details] of Object.entries(samples)) {
+    const res = new MockRes();
+    jsonError(res, 400, code, 'nope', { details });
+    assert.deepEqual(res.body().details, details, code);
+  }
+});
+
+test('a stray key on a registered code throws outside production', () => {
+  assert.throws(
+    () =>
+      jsonError(new MockRes(), 409, 'conflict', 'nope', {
+        details: { id: 'p1', revision: 4, whoops: true },
+      }),
+    /Unregistered key "whoops"/,
+  );
+});
+
+test('an unregistered code may send no details at all', () => {
+  assert.throws(
+    () =>
+      jsonError(new MockRes(), 503, 'ai_unavailable', 'nope', {
+        details: { reason: 'no vendor' },
+      }),
+    /Unregistered details on error "ai_unavailable"/,
+  );
+});
+
+test('details is never a string, and never an array', () => {
+  for (const bad of ['a sentence', ['a', 'list']]) {
+    assert.throws(
+      () =>
+        jsonError(new MockRes(), 501, 'notion_not_configured', 'nope', {
+          details: bad,
+        }),
+      /Non-object details/,
+      JSON.stringify(bad),
+    );
+  }
+});
+
+test('a storage reason carries the location shape, not a payload', () => {
+  const res = new MockRes();
+  const details = { field: 'items', index: 2, itemIndex: 0, reason: 'empty' };
+  jsonError(res, 400, 'invalid', 'Invalid input', { details });
+  assert.deepEqual(res.body().details, details);
+
+  // Location keys only: a payload key is not in a storage reason's vocabulary.
+  assert.throws(
+    () =>
+      jsonError(new MockRes(), 400, 'invalid', 'nope', {
+        details: { field: 'items', report: {} },
+      }),
+    /Unregistered key "report"/,
+  );
+});
+
+test('AppError.toJSON() runs through the same assertion', () => {
+  const ok = new AppError('Conflict', 409, { id: 'p1', revision: 4 });
+  assert.deepEqual(ok.toJSON().details, { id: 'p1', revision: 4 });
+
+  const bad = new AppError('Nope', 500, { anything: 1 });
+  assert.throws(() => bad.toJSON(), /Unregistered details on error/);
+});
+
+test('assertErrorDetails lets a violation through in production', () => {
+  const previous = process.env.NODE_ENV;
+  process.env.NODE_ENV = 'production';
+  try {
+    // A contract slip must never turn a running instance's 4xx into a 500.
+    assert.doesNotThrow(() => assertErrorDetails('ai_unavailable', { a: 1 }));
+    const res = new MockRes();
+    jsonError(res, 503, 'ai_unavailable', 'nope', { details: { a: 1 } });
+    assert.deepEqual(res.body().details, { a: 1 });
+  } finally {
+    if (previous === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previous;
+  }
+});
+
+test('absent details always passes, for any code', () => {
+  assert.doesNotThrow(() => assertErrorDetails('whatever', undefined));
+  assert.doesNotThrow(() => assertErrorDetails('whatever', null));
+  const res = new MockRes();
+  jsonError(res, 501, 'notion_not_configured', 'off');
+  assert.ok(!('details' in res.body()));
+});
+
+test('the slide-merge conflict serializes with its full registered payload', () => {
+  // The 409 with `conflictingSlides` is built in `storage/presentations/
+  // index.js`, not in the shared `conflictError()` helper — the path a plain
+  // `.details` assertion never serializes. Pin the envelope, not the throw.
+  const err = new AppError('Conflict: the same slides were modified.', 409, {
+    id: 'p1',
+    revision: 7,
+    modified: '2026-09-02T00:00:00.000Z',
+    updatedBy: 'a@b.c',
+    conflictingSlides: ['s3'],
+  });
+  const body = err.toJSON();
+  assert.equal(body.error, 'conflict');
+  assert.deepEqual(body.details.conflictingSlides, ['s3']);
 });

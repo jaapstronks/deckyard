@@ -46,6 +46,18 @@ export function notionEnabled() {
   return !!getNotionSecret();
 }
 
+/**
+ * The one sentence a Notion surface says when the integration is switched off.
+ *
+ * It lives next to the switch because both surfaces that report it need it:
+ * the 501 routes answer it as the envelope's `message`
+ * (`refuseNotionUnconfigured()` in `server/routes/api/notion/utils.js`) and the
+ * converter pushes it onto its report. Two spellings of one refusal is drift.
+ * @type {string}
+ */
+export const NOTION_NOT_CONFIGURED_MESSAGE =
+  'Notion is not configured. Set NOTION_SECRET on the server to enable this feature.';
+
 function notionHeaders() {
   return {
     Authorization: `Bearer ${getNotionSecret()}`,
