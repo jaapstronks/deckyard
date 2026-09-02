@@ -31,17 +31,8 @@ import {
   getUserIdByEmail,
 } from './utils/index.js';
 import { validateUsage } from '../../shared/slide-types/usage.js';
+import { validateCustomFieldDefinitions } from '../../shared/slide-types/custom-field-definitions.js';
 
-// Valid field types for custom slide types
-const VALID_FIELD_TYPES = [
-  'string',
-  'markdown',
-  'image',
-  'images',
-  'enum',
-  'items',
-];
-const MAX_FIELDS = 30;
 const MAX_LABEL_LEN = 255;
 
 const SELECT_COLUMNS = [
@@ -151,9 +142,9 @@ export async function createCustomSlideType(scope, data) {
     return { ok: false, reason: 'invalid', field: 'slug' };
   }
 
-  const fieldsResult = validateFields(data?.fields);
+  const fieldsResult = validateCustomFieldDefinitions(data?.fields);
   if (!fieldsResult.ok) {
-    return { ok: false, reason: 'invalid', field: 'fields' };
+    return invalidFields(fieldsResult.problem);
   }
 
   const baseType = data?.baseType ? String(data.baseType).trim() : null;
@@ -273,9 +264,9 @@ export async function updateCustomSlideType(scope, typeId, updates) {
     }
 
     if ('fields' in updates) {
-      const fieldsResult = validateFields(updates.fields);
+      const fieldsResult = validateCustomFieldDefinitions(updates.fields);
       if (!fieldsResult.ok) {
-        return { ok: false, reason: 'invalid', field: 'fields' };
+        return invalidFields(fieldsResult.problem);
       }
       updateData.fields = JSON.stringify(fieldsResult.fields);
     }
@@ -454,9 +445,6 @@ function formatRow(row, lookup = NO_DISPLAY_NAMES) {
 }
 
 /**
- * Validate a fields array. Each field must have key, type, label.
- */
-/**
  * The display names this batch of rows needs for its `created_by` addresses.
  * @param {Array<Object>} rows
  * @returns {Promise<import('./display-identity.js').DisplayNameLookup>}
@@ -465,53 +453,21 @@ function creatorNames(rows) {
   return resolveNamesForAddresses((rows || []).map((row) => row?.created_by));
 }
 
-function validateFields(fields) {
-  if (!Array.isArray(fields)) return { ok: false };
-  if (fields.length > MAX_FIELDS) return { ok: false };
-
-  const validated = [];
-  const keys = new Set();
-
-  for (const field of fields) {
-    if (!field || typeof field !== 'object') return { ok: false };
-
-    const key = String(field.key || '').trim();
-    const type = String(field.type || '').trim();
-    const label = String(field.label || '').trim();
-
-    if (!key || !type || !label) return { ok: false };
-    if (!VALID_FIELD_TYPES.includes(type)) return { ok: false };
-    if (keys.has(key)) return { ok: false }; // duplicate keys
-    keys.add(key);
-
-    const clean = { key, type, label };
-    if (field.required === true) clean.required = true;
-    if (typeof field.maxLength === 'number' && field.maxLength > 0)
-      clean.maxLength = field.maxLength;
-    if (typeof field.placeholder === 'string')
-      clean.placeholder = field.placeholder;
-    if (typeof field.helpText === 'string') clean.helpText = field.helpText;
-
-    if (type === 'enum') {
-      if (!Array.isArray(field.options) || field.options.length === 0)
-        return { ok: false };
-      clean.options = field.options;
-    }
-
-    if (type === 'items') {
-      if (!Array.isArray(field.itemFields) || field.itemFields.length === 0)
-        return { ok: false };
-      const sub = validateFields(field.itemFields);
-      if (!sub.ok) return { ok: false };
-      clean.itemFields = sub.fields;
-      if (typeof field.minItems === 'number') clean.minItems = field.minItems;
-      if (typeof field.maxItems === 'number') clean.maxItems = field.maxItems;
-    }
-
-    validated.push(clean);
-  }
-
-  return { ok: true, fields: validated };
+/**
+ * The `invalid` result for a rejected `fields[]`, carrying the located problem
+ * so the route can say which field is wrong instead of "Invalid field
+ * definitions." — the copy that made Save look like it did nothing (B200).
+ *
+ * @param {import('../../shared/slide-types/custom-field-definitions.js').FieldDefinitionProblem} problem
+ * @returns {{ok: false, reason: 'invalid', field: 'fields', fieldProblem: Object}}
+ */
+function invalidFields(problem) {
+  return {
+    ok: false,
+    reason: 'invalid',
+    field: 'fields',
+    fieldProblem: problem,
+  };
 }
 
 function sanitizeDefaults(defaults) {

@@ -6,11 +6,12 @@
 
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { toast } from '../../../lib/dom/toast.js';
 import { createFieldListEditor } from './field-editor.js';
 import { createTemplateHelp } from './template-help.js';
 import { createSlideTypePreview } from './preview.js';
+import { fieldProblemMessage } from './field-problem-copy.js';
 import { USAGE_MAX_LENGTH } from '../../../../shared/slide-types/usage.js';
+import { validateCustomFieldDefinitions } from '../../../../shared/slide-types/custom-field-definitions.js';
 
 /**
  * Generate a slug from a label.
@@ -131,6 +132,26 @@ export function createSlideTypeEditor({
     h('div', { class: 'row is-center gap-3' }, [backBtn, headerTitle]),
     headerActions,
   );
+
+  // The one place a refused save is reported. It sits beside Save and stays
+  // until the next attempt, because the failure this replaced was a toast in the
+  // far corner that had faded by the time anyone looked for it (B200) — and a
+  // refusal is a state of the form, not a passing notification.
+  const saveError = h('div', {
+    class: 'slide-type-editor-error',
+    role: 'alert',
+    hidden: true,
+  });
+
+  /**
+   * Show (or, with no message, clear) the editor-level save error.
+   * @param {string} [message]
+   */
+  function setSaveError(message) {
+    saveError.textContent = message || '';
+    saveError.hidden = !message;
+    if (message) saveError.scrollIntoView({ block: 'nearest' });
+  }
 
   // ============================================================
   // Left column: Form
@@ -506,37 +527,51 @@ export function createSlideTypeEditor({
   // ============================================================
   const main = h('div', { class: 'slide-type-editor-main' });
   main.append(formColumn, previewColumn);
-  container.append(header, main);
+  container.append(header, saveError, main);
 
   // ============================================================
   // Save handler
   // ============================================================
+  /**
+   * Refuse the save: say why beside the button, and put the cursor where the
+   * fix is. One shape for every refusal, local or from the API.
+   * @param {string} message
+   * @param {HTMLElement} [focusEl]
+   */
+  function refuseSave(message, focusEl) {
+    setSaveError(message);
+    focusEl?.focus();
+  }
+
   saveBtn.addEventListener('click', async () => {
+    setSaveError('');
+    fieldEditor.clearProblem();
+
     // Validate
     if (!state.label.trim()) {
-      toast.error(
+      refuseSave(
         t(
           'settings.slideTypes.errorNameRequired',
           'Slide type name is required.',
         ),
+        nameInput,
       );
-      nameInput.focus();
       return;
     }
 
     if (!isValidSlug(state.slug)) {
-      toast.error(
+      refuseSave(
         t(
           'settings.slideTypes.errorInvalidSlug',
           'Invalid slug. Use lowercase letters, numbers, and hyphens.',
         ),
+        slugInput,
       );
-      slugInput.focus();
       return;
     }
 
     if (state.fields.length === 0) {
-      toast.error(
+      refuseSave(
         t(
           'settings.slideTypes.errorFieldsRequired',
           'At least one field is required.',
@@ -545,17 +580,33 @@ export function createSlideTypeEditor({
       return;
     }
 
+    // The same rules the API applies, run here first so the answer can point at
+    // the offending row instead of arriving as one sentence about the whole
+    // list. The API check stays authoritative — this only shortens the loop.
+    const fieldsResult = validateCustomFieldDefinitions(state.fields);
+    if (!fieldsResult.ok) {
+      const message = fieldProblemMessage(fieldsResult.problem);
+      const row = fieldEditor.showProblem({
+        index: fieldsResult.problem.index,
+        itemIndex: fieldsResult.problem.itemIndex,
+        message,
+      });
+      refuseSave(message);
+      row?.scrollIntoView({ block: 'nearest' });
+      return;
+    }
+
     // Parse defaults if not yet parsed
     if (defaultsJson.trim()) {
       const parsed = tryParseJson(defaultsJson);
       if (!parsed) {
-        toast.error(
+        refuseSave(
           t(
             'settings.slideTypes.errorInvalidDefaults',
             'Defaults JSON is invalid.',
           ),
+          defaultsArea,
         );
-        defaultsArea.focus();
         return;
       }
       state.defaults = parsed;
@@ -580,6 +631,17 @@ export function createSlideTypeEditor({
 
     try {
       await onSave(data);
+    } catch (err) {
+      // `onSave` rejects with the API error; its message is the only account of
+      // why the save was refused, so it lands in the same place a local refusal
+      // does rather than disappearing into a console.
+      setSaveError(
+        err?.message ||
+          t(
+            'settings.slideTypes.errorSaveFailed',
+            'Could not save this slide type.',
+          ),
+      );
     } finally {
       saveBtn.disabled = false;
       cancelBtn.disabled = false;

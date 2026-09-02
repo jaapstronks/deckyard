@@ -32,6 +32,7 @@ import {
 } from '../../storage/custom-slide-types.js';
 import { SLIDE_TYPES } from '../../../shared/slide-types.js';
 import { USAGE_MAX_LENGTH } from '../../../shared/slide-types/usage.js';
+import { describeFieldProblem } from '../../../shared/slide-types/custom-field-definitions.js';
 import { SLIDE_TYPE_CATALOG } from '../../utils/ai/slide-catalog/definitions.js';
 import { canManage } from '../../utils/route-middleware.js';
 
@@ -51,6 +52,11 @@ const ERROR_MESSAGES = {
  * `field`, so the copy that used to hang off `invalid_id` / `invalid_name` /
  * `invalid_fields` hangs off the field name instead. The field also reaches the
  * client as `details.field`, which is more than the old suffix gave it.
+ *
+ * `fields` is the one entry with a sharper form available: the storage layer
+ * locates the offending definition and the message is composed from that
+ * problem instead (see {@link slideTypeError}). The generic line below is what
+ * a caller sees when the rejection carries no located problem.
  */
 const INVALID_FIELD_MESSAGES = {
   fields: 'Invalid field definitions.',
@@ -71,14 +77,15 @@ const INVALID_FIELD_MESSAGES = {
  * unavailable."* — into a 400.
  *
  * @param {import('node:http').ServerResponse} res
- * @param {{reason: string, field?: string}} result
+ * @param {{reason: string, field?: string, fieldProblem?: Object}} result
  * @returns {true}
  */
 function slideTypeError(res, result) {
   // No reason guard around the field lookup: `field` only ever rides on
   // `invalid`, and the vocabulary gate is what keeps that true.
-  const message =
-    INVALID_FIELD_MESSAGES[result.field] || ERROR_MESSAGES[result.reason];
+  const message = result.fieldProblem
+    ? describeFieldProblem(result.fieldProblem)
+    : INVALID_FIELD_MESSAGES[result.field] || ERROR_MESSAGES[result.reason];
   return storageError(res, result, message);
 }
 
