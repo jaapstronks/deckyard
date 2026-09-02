@@ -30,8 +30,13 @@ export function buildTemplateOptions(templateSelect, currentType) {
  * Build default locale selector options.
  * @param {HTMLSelectElement} defaultLocaleSelect - Select element
  * @param {Object} data - Template data from server
+ * @param {string} selectedLocale - Default locale the server holds
  */
-export function buildDefaultLocaleOptions(defaultLocaleSelect, data) {
+export function buildDefaultLocaleOptions(
+  defaultLocaleSelect,
+  data,
+  selectedLocale,
+) {
   defaultLocaleSelect.innerHTML = '';
   const locales = data?.supportedLocales || ['en'];
   for (const locale of locales) {
@@ -41,7 +46,7 @@ export function buildDefaultLocaleOptions(defaultLocaleSelect, data) {
     });
     defaultLocaleSelect.append(option);
   }
-  defaultLocaleSelect.value = data?.defaultLocale || 'en';
+  defaultLocaleSelect.value = selectedLocale;
 }
 
 /**
