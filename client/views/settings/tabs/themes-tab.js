@@ -6,6 +6,7 @@
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { api } from '../../../lib/api.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
 import {
@@ -101,11 +102,18 @@ export function createThemesTab({ user }) {
     workspaceSaveBtn,
   ]);
 
+  // A refused save of this card is a state of it, so it stays beside its Save
+  // until the next attempt (docs/reference/feedback-surfaces.md). The settings
+  // routes answer about the request as a whole — permission, a malformed body
+  // — and name no `details.field`, so there is no control to mark.
+  const workspaceError = createInlineError({ callout: true });
+
   workspaceCard.append(
     workspaceTitle,
     workspaceHint,
     defaultField,
     visibleField,
+    workspaceError.el,
     workspaceActions,
   );
 
@@ -162,6 +170,7 @@ export function createThemesTab({ user }) {
   });
 
   workspaceSaveBtn.addEventListener('click', async () => {
+    workspaceError.clear();
     workspaceSaveBtn.disabled = true;
     try {
       const checkedIds = [];
@@ -180,7 +189,7 @@ export function createThemesTab({ user }) {
       invalidateSettingsCache();
       toast.success(t('settings.saved', 'Saved.'));
     } catch (err) {
-      toast.error(err);
+      workspaceError.show(err.message);
     } finally {
       workspaceSaveBtn.disabled = false;
     }
@@ -550,31 +559,32 @@ export function createThemesTab({ user }) {
 
     editorInstance = createThemeEditor({
       theme,
+      // No catch here: a refusal of this save is a state of the editor's form,
+      // and the editor is what has a place to put it — beside its own Save,
+      // on the control `details.field` names. Rejecting is how it gets there
+      // (docs/reference/feedback-surfaces.md; the same shape as the slide-type
+      // editor's `onSave`).
       onSave: async (themeData) => {
-        try {
-          if (theme?.id) {
-            // Update existing
-            await api(`/api/themes/custom/${theme.id}`, {
-              method: 'PUT',
-              body: JSON.stringify(themeData),
-            });
-            // Drop the cached copy (here and in other tabs) so decks on this
-            // theme pick the change up without a reload.
-            invalidateTheme(theme.id);
-            toast.success(t('settings.themes.updateSuccess', 'Theme updated.'));
-          } else {
-            // Create new
-            await api('/api/themes/custom', {
-              method: 'POST',
-              body: JSON.stringify(themeData),
-            });
-            toast.success(t('settings.themes.createSuccess', 'Theme created.'));
-          }
-          await loadThemes();
-          closeEditor();
-        } catch (err) {
-          toast.error(err);
+        if (theme?.id) {
+          // Update existing
+          await api(`/api/themes/custom/${theme.id}`, {
+            method: 'PUT',
+            body: JSON.stringify(themeData),
+          });
+          // Drop the cached copy (here and in other tabs) so decks on this
+          // theme pick the change up without a reload.
+          invalidateTheme(theme.id);
+          toast.success(t('settings.themes.updateSuccess', 'Theme updated.'));
+        } else {
+          // Create new
+          await api('/api/themes/custom', {
+            method: 'POST',
+            body: JSON.stringify(themeData),
+          });
+          toast.success(t('settings.themes.createSuccess', 'Theme created.'));
         }
+        await loadThemes();
+        closeEditor();
       },
       onCancel: closeEditor,
     });

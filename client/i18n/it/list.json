@@ -315,7 +315,6 @@
   "slideLibrary.edit.nameRequired": "Inserire un nome.",
   "slideLibrary.edit.noEditableFields": "Questo tipo di slide non ha campi di testo modificabili.",
   "slideLibrary.edit.preview": "Anteprima",
-  "slideLibrary.edit.saveFailed": "Salvataggio della slide non riuscito.",
   "slideLibrary.edit.saved": "Slide salvata.",
   "slideLibrary.edit.title": "Modifica la slide",
   "slideLibrary.edit.tooltip": "Modifica il contenuto della slide",

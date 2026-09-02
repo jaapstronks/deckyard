@@ -308,6 +308,13 @@ export function createFontEditor({ fontFamily, onSave, onCancel, onDelete }) {
   updateSourcePanels();
 
   // ─── Save Handler ─────────────────────────────────────────
+
+  /** The input each `details.field` of an API refusal names. */
+  const controlFor = {
+    name: nameInput,
+    category: categorySelect,
+  };
+
   saveBtn.addEventListener('click', async () => {
     saveError.clear();
 
@@ -370,8 +377,12 @@ export function createFontEditor({ fontFamily, onSave, onCancel, onDelete }) {
       );
       if (onSave) onSave(result);
     } catch (err) {
-      toast.error(
+      // The same callout the local refusals above use: a refused save is a
+      // state of this form, and `/api/font-families` names the input it
+      // refused in `details.field` (docs/reference/api-error-format.md).
+      saveError.show(
         err.message || t('fonts.saveError', 'Failed to save font family.'),
+        { control: controlFor[err?.details?.field] || null },
       );
     } finally {
       saveBtn.disabled = false;

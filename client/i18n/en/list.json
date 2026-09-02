@@ -317,7 +317,6 @@
   "slideLibrary.edit.nameRequired": "Please enter a name.",
   "slideLibrary.edit.noEditableFields": "This slide type has no editable text fields.",
   "slideLibrary.edit.preview": "Preview",
-  "slideLibrary.edit.saveFailed": "Failed to save slide.",
   "slideLibrary.edit.saved": "Slide saved.",
   "slideLibrary.edit.title": "Edit slide",
   "slideLibrary.edit.tooltip": "Edit slide content",

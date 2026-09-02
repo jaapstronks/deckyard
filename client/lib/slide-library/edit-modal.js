@@ -5,6 +5,7 @@
 
 import { t } from '../ui-i18n.js';
 import { toast } from '../dom/toast.js';
+import { createInlineError } from '../dom/inline-error.js';
 import { createModal } from '../dom/modal.js';
 import { renderSlideElement } from '../slide-runtime/slide-render.js';
 import { contentLang } from './search.js';
@@ -237,7 +238,12 @@ export function openEditModal({
 
   // Footer with save button
   const footer = h('div', { class: 'ps-modal-footer' });
+  // `status` carries progress only ("Saving…"). A refusal is not progress: it
+  // is a state of this form, so it goes in the one element for that, beside
+  // Save and staying until the next attempt
+  // (docs/reference/feedback-surfaces.md).
   const status = h('div', { class: 'help modal-status', text: '' });
+  const saveError = createInlineError({ callout: true });
   const saveBtn = h('button', {
     class: 'btn btn-primary',
     type: 'button',
@@ -246,13 +252,13 @@ export function openEditModal({
 
   let saving = false;
   saveBtn.addEventListener('click', async () => {
+    saveError.clear();
     const name = String(workingName || '').trim();
     if (!name) {
-      status.textContent = t(
-        'slideLibrary.edit.nameRequired',
-        'Please enter a name.',
+      saveError.show(
+        t('slideLibrary.edit.nameRequired', 'Please enter a name.'),
+        { control: nameInput },
       );
-      nameInput.focus();
       return;
     }
 
@@ -276,18 +282,23 @@ export function openEditModal({
       }
       modal.close({ saved: true });
     } else {
-      status.textContent = String(
-        result.error?.message ||
-          result.error ||
-          t('common.saveFailed', 'Save failed'),
+      status.textContent = '';
+      // The server's sentence, not a generic replacement: `/api/slide-library`
+      // answers about the request as a whole and names no `details.field`, so
+      // the callout carries it without marking a control.
+      saveError.show(
+        String(
+          result.error?.message ||
+            result.error ||
+            t('common.saveFailed', 'Save failed'),
+        ),
       );
-      toast.error(t('slideLibrary.edit.saveFailed', 'Failed to save slide.'));
       saving = false;
       saveBtn.disabled = false;
     }
   });
 
-  footer.append(status, saveBtn);
+  footer.append(status, saveError.el, saveBtn);
 
   modal.show(document.body);
   // The footer is pinned below the scrolling body, so it sits next to

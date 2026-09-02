@@ -23,7 +23,13 @@ import {
  * @returns {Object} Action functions
  */
 export function createActions(state, elements, rebuildUI) {
-  const { previewContainer, previewFrame, defaultLocaleSelect } = elements;
+  const {
+    previewContainer,
+    previewFrame,
+    defaultLocaleSelect,
+    defaultLocaleError,
+    saveError,
+  } = elements;
 
   /**
    * Load template data from server.
@@ -46,6 +52,9 @@ export function createActions(state, elements, rebuildUI) {
    * @param {string} type - New template type
    */
   const onTemplateTypeChange = (type) => {
+    // The refusal named the form that is about to be replaced, so it goes with
+    // it — a message about the template you just left is worse than none.
+    saveError.clear();
     state.setCurrentType(type);
     rebuildUI();
     previewContainer.style.display = 'none';
@@ -56,6 +65,7 @@ export function createActions(state, elements, rebuildUI) {
    * @param {string} locale - New locale
    */
   const onLocaleChange = (locale) => {
+    saveError.clear();
     state.setCurrentLocale(locale);
     rebuildUI();
     previewContainer.style.display = 'none';
@@ -66,6 +76,7 @@ export function createActions(state, elements, rebuildUI) {
    */
   const onDefaultLocaleChange = async () => {
     const locale = defaultLocaleSelect.value;
+    defaultLocaleError.clear();
     try {
       state.setBusy(true);
       await updateEmailDefaultLocale(locale);
@@ -77,9 +88,12 @@ export function createActions(state, elements, rebuildUI) {
         { id: 'email-templates-save', durationMs: 2000 },
       );
     } catch (err) {
-      toast.error(err, { id: 'email-templates-save' });
       const data = state.getData();
       defaultLocaleSelect.value = data?.defaultLocale || 'en';
+      // The select is the control that was refused, and the value has just
+      // snapped back to what the server still holds — so the sentence belongs
+      // underneath it, not in a toast that leaves the reversal unexplained.
+      defaultLocaleError.show(err.message, { control: defaultLocaleSelect });
     } finally {
       state.setBusy(false);
     }
@@ -90,6 +104,7 @@ export function createActions(state, elements, rebuildUI) {
    */
   const onSave = async () => {
     if (state.isBusy()) return;
+    saveError.clear();
     const fields = state.getFormValues();
 
     try {
@@ -107,7 +122,10 @@ export function createActions(state, elements, rebuildUI) {
         { id: 'email-templates-save', durationMs: 2000 },
       );
     } catch (err) {
-      toast.error(err, { id: 'email-templates-save' });
+      // `rebuildUI()` rewrites the form inputs on every state change, so the
+      // refusal names the form as a whole rather than a control that may no
+      // longer be the one the user typed in.
+      saveError.show(err.message);
     } finally {
       state.setBusy(false);
     }

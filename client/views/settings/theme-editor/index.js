@@ -507,6 +507,16 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
 
     try {
       await onSave(themeData);
+    } catch (err) {
+      // `onSave` rejects with the API error; its sentence is the only account
+      // of why the save was refused, so it lands where a local refusal lands
+      // rather than in a toast the far corner of the screen swallows. `label`
+      // is the one `details.field` this form has a control for — the colour
+      // and font pickers are checked above before anything is sent, and a
+      // `slug` is derived server-side, so those keep the form-level callout.
+      saveError.show(err.message, {
+        control: err?.details?.field === 'label' ? nameInput : null,
+      });
     } finally {
       saveBtn.disabled = false;
       cancelBtn.disabled = false;

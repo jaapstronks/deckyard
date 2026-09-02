@@ -315,7 +315,6 @@
   "slideLibrary.edit.nameRequired": "Introduza um nome.",
   "slideLibrary.edit.noEditableFields": "Este tipo de diapositivo não tem campos de texto editáveis.",
   "slideLibrary.edit.preview": "Pré-visualização",
-  "slideLibrary.edit.saveFailed": "Não foi possível guardar o diapositivo.",
   "slideLibrary.edit.saved": "Diapositivo guardado.",
   "slideLibrary.edit.title": "Editar o diapositivo",
   "slideLibrary.edit.tooltip": "Editar o conteúdo do diapositivo",

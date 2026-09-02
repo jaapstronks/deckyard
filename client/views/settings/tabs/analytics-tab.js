@@ -6,6 +6,7 @@
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 import {
   fetchAppSettings,
   updateAppSettings,
@@ -462,7 +463,13 @@ export function createAnalyticsTab({ user }) {
     consentSection,
   ]);
 
-  container.append(title, description, cards, actions);
+  // A refused save is a state of this form, so it stays beside Save until the
+  // next attempt (docs/reference/feedback-surfaces.md). The settings routes
+  // answer about the request as a whole — permission, a malformed body — and
+  // name no `details.field`, so there is no control to mark.
+  const saveError = createInlineError({ callout: true });
+
+  container.append(title, description, cards, saveError.el, actions);
 
   let busy = false;
   let loaded = false;
@@ -501,6 +508,7 @@ export function createAnalyticsTab({ user }) {
 
   btnSave.addEventListener('click', async () => {
     if (busy) return;
+    saveError.clear();
     setBusy(true);
 
     try {
@@ -527,7 +535,7 @@ export function createAnalyticsTab({ user }) {
         durationMs: 1800,
       });
     } catch (e) {
-      toast.error(e, { id: 'settings-save' });
+      saveError.show(e.message);
     } finally {
       setBusy(false);
     }

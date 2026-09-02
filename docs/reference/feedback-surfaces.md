@@ -156,18 +156,20 @@ The primitive and the helper meet the rules above. The call sites do not yet:
 
 | Burndown                                                               | Count    | Item |
 | ---------------------------------------------------------------------- | -------- | ---- |
-| Refusals of the form on screen reported in a `toast.error`             | 13       | B204 |
+| Refusals of the form on screen reported in a `toast.error`             | 0        | B204 |
 | `catch` blocks that discard the server sentence for generic `t()` copy | 24       | B205 |
 | Background failures that expire in a toast                             | 10       | B206 |
 | Hand-rolled inline error classes (message idioms)                      | 19 files | B204 |
 
-The 16 local validations (a form that says no before anything is sent) are on
-the helper as of B204 PR 1; what the first row still counts is the API refusal
-caught in a save handler and toasted. What is left in the refuse-and-return
-allowlist after that PR is a different shape: a modal that refuses to open, a
-menu item, a card action, a file dropped on the canvas — an action with no
-form on screen, whose carrier _is_ `toast.error`. Not `toast.warning`: no
-kind maps to it, and the client has no call site for it.
+No refusal of a form on screen is toasted any more: the 16 local validations
+went to the helper in B204 PR 1, and the 13 API refusals caught in a save
+handler followed in PR 2. What is left of B204 is the last row — the files that
+still spell the message element by hand instead of reaching for
+`createInlineError()`. The `toast.error` calls left in the refuse-and-return
+allowlist are a different shape: a modal that refuses to open, a menu item, a
+card action, a file dropped on the canvas — an action with no form on screen,
+whose carrier _is_ `toast.error`. Not `toast.warning`: no kind maps to it, and
+the client has no call site for it.
 
 The counts are the allowlists in `tests/feedback-surfaces-guard.test.js`; each
 item lowers them and the test refuses a rise. Alongside: `toast.info` used as a

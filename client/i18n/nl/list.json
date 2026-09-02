@@ -317,7 +317,6 @@
   "slideLibrary.edit.nameRequired": "Vul een naam in.",
   "slideLibrary.edit.noEditableFields": "Dit slide-type heeft geen bewerkbare tekstvelden.",
   "slideLibrary.edit.preview": "Voorbeeld",
-  "slideLibrary.edit.saveFailed": "Kon slide niet opslaan.",
   "slideLibrary.edit.saved": "Slide opgeslagen.",
   "slideLibrary.edit.title": "Slide bewerken",
   "slideLibrary.edit.tooltip": "Inhoud van de slide bewerken",
