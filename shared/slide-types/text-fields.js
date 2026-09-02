@@ -187,16 +187,6 @@ export function textFieldSpecForType(type, slideTypes = SLIDE_TYPES) {
 }
 
 /**
- * Top-level translatable keys for a slide type.
- * @param {string} type - Slide type name
- * @param {Object} [slideTypes] - Slide-type registry (forks/tests override)
- * @returns {string[]}
- */
-export function translatableKeysForType(type, slideTypes = SLIDE_TYPES) {
-  return [...textFieldSpecForType(type, slideTypes).textKeys];
-}
-
-/**
  * Value at a `['rows', 0, 'blocks', 1, 'title']` path inside a slide content
  * object. Missing links yield `undefined` rather than throwing, so a call site
  * can ask the other language for a path its version does not have yet.

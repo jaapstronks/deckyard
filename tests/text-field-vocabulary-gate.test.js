@@ -179,10 +179,17 @@ test('the canonical module is the one that holds the vocabulary', () => {
 // both answered "machine value", which emptied 465 translated strings on the
 // CIIIC fork (#1040).
 
-/** The one spec member a re-implementation of the value rule would have to read. */
-const RULE_MEMBER = 'declaredKeys';
+/**
+ * The spec members a re-implementation of the rule would have to read. A
+ * faithful copy needs `declaredKeys`; a sloppy one gets by on `textKeys` plus
+ * a `typeof` — and calls a declared enum's string prose. Since this rule
+ * landed, no module outside the canonical one reads either, so both are
+ * gated: a consumer asks `isPerLanguageKey` / `perLanguageKeys` and walks
+ * `spec.items`, nothing else.
+ */
+const RULE_MEMBERS = /\b(declaredKeys|textKeys)\b/;
 
-test('only text-fields.js decides what an undeclared key is', () => {
+test('only text-fields.js decides what a content key is', () => {
   const found = [];
   for (const dir of SCAN_DIRS) {
     const abs = path.join(repoRoot, dir);
@@ -190,14 +197,15 @@ test('only text-fields.js decides what an undeclared key is', () => {
     for (const file of jsFiles(abs)) {
       const rel = path.relative(repoRoot, file).split(path.sep).join('/');
       if (rel === CANONICAL) continue;
-      if (fs.readFileSync(file, 'utf8').includes(RULE_MEMBER)) found.push(rel);
+      const m = fs.readFileSync(file, 'utf8').match(RULE_MEMBERS);
+      if (m) found.push(`${rel} (${m[1]})`);
     }
   }
   assert.deepEqual(
     found,
     [],
-    `These modules read \`${RULE_MEMBER}\` themselves, which is how a second ` +
-      'answer to "is this undeclared key prose" gets written. Call ' +
+    "These modules read the spec's key sets themselves, which is how a " +
+      'second answer to "is this content key prose" gets written. Call ' +
       `isPerLanguageKey / perLanguageKeys from ${CANONICAL} instead.`,
   );
 });

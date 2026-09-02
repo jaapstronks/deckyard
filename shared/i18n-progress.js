@@ -5,8 +5,8 @@
  * Shared, not server-only. It lived under `server/utils/translation-status.js`
  * while the only reader was the API; the editor chrome now asks the same
  * question ("how far along is the `de` version?"), and the answer may not be
- * computed twice with two spellings. Its one dependency,
- * `translatableKeysForType`, was already shared (B182/D72).
+ * computed twice with two spellings. Its one dependency, the text-field spec
+ * in `slide-types/text-fields.js`, was already shared (B182/D72).
  *
  * The counters are **derived, never stored**. A deck used to carry
  * `i18n.progress` — two NL/EN-shaped numbers written on every save — which is
