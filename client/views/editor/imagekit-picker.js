@@ -9,6 +9,8 @@ import {
   buildDocTag,
 } from './imagekit-picker/transform-utils.js';
 import { h } from '../../lib/dom.js';
+import { defaultLang } from '../../lib/format/i18n.js';
+import { getLangDisplayName } from '../../../shared/i18n-utils.js';
 
 export function openImageKitPicker({
   title = t('imagekit.title', 'ImageKit'),
@@ -24,6 +26,13 @@ export function openImageKitPicker({
 
   const unlockScroll = lockDocumentScroll();
   let closed = false;
+
+  // ImageKit stores a single ALT string per asset, so this picker seeds one
+  // language rather than the library's full map. Which one is not "English" by
+  // decree but the workspace's primary deck language — the first of the enabled
+  // subset (D72 #5); the label and the AI request both read it off that.
+  const seedLang = defaultLang();
+  const seedLangName = getLangDisplayName(seedLang);
 
   const modal = createModal({
     title,
@@ -347,7 +356,8 @@ export function openImageKitPicker({
       rows: 3,
       placeholder: t(
         'imagekit.alt.placeholder',
-        'ALT text (English, recommended)',
+        'ALT text ({lang}, recommended)',
+        { lang: seedLangName },
       ),
     });
     // Set value via property, not attribute (textarea doesn't use value attribute)
@@ -374,13 +384,13 @@ export function openImageKitPicker({
               description: cleanStr(selected?.name),
               tags: uniq(selected?.tags),
               photographer: '',
+              langs: [seedLang],
               context: context || null,
             }),
           });
           const a =
             resp?.alts && typeof resp.alts === 'object' ? resp.alts : {};
-          // For this project we treat ImageKit metadata as a single “seed” (English-first).
-          altTa.value = cleanStr(a?.['en-GB']) || cleanStr(a?.nl) || '';
+          altTa.value = cleanStr(a?.[seedLang]);
           statusLine.textContent = t('imagekit.alt.generated', 'Generated.');
         } catch (e) {
           statusLine.textContent = String(e?.message || e);
@@ -491,7 +501,7 @@ export function openImageKitPicker({
       h('div', { class: 'stack is-field' }, [
         h('div', {
           class: 'field-label',
-          text: t('imagekit.alt', 'ALT text (English)'),
+          text: t('imagekit.alt', 'ALT text ({lang})', { lang: seedLangName }),
         }),
         altTa,
         altKey

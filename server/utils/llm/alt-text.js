@@ -1,3 +1,8 @@
+import {
+  DEFAULT_SUPPORTED_DECK_LANGS,
+  TRANSLATION_LANG_LABELS,
+  normalizeLang,
+} from '../../../shared/i18n-utils.js';
 import { getLlmConfig } from './config.js';
 import { requestChatCompletionContent } from './index.js';
 import { extractJsonObject } from '../openai/json.js';
@@ -5,6 +10,28 @@ import { truncateForPrompt } from '../openai/prompt.js';
 import { resolveImageUrlForVisionInput } from './vision.js';
 import { ValidationError } from '../errors.js';
 import { LlmError } from './error.js';
+
+/**
+ * The languages one generation run writes, normalized onto the deck axis.
+ *
+ * The caller (the image library's alt panel) names the workspace's enabled
+ * subset, because that is the set of inputs on screen — D72 #5. Before B182
+ * fase 5 this was the hardcoded `nl` + `en-GB` pair, so a workspace running
+ * German got an empty German field back from a button labelled "generate".
+ * Off-axis codes are dropped rather than passed to the prompt; an empty result
+ * falls back to the shipped subset so the endpoint always answers something.
+ *
+ * @param {unknown} langs
+ * @returns {string[]}
+ */
+function resolveAltLangs(langs) {
+  const out = [];
+  for (const v of Array.isArray(langs) ? langs : []) {
+    const l = normalizeLang(v);
+    if (l && !out.includes(l)) out.push(l);
+  }
+  return out.length ? out : [...DEFAULT_SUPPORTED_DECK_LANGS];
+}
 
 function cleanTagList(tags) {
   const arr = Array.isArray(tags) ? tags : [];
@@ -21,8 +48,10 @@ export async function generateImageAltTexts({
   tags = [],
   photographer = '',
   context = null,
+  langs,
   vendor = 'openai',
 } = {}) {
+  const targetLangs = resolveAltLangs(langs);
   const url = String(imageUrl || '').trim();
   if (!url) {
     throw new ValidationError('imageUrl is required');
@@ -42,20 +71,25 @@ export async function generateImageAltTexts({
   const tg = cleanTagList(tags);
   const photo = truncateForPrompt(photographer || '', 120);
 
+  const shape = targetLangs.map((l) => `"${l}": "<alt text>"`).join(', ');
+  const naming = targetLangs
+    .map((l) => `natural ${TRANSLATION_LANG_LABELS[l]} for "${l}"`)
+    .join(', ');
+
   const system = [
     'You are an expert accessibility assistant.',
     'Write concise, accurate alt text so blind/visually impaired users can understand what is in the image.',
     'Return ONLY valid JSON. No markdown fences, no commentary.',
     '',
     'Output format MUST be exactly:',
-    '{ "nl": "<alt text>", "en-GB": "<alt text>" }',
+    `{ ${shape} }`,
     '',
     'Rules:',
     '- Keep each alt text short (usually 6–18 words).',
     '- Do not start with "Image of" / "Photo of" unless necessary for clarity.',
     '- If the image is decorative or contains no meaningful information, return empty strings.',
     '- If there is visible text, summarize it only if it is central and short.',
-    '- Use natural Dutch for "nl" and British English for "en-GB".',
+    `- Use ${naming}.`,
   ].join('\n');
 
   const userText = [
@@ -88,7 +122,12 @@ export async function generateImageAltTexts({
     model,
     temperature: 0.2,
     responseFormat: { type: 'json_object' },
-    maxTokens: 500,
+    // One short string per language plus its key, so a twelve-language run is
+    // not capped by a budget sized for the old fixed pair. (The
+    // OpenAI-compatible request transform drops `maxTokens` before it reaches
+    // the wire — a seam of its own, not this module's to fix; the value stated
+    // here is the one that holds the day it stops.)
+    maxTokens: 200 + 120 * targetLangs.length,
     messages: [
       { role: 'system', content: system },
       { role: 'user', content: userContent },
@@ -105,12 +144,15 @@ export async function generateImageAltTexts({
     });
   }
 
-  const nl = typeof obj.nl === 'string' ? obj.nl.trim() : '';
-  const enGb = typeof obj['en-GB'] === 'string' ? obj['en-GB'].trim() : '';
+  const alts = {};
+  for (const lang of targetLangs) {
+    const v = typeof obj[lang] === 'string' ? obj[lang].trim() : '';
+    alts[lang] = v.slice(0, 220);
+  }
 
   return {
-    nl: nl.slice(0, 220),
-    'en-GB': enGb.slice(0, 220),
+    alts,
+    langs: targetLangs,
     _meta: {
       usedVision: vision.type === 'data' || vision.type === 'remote',
       visionType: vision.type,

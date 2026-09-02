@@ -6,6 +6,7 @@ import {
   getAllTags,
   installTagsAutocomplete,
   createFieldWrap,
+  createAltLangInputs,
 } from './utils.js';
 import { h } from '../../../lib/dom.js';
 import { isOrganizationAdmin } from '../../../../shared/organization-role.js';
@@ -176,20 +177,10 @@ export function createImageLibraryDetail({
       value: String(it?.photographer || ''),
       disabled: !isEditable,
     });
-    const inAltNl = h('input', {
-      class: 'form-input',
-      value: String(alts?.nl || ''),
-      disabled: !isEditable,
-    });
-    const inAltEn = h('input', {
-      class: 'form-input',
-      value: String(alts?.['en-GB'] || ''),
-      disabled: !isEditable,
-    });
+    const altInputs = createAltLangInputs({ disabled: !isEditable });
+    altInputs.write(alts);
 
-    const altsAreEmpty = () =>
-      !String(inAltNl.value || '').trim() &&
-      !String(inAltEn.value || '').trim();
+    const altsAreEmpty = () => altInputs.isEmpty();
 
     const ensureAltBeforeUse = async () => {
       if (!altsAreEmpty()) return true;
@@ -209,22 +200,17 @@ export function createImageLibraryDetail({
               `/api/image-library/${it.id}/generate-alts`,
               {
                 method: 'POST',
-                body: JSON.stringify({ context: context || null }),
+                body: JSON.stringify({
+                  langs: altInputs.langs,
+                  context: context || null,
+                }),
               },
             );
-            const a =
-              resp?.alts && typeof resp.alts === 'object' ? resp.alts : {};
-            inAltNl.value = String(a?.nl || '');
-            inAltEn.value = String(a?.['en-GB'] || '');
+            altInputs.write(resp?.alts);
 
             const updated = await api(`/api/image-library/${it.id}`, {
               method: 'PUT',
-              body: JSON.stringify({
-                alts: {
-                  nl: String(inAltNl.value || ''),
-                  'en-GB': String(inAltEn.value || ''),
-                },
-              }),
+              body: JSON.stringify({ alts: altInputs.read() }),
             });
             onItemUpdated(updated);
             setStatus(t('imageLibrary.alt.generated', 'Generated.'));
@@ -254,25 +240,20 @@ export function createImageLibraryDetail({
           text: t('imageLibrary.alt.generate', 'Generate alt text (AI)'),
           onclick: async () => {
             try {
-              const overwriteOk =
-                String(inAltNl.value || '').trim() ||
-                String(inAltEn.value || '').trim()
-                  ? await confirmModal(document.body, {
-                      title: t(
-                        'imageLibrary.alt.overwriteTitle',
-                        'Overwrite alt text',
-                      ),
-                      message: t(
-                        'imageLibrary.alt.overwriteConfirm',
-                        'Overwrite existing alt text with AI-generated text?',
-                      ),
-                      confirmLabel: t(
-                        'imageLibrary.alt.overwrite',
-                        'Overwrite',
-                      ),
-                      danger: true,
-                    })
-                  : true;
+              const overwriteOk = !altInputs.isEmpty()
+                ? await confirmModal(document.body, {
+                    title: t(
+                      'imageLibrary.alt.overwriteTitle',
+                      'Overwrite alt text',
+                    ),
+                    message: t(
+                      'imageLibrary.alt.overwriteConfirm',
+                      'Overwrite existing alt text with AI-generated text?',
+                    ),
+                    confirmLabel: t('imageLibrary.alt.overwrite', 'Overwrite'),
+                    danger: true,
+                  })
+                : true;
               if (!overwriteOk) return;
               setBusy(true);
               setStatus(
@@ -282,13 +263,13 @@ export function createImageLibraryDetail({
                 `/api/image-library/${it.id}/generate-alts`,
                 {
                   method: 'POST',
-                  body: JSON.stringify({ context: context || null }),
+                  body: JSON.stringify({
+                    langs: altInputs.langs,
+                    context: context || null,
+                  }),
                 },
               );
-              const a =
-                resp?.alts && typeof resp.alts === 'object' ? resp.alts : {};
-              inAltNl.value = String(a?.nl || '');
-              inAltEn.value = String(a?.['en-GB'] || '');
+              altInputs.write(resp?.alts);
               setStatus(t('imageLibrary.alt.generated', 'Generated.'));
             } catch (e) {
               setStatus(String(e?.message || e));
@@ -349,10 +330,7 @@ export function createImageLibraryDetail({
                   description: inDescription.value || '',
                   tags: tagsArr,
                   photographer: inPhotographer.value || '',
-                  alts: {
-                    nl: inAltNl.value || '',
-                    'en-GB': inAltEn.value || '',
-                  },
+                  alts: altInputs.read(),
                 }),
               });
               onItemUpdated(updated);
@@ -526,14 +504,7 @@ export function createImageLibraryDetail({
             t('imageLibrary.photographer.label', 'Photographer'),
             inPhotographer,
           ),
-          createFieldWrap(
-            t('imageLibrary.altNl.label', 'Alt text (NL)'),
-            inAltNl,
-          ),
-          createFieldWrap(
-            t('imageLibrary.altEn.label', 'Alt text (EN)'),
-            inAltEn,
-          ),
+          ...altInputs.fields,
         ]),
         tagsDatalist,
         inputReplace,

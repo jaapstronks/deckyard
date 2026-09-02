@@ -1,4 +1,7 @@
 import { h } from '../../../lib/dom.js';
+import { t } from '../../../lib/ui-i18n.js';
+import { getSupportedLangs } from '../../../lib/format/i18n.js';
+import { getLangDisplayName } from '../../../../shared/i18n-utils.js';
 
 /** Slide aspect ratio (16:9) */
 const SLIDE_ASPECT_RATIO = 16 / 9;
@@ -167,4 +170,66 @@ export function createFieldWrap(label, control, opts = {}) {
     control,
     helpText ? h('div', { class: 'help', text: helpText }) : null,
   ]);
+}
+
+/**
+ * One alt-text input per enabled deck language.
+ *
+ * The library is a workspace-level store, so its alt map is keyed by the
+ * workspace's enabled subset (`getSupportedLangs()`) rather than by the
+ * versions of one deck — D72 #5. Before B182 fase 5 both call sites hardcoded
+ * a Dutch and an English input, which is why a workspace running German or
+ * Finnish could store `alts.de` through the API but never type one.
+ *
+ * The returned handle owns the whole set: `fields` renders it, `read()` builds
+ * the `alts` payload for the API, `write()` fills it from a response, and
+ * `isEmpty()` answers the "no alt text yet" prompts.
+ *
+ * @param {Object} [opts]
+ * @param {boolean} [opts.disabled] - render the inputs read-only
+ * @param {boolean} [opts.asPlaceholder] - label inside the input instead of above it
+ * @returns {{
+ *   langs: string[],
+ *   fields: HTMLElement[],
+ *   read: () => Record<string, string>,
+ *   write: (alts: Object|null|undefined) => void,
+ *   isEmpty: () => boolean,
+ * }}
+ */
+export function createAltLangInputs({
+  disabled = false,
+  asPlaceholder = false,
+} = {}) {
+  const langs = getSupportedLangs();
+  const inputs = new Map();
+  const fields = [];
+
+  for (const lang of langs) {
+    const label = t('imageLibrary.alt.langLabel', 'Alt text ({lang})', {
+      lang: getLangDisplayName(lang),
+    });
+    const input = h('input', {
+      class: 'form-input',
+      disabled,
+      ...(asPlaceholder ? { placeholder: label } : {}),
+    });
+    inputs.set(lang, input);
+    fields.push(asPlaceholder ? input : createFieldWrap(label, input));
+  }
+
+  const valueOf = (lang) => String(inputs.get(lang)?.value || '');
+
+  return {
+    langs,
+    fields,
+    read: () => Object.fromEntries(langs.map((l) => [l, valueOf(l)])),
+    write: (alts) => {
+      const map = alts && typeof alts === 'object' ? alts : {};
+      for (const lang of langs) {
+        const input = inputs.get(lang);
+        if (input) input.value = String(map?.[lang] || '');
+      }
+    },
+    isEmpty: () => langs.every((l) => !valueOf(l).trim()),
+  };
 }

@@ -94,9 +94,10 @@ async function handleGenerateAltsPreview({ repoRoot, req, res, authedUser }) {
     tags: body?.tags || [],
     photographer: body?.photographer || '',
     context: body?.context || null,
+    langs: body?.langs,
     vendor: 'openai',
   });
-  serveJson(res, 200, { alts: { nl: out.nl, 'en-GB': out['en-GB'] } });
+  serveJson(res, 200, { alts: out.alts });
   return true;
 }
 
@@ -142,9 +143,10 @@ async function handleItemGenerateAlts(
     tags: item.tags || [],
     photographer: item.photographer || '',
     context: body?.context || null,
+    langs: body?.langs,
     vendor: 'openai',
   });
-  serveJson(res, 200, { alts: { nl: out.nl, 'en-GB': out['en-GB'] } });
+  serveJson(res, 200, { alts: out.alts });
   return true;
 }
 

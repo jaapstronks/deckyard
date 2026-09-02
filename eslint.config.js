@@ -500,21 +500,17 @@ const deckLangLiteralRestriction = {
 // literal, so a file that is cleaned up cannot quietly stay exempt.
 //
 // Two reasons appear, and only two:
-//   * *bilingual chrome* — the paired alt-text inputs of the image library.
-//     Widening these to N languages is a UI design job, not a rename: B182
-//     fase 5. (The editor's NL⇄EN toggle is gone — it is a language menu over
-//     every version the deck has since fase 2 — the translate modals name
-//     their source and target off the axis since fase 3, and the public
-//     viewer, the embed and the follow codes follow the deck's versions since
-//     fase 4.)
 //   * *UI-locale axis* — `'nl'` there is a locale directory
 //     (`client/i18n/nl/`), a different vocabulary that shares a spelling.
+//   * *the axis↔locale seam* — a module that names `en-GB` precisely because
+//     it is the one code the two axes spell differently.
+//
+// B182 is closed: the editor's NL⇄EN toggle is a language menu over every
+// version the deck has (fase 2), the translate modals name their source and
+// target off the axis (fase 3), the public viewer, the embed and the follow
+// codes follow the deck's versions (fase 4), and the image library's alt panel
+// renders one input per enabled language (fase 5).
 const deckLangLiteralAllowlist = [
-  // bilingual chrome (B182)
-  'client/views/editor/image-library/detail.js',
-  'client/views/editor/image-library/upload.js',
-  'client/views/editor/imagekit-picker.js',
-  'client/views/editor/media/apply-pick.js',
   // the axis↔locale seam: these name `en-GB` precisely because it is the one
   // code the two axes spell differently
   'client/views/follow/i18n.js',
