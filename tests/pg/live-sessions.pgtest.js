@@ -34,6 +34,7 @@ import {
   findMostRecentSessionForPresentation,
   touchLiveSession,
 } from '../../server/storage/live-sessions/sessions.js';
+import { DEFAULT_DECK_LANG } from '../../shared/i18n-utils.js';
 import { getFollowStateForPresentation } from '../../server/storage/live-sessions/follow-state.js';
 import { updateLiveSessionState } from '../../server/storage/live-sessions/sse.js';
 import { setLiveSessionControlEnabled } from '../../server/storage/live-sessions/control.js';
@@ -96,7 +97,11 @@ pgDescribe('live-session storage (real PostgreSQL)', () => {
     assert.equal(typeof row.state, 'object');
     assert.equal(row.state.slideIndex, 0);
     assert.deepEqual(row.follow_codes, created.followCodes);
-    assert.equal(Object.keys(created.followCodes).length, 2, 'nl + en minted');
+    // One code per language version the deck has, keyed by deck language
+    // (B182/D72 #6). This deck carries no version block, so it has one
+    // language and gets one code — a fixed pair would advertise a version it
+    // cannot serve.
+    assert.deepEqual(Object.keys(created.followCodes), [DEFAULT_DECK_LANG]);
     assert.ok(
       row.follow_codes_created_at,
       'the follow-code age survives a restart',
