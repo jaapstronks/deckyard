@@ -96,7 +96,11 @@ export function createOptionalBearerHeaders(apiKey) {
 }
 
 /**
- * Standard request transformer for OpenAI-compatible APIs
+ * Standard request transformer for OpenAI-compatible APIs.
+ *
+ * `maxTokens` is only sent when a caller supplies a positive budget; an
+ * absent budget stays absent so the model's own default applies.
+ *
  * @param {Object} params - Request parameters
  * @returns {Object} Request body
  */
@@ -104,14 +108,45 @@ export function transformOpenAiCompatibleRequest({
   model,
   temperature = 0.2,
   responseFormat,
+  maxTokens,
   messages = [],
 }) {
+  const budget = Number(maxTokens);
+  const hasBudget = Number.isFinite(budget) && budget > 0;
+
   return {
     model,
     ...(supportsSampling(model) ? { temperature } : {}),
+    ...(hasBudget ? { [maxTokensField(model)]: Math.floor(budget) } : {}),
     ...(responseFormat ? { response_format: responseFormat } : {}),
     messages,
   };
+}
+
+/**
+ * The wire field a model expects for the output-token budget.
+ *
+ * OpenAI deprecated `max_tokens` for chat completions and its reasoning
+ * models reject it outright with `400 unsupported_parameter`, the same
+ * fail-the-request shape as the temperature guard below. Every other
+ * OpenAI-compatible server we target (Mistral, DeepSeek, Ollama, vLLM,
+ * Together, Groq) implements `max_tokens` and does not reliably know
+ * `max_completion_tokens` — sending the new spelling there would put the
+ * budget back on the floor, which is the bug this exists to close.
+ *
+ * So the field name is chosen per model, and exactly one is ever sent.
+ * The split is deliberately wider than `supportsSampling()`: the whole
+ * gpt-5 line requires `max_completion_tokens`, while temperature only
+ * disappeared from gpt-5.5 up. Two deprecations, two boundaries.
+ *
+ * @param {string} model - Model identifier
+ * @returns {'max_tokens'|'max_completion_tokens'}
+ */
+function maxTokensField(model) {
+  // gpt-5 and up, any gpt-NN, and the o-series reasoning models.
+  return /^(gpt-[5-9]|gpt-\d{2}|o[1-9])/i.test(String(model || ''))
+    ? 'max_completion_tokens'
+    : 'max_tokens';
 }
 
 /**

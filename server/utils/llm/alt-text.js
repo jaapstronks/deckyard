@@ -123,10 +123,7 @@ export async function generateImageAltTexts({
     temperature: 0.2,
     responseFormat: { type: 'json_object' },
     // One short string per language plus its key, so a twelve-language run is
-    // not capped by a budget sized for the old fixed pair. (The
-    // OpenAI-compatible request transform drops `maxTokens` before it reaches
-    // the wire — a seam of its own, not this module's to fix; the value stated
-    // here is the one that holds the day it stops.)
+    // not capped by a budget sized for the old fixed pair.
     maxTokens: 200 + 120 * targetLangs.length,
     messages: [
       { role: 'system', content: system },
