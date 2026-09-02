@@ -334,31 +334,22 @@ export function openImageLibraryPicker({
 
   sectionHeader.append(sectionTitle, sectionCount);
 
-  // Toolbar with search and upload button
+  // Toolbar with search. There used to be a "+ Upload" button here that did
+  // nothing but scroll to the upload panel at the bottom; with that panel now
+  // first, the shortcut has nothing left to point at (B210).
   const toolbar = h('div', { class: 'media-lib-toolbar' });
   const searchWrap = h('div', { class: 'media-lib-search-wrap' });
   searchWrap.append(gridComponent.searchField);
-
-  const uploadBtn = uploadsDisabled
-    ? null
-    : h('button', {
-        class: 'btn btn-primary',
-        text: t('imageLibrary.upload', '+ Upload'),
-        onclick: () => {
-          // Scroll to upload section
-          uploadComponent.el.scrollIntoView({ behavior: 'smooth' });
-        },
-      });
-
   toolbar.append(searchWrap);
-  if (uploadBtn) toolbar.append(uploadBtn);
 
-  // Assemble library view
+  // Assemble library view — upload first, then search and the grid. Uploading
+  // is the most common reason this modal opens, and it used to sit under the
+  // whole thumbnail grid.
   libraryView.append(
+    uploadComponent.el,
     toolbar,
     sectionHeader,
     gridComponent.grid,
-    uploadComponent.el,
   );
 
   // Handle external section clicks (Unsplash/Giphy)

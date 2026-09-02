@@ -85,11 +85,16 @@ export async function uploadFile(api, file) {
 }
 
 /**
- * Creates the image library upload component with improved UX
- * - Large drag-and-drop zone for easy uploads
- * - Metadata fields only shown after image is uploaded
+ * Creates the image library upload component.
+ *
+ * - Drag-and-drop zone and URL field side by side, both visible from the start
+ * - Metadata fields only shown after an image is picked
+ *
+ * The picker mounts this at the *top* of the library view (B210): uploading is
+ * the common way into the modal, so it must not cost a scroll past the grid.
+ *
  * @param {Object} options - Component options
- * @returns {Object} Upload component API
+ * @returns {{el: HTMLElement}} Upload component API
  */
 export function createImageLibraryUpload({
   api,
@@ -146,7 +151,7 @@ export function createImageLibraryUpload({
 
   // Dropzone - the main upload area
   const dropzoneIcon = h('div', { class: 'image-lib-dropzone-icon' }, [
-    icon('upload', { size: 32 }),
+    icon('upload', { size: 24 }),
   ]);
   const dropzoneText = h('div', {
     class: 'image-lib-dropzone-text',
@@ -159,8 +164,10 @@ export function createImageLibraryUpload({
 
   const dropzone = h('div', { class: 'image-lib-dropzone' }, [
     dropzoneIcon,
-    dropzoneText,
-    dropzoneHint,
+    h('div', { class: 'image-lib-dropzone-copy' }, [
+      dropzoneText,
+      dropzoneHint,
+    ]),
   ]);
 
   // Preview section (hidden initially)
@@ -181,7 +188,9 @@ export function createImageLibraryUpload({
     [btnChangeImage],
   );
 
-  // URL input as alternative (collapsible)
+  // URL input as the alternative source. It sits beside the dropzone rather
+  // than behind a toggle: a toggle that opens a field below the fold reads as
+  // a broken button (B210).
   const inputUrl = h('input', {
     class: 'form-input',
     placeholder: t(
@@ -189,28 +198,12 @@ export function createImageLibraryUpload({
       'Paste URL (e.g. /uploads/image.jpg)',
     ),
   });
-  const urlToggle = h('button', {
-    class: 'image-lib-url-toggle',
-    text: t('imageLibrary.useUrl', 'Or use existing URL'),
-    type: 'button',
-  });
-  const urlSection = h(
-    'div',
-    { class: 'image-lib-url-section', hidden: true },
-    [
-      createFieldWrap(
-        t('imageLibrary.upload.url.label', 'Image URL'),
-        inputUrl,
-      ),
-    ],
-  );
 
-  urlToggle.addEventListener('click', () => {
-    urlSection.hidden = !urlSection.hidden;
-    urlToggle.textContent = urlSection.hidden
-      ? t('imageLibrary.useUrl', 'Or use existing URL')
-      : t('imageLibrary.hideUrl', 'Hide URL field');
-  });
+  // Both ways in, on one row. Hidden as a unit once a *file* is uploaded.
+  const entryRow = h('div', { class: 'image-lib-entry' }, [
+    dropzone,
+    createFieldWrap(t('imageLibrary.upload.url.label', 'Image URL'), inputUrl),
+  ]);
 
   // Metadata section (hidden until image uploaded)
   const inDescription = h('input', {
@@ -414,17 +407,43 @@ export function createImageLibraryUpload({
     [btnCreate, btnUseOnly],
   );
 
-  // Show uploaded state
-  const showUploadedState = (url) => {
+  /**
+   * Show the picked-image state.
+   *
+   * `fromUrl` decides whether the entry row collapses. A file upload replaces
+   * it with a preview plus "Change image"; a pasted URL must not, because the
+   * caret is in that very field and every keystroke lands here — pulling the
+   * input out from under the user mid-typing is how the old toggle-less path
+   * would have broken.
+   *
+   * @param {string} url - The picked image URL
+   * @param {{fromUrl?: boolean}} [opts] - Source of the URL
+   */
+  const showUploadedState = (url, { fromUrl = false } = {}) => {
     newUrl = url;
     previewImg.src = url;
-    dropzone.hidden = true;
-    urlToggle.hidden = true;
-    urlSection.hidden = true;
+    entryRow.hidden = !fromUrl;
+    changeImageRow.hidden = fromUrl;
     previewWrap.hidden = false;
-    changeImageRow.hidden = false;
     metadataSection.hidden = false;
     actionsSection.hidden = false;
+    if (!fromUrl) {
+      // The panel now sits above the grid, so its own tail can fall below the
+      // fold: bring the Save/Use buttons into view rather than leave the user
+      // hunting for them. `nearest` scrolls the minimum needed, or not at all.
+      actionsSection.scrollIntoView({ block: 'nearest' });
+    }
+  };
+
+  /** Back to "nothing picked yet" — only the URL path can undo a pick. */
+  const clearUploadedState = () => {
+    newUrl = '';
+    previewImg.removeAttribute('src');
+    entryRow.hidden = false;
+    changeImageRow.hidden = true;
+    previewWrap.hidden = true;
+    metadataSection.hidden = true;
+    actionsSection.hidden = true;
   };
 
   // Handle file upload
@@ -469,24 +488,23 @@ export function createImageLibraryUpload({
     }
   });
 
-  // URL input - show preview when valid URL entered
+  // URL input - show preview when valid URL entered, and take it back when the
+  // field is emptied again (the field stays on screen now, so clearing it is a
+  // move the user can actually make).
   inputUrl.addEventListener('input', () => {
     const url = String(inputUrl.value || '').trim();
     if (url && (url.startsWith('/') || url.startsWith('http'))) {
-      showUploadedState(url);
+      showUploadedState(url, { fromUrl: true });
+    } else if (newUrl) {
+      clearUploadedState();
     }
   });
 
-  // Assemble component
+  // Assemble component. No "Add new" heading here: this block is the first
+  // thing in the modal below its own title, and the dropzone says what it is.
   addWrap.append(
-    h('div', {
-      class: 'field-label',
-      text: t('imageLibrary.addNew', 'Add new'),
-    }),
     inputFile,
-    dropzone,
-    urlToggle,
-    urlSection,
+    entryRow,
     previewWrap,
     changeImageRow,
     metadataSection,
