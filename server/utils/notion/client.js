@@ -71,7 +71,7 @@ export async function notionFetchJson(
   { method = 'GET', body = null } = {},
 ) {
   if (!notionEnabled()) {
-    throw new AppError('Notion is not configured', 501);
+    throw new AppError(NOTION_NOT_CONFIGURED_MESSAGE, 501);
   }
 
   // Apply rate limiting before making request
