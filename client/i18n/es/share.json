@@ -40,7 +40,6 @@
   "share.erase.tooltip": "Borrar el historial de visualización registrado para este dispositivo",
   "share.error.expired": "Enlace caducado",
   "share.error.expiredHelp": "Este enlace compartido ha caducado.",
-  "share.error.generic": "Error",
   "share.error.genericHelp": "Algo ha ido mal al cargar este enlace compartido.",
   "share.error.invalidPassword": "Contraseña incorrecta",
   "share.error.invalidPasswordHelp": "La contraseña que ha introducido no es correcta.",

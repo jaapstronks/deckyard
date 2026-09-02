@@ -271,9 +271,9 @@ bodies is a second place the contract can drift from `docs/openapi.yaml`.
 5. Add labels to **both** Tier-1 locales: `client/i18n/en/slide-types.json` and
    `client/i18n/nl/slide-types.json` (`npm test` fails if either drifts)
 6. Materialize and translate them: `node scripts/i18n-fill.js --apply en`, then
-   `node scripts/i18n-fill.js nl --json`. The other ten locales are Tier 2:
-   they fall back to English until someone translates them, and `i18n:sync`
-   seeds them with the English string so the gap is visible. See
+   `node scripts/i18n-fill.js nl --json`. The other ten locales are Tier 2 and
+   need nothing: they fall back to the English until someone translates them,
+   and copying the English in is a gate failure, not a placeholder. See
    [i18n.md](i18n.md) and `docs/reference/i18n-locale-tiers.md`
 
 ### New API Endpoint
@@ -288,9 +288,9 @@ bodies is a second place the contract can drift from `docs/openapi.yaml`.
 1. Add keys to appropriate module in `client/i18n/en/*.json`
 2. Materialize English mechanically and translate Dutch (both Tier 1 and
    gated): `node scripts/i18n-fill.js --apply en`, then
-   `node scripts/i18n-fill.js nl --json`. The other ten locales are Tier 2:
-   they fall back to English until someone translates them, and `i18n:sync`
-   seeds them with the English string so the gap is visible. See
+   `node scripts/i18n-fill.js nl --json`. The other ten locales are Tier 2 and
+   need nothing: they fall back to the English until someone translates them,
+   and copying the English in is a gate failure, not a placeholder. See
    [i18n.md](i18n.md) and `docs/reference/i18n-locale-tiers.md`
 3. Run `npm test` — the i18n gates (coverage, duplicates, module homes,
    empty values, placeholders) run as part of the suite

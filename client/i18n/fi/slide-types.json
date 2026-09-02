@@ -4,7 +4,6 @@
   "slideType.chart-slide.field.chartType.option.bar.label": "Pylväs",
   "slideType.chart-slide.field.chartType.option.line.label": "Viiva",
   "slideType.chart-slide.field.chartType.option.pie.label": "Ympyrä",
-  "slideType.chart-slide.field.data.label": "Data (CSV/TSV)",
   "slideType.chart-slide.field.pieLabelMode.label": "Piirakan tunnisteet",
   "slideType.chart-slide.field.pieLabelMode.option.both.label": "Molemmat",
   "slideType.chart-slide.field.pieLabelMode.option.none.label": "Ei mitään",
@@ -41,13 +40,10 @@
   "slideType.countdown-slide.field.soundOnZero.option.on.label": "Päällä",
   "slideType.countdown-slide.field.zeroText.label": "Teksti nollassa",
   "slideType.countdown-slide.label": "Lähtölaskenta",
-  "slideType.custom-html-slide.field.css.label": "CSS",
-  "slideType.custom-html-slide.field.html.label": "HTML",
   "slideType.custom-html-slide.label": "Mukautettu HTML",
   "slideType.cycle-slide.field.centerLabel.label": "Keskitunniste",
   "slideType.cycle-slide.label": "Sykli",
   "slideType.embed-slide.field.aspectRatio.label": "Kuvasuhde",
-  "slideType.embed-slide.field.aspectRatio.option.auto.label": "Auto",
   "slideType.embed-slide.field.embedUrl.label": "Upotuksen URL-osoite (vain HTTPS)",
   "slideType.embed-slide.field.sandbox.label": "Hiekkalaatikkotila",
   "slideType.embed-slide.field.sandbox.option.permissive.label": "Salliva",
@@ -106,7 +102,6 @@
   "slideType.kpi-metrics-slide.field.metrics.item.unit.label": "Yksikko",
   "slideType.kpi-metrics-slide.field.metrics.item.value.label": "Arvo",
   "slideType.kpi-metrics-slide.field.metrics.label": "Mittarit",
-  "slideType.kpi-metrics-slide.label": "KPI",
   "slideType.likert-slide.field.options.item.text.label": "Tunniste",
   "slideType.likert-slide.field.options.label": "Asteikon tunnisteet",
   "slideType.likert-slide.field.question.label": "Kysymys",
@@ -215,6 +210,5 @@
   "slideType.video-slide.field.autoplay.option.on.label": "Päällä",
   "slideType.video-slide.field.bunnyLibraryId.label": "Bunny-kirjaston ID",
   "slideType.video-slide.field.source.label": "Videon URL tai Bunny ID (YouTube/Vimeo URL, Bunny embed URL tai Bunny video UUID)",
-  "slideType.video-slide.field.watchUrl.label": "Katselulinkki PDF-vientiin",
-  "slideType.video-slide.label": "Video"
+  "slideType.video-slide.field.watchUrl.label": "Katselulinkki PDF-vientiin"
 }
