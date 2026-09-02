@@ -15,7 +15,8 @@ import {
  * @param {string} options.label - Field label
  * @param {string} options.value - Initial hex color value
  * @param {Function} options.onChange - Change callback
- * @returns {Object} { el, getValue, setValue }
+ * @returns {Object} { el, control, getValue, setValue } - `control` is the hex
+ *   field: the input a refusal of this colour names (`aria-invalid`, focus).
  */
 export function createColorPicker({ label, value, onChange }) {
   const container = h('div', { class: 'theme-color-picker' });
@@ -84,6 +85,7 @@ export function createColorPicker({ label, value, onChange }) {
 
   return {
     el: container,
+    control: textInput,
     getValue: () => textInput.value,
     setValue: (v) => {
       const normalized = normalizeHex(v);

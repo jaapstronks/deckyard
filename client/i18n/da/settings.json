@@ -3,7 +3,6 @@
   "admin.jsonDebug.copy": "Kopiér JSON",
   "admin.jsonDebug.copyFailed": "Kopieringen mislykkedes",
   "admin.jsonDebug.copySchema": "Kopiér skema",
-  "admin.jsonDebug.error.invalidJson": "Ugyldig JSON: {message}",
   "admin.jsonDebug.error.missingFields": "Sliden skal have id og type",
   "admin.jsonDebug.format": "Formatér",
   "admin.jsonDebug.menuItem": "Vis JSON (debug)",

@@ -3,7 +3,6 @@
   "admin.jsonDebug.copy": "Kopier JSON",
   "admin.jsonDebug.copyFailed": "Kopieringen mislyktes",
   "admin.jsonDebug.copySchema": "Kopier skjemaet",
-  "admin.jsonDebug.error.invalidJson": "Ugyldig JSON: {message}",
   "admin.jsonDebug.error.missingFields": "Lysbildet må ha id og type",
   "admin.jsonDebug.format": "Formater",
   "admin.jsonDebug.menuItem": "Vis JSON (feilsøking)",

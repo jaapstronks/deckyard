@@ -6,7 +6,7 @@
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { api } from '../../../lib/api.js';
-import { toast } from '../../../lib/dom/toast.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 import {
   isValidHexColor,
   deriveColorPalette,
@@ -66,6 +66,9 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
     text: t('common.save', 'Save'),
   });
   headerActions.append(cancelBtn, saveBtn);
+
+  // The refusal of this form, beside Save (docs/reference/feedback-surfaces.md).
+  const saveError = createInlineError({ callout: true });
 
   header.append(
     h('div', { class: 'row is-center gap-3' }, [backBtn, headerTitle]),
@@ -440,34 +443,38 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
   main.append(formColumn, previewColumn);
 
   // Assemble container
-  container.append(header, main);
+  container.append(header, saveError.el, main);
 
   // ============================================================
   // Save Handler
   // ============================================================
   saveBtn.addEventListener('click', async () => {
+    saveError.clear();
+
     // Validate
     if (!state.label.trim()) {
-      toast.error(
+      saveError.show(
         t('settings.themes.errorNameRequired', 'Theme name is required.'),
+        { control: nameInput },
       );
-      nameInput.focus();
       return;
     }
 
     if (!isValidHexColor(state.colors.primary)) {
-      toast.error(
+      saveError.show(
         t('settings.themes.errorInvalidPrimary', 'Invalid primary color.'),
+        { control: primaryPicker.control },
       );
       return;
     }
 
     if (!isValidHexColor(state.colors.background)) {
-      toast.error(
+      saveError.show(
         t(
           'settings.themes.errorInvalidBackground',
           'Invalid background color.',
         ),
+        { control: bgPicker.control },
       );
       return;
     }

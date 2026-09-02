@@ -5,6 +5,7 @@ import {
 } from '../../../../shared/slide-types/types/table-slide.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { createModal, createTextArea } from '../../../lib/dom/modal.js';
 import { h } from '../../../lib/dom.js';
 
@@ -426,6 +427,8 @@ export function createTableGridEditor({
   );
   const ta = h('textarea', { class: 'form-input form-textarea-md' });
   ta.placeholder = '| Col A | Col B |\n| --- | --- |\n| Val 1 | Val 2 |';
+  // The refusal of the import, at the textarea it is about.
+  const importError = createInlineError();
 
   const importActions = h('div', { class: 'row is-wrap' });
   importActions.append(
@@ -433,10 +436,12 @@ export function createTableGridEditor({
       class: 'btn btn-secondary',
       text: t('editor.table.import', 'Import'),
       onclick: async () => {
+        importError.clear();
         const parsed = parseMarkdownTable(ta.value || '');
         if (!parsed) {
-          toast.error(
+          importError.show(
             t('editor.table.importNotFound', 'No Markdown table found.'),
+            { control: ta },
           );
           return;
         }
@@ -504,6 +509,7 @@ export function createTableGridEditor({
   );
   importWrap.append(
     ta,
+    importError.el,
     importActions,
     h('div', {
       class: 'help',

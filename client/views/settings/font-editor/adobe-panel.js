@@ -7,6 +7,7 @@ import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { api } from '../../../lib/api.js';
 import { toast } from '../../../lib/dom/toast.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 
 /**
  * Create the Adobe Fonts panel.
@@ -43,7 +44,9 @@ export function createAdobePanel({ sourceConfig = {}, onImport }) {
     value: sourceConfig.projectId || '',
     maxlength: '12',
   });
-  fieldWrap.append(label, input);
+  // The refusal of the project-id field, under the field it names.
+  const fieldError = createInlineError();
+  fieldWrap.append(label, input, fieldError.el);
 
   const discoverBtn = h('button', {
     class: 'btn btn-secondary',
@@ -55,10 +58,12 @@ export function createAdobePanel({ sourceConfig = {}, onImport }) {
   const resultsContainer = h('div', { class: 'font-discover-results' });
 
   discoverBtn.addEventListener('click', async () => {
+    fieldError.clear();
     const projectId = input.value.trim();
     if (!projectId) {
-      toast.error(
+      fieldError.show(
         t('fonts.adobeProjectRequired', 'Please enter a project ID.'),
+        { control: input },
       );
       return;
     }

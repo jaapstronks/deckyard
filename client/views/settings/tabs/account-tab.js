@@ -6,6 +6,7 @@
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { api } from '../../../lib/api.js';
 import { createAvatar, updateAvatar } from '../../../lib/user/avatar.js';
 import { invalidateProfile } from '../../../lib/user/user-profiles.js';
@@ -79,29 +80,32 @@ export function createAccountTab({ user }) {
   });
 
   const imageStatus = h('div', { class: 'help', text: '' });
+  // What the picker would not take, beside the button that opened it. The file
+  // input itself is hidden, so the message carries the focus rather than a
+  // control the user cannot see.
+  const imageError = createInlineError();
 
   // File input change handler
   fileInput.addEventListener('change', async () => {
+    imageError.clear();
     const file = fileInput.files?.[0];
     if (!file) return;
 
     // Validate file type
     if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
-      toast.error(
+      imageError.show(
         t(
           'settings.profile.invalidImageType',
           'Please select a PNG, JPEG, or WebP image.',
         ),
-        { id: 'profile-image' },
       );
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error(
+      imageError.show(
         t('settings.profile.imageTooLarge', 'Image must be smaller than 5MB.'),
-        { id: 'profile-image' },
       );
       return;
     }
@@ -168,7 +172,12 @@ export function createAccountTab({ user }) {
   });
 
   profileImageActions.append(uploadBtn, removeBtn, fileInput);
-  profileImageWrap.append(avatarEl, profileImageActions, imageStatus);
+  profileImageWrap.append(
+    avatarEl,
+    profileImageActions,
+    imageStatus,
+    imageError.el,
+  );
 
   // Profile name input
   const profileName = h('input', {

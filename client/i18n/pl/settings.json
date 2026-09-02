@@ -3,7 +3,6 @@
   "admin.jsonDebug.copy": "Kopiuj JSON",
   "admin.jsonDebug.copyFailed": "Kopiowanie nie powiodło się",
   "admin.jsonDebug.copySchema": "Kopiuj schemat",
-  "admin.jsonDebug.error.invalidJson": "Nieprawidłowy JSON: {message}",
   "admin.jsonDebug.error.missingFields": "Slajd musi mieć pola id i type",
   "admin.jsonDebug.format": "Formatuj",
   "admin.jsonDebug.menuItem": "Pokaż JSON (debugowanie)",

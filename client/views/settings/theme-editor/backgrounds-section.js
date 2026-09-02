@@ -15,6 +15,7 @@
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { uploadImage } from './upload-image.js';
 
 const MAX_PRESETS = 24;
@@ -45,6 +46,8 @@ export function createBackgroundsSection({ config, onChange }) {
 
   const grid = h('div', { class: 'row is-wrap is-gap-2 theme-bg-presets' });
   const status = h('p', { class: 'help', text: '' });
+  // What this section would not take, beside the button that offered it.
+  const addError = createInlineError();
 
   /** Current list, always an array so callers never have to guard it. */
   const presets = () =>
@@ -102,13 +105,14 @@ export function createBackgroundsSection({ config, onChange }) {
     multiple: true,
     class: 'is-hidden',
     onchange: async (e) => {
+      addError.clear();
       const files = [...(e.target.files || [])];
       e.target.value = '';
       if (!files.length) return;
 
       const room = MAX_PRESETS - presets().length;
       if (room <= 0) {
-        toast.error(
+        addError.show(
           t(
             'settings.themes.config.backgroundsFull',
             'That is as many background images as a theme can hold.',
@@ -119,13 +123,16 @@ export function createBackgroundsSection({ config, onChange }) {
 
       const accepted = files.slice(0, room);
       if (accepted.length < files.length) {
-        // Never drop input silently — say what did not fit.
-        toast.error(
+        // Never drop input silently — say what did not fit. Focus stays put:
+        // the rest of the selection is being uploaded, and there is nothing
+        // here to correct.
+        addError.show(
           t(
             'settings.themes.config.backgroundsSomeSkipped',
             'Only {count} more images fit; the rest were skipped.',
             { count: String(room) },
           ),
+          { focus: false },
         );
       }
 
@@ -156,6 +163,7 @@ export function createBackgroundsSection({ config, onChange }) {
   el.append(
     grid,
     h('div', { class: 'row is-gap-2' }, [addBtn, fileInput]),
+    addError.el,
     status,
   );
 

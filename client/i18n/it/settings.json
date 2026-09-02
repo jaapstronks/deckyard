@@ -3,7 +3,6 @@
   "admin.jsonDebug.copy": "Copia il JSON",
   "admin.jsonDebug.copyFailed": "Copia non riuscita",
   "admin.jsonDebug.copySchema": "Copia lo schema",
-  "admin.jsonDebug.error.invalidJson": "JSON non valido: {message}",
   "admin.jsonDebug.error.missingFields": "La slide deve avere un id e un type",
   "admin.jsonDebug.format": "Formatta",
   "admin.jsonDebug.menuItem": "Visualizza il JSON (debug)",
