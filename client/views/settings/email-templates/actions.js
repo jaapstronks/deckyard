@@ -80,11 +80,11 @@ export function createActions(state, elements, rebuildUI) {
     try {
       state.setBusy(true);
       const resp = await updateEmailDefaultLocale(locale);
-      // The server answers with the locale it now holds; recording it keeps
+      // The server always answers with the locale it now holds; recording it keeps
       // the state the truth about what is saved. Without this the state stays
       // on the value from page load, and every later reader of it is wrong —
       // a refused change rolls back to it, and any rebuild re-selects it.
-      state.setDefaultLocale(resp?.defaultLocale || locale);
+      state.setDefaultLocale(resp.defaultLocale);
       toast.success(
         t(
           'settings.admin.emailTemplates.defaultLocaleSaved',
