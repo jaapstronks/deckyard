@@ -1267,16 +1267,166 @@ test('a removal with a successor but no lossless claim is left alone', () => {
   // funnel acts on the `losslessRename` flag, never on `successor` alone.
   //
   // Read off the table rather than named here, so the assertion keeps holding
-  // as removals come and go, and so this file does not have to name a retired
-  // type the removal guardrail would then need an allowlist entry for.
+  // as removals come and go. The one exception is spelled out: a conversion the
+  // funnel *does* perform is one somebody decided and wrote into a step of its
+  // own, by name — never something derived from the record (D80).
   const conversions = Object.entries(REMOVED_SLIDE_TYPES)
     .filter(([, r]) => r.successor && r.losslessRename !== true)
-    .map(([name]) => name);
+    .map(([name]) => name)
+    .filter((name) => name !== AGENDA_TIMELINE);
   assert.ok(conversions.length > 0, 'at least one non-lossless successor');
   for (const type of conversions) {
     const migrated = migratePresentation(deckAtV11(type));
     assert.equal(migrated.slides[0].type, type);
   }
+});
+
+/* ------------------------------------------------------------------ *
+ * v12 -> v13: finishing migration 030 (B225)
+ * ------------------------------------------------------------------ */
+
+/** The one conversion the funnel performs, written out in a step of its own. */
+const AGENDA_TIMELINE = 'agenda-timeline-slide';
+
+/**
+ * A pre-v13 deck whose translations carry the retired type — the exact shape
+ * migration 030 left behind, because it converted `slides` and skipped `i18n`.
+ * @param {Object} [opts]
+ * @param {string} [opts.dominantType] - type on the dominant version's slide.
+ * @returns {Object} a deck stamped at v12
+ */
+function deckAtV12({ dominantType = AGENDA_TIMELINE } = {}) {
+  const item = (label) => ({
+    time: '2024',
+    title: label,
+    body: `over ${label}`,
+  });
+  const slide = (type, label) => ({
+    id: 's1',
+    type,
+    content: { title: label, subheading: '', items: [item(label)] },
+    notes: '',
+  });
+  const versions = {
+    nl: { title: 'nl', slides: [slide(dominantType, 'Mijlpaal')] },
+    'en-GB': { title: 'en', slides: [slide(AGENDA_TIMELINE, 'Milestone')] },
+  };
+  const deck = {
+    id: randomUUID(),
+    title: 'nl',
+    lang: 'nl',
+    schemaVersion: 12,
+    i18n: { dominant: 'nl', active: 'nl', versions },
+  };
+  deck.slides = versions.nl.slides;
+  return deck;
+}
+
+test('the agenda-timeline conversion reaches every language version', () => {
+  // The half migration 030 skipped: `i18n.versions[*]` is a second copy of
+  // every slide, and a version left on the retired type renders as an
+  // *archived* slide in that language alone — 80 such slides across ~20 live
+  // fork decks on 2026-09-03 (D80).
+  const migrated = migratePresentation(deckAtV12());
+
+  assert.equal(migrated.schemaVersion, CURRENT_SCHEMA_VERSION);
+  for (const lang of ['nl', 'en-GB']) {
+    const slide = migrated.i18n.versions[lang].slides[0];
+    assert.equal(slide.type, 'timeline-slide', lang);
+  }
+  assert.equal(migrated.slides[0].type, 'timeline-slide');
+});
+
+test('a deck already converted in the dominant version still heals its translations', () => {
+  // The shape 030 actually produced, and the one the fork is in: the same
+  // slide id is a timeline in `slides` and the retired type in every version.
+  const migrated = migratePresentation(
+    deckAtV12({ dominantType: 'timeline-slide' }),
+  );
+
+  assert.equal(
+    migrated.i18n.versions['en-GB'].slides[0].type,
+    'timeline-slide',
+  );
+  assert.deepEqual(migrated.i18n.versions['en-GB'].slides[0].content.items, [
+    { date: '2024', title: 'Milestone', text: 'over Milestone' },
+  ]);
+});
+
+test('the item fold uses migration 030 COALESCE order, and drops the legacy keys', () => {
+  const deck = {
+    schemaVersion: 12,
+    slides: [
+      {
+        id: 's1',
+        type: AGENDA_TIMELINE,
+        content: {
+          items: [
+            { time: 'time wins', label: 'over label', date: 'over date' },
+            { label: 'label wins', date: 'over date' },
+            { date: 'date is last' },
+            { body: 'not read: `text` is present, even empty', text: '' },
+            { text: 'text wins', body: 'over body' },
+          ],
+        },
+      },
+    ],
+  };
+
+  const items = migratePresentation(deck).slides[0].content.items;
+
+  assert.deepEqual(items, [
+    { date: 'time wins', title: '', text: '' },
+    { date: 'label wins', title: '', text: '' },
+    { date: 'date is last', title: '', text: '' },
+    { date: '', title: '', text: '' },
+    { date: '', title: '', text: 'text wins' },
+  ]);
+  assert.equal(items[3].text, '', 'an empty `text` still wins over `body`');
+});
+
+test('the agenda-timeline conversion keeps every other item key', () => {
+  const deck = {
+    schemaVersion: 12,
+    slides: [
+      {
+        id: 's1',
+        type: AGENDA_TIMELINE,
+        content: { items: [{ time: '2024', title: 'x', icon: 'star' }] },
+      },
+    ],
+  };
+
+  assert.deepEqual(migratePresentation(deck).slides[0].content.items, [
+    { date: '2024', title: 'x', text: '', icon: 'star' },
+  ]);
+});
+
+test('the agenda-timeline conversion is idempotent', () => {
+  const once = migratePresentation(deckAtV12());
+  const twice = migratePresentation(structuredClone(once));
+  assert.deepEqual(twice.i18n.versions, once.i18n.versions);
+  assert.deepEqual(twice.slides, once.slides);
+});
+
+test('a deck that is already a timeline comes through untouched', () => {
+  const stored = {
+    schemaVersion: 12,
+    slides: [
+      {
+        id: 's1',
+        type: 'timeline-slide',
+        content: { items: [{ date: '2024', title: 'x', text: 'y' }] },
+        notes: 'n',
+      },
+    ],
+  };
+  const before = structuredClone(stored);
+
+  const migrated = migratePresentation(stored);
+
+  assert.equal(migrated.schemaVersion, CURRENT_SCHEMA_VERSION);
+  assert.deepEqual(migrated.slides, before.slides);
 });
 
 test('every declared lossless rename names a registered successor', () => {

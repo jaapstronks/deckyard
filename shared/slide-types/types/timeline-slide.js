@@ -14,24 +14,12 @@ function safeItemsArr(items) {
 }
 
 function itemHtml(item, idx, total) {
-  // Back-compat: older "agenda-timeline-slide" data used { time, label, body }.
-  const dateRaw =
-    typeof item?.date === 'string'
-      ? item.date
-      : typeof item?.time === 'string'
-        ? item.time
-        : typeof item?.label === 'string'
-          ? item.label
-          : '';
-  const date = String(dateRaw || '').trim();
+  // One spelling per field. The legacy {time, label, body} shape a consolidated
+  // predecessor stored is folded by the v12 -> v13 schema step, so every deck
+  // this renderer sees has already been converted (B225).
+  const date = typeof item?.date === 'string' ? item.date.trim() : '';
   const title = typeof item?.title === 'string' ? item.title.trim() : '';
-  const textRaw =
-    typeof item?.text === 'string'
-      ? item.text
-      : typeof item?.body === 'string'
-        ? item.body
-        : '';
-  const text = String(textRaw || '').trim();
+  const text = typeof item?.text === 'string' ? item.text.trim() : '';
 
   // Alternate cards above/below the track for visual interest
   const isTop = idx % 2 === 0;

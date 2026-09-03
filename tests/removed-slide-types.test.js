@@ -225,12 +225,17 @@ test('every allowlisted reference carries a reason', () => {
 
 test('a migration is recorded whenever stored decks needed converting', () => {
   for (const name of REMOVED_SLIDE_TYPE_NAMES) {
-    const { migration } = REMOVED_SLIDE_TYPES[name];
-    if (migration == null) continue; // no deck used the type; nothing to convert
+    const { migrations } = REMOVED_SLIDE_TYPES[name];
     assert.ok(
-      fs.existsSync(path.join(REPO_ROOT, migration)),
-      `${name}: recorded migration "${migration}" does not exist`,
+      Array.isArray(migrations),
+      `${name}: migrations must be an array (empty when no deck needed converting)`,
     );
+    for (const migration of migrations) {
+      assert.ok(
+        fs.existsSync(path.join(REPO_ROOT, migration)),
+        `${name}: recorded migration "${migration}" does not exist`,
+      );
+    }
   }
 });
 

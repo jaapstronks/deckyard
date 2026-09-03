@@ -140,8 +140,19 @@ Then, in rough dependency order:
    so only the `type` string changes and `content` is left byte for byte alone.
    A successor that renames a field, or adds one, is a **conversion** — a
    decision someone makes about a deck, not something a read path may do
-   silently. Conversions stay where they are: a numbered migration someone aims,
-   or a `scripts/` one-off someone runs.
+   silently. A conversion therefore never rides on `losslessRename`, and is
+   never _derived_ from `successor`.
+
+   **A conversion may still become a funnel step — once somebody has decided
+   it, and by name.** The distinction that matters is who decides, not where the
+   code runs. `agenda-timeline-slide` is the worked example: migration 030
+   decided the fold in May 2026 (`time`/`label` → `date`, `body` → `text`) and
+   applied it to `presentations.slides` only, so ~20 live fork decks kept the
+   retired type in every translation and rendered _archived_ there. The v12 →
+   v13 step (`convertAgendaTimelineSlides`) finishes that decision; it names the
+   one type it converts and derives nothing (D80, B225). A conversion nobody has
+   decided yet stays out of the funnel entirely — it is a numbered migration
+   someone aims, or a `scripts/` one-off someone runs.
 
    **Ship the numbered DB migration as well**, self-contained SQL —
    `056_rename_lijstje_slide_to_list_slide.js` walks the jsonb columns with a
@@ -249,7 +260,8 @@ Then, in rough dependency order:
    `node scripts/generate-slide-type-docs.js`; do not grep the number by hand.
 7. **Record the removal and let the guardrail find the rest.** Add an entry to
    `REMOVED_SLIDE_TYPES` in `shared/slide-types/removed.js` (when it went, the
-   successor or `null`, why, the migration if there was one), then run
+   successor or `null`, why, the `migrations` that converted stored decks —
+   empty when none did), then run
    `node --test tests/removed-slide-types.test.js`. It reports every remaining
    reference as a worklist — comments, doc rows, hand-written test lists — so
    this step replaces the manual grep sweep. Fix each one, or add it to that
@@ -413,9 +425,10 @@ The record draws that line explicitly instead of leaving it to memory.
 `getRemovedSlideType(name)` tells a deliberate removal apart from a name nobody
 recognises — the distinction that makes the render contract below possible.
 
-Two entries so far: `agenda-timeline-slide` (consolidated into `timeline-slide`,
-with migration 030 converting stored decks — the model case) and `freeform-slide`
-(no successor, no decks).
+The two shapes an entry takes: `agenda-timeline-slide` (consolidated into
+`timeline-slide`, with `migrations` naming both the conversion and the backfill
+that finished it — the model case) and `freeform-slide` (no successor, no decks,
+so `migrations` is empty).
 
 ## The render contract
 

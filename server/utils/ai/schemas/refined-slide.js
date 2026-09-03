@@ -32,10 +32,12 @@ const listItemSchema = z.object({
   text: z.string().max(120).optional(),
 });
 
-// Timeline item - accepts both 'date' (preferred) and 'time' (back-compat with old agenda-timeline)
+// Timeline item. One spelling per field: the `time` alias this used to accept
+// beside `date` was the pre-consolidation shape, folded away by schema v13
+// (B225). An agent that still emits it is told it authored no date rather than
+// having one silently accepted and then dropped on render.
 const timelineItemSchema = z.object({
   date: z.string().max(60).optional(),
-  time: z.string().max(60).optional(), // Back-compat alias for date
   title: z.string().min(1).max(80),
   text: z.string().max(200).optional(),
 });
@@ -145,7 +147,7 @@ const listSlideSchema = z.object({
   background: backgroundSchema,
 });
 
-// Timeline Slide (consolidated from agenda-timeline-slide)
+// Timeline Slide
 const timelineSlideSchema = z.object({
   title: titleSchema,
   subheading: subheadingSchema,
