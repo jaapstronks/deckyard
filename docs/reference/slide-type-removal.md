@@ -82,10 +82,12 @@ surviving name is still the `successor` in `shared/slide-types/removed.js`, but
 **a clean deck scan is not what clears the way** — a scan reads the store it is
 pointed at, and on a fresh file-store install that store is empty, so it reports
 "clean" about decks it has never seen (the trap #464 walked into). What actually
-clears the way is a **numbered migration**: `056_rename_lijstje_slide_to_list_slide.js`
-renames the type across every stored surface on every install, as part of the
-normal upgrade, whether or not anyone ran a script. See the migration step in the
-checklist below.
+clears the way is the **schema funnel**: a rename declared with
+`losslessRename: true` is applied by `migratePresentation()` on every read,
+whatever the backend and whether or not anyone ran anything. The numbered
+migration (`056_rename_lijstje_slide_to_list_slide.js`) still ships beside it,
+to write the columns without waiting for a save and to reach the stored surfaces
+the read funnel does not pass through. Both are step 0 of the checklist below.
 
 ## The removal checklist
 
@@ -121,15 +123,54 @@ promise.
 
 Then, in rough dependency order:
 
-0. **If the type has a successor, ship a numbered DB migration** in
-   `server/db/migrations/` that rewrites the stored name. This is what makes the
-   removal safe on installs you will never see: the migration runner applies it
-   on every upgrade, while a `scripts/` one-off only ever runs where someone
-   remembers to run it. Keep it **self-contained SQL** — `056_rename_lijstje_slide_to_list_slide.js`
-   walks the jsonb columns with a recursive `pg_temp` function rather than
-   importing the equivalent script, because a migration is a historical record
-   and the script it mirrors is free to move. Keep the script too: file-store
-   installs have no migration runner, and exports still need converting.
+0. **If the move to the successor is a _lossless rename_, declare it — the
+   funnel does the rest.** Set `losslessRename: true` beside `successor` in
+   `shared/slide-types/removed.js`, append `renameLosslessRemovedTypes` as the
+   next step in `SCHEMA_MIGRATIONS` and bump `CURRENT_SCHEMA_VERSION`
+   (`shared/slide-types/schema-version.js`). `migratePresentation()` then
+   rewrites the stored name on every read, every write and every import,
+   whatever the backend — the one path a deck cannot avoid.
+
+   The bump is not ceremony: the funnel only runs steps _above_ a deck's stamp,
+   so a rename added to the table without one would never reach a deck already
+   stamped at the current version. Appending the same function again is what
+   makes the next rename a two-line change.
+
+   **Lossless means literally lossless**: the two names share one field schema,
+   so only the `type` string changes and `content` is left byte for byte alone.
+   A successor that renames a field, or adds one, is a **conversion** — a
+   decision someone makes about a deck, not something a read path may do
+   silently. Conversions stay where they are: a numbered migration someone aims,
+   or a `scripts/` one-off someone runs.
+
+   **Ship the numbered DB migration as well**, self-contained SQL —
+   `056_rename_lijstje_slide_to_list_slide.js` walks the jsonb columns with a
+   recursive `pg_temp` function rather than importing the equivalent script,
+   because a migration is a historical record and the script it mirrors is free
+   to move. Since the funnel step it is no longer what makes the removal
+   _correct_; it is what makes it _persistent_ and _complete_:
+
+   - the funnel migrates in memory and the deck is written back on its next
+     save, so without the SQL the columns keep the old name until someone edits
+     the deck;
+   - the read funnel covers presentations. Version snapshots, `slide_library`
+     rows and comment snapshots have their own read paths, and the SQL is what
+     reaches those.
+
+   The order matters for what you can promise. Before the funnel step, an
+   install the migration never ran against kept the retired name and rendered
+   those slides as _archived_ — indefinitely, silently, and with no test that
+   could see it. That was not hypothetical: on 2026-09-03 the CIIIC fork still
+   had 35 of 35 stored decks (248 slides) on the retired list alias, five weeks
+   after the rename shipped, because nothing on that store had ever run either
+   the migration or the script.
+
+   **What the `scripts/migrate-*.js` one-offs are for now.** They keep exactly
+   one job: rewriting JSON **at rest**, outside any running install — an export
+   dump, a data directory staged for import, a backup being inspected
+   (`--dir <path>`). Everything a running install reads is the funnel's job, so
+   do not write a new one for a lossless rename, and do not treat an existing
+   one as a step anybody has to remember.
 
 1. **Delete the definition** — `shared/slide-types/types/<type>.js`.
 2. **Delete the stylesheet(s)** — every sheet the type claims in `TYPE_CSS`
@@ -425,7 +466,10 @@ the prerequisite for rung 3 on any type decks actually used.
 ## See also
 
 - `scripts/scan-slide-type.js` — the deck-population scan behind rung 2.
-- `shared/slide-types/removed.js` — the removal record.
+- `shared/slide-types/removed.js` — the removal record, and where a lossless
+  rename is declared.
+- `shared/slide-types/schema-version.js` — the funnel that applies it on every
+  read, and `docs/reference/versioning.md` for how the version bump is judged.
 - `shared/slide-types/unresolved.js` — the render contract for a type that is gone.
 - `tests/removed-slide-types.test.js` — the guardrail that enforces it.
 - `docs/reference/editor-inspector.md` — the per-type inspector table (generated).

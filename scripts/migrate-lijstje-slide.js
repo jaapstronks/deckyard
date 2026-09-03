@@ -11,6 +11,24 @@
  * documented in `docs/reference/slide-type-removal.md`),
  * and running it is what lets rung 2 of the deprecation ladder be signed off.
  *
+ * ## What this script is for now (B223)
+ *
+ * The rename is declared with `losslessRename: true` in
+ * `shared/slide-types/removed.js` and applied by `migratePresentation()`, so a
+ * *running* install renames the type on every read, write and import without
+ * anyone running anything. Nothing here has to be remembered any more.
+ *
+ * What is left is the one job the funnel cannot do: rewriting JSON **at rest**,
+ * outside a running install — an export dump, a data directory staged for
+ * import, a backup being inspected. That is `--dir <path>`, and it is why this
+ * file stays. The `--backend postgres` half is likewise a *backfill*: it writes
+ * the columns in one pass instead of leaving each deck to be renamed on read
+ * until its next save. Neither is load-bearing for correctness.
+ *
+ * A future lossless rename does **not** need a script like this one. Declare it
+ * on the removal record and add the funnel step; see step 0 of
+ * `docs/reference/slide-type-removal.md`.
+ *
  * ## Both stores, on purpose
  *
  * `scripts/migrate-slides.js` is file-only. slides.ciiic.nl runs on Postgres, so

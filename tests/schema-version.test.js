@@ -5,11 +5,13 @@ import fs from 'node:fs';
 
 import {
   CURRENT_SCHEMA_VERSION,
+  LOSSLESS_TYPE_RENAMES,
   SCHEMA_MIGRATIONS,
   eachSlide,
   migratePresentation,
   schemaVersionOf,
 } from '../shared/slide-types/schema-version.js';
+import { REMOVED_SLIDE_TYPES } from '../shared/slide-types/removed.js';
 import {
   newPresentation,
   validatePresentation,
@@ -1197,4 +1199,97 @@ test('eachSlide yields every slide of every version, each object once', () => {
   );
   assert.deepEqual([...eachSlide({})], []);
   assert.deepEqual([...eachSlide(null)], []);
+});
+
+/* ------------------------------------------------------------------ *
+ * v11 -> v12: lossless type renames (B223)
+ * ------------------------------------------------------------------ */
+
+/** A pre-v12 deck carrying `type` on the dominant slide and one translation. */
+function deckAtV11(type) {
+  const slide = (title) => ({
+    id: 's1',
+    type,
+    content: { title, subheading: '', variant: 'bullets', items: [] },
+    notes: '',
+  });
+  const versions = {
+    nl: { title: 'nl', slides: [slide('Lijstje')] },
+    'en-GB': { title: 'en', slides: [slide('List')] },
+  };
+  const deck = {
+    id: randomUUID(),
+    title: 'nl',
+    lang: 'nl',
+    schemaVersion: 11,
+    i18n: { dominant: 'nl', active: 'nl', versions },
+  };
+  deck.slides = versions.nl.slides;
+  return deck;
+}
+
+/** The first declared lossless rename, read off the table rather than named. */
+const [LOSSLESS_OLD, LOSSLESS_NEW] = [...LOSSLESS_TYPE_RENAMES][0] ?? [];
+
+test('a lossless rename reaches every language version, not just the dominant', () => {
+  // B223. The rename used to live only in a numbered SQL migration and a
+  // `scripts/` one-off, so a file-store install kept the retired name and
+  // rendered archived slides forever. The funnel runs on every read, on every
+  // backend, which is the one path that reaches every install.
+  const migrated = migratePresentation(deckAtV11(LOSSLESS_OLD));
+
+  assert.equal(migrated.schemaVersion, CURRENT_SCHEMA_VERSION);
+  for (const lang of ['nl', 'en-GB']) {
+    const slide = migrated.i18n.versions[lang].slides[0];
+    assert.equal(slide.type, LOSSLESS_NEW, lang);
+  }
+  assert.equal(migrated.slides[0].type, LOSSLESS_NEW);
+});
+
+test('a lossless rename touches the type and nothing else', () => {
+  const before = deckAtV11(LOSSLESS_OLD);
+  const content = structuredClone(before.slides[0].content);
+  const migrated = migratePresentation(before);
+  assert.deepEqual(migrated.slides[0].content, content);
+  assert.equal(migrated.slides[0].notes, '');
+});
+
+test('the lossless rename step is idempotent', () => {
+  const once = migratePresentation(deckAtV11(LOSSLESS_OLD));
+  const twice = migratePresentation(structuredClone(once));
+  assert.deepEqual(twice.i18n.versions, once.i18n.versions);
+  assert.deepEqual(twice.slides, once.slides);
+});
+
+test('a removal with a successor but no lossless claim is left alone', () => {
+  // Most successors rename or add fields, which makes the move a conversion —
+  // a decision someone makes about a deck, not something a read path does. The
+  // funnel acts on the `losslessRename` flag, never on `successor` alone.
+  //
+  // Read off the table rather than named here, so the assertion keeps holding
+  // as removals come and go, and so this file does not have to name a retired
+  // type the removal guardrail would then need an allowlist entry for.
+  const conversions = Object.entries(REMOVED_SLIDE_TYPES)
+    .filter(([, r]) => r.successor && r.losslessRename !== true)
+    .map(([name]) => name);
+  assert.ok(conversions.length > 0, 'at least one non-lossless successor');
+  for (const type of conversions) {
+    const migrated = migratePresentation(deckAtV11(type));
+    assert.equal(migrated.slides[0].type, type);
+  }
+});
+
+test('every declared lossless rename names a registered successor', () => {
+  assert.ok(LOSSLESS_TYPE_RENAMES.size > 0, 'at least one rename is declared');
+  for (const [old, successor] of LOSSLESS_TYPE_RENAMES) {
+    assert.ok(
+      SLIDE_TYPES[successor],
+      `${old} renames to ${successor}, which is not registered`,
+    );
+    assert.ok(
+      !SLIDE_TYPES[old],
+      `${old} is still registered, so nothing should rename away from it`,
+    );
+    assert.equal(REMOVED_SLIDE_TYPES[old].losslessRename, true);
+  }
 });
