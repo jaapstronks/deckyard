@@ -32,6 +32,52 @@ function roundTrip(pres) {
   return { projected: codec.projectDocToPresentation(doc), warnings, doc };
 }
 
+/**
+ * Drop every empty leaf from a parsed deck, recursively.
+ *
+ * Deliberately not "ignore empties": an absent key and an empty one become
+ * equal, while a *populated* key that comes back empty keeps its value on one
+ * side alone and still differs. That asymmetry is what lets the comparison
+ * forgive the projection's defaults without forgiving a loss.
+ *
+ * @param {*} value - Any parsed JSON value.
+ * @returns {*} the same value with empty strings and empty arrays removed from
+ *   every object it contains.
+ */
+function foldProjectionDefaults(value) {
+  if (Array.isArray(value)) return value.map(foldProjectionDefaults);
+  if (!value || typeof value !== 'object') return value;
+  const out = {};
+  for (const [key, entry] of Object.entries(value)) {
+    if (entry === '') continue;
+    if (Array.isArray(entry) && entry.length === 0) continue;
+    out[key] = foldProjectionDefaults(entry);
+  }
+  return out;
+}
+
+/**
+ * A deck reduced to what the codec actually promises to preserve.
+ *
+ * Two things come off. `i18n.progress` and `i18n.active` are per-client editor
+ * state the codec deliberately does not round-trip (projection emits
+ * `active = dominant`). And the projection materialises the three defaults
+ * `foldProjectionDefaults` folds away: `notes` (`undefined` -> `''`), a
+ * version's `slides` (`undefined` -> `[]`), and a text key only one language
+ * version holds (`''` in the others).
+ *
+ * @param {Object} pres - A stored or projected deck.
+ * @returns {Object} a fresh, comparable copy.
+ */
+function comparableDeck(pres) {
+  const p = JSON.parse(JSON.stringify(pres));
+  if (p.i18n) {
+    delete p.i18n.progress;
+    delete p.i18n.active;
+  }
+  return foldProjectionDefaults(p);
+}
+
 /** Sync a doc into a fresh one via a real yjs update (CRDT wire format). */
 function syncToFreshDoc(doc) {
   const fresh = new Y.Doc();
@@ -861,21 +907,24 @@ describe('round-trip: every registered slide type with real defaults', () => {
 
 describe('round-trip: real local decks (skipped when none present)', () => {
   // Opportunistic fidelity check against whatever decks exist in this
-  // checkout's file storage. CI has none; locally this catches real-world
-  // shapes the fixtures miss. Volatile/derived fields are ignored.
+  // checkout's storage. CI has none; locally this catches real-world shapes the
+  // fixtures miss — and it has: the comment on the #1040 regression above says
+  // in as many words that the bug shipped green because this block skipped.
+  //
+  // For a while it could not catch anything either, for the opposite reason.
+  // Compared with `deepStrictEqual` against raw stored JSON it failed on
+  // **every** deck that leaves an optional key out, which in a real store is
+  // most of them: 15 of the CIIIC fork's 35 decks, 618 differences, and all 618
+  // of them the projection materialising an absent key (616 × `''`, 2 × `[]`).
+  // Not one dropped or changed value among them. A net that fails on
+  // everything catches nothing, so it was ignored, which is the same as dead.
+  //
+  // What it now compares is defined by `foldProjectionDefaults` below, and the
+  // guard test under this block proves the teeth are still in (B224).
   const dir = path.join(process.cwd(), 'server', 'data', 'presentations');
   const files = fs.existsSync(dir)
     ? fs.readdirSync(dir).filter((f) => f.endsWith('.json'))
     : [];
-
-  function stripVolatile(pres) {
-    const p = JSON.parse(JSON.stringify(pres));
-    if (p.i18n) delete p.i18n.progress;
-    // `active` is per-client editor state: the codec deliberately does not
-    // round-trip it (projection emits active = dominant).
-    if (p.i18n) delete p.i18n.active;
-    return p;
-  }
 
   it(
     `round-trips ${files.length} local deck(s)`,
@@ -885,11 +934,79 @@ describe('round-trip: real local decks (skipped when none present)', () => {
         const pres = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
         const { projected } = roundTrip(pres);
         assert.deepStrictEqual(
-          stripVolatile(projected),
-          stripVolatile(pres),
+          comparableDeck(projected),
+          comparableDeck(pres),
           `round-trip mismatch for ${f}`,
         );
       }
     },
   );
+});
+
+describe('the real-decks fidelity comparison keeps its teeth (B224)', () => {
+  // `comparableDeck` is the only thing standing between the check above and
+  // "always green", and against real decks it is exercised nowhere else — CI
+  // has no decks at all. So the normalisation is pinned here, on fixtures,
+  // both ways round: what it is allowed to forgive, and what it must not.
+
+  it('forgives the three defaults the projection materialises', () => {
+    // Absent `notes`, an absent version `slides`, and a text key only one
+    // language holds: all three come back as the codec answering "no value
+    // here" in the shape the editor reads, not as a change to the deck.
+    const stored = normalizeTopLevel(twoLangDeck());
+    delete stored.i18n.versions['en-GB'].slides[1].content.attribution;
+    delete stored.slides[1].notes;
+    delete stored.i18n.versions['en-GB'].slides[1].notes;
+
+    const { projected } = roundTrip(stored);
+
+    assert.equal(
+      projected.i18n.versions['en-GB'].slides[1].content.attribution,
+      '',
+      'the projection does materialise it — otherwise this test proves nothing',
+    );
+    assert.deepStrictEqual(comparableDeck(projected), comparableDeck(stored));
+  });
+
+  it('still fails when a value is lost between two versions', () => {
+    // The class of bug the block exists for: a value the deck holds in one
+    // language does not survive, and the dominant version wins. Forgiving
+    // empties must not forgive this.
+    const stored = normalizeTopLevel(twoLangDeck());
+    stored.i18n.versions['en-GB'].slides[0].content.variant = 'bullets';
+
+    const { projected, warnings } = roundTrip(stored);
+
+    assert.equal(warnings.length, 1, warnings.join('\n'));
+    assert.notDeepStrictEqual(
+      comparableDeck(projected),
+      comparableDeck(stored),
+    );
+  });
+
+  it('still fails when a stored value projects back empty', () => {
+    // The asymmetry that makes "drop empty leaves" safe: an absent key and an
+    // empty one become equal, a *populated* key that comes back empty does
+    // not. Simulated on the projection, because the codec (rightly) has no
+    // path that does this today.
+    const stored = normalizeTopLevel(twoLangDeck());
+    const { projected } = roundTrip(stored);
+    projected.i18n.versions.nl.slides[1].content.quote = '';
+
+    assert.notDeepStrictEqual(
+      comparableDeck(projected),
+      comparableDeck(stored),
+    );
+  });
+
+  it('still fails when a slide disappears', () => {
+    const stored = normalizeTopLevel(twoLangDeck());
+    const { projected } = roundTrip(stored);
+    projected.i18n.versions.nl.slides.pop();
+
+    assert.notDeepStrictEqual(
+      comparableDeck(projected),
+      comparableDeck(stored),
+    );
+  });
 });
