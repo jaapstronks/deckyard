@@ -25,6 +25,16 @@
  * @property {string|null} successor - Registered type stored decks should move
  *   to, or `null` when there is no equivalent.
  * @property {string} reason - Why it was removed, in one line.
+ * @property {boolean} [losslessRename] - `true` when moving to `successor` is a
+ *   pure rename: the two names share one field schema, so only the `type`
+ *   string changes and `content` is left byte for byte alone. This is the one
+ *   claim the schema funnel acts on — `SCHEMA_MIGRATIONS` rewrites the stored
+ *   name on read for every entry that declares it, so the move reaches every
+ *   install and every storage backend without a script being run. Declare it
+ *   only when it is literally true: a successor that renames fields
+ *   (`agenda-timeline-slide`) or adds them (`card-stack-slide`) is a
+ *   conversion, and a conversion belongs in a migration a human aims, not in a
+ *   step that runs on every read.
  * @property {string|null} migration - Path to the migration that converted
  *   stored decks, or `null` when no deck used the type.
  * @property {Record<string, string>} allowedReferences - `path` → why this file
@@ -156,11 +166,19 @@ export const REMOVED_SLIDE_TYPES = {
       'definition and stood beside each other in the picker. Rung 3 drops the ' +
       'Dutch alias; every stored deck is renamed to `list-slide` (a lossless ' +
       'rename — same field schema, only the `type` string changes).',
+    losslessRename: true,
     // Production scan, slides.ciiic.nl, 2026-07-31 (Postgres): 45 of 118
     // presentations / 565 slides still carried the old name, plus 28 version
     // snapshots / 127 slides; slide_library and comments were clean. Without
     // the rename those 565 slides would have rendered as *archived*. A second
     // dry-run after the real run reported 0 everywhere (idempotent).
+    //
+    // Since the funnel step (B223) the migration is the *backfill*, not the
+    // correctness: `migratePresentation()` renames the type on every read, on
+    // every backend, so a deck is never served under the old name again. What
+    // the SQL still buys is persistence without a save — it writes the columns
+    // once — and the surfaces the read funnel does not pass through
+    // (version snapshots, slide_library, comment snapshots).
     migration: 'server/db/migrations/056_rename_lijstje_slide_to_list_slide.js',
     allowedReferences: {
       'server/db/migrations/056_rename_lijstje_slide_to_list_slide.js':
@@ -169,6 +187,8 @@ export const REMOVED_SLIDE_TYPES = {
         'the standalone rename for file-store installs and exports (which have no migration runner); it names both types by design',
       'tests/lijstje-slide-migration.test.js':
         'exercises that rename script, so it must name the old type it renames',
+      'tests/lossless-type-rename-funnel.test.js':
+        'the end-to-end test of the schema funnel doing the rename: a stored deck has to carry a real retired name for the read path to prove anything',
       'docs/reference/slide-type-removal.md':
         'the "deprecating a type versus deprecating an alias" section uses this exact rename as its worked example',
     },

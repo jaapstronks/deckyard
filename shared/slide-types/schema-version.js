@@ -22,9 +22,10 @@ import {
   getFieldGroups,
   groupAlignValues,
 } from './field-groups.js';
+import { REMOVED_SLIDE_TYPES } from './removed.js';
 
 /** The schema version every freshly written deck is stamped with. */
-export const CURRENT_SCHEMA_VERSION = 11;
+export const CURRENT_SCHEMA_VERSION = 12;
 
 /**
  * The one legacy collection key each type stored before `items` — the v6 -> v7
@@ -249,6 +250,54 @@ function str(v) {
 /** Type + group the v4 -> v5 quote-alignment fold reads its target key from. */
 const QUOTE_SLIDE_TYPE = 'quote-slide';
 const QUOTE_BLOCK_GROUP = 'quote-block';
+
+/**
+ * Every lossless type rename a removal has declared, as old name -> successor.
+ *
+ * Derived from `REMOVED_SLIDE_TYPES` rather than written out here, because the
+ * removal record is where the claim belongs: a removal declares
+ * `losslessRename: true` beside its `successor`, and the funnel does the rest.
+ * A second hand-written table would be the same knowledge in a second place —
+ * exactly what the removal doctrine spent #451 learning to avoid.
+ *
+ * A `Map` and not an object literal: the keys are stored data, and
+ * `renames['constructor']` on a plain object answers with a function.
+ *
+ * @type {Map<string, string>}
+ */
+export const LOSSLESS_TYPE_RENAMES = new Map(
+  Object.entries(REMOVED_SLIDE_TYPES)
+    .filter(
+      ([, record]) =>
+        record?.losslessRename === true && typeof record.successor === 'string',
+    )
+    .map(([name, record]) => [name, record.successor]),
+);
+
+/**
+ * Rewrite every stored slide type that a removal declared a lossless rename of.
+ *
+ * The step every lossless rename gets to reuse: a removal declares the rename
+ * once in `removed.js`, appends this function as the next migration step and
+ * bumps `CURRENT_SCHEMA_VERSION`. The bump is not ceremony — the funnel only
+ * runs steps *above* a deck's stamp, so a rename added to the table without one
+ * would never reach a deck already stamped at the current version.
+ *
+ * Only `type` changes; `content` is untouched, which is what "lossless" means
+ * and why this can run on every read. Idempotent by construction: after one
+ * pass no slide carries the old name.
+ *
+ * @param {any} pres
+ * @returns {any}
+ */
+function renameLosslessRemovedTypes(pres) {
+  if (LOSSLESS_TYPE_RENAMES.size === 0) return pres;
+  for (const slide of eachSlide(pres)) {
+    const successor = LOSSLESS_TYPE_RENAMES.get(slide?.type);
+    if (successor) slide.type = successor;
+  }
+  return pres;
+}
 
 /**
  * Every slide a migration step has to visit: the top-level `slides` and the
@@ -627,6 +676,29 @@ export const SCHEMA_MIGRATIONS = [
     if (i18n && typeof i18n === 'object') delete i18n.progress;
     return pres;
   },
+
+  // v11 -> v12: apply every lossless type rename a removal has declared. The
+  // first (and so far only) one is the list alias whose rename shipped as
+  // migration 056 (B223).
+  //
+  // A lossless rename used to live in two places that both had to be aimed by
+  // hand: a numbered SQL migration, which only reaches Postgres, and a
+  // `scripts/migrate-*.js` one-off, which only ever runs "where someone
+  // remembers to run it". A file-store install got neither, so its decks kept
+  // the retired name and rendered as *archived* forever. The evidence is not
+  // hypothetical: on 2026-09-03 the CIIIC fork still had 35 of 35 stored decks
+  // (248 slides) on the retired name, five weeks after the rename shipped.
+  //
+  // The funnel is the one path every install already runs, on every read and
+  // write and on import, whatever the backend — so that is where a rename
+  // belongs. Migration 056 stays: it is the historical record, and it is the
+  // only thing that writes the columns without waiting for the next save.
+  //
+  // Not generic over `successor`, deliberately. Most successors rename or add
+  // fields, which makes the move a *conversion* — a decision someone makes
+  // about a deck, not something a read path does silently. `losslessRename` in
+  // `removed.js` is that line, drawn once, beside the removals it judges.
+  renameLosslessRemovedTypes,
 ];
 
 /**
