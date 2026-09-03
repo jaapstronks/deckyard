@@ -157,6 +157,14 @@ Then, in rough dependency order:
      rows and comment snapshots have their own read paths, and the SQL is what
      reaches those.
 
+   A one-off on a snapshot table is a moment, not a guarantee. Migration 056
+   zeroed `lijstje-slide` in `presentation_versions` on 2026-07-31, and the
+   fork's snapshots of 6 and 20 August carried the name again: a snapshot is
+   written from the deck object in memory, and before the funnel step that
+   object had never been renamed. With the step in place the deck is renamed
+   before anything snapshots it, which is why the funnel is what makes the
+   removal _correct_ and the SQL only what makes it _complete_.
+
    The order matters for what you can promise. Before the funnel step, an
    install the migration never ran against kept the retired name and rendered
    those slides as _archived_ — indefinitely, silently, and with no test that
