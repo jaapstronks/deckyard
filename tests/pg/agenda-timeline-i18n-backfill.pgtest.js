@@ -43,6 +43,10 @@ const legacySlide = (id, label) => ({
     items: [
       { time: '2020', title: 'Start', body: 'Het begin' },
       { label: '2024', title: 'Nu', text: 'Vandaag' },
+      // A non-string value is read the way the funnel step reads it: an object
+      // or array is not a spelling (the next one gets its turn), a number is
+      // its text. 030's bare `->>` would have written `["x"]` as the date.
+      { time: ['x'], label: 2016, title: 'Cijfer' },
     ],
   },
   notes: 'blijft staan',
@@ -52,6 +56,7 @@ const legacySlide = (id, label) => ({
 const CONVERTED_ITEMS = [
   { date: '2020', title: 'Start', text: 'Het begin' },
   { date: '2024', title: 'Nu', text: 'Vandaag' },
+  { date: '2016', title: 'Cijfer', text: '' },
 ];
 
 /** The already-converted dominant slide, the half 030 did do. */

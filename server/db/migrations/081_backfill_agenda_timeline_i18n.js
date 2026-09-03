@@ -35,8 +35,9 @@
  *
  * Self-contained SQL (`pg_temp` functions), like 030 and 056: a migration is a
  * historical record, so it does not import the funnel step it mirrors — that
- * code is free to change. The COALESCE order is 030's, so a deck converted by
- * either path comes out the same.
+ * code is free to change. The COALESCE order is 030's, and a value is read as
+ * text the way the step's `itemText` reads it, so a deck converted by either
+ * path comes out the same — on every input, not only the string ones.
  *
  * Idempotent by construction: after this runs no stored object carries the
  * retired type, so a second run matches nothing.
@@ -52,6 +53,24 @@ import { sql } from 'kysely';
 
 const OLD_TYPE = 'agenda-timeline-slide';
 const NEW_TYPE = 'timeline-slide';
+
+/**
+ * A stored item value as text, the way the funnel step's `itemText` reads it:
+ * a string, number or boolean as its text, anything else (JSON `null`, an
+ * object, an array) as SQL NULL so the next spelling gets its turn. 030 used
+ * bare `->>` here, which renders an object as its JSON text; the JS twin does
+ * not, and the two paths have to agree on every input, not only the scalar
+ * ones.
+ */
+const ITEM_TEXT_FUNCTION = `
+  CREATE OR REPLACE FUNCTION pg_temp.agenda_item_text(v jsonb)
+  RETURNS text AS $$
+  SELECT CASE
+    WHEN jsonb_typeof(v) IN ('string', 'number', 'boolean') THEN v #>> '{}'
+    ELSE NULL
+  END
+  $$ LANGUAGE sql IMMUTABLE;
+`;
 
 /**
  * The item fold, as migration 030 wrote it: `time`/`label` collapse into
@@ -70,9 +89,18 @@ const ITEMS_FUNCTION = `
           CASE
             WHEN jsonb_typeof(item) = 'object'
             THEN (item - 'time' - 'label' - 'body') || jsonb_build_object(
-              'date', COALESCE(item->>'time', item->>'label', item->>'date', ''),
-              'title', COALESCE(item->>'title', ''),
-              'text', COALESCE(item->>'text', item->>'body', '')
+              'date', COALESCE(
+                pg_temp.agenda_item_text(item->'time'),
+                pg_temp.agenda_item_text(item->'label'),
+                pg_temp.agenda_item_text(item->'date'),
+                ''
+              ),
+              'title', COALESCE(pg_temp.agenda_item_text(item->'title'), ''),
+              'text', COALESCE(
+                pg_temp.agenda_item_text(item->'text'),
+                pg_temp.agenda_item_text(item->'body'),
+                ''
+              )
             )
             ELSE item
           END
@@ -187,6 +215,7 @@ async function convertColumn(db, table, column) {
 
 export const up = async (db) => {
   for (const fn of [
+    ITEM_TEXT_FUNCTION,
     ITEMS_FUNCTION,
     CONTENT_FUNCTION,
     CONVERT_FUNCTION,

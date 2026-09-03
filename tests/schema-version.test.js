@@ -1367,6 +1367,7 @@ test('the item fold uses migration 030 COALESCE order, and drops the legacy keys
             { date: 'date is last' },
             { body: 'not read: `text` is present, even empty', text: '' },
             { text: 'text wins', body: 'over body' },
+            { time: ['x'], label: 2016, body: { a: 1 } },
           ],
         },
       },
@@ -1381,8 +1382,14 @@ test('the item fold uses migration 030 COALESCE order, and drops the legacy keys
     { date: 'date is last', title: '', text: '' },
     { date: '', title: '', text: '' },
     { date: '', title: '', text: 'text wins' },
+    { date: '2016', title: '', text: '' },
   ]);
   assert.equal(items[3].text, '', 'an empty `text` still wins over `body`');
+  assert.equal(
+    items[5].date,
+    '2016',
+    'an object or array is not a spelling; a number is its text',
+  );
 });
 
 test('the agenda-timeline conversion keeps every other item key', () => {
