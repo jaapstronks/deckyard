@@ -921,17 +921,29 @@ describe('round-trip: real local decks (skipped when none present)', () => {
   //
   // What it now compares is defined by `foldProjectionDefaults` below, and the
   // guard test under this block proves the teeth are still in (B224).
+  //
+  // The directory does not hold decks only: a version snapshot wraps one under
+  // a `presentation` key, and the codec has no opinion about that envelope. Two
+  // of the CIIIC fork's 35 files are snapshots; they round-tripped green by
+  // doing nothing at all, which made the count say 35 where it meant 33. A file
+  // enters the check when it *is* a deck — `slides` is an array (B225).
   const dir = path.join(process.cwd(), 'server', 'data', 'presentations');
-  const files = fs.existsSync(dir)
-    ? fs.readdirSync(dir).filter((f) => f.endsWith('.json'))
-    : [];
+  const decks = (
+    fs.existsSync(dir)
+      ? fs.readdirSync(dir).filter((f) => f.endsWith('.json'))
+      : []
+  )
+    .map((f) => ({
+      file: f,
+      pres: JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')),
+    }))
+    .filter(({ pres }) => Array.isArray(pres?.slides));
 
   it(
-    `round-trips ${files.length} local deck(s)`,
-    { skip: files.length === 0 },
+    `round-trips ${decks.length} local deck(s)`,
+    { skip: decks.length === 0 },
     () => {
-      for (const f of files) {
-        const pres = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
+      for (const { file: f, pres } of decks) {
         const { projected } = roundTrip(pres);
         assert.deepStrictEqual(
           comparableDeck(projected),

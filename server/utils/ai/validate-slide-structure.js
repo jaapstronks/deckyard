@@ -238,8 +238,8 @@ export const STRUCTURE_VALIDATORS = {
       issues.push(`items array has ${content.items.length} items, need 2-10`);
     } else {
       content.items.forEach((item, i) => {
-        // Accept either 'date' (preferred) or 'time' (back-compat with old agenda-timeline)
-        if (!item?.date && !item?.time) issues.push(`items[${i}] missing date`);
+        // One spelling: the `time` alias folded away with schema v13 (B225).
+        if (!item?.date) issues.push(`items[${i}] missing date`);
         if (!item?.title) issues.push(`items[${i}] missing title`);
       });
     }

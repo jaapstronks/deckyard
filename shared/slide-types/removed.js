@@ -33,10 +33,15 @@
  *   install and every storage backend without a script being run. Declare it
  *   only when it is literally true: a successor that renames fields
  *   (`agenda-timeline-slide`) or adds them (`card-stack-slide`) is a
- *   conversion, and a conversion belongs in a migration a human aims, not in a
- *   step that runs on every read.
- * @property {string|null} migration - Path to the migration that converted
- *   stored decks, or `null` when no deck used the type.
+ *   conversion, and a conversion is never *derived* from `successor`. It
+ *   reaches the funnel only by being written out in a step of its own, for
+ *   that one type, after somebody decided it — which is what the v12 -> v13
+ *   step does for `agenda-timeline-slide` (D80).
+ * @property {string[]} migrations - Paths of the migrations that converted
+ *   stored decks, in the order they ran. Empty when no deck used the type, or
+ *   when the render contract degrades stored slides instead of converting
+ *   them. More than one when a later migration finishes what an earlier one
+ *   left half-applied.
  * @property {Record<string, string>} allowedReferences - `path` → why this file
  *   is allowed to keep naming the type.
  */
@@ -49,19 +54,34 @@ export const REMOVED_SLIDE_TYPES = {
     reason:
       'visually near-identical to timeline-slide; two types for one layout, ' +
       'differing only in field names (time/label/body vs date/text).',
-    migration:
+    // 030 renamed the type and folded the items, but only in
+    // `presentations.slides` and each snapshot's `slides` array — it skipped
+    // `i18n` deliberately, so ~20 live fork decks kept the retired type in
+    // every non-dominant language version and rendered *archived* there. 081
+    // finishes it across `presentations.i18n` and the snapshot column; the
+    // v12 -> v13 funnel step is what makes it true on every install and
+    // backend, SQL or not (D80/B225).
+    migrations: [
       'server/db/migrations/030_migrate_agenda_timeline_to_timeline.js',
+      'server/db/migrations/081_backfill_agenda_timeline_i18n.js',
+    ],
     allowedReferences: {
       'server/db/migrations/030_migrate_agenda_timeline_to_timeline.js':
         'the migration itself — it converts stored decks and must name both types',
-      'shared/slide-types/types/timeline-slide.js':
-        'the successor explains where the legacy {time,label,body} item shape comes from',
-      'server/utils/ai/schemas/refined-slide.js':
-        'the AI schema accepts the legacy `time` field and says why',
+      'server/db/migrations/081_backfill_agenda_timeline_i18n.js':
+        'the backfill that finishes 030 across the columns it skipped; it must name what it converts',
+      'shared/slide-types/schema-version.js':
+        'the v12 -> v13 funnel step converts this one type by name, because a conversion is never derived from `successor`',
       'docs/reference/slide-type-removal.md':
         'cites this removal as the model case: migrated, with a successor',
       'tests/unresolved-slide-render.test.js':
         'the render contract needs a removal WITH a successor to pin the "rebuild it as X" promise',
+      'tests/schema-version.test.js':
+        'the unit tests of the v12 -> v13 step need a deck carrying the retired type, and the "conversions are left alone" assertion has to exclude the one the funnel converts by name',
+      'tests/agenda-timeline-i18n-funnel.test.js':
+        'the end-to-end test that a stored translation on the retired type reads back converted; the stored row has to carry the real name',
+      'tests/pg/agenda-timeline-i18n-backfill.pgtest.js':
+        'the real-PostgreSQL test of the backfill: it seeds rows carrying the retired type',
     },
   },
   'card-stack-slide': {
@@ -79,7 +99,7 @@ export const REMOVED_SLIDE_TYPES = {
     // move is a manual rebuild, not a rename. scripts/migrate-slides.js offers
     // the conversion for anyone who wants it; the archived-slide render keeps
     // every stored field visible for decks left on the type.
-    migration: null,
+    migrations: [],
     allowedReferences: {
       'server/db/migrations/021_terminology_standardization.js':
         'a past migration that copied cardNLabel→cardNTitle on this type; it must keep naming it to stay a faithful record of what it did',
@@ -107,7 +127,7 @@ export const REMOVED_SLIDE_TYPES = {
     // No conversion migration: no core type carries the nested structure, so
     // the render contract (unresolved.js) degrades stored decks to an archived
     // slide with every field visible rather than converting them.
-    migration: null,
+    migrations: [],
     allowedReferences: {
       'tests/slide-types-policy.test.js':
         'asserts the type is off the registry and a stored slide degrades safely',
@@ -122,7 +142,7 @@ export const REMOVED_SLIDE_TYPES = {
       'a free-positioning canvas: too easy to make inaccessible slides, no ' +
       'semantic projection (it degraded to nothing in the reader/reflow view), ' +
       'and it never earned an authoring surface after #252 retired the canvas editor.',
-    migration: null, // scan-slide-type.js reported no decks using it
+    migrations: [], // scan-slide-type.js reported no decks using it
     allowedReferences: {
       'tests/slide-types-policy.test.js':
         'asserts the type is off the registry and a stored slide degrades safely',
@@ -151,7 +171,7 @@ export const REMOVED_SLIDE_TYPES = {
     // slide with every field still visible. The deck scan on 2026-08-22 found
     // no deck on the type; a stored slide loses its form, which is the
     // breaking half of this removal and is called out in the release notes.
-    migration: null,
+    migrations: [],
     allowedReferences: {
       'tests/slide-types-policy.test.js':
         'asserts the type is off the registry and a stored slide degrades safely',
@@ -179,7 +199,9 @@ export const REMOVED_SLIDE_TYPES = {
     // the SQL still buys is persistence without a save — it writes the columns
     // once — and the surfaces the read funnel does not pass through
     // (version snapshots, slide_library, comment snapshots).
-    migration: 'server/db/migrations/056_rename_lijstje_slide_to_list_slide.js',
+    migrations: [
+      'server/db/migrations/056_rename_lijstje_slide_to_list_slide.js',
+    ],
     allowedReferences: {
       'server/db/migrations/056_rename_lijstje_slide_to_list_slide.js':
         'the migration itself — it renames stored decks and must name both types',
@@ -207,7 +229,7 @@ export const REMOVED_SLIDE_TYPES = {
     // production scan the removal PR owed (slides.ciiic.nl, 2026-07-31) found
     // 2 presentations / 1 slide each, both throwaway test decks, and nothing in
     // presentation_versions or slide_library — so no real deck degrades.
-    migration: null,
+    migrations: [],
     allowedReferences: {
       'server/db/migrations/020_rename_subtitle_to_subheading.js':
         'a past migration that renamed subtitle→subheading across several title types; it must keep naming this one to stay a faithful record of what it did',

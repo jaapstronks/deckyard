@@ -25,7 +25,7 @@ import {
 import { REMOVED_SLIDE_TYPES } from './removed.js';
 
 /** The schema version every freshly written deck is stamped with. */
-export const CURRENT_SCHEMA_VERSION = 12;
+export const CURRENT_SCHEMA_VERSION = 13;
 
 /**
  * The one legacy collection key each type stored before `items` — the v6 -> v7
@@ -323,6 +323,94 @@ export function* eachSlide(pres) {
       yield slide;
     }
   }
+}
+
+/**
+ * The removed type the v12 -> v13 step converts, and what it becomes.
+ *
+ * Written out here rather than read off `REMOVED_SLIDE_TYPES[...].successor`.
+ * The move renames three item fields, which makes it a *conversion* — a
+ * decision somebody took about these decks — and B223 drew the line that the
+ * funnel derives only *lossless* renames from a removal record. A conversion
+ * reaches the funnel by being named, once, in a step written for it.
+ */
+const AGENDA_TIMELINE_TYPE = 'agenda-timeline-slide';
+const AGENDA_TIMELINE_SUCCESSOR = 'timeline-slide';
+
+/**
+ * A stored item value as migration 030's `->>` would have rendered it: the
+ * string itself, the text of a number or boolean, and "absent" (`null`) for
+ * anything else — `null`, an object, an array — so the next spelling gets its
+ * turn instead of `[object Object]` landing in the deck.
+ * @param {any} v
+ * @returns {string|null}
+ */
+function itemText(v) {
+  if (typeof v === 'string') return v;
+  if (typeof v === 'number' || typeof v === 'boolean') return String(v);
+  return null;
+}
+
+/**
+ * The first spelling a stored item actually carries, as text — the JS twin of
+ * 030's `COALESCE(item->>'time', item->>'label', item->>'date', '')`.
+ * @param {...any} values
+ * @returns {string}
+ */
+function firstItemText(...values) {
+  for (const v of values) {
+    const text = itemText(v);
+    if (text != null) return text;
+  }
+  return '';
+}
+
+/**
+ * Finish migration 030: convert every stored `agenda-timeline-slide` into the
+ * `timeline-slide` it was consolidated into, in every language version.
+ *
+ * 030 (May 2026) renamed the type and folded the items (`time`/`label` ->
+ * `date`, `body` -> `text`) in `presentations.slides` and the `slides` array of
+ * each version snapshot — and skipped `i18n` on purpose, on two arguments that
+ * have since expired. The first was "the renderer has back-compat for the old
+ * field names": true of the fields, but rung 3 took the *type* off the
+ * registry, so a version left behind renders as an *archived* slide and the
+ * field names stop mattering. The second was "the i18n structure varies and
+ * SQL is complex": migration 056 has walked those same jsonb columns
+ * recursively ever since. What was left is a deck whose one slide id is a
+ * timeline in the dominant version and an archived slide in every other: 80
+ * such slides across ~20 live decks in the CIIIC fork on 2026-09-03.
+ *
+ * `eachSlide()` is the difference — it visits the translations too. Same
+ * COALESCE order as 030, so a deck converted by either path comes out the same
+ * (D80). Idempotent: after one pass no slide carries the retired type, so a
+ * second run finds nothing to convert.
+ *
+ * @param {any} pres
+ * @returns {any}
+ */
+function convertAgendaTimelineSlides(pres) {
+  for (const slide of eachSlide(pres)) {
+    if (slide?.type !== AGENDA_TIMELINE_TYPE) continue;
+    slide.type = AGENDA_TIMELINE_SUCCESSOR;
+    const content = slide.content;
+    if (!content || typeof content !== 'object') continue;
+    if (!Array.isArray(content.items)) continue;
+    content.items = content.items.map((item) => {
+      if (!item || typeof item !== 'object') return item;
+      const converted = {
+        ...item,
+        date: firstItemText(item.time, item.label, item.date),
+        title: firstItemText(item.title),
+        text: firstItemText(item.text, item.body),
+      };
+      delete converted.time;
+      delete converted.label;
+      delete converted.body;
+      return converted;
+    });
+  }
+  return pres;
 }
 
 /**
@@ -699,6 +787,17 @@ export const SCHEMA_MIGRATIONS = [
   // about a deck, not something a read path does silently. `losslessRename` in
   // `removed.js` is that line, drawn once, beside the removals it judges.
   renameLosslessRemovedTypes,
+
+  // v12 -> v13: finish migration 030 — convert `agenda-timeline-slide` into
+  // `timeline-slide` in every language version, not only the dominant one.
+  //
+  // A conversion, not a rename, so it is named in a step of its own rather
+  // than derived from `successor` (see convertAgendaTimelineSlides). The
+  // decision itself is not new: 030 took it in May 2026 and applied it to
+  // `presentations.slides` only. This applies the same transform to the copies
+  // it skipped, which is why it is a funnel step and not a fresh judgement
+  // about anybody's deck (D80).
+  convertAgendaTimelineSlides,
 ];
 
 /**
