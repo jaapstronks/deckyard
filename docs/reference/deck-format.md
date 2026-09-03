@@ -228,8 +228,10 @@ When the badge comes off, the window closes and the rule binds absolutely.
 - `version` is the **envelope** version, bumped only for a breaking change to the
   envelope shape itself. It is `1` today.
 - Slide **content** shape is versioned independently by the schema `$id`
-  (`/v<N>/…`), tied to the storage `schemaVersion` and its migration runner (see
-  [schema versioning](../developer/slide-types.md)). A reader validates content
+  (`/v<N>/…`), tied to the storage `schemaVersion` and its migration runner
+  (`shared/slide-types/schema-version.js`; how a rename or a narrowing enters
+  that chain is step 0 of [slide-type-removal.md](./slide-type-removal.md)). A
+  reader validates content
   against the schema version it understands; the lenient contract lets it tolerate
   newer keys.
 - A **type id's** `@version` is neither of those two: it is a hint about which
