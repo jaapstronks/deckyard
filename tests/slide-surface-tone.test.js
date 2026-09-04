@@ -98,6 +98,20 @@ test('background tone', async (t) => {
     assert.equal(resolveSlideBgTone({}, THEME), 'light');
   });
 
+  await t.test('a hex the colour utils cannot parse is no signal', () => {
+    // `#rrggbbaa` and `#rgba` are valid CSS but not a luminance the utils can
+    // read; the dark-pole fallback would otherwise call a dark ground light.
+    const theme = {
+      ...THEME,
+      slideBackgrounds: [
+        { id: 'a', label: 'A', value: '#13393acc' },
+        { id: 'b', label: 'B', value: '#123f' },
+      ],
+    };
+    assert.equal(resolveSlideBgTone({ background: 'a' }, theme), '');
+    assert.equal(resolveSlideBgTone({ background: 'b' }, theme), '');
+  });
+
   await t.test('an unknowable surface stays unknown', () => {
     assert.equal(resolveSlideBgTone({ background: 'accent' }, THEME), '');
     assert.equal(

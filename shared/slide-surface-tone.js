@@ -13,7 +13,7 @@
 // callers must keep their existing default rather than guess: a wrong guess
 // flips a logo to the invisible variant, which is worse than the status quo.
 
-import { pickTextColorForBg } from './color-utils.js';
+import { hexToRgb, pickTextColorForBg } from './color-utils.js';
 
 // The last colour literal in a CSS background shorthand is its ground — the
 // layer every other layer is composited over, and the one that shows wherever
@@ -28,10 +28,12 @@ function groundHexOf(cssValue) {
 }
 
 function toneOfHex(hex) {
-  if (!hex) return '';
   // pickTextColorForBg returns the light pole for a dark ground. It falls back
   // to the dark pole for anything it cannot parse, which would silently read as
-  // "light surface" — so unparseable input has to be caught here instead.
+  // "light surface" — so anything hexToRgb rejects (an alpha channel, an odd
+  // digit count) has to stay '' here: a mark on an unknown surface is the
+  // neutral one, never a guess.
+  if (!hex || !hexToRgb(hex)) return '';
   return pickTextColorForBg(hex) === '#ffffff' ? 'dark' : 'light';
 }
 
