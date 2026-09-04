@@ -110,7 +110,11 @@ describe('share dialog scroll chain', () => {
 
   it('scrolls in the body, not by growing the dialog', () => {
     const body = ruleBody(css, '.share-modal-body');
-    assert.match(body, /min-height:\s*0/, '`.share-modal-body` needs `min-height: 0`');
+    assert.match(
+      body,
+      /min-height:\s*0/,
+      '`.share-modal-body` needs `min-height: 0`',
+    );
     assert.match(
       body,
       /overflow-y:\s*auto/,
