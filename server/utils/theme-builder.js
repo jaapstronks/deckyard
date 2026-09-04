@@ -422,9 +422,21 @@ function applyThemeConfig(theme, rawConfig) {
     theme.defaultTitleSlide = config.defaultTitleSlide;
   if (config.locks) theme.locks = config.locks;
 
-  // Dark/light logo variants sit alongside the existing large/small pair; the
-  // renderer picks by background, which is a later slice's job.
-  if (config.logos) theme.assets = { ...theme.assets, ...config.logos };
+  // Dark/light logo variants sit alongside the existing large/small pair. The
+  // stored keys are surface-keyed (`dark` = the mark for a dark ground); the
+  // renderer reads them under their asset names, so map rather than spread —
+  // `assets.dark` would be a second name for the same thing, and nothing would
+  // find it (shared/theme-logo.js).
+  if (config.logos) {
+    const { dark, light, darkSmall, lightSmall } = config.logos;
+    theme.assets = {
+      ...theme.assets,
+      ...(dark ? { logoOnDark: dark } : {}),
+      ...(light ? { logoOnLight: light } : {}),
+      ...(darkSmall ? { titleLogoOnDark: darkSmall } : {}),
+      ...(lightSmall ? { titleLogoOnLight: lightSmall } : {}),
+    };
+  }
 
   if (config.cssVarOverrides) Object.assign(cssVars, config.cssVarOverrides);
 

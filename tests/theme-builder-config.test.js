@@ -171,12 +171,21 @@ test('logo variants land alongside the existing large/small pair', () => {
   const built = buildThemeConfig({
     ...baseRow(),
     config: {
-      logos: { dark: '/uploads/dark.svg', light: '/uploads/light.svg' },
+      logos: {
+        dark: '/uploads/dark.svg',
+        light: '/uploads/light.svg',
+        darkSmall: '/uploads/dark-small.svg',
+        lightSmall: '/uploads/light-small.svg',
+      },
     },
   });
 
-  assert.equal(built.assets.dark, '/uploads/dark.svg');
-  assert.equal(built.assets.light, '/uploads/light.svg');
+  // The stored keys are surface-keyed; the renderer reads them under their
+  // asset names (shared/theme-logo.js).
+  assert.equal(built.assets.logoOnDark, '/uploads/dark.svg');
+  assert.equal(built.assets.logoOnLight, '/uploads/light.svg');
+  assert.equal(built.assets.titleLogoOnDark, '/uploads/dark-small.svg');
+  assert.equal(built.assets.titleLogoOnLight, '/uploads/light-small.svg');
   // The originals survive.
   assert.equal(built.assets.logo, '/uploads/acme.svg');
   assert.equal(built.assets.titleLogo, '/uploads/acme-small.svg');

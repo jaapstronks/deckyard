@@ -17,6 +17,7 @@ import { injectTextStyles } from './text-styles.js';
 import { validateFieldValue } from './field-types.js';
 import { CURRENT_SCHEMA_VERSION } from './schema-version.js';
 import { renderUnresolvedSlideHtml } from './unresolved.js';
+import { resolveThemeLogo } from '../theme-logo.js';
 import {
   DEFAULT_DECK_LANG,
   TRANSLATION_LANGS,
@@ -255,14 +256,14 @@ function injectVariantContrastClass(html, content, ctx) {
 }
 
 // Inject an optional per-slide theme logo into a corner of the slide. The logo
-// comes from the active theme (ctx.theme.assets.logo), matching the logo shown
-// elsewhere in the theme. Works on any slide type's rendered output.
+// comes from the active theme (ctx.theme.assets), matching the logo shown
+// elsewhere in the theme, and is the variant that will be visible on this
+// slide's own surface (../theme-logo.js). Works on any slide type's rendered
+// output.
 function injectSlideLogo(html, content, ctx) {
   if (content?.slideLogo !== 'top-right') return html;
   const theme = ctx?.theme && typeof ctx.theme === 'object' ? ctx.theme : null;
-  const src = sanitizeBgUrl(
-    String(theme?.assets?.logo || '/assets/images/logo.svg'),
-  );
+  const src = sanitizeBgUrl(resolveThemeLogo(theme, content));
   if (!src) return html;
   const alt = escapeHtml(String(theme?.assets?.logoAlt || 'Logo'));
   const node =

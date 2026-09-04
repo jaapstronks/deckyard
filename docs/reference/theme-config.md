@@ -26,7 +26,9 @@ anything the editor does not cover.
 {
   "version": 1,
 
-  // Dark/light logo variants, alongside the existing large/small pair.
+  // Logo variants keyed by the SURFACE they belong on: `dark` is the mark for
+  // a dark ground, `light` the one for a light ground, `*Small` the title-slide
+  // sizes of each. See "Contrast-aware logos" below.
   "logos": { "dark": "…", "darkSmall": "…", "light": "…", "lightSmall": "…" },
 
   // Named scales rather than raw pixel values, so the wizard can offer choices.
@@ -172,7 +174,9 @@ and a stored config is always safe to merge without further checking.
 2. `surfaces` and `typography`
 3. `slideBackgrounds`, `backgroundPresets`, `gradient`, `slideTypes`,
    `defaultTitleSlide`, `locks`
-4. `logos` into `assets`
+4. `logos` into `assets`, under their asset names (`dark` → `assets.logoOnDark`,
+   `light` → `assets.logoOnLight`, and the `*Small` pair →
+   `assets.titleLogoOn*`)
 5. `cssVarOverrides` — **last, so a raw override always wins**
 
 An empty config leaves the derived theme byte-identical. Every row predating the
@@ -212,6 +216,47 @@ box. That sampler, and turning the sheet into a build gate, are follow-ups.
 
 Output goes to the gitignored `tmp/`. The run needs the same Chrome the export
 chain uses, and no server or database.
+
+## Contrast-aware logos
+
+A single wordmark cannot serve both poles: a black mark disappears on a dark
+ground and a white one disappears on a light one. A theme may therefore ship a
+mark per pole next to the neutral `assets.logo`:
+
+| File theme (`theme.json`) | DB theme (`config.logos`) | Used for                    |
+| ------------------------- | ------------------------- | --------------------------- |
+| `assets.logoOnDark`       | `logos.dark`              | slides on a dark surface    |
+| `assets.logoOnLight`      | `logos.light`             | slides on a light surface   |
+| `assets.titleLogoOnDark`  | `logos.darkSmall`         | title slides on a dark one  |
+| `assets.titleLogoOnLight` | `logos.lightSmall`        | title slides on a light one |
+
+`assets.logo` stays the fallback, so a theme that ships one mark behaves exactly
+as before.
+
+Two places draw a theme mark and both ask `shared/theme-logo.js` for it: the
+per-slide corner logo (`slideLogo: 'top-right'`, injected centrally by
+`renderSlideHtml` for every slide type) and the title slide's own logo.
+**Visibility outranks size** — a title slide takes `titleLogoOnDark`, then
+`logoOnDark`, then `titleLogo`, then `logo`, because a mark at the wrong size is
+a smaller loss than a mark nobody can see.
+
+The cascade cannot make the choice — an `<img>` `src` is not a CSS property — so
+the surface is resolved at render time by `shared/slide-surface-tone.js`, from
+the slide content plus the active theme:
+
+1. a **background image** whose text colour is settled (`slideBgText` set to
+   `light`/`dark`, or `auto` with a stored `slideBgTextAuto`) states the photo's
+   own luminance, and outranks the colour beneath it;
+2. otherwise the **background colour**: a theme variant's `textColor` inverted,
+   or failing that the colour literal in its `value`; for the built-in `lime` /
+   `mist` / `dark` slots, the theme's own `--t-slide-bg-<id>` — read, not
+   assumed, because `midnight` paints `lime` near-black.
+
+The resolver is three-valued. When nothing reliable is known (`accent`,
+`brand-*` and `custom`, or a theme with no matching var) it returns `''` and
+every caller keeps `assets.logo`: a wrong guess flips the mark to the invisible
+variant, which is worse than the status quo. Pinned by
+`tests/slide-surface-tone.test.js`.
 
 ## Override locks
 

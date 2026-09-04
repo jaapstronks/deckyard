@@ -144,6 +144,16 @@ A valid theme file must include at least:
 
 Everything else is optional.
 
+### Theme JSON: contrast-aware logos
+
+`assets.logo` is the one mark every theme must ship. A theme whose slides live
+on both poles can add `assets.logoOnDark` (the mark for a **dark** ground) and
+`assets.logoOnLight`, plus `titleLogoOnDark` / `titleLogoOnLight` for the
+title-slide sizes. The per-slide corner logo and the title slide's own logo each
+pick the variant that is visible on that slide's surface; `assets.logo` is the
+fallback whenever the surface cannot be resolved. Full rules in
+[`docs/reference/theme-config.md`](../reference/theme-config.md#contrast-aware-logos).
+
 ### Theme JSON: optional fields
 
 - **`sampleEmbedUrl`**: URL to use as the sample embed in the slide type picker thumbnail. If not provided, the embed slide thumbnail will show a placeholder. This should be a publicly accessible embed URL (e.g., a Miro board, Figma embed, or other iframe-compatible URL).
