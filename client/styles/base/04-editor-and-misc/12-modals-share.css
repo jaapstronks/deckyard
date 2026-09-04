@@ -2,8 +2,23 @@
    Share Modal
    ============================================ */
 
+/* One height, fixed, so the tab strip never moves under the pointer.
+
+   The dialog fills itself in after `show()` — collaborators and share links
+   both arrive from the network — and a content-driven box grew 621 → 726 px
+   while they landed, lifting the tab strip 53 px: more than the height of the
+   button being aimed at, so a click meant for "Link" landed beside it (B220,
+   and the same reflow is why the capture recipe missed its tab in A9.9).
+   Switching tabs moved it as well: measured at 1440×900 the strip sat at
+   179 px on Workspace, 198 px on Link and 372 px on Publish.
+
+   664px is the tallest tab measured at that viewport once loaded (Workspace),
+   in the same content-box coordinates as the `80vh` beside it: `.modal` is
+   content-box, so the dialog measures 664 + 40 padding + 2 border = 706 px on
+   screen. `min()` hands short viewports back to 80vh, so nothing is pushed off
+   screen there. The body below keeps doing the scrolling, as it already did. */
 .share-modal {
-  max-height: 80vh;
+  height: min(80vh, 664px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
