@@ -104,6 +104,14 @@ function sanitizeCssVarOverrides(raw) {
   return out;
 }
 
+/**
+ * Surface-keyed logo variants: `dark` is the mark for a DARK ground, `light`
+ * the one for a light ground, and the `*Small` pair the title-slide sizes of
+ * each. `buildThemeConfig` maps them onto `assets.logoOn*` / `titleLogoOn*`;
+ * the renderer picks one per slide (shared/theme-logo.js).
+ * @param {*} raw - The stored `logos` object
+ * @returns {Object|null} The sanitized pair, or null when empty
+ */
 function sanitizeLogos(raw) {
   if (!raw || typeof raw !== 'object') return null;
   const out = {};

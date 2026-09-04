@@ -10,6 +10,7 @@ import {
   DEFAULT_TITLE_LAYOUT,
 } from '../../theme-config-schema.js';
 import { alignGroup, groupAlignClass } from '../field-groups.js';
+import { resolveThemeLogo } from '../../theme-logo.js';
 
 /**
  * Title, subtitle and meta are ONE visual block: they share a container and
@@ -192,12 +193,10 @@ export default {
         : '';
     const theme =
       ctx?.theme && typeof ctx.theme === 'object' ? ctx.theme : null;
-    // Title slide can use a separate smaller logo (titleLogo) or fall back to main logo
-    const logoSrc = String(
-      theme?.assets?.titleLogo ||
-        theme?.assets?.logo ||
-        '/assets/images/logo.svg',
-    );
+    // Title slide can use a separate smaller logo (titleLogo) or fall back to
+    // the main one, and takes the variant that is visible on the surface this
+    // slide renders on when the theme ships a mark per pole.
+    const logoSrc = resolveThemeLogo(theme, content, { title: true });
     const logoAlt = String(
       theme?.assets?.titleLogoAlt || theme?.assets?.logoAlt || 'Logo',
     );
