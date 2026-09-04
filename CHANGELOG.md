@@ -4,6 +4,29 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.31.0](https://github.com/jaapstronks/deckyard/compare/v1.30.0...v1.31.0) (2026-09-04)
+
+
+### Added
+
+* **errors:** details is typed by the code (B208) ([#1086](https://github.com/jaapstronks/deckyard/issues/1086)) ([d05f80e](https://github.com/jaapstronks/deckyard/commit/d05f80ed7aae9c9ea8c32ab2c8d1c5d3db0ab9f5))
+* **image-library:** the picker leads with uploading, not with the grid (B210) ([#1090](https://github.com/jaapstronks/deckyard/issues/1090)) ([40d8504](https://github.com/jaapstronks/deckyard/commit/40d850460b5cfa114db85d7066efd911f59c3ae9))
+* **slide-types:** a lossless type rename is a funnel step, not a script someone remembers (B223) ([#1097](https://github.com/jaapstronks/deckyard/issues/1097)) ([4a1d10c](https://github.com/jaapstronks/deckyard/commit/4a1d10c0a553e91ca750f982bf5fd5a8110dbef8))
+* **theme:** pick the logo that is visible on the slide's own surface ([#1101](https://github.com/jaapstronks/deckyard/issues/1101)) ([a1d6ab5](https://github.com/jaapstronks/deckyard/commit/a1d6ab5746d270f97d4bdb7f2e0e223bf4b59c18))
+
+
+### Fixed
+
+* **capture:** the share dialog's tab click is verified, not assumed (A9.9) ([#1092](https://github.com/jaapstronks/deckyard/issues/1092)) ([c76f4b7](https://github.com/jaapstronks/deckyard/commit/c76f4b7c0b40878ca0bbe116ac7da2c30f18165c))
+* **collab:** migrate every language version, not only the dominant one (B211 part 1) ([#1085](https://github.com/jaapstronks/deckyard/issues/1085)) ([af826ae](https://github.com/jaapstronks/deckyard/commit/af826ae73da5d7bdf4ac8b0197119746877aa751))
+* **i18n:** an undeclared string content key is prose, in every language (B211 part 2) ([d073d4a](https://github.com/jaapstronks/deckyard/commit/d073d4add34638820076abf5cecd930c1ebe3713)), closes [#1040](https://github.com/jaapstronks/deckyard/issues/1040)
+* **i18n:** drop the stale locale copy of the fill-slide tooltip (B201) ([#1093](https://github.com/jaapstronks/deckyard/issues/1093)) ([0110a69](https://github.com/jaapstronks/deckyard/commit/0110a69ea2033a3fe79f74f98ee4e41b8b4481fd))
+* **llm:** the OpenAI-compatible transform sends the caller's token budget (B214) ([930dc02](https://github.com/jaapstronks/deckyard/commit/930dc028c08cdc9ea96cb207f4cf63b341f86194))
+* **mcp:** a tool's gate belongs to its name, not to the last registrant ([#1100](https://github.com/jaapstronks/deckyard/issues/1100)) ([93a6797](https://github.com/jaapstronks/deckyard/commit/93a6797a850a01f890c2e19c40b37a19c386e4c8))
+* **settings:** the email default locale rolls back to what the server holds (B209) ([#1094](https://github.com/jaapstronks/deckyard/issues/1094)) ([63abe04](https://github.com/jaapstronks/deckyard/commit/63abe04b61e785c17ef2982c57e98d334fd5e5ae))
+* **slide-types:** migration 030 reaches the translations it skipped (B225) ([da05268](https://github.com/jaapstronks/deckyard/commit/da0526800e36a18e645e105293197bcfdf4651e7))
+* **slides:** a card over a photo gets a real scrim, not a glass tint (B212) ([13b25bb](https://github.com/jaapstronks/deckyard/commit/13b25bb553faa86f83eb97874bda4d832938d5ce))
+
 ## [1.30.0](https://github.com/jaapstronks/deckyard/compare/v1.29.0...v1.30.0) (2026-09-02)
 
 
