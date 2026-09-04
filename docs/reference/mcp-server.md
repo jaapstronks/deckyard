@@ -305,9 +305,16 @@ export default function registerCustomTools(server, ctx) {
       // ... fork logic; import core modules directly as needed
       return { url: ctx.presentationUrl(presentationId, 'present') };
     },
+    { permission: 'write' },
   );
 }
 ```
+
+**Declare a permission.** A tool that declares none is unreachable for a keyed
+caller — it is hidden from `tools/list` and refused at `tools/call` (fail
+closed, [below](#permissions-and-quota)). Stdio has no key and so notices
+nothing, which is what makes an omission easy to miss: it works in Claude
+Code and Desktop, and only the HTTP transport comes up empty.
 
 Both transports auto-load it (`server/mcp/custom-tools-loader.js`): the stdio
 entry point and the lazy SSE mount. Alternatively, call
@@ -318,6 +325,39 @@ entry point and the lazy SSE mount. Alternatively, call
 `getOwner(context)` (prefers the SSE session's owner over the static default),
 `getAppBaseUrl()`, `presentationUrl(id, mode)`. Custom handlers run in the
 core process, so anything else can be imported directly.
+
+### Enriching a core tool
+
+Registering a name that already exists replaces it, which is how a fork wraps
+core behaviour: read the entry, register the same name again with the original
+handler in the closure.
+
+```js
+const core = server.tools.get('update_slide');
+server.tool(
+  core.name,
+  core.description,
+  core.inputSchema,
+  async (args, ctx) => {
+    const result = await core.handler(args, ctx);
+    return { ...result, published: await publish(args.presentationId) };
+  },
+);
+```
+
+**The gate belongs to the tool name, not to the last registrant.** On a
+re-register, `readOnly` and `permission` that you do not restate are inherited
+from the existing entry rather than reset to the fail-closed defaults — those
+defaults are what a _first_ registration gets. Restating an option is an
+explicit choice and wins, with one exception: removing a permission throws,
+because a tool no key can reach is never what a wrapper meant to express.
+
+That inheritance is the point of the rule. Falling back to the defaults here
+fails closed in the _invisible_ direction: the enriched tool drops out of
+`tools/list`, every `tools/call` is refused with "declares no required
+permission", and only for keyed callers — stdio keeps working, so the loss
+shows up as an empty tool list on the HTTP transport alone.
+`tests/mcp/custom-tools-seam.test.js` guards the seam.
 
 Core's tool-count tests only count core tools; custom tools are the fork's to
 test.
