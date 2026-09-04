@@ -134,14 +134,41 @@ export class McpServer {
    *   same one its `/api/v1` counterpart requires, so a key means the same
    *   thing on both transports. Fail closed as well: a keyed caller cannot
    *   reach a tool that declares no permission (see ./authorization.js).
+   *
+   * Registering a name that already exists replaces it — that is how a fork's
+   * custom registrar enriches a core tool (same name, original handler in the
+   * closure; see ./custom-tools-loader.js). **The gate belongs to the name,
+   * not to the last registrant**: on such a re-register, `readOnly` and
+   * `permission` that the caller does not restate are inherited from the
+   * existing entry instead of falling back to the defaults. The fail-closed
+   * defaults are what a *first* registration gets — inheriting them on a
+   * re-register would silently strip the gate off a gated tool, which fails
+   * closed in the invisible direction: the tool drops out of `tools/list` and
+   * every `tools/call` is refused, and only for keyed (HTTP) callers, so stdio
+   * never notices. Restating an option is an explicit choice and wins — except
+   * removing a permission, which throws, because a tool that no key can reach
+   * is never what a re-register meant to express.
    */
-  tool(
-    name,
-    description,
-    inputSchema,
-    handler,
-    { readOnly = false, permission = null } = {},
-  ) {
+  tool(name, description, inputSchema, handler, options = {}) {
+    const existing = this.tools.get(name);
+    const stated = (key) => options[key] !== undefined;
+
+    const readOnly = stated('readOnly')
+      ? Boolean(options.readOnly)
+      : (existing?.readOnly ?? false);
+
+    let permission = stated('permission')
+      ? options.permission
+      : (existing?.permission ?? null);
+    if (existing?.permission && !permission) {
+      throw new Error(
+        `Tool ${name} is already registered requiring permission "${existing.permission}"; ` +
+          'a re-registration cannot drop it (that would hide the tool from every API key). ' +
+          'Omit `permission` to keep it, or name a different one.',
+      );
+    }
+    permission = permission ?? null;
+
     const { inputSchema: schema, handler: wrapped } = withPresentationIdAlias(
       inputSchema,
       handler,
