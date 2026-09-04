@@ -4,6 +4,13 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.32.1](https://github.com/jaapstronks/deckyard/compare/v1.32.0...v1.32.1) (2026-09-04)
+
+
+### Fixed
+
+* **share:** the dialog holds one height while it fills itself in ([#1105](https://github.com/jaapstronks/deckyard/issues/1105)) ([4f816f9](https://github.com/jaapstronks/deckyard/commit/4f816f9466ca0aa5a6565d21443bb00687992923))
+
 ## [1.32.0](https://github.com/jaapstronks/deckyard/compare/v1.31.0...v1.32.0) (2026-09-04)
 
 
