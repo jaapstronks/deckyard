@@ -323,8 +323,32 @@ entry point and the lazy SSE mount. Alternatively, call
 
 `ctx` (the documented helper surface): `repoRoot`, `defaultOwnerEmail`,
 `getOwner(context)` (prefers the SSE session's owner over the static default),
-`getAppBaseUrl()`, `presentationUrl(id, mode)`. Custom handlers run in the
-core process, so anything else can be imported directly.
+`storageScopeOf(context)`, `getAppBaseUrl()`, `presentationUrl(id, mode)`.
+Custom handlers run in the core process, so anything else can be imported
+directly.
+
+**Reaching storage: `ctx.storageScopeOf(context)`, never `ctx.repoRoot`.**
+Every facade under `server/storage/` takes a _storage scope_ — which
+organization the call acts in and on whose behalf — and throws on a bare
+`repoRoot` string (`server/storage/scope.js`). `storageScopeOf(context)` builds
+the scope for the session at hand: an SSE session acts in its API key's
+organization, a stdio session in the single organization the instance holds
+(and refuses to guess once it holds several).
+
+```js
+import { getPresentation } from '../server/storage/presentations/index.js';
+
+async ({ presentationId }, context) => {
+  const deck = await getPresentation(
+    ctx.storageScopeOf(context),
+    presentationId,
+  );
+  return { title: deck.title };
+};
+```
+
+`repoRoot` stays on `ctx` for the non-storage paths that want the disk path —
+theme assets, uploads — but it is not a storage argument.
 
 ### Enriching a core tool
 

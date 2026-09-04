@@ -142,7 +142,10 @@ function parseSince(since) {
  *   for downstream forks: called once after the core tools with
  *   `(server, ctx)`, so a fork registers its own tools from its own file
  *   instead of editing this one. `ctx` is the documented helper surface:
- *   `{ repoRoot, defaultOwnerEmail, getOwner, getAppBaseUrl, presentationUrl }`.
+ *   `{ repoRoot, defaultOwnerEmail, getOwner, storageScopeOf, getAppBaseUrl,
+ *   presentationUrl }`. `storageScopeOf(context)` is what a storage call takes:
+ *   the facade refuses a bare `repoRoot` string, so a fork that reaches storage
+ *   goes through this rather than rebuilding the scope itself.
  *   Usually supplied by the `custom/mcp-tools.js` auto-loader
  *   (see ./custom-tools-loader.js); docs in docs/reference/mcp-server.md.
  */
@@ -165,6 +168,10 @@ export function registerTools(
    * organization its API key belongs to. A stdio session has no key and no
    * organization — it is a trusted local process bound to the instance — so it
    * takes the single organization, and refuses to guess once there are several.
+   *
+   * Handed to the custom-tools seam below: a fork's storage calls need the same
+   * scope, and the alternative — copying these four lines into the fork — is a
+   * copy of core logic that drifts on every upstream merge.
    * @param {Object} [context] - Per-request context (SSE session)
    * @returns {Object} storage scope
    */
@@ -2103,6 +2110,7 @@ export function registerTools(
       repoRoot,
       defaultOwnerEmail,
       getOwner,
+      storageScopeOf,
       getAppBaseUrl,
       presentationUrl,
     });

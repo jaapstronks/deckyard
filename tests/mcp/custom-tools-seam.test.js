@@ -23,6 +23,12 @@
  *   permission, which throws rather than producing a tool no key can reach;
  * - a genuinely new custom tool still fails closed when it declares nothing.
  *
+ * The last group pins the other half of the seam: what a registrar is *handed*.
+ * Since #372 every storage facade takes a scope and throws on a bare `repoRoot`
+ * string, so a fork tool that reached storage with `ctx.repoRoot` failed for
+ * every keyed caller. `ctx.storageScopeOf(context)` is the core builder, and it
+ * has to stay on the seam — otherwise the fork copies it and the copy drifts.
+ *
  * Run with: node --test tests/mcp/custom-tools-seam.test.js
  */
 
@@ -35,6 +41,8 @@ import {
   isToolVisible,
   enforceToolPolicy,
 } from '../../server/mcp/authorization.js';
+import { resolveScope } from '../../server/storage/scope.js';
+import { getDefaultOrganizationId } from '../../server/config/database.js';
 
 const OWNER = 'owner@example.com';
 const SCHEMA = { type: 'object', properties: {} };
@@ -217,5 +225,68 @@ describe('custom-tools seam — a new tool still fails closed', () => {
     assert.equal(entry.permission, null);
     assert.equal(entry.readOnly, false);
     assert.equal(isToolVisible(entry, keyedContext(['read'])), false);
+  });
+});
+
+describe('custom-tools seam — a fork reaches storage through the scope', () => {
+  /**
+   * The `ctx` a fork registrar is handed.
+   * @returns {Object} The seam context
+   */
+  function seamContext() {
+    let seen = null;
+    registerTools(new McpServer(), {
+      defaultOwnerEmail: OWNER,
+      registerCustom: (_srv, ctx) => {
+        seen = ctx;
+      },
+    });
+    return seen;
+  }
+
+  it('hands the registrar a storageScopeOf helper', () => {
+    assert.equal(typeof seamContext().storageScopeOf, 'function');
+  });
+
+  it('builds a scope the storage facade accepts for an SSE session', () => {
+    const scope = seamContext().storageScopeOf({
+      ownerEmail: OWNER,
+      organizationId: 'org-under-test',
+      transport: 'sse',
+    });
+
+    const resolved = resolveScope(scope, 'custom_tool');
+    assert.equal(resolved.organizationId, 'org-under-test');
+    assert.equal(resolved.actorEmail, OWNER);
+  });
+
+  it('builds a scope the storage facade accepts for a stdio session', () => {
+    const scope = seamContext().storageScopeOf(undefined);
+
+    const resolved = resolveScope(scope, 'custom_tool');
+    assert.equal(resolved.organizationId, getDefaultOrganizationId());
+    assert.equal(resolved.actorEmail, OWNER);
+  });
+
+  it('prefers the per-request owner over the static default', () => {
+    const scope = seamContext().storageScopeOf({
+      ownerEmail: 'session@example.com',
+      organizationId: 'org-under-test',
+    });
+
+    assert.equal(
+      resolveScope(scope, 'custom_tool').actorEmail,
+      'session@example.com',
+    );
+  });
+
+  it('still carries repoRoot, which storage refuses on its own', () => {
+    const ctx = seamContext();
+
+    assert.equal(typeof ctx.repoRoot, 'string');
+    assert.throws(
+      () => resolveScope(ctx.repoRoot, 'custom_tool'),
+      /takes a storage scope, not a repoRoot string/,
+    );
   });
 });
