@@ -4,6 +4,13 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.32.0](https://github.com/jaapstronks/deckyard/compare/v1.31.0...v1.32.0) (2026-09-04)
+
+
+### Added
+
+* **mcp:** the custom-tools seam hands a fork the storage scope ([#1103](https://github.com/jaapstronks/deckyard/issues/1103)) ([77fbbe8](https://github.com/jaapstronks/deckyard/commit/77fbbe86dcac2e5456e90aa1f8a8c5835b12f0ef))
+
 ## [1.31.0](https://github.com/jaapstronks/deckyard/compare/v1.30.0...v1.31.0) (2026-09-04)
 
 
