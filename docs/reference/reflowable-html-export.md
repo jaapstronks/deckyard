@@ -37,6 +37,16 @@ document that stays readable with JavaScript — and author CSS — turned off.
     `kpi-metrics-slide` leads with `value`, so its `metrics` field names
     `label`. A declared field that is empty on one item falls back to the
     default for that item.
+  - A `string` field declaring `mediaRef` is a **reference to media the document
+    cannot embed**, not document text, and projects as a stand-in naming the
+    medium — linked when a link resolves, plain text otherwise. It names the
+    medium and not the slide: the section heading directly above already
+    carries the title. The declaration
+    carries `label` (what to call it — "Video") and an optional `linkKey` naming
+    a sibling that holds the author's own link, which wins and is then folded
+    into the stand-in rather than repeated as a loose paragraph. A video slide's
+    `source` accepts a URL _or_ a bare provider id, so without this the reader
+    printed `<p>3045cc09-605c-…</p>`; an id is never text (D82).
   - Presentational field types (`enum`, `color`, `number`, `boolean`) and the
     global background/logo fields carry no document text and are omitted.
 - The slide heading resolves as: `a11yTitle` override → the type's `labelField`

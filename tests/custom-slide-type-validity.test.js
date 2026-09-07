@@ -434,6 +434,53 @@ const WARNING_CASES = [
     {},
   ],
   [
+    // The stand-in still fires (a media reference is never printed raw), but
+    // it can only call the medium "Media" — which is the point of declaring.
+    'a mediaRef without a label',
+    validDef({
+      fields: [{ key: 'src', type: 'string', label: 'Source', mediaRef: {} }],
+      defaults: { src: '' },
+    }),
+    '`mediaRef.label` is missing',
+    {},
+  ],
+  [
+    // Same silent no-op as a labelField typo: the stand-in falls back to
+    // linking the reference itself, so the type renders either way.
+    'a mediaRef whose linkKey names nothing',
+    validDef({
+      fields: [
+        {
+          key: 'src',
+          type: 'string',
+          label: 'Source',
+          mediaRef: { label: 'Video', linkKey: 'nope' },
+        },
+      ],
+      defaults: { src: '' },
+    }),
+    '`mediaRef.linkKey` "nope"',
+    {},
+  ],
+  [
+    // A media reference is a string; on any other type the stand-in silently
+    // replaces whatever that type would have projected.
+    'a mediaRef on a non-string field',
+    validDef({
+      fields: [
+        {
+          key: 'shot',
+          type: 'image',
+          label: 'Shot',
+          mediaRef: { label: 'Video' },
+        },
+      ],
+      defaults: { shot: '' },
+    }),
+    'is declared on a `image` field',
+    {},
+  ],
+  [
     'a required field with no default',
     validDef({
       fields: [{ key: 'heading', type: 'string', required: true }],

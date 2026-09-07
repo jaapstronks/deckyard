@@ -917,3 +917,105 @@ describe('itemLabelField — an items field declares its own heading (D81)', () 
     assert.ok(html.includes('<p>1.2</p>'), html);
   });
 });
+
+describe('mediaRef — a reference projects as a stand-in, never as an id (D82)', () => {
+  const videoDef = () => ({
+    label: 'Video',
+    fields: [
+      { key: 'title', type: 'string' },
+      {
+        key: 'source',
+        type: 'string',
+        mediaRef: { label: 'Video', linkKey: 'watchUrl' },
+      },
+      { key: 'watchUrl', type: 'string' },
+      { key: 'bunnyLibraryId', type: 'string', presentational: true },
+    ],
+  });
+
+  it('names the medium when the reference is a bare id', () => {
+    const html = body(
+      { content: { source: '3045cc09-605c-40d9-aa76-9ace93e7f637' } },
+      videoDef(),
+    );
+    assert.ok(html.includes('<p class="reader-media"'), html);
+    assert.ok(html.includes('>Video</p>'), html);
+    assert.ok(!html.includes('3045cc09'), html);
+  });
+
+  it('links the reference when it is a URL, named by the medium', () => {
+    const html = body(
+      { content: { title: 'Our launch film', source: 'https://youtu.be/abc' } },
+      videoDef(),
+      { headingKey: 'title', headingText: 'Our launch film' },
+    );
+    assert.ok(html.includes('<a href="https://youtu.be/abc">Video</a>'), html);
+    // The section heading carries the title; the stand-in must not say it
+    // again right underneath.
+    assert.ok(!html.includes('Our launch film'), html);
+  });
+
+  it("the author's linkKey wins over the reference, and does not repeat", () => {
+    const html = body(
+      {
+        content: {
+          title: 'Our launch film',
+          source: '3045cc09-605c-40d9-aa76-9ace93e7f637',
+          watchUrl: 'go.example.nl/film',
+        },
+      },
+      videoDef(),
+      { headingKey: 'title', headingText: 'Our launch film' },
+    );
+    // Scheme-less author input is normalised the same way the PDF ladder does.
+    assert.ok(
+      html.includes('<a href="https://go.example.nl/film">Video</a>'),
+      html,
+    );
+    // Folded in, not projected a second time as a loose paragraph.
+    assert.equal(html.match(/go\.example\.nl/g).length, 1, html);
+    assert.ok(!html.includes('3045cc09'), html);
+  });
+
+  it('rejects an unsafe reference rather than linking it', () => {
+    const html = body(
+      // eslint-disable-next-line no-script-url
+      { content: { source: 'javascript:alert(1)' } },
+      videoDef(),
+    );
+    assert.ok(!html.includes('<a '), html);
+    assert.ok(!html.includes('javascript:'), html);
+    assert.ok(html.includes('>Video</p>'), html);
+  });
+
+  it('projects nothing when the reference is empty', () => {
+    assert.equal(body({ content: { source: '' } }, videoDef()), '');
+  });
+
+  it('suppresses the raw reference even when the declaration is malformed', () => {
+    const html = body(
+      { content: { source: '3045cc09-605c-40d9-aa76-9ace93e7f637' } },
+      { fields: [{ key: 'source', type: 'string', mediaRef: {} }] },
+    );
+    assert.ok(!html.includes('3045cc09'), html);
+    assert.ok(html.includes('>Media</p>'), html);
+  });
+
+  it('video-slide projects its default Bunny UUID as heading + stand-in', () => {
+    const type = 'video-slide';
+    const def = SLIDE_TYPES[type];
+    const slide = { type, content: structuredClone(def.defaults) };
+    const { key: headingKey, text: headingText } = slideHeading(slide, def);
+    const html = renderSlideBodySemanticHtml(slide, def, {
+      headingKey,
+      headingText,
+    });
+    // The default deck has no title, so the section heading is the type label.
+    assert.equal(headingText, 'Video');
+    assert.ok(html.includes('<p class="reader-media"'), html);
+    assert.ok(html.includes('>Video</p>'), html);
+    assert.ok(!html.includes(def.defaults.source), html);
+    // The library id was already presentational and stays out.
+    assert.ok(!html.includes('366590'), html);
+  });
+});
