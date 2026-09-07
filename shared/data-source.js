@@ -146,7 +146,10 @@ export const BINDABLE_SLIDE_TYPES = {
     label: 'Chart',
     fields: [
       {
-        target: 'csvData',
+        // The field is `data` (chart-slide.js). This offered `csvData`, a key
+        // no renderer reads, so every chart binding wrote a value into a
+        // corner of the content and the chart kept its old data.
+        target: 'data',
         label: 'Chart data (CSV)',
         sourceHint: 'range or URL',
       },
@@ -158,8 +161,16 @@ export const BINDABLE_SLIDE_TYPES = {
     fields: [
       { target: 'quote', label: 'Quote text', sourceHint: 'block or cell' },
       {
-        target: 'attribution',
-        label: 'Attribution',
+        // Same defect as chart's `csvData` was: the type splits attribution
+        // into `authorName` and `authorTitle`, and never had an
+        // `attribution` field for a binding to land in.
+        target: 'authorName',
+        label: 'Author name',
+        sourceHint: 'block or cell',
+      },
+      {
+        target: 'authorTitle',
+        label: 'Author role / title',
         sourceHint: 'block or cell',
       },
     ],

@@ -95,8 +95,8 @@ Requires `NOTION_SECRET` with access to a Notion database.
 | ------------------- | -------------------------------------- | ----------------- |
 | `kpi-metrics-slide` | `metrics[N].value`, `.label`, `.delta` | CSV or Notion DB  |
 | `table-slide`       | `rows[N].c1` through `.c10`            | CSV               |
-| `chart-slide`       | `csvData`                              | CSV URL           |
-| `quote-slide`       | `quote`, `attribution`                 | Notion block      |
+| `chart-slide`       | `data`                                 | CSV URL           |
+| `quote-slide`       | `quote`, `authorName`, `authorTitle`   | Notion block      |
 | `content-slide`     | `title`, `body`                        | Notion block      |
 | `timeline-slide`    | `items[N].time`, `.title`, `.text`     | Notion DB or CSV  |
 
