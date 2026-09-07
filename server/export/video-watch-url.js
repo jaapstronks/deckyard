@@ -24,32 +24,7 @@
  */
 
 import { parseVideoSource } from './video-helpers.js';
-
-/**
- * Normalise an author-typed watch URL, or return null when it isn't usable.
- *
- * Forgiving about the scheme (`go.ciiic.nl/our-video` is what someone types)
- * and strict about everything else: only http(s) survives, so a `javascript:`
- * or `data:` URL can't ride into an exported document as a clickable link.
- *
- * @param {unknown} raw
- * @returns {string|null}
- */
-function normaliseWatchUrl(raw) {
-  const s = String(raw || '').trim();
-  if (!s) return null;
-  const candidate = /^[a-z][a-z0-9+.-]*:/i.test(s) ? s : `https://${s}`;
-  let url;
-  try {
-    url = new URL(candidate);
-  } catch {
-    return null;
-  }
-  if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
-  // A bare word ("intranet") parses fine once prefixed; require a real host.
-  if (!url.hostname.includes('.')) return null;
-  return url.href;
-}
+import { normalizeAuthoredUrl } from '../../shared/slide-types/helpers.js';
 
 /**
  * Build the public provider URL for a parsed video source.
@@ -109,7 +84,7 @@ export function resolveVideoWatchUrl(
 
   // Rung 0: the author's own link wins. An unusable value falls through rather
   // than blanking the placeholder — a typo shouldn't cost the reader the link.
-  const explicit = normaliseWatchUrl(content?.watchUrl);
+  const explicit = normalizeAuthoredUrl(content?.watchUrl);
   if (explicit) return { url: explicit, kind: 'explicit' };
 
   // Rung 1: published deck deep-link.

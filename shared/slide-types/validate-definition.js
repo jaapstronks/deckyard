@@ -256,6 +256,9 @@ export function validateSlideTypeDefinition(def, name, options = {}) {
   // field may name (the readable string sub-fields), checked below beside the
   // type-level `labelField` it mirrors.
   const itemsHeadings = new Map();
+  // Fields declaring a `mediaRef` stand-in, checked below once every key of
+  // this type is known (the declaration may name a sibling).
+  const mediaRefs = [];
   const globals = new Set(globalFieldKeys);
 
   fields.forEach((field, i) => {
@@ -273,6 +276,14 @@ export function validateSlideTypeDefinition(def, name, options = {}) {
             `unless the override is deliberate`,
         );
       }
+    }
+    if (field?.mediaRef !== undefined && field?.mediaRef !== null) {
+      mediaRefs.push({
+        path,
+        key: key || '?',
+        declared: field.mediaRef,
+        field,
+      });
     }
     if (field?.type === 'items') {
       const nested = new Set();
@@ -346,6 +357,45 @@ export function validateSlideTypeDefinition(def, name, options = {}) {
           `(${[...headable].join(', ') || 'none'}), so it is ignored and the ` +
           `item heading falls back to the first readable string`,
       );
+    }
+  }
+
+  // --- mediaRef (the stand-in for a string that references embedded media) ----
+  // Warnings for the same reason as the two above: the projection already
+  // refuses to print the raw reference the moment `mediaRef` is present, so a
+  // half-declared one degrades (an unnamed medium, an ignored link) instead of
+  // breaking the type. The one thing worth being loud about is declaring it on
+  // a field whose value is not a string reference at all.
+  for (const { path, key, declared, field } of mediaRefs) {
+    if (typeof declared !== 'object' || Array.isArray(declared)) {
+      warnings.push(
+        `${path} (${key}): \`mediaRef\` must be an object ` +
+          `(\`{ label, linkKey }\`), so it is ignored and the field projects ` +
+          `as plain text`,
+      );
+      continue;
+    }
+    if (field.type !== 'string') {
+      warnings.push(
+        `${path} (${key}): \`mediaRef\` is declared on a \`${field.type}\` ` +
+          `field, but a media reference is a string — the stand-in replaces ` +
+          `whatever that type would otherwise project`,
+      );
+    }
+    if (!isNonEmpty(declared.label)) {
+      warnings.push(
+        `${path} (${key}): \`mediaRef.label\` is missing, so the reader names ` +
+          `the stand-in "Media" instead of what this field actually references`,
+      );
+    }
+    if (declared.linkKey !== undefined && declared.linkKey !== null) {
+      if (!isNonEmpty(declared.linkKey) || !known.has(declared.linkKey)) {
+        warnings.push(
+          `${path} (${key}): \`mediaRef.linkKey\` ` +
+            `${JSON.stringify(declared.linkKey)} does not name a field of this ` +
+            `type, so the stand-in falls back to linking the reference itself`,
+        );
+      }
     }
   }
 

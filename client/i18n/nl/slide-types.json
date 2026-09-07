@@ -382,7 +382,7 @@
   "slideType.video-slide.field.autoplay.option.on.label": "Aan",
   "slideType.video-slide.field.bunnyLibraryId.label": "Bunny library-ID",
   "slideType.video-slide.field.source.label": "Video-URL of Bunny-ID (YouTube/Vimeo-URL, Bunny embed-URL of Bunny video-UUID)",
-  "slideType.video-slide.field.watchUrl.help": "Wordt in de PDF-export getoond in plaats van de gegenereerde link. Gebruik hem voor een korte, leesbare URL.",
+  "slideType.video-slide.field.watchUrl.help": "Wordt in de PDF-export en het leesdocument getoond in plaats van de gegenereerde link. Gebruik hem voor een korte, leesbare URL.",
   "slideType.video-slide.field.watchUrl.label": "Kijklink voor de PDF-export",
   "slideType.video-slide.label": "Video"
 }

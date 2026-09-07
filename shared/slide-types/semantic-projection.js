@@ -39,10 +39,22 @@
  *    coordinates. The `type` alone cannot say so — they are all `string` — so
  *    the field says it, once, and every reader (ours and any other) gets the
  *    same answer instead of each guessing from the key name.
+ *  - **`mediaRef` is honoured.** A third kind of string sits between those two:
+ *    a reference to media the document cannot embed — a video source that is a
+ *    URL on one slide and a bare provider id on the next. Dropping it loses the
+ *    slide's whole content; printing it prints an id at the reader. So the
+ *    field declares what it refers to and the projection renders a stand-in
+ *    (D82). See {@link renderMediaRef}.
  */
 
 import { markdownToSafeHtml, inlineMarkdownToSafeHtml } from '../markdown.js';
-import { escapeHtml, pickAltText, normalizeUrl, safeHref } from './helpers.js';
+import {
+  escapeHtml,
+  pickAltText,
+  normalizeUrl,
+  safeHref,
+  normalizeAuthoredUrl,
+} from './helpers.js';
 import { slideStructure } from './structure.js';
 import { isFieldVisible } from './field-visibility.js';
 
@@ -435,6 +447,56 @@ function renderItemBlock(item, itemFields, itemLabelField) {
 }
 
 /**
+ * Project a `mediaRef` field: a stand-in for media the document cannot embed.
+ *
+ * `source` on a video slide is the case that forced this. It is content, not
+ * `presentational` — declaring it presentational would make the video vanish
+ * from the reader entirely — but it is a *reference*, and half its accepted
+ * values are a bare provider id. The projection printed the id verbatim
+ * (`<p>3045cc09-605c-…</p>`), which is not something anyone can read, follow or
+ * translate. D82 settles the shape: a link when a link can be resolved,
+ * otherwise the media's name; an id is never text.
+ *
+ * The declaration carries both halves:
+ *  - `label` — what to call the thing in a document ("Video"). Declared per
+ *    field rather than derived from the type, because a slide may carry a video
+ *    without *being* a video slide.
+ *  - `linkKey` — an optional sibling holding the author's own link. It wins,
+ *    for the same reason it is rung 0 of the PDF export's ladder
+ *    (`server/export/video-watch-url.js`): a short, human-chosen URL is exactly
+ *    what belongs in a document. The key is then consumed, so the link is the
+ *    stand-in instead of a second loose paragraph beside it.
+ *
+ * There is deliberately **no provider parsing here**. "Is this string a link?"
+ * is answered by the same allowlist every other projected link goes through, so
+ * the reader gains no second ladder that could disagree with the export's about
+ * what a video source is; naming the provider would have required one.
+ *
+ * The stand-in is named, and nothing else. Titling the link with the slide's
+ * own heading was the first shape and read badly in the browser — the section
+ * heading and the paragraph under it said the same words twice — so the medium
+ * names itself and the heading directly above supplies the subject.
+ *
+ * @param {{key: string, mediaRef?: {label?: string, linkKey?: string}}} field
+ * @param {object} content - the object the field lives in
+ * @returns {string}
+ */
+function renderMediaRef(field, content) {
+  const ref = field.mediaRef;
+  // A malformed declaration still suppresses the raw value: the point of the
+  // field saying "this is a reference" is that no reader prints the reference.
+  const name = str(ref?.label) || 'Media';
+  const linkKey = str(ref?.linkKey);
+  const authored = linkKey ? normalizeAuthoredUrl(content?.[linkKey]) : '';
+  const href = authored || safeHref(content?.[field.key]);
+  if (!href && !str(content?.[field.key])) return '';
+  const inner = href
+    ? `<a href="${escapeHtml(href)}">${escapeHtml(name)}</a>`
+    : escapeHtml(name);
+  return `<p class="reader-media" data-media="${escapeHtml(name)}">${inner}</p>`;
+}
+
+/**
  * Project a single field's value to semantic HTML (no-op for empty or
  * presentational fields). `content` is the object the field lives in (slide
  * content, or one item object).
@@ -443,6 +505,9 @@ function renderFieldValue(field, content, headingText) {
   if (!field || field.hidden) return '';
   if (NON_CONTENT_GLOBAL_KEYS.has(field.key)) return '';
   if (isPresentationalField(field)) return '';
+  // Checked before the type switch: a `mediaRef` string never reaches the
+  // plain-text branch, whatever the declaration around it looks like.
+  if (field.mediaRef) return renderMediaRef(field, content);
 
   const value = content?.[field.key];
   switch (field.type) {
@@ -574,6 +639,10 @@ export function renderSlideBodySemanticHtml(
   const structuredHtmlByKey = new Map();
   for (const field of fields) {
     if (!field) continue;
+    // A media stand-in absorbs the author's own link, so that sibling field
+    // does not also render as a loose paragraph beside it.
+    const mediaLinkKey = str(field.mediaRef?.linkKey);
+    if (mediaLinkKey) consumed.add(mediaLinkKey);
     // `tabular`: the single item array is rows × columns, not a bullet list.
     if (structure === 'tabular' && field.type === 'items') {
       structuredHtmlByKey.set(

@@ -277,6 +277,43 @@ export function safeHref(value) {
   return /^(?:https?:\/\/|mailto:)/i.test(raw) ? raw : '';
 }
 
+/**
+ * Normalise an **author-typed** link into a safe absolute URL, or `''` when it
+ * isn't usable as one.
+ *
+ * The forgiving sibling of {@link safeHref}, for the one place the two differ:
+ * a field whose whole point is that a human types a short link into it
+ * (`go.example.nl/our-video`). Forgiving about the missing scheme, strict about
+ * everything else — only http(s) survives, and a bare word ("intranet") that
+ * parses fine once prefixed is rejected for having no real host, so a
+ * `javascript:` or `data:` URL can never ride into an exported document as a
+ * clickable link.
+ *
+ * It lives here, beside `safeHref`, because both the PDF export's watch-link
+ * ladder (`server/export/video-watch-url.js`) and the reader's media stand-in
+ * (`semantic-projection.js`) resolve the same authored field: two normalisers
+ * would mean the same typed link works in one document and vanishes from the
+ * other.
+ *
+ * @param {unknown} raw
+ * @returns {string}
+ */
+export function normalizeAuthoredUrl(raw) {
+  const s = String(raw == null ? '' : raw).trim();
+  if (!s) return '';
+  const candidate = /^[a-z][a-z0-9+.-]*:/i.test(s) ? s : `https://${s}`;
+  let url;
+  try {
+    url = new URL(candidate);
+  } catch {
+    return '';
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return '';
+  // A bare word ("intranet") parses fine once prefixed; require a real host.
+  if (!url.hostname.includes('.')) return '';
+  return url.href;
+}
+
 function looksLikeUuid(s) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
     String(s || '').trim(),

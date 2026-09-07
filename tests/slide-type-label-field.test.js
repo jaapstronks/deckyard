@@ -12,6 +12,11 @@
  * the item does not carry degrades silently to the first-readable-string
  * default, which is exactly the projection the declaration exists to correct.
  *
+ * `mediaRef` (D82, A2.2) is the third: it is what keeps a reference — a video
+ * source that may be a bare provider id — out of the reader as text, and a
+ * half-declared one degrades just as quietly (an unnamed medium, an ignored
+ * author link).
+ *
  * Run with: node --test tests/slide-type-label-field.test.js
  */
 
@@ -55,6 +60,36 @@ test('every declared itemLabelField names a readable string sub-field', () => {
         headable.includes(field.itemLabelField),
         `${name}.${field.key}: itemLabelField '${field.itemLabelField}' is not ` +
           `a readable string sub-field (${headable.join(', ') || 'none'})`,
+      );
+    }
+  }
+});
+
+test('every declared mediaRef is complete and names its own siblings', () => {
+  for (const [name, def] of Object.entries(SLIDE_TYPES)) {
+    const keys = (def.fields || []).map((f) => f.key);
+    for (const field of def.fields || []) {
+      const ref = field?.mediaRef;
+      if (ref === undefined) continue;
+      assert.ok(
+        ref && typeof ref === 'object' && !Array.isArray(ref),
+        `${name}.${field.key}: mediaRef must be an object`,
+      );
+      assert.equal(
+        field.type,
+        'string',
+        `${name}.${field.key}: mediaRef belongs on a string reference`,
+      );
+      assert.ok(
+        typeof ref.label === 'string' && ref.label.trim(),
+        `${name}.${field.key}: mediaRef needs a label — without it the reader ` +
+          `calls the medium "Media"`,
+      );
+      if (ref.linkKey === undefined) continue;
+      assert.ok(
+        keys.includes(ref.linkKey),
+        `${name}.${field.key}: mediaRef.linkKey '${ref.linkKey}' is not one ` +
+          `of its fields (${keys.join(', ')})`,
       );
     }
   }

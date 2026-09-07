@@ -35,6 +35,14 @@ export default {
       type: 'string',
       required: true,
       maxLength: 400,
+      // What this slide *is*, so it is content and not `presentational` — a
+      // reader that dropped it would lose the video from the document. But it
+      // is a reference, not document text: half its accepted values are a bare
+      // Bunny UUID, which the reflowable projection used to print verbatim as
+      // `<p>3045cc09-…</p>`. `mediaRef` says so once (D82): the projection
+      // renders a stand-in named by `label`, linked when a link can be
+      // resolved, and folds in the author's own `linkKey` field.
+      mediaRef: { label: 'Video', linkKey: 'watchUrl' },
     },
     BACKGROUND_FIELD,
     {
@@ -54,7 +62,7 @@ export default {
       required: false,
       maxLength: 400,
       helpText:
-        'Shown in the PDF export instead of the generated link. Use it for a short, readable URL.',
+        'Shown in the PDF export and the reader document instead of the generated link. Use it for a short, readable URL.',
       // Author-chosen, not inferable: it points at a real landing page (a
       // shortened link, a campaign page) that only a human knows exists.
       ai: false,
