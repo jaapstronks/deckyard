@@ -45,7 +45,7 @@
  *   }
  */
 
-import { SLIDE_TYPES } from '../slide-types.js';
+import { SLIDE_TYPES } from './registry.js';
 import { enumOptionValues } from './field-types.js';
 
 /**
