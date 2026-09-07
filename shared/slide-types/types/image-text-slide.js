@@ -6,6 +6,7 @@ import {
   pickAltText,
   BACKGROUND_FIELD,
   IMAGE_ROLE_FIELD,
+  densityField,
 } from '../helpers.js';
 import { getSlideCopy } from '../slide-copy.js';
 import { markdownToSafeHtml } from '../../markdown.js';
@@ -21,7 +22,6 @@ import {
   ensureImageTextImages,
   IMAGE_TEXT_IMAGE_DEFAULTS,
 } from './image-text-slide/images.js';
-import { sharedOption } from '../../ui-i18n-keys.js';
 
 export default {
   structure: 'singleton',
@@ -263,23 +263,11 @@ export default {
       helpText:
         'Only used when Image fit is “cover” (cropped). 0 = top, 50 = center, 100 = bottom.',
     },
-    {
-      key: 'density',
-      label: 'Text size',
-      labelKey: 'editor.slideField.density.label',
-      type: 'enum',
-      required: false,
-      // 'auto' keeps the default sizing; 'compact' steps the copy down one
-      // size so more of it fits. Same vocabulary as list-slide's density field.
-      options: [
-        sharedOption('editor.slideField.density.option.auto', 'auto', 'Auto'),
-        sharedOption(
-          'editor.slideField.density.option.compact',
-          'compact',
-          'Small',
-        ),
-      ],
-    },
+    // Two of the three shared stands: `auto` keeps the default sizing and
+    // `compact` steps the copy down one size so more of it fits. There is no
+    // `comfortable` branch in renderHtml below, so the field does not offer it
+    // — a stored one folds to `auto` (DENSITY_OPTIONS in helpers.js).
+    densityField(['auto', 'compact']),
     ...ASIDE_FIELDS,
     BACKGROUND_FIELD,
     ACTIONS_FIELD,
@@ -382,13 +370,7 @@ export default {
   // Legacy-to-canonical fold, run by the editor on open
   // (shared/slide-types/normalize-content.js): the flat `image` migrates into
   // images[0] and the slide-level alt/focus/imageFit fold into the items.
-  // Density 'comfortable' was retired with the shrink layer — it only ever
-  // meant "do not shrink me", which is now the only behaviour — so stored
-  // decks fold to 'auto' and the strict enum validation stops seeing it.
-  normalizeContent(content) {
-    ensureImageTextImages(content);
-    if (content?.density === 'comfortable') content.density = 'auto';
-  },
+  normalizeContent: ensureImageTextImages,
   defaultsByLang: {
     nl: {
       image: '',
@@ -483,9 +465,7 @@ export default {
         : '';
     const imgBg =
       content?.imageBackground === 'match' ? 'is-image-bg-match' : '';
-    // 'compact' takes the smaller copy size; anything else (including the
-    // retired 'comfortable', which only ever meant "do not shrink me") is the
-    // default size.
+    // 'compact' takes the smaller copy size; anything else is the default.
     const densityClass = content?.density === 'compact' ? ' is-compact' : '';
     const caption = content?.caption
       ? `<figcaption class="caption" data-inline-field="caption" dir="auto">${escapeHtml(

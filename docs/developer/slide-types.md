@@ -791,6 +791,44 @@ concept is exactly the drift the beta stance rules out. If a future field
 genuinely needs nested structure, that is a change to the field system and
 gets its own proposal — not a one-off shape smuggled in under a feature.
 
+### Retiring an option (`foldUnofferedTo`)
+
+Retiring an option is not the same as retiring a field: the value stays on
+disk, the strict enum validation still sees it, and every reader has to decide
+what it means. An `enum` field settles that once by declaring where a stored
+value it no longer offers lands.
+
+```javascript
+{ key: 'density', type: 'enum',
+  options: [/* auto, compact */], foldUnofferedTo: 'auto' }
+```
+
+Driven by the field's own `options`, so it needs no list of retired values:
+whatever the type offers today is what a stored value is measured against. The
+fold runs in one place (`foldUnofferedEnums` in
+`shared/slide-types/normalize-content.js`) and is reached twice — by the editor
+when it opens a slide, and by the migration funnel, so a deck heals whether or
+not anyone opens it. Declaring it is therefore a schema change: add a
+`foldUnofferedEnumValues` step and bump `CURRENT_SCHEMA_VERSION`, the same way
+`docs/reference/slide-type-removal.md` step 0 describes for a rename.
+
+It is **opt-in**. A field that says nothing keeps every stored value, because
+an enum whose renderer still reads a value it no longer offers is a defect to
+find, not a deck to rewrite silently. A fold target the field does not itself
+offer is a warning from `validateSlideTypeDefinition` and is skipped rather
+than applied — folding one unoffered value into another helps nobody. The
+declaration is JSON-safe, so unlike `normalizeContent` it could travel to the
+editor; it is still file-types-only, because the allowlist a database-defined
+type's fields are cleaned through (`validateCustomFieldDefinitions`) does not
+carry it — and a type authored in the database has no deck full of a value it
+used to offer.
+
+The three types with a `density` field are the instance. `list-slide` renders
+all three stands of the shared vocabulary (`DENSITY_OPTIONS` in `helpers.js`)
+and offers all three; `content-slide` and `image-text-slide` render two and
+offer two. A type offers the subset it renders — never the whole set — and the
+subset is what the fold measures against.
+
 ---
 
 ## Extension Properties Reference

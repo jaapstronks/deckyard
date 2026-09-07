@@ -23,9 +23,10 @@ import {
   groupAlignValues,
 } from './field-groups.js';
 import { REMOVED_SLIDE_TYPES } from './removed.js';
+import { foldUnofferedEnums } from './normalize-content.js';
 
 /** The schema version every freshly written deck is stamped with. */
-export const CURRENT_SCHEMA_VERSION = 13;
+export const CURRENT_SCHEMA_VERSION = 14;
 
 /**
  * The one legacy collection key each type stored before `items` — the v6 -> v7
@@ -409,6 +410,34 @@ function convertAgendaTimelineSlides(pres) {
       delete converted.body;
       return converted;
     });
+  }
+  return pres;
+}
+
+/**
+ * Fold every stored enum value its type no longer offers down to the value the
+ * field declares (`foldUnofferedTo`; see foldUnofferedEnums in
+ * normalize-content.js for the declaration and why it is opt-in).
+ *
+ * Same fold the editor runs on open — deliberately the same function, not a
+ * second copy of the rule. The editor could only ever heal a slide someone
+ * opened; a deck that is read, exported or served without being edited kept the
+ * retired value indefinitely, which is the shape B223 already had to fix once
+ * for type renames. The funnel is the one path every install runs on every read,
+ * write and import, whatever the backend, so that is where the fold belongs.
+ *
+ * A slide whose type is not registered is skipped: nothing here knows what its
+ * fields offer, and a foreign type is never rewritten.
+ *
+ * @param {any} pres
+ * @returns {any}
+ */
+function foldUnofferedEnumValues(pres) {
+  for (const slide of eachSlide(pres)) {
+    if (!slide || typeof slide.type !== 'string') continue;
+    const def = getSlideType(slide.type);
+    if (!def) continue;
+    foldUnofferedEnums(def, slide.content);
   }
   return pres;
 }
@@ -798,6 +827,26 @@ export const SCHEMA_MIGRATIONS = [
   // it skipped, which is why it is a funnel step and not a fresh judgement
   // about anybody's deck (D80).
   convertAgendaTimelineSlides,
+
+  // v13 -> v14: fold every stored enum value its type no longer offers down to
+  // the value the field declares. Today that is one value on two types — the
+  // `density: 'comfortable'` that `content-slide` and `image-text-slide`
+  // retired with the shrink layer (A2.3).
+  //
+  // The fold itself is not new; where it runs is. Both types carried their own
+  // hand-written copy of it in `normalizeContent`, so it only ever reached a
+  // slide someone opened in the editor. A deck that is read, exported or served
+  // untouched kept the retired value — visible to the strict enum validation,
+  // and to anything that reasons about what a field may say. Same lesson as
+  // v11 -> v12: a fold that lives only on a path someone has to walk is a fold
+  // that does not happen.
+  //
+  // Render-equivalent: neither type has a `comfortable` branch, so the value
+  // already rendered exactly as `auto` did — this changes what is stored, not
+  // what is shown. `list-slide` renders all three stands and offers all three,
+  // so its slides are untouched. Idempotent: after one run every stored value
+  // is one the field offers.
+  foldUnofferedEnumValues,
 ];
 
 /**

@@ -190,6 +190,70 @@ export const ON_CLOSE_FIELD = {
 };
 
 /**
+ * The one text-size vocabulary, in one place: what a `density` field may say
+ * across every type that has one.
+ *
+ * Three stands, largest first, and each is a distinct promise about the type
+ * on the slide — measured on `list-slide`, the only type that renders all
+ * three, by sweeping item count x content shape x column preference through
+ * `resolveListLayout` (2026-09-07, A2.3): 36 of 126 shapes resolve differently
+ * under `comfortable` than under `auto`.
+ *
+ *  - `auto` has no size opinion. It holds the column preference and takes the
+ *    largest size that fits there, so a short list comes out large and a wordy
+ *    one settles at the default fit.
+ *  - `comfortable` asks for the largest size and means it. It outranks the
+ *    column preference — a four-item wordy list that `auto` renders normal in
+ *    one column comes out large in two — and when no column count can hold it
+ *    the size steps down and says so (`steppedDownFrom`).
+ *  - `compact` shrinks the type so more content fits on one slide.
+ *
+ * A type offers the SUBSET it actually renders, never the whole set: only
+ * `list-slide` has a `comfortable` branch, so `content-slide` and
+ * `image-text-slide` offer two. A stored value a type does not offer folds to
+ * the field's `foldUnofferedTo` — one fold, in `normalize-content.js` and in
+ * the migration funnel, instead of a hand-written one per type.
+ */
+export const DENSITY_OPTIONS = {
+  auto: sharedOption('editor.slideField.density.option.auto', 'auto', 'Auto'),
+  comfortable: sharedOption(
+    'editor.slideField.density.option.comfortable',
+    'comfortable',
+    'Large',
+  ),
+  compact: sharedOption(
+    'editor.slideField.density.option.compact',
+    'compact',
+    'Small',
+  ),
+};
+
+/** The vocabulary in canonical order, largest first. */
+export const DENSITY_VALUES = Object.freeze(['auto', 'comfortable', 'compact']);
+
+/**
+ * Build a type's `density` field from the shared vocabulary.
+ *
+ * @param {string[]} offered - the subset this type renders, e.g.
+ *   `['auto', 'compact']`. Must contain `auto`: it is the stand a value the
+ *   type no longer offers folds to, so a field without it would fold to
+ *   something it does not offer either.
+ * @returns {Object} the field definition
+ */
+export function densityField(offered) {
+  const values = DENSITY_VALUES.filter((v) => offered.includes(v));
+  return {
+    key: 'density',
+    label: 'Text size',
+    labelKey: 'editor.slideField.density.label',
+    type: 'enum',
+    required: false,
+    options: values.map((v) => DENSITY_OPTIONS[v]),
+    foldUnofferedTo: 'auto',
+  };
+}
+
+/**
  * The destination for ON_CLOSE_FIELD's `goto` mode.
  *
  * The condition used to live in prose ("Only used when …"), which meant the
