@@ -252,6 +252,10 @@ export function validateSlideTypeDefinition(def, name, options = {}) {
   const fields = Array.isArray(def.fields) ? def.fields : [];
   const keys = [];
   const itemsKeys = new Map(); // key -> Set of its itemFields keys
+  // key -> { path, declared, headable }: what an `itemLabelField` on that
+  // field may name (the readable string sub-fields), checked below beside the
+  // type-level `labelField` it mirrors.
+  const itemsHeadings = new Map();
   const globals = new Set(globalFieldKeys);
 
   fields.forEach((field, i) => {
@@ -290,6 +294,21 @@ export function validateSlideTypeDefinition(def, name, options = {}) {
         });
       }
       if (key) itemsKeys.set(key, nested);
+      if (key) {
+        const headable = new Set(
+          (Array.isArray(field.itemFields) ? field.itemFields : [])
+            .filter(
+              (sub) =>
+                sub?.type === 'string' && !sub.hidden && !sub.presentational,
+            )
+            .map((sub) => sub.key),
+        );
+        itemsHeadings.set(key, {
+          path,
+          declared: field.itemLabelField,
+          headable,
+        });
+      }
     }
   });
 
@@ -309,6 +328,23 @@ export function validateSlideTypeDefinition(def, name, options = {}) {
         `${who}: \`labelField\` ${JSON.stringify(def.labelField)} does not ` +
           `name a field of this type, so it is ignored and the outline label ` +
           `falls back to the built-in resolvers`,
+      );
+    }
+  }
+
+  // --- itemLabelField (the per-items mirror of labelField) --------------------
+  // Same shape and the same reason it is a warning: `renderItemBlock` falls
+  // back to the first readable string when the declaration names nothing, so
+  // the type still renders — only the item heading degrades to the default the
+  // declaration was written to override.
+  for (const [key, { path, declared, headable }] of itemsHeadings) {
+    if (declared === undefined || declared === null) continue;
+    if (!isNonEmpty(declared) || !headable.has(declared)) {
+      warnings.push(
+        `${path} (${key}): \`itemLabelField\` ${JSON.stringify(declared)} ` +
+          `does not name a readable string sub-field of this item ` +
+          `(${[...headable].join(', ') || 'none'}), so it is ignored and the ` +
+          `item heading falls back to the first readable string`,
       );
     }
   }

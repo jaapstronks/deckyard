@@ -343,7 +343,7 @@ export const FIELD_TYPES = {
     description:
       'Repeating list of structured objects, each shaped by `itemFields`',
     docExtra:
-      '`minItems`, `maxItems`, `itemFields`, `itemDefaults`, `itemDefaultsByLang`, `required`, `ordered`, `relationField`, `relationLabels`, `columnCountKey`, `headerRowKey`, `captionKey`',
+      '`minItems`, `maxItems`, `itemFields`, `itemDefaults`, `itemDefaultsByLang`, `required`, `collapsible`, `ordered`, `relationField`, `relationLabels`, `itemLabelField`, `columnCountKey`, `headerRowKey`, `captionKey`',
     valueKind: 'objectArray',
     validate: validateItems,
   },

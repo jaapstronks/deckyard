@@ -379,34 +379,49 @@ function renderItemList(blocks, ordered = false) {
 }
 
 /**
- * Render one repeating-item (`items` field) as a small block: its first
- * non-empty *readable* string becomes an <h3>, the rest of its fields project
- * by type.
+ * Render one repeating-item (`items` field) as a small block: one of its
+ * *readable* strings becomes an <h3>, the rest of its fields project by type.
+ *
+ * Which string is the heading is a declaration first and a default second. The
+ * field may name it with `itemLabelField` — the mirror of the type's own
+ * `labelField` — and a type whose first string is not its heading has to say
+ * so: `kpi-metrics-slide` leads with `value`, so the default headed a metric
+ * "1.2" and demoted "Reach" to a paragraph. Without a declaration the first
+ * readable string stays the heading; that default is right for cards, and it
+ * is a default, not a tolerated second spelling.
  *
  * "Readable" is doing real work in that sentence. A field the item's own image
  * consumes (`alt`, `caption`) and a field the type declares `presentational`
  * (an icon name) are both strings, and taking the first one regardless is how
  * cards ended up headed "rocket" and team members headed by their own alt text.
  * Both exclusions are declarations, not a list of key names to skip.
+ *
+ * @param {object} item - one entry of the field's array
+ * @param {Array<object>} itemFields - the field's `itemFields[]`
+ * @param {string} [itemLabelField] - declared heading sub-field, if any
  */
-function renderItemBlock(item, itemFields) {
+function renderItemBlock(item, itemFields, itemLabelField) {
   if (!item || typeof item !== 'object' || !Array.isArray(itemFields))
     return '';
   const consumed = imageConsumedKeys(itemFields, item);
   const parts = [];
   let headingKey = null;
-  const firstString = itemFields.find(
-    (f) =>
-      f?.type === 'string' &&
-      !f.hidden &&
-      !f.presentational &&
-      !consumed.has(f.key) &&
-      str(item[f.key]),
-  );
+  const headable = (f) =>
+    f?.type === 'string' &&
+    !f.hidden &&
+    !f.presentational &&
+    !consumed.has(f.key) &&
+    str(item[f.key]);
+  // A declared heading that is empty on *this* item falls through to the
+  // default: an item with no label still deserves a heading, not a stray <p>.
+  const declared = str(itemLabelField);
+  const headingField =
+    (declared && itemFields.find((f) => f?.key === declared && headable(f))) ||
+    itemFields.find(headable);
   let headingText = '';
-  if (firstString) {
-    headingKey = firstString.key;
-    headingText = str(item[firstString.key]);
+  if (headingField) {
+    headingKey = headingField.key;
+    headingText = str(item[headingField.key]);
     parts.push(`<h3>${escapeHtml(headingText)}</h3>`);
   }
   for (const f of itemFields) {
@@ -490,7 +505,11 @@ function renderFieldValue(field, content, headingText) {
       const hasRelations = !!relField && value.some((it) => relationOf(it));
       const blocks = value
         .map((item) => {
-          const li = renderItemBlock(item, field.itemFields);
+          const li = renderItemBlock(
+            item,
+            field.itemFields,
+            field.itemLabelField,
+          );
           if (!li) return '';
           const rel = relationOf(item);
           if (!rel) return li;

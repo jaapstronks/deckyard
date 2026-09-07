@@ -378,6 +378,53 @@ const WARNING_CASES = [
     {},
   ],
   [
+    // Same story one level down: renderItemBlock falls back to the first
+    // readable string, so the item renders — headed by the field the
+    // declaration was written to demote.
+    'an itemLabelField naming nothing',
+    validDef({
+      fields: [
+        {
+          key: 'cards',
+          type: 'items',
+          label: 'Cards',
+          itemLabelField: 'nope',
+          itemFields: [{ key: 'title', type: 'string', label: 'Title' }],
+        },
+      ],
+      defaults: { cards: [] },
+    }),
+    '`itemLabelField` "nope"',
+    {},
+  ],
+  [
+    // A presentational sub-field is a string the projection never reads, so
+    // naming it is the same silent no-op as a typo.
+    'an itemLabelField naming a presentational sub-field',
+    validDef({
+      fields: [
+        {
+          key: 'cards',
+          type: 'items',
+          label: 'Cards',
+          itemLabelField: 'icon',
+          itemFields: [
+            {
+              key: 'icon',
+              type: 'string',
+              label: 'Icon',
+              presentational: true,
+            },
+            { key: 'title', type: 'string', label: 'Title' },
+          ],
+        },
+      ],
+      defaults: { cards: [] },
+    }),
+    'does not name a readable string sub-field',
+    {},
+  ],
+  [
     // The CSS-scoping convention: the root class is the only handle a fork's
     // `custom/styles/*.css` has to nest under. A warning, not an error —
     // a type that ships no CSS at all is a legitimate shape.
