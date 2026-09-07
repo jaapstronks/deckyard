@@ -416,10 +416,13 @@ const FINDING_MESSAGES = {
  * @returns {string}
  */
 export function describeFieldFinding(finding, where) {
-  const place = where || finding?.name || 'a field';
   const write = FINDING_MESSAGES[finding?.code];
   if (!write) return 'Invalid field definitions.';
-  return write(place, finding);
+  if (where) return write(where, finding);
+  // The human name may open in lower case (`the field list`, `field 3`); the
+  // sentence it starts is still a sentence.
+  const sentence = write(finding?.name || 'a field', finding);
+  return sentence.charAt(0).toUpperCase() + sentence.slice(1);
 }
 
 /** Every code {@link describeFieldFinding} knows a sentence for. */

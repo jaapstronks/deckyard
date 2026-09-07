@@ -65,13 +65,6 @@ const DB_TYPE_PROFILE = {
   labelSeverity: 'error',
 };
 
-/**
- * @typedef {import('./field-definitions.js').FieldFinding} FieldDefinitionProblem
- * The first blocking finding of the shared walk. It is a
- * {@link import('./field-definitions.js').FieldFinding} and nothing more: the
- * builder opens `index` / `itemIndex`, prints `name`, and translates `code`.
- */
-
 /** Properties a stored field definition keeps. Everything else is dropped. */
 function cleanField(field) {
   const clean = {
@@ -104,7 +97,10 @@ function cleanField(field) {
  * errors and leaves the rest to the boot-time report.
  *
  * @param {unknown} fields
- * @returns {{ok: true, fields: Array<Object>} | {ok: false, problem: FieldDefinitionProblem}}
+ * @returns {{ok: true, fields: Array<Object>} | {ok: false, problem: import('./field-definitions.js').FieldFinding}}
+ *   On failure, the first blocking finding of the shared walk and nothing
+ *   more: the builder opens `index` / `itemIndex`, prints `name`, and
+ *   translates `code`.
  */
 export function validateCustomFieldDefinitions(fields) {
   const { findings } = walkFieldDefinitions(fields, DB_TYPE_PROFILE);

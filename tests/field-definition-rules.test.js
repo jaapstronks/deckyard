@@ -199,6 +199,21 @@ test('nesting deeper than the builder can render still gets walked', () => {
   assert.equal(findings[0].itemIndex, 0);
 });
 
+test('a sentence for a form opens in upper case, whatever names the place', () => {
+  // The human name of the array itself, and of a field with neither label nor
+  // key, opens in lower case (`the field list`, `field 3`). The API answers
+  // with the sentence as-is, so it has to start like one. A log line keeps the
+  // caller's own prefix untouched.
+  const [list] = walkFieldDefinitions({}, DB).findings;
+  assert.equal(describeFieldFinding(list), 'The field list must be an array.');
+  assert.equal(
+    describeFieldFinding(list, 'v.fields'),
+    'v.fields must be an array.',
+  );
+  const [nameless] = walkFieldDefinitions([{ type: 'string' }], DB).findings;
+  assert.equal(describeFieldFinding(nameless), 'Field 1 has no key.');
+});
+
 test('every code the walk emits has a sentence', () => {
   const seen = new Set();
   const collect = (fields, profile, options) => {
