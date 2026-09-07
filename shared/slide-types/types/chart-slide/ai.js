@@ -28,11 +28,16 @@ export const ai = {
       - chartType: "bar", "line", or "pie"
       - data: Tab-separated values (TSV) string with header row
 
-      DATA FORMAT (TSV - tabs between columns, newlines between rows):
-      "Label\\tValue1\\tValue2\\nItem A\\t100\\t150\\nItem B\\t200\\t180"
+      DATA FORMAT (TSV - tabs between columns, newlines between rows).
+      How many columns depends on the chart type:
+      - bar and pie read exactly two columns, label + value:
+        "Label\\tValue\\nItem A\\t100\\nItem B\\t200"
+      - line reads a third column as a second series:
+        "Month\\tSeries 1\\tSeries 2\\nJan\\t100\\t150\\nFeb\\t200\\t180"
 
-      For pie charts, use just two columns (label + value).
-      For bar/line charts, can have multiple data series.
+      Any further column is ignored. There is no grouped/stacked bar: a bar
+      chart with two value columns draws the first one only. Use a line chart
+      for two series, or one bar chart per series.
     `,
   bestFor: [
     'Trends over time (line chart)',
@@ -80,12 +85,21 @@ export const aiExamples = [
     data: 'Segment\tShare\nOur Company\t35\nCompetitor A\t28\nCompetitor B\t22\nOthers\t15',
   },
   {
-    _variation: 'Multi-series bar chart',
+    // Two series, and therefore a line chart: `parse.js` reads a third column
+    // for line only. The same data as a bar chart silently lost the 2024
+    // column, so this example used to promise a grouped bar that no renderer
+    // draws.
+    _variation: 'Two-series line chart',
     title: 'Quarterly Comparison',
     subheading: 'Year-over-year performance',
-    chartType: 'bar',
-    data: 'Quarter\t2023\t2024\nQ1\t1200\t1450\nQ2\t1350\t1620\nQ3\t1480\t1890\nQ4\t1550\t2100',
+    chartType: 'line',
+    // The header names are prose, not years: the header heuristic reads a
+    // row as data when its second cell parses as a number, so a bare `2023`
+    // would have become a data point labelled "Quarter".
+    data: 'Quarter\tFY 2023\tFY 2024\nQ1\t1200\t1450\nQ2\t1350\t1620\nQ3\t1480\t1890\nQ4\t1550\t2100',
     xLabel: 'Quarter',
     yLabel: 'Revenue (K)',
+    series1Label: 'FY 2023',
+    series2Label: 'FY 2024',
   },
 ];

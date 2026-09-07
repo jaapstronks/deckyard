@@ -1,4 +1,4 @@
-import { makeTicks } from './ticks.js';
+import { makeAxis } from './ticks.js';
 import { truncateLabel, formatTick } from './strings.js';
 import { svgText } from './svg.js';
 
@@ -21,14 +21,22 @@ export function renderBarSvg(
   const ph = H - margin.t - margin.b;
   const baseY = margin.t + ph;
 
-  const nums = values.map((v) => (v == null ? 0 : v));
-  const maxV = Math.max(1, ...nums.filter((n) => Number.isFinite(n)));
-  const ticks = makeTicks({
-    min: 0,
+  const nums = values
+    .map((v) => (v == null ? 0 : v))
+    .filter((n) => Number.isFinite(n));
+  const maxV = Math.max(1, ...nums);
+  // A bar chart is read against its baseline, so zero is always in view; a
+  // negative value pushes the ladder below it rather than off the plot.
+  const minV = Math.min(0, ...nums);
+  const { ticks, toY } = makeAxis({
+    min: minV,
     max: maxV,
+    top: margin.t,
+    height: ph,
     desired: 6,
-    forceMinZero: true,
+    forceMinZero: minV >= 0,
   });
+  const zeroY = toY(0);
 
   const n = labels.length || 1;
   // Prevent small bar charts (2–4) from stretching too wide: cap plot width and center it.
@@ -43,10 +51,13 @@ export function renderBarSvg(
   let bars = '';
   for (let i = 0; i < n; i += 1) {
     const v = values[i];
-    const val = v == null ? 0 : v;
-    const h = (val / maxV) * ph;
+    const val = v == null || !Number.isFinite(v) ? 0 : v;
+    const valY = toY(val);
+    // Bars grow away from zero in both directions; the rect is the span
+    // between the value and the baseline, never a negative height.
+    const y = Math.min(valY, zeroY);
+    const h = Math.abs(zeroY - valY);
     const x = x0 + i * step;
-    const y = baseY - h;
     const xLabel = svgText(
       x + barW / 2,
       baseY + 40,
@@ -58,8 +69,9 @@ export function renderBarSvg(
         opacity: 0.85,
       },
     );
+    const labelY = val < 0 ? y + h + 26 : y - 10;
     const vLabel = showValues
-      ? svgText(x + barW / 2, y - 10, v == null ? '' : String(v), {
+      ? svgText(x + barW / 2, labelY, v == null ? '' : String(v), {
           anchor: 'middle',
           cls: 'chart-value',
           size: 20,
@@ -78,7 +90,7 @@ export function renderBarSvg(
   // Y ticks + faint gridlines
   let yTicks = '';
   for (const tv of ticks) {
-    const y = baseY - (tv / (ticks[ticks.length - 1] || maxV || 1)) * ph;
+    const y = toY(tv);
     yTicks += `
       <line x1="${plotX}" y1="${y}" x2="${plotX + plotW}" y2="${y}" class="chart-grid"></line>
       ${svgText(plotX - 12, y + 7, formatTick(tv), {
@@ -92,7 +104,7 @@ export function renderBarSvg(
 
   const axes = `
     ${yTicks}
-    <line x1="${plotX}" y1="${baseY}" x2="${plotX + plotW}" y2="${baseY}" class="chart-axis"></line>
+    <line x1="${plotX}" y1="${zeroY}" x2="${plotX + plotW}" y2="${zeroY}" class="chart-axis"></line>
     <line x1="${plotX}" y1="${margin.t}" x2="${plotX}" y2="${baseY}" class="chart-axis"></line>
   `;
 

@@ -1,4 +1,4 @@
-import { makeTicks } from './ticks.js';
+import { makeAxis } from './ticks.js';
 import { truncateLabel, formatTick } from './strings.js';
 import { svgText } from './svg.js';
 
@@ -46,16 +46,13 @@ export function renderLineSvg(
   const maxV = all.length ? Math.max(...all) : 1;
   // IMPORTANT: include 0 in the visible range so the x-axis baseline is at 0,
   // not at the minimum observed value (prevents "floating baseline" bugs).
-  let yMin = Math.min(0, minV);
-  let yMax = Math.max(0, maxV);
-  if (yMax === yMin) {
-    yMin -= 0.5;
-    yMax += 0.5;
-  }
-  const range = yMax - yMin || 1;
-  const yTicks = makeTicks({
+  const yMin = Math.min(0, minV);
+  const yMax = Math.max(0, maxV);
+  const { ticks: yTicks, toY } = makeAxis({
     min: yMin,
     max: yMax,
+    top: margin.t,
+    height: ph,
     desired: 6,
     forceMinZero: yMin >= 0,
   });
@@ -63,7 +60,6 @@ export function renderLineSvg(
   const n = Math.max(2, (x || []).length);
   const step = pw / (n - 1);
   const toX = (i) => margin.l + i * step;
-  const toY = (v) => margin.t + ((yMax - v) / (yMax - yMin || range)) * ph;
   const axisY = toY(0);
 
   // Step-by-step friendly: render per-point fragments (segments + markers + tick label).
