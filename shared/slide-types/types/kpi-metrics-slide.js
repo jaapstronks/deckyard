@@ -118,6 +118,10 @@ export default {
       key: 'metrics',
       label: 'Metrics',
       type: 'items',
+      // The metric a reader is looking for is "Reach", not "1.2": this type
+      // leads with `value` because that is the visual hierarchy of the canvas,
+      // and the document projection needs the other half said out loud.
+      itemLabelField: 'label',
       required: false,
       minItems: 1,
       maxItems: 4,

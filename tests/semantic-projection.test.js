@@ -828,3 +828,92 @@ describe('an item folds its own image siblings into the <figure>', () => {
     assert.ok(html.includes('alt="Alan Turing"'), html);
   });
 });
+
+describe('itemLabelField — an items field declares its own heading (D81)', () => {
+  it('promotes the declared sub-field over the first readable string', () => {
+    const def = {
+      fields: [
+        {
+          key: 'metrics',
+          type: 'items',
+          itemLabelField: 'label',
+          itemFields: [
+            { key: 'value', type: 'string' },
+            { key: 'unit', type: 'string' },
+            { key: 'label', type: 'string' },
+            { key: 'note', type: 'string' },
+          ],
+        },
+      ],
+    };
+    const html = body(
+      {
+        content: {
+          metrics: [{ value: '1.2', unit: 'M', label: 'Reach', note: '+12%' }],
+        },
+      },
+      def,
+    );
+    assert.ok(html.includes('<h3>Reach</h3>'), html);
+    assert.ok(!html.includes('<h3>1.2</h3>'), html);
+    // The fields the heading did not consume still project, in declared order.
+    assert.ok(html.includes('<p>1.2</p>'), html);
+    assert.ok(html.includes('<p>M</p>'), html);
+    assert.ok(!html.includes('<p>Reach</p>'), html);
+  });
+
+  it('falls back to the first readable string when nothing is declared', () => {
+    const def = {
+      fields: [
+        {
+          key: 'cards',
+          type: 'items',
+          itemFields: [
+            { key: 'label', type: 'string' },
+            { key: 'text', type: 'string' },
+          ],
+        },
+      ],
+    };
+    const html = body(
+      { content: { cards: [{ label: 'One', text: 'x' }] } },
+      def,
+    );
+    assert.ok(html.includes('<h3>One</h3>'), html);
+  });
+
+  it('falls back when the declared field is empty on this item', () => {
+    const def = {
+      fields: [
+        {
+          key: 'metrics',
+          type: 'items',
+          itemLabelField: 'label',
+          itemFields: [
+            { key: 'value', type: 'string' },
+            { key: 'label', type: 'string' },
+          ],
+        },
+      ],
+    };
+    const html = body(
+      { content: { metrics: [{ value: '42', label: '' }] } },
+      def,
+    );
+    assert.ok(html.includes('<h3>42</h3>'), html);
+  });
+
+  it('kpi-metrics projects its label as the heading, not its value', () => {
+    const type = 'kpi-metrics-slide';
+    const def = SLIDE_TYPES[type];
+    const slide = { type, content: structuredClone(def.defaults) };
+    const { key: headingKey, text: headingText } = slideHeading(slide, def);
+    const html = renderSlideBodySemanticHtml(slide, def, {
+      headingKey,
+      headingText,
+    });
+    assert.ok(html.includes('<h3>Reach</h3>'), html);
+    assert.ok(!html.includes('<h3>1.2</h3>'), html);
+    assert.ok(html.includes('<p>1.2</p>'), html);
+  });
+});

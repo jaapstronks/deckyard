@@ -29,7 +29,14 @@ document that stays readable with JavaScript — and author CSS — turned off.
     `decorative` `imageRole` yields `alt=""` + `aria-hidden`) and an optional
     `<figcaption>`. An image field's sibling `alt`/`caption` keys fold into the
     figure and are not repeated as paragraphs.
-  - `items` → a list, each item's first text field becoming an `<h3>`.
+  - `items` → a list. The item heading is the sub-field the field names in
+    `itemLabelField` (the per-item mirror of `labelField`), and otherwise the
+    item's first readable string — readable meaning not `hidden`, not
+    `presentational`, and not already folded into the item's own figure. A
+    type whose first string is not its heading declares one:
+    `kpi-metrics-slide` leads with `value`, so its `metrics` field names
+    `label`. A declared field that is empty on one item falls back to the
+    default for that item.
   - Presentational field types (`enum`, `color`, `number`, `boolean`) and the
     global background/logo fields carry no document text and are omitted.
 - The slide heading resolves as: `a11yTitle` override → the type's `labelField`
