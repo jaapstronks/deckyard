@@ -30,7 +30,11 @@
  * @see docs/developer/slide-types.md
  */
 
-import { enumOptionValues, isKnownFieldType } from './field-types.js';
+import {
+  describeFieldFinding,
+  walkFieldDefinitions,
+} from './field-definitions.js';
+import { FIELD_TYPE_NAMES } from './field-types.js';
 import { canonicalTypeName, isValidNamespace } from './type-id.js';
 
 /**
@@ -89,42 +93,6 @@ function functionPaths(value, path, seen) {
     found.push(...functionPaths(v, `${path}.${k}`, seen));
   }
   return found;
-}
-
-/**
- * Validate one field descriptor. Shared by `fields[]` and `itemFields[]` — the
- * two levels `validateItems()` walks — so a nested field gets the same key and
- * type checks as a top-level one.
- *
- * @param {unknown} field
- * @param {string} path - e.g. `fields[2]` or `fields[2].itemFields[0]`.
- * @param {{errors: string[], warnings: string[]}} out
- * @returns {string|null} the field's key, or null when it has none.
- */
-function checkField(field, path, out) {
-  if (!field || typeof field !== 'object' || Array.isArray(field)) {
-    out.errors.push(`${path} must be an object`);
-    return null;
-  }
-  const key = isNonEmpty(field.key) ? field.key : null;
-  if (!key) {
-    out.errors.push(`${path}.key must be a non-empty string`);
-  }
-  const where = key ? `${path} (${key})` : path;
-  if (!isKnownFieldType(field.type)) {
-    out.errors.push(
-      `${where}.type ${JSON.stringify(field.type)} is not a declared field ` +
-        `type — see FIELD_TYPES in shared/slide-types/field-types.js`,
-    );
-    return key;
-  }
-  if (field.type === 'enum' && enumOptionValues(field).length === 0) {
-    out.errors.push(
-      `${where} is an enum with no usable options — give it \`options: [...]\` ` +
-        `of strings or \`{ value, label }\` objects`,
-    );
-  }
-  return key;
 }
 
 /**
@@ -245,97 +213,39 @@ export function validateSlideTypeDefinition(def, name, options = {}) {
   }
 
   // --- fields[] --------------------------------------------------------------
+  // One walk, shared with the database surface (field-definitions.js). The
+  // findings arrive structured; this report is a rendering of them, named the
+  // way a developer reading a boot log wants: the structural path, prefixed
+  // with the type it belongs to.
   const hasFields = def.fields !== undefined && def.fields !== null;
-  if (hasFields && !Array.isArray(def.fields)) {
-    errors.push(`${who}: \`fields\` must be an array`);
-  }
   const fields = Array.isArray(def.fields) ? def.fields : [];
-  const keys = [];
-  const itemsKeys = new Map(); // key -> Set of its itemFields keys
-  // key -> { path, declared, headable }: what an `itemLabelField` on that
-  // field may name (the readable string sub-fields), checked below beside the
-  // type-level `labelField` it mirrors.
-  const itemsHeadings = new Map();
-  // Fields declaring a `mediaRef` stand-in, checked below once every key of
-  // this type is known (the declaration may name a sibling).
-  const mediaRefs = [];
-  // Fields declaring where a stored value they no longer offer folds to,
-  // checked below against the options they do offer.
-  const enumFolds = [];
+  const fieldWalk = hasFields
+    ? walkFieldDefinitions(def.fields, {
+        fieldTypes: FIELD_TYPE_NAMES,
+        globalFieldKeys,
+      })
+    : { findings: [], keys: [] };
+  for (const finding of fieldWalk.findings) {
+    const where = `${who}.${finding.path}${finding.key ? ` (${finding.key})` : ''}`;
+    out[finding.severity === 'error' ? 'errors' : 'warnings'].push(
+      describeFieldFinding(finding, where),
+    );
+  }
+  const keys = fieldWalk.keys;
   const globals = new Set(globalFieldKeys);
-
-  fields.forEach((field, i) => {
-    const path = `${who}.fields[${i}]`;
-    const key = checkField(field, path, out);
-    if (key) {
-      if (keys.includes(key)) {
-        errors.push(`${who}: duplicate field key \`${key}\``);
-      }
-      keys.push(key);
-      if (globals.has(key)) {
-        warnings.push(
-          `${who}: field \`${key}\` shadows the global slide field of the same ` +
-            `name, so this type does not get the injected one — rename it ` +
-            `unless the override is deliberate`,
-        );
-      }
-    }
-    if (field?.mediaRef !== undefined && field?.mediaRef !== null) {
-      mediaRefs.push({
-        path,
-        key: key || '?',
-        declared: field.mediaRef,
-        field,
-      });
-    }
-    if (
-      field?.foldUnofferedTo !== undefined &&
-      field?.foldUnofferedTo !== null
-    ) {
-      enumFolds.push({
-        path,
-        key: key || '?',
-        declared: field.foldUnofferedTo,
-        field,
-      });
-    }
-    if (field?.type === 'items') {
-      const nested = new Set();
-      if (!Array.isArray(field.itemFields)) {
-        errors.push(
-          `${path} (${key || '?'}) is an \`items\` field without an ` +
-            `\`itemFields\` array — nothing describes the shape of an item`,
-        );
-      } else {
-        field.itemFields.forEach((sub, j) => {
-          const subKey = checkField(sub, `${path}.itemFields[${j}]`, out);
-          if (!subKey) return;
-          if (nested.has(subKey)) {
-            errors.push(
-              `${who}: duplicate item field key \`${key}[].${subKey}\``,
-            );
-          }
-          nested.add(subKey);
-        });
-      }
-      if (key) itemsKeys.set(key, nested);
-      if (key) {
-        const headable = new Set(
-          (Array.isArray(field.itemFields) ? field.itemFields : [])
-            .filter(
-              (sub) =>
-                sub?.type === 'string' && !sub.hidden && !sub.presentational,
-            )
-            .map((sub) => sub.key),
-        );
-        itemsHeadings.set(key, {
-          path,
-          declared: field.itemLabelField,
-          headable,
-        });
-      }
-    }
-  });
+  // key -> Set of its itemFields keys, for the `inline.cards` reference check.
+  const itemsKeys = new Map(
+    fields
+      .filter((f) => f?.type === 'items' && isNonEmpty(f.key))
+      .map((f) => [
+        f.key,
+        new Set(
+          (Array.isArray(f.itemFields) ? f.itemFields : [])
+            .map((sub) => sub?.key)
+            .filter(isNonEmpty),
+        ),
+      ]),
+  );
 
   // Keys a descriptor or a defaults map may legitimately reference: the type's
   // own fields plus the globals the registry injects into every type.
@@ -346,96 +256,14 @@ export function validateSlideTypeDefinition(def, name, options = {}) {
   // nothing (editor-utils and semantic-projection both fall through to the
   // heuristic resolvers), so the type renders fine — only the outline label
   // degrades. Refusing a renderable type here would be stricter than the
-  // error contract above.
+  // error contract above. Its per-items mirror, `itemLabelField`, is checked in
+  // the shared walk beside the field that declares it.
   if (def.labelField !== undefined && def.labelField !== null) {
     if (!isNonEmpty(def.labelField) || !known.has(def.labelField)) {
       warnings.push(
         `${who}: \`labelField\` ${JSON.stringify(def.labelField)} does not ` +
           `name a field of this type, so it is ignored and the outline label ` +
           `falls back to the built-in resolvers`,
-      );
-    }
-  }
-
-  // --- itemLabelField (the per-items mirror of labelField) --------------------
-  // Same shape and the same reason it is a warning: `renderItemBlock` falls
-  // back to the first readable string when the declaration names nothing, so
-  // the type still renders — only the item heading degrades to the default the
-  // declaration was written to override.
-  for (const [key, { path, declared, headable }] of itemsHeadings) {
-    if (declared === undefined || declared === null) continue;
-    if (!isNonEmpty(declared) || !headable.has(declared)) {
-      warnings.push(
-        `${path} (${key}): \`itemLabelField\` ${JSON.stringify(declared)} ` +
-          `does not name a readable string sub-field of this item ` +
-          `(${[...headable].join(', ') || 'none'}), so it is ignored and the ` +
-          `item heading falls back to the first readable string`,
-      );
-    }
-  }
-
-  // --- mediaRef (the stand-in for a string that references embedded media) ----
-  // Warnings for the same reason as the two above: the projection already
-  // refuses to print the raw reference the moment `mediaRef` is present, so a
-  // half-declared one degrades (an unnamed medium, an ignored link) instead of
-  // breaking the type. The one thing worth being loud about is declaring it on
-  // a field whose value is not a string reference at all.
-  for (const { path, key, declared, field } of mediaRefs) {
-    if (typeof declared !== 'object' || Array.isArray(declared)) {
-      warnings.push(
-        `${path} (${key}): \`mediaRef\` must be an object ` +
-          `(\`{ label, linkKey }\`), so it is ignored and the field projects ` +
-          `as plain text`,
-      );
-      continue;
-    }
-    if (field.type !== 'string') {
-      warnings.push(
-        `${path} (${key}): \`mediaRef\` is declared on a \`${field.type}\` ` +
-          `field, but a media reference is a string — the stand-in replaces ` +
-          `whatever that type would otherwise project`,
-      );
-    }
-    if (!isNonEmpty(declared.label)) {
-      warnings.push(
-        `${path} (${key}): \`mediaRef.label\` is missing, so the reader names ` +
-          `the stand-in "Media" instead of what this field actually references`,
-      );
-    }
-    if (declared.linkKey !== undefined && declared.linkKey !== null) {
-      if (!isNonEmpty(declared.linkKey) || !known.has(declared.linkKey)) {
-        warnings.push(
-          `${path} (${key}): \`mediaRef.linkKey\` ` +
-            `${JSON.stringify(declared.linkKey)} does not name a field of this ` +
-            `type, so the stand-in falls back to linking the reference itself`,
-        );
-      }
-    }
-  }
-
-  // --- foldUnofferedTo (where a value the field no longer offers lands) -------
-  // Warnings, same contract as the two above: `foldUnofferedEnums` skips a
-  // declaration it cannot honour rather than folding one unoffered value into
-  // another, so a half-declared one degrades to "keep what is stored" and the
-  // type still renders. Both checks are about the declaration disagreeing with
-  // the options beside it — a fold target the field does not offer, or a fold
-  // on a field with no options to measure against at all.
-  for (const { path, key, declared, field } of enumFolds) {
-    if (field.type !== 'enum') {
-      warnings.push(
-        `${path} (${key}): \`foldUnofferedTo\` is declared on a ` +
-          `\`${field.type}\` field, but only an \`enum\` has options a stored ` +
-          `value can fall outside of, so it is ignored`,
-      );
-      continue;
-    }
-    const offered = enumOptionValues(field);
-    if (!isNonEmpty(declared) || !offered.includes(declared)) {
-      warnings.push(
-        `${path} (${key}): \`foldUnofferedTo\` ${JSON.stringify(declared)} is ` +
-          `not one of this field's options (${offered.join(', ') || 'none'}), ` +
-          `so it would fold one unoffered value into another — the fold is ` +
-          `skipped and stored values are kept as they are`,
       );
     }
   }

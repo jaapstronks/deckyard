@@ -458,7 +458,7 @@ function creatorNames(rows) {
  * so the route can say which field is wrong instead of "Invalid field
  * definitions." — the copy that made Save look like it did nothing (B200).
  *
- * @param {import('../../shared/slide-types/custom-field-definitions.js').FieldDefinitionProblem} problem
+ * @param {import('../../shared/slide-types/field-definitions.js').FieldFinding} problem
  * @returns {{ok: false, reason: 'invalid', field: 'fields', fieldProblem: Object}}
  */
 function invalidFields(problem) {

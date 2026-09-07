@@ -113,9 +113,13 @@ per-deck refusals there are JSON-RPC tool errors, not HTTP statuses.
 For a storage `reason` code, use **`storageError(res, result, message?)`** — it
 reads `result.reason` for the code and the status, puts an optional
 `result.field` on the wire as `details.field`, and, when the result carries a
-located `fieldProblem` (`{ reason, index, itemIndex }`), adds those three as
-`details.index` / `details.itemIndex` / `details.reason` (null indexes are
-omitted; `tests/storage-error-details.test.js`). Spreading the result by hand
+located `fieldProblem` (a finding of
+[`shared/slide-types/field-definitions.js`](../../shared/slide-types/field-definitions.js),
+`{ code, index, itemIndex, … }`), adds those three as `details.index` /
+`details.itemIndex` / `details.reason` (null indexes are omitted;
+`tests/storage-error-details.test.js`). The finding's `code` travels as
+`details.reason` because the envelope already spends `code` on the storage
+reason. Spreading the result by hand
 (`jsonError(res, getErrorStatus(result.reason), result.reason)`) drops all of
 that, so `tests/storage-reason-vocabulary.test.js` refuses that form under
 `server/routes/**`.

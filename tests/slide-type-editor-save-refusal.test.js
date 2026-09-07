@@ -42,8 +42,10 @@ globalThis.cancelAnimationFrame =
 // jsdom has no layout, so scrollIntoView is absent on elements.
 dom.window.Element.prototype.scrollIntoView = function scrollIntoView() {};
 
-const { validateCustomFieldDefinitions, describeFieldProblem } =
+const { validateCustomFieldDefinitions } =
   await import('../shared/slide-types/custom-field-definitions.js');
+const { describeFieldFinding } =
+  await import('../shared/slide-types/field-definitions.js');
 const { createSlideTypeEditor } =
   await import('../client/views/settings/slide-type-editor/index.js');
 
@@ -79,12 +81,12 @@ test('the shared rules refuse an items field with no item fields, and locate it'
     { key: 'rows', type: 'items', label: 'Rows' },
   ]);
   assert.equal(result.ok, false);
-  assert.equal(result.problem.reason, 'items_without_item_fields');
+  assert.equal(result.problem.code, 'items_without_item_fields');
   assert.equal(result.problem.index, 1);
   assert.equal(result.problem.itemIndex, null);
-  const message = describeFieldProblem(result.problem);
+  const message = describeFieldFinding(result.problem);
   assert.match(message, /"Rows"/);
-  assert.match(message, /item fields/);
+  assert.match(message, /itemFields/);
 });
 
 test('a problem inside itemFields is re-anchored on the parent row', () => {
@@ -100,10 +102,10 @@ test('a problem inside itemFields is re-anchored on the parent row', () => {
     },
   ]);
   assert.equal(result.ok, false);
-  assert.equal(result.problem.reason, 'enum_without_options');
+  assert.equal(result.problem.code, 'enum_without_options');
   assert.equal(result.problem.index, 0, 'the top-level row to open');
   assert.equal(result.problem.itemIndex, 1, 'the sub-row inside it');
-  assert.match(describeFieldProblem(result.problem), /"Rows" › "Kind"/);
+  assert.match(describeFieldFinding(result.problem), /"Rows" › "Kind"/);
 });
 
 test('a valid definition normalizes and drops stray properties', () => {

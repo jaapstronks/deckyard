@@ -349,7 +349,7 @@ export function storageError(res, result, message, { headers } = {}) {
  * snake_case sub-code a client can translate). `message` still carries the
  * English sentence; `details` is what lets a client point at the row without
  * parsing it. Shape and meaning: docs/reference/api-error-format.md.
- * @param {{field?: string, fieldProblem?: {reason?: string, index?: number|null, itemIndex?: number|null}}|null|undefined} result
+ * @param {{field?: string, fieldProblem?: {code?: string, index?: number|null, itemIndex?: number|null}}|null|undefined} result
  * @returns {Object|undefined} `undefined` when the result names no field.
  */
 function locateDetails(result) {
@@ -361,7 +361,10 @@ function locateDetails(result) {
   if (typeof problem.itemIndex === 'number') {
     details.itemIndex = problem.itemIndex;
   }
-  if (typeof problem.reason === 'string') details.reason = problem.reason;
+  // The finding calls this `code`; the wire keeps `reason`, because the error
+  // envelope already spends `code` on the storage reason and two `code`s one
+  // level apart would name two different vocabularies.
+  if (typeof problem.code === 'string') details.reason = problem.code;
   return details;
 }
 

@@ -25,8 +25,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 import {
   isPerLanguageKey,
+  isTextField,
   perLanguageKeys,
   textFieldSpec,
 } from '../shared/slide-types/text-fields.js';
@@ -280,4 +282,48 @@ test('perLanguageKeys reads every version, so a peer-only string survives', () =
     ['title'],
     'with no content at all, the declared text keys are the answer',
   );
+});
+
+test('a mediaRef string is a reference, not prose (B231)', () => {
+  // `video-slide.source` holds a Bunny UUID or a YouTube URL. `mediaRef` says
+  // once that the string references media the document cannot embed (D82); the
+  // reflowable projection already refuses to print it, and the translate
+  // pipeline has to hear the same sentence — otherwise a translator is offered
+  // a video id and the deck ends up with a different reference per language.
+  const fields = [
+    { key: 'title', type: 'string' },
+    { key: 'source', type: 'string', mediaRef: { label: 'Video' } },
+    {
+      key: 'clips',
+      type: 'items',
+      itemFields: [
+        { key: 'caption', type: 'string' },
+        { key: 'src', type: 'string', mediaRef: { label: 'Video' } },
+      ],
+    },
+  ];
+  const spec = textFieldSpec(fields);
+  assert.deepEqual([...spec.textKeys], ['title']);
+  assert.ok(spec.declaredKeys.has('source'), 'still a declared key');
+  assert.equal(
+    isPerLanguageKey(spec, 'source', 'abc-123', 'abc-123'),
+    false,
+    'a declared non-text key is one value per deck',
+  );
+  assert.deepEqual([...spec.items.get('clips').textKeys], ['caption']);
+});
+
+test('the registry has no translatable media reference left', () => {
+  const offenders = [];
+  const walk = (name, fields, path) => {
+    for (const f of Array.isArray(fields) ? fields : []) {
+      if (f?.mediaRef && isTextField(f))
+        offenders.push(`${name}.${path}${f.key}`);
+      if (f?.type === 'items') walk(name, f.itemFields, `${path}${f.key}[].`);
+    }
+  };
+  for (const [name, def] of Object.entries(SLIDE_TYPES)) {
+    walk(name, def?.fields, '');
+  }
+  assert.deepEqual(offenders, []);
 });

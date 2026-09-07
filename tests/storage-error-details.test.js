@@ -54,10 +54,10 @@ test('a located problem adds index, itemIndex and reason — and nothing else', 
       reason: 'invalid',
       field: 'fields',
       fieldProblem: {
-        reason: 'enum_without_options',
+        code: 'enum_without_options',
         index: 0,
         itemIndex: 1,
-        where: '"Rows" › "Kind"',
+        name: '"Rows" › "Kind"',
       },
     },
     '"Rows" › "Kind" is a dropdown with no options.',
@@ -77,7 +77,7 @@ test('a null index is omitted rather than sent as null', () => {
     {
       reason: 'invalid',
       field: 'fields',
-      fieldProblem: { reason: 'not_an_array', index: null, itemIndex: null },
+      fieldProblem: { code: 'not_an_array', index: null, itemIndex: null },
     },
     'Fields must be a list.',
   );

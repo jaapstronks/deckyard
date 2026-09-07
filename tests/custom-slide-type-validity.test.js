@@ -207,12 +207,12 @@ const MALFORMED = [
   [
     'fields is not an array',
     validDef({ fields: {} }),
-    '`fields` must be an array',
+    'fields must be an array',
   ],
   [
     'field without a key',
     validDef({ fields: [{ type: 'string' }] }),
-    'key must be a non-empty string',
+    'has no key',
   ],
   [
     'duplicate field keys',
@@ -222,12 +222,12 @@ const MALFORMED = [
         { key: 'a', type: 'markdown' },
       ],
     }),
-    'duplicate field key',
+    'reuses a key another field already has',
   ],
   [
     'unknown field type',
     validDef({ fields: [{ key: 'a', type: 'strng' }] }),
-    'is not a declared field type',
+    'the field types accepted here are',
   ],
   [
     'enum without options',
@@ -244,7 +244,7 @@ const MALFORMED = [
   [
     'items without itemFields',
     validDef({ fields: [{ key: 'rows', type: 'items' }] }),
-    'without an `itemFields` array',
+    'items field with no `itemFields`',
   ],
   [
     'item field with an unknown type',
@@ -253,7 +253,7 @@ const MALFORMED = [
         { key: 'rows', type: 'items', itemFields: [{ key: 'a', type: 'txt' }] },
       ],
     }),
-    'is not a declared field type',
+    'the field types accepted here are',
   ],
   [
     'duplicate item field keys',
@@ -269,7 +269,7 @@ const MALFORMED = [
         },
       ],
     }),
-    'duplicate item field key',
+    'reuses a key another field already has',
   ],
   [
     'function inside inline',
@@ -421,7 +421,7 @@ const WARNING_CASES = [
       ],
       defaults: { cards: [] },
     }),
-    'does not name a readable string sub-field',
+    'not a readable string sub-field',
     {},
   ],
   [
@@ -441,7 +441,7 @@ const WARNING_CASES = [
       fields: [{ key: 'src', type: 'string', label: 'Source', mediaRef: {} }],
       defaults: { src: '' },
     }),
-    '`mediaRef.label` is missing',
+    'has no `mediaRef.label`',
     {},
   ],
   [
@@ -477,7 +477,7 @@ const WARNING_CASES = [
       ],
       defaults: { shot: '' },
     }),
-    'is declared on a `image` field',
+    'declares `mediaRef` on a `image` field',
     {},
   ],
   [

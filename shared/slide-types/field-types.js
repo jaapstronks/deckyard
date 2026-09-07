@@ -257,7 +257,7 @@ export const FIELD_TYPES = {
   string: {
     label: 'Single-line text',
     description:
-      'Single-line text. `mediaRef` marks the string as a reference to media the document cannot embed (a video source) rather than document text: the reflowable projection renders a named stand-in, linked where a link resolves, instead of printing the reference.',
+      'Single-line text. `mediaRef` marks the string as a reference to media the document cannot embed (a video source) rather than document text: the reflowable projection renders a named stand-in, linked where a link resolves, instead of printing the reference, and the field is not offered for translation — a video id is the same in every language.',
     docExtra:
       '`maxLength`, `required`, `placeholder`, `helpText`, `mediaRef` (`{ label, linkKey }`)',
     valueKind: 'string',
