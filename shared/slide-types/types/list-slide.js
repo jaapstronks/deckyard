@@ -3,6 +3,7 @@ import {
   escapeHtml,
   renderSubheadingHtml,
   BACKGROUND_FIELD,
+  densityField,
 } from '../helpers.js';
 import { alignGroup, groupAlignClass } from '../field-groups.js';
 import {
@@ -281,29 +282,10 @@ export default {
       ],
       formLayout: 'pair',
     },
-    {
-      key: 'density',
-      label: 'Text size',
-      labelKey: 'editor.slideField.density.label',
-      type: 'enum',
-      required: false,
-      // 'auto' keeps the default sizing; 'comfortable' scales titles and text
-      // up to fill sparse slides (few items); 'compact' shrinks them so many
-      // items still fit on one slide.
-      options: [
-        sharedOption('editor.slideField.density.option.auto', 'auto', 'Auto'),
-        sharedOption(
-          'editor.slideField.density.option.comfortable',
-          'comfortable',
-          'Large',
-        ),
-        sharedOption(
-          'editor.slideField.density.option.compact',
-          'compact',
-          'Small',
-        ),
-      ],
-    },
+    // The only type that renders all three stands of the shared vocabulary:
+    // `comfortable` is a real third size here (SIZE_ORDER + the capacity table
+    // above), not a synonym for `auto`. See DENSITY_OPTIONS in helpers.js.
+    densityField(['auto', 'comfortable', 'compact']),
     ...ASIDE_FIELDS,
     BACKGROUND_FIELD,
     {

@@ -259,6 +259,9 @@ export function validateSlideTypeDefinition(def, name, options = {}) {
   // Fields declaring a `mediaRef` stand-in, checked below once every key of
   // this type is known (the declaration may name a sibling).
   const mediaRefs = [];
+  // Fields declaring where a stored value they no longer offer folds to,
+  // checked below against the options they do offer.
+  const enumFolds = [];
   const globals = new Set(globalFieldKeys);
 
   fields.forEach((field, i) => {
@@ -282,6 +285,17 @@ export function validateSlideTypeDefinition(def, name, options = {}) {
         path,
         key: key || '?',
         declared: field.mediaRef,
+        field,
+      });
+    }
+    if (
+      field?.foldUnofferedTo !== undefined &&
+      field?.foldUnofferedTo !== null
+    ) {
+      enumFolds.push({
+        path,
+        key: key || '?',
+        declared: field.foldUnofferedTo,
         field,
       });
     }
@@ -396,6 +410,33 @@ export function validateSlideTypeDefinition(def, name, options = {}) {
             `type, so the stand-in falls back to linking the reference itself`,
         );
       }
+    }
+  }
+
+  // --- foldUnofferedTo (where a value the field no longer offers lands) -------
+  // Warnings, same contract as the two above: `foldUnofferedEnums` skips a
+  // declaration it cannot honour rather than folding one unoffered value into
+  // another, so a half-declared one degrades to "keep what is stored" and the
+  // type still renders. Both checks are about the declaration disagreeing with
+  // the options beside it — a fold target the field does not offer, or a fold
+  // on a field with no options to measure against at all.
+  for (const { path, key, declared, field } of enumFolds) {
+    if (field.type !== 'enum') {
+      warnings.push(
+        `${path} (${key}): \`foldUnofferedTo\` is declared on a ` +
+          `\`${field.type}\` field, but only an \`enum\` has options a stored ` +
+          `value can fall outside of, so it is ignored`,
+      );
+      continue;
+    }
+    const offered = enumOptionValues(field);
+    if (!isNonEmpty(declared) || !offered.includes(declared)) {
+      warnings.push(
+        `${path} (${key}): \`foldUnofferedTo\` ${JSON.stringify(declared)} is ` +
+          `not one of this field's options (${offered.join(', ') || 'none'}), ` +
+          `so it would fold one unoffered value into another — the fold is ` +
+          `skipped and stored values are kept as they are`,
+      );
     }
   }
 

@@ -3,6 +3,7 @@ import {
   escapeHtml,
   renderSubheadingHtml,
   BACKGROUND_FIELD,
+  densityField,
 } from '../helpers.js';
 import { markdownToSafeHtml } from '../../markdown.js';
 import { ACTIONS_FIELD, renderActionsHtml } from '../actions-field.js';
@@ -59,23 +60,11 @@ export default {
         ),
       ],
     },
-    {
-      key: 'density',
-      label: 'Text size',
-      labelKey: 'editor.slideField.density.label',
-      type: 'enum',
-      required: false,
-      // 'auto' keeps the default sizing; 'compact' steps the body down one
-      // size so more copy fits. Same vocabulary as list-slide's density field.
-      options: [
-        sharedOption('editor.slideField.density.option.auto', 'auto', 'Auto'),
-        sharedOption(
-          'editor.slideField.density.option.compact',
-          'compact',
-          'Small',
-        ),
-      ],
-    },
+    // Two of the three shared stands: `auto` keeps the default sizing and
+    // `compact` steps the body down one size so more copy fits. There is no
+    // `comfortable` branch in renderHtml below, so the field does not offer it
+    // — a stored one folds to `auto` (DENSITY_OPTIONS in helpers.js).
+    densityField(['auto', 'compact']),
     {
       key: 'body',
       label: 'Body (Markdown)',
@@ -211,21 +200,11 @@ export default {
     background: 'lime',
     actions: [],
   },
-  // Legacy-to-canonical fold, run by the editor on open
-  // (shared/slide-types/normalize-content.js): 'comfortable' was retired with
-  // the shrink layer — it only ever meant "do not shrink me", which is now the
-  // only behaviour — so stored decks fold to 'auto' and the strict enum
-  // validation stops seeing the retired value.
-  normalizeContent(content) {
-    if (content?.density === 'comfortable') content.density = 'auto';
-  },
   renderHtml: (content, _slide, ctx) => {
     const bg = bgClass(content?.background);
     const layout =
       content?.layout === 'one-column' ? 'is-one-col' : 'is-two-col';
-    // 'compact' takes the smaller body size; anything else (including the
-    // retired 'comfortable', which only ever meant "do not shrink me") is the
-    // default size.
+    // 'compact' takes the smaller body size; anything else is the default.
     const densityClass = content?.density === 'compact' ? ' is-compact' : '';
     const subheading = renderSubheadingHtml(content, 'subheading', 'subtitle');
     const actionsHtml = renderActionsHtml(content?.actions);
