@@ -32,7 +32,7 @@ import {
 } from '../../storage/custom-slide-types.js';
 import { SLIDE_TYPES } from '../../../shared/slide-types.js';
 import { USAGE_MAX_LENGTH } from '../../../shared/slide-types/usage.js';
-import { describeFieldProblem } from '../../../shared/slide-types/custom-field-definitions.js';
+import { describeFieldFinding } from '../../../shared/slide-types/field-definitions.js';
 import { SLIDE_TYPE_CATALOG } from '../../utils/ai/slide-catalog/definitions.js';
 import { canManage } from '../../utils/route-middleware.js';
 
@@ -84,7 +84,7 @@ function slideTypeError(res, result) {
   // No reason guard around the field lookup: `field` only ever rides on
   // `invalid`, and the vocabulary gate is what keeps that true.
   const message = result.fieldProblem
-    ? describeFieldProblem(result.fieldProblem)
+    ? describeFieldFinding(result.fieldProblem)
     : INVALID_FIELD_MESSAGES[result.field] || ERROR_MESSAGES[result.reason];
   return storageError(res, result, message);
 }

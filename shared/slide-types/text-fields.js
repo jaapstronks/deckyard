@@ -20,6 +20,13 @@
  *   prose.
  * - `boolean`, `code`, `enum`, `image`, `link` and `number` are not, because
  *   their value is a machine token, a path or a number.
+ * - **A field that declares `mediaRef` is not prose either**, whatever its
+ *   type. `mediaRef` says the string is a reference to media the document
+ *   cannot embed rather than document text (D82) — `video-slide.source` holds
+ *   a Bunny UUID or a YouTube URL — and the reflowable projection already
+ *   refuses to print it. The same sentence has to hold here, or the translate
+ *   pipeline offers a translator a video id to render into Dutch and stores a
+ *   different reference per language for the same video.
  * - `items` fields are walked recursively; their `itemFields` follow the same
  *   rule.
  * - **A text field is translatable, and nothing else is.** Translation is a
@@ -61,6 +68,7 @@ const TEXT_TYPE_SET = new Set(TEXT_FIELD_TYPES);
  * @returns {boolean}
  */
 export function isTextField(field) {
+  if (field?.mediaRef) return false;
   return TEXT_TYPE_SET.has(field?.type);
 }
 

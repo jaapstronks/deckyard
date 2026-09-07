@@ -2,9 +2,9 @@
  * Translated copy for a rejected field definition.
  *
  * The rules and the located problem come from
- * `shared/slide-types/custom-field-definitions.js`, which the server runs too;
- * this module is only the UI's voice for them. `describeFieldProblem` is the
- * fallback, so a reason added there without copy here still says something true
+ * `shared/slide-types/field-definitions.js`, the walk the server runs too;
+ * this module is only the UI's voice for them. `describeFieldFinding` is the
+ * fallback, so a code added there without copy here still says something true
  * rather than nothing.
  */
 
@@ -12,11 +12,11 @@ import { t } from '../../../lib/ui-i18n.js';
 import {
   CUSTOM_TYPE_FIELD_TYPES,
   MAX_CUSTOM_TYPE_FIELDS,
-  describeFieldProblem,
 } from '../../../../shared/slide-types/custom-field-definitions.js';
+import { describeFieldFinding } from '../../../../shared/slide-types/field-definitions.js';
 
-/** reason -> [translation key, English fallback]. Keep in step with the module above. */
-const REASON_COPY = {
+/** code -> [translation key, English fallback]. Keep in step with the shared walk. */
+const CODE_COPY = {
   not_an_array: [
     'settings.slideTypes.fields.error.notAnArray',
     'The field list must be an array.',
@@ -61,14 +61,14 @@ const REASON_COPY = {
 
 /**
  * The sentence to show for a field-definition problem.
- * @param {import('../../../../shared/slide-types/custom-field-definitions.js').FieldDefinitionProblem} problem
+ * @param {import('../../../../shared/slide-types/field-definitions.js').FieldFinding} problem
  * @returns {string}
  */
 export function fieldProblemMessage(problem) {
-  const entry = REASON_COPY[problem?.reason];
-  if (!entry) return describeFieldProblem(problem);
+  const entry = CODE_COPY[problem?.code];
+  if (!entry) return describeFieldFinding(problem);
   return t(entry[0], entry[1], {
-    where: problem.where || '',
+    where: problem.name || '',
     max: MAX_CUSTOM_TYPE_FIELDS,
     types: CUSTOM_TYPE_FIELD_TYPES.join(', '),
   });

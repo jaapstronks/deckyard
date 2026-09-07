@@ -251,11 +251,24 @@ slide's content, the _schema itself_ — and prints a per-file report at startup
   server keeps serving every other deck.
 - **Warnings** leave the type registered but say what is being ignored: a field
   shadowing a global one, an invalid `namespace` (it falls back to `custom`), a
-  `labelField` naming nothing (the outline label falls back), a default for a
-  field that does not exist, a required field without a default, an `ai` block
-  that will be dropped, and a rendered root without its `.slide-<name>` class
-  (the scoping rule above — the slide still renders, its stylesheet is what
-  loses its anchor).
+  `labelField` or `itemLabelField` naming nothing (the label falls back), a
+  `mediaRef` or `foldUnofferedTo` the field beside it cannot honour, a field
+  without a `label` (the inspector shows its bare key), a default for a field
+  that does not exist, a required field without a default, an `ai` block that
+  will be dropped, and a rendered root without its `.slide-<name>` class (the
+  scoping rule above — the slide still renders, its stylesheet is what loses
+  its anchor).
+
+**The `fields[]` rules themselves live one module further down**, in
+[`shared/slide-types/field-definitions.js`](../../shared/slide-types/field-definitions.js).
+That single walk is what the boot-time check above and the Settings > Slide
+Types builder both run, so "an `enum` needs options" is stated once rather than
+once per surface. The two surfaces differ in four declared ways — the accepted
+`type` vocabulary (a database type may use only the six the builder has a
+control for), an upper bound on the number of fields (a stored row is bounded,
+hand-written source is not), how loud a missing `label` is, and whether the
+registry's global field keys are known. Everything else, including how a
+finding names its place, is one shape.
 
 The same function runs in `npm test`
 (`tests/custom-slide-type-validity.test.js`), so a fork can validate its types
@@ -527,7 +540,7 @@ In `custom/themes/acme-corp.json`:
 
 | Type       | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Extra Properties                                                                      |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `string`   | Single-line text. `mediaRef` marks the string as a reference to media the document cannot embed (a video source) rather than document text: the reflowable projection renders a named stand-in, linked where a link resolves, instead of printing the reference.                                                                                                                                                                                                                                                                                                                                                                | `maxLength`, `required`, `placeholder`, `helpText`, `mediaRef` (`{ label, linkKey }`) |
+| `string`   | Single-line text. `mediaRef` marks the string as a reference to media the document cannot embed (a video source) rather than document text: the reflowable projection renders a named stand-in, linked where a link resolves, instead of printing the reference, and the field is not offered for translation — a video id is the same in every language.                                                                                                                                                                                                                                                                       | `maxLength`, `required`, `placeholder`, `helpText`, `mediaRef` (`{ label, linkKey }`) |
 | `markdown` | Multi-line rich text (renders to HTML; **HTML is escaped**)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | `maxLength`, `required`                                                               |
 | `code`     | Monospace textarea storing the raw string verbatim (no markdown, no escaping on input)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | `maxLength`, `required`, `capability`                                                 |
 | `csv`      | Tabular text stored as a CSV/TSV string. Editor renders a chart-type-aware grid with a "Raw CSV" toggle (`client/views/editor/fields/csv-grid.js`); serialises to exactly the string the parser eats. Treated as a per-language, collaborative text field everywhere `markdown` is (validation, collab text-keys, i18n/translate filters). Used by the chart `data` field. `encodingKeys` names the sibling fields that describe the payload's encoding; the semantic projection captions the decoded table with their declared labels rather than dropping them in as anonymous paragraphs (the `dataset` structure contract). | `maxLength`, `required`, `encodingKeys`                                               |
