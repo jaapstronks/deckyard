@@ -46,6 +46,8 @@ const { validateCustomFieldDefinitions } =
   await import('../shared/slide-types/custom-field-definitions.js');
 const { describeFieldFinding } =
   await import('../shared/slide-types/field-definitions.js');
+const { fieldProblemMessage } =
+  await import('../client/views/settings/slide-type-editor/field-problem-copy.js');
 const { createSlideTypeEditor } =
   await import('../client/views/settings/slide-type-editor/index.js');
 
@@ -108,14 +110,29 @@ test('a problem inside itemFields is re-anchored on the parent row', () => {
   assert.match(describeFieldFinding(result.problem), /"Rows" › "Kind"/);
 });
 
-test('a valid definition normalizes and drops stray properties', () => {
+test('a valid definition normalizes', () => {
   const result = validateCustomFieldDefinitions([
-    { key: 'title', type: 'string', label: 'Title', bogus: 1, required: true },
+    { key: ' title ', type: 'string', label: ' Title ', required: true },
   ]);
   assert.equal(result.ok, true);
   assert.deepEqual(result.fields, [
     { key: 'title', type: 'string', label: 'Title', required: true },
   ]);
+});
+
+test('a property the builder cannot write is refused, and locates its row', () => {
+  // The whitelist used to drop this on the way to storage; it now answers for
+  // it (D84), and the answer carries the coordinates the builder opens.
+  const result = validateCustomFieldDefinitions([
+    { key: 'title', type: 'string', label: 'Title' },
+    { key: 'kind', type: 'enum', label: 'Kind', options: ['a'], hidden: true },
+  ]);
+  assert.equal(result.ok, false);
+  assert.equal(result.problem.code, 'unknown_property');
+  assert.equal(result.problem.index, 1);
+  assert.equal(result.problem.itemIndex, null);
+  assert.match(fieldProblemMessage(result.problem), /hidden/);
+  assert.match(fieldProblemMessage(result.problem), /"Kind"/);
 });
 
 test('Save does not post a definition the API would refuse, and names the field', async () => {

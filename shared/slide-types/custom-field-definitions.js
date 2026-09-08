@@ -22,14 +22,26 @@
  * `validate-definition.js` runs too — one walk, one finding shape, no second
  * spelling of "an enum needs options" (B231). What stays here is what is
  * genuinely the database's: the narrowed type vocabulary, the row-sized bound,
- * a label the form insists on, and the **whitelist** — which properties survive
- * into storage, so a stored definition never keeps stray keys.
+ * a label the form insists on, and the **property vocabulary** a stored row may
+ * spell.
  *
- * That whitelist is why the A2 declarations (`mediaRef`, `itemLabelField`,
- * `foldUnofferedTo`) do not reach a DB type today: the shared walk checks them
- * wherever they appear, but the builder has no control that writes one, so
- * keeping them here would let the API accept a declaration the next Save drops.
- * They arrive when the builder offers them, not before.
+ * ## The vocabulary is a contract, not a filter (D84)
+ *
+ * It used to be a whitelist `cleanField` applied on the way to storage:
+ * anything else fell out, silently. That is why the A2 declarations
+ * (`itemLabelField`, `foldUnofferedTo`, `mediaRef`) could not reach a DB type —
+ * the shared walk checked them wherever they appeared, but the next Save
+ * dropped them again. They now have a control in the builder, so the vocabulary
+ * carries them, and what it does not know it **refuses**: an unlisted property
+ * is `unknown_property`, an error located on the row that declares it. Losing a
+ * declaration on the way to disk is the same "truncated" this surface already
+ * refuses for `usage`.
+ *
+ * The vocabulary is read per field type, because that is how it is authored: a
+ * form with a control per row type. `options` belongs to an `enum` row and
+ * `maxLength` to a text one, so either on the wrong row is a mistake with the
+ * same answer as a property nothing has ever heard of. `cleanField` still trims
+ * and normalizes; it no longer chooses.
  *
  * @see docs/developer/slide-types.md
  */
@@ -53,6 +65,35 @@ export const CUSTOM_TYPE_FIELD_TYPES = [
 export const MAX_CUSTOM_TYPE_FIELDS = 30;
 
 /**
+ * Every property a stored field definition may carry, per field type. This is
+ * the contract, so it is also the list the builder prunes a row to when its
+ * type changes: a `maxLength` left behind by a string that became an enum would
+ * otherwise be refused by a Save with no control on screen to clear it.
+ * @type {import('./field-definitions.js').FieldPropertyVocabulary}
+ */
+export const CUSTOM_TYPE_PROPERTY_KEYS = Object.freeze({
+  all: Object.freeze([
+    'key',
+    'type',
+    'label',
+    'required',
+    'placeholder',
+    'helpText',
+  ]),
+  byType: Object.freeze({
+    string: Object.freeze(['maxLength', 'mediaRef']),
+    markdown: Object.freeze(['maxLength']),
+    enum: Object.freeze(['options', 'foldUnofferedTo']),
+    items: Object.freeze([
+      'itemFields',
+      'minItems',
+      'maxItems',
+      'itemLabelField',
+    ]),
+  }),
+});
+
+/**
  * The rules this surface applies. `labelSeverity: 'error'` is the one place it
  * is stricter than the boot-time check: the inspector falls back to the key, so
  * a file-JS type without a label degrades, but for a DB type the label is the
@@ -63,9 +104,20 @@ const DB_TYPE_PROFILE = {
   fieldTypes: CUSTOM_TYPE_FIELD_TYPES,
   maxFields: MAX_CUSTOM_TYPE_FIELDS,
   labelSeverity: 'error',
+  propertyKeys: CUSTOM_TYPE_PROPERTY_KEYS,
 };
 
-/** Properties a stored field definition keeps. Everything else is dropped. */
+/** True for a string with at least one non-space character. */
+function isNonEmpty(v) {
+  return typeof v === 'string' && v.trim() !== '';
+}
+
+/**
+ * Normalize one field definition for storage. Every property it reads is in the
+ * vocabulary above — the walk has already refused anything else — so this trims
+ * strings and drops values that say nothing (a `required: false`, an empty
+ * `mediaRef.linkKey`), and decides nothing.
+ */
 function cleanField(field) {
   const clean = {
     key: field.key.trim(),
@@ -78,11 +130,25 @@ function cleanField(field) {
   if (typeof field.placeholder === 'string')
     clean.placeholder = field.placeholder;
   if (typeof field.helpText === 'string') clean.helpText = field.helpText;
-  if (clean.type === 'enum') clean.options = field.options;
+  if (clean.type === 'enum') {
+    clean.options = field.options;
+    if (isNonEmpty(field.foldUnofferedTo))
+      clean.foldUnofferedTo = field.foldUnofferedTo.trim();
+  }
+  if (clean.type === 'string' && field.mediaRef) {
+    const ref = {};
+    if (isNonEmpty(field.mediaRef.label))
+      ref.label = field.mediaRef.label.trim();
+    if (isNonEmpty(field.mediaRef.linkKey))
+      ref.linkKey = field.mediaRef.linkKey.trim();
+    clean.mediaRef = ref;
+  }
   if (clean.type === 'items') {
     clean.itemFields = field.itemFields.map(cleanField);
     if (typeof field.minItems === 'number') clean.minItems = field.minItems;
     if (typeof field.maxItems === 'number') clean.maxItems = field.maxItems;
+    if (isNonEmpty(field.itemLabelField))
+      clean.itemLabelField = field.itemLabelField.trim();
   }
   return clean;
 }
@@ -90,11 +156,11 @@ function cleanField(field) {
 /**
  * Validate and normalize a `fields[]` array.
  *
- * Returns the cleaned array on success — only the properties a type may carry
- * survive. On failure it returns the first blocking finding of the shared walk,
- * located precisely enough for a caller to point at the offending row. The walk
- * reports warnings too; this surface has one answer to give, so it acts on the
- * errors and leaves the rest to the boot-time report.
+ * Returns the cleaned array on success. On failure it returns the first
+ * blocking finding of the shared walk, located precisely enough for a caller to
+ * point at the offending row. The walk reports warnings too; this surface has
+ * one answer to give, so it acts on the errors and leaves the rest to the
+ * boot-time report.
  *
  * @param {unknown} fields
  * @returns {{ok: true, fields: Array<Object>} | {ok: false, problem: import('./field-definitions.js').FieldFinding}}

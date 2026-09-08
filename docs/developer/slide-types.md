@@ -252,7 +252,8 @@ slide's content, the _schema itself_ — and prints a per-file report at startup
 - **Warnings** leave the type registered but say what is being ignored: a field
   shadowing a global one, an invalid `namespace` (it falls back to `custom`), a
   `labelField` or `itemLabelField` naming nothing (the label falls back), a
-  `mediaRef` or `foldUnofferedTo` the field beside it cannot honour, a field
+  `mediaRef`, `foldUnofferedTo` or `itemLabelField` on a field type that cannot
+  honour it, a field
   without a `label` (the inspector shows its bare key), a default for a field
   that does not exist, a required field without a default, an `ai` block that
   will be dropped, and a rendered root without its `.slide-<name>` class (the
@@ -678,11 +679,43 @@ the table above are not reachable everywhere:
 | a core type or `custom/slide-types/*.js`  | yes        | yes            |
 | Settings → Slide Types (stored in the DB) | no         | no             |
 
-The DB-backed path validates each field down to `key`, `type`, `label` plus
-`required`/`placeholder`/`helpText` (`validateFields` in
-`server/storage/custom-slide-types.js`), and only its `items` branch keeps
-`minItems`/`maxItems`. An `images` field authored there therefore always renders
-unbounded and without presets.
+An `images` field authored in the builder therefore always renders unbounded and
+without presets — see the vocabulary below for the exact list.
+
+#### What a stored field definition may say
+
+A DB-backed type is a row a form writes, so what its fields may declare is a
+**closed vocabulary**, read per field type
+(`CUSTOM_TYPE_PROPERTY_KEYS` in `shared/slide-types/custom-field-definitions.js`):
+
+| Applies to  | Properties                                                    |
+| ----------- | ------------------------------------------------------------- |
+| every field | `key`, `type`, `label`, `required`, `placeholder`, `helpText` |
+| `string`    | `maxLength`, `mediaRef` (`{ label, linkKey }`)                |
+| `markdown`  | `maxLength`                                                   |
+| `enum`      | `options`, `foldUnofferedTo`                                  |
+| `items`     | `itemFields`, `minItems`, `maxItems`, `itemLabelField`        |
+
+Anything else is **refused**, not dropped: `POST`/`PATCH` answers `400` with
+`unknown_property` and the row that declares it, and the builder shows the same
+sentence beside that row (`unknownProperty` in `field-problem-copy.js`). It used
+to be a whitelist the storage layer filtered through, which is how a declaration
+could be accepted and then be gone by the time anyone looked — and why the three
+semantic declarations above could not reach a DB type at all. They each have a
+control in the builder now (D84), so the vocabulary carries them; everything the
+form has no control for is a mistake with an answer.
+
+The vocabulary is read per type because that is how it is authored, one control
+per row type: `options` on a `string` row is refused the same way a property
+nothing has ever heard of is. Changing a row's type in the builder drops what
+the new type cannot carry, so a Save is never refused over a control that is no
+longer on screen. A property that is _inert_ rather than unspellable — a
+`mediaRef` on a non-`string`, an `itemLabelField` on a non-`items` — is a
+warning from the shared walk, exactly as it is for a file-JS type.
+
+Hand-written source stays open: `custom/slide-types/*.js` and the core types
+pass no vocabulary to the walk, because a file declares more than a form can and
+its author reads the boot log.
 
 #### Where a DB-backed type is registered
 
@@ -830,11 +863,11 @@ an enum whose renderer still reads a value it no longer offers is a defect to
 find, not a deck to rewrite silently. A fold target the field does not itself
 offer is a warning from `validateSlideTypeDefinition` and is skipped rather
 than applied — folding one unoffered value into another helps nobody. The
-declaration is JSON-safe, so unlike `normalizeContent` it could travel to the
-editor; it is still file-types-only, because the allowlist a database-defined
-type's fields are cleaned through (`validateCustomFieldDefinitions`) does not
-carry it — and a type authored in the database has no deck full of a value it
-used to offer.
+declaration is JSON-safe, so unlike `normalizeContent` it travels to the editor:
+a database-defined `enum` declares it too, through the "A retired value becomes"
+select the builder puts under its options (the choices are the field's own
+options, which is precisely the case the builder creates the moment an author
+deletes a line above).
 
 The three types with a `density` field are the instance. `list-slide` renders
 all three stands of the shared vocabulary (`DENSITY_OPTIONS` in `helpers.js`)
