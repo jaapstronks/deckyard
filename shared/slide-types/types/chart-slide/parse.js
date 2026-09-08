@@ -85,33 +85,18 @@ export function parseDelimited(text, delimiter) {
   return cleaned;
 }
 
-function isHeaderRowForBarOrPie(rows) {
-  if (rows.length < 2) return false;
-  const r0 = rows[0] || [];
-  const maybe = normalizeNumber(r0[1]);
-  return maybe == null; // if 2nd column isn't numeric, assume header
-}
-
-function isHeaderRowForLine(rows) {
-  if (rows.length < 2) return false;
-  const r0 = rows[0] || [];
-  const n1 = normalizeNumber(r0[1]);
-  const n2 = normalizeNumber(r0[2]);
-  return n1 == null && n2 == null;
-}
-
 /**
- * Whether the first row of a parsed matrix is a header (non-numeric) row, using
- * the same heuristic the chart parser applies. Exposed so the grid editor shows
- * the same header/body split the renderer will infer.
+ * The column names a chart's data carries when its first row supplies none —
+ * the one source of the synthesised column names. The grid editor fills a
+ * *blank* column name from it; the parser itself never synthesises, because the
+ * first row *is* the header (D83).
  * @param {string} chartType
- * @param {string[][]} rows
- * @returns {boolean}
+ * @returns {string[]}
  */
-export function detectHeaderRow(chartType, rows) {
-  return chartType === 'line'
-    ? isHeaderRowForLine(rows)
-    : isHeaderRowForBarOrPie(rows);
+export function defaultHeaderFor(chartType) {
+  return String(chartType) === 'line'
+    ? ['X', 'Series 1', 'Series 2']
+    : ['Label', 'Value'];
 }
 
 /**
@@ -155,16 +140,23 @@ export function parseChartData({ chartType, data }) {
 
   const delimiter = detectDelimiter(raw);
   const rows = parseDelimited(raw, delimiter);
-  if (rows.length < 2) {
+  // The first row is the header - always, for every chart type (D83). No
+  // heuristic decides it, so a numeric column name ("Quarter\t2023\t2024") is
+  // a column name and not a data point, and a deck stored without a header
+  // keeps its first row as its column names; `scripts/scan-chart-headers.js`
+  // lists those for an admin to judge (D86), because no fold can tell a misread
+  // year header from headerless data.
+  if (rows.length < 3) {
     return {
       ok: false,
-      errors: ['Niet genoeg rijen. Voeg minstens 2 datarijen toe.'],
+      errors: [
+        'Niet genoeg rijen. Voeg een kolomnamen-rij plus minstens 2 datarijen toe.',
+      ],
     };
   }
+  const body = rows.slice(1);
 
   if (chartType === 'bar' || chartType === 'pie') {
-    const hasHeader = isHeaderRowForBarOrPie(rows);
-    const body = hasHeader ? rows.slice(1) : rows;
     const labels = [];
     const values = [];
     for (const r of body) {
@@ -195,9 +187,7 @@ export function parseChartData({ chartType, data }) {
   }
 
   // line (1–2 series)
-  const hasHeader = isHeaderRowForLine(rows);
-  const header = hasHeader ? rows[0] : null;
-  const body = hasHeader ? rows.slice(1) : rows;
+  const header = rows[0];
 
   const x = [];
   const y1 = [];
@@ -230,8 +220,8 @@ export function parseChartData({ chartType, data }) {
     };
   }
 
-  const series1Label = header?.[1] ? String(header[1]).trim() : '';
-  const series2Label = header?.[2] ? String(header[2]).trim() : '';
+  const series1Label = header[1] ? String(header[1]).trim() : '';
+  const series2Label = header[2] ? String(header[2]).trim() : '';
 
   const dataset = anyY2
     ? { x, y1, y2, series1Label, series2Label }

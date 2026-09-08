@@ -1,8 +1,10 @@
 /**
  * CSV grid helpers used by the chart data editor (client/views/editor/fields/
- * csv-grid.js): serialise a matrix back to CSV, the lossless grid parse, and the
- * header-detection heuristic must all agree so the grid round-trips through the
- * string the chart parser eats.
+ * csv-grid.js): serialise a matrix back to CSV and the lossless grid parse must
+ * agree with the parser, so the grid round-trips through the string the chart
+ * parser eats. Row 0 is the header on both sides - a form, not a detection
+ * (D83), so what the grid shows as column names is what the renderer reads as
+ * column names.
  *
  * Run with: node --test tests/chart-csv-grid.test.js
  */
@@ -10,7 +12,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 
-const { serializeCsv, parseCsvToGrid, detectHeaderRow, parseChartData } =
+const { serializeCsv, parseCsvToGrid, defaultHeaderFor, parseChartData } =
   await import('../shared/slide-types/types/chart-slide/parse.js');
 
 const { applyHeaderPaste } =
@@ -64,35 +66,45 @@ describe('parseCsvToGrid', () => {
   });
 });
 
-describe('detectHeaderRow', () => {
-  it('treats a non-numeric first row as a header for bar/pie', () => {
-    assert.equal(
-      detectHeaderRow('bar', [
-        ['Label', 'Value'],
-        ['A', '10'],
-      ]),
-      true,
-    );
+describe('defaultHeaderFor', () => {
+  it('names the two columns a bar/pie chart reads', () => {
+    assert.deepEqual(defaultHeaderFor('bar'), ['Label', 'Value']);
+    assert.deepEqual(defaultHeaderFor('pie'), ['Label', 'Value']);
   });
 
-  it('treats a numeric first row as data (no header) for bar/pie', () => {
-    assert.equal(
-      detectHeaderRow('pie', [
-        ['A', '10'],
-        ['B', '25'],
-      ]),
-      false,
-    );
+  it('names the x column and both series a line chart reads', () => {
+    assert.deepEqual(defaultHeaderFor('line'), ['X', 'Series 1', 'Series 2']);
+  });
+});
+
+describe('the first row is the header (D83)', () => {
+  it('reads a numeric column name as a name, not a data point', () => {
+    // The whole point of retiring the heuristic: `2023` and `2024` are what
+    // the two series are called, not the first pair of values.
+    const parsed = parseChartData({
+      chartType: 'line',
+      data: 'Quarter\t2023\t2024\nQ1\t1200\t1450\nQ2\t1350\t1620',
+    });
+    assert.equal(parsed.ok, true);
+    assert.equal(parsed.dataset.series1Label, '2023');
+    assert.equal(parsed.dataset.series2Label, '2024');
+    assert.deepEqual(parsed.dataset.x, ['Q1', 'Q2']);
+    assert.deepEqual(parsed.dataset.y1, [1200, 1350]);
   });
 
-  it('detects a header for line charts across both series columns', () => {
-    assert.equal(
-      detectHeaderRow('line', [
-        ['X', 'Revenue', 'Cost'],
-        ['Jan', '12', '8'],
-      ]),
-      true,
-    );
+  it('reads row 0 of a bar chart as names whatever it contains', () => {
+    const parsed = parseChartData({
+      chartType: 'bar',
+      data: '2023,2024\nA,10\nB,25',
+    });
+    assert.equal(parsed.ok, true);
+    assert.deepEqual(parsed.dataset.labels, ['A', 'B']);
+    assert.deepEqual(parsed.dataset.values, [10, 25]);
+  });
+
+  it('needs a header row plus two data rows', () => {
+    const parsed = parseChartData({ chartType: 'bar', data: 'A,10\nB,25' });
+    assert.equal(parsed.ok, false);
   });
 });
 
@@ -109,9 +121,9 @@ describe('grid round-trip through the chart parser', () => {
     assert.deepEqual(parsed.dataset.values, [10, 25]);
   });
 
-  it('a synthesised header (no header in source) still parses correctly', () => {
-    // Grid synthesises "Label,Value" for headerless data; the parser must then
-    // detect it as a header and not treat it as a data point.
+  it('a synthesised header (blank header cells in the grid) still parses', () => {
+    // The grid fills a blank column name from defaultHeaderFor; the parser
+    // reads row 0 as names either way, so no data point is lost.
     const withHeader = serializeCsv([
       ['Label', 'Value'],
       ['A', '10'],
@@ -206,9 +218,9 @@ describe('applyHeaderPaste (header-cell paste placement)', () => {
     assert.deepEqual(next.body, [['Jan', '5']]);
   });
 
-  it('top-left paste of a headerless block keeps every row as data', () => {
-    // Regression: the old handler always ate row 0 as the header, dropping a
-    // real data point when the pasted block had no header row.
+  it("top-left paste reads the block's first row as the column names", () => {
+    // You pasted onto the header, so the block is read as one (D83). A
+    // headerless block belongs in a body cell - where you paste is what it is.
     const next = applyHeaderPaste({
       matrix: [
         ['A', '10'],
@@ -221,11 +233,8 @@ describe('applyHeaderPaste (header-cell paste placement)', () => {
       chartType: 'bar',
       model: BAR_MODEL,
     });
-    assert.deepEqual(next.header, ['Label', 'Value']); // synthesised defaults
-    assert.deepEqual(next.body, [
-      ['A', '10'],
-      ['B', '25'],
-    ]);
+    assert.deepEqual(next.header, ['A', '10']);
+    assert.deepEqual(next.body, [['B', '25']]);
   });
 
   it('is a no-op for an empty matrix', () => {

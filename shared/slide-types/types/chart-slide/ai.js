@@ -28,6 +28,10 @@ export const ai = {
       - chartType: "bar", "line", or "pie"
       - data: Tab-separated values (TSV) string with header row
 
+      The first row is ALWAYS the header - column names, never a data point,
+      even when the names are numbers. "Quarter\\t2023\\t2024" names two series
+      called 2023 and 2024; it does not plot anything.
+
       DATA FORMAT (TSV - tabs between columns, newlines between rows).
       How many columns depends on the chart type:
       - bar and pie read exactly two columns, label + value:
@@ -93,13 +97,13 @@ export const aiExamples = [
     title: 'Quarterly Comparison',
     subheading: 'Year-over-year performance',
     chartType: 'line',
-    // The header names are prose, not years: the header heuristic reads a
-    // row as data when its second cell parses as a number, so a bare `2023`
-    // would have become a data point labelled "Quarter".
-    data: 'Quarter\tFY 2023\tFY 2024\nQ1\t1200\t1450\nQ2\t1350\t1620\nQ3\t1480\t1890\nQ4\t1550\t2100',
+    // Bare years, on purpose: the header is the first row by form (D83), so a
+    // numeric column name is a column name. This example had to say "FY 2023"
+    // while a heuristic still read a numeric second cell as data.
+    data: 'Quarter\t2023\t2024\nQ1\t1200\t1450\nQ2\t1350\t1620\nQ3\t1480\t1890\nQ4\t1550\t2100',
     xLabel: 'Quarter',
     yLabel: 'Revenue (K)',
-    series1Label: 'FY 2023',
-    series2Label: 'FY 2024',
+    series1Label: '2023',
+    series2Label: '2024',
   },
 ];

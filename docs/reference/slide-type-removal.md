@@ -131,10 +131,12 @@ Then, in rough dependency order:
    rewrites the stored name on every read, every write and every import,
    whatever the backend — the one path a deck cannot avoid.
 
-   The bump is not ceremony: the funnel only runs steps _above_ a deck's stamp,
-   so a rename added to the table without one would never reach a deck already
-   stamped at the current version. Appending the same function again is what
-   makes the next rename a two-line change.
+   The bump is not ceremony, but not for the reason a version ladder would
+   give: no deck carries a stored stamp, so the funnel runs every step on every
+   read regardless (D85). The version is the ledger of shape changes, pinned by
+   `SCHEMA_MIGRATIONS.length === CURRENT_SCHEMA_VERSION`, and a step without a
+   bump fails that test instead of shipping unrecorded. Appending the same
+   function again is what makes the next rename a two-line change.
 
    **Lossless means literally lossless**: the two names share one field schema,
    so only the `type` string changes and `content` is left byte for byte alone.
@@ -153,6 +155,16 @@ Then, in rough dependency order:
    one type it converts and derives nothing (D80, B225). A conversion nobody has
    decided yet stays out of the funnel entirely — it is a numbered migration
    someone aims, or a `scripts/` one-off someone runs.
+
+   **And a decided conversion enters the funnel only if it is a normaliser**:
+   keyed on a shape valid content cannot have, so it is a no-op on every deck
+   the current writers produce. The funnel runs every step on every read (no
+   stamp is stored), so a fold that has to know _when_ a deck was written is a
+   numbered migration only - and only when one fold is right for every deck.
+   The chart header is the worked example (D83, D86): "row 0 is numeric" is a
+   misread year header in some stored decks and headerless data in others, no
+   fold can tell which, so there is neither a funnel step nor a migration;
+   `scripts/scan-chart-headers.js` lists the candidates for an admin to judge.
 
    **Ship the numbered DB migration as well**, self-contained SQL —
    `056_rename_lijstje_slide_to_list_slide.js` walks the jsonb columns with a

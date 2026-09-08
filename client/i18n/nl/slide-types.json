@@ -23,6 +23,7 @@
   "slideType.chart-slide.field.chartType.option.bar.label": "Staaf",
   "slideType.chart-slide.field.chartType.option.line.label": "Lijn",
   "slideType.chart-slide.field.chartType.option.pie.label": "Cirkel",
+  "slideType.chart-slide.field.data.help": "De eerste rij bevat de kolomnamen en wordt nooit getekend; elke rij daarna is een datapunt. Bar en pie lezen een label en een waarde; line leest een x-label en één of twee series, benoemd door de koprij.",
   "slideType.chart-slide.field.data.label": "Data (CSV/TSV)",
   "slideType.chart-slide.field.pieLabelMode.label": "Pie labels",
   "slideType.chart-slide.field.pieLabelMode.option.both.label": "Beide",

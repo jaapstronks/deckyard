@@ -19,7 +19,7 @@ import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { createSegmented } from '../../../lib/dom/segmented.js';
 import {
-  detectHeaderRow,
+  defaultHeaderFor,
   parseCsvToGrid,
   serializeCsv,
 } from '../../../../shared/slide-types/types/chart-slide/parse.js';
@@ -30,10 +30,10 @@ import {
  * @param {string} chartType
  */
 function columnModel(chartType) {
-  if (String(chartType) === 'line') {
-    return { min: 2, max: 3, defaultHeaders: ['X', 'Series 1', 'Series 2'] };
-  }
-  return { min: 2, max: 2, defaultHeaders: ['Label', 'Value'] };
+  const defaultHeaders = defaultHeaderFor(chartType);
+  return String(chartType) === 'line'
+    ? { min: 2, max: 3, defaultHeaders }
+    : { min: 2, max: 2, defaultHeaders };
 }
 
 /** Seed data for the Example button, per chart type. */
@@ -44,21 +44,19 @@ function exampleFor(chartType) {
 }
 
 /**
- * Turn a CSV string into `{ header, body, cols }` for the grid: an explicit
- * header row (detected via the same heuristic the renderer uses, or synthesised
- * from `defaultHeaders`), body rows normalised to `cols` columns.
+ * Turn a CSV string into `{ header, body, cols }` for the grid: the first row
+ * as the header, every row after it as the body, normalised to `cols` columns.
+ *
+ * The split is the form, not a guess (D83): row 0 is the header for every chart
+ * type, so the grid shows exactly what the renderer will read and a numeric
+ * column name stays a column name. `defaultHeaders` fills in a *blank* header
+ * cell only - it never invents a whole header row: row 0 is the header,
+ * whatever it holds (D83).
  */
 function buildMatrix(value, chartType, model) {
   const rows = parseCsvToGrid(value);
-  let header;
-  let body;
-  if (rows.length && detectHeaderRow(chartType, rows)) {
-    header = rows[0].slice();
-    body = rows.slice(1).map((r) => r.slice());
-  } else {
-    header = [];
-    body = rows.map((r) => r.slice());
-  }
+  let header = rows.length ? rows[0].slice() : [];
+  let body = rows.slice(1).map((r) => r.slice());
 
   const widest = body.reduce((m, r) => Math.max(m, r.length), 0);
   let cols = Math.max(model.min, header.length, widest);
@@ -82,9 +80,10 @@ function buildMatrix(value, chartType, model) {
  * header cell at `startCol`. Pure so it can be unit-tested without the DOM.
  *
  * - Into the **top-left** header cell it rebuilds the whole grid via
- *   {@link buildMatrix}, so the same header-detection the renderer applies
- *   decides whether the block's first row is column names or data - a headerless
- *   block keeps every row instead of losing row 0 to the header.
+ *   {@link buildMatrix}, so the pasted block's first row becomes the column
+ *   names and the rest becomes data - you pasted onto the header, so the block
+ *   is read as one (D83). Paste a headerless block into a *body* cell instead;
+ *   where you paste is what it is.
  * - Into **any other** header cell it fills in place from that column: the first
  *   pasted row sets the column name(s), following rows drop into the body at the
  *   same column offset, and other columns are preserved - so pasting a single
@@ -242,9 +241,9 @@ export function createCsvGridEditor({
     focusCell(startRow, startCol);
   };
 
-  // Paste into a header cell: the top-left cell rebuilds the whole grid (with
-  // header auto-detection); any other header cell fills in place from that
-  // column. See applyHeaderPaste for the full semantics.
+  // Paste into a header cell: the top-left cell rebuilds the whole grid (its
+  // first row becomes the column names); any other header cell fills in place
+  // from that column. See applyHeaderPaste for the full semantics.
   const handleHeaderPaste = (e, startCol) => {
     const text = e.clipboardData?.getData('text/plain') || '';
     if (!isMultiCell(text)) return;
@@ -512,7 +511,7 @@ export function createCsvGridEditor({
           )
         : t(
             'editor.chart.grid.helpBarPie',
-            'A label and a numeric value per row. Paste a block from Sheets/Excel into any cell.',
+            'The first row names the columns; every row after it is a label and a numeric value. Paste a block from Sheets/Excel into any cell.',
           ),
   });
 

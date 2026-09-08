@@ -5,14 +5,39 @@
  * schema version at all (`version: 1` existed only on the export wire format in
  * deck.js, never on the thing on disk), and backward-compatibility was handled
  * by scattered per-type "fold on edit / fall back on render" resolvers. This
- * module gives the durable deck a stamped `schemaVersion` and one ordered place
- * to migrate old shapes forward.
+ * module gives the engine one ordered place to fold old shapes forward, so the
+ * rest of it never branches on version.
  *
- * Design (modelled on Jupyter nbformat): a deck declares `schemaVersion`; a
- * single `migratePresentation()` funnel upgrades any older deck to the current
- * in-memory shape via a chain of small, pure steps, so the rest of the engine
- * never branches on version. Migration runs at read time; the upgraded deck is
- * persisted on the next write (reads never write).
+ * What the funnel actually is (D85, B239): a chain of **idempotent
+ * normalisers**, not a version ladder. `schemaVersion` is persisted nowhere -
+ * the `presentations` row has no column for it, `mapPresentationRow` reads
+ * none, and the portable deck format leaves it out on purpose - so every
+ * stored deck reads as version 0 and `migratePresentation()` runs **every**
+ * step on every read, every write and every import, on every backend. That is
+ * the form, not a defect: it is the one path a deck cannot avoid, and it needs
+ * no stamp to be trusted. A stamp is a claim every writer would have to honour
+ * (row, snapshot, library row, comment snapshot, wire format, an agent's POST),
+ * and the surfaces the read funnel never passes through are exactly where such
+ * claims failed before (docs/reference/slide-type-removal.md, step 0).
+ * Persisting a fold is a numbered DB migration's job (030, 056, 081), never
+ * this module's.
+ *
+ * The consequence for a step is the contract on `SCHEMA_MIGRATIONS` below: it
+ * must be a no-op on content the current writers produce. A fold that has to
+ * know *when* a deck was written - one keyed on a shape valid content can still
+ * have - is not a normaliser and cannot be a step; it is a numbered migration
+ * someone aims, or a judgment someone makes per deck (the chart header, D86:
+ * a numeric first row is a misread year header or headerless data, and no
+ * fold can tell which, so `scripts/scan-chart-headers.js` lists them).
+ *
+ * `CURRENT_SCHEMA_VERSION` is the ledger: one step per shape change, pinned by
+ * `SCHEMA_MIGRATIONS.length === CURRENT_SCHEMA_VERSION`, and the `$id` version
+ * of the generated JSON schemas (docs/reference/deck-format.md). The in-memory
+ * stamp `migratePresentation()` writes says "this object went through the
+ * funnel of this build" - the collab live-apply guard compares it - and is
+ * never stored. Its early return on an already-stamped object is the last
+ * place the stamp is read as "these steps already ran"; retiring that is
+ * B239's execution item.
  */
 
 import { resolveRows } from './types/text-blocks-slide.js';
@@ -280,9 +305,11 @@ export const LOSSLESS_TYPE_RENAMES = new Map(
  *
  * The step every lossless rename gets to reuse: a removal declares the rename
  * once in `removed.js`, appends this function as the next migration step and
- * bumps `CURRENT_SCHEMA_VERSION`. The bump is not ceremony — the funnel only
- * runs steps *above* a deck's stamp, so a rename added to the table without one
- * would never reach a deck already stamped at the current version.
+ * bumps `CURRENT_SCHEMA_VERSION`. The bump is not ceremony, but not because a
+ * stamp gates anything (none is stored, so the funnel runs every step on every
+ * read regardless): the version is the ledger of shape changes, and a step
+ * appended without a bump fails `SCHEMA_MIGRATIONS.length ===
+ * CURRENT_SCHEMA_VERSION` instead of shipping unrecorded (D85).
  *
  * Only `type` changes; `content` is untouched, which is what "lossless" means
  * and why this can run on every read. Idempotent by construction: after one
@@ -443,11 +470,18 @@ function foldUnofferedEnumValues(pres) {
 }
 
 /**
- * Ordered migration steps. `SCHEMA_MIGRATIONS[i]` migrates a deck FROM version
- * `i` TO version `i + 1` and must:
- *  - assume the deck is already at the source version;
+ * Ordered migration steps. `SCHEMA_MIGRATIONS[i]` folds the shape version `i`
+ * still allowed into the one version `i + 1` requires. No stamp is stored (see
+ * the module docstring), so every step runs on every deck, every time - which
+ * is why a step must:
+ *  - be **idempotent**, and key on a shape that valid current content cannot
+ *    have (a retired key, a retired type name, an enum value the field no
+ *    longer offers) - so that it is a **no-op on every deck the current
+ *    writers produce**. A step that matches valid content rewrites decks that
+ *    were never old: the reverted chart-header step did exactly that (B239);
+ *  - be render-equivalent: it changes what is stored, not what is shown;
  *  - be pure enough to run safely (it may mutate the passed object, which is a
- *    fresh parse from disk, and must return the deck);
+ *    fresh parse from the row, and must return the deck);
  *  - never lose data.
  *
  * A deck stores its slides more than once when it is translated: `pres.slides`
@@ -458,7 +492,8 @@ function foldUnofferedEnumValues(pres) {
  * deck-level block (`i18n`, `lang`, …) reads the deck directly.
  *
  * The invariant `SCHEMA_MIGRATIONS.length === CURRENT_SCHEMA_VERSION` is
- * enforced by tests, so bumping the version forces you to add a real step.
+ * enforced by tests: the version is the ledger of shape changes, so a bump
+ * without a step, or a step without a bump, makes the ledger lie.
  *
  * @type {Array<(pres: any) => any>}
  */
@@ -861,10 +896,16 @@ export function schemaVersionOf(pres) {
 }
 
 /**
- * Upgrade a deck to `CURRENT_SCHEMA_VERSION` in memory, running each ordered
- * migration step in turn. Idempotent: an already-current deck is returned with
- * only its stamp normalised. A deck from a *newer* version is left untouched
- * (we never downgrade); validation surfaces that separately.
+ * Run a deck through every normaliser in order and stamp it, in memory. Every
+ * stored deck arrives unstamped (nothing persists `schemaVersion`), so in
+ * practice the whole chain runs on every call; each step is a no-op on current
+ * content, which is what makes that free. Idempotent by construction.
+ *
+ * An object that arrives already stamped at or above the current version is
+ * returned untouched. Nothing stored produces one; an import can, when a JSON
+ * that once left this funnel is handed back. That early return is the last
+ * place the stamp is read as "these steps already ran" - a claim nothing
+ * verifies - and retiring it is B239's execution item.
  *
  * A translated deck stores its slides more than once: `pres.slides` holds the
  * dominant language and `pres.i18n.versions[*].slides` every version, including

@@ -23,6 +23,7 @@
   "slideType.chart-slide.field.chartType.option.bar.label": "Bar",
   "slideType.chart-slide.field.chartType.option.line.label": "Line",
   "slideType.chart-slide.field.chartType.option.pie.label": "Pie",
+  "slideType.chart-slide.field.data.help": "The first row names the columns and is never plotted; every row after it is a data point. Bar and pie read a label and a value; line reads an x label and one or two series, named by the header.",
   "slideType.chart-slide.field.data.label": "Data (CSV/TSV)",
   "slideType.chart-slide.field.pieLabelMode.label": "Pie labels",
   "slideType.chart-slide.field.pieLabelMode.option.both.label": "Both",
