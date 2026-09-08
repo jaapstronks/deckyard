@@ -709,9 +709,11 @@ The vocabulary is read per type because that is how it is authored, one control
 per row type: `options` on a `string` row is refused the same way a property
 nothing has ever heard of is. Changing a row's type in the builder drops what
 the new type cannot carry, so a Save is never refused over a control that is no
-longer on screen. A property that is _inert_ rather than unspellable — a
+longer on screen. The vocabulary also fixes the _shape_: a `mediaRef` that is
+not an object is refused here, where a file-JS type gets a warning and the
+declaration is ignored. In hand-written source an inert declaration — a
 `mediaRef` on a non-`string`, an `itemLabelField` on a non-`items` — is a
-warning from the shared walk, exactly as it is for a file-JS type.
+warning; on a DB type it is unspellable, so it is the same `unknown_property`.
 
 Hand-written source stays open: `custom/slide-types/*.js` and the core types
 pass no vocabulary to the walk, because a file declares more than a form can and

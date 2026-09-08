@@ -435,6 +435,21 @@ test('the vocabulary is read per field type', () => {
   assert.equal(onTheRightRow.ok, true);
 });
 
+test('a `mediaRef` that is not an object is refused where the vocabulary is closed', () => {
+  // Open source ignores it (a warning); the stored row would otherwise be
+  // rewritten into an empty declaration — a choice `cleanField` no longer makes.
+  const fields = [{ key: 'a', type: 'string', label: 'A', mediaRef: 'Video' }];
+  assert.deepEqual(codes(fields, FILE_JS), ['media_ref_not_an_object']);
+  assert.equal(
+    walkFieldDefinitions(fields, FILE_JS).findings[0].severity,
+    'warning',
+  );
+  const result = validateCustomFieldDefinitions(fields);
+  assert.equal(result.ok, false);
+  assert.equal(result.problem.code, 'media_ref_not_an_object');
+  assert.match(describeFieldFinding(result.problem), /cannot carry/);
+});
+
 test('a property nested inside `mediaRef` is read the same way', () => {
   const result = validateCustomFieldDefinitions([
     {
@@ -450,9 +465,9 @@ test('a property nested inside `mediaRef` is read the same way', () => {
 });
 
 test('a key whose value is undefined declares nothing, on either side of JSON', () => {
-  // The builder clears a control by assigning `undefined`; `structuredClone`
-  // keeps the key and `JSON.stringify` drops it. Refusing it would make the
-  // client refuse what the server accepts — the drift this walk exists to end.
+  // JSON cannot carry `undefined`, so the API never sees such a key, while
+  // `structuredClone` keeps it on the client. Refusing it would let the client
+  // refuse what the server accepts — the drift this walk exists to end.
   const field = { key: 'a', type: 'enum', label: 'A', options: ['x'] };
   field.maxLength = undefined;
   assert.equal(validateCustomFieldDefinitions([field]).ok, true);

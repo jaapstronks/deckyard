@@ -296,8 +296,9 @@ export function walkFieldDefinitions(fields, profile) {
       if (propertyKeys) {
         const offered = offeredProperties(propertyKeys, type);
         for (const property of Object.keys(field)) {
-          // A key whose value is `undefined` declares nothing and does not
-          // survive JSON, so refusing it would make the client refuse what the
+          // A key whose value is `undefined` declares nothing: JSON cannot
+          // carry it, so the API never sees it, while `structuredClone` keeps
+          // it on the client. Refusing it would let the client refuse what the
           // server accepts — the drift this one walk exists to prevent.
           if (field[property] === undefined || offered.has(property)) continue;
           at2('unknown_property', 'error', {
@@ -361,7 +362,10 @@ export function walkFieldDefinitions(fields, profile) {
 
       if (field.mediaRef !== undefined && field.mediaRef !== null) {
         if (!isPlainObject(field.mediaRef)) {
-          at2('media_ref_not_an_object', 'warning');
+          // A closed vocabulary stores `mediaRef` as `{ label, linkKey }`; a
+          // shape it cannot store faithfully is refused, not rewritten into an
+          // empty declaration on the way to disk (D84). Open source ignores it.
+          at2('media_ref_not_an_object', propertyKeys ? 'error' : 'warning');
         } else {
           if (type !== 'string')
             at2('media_ref_wrong_type', 'warning', { type });
@@ -466,10 +470,12 @@ const FINDING_MESSAGES = {
     `sub-field of this item (${(f?.detail?.headable || []).join(', ') || 'none'}), ` +
     `so it is ignored and the item heading falls back to the first readable ` +
     `string.`,
-  media_ref_not_an_object: (where) =>
+  media_ref_not_an_object: (where, f) =>
     `${where} declares \`mediaRef\` as something other than an object ` +
-    `(\`{ label, linkKey }\`), so it is ignored and the field projects as ` +
-    `plain text.`,
+    `(\`{ label, linkKey }\`)` +
+    (f?.severity === 'error'
+      ? `, which a stored field definition cannot carry.`
+      : `, so it is ignored and the field projects as plain text.`),
   media_ref_wrong_type: (where, f) =>
     `${where} declares \`mediaRef\` on a \`${f?.detail?.type}\` field, but a ` +
     `media reference is a string — the stand-in replaces whatever that type ` +
