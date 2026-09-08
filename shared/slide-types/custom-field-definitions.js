@@ -47,6 +47,7 @@
  */
 
 import { walkFieldDefinitions } from './field-definitions.js';
+import { GLOBAL_SLIDE_FIELD_KEYS } from './compose.js';
 
 /**
  * The field types a database custom slide type may declare, in the order the
@@ -105,6 +106,14 @@ const DB_TYPE_PROFILE = {
   maxFields: MAX_CUSTOM_TYPE_FIELDS,
   labelSeverity: 'error',
   propertyKeys: CUSTOM_TYPE_PROPERTY_KEYS,
+  // A stored `fields[]` is RAW: the registry appends the global slide fields
+  // to it at runtime (`composeSlideType`), exactly as it does for a file-JS
+  // type. Naming them here is what lets a `mediaRef.linkKey` point at
+  // `slideBgImage` without a false "unknown key" warning. The walk also flags
+  // a row that redeclares one of them (`shadows_global`), but as a warning,
+  // which this surface drops: a redeclared global simply wins, as it does for
+  // a file-JS type.
+  globalFieldKeys: GLOBAL_SLIDE_FIELD_KEYS,
 };
 
 /** True for a string with at least one non-space character. */

@@ -598,11 +598,18 @@ removed.
 
 A slide-wide background image is **not** a field you add. Every registered type
 gets `slideBgImage` — plus `slideBgFit`, `slideBgFocusX/Y`, `slideBgOverlay`,
-`slideBgText` and `slideLogo` — from `withGlobalSlideFields()`, and
+`slideBgText` and `slideLogo` — from `composeSlideType()` in
+`shared/slide-types/compose.js`, and
 `renderSlideHtml()` paints it as a layer behind your markup
 (`injectSlideBackground`). You get the library/upload picker, the theme's
 background presets, the crop-focus grid, the scrim and the automatic
 light/dark text contrast for free, and your `renderHtml` never sees it.
+
+This holds for a **database** type from Settings → Slide Types just as much as
+for a core or file-JS one: `toRuntimeSlideType()` runs the same
+`composeSlideType()`, so a stored `fields[]` is the type's _own_ schema and the
+globals are appended to it at runtime. That is also why the stored definition
+may point a `mediaRef.linkKey` at `slideBgImage` without declaring it.
 
 Types used to carry their own `bgImage`/`bgAlt` pair, and earlier versions of
 this page showed that in the examples. Declaring it now buys you a **second**
