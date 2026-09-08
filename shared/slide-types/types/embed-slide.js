@@ -30,6 +30,13 @@ function getSandboxValue(mode) {
   return 'allow-same-origin';
 }
 
+// `embedUrl` is `required`, so the defaults cannot ship it blank: they are also
+// the `example` `get_slide_types` hands an agent, and an example that its own
+// type refuses is two descriptions of one type disagreeing (D87). IANA's
+// reserved illustrative domain is the honest placeholder — visibly a stand-in,
+// registered to nobody, and it renders something rather than an empty frame.
+const PLACEHOLDER_EMBED_URL = 'https://example.com';
+
 export default {
   structure: 'singleton',
   fallback: 'content-slide',
@@ -78,14 +85,14 @@ export default {
   defaultsByLang: {
     nl: {
       title: '',
-      embedUrl: '',
+      embedUrl: PLACEHOLDER_EMBED_URL,
       aspectRatio: '16:9',
       sandbox: 'restricted',
       background: 'lime',
     },
     'en-GB': {
       title: '',
-      embedUrl: '',
+      embedUrl: PLACEHOLDER_EMBED_URL,
       aspectRatio: '16:9',
       sandbox: 'restricted',
       background: 'lime',
@@ -95,7 +102,7 @@ export default {
   // Key-identical to the maps above; see `defaults` in validate-definition.js.
   defaults: {
     title: '',
-    embedUrl: '',
+    embedUrl: PLACEHOLDER_EMBED_URL,
     aspectRatio: '16:9',
     sandbox: 'restricted',
     background: 'lime',

@@ -55,7 +55,6 @@ inline-edit descriptor and inspector keep-list stay, the picker entries go.
 | Inline-edit descriptor                                    | `client/views/editor/inline-edit/descriptors.js` (`INLINE_DESCRIPTORS`) | every registered type                                        | no on-canvas editing; every field is side-form only                                                                                                  |
 | Inspector keep-list                                       | `shared/slide-types/types/<name>/inline-edit.js` (`inspectorKeeps`)     | sparse by design (reverse only)                              | inspector shows every field the inline layer misses (the safe default)                                                                               |
 | Element-tab offer                                         | `shared/slide-types/types/<name>/inline-edit.js` (`elementTab`)         | sparse by design (reverse only)                              | no "This element" tab for a selected image or card; its settings stay reachable only through the slide-level form                                    |
-| Refine content schema                                     | `server/utils/ai/schemas/refined-slide.js` (`SLIDE_SCHEMAS`)            | every agent-emittable type (not `ai: false`, not deprecated) | `validateSlideContent` hits its "unknown type" branch and skips validation — refine never notices malformed content                                  |
 | Structural validator                                      | `server/utils/ai/validate-slide-structure.js` (`STRUCTURE_VALIDATORS`)  | every agent-emittable `collection` / `fixed-collection` type | `validateSlideContentStructure` returns no issues — a collection with too few items or a missing item field is accepted unvalidated                  |
 
 A fork-local type in `custom/slide-types/` can satisfy the agent, schematic and
@@ -254,21 +253,27 @@ recognising its name — which is the shape of progress this gate exists to
 produce: the count drops because knowledge moved onto the types, not because the
 threshold moved.
 
-`server/utils/ai/schemas/refined-slide.js` and
-`server/utils/ai/validate-slide-structure.js` used to carry `promote: true`:
-both companion-shaped — a type with no entry is silently unvalidated by the
-refine phase — and neither was gated. They have now been promoted to the matrix
-(the two AI-refine companions above), so no inventory entry carries `promote`.
-Their eligibility rules differ, which is the point of writing them down:
+Two modules used to carry `promote: true` — the refine phase's per-type Zod map
+and `server/utils/ai/validate-slide-structure.js` — both companion-shaped (a
+type with no entry is silently unvalidated) and neither gated. The second was
+promoted to the matrix (**Structural validator** above); the first is **gone**
+(D87, B241), and how it went is the more useful lesson.
 
-- **Refine content schema** is owed by _every_ agent-emittable type
-  (`!isAgentOptOut`), because the refine phase can emit any of them and a
-  missing schema silently skips validation. Even a chrome type owes a trivial
-  schema — it keeps the "unknown slide type" warning meaningful.
-- **Structural validator** is owed only by the `collection` /
-  `fixed-collection` types: its unique job over the flat field/Zod schema is
-  checking a repeated-item array's cardinality and per-item required fields, and
-  `singleton` / `dataset` / `tabular` / `chrome` types have no such invariant.
+A companion is a per-type table someone has to remember to fill in, and the gate
+exists because they forget. But a table that restates what the definition
+already says has a better fate than a gate: it can be derived and deleted.
+That map was 32 hand-written Zod schemas of content whose shape `fields[]`
+already declared, and it had drifted from it — the strict validator refused the
+`example` `get_slide_types` offers for four types. It is now derived
+(`server/utils/ai/schemas/content-schema.js`), so there is no coverage left to
+check: a type has a content schema because it has fields.
+
+**Ask of a companion whether it can be derived before you gate it.** A gate on a
+derivable table is a maintained answer to a question nobody needs asked.
+**Structural validator** stays a companion because it is not derivable: it is
+owed only by the `collection` / `fixed-collection` types, and what it checks —
+whether a repeated-item array's cardinality and per-item required fields hold
+together as a _shape_ — is a judgement about the type, not a restatement of it.
 
 The next ungated per-type table should get `promote: true` again as the
 signpost to the following promotion.

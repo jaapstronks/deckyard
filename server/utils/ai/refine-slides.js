@@ -16,7 +16,8 @@ import { requestChatCompletionContent } from '../llm/index.js';
 import { extractJsonObject } from '../openai/json.js';
 import { SLIDE_TYPE_CATALOG } from './slide-type-catalog.js';
 import { validateSlideContentStructure } from './validate-slide-structure.js';
-import { validateSlideContent } from './schemas/index.js';
+import { describeIssue, validateSlideContent } from './schemas/index.js';
+import { SLIDE_TYPES } from '../../../shared/slide-types/registry.js';
 import { prompts } from './prompts/index.js';
 import { createLogger } from '../logger.js';
 
@@ -140,12 +141,15 @@ function normalizeRefinedSlide(slide, originalSlide, disabledSlideTypes = []) {
     });
   }
 
-  // Zod schema validation (defense-in-depth, logs warnings but doesn't block)
-  const zodResult = validateSlideContent(type, content);
-  if (!zodResult.valid && zodResult.issues.length > 0) {
-    log.warn(`Zod validation issues for ${type}:`, {
+  // The content schema derived from the type's fields[] (D87): logged here,
+  // never blocking — refine repairs downstream.
+  const schemaResult = validateSlideContent(SLIDE_TYPES[type], content);
+  if (!schemaResult.valid && schemaResult.issues.length > 0) {
+    log.warn(`Content schema issues for ${type}:`, {
       originalIndex: originalSlide.index,
-      issues: zodResult.issues,
+      issues: schemaResult.issues.map(
+        (issue) => describeIssue(issue, content).message,
+      ),
     });
   }
 

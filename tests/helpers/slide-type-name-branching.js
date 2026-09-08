@@ -182,10 +182,10 @@ const { table, sparse, specific, generated, source } = KINDS;
  * The reason field is the point. An inventory that says "yes, we know" for 46
  * modules is worth nothing; one that says *why* each is safe, and which ones are
  * only safe for now, is a worklist. `promote: true` used to flag the modules
- * that looked like companions and were not gated as such; the last two —
- * refined-slide.js and validate-slide-structure.js — were promoted to the matrix
- * (kind `table`), so no entry carries it now. A future ungated per-type table
- * should get it again as a signpost to the next promotion.
+ * that looked like companions and were not gated as such; the last of them,
+ * validate-slide-structure.js, was promoted to the matrix (kind `table`), so no
+ * entry carries it now. A future ungated per-type table should get it again as
+ * a signpost to the next promotion.
  *
  * @type {Record<string, {kind: string, companion?: string, gate?: string, promote?: boolean, why: string}>}
  */
@@ -272,14 +272,6 @@ export const INVENTORY = {
     kind: table,
     companion: 'v1-manual-examples',
     why: 'MANUAL_EXAMPLES, the worked example the v1 prompt shows per type.',
-  },
-  'server/utils/ai/schemas/refined-slide.js': {
-    kind: table,
-    companion: 'refine-schema',
-    why:
-      'SLIDE_SCHEMAS — the per-type Zod schema the refine phase validates agent ' +
-      'content against. Every agent-emittable type owes one; a missing entry ' +
-      'silently skips validation. Promoted from a `promote: true` sparse entry.',
   },
   'server/utils/ai/validate-slide-structure.js': {
     kind: table,

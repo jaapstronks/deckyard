@@ -107,7 +107,7 @@ inline editor).
 whole vocabulary). A 4th row exists only in array form — it round-trips through
 save/load and AI validation with no numbered counterpart, while legacy ≤3-row
 decks keep their mirror. The refine schema
-(`server/utils/ai/schemas/refined-slide.js`) validates `rows[]` (max 4) and
+(`server/utils/ai/schemas/content-schema.js`, derived from `fields[]`) validates `rows[]` (max 4) and
 keeps the numbered fields optional to match.
 `content-columns` is the exception: **numbered-only, no array**. Since step 4
 that duality is resolved the ImageRef way rather than by a storage rewrite:

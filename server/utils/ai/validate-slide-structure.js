@@ -10,8 +10,8 @@
  * per-item required fields cannot be expressed as independent scalar fields —
  * i.e. its declared `structure` is `collection` or `fixed-collection`, and it is
  * not agent-opt-out. `singleton`, `dataset`, `tabular` and `chrome` types are
- * validated field-by-field by the derived agent schema and the refined-slide Zod
- * schemas (`schemas/refined-slide.js`); adding a structural case for them would
+ * validated field-by-field by the derived agent schema and the derived content
+ * schema (`schemas/content-schema.js`); adding a structural case for them would
  * only restate what those layers already check. Both directions are gated by
  * tests/slide-type-companion-coverage.test.js, and the map — rather than a
  * switch — is what lets the reverse direction see which types are covered.
