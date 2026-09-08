@@ -109,8 +109,10 @@ const DB_TYPE_PROFILE = {
   // A stored `fields[]` is RAW: the registry appends the global slide fields
   // to it at runtime (`composeSlideType`), exactly as it does for a file-JS
   // type. Naming them here is what lets a `mediaRef.linkKey` point at
-  // `slideBgImage` without a false "unknown key" warning, and what makes a row
-  // that redeclares one of them say so.
+  // `slideBgImage` without a false "unknown key" warning. The walk also flags
+  // a row that redeclares one of them (`shadows_global`), but as a warning,
+  // which this surface drops: a redeclared global simply wins, as it does for
+  // a file-JS type.
   globalFieldKeys: GLOBAL_SLIDE_FIELD_KEYS,
 };
 
