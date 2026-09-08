@@ -1,9 +1,16 @@
 /**
  * Shared validation constants.
  *
- * Central home for the item-count requirements, max-length tables, and slide
- * type groupings used by the fix pipeline and the strict validator. Keeping
- * them here avoids the two validators drifting apart.
+ * What is left here is the fix pipeline's own behaviour: which types it repairs
+ * an item count for, and which types do not count toward the slide budget.
+ *
+ * The max-length tables are gone (D87). They were a second spelling of
+ * `fields[].maxLength` and disagreed with it in nineteen places; both
+ * validators now read the declaration — strict through
+ * `schemas/content-schema.js`, the fix pipeline through `truncate.js`. The
+ * item-count *numbers* were already read off the definition; what stays is the
+ * judgement about which three types get padded or downgraded rather than
+ * refused, and that is behaviour, not a constraint.
  */
 
 import { SLIDE_TYPES } from '../../../../shared/slide-types/registry.js';
@@ -40,49 +47,6 @@ export const SLIDE_ITEM_REQUIREMENTS = Object.fromEntries(
 
 // Global accessibility fields that are added to all slide types
 export const GLOBAL_A11Y_FIELDS = ['a11yTitle', 'a11ySummary'];
-
-// Max lengths for common fields (to avoid validation errors)
-export const MAX_LENGTHS = {
-  title: 120,
-  subheading: 200,
-  body: 2000,
-  // list-slide items
-  'items.title': 80,
-  'items.text': 120,
-  // card types (icon-card-grid, team-cards)
-  cardBody: 800,
-  // text-blocks-slide
-  blockTitle: 80,
-  blockBody: 200,
-  // timeline items
-  'items.time': 60,
-  // quote
-  quote: 280,
-  authorName: 80,
-  authorTitle: 120,
-  // misc
-  tagline: 120,
-  caption: 200,
-};
-
-// Max length table used both by truncation (fix mode) and strict validation.
-// Mirrors MAX_LENGTHS / item-level limits defined elsewhere in this file.
-export const STRICT_TEXT_LIMITS = {
-  title: MAX_LENGTHS.title,
-  subheading: MAX_LENGTHS.subheading,
-  body: MAX_LENGTHS.body,
-  tagline: MAX_LENGTHS.tagline,
-  caption: MAX_LENGTHS.caption,
-  quote: MAX_LENGTHS.quote,
-  authorName: MAX_LENGTHS.authorName,
-  authorTitle: MAX_LENGTHS.authorTitle,
-};
-
-export const STRICT_ITEM_LIMITS = {
-  title: MAX_LENGTHS['items.title'],
-  text: MAX_LENGTHS['items.text'],
-  time: MAX_LENGTHS['items.time'],
-};
 
 // Slide types that don't count toward "content" slide budget
 export const NON_CONTENT_SLIDE_TYPES = new Set([

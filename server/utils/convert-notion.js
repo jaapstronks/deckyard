@@ -360,9 +360,7 @@ async function convertWithAi(formattedContent, options = {}) {
   }
 
   // Validate refined slides
-  const validatedSlides = validateAndFixRefinedSlides(refinedContentSlides, {
-    allowPartial: true,
-  });
+  const validatedSlides = validateAndFixRefinedSlides(refinedContentSlides);
 
   // Merge structural and content slides, sorted by originalIndex
   const allSlides = [

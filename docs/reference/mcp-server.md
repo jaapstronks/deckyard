@@ -208,6 +208,31 @@ When the caller is itself an LLM (or any agent that already has structured data)
 
 Call `get_slide_types` first (it returns an `example` field per type) to see the exact content shape for each slide type.
 
+### What strict validation checks
+
+Exactly what the type declares, and nothing beside it. The schema is **derived
+from the type's `fields[]`** (`server/utils/ai/schemas/content-schema.js`) — the
+same declaration `get_slide_types` publishes as that type's `schema` — so the
+`example` you are handed is by construction something this endpoint accepts:
+
+| Declaration                   | What strict does with it                                             |
+| ----------------------------- | -------------------------------------------------------------------- |
+| `required`                    | The key must be present, and for text not blank                      |
+| `maxLength`, `min` / `max`    | Enforced as declared, per field                                      |
+| `minItems` / `maxItems`       | Enforced on every collection, not just a chosen few                  |
+| `options` (an `enum`)         | The value must be one the field offers (`''` clears an optional one) |
+| `itemFields`                  | Applied recursively, as deep as the type declares                    |
+| a key the type never declares | **Refused** as `unknown_field`                                       |
+
+That last row is the one worth knowing: an undeclared key used to be dropped on
+the way to the deck, so an agent could write content that quietly never
+appeared. It is now an error naming the key, which is the only way you get to
+fix it. `validation: "fix"` logs the same finding instead of throwing.
+
+A field the type declares but withholds from you (`ai: false`, `hidden`,
+`deprecated`) is not in the `schema` you are shown, but it is still a key the
+type has — writing it is accepted, not "unknown".
+
 ## Which slide types an agent sees
 
 `get_slide_types` derives its answer from the **runtime registry**, not from the

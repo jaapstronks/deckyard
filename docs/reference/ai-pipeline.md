@@ -64,10 +64,11 @@ Pipeline (`server/utils/ai/`, 42 modules). The top level:
 - `server/utils/ai/compare-versions.js` — human-readable diff
   summaries between two deck versions.
 - `server/utils/ai/validate-slides/` (an `index.js` barrel over 8 modules) —
-  the repair stage: `checks.js`, `constants.js` (item counts, max
-  lengths), `fields.js` (valid/unknown field keys), `fix.js` (404 lines, the
-  non-throwing repair pipeline), `fixers.js` (per-type repairs),
-  `strict.js` (throwing validation for raw output), `truncate.js`, `logging.js`.
+  the repair stage: `checks.js`, `constants.js` (which types get their item
+  count repaired — a behaviour choice, not a constraint), `fields.js`
+  (valid/unknown field keys), `fix.js` (the non-throwing repair pipeline),
+  `fixers.js` (per-type repairs), `strict.js` (throwing validation for raw
+  output), `truncate.js`, `logging.js`.
 - `server/utils/ai/validate-slide-structure.js` — structural check of
   one slide's content against its type.
 - `server/utils/ai/slide-type-catalog.js` — a 21-line compatibility re-export of
@@ -85,8 +86,13 @@ Pipeline (`server/utils/ai/`, 42 modules). The top level:
   (`outline.js`, `revise-outline.js`, `refine-slides.js`, `refine-section.js`,
   `iterate-deck.js`), `custom-loader.js` lets a fork override the copy without
   patching the mechanism.
-- `server/utils/ai/schemas/` — `index.js`, `refined-slide.js`: the JSON shapes
-  the model is asked to return.
+- `server/utils/ai/schemas/` — `index.js`, `content-schema.js`: the shape a
+  slide's `content` must have, **derived from the type's `fields[]`** (D87) and
+  cached per definition. The only place in the tree that imports Zod
+  (`tests/zod-scope-guard.test.js`); Zod is the engine, the registry is the
+  source. Strict validation and the fix pipeline read this one derivation, so
+  what `get_slide_types` offers as a type's example is what
+  `create_presentation_from_slides` accepts.
 - `server/utils/ai/logging.js` — full LLM conversation logs for
   debugging/finetuning, written under `server/logs/ai/`; off in production.
 - `server/utils/ai/validation-logging.js` — small, production-safe
@@ -157,11 +163,15 @@ Everything else is files on disk: conversation logs under `server/logs/ai/`
   `generateDeckJsonFromRawContent`, no outline phase, no group refinement. The
   user-chosen theme always wins over whatever the model returned.
 - **Validate and fix** — the stage that makes the output usable. `fix.js`
-  truncates over-long text to word boundaries, drops unknown fields, applies
-  per-type repairs and smart defaults from `fixers.js`, and enforces the item
-  counts in `constants.js` — non-throwing, because a repairable slide is better
+  truncates over-long text to word boundaries (to the `maxLength` the field
+  itself declares), drops unknown fields, applies per-type repairs and smart
+  defaults from `fixers.js`, and repairs the item count for the three types
+  `constants.js` names — non-throwing, because a repairable slide is better
   than a failed generation. `strict.js` is the throwing counterpart used on raw
-  output. Every repair is recorded as a validation event.
+  output: it reads the same derivation and refuses on the first issue, an
+  undeclared key included (`unknown_field`), so an agent is told rather than
+  having its content silently dropped. Every repair is recorded as a validation
+  event.
 - **Append / refine / iterate / compress** — the editing verbs. Append generates
   slides for an existing deck; section refine revises a contiguous range with a
   couple of neighbouring slides as context; iterate applies a natural-language

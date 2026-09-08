@@ -7,8 +7,9 @@
  * warnings, and diffs input vs output into a list of applied fixes.
  */
 
-import { validateSlideContent } from '../schemas/index.js';
-import { SLIDE_ITEM_REQUIREMENTS, STRICT_TEXT_LIMITS } from './constants.js';
+import { describeIssue, validateSlideContent } from '../schemas/index.js';
+import { SLIDE_TYPES } from '../../../../shared/slide-types/registry.js';
+import { SLIDE_ITEM_REQUIREMENTS } from './constants.js';
 import { logValidation } from './logging.js';
 import { checkForUnknownFields } from './fields.js';
 import { truncateContentFields } from './truncate.js';
@@ -25,10 +26,19 @@ import {
  * Validate and fix a refined slide to meet minimum requirements
  *
  * @param {Object} slide - The refined slide
+ * @param {Object} [options]
+ * @param {Record<string, Object>} [options.slideTypes] - The registry to read
+ *   declarations from; an org-aware caller passes its merged map.
+ * @param {Object|null} [options.theme] - The deck's theme, when the caller has
+ *   one. Only the `background` field reads it (D88).
  * @returns {Object} Fixed slide
  */
-export function validateAndFixSlide(slide) {
+export function validateAndFixSlide(
+  slide,
+  { slideTypes = SLIDE_TYPES, theme = null } = {},
+) {
   const type = slide?.type;
+  const def = slideTypes[type];
   let content = slide?.content || {};
 
   // Special handling for table-slide schema issues
@@ -46,8 +56,8 @@ export function validateAndFixSlide(slide) {
     content = fixTextBlocksSlideDefaults(content);
   }
 
-  // First, truncate all text fields to their max lengths
-  const truncatedContent = truncateContentFields(type, content);
+  // First, truncate all text fields to the max lengths their type declares
+  const truncatedContent = truncateContentFields(def, content);
   const fixedSlide = { ...slide, content: truncatedContent };
 
   // Add icon-card-grid optimization note to reasoning
@@ -63,13 +73,17 @@ export function validateAndFixSlide(slide) {
     }
   }
 
-  // Zod schema validation (defense-in-depth, logs issues for debugging)
-  const zodResult = validateSlideContent(type, truncatedContent);
-  if (!zodResult.valid && zodResult.issues.length > 0) {
-    logValidation('zod-validation-issues', {
+  // The same derivation strict throws on, here only logged: the fix pipeline
+  // repairs what it can and never rejects, so an issue it cannot repair is a
+  // signal for the prompt, not an error for the caller.
+  const schemaResult = validateSlideContent(def, truncatedContent, { theme });
+  if (!schemaResult.valid && schemaResult.issues.length > 0) {
+    logValidation('content-schema-issues', {
       slideType: type,
       originalIndex: slide.originalIndex,
-      issues: zodResult.issues,
+      issues: schemaResult.issues.map(
+        (issue) => describeIssue(issue, truncatedContent).message,
+      ),
     });
   }
 
@@ -327,16 +341,23 @@ function getContentWarnings(slide, prevSlide = null) {
  * Validate and fix all refined slides
  *
  * @param {Array} refinedSlides - Array of refined slides from Phase 2
+ * @param {Object} [options]
+ * @param {Record<string, Object>} [options.slideTypes] - The registry to read
+ *   declarations from; an org-aware caller passes its merged map.
+ * @param {Object|null} [options.theme] - The deck's theme, when the caller has one.
  * @returns {Array} Fixed slides
  */
-export function validateAndFixRefinedSlides(refinedSlides) {
+export function validateAndFixRefinedSlides(
+  refinedSlides,
+  { slideTypes = SLIDE_TYPES, theme = null } = {},
+) {
   if (!Array.isArray(refinedSlides)) return [];
 
   const fixedSlides = [];
   for (let i = 0; i < refinedSlides.length; i++) {
     const slide = refinedSlides[i];
     const prevSlide = i > 0 ? fixedSlides[i - 1] : null;
-    const fixedSlide = validateAndFixSlide(slide);
+    const fixedSlide = validateAndFixSlide(slide, { slideTypes, theme });
 
     // Add content-aware warnings
     const warnings = getContentWarnings(fixedSlide, prevSlide);
@@ -413,8 +434,10 @@ export function diffAppliedFixes(input, fixed) {
     const aContent = a.content || {};
     const bContent = b.content || {};
 
-    // Compare known scalar text fields for truncation
-    for (const field of Object.keys(STRICT_TEXT_LIMITS)) {
+    // Compare scalar text values for truncation. Every string key the caller
+    // sent, not a fixed list of eight: the caps are the type's now, so a type
+    // whose field is not one of those eight had its truncation go unreported.
+    for (const field of Object.keys(aContent)) {
       const av = aContent[field];
       const bv = bContent[field];
       if (

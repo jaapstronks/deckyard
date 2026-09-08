@@ -156,6 +156,32 @@ export default {
         // itemDefaults seeds it. gallery-slide's images[] declares its `alt`
         // the same way.
         { key: 'alt', type: 'string', label: 'Photo alt text', maxLength: 180 },
+        // Focus is carried data, not editor surface (`hidden`): the inspector's
+        // image card owns it. Declared for the same reason `alt` is — the
+        // renderer reads it and `itemDefaults` seeds it — and shaped like
+        // gallery-slide's `images[].focusX/Y`, which is the same thing.
+        {
+          key: 'imageFocusX',
+          label: 'Focus X',
+          labelKey: 'editor.slideField.focusX.label',
+          type: 'number',
+          required: false,
+          min: 0,
+          max: 100,
+          step: 1,
+          hidden: true,
+        },
+        {
+          key: 'imageFocusY',
+          label: 'Focus Y',
+          labelKey: 'editor.slideField.focusY.label',
+          type: 'number',
+          required: false,
+          min: 0,
+          max: 100,
+          step: 1,
+          hidden: true,
+        },
         { key: 'name', type: 'string', label: 'Title', maxLength: 80 },
         { key: 'byline', type: 'string', label: 'Caption', maxLength: 120 },
         {

@@ -5,15 +5,22 @@
  * does not mutate input; it throws RawSlideValidationError on the first issue
  * with structured detail so MCP callers can pinpoint the failure without
  * parsing prose.
+ *
+ * There is one check here, not four: the type resolves against the caller's
+ * registry, and the content matches the schema derived from that type's
+ * `fields[]` (`schemas/content-schema.js`, D87). The item counts and text caps
+ * this file used to enforce from its own tables are the same declarations, read
+ * once instead of transcribed.
  */
 
-import { validateSlideContent } from '../schemas/index.js';
-import { resolveSlideTypeName } from '../../../../shared/slide-types/registry.js';
 import {
-  SLIDE_ITEM_REQUIREMENTS,
-  STRICT_TEXT_LIMITS,
-  STRICT_ITEM_LIMITS,
-} from './constants.js';
+  describeIssue,
+  validateSlideContent,
+} from '../schemas/content-schema.js';
+import {
+  SLIDE_TYPES,
+  resolveSlideTypeName,
+} from '../../../../shared/slide-types/registry.js';
 
 /**
  * Strict validation error thrown by validateRefinedSlidesStrict.
@@ -34,18 +41,31 @@ export class RawSlideValidationError extends Error {
 }
 
 /**
- * Validate a single raw slide and throw RawSlideValidationError on first issue.
+ * Resolve a raw `slides[].type` against a registry.
  *
- * Checks:
- * - slide.type exists in SLIDE_TYPES
- * - content matches Zod schema (when available for that type)
- * - item-bearing types meet min/max count requirements
- * - common text fields are within their max length
+ * `resolveSlideTypeName` knows the core spellings (bare key, `core/…`, the
+ * canonical id) but only the process-wide map, so an organization's DB-backed
+ * type would be refused before its content was ever looked at. A key the
+ * caller's registry holds is a known type, whatever built that registry.
+ *
+ * @param {string} rawType
+ * @param {Record<string, Object>} slideTypes
+ * @returns {string|null} the registry key, or null when nothing matches
+ */
+function resolveAgainst(rawType, slideTypes) {
+  if (Object.prototype.hasOwnProperty.call(slideTypes, rawType)) return rawType;
+  const resolved = resolveSlideTypeName(rawType);
+  return resolved && slideTypes[resolved] ? resolved : null;
+}
+
+/**
+ * Validate a single raw slide and throw RawSlideValidationError on first issue.
  *
  * @param {Object} slide - { type, content, notes? }
  * @param {number} index - Slide index in the raw input array (for error reporting)
+ * @param {{slideTypes: Record<string, Object>, theme: Object|null}} ctx
  */
-function validateSlideStrict(slide, index) {
+function validateSlideStrict(slide, index, { slideTypes, theme }) {
   const rawType = slide?.type;
   const content = slide?.content;
 
@@ -62,7 +82,7 @@ function validateSlideStrict(slide, index) {
 
   // Accept any spelling of a known type (bare key, core/…, canonical id) and
   // validate against the resolved registry key from here on.
-  const type = resolveSlideTypeName(rawType);
+  const type = resolveAgainst(rawType, slideTypes);
   if (!type) {
     throw new RawSlideValidationError({
       slideIndex: index,
@@ -85,92 +105,20 @@ function validateSlideStrict(slide, index) {
     });
   }
 
-  // Item count (min/max)
-  const req = SLIDE_ITEM_REQUIREMENTS[type];
-  if (req) {
-    const arr = content[req.field];
-    if (!Array.isArray(arr)) {
-      throw new RawSlideValidationError({
-        slideIndex: index,
-        slideType: type,
-        field: req.field,
-        expected: `array with ${req.min}–${req.max} items`,
-        got: arr === undefined ? 'undefined' : typeof arr,
-        message: `Slide ${index} (${type}): "${req.field}" must be an array`,
-      });
-    }
-    if (arr.length < req.min) {
-      throw new RawSlideValidationError({
-        slideIndex: index,
-        slideType: type,
-        field: req.field,
-        expected: `minItems ${req.min}`,
-        got: arr.length,
-        message: `Slide ${index} (${type}): "${req.field}" requires at least ${req.min} items (got ${arr.length})`,
-      });
-    }
-    if (req.max && arr.length > req.max) {
-      throw new RawSlideValidationError({
-        slideIndex: index,
-        slideType: type,
-        field: req.field,
-        expected: `maxItems ${req.max}`,
-        got: arr.length,
-        message: `Slide ${index} (${type}): "${req.field}" allows at most ${req.max} items (got ${arr.length})`,
-      });
-    }
-  }
+  const { valid, issues } = validateSlideContent(slideTypes[type], content, {
+    theme,
+  });
+  if (valid) return;
 
-  // Common text-field length caps
-  for (const [field, max] of Object.entries(STRICT_TEXT_LIMITS)) {
-    const v = content[field];
-    if (typeof v === 'string' && v.length > max) {
-      throw new RawSlideValidationError({
-        slideIndex: index,
-        slideType: type,
-        field,
-        expected: `maxLength ${max}`,
-        got: v.length,
-        message: `Slide ${index} (${type}): "${field}" exceeds max length (${v.length} > ${max})`,
-      });
-    }
-  }
-
-  // Array-item text caps (items[].title / text / time)
-  if (Array.isArray(content.items)) {
-    content.items.forEach((item, itemIdx) => {
-      if (!item || typeof item !== 'object') return;
-      for (const [field, max] of Object.entries(STRICT_ITEM_LIMITS)) {
-        const v = item[field];
-        if (typeof v === 'string' && v.length > max) {
-          throw new RawSlideValidationError({
-            slideIndex: index,
-            slideType: type,
-            field: `items[${itemIdx}].${field}`,
-            expected: `maxLength ${max}`,
-            got: v.length,
-            message: `Slide ${index} (${type}): items[${itemIdx}].${field} exceeds max length (${v.length} > ${max})`,
-          });
-        }
-      }
-    });
-  }
-
-  // Zod schema (defense in depth). Only enforced when a schema is registered
-  // for this type; unknown-to-Zod types fall back to the checks above.
-  const zod = validateSlideContent(type, content);
-  if (!zod.valid && zod.issues.length > 0) {
-    const first = zod.issues[0];
-    const [pathPart, ...rest] = first.split(':');
-    throw new RawSlideValidationError({
-      slideIndex: index,
-      slideType: type,
-      field: pathPart.trim(),
-      expected: 'schema match',
-      got: rest.join(':').trim(),
-      message: `Slide ${index} (${type}): ${first}`,
-    });
-  }
+  const detail = describeIssue(issues[0], content);
+  throw new RawSlideValidationError({
+    slideIndex: index,
+    slideType: type,
+    field: detail.field,
+    expected: detail.expected,
+    got: detail.got,
+    message: `Slide ${index} (${type}): ${detail.message}`,
+  });
 }
 
 /**
@@ -178,8 +126,17 @@ function validateSlideStrict(slide, index) {
  * failure with structured detail. Does not mutate inputs.
  *
  * @param {Array<{type: string, content: object}>} slides
+ * @param {Object} [options]
+ * @param {Record<string, Object>} [options.slideTypes] - The registry to
+ *   resolve against. Defaults to the process-wide map; an org-aware caller
+ *   passes `buildMergedSlideTypes(ctx)` so its DB-backed types are known too.
+ * @param {Object|null} [options.theme] - The deck's theme, when the caller has
+ *   one. Only the `background` field reads it (D88).
  */
-export function validateRefinedSlidesStrict(slides) {
+export function validateRefinedSlidesStrict(
+  slides,
+  { slideTypes = SLIDE_TYPES, theme = null } = {},
+) {
   if (!Array.isArray(slides)) {
     throw new RawSlideValidationError({
       slideIndex: -1,
@@ -201,6 +158,6 @@ export function validateRefinedSlidesStrict(slides) {
     });
   }
   for (let i = 0; i < slides.length; i++) {
-    validateSlideStrict(slides[i], i);
+    validateSlideStrict(slides[i], i, { slideTypes, theme });
   }
 }

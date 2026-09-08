@@ -1,18 +1,22 @@
 /**
  * AI Schema Validation Module
  *
- * Re-exports the schema validators consumers actually import via this barrel.
- * Import the sibling module (`refined-slide.js`) directly for the individual
- * Zod schemas.
+ * The one Zod address in the tree (`tests/zod-scope-guard.test.js`), and since
+ * D87 the only content schema: `content-schema.js` derives a type's schema from
+ * its `fields[]` instead of restating it. The 32 hand-written per-type schemas
+ * this barrel used to re-export are gone — they were a second spelling of the
+ * registry, and they had drifted from it.
  *
  * Usage:
  * ```js
  * import { validateSlideContent } from './schemas/index.js';
  *
- * // Validate Phase 2 slide content
- * const { valid, issues } = validateSlideContent('list-slide', content);
+ * const { valid, issues } = validateSlideContent(slideTypes['list-slide'], content);
  * ```
  */
 
-// Phase 2: Refined slide content schemas
-export { validateSlideContent } from './refined-slide.js';
+export {
+  contentSchemaFor,
+  describeIssue,
+  validateSlideContent,
+} from './content-schema.js';

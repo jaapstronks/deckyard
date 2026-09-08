@@ -37,7 +37,6 @@ import {
 import { SLIDE_TYPE_CATALOG } from '../../server/utils/ai/slide-catalog/definitions.js';
 import { SLIDE_TYPE_EXAMPLES } from '../../server/utils/ai/slide-catalog/examples.js';
 import { isAgentOptOut } from '../../server/utils/ai/slide-catalog/agent-catalog.js';
-import { SLIDE_SCHEMAS } from '../../server/utils/ai/schemas/refined-slide.js';
 import { STRUCTURE_VALIDATORS } from '../../server/utils/ai/validate-slide-structure.js';
 import { slideStructure } from '../../shared/slide-types/structure.js';
 import { MANUAL_EXAMPLES } from '../../server/utils/openai/slide-types-prompt.js';
@@ -394,30 +393,13 @@ export const COMPANIONS = [
     exempt: {},
   },
   {
-    id: 'refine-schema',
-    label: 'refine content schema',
-    where: 'server/utils/ai/schemas/refined-slide.js (SLIDE_SCHEMAS)',
-    degradesTo:
-      'validateSlideContent() hits the "Unknown slide type" branch and skips ' +
-      'validation, so the refine phase never notices malformed content for the type',
-    // Owed by every type an agent can emit. The refine phase only ever validates
-    // agent output, so an agent-opt-out type (deprecated / ai:false) never
-    // reaches this map and owes nothing — the same rule as the AI catalog. Even a
-    // chrome type owes a (trivial) schema: it keeps the unknown-type warning
-    // meaningful.
-    appliesTo: (name, def) => !isAgentOptOut(def),
-    has: (name) => Boolean(SLIDE_SCHEMAS[name]),
-    keys: () => Object.keys(SLIDE_SCHEMAS),
-    exempt: {},
-  },
-  {
     id: 'structure-validation',
     label: 'structural validator',
     where: 'server/utils/ai/validate-slide-structure.js (STRUCTURE_VALIDATORS)',
     degradesTo:
       'validateSlideContentStructure() returns no issues, so a collection with ' +
       'too few items or a missing item field is accepted unvalidated by refine',
-    // Narrower than refine-schema: this validator earns its keep only on
+    // Narrower than the derived content schema: this validator earns its keep only on
     // repeated-item collections, where cardinality and per-item required fields
     // are invariants the flat field/Zod schema cannot express. Singleton,
     // dataset, tabular and chrome types are validated field-by-field there and
