@@ -50,8 +50,8 @@ function exampleFor(chartType) {
  * The split is the form, not a guess (D83): row 0 is the header for every chart
  * type, so the grid shows exactly what the renderer will read and a numeric
  * column name stays a column name. `defaultHeaders` fills in a *blank* header
- * cell only - it never invents a whole header row, because after the v14 -> v15
- * migration a stored chart has one.
+ * cell only - it never invents a whole header row: row 0 is the header,
+ * whatever it holds (D83).
  */
 function buildMatrix(value, chartType, model) {
   const rows = parseCsvToGrid(value);

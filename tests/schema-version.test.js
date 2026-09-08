@@ -43,7 +43,8 @@ function legacyDeck() {
 }
 
 test('the migrations array has exactly one step per version bump', () => {
-  // Bumping CURRENT_SCHEMA_VERSION without adding a migration should fail here.
+  // The version is the ledger of shape changes (D85): a bump without a step,
+  // or a step without a bump, fails here.
   assert.equal(SCHEMA_MIGRATIONS.length, CURRENT_SCHEMA_VERSION);
 });
 

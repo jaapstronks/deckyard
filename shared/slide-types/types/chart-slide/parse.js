@@ -87,10 +87,9 @@ export function parseDelimited(text, delimiter) {
 
 /**
  * The column names a chart's data carries when its first row supplies none —
- * the same synthesised names the grid editor writes into an empty header. Used
- * only by the schema migration that gave every stored chart a header row; the
- * parser itself never synthesises, because after v15 the first row *is* the
- * header.
+ * the one source of the synthesised column names. The grid editor fills a
+ * *blank* column name from it; the parser itself never synthesises, because the
+ * first row *is* the header (D83).
  * @param {string} chartType
  * @returns {string[]}
  */
@@ -143,8 +142,10 @@ export function parseChartData({ chartType, data }) {
   const rows = parseDelimited(raw, delimiter);
   // The first row is the header - always, for every chart type (D83). No
   // heuristic decides it, so a numeric column name ("Quarter\t2023\t2024") is
-  // a column name and not a data point, and a deck stored without a header got
-  // one from the v14 -> v15 migration rather than from a guess made here.
+  // a column name and not a data point, and a deck stored without a header
+  // keeps its first row as its column names; `scripts/scan-chart-headers.js`
+  // lists those for an admin to judge (D86), because no fold can tell a misread
+  // year header from headerless data.
   if (rows.length < 3) {
     return {
       ok: false,
