@@ -11,6 +11,7 @@ import {
   canonicalSlideType,
 } from '../../../../shared/slide-types.js';
 import { loadThemeAssets, resolveThemeId } from '../../../utils/themes.js';
+import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import {
   requirePermission,
   v1MethodNotAllowed,
@@ -101,15 +102,17 @@ async function handleUpdateSlide(ctx, presentationId, slideId) {
 
   const existingSlide = slides[index];
 
+  // This organization's registry: core and file-based types plus its published
+  // custom ones, the same map the storage write seam resolves against. Built
+  // once per request and never cached across organizations.
+  const slideTypes = await buildMergedSlideTypes(storageScope);
+
   // Validate slide type, and store the canonical registry key regardless of the
   // spelling the caller sent (title-slide / core/title-slide / eu.deckyard.slide.title).
-  const slideType = resolveSlideTypeName(body.type || existingSlide.type);
+  const rawType = body.type || existingSlide.type;
+  const slideType = resolveSlideTypeName(rawType, slideTypes);
   if (!slideType) {
-    await apiError(
-      ctx,
-      400,
-      `Unknown slide type: ${body.type || existingSlide.type}`,
-    );
+    await apiError(ctx, 400, `Unknown slide type: ${rawType}`);
     return true;
   }
 
@@ -129,7 +132,7 @@ async function handleUpdateSlide(ctx, presentationId, slideId) {
   }
 
   // Validate the slide
-  const errors = validateSlide(updatedSlide);
+  const errors = validateSlide(updatedSlide, { slideTypes });
   if (errors.length > 0) {
     await apiError(ctx, 400, 'Invalid slide data', { details: errors });
     return true;
@@ -187,8 +190,13 @@ async function handleCreateSlide(ctx, presentationId) {
   });
   if (!ok) return true;
 
+  // This organization's registry, as above.
+  const slideTypes = await buildMergedSlideTypes(storageScope);
+
   // Validate slide type, resolving any accepted spelling to the registry key.
-  const slideType = body.type ? resolveSlideTypeName(body.type) : '';
+  const slideType = body.type
+    ? resolveSlideTypeName(body.type, slideTypes)
+    : '';
   if (!slideType) {
     await apiError(ctx, 400, `Unknown or missing slide type: ${body.type}`);
     return true;
@@ -206,7 +214,7 @@ async function handleCreateSlide(ctx, presentationId) {
   // Create new slide
   let newSlideObj;
   try {
-    newSlideObj = newSlide({ type: slideType, theme });
+    newSlideObj = newSlide({ type: slideType, theme, slideTypes });
   } catch (e) {
     await apiError(ctx, 400, `Failed to create slide: ${e.message}`);
     return true;
@@ -231,7 +239,7 @@ async function handleCreateSlide(ctx, presentationId) {
   }
 
   // Validate the new slide
-  const errors = validateSlide(newSlideObj);
+  const errors = validateSlide(newSlideObj, { slideTypes });
   if (errors.length > 0) {
     await apiError(ctx, 400, 'Invalid slide data', { details: errors });
     return true;

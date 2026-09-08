@@ -41,24 +41,6 @@ export class RawSlideValidationError extends Error {
 }
 
 /**
- * Resolve a raw `slides[].type` against a registry.
- *
- * `resolveSlideTypeName` knows the core spellings (bare key, `core/…`, the
- * canonical id) but only the process-wide map, so an organization's DB-backed
- * type would be refused before its content was ever looked at. A key the
- * caller's registry holds is a known type, whatever built that registry.
- *
- * @param {string} rawType
- * @param {Record<string, Object>} slideTypes
- * @returns {string|null} the registry key, or null when nothing matches
- */
-function resolveAgainst(rawType, slideTypes) {
-  if (Object.prototype.hasOwnProperty.call(slideTypes, rawType)) return rawType;
-  const resolved = resolveSlideTypeName(rawType);
-  return resolved && slideTypes[resolved] ? resolved : null;
-}
-
-/**
  * Validate a single raw slide and throw RawSlideValidationError on first issue.
  *
  * @param {Object} slide - { type, content, notes? }
@@ -81,8 +63,10 @@ function validateSlideStrict(slide, index, { slideTypes, theme }) {
   }
 
   // Accept any spelling of a known type (bare key, core/…, canonical id) and
-  // validate against the resolved registry key from here on.
-  const type = resolveAgainst(rawType, slideTypes);
+  // validate against the resolved registry key from here on. The registry is
+  // the caller's, so an organization's DB-backed type is a known type here
+  // exactly when the caller built its map with it.
+  const type = resolveSlideTypeName(rawType, slideTypes);
   if (!type) {
     throw new RawSlideValidationError({
       slideIndex: index,

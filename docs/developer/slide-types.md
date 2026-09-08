@@ -761,13 +761,22 @@ Two rules follow, and both are load-bearing:
   default argument is there for callers that genuinely have no organization
   (schema migrations, the shared client bundle), not as a shortcut.
 
-Not yet org-aware, and deliberately out of B129's scope because they need a
-design answer rather than plumbing: the public API's per-slide write
-(`server/routes/public-api/v1/slides.js`, which also needs `newSlide()` to
-accept a registry) and the AI/MCP strict validator
-(`server/utils/ai/validate-slides/strict.js`, whose per-type Zod schemas and
-item requirements have no answer for a type whose fields are a database row).
-Both still reject `custom-<slug>`.
+Since B131 the two write surfaces in front of that seam say whose registry they
+mean as well: the public API's per-slide routes (`POST`/`PUT
+…/presentations/:id/slides` and the from-library insert) build the org registry
+and hand it to `resolveSlideTypeName()`, `newSlide()` and `validateSlide()`, and
+the MCP write tools hand it to strict and fix validation. Strict has no
+per-type schema table left to answer for a database row — it derives one from
+`fields[]` (D87) — so a published `custom-<slug>` is created the same way as any
+core type, and `tests/org-registry-write-surfaces.test.js` reads the sources to
+keep a new call site from quietly taking the global map.
+
+Still on the global map, and the one place left worth naming: the fix pipeline's
+callers on the AI generation path (`server/routes/api/ai/*`, and the deck
+generators under `server/utils/`). That pipeline repairs rather than refuses, so
+a custom type is not rejected there — it simply has none of its declarations
+applied (no `maxLength`, no item bounds). That is B131's leftover, tracked as
+B247.
 
 ### Form layout (`formLayout`)
 
