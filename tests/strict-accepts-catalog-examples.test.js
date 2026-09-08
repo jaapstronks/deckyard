@@ -25,6 +25,7 @@ import {
   validateRefinedSlidesStrict,
 } from '../server/utils/ai/validate-slides/strict.js';
 import { toRuntimeSlideType } from '../server/utils/custom-slide-type-runtime.js';
+import { contentSchemaFor } from '../server/utils/ai/schemas/content-schema.js';
 import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 
 /** The offer, in one language: `{ [typeName]: example }` for everything with one. */
@@ -76,6 +77,7 @@ test('a published DB type validates against its own stored fields', () => {
         maxLength: 60,
       },
       { key: 'summary', type: 'markdown', label: 'Summary', maxLength: 400 },
+      { key: 'score', type: 'number', label: 'Score', min: 0, max: 10 },
       {
         key: 'stage',
         type: 'enum',
@@ -124,6 +126,11 @@ test('a published DB type validates against its own stored fields', () => {
     [{ ...ok, stage: 'sold' }, 'stage', 'an enum value must be offered'],
     [{ ...ok, wins: [] }, 'wins', 'minItems is enforced'],
     [
+      { ...ok, score: 11 },
+      'score',
+      'a number max is enforced, in its own words',
+    ],
+    [
       { ...ok, wins: [{ text: 'x'.repeat(41) }] },
       'wins.0.text',
       'an itemFields maxLength is enforced',
@@ -143,9 +150,30 @@ test('a published DB type validates against its own stored fields', () => {
       (err) => {
         assert.ok(err instanceof RawSlideValidationError, why);
         assert.equal(err.details.field, field, why);
+        if (field === 'score') assert.equal(err.details.expected, 'max 10');
         return true;
       },
       why,
     );
   }
+});
+
+test('the derivation is cached per definition, and per theme object', () => {
+  const def = SLIDE_TYPES['title-slide'];
+  const theme = { slideBackgrounds: [] };
+  assert.equal(
+    contentSchemaFor(def),
+    contentSchemaFor(def),
+    'bare: one schema',
+  );
+  assert.equal(
+    contentSchemaFor(def, { theme }),
+    contentSchemaFor(def, { theme }),
+    'themed: one schema per theme object',
+  );
+  assert.notEqual(
+    contentSchemaFor(def),
+    contentSchemaFor(def, { theme }),
+    'the themed derivation is its own schema',
+  );
 });

@@ -47,10 +47,15 @@ import {
 import { mergeBackgroundOptions } from '../../../../shared/theme-slide-backgrounds.js';
 import { slideInstanceKeys } from '../../../../shared/slide-types/instance-keys.js';
 
-/** Per-definition cache. Keyed by theme, because `background` reads it. */
+/**
+ * Per-definition cache: the bare derivation, and one per theme because
+ * `background` reads it. Both levels are weak — a DB type's definition and a
+ * deck's theme are rebuilt per request, and a strong map would keep every one
+ * of them alive on behalf of a core definition that never goes away.
+ *
+ * @type {WeakMap<Object, {bare: import('zod').ZodType|null, byTheme: WeakMap<Object, import('zod').ZodType>}>}
+ */
 const cache = new WeakMap();
-/** Stand-in key for "no theme", so the WeakMap can hold both branches. */
-const NO_THEME = Symbol('no-theme');
 
 /** A number, or the `''` a cleared field stores. */
 function numberSchema(field) {
@@ -159,20 +164,21 @@ function objectSchema(fields, theme, extraKeys = []) {
  * @returns {import('zod').ZodType}
  */
 export function contentSchemaFor(def, { theme = null } = {}) {
-  let byTheme = cache.get(def);
-  if (!byTheme) {
-    byTheme = new Map();
-    cache.set(def, byTheme);
+  let entry = cache.get(def);
+  if (!entry) {
+    entry = { bare: null, byTheme: new WeakMap() };
+    cache.set(def, entry);
   }
-  const key = theme || NO_THEME;
-  let schema = byTheme.get(key);
+  const themed = theme && typeof theme === 'object' ? theme : null;
+  let schema = themed ? entry.byTheme.get(themed) : entry.bare;
   if (!schema) {
     schema = objectSchema(
       def?.fields,
-      theme,
+      themed,
       Object.keys(slideInstanceKeys(def)),
     );
-    byTheme.set(key, schema);
+    if (themed) entry.byTheme.set(themed, schema);
+    else entry.bare = schema;
   }
   return schema;
 }
@@ -214,36 +220,56 @@ export function describeIssue(issue, content) {
         message: `unknown field "${key}"`,
       };
     }
+    // `origin` says which declaration the bound came from: `array` for
+    // `minItems`/`maxItems`, `number` for `min`/`max`, `string` for `maxLength`.
     case 'too_big':
-      return issue.origin === 'array'
-        ? {
-            field: at,
-            expected: `maxItems ${issue.maximum}`,
-            got: Array.isArray(value) ? value.length : undefined,
-            message: `"${at}" allows at most ${issue.maximum} items`,
-          }
-        : {
-            field: at,
-            expected: `maxLength ${issue.maximum}`,
-            got: typeof value === 'string' ? value.length : undefined,
-            message: `"${at}" exceeds max length (${
-              typeof value === 'string' ? value.length : '?'
-            } > ${issue.maximum})`,
-          };
+      if (issue.origin === 'array') {
+        return {
+          field: at,
+          expected: `maxItems ${issue.maximum}`,
+          got: Array.isArray(value) ? value.length : undefined,
+          message: `"${at}" allows at most ${issue.maximum} items`,
+        };
+      }
+      if (issue.origin === 'number') {
+        return {
+          field: at,
+          expected: `max ${issue.maximum}`,
+          got: value,
+          message: `"${at}" must be at most ${issue.maximum}`,
+        };
+      }
+      return {
+        field: at,
+        expected: `maxLength ${issue.maximum}`,
+        got: typeof value === 'string' ? value.length : undefined,
+        message: `"${at}" exceeds max length (${
+          typeof value === 'string' ? value.length : '?'
+        } > ${issue.maximum})`,
+      };
     case 'too_small':
-      return issue.origin === 'array'
-        ? {
-            field: at,
-            expected: `minItems ${issue.minimum}`,
-            got: Array.isArray(value) ? value.length : undefined,
-            message: `"${at}" requires at least ${issue.minimum} items`,
-          }
-        : {
-            field: at,
-            expected: `a non-blank value`,
-            got: value,
-            message: `"${at}" must not be blank`,
-          };
+      if (issue.origin === 'array') {
+        return {
+          field: at,
+          expected: `minItems ${issue.minimum}`,
+          got: Array.isArray(value) ? value.length : undefined,
+          message: `"${at}" requires at least ${issue.minimum} items`,
+        };
+      }
+      if (issue.origin === 'number') {
+        return {
+          field: at,
+          expected: `min ${issue.minimum}`,
+          got: value,
+          message: `"${at}" must be at least ${issue.minimum}`,
+        };
+      }
+      return {
+        field: at,
+        expected: `a non-blank value`,
+        got: value,
+        message: `"${at}" must not be blank`,
+      };
     case 'invalid_value':
       return {
         field: at,

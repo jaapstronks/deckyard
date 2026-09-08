@@ -85,7 +85,11 @@ describe('the derived text-blocks schema accepts the array-canonical shape', () 
     const { valid } = validateSlideContent(DEF, {
       rows: [{ blocks: [{ title: 'x'.repeat(blockTitle.maxLength + 1) }] }],
     });
-    assert.strictEqual(valid, false, 'an over-long block title must not validate');
+    assert.strictEqual(
+      valid,
+      false,
+      'an over-long block title must not validate',
+    );
   });
 
   it('a legacy numbered slide still validates (mirror stays optional)', () => {
