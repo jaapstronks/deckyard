@@ -607,7 +607,7 @@ light/dark text contrast for free, and your `renderHtml` never sees it.
 
 This holds for a **database** type from Settings → Slide Types just as much as
 for a core or file-JS one: `toRuntimeSlideType()` runs the same
-`composeSlideType()`, so a stored `fields[]` is the type's *own* schema and the
+`composeSlideType()`, so a stored `fields[]` is the type's _own_ schema and the
 globals are appended to it at runtime. That is also why the stored definition
 may point a `mediaRef.linkKey` at `slideBgImage` without declaring it.
 
