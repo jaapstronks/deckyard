@@ -93,6 +93,14 @@ export default {
       type: 'csv', // the csv-grid widget (field-editors.js) is this type's base editor
       required: true,
       maxLength: 20000,
+      // The contract in words, in the one place that reaches both the
+      // inspector and the agent schema (json-schema.js reads `helpText` as the
+      // field's description). The first row is the header for every chart type
+      // - no heuristic reads it back as data, so a year is a column name (D83).
+      helpText:
+        'The first row names the columns and is never plotted; every row after ' +
+        'it is a data point. Bar and pie read a label and a value; line reads ' +
+        'an x label and one or two series, named by the header.',
       // The `dataset` contract tells a reader to decode this payload to rows
       // and lose "only the visual encoding" — which is honest only if the
       // encoding is named. These siblings describe it; the projection captions

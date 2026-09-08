@@ -266,6 +266,22 @@ describe('the bar/pie parser reads one series', () => {
     });
   });
 
+  it('reads a numeric header as the series names, not as the first data row', () => {
+    // The heuristic this replaced (D83) read `2023` as a value and `Quarter` as
+    // its label, so a year-over-year chart lost its first column pair and grew
+    // a phantom point. Row 0 is the header now, whatever it says.
+    const parsed = parseChartData({
+      chartType: 'line',
+      data: 'Quarter\t2023\t2024\nQ1\t1200\t1450\nQ2\t1350\t1620',
+    });
+    assert.equal(parsed.ok, true);
+    assert.equal(parsed.dataset.series1Label, '2023');
+    assert.equal(parsed.dataset.series2Label, '2024');
+    assert.deepEqual(parsed.dataset.x, ['Q1', 'Q2']);
+    assert.deepEqual(parsed.dataset.y1, [1200, 1350]);
+    assert.deepEqual(parsed.dataset.y2, [1450, 1620]);
+  });
+
   it('reads column 3 as a second series for line, and only for line', () => {
     const parsed = parseChartData({
       chartType: 'line',

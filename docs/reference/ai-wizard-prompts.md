@@ -388,7 +388,7 @@ Fields:
 - title: Required, max 120 chars
 - subtitle: Optional, max 200 chars
 - chartType: "bar", "line", or "pie"
-- data: TSV format (tabs between columns, newlines between rows) with header row
+- data: TSV format (tabs between columns, newlines between rows). The first row is always the header - column names, never a data point, even when the names are numbers
 - xLabel: Optional, max 60 chars
 - yLabel: Optional, max 60 chars
 

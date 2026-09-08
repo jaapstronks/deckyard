@@ -187,7 +187,7 @@
   "editor.chart.grid.addRow": "+ Row",
   "editor.chart.grid.addSeries": "+ Series",
   "editor.chart.grid.columnName": "Column {n} name",
-  "editor.chart.grid.helpBarPie": "A label and a numeric value per row. Paste a block from Sheets/Excel into any cell.",
+  "editor.chart.grid.helpBarPie": "The first row names the columns; every row after it is a label and a numeric value. Paste a block from Sheets/Excel into any cell.",
   "editor.chart.grid.helpLine": "X label in the first column, then one or two numeric series. The header row sets the series names.",
   "editor.chart.grid.removeRow": "Remove row",
   "editor.chart.grid.removeRowN": "Remove row {n}",

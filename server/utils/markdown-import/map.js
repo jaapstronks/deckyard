@@ -501,6 +501,12 @@ function buildChartSlide(parsed, overrides = {}) {
     (b) => b.lang === 'csv' || b.lang === 'tsv' || b.lang === '',
   );
 
+  // The fenced block is taken verbatim, so it carries the chart contract as
+  // written: its **first row names the columns** and is never plotted (D83).
+  // Nothing here guesses whether a header is present - a heuristic at this
+  // boundary would be the second reading of "what is row 0" that the parser
+  // just retired. A block without a header loses its first row, visibly, in
+  // the grid editor the author lands in.
   return slide(
     'chart-slide',
     {
