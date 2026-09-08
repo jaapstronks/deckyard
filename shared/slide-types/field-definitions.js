@@ -20,7 +20,7 @@
  *
  * ## What legitimately differs, and how it is expressed
  *
- * Four things, all in the {@link FieldProfile} the caller passes:
+ * Five things, all in the {@link FieldProfile} the caller passes:
  *
  * - **`fieldTypes`** — a DB type is authored through a form and may use only
  *   the six types that form has a control for; a file-JS type may use the whole
@@ -34,6 +34,11 @@
  * - **`globalFieldKeys`** — the keys the registry injects into every type. Known
  *   only to the file-JS side (`registry.js` reaches this module mid-evaluation,
  *   so it is passed in rather than imported).
+ * - **`propertyKeys`** — the closed vocabulary a stored row may spell, read per
+ *   field type. A DB definition is a row a form writes and an API accepts, so a
+ *   property nobody authored is a mistake worth an answer (`unknown_property`,
+ *   D84); hand-written source is open by nature, so the boot profile passes no
+ *   vocabulary and the check does not run.
  *
  * ## One finding shape, two ways of naming a place
  *
@@ -63,6 +68,18 @@ import { enumOptionValues } from './field-types.js';
  * @property {string[]} [globalFieldKeys] - Keys the registry injects into every
  *   type: they are valid `mediaRef.linkKey` targets, and a field that reuses
  *   one shadows it.
+ * @property {FieldPropertyVocabulary} [propertyKeys] - The only property names a
+ *   field definition may carry on this surface. Omit for a surface whose
+ *   definitions are open (hand-written source); a vocabulary makes any other
+ *   property an error.
+ */
+
+/**
+ * @typedef {object} FieldPropertyVocabulary
+ * @property {string[]} all - Properties every field may carry, whatever its
+ *   type.
+ * @property {Record<string, string[]>} byType - Per field type, the properties
+ *   that type adds. A type absent from the map adds none.
  */
 
 /**
@@ -91,6 +108,23 @@ function isPlainObject(v) {
   return Boolean(v) && typeof v === 'object' && !Array.isArray(v);
 }
 
+/** The shape of a `mediaRef`, wherever a surface closes its vocabulary. */
+const MEDIA_REF_PROPERTIES = new Set(['label', 'linkKey']);
+
+/**
+ * The property names a field of `type` may carry, on a surface that declares a
+ * closed vocabulary: the ones every field has plus the ones this type adds.
+ * @param {FieldPropertyVocabulary} vocabulary
+ * @param {string} type
+ * @returns {Set<string>}
+ */
+export function offeredProperties(vocabulary, type) {
+  return new Set([
+    ...(vocabulary?.all || []),
+    ...(vocabulary?.byType?.[type] || []),
+  ]);
+}
+
 /**
  * Name a field the way the person authoring it would: its label, else its key,
  * else its position.
@@ -111,10 +145,15 @@ function fieldName(field, index) {
  * the readable strings. Mirrors what `renderItemBlock` in semantic-projection
  * will actually pick from, so an `itemLabelField` naming anything else is a
  * declaration that cannot be honoured.
+ *
+ * Exported because the builder's `itemLabelField` control offers exactly this
+ * set: a second list of "which sub-fields can head an item" is the drift this
+ * module exists to prevent (D84).
+ *
  * @param {unknown[]} itemFields
  * @returns {Set<string>}
  */
-function headableKeys(itemFields) {
+export function headableKeys(itemFields) {
   return new Set(
     (Array.isArray(itemFields) ? itemFields : [])
       .filter(
@@ -150,6 +189,10 @@ export function walkFieldDefinitions(fields, profile) {
   const globalFieldKeys = new Set(
     Array.isArray(profile?.globalFieldKeys) ? profile.globalFieldKeys : [],
   );
+  // No vocabulary means the surface is open (hand-written source).
+  const propertyKeys = isPlainObject(profile?.propertyKeys)
+    ? profile.propertyKeys
+    : null;
 
   const findings = [];
   const topKeys = [];
@@ -244,6 +287,42 @@ export function walkFieldDefinitions(fields, profile) {
         return;
       }
 
+      // A closed vocabulary answers for what it does not know, rather than
+      // dropping it on the way to storage: silently losing a declaration the
+      // author wrote is the "truncated" this surface already refuses elsewhere
+      // (D84). Read per type, because that is how the vocabulary is authored —
+      // a form with a control per row type — so `options` on a string row is as
+      // much a mistake as a property nothing has ever heard of.
+      if (propertyKeys) {
+        const offered = offeredProperties(propertyKeys, type);
+        for (const property of Object.keys(field)) {
+          // A key whose value is `undefined` declares nothing: JSON cannot
+          // carry it, so the API never sees it, while `structuredClone` keeps
+          // it on the client. Refusing it would let the client refuse what the
+          // server accepts — the drift this one walk exists to prevent.
+          if (field[property] === undefined || offered.has(property)) continue;
+          at2('unknown_property', 'error', {
+            property,
+            offered: [...offered],
+          });
+        }
+        // Only worth reading when `mediaRef` itself is offered here: on a row
+        // that may not carry one at all, the property is the finding.
+        if (offered.has('mediaRef') && isPlainObject(field.mediaRef)) {
+          for (const property of Object.keys(field.mediaRef)) {
+            if (
+              field.mediaRef[property] === undefined ||
+              MEDIA_REF_PROPERTIES.has(property)
+            )
+              continue;
+            at2('unknown_property', 'error', {
+              property: `mediaRef.${property}`,
+              offered: [...MEDIA_REF_PROPERTIES].map((p) => `mediaRef.${p}`),
+            });
+          }
+        }
+      }
+
       if (type === 'enum') {
         if (enumOptionValues(field).length === 0) {
           at2('enum_without_options', 'error');
@@ -262,10 +341,12 @@ export function walkFieldDefinitions(fields, profile) {
             depth: at.depth + 1,
           });
         }
-        if (
-          field.itemLabelField !== undefined &&
-          field.itemLabelField !== null
-        ) {
+      }
+
+      if (field.itemLabelField !== undefined && field.itemLabelField !== null) {
+        if (type !== 'items') {
+          at2('item_label_field_not_items', 'warning', { type });
+        } else {
           const headable = headableKeys(field.itemFields);
           if (
             !isNonEmpty(field.itemLabelField) ||
@@ -281,7 +362,10 @@ export function walkFieldDefinitions(fields, profile) {
 
       if (field.mediaRef !== undefined && field.mediaRef !== null) {
         if (!isPlainObject(field.mediaRef)) {
-          at2('media_ref_not_an_object', 'warning');
+          // A closed vocabulary stores `mediaRef` as `{ label, linkKey }`; a
+          // shape it cannot store faithfully is refused, not rewritten into an
+          // empty declaration on the way to disk (D84). Open source ignores it.
+          at2('media_ref_not_an_object', propertyKeys ? 'error' : 'warning');
         } else {
           if (type !== 'string')
             at2('media_ref_wrong_type', 'warning', { type });
@@ -372,16 +456,26 @@ const FINDING_MESSAGES = {
   items_without_item_fields: (where) =>
     `${where} is an items field with no \`itemFields\` — add at least one, so ` +
     `something describes the shape of an item.`,
+  unknown_property: (where, f) =>
+    `${where} declares \`${f?.detail?.property}\`, which is not part of what ` +
+    `a stored field definition may say — the properties accepted here are: ` +
+    `${(f?.detail?.offered || []).join(', ')}.`,
+  item_label_field_not_items: (where, f) =>
+    `${where} declares \`itemLabelField\` on a \`${f?.detail?.type}\` field, ` +
+    `but only an \`items\` field has sub-fields one of which could head an ` +
+    `item, so it is ignored.`,
   item_label_field_unknown: (where, f) =>
     `${where} declares \`itemLabelField\` ` +
     `${JSON.stringify(f?.detail?.declared)}, which is not a readable string ` +
     `sub-field of this item (${(f?.detail?.headable || []).join(', ') || 'none'}), ` +
     `so it is ignored and the item heading falls back to the first readable ` +
     `string.`,
-  media_ref_not_an_object: (where) =>
+  media_ref_not_an_object: (where, f) =>
     `${where} declares \`mediaRef\` as something other than an object ` +
-    `(\`{ label, linkKey }\`), so it is ignored and the field projects as ` +
-    `plain text.`,
+    `(\`{ label, linkKey }\`)` +
+    (f?.severity === 'error'
+      ? `, which a stored field definition cannot carry.`
+      : `, so it is ignored and the field projects as plain text.`),
   media_ref_wrong_type: (where, f) =>
     `${where} declares \`mediaRef\` on a \`${f?.detail?.type}\` field, but a ` +
     `media reference is a string — the stand-in replaces whatever that type ` +

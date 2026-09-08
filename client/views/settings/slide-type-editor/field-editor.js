@@ -7,7 +7,15 @@ import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
-import { CUSTOM_TYPE_FIELD_TYPES } from '../../../../shared/slide-types/custom-field-definitions.js';
+import {
+  CUSTOM_TYPE_FIELD_TYPES,
+  CUSTOM_TYPE_PROPERTY_KEYS,
+} from '../../../../shared/slide-types/custom-field-definitions.js';
+import {
+  headableKeys,
+  offeredProperties,
+} from '../../../../shared/slide-types/field-definitions.js';
+import { enumOptionValues } from '../../../../shared/slide-types/field-types.js';
 
 // The dropdown offers exactly the types the storage layer accepts, in that
 // module's order — a seventh option here would be a control for something no
@@ -40,6 +48,13 @@ export function createFieldListEditor({ fields = [], onChange }) {
   // closes itself on change hides the very sub-editor the change just revealed —
   // which is how an `items` field ends up saved with no item fields (B200).
   const openRows = new WeakSet();
+  // Controls whose choices are other rows: an item-heading select reads the
+  // sub-fields, a fold target reads its own options, a media link reads its
+  // string siblings. They are rebuilt on every edit at this level rather than
+  // re-rendered, because a re-render per keystroke steals focus from the very
+  // row being typed in.
+  /** @type {Array<() => void>} */
+  let refreshers = [];
 
   function notify() {
     // Any edit invalidates the located problem: it named a row that may no
@@ -56,10 +71,12 @@ export function createFieldListEditor({ fields = [], onChange }) {
       }
     }
     onChange?.(structuredClone(currentFields));
+    for (const refresh of refreshers) refresh();
   }
 
   function render() {
     el.innerHTML = '';
+    refreshers = [];
 
     if (currentFields.length === 0) {
       el.append(
@@ -93,6 +110,38 @@ export function createFieldListEditor({ fields = [], onChange }) {
       },
     });
     el.append(addBtn);
+  }
+
+  /**
+   * The string fields beside `field` at this level: the only ones a
+   * `mediaRef.linkKey` may name. A declaration that no longer names one is kept
+   * as a choice rather than silently re-pointed — the walk warns about it, and
+   * a select that quietly swaps the author's answer would hide that.
+   * @param {Object} field
+   * @returns {string[]}
+   */
+  function linkKeyChoices(field) {
+    const siblings = currentFields
+      .filter((f) => f !== field && f?.type === 'string' && f.key?.trim())
+      .map((f) => f.key.trim());
+    const declared = field.mediaRef?.linkKey;
+    return declared && !siblings.includes(declared)
+      ? [...siblings, declared]
+      : siblings;
+  }
+
+  /**
+   * The sub-fields that could head an item, from the shared walk, plus a
+   * declaration that no longer names one — same reason as above.
+   * @param {Object} field
+   * @returns {string[]}
+   */
+  function itemHeadingChoices(field) {
+    const headable = [...headableKeys(field.itemFields)];
+    const declared = field.itemLabelField;
+    return declared && !headable.includes(declared)
+      ? [...headable, declared]
+      : headable;
   }
 
   function renderFieldRow(index) {
@@ -271,6 +320,13 @@ export function createFieldListEditor({ fields = [], onChange }) {
     }
     typeSelect.addEventListener('change', () => {
       field.type = typeSelect.value;
+      // The stored vocabulary is read per type (D84), so a property the old
+      // type carried is one a Save would now refuse with no control left on
+      // screen to clear it — a `maxLength` on a string that became an enum.
+      const offered = offeredProperties(CUSTOM_TYPE_PROPERTY_KEYS, field.type);
+      for (const property of Object.keys(field)) {
+        if (!offered.has(property)) delete field[property];
+      }
       notify();
       render();
     });
@@ -377,6 +433,121 @@ export function createFieldListEditor({ fields = [], onChange }) {
     );
     body.append(helpRow);
 
+    // Media reference (string) — A2.2/D82's declaration, D84's control. A DB
+    // type shows a player through its template just as `video-slide` does, so
+    // the document projection needs the same stand-in: the reference is not
+    // document text and must not be printed as if it were.
+    if (field.type === 'string') {
+      const mediaRow = h('div', {
+        class: 'field-list-field-row field-list-field-row-inline',
+      });
+      const mediaToggle = h('input', {
+        type: 'checkbox',
+        checked: Boolean(field.mediaRef),
+      });
+      mediaToggle.addEventListener('change', () => {
+        if (mediaToggle.checked) field.mediaRef = {};
+        else delete field.mediaRef;
+        notify();
+        render();
+      });
+      mediaRow.append(
+        mediaToggle,
+        h('label', {
+          class: 'field-label field-label-sm',
+          text: t(
+            'settings.slideTypes.fields.mediaRef',
+            'References media (not document text)',
+          ),
+        }),
+      );
+      body.append(mediaRow);
+
+      if (field.mediaRef) {
+        const mediaSection = h('div', { class: 'field-list-nested' });
+        mediaSection.append(
+          h('div', {
+            class: 'help',
+            text: t(
+              'settings.slideTypes.fields.mediaRefHelp',
+              'The reader and the reflowable export show a named stand-in instead of printing this value, and it is not offered for translation.',
+            ),
+          }),
+        );
+
+        const mediaLabelRow = h('div', { class: 'field-list-field-row' });
+        mediaLabelRow.append(
+          h('label', {
+            class: 'field-label field-label-sm',
+            text: t(
+              'settings.slideTypes.fields.mediaRefLabel',
+              'Name of the stand-in',
+            ),
+          }),
+          createInput(
+            field.mediaRef.label || '',
+            (val) => {
+              field.mediaRef.label = val;
+              notify();
+            },
+            {
+              class: 'form-input form-input-sm',
+              placeholder: t(
+                'settings.slideTypes.fields.mediaRefLabelPlaceholder',
+                'Video',
+              ),
+            },
+          ),
+        );
+
+        const linkRow = h('div', { class: 'field-list-field-row' });
+        const linkSelect = h('select', { class: 'form-input form-input-sm' });
+        const syncLink = () => {
+          // A refresh runs on any edit at this level, including the toggle that
+          // just removed the reference this control belongs to; that row is on
+          // its way out of the DOM.
+          if (!field.mediaRef) return;
+          syncOptions(
+            linkSelect,
+            [
+              {
+                value: '',
+                text: t(
+                  'settings.slideTypes.fields.mediaRefLinkKeyNone',
+                  '(none — link the reference itself)',
+                ),
+              },
+              ...linkKeyChoices(field).map((key) => ({
+                value: key,
+                text: key,
+              })),
+            ],
+            field.mediaRef.linkKey || '',
+          );
+        };
+        syncLink();
+        linkSelect.addEventListener('change', () => {
+          if (linkSelect.value) field.mediaRef.linkKey = linkSelect.value;
+          else delete field.mediaRef.linkKey;
+          notify();
+        });
+        refreshers.push(syncLink);
+        linkRow.append(
+          h('label', {
+            class: 'field-label field-label-sm',
+            text: t(
+              'settings.slideTypes.fields.mediaRefLinkKey',
+              'Link the stand-in to',
+            ),
+          }),
+          linkSelect,
+        );
+
+        mediaSection.append(mediaLabelRow, linkRow);
+        body.append(mediaSection);
+      }
+    }
+
     // Options (enum)
     if (field.type === 'enum') {
       const optRow = h('div', { class: 'field-list-field-row' });
@@ -401,6 +572,56 @@ export function createFieldListEditor({ fields = [], onChange }) {
       });
       optRow.append(optLabel, optArea);
       body.append(optRow);
+
+      // Where a stored value this field no longer offers lands (A2.3/D84).
+      // Driven by the field's own options, so it needs no list of retired
+      // values — and it is exactly the case the builder itself creates the
+      // moment an author deletes a line above.
+      const foldRow = h('div', { class: 'field-list-field-row' });
+      const foldSelect = h('select', { class: 'form-input form-input-sm' });
+      const syncFold = () =>
+        syncOptions(
+          foldSelect,
+          [
+            {
+              value: '',
+              text: t(
+                'settings.slideTypes.fields.foldUnofferedToNone',
+                '(none — keep stored values as they are)',
+              ),
+            },
+            ...enumOptionValues(field).map((value) => ({
+              value,
+              text: value,
+            })),
+          ],
+          field.foldUnofferedTo || '',
+        );
+      syncFold();
+      foldSelect.addEventListener('change', () => {
+        if (foldSelect.value) field.foldUnofferedTo = foldSelect.value;
+        else delete field.foldUnofferedTo;
+        notify();
+      });
+      refreshers.push(syncFold);
+      foldRow.append(
+        h('label', {
+          class: 'field-label field-label-sm',
+          text: t(
+            'settings.slideTypes.fields.foldUnofferedTo',
+            'A retired value becomes',
+          ),
+        }),
+        foldSelect,
+        h('div', {
+          class: 'help',
+          text: t(
+            'settings.slideTypes.fields.foldUnofferedToHelp',
+            'Deleting an option above leaves slides holding it. Name where such a value lands, or leave this alone to keep it.',
+          ),
+        }),
+      );
+      body.append(foldRow);
     }
 
     // Items sub-fields (nested)
@@ -455,11 +676,60 @@ export function createFieldListEditor({ fields = [], onChange }) {
         ),
       );
 
+      // Which sub-field heads an item in the document projection (A2.1/D81).
+      // The choices are the walk's own `headableKeys`, so the builder cannot
+      // offer a heading the projection would refuse to honour.
+      const headRow = h('div', { class: 'field-list-field-row' });
+      const headSelect = h('select', { class: 'form-input form-input-sm' });
+      const syncHead = () =>
+        syncOptions(
+          headSelect,
+          [
+            {
+              value: '',
+              text: t(
+                'settings.slideTypes.fields.itemLabelFieldNone',
+                '(the first text sub-field)',
+              ),
+            },
+            ...itemHeadingChoices(field).map((key) => ({
+              value: key,
+              text: key,
+            })),
+          ],
+          field.itemLabelField || '',
+        );
+      syncHead();
+      headSelect.addEventListener('change', () => {
+        if (headSelect.value) field.itemLabelField = headSelect.value;
+        else delete field.itemLabelField;
+        notify();
+      });
+      refreshers.push(syncHead);
+      headRow.append(
+        h('label', {
+          class: 'field-label field-label-sm',
+          text: t(
+            'settings.slideTypes.fields.itemLabelField',
+            'Heading of an item',
+          ),
+        }),
+        headSelect,
+        h('div', {
+          class: 'help',
+          text: t(
+            'settings.slideTypes.fields.itemLabelFieldHelp',
+            'Used by the reader and the reflowable export to head each item.',
+          ),
+        }),
+      );
+
       const nestedEditor = createFieldListEditor({
         fields: Array.isArray(field.itemFields) ? field.itemFields : [],
         onChange: (subFields) => {
           field.itemFields = subFields;
           notify();
+          syncHead();
         },
       });
       if (rowProblem && rowProblem.itemIndex != null) {
@@ -470,7 +740,7 @@ export function createFieldListEditor({ fields = [], onChange }) {
         });
       }
 
-      itemsSection.append(minRow, maxRow, nestedEditor.el);
+      itemsSection.append(minRow, maxRow, headRow, nestedEditor.el);
       body.append(itemsSection);
     }
 
@@ -506,6 +776,31 @@ export function createFieldListEditor({ fields = [], onChange }) {
 
   render();
   return { el, update, showProblem, clearProblem };
+}
+
+/**
+ * Fill a select with `options`, keeping `value` selected. Rebuilt only when the
+ * choices or the selection actually changed, so a refresh triggered by an edit
+ * elsewhere does not disturb a select the user is holding open.
+ * @param {HTMLSelectElement} select
+ * @param {Array<{value: string, text: string}>} options
+ * @param {string} value
+ */
+function syncOptions(select, options, value) {
+  const next = options.map((o) => o.value).join('\u0000');
+  if (select.dataset.options === next && select.value === value) return;
+  select.dataset.options = next;
+  select.innerHTML = '';
+  for (const option of options) {
+    select.append(
+      h('option', {
+        value: option.value,
+        text: option.text,
+        selected: option.value === value,
+      }),
+    );
+  }
+  select.value = value;
 }
 
 function createInput(value, onInput, attrs = {}) {

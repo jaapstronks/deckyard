@@ -18,7 +18,10 @@
  *     `foldUnofferedTo`) are checked beside the field that declares them, at
  *     every depth, and stay warnings;
  *  4. the DB surface answers with the FIRST error, the boot surface with all of
- *     them — that split is the callers', not the walk's.
+ *     them — that split is the callers', not the walk's;
+ *  5. the stored vocabulary is a contract (D84): a property a DB row may not
+ *     carry is refused and located, not dropped on the way to storage, while
+ *     hand-written source stays open.
  *
  * Run with: node --test tests/field-definition-rules.test.js
  */
@@ -355,7 +358,7 @@ test('a global field key is a valid link target and a shadow at the same time', 
 
 // --- 4. what each caller does with the findings -----------------------------
 
-test('the builder answers with the first error and drops stray properties', () => {
+test('the builder answers with the first error', () => {
   const bad = validateCustomFieldDefinitions([
     { key: 'a', type: 'string', label: 'A' },
     { key: 'b', type: 'enum', label: 'B', options: [] },
@@ -369,9 +372,8 @@ test('the builder answers with the first error and drops stray properties', () =
       key: 'rows',
       type: 'items',
       label: 'Rows',
-      bogus: 1,
       minItems: 1,
-      itemFields: [{ key: 'title', type: 'string', label: 'T', junk: true }],
+      itemFields: [{ key: 'title', type: 'string', label: 'T' }],
     },
   ]);
   assert.equal(good.ok, true);
@@ -384,6 +386,162 @@ test('the builder answers with the first error and drops stray properties', () =
       minItems: 1,
     },
   ]);
+});
+
+// --- 5. the stored vocabulary is a contract, not a filter (D84) -------------
+
+/**
+ * A property the DB surface has no control for used to fall out on the way to
+ * storage: the definition was accepted, and the declaration was gone by the
+ * time anyone looked. That silent drop is why the A2 declarations could not
+ * reach a DB type at all. The vocabulary now refuses what it does not know,
+ * located on the row that declares it — and the boot surface, whose source is
+ * hand-written, stays open.
+ */
+test('a property outside the stored vocabulary is refused, and located', () => {
+  const result = validateCustomFieldDefinitions([
+    { key: 'a', type: 'string', label: 'A' },
+    { key: 'b', type: 'string', label: 'B', presetSource: 'themeColors' },
+  ]);
+  assert.equal(result.ok, false);
+  assert.equal(result.problem.code, 'unknown_property');
+  assert.equal(result.problem.severity, 'error');
+  assert.equal(result.problem.detail.property, 'presetSource');
+  assert.equal(result.problem.index, 1, 'the row the builder must open');
+  assert.equal(result.problem.itemIndex, null);
+  assert.match(describeFieldFinding(result.problem), /"B"/);
+
+  assert.deepEqual(
+    codes(
+      [{ key: 'b', type: 'string', label: 'B', presetSource: 'x' }],
+      FILE_JS,
+    ),
+    [],
+    'hand-written source declares more than a form can, and stays open',
+  );
+});
+
+test('the vocabulary is read per field type', () => {
+  const onTheWrongRow = validateCustomFieldDefinitions([
+    { key: 'a', type: 'string', label: 'A', options: ['x'] },
+  ]);
+  assert.equal(onTheWrongRow.ok, false);
+  assert.equal(onTheWrongRow.problem.code, 'unknown_property');
+  assert.equal(onTheWrongRow.problem.detail.property, 'options');
+
+  const onTheRightRow = validateCustomFieldDefinitions([
+    { key: 'a', type: 'enum', label: 'A', options: ['x'] },
+  ]);
+  assert.equal(onTheRightRow.ok, true);
+});
+
+test('a `mediaRef` that is not an object is refused where the vocabulary is closed', () => {
+  // Open source ignores it (a warning); the stored row would otherwise be
+  // rewritten into an empty declaration — a choice `cleanField` no longer makes.
+  const fields = [{ key: 'a', type: 'string', label: 'A', mediaRef: 'Video' }];
+  assert.deepEqual(codes(fields, FILE_JS), ['media_ref_not_an_object']);
+  assert.equal(
+    walkFieldDefinitions(fields, FILE_JS).findings[0].severity,
+    'warning',
+  );
+  const result = validateCustomFieldDefinitions(fields);
+  assert.equal(result.ok, false);
+  assert.equal(result.problem.code, 'media_ref_not_an_object');
+  assert.match(describeFieldFinding(result.problem), /cannot carry/);
+});
+
+test('a property nested inside `mediaRef` is read the same way', () => {
+  const result = validateCustomFieldDefinitions([
+    {
+      key: 'a',
+      type: 'string',
+      label: 'A',
+      mediaRef: { label: 'V', href: 'x' },
+    },
+  ]);
+  assert.equal(result.ok, false);
+  assert.equal(result.problem.code, 'unknown_property');
+  assert.equal(result.problem.detail.property, 'mediaRef.href');
+});
+
+test('a key whose value is undefined declares nothing, on either side of JSON', () => {
+  // JSON cannot carry `undefined`, so the API never sees such a key, while
+  // `structuredClone` keeps it on the client. Refusing it would let the client
+  // refuse what the server accepts — the drift this walk exists to end.
+  const field = { key: 'a', type: 'enum', label: 'A', options: ['x'] };
+  field.maxLength = undefined;
+  assert.equal(validateCustomFieldDefinitions([field]).ok, true);
+});
+
+test('a stored row carries the three A2 declarations, unchanged', () => {
+  const result = validateCustomFieldDefinitions([
+    {
+      key: 'src',
+      type: 'string',
+      label: 'Source',
+      mediaRef: { label: ' Video ', linkKey: 'watchUrl' },
+    },
+    { key: 'watchUrl', type: 'string', label: 'Watch URL' },
+    {
+      key: 'density',
+      type: 'enum',
+      label: 'Density',
+      options: ['auto', 'compact'],
+      foldUnofferedTo: 'auto',
+    },
+    {
+      key: 'rows',
+      type: 'items',
+      label: 'Rows',
+      itemLabelField: 'title',
+      itemFields: [
+        { key: 'value', type: 'string', label: 'Value' },
+        { key: 'title', type: 'string', label: 'Title' },
+      ],
+    },
+  ]);
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.fields[0].mediaRef, {
+    label: 'Video',
+    linkKey: 'watchUrl',
+  });
+  assert.equal(result.fields[2].foldUnofferedTo, 'auto');
+  assert.equal(result.fields[3].itemLabelField, 'title');
+
+  // A second pass over the stored form is a no-op: what the builder reads back
+  // and posts again is what it posted.
+  const again = validateCustomFieldDefinitions(result.fields);
+  assert.equal(again.ok, true);
+  assert.deepEqual(again.fields, result.fields);
+});
+
+test('an inert A2 declaration is a warning, not a refusal', () => {
+  // Same contract as `foldUnofferedTo` on a non-enum and `mediaRef` on a
+  // non-string: the row is storable, the declaration does nothing, and the boot
+  // report says so.
+  const fields = [
+    {
+      key: 'a',
+      type: 'items',
+      label: 'A',
+      itemLabelField: 'x',
+      itemFields: [],
+    },
+  ];
+  assert.deepEqual(
+    codes(
+      [{ key: 'a', type: 'string', label: 'A', itemLabelField: 'x' }],
+      FILE_JS,
+    ),
+    ['item_label_field_not_items'],
+  );
+  assert.equal(
+    walkFieldDefinitions(fields, FILE_JS).findings.some(
+      (f) => f.code === 'item_label_field_not_items',
+    ),
+    false,
+    'an items field with an unresolvable heading is the other finding',
+  );
 });
 
 test('the boot report renders every finding, errors and warnings apart', () => {
