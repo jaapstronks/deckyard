@@ -41,7 +41,18 @@ describe('markdown import: a fenced csv block becomes a chart', () => {
 
   it('the imported block parses with its header row as column names', () => {
     const slide = mapped(
-      ['# Q', '', '```tsv', 'Quarter\t2023\t2024', 'Q1\t12\t14', 'Q2\t13\t16', '```', '', '---', ''].join('\n'),
+      [
+        '# Q',
+        '',
+        '```tsv',
+        'Quarter\t2023\t2024',
+        'Q1\t12\t14',
+        'Q2\t13\t16',
+        '```',
+        '',
+        '---',
+        '',
+      ].join('\n'),
     )[0];
 
     const parsed = parseChartData({

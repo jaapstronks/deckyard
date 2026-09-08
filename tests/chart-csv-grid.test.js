@@ -218,7 +218,7 @@ describe('applyHeaderPaste (header-cell paste placement)', () => {
     assert.deepEqual(next.body, [['Jan', '5']]);
   });
 
-  it('top-left paste reads the block\'s first row as the column names', () => {
+  it("top-left paste reads the block's first row as the column names", () => {
     // You pasted onto the header, so the block is read as one (D83). A
     // headerless block belongs in a body cell - where you paste is what it is.
     const next = applyHeaderPaste({
