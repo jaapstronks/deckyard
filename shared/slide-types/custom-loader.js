@@ -37,8 +37,9 @@ const CUSTOM_SLIDE_TYPES_DIR = join(REPO_ROOT, 'custom', 'slide-types');
  *
  * @param {object} [options]
  * @param {string[]} [options.globalFieldKeys] - `GLOBAL_SLIDE_FIELD_KEYS`,
- *   passed in by the registry. It cannot be imported here: the registry reaches
- *   this module mid-evaluation, so the import would be a cycle.
+ *   passed in by the registry. Supplying them says the definitions here are
+ *   RAW, so one of those keys is a shadow of an injected field; a composed
+ *   definition carries them by right and is checked without the list.
  * @returns {Promise<Object>} Map of type-name -> slide type definition
  */
 export async function loadCustomSlideTypes({ globalFieldKeys = [] } = {}) {

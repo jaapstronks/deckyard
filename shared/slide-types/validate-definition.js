@@ -175,10 +175,11 @@ function checkRootClass(def, who, out) {
  *   bare filename for a file-JS type). Used in the messages.
  * @param {object} [options]
  * @param {string[]} [options.globalFieldKeys] - `GLOBAL_SLIDE_FIELD_KEYS` from
- *   the registry. Passed in rather than imported: `registry.js` reaches the
- *   loader (and through it this module) mid-evaluation, so importing back into
- *   it would be a cycle. Omit it and the shadowing warning is simply not
- *   produced; the keys are also accepted as valid `inline` references.
+ *   `compose.js`. Passed in rather than imported because supplying it is a
+ *   claim about the definition: a RAW one that declares such a key shadows an
+ *   injected field, while a COMPOSED one carries it by right. Omit it and the
+ *   shadowing warning is simply not produced; the keys are also accepted as
+ *   valid `inline` references.
  * @param {string[]} [options.coreNames] - core registry keys. Supply them to
  *   get the "this name shadows core" warning (the scaffolder does; the loader
  *   deliberately does not — see the module header).

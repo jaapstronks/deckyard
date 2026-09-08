@@ -30,6 +30,7 @@
  */
 
 import { SLIDE_TYPES } from '../../shared/slide-types.js';
+import { composeSlideType } from '../../shared/slide-types/compose.js';
 import { escapeHtml } from '../../shared/slide-types/helpers.js';
 import {
   createTemplateSlideRenderer,
@@ -43,6 +44,14 @@ const log = createLogger('custom-slide-type-runtime');
 
 /**
  * Convert a custom slide type record into a runtime slide type definition.
+ *
+ * The result goes through {@link composeSlideType} — the same composition the
+ * registry runs on core and file-JS types — so a DB type reaches the inspector
+ * with the global slide fields (background, a11y, theme logo) and the i18n key
+ * annotations its neighbours have. Until B240 it did not, and the difference
+ * was invisible in the render (`renderSlideHtml` injects those layers from the
+ * content, whatever the schema says) but plain in the editor: no background
+ * picker, no accessibility section, no logo control on a custom type.
  *
  * @param {Object} ct - Custom slide type record from the database
  * @returns {Object} Runtime slide type definition (label, fields, defaults, renderHtml)
@@ -88,7 +97,7 @@ export function toRuntimeSlideType(ct) {
     };
   }
 
-  return def;
+  return composeSlideType(customSlideTypeKey(ct), def);
 }
 
 /**
