@@ -39,7 +39,7 @@ The vocabulary is six shelves, defined in `shared/slide-types/authoring-groups.j
 | `group`       | What it means                                                           | Members |
 | ------------- | ----------------------------------------------------------------------- | ------- |
 | `basic`       | the handful most decks are actually built from — familiarity, not shape | 5       |
-| `media`       | carries an image, video or embedded page                                | 7       |
+| `media`       | carries an image, video or embedded page                                | 8       |
 | `layouts`     | a structured arrangement of blocks, cards or steps                      | 4       |
 | `data`        | argues with figures, comparisons or diagrams                            | 8       |
 | `interaction` | the audience answers, or the slide runs on a clock                      | 6       |
@@ -64,8 +64,9 @@ picker is asking _what am I putting on this slide_. Deriving one from the other
 gives:
 
 - **`media` disappears.** `image-slide`, `image-text-slide`, `video-slide` and
-  `embed-slide` are `singleton`; `gallery-slide`, `logo-wall-slide` and
-  `team-cards-slide` are `collection`. Nothing reconstructs the shelf — the
+  `embed-slide` are `singleton`; `gallery-slide`, `image-set-slide`,
+  `logo-wall-slide` and `team-cards-slide` are `collection`. Nothing
+  reconstructs the shelf — the
   facet that would is `payload`, which is deliberately unbuilt for want of a
   consumer.
 - **`data` scatters** across five buckets.

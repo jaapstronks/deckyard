@@ -90,7 +90,7 @@ rule exists to stop exactly this.
 
 | Property                    | image-slide                                                         | image-text                                                        | content-columns    | gallery           | team-cards  | logo-wall | quote                                                   |
 | --------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------ | ----------------- | ----------- | --------- | ------------------------------------------------------- |
-| `imageRole` (a11y exposure) | S `content`                                                         | S `content` (all cells)                                           | —                  | —                 | —           | —         | —                                                       |
+| `imageRole` (a11y exposure) | S `content`                                                         | S `content` (one frame)                                           | —                  | —                 | —           | —         | —                                                       |
 | `background` (slide bg)     | S                                                                   | S (+ `imageBackground` = _different_ axis: image-area bg)         | S                  | S                 | S           | S         | S                                                       |
 | **structural `layout`**     | ❌ none (legacy `layout` was fit; split into `fit`+`bleed`, step 3) | S `split/corner` (toolbar chip); image-set: S `beside/top/bottom` | ❌ (`columnCount`) | S `layout` (grid) | —           | —         | —                                                       |
 | media collection            | flat `image`                                                        | flat `image` (one image; 2–3 images are image-set's `images[]`)   | flat `col{n}Image` | `images[]`        | `members[]` | `logos[]` | flat `authorImage{n}` + item `quotes[i].authorImage` 🚩 |
@@ -220,11 +220,15 @@ imageDefaults = {
 > `content-columns`) — the same spread the field-name rule cleans up. Moving to
 > type defaults without enforcing this just re-nests the spread in a new place.
 
-> **Fit is live since step 2b** (PR #184): an image-text item without its own
-> `fit` follows `imageDefaults.fit`, and the fold in `ensureImageTextImages`
-> deliberately drops a stored base fit that equals the default instead of
-> stamping it onto the items — exactly to preserve the empty/explicit signal
-> described above. `focus` was already live as a type default.
+> **Fit is live since step 2b** (PR #184): an image without its own `fit`
+> follows `imageDefaults.fit`. Today that is image-set's `images[i].fit`
+> (`resolveImageSetCell`) and image-text's flat `fit`
+> (`resolveImageTextImage`), each resolving own value → type default and
+> nothing in between. Step 2b's fold in `ensureImageTextImages` deliberately
+> dropped a stored base fit that equalled the default instead of stamping it
+> onto the items — exactly to preserve the empty/explicit signal described
+> above; the funnel deletes the plural keys outright since D100, so no fold is
+> left to run. `focus` was already live as a type default.
 
 ### The fit/bleed split (part of `ImageRef`)
 
@@ -270,12 +274,17 @@ the field is cheaper.
 ### Conversion becomes lossless
 
 > ✅ **Shipped with step 3 (PR #185).** The image-slide → image-text seam
-> resolves fit through `resolveImageSlideImage` and carries `bleed` on
-> `images[0]`; the image-text item sanitizer preserves it.
+> resolves fit through `resolveImageSlideImage`. It carried `bleed` on
+> `images[0]` until D100 (2026-09-09), which now **drops** it: image-text
+> renders no edge-to-edge frame, and a carried-but-unrendered key is a hidden
+> field. The drop is declared in `CONSUMED_SOURCE_KEYS`
+> (`shared/slide-types/convert.js`), so it is a deliberate loss the confirm
+> does not warn about, and `bleed` is stored on neither type after the
+> conversion.
 
 Before the split, conversion demoted both `full` and `bleed` to `cover`; the
-edge-to-edge distinction was lost. Now `bleed` simply travels as a property
-image-text does not yet render, and the reverse direction
+edge-to-edge distinction was lost. It is still lost — but declared rather than
+silent, which is the difference D100 was after. The reverse direction
 (image-text → image-slide, currently not offered) becomes worth building — there
 is nothing left to guess.
 
@@ -288,8 +297,12 @@ steps converge on the `ImageRef` shape above — migrate the shape, not each
 property.
 
 1. ~~**Centralize precedence.**~~ ✅ **Shipped — PR #182 (2026-07-20).** One
-   `resolveImageTextCell(content, idx)` is the single read authority (render +
-   canvas drag + inspector). Pure refactor, render byte-identical.
+   `resolveImageTextCell(content, idx)` was the single read authority (render +
+   canvas drag + inspector). Pure refactor, render byte-identical. D100 split
+   the type in two and the authority with it: `resolveImageTextImage(content)`
+   (`types/image-text-slide/image.js`) for the one flat image, and
+   `resolveImageSetCell(content, idx)`
+   (`types/image-set-slide/images.js`) for the 2–3 of a set.
 2. ~~**De-duplicate image-text S + I → `ImageRef` (focus + alt).**~~ ✅ **Shipped
    — datamodel step 2, PR #183 merged (2026-07-20).** `ensureImageTextImages` folds the
    slide-level `alt`/`focusX`/`focusY` into `images[0]` and clears them; the
@@ -314,16 +327,20 @@ property.
    then-render-neutral fold in `ensureImageTextImages` fans a _deviating_ base
    fit out to the items and simply drops a default-equal one, and the
    slide-level fit control is retired (images manager owns fit, silent-default
-   UX). Legacy `imageFit` stays a read-only render fallback for un-migrated
-   decks, like the flat `image`.
+   UX). Legacy `imageFit` stayed a read-only render fallback for un-migrated
+   decks until D100; the v14 → v15 funnel step
+   (`cutImageTextPluralLayouts`) deletes it — along with `images`,
+   `textColumns`, `altNl` and `altEn` — from every image-text slide, so it is
+   no longer read anywhere.
 3. ~~**Split image-slide `layout` → `ImageRef.fit` + `bleed`.**~~ ✅ **Shipped —
    PR #185 (2026-07-20).** `resolveImageSlideImage` (own value → legacy
    `layout` → `IMAGE_SLIDE_IMAGE_DEFAULTS`) is the single read authority;
    `ensureImageSlideImage` folds `layout` on edit (default-equal values
    dropped, not stamped); the renderer emits orthogonal `is-fit-*`/`is-bleed`
    classes (CSS restructured per axis); `contain + bleed` is expressible and
-   renders; conversion to image-text is lossless (`bleed` travels on the
-   ImageRef). `validateSlide` gained a boolean field type for `bleed`.
+   renders; conversion to image-text carries the ImageRef (`bleed` travelled on
+   it until D100 dropped it — see "Conversion becomes lossless" above).
+   `validateSlide` gained a boolean field type for `bleed`.
 4. ~~**Normalize content-columns `col{n}*` → `ImageRef`.**~~ ✅ **Shipped —
    PR #186 (2026-07-20).** `resolveContentColumnImage(content, n)` is the
    single read authority (own value → `CONTENT_COLUMNS_IMAGE_DEFAULTS`); the
@@ -339,8 +356,10 @@ property.
 through a per-type resolve authority, every default is lookupable in the type
 definition, and the remaining record-level differences are storage shapes, not
 semantics. What deliberately remains outside this track: the `team-cards`
-`imageFocusX/Y` naming divergence, quote's portrait S+I split, and image-text
-not yet _rendering_ `bleed` (it travels on the ImageRef).
+`imageFocusX/Y` naming divergence and quote's portrait S+I split. The third
+item on this list used to be image-text not _rendering_ `bleed` while carrying
+it; D100 closed that the other way, by dropping `bleed` at the conversion and
+storing it on neither type.
 
 The editing-surface UI work (`docs/reference/editing-surfaces.md`) sits on top of
 step 1-2: once "This image" reads a single per-element `ImageRef`, the tab split

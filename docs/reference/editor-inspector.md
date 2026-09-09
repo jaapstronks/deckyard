@@ -247,21 +247,25 @@ there is no tab bar - just the slide form (identical to the pre-tab pane).
   most image types use the **shared image-element card**
   (`editor-form/image-element-card.js`: replace/delete, alt, fit where the type
   has one, the 3x3 focus grid as the precise fallback to the canvas drag, and
-  per-item metadata like a LinkedIn URL); image-text keeps its own per-image
+  per-item metadata like a LinkedIn URL); image-set keeps its own per-image
   manager (Images section) plus role + layout; icon-card-grid → just the
-  selected card's icon + link.
+  selected card's icon + link. image-text has no entry of its own: since D100 it
+  carries one flat image, which the shared card covers in full.
 - **Scope:** every image type carries a "This image" tab - image-slide,
-  image-text, gallery, team-cards, content-columns (per selected column),
-  logo-wall, quote portraits - plus icon-cards. The shared card is driven by the
-  type's inline descriptor (media/focus/fit), so it writes the same focusX/Y
-  keys the canvas focal-point drag writes: one value, two representations.
+  image-text, image-set, gallery, team-cards, content-columns (per selected
+  column), logo-wall, quote portraits - plus icon-cards. The shared card is
+  driven by the type's inline descriptor (media/focus/fit), so it writes the
+  same focusX/Y keys the canvas focal-point drag writes: one value, two
+  representations.
 - **Who offers what is declared, not switched.** A type says which sub-element
   kinds it offers, and how many, as `elementTab` in its own
   `shared/slide-types/types/<name>/inline-edit.js`, beside `inspectorKeeps`.
   Three shapes cover every case: `{ list: 'images' }` (one tab per item of that
   collection), `{ range: [1, 3] }` (a fixed index window - quote's author
-  portraits), `{ any: true }` (image-set, whose `images[]` is padded to its
-  minimum on demand). Resolve it through `slideTypeElementTab()` /
+  portraits, and image-set's `[0, 2]`), `{ any: true }` (every index, for a
+  type whose ceiling is not knowable up front - no core type declares it, and
+  it is kept for forks and custom types). Resolve it through
+  `slideTypeElementTab()` /
   `elementTabOffersIndex()` in `shared/slide-types/inline-edit-companions.js`;
   it travels on `GET /api/slide-types`, so a fork type is heard too. A type
   that declares nothing offers no element tab, which is the answer for most.
@@ -370,7 +374,7 @@ Column semantics:
   empty list is a real answer: the canvas covers everything.
 
 One limit worth knowing: the per-type widgets in `renderInspectorExtrasByType`
-(the image-text "Images" section, per-column image settings, icon-card icon +
+(the image-set "Images" section, per-column image settings, icon-card icon +
 link) route imperatively rather than through a declaration, so a collection they
 render can still show up in the bulk-modal column. That is a property of the
 routing, not of this table - the widgets are the open half of the same
