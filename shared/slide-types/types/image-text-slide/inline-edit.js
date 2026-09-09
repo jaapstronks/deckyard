@@ -9,59 +9,44 @@
  * Descriptor grammar: client/views/editor/inline-edit/descriptors.js.
  */
 
-import { resolveImageTextCell, IMAGE_TEXT_IMAGE_DEFAULTS } from './images.js';
+import { resolveImageTextImage } from './image.js';
 
 /** @type {Object} InlineDescriptor for image-text-slide. */
 export const inlineEdit = {
   ghosts: [{ field: 'caption', anchor: '.frame', pos: 'append' }],
-  // images[] media (phase 2): every cell (filled <img> or empty
-  // placeholder) carries data-inline-photo="<idx>"; clicking mutates
-  // images[idx] (src + alt) in place. Legacy flat decks migrate to
-  // images[] when the editor forms render (ensureImageTextImages); the
-  // inline editor pads missing items up to the clicked cell. Per-image
-  // fit/focus and reordering stay in the images section.
+  // Flat single image (D100): clicking the frame sets image + alt in-slide.
+  // The image IS the element, so the shared "This image" card (element tab)
+  // carries its ImageRef axes; the role is slide-wide and renders via the
+  // inspector's keeps loop.
   media: {
-    list: 'images',
     photoSelector: '.frame [data-inline-photo]',
-    imageField: 'src',
+    imageField: 'image',
     altField: 'alt',
   },
-  // Draggable focal point on each filled image (crop/cover mode only). Writes
-  // the item's own focusX/focusY (the same keys the renderer reads once an
-  // item has its own focus), so a drag localizes the crop to that cell. Fit
-  // is the item's `fit` (falling back to the type default via the resolver).
+  // Draggable focal point on the image, but only in cover mode - contain (no
+  // crop) has nothing to move, so the point stays hidden there and the element
+  // card offers the alignment picker instead (measured against
+  // containSelector). Effective fit comes from resolveImageTextImage, the
+  // single authority the render shares.
   focus: {
     xField: 'focusX',
     yField: 'focusY',
-    // Effective fit and crop-point both come from resolveImageTextCell (the
-    // single authority render shares), so the handle starts where the crop
-    // actually is - cell 0 without its own focus reads the slide-level focus.
-    // Writes always localize to the item, which then wins on the next render.
-    cropMode: (slide, idx) => resolveImageTextCell(slide?.content, idx).fit,
-    get: (slide, idx) => {
-      const { focusSource } = resolveImageTextCell(slide?.content, idx);
-      return { x: focusSource.focusX, y: focusSource.focusY };
-    },
+    cropMode: (slide) => resolveImageTextImage(slide?.content).fit,
     containSelector:
       '.preview-panel .thumb.is-clickable-preview .slide-image-text .frame.is-fit-contain',
   },
-  // Cover/Contain toggle on each filled image. Writes the item's own `fit`
-  // (canonical since step 2b), so a toggle localizes to that cell. The
-  // fallback seeds the initial state for an item without its own fit: the
-  // legacy slide-level `imageFit` on an un-migrated deck, else the type
-  // default - same chain as resolveImageTextCell.
+  // The canonical fit axis, declared here rather than as a form field because
+  // it is a property of the image element: one declaration, read by the canvas
+  // affordances and by the element card.
   fit: {
     field: 'fit',
-    fallback: (slide) =>
-      slide?.content?.imageFit || IMAGE_TEXT_IMAGE_DEFAULTS.fit,
+    fallback: (slide) => resolveImageTextImage(slide?.content).fit,
   },
   formText: ['title', 'caption', 'body'],
   convert: {
-    // × on the ONLY empty placeholder removes the reserved image area =
-    // become a plain text slide (with an image set the placeholder doesn't
-    // render, so removal stays a deliberate two-step). Multi-cell layouts
-    // (duo/rows) manage their cells in the images section instead - no
-    // convert affordance per cell.
+    // × on the empty placeholder removes the reserved image area = become a
+    // plain text slide (with an image set the placeholder doesn't render, so
+    // removal stays a deliberate two-step).
     removeMedia: {
       toType: 'content-slide',
       selector:
@@ -75,11 +60,11 @@ export const inlineEdit = {
  * rest of the slide.
  *
  * `layout` (structural variant) is intentionally NOT kept: the toolbar
- * "Layout" chip is its canonical control in the inspector. textColumns /
- * imageSide stay as precise, distinctly-named sub-settings. `imageFit` is
- * intentionally absent since datamodel step 2b: fit is a per-image ImageRef
- * property (images manager / "This image"), no longer a writable slide-level
- * setting.
+ * "Layout" chip is its canonical control in the inspector. imageSide /
+ * imageWidth stay as precise, distinctly-named sub-settings. `fit` is absent
+ * because it is an ImageRef property of the image ELEMENT, declared on the
+ * descriptor above and rendered by the shared "This image" card — listing it
+ * here would render it a second time in the slide form.
  *
  * `asideVariant` / `asideText`: the aside inset (shared/slide-types/aside-field.js).
  * Its body is click-to-edit on the canvas once it exists, but only once — the
@@ -90,7 +75,6 @@ export const inlineEdit = {
 export const inspectorKeeps = [
   'imageRole',
   'density',
-  'textColumns',
   'imageSide',
   'imageWidth',
   'imageBackground',
@@ -100,9 +84,8 @@ export const inspectorKeeps = [
 ];
 
 /**
- * Every image cell gets a tab: `images[]` is padded to the layout's cell count
- * on demand, so a selection can legitimately point past the stored items.
+ * The one image lives at index 0 — there is no collection to walk.
  * Grammar: shared/slide-types/inline-edit-companions.js.
  * @type {Object}
  */
-export const elementTab = { image: { any: true } };
+export const elementTab = { image: { range: [0, 0] } };

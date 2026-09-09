@@ -117,7 +117,11 @@ function renderSlideReadableHtml(slide, lang) {
       : '';
   }
 
-  if (type === 'content-slide' || type === 'image-text-slide') {
+  if (
+    type === 'content-slide' ||
+    type === 'image-text-slide' ||
+    type === 'image-set-slide'
+  ) {
     const body = String(c?.body || '').trim();
     return body ? `<div class="md">${markdownToSafeHtml(body)}</div>` : '';
   }

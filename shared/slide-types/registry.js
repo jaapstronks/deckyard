@@ -4,6 +4,7 @@ import contentSlide from './types/content-slide.js';
 import iconCardGridSlide from './types/icon-card-grid-slide/index.js';
 import imageSlide from './types/image-slide.js';
 import imageTextSlide from './types/image-text-slide.js';
+import imageSetSlide from './types/image-set-slide.js';
 import listSlide from './types/list-slide.js';
 import endSlide from './types/end-slide.js';
 import payoffSlide from './types/payoff-slide.js';
@@ -72,6 +73,7 @@ const CORE_SLIDE_TYPES = {
   'list-slide': listSlide,
   'kpi-metrics-slide': kpiMetricsSlide,
   'image-text-slide': imageTextSlide,
+  'image-set-slide': imageSetSlide,
   'video-slide': videoSlide,
   'team-cards-slide': teamCardsSlide,
   'logo-wall-slide': logoWallSlide,

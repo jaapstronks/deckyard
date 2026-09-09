@@ -156,6 +156,20 @@ Then, in rough dependency order:
    decided yet stays out of the funnel entirely — it is a numbered migration
    someone aims, or a `scripts/` one-off someone runs.
 
+   **A split is a conversion too, and takes the same route.** The v14 → v15 step
+   (`cutImageTextPluralLayouts`) is the worked example: `image-text-slide`
+   carried two schemas under one id — `duo`/`row-top`/`row-bottom` read
+   `images[0..2]`, `split`/`corner` read one image — and D100 resolved that by
+   type, so the plural layouts became `image-set-slide` and image-text became the
+   singleton in `image-slide`'s spelling. No type is removed, so there is no
+   record in `removed.js` to derive anything from; the step names both types
+   itself, keys on the retired shape (a plural `layout`, or an own `images`,
+   `imageFit`, `textColumns`, `altNl`, `altEn`) and drops what the singleton has
+   no home for — the images past the first on a `split`/`corner` slide, which
+   D100 accepts by name. It is the same argument as v11 → v12: the plural shape
+   sits in version snapshots, library rows and exported decks on every backend,
+   and the funnel is the one path that reaches all of them.
+
    **And a decided conversion enters the funnel only if it is a normaliser**:
    keyed on a shape valid content cannot have, so it is a no-op on every deck
    the current writers produce. The funnel runs every step on every read (no

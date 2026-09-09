@@ -7,17 +7,14 @@ import {
   IMAGE_SLIDE_IMAGE_DEFAULTS,
 } from '../shared/slide-types/types/image-slide/image.js';
 import { convertSlideToType } from '../shared/slide-types/convert.js';
-import {
-  ensureImageTextImages,
-  imageTextImageItems,
-} from '../shared/slide-types/types/image-text-slide/images.js';
+import { resolveImageTextImage } from '../shared/slide-types/types/image-text-slide/image.js';
 import { validateSlide } from '../shared/slide-types/presentation.js';
 
 /**
  * Datamodel-normalisation step 3: image-slide's conflated `layout` splits
  * into the ImageRef axes `fit` + `bleed`. These tests pin the axis classes
  * the render emits, the legacy mapping (full/bleed/centered), the editor
- * fold, and the lossless travel of `bleed` through the conversion seam.
+ * fold, and what each axis does at the conversion seam.
  */
 
 const DEF = SLIDE_TYPES['image-slide'];
@@ -172,9 +169,14 @@ test('resolve: own value -> legacy layout -> type default, per axis', () => {
   );
 });
 
-// ---- Conversion: bleed travels losslessly to image-text ---------------------
+// ---- Conversion: fit travels to image-text, bleed does not ------------------
 
-test('convert: bleed image-slide -> image-text carries bleed on the ImageRef', () => {
+test('convert: bleed image-slide -> image-text drops bleed and keeps the fit', () => {
+  // The two axes part ways at the seam. `fit` means the same on image-text and
+  // travels; `bleed` has no renderer there, and a carried-but-unrendered key is
+  // a hidden field, so it is dropped rather than stored where nothing reads it
+  // (D100). The seam declares it consumed, so the drop raises no confirm - see
+  // tests/image-ref-round-trip.test.js.
   const src = {
     id: 's1',
     type: 'image-slide',
@@ -186,19 +188,13 @@ test('convert: bleed image-slide -> image-text carries bleed on the ImageRef', (
     },
   };
   const next = convertSlideToType(src, 'image-text-slide', { lang: 'nl' });
+  assert.equal(next.content.bleed, undefined, 'bleed does not travel');
   assert.equal(
-    next.content.images[0].bleed,
-    true,
-    'bleed travels, not guessed away',
-  );
-  assert.equal(
-    next.content.images[0].fit ?? '',
+    next.content.fit ?? '',
     '',
-    'cover = default, so no fit written',
+    'bleed resolves to cover = default, so no fit written',
   );
-  // The image-text item sanitizer keeps the property through editor passes.
-  ensureImageTextImages(next.content);
-  assert.equal(imageTextImageItems(next.content)[0].bleed, true);
+  assert.equal(resolveImageTextImage(next.content).fit, 'cover');
 });
 
 // ---- Validation: the boolean field type -------------------------------------

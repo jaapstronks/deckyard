@@ -13,8 +13,10 @@ image type's fit / focus / alt / role is stored or rendered.
 
 > **One concept, one field name, across every slide type:** `fit`, `focusX` /
 > `focusY`, `alt`, `bleed`, `role`. **`layout` means structure only**
-> (split / corner / duo / rows / grid) and never fit. A new image-bearing slide
+> (split / corner / beside / rows / grid) and never fit. A new image-bearing slide
 > type uses these names, or documents in its type definition why it must not.
+
+> **One image, one level (D100, 2026-09-09).** A `singleton` type stores its one image as the flat ImageRef on the slide (`image`, `alt`, `fit`, `focusX`, `focusY`), the way `image-slide` does; a `collection` type stores each image as an item in its array. `image-text-slide` is the singleton, `image-set-slide` (2–3 images with one story) the collection. The two never share a shape, which is what makes the S/I column below a fact about the type rather than about its history.
 
 The whole confusion this document exists to end is that `layout` carried
 two unrelated axes under one word: in `image-slide` it _was_ the fit/crop axis
@@ -44,12 +46,13 @@ inspector write path that disagrees with the render read path.
 
 ### fit — "how the image fills its frame" 🚩 (the core mess)
 
-| Type                                     | Level                             | Field(s)                                                           | Render reads                                                                                                                               | Inspector writes                                                                                                               | Default                                                                                |
-| ---------------------------------------- | --------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
-| image-slide                              | S (single image = the element) ✅ | `fit` + `bleed` canonical (split from `layout`, step 3)            | `resolveImageSlideImage` → `is-fit-*`/`is-bleed` classes; legacy `layout` is a read-only fallback, folded on edit                          | fit/bleed on the shared "This image" element card, declared via the inline descriptor's `fit`/`bleed` axes (silent-default UX) | `cover`/`false` (`IMAGE_SLIDE_IMAGE_DEFAULTS`, live)                                   |
-| image-text                               | **I** (was S+I) ✅                | item `fit` canonical                                               | every `.frame` carries its effective `is-fit-*` class (one mechanism); legacy `imageFit` is a read-only fallback, folded on edit (step 2b) | element card (inspector) + the `editor: 'image-fit'` item widget in the bulk modal's collection editor                         | `cover` (type default `IMAGE_TEXT_IMAGE_DEFAULTS.fit`, live)                           |
-| content-columns                          | N (resolved to ImageRef) ✅       | `col{n}ImageFit`                                                   | `resolveContentColumnImage` (own value → type default, step 4)                                                                             | silent-default fit controls (form + inspector + element card)                                                                  | `cover` (`CONTENT_COLUMNS_IMAGE_DEFAULTS.fit`, live — no longer stamped into defaults) |
-| gallery / team-cards / logo-wall / quote | —                                 | no `fit` (cover fixed, or derived from `imageShape`/`imageAspect`) | —                                                                                                                                          | —                                                                                                                              | —                                                                                      |
+| Type                                     | Level                             | Field(s)                                                           | Render reads                                                                                                                             | Inspector writes                                                                                                               | Default                                                                                |
+| ---------------------------------------- | --------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| image-slide                              | S (single image = the element) ✅ | `fit` + `bleed` canonical (split from `layout`, step 3)            | `resolveImageSlideImage` → `is-fit-*`/`is-bleed` classes; legacy `layout` is a read-only fallback, folded on edit                        | fit/bleed on the shared "This image" element card, declared via the inline descriptor's `fit`/`bleed` axes (silent-default UX) | `cover`/`false` (`IMAGE_SLIDE_IMAGE_DEFAULTS`, live)                                   |
+| image-text                               | S (single image = the element) ✅ | `fit` canonical (flat, since D100)                                 | `resolveImageTextImage` → the one `.frame` carries its effective `is-fit-*` class; no legacy fallback, the schema funnel (v15) folded it | fit on the shared "This image" element card, declared via the inline descriptor's `fit` axis                                   | `cover` (type default `IMAGE_TEXT_IMAGE_DEFAULTS.fit`, live)                           |
+| image-set                                | **I** ✅                          | item `fit` canonical                                               | `resolveImageSetCell` → every `.frame` carries its effective `is-fit-*` class (one mechanism); no slide-level fit exists on this type    | element card (inspector) + the `editor: 'image-fit'` item widget in the bulk modal's collection editor                         | `cover` (type default `IMAGE_SET_IMAGE_DEFAULTS.fit`, live)                            |
+| content-columns                          | N (resolved to ImageRef) ✅       | `col{n}ImageFit`                                                   | `resolveContentColumnImage` (own value → type default, step 4)                                                                           | silent-default fit controls (form + inspector + element card)                                                                  | `cover` (`CONTENT_COLUMNS_IMAGE_DEFAULTS.fit`, live — no longer stamped into defaults) |
+| gallery / team-cards / logo-wall / quote | —                                 | no `fit` (cover fixed, or derived from `imageShape`/`imageAspect`) | —                                                                                                                                        | —                                                                                                                              | —                                                                                      |
 
 Every fit now reads through a per-type resolve authority with a config-anchored
 default. The storage _names_ still differ (`fit` vs `col{n}ImageFit` — the
@@ -63,7 +66,8 @@ resolved: `bleed` is its own orthogonal axis.
 | Type            | Level                       | Field(s)                                            | Render precedence                                                                                                |
 | --------------- | --------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | image-slide     | S                           | `focusX`/`focusY`                                   | `content` (`image-slide.js:256`)                                                                                 |
-| image-text      | **I** (was S+I) ✅          | item `focusX/Y` canonical                           | folded to `images[i]` on edit (step 2); slide-level `focusX/Y` is now a read-only fallback for un-migrated decks |
+| image-text      | S (since D100)              | `focusX`/`focusY`                                   | `resolveImageTextImage` (flat, like image-slide)                                                                 |
+| image-set       | **I** ✅                    | item `focusX/Y` canonical                           | item; no slide-level focus exists on this type                                                                   |
 | content-columns | N (resolved to ImageRef) ✅ | `col{n}ImageFocusX/Y`                               | `resolveContentColumnImage`; the stamped 50/50 defaults are dropped on edit (step 4), empty = type default focus |
 | gallery         | I                           | `images[i].focusX/Y`                                | item                                                                                                             |
 | team-cards      | I                           | `members[i].`**`imageFocusX/Y`** 🚩 _name diverges_ | item                                                                                                             |
@@ -73,22 +77,23 @@ rule exists to stop exactly this.
 
 ### alt 🚩
 
-| Type                             | Level              | Field(s)                                                               | Render precedence                                                                                                                  |
-| -------------------------------- | ------------------ | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| image-slide                      | S                  | `alt` (+`altNl`/`altEn`)                                               | `content` (`image-slide.js:242-252`)                                                                                               |
-| image-text                       | **I** (was S+I) ✅ | item `alt` canonical                                                   | folded to `images[i]` on edit (step 2); slide `alt`/`altNl`/`altEn` are read-only fallbacks (item alt is translated as an itemKey) |
-| content-columns                  | N                  | `col{n}Alt`                                                            | per column                                                                                                                         |
-| gallery / team-cards / logo-wall | I                  | `images[i]`/`members[i]`/`logos[i]`.`alt`                              | item (the numbered mirrors went with schema v7 -> v8)                                                                              |
-| quote                            | **S + I** 🚩       | primary `authorImage{n}Alt` (flat) + extras `quotes[i].authorImageAlt` | flat for portraits 1-2 `quote-slide.js:85-99`; item for extra quotes `:108-118`                                                    |
+| Type                             | Level          | Field(s)                                                               | Render precedence                                                                                         |
+| -------------------------------- | -------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| image-slide                      | S              | `alt` (+`altNl`/`altEn`)                                               | `content` (`image-slide.js:242-252`)                                                                      |
+| image-text                       | S (since D100) | `alt`                                                                  | `resolveImageTextImage`; the vestigial `altNl`/`altEn` were folded and dropped by the schema funnel (v15) |
+| image-set                        | **I** ✅       | item `alt` canonical                                                   | item (translated as an itemKey)                                                                           |
+| content-columns                  | N              | `col{n}Alt`                                                            | per column                                                                                                |
+| gallery / team-cards / logo-wall | I              | `images[i]`/`members[i]`/`logos[i]`.`alt`                              | item (the numbered mirrors went with schema v7 -> v8)                                                     |
+| quote                            | **S + I** 🚩   | primary `authorImage{n}Alt` (flat) + extras `quotes[i].authorImageAlt` | flat for portraits 1-2 `quote-slide.js:85-99`; item for extra quotes `:108-118`                           |
 
 ### role, background, structural layout, media collection
 
-| Property                    | image-slide                                                         | image-text                                                | content-columns    | gallery           | team-cards  | logo-wall | quote                                                   |
-| --------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------- | ------------------ | ----------------- | ----------- | --------- | ------------------------------------------------------- |
-| `imageRole` (a11y exposure) | S `content`                                                         | S `content` (all cells)                                   | —                  | —                 | —           | —         | —                                                       |
-| `background` (slide bg)     | S                                                                   | S (+ `imageBackground` = _different_ axis: image-area bg) | S                  | S                 | S           | S         | S                                                       |
-| **structural `layout`**     | ❌ none (legacy `layout` was fit; split into `fit`+`bleed`, step 3) | S `split/corner/duo/rows` (toolbar chip)                  | ❌ (`columnCount`) | S `layout` (grid) | —           | —         | —                                                       |
-| media collection            | flat `image`                                                        | **`images[]`** (legacy flat → item 0)                     | flat `col{n}Image` | `images[]`        | `members[]` | `logos[]` | flat `authorImage{n}` + item `quotes[i].authorImage` 🚩 |
+| Property                    | image-slide                                                         | image-text                                                        | content-columns    | gallery           | team-cards  | logo-wall | quote                                                   |
+| --------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------ | ----------------- | ----------- | --------- | ------------------------------------------------------- |
+| `imageRole` (a11y exposure) | S `content`                                                         | S `content` (all cells)                                           | —                  | —                 | —           | —         | —                                                       |
+| `background` (slide bg)     | S                                                                   | S (+ `imageBackground` = _different_ axis: image-area bg)         | S                  | S                 | S           | S         | S                                                       |
+| **structural `layout`**     | ❌ none (legacy `layout` was fit; split into `fit`+`bleed`, step 3) | S `split/corner` (toolbar chip); image-set: S `beside/top/bottom` | ❌ (`columnCount`) | S `layout` (grid) | —           | —         | —                                                       |
+| media collection            | flat `image`                                                        | flat `image` (one image; 2–3 images are image-set's `images[]`)   | flat `col{n}Image` | `images[]`        | `members[]` | `logos[]` | flat `authorImage{n}` + item `quotes[i].authorImage` 🚩 |
 
 `imageRole` and `background` are **uniformly slide-level** — they do not exhibit
 the smell. Only `fit`, `focus`, `alt` (and the portrait `image` in quote) do.
@@ -120,7 +125,7 @@ target model says the flat/numbered/array duality should dissolve.
 Until PR #182 there was no single authority for "item vs slide wins": each
 `renderHtml` re-derived the rule inline, and the canvas focal drag and inspector
 each re-derived their own copy. **Step 1 (#182) centralized the read** into
-`resolveImageTextCell(content, idx)` in `shared/slide-types/types/image-text-slide/images.js`
+`resolveImageTextImage(content)` in `shared/slide-types/types/image-text-slide/image.js`
 — render, the canvas focal-point drag and the inspector's effective-fit all read
 through it, so the three can no longer drift.
 
@@ -182,7 +187,7 @@ freezes the deck against a future default change and erases the empty/explicit
 signal).
 
 Each image-bearing type therefore declares an `imageDefaults` bundle, e.g.
-image-text (`IMAGE_TEXT_IMAGE_DEFAULTS` in `shared/slide-types/types/image-text-slide/images.js`):
+image-text (`IMAGE_TEXT_IMAGE_DEFAULTS` in `shared/slide-types/types/image-text-slide/image.js`):
 
 ```js
 imageDefaults = {
@@ -249,8 +254,7 @@ Use the existing `cover`/`contain` vocabulary (what image-text already stores,
 - **`fit` is one concept, one field, everywhere** — the shared
   `image-element-card` renders the type's allowed fit set and writes `fit`, with
   no per-type branch and no encode/decode shim.
-- **`layout` means structure only** — image-text keeps `split/corner/duo/rows`
-  on the slide (toolbar chip); nothing else calls its fit "layout".
+- **`layout` means structure only** — image-text keeps `split/corner` and image-set `beside/top/bottom` on the slide (toolbar chip); nothing else calls its fit "layout".
 - **`bleed` becomes expressible where it was not**, e.g. `contain + bleed`
   (image fits, frame runs to the edge) — a legitimate state the old three-value
   enum could not represent.

@@ -143,6 +143,20 @@ export const STRUCTURE_VALIDATORS = {
     return issues;
   },
 
+  'image-set-slide': (content) => {
+    const issues = [];
+    if (!Array.isArray(content.images)) {
+      issues.push('Missing images array');
+    } else if (content.images.length < 2 || content.images.length > 3) {
+      issues.push(`images array has ${content.images.length} items, need 2-3`);
+    } else {
+      content.images.forEach((img, i) => {
+        if (!img?.src) issues.push(`images[${i}] missing src`);
+      });
+    }
+    return issues;
+  },
+
   'gallery-slide': (content) => {
     const issues = [];
     if (!Array.isArray(content.images)) {

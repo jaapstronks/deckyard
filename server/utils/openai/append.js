@@ -94,7 +94,7 @@ export async function generateSlidesToAppendFromRawContent(
     }),
     '',
     'Rules:',
-    '- Prefer specialized slide types when they fit (timeline-slide, table-slide, team-cards-slide, logo-wall-slide, poll-slide, likert-slide, likert-slider-slide, quote-slide, list-slide, icon-card-grid-slide, image-text-slide, chart-slide, video-slide, feedback-slide).',
+    '- Prefer specialized slide types when they fit (timeline-slide, table-slide, team-cards-slide, logo-wall-slide, poll-slide, likert-slide, likert-slider-slide, quote-slide, list-slide, icon-card-grid-slide, image-text-slide, image-set-slide, chart-slide, video-slide, feedback-slide).',
     '- But only use a specialized type when the content genuinely has its structure; when unsure, use list-slide or content-slide. Use text-blocks-slide ONLY for a real cause→effect / input→output relationship between rows (its arrows assert causality); for plain or parallel points, use list-slide.',
     '',
     'HARD RULES (avoid falling back to content-slide):',

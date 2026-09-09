@@ -13,7 +13,7 @@
  * Canonical key is `slideBgImage`. `bgImage`/`bgAlt` are a read-only render
  * fallback for un-migrated decks (renderHtml stays pure and never mutates); the
  * editor folds them into `slideBgImage` on edit, mirroring the established
- * `ensureImageSlideImage` / `ensureImageTextImages` pattern. `bgAlt` is dropped
+ * `ensureImageSlideImage` pattern. `bgAlt` is dropped
  * on migration: a full-slide background is decorative (the heading carries the
  * meaning), so the generic `aria-hidden` layer is the correct treatment.
  *

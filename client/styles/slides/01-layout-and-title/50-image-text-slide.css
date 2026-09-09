@@ -65,79 +65,10 @@
   grid-column: 1;
   grid-row: 1;
 }
-/* Duo layout: two images stacked in the media column. The width series and
-   mirroring (is-right) keep applying - the duo only subdivides the media
-   cell, so the split rules above stay in charge of the columns. */
-.slide-image-text.is-layout-duo .split .media {
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-template-rows: 1fr 1fr;
-  gap: 0;
-}
-/* Row layouts: a full-width strip of 2-3 equal-height cells above or below
-   the text. These come after the width rules on purpose (same trick as
-   corner): a row slide keeps its remembered imageWidth, and the later row
-   rules must win the same-specificity fight over the columns. */
-.slide-image-text.is-layout-row-top .split,
-.slide-image-text.is-layout-row-bottom .split {
-  grid-template-columns: 1fr;
-  grid-template-rows: 48fr 52fr;
-}
-.slide-image-text.is-layout-row-top .split.is-right,
-.slide-image-text.is-layout-row-bottom .split.is-right {
-  grid-template-columns: 1fr;
-}
-.slide-image-text.is-layout-row-top .split .media {
-  grid-column: 1;
-  grid-row: 1;
-}
-.slide-image-text.is-layout-row-top .split .copy {
-  grid-column: 1;
-  grid-row: 2;
-}
-.slide-image-text.is-layout-row-bottom .split {
-  grid-template-rows: 52fr 48fr;
-}
-.slide-image-text.is-layout-row-bottom .split .media {
-  grid-column: 1;
-  grid-row: 2;
-}
-.slide-image-text.is-layout-row-bottom .split .copy {
-  grid-column: 1;
-  grid-row: 1;
-}
-/* Rows don't mirror, but a row slide can carry imageSide: right (remembered
-   from a split, or via the mirror toggle). The generic split mirror rule
-   (02-content-and-media/10-image-text.css, loaded later) would then push .media into an implicit
-   second column; these is-right repeats out-specificity it, same trick as
-   the corner rules above. */
-.slide-image-text.is-layout-row-top .split.is-right .media {
-  grid-column: 1;
-  grid-row: 1;
-}
-.slide-image-text.is-layout-row-top .split.is-right .copy {
-  grid-column: 1;
-  grid-row: 2;
-}
-.slide-image-text.is-layout-row-bottom .split.is-right .media {
-  grid-column: 1;
-  grid-row: 2;
-}
-.slide-image-text.is-layout-row-bottom .split.is-right .copy {
-  grid-column: 1;
-  grid-row: 1;
-}
-.slide-image-text.is-layout-row-top .split .media,
-.slide-image-text.is-layout-row-bottom .split .media {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: 1fr;
-  gap: 0;
-}
-.slide-image-text.is-layout-row-top .split .media[data-count='3'],
-.slide-image-text.is-layout-row-bottom .split .media[data-count='3'] {
-  grid-template-columns: repeat(3, 1fr);
-}
+/* The plural layouts (duo, row-top, row-bottom) are not here any more: D100
+   moved every 2-3 image layout to its own type, `.slide-image-set`
+   (55-image-set-slide.css). image-text renders one `.frame`, and
+   `is-layout-corner` above is its only layout class. */
 .slide-image-text .media {
   width: 100%;
   height: 100%;
@@ -236,22 +167,10 @@
 /* The placeholder inner (icon + label) is shared across slide types —
    see 00-patterns.css. */
 
-/* Multi-cell media (duo/rows): the .media itself is a grid of frames. */
-.slide-image-text .media.is-multi {
-  display: grid;
-  padding: 0;
-}
-.slide-image-text .media.is-multi .frame {
-  min-width: 0;
-  min-height: 0;
-  overflow: hidden;
-}
-
-/* Fit — the single, frame-based mechanism. Every frame carries its effective
-   fit as an is-fit-* class (renderHtml resolves item override -> slide base ->
-   type default per cell), so slide-level and per-image fit are one and the
-   same CSS path. Cover is the base state (.media img above); contain adds
-   breathing room + a white plate inside the frame. */
+/* Fit — the single, frame-based mechanism. The frame carries its effective fit
+   as an is-fit-* class (renderHtml resolves the image's own fit -> the type
+   default), so one CSS path covers it. Cover is the base state (.media img
+   above); contain adds breathing room + a white plate inside the frame. */
 .slide-image-text .media .frame.is-fit-contain {
   padding: calc(var(--slide-space-16) * 0.35);
   box-sizing: border-box;
@@ -277,31 +196,9 @@
   min-height: 0;
   min-width: 0;
 }
-/* Two text columns (textColumns: 2): the renderer only emits the class in
-   the row/duo layouts, where the copy is wide enough for two columns.
-   Unlike the content slide this balances the columns: the split is an
-   explicit toggle, so short bodies must visibly divide instead of all
-   landing in the left column (which would make the toggle look inert).
-   Overflow would otherwise spill sideways into a cut-off extra column; clip
-   it at the box edge instead. */
-.slide-image-text.is-text-cols-2 .copy .body {
-  columns: 2;
-  column-gap: var(--slide-space-16);
-  column-fill: balance;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-/* The duo copy is only ~half the slide wide; tighten the gutter there. */
-.slide-image-text.is-layout-duo.is-text-cols-2 .copy .body {
-  column-gap: var(--slide-space-10);
-}
-/* List items carry symmetric vertical margins; at a column start the top
-   margin is trimmed, which made the second column sit a few px higher.
-   Bottom-only margins keep both columns top-aligned. */
-.slide-image-text.is-text-cols-2 .copy .body li {
-  margin: 0 0 var(--slide-space-3);
-}
+/* Two text columns went with the plural layouts (D100): the copy beside one
+   image is never wide enough for a second column, so `textColumns` is a field
+   of `image-set-slide` now and its rules live in 55-image-set-slide.css. */
 .slide-image-text .copy .heading {
   font-family: var(--font-heading);
   font-size: var(--slide-font-size-heading);

@@ -4,7 +4,7 @@ import {
   slideTypeInspectorKeeps,
   slideTypeElementTab,
 } from '../../../../shared/slide-types/inline-edit-companions.js';
-import { renderImageTextCollectionExtra } from './slide-forms/image-text-images.js';
+import { renderImageSetCollectionExtra } from './slide-forms/image-set-images.js';
 import { renderIconCardExtras } from './slide-forms/icon-card-links.js';
 import { renderListDensityExtra } from './slide-forms/list-density.js';
 import { renderImageElementCard } from './image-element-card.js';
@@ -89,10 +89,12 @@ export function getInspectorKeepKeys(type, def) {
  * type without a row — including every custom/fork type — renders through the
  * generic keeps loop. The reasons live in the module headers:
  *
- * - image-text-slide: the slim slide-tab image collection manager
+ * - image-set-slide: the slim slide-tab image collection manager
  *   (add/reorder/remove, no per-image settings) — a difference between
  *   SURFACES, not between types, so a field declaration is structurally the
- *   wrong axis (slide-forms/image-text-images.js, the #528 exception).
+ *   wrong axis (slide-forms/image-set-images.js, the #528 exception).
+ *   image-text-slide has no row: since D100 it carries one flat image, which
+ *   the elementTab rule below covers in full.
  * - icon-card-grid-slide: per-card icon + link with the selected-card /
  *   all-cards split and the numbered-mirror sync — real one-type UI whose
  *   declarative form would put an icon picker, a link field and a
@@ -108,7 +110,7 @@ export function getInspectorKeepKeys(type, def) {
  * became the elementTab-driven rule in renderInspectorExtrasByType below.
  */
 const INSPECTOR_EXTRAS = new Map([
-  ['image-text-slide', renderImageTextCollectionExtra],
+  ['image-set-slide', renderImageSetCollectionExtra],
   ['icon-card-grid-slide', renderIconCardExtras],
   ['list-slide', renderListDensityExtra],
 ]);

@@ -127,28 +127,31 @@ export default {
       set: { layout: 'split', imageWidth: 'wide' },
       schematic: { split: 63 },
     },
+    // The plural image layouts are image-set-slide since D100: two or three
+    // images sharing one story is a different contract from one image beside
+    // text, so these tiles convert to that type rather than to image-text.
     {
-      id: 'row-top',
+      id: 'top',
       labelKey: 'editor.layoutVariant.rowTop',
       label: 'Row above',
-      convertTo: 'image-text-slide',
-      set: { layout: 'row-top' },
+      convertTo: 'image-set-slide',
+      set: { layout: 'top' },
       schematic: { row: 'top' },
     },
     {
-      id: 'row-bottom',
+      id: 'bottom',
       labelKey: 'editor.layoutVariant.rowBottom',
       label: 'Row below',
-      convertTo: 'image-text-slide',
-      set: { layout: 'row-bottom' },
+      convertTo: 'image-set-slide',
+      set: { layout: 'bottom' },
       schematic: { row: 'bottom' },
     },
     {
-      id: 'duo',
-      labelKey: 'editor.layoutVariant.duo',
-      label: 'Two beside text',
-      convertTo: 'image-text-slide',
-      set: { layout: 'duo' },
+      id: 'beside',
+      labelKey: 'editor.layoutVariant.beside',
+      label: 'Beside text',
+      convertTo: 'image-set-slide',
+      set: { layout: 'beside' },
       schematic: { duo: 45 },
     },
     {

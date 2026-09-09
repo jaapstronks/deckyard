@@ -260,8 +260,8 @@ there is no tab bar - just the slide form (identical to the pre-tab pane).
   `shared/slide-types/types/<name>/inline-edit.js`, beside `inspectorKeeps`.
   Three shapes cover every case: `{ list: 'images' }` (one tab per item of that
   collection), `{ range: [1, 3] }` (a fixed index window - quote's author
-  portraits), `{ any: true }` (image-text, whose `images[]` is padded to the
-  layout's cell count on demand). Resolve it through `slideTypeElementTab()` /
+  portraits), `{ any: true }` (image-set, whose `images[]` is padded to its
+  minimum on demand). Resolve it through `slideTypeElementTab()` /
   `elementTabOffersIndex()` in `shared/slide-types/inline-edit-companions.js`;
   it travels on `GET /api/slide-types`, so a fork type is heard too. A type
   that declares nothing offers no element tab, which is the answer for most.
@@ -377,7 +377,7 @@ routing, not of this table - the widgets are the open half of the same
 consolidation.
 
 Not repeated per row, because they are the same for all
-<!--gen:slide-type-count-->34<!--/gen:slide-type-count--> types: `slideBgImage`,
+<!--gen:slide-type-count-->35<!--/gen:slide-type-count--> types: `slideBgImage`,
 
 `slideBgFit`, `slideBgFocusX/Y`, `slideBgOverlay`, `slideBgText`, `slideLogo`
 (Background image section), `a11yTitle`/`a11ySummary` (Accessibility) and the
@@ -399,7 +399,8 @@ rather than getting a home of its own.
 | `table-slide`          | `title`, `caption`                                                                                       | `rows`                 | `headerRow`, `tableStyle`, `animateByCell`, `cornerCell`                                                                    |
 | `list-slide`           | `title`, `subheading`, `items`                                                                           | –                      | `variant`, `layout`, `density`, `asideVariant`, `asideText`                                                                 |
 | `kpi-metrics-slide`    | `title`, `subheading`, `bottomSubheading`                                                                | `metrics`              | `accent`, `countUp`                                                                                                         |
-| `image-text-slide`     | `title`, `caption`, `body`                                                                               | `images`               | `imageRole`, `density`, `textColumns`, `imageSide`, `imageWidth`, `imageBackground`, `actions`, `asideVariant`, `asideText` |
+| `image-text-slide`     | `title`, `caption`, `body`                                                                               | –                      | `imageRole`, `density`, `imageSide`, `imageWidth`, `imageBackground`, `actions`, `asideVariant`, `asideText`                |
+| `image-set-slide`      | `title`, `caption`, `body`                                                                               | `images`               | `imageRole`, `density`, `textColumns`, `imageSide`, `imageWidth`, `imageBackground`, `actions`, `asideVariant`, `asideText` |
 | `video-slide`          | `title`                                                                                                  | –                      | `source`, `autoplay`, `bunnyLibraryId`, `watchUrl`                                                                          |
 | `team-cards-slide`     | `title`, `subheading`, `bottomSubheading`, `subheading2`                                                 | `members`              | `textPosition`, `imageShape`, `imageAspect`, `showPhotoFrame`, `columnSplit`                                                |
 | `logo-wall-slide`      | `title`, `subheading`                                                                                    | `logos`                | –                                                                                                                           |

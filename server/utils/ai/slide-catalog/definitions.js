@@ -60,6 +60,7 @@ export const CATALOG_ORDER = Object.freeze([
   'list-slide',
   'callout-slide',
   'image-text-slide',
+  'image-set-slide',
   'image-slide',
   'gallery-slide',
   'table-slide',

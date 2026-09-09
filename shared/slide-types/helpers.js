@@ -159,6 +159,70 @@ export const IMAGE_ROLE_FIELD = {
 };
 
 /**
+ * The three fields that describe the image AREA rather than any one image:
+ * which side it sits on, how wide it is, and what shows behind a `contain`
+ * image. image-text-slide and image-set-slide ask exactly the same three
+ * questions with exactly the same words, so they are one declaration and one
+ * key each (D60 + the shared-copy gate) rather than two verbatim copies.
+ *
+ * They belong to the image area, not to a type, which is why they are
+ * `editor.slideField.*` and not `slideType.<type>.field.*`: a third type that
+ * grows an image area asks the same question and gets the same translation.
+ */
+export const IMAGE_SIDE_FIELD = {
+  key: 'imageSide',
+  label: 'Image position',
+  labelKey: 'editor.slideField.imageSide.label',
+  type: 'enum',
+  required: false,
+  options: [
+    sharedOption('editor.slideField.imageSide.option.left', 'left', 'Left'),
+    sharedOption('editor.slideField.imageSide.option.right', 'right', 'Right'),
+  ],
+  formLayout: 'pair',
+};
+
+/**
+ * How much of the width the image area takes. narrow/half/wide double as the
+ * layout catalogue's 1/3, 1/2 and 2/3 splits (37/63 mirrors 63/37, so no
+ * fourth value is needed).
+ */
+export const IMAGE_WIDTH_FIELD = {
+  key: 'imageWidth',
+  label: 'Image width',
+  labelKey: 'editor.slideField.imageWidth.label',
+  type: 'enum',
+  required: false,
+  formLayout: 'pair',
+  options: [
+    sharedOption('editor.slideField.imageWidth.option.half', 'half', '50%'),
+    sharedOption('editor.slideField.imageWidth.option.narrow', 'narrow', '37%'),
+    sharedOption('editor.slideField.imageWidth.option.wide', 'wide', '63%'),
+  ],
+};
+
+/** What shows behind an image that does not fill its frame. */
+export const IMAGE_BACKGROUND_FIELD = {
+  key: 'imageBackground',
+  label: 'Image background',
+  labelKey: 'editor.slideField.imageBackground.label',
+  type: 'enum',
+  required: false,
+  options: [
+    sharedOption(
+      'editor.slideField.imageBackground.option.white',
+      'white',
+      'White',
+    ),
+    sharedOption(
+      'editor.slideField.imageBackground.option.match',
+      'match',
+      'Match slide',
+    ),
+  ],
+};
+
+/**
  * What an interactive slide does once its round closes — shared by the two
  * audience-input types (poll, likert), which offer the identical choice.
  *

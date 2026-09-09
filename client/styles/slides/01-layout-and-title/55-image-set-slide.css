@@ -1,0 +1,335 @@
+/* Image set + text slide (2-3 images with one shared story).
+   D100 split this out of image-text: the plural layouts (duo, row-top,
+   row-bottom) read images[0..2] while split/corner read one image, which was
+   two contracts under one id. image-text is now a true singleton and every
+   multi-image layout lives here.
+
+   The rules below are this type's own on purpose. `.slide-image-text` keeps the
+   singleton half (split + corner, one frame); this file carries the whole of
+   what `.slide-image-set` renders, so a restyle of either type cannot reach the
+   other by accident. The names it shares with image-text — `.split`, `.media`,
+   `.frame`, `.copy` — are the media-slide vocabulary, not a borrowed
+   stylesheet. */
+.slide-image-set {
+  /* The slide root carries no frame inset; stating it as --slide-padding (not
+     `padding: 0`) keeps the fluid type unit correct — see 00-tokens.css
+     § THE FLUID BASIS. */
+  --slide-padding: 0px;
+}
+.slide-image-set .slide-inner {
+  justify-content: flex-start;
+  padding: 0;
+}
+.slide-image-set .split {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr; /* lock to full height so swapping columns can't change vertical sizing */
+  gap: 0;
+  align-items: stretch; /* top align content; fill full height */
+  min-height: 0;
+  min-width: 0;
+}
+/* The image side. Both mirror rules sit here, before the layout rules, so the
+   row layouts below can out-specify them at the same specificity — image-text
+   needs the same trick, but its generic mirror lives one layer later
+   (02-content-and-media/10-image-text.css), which is why its row rules had to
+   repeat `.is-right`. One file, one cascade. */
+.slide-image-set .split.is-right .media {
+  grid-column: 2;
+  grid-row: 1;
+}
+.slide-image-set .split.is-right .copy {
+  grid-column: 1;
+  grid-row: 1;
+}
+/* Narrow image column: ~37% images, ~63% text (the catalogue's 1/3 split) */
+.slide-image-set.is-image-narrow .split {
+  grid-template-columns: 37fr 63fr;
+}
+/* When the images are on the right, flip the columns so they are still 37% */
+.slide-image-set.is-image-narrow .split.is-right {
+  grid-template-columns: 63fr 37fr;
+}
+/* Wide image column: ~63% images, ~37% text (the 2/3 split, mirror of narrow) */
+.slide-image-set.is-image-wide .split {
+  grid-template-columns: 63fr 37fr;
+}
+.slide-image-set.is-image-wide .split.is-right {
+  grid-template-columns: 37fr 63fr;
+}
+/* Beside: the images stack in the media column. The width series and mirroring
+   (is-right) keep applying — beside only subdivides the media cell, so the
+   split rules above stay in charge of the columns.
+
+   The row count follows `data-count`, which renderHtml writes from the image
+   count, so three images stack three-high instead of overflowing two rows.
+   An attribute selector rather than `attr()` in `grid-template-rows`: the
+   typed form of attr() is not shipped widely enough to render a slide on, and
+   the row layouts below already read data-count this way. */
+.slide-image-set.is-layout-beside .split .media {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: repeat(2, 1fr);
+  gap: 0;
+}
+.slide-image-set.is-layout-beside .split .media[data-count='3'] {
+  grid-template-rows: repeat(3, 1fr);
+}
+/* Row layouts: a full-width strip of 2-3 equal-height cells above or below
+   the text. These come after the width rules on purpose: a row slide keeps its
+   remembered imageWidth, and the later row rules must win the same-specificity
+   fight over the columns. Rows don't mirror, but a row slide can carry
+   imageSide: right (remembered from a beside layout, or via the mirror
+   toggle), so the is-right repeats put .media back in the single column. */
+.slide-image-set.is-layout-top .split,
+.slide-image-set.is-layout-bottom .split {
+  grid-template-columns: 1fr;
+  grid-template-rows: 48fr 52fr;
+}
+.slide-image-set.is-layout-top .split.is-right,
+.slide-image-set.is-layout-bottom .split.is-right {
+  grid-template-columns: 1fr;
+}
+.slide-image-set.is-layout-top .split .media,
+.slide-image-set.is-layout-top .split.is-right .media {
+  grid-column: 1;
+  grid-row: 1;
+}
+.slide-image-set.is-layout-top .split .copy,
+.slide-image-set.is-layout-top .split.is-right .copy {
+  grid-column: 1;
+  grid-row: 2;
+}
+.slide-image-set.is-layout-bottom .split {
+  grid-template-rows: 52fr 48fr;
+}
+.slide-image-set.is-layout-bottom .split .media,
+.slide-image-set.is-layout-bottom .split.is-right .media {
+  grid-column: 1;
+  grid-row: 2;
+}
+.slide-image-set.is-layout-bottom .split .copy,
+.slide-image-set.is-layout-bottom .split.is-right .copy {
+  grid-column: 1;
+  grid-row: 1;
+}
+.slide-image-set.is-layout-top .split .media,
+.slide-image-set.is-layout-bottom .split .media {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: 1fr;
+  gap: 0;
+}
+.slide-image-set.is-layout-top .split .media[data-count='3'],
+.slide-image-set.is-layout-bottom .split .media[data-count='3'] {
+  grid-template-columns: repeat(3, 1fr);
+}
+.slide-image-set .media {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.08);
+  min-height: 0;
+  min-width: 0;
+  position: relative;
+}
+/* The .media is always a grid of frames here — the type carries 2-3 images in
+   every layout — so is-multi only has to strip the padding. */
+.slide-image-set .media.is-multi {
+  display: grid;
+  padding: 0;
+}
+.slide-image-set .media.is-multi .frame {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.slide-image-set .frame {
+  width: 100%;
+  height: 100%;
+  margin: 0; /* reset default figure margins */
+  position: relative;
+}
+.slide-image-set .media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+.slide-image-set .caption {
+  position: absolute;
+  left: 18px;
+  bottom: 18px;
+  padding: var(--slide-space-4) var(--slide-space-5);
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: var(--slide-radius-sm);
+  font-family: var(--font-caption);
+  font-size: var(--slide-text-base);
+  line-height: var(--slide-leading-compact);
+  color: rgba(255, 255, 255, 0.92);
+  display: inline-block;
+  width: fit-content;
+  max-width: calc(100% - 36px);
+  white-space: normal;
+}
+
+/* Image background: match slide background color */
+.slide-image-set.is-image-bg-match .media {
+  background: transparent;
+}
+
+/* Image placeholder (when no image is picked yet) */
+.slide-image-set .image-placeholder {
+  width: 100%;
+  height: 100%;
+  /* centring comes from the shared .image-placeholder base (00-patterns.css) */
+  border-radius: 0; /* the media column is full-bleed; don't round the panel */
+  border: 0;
+  background:
+    radial-gradient(
+      circle at 40% 30%,
+      rgba(255, 255, 255, 0.08) 0%,
+      rgba(255, 255, 255, 0) 55%
+    ),
+    radial-gradient(
+      circle at 70% 70%,
+      rgba(255, 255, 255, 0.06) 0%,
+      rgba(255, 255, 255, 0) 55%
+    ),
+    rgba(0, 0, 0, 0.12);
+  color: rgba(255, 255, 255, 0.72);
+}
+
+/* Fit — the single, frame-based mechanism. Every frame carries its effective
+   fit as an is-fit-* class (renderHtml resolves the item's fit -> the type
+   default per cell), so one CSS path covers every image. Cover is the base
+   state (.media img above); contain adds breathing room + a white plate. */
+.slide-image-set .media .frame.is-fit-contain {
+  padding: calc(var(--slide-space-16) * 0.35);
+  box-sizing: border-box;
+  background: #fff;
+}
+.slide-image-set.is-image-bg-match .media .frame.is-fit-contain {
+  background: transparent;
+}
+.slide-image-set .media .frame.is-fit-contain img {
+  /* Fill the padded box; object-fit contain lets `object-position` align the
+     image within any letterboxed space. */
+  object-fit: contain;
+}
+.slide-image-set .copy {
+  height: 100%;
+  /* The frame inset, on the copy column rather than on the slide root — the
+     root bleeds (--slide-padding: 0px above), so this reads the scale step. */
+  padding: var(--slide-space-16);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  min-height: 0;
+  min-width: 0;
+}
+.slide-image-set .copy .heading {
+  font-family: var(--font-heading);
+  font-size: var(--slide-font-size-heading);
+  line-height: var(--slide-leading-tight);
+  margin: 0 0 var(--slide-space-5);
+  font-weight: var(--heading-weight, 400);
+  text-transform: var(--heading-transform, none);
+  font-synthesis: none;
+}
+/* The body size tracks the text column's width:
+   - 50% images (half): text gets a wider column → lg
+   - 37% images (narrow): text gets even more room → xl
+   The is-compact variant (the density field's "Small") drops back to a denser
+   size. Each width/density step multiplies by --tf-size-scale (per-field S/M/L,
+   default 1) so the field scale composes on top of the active base size. */
+.slide-image-set .copy .body {
+  font-family: var(--font-body);
+  font-size: calc(var(--slide-text-lg) * var(--tf-size-scale, 1));
+  line-height: var(--slide-leading-normal);
+}
+.slide-image-set.is-image-narrow .copy .body {
+  font-size: calc(var(--slide-text-xl) * var(--tf-size-scale, 1));
+}
+.slide-image-set.is-compact .copy .body {
+  font-size: calc(var(--slide-text-md) * var(--tf-size-scale, 1));
+}
+.slide-image-set.is-image-narrow.is-compact .copy .body {
+  font-size: calc(var(--slide-text-lg) * var(--tf-size-scale, 1));
+}
+.slide-image-set .copy .body p {
+  margin: 0 0 var(--slide-space-4);
+}
+/* Markdown subheading: ## renders as h3 (since the slide title is h2) */
+.slide-image-set .copy .body .md-subheading {
+  font-family: var(--font-heading);
+  font-size: var(--slide-text-lg);
+  line-height: var(--slide-leading-compact);
+  font-weight: var(--heading-weight, 400);
+  text-transform: var(--heading-transform, none);
+  font-synthesis: none;
+  margin: var(--slide-space-6) 0 var(--slide-space-3);
+  color: var(--slide-on-surface);
+}
+.slide-image-set.is-compact .copy .body .md-subheading {
+  font-size: var(--slide-text-md);
+  margin: var(--slide-space-5) 0 var(--slide-space-3);
+}
+.slide-image-set .copy .body .md-subheading:first-child {
+  margin-top: 0;
+}
+.slide-image-set .copy .body ul,
+.slide-image-set .copy .body ol {
+  margin: 0 0 var(--slide-space-4) 1.2em;
+  padding: 0;
+}
+.slide-image-set .copy .body li {
+  margin: var(--slide-space-3) 0;
+}
+.slide-image-set .copy .body ul li::marker {
+  color: var(--slide-accent);
+}
+.slide-image-set .copy .body a {
+  color: var(--slide-link);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--slide-link);
+  transition: text-decoration-color 0.15s ease;
+}
+.slide-image-set .copy .body a:hover {
+  text-decoration-color: transparent;
+}
+/* Two text columns (textColumns: 2). Unlike the content slide this balances the
+   columns: the split is an explicit toggle, so short bodies must visibly divide
+   instead of all landing in the left column (which would make the toggle look
+   inert). Overflow would otherwise spill sideways into a cut-off extra column;
+   clip it at the box edge instead. This type offers the toggle in every layout
+   — that is what makes textColumns a field here rather than a branch. */
+.slide-image-set.is-text-cols-2 .copy .body {
+  columns: 2;
+  column-gap: var(--slide-space-16);
+  column-fill: balance;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+/* The beside copy is only ~half the slide wide; tighten the gutter there. */
+.slide-image-set.is-layout-beside.is-text-cols-2 .copy .body {
+  column-gap: var(--slide-space-10);
+}
+/* List items carry symmetric vertical margins; at a column start the top
+   margin is trimmed, which made the second column sit a few px higher.
+   Bottom-only margins keep both columns top-aligned. */
+.slide-image-set.is-text-cols-2 .copy .body li {
+  margin: 0 0 var(--slide-space-3);
+}
+/* Positioning of the shared CTA row
+   (`.slide-actions` lives in 01-layout-and-title/32-markdown-and-actions.css). */
+.slide-image-set .slide-actions {
+  margin-top: var(--slide-space-5);
+}

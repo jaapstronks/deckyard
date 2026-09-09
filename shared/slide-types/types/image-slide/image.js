@@ -17,7 +17,7 @@
  *
  * `layout` stays a read-only render fallback for un-migrated decks (renderHtml
  * is pure and never migrates); `ensureImageSlideImage` folds it on edit, the
- * same pattern as image-text's `ensureImageTextImages`.
+ * same pattern as image-set's `ensureImageSetImages`.
  */
 
 /**

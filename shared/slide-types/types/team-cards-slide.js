@@ -55,7 +55,7 @@ function resolveMembers(content) {
 
 /**
  * Canonicalize an "Image blocks" slide to the array form (editor-only,
- * idempotent). Mirrors `ensureLogos` / `ensureImageTextImages`: it materializes
+ * idempotent). Mirrors `ensureLogos` / `ensureImageSetImages`: it materializes
  * `members[]` so the inline media popover and card affordances have a stable,
  * mutable array to write to. Never called from `renderHtml` (which stays pure):
  * the inline editor runs it via the descriptor's `ensure` knob.

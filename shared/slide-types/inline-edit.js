@@ -17,6 +17,7 @@ import * as followInviteSlide from './types/follow-invite-slide/inline-edit.js';
 import * as funnelSlide from './types/funnel-slide/inline-edit.js';
 import * as gallerySlide from './types/gallery-slide/inline-edit.js';
 import * as iconCardGridSlide from './types/icon-card-grid-slide/inline-edit.js';
+import * as imageSetSlide from './types/image-set-slide/inline-edit.js';
 import * as imageSlide from './types/image-slide/inline-edit.js';
 import * as imageTextSlide from './types/image-text-slide/inline-edit.js';
 import * as kpiMetricsSlide from './types/kpi-metrics-slide/inline-edit.js';
@@ -61,6 +62,7 @@ const MODULES = Object.freeze({
   'funnel-slide': funnelSlide,
   'gallery-slide': gallerySlide,
   'icon-card-grid-slide': iconCardGridSlide,
+  'image-set-slide': imageSetSlide,
   'image-slide': imageSlide,
   'image-text-slide': imageTextSlide,
   'kpi-metrics-slide': kpiMetricsSlide,

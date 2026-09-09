@@ -17,8 +17,8 @@
  * EVERY image type renders through this card, image-slide and image-text
  * included (editor-behaviour-abstraction step 5): what used to be per-type
  * "this image" forms was the same card with different hand-written spellings.
- * image-text keeps a separate slide-level collection section for
- * add/reorder/remove (image-text-images.js) - that is collection chrome, not
+ * image-set keeps a separate slide-level collection section for
+ * add/reorder/remove (image-set-images.js) - that is collection chrome, not
  * per-image settings, and deliberately carries none.
  */
 import { renderFocusGridField } from './focus-picker.js';

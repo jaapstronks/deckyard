@@ -1,6 +1,6 @@
 # The `structure` facet, and when something is a type
 
-Deckyard has <!--gen:slide-type-count-->34<!--/gen:slide-type-count--> core slide types. Until the `structure` facet there was no
+Deckyard has <!--gen:slide-type-count-->35<!--/gen:slide-type-count--> core slide types. Until the `structure` facet there was no
 statement anywhere about how any of them relate to any other: the registry is a
 flat `name -> definition` map, so every type is a sibling of every other type.
 
@@ -52,7 +52,7 @@ each type's definition; served out through `/api/slide-types`.
 | `dataset`          | data points plus an encoding                                | chart                                                |
 | `chrome`           | no content fields at all                                    | payoff, follow-invite                                |
 
-These six partition the current <!--gen:slide-type-count-->34<!--/gen:slide-type-count--> completely. There is no "other" bucket, which
+These six partition the current <!--gen:slide-type-count-->35<!--/gen:slide-type-count--> completely. There is no "other" bucket, which
 is the best evidence available that the axis is the right one.
 
 ## The item contract (normative)
@@ -95,19 +95,19 @@ prevent.
 The operational test is a round-trip: flip the variant, flip it back. If a
 content-bearing field is orphaned, it was never a variant.
 
-Worked on the case the question came from — `image-text-slide`, which offers 9
-layout tiles over ~180 renderable combinations (`layout` × `imageSide` ×
-`imageWidth` × `textColumns` × `imageFit` × `imageBackground`):
+Worked on the case the question came from — `image-text-slide` as it stood before D100 (2026-09-09), offering 9 layout tiles over ~180 renderable combinations (`layout` × `imageSide` × `imageWidth` × `textColumns` × `imageFit` × `imageBackground`):
 
-| Tile                                          | Fields                   | Verdict                                                                                                      |
-| --------------------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| `split` / `corner` / `row-top` / `row-bottom` | `image`, `title`, `body` | real variants ✅                                                                                             |
-| "Text without image"                          | `image` left empty       | not a variant but the _absence_ of the payload; the result is a `content-slide` under a different type id ⚠️ |
-| `duo` / "own text per column"                 | reads `images[0-3]`      | flipping back to `split` orphans images 2 and 3 → **boundary crossed** ⚠️                                    |
+| Tile                             | Fields                   | Verdict                                                                                                                    |
+| -------------------------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| `split` / `corner`               | `image`, `title`, `body` | real variants ✅                                                                                                           |
+| "Text without image"             | `image` left empty       | not a variant but the _absence_ of the payload; the result is a `content-slide` under a different type id ⚠️               |
+| `duo` / `row-top` / `row-bottom` | read `images[0-2]`       | flipping back to `split` orphans images 2 and 3; flipping a 3-image row to `duo` orphans image 3 → **boundary crossed** ⚠️ |
 
-The combinatorial explosion is therefore not the problem — that is exactly what a
-variant axis is for. The problem is that two of the nine tiles are a _different
-contract_ under the same id.
+The combinatorial explosion is therefore not the problem — that is exactly what a variant axis is for. The problem was that three of the nine tiles were a _different contract_ under the same id. (An earlier version of this table listed the rows as real variants; the guardrail's render-side assertion showed they read the plural array too.)
+
+**The cut (D100).** The plural tiles are `image-set-slide` now: a `collection` of 2–3 images with one story, whose `layout` axis (`beside` / `top` / `bottom`) renders every image in every layout, so it passes the round-trip. `image-text-slide` is a `singleton` in `image-slide`'s spelling — one flat ImageRef (`image`, `alt`, `fit`, `focusX`, `focusY`) — with `split` and `corner` as its only layouts. The tiles that used to switch a slide into the plural form are cross-type tiles now (`convertTo: 'image-set-slide'`), which is the shape a boundary is supposed to have. Stored decks are moved by the schema funnel (v14 → v15).
+
+The same test applies to a render axis that is a plain enum rather than a tile set. `list-slide.variant` (`bullets` / `numbers`) flips without orphaning a field — only the list element and the marker change — so it is a variant (D101). That numbering changes what the slide _promises_ (a sequence rather than a set) is true, but it is a question for the `intent` facet, not this one.
 
 ## The guardrail
 
@@ -135,10 +135,9 @@ contract_ under the same id.
    and not another is content the author loses by switching, which makes it a
    type boundary. Tiles with `convertTo` are cross-type exits through the convert
    seam — a boundary already modelled correctly — and are out of scope.
+   **4b** runs the same probe over a declared enum axis that has no tile per value (`ENUM_VARIANT_AXES`: `list-slide.variant`, `callout-slide.variant`), so a render choice picked by a dropdown is held to the same rule as one picked by a tile.
 
-Assertions 3 and 4 are gates first: they each carry exactly one violation today
-and their value is what they stop from being added tomorrow. Assertion 4 checks
-ten types with variant sets and clears nine of them.
+Assertions 3 and 4 are gates first: assertion 3 carries one violation today, assertion 4 none since D100, and their value is what they stop from being added tomorrow. Assertion 4 checks every type with a variant set (eleven, now that `image-set-slide` has one) and clears them all.
 
 `actions[]` is excluded from "content". `content-slide` and `image-text-slide`
 both carry an `actions[0-3]` array beside their scalar slots, and by field type
@@ -149,23 +148,22 @@ down in the test rather than silently distorting the facet.
 
 ### What the facet found
 
-Two types whose declaration contradicts their schema — it was five when the
+One type whose declaration contradicts its schema — it was five when the
 facet landed. `poll-slide` and `likert-slide` left the list with schema v9,
 which folded their flat `option1..N` slots into one `options[]` array and
 corrected the declaration to `collection`: the count is bounded (2–4 answers,
 2–10 scale points) but it is the author's, so `fixed-collection`, which means
 `minItems === maxItems`, was the wrong bucket in both directions. `matrix-slide`
 is now its only member, which is what a structure whose count really is fixed by
-the type looks like. They sit in an explicit
+the type looks like. `image-text-slide` left with D100 (schema v15): the plural layouts that made it carry `images[0-3]` under a `singleton` declaration are `image-set-slide` now, and it carries one flat image. It sits in an explicit
 `BURNDOWN` map in the test — the gate is on from day one for everything new, and
 the existing violations are a shrinking list rather than a reason to weaken the
 rule (the pattern `eslint-suppressions.json` established). Recording them is the
 point: this is what the facet was built to make visible.
 
-| Type               | What the schema says                                                           | Why it is not a relabelling                                                                                                              |
-| ------------------ | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `image-text-slide` | declared `singleton`, carries `images[0-3]`                                    | the `duo` tile is a second contract; the cut (image-text strictly one image, plural cases to the image collection) is a product decision |
-| `quote-slide`      | declared `singleton`, carries `quotes[0-2]` beside scalar `quote`/`authorName` | one type, two representations — the legacy-mirror disease; fix by retiring one side                                                      |
+| Type          | What the schema says                                                           | Why it is not a relabelling                                                         |
+| ------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| `quote-slide` | declared `singleton`, carries `quotes[0-2]` beside scalar `quote`/`authorName` | one type, two representations — the legacy-mirror disease; fix by retiring one side |
 
 Assertion 3's `SIGNATURE_BURNDOWN` has one pair, and it is a finding the v9 fold
 **revealed** rather than created: `poll-slide` and `likert-slide` now offer the
@@ -181,16 +179,7 @@ second render and the two should merge — open, and recorded in the burndown wi
 that question attached. (Its previous entry, the List type registered under both
 `list-slide` and a Dutch alias, went at rung 3 of the list consolidation.)
 
-Assertion 4 adds one type, in `VARIANT_BURNDOWN`:
-
-| Type               | Why                                                                                                                                                                                                                                                                  |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `image-text-slide` | the tiles disagree about how many images they render — `split`/`corner` one cell, `duo` two, the rows up to three — so flipping `duo` → `split` orphans image 2. The same finding as the structure burndown, reached from the render side instead of the schema side |
-
-That the two assertions converge on `image-text-slide` from opposite directions
-is the useful part: the schema says it declares `singleton` while carrying
-`images[0-3]`, and the renderer says its tiles are not interchangeable. One
-boundary, two witnesses.
+Assertion 4's `VARIANT_BURNDOWN` is empty since D100. Its one entry was `image-text-slide`: the tiles disagreed about how many images they rendered (`split`/`corner` one cell, `duo` two, the rows up to three), so flipping `duo` → `split` orphaned image 2 — the same finding as the structure burndown, reached from the render side instead of the schema side. That the two assertions converged on one type from opposite directions was the useful part: one boundary, two witnesses. The cut that emptied both entries is described under _The rule_ above; a type whose tiles disagree about what they read belongs in this map only until its boundary is cut, never as a permanent resident.
 
 ## The fifth assertion
 

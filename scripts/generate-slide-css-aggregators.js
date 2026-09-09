@@ -80,6 +80,12 @@ export const TYPE_CSS = {
     { tier: '01-layout-and-title', file: '50-image-text-slide.css' },
     { tier: '02-content-and-media', file: '10-image-text.css' },
   ],
+  // One sheet, not two: image-set was split out of image-text (D100) after the
+  // tier-01/tier-02 division above had already lost its reason, so its layout
+  // and its typography load together at one cascade position.
+  'image-set-slide': [
+    { tier: '01-layout-and-title', file: '55-image-set-slide.css' },
+  ],
   'list-slide': [{ tier: '01-layout-and-title', file: '60-list-slide.css' }],
   'kpi-metrics-slide': [
     { tier: '01-layout-and-title', file: '80-kpi-metrics-slide.css' },
