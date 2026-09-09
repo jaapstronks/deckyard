@@ -177,6 +177,19 @@ Apply it at the recurring moments:
   number by hand. Merges to `main` are internal CI; a release is the deliberate
   outward signal — the two are decoupled. Forks sync on tags, not `main`.
   Details + one-time PAT setup: `docs/reference/versioning.md`.
+- **Release → release notes on `deckyard-website`** is a hub → spoke recipe
+  (this repo is the hub of `deckyard-website`, `deckyard-planning`,
+  `deckyard-cloud` and `deckyard-video`; rules and the test question in
+  `../_meta/workspace-CLAUDE.md` § Cross-repo, `hub:` in `../_meta/REPOS.yaml`).
+  After a Release PR merges, write the note in
+  `../deckyard-website/src/content/releases/{en,nl}/X.Y.Z.md` from the
+  `CHANGELOG.md` section (selection criterion: what a user notices, not the
+  commit prefix; bump `SLIDE_TYPE_COUNT` in its `src/lib/facts.ts` if the count
+  changed), run its `npm run verify`, commit and push there with the tag in the
+  message. No briefing. A briefing stays the route when the website has an open
+  PR or plan touching those pages, or the note needs a positioning call rather
+  than a rewrite. The other way round never: `deckyard-website` does not change
+  this repo.
 - **After merging a delegated PR** (a "review en merge" hand-off you completed):
   run the **`merge-housekeeping`** skill as the tail of the flow, before you
   stop. It cleans up the branch, ticks the shipped item off `docs/plans/TODO.md`,
