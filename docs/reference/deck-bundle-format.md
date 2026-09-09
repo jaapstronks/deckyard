@@ -11,6 +11,16 @@ and it can enumerate exactly which assets it needs.
 
 The layout is OCF/EPUB-inspired.
 
+The media type `application/vnd.deckyard.deck` is registered with IANA
+(vendor tree, registered 2026-08-14):
+<https://www.iana.org/assignments/media-types/application/vnd.deckyard.deck>.
+The registration names <https://deckyard.eu/spec/deck-bundle/>,
+<https://deckyard.eu/spec/deck-format/> and
+<https://deckyard.eu/schema/v3/deck.schema.json> as the published
+specification, so those URLs are a permanent commitment: they keep working
+or they redirect, and changing the registration goes through the same
+Expert Review as the original request.
+
 ## Archive layout
 
 ```
