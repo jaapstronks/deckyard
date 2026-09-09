@@ -113,6 +113,9 @@ test('both exports see the same asset set for the same deck', () => {
   // Neither export claims a remote URL as an asset: it stays a valid URL in the
   // exported JSON, and a link target was never an image to begin with.
   for (const refs of [owned, served]) {
-    assert.ok(!refs.some((r) => r.startsWith('http')));
+    assert.deepEqual(
+      refs.filter((r) => /^https?:/.test(r)),
+      [],
+    );
   }
 });

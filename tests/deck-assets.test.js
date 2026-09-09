@@ -124,9 +124,12 @@ describe('collectServedAssetRefs', () => {
     ]);
   });
   it('counts neither a link target nor a remote image as an asset', () => {
-    const refs = collectServedAssetRefs(deck);
-    assert.ok(!refs.includes('https://example.com/pricing'));
-    assert.ok(!refs.includes('https://cdn.example.com/logo.png'));
+    // Stated as the rule rather than as the two strings that happen to be in
+    // this deck: no remote URL is ever an asset ref, whatever field it sits in.
+    const remote = collectServedAssetRefs(deck).filter((r) =>
+      /^https?:/.test(r),
+    );
+    assert.deepEqual(remote, []);
   });
   it('contains every ref collectAssetRefs finds, and only adds served paths', () => {
     const owned = collectAssetRefs(deck);
