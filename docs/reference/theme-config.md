@@ -63,6 +63,9 @@ anything the editor does not cover.
   "slideTypes": { "include": [], "exclude": [] },
   "defaultTitleSlide": "title-slide",
 
+  // The ground a new slide starts on under this theme. See below.
+  "defaultBackground": "mist",
+
   // Coarse per-property override policy, enforced at edit- and render-time.
   "locks": {
     "background": "open" | "locked",
@@ -73,6 +76,45 @@ anything the editor does not cover.
   "cssVarOverrides": { "--t-color-accent": "#00aa55" }
 }
 ```
+
+## `defaultBackground` — the ground this theme stands on
+
+A slide type declares its own `background` default (`lime` on fourteen core
+types, `mist` on twelve, `dark` on one) because it cannot know which theme will
+carry it. A theme whose whole design stands on another ground says so once:
+
+```json
+{ "defaultBackground": "mist" }
+```
+
+One background id, in the same vocabulary a slide stores in
+`content.background`: `lime`, `mist`, or the `id` of one of this theme's own
+[`slideBackgrounds`](theme-slide-backgrounds.md) variants. Case and surrounding
+space are folded away by `normalizeTheme`; a theme that sets nothing leaves
+every type on its own default. Available to a file theme (`themes/<id>.json`)
+and a database theme alike, and in the theme editor as **This theme's ground**,
+beside the background options it chooses from.
+
+**Where it applies.** The value replaces the type's default `background`
+wherever that type _offers_ the id — the same union the editor's background
+picker builds, which is the type's own `background` options extended with the
+theme's variants. So:
+
+- a type that declares no `background` field at all (`quote-slide`) is
+  untouched, and gets no `background` key invented for it;
+- a type whose options do not include the id keeps its own default — a theme on
+  `accent` moves `countdown-slide` (which offers it) and leaves `content-slide`
+  (which does not) on `lime`;
+- an id no type and no variant offers moves nothing. It is not an error and not
+  a refusal: a theme cannot know every type a fork registers.
+
+**It is a default, not an override.** It is applied where a type's defaults are
+resolved, so anything that arrives with a background of its own — an imported
+deck, a slide-library item, an agent naming one — keeps it, exactly as with any
+other content key. And because both surfaces that resolve type defaults go
+through the same resolver, a slide gets the theme's ground on every route it
+can come into being on: an editor insert, a new deck, the public API, deck
+import, the MCP write tools, and a type conversion.
 
 ## How `surfaces` reaches the slides
 
@@ -173,7 +215,7 @@ and a stored config is always safe to merge without further checking.
 1. tokens derived from `colors` and `fonts`
 2. `surfaces` and `typography`
 3. `slideBackgrounds`, `backgroundPresets`, `gradient`, `slideTypes`,
-   `defaultTitleSlide`, `locks`
+   `defaultTitleSlide`, `defaultBackground`, `locks`
 4. `logos` into `assets`, under their asset names (`dark` → `assets.logoOnDark`,
    `light` → `assets.logoOnLight`, and the `*Small` pair →
    `assets.titleLogoOn*`)

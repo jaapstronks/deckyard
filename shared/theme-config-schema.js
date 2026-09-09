@@ -241,6 +241,14 @@ export function validateThemeConfig(raw) {
   const defaultTitleSlide = str(raw.defaultTitleSlide, 80);
   if (defaultTitleSlide) out.defaultTitleSlide = defaultTitleSlide;
 
+  // The ground a new slide starts on under this theme: one background id
+  // (`lime`, `mist`, or one of the theme's own `slideBackgrounds` variants).
+  // Whitelisted here so a DB theme can say it as well as a file theme; the id
+  // itself is only honoured where the slide type actually offers it (see
+  // `resolveTypeDefaults`).
+  const defaultBackground = str(raw.defaultBackground, 32);
+  if (defaultBackground) out.defaultBackground = defaultBackground;
+
   // Theme-driven title-slide layout token (bottom | center | top). The renderer
   // maps it to a `.tsu-layout-*` class; unknown/absent falls back to the
   // normalize default. Whitelisted here so custom/DB themes keep it.

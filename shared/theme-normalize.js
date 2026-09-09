@@ -129,6 +129,13 @@ export function normalizeTheme(theme) {
   // Title slide type used for new presentations on this theme.
   out.defaultTitleSlide = cleanStr(out.defaultTitleSlide) || 'title-slide';
 
+  // The ground a new slide starts on under this theme. A background id is
+  // lowercase everywhere it is read (the picker's option values, the
+  // `slide-bg-<id>` class, `SLIDE_BG_ID_RE`), so it is folded down here rather
+  // than at every reader. Empty = the theme says nothing and every type keeps
+  // its own default.
+  out.defaultBackground = cleanStr(out.defaultBackground).toLowerCase();
+
   // Theme-driven title-slide layout (bottom | center | top). Validated here so
   // every consumer of a normalized theme can trust `ctx.theme.titleLayout`.
   out.titleLayout = TITLE_LAYOUTS.includes(cleanStr(out.titleLayout))

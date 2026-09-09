@@ -38,10 +38,15 @@ import { deckToPresentationParts } from '../shared/slide-types/deck.js';
 import { convertSlideToType } from '../shared/slide-types/convert.js';
 import { migratePresentation } from '../shared/slide-types/schema-version.js';
 
-/** A theme that declares both background presets and slide-background variants. */
+/**
+ * A theme that declares background presets, slide-background variants, and a
+ * ground of its own (B160) — so every parity claim below is made against a
+ * theme that actually steers composition, not a bare one.
+ */
 const THEME = {
   backgroundPresets: ['/assets/images/backgrounds/preset-one.jpg'],
   slideBackgrounds: [{ id: 'seaweed', label: 'Seaweed' }],
+  defaultBackground: 'seaweed',
 };
 
 /** Ids are per-instance by construction; content is what the routes must agree on. */
