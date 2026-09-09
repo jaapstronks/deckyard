@@ -4,6 +4,7 @@ import { markdownToSafeHtml } from '../../markdown.js';
 export default {
   structure: 'singleton',
   runtime: 'static',
+  fidelity: { pptx: 'raster' },
   label: 'End / Contact',
   // `.slide-end .slide-inner` centres everything (11-end-slide.css). Declared
   // so the style panel reports the alignment that is actually in force, and so

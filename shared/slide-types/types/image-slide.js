@@ -20,6 +20,7 @@ import {
 export default {
   structure: 'singleton',
   runtime: 'static',
+  fidelity: { pptx: 'raster' },
   label: 'Image slide',
   labelField: 'caption',
   fields: [

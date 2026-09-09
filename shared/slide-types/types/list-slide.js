@@ -224,6 +224,7 @@ function isSingleLine({ twoCol, longestTitle, longestText }) {
 export default {
   structure: 'collection',
   runtime: 'static',
+  fidelity: { pptx: 'raster' },
   fieldGroups: [HEADER_BLOCK.group],
   layoutVariants: HEADER_BLOCK.variants,
   label: 'List',

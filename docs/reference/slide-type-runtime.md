@@ -138,5 +138,7 @@ changes is that a fifth live type would get its codes instead of silently not.
 - `tests/slide-type-runtime.test.js` — the guardrail.
 - [`slide-type-structure.md`](./slide-type-structure.md) — the first facet, the
   type-versus-variant rule, and why facets rather than a hierarchy.
+- [`slide-type-fidelity.md`](./slide-type-fidelity.md) — the fourth facet,
+  modelled on this one: how faithfully an export can write a type.
 - [`slide-type-companions.md`](./slide-type-companions.md) — the name-branching
   inventory this facet emptied ten entries out of.

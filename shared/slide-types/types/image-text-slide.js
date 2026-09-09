@@ -30,6 +30,7 @@ import {
 export default {
   structure: 'singleton',
   runtime: 'static',
+  fidelity: { pptx: 'raster' },
   label: 'Image + text',
   fields: [
     // Text first: `fields[]` order IS the form order on both surfaces (the

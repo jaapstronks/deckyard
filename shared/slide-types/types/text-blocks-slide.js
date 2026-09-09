@@ -133,6 +133,7 @@ export default {
   structure: 'collection',
   fallback: 'list-slide',
   runtime: 'static',
+  fidelity: { pptx: 'raster' },
   label: 'Text blocks',
   fields: [
     // Header

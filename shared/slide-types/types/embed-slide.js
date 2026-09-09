@@ -41,6 +41,7 @@ export default {
   structure: 'singleton',
   fallback: 'content-slide',
   runtime: 'static',
+  fidelity: { pptx: 'raster' },
   label: 'Embed',
   fields: [
     {

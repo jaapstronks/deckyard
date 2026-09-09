@@ -20,6 +20,7 @@ import { DEFAULT_CALLOUT_VARIANT } from './variants.js';
 export default {
   structure: 'singleton',
   runtime: 'static',
+  fidelity: { pptx: 'raster' },
   // Tier 2, so it names the tier-1 contract that holds its content without
   // losing any (shared/slide-types/tiers.js): an eyebrow, a body and an
   // attribution line are a title plus prose, which is content-slide.

@@ -17,6 +17,7 @@ export default {
   structure: 'collection',
   fallback: 'list-slide',
   runtime: 'live',
+  fidelity: { pptx: 'raster' },
   interaction: 'poll',
   // `pollId` addresses the interaction state a live session collects, so two
   // slides must never share one: every copy path re-mints it. Vocabulary and

@@ -102,6 +102,7 @@ nothing is discoverable only by `ls`.
 | [`slide-type-directory.md`](reference/slide-type-directory.md)               | The directory form a type ships in                                |
 | [`slide-type-structure.md`](reference/slide-type-structure.md)               | The `structure` facet, and type vs variant                        |
 | [`slide-type-runtime.md`](reference/slide-type-runtime.md)                   | The `runtime` facet — what the presenting session does for a type |
+| [`slide-type-fidelity.md`](reference/slide-type-fidelity.md)                 | The `fidelity` facet — how faithfully an export can write a type  |
 | [`slide-type-groups.md`](reference/slide-type-groups.md)                     | The `group` axis — which shelf a type is offered on               |
 | [`slide-type-tiers.md`](reference/slide-type-tiers.md)                       | The three tiers and the `fallback` facet — which types we promise |
 | [`slide-type-companions.md`](reference/slide-type-companions.md)             | What a new type owes elsewhere                                    |

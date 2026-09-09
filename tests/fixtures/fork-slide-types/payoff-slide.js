@@ -62,6 +62,7 @@ export default {
   structure: 'chrome',
   fallback: 'end-slide',
   runtime: 'static',
+  fidelity: { pptx: 'raster' },
   fields: [],
   defaults: {},
   // The fork's own renderer — the whole point. `fork-payoff` is a marker the

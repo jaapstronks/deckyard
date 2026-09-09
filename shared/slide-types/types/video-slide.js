@@ -18,6 +18,10 @@ export default {
   // chosen on what holds the content, not on family resemblance.
   fallback: 'content-slide',
   runtime: 'static',
+  // The only type the PPTX export composes rather than photographs: the MP4
+  // goes in as real embedded media, so it still plays in PowerPoint. A picture
+  // of a video is not a video, which is why this one earned a mapper first.
+  fidelity: { pptx: 'native' },
   label: 'Video',
   fields: [
     {

@@ -50,6 +50,7 @@ export default {
   structure: 'singleton',
   fallback: 'content-slide',
   runtime: 'static',
+  fidelity: { pptx: 'raster' },
   label: 'Custom HTML',
   // Deliberately not offered to agents (see server/utils/ai/slide-catalog/
   // agent-catalog.js): authoring the raw markup is gated behind the

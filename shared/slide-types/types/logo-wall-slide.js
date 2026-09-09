@@ -75,6 +75,7 @@ export default {
   // The grid is the loss, not the logos.
   fallback: 'image-slide',
   runtime: 'static',
+  fidelity: { pptx: 'raster' },
   fieldGroups: [HEADER_BLOCK.group],
   layoutVariants: HEADER_BLOCK.variants,
   label: 'Logo wall',

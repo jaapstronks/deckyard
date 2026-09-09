@@ -59,6 +59,7 @@ export default {
   // is free to emit one image slide per item.
   fallback: 'image-slide',
   runtime: 'static',
+  fidelity: { pptx: 'raster' },
   label: 'Gallery',
   fields: [
     {

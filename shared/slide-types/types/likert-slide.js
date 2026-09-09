@@ -12,6 +12,7 @@ export default {
   structure: 'collection',
   fallback: 'list-slide',
   runtime: 'live',
+  fidelity: { pptx: 'raster' },
   interaction: 'likert',
   label: 'Likert (agree/disagree)',
   fields: [

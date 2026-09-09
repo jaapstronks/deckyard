@@ -22,6 +22,7 @@
 export default {
   label: 'Fork Beta',
   fallback: 'content-slide',
+  fidelity: { pptx: 'raster' },
   fields: [
     {
       key: 'forkNote',

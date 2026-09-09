@@ -43,6 +43,7 @@ export default {
   // a table preserves and a list does not.
   fallback: 'table-slide',
   runtime: 'static',
+  fidelity: { pptx: 'raster' },
   label: 'Matrix',
   fields: [
     {

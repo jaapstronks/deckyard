@@ -45,6 +45,7 @@ export default {
   structure: 'collection',
   fallback: 'list-slide',
   runtime: 'static',
+  fidelity: { pptx: 'raster' },
   label: 'Funnel',
   fields: [
     {

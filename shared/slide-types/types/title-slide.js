@@ -71,6 +71,7 @@ export function coverFontScale(content) {
 export default {
   structure: 'singleton',
   runtime: 'static',
+  fidelity: { pptx: 'raster' },
   label: 'Title slide',
   fieldGroups: [TITLE_BLOCK.group],
   fields: [
