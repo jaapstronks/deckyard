@@ -1,6 +1,7 @@
 import { renderSlideToPngBuffer } from '../render/png.js';
 import { resolveDeckLang } from '../../shared/i18n-utils.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
+import { getAppName } from '../config/branding.js';
 import {
   parseVideoSource,
   buildBunnyMp4Url,
@@ -50,7 +51,7 @@ export async function buildPptxBuffer(
   const SLIDE_W_IN = 13.333;
   const SLIDE_H_IN = 7.5;
 
-  pptx.author = 'Slide Deck Builder';
+  pptx.author = getAppName();
   pptx.company = '';
   pptx.subject = String(pres?.title || 'Presentation');
   pptx.title = String(pres?.title || 'Presentation');
@@ -63,36 +64,41 @@ export async function buildPptxBuffer(
   for (let i = 0; i < slides.length; i++) {
     const slide = slides[i];
     const slideNum = i + 1;
+    // One slide part per deck slide, created here rather than inside each
+    // branch: the speaker notes below attach to every slide the same way, and
+    // a second creation site is how the video branch ended up without them.
+    const pptxSlide = pptx.addSlide();
 
-    // Special handling for video slides
     if (slide?.type === 'video-slide') {
-      const videoResult = await handleVideoSlide(pptx, slide, slideNum, {
+      // Video slides carry their own composition (embedded MP4 or placeholder)
+      // instead of a raster render.
+      const videoResult = await handleVideoSlide(pptxSlide, slide, slideNum, {
         slideWidth: SLIDE_W_IN,
         slideHeight: SLIDE_H_IN,
       });
       if (videoResult.warning) {
         warnings.push(videoResult.warning);
       }
-      continue;
+    } else {
+      // Regular slide: render as PNG
+      const pngBuf = await renderSlideToPngBuffer(repoRoot, slide, {
+        scale: s,
+        theme,
+        slideTypes,
+        lang: deckLang,
+        docLang,
+      });
+
+      pptxSlide.addImage({
+        data: `data:image/png;base64,${pngBuf.toString('base64')}`,
+        x: 0,
+        y: 0,
+        w: SLIDE_W_IN,
+        h: SLIDE_H_IN,
+      });
     }
 
-    // Regular slide: render as PNG
-    const pngBuf = await renderSlideToPngBuffer(repoRoot, slide, {
-      scale: s,
-      theme,
-      slideTypes,
-      lang: deckLang,
-      docLang,
-    });
-
-    const pptxSlide = pptx.addSlide();
-    pptxSlide.addImage({
-      data: `data:image/png;base64,${pngBuf.toString('base64')}`,
-      x: 0,
-      y: 0,
-      w: SLIDE_W_IN,
-      h: SLIDE_H_IN,
-    });
+    addSpeakerNotes(pptxSlide, slide);
   }
 
   const out = await pptx.write('nodebuffer');
@@ -100,12 +106,36 @@ export async function buildPptxBuffer(
 }
 
 /**
+ * Attach a slide's speaker notes as PowerPoint notes.
+ *
+ * The single place where notes reach the file, for every slide the export can
+ * produce. `slides[].notes` is one markdown string per slide, already resolved
+ * to the exported language version (the language projection swaps the whole
+ * `slides` array), so there is no second path for a translated deck.
+ *
+ * An empty or absent string writes nothing: pptxgenjs emits a notes part for
+ * every slide regardless, but without an `addNotes` call it stays textless, so
+ * PowerPoint shows an empty notes pane rather than a stray blank note.
+ *
+ * @param {object} pptxSlide - The pptxgenjs slide to annotate.
+ * @param {object} slide - The stored slide (`{ id, type, content, notes? }`).
+ */
+function addSpeakerNotes(pptxSlide, slide) {
+  const notes = typeof slide?.notes === 'string' ? slide.notes.trim() : '';
+  if (!notes) return;
+  pptxSlide.addNotes(notes);
+}
+
+/**
  * Handle a video slide for PPTX export.
  * For Bunny videos: attempts to embed the MP4 directly.
  * For YouTube/Vimeo: creates a placeholder with instructions.
+ *
+ * Composes onto a slide the caller already added, so that every slide — raster
+ * or video — is created and annotated in one place.
  */
 async function handleVideoSlide(
-  pptx,
+  pptxSlide,
   slide,
   slideNum,
   { slideWidth, slideHeight },
@@ -117,7 +147,6 @@ async function handleVideoSlide(
   const background = content.background === 'lime' ? 'DBFF00' : 'E8F0F0'; // lime or mist
 
   const parsed = parseVideoSource(source, bunnyLibraryId);
-  const pptxSlide = pptx.addSlide();
 
   // Set background color
   pptxSlide.background = { color: background };

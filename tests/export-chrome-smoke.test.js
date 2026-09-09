@@ -81,6 +81,21 @@ function smokeDeck() {
   return { title: 'Export smoke', theme: 'default', slides: [smokeSlide()] };
 }
 
+const NOTES = 'Speaker notes reach the PPTX.\nOn two lines, even.';
+
+/**
+ * The same one-slide deck with speaker notes on it, for the PPTX test.
+ *
+ * The raster branch is where the notes used to get dropped (B255): a regular
+ * slide goes through Chrome and lands as an image, and until that path called
+ * `addNotes` the .pptx carried a picture of the deck with the speaking half
+ * left in the handoff zip's notes.md. The no-notes half of the contract, and
+ * the document author, are pinned browser-free in `export-pptx-notes.test.js`.
+ */
+function notesDeck() {
+  return { ...smokeDeck(), slides: [{ ...smokeSlide(), notes: NOTES }] };
+}
+
 /** Collapse every whitespace run to a single space, so line breaks stop mattering. */
 function flattenSpace(text) {
   return String(text).replace(/\s+/g, ' ').trim();
@@ -219,7 +234,7 @@ test(
   { skip },
   async () => {
     const theme = await loadThemeAssets(repoRoot, 'default');
-    const { buffer } = await buildPptxBuffer(repoRoot, smokeDeck(), {
+    const { buffer } = await buildPptxBuffer(repoRoot, notesDeck(), {
       scale: 1,
       theme,
     });
@@ -258,6 +273,24 @@ test(
     assert.ok(
       unique >= 64,
       `the embedded slide image should not be blank (got ${unique} colours)`,
+    );
+
+    // The rendered slide is a picture; the speaking half only survives as
+    // PowerPoint notes on the same slide part.
+    const notesXml = await zip
+      .file('ppt/notesSlides/notesSlide1.xml')
+      ?.async('string');
+    assert.ok(notesXml, 'a rastered slide should still get a notes part');
+    const notesText = [...notesXml.matchAll(/<a:t>([\s\S]*?)<\/a:t>/g)]
+      .map((m) => m[1])
+      .join(' ');
+    assert.ok(
+      notesText.includes('Speaker notes reach the PPTX.'),
+      `the slide's notes should travel with the render, got: ${notesText}`,
+    );
+    assert.ok(
+      notesText.includes('On two lines, even.'),
+      'a multi-line note should survive whole',
     );
   },
 );
