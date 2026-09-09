@@ -95,9 +95,19 @@ export function newPresentation({
  *   `autoBackgroundPreset` take their `slideBgImage` from
  *   `theme.backgroundPresets`; without a theme (or without presets) the slide
  *   is created with no background image.
+ * @param {Record<string, Object>} [opts.slideTypes] - the registry the type is
+ *   looked up in. Defaults to the process-wide map; an org-aware caller passes
+ *   `buildMergedSlideTypes(scope)` so a DB-backed `custom-<slug>` can be
+ *   created too. `type` is a registry key here, not a spelling to resolve —
+ *   callers fold spellings down with `resolveSlideTypeName()` first.
  */
-export function newSlide({ type, parentId = null, theme = null }) {
-  const def = SLIDE_TYPES[type];
+export function newSlide({
+  type,
+  parentId = null,
+  theme = null,
+  slideTypes = SLIDE_TYPES,
+}) {
+  const def = slideTypes[type];
   if (!def) throw new Error(`Unknown slide type: ${type}`);
   const slide = {
     id: cryptoUuid(),
@@ -458,18 +468,29 @@ export function validatePresentation(pres, opts = {}) {
     errors.push('Presentation.slides must be an array');
 
   for (const slide of pres.slides || []) {
-    const slideErrors = validateSlide(slide);
+    const slideErrors = validateSlide(slide, { slideTypes: opts?.slideTypes });
     for (const e of slideErrors) errors.push(e);
   }
 
   return { ok: errors.length === 0, errors };
 }
 
-export function validateSlide(slide) {
+/**
+ * Validate one slide's shape and its content against its type's `fields[]`.
+ *
+ * @param {Object} slide
+ * @param {Object} [opts]
+ * @param {Record<string, Object>} [opts.slideTypes] - the registry the slide's
+ *   type is resolved in. Defaults to the process-wide map; an org-aware caller
+ *   passes `buildMergedSlideTypes(scope)`, so a DB-backed `custom-<slug>` is a
+ *   known type here and its own `fields[]` are what its content is held to.
+ * @returns {string[]} the errors, empty when the slide is valid
+ */
+export function validateSlide(slide, { slideTypes = SLIDE_TYPES } = {}) {
   const errors = [];
   if (!slide || typeof slide !== 'object') return ['Slide must be an object'];
   if (!isUuid(slide.id)) errors.push('Slide.id must be a UUID');
-  if (!isNonEmptyString(slide.type) || !getSlideType(slide.type))
+  if (!isNonEmptyString(slide.type) || !getSlideType(slide.type, slideTypes))
     errors.push(
       `Slide.type must be a known slide type (got: ${JSON.stringify(
         slide?.type,
@@ -491,7 +512,7 @@ export function validateSlide(slide) {
   // visibility validation
   const visibilityErrors = validateVisibility(slide.visibility);
   for (const e of visibilityErrors) errors.push(e);
-  const def = getSlideType(slide.type);
+  const def = getSlideType(slide.type, slideTypes);
   if (!def) return errors;
 
   // Per-field validation is delegated to the single declared field-type

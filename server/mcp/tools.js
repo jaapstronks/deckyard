@@ -76,6 +76,7 @@ import {
   loadThemeAssets,
   resolveThemeId,
 } from '../utils/themes.js';
+import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
 import { GLOBAL_SLIDE_OPTIONS } from '../utils/ai/slide-type-catalog.js';
 import { resolveAgentSlideTypes } from '../utils/ai/slide-catalog/agent-catalog.js';
 import {
@@ -182,6 +183,20 @@ export function registerTools(
       : singleOrganizationScope(repoRoot, 'MCP stdio session', {
           actorEmail: getOwner(context),
         });
+  }
+
+  /**
+   * The slide-type registry this MCP call validates against: core and
+   * file-based types plus the session organization's published custom ones.
+   * Every validating tool goes through here rather than leaning on the
+   * process-wide map, which cannot hold a per-organization DB row — so a
+   * published `custom-<slug>` is a known type on the MCP write path too.
+   * Built per call and never cached across organizations.
+   * @param {Object} [context] - Per-request context (SSE session)
+   * @returns {Promise<Record<string, Object>>} the merged registry
+   */
+  function sessionSlideTypes(context) {
+    return buildMergedSlideTypes(storageScopeOf(context));
   }
 
   /**
@@ -657,12 +672,15 @@ export function registerTools(
         }
       }
 
-      // Validation
+      // Validation, against this session organization's registry so a
+      // published custom type is not refused before its content is read.
+      const slideTypes = await sessionSlideTypes(context);
       let validatedSlides;
       let appliedFixes = [];
       if (validation === 'fix') {
         const fixed = validateAndFixRefinedSlides(
           inputSlides.map((s) => ({ type: s.type, content: s.content })),
+          { slideTypes },
         );
         appliedFixes = diffAppliedFixes(inputSlides, fixed);
         validatedSlides = fixed.map((s, i) => ({
@@ -674,6 +692,7 @@ export function registerTools(
         try {
           validateRefinedSlidesStrict(
             inputSlides.map((s) => ({ type: s.type, content: s.content })),
+            { slideTypes },
           );
         } catch (err) {
           if (err instanceof RawSlideValidationError) {
@@ -778,12 +797,15 @@ export function registerTools(
       slide.content = { ...slide.content, ...content };
 
       // Validate the updated slide
-      const [validated] = validateAndFixRefinedSlides([
-        {
-          type: slide.type,
-          content: slide.content,
-        },
-      ]);
+      const [validated] = validateAndFixRefinedSlides(
+        [
+          {
+            type: slide.type,
+            content: slide.content,
+          },
+        ],
+        { slideTypes: await sessionSlideTypes(context) },
+      );
       slide.content = validated.content;
 
       await updatePresentation(
@@ -833,7 +855,9 @@ export function registerTools(
       });
 
       // Validate the new slide
-      const [validated] = validateAndFixRefinedSlides([{ type, content }]);
+      const [validated] = validateAndFixRefinedSlides([{ type, content }], {
+        slideTypes: await sessionSlideTypes(context),
+      });
 
       const newSlide = {
         id: crypto.randomUUID(),
@@ -1013,6 +1037,7 @@ export function registerTools(
           content: s.content,
           reasoning: '',
         })),
+        { slideTypes: await sessionSlideTypes(context) },
       );
 
       const warnings = [];

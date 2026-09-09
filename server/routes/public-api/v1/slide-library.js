@@ -11,6 +11,7 @@ import {
 } from '../../../storage/slide-library.js';
 import { updatePresentation } from '../../../storage/presentations/index.js';
 import { newSlide } from '../../../../shared/slide-types.js';
+import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import {
   requirePermission,
   v1MethodNotAllowed,
@@ -161,10 +162,13 @@ async function handleAddFromLibrary(ctx, presentationId) {
     return true;
   }
 
-  // Create new slide from library item content
+  // Create new slide from library item content. A library item saved off a
+  // slide of this organization's own custom type names a key only that
+  // organization's registry holds, so resolve in that map, not the global one.
+  const slideTypes = await buildMergedSlideTypes(storageScope);
   let newSlideObj;
   try {
-    newSlideObj = newSlide({ type: libraryItem.slideType });
+    newSlideObj = newSlide({ type: libraryItem.slideType, slideTypes });
     // Override with library content
     newSlideObj.content = { ...libraryItem.content };
   } catch (e) {
