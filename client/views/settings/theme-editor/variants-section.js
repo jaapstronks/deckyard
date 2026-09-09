@@ -16,7 +16,13 @@
  *   (`content.background = 'calm'`). Renaming it would orphan every slide using
  *   it, so it is derived from the name once and then fixed.
  *
- * See docs/reference/theme-slide-backgrounds.md.
+ * The section also owns which of those grounds is the theme's own
+ * (`defaultBackground`, B160): the choice is over exactly the set this section
+ * defines — the two built-in slots plus the variants below — so it belongs
+ * beside them rather than in a card of its own.
+ *
+ * See docs/reference/theme-slide-backgrounds.md and
+ * docs/reference/theme-config.md.
  */
 
 import { h } from '../../../lib/dom.js';
@@ -139,6 +145,7 @@ export function createVariantsSection({ config, colors, onChange }) {
                 delete config.backgroundLabels;
               }
             }
+            renderGround();
             onChange();
           },
         }),
@@ -155,6 +162,7 @@ export function createVariantsSection({ config, colors, onChange }) {
     if (next.length) config.slideBackgrounds = next;
     else delete config.slideBackgrounds;
     render();
+    renderGround();
     onChange();
   }
 
@@ -309,7 +317,86 @@ export function createVariantsSection({ config, colors, onChange }) {
     write([...list(), { id, label, value, textColor: autoTextColor(value) }]);
   }
 
+  // ── the theme's own ground ────────────────────────────────────────────────
+
+  const ground = h('div', { class: 'stack theme-variant-ground' });
+
+  /** Every ground this theme offers: the two built-in slots, then variants. */
+  function groundOptions() {
+    return [
+      {
+        value: '',
+        label: t(
+          'settings.themes.config.groundPerType',
+          'Each slide type decides',
+        ),
+      },
+      {
+        value: 'lime',
+        label:
+          config.backgroundLabels?.lime ||
+          t('editor.background.opt1', 'Color 1'),
+      },
+      {
+        value: 'mist',
+        label:
+          config.backgroundLabels?.mist ||
+          t('editor.background.opt2', 'Color 2'),
+      },
+      ...list().map((entry) => ({
+        value: entry.id,
+        label: entry.label || entry.id,
+      })),
+    ];
+  }
+
+  function renderGround() {
+    // A removed variant cannot stay the theme's ground.
+    const offered = new Set(groundOptions().map((o) => o.value));
+    if (config.defaultBackground && !offered.has(config.defaultBackground)) {
+      delete config.defaultBackground;
+    }
+    ground.innerHTML = '';
+    ground.append(
+      h('label', {
+        class: 'field-label field-label-sm',
+        for: 'theme-default-background',
+        text: t('settings.themes.config.ground', "This theme's ground"),
+      }),
+      h('p', {
+        class: 'help',
+        text: t(
+          'settings.themes.config.groundHint',
+          'The background a new slide starts on. Slide types that do not offer this option keep their own.',
+        ),
+      }),
+      h(
+        'select',
+        {
+          class: 'form-input is-compact',
+          id: 'theme-default-background',
+          onchange: (e) => {
+            const value = e.target.value;
+            if (value) config.defaultBackground = value;
+            else delete config.defaultBackground;
+            onChange();
+          },
+        },
+        groundOptions().map((o) =>
+          h('option', {
+            value: o.value,
+            text: o.label,
+            ...(o.value === (config.defaultBackground || '')
+              ? { selected: true }
+              : {}),
+          }),
+        ),
+      ),
+    );
+  }
+
   render();
+  renderGround();
   el.append(
     builtins,
     h('div', {
@@ -327,6 +414,7 @@ export function createVariantsSection({ config, colors, onChange }) {
       }),
     ]),
     addError.el,
+    ground,
   );
 
   return { el };

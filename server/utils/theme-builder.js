@@ -420,6 +420,8 @@ function applyThemeConfig(theme, rawConfig) {
   if (config.slideTypes) theme.slideTypes = config.slideTypes;
   if (config.defaultTitleSlide)
     theme.defaultTitleSlide = config.defaultTitleSlide;
+  if (config.defaultBackground)
+    theme.defaultBackground = config.defaultBackground;
   if (config.locks) theme.locks = config.locks;
 
   // Dark/light logo variants sit alongside the existing large/small pair. The

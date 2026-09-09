@@ -17,12 +17,15 @@ function isListType(type) {
   return type === 'list-slide';
 }
 
-function defaultsForType(type, { slideTypes = SLIDE_TYPES, lang = null } = {}) {
+function defaultsForType(
+  type,
+  { slideTypes = SLIDE_TYPES, lang = null, theme = null } = {},
+) {
   const def = slideTypes?.[type];
   if (!def) throw new Error(`Unknown slide type: ${type}`);
   // Same resolver the slide factory uses, so a converted slide is seeded from
   // the same skeleton a freshly created one of that type would get.
-  return resolveTypeDefaults(def, normalizeLang(lang));
+  return resolveTypeDefaults(def, normalizeLang(lang), theme);
 }
 
 function preserveGlobalFields({ fromContent, toContent }) {
@@ -221,7 +224,7 @@ export function convertSlideToType(
   const next = {
     ...slide,
     type: targetType,
-    content: defaultsForType(targetType, { slideTypes, lang }),
+    content: defaultsForType(targetType, { slideTypes, lang, theme }),
   };
 
   const from =

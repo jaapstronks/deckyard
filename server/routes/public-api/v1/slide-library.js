@@ -11,6 +11,7 @@ import {
 } from '../../../storage/slide-library.js';
 import { updatePresentation } from '../../../storage/presentations/index.js';
 import { newSlide } from '../../../../shared/slide-types.js';
+import { loadDeckTheme } from '../../../utils/themes.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import {
   requirePermission,
@@ -129,7 +130,7 @@ async function handleGet(ctx, itemId) {
  * POST /api/v1/presentations/:id/slides/from-library - Add a slide from library.
  */
 async function handleAddFromLibrary(ctx, presentationId) {
-  const { storageScope, apiKey } = ctx;
+  const { repoRoot, storageScope, apiKey } = ctx;
 
   if (!requirePermission(ctx, 'write')) return true;
 
@@ -162,15 +163,25 @@ async function handleAddFromLibrary(ctx, presentationId) {
     return true;
   }
 
-  // Create new slide from library item content. A library item saved off a
-  // slide of this organization's own custom type names a key only that
-  // organization's registry holds, so resolve in that map, not the global one.
+  // Compose the slide through the one factory, with the deck's theme and
+  // language and the library item's content as the patch — the same call the
+  // editor makes for a library insert. A key the item lacks takes the type's
+  // default (the theme ground among them); a key it carries wins. A library
+  // item saved off a slide of this organization's own custom type names a
+  // key only that organization's registry holds, so resolve in that map, not
+  // the global one.
   const slideTypes = await buildMergedSlideTypes(storageScope);
+  const theme = await loadDeckTheme(repoRoot, pres.theme);
   let newSlideObj;
   try {
-    newSlideObj = newSlide({ type: libraryItem.slideType, slideTypes });
-    // Override with library content
-    newSlideObj.content = { ...libraryItem.content };
+    newSlideObj = newSlide({
+      type: libraryItem.slideType,
+      slideTypes,
+      theme,
+      lang: pres?.lang,
+      presentationId: pres?.id,
+      content: libraryItem.content,
+    });
   } catch (e) {
     await apiError(ctx, 400, `Invalid slide type: ${libraryItem.slideType}`);
     return true;

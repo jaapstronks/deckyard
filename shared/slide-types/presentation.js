@@ -110,7 +110,10 @@ export function newPresentation({
  * The composition, in order:
  *
  * 1. `defaultsByLang(lang)` when the type declares one for this deck language,
- *    otherwise `defaults` (`resolveTypeDefaults`).
+ *    otherwise `defaults` (`resolveTypeDefaults`) — with the theme's
+ *    `defaultBackground` replacing the type's default `background` where the
+ *    type offers that id. It sits in step 1 because it *is* a default: the
+ *    caller's patch in step 2 wins over it, exactly as over any other key.
  * 2. `content` merged over that, for the callers that bring content along — a
  *    layout-variant preset, a slide-library item, an imported slide. It is a
  *    *patch*: a key the caller omits keeps the type's default, which is how
@@ -155,7 +158,7 @@ export function newSlide({
 }) {
   const def = slideTypes?.[type];
   if (!def) throw new Error(`Unknown slide type: ${type}`);
-  const composed = resolveTypeDefaults(def, normalizeLang(lang));
+  const composed = resolveTypeDefaults(def, normalizeLang(lang), theme);
   if (content && typeof content === 'object') Object.assign(composed, content);
   const slide = {
     id: cryptoUuid(),

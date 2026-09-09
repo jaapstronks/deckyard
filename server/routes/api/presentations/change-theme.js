@@ -228,9 +228,13 @@ export async function handleChangeTheme(
     const targetType = conversionMap.get(slide.id);
     if (targetType) {
       try {
+        // The converted slide is re-seeded for its new type, and that seed
+        // reads the theme (ground, background presets): the theme the deck
+        // is moving to, not the one it leaves.
         return convertSlideToType(slide, targetType, {
           slideTypes: SLIDE_TYPES,
           lang: pres.lang || null,
+          theme: newTheme,
         });
       } catch (err) {
         log.warn(
