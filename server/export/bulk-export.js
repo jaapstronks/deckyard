@@ -17,7 +17,13 @@ import {
   listOrganizationLibrary,
 } from '../storage/slide-library.js';
 import { listThemes } from '../storage/themes.js';
-import { collectServedAssetRefs } from '../../shared/slide-types/deck-assets.js';
+import {
+  UPLOADS_PREFIX,
+  collectServedAssetRefs,
+  isServedAssetRef,
+  isUploadRef,
+} from '../../shared/slide-types/deck-assets.js';
+import { uploadsDir } from '../config/storage-paths.js';
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import { createWriteStream } from 'node:fs';
@@ -135,36 +141,32 @@ async function downloadImage(url, timeout = 30000) {
 
 /**
  * Resolve a local image from disk.
- * Handles /uploads/, /assets/, /custom/assets/ and /custom/themes/ paths
- * following the same pattern as toDataUrlIfLocal() in server/utils/html-utils.js.
+ *
+ * Accepts exactly the class the collector produces — `isServedAssetRef`, the
+ * one spelling of "a path this installation serves as an asset" — so the
+ * walker and the resolver cannot drift apart. Uploads live in the
+ * env/sandbox-aware `uploadsDir` (the same root the `.deck` bundle reads), the
+ * other served trees under the repo root.
  * @param {string} repoRoot - Repository root path
  * @param {string} urlPath - Local URL path (e.g. /uploads/abc.png)
  * @returns {Promise<{buffer: Buffer, ext: string}|null>}
  */
 async function resolveLocalImage(repoRoot, urlPath) {
   try {
-    const isUpload = urlPath.startsWith('/uploads/');
-    const isAsset = urlPath.startsWith('/assets/');
-    // Fork assets: shared content under /custom/assets/, and per-theme assets
-    // co-located under /custom/themes/<id>/assets/.
-    const isCustom =
-      urlPath.startsWith('/custom/assets/') ||
-      urlPath.startsWith('/custom/themes/');
+    if (!isServedAssetRef(urlPath)) return null;
 
-    if (!isUpload && !isAsset && !isCustom) return null;
+    const base = path.resolve(
+      isUploadRef(urlPath) ? uploadsDir(repoRoot) : repoRoot,
+    );
+    const rel = isUploadRef(urlPath)
+      ? urlPath.slice(UPLOADS_PREFIX.length)
+      : urlPath.slice(1);
+    const resolved = path.resolve(base, rel);
 
-    const abs = isUpload
-      ? path.join(
-          repoRoot,
-          'server',
-          'uploads',
-          urlPath.replace('/uploads/', ''),
-        )
-      : path.join(repoRoot, urlPath.replace(/^\//, ''));
-
-    // Guard against path traversal (e.g. /uploads/../../etc/passwd)
-    const resolved = path.resolve(abs);
-    if (!resolved.startsWith(path.resolve(repoRoot))) return null;
+    // Guard against path traversal (e.g. /uploads/../../etc/passwd); the
+    // predicate already refuses `..`, this keeps the resolved path inside
+    // its own root regardless.
+    if (!resolved.startsWith(base + path.sep)) return null;
 
     const buffer = await fs.readFile(resolved);
     const ext = path.extname(resolved).toLowerCase() || '.bin';

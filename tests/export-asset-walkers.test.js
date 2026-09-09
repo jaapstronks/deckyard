@@ -39,8 +39,10 @@ import { fileURLToPath } from 'node:url';
 import {
   collectAssetRefs,
   collectServedAssetRefs,
+  isServedAssetRef,
   isUploadRef,
 } from '../shared/slide-types/deck-assets.js';
+import { SHARED_PUBLIC_DIRS } from '../server/config/paths.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(here, '..');
@@ -57,7 +59,7 @@ const deckBundleSrc = fs.readFileSync(
 test('bulk export takes its deck refs from the shared collector', () => {
   assert.match(
     bulkExportSrc,
-    /import \{ collectServedAssetRefs \} from '\.\.\/\.\.\/shared\/slide-types\/deck-assets\.js';/,
+    /import \{[^}]*\bcollectServedAssetRefs\b[^}]*\} from '\.\.\/\.\.\/shared\/slide-types\/deck-assets\.js';/,
   );
   assert.match(bulkExportSrc, /collectServedAssetRefs\(full\)/);
 });
@@ -74,6 +76,42 @@ test('bulk export defines no asset walker of its own', () => {
   assert.doesNotMatch(bulkExportSrc, /function isImageUrl/);
   assert.doesNotMatch(bulkExportSrc, /'slideBgImage'/);
   assert.doesNotMatch(bulkExportSrc, /'logoSmallUrl'/);
+});
+
+test('the bulk-export resolver accepts the class the collector produces', () => {
+  // The walker says which strings are assets; the resolver turns them into
+  // files. Both must ride one predicate, or a prefix the walker collects can
+  // be one the resolver refuses (or the reverse) without any test noticing.
+  assert.match(bulkExportSrc, /isServedAssetRef\(urlPath\)/);
+  assert.doesNotMatch(bulkExportSrc, /'\/custom\//);
+  assert.doesNotMatch(bulkExportSrc, /'\/assets\/'/);
+  // Uploads come from the env/sandbox-aware uploads dir, like the .deck bundle,
+  // not from a hardcoded server/uploads — under UPLOADS_DIR the old spelling
+  // silently backed up nothing.
+  assert.match(bulkExportSrc, /uploadsDir\(repoRoot\)/);
+  assert.doesNotMatch(bulkExportSrc, /'server',\s*'uploads'/);
+});
+
+test('the served-asset class is a named subset of what the server serves', () => {
+  // `shared/` cannot import server config, so the prefixes are spelled there
+  // too; this pins that spelling to server/config/paths.js in both directions.
+  const assetTrees = [
+    '/uploads/',
+    '/assets/',
+    '/custom/assets/',
+    '/custom/themes/',
+  ];
+  const served = SHARED_PUBLIC_DIRS.map((d) => d.urlPrefix);
+  for (const prefix of assetTrees) {
+    assert.ok(served.includes(prefix), `${prefix} is no longer served`);
+  }
+  for (const prefix of served) {
+    assert.equal(
+      isServedAssetRef(`${prefix}x.png`),
+      assetTrees.includes(prefix),
+      prefix,
+    );
+  }
 });
 
 test('both exports see the same asset set for the same deck', () => {

@@ -31,7 +31,8 @@
  * URL is still valid after a restore — it stays a URL in the deck JSON.
  */
 
-const UPLOADS_PREFIX = '/uploads/';
+/** The one spelling of the uploads URL prefix; resolvers slice it off. */
+export const UPLOADS_PREFIX = '/uploads/';
 const BUNDLE_PREFIX = 'assets/';
 
 /**
