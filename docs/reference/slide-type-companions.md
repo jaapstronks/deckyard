@@ -41,21 +41,21 @@ inline-edit descriptor and inspector keep-list stay, the picker entries go.
 
 ## The gated companions
 
-| Companion                                                 | Source of truth                                                         | Owed by                                                      | Silent degradation                                                                                                                                   |
-| --------------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| AI / MCP catalog **prose** (description, bestFor, notFor) | `shared/slide-types/types/<name>/ai.js`                                 | not `ai: false`, not deprecated                              | derived entry flagged `documented: false`; category falls back to `content`                                                                          |
-| AI prompt examples                                        | `shared/slide-types/types/<name>/ai.js` (`aiExamples`)                  | sparse by design (reverse only)                              | prompt shows the schema without filled-in content                                                                                                    |
-| v1 generator manual example                               | `server/utils/openai/slide-types-prompt.js` (`MANUAL_EXAMPLES`)         | sparse by design (reverse only)                              | falls through to the catalog example, then to defaults                                                                                               |
-| Picker description                                        | `shared/slide-types/types/<name>/authoring.js` (`description`)          | every insertable type                                        | tile shows the bare label, no tooltip                                                                                                                |
-| Dutch picker description                                  | `client/i18n/nl/editor.json` (`editor.slideTypeDesc.<name>`)            | every insertable type (Tier-1 pair)                          | tile shows the English description to Dutch users — English tile among Dutch neighbours, suite still green                                           |
-| Picker search aliases                                     | same file (`aliases`)                                                   | every insertable type                                        | only findable by exact label                                                                                                                         |
-| Picker schematic glyph                                    | `client/views/editor/slide-type-schematics.js`                          | every insertable type                                        | generic text-only diagram                                                                                                                            |
-| Sample content                                            | `shared/slide-types/types/<name>/authoring.js` (`sample`)               | every insertable type (except `embed-slide`)                 | every preview renders from `defaults` — picker thumbnail, peek lightbox and settings curation tile show an empty slide where they promise an example |
-| Curated group                                             | `shared/slide-types/types/<name>/authoring.js` (`group`)                | every insertable type                                        | lands in the picker's computed "Other" group _and_ the settings tab's "Other" heading                                                                |
-| Inline-edit descriptor                                    | `client/views/editor/inline-edit/descriptors.js` (`INLINE_DESCRIPTORS`) | every registered type                                        | no on-canvas editing; every field is side-form only                                                                                                  |
-| Inspector keep-list                                       | `shared/slide-types/types/<name>/inline-edit.js` (`inspectorKeeps`)     | sparse by design (reverse only)                              | inspector shows every field the inline layer misses (the safe default)                                                                               |
-| Element-tab offer                                         | `shared/slide-types/types/<name>/inline-edit.js` (`elementTab`)         | sparse by design (reverse only)                              | no "This element" tab for a selected image or card; its settings stay reachable only through the slide-level form                                    |
-| Structural validator                                      | `server/utils/ai/validate-slide-structure.js` (`STRUCTURE_VALIDATORS`)  | every agent-emittable `collection` / `fixed-collection` type | `validateSlideContentStructure` returns no issues — a collection with too few items or a missing item field is accepted unvalidated                  |
+| Companion                                                 | Source of truth                                                         | Owed by                                                                                                  | Silent degradation                                                                                                                                   |
+| --------------------------------------------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AI / MCP catalog **prose** (description, bestFor, notFor) | `shared/slide-types/types/<name>/ai.js`                                 | not `ai: false`, not deprecated                                                                          | derived entry flagged `documented: false`; category falls back to `content`                                                                          |
+| AI prompt examples                                        | `shared/slide-types/types/<name>/ai.js` (`aiExamples`)                  | sparse by design (reverse only)                                                                          | prompt shows the schema without filled-in content                                                                                                    |
+| v1 generator manual example                               | `server/utils/openai/slide-types-prompt.js` (`MANUAL_EXAMPLES`)         | sparse by design (reverse only)                                                                          | falls through to the catalog example, then to defaults                                                                                               |
+| Picker description                                        | `shared/slide-types/types/<name>/authoring.js` (`description`)          | every insertable type                                                                                    | tile shows the bare label, no tooltip                                                                                                                |
+| Dutch picker description                                  | `client/i18n/nl/editor.json` (`editor.slideTypeDesc.<name>`)            | every insertable type (Tier-1 pair)                                                                      | tile shows the English description to Dutch users — English tile among Dutch neighbours, suite still green                                           |
+| Picker search aliases                                     | same file (`aliases`)                                                   | every insertable type                                                                                    | only findable by exact label                                                                                                                         |
+| Picker schematic glyph                                    | `client/views/editor/slide-type-schematics.js`                          | every insertable type                                                                                    | generic text-only diagram                                                                                                                            |
+| Sample content                                            | `shared/slide-types/types/<name>/authoring.js` (`sample`)               | every insertable type with content fields (exempt: `embed-slide`, `payoff-slide`, `follow-invite-slide`) | every preview renders from `defaults` — picker thumbnail, peek lightbox and settings curation tile show an empty slide where they promise an example |
+| Curated group                                             | `shared/slide-types/types/<name>/authoring.js` (`group`)                | every insertable type                                                                                    | lands in the picker's computed "Other" group _and_ the settings tab's "Other" heading                                                                |
+| Inline-edit descriptor                                    | `client/views/editor/inline-edit/descriptors.js` (`INLINE_DESCRIPTORS`) | every registered type                                                                                    | no on-canvas editing; every field is side-form only                                                                                                  |
+| Inspector keep-list                                       | `shared/slide-types/types/<name>/inline-edit.js` (`inspectorKeeps`)     | sparse by design (reverse only)                                                                          | inspector shows every field the inline layer misses (the safe default)                                                                               |
+| Element-tab offer                                         | `shared/slide-types/types/<name>/inline-edit.js` (`elementTab`)         | sparse by design (reverse only)                                                                          | no "This element" tab for a selected image or card; its settings stay reachable only through the slide-level form                                    |
+| Structural validator                                      | `server/utils/ai/validate-slide-structure.js` (`STRUCTURE_VALIDATORS`)  | every agent-emittable `collection` / `fixed-collection` type                                             | `validateSlideContentStructure` returns no issues — a collection with too few items or a missing item field is accepted unvalidated                  |
 
 A fork-local type in `custom/slide-types/` can satisfy the agent, schematic and
 inline companions from its own definition (`ai: {}`, `schematic: {}`,
@@ -196,11 +196,29 @@ factory (`newSlide`), which reads `defaultsByLang[<deck lang>]` and so already
 follows the deck language (`tests/insert-seeds-deck-language.test.js`).
 
 Preview-only does not mean optional: a type without one previews as an empty
-slide, so the sample is a gated companion like the rest (`picker-sample`).
-`embed-slide` is the single exemption — its content _is_ an external URL, the
+slide, so the sample is a gated companion like the rest (`picker-sample`). Three
+types are exempt. `embed-slide`, because its content _is_ an external URL: the
 picker draws it as a static browser-window mockup rather than rendering the
 sample at all, and a hardcoded sample URL would turn the settings curation tile
-into a live third-party iframe.
+into a live third-party iframe. `payoff-slide` and `follow-invite-slide`,
+because they are **chrome** (`fields: []`) and their renderers never read
+`content` — the one draws the theme's payoff logo, the other its own
+per-language copy plus the session's join code. A type with no content fields
+has nothing to exemplify, and the samples they used to carry named keys nothing
+declared, rendered or stored.
+
+**A sample names only keys the type declares** — a field, a global slide field,
+or an instance key. It has to be said, because a sample that names something
+else does not fail anywhere: the projection and the editor form both walk
+`fields[]`, so the stray key is simply dropped and the preview quietly shows
+`defaults` where it promises an example. Four samples had drifted that way by
+B248 (a flat `metric1Value` model that had become an items field, a
+`statement`/`labelLow` trio whose fields were renamed, and the two chrome types
+above). `tests/semantic-projection-snapshot.test.js` now checks it for every
+core type. **And a sample is a declaration, not a draw**: `chart-slide` used to
+pick one of three chart types at random on first import, so the tile showed a
+different chart per server process and no tracked artifact could pin the
+type's example.
 
 This is why the locale-tiering work (A6 / A7.7) added **no** Dutch-sample
 obligation. It was considered — a `sampleNl` per type, gated like the other

@@ -41,9 +41,9 @@ export default {
    * `defaults` on the definition).
    */
   sample: {
-    statement: 'How satisfied are you?',
-    labelLow: 'Not at all',
-    labelHigh: 'Completely',
+    question: 'How satisfied are you?',
+    minLabel: 'Not at all',
+    maxLabel: 'Completely',
     background: 'lime',
   },
 };

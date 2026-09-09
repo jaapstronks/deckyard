@@ -310,6 +310,22 @@ export const COMPANIONS = [
       Boolean(def?.sampleContent && typeof def.sampleContent === 'object'),
     keys: () => Object.keys(SLIDE_TYPE_SAMPLE_CONTENT),
     exempt: {
+      // Chrome types (`fields: []`): a sample is content, and these declare
+      // none. Both renderers ignore `content` entirely — payoff draws the
+      // theme's logo, the follow-invite its own per-language copy plus the
+      // session's join code from `ctx` — so the samples they used to carry
+      // named keys nothing declared, rendered or stored, and reached exactly
+      // one surface: the reader's heading, which read a `title` no field
+      // knows. Measured and removed with B248.
+      'payoff-slide':
+        'chrome: `fields: []` and `defaults: {}`, and renderHtml reads only ' +
+        'the theme (payoffLogo/logo). There is no content to exemplify, and ' +
+        'the picker tile renders identically with and without a sample',
+      'follow-invite-slide':
+        'chrome: `fields: []` deliberately (an empty field list is what keeps ' +
+        'the translator from flipping the invite language), and renderHtml ' +
+        'draws its own per-language COPY plus ctx.followCodes. There is no ' +
+        'content to exemplify',
       'embed-slide':
         'the whole content of the slide is a third-party URL. The picker draws ' +
         'a static browser-window mockup for this type and never renders its ' +
