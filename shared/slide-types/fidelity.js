@@ -99,7 +99,9 @@ export const SLIDE_FIDELITIES = Object.freeze({
 });
 
 /** @type {ReadonlyArray<string>} */
-export const SLIDE_FIDELITY_NAMES = Object.freeze(Object.keys(SLIDE_FIDELITIES));
+export const SLIDE_FIDELITY_NAMES = Object.freeze(
+  Object.keys(SLIDE_FIDELITIES),
+);
 
 /**
  * The export targets a type may declare a fidelity for.

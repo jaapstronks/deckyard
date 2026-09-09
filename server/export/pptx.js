@@ -7,6 +7,7 @@ import {
 import { resolveDeckLang } from '../../shared/i18n-utils.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { getAppName } from '../config/branding.js';
+import { createLogger } from '../utils/logger.js';
 import {
   parseVideoSource,
   buildBunnyMp4Url,
@@ -50,6 +51,54 @@ const NATIVE_PPTX_HANDLERS = Object.freeze({
 export const NATIVE_PPTX_SLIDE_TYPES = Object.freeze(
   Object.keys(NATIVE_PPTX_HANDLERS),
 );
+
+const log = createLogger('export-pptx');
+
+/**
+ * The types in a registry whose `fidelity.pptx` claims a composition this
+ * build does not have.
+ *
+ * The facet's guardrail pins the core types against `NATIVE_PPTX_HANDLERS` in
+ * CI; this is the same check for the registry a *running* server composed,
+ * which is where a fork's file-JS types appear. Called once at boot so the
+ * mismatch is reported where the person who wrote the declaration is looking —
+ * the server log at startup — rather than only inside an export nobody can see
+ * the warnings of (a download is a binary file; it carries no message). The
+ * validator cannot do this: it lives in `shared/` and must not know the export.
+ *
+ * @param {Record<string, any>} [registry] - defaults to the process-wide
+ *   registry, core plus file-JS fork types
+ * @returns {Array<{ type: string, claim: string }>}
+ */
+export function unbackedFidelityClaims(registry = SLIDE_TYPES) {
+  const out = [];
+  for (const [type, def] of Object.entries(registry || {})) {
+    if (needsNativeComposition(def, 'pptx') && !NATIVE_PPTX_HANDLERS[type]) {
+      out.push({ type, claim: exportFidelity(def, 'pptx') });
+    }
+  }
+  return out;
+}
+
+/**
+ * Report every unbacked claim in the registry to the server log. Returns the
+ * claims so a boot sequence can count them.
+ *
+ * @param {Record<string, any>} [registry]
+ * @returns {Array<{ type: string, claim: string }>}
+ */
+export function warnUnbackedFidelityClaims(registry = SLIDE_TYPES) {
+  const claims = unbackedFidelityClaims(registry);
+  for (const { type, claim } of claims) {
+    log.warn(
+      `slide type ${type} declares PPTX fidelity '${claim}', but this build ` +
+        `has no native composition for it — its slides export as an image. ` +
+        `Declare 'raster' or add a mapper to NATIVE_PPTX_HANDLERS in ` +
+        `server/export/pptx.js.`,
+    );
+  }
+  return claims;
+}
 
 /**
  * Build PPTX buffer from presentation.
@@ -117,8 +166,8 @@ export async function buildPptxBuffer(
     // `raster` is claiming a composition exists for it, so the claim is checked
     // against what this build actually has rather than trusted — a fork can
     // declare `native` on a type whose mapper lives in a branch that never
-    // shipped, and rasterising it silently would hand back a file with a
-    // missing slide's worth of content and no way to tell.
+    // shipped. Boot already reported that (warnUnbackedFidelityClaims); this is
+    // the same fact at the moment it costs a slide its editable export.
     const def = registry[slide?.type];
     const claimsNative = needsNativeComposition(def, 'pptx');
     const composeNative = claimsNative
@@ -163,6 +212,13 @@ export async function buildPptxBuffer(
   }
 
   const out = await pptx.write('nodebuffer');
+  // The warnings are returned for a caller that can carry them, and logged
+  // here because today none can: every caller hands the buffer straight to a
+  // download or a job result, and a .pptx has no channel for a message. A
+  // warning that only lives in the return value is a warning nobody reads.
+  for (const w of warnings) {
+    log.warn(`${String(pres?.title || 'Presentation')}: ${w}`);
+  }
   return { buffer: out, warnings };
 }
 

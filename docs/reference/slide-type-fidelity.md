@@ -12,11 +12,11 @@ One name, so it stayed below the branching inventory's threshold of three and no
 
 Defined in `shared/slide-types/fidelity.js`; declared as `fidelity: { pptx: '…' }` on each type's definition.
 
-| `fidelity` | Meaning                                                               | Types                    |
-| ---------- | --------------------------------------------------------------------- | ------------------------ |
-| `native`   | the whole slide is written as target-native, editable objects          | video                    |
-| `mixed`    | the text is native; one part of the slide travels as an image          | none yet                 |
-| `raster`   | the whole slide travels as one image                                   | every other core type    |
+| `fidelity` | Meaning                                                       | Types                 |
+| ---------- | ------------------------------------------------------------- | --------------------- |
+| `native`   | the whole slide is written as target-native, editable objects | video                 |
+| `mixed`    | the text is native; one part of the slide travels as an image | none yet              |
+| `raster`   | the whole slide travels as one image                          | every other core type |
 
 The line is drawn at **what the receiving application can edit**, not at how good it looks. A raster slide can be a pixel-perfect reproduction and is still `raster`; a native slide can be a plainer arrangement of the same content and is still `native`. Fidelity here means editability, because that is what the reader of the exported file gains or does not gain, and it is what "please send me the PowerPoint" is actually asking for.
 
@@ -34,7 +34,7 @@ The tiers as declared are the honest starting state, not a design target. Which 
 
 ## Who declares, and who cannot
 
-- **Core and file-JS types** declare on the definition. A file-JS fork type that does not gets a boot warning from `validateSlideTypeDefinition()` and resolves to `raster`. It is a warning rather than an error because the loss is exactly one editable export — the type still renders, still presents, still travels as a picture — but silence and `raster` look identical from outside and only one of them is a decision.
+- **Core and file-JS types** declare on the definition. A file-JS fork type that does not gets a boot warning from `validateSlideTypeDefinition()` and resolves to `raster`. It is a warning rather than an error because the loss is exactly one editable export — the type still renders, still presents, still travels as a picture — but silence and `raster` look identical from outside and only one of them is a decision. A fork type that declares `native` or `mixed` for a composition this build does not have gets a second boot warning, from `warnUnbackedFidelityClaims()` in `server/export/pptx.js`: the validator lives in `shared/` and cannot know the export, so the server asks that question itself once at startup.
 - **Database-backed types** (Settings > Slide Types) have nowhere to put a declaration, and no mapper could exist for arbitrary authored markup, so `toRuntimeSlideType()` writes `fidelity: { pptx: 'raster' }` onto the composed definition. That is a definition, not a default: the facet is present on every entry of every registry, whichever way the registry was built.
 
 ## The lookup
@@ -59,7 +59,7 @@ An undeclared type, an unresolvable one and a value outside the vocabulary all r
 
 Gate 3 is an allow-list rather than a threshold, because the branch this facet retired was a single name and a count-based gate would never have seen it.
 
-At export time the same claim is checked once more, and a fork type declaring `native` with no handler in this build gets its slide rastered **with a warning in the export's warning list** rather than silently. The export never refuses over this: a file with every slide in it beats no file, as long as the user is told which slide was not what it promised.
+At export time the same claim is checked once more, and a fork type declaring `native` with no handler in this build gets its slide rastered **with a warning** rather than silently. The export never refuses over this: a file with every slide in it beats no file. Where the warning goes is decided by what can carry it (D108): the export returns its warnings, and also writes them to the server log, because every caller today hands the buffer straight to a download or a job result and a `.pptx` carries no message. The real moment of loudness is boot, where the operator who wrote the declaration is looking; the export-time line is the same fact at the moment it costs a slide. A user-facing carrier in the export flow is a product question, not something this facet invents.
 
 ## See also
 

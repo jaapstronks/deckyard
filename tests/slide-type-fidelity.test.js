@@ -16,7 +16,10 @@ import {
   exportFidelity,
   slideFidelity,
 } from '../shared/slide-types/fidelity.js';
-import { NATIVE_PPTX_SLIDE_TYPES } from '../server/export/pptx.js';
+import {
+  NATIVE_PPTX_SLIDE_TYPES,
+  unbackedFidelityClaims,
+} from '../server/export/pptx.js';
 
 /**
  * The `fidelity` facet's guardrail.
@@ -105,6 +108,27 @@ test('a type claims native PPTX only where the export has a composition', () => 
       `A declaration without a handler rasterises the slide while telling the ` +
       `user it is editable;\na handler without a declaration never runs. ` +
       `Adding a native mapper is two edits, on purpose.`,
+  );
+});
+
+test('the boot check reports a claim the build cannot honour, by name', () => {
+  // Assertion 2 covers the core types in CI. A fork's file-JS types only exist
+  // in the registry a running server composed, so the same question is asked
+  // once more at boot — against the process-wide registry, which here holds
+  // whatever fork fixtures the suite loaded, and must be clean.
+  assert.deepEqual(unbackedFidelityClaims(), []);
+  assert.deepEqual(
+    unbackedFidelityClaims({
+      'fork-native-slide': { fidelity: { pptx: 'native' } },
+      'fork-mixed-slide': { fidelity: { pptx: 'mixed' } },
+      'fork-raster-slide': { fidelity: { pptx: 'raster' } },
+      'fork-silent-slide': {},
+      'video-slide': SLIDE_TYPES['video-slide'],
+    }),
+    [
+      { type: 'fork-native-slide', claim: 'native' },
+      { type: 'fork-mixed-slide', claim: 'mixed' },
+    ],
   );
 });
 

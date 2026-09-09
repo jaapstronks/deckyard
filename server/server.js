@@ -25,6 +25,7 @@ import { uploadsDir } from './config/storage-paths.js';
 import { initializeStorage, closeStorage } from './storage/lifecycle.js';
 import { strandedFileDataError } from './storage/boot-check.js';
 import { initializeMediaProvider } from './media/index.js';
+import { warnUnbackedFidelityClaims } from './export/pptx.js';
 import {
   startHeartbeat as startCommentHeartbeat,
   stopHeartbeat as stopCommentHeartbeat,
@@ -266,6 +267,9 @@ async function main() {
   }
   await initializeMediaProvider(repoRoot);
   await initSanitizer(); // Enable sync HTML sanitization for markdown rendering
+  // A fork type may declare a PPTX fidelity this build cannot honour. Said
+  // once, here, where the operator who wrote the declaration is looking.
+  warnUnbackedFidelityClaims();
   // Recurring background work starts here and only here: every schedule…()
   // returns { stop() }, every handle lands in runningJobs, and shutdown()
   // walks the array. No route and no module-load starts a timer.

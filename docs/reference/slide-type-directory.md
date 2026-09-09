@@ -74,19 +74,19 @@ subject of the track this form came out of.
 
 ## What goes where
 
-| Fact                                            | Slot             | Read by                                                                                                            |
-| ----------------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------ |
-| label, `fields[]`, `defaults`, `defaultsByLang` | `index.js`       | registry, editor form, validation, agent schema                                                                    |
-| `structure` / `runtime` / `fallback` / `fidelity` facets | `index.js` | the facet module for each (`structure.js`, `runtime.js`, [`tiers.js`](./slide-type-tiers.md), [`fidelity.js`](./slide-type-fidelity.md)) + `/api/slide-types`, except `fidelity`, which only the exports read |
-| `renderHtml`                                    | `render.js`      | presenter, editor preview, export                                                                                  |
-| picker description, search aliases              | `authoring.js`   | the picker, via `authoring-companions.js` + `/api/slide-types`                                                     |
-| schematic glyph, per-preset glyph overrides     | `authoring.js`   | `slide-type-schematics.js` (derived)                                                                               |
-| picker sample content                           | `authoring.js`   | `slide-type-sample-content.js`                                                                                     |
-| curated group (`group`)                         | `authoring.js`   | picker shelves + settings curation (derived)                                                                       |
-| inline-edit descriptor                          | `inline-edit.js` | `inline-edit/descriptors.js`                                                                                       |
-| inspector keep-list                             | `inline-edit.js` | `editor-form/inspector-form.js`                                                                                    |
-| agent description / bestFor / notFor            | `ai.js`          | `ai/slide-catalog/` (derived)                                                                                      |
-| agent examples (`aiExamples`, sparse)           | `ai.js`          | `ai/slide-catalog/examples.js` (derived)                                                                           |
+| Fact                                                     | Slot             | Read by                                                                                                                                                                                                       |
+| -------------------------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| label, `fields[]`, `defaults`, `defaultsByLang`          | `index.js`       | registry, editor form, validation, agent schema                                                                                                                                                               |
+| `structure` / `runtime` / `fallback` / `fidelity` facets | `index.js`       | the facet module for each (`structure.js`, `runtime.js`, [`tiers.js`](./slide-type-tiers.md), [`fidelity.js`](./slide-type-fidelity.md)) + `/api/slide-types`, except `fidelity`, which only the exports read |
+| `renderHtml`                                             | `render.js`      | presenter, editor preview, export                                                                                                                                                                             |
+| picker description, search aliases                       | `authoring.js`   | the picker, via `authoring-companions.js` + `/api/slide-types`                                                                                                                                                |
+| schematic glyph, per-preset glyph overrides              | `authoring.js`   | `slide-type-schematics.js` (derived)                                                                                                                                                                          |
+| picker sample content                                    | `authoring.js`   | `slide-type-sample-content.js`                                                                                                                                                                                |
+| curated group (`group`)                                  | `authoring.js`   | picker shelves + settings curation (derived)                                                                                                                                                                  |
+| inline-edit descriptor                                   | `inline-edit.js` | `inline-edit/descriptors.js`                                                                                                                                                                                  |
+| inspector keep-list                                      | `inline-edit.js` | `editor-form/inspector-form.js`                                                                                                                                                                               |
+| agent description / bestFor / notFor                     | `ai.js`          | `ai/slide-catalog/` (derived)                                                                                                                                                                                 |
+| agent examples (`aiExamples`, sparse)                    | `ai.js`          | `ai/slide-catalog/examples.js` (derived)                                                                                                                                                                      |
 
 The agent-facing **schema** is deliberately absent from `ai.js`: it is derived
 from `index.js`'s `fields[]` by `deriveAgentSchema()`. A hand-written second copy
