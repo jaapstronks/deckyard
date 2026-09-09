@@ -329,6 +329,14 @@ ${defaultLines}
   // Which field names the slide in the deck outline.
   labelField: '${labelField}',
 
+  // How faithfully each export target can write this type. \`raster\` means the
+  // slide travels as one picture: nothing is editable in PowerPoint, nothing is
+  // lost either, and it is what every core type but video does today. Claim
+  // \`native\` or \`mixed\` only once a mapper for this type exists in
+  // server/export/pptx.js — the guardrail in tests/slide-type-fidelity.test.js
+  // holds the declaration and the implementation to each other.
+  fidelity: { pptx: 'raster' },
+
   // One root element, carrying \`.${rootClass}\`, with every selector in
   // your stylesheet nested under it — that is what keeps a custom type from
   // restyling deck chrome.

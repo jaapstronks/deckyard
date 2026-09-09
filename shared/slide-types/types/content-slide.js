@@ -17,6 +17,7 @@ import { sharedOption } from '../../ui-i18n-keys.js';
 export default {
   structure: 'singleton',
   runtime: 'static',
+  fidelity: { pptx: 'raster' },
   label: 'Text slide',
   fields: [
     {

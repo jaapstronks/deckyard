@@ -38,6 +38,7 @@ export default {
   // what the deterministic conversion between the two types does.
   fallback: 'image-text-slide',
   runtime: 'static',
+  fidelity: { pptx: 'raster' },
   label: 'Images + text',
   fields: [
     // Text first: `fields[]` order IS the form order on both surfaces (the bulk

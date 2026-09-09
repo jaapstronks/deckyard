@@ -25,6 +25,7 @@
 
 export default {
   label: 'Fork Alpha',
+  fidelity: { pptx: 'raster' },
   fields: [
     { key: 'heading', type: 'string', label: 'Fork heading' },
     {

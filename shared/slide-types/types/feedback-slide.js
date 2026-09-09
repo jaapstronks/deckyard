@@ -10,6 +10,7 @@ export default {
   structure: 'singleton',
   fallback: 'content-slide',
   runtime: 'live',
+  fidelity: { pptx: 'raster' },
   interaction: 'feedback',
   label: 'Feedback',
   fields: [

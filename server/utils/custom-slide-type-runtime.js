@@ -64,6 +64,13 @@ export function toRuntimeSlideType(ct) {
     defaultsByLang: ct.defaultsByLang || undefined,
     isCustom: true,
     customId: ct.id,
+    // The `fidelity` facet, written here rather than left absent: a DB record
+    // is a template, some CSS and a field list, with nowhere to put a
+    // declaration and no native mapper that could ever exist for arbitrary
+    // authored markup. `raster` is therefore what this kind of type IS, not
+    // what it falls back to, and saying so keeps the facet present on every
+    // entry of every registry instead of only the ones composed at boot.
+    fidelity: { pptx: 'raster' },
   };
 
   if (ct.template) {

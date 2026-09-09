@@ -85,6 +85,7 @@ function validDef(extra = {}) {
     label: 'Fixture',
     fields: [{ key: 'heading', type: 'string', label: 'Heading' }],
     defaults: { heading: '' },
+    fidelity: { pptx: 'raster' },
     renderHtml: () => '<div class="slide slide-fixture"></div>',
     ...extra,
   };
@@ -343,6 +344,24 @@ const WARNING_CASES = [
     'an invalid namespace',
     validDef({ namespace: 'Not A Namespace' }),
     'falls back to `custom`',
+    {},
+  ],
+  [
+    'no fidelity declaration at all',
+    validDef({ fidelity: undefined }),
+    'no `fidelity` declaration',
+    {},
+  ],
+  [
+    'a fidelity value outside the vocabulary',
+    validDef({ fidelity: { pptx: 'gorgeous' } }),
+    '`fidelity.pptx`',
+    {},
+  ],
+  [
+    'a fidelity declaration that skips a known target',
+    validDef({ fidelity: {} }),
+    'says nothing about `pptx`',
     {},
   ],
   [

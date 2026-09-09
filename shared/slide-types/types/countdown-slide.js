@@ -47,6 +47,7 @@ export default {
   // session state. The timer runs entirely in the presenting window (see
   // client/lib/slide-runtime/countdown-runtime.js).
   runtime: 'timed',
+  fidelity: { pptx: 'raster' },
   label: 'Countdown timer',
   fields: [
     {

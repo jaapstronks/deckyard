@@ -198,6 +198,7 @@ function activeExtraQuotes(content) {
 export default {
   structure: 'singleton',
   runtime: 'static',
+  fidelity: { pptx: 'raster' },
   label: 'Quote',
   labelField: 'quote',
   fieldGroups: [QUOTE_BLOCK.group],

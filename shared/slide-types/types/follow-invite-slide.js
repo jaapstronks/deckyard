@@ -34,6 +34,7 @@ export default {
   // `static`: the join code it renders is a render input the session hands
   // over (ctx.followCodes), not state the session keeps for this slide.
   runtime: 'static',
+  fidelity: { pptx: 'raster' },
   // `presentationId` caches which deck this slide invites people into (the QR
   // code is built from it), so a copy into another deck has to re-point it.
   // Vocabulary and rationale in shared/slide-types/instance-keys.js.

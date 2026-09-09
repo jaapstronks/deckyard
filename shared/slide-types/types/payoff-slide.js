@@ -7,6 +7,7 @@ export default {
   // occupies in the sequence. For a payoff that is the closing slide.
   fallback: 'end-slide',
   runtime: 'static',
+  fidelity: { pptx: 'raster' },
   label: 'Payoff',
   fields: [],
   defaults: {},

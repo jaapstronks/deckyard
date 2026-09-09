@@ -59,6 +59,7 @@ function rowToCellsHtml(
 export default {
   structure: 'tabular',
   runtime: 'static',
+  fidelity: { pptx: 'raster' },
   label: 'Table',
   fields: [
     {

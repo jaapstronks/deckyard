@@ -58,6 +58,7 @@ export default {
   structure: 'collection',
   fallback: 'list-slide',
   runtime: 'static',
+  fidelity: { pptx: 'raster' },
   fieldGroups: [HEADER_BLOCK.group],
   layoutVariants: HEADER_BLOCK.variants,
   label: 'KPI',

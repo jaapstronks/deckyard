@@ -1,4 +1,9 @@
 import { renderSlideToPngBuffer } from '../render/png.js';
+import { SLIDE_TYPES } from '../../shared/slide-types.js';
+import {
+  exportFidelity,
+  needsNativeComposition,
+} from '../../shared/slide-types/fidelity.js';
 import { resolveDeckLang } from '../../shared/i18n-utils.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { getAppName } from '../config/branding.js';
@@ -13,6 +18,38 @@ function safeScale(n) {
   const s = Number(n) || 2;
   return Math.max(1, Math.min(3, s));
 }
+
+/**
+ * The native compositions this export can write, keyed by slide type.
+ *
+ * The `fidelity` facet says which types *claim* a composition; this map is what
+ * actually exists, and the two are held together by
+ * `tests/slide-type-fidelity.test.js` in both directions. Splitting it that way
+ * is the point of the facet: the claim lives with the type, where an author
+ * adding a type is looking, and the implementation lives here, where an author
+ * adding a mapper is looking. Neither has to know the other's inventory, and
+ * neither can drift without the test noticing.
+ *
+ * One entry today. Every other core type is `raster` — a picture of the slide,
+ * which is what the whole export was until this facet existed.
+ *
+ * @type {Readonly<Record<string, Function>>}
+ */
+const NATIVE_PPTX_HANDLERS = Object.freeze({
+  'video-slide': handleVideoSlide,
+});
+
+/**
+ * The slide types this build can write as a native PPTX composition.
+ *
+ * Exported for the facet's guardrail, which is the only consumer: the export
+ * itself reads the map, not the names.
+ *
+ * @type {ReadonlyArray<string>}
+ */
+export const NATIVE_PPTX_SLIDE_TYPES = Object.freeze(
+  Object.keys(NATIVE_PPTX_HANDLERS),
+);
 
 /**
  * Build PPTX buffer from presentation.
@@ -57,6 +94,12 @@ export async function buildPptxBuffer(
   pptx.title = String(pres?.title || 'Presentation');
 
   const slides = Array.isArray(pres?.slides) ? pres.slides : [];
+  // The registry this deck's types resolve against — the caller's when it has
+  // one, because a database-backed custom type exists only there. Same
+  // precedence as renderSlideHtml(), and the reason the fidelity lookup takes a
+  // definition rather than a name.
+  const registry =
+    slideTypes && typeof slideTypes === 'object' ? slideTypes : SLIDE_TYPES;
   const s = safeScale(scale);
   const deckLang = resolveDeckLang(pres);
   const docLang = resolveDocLangFromPresentation(pres);
@@ -69,15 +112,33 @@ export async function buildPptxBuffer(
     // a second creation site is how the video branch ended up without them.
     const pptxSlide = pptx.addSlide();
 
-    if (slide?.type === 'video-slide') {
-      // Video slides carry their own composition (embedded MP4 or placeholder)
-      // instead of a raster render.
-      const videoResult = await handleVideoSlide(pptxSlide, slide, slideNum, {
+    // Which branch a slide takes is the type's own declaration, not a name this
+    // module recognises: `fidelity.pptx`. A type that says anything other than
+    // `raster` is claiming a composition exists for it, so the claim is checked
+    // against what this build actually has rather than trusted — a fork can
+    // declare `native` on a type whose mapper lives in a branch that never
+    // shipped, and rasterising it silently would hand back a file with a
+    // missing slide's worth of content and no way to tell.
+    const def = registry[slide?.type];
+    const claimsNative = needsNativeComposition(def, 'pptx');
+    const composeNative = claimsNative
+      ? NATIVE_PPTX_HANDLERS[slide?.type]
+      : null;
+    if (claimsNative && !composeNative) {
+      warnings.push(
+        `Slide ${slideNum}: type ${slide?.type} declares PPTX fidelity ` +
+          `'${exportFidelity(def, 'pptx')}', but this build has no native ` +
+          `composition for it — exported as an image.`,
+      );
+    }
+
+    if (composeNative) {
+      const nativeResult = await composeNative(pptxSlide, slide, slideNum, {
         slideWidth: SLIDE_W_IN,
         slideHeight: SLIDE_H_IN,
       });
-      if (videoResult.warning) {
-        warnings.push(videoResult.warning);
+      if (nativeResult?.warning) {
+        warnings.push(nativeResult.warning);
       }
     } else {
       // Regular slide: render as PNG

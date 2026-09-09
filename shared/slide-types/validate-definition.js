@@ -35,6 +35,13 @@ import {
   walkFieldDefinitions,
 } from './field-definitions.js';
 import { FIELD_TYPE_NAMES } from './field-types.js';
+import {
+  DEFAULT_FIDELITY,
+  FIDELITY_TARGETS,
+  SLIDE_FIDELITY_NAMES,
+  isFidelityTarget,
+  isSlideFidelity,
+} from './fidelity.js';
 import { canonicalTypeName, isValidNamespace } from './type-id.js';
 
 /**
@@ -299,6 +306,9 @@ export function validateSlideTypeDefinition(def, name, options = {}) {
     }
   }
 
+  // --- fidelity --------------------------------------------------------------
+  checkFidelity(def.fidelity, who, warnings);
+
   // --- ai --------------------------------------------------------------------
   checkAi(def.ai, who, known, warnings);
 
@@ -438,6 +448,64 @@ function checkInline(inline, { who, known, itemsKeys }, out) {
       `${who}: \`inline.cards.child.field\` ${JSON.stringify(child.field)} is ` +
         `not an item field of \`${parent}\``,
     );
+  }
+}
+
+/**
+ * Check the `fidelity` facet: `{ pptx: 'native' | 'mixed' | 'raster' }`.
+ *
+ * Warnings throughout, never errors. An absent or malformed declaration costs
+ * the type its editable export and nothing else — it travels as a picture,
+ * which is what every type does today anyway — so refusing to register it would
+ * be far stricter than the loss. But it is worth saying out loud, because
+ * silence and `raster` look identical from the outside and only one of them is
+ * a decision: the core types all declare, and a fork type that does not is a
+ * type whose author has not been asked the question yet.
+ *
+ * @param {unknown} fidelity
+ * @param {string} who
+ * @param {string[]} warnings
+ */
+function checkFidelity(fidelity, who, warnings) {
+  if (fidelity === undefined || fidelity === null) {
+    warnings.push(
+      `${who}: no \`fidelity\` declaration, so every export target falls back ` +
+        `to \`${DEFAULT_FIDELITY}\` — declare ` +
+        `\`fidelity: { ${FIDELITY_TARGETS.map((t) => `${t}: '…'`).join(', ')} }\` ` +
+        `with one of ${SLIDE_FIDELITY_NAMES.join(' | ')}`,
+    );
+    return;
+  }
+  if (!isPlainObject(fidelity)) {
+    warnings.push(
+      `${who}: \`fidelity\` must be an object keyed by export target ` +
+        `(${FIDELITY_TARGETS.join(', ')}) — ${JSON.stringify(fidelity)} is ignored`,
+    );
+    return;
+  }
+  for (const [target, value] of Object.entries(fidelity)) {
+    if (!isFidelityTarget(target)) {
+      warnings.push(
+        `${who}: \`fidelity.${target}\` names no export target, so it is ` +
+          `ignored — known targets are ${FIDELITY_TARGETS.join(', ')}`,
+      );
+      continue;
+    }
+    if (!isSlideFidelity(value)) {
+      warnings.push(
+        `${who}: \`fidelity.${target}\` ${JSON.stringify(value)} is not one of ` +
+          `${SLIDE_FIDELITY_NAMES.join(' | ')}, so the export falls back to ` +
+          `\`${DEFAULT_FIDELITY}\``,
+      );
+    }
+  }
+  for (const target of FIDELITY_TARGETS) {
+    if (!Object.hasOwn(fidelity, target)) {
+      warnings.push(
+        `${who}: \`fidelity\` says nothing about \`${target}\`, so that export ` +
+          `falls back to \`${DEFAULT_FIDELITY}\``,
+      );
+    }
   }
 }
 

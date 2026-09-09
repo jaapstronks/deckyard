@@ -970,6 +970,7 @@ subset is what the fold measures against.
 | `structure`            | string  | The shape of the type's primary content: `singleton`, `collection`, `fixed-collection`, `tabular`, `dataset` or `chrome`. **Required on core types** and CI-enforced; optional on fork-local types. See [`docs/reference/slide-type-structure.md`](../reference/slide-type-structure.md) |
 | `runtime`              | string  | What the presenting session has to do for the type: `static`, `timed` or `live`. **Required on core types** and CI-enforced; optional on fork-local types. See [`docs/reference/slide-type-runtime.md`](../reference/slide-type-runtime.md)                                              |
 | `interaction`          | string  | Which kind of answer a `live` type collects: `poll`, `likert` or `feedback`. Required on `live` types, forbidden on the others                                                                                                                                                           |
+| `fidelity`             | object  | How faithfully each export target can write the type, keyed by target: `{ pptx: 'native' \| 'mixed' \| 'raster' }`. **Required on core types** and CI-enforced; a fork-local type that omits it gets a boot warning and resolves to `raster`. Claim anything but `raster` only once a mapper for the type exists in `server/export/pptx.js`. See [`docs/reference/slide-type-fidelity.md`](../reference/slide-type-fidelity.md) |
 
 ---
 

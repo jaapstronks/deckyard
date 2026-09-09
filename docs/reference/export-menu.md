@@ -64,6 +64,10 @@ renderer runs_ (an implementation detail) with a genuine user choice. The
 genuinely distinct artifact is the **Text handout** (document layout), which
 stays its own row under Documents.
 
+## What the PPTX hands back
+
+Every slide but video travels as one picture, so nothing in the exported file is editable yet. Which branch a slide takes is the type's own `fidelity.pptx` declaration rather than a name the export recognises — see [`slide-type-fidelity.md`](./slide-type-fidelity.md).
+
 ## Speaker notes in the PPTX
 
 The PPTX carries every slide's speaker notes as PowerPoint notes, in the notes
