@@ -64,6 +64,27 @@ renderer runs_ (an implementation detail) with a genuine user choice. The
 genuinely distinct artifact is the **Text handout** (document layout), which
 stays its own row under Documents.
 
+## Speaker notes in the PPTX
+
+The PPTX carries every slide's speaker notes as PowerPoint notes, in the notes
+part that belongs to that slide (`addSpeakerNotes` in `server/export/pptx.js`,
+one call site for both the raster and the video branch). `slides[].notes` is already
+resolved to the exported language version — the language projection swaps the
+whole `slides` array — so a translated export carries that version's notes with
+no second path.
+
+A slide with no notes, or notes that are only whitespace, gets no note text.
+pptxgenjs writes a notes part for every slide regardless, to keep the
+relationship numbering intact; the part simply stays empty, which PowerPoint
+shows as an empty notes pane.
+
+The document author (`docProps/core.xml`) is `APP_NAME`
+(`server/config/branding.js`), so a white-label deployment ships decks under its
+own name.
+
+The Documents group's separate **Notes** rows stay: `notes.md` / `notes.docx`
+are the standalone handout, not a substitute for notes inside the deck.
+
 ## Language
 
 `export-modal.js` reads `pres.i18n.active` for the default language. When the
