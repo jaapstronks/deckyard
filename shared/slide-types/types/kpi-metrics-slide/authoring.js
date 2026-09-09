@@ -42,12 +42,11 @@ export default {
    */
   sample: {
     title: 'Key Metrics',
-    metric1Value: '98%',
-    metric1Label: 'Customer Satisfaction',
-    metric2Value: '500+',
-    metric2Label: 'Projects Completed',
-    metric3Value: '24/7',
-    metric3Label: 'Support Available',
+    metrics: [
+      { value: '98', unit: '%', label: 'Customer Satisfaction', note: '' },
+      { value: '500', unit: '+', label: 'Projects Completed', note: '' },
+      { value: '24/7', unit: '', label: 'Support Available', note: '' },
+    ],
     background: 'lime',
   },
 };

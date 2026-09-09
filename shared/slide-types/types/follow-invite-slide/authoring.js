@@ -35,14 +35,9 @@ export default {
    */
   schematic: { kind: 'qr' },
 
-  /**
-   * Rich example content for the picker's preview thumbnails — what a good
-   * slide of this type looks like, not what an empty one looks like (that is
-   * `defaults` on the definition).
-   */
-  sample: {
-    enabled: true,
-    title: 'Join the presentation',
-    subheading: 'Scan the QR code',
-  },
+  // No `sample`: this type is chrome (`fields: []` on purpose, so the
+  // translator cannot flip the invite's language) and its renderer draws its
+  // own per-language copy plus the session's join code from `ctx`, never from
+  // `content`. An example can only name keys nothing declares, renders or
+  // stores. Exempted from the `picker-sample` companion with that reason.
 };

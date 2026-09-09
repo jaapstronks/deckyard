@@ -120,6 +120,36 @@ export default {
     },
     BACKGROUND_FIELD_EXTENDED,
   ],
+  // `zeroText` is the one key here that is prose rather than config, so it is
+  // the one that owes a per-language seed. It used to read 'Tijd!' in the
+  // language-less `defaults`, which made every English deck count down to a
+  // Dutch word — against this type's own field help ('e.g. "Time!"') and
+  // against the rule that `defaults` is the English seed. Measured by the
+  // reader-form snapshot (B248).
+  defaultsByLang: {
+    nl: {
+      title: '',
+      durationMinutes: DEFAULT_MINUTES,
+      durationSeconds: 0,
+      autoStart: 'off',
+      flashOnZero: 'on',
+      soundOnZero: 'off',
+      zeroText: 'Tijd!',
+      background: 'dark',
+    },
+    'en-GB': {
+      title: '',
+      durationMinutes: DEFAULT_MINUTES,
+      durationSeconds: 0,
+      autoStart: 'off',
+      flashOnZero: 'on',
+      soundOnZero: 'off',
+      zeroText: 'Time!',
+      background: 'dark',
+    },
+  },
+  // The language-less seed: what every path with no deck language clones.
+  // Key-identical to the maps above.
   defaults: {
     title: '',
     durationMinutes: DEFAULT_MINUTES,
@@ -127,7 +157,7 @@ export default {
     autoStart: 'off',
     flashOnZero: 'on',
     soundOnZero: 'off',
-    zeroText: 'Tijd!',
+    zeroText: 'Time!',
     background: 'dark',
   },
   // Signature must be (content, slide, ctx) – see `shared/slide-types/presentation.js`.

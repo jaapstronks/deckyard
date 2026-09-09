@@ -1,0 +1,546 @@
+{
+  "title-slide": {
+    "nl": {
+      "heading": {
+        "text": "Presentation Title",
+        "key": "title"
+      },
+      "body": "<p>Your subtitle or tagline here</p>\n<p>Your Name · June 2026</p>"
+    },
+    "en-GB": {
+      "heading": {
+        "text": "Presentation Title",
+        "key": "title"
+      },
+      "body": "<p>Your subtitle or tagline here</p>\n<p>Your Name · June 2026</p>"
+    }
+  },
+  "chapter-title-slide": {
+    "nl": {
+      "heading": {
+        "text": "Chapter One",
+        "key": "title"
+      },
+      "body": ""
+    },
+    "en-GB": {
+      "heading": {
+        "text": "Chapter One",
+        "key": "title"
+      },
+      "body": ""
+    }
+  },
+  "content-slide": {
+    "nl": {
+      "heading": {
+        "text": "Key Insights",
+        "key": "title"
+      },
+      "body": "<ul><li>First important point with details</li><li>Second point that matters</li><li>Third supporting argument</li><li>Final conclusion to remember</li></ul>"
+    },
+    "en-GB": {
+      "heading": {
+        "text": "Key Insights",
+        "key": "title"
+      },
+      "body": "<ul><li>First important point with details</li><li>Second point that matters</li><li>Third supporting argument</li><li>Final conclusion to remember</li></ul>"
+    }
+  },
+  "callout-slide": {
+    "nl": {
+      "heading": {
+        "text": "Callout",
+        "key": null
+      },
+      "body": "<p>Teams that ship weekly find integration bugs <strong>six times</strong> earlier than teams that ship quarterly.</p>\n<p>DORA, State of DevOps 2024</p>"
+    },
+    "en-GB": {
+      "heading": {
+        "text": "Callout",
+        "key": null
+      },
+      "body": "<p>Teams that ship weekly find integration bugs <strong>six times</strong> earlier than teams that ship quarterly.</p>\n<p>DORA, State of DevOps 2024</p>"
+    }
+  },
+  "table-slide": {
+    "nl": {
+      "heading": {
+        "text": "Quarterly Results",
+        "key": "title"
+      },
+      "body": "<table class=\"reader-table\"><caption>All figures in thousands</caption><thead><tr><th scope=\"col\">Metric</th><th scope=\"col\">Q1</th><th scope=\"col\">Q2</th><th scope=\"col\">Q3</th></tr></thead><tbody><tr><td>Revenue</td><td>$120K</td><td>$185K</td><td>$240K</td></tr><tr><td>Users</td><td>2,400</td><td>3,800</td><td>5,200</td></tr><tr><td>Growth</td><td>+18%</td><td>+42%</td><td>+67%</td></tr></tbody></table>"
+    },
+    "en-GB": {
+      "heading": {
+        "text": "Quarterly Results",
+        "key": "title"
+      },
+      "body": "<table class=\"reader-table\"><caption>All figures in thousands</caption><thead><tr><th scope=\"col\">Metric</th><th scope=\"col\">Q1</th><th scope=\"col\">Q2</th><th scope=\"col\">Q3</th></tr></thead><tbody><tr><td>Revenue</td><td>$120K</td><td>$185K</td><td>$240K</td></tr><tr><td>Users</td><td>2,400</td><td>3,800</td><td>5,200</td></tr><tr><td>Growth</td><td>+18%</td><td>+42%</td><td>+67%</td></tr></tbody></table>"
+    }
+  },
+  "list-slide": {
+    "nl": {
+      "heading": {
+        "text": "Our Process",
+        "key": "title"
+      },
+      "body": "<p>How we approach every project</p>\n<ul class=\"reader-items\"><li class=\"reader-item\"><h3>Discovery</h3>\n<p>Understanding your needs and goals</p></li><li class=\"reader-item\"><h3>Strategy</h3>\n<p>Planning the optimal approach</p></li><li class=\"reader-item\"><h3>Execution</h3>\n<p>Delivering exceptional results</p></li><li class=\"reader-item\"><h3>Review</h3>\n<p>Continuous improvement</p></li></ul>"
+    },
+    "en-GB": {
+      "heading": {
+        "text": "Our Process",
+        "key": "title"
+      },
+      "body": "<p>How we approach every project</p>\n<ul class=\"reader-items\"><li class=\"reader-item\"><h3>Discovery</h3>\n<p>Understanding your needs and goals</p></li><li class=\"reader-item\"><h3>Strategy</h3>\n<p>Planning the optimal approach</p></li><li class=\"reader-item\"><h3>Execution</h3>\n<p>Delivering exceptional results</p></li><li class=\"reader-item\"><h3>Review</h3>\n<p>Continuous improvement</p></li></ul>"
+    }
+  },
+  "kpi-metrics-slide": {
+    "nl": {
+      "heading": {
+        "text": "Key Metrics",
+        "key": "title"
+      },
+      "body": "<ul class=\"reader-items\"><li class=\"reader-item\"><h3>Customer Satisfaction</h3>\n<p>98</p>\n<p>%</p></li><li class=\"reader-item\"><h3>Projects Completed</h3>\n<p>500</p>\n<p>+</p></li><li class=\"reader-item\"><h3>Support Available</h3>\n<p>24/7</p></li></ul>"
+    },
+    "en-GB": {
+      "heading": {
+        "text": "Key Metrics",
+        "key": "title"
+      },
+      "body": "<ul class=\"reader-items\"><li class=\"reader-item\"><h3>Customer Satisfaction</h3>\n<p>98</p>\n<p>%</p></li><li class=\"reader-item\"><h3>Projects Completed</h3>\n<p>500</p>\n<p>+</p></li><li class=\"reader-item\"><h3>Support Available</h3>\n<p>24/7</p></li></ul>"
+    }
+  },
+  "image-text-slide": {
+    "nl": {
+      "heading": {
+        "text": "Visual Storytelling",
+        "key": "title"
+      },
+      "body": "<ul><li>Engage your audience</li><li>Communicate complex ideas</li><li>Leave a lasting impression</li></ul>"
+    },
+    "en-GB": {
+      "heading": {
+        "text": "Visual Storytelling",
+        "key": "title"
+      },
+      "body": "<ul><li>Engage your audience</li><li>Communicate complex ideas</li><li>Leave a lasting impression</li></ul>"
+    }
+  },
+  "video-slide": {
+    "nl": {
+      "heading": {
+        "text": "Video Content",
+        "key": "title"
+      },
+      "body": ""
+    },
+    "en-GB": {
+      "heading": {
+        "text": "Video Content",
+        "key": "title"
+      },
+      "body": ""
+    }
+  },
+  "team-cards-slide": {
+    "nl": {
+      "heading": {
+        "text": "Meet the Team",
+        "key": "title"
+      },
+      "body": "<ul class=\"reader-items\"><li class=\"reader-item\"><h3>Jane Doe</h3>\n<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/slide-picker/800/600\" alt=\"Jane Doe\" loading=\"lazy\" /></figure>\n<p>CEO &amp; Founder</p></li><li class=\"reader-item\"><h3>John Smith</h3>\n<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/slide-picker-3/800/600\" alt=\"John Smith\" loading=\"lazy\" /></figure>\n<p>Head of Design</p></li><li class=\"reader-item\"><h3>Alex Johnson</h3>\n<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/slide-picker-4/800/600\" alt=\"Alex Johnson\" loading=\"lazy\" /></figure>\n<p>Lead Developer</p></li></ul>"
+    },
+    "en-GB": {
+      "heading": {
+        "text": "Meet the Team",
+        "key": "title"
+      },
+      "body": "<ul class=\"reader-items\"><li class=\"reader-item\"><h3>Jane Doe</h3>\n<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/slide-picker/800/600\" alt=\"Jane Doe\" loading=\"lazy\" /></figure>\n<p>CEO &amp; Founder</p></li><li class=\"reader-item\"><h3>John Smith</h3>\n<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/slide-picker-3/800/600\" alt=\"John Smith\" loading=\"lazy\" /></figure>\n<p>Head of Design</p></li><li class=\"reader-item\"><h3>Alex Johnson</h3>\n<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/slide-picker-4/800/600\" alt=\"Alex Johnson\" loading=\"lazy\" /></figure>\n<p>Lead Developer</p></li></ul>"
+    }
+  },
+  "logo-wall-slide": {
+    "nl": {
+      "heading": {
+        "text": "Our Partners",
+        "key": "title"
+      },
+      "body": "<p>Trusted by industry leaders</p>\n<ul class=\"reader-items\"><li class=\"reader-item\"><h3>Acme Corp</h3>\n<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/logo1/200/80\" alt=\"Acme Corp logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3>TechFlow</h3>\n<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/logo2/200/80\" alt=\"TechFlow logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3>Innovate Inc</h3>\n<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/logo3/200/80\" alt=\"Innovate Inc logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3>GlobalNet</h3>\n<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/logo4/200/80\" alt=\"GlobalNet logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3>Summit Co</h3>\n<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/logo5/200/80\" alt=\"Summit Co logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3>Bright Labs</h3>\n<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/logo6/200/80\" alt=\"Bright Labs logo\" loading=\"lazy\" /></figure></li></ul>"
+    },
+    "en-GB": {
+      "heading": {
+        "text": "Our Partners",
+        "key": "title"
+      },
+      "body": "<p>Trusted by industry leaders</p>\n<ul class=\"reader-items\"><li class=\"reader-item\"><h3>Acme Corp</h3>\n<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/logo1/200/80\" alt=\"Acme Corp logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3>TechFlow</h3>\n<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/logo2/200/80\" alt=\"TechFlow logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3>Innovate Inc</h3>\n<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/logo3/200/80\" alt=\"Innovate Inc logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3>GlobalNet</h3>\n<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/logo4/200/80\" alt=\"GlobalNet logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3>Summit Co</h3>\n<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/logo5/200/80\" alt=\"Summit Co logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3>Bright Labs</h3>\n<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/logo6/200/80\" alt=\"Bright Labs logo\" loading=\"lazy\" /></figure></li></ul>"
+    }
+  },
+  "icon-card-grid-slide": {
+    "nl": {
+      "heading": {
+        "text": "Our Approach",
+        "key": "title"
+      },
+      "body": "<p>What makes us different</p>\n<ul class=\"reader-items\"><li class=\"reader-item\"><h3>Insight</h3>\n<p>Deep understanding</p></li><li class=\"reader-item\"><h3>Focus</h3>\n<p>Clear objectives</p></li><li class=\"reader-item\"><h3>Collaboration</h3>\n<p>Working together</p></li><li class=\"reader-item\"><h3>Growth</h3>\n<p>Continuous progress</p></li></ul>"
+    },
+    "en-GB": {
+      "heading": {
+        "text": "Our Approach",
+        "key": "title"
+      },
+      "body": "<p>What makes us different</p>\n<ul class=\"reader-items\"><li class=\"reader-item\"><h3>Insight</h3>\n<p>Deep understanding</p></li><li class=\"reader-item\"><h3>Focus</h3>\n<p>Clear objectives</p></li><li class=\"reader-item\"><h3>Collaboration</h3>\n<p>Working together</p></li><li class=\"reader-item\"><h3>Growth</h3>\n<p>Continuous progress</p></li></ul>"
+    }
+  },
+  "payoff-slide": {
+    "nl": {
+      "heading": {
+        "text": "Payoff",
+        "key": null
+      },
+      "body": ""
+    },
+    "en-GB": {
+      "heading": {
+        "text": "Payoff",
+        "key": null
+      },
+      "body": ""
+    }
+  },
+  "quote-slide": {
+    "nl": {
+      "heading": {
+        "text": "The best way to predict the future is to create it.",
+        "key": "quote"
+      },
+      "body": "<p>Peter Drucker</p>\n<p>Management Consultant</p>"
+    },
+    "en-GB": {
+      "heading": {
+        "text": "The best way to predict the future is to create it.",
+        "key": "quote"
+      },
+      "body": "<p>Peter Drucker</p>\n<p>Management Consultant</p>"
+    }
+  },
+  "image-slide": {
+    "nl": {
+      "heading": {
+        "text": "Caption for context",
+        "key": "caption"
+      },
+      "body": "<p>Full Image</p>\n<p>Beautiful visuals matter</p>\n<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/slide-picker-2/800/600\" alt=\"Sample image\" loading=\"lazy\" /><figcaption>Caption for context</figcaption></figure>"
+    },
+    "en-GB": {
+      "heading": {
+        "text": "Caption for context",
+        "key": "caption"
+      },
+      "body": "<p>Full Image</p>\n<p>Beautiful visuals matter</p>\n<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/slide-picker-2/800/600\" alt=\"Sample image\" loading=\"lazy\" /><figcaption>Caption for context</figcaption></figure>"
+    }
+  },
+  "embed-slide": {
+    "nl": {
+      "heading": {
+        "text": "Embed",
+        "key": null
+      },
+      "body": "<p>https://example.com</p>"
+    },
+    "en-GB": {
+      "heading": {
+        "text": "Embed",
+        "key": null
+      },
+      "body": "<p>https://example.com</p>"
+    }
+  },
+  "countdown-slide": {
+    "nl": {
+      "heading": {
+        "text": "Break",
+        "key": "title"
+      },
+      "body": "<p>Tijd!</p>"
+    },
+    "en-GB": {
+      "heading": {
+        "text": "Break",
+        "key": "title"
+      },
+      "body": "<p>Time!</p>"
+    }
+  },
+  "poll-slide": {
+    "nl": {
+      "heading": {
+        "text": "What do you think?",
+        "key": "question"
+      },
+      "body": "<ul class=\"reader-items\"><li class=\"reader-item\"><h3>Strongly agree</h3></li><li class=\"reader-item\"><h3>Somewhat agree</h3></li><li class=\"reader-item\"><h3>Neutral</h3></li><li class=\"reader-item\"><h3>Disagree</h3></li></ul>"
+    },
+    "en-GB": {
+      "heading": {
+        "text": "What do you think?",
+        "key": "question"
+      },
+      "body": "<ul class=\"reader-items\"><li class=\"reader-item\"><h3>Strongly agree</h3></li><li class=\"reader-item\"><h3>Somewhat agree</h3></li><li class=\"reader-item\"><h3>Neutral</h3></li><li class=\"reader-item\"><h3>Disagree</h3></li></ul>"
+    }
+  },
+  "likert-slide": {
+    "nl": {
+      "heading": {
+        "text": "Rate your experience",
+        "key": "question"
+      },
+      "body": "<ol class=\"reader-items\"><li class=\"reader-item\"><h3>Poor</h3></li><li class=\"reader-item\"><h3>Fair</h3></li><li class=\"reader-item\"><h3>Good</h3></li><li class=\"reader-item\"><h3>Very good</h3></li><li class=\"reader-item\"><h3>Excellent</h3></li></ol>"
+    },
+    "en-GB": {
+      "heading": {
+        "text": "Rate your experience",
+        "key": "question"
+      },
+      "body": "<ol class=\"reader-items\"><li class=\"reader-item\"><h3>Poor</h3></li><li class=\"reader-item\"><h3>Fair</h3></li><li class=\"reader-item\"><h3>Good</h3></li><li class=\"reader-item\"><h3>Very good</h3></li><li class=\"reader-item\"><h3>Excellent</h3></li></ol>"
+    }
+  },
+  "likert-slider-slide": {
+    "nl": {
+      "heading": {
+        "text": "How satisfied are you?",
+        "key": "question"
+      },
+      "body": "<p>Not at all</p>\n<p>Completely</p>"
+    },
+    "en-GB": {
+      "heading": {
+        "text": "How satisfied are you?",
+        "key": "question"
+      },
+      "body": "<p>Not at all</p>\n<p>Completely</p>"
+    }
+  },
+  "feedback-slide": {
+    "nl": {
+      "heading": {
+        "text": "What would you improve?",
+        "key": "question"
+      },
+      "body": "<p>Share your thoughts...</p>"
+    },
+    "en-GB": {
+      "heading": {
+        "text": "What would you improve?",
+        "key": "question"
+      },
+      "body": "<p>Share your thoughts...</p>"
+    }
+  },
+  "follow-invite-slide": {
+    "nl": {
+      "heading": {
+        "text": "Follow-along invite",
+        "key": null
+      },
+      "body": ""
+    },
+    "en-GB": {
+      "heading": {
+        "text": "Follow-along invite",
+        "key": null
+      },
+      "body": ""
+    }
+  },
+  "chart-slide": {
+    "nl": {
+      "heading": {
+        "text": "Growth Metrics",
+        "key": "title"
+      },
+      "body": "<table class=\"reader-table\"><caption>Chart type: line.</caption><thead><tr><th scope=\"col\">Month</th><th scope=\"col\">Sales</th><th scope=\"col\">Target</th></tr></thead><tbody><tr><td>Jan</td><td>30</td><td>25</td></tr><tr><td>Feb</td><td>45</td><td>40</td></tr><tr><td>Mar</td><td>55</td><td>50</td></tr><tr><td>Apr</td><td>70</td><td>60</td></tr><tr><td>May</td><td>85</td><td>75</td></tr></tbody></table>"
+    },
+    "en-GB": {
+      "heading": {
+        "text": "Growth Metrics",
+        "key": "title"
+      },
+      "body": "<table class=\"reader-table\"><caption>Chart type: line.</caption><thead><tr><th scope=\"col\">Month</th><th scope=\"col\">Sales</th><th scope=\"col\">Target</th></tr></thead><tbody><tr><td>Jan</td><td>30</td><td>25</td></tr><tr><td>Feb</td><td>45</td><td>40</td></tr><tr><td>Mar</td><td>55</td><td>50</td></tr><tr><td>Apr</td><td>70</td><td>60</td></tr><tr><td>May</td><td>85</td><td>75</td></tr></tbody></table>"
+    }
+  },
+  "text-blocks-slide": {
+    "nl": {
+      "heading": {
+        "text": "Our Process",
+        "key": "title"
+      },
+      "body": "<p>From concept to delivery</p>\n<ol class=\"reader-items\"><li class=\"reader-item\"><ul class=\"reader-items\"><li class=\"reader-item\"><h3>Research</h3>\n<p>Understanding the challenge</p></li><li class=\"reader-item\"><h3>Design</h3>\n<p>Creating the solution</p></li><li class=\"reader-item\"><h3>Build</h3>\n<p>Making it real</p></li></ul><p class=\"reader-relation\" data-relation=\"down\">leads to</p></li><li class=\"reader-item\"><h3>The Result</h3>\n<ul class=\"reader-items\"><li class=\"reader-item\"><h3>Launch</h3>\n<p>Going live</p></li><li class=\"reader-item\"><h3>Measure</h3>\n<p>Tracking success</p></li><li class=\"reader-item\"><h3>Iterate</h3>\n<p>Continuous improvement</p></li></ul></li></ol>"
+    },
+    "en-GB": {
+      "heading": {
+        "text": "Our Process",
+        "key": "title"
+      },
+      "body": "<p>From concept to delivery</p>\n<ol class=\"reader-items\"><li class=\"reader-item\"><ul class=\"reader-items\"><li class=\"reader-item\"><h3>Research</h3>\n<p>Understanding the challenge</p></li><li class=\"reader-item\"><h3>Design</h3>\n<p>Creating the solution</p></li><li class=\"reader-item\"><h3>Build</h3>\n<p>Making it real</p></li></ul><p class=\"reader-relation\" data-relation=\"down\">leads to</p></li><li class=\"reader-item\"><h3>The Result</h3>\n<ul class=\"reader-items\"><li class=\"reader-item\"><h3>Launch</h3>\n<p>Going live</p></li><li class=\"reader-item\"><h3>Measure</h3>\n<p>Tracking success</p></li><li class=\"reader-item\"><h3>Iterate</h3>\n<p>Continuous improvement</p></li></ul></li></ol>"
+    }
+  },
+  "comparison-slide": {
+    "nl": {
+      "heading": {
+        "text": "Build or Buy",
+        "key": "title"
+      },
+      "body": "<p>Choosing the platform for next year</p>\n<p>Build in-house</p>\n<ul><li>Fits our workflow exactly</li><li>Two engineers for six months</li><li>Every bug is ours</li></ul>\n<p>Buy off the shelf</p>\n<ul><li>Live within a month</li><li>Licence per seat, per year</li><li>Their roadmap, not ours</li></ul>\n<p>Buy now, revisit when the team doubles</p>"
+    },
+    "en-GB": {
+      "heading": {
+        "text": "Build or Buy",
+        "key": "title"
+      },
+      "body": "<p>Choosing the platform for next year</p>\n<p>Build in-house</p>\n<ul><li>Fits our workflow exactly</li><li>Two engineers for six months</li><li>Every bug is ours</li></ul>\n<p>Buy off the shelf</p>\n<ul><li>Live within a month</li><li>Licence per seat, per year</li><li>Their roadmap, not ours</li></ul>\n<p>Buy now, revisit when the team doubles</p>"
+    }
+  },
+  "process-slide": {
+    "nl": {
+      "heading": {
+        "text": "From brief to launch",
+        "key": "title"
+      },
+      "body": "<p>How a project runs here</p>\n<ol class=\"reader-items\"><li class=\"reader-item\"><h3>Discover</h3>\n<p>Interviews and a look at the numbers</p></li><li class=\"reader-item\"><h3>Shape</h3>\n<p>Three sketches, then one direction</p></li><li class=\"reader-item\"><h3>Build</h3>\n<p>Weekly demos, no big reveal</p></li><li class=\"reader-item\"><h3>Launch</h3>\n<p>Ship, measure, adjust</p></li></ol>"
+    },
+    "en-GB": {
+      "heading": {
+        "text": "From brief to launch",
+        "key": "title"
+      },
+      "body": "<p>How a project runs here</p>\n<ol class=\"reader-items\"><li class=\"reader-item\"><h3>Discover</h3>\n<p>Interviews and a look at the numbers</p></li><li class=\"reader-item\"><h3>Shape</h3>\n<p>Three sketches, then one direction</p></li><li class=\"reader-item\"><h3>Build</h3>\n<p>Weekly demos, no big reveal</p></li><li class=\"reader-item\"><h3>Launch</h3>\n<p>Ship, measure, adjust</p></li></ol>"
+    }
+  },
+  "timeline-slide": {
+    "nl": {
+      "heading": {
+        "text": "From pilot to platform",
+        "key": "title"
+      },
+      "body": "<p>Five years, five turns</p>\n<ol class=\"reader-items\"><li class=\"reader-item\"><h3>2021</h3>\n<p>Pilot</p>\n<p>One team, one workflow</p></li><li class=\"reader-item\"><h3>2022</h3>\n<p>First customers</p>\n<p>Twelve teams paying</p></li><li class=\"reader-item\"><h3>2023</h3>\n<p>Self-service</p>\n<p>Signing up without us</p></li><li class=\"reader-item\"><h3>2024</h3>\n<p>Platform</p>\n<p>Public API, first integrations</p></li><li class=\"reader-item\"><h3>2025</h3>\n<p>Scale</p>\n<p>Eight countries, one product</p></li></ol>"
+    },
+    "en-GB": {
+      "heading": {
+        "text": "From pilot to platform",
+        "key": "title"
+      },
+      "body": "<p>Five years, five turns</p>\n<ol class=\"reader-items\"><li class=\"reader-item\"><h3>2021</h3>\n<p>Pilot</p>\n<p>One team, one workflow</p></li><li class=\"reader-item\"><h3>2022</h3>\n<p>First customers</p>\n<p>Twelve teams paying</p></li><li class=\"reader-item\"><h3>2023</h3>\n<p>Self-service</p>\n<p>Signing up without us</p></li><li class=\"reader-item\"><h3>2024</h3>\n<p>Platform</p>\n<p>Public API, first integrations</p></li><li class=\"reader-item\"><h3>2025</h3>\n<p>Scale</p>\n<p>Eight countries, one product</p></li></ol>"
+    }
+  },
+  "matrix-slide": {
+    "nl": {
+      "heading": {
+        "text": "Impact vs. effort",
+        "key": "title"
+      },
+      "body": "<p>Where the next quarter goes</p>\n<ul class=\"reader-items\"><li class=\"reader-item\"><h3>Quick wins</h3>\n<ul><li>Faster search</li><li>Keyboard shortcuts</li><li>Better empty states</li></ul></li><li class=\"reader-item\"><h3>Big bets</h3>\n<ul><li>Offline editing</li><li>Real-time collaboration</li></ul></li><li class=\"reader-item\"><h3>Fill-ins</h3>\n<ul><li>Icon refresh</li><li>Two more export formats</li></ul></li><li class=\"reader-item\"><h3>Time sinks</h3>\n<ul><li>Per-team theming</li><li>Importing the legacy format</li></ul></li></ul>"
+    },
+    "en-GB": {
+      "heading": {
+        "text": "Impact vs. effort",
+        "key": "title"
+      },
+      "body": "<p>Where the next quarter goes</p>\n<ul class=\"reader-items\"><li class=\"reader-item\"><h3>Quick wins</h3>\n<ul><li>Faster search</li><li>Keyboard shortcuts</li><li>Better empty states</li></ul></li><li class=\"reader-item\"><h3>Big bets</h3>\n<ul><li>Offline editing</li><li>Real-time collaboration</li></ul></li><li class=\"reader-item\"><h3>Fill-ins</h3>\n<ul><li>Icon refresh</li><li>Two more export formats</li></ul></li><li class=\"reader-item\"><h3>Time sinks</h3>\n<ul><li>Per-team theming</li><li>Importing the legacy format</li></ul></li></ul>"
+    }
+  },
+  "funnel-slide": {
+    "nl": {
+      "heading": {
+        "text": "Sales Funnel",
+        "key": "title"
+      },
+      "body": "<p>From awareness to conversion</p>\n<ol class=\"reader-items\"><li class=\"reader-item\"><h3>Awareness</h3>\n<p>10,000</p>\n<p>Website visitors</p></li><li class=\"reader-item\"><h3>Interest</h3>\n<p>3,000</p>\n<p>30% engagement</p></li><li class=\"reader-item\"><h3>Consideration</h3>\n<p>800</p>\n<p>Qualified leads</p></li><li class=\"reader-item\"><h3>Conversion</h3>\n<p>200</p>\n<p>New customers</p></li></ol>"
+    },
+    "en-GB": {
+      "heading": {
+        "text": "Sales Funnel",
+        "key": "title"
+      },
+      "body": "<p>From awareness to conversion</p>\n<ol class=\"reader-items\"><li class=\"reader-item\"><h3>Awareness</h3>\n<p>10,000</p>\n<p>Website visitors</p></li><li class=\"reader-item\"><h3>Interest</h3>\n<p>3,000</p>\n<p>30% engagement</p></li><li class=\"reader-item\"><h3>Consideration</h3>\n<p>800</p>\n<p>Qualified leads</p></li><li class=\"reader-item\"><h3>Conversion</h3>\n<p>200</p>\n<p>New customers</p></li></ol>"
+    }
+  },
+  "pyramid-slide": {
+    "nl": {
+      "heading": {
+        "text": "Priority Pyramid",
+        "key": "title"
+      },
+      "body": "<p>Our focus areas</p>\n<ol class=\"reader-items\"><li class=\"reader-item\"><h3>Vision</h3>\n<p>Long-term goals</p></li><li class=\"reader-item\"><h3>Strategy</h3>\n<p>How we get there</p></li><li class=\"reader-item\"><h3>Tactics</h3>\n<p>Day-to-day actions</p></li><li class=\"reader-item\"><h3>Operations</h3>\n<p>Foundation</p></li></ol>"
+    },
+    "en-GB": {
+      "heading": {
+        "text": "Priority Pyramid",
+        "key": "title"
+      },
+      "body": "<p>Our focus areas</p>\n<ol class=\"reader-items\"><li class=\"reader-item\"><h3>Vision</h3>\n<p>Long-term goals</p></li><li class=\"reader-item\"><h3>Strategy</h3>\n<p>How we get there</p></li><li class=\"reader-item\"><h3>Tactics</h3>\n<p>Day-to-day actions</p></li><li class=\"reader-item\"><h3>Operations</h3>\n<p>Foundation</p></li></ol>"
+    }
+  },
+  "cycle-slide": {
+    "nl": {
+      "heading": {
+        "text": "Feedback Loop",
+        "key": "title"
+      },
+      "body": "<p>Continuous improvement</p>\n<p>Quality</p>\n<ol class=\"reader-items\"><li class=\"reader-item\"><h3>Plan</h3>\n<p>Set objectives</p></li><li class=\"reader-item\"><h3>Do</h3>\n<p>Implement changes</p></li><li class=\"reader-item\"><h3>Check</h3>\n<p>Measure results</p></li><li class=\"reader-item\"><h3>Act</h3>\n<p>Standardise</p></li></ol>"
+    },
+    "en-GB": {
+      "heading": {
+        "text": "Feedback Loop",
+        "key": "title"
+      },
+      "body": "<p>Continuous improvement</p>\n<p>Quality</p>\n<ol class=\"reader-items\"><li class=\"reader-item\"><h3>Plan</h3>\n<p>Set objectives</p></li><li class=\"reader-item\"><h3>Do</h3>\n<p>Implement changes</p></li><li class=\"reader-item\"><h3>Check</h3>\n<p>Measure results</p></li><li class=\"reader-item\"><h3>Act</h3>\n<p>Standardise</p></li></ol>"
+    }
+  },
+  "gallery-slide": {
+    "nl": {
+      "heading": {
+        "text": "Project Highlights",
+        "key": "title"
+      },
+      "body": "<p>Recent work</p>\n<ul class=\"reader-items\"><li class=\"reader-item\"><figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/gallery1/800/600\" alt=\"Project Alpha\" loading=\"lazy\" /><figcaption>Project Alpha</figcaption></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/gallery2/800/600\" alt=\"Project Beta\" loading=\"lazy\" /><figcaption>Project Beta</figcaption></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/gallery3/800/600\" alt=\"Project Gamma\" loading=\"lazy\" /><figcaption>Project Gamma</figcaption></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/gallery4/800/600\" alt=\"Project Delta\" loading=\"lazy\" /><figcaption>Project Delta</figcaption></figure></li></ul>"
+    },
+    "en-GB": {
+      "heading": {
+        "text": "Project Highlights",
+        "key": "title"
+      },
+      "body": "<p>Recent work</p>\n<ul class=\"reader-items\"><li class=\"reader-item\"><figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/gallery1/800/600\" alt=\"Project Alpha\" loading=\"lazy\" /><figcaption>Project Alpha</figcaption></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/gallery2/800/600\" alt=\"Project Beta\" loading=\"lazy\" /><figcaption>Project Beta</figcaption></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/gallery3/800/600\" alt=\"Project Gamma\" loading=\"lazy\" /><figcaption>Project Gamma</figcaption></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/gallery4/800/600\" alt=\"Project Delta\" loading=\"lazy\" /><figcaption>Project Delta</figcaption></figure></li></ul>"
+    }
+  },
+  "custom-html-slide": {
+    "nl": {
+      "heading": {
+        "text": "Custom HTML",
+        "key": null
+      },
+      "body": "<pre class=\"reader-code\"><code>&lt;div class=&quot;ch-card&quot;&gt;\n  &lt;p class=&quot;ch-kicker&quot;&gt;Uptime this quarter&lt;/p&gt;\n  &lt;p class=&quot;ch-figure&quot;&gt;99.98%&lt;/p&gt;\n  &lt;p class=&quot;ch-note&quot;&gt;Two incidents, both under four minutes.&lt;/p&gt;\n&lt;/div&gt;</code></pre>\n<pre class=\"reader-code\"><code>.ch-card {\n  height: 100%;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  gap: 0.35rem;\n  text-align: center;\n}\n.ch-kicker { text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.9rem; opacity: 0.7; }\n.ch-figure { font-size: 4.5rem; font-weight: 800; line-height: 1; }\n.ch-note { opacity: 0.7; }</code></pre>"
+    },
+    "en-GB": {
+      "heading": {
+        "text": "Custom HTML",
+        "key": null
+      },
+      "body": "<pre class=\"reader-code\"><code>&lt;div class=&quot;ch-card&quot;&gt;\n  &lt;p class=&quot;ch-kicker&quot;&gt;Uptime this quarter&lt;/p&gt;\n  &lt;p class=&quot;ch-figure&quot;&gt;99.98%&lt;/p&gt;\n  &lt;p class=&quot;ch-note&quot;&gt;Two incidents, both under four minutes.&lt;/p&gt;\n&lt;/div&gt;</code></pre>\n<pre class=\"reader-code\"><code>.ch-card {\n  height: 100%;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  gap: 0.35rem;\n  text-align: center;\n}\n.ch-kicker { text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.9rem; opacity: 0.7; }\n.ch-figure { font-size: 4.5rem; font-weight: 800; line-height: 1; }\n.ch-note { opacity: 0.7; }</code></pre>"
+    }
+  },
+  "end-slide": {
+    "nl": {
+      "heading": {
+        "text": "Thank you",
+        "key": "title"
+      },
+      "body": "<p>Questions are welcome — now, or in the hallway afterwards.</p>\n<p>Robin Meyer</p>\n<p>robin@example.com</p>\n<p>example.com/talks</p>\n<p>LinkedIn</p>\n<p>linkedin.com/in/example</p>"
+    },
+    "en-GB": {
+      "heading": {
+        "text": "Thank you",
+        "key": "title"
+      },
+      "body": "<p>Questions are welcome — now, or in the hallway afterwards.</p>\n<p>Robin Meyer</p>\n<p>robin@example.com</p>\n<p>example.com/talks</p>\n<p>LinkedIn</p>\n<p>linkedin.com/in/example</p>"
+    }
+  }
+}

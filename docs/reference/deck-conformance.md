@@ -196,6 +196,15 @@ serialized coordinate list — says so once, on the field, and travels through
 `/api/slide-types` like the declarations above. A reader that skipped such
 fields by key name would be guessing; this one follows the declaration.
 
+**What the worked example produces is pinned.** Because the projection is
+derived from `fields[]`, a field added, renamed or re-typed moves what the
+reader calls the heading of a slide without anything saying so — and the same
+projection is what a PPTX mapper reads to find a title box.
+`tests/fixtures/semantic-projection.json` holds the reader form of all 34 core
+types in both deck languages, so a change to any of them arrives as a diff to
+accept rather than as a silent move. Regenerate it deliberately with
+`UPDATE_SNAPSHOT=1 node --test tests/semantic-projection-snapshot.test.js`.
+
 ## Level 2 — core-profile conformance
 
 Level 2 adds the nine tier-1 types and their field contracts:
