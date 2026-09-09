@@ -78,6 +78,16 @@ Apply it at the recurring moments:
 - **Weighing a design**: "the code already accepts X" is never an argument —
   current behaviour describes the codebase, it does not justify the contract.
   When surfaces disagree, the inconsistency is the defect, not the precedent.
+- **Meeting a form question mid-build**: decide it on the doctrine side
+  (declaration over a branch on a name, one shape, refuse over silently
+  repair) and state the decision in the PR body for the reviewer to test.
+  "Behaviour preserved, minted as a B-number, test pins the disagreement" is
+  not an option — that parks tolerance with a label on it (D92, 2026-09-09).
+  Only a _product_ question (does Jaap want X at all) is parked, with an
+  advice, in the terugkeer-check of `docs/plans/handoff/queue.md`.
+- **Reviewing for parked tolerance**: a PR that _leaves_ an existing second
+  form standing and mints a number for it is the same blocking finding as a
+  PR that adds one. Decide it in the review (a D-number) or send it back.
 
 ## Docs discipline (maintain this in every session)
 
