@@ -1,5 +1,8 @@
 import { isNonEmptyString, safeHref } from './helpers.js';
-import { SLIDE_BG_ID_RE } from '../theme-slide-backgrounds.js';
+import {
+  SLIDE_BG_ID_RE,
+  mergeBackgroundOptions,
+} from '../theme-slide-backgrounds.js';
 
 /**
  * The single declared vocabulary of inspector field types.
@@ -36,6 +39,28 @@ export function enumOptionValues(field) {
       return null; // Mark invalid entries as null
     })
     .filter((v) => v !== null); // Filter out null but keep empty strings
+}
+
+/**
+ * The values an `enum` field actually accepts in a deck, theme included.
+ *
+ * `background` is the one field whose option list is not closed by the
+ * definition alone: a theme may declare slide-background variants, and every
+ * surface that asks "is this value on offer" must offer their union — the
+ * editor's picker, the agent-facing schema, and the import funnel. Without a
+ * theme in hand the declared options are the answer.
+ *
+ * @param {Object} field - a field schema
+ * @param {Object} [theme] - the loaded theme, when the caller has one
+ * @returns {string[]}
+ */
+export function allowedEnumValues(field, theme) {
+  if (field?.key === 'background' && theme) {
+    return mergeBackgroundOptions(field.options, theme.slideBackgrounds).map(
+      (o) => o.value,
+    );
+  }
+  return enumOptionValues(field);
 }
 
 /** A value is "present" (not cleared) when it is neither null/undefined nor ''. */

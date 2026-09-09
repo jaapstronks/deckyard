@@ -6,7 +6,7 @@ import {
   loadDisabledSlideTypes,
   loadCustomSlideTypes,
 } from '../../../utils/org-slide-types.js';
-import { loadThemeAssets, resolveThemeId } from '../../../utils/themes.js';
+import { loadDeckTheme } from '../../../utils/themes.js';
 import { createLogger } from '../../../utils/logger.js';
 import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
 
@@ -69,22 +69,23 @@ function extractThemeContext(theme) {
  * Load the theme-appropriate title slide type and AI theme context for a deck.
  * Loading failures fall back to the default title slide with no theme context.
  *
+ * The loaded theme comes back too: the AI routes normalize their generated deck
+ * through `deckToPresentationParts`, and the slide factory behind it reads the
+ * theme for background presets and slide-background variants. Returning it here
+ * is what keeps them from loading the same theme a second time — or, as they
+ * did before, composing their slides against no theme at all.
+ *
  * @param {string} repoRoot
  * @param {string} effectiveTheme
- * @returns {Promise<{ titleSlideType: string, themeContext: object|null }>}
+ * @returns {Promise<{ titleSlideType: string, themeContext: object|null, theme: object|null }>}
  */
 export async function loadAiThemeContext(repoRoot, effectiveTheme) {
-  let titleSlideType = 'title-slide';
-  let themeContext = null;
-  try {
-    const themeId = resolveThemeId(effectiveTheme);
-    const theme = await loadThemeAssets(repoRoot, themeId);
-    titleSlideType = theme?.defaultTitleSlide || 'title-slide';
-    themeContext = extractThemeContext(theme);
-  } catch {
-    // ignore theme loading errors, use default
-  }
-  return { titleSlideType, themeContext };
+  const theme = await loadDeckTheme(repoRoot, effectiveTheme);
+  return {
+    titleSlideType: theme?.defaultTitleSlide || 'title-slide',
+    themeContext: theme ? extractThemeContext(theme) : null,
+    theme,
+  };
 }
 
 /**

@@ -42,9 +42,8 @@
 import { z } from 'zod';
 import {
   FIELD_TYPES,
-  enumOptionValues,
+  allowedEnumValues,
 } from '../../../../shared/slide-types/field-types.js';
-import { mergeBackgroundOptions } from '../../../../shared/theme-slide-backgrounds.js';
 import { slideInstanceKeys } from '../../../../shared/slide-types/instance-keys.js';
 
 /**
@@ -65,20 +64,6 @@ function numberSchema(field) {
   return z.union([num, z.literal('')]);
 }
 
-/**
- * The values an enum field accepts. `background` is the one field whose option
- * list is not closed by the definition alone: a theme may add slide-background
- * variants, and the editor's picker offers their union (`mergeBackgroundOptions`).
- */
-function enumValues(field, theme) {
-  if (field?.key === 'background' && theme) {
-    return mergeBackgroundOptions(field.options, theme.slideBackgrounds).map(
-      (o) => o.value,
-    );
-  }
-  return enumOptionValues(field);
-}
-
 /** A single field's value schema, before optionality is applied. */
 function valueSchema(field, theme) {
   const kind = FIELD_TYPES[field?.type]?.valueKind || 'string';
@@ -94,7 +79,7 @@ function valueSchema(field, theme) {
     case 'string':
     default:
       if (field?.type === 'enum') {
-        const values = enumValues(field, theme);
+        const values = allowedEnumValues(field, theme);
         // A blank enum is the cleared state, which only an optional field has.
         const accepted = field?.required ? values : [...values, ''];
         return accepted.length

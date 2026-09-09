@@ -54,6 +54,7 @@ import {
 import { listPresentationsSharedWithUser } from '../storage/collaborators.js';
 import {
   deckToPresentationParts,
+  newSlide,
   presentationToDeck,
 } from '../../shared/slide-types.js';
 import { generateDeckV2 } from '../utils/ai/index.js';
@@ -197,6 +198,49 @@ export function registerTools(
    */
   function sessionSlideTypes(context) {
     return buildMergedSlideTypes(storageScopeOf(context));
+  }
+
+  /**
+   * The loaded theme a slide is being created against, by theme id. Tolerant on
+   * purpose: a deck naming a theme this instance does not carry still gets its
+   * slide, just without a theme-seeded background.
+   * @param {string} [themeId]
+   * @returns {Promise<Object|null>} the loaded theme, or null
+   */
+  async function loadedTheme(themeId) {
+    try {
+      return await loadThemeAssets(repoRoot, resolveThemeId(themeId));
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * A slide written by an MCP tool, composed the way every other creation route
+   * composes one. Validation happens first — an agent's content is checked
+   * against the type before anything is built from it — and what survives is
+   * handed to the factory as a patch, so the slide arrives with the type's
+   * defaults for the keys the agent left out, a theme background if the type
+   * asks for one, and its declared instance keys filled in. Before this, the
+   * MCP write path stored validated content raw, which is why an agent-created
+   * poll slide reached storage without a `pollId`.
+   *
+   * @param {Object} opts
+   * @param {string} opts.type - registry key, as validated
+   * @param {Object} opts.content - the validated content
+   * @param {Record<string, Object>} opts.slideTypes - this session's registry
+   * @param {Object|null} [opts.theme] - the loaded theme
+   * @param {string} [opts.presentationId] - the deck being written
+   * @returns {{type: string, content: Object, notes: string}}
+   */
+  function composeMcpSlide({
+    type,
+    content,
+    slideTypes,
+    theme = null,
+    presentationId = '',
+  }) {
+    return newSlide({ type, content, slideTypes, theme, presentationId });
   }
 
   /**
@@ -500,14 +544,8 @@ export function registerTools(
       context,
     ) => {
       const effectiveOwner = ownerEmail || getOwner(context);
-      // Load theme for title slide type
-      let titleSlideType = 'title-slide';
-      try {
-        const themeObj = await loadThemeAssets(repoRoot, resolveThemeId(theme));
-        titleSlideType = themeObj?.defaultTitleSlide || 'title-slide';
-      } catch {
-        /* use default */
-      }
+      const themeObj = await loadedTheme(theme);
+      const titleSlideType = themeObj?.defaultTitleSlide || 'title-slide';
 
       const deck = await generateDeckV2(content, {
         userName: speaker,
@@ -519,7 +557,7 @@ export function registerTools(
       });
 
       // Create and save the presentation
-      const parts = deckToPresentationParts(deck);
+      const parts = deckToPresentationParts(deck, { theme: themeObj });
       if (title) parts.title = title;
 
       const created = await createPresentation(storageScopeOf(context), {
@@ -651,18 +689,11 @@ export function registerTools(
         notes: typeof s?.notes === 'string' ? s.notes : '',
       }));
 
+      const themeObj = await loadedTheme(theme);
+
       // Optional escape hatch: prepend an empty title slide if missing.
       if (auto_prepend_title) {
-        let titleSlideType = 'title-slide';
-        try {
-          const themeObj = await loadThemeAssets(
-            repoRoot,
-            resolveThemeId(theme),
-          );
-          titleSlideType = themeObj?.defaultTitleSlide || 'title-slide';
-        } catch {
-          /* keep default */
-        }
+        const titleSlideType = themeObj?.defaultTitleSlide || 'title-slide';
 
         if (inputSlides[0]?.type !== titleSlideType) {
           inputSlides = [
@@ -725,8 +756,13 @@ export function registerTools(
           ...created,
           title,
           slides: validatedSlides.map((s) => ({
-            type: s.type,
-            content: s.content,
+            ...composeMcpSlide({
+              type: s.type,
+              content: s.content,
+              slideTypes,
+              theme: themeObj,
+              presentationId: created.id,
+            }),
             notes: s.notes || '',
           })),
         },
@@ -797,6 +833,7 @@ export function registerTools(
       slide.content = { ...slide.content, ...content };
 
       // Validate the updated slide
+      const slideTypes = await sessionSlideTypes(context);
       const [validated] = validateAndFixRefinedSlides(
         [
           {
@@ -804,9 +841,18 @@ export function registerTools(
             content: slide.content,
           },
         ],
-        { slideTypes: await sessionSlideTypes(context) },
+        { slideTypes },
       );
-      slide.content = validated.content;
+      // Compose rather than assign: an update may change the slide's type, and
+      // the content it arrives with was shaped for the old one. The factory
+      // supplies whatever the new type declares and the update did not carry.
+      slide.content = composeMcpSlide({
+        type: slide.type,
+        content: validated.content,
+        slideTypes,
+        theme: await loadedTheme(pres?.theme),
+        presentationId,
+      }).content;
 
       await updatePresentation(
         storageScopeOf(context),
@@ -855,23 +901,25 @@ export function registerTools(
       });
 
       // Validate the new slide
+      const slideTypes = await sessionSlideTypes(context);
       const [validated] = validateAndFixRefinedSlides([{ type, content }], {
-        slideTypes: await sessionSlideTypes(context),
+        slideTypes,
       });
 
-      const newSlide = {
-        id: crypto.randomUUID(),
+      const added = composeMcpSlide({
         type: validated.type,
         content: validated.content,
-        notes: '',
-      };
+        slideTypes,
+        theme: await loadedTheme(pres?.theme),
+        presentationId,
+      });
 
       const insertAt =
         position != null
           ? Math.max(0, Math.min(pres.slides.length, position))
           : pres.slides.length;
 
-      pres.slides.splice(insertAt, 0, newSlide);
+      pres.slides.splice(insertAt, 0, added);
       await updatePresentation(
         storageScopeOf(context),
         presentationId,
@@ -881,9 +929,9 @@ export function registerTools(
 
       return {
         added: true,
-        slideId: newSlide.id,
+        slideId: added.id,
         position: insertAt,
-        type: newSlide.type,
+        type: added.type,
         totalSlides: pres.slides.length,
       };
     },

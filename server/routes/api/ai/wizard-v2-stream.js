@@ -73,7 +73,7 @@ export async function handleAiWizardV2Stream({
     (sandboxEnabled() ? sandboxDefaultThemeId() : 'default');
 
   // Load theme to get the correct title slide type and theme context for AI
-  const { titleSlideType, themeContext } = await loadAiThemeContext(
+  const { titleSlideType, themeContext, theme } = await loadAiThemeContext(
     repoRoot,
     effectiveTheme,
   );
@@ -221,7 +221,7 @@ export async function handleAiWizardV2Stream({
       ],
     };
 
-    const parts = deckToPresentationParts(deck);
+    const parts = deckToPresentationParts(deck, { theme });
     // Keep the per-slide "why this type" + alternatives on the saved slides;
     // the whole-deck review grid reads them after the editor loads the deck.
     reattachAiMeta(parts.slides, deck.slides);

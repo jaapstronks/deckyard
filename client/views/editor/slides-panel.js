@@ -2,8 +2,8 @@ import { openSlideTypeModal as openSlideTypeModalImpl } from './modals/slide-typ
 import { openSlideLibraryModal as openSlideLibraryModalImpl } from './modals/slide-library-modal.js';
 import { openFollowInviteSuggestModal } from './modals/follow-invite-suggest-modal.js';
 import { createSlideTypePicker } from './slide-type-picker.js';
-import { deepClone, makeNewSlide } from './editor-utils.js';
-import { seedAutoBackgroundPreset } from '../../../shared/theme-background-presets.js';
+import { deepClone } from './editor-utils.js';
+import { newSlide } from '../../../shared/slide-types/presentation.js';
 import { t } from '../../lib/ui-i18n.js';
 import { newId } from '../../lib/util/id.js';
 import { createSlideLibraryPicker } from './slide-library-picker.js';
@@ -223,12 +223,21 @@ export function createSlidesPanel({
   );
   drawerEl.append(drawerHeader, drawerBody);
 
-  const maybeAssignRandomBg = (slide) => {
-    // Types declaring autoBackgroundPreset get a random theme background on the
-    // canonical key. Same helper as newSlide(), so a slide inserted here and
-    // one created server-side come out identical.
-    seedAutoBackgroundPreset(slide?.content, SLIDE_TYPES?.[slide?.type], theme);
-  };
+  // Every insert in this panel composes through the one factory, with the
+  // three things this panel knows: the registry the editor holds (the
+  // `/api/slide-types` metadata, so a published `custom-<slug>` inserts too),
+  // the deck's active language, and the deck's theme and id. Defaults,
+  // background preset and instance keys all come from there — the panel used
+  // to add the last two back by hand afterwards.
+  const insertedSlide = (type, content = null) =>
+    newSlide({
+      type,
+      slideTypes: SLIDE_TYPES,
+      lang: pres?.i18n?.active,
+      theme,
+      presentationId: pres?.id || '',
+      content,
+    });
 
   const insertSlideObject = (s, { afterSlideId, parentId = null } = {}) => {
     const slides = pres.slides || [];
@@ -249,10 +258,7 @@ export function createSlidesPanel({
 
   // Helper to insert a follow-invite slide at a specific position
   const insertFollowInviteSlide = (afterSlideId) => {
-    const s = makeNewSlide('follow-invite-slide', SLIDE_TYPES, {
-      lang: pres?.i18n?.active,
-      presentationId: pres?.id || '',
-    });
+    const s = insertedSlide('follow-invite-slide');
     // No language on the content: the invite renders in the language of the
     // version it sits in, derived from the render context.
     insertSlideObject(s, { afterSlideId });
@@ -312,16 +318,9 @@ export function createSlidesPanel({
       toast?.error?.('This slide type is not available for the active theme.');
       return;
     }
-    const s = makeNewSlide(type, SLIDE_TYPES, {
-      lang: pres?.i18n?.active,
-      presentationId: pres?.id || '',
-    });
     // Layout-variant presets (picker item 15) pre-configure a few content fields
     // (e.g. imageSide, layout, variant) on top of the type's defaults.
-    if (contentOverrides && typeof contentOverrides === 'object') {
-      Object.assign(s.content, contentOverrides);
-    }
-    maybeAssignRandomBg(s);
+    const s = insertedSlide(type, contentOverrides);
 
     // An interactive slide needs an invite for the audience to join through:
     // if the deck has none, ask where it should go before inserting either.
@@ -420,15 +419,12 @@ export function createSlidesPanel({
       toast?.error?.('This slide type is not available for the active theme.');
       return;
     }
-    const s = makeNewSlide(type, SLIDE_TYPES, {
-      lang: pres?.i18n?.active,
-      presentationId: pres?.id || '',
-    });
-    const nextContent =
+    const s = insertedSlide(
+      type,
       item?.content && typeof item.content === 'object'
         ? deepClone(item.content)
-        : {};
-    s.content = { ...s.content, ...nextContent };
+        : null,
+    );
     // A library item is a copy of a slide, so the instance-bound content keys
     // its type declares are re-derived here too — a reused poll gets its own
     // pollId, a reused follow-invite points at this deck. Declaration:
@@ -438,7 +434,6 @@ export function createSlidesPanel({
       presentationId: pres?.id || '',
       newId,
     });
-    maybeAssignRandomBg(s);
     recordLibraryUsage(item);
 
     // Same suggestion as the type picker: a library copy of an interactive

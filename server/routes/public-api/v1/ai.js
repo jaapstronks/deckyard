@@ -12,8 +12,10 @@ import { generateSlidesToAppendFromRawContent } from '../../../utils/openai/appe
 import { getLlmStatus } from '../../../utils/llm/config.js';
 import {
   deckToPresentationParts,
+  deckThemeId,
   presentationToDeck,
 } from '../../../../shared/slide-types.js';
+import { loadDeckTheme } from '../../../utils/themes.js';
 import {
   sandboxDefaultThemeId,
   sandboxEnabled,
@@ -79,7 +81,7 @@ async function handleVendors(ctx) {
  * POST /api/v1/ai/wizard - Generate a new presentation from text.
  */
 async function handleWizard(ctx) {
-  const { storageScope, apiKey } = ctx;
+  const { repoRoot, storageScope, apiKey } = ctx;
 
   if (!requirePermission(ctx, 'ai')) return true;
 
@@ -117,11 +119,13 @@ async function handleWizard(ctx) {
       customSlideTypes,
     });
 
-    const parts = deckToPresentationParts(deck);
-
-    // Create the presentation
+    // The theme is decided before normalizing, because the slides compose
+    // against it.
     const effectiveTheme =
-      theme || (sandboxEnabled() ? sandboxDefaultThemeId() : parts.theme);
+      theme || (sandboxEnabled() ? sandboxDefaultThemeId() : deckThemeId(deck));
+    const parts = deckToPresentationParts(deck, {
+      theme: await loadDeckTheme(repoRoot, effectiveTheme),
+    });
 
     const created = await createPresentation(storageScope, {
       title: parts.title,
@@ -179,7 +183,7 @@ async function handleWizard(ctx) {
  * POST /api/v1/ai/append-slides - Generate slides to append to an existing presentation.
  */
 async function handleAppendSlides(ctx) {
-  const { apiKey } = ctx;
+  const { repoRoot, apiKey } = ctx;
 
   if (!requirePermission(ctx, 'ai')) return true;
 
@@ -227,8 +231,11 @@ async function handleAppendSlides(ctx) {
         customSlideTypes,
       });
 
-    // Normalize into internal slide format
-    const parts = deckToPresentationParts(generatedSlides);
+    // Normalize into internal slide format, against the theme of the deck the
+    // slides are being appended to.
+    const parts = deckToPresentationParts(generatedSlides, {
+      theme: await loadDeckTheme(repoRoot, deckThemeId(existingDeck)),
+    });
     const slides = Array.isArray(parts?.slides) ? parts.slides : [];
 
     // Ensure required image URLs are never blank

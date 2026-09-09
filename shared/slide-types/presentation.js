@@ -6,6 +6,8 @@ import {
   escapeHtml,
 } from './helpers.js';
 import { seedAutoBackgroundPreset } from '../theme-background-presets.js';
+import { resolveTypeDefaults } from './type-defaults.js';
+import { applyInstanceKeyDefaults } from './instance-keys.js';
 import {
   SLIDE_BG_ID_RE,
   slideBackgroundContrastClass,
@@ -81,52 +83,94 @@ export function newPresentation({
         mode: 'auto', // 'auto' | 'pacing'
       },
     },
-    slides: [newSlide({ type: titleSlideType, theme: themeConfig })],
+    // The deck's language reaches the factory, so a new NL deck's title slide
+    // is seeded from `defaultsByLang.nl` — the same content an insert in the
+    // editor produces for that type.
+    slides: [
+      newSlide({
+        type: titleSlideType,
+        theme: themeConfig,
+        lang: normalizeLang(lang) || DEFAULT_DECK_LANG,
+      }),
+    ],
   };
 }
 
 /**
- * Create a blank slide of a given type.
+ * The one place a slide of a given type comes into being.
+ *
+ * Every route that creates a slide composes it here — the editor's insert
+ * paths, `newPresentation`, the public API's per-slide POST, the slide-library
+ * insert, deck import (`normalizeDeckSlide` starts from this and merges the
+ * imported content over it) and the MCP write tools (which compose after
+ * validation). There used to be three spellings of this composition plus one
+ * route that skipped it entirely, so every hook that had to hold "on both
+ * creation paths" was written three times and missed the fourth.
+ *
+ * The composition, in order:
+ *
+ * 1. `defaultsByLang(lang)` when the type declares one for this deck language,
+ *    otherwise `defaults` (`resolveTypeDefaults`).
+ * 2. `content` merged over that, for the callers that bring content along — a
+ *    layout-variant preset, a slide-library item, an imported slide. It is a
+ *    *patch*: a key the caller omits keeps the type's default, which is how
+ *    "don't blank a required field on import" is expressed.
+ * 3. `seedAutoBackgroundPreset` — types declaring `autoBackgroundPreset` take
+ *    their `slideBgImage` from `theme.backgroundPresets`. After the merge, so
+ *    a preset is never stacked on a background the caller's content already
+ *    carries (including a legacy `bgImage`).
+ * 4. `applyInstanceKeyDefaults` — the keys the type declares as bound to this
+ *    slide instance (`pollId`, `presentationId`). A declaration, so there is
+ *    no branch on the type name here.
  *
  * @param {Object} opts
  * @param {string} opts.type - slide type id
  * @param {string|null} [opts.parentId] - parent slide id, or null for top-level
- * @param {Object} [opts.theme] - the active theme. Types declaring
- *   `autoBackgroundPreset` take their `slideBgImage` from
- *   `theme.backgroundPresets`; without a theme (or without presets) the slide
- *   is created with no background image.
+ * @param {Object} [opts.theme] - the active theme. Without one (or without
+ *   presets) the slide is created with no background image.
+ * @param {string|null} [opts.lang] - the deck's language. Without one the
+ *   type's neutral `defaults` are used.
+ * @param {Object} [opts.content] - content to merge over the defaults, as a
+ *   patch (see step 2). Callers that clean or normalize input do that first
+ *   and hand the result in here, rather than composing a slide of their own.
+ * @param {string} [opts.presentationId] - the deck the slide is being created
+ *   in. What a `presentation-id` instance key resolves against; without it
+ *   such a key is left alone (see `applyInstanceKeyDefaults`), and the
+ *   server's save seam repairs it on first write.
  * @param {Record<string, Object>} [opts.slideTypes] - the registry the type is
  *   looked up in. Defaults to the process-wide map; an org-aware caller passes
  *   `buildMergedSlideTypes(scope)` so a DB-backed `custom-<slug>` can be
- *   created too. `type` is a registry key here, not a spelling to resolve —
+ *   created too, and the editor passes the `/api/slide-types` metadata it
+ *   already holds. `type` is a registry key here, not a spelling to resolve —
  *   callers fold spellings down with `resolveSlideTypeName()` first.
  */
 export function newSlide({
   type,
   parentId = null,
   theme = null,
+  lang = null,
+  content = null,
+  presentationId = '',
   slideTypes = SLIDE_TYPES,
 }) {
-  const def = slideTypes[type];
+  const def = slideTypes?.[type];
   if (!def) throw new Error(`Unknown slide type: ${type}`);
+  const composed = resolveTypeDefaults(def, normalizeLang(lang));
+  if (content && typeof content === 'object') Object.assign(composed, content);
   const slide = {
     id: cryptoUuid(),
     type,
     parentId: parentId || null, // null = top-level, UUID = child of that slide
-    content: structuredClone(def.defaults),
+    content: composed,
     notes: '',
     visibility: {}, // Empty = all false = visible everywhere (backward compatible)
   };
-  // Types declaring autoBackgroundPreset get a random theme background on the
-  // canonical key (see seedAutoBackgroundPreset — one helper, both callers).
   seedAutoBackgroundPreset(slide.content, def, theme);
-  if (type === 'poll-slide') {
-    const pollId =
-      typeof slide.content.pollId === 'string'
-        ? slide.content.pollId.trim()
-        : '';
-    if (!pollId) slide.content.pollId = cryptoUuid();
-  }
+  applyInstanceKeyDefaults(slide, {
+    def,
+    presentationId: presentationId || '',
+    newId: cryptoUuid,
+  });
   return slide;
 }
 

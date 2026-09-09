@@ -1,14 +1,9 @@
 import { SLIDE_TYPES, GLOBAL_SLIDE_FIELD_KEYS } from './registry.js';
 import { pickBackgroundPreset } from '../theme-background-presets.js';
 import { normalizeLang } from '../i18n-utils.js';
+import { resolveTypeDefaults } from './type-defaults.js';
 import { IMAGE_TEXT_IMAGE_DEFAULTS } from './types/image-text-slide/images.js';
 import { resolveImageSlideImage } from './types/image-slide/image.js';
-
-function deepClone(v) {
-  return typeof structuredClone === 'function'
-    ? structuredClone(v)
-    : JSON.parse(JSON.stringify(v));
-}
 
 function nonEmptyString(v) {
   return typeof v === 'string' && v.trim().length > 0;
@@ -25,16 +20,9 @@ function isListType(type) {
 function defaultsForType(type, { slideTypes = SLIDE_TYPES, lang = null } = {}) {
   const def = slideTypes?.[type];
   if (!def) throw new Error(`Unknown slide type: ${type}`);
-  const l = normalizeLang(lang);
-  const byLang =
-    l &&
-    def.defaultsByLang &&
-    typeof def.defaultsByLang === 'object' &&
-    def.defaultsByLang[l] &&
-    typeof def.defaultsByLang[l] === 'object'
-      ? def.defaultsByLang[l]
-      : null;
-  return deepClone(byLang || def.defaults || {});
+  // Same resolver the slide factory uses, so a converted slide is seeded from
+  // the same skeleton a freshly created one of that type would get.
+  return resolveTypeDefaults(def, normalizeLang(lang));
 }
 
 function preserveGlobalFields({ fromContent, toContent }) {

@@ -930,7 +930,7 @@
   },
   "server/mcp/tools.js": {
     "no-restricted-syntax": {
-      "count": 4
+      "count": 2
     }
   },
   "server/media/bundled-gradients.js": {
@@ -960,11 +960,6 @@
     }
   },
   "server/routes/api/activity.js": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "server/routes/api/ai/shared.js": {
     "no-restricted-syntax": {
       "count": 1
     }
@@ -1034,21 +1029,6 @@
       "count": 1
     }
   },
-  "server/routes/api/presentations/import-deck.js": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "server/routes/api/presentations/import-json.js": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "server/routes/api/presentations/import-markdown.js": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "server/routes/api/presentations/popular.js": {
     "no-useless-assignment": {
       "count": 1
@@ -1085,11 +1065,6 @@
     }
   },
   "server/routes/public-api/v1/middleware.js": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "server/routes/public-api/v1/slides.js": {
     "no-restricted-syntax": {
       "count": 1
     }
