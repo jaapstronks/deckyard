@@ -38,10 +38,11 @@
  * > or thrown away.
  *
  * The operational test is a round-trip: flip the variant and flip it back; if a
- * content-bearing field is orphaned, it was never a variant. That is what makes
- * `image-text-slide`'s `duo` tile (which reads `images[0-3]`) a second contract
- * under one id rather than a ninth layout, while `split`/`corner`/`row-top` are
- * exactly what a variant axis is for.
+ * content-bearing field is orphaned, it was never a variant. That is what made
+ * `image-text-slide`'s plural tiles (`duo` and the rows, reading `images[0..2]`)
+ * a second contract under one id rather than extra layouts, and why they became
+ * `image-set-slide` (D100): on each type every tile now reads the same fields,
+ * which is exactly what a variant axis is for.
  *
  * ## The item contract, and why it is the interop currency
  *

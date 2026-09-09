@@ -480,11 +480,18 @@ test('every layout variant of a type carries the same content', () => {
  * bulleted changes what the slide *promises* (a sequence rather than a set),
  * which is a question for the `intent` facet, but it orphans nothing, so under
  * *this* facet it is a variant. `callout-slide.variant` is the same shape of
- * axis (five kinds on one type) and rides along.
+ * axis (five kinds on one type) and rides along, as do the three other types
+ * whose whole render axis is one plain enum with no tile at all
+ * (`comparison-slide.variant`, `gallery-slide.layout`,
+ * `icon-card-grid-slide.layout`; #1123 review). A type with tiles for part of
+ * an axis is assertion 4's business.
  */
 const ENUM_VARIANT_AXES = {
   'list-slide': ['variant'],
   'callout-slide': ['variant'],
+  'comparison-slide': ['variant'],
+  'gallery-slide': ['layout'],
+  'icon-card-grid-slide': ['layout'],
 };
 
 test('every declared enum variant axis carries the same content', () => {

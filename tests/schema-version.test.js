@@ -1650,6 +1650,42 @@ test('a split slide flattens images[0] and drops the retired keys', () => {
   assert.equal(JSON.stringify(slide.content).includes('b.jpg'), false);
 });
 
+test("an item's partial focus out-votes the slide-level pair on the flat form", () => {
+  // The retired resolver read the item as soon as EITHER axis was set, so its
+  // empty axis meant the default, never the slide-level value beside it. The
+  // flat form must say the same: item 0's focus, both axes, nothing merged.
+  const migrated = migratePresentation(
+    deckAtV14({
+      layout: 'split',
+      focusX: 20,
+      focusY: 80,
+      images: [{ src: 'a.jpg', alt: 'a', focusX: 70 }],
+    }),
+  );
+  const content = migrated.slides[0].content;
+  assert.equal(content.focusX, 70);
+  assert.equal(content.focusY, '', 'the slide-level focusY did not survive');
+});
+
+test('a flat fit on a plural slide does not ride along into image-set', () => {
+  // image-set has no slide-level image key; the plural type never read a flat
+  // `fit`, so it is dropped on this route exactly as on the flat one.
+  const migrated = migratePresentation(
+    deckAtV14({
+      layout: 'row-top',
+      fit: 'contain',
+      images: [{ src: 'a.jpg' }, { src: 'b.jpg' }],
+    }),
+  );
+  const content = migrated.slides[0].content;
+  assert.equal(migrated.slides[0].type, 'image-set-slide');
+  assert.equal(Object.prototype.hasOwnProperty.call(content, 'fit'), false);
+  assert.deepEqual(
+    content.images.map((it) => it.fit),
+    ['', ''],
+  );
+});
+
 test('a split slide without an explicit item fit carries no flat fit', () => {
   // The plural type never read a flat `fit`, so promoting one would give the
   // slide a crop it never rendered with.

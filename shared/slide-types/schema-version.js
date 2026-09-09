@@ -512,13 +512,18 @@ const RETIRED_IMAGE_TEXT_KEYS = [
   'altEn',
 ];
 
-/** The slide-level image keys the plural form re-expressed per item. */
+/**
+ * The slide-level image keys the plural form re-expressed per item, plus the
+ * flat `fit` the plural type never read: image-set has no slide-level image key
+ * at all, so none of these may ride along into it.
+ */
 const RETIRED_SLIDE_IMAGE_KEYS = [
   'image',
   'alt',
   'altNl',
   'altEn',
   'imageFit',
+  'fit',
   'focusX',
   'focusY',
 ];
@@ -617,9 +622,10 @@ function retiredImageTextItems(content) {
  * What it drops, and why: on a `split`/`corner` slide the items past the first
  * (the plural layouts rendered them, this layout never did, and the flat form
  * has no home for them — D100 accepts that loss by name), and the slide-level
- * image keys the flat form re-expresses. A stored `fit` on such a slide goes
- * with them unless item 0 declares one, because the plural type never read a
- * flat `fit`: promoting it would give the slide a crop it never had.
+ * image keys the flat form re-expresses. A stored flat `fit` goes on both
+ * routes unless item 0 declares one, because the plural type never read a
+ * flat `fit`: promoting it would give the slide a crop it never had. So does a
+ * slide-level focus axis that item 0 out-voted with one of its own.
  *
  * @param {any} pres
  * @returns {any}
@@ -650,14 +656,19 @@ function cutImageTextPluralLayouts(pres) {
       continue;
     }
 
+    // The flat image IS item 0, every axis of it: an item with one focus axis
+    // of its own out-voted the whole slide-level pair on render (its empty
+    // axis meant the default, not the slide's value), so the pair is written
+    // from the item unconditionally rather than merged with what the slide
+    // still carries.
     const first = items[0];
     content.image = first?.src ?? '';
     content.alt = first?.alt ?? '';
     if (first?.fit === 'cover' || first?.fit === 'contain')
       content.fit = first.fit;
     else delete content.fit;
-    if (first && first.focusX !== '') content.focusX = first.focusX;
-    if (first && first.focusY !== '') content.focusY = first.focusY;
+    content.focusX = first?.focusX ?? '';
+    content.focusY = first?.focusY ?? '';
     for (const key of RETIRED_IMAGE_TEXT_KEYS) delete content[key];
   }
   return pres;
