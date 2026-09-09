@@ -17,6 +17,7 @@ import {
   listOrganizationLibrary,
 } from '../storage/slide-library.js';
 import { listThemes } from '../storage/themes.js';
+import { collectServedAssetRefs } from '../../shared/slide-types/deck-assets.js';
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import { createWriteStream } from 'node:fs';
@@ -56,65 +57,6 @@ function createSemaphore(limit) {
   }
 
   return acquire;
-}
-
-/**
- * Extract image URLs from a slide's content recursively.
- * Looks for bgImage, image, src, url, logoUrl fields.
- * @param {Object} obj - Slide content or nested object
- * @param {Set<string>} urls - Set to accumulate URLs into
- */
-function extractImageUrls(obj, urls) {
-  if (!obj || typeof obj !== 'object') return;
-
-  if (Array.isArray(obj)) {
-    for (const item of obj) extractImageUrls(item, urls);
-    return;
-  }
-
-  const urlFields = [
-    'slideBgImage',
-    'bgImage',
-    'image',
-    'src',
-    'url',
-    'logoUrl',
-    'imageUrl',
-    'logoSmallUrl',
-  ];
-  for (const field of urlFields) {
-    const val = obj[field];
-    if (typeof val === 'string' && val.trim() && isImageUrl(val)) {
-      urls.add(val.trim());
-    }
-  }
-
-  // Recurse into nested objects
-  for (const value of Object.values(obj)) {
-    if (value && typeof value === 'object') {
-      extractImageUrls(value, urls);
-    }
-  }
-}
-
-/**
- * Check if a string looks like an image URL.
- * @param {string} str
- * @returns {boolean}
- */
-function isImageUrl(str) {
-  if (!str) return false;
-  // Must be http(s) or start with /
-  if (
-    !str.startsWith('http://') &&
-    !str.startsWith('https://') &&
-    !str.startsWith('/')
-  ) {
-    return false;
-  }
-  // Skip data URIs (already embedded)
-  if (str.startsWith('data:')) return false;
-  return true;
 }
 
 /**
@@ -306,23 +248,14 @@ export async function buildBulkExport(opts) {
     zip.file(`presentations/${summary.id}.json`, JSON.stringify(full, null, 2));
     presentations.push({ id: summary.id, title: full.title || '' });
 
-    // Extract image URLs from slides
-    if (Array.isArray(full.slides)) {
-      for (const slide of full.slides) {
-        extractImageUrls(slide.content, imageUrls);
-        extractImageUrls(slide, imageUrls);
-      }
-    }
-    // Also check i18n versions for images
-    if (full.i18n?.versions) {
-      for (const langData of Object.values(full.i18n.versions)) {
-        if (Array.isArray(langData.slides)) {
-          for (const slide of langData.slides) {
-            extractImageUrls(slide.content, imageUrls);
-            extractImageUrls(slide, imageUrls);
-          }
-        }
-      }
+    // The deck's own asset refs come from the one walker in
+    // shared/slide-types/deck-assets.js — the same module the `.deck` bundle
+    // uses, so a new or nested image field is found by both exports or by
+    // neither. A backup is of *this* installation, so it takes the wider
+    // served-path class (uploads + the fork/theme asset trees).
+    for (const ref of collectServedAssetRefs(full)) imageUrls.add(ref);
+    for (const langData of Object.values(full.i18n?.versions || {})) {
+      for (const ref of collectServedAssetRefs(langData)) imageUrls.add(ref);
     }
 
     const pct = 2 + Math.round((i / userPresentations.length) * 13);

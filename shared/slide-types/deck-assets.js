@@ -11,6 +11,24 @@
  * This module is pure (no fs/crypto): it walks/rewrites the JSON and formats
  * the content-addressed refs. The server side (server/export/deck-bundle.js)
  * reads bytes, hashes them, and builds/reads the ZIP.
+ *
+ * **One walk, two questions.** Both exports that enumerate a deck's images ask
+ * the same structural question — "which strings in this deck name a file?" —
+ * and differ only in which class of file they may act on:
+ *
+ * - `collectAssetRefs` (the `.deck` bundle) takes the refs it *owns*: local
+ *   uploads, the only class it can content-address and rewrite so the bundle
+ *   stays portable to another installation.
+ * - `collectServedAssetRefs` (the bulk export / backup) takes every path *this*
+ *   installation serves — uploads plus the fork's `/assets/` and `/custom/…`
+ *   trees, which is where a theme's `backgroundPresets` live once they are
+ *   baked into a slide's `slideBgImage`.
+ *
+ * The uploads rule is written once and the wider class is defined on top of it,
+ * so the first set is a subset of the second by construction. Remote `http(s)`
+ * URLs are deliberately in neither: a bare string cannot say whether it is an
+ * image or a link target (a call-to-action `url` is not an asset), and a remote
+ * URL is still valid after a restore — it stays a URL in the deck JSON.
  */
 
 const UPLOADS_PREFIX = '/uploads/';
@@ -50,6 +68,35 @@ export function isBundleRef(v) {
 }
 
 /**
+ * The non-upload path prefixes this installation serves as static files: the
+ * fork's shared content (`/custom/assets/`) and per-theme assets
+ * (`/custom/themes/<id>/assets/`), plus the built-in `/assets/` tree. Unlike
+ * `/uploads/` these are nested trees, so a nested path is legitimate here.
+ */
+const SERVED_PREFIXES = ['/assets/', '/custom/assets/', '/custom/themes/'];
+
+/**
+ * Is `v` a reference to a file *this* installation serves — an upload, or one
+ * of the fork/theme asset trees? The superset of `isUploadRef`, defined on top
+ * of it so the uploads rule has exactly one spelling. Path-traversal shapes are
+ * rejected; the caller still resolves against its own root.
+ *
+ * A theme's `backgroundPresets` are documented to point at any of these (see
+ * docs/developer/themes.md) and are baked into `content.slideBgImage` when a
+ * slide is created, so a deck genuinely carries non-upload local refs.
+ * @param {unknown} v
+ * @returns {boolean}
+ */
+export function isServedAssetRef(v) {
+  if (isUploadRef(v)) return true;
+  return (
+    typeof v === 'string' &&
+    !v.includes('..') &&
+    SERVED_PREFIXES.some((p) => v.startsWith(p) && v.length > p.length)
+  );
+}
+
+/**
  * Deep-walk a JSON value, calling `visit` for every string. Objects and arrays
  * are traversed; other primitives are ignored.
  * @param {unknown} value
@@ -66,21 +113,45 @@ function walkStrings(value, visit) {
 }
 
 /**
- * Collect the unique local upload refs a deck (or presentation) references,
- * in first-seen order. Walks every slide's content deeply, so it is robust to
- * new/legacy field keys (any `/uploads/...` string is found).
+ * Collect the unique refs matched by `isRef` across every slide's content, in
+ * first-seen order. The walk is deep and key-agnostic, so it is robust to new,
+ * nested and legacy field keys — a ref is recognised by its own shape, never by
+ * the name of the field it sits in.
  * @param {{ slides?: Array<{ content?: object }> }} deck
+ * @param {(s: string) => boolean} isRef
  * @returns {string[]}
  */
-export function collectAssetRefs(deck) {
+function collectRefs(deck, isRef) {
   const seen = new Set();
   const slides = Array.isArray(deck?.slides) ? deck.slides : [];
   for (const slide of slides) {
     walkStrings(slide?.content, (s) => {
-      if (isUploadRef(s)) seen.add(s);
+      if (isRef(s)) seen.add(s);
     });
   }
   return [...seen];
+}
+
+/**
+ * Collect the unique local upload refs a deck (or presentation) references, in
+ * first-seen order — the assets a `.deck` bundle owns and content-addresses.
+ * @param {{ slides?: Array<{ content?: object }> }} deck
+ * @returns {string[]}
+ */
+export function collectAssetRefs(deck) {
+  return collectRefs(deck, isUploadRef);
+}
+
+/**
+ * Collect every ref a deck makes to a file this installation serves — uploads
+ * plus the fork/theme asset trees — in first-seen order. A superset of
+ * `collectAssetRefs`; used by the bulk export, which backs up *this* install
+ * rather than producing something portable.
+ * @param {{ slides?: Array<{ content?: object }> }} deck
+ * @returns {string[]}
+ */
+export function collectServedAssetRefs(deck) {
+  return collectRefs(deck, isServedAssetRef);
 }
 
 /**
