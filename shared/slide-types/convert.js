@@ -1,5 +1,5 @@
 import { SLIDE_TYPES, GLOBAL_SLIDE_FIELD_KEYS } from './registry.js';
-import { pickBackgroundPreset } from '../theme-background-presets.js';
+import { seedAutoBackgroundPreset } from '../theme-background-presets.js';
 import { normalizeLang } from '../i18n-utils.js';
 import { resolveTypeDefaults } from './type-defaults.js';
 import { IMAGE_TEXT_IMAGE_DEFAULTS } from './types/image-text-slide/images.js';
@@ -230,6 +230,10 @@ export function convertSlideToType(
 
   // Keep global cross-type fields (a11y, background image, logo) if present.
   preserveGlobalFields({ fromContent: from, toContent: to });
+  // A converted slide is a new slide of the target type as far as the theme
+  // is concerned: the target's declaration decides whether it takes a theme
+  // background, and a background carried over above is never overwritten.
+  seedAutoBackgroundPreset(to, slideTypes[targetType], theme);
 
   // Shared common keys where they overlap across these slide families.
   if (nonEmptyString(from.title) && typeof to.title === 'string')
@@ -335,15 +339,6 @@ export function convertSlideToType(
   if (fromType === 'chapter-title-slide' && targetType === 'title-slide') {
     to.title = nonEmptyString(from?.title) ? from.title : to.title;
     if (nonEmptyString(from?.subheading)) to.subheading = from.subheading;
-    // Give the target a background from the theme's own presets when it has
-    // none. Canonical key is slideBgImage. No theme (or no presets) leaves it
-    // flat.
-    const bg =
-      typeof to.slideBgImage === 'string' ? to.slideBgImage.trim() : '';
-    if (!bg) {
-      const preset = pickBackgroundPreset(theme);
-      if (preset) to.slideBgImage = preset;
-    }
   }
 
   return next;

@@ -76,7 +76,7 @@ export async function handlePresentationsImportMarkdown({
   const themeConfig = await loadDeckTheme(repoRoot, deck?.theme);
 
   // Normalize through deckToPresentationParts (same as JSON import)
-  const parts = deckToPresentationParts(deck, { theme: themeConfig });
+  const parts = deckToPresentationParts(deck, { theme: themeConfig, lang });
   log.info(
     '[import-markdown] Normalized - title:',
     parts.title,

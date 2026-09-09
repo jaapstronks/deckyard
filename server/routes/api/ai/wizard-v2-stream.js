@@ -221,7 +221,7 @@ export async function handleAiWizardV2Stream({
       ],
     };
 
-    const parts = deckToPresentationParts(deck, { theme });
+    const parts = deckToPresentationParts(deck, { theme, lang: langCode });
     // Keep the per-slide "why this type" + alternatives on the saved slides;
     // the whole-deck review grid reads them after the editor loads the deck.
     reattachAiMeta(parts.slides, deck.slides);

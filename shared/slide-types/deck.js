@@ -2,8 +2,6 @@ import { cryptoUuid } from './helpers.js';
 import { newSlide } from './presentation.js';
 import { allowedEnumValues } from './field-types.js';
 import { isTextField } from './text-fields.js';
-import { pickBackgroundPreset } from '../theme-background-presets.js';
-import { resolveSlideBgImage } from './legacy-bg-image.js';
 import {
   canonicalSlideType,
   getSlideType,
@@ -82,15 +80,23 @@ export function deckThemeId(input) {
  * Normalize an imported deck (JSON, markdown, Notion, AI output) into
  * presentation parts.
  *
+ * Every slide is composed by `newSlide()` — import cleans the input into a
+ * patch and hands it over — so a caller passes what the factory reads: the
+ * loaded theme and the deck's language. Both are the caller's to know (the
+ * route loads the theme, the request or manifest names the language); a guard
+ * test pins that no call site leaves either out.
+ *
  * @param {Object|Array} input - a deck object, or a bare slides array
  * @param {Object} [opts]
- * @param {Object} [opts.theme] - the loaded theme, when the caller has one.
- *   Title slides without a background image take one from
- *   `theme.backgroundPresets`; without a theme they stay empty.
+ * @param {Object} [opts.theme] - the loaded theme. Types declaring
+ *   `autoBackgroundPreset` take a background from `theme.backgroundPresets`,
+ *   and a theme's slide-background variants are on offer for `background`.
+ * @param {string|null} [opts.lang] - the deck's language; a type declaring
+ *   `defaultsByLang` composes from that variant, exactly as an editor insert.
  */
 export function deckToPresentationParts(
   input,
-  { theme: themeConfig = null } = {},
+  { theme: themeConfig = null, lang = null } = {},
 ) {
   // Accept either the full object or a raw slides array (super simple use-case).
   // An imported deck is a read of unknown vintage, so it goes through the same
@@ -112,11 +118,13 @@ export function deckToPresentationParts(
   const theme = deckThemeId(deck);
   const slidesRaw = Array.isArray(deck.slides) ? deck.slides : [];
 
-  const slides = slidesRaw.map((raw) => normalizeDeckSlide(raw, themeConfig));
+  const slides = slidesRaw.map((raw) =>
+    normalizeDeckSlide(raw, { theme: themeConfig, lang }),
+  );
   return { title, theme, slides };
 }
 
-function normalizeDeckSlide(raw, theme = null) {
+function normalizeDeckSlide(raw, { theme = null, lang = null } = {}) {
   const type = typeof raw?.type === 'string' ? raw.type : '';
   // Resolve by identity so any spelling imports — a qualified ref
   // (core/title-slide, acme/hero) or the canonical reverse-DNS id
@@ -217,30 +225,17 @@ function normalizeDeckSlide(raw, theme = null) {
     }
   }
 
+  // Nothing is composed here. Whether the slide takes a theme background is the
+  // type's declaration (`autoBackgroundPreset`, read by the factory) — import
+  // used to seed the core title slide by name on top of that, a second rule
+  // for one question, retired with D92.
   const slide = newSlide({
     type: localName,
     theme,
+    lang,
     content: patch,
     slideTypes: { [localName]: def },
   });
-
-  // The one composition step import still owns. `seedAutoBackgroundPreset` in
-  // the factory seeds by DECLARATION (`autoBackgroundPreset`), which no core
-  // type carries; import has always seeded the core title slide by NAME. Two
-  // rules for one question — but which one wins is a form decision (does
-  // `title-slide` declare the flag, or does import stop seeding?), not a
-  // refactor. Until that is decided, the imported behaviour is preserved here
-  // rather than silently dropped. See docs/plans/TODO.md (B256).
-  if (localName === 'title-slide') {
-    // Seed a theme background on the canonical key only when the slide has no
-    // background at all (canonical or legacy). An imported deck that still
-    // carries a legacy bgImage is left as-is — it renders via the fallback and
-    // migrates on edit — so we never stack a preset on top of it.
-    if (resolveSlideBgImage(slide.content).source === 'none') {
-      const preset = pickBackgroundPreset(theme);
-      if (preset) slide.content.slideBgImage = preset;
-    }
-  }
 
   return { id: slide.id, type: localName, content: slide.content };
 }

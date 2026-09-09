@@ -125,6 +125,7 @@ async function handleWizard(ctx) {
       theme || (sandboxEnabled() ? sandboxDefaultThemeId() : deckThemeId(deck));
     const parts = deckToPresentationParts(deck, {
       theme: await loadDeckTheme(repoRoot, effectiveTheme),
+      lang,
     });
 
     const created = await createPresentation(storageScope, {
@@ -235,6 +236,7 @@ async function handleAppendSlides(ctx) {
     // slides are being appended to.
     const parts = deckToPresentationParts(generatedSlides, {
       theme: await loadDeckTheme(repoRoot, deckThemeId(existingDeck)),
+      lang: lang || existingDeck?.lang,
     });
     const slides = Array.isArray(parts?.slides) ? parts.slides : [];
 

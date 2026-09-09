@@ -35,6 +35,7 @@ import { walkJsFiles, callArguments } from './helpers/call-sites.js';
 import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 import { newSlide } from '../shared/slide-types/presentation.js';
 import { deckToPresentationParts } from '../shared/slide-types/deck.js';
+import { convertSlideToType } from '../shared/slide-types/convert.js';
 import { migratePresentation } from '../shared/slide-types/schema-version.js';
 
 /** A theme that declares both background presets and slide-background variants. */
@@ -51,43 +52,35 @@ function withoutInstanceIds(content) {
 
 // ── the routes agree ────────────────────────────────────────────────────────
 
-/**
- * The one type where creating and importing still disagree, and why.
- *
- * The factory seeds a theme background by DECLARATION (`autoBackgroundPreset`),
- * which no core type carries; deck import has always seeded the core title
- * slide by NAME. Two rules for one question, and which one wins is a form
- * decision — does `title-slide` declare the flag, or does import stop seeding?
- * — not something a refactor gets to settle. B243 preserved the imported
- * behaviour and left the decision to B256; when that lands, this exception
- * goes and the loop below covers the whole registry.
- */
-const IMPORT_SEEDS_BY_NAME = 'title-slide';
-
 test('creating and importing a slide of the same type yield the same content', () => {
   // The editor insert (the factory, with the registry the editor holds) and a
   // deck import of a bare `{ type }` slide. The import path builds a patch and
   // hands it to the same factory, so on every key neither route was given they
-  // must land on the same value.
+  // must land on the same value — for the whole registry, and for a deck
+  // language too: a type declaring `defaultsByLang` composes from that variant
+  // on import exactly as on insert.
   //
   // Keys the migration funnel synthesizes are excluded, and they are the reason
   // this compares key by key rather than whole objects: an imported slide runs
   // the funnel first, which seeds a shape for the legacy-collection types
   // (`text-blocks-slide` gets an empty `rows` skeleton), so the import genuinely
   // *was* given those keys. That is the funnel's contract, not the factory's.
-  for (const type of Object.keys(SLIDE_TYPES)) {
-    if (type === IMPORT_SEEDS_BY_NAME) continue;
+  for (const [type, lang] of Object.keys(SLIDE_TYPES).flatMap((t) => [
+    [t, null],
+    [t, 'nl'],
+  ])) {
     const created = withoutInstanceIds(
       newSlide({
         type,
         slideTypes: SLIDE_TYPES,
         theme: THEME,
+        lang,
         presentationId: 'deck-1',
       }).content,
     );
     const [importedSlide] = deckToPresentationParts(
       { slides: [{ type, content: {} }] },
-      { theme: THEME },
+      { theme: THEME, lang },
     ).slides;
     const imported = withoutInstanceIds(importedSlide.content);
     const funnelSeeded = new Set(
@@ -104,33 +97,75 @@ test('creating and importing a slide of the same type yield the same content', (
       Object.keys(created)
         .filter((k) => !funnelSeeded.has(k))
         .sort(),
-      `${type}: creating and importing must produce the same content keys`,
+      `${type} (${lang}): creating and importing must produce the same content keys`,
     );
     for (const key of Object.keys(created)) {
       if (funnelSeeded.has(key)) continue;
       assert.deepEqual(
         imported[key],
         created[key],
-        `${type}.${key}: an imported slide must compose like a created one`,
+        `${type}.${key} (${lang}): an imported slide must compose like a created one`,
       );
     }
   }
 });
 
-test('the one remaining disagreement is the title-slide import seed', () => {
-  // Pinned so the exception above cannot quietly widen, and so the day
-  // `title-slide` declares `autoBackgroundPreset` (or import stops seeding by
-  // name) this test says which half moved.
-  const created = newSlide({ type: IMPORT_SEEDS_BY_NAME, theme: THEME });
+test("a theme background is the type's declaration, on every route (D92)", () => {
+  // One rule for one question. `autoBackgroundPreset` on the type decides
+  // whether a slide takes a background from `theme.backgroundPresets`; no route
+  // seeds one by type name on top of that. Import used to seed the core
+  // `title-slide` by name and the converter did the same for
+  // chapter-title → title, so an imported or converted title slide wore a
+  // theme photo an inserted one did not.
+  const chapter = { type: 'chapter-title-slide', content: { title: 'Ch.' } };
+  assert.ok(!SLIDE_TYPES['title-slide'].autoBackgroundPreset);
   assert.ok(
-    !created.content.slideBgImage,
-    'the core title type declares no autoBackgroundPreset, so creating seeds nothing',
+    !newSlide({ type: 'title-slide', theme: THEME }).content.slideBgImage,
+    'insert: the core title type declares nothing, so nothing is seeded',
   );
-  const [imported] = deckToPresentationParts(
-    { slides: [{ type: IMPORT_SEEDS_BY_NAME, content: {} }] },
-    { theme: THEME },
-  ).slides;
-  assert.equal(imported.content.slideBgImage, THEME.backgroundPresets[0]);
+  assert.ok(
+    !deckToPresentationParts(
+      { slides: [{ type: 'title-slide', content: {} }] },
+      { theme: THEME },
+    ).slides[0].content.slideBgImage,
+    'import: no seed by name',
+  );
+  assert.ok(
+    !convertSlideToType(chapter, 'title-slide', { theme: THEME }).content
+      .slideBgImage,
+    'convert: no seed by name',
+  );
+
+  // The declaration is enough: a registry whose title type declares the flag
+  // is seeded on the same three routes, and a background carried into a
+  // conversion is not overwritten.
+  const declared = {
+    ...SLIDE_TYPES,
+    'title-slide': {
+      ...SLIDE_TYPES['title-slide'],
+      autoBackgroundPreset: true,
+    },
+  };
+  assert.equal(
+    newSlide({ type: 'title-slide', theme: THEME, slideTypes: declared })
+      .content.slideBgImage,
+    THEME.backgroundPresets[0],
+  );
+  assert.equal(
+    convertSlideToType(chapter, 'title-slide', {
+      theme: THEME,
+      slideTypes: declared,
+    }).content.slideBgImage,
+    THEME.backgroundPresets[0],
+  );
+  assert.equal(
+    convertSlideToType(
+      { ...chapter, content: { ...chapter.content, slideBgImage: '/own.jpg' } },
+      'title-slide',
+      { theme: THEME, slideTypes: declared },
+    ).content.slideBgImage,
+    '/own.jpg',
+  );
 });
 
 test('a type declaring instance keys gets them on every route', () => {
@@ -277,16 +312,17 @@ function withoutComments(source) {
     .replace(/(^|[^:])\/\/[^\n]*/g, '$1');
 }
 
-test('every deck normalization is given a theme', () => {
+test('every deck normalization is given a theme and a language', () => {
   // A slide composes against the theme (background presets, slide-background
-  // variants). Twelve of the thirteen call sites used to pass none, so an
+  // variants) and the deck language (`defaultsByLang`). Twelve of the thirteen
+  // call sites used to pass no theme, and none passed a language, so an
   // imported or AI-generated slide came out different from an inserted one.
   const offenders = [];
   for (const dir of ['server', 'shared', 'client']) {
     for (const file of walkJsFiles(path.join(process.cwd(), dir))) {
       const source = withoutComments(fs.readFileSync(file, 'utf8'));
       for (const args of callArguments(source, 'deckToPresentationParts')) {
-        if (!args[1]?.includes('theme')) {
+        if (!args[1]?.includes('theme') || !args[1]?.includes('lang')) {
           offenders.push(
             `${path.relative(process.cwd(), file)}: deckToPresentationParts(${args.join(', ')})`,
           );
@@ -297,7 +333,7 @@ test('every deck normalization is given a theme', () => {
   assert.deepEqual(
     offenders,
     [],
-    `these call sites normalize a deck without a theme:\n${offenders.join('\n')}`,
+    `these call sites normalize a deck without a theme or a language:\n${offenders.join('\n')}`,
   );
 });
 

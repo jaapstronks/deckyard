@@ -80,6 +80,7 @@ export const handleAiRefineSection = withErrorHandler(
     // like a newly inserted one of the same type.
     const parts = deckToPresentationParts(revisedRaw, {
       theme: await loadDeckTheme(repoRoot, presentation?.theme),
+      lang: lang || presentation?.lang,
     });
     let slides = Array.isArray(parts?.slides) ? parts.slides : [];
     slides = validateAndFixRefinedSlides(slides);

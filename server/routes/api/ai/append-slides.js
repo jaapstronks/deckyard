@@ -67,6 +67,7 @@ export async function handleAiAppendSlides({ repoRoot, req, res, authedUser }) {
   // generated slide composes the way an inserted one does.
   const parts = deckToPresentationParts(generatedSlides, {
     theme: await loadDeckTheme(repoRoot, deckThemeId(existingDeck)),
+    lang: lang || existingDeck?.lang,
   });
   let slides = Array.isArray(parts?.slides) ? parts.slides : [];
 

@@ -806,13 +806,13 @@ It composes in this order, and the order is the contract:
 
 The callers, and what each of them brings:
 
-| route                                                              | brings                                                                    |
-| ------------------------------------------------------------------ | ------------------------------------------------------------------------- |
-| the editor's three insert sites (`slides-panel.js`)                | the `/api/slide-types` registry it holds, the deck language, theme and id |
-| `newPresentation`                                                  | the deck's language and loaded theme                                      |
-| public API `POST …/slides`, slide-library insert                   | the org registry, the deck's theme, caller content as the patch           |
-| deck import (`normalizeDeckSlide`)                                 | a cleaned patch — import _cleans_, the factory _composes_                 |
-| MCP `create_presentation_from_slides`, `add_slide`, `update_slide` | validated content as the patch, after validation                          |
+| route                                               | brings                                                                    |
+| --------------------------------------------------- | ------------------------------------------------------------------------- |
+| the editor's three insert sites (`slides-panel.js`) | the `/api/slide-types` registry it holds, the deck language, theme and id |
+| `newPresentation`                                   | the deck's language and loaded theme                                      |
+| public API `POST …/slides`, slide-library insert    | the org registry, the deck's theme, caller content as the patch           |
+| deck import (`normalizeDeckSlide`)                  | a cleaned patch — import _cleans_, the factory _composes_                 |
+| MCP `create_presentation_from_slides`, `add_slide`  | validated content as the patch, after validation; the deck's language     |
 
 There used to be three spellings of this composition and one route that skipped
 it, which is why an agent-created poll slide reached storage with no `pollId`
@@ -820,8 +820,24 @@ and why every hook that had to hold "on both creation paths" was written three
 times. `tests/one-slide-factory.test.js` pins the agreement and guards against a
 fourth composition growing back: cloning a type's `defaults` anywhere outside
 `resolveTypeDefaults` fails the guard, and so does a `deckToPresentationParts`
-call that passes no theme — a slide composes against the theme, so a route that
-withholds it produces a different slide than the editor would.
+call that passes no theme or no language — a slide composes against both, so a
+route that withholds either produces a different slide than the editor would.
+
+Two things are deliberately _not_ the factory's (D92):
+
+- **A theme background is the type's declaration, on every route.** Whether a
+  slide takes a `slideBgImage` from `theme.backgroundPresets` is
+  `autoBackgroundPreset` on the type and nothing else. Import used to seed the
+  core `title-slide` by name on top of that, and the converter did the same
+  for chapter-title → title; both are gone. No core type declares the flag
+  today, so a core title slide is flat on every route — declaring it is a
+  one-line product choice, not a second rule.
+- **An update is not a birth.** MCP `update_slide` is a patch plus validation;
+  a `type` on it is a _conversion_ through `convertSlideToType` — the editor's
+  converter — which carries over what maps, re-seeds the rest for the target
+  type, and refuses a pair the model has no mapping for. The factory's birth
+  steps (defaults, theme seed, instance keys) never run on a slide that already
+  exists. `tests/mcp-update-slide-is-a-patch.test.js` pins this.
 
 ### Form layout (`formLayout`)
 

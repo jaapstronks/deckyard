@@ -83,11 +83,12 @@ export async function handleNotionImport({
     }
 
     // Create the presentation from the deck
-    const parts = deckToPresentationParts(deck, {
-      theme: await loadDeckTheme(repoRoot, theme),
-    });
     const effectiveLang =
       deck.lang || deck._generationMeta?.effectiveLang || DEFAULT_DECK_LANG;
+    const parts = deckToPresentationParts(deck, {
+      theme: await loadDeckTheme(repoRoot, theme),
+      lang: effectiveLang,
+    });
 
     const created = await createPresentation(storageScope, {
       title: parts.title || deck.title || 'Imported from Notion',
@@ -277,11 +278,12 @@ export async function handleNotionImportStream({
     });
 
     // Create the presentation
-    const parts = deckToPresentationParts(deck, {
-      theme: await loadDeckTheme(repoRoot, theme),
-    });
     const effectiveLang =
       deck.lang || deck._generationMeta?.effectiveLang || DEFAULT_DECK_LANG;
+    const parts = deckToPresentationParts(deck, {
+      theme: await loadDeckTheme(repoRoot, theme),
+      lang: effectiveLang,
+    });
 
     const created = await createPresentation(storageScope, {
       title: parts.title || deck.title || 'Imported from Notion',

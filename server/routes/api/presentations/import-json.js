@@ -41,7 +41,7 @@ export async function handlePresentationsImportJson({
   // presets, theme slide-background variants).
   const themeConfig = await loadDeckTheme(repoRoot, deck?.theme);
 
-  const parts = deckToPresentationParts(deck, { theme: themeConfig });
+  const parts = deckToPresentationParts(deck, { theme: themeConfig, lang });
   log.info(
     '[import-json] Parsed parts - title:',
     parts.title,

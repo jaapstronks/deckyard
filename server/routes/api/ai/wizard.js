@@ -57,6 +57,7 @@ export async function handleAiWizard({
   // Resolved before normalizing: the slides compose against this theme.
   const parts = deckToPresentationParts(deck, {
     theme: await loadDeckTheme(repoRoot, effectiveTheme),
+    lang,
   });
 
   const updated = await createPresentationWithI18n(storageScope, {

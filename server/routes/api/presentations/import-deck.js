@@ -92,7 +92,10 @@ export async function handlePresentationsImportDeck({
   // presets, theme slide-background variants).
   const themeConfig = await loadDeckTheme(repoRoot, rehydrated?.theme);
 
-  const parts = deckToPresentationParts(rehydrated, { theme: themeConfig });
+  const parts = deckToPresentationParts(rehydrated, {
+    theme: themeConfig,
+    lang,
+  });
 
   const created = await createPresentation(storageScope, {
     title: parts.title,

@@ -106,6 +106,7 @@ async function handleConvertFile({
   try {
     const parts = deckToPresentationParts(deck, {
       theme: await loadDeckTheme(repoRoot, theme),
+      lang: deck.lang || deck._generationMeta?.effectiveLang || lang,
     });
 
     // Use the detected/effective language from the deck, not the original request
@@ -393,6 +394,7 @@ async function handleConvertStream({
 
     const parts = deckToPresentationParts(deck, {
       theme: await loadDeckTheme(repoRoot, theme),
+      lang: deck.lang || deck._generationMeta?.effectiveLang || lang,
     });
 
     // Use the detected/effective language from the deck, not the original request

@@ -56,8 +56,8 @@ export async function prepareNewPresentation(
   let defaultTitleSlide = 'title-slide';
   // Also carried into newPresentation and on to newSlide, so that a slide type
   // opting in via `autoBackgroundPreset` can draw a background from the theme's
-  // own presets. No core type sets that flag today, so the default title slide
-  // stays flat here; import/convert apply theme presets on their own paths.
+  // own presets. That declaration is the only rule, on every route (D92); no
+  // core type sets it today, so the default title slide stays flat.
   let themeConfig = null;
   try {
     const themeId = resolveThemeId(effectiveTheme);
