@@ -53,7 +53,9 @@ import {
 } from '../routes/api/presentations/comments-shared.js';
 import { listPresentationsSharedWithUser } from '../storage/collaborators.js';
 import {
+  convertSlideToType,
   deckToPresentationParts,
+  newSlide,
   presentationToDeck,
 } from '../../shared/slide-types.js';
 import { generateDeckV2 } from '../utils/ai/index.js';
@@ -73,6 +75,7 @@ import { convertSlideWithAi } from '../utils/openai/convert-slide.js';
 import { generateSlidesToAppendFromRawContent } from '../utils/openai/append.js';
 import {
   listThemeIds,
+  loadDeckTheme,
   loadThemeAssets,
   resolveThemeId,
 } from '../utils/themes.js';
@@ -198,6 +201,14 @@ export function registerTools(
   function sessionSlideTypes(context) {
     return buildMergedSlideTypes(storageScopeOf(context));
   }
+
+  // A slide an MCP tool creates is composed by the shared slide factory like
+  // every other route's: validation first (an agent's content is checked against the type
+  // before anything is built from it), then the validated content goes in as
+  // the factory's patch, so the slide arrives with the type's defaults for the
+  // keys the agent left out, a theme background if the type declares one, and
+  // its instance keys. The write path used to store validated content raw —
+  // an agent-created poll slide reached storage without a `pollId`.
 
   /**
    * The acting machine client for a per-deck authorization check: who is acting
@@ -500,14 +511,8 @@ export function registerTools(
       context,
     ) => {
       const effectiveOwner = ownerEmail || getOwner(context);
-      // Load theme for title slide type
-      let titleSlideType = 'title-slide';
-      try {
-        const themeObj = await loadThemeAssets(repoRoot, resolveThemeId(theme));
-        titleSlideType = themeObj?.defaultTitleSlide || 'title-slide';
-      } catch {
-        /* use default */
-      }
+      const themeObj = await loadDeckTheme(repoRoot, theme);
+      const titleSlideType = themeObj?.defaultTitleSlide || 'title-slide';
 
       const deck = await generateDeckV2(content, {
         userName: speaker,
@@ -519,7 +524,7 @@ export function registerTools(
       });
 
       // Create and save the presentation
-      const parts = deckToPresentationParts(deck);
+      const parts = deckToPresentationParts(deck, { theme: themeObj, lang });
       if (title) parts.title = title;
 
       const created = await createPresentation(storageScopeOf(context), {
@@ -651,18 +656,11 @@ export function registerTools(
         notes: typeof s?.notes === 'string' ? s.notes : '',
       }));
 
+      const themeObj = await loadDeckTheme(repoRoot, theme);
+
       // Optional escape hatch: prepend an empty title slide if missing.
       if (auto_prepend_title) {
-        let titleSlideType = 'title-slide';
-        try {
-          const themeObj = await loadThemeAssets(
-            repoRoot,
-            resolveThemeId(theme),
-          );
-          titleSlideType = themeObj?.defaultTitleSlide || 'title-slide';
-        } catch {
-          /* keep default */
-        }
+        const titleSlideType = themeObj?.defaultTitleSlide || 'title-slide';
 
         if (inputSlides[0]?.type !== titleSlideType) {
           inputSlides = [
@@ -725,8 +723,14 @@ export function registerTools(
           ...created,
           title,
           slides: validatedSlides.map((s) => ({
-            type: s.type,
-            content: s.content,
+            ...newSlide({
+              type: s.type,
+              content: s.content,
+              slideTypes,
+              theme: themeObj,
+              lang,
+              presentationId: created.id,
+            }),
             notes: s.notes || '',
           })),
         },
@@ -777,7 +781,8 @@ export function registerTools(
         },
         type: {
           type: 'string',
-          description: 'Optional: change the slide type',
+          description:
+            'Optional: convert the slide to another type. Only the pairs the editor converts between are supported (content ↔ image-text, image → image-text, list → content, title ↔ chapter-title); other pairs are refused.',
         },
       },
       required: ['presentationId', 'slideIndex', 'content'],
@@ -792,8 +797,24 @@ export function registerTools(
         );
       }
 
-      const slide = pres.slides[slideIndex];
-      if (type) slide.type = type;
+      const slideTypes = await sessionSlideTypes(context);
+      let slide = pres.slides[slideIndex];
+      // A type change is a conversion, not a new slide: the same
+      // `convertSlideToType` the editor uses re-seeds the content for the
+      // target type and carries over what maps, and it refuses a pair the
+      // model has no mapping for rather than leaving the old type's content
+      // under a new name. An update is then a patch on that slide — it is not
+      // composed through the factory, which is where a slide is *born*
+      // (defaults, theme seed, instance keys) and must not run again on
+      // something that already exists.
+      if (type && type !== slide.type) {
+        slide = convertSlideToType(slide, type, {
+          slideTypes,
+          lang: pres?.lang,
+          theme: await loadDeckTheme(repoRoot, pres?.theme),
+        });
+        pres.slides[slideIndex] = slide;
+      }
       slide.content = { ...slide.content, ...content };
 
       // Validate the updated slide
@@ -804,7 +825,7 @@ export function registerTools(
             content: slide.content,
           },
         ],
-        { slideTypes: await sessionSlideTypes(context) },
+        { slideTypes },
       );
       slide.content = validated.content;
 
@@ -855,23 +876,26 @@ export function registerTools(
       });
 
       // Validate the new slide
+      const slideTypes = await sessionSlideTypes(context);
       const [validated] = validateAndFixRefinedSlides([{ type, content }], {
-        slideTypes: await sessionSlideTypes(context),
+        slideTypes,
       });
 
-      const newSlide = {
-        id: crypto.randomUUID(),
+      const added = newSlide({
         type: validated.type,
         content: validated.content,
-        notes: '',
-      };
+        slideTypes,
+        theme: await loadDeckTheme(repoRoot, pres?.theme),
+        lang: pres?.lang,
+        presentationId,
+      });
 
       const insertAt =
         position != null
           ? Math.max(0, Math.min(pres.slides.length, position))
           : pres.slides.length;
 
-      pres.slides.splice(insertAt, 0, newSlide);
+      pres.slides.splice(insertAt, 0, added);
       await updatePresentation(
         storageScopeOf(context),
         presentationId,
@@ -881,9 +905,9 @@ export function registerTools(
 
       return {
         added: true,
-        slideId: newSlide.id,
+        slideId: added.id,
         position: insertAt,
-        type: newSlide.type,
+        type: added.type,
         totalSlides: pres.slides.length,
       };
     },

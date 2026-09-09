@@ -3,7 +3,11 @@ import {
   getAiParams,
   getTrimmedString,
 } from '../../../utils/request-validators.js';
-import { deckToPresentationParts } from '../../../../shared/slide-types.js';
+import {
+  deckToPresentationParts,
+  deckThemeId,
+} from '../../../../shared/slide-types.js';
+import { loadDeckTheme } from '../../../utils/themes.js';
 import { generateDeckJsonFromRawContent } from '../../../utils/openai/deck.js';
 import { getDisplayNameForUser } from '../../../utils/user-name.js';
 import {
@@ -45,12 +49,16 @@ export async function handleAiWizard({
     disabledSlideTypes: slideTypeCtx.disabled,
     customSlideTypes: slideTypeCtx.custom,
   });
-  const parts = deckToPresentationParts(deck);
-
   // Theme is chosen by the user at creation time; do not let the model/environment decide.
   const effectiveTheme =
     themeFromRequest ||
-    (sandboxEnabled() ? sandboxDefaultThemeId() : parts.theme);
+    (sandboxEnabled() ? sandboxDefaultThemeId() : deckThemeId(deck));
+
+  // Resolved before normalizing: the slides compose against this theme.
+  const parts = deckToPresentationParts(deck, {
+    theme: await loadDeckTheme(repoRoot, effectiveTheme),
+    lang,
+  });
 
   const updated = await createPresentationWithI18n(storageScope, {
     parts,

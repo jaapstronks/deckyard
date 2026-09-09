@@ -62,6 +62,30 @@ function findThemeFile(repoRoot, themeId) {
   return null;
 }
 
+/**
+ * The loaded theme a deck is being created or imported against, or `null`.
+ *
+ * Tolerant by design and shared by every write route: a slide's composition
+ * (`newSlide`) reads the theme for background presets and slide-background
+ * variants, but a deck naming a theme this instance does not carry must still
+ * be importable — it simply arrives without a theme-seeded background. Six
+ * routes carried this try/catch by hand, and the ones that did not silently
+ * fell back to "no theme" for a theme that exists.
+ *
+ * @param {string} repoRoot
+ * @param {string} [rawThemeId] - the deck's theme id, in any accepted spelling
+ * @param {Object} [ctx] - storage context, for a DB-backed custom theme
+ * @returns {Promise<Object|null>} the loaded theme, or null when it cannot be
+ *   loaded
+ */
+export async function loadDeckTheme(repoRoot, rawThemeId, ctx = null) {
+  try {
+    return await loadThemeAssets(repoRoot, resolveThemeId(rawThemeId), ctx);
+  } catch {
+    return null;
+  }
+}
+
 export async function loadThemeAssets(repoRoot, rawThemeId, ctx = null) {
   const rawId = String(rawThemeId || '').trim();
 

@@ -21,6 +21,7 @@ import {
   updatePresentation,
 } from '../../../storage/presentations/index.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
+import { loadDeckTheme } from '../../../utils/themes.js';
 import { handleNotionError, refuseNotionUnconfigured } from './utils.js';
 import { createLogger } from '../../../utils/logger.js';
 import { sseWrite, sseError, openSseStream } from '../../../utils/sse.js';
@@ -33,6 +34,7 @@ const log = createLogger('import');
  * Uses the same AI pipeline as file conversion.
  */
 export async function handleNotionImport({
+  repoRoot,
   req,
   res,
   authedUser,
@@ -81,9 +83,12 @@ export async function handleNotionImport({
     }
 
     // Create the presentation from the deck
-    const parts = deckToPresentationParts(deck);
     const effectiveLang =
       deck.lang || deck._generationMeta?.effectiveLang || DEFAULT_DECK_LANG;
+    const parts = deckToPresentationParts(deck, {
+      theme: await loadDeckTheme(repoRoot, theme),
+      lang: effectiveLang,
+    });
 
     const created = await createPresentation(storageScope, {
       title: parts.title || deck.title || 'Imported from Notion',
@@ -125,6 +130,7 @@ export async function handleNotionImport({
  * Streaming import from Notion: provides real-time status updates via SSE.
  */
 export async function handleNotionImportStream({
+  repoRoot,
   req,
   res,
   authedUser,
@@ -272,9 +278,12 @@ export async function handleNotionImportStream({
     });
 
     // Create the presentation
-    const parts = deckToPresentationParts(deck);
     const effectiveLang =
       deck.lang || deck._generationMeta?.effectiveLang || DEFAULT_DECK_LANG;
+    const parts = deckToPresentationParts(deck, {
+      theme: await loadDeckTheme(repoRoot, theme),
+      lang: effectiveLang,
+    });
 
     const created = await createPresentation(storageScope, {
       title: parts.title || deck.title || 'Imported from Notion',

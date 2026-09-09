@@ -1,7 +1,7 @@
 import { cryptoUuid } from './helpers.js';
+import { newSlide } from './presentation.js';
+import { allowedEnumValues } from './field-types.js';
 import { isTextField } from './text-fields.js';
-import { pickBackgroundPreset } from '../theme-background-presets.js';
-import { resolveSlideBgImage } from './legacy-bg-image.js';
 import {
   canonicalSlideType,
   getSlideType,
@@ -59,18 +59,44 @@ export function presentationToDeck(pres) {
 }
 
 /**
+ * The theme id a deck declares, or `'default'`.
+ *
+ * Exported because a caller has to know it *before* it can normalize: the
+ * theme decides which background presets and slide-background variants a slide
+ * composes against, so the route loads the theme first and hands it to
+ * `deckToPresentationParts`. Reading `parts.theme` afterwards is too late, and
+ * spelling the trim-and-fall-back rule a second time at the call site is how
+ * the two drift.
+ *
+ * @param {Object|Array|null} [input] - a deck object, or a bare slides array
+ * @returns {string}
+ */
+export function deckThemeId(input) {
+  const raw = Array.isArray(input) ? null : input?.theme;
+  return typeof raw === 'string' && raw.trim() ? raw.trim() : 'default';
+}
+
+/**
  * Normalize an imported deck (JSON, markdown, Notion, AI output) into
  * presentation parts.
  *
+ * Every slide is composed by `newSlide()` — import cleans the input into a
+ * patch and hands it over — so a caller passes what the factory reads: the
+ * loaded theme and the deck's language. Both are the caller's to know (the
+ * route loads the theme, the request or manifest names the language); a guard
+ * test pins that no call site leaves either out.
+ *
  * @param {Object|Array} input - a deck object, or a bare slides array
  * @param {Object} [opts]
- * @param {Object} [opts.theme] - the loaded theme, when the caller has one.
- *   Title slides without a background image take one from
- *   `theme.backgroundPresets`; without a theme they stay empty.
+ * @param {Object} [opts.theme] - the loaded theme. Types declaring
+ *   `autoBackgroundPreset` take a background from `theme.backgroundPresets`,
+ *   and a theme's slide-background variants are on offer for `background`.
+ * @param {string|null} [opts.lang] - the deck's language; a type declaring
+ *   `defaultsByLang` composes from that variant, exactly as an editor insert.
  */
 export function deckToPresentationParts(
   input,
-  { theme: themeConfig = null } = {},
+  { theme: themeConfig = null, lang = null } = {},
 ) {
   // Accept either the full object or a raw slides array (super simple use-case).
   // An imported deck is a read of unknown vintage, so it goes through the same
@@ -89,28 +115,16 @@ export function deckToPresentationParts(
     typeof deck.title === 'string' && deck.title.trim()
       ? deck.title.trim()
       : 'Imported presentation';
-  const theme =
-    typeof deck.theme === 'string' && deck.theme.trim()
-      ? deck.theme.trim()
-      : 'default';
+  const theme = deckThemeId(deck);
   const slidesRaw = Array.isArray(deck.slides) ? deck.slides : [];
 
-  const slides = slidesRaw.map((raw) => normalizeDeckSlide(raw, themeConfig));
+  const slides = slidesRaw.map((raw) =>
+    normalizeDeckSlide(raw, { theme: themeConfig, lang }),
+  );
   return { title, theme, slides };
 }
 
-function enumOptionValues(field) {
-  const opts = Array.isArray(field?.options) ? field.options : [];
-  return opts
-    .map((o) => {
-      if (typeof o === 'string') return o;
-      if (o && typeof o === 'object' && o.value != null) return String(o.value);
-      return '';
-    })
-    .filter(Boolean);
-}
-
-function normalizeDeckSlide(raw, theme = null) {
+function normalizeDeckSlide(raw, { theme = null, lang = null } = {}) {
   const type = typeof raw?.type === 'string' ? raw.type : '';
   // Resolve by identity so any spelling imports — a qualified ref
   // (core/title-slide, acme/hero) or the canonical reverse-DNS id
@@ -138,28 +152,37 @@ function normalizeDeckSlide(raw, theme = null) {
     };
   }
 
+  // Import cleans; it does not compose. What this builds is a *patch* over the
+  // type's defaults, which `newSlide()` then composes into a slide — so an
+  // imported slide of type T and a freshly inserted one of type T come out of
+  // the same factory. Every "don't blank a required field" rule below is
+  // expressed by leaving the key out of the patch: an omitted key keeps the
+  // type's default, and does so for the deck's language too.
   const contentIn =
     raw?.content && typeof raw.content === 'object' ? raw.content : {};
-  const content = structuredClone(def.defaults || {});
+  const patch = {};
 
-  // Merge input content into defaults, but never overwrite required fields with "empty" values.
   const fieldByKey = new Map((def.fields || []).map((f) => [f.key, f]));
   for (const [k, v] of Object.entries(contentIn)) {
     const field = fieldByKey.get(k);
     if (!field) {
       // Allow unknown keys (forward-compatible), but ignore explicit null/undefined.
-      if (v != null) content[k] = v;
+      if (v != null) patch[k] = v;
       continue;
     }
 
     // Normalize by field type/requirements so imports (and AI outputs) can't break validation.
     if (field.type === 'enum') {
-      const allowed = enumOptionValues(field);
-      if (typeof v === 'string' && allowed.includes(v)) content[k] = v;
+      if (
+        typeof v === 'string' &&
+        allowedEnumValues(field, theme).includes(v)
+      ) {
+        patch[k] = v;
+      }
       continue;
     }
     if (field.type === 'image') {
-      if (typeof v === 'string' && v.trim()) content[k] = v.trim();
+      if (typeof v === 'string' && v.trim()) patch[k] = v.trim();
       // If missing/empty, keep default (prevents required image fields from being blanked)
       continue;
     }
@@ -172,7 +195,7 @@ function normalizeDeckSlide(raw, theme = null) {
           ? cleaned.slice(0, field.maxItems)
           : cleaned;
         if (field.required && limited.length === 0) continue; // don't blank required fields
-        content[k] = limited;
+        patch[k] = limited;
       }
       continue;
     }
@@ -180,43 +203,39 @@ function normalizeDeckSlide(raw, theme = null) {
       if (typeof v !== 'string') continue;
       const t = v;
       if (field.required && !t.trim()) continue; // don't blank required fields
-      content[k] = t;
+      patch[k] = t;
       continue;
     }
 
     // Fallback: accept non-null values.
-    if (v != null) content[k] = v;
+    if (v != null) patch[k] = v;
   }
 
-  // Light normalization for enums (avoid validation failures)
+  // An enum value that is not on offer drops out of the patch rather than being
+  // rewritten to `def.defaults[key]`: dropping it is what "fall back to the
+  // default" means once the factory owns the defaults, and it falls back to the
+  // per-language default where the type declares one.
   for (const field of def.fields) {
     if (
       field.type === 'enum' &&
-      content[field.key] != null &&
-      !enumOptionValues(field).includes(content[field.key])
+      patch[field.key] != null &&
+      !allowedEnumValues(field, theme).includes(patch[field.key])
     ) {
-      content[field.key] = (def.defaults || {})[field.key];
+      delete patch[field.key];
     }
   }
 
-  // Type-specific normalization for back-compat and better defaults.
-  if (localName === 'title-slide') {
-    // Seed a theme background on the canonical key only when the slide has no
-    // background at all (canonical or legacy). An imported deck that still
-    // carries a legacy bgImage is left as-is — it renders via the fallback and
-    // migrates on edit — so we never stack a preset on top of it.
-    if (resolveSlideBgImage(content).source === 'none') {
-      const preset = pickBackgroundPreset(theme);
-      if (preset) content.slideBgImage = preset;
-    }
-  }
-  if (localName === 'poll-slide') {
-    // pollId is required at runtime for interaction state. Deck imports (including AI output)
-    // may omit it, so we ensure it exists here (mirrors newSlide()).
-    const pollId =
-      typeof content.pollId === 'string' ? content.pollId.trim() : '';
-    if (!pollId) content.pollId = cryptoUuid();
-  }
+  // Nothing is composed here. Whether the slide takes a theme background is the
+  // type's declaration (`autoBackgroundPreset`, read by the factory) — import
+  // used to seed the core title slide by name on top of that, a second rule
+  // for one question, retired with D92.
+  const slide = newSlide({
+    type: localName,
+    theme,
+    lang,
+    content: patch,
+    slideTypes: { [localName]: def },
+  });
 
-  return { id: cryptoUuid(), type: localName, content };
+  return { id: slide.id, type: localName, content: slide.content };
 }

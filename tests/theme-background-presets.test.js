@@ -149,22 +149,39 @@ test('newSlide works for every registered type without a theme, and none seed a 
   }
 });
 
-test('imported title slides take a background from the theme, or none', () => {
+test('an imported title slide takes a background only by declaration (D92)', () => {
+  // Import used to seed the core `title-slide` by name, on top of the
+  // declaration (`autoBackgroundPreset`) the factory reads — two rules for one
+  // question, and an imported title slide wore a theme photo an inserted one
+  // did not. The declaration is the only rule now: the core title type does
+  // not carry it, so import seeds nothing, with or without presets.
   const deck = {
     title: 'Imported',
     slides: [{ type: 'title-slide', content: { title: 'Hello' } }],
   };
 
   const withTheme = deckToPresentationParts(deck, { theme: themeWithPresets });
-  assert.ok(PRESETS.includes(withTheme.slides[0].content.slideBgImage));
+  assert.ok(!withTheme.slides[0].content.slideBgImage);
 
-  // The behaviour change: a theme with no presets leaves the slide flat rather
-  // than reaching for a demo photo.
   const withoutTheme = deckToPresentationParts(deck, { theme: themeWithout });
   assert.ok(!withoutTheme.slides[0].content.slideBgImage);
 
   const noThemeAtAll = deckToPresentationParts(deck);
   assert.ok(!noThemeAtAll.slides[0].content.slideBgImage);
+
+  // A background the deck brings is what the slide has.
+  const own = deckToPresentationParts(
+    {
+      slides: [
+        {
+          type: 'title-slide',
+          content: { title: 'Hello', slideBgImage: '/mine.jpg' },
+        },
+      ],
+    },
+    { theme: themeWithPresets },
+  );
+  assert.equal(own.slides[0].content.slideBgImage, '/mine.jpg');
 });
 
 test('an imported title slide keeps a legacy background it already declares', () => {
@@ -182,21 +199,40 @@ test('an imported title slide keeps a legacy background it already declares', ()
   assert.ok(!parts.slides[0].content.slideBgImage);
 });
 
-test('chapter-title → title conversion takes its background from the theme', () => {
+test('chapter-title → title conversion seeds a background by declaration only (D92)', () => {
   const slide = {
     id: 'a',
     type: 'chapter-title-slide',
     content: { title: 'Chapter one' },
   };
 
+  // The core title type declares no `autoBackgroundPreset`, so converting into
+  // it seeds nothing — the converter used to do this by name, a second rule
+  // beside the declaration the factory reads.
   const converted = convertSlideToType(slide, 'title-slide', {
     theme: themeWithPresets,
   });
   assert.equal(converted.type, 'title-slide');
   assert.equal(converted.content.title, 'Chapter one');
-  assert.ok(PRESETS.includes(converted.content.slideBgImage));
+  assert.ok(!converted.content.slideBgImage);
 
-  const flat = convertSlideToType(slide, 'title-slide');
+  // With the declaration on the target type, the conversion seeds like an
+  // insert of that type would; without a theme it stays flat.
+  const declared = {
+    ...SlideTypes.SLIDE_TYPES,
+    'title-slide': {
+      ...SlideTypes.SLIDE_TYPES['title-slide'],
+      autoBackgroundPreset: true,
+    },
+  };
+  const seeded = convertSlideToType(slide, 'title-slide', {
+    theme: themeWithPresets,
+    slideTypes: declared,
+  });
+  assert.ok(PRESETS.includes(seeded.content.slideBgImage));
+  const flat = convertSlideToType(slide, 'title-slide', {
+    slideTypes: declared,
+  });
   assert.ok(!flat.content.slideBgImage);
 });
 

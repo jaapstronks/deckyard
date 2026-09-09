@@ -30,7 +30,7 @@ import { readDeckBundle } from '../../../export/deck-bundle.js';
 import { writeUploadedFile } from '../../../storage/uploads.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { rewriteBundleRefs } from '../../../../shared/slide-types/deck-assets.js';
-import { loadThemeAssets, resolveThemeId } from '../../../utils/themes.js';
+import { loadDeckTheme } from '../../../utils/themes.js';
 import {
   DEFAULT_DECK_LANG,
   normalizeLang,
@@ -88,19 +88,14 @@ export async function handlePresentationsImportDeck({
   // Rewrite the deck's content-addressed refs back to the new /uploads/ URLs.
   const rehydrated = rewriteBundleRefs(deck, (ref) => refToUpload.get(ref));
 
-  // Load the deck's theme so imported title slides can take a background image
-  // from its presets (mirrors import-json.js).
-  let themeConfig = null;
-  try {
-    themeConfig = await loadThemeAssets(
-      repoRoot,
-      resolveThemeId(rehydrated?.theme),
-    );
-  } catch {
-    // ignore — title slides are imported without a background image
-  }
+  // The deck's theme, so imported slides compose against it (background
+  // presets, theme slide-background variants).
+  const themeConfig = await loadDeckTheme(repoRoot, rehydrated?.theme);
 
-  const parts = deckToPresentationParts(rehydrated, { theme: themeConfig });
+  const parts = deckToPresentationParts(rehydrated, {
+    theme: themeConfig,
+    lang,
+  });
 
   const created = await createPresentation(storageScope, {
     title: parts.title,

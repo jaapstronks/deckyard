@@ -10,7 +10,7 @@ import {
   resolveSlideTypeName,
   canonicalSlideType,
 } from '../../../../shared/slide-types.js';
-import { loadThemeAssets, resolveThemeId } from '../../../utils/themes.js';
+import { loadDeckTheme } from '../../../utils/themes.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import {
   requirePermission,
@@ -204,26 +204,25 @@ async function handleCreateSlide(ctx, presentationId) {
 
   // The deck's theme supplies the background presets for types that auto-assign
   // one; without it a new title slide would come out flat.
-  let theme = null;
-  try {
-    theme = await loadThemeAssets(repoRoot, resolveThemeId(pres.theme));
-  } catch {
-    // ignore — the slide is simply created without a background image
-  }
+  const theme = await loadDeckTheme(repoRoot, pres.theme);
 
-  // Create new slide
+  // Create new slide. Caller-supplied content goes in as the factory's patch
+  // rather than being assigned over the result, so the composition steps that
+  // read content (the background seed, the instance keys) see what the caller
+  // actually sent.
   let newSlideObj;
   try {
-    newSlideObj = newSlide({ type: slideType, theme, slideTypes });
+    newSlideObj = newSlide({
+      type: slideType,
+      theme,
+      slideTypes,
+      lang: pres?.lang,
+      presentationId: pres?.id,
+      content: getOptionalObject(body, 'content'),
+    });
   } catch (e) {
     await apiError(ctx, 400, `Failed to create slide: ${e.message}`);
     return true;
-  }
-
-  // Override content if provided
-  const contentPatch = getOptionalObject(body, 'content');
-  if (contentPatch) {
-    newSlideObj.content = { ...newSlideObj.content, ...contentPatch };
   }
 
   // Set notes if provided

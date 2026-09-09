@@ -28,6 +28,7 @@ export {
 export {
   presentationToDeck,
   deckToPresentationParts,
+  deckThemeId,
 } from './slide-types/deck.js';
 
 export {

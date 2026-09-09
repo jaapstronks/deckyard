@@ -8,8 +8,10 @@ import {
 } from '../../../utils/request-validators.js';
 import {
   deckToPresentationParts,
+  deckThemeId,
   presentationToDeck,
 } from '../../../../shared/slide-types.js';
+import { loadDeckTheme } from '../../../utils/themes.js';
 import { generateSlidesToAppendFromRawContent } from '../../../utils/openai/append.js';
 import { validateAndFixRefinedSlides } from '../../../utils/ai/validate-slides/index.js';
 import { loadSlideTypeContext } from './shared.js';
@@ -19,7 +21,7 @@ import { loadSlideTypeContext } from './shared.js';
  * presentation (editor flow).
  * @param {import('./shared.js').AiContext} ctx
  */
-export async function handleAiAppendSlides({ req, res, authedUser }) {
+export async function handleAiAppendSlides({ repoRoot, req, res, authedUser }) {
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
@@ -61,7 +63,12 @@ export async function handleAiAppendSlides({ req, res, authedUser }) {
   });
 
   // Normalize into internal slide format so validation is stable and ids exist.
-  const parts = deckToPresentationParts(generatedSlides);
+  // Against the theme of the deck the slides are being appended to, so a
+  // generated slide composes the way an inserted one does.
+  const parts = deckToPresentationParts(generatedSlides, {
+    theme: await loadDeckTheme(repoRoot, deckThemeId(existingDeck)),
+    lang: lang || existingDeck?.lang,
+  });
   let slides = Array.isArray(parts?.slides) ? parts.slides : [];
 
   // Validate slides and log any issues (unknown fields, schema mismatches, etc.)

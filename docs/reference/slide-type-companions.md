@@ -191,9 +191,9 @@ the list of judgements was complete. That is what the inventory below is for.
 
 A type's `sample` (in its `authoring.js`) is the filled-in example the picker
 renders in a tile thumbnail, the peek lightbox, and the settings curation grid.
-It is **never** what an inserted slide is seeded from — that is `makeNewSlide`,
-which reads `defaultsByLang[<deck lang>]` and so already follows the deck
-language (`tests/insert-seeds-deck-language.test.js`).
+It is **never** what an inserted slide is seeded from — that is the slide
+factory (`newSlide`), which reads `defaultsByLang[<deck lang>]` and so already
+follows the deck language (`tests/insert-seeds-deck-language.test.js`).
 
 Preview-only does not mean optional: a type without one previews as an empty
 slide, so the sample is a gated companion like the rest (`picker-sample`).

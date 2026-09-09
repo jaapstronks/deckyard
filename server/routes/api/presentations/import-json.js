@@ -4,7 +4,7 @@ import {
 } from '../../../storage/presentations/index.js';
 import { serveJson, requireJsonBody } from '../../../utils/http.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
-import { loadThemeAssets, resolveThemeId } from '../../../utils/themes.js';
+import { loadDeckTheme } from '../../../utils/themes.js';
 import { createLogger } from '../../../utils/logger.js';
 import {
   DEFAULT_DECK_LANG,
@@ -37,16 +37,11 @@ export async function handlePresentationsImportJson({
     Array.isArray(deck?.slides) ? deck.slides.length : 'not an array',
   );
 
-  // Load the deck's theme first so imported title slides can take a
-  // background image from its presets.
-  let themeConfig = null;
-  try {
-    themeConfig = await loadThemeAssets(repoRoot, resolveThemeId(deck?.theme));
-  } catch {
-    // ignore — title slides are imported without a background image
-  }
+  // The deck's theme, so imported slides compose against it (background
+  // presets, theme slide-background variants).
+  const themeConfig = await loadDeckTheme(repoRoot, deck?.theme);
 
-  const parts = deckToPresentationParts(deck, { theme: themeConfig });
+  const parts = deckToPresentationParts(deck, { theme: themeConfig, lang });
   log.info(
     '[import-json] Parsed parts - title:',
     parts.title,

@@ -15,6 +15,7 @@ import {
 } from '../../utils/http.js';
 import { getConvertParams } from '../../utils/request-validators.js';
 import { deckToPresentationParts } from '../../../shared/slide-types.js';
+import { loadDeckTheme } from '../../utils/themes.js';
 import { createLogger } from '../../utils/logger.js';
 import { sseWrite, sseError, openSseStream } from '../../utils/sse.js';
 import { dispatchRoutes } from '../../utils/router.js';
@@ -27,7 +28,13 @@ import {
 import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
 
 // POST /api/convert - Convert a file to a presentation
-async function handleConvertFile({ storageScope, req, res, authedUser }) {
+async function handleConvertFile({
+  repoRoot,
+  storageScope,
+  req,
+  res,
+  authedUser,
+}) {
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
@@ -97,7 +104,10 @@ async function handleConvertFile({ storageScope, req, res, authedUser }) {
 
   // Create the presentation from the deck
   try {
-    const parts = deckToPresentationParts(deck);
+    const parts = deckToPresentationParts(deck, {
+      theme: await loadDeckTheme(repoRoot, theme),
+      lang: deck.lang || deck._generationMeta?.effectiveLang || lang,
+    });
 
     // Use the detected/effective language from the deck, not the original request
     const effectiveLang =
@@ -144,7 +154,13 @@ async function handleConvertFile({ storageScope, req, res, authedUser }) {
 }
 
 // POST /api/convert/stream - Convert a file, streaming progress over SSE
-async function handleConvertStream({ storageScope, req, res, authedUser }) {
+async function handleConvertStream({
+  repoRoot,
+  storageScope,
+  req,
+  res,
+  authedUser,
+}) {
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
@@ -376,7 +392,10 @@ async function handleConvertStream({ storageScope, req, res, authedUser }) {
       },
     });
 
-    const parts = deckToPresentationParts(deck);
+    const parts = deckToPresentationParts(deck, {
+      theme: await loadDeckTheme(repoRoot, theme),
+      lang: deck.lang || deck._generationMeta?.effectiveLang || lang,
+    });
 
     // Use the detected/effective language from the deck, not the original request
     const effectiveLang =

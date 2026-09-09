@@ -12,6 +12,7 @@ import {
   getStringArray,
 } from '../../../utils/request-validators.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
+import { loadDeckTheme } from '../../../utils/themes.js';
 import { validateAndFixRefinedSlides } from '../../../utils/ai/validate-slides/index.js';
 import { refineSectionWithAi } from '../../../utils/ai/refine-section.js';
 import { loadSlideTypeContext } from './shared.js';
@@ -23,7 +24,7 @@ import { loadSlideTypeContext } from './shared.js';
  */
 export const handleAiRefineSection = withErrorHandler(
   'ai-refine-section',
-  async ({ req, res, authedUser }) => {
+  async ({ repoRoot, req, res, authedUser }) => {
     const parsed = await requireJsonBody(req, res);
     if (!parsed.ok) return true;
     const body = parsed.body;
@@ -75,7 +76,12 @@ export const handleAiRefineSection = withErrorHandler(
 
     // Normalize so ids exist and content matches schemas, then re-attach the
     // per-slide "why" (normalization strips unknown keys).
-    const parts = deckToPresentationParts(revisedRaw);
+    // Against the theme of the deck being refined: a revised slide composes
+    // like a newly inserted one of the same type.
+    const parts = deckToPresentationParts(revisedRaw, {
+      theme: await loadDeckTheme(repoRoot, presentation?.theme),
+      lang: lang || presentation?.lang,
+    });
     let slides = Array.isArray(parts?.slides) ? parts.slides : [];
     slides = validateAndFixRefinedSlides(slides);
     slides.forEach((s, i) => {
