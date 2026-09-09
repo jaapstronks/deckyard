@@ -91,7 +91,10 @@ One background id, in the same vocabulary a slide stores in
 `content.background`: `lime`, `mist`, or the `id` of one of this theme's own
 [`slideBackgrounds`](theme-slide-backgrounds.md) variants. Case and surrounding
 space are folded away by `normalizeTheme`; a theme that sets nothing leaves
-every type on its own default. Available to a file theme (`themes/<id>.json`)
+every type on its own default. A stored theme config only keeps a ground the
+same config offers (`validateThemeConfig` drops any other id), which is why
+removing a variant in the theme editor also clears a ground that named it: an
+id that resolves to nothing is not a state. Available to a file theme (`themes/<id>.json`)
 and a database theme alike, and in the theme editor as **This theme's ground**,
 beside the background options it chooses from.
 

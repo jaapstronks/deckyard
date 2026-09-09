@@ -342,7 +342,45 @@ test('every deck normalization is given a theme and a language', () => {
   );
 });
 
+test('every slide composition and conversion is given a theme', () => {
+  // The factory and the converter both re-seed a slide for its type, and that
+  // seed reads the theme: the ground (`defaultBackground`, B160), the
+  // background presets, the variants a type may carry. A call site without
+  // a theme is a route where a slide comes out different from every other —
+  // the public-API library insert and the theme-change conversion used to be
+  // two such routes.
+  const offenders = [];
+  for (const dir of ['server', 'shared', 'client']) {
+    for (const file of walkJsFiles(path.join(process.cwd(), dir))) {
+      const rel = path.relative(process.cwd(), file);
+      const source = withoutComments(fs.readFileSync(file, 'utf8'));
+      for (const args of callArguments(source, '\\bnewSlide')) {
+        if (!args[0]?.includes('theme'))
+          offenders.push(`${rel}: newSlide(${args.join(', ')})`);
+      }
+      for (const args of callArguments(source, '\\bconvertSlideToType')) {
+        if (!args[2]?.includes('theme'))
+          offenders.push(`${rel}: convertSlideToType(${args.join(', ')})`);
+      }
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `these call sites compose or convert a slide without a theme:\n${offenders.join('\n')}`,
+  );
+});
+
 test('the guards would catch what they are for', () => {
+  assert.deepEqual(
+    callArguments('x = newSlide({ type, slideTypes });', '\\bnewSlide'),
+    [['{ type, slideTypes }']],
+  );
+  assert.deepEqual(
+    callArguments('makeNewSlide({ theme });', '\\bnewSlide'),
+    [],
+    'a word boundary keeps a differently named helper out of the scan',
+  );
   // A blinded guard passes silently, so both patterns are exercised here.
   assert.ok(DEFAULTS_CLONE.test('  const c = structuredClone(def.defaults);'));
   assert.ok(DEFAULTS_CLONE.test('  return deepClone(byLang || def.defaults);'));

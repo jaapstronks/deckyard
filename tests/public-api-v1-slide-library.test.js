@@ -22,6 +22,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
 import { userIdFor, userRows } from './helpers/identity-fixtures.js';
+import { SLIDE_TYPES } from '../shared/slide-types.js';
 
 process.env.AUTH_SECRET = ['deckyard', 'test', 'auth']
   .join('-')
@@ -45,8 +46,9 @@ const { handleSlideLibrary } =
  * Install a freshly seeded double and point the storage facade at Postgres.
  * @returns {Promise<Object>} The database double.
  */
-async function installDb() {
+async function installDb({ themes = [], deckTheme = 'default' } = {}) {
   const db = createFakeDb({
+    themes,
     organizations: [
       { id: ORG, name: 'Default', slug: 'default' },
       { id: OTHER_ORG, name: 'Other', slug: 'other' },
@@ -82,7 +84,7 @@ async function installDb() {
     tags: [{ id: 'tag-1', organization_id: ORG, name: 'intro' }],
     slide_library_tags: [{ slide_library_id: 'item-team', tag_id: 'tag-1' }],
     presentations: [
-      deckRow({ id: DECK_ID, owner: KEY_OWNER }),
+      deckRow({ id: DECK_ID, owner: KEY_OWNER, theme: deckTheme }),
       deckRow({ id: FOREIGN_DECK_ID, owner: 'someone-else@example.com' }),
     ],
   });
@@ -115,7 +117,7 @@ function libraryRow({ id, organization_id, shelf, name, trashed_at = null }) {
   };
 }
 
-function deckRow({ id, owner }) {
+function deckRow({ id, owner, theme = 'default' }) {
   return {
     id,
     organization_id: ORG,
@@ -128,7 +130,7 @@ function deckRow({ id, owner }) {
     updated_by_user_id: userIdFor(owner),
     title: id,
     description: null,
-    theme: 'default',
+    theme,
     lang: 'nl',
     visibility: 'private',
     revision: 1,
@@ -375,10 +377,17 @@ test('POST /slides/from-library copies the item into the deck and answers 201', 
   assert.equal(ctx.res.statusCode, 201);
   const body = ctx.res.body;
   assert.equal(body.slide.type, 'content-slide');
-  assert.deepEqual(body.slide.content, {
-    title: 'Team intro title',
-    body: 'Library body',
-  });
+  // The item's content is the factory's patch (the same call the editor
+  // makes for a library insert): its keys win, every key it lacks takes the
+  // type's default — so the copy is a complete content-slide, not a bare
+  // two-key object that the editor would have to fill in on first touch.
+  assert.equal(body.slide.content.title, 'Team intro title');
+  assert.equal(body.slide.content.body, 'Library body');
+  assert.equal(
+    body.slide.content.background,
+    SLIDE_TYPES['content-slide'].defaults.background,
+    "a key the item lacks is the type's default",
+  );
   assert.equal(body.index, 2, 'appends at the end by default');
   assert.deepEqual(body.copiedFrom, {
     libraryItemId: 'item-team',
@@ -395,6 +404,50 @@ test('POST /slides/from-library copies the item into the deck and answers 201', 
     'item-team',
     'the copy gets a fresh slide id',
   );
+});
+
+/** Unique per file: `loadDeckTheme` memoizes a DB theme by its UUID. */
+const GROUND_THEME_ID = '99999999-2222-4333-8444-555555555555';
+
+test('POST /slides/from-library composes against the deck theme (the ground, D98)', async () => {
+  const db = await installDb({
+    deckTheme: GROUND_THEME_ID,
+    themes: [
+      {
+        id: GROUND_THEME_ID,
+        organization_id: ORG,
+        slug: 'ground',
+        label: 'Ground',
+        logo_url: null,
+        logo_small_url: null,
+        colors: {
+          primary: '#7c3aed',
+          background: '#fefefe',
+          textLight: '#ffffff',
+          textDark: '#1f2937',
+        },
+        fonts: { heading: 'Montserrat', body: 'Inter' },
+        config: { version: 1, defaultBackground: 'mist' },
+        is_default: false,
+        created_at: '2026-07-01T00:00:00.000Z',
+        updated_at: '2026-07-01T00:00:00.000Z',
+        created_by: null,
+      },
+    ],
+  });
+  const ctx = makeCtx(
+    'POST',
+    `/api/v1/presentations/${DECK_ID}/slides/from-library`,
+    { body: { libraryItemId: 'item-team' } },
+  );
+  assert.equal(await handleSlideLibrary(ctx), true);
+  assert.equal(ctx.res.statusCode, 201);
+  assert.equal(
+    ctx.res.body.slide.content.background,
+    'mist',
+    'a library copy that names no background lands on the theme ground',
+  );
+  assert.equal(storedDeck(db).slides[2].content.background, 'mist');
 });
 
 test('POST /slides/from-library honours atIndex', async () => {

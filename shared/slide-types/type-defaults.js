@@ -74,10 +74,12 @@ export function resolveTypeDefaults(def, lang, theme = null) {
  * @returns {Object} the same `defaults` object
  */
 export function applyThemeDefaultBackground(defaults, def, theme) {
-  const wanted = String(theme?.defaultBackground || '')
-    .trim()
-    .toLowerCase();
-  if (!wanted || !defaults || typeof defaults !== 'object') return defaults;
+  // One spelling, folded once: `normalizeTheme` lowercases the id on every
+  // theme that reaches a composition (file, DB and the client's copy alike),
+  // so this reader takes it as it is rather than folding a second time.
+  const wanted = theme?.defaultBackground;
+  if (typeof wanted !== 'string' || !wanted) return defaults;
+  if (!defaults || typeof defaults !== 'object') return defaults;
   const field = (def?.fields || []).find((f) => f?.key === 'background');
   if (!field) return defaults;
   if (!allowedEnumValues(field, theme).includes(wanted)) return defaults;

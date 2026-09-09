@@ -145,6 +145,35 @@ test('normalizeTheme folds the id to one spelling', () => {
   assert.equal(normalizeTheme({}).defaultBackground, '');
 });
 
+test('a stored config keeps only a ground it offers itself', () => {
+  // The write gate for a DB theme: `lime`, `mist` or one of this config's own
+  // variants — the set the theme editor's select is built from. Anything
+  // else would be a stored id that resolves to nothing, a second state for
+  // "no ground", so it is dropped rather than kept.
+  const calm = { id: 'calm', label: 'Calm', value: '#eef' };
+  assert.equal(
+    validateThemeConfig({ defaultBackground: 'lime' }).defaultBackground,
+    'lime',
+  );
+  assert.equal(
+    validateThemeConfig({ defaultBackground: ' MIST ' }).defaultBackground,
+    'mist',
+    'one spelling at the gate as well',
+  );
+  assert.equal(
+    validateThemeConfig({ slideBackgrounds: [calm], defaultBackground: 'calm' })
+      .defaultBackground,
+    'calm',
+  );
+  for (const id of ['calm', 'dark', 'nope', '']) {
+    assert.equal(
+      validateThemeConfig({ defaultBackground: id }).defaultBackground,
+      undefined,
+      `"${id}" is not a ground this config offers`,
+    );
+  }
+});
+
 test('a DB theme can declare it too', () => {
   // The file/DB gap `theme-config-schema` exists to close: the key survives
   // validation of the stored config and reaches the built theme.

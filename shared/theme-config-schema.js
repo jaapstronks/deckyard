@@ -241,13 +241,21 @@ export function validateThemeConfig(raw) {
   const defaultTitleSlide = str(raw.defaultTitleSlide, 80);
   if (defaultTitleSlide) out.defaultTitleSlide = defaultTitleSlide;
 
-  // The ground a new slide starts on under this theme: one background id
-  // (`lime`, `mist`, or one of the theme's own `slideBackgrounds` variants).
-  // Whitelisted here so a DB theme can say it as well as a file theme; the id
-  // itself is only honoured where the slide type actually offers it (see
-  // `resolveTypeDefaults`).
-  const defaultBackground = str(raw.defaultBackground, 32);
-  if (defaultBackground) out.defaultBackground = defaultBackground;
+  // The ground a new slide starts on under this theme: one background id,
+  // and one of the grounds this very config offers — `lime`, `mist`, or the
+  // id of one of its own `slideBackgrounds` variants (the same set the theme
+  // editor's select is built from). A stored id that resolves to nothing
+  // would be a second state meaning "no ground", so it is dropped here, at
+  // the write gate, rather than tolerated. Which slide types then take the
+  // ground is decided per type by `resolveTypeDefaults`.
+  const defaultBackground = str(raw.defaultBackground, 32).toLowerCase();
+  const offeredGrounds = new Set([
+    'lime',
+    'mist',
+    ...slideBackgrounds.map((v) => v.id),
+  ]);
+  if (offeredGrounds.has(defaultBackground))
+    out.defaultBackground = defaultBackground;
 
   // Theme-driven title-slide layout token (bottom | center | top). The renderer
   // maps it to a `.tsu-layout-*` class; unknown/absent falls back to the

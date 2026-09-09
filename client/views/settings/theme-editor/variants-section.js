@@ -145,6 +145,7 @@ export function createVariantsSection({ config, colors, onChange }) {
                 delete config.backgroundLabels;
               }
             }
+            renderGround();
             onChange();
           },
         }),
