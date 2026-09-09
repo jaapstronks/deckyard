@@ -66,9 +66,9 @@ stays its own row under Documents.
 
 ## Speaker notes in the PPTX
 
-The PPTX carries every slide's speaker notes as PowerPoint notes, on the same
-slide part as the render (`addSpeakerNotes` in `server/export/pptx.js`, one call
-site for both the raster and the video branch). `slides[].notes` is already
+The PPTX carries every slide's speaker notes as PowerPoint notes, in the notes
+part that belongs to that slide (`addSpeakerNotes` in `server/export/pptx.js`,
+one call site for both the raster and the video branch). `slides[].notes` is already
 resolved to the exported language version — the language projection swaps the
 whole `slides` array — so a translated export carries that version's notes with
 no second path.
