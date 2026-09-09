@@ -127,6 +127,10 @@ fixpoint (identical content-addressed refs, since identical bytes hash the same)
   `handlePresentationsImportDeck` (route `POST /api/presentations/import/deck`).
 - Pure ref layer: `shared/slide-types/deck-assets.js`
   (`collectAssetRefs`, `rewriteAssetRefs`, `rewriteBundleRefs`, `assetRefForHash`).
+  One walk serves both exports: the bundle takes the uploads it can
+  content-address (`collectAssetRefs`), the [bulk export](./bulk-export.md)
+  takes the wider set of paths this install serves
+  (`collectServedAssetRefs`).
 - Export route: `GET /api/presentations/:id/export/deck.zip` (downloads
   `<title>.deck`).
 

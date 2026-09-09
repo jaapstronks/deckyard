@@ -11,7 +11,9 @@ import assert from 'node:assert';
 import {
   isUploadRef,
   isBundleRef,
+  isServedAssetRef,
   collectAssetRefs,
+  collectServedAssetRefs,
   rewriteAssetRefs,
   rewriteBundleRefs,
   assetRefForHash,
@@ -59,6 +61,97 @@ describe('collectAssetRefs', () => {
     assert.deepEqual(collectAssetRefs({ slides: [] }), []);
     assert.deepEqual(collectAssetRefs({}), []);
     assert.deepEqual(collectAssetRefs(null), []);
+  });
+});
+
+describe('isServedAssetRef', () => {
+  it('accepts every path this installation serves, uploads included', () => {
+    assert.equal(isServedAssetRef('/uploads/photo-abc.png'), true);
+    assert.equal(isServedAssetRef('/assets/logo.svg'), true);
+    assert.equal(isServedAssetRef('/custom/assets/images/bg1.jpg'), true);
+    assert.equal(
+      isServedAssetRef('/custom/themes/acme/assets/images/bg.jpg'),
+      true,
+    );
+  });
+  it('rejects remote URLs, other paths, traversal and non-strings', () => {
+    // A remote URL is not an asset this install holds — and a bare string
+    // cannot say whether it is an image or a link target.
+    assert.equal(isServedAssetRef('https://cdn.example.com/logo.png'), false);
+    assert.equal(isServedAssetRef('http://example.com/x.png'), false);
+    assert.equal(isServedAssetRef('/about'), false);
+    assert.equal(isServedAssetRef('/assets/'), false);
+    assert.equal(isServedAssetRef('/custom/assets/../../etc/passwd'), false);
+    assert.equal(isServedAssetRef(42), false);
+    assert.equal(isServedAssetRef(null), false);
+  });
+  it('is a superset of isUploadRef', () => {
+    for (const ref of ['/uploads/a.png', '/uploads/b-1.jpeg']) {
+      assert.equal(isUploadRef(ref), true);
+      assert.equal(isServedAssetRef(ref), true);
+    }
+  });
+});
+
+describe('collectServedAssetRefs', () => {
+  // A realistic deck: a nested item image, the quote author photo the old
+  // bulk-export key list missed, a theme background preset under /custom/, a
+  // call-to-action link and a remote image.
+  const deck = {
+    slides: [
+      { content: { members: [{ image: '/uploads/ann.jpg' }] } },
+      { content: { authorImage1: '/uploads/bo.png' } },
+      { content: { slideBgImage: '/custom/assets/backgrounds/bg1.jpg' } },
+      {
+        content: {
+          actions: [{ url: 'https://example.com/pricing' }],
+          image: 'https://cdn.example.com/logo.png',
+        },
+      },
+    ],
+  };
+
+  it('finds uploads in nested items and undeclared-key fields', () => {
+    const refs = collectServedAssetRefs(deck);
+    assert.ok(refs.includes('/uploads/ann.jpg'));
+    assert.ok(refs.includes('/uploads/bo.png'));
+  });
+  it('adds the fork/theme asset trees the bundle does not own', () => {
+    assert.deepEqual(collectServedAssetRefs(deck), [
+      '/uploads/ann.jpg',
+      '/uploads/bo.png',
+      '/custom/assets/backgrounds/bg1.jpg',
+    ]);
+  });
+  it('counts neither a link target nor a remote image as an asset', () => {
+    // Stated as the rule rather than as the two strings that happen to be in
+    // this deck: no remote URL is ever an asset ref, whatever field it sits in.
+    const remote = collectServedAssetRefs(deck).filter((r) =>
+      /^https?:/.test(r),
+    );
+    assert.deepEqual(remote, []);
+  });
+  it('contains every ref collectAssetRefs finds, and only adds served paths', () => {
+    const owned = collectAssetRefs(deck);
+    const served = collectServedAssetRefs(deck);
+    for (const ref of owned) assert.ok(served.includes(ref), ref);
+    assert.deepEqual(
+      served.filter((r) => isUploadRef(r)),
+      owned,
+    );
+  });
+  it('walks a language version the same way (it is just { slides })', () => {
+    const version = {
+      slides: [{ content: { image: '/uploads/en-hero.webp' } }],
+    };
+    assert.deepEqual(collectServedAssetRefs(version), [
+      '/uploads/en-hero.webp',
+    ]);
+  });
+  it('returns [] for an empty or absent deck', () => {
+    assert.deepEqual(collectServedAssetRefs({ slides: [] }), []);
+    assert.deepEqual(collectServedAssetRefs({}), []);
+    assert.deepEqual(collectServedAssetRefs(null), []);
   });
 });
 
