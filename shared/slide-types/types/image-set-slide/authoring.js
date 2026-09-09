@@ -1,5 +1,5 @@
 /**
- * image-text-slide — the authoring companions.
+ * image-set-slide — the authoring companions.
  *
  * Plain data the editor reads to *offer* this type. Imported by the editor
  * surfaces that need it, never by the definition module: the presenter and the
@@ -21,49 +21,49 @@ export default {
    * Short "what is this" line, shown as the picker tile's tooltip. English is
    * the fallback; translations live under `editor.slideTypeDesc.<type>`.
    */
-  description: 'An image beside text',
+  description: 'Two or three images with text',
 
   /**
    * Extra search terms (incl. Dutch) folded into the picker's search haystack.
    * Never displayed.
    */
-  aliases: 'photo text foto beeld tekst',
+  aliases: 'photos row duo beeldreeks foto rij tekst',
 
   /**
    * Abstract glyph for the picker's schematic view mode. JSON-safe spec read by
    * renderSlideSchematic() — grammar in client/lib/slide-authoring/slide-schematic.js.
    */
-  schematic: { split: 50 },
-
-  /**
-   * Per-preset glyph overrides, keyed by the preset id in SLIDE_TYPE_PRESETS
-   * (client/views/editor/slide-type-picker/data.js). A preset absent here falls
-   * back to `schematic` above.
-   */
-  presetSchematics: {
-    'image-left': { split: 50 },
-    'image-right': { split: 50, mirror: true },
-    'image-wide': { split: 63 },
-    'image-corner': { corner: 45, mirror: true },
-  },
+  schematic: { row: 'top' },
 
   /**
    * Rich example content for the picker's preview thumbnails — what a good
    * slide of this type looks like, not what an empty one looks like (that is
    * `defaults` on the definition).
    *
-   * The placeholder image URL is inlined (see image-slide's note). This is the
-   * shared `slide-picker` seed the old module also used for team-cards-slide;
-   * the value is byte-identical, the sharing was incidental.
+   * The placeholder image URLs are inlined (see image-slide's note): an
+   * authoring.js is self-contained plain data, and the seeds are meaningless
+   * picsum ids.
    */
   sample: {
-    image: 'https://picsum.photos/seed/slide-picker/800/600',
+    title: 'Three moments',
+    body: '- Where it started\n- What changed\n- Where it stands now',
+    images: [
+      {
+        src: 'https://picsum.photos/seed/image-set-1/800/600',
+        alt: 'Sample image',
+      },
+      {
+        src: 'https://picsum.photos/seed/image-set-2/800/600',
+        alt: 'Sample image',
+      },
+      {
+        src: 'https://picsum.photos/seed/image-set-3/800/600',
+        alt: 'Sample image',
+      },
+    ],
     caption: '',
-    alt: 'Sample image',
     imageRole: 'content',
-    imageSide: 'left',
-    title: 'Visual Storytelling',
-    body: '- Engage your audience\n- Communicate complex ideas\n- Leave a lasting impression',
+    layout: 'top',
     background: 'lime',
   },
 };

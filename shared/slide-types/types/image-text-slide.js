@@ -6,6 +6,9 @@ import {
   pickAltText,
   BACKGROUND_FIELD,
   IMAGE_ROLE_FIELD,
+  IMAGE_SIDE_FIELD,
+  IMAGE_WIDTH_FIELD,
+  IMAGE_BACKGROUND_FIELD,
   densityField,
 } from '../helpers.js';
 import { getSlideCopy } from '../slide-copy.js';
@@ -17,12 +20,13 @@ import {
   renderAsideHtml,
 } from '../aside-field.js';
 import {
-  imageTextCellCount,
-  resolveImageTextCell,
-  ensureImageTextImages,
+  resolveImageTextImage,
   IMAGE_TEXT_IMAGE_DEFAULTS,
-} from './image-text-slide/images.js';
+} from './image-text-slide/image.js';
 
+// One image beside text. The plural layouts this type used to carry (`duo`,
+// `row-top`, `row-bottom`, reading images[0..2]) are `image-set-slide` since
+// D100; the schema funnel moves stored decks over.
 export default {
   structure: 'singleton',
   runtime: 'static',
@@ -50,79 +54,26 @@ export default {
       maxLength: 3000,
     },
     {
-      // LEGACY single-image field. Since the phase-2 layout catalogue the
-      // canonical field is `images` below; this one stays declared so old
-      // decks keep validating, translating and collab-syncing, and renders
-      // as item 0 when images[] is empty. The editor migrates it on touch
-      // (ensureImageTextImages).
       key: 'image',
       label: 'Image',
       labelKey: 'editor.slideField.image.label',
       type: 'image',
-      hidden: true,
       required: false,
       // A picked image that would be heavily cropped switches to `contain`,
-      // unless the author already chose a fit. Canonical sink is the first
-      // ImageRef's `fit`; `imageFit` is the pre-migration fallback.
-      autoFit: { fit: 'imageFit', item: { list: 'images', fit: 'fit' } },
+      // unless the author already chose a fit.
+      autoFit: { fit: 'fit' },
     },
+    IMAGE_ROLE_FIELD,
     {
-      key: 'images',
-      label: 'Images',
-      labelKey: 'editor.slideField.images.label',
-      type: 'items',
+      key: 'alt',
+      label: 'Alt text',
+      labelKey: 'editor.slideField.alt.label',
+      type: 'string',
       required: false,
-      minItems: 0,
-      maxItems: 3,
-      itemDefaults: { src: '', alt: '' },
-      itemFields: [
-        { key: 'src', label: 'Image URL', type: 'image', required: false },
-        {
-          key: 'alt',
-          label: 'Alt text',
-          labelKey: 'editor.slideField.alt.label',
-          type: 'string',
-          required: false,
-          maxLength: 180,
-        },
-        {
-          // Per-image fit (canonical since step 2b); empty = follow the
-          // type default (imageDefaults.fit), which is what the `image-fit`
-          // widget's derived empty option says out loud.
-          key: 'fit',
-          label: 'Image fit',
-          labelKey: 'editor.imageText.imageFit',
-          type: 'enum',
-          required: false,
-          options: ['cover', 'contain'],
-          editor: 'image-fit',
-        },
-        {
-          // Carried data, not a form control: the crop point is edited by the
-          // canvas focal-point drag and the "This image" card, both of which
-          // resolve it through the inline descriptor. Same as gallery.
-          key: 'focusX',
-          label: 'Focus X',
-          labelKey: 'editor.slideField.focusX.label',
-          type: 'number',
-          hidden: true,
-          required: false,
-          min: 0,
-          max: 100,
-          step: 1,
-        },
-        {
-          key: 'focusY',
-          label: 'Focus Y',
-          labelKey: 'editor.slideField.focusY.label',
-          type: 'number',
-          hidden: true,
-          required: false,
-          min: 0,
-          max: 100,
-          step: 1,
-        },
-      ],
+      maxLength: 180,
+      // A decorative image is hidden from screen readers, so its alt text is
+      // dead UI.
+      visibleWhen: { field: 'imageRole', in: ['content'] },
     },
     {
       key: 'caption',
@@ -133,111 +84,9 @@ export default {
       maxLength: 160,
     },
     {
-      // LEGACY slide-level alt. normalizeContent folds it into images[0]; the
-      // per-image alt is the edited one, so this never renders as a control.
-      key: 'alt',
-      label: 'Alt text',
-      labelKey: 'editor.slideField.alt.label',
-      type: 'string',
-      hidden: true,
-      required: false,
-      maxLength: 180,
-    },
-    IMAGE_ROLE_FIELD,
-    {
-      key: 'imageSide',
-      label: 'Image position',
-      type: 'enum',
-      required: false,
-      options: [
-        { value: 'left', label: 'Left' },
-        { value: 'right', label: 'Right' },
-      ],
-      formLayout: 'pair',
-    },
-    {
-      key: 'imageWidth',
-      label: 'Image width',
-      type: 'enum',
-      required: false,
-      formLayout: 'pair',
-      // narrow/half/wide double as the catalogue's 1/3, 1/2 and 2/3 splits
-      // (37/63 mirrors 63/37, so no fourth value is needed).
-      options: [
-        { value: 'half', label: '50%' },
-        { value: 'narrow', label: '37%' },
-        { value: 'wide', label: '63%' },
-      ],
-    },
-    {
-      key: 'layout',
-      label: 'Layout',
-      labelKey: 'editor.slideField.layout.label',
-      type: 'enum',
-      required: false,
-      options: [
-        { value: 'split', label: 'Split' },
-        {
-          value: 'corner',
-          label: 'Corner image',
-          title:
-            'Image only in the top corner; the space below stays empty. Fits little text.',
-        },
-        {
-          value: 'duo',
-          label: 'Two beside text',
-          title: 'Two images stacked beside the text.',
-        },
-        {
-          value: 'row-top',
-          label: 'Row above',
-          title:
-            'A row of 2-3 images above the text; the number of images sets the columns.',
-        },
-        {
-          value: 'row-bottom',
-          label: 'Row below',
-          title:
-            'A row of 2-3 images below the text; the number of images sets the columns.',
-        },
-      ],
-    },
-    {
-      key: 'textColumns',
-      label: 'Text columns',
-      type: 'enum',
-      required: false,
-      helpText: 'Only used in the image-row and duo layouts.',
-      options: [
-        { value: '1', label: '1 column' },
-        { value: '2', label: '2 columns' },
-      ],
-    },
-    {
-      // LEGACY slide-level base fit. Since datamodel step 2b fit lives on the
-      // ImageRef (`images[i].fit`, falling back to imageDefaults.fit); this
-      // field stays declared so old decks keep validating and rendering, and
-      // the editor folds it into the items on touch (ensureImageTextImages).
-      key: 'imageFit',
-      label: 'Image fit',
-      type: 'enum',
-      hidden: true,
-      required: false,
-      options: ['cover', 'contain'],
-    },
-    {
-      key: 'imageBackground',
-      label: 'Image background',
-      type: 'enum',
-      required: false,
-      options: [
-        { value: 'white', label: 'White' },
-        { value: 'match', label: 'Match slide' },
-      ],
-    },
-    {
-      // LEGACY slide-level crop point, folded into images[0] by
-      // normalizeContent. Carried data, never a control.
+      // Carried data, never a form control: the crop point is an ImageRef
+      // property of the image ELEMENT, declared on the inline descriptor and
+      // edited by the canvas focal-point drag and the "This image" card.
       key: 'focusX',
       label: 'Focus X',
       labelKey: 'editor.slideField.focusX.label',
@@ -263,6 +112,45 @@ export default {
       helpText:
         'Only used when Image fit is “cover” (cropped). 0 = top, 50 = center, 100 = bottom.',
     },
+    {
+      // Canonical fit axis (ImageRef); empty = follow the type default
+      // (imageDefaults.fit).
+      key: 'fit',
+      label: 'Image fit',
+      // The ImageRef axes share one wording across every image type and every
+      // surface, so they name the shared key rather than accept the per-type
+      // one the registry would stamp.
+      labelKey: 'editor.imageText.imageFit',
+      type: 'enum',
+      required: false,
+      options: ['cover', 'contain'],
+      // The silent-default widget: an extra empty option labelled with the
+      // value imageDefaults.fit resolves to, which doubles as back-to-default.
+      editor: 'image-fit',
+      formLayout: 'pair',
+    },
+    IMAGE_SIDE_FIELD,
+    IMAGE_WIDTH_FIELD,
+    {
+      // No `foldUnofferedTo` on purpose: the schema funnel's v14 -> v15 step
+      // must still see a stored `duo`/`row-top`/`row-bottom` to move that
+      // slide to image-set-slide. A fold here would eat the evidence first.
+      key: 'layout',
+      label: 'Layout',
+      labelKey: 'editor.slideField.layout.label',
+      type: 'enum',
+      required: false,
+      options: [
+        { value: 'split', label: 'Split' },
+        {
+          value: 'corner',
+          label: 'Corner image',
+          title:
+            'Image only in the top corner; the space below stays empty. Fits little text.',
+        },
+      ],
+    },
+    IMAGE_BACKGROUND_FIELD,
     // Two of the three shared stands: `auto` keeps the default sizing and
     // `compact` steps the copy down one size so more of it fits. There is no
     // `comfortable` branch in renderHtml below, so the field does not offer it
@@ -294,17 +182,6 @@ export default {
   // two values in [left, right] order. Declared here (JSON-safe) so forks
   // keep control per type; absent = no toggle.
   layoutMirror: { key: 'imageSide', values: ['left', 'right'] },
-  // Second popover toggle: text in one or two columns. Same fork story as
-  // layoutMirror (JSON-safe, declared per type; absent = no toggle):
-  //   key/values - the enum field and its two values in [one, two] order;
-  //   when       - only offered while this enum field holds one of these
-  //                values (the wide-copy layouts; elsewhere the stored value
-  //                is remembered but inert, like imageSide on a row).
-  layoutTextColumns: {
-    key: 'textColumns',
-    values: ['1', '2'],
-    when: { key: 'layout', values: ['row-top', 'row-bottom', 'duo'] },
-  },
   layoutVariants: [
     {
       id: 'text',
@@ -335,53 +212,55 @@ export default {
       schematic: { split: 63 },
     },
     {
-      id: 'row-top',
-      labelKey: 'editor.layoutVariant.rowTop',
-      label: 'Row above',
-      set: { layout: 'row-top' },
-      schematic: { row: 'top' },
-    },
-    {
-      id: 'row-bottom',
-      labelKey: 'editor.layoutVariant.rowBottom',
-      label: 'Row below',
-      set: { layout: 'row-bottom' },
-      schematic: { row: 'bottom' },
-    },
-    {
-      id: 'duo',
-      labelKey: 'editor.layoutVariant.duo',
-      label: 'Two beside text',
-      set: { layout: 'duo' },
-      schematic: { duo: 45 },
-    },
-    {
       id: 'corner',
       labelKey: 'editor.layoutVariant.corner',
       label: 'Corner image',
       set: { layout: 'corner' },
       schematic: { corner: 45 },
     },
+    // Cross-type: a second and third image is a different contract, so the
+    // tile converts to image-set-slide instead of growing this one (D100).
+    {
+      id: 'beside',
+      labelKey: 'editor.layoutVariant.beside',
+      label: 'Beside text',
+      convertTo: 'image-set-slide',
+      set: { layout: 'beside' },
+      schematic: { duo: 45 },
+    },
+    {
+      id: 'top',
+      labelKey: 'editor.layoutVariant.rowTop',
+      label: 'Row above',
+      convertTo: 'image-set-slide',
+      set: { layout: 'top' },
+      schematic: { row: 'top' },
+    },
+    {
+      id: 'bottom',
+      labelKey: 'editor.layoutVariant.rowBottom',
+      label: 'Row below',
+      convertTo: 'image-set-slide',
+      set: { layout: 'bottom' },
+      schematic: { row: 'bottom' },
+    },
   ],
   // The ImageRef config anchor for this type (looked up, never stored per
-  // slide): an item without its own fit/focus follows these. See
+  // slide): an image without its own fit/focus follows these. See
   // IMAGE_TEXT_IMAGE_DEFAULTS + docs/reference/image-property-ownership.md.
   imageDefaults: IMAGE_TEXT_IMAGE_DEFAULTS,
-  // Legacy-to-canonical fold, run by the editor on open
-  // (shared/slide-types/normalize-content.js): the flat `image` migrates into
-  // images[0] and the slide-level alt/focus/imageFit fold into the items.
-  normalizeContent: ensureImageTextImages,
+  // No `normalizeContent`: since D100 there is one shape and no legacy
+  // slide-level key left to fold on touch — the schema funnel does the
+  // migration once, at read time.
   defaultsByLang: {
     nl: {
       image: '',
-      images: [],
       caption: '',
       alt: '',
       imageRole: 'content',
       imageSide: 'left',
       imageWidth: 'half',
       layout: 'split',
-      textColumns: '1',
       imageBackground: 'white',
       focusX: '',
       focusY: '',
@@ -393,14 +272,12 @@ export default {
     },
     'en-GB': {
       image: '',
-      images: [],
       caption: '',
       alt: '',
       imageRole: 'content',
       imageSide: 'left',
       imageWidth: 'half',
       layout: 'split',
-      textColumns: '1',
       imageBackground: 'white',
       focusX: '',
       focusY: '',
@@ -421,7 +298,6 @@ export default {
     imageSide: 'left',
     imageWidth: 'half',
     layout: 'split',
-    textColumns: '1',
     imageBackground: 'white',
     density: 'auto',
     focusX: '',
@@ -442,26 +318,10 @@ export default {
         : content?.imageWidth === 'wide'
           ? 'is-image-wide'
           : '';
-    const layoutRaw = String(content?.layout || 'split');
+    // `split` is the base layout and carries no class of its own.
     const layoutClass =
-      layoutRaw === 'corner'
+      String(content?.layout || 'split') === 'corner'
         ? ' is-layout-corner'
-        : layoutRaw === 'duo'
-          ? ' is-layout-duo'
-          : layoutRaw === 'row-top'
-            ? ' is-layout-row-top'
-            : layoutRaw === 'row-bottom'
-              ? ' is-layout-row-bottom'
-              : '';
-    // Two text columns only apply in the wide-copy layouts (rows/duo);
-    // elsewhere the stored value is remembered but inert, so a split slide
-    // never inherits phantom columns (same model as imageSide on a row).
-    const textColsClass =
-      String(content?.textColumns) === '2' &&
-      (layoutRaw === 'duo' ||
-        layoutRaw === 'row-top' ||
-        layoutRaw === 'row-bottom')
-        ? ' is-text-cols-2'
         : '';
     const imgBg =
       content?.imageBackground === 'match' ? 'is-image-bg-match' : '';
@@ -476,62 +336,49 @@ export default {
       content?.imageRole === 'decorative' ? 'decorative' : 'content';
     const ariaDecorative =
       imageRole === 'decorative' ? ' aria-hidden="true"' : '';
-    const cells = imageTextCellCount(content);
-    // One <figure class="frame"> per cell, each carrying its *effective* fit as
-    // an is-fit-* class - the single CSS mechanism for fit (frame padding). The
-    // item-wins precedence lives in resolveImageTextCell (the single authority
-    // render, the canvas focal drag and the inspector share); whether the fit
-    // came from the item, the slide-level base or the type default is invisible
-    // in the emitted HTML, which is what makes the step-2b data fan-out
-    // render-neutral (see docs/reference/image-property-ownership.md).
-    const cellHtml = (idx) => {
-      const {
-        item,
-        fit: cellFit,
-        focusSource,
-        altExplicit,
-      } = resolveImageTextCell(content, idx);
-      const alt =
-        imageRole === 'decorative'
-          ? ''
-          : pickAltText({
-              explicit: altExplicit,
-              src: item.src,
-              fallbacks: idx === 0 ? [content?.caption, content?.title] : [],
-              hardFallback: cells > 1 ? `Image ${idx + 1}` : 'Image',
-            });
-      // For cover this controls crop focus; for contain, alignment.
-      const focusStyle = objectPositionStyleAttrFromFocus(focusSource);
-      const fitClass =
-        cellFit === 'contain' ? ' is-fit-contain' : ' is-fit-cover';
-      // data-inline-photo: clicking the image in the editor opens the
-      // media popover (image + alt); inert on every other surface.
-      const inner = item.src
-        ? `<img src="${escapeHtml(item.src)}" alt="${escapeHtml(
-            alt,
-          )}" data-inline-photo="${idx}"${ariaDecorative}${focusStyle} />`
-        : imagePlaceholderHtml({ label: copy.imagePlaceholder, index: idx });
-      // The shared caption lives in the first frame (absolute, bottom-left).
-      return `<figure class="frame${fitClass}">
-                  ${inner}
-                  ${idx === 0 ? caption : ''}
-                </figure>`;
-    };
-    const mediaCells = Array.from({ length: cells }, (_, i) =>
-      cellHtml(i),
-    ).join('');
-    const mediaMulti = cells > 1 ? ` is-multi` : '';
-    const mediaCount = cells > 1 ? ` data-count="${cells}"` : '';
+    // The one <figure class="frame"> carries its effective fit as an is-fit-*
+    // class - the single CSS mechanism for fit (frame padding). Whether the fit
+    // came from the slide or the type default is invisible in the emitted HTML
+    // (see docs/reference/image-property-ownership.md).
+    const {
+      src,
+      alt: altExplicit,
+      fit,
+      focusX,
+      focusY,
+    } = resolveImageTextImage(content);
+    const alt =
+      imageRole === 'decorative'
+        ? ''
+        : pickAltText({
+            explicit: altExplicit,
+            src,
+            fallbacks: [content?.caption, content?.title],
+            hardFallback: 'Image',
+          });
+    // For cover this controls crop focus; for contain, alignment.
+    const focusStyle = objectPositionStyleAttrFromFocus({ focusX, focusY });
+    const fitClass = fit === 'contain' ? ' is-fit-contain' : ' is-fit-cover';
+    // data-inline-photo: clicking the image in the editor opens the media
+    // popover (image + alt); inert on every other surface.
+    const inner = src
+      ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(
+          alt,
+        )}" data-inline-photo="0"${ariaDecorative}${focusStyle} />`
+      : imagePlaceholderHtml({ label: copy.imagePlaceholder, index: 0 });
     const actionsHtml = renderActionsHtml(content?.actions);
     // In the copy column, not over the image: the aside annotates the text it
     // sits with, and every layout variant moves the picture around it.
     const asideHtml = renderAsideHtml(content, ctx);
     return `
-        <div class="slide slide-image-text ${bg} ${width} ${imgBg}${layoutClass}${textColsClass}${densityClass}">
+        <div class="slide slide-image-text ${bg} ${width} ${imgBg}${layoutClass}${densityClass}">
           <div class="slide-inner">
             <div class="split ${side}">
-              <div class="media${mediaMulti}"${mediaCount} data-morph-role="image">
-                ${mediaCells}
+              <div class="media" data-morph-role="image">
+                <figure class="frame${fitClass}">
+                  ${inner}
+                  ${caption}
+                </figure>
               </div>
               <div class="copy">
                 <h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${escapeHtml(

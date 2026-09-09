@@ -51,7 +51,11 @@ const applies = (type, sel, content) =>
  */
 const EXPECTED = {
   'image-slide': { image: [0] },
-  'image-text-slide': { image: [0, 1, 2, 3] }, // padded to the layout on demand
+  'image-text-slide': { image: [0] }, // a singleton: the one image is index 0
+  // A fixed window, not `{ list: 'images' }`: the set pads to its minimum cell
+  // count on render, so a cell can be clicked before an item is stored under
+  // it. And not `{ any: true }`: nothing renders past the three-image ceiling.
+  'image-set-slide': { image: [0, 1, 2] },
   'gallery-slide': { image: [0, 1, 2] }, // three items in the fixture
   'team-cards-slide': { image: [0, 1, 2] },
   'logo-wall-slide': { image: [0, 1, 2] },

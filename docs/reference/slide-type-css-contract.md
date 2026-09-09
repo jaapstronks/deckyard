@@ -53,7 +53,7 @@ accidental. `is-bleed` was reached only through image-slide's _legacy_ hidden
 `layout` enum, so retiring that compatibility field would have quietly dropped
 the class from the sweep; the canonical `bleed` toggle now covers it. `is-black`
 (text-blocks `rows[].color`) was emitted but never swept at all, and
-`is-fit-contain` is now attributed to image-text through its own `images[].fit`
+`is-fit-contain` is now attributed to image-text through its own flat `fit`
 instead of being borrowed from image-slide.
 
 A class passes if it has a rule in `client/styles/**`, or if the rendered markup

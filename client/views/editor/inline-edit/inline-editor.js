@@ -1219,7 +1219,7 @@ export function createInlineEditor({
       const arr = getByPath(slide.content, media.list);
       if (!Array.isArray(arr)) return null;
       // Renderers may draw placeholder cells beyond the current array (e.g.
-      // image-text rows padding to their cell count); create the item we mutate
+      // image-set rows padding to their cell count); create the item we mutate
       // in place.
       while (arr.length <= idx) arr.push({});
       member = arr[idx];

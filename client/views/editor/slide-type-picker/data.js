@@ -65,6 +65,7 @@ export const PICKER_GROUP_ORDER = {
   ],
   media: [
     'image-text-slide',
+    'image-set-slide',
     'image-slide',
     'gallery-slide',
     'video-slide',
@@ -141,13 +142,12 @@ export const SLIDE_TYPE_PRESETS = {
       label: 'Corner image',
       content: { layout: 'corner', imageSide: 'right' },
     },
-    {
-      id: 'image-row',
-      labelKey: 'editor.slideTypePreset.imageText.row',
-      label: 'Image row',
-      content: { layout: 'row-top' },
-    },
   ],
+  // image-set-slide has no presets on purpose (D100). Its three layouts differ
+  // in where the images sit relative to the text, which is the same axis the
+  // base tile's own schematic already shows; a preset row would repeat the
+  // type rather than open a use case the picker cannot otherwise reach. The
+  // layouts stay one click away in the editor's layout switcher.
   // content-slide has no picker presets on purpose: its two-column layout is a
   // CSS text-flow variant that only splits once the body is long enough, so it
   // reads as "one column" in an empty new slide and confused people who picked

@@ -1437,6 +1437,372 @@ test('a deck that is already a timeline comes through untouched', () => {
   assert.deepEqual(migrated.slides, before.slides);
 });
 
+/* ------------------------------------------------------------------ *
+ * v14 -> v15: image-text's plural layouts become image-set (D100)
+ * ------------------------------------------------------------------ */
+
+/**
+ * The v14 -> v15 step on its own, for the probes that must not run the rest of
+ * the funnel. `SCHEMA_MIGRATIONS[i]` folds version `i` into `i + 1`, so the
+ * index stays right however many steps are appended after it.
+ */
+const CUT_PLURAL_LAYOUTS = SCHEMA_MIGRATIONS[14];
+
+/** A deck at v14 holding one image-text slide with the given content. */
+function deckAtV14(content) {
+  return {
+    id: randomUUID(),
+    title: 'images',
+    lang: 'nl',
+    schemaVersion: 14,
+    slides: [{ id: 's1', type: 'image-text-slide', content, notes: 'n' }],
+  };
+}
+
+test('each plural image-text layout becomes the image-set layout it means', () => {
+  // D100: `duo`/`row-top`/`row-bottom` read images[0..2] while split/corner
+  // read one, so the id carried two schemas. The plural half moves to its own
+  // type, keeping the layout it meant.
+  for (const [stored, expected] of [
+    ['duo', 'beside'],
+    ['row-top', 'top'],
+    ['row-bottom', 'bottom'],
+  ]) {
+    const migrated = migratePresentation(
+      deckAtV14({
+        title: 'T',
+        layout: stored,
+        images: [
+          { src: 'a.jpg', alt: 'a' },
+          { src: 'b.jpg', alt: 'b' },
+        ],
+      }),
+    );
+    const slide = migrated.slides[0];
+    assert.equal(migrated.schemaVersion, CURRENT_SCHEMA_VERSION);
+    assert.equal(slide.type, 'image-set-slide', stored);
+    assert.equal(slide.content.layout, expected, stored);
+    assert.deepEqual(
+      slide.content.images.map((it) => it.src),
+      ['a.jpg', 'b.jpg'],
+    );
+  }
+});
+
+test('the image-text split reaches every language version, not just the dominant', () => {
+  const slide = (alt) => ({
+    id: 's1',
+    type: 'image-text-slide',
+    content: { title: alt, layout: 'row-top', images: [{ src: 'a.jpg', alt }] },
+    notes: '',
+  });
+  const versions = {
+    nl: { title: 'nl', slides: [slide('nl alt')] },
+    'en-GB': { title: 'en', slides: [slide('en alt')] },
+  };
+  const deck = {
+    id: randomUUID(),
+    title: 'nl',
+    lang: 'nl',
+    schemaVersion: 14,
+    i18n: { dominant: 'nl', active: 'nl', versions },
+  };
+  deck.slides = versions.nl.slides;
+
+  const migrated = migratePresentation(deck);
+
+  for (const [lang, alt] of [
+    ['nl', 'nl alt'],
+    ['en-GB', 'en alt'],
+  ]) {
+    const converted = migrated.i18n.versions[lang].slides[0];
+    assert.equal(converted.type, 'image-set-slide', lang);
+    assert.equal(converted.content.layout, 'top', lang);
+    assert.equal(converted.content.images[0].alt, alt, lang);
+  }
+  assert.equal(migrated.slides[0].type, 'image-set-slide');
+});
+
+test('the legacy flat image becomes images[0] on a plural layout', () => {
+  const migrated = migratePresentation(
+    deckAtV14({ layout: 'duo', image: ' a.jpg ', images: [] }),
+  );
+  const content = migrated.slides[0].content;
+  assert.equal(content.images[0].src, 'a.jpg');
+  assert.equal(Object.prototype.hasOwnProperty.call(content, 'image'), false);
+});
+
+test('the slide-level alt and focus fold into the first image', () => {
+  // Exactly what the retired resolver already resolved on render: item 0 read
+  // the slide-level alt (then the vestigial altNl/altEn) and the slide focus,
+  // later cells never did.
+  const migrated = migratePresentation(
+    deckAtV14({
+      layout: 'row-top',
+      alt: '',
+      altNl: 'uit altNl',
+      focusX: 20,
+      focusY: 80,
+      images: [{ src: 'a.jpg' }, { src: 'b.jpg', alt: 'eigen alt' }],
+    }),
+  );
+  const [first, second] = migrated.slides[0].content.images;
+  assert.equal(first.alt, 'uit altNl');
+  assert.equal(first.focusX, 20);
+  assert.equal(first.focusY, 80);
+  assert.equal(second.alt, 'eigen alt', 'item 1 keeps its own alt');
+  assert.equal(second.focusX, '', 'the slide focus never reached later cells');
+  for (const key of ['alt', 'altNl', 'altEn', 'focusX', 'focusY'])
+    assert.equal(
+      Object.prototype.hasOwnProperty.call(migrated.slides[0].content, key),
+      false,
+      key,
+    );
+});
+
+test("an item's own alt and focus win over the slide-level ones", () => {
+  const migrated = migratePresentation(
+    deckAtV14({
+      layout: 'duo',
+      alt: 'slide alt',
+      focusX: 20,
+      images: [{ src: 'a.jpg', alt: 'item alt', focusX: 70 }],
+    }),
+  );
+  const first = migrated.slides[0].content.images[0];
+  assert.equal(first.alt, 'item alt');
+  assert.equal(first.focusX, 70);
+});
+
+test('a slide-level imageFit fans out only when it deviates from the type default', () => {
+  // The empty-means-follow-the-type signal: `cover` is image-text's default, so
+  // it is dropped rather than stamped onto the items (which would freeze the
+  // deck against a future default change).
+  const covered = migratePresentation(
+    deckAtV14({
+      layout: 'duo',
+      imageFit: 'cover',
+      images: [{ src: 'a.jpg' }, { src: 'b.jpg' }],
+    }),
+  );
+  assert.deepEqual(
+    covered.slides[0].content.images.map((it) => it.fit),
+    ['', ''],
+  );
+
+  const contained = migratePresentation(
+    deckAtV14({
+      layout: 'duo',
+      imageFit: 'contain',
+      images: [{ src: 'a.jpg' }, { src: 'b.jpg', fit: 'cover' }],
+    }),
+  );
+  assert.deepEqual(
+    contained.slides[0].content.images.map((it) => it.fit),
+    ['contain', 'cover'],
+  );
+  assert.equal(
+    Object.prototype.hasOwnProperty.call(
+      contained.slides[0].content,
+      'imageFit',
+    ),
+    false,
+  );
+});
+
+test('a converted image-set slide always holds at least two images', () => {
+  const migrated = migratePresentation(
+    deckAtV14({ layout: 'row-bottom', images: [{ src: 'a.jpg', alt: 'a' }] }),
+  );
+  assert.deepEqual(migrated.slides[0].content.images, [
+    { src: 'a.jpg', alt: 'a', fit: '', focusX: '', focusY: '' },
+    { src: '', alt: '' },
+  ]);
+});
+
+test('a split slide flattens images[0] and drops the retired keys', () => {
+  const migrated = migratePresentation(
+    deckAtV14({
+      title: 'T',
+      layout: 'split',
+      textColumns: '2',
+      imageFit: 'contain',
+      images: [
+        { src: 'a.jpg', alt: 'a', focusX: 30 },
+        { src: 'b.jpg', alt: 'unrendered' },
+      ],
+    }),
+  );
+  const slide = migrated.slides[0];
+  assert.equal(slide.type, 'image-text-slide', 'the singleton keeps the id');
+  assert.equal(slide.content.image, 'a.jpg');
+  assert.equal(slide.content.alt, 'a');
+  assert.equal(slide.content.fit, 'contain', 'the fanned-out fit stays');
+  assert.equal(slide.content.focusX, 30);
+  for (const key of ['images', 'imageFit', 'textColumns', 'altNl', 'altEn'])
+    assert.equal(
+      Object.prototype.hasOwnProperty.call(slide.content, key),
+      false,
+      key,
+    );
+  // D100 names this loss: `split` rendered one image, and the flat form has no
+  // home for the rest.
+  assert.equal(JSON.stringify(slide.content).includes('b.jpg'), false);
+});
+
+test("an item's partial focus out-votes the slide-level pair on the flat form", () => {
+  // The retired resolver read the item as soon as EITHER axis was set, so its
+  // empty axis meant the default, never the slide-level value beside it. The
+  // flat form must say the same: item 0's focus, both axes, nothing merged.
+  const migrated = migratePresentation(
+    deckAtV14({
+      layout: 'split',
+      focusX: 20,
+      focusY: 80,
+      images: [{ src: 'a.jpg', alt: 'a', focusX: 70 }],
+    }),
+  );
+  const content = migrated.slides[0].content;
+  assert.equal(content.focusX, 70);
+  assert.equal(content.focusY, '', 'the slide-level focusY did not survive');
+});
+
+test('a flat fit on a plural slide does not ride along into image-set', () => {
+  // image-set has no slide-level image key; the plural type never read a flat
+  // `fit`, so it is dropped on this route exactly as on the flat one.
+  const migrated = migratePresentation(
+    deckAtV14({
+      layout: 'row-top',
+      fit: 'contain',
+      images: [{ src: 'a.jpg' }, { src: 'b.jpg' }],
+    }),
+  );
+  const content = migrated.slides[0].content;
+  assert.equal(migrated.slides[0].type, 'image-set-slide');
+  assert.equal(Object.prototype.hasOwnProperty.call(content, 'fit'), false);
+  assert.deepEqual(
+    content.images.map((it) => it.fit),
+    ['', ''],
+  );
+});
+
+test('a split slide without an explicit item fit carries no flat fit', () => {
+  // The plural type never read a flat `fit`, so promoting one would give the
+  // slide a crop it never rendered with.
+  const migrated = migratePresentation(
+    deckAtV14({
+      layout: 'corner',
+      fit: 'contain',
+      images: [{ src: 'a.jpg', alt: 'a' }],
+    }),
+  );
+  assert.equal(
+    Object.prototype.hasOwnProperty.call(migrated.slides[0].content, 'fit'),
+    false,
+  );
+});
+
+test('a current flat image-text slide comes through byte-identical', () => {
+  // The idempotence key: the step fires on a plural layout or a retired key,
+  // and a slide the current writers produce has neither.
+  const stored = deckAtV14({
+    title: 'T',
+    body: 'b',
+    layout: 'split',
+    image: 'a.jpg',
+    alt: 'a',
+    fit: 'contain',
+    focusX: 40,
+    focusY: 60,
+    imageSide: 'left',
+    imageWidth: 'half',
+  });
+  const before = structuredClone(stored.slides);
+
+  const migrated = migratePresentation(stored);
+
+  assert.equal(migrated.schemaVersion, CURRENT_SCHEMA_VERSION);
+  assert.deepEqual(migrated.slides, before);
+});
+
+test('an image-set slide is never touched by the step', () => {
+  const stored = {
+    schemaVersion: 14,
+    slides: [
+      {
+        id: 's1',
+        type: 'image-set-slide',
+        content: {
+          title: 'T',
+          layout: 'beside',
+          textColumns: '2',
+          images: [
+            { src: 'a.jpg', alt: 'a' },
+            { src: 'b.jpg', alt: 'b' },
+          ],
+        },
+        notes: '',
+      },
+    ],
+  };
+  const before = structuredClone(stored.slides);
+  assert.deepEqual(CUT_PLURAL_LAYOUTS(stored).slides, before);
+});
+
+test('the image-text split is idempotent', () => {
+  for (const content of [
+    { layout: 'duo', image: 'a.jpg', alt: 'a', imageFit: 'contain' },
+    {
+      layout: 'split',
+      textColumns: '2',
+      images: [{ src: 'a.jpg', alt: 'a' }, { src: 'b.jpg' }],
+    },
+  ]) {
+    const once = CUT_PLURAL_LAYOUTS(deckAtV14(structuredClone(content)));
+    const twice = CUT_PLURAL_LAYOUTS(structuredClone(once));
+    assert.deepEqual(twice.slides, once.slides, content.layout);
+  }
+});
+
+test('the full funnel takes an unstamped duo slide all the way to image-set', () => {
+  // The ordering hazard: v13 -> v14 (foldUnofferedEnumValues) runs first on
+  // every read and folds any enum value the field no longer offers. If
+  // image-text's `layout` ever declared `foldUnofferedTo`, `duo` would be
+  // rewritten to a singleton layout before this step could see it, and the
+  // slide would silently keep the plural images it can no longer render.
+  const deck = {
+    id: randomUUID(),
+    title: 'unstamped',
+    lang: 'nl',
+    slides: [
+      {
+        id: 's1',
+        type: 'image-text-slide',
+        content: {
+          title: 'T',
+          layout: 'duo',
+          images: [
+            { src: 'a.jpg', alt: 'a' },
+            { src: 'b.jpg', alt: 'b' },
+          ],
+        },
+        notes: '',
+      },
+    ],
+  };
+
+  const migrated = migratePresentation(deck);
+
+  assert.equal(
+    schemaVersionOf(migrated),
+    CURRENT_SCHEMA_VERSION,
+    'the deck ran the whole chain',
+  );
+  assert.equal(migrated.slides[0].type, 'image-set-slide');
+  assert.equal(migrated.slides[0].content.layout, 'beside');
+  assert.equal(migrated.slides[0].content.images.length, 2);
+});
+
 test('every declared lossless rename names a registered successor', () => {
   assert.ok(LOSSLESS_TYPE_RENAMES.size > 0, 'at least one rename is declared');
   for (const [old, successor] of LOSSLESS_TYPE_RENAMES) {

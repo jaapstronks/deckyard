@@ -39,6 +39,10 @@ import {
   ai as iconCardGridSlideAi,
   aiExamples as iconCardGridSlideAiExamples,
 } from '../../../../shared/slide-types/types/icon-card-grid-slide/ai.js';
+import {
+  ai as imageSetSlideAi,
+  aiExamples as imageSetSlideAiExamples,
+} from '../../../../shared/slide-types/types/image-set-slide/ai.js';
 import { ai as imageSlideAi } from '../../../../shared/slide-types/types/image-slide/ai.js';
 import {
   ai as imageTextSlideAi,
@@ -125,6 +129,7 @@ export const SLIDE_TYPE_AI = Object.freeze({
   'funnel-slide': funnelSlideAi,
   'gallery-slide': gallerySlideAi,
   'icon-card-grid-slide': iconCardGridSlideAi,
+  'image-set-slide': imageSetSlideAi,
   'image-slide': imageSlideAi,
   'image-text-slide': imageTextSlideAi,
   'kpi-metrics-slide': kpiMetricsSlideAi,
@@ -163,6 +168,7 @@ export const SLIDE_TYPE_AI_EXAMPLES = Object.freeze({
   'funnel-slide': funnelSlideAiExamples,
   'gallery-slide': gallerySlideAiExamples,
   'icon-card-grid-slide': iconCardGridSlideAiExamples,
+  'image-set-slide': imageSetSlideAiExamples,
   'image-text-slide': imageTextSlideAiExamples,
   'kpi-metrics-slide': kpiMetricsSlideAiExamples,
   'list-slide': listSlideAiExamples,

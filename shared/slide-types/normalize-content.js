@@ -25,7 +25,7 @@
  * shape to migrate.
  *
  * Why it exists: the legacy-to-canonical folds (`ensureImageSlideImage`,
- * `ensureImageTextImages`, `ensureContentColumnsImages`) used to run as a SIDE
+ * `ensureImageSetImages`, `ensureContentColumnsImages`) used to run as a SIDE
  * EFFECT of rendering a per-type form. That coupled "this type is edited by a
  * hand-built form" to "this type migrates its content", so deleting the form
  * would silently have deleted the migration too. They are separate concerns and

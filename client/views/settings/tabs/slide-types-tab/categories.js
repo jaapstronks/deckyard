@@ -50,6 +50,7 @@ export const CATEGORY_ORDER = [
     key: 'media',
     types: [
       'image-text-slide',
+      'image-set-slide',
       'image-slide',
       'gallery-slide',
       'video-slide',

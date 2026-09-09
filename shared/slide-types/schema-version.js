@@ -51,7 +51,7 @@ import { REMOVED_SLIDE_TYPES } from './removed.js';
 import { foldUnofferedEnums } from './normalize-content.js';
 
 /** The schema version every freshly written deck is stamped with. */
-export const CURRENT_SCHEMA_VERSION = 14;
+export const CURRENT_SCHEMA_VERSION = 15;
 
 /**
  * The one legacy collection key each type stored before `items` — the v6 -> v7
@@ -470,6 +470,211 @@ function foldUnofferedEnumValues(pres) {
 }
 
 /**
+ * The `image-text-slide` layouts that read a plural `images[]`, and the
+ * `image-set-slide` layout each one becomes (D100).
+ *
+ * A `Map` and not an object literal, for the same reason
+ * `LOSSLESS_TYPE_RENAMES` is one: the keys are stored data, and
+ * `layouts['constructor']` on a plain object answers with a function.
+ *
+ * @type {Map<string, string>}
+ */
+const PLURAL_IMAGE_TEXT_LAYOUTS = new Map([
+  ['duo', 'beside'],
+  ['row-top', 'top'],
+  ['row-bottom', 'bottom'],
+]);
+
+const IMAGE_TEXT_TYPE = 'image-text-slide';
+const IMAGE_SET_TYPE = 'image-set-slide';
+const IMAGE_SET_MIN_IMAGES = 2;
+const IMAGE_SET_MAX_IMAGES = 3;
+
+/**
+ * image-text's type-level fit default, written out rather than imported. The
+ * module it lived in (`types/image-text-slide/images.js`) is gone with the
+ * plural form, and a migration is a record of a shape that no longer exists:
+ * importing today's value would let a future default change rewrite decks this
+ * step already folded.
+ */
+const IMAGE_TEXT_DEFAULT_FIT = 'cover';
+
+/**
+ * The keys only the retired plural form could carry. `layout: duo|row-*` aside,
+ * one of these on an `image-text-slide` is what makes the v14 -> v15 step fire;
+ * a slide with none of them is the shape the current writers produce.
+ */
+const RETIRED_IMAGE_TEXT_KEYS = [
+  'images',
+  'imageFit',
+  'textColumns',
+  'altNl',
+  'altEn',
+];
+
+/**
+ * The slide-level image keys the plural form re-expressed per item, plus the
+ * flat `fit` the plural type never read: image-set has no slide-level image key
+ * at all, so none of these may ride along into it.
+ */
+const RETIRED_SLIDE_IMAGE_KEYS = [
+  'image',
+  'alt',
+  'altNl',
+  'altEn',
+  'imageFit',
+  'fit',
+  'focusX',
+  'focusY',
+];
+
+/**
+ * One stored `images[]` entry as the canonical ImageRef — the sanitiser the
+ * retired `imageTextImageItems` used, copied here rather than imported for the
+ * reason `IMAGE_TEXT_DEFAULT_FIT` is. A stored `bleed` (an image-slide
+ * conversion used to deliver one) is dropped: neither successor renders an
+ * edge-to-edge frame, and a carried-but-unrendered key is a hidden field
+ * (D100).
+ * @param {any} raw
+ * @returns {{src: string, alt: string, fit: string, focusX: any, focusY: any}}
+ */
+function sanitizeImageRef(raw) {
+  const it = raw && typeof raw === 'object' ? raw : {};
+  return {
+    src: typeof it.src === 'string' ? it.src.trim() : '',
+    alt: typeof it.alt === 'string' ? it.alt : '',
+    fit: it.fit === 'contain' || it.fit === 'cover' ? it.fit : '',
+    focusX: it.focusX ?? '',
+    focusY: it.focusY ?? '',
+  };
+}
+
+/**
+ * The canonical items a retired image-text slide resolves to, reproducing
+ * exactly what `ensureImageTextImages` + `resolveImageTextCell` did on the last
+ * build that had them (84933c52): the array wins when it holds a filled `src`,
+ * the flat `image` becomes item 0 otherwise, the slide-level alt (then the
+ * vestigial `altNl`/`altEn`) and focus fold into item 0 when it carries none of
+ * its own, and a slide-level `imageFit` fans out to every item without its own
+ * fit — but only when it deviates from the type default, so the
+ * empty-means-follow-the-type signal is never stamped away.
+ *
+ * @param {object} content
+ * @returns {Array<{src: string, alt: string, fit: string, focusX: any, focusY: any}>}
+ */
+function retiredImageTextItems(content) {
+  const stored = Array.isArray(content.images) ? content.images : [];
+  const items = stored.slice(0, IMAGE_SET_MAX_IMAGES).map(sanitizeImageRef);
+  const legacy = typeof content.image === 'string' ? content.image.trim() : '';
+  if (legacy && !items.some((it) => it.src)) {
+    if (items.length) items[0] = { ...items[0], src: legacy };
+    else items.push(sanitizeImageRef({ src: legacy }));
+  }
+  const first = items[0];
+  if (first) {
+    if (!str(first.alt)) {
+      const slideAlt =
+        str(content.alt) || str(content.altNl) || str(content.altEn);
+      if (slideAlt) first.alt = slideAlt;
+    }
+    if (first.focusX === '' && first.focusY === '') {
+      if (content.focusX !== '' && content.focusX != null)
+        first.focusX = content.focusX;
+      if (content.focusY !== '' && content.focusY != null)
+        first.focusY = content.focusY;
+    }
+  }
+  const baseFit =
+    content.imageFit === 'contain' || content.imageFit === 'cover'
+      ? content.imageFit
+      : '';
+  if (baseFit && baseFit !== IMAGE_TEXT_DEFAULT_FIT)
+    for (const it of items) if (!it.fit) it.fit = baseFit;
+  return items;
+}
+
+/**
+ * Split the two contracts that shared the `image-text-slide` id: send the
+ * plural layouts to the new `image-set-slide`, and flatten what stays.
+ *
+ * `duo`, `row-top` and `row-bottom` read `images[0..2]` while `split` and
+ * `corner` read one image, so one type id carried two schemas — the round-trip
+ * disagreement `structure.js` has been pinning. D100 resolves it by *type*:
+ * image-set is the collection of 2-3 images, image-text is the singleton in
+ * image-slide's spelling (`image`, `alt`, `fit`, `focusX`, `focusY`).
+ *
+ * A funnel step and not SQL, for the reason v11 -> v12 spells out: the plural
+ * shape lives in `presentations.slides`, in every `i18n.versions[*].slides`, in
+ * version snapshots, library rows and any deck someone exported months ago, on
+ * every backend including the ones no numbered migration reaches. The funnel is
+ * the one path a deck cannot avoid.
+ *
+ * Keyed on the retired shape — a plural `layout`, or an own `images`,
+ * `imageFit`, `textColumns`, `altNl` or `altEn` — so it is a byte-for-byte
+ * no-op on a flat image-text slide the current writers produce and on every
+ * image-set slide (whose type it never matches). Idempotent: a converted slide
+ * carries the new type, a flattened one carries none of the keys that fire it.
+ *
+ * Render-equivalent, with the one exception D100 names: an image-set `beside`
+ * lays out every image it has, where `duo` rendered exactly two. Nothing else
+ * changes on screen — the items are what the retired resolver already resolved.
+ *
+ * What it drops, and why: on a `split`/`corner` slide the items past the first
+ * (the plural layouts rendered them, this layout never did, and the flat form
+ * has no home for them — D100 accepts that loss by name), and the slide-level
+ * image keys the flat form re-expresses. A stored flat `fit` goes on both
+ * routes unless item 0 declares one, because the plural type never read a
+ * flat `fit`: promoting it would give the slide a crop it never had. So does a
+ * slide-level focus axis that item 0 out-voted with one of its own.
+ *
+ * @param {any} pres
+ * @returns {any}
+ */
+function cutImageTextPluralLayouts(pres) {
+  for (const slide of eachSlide(pres)) {
+    if (slide?.type !== IMAGE_TEXT_TYPE) continue;
+    const content = slide.content;
+    if (!content || typeof content !== 'object') continue;
+    const successorLayout =
+      typeof content.layout === 'string'
+        ? PLURAL_IMAGE_TEXT_LAYOUTS.get(content.layout)
+        : undefined;
+    const carriesRetiredKey = RETIRED_IMAGE_TEXT_KEYS.some((key) =>
+      Object.prototype.hasOwnProperty.call(content, key),
+    );
+    if (!successorLayout && !carriesRetiredKey) continue;
+
+    const items = retiredImageTextItems(content);
+    if (successorLayout) {
+      slide.type = IMAGE_SET_TYPE;
+      content.layout = successorLayout;
+      const images = items.slice(0, IMAGE_SET_MAX_IMAGES);
+      while (images.length < IMAGE_SET_MIN_IMAGES)
+        images.push({ src: '', alt: '' });
+      content.images = images;
+      for (const key of RETIRED_SLIDE_IMAGE_KEYS) delete content[key];
+      continue;
+    }
+
+    // The flat image IS item 0, every axis of it: an item with one focus axis
+    // of its own out-voted the whole slide-level pair on render (its empty
+    // axis meant the default, not the slide's value), so the pair is written
+    // from the item unconditionally rather than merged with what the slide
+    // still carries.
+    const first = items[0];
+    content.image = first?.src ?? '';
+    content.alt = first?.alt ?? '';
+    if (first?.fit === 'cover' || first?.fit === 'contain')
+      content.fit = first.fit;
+    else delete content.fit;
+    content.focusX = first?.focusX ?? '';
+    content.focusY = first?.focusY ?? '';
+    for (const key of RETIRED_IMAGE_TEXT_KEYS) delete content[key];
+  }
+  return pres;
+}
+
+/**
  * Ordered migration steps. `SCHEMA_MIGRATIONS[i]` folds the shape version `i`
  * still allowed into the one version `i + 1` requires. No stamp is stored (see
  * the module docstring), so every step runs on every deck, every time - which
@@ -882,6 +1087,22 @@ export const SCHEMA_MIGRATIONS = [
   // so its slides are untouched. Idempotent: after one run every stored value
   // is one the field offers.
   foldUnofferedEnumValues,
+
+  // v14 -> v15: split the two contracts that shared the `image-text-slide` id.
+  // `duo`/`row-top`/`row-bottom` read `images[0..2]`, `split`/`corner` read one
+  // image: two schemas under one type name. The plural layouts become the new
+  // `image-set-slide`, image-text keeps the singleton (D100).
+  //
+  // The step reaches every copy of a slide on every backend, which is why the
+  // split can be decided cleanly instead of being carried as a tolerant reader
+  // forever. See cutImageTextPluralLayouts for what it keys on, what it drops
+  // and the one deliberate render difference.
+  //
+  // Ordering note: v13 -> v14 runs first on every read, and it folds only enum
+  // values whose field declares `foldUnofferedTo`. image-text's `layout` must
+  // not declare one, or `duo` would be folded to a singleton layout before this
+  // step ever saw it. A full-funnel test pins that.
+  cutImageTextPluralLayouts,
 ];
 
 /**

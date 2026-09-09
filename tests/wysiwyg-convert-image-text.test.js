@@ -35,12 +35,31 @@ const imageTextSlide = (content = {}) => ({
   },
 });
 
-test('convert seam offers the pair in both directions', () => {
+const imageSetSlide = (content = {}) => ({
+  id: 'slide-3',
+  type: 'image-set-slide',
+  notes: 'presenter notes',
+  content: {
+    ...structuredClone(SLIDE_TYPES['image-set-slide'].defaults),
+    ...content,
+  },
+});
+
+test('convert seam offers the three text-and-image types to each other', () => {
+  // One text type and two image-and-text types, each reachable from the other
+  // two: adding an image is a switch to image-text, adding a second one a
+  // switch to image-set (D100).
   assert.deepEqual(getConvertibleSlideTypes(contentSlide()), [
     'image-text-slide',
+    'image-set-slide',
   ]);
   assert.deepEqual(getConvertibleSlideTypes(imageTextSlide()), [
     'content-slide',
+    'image-set-slide',
+  ]);
+  assert.deepEqual(getConvertibleSlideTypes(imageSetSlide()), [
+    'content-slide',
+    'image-text-slide',
   ]);
 });
 

@@ -285,6 +285,7 @@ const RENDER_PRECONDITIONS = {
   'content-slide': [{ content: { asideVariant: 'note' } }],
   'list-slide': [{ content: { asideVariant: 'note' } }],
   'image-text-slide': [{ content: { asideVariant: 'note' } }],
+  'image-set-slide': [{ content: { asideVariant: 'note' } }],
 };
 
 test('every inspector-keep field renders (no config field is bulk-modal-only)', () => {
@@ -371,8 +372,8 @@ test('unknown custom types fall back to rendering all non-inline-covered fields'
 // ---- Editing-surfaces tab split: Slide tab == no-selection view, and the
 // element tab carries only the selected element's own settings. ----
 
-const DUO_CONTENT = {
-  layout: 'duo',
+const SET_CONTENT = {
+  layout: 'beside',
   title: 'T',
   body: 'B',
   images: [
@@ -381,14 +382,22 @@ const DUO_CONTENT = {
   ],
 };
 
-test('image-text: Slide tab renders the same fields as the no-selection view', () => {
+const TEXT_CONTENT = {
+  layout: 'split',
+  title: 'T',
+  body: 'B',
+  image: '/uploads/a.jpg',
+  alt: 'a',
+};
+
+test('image-set: Slide tab renders the same fields as the no-selection view', () => {
   const noSel = renderForm({
-    type: 'image-text-slide',
-    content: structuredClone(DUO_CONTENT),
+    type: 'image-set-slide',
+    content: structuredClone(SET_CONTENT),
   });
   const withSel = renderForm({
-    type: 'image-text-slide',
-    content: structuredClone(DUO_CONTENT),
+    type: 'image-set-slide',
+    content: structuredClone(SET_CONTENT),
     selectedElement: { kind: 'image', idx: 0 },
   });
   assert.ok(elementFormOf(withSel), 'element tab renders for a selected cell');
@@ -399,10 +408,10 @@ test('image-text: Slide tab renders the same fields as the no-selection view', (
   );
 });
 
-test('image-text: element tab shows only the selected cell, slide form only slide-wide settings', () => {
+test('image-set: element tab shows only the selected cell, slide form only slide-wide settings', () => {
   const mount = renderForm({
-    type: 'image-text-slide',
-    content: structuredClone(DUO_CONTENT),
+    type: 'image-set-slide',
+    content: structuredClone(SET_CONTENT),
     selectedElement: { kind: 'image', idx: 1 },
   });
   const elForm = elementFormOf(mount);
@@ -456,7 +465,7 @@ test('image-text: element tab shows only the selected cell, slide form only slid
   );
   // The layout settings render as plain keep fields since step 5 (the "Layout
   // options" wrapper is gone); `layout` itself is absent because the toolbar
-  // chip owns it — which is what image-text's inspectorKeeps has always said.
+  // chip owns it — which is what the inspectorKeeps of both image types say.
   assert.ok(
     sLabels.some((l) => l.includes('image position')),
     'image side on the Slide tab',
@@ -471,10 +480,50 @@ test('image-text: element tab shows only the selected cell, slide form only slid
   );
 });
 
+test('image-text: the element tab is the one image, and it carries the ImageRef', () => {
+  // The singleton counterpart of the block above: image-text has exactly one
+  // cell, so index 0 is the only selectable element and its controls are the
+  // slide-level flat keys - the same shape image-slide has (D100).
+  const noSel = renderForm({
+    type: 'image-text-slide',
+    content: structuredClone(TEXT_CONTENT),
+  });
+  const noSelLabels = fieldLabels(slideForm(noSel));
+  for (const label of ['alt text', 'image fit', 'image focus']) {
+    assert.ok(
+      !noSelLabels.some((l) => l.includes(label)),
+      `no ${label} in the no-selection view`,
+    );
+  }
+
+  const withSel = renderForm({
+    type: 'image-text-slide',
+    content: structuredClone(TEXT_CONTENT),
+    selectedElement: { kind: 'image', idx: 0 },
+  });
+  const elLabels = fieldLabels(elementFormOf(withSel));
+  for (const label of ['alt text', 'image fit', 'image focus']) {
+    assert.ok(
+      elLabels.some((l) => l.includes(label)),
+      `${label} renders in the element tab`,
+    );
+  }
+  assert.ok(
+    !elLabels.some((l) => l === 'images'),
+    'a singleton has no collection manager',
+  );
+
+  assert.deepEqual(
+    fieldLabels(slideForm(withSel)),
+    fieldLabels(slideForm(noSel)),
+    'Slide tab and no-selection view render identical fields',
+  );
+});
+
 test('image-text: layout settings render as plain fields, behind no collapsible', () => {
   const mount = renderForm({
     type: 'image-text-slide',
-    content: structuredClone(DUO_CONTENT),
+    content: structuredClone(TEXT_CONTENT),
   });
   const form = slideForm(mount);
   const sideLabel = [...form.querySelectorAll('.field-label')].find((el) =>

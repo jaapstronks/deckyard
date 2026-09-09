@@ -4,7 +4,7 @@ Deckyard publishes its deck format, and a published format has to be able to
 answer one question: **what does an implementation have to do to say it reads
 Deckyard decks?**
 
-Until this page, the only available answer was "all of it" — <!--gen:slide-type-count-->34<!--/gen:slide-type-count--> slide types,
+Until this page, the only available answer was "all of it" — <!--gen:slide-type-count-->35<!--/gen:slide-type-count--> slide types,
 each with its own field contract. That is not a threshold anyone clears, so in
 practice it meant every implementation was incomplete and none could say what it
 did support. A format whose only conformance claim is unreachable has no
@@ -18,7 +18,7 @@ one does not scale with the number of types.
 | **1 — Structure**    | the envelope, the six `structure` contracts, and the unknown-type behaviour | _reads Deckyard decks_ — every deck renders, nothing is dropped                                              |
 | **2 — Core profile** | level 1, plus the nine tier-1 types' own field contracts, plus `fallback`   | _renders the Deckyard core profile_ — every deck renders the way it was authored, up to declared degradation |
 
-Neither level requires all <!--gen:slide-type-count-->34<!--/gen:slide-type-count--> types. Tier 2 is not a conformance surface: we
+Neither level requires all <!--gen:slide-type-count-->35<!--/gen:slide-type-count--> types. Tier 2 is not a conformance surface: we
 ship those types and version them with the app
 ([`slide-type-tiers.md`](./slide-type-tiers.md)), and a reader meets them
 through the level-1 structure contract or their declared `fallback`.
@@ -200,7 +200,7 @@ fields by key name would be guessing; this one follows the declaration.
 derived from `fields[]`, a field added, renamed or re-typed moves what the
 reader calls the heading of a slide without anything saying so — and the same
 projection is what a PPTX mapper reads to find a title box.
-`tests/fixtures/semantic-projection.json` holds the reader form of all 34 core
+`tests/fixtures/semantic-projection.json` holds the reader form of all 35 core
 types in both deck languages, so a change to any of them arrives as a diff to
 accept rather than as a silent move. Regenerate it deliberately with
 `UPDATE_SNAPSHOT=1 node --test tests/semantic-projection-snapshot.test.js`.

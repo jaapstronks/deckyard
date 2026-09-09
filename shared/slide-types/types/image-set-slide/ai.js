@@ -1,5 +1,5 @@
 /**
- * image-text-slide — the agent-facing editorial layer. **SERVER-ONLY.**
+ * image-set-slide — the agent-facing editorial layer. **SERVER-ONLY.**
  *
  * This is the hand-written half of the agent contract: when to pick this type
  * and when not to. The other half — the field schema — is derived from the
@@ -22,39 +22,36 @@ export const ai = {
   category: 'content',
   resolveInPhase1: false,
   description: `
-      Split layout with ONE image on one side and text (bullets) on the other.
-      Great for visual breaks and when there's a relevant image.
-      Keep body concise (3-6 bullets).
+      A small set of 2-3 images that share one story, with a title and a short
+      body beside or under them.
 
-      IMAGE: the flat "image" field (one URL) plus "alt". For a set of 2-3
-      images sharing one story, use image-set-slide instead.
+      IMAGES: the "images" array, 2-3 items, each { src, alt }. There is no
+      single-image field on this type - one image beside text is an
+      image-text-slide.
 
       LAYOUT VARIANTS:
-      - layout "split" (default): the image beside text. imageWidth picks the
-        split: "narrow" (1/3 image), "half" (default), "wide" (2/3 image -
-        image-dominant, keep body to 2-3 short bullets).
-      - layout "corner": the image only in the top corner, the space below
-        stays empty air. Very little text room - max 2-3 short bullets.
+      - layout "top" (default) / "bottom": a row of images above/below the
+        text; the number of images sets the columns. About half the slide is
+        images, so keep the body short (2-4 bullets).
+      - layout "beside": the images stack beside the text. imageSide picks the
+        side, imageWidth the split ("narrow" 1/3, "half" default, "wide" 2/3).
+      - textColumns "2" sets the body in two columns, in every layout.
 
       ASIDE (optional): a small contrast block inside the slide, for a caveat
       or pointer that would clutter the body but does not deserve its own
       slide. Set asideVariant to "note", "tip" or "warning" and put one or two
       sentences in asideText; leave asideVariant "none" (the default) and there
-      is no aside. Something the audience must actually stop at belongs on a
-      callout-slide instead — an inset is a footnote, not a beat.
+      is no aside.
     `,
   bestFor: [
-    'Content where a photo/image adds value',
-    'Product or feature showcases',
-    'Person introductions with photo',
-    'Location or event context',
+    'A small set of 2-3 related images with one shared story',
+    'Before/after or step-by-step visuals that belong on one slide',
+    'A product or location shown from a few angles',
   ],
   notFor: [
-    'Content without a meaningful image to pair',
-    'Heavy text content (use content-slide or split into multiple)',
-    'Long bodies on the "wide" or "corner" layouts (little text room)',
-    'Two or three images with one shared story (use image-set-slide)',
+    'One image beside text (use image-text-slide)',
     'Many images without text (use gallery-slide)',
+    'Heavy text content (use content-slide or split into multiple)',
   ],
 };
 
@@ -65,10 +62,13 @@ export const ai = {
  */
 export const aiExamples = [
   {
-    title: 'Our Approach',
-    body: '- User-centered design process\n- Iterative development cycles\n- Continuous feedback integration',
-    image: '',
-    imageSide: 'right',
+    title: 'Before and after',
+    body: '- The old flow took four screens\n- The new one takes two',
+    images: [
+      { src: '', alt: 'The old flow' },
+      { src: '', alt: 'The new flow' },
+    ],
+    layout: 'top',
     background: 'lime',
   },
 ];

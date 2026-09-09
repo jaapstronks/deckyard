@@ -17,6 +17,7 @@ import followInviteSlideAuthoring from './types/follow-invite-slide/authoring.js
 import funnelSlideAuthoring from './types/funnel-slide/authoring.js';
 import gallerySlideAuthoring from './types/gallery-slide/authoring.js';
 import iconCardGridSlideAuthoring from './types/icon-card-grid-slide/authoring.js';
+import imageSetSlideAuthoring from './types/image-set-slide/authoring.js';
 import imageSlideAuthoring from './types/image-slide/authoring.js';
 import imageTextSlideAuthoring from './types/image-text-slide/authoring.js';
 import kpiMetricsSlideAuthoring from './types/kpi-metrics-slide/authoring.js';
@@ -67,6 +68,7 @@ export const SLIDE_TYPE_AUTHORING = {
   'funnel-slide': funnelSlideAuthoring,
   'gallery-slide': gallerySlideAuthoring,
   'icon-card-grid-slide': iconCardGridSlideAuthoring,
+  'image-set-slide': imageSetSlideAuthoring,
   'image-slide': imageSlideAuthoring,
   'image-text-slide': imageTextSlideAuthoring,
   'kpi-metrics-slide': kpiMetricsSlideAuthoring,

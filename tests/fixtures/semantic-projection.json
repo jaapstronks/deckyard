@@ -117,14 +117,30 @@
         "text": "Visual Storytelling",
         "key": "title"
       },
-      "body": "<ul><li>Engage your audience</li><li>Communicate complex ideas</li><li>Leave a lasting impression</li></ul>"
+      "body": "<ul><li>Engage your audience</li><li>Communicate complex ideas</li><li>Leave a lasting impression</li></ul>\n<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/slide-picker/800/600\" alt=\"Sample image\" loading=\"lazy\" /></figure>"
     },
     "en-GB": {
       "heading": {
         "text": "Visual Storytelling",
         "key": "title"
       },
-      "body": "<ul><li>Engage your audience</li><li>Communicate complex ideas</li><li>Leave a lasting impression</li></ul>"
+      "body": "<ul><li>Engage your audience</li><li>Communicate complex ideas</li><li>Leave a lasting impression</li></ul>\n<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/slide-picker/800/600\" alt=\"Sample image\" loading=\"lazy\" /></figure>"
+    }
+  },
+  "image-set-slide": {
+    "nl": {
+      "heading": {
+        "text": "Three moments",
+        "key": "title"
+      },
+      "body": "<ul><li>Where it started</li><li>What changed</li><li>Where it stands now</li></ul>\n<ul class=\"reader-items\"><li class=\"reader-item\"><figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/image-set-1/800/600\" alt=\"Sample image\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/image-set-2/800/600\" alt=\"Sample image\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/image-set-3/800/600\" alt=\"Sample image\" loading=\"lazy\" /></figure></li></ul>"
+    },
+    "en-GB": {
+      "heading": {
+        "text": "Three moments",
+        "key": "title"
+      },
+      "body": "<ul><li>Where it started</li><li>What changed</li><li>Where it stands now</li></ul>\n<ul class=\"reader-items\"><li class=\"reader-item\"><figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/image-set-1/800/600\" alt=\"Sample image\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/image-set-2/800/600\" alt=\"Sample image\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/image-set-3/800/600\" alt=\"Sample image\" loading=\"lazy\" /></figure></li></ul>"
     }
   },
   "video-slide": {

@@ -125,13 +125,15 @@ function chooseOption(root, key, optionText) {
   select.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
 }
 
-test('image-fit is in the closed vocabulary and both image types declare it', () => {
+test('image-fit is in the closed vocabulary, on the slide or on the item', () => {
   assert.ok(FIELD_EDITOR_VALUES.includes('image-fit'));
-  const slideFit = SLIDE_TYPES['image-slide'].fields.find(
-    (f) => f.key === 'fit',
-  );
-  assert.equal(fieldEditor(slideFit), 'image-fit');
-  const images = SLIDE_TYPES['image-text-slide'].fields.find(
+  // The two singletons spell the fit the same way: one slide-level field.
+  for (const type of ['image-slide', 'image-text-slide']) {
+    const fit = SLIDE_TYPES[type].fields.find((f) => f.key === 'fit');
+    assert.equal(fieldEditor(fit), 'image-fit', type);
+  }
+  // The collection puts it where the image is: on the item.
+  const images = SLIDE_TYPES['image-set-slide'].fields.find(
     (f) => f.key === 'images',
   );
   const itemFit = images.itemFields.find((f) => f.key === 'fit');
@@ -253,12 +255,12 @@ test('image-slide: the ImageRef keys the element surfaces own never render as fi
   }
 });
 
-test('image-text: images render through the generic collection editor', () => {
+test('image-set: images render through the generic collection editor', () => {
   const { editorMount } = renderForm({
-    type: 'image-text-slide',
+    type: 'image-set-slide',
     content: {
-      ...structuredClone(SLIDE_TYPES['image-text-slide'].defaults),
-      layout: 'duo',
+      ...structuredClone(SLIDE_TYPES['image-set-slide'].defaults),
+      layout: 'beside',
       images: [
         { src: '/uploads/a.jpg', alt: 'a' },
         { src: '/uploads/b.jpg', alt: 'b' },

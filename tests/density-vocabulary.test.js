@@ -48,6 +48,7 @@ const OFFERED = {
   // `renderHtml` branches on 'compact' only; anything else is the default size.
   'content-slide': ['auto', 'compact'],
   'image-text-slide': ['auto', 'compact'],
+  'image-set-slide': ['auto', 'compact'],
 };
 
 const densityFieldOf = (name) =>
@@ -192,16 +193,25 @@ test('the type that offers comfortable keeps it', () => {
   assert.equal(content.density, 'comfortable');
 });
 
-test('the two types no longer carry a hand-written density fold', () => {
-  // content-slide had nothing else to normalize, so its hook is gone entirely;
-  // image-text-slide keeps only the image fold it was written for.
-  assert.equal(SLIDE_TYPES['content-slide'].normalizeContent, undefined);
-  const src = SLIDE_TYPES['image-text-slide'].normalizeContent;
+test('no type carries a hand-written density fold', () => {
+  // The retired value converges in one place — the declared `foldUnofferedTo`.
+  // content-slide and image-text-slide have nothing left to normalize at all,
+  // so their hook is gone; image-set-slide keeps one for the shape of its
+  // images[], and it must not spell the retired density value out itself.
+  for (const name of ['content-slide', 'image-text-slide']) {
+    assert.equal(SLIDE_TYPES[name].normalizeContent, undefined, name);
+  }
+  const src = SLIDE_TYPES['image-set-slide'].normalizeContent;
   assert.equal(typeof src, 'function');
   assert.ok(
-    !String(src).includes('comfortable'),
-    'image-text-slide no longer spells the retired value out itself',
+    !String(src).includes('density'),
+    'image-set-slide does not touch density in its hook',
   );
+  // And demonstrably so: a stored value the type does not offer survives the
+  // hook untouched, to be folded by the declaration instead.
+  const content = { density: 'comfortable', images: [{ src: '/a.png' }] };
+  src(content);
+  assert.equal(content.density, 'comfortable');
 });
 
 test('the fold is opt-in: a field that declares nothing keeps its value', () => {

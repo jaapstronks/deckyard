@@ -57,9 +57,15 @@ test('the heading button is declared, and only where it was', () => {
     .filter(({ field }) => fieldToolbars(field).includes('heading'))
     .map(({ type, field }) => `${type}.${field.key}`)
     .sort();
-  // Exactly the pair the old `slide.type === 'content-slide' || …` branch let
-  // through. Every other markdown field renders the toolbar without it.
-  assert.deepEqual(declaring, ['content-slide.body', 'image-text-slide.body']);
+  // The types whose body is long-form prose: the pair the old
+  // `slide.type === 'content-slide' || …` branch let through, plus image-set,
+  // which inherited image-text's body when the plural layouts split off (D100).
+  // Every other markdown field renders the toolbar without it.
+  assert.deepEqual(declaring, [
+    'content-slide.body',
+    'image-set-slide.body',
+    'image-text-slide.body',
+  ]);
 });
 
 test('fieldToolbars ignores what it does not know', () => {
@@ -76,6 +82,19 @@ test('auto-fit is declared, and only where it was', () => {
     .map(({ type, field }) => `${type}.${field.key}`)
     .sort();
   assert.deepEqual(declaring, ['image-slide.image', 'image-text-slide.image']);
+});
+
+test('a collection type declares no auto-fit: there is no "the" image to fit', () => {
+  // Auto-fit answers "the image the author just picked would be badly cropped".
+  // On a set there is no single such image, and firing on images[0] would crop
+  // one cell of three by surprise, so image-set declares none - neither on the
+  // `images` field nor on its item fields.
+  const set = SLIDE_TYPES['image-set-slide'];
+  const images = set.fields.find((f) => f.key === 'images');
+  assert.equal(fieldAutoFit(images), null);
+  for (const item of images.itemFields || []) {
+    assert.equal(fieldAutoFit(item), null, `images[].${item.key}`);
+  }
 });
 
 test('fieldAutoFit refuses a declaration it cannot act on', () => {
@@ -114,22 +133,18 @@ test('image-slide: contain unless the author already chose a fit', () => {
   assert.equal(legacyDefault.fit, 'contain');
 });
 
-test('image-text: the fit lands on the first ImageRef, or the legacy sink', () => {
+test('image-text: the fit lands on the one flat sink, like image-slide', () => {
+  // Since image-text became a singleton (D100) the two image types spell the
+  // single image identically, so auto-fit has one target on both: `fit`.
   const decl = fieldAutoFit(
     SLIDE_TYPES['image-text-slide'].fields.find((f) => f.key === 'image'),
   );
 
-  const migrated = { images: [{ src: 'a.png' }] };
-  assert.equal(applyAutoContainFit(migrated, decl), true);
-  assert.equal(migrated.images[0].fit, 'contain');
+  const fresh = { image: 'a.png' };
+  assert.equal(applyAutoContainFit(fresh, decl), true);
+  assert.equal(fresh.fit, 'contain');
 
-  // Fired from the legacy flat `image` field before the migration into
-  // images[]: write the slide-level sink, which the next edit folds in.
-  const preMigration = { image: 'a.png' };
-  assert.equal(applyAutoContainFit(preMigration, decl), true);
-  assert.equal(preMigration.imageFit, 'contain');
-
-  const chosen = { images: [{ src: 'a.png', fit: 'contain' }] };
+  const chosen = { image: 'a.png', fit: 'contain' };
   assert.equal(applyAutoContainFit(chosen, decl), false);
 });
 
@@ -138,15 +153,14 @@ test('an explicit cover is respected on both types — the one behaviour change'
   // author's choice and left it alone, image-text treated it as unchosen and
   // overrode it. Two rules for one question is the defect; respecting the
   // author is the rule that survived the consolidation.
-  const imageText = fieldAutoFit(
-    SLIDE_TYPES['image-text-slide'].fields.find((f) => f.key === 'image'),
-  );
-  const onItem = { images: [{ src: 'a.png', fit: 'cover' }] };
-  assert.equal(applyAutoContainFit(onItem, imageText), false);
-  assert.equal(onItem.images[0].fit, 'cover');
-
-  const onSlide = { images: [{ src: 'a.png' }], imageFit: 'cover' };
-  assert.equal(applyAutoContainFit(onSlide, imageText), false);
+  for (const type of ['image-slide', 'image-text-slide']) {
+    const decl = fieldAutoFit(
+      SLIDE_TYPES[type].fields.find((f) => f.key === 'image'),
+    );
+    const chosen = { image: 'a.png', fit: 'cover' };
+    assert.equal(applyAutoContainFit(chosen, decl), false, type);
+    assert.equal(chosen.fit, 'cover', type);
+  }
 });
 
 test('the AI convert pairs have one source, and the menu holds no names', () => {

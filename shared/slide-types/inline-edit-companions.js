@@ -62,15 +62,18 @@ export function slideTypeInspectorKeeps(type, def = null) {
  * own "This element" tab in the inspector, and how many of each.
  *
  * The grammar, one entry per selection kind (`image`, `card`) — three shapes,
- * because the seven types that offer a tab need exactly three answers:
+ * because the eight types that offer a tab need exactly three answers:
  *
  *   { list: 'images' }   a tab per item of that content collection; the
  *                        collection's length is the bound
  *   { range: [min, max] } a fixed index window (image-slide's single image at
- *                        0, quote-slide's author portraits at 1-3)
- *   { any: true }        every index (image-text pads `images[]` to the
- *                        layout's cell count on demand, so a selection may
- *                        legitimately point past the stored items)
+ *                        0, quote-slide's author portraits at 1-3,
+ *                        image-set-slide's cells at 0-2)
+ *   { any: true }        every index, for a type whose ceiling is not knowable
+ *                        up front. No core type declares it: image-set pads
+ *                        `images[]` on demand but has a hard three-image
+ *                        ceiling, so a range says more. Kept for custom and
+ *                        fork types that need the open answer.
  *
  * Read through this function rather than off the map: the definition is asked
  * first, so a fork type declaring `elementTab` is heard — the same precedence

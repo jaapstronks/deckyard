@@ -1,10 +1,10 @@
 /**
  * The reader form of every core slide type, pinned as a fixture (B248).
  *
- * `itemLabelField` is declared on 1 of 34 types and `mediaRef` on 1, which is
+ * `itemLabelField` is declared on 1 of 35 types and `mediaRef` on 1, which is
  * exactly what D81/D82 intend — a type declares only where the "first readable
  * string" default would be wrong. What nothing pinned is the other side of that
- * bargain: **that the default is right for the other 33.** The projection is
+ * bargain: **that the default is right for the other 34.** The projection is
  * derived from `fields[]`, so a field added, renamed or re-typed silently moves
  * what the reader calls the heading of a slide, and a wrong heading becomes a
  * wrong title box the moment the PPTX mapper reads the same projection.
@@ -16,7 +16,7 @@
  *     UPDATE_SNAPSHOT=1 node --test tests/semantic-projection-snapshot.test.js
  *
  * The fixture is also the artifact for the A2.5 gate ("does the text version of
- * each type read the way you would read it?"): one file, 34 types, both deck
+ * each type read the way you would read it?"): one file, 35 types, both deck
  * languages, in the reader's own words rather than a summary of them.
  *
  * ## What it projects, and why through these seams
@@ -29,7 +29,7 @@
  * - **Through `newSlide()`**, the one factory a slide comes into being through
  *   (B243), with the type's own `sample` as the caller's patch — so the fixture
  *   shows the *filled-in* example the picker promises, over per-language
- *   defaults (`defaultsByLang`, declared by 27 of 34 types). No theme is passed:
+ *   defaults (`defaultsByLang`, declared by 29 of 35 types). No theme is passed:
  *   a theme only moves `background`, which is presentational and never
  *   projected, and leaving it out keeps the artifact deterministic.
  * - **Through `slideHeading()` + `renderSlideBodySemanticHtml()`**, which is the

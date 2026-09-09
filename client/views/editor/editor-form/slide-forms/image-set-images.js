@@ -1,5 +1,5 @@
 /**
- * The image-text slide's slide-level image COLLECTION section.
+ * The image-set slide's slide-level image COLLECTION section.
  *
  * DOCUMENTED EXCEPTION (editor-behaviour-abstraction step 5). Everything else
  * this module used to hold is gone: the per-cell card is the shared "This
@@ -11,26 +11,28 @@
  * the element tab, one home per setting.
  *
  * Why it is not declarable, stated once so the next pass does not re-litigate:
+ * "collection chrome without item fields" is a difference between SURFACES,
+ * not between types. A field declaration is read by both surfaces by design
+ * (that is the whole point of the vocabulary), so it is structurally the wrong
+ * axis to express "here, but not there".
  *
- * 1. "Collection chrome without item fields" is a difference between
- *    SURFACES, not between types. A field declaration is read by both
- *    surfaces by design (that is the whole point of the vocabulary), so it is
- *    structurally the wrong axis to express "here, but not there".
- * 2. The number of visible cells comes from `layout` via
- *    `imageTextCellCount` (rows follow the image count, duo is fixed at two,
- *    split/corner show one), not from `minItems`/`maxItems`. A
- *    computed-cardinality declaration would have exactly one declarant, which
- *    is a vocabulary of one — more expensive than this exception.
+ * The second reason this file used to give is gone with D100. Cardinality was
+ * computed from `layout` (`imageTextCellCount`: rows followed the image count,
+ * duo was fixed at two, split/corner showed one) because one type carried two
+ * contracts. `image-set-slide` carries one: 2-3 images in every layout, stated
+ * as `minItems`/`maxItems` on the field, which is what this section reads.
  *
- * Items beyond the active layout's cell count stay in the content (switching
- * layouts remembers the images) but are not listed here.
+ * The `editor.imageText.*` copy keys are shared vocabulary, not a leftover:
+ * image-slide reads `editor.imageText.imageFit` too. They name image chrome,
+ * not a slide type.
  */
 import { t } from '../../../../lib/ui-i18n.js';
 import {
-  IMAGE_TEXT_MAX_IMAGES,
-  ensureImageTextImages,
-  imageTextCellCount,
-} from '../../../../../shared/slide-types/types/image-text-slide/images.js';
+  IMAGE_SET_MAX_IMAGES,
+  IMAGE_SET_MIN_IMAGES,
+  ensureImageSetImages,
+  imageSetCellCount,
+} from '../../../../../shared/slide-types/types/image-set-slide/images.js';
 import { h } from '../../../../lib/dom.js';
 
 /**
@@ -62,14 +64,14 @@ function collectionActions({
     },
     removeImage: (i) => {
       images.splice(i, 1);
-      ensureImageTextImages(content);
+      ensureImageSetImages(content);
       refresh();
     },
   };
 }
 
 /** The ↑ / ↓ / × buttons for cell i, or null when none apply. */
-function cellControlButtons({ content, i, cellCount, isRow, actions }) {
+function cellControlButtons({ i, cellCount, canRemove, actions }) {
   const controls = h('div', { class: 'row' });
   if (i > 0) {
     controls.append(
@@ -93,9 +95,10 @@ function cellControlButtons({ content, i, cellCount, isRow, actions }) {
       }),
     );
   }
-  // Rows above the minimum can drop an image entirely (fewer columns);
-  // fixed-cell layouts clear per image via the canvas/media popover.
-  if (isRow && content.images.length > 2) {
+  // Above the minimum an image can go entirely (one cell fewer); at the
+  // minimum the only way to empty a cell is the canvas/media popover, because
+  // the type has no shape with fewer than two images.
+  if (canRemove) {
     controls.append(
       h('button', {
         type: 'button',
@@ -114,15 +117,14 @@ function cellControlButtons({ content, i, cellCount, isRow, actions }) {
 
 /**
  * Slim slide-level collection manager (inspector Slide tab): one thumbnail
- * row per cell with reorder/remove, plus "+ Add image" in the row model.
- * Deliberately NO per-image settings — alt/fit/focus live in the "This
- * image" element tab (every setting in exactly one place). Returns null when
- * there is no collection to manage (single fixed cell).
+ * row per cell with reorder/remove, plus "+ Add image" while under the
+ * maximum. Deliberately NO per-image settings — alt/fit/focus live in the
+ * "This image" element tab (every setting in exactly one place).
  *
- * @param {Object} opts - h, slide, used + edit hooks
+ * @param {Object} opts - slide, used + edit hooks
  * @returns {HTMLElement|null}
  */
-function renderImageTextCollectionSection({
+function renderImageSetCollectionSection({
   slide,
   used,
   markDirty,
@@ -132,19 +134,13 @@ function renderImageTextCollectionSection({
   const content = slide?.content;
   if (!content || typeof content !== 'object') return null;
   // The content is already canonical here (normalizeContent runs on open); this
-  // only claims the keys so the generic keeps loop leaves them alone.
-  used?.add('image');
+  // only claims the key so the generic keeps loop leaves it alone.
   used?.add('images');
-  used?.add('alt');
 
   const images = Array.isArray(content.images) ? content.images : [];
-  const layout = String(content.layout || 'split');
-  const isRow = layout === 'row-top' || layout === 'row-bottom';
-  const cellCount = imageTextCellCount(content);
-  const canAdd = isRow && images.length < IMAGE_TEXT_MAX_IMAGES;
-  // A single fixed cell has nothing to add, remove or reorder; the element
-  // tab (and the canvas) fully cover it.
-  if (cellCount < 2 && !canAdd) return null;
+  const cellCount = imageSetCellCount(content);
+  const canAdd = images.length < IMAGE_SET_MAX_IMAGES;
+  const canRemove = images.length > IMAGE_SET_MIN_IMAGES;
 
   const actions = collectionActions({
     content,
@@ -195,10 +191,9 @@ function renderImageTextCollectionSection({
     );
     rowEl.append(left);
     const controls = cellControlButtons({
-      content,
       i,
       cellCount,
-      isRow,
+      canRemove,
       actions,
     });
     if (controls) rowEl.append(controls);
@@ -221,15 +216,15 @@ function renderImageTextCollectionSection({
 /**
  * The INSPECTOR_EXTRAS entry (inspector-form.js): the collection manager into
  * the inspector's Slide tab. The selected cell's card is NOT rendered here —
- * image-text declares `elementTab: { image: … }` like every other image type,
+ * image-set declares `elementTab: { image: … }` like every other image type,
  * so the shared "This image" card comes from the declaration-driven rule.
  *
  * @param {Object} ctx - Same context shape as renderSlideFormByType
  */
-export function renderImageTextCollectionExtra(ctx) {
+export function renderImageSetCollectionExtra(ctx) {
   const { form, slide, used, markDirty, rerenderEditor, scheduleUiRefresh } =
     ctx;
-  const section = renderImageTextCollectionSection({
+  const section = renderImageSetCollectionSection({
     slide,
     used,
     markDirty,

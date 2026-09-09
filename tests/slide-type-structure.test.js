@@ -71,12 +71,8 @@ function collectionFields(def) {
  * of this brief, not a workaround.
  */
 const BURNDOWN = {
-  'image-text-slide':
-    'Declared singleton, carries images[0-3]. The `duo` tile is a second ' +
-    'contract under one type id, not a ninth layout: flipping back to `split` ' +
-    'orphans images 2 and 3. Open question 5 in the umbrella brief — the cut ' +
-    'is a product decision (image-text strictly one image, the plural cases to ' +
-    'the image collection), not a relabelling.',
+  // `image-text-slide` left this list with D100 (2026-09-09): its plural
+  // layouts became `image-set-slide` and it carries one flat image again.
   'quote-slide':
     'Declared singleton, carries quotes[0-2] beside scalar quote/authorName/…. ' +
     'The same legacy-mirror disease as team-cards: one type, two ' +
@@ -374,14 +370,26 @@ function sentinelsFor(def) {
  * for the entry to go.
  */
 const VARIANT_BURNDOWN = {
-  'image-text-slide':
-    'The layout tiles disagree about how many images they render: `split`, ' +
-    '`corner` show one cell, `duo` two, the rows up to three. Flipping duo -> ' +
-    'split orphans image 2 — the boundary the rule names, and the same finding ' +
-    'the structure burndown records from the schema side. The cut (image-text ' +
-    'strictly one image, the plural cases to the image collection) is a product ' +
-    'decision, open question 5 in the umbrella brief.',
+  // Empty since D100 (2026-09-09): `image-text-slide`'s tiles all render one
+  // cell now, and `image-set-slide`'s tiles all render every image. A type
+  // whose tiles disagree about what they read belongs in this map only until
+  // the boundary is cut, never as a permanent resident.
 };
+
+/**
+ * Which surviving sentinels a render carries, by probe label.
+ * @param {Object} def
+ * @param {string} name
+ * @param {Object} content
+ * @param {Array<{label: string, sentinel: string}>} probes
+ * @returns {Set<string>}
+ */
+function carriedLabels(def, name, content, probes) {
+  const html = def.renderHtml(content, { id: 's1', type: name }, {}) || '';
+  return new Set(
+    probes.filter((p) => html.includes(p.sentinel)).map((p) => p.label),
+  );
+}
 
 test('every layout variant of a type carries the same content', () => {
   // The rule, made operational: a variant is a render choice every valid
@@ -416,13 +424,7 @@ test('every layout variant of a type carries the same content', () => {
     const carried = new Map();
     for (const variant of variants) {
       const content = { ...base, ...variant.set };
-      const html = def.renderHtml(content, { id: 's1', type: name }, {}) || '';
-      carried.set(
-        variant.id,
-        new Set(
-          probes.filter((p) => html.includes(p.sentinel)).map((p) => p.label),
-        ),
-      );
+      carried.set(variant.id, carriedLabels(def, name, content, probes));
     }
 
     const union = new Set([...carried.values()].flatMap((s) => [...s]));
@@ -462,6 +464,83 @@ test('every layout variant of a type carries the same content', () => {
     [],
     `these types' variants are interchangeable now — drop them from ` +
       `VARIANT_BURNDOWN:\n${stale.join('\n')}`,
+  );
+});
+
+// --- assertion 4b: a declared enum axis is lossless too ---------------------
+
+/**
+ * Enum fields a type offers as its render axis without a `layoutVariants`
+ * tile per value. Assertion 4 only sees tiles, so an axis that lives on a
+ * plain enum (`list-slide.variant`: bullets or numbers) would escape the
+ * round-trip. It must not: the rule is about render choices, not about the
+ * control that picks them.
+ *
+ * `list-slide.variant` is here because of D101 (2026-09-09): numbered versus
+ * bulleted changes what the slide *promises* (a sequence rather than a set),
+ * which is a question for the `intent` facet, but it orphans nothing, so under
+ * *this* facet it is a variant. `callout-slide.variant` is the same shape of
+ * axis (five kinds on one type) and rides along, as do the three other types
+ * whose whole render axis is one plain enum with no tile at all
+ * (`comparison-slide.variant`, `gallery-slide.layout`,
+ * `icon-card-grid-slide.layout`; #1123 review). A type with tiles for part of
+ * an axis is assertion 4's business.
+ */
+const ENUM_VARIANT_AXES = {
+  'list-slide': ['variant'],
+  'callout-slide': ['variant'],
+  'comparison-slide': ['variant'],
+  'gallery-slide': ['layout'],
+  'icon-card-grid-slide': ['layout'],
+};
+
+test('every declared enum variant axis carries the same content', () => {
+  const lossy = [];
+  let checked = 0;
+
+  for (const [name, keys] of Object.entries(ENUM_VARIANT_AXES)) {
+    const def = SLIDE_TYPES[name];
+    assert.ok(def, `enum axis names a registered type: ${name}`);
+    const base = Object.fromEntries(
+      contentFields(def).map((f) => [f.key, sampleValue(f, f.key)]),
+    );
+    const probes = sentinelsFor(def);
+    assert.ok(probes.length, `${name}: no content to probe`);
+
+    for (const key of keys) {
+      const field = contentFields(def).find((f) => f.key === key);
+      assert.equal(field?.type, 'enum', `${name}.${key} must be an enum`);
+      const values = (field.options || []).map((o) =>
+        typeof o === 'string' ? o : o?.value,
+      );
+      assert.ok(values.length >= 2, `${name}.${key} needs two options`);
+
+      const carried = new Map();
+      for (const value of values) {
+        carried.set(
+          value,
+          carriedLabels(def, name, { ...base, [key]: value }, probes),
+        );
+      }
+      const union = new Set([...carried.values()].flatMap((s) => [...s]));
+      assert.ok(union.size, `${name}.${key}: no option rendered any content`);
+      checked += 1;
+
+      for (const [value, labels] of carried) {
+        const missing = [...union].filter((k) => !labels.has(k)).sort();
+        if (missing.length) {
+          lossy.push(`${name}.${key}='${value}' drops ${missing.join(', ')}`);
+        }
+      }
+    }
+  }
+
+  assert.ok(checked >= 2, `expected declared enum axes, checked ${checked}`);
+  assert.deepEqual(
+    lossy,
+    [],
+    `an enum option throws content away, so it is a second contract under one ` +
+      `type id rather than a render choice:\n${lossy.join('\n')}`,
   );
 });
 

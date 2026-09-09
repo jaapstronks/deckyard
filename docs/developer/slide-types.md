@@ -948,10 +948,10 @@ select the builder puts under its options (the choices are the field's own
 options, which is precisely the case the builder creates the moment an author
 deletes a line above).
 
-The three types with a `density` field are the instance. `list-slide` renders
+The four types with a `density` field are the instance. `list-slide` renders
 all three stands of the shared vocabulary (`DENSITY_OPTIONS` in `helpers.js`)
-and offers all three; `content-slide` and `image-text-slide` render two and
-offer two. A type offers the subset it renders — never the whole set — and the
+and offers all three; `content-slide`, `image-text-slide` and `image-set-slide`
+render two and offer two. A type offers the subset it renders — never the whole set — and the
 subset is what the fold measures against.
 
 ---

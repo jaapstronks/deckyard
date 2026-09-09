@@ -2,7 +2,7 @@
 
 const getBodyEl = (section) =>
   section?.querySelector?.(
-    '.slide-content .body, .slide-image-text .copy .body',
+    '.slide-content .body, .slide-image-text .copy .body, .slide-image-set .copy .body',
   ) || null;
 
 // Zoom step presets: each position is { x, y } as percentages (0-100)

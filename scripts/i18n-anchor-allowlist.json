@@ -90,10 +90,6 @@
       "forms": ["Billed-URL", "Billedets URL"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "da  Image position": {
-      "forms": ["Billedets placering", "Billedposition"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "da  Light": {
       "forms": ["Lys", "Lyse"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -206,10 +202,6 @@
     },
     "de  Grid": {
       "forms": ["Raster", "Tabelle"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "de  Image fit": {
-      "forms": ["Bildanpassung", "Bildeinpassung"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "de  Label": {
@@ -358,14 +350,6 @@
     },
     "es  Image URL": {
       "forms": ["URL de imagen", "URL de la imagen"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "es  Image fit": {
-      "forms": ["Ajuste de imagen", "Ajuste de la imagen"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "es  Image position": {
-      "forms": ["Posición de imagen", "Posición de la imagen"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "es  Light": {
@@ -657,14 +641,6 @@
       "forms": ["Grille", "Tableau"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "fr  Image fit": {
-      "forms": ["Ajustement de l'image", "Ajustement image"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "fr  Image position": {
-      "forms": ["Position de l'image", "Position image"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "fr  Insert slide": {
       "forms": ["Insérer la diapositive", "Insérer une diapositive"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -808,14 +784,6 @@
     },
     "it  Image URL": {
       "forms": ["URL dell'immagine", "URL immagine"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "it  Image fit": {
-      "forms": ["Adattamento dell'immagine", "Adattamento immagine"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "it  Image position": {
-      "forms": ["Posizione dell'immagine", "Posizione immagine"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "it  Insert slide": {
@@ -1031,10 +999,6 @@
       "forms": ["Raster", "Tabel"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "nl  Image fit": {
-      "forms": ["Afbeelding passend", "Uitsnede"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "nl  Image focus (crop)": {
       "forms": ["Beeldfocus (crop)", "Beeldfocus (uitsnede)"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -1125,10 +1089,6 @@
       "forms": ["Stijl", "Type"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "nl  Two beside text": {
-      "forms": ["Duo naast", "Twee naast tekst"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "nl  Unpublish": {
       "forms": ["Depubliceren", "Publicatie ongedaan maken"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -1210,10 +1170,6 @@
     },
     "no  Image URL": {
       "forms": ["Bilde-URL", "Bildets URL"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "no  Image position": {
-      "forms": ["Bildeposisjon", "Bildets plassering"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "no  Insert slide": {
@@ -1513,10 +1469,6 @@
       "forms": ["Grade", "Tabela"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "pt  Image fit": {
-      "forms": ["Ajuste da imagem", "Ajuste de imagem"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "pt  Light": {
       "forms": ["Claro", "Claros"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -1663,10 +1615,6 @@
     },
     "sv  Image URL": {
       "forms": ["Bild-URL", "Bildens URL"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
-    "sv  Image position": {
-      "forms": ["Bildens placering", "Bildposition"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "sv  Insert slide": {

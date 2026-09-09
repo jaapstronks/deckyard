@@ -53,7 +53,7 @@ function resolveLogos(content) {
  * Materializes `logos[]` so the inline media popover and card affordances have
  * a stable, mutable array to write to. Never called from `renderHtml` (which
  * stays pure): the inline editor runs it via the descriptor's `ensure` knob.
- * Mirrors `ensureImageTextImages`.
+ * Mirrors `ensureImageSetImages`.
  * @param {Object} content
  * @returns {Object} the same content object
  */
