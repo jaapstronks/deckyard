@@ -83,6 +83,38 @@ test('no stylesheet outside the base layer lifts the cap on .modal-content', () 
   );
 });
 
+test('a dialog that scrolls its own body outranks the base layer', () => {
+  // The base layer's `.modal.is-fill > .modal-content` clips (three classes,
+  // imported after `app/components.css`). A dialog whose body is the scroller
+  // has to *outrank* that, not tie with it: `.modal-wide .modal-content` is
+  // two classes and loses, `.modal.table-editor-modal .modal-content` ties and
+  // loses on order — both silently, leaving a body that cannot scroll.
+  const offenders = [];
+  for (const file of cssFiles(path.join(repoRoot, 'client/styles'))) {
+    if (file === BASE_LAYER) continue;
+    // Comments first: they sit inside the selector capture, and one of them
+    // names `.modal.is-fill` in prose.
+    const css = readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    for (const [, selector, body] of css.matchAll(
+      /([^{}]*modal-content[^{}]*)\{([^}]*)\}/g,
+    )) {
+      if (!/(^|[;{\s])overflow(-[xy])?\s*:/.test(body)) continue;
+      // Per selector in the list: one `.is-fill` does not carry its siblings.
+      for (const one of selector.split(',')) {
+        if (!one.includes('modal-content')) continue;
+        if (/\.is-fill\b/.test(one)) continue;
+        offenders.push(`${path.relative(repoRoot, file)}: ${one.trim()}`);
+      }
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    'Say it against `.modal.is-fill` so it wins on specificity rather than on ' +
+      `import order: ${offenders.join(' | ')}`,
+  );
+});
+
 test('the load-order workaround is gone', () => {
   const offenders = [];
   for (const file of cssFiles(path.join(repoRoot, 'client/styles'))) {

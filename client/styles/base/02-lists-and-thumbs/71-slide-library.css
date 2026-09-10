@@ -461,8 +461,11 @@
   white-space: nowrap;
 }
 
-/* The dialog's `.modal-content`; `fill: true` gives it the height. */
-.ps-lib-lightbox-body {
+/* The dialog's `.modal-content`; `fill: true` gives it the height. Written
+   against `.modal.is-fill` like the edit body below: the base layer's
+   `.modal-content` imports after this file, so a single class ties on
+   specificity and loses its own `gap` and padding to it. */
+.modal.is-fill > .ps-lib-lightbox-body {
   padding: var(--ps-space-3);
   padding-top: 0;
   gap: 0;

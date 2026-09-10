@@ -904,9 +904,11 @@
   width: min(1000px, 100%);
 }
 
-/* A list of versions, so the body is the scroller itself. */
-.modal-wide .modal-content,
-.modal-compare .modal-content {
+/* A list of versions, so the body is the scroller itself — said against
+   `.modal.is-fill` so it outranks the base layer's `overflow: hidden` rather
+   than tying with it. */
+.modal.is-fill.modal-wide > .modal-content,
+.modal.is-fill.modal-compare > .modal-content {
   overflow-y: auto;
 }
 

@@ -811,8 +811,10 @@ table.csv-grid {
   max-height: min(92vh, 900px);
 }
 /* The grid is one wide block, so the body is the scroller rather than handing
-   the scrolling to a child — both axes. */
-.modal.table-editor-modal .modal-content {
+   the scrolling to a child — both axes. Written against `.modal.is-fill` so it
+   outranks the base layer's `overflow: hidden` on specificity: this file
+   imports *before* base.css, so an equally specific rule would lose. */
+.modal.is-fill.table-editor-modal > .modal-content {
   overflow: auto;
 }
 .table-editor-modal-grid {

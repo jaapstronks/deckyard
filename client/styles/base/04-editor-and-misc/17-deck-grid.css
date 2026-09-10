@@ -10,9 +10,11 @@
   max-height: 92vh;
 }
 
-/* One long grid, so the body is the scroller itself. */
-.modal.modal-deck-grid .modal-content,
-.modal.modal-ai-review .modal-content {
+/* One long grid, so the body is the scroller itself. The horizontal axis stays
+   the base layer's `hidden`: a lone `overflow-y: auto` computes `overflow-x`
+   to `auto` too, which is the accidental horizontal scroll container. */
+.modal.is-fill.modal-deck-grid > .modal-content,
+.modal.is-fill.modal-ai-review > .modal-content {
   overflow-y: auto;
 }
 
