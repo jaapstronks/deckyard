@@ -152,7 +152,12 @@ size}` returns a presigned PUT plus the eventual `publicUrl` and a key
   mime must match the existing extension.
 - **ImageKit browse** — `GET /api/media/imagekit/files|tags|…/details` proxy an
   external DAM read-only, plus `PATCH …/details` to write tags/custom metadata
-  back. ImageKit items are never copied into `image_library`.
+  back. ImageKit items are never copied into `image_library`. Listings are
+  **newest-first**: `files` sends `sort=DESC_CREATED` unless the caller passes
+  another value from `IMAGEKIT_SORT_VALUES` (anything else is a 400), and the
+  tag sample is drawn from the newest files for the same reason. ImageKit's own
+  default is oldest-first, which hides every recent upload behind the first
+  import.
 
 ## Config & flags
 
