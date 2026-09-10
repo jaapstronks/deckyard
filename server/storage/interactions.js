@@ -156,6 +156,42 @@ async function aggregateForDevice(slide, deviceId) {
   };
 }
 
+/**
+ * The interaction aggregate a client attaching mid-session needs to catch up.
+ *
+ * Every other route to this payload is a *push*: a vote, a status change, a
+ * reset. A client that connects after those have happened — a presenter who
+ * reloads their view mid-poll, a second presenter window, a phone that joins
+ * once the votes are in — has nothing to render and sits at "Total: 0" until
+ * the next vote comes in. The SSE attach snapshot answers that by asking here.
+ *
+ * Returns `null` when the slide has no interaction row, which is also the
+ * answer for a session parked on an ordinary slide: nothing to catch up on.
+ *
+ * @param {import('./scope.js').StorageScope} scope
+ * @param {string} sessionId
+ * @param {object} [opts]
+ * @param {string} [opts.slideId] The session's current slide.
+ * @param {string|null} [opts.deviceId] Whose own answer to include, if any.
+ * @returns {Promise<object|null>}
+ */
+export async function getInteractionCatchUp(
+  scope,
+  sessionId,
+  { slideId = '', deviceId = null } = {},
+) {
+  toStorageContext(
+    scope,
+    'getInteractionCatchUp',
+    {},
+    { allowCrossOrganization: true },
+  );
+  const sid = String(sessionId || '').trim();
+  const slide = String(slideId || '').trim();
+  if (!sid || !slide) return null;
+  return await getInteractionAggregate(scope, sid, { slideId: slide, deviceId });
+}
+
 async function maybeBroadcast(scope, sessionId, agg) {
   // Fire and forget; this goes to presenter + follow (via attachSessionSseClient).
   try {

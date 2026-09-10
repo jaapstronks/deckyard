@@ -164,10 +164,16 @@ async function stagePage(recipe, api) {
     const url = `${api.base}${resolveNavigate(recipe, ctx)}`;
     await gotoStable(page, url);
     if (recipe.waitFor) {
-      await page.waitForSelector(recipe.waitFor, {
-        visible: true,
-        timeout: 20_000,
-      });
+      try {
+        await page.waitForSelector(recipe.waitFor, {
+          visible: true,
+          timeout: 20_000,
+        });
+      } catch (e) {
+        throw new Error(await describeMissingSelector(page, recipe.waitFor, e), {
+          cause: e,
+        });
+      }
     }
     if (recipe.action) await recipe.action(page, ctx);
     await settle(page);
@@ -176,6 +182,48 @@ async function stagePage(recipe, api) {
     throw e;
   }
   return { page, ctx };
+}
+
+/**
+ * Say what the page actually held when a `waitFor` selector never arrived.
+ *
+ * `Waiting failed: 20000ms exceeded` names neither the selector nor the page,
+ * which is all an unattended refresh run gets to work with when a recipe
+ * flakes: the 2026-09-06 run on dev-server-1 failed three recipes with that
+ * one line and no way to tell an unrendered app from a renamed class. The
+ * digest below is read off the live page at the moment of the failure — its
+ * URL, whether the selector exists but is invisible, and the app's own
+ * top-level markers — so the next failure arrives already diagnosed.
+ *
+ * @param {import('puppeteer-core').Page} page
+ * @param {string} selector The `waitFor` that timed out.
+ * @param {unknown} cause The puppeteer error, kept for its message.
+ * @returns {Promise<string>} A message to throw.
+ */
+async function describeMissingSelector(page, selector, cause) {
+  const reason = cause instanceof Error ? cause.message : String(cause);
+  let digest = '(page unreadable)';
+  try {
+    digest = await page.evaluate((sel) => {
+      const found = document.querySelectorAll(sel).length;
+      const body = document.body;
+      const roots = Array.from(body?.children || [])
+        .slice(0, 6)
+        .map((el) => `${el.tagName.toLowerCase()}.${el.className || '—'}`);
+      const err = document.querySelector('.error-page, .app-error, .fatal');
+      return [
+        `matches=${found}`,
+        found ? '(present but not visible)' : '',
+        `body=[${roots.join(', ')}]`,
+        err ? `error-on-page="${(err.textContent || '').trim().slice(0, 120)}"` : '',
+      ]
+        .filter(Boolean)
+        .join(' ');
+    }, selector);
+  } catch {
+    /* page gone or navigating — the URL below is still worth having */
+  }
+  return `waitFor \`${selector}\` never became visible: ${reason}\n    url: ${page.url()}\n    dom: ${digest}`;
 }
 
 /**
@@ -219,6 +267,69 @@ async function recordOne(recipe, api, outRoot) {
  * @param {import('./lib/api.js').ApiClient} api
  * @param {string} outRoot
  */
+/**
+ * Refuse to photograph a clip that is hiding part of itself behind a scrollbar.
+ *
+ * A clipped shot photographs what is *rendered*, so any box inside the clip
+ * that scrolls its own content is content the PNG silently loses. That is the
+ * worst kind of capture failure: the file is written, the registry is
+ * baselined and the run reports success, while the image on the site is cut in
+ * half. It is how the fill-from-translation shot lost the "Apply" button the
+ * marketing copy beside it tells the reader to click, and how the share shot
+ * lost its link before that — both because a modal caps its body in viewport
+ * units and scrolls the rest.
+ *
+ * So: a clip whose subtree overflows is an error, not a shot. The fix is a
+ * viewport the content fits in (`MODAL_SHOT_VIEWPORT`), never a taller crop.
+ * A subject that scrolls at *every* viewport size — a dialog with a fixed
+ * pixel height — is the app's own behaviour rather than a capture artefact,
+ * and says so in the recipe's `clipMayScroll` with the reason.
+ *
+ * @param {import('puppeteer-core').Page} page
+ * @param {import('./lib/recipe.js').Recipe} recipe
+ * @returns {Promise<void>}
+ */
+async function refuseHiddenOverflow(page, recipe) {
+  // 4px of slack: sub-pixel layout rounding puts a stray pixel on a box that
+  // is not actually scrollable.
+  const hidden = await page.evaluate(
+    (sel, slack) => {
+      const root = document.querySelector(sel);
+      if (!root) return null;
+      const boxes = [root, ...root.querySelectorAll('*')];
+      for (const el of boxes) {
+        const style = getComputedStyle(el);
+        const scrolls = (axis) => /auto|scroll/.test(axis);
+        const overY =
+          scrolls(style.overflowY) && el.scrollHeight - el.clientHeight > slack;
+        const overX =
+          scrolls(style.overflowX) && el.scrollWidth - el.clientWidth > slack;
+        if (overY || overX) {
+          const name = `${el.tagName.toLowerCase()}${
+            el.className ? `.${String(el.className).trim().split(/\s+/).join('.')}` : ''
+          }`;
+          return {
+            name,
+            axis: overY ? 'height' : 'width',
+            rendered: overY ? el.clientHeight : el.clientWidth,
+            needed: overY ? el.scrollHeight : el.scrollWidth,
+          };
+        }
+      }
+      return null;
+    },
+    recipe.clip,
+    4,
+  );
+  if (!hidden) return;
+  throw new Error(
+    `Recipe "${recipe.id}" would photograph a truncated clip: ` +
+      `${hidden.name} scrolls its own content ` +
+      `(${hidden.axis} ${hidden.rendered}px rendered, ${hidden.needed}px of content). ` +
+      `Give the shot a viewport the content fits in.`,
+  );
+}
+
 async function captureOne(recipe, api, outRoot) {
   const { page, ctx } = await stagePage(recipe, api);
   try {
@@ -234,6 +345,7 @@ async function captureOne(recipe, api, outRoot) {
           `Recipe "${recipe.id}" clip selector matched nothing: ${recipe.clip}`,
         );
       }
+      if (!recipe.clipMayScroll) await refuseHiddenOverflow(page, recipe);
       await el.screenshot({ path: outPath });
     } else {
       await page.screenshot({
