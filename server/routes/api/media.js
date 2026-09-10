@@ -126,11 +126,13 @@ async function handleImageKitFiles({ res, url }) {
   const searchQuery = url.searchParams.get('searchQuery') || '';
   const limit = url.searchParams.get('limit') || '';
   const skip = url.searchParams.get('skip') || '';
+  const sort = url.searchParams.get('sort') || '';
   const out = await listImageKitFiles({
     q,
     searchQuery,
     limit: Number(limit || 48),
     skip: Number(skip || 0),
+    sort,
   });
   serveJson(res, 200, out);
   return true;
