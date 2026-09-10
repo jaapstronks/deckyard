@@ -54,31 +54,63 @@ function toneOfHex(hex) {
  * @returns {'dark'|'light'|''} '' when nothing reliable is known
  */
 export function resolveSlideBgTone(content, theme) {
-  const id = String(content?.background || 'lime')
-    .trim()
-    .toLowerCase();
+  const id = normalizeBgId(content);
   if (!id) return '';
 
+  const variant = findVariant(theme, id);
+  if (variant?.textColor) {
+    const textTone = toneOfHex(variant.textColor);
+    // The text pole is the opposite of the surface it sits on.
+    if (textTone === 'light') return 'dark';
+    if (textTone === 'dark') return 'light';
+  }
+  return toneOfHex(resolveSlideBgHex(content, theme));
+}
+
+/** The `background` id a slide asks for, folded to the stored spelling. */
+function normalizeBgId(content) {
+  return String(content?.background || 'lime')
+    .trim()
+    .toLowerCase();
+}
+
+/** The theme's own variant for an id, when it ships one. */
+function findVariant(theme, id) {
   const variants = Array.isArray(theme?.slideBackgrounds)
     ? theme.slideBackgrounds
     : [];
-  const variant = variants.find((v) => v && v.id === id);
-  if (variant) {
-    if (variant.textColor) {
-      const textTone = toneOfHex(variant.textColor);
-      // The text pole is the opposite of the surface it sits on.
-      if (textTone === 'light') return 'dark';
-      if (textTone === 'dark') return 'light';
-    }
-    return toneOfHex(groundHexOf(variant.value));
-  }
+  return variants.find((v) => v && v.id === id) || null;
+}
 
-  // Built-in slots. `accent` / `brand-*` / `custom` are countdown-only classes
-  // with no theme var of their own, so they fall through to ''.
+/**
+ * The colour literal a slide's ground actually resolves to under one theme.
+ *
+ * Split out of {@link resolveSlideBgTone} rather than duplicated, because a
+ * second consumer now needs the colour itself and not only its pole: the PPTX
+ * theme master (`server/export/pptx-theme.js`) paints the ground it names.
+ * Reading the theme rather than assuming is the point — `midnight` paints
+ * `lime` near-black where `deckyard` paints it white — and there must be one
+ * place that reading happens.
+ *
+ * Same resolution as the tone: a theme variant's own `value`, else the
+ * `--t-slide-bg-<id>` var for the three built-in slots. `accent` / `brand-*` /
+ * `custom` are countdown-only classes with no theme var, so they resolve to ''.
+ *
+ * @param {object|null} content - slide content
+ * @param {object|null} theme - the active normalized theme
+ * @returns {string} a hex literal, or '' when the theme names no colour
+ */
+export function resolveSlideBgHex(content, theme) {
+  const id = normalizeBgId(content);
+  if (!id) return '';
+
+  const variant = findVariant(theme, id);
+  if (variant) return groundHexOf(variant.value);
+
   if (id !== 'lime' && id !== 'mist' && id !== 'dark') return '';
   const vars =
     theme?.cssVars && typeof theme.cssVars === 'object' ? theme.cssVars : null;
-  return toneOfHex(groundHexOf(vars?.[`--t-slide-bg-${id}`]));
+  return groundHexOf(vars?.[`--t-slide-bg-${id}`]);
 }
 
 /**

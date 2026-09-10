@@ -15,6 +15,7 @@ overlapping PDF entries and a duplicated "other language" section.
 | Slides        | PDF                     | `pdf-slides.pdf`                          | `renderSlidesToPdfBuffer` (`server/render/pdf.js`, Puppeteer) |
 | Slides        | PNG                     | `png`                                     | `buildSlidesPngExportHtml` (opens in a tab)                   |
 | Slides        | PPTX                    | `pptx`                                    | `buildPptxBuffer`                                             |
+| Slides        | PPTX template           | `pptx-template`                           | `buildThemeTemplateBuffer` (download)                         |
 | Slides        | HTML                    | `html`                                    | `buildStandaloneHtml` (download)                              |
 | Documents     | Text handout            | `pdf`                                     | `buildPrintHtml` (document layout, not slides)                |
 | Documents     | Notes (Markdown / Word) | `notes.md` / `notes.docx`                 | `buildNotesMarkdown` / `buildNotesDocxBuffer`                 |
@@ -67,6 +68,22 @@ stays its own row under Documents.
 ## What the PPTX hands back
 
 Every slide but video travels as one picture, so nothing in the exported file is editable yet. Which branch a slide takes is the type's own `fidelity.pptx` declaration rather than a name the export recognises — see [`slide-type-fidelity.md`](./slide-type-fidelity.md).
+
+## What the theme template hands back
+
+The **PPTX template** row downloads an empty `.pptx` built from the deck's theme (`server/export/pptx-theme.js`). Its promise is deliberately the smaller one: ground, fonts, text colours and logo come from the theme and are applied per slide; it is not a master that restyles an existing deck. That wording is the promise, not a hedge — see D106 in `docs/plans/done/decisions.md` for the decision and the measurement behind it.
+
+The reason is the library. pptxgenjs 4.0.1's `defineSlideMaster` does not write an OOXML master at all; it writes a _layout_, and a placeholder's options are copied into the run properties of every slide built on it rather than inherited from it. Editing the layout afterwards therefore moves nothing that already exists — precisely the handling most people mean by "template". A genuinely restyling template means writing `slideMaster1.xml` by hand alongside pptxgenjs, and is its own piece of work. The word "master" belongs in this file only where it names the layout.
+
+Three consequences are visible in the output, and each is pinned by `tests/export-pptx-theme-master.test.js`:
+
+- **Every placeholder names its own colour.** There is no theme text colour in OOXML: `pptx.theme` carries font faces and nothing else, and a run that names no colour is written as hard-coded black — invisible on a dark ground. Any later layer that writes runs onto these layouts must do the same.
+- **The logo travels as a raster.** pptxgenjs writes an SVG twice: behind the modern `asvg:svgBlip` extension, and as a "PNG" fallback that is the same SVG bytes under a `.png` name. PowerPoint takes the first; everything else draws a broken-image box. The mark is rendered to real PNG bytes here, sized to its own aspect ratio, or left out entirely.
+- **The ground is read, not assumed.** It is the theme's `defaultBackground` when it declares one and the `lime` slot otherwise, resolved through `resolveSlideBgHex` — the same reader the slide surface uses, because `lime` is near-black under `midnight` and white under `deckyard`.
+
+The three layouts are `Title`, `Heading and body` and `Heading, image and body` (`PPTX_LAYOUTS`). Their boxes and type sizes are expressed in the slide's own 1600x900 reference pixels and converted once, so they sit where the theme's padding and type scale put them; `--t-slide-text-scale` is honoured like any other theme value. Two things in the file are the library's, not the theme's: PowerPoint's layout gallery also lists pptxgenjs' own blank `DEFAULT` layout, which the writer always emits first; and the image slot of the third layout is an untyped content placeholder rather than a picture placeholder, because pptxgenjs 4.0.1 never writes `type="pic"` (it maps `image` to `pic` and then looks `pic` up again). PowerPoint offers such a slot for a picture as readily as for text, and a later layer addresses it by name (`image`), so nothing is lost, but the box is not picture-only.
+
+The deck's own PPTX export does not use these layouts yet — it still rasterises every slide but video. Putting slide content onto them is the next piece of work.
 
 ## Speaker notes in the PPTX
 
