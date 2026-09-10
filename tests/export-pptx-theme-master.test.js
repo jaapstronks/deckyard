@@ -19,6 +19,7 @@ import JSZip from 'jszip';
 import {
   PPTX_LAYOUTS,
   buildThemeTemplateBuffer,
+  rasterThemeLogo,
   resolveThemeMaster,
   themeLayoutDefinitions,
 } from '../server/export/pptx-theme.js';
@@ -226,4 +227,51 @@ test('a theme variant ground is read from the variant, not the built-in slots', 
     'FFFFFF',
     "a variant's declared text colour outranks the theme's page text",
   );
+});
+
+test('the boxes of a layout keep clear of each other and of the logo', async () => {
+  // Handoff step 3 of the #1128 review, pinned rather than eyeballed: the
+  // image slot of the third layout must not run into the body beside it, and
+  // the bottom-right mark must sit below every text box on every layout. The
+  // definitions carry inches, so the check needs no package. Two marks are
+  // tried: the theme's real one, and the largest `rasterThemeLogo` can hand
+  // back — the full 150x44 reference-pixel corner box.
+  const theme = await loadDeckTheme(repoRoot, 'midnight');
+  const spec = resolveThemeMaster(theme);
+  const real = await rasterThemeLogo(repoRoot, spec.logoUrl);
+  assert.ok(real, 'midnight ships a local mark');
+  const fullBox = { data: real.data, w: 1.25, h: 0.3667 };
+
+  const rectOf = (o) =>
+    o.placeholder ? o.placeholder.options : o.image ? o.image : null;
+  const overlaps = (a, b) =>
+    a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+
+  for (const logo of [real, fullBox]) {
+    for (const layout of themeLayoutDefinitions(spec, logo)) {
+      const boxes = layout.objects.map(rectOf).filter(Boolean);
+      const names = layout.objects
+        .filter((o) => o.placeholder)
+        .map((o) => o.placeholder.options.name);
+      assert.equal(
+        new Set(names).size,
+        names.length,
+        `layout "${layout.title}": a placeholder name is the address PR 3 writes to, so it must be unique`,
+      );
+      for (const b of boxes) {
+        assert.ok(
+          b.x >= 0 && b.y >= 0 && b.x + b.w <= 13.334 && b.y + b.h <= 7.501,
+          `layout "${layout.title}": a box runs off the slide`,
+        );
+      }
+      for (let i = 0; i < boxes.length; i++) {
+        for (let j = i + 1; j < boxes.length; j++) {
+          assert.ok(
+            !overlaps(boxes[i], boxes[j]),
+            `layout "${layout.title}": boxes ${i} and ${j} overlap`,
+          );
+        }
+      }
+    }
+  }
 });
