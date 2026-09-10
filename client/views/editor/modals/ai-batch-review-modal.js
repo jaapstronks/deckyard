@@ -49,6 +49,7 @@ export function openAiBatchReviewModal({
       'Nothing has been added yet. Inspect the proposed slides, switch types where useful, then accept or adjust the batch.',
     ),
     modalClass: 'modal-ai-review',
+    fill: true,
     // The batch only exists in this modal until it's accepted: guard the
     // implicit close paths (Esc, backdrop, the header Close button) with a
     // confirm. The explicit Discard/Accept buttons close directly.

@@ -37,6 +37,7 @@ export function openImageKitPicker({
   const modal = createModal({
     title,
     modalClass: 'imagekit-modal',
+    fill: true,
     onClose: () => {
       closed = true;
       unlockScroll();

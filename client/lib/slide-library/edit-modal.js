@@ -139,6 +139,7 @@ export function openEditModal({
   const modal = createModal({
     title: t('slideLibrary.edit.title', 'Edit slide'),
     modalClass: 'ps-modal ps-lib-edit-modal',
+    fill: true,
     closeLabel: t('common.cancel', 'Cancel'),
     onClose: (result) => {
       if (previewTimeout) clearTimeout(previewTimeout);

@@ -3,17 +3,11 @@
   width: min(1200px, 100%);
   max-height: 86vh;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
 }
 
 /* Header, status bar, layout and credit row are stacked by the modal itself;
-   `.modal-content` is only the growing region between them. */
+   `.modal-content` is only the growing region between them (`fill: true`). */
 .modal.image-library-modal > .modal-content {
-  flex: 1 1 auto;
-  min-height: 0;
-  max-height: none;
-  overflow: hidden;
   gap: 0;
   padding: 0;
 }

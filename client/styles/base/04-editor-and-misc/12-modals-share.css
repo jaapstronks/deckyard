@@ -19,19 +19,12 @@
    screen there. The body below keeps doing the scrolling, as it already did. */
 .share-modal {
   height: min(80vh, 664px);
-  display: flex;
-  flex-direction: column;
   overflow: hidden;
 }
 
-/* The dialog lays itself out as a flex column, so `.modal-content` is the
-   growing region and `.share-modal-body` inside it does the scrolling — not
-   the generic 70vh cap. */
+/* `fill: true` makes `.modal-content` the growing region; `.share-modal-body`
+   inside it does the scrolling. */
 .modal.share-modal > .modal-content {
-  flex: 1 1 auto;
-  min-height: 0;
-  max-height: none;
-  overflow: hidden;
   padding-right: 0;
 }
 

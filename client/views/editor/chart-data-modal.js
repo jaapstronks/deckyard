@@ -92,6 +92,7 @@ export function openChartDataModal({
   const modal = createModal({
     title: t('editor.chart.editDataTitle', 'Chart data'),
     modalClass: 'chart-data-modal',
+    fill: true,
     isDirty: () => latest !== raw,
     confirmMessage: t(
       'editor.chart.discardConfirm',

@@ -461,19 +461,11 @@
   white-space: nowrap;
 }
 
-/* This is the dialog's `.modal-content`. The generic rule for that class lives
-   in the modals base layer (`04-editor-and-misc/10-modals-base.css`), which
-   still imports after this file, so match its specificity here. */
-.modal-content.ps-lib-lightbox-body {
-  flex: 1;
-  min-height: 0;
+/* The dialog's `.modal-content`; `fill: true` gives it the height. */
+.ps-lib-lightbox-body {
   padding: var(--ps-space-3);
   padding-top: 0;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
   gap: 0;
-  max-height: none;
 }
 
 .ps-lib-lightbox-stage {
@@ -759,16 +751,13 @@
   flex-direction: column;
 }
 
-/* Also a `.modal-content` — same load-order note as the lightbox body. */
-.modal-content.ps-lib-edit-body {
-  flex: 1;
-  min-height: 0;
+/* Also a `.modal-content`; `fill: true` gives it the height, and the two
+   columns replace the base layer's flex column. */
+.modal.is-fill > .ps-lib-edit-body {
   padding: var(--ps-space-4);
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--ps-space-6);
-  overflow: hidden;
-  max-height: none;
 }
 
 .ps-lib-edit-form {

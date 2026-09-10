@@ -2,16 +2,10 @@
   width: min(1180px, 100%);
   max-height: calc(100vh - 32px);
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
 }
 
-/* The dialog is a flex column; `.modal-content` grows and the grid scrolls. */
+/* `fill: true` grows `.modal-content`; the grid inside it scrolls. */
 .modal.imagekit-modal > .modal-content {
-  flex: 1 1 auto;
-  min-height: 0;
-  max-height: none;
-  overflow: hidden;
   gap: 0;
 }
 

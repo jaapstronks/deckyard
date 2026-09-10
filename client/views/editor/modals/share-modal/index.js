@@ -82,6 +82,7 @@ export function openShareModal({
   const modal = createModal({
     title: t('share.modal.title', 'Share'),
     modalClass: 'share-modal',
+    fill: true,
     onClose: () => {
       unlockScroll();
       collaborators?.detach?.();

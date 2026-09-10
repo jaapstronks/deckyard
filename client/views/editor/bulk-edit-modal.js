@@ -48,6 +48,7 @@ export function createBulkEditModal({
     const modal = createModal({
       title: t('editor.bulkEdit.title', 'Edit all text'),
       modalClass: 'bulk-edit-modal',
+      fill: true,
       onClose: () => {
         if (previewRaf) cancelAnimationFrame(previewRaf);
         previewRaf = 0;

@@ -8,14 +8,12 @@
 .modal.modal-ai-review {
   width: min(96vw, 1180px);
   max-height: 92vh;
-  display: flex;
-  flex-direction: column;
 }
 
+/* One long grid, so the body is the scroller itself. */
 .modal.modal-deck-grid .modal-content,
 .modal.modal-ai-review .modal-content {
   overflow-y: auto;
-  min-height: 0;
 }
 
 .deck-grid {

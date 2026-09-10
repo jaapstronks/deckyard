@@ -169,6 +169,7 @@ export function openJsonDebugModal({
   const modal = createModal({
     title: t('admin.jsonDebug.title', 'Slide JSON Debug'),
     modalClass: 'json-debug-modal',
+    fill: true,
     closeButton: 'icon',
     isDirty: () => hasUnsavedChanges,
     confirmMessage: t(

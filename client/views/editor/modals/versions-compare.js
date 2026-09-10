@@ -40,6 +40,7 @@ export function openVersionCompareModal({
   const modal = createPromiseModal({
     title: t('editor.versions.compare.title', 'Compare versions'),
     modalClass: 'modal-wide modal-compare',
+    fill: true,
     closeOnBackdrop: true,
   });
 

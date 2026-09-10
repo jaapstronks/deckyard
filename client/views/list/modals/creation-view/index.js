@@ -72,6 +72,7 @@ export function openCreationView({
   const modal = createModal({
     title: t('list.creationView.title', 'New presentation'),
     modalClass: 'creation-view',
+    fill: true,
     closeButton: false,
     isDirty: () => isDirty(),
     confirmMessage: t(

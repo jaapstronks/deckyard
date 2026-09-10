@@ -320,6 +320,7 @@ function openTableEditorModal({
     title: t('editor.table.edit', 'Edit table'),
     hint: t('editor.table.editHint', 'Changes apply to the slide immediately.'),
     modalClass: 'table-editor-modal',
+    fill: true,
     // Sync the compact sidebar grid with whatever happened in the modal.
     onClose: () => rerenderEditor?.(),
   });
