@@ -11,7 +11,7 @@
  *    `setUiLocale()` lives in `./api.js`, because the docs recipes turned out
  *    to need it too.
  * 2. **A poll only has votes inside a presentation session.** The editor
- *    preview always renders zeroes because `getPollInteractionAggregate` is
+ *    preview always renders zeroes because `getInteractionAggregate` is
  *    session-scoped — so a live-result shot seeds a session, pushes live state
  *    onto the poll slide, and casts real votes through the same route an
  *    audience phone uses.
@@ -179,6 +179,45 @@ async function waitForPollTotal(
   }
   throw new Error(
     `Poll tally never reached ${total} (last saw ${seen}) for slide ${slideId}`,
+  );
+}
+
+/**
+ * Wait until the presenter's stage shows the tally that was already seeded.
+ *
+ * The same wait for both shots that photograph a live poll, and the one that
+ * fails when either of them flakes — so it reports what it saw. A bare
+ * `Waiting failed: 20000ms exceeded` cannot tell "the stage never rendered"
+ * from "the stage rendered and the tally stayed at zero", which is the whole
+ * question, and it was all the unattended run of 2026-09-06 left behind.
+ *
+ * @param {import('puppeteer-core').Page} page
+ * @param {number} expected Total votes seeded, already confirmed server-side.
+ * @param {number} [timeoutMs]
+ * @returns {Promise<void>}
+ */
+export async function waitForStageTally(page, expected, timeoutMs = 20_000) {
+  const read = () =>
+    page.evaluate(() => {
+      const el = document.querySelector('.deck-stage-inner [data-poll-total]');
+      if (!el) return null;
+      return String(el.textContent || '');
+    });
+  const deadline = Date.now() + timeoutMs;
+  let seen = null;
+  while (Date.now() < deadline) {
+    seen = await read().catch(() => null);
+    if (seen != null) {
+      const n = Number(seen.replace(/\D+/g, ''));
+      if (n === expected) return;
+    }
+    await new Promise((r) => setTimeout(r, 200));
+  }
+  throw new Error(
+    `Stage tally never reached ${expected} within ${timeoutMs}ms — ` +
+      (seen == null
+        ? 'the [data-poll-total] element never rendered on the stage'
+        : `last read "${seen.trim()}"`),
   );
 }
 
@@ -466,6 +505,30 @@ export const MARKETING_VIEWPORT = {
   height: 800,
   deviceScaleFactor: 2,
 };
+
+/**
+ * The viewport a **modal** shot uses: the marketing frame, made tall enough
+ * that a dialog capped in viewport units is entirely in frame.
+ *
+ * A modal scrolls inside its own `.modal-content` once it outgrows a fraction
+ * of the viewport height — 70vh in the base layer since the wrapper landed in
+ * the v1.27 series. A shot clipped to the dialog photographs only what is
+ * *rendered*, so on an 800-high viewport the tall dialogs end mid-content: the
+ * share shot lost the very link it exists to show, and the
+ * fill-from-translation shot lost the "Apply" button the copy beside it tells
+ * the reader to click. Neither failure is visible in a capture run — the PNG
+ * is written, the registry is baselined, the run reports success — which is
+ * why `refuseHiddenOverflow()` in the runner now makes it one.
+ *
+ * 1200 leaves room for the tallest dialog either shot reaches. The window
+ * behind the dialog is never in frame, so widening the viewport costs the shot
+ * nothing — which is why this is the fix rather than a per-dialog CSS
+ * exception.
+ */
+export const MODAL_SHOT_VIEWPORT = Object.freeze({
+  ...MARKETING_VIEWPORT,
+  height: 1200,
+});
 
 /** The rendered slide inside the presenter stage — the "pure slide" clip target. */
 export const PRESENTER_SLIDE = '.deck-stage-inner .deck-slide';

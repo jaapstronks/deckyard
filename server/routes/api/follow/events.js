@@ -2,6 +2,7 @@ import { attachSessionSseClient } from '../../../storage/live-sessions/index.js'
 import { sseWrite, openSseStream } from '../../../utils/sse.js';
 import { followAudienceScope } from './helpers.js';
 import { subscribeFollowStatus } from './status-ticker.js';
+import { sendInteractionCatchUp } from '../interaction-catch-up.js';
 
 export async function handleFollowEvents(
   { repoRoot, req, res },
@@ -44,6 +45,11 @@ export async function handleFollowEvents(
           state.sessionId,
           res,
         );
+        await sendInteractionCatchUp(followAudienceScope(repoRoot), {
+          sessionId: state.sessionId,
+          slideId: state.slideId || '',
+          res,
+        });
       }
     } else {
       detachSession();

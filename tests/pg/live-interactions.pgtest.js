@@ -47,7 +47,7 @@ import {
 import {
   ensureLikertInteractionForSlide,
   ensurePollInteractionForSlide,
-  getPollInteractionAggregate,
+  getInteractionAggregate,
   resetLikertInteraction,
   resetPollInteraction,
   setLikertInteractionStatus,
@@ -305,6 +305,46 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
     assert.deepEqual(await listQuestions(testScope(), sessionId), []);
   });
 
+  it('hands a late client the tally it missed, and nothing on a plain slide', async () => {
+    // Every other route to this payload is a push. A client that attaches
+    // after the votes are in — a presenter reloading mid-poll, a phone that
+    // joins late — has to be able to ask, or it renders "Total: 0" until
+    // somebody votes again.
+    await ensurePollInteractionForSlide(testScope(), sessionId, {
+      slideId: 'poll-catch-up',
+      optionCount: 3,
+    });
+    await votePollInteraction(testScope(), sessionId, {
+      slideId: 'poll-catch-up',
+      deviceId: 'dev-a',
+      optionIndex: 1,
+      optionCount: 3,
+    });
+    coldStart();
+
+    const agg = await getInteractionAggregate(testScope(), sessionId, {
+      slideId: 'poll-catch-up',
+    });
+    assert.equal(agg.total, 1);
+    assert.deepEqual(agg.totals, [0, 1, 0]);
+    // The crowd, not the reader: the follower's own answer rides on a device
+    // cookie the SSE response can no longer set.
+    assert.equal(agg.myVote, undefined);
+
+    // A slide nobody opened an interaction on has nothing to catch up on, and
+    // says so with null rather than an empty tally.
+    assert.equal(
+      await getInteractionAggregate(testScope(), sessionId, {
+        slideId: 'an-ordinary-slide',
+      }),
+      null,
+    );
+    assert.equal(
+      await getInteractionAggregate(testScope(), sessionId, { slideId: '' }),
+      null,
+    );
+  });
+
   it('answers "no such question" for a malformed id instead of erroring', async () => {
     // The column is uuid; a path segment is whatever the client typed.
     assert.equal(await getQuestion(testScope(), sessionId, 'not-a-uuid'), null);
@@ -338,7 +378,7 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
     });
     coldStart();
 
-    const agg = await getPollInteractionAggregate(testScope(), sessionId, {
+    const agg = await getInteractionAggregate(testScope(), sessionId, {
       slideId: 'poll-1',
       deviceId: 'dev-a',
       optionCount: 3,
@@ -423,7 +463,7 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
     });
 
     // The deck was edited mid-session: four options became two.
-    const agg = await getPollInteractionAggregate(testScope(), sessionId, {
+    const agg = await getInteractionAggregate(testScope(), sessionId, {
       slideId: 'poll-1',
       optionCount: 2,
     });

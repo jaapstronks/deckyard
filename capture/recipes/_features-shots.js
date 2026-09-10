@@ -21,6 +21,7 @@ import {
   MARKETING_LANGS,
   MARKETING_PUBLIC_ORIGIN,
   MARKETING_VIEWPORT,
+  MODAL_SHOT_VIEWPORT,
   PRESENTER_CONSOLE_TARGET_SECONDS,
   dismissPresenterStartGate,
   pinJoinCode,
@@ -28,6 +29,7 @@ import {
   seedPollVotes,
   stubTranslateFields,
   startLiveSession,
+  waitForStageTally,
 } from '../lib/marketing.js';
 import {
   closeCommentSeedStorage,
@@ -186,16 +188,8 @@ export function presenterViewShot(lang) {
       // The tally arrives over the interaction poll after the stage renders,
       // so wait for the seeded total on the stage itself: shooting early gets
       // the zero state, and a poll at zero is the timeline slide with bars.
-      await page.waitForFunction(
-        (expected) => {
-          const el = document.querySelector(
-            '.deck-stage-inner [data-poll-total]',
-          );
-          if (!el) return false;
-          const n = Number((el.textContent || '').replace(/\D+/g, ''));
-          return n === expected;
-        },
-        { timeout: 20_000 },
+      await waitForStageTally(
+        page,
         MARKETING_POLL_VOTES.reduce((a, b) => a + b, 0),
       );
       // Stop the stopwatch the presentation started, then zero it: reset alone
@@ -334,12 +328,15 @@ export function shareLinkRulesShot(lang) {
     id: `share-link-rules-${suffix}`,
     output: `share-link-rules-${suffix}.png`,
     registryPath: `public/images/marketing/share-link-rules-${suffix}.png`,
-    // Taller than the marketing default on purpose: the dialog is capped at
-    // 80vh and scrolls internally, so on an 800-high viewport the shot ends
-    // halfway through the very link it is meant to show. The shot is clipped
-    // to the dialog anyway, so the window behind it is never in frame.
-    viewport: { ...MARKETING_VIEWPORT, height: 1200 },
+    viewport: MODAL_SHOT_VIEWPORT,
     clip: '.modal.share-modal',
+    // The share dialog holds one height while it fills itself in (#1105):
+    // `height: min(80vh, 664px)`, with `.share-modal-body` scrolling whatever
+    // does not fit. Above 830px of viewport that is a fixed 664px, so no
+    // viewport makes the last rules visible — the dialog is like this for
+    // every user, and the shot photographs what they see.
+    clipMayScroll:
+      'the dialog is capped at 664px and scrolls its body at every viewport size',
     localStorage: EDITOR_LOCAL_STORAGE,
 
     async state(api) {
@@ -440,7 +437,7 @@ export function aiFillsFieldsShot(lang) {
     id: `ai-fills-fields-${suffix}`,
     output: `ai-fills-fields-${suffix}.png`,
     registryPath: `public/images/marketing/ai-fills-fields-${suffix}.png`,
-    viewport: MARKETING_VIEWPORT,
+    viewport: MODAL_SHOT_VIEWPORT,
     clip: '.modal.translate-slide-modal',
     localStorage: EDITOR_LOCAL_STORAGE,
 

@@ -29,6 +29,18 @@
  *                                   "pure slide" shots where the surrounding app chrome
  *                                   is not the subject — the presenter toolbar around a
  *                                   live poll, say. Mutually exclusive with `fullPage`.
+ * @property {string} [clipMayScroll] Why this clip's subject is allowed to hide
+ *                                   part of itself behind its own scrollbar.
+ *                                   A clipped shot photographs what is
+ *                                   rendered, so a scrolling box inside the
+ *                                   clip is content the PNG loses without
+ *                                   saying so — the runner refuses that by
+ *                                   default. Set this only when the scrolling
+ *                                   is the app's own behaviour at every
+ *                                   viewport size (a dialog with a fixed pixel
+ *                                   height, say), never to get a shot past the
+ *                                   check; the string is the reason, so
+ *                                   declaring it costs an explanation.
  * @property {(api: import('./api.js').ApiClient, ctx: object) => Promise<void>} [cleanup]
  *                                   Optional teardown after the shot.
  * @property {'screenshot' | 'video'} [kind] Defaults to `screenshot`. The kind
