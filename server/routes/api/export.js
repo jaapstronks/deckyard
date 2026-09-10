@@ -4,6 +4,7 @@ import { buildSlidesPdfHtml } from '../../export/pdf-slides.js';
 import { buildSlidesPngExportHtml } from '../../export/png-slides.js';
 import { buildSlidesPngZipBuffer } from '../../export/png-zip.js';
 import { buildPptxBuffer } from '../../export/pptx.js';
+import { buildThemeTemplateBuffer } from '../../export/pptx-theme.js';
 import { buildHandoffZipBuffer } from '../../export/handoff-zip.js';
 import { buildDeckBundle, DECK_MIMETYPE } from '../../export/deck-bundle.js';
 import {
@@ -141,6 +142,20 @@ const exportRoutes = [
       ctx.pptxWarnings = result.warnings;
       return result.buffer;
     },
+  }),
+
+  // The theme as a PPTX template: the layouts only, no slides (B264, D106).
+  // A separate route rather than a flag on `pptx` because the artifact is a
+  // different thing — a starting document for a theme, not this deck in another
+  // format. It still hangs off the deck, because the deck is what names the
+  // theme.
+  createExportRoute({
+    pattern: /^\/api\/presentations\/([^/]+)\/export\/pptx-template$/,
+    contentType:
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    extension: '-template.pptx',
+    buildContent: async (ctx, { repoRoot }) =>
+      buildThemeTemplateBuffer(repoRoot, ctx.theme),
   }),
 
   // Handoff ZIP export (supports async via queue)

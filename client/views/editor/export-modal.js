@@ -72,6 +72,18 @@ function exportGroups() {
           open: 'tab',
         },
         {
+          key: 'pptxTemplate',
+          name: t('editor.export.pptxTemplate', 'PPTX template'),
+          desc: t(
+            'editor.export.descPptxTemplate',
+            "Empty deck with the theme's layouts",
+          ),
+          icon: 'layout-template',
+          color: 'amber',
+          path: 'pptx-template',
+          open: 'download',
+        },
+        {
           key: 'html',
           name: 'HTML',
           desc: t('editor.export.descHtml', 'Self-contained web page'),
