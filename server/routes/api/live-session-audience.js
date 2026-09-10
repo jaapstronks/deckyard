@@ -25,6 +25,7 @@ import {
   attachSessionSseClient,
   getLiveSession,
 } from '../../storage/live-sessions/index.js';
+import { sendInteractionCatchUp } from './interaction-catch-up.js';
 import { getPresentation } from '../../storage/presentations/index.js';
 import { customThemeConfig } from '../../utils/themes.js';
 import { updateSlideNotes } from '../../storage/presentations/slide-notes.js';
@@ -132,6 +133,11 @@ async function handleSessionEvents({ repoRoot, req, res }, sessionId) {
   const stream = openSseStream(req, res);
   if (!stream.ok) return true;
   await attachSessionSseClient(companionScope(repoRoot), sessionId, res);
+  await sendInteractionCatchUp(companionScope(repoRoot), {
+    sessionId,
+    slideId: s.state?.slideId || '',
+    res,
+  });
   return true;
 }
 

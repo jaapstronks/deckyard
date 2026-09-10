@@ -18,10 +18,9 @@ import {
 } from './helpers.js';
 import {
   ensurePollInteractionForSlide,
-  getPollInteractionAggregate,
+  getInteractionAggregate,
   votePollInteraction,
   ensureLikertInteractionForSlide,
-  getLikertInteractionAggregate,
   voteLikertInteraction,
 } from '../../../storage/interactions.js';
 import {
@@ -156,25 +155,16 @@ export async function handleFollowInteractionsCurrent(
             deviceId: dev.id,
           },
         )
-      : type === 'likert'
-        ? await getLikertInteractionAggregate(
-            followAudienceScope(repoRoot),
-            state.sessionId,
-            {
-              slideId,
-              deviceId: dev.id,
-              optionCount,
-            },
-          )
-        : await getPollInteractionAggregate(
-            followAudienceScope(repoRoot),
-            state.sessionId,
-            {
-              slideId,
-              deviceId: dev.id,
-              optionCount,
-            },
-          );
+      : // Poll and likert are one read: the kind is in the interaction row.
+        await getInteractionAggregate(
+          followAudienceScope(repoRoot),
+          state.sessionId,
+          {
+            slideId,
+            deviceId: dev.id,
+            optionCount,
+          },
+        );
 
   serveJson(
     res,
@@ -265,25 +255,16 @@ export async function handleFollowInteractionState(
             deviceId: dev.id,
           },
         )
-      : type === 'likert'
-        ? await getLikertInteractionAggregate(
-            followAudienceScope(repoRoot),
-            state.sessionId,
-            {
-              slideId: requested,
-              deviceId: dev.id,
-              optionCount,
-            },
-          )
-        : await getPollInteractionAggregate(
-            followAudienceScope(repoRoot),
-            state.sessionId,
-            {
-              slideId: requested,
-              deviceId: dev.id,
-              optionCount,
-            },
-          );
+      : // Poll and likert are one read: the kind is in the interaction row.
+        await getInteractionAggregate(
+          followAudienceScope(repoRoot),
+          state.sessionId,
+          {
+            slideId: requested,
+            deviceId: dev.id,
+            optionCount,
+          },
+        );
 
   serveJson(
     res,

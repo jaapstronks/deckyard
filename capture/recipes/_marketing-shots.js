@@ -24,6 +24,7 @@ import {
   rewriteJoinOrigin,
   seedPollVotes,
   startLiveSession,
+  waitForStageTally,
 } from '../lib/marketing.js';
 import {
   MARKETING_POLL_VOTES,
@@ -97,7 +98,7 @@ export function editorFormShot(lang) {
  * result and the counter showing.
  *
  * Cannot be shot from the editor: the editor preview of a `poll-slide` always
- * renders `Total: 0` with empty bars, because `getPollInteractionAggregate` is
+ * renders `Total: 0` with empty bars, because `getInteractionAggregate` is
  * scoped to a presentation session. So this one opens a session, parks it on
  * the poll slide, and casts {@link MARKETING_POLL_VOTES} through the same
  * public route an audience phone uses.
@@ -143,16 +144,8 @@ export function pollLiveShot(lang) {
       // Results arrive over the interaction poll after the stage renders, so
       // wait for the tally itself rather than for the slide element: shooting
       // early yields the zero state this shot exists to replace.
-      await page.waitForFunction(
-        (expected) => {
-          const el = document.querySelector(
-            '.deck-stage-inner [data-poll-total]',
-          );
-          if (!el) return false;
-          const n = Number((el.textContent || '').replace(/\D+/g, ''));
-          return n === expected;
-        },
-        { timeout: 20_000 },
+      await waitForStageTally(
+        page,
         MARKETING_POLL_VOTES.reduce((a, b) => a + b, 0),
       );
       // The scan card beside the bars prints the session's two follow codes,
