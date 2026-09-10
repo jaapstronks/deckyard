@@ -24,6 +24,14 @@
  *  4. the scroll chain under it survives — `min-height: 0` on both the content
  *     region and the body, and the body still scrolls
  *
+ * The first half of check 4 moved out of this stylesheet when the "dialog owns
+ * its height" shape got a name: `createModal({ fill: true })` makes the content
+ * region the shrinkable growing one, for the eleven dialogs that each used to
+ * spell it out. So it is asserted where it now lives — the base layer — plus
+ * the call site that opts in, which keeps the guarantee end to end instead of
+ * trusting that the option was passed. Clipping stayed here: `fill` says who
+ * grows, not who clips, and the dialogs differ on that.
+ *
  * Run with: node --test tests/share-modal-stable-height.test.js
  */
 
@@ -40,6 +48,14 @@ const repoRoot = path.resolve(
 const SHARE_CSS = path.join(
   repoRoot,
   'client/styles/base/04-editor-and-misc/12-modals-share.css',
+);
+const MODALS_BASE_CSS = path.join(
+  repoRoot,
+  'client/styles/base/04-editor-and-misc/10-modals-base.css',
+);
+const SHARE_MODAL_JS = path.join(
+  repoRoot,
+  'client/views/editor/modals/share-modal/index.js',
 );
 
 /**
@@ -68,6 +84,8 @@ function ruleBody(css, selector) {
 }
 
 const css = stripComments(await fs.readFile(SHARE_CSS, 'utf8'));
+const baseCss = stripComments(await fs.readFile(MODALS_BASE_CSS, 'utf8'));
+const shareJs = await fs.readFile(SHARE_MODAL_JS, 'utf8');
 
 describe('share dialog height', () => {
   const modal = ruleBody(css, '.share-modal');
@@ -100,9 +118,14 @@ describe('share dialog height', () => {
 
 describe('share dialog scroll chain', () => {
   it('lets the content region shrink inside the fixed height', () => {
-    const content = ruleBody(css, '.modal.share-modal > .modal-content');
     assert.match(
-      content,
+      shareJs,
+      /fill:\s*true/,
+      'the share dialog must be opened with `fill: true`; that is what makes ' +
+        'the content region the growing, shrinkable one',
+    );
+    assert.match(
+      ruleBody(baseCss, '.modal.is-fill > .modal-content'),
       /min-height:\s*0/,
       'the content region needs `min-height: 0`, or the flex child refuses to shrink and the footer leaves the screen',
     );

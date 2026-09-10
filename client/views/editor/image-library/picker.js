@@ -139,6 +139,7 @@ export function openImageLibraryPicker({
   const modal = createModal({
     title,
     modalClass: 'image-library-modal',
+    fill: true,
     onClose: () => {
       closed = true;
       unlockScroll();

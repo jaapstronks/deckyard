@@ -138,14 +138,9 @@
   margin: 0;
 }
 
-/* `.creation-view-body` is the dialog's `.modal-content`: rail + pane side by
-   side, growing, with the pane doing its own scrolling. */
-.creation-view-body {
-  flex: 1 1 auto;
-  min-height: 0;
-  max-height: none;
-  overflow: hidden;
-  display: flex;
+/* `.creation-view-body` is the dialog's `.modal-content` (`fill: true`): rail
+   and pane side by side, with the pane doing its own scrolling. */
+.modal.is-fill > .creation-view-body {
   flex-direction: row;
   gap: 0;
   padding: 0;
@@ -903,19 +898,18 @@
 .modal.modal-wide {
   width: min(900px, 100%);
   max-height: min(90vh, 800px);
-  display: flex;
-  flex-direction: column;
 }
 
 .modal.modal-compare {
   width: min(1000px, 100%);
 }
 
-.modal-wide .modal-content,
-.modal-compare .modal-content {
+/* A list of versions, so the body is the scroller itself — said against
+   `.modal.is-fill` so it outranks the base layer's `overflow: hidden` rather
+   than tying with it. */
+.modal.is-fill.modal-wide > .modal-content,
+.modal.is-fill.modal-compare > .modal-content {
   overflow-y: auto;
-  flex: 1;
-  min-height: 0;
 }
 
 /* Version Preview Grid */

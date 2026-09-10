@@ -345,22 +345,11 @@ table.csv-grid {
 .modal.chart-data-modal {
   width: min(1040px, calc(100% - 32px));
   max-height: min(90vh, 860px);
-  display: flex;
-  flex-direction: column;
   gap: var(--ps-space-4);
 }
+/* `fill: true` does the growing; each body column scrolls internally. */
 .modal.chart-data-modal .modal-content {
-  flex: 1 1 auto;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
   gap: var(--ps-space-4);
-  /* Override the base .modal-content (max-height:70vh + overflow-y:auto, which
-     also computes overflow-x to auto): the modal itself caps height and each
-     body column scrolls internally, so the content wrapper must not become its
-     own (partly horizontal) scroll container. */
-  max-height: none;
-  overflow: hidden;
   padding-right: 0;
 }
 
@@ -820,10 +809,12 @@ table.csv-grid {
 .modal.table-editor-modal {
   width: min(1100px, 100%);
   max-height: min(92vh, 900px);
-  display: flex;
-  flex-direction: column;
 }
-.modal.table-editor-modal .modal-content {
+/* The grid is one wide block, so the body is the scroller rather than handing
+   the scrolling to a child — both axes. Written against `.modal.is-fill` so it
+   outranks the base layer's `overflow: hidden` on specificity: this file
+   imports *before* base.css, so an equally specific rule would lose. */
+.modal.is-fill.table-editor-modal > .modal-content {
   overflow: auto;
 }
 .table-editor-modal-grid {

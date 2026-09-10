@@ -37,6 +37,7 @@ export function openDeckOverviewModal({
       { count },
     ),
     modalClass: 'modal-deck-grid',
+    fill: true,
     onClose: () => grid?.detach(),
   });
 

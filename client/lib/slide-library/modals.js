@@ -59,6 +59,7 @@ export function createSlideLibraryModals({
     const modal = createModal({
       title: titleText,
       modalClass: 'ps-modal ps-lib-lightbox-modal',
+      fill: true,
       onClose: () => {
         window.removeEventListener('resize', updateScale);
         tagEditor.detach?.();

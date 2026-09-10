@@ -6,19 +6,6 @@
   width: min(1680px, calc(100vw - 48px));
   max-width: none;
   height: min(920px, calc(100vh - 64px));
-  display: flex;
-  flex-direction: column;
-}
-
-.bulk-edit-modal .modal-content {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  /* The base .modal-content caps itself at 70vh and scrolls; here the modal
-     shell owns the height and only the form pane scrolls. */
-  max-height: none;
-  overflow: hidden;
 }
 
 .bulk-edit-hint {

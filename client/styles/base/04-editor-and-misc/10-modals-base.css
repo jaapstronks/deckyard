@@ -25,8 +25,7 @@
 
 /* The dialog's content region, built by `createModal`. It is the base layer's
    own structure, so it belongs here: putting it in a late-loading feature file
-   made every earlier single-class override lose on load order, which is why
-   four call sites had to double up as `.modal-content.<class>`. */
+   made every earlier single-class override lose on load order. */
 .modal-content {
   display: flex;
   flex-direction: column;
@@ -34,6 +33,35 @@
   max-height: 70vh;
   overflow-y: auto;
   padding-right: var(--ps-space-2);
+}
+
+/* `createModal({ fill: true })`: the dialog owns its own height and the content
+   region fills what the header leaves.
+
+   The default above is right for a form or a confirmation — as tall as its
+   content, capped, scrolling. It is wrong for a grid, an editor or an iframe:
+   the flex chain stops at the wrapper and the cap bites two levels above the
+   thing that should be growing. Eleven dialogs used to undo it themselves, in
+   ten stylesheets and about as many spellings, and a fork that built the same
+   kind of dialog hit both halves of it in one evening (ciiic-slides #133,
+   #134).
+
+   Deliberately no height and no clipping: how tall a dialog is, and whether it
+   clips, belong to that dialog and differ (90vh, 86vh, min(920px, 100vh - 64px);
+   the deck grid lets a tile's menu escape, the share dialog does not). This
+   rule only says who does the growing. A body that scrolls itself rather than
+   handing the scrolling to its children says `overflow-y: auto` in its own
+   stylesheet. */
+.modal.is-fill {
+  display: flex;
+  flex-direction: column;
+}
+
+.modal.is-fill > .modal-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow: hidden;
 }
 
 /* Confirm/prompt action rows live inside .modal-content, which reserves a

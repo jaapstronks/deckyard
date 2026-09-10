@@ -309,6 +309,15 @@ export function createOverlay(options = {}) {
  * @param {string} options.title - Modal title text
  * @param {string} [options.hint] - Optional hint text below title
  * @param {string} [options.modalClass] - Additional CSS class for the modal
+ * @param {boolean} [options.fill=false] - The dialog owns its own height, and
+ *   `.modal-content` becomes the region that fills what the header leaves.
+ *   Without it a dialog is as tall as its content, capped at 70vh, and the
+ *   content region scrolls — right for a form or a confirmation, wrong for a
+ *   grid, an editor or an iframe, which need the flex chain to reach them and
+ *   must not meet a cap two levels up. Say how tall the dialog is in its own
+ *   stylesheet (`max-height`, `height`); this only says who does the growing.
+ *   A body that should scroll itself rather than hand the scrolling to its
+ *   children adds `overflow-y: auto` there too.
  * @param {true|false|HTMLElement} [options.header=true] - `true` builds the
  *   standard header (title + close button); `false` renders no header (the
  *   title, when given, becomes the dialog's `aria-label`); an element is used
@@ -331,6 +340,7 @@ export function createModal(options = {}) {
     title: titleText,
     hint: hintText,
     modalClass,
+    fill = false,
     header: headerOption = true,
     closeButton = 'text',
     closeLabel = t('common.close', 'Close'),
@@ -341,7 +351,9 @@ export function createModal(options = {}) {
     confirmMessage,
   } = options;
 
-  const modalClasses = ['modal', modalClass].filter(Boolean).join(' ');
+  const modalClasses = ['modal', fill && 'is-fill', modalClass]
+    .filter(Boolean)
+    .join(' ');
   const modalId = `modal-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
   const builtHeader = headerOption === true;
@@ -658,6 +670,8 @@ export function createPromiseModal(options = {}) {
  * @param {HTMLElement} options.root - Root element to append modal to
  * @param {string} [options.title] - Modal title
  * @param {string} [options.className] - Additional CSS class (maps to modalClass)
+ * @param {boolean} [options.fill=false] - The dialog owns its own height; see
+ *   {@link createModal}
  * @param {boolean} [options.closeOnBackdrop=true] - Close when clicking backdrop
  * @param {boolean} [options.closeOnEscape=true] - Close on Escape key
  * @param {Function} [options.onClose] - Callback when modal closes
@@ -669,6 +683,7 @@ export function createQuickModal({
   root,
   title,
   className,
+  fill = false,
   closeOnBackdrop = true,
   closeOnEscape = true,
   onClose,
@@ -678,6 +693,7 @@ export function createQuickModal({
   const modalApi = createModal({
     title,
     modalClass: className,
+    fill,
     closeOnBackdrop,
     closeOnEscape,
     onClose,
