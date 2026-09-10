@@ -47,8 +47,7 @@ import {
 import {
   ensureLikertInteractionForSlide,
   ensurePollInteractionForSlide,
-  getInteractionCatchUp,
-  getPollInteractionAggregate,
+  getInteractionAggregate,
   resetLikertInteraction,
   resetPollInteraction,
   setLikertInteractionStatus,
@@ -323,7 +322,7 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
     });
     coldStart();
 
-    const agg = await getInteractionCatchUp(testScope(), sessionId, {
+    const agg = await getInteractionAggregate(testScope(), sessionId, {
       slideId: 'poll-catch-up',
     });
     assert.equal(agg.total, 1);
@@ -335,13 +334,13 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
     // A slide nobody opened an interaction on has nothing to catch up on, and
     // says so with null rather than an empty tally.
     assert.equal(
-      await getInteractionCatchUp(testScope(), sessionId, {
+      await getInteractionAggregate(testScope(), sessionId, {
         slideId: 'an-ordinary-slide',
       }),
       null,
     );
     assert.equal(
-      await getInteractionCatchUp(testScope(), sessionId, { slideId: '' }),
+      await getInteractionAggregate(testScope(), sessionId, { slideId: '' }),
       null,
     );
   });
@@ -379,7 +378,7 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
     });
     coldStart();
 
-    const agg = await getPollInteractionAggregate(testScope(), sessionId, {
+    const agg = await getInteractionAggregate(testScope(), sessionId, {
       slideId: 'poll-1',
       deviceId: 'dev-a',
       optionCount: 3,
@@ -464,7 +463,7 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
     });
 
     // The deck was edited mid-session: four options became two.
-    const agg = await getPollInteractionAggregate(testScope(), sessionId, {
+    const agg = await getInteractionAggregate(testScope(), sessionId, {
       slideId: 'poll-1',
       optionCount: 2,
     });

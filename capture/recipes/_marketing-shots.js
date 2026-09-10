@@ -98,7 +98,7 @@ export function editorFormShot(lang) {
  * result and the counter showing.
  *
  * Cannot be shot from the editor: the editor preview of a `poll-slide` always
- * renders `Total: 0` with empty bars, because `getPollInteractionAggregate` is
+ * renders `Total: 0` with empty bars, because `getInteractionAggregate` is
  * scoped to a presentation session. So this one opens a session, parks it on
  * the poll slide, and casts {@link MARKETING_POLL_VOTES} through the same
  * public route an audience phone uses.

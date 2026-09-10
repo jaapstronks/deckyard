@@ -156,42 +156,6 @@ async function aggregateForDevice(slide, deviceId) {
   };
 }
 
-/**
- * The interaction aggregate a client attaching mid-session needs to catch up.
- *
- * Every other route to this payload is a *push*: a vote, a status change, a
- * reset. A client that connects after those have happened — a presenter who
- * reloads their view mid-poll, a second presenter window, a phone that joins
- * once the votes are in — has nothing to render and sits at "Total: 0" until
- * the next vote comes in. The SSE attach snapshot answers that by asking here.
- *
- * Returns `null` when the slide has no interaction row, which is also the
- * answer for a session parked on an ordinary slide: nothing to catch up on.
- *
- * @param {import('./scope.js').StorageScope} scope
- * @param {string} sessionId
- * @param {object} [opts]
- * @param {string} [opts.slideId] The session's current slide.
- * @param {string|null} [opts.deviceId] Whose own answer to include, if any.
- * @returns {Promise<object|null>}
- */
-export async function getInteractionCatchUp(
-  scope,
-  sessionId,
-  { slideId = '', deviceId = null } = {},
-) {
-  toStorageContext(
-    scope,
-    'getInteractionCatchUp',
-    {},
-    { allowCrossOrganization: true },
-  );
-  const sid = String(sessionId || '').trim();
-  const slide = String(slideId || '').trim();
-  if (!sid || !slide) return null;
-  return await getInteractionAggregate(scope, sid, { slideId: slide, deviceId });
-}
-
 async function maybeBroadcast(scope, sessionId, agg) {
   // Fire and forget; this goes to presenter + follow (via attachSessionSseClient).
   try {
@@ -323,6 +287,16 @@ async function ensureInteractionForSlide(
  * Read the aggregate for a slide, optionally reconciling the option count with
  * what the deck says today.
  *
+ * One read for both kinds: which kind a slide is lives in its row, so a reader
+ * that branches on the name reads the same rows twice under two names. It is
+ * also what a client attaching mid-session asks for — every other route to
+ * this payload is a *push* (a vote, a status change, a reset), so a client
+ * that connects after the votes are in has nothing to render and sits at
+ * "Total: 0" until the next vote comes in.
+ *
+ * Returns `null` when the slide has no interaction row, which is the answer
+ * for a session parked on an ordinary slide too: nothing to read.
+ *
  * @param {import('./scope.js').StorageScope} scope
  * @param {string} sessionId
  * @param {object} [opts]
@@ -331,11 +305,17 @@ async function ensureInteractionForSlide(
  * @param {number|null} [opts.optionCount]
  * @returns {Promise<object|null>}
  */
-async function getInteractionAggregate(
+export async function getInteractionAggregate(
   scope,
   sessionId,
   { slideId = '', deviceId = null, optionCount = null } = {},
 ) {
+  toStorageContext(
+    scope,
+    'getInteractionAggregate',
+    {},
+    { allowCrossOrganization: true },
+  );
   let slide = await getInteractionSlide({ sessionId, slideId });
   if (!slide) return null;
   if (
@@ -535,16 +515,6 @@ export async function ensurePollInteractionForSlide(
   return ensureInteractionForSlide(scope, sessionId, { ...opts, type: 'poll' });
 }
 
-export async function getPollInteractionAggregate(scope, sessionId, opts = {}) {
-  toStorageContext(
-    scope,
-    'getPollInteractionAggregate',
-    {},
-    { allowCrossOrganization: true },
-  );
-  return getInteractionAggregate(scope, sessionId, opts);
-}
-
 export async function votePollInteraction(scope, sessionId, opts = {}) {
   toStorageContext(
     scope,
@@ -582,20 +552,6 @@ export async function ensureLikertInteractionForSlide(
     ...opts,
     type: 'likert',
   });
-}
-
-export async function getLikertInteractionAggregate(
-  scope,
-  sessionId,
-  opts = {},
-) {
-  toStorageContext(
-    scope,
-    'getLikertInteractionAggregate',
-    {},
-    { allowCrossOrganization: true },
-  );
-  return getInteractionAggregate(scope, sessionId, opts);
 }
 
 export async function voteLikertInteraction(scope, sessionId, opts = {}) {

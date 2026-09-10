@@ -170,9 +170,12 @@ async function stagePage(recipe, api) {
           timeout: 20_000,
         });
       } catch (e) {
-        throw new Error(await describeMissingSelector(page, recipe.waitFor, e), {
-          cause: e,
-        });
+        throw new Error(
+          await describeMissingSelector(page, recipe.waitFor, e),
+          {
+            cause: e,
+          },
+        );
       }
     }
     if (recipe.action) await recipe.action(page, ctx);
@@ -215,7 +218,9 @@ async function describeMissingSelector(page, selector, cause) {
         `matches=${found}`,
         found ? '(present but not visible)' : '',
         `body=[${roots.join(', ')}]`,
-        err ? `error-on-page="${(err.textContent || '').trim().slice(0, 120)}"` : '',
+        err
+          ? `error-on-page="${(err.textContent || '').trim().slice(0, 120)}"`
+          : '',
       ]
         .filter(Boolean)
         .join(' ');
@@ -262,12 +267,6 @@ async function recordOne(recipe, api, outRoot) {
 }
 
 /**
- * Capture one screenshot recipe end to end.
- * @param {import('./lib/recipe.js').Recipe} recipe
- * @param {import('./lib/api.js').ApiClient} api
- * @param {string} outRoot
- */
-/**
  * Refuse to photograph a clip that is hiding part of itself behind a scrollbar.
  *
  * A clipped shot photographs what is *rendered*, so any box inside the clip
@@ -306,7 +305,9 @@ async function refuseHiddenOverflow(page, recipe) {
           scrolls(style.overflowX) && el.scrollWidth - el.clientWidth > slack;
         if (overY || overX) {
           const name = `${el.tagName.toLowerCase()}${
-            el.className ? `.${String(el.className).trim().split(/\s+/).join('.')}` : ''
+            el.className
+              ? `.${String(el.className).trim().split(/\s+/).join('.')}`
+              : ''
           }`;
           return {
             name,
@@ -330,6 +331,12 @@ async function refuseHiddenOverflow(page, recipe) {
   );
 }
 
+/**
+ * Capture one screenshot recipe end to end.
+ * @param {import('./lib/recipe.js').Recipe} recipe
+ * @param {import('./lib/api.js').ApiClient} api
+ * @param {string} outRoot
+ */
 async function captureOne(recipe, api, outRoot) {
   const { page, ctx } = await stagePage(recipe, api);
   try {

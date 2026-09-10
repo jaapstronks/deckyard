@@ -1,4 +1,4 @@
-import { getInteractionCatchUp } from '../../storage/interactions.js';
+import { getInteractionAggregate } from '../../storage/interactions.js';
 import { sseWrite } from '../../utils/sse.js';
 import { createLogger } from '../../utils/logger.js';
 
@@ -39,7 +39,7 @@ export async function sendInteractionCatchUp(
 ) {
   if (!slideId) return;
   try {
-    const agg = await getInteractionCatchUp(scope, sessionId, { slideId });
+    const agg = await getInteractionAggregate(scope, sessionId, { slideId });
     if (!agg) return;
     sseWrite(res, {
       event: 'interactionState',

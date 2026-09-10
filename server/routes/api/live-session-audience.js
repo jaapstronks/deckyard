@@ -135,7 +135,7 @@ async function handleSessionEvents({ repoRoot, req, res }, sessionId) {
   await attachSessionSseClient(companionScope(repoRoot), sessionId, res);
   await sendInteractionCatchUp(companionScope(repoRoot), {
     sessionId,
-    slideId: s?.state?.slideId || '',
+    slideId: s.state?.slideId || '',
     res,
   });
   return true;

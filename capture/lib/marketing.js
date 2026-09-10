@@ -11,7 +11,7 @@
  *    `setUiLocale()` lives in `./api.js`, because the docs recipes turned out
  *    to need it too.
  * 2. **A poll only has votes inside a presentation session.** The editor
- *    preview always renders zeroes because `getPollInteractionAggregate` is
+ *    preview always renders zeroes because `getInteractionAggregate` is
  *    session-scoped — so a live-result shot seeds a session, pushes live state
  *    onto the poll slide, and casts real votes through the same route an
  *    audience phone uses.
