@@ -4,6 +4,40 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.33.0](https://github.com/jaapstronks/deckyard/compare/v1.32.0...v1.33.0) (2026-09-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* **chart:** the first row of a chart slide's `data` is always the header and is never plotted, even when the names are numbers. A stored chart whose first row was data (a numeric second column) now reads that row as its column names and loses it as a point. Before syncing this tag, run `node scripts/scan-chart-headers.js` (Postgres via `.env`, or `--dir <path>` over deck JSON) and judge each hit: a misread year header needs nothing, the chart is right now; genuinely headerless data needs one header row added in the grid editor.
+
+### Added
+
+* **ai:** strict validation is one derivation from fields[], not a Zod map ([#1115](https://github.com/jaapstronks/deckyard/issues/1115)) ([5f06504](https://github.com/jaapstronks/deckyard/commit/5f06504e3d65382057d4fb6caf811c9dcc9d46b9))
+* **chart:** the first row of chart data is the header, not a guess ([#1112](https://github.com/jaapstronks/deckyard/issues/1112)) ([477f4a0](https://github.com/jaapstronks/deckyard/commit/477f4a03978e8710319bbae79939ae4492d11d96))
+* **export:** speaker notes travel with the PPTX (B255) ([#1121](https://github.com/jaapstronks/deckyard/issues/1121)) ([84933c5](https://github.com/jaapstronks/deckyard/commit/84933c52847d1932c373636a47cbbd1b4736c639))
+* **export:** the theme writes the PPTX layouts and ships as a template (B264, D106) ([1137195](https://github.com/jaapstronks/deckyard/commit/11371953d5236d02d5fcb586169e5dce2dc51232))
+* **modal:** one name for "the dialog owns its height" ([#1127](https://github.com/jaapstronks/deckyard/issues/1127)) ([926a0b0](https://github.com/jaapstronks/deckyard/commit/926a0b09ba1261af45f4eb580de2ec594cfa6fd1))
+* **slide-types:** a database type carries the three A2 declarations ([#1113](https://github.com/jaapstronks/deckyard/issues/1113)) ([765e249](https://github.com/jaapstronks/deckyard/commit/765e2497a68a328af65e087f2d60b1531b21667a))
+* **slide-types:** a string field declares it references media, and projects as a stand-in (A2.2) ([#1108](https://github.com/jaapstronks/deckyard/issues/1108)) ([9765279](https://github.com/jaapstronks/deckyard/commit/9765279c585fcaaac8d5362d910784816d08dfa4))
+* **slide-types:** an items field declares which sub-field is its heading (A2.1) ([#1107](https://github.com/jaapstronks/deckyard/issues/1107)) ([cb4ca33](https://github.com/jaapstronks/deckyard/commit/cb4ca3342cd0a231b38eff4c5a3232dde864f5d0))
+* **slide-types:** every type declares how faithfully an export can write it (B263) ([bad556a](https://github.com/jaapstronks/deckyard/commit/bad556a89fed18264640426f7b0599013bebd62a))
+* **slide-types:** image-set-slide takes the plural image layouts; image-text-slide is one flat image (A7.12, D100/D101) ([ae8a92e](https://github.com/jaapstronks/deckyard/commit/ae8a92e2330351d203048406f2f523fc320b37eb))
+* **slide-types:** one density vocabulary, one place a retired option folds (A2.3) ([0a659a6](https://github.com/jaapstronks/deckyard/commit/0a659a67dae99f39e99fcc8c5435ef9c77cf555e))
+* **slide-types:** one factory where a slide comes into being (B243, D92) ([db2aee2](https://github.com/jaapstronks/deckyard/commit/db2aee22fa409d6b2e3d4586b74925bc7e2aa82e))
+* **slide-types:** one walk over fields[], so both surfaces state the same rules (B231) ([7b3f440](https://github.com/jaapstronks/deckyard/commit/7b3f44019b4408cd25be10c3fc5be136fde09b0e))
+* **themes:** a theme declares the ground its slides start on (B160) ([#1118](https://github.com/jaapstronks/deckyard/issues/1118)) ([5e94897](https://github.com/jaapstronks/deckyard/commit/5e948971c4d93d88f524bd5bb2dc9dd97f6ccad9))
+
+
+### Fixed
+
+* **chart:** one axis per plot, so a bar lands on the gridline that names it ([#1110](https://github.com/jaapstronks/deckyard/issues/1110)) ([1ecba7c](https://github.com/jaapstronks/deckyard/commit/1ecba7cde58cc3dd53fc33cb96dd08dc131b7df8))
+* **live:** a client attaching mid-session is handed the tally it missed ([#1126](https://github.com/jaapstronks/deckyard/issues/1126)) ([fb7e19a](https://github.com/jaapstronks/deckyard/commit/fb7e19a1356333bc58d77a3451959e55166f275e))
+* **media:** ImageKit listings are newest-first ([#1125](https://github.com/jaapstronks/deckyard/issues/1125)) ([9f3ec79](https://github.com/jaapstronks/deckyard/commit/9f3ec79efa330fbf157201db3e8b1e536c0ba61f))
+* **share:** the dialog holds one height while it fills itself in ([#1105](https://github.com/jaapstronks/deckyard/issues/1105)) ([4f816f9](https://github.com/jaapstronks/deckyard/commit/4f816f9466ca0aa5a6565d21443bb00687992923))
+* **slide-types:** a database type is composed like every other registry entry ([#1114](https://github.com/jaapstronks/deckyard/issues/1114)) ([dcc695e](https://github.com/jaapstronks/deckyard/commit/dcc695e2c82c3f9afe0621ba6192f9fab8ab6c07))
+* **slide-types:** a write surface resolves against the organization's registry ([#1116](https://github.com/jaapstronks/deckyard/issues/1116)) ([54eda18](https://github.com/jaapstronks/deckyard/commit/54eda189980d561f17aa909f53cbba042116e767))
+
 ## [1.32.0](https://github.com/jaapstronks/deckyard/compare/v1.31.0...v1.32.0) (2026-09-04)
 
 
