@@ -111,11 +111,56 @@ function toImageKitSearchQuery({ q, searchQuery }) {
   return `(name HAS "${escaped}" OR tags HAS "${escaped}" OR ${peopleClause})`;
 }
 
+/**
+ * The `sort` values ImageKit accepts on `GET /v1/files`. Listing without one
+ * gives oldest-first, which buries every recent upload past the first page —
+ * so the default here is newest-first and callers may only narrow it to
+ * another value from this set.
+ * @type {ReadonlySet<string>}
+ */
+export const IMAGEKIT_SORT_VALUES = Object.freeze(
+  new Set([
+    'ASC_NAME',
+    'DESC_NAME',
+    'ASC_CREATED',
+    'DESC_CREATED',
+    'ASC_UPDATED',
+    'DESC_UPDATED',
+    'ASC_HEIGHT',
+    'DESC_HEIGHT',
+    'ASC_WIDTH',
+    'DESC_WIDTH',
+    'ASC_SIZE',
+    'DESC_SIZE',
+    'ASC_RELEVANCE',
+    'DESC_RELEVANCE',
+  ]),
+);
+
+export const IMAGEKIT_DEFAULT_SORT = 'DESC_CREATED';
+
+/**
+ * @param {unknown} sort - Caller-supplied sort, empty for the default.
+ * @returns {string} - A value from {@link IMAGEKIT_SORT_VALUES}.
+ * @throws {ValidationError} - When a non-empty value is not in the set.
+ */
+function normalizeSort(sort) {
+  const s = cleanStr(sort).toUpperCase();
+  if (!s) return IMAGEKIT_DEFAULT_SORT;
+  if (!IMAGEKIT_SORT_VALUES.has(s)) {
+    // `details` is a registered payload per code (`error-details.js`); a
+    // plain `bad_request` carries none, so the fact goes in the message.
+    throw new ValidationError(`Unsupported sort: ${s}`);
+  }
+  return s;
+}
+
 export async function listImageKitFiles({
   q,
   searchQuery,
   limit = 48,
   skip = 0,
+  sort = '',
 } = {}) {
   const cfg = getImageKitConfigFromEnv();
   if (!cfg.configured) {
@@ -130,6 +175,7 @@ export async function listImageKitFiles({
     String(Math.max(1, Math.min(100, Number(limit) || 48))),
   );
   u.searchParams.set('skip', String(Math.max(0, Number(skip) || 0)));
+  u.searchParams.set('sort', normalizeSort(sort));
   // Include custom metadata (for ALT text) in response
   u.searchParams.set('includeCustomMetadata', 'true');
 
@@ -162,6 +208,9 @@ export async function listImageKitTags() {
       const u = new URL('https://api.imagekit.io/v1/files');
       u.searchParams.set('limit', String(batchSize));
       u.searchParams.set('skip', String(i * batchSize));
+      // Sample the newest files: a tag that only exists on recent uploads is
+      // exactly the one a user goes looking for.
+      u.searchParams.set('sort', IMAGEKIT_DEFAULT_SORT);
 
       const files = await fetchJsonOrThrow(u.toString(), {
         method: 'GET',
