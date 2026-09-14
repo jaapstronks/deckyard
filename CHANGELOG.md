@@ -4,6 +4,13 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.33.1](https://github.com/jaapstronks/deckyard/compare/v1.33.0...v1.33.1) (2026-09-14)
+
+
+### Fixed
+
+* **present:** fullscreen hides both bars as overlays on /p/ and in the presenter ([#1132](https://github.com/jaapstronks/deckyard/issues/1132)) ([20aefba](https://github.com/jaapstronks/deckyard/commit/20aefba6ae52da13585eb8730c93c03502dc4483))
+
 ## [1.33.0](https://github.com/jaapstronks/deckyard/compare/v1.32.0...v1.33.0) (2026-09-14)
 
 
