@@ -4,6 +4,13 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.33.2](https://github.com/jaapstronks/deckyard/compare/v1.33.1...v1.33.2) (2026-09-14)
+
+
+### Fixed
+
+* **image-text:** centre the copy beside the image vertically ([#1134](https://github.com/jaapstronks/deckyard/issues/1134)) ([bddc05a](https://github.com/jaapstronks/deckyard/commit/bddc05a846e88935b4b296279e4451a50d0e3d4d))
+
 ## [1.33.1](https://github.com/jaapstronks/deckyard/compare/v1.33.0...v1.33.1) (2026-09-14)
 
 
