@@ -10,7 +10,10 @@ import {
   buildPrismKatexTags,
   detectPrismKatexNeeds,
 } from '../utils/prism-katex.js';
-import { buildScriptChain } from '../utils/script-chain.js';
+import {
+  buildScriptChain,
+  detectSlideRuntimeNeeds,
+} from '../utils/script-chain.js';
 import { loadExportCssBundle, embedSlideImages } from './css-bundle.js';
 import { buildCssChain } from '../utils/css-chain.js';
 import { buildDocumentHead } from '../utils/head-chain.js';
@@ -631,6 +634,7 @@ export async function buildStandaloneHtml(
     ${buildScriptChain({
       runtime: 'stage',
       needs: highlightNeeds,
+      slideNeeds: detectSlideRuntimeNeeds(slidesHtml),
       body: deckRuntimeJs({ autoAdvanceJson }),
     })}
   </body>
