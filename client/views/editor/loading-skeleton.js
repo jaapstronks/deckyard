@@ -79,7 +79,7 @@ export function showEditorLoadingSkeleton(root) {
     block('skeleton-heading'),
   ]);
   const preview = h('div', { class: 'panel preview-panel' }, [
-    h('div', { class: 'panel-scroll preview-panel-scroll' }, [
+    h('div', { class: 'preview-panel-body' }, [
       h('div', { class: 'skeleton-canvas' }, [status]),
     ]),
   ]);

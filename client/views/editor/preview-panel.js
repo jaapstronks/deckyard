@@ -112,7 +112,7 @@ export function createPreviewPanel({
   slideBar.append(slideBarLeft, openersSlot);
 
   const previewScroll = h('div', {
-    class: 'panel-scroll preview-panel-scroll',
+    class: 'preview-panel-body',
   });
   const previewStage = h('div', { class: 'preview-stage' });
   const thumb = h('div', {
