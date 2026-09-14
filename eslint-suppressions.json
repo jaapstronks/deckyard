@@ -675,11 +675,6 @@
       "count": 6
     }
   },
-  "client/views/presenter/chrome-autohide.js": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "client/views/presenter/console-timer.js": {
     "no-restricted-syntax": {
       "count": 2

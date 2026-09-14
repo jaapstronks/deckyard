@@ -22,59 +22,56 @@
   border-color: hsl(var(--app-border-strong));
 }
 
-/* Fullscreen presenter: hide the top bar AND collapse the progress row so the
-   deck fills a true 16:9 (no pillarbox bars). The progress bar becomes an
-   auto-hiding bottom overlay (see .is-chrome-active below). */
-html:fullscreen,
+/* Fullscreen (html.is-fullscreen, set by client/views/presenter/fullscreen.js
+   for the Fullscreen API and for a screen-filling window alike): both chrome
+   rows collapse so the deck fills a true 16:9 (no pillarbox bars), and the top
+   bar and the progress bar become overlays that appear on pointer activity
+   (JS toggles .is-chrome-active). They span the whole shell so showing them
+   never moves the slide, and the root cannot scroll. D111. */
 html.is-fullscreen {
   --presenter-topbar-height: 0px;
+  overflow: hidden;
 }
-html:fullscreen .presenter-shell,
 html.is-fullscreen .presenter-shell {
   --presenter-progress-height: 0px;
+  overflow: hidden; /* the parked bars sit just outside it */
 }
-html:fullscreen .presenter-topbar,
-html.is-fullscreen .presenter-topbar {
-  visibility: hidden; /* avoid reflow that can shift grid auto-placement */
-  pointer-events: none;
-}
-.presenter-shell:fullscreen {
-  --presenter-topbar-height: 0px;
-  --presenter-progress-height: 0px;
-  height: 100%;
-}
-.presenter-shell:fullscreen .presenter-topbar {
-  visibility: hidden;
-  pointer-events: none;
-}
-
-/* Fullscreen: the progress bar floats over the bottom of the deck and only
-   appears on pointer/keyboard activity (JS toggles .is-chrome-active). */
-html.is-fullscreen .presenter-progress,
-.presenter-shell:fullscreen .presenter-progress {
+html.is-fullscreen .presenter-topbar,
+html.is-fullscreen .presenter-progress {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 0;
+  grid-row: 1 / -1;
   z-index: 60;
-  border-top: none;
   opacity: 0;
-  transform: translateY(100%);
   pointer-events: none;
   transition:
     opacity 200ms ease,
     transform 200ms ease;
 }
-html.is-fullscreen .presenter-shell.is-chrome-active .presenter-progress,
-.presenter-shell:fullscreen.is-chrome-active .presenter-progress {
+html.is-fullscreen .presenter-topbar {
+  top: 0;
+  bottom: auto;
+  /* The row it leaves is 0 in fullscreen; keep the windowed bar's height
+     (theme.css --presenter-topbar-height). */
+  min-height: 56px;
+  transform: translateY(-100%);
+}
+html.is-fullscreen .presenter-progress {
+  top: auto;
+  bottom: 0;
+  border-top: none;
+  transform: translateY(100%);
+}
+html.is-fullscreen .presenter-shell.is-chrome-active .presenter-topbar,
+html.is-fullscreen .presenter-shell.is-chrome-active .presenter-progress {
   opacity: 1;
   transform: translateY(0);
   pointer-events: auto;
 }
 
 /* Hide the cursor along with the chrome when idle in fullscreen. */
-html.is-fullscreen .presenter-shell:not(.is-chrome-active),
-.presenter-shell:fullscreen:not(.is-chrome-active) {
+html.is-fullscreen .presenter-shell:not(.is-chrome-active) {
   cursor: none;
 }
 
@@ -301,13 +298,21 @@ html.is-fullscreen .presenter-shell:not(.is-chrome-active),
   position: relative;
   overflow: hidden;
   background: transparent;
-  /* Fit the available presenter viewport area (shell is 100vh, progress is 56px). */
+  /* Fit the area the shell's chrome rows leave (both 0 in fullscreen). */
   width: min(
     100vw,
-    calc((100dvh - var(--presenter-topbar-height) - 56px) * 16 / 9)
+    calc(
+      (
+          100dvh - var(--presenter-topbar-height) -
+            var(--presenter-progress-height)
+        ) *
+        16 / 9
+    )
   );
   height: min(
-    calc(100dvh - var(--presenter-topbar-height) - 56px),
+    calc(
+      100dvh - var(--presenter-topbar-height) - var(--presenter-progress-height)
+    ),
     calc(100vw * 9 / 16)
   );
 }

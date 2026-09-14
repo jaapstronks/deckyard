@@ -158,11 +158,49 @@ function attachStageScale() {
 }`;
 
 /**
- * The countdown timer, from the one module the app itself runs
- * (`client/lib/slide-runtime/countdown-runtime.js`), not a server-side copy.
- * That module has no imports and a single export, so dropping the `export`
- * keyword and closing it in a block of its own is all it takes to run it as a
- * classic script: its helpers cannot collide with a path's body.
+ * Inline a client module as a classic script, from the one file the app itself
+ * runs rather than a server-side copy (D110, D111). The module may have no
+ * imports and exactly one export, a function declaration: dropping the
+ * `export` keyword and closing the file in a function scope of its own is then
+ * all it takes. Only that export's name reaches the surrounding block, so the
+ * module's helpers cannot collide with a path's body.
+ *
+ * @param {URL} url - The module file.
+ * @param {string} exportName - Its single exported function.
+ * @returns {string} `const <exportName> = …;`
+ */
+function inlineClientModule(url, exportName) {
+  const file = url.pathname.split('/').pop();
+  const src = readFileSync(url, 'utf8');
+  if (/^\s*import\s/m.test(src)) {
+    throw new Error(
+      `${file} imports a module; the script chain inlines it as a classic script and cannot follow imports`,
+    );
+  }
+  const body = src.replace(
+    new RegExp(`^export function ${exportName}\\b`, 'm'),
+    `function ${exportName}`,
+  );
+  if (body === src || /^export\s/m.test(body)) {
+    throw new Error(
+      `${file} must have exactly one export, \`export function ${exportName}\``,
+    );
+  }
+  return `const ${exportName} = (() => {
+${body.trim()}
+
+return ${exportName};
+})();`;
+}
+
+const moduleCache = new Map();
+function cachedModule(key, build) {
+  if (!moduleCache.has(key)) moduleCache.set(key, build());
+  return moduleCache.get(key);
+}
+
+/**
+ * The countdown timer (`client/lib/slide-runtime/countdown-runtime.js`).
  *
  * Stage documents only. A `none` document lays its slides out as a static
  * sheet, where a ticking timer would be wrong.
@@ -172,32 +210,64 @@ const COUNTDOWN_MODULE = new URL(
   import.meta.url,
 );
 
-let countdownRuntime = null;
 function countdownRuntimeSource() {
-  if (countdownRuntime) return countdownRuntime;
-  const src = readFileSync(COUNTDOWN_MODULE, 'utf8');
-  if (/^\s*import\s/m.test(src)) {
-    throw new Error(
-      'countdown-runtime.js imports a module; the script chain inlines it as a classic script and cannot follow imports',
-    );
-  }
-  const body = src.replace(
-    /^export function initCountdownSlides\b/m,
-    'function initCountdownSlides',
-  );
-  if (body === src || /^export\s/m.test(body)) {
-    throw new Error(
-      'countdown-runtime.js must have exactly one export, `export function initCountdownSlides`',
-    );
-  }
-  countdownRuntime = `${SLIDE_RUNTIME_BANNER}
+  return cachedModule(
+    'countdown',
+    () => `${SLIDE_RUNTIME_BANNER}
 // Countdown slides: client/lib/slide-runtime/countdown-runtime.js, inlined.
 {
-${body.trim()}
+${inlineClientModule(COUNTDOWN_MODULE, 'initCountdownSlides')}
 
 initCountdownSlides(document);
-}`;
-  return countdownRuntime;
+}`,
+  );
+}
+
+/**
+ * Client modules a path's body calls into, by name. A closed set, like
+ * {@link SCRIPT_RUNTIMES}: a path that needs another one adds an entry here
+ * instead of carrying a copy in its body. Each is inlined before the body and
+ * exposes only its export.
+ *
+ * - `presenter-fullscreen` — `createPresenterFullscreenController`, the
+ *   fullscreen detector and `html.is-fullscreen` sync
+ *   (`client/views/presenter/fullscreen.js`).
+ * - `chrome-autohide` — `createChromeAutoHide`, the overlay chrome in
+ *   fullscreen (`client/views/presenter/chrome-autohide.js`).
+ *
+ * The published page (`/p/`) carries both, so it has the presenter's
+ * fullscreen contract rather than one of its own (D111).
+ */
+const CLIENT_MODULES = Object.freeze({
+  'presenter-fullscreen': {
+    url: new URL('../../client/views/presenter/fullscreen.js', import.meta.url),
+    exportName: 'createPresenterFullscreenController',
+  },
+  'chrome-autohide': {
+    url: new URL(
+      '../../client/views/presenter/chrome-autohide.js',
+      import.meta.url,
+    ),
+    exportName: 'createChromeAutoHide',
+  },
+});
+
+/** The names {@link buildScriptChain} accepts in `clientModules`. */
+export const CLIENT_MODULE_NAMES = Object.freeze(Object.keys(CLIENT_MODULES));
+
+function clientModuleSource(name) {
+  const entry = CLIENT_MODULES[name];
+  if (!entry) {
+    throw new Error(
+      `unknown client module "${name}" — one of ${CLIENT_MODULE_NAMES.join('/')}`,
+    );
+  }
+  return cachedModule(
+    name,
+    () => `${SLIDE_RUNTIME_BANNER}
+// ${entry.exportName}: client module "${name}", inlined.
+${inlineClientModule(entry.url, entry.exportName)}`,
+  );
 }
 
 /**
@@ -214,7 +284,8 @@ export function detectSlideRuntimeNeeds(slidesHtml) {
  * Assemble the `<script>` a render path carries.
  *
  * Order is fixed and is the whole contract: shared runtime first (so the body
- * can call into it), then the path's own body, then the Prism/KaTeX
+ * can call into it), then slide runtimes and client modules, then the path's
+ * own body, then the Prism/KaTeX
  * initialiser last — it sweeps the finished DOM, so it must not run before a
  * body that rewrites one.
  *
@@ -228,6 +299,8 @@ export function detectSlideRuntimeNeeds(slidesHtml) {
  * @param {{countdown: boolean}} [options.slideNeeds] - Client slide runtimes
  *   the slides need, from `detectSlideRuntimeNeeds()`. Stage runtime only;
  *   asking for one on a `none` document throws.
+ * @param {string[]} [options.clientModules] - Client modules the body calls
+ *   into, by name from {@link CLIENT_MODULE_NAMES}; inlined before the body.
  * @param {string} [options.body=''] - The path's own runtime.
  * @param {boolean} [options.module=false] - Emit `<script type="module">`
  *   instead of wrapping the block in an IIFE. Both give the block a scope of
@@ -239,6 +312,7 @@ export function buildScriptChain({
   runtime = 'none',
   needs = undefined,
   slideNeeds = undefined,
+  clientModules = [],
   body = '',
   module = false,
 } = {}) {
@@ -258,6 +332,7 @@ export function buildScriptChain({
   // Before the body: it only arms. Auto-start waits a microtask for the body
   // to mark the first slide `is-active`.
   if (slideNeeds?.countdown) parts.push(countdownRuntimeSource());
+  for (const name of clientModules) parts.push(clientModuleSource(name));
   if (String(body || '').trim()) parts.push(dedent(String(body)));
 
   const init = buildPrismKatexInitScript(needs ?? {});

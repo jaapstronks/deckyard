@@ -54,16 +54,13 @@
 
 /* Fullscreen = projector: never show the console there, and let the deck
    reclaim the full width. */
-html.is-fullscreen .presenter-console,
-.presenter-shell:fullscreen .presenter-console {
+html.is-fullscreen .presenter-console {
   display: none !important;
 }
-html.is-fullscreen .presenter-shell.is-console .deck,
-.presenter-shell:fullscreen.is-console .deck {
+html.is-fullscreen .presenter-shell.is-console .deck {
   padding-right: 0;
 }
-html.is-fullscreen .presenter-shell.is-console .deck-stage,
-.presenter-shell:fullscreen.is-console .deck-stage {
+html.is-fullscreen .presenter-shell.is-console .deck-stage {
   width: min(
     100vw,
     calc(

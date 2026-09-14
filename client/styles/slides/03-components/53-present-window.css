@@ -18,8 +18,8 @@
   height: 100%;
 }
 
-/* Override the presenter's letterbox math (which subtracts a 56px progress row)
-   so the deck uses the entire projector window. */
+/* Override the presenter's letterbox math (which subtracts the shell's chrome
+   rows) so the deck uses the entire projector window. */
 .present-window .deck-stage {
   width: min(100vw, calc(100dvh * 16 / 9));
   height: min(100dvh, calc(100vw * 9 / 16));
