@@ -27,7 +27,7 @@
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr; /* lock to full height so swapping columns can't change vertical sizing */
   gap: 0;
-  align-items: stretch; /* top align content; fill full height */
+  align-items: stretch; /* cells fill the full height; .copy places its own content */
   min-height: 0;
   min-width: 0;
 }
@@ -231,6 +231,13 @@
   align-items: stretch;
   min-height: 0;
   min-width: 0;
+}
+/* Beside: the copy column stands next to the image stack, so it balances on the
+   vertical middle, the same rule as image-text's split. The row layouts keep the
+   top: there the copy hangs from (or sits above) a full-width strip. `safe`
+   falls back to the top when the copy overflows the column. */
+.slide-image-set.is-layout-beside .copy {
+  justify-content: safe center;
 }
 .slide-image-set .copy .heading {
   font-family: var(--font-heading);
