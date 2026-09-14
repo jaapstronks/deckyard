@@ -33,7 +33,7 @@ export function createPresenterTeardown({
   cleanupSlideRuntimes,
   detachKeys,
   detachSwipe,
-  syncFullscreenClass,
+  detachFullscreen,
   closeSessionEvents,
   toolsMenu,
   detachStageScale,
@@ -62,9 +62,7 @@ export function createPresenterTeardown({
       },
       detachKeys,
       detachSwipe,
-      () =>
-        document.removeEventListener('fullscreenchange', syncFullscreenClass),
-      () => document.documentElement.classList.remove('is-fullscreen'),
+      detachFullscreen,
       () => {
         if (typeof closeSessionEvents === 'function') closeSessionEvents();
         // Null the captured handle so a double unmount doesn't re-close the

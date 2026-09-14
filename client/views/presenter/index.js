@@ -184,7 +184,6 @@ export async function renderPresenter(root, id) {
     nav(dest);
   };
   const fullscreenCtl = createPresenterFullscreenController({ shell });
-  const syncFullscreenClass = fullscreenCtl.syncFullscreenClass;
   const toggleFullscreen = fullscreenCtl.toggleFullscreen;
 
   let closeSessionEvents = null;
@@ -584,8 +583,7 @@ export async function renderPresenter(root, id) {
       if (ok) goToEditor();
     },
   });
-  document.addEventListener('fullscreenchange', syncFullscreenClass);
-  syncFullscreenClass();
+  const detachFullscreen = fullscreenCtl.attach();
 
   // Swipe navigation for presenting from a phone or tablet. Bound to
   // stageWrap, not stage: the highlighter canvas is layered over stage as a
@@ -599,8 +597,8 @@ export async function renderPresenter(root, id) {
     onNext: guardNav(() => deckCtl?.next?.()),
   });
 
-  // Auto-hiding chrome: collapses the progress bar (and cursor) after idle in
-  // fullscreen so the deck fills a true 16:9 with no pillarbox bars.
+  // Auto-hiding chrome: in fullscreen both bars are overlays that show on
+  // pointer activity and hide (with the cursor) after idle.
   const chromeAutoHide = createChromeAutoHide({ shell });
 
   // Start curtain: primary path into fullscreen (and the required user gesture).
@@ -742,7 +740,7 @@ export async function renderPresenter(root, id) {
     cleanupSlideRuntimes,
     detachKeys,
     detachSwipe,
-    syncFullscreenClass,
+    detachFullscreen,
     closeSessionEvents,
     toolsMenu,
     detachStageScale,

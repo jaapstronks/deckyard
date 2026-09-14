@@ -53,6 +53,17 @@ Two deliberate choices about what "min" keeps:
   at narrow widths and the host page can render its own; the loop bar is an
   operator control, not reader information.
 
+### Fullscreen
+
+The page shares one fullscreen contract with the in-app presenter (D111). The two presenter modules, `client/views/presenter/fullscreen.js` and `client/views/presenter/chrome-autohide.js`, are inlined by the script chain (`clientModules` in `server/utils/script-chain.js`), not copied:
+
+- **Fullscreen is one class, `html.is-fullscreen`**, set when the Fullscreen API is active (`F`, which fullscreens the `.presenter-shell`) or when the window covers the whole screen (Safari's green button, F11). The CSS keys on that class only.
+- **Both bars become overlays.** The chrome rows collapse, the stage fills the viewport and the root cannot scroll. The top bar and the control row are hidden on entry, appear on pointer movement, touch, or keyboard focus inside a bar, stay while the pointer rests on one, and fade out (with the cursor) after about 2.6 s idle.
+- **Navigation keys do not reveal them**, so a clicker does not flash the bars on every slide.
+- **`ui=min` stays out of it**: there are no bars to show, so the page wires neither the class nor the autohide and only keeps `F`.
+
+A known edge: at a browser zoom below 100% a window that nearly fills the screen can measure as screen-filling. The bars then behave as in fullscreen but stay reachable with the mouse.
+
 ## What gets inlined
 
 Everything the page needs is embedded into the one HTML file:

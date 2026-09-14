@@ -157,7 +157,7 @@ const STANDALONE_CSS = `
 
 /**
  * The standalone/published deck runtime: slide navigation, the progress bar and
- * screen-reader status, fullscreen, and the auto-advance/loop machinery.
+ * screen-reader status, fullscreen wiring, and the auto-advance/loop machinery.
  *
  * Path-specific — no other render path shows one slide at a time with visible
  * nav — so it stays here and is handed to the script chain as a body. What it
@@ -242,11 +242,17 @@ function deckRuntimeJs({ autoAdvanceJson }) {
         }
         function next() { show(idx + 1); }
         function prev() { show(idx - 1); }
-        function toggleFullscreen() {
-          const d = document.documentElement;
-          if (!document.fullscreenElement) d.requestFullscreen && d.requestFullscreen();
-          else document.exitFullscreen && document.exitFullscreen();
+        // Fullscreen: the presenter's own contract (D111), inlined from
+        // client/views/presenter/ by the script chain. Both bars become
+        // overlays that show on pointer activity. ?ui=min has no bars, so it
+        // keeps only the F key.
+        const shellEl = document.querySelector('.presenter-shell');
+        const fullscreenCtl = createPresenterFullscreenController({ shell: shellEl });
+        if (window.__DECK_UI__ !== 'min') {
+          fullscreenCtl.attach();
+          createChromeAutoHide({ shell: shellEl });
         }
+        const toggleFullscreen = fullscreenCtl.toggleFullscreen;
         if (btnPrev) btnPrev.addEventListener('click', () => prev());
         if (btnNext) btnNext.addEventListener('click', () => next());
         document.addEventListener('keydown', (e) => {
@@ -635,6 +641,7 @@ export async function buildStandaloneHtml(
       runtime: 'stage',
       needs: highlightNeeds,
       slideNeeds: detectSlideRuntimeNeeds(slidesHtml),
+      clientModules: ['presenter-fullscreen', 'chrome-autohide'],
       body: deckRuntimeJs({ autoAdvanceJson }),
     })}
   </body>

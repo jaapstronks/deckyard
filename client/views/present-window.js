@@ -53,7 +53,7 @@ export async function renderPresentWindow(root, id) {
   });
 
   const fullscreenCtl = createPresenterFullscreenController({ shell });
-  const { toggleFullscreen, syncFullscreenClass } = fullscreenCtl;
+  const { toggleFullscreen } = fullscreenCtl;
 
   const animator = createPresenterAnimator();
 
@@ -172,8 +172,7 @@ export async function renderPresentWindow(root, id) {
   // Ask the master for the current state (covers opening mid-presentation).
   channel.sendHello();
 
-  document.addEventListener('fullscreenchange', syncFullscreenClass);
-  syncFullscreenClass();
+  const detachFullscreen = fullscreenCtl.attach();
 
   return () => {
     animator.cancel();
@@ -192,8 +191,7 @@ export async function renderPresentWindow(root, id) {
     } catch {
       // ignore
     }
-    document.removeEventListener('fullscreenchange', syncFullscreenClass);
-    document.documentElement.classList.remove('is-fullscreen');
+    detachFullscreen();
     try {
       detachStageScale?.();
     } catch {
