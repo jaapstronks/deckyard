@@ -16,7 +16,7 @@
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr; /* lock to full height so swapping columns can't change vertical sizing */
   gap: 0;
-  align-items: stretch; /* top align content; fill full height */
+  align-items: stretch; /* cells fill the full height; .copy places its own content */
   min-height: 0;
   min-width: 0;
 }
@@ -191,10 +191,21 @@
   padding: var(--slide-space-16);
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  /* Copy beside the image balances on the column's vertical middle: the image
+     half is visually centred (a contained image sits mid-frame), so top-aligned
+     copy beside it read as lopsided. `safe` falls back to the top when the copy
+     is taller than the column, so an overflowing title is never clipped at the
+     top edge. The corner layout keeps the top, below. */
+  justify-content: safe center;
   align-items: stretch;
   min-height: 0;
   min-width: 0;
+}
+/* Corner: the copy sits in the top row beside the corner image, and the empty
+   bottom row is the design — centring it would float the title off the image's
+   top edge. */
+.slide-image-text.is-layout-corner .copy {
+  justify-content: flex-start;
 }
 /* Two text columns went with the plural layouts (D100): the copy beside one
    image is never wide enough for a second column, so `textColumns` is a field
