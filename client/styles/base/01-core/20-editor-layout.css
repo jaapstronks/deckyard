@@ -342,7 +342,7 @@
   min-width: 0;
 }
 
-.is-editor .preview-panel-scroll {
+.is-editor .preview-panel-body {
   padding: var(--ps-space-4);
 }
 

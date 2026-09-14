@@ -19,66 +19,120 @@
   color: var(--slide-on-dark);
 }
 
-/* Make the slide its own size-query container so the digits scale relative to
-   the slide itself (cqi/cqb), not the viewport. Without this the timer overflows
-   in scaled-down contexts like the editor canvas and thumbnails. */
+/* Layout: the digits sit at the optical centre of the slide, whatever else is
+   on it. Everything that is not the digits is kept from pushing them around:
+   the title gets a mirrored band below the stage, the "Tijd!" text and the
+   presenter controls are laid out so they take no part in the centring.
+   The frame is the slide's own `--slide-padding`; the inner box adds none. */
+
+/* The slide root is a size container (both axes), so `cqi`/`cqb` below are
+   the slide's content box in present, editor and thumbnail alike. It is the
+   only container: an element inside the slide may not become one, or the
+   type scale in its subtree would measure that element instead
+   (tests/slide-typography-scale.test.js). */
 .slide-countdown {
   container-type: size;
+  /* The height a one-line title takes, and its mirror below the digits. */
+  --cd-band: 0px;
+  /* The digit size. Width: "MM:SS" is four tabular figures and a colon; in the
+     widest heading face we ship to (GT America Extended, 0.78em figures) that
+     is ~3.3em, so 27cqi keeps it inside ~90% of the frame. Height: the
+     cap-trimmed digits plus the zero text below them must fit twice over in
+     what the title bands leave (equal outer tracks), which holds up to ~60%;
+     55% leaves the untrimmed fallback its line box. Resolved by each child. */
+  --cd-digits: min(27cqi, calc((100cqb - 2 * var(--cd-band)) * 0.55));
+}
+.slide-countdown:has(.cd-title) {
+  --cd-band: calc(var(--slide-font-size-title) * var(--slide-leading-tight));
 }
 
 .slide-countdown .slide-inner {
+  position: relative;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4em;
-  padding: var(--slide-space-12);
   text-align: center;
   overflow: hidden;
 }
 
 .slide-countdown .cd-title {
   margin: 0;
+  font-family: var(--font-heading);
+  font-size: var(--slide-font-size-title);
+  line-height: var(--slide-leading-tight);
+  font-weight: var(--heading-weight, 400);
+  text-transform: var(--heading-transform, none);
+  font-synthesis: none;
+  /* Addressed directly: `00-base.css` resets `.slide h1..h4` to start. */
+  text-align: center;
+  text-wrap: balance;
   opacity: 0.85;
 }
 
-.slide-countdown .cd-stage {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+/* The mirror of a one-line title, so a titled countdown still centres its
+   digits on the slide rather than in the space under the title. A title that
+   wraps shifts the digits down by the extra line instead of overflowing: the
+   stage below is what shrinks. */
+.slide-countdown .slide-inner:has(.cd-title)::after {
+  content: '';
+  flex: none;
+  block-size: var(--cd-band);
 }
 
-/* The digits: as large as the slide allows while keeping "MM:SS" on one line
-   and readable from the back row. Sized against the slide's own box (cqi = inline
-   size, cqb = block size) so it fits in present, editor and thumbnail alike.
-   ~5 tabular glyphs need to fit the width; cqb guards short/landscape boxes. */
+/* The stage is the space left after title and mirror. Three rows — empty,
+   digits, zero text — with equal outer tracks keep the digits in the middle;
+   the zero text hangs in the lower track. */
+.slide-countdown .cd-stage {
+  flex: 1 1 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr);
+  justify-items: center;
+}
+
+/* The digits: the theme's heading face at the theme's heading weight, so a
+   countdown reads as part of the deck rather than as app chrome. */
 .slide-countdown .cd-time {
+  grid-row: 2;
+  font-family: var(--font-heading);
+  font-weight: var(--heading-weight, 400);
+  font-synthesis: none;
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1;
-  font-weight: 800;
+  font-size: var(--cd-digits);
   /* allowlist: single-line display glyph — the line box is the layout, not text rhythm (slide-roles.md) */
   line-height: 0.95;
+  /* Figures have no descenders and sit high in their line box; trimming to cap
+     height and baseline centres the ink itself. Browsers without `text-box`
+     keep the 0.95 line box, which is within a few percent of centred. */
+  text-box: trim-both cap alphabetic;
   letter-spacing: -0.02em;
   white-space: nowrap;
-  font-size: min(26cqi, 60cqb);
   transition: color 0.2s ease;
 }
 
 .slide-countdown .cd-zero-text {
-  margin-top: 0.05em;
-  font-weight: 800;
-  font-size: min(9cqi, 18cqb);
+  grid-row: 3;
+  align-self: start;
+  max-inline-size: 100%;
+  padding-top: calc(var(--cd-digits) * 0.08);
+  font-family: var(--font-heading);
+  font-weight: var(--heading-weight, 400);
+  font-synthesis: none;
+  font-size: calc(var(--cd-digits) * 0.33);
+  line-height: var(--slide-leading-tight);
   opacity: 0;
   transition: opacity 0.2s ease;
 }
 
-/* Controls row */
+/* Controls row: pinned to the bottom of the frame, out of the flow, so showing
+   them to the presenter does not lift the digits. */
 .slide-countdown .cd-controls {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
   display: flex;
+  justify-content: center;
   gap: var(--slide-space-4);
-  margin-top: 0.4em;
 }
 
 .slide-countdown .cd-controls[hidden] {

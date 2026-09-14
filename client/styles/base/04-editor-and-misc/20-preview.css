@@ -93,7 +93,15 @@
   text-align: center;
 }
 
-.preview-panel-scroll {
+/* The preview panel's body is deliberately NOT a `.panel-scroll`: that class
+   makes a box scroll (`overflow-y: auto`), and a scrollbar here feeds back into
+   the fit. Any sub-pixel overflow (the hover lift, an inline-edit chip) would
+   show a scrollbar, narrow the stage, shrink the thumb via
+   attachThumbScaleContain(), drop the scrollbar and grow the thumb again — a
+   ResizeObserver loop that made the preview flicker between two sizes. */
+.preview-panel-body {
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   /* The slide preview should always be fully visible; notes can scroll independently. */
@@ -271,10 +279,10 @@
 
 /* ─────────────────────────────────────────────────────────────────────────────
    The slide preview must always be fully visible — no vertical scrollbar on the
-   stage. Presenter notes live in their own strip beneath the scroll container
+   stage. Presenter notes live in their own strip beneath the panel body
    (notes-strip.js), so the stage never needs to scroll: it fills the available
    height and attachThumbScaleContain() fits the 16:9 slide within it (scaling by
    whichever of width/height is the limiting dimension). The base rules
-   (.preview-panel-scroll { overflow: hidden } + .preview-stage { flex: 1;
+   (.preview-panel-body { overflow: hidden } + .preview-stage { flex: 1;
    min-height: 0 }) already do this, so no desktop override is needed.
    ───────────────────────────────────────────────────────────────────────────── */
