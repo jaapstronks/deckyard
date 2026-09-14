@@ -10,13 +10,13 @@
  *     button, F11 in Chrome on Windows/Linux — where `:fullscreen` never
  *     matches.
  * One detector turns both into one class, `html.is-fullscreen`; the CSS keys
- * on that class alone (D111).
+ * on that class alone (D111), and so does every reader: the class is the one
+ * signal, so the detector itself is not exported.
  *
  * @param {object} [opts]
  * @param {Element} [opts.shell] - The `.presenter-shell`; fullscreened instead
  *   of `<html>` when the API route is taken.
- * @returns {{ attach: () => () => void, toggleFullscreen: () => void,
- *   isFullscreen: () => boolean }}
+ * @returns {{ attach: () => () => void, toggleFullscreen: () => void }}
  */
 export function createPresenterFullscreenController({ shell } = {}) {
   const isFullscreen = () => {
@@ -60,5 +60,5 @@ export function createPresenterFullscreenController({ shell } = {}) {
     }
   };
 
-  return { attach, toggleFullscreen, isFullscreen };
+  return { attach, toggleFullscreen };
 }
