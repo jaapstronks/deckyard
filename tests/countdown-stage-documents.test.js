@@ -89,9 +89,9 @@ test('the stage chain inlines the countdown runtime and still parses', () => {
     assert.match(html, /function initCountdownSlides/);
     assert.match(html, /initCountdownSlides\(document\);/);
     assert.doesNotMatch(html, /^\s*export\s/m);
-    const source = html
-      .replace(/^<script[^>]*>/, '')
-      .replace(/<\/script>$/, '');
+    // The chain emits exactly one element, so its body sits between the end
+    // of the opening tag and the start of the closing one.
+    const source = html.slice(html.indexOf('>') + 1, html.lastIndexOf('</'));
     // The chain carries no import or export, so a module body parses as a
     // script too.
     assert.doesNotThrow(
