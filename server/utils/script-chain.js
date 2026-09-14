@@ -35,6 +35,8 @@
  * If it is ever taken, this is where it lands, and the seam goes last.
  */
 
+import { readFileSync } from 'node:fs';
+
 import { buildPrismKatexInitScript } from './prism-katex.js';
 
 /** Marks an assembled runtime block. Also the handle the registry test uses. */
@@ -156,6 +158,59 @@ function attachStageScale() {
 }`;
 
 /**
+ * The countdown timer, from the one module the app itself runs
+ * (`client/lib/slide-runtime/countdown-runtime.js`), not a server-side copy.
+ * That module has no imports and a single export, so dropping the `export`
+ * keyword and closing it in a block of its own is all it takes to run it as a
+ * classic script: its helpers cannot collide with a path's body.
+ *
+ * Stage documents only. A `none` document lays its slides out as a static
+ * sheet, where a ticking timer would be wrong.
+ */
+const COUNTDOWN_MODULE = new URL(
+  '../../client/lib/slide-runtime/countdown-runtime.js',
+  import.meta.url,
+);
+
+let countdownRuntime = null;
+function countdownRuntimeSource() {
+  if (countdownRuntime) return countdownRuntime;
+  const src = readFileSync(COUNTDOWN_MODULE, 'utf8');
+  if (/^\s*import\s/m.test(src)) {
+    throw new Error(
+      'countdown-runtime.js imports a module; the script chain inlines it as a classic script and cannot follow imports',
+    );
+  }
+  const body = src.replace(
+    /^export function initCountdownSlides\b/m,
+    'function initCountdownSlides',
+  );
+  if (body === src || /^export\s/m.test(body)) {
+    throw new Error(
+      'countdown-runtime.js must have exactly one export, `export function initCountdownSlides`',
+    );
+  }
+  countdownRuntime = `${SLIDE_RUNTIME_BANNER}
+// Countdown slides: client/lib/slide-runtime/countdown-runtime.js, inlined.
+{
+${body.trim()}
+
+initCountdownSlides(document);
+}`;
+  return countdownRuntime;
+}
+
+/**
+ * Which client slide runtimes a rendered deck needs, from its markup.
+ *
+ * @param {string} slidesHtml
+ * @returns {{countdown: boolean}}
+ */
+export function detectSlideRuntimeNeeds(slidesHtml) {
+  return { countdown: /\bslide-countdown\b/.test(String(slidesHtml || '')) };
+}
+
+/**
  * Assemble the `<script>` a render path carries.
  *
  * Order is fixed and is the whole contract: shared runtime first (so the body
@@ -170,6 +225,9 @@ function attachStageScale() {
  *   rendered slides actually contain, from `detectPrismKatexNeeds()`. Omitted
  *   means "assume both". `{prism: false, katex: false}` emits no initialiser,
  *   which is the point of detecting: a deck with neither runs nothing.
+ * @param {{countdown: boolean}} [options.slideNeeds] - Client slide runtimes
+ *   the slides need, from `detectSlideRuntimeNeeds()`. Stage runtime only;
+ *   asking for one on a `none` document throws.
  * @param {string} [options.body=''] - The path's own runtime.
  * @param {boolean} [options.module=false] - Emit `<script type="module">`
  *   instead of wrapping the block in an IIFE. Both give the block a scope of
@@ -180,6 +238,7 @@ function attachStageScale() {
 export function buildScriptChain({
   runtime = 'none',
   needs = undefined,
+  slideNeeds = undefined,
   body = '',
   module = false,
 } = {}) {
@@ -188,9 +247,17 @@ export function buildScriptChain({
       `unknown script runtime "${runtime}" — one of ${SCRIPT_RUNTIMES.join('/')}`,
     );
   }
+  if (slideNeeds?.countdown && runtime !== 'stage') {
+    throw new Error(
+      `slide runtimes need the stage runtime, not "${runtime}" — a static sheet has no active slide to run a timer on`,
+    );
+  }
 
   const parts = [];
   if (runtime === 'stage') parts.push(STAGE_RUNTIME);
+  // Before the body: it only arms. Auto-start waits a microtask for the body
+  // to mark the first slide `is-active`.
+  if (slideNeeds?.countdown) parts.push(countdownRuntimeSource());
   if (String(body || '').trim()) parts.push(dedent(String(body)));
 
   const init = buildPrismKatexInitScript(needs ?? {});

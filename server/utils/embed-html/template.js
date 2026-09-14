@@ -3,7 +3,7 @@ import { DEFAULT_THEME_ID } from '../../../shared/constants/themes.js';
 import { repoRoot as defaultRepoRoot } from '../../config/paths.js';
 import { buildCssChain } from '../css-chain.js';
 import { buildDocumentHead } from '../head-chain.js';
-import { buildScriptChain } from '../script-chain.js';
+import { buildScriptChain, detectSlideRuntimeNeeds } from '../script-chain.js';
 import { buildPrismKatexTags, detectPrismKatexNeeds } from '../prism-katex.js';
 import {
   getLangDisplayName,
@@ -456,6 +456,7 @@ export function renderEmbedHtmlDocument({
       runtime: 'stage',
       module: true,
       needs: highlightNeeds,
+      slideNeeds: detectSlideRuntimeNeeds(slidesHtml),
       body: EMBED_RUNTIME_JS,
     })}
   </body>
