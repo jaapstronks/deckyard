@@ -7,7 +7,8 @@
  *
  * Behaviour:
  *  - interactive (present / follow): Start / Pause / Reset controls are shown.
- *    The timer does NOT run on open unless `data-countdown-autostart="1"`.
+ *    The timer does NOT run on open unless `data-countdown-autostart="1"`, and
+ *    then it starts the first time its slide becomes the active one.
  *  - non-interactive (thumb): controls hidden, timer never runs, shows the
  *    configured start time as a static preview.
  *
@@ -210,9 +211,37 @@ function initOne(slideEl, { interactive }) {
   btnPause?.addEventListener('click', onPauseClick);
   btnReset?.addEventListener('click', onResetClick);
 
-  if (autoStart) start();
+  // Auto-start fires when the slide is first shown, not when it is mounted:
+  // the presenter mounts the whole deck at once, so starting here would run
+  // every auto-start countdown in parallel from the moment the deck loads.
+  // The deck section is only attached (and marked `is-active`) after this
+  // init returns, hence the microtask. Outside the presenter there is no
+  // section and the slide on screen is the one being initialised.
+  let activationObserver = null;
+  let disposed = false;
+  const armAutoStart = () => {
+    if (disposed) return;
+    const deckSection = slideEl.closest?.('section.deck-slide');
+    if (!deckSection || deckSection.classList.contains('is-active')) {
+      start();
+      return;
+    }
+    activationObserver = new MutationObserver(() => {
+      if (!deckSection.classList.contains('is-active')) return;
+      activationObserver.disconnect();
+      activationObserver = null;
+      start();
+    });
+    activationObserver.observe(deckSection, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+  };
+  if (autoStart) queueMicrotask(armAutoStart);
 
   return () => {
+    disposed = true;
+    activationObserver?.disconnect();
     stopTicking();
     btnStart?.removeEventListener('click', onStartClick);
     btnPause?.removeEventListener('click', onPauseClick);
