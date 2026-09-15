@@ -16,7 +16,7 @@ const log = createLogger('themes');
 
 const THEME_ID_RE = /^[a-z0-9-]{1,32}$/i;
 const cache = new Map(); // id -> theme object
-const customThemeCache = new Map(); // uuid -> theme object
+const customThemeCache = new Map(); // uuid -> { theme, organizationId }
 
 // Default theme for OSS version (can be overridden via DEFAULT_THEME env var)
 const DEFAULT_THEME = envStr('DEFAULT_THEME', DEFAULT_THEME_ID);
@@ -160,9 +160,17 @@ async function loadCustomTheme(themeId, ctx, repoRoot) {
  * @returns {Promise<Object|null>} Normalized theme config, or null
  */
 async function loadCustomThemeRecord(themeId, ctx, repoRoot) {
-  // Check cache first
-  if (customThemeCache.has(themeId)) {
-    return customThemeCache.get(themeId);
+  // The cache is shared by every caller, so a hit has to pass the same
+  // organization filter the database read below applies: a session ctx must
+  // not be handed another organization's theme because some deck render warmed
+  // the cache with it (B278: `POST /api/render-slide` takes the UUID from the
+  // client, not from a deck).
+  const cached = customThemeCache.get(themeId);
+  if (
+    cached &&
+    (!ctx?.organizationId || cached.organizationId === ctx.organizationId)
+  ) {
+    return cached.theme;
   }
 
   try {
@@ -196,7 +204,10 @@ async function loadCustomThemeRecord(themeId, ctx, repoRoot) {
       // Build full theme config from database record
       const themeConfig = buildThemeConfig(dbTheme, { managedFonts });
       const normalized = normalizeTheme(themeConfig);
-      customThemeCache.set(themeId, normalized);
+      customThemeCache.set(themeId, {
+        theme: normalized,
+        organizationId: dbTheme.organizationId ?? null,
+      });
       return normalized;
     }
   } catch (err) {

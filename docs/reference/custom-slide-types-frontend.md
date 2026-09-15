@@ -97,15 +97,28 @@ sub-fields).
   type surfaces in the slide picker and its `usage` string travels to agents:
   `get_slide_types` lists it as `custom-<slug>`.
 - **Insert into a deck.** The picker's "Custom" group inserts the type; the form
-  router renders its fields. Actual slide rendering goes through the server:
-  `client/lib/slide-runtime/slide-render.js` posts to
-  `POST /api/presentations/:id/render-slide`
-  (`server/routes/api/presentations/render-slide.js`) when the type is either
-  **not bundled** (the normal case for a custom type) or **bundled but
-  overridden server-side** (a fork file that replaces a core name with
-  `override: true`, named in `window.__DECK_SERVER_RENDERED_TYPES__`). Types on
-  a tombstone record are excluded — they render the archived-slide placeholder
-  client-side.
+  router renders its fields. Actual slide rendering goes through the server
+  when the type is either **not bundled** (the normal case for a custom type)
+  or **bundled but overridden server-side** (a fork file that replaces a core
+  name with `override: true`, named in `window.__DECK_SERVER_RENDERED_TYPES__`).
+  Types on a tombstone record are excluded — they render the archived-slide
+  placeholder client-side. `client/lib/slide-runtime/slide-render.js` picks
+  one of two ways into the same server render (`serveSlideRender` in
+  `server/routes/api/render-slide.js`):
+  - **With a deck**: `POST /api/presentations/:id/render-slide`
+    (`server/routes/api/presentations/render-slide.js`). The deck authorizes the
+    render and names the theme and language.
+  - **Without a deck** (the settings curation grid, the slide-type picker's
+    preview tiles, samples): `POST /api/render-slide` with
+    `{ slide, mode, theme, lang }`. `theme` (a theme id, or `null` for the
+    instance default) and `lang` (a deck language, or `null` for
+    `NO_DECK_LANG`) are both required; a body silent about either is refused.
+    A database theme UUID resolves under the session's organization only.
+
+  Both use the request organization's merged registry
+  (`buildMergedSlideTypes`), so a deckless render sees the same fork and
+  published database types `/api/slide-types` lists.
+
 - **Reorder.** The settings grid drags cards
   (`editor/inline-edit/reorder-geometry.js`); the ⋮ menu offers "Move
   earlier"/"Move later". Both write the full id list to

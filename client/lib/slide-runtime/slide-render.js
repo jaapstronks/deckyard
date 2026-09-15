@@ -162,9 +162,8 @@ function isServerOverriddenType(type) {
  * the same treatment even though it is "bundled" — hence the override check. A
  * type on the tombstone record is different: it is gone everywhere, so the
  * round-trip can only come back with the same archived-slide placeholder the
- * client can render itself. Asking anyway would leave the slide stuck on the
- * bare "loading" box whenever there is no presentation id (a thumbnail, a
- * preview, an offline render).
+ * client can render itself. Asking anyway would only fetch that placeholder
+ * back, or leave the bare "loading" box when the request fails.
  */
 function needsServerRender(type) {
   if (!type || getRemovedSlideType(type)) return false;
@@ -172,23 +171,70 @@ function needsServerRender(type) {
 }
 
 /**
+ * The id the server resolves a loaded theme by. A database theme reports its
+ * slug as `id` and carries the UUID in `_customThemeId` (see `isThemeForId` in
+ * `client/lib/theme/theme.js`); the server loads it by the UUID.
+ *
+ * @param {object|null|undefined} theme
+ * @returns {string|null}
+ */
+function serverThemeId(theme) {
+  return theme?._customThemeId || theme?.id || null;
+}
+
+/**
+ * The request that renders `slide` on the server.
+ *
+ * With a deck, the deck route: the deck authorizes the render and names its
+ * theme and language. Without one, `POST /api/render-slide` with the theme and
+ * language this surface renders against, stated rather than implied — the same
+ * render path on the server (B278).
+ */
+function serverRenderRequest({ slide, presentationId, mode, theme, lang }) {
+  if (presentationId) {
+    return {
+      path: `/api/presentations/${presentationId}/render-slide`,
+      body: { slide, mode },
+      key: `deck:${presentationId}`,
+    };
+  }
+  const themeId = serverThemeId(theme);
+  return {
+    path: '/api/render-slide',
+    body: { slide, mode, theme: themeId, lang: lang ?? null },
+    key: `theme:${themeId}:${lang ?? ''}`,
+  };
+}
+
+/**
  * Render a slide using server-side rendering (for custom slide types).
  * Returns a promise that resolves to the HTML string.
  */
-async function serverRenderSlide({ slide, presentationId, mode, api }) {
-  const cacheKey = `${presentationId}:${slide?.id}:${slide?.type}:${mode}:${JSON.stringify(slide?.content || {})}`;
+async function serverRenderSlide({
+  slide,
+  presentationId,
+  mode,
+  theme,
+  lang,
+  api,
+}) {
+  const request = serverRenderRequest({
+    slide,
+    presentationId,
+    mode,
+    theme,
+    lang,
+  });
+  const cacheKey = `${request.key}:${slide?.id}:${slide?.type}:${mode}:${JSON.stringify(slide?.content || {})}`;
   if (serverRenderCache.has(cacheKey)) {
     return serverRenderCache.get(cacheKey);
   }
 
   const apiFn = api || defaultApi;
-  const resp = await apiFn(
-    `/api/presentations/${presentationId}/render-slide`,
-    {
-      method: 'POST',
-      body: JSON.stringify({ slide, mode }),
-    },
-  );
+  const resp = await apiFn(request.path, {
+    method: 'POST',
+    body: JSON.stringify(request.body),
+  });
 
   const html =
     resp?.html ||
@@ -413,11 +459,18 @@ export function renderSlideElement(
     );
   }
 
-  // For custom slide types, trigger async server-side rendering
-  if (el.dataset.needsServerRender === '1' && presentationId) {
+  // For custom slide types, trigger async server-side rendering — against the
+  // deck when there is one, otherwise against the theme and language given.
+  if (el.dataset.needsServerRender === '1') {
     pendingServerRenders.set(
       el,
-      triggerServerRender(el, slide, { mode, theme, presentationId, api }),
+      triggerServerRender(el, slide, {
+        mode,
+        theme,
+        presentationId,
+        lang,
+        api,
+      }),
     );
   }
 
@@ -434,8 +487,9 @@ const pendingServerRenders = new WeakMap();
  * A client-rendered slide is complete when it is returned, so this resolves
  * `true` straight away. A server-rendered one starts as a `slide-loading`
  * placeholder; this resolves once `triggerServerRender` has settled: `true` when
- * the markup was swapped in, `false` when it never will be (the render failed,
- * the element was unmounted first, or there was no deck to render against).
+ * the markup was swapped in, `false` when it never will be (the render failed
+ * or the element was unmounted first). A surface without a deck gets its render
+ * too: `renderSlideElement` then asks for one against its theme and language.
  *
  * This is the one signal that server markup landed (D113): the editor canvas
  * awaits it to redecorate after a mount, the ghost spawn to find the field it
@@ -459,10 +513,17 @@ export function slideRendered(el) {
 async function triggerServerRender(
   el,
   slide,
-  { mode, theme, presentationId, api },
+  { mode, theme, presentationId, lang, api },
 ) {
   try {
-    const html = await serverRenderSlide({ slide, presentationId, mode, api });
+    const html = await serverRenderSlide({
+      slide,
+      presentationId,
+      mode,
+      theme,
+      lang,
+      api,
+    });
     const wrap = h('div');
     wrap.innerHTML = html.trim();
     const newContent = wrap.firstElementChild;
