@@ -4,6 +4,13 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.33.4](https://github.com/jaapstronks/deckyard/compare/v1.33.3...v1.33.4) (2026-09-15)
+
+
+### Fixed
+
+* **editor:** spawn ghost fields on server-rendered slide types ([#1139](https://github.com/jaapstronks/deckyard/issues/1139)) ([b60e28d](https://github.com/jaapstronks/deckyard/commit/b60e28d3bd3d183f527e109f4a77d9648c0fbb5e))
+
 ## [1.33.3](https://github.com/jaapstronks/deckyard/compare/v1.33.2...v1.33.3) (2026-09-15)
 
 
