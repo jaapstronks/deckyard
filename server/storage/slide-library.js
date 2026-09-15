@@ -25,6 +25,7 @@ import {
   NO_DISPLAY_NAMES,
 } from './display-identity.js';
 import { nowIso } from '../utils/normalize.js';
+import { migrateLibraryItem } from '../../shared/slide-types/schema-version.js';
 
 /**
  * Serialize a JSONB value for PostgreSQL.
@@ -43,17 +44,25 @@ function jsonb(value) {
  *   Resolved display names; omitted derives them from the stored address.
  * @returns {object}
  */
-function mapSlideLibraryRow(row, lookup = NO_DISPLAY_NAMES) {
+export function mapSlideLibraryRow(row, lookup = NO_DISPLAY_NAMES) {
+  // Through the deck funnel on every read, like a presentation (B286): the
+  // stored content can predate any step of the schema ledger, and every reader
+  // of the library - preview, insert, compose, public API, MCP - reads here.
+  const { slideType, content, i18n } = migrateLibraryItem({
+    slideType: row.slide_type,
+    content: row.content || {},
+    i18n: row.i18n || {},
+  });
   return {
     id: row.id,
     shelf: row.shelf,
     ownerEmail: row.owner_email,
     name: row.name,
     description: row.description || '',
-    slideType: row.slide_type,
+    slideType,
     themeId: row.theme_id,
-    content: row.content || {},
-    i18n: row.i18n || {},
+    content,
+    i18n,
     favorites: row.favorites || [],
     trashedAt: row.trashed_at,
     // Everyone named on an item is a display pair (D22): the stable `users.id`

@@ -49,6 +49,7 @@ import {
 } from './field-groups.js';
 import { REMOVED_SLIDE_TYPES } from './removed.js';
 import { foldUnofferedEnums } from './normalize-content.js';
+import { canonicalJson } from '../slide-fingerprint.js';
 
 /** The schema version every freshly written deck is stamped with. */
 export const CURRENT_SCHEMA_VERSION = 15;
@@ -271,6 +272,37 @@ function foldLegacySlots(family, content) {
  */
 function str(v) {
   return v == null ? '' : String(v).trim();
+}
+
+/**
+ * Whether a canonical array is exactly what the type's defaults seed, in any
+ * language: the placeholder a fresh slide gets, not something a person wrote.
+ *
+ * Why the slot folds need this (B286): a slide-library item stored before the
+ * v7 -> v8 / v8 -> v9 folds carries only the numbered slots, and inserting it
+ * merged the type's `defaults` underneath - which seed the array. The deck then
+ * held the seed *beside* the real slots, and "a populated array wins" dropped
+ * the slots and kept the placeholder. Treating the seed as empty lets the slots
+ * fold instead. Still a normaliser: the check only runs on a slide that carries
+ * legacy slot keys, which no current writer produces.
+ * @param {string} type
+ * @param {string} arrayKey
+ * @param {any} value
+ * @returns {boolean}
+ */
+function isSeededArray(type, arrayKey, value) {
+  if (!Array.isArray(value) || value.length === 0) return false;
+  const def = getSlideType(type);
+  if (!def) return false;
+  const seeds = [def.defaults?.[arrayKey]];
+  const byLang = def.defaultsByLang;
+  if (byLang && typeof byLang === 'object')
+    for (const d of Object.values(byLang)) seeds.push(d?.[arrayKey]);
+  // Key-order blind: a JSONB column hands keys back in its own order.
+  const stored = canonicalJson(value);
+  return seeds.some(
+    (seed) => Array.isArray(seed) && canonicalJson(seed) === stored,
+  );
 }
 
 /** Type + group the v4 -> v5 quote-alignment fold reads its target key from. */
@@ -906,6 +938,10 @@ export const SCHEMA_MIGRATIONS = [
   // knobs and why each one is what it is), and then the legacy keys are
   // dropped. Nothing is lost: a slot the resolver ignored rendered nowhere.
   //
+  // An array that is exactly the type's seeded placeholder does not count as
+  // populated (B286, see `isSeededArray`): that is the shape inserting a
+  // pre-v8 slide-library item left behind, and there the slots are the content.
+  //
   // Idempotent: a slide with no key from the family is untouched, and after one
   // run there is no such key left.
   (pres) => {
@@ -918,7 +954,11 @@ export const SCHEMA_MIGRATIONS = [
       const stored = legacySlotKeys(family, content);
       if (!stored.length) continue;
       const canonical = content[family.arrayKey];
-      if (!Array.isArray(canonical) || canonical.length === 0) {
+      if (
+        !Array.isArray(canonical) ||
+        canonical.length === 0 ||
+        isSeededArray(slide.type, family.arrayKey, canonical)
+      ) {
         const folded = foldLegacySlots(family, content);
         if (folded.length) content[family.arrayKey] = folded;
       }
@@ -943,7 +983,8 @@ export const SCHEMA_MIGRATIONS = [
   // (see LEGACY_OPTION_SLOTS).
   //
   // As in v7 -> v8: a populated canonical array wins untouched and the legacy
-  // keys are dropped either way. Idempotent — after one run no slot key is
+  // keys are dropped either way, and the type's seeded placeholder options do
+  // not count as populated (B286). Idempotent — after one run no slot key is
   // left, and a slide that never had one is untouched.
   (pres) => {
     for (const slide of eachSlide(pres)) {
@@ -964,7 +1005,9 @@ export const SCHEMA_MIGRATIONS = [
       if (!stored.length) continue;
       const canonical = content[family.arrayKey];
       if (
-        (!Array.isArray(canonical) || canonical.length === 0) &&
+        (!Array.isArray(canonical) ||
+          canonical.length === 0 ||
+          isSeededArray(slide.type, family.arrayKey, canonical)) &&
         folded.length
       ) {
         content[family.arrayKey] = folded;
@@ -1158,4 +1201,55 @@ export function migratePresentation(pres) {
   }
   out.schemaVersion = CURRENT_SCHEMA_VERSION;
   return out;
+}
+
+/**
+ * Run a slide-library item through the same funnel as a deck (B286).
+ *
+ * A library item is a copy of one slide - `slideType` + `content`, plus a
+ * `content` per language under `i18n.versions[lang]` - stored in its own table.
+ * Nothing ever passed it through `migratePresentation()`, so every shape change
+ * of the ledger skipped the library: an item saved before v8 still rendered its
+ * numbered `card*` slots to nobody. Rather than a second list of steps, the item
+ * is dressed as a one-slide deck (one slide per language version) and handed to
+ * the deck funnel, so a step appended to `SCHEMA_MIGRATIONS` covers the library
+ * the moment it exists. A step that renames the type renames `slideType` too.
+ *
+ * Mutates the item's `content` / `i18n.versions[*].content` in place and returns
+ * the item; anything that is not an object is returned as-is. Idempotent, like
+ * the funnel.
+ * @template T
+ * @param {T} item - `{ slideType, content, i18n }`
+ * @returns {T}
+ */
+export function migrateLibraryItem(item) {
+  if (!item || typeof item !== 'object') return item;
+  const type = typeof item.slideType === 'string' ? item.slideType : '';
+  if (!type) return item;
+  const asSlide = (content) => ({
+    type,
+    content: content && typeof content === 'object' ? content : {},
+  });
+  const versions = {};
+  const stored = item.i18n?.versions;
+  if (stored && typeof stored === 'object') {
+    for (const [lang, version] of Object.entries(stored)) {
+      if (!version?.content || typeof version.content !== 'object') continue;
+      versions[lang] = { slides: [asSlide(version.content)] };
+    }
+  }
+  // Read the result back off the deck, not off the objects handed in: a step
+  // may replace a slide or its content rather than edit it.
+  const deck = migratePresentation({
+    slides: [asSlide(item.content)],
+    i18n: { versions },
+  });
+  const top = deck.slides?.[0];
+  if (top?.content) item.content = top.content;
+  for (const lang of Object.keys(versions)) {
+    const migrated = deck.i18n?.versions?.[lang]?.slides?.[0]?.content;
+    if (migrated) stored[lang].content = migrated;
+  }
+  if (top?.type && top.type !== type) item.slideType = top.type;
+  return item;
 }
