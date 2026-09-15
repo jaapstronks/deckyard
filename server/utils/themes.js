@@ -160,24 +160,31 @@ async function loadCustomTheme(themeId, ctx, repoRoot) {
  * @returns {Promise<Object|null>} Normalized theme config, or null
  */
 async function loadCustomThemeRecord(themeId, ctx, repoRoot) {
+  // Two kinds of caller, told apart by whether they pass a ctx at all. Render
+  // and export paths pass none: the theme UUID came out of the deck being
+  // rendered and is the authorization (cross-organization category 1). A
+  // session passes its storage scope, and then the theme has to belong to that
+  // scope's organization; a session scope that names no organization (an
+  // unverified user under multi-organization, see `createStorageScope`) gets
+  // no database theme rather than the cross-organization read.
+  const sessionScoped = ctx != null;
+  if (sessionScoped && !ctx.organizationId) return null;
+
   // The cache is shared by every caller, so a hit has to pass the same
-  // organization filter the database read below applies: a session ctx must
-  // not be handed another organization's theme because some deck render warmed
-  // the cache with it (B278: `POST /api/render-slide` takes the UUID from the
+  // organization filter the database read below applies: a session must not be
+  // handed another organization's theme because some deck render warmed the
+  // cache with it (B278: `POST /api/render-slide` takes the UUID from the
   // client, not from a deck).
   const cached = customThemeCache.get(themeId);
   if (
     cached &&
-    (!ctx?.organizationId || cached.organizationId === ctx.organizationId)
+    (!sessionScoped || cached.organizationId === ctx.organizationId)
   ) {
     return cached.theme;
   }
 
   try {
-    // A session ctx keeps the organization filter; render and export paths
-    // have none — there the theme UUID came out of the deck being rendered
-    // and is the authorization (cross-organization category 1).
-    const scope = ctx?.organizationId
+    const scope = sessionScoped
       ? ctx
       : crossOrganizationScope(
           repoRoot ?? null,

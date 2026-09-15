@@ -75,3 +75,25 @@ test('a warm cache does not hand another organization its theme', async () => {
     'another organization gets the default theme, not this one',
   );
 });
+
+test('a session scope without an organization gets no database theme', async () => {
+  clearCustomThemeCache();
+  const created = await createTheme(testScope(null, { actorEmail: OWNER }), {
+    label: 'Orphan probe',
+    slug: 'orphan-probe',
+    colors: { primary: '#00ff55' },
+  });
+  assert.equal(created.ok, true);
+  const uuid = created.theme.id;
+
+  // An unverified user under multi-organization: `createStorageScope` gives a
+  // scope, but no organization. Neither a cold nor a warm cache may fall
+  // through to the unscoped read render paths use.
+  const orphan = { repoRoot: null, organizationId: null };
+  const cold = await loadThemeAssets(repoRoot, uuid, orphan);
+  assert.notEqual(cold?._customThemeId, uuid, 'cold cache: default theme');
+
+  await loadThemeAssets(repoRoot, uuid);
+  const warm = await loadThemeAssets(repoRoot, uuid, orphan);
+  assert.notEqual(warm?._customThemeId, uuid, 'warm cache: default theme');
+});
