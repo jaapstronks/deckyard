@@ -4,6 +4,13 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.33.5](https://github.com/jaapstronks/deckyard/compare/v1.33.4...v1.33.5) (2026-09-15)
+
+
+### Fixed
+
+* **slide-library:** run library items through the schema funnel ([#1141](https://github.com/jaapstronks/deckyard/issues/1141)) ([47021f4](https://github.com/jaapstronks/deckyard/commit/47021f489a576c0df3574dc784565ead9b69b485))
+
 ## [1.33.4](https://github.com/jaapstronks/deckyard/compare/v1.33.3...v1.33.4) (2026-09-15)
 
 
