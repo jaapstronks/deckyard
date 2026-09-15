@@ -96,14 +96,16 @@ function setup(slide) {
   const rerenderPreview = () => {
     if (editor.isEditing()) return;
     thumb.innerHTML = '';
-    thumb.append(
-      renderSlideElement(slide, {
-        mode: 'edit',
-        presentationId: pres.id,
-        api,
-        lang: NO_DECK_LANG,
-      }),
-    );
+    const mounted = renderSlideElement(slide, {
+      mode: 'edit',
+      presentationId: pres.id,
+      api,
+      lang: NO_DECK_LANG,
+    });
+    thumb.append(mounted);
+    slideRendered(mounted).then((ok) => {
+      if (ok && mounted.isConnected) editor.refresh();
+    });
     editor.refresh();
   };
   editor = createInlineEditor({
@@ -116,7 +118,6 @@ function setup(slide) {
     rerenderPreview,
     pres,
   });
-  thumb.addEventListener('slide-server-rendered', () => editor.refresh());
   rerenderPreview();
   return {
     thumb,

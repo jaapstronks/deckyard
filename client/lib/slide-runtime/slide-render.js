@@ -437,11 +437,10 @@ const pendingServerRenders = new WeakMap();
  * the markup was swapped in, `false` when it never will be (the render failed,
  * the element was unmounted first, or there was no deck to render against).
  *
- * This is the per-element form of the `slide-server-rendered` event. The event
- * tells a container "some slide under you changed, decorate again"; this
- * answers "is THIS element done", which is what a caller that must act on the
- * rendered DOM needs — and unlike the event it also settles on failure, so an
- * awaiting caller never hangs.
+ * This is the one signal that server markup landed (D113): the editor canvas
+ * awaits it to redecorate after a mount, the ghost spawn to find the field it
+ * asked for. It settles on failure too, so an awaiting caller never hangs; a
+ * caller that remounted in the meantime checks `el.isConnected` itself.
  *
  * @param {Element|null|undefined} el
  * @returns {Promise<boolean>}
@@ -480,12 +479,8 @@ async function triggerServerRender(
       if (theme) applyThemeVarsToElement(el, theme);
       // Initialize code highlighting and math rendering
       initCodeAndMath(el);
-      // The sync mount already ran its decorators against the placeholder;
-      // let listeners (the editor's inline-edit overlay) re-apply against the
-      // real slide DOM now that it exists.
-      el.dispatchEvent(
-        new CustomEvent('slide-server-rendered', { bubbles: true }),
-      );
+      // Callers that decorated the placeholder re-apply against the real slide
+      // DOM by awaiting slideRendered(el).
       return true;
     }
   } catch (err) {

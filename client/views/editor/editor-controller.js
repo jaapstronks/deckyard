@@ -22,6 +22,7 @@ import {
   cleanupSlideRuntimes,
   mountSlideInto,
   renderSlideElement,
+  slideRendered,
 } from '../../lib/slide-runtime/slide-render.js';
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 import { lockDocumentScroll } from './editor-utils.js';
@@ -1483,15 +1484,6 @@ export async function createEditorController({
   });
   cleanup.register('inlineEditor', inlineEditor.detach);
 
-  // Custom (non-bundled) slide types render a placeholder synchronously and
-  // get their real DOM from the server afterwards — re-apply the inline-edit
-  // affordances then (refresh() is a no-op mid-edit and for undecorated types).
-  const onSlideServerRendered = () => inlineEditor.refresh();
-  thumb.addEventListener('slide-server-rendered', onSlideServerRendered);
-  cleanup.register('inlineServerRenderRefresh', () =>
-    thumb.removeEventListener('slide-server-rendered', onSlideServerRendered),
-  );
-
   // ============================================================
   // PREVIEW RERENDER
   // ============================================================
@@ -1506,13 +1498,20 @@ export async function createEditorController({
     // otherwise intercept click-to-edit). Behaves like the default mode for all
     // runtime guards in slide-render (verified: only 'thumb'/'present'/'follow'
     // are special-cased).
-    mountSlideInto(thumb, slide, {
+    const mounted = mountSlideInto(thumb, slide, {
       mode: 'edit',
       theme,
       presentationId: pres?.id,
       // The canvas is a render surface like any other: without this the
       // interactive types cannot know the deck's language.
       lang: resolveDeckLang(pres),
+    });
+    // A server-rendered type (fork type, fork override) mounts a placeholder
+    // and gets its real DOM afterwards: re-apply the inline-edit affordances
+    // then, unless this slide was remounted or the editor left in the meantime
+    // (refresh() is a no-op mid-edit and for undecorated types).
+    slideRendered(mounted).then((ok) => {
+      if (ok && mounted.isConnected) inlineEditor.refresh();
     });
     if (!slide) {
       inlineEditor.refresh();

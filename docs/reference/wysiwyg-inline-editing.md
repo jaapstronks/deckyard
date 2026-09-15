@@ -36,10 +36,7 @@ destroyed mid-type. The solution, in `editor-controller.js` +
   field-to-field editing smooth.
 - All decoration (ghost chips, card buttons, clear buttons, outlines, grips)
   is stateless against the DOM: it is rebuilt in `inlineEditor.refresh()`,
-  which the controller calls after every mount. Custom (server-rendered)
-  slide types re-apply affordances via the `slide-server-rendered` event;
-  code that must act on one element's finished markup awaits
-  `slideRendered(el)` instead (see _Ghost spawn_ below).
+  which the controller calls after every mount. A server-rendered slide type (a fork type, or a fork override of a core name) mounts a placeholder first, so the controller calls it again once `slideRendered(el)` from `client/lib/slide-runtime/slide-render.js` resolves `true` for the slide it mounted. That promise is the one signal that server markup landed (D113); the ghost spawn below awaits the same one.
 
 The canvas mounts with `mode: 'edit'`, which lets slide types suppress
 non-editing affordances (e.g. icon-card link overlays that would intercept
