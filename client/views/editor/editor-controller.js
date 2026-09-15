@@ -260,7 +260,7 @@ export async function createEditorController({
     },
     onLockFailed: ({ slideId, lock }) => {
       const name = lock?.holder?.displayName || 'another user';
-      toast?.warn?.(
+      toast.warning(
         t('editor.slideLocked.toast', 'This slide is being edited by {name}', {
           name,
         }),
@@ -270,6 +270,9 @@ export async function createEditorController({
       restoreSlideFromServer({ api, presentationId: id, pres, slideId })
         .then((restored) => {
           if (!restored) return;
+          saveManager.adoptServerSlide(
+            pres.slides.find((s) => s?.id === slideId),
+          );
           slideLockManager.resyncSlide(slideId);
           rerenderSlideList();
           rerenderPreview();
@@ -1522,6 +1525,13 @@ export async function createEditorController({
       previewNotesTa.value = slide.notes || '';
       previewPanel.refreshSlideComments?.();
     } else {
+      // Typing keeps the two equal (notes-strip writes the value into the
+      // slide), so a difference means the slide was replaced from outside: an
+      // adopted remote update or a refused edit taken back (D112). Left stale,
+      // the next keystroke would write the old text over the server copy.
+      if (previewNotesTa.value !== (slide.notes || '')) {
+        previewNotesTa.value = slide.notes || '';
+      }
       // mountSlideInto wiped thumb.innerHTML — restore the markers container
       // so positioned comments stay visible during edit-time rerenders too.
       previewPanel.reattachCommentMarkers?.();

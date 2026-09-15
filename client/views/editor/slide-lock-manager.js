@@ -12,7 +12,8 @@
  * 3. Refreshes the held lock every 30 seconds while the user keeps editing
  * 4. Releases the held lock on switching slides, after IDLE_RELEASE_MS
  *    without a change, and when the tab is hidden
- * 5. Listens for SSE events to show locks held by other users
+ * 5. Listens for SSE events to show locks held by other users, and re-fetches
+ *    while the selected slide shows as held (an expired lock is not broadcast)
  * 6. Releases all locks on page unload
  */
 
@@ -280,6 +281,17 @@ export function createSlideLockManager({
     }
   };
 
+  /**
+   * Ask the server again while the selected slide shows as held by someone
+   * else. Such a lock can end without a broadcast (the holder's tab crashed or
+   * slept past the TTL; only a release announces itself). Before D112 this
+   * user's own acquire on selection corrected that; with no acquire until an
+   * edit, and editing surfaces blocked by the stale state, nothing would.
+   */
+  const verifySelectedLock = () => {
+    if (lockedByOthers.has(selectedSlideId())) fetchLocks();
+  };
+
   const isTabHidden = () =>
     typeof document !== 'undefined' && document.visibilityState === 'hidden';
 
@@ -308,7 +320,9 @@ export function createSlideLockManager({
    * lock of one who stopped or left the tab.
    */
   const tick = () => {
-    if (stopped || !currentLockedSlideId) return lockOps;
+    if (stopped) return lockOps;
+    verifySelectedLock();
+    if (!currentLockedSlideId) return lockOps;
     if (isTabHidden() || Date.now() - lastEditAt >= IDLE_RELEASE_MS) {
       return releaseHeldLock();
     }
@@ -406,6 +420,7 @@ export function createSlideLockManager({
         ? releaseHeldLock()
         : lockOps;
     emitLocksChanged();
+    verifySelectedLock();
     return pending;
   };
 

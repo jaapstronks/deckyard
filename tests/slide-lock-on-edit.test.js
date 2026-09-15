@@ -48,7 +48,7 @@ const flush = async () => {
   for (let i = 0; i < 10; i += 1) await Promise.resolve();
 };
 
-function makeManager({ acquire } = {}) {
+function makeManager({ acquire, serverLocks } = {}) {
   const calls = [];
   const events = [];
   const deck = {
@@ -62,7 +62,9 @@ function makeManager({ acquire } = {}) {
     const method = opts.method || 'GET';
     calls.push(`${method} ${path}`);
     if (path.endsWith('/slide-locks')) {
-      return { ok: true, locks: {}, lockedByOthers: [] };
+      return serverLocks
+        ? serverLocks()
+        : { ok: true, locks: {}, lockedByOthers: [] };
     }
     if (method === 'POST' && path.endsWith('/lock')) {
       if (acquire) return acquire(path);
@@ -233,6 +235,38 @@ test('a held lock is released after idle, but kept while editing continues', asy
   edit('s1', 'Back');
   await flush();
   assert.equal(lockCalls().at(-1), 'POST /api/presentations/p1/slides/s1/lock');
+  await mgr.detach();
+});
+
+test('a lock another user held that ended without a broadcast stops blocking the slide', async (t) => {
+  t.mock.timers.enable({ apis: ['setInterval'] });
+  // The holder's tab crashed: the server expired the lock, nothing announced it.
+  let held = true;
+  const { mgr, select, edit, events, lockCalls } = makeManager({
+    serverLocks: () =>
+      held
+        ? { ok: true, locks: { s2: OTHER_LOCK }, lockedByOthers: ['s2'] }
+        : { ok: true, locks: {}, lockedByOthers: [] },
+  });
+  await mgr.init();
+  await select('s1');
+  dispatchLock('slide:locked', { slideId: 's2', lock: OTHER_LOCK });
+
+  // Selecting the held slide asks the server; still held, still blocked.
+  await select('s2');
+  await flush();
+  assert.equal(mgr.isLockedByOther('s2'), true);
+  assert.equal(edit('s2', 'Mine'), false);
+
+  // The lock expires server-side; the next refresh tick picks that up.
+  held = false;
+  t.mock.timers.tick(30 * 1000);
+  await flush();
+  assert.equal(mgr.isLockedByOther('s2'), false);
+  assert.equal(edit('s2', 'Mine again'), true);
+  await flush();
+  assert.equal(lockCalls().at(-1), 'POST /api/presentations/p1/slides/s2/lock');
+  assert.equal(events.filter((e) => e.failed).length, 1);
   await mgr.detach();
 });
 

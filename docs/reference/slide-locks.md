@@ -11,16 +11,17 @@ separate, permanent flag and work in both modes.
 A lock is taken on the **first real change** to a slide, not on selection
 (D112). Opening a deck or clicking through its slides leaves no lock behind.
 
-| Moment                               | What happens                                                                                                      |
-| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
-| Deck opens, slide selected           | No lock. The slide's content fingerprint is recorded; the shell shows the banner if someone else holds the slide. |
-| Edit that changes the selected slide | Lock requested once (`POST …/slides/:id/lock`); later edits only restart the idle clock.                          |
-| Edit that leaves the slide as-is     | Deck title, settings, language: no lock.                                                                          |
-| Change to a slide another user holds | Refused: not saved, a toast names the holder, and the slide is restored from the server.                          |
-| Switch to another slide              | Pending edits are saved, then the held lock is released.                                                          |
-| No change for 2 minutes              | Pending edits are saved, then released (checked on the 30 s refresh tick, so between 2:00 and 2:30).              |
-| Tab hidden                           | Pending edits are saved, then released. The next edit asks again.                                                 |
-| Tab closed                           | `release-all` on `beforeunload`; the 2-minute server TTL covers a lost request.                                   |
+| Moment                               | What happens                                                                                                        |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| Deck opens, slide selected           | No lock. The slide's content fingerprint is recorded; the shell shows the banner if someone else holds the slide.   |
+| Edit that changes the selected slide | Lock requested once (`POST …/slides/:id/lock`); later edits only restart the idle clock.                            |
+| Edit that leaves the slide as-is     | Deck title, settings, language: no lock.                                                                            |
+| Change to a slide another user holds | Refused: not saved, a toast names the holder, and the slide is restored from the server.                            |
+| Switch to another slide              | Pending edits are saved, then the held lock is released.                                                            |
+| No change for 2 minutes              | Pending edits are saved, then released (checked on the 30 s refresh tick, so between 2:00 and 2:30).                |
+| Tab hidden                           | Pending edits are saved, then released. The next edit asks again.                                                   |
+| Tab closed                           | `release-all` on `beforeunload`; the 2-minute server TTL covers a lost request.                                     |
+| Viewing a slide another user holds   | The lock state is fetched again on selection and on each 30 s tick, so a lock that expired silently stops blocking. |
 
 "Changes the slide" is decided by comparing the selected slide's
 `slideFingerprint` (`shared/slide-fingerprint.js`) with the one last seen: at
@@ -28,6 +29,16 @@ selection, after each edit, and whenever the local copy is rebased onto server
 truth (save response, adopted remote update, silent wake-up refresh; the save
 manager's `onServerTruth` hook). Nearly every `markDirty()` call passes no
 slide id, so the call itself cannot tell a slide edit from a deck edit.
+
+A refused change is taken back in two places: the slide is replaced with the
+server copy, and the save manager forgets it as a pending edit and re-bases it
+on that copy (`adoptServerSlide`). Without the second step the next save would
+read the holder's change as "both changed" and block the editor on a conflict.
+
+Only a take or a release is broadcast. A lock whose holder vanished (crashed
+tab, sleeping laptop) simply expires on the server, so while the selected slide
+shows as held the client asks `GET …/slide-locks` again rather than trusting
+its last event.
 
 ## Where it lives
 

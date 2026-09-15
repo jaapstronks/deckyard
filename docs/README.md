@@ -188,6 +188,7 @@ nothing is discoverable only by `ls`.
 | [`collab-presence.md`](reference/collab-presence.md)                        | Collaborator presence                                                      |
 | [`collab-deck-doc.md`](reference/collab-deck-doc.md)                        | CRDT schema, serializer, persistence                                       |
 | [`collab-editor-binder.md`](reference/collab-editor-binder.md)              | Live edits in the editor                                                   |
+| [`slide-locks.md`](reference/slide-locks.md)                                | Per-slide edit locks when live edits are off: taken on the first change    |
 | [`collab-research.md`](reference/collab-research.md)                        | Phase 0 research (dated snapshot)                                          |
 | [`../adr/001-realtime-collaboration.md`](adr/001-realtime-collaboration.md) | ADR 001 — Yjs + Hocuspocus                                                 |
 
