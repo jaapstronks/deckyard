@@ -23,6 +23,7 @@ import { t } from '../../../lib/ui-i18n.js';
 import { isInsertableSlideType } from '../../../../shared/slide-types/policy.js';
 import {
   NO_DECK_LANG,
+  RENDER_VIA_THEME,
   renderSlideElement,
   cleanupSlideRuntimes,
 } from '../../../lib/slide-runtime/slide-render.js';
@@ -205,6 +206,7 @@ export function createSlideTypePicker({
       const el = renderSlideElement(slide, {
         mode: 'thumb',
         theme,
+        renderVia: RENDER_VIA_THEME,
         lang: NO_DECK_LANG,
       });
       thumbWrap.append(el);

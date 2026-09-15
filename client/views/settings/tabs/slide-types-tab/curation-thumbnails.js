@@ -2,6 +2,7 @@ import { h } from '../../../../lib/dom.js';
 import { icon } from '../../../../lib/dom/icons.js';
 import {
   NO_DECK_LANG,
+  RENDER_VIA_THEME,
   renderSlideElement,
 } from '../../../../lib/slide-runtime/slide-render.js';
 import { getSampleContent } from '../../../editor/slide-type-sample-content.js';
@@ -65,6 +66,7 @@ export function createCurationThumbnail(
     const el = renderSlideElement(slide, {
       mode: 'thumb',
       theme,
+      renderVia: RENDER_VIA_THEME,
       lang: NO_DECK_LANG,
     });
     thumbWrap.append(el);

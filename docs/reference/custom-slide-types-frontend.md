@@ -102,22 +102,50 @@ sub-fields).
   or **bundled but overridden server-side** (a fork file that replaces a core
   name with `override: true`, named in `window.__DECK_SERVER_RENDERED_TYPES__`).
   Types on a tombstone record are excluded — they render the archived-slide
-  placeholder client-side. `client/lib/slide-runtime/slide-render.js` picks
-  one of two ways into the same server render (`serveSlideRender` in
-  `server/routes/api/render-slide.js`):
-  - **With a deck**: `POST /api/presentations/:id/render-slide`
+  placeholder client-side. Every render call declares where that render comes
+  from as `renderVia` (D114); `client/lib/slide-runtime/slide-render.js` maps
+  each kind to one route into the same server render (`serveSlideRender` in
+  `server/routes/api/render-slide.js`). A missing or unknown kind refuses: the
+  slide stays a placeholder and the console names the error. There is no
+  fallback from a `presentationId`, which only says what a client renderer
+  links to.
+  - **`{ kind: 'deck', id }`** (editor, presenter, viewer — a signed-in
+    session): `POST /api/presentations/:id/render-slide`
     (`server/routes/api/presentations/render-slide.js`). The deck authorizes the
     render and names the theme and language.
-  - **Without a deck** (the settings curation grid, the slide-type picker's
-    preview tiles, samples): `POST /api/render-slide` with
-    `{ slide, mode, theme, lang }`. `theme` (a theme id, or `null` for the
-    instance default) and `lang` (a deck language, or `null` for
-    `NO_DECK_LANG`) are both required; a body silent about either is refused.
-    A database theme UUID resolves under the session's organization only.
+  - **`RENDER_VIA_THEME`** (the settings curation grid, the slide-type picker's
+    preview tiles, the slide library, samples): `POST /api/render-slide` with
+    `{ slide, mode, theme, lang }`, taken from the mount's own `theme` and
+    `lang`. `theme` (a theme id, or `null` for the instance default) and `lang`
+    (a deck language, or `null` for `NO_DECK_LANG`) are both required; a body
+    silent about either is refused. A database theme UUID resolves under the
+    session's organization only.
 
   Both use the request organization's merged registry
   (`buildMergedSlideTypes`), so a deckless render sees the same fork and
   published database types `/api/slide-types` lists.
+
+  The anonymous surfaces hold no session, and both routes above sit behind the
+  login gate. Each renders through the capability that already hands it the
+  deck, mounted before the gate, and names a slide **by id**: the capability
+  covers that deck's slides, not the organization's renderer, so the server
+  renders its own copy with the deck's theme, language and organization
+  registry (`serveDeckSlideRender`).
+  - **`{ kind: 'share', token, grant }`** (share-link viewer):
+    `POST /api/share/:token/render-slide` with `{ slideId, mode, grant }`.
+    `verify` mints the grant, a signed 24-hour proof that this viewer passed
+    the link's gate (its password, when it has one); the route also validates
+    the link itself, so revocation and expiry apply at once. Only slides the
+    view-only filter hands the viewer render.
+  - **`{ kind: 'follow', id }`** (follow-along audience):
+    `POST /api/follow/:id/render-slide` with `{ slideId, mode, lang }`, while
+    the follow state is live; `lang` is the version the audience was served.
+  - **`{ kind: 'session', id }`** (speaker-notes companion):
+    `POST /api/live-sessions/:id/render-slide` with `{ slideId, mode }`.
+
+  `tests/render-via-declaration.test.js` pins that every call site states
+  `renderVia` and that no view `client/app.js` mounts without a login
+  declares a kind whose route is behind the gate.
 
 - **Reorder.** The settings grid drags cards
   (`editor/inline-edit/reorder-geometry.js`); the ⋮ menu offers "Move

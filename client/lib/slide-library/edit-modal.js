@@ -7,7 +7,10 @@ import { t } from '../ui-i18n.js';
 import { toast } from '../dom/toast.js';
 import { createInlineError } from '../dom/inline-error.js';
 import { createModal } from '../dom/modal.js';
-import { renderSlideElement } from '../slide-runtime/slide-render.js';
+import {
+  RENDER_VIA_THEME,
+  renderSlideElement,
+} from '../slide-runtime/slide-render.js';
 import { contentLang } from './search.js';
 import { cleanStr } from '../../../shared/string-utils.js';
 import { SLIDE_TYPES } from '../../../shared/slide-types.js';
@@ -187,6 +190,7 @@ export function openEditModal({
     // renders in the item's own language, not the library's browsing language.
     const slideEl = renderSlideElement(slide, {
       theme: thTheme,
+      renderVia: RENDER_VIA_THEME,
       lang: contentLang(item),
     });
     previewThumb.appendChild(slideEl);

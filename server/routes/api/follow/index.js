@@ -21,6 +21,7 @@ import {
 import { handleFollowQuestionsEvents } from './questions-events.js';
 import { handleFollowPresentation } from './presentation.js';
 import { handleFollowEvents } from './events.js';
+import { handleFollowRenderSlide } from './render-slide.js';
 import {
   handleFollowInteractionsCurrent,
   handleFollowInteractionState,
@@ -93,6 +94,10 @@ export const ROUTES = [
   {
     pattern: /^\/api\/follow\/([^/]+)\/events$/,
     handler: requireUuidId(handleFollowEvents),
+  },
+  {
+    pattern: /^\/api\/follow\/([^/]+)\/render-slide$/,
+    handler: requireUuidId(handleFollowRenderSlide),
   },
 ];
 

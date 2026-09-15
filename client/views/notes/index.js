@@ -147,9 +147,13 @@ export async function renderNotes(root, sessionId, { user } = {}) {
     // One resolve per render, handed to both thumbs: the current slide and the
     // "up next" thumb are the same deck, so they cannot disagree about it.
     const deckLang = resolveDeckLang(pres);
+    // The companion may hold no account: its join link authorizes a server
+    // render through the session route, not the login-gated deck route (B287).
+    const renderVia = { kind: 'session', id: sessionId };
     mountSlideInto(previewWrap, slide, {
       theme,
       presentationId: pres?.id,
+      renderVia,
       lang: deckLang,
     });
 
@@ -159,6 +163,7 @@ export async function renderNotes(root, sessionId, { user } = {}) {
       mountSlideInto(nextPreviewWrap, nextSlide, {
         theme,
         presentationId: pres?.id,
+        renderVia,
         lang: deckLang,
       });
       nextPreviewWrap.classList.remove('is-empty');

@@ -2,7 +2,8 @@
  * Public share link endpoints (no auth required) (A7.19 C8 — ROUTES table).
  *
  * GET    /api/share/:token                            - Validate token
- * POST   /api/share/:token/verify                     - Verify password & get access (+ deck)
+ * POST   /api/share/:token/verify                     - Verify password & get access (+ deck, render grant)
+ * POST   /api/share/:token/render-slide               - Render one slide server-side (needs the grant)
  * POST   /api/share/:token/guest/request              - Request guest email verification
  * GET    /api/share/:token/guest/verify/:vtoken       - Verify guest email & create session
  * GET    /api/share/:token/guest/me                   - Get current guest session info
@@ -11,6 +12,7 @@
  * method mismatch, no 405. Table order mirrors the old branch order exactly.
  */
 
+import { randomBytes } from 'node:crypto';
 import { getPresentation } from '../../../storage/presentations/index.js';
 import {
   validateShareLink,
@@ -55,6 +57,12 @@ import { createLogger } from '../../../utils/logger.js';
 import { fireAndForget } from '../../../utils/fire-and-forget.js';
 import { crossOrganizationScope } from '../../../storage/scope.js';
 import { customThemeConfig } from '../../../utils/themes.js';
+import {
+  readSignedPayload,
+  signPayload,
+} from '../../../utils/signed-payload.js';
+import { envStr } from '../../../config/utils.js';
+import { serveDeckSlideRender } from '../render-slide.js';
 const log = createLogger('public');
 
 // No request context on this surface on purpose: these endpoints are
@@ -235,9 +243,97 @@ async function handleShareVerify({ repoRoot, req, res }, token) {
     presentationId: result.shareLink.presentationId,
     permission: result.shareLink.permission,
     token: result.shareLink.token,
+    renderGrant: mintRenderGrant(result.shareLink),
     presentation: await shareViewerDeck(repoRoot, pres),
   });
   return true;
+}
+
+/** How long a render grant outlives the `verify` that minted it. */
+const RENDER_GRANT_TTL_MS = 24 * 60 * 60 * 1000;
+const RENDER_GRANT_PURPOSE = 'share-render';
+/**
+ * Signing key when no AUTH_SECRET is configured: per boot, so grants die with
+ * the process (a reload mints a new one). Same rule as the analytics device
+ * label key (`server/analytics/helpers.js`).
+ */
+const EPHEMERAL_GRANT_KEY = randomBytes(32).toString('hex');
+
+function renderGrantKey() {
+  return envStr('AUTH_SECRET') || EPHEMERAL_GRANT_KEY;
+}
+
+/**
+ * The proof that this viewer passed `verify` for this link.
+ *
+ * A share-link render hands out the deck's slides, so it must sit behind the
+ * same gate `verify` does — the password, when the link has one. Nothing on
+ * this anonymous surface remembers that the password was entered (see
+ * {@link shareViewerDeck}), and asking for it on every render would make each
+ * render a password check and a guessing oracle outside verify's throttle. So
+ * verify mints a signed grant for the link, and the render route asks for that.
+ * Every link gets one, password or not: one shape, and a render never skips the
+ * `verify` that counts a use.
+ *
+ * Revocation and expiry still bite at once: the render route validates the link
+ * itself on every request; the grant only stands in for the password.
+ *
+ * @param {{ id: string }} shareLink
+ * @returns {string}
+ */
+function mintRenderGrant(shareLink) {
+  return signPayload(
+    {
+      purpose: RENDER_GRANT_PURPOSE,
+      link: shareLink.id,
+      exp: Date.now() + RENDER_GRANT_TTL_MS,
+    },
+    renderGrantKey(),
+  );
+}
+
+/**
+ * POST /api/share/:token/render-slide — render one slide of the shared deck.
+ * Body: `{ slideId, mode?, grant }`.
+ *
+ * The slides are the ones `verify` hands the viewer (view-only filter, drafts
+ * badged), so a slide hidden from viewers cannot be rendered here either.
+ */
+async function handleShareRenderSlide({ repoRoot, req, res }, token) {
+  const validation = await validateShareLink(token);
+  if (!validation.ok) {
+    storageError(res, validation);
+    return true;
+  }
+
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
+
+  const grant = readSignedPayload(body?.grant, renderGrantKey());
+  if (
+    grant?.purpose !== RENDER_GRANT_PURPOSE ||
+    grant.link !== validation.shareLink.id
+  ) {
+    forbidden(res, 'Open the share link to render its slides');
+    return true;
+  }
+
+  const pres = await getPresentation(
+    crossOrganizationScope(
+      repoRoot,
+      'share link: the share token is the authorization',
+    ),
+    validation.shareLink.presentationId,
+  );
+  if (!pres) return notFound(res);
+
+  const visible = filterForViewOnly(pres, { markDrafts: true });
+  return serveDeckSlideRender({ repoRoot, res }, body, {
+    pres,
+    slides: Array.isArray(visible.slides) ? visible.slides : [],
+    lang: resolveDeckLang(pres),
+  });
 }
 
 /** POST /api/share/:token/guest/request - Request guest email verification */
@@ -424,7 +520,8 @@ async function handleShareGuestMe({ req, res }, shareToken) {
 }
 
 /**
- * Public routes in the old chain's exact order. `/api/share/:token` is a
+ * Public routes in the old chain's exact order (`render-slide`, B287, joined
+ * after `verify`, whose grant it asks for). `/api/share/:token` is a
  * single-segment match (`[^/]+`), so it cannot swallow the deeper
  * `/verify`, `/guest/*` paths regardless of order — the order is still
  * kept verbatim per route-dispatch.md.
@@ -440,6 +537,11 @@ export const PUBLIC_ROUTES = [
     method: 'POST',
     pattern: /^\/api\/share\/([^/]+)\/verify$/,
     handler: handleShareVerify,
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/share\/([^/]+)\/render-slide$/,
+    handler: handleShareRenderSlide,
   },
   {
     method: 'POST',

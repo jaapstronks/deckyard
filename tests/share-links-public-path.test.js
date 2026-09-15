@@ -420,14 +420,18 @@ test('a link without a password verifies, is counted, and is logged', async () =
 
   assert.equal(res.status, 200);
   assert.deepEqual(
-    { ...res.body, presentation: undefined },
+    { ...res.body, presentation: undefined, renderGrant: undefined },
     {
       presentationId: 'deck-shared',
       permission: 'view',
       token: 'tok-view',
       presentation: undefined,
+      renderGrant: undefined,
     },
   );
+  // The proof a server render asks for (B287); its gate is pinned in
+  // tests/anon-follow-and-share-surfaces.test.js.
+  assert.equal(typeof res.body.renderGrant, 'string');
   assert.equal(link('tok-view').use_count, 1, 'the access is counted');
   assert.equal(link('tok-view').last_used_at != null, true);
   assert.deepEqual(
@@ -449,6 +453,7 @@ test('the right password opens the link; the response carries no hash', async ()
     'permission',
     'presentation',
     'presentationId',
+    'renderGrant',
     'token',
   ]);
   assert.equal(link('tok-password').use_count, 1);

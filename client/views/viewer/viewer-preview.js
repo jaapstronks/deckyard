@@ -94,6 +94,7 @@ export function createViewerPreview({
       mountSlideInto(slideWrap, slide, {
         theme,
         presentationId: pres?.id,
+        renderVia: { kind: 'deck', id: pres?.id },
         lang: resolveDeckLang(pres),
       });
     } else {

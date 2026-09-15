@@ -406,6 +406,13 @@ export async function renderShareViewer(root, token) {
       mode: 'thumb',
       theme,
       presentationId: presentation.id,
+      // An anonymous viewer: the share token and the grant `verify` handed out
+      // authorize a server render, not the login-gated deck route (B287).
+      renderVia: {
+        kind: 'share',
+        token,
+        grant: shareLink?.renderGrant,
+      },
       lang: resolveDeckLang(presentation),
     });
 

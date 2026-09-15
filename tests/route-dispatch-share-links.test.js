@@ -161,6 +161,14 @@ test('share-links: guest management routes resolve to their named handlers in or
 test('share-links: public routes resolve to their named handlers in order', () => {
   named(PUBLIC_ROUTES, 'GET', '/api/share/tok', 'handleShareValidate');
   named(PUBLIC_ROUTES, 'POST', '/api/share/tok/verify', 'handleShareVerify');
+  // B287: the anonymous viewer's server render, before the login gate like
+  // the rest of this table (the deck routes that render sit behind it).
+  named(
+    PUBLIC_ROUTES,
+    'POST',
+    '/api/share/tok/render-slide',
+    'handleShareRenderSlide',
+  );
   named(
     PUBLIC_ROUTES,
     'POST',
@@ -250,6 +258,7 @@ test('share-links: a wrong method on a public path falls through (no 405, storag
   const cases = [
     ['POST', '/api/share/tok'],
     ['GET', '/api/share/tok/verify'],
+    ['GET', '/api/share/tok/render-slide'],
     ['GET', '/api/share/tok/guest/request'],
     ['POST', '/api/share/tok/guest/verify/vtok'],
     ['POST', '/api/share/tok/guest/me'],

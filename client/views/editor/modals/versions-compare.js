@@ -281,6 +281,7 @@ export function openVersionCompareModal({
             mode: 'thumb',
             theme,
             presentationId,
+            renderVia: { kind: 'deck', id: presentationId },
             lang,
           });
           content.append(slideEl);
@@ -336,6 +337,7 @@ export function openVersionCompareModal({
               mode: 'thumb',
               theme,
               presentationId,
+              renderVia: { kind: 'deck', id: presentationId },
               lang: currentLang,
             });
             thumb.append(slideEl);
@@ -384,6 +386,7 @@ export function openVersionCompareModal({
               mode: 'thumb',
               theme,
               presentationId,
+              renderVia: { kind: 'deck', id: presentationId },
               lang: snapshotLang,
             });
             thumb.append(slideEl);

@@ -842,7 +842,11 @@ export async function createEditorController({
     attachThumbScale,
     attachThumbScaleContain,
     renderSlideElement: (s, opts) =>
-      renderSlideElement(s, { ...(opts || {}), lang: resolveDeckLang(pres) }),
+      renderSlideElement(s, {
+        ...(opts || {}),
+        renderVia: { kind: 'deck', id: pres?.id },
+        lang: resolveDeckLang(pres),
+      }),
     getSelectedSlideId: () => selectedSlideId,
     commentsApi,
     user,
@@ -1095,6 +1099,7 @@ export async function createEditorController({
         ...(opts || {}),
         theme,
         presentationId: pres?.id,
+        renderVia: { kind: 'deck', id: pres?.id },
         lang: resolveDeckLang(pres),
       }),
     editorState,
@@ -1502,6 +1507,7 @@ export async function createEditorController({
       mode: 'edit',
       theme,
       presentationId: pres?.id,
+      renderVia: { kind: 'deck', id: pres?.id },
       // The canvas is a render surface like any other: without this the
       // interactive types cannot know the deck's language.
       lang: resolveDeckLang(pres),

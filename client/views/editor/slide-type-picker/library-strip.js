@@ -11,7 +11,10 @@
  * large organization library (and vice versa).
  */
 
-import { renderSlideElement } from '../../../lib/slide-runtime/slide-render.js';
+import {
+  RENDER_VIA_THEME,
+  renderSlideElement,
+} from '../../../lib/slide-runtime/slide-render.js';
 import { contentLang } from '../../../lib/slide-library/search.js';
 import { applyThumbScale } from './thumbnails.js';
 import { h } from '../../../lib/dom.js';
@@ -86,7 +89,12 @@ export function mountLibraryStrip(ctx) {
         },
         // The tile shows `item.content`, so it speaks the item's own
         // language — not the deck the picker is about to insert it into.
-        { mode: 'thumb', theme, lang: contentLang(item) },
+        {
+          mode: 'thumb',
+          theme,
+          renderVia: RENDER_VIA_THEME,
+          lang: contentLang(item),
+        },
       );
       thumbWrap.append(el);
       applyThumbScale(thumbWrap);

@@ -112,6 +112,7 @@ export function createBulkEditModal({
         mountSlideInto(previewThumb, slide, {
           theme: getTheme?.(),
           presentationId: pres?.id,
+          renderVia: { kind: 'deck', id: pres?.id },
           lang: resolveDeckLang(pres),
         });
       });

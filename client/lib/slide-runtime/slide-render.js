@@ -183,48 +183,96 @@ function serverThemeId(theme) {
 }
 
 /**
- * The request that renders `slide` on the server.
+ * "This surface renders against its theme and language, not a deck."
  *
- * With a deck, the deck route: the deck authorizes the render and names its
- * theme and language. Without one, `POST /api/render-slide` with the theme and
- * language this surface renders against, stated rather than implied — the same
- * render path on the server (B278).
+ * The `renderVia` of the settings curation, the slide-type picker, the slide
+ * library and the other sample surfaces: a server-rendered type goes to
+ * `POST /api/render-slide` with the `theme` and `lang` the mount was given
+ * (B278). Those two stay mount options rather than being repeated here, so a
+ * surface cannot render against one theme and ask the server for another.
  */
-function serverRenderRequest({ slide, presentationId, mode, theme, lang }) {
-  if (presentationId) {
-    return {
-      path: `/api/presentations/${presentationId}/render-slide`,
-      body: { slide, mode },
-      key: `deck:${presentationId}`,
-    };
-  }
-  const themeId = serverThemeId(theme);
-  return {
-    path: '/api/render-slide',
-    body: { slide, mode, theme: themeId, lang: lang ?? null },
-    key: `theme:${themeId}:${lang ?? ''}`,
+export const RENDER_VIA_THEME = Object.freeze({ kind: 'theme' });
+
+/**
+ * Where a server-rendered type is rendered, as the surface declares it (D114).
+ *
+ * A surface names the capability it holds, and each kind has exactly one route:
+ *
+ * - `{ kind: 'deck', id }`: a signed-in session with the deck; the deck route
+ *   authorizes the render and names theme and language.
+ * - {@link RENDER_VIA_THEME}: no deck; the deckless route, against the mount's
+ *   theme and language.
+ * - `{ kind: 'share', token, grant }`: an anonymous share-link viewer; the
+ *   grant comes from `verify`.
+ * - `{ kind: 'follow', id }`: the follow-along audience of a live deck; the
+ *   mount's `lang` names the version it was served.
+ * - `{ kind: 'session', id }`: the speaker-notes companion of a live session.
+ *
+ * The anonymous kinds send the slide's id, not the slide: their capability
+ * covers the slides of one deck, and the server renders its own copy.
+ *
+ * There is no inference from what else the mount was given — a `presentationId`
+ * says which deck a client renderer links to, not what the viewer is allowed to
+ * call — and no fallback: a missing or unknown kind throws, and the render
+ * stays a placeholder with that error in the console.
+ *
+ * @param {{ slide: object, renderVia: object, mode?: string, theme?: object, lang?: string|null }} p
+ * @returns {{ path: string, body: object, key: string }}
+ */
+function serverRenderRequest({ slide, renderVia, mode, theme, lang }) {
+  const via = renderVia || {};
+  const segment = (value, name) => {
+    if (typeof value !== 'string' || !value) {
+      throw new TypeError(`renderVia ${via.kind}: ${name} is required`);
+    }
+    return encodeURIComponent(value);
   };
+  switch (via.kind) {
+    case 'deck':
+      return {
+        path: `/api/presentations/${segment(via.id, 'id')}/render-slide`,
+        body: { slide, mode },
+        key: `deck:${via.id}`,
+      };
+    case 'theme': {
+      const themeId = serverThemeId(theme);
+      return {
+        path: '/api/render-slide',
+        body: { slide, mode, theme: themeId, lang: lang ?? null },
+        key: `theme:${themeId}:${lang ?? ''}`,
+      };
+    }
+    case 'share':
+      return {
+        path: `/api/share/${segment(via.token, 'token')}/render-slide`,
+        body: { slideId: slide?.id, mode, grant: via.grant },
+        key: `share:${via.token}`,
+      };
+    case 'follow':
+      return {
+        path: `/api/follow/${segment(via.id, 'id')}/render-slide`,
+        body: { slideId: slide?.id, mode, lang: lang ?? null },
+        key: `follow:${via.id}:${lang ?? ''}`,
+      };
+    case 'session':
+      return {
+        path: `/api/live-sessions/${segment(via.id, 'id')}/render-slide`,
+        body: { slideId: slide?.id, mode },
+        key: `session:${via.id}`,
+      };
+    default:
+      throw new TypeError(
+        `renderVia: unknown kind ${JSON.stringify(via.kind)} — declare deck, theme, share, follow or session`,
+      );
+  }
 }
 
 /**
  * Render a slide using server-side rendering (for custom slide types).
  * Returns a promise that resolves to the HTML string.
  */
-async function serverRenderSlide({
-  slide,
-  presentationId,
-  mode,
-  theme,
-  lang,
-  api,
-}) {
-  const request = serverRenderRequest({
-    slide,
-    presentationId,
-    mode,
-    theme,
-    lang,
-  });
+async function serverRenderSlide({ slide, renderVia, mode, theme, lang, api }) {
+  const request = serverRenderRequest({ slide, renderVia, mode, theme, lang });
   const cacheKey = `${request.key}:${slide?.id}:${slide?.type}:${mode}:${JSON.stringify(slide?.content || {})}`;
   if (serverRenderCache.has(cacheKey)) {
     return serverRenderCache.get(cacheKey);
@@ -353,7 +401,7 @@ export function cleanupSlideRuntimes(rootEl) {
 export function mountSlideInto(
   container,
   slide,
-  { mode, theme, presentationId, lang } = {},
+  { mode, theme, presentationId, renderVia, lang } = {},
 ) {
   if (!container) return null;
   cleanupSlideRuntimes(container);
@@ -363,7 +411,13 @@ export function mountSlideInto(
     // ignore
   }
   if (!slide) return null;
-  const el = renderSlideElement(slide, { mode, theme, presentationId, lang });
+  const el = renderSlideElement(slide, {
+    mode,
+    theme,
+    presentationId,
+    renderVia,
+    lang,
+  });
   container.append(el);
   return el;
 }
@@ -377,10 +431,15 @@ export function mountSlideInto(
  * interactive types read for their built-in copy. Leaving it out is not
  * neutral: the slide then falls back to `DEFAULT_SLIDE_COPY_LANG`, so a caller
  * that has a presentation in hand should always pass it.
+ *
+ * `renderVia` is where a server-rendered type is fetched from (see
+ * `serverRenderRequest`). Every call site states it, like `lang`
+ * (`tests/render-via-declaration.test.js`), because the surface is the only
+ * thing that knows which capability it holds.
  */
 export function renderSlideElement(
   slide,
-  { mode, theme, followCodes, presentationId, api, lang } = {},
+  { mode, theme, followCodes, presentationId, renderVia, api, lang } = {},
 ) {
   let html;
 
@@ -459,15 +518,15 @@ export function renderSlideElement(
     );
   }
 
-  // For custom slide types, trigger async server-side rendering — against the
-  // deck when there is one, otherwise against the theme and language given.
+  // For custom slide types, trigger async server-side rendering through the
+  // route the surface declared.
   if (el.dataset.needsServerRender === '1') {
     pendingServerRenders.set(
       el,
       triggerServerRender(el, slide, {
         mode,
         theme,
-        presentationId,
+        renderVia,
         lang,
         api,
       }),
@@ -488,8 +547,7 @@ const pendingServerRenders = new WeakMap();
  * `true` straight away. A server-rendered one starts as a `slide-loading`
  * placeholder; this resolves once `triggerServerRender` has settled: `true` when
  * the markup was swapped in, `false` when it never will be (the render failed
- * or the element was unmounted first). A surface without a deck gets its render
- * too: `renderSlideElement` then asks for one against its theme and language.
+ * or the element was unmounted first).
  *
  * This is the one signal that server markup landed (D113): the editor canvas
  * awaits it to redecorate after a mount, the ghost spawn to find the field it
@@ -513,12 +571,12 @@ export function slideRendered(el) {
 async function triggerServerRender(
   el,
   slide,
-  { mode, theme, presentationId, lang, api },
+  { mode, theme, renderVia, lang, api },
 ) {
   try {
     const html = await serverRenderSlide({
       slide,
-      presentationId,
+      renderVia,
       mode,
       theme,
       lang,
@@ -555,3 +613,7 @@ async function triggerServerRender(
 // decision that a fork override of a core name is drawn by the server, which is
 // what makes the inline descriptor safe to resolve definition-first.
 export { needsServerRender, isServerOverriddenType };
+// Exported for the render-source guard (tests/render-via-declaration.test.js):
+// the route each `renderVia` kind resolves to is what it checks against the
+// server's pre-gate route tables.
+export { serverRenderRequest };

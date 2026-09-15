@@ -13,6 +13,7 @@
 
 import {
   NO_DECK_LANG,
+  RENDER_VIA_THEME,
   renderSlideElement,
   cleanupSlideRuntimes,
 } from '../../../lib/slide-runtime/slide-render.js';
@@ -84,7 +85,7 @@ export function openTypePeek(type, _anchorBtn, preset, ctx) {
         content: sampleContentFor(type, previewOverridesFor(preset)),
         notes: '',
       },
-      { mode: 'thumb', theme, lang: NO_DECK_LANG },
+      { mode: 'thumb', theme, renderVia: RENDER_VIA_THEME, lang: NO_DECK_LANG },
     );
     bigThumb.append(el);
   } catch {

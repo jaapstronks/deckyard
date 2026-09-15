@@ -189,6 +189,7 @@ export function createPresenterConsole({ theme, presentationId, lang } = {}) {
         mode: 'thumb',
         theme,
         presentationId,
+        renderVia: { kind: 'deck', id: presentationId },
         lang,
       });
       nextThumb.classList.remove('is-empty');

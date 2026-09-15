@@ -90,6 +90,7 @@ export function openVersionPreviewModal({
             mode: 'thumb',
             theme,
             presentationId,
+            renderVia: { kind: 'deck', id: presentationId },
             lang: snapshotLang,
           });
           thumb.append(slideEl);

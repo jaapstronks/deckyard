@@ -5,7 +5,10 @@
 
 import { t } from '../ui-i18n.js';
 import { toast } from '../dom/toast.js';
-import { renderSlideElement } from '../slide-runtime/slide-render.js';
+import {
+  RENDER_VIA_THEME,
+  renderSlideElement,
+} from '../slide-runtime/slide-render.js';
 import { cleanStr } from '../../../shared/string-utils.js';
 import { icon } from '../dom/icons.js';
 import { createModal } from '../dom/modal.js';
@@ -107,6 +110,7 @@ export function createSlideLibraryModals({
 
     const slideEl = renderSlideElement(slide, {
       theme: thTheme,
+      renderVia: RENDER_VIA_THEME,
       lang: state.getLang?.(),
     });
     bigThumb.appendChild(slideEl);

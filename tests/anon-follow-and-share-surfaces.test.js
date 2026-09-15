@@ -10,6 +10,8 @@
  *   - server/routes/api/follow/interactions.js — audience poll/likert/feedback
  *     (current / state / vote / feedback)
  *   - server/routes/static/share-viewer.js   — token → app shell + og: metadata
+ *   - the three `render-slide` rows (share, follow, live session) — a
+ *     server-rendered type drawn for a viewer with no session (B287)
  *
  * B114 added the four handlers this file did not reach when it was written —
  * `handleFollowCancel`, `handleFollowInteractionState` and
@@ -49,8 +51,14 @@ const { createPresentation, updatePresentation } =
   await import('../server/storage/presentations/index.js');
 const { createLiveSession, updateLiveSessionState } =
   await import('../server/storage/live-sessions/index.js');
-const { createShareLink } =
+const { createShareLink, revokeShareLink } =
   await import('../server/storage/share-links/index.js');
+const { handleSharePublic } =
+  await import('../server/routes/api/share-links/index.js');
+const { handleFollowPublic } =
+  await import('../server/routes/api/follow/index.js');
+const { handleLiveSessionsPublic } =
+  await import('../server/routes/api/live-session-audience.js');
 const { resetRateLimitBuckets } = await import('../server/utils/rate-limit.js');
 
 const { handleFollowQuestions, handleFollowUpvote, handleFollowCancel } =
@@ -67,12 +75,57 @@ const { handleShareLink } =
   await import('../server/routes/static/share-viewer.js');
 const { getErrorStatus } = await import('../server/utils/http.js');
 
+/** A second organization, for the registry the share render must not reach. */
+const OTHER_ORG = '00000000-0000-0000-0000-0000000000bb';
+
+/**
+ * One published `custom_slide_types` row: a type only the server can draw,
+ * standing in for a fork type (B287).
+ */
+function publishedTypeRow({ id, organizationId, slug }) {
+  return {
+    id,
+    organization_id: organizationId,
+    slug,
+    label: slug,
+    base_type: null,
+    fields: [{ key: 'title', type: 'string', label: 'Title' }],
+    defaults: { title: '' },
+    defaults_by_lang: null,
+    template: `<div class="slide ${slug}-marker"><h2>{{esc title}}</h2></div>`,
+    css: null,
+    usage: null,
+    is_published: true,
+    sort_order: 0,
+    created_at: '2026-09-15T00:00:00.000Z',
+    updated_at: '2026-09-15T00:00:00.000Z',
+    created_by: null,
+  };
+}
+
+/** The in-memory database, for the rows no write path may produce. */
+let fakeDb;
+
 test.before(async () => {
-  __setTestDb(
-    createFakeDb({
-      organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
-    }),
-  );
+  fakeDb = createFakeDb({
+    organizations: [
+      { id: ORG, name: 'Default', slug: 'default' },
+      { id: OTHER_ORG, name: 'Other', slug: 'other' },
+    ],
+    custom_slide_types: [
+      publishedTypeRow({
+        id: 'cst-home-wall',
+        organizationId: ORG,
+        slug: 'home-wall',
+      }),
+      publishedTypeRow({
+        id: 'cst-away-wall',
+        organizationId: OTHER_ORG,
+        slug: 'away-wall',
+      }),
+    ],
+  });
+  __setTestDb(fakeDb);
   await initializeStorage();
 });
 test.after(() => {
@@ -850,4 +903,261 @@ test('a requested language version is the language the payload states', async ()
   // one requested.
   const plain = await callFollowPresentation(pres.id);
   assert.equal(plain.body.presentation.lang, 'nl');
+});
+
+// ---------------------------------------------------------------------------
+// Server-rendered slides on the anonymous surfaces (B287, D114)
+// ---------------------------------------------------------------------------
+
+/**
+ * A fork type, a fork override of a core name and a published database type are
+ * drawn by the server only. The deck routes that draw them sit behind the login
+ * gate, so a share-link viewer, the follow audience and the notes companion got
+ * a 401 and kept the `slide-loading` placeholder. Each now renders through the
+ * capability that already hands it the deck. A published database type stands
+ * in for the fork type here: it is the one the in-memory registry can hold per
+ * organization, which is what the cross-organization rows need.
+ */
+
+const HOME_TYPE = 'custom-home-wall';
+const AWAY_TYPE = 'custom-away-wall';
+
+/**
+ * Rewrite a stored deck's slides behind the storage layer's back. The write
+ * paths strip `visibility` on create and refuse a type outside the deck's
+ * organization, which is right for them; the render route must still hold
+ * when such a row exists (an older deck, an import).
+ */
+function storeSlides(presId, rewrite) {
+  const row = fakeDb.__tables.presentations.find((r) => r.id === presId);
+  row.slides = rewrite(row.slides);
+}
+
+/** Drive a public dispatcher at `path`; resolve status and JSON body. */
+async function callPublic(handler, { path, method = 'POST', body }) {
+  const res = fakeRes();
+  const handled = await handler({
+    repoRoot: process.cwd(),
+    req: fakeReq({
+      method,
+      body,
+      headers: { 'content-type': 'application/json' },
+    }),
+    res,
+    url: new URL(path, 'http://example.com'),
+  });
+  return { handled, status: res.statusCode, body: jsonBody(res) };
+}
+
+async function seedRenderDeck({
+  organizationId = ORG,
+  slides = [{ type: HOME_TYPE, content: { title: 'Home wall' } }],
+  password,
+} = {}) {
+  const scope = { repoRoot: REPO_ROOT, organizationId };
+  const pres = await createPresentation(scope, {
+    title: 'Render deck',
+    ownerEmail: OWNER,
+    slides,
+  });
+  const created = await createShareLink(scope, pres.id, {
+    permission: 'view',
+    ...(password ? { password } : {}),
+  });
+  return { pres, scope, link: created.shareLink };
+}
+
+const verifyShare = (token, body = {}) =>
+  callPublic(handleSharePublic, {
+    path: `/api/share/${token}/verify`,
+    body,
+  });
+
+const renderShare = (token, body) =>
+  callPublic(handleSharePublic, {
+    path: `/api/share/${token}/render-slide`,
+    body,
+  });
+
+test('share render: a verified link draws a server-only type to real markup', async () => {
+  const { pres, link } = await seedRenderDeck();
+  const verified = await verifyShare(link.token);
+  assert.equal(verified.status, 200);
+  assert.equal(typeof verified.body.renderGrant, 'string');
+
+  const out = await renderShare(link.token, {
+    slideId: pres.slides[0].id,
+    mode: 'thumb',
+    grant: verified.body.renderGrant,
+  });
+  assert.equal(out.status, 200);
+  assert.match(out.body.html, /home-wall-marker/);
+  assert.match(out.body.html, /Home wall/);
+  assert.doesNotMatch(out.body.html, /slide-loading/);
+});
+
+test('share render: without the grant from verify, or with another link’s, it refuses', async () => {
+  const { pres, link } = await seedRenderDeck();
+  const other = await seedRenderDeck();
+  const otherGrant = (await verifyShare(other.link.token)).body.renderGrant;
+  const ownGrant = (await verifyShare(link.token)).body.renderGrant;
+  const slideId = pres.slides[0].id;
+
+  for (const grant of [
+    undefined,
+    '',
+    'not-a-grant',
+    otherGrant,
+    // A grant whose payload was edited no longer matches its signature.
+    `${Buffer.from(JSON.stringify({ purpose: 'share-render', link: link.id, exp: Date.now() + 1e9 })).toString('base64url')}.${ownGrant.split('.')[1]}`,
+  ]) {
+    const out = await renderShare(link.token, { slideId, grant });
+    assert.equal(out.status, 403, `grant ${String(grant).slice(0, 24)}`);
+    assert.equal(out.body.html, undefined);
+  }
+});
+
+test('share render: a password link renders only after the password was proven', async () => {
+  const { pres, link } = await seedRenderDeck({ password: 'open sesame' });
+  const slideId = pres.slides[0].id;
+
+  const refused = await verifyShare(link.token);
+  assert.notEqual(refused.status, 200, 'verify without the password refuses');
+  assert.equal(refused.body.renderGrant, undefined, 'and mints no grant');
+  assert.equal((await renderShare(link.token, { slideId })).status, 403);
+
+  const verified = await verifyShare(link.token, { password: 'open sesame' });
+  assert.equal(verified.status, 200);
+  const out = await renderShare(link.token, {
+    slideId,
+    grant: verified.body.renderGrant,
+  });
+  assert.equal(out.status, 200);
+  assert.match(out.body.html, /home-wall-marker/);
+});
+
+test('share render: a revoked link refuses, even with a grant minted before', async () => {
+  const { pres, scope, link } = await seedRenderDeck();
+  const grant = (await verifyShare(link.token)).body.renderGrant;
+  await revokeShareLink(scope, link.id, OWNER);
+
+  const out = await renderShare(link.token, {
+    slideId: pres.slides[0].id,
+    grant,
+  });
+  assert.equal(out.status, 410);
+  assert.equal(out.body.html, undefined);
+});
+
+test('share render: only the slides verify hands the viewer, of this deck', async () => {
+  const { pres, link } = await seedRenderDeck({
+    slides: [
+      { type: HOME_TYPE, content: { title: 'Shown' } },
+      { type: HOME_TYPE, content: { title: 'Hidden from viewers' } },
+    ],
+  });
+  storeSlides(pres.id, ([shown, hidden]) => [
+    shown,
+    { ...hidden, visibility: { hideFromViewers: true } },
+  ]);
+  const deckB = await seedRenderDeck();
+  const grant = (await verifyShare(link.token)).body.renderGrant;
+
+  const hidden = await renderShare(link.token, {
+    slideId: pres.slides[1].id,
+    grant,
+  });
+  assert.equal(hidden.status, 404, 'a slide hidden from viewers');
+
+  const foreign = await renderShare(link.token, {
+    slideId: deckB.pres.slides[0].id,
+    grant,
+  });
+  assert.equal(foreign.status, 404, 'a slide of another deck');
+
+  const missing = await renderShare(link.token, { grant });
+  assert.equal(missing.status, 400, 'no slideId');
+});
+
+test('share render: the registry is the deck’s organization’s, not another’s', async () => {
+  // A deck in the other organization, holding a slide of this organization's
+  // type beside one of its own.
+  const { pres, link } = await seedRenderDeck({
+    organizationId: OTHER_ORG,
+    slides: [
+      { type: AWAY_TYPE, content: { title: 'Not ours' } },
+      { type: AWAY_TYPE, content: { title: 'Ours' } },
+    ],
+  });
+  storeSlides(pres.id, ([first, second]) => [
+    { ...first, type: HOME_TYPE },
+    second,
+  ]);
+  const grant = (await verifyShare(link.token)).body.renderGrant;
+
+  const foreignType = await renderShare(link.token, {
+    slideId: pres.slides[0].id,
+    grant,
+  });
+  assert.equal(foreignType.status, 200);
+  assert.doesNotMatch(
+    foreignType.body.html,
+    /home-wall-marker/,
+    "a token for this deck draws nothing from another organization's registry",
+  );
+
+  const ownType = await renderShare(link.token, {
+    slideId: pres.slides[1].id,
+    grant,
+  });
+  assert.match(ownType.body.html, /away-wall-marker/);
+});
+
+test('follow render: a live deck draws a server-only type; a not-live one refuses', async () => {
+  const { pres, slideId } = await seedLiveDeck({
+    slides: [{ type: HOME_TYPE, content: { title: 'On stage' } }],
+  });
+  const path = `/api/follow/${pres.id}/render-slide`;
+
+  const out = await callPublic(handleFollowPublic, {
+    path,
+    body: { slideId, mode: 'follow', lang: null },
+  });
+  assert.equal(out.status, 200);
+  assert.match(out.body.html, /home-wall-marker/);
+
+  const version = await callPublic(handleFollowPublic, {
+    path,
+    body: { slideId, lang: 'de' },
+  });
+  assert.equal(version.status, 404, 'a version the deck does not carry');
+
+  const idle = await createPresentation(testScope(), {
+    title: 'Idle',
+    ownerEmail: OWNER,
+    slides: [{ type: HOME_TYPE, content: { title: 'Off stage' } }],
+  });
+  const notLive = await callPublic(handleFollowPublic, {
+    path: `/api/follow/${idle.id}/render-slide`,
+    body: { slideId: idle.slides[0].id, lang: null },
+  });
+  assert.equal(notLive.status, 404);
+});
+
+test('session render: the companion’s join link draws a server-only type', async () => {
+  const { sessionId, slideId } = await seedLiveDeck({
+    slides: [{ type: HOME_TYPE, content: { title: 'Speaker view' } }],
+  });
+  const out = await callPublic(handleLiveSessionsPublic, {
+    path: `/api/live-sessions/${sessionId}/render-slide`,
+    body: { slideId, mode: 'thumb' },
+  });
+  assert.equal(out.status, 200);
+  assert.match(out.body.html, /home-wall-marker/);
+
+  const unknown = await callPublic(handleLiveSessionsPublic, {
+    path: '/api/live-sessions/00000000-0000-4000-8000-000000000000/render-slide',
+    body: { slideId },
+  });
+  assert.equal(unknown.status, 404);
 });

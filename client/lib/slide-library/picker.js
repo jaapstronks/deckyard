@@ -11,7 +11,10 @@
 
 import { t } from '../ui-i18n.js';
 import { confirmModal } from '../dom/modal.js';
-import { renderSlideElement } from '../slide-runtime/slide-render.js';
+import {
+  RENDER_VIA_THEME,
+  renderSlideElement,
+} from '../slide-runtime/slide-render.js';
 import { loadThemeById } from '../theme/theme.js';
 import { cleanStr } from '../../../shared/string-utils.js';
 import { icon } from '../dom/icons.js';
@@ -124,6 +127,7 @@ export function createSlideLibraryPicker({
     const el = renderSlideElement(slide, {
       mode: 'thumb',
       theme: thTheme,
+      renderVia: RENDER_VIA_THEME,
       lang: state.getLang?.(),
     });
     th.appendChild(el);

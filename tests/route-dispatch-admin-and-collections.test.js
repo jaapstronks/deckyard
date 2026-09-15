@@ -8,8 +8,8 @@
  * `admin-users`, `admin-ai-logs` and `email-templates` fell through on a
  * method mismatch (Form A, no 405 rows); `live-session-audience` mixes both —
  * `/state` and `/events` fall through on purpose (their POST counterparts are
- * presenter actions mounted behind the login gate), `/deck` and `/notes` keep
- * their explicit 405.
+ * presenter actions mounted behind the login gate), `/deck`, `/notes` and
+ * `/render-slide` keep their explicit 405.
  *
  * Routing is asserted with `select()` over the exported ROUTES (storage-free);
  * 405/401/403 behaviour is asserted by invoking the entry function — which for
@@ -531,6 +531,12 @@ test('live-session-audience: routes resolve to their named handlers', () => {
   named(LSA_ROUTES, 'GET', '/api/live-sessions/s-1/deck', 'handleSessionDeck');
   named(
     LSA_ROUTES,
+    'POST',
+    '/api/live-sessions/s-1/render-slide',
+    'handleSessionRenderSlide',
+  );
+  named(
+    LSA_ROUTES,
     'PUT',
     '/api/live-sessions/s-1/notes/slide-1',
     'handleSessionNotesWrite',
@@ -552,10 +558,11 @@ test('live-session-audience: /state and /events fall through on a wrong method (
   assert.equal(await handleLiveSessionsPublic(c), false);
 });
 
-test('live-session-audience: /deck and /notes keep their explicit 405', async () => {
+test('live-session-audience: /deck, /notes and /render-slide keep their explicit 405', async () => {
   for (const [method, path, allow] of [
     ['POST', '/api/live-sessions/s-1/deck', 'GET'],
     ['GET', '/api/live-sessions/s-1/notes/slide-1', 'PUT'],
+    ['GET', '/api/live-sessions/s-1/render-slide', 'POST'],
   ]) {
     const { ctx: c, res } = ctx(method, path, null);
     await handleLiveSessionsPublic(c);
