@@ -132,23 +132,39 @@ function setup(slide) {
   };
 }
 
-test('slideRendered: a client-rendered slide is ready at once, a deckless server one never', async () => {
+test('slideRendered: a client-rendered slide is ready at once, a failed server one settles false', async () => {
   const clientEl = renderSlideElement(
     { id: 'c', type: 'content-slide', content: { title: 'T' } },
     { mode: 'edit', lang: NO_DECK_LANG },
   );
   assert.equal(await slideRendered(clientEl), true);
 
-  const serverEl = renderSlideElement(
-    { id: 's', type: 'title-slide', content: { title: 'T' } },
-    { mode: 'edit', lang: NO_DECK_LANG },
-  );
-  assert.equal(serverEl.dataset.needsServerRender, '1');
-  assert.equal(
-    await slideRendered(serverEl),
-    false,
-    'without a deck nothing renders it, so waiting must settle, not hang',
-  );
+  // Without a deck the placeholder still asks the server (B278, covered in
+  // tests/deckless-server-render.test.js); here that request fails.
+  const originalError = console.error;
+  console.error = () => {};
+  try {
+    const serverEl = renderSlideElement(
+      { id: 's', type: 'title-slide', content: { title: 'T' } },
+      {
+        mode: 'edit',
+        lang: NO_DECK_LANG,
+        api: async () => {
+          throw new Error('render-slide unavailable');
+        },
+      },
+    );
+    document.body.append(serverEl);
+    assert.equal(serverEl.dataset.needsServerRender, '1');
+    assert.equal(
+      await slideRendered(serverEl),
+      false,
+      'a render that fails must settle, not hang',
+    );
+    serverEl.remove();
+  } finally {
+    console.error = originalError;
+  }
   assert.equal(await slideRendered(null), false);
 });
 

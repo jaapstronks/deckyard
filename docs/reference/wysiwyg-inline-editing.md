@@ -105,8 +105,8 @@ renderer lacks the field (a markdown field opens the modal instead).
 
 The lookup waits for the rendered slide, one path for every type. A
 server-rendered type (a fork type, or a fork override of a core name) mounts a
-`slide-loading` placeholder and gets its markup from `/render-slide`
-afterwards, so the spawn awaits `slideRendered(el)` from
+`slide-loading` placeholder and gets its markup from the server render
+(`/render-slide`) afterwards, so the spawn awaits `slideRendered(el)` from
 `client/lib/slide-runtime/slide-render.js` before it looks for the field; for a
 client-rendered slide that promise is already resolved. It settles on a failed
 render too, so a spawn never hangs: it then finds no field, resets the sentinel

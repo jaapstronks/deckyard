@@ -37,6 +37,7 @@ import { handleLiveSessions } from './live-sessions.js';
 import { handleLiveSessionsPublic } from './live-session-audience.js';
 import { handleAssets } from './assets.js';
 import { handleSlideTypes } from './slide-types.js';
+import { handleRenderSlide } from './render-slide.js';
 import { handleThemes } from './themes.js';
 import { handleCustomSlideTypes } from './custom-slide-types.js';
 import { handleFontFamilies } from './font-families.js';
@@ -210,6 +211,7 @@ export async function handleApi({ repoRoot, req, res, url }) {
   if (await handleLiveSessions(ctx)) return;
   if (await handleAssets(ctx)) return;
   if (await handleSlideTypes(ctx)) return;
+  if (await handleRenderSlide(ctx)) return;
   if (await handleThemes(ctx)) return;
   if (await handleCustomSlideTypes(ctx)) return;
   if (await handleFontFamilies(ctx)) return;
