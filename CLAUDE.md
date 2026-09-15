@@ -97,13 +97,15 @@ Apply it at the recurring moments:
   contributor how-to →
   `docs/developer/`; deploy/server notes → `docs/ops/`. Exception:
   `docs/openapi.yaml` stays put (served at `/api/v1/openapi.yaml`).
-- **`TODO.md` is a worklist, not a research report.** An entry there is **max ~12
-  lines**: title, status, one sentence on why it matters, and a link. Diagnosis,
-  code locations, option space, measurements and step-checklists go in
-  `docs/plans/briefs/<slug>.md` — including sub-items that get ticked off
-  individually. Writing the whole investigation into `TODO.md` is how it reached
-  2.468 lines by 2026-07-27; the folding rules and the line budget live in
-  `docs/plans/LEESWIJZER.md`, and `merge-housekeeping` measures it every merge.
+- **`TODO.md` is a worklist, not a research report.** An entry there is **max
+  ~1.000 characters** (one paragraph is one line in the planning docs, so the
+  unit is characters, not lines): title, status, one sentence on why it matters,
+  and a link. Diagnosis, code locations, option space, measurements and
+  step-checklists go in `docs/plans/briefs/<slug>.md` — including sub-items that
+  get ticked off individually. Writing the whole investigation into `TODO.md` is
+  how it reached 2.468 lines by 2026-07-27; the folding rules and the file budget
+  (≤ 100 items, ≤ 100 KB) live in `docs/plans/LEESWIJZER.md`, and
+  `merge-housekeeping` measures it every merge.
 - **Starting a plan**: move its entry to _In progress_ in `docs/plans/TODO.md`.
 - **Finishing a plan**: move the entry to _Recently done_ (dated), then delete
   the plan file or convert its durable parts to `docs/reference/`, and remove
