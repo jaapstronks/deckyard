@@ -1,4 +1,5 @@
 import { t } from '../../lib/ui-i18n.js';
+import { debugLog } from '../../lib/util/debug.js';
 import { slideFingerprint } from '../../../shared/slide-fingerprint.js';
 import {
   mapItemTexts,
@@ -23,6 +24,7 @@ export function createSaveManager({
   onRemoteMerge,
   onStatusChange,
   getSelectedSlideId,
+  onServerTruth,
 } = {}) {
   let dirty = false;
   let saving = false;
@@ -68,6 +70,13 @@ export function createSaveManager({
         baseFingerprints.set(s.id, slideFingerprint(s));
         baseOrder.push(s.id);
       }
+    }
+    // The local copy now matches (or was just rebased onto) server truth;
+    // listeners that fingerprint local slides re-anchor here too.
+    try {
+      onServerTruth?.();
+    } catch (err) {
+      debugLog('[save-manager] onServerTruth listener failed', err);
     }
   };
   rebaseFingerprints(pres?.slides);

@@ -1,18 +1,31 @@
 /**
  * Slide Lock Manager
  *
- * Manages per-slide locking for concurrent editing.
- * When a user selects a slide, this module:
- * 1. Acquires a lock on that slide
- * 2. Refreshes the lock periodically (every 30 seconds)
- * 3. Releases the lock when switching to a different slide
- * 4. Listens for SSE events to show locks held by other users
- * 5. Releases all locks on page unload
+ * Manages per-slide locking for concurrent editing (the collab-live-edits-off
+ * path). A lock is taken on the first real change, not on selection (D112):
+ * opening a deck or clicking through its slides leaves no trace for anyone
+ * else. The module:
+ * 1. Records the content fingerprint of the selected slide on selection
+ * 2. On an edit, compares the selected slide against that fingerprint; only a
+ *    changed slide asks for the lock, and a slide another user holds refuses
+ *    the edit (onLockFailed)
+ * 3. Refreshes the held lock every 30 seconds while the user keeps editing
+ * 4. Releases the held lock on switching slides, after IDLE_RELEASE_MS
+ *    without a change, and when the tab is hidden
+ * 5. Listens for SSE events to show locks held by other users
+ * 6. Releases all locks on page unload
  */
 
 import { matchesIdentity } from '../../../shared/identity-match.js';
+import { slideFingerprint } from '../../../shared/slide-fingerprint.js';
 
 const REFRESH_INTERVAL_MS = 30 * 1000; // 30 seconds
+// A held lock is released once its slide saw no change for this long. Equal to
+// the server TTL (server/storage/slide-locks.js): the lock ends when it would
+// have expired had the refreshes stopped at the last edit, but explicitly, so
+// the slide:unlocked broadcast frees it for others at once. Checked on the
+// refresh tick, so the release lands between 2:00 and 2:30.
+export const IDLE_RELEASE_MS = 2 * 60 * 1000;
 const DEBUG = false; // Set to true to enable debug logging
 
 function debugLog(...args) {
@@ -27,14 +40,24 @@ function debugLog(...args) {
  * @param {Object} [options.user] - The current user ({ id, email }), for the
  *   "is this lock mine?" self-check on SSE lock events
  * @param {Function} options.getSelectedSlideId - Function to get current slide ID
+ * @param {Function} options.getSlide - Returns the local slide object for an ID
+ *   (or null), for the "did this edit change the slide?" fingerprint check
+ * @param {Function} [options.beforeRelease] - Awaited before a held lock is
+ *   released on a slide switch, idle or a hidden tab, so pending edits are
+ *   saved while the lock still covers them
  * @param {Function} [options.onLocksChanged] - Callback when locks state changes
- * @param {Function} [options.onLockFailed] - Callback when lock acquisition fails
+ * @param {Function} [options.onLockFailed] - Called with `{ slideId, lock }`
+ *   when an edit is refused because another user holds the slide: at once
+ *   when the lock is already known, or when the acquire comes back held
  * @returns {Object} Slide lock manager API
  */
 export function createSlideLockManager({
   api,
   presentationId,
   user,
+  getSelectedSlideId,
+  getSlide,
+  beforeRelease,
   onLocksChanged,
   onLockFailed,
 } = {}) {
@@ -43,6 +66,8 @@ export function createSlideLockManager({
       init: () => {},
       detach: () => {},
       onSlideSelected: () => {},
+      onSlideEdited: () => true,
+      resyncSlide: () => {},
       getLocks: () => ({}),
       isLockedByOther: () => false,
       refreshLocks: async () => {},
@@ -51,11 +76,34 @@ export function createSlideLockManager({
 
   let locks = {}; // slideId -> lock info
   let lockedByOthers = new Set(); // slide IDs locked by other users
+  // The slide this user holds or is acquiring. Set synchronously when an edit
+  // asks for the lock, so the next keystroke doesn't ask again and the remote
+  // update handler already protects the slide while the acquire is in flight.
   let currentLockedSlideId = null;
-  let currentSlideIsLocked = false; // true if current slide is locked by another user
+  let lastEditAt = 0;
+  // Fingerprint of the selected slide as last seen: at selection, after each
+  // edit, after a server-truth rebase. An edit that leaves it unchanged (deck
+  // title, settings) is no slide edit and takes no lock.
+  let seen = { slideId: null, fingerprint: null };
   let refreshTimer = null;
   let stopped = false;
   let lastEmittedSignature = null;
+  // Acquire/release requests run one at a time, in order: a release queued by
+  // a slide switch must not land after the acquire of an edit that followed it.
+  let lockOps = Promise.resolve();
+  const enqueue = (op) => {
+    lockOps = lockOps.then(op).catch((err) => {
+      debugLog('lock op error:', err?.message);
+    });
+    return lockOps;
+  };
+
+  const selectedSlideId = () => getSelectedSlideId?.() || null;
+  const currentSlideIsLocked = () => lockedByOthers.has(selectedSlideId());
+  const fingerprintOf = (slideId) => {
+    const slide = getSlide?.(slideId);
+    return slide ? slideFingerprint(slide) : null;
+  };
 
   /**
    * Stable signature of the state emitLocksChanged would broadcast, used to
@@ -86,7 +134,10 @@ export function createSlideLockManager({
         }),
       lockedByOthers: Array.from(lockedByOthers).sort(),
       currentLockedSlideId,
-      currentSlideIsLocked,
+      // The selected slide goes in: the shell's locked-slide state is
+      // recomputed for every selection, also between two held slides.
+      selectedSlideId: selectedSlideId(),
+      currentSlideIsLocked: currentSlideIsLocked(),
     });
 
   /**
@@ -103,7 +154,7 @@ export function createSlideLockManager({
         locks,
         lockedByOthers: Array.from(lockedByOthers),
         currentLockedSlideId,
-        currentSlideIsLocked,
+        currentSlideIsLocked: currentSlideIsLocked(),
       });
     } catch (err) {
       debugLog('onLocksChanged callback error:', err.message);
@@ -145,8 +196,6 @@ export function createSlideLockManager({
         },
       );
       if (resp?.ok) {
-        currentLockedSlideId = slideId;
-        currentSlideIsLocked = false;
         locks[slideId] = resp.lock;
         lockedByOthers.delete(slideId);
         emitLocksChanged();
@@ -156,8 +205,10 @@ export function createSlideLockManager({
       return false;
     } catch (err) {
       // Held by another user: the 409 envelope carries the competing lock.
+      // The edit that asked for it already landed locally; onLockFailed is
+      // where the editor takes it back.
       if (err.code === 'held' && err.details?.lock) {
-        currentSlideIsLocked = true;
+        if (currentLockedSlideId === slideId) currentLockedSlideId = null;
         locks[slideId] = err.details.lock;
         lockedByOthers.add(slideId);
         emitLocksChanged();
@@ -188,11 +239,10 @@ export function createSlideLockManager({
           body: JSON.stringify({}),
         },
       );
+      // currentLockedSlideId is the caller's to clear: by the time a queued
+      // release lands, a new edit may already have claimed the same slide.
       if (resp?.ok) {
         delete locks[slideId];
-        if (currentLockedSlideId === slideId) {
-          currentLockedSlideId = null;
-        }
         emitLocksChanged();
         return true;
       }
@@ -207,25 +257,62 @@ export function createSlideLockManager({
    * Refresh the lock on the currently locked slide.
    */
   const refreshCurrentLock = async () => {
-    if (stopped || !currentLockedSlideId) return;
+    const slideId = currentLockedSlideId;
+    if (stopped || !slideId) return;
     try {
       const resp = await api(
-        `/api/presentations/${presentationId}/slides/${currentLockedSlideId}/lock/refresh`,
+        `/api/presentations/${presentationId}/slides/${slideId}/lock/refresh`,
         {
           method: 'POST',
           body: JSON.stringify({}),
         },
       );
+      if (currentLockedSlideId !== slideId) return;
       if (resp?.ok) {
-        locks[currentLockedSlideId] = resp.lock;
+        locks[slideId] = resp.lock;
         emitLocksChanged();
       } else if (resp?.reason === 'expired' || resp?.reason === 'not_found') {
         // Lock was lost, try to reacquire
-        await acquireLock(currentLockedSlideId);
+        await acquireLock(slideId);
       }
     } catch (err) {
       debugLog('refreshCurrentLock error:', err.message);
     }
+  };
+
+  const isTabHidden = () =>
+    typeof document !== 'undefined' && document.visibilityState === 'hidden';
+
+  /**
+   * Give up the held lock (slide switch, idle, hidden tab). Pending edits are
+   * saved first, while the lock still covers them.
+   */
+  const releaseHeldLock = () => {
+    const slideId = currentLockedSlideId;
+    if (!slideId) return lockOps;
+    currentLockedSlideId = null;
+    return enqueue(async () => {
+      try {
+        await beforeRelease?.();
+      } catch (err) {
+        debugLog('beforeRelease error:', err?.message);
+      }
+      // An edit during that save may have claimed the slide again.
+      if (currentLockedSlideId === slideId) return;
+      await releaseLock(slideId);
+    });
+  };
+
+  /**
+   * Refresh tick: keep the lock of a user who is still editing, release the
+   * lock of one who stopped or left the tab.
+   */
+  const tick = () => {
+    if (stopped || !currentLockedSlideId) return lockOps;
+    if (isTabHidden() || Date.now() - lastEditAt >= IDLE_RELEASE_MS) {
+      return releaseHeldLock();
+    }
+    return enqueue(refreshCurrentLock);
   };
 
   /**
@@ -305,25 +392,67 @@ export function createSlideLockManager({
   };
 
   /**
-   * Called when a slide is selected.
-   * Releases the previous lock and acquires a new one.
+   * Called when a slide is selected. Takes no lock: it releases the lock held
+   * on another slide, records the new slide's fingerprint and re-emits, so
+   * the shell shows whether someone else is editing the slide now in view.
    * @param {string} slideId - The newly selected slide ID
+   * @returns {Promise<void>} Settles once a queued release has gone out
    */
-  const onSlideSelected = async (slideId) => {
-    if (stopped) return;
+  const onSlideSelected = (slideId) => {
+    if (stopped) return lockOps;
+    seen = { slideId, fingerprint: slideId ? fingerprintOf(slideId) : null };
+    const pending =
+      currentLockedSlideId && currentLockedSlideId !== slideId
+        ? releaseHeldLock()
+        : lockOps;
+    emitLocksChanged();
+    return pending;
+  };
 
-    // Same slide - no action needed
-    if (slideId === currentLockedSlideId) return;
-
-    // Release previous lock
-    if (currentLockedSlideId) {
-      await releaseLock(currentLockedSlideId);
+  /**
+   * Called on every edit (markDirty) with the selected slide. Decides whether
+   * the edit changed that slide and, if so, whether it may stand:
+   * - the slide's fingerprint is unchanged → no slide edit, allowed, no lock
+   * - another user holds the slide → refused: onLockFailed fires, and the
+   *   caller takes the local change back
+   * - otherwise → allowed; the lock is asked for once (a held reply later
+   *   still refuses through onLockFailed) and its idle clock restarts
+   * A slide that is gone from the deck (a deletion) takes no lock here; the
+   * server's write enforcement covers it.
+   * @param {string} slideId - The selected slide
+   * @returns {boolean} False when the edit is refused
+   */
+  const onSlideEdited = (slideId) => {
+    if (stopped || !slideId) return true;
+    const fingerprint = fingerprintOf(slideId);
+    if (!fingerprint) return true;
+    if (seen.slideId === slideId && seen.fingerprint === fingerprint) {
+      return true;
     }
-
-    // Acquire new lock (if slide is provided)
-    if (slideId) {
-      await acquireLock(slideId);
+    if (lockedByOthers.has(slideId)) {
+      onLockFailed?.({ slideId, reason: 'held', lock: locks[slideId] || null });
+      return false;
     }
+    seen = { slideId, fingerprint };
+    lastEditAt = Date.now();
+    if (currentLockedSlideId === slideId) return true;
+    if (currentLockedSlideId) releaseHeldLock();
+    currentLockedSlideId = slideId;
+    enqueue(async () => {
+      if (currentLockedSlideId === slideId) await acquireLock(slideId);
+    });
+    return true;
+  };
+
+  /**
+   * Re-record a slide's fingerprint after its local copy was replaced from
+   * the server (save response, remote update adopted, refused edit taken
+   * back), so that replacement doesn't read as an edit by this user.
+   * @param {string} [slideId] - Defaults to the selected slide
+   */
+  const resyncSlide = (slideId = selectedSlideId()) => {
+    if (!slideId || seen.slideId !== slideId) return;
+    seen = { slideId, fingerprint: fingerprintOf(slideId) };
   };
 
   /**
@@ -357,8 +486,8 @@ export function createSlideLockManager({
     // listeners stay attached for the lifetime of the tab.
     if (stopped) return () => {};
 
-    // Set up periodic refresh
-    refreshTimer = setInterval(refreshCurrentLock, REFRESH_INTERVAL_MS);
+    // Set up periodic refresh (and the idle release it checks for)
+    refreshTimer = setInterval(tick, REFRESH_INTERVAL_MS);
 
     // Set up SSE for real-time updates
     const cleanupSSE = setupSSE();
@@ -369,9 +498,17 @@ export function createSlideLockManager({
     };
     window.addEventListener('beforeunload', onBeforeUnload);
 
+    // A tab left in the background holds nothing: the next edit after
+    // coming back asks for the lock again.
+    const onVisibilityChange = () => {
+      if (isTabHidden()) releaseHeldLock();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
     // Store cleanup reference
     return () => {
       window.removeEventListener('beforeunload', onBeforeUnload);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
       cleanupSSE();
     };
   };
@@ -392,13 +529,13 @@ export function createSlideLockManager({
     init,
     detach,
     onSlideSelected,
+    onSlideEdited,
+    resyncSlide,
     getLocks: () => ({ ...locks }),
     getLockedByOthers: () => Array.from(lockedByOthers),
     isLockedByOther,
     getLockInfo,
     refreshLocks: fetchLocks,
     getCurrentLockedSlideId: () => currentLockedSlideId,
-    isCurrentSlideEditable: () => !currentSlideIsLocked,
-    isCurrentSlideLocked: () => currentSlideIsLocked,
   };
 }

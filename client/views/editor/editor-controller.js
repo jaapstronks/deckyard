@@ -65,6 +65,8 @@ import { loadEditorModel } from './load-editor-model.js';
 import { attachEditorLifecycle } from './editor-lifecycle.js';
 import { getFeatures } from '../../lib/state/features.js';
 import { createSlideLockManager } from './slide-lock-manager.js';
+import { restoreSlideFromServer } from './slide-lock-restore.js';
+import { debugLog } from '../../lib/util/debug.js';
 import { syncSlideIdInUrl } from './slide-url.js';
 import { createCommentsPanel } from './comments-panel.js';
 import { createCommentsApi } from './comments-api.js';
@@ -213,6 +215,9 @@ export async function createEditorController({
     presentationId: id,
     user,
     getSelectedSlideId: () => selectedSlideId,
+    getSlide: (slideId) => pres.slides?.find((s) => s?.id === slideId) || null,
+    // Save pending edits while the lock still covers them.
+    beforeRelease: () => saveManager.requestSave(),
     onLocksChanged: ({ currentSlideIsLocked, lockedByOthers } = {}) => {
       // Patch the affected rows' lock indicators. A full rerenderSlideList()
       // here re-rendered every thumbnail on every SSE lock echo, which on a
@@ -259,7 +264,21 @@ export async function createEditorController({
         t('editor.slideLocked.toast', 'This slide is being edited by {name}', {
           name,
         }),
+        { id: 'slide-locked' },
       );
+      // The refused change is already in the local copy: take it back.
+      restoreSlideFromServer({ api, presentationId: id, pres, slideId })
+        .then((restored) => {
+          if (!restored) return;
+          slideLockManager.resyncSlide(slideId);
+          rerenderSlideList();
+          rerenderPreview();
+          if (slideId === selectedSlideId) rerenderEditor();
+        })
+        .catch((err) => {
+          // The server's write enforcement (423) still keeps the change out.
+          debugLog('[slide-lock] restoring refused slide failed', err);
+        });
     },
   });
 
@@ -310,8 +329,9 @@ export async function createEditorController({
     } catch {
       /* ignore */
     }
-    // Acquire lock on the newly selected slide (not in live-edit mode:
-    // concurrent editing is the point, presence covers awareness)
+    // Selecting takes no lock (D112): it releases one held on another slide
+    // and shows whether someone else edits this one. Not in live-edit mode:
+    // concurrent editing is the point, presence covers awareness.
     if (!liveEditsActive) slideLockManager.onSlideSelected(v).catch(() => {});
     // A slide-scoped comments pane follows the selection.
     commentsPanel?.onSlideChanged?.();
@@ -336,6 +356,8 @@ export async function createEditorController({
     normalizeLang,
     onStatusChange: (status) => setSaveStatus(status),
     getSelectedSlideId: () => selectedSlideId,
+    // A slide replaced from the server is no edit by this user.
+    onServerTruth: () => slideLockManager.resyncSlide(),
     onConflict: (err) => {
       if (conflictModalShown) return;
       conflictModalShown = true;
@@ -452,6 +474,10 @@ export async function createEditorController({
       else liveEditsHadEarlyEdits = true;
       return undefined;
     }
+    // The first change to the selected slide takes its lock (D112). A slide
+    // another user holds refuses the edit: it is not saved, and onLockFailed
+    // takes it back out of the local copy.
+    if (!slideLockManager.onSlideEdited(selectedSlideId)) return undefined;
     // Notify undo manager of the change (it tracks sequences internally)
     undoManager.captureSnapshot(pres, {
       slideId: opts?.slideId || selectedSlideId,
@@ -1131,7 +1157,7 @@ export async function createEditorController({
       .catch(() => {});
     cleanup.register('slideLockManager', () => slideLockManager.detach());
 
-    // Acquire lock on initial slide
+    // Record the initial slide (no lock until it is edited)
     if (selectedSlideId) {
       slideLockManager.onSlideSelected(selectedSlideId).catch(() => {});
     }
