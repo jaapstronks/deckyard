@@ -35,31 +35,16 @@ import {
   migrateLibraryItem,
   migratePresentation,
 } from '../shared/slide-types/schema-version.js';
+import { canonicalJson } from '../shared/slide-fingerprint.js';
 
 const REPO_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '..',
 );
 
-/**
- * JSON with object keys sorted, so two equal values stringify equally whatever
- * order the jsonb column handed their keys back in.
- * @param {any} value
- * @returns {string}
- */
-function stableJson(value) {
-  if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`;
-  if (value && typeof value === 'object')
-    return `{${Object.keys(value)
-      .sort()
-      .map((k) => `${JSON.stringify(k)}:${stableJson(value[k])}`)
-      .join(',')}}`;
-  return JSON.stringify(value ?? null);
-}
-
 /** @param {any} slide */
 const slideShape = (slide) =>
-  stableJson({ type: slide?.type ?? null, content: slide?.content ?? null });
+  canonicalJson({ type: slide?.type ?? null, content: slide?.content ?? null });
 
 /**
  * The slides of a stored deck the funnel would still change, as
@@ -100,7 +85,7 @@ export function unmigratedDeckSlides(deck) {
  * @returns {boolean}
  */
 export function isUnmigratedLibraryItem(item) {
-  const before = stableJson({
+  const before = canonicalJson({
     slideType: item?.slideType ?? null,
     content: item?.content ?? null,
     i18n: item?.i18n ?? null,
@@ -114,7 +99,7 @@ export function isUnmigratedLibraryItem(item) {
   );
   return (
     before !==
-    stableJson({
+    canonicalJson({
       slideType: after?.slideType ?? null,
       content: after?.content ?? null,
       i18n: after?.i18n ?? null,

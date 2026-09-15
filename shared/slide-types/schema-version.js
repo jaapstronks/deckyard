@@ -49,6 +49,7 @@ import {
 } from './field-groups.js';
 import { REMOVED_SLIDE_TYPES } from './removed.js';
 import { foldUnofferedEnums } from './normalize-content.js';
+import { canonicalJson } from '../slide-fingerprint.js';
 
 /** The schema version every freshly written deck is stamped with. */
 export const CURRENT_SCHEMA_VERSION = 15;
@@ -274,28 +275,6 @@ function str(v) {
 }
 
 /**
- * Structural equality for stored JSON, blind to key order: a JSONB column hands
- * keys back in its own order, so a string compare would miss an equal object.
- * @param {any} a
- * @param {any} b
- * @returns {boolean}
- */
-function sameJson(a, b) {
-  if (a === b) return true;
-  if (Array.isArray(a) || Array.isArray(b)) {
-    if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length)
-      return false;
-    return a.every((v, i) => sameJson(v, b[i]));
-  }
-  if (!a || !b || typeof a !== 'object' || typeof b !== 'object') return false;
-  const ak = Object.keys(a);
-  if (ak.length !== Object.keys(b).length) return false;
-  return ak.every(
-    (k) => Object.prototype.hasOwnProperty.call(b, k) && sameJson(a[k], b[k]),
-  );
-}
-
-/**
  * Whether a canonical array is exactly what the type's defaults seed, in any
  * language: the placeholder a fresh slide gets, not something a person wrote.
  *
@@ -319,7 +298,11 @@ function isSeededArray(type, arrayKey, value) {
   const byLang = def.defaultsByLang;
   if (byLang && typeof byLang === 'object')
     for (const d of Object.values(byLang)) seeds.push(d?.[arrayKey]);
-  return seeds.some((seed) => Array.isArray(seed) && sameJson(seed, value));
+  // Key-order blind: a JSONB column hands keys back in its own order.
+  const stored = canonicalJson(value);
+  return seeds.some(
+    (seed) => Array.isArray(seed) && canonicalJson(seed) === stored,
+  );
 }
 
 /** Type + group the v4 -> v5 quote-alignment fold reads its target key from. */

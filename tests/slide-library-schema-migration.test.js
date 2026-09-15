@@ -22,6 +22,7 @@ import fs from 'node:fs';
 
 import {
   CURRENT_SCHEMA_VERSION,
+  LOSSLESS_TYPE_RENAMES,
   SCHEMA_MIGRATIONS,
   migrateLibraryItem,
   migratePresentation,
@@ -211,14 +212,15 @@ test('the seed only yields to slots: a seed alone, or real members beside slots,
 });
 
 test('a type-changing step renames the library item type', () => {
+  // The names come from the removal record, so a removed type is spelled in
+  // one place only (tests/removed-slide-types.test.js).
+  const [oldName, successor] = [...LOSSLESS_TYPE_RENAMES][0];
   const item = migrateLibraryItem({
-    slideType: 'agenda-timeline-slide',
-    content: {
-      title: 'Plan',
-      items: [{ time: '2024', title: 'Start', body: 'nu' }],
-    },
+    slideType: oldName,
+    content: { title: 'Plan' },
   });
-  assert.equal(item.slideType, 'timeline-slide');
+  assert.equal(item.slideType, successor);
+  assert.equal(item.content.title, 'Plan');
 });
 
 test('every step of the ledger reaches the library, including the last one', () => {
