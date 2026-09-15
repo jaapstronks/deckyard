@@ -56,6 +56,8 @@ import { createFocusDrag } from './focus-drag.js';
 import { createMarkdownEditModal } from './markdown-modal.js';
 import { createReorderDrag } from './reorder-drag.js';
 import { h } from '../../../lib/dom.js';
+import { slideRendered } from '../../../lib/slide-runtime/slide-render.js';
+import { debugLog } from '../../../lib/util/debug.js';
 
 /**
  * @param {Object} opts
@@ -615,7 +617,9 @@ export function createInlineEditor({
         onclick: (e) => {
           e.preventDefault();
           e.stopPropagation();
-          spawnFromGhost(path, reanchor || (() => anchor), meta, kind);
+          spawnFromGhost(path, reanchor || (() => anchor), meta, kind).catch(
+            (err) => debugLog('[inline-editor] ghost spawn failed', path, err),
+          );
         },
       },
       [
@@ -626,51 +630,73 @@ export function createInlineEditor({
     overlay.place(chip, anchor.el, anchor.chip, 8);
   }
 
-  function spawnFromGhost(path, resolveAnchor, meta, kind) {
+  /**
+   * Remount the preview and wait until the slide on the canvas carries its real
+   * markup. A client-rendered slide is ready at once; a server-rendered one
+   * (fork types, fork overrides) starts as a placeholder that the server fills
+   * in afterwards. If something remounts the canvas meanwhile, wait for the
+   * slide that is there now. A render that failed settles too: the caller then
+   * simply finds no field element.
+   */
+  async function rerenderAndSettle() {
+    rerenderPreview?.();
+    let el;
+    do {
+      el = slideEl();
+      await slideRendered(el);
+    } while (slideEl() !== el);
+  }
+
+  /**
+   * Add an empty optional field from its ghost chip and edit it in place.
+   * One path for every type: text and markdown differ only in which edit they
+   * begin and what they fall back to, and a server-rendered slide is awaited
+   * rather than looked up before its markup exists.
+   */
+  async function spawnFromGhost(path, resolveAnchor, meta, kind) {
     // Chart data lives on the bottom-panel Data tab (editing-surfaces §4.3),
     // not an in-slide element or a modal.
     if (kind === 'csv') {
       onEditChartData?.();
       return;
     }
-    if (kind === 'markdown') {
-      // Same sentinel flow as plain text: let the renderer emit the real
-      // field element, then edit it in place (rich). A fresh field is empty,
-      // so the round-trip gate is trivially satisfied.
-      const slide = getSlide?.();
-      if (!slide) return;
-      setByPath(slide.content, path, NEW_FIELD_SENTINEL);
-      rerenderPreview?.();
-      const el = slideEl()?.querySelector(`[data-inline-field="${path}"]`);
-      if (el) {
-        beginRichEdit(el, path, meta, { isNew: true });
-        return;
-      }
-      // Renderer didn't emit the element for this path: modal fallback.
-      setByPath(slide.content, path, '');
-      rerenderPreview?.();
-      mdModal.open(path, meta, { isNew: true });
-      return;
-    }
     const slide = getSlide?.();
     if (!slide) return;
+    // The spawn is only still wanted if nothing moved while the render was on
+    // its way: same slide selected, no other edit started. Otherwise drop the
+    // sentinel so it can never be committed along with someone else's edit.
+    const abandoned = () => {
+      if (getSlide?.()?.id === slide.id && !editing) return false;
+      if (getByPath(slide.content, path) === NEW_FIELD_SENTINEL) {
+        setByPath(slide.content, path, '');
+      }
+      return true;
+    };
     // Let the REAL renderer emit the field element so the edit happens at the
     // field's true tag/class/font-size (a bare spawned <p> renders microscopic
     // - base font inside the scaled slide). The sentinel makes the renderer
     // treat the field as non-empty while showing nothing; commit/cancel in
-    // endTextEdit replace it with the typed value or empty.
+    // endTextEdit replace it with the typed value or empty. A fresh markdown
+    // field is empty, so its round-trip gate is trivially satisfied.
     setByPath(slide.content, path, NEW_FIELD_SENTINEL);
-    rerenderPreview?.();
+    await rerenderAndSettle();
+    if (abandoned()) return;
     const el = slideEl()?.querySelector(`[data-inline-field="${path}"]`);
     if (el) {
-      beginTextEdit(el, path, meta, { isNew: true });
+      if (kind === 'markdown') beginRichEdit(el, path, meta, { isNew: true });
+      else beginTextEdit(el, path, meta, { isNew: true });
       return;
     }
-    // Renderer didn't emit the element (no data-inline-field for this path);
-    // fall back to spawning a bare editable host at the descriptor anchor,
-    // re-resolved against the fresh DOM (the rerender orphaned the old one).
+    // The renderer didn't emit an element for this path.
     setByPath(slide.content, path, '');
-    rerenderPreview?.();
+    await rerenderAndSettle();
+    if (abandoned()) return;
+    if (kind === 'markdown') {
+      mdModal.open(path, meta, { isNew: true });
+      return;
+    }
+    // Spawn a bare editable host at the descriptor anchor, re-resolved against
+    // the fresh DOM (the rerender orphaned the old one).
     const anchor = resolveAnchor?.();
     if (!anchor) return;
     const host = h('p', { class: 'ie-ghost-input' });
