@@ -4,6 +4,13 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.33.3](https://github.com/jaapstronks/deckyard/compare/v1.33.2...v1.33.3) (2026-09-15)
+
+
+### Fixed
+
+* **editor:** take a slide lock on the first real edit, not on selection ([#1136](https://github.com/jaapstronks/deckyard/issues/1136)) ([55effaa](https://github.com/jaapstronks/deckyard/commit/55effaa79d7593942e8e4712ec0f4b009cf49297))
+
 ## [1.33.2](https://github.com/jaapstronks/deckyard/compare/v1.33.1...v1.33.2) (2026-09-14)
 
 
