@@ -415,15 +415,47 @@ export function renderSlideElement(
 
   // For custom slide types, trigger async server-side rendering
   if (el.dataset.needsServerRender === '1' && presentationId) {
-    triggerServerRender(el, slide, { mode, theme, presentationId, api });
+    pendingServerRenders.set(
+      el,
+      triggerServerRender(el, slide, { mode, theme, presentationId, api }),
+    );
   }
 
   return el;
 }
 
+// Placeholder element -> the promise of its server render (see slideRendered).
+const pendingServerRenders = new WeakMap();
+
+/**
+ * Wait until a slide element returned by `renderSlideElement()` carries its
+ * real markup.
+ *
+ * A client-rendered slide is complete when it is returned, so this resolves
+ * `true` straight away. A server-rendered one starts as a `slide-loading`
+ * placeholder; this resolves once `triggerServerRender` has settled: `true` when
+ * the markup was swapped in, `false` when it never will be (the render failed,
+ * the element was unmounted first, or there was no deck to render against).
+ *
+ * This is the per-element form of the `slide-server-rendered` event. The event
+ * tells a container "some slide under you changed, decorate again"; this
+ * answers "is THIS element done", which is what a caller that must act on the
+ * rendered DOM needs — and unlike the event it also settles on failure, so an
+ * awaiting caller never hangs.
+ *
+ * @param {Element|null|undefined} el
+ * @returns {Promise<boolean>}
+ */
+export function slideRendered(el) {
+  if (!el) return Promise.resolve(false);
+  if (el.dataset?.needsServerRender !== '1') return Promise.resolve(true);
+  return pendingServerRenders.get(el) || Promise.resolve(false);
+}
+
 /**
  * Trigger server-side rendering for a custom slide type.
  * Replaces the placeholder element's content with server-rendered HTML.
+ * Resolves `true` when the markup was swapped in, `false` otherwise.
  */
 async function triggerServerRender(
   el,
@@ -454,11 +486,13 @@ async function triggerServerRender(
       el.dispatchEvent(
         new CustomEvent('slide-server-rendered', { bubbles: true }),
       );
+      return true;
     }
   } catch (err) {
     console.error('[slide-render] Server render failed:', err);
     // Leave the placeholder in place
   }
+  return false;
 }
 
 // Exported for the seam-order / fork-override guardrails: the render-path

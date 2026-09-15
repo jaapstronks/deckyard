@@ -37,7 +37,9 @@ destroyed mid-type. The solution, in `editor-controller.js` +
 - All decoration (ghost chips, card buttons, clear buttons, outlines, grips)
   is stateless against the DOM: it is rebuilt in `inlineEditor.refresh()`,
   which the controller calls after every mount. Custom (server-rendered)
-  slide types re-apply affordances via the `slide-server-rendered` event.
+  slide types re-apply affordances via the `slide-server-rendered` event;
+  code that must act on one element's finished markup awaits
+  `slideRendered(el)` instead (see _Ghost spawn_ below).
 
 The canvas mounts with `mode: 'edit'`, which lets slide types suppress
 non-editing affordances (e.g. icon-card link overlays that would intercept
@@ -102,7 +104,18 @@ real renderer, then edits the element it emitted - so the first-time edit
 gets the correct tag/class/font size with zero descriptor work. The sentinel
 is never persisted: commit/cancel replace it, and an abandoned empty edit
 does not dirty the deck. A reanchoring fallback spawns a bare host if a
-renderer lacks the field.
+renderer lacks the field (a markdown field opens the modal instead).
+
+The lookup waits for the rendered slide, one path for every type. A
+server-rendered type (a fork type, or a fork override of a core name) mounts a
+`slide-loading` placeholder and gets its markup from `/render-slide`
+afterwards, so the spawn awaits `slideRendered(el)` from
+`client/lib/slide-runtime/slide-render.js` before it looks for the field; for a
+client-rendered slide that promise is already resolved. It settles on a failed
+render too, so a spawn never hangs: it then finds no field, resets the sentinel
+and ends. If the user switches slides or starts another edit while the render
+is on its way, the spawn drops its sentinel and stops. Pinned by
+`tests/inline-ghost-server-rendered.test.js`.
 
 ## Interaction kinds
 
