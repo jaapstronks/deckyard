@@ -1,4 +1,5 @@
 import { t } from '../../lib/ui-i18n.js';
+import { debugLog } from '../../lib/util/debug.js';
 import { slideFingerprint } from '../../../shared/slide-fingerprint.js';
 import {
   mapItemTexts,
@@ -23,6 +24,7 @@ export function createSaveManager({
   onRemoteMerge,
   onStatusChange,
   getSelectedSlideId,
+  onServerTruth,
 } = {}) {
   let dirty = false;
   let saving = false;
@@ -69,6 +71,13 @@ export function createSaveManager({
         baseOrder.push(s.id);
       }
     }
+    // The local copy now matches (or was just rebased onto) server truth;
+    // listeners that fingerprint local slides re-anchor here too.
+    try {
+      onServerTruth?.();
+    } catch (err) {
+      debugLog('[save-manager] onServerTruth listener failed', err);
+    }
   };
   rebaseFingerprints(pres?.slides);
 
@@ -108,6 +117,20 @@ export function createSaveManager({
     }
     rebaseFingerprints(slides);
     for (const [sid, fp] of pending) baseFingerprints.set(sid, fp);
+  };
+
+  /**
+   * Take one slide back to server truth after its local edit was refused (a
+   * slide lock another user holds, D112). It is no pending edit any more, and
+   * its merge base is the server copy it now holds: left pending on its old
+   * base, the next save would read the holder's change as "both changed"
+   * and block the editor on a conflict.
+   * @param {Object} slide - The slide as just received from the server
+   */
+  const adoptServerSlide = (slide) => {
+    if (!slide || typeof slide.id !== 'string' || !slide.id) return;
+    modifiedSlideIds.delete(slide.id);
+    baseFingerprints.set(slide.id, slideFingerprint(slide));
   };
 
   const setLastError = (e) => {
@@ -631,6 +654,7 @@ export function createSaveManager({
     isDirty: () => dirty,
     isSaving: () => saving,
     rebaseServerTruth,
+    adoptServerSlide,
     getLastError: () => lastError,
     getStatus,
     isBlockedByConflict: () => blockedByConflict,

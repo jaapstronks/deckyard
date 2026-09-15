@@ -164,3 +164,29 @@ test('the detector catches both forbidden forms and passes the allowed ones', ()
   assert.equal(badToastSites('toast(msg, { durationMs: 60000 })').length, 0);
   assert.equal(badToastSites("toast(msg, { id: 'notes-save' })").length, 0);
 });
+
+test('every toast.<helper> call names a helper that exists', () => {
+  // `toast?.warn?.(…)` read as a warning and rendered nothing: the helper is
+  // `warning`, and optional chaining turned the typo into a silent no-op (the
+  // slide-lock refusal toast, #1136). The helpers are whatever toast.js assigns.
+  const toastSrc = fs.readFileSync(
+    path.join(repoRoot, 'client/lib/dom/toast.js'),
+    'utf8',
+  );
+  const helpers = new Set(
+    [...toastSrc.matchAll(/^toast\.(\w+)\s*=/gm)].map((m) => m[1]),
+  );
+  assert.ok(helpers.has('warning'), 'helper list read from toast.js');
+  const violations = [];
+  for (const file of walk(path.join(repoRoot, 'client'))) {
+    const rel = path.relative(repoRoot, file).split(path.sep).join('/');
+    if (SKIP_FILES.has(rel)) continue;
+    const src = fs.readFileSync(file, 'utf8');
+    for (const m of src.matchAll(/\btoast\s*\??\.\s*(\w+)\s*(?:\?\.)?\s*\(/g)) {
+      if (!helpers.has(m[1])) {
+        violations.push(`${rel}:${lineOf(src, m.index)}  toast.${m[1]}`);
+      }
+    }
+  }
+  assert.deepEqual(violations, []);
+});

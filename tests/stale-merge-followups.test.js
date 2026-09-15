@@ -475,6 +475,31 @@ describe('save-manager — X-Slides-Order-Changed and rebaseServerTruth', () => 
       'slide with pending local edits must keep its pre-edit base',
     );
   });
+
+  it('adoptServerSlide drops a refused edit and re-bases the slide on the server copy', async () => {
+    const pres = makePres();
+    const sentHeaders = [];
+    const mgr = makeManager({ pres, apiImpl: echoApi(sentHeaders) });
+
+    // The edit to B landed while its lock acquire was in flight; the acquire
+    // came back held by another user, who changed B on the server meanwhile.
+    pres.slides[1].content.body = 'B refused edit';
+    mgr.markDirty({ slideId: 'b' });
+    pres.slides[1] = slide('b', 'B v2 by the holder');
+    mgr.adoptServerSlide(pres.slides[1]);
+
+    // A later edit elsewhere saves A only, not B on its stale base.
+    pres.slides[0].content.body = 'A edit';
+    mgr.markDirty({ slideId: 'a' });
+    await mgr.requestSave();
+    mgr.cancelAutosave();
+
+    assert.deepEqual(JSON.parse(sentHeaders[0]['X-Modified-Slides']), ['a']);
+    assert.equal(
+      JSON.parse(sentHeaders[0]['X-Slide-Base-Fingerprints']).b,
+      undefined,
+    );
+  });
 });
 
 // ============================================================================
