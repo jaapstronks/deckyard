@@ -190,9 +190,14 @@ Then, in rough dependency order:
    - the funnel migrates in memory and the deck is written back on its next
      save, so without the SQL the columns keep the old name until someone edits
      the deck;
-   - the read funnel covers presentations. Version snapshots, `slide_library`
-     rows and comment snapshots have their own read paths, and the SQL is what
-     reaches those.
+   - the read funnel covers presentations and, since B286, `slide_library`
+     rows (`migrateLibraryItem()`, called by the storage row mapper, dresses an
+     item as a one-slide deck per language and hands it to the same funnel).
+     Version snapshots and comment snapshots have their own read paths, and the
+     SQL is what reaches those; for the library it is what makes the rename
+     persistent. `scripts/scan-unmigrated-content.js` (read-only) counts the
+     decks and library items the funnel would still change, which is how a
+     fork sees how much stored content is waiting on a save or a migration.
 
    A one-off on a snapshot table is a moment, not a guarantee. Migration 056
    zeroed `lijstje-slide` in `presentation_versions` on 2026-07-31, and the

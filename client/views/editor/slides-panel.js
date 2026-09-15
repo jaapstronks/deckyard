@@ -4,6 +4,7 @@ import { openFollowInviteSuggestModal } from './modals/follow-invite-suggest-mod
 import { createSlideTypePicker } from './slide-type-picker.js';
 import { deepClone } from './editor-utils.js';
 import { newSlide } from '../../../shared/slide-types/presentation.js';
+import { migrateLibraryItem } from '../../../shared/slide-types/schema-version.js';
 import { t } from '../../lib/ui-i18n.js';
 import { newId } from '../../lib/util/id.js';
 import { createSlideLibraryPicker } from './slide-library-picker.js';
@@ -405,7 +406,18 @@ export function createSlidesPanel({
   };
 
   const insertFromLibraryItem = (item, { afterSlideId } = {}) => {
-    const type = String(item?.slideType || '').trim();
+    // Migrate before `newSlide` merges the type's defaults underneath (B286):
+    // on a pre-v8 item those defaults seed the array beside the numbered slots,
+    // and the slide would keep the placeholder. The server already migrates on
+    // read; this keeps the insert right whatever handed the item over.
+    const migrated = migrateLibraryItem({
+      slideType: String(item?.slideType || '').trim(),
+      content:
+        item?.content && typeof item.content === 'object'
+          ? deepClone(item.content)
+          : null,
+    });
+    const type = migrated.slideType;
     if (!type) return;
     if (
       !isInsertableSlideType({
@@ -419,12 +431,7 @@ export function createSlidesPanel({
       toast?.error?.('This slide type is not available for the active theme.');
       return;
     }
-    const s = insertedSlide(
-      type,
-      item?.content && typeof item.content === 'object'
-        ? deepClone(item.content)
-        : null,
-    );
+    const s = insertedSlide(type, migrated.content);
     // A library item is a copy of a slide, so the instance-bound content keys
     // its type declares are re-derived here too — a reused poll gets its own
     // pollId, a reused follow-invite points at this deck. Declaration:
