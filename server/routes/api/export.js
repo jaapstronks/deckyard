@@ -38,7 +38,9 @@ const exportRoutes = [
     extension: '.json',
     stripLiveOnly: false,
     buildContent: (ctx) => {
-      const deck = presentationToDeck(ctx.pres);
+      const deck = presentationToDeck(ctx.pres, {
+        slideTypes: ctx.slideTypes,
+      });
       return JSON.stringify(deck, null, 2);
     },
   }),
@@ -52,7 +54,7 @@ const exportRoutes = [
     extension: '.deck',
     stripLiveOnly: false,
     buildContent: async (ctx, { repoRoot }) =>
-      buildDeckBundle(repoRoot, ctx.pres),
+      buildDeckBundle(repoRoot, ctx.pres, { slideTypes: ctx.slideTypes }),
   }),
 
   // HTML export (download)

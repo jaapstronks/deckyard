@@ -126,11 +126,23 @@ export async function getCustomSlideType(scope, typeId) {
 
 /**
  * Create a custom slide type.
+ *
+ * A type created in Settings starts as a draft. `published` is for a caller
+ * whose type is finished the moment it exists: a definition installed from a
+ * `.deck` bundle (D91), where the deck that carried it already uses it. It is
+ * an option, not a key of `data`, so a request body cannot set it.
+ *
  * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {Object} data
+ * @param {Object} [opts]
+ * @param {boolean} [opts.published] - create it published
  * @returns {Promise<{ ok: boolean, customSlideType?: Object, reason?: string }>}
  */
-export async function createCustomSlideType(scope, data) {
+export async function createCustomSlideType(
+  scope,
+  data,
+  { published = false } = {},
+) {
   toStorageContext(scope, 'createCustomSlideType');
   const label = String(data?.label || '').trim();
   if (!label || label.length > MAX_LABEL_LEN) {
@@ -196,7 +208,7 @@ export async function createCustomSlideType(scope, data) {
         template,
         css,
         usage: usageResult.usage,
-        is_published: false,
+        is_published: published === true,
         sort_order: typeof data?.sortOrder === 'number' ? data.sortOrder : 0,
         created_at: now,
         updated_at: now,

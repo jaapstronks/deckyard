@@ -34,6 +34,9 @@ deck.json              The portable deck (as from presentationToDeck), with
                        every asset ref rewritten to a bundle ref.
 theme.json             The deck's database theme, when it is on one (see
                        Theme). Absent for a file theme.
+slide-types/<slug>.json
+                       Each database slide type the deck uses (see Custom
+                       slide types). Absent for core and file-JS types.
 assets/<sha256>.<ext>  The asset bytes, content-addressed by SHA-256 of the
                        content: slide images, theme logos and curated font
                        files. Identical bytes are stored once (dedup).
@@ -44,10 +47,13 @@ assets/<sha256>.<ext>  The asset bytes, content-addressed by SHA-256 of the
 ```json
 {
   "format": "deckyard.deck",
-  "bundleVersion": 2,
+  "bundleVersion": 3,
   "mimetype": "application/vnd.deckyard.deck",
   "deck": "deck.json",
   "theme": { "ref": "theme.json", "hash": "9c1f…07ab" },
+  "slideTypes": [
+    { "slug": "hero", "ref": "slide-types/hero.json", "hash": "41d0…9e2c" }
+  ],
   "assets": [
     {
       "ref": "assets/e2e9…445a.png",
@@ -81,12 +87,16 @@ assets/<sha256>.<ext>  The asset bytes, content-addressed by SHA-256 of the
 }
 ```
 
-- **`bundleVersion`** — `2` since the bundle carries a theme (B250, D90). A
-  reader reads the versions it knows (`1` and `2`: a version-1 bundle is a
-  version-2 bundle without a theme) and refuses any other, rather than
-  silently dropping parts it cannot see.
+- **`bundleVersion`** — `3` since the bundle carries slide types (B251, D91);
+  `2` added the theme (B250, D90). A reader reads the versions it knows (`1`,
+  `2` and `3`: each is the one before it plus a part) and refuses any other,
+  rather than silently dropping parts it cannot see.
 - **`theme`** (optional) — where `theme.json` lives and the SHA-256 of its
   bytes; the reader re-hashes it like an asset and rejects a mismatch.
+- **`slideTypes`** (optional) — one entry per carried slide type: its `slug`,
+  its `ref` (always `slide-types/<slug>.json`) and the SHA-256 of its bytes.
+  The reader refuses another path, a hash mismatch, and a file that names
+  another slug.
 
 - **`ref`** — where the bytes live in the archive; also the value used inside
   `deck.json`.
@@ -160,6 +170,36 @@ A **file theme** (`themes/<id>.json`, a fork's `custom/themes/<id>/`) is not a
 record: it ships with an install, like a file-JS slide type, and travels by the
 id in `deck.json` alone.
 
+## Custom slide types
+
+A slide on a **database slide type** (built in Settings > Slide Types) stores
+the type as `custom-<slug>`, and that slug names nothing on another instance.
+The bundle therefore carries each database type the deck uses as
+`slide-types/<slug>.json`, exactly the fields a type is created from, with no
+id, organization, publication state, order or authorship:
+
+```json
+{
+  "slug": "hero",
+  "label": "Hero",
+  "baseType": null,
+  "fields": [{ "key": "title", "type": "string", "label": "Title" }],
+  "defaults": { "title": "Hello", "image": "assets/5a1b…e0.png" },
+  "defaultsByLang": null,
+  "template": "<div class=\"slide\"><h2>{{title}}</h2></div>",
+  "css": "h2 { color: #ff0055; }",
+  "usage": null
+}
+```
+
+Its uploads go through the same asset walk as a theme's logos. `deck.json`
+keeps `custom-<slug>` on the slides. Only the organization's **published**
+types travel: they are the ones a slide resolves to.
+
+A **file-JS slide type** (core, or a fork's `custom/slide-types/`) is code, not
+a record: it ships with an install and travels by the type id on the slide
+alone. The same fork resolves it; any other install imports the placeholder.
+
 ## Guarantees
 
 - **Self-contained:** all local slide assets are embedded, and so are a
@@ -174,24 +214,25 @@ id in `deck.json` alone.
 
 ## Import (re-hydrating a bundle)
 
-`POST /api/presentations/import/deck[?install=theme]` takes a raw `.deck` body
-and creates a presentation from it — the mirror of the export. `install` is a
-comma-separated list of what the importer asks to install; `theme` is the one
-value today (custom slide types join it with B251). A value the install does
-not know is refused with 400. The flow:
+`POST /api/presentations/import/deck[?install=theme,slideTypes]` takes a raw
+`.deck` body and creates a presentation from it — the mirror of the export.
+`install` is a comma-separated list of what the importer asks to install:
+`theme` and `slideTypes`. A value the install does not know is refused with 400. The flow:
 
 1. `readDeckBundle(buffer)` — verify the mimetype sentinel and re-hash every
    asset (integrity), yielding `{ manifest, deck, assets }`.
    The deck's own `lang` decides the language it imports in; a bundle whose
    `lang` or `translations` name a language this install does not author in is
    refused with 400 (`deckImportLang`).
-2. **The carried theme is settled** before any bytes are written — see
-   [Installing a carried theme](#installing-a-carried-theme).
+2. **The carried theme and slide types are settled** before any bytes are
+   written — see [Installing a carried theme](#installing-a-carried-theme) and
+   [Installing carried slide types](#installing-carried-slide-types).
 3. For each manifest asset, write its bytes back into `/uploads/` via
    `writeBundleAsset`, **verbatim** (a content-addressed file keeps its
    address; the upload path's raster re-encoding would change it), using the
    manifest `sources[0]` as the human basename. Font files are never written,
-   and a theme's logos only when the theme is installed. This builds a
+   and a definition's uploads only when that definition is installed. This
+   builds a
    `assets/<hash>.<ext>` → `/uploads/<uuid>.<ext>` map.
 4. `rewriteBundleRefs(deck, mapFn)` — rewrite the deck's bundle refs to the new
    upload URLs (the inverse of the export's `rewriteAssetRefs`).
@@ -223,6 +264,26 @@ form, so a second import of the same bundle resolves, hashes and dedups the
 same way; once the organization adds the family, the bundle installs as a
 different theme.
 
+### Installing carried slide types
+
+The same rule as the theme, per type. A carried type is recognised by its
+**content**: SHA-256 over the canonical JSON of its definition without the
+slug, compared with each of the organization's published types hashed the same
+way. Each outcome is one entry of `bundledSlideTypes` in the response (`slug`,
+`label`, `status`, and `typeId`, `reason` where they apply):
+
+| `status`        | When                                                                               | The deck's slides of this type                                                                                                               |
+| --------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `existing`      | the organization already has a published type with this content, whatever its slug | resolve to that type                                                                                                                         |
+| `installed`     | a user who may manage slide types (`canManage`) asked for `install=slideTypes`     | resolve to the new type, created **published**; a taken slug gets `-2`, `-3`, … and the slides follow; an existing type is never overwritten |
+| `not-installed` | otherwise; `reason` is `install-not-requested` or `not-permitted`                  | import as the placeholder, which adds that the definition is in the bundle                                                                   |
+
+A carried type never resolves by name: when it is not installed, the slides do
+not borrow an unrelated type the organization has under the same slug. A type
+that cannot be created (its fields fail validation) refuses the import with
+400; types installed before it in the same bundle stay, and dedup on the next
+import.
+
 **Round-trip:** for content-bearing slides, `export → import → export` is a
 fixpoint (identical content-addressed refs, since identical bytes hash the same
 and bundle assets are written verbatim).
@@ -243,10 +304,15 @@ and bundle assets are written verbatim).
 
 ## Code
 
-- Build: `server/export/deck-bundle.js` → `buildDeckBundle(repoRoot, pres)`.
+- Build: `server/export/deck-bundle.js` → `buildDeckBundle(repoRoot, pres, { slideTypes })`.
 - Theme, both directions: `server/export/deck-theme.js` (`portableThemeRecord`,
   `bundleThemeFonts`, `settleBundledTheme`, `installBundledTheme`).
-- Read/validate: `readDeckBundle(buffer)` → `{ mimetype, manifest, deck, theme, assets }`.
+- Slide types, both directions: `server/export/deck-slide-types.js`
+  (`portableSlideTypeRecord`, `loadBundleableSlideTypes`,
+  `settleBundledSlideTypes`, `installBundledSlideType`).
+- What both share (content hash, verbatim uploads, free slug):
+  `server/export/deck-install.js`.
+- Read/validate: `readDeckBundle(buffer)` → `{ mimetype, manifest, deck, theme, slideTypes, assets }`.
 - Import: `server/routes/api/presentations/import-deck.js` →
   `handlePresentationsImportDeck` (route `POST /api/presentations/import/deck`).
 - Pure ref layer: `shared/slide-types/deck-assets.js`
@@ -261,6 +327,8 @@ and bundle assets are written verbatim).
 ## Not yet covered
 
 - External image URLs are not embedded.
-- Custom slide types do not travel yet (B251, D91).
+- A file theme and a file-JS slide type travel by name only: they are part of
+  an install, and a receiver without them lands on its default theme or the
+  placeholder.
 - Assets named inside CSS values (a `url()` in a theme's `slideBackgrounds` or
   `cssVarOverrides`) are not embedded.

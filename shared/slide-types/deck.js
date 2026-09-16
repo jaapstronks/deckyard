@@ -12,6 +12,7 @@ import { DEFAULT_DECK_LANG, normalizeLang } from '../i18n-utils.js';
 import { existingVersionLangs, pickVersion } from '../i18n-progress.js';
 import { VISIBILITY_PRESETS } from '../slide-visibility.js';
 import {
+  SLIDE_TYPES,
   canonicalSlideType,
   getSlideType,
   resolveSlideTypeName,
@@ -118,9 +119,13 @@ function matchingSlide(slide, index, versionSlides, byId) {
  * projection onto one language — projecting first is what used to drop them.
  *
  * @param {Object} pres - a stored presentation (or presentation parts)
+ * @param {Object} [opts]
+ * @param {Object} [opts.slideTypes] - the registry the deck resolves against;
+ *   the deck organization's (`buildMergedSlideTypes`) so the text fields of a
+ *   database type are known and its translations travel
  * @returns {Object} the portable deck
  */
-export function presentationToDeck(pres) {
+export function presentationToDeck(pres, { slideTypes = SLIDE_TYPES } = {}) {
   const lang =
     normalizeLang(pres?.i18n?.dominant) || normalizeLang(pres?.lang) || null;
   const base = lang
@@ -148,7 +153,7 @@ export function presentationToDeck(pres) {
       type: canonicalSlideType(s?.type),
       content: s?.content || {},
     };
-    const spec = textFieldSpecForType(s?.type);
+    const spec = textFieldSpecForType(s?.type, slideTypes);
     const translations = {};
     for (const { lang: l, version, byId } of others) {
       const match = matchingSlide(s, index, version.slides, byId);
@@ -266,6 +271,33 @@ export function deckThemeId(input) {
 }
 
 /**
+ * What an imported slide's type resolves to here: the definition and the key
+ * the slide is stored under, or no definition.
+ *
+ * A type whose definition a `.deck` bundle carries is looked up through
+ * `carriedSlideTypes` (D91), never by the name on the slide: the receiving
+ * organization may hold an unrelated type under the same slug, and the carried
+ * definition, not the name, is what the slide means. It resolves under the key
+ * the definition landed on (an existing type with this content, or an install
+ * with a suffix), or — not installed — to nothing, and imports as the
+ * placeholder that names the bundle.
+ *
+ * @param {string} type - the type as the deck names it
+ * @param {Object} slideTypes
+ * @param {Map<string, string|null>} carriedSlideTypes
+ * @returns {{def: Object|undefined, name: string}}
+ */
+function importedSlideType(type, slideTypes, carriedSlideTypes) {
+  const ref = carriedSlideTypes.has(type) ? carriedSlideTypes.get(type) : type;
+  const def = ref ? getSlideType(ref, slideTypes) : undefined;
+  const name =
+    (ref && resolveSlideTypeName(ref, slideTypes)) ||
+    tryParseTypeId(type)?.name ||
+    type;
+  return { def, name };
+}
+
+/**
  * Normalize an imported deck (JSON, markdown, Notion, AI output) into
  * presentation parts.
  *
@@ -284,13 +316,25 @@ export function deckThemeId(input) {
  *   `defaultsByLang` composes from that variant, exactly as an editor insert.
  *   It is also the base language `translations` are read against; without it
  *   the deck's own `lang` is.
+ * @param {Object} [opts.slideTypes] - the registry slide types resolve against:
+ *   the importing organization's (`buildMergedSlideTypes`), so a database type
+ *   it has imports as itself rather than as the placeholder
+ * @param {Map<string, string|null>} [opts.carriedSlideTypes] - for each type
+ *   key a `.deck` bundle carries the definition of (D91): the key it landed on
+ *   in `slideTypes`, or `null` when it was not installed, in which case its
+ *   placeholder says the definition is in the bundle
  * @returns {{title: string, theme: string, slides: Object[], translations: Record<string, {title: string, slides: Object[]}>}}
  *   `translations` holds one stored language version per translated language
  *   (D89); `{}` for a deck in one language.
  */
 export function deckToPresentationParts(
   input,
-  { theme: themeConfig = null, lang = null } = {},
+  {
+    theme: themeConfig = null,
+    lang = null,
+    slideTypes = SLIDE_TYPES,
+    carriedSlideTypes = new Map(),
+  } = {},
 ) {
   // Accept either the full object or a raw slides array (super simple use-case).
   // An imported deck is a read of unknown vintage, so it goes through the same
@@ -313,11 +357,22 @@ export function deckToPresentationParts(
   const slidesRaw = Array.isArray(deck.slides) ? deck.slides : [];
 
   const slides = slidesRaw.map((raw) =>
-    normalizeDeckSlide(raw, { theme: themeConfig, lang }),
+    normalizeDeckSlide(raw, {
+      theme: themeConfig,
+      lang,
+      slideTypes,
+      carriedSlideTypes,
+    }),
   );
   const baseLang = normalizeLang(lang) || normalizeLang(deck.lang) || null;
   const translations = baseLang
-    ? deckTranslations(deck, slidesRaw, slides, baseLang)
+    ? deckTranslations(
+        deck,
+        slidesRaw,
+        slides,
+        baseLang,
+        (type) => importedSlideType(type, slideTypes, carriedSlideTypes).def,
+      )
     : {};
   return { title, theme, slides, translations };
 }
@@ -334,7 +389,7 @@ export function deckToPresentationParts(
  * placeholder has no type to read its translation against, so every version
  * keeps the base placeholder.
  */
-function deckTranslations(deck, slidesRaw, slides, baseLang) {
+function deckTranslations(deck, slidesRaw, slides, baseLang, resolveType) {
   const langs = new Map(); // normalized lang -> raw tags that spell it
   for (const tag of deckTranslationTags(deck)) {
     const l = normalizeLang(tag);
@@ -355,7 +410,7 @@ function deckTranslations(deck, slidesRaw, slides, baseLang) {
       title: typeof titleTr?.title === 'string' ? titleTr.title : '',
       slides: slides.map((slide, i) => {
         const raw = slidesRaw[i];
-        const def = getSlideType(typeof raw?.type === 'string' ? raw.type : '');
+        const def = resolveType(typeof raw?.type === 'string' ? raw.type : '');
         const { notes, ...contentTr } = pick(raw?.translations, tags) || {};
         return {
           ...slide,
@@ -374,15 +429,20 @@ function deckTranslations(deck, slidesRaw, slides, baseLang) {
   return out;
 }
 
-function normalizeDeckSlide(raw, { theme = null, lang = null } = {}) {
+function normalizeDeckSlide(
+  raw,
+  { theme = null, lang = null, slideTypes, carriedSlideTypes },
+) {
   const type = typeof raw?.type === 'string' ? raw.type : '';
   // Resolve by identity so any spelling imports — a qualified ref
   // (core/title-slide, acme/hero) or the canonical reverse-DNS id
   // (eu.deckyard.slide.title). Storage keeps the registry key, so downstream
   // bare lookups keep working and no deck is rewritten by the rename.
-  const def = getSlideType(type);
-  const localName =
-    resolveSlideTypeName(type) || tryParseTypeId(type)?.name || type;
+  const { def, name: localName } = importedSlideType(
+    type,
+    slideTypes,
+    carriedSlideTypes,
+  );
   if (!def) {
     // Unknown types become a real content-slide so the imported deck stays
     // editable and saveable (an unregistered type would be neither). The
@@ -391,10 +451,10 @@ function normalizeDeckSlide(raw, { theme = null, lang = null } = {}) {
     // replaces it, and carries the original content across as text. Import is
     // the one surface that persists rather than renders, so dropping the
     // content here would lose it for good.
-    const { title, body } = unresolvedSlideAsMarkdown({
-      type: localName,
-      content: raw?.content,
-    });
+    const { title, body } = unresolvedSlideAsMarkdown(
+      { type: localName, content: raw?.content },
+      { definitionInBundle: carriedSlideTypes.get(type) === null },
+    );
     return withSlideKeys(
       {
         id: cryptoUuid(),

@@ -21,21 +21,14 @@
  * with the install, like a file-JS slide type, and travels by its id alone.
  *
  * On the receiving side a bundled theme is recognised by its content, not by
- * name: {@link themeContentHash} over the installable form, with every logo
+ * name: {@link definitionContentHash} over the installable form, with every logo
  * named by the hash of its bytes. The same function hashes the receiver's own
  * themes, so "this theme is already here" has one definition.
  */
 
-import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { canonicalJson } from '../../shared/slide-fingerprint.js';
-import {
-  collectUploadRefsIn,
-  rewriteUploadRefsIn,
-  assetRefForHash,
-} from '../../shared/slide-types/deck-assets.js';
 import {
   curatedFontFaces,
   isValidFont,
@@ -44,10 +37,15 @@ import {
 } from '../../shared/theme-fonts.js';
 import { validateThemeConfig } from '../../shared/theme-config-schema.js';
 import { UUID_RE } from '../utils/uuid.js';
-import { uploadsDir } from '../config/storage-paths.js';
 import { crossOrganizationScope } from '../storage/scope.js';
 import { createTheme, getThemeRecord, listThemes } from '../storage/themes.js';
 import { listAllFontFamiliesWithVariants } from '../storage/font-families.js';
+import {
+  definitionContentHash,
+  installUnderFreeSlug,
+  sha256Hex,
+  withBundleRefs,
+} from './deck-install.js';
 
 /** Where the carried theme lives inside the archive. */
 export const THEME_ENTRY = 'theme.json';
@@ -68,46 +66,6 @@ const FONT_NOT_INCLUDED_REASONS = Object.freeze({
   /** Not vendored on the sending instance, so there are no bytes to carry. */
   notVendored: 'not-vendored',
 });
-
-export function sha256Hex(buf) {
-  return crypto.createHash('sha256').update(buf).digest('hex');
-}
-
-/**
- * Resolve a `/uploads/<file>` ref to an absolute path under the uploads dir,
- * or null if it would escape it. Uses the env/sandbox-aware uploadsDir.
- * @param {string} repoRoot
- * @param {string} ref
- * @returns {string|null}
- */
-function resolveUploadPath(repoRoot, ref) {
-  const base = path.resolve(uploadsDir(repoRoot));
-  const rel = decodeURIComponent(String(ref).replace(/^\/uploads\//, ''));
-  const abs = path.resolve(base, rel);
-  if (abs !== base && !abs.startsWith(base + path.sep)) return null;
-  return abs;
-}
-
-/**
- * Read one upload and name it by content.
- * @param {string} repoRoot
- * @param {string} ref - `/uploads/<file>`
- * @returns {Promise<{buffer: Buffer, hash: string, ext: string, bundleRef: string}|null>}
- *   null when the file is outside the uploads dir or unreadable
- */
-export async function readUploadAsset(repoRoot, ref) {
-  const abs = resolveUploadPath(repoRoot, ref);
-  if (!abs) return null;
-  let buffer;
-  try {
-    buffer = await fs.readFile(abs);
-  } catch {
-    return null;
-  }
-  const hash = sha256Hex(buffer);
-  const ext = path.extname(abs).slice(1).toLowerCase();
-  return { buffer, hash, ext, bundleRef: assetRefForHash(hash, ext) };
-}
 
 /**
  * The installable form of a theme record: exactly the fields `createTheme`
@@ -132,21 +90,6 @@ export function portableThemeRecord(record) {
     },
     config: validateThemeConfig(record?.config),
   };
-}
-
-/**
- * The content hash a bundled theme is recognised by: SHA-256 over the canonical
- * JSON of its installable form, logos named by the hash of their bytes.
- *
- * The slug is left out: it is the theme's address on one instance, not part of
- * what the theme looks like. A theme installed under `brand-2` because `brand`
- * was taken is still the bundle's theme.
- * @param {Object} portable - a portable theme whose upload refs are bundle refs
- * @returns {string} lowercase hex
- */
-function themeContentHash(portable) {
-  const { slug: _address, ...content } = portable || {};
-  return sha256Hex(Buffer.from(canonicalJson(content), 'utf8'));
 }
 
 /**
@@ -248,36 +191,19 @@ export async function bundleThemeFonts(repoRoot, record) {
 }
 
 /**
- * The installable form of one of this organization's own themes, logos named
- * by the hash of their bytes — the receiver's side of {@link themeContentHash}.
- * A logo whose file cannot be read keeps its `/uploads/` ref, so it simply
- * never matches a bundle.
- * @param {string} repoRoot
- * @param {Object} record
- * @returns {Promise<Object>}
- */
-async function hashableThemeRecord(repoRoot, record) {
-  const portable = portableThemeRecord(record);
-  const refs = collectUploadRefsIn(portable);
-  const map = new Map();
-  for (const ref of refs) {
-    const asset = await readUploadAsset(repoRoot, ref);
-    if (asset) map.set(ref, asset.bundleRef);
-  }
-  return rewriteUploadRefsIn(portable, (ref) => map.get(ref));
-}
-
-/**
  * This organization's theme with exactly this content, or null.
  * @param {string} repoRoot
  * @param {import('../storage/scope.js').StorageScope} scope
- * @param {string} hash - {@link themeContentHash} of the bundled theme
+ * @param {string} hash - {@link definitionContentHash} of the bundled theme
  * @returns {Promise<Object|null>} the theme record
  */
 async function findThemeByContent(repoRoot, scope, hash) {
   for (const record of await listThemes(scope)) {
-    const hashable = await hashableThemeRecord(repoRoot, record);
-    if (themeContentHash(hashable) === hash) return record;
+    const hashable = await withBundleRefs(
+      repoRoot,
+      portableThemeRecord(record),
+    );
+    if (definitionContentHash(hashable) === hash) return record;
   }
   return null;
 }
@@ -330,24 +256,6 @@ async function resolveBundledThemeFonts(theme, scope) {
   };
 }
 
-/** The longest slug `isValidSlug` accepts. */
-const MAX_SLUG_LEN = 80;
-
-/**
- * The slugs to try, in order, for a theme installed from a bundle: its own,
- * then `-2`, `-3`, … — trimmed so the suffix always fits.
- * @param {string} slug
- * @returns {Generator<string>}
- */
-function* installSlugCandidates(slug) {
-  const base = String(slug || 'theme').slice(0, MAX_SLUG_LEN);
-  yield base;
-  for (let n = 2; n < 100; n += 1) {
-    const suffix = `-${n}`;
-    yield `${base.slice(0, MAX_SLUG_LEN - suffix.length).replace(/-+$/, '')}${suffix}`;
-  }
-}
-
 /**
  * Decide what a bundled theme becomes on this instance (D90), before any bytes
  * are written.
@@ -379,7 +287,7 @@ export async function settleBundledTheme({
   const record = await findThemeByContent(
     repoRoot,
     scope,
-    themeContentHash(resolved.theme),
+    definitionContentHash(resolved.theme),
   );
   if (record) {
     return { status: 'existing', record, fontsMissing: resolved.fontsMissing };
@@ -407,14 +315,11 @@ export async function settleBundledTheme({
  *   the storage result of the last attempt
  */
 export async function installBundledTheme(scope, theme, familyIds) {
-  let result = { ok: false, reason: 'slug_exists' };
-  for (const slug of installSlugCandidates(theme.slug)) {
-    result = await createTheme(scope, {
+  return installUnderFreeSlug(theme.slug, 'theme', (slug) =>
+    createTheme(scope, {
       ...theme,
       slug,
       fonts: { ...theme.fonts, ...familyIds },
-    });
-    if (result.ok || result.reason !== 'slug_exists') return result;
-  }
-  return result;
+    }),
+  );
 }

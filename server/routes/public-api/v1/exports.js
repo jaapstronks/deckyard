@@ -141,7 +141,9 @@ async function handleJsonExport(ctx, id) {
   await trackExportRequest(ctx);
 
   // Build JSON export
-  const deck = presentationToDeck(exportCtx.pres);
+  const deck = presentationToDeck(exportCtx.pres, {
+    slideTypes: exportCtx.slideTypes,
+  });
   const data = JSON.stringify(deck, null, 2);
 
   await sendExportResponse(ctx, {
