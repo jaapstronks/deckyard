@@ -67,6 +67,7 @@ export function openChartDataModal({
       mode: 'thumb',
       theme,
       presentationId,
+      renderVia: { kind: 'deck', id: presentationId },
       lang,
     });
   };

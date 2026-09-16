@@ -1,7 +1,10 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { buildSectionHeader } from './section-header.js';
-import { renderSlideElement } from '../../../lib/slide-runtime/slide-render.js';
+import {
+  RENDER_VIA_THEME,
+  renderSlideElement,
+} from '../../../lib/slide-runtime/slide-render.js';
 import { attachThumbScale } from '../../../lib/slide-runtime/thumb-scale.js';
 import { loadThemeById } from '../../../lib/theme/theme.js';
 import { h } from '../../../lib/dom.js';
@@ -103,6 +106,7 @@ export function createSandboxExamplesSection({ api, detachThumbs }) {
           renderSlideElement(first, {
             mode: 'thumb',
             theme,
+            renderVia: RENDER_VIA_THEME,
             lang: exampleLang(example),
           }),
         );

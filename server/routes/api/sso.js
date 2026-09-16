@@ -16,8 +16,8 @@
  * @see docs/reference/sso-oidc.md
  */
 
-import crypto from 'node:crypto';
 import { setSessionCookie } from '../../auth/auth.js';
+import { readSignedPayload, signPayload } from '../../utils/signed-payload.js';
 import { isSsoEnabled, getOidcConfig } from '../../config/sso.js';
 import { getOrCreateSsoUser } from '../../storage/sso.js';
 import { logAuthEvent } from '../../storage/password-reset.js';
@@ -50,19 +50,9 @@ const STATE_COOKIE = 'sb_oidc';
 /** State cookie lifetime — long enough to complete an IdP login, no longer. */
 const STATE_TTL_MS = 10 * 60 * 1000;
 
-function base64url(buf) {
-  return Buffer.from(buf).toString('base64url');
-}
-
 /** Sign the OAuth-flow state payload with the auth secret (HMAC-SHA256). */
 function signState(payload) {
-  const secret = envStr('AUTH_SECRET');
-  const body = base64url(JSON.stringify(payload));
-  const sig = crypto
-    .createHmac('sha256', secret)
-    .update(body)
-    .digest('base64url');
-  return `${body}.${sig}`;
+  return signPayload(payload, envStr('AUTH_SECRET'));
 }
 
 /**
@@ -72,27 +62,7 @@ function signState(payload) {
  * @returns {object|null}
  */
 function verifyState(token) {
-  const secret = envStr('AUTH_SECRET');
-  const [body, sig] = String(token || '').split('.');
-  if (!body || !sig) return null;
-  const expected = crypto
-    .createHmac('sha256', secret)
-    .update(body)
-    .digest('base64url');
-  try {
-    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected)))
-      return null;
-  } catch {
-    return null;
-  }
-  let payload;
-  try {
-    payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
-  } catch {
-    return null;
-  }
-  if (!payload?.exp || Number(payload.exp) < Date.now()) return null;
-  return payload;
+  return readSignedPayload(token, envStr('AUTH_SECRET'));
 }
 
 /** Build a Set-Cookie value for the state cookie (or clear it with maxAge 0). */

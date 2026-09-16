@@ -48,6 +48,7 @@ import {
 } from '../../utils/rate-limit.js';
 import { openSseStream } from '../../utils/sse.js';
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
+import { serveDeckSlideRender } from './render-slide.js';
 
 /**
  * Human-readable text per slide-note write failure. The status is the reason's
@@ -183,6 +184,31 @@ async function handleSessionDeck({ repoRoot, res }, sessionId) {
 }
 
 /**
+ * POST /api/live-sessions/:sessionId/render-slide
+ * Body: `{ slideId, mode? }`
+ *
+ * One slide of this session's deck, rendered server-side for the companion
+ * (B287): a fork type or a published database type has no renderer in the
+ * browser, and the deck routes that draw one sit behind the login gate. The
+ * session is the authorization, exactly as for `/deck`, and the slides are the
+ * ones `/deck` serves.
+ */
+async function handleSessionRenderSlide({ repoRoot, req, res }, sessionId) {
+  const resolved = await resolveSessionDeck(repoRoot, sessionId);
+  if (!resolved) return notFound(res);
+  const { pres } = resolved;
+
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+
+  return serveDeckSlideRender({ repoRoot, res }, parsed.body, {
+    pres,
+    slides: Array.isArray(pres.slides) ? pres.slides : [],
+    lang: resolveDeckLang(pres),
+  });
+}
+
+/**
  * PUT /api/live-sessions/:sessionId/notes/:slideId
  * Body: `{ notes: string }`
  *
@@ -267,7 +293,8 @@ async function handleSessionNotesWrite(
  * counterparts are presenter actions that live behind deck-write in
  * `live-sessions.js`, mounted after the login gate — a 405 here would shadow
  * them. `/deck` and `/notes/:slideId` sent an explicit 405, preserved as
- * trailing catch-all rows.
+ * trailing catch-all rows; `/render-slide` (B287) has no presenter counterpart
+ * and follows them.
  *
  * @type {import('../../utils/router.js').Route[]}
  */
@@ -290,6 +317,15 @@ export const ROUTES = [
   {
     pattern: /^\/api\/live-sessions\/([^/]+)\/deck$/,
     handler: ({ res }) => methodNotAllowed(res, ['GET']),
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/live-sessions\/([^/]+)\/render-slide$/,
+    handler: handleSessionRenderSlide,
+  },
+  {
+    pattern: /^\/api\/live-sessions\/([^/]+)\/render-slide$/,
+    handler: ({ res }) => methodNotAllowed(res, ['POST']),
   },
   {
     method: 'PUT',

@@ -153,6 +153,12 @@ test('follow: routes resolve to their named sub-handlers in order', () => {
     'handleFollowPresentation',
   );
   named(FOLLOW_ROUTES, 'GET', '/api/follow/CODE/events', 'handleFollowEvents');
+  named(
+    FOLLOW_ROUTES,
+    'POST',
+    '/api/follow/CODE/render-slide',
+    'handleFollowRenderSlide',
+  );
 });
 
 test('follow: every row is method-less — the sub-handler owns the method decision', () => {

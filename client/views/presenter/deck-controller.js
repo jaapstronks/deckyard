@@ -128,6 +128,7 @@ export function createPresenterDeckController({
       };
       // Also pass `presentationId` so slides can render follow URLs/QR codes.
       renderOptions.presentationId = presentationId;
+      renderOptions.renderVia = { kind: 'deck', id: presentationId };
       if (s?.type === 'follow-invite-slide' || isLiveSlideType(s?.type)) {
         const followCodes = getFollowCodes?.();
         if (followCodes) {

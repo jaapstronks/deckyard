@@ -17,6 +17,7 @@ import { t } from '../../../lib/ui-i18n.js';
 import { api } from '../../../lib/api.js';
 import {
   NO_DECK_LANG,
+  RENDER_VIA_THEME,
   renderSlideElement,
 } from '../../../lib/slide-runtime/slide-render.js';
 import { attachThumbScaleContain } from '../../../lib/slide-runtime/thumb-scale.js';
@@ -106,6 +107,7 @@ export function createThemePreview() {
         slideEl = renderSlideElement(slide, {
           mode: 'thumb',
           theme,
+          renderVia: RENDER_VIA_THEME,
           lang: NO_DECK_LANG,
         });
       } catch {

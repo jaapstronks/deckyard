@@ -68,6 +68,9 @@ export function renderFollowSlide({
     mode: 'follow',
     theme,
     presentationId: pres?.id,
+    // The audience holds no session: the live follow state is what authorizes
+    // a server render, through the follow route (B287).
+    renderVia: { kind: 'follow', id: pres?.id },
     lang: resolveDeckLang(pres),
   });
 

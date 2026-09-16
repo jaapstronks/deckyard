@@ -51,7 +51,7 @@ globalThis.cancelAnimationFrame = clearTimeout;
 
 const { SLIDE_TYPES, renderSlideHtml } =
   await import('../shared/slide-types.js');
-const { renderSlideElement, slideRendered, NO_DECK_LANG } =
+const { renderSlideElement, slideRendered, NO_DECK_LANG, RENDER_VIA_THEME } =
   await import('../client/lib/slide-runtime/slide-render.js');
 const { createInlineEditor } =
   await import('../client/views/editor/inline-edit/inline-editor.js');
@@ -99,6 +99,7 @@ function setup(slide) {
     const mounted = renderSlideElement(slide, {
       mode: 'edit',
       presentationId: pres.id,
+      renderVia: { kind: 'deck', id: pres.id },
       api,
       lang: NO_DECK_LANG,
     });
@@ -148,6 +149,7 @@ test('slideRendered: a client-rendered slide is ready at once, a failed server o
       { id: 's', type: 'title-slide', content: { title: 'T' } },
       {
         mode: 'edit',
+        renderVia: RENDER_VIA_THEME,
         lang: NO_DECK_LANG,
         api: async () => {
           throw new Error('render-slide unavailable');

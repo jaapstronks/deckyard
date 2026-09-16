@@ -8,6 +8,7 @@ import { icon } from '../../lib/dom/icons.js';
 import { loadThemeById } from '../../lib/theme/theme.js';
 import {
   NO_DECK_LANG,
+  RENDER_VIA_THEME,
   renderSlideElement,
 } from '../../lib/slide-runtime/slide-render.js';
 import { attachThumbScale } from '../../lib/slide-runtime/thumb-scale.js';
@@ -42,6 +43,7 @@ function createThemePreview(theme, detachCallbacks) {
     const slideEl = renderSlideElement(sampleSlide, {
       mode: 'thumb',
       theme,
+      renderVia: RENDER_VIA_THEME,
       lang: NO_DECK_LANG,
     });
     thumb.append(slideEl);

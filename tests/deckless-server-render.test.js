@@ -11,6 +11,13 @@
  * theme and language it renders against; with a deck it keeps the deck route.
  * Both routes share one server render (`serveSlideRender`).
  *
+ * Which route is not inferred from what else a mount was given: the surface
+ * declares it as `renderVia` (B287, D114), one route per kind, and a missing or
+ * unknown kind refuses rather than falling back. The anonymous kinds' server
+ * half is in `tests/anon-follow-and-share-surfaces.test.js`, the guard that no
+ * anonymous view declares a post-gate kind in
+ * `tests/render-via-declaration.test.js`.
+ *
  * The client half simulates a fork override the way the app shell announces
  * one (`window.__DECK_SERVER_RENDERED_TYPES__`) and answers the request with
  * the shared renderer's markup. The server half drives the real handlers.
@@ -46,7 +53,7 @@ globalThis.requestAnimationFrame = () => 0;
 
 const { SLIDE_TYPES, renderSlideHtml } =
   await import('../shared/slide-types.js');
-const { renderSlideElement, slideRendered, NO_DECK_LANG } =
+const { renderSlideElement, slideRendered, NO_DECK_LANG, RENDER_VIA_THEME } =
   await import('../client/lib/slide-runtime/slide-render.js');
 const { createCurationThumbnail } =
   await import('../client/views/settings/tabs/slide-types-tab/curation-thumbnails.js');
@@ -68,7 +75,9 @@ function installServer() {
   globalThis.fetch = async (path, opts) => {
     const body = JSON.parse(opts.body);
     requests.push({ path, body });
-    const html = renderSlideHtml(body.slide, { mode: body.mode });
+    // The anonymous kinds send the slide's id; the server renders its own copy.
+    const slide = body.slide || { id: body.slideId, type: 'content-slide' };
+    const html = renderSlideHtml(slide, { mode: body.mode });
     return {
       ok: true,
       status: 200,
@@ -145,23 +154,86 @@ test('picker: a server-rendered type fills its preview tile without a deck', asy
   localStorage.clear();
 });
 
-test('with a deck the render stays on the deck route', async () => {
-  const requests = installServer();
-  const el = renderSlideElement(
-    { id: 'd1', type: SERVER_TYPE, content: { title: 'Deck' } },
-    {
+test('renderVia: each declared kind has exactly one route', async () => {
+  const slide = { id: 'd1', type: SERVER_TYPE, content: { title: 'Deck' } };
+  const rows = [
+    [
+      { kind: 'deck', id: 'p1' },
+      '/api/presentations/p1/render-slide',
+      { slide, mode: 'thumb' },
+    ],
+    [
+      RENDER_VIA_THEME,
+      '/api/render-slide',
+      { slide, mode: 'thumb', theme: UUID, lang: 'nl' },
+    ],
+    [
+      { kind: 'share', token: 'tok', grant: 'g1' },
+      '/api/share/tok/render-slide',
+      { slideId: 'd1', mode: 'thumb', grant: 'g1' },
+    ],
+    [
+      { kind: 'follow', id: 'p1' },
+      '/api/follow/p1/render-slide',
+      { slideId: 'd1', mode: 'thumb', lang: 'nl' },
+    ],
+    [
+      { kind: 'session', id: 's1' },
+      '/api/live-sessions/s1/render-slide',
+      { slideId: 'd1', mode: 'thumb' },
+    ],
+  ];
+  for (const [renderVia, path, body] of rows) {
+    const requests = installServer();
+    const el = renderSlideElement(slide, {
       mode: 'thumb',
       theme: DB_THEME,
+      // A presentationId beside a non-deck kind changes nothing: it is what a
+      // client renderer links to, not what the viewer may call.
       presentationId: 'p1',
-      lang: NO_DECK_LANG,
-    },
-  );
-  document.body.append(el);
-  assert.equal(await slideRendered(el), true);
-  assert.equal(requests.length, 1);
-  assert.equal(requests[0].path, '/api/presentations/p1/render-slide');
-  assert.deepEqual(Object.keys(requests[0].body).sort(), ['mode', 'slide']);
-  el.remove();
+      renderVia,
+      lang: 'nl',
+    });
+    document.body.append(el);
+    assert.equal(await slideRendered(el), true, renderVia.kind);
+    assert.equal(requests.length, 1);
+    assert.equal(requests[0].path, path);
+    assert.deepEqual(requests[0].body, body, renderVia.kind);
+    el.remove();
+  }
+});
+
+test('renderVia: a missing or unknown kind refuses — no request, no fallback', async () => {
+  const errors = [];
+  const originalError = console.error;
+  console.error = (...args) => errors.push(args);
+  try {
+    for (const renderVia of [
+      undefined,
+      { kind: 'bogus', id: 'p1' },
+      { kind: 'deck' },
+      { kind: 'share', grant: 'g1' },
+    ]) {
+      const requests = installServer();
+      errors.length = 0;
+      const el = renderSlideElement(
+        { id: 'd1', type: SERVER_TYPE, content: { title: 'Deck' } },
+        { mode: 'thumb', presentationId: 'p1', renderVia, lang: NO_DECK_LANG },
+      );
+      document.body.append(el);
+      assert.equal(
+        await slideRendered(el),
+        false,
+        JSON.stringify(renderVia ?? null),
+      );
+      assert.equal(requests.length, 0, 'nothing was asked of the server');
+      assert.ok(el.classList.contains('slide-loading'));
+      assert.match(String(errors[0]?.[1]?.message), /renderVia/);
+      el.remove();
+    }
+  } finally {
+    console.error = originalError;
+  }
 });
 
 // --- server --------------------------------------------------------------

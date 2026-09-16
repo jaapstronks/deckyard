@@ -60,6 +60,7 @@ export function createViewerSlidesPanel({
             mode: 'thumb',
             theme,
             presentationId: pres?.id,
+            renderVia: { kind: 'deck', id: pres?.id },
             lang: resolveDeckLang(pres),
           }),
         );

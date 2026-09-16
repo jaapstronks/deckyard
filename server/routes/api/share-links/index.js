@@ -13,6 +13,7 @@
  * Public endpoints (no auth required):
  *   GET    /api/share/:token                      - Validate token
  *   POST   /api/share/:token/verify               - Verify password & get access
+ *   POST   /api/share/:token/render-slide         - Render one slide (render grant from verify)
  *   POST   /api/share/:token/guest/request        - Request guest email verification
  *   GET    /api/share/:token/guest/verify/:vtoken - Verify guest email & create session
  *   GET    /api/share/:token/guest/me             - Get current guest session info

@@ -407,7 +407,11 @@ export function setupSlideList({
       collapsedParents,
       SLIDE_TYPES,
       renderSlideElement: (s, opts) =>
-        renderSlideElement(s, { ...(opts || {}), lang: resolveDeckLang(pres) }),
+        renderSlideElement(s, {
+          ...(opts || {}),
+          renderVia: { kind: 'deck', id: pres?.id },
+          lang: resolveDeckLang(pres),
+        }),
       getSlideCommentCount,
       getSlideLockInfo,
       isSlideLockedByOther,
@@ -569,6 +573,7 @@ export function setupSlideList({
           const newSlideEl = renderSlideElement(slide, {
             mode: 'thumb',
             presentationId: pres?.id,
+            renderVia: { kind: 'deck', id: pres?.id },
             lang: resolveDeckLang(pres),
           });
           oldSlideEl.replaceWith(newSlideEl);

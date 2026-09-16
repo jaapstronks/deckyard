@@ -16,6 +16,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
+import {
+  RENDER_ENTRYPOINTS,
+  declaredObject,
+  renderCallSites,
+} from './helpers/render-call-sites.js';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -132,108 +137,6 @@ test('no slide type carries its own language fallback', () => {
   );
 });
 
-// The three functions a render surface can enter through, and the module each
-// one must be imported from for a call to be *that* function. The import check
-// is what keeps the scan honest about shadowing: the editor hands its render
-// modules a `renderSlideElement` of its own — a wrapper that injects
-// `resolveDeckLang(pres)` — and those modules would otherwise read as call
-// sites that forgot the language while being the ones that cannot.
-const RENDER_ENTRYPOINTS = [
-  { name: 'renderSlideHtml', from: /slide-types(\/presentation)?\.js'/ },
-  { name: 'mountSlideInto', from: /slide-runtime\/slide-render\.js'/ },
-  { name: 'renderSlideElement', from: /slide-runtime\/slide-render\.js'/ },
-];
-
-/** Blank out comments, keeping every byte's line and column. */
-function stripComments(src) {
-  const blank = (m) => m.replace(/[^\n]/g, ' ');
-  return src
-    .replace(/\/\*[\s\S]*?\*\//g, blank)
-    .replace(
-      /(^|[^:\\])\/\/[^\n]*/g,
-      (m, lead) => lead + blank(m.slice(lead.length)),
-    );
-}
-
-/**
- * The arguments of the call that starts at `from` (just past its `(`), split on
- * top-level commas. A trailing comma yields no extra argument.
- */
-function callArgs(src, from) {
-  const args = [];
-  let depth = 1;
-  let nested = 0;
-  let start = from;
-  for (let i = from; i < src.length; i++) {
-    const c = src[i];
-    if (c === '(') depth++;
-    else if (c === ')') {
-      depth--;
-      if (!depth) {
-        args.push(src.slice(start, i));
-        break;
-      }
-    } else if (c === '[' || c === '{') nested++;
-    else if (c === ']' || c === '}') nested--;
-    else if (c === ',' && depth === 1 && nested === 0) {
-      args.push(src.slice(start, i));
-      start = i + 1;
-    }
-  }
-  return args.map((a) => a.trim()).filter(Boolean);
-}
-
-/** The `{ … }` an identifier was declared with in the same file, or null. */
-function declaredObject(src, name) {
-  const decl = new RegExp(`(?:const|let|var)\\s+${name}\\s*=\\s*\\{`).exec(src);
-  if (!decl) return null;
-  let i = src.indexOf('{', decl.index);
-  let depth = 0;
-  const open = i;
-  for (; i < src.length; i++) {
-    if (src[i] === '{') depth++;
-    else if (src[i] === '}' && !--depth) break;
-  }
-  // Properties assigned after the literal count too (`opts.lang = …`).
-  const assigned = [
-    ...src.matchAll(new RegExp(`${name}\\.(\\w+)\\s*=[^=]`, 'g')),
-  ].map((m) => `${m[1]},`);
-  return src.slice(open, i + 1) + '\n' + assigned.join('\n');
-}
-
-const jsFilesUnder = (dir, acc = []) => {
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const p = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      if (entry.name !== 'node_modules') jsFilesUnder(p, acc);
-    } else if (entry.name.endsWith('.js')) acc.push(p);
-  }
-  return acc;
-};
-
-/** Every call site of `entry` under client/, server/ and shared/. */
-function callSitesOf(entry) {
-  const sites = [];
-  for (const root of ['client', 'server', 'shared']) {
-    for (const file of jsFilesUnder(join(repoRoot, root))) {
-      const raw = readFileSync(file, 'utf8');
-      if (!entry.from.test(raw)) continue;
-      const src = stripComments(raw);
-      const call = new RegExp(`(?<![\\w.$])${entry.name}\\(`, 'g');
-      for (const m of src.matchAll(call)) {
-        // The declaration itself is not a call.
-        if (/\bfunction\s+$/.test(src.slice(0, m.index))) continue;
-        const args = callArgs(src, m.index + m[0].length);
-        const where = `${file.slice(repoRoot.length + 1)}:${
-          src.slice(0, m.index).split('\n').length
-        }`;
-        sites.push({ where, options: args[args.length - 1] || '', src });
-      }
-    }
-  }
-  return sites;
-}
-
 test('every render entrypoint is handed a language, explicitly', () => {
   // The other half of the same defect: a type that reads only ctx.lang is
   // correct precisely as long as every caller SETS it. Removing the per-type
@@ -255,7 +158,7 @@ test('every render entrypoint is handed a language, explicitly', () => {
   // live deck to reach.
   const offenders = [];
   for (const entry of RENDER_ENTRYPOINTS) {
-    for (const site of callSitesOf(entry)) {
+    for (const site of renderCallSites(repoRoot, entry)) {
       let options = site.options;
       if (/^[A-Za-z_$][\w$]*$/.test(options)) {
         const declared = declaredObject(site.src, options);
@@ -286,7 +189,7 @@ test('the scan actually reaches the surfaces it claims to', () => {
   // guard was written for) must be among the sites it sees.
   const seen = new Map();
   for (const entry of RENDER_ENTRYPOINTS) {
-    const sites = callSitesOf(entry);
+    const sites = renderCallSites(repoRoot, entry);
     assert.ok(sites.length > 0, `${entry.name}: the scan found no call sites`);
     for (const s of sites) seen.set(s.where.split(':')[0], entry.name);
   }

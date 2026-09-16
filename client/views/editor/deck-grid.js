@@ -113,6 +113,7 @@ export function createDeckGridView({
         mode: 'thumb',
         theme,
         presentationId,
+        renderVia: { kind: 'deck', id: presentationId },
         lang,
       });
       thumbWrap.append(rendered);
@@ -263,6 +264,7 @@ export function createDeckGridView({
             mode: 'thumb',
             theme,
             presentationId,
+            renderVia: { kind: 'deck', id: presentationId },
             lang,
           }),
         );
