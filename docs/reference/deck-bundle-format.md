@@ -217,7 +217,24 @@ alone. The same fork resolves it; any other install imports the placeholder.
 `POST /api/presentations/import/deck[?install=theme,slideTypes]` takes a raw
 `.deck` body and creates a presentation from it — the mirror of the export.
 `install` is a comma-separated list of what the importer asks to install:
-`theme` and `slideTypes`. A value the install does not know is refused with 400. The flow:
+`theme` and `slideTypes`. A value the install does not know is refused with 400.
+
+In the app, the route is the **Import → Import .deck** tab of the
+new-presentation dialog (`client/views/list/modals/creation-view/import-deck.js`),
+and the bundle comes out of the editor's Export menu (**Data & bundle → .deck**).
+A user who may manage themes and slide types sees one checkbox, "Install the
+theme and slide types it carries", which sends `install=theme,slideTypes`: one
+choice, because D91 is one rule for both. It is unticked by default. When
+everything the bundle carried arrived (`installed` or `existing`, no missing
+font, no failed asset), the editor of the new deck opens and `bundledTheme` /
+`bundledSlideTypes` become one passing message in plain language. When
+something was left out, the dialog stays and lists it above an "Open
+presentation" button, the same block the Markdown import uses for its warnings
+(D144: a message with a next step does not expire). A refused bundle (400)
+stays in the dialog as an inline error at the file input with the server's
+sentence.
+
+The flow:
 
 1. `readDeckBundle(buffer)` — verify the mimetype sentinel and re-hash every
    asset (integrity), yielding `{ manifest, deck, assets }`.

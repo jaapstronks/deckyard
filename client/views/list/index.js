@@ -75,6 +75,7 @@ export async function renderList(root, { user, openSlideLibrary } = {}) {
       writeLangMode,
       preselectedTheme,
       preselect,
+      canInstallDefinitions: Boolean(user?.isDesigner),
     });
 
   // ============================================================

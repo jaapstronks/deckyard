@@ -7,6 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import editorFull from './editor-full.js';
+import advancedImportDialog from './advanced-import-dialog.js';
 import slideTypePickerNew from './slide-type-picker-new.js';
 import themeEditorFull from './theme-editor-full.js';
 
@@ -38,6 +39,7 @@ import agentFillsFields from './agent-fills-fields.js';
 /** @type {Array<import('../lib/recipe.js').Recipe | import('../lib/recipe.js').VideoRecipe>} */
 export const RECIPES = [
   editorFull,
+  advancedImportDialog,
   slideTypePickerNew,
   themeEditorFull,
   editorFormNl,

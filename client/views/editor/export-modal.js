@@ -37,7 +37,9 @@ const PDF_FETCH_TIMEOUT_MS = 90_000;
  * Describe the export format groups. Called at open time so labels pick up the
  * current locale. `path` is the export route segment; `open` is how a plain
  * export is triggered ('tab' → new tab, 'download' → same-tab navigation).
- * PDF and Notes are special-cased in the row builder.
+ * `allLanguages` marks a format that carries every language version itself
+ * (the portable deck, D89): its URL takes no `?lang=`, since the route ignores
+ * one. PDF and Notes are special-cased in the row builder.
  * @returns {Array<{key:string,title:string,formats:Array<object>}>}
  */
 function exportGroups() {
@@ -132,6 +134,19 @@ function exportGroups() {
       title: t('editor.export.groupData', 'Data & bundle'),
       formats: [
         {
+          key: 'deck',
+          name: '.deck',
+          desc: t(
+            'editor.export.descDeck',
+            'Portable deck: every language, images, theme and slide types',
+          ),
+          icon: 'archive',
+          color: 'indigo',
+          path: 'deck.zip',
+          open: 'download',
+          allLanguages: true,
+        },
+        {
           key: 'json',
           name: 'JSON',
           desc: t('editor.export.descJson', 'Raw deck data'),
@@ -139,6 +154,7 @@ function exportGroups() {
           color: 'slate',
           path: 'json',
           open: 'download',
+          allLanguages: true,
         },
         {
           key: 'handoff',
@@ -308,15 +324,17 @@ function buildFormatRow(fmt, { id, getLang, title }) {
     return row;
   }
 
+  const exportThis = () =>
+    runExport(id, fmt.path, fmt.allLanguages ? null : getLang(), fmt.open);
   actions.append(
     h('button', {
       class: 'btn btn-secondary btn-sm',
       type: 'button',
       text: t('editor.export.exportAction', 'Export'),
-      onclick: () => runExport(id, fmt.path, getLang(), fmt.open),
+      onclick: exportThis,
     }),
   );
-  makeClickable(() => runExport(id, fmt.path, getLang(), fmt.open));
+  makeClickable(exportThis);
 
   // The self-contained HTML export is the offline twin of Publish (same build).
   // Point users at the hosted, always-current alternative so they can choose.

@@ -38,6 +38,9 @@ export function openCreationView({
   writeLangMode,
   getSupportedLangs,
   preselectedTheme,
+  // Whether the user may install the theme and slide types a `.deck` carries
+  // (`isDesigner` from /api/auth/me — the import route's `canManage`).
+  canInstallDefinitions = false,
   // Optional: land directly in the library compose flow, seeded from a
   // building block. `{ collection }` pre-fills the tray from a saved
   // collection; `{ items }` seeds it from an already-resolved list of
@@ -150,7 +153,7 @@ export function openCreationView({
   rail.append(h('div', { class: 'creation-rail-divider' }));
   rail.append(
     makeRailItem('import', t('list.creationView.method.import', 'Import'), {
-      desc: t('list.creationView.method.importDesc', '.json or .md'),
+      desc: t('list.creationView.method.importDesc', '.deck, .json or .md'),
     }),
   );
 
@@ -200,12 +203,13 @@ export function openCreationView({
   });
   const contentPanel = content.panel;
 
-  // --- Import panel (.json / .md file / paste markdown) ---
+  // --- Import panel (.deck / .json / .md file / paste markdown) ---
   // A third self-contained concern: the active sub-tab, the two selected files,
   // and the inline import-warnings renderer live in the module. syncUI drives
   // its panel, getEffectiveMode/isDirty/themeApplies read its state, and Create
   // delegates to its run().
   const importMethod = createImportCompose({
+    canInstallDefinitions,
     onChange: () => syncUI(),
   });
   const importPanel = importMethod.panel;
@@ -333,6 +337,7 @@ export function openCreationView({
       'paste-text': t('list.aiWizard.generate', 'Generate'),
       'convert-file': t('list.fileConverter.convert', 'Convert'),
       notion: t('list.newPresentation.notion.import', 'Import'),
+      'import-deck': t('list.importDeck', 'Import .deck'),
       'import-json': t('list.importJson', 'Import JSON'),
       'import-markdown': t('list.importMarkdown', 'Import Markdown'),
       'paste-markdown': t('list.importMarkdown', 'Import Markdown'),
@@ -340,7 +345,7 @@ export function openCreationView({
     return labels[mode] || t('common.create', 'Create');
   };
 
-  // Theme applies to every method except JSON import (which carries its own).
+  // Theme applies to every method except the imports that carry their own.
   const themeApplies = () =>
     !(method === 'import' && importMethod.carriesOwnTheme());
 
@@ -365,10 +370,14 @@ export function openCreationView({
     importMethod.syncPanel();
 
     // Setup (theme + language) applies to every method; theme is hidden only
-    // for JSON import (which carries its own theme). Composing from the library
+    // for the imports that carry their own theme. Composing from the library
     // reads it as optional (collapsed, with a "keeps the workspace theme" hint);
-    // every other method keeps it prominent.
-    setupWrap.classList.remove('is-hidden');
+    // every other method keeps it prominent. A .deck names its own language
+    // too (D89), so there is nothing left to set up and the block goes.
+    setupWrap.classList.toggle(
+      'is-hidden',
+      method === 'import' && importMethod.carriesOwnLanguage(),
+    );
     const showTheme = themeApplies();
     const themeOptional = method === 'library';
     themeDisclosure.classList.toggle('is-hidden', !showTheme);
@@ -469,6 +478,7 @@ export function openCreationView({
           themeId: themeSelect.getTheme(),
         });
         break;
+      case 'import-deck':
       case 'import-json':
       case 'import-markdown':
       case 'paste-markdown':

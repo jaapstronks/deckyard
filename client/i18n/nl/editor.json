@@ -309,6 +309,7 @@
   "editor.descriptionModal.tooLong": "Te lang ({n}/{max}). Maak het korter.",
   "editor.descriptionModal.twoSentences": "Streef naar precies twee zinnen.",
   "editor.export.button": "Exporteren",
+  "editor.export.descDeck": "Draagbaar deck: alle talen, afbeeldingen, thema en slide-types",
   "editor.export.descHandoff": "Alles gebundeld (PDF, PPTX, PNG, notities)",
   "editor.export.descHtml": "Zelfstandige webpagina",
   "editor.export.descJson": "Ruwe deck-data",
