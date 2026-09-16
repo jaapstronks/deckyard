@@ -1,12 +1,22 @@
 // Helpers for outputs that must not include "live-only" slides.
 
 import { filterSlidesForContext } from '../../shared/slide-visibility.js';
+import { getSlideType } from '../../shared/slide-types/registry.js';
 
+/**
+ * Drop the slides whose type declares `liveOnly: true` — content that only
+ * means something while a session is running (the follow-along invite).
+ * A declaration on the type, not a list of names here, so a fork type can say
+ * the same thing.
+ * @param {Object} pres - Presentation object
+ * @returns {Object} the presentation, unchanged when nothing was live-only
+ */
 export function stripLiveOnlySlidesFromPresentation(pres) {
   if (!pres || typeof pres !== 'object') return pres;
   const slides = Array.isArray(pres.slides) ? pres.slides : [];
   const filtered = slides.filter(
-    (s) => !(s && typeof s === 'object' && s.type === 'follow-invite-slide'),
+    (s) =>
+      !(s && typeof s === 'object' && getSlideType(s.type)?.liveOnly === true),
   );
   // Avoid cloning big objects unless we actually changed something.
   if (filtered.length === slides.length) return pres;
@@ -15,7 +25,7 @@ export function stripLiveOnlySlidesFromPresentation(pres) {
 
 /**
  * Filter presentation for export context (PDF, standalone HTML, etc.).
- * Removes follow-invite slides and slides with hideInExport visibility.
+ * Removes live-only slides and slides with hideInExport visibility.
  * @param {Object} pres - Presentation object
  * @returns {Object} Filtered presentation
  */
@@ -32,7 +42,7 @@ export function filterForExport(pres) {
 
 /**
  * Filter presentation for published/public context (embed, /p/ pages).
- * Removes follow-invite slides and slides with hideInPublished visibility.
+ * Removes live-only slides and slides with hideInPublished visibility.
  * @param {Object} pres - Presentation object
  * @returns {Object} Filtered presentation
  */

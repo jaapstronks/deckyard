@@ -11,7 +11,10 @@
  *
  * A field declares a `role` in its slide-type `fields[]` entry only when it
  * differs from the safe default (`prose`/`heading` — everything allowed); the
- * vast majority of fields stay implicit. `ROLE_AFFORDANCES` is the single
+ * vast majority of fields stay implicit. The exception is `heading`: the one
+ * field that titles the slide declares it, because the reader projection makes
+ * that field the section's visible `<h2>` (semantic-projection.js
+ * `slideHeading`, D129), and the field walk refuses a second one per type. `ROLE_AFFORDANCES` is the single
  * source both the editor (which controls to show) and the renderer (which
  * `tf-*` classes to emit) read.
  *

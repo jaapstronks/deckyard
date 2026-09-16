@@ -86,6 +86,7 @@ export default {
   fields: [
     {
       key: 'title',
+      role: 'heading',
       label: 'Title',
       type: 'string',
       required: false,

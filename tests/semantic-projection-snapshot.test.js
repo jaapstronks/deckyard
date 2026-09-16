@@ -32,9 +32,15 @@
  *   defaults (`defaultsByLang`, declared by 29 of 35 types). No theme is passed:
  *   a theme only moves `background`, which is presentational and never
  *   projected, and leaving it out keeps the artifact deterministic.
- * - **Through `slideHeading()` + `renderSlideBodySemanticHtml()`**, which is the
- *   pair `server/export/reader.js` calls per slide. Projecting through anything
- *   else would pin a second reader that could drift from the one we ship.
+ * - **Through `renderSlideSectionHtml()`**, the one function
+ *   `server/export/reader.js` calls per slide, so the fixture pins the whole
+ *   `<section>`: whether the heading is visible or a hidden name (D129), what
+ *   labels the section, the type marker, and the body. Half of what the reader
+ *   says about a slide lives in that wrapper, and a fixture of heading + body
+ *   alone could not see it. Projecting through anything else would pin a second
+ *   reader that could drift from the one we ship.
+ * - **One array entry per line** of the section, so a change reads as a line
+ *   diff in review instead of one rewritten string.
  * - **With the sanitizer initialised**, as the server has it: without it
  *   markdown fields come out escaped, and the fixture would pin a form no
  *   reader ever serves.
@@ -66,7 +72,7 @@ const { CORE_SLIDE_TYPE_DEFS, CORE_SLIDE_TYPE_NAMES, GLOBAL_SLIDE_FIELD_KEYS } =
   await import('../shared/slide-types/registry.js');
 const { slideTypeSample } =
   await import('../shared/slide-types/authoring-companions.js');
-const { slideHeading, renderSlideBodySemanticHtml } =
+const { renderSlideSectionHtml } =
   await import('../shared/slide-types/semantic-projection.js');
 const { newSlide } = await import('../shared/slide-types/presentation.js');
 
@@ -84,7 +90,7 @@ const FIXTURE = path.join(
  *
  * @param {string} type - core slide type name
  * @param {string} lang - deck language
- * @returns {{heading: {text: string, key: string|null}, body: string}}
+ * @returns {string[]} the reader `<section>`, one entry per line
  */
 function project(type, lang) {
   const def = CORE_SLIDE_TYPE_DEFS[type];
@@ -97,14 +103,7 @@ function project(type, lang) {
     // depend on which deck the projection ran for.
     presentationId: 'fixture-deck',
   });
-  const heading = slideHeading(slide, def, 0);
-  return {
-    heading,
-    body: renderSlideBodySemanticHtml(slide, def, {
-      headingKey: heading.key,
-      headingText: heading.text,
-    }),
-  };
+  return renderSlideSectionHtml(slide, def, { index: 0 }).split('\n');
 }
 
 /** The whole registry projected, in registration order. */

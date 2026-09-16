@@ -230,6 +230,27 @@ function placeholderHeading(content, info) {
   };
 }
 
+/**
+ * The reader's heading for a slide whose type does not resolve.
+ *
+ * With no definition there is no `role: 'heading'` declaration to read (D129),
+ * so the stored content is all there is: the placeholder's own resolver, which
+ * the canvas placeholder already shows as its heading. A stored title is the
+ * visible `<h2>` and is consumed; without one the section is named by the
+ * placeholder's state ("Archived slide") and that name stays hidden, because a
+ * system word is never a visible document heading.
+ *
+ * @param {object} slide - the stored slide (`{type, content}`)
+ * @returns {{text: string, visible: boolean, key: string|null}}
+ */
+export function unresolvedSlideHeading(slide) {
+  const heading = placeholderHeading(
+    slide?.content,
+    describeUnresolvedType(slide?.type),
+  );
+  return { ...heading, visible: heading.key !== null };
+}
+
 function truncate(text, max) {
   return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
 }

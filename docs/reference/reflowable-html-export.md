@@ -18,7 +18,10 @@ document that stays readable with JavaScript — and author CSS — turned off.
 
 - `<html lang dir>`, a `<header>` with the deck `<h1>`, a `<nav aria-label="Slides">`
   table of contents, and a `<main>` with one
-  `<section aria-labelledby="slide-N-title">` per slide, each led by an `<h2>`.
+  `<section data-slide-type="…" aria-labelledby="slide-N-title">` per slide,
+  each led by an `<h2>`. The section is emitted by `renderSlideSectionHtml` in
+  the projection, not by the document wrapper, so everything the reader says
+  about a slide is in one place and one fixture.
 - Per-slide content is derived generically from the slide type's declared
   `fields` (see `field-types.js`), so **every** slide type — core or custom —
   projects without bespoke code and the output cannot drift from the type
@@ -49,9 +52,25 @@ document that stays readable with JavaScript — and author CSS — turned off.
     printed `<p>3045cc09-605c-…</p>`; an id is never text (D82).
   - Presentational field types (`enum`, `color`, `number`, `boolean`) and the
     global background/logo fields carry no document text and are omitted.
-- The slide heading resolves as: `a11yTitle` override → the type's `labelField`
-  → common title keys (`title`, `heading`, …) → the type label. `a11ySummary`
-  renders as an intro paragraph.
+- The slide heading is a **declaration** (D129). A type marks its title with
+  `role: 'heading'` on exactly one field (the field walk refuses a second).
+  When the slide fills that field, it is the visible `<h2>` and is not repeated
+  in the body. Otherwise the `<h2>` carries a **name** and is visually hidden
+  (`class="reader-sr-only"`), so every section stays reachable by heading
+  navigation and in the table of contents: the slide's `a11yTitle`, else the
+  value of the type's `labelField`, else the type label. A hidden heading
+  consumes nothing, so a quote named by its own text still appears in the body.
+  No title is guessed from a key name: a type (or fork type) without the
+  declaration always gets a hidden name.
+- `a11yTitle` is a name, never a replacement title: beside a visible title it
+  becomes the section's `aria-label` (instead of `aria-labelledby`), and the
+  author's title stays the heading. `a11ySummary` renders as an intro
+  paragraph.
+- Slides are numbered by position, not text (D133): CSS counters on `<main>`
+  and each section, drawn by `h2::before` with empty alternative text, so the
+  number is not part of the heading's accessible name.
+- A type that declares `liveOnly: true` (`follow-invite-slide`) is left out of
+  the reader, like every output that outlives a live session.
 - No `<script>`; a self-contained reflow-first stylesheet (single readable
   column, relative units, `max-width: 100%` media, tables scroll in place). It
   meets WCAG 1.4.10 reflow — no horizontal scrolling at 320px.
@@ -59,9 +78,12 @@ document that stays readable with JavaScript — and author CSS — turned off.
 ## Contract
 
 `tests/semantic-reader.test.js` pins the document contract (one `<h1>`, an
-`<h2>` per slide with matching ids + `aria-labelledby`, the landmarks, every
-`<img>` carries `alt`, no script, no fixed canvas geometry).
-`tests/semantic-projection.test.js` covers the field-driven projection itself.
+`<h2>` per slide with matching ids + `aria-labelledby`, visible vs. hidden
+headings, counters instead of number text, the landmarks, every `<img>` carries
+`alt`, no script, no fixed canvas geometry).
+`tests/semantic-projection.test.js` covers the field-driven projection itself,
+and `tests/fixtures/semantic-projection.json` pins the whole `<section>` of every
+core type.
 
 ## Not (yet) covered
 

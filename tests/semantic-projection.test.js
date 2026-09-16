@@ -21,36 +21,83 @@ const { migratePresentation } =
 const body = (slide, def, opts) =>
   renderSlideBodySemanticHtml(slide, def, opts);
 
-describe('slideHeading resolution', () => {
-  it('prefers an a11yTitle override', () => {
+describe('slideHeading resolution (D129)', () => {
+  const titled = {
+    label: 'Text slide',
+    labelField: 'name',
+    fields: [
+      { key: 'title', type: 'string', role: 'heading' },
+      { key: 'name', type: 'string' },
+    ],
+  };
+  it('the declared heading field is the visible heading and is consumed', () => {
+    const h = slideHeading({ content: { title: 'Title' } }, titled);
+    assert.deepEqual(h, {
+      text: 'Title',
+      visible: true,
+      key: 'title',
+      ariaLabel: '',
+    });
+  });
+  it('an a11yTitle beside a visible title becomes the section name, not the heading', () => {
     const h = slideHeading(
       { content: { a11yTitle: 'Override', title: 'Title' } },
-      {},
+      titled,
     );
-    assert.deepEqual(h, { text: 'Override', key: null });
+    assert.deepEqual(h, {
+      text: 'Title',
+      visible: true,
+      key: 'title',
+      ariaLabel: 'Override',
+    });
   });
-  it('uses the def labelField next', () => {
+  it('without a filled heading field, the a11yTitle is a hidden name', () => {
+    const h = slideHeading({ content: { a11yTitle: 'Override' } }, titled);
+    assert.deepEqual(h, {
+      text: 'Override',
+      visible: false,
+      key: null,
+      ariaLabel: '',
+    });
+  });
+  it('then the labelField value, hidden and consuming nothing', () => {
+    const h = slideHeading({ content: { name: 'Ada' } }, titled);
+    assert.deepEqual(h, {
+      text: 'Ada',
+      visible: false,
+      key: null,
+      ariaLabel: '',
+    });
+  });
+  it('guesses no title from a key name: an undeclared `title` is not a heading', () => {
     const h = slideHeading(
-      { content: { name: 'Ada' } },
-      { labelField: 'name' },
+      { content: { title: 'Looks like a title' } },
+      { label: 'Fork type', fields: [{ key: 'title', type: 'string' }] },
     );
-    assert.deepEqual(h, { text: 'Ada', key: 'name' });
+    assert.deepEqual(h, {
+      text: 'Fork type',
+      visible: false,
+      key: null,
+      ariaLabel: '',
+    });
   });
-  it('falls back to common title candidate keys', () => {
-    assert.equal(
-      slideHeading({ content: { question: 'Why?' } }, {}).text,
-      'Why?',
-    );
-  });
-  it('falls back to the type label, then a numbered default', () => {
-    assert.equal(
-      slideHeading({ content: {} }, { label: 'Quote' }).text,
-      'Quote',
-    );
+  it('falls back to the type label, then a numbered default, both hidden', () => {
+    const h = slideHeading({ content: {} }, { label: 'Quote' });
+    assert.equal(h.text, 'Quote');
+    assert.equal(h.visible, false);
     assert.equal(
       slideHeading({ type: '', content: {} }, {}, 4).text,
       'Slide 5',
     );
+  });
+  it('an unresolved type shows its stored title, and hides its state name', () => {
+    assert.deepEqual(
+      slideHeading({ type: 'gone-slide', content: { title: 'Kept' } }, null),
+      { text: 'Kept', visible: true, key: 'title', ariaLabel: '' },
+    );
+    const bare = slideHeading({ type: 'gone-slide', content: {} }, undefined);
+    assert.equal(bare.visible, false);
+    assert.equal(bare.key, null);
   });
 });
 

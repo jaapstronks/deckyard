@@ -31,6 +31,10 @@ export default {
   // anywhere in the deck rather than at the end, so the neutral prose slide is
   // the tier-1 contract that keeps its place without claiming a closing beat.
   fallback: 'content-slide',
+  // Only meaningful while a session is live: the invite points an audience at
+  // a join code, so every output that outlives the session (reader, exports,
+  // published view) leaves it out. Read by server/utils/public-output.js.
+  liveOnly: true,
   // `static`: the join code it renders is a render input the session hands
   // over (ctx.followCodes), not state the session keeps for this slide.
   runtime: 'static',
