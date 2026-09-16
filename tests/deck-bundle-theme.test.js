@@ -7,7 +7,7 @@
  *   - export: `theme.json` is the record without ids, its logo rides as a
  *     content-addressed asset, curated fonts as bytes with their faces named,
  *     a managed font by name with a `fontsNotIncluded` reason; a file theme
- *     carries no `theme.json`; `bundleVersion` is 2;
+ *     carries no `theme.json`;
  *   - import, the three paths: `canManage` + `install=theme` installs it and the
  *     deck renders with it; `canManage` without the flag, or the flag without
  *     `canManage`, lands on the organization default and says `bundledTheme`;
@@ -206,7 +206,7 @@ test('export: theme.json is the record without ids, fonts by class', async () =>
   const bundle = await buildDeckBundle(repoRoot, deckOn(theme.id));
   const { manifest, theme: carried, assets } = await readDeckBundle(bundle);
 
-  assert.equal(manifest.bundleVersion, 2);
+  assert.equal(manifest.bundleVersion, 3);
   assert.equal(manifest.theme.ref, 'theme.json');
   assert.deepEqual(Object.keys(carried).sort(), [
     'colors',
@@ -444,10 +444,10 @@ test('fonts: a missing managed family falls back and is reported; a named one bi
 test('an unknown install value is refused', async () => {
   const bundle = await buildDeckBundle(repoRoot, deckOn('default'));
   const { res, body } = await importInto(receiverScope(), bundle, {
-    install: 'theme,slideTypes',
+    install: 'theme,fonts',
   });
   assert.equal(res.statusCode, 400);
-  assert.match(body.message, /install=slideTypes/);
+  assert.match(body.message, /install=fonts/);
 });
 
 test('reading refuses an unknown bundleVersion and a tampered theme', async () => {
@@ -460,11 +460,11 @@ test('reading refuses an unknown bundleVersion and a tampered theme', async () =
   );
   future.file(
     'manifest.json',
-    JSON.stringify({ ...manifest, bundleVersion: 3 }),
+    JSON.stringify({ ...manifest, bundleVersion: 4 }),
   );
   await assert.rejects(
     readDeckBundle(await future.generateAsync({ type: 'nodebuffer' })),
-    /bundleVersion 3/,
+    /bundleVersion 4/,
   );
 
   const tampered = await JSZip.loadAsync(bundle);

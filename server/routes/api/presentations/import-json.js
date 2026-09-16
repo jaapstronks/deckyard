@@ -8,6 +8,7 @@ import {
   deckToPresentationParts,
 } from '../../../../shared/slide-types.js';
 import { loadDeckTheme } from '../../../utils/themes.js';
+import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import { createLogger } from '../../../utils/logger.js';
 const log = createLogger('import-json');
 
@@ -45,7 +46,13 @@ export async function handlePresentationsImportJson({
   // presets, theme slide-background variants).
   const themeConfig = await loadDeckTheme(repoRoot, deck?.theme);
 
-  const parts = deckToPresentationParts(deck, { theme: themeConfig, lang });
+  // The organization's own registry, so a slide of one of its database types
+  // imports as itself rather than as the placeholder.
+  const parts = deckToPresentationParts(deck, {
+    theme: themeConfig,
+    lang,
+    slideTypes: await buildMergedSlideTypes(storageScope),
+  });
   log.info(
     '[import-json] Parsed parts - title:',
     parts.title,

@@ -353,14 +353,29 @@ export function renderUnresolvedSlideSemanticHtml(
  * rather than render it: deck import, which turns an unresolvable slide into a
  * real `content-slide` so the imported deck stays editable and saveable.
  *
+ * A `.deck` bundle can carry the definition of a database slide type the
+ * importer did not install (D91). The placeholder then says where the type is,
+ * so the missing type reads as one step away rather than as gone.
+ *
  * @param {object} slide
+ * @param {Object} [opts]
+ * @param {boolean} [opts.definitionInBundle] - the imported bundle carries the
+ *   type's definition, not installed
  * @returns {{title: string, body: string}}
  */
-export function unresolvedSlideAsMarkdown(slide) {
+export function unresolvedSlideAsMarkdown(
+  slide,
+  { definitionInBundle = false } = {},
+) {
   const content =
     slide?.content && typeof slide.content === 'object' ? slide.content : {};
   const info = describeUnresolvedType(slide?.type);
   const lines = unresolvedNotes(info).slice();
+  if (definitionInBundle) {
+    lines.push(
+      'Its definition is in the .deck bundle; an administrator can install it by importing the bundle with its slide types.',
+    );
+  }
   const entries = unresolvedContentEntries(content);
   if (entries.length) {
     lines.push('');

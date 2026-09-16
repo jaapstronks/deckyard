@@ -7,6 +7,8 @@
  *   manifest.json         bundle meta + asset inventory ({hash, id, mime, bytes})
  *   deck.json             the portable deck; asset refs rewritten to bundle refs
  *   theme.json            the deck's database theme, when it has one (D90)
+ *   slide-types/<slug>.json
+ *                         each database slide type the deck uses (D91)
  *   assets/<sha256>.<ext> the asset bytes, content-addressed (dedup + integrity):
  *                         slide images, theme logos, curated font files
  *
@@ -41,9 +43,13 @@ import {
   bundleThemeFonts,
   loadBundleableTheme,
   portableThemeRecord,
-  readUploadAsset,
-  sha256Hex,
 } from './deck-theme.js';
+import {
+  loadBundleableSlideTypes,
+  portableSlideTypeRecord,
+  slideTypeEntryRef,
+} from './deck-slide-types.js';
+import { readUploadAsset, sha256Hex } from './deck-install.js';
 
 // Re-exported so bundle callers keep one import for the whole bundle surface;
 // the values themselves (and the historical ones a reader still accepts) live
@@ -52,16 +58,17 @@ export { DECK_MIMETYPE };
 
 /**
  * The bundle version this build writes. 2 added the carried theme and its
- * font files (D90).
+ * font files (D90); 3 added the carried slide types (D91).
  */
-export const DECK_BUNDLE_VERSION = 2;
+export const DECK_BUNDLE_VERSION = 3;
 
 /**
- * The bundle versions this build reads. A version-1 bundle is a version-2
- * bundle without a theme, so it reads unchanged; a version this build does not
- * know may carry parts it would silently drop, so it is refused.
+ * The bundle versions this build reads. Each version is the one before it plus
+ * a part — a version-1 bundle has no theme, a version-2 bundle no slide types —
+ * so an older bundle reads unchanged; a version this build does not know may
+ * carry parts it would silently drop, so it is refused.
  */
-const READABLE_BUNDLE_VERSIONS = Object.freeze([1, 2]);
+const READABLE_BUNDLE_VERSIONS = Object.freeze([1, 2, 3]);
 
 /** SRI-shaped integrity id (`sha256-<base64>`) from a hex digest. */
 function sriFromSha256Hex(hex) {
@@ -124,12 +131,16 @@ function createInventory() {
  * Build a `.deck` bundle for a presentation.
  *
  * @param {string} repoRoot
- * @param {object} pres - a stored presentation (already lang-projected/filtered
- *   by the caller, matching the JSON deck export)
+ * @param {object} pres - a stored presentation, every language version kept
+ *   (matching the JSON deck export)
+ * @param {Object} [opts]
+ * @param {Object} [opts.slideTypes] - the deck organization's registry
+ *   (`buildMergedSlideTypes`), so a database type's text fields are known to
+ *   the translation walk
  * @returns {Promise<Buffer>} the ZIP bytes
  */
-export async function buildDeckBundle(repoRoot, pres) {
-  const deck = presentationToDeck(pres);
+export async function buildDeckBundle(repoRoot, pres, { slideTypes } = {}) {
+  const deck = presentationToDeck(pres, { slideTypes });
   const inventory = createInventory();
   const missing = [];
 
@@ -168,6 +179,28 @@ export async function buildDeckBundle(repoRoot, pres) {
     themeJson = JSON.stringify(bundledTheme, null, 2);
   }
 
+  // The database slide types the deck uses, as installable records (D91). A
+  // file-JS type is code and travels by the type id already on its slides.
+  const typeEntries = [];
+  for (const record of await loadBundleableSlideTypes(
+    pres?.organizationId,
+    portableDeck,
+  )) {
+    const portable = portableSlideTypeRecord(record);
+    const typeRefs = await addUploads(collectUploadRefsIn(portable));
+    const json = JSON.stringify(
+      rewriteUploadRefsIn(portable, (ref) => typeRefs.get(ref)),
+      null,
+      2,
+    );
+    typeEntries.push({
+      slug: portable.slug,
+      ref: slideTypeEntryRef(portable.slug),
+      json,
+      hash: sha256Hex(Buffer.from(json, 'utf8')),
+    });
+  }
+
   const manifest = {
     format: DECK_FORMAT_ID,
     bundleVersion: DECK_BUNDLE_VERSION,
@@ -179,6 +212,15 @@ export async function buildDeckBundle(repoRoot, pres) {
             ref: THEME_ENTRY,
             hash: sha256Hex(Buffer.from(themeJson, 'utf8')),
           },
+        }
+      : {}),
+    ...(typeEntries.length
+      ? {
+          slideTypes: typeEntries.map(({ slug, ref, hash }) => ({
+            slug,
+            ref,
+            hash,
+          })),
         }
       : {}),
     assets: [...inventory.byHash.values()].map((a) => a.meta),
@@ -194,6 +236,7 @@ export async function buildDeckBundle(repoRoot, pres) {
   zip.file('manifest.json', JSON.stringify(manifest, null, 2));
   zip.file('deck.json', JSON.stringify(portableDeck, null, 2));
   if (themeJson) zip.file(THEME_ENTRY, themeJson);
+  for (const { ref, json } of typeEntries) zip.file(ref, json);
   for (const { meta, buffer } of inventory.byHash.values()) {
     zip.file(meta.ref, buffer);
   }
@@ -245,7 +288,7 @@ export async function writeBundleAsset(repoRoot, buffer, filename, mime) {
  * keyed by their bundle ref.
  *
  * @param {Buffer|Uint8Array|ArrayBuffer} buffer
- * @returns {Promise<{ mimetype: string, manifest: object, deck: object, theme: object|null, assets: Map<string, Buffer> }>}
+ * @returns {Promise<{ mimetype: string, manifest: object, deck: object, theme: object|null, slideTypes: object[], assets: Map<string, Buffer> }>}
  */
 export async function readDeckBundle(buffer) {
   const zip = await JSZip.loadAsync(buffer);
@@ -289,6 +332,39 @@ export async function readDeckBundle(buffer) {
     theme = JSON.parse(buf.toString('utf8'));
   }
 
+  // Each carried slide type the same way. The entry's ref is derived from its
+  // slug and the file names that slug too: one spelling, refused otherwise.
+  const slideTypes = [];
+  const typeEntries = manifest.slideTypes ?? [];
+  if (!Array.isArray(typeEntries)) {
+    throw new Error('.deck manifest slideTypes is not a list');
+  }
+  for (const entry of typeEntries) {
+    const slug = String(entry?.slug || '');
+    if (!slug || entry.ref !== slideTypeEntryRef(slug)) {
+      throw new Error(
+        `.deck manifest names a slide type at an unexpected path: ${entry?.ref}`,
+      );
+    }
+    const typeEntry = zip.file(entry.ref);
+    if (!typeEntry) {
+      throw new Error(
+        `.deck bundle manifest names a missing slide type: ${entry.ref}`,
+      );
+    }
+    const buf = await typeEntry.async('nodebuffer');
+    if (sha256Hex(buf) !== entry.hash) {
+      throw new Error(`.deck slide type failed integrity check: ${entry.ref}`);
+    }
+    const definition = JSON.parse(buf.toString('utf8'));
+    if (definition?.slug !== slug) {
+      throw new Error(
+        `.deck slide type ${entry.ref} names another slug: ${definition?.slug}`,
+      );
+    }
+    slideTypes.push(definition);
+  }
+
   const assets = new Map();
   for (const a of Array.isArray(manifest?.assets) ? manifest.assets : []) {
     const entry = zip.file(a.ref);
@@ -302,5 +378,5 @@ export async function readDeckBundle(buffer) {
     assets.set(a.ref, buf);
   }
 
-  return { mimetype, manifest, deck, theme, assets };
+  return { mimetype, manifest, deck, theme, slideTypes, assets };
 }

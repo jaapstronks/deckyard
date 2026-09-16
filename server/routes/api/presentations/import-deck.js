@@ -6,17 +6,19 @@
  * create a presentation from the re-hydrated deck.
  *
  * Flow (see docs/reference/deck-bundle-format.md):
- *   readDeckBundle(buffer)                     verify sentinel + asset integrity
+ *   readDeckBundle(buffer)                     verify sentinel + integrity
  *   → settleBundledTheme                       existing / install / not-installed
+ *   → settleBundledSlideTypes                  the same, per carried type
  *   → writeBundleAsset per asset                assets/<hash> -> /uploads/<uuid>
  *   → rewriteBundleRefs(deck, mapFn)           bundle refs -> /uploads/ refs
  *   → createTheme (install only)               the carried theme, never over one
- *   → deckToPresentationParts(deck, {theme})   normalize (shared with JSON import)
+ *   → createCustomSlideType (install only)     each carried type, never over one
+ *   → deckToPresentationParts(deck, {…})       normalize (shared with JSON import)
  *   → createPresentation + updatePresentation  same shape as import-json.js
  *
- * `?install=theme` asks for the carried theme to be installed (D90); only a
- * user who may manage themes gets it. The list form is the same flag D91 uses
- * for slide types; a value this build does not know is refused.
+ * `?install=theme,slideTypes` asks for the carried definitions to be installed
+ * (D90, D91); only a user who may manage them gets it. A value this build does
+ * not know is refused.
  *
  * Degrades gracefully: a bundle that lists an unsupported asset (or one that
  * fails to save) keeps its original ref rather than crashing the import; unknown
@@ -40,6 +42,12 @@ import {
   installBundledTheme,
   settleBundledTheme,
 } from '../../../export/deck-theme.js';
+import {
+  installBundledSlideType,
+  settleBundledSlideTypes,
+} from '../../../export/deck-slide-types.js';
+import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
+import { customSlideTypeKey } from '../../../../shared/slide-types/custom-type-runtime.js';
 import { getDefaultThemeId } from '../../../storage/settings.js';
 import { canManage } from '../../../utils/route-middleware.js';
 import {
@@ -53,8 +61,8 @@ import {
 } from '../../../../shared/slide-types/deck-assets.js';
 import { loadDeckTheme } from '../../../utils/themes.js';
 
-/** What `?install=` may name. B251 adds `slideTypes` (D91). */
-const DECK_INSTALLABLES = Object.freeze(['theme']);
+/** What `?install=` may name (D90, D91). */
+const DECK_INSTALLABLES = Object.freeze(['theme', 'slideTypes']);
 
 /**
  * The `install` query as a set, or an error message for a value this build
@@ -109,7 +117,13 @@ export async function handlePresentationsImportDeck({
     return true;
   }
 
-  const { manifest, deck, theme: bundledThemeJson, assets } = bundle;
+  const {
+    manifest,
+    deck,
+    theme: bundledThemeJson,
+    slideTypes: bundledTypeJsons,
+    assets,
+  } = bundle;
   // The deck names its own language (D89); the manifest has never carried one.
   const resolved = deckImportLang(deck);
   if (!resolved.ok) {
@@ -129,11 +143,29 @@ export async function handlePresentationsImportDeck({
         permitted: canManage(authedUser),
       })
     : null;
-  const deckRefs = new Set(collectBundleRefsIn(deck));
+  const settledTypes = await settleBundledSlideTypes({
+    repoRoot,
+    scope: storageScope,
+    slideTypes: bundledTypeJsons,
+    install: asked.install.has('slideTypes'),
+    permitted: canManage(authedUser),
+  });
+
+  // A definition's uploads are written only when it is installed; an upload
+  // the deck or an installed definition also names is written regardless.
+  const neededRefs = new Set(collectBundleRefsIn(deck));
+  const definitionRefs = new Set();
+  const definitions = [
+    ...(settled ? [{ status: settled.status, json: bundledThemeJson }] : []),
+    ...settledTypes.map((t) => ({ status: t.status, json: t.definition })),
+  ];
+  for (const { status, json } of definitions) {
+    for (const ref of collectBundleRefsIn(json)) {
+      (status === 'install' ? neededRefs : definitionRefs).add(ref);
+    }
+  }
   const skipRefs = new Set(
-    settled?.status === 'install'
-      ? []
-      : collectBundleRefsIn(bundledThemeJson).filter((r) => !deckRefs.has(r)),
+    [...definitionRefs].filter((ref) => !neededRefs.has(ref)),
   );
 
   // Re-hydrate each asset into /uploads/ and build bundle-ref -> upload-url map.
@@ -204,6 +236,42 @@ export async function handlePresentationsImportDeck({
     if (settled.status !== 'not-installed') bundledTheme.themeId = themeId;
   }
 
+  // What each carried slide type became: the deck's key -> the key it landed on
+  // here (an existing type with this content, or an install that may carry a
+  // suffix), or null when it was not installed. Normalization resolves the
+  // deck's slides through this map, never by name (D91).
+  const carriedSlideTypes = new Map();
+  const bundledSlideTypes = [];
+  for (const t of settledTypes) {
+    const key = customSlideTypeKey(t.definition);
+    const report = {
+      slug: t.definition.slug,
+      label: t.definition.label,
+      status: t.status === 'install' ? 'installed' : t.status,
+      ...(t.reason ? { reason: t.reason } : {}),
+    };
+    let record = t.record;
+    if (t.status === 'install') {
+      const definition = rewriteBundleRefsIn(t.definition, (ref) =>
+        refToUpload.get(ref),
+      );
+      const result = await installBundledSlideType(storageScope, definition);
+      if (!result.ok) {
+        badRequest(
+          res,
+          `Invalid .deck bundle: its slide type "${t.definition.slug}" cannot be installed (${result.field || result.reason})`,
+        );
+        return true;
+      }
+      record = result.customSlideType;
+    }
+    if (record) report.typeId = record.id;
+    carriedSlideTypes.set(key, record ? customSlideTypeKey(record) : null);
+    bundledSlideTypes.push(report);
+  }
+  // Built after the installs, so the slides resolve to the types just created.
+  const slideTypes = await buildMergedSlideTypes(storageScope);
+
   // The deck's theme, so imported slides compose against it (background
   // presets, theme slide-background variants).
   const themeConfig = await loadDeckTheme(
@@ -215,6 +283,8 @@ export async function handlePresentationsImportDeck({
   const parts = deckToPresentationParts(rehydrated, {
     theme: themeConfig,
     lang,
+    slideTypes,
+    carriedSlideTypes,
   });
   const theme = themeId ?? parts.theme;
 
@@ -259,6 +329,7 @@ export async function handlePresentationsImportDeck({
     ...updated,
     ...(failedAssets.length ? { failedAssets } : {}),
     ...(bundledTheme ? { bundledTheme } : {}),
+    ...(bundledSlideTypes.length ? { bundledSlideTypes } : {}),
   });
   return true;
 }
