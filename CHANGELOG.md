@@ -4,6 +4,20 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.34.0](https://github.com/jaapstronks/deckyard/compare/v1.33.5...v1.34.0) (2026-09-16)
+
+
+### Added
+
+* **reader:** the slide heading is a role: 'heading' declaration ([#1148](https://github.com/jaapstronks/deckyard/issues/1148)) ([779a285](https://github.com/jaapstronks/deckyard/commit/779a285a2c61d3de49cafc51e00a051fb1890343))
+
+
+### Fixed
+
+* **export:** image blocks with original aspect and emoji export as in the editor ([#1147](https://github.com/jaapstronks/deckyard/issues/1147)) ([93f611b](https://github.com/jaapstronks/deckyard/commit/93f611beaf4fa0b0d08cab4aee428eeb05869193))
+* **share:** render server-drawn slide types for anonymous viewers ([#1146](https://github.com/jaapstronks/deckyard/issues/1146)) ([ae75f5c](https://github.com/jaapstronks/deckyard/commit/ae75f5c45202e50d57014bbf26f80dd48b19bd41))
+* **slide-render:** render server-drawn types without a deck ([#1144](https://github.com/jaapstronks/deckyard/issues/1144)) ([ec42a7a](https://github.com/jaapstronks/deckyard/commit/ec42a7a3a780496bfffec8c9a47447859590a1d1))
+
 ## [1.33.5](https://github.com/jaapstronks/deckyard/compare/v1.33.4...v1.33.5) (2026-09-15)
 
 
