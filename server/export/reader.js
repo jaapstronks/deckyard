@@ -76,8 +76,9 @@ body {
   font-variant-numeric: tabular-nums; opacity: 0.5; font-size: 0.85em;
 }
 /* Hidden headings stay in flow: a 1px box pulled back by its own margin, so the
-   reader keeps its no-absolute-positioning contract. */
-.reader-sr-only {
+   reader keeps its no-absolute-positioning contract. Scoped under the section
+   so it outranks the .reader-slide h2 margin above. */
+.reader-slide .reader-sr-only {
   width: 1px; height: 1px; margin: -1px 0 0; padding: 0; border: 0;
   overflow: hidden; clip-path: inset(50%); white-space: nowrap;
 }
