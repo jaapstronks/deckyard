@@ -57,6 +57,7 @@ import {
 } from './helpers.js';
 import { slideStructure } from './structure.js';
 import { isFieldVisible } from './field-visibility.js';
+import { semanticEnumAttrs } from './semantic-enums.js';
 import {
   renderUnresolvedSlideSemanticHtml,
   unresolvedSlideHeading,
@@ -117,6 +118,19 @@ function str(v) {
 }
 
 /**
+ * The ` data-field="<key>"` marker every projected block carries (D132): the
+ * field it came from, in the style of `data-relation` and `data-media`. A
+ * reader otherwise cannot tell one `<p>` from the next, while the definition
+ * already knows which is the source line and which the body. Classes stay
+ * style hooks; this is the addressable name.
+ * @param {string} key
+ * @returns {string}
+ */
+function fieldAttr(key) {
+  return ` data-field="${escapeHtml(key)}"`;
+}
+
+/**
  * The heading of a slide's reader `<section>`, and whether a reader sees it.
  *
  * The heading is a declaration, not a guess (D129). A type names its title with
@@ -167,14 +181,17 @@ export function slideHeading(slide, def, index = 0) {
   return { text, visible: false, key: null, ariaLabel: '' };
 }
 
-/** Render one image as a <figure> with a resolved alt + optional caption. */
-function renderFigure(src, { alt, decorative, caption }) {
+/**
+ * Render one image as a <figure> with a resolved alt + optional caption.
+ * `attrs` is spliced into the start tag (the `data-field` marker).
+ */
+function renderFigure(src, { alt, decorative, caption }, attrs = '') {
   const url = normalizeUrl(src);
   if (!url) return '';
   const altAttr = decorative ? '' : escapeHtml(alt || '');
   const ariaHidden = decorative ? ' aria-hidden="true"' : '';
   const fig = caption ? `<figcaption>${escapeHtml(caption)}</figcaption>` : '';
-  return `<figure class="reader-figure"><img src="${escapeHtml(url)}" alt="${altAttr}"${ariaHidden} loading="lazy" />${fig}</figure>`;
+  return `<figure class="reader-figure"${attrs}><img src="${escapeHtml(url)}" alt="${altAttr}"${ariaHidden} loading="lazy" />${fig}</figure>`;
 }
 
 /**
@@ -246,8 +263,9 @@ function resolveImageA11y(fieldKey, content, headingText) {
  * @param {string} csv
  * @param {string} [caption] - `<caption>` text; for a `dataset` payload this is
  *   the encoding the decoded rows no longer carry (see {@link encodingCaption}).
+ * @param {string} [attrs] - spliced into the `<table>` start tag
  */
-function renderCsvTable(csv, caption = '') {
+function renderCsvTable(csv, caption = '', attrs = '') {
   const rows = String(csv || '')
     .replace(/\r\n/g, '\n')
     .split('\n')
@@ -268,7 +286,7 @@ function renderCsvTable(csv, caption = '') {
         )
         .join('')}</tbody>`
     : '';
-  return `<table class="reader-table">${cap}${thead}${tbody}</table>`;
+  return `<table class="reader-table"${attrs}>${cap}${thead}${tbody}</table>`;
 }
 
 /**
@@ -369,7 +387,7 @@ function renderRowTable(field, content, defaults) {
   const cap = captionText
     ? `<caption>${escapeHtml(captionText)}</caption>`
     : '';
-  return `<table class="reader-table">${cap}${thead}${tbody}</table>`;
+  return `<table class="reader-table"${fieldAttr(field.key)}>${cap}${thead}${tbody}</table>`;
 }
 
 /**
@@ -396,12 +414,13 @@ function cellHtml(col, row) {
  * projection: the list element reflects what the type declares, never a guess.
  * @param {string[]} blocks - already-rendered `<li>` strings
  * @param {boolean} [ordered=false]
+ * @param {string} [attrs] - spliced into the list start tag
  * @returns {string}
  */
-function renderItemList(blocks, ordered = false) {
+function renderItemList(blocks, ordered = false, attrs = '') {
   if (!blocks.length) return '';
   const tag = ordered ? 'ol' : 'ul';
-  return `<${tag} class="reader-items">${blocks.join('')}</${tag}>`;
+  return `<${tag} class="reader-items"${attrs}>${blocks.join('')}</${tag}>`;
 }
 
 /**
@@ -448,7 +467,7 @@ function renderItemBlock(item, itemFields, itemLabelField) {
   if (headingField) {
     headingKey = headingField.key;
     headingText = str(item[headingField.key]);
-    parts.push(`<h3>${escapeHtml(headingText)}</h3>`);
+    parts.push(`<h3${fieldAttr(headingKey)}>${escapeHtml(headingText)}</h3>`);
   }
   for (const f of itemFields) {
     if (!f || f.key === headingKey || f.hidden || consumed.has(f.key)) continue;
@@ -457,7 +476,9 @@ function renderItemBlock(item, itemFields, itemLabelField) {
     parts.push(renderFieldValue(f, item, headingText));
   }
   const inner = parts.filter(Boolean).join('\n');
-  return inner ? `<li class="reader-item">${inner}</li>` : '';
+  // An item's own `semantic` enums (a matrix cell's tone) mark its <li>.
+  const attrs = semanticEnumAttrs(itemFields, item);
+  return inner ? `<li class="reader-item"${attrs}>${inner}</li>` : '';
 }
 
 /**
@@ -507,7 +528,7 @@ function renderMediaRef(field, content) {
   const inner = href
     ? `<a href="${escapeHtml(href)}">${escapeHtml(name)}</a>`
     : escapeHtml(name);
-  return `<p class="reader-media" data-media="${escapeHtml(name)}">${inner}</p>`;
+  return `<p class="reader-media"${fieldAttr(field.key)} data-media="${escapeHtml(name)}">${inner}</p>`;
 }
 
 /**
@@ -524,28 +545,31 @@ function renderFieldValue(field, content, headingText) {
   if (field.mediaRef) return renderMediaRef(field, content);
 
   const value = content?.[field.key];
+  const attrs = fieldAttr(field.key);
   switch (field.type) {
     case 'string': {
       const v = str(value);
-      return v ? `<p>${escapeHtml(v)}</p>` : '';
+      return v ? `<p${attrs}>${escapeHtml(v)}</p>` : '';
     }
     case 'markdown': {
+      // Markdown may be several blocks, so the field is one wrapper around
+      // them: one marked element per field, whatever the author wrote.
       const v = str(value);
-      return v ? markdownToSafeHtml(v) : '';
+      return v ? `<div${attrs}>${markdownToSafeHtml(v)}</div>` : '';
     }
     case 'code': {
       const v = str(value);
       return v
-        ? `<pre class="reader-code"><code>${escapeHtml(v)}</code></pre>`
+        ? `<pre class="reader-code"${attrs}><code>${escapeHtml(v)}</code></pre>`
         : '';
     }
     case 'csv': {
       const v = str(value);
-      return v ? renderCsvTable(v) : '';
+      return v ? renderCsvTable(v, '', attrs) : '';
     }
     case 'image': {
       const a11y = resolveImageA11y(field.key, content, headingText);
-      return renderFigure(value, a11y);
+      return renderFigure(value, a11y, attrs);
     }
     case 'images': {
       if (!Array.isArray(value) || !value.length) return '';
@@ -559,7 +583,7 @@ function renderFieldValue(field, content, headingText) {
         )
         .filter(Boolean);
       return figs.length
-        ? `<div class="reader-gallery">${figs.join('')}</div>`
+        ? `<div class="reader-gallery"${attrs}>${figs.join('')}</div>`
         : '';
     }
     case 'items': {
@@ -592,18 +616,22 @@ function renderFieldValue(field, content, headingText) {
           if (!li) return '';
           const rel = relationOf(item);
           if (!rel) return li;
-          const marker = `<p class="reader-relation" data-relation="${escapeHtml(
+          const marker = `<p class="reader-relation"${fieldAttr(relField)} data-relation="${escapeHtml(
             rel,
           )}">${escapeHtml(relLabels[rel])}</p>`;
           return li.replace(/<\/li>\s*$/, `${marker}</li>`);
         })
         .filter(Boolean);
-      return renderItemList(blocks, field.ordered === true || hasRelations);
+      return renderItemList(
+        blocks,
+        field.ordered === true || hasRelations,
+        attrs,
+      );
     }
     case 'url': {
       const href = safeHref(value);
       if (!href) return '';
-      return `<p><a href="${escapeHtml(href)}">${escapeHtml(href)}</a></p>`;
+      return `<p${attrs}><a href="${escapeHtml(href)}">${escapeHtml(href)}</a></p>`;
     }
     default:
       return '';
@@ -638,7 +666,9 @@ export function renderSlideBodySemanticHtml(
 
   const summary = str(content.a11ySummary);
   if (summary)
-    parts.push(`<p class="reader-summary">${escapeHtml(summary)}</p>`);
+    parts.push(
+      `<p class="reader-summary"${fieldAttr('a11ySummary')}>${escapeHtml(summary)}</p>`,
+    );
 
   // An image field folds its sibling alt/caption/role keys INTO the <figure>,
   // so those sibling string fields must not also render as standalone
@@ -676,6 +706,7 @@ export function renderSlideBodySemanticHtml(
         renderCsvTable(
           content?.[field.key],
           encodingCaption(field.encodingKeys, visibleByKey, content),
+          fieldAttr(field.key),
         ),
       );
       for (const key of field.encodingKeys) consumed.add(key);
@@ -709,6 +740,9 @@ export function renderSlideBodySemanticHtml(
  * - The section is labelled by its `<h2>`, except when the author gave the
  *   slide an `a11yTitle` beside a visible title: that name is the section's
  *   `aria-label` and the title stays the heading.
+ * - The section carries the full type name as `data-slide-type` and every
+ *   top-level `semantic: true` enum as `data-<key>` (D132, D130b); the visible
+ *   `<h2>` names its field with `data-field`, like every block in the body.
  * - The slide number is position, not text (D133): the document stylesheet
  *   counts sections with CSS counters, so no number is part of the heading's
  *   accessible name.
@@ -731,10 +765,17 @@ export function renderSlideSectionHtml(slide, def, { index = 0 } = {}) {
   const label = heading.ariaLabel
     ? `aria-label="${escapeHtml(heading.ariaLabel)}"`
     : `aria-labelledby="${titleId}"`;
-  const hidden = heading.visible ? '' : ' class="reader-sr-only"';
+  // A visible heading is a consumed field and says which; a hidden one is a
+  // name, not a field (D129b), so it carries no marker.
+  const headingAttrs = heading.visible
+    ? fieldAttr(heading.key)
+    : ' class="reader-sr-only"';
+  const content =
+    slide?.content && typeof slide.content === 'object' ? slide.content : {};
+  const enums = def ? semanticEnumAttrs(def.fields, content, def.defaults) : '';
   return [
-    `<section id="slide-${n}" class="reader-slide" data-slide-type="${escapeHtml(str(slide?.type))}" ${label}>`,
-    `<h2 id="${titleId}"${hidden}>${escapeHtml(heading.text)}</h2>`,
+    `<section id="slide-${n}" class="reader-slide" data-slide-type="${escapeHtml(str(slide?.type))}"${enums} ${label}>`,
+    `<h2 id="${titleId}"${headingAttrs}>${escapeHtml(heading.text)}</h2>`,
     inner,
     '</section>',
   ]

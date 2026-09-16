@@ -497,6 +497,33 @@ says `ai: false`. "Not document text" is a different claim from "not editable"
 (`hidden: true`) and from "not part of the contract" (`deprecated: true`); a
 field may make more than one of them.
 
+### Saying an enum carries meaning (`semantic`)
+
+The mirror case: an `enum` is presentational by default, but some enums say
+what the content _is_ rather than how it is laid out. A callout's `variant` is
+the difference between a warning and a tip; a matrix cell's `tone` is whether a
+quadrant is good or bad news. The field declares it:
+
+```javascript
+{ key: 'variant', type: 'enum', options: [/* … */], semantic: true }
+```
+
+The value never becomes document text. It travels as a `data-<key>` attribute
+(`data-variant`; a camelCase `asideVariant` becomes `data-aside-variant`) on the
+block the field belongs to:
+
+- a top-level field → the canvas root `.slide` (injected by `renderSlideHtml`,
+  so the renderer does not repeat it) and the reader's `<section>`;
+- an item field → that item's `<li>` in the reader. Canvas items are per-type
+  markup, so there the type emits the attribute on its own item element
+  (`matrix-slide`'s `.matrix-cell`).
+
+The value is the stored one when it is one of the options, else the type's
+default when that is, else absent: a value outside the options is not a meaning
+the type knows. `semantic` is a flag on an enum only; anything else is a boot
+warning. A database slide type cannot declare it yet (the builder has no
+control, so a stored row refuses it as `unknown_property`).
+
 ---
 
 ## Theme-Specific Slide Types

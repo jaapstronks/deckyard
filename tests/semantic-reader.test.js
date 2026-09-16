@@ -89,8 +89,9 @@ describe('heading hierarchy', () => {
   it('has one <h2> per slide, each with a stable id + aria-labelledby section', () => {
     assert.equal(
       (
-        html.match(/<h2 id="slide-\d+-title"(?: class="reader-sr-only")?>/g) ||
-        []
+        html.match(
+          /<h2 id="slide-\d+-title"(?: class="reader-sr-only"| data-field="\w+")?>/g,
+        ) || []
       ).length,
       3,
     );
@@ -106,7 +107,12 @@ describe('heading hierarchy', () => {
   });
   it('shows the declared heading and hides a name (D129)', () => {
     // content-slide declares `role: 'heading'` on `title`: visible.
-    assert.ok(html.includes('<h2 id="slide-1-title">Where we are</h2>'), html);
+    assert.ok(
+      html.includes(
+        '<h2 id="slide-1-title" data-field="title">Where we are</h2>',
+      ),
+      html,
+    );
     // image-slide without a title: hidden, named by its labelField (caption),
     // and the caption is still the figure's <figcaption>.
     assert.ok(
@@ -138,7 +144,12 @@ describe('heading hierarchy', () => {
       ),
       doc,
     );
-    assert.ok(doc.includes('<h2 id="slide-1-title">Visible title</h2>'), doc);
+    assert.ok(
+      doc.includes(
+        '<h2 id="slide-1-title" data-field="title">Visible title</h2>',
+      ),
+      doc,
+    );
   });
   it('renders a navigable table of contents linking each slide', () => {
     for (const n of [1, 2, 3]) {

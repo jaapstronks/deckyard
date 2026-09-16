@@ -86,7 +86,7 @@ export function buildEmbedHtml(
       }
       return `<section id="slide-${i + 1}" class="deck-slide${activeClass}" data-slide-id="${escapeHtml(
         s.id,
-      )}" data-slide-index="${i}" role="group" aria-roledescription="slide" aria-label="${label}" aria-hidden="${ariaHidden}" tabindex="-1"${inertAttr}>${innerHtml}</section>`;
+      )}" data-slide-type="${escapeHtml(s.type)}" data-slide-index="${i}" role="group" aria-roledescription="slide" aria-label="${label}" aria-hidden="${ariaHidden}" tabindex="-1"${inertAttr}>${innerHtml}</section>`;
     })
     .join('\n');
 

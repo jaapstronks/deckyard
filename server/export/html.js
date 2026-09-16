@@ -538,7 +538,7 @@ export async function buildStandaloneHtml(
         : '';
       return `<section class="deck-slide" data-slide-id="${escapeHtml(
         s.id,
-      )}"${a11yTitleAttr}${a11ySummaryAttr}>${renderSlideHtml(s, { theme, slideTypes, stripEditorAttrs: true, headingShift: headingShifts[i], lang: deckLang })}</section>`;
+      )}" data-slide-type="${escapeHtml(s.type)}"${a11yTitleAttr}${a11ySummaryAttr}>${renderSlideHtml(s, { theme, slideTypes, stripEditorAttrs: true, headingShift: headingShifts[i], lang: deckLang })}</section>`;
     })
     .join('\n');
   slidesHtml = await embedImgSrcDataUrls(repoRoot, slidesHtml, {

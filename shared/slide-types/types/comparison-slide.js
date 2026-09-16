@@ -126,6 +126,9 @@ export default {
       label: 'Treatment',
       type: 'enum',
       required: false,
+      // Before/after and pros/cons are different claims about the two columns,
+      // so the treatment travels as `data-variant` (D130b).
+      semantic: true,
       // Spelled out rather than derived from COMPARISON_VARIANTS: an option is
       // copy only when it declares a label (shared/ui-i18n-keys.js), and these
       // four are words a reader picks from, not storage tokens. The pair is

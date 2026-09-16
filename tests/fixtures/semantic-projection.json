@@ -2,242 +2,242 @@
   "title-slide": {
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"title-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Presentation Title</h2>",
-      "<p>Your subtitle or tagline here</p>",
-      "<p>Your Name · June 2026</p>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Presentation Title</h2>",
+      "<p data-field=\"subheading\">Your subtitle or tagline here</p>",
+      "<p data-field=\"meta\">Your Name · June 2026</p>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"title-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Presentation Title</h2>",
-      "<p>Your subtitle or tagline here</p>",
-      "<p>Your Name · June 2026</p>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Presentation Title</h2>",
+      "<p data-field=\"subheading\">Your subtitle or tagline here</p>",
+      "<p data-field=\"meta\">Your Name · June 2026</p>",
       "</section>"
     ]
   },
   "chapter-title-slide": {
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"chapter-title-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Chapter One</h2>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Chapter One</h2>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"chapter-title-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Chapter One</h2>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Chapter One</h2>",
       "</section>"
     ]
   },
   "content-slide": {
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"content-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Key Insights</h2>",
-      "<ul><li>First important point with details</li><li>Second point that matters</li><li>Third supporting argument</li><li>Final conclusion to remember</li></ul>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Key Insights</h2>",
+      "<div data-field=\"body\"><ul><li>First important point with details</li><li>Second point that matters</li><li>Third supporting argument</li><li>Final conclusion to remember</li></ul></div>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"content-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Key Insights</h2>",
-      "<ul><li>First important point with details</li><li>Second point that matters</li><li>Third supporting argument</li><li>Final conclusion to remember</li></ul>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Key Insights</h2>",
+      "<div data-field=\"body\"><ul><li>First important point with details</li><li>Second point that matters</li><li>Third supporting argument</li><li>Final conclusion to remember</li></ul></div>",
       "</section>"
     ]
   },
   "callout-slide": {
     "nl": [
-      "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"callout-slide\" aria-labelledby=\"slide-1-title\">",
+      "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"callout-slide\" data-variant=\"insight\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" class=\"reader-sr-only\">Callout</h2>",
-      "<p>Teams that ship weekly find integration bugs <strong>six times</strong> earlier than teams that ship quarterly.</p>",
-      "<p>DORA, State of DevOps 2024</p>",
+      "<div data-field=\"body\"><p>Teams that ship weekly find integration bugs <strong>six times</strong> earlier than teams that ship quarterly.</p></div>",
+      "<p data-field=\"source\">DORA, State of DevOps 2024</p>",
       "</section>"
     ],
     "en-GB": [
-      "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"callout-slide\" aria-labelledby=\"slide-1-title\">",
+      "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"callout-slide\" data-variant=\"insight\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" class=\"reader-sr-only\">Callout</h2>",
-      "<p>Teams that ship weekly find integration bugs <strong>six times</strong> earlier than teams that ship quarterly.</p>",
-      "<p>DORA, State of DevOps 2024</p>",
+      "<div data-field=\"body\"><p>Teams that ship weekly find integration bugs <strong>six times</strong> earlier than teams that ship quarterly.</p></div>",
+      "<p data-field=\"source\">DORA, State of DevOps 2024</p>",
       "</section>"
     ]
   },
   "table-slide": {
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"table-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Quarterly Results</h2>",
-      "<table class=\"reader-table\"><caption>All figures in thousands</caption><thead><tr><th scope=\"col\">Metric</th><th scope=\"col\">Q1</th><th scope=\"col\">Q2</th><th scope=\"col\">Q3</th></tr></thead><tbody><tr><td>Revenue</td><td>$120K</td><td>$185K</td><td>$240K</td></tr><tr><td>Users</td><td>2,400</td><td>3,800</td><td>5,200</td></tr><tr><td>Growth</td><td>+18%</td><td>+42%</td><td>+67%</td></tr></tbody></table>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Quarterly Results</h2>",
+      "<table class=\"reader-table\" data-field=\"rows\"><caption>All figures in thousands</caption><thead><tr><th scope=\"col\">Metric</th><th scope=\"col\">Q1</th><th scope=\"col\">Q2</th><th scope=\"col\">Q3</th></tr></thead><tbody><tr><td>Revenue</td><td>$120K</td><td>$185K</td><td>$240K</td></tr><tr><td>Users</td><td>2,400</td><td>3,800</td><td>5,200</td></tr><tr><td>Growth</td><td>+18%</td><td>+42%</td><td>+67%</td></tr></tbody></table>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"table-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Quarterly Results</h2>",
-      "<table class=\"reader-table\"><caption>All figures in thousands</caption><thead><tr><th scope=\"col\">Metric</th><th scope=\"col\">Q1</th><th scope=\"col\">Q2</th><th scope=\"col\">Q3</th></tr></thead><tbody><tr><td>Revenue</td><td>$120K</td><td>$185K</td><td>$240K</td></tr><tr><td>Users</td><td>2,400</td><td>3,800</td><td>5,200</td></tr><tr><td>Growth</td><td>+18%</td><td>+42%</td><td>+67%</td></tr></tbody></table>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Quarterly Results</h2>",
+      "<table class=\"reader-table\" data-field=\"rows\"><caption>All figures in thousands</caption><thead><tr><th scope=\"col\">Metric</th><th scope=\"col\">Q1</th><th scope=\"col\">Q2</th><th scope=\"col\">Q3</th></tr></thead><tbody><tr><td>Revenue</td><td>$120K</td><td>$185K</td><td>$240K</td></tr><tr><td>Users</td><td>2,400</td><td>3,800</td><td>5,200</td></tr><tr><td>Growth</td><td>+18%</td><td>+42%</td><td>+67%</td></tr></tbody></table>",
       "</section>"
     ]
   },
   "list-slide": {
     "nl": [
-      "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"list-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Our Process</h2>",
-      "<p>How we approach every project</p>",
-      "<ul class=\"reader-items\"><li class=\"reader-item\"><h3>Discovery</h3>",
-      "<p>Understanding your needs and goals</p></li><li class=\"reader-item\"><h3>Strategy</h3>",
-      "<p>Planning the optimal approach</p></li><li class=\"reader-item\"><h3>Execution</h3>",
-      "<p>Delivering exceptional results</p></li><li class=\"reader-item\"><h3>Review</h3>",
-      "<p>Continuous improvement</p></li></ul>",
+      "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"list-slide\" data-variant=\"numbers\" aria-labelledby=\"slide-1-title\">",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Our Process</h2>",
+      "<p data-field=\"subheading\">How we approach every project</p>",
+      "<ul class=\"reader-items\" data-field=\"items\"><li class=\"reader-item\"><h3 data-field=\"title\">Discovery</h3>",
+      "<p data-field=\"text\">Understanding your needs and goals</p></li><li class=\"reader-item\"><h3 data-field=\"title\">Strategy</h3>",
+      "<p data-field=\"text\">Planning the optimal approach</p></li><li class=\"reader-item\"><h3 data-field=\"title\">Execution</h3>",
+      "<p data-field=\"text\">Delivering exceptional results</p></li><li class=\"reader-item\"><h3 data-field=\"title\">Review</h3>",
+      "<p data-field=\"text\">Continuous improvement</p></li></ul>",
       "</section>"
     ],
     "en-GB": [
-      "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"list-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Our Process</h2>",
-      "<p>How we approach every project</p>",
-      "<ul class=\"reader-items\"><li class=\"reader-item\"><h3>Discovery</h3>",
-      "<p>Understanding your needs and goals</p></li><li class=\"reader-item\"><h3>Strategy</h3>",
-      "<p>Planning the optimal approach</p></li><li class=\"reader-item\"><h3>Execution</h3>",
-      "<p>Delivering exceptional results</p></li><li class=\"reader-item\"><h3>Review</h3>",
-      "<p>Continuous improvement</p></li></ul>",
+      "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"list-slide\" data-variant=\"numbers\" aria-labelledby=\"slide-1-title\">",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Our Process</h2>",
+      "<p data-field=\"subheading\">How we approach every project</p>",
+      "<ul class=\"reader-items\" data-field=\"items\"><li class=\"reader-item\"><h3 data-field=\"title\">Discovery</h3>",
+      "<p data-field=\"text\">Understanding your needs and goals</p></li><li class=\"reader-item\"><h3 data-field=\"title\">Strategy</h3>",
+      "<p data-field=\"text\">Planning the optimal approach</p></li><li class=\"reader-item\"><h3 data-field=\"title\">Execution</h3>",
+      "<p data-field=\"text\">Delivering exceptional results</p></li><li class=\"reader-item\"><h3 data-field=\"title\">Review</h3>",
+      "<p data-field=\"text\">Continuous improvement</p></li></ul>",
       "</section>"
     ]
   },
   "kpi-metrics-slide": {
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"kpi-metrics-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Key Metrics</h2>",
-      "<ul class=\"reader-items\"><li class=\"reader-item\"><h3>Customer Satisfaction</h3>",
-      "<p>98</p>",
-      "<p>%</p></li><li class=\"reader-item\"><h3>Projects Completed</h3>",
-      "<p>500</p>",
-      "<p>+</p></li><li class=\"reader-item\"><h3>Support Available</h3>",
-      "<p>24/7</p></li></ul>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Key Metrics</h2>",
+      "<ul class=\"reader-items\" data-field=\"metrics\"><li class=\"reader-item\"><h3 data-field=\"label\">Customer Satisfaction</h3>",
+      "<p data-field=\"value\">98</p>",
+      "<p data-field=\"unit\">%</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Projects Completed</h3>",
+      "<p data-field=\"value\">500</p>",
+      "<p data-field=\"unit\">+</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Support Available</h3>",
+      "<p data-field=\"value\">24/7</p></li></ul>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"kpi-metrics-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Key Metrics</h2>",
-      "<ul class=\"reader-items\"><li class=\"reader-item\"><h3>Customer Satisfaction</h3>",
-      "<p>98</p>",
-      "<p>%</p></li><li class=\"reader-item\"><h3>Projects Completed</h3>",
-      "<p>500</p>",
-      "<p>+</p></li><li class=\"reader-item\"><h3>Support Available</h3>",
-      "<p>24/7</p></li></ul>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Key Metrics</h2>",
+      "<ul class=\"reader-items\" data-field=\"metrics\"><li class=\"reader-item\"><h3 data-field=\"label\">Customer Satisfaction</h3>",
+      "<p data-field=\"value\">98</p>",
+      "<p data-field=\"unit\">%</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Projects Completed</h3>",
+      "<p data-field=\"value\">500</p>",
+      "<p data-field=\"unit\">+</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Support Available</h3>",
+      "<p data-field=\"value\">24/7</p></li></ul>",
       "</section>"
     ]
   },
   "image-text-slide": {
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"image-text-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Visual Storytelling</h2>",
-      "<ul><li>Engage your audience</li><li>Communicate complex ideas</li><li>Leave a lasting impression</li></ul>",
-      "<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/slide-picker/800/600\" alt=\"Sample image\" loading=\"lazy\" /></figure>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Visual Storytelling</h2>",
+      "<div data-field=\"body\"><ul><li>Engage your audience</li><li>Communicate complex ideas</li><li>Leave a lasting impression</li></ul></div>",
+      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/slide-picker/800/600\" alt=\"Sample image\" loading=\"lazy\" /></figure>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"image-text-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Visual Storytelling</h2>",
-      "<ul><li>Engage your audience</li><li>Communicate complex ideas</li><li>Leave a lasting impression</li></ul>",
-      "<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/slide-picker/800/600\" alt=\"Sample image\" loading=\"lazy\" /></figure>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Visual Storytelling</h2>",
+      "<div data-field=\"body\"><ul><li>Engage your audience</li><li>Communicate complex ideas</li><li>Leave a lasting impression</li></ul></div>",
+      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/slide-picker/800/600\" alt=\"Sample image\" loading=\"lazy\" /></figure>",
       "</section>"
     ]
   },
   "image-set-slide": {
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"image-set-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Three moments</h2>",
-      "<ul><li>Where it started</li><li>What changed</li><li>Where it stands now</li></ul>",
-      "<ul class=\"reader-items\"><li class=\"reader-item\"><figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/image-set-1/800/600\" alt=\"Sample image\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/image-set-2/800/600\" alt=\"Sample image\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/image-set-3/800/600\" alt=\"Sample image\" loading=\"lazy\" /></figure></li></ul>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Three moments</h2>",
+      "<div data-field=\"body\"><ul><li>Where it started</li><li>What changed</li><li>Where it stands now</li></ul></div>",
+      "<ul class=\"reader-items\" data-field=\"images\"><li class=\"reader-item\"><figure class=\"reader-figure\" data-field=\"src\"><img src=\"https://picsum.photos/seed/image-set-1/800/600\" alt=\"Sample image\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\" data-field=\"src\"><img src=\"https://picsum.photos/seed/image-set-2/800/600\" alt=\"Sample image\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\" data-field=\"src\"><img src=\"https://picsum.photos/seed/image-set-3/800/600\" alt=\"Sample image\" loading=\"lazy\" /></figure></li></ul>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"image-set-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Three moments</h2>",
-      "<ul><li>Where it started</li><li>What changed</li><li>Where it stands now</li></ul>",
-      "<ul class=\"reader-items\"><li class=\"reader-item\"><figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/image-set-1/800/600\" alt=\"Sample image\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/image-set-2/800/600\" alt=\"Sample image\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/image-set-3/800/600\" alt=\"Sample image\" loading=\"lazy\" /></figure></li></ul>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Three moments</h2>",
+      "<div data-field=\"body\"><ul><li>Where it started</li><li>What changed</li><li>Where it stands now</li></ul></div>",
+      "<ul class=\"reader-items\" data-field=\"images\"><li class=\"reader-item\"><figure class=\"reader-figure\" data-field=\"src\"><img src=\"https://picsum.photos/seed/image-set-1/800/600\" alt=\"Sample image\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\" data-field=\"src\"><img src=\"https://picsum.photos/seed/image-set-2/800/600\" alt=\"Sample image\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\" data-field=\"src\"><img src=\"https://picsum.photos/seed/image-set-3/800/600\" alt=\"Sample image\" loading=\"lazy\" /></figure></li></ul>",
       "</section>"
     ]
   },
   "video-slide": {
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"video-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Video Content</h2>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Video Content</h2>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"video-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Video Content</h2>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Video Content</h2>",
       "</section>"
     ]
   },
   "team-cards-slide": {
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"team-cards-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Meet the Team</h2>",
-      "<ul class=\"reader-items\"><li class=\"reader-item\"><h3>Jane Doe</h3>",
-      "<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/slide-picker/800/600\" alt=\"Jane Doe\" loading=\"lazy\" /></figure>",
-      "<p>CEO &amp; Founder</p></li><li class=\"reader-item\"><h3>John Smith</h3>",
-      "<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/slide-picker-3/800/600\" alt=\"John Smith\" loading=\"lazy\" /></figure>",
-      "<p>Head of Design</p></li><li class=\"reader-item\"><h3>Alex Johnson</h3>",
-      "<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/slide-picker-4/800/600\" alt=\"Alex Johnson\" loading=\"lazy\" /></figure>",
-      "<p>Lead Developer</p></li></ul>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Meet the Team</h2>",
+      "<ul class=\"reader-items\" data-field=\"members\"><li class=\"reader-item\"><h3 data-field=\"name\">Jane Doe</h3>",
+      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/slide-picker/800/600\" alt=\"Jane Doe\" loading=\"lazy\" /></figure>",
+      "<p data-field=\"byline\">CEO &amp; Founder</p></li><li class=\"reader-item\"><h3 data-field=\"name\">John Smith</h3>",
+      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/slide-picker-3/800/600\" alt=\"John Smith\" loading=\"lazy\" /></figure>",
+      "<p data-field=\"byline\">Head of Design</p></li><li class=\"reader-item\"><h3 data-field=\"name\">Alex Johnson</h3>",
+      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/slide-picker-4/800/600\" alt=\"Alex Johnson\" loading=\"lazy\" /></figure>",
+      "<p data-field=\"byline\">Lead Developer</p></li></ul>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"team-cards-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Meet the Team</h2>",
-      "<ul class=\"reader-items\"><li class=\"reader-item\"><h3>Jane Doe</h3>",
-      "<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/slide-picker/800/600\" alt=\"Jane Doe\" loading=\"lazy\" /></figure>",
-      "<p>CEO &amp; Founder</p></li><li class=\"reader-item\"><h3>John Smith</h3>",
-      "<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/slide-picker-3/800/600\" alt=\"John Smith\" loading=\"lazy\" /></figure>",
-      "<p>Head of Design</p></li><li class=\"reader-item\"><h3>Alex Johnson</h3>",
-      "<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/slide-picker-4/800/600\" alt=\"Alex Johnson\" loading=\"lazy\" /></figure>",
-      "<p>Lead Developer</p></li></ul>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Meet the Team</h2>",
+      "<ul class=\"reader-items\" data-field=\"members\"><li class=\"reader-item\"><h3 data-field=\"name\">Jane Doe</h3>",
+      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/slide-picker/800/600\" alt=\"Jane Doe\" loading=\"lazy\" /></figure>",
+      "<p data-field=\"byline\">CEO &amp; Founder</p></li><li class=\"reader-item\"><h3 data-field=\"name\">John Smith</h3>",
+      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/slide-picker-3/800/600\" alt=\"John Smith\" loading=\"lazy\" /></figure>",
+      "<p data-field=\"byline\">Head of Design</p></li><li class=\"reader-item\"><h3 data-field=\"name\">Alex Johnson</h3>",
+      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/slide-picker-4/800/600\" alt=\"Alex Johnson\" loading=\"lazy\" /></figure>",
+      "<p data-field=\"byline\">Lead Developer</p></li></ul>",
       "</section>"
     ]
   },
   "logo-wall-slide": {
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"logo-wall-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Our Partners</h2>",
-      "<p>Trusted by industry leaders</p>",
-      "<ul class=\"reader-items\"><li class=\"reader-item\"><h3>Acme Corp</h3>",
-      "<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/logo1/200/80\" alt=\"Acme Corp logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3>TechFlow</h3>",
-      "<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/logo2/200/80\" alt=\"TechFlow logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3>Innovate Inc</h3>",
-      "<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/logo3/200/80\" alt=\"Innovate Inc logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3>GlobalNet</h3>",
-      "<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/logo4/200/80\" alt=\"GlobalNet logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3>Summit Co</h3>",
-      "<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/logo5/200/80\" alt=\"Summit Co logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3>Bright Labs</h3>",
-      "<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/logo6/200/80\" alt=\"Bright Labs logo\" loading=\"lazy\" /></figure></li></ul>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Our Partners</h2>",
+      "<p data-field=\"subheading\">Trusted by industry leaders</p>",
+      "<ul class=\"reader-items\" data-field=\"logos\"><li class=\"reader-item\"><h3 data-field=\"name\">Acme Corp</h3>",
+      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo1/200/80\" alt=\"Acme Corp logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3 data-field=\"name\">TechFlow</h3>",
+      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo2/200/80\" alt=\"TechFlow logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3 data-field=\"name\">Innovate Inc</h3>",
+      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo3/200/80\" alt=\"Innovate Inc logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3 data-field=\"name\">GlobalNet</h3>",
+      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo4/200/80\" alt=\"GlobalNet logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3 data-field=\"name\">Summit Co</h3>",
+      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo5/200/80\" alt=\"Summit Co logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3 data-field=\"name\">Bright Labs</h3>",
+      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo6/200/80\" alt=\"Bright Labs logo\" loading=\"lazy\" /></figure></li></ul>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"logo-wall-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Our Partners</h2>",
-      "<p>Trusted by industry leaders</p>",
-      "<ul class=\"reader-items\"><li class=\"reader-item\"><h3>Acme Corp</h3>",
-      "<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/logo1/200/80\" alt=\"Acme Corp logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3>TechFlow</h3>",
-      "<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/logo2/200/80\" alt=\"TechFlow logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3>Innovate Inc</h3>",
-      "<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/logo3/200/80\" alt=\"Innovate Inc logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3>GlobalNet</h3>",
-      "<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/logo4/200/80\" alt=\"GlobalNet logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3>Summit Co</h3>",
-      "<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/logo5/200/80\" alt=\"Summit Co logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3>Bright Labs</h3>",
-      "<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/logo6/200/80\" alt=\"Bright Labs logo\" loading=\"lazy\" /></figure></li></ul>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Our Partners</h2>",
+      "<p data-field=\"subheading\">Trusted by industry leaders</p>",
+      "<ul class=\"reader-items\" data-field=\"logos\"><li class=\"reader-item\"><h3 data-field=\"name\">Acme Corp</h3>",
+      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo1/200/80\" alt=\"Acme Corp logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3 data-field=\"name\">TechFlow</h3>",
+      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo2/200/80\" alt=\"TechFlow logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3 data-field=\"name\">Innovate Inc</h3>",
+      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo3/200/80\" alt=\"Innovate Inc logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3 data-field=\"name\">GlobalNet</h3>",
+      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo4/200/80\" alt=\"GlobalNet logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3 data-field=\"name\">Summit Co</h3>",
+      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo5/200/80\" alt=\"Summit Co logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3 data-field=\"name\">Bright Labs</h3>",
+      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo6/200/80\" alt=\"Bright Labs logo\" loading=\"lazy\" /></figure></li></ul>",
       "</section>"
     ]
   },
   "icon-card-grid-slide": {
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"icon-card-grid-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Our Approach</h2>",
-      "<p>What makes us different</p>",
-      "<ul class=\"reader-items\"><li class=\"reader-item\"><h3>Insight</h3>",
-      "<p>Deep understanding</p></li><li class=\"reader-item\"><h3>Focus</h3>",
-      "<p>Clear objectives</p></li><li class=\"reader-item\"><h3>Collaboration</h3>",
-      "<p>Working together</p></li><li class=\"reader-item\"><h3>Growth</h3>",
-      "<p>Continuous progress</p></li></ul>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Our Approach</h2>",
+      "<p data-field=\"subheading\">What makes us different</p>",
+      "<ul class=\"reader-items\" data-field=\"items\"><li class=\"reader-item\"><h3 data-field=\"title\">Insight</h3>",
+      "<div data-field=\"body\"><p>Deep understanding</p></div></li><li class=\"reader-item\"><h3 data-field=\"title\">Focus</h3>",
+      "<div data-field=\"body\"><p>Clear objectives</p></div></li><li class=\"reader-item\"><h3 data-field=\"title\">Collaboration</h3>",
+      "<div data-field=\"body\"><p>Working together</p></div></li><li class=\"reader-item\"><h3 data-field=\"title\">Growth</h3>",
+      "<div data-field=\"body\"><p>Continuous progress</p></div></li></ul>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"icon-card-grid-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Our Approach</h2>",
-      "<p>What makes us different</p>",
-      "<ul class=\"reader-items\"><li class=\"reader-item\"><h3>Insight</h3>",
-      "<p>Deep understanding</p></li><li class=\"reader-item\"><h3>Focus</h3>",
-      "<p>Clear objectives</p></li><li class=\"reader-item\"><h3>Collaboration</h3>",
-      "<p>Working together</p></li><li class=\"reader-item\"><h3>Growth</h3>",
-      "<p>Continuous progress</p></li></ul>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Our Approach</h2>",
+      "<p data-field=\"subheading\">What makes us different</p>",
+      "<ul class=\"reader-items\" data-field=\"items\"><li class=\"reader-item\"><h3 data-field=\"title\">Insight</h3>",
+      "<div data-field=\"body\"><p>Deep understanding</p></div></li><li class=\"reader-item\"><h3 data-field=\"title\">Focus</h3>",
+      "<div data-field=\"body\"><p>Clear objectives</p></div></li><li class=\"reader-item\"><h3 data-field=\"title\">Collaboration</h3>",
+      "<div data-field=\"body\"><p>Working together</p></div></li><li class=\"reader-item\"><h3 data-field=\"title\">Growth</h3>",
+      "<div data-field=\"body\"><p>Continuous progress</p></div></li></ul>",
       "</section>"
     ]
   },
@@ -257,33 +257,33 @@
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"quote-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" class=\"reader-sr-only\">The best way to predict the future is to create it.</h2>",
-      "<p>The best way to predict the future is to create it.</p>",
-      "<p>Peter Drucker</p>",
-      "<p>Management Consultant</p>",
+      "<p data-field=\"quote\">The best way to predict the future is to create it.</p>",
+      "<p data-field=\"authorName\">Peter Drucker</p>",
+      "<p data-field=\"authorTitle\">Management Consultant</p>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"quote-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" class=\"reader-sr-only\">The best way to predict the future is to create it.</h2>",
-      "<p>The best way to predict the future is to create it.</p>",
-      "<p>Peter Drucker</p>",
-      "<p>Management Consultant</p>",
+      "<p data-field=\"quote\">The best way to predict the future is to create it.</p>",
+      "<p data-field=\"authorName\">Peter Drucker</p>",
+      "<p data-field=\"authorTitle\">Management Consultant</p>",
       "</section>"
     ]
   },
   "image-slide": {
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"image-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Full Image</h2>",
-      "<p>Beautiful visuals matter</p>",
-      "<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/slide-picker-2/800/600\" alt=\"Sample image\" loading=\"lazy\" /><figcaption>Caption for context</figcaption></figure>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Full Image</h2>",
+      "<p data-field=\"subheading\">Beautiful visuals matter</p>",
+      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/slide-picker-2/800/600\" alt=\"Sample image\" loading=\"lazy\" /><figcaption>Caption for context</figcaption></figure>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"image-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Full Image</h2>",
-      "<p>Beautiful visuals matter</p>",
-      "<figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/slide-picker-2/800/600\" alt=\"Sample image\" loading=\"lazy\" /><figcaption>Caption for context</figcaption></figure>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Full Image</h2>",
+      "<p data-field=\"subheading\">Beautiful visuals matter</p>",
+      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/slide-picker-2/800/600\" alt=\"Sample image\" loading=\"lazy\" /><figcaption>Caption for context</figcaption></figure>",
       "</section>"
     ]
   },
@@ -291,85 +291,85 @@
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"embed-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" class=\"reader-sr-only\">Embed</h2>",
-      "<p>https://example.com</p>",
+      "<p data-field=\"embedUrl\">https://example.com</p>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"embed-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" class=\"reader-sr-only\">Embed</h2>",
-      "<p>https://example.com</p>",
+      "<p data-field=\"embedUrl\">https://example.com</p>",
       "</section>"
     ]
   },
   "countdown-slide": {
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"countdown-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Break</h2>",
-      "<p>Tijd!</p>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Break</h2>",
+      "<p data-field=\"zeroText\">Tijd!</p>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"countdown-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Break</h2>",
-      "<p>Time!</p>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Break</h2>",
+      "<p data-field=\"zeroText\">Time!</p>",
       "</section>"
     ]
   },
   "poll-slide": {
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"poll-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">What do you think?</h2>",
-      "<ul class=\"reader-items\"><li class=\"reader-item\"><h3>Strongly agree</h3></li><li class=\"reader-item\"><h3>Somewhat agree</h3></li><li class=\"reader-item\"><h3>Neutral</h3></li><li class=\"reader-item\"><h3>Disagree</h3></li></ul>",
+      "<h2 id=\"slide-1-title\" data-field=\"question\">What do you think?</h2>",
+      "<ul class=\"reader-items\" data-field=\"options\"><li class=\"reader-item\"><h3 data-field=\"text\">Strongly agree</h3></li><li class=\"reader-item\"><h3 data-field=\"text\">Somewhat agree</h3></li><li class=\"reader-item\"><h3 data-field=\"text\">Neutral</h3></li><li class=\"reader-item\"><h3 data-field=\"text\">Disagree</h3></li></ul>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"poll-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">What do you think?</h2>",
-      "<ul class=\"reader-items\"><li class=\"reader-item\"><h3>Strongly agree</h3></li><li class=\"reader-item\"><h3>Somewhat agree</h3></li><li class=\"reader-item\"><h3>Neutral</h3></li><li class=\"reader-item\"><h3>Disagree</h3></li></ul>",
+      "<h2 id=\"slide-1-title\" data-field=\"question\">What do you think?</h2>",
+      "<ul class=\"reader-items\" data-field=\"options\"><li class=\"reader-item\"><h3 data-field=\"text\">Strongly agree</h3></li><li class=\"reader-item\"><h3 data-field=\"text\">Somewhat agree</h3></li><li class=\"reader-item\"><h3 data-field=\"text\">Neutral</h3></li><li class=\"reader-item\"><h3 data-field=\"text\">Disagree</h3></li></ul>",
       "</section>"
     ]
   },
   "likert-slide": {
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"likert-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Rate your experience</h2>",
-      "<ol class=\"reader-items\"><li class=\"reader-item\"><h3>Poor</h3></li><li class=\"reader-item\"><h3>Fair</h3></li><li class=\"reader-item\"><h3>Good</h3></li><li class=\"reader-item\"><h3>Very good</h3></li><li class=\"reader-item\"><h3>Excellent</h3></li></ol>",
+      "<h2 id=\"slide-1-title\" data-field=\"question\">Rate your experience</h2>",
+      "<ol class=\"reader-items\" data-field=\"options\"><li class=\"reader-item\"><h3 data-field=\"text\">Poor</h3></li><li class=\"reader-item\"><h3 data-field=\"text\">Fair</h3></li><li class=\"reader-item\"><h3 data-field=\"text\">Good</h3></li><li class=\"reader-item\"><h3 data-field=\"text\">Very good</h3></li><li class=\"reader-item\"><h3 data-field=\"text\">Excellent</h3></li></ol>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"likert-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Rate your experience</h2>",
-      "<ol class=\"reader-items\"><li class=\"reader-item\"><h3>Poor</h3></li><li class=\"reader-item\"><h3>Fair</h3></li><li class=\"reader-item\"><h3>Good</h3></li><li class=\"reader-item\"><h3>Very good</h3></li><li class=\"reader-item\"><h3>Excellent</h3></li></ol>",
+      "<h2 id=\"slide-1-title\" data-field=\"question\">Rate your experience</h2>",
+      "<ol class=\"reader-items\" data-field=\"options\"><li class=\"reader-item\"><h3 data-field=\"text\">Poor</h3></li><li class=\"reader-item\"><h3 data-field=\"text\">Fair</h3></li><li class=\"reader-item\"><h3 data-field=\"text\">Good</h3></li><li class=\"reader-item\"><h3 data-field=\"text\">Very good</h3></li><li class=\"reader-item\"><h3 data-field=\"text\">Excellent</h3></li></ol>",
       "</section>"
     ]
   },
   "likert-slider-slide": {
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"likert-slider-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">How satisfied are you?</h2>",
-      "<p>Not at all</p>",
-      "<p>Completely</p>",
+      "<h2 id=\"slide-1-title\" data-field=\"question\">How satisfied are you?</h2>",
+      "<p data-field=\"minLabel\">Not at all</p>",
+      "<p data-field=\"maxLabel\">Completely</p>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"likert-slider-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">How satisfied are you?</h2>",
-      "<p>Not at all</p>",
-      "<p>Completely</p>",
+      "<h2 id=\"slide-1-title\" data-field=\"question\">How satisfied are you?</h2>",
+      "<p data-field=\"minLabel\">Not at all</p>",
+      "<p data-field=\"maxLabel\">Completely</p>",
       "</section>"
     ]
   },
   "feedback-slide": {
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"feedback-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">What would you improve?</h2>",
-      "<p>Share your thoughts...</p>",
+      "<h2 id=\"slide-1-title\" data-field=\"question\">What would you improve?</h2>",
+      "<p data-field=\"placeholder\">Share your thoughts...</p>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"feedback-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">What would you improve?</h2>",
-      "<p>Share your thoughts...</p>",
+      "<h2 id=\"slide-1-title\" data-field=\"question\">What would you improve?</h2>",
+      "<p data-field=\"placeholder\">Share your thoughts...</p>",
       "</section>"
     ]
   },
@@ -388,250 +388,250 @@
   "chart-slide": {
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"chart-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Growth Metrics</h2>",
-      "<table class=\"reader-table\"><caption>Chart type: line.</caption><thead><tr><th scope=\"col\">Month</th><th scope=\"col\">Sales</th><th scope=\"col\">Target</th></tr></thead><tbody><tr><td>Jan</td><td>30</td><td>25</td></tr><tr><td>Feb</td><td>45</td><td>40</td></tr><tr><td>Mar</td><td>55</td><td>50</td></tr><tr><td>Apr</td><td>70</td><td>60</td></tr><tr><td>May</td><td>85</td><td>75</td></tr></tbody></table>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Growth Metrics</h2>",
+      "<table class=\"reader-table\" data-field=\"data\"><caption>Chart type: line.</caption><thead><tr><th scope=\"col\">Month</th><th scope=\"col\">Sales</th><th scope=\"col\">Target</th></tr></thead><tbody><tr><td>Jan</td><td>30</td><td>25</td></tr><tr><td>Feb</td><td>45</td><td>40</td></tr><tr><td>Mar</td><td>55</td><td>50</td></tr><tr><td>Apr</td><td>70</td><td>60</td></tr><tr><td>May</td><td>85</td><td>75</td></tr></tbody></table>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"chart-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Growth Metrics</h2>",
-      "<table class=\"reader-table\"><caption>Chart type: line.</caption><thead><tr><th scope=\"col\">Month</th><th scope=\"col\">Sales</th><th scope=\"col\">Target</th></tr></thead><tbody><tr><td>Jan</td><td>30</td><td>25</td></tr><tr><td>Feb</td><td>45</td><td>40</td></tr><tr><td>Mar</td><td>55</td><td>50</td></tr><tr><td>Apr</td><td>70</td><td>60</td></tr><tr><td>May</td><td>85</td><td>75</td></tr></tbody></table>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Growth Metrics</h2>",
+      "<table class=\"reader-table\" data-field=\"data\"><caption>Chart type: line.</caption><thead><tr><th scope=\"col\">Month</th><th scope=\"col\">Sales</th><th scope=\"col\">Target</th></tr></thead><tbody><tr><td>Jan</td><td>30</td><td>25</td></tr><tr><td>Feb</td><td>45</td><td>40</td></tr><tr><td>Mar</td><td>55</td><td>50</td></tr><tr><td>Apr</td><td>70</td><td>60</td></tr><tr><td>May</td><td>85</td><td>75</td></tr></tbody></table>",
       "</section>"
     ]
   },
   "text-blocks-slide": {
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"text-blocks-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Our Process</h2>",
-      "<p>From concept to delivery</p>",
-      "<ol class=\"reader-items\"><li class=\"reader-item\"><ul class=\"reader-items\"><li class=\"reader-item\"><h3>Research</h3>",
-      "<p>Understanding the challenge</p></li><li class=\"reader-item\"><h3>Design</h3>",
-      "<p>Creating the solution</p></li><li class=\"reader-item\"><h3>Build</h3>",
-      "<p>Making it real</p></li></ul><p class=\"reader-relation\" data-relation=\"down\">leads to</p></li><li class=\"reader-item\"><h3>The Result</h3>",
-      "<ul class=\"reader-items\"><li class=\"reader-item\"><h3>Launch</h3>",
-      "<p>Going live</p></li><li class=\"reader-item\"><h3>Measure</h3>",
-      "<p>Tracking success</p></li><li class=\"reader-item\"><h3>Iterate</h3>",
-      "<p>Continuous improvement</p></li></ul></li></ol>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Our Process</h2>",
+      "<p data-field=\"subheading\">From concept to delivery</p>",
+      "<ol class=\"reader-items\" data-field=\"rows\"><li class=\"reader-item\"><ul class=\"reader-items\" data-field=\"blocks\"><li class=\"reader-item\"><h3 data-field=\"title\">Research</h3>",
+      "<div data-field=\"body\"><p>Understanding the challenge</p></div></li><li class=\"reader-item\"><h3 data-field=\"title\">Design</h3>",
+      "<div data-field=\"body\"><p>Creating the solution</p></div></li><li class=\"reader-item\"><h3 data-field=\"title\">Build</h3>",
+      "<div data-field=\"body\"><p>Making it real</p></div></li></ul><p class=\"reader-relation\" data-field=\"arrow\" data-relation=\"down\">leads to</p></li><li class=\"reader-item\"><h3 data-field=\"title\">The Result</h3>",
+      "<ul class=\"reader-items\" data-field=\"blocks\"><li class=\"reader-item\"><h3 data-field=\"title\">Launch</h3>",
+      "<div data-field=\"body\"><p>Going live</p></div></li><li class=\"reader-item\"><h3 data-field=\"title\">Measure</h3>",
+      "<div data-field=\"body\"><p>Tracking success</p></div></li><li class=\"reader-item\"><h3 data-field=\"title\">Iterate</h3>",
+      "<div data-field=\"body\"><p>Continuous improvement</p></div></li></ul></li></ol>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"text-blocks-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Our Process</h2>",
-      "<p>From concept to delivery</p>",
-      "<ol class=\"reader-items\"><li class=\"reader-item\"><ul class=\"reader-items\"><li class=\"reader-item\"><h3>Research</h3>",
-      "<p>Understanding the challenge</p></li><li class=\"reader-item\"><h3>Design</h3>",
-      "<p>Creating the solution</p></li><li class=\"reader-item\"><h3>Build</h3>",
-      "<p>Making it real</p></li></ul><p class=\"reader-relation\" data-relation=\"down\">leads to</p></li><li class=\"reader-item\"><h3>The Result</h3>",
-      "<ul class=\"reader-items\"><li class=\"reader-item\"><h3>Launch</h3>",
-      "<p>Going live</p></li><li class=\"reader-item\"><h3>Measure</h3>",
-      "<p>Tracking success</p></li><li class=\"reader-item\"><h3>Iterate</h3>",
-      "<p>Continuous improvement</p></li></ul></li></ol>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Our Process</h2>",
+      "<p data-field=\"subheading\">From concept to delivery</p>",
+      "<ol class=\"reader-items\" data-field=\"rows\"><li class=\"reader-item\"><ul class=\"reader-items\" data-field=\"blocks\"><li class=\"reader-item\"><h3 data-field=\"title\">Research</h3>",
+      "<div data-field=\"body\"><p>Understanding the challenge</p></div></li><li class=\"reader-item\"><h3 data-field=\"title\">Design</h3>",
+      "<div data-field=\"body\"><p>Creating the solution</p></div></li><li class=\"reader-item\"><h3 data-field=\"title\">Build</h3>",
+      "<div data-field=\"body\"><p>Making it real</p></div></li></ul><p class=\"reader-relation\" data-field=\"arrow\" data-relation=\"down\">leads to</p></li><li class=\"reader-item\"><h3 data-field=\"title\">The Result</h3>",
+      "<ul class=\"reader-items\" data-field=\"blocks\"><li class=\"reader-item\"><h3 data-field=\"title\">Launch</h3>",
+      "<div data-field=\"body\"><p>Going live</p></div></li><li class=\"reader-item\"><h3 data-field=\"title\">Measure</h3>",
+      "<div data-field=\"body\"><p>Tracking success</p></div></li><li class=\"reader-item\"><h3 data-field=\"title\">Iterate</h3>",
+      "<div data-field=\"body\"><p>Continuous improvement</p></div></li></ul></li></ol>",
       "</section>"
     ]
   },
   "comparison-slide": {
     "nl": [
-      "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"comparison-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Build or Buy</h2>",
-      "<p>Choosing the platform for next year</p>",
-      "<p>Build in-house</p>",
-      "<ul><li>Fits our workflow exactly</li><li>Two engineers for six months</li><li>Every bug is ours</li></ul>",
-      "<p>Buy off the shelf</p>",
-      "<ul><li>Live within a month</li><li>Licence per seat, per year</li><li>Their roadmap, not ours</li></ul>",
-      "<p>Buy now, revisit when the team doubles</p>",
+      "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"comparison-slide\" data-variant=\"versus\" aria-labelledby=\"slide-1-title\">",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Build or Buy</h2>",
+      "<p data-field=\"subheading\">Choosing the platform for next year</p>",
+      "<p data-field=\"leftTitle\">Build in-house</p>",
+      "<div data-field=\"leftBody\"><ul><li>Fits our workflow exactly</li><li>Two engineers for six months</li><li>Every bug is ours</li></ul></div>",
+      "<p data-field=\"rightTitle\">Buy off the shelf</p>",
+      "<div data-field=\"rightBody\"><ul><li>Live within a month</li><li>Licence per seat, per year</li><li>Their roadmap, not ours</li></ul></div>",
+      "<p data-field=\"verdict\">Buy now, revisit when the team doubles</p>",
       "</section>"
     ],
     "en-GB": [
-      "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"comparison-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Build or Buy</h2>",
-      "<p>Choosing the platform for next year</p>",
-      "<p>Build in-house</p>",
-      "<ul><li>Fits our workflow exactly</li><li>Two engineers for six months</li><li>Every bug is ours</li></ul>",
-      "<p>Buy off the shelf</p>",
-      "<ul><li>Live within a month</li><li>Licence per seat, per year</li><li>Their roadmap, not ours</li></ul>",
-      "<p>Buy now, revisit when the team doubles</p>",
+      "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"comparison-slide\" data-variant=\"versus\" aria-labelledby=\"slide-1-title\">",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Build or Buy</h2>",
+      "<p data-field=\"subheading\">Choosing the platform for next year</p>",
+      "<p data-field=\"leftTitle\">Build in-house</p>",
+      "<div data-field=\"leftBody\"><ul><li>Fits our workflow exactly</li><li>Two engineers for six months</li><li>Every bug is ours</li></ul></div>",
+      "<p data-field=\"rightTitle\">Buy off the shelf</p>",
+      "<div data-field=\"rightBody\"><ul><li>Live within a month</li><li>Licence per seat, per year</li><li>Their roadmap, not ours</li></ul></div>",
+      "<p data-field=\"verdict\">Buy now, revisit when the team doubles</p>",
       "</section>"
     ]
   },
   "process-slide": {
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"process-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">From brief to launch</h2>",
-      "<p>How a project runs here</p>",
-      "<ol class=\"reader-items\"><li class=\"reader-item\"><h3>Discover</h3>",
-      "<p>Interviews and a look at the numbers</p></li><li class=\"reader-item\"><h3>Shape</h3>",
-      "<p>Three sketches, then one direction</p></li><li class=\"reader-item\"><h3>Build</h3>",
-      "<p>Weekly demos, no big reveal</p></li><li class=\"reader-item\"><h3>Launch</h3>",
-      "<p>Ship, measure, adjust</p></li></ol>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">From brief to launch</h2>",
+      "<p data-field=\"subheading\">How a project runs here</p>",
+      "<ol class=\"reader-items\" data-field=\"items\"><li class=\"reader-item\"><h3 data-field=\"title\">Discover</h3>",
+      "<p data-field=\"text\">Interviews and a look at the numbers</p></li><li class=\"reader-item\"><h3 data-field=\"title\">Shape</h3>",
+      "<p data-field=\"text\">Three sketches, then one direction</p></li><li class=\"reader-item\"><h3 data-field=\"title\">Build</h3>",
+      "<p data-field=\"text\">Weekly demos, no big reveal</p></li><li class=\"reader-item\"><h3 data-field=\"title\">Launch</h3>",
+      "<p data-field=\"text\">Ship, measure, adjust</p></li></ol>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"process-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">From brief to launch</h2>",
-      "<p>How a project runs here</p>",
-      "<ol class=\"reader-items\"><li class=\"reader-item\"><h3>Discover</h3>",
-      "<p>Interviews and a look at the numbers</p></li><li class=\"reader-item\"><h3>Shape</h3>",
-      "<p>Three sketches, then one direction</p></li><li class=\"reader-item\"><h3>Build</h3>",
-      "<p>Weekly demos, no big reveal</p></li><li class=\"reader-item\"><h3>Launch</h3>",
-      "<p>Ship, measure, adjust</p></li></ol>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">From brief to launch</h2>",
+      "<p data-field=\"subheading\">How a project runs here</p>",
+      "<ol class=\"reader-items\" data-field=\"items\"><li class=\"reader-item\"><h3 data-field=\"title\">Discover</h3>",
+      "<p data-field=\"text\">Interviews and a look at the numbers</p></li><li class=\"reader-item\"><h3 data-field=\"title\">Shape</h3>",
+      "<p data-field=\"text\">Three sketches, then one direction</p></li><li class=\"reader-item\"><h3 data-field=\"title\">Build</h3>",
+      "<p data-field=\"text\">Weekly demos, no big reveal</p></li><li class=\"reader-item\"><h3 data-field=\"title\">Launch</h3>",
+      "<p data-field=\"text\">Ship, measure, adjust</p></li></ol>",
       "</section>"
     ]
   },
   "timeline-slide": {
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"timeline-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">From pilot to platform</h2>",
-      "<p>Five years, five turns</p>",
-      "<ol class=\"reader-items\"><li class=\"reader-item\"><h3>2021</h3>",
-      "<p>Pilot</p>",
-      "<p>One team, one workflow</p></li><li class=\"reader-item\"><h3>2022</h3>",
-      "<p>First customers</p>",
-      "<p>Twelve teams paying</p></li><li class=\"reader-item\"><h3>2023</h3>",
-      "<p>Self-service</p>",
-      "<p>Signing up without us</p></li><li class=\"reader-item\"><h3>2024</h3>",
-      "<p>Platform</p>",
-      "<p>Public API, first integrations</p></li><li class=\"reader-item\"><h3>2025</h3>",
-      "<p>Scale</p>",
-      "<p>Eight countries, one product</p></li></ol>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">From pilot to platform</h2>",
+      "<p data-field=\"subheading\">Five years, five turns</p>",
+      "<ol class=\"reader-items\" data-field=\"items\"><li class=\"reader-item\"><h3 data-field=\"date\">2021</h3>",
+      "<p data-field=\"title\">Pilot</p>",
+      "<p data-field=\"text\">One team, one workflow</p></li><li class=\"reader-item\"><h3 data-field=\"date\">2022</h3>",
+      "<p data-field=\"title\">First customers</p>",
+      "<p data-field=\"text\">Twelve teams paying</p></li><li class=\"reader-item\"><h3 data-field=\"date\">2023</h3>",
+      "<p data-field=\"title\">Self-service</p>",
+      "<p data-field=\"text\">Signing up without us</p></li><li class=\"reader-item\"><h3 data-field=\"date\">2024</h3>",
+      "<p data-field=\"title\">Platform</p>",
+      "<p data-field=\"text\">Public API, first integrations</p></li><li class=\"reader-item\"><h3 data-field=\"date\">2025</h3>",
+      "<p data-field=\"title\">Scale</p>",
+      "<p data-field=\"text\">Eight countries, one product</p></li></ol>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"timeline-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">From pilot to platform</h2>",
-      "<p>Five years, five turns</p>",
-      "<ol class=\"reader-items\"><li class=\"reader-item\"><h3>2021</h3>",
-      "<p>Pilot</p>",
-      "<p>One team, one workflow</p></li><li class=\"reader-item\"><h3>2022</h3>",
-      "<p>First customers</p>",
-      "<p>Twelve teams paying</p></li><li class=\"reader-item\"><h3>2023</h3>",
-      "<p>Self-service</p>",
-      "<p>Signing up without us</p></li><li class=\"reader-item\"><h3>2024</h3>",
-      "<p>Platform</p>",
-      "<p>Public API, first integrations</p></li><li class=\"reader-item\"><h3>2025</h3>",
-      "<p>Scale</p>",
-      "<p>Eight countries, one product</p></li></ol>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">From pilot to platform</h2>",
+      "<p data-field=\"subheading\">Five years, five turns</p>",
+      "<ol class=\"reader-items\" data-field=\"items\"><li class=\"reader-item\"><h3 data-field=\"date\">2021</h3>",
+      "<p data-field=\"title\">Pilot</p>",
+      "<p data-field=\"text\">One team, one workflow</p></li><li class=\"reader-item\"><h3 data-field=\"date\">2022</h3>",
+      "<p data-field=\"title\">First customers</p>",
+      "<p data-field=\"text\">Twelve teams paying</p></li><li class=\"reader-item\"><h3 data-field=\"date\">2023</h3>",
+      "<p data-field=\"title\">Self-service</p>",
+      "<p data-field=\"text\">Signing up without us</p></li><li class=\"reader-item\"><h3 data-field=\"date\">2024</h3>",
+      "<p data-field=\"title\">Platform</p>",
+      "<p data-field=\"text\">Public API, first integrations</p></li><li class=\"reader-item\"><h3 data-field=\"date\">2025</h3>",
+      "<p data-field=\"title\">Scale</p>",
+      "<p data-field=\"text\">Eight countries, one product</p></li></ol>",
       "</section>"
     ]
   },
   "matrix-slide": {
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"matrix-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Impact vs. effort</h2>",
-      "<p>Where the next quarter goes</p>",
-      "<ul class=\"reader-items\"><li class=\"reader-item\"><h3>Quick wins</h3>",
-      "<ul><li>Faster search</li><li>Keyboard shortcuts</li><li>Better empty states</li></ul></li><li class=\"reader-item\"><h3>Big bets</h3>",
-      "<ul><li>Offline editing</li><li>Real-time collaboration</li></ul></li><li class=\"reader-item\"><h3>Fill-ins</h3>",
-      "<ul><li>Icon refresh</li><li>Two more export formats</li></ul></li><li class=\"reader-item\"><h3>Time sinks</h3>",
-      "<ul><li>Per-team theming</li><li>Importing the legacy format</li></ul></li></ul>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Impact vs. effort</h2>",
+      "<p data-field=\"subheading\">Where the next quarter goes</p>",
+      "<ul class=\"reader-items\" data-field=\"cells\"><li class=\"reader-item\" data-tone=\"positive\"><h3 data-field=\"title\">Quick wins</h3>",
+      "<div data-field=\"body\"><ul><li>Faster search</li><li>Keyboard shortcuts</li><li>Better empty states</li></ul></div></li><li class=\"reader-item\" data-tone=\"neutral\"><h3 data-field=\"title\">Big bets</h3>",
+      "<div data-field=\"body\"><ul><li>Offline editing</li><li>Real-time collaboration</li></ul></div></li><li class=\"reader-item\" data-tone=\"neutral\"><h3 data-field=\"title\">Fill-ins</h3>",
+      "<div data-field=\"body\"><ul><li>Icon refresh</li><li>Two more export formats</li></ul></div></li><li class=\"reader-item\" data-tone=\"negative\"><h3 data-field=\"title\">Time sinks</h3>",
+      "<div data-field=\"body\"><ul><li>Per-team theming</li><li>Importing the legacy format</li></ul></div></li></ul>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"matrix-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Impact vs. effort</h2>",
-      "<p>Where the next quarter goes</p>",
-      "<ul class=\"reader-items\"><li class=\"reader-item\"><h3>Quick wins</h3>",
-      "<ul><li>Faster search</li><li>Keyboard shortcuts</li><li>Better empty states</li></ul></li><li class=\"reader-item\"><h3>Big bets</h3>",
-      "<ul><li>Offline editing</li><li>Real-time collaboration</li></ul></li><li class=\"reader-item\"><h3>Fill-ins</h3>",
-      "<ul><li>Icon refresh</li><li>Two more export formats</li></ul></li><li class=\"reader-item\"><h3>Time sinks</h3>",
-      "<ul><li>Per-team theming</li><li>Importing the legacy format</li></ul></li></ul>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Impact vs. effort</h2>",
+      "<p data-field=\"subheading\">Where the next quarter goes</p>",
+      "<ul class=\"reader-items\" data-field=\"cells\"><li class=\"reader-item\" data-tone=\"positive\"><h3 data-field=\"title\">Quick wins</h3>",
+      "<div data-field=\"body\"><ul><li>Faster search</li><li>Keyboard shortcuts</li><li>Better empty states</li></ul></div></li><li class=\"reader-item\" data-tone=\"neutral\"><h3 data-field=\"title\">Big bets</h3>",
+      "<div data-field=\"body\"><ul><li>Offline editing</li><li>Real-time collaboration</li></ul></div></li><li class=\"reader-item\" data-tone=\"neutral\"><h3 data-field=\"title\">Fill-ins</h3>",
+      "<div data-field=\"body\"><ul><li>Icon refresh</li><li>Two more export formats</li></ul></div></li><li class=\"reader-item\" data-tone=\"negative\"><h3 data-field=\"title\">Time sinks</h3>",
+      "<div data-field=\"body\"><ul><li>Per-team theming</li><li>Importing the legacy format</li></ul></div></li></ul>",
       "</section>"
     ]
   },
   "funnel-slide": {
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"funnel-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Sales Funnel</h2>",
-      "<p>From awareness to conversion</p>",
-      "<ol class=\"reader-items\"><li class=\"reader-item\"><h3>Awareness</h3>",
-      "<p>10,000</p>",
-      "<p>Website visitors</p></li><li class=\"reader-item\"><h3>Interest</h3>",
-      "<p>3,000</p>",
-      "<p>30% engagement</p></li><li class=\"reader-item\"><h3>Consideration</h3>",
-      "<p>800</p>",
-      "<p>Qualified leads</p></li><li class=\"reader-item\"><h3>Conversion</h3>",
-      "<p>200</p>",
-      "<p>New customers</p></li></ol>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Sales Funnel</h2>",
+      "<p data-field=\"subheading\">From awareness to conversion</p>",
+      "<ol class=\"reader-items\" data-field=\"items\"><li class=\"reader-item\"><h3 data-field=\"label\">Awareness</h3>",
+      "<p data-field=\"value\">10,000</p>",
+      "<p data-field=\"text\">Website visitors</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Interest</h3>",
+      "<p data-field=\"value\">3,000</p>",
+      "<p data-field=\"text\">30% engagement</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Consideration</h3>",
+      "<p data-field=\"value\">800</p>",
+      "<p data-field=\"text\">Qualified leads</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Conversion</h3>",
+      "<p data-field=\"value\">200</p>",
+      "<p data-field=\"text\">New customers</p></li></ol>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"funnel-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Sales Funnel</h2>",
-      "<p>From awareness to conversion</p>",
-      "<ol class=\"reader-items\"><li class=\"reader-item\"><h3>Awareness</h3>",
-      "<p>10,000</p>",
-      "<p>Website visitors</p></li><li class=\"reader-item\"><h3>Interest</h3>",
-      "<p>3,000</p>",
-      "<p>30% engagement</p></li><li class=\"reader-item\"><h3>Consideration</h3>",
-      "<p>800</p>",
-      "<p>Qualified leads</p></li><li class=\"reader-item\"><h3>Conversion</h3>",
-      "<p>200</p>",
-      "<p>New customers</p></li></ol>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Sales Funnel</h2>",
+      "<p data-field=\"subheading\">From awareness to conversion</p>",
+      "<ol class=\"reader-items\" data-field=\"items\"><li class=\"reader-item\"><h3 data-field=\"label\">Awareness</h3>",
+      "<p data-field=\"value\">10,000</p>",
+      "<p data-field=\"text\">Website visitors</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Interest</h3>",
+      "<p data-field=\"value\">3,000</p>",
+      "<p data-field=\"text\">30% engagement</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Consideration</h3>",
+      "<p data-field=\"value\">800</p>",
+      "<p data-field=\"text\">Qualified leads</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Conversion</h3>",
+      "<p data-field=\"value\">200</p>",
+      "<p data-field=\"text\">New customers</p></li></ol>",
       "</section>"
     ]
   },
   "pyramid-slide": {
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"pyramid-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Priority Pyramid</h2>",
-      "<p>Our focus areas</p>",
-      "<ol class=\"reader-items\"><li class=\"reader-item\"><h3>Vision</h3>",
-      "<p>Long-term goals</p></li><li class=\"reader-item\"><h3>Strategy</h3>",
-      "<p>How we get there</p></li><li class=\"reader-item\"><h3>Tactics</h3>",
-      "<p>Day-to-day actions</p></li><li class=\"reader-item\"><h3>Operations</h3>",
-      "<p>Foundation</p></li></ol>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Priority Pyramid</h2>",
+      "<p data-field=\"subheading\">Our focus areas</p>",
+      "<ol class=\"reader-items\" data-field=\"levels\"><li class=\"reader-item\"><h3 data-field=\"label\">Vision</h3>",
+      "<p data-field=\"text\">Long-term goals</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Strategy</h3>",
+      "<p data-field=\"text\">How we get there</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Tactics</h3>",
+      "<p data-field=\"text\">Day-to-day actions</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Operations</h3>",
+      "<p data-field=\"text\">Foundation</p></li></ol>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"pyramid-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Priority Pyramid</h2>",
-      "<p>Our focus areas</p>",
-      "<ol class=\"reader-items\"><li class=\"reader-item\"><h3>Vision</h3>",
-      "<p>Long-term goals</p></li><li class=\"reader-item\"><h3>Strategy</h3>",
-      "<p>How we get there</p></li><li class=\"reader-item\"><h3>Tactics</h3>",
-      "<p>Day-to-day actions</p></li><li class=\"reader-item\"><h3>Operations</h3>",
-      "<p>Foundation</p></li></ol>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Priority Pyramid</h2>",
+      "<p data-field=\"subheading\">Our focus areas</p>",
+      "<ol class=\"reader-items\" data-field=\"levels\"><li class=\"reader-item\"><h3 data-field=\"label\">Vision</h3>",
+      "<p data-field=\"text\">Long-term goals</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Strategy</h3>",
+      "<p data-field=\"text\">How we get there</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Tactics</h3>",
+      "<p data-field=\"text\">Day-to-day actions</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Operations</h3>",
+      "<p data-field=\"text\">Foundation</p></li></ol>",
       "</section>"
     ]
   },
   "cycle-slide": {
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"cycle-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Feedback Loop</h2>",
-      "<p>Continuous improvement</p>",
-      "<p>Quality</p>",
-      "<ol class=\"reader-items\"><li class=\"reader-item\"><h3>Plan</h3>",
-      "<p>Set objectives</p></li><li class=\"reader-item\"><h3>Do</h3>",
-      "<p>Implement changes</p></li><li class=\"reader-item\"><h3>Check</h3>",
-      "<p>Measure results</p></li><li class=\"reader-item\"><h3>Act</h3>",
-      "<p>Standardise</p></li></ol>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Feedback Loop</h2>",
+      "<p data-field=\"subheading\">Continuous improvement</p>",
+      "<p data-field=\"centerLabel\">Quality</p>",
+      "<ol class=\"reader-items\" data-field=\"items\"><li class=\"reader-item\"><h3 data-field=\"label\">Plan</h3>",
+      "<p data-field=\"text\">Set objectives</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Do</h3>",
+      "<p data-field=\"text\">Implement changes</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Check</h3>",
+      "<p data-field=\"text\">Measure results</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Act</h3>",
+      "<p data-field=\"text\">Standardise</p></li></ol>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"cycle-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Feedback Loop</h2>",
-      "<p>Continuous improvement</p>",
-      "<p>Quality</p>",
-      "<ol class=\"reader-items\"><li class=\"reader-item\"><h3>Plan</h3>",
-      "<p>Set objectives</p></li><li class=\"reader-item\"><h3>Do</h3>",
-      "<p>Implement changes</p></li><li class=\"reader-item\"><h3>Check</h3>",
-      "<p>Measure results</p></li><li class=\"reader-item\"><h3>Act</h3>",
-      "<p>Standardise</p></li></ol>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Feedback Loop</h2>",
+      "<p data-field=\"subheading\">Continuous improvement</p>",
+      "<p data-field=\"centerLabel\">Quality</p>",
+      "<ol class=\"reader-items\" data-field=\"items\"><li class=\"reader-item\"><h3 data-field=\"label\">Plan</h3>",
+      "<p data-field=\"text\">Set objectives</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Do</h3>",
+      "<p data-field=\"text\">Implement changes</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Check</h3>",
+      "<p data-field=\"text\">Measure results</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Act</h3>",
+      "<p data-field=\"text\">Standardise</p></li></ol>",
       "</section>"
     ]
   },
   "gallery-slide": {
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"gallery-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Project Highlights</h2>",
-      "<p>Recent work</p>",
-      "<ul class=\"reader-items\"><li class=\"reader-item\"><figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/gallery1/800/600\" alt=\"Project Alpha\" loading=\"lazy\" /><figcaption>Project Alpha</figcaption></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/gallery2/800/600\" alt=\"Project Beta\" loading=\"lazy\" /><figcaption>Project Beta</figcaption></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/gallery3/800/600\" alt=\"Project Gamma\" loading=\"lazy\" /><figcaption>Project Gamma</figcaption></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/gallery4/800/600\" alt=\"Project Delta\" loading=\"lazy\" /><figcaption>Project Delta</figcaption></figure></li></ul>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Project Highlights</h2>",
+      "<p data-field=\"subheading\">Recent work</p>",
+      "<ul class=\"reader-items\" data-field=\"images\"><li class=\"reader-item\"><figure class=\"reader-figure\" data-field=\"src\"><img src=\"https://picsum.photos/seed/gallery1/800/600\" alt=\"Project Alpha\" loading=\"lazy\" /><figcaption>Project Alpha</figcaption></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\" data-field=\"src\"><img src=\"https://picsum.photos/seed/gallery2/800/600\" alt=\"Project Beta\" loading=\"lazy\" /><figcaption>Project Beta</figcaption></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\" data-field=\"src\"><img src=\"https://picsum.photos/seed/gallery3/800/600\" alt=\"Project Gamma\" loading=\"lazy\" /><figcaption>Project Gamma</figcaption></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\" data-field=\"src\"><img src=\"https://picsum.photos/seed/gallery4/800/600\" alt=\"Project Delta\" loading=\"lazy\" /><figcaption>Project Delta</figcaption></figure></li></ul>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"gallery-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Project Highlights</h2>",
-      "<p>Recent work</p>",
-      "<ul class=\"reader-items\"><li class=\"reader-item\"><figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/gallery1/800/600\" alt=\"Project Alpha\" loading=\"lazy\" /><figcaption>Project Alpha</figcaption></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/gallery2/800/600\" alt=\"Project Beta\" loading=\"lazy\" /><figcaption>Project Beta</figcaption></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/gallery3/800/600\" alt=\"Project Gamma\" loading=\"lazy\" /><figcaption>Project Gamma</figcaption></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\"><img src=\"https://picsum.photos/seed/gallery4/800/600\" alt=\"Project Delta\" loading=\"lazy\" /><figcaption>Project Delta</figcaption></figure></li></ul>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Project Highlights</h2>",
+      "<p data-field=\"subheading\">Recent work</p>",
+      "<ul class=\"reader-items\" data-field=\"images\"><li class=\"reader-item\"><figure class=\"reader-figure\" data-field=\"src\"><img src=\"https://picsum.photos/seed/gallery1/800/600\" alt=\"Project Alpha\" loading=\"lazy\" /><figcaption>Project Alpha</figcaption></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\" data-field=\"src\"><img src=\"https://picsum.photos/seed/gallery2/800/600\" alt=\"Project Beta\" loading=\"lazy\" /><figcaption>Project Beta</figcaption></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\" data-field=\"src\"><img src=\"https://picsum.photos/seed/gallery3/800/600\" alt=\"Project Gamma\" loading=\"lazy\" /><figcaption>Project Gamma</figcaption></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\" data-field=\"src\"><img src=\"https://picsum.photos/seed/gallery4/800/600\" alt=\"Project Delta\" loading=\"lazy\" /><figcaption>Project Delta</figcaption></figure></li></ul>",
       "</section>"
     ]
   },
@@ -639,12 +639,12 @@
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"custom-html-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" class=\"reader-sr-only\">Custom HTML</h2>",
-      "<pre class=\"reader-code\"><code>&lt;div class=&quot;ch-card&quot;&gt;",
+      "<pre class=\"reader-code\" data-field=\"html\"><code>&lt;div class=&quot;ch-card&quot;&gt;",
       "  &lt;p class=&quot;ch-kicker&quot;&gt;Uptime this quarter&lt;/p&gt;",
       "  &lt;p class=&quot;ch-figure&quot;&gt;99.98%&lt;/p&gt;",
       "  &lt;p class=&quot;ch-note&quot;&gt;Two incidents, both under four minutes.&lt;/p&gt;",
       "&lt;/div&gt;</code></pre>",
-      "<pre class=\"reader-code\"><code>.ch-card {",
+      "<pre class=\"reader-code\" data-field=\"css\"><code>.ch-card {",
       "  height: 100%;",
       "  display: flex;",
       "  flex-direction: column;",
@@ -661,12 +661,12 @@
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"custom-html-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" class=\"reader-sr-only\">Custom HTML</h2>",
-      "<pre class=\"reader-code\"><code>&lt;div class=&quot;ch-card&quot;&gt;",
+      "<pre class=\"reader-code\" data-field=\"html\"><code>&lt;div class=&quot;ch-card&quot;&gt;",
       "  &lt;p class=&quot;ch-kicker&quot;&gt;Uptime this quarter&lt;/p&gt;",
       "  &lt;p class=&quot;ch-figure&quot;&gt;99.98%&lt;/p&gt;",
       "  &lt;p class=&quot;ch-note&quot;&gt;Two incidents, both under four minutes.&lt;/p&gt;",
       "&lt;/div&gt;</code></pre>",
-      "<pre class=\"reader-code\"><code>.ch-card {",
+      "<pre class=\"reader-code\" data-field=\"css\"><code>.ch-card {",
       "  height: 100%;",
       "  display: flex;",
       "  flex-direction: column;",
@@ -684,24 +684,24 @@
   "end-slide": {
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"end-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Thank you</h2>",
-      "<p>Questions are welcome — now, or in the hallway afterwards.</p>",
-      "<p>Robin Meyer</p>",
-      "<p>robin@example.com</p>",
-      "<p>example.com/talks</p>",
-      "<p>LinkedIn</p>",
-      "<p>linkedin.com/in/example</p>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Thank you</h2>",
+      "<div data-field=\"body\"><p>Questions are welcome — now, or in the hallway afterwards.</p></div>",
+      "<p data-field=\"contactName\">Robin Meyer</p>",
+      "<p data-field=\"contactEmail\">robin@example.com</p>",
+      "<p data-field=\"contactUrl\">example.com/talks</p>",
+      "<p data-field=\"social1Label\">LinkedIn</p>",
+      "<p data-field=\"social1Url\">linkedin.com/in/example</p>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"end-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\">Thank you</h2>",
-      "<p>Questions are welcome — now, or in the hallway afterwards.</p>",
-      "<p>Robin Meyer</p>",
-      "<p>robin@example.com</p>",
-      "<p>example.com/talks</p>",
-      "<p>LinkedIn</p>",
-      "<p>linkedin.com/in/example</p>",
+      "<h2 id=\"slide-1-title\" data-field=\"title\">Thank you</h2>",
+      "<div data-field=\"body\"><p>Questions are welcome — now, or in the hallway afterwards.</p></div>",
+      "<p data-field=\"contactName\">Robin Meyer</p>",
+      "<p data-field=\"contactEmail\">robin@example.com</p>",
+      "<p data-field=\"contactUrl\">example.com/talks</p>",
+      "<p data-field=\"social1Label\">LinkedIn</p>",
+      "<p data-field=\"social1Url\">linkedin.com/in/example</p>",
       "</section>"
     ]
   }

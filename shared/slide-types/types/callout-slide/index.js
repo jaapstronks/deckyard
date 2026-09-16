@@ -35,6 +35,9 @@ export default {
       label: 'Kind',
       type: 'enum',
       required: true,
+      // The kind IS the meaning (a warning is not a tip), so it travels as
+      // `data-variant` on the canvas root and the reader section (D130b).
+      semantic: true,
       // Spelled out rather than derived from CALLOUT_VARIANTS: an option is
       // copy only when it declares a label (shared/ui-i18n-keys.js), and these
       // five are words a reader picks from, not storage tokens. The pair is

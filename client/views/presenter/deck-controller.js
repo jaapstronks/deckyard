@@ -112,6 +112,7 @@ export function createPresenterDeckController({
       const section = h('section', {
         class: 'deck-slide',
         'data-slide-id': s.id,
+        'data-slide-type': s.type,
       });
 
       // Pass follow codes to the slides that render a join hint: the invite

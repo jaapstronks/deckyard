@@ -99,13 +99,16 @@ describe('the treatment is one modifier class on the root', () => {
 
   it('the class is all that changes — the markup is otherwise identical', () => {
     // The whole design claim of this field: same schema, same DOM, same morph
-    // roles, only a style hook. Strip the hook back out and the two renders
-    // have to be the same string.
+    // roles, only a style hook plus the `data-variant` the field publishes as
+    // `semantic: true` (D130b). Put both back to the default and the two
+    // renders have to be the same string.
     const baseline = render({ ...CONTENT, variant: 'versus' });
     for (const variant of COMPARISON_VARIANTS) {
       const html = render({ ...CONTENT, variant });
       assert.equal(
-        html.replace(` slide-comparison--${variant}`, ''),
+        html
+          .replace(` slide-comparison--${variant}`, '')
+          .replace(` data-variant="${variant}"`, ' data-variant="versus"'),
         baseline,
         `${variant} changed something other than the root class`,
       );

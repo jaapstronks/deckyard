@@ -124,7 +124,7 @@ describe('field-type projection', () => {
   it('renders string as <p>, markdown as prose, skips presentational fields', () => {
     const html = body(slide, def, { headingKey: 'title' });
     assert.ok(!html.includes('The Title'), 'heading field is not repeated');
-    assert.ok(html.includes('<p>A subtitle</p>'), html);
+    assert.ok(html.includes('<p data-field="subtitle">A subtitle</p>'), html);
     assert.ok(html.includes('<strong>bold</strong>'), html);
     assert.ok(html.includes('<h3'), 'markdown ## renders as h3');
     assert.ok(!html.includes('two-col'), 'enum skipped');
@@ -204,7 +204,7 @@ describe('images and figures', () => {
       'caption appears once (in figcaption)',
     );
     assert.ok(
-      !html.includes('<p>Chart alt</p>'),
+      !/<p[^>]*>Chart alt<\/p>/.test(html),
       'alt is not a standalone paragraph',
     );
     assert.ok(html.includes('alt="Chart alt"'), 'alt still used on the img');
@@ -253,9 +253,12 @@ describe('items and tables', () => {
       },
       def,
     );
-    assert.ok(html.includes('<ul class="reader-items">'), html);
-    assert.ok(html.includes('<h3>One</h3>'), html);
-    assert.ok(html.includes('<h3>Two</h3>'), html);
+    assert.ok(
+      html.includes('<ul class="reader-items" data-field="cards">'),
+      html,
+    );
+    assert.ok(html.includes('<h3 data-field="label">One</h3>'), html);
+    assert.ok(html.includes('<h3 data-field="label">Two</h3>'), html);
     assert.ok(html.includes('first') && html.includes('second'), html);
   });
 
@@ -312,10 +315,10 @@ describe('count-/order-aware collection projection', () => {
     };
     const val = { content: { items: [{ title: 'A' }, { title: 'B' }] } };
     const oh = body(val, ordered);
-    assert.ok(/<ol class="reader-items">/.test(oh), oh);
+    assert.ok(/<ol class="reader-items"[ >]/.test(oh), oh);
     assert.ok(!/<ul/.test(oh), oh);
     const uh = body(val, unordered);
-    assert.ok(/<ul class="reader-items">/.test(uh), uh);
+    assert.ok(/<ul class="reader-items"[ >]/.test(uh), uh);
     assert.ok(!/<ol/.test(uh), uh);
   });
 
@@ -413,7 +416,7 @@ describe('the legacy numbered slot families project exactly once', () => {
           `${type} (${label}) leaked a legacy key: ${html}`,
         );
         // One block per card, not loose paragraphs.
-        assert.match(html, /<ul class="reader-items">/);
+        assert.match(html, /<ul class="reader-items"[ >]/);
       }
       const [first, ...rest] = rendered.map(([, html]) => html);
       for (const html of rest) assert.equal(html, first);
@@ -489,18 +492,22 @@ describe('relation-aware collection projection (text-blocks arrows)', () => {
       },
       relDef(),
     );
-    assert.ok(/^<ol class="reader-items">/.test(html), html);
+    assert.ok(/^<ol class="reader-items" data-field="rows">/.test(html), html);
     assert.ok(
-      /class="reader-relation" data-relation="down">leads to</.test(html),
+      /class="reader-relation" data-field="arrow" data-relation="down">leads to</.test(
+        html,
+      ),
       html,
     );
     // nested blocks stay an unordered sub-list
     assert.ok(
-      /<ul class="reader-items"><li class="reader-item"><h3>A<\/h3>/.test(html),
+      /<ul class="reader-items" data-field="blocks"><li class="reader-item"><h3 data-field="title">A<\/h3>/.test(
+        html,
+      ),
       html,
     );
     // the row heading is a heading, the arrow enum never renders as content
-    assert.ok(/<h3>Phase 1<\/h3>/.test(html), html);
+    assert.ok(/<h3 data-field="title">Phase 1<\/h3>/.test(html), html);
     assert.ok(!/none/.test(html), html);
   });
 
@@ -519,7 +526,7 @@ describe('relation-aware collection projection (text-blocks arrows)', () => {
       },
       relDef(),
     );
-    assert.ok(/^<ul class="reader-items">/.test(html), html);
+    assert.ok(/^<ul class="reader-items" data-field="rows">/.test(html), html);
     assert.ok(!/reader-relation/.test(html), html);
   });
 });
@@ -560,7 +567,7 @@ describe('the structure contract: tabular projects to a real <table>', () => {
       tabular({ headerRowKey: 'headerRow' }),
       { headingKey: 'title' },
     );
-    assert.ok(/<table class="reader-table">/.test(html), html);
+    assert.ok(/<table class="reader-table"[ >]/.test(html), html);
     assert.ok(/<th scope="col">Year<\/th>/.test(html), html);
     assert.ok(/<tbody><tr><td>2024<\/td>/.test(html), html);
     assert.ok(!/reader-items/.test(html), html);
@@ -597,7 +604,7 @@ describe('the structure contract: tabular projects to a real <table>', () => {
       { headingKey: 'title' },
     );
     assert.ok(/<caption>In thousands<\/caption>/.test(html), html);
-    assert.ok(!/<p>In thousands<\/p>/.test(html), html);
+    assert.ok(!/<p[^>]*>In thousands<\/p>/.test(html), html);
   });
 
   it('renders a markdown cell inline, without a block <p> wrapper', () => {
@@ -670,8 +677,8 @@ describe('the structure contract: a dataset names the encoding it drops', () => 
       html,
     );
     // …and never twice: the encoding fields are consumed by the caption.
-    assert.ok(!/<p>Year<\/p>/.test(html), html);
-    assert.ok(!/<p>EUR<\/p>/.test(html), html);
+    assert.ok(!/<p[^>]*>Year<\/p>/.test(html), html);
+    assert.ok(!/<p[^>]*>EUR<\/p>/.test(html), html);
   });
 });
 
@@ -705,7 +712,7 @@ describe('fields the type declares inactive do not project', () => {
       def,
       { headingKey: 'title' },
     );
-    assert.ok(/<p>Revenue<\/p>/.test(html), html);
+    assert.ok(/<p data-field="seriesLabel">Revenue<\/p>/.test(html), html);
   });
 
   it('resolves an unset driver against the type defaults', () => {
@@ -736,7 +743,7 @@ describe('a field the type declares presentational is not document text', () => 
       { headingKey: 'title' },
     );
     assert.ok(!html.includes('366590'), html);
-    assert.ok(html.includes('<p>Real text</p>'), html);
+    assert.ok(html.includes('<p data-field="note">Real text</p>'), html);
   });
 
   it('skips a presentational item field, and never makes it the <h3>', () => {
@@ -759,7 +766,7 @@ describe('a field the type declares presentational is not document text', () => 
       },
       def,
     );
-    assert.ok(html.includes('<h3>Speed</h3>'), html);
+    assert.ok(html.includes('<h3 data-field="title">Speed</h3>'), html);
     assert.ok(!html.includes('rocket'), html);
   });
 
@@ -818,11 +825,11 @@ describe('an item folds its own image siblings into the <figure>', () => {
       },
       def,
     );
-    assert.ok(html.includes('<h3>Ada Lovelace</h3>'), html);
+    assert.ok(html.includes('<h3 data-field="name">Ada Lovelace</h3>'), html);
     assert.ok(html.includes('alt="Ada at her desk"'), html);
-    assert.ok(!html.includes('<p>Ada at her desk</p>'), html);
-    assert.ok(!html.includes('<h3>Ada at her desk</h3>'), html);
-    assert.ok(html.includes('<p>Engineer</p>'), html);
+    assert.ok(!/<p[^>]*>Ada at her desk<\/p>/.test(html), html);
+    assert.ok(!/<h3[^>]*>Ada at her desk<\/h3>/.test(html), html);
+    assert.ok(html.includes('<p data-field="byline">Engineer</p>'), html);
   });
 
   it('folds an item caption into <figcaption> instead of beside the picture', () => {
@@ -857,7 +864,7 @@ describe('an item folds its own image siblings into the <figure>', () => {
       html.includes('<figcaption>Sunrise over the bay</figcaption>'),
       html,
     );
-    assert.ok(!html.includes('<p>Sunrise over the bay</p>'), html);
+    assert.ok(!/<p[^>]*>Sunrise over the bay<\/p>/.test(html), html);
     assert.ok(!html.includes('<h3>'), html);
   });
 
@@ -901,12 +908,12 @@ describe('itemLabelField — an items field declares its own heading (D81)', () 
       },
       def,
     );
-    assert.ok(html.includes('<h3>Reach</h3>'), html);
-    assert.ok(!html.includes('<h3>1.2</h3>'), html);
+    assert.ok(html.includes('<h3 data-field="label">Reach</h3>'), html);
+    assert.ok(!/<h3[^>]*>1\.2<\/h3>/.test(html), html);
     // The fields the heading did not consume still project, in declared order.
-    assert.ok(html.includes('<p>1.2</p>'), html);
-    assert.ok(html.includes('<p>M</p>'), html);
-    assert.ok(!html.includes('<p>Reach</p>'), html);
+    assert.ok(html.includes('<p data-field="value">1.2</p>'), html);
+    assert.ok(html.includes('<p data-field="unit">M</p>'), html);
+    assert.ok(!/<p[^>]*>Reach<\/p>/.test(html), html);
   });
 
   it('falls back to the first readable string when nothing is declared', () => {
@@ -926,7 +933,7 @@ describe('itemLabelField — an items field declares its own heading (D81)', () 
       { content: { cards: [{ label: 'One', text: 'x' }] } },
       def,
     );
-    assert.ok(html.includes('<h3>One</h3>'), html);
+    assert.ok(html.includes('<h3 data-field="label">One</h3>'), html);
   });
 
   it('falls back when the declared field is empty on this item', () => {
@@ -947,7 +954,7 @@ describe('itemLabelField — an items field declares its own heading (D81)', () 
       { content: { metrics: [{ value: '42', label: '' }] } },
       def,
     );
-    assert.ok(html.includes('<h3>42</h3>'), html);
+    assert.ok(html.includes('<h3 data-field="value">42</h3>'), html);
   });
 
   it('kpi-metrics projects its label as the heading, not its value', () => {
@@ -959,9 +966,9 @@ describe('itemLabelField — an items field declares its own heading (D81)', () 
       headingKey,
       headingText,
     });
-    assert.ok(html.includes('<h3>Reach</h3>'), html);
-    assert.ok(!html.includes('<h3>1.2</h3>'), html);
-    assert.ok(html.includes('<p>1.2</p>'), html);
+    assert.ok(html.includes('<h3 data-field="label">Reach</h3>'), html);
+    assert.ok(!/<h3[^>]*>1\.2<\/h3>/.test(html), html);
+    assert.ok(html.includes('<p data-field="value">1.2</p>'), html);
   });
 });
 

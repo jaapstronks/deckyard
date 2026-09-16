@@ -18,7 +18,10 @@ document that stays readable with JavaScript — and author CSS — turned off.
 
 - `<html lang dir>`, a `<header>` with the deck `<h1>`, a `<nav aria-label="Slides">`
   table of contents, and a `<main>` with one
-  `<section data-slide-type="…" aria-labelledby="slide-N-title">` per slide,
+  `<section data-slide-type="…" aria-labelledby="slide-N-title">` per slide
+  (the full type name, the same marker every HTML surface puts on its slide
+  wrapper: `section.deck-slide` in presenter, export and embed, and
+  `section.print-slide`),
   each led by an `<h2>`. The section is emitted by `renderSlideSectionHtml` in
   the projection, not by the document wrapper, so everything the reader says
   about a slide is in one place and one fixture.
@@ -52,6 +55,16 @@ document that stays readable with JavaScript — and author CSS — turned off.
     printed `<p>3045cc09-605c-…</p>`; an id is never text (D82).
   - Presentational field types (`enum`, `color`, `number`, `boolean`) and the
     global background/logo fields carry no document text and are omitted.
+  - Every block the projection emits for a field carries `data-field="<key>"`
+    (D132): the `<p>`, `<h3>`, `<figure>`, `<table>`, list, gallery and media
+    stand-in, and the visible `<h2>` for its heading field. A `markdown` field
+    may be several blocks, so it is one `<div data-field>` around them. A
+    hidden heading is a name rather than a field and carries none. Classes stay
+    style hooks; `data-field` is the addressable name.
+  - An `enum` declaring `semantic: true` is still not text, but its value
+    travels as `data-<key>` on the `<section>` (or on the item's `<li>` for an
+    item field): `data-variant` on callout, list and comparison slides,
+    `data-tone` on a matrix cell (D130b).
 - The slide heading is a **declaration** (D129). A type marks its title with
   `role: 'heading'` on exactly one field (the field walk refuses a second).
   When the slide fills that field, it is the visible `<h2>` and is not repeated

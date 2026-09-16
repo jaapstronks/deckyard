@@ -20,6 +20,7 @@ import { validateFieldValue } from './field-types.js';
 import { CURRENT_SCHEMA_VERSION } from './schema-version.js';
 import { renderUnresolvedSlideHtml } from './unresolved.js';
 import { resolveThemeLogo } from '../theme-logo.js';
+import { semanticEnumAttrs } from './semantic-enums.js';
 import {
   DEFAULT_DECK_LANG,
   TRANSLATION_LANGS,
@@ -312,6 +313,21 @@ function injectVariantContrastClass(html, content, ctx) {
   );
 }
 
+// Publish every top-level `semantic: true` enum as a `data-<key>` attribute on
+// the root .slide element (D130b), so a callout's variant or a list's style is
+// readable from the canvas markup the same way the reader's <section> says it.
+// Declaration-driven, so a type (core or fork) gets it by declaring the field,
+// not by repeating the attribute in its own renderer. Item enums live on
+// per-type item markup and are the type's to emit (see semantic-enums.js).
+function injectSemanticEnumAttrs(html, content, def) {
+  const attrs = semanticEnumAttrs(def?.fields, content, def?.defaults);
+  if (!attrs) return html;
+  return html.replace(
+    /<div\b([^>]*?)\bclass="(slide(?:\s[^"]*)?)"([^>]*)>/,
+    (_m, pre, classes, post) => `<div${pre}class="${classes}"${post}${attrs}>`,
+  );
+}
+
 // Inject an optional per-slide theme logo into a corner of the slide. The logo
 // comes from the active theme (ctx.theme.assets), matching the logo shown
 // elsewhere in the theme, and is the variant that will be visible on this
@@ -447,6 +463,7 @@ export function renderSlideHtml(slide, ctx = {}) {
   // slide CSS declares `defaultAlign` at type level, and that decides which
   // stored value counts as an override worth emitting a class for.
   out = injectTextStyles(out, content, def);
+  out = injectSemanticEnumAttrs(out, content, def);
   out = injectSlideBackground(out, content);
   // After the image pass: the image is the ground when there is one, so it
   // gets first claim on the slide's contrast class.
