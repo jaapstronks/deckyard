@@ -15,7 +15,8 @@
  *     reads the active sub-tab).
  *
  * The `.deck` sub-tab is its own module (import-deck.js): it owns an inline
- * refusal and the install choice, which the other three do not have.
+ * refusal and the install choice, which the other three do not have. What was
+ * left out of an import shows through the same warnings block as Markdown.
  */
 
 import { t } from '../../../../lib/ui-i18n.js';
@@ -239,7 +240,10 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
     const warnCtx = { ...commonOpts, btnAction };
     switch (importSubtab) {
       case 'deck':
-        await deckImport.run(commonOpts);
+        await deckImport.run({
+          ...commonOpts,
+          showWarnings: makeWarningShower(panelDeck, warnCtx),
+        });
         break;
       case 'json':
         await handleImportJson({

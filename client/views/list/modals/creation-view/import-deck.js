@@ -5,10 +5,14 @@
  * The bundle is posted as raw bytes to `POST /api/presentations/import/deck`
  * (docs/reference/deck-bundle-format.md § Import). What the import did with the
  * carried theme and slide types comes back as `bundledTheme` /
- * `bundledSlideTypes`; that outcome is not on screen once the editor opens, so
- * it is one passing message (`toast`). A bundle the server refuses is a state
- * of this form: an inline error at the file input, cleared at the next attempt
- * (docs/reference/feedback-surfaces.md).
+ * `bundledSlideTypes`. When everything arrived, the editor opens and the
+ * outcome is one passing message (`toast.success`), since nothing is left to
+ * do. When something was left out (not installed, a font or an asset missing),
+ * the dialog stays and lists it above an "Open presentation" button, the same
+ * form the Markdown import uses for its warnings: a message with a next step
+ * does not expire (docs/reference/feedback-surfaces.md; D144). A bundle the
+ * server refuses is a state of this form: an inline error at the file input,
+ * cleared at the next attempt.
  *
  * Installing is one choice, not two (D91: one rule for carried definitions),
  * and it is offered only to a user who may manage them — the same `canManage`
@@ -41,8 +45,9 @@ function labelsWith(items, status) {
 }
 
 /**
- * The passing message for what a `.deck` import did with what it carried, or
- * null when it carried nothing to report (the deck on screen says it all).
+ * What a `.deck` import did with what it carried, as sentences, or null when
+ * it carried nothing to report (the deck on screen says it all). `type` is
+ * 'success' when everything arrived and 'warning' when something was left out.
  *
  * @param {Object} created - The import response.
  * @param {{slug: string, label?: string, status: string, reason?: string,
@@ -50,7 +55,7 @@ function labelsWith(items, status) {
  * @param {Array<{slug: string, label?: string, status: string,
  *   reason?: string}>} [created.bundledSlideTypes]
  * @param {Array<{ref: string}>} [created.failedAssets]
- * @returns {{type: 'success'|'warning', message: string} | null}
+ * @returns {{type: 'success'|'warning', sentences: string[]} | null}
  */
 export function deckImportOutcome(created) {
   const theme = created?.bundledTheme || null;
@@ -165,7 +170,7 @@ export function deckImportOutcome(created) {
   }
 
   if (!sentences.length) return null;
-  return { type: warn ? 'warning' : 'success', message: sentences.join(' ') };
+  return { type: warn ? 'warning' : 'success', sentences };
 }
 
 /**
@@ -177,7 +182,9 @@ export function deckImportOutcome(created) {
  * @returns {{
  *   el: HTMLElement,
  *   run: (commonOpts: {api: Function, close: Function,
- *     setBusy: Function, setStatus: Function}) => Promise<void>
+ *     setBusy: Function, setStatus: Function,
+ *     showWarnings: (arg: {warnings: string[], navUrl: string}) => void
+ *   }) => Promise<void>
  * }}
  */
 export function createDeckImportPanel({ canInstall }) {
@@ -221,7 +228,7 @@ export function createDeckImportPanel({ canInstall }) {
     });
     installBox = h('input', { type: 'checkbox', 'aria-describedby': hint.id });
     el.append(
-      h('label', { class: 'row is-center gap-2' }, [
+      h('label', { class: 'row gap-2' }, [
         installBox,
         h('span', {
           text: t(
@@ -235,10 +242,11 @@ export function createDeckImportPanel({ canInstall }) {
   }
 
   /**
-   * Post the selected bundle and open the new deck.
+   * Post the selected bundle and open the new deck, or list what was left out
+   * first.
    * @param {Object} commonOpts
    */
-  async function run({ api, close, setBusy, setStatus }) {
+  async function run({ api, close, setBusy, setStatus, showWarnings }) {
     error.clear();
     if (!selectedFile) {
       error.show(
@@ -257,9 +265,14 @@ export function createDeckImportPanel({ canInstall }) {
         body: selectedFile,
       });
       const outcome = deckImportOutcome(created);
+      const navUrl = `/app/${created.id}?lang=${encodeURIComponent(created.lang)}`;
+      if (outcome?.type === 'warning') {
+        showWarnings({ warnings: outcome.sentences, navUrl });
+        return;
+      }
       close();
-      nav(`/app/${created.id}?lang=${encodeURIComponent(created.lang)}`);
-      if (outcome) toast[outcome.type](outcome.message);
+      nav(navUrl);
+      if (outcome) toast.success(outcome.sentences.join(' '));
     } catch (err) {
       setStatus('');
       setBusy(false);

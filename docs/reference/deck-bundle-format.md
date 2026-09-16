@@ -224,11 +224,15 @@ new-presentation dialog (`client/views/list/modals/creation-view/import-deck.js`
 and the bundle comes out of the editor's Export menu (**Data & bundle → .deck**).
 A user who may manage themes and slide types sees one checkbox, "Install the
 theme and slide types it carries", which sends `install=theme,slideTypes`: one
-choice, because D91 is one rule for both. It is unticked by default. After the
-import the editor of the new deck opens, and `bundledTheme` /
-`bundledSlideTypes` / `failedAssets` become one passing message in plain
-language; a refused bundle (400) stays in the dialog as an inline error at the
-file input with the server's sentence.
+choice, because D91 is one rule for both. It is unticked by default. When
+everything the bundle carried arrived (`installed` or `existing`, no missing
+font, no failed asset), the editor of the new deck opens and `bundledTheme` /
+`bundledSlideTypes` become one passing message in plain language. When
+something was left out, the dialog stays and lists it above an "Open
+presentation" button, the same block the Markdown import uses for its warnings
+(D144: a message with a next step does not expire). A refused bundle (400)
+stays in the dialog as an inline error at the file input with the server's
+sentence.
 
 The flow:
 

@@ -1,7 +1,8 @@
 /**
- * The `.deck` import in the creation view (B253): what the passing message says
- * about the carried theme and slide types, the install choice, and the inline
- * refusal of a bundle.
+ * The `.deck` import in the creation view (B253): what the outcome says about
+ * the carried theme and slide types and where it goes (a passing message when
+ * everything arrived, the dialog's warnings block when something was left
+ * out; D144), the install choice, and the inline refusal of a bundle.
  *
  * The route and its statuses are pinned by deck-bundle-theme.test.js and
  * deck-bundle-slide-types.test.js; this pins how the client reads them.
@@ -40,9 +41,11 @@ test('installed and existing definitions are a success, named by label', () => {
     ],
   });
   assert.equal(outcome.type, 'success');
-  assert.match(outcome.message, /Theme “Brand” installed\./);
-  assert.match(outcome.message, /Slide types installed: “KPI”\./);
-  assert.match(outcome.message, /already in your workspace: “Quote X”\./);
+  assert.deepEqual(outcome.sentences, [
+    'Theme “Brand” installed.',
+    'Slide types installed: “KPI”.',
+    'Slide types already in your workspace: “Quote X”.',
+  ]);
 });
 
 test('not installed is a warning that says who can install it', () => {
@@ -55,8 +58,8 @@ test('not installed is a warning that says who can install it', () => {
     },
   });
   assert.equal(notRequested.type, 'warning');
-  assert.match(notRequested.message, /uses the default theme/);
-  assert.match(notRequested.message, /install option ticked/);
+  assert.match(notRequested.sentences[0], /uses the default theme/);
+  assert.match(notRequested.sentences[1], /install option ticked/);
 
   const notPermitted = deckImportOutcome({
     bundledSlideTypes: [
@@ -68,8 +71,8 @@ test('not installed is a warning that says who can install it', () => {
     ],
   });
   assert.equal(notPermitted.type, 'warning');
-  assert.match(notPermitted.message, /placeholders: “kpi”\./);
-  assert.match(notPermitted.message, /A designer in your workspace/);
+  assert.match(notPermitted.sentences[0], /placeholders: “kpi”\./);
+  assert.match(notPermitted.sentences[1], /A designer in your workspace/);
 });
 
 test('missing fonts and failed assets are reported', () => {
@@ -82,15 +85,15 @@ test('missing fonts and failed assets are reported', () => {
     failedAssets: [{ ref: 'assets/a.bin' }],
   });
   assert.equal(outcome.type, 'warning');
-  assert.match(outcome.message, /default font is used: Brand Sans\./);
-  assert.match(outcome.message, /1 file\(s\) could not be imported\./);
+  assert.match(outcome.sentences[1], /default font is used: Brand Sans\./);
+  assert.match(outcome.sentences[2], /1 file\(s\) could not be imported\./);
 });
 
 /** Mount a panel with a fake API and the host callbacks it expects. */
 function mount({ canInstall, api }) {
   const panel = createDeckImportPanel({ canInstall });
   document.body.replaceChildren(panel.el);
-  const calls = { close: 0, busy: [] };
+  const calls = { close: 0, busy: [], warnings: [] };
   const opts = {
     api,
     close: () => {
@@ -98,6 +101,7 @@ function mount({ canInstall, api }) {
     },
     setBusy: (v) => calls.busy.push(v),
     setStatus: () => {},
+    showWarnings: (arg) => calls.warnings.push(arg),
   };
   const fileInput = panel.el.querySelector('input[type="file"]');
   const pick = () => {
@@ -122,7 +126,7 @@ test('the install choice is offered only to a user who may manage', () => {
 
 test('ticking install asks for both theme and slide types', async () => {
   const paths = [];
-  const { panel, opts, pick } = mount({
+  const { panel, opts, calls, pick } = mount({
     canInstall: true,
     api: async (path) => {
       paths.push(path);
@@ -135,6 +139,33 @@ test('ticking install asks for both theme and slide types', async () => {
   assert.deepEqual(paths, [
     '/api/presentations/import/deck?install=theme,slideTypes',
   ]);
+  assert.equal(calls.close, 1, 'nothing left out: the editor opens');
+  assert.deepEqual(calls.warnings, []);
+});
+
+test('what was left out stays in the dialog with a next step, not a toast', async () => {
+  const { panel, opts, calls, pick } = mount({
+    canInstall: false,
+    api: async () => ({
+      id: 'p1',
+      lang: 'nl',
+      bundledTheme: {
+        slug: 'brand',
+        label: 'Brand',
+        status: 'not-installed',
+        reason: 'not-permitted',
+      },
+    }),
+  });
+  pick();
+  await panel.run(opts);
+  assert.equal(calls.close, 0, 'the dialog stays open');
+  assert.equal(calls.warnings.length, 1);
+  const [{ warnings, navUrl }] = calls.warnings;
+  assert.equal(navUrl, '/app/p1?lang=nl');
+  assert.equal(warnings.length, 2);
+  assert.match(warnings[0], /Theme “Brand” is in the file but not installed/);
+  assert.match(warnings[1], /A designer in your workspace/);
 });
 
 test('a refused bundle is an inline error at the file input, cleared on retry', async () => {
