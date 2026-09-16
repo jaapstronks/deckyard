@@ -58,6 +58,7 @@ import {
 import { slideStructure } from './structure.js';
 import { isFieldVisible } from './field-visibility.js';
 import { semanticEnumAttrs } from './semantic-enums.js';
+import { resolveItemDefaults } from './item-defaults.js';
 import {
   renderUnresolvedSlideSemanticHtml,
   unresolvedSlideHeading,
@@ -444,8 +445,10 @@ function renderItemList(blocks, ordered = false, attrs = '') {
  * @param {object} item - one entry of the field's array
  * @param {Array<object>} itemFields - the field's `itemFields[]`
  * @param {string} [itemLabelField] - declared heading sub-field, if any
+ * @param {object} [itemDefaults] - the field's `itemDefaults` skeleton, the
+ *   declared default an item's own `semantic` enum resolves through
  */
-function renderItemBlock(item, itemFields, itemLabelField) {
+function renderItemBlock(item, itemFields, itemLabelField, itemDefaults) {
   if (!item || typeof item !== 'object' || !Array.isArray(itemFields))
     return '';
   const consumed = imageConsumedKeys(itemFields, item);
@@ -476,8 +479,11 @@ function renderItemBlock(item, itemFields, itemLabelField) {
     parts.push(renderFieldValue(f, item, headingText));
   }
   const inner = parts.filter(Boolean).join('\n');
-  // An item's own `semantic` enums (a matrix cell's tone) mark its <li>.
-  const attrs = semanticEnumAttrs(itemFields, item);
+  // An item's own `semantic` enums (a matrix cell's tone) mark its <li>,
+  // resolved through the items field's `itemDefaults` the way a top-level
+  // enum resolves through the type's `defaults`: one rule, and the canvas
+  // (`.matrix-cell[data-tone]`) says the same for a cell without a tone.
+  const attrs = semanticEnumAttrs(itemFields, item, itemDefaults);
   return inner ? `<li class="reader-item"${attrs}>${inner}</li>` : '';
 }
 
@@ -612,6 +618,7 @@ function renderFieldValue(field, content, headingText) {
             item,
             field.itemFields,
             field.itemLabelField,
+            resolveItemDefaults(field),
           );
           if (!li) return '';
           const rel = relationOf(item);

@@ -56,12 +56,14 @@ export function isSemanticEnum(field) {
  *
  * A stored value outside the options is not a meaning the type knows, so it is
  * not written into the HTML; the canvas renders such a value as the default,
- * and so does this. An item field has no declared default, so an unset or
- * unknown item value carries no attribute.
+ * and so does this. The default is the declared one at that level: the type's
+ * `defaults` for a top-level field, the items field's `itemDefaults` skeleton
+ * for an item field. Without one, an unset or unknown value carries nothing.
  *
  * @param {object} field - the enum field
  * @param {object} obj - the object the field lives in (content or one item)
- * @param {object} [defaults] - the type's `defaults`, for a top-level field
+ * @param {object} [defaults] - the declared defaults at that level (`defaults`
+ *   or `itemDefaults`)
  * @returns {string} the value, or `''`
  */
 export function semanticEnumValue(field, obj, defaults) {
@@ -81,7 +83,8 @@ export function semanticEnumValue(field, obj, defaults) {
  *
  * @param {Array<object>} fields - `fields[]` or `itemFields[]`
  * @param {object} obj - the object those fields describe
- * @param {object} [defaults] - the type's `defaults` (top level only)
+ * @param {object} [defaults] - the declared defaults at that level: the type's
+ *   `defaults`, or the items field's `itemDefaults`
  * @returns {string}
  */
 export function semanticEnumAttrs(fields, obj, defaults) {

@@ -518,9 +518,10 @@ block the field belongs to:
   markup, so there the type emits the attribute on its own item element
   (`matrix-slide`'s `.matrix-cell`).
 
-The value is the stored one when it is one of the options, else the type's
-default when that is, else absent: a value outside the options is not a meaning
-the type knows. `semantic` is a flag on an enum only; anything else is a boot
+The value is the stored one when it is one of the options, else the declared
+default when that is (the type's `defaults` for a top-level field, the items
+field's `itemDefaults` for an item field), else absent: a value outside the
+options is not a meaning the type knows. `semantic` is a flag on an enum only; anything else is a boot
 warning. A database slide type cannot declare it yet (the builder has no
 control, so a stored row refuses it as `unknown_property`).
 

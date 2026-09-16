@@ -7,8 +7,9 @@
  *  2. the canvas: on the root `.slide` element, injected from the declaration
  *     by `renderSlideHtml`, so no type repeats it in its own renderer;
  *  3. one resolution for both: a stored value outside the options is not a
- *     meaning, so the type's default stands in (as the canvas renders it), and
- *     an item without a value carries nothing;
+ *     meaning, so the declared default stands in (as the canvas renders it):
+ *     the type's `defaults` for a top-level field, the items field's
+ *     `itemDefaults` for an item field;
  *  4. the attribute name is derived: camelCase keys become kebab-case, since
  *     HTML lower-cases attribute names;
  *  5. which core fields declare it: the four D130 names, and no enum it did
@@ -70,9 +71,22 @@ test('the reader marks each item <li> with its own semantic enum', () => {
     html,
     /<li class="reader-item" data-tone="positive"><h3 data-field="title">A</,
   );
-  // No declared default per item: an unknown or unset tone carries nothing.
-  assert.match(html, /<li class="reader-item"><h3 data-field="title">B</);
-  assert.match(html, /<li class="reader-item"><h3 data-field="title">C</);
+  // An unknown or unset tone resolves through the items field's
+  // `itemDefaults` (`tone: 'default'`), which is also what the canvas cell
+  // says for it: the two surfaces never disagree on one stored state.
+  assert.match(
+    html,
+    /<li class="reader-item" data-tone="default"><h3 data-field="title">B</,
+  );
+  assert.match(
+    html,
+    /<li class="reader-item" data-tone="default"><h3 data-field="title">C</,
+  );
+  const canvas = renderSlideHtml({
+    type: 'matrix-slide',
+    content: { title: 'M', cells: [{ title: 'C', body: 'c' }] },
+  });
+  assert.match(canvas, /class="matrix-cell"[^>]* data-tone="default"/);
 });
 
 test('the canvas root carries the same attribute, from the declaration', () => {
