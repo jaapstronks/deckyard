@@ -1,7 +1,16 @@
 import { cryptoUuid } from './helpers.js';
 import { newSlide } from './presentation.js';
 import { allowedEnumValues } from './field-types.js';
-import { isTextField } from './text-fields.js';
+import {
+  applyContentTranslation,
+  contentTranslation,
+  isTextField,
+  textFieldSpec,
+  textFieldSpecForType,
+} from './text-fields.js';
+import { DEFAULT_DECK_LANG, normalizeLang } from '../i18n-utils.js';
+import { existingVersionLangs, pickVersion } from '../i18n-progress.js';
+import { VISIBILITY_PRESETS } from '../slide-visibility.js';
 import {
   canonicalSlideType,
   getSlideType,
@@ -17,7 +26,8 @@ import { migratePresentation } from './schema-version.js';
 //
 // This is intentionally readable and stable:
 // - No UUIDs/timestamps required
-// - `slides` is an array of `{ type, content }`
+// - `slides` is an array of `{ type, content }`, plus the optional slide keys
+//   `translations`, `notes`, `duration` and `visibility` (see Languages below)
 //
 // Example:
 // {
@@ -44,18 +54,197 @@ import { migratePresentation } from './schema-version.js';
 // which historical values a reader still accepts.
 // --------
 
+// Languages (D89). A stored deck keeps a full copy of its slides per language
+// (`i18n.versions[lang]`); the portable deck carries structure once. `content`,
+// `title` and `notes` are the dominant language, named by the envelope `lang`;
+// every other version travels as `translations.<lang>` — on the envelope for
+// the title, on each slide for its per-language keys plus `notes`. Which keys
+// are per-language is the text-field predicate's answer, applied by the same
+// pair of walks in both directions (`contentTranslation` on export,
+// `applyContentTranslation` on import). Everything is optional: a reader that
+// does not know `translations` still gets a complete deck in one language.
+//
+// `notes` is a slide key, not a content key, so inside a slide translation it
+// always means the notes; no type may declare a content field named `notes`
+// (pinned by tests/deck-translations.test.js).
+// --------
+
+const VISIBILITY_FLAGS = Object.keys(VISIBILITY_PRESETS.visible);
+const MIN_DURATION = 1;
+const MAX_DURATION = 300;
+
+function isPlainObject(v) {
+  return v !== null && typeof v === 'object' && !Array.isArray(v);
+}
+
+function portableDuration(value) {
+  return typeof value === 'number' &&
+    value >= MIN_DURATION &&
+    value <= MAX_DURATION
+    ? Math.round(value)
+    : null;
+}
+
+/**
+ * The visibility flags a slide sets, or `null` when it sets none. Only the four
+ * known flags, and only when `true`: an absent flag already means "visible".
+ * @param {*} value
+ * @returns {Object|null}
+ */
+function portableVisibility(value) {
+  if (!isPlainObject(value)) return null;
+  const out = {};
+  for (const key of VISIBILITY_FLAGS) if (value[key] === true) out[key] = true;
+  return Object.keys(out).length ? out : null;
+}
+
+/**
+ * The slide in another language version that answers to `slide`: same id, else
+ * same position — the match every language walk makes.
+ */
+function matchingSlide(slide, index, versionSlides, byId) {
+  return (
+    (typeof slide?.id === 'string' && slide.id && byId.get(slide.id)) ||
+    versionSlides[index] ||
+    null
+  );
+}
+
+/**
+ * Project a stored presentation onto the portable `deckyard.deck` envelope.
+ *
+ * Every language version travels: `content` holds the dominant language and
+ * the others become `translations` (D89). The input is the stored deck, not a
+ * projection onto one language — projecting first is what used to drop them.
+ *
+ * @param {Object} pres - a stored presentation (or presentation parts)
+ * @returns {Object} the portable deck
+ */
 export function presentationToDeck(pres) {
-  const slides = (pres?.slides || []).map((s) => ({
-    type: canonicalSlideType(s?.type),
-    content: s?.content || {},
-  }));
-  return {
+  const lang =
+    normalizeLang(pres?.i18n?.dominant) || normalizeLang(pres?.lang) || null;
+  const base = lang
+    ? pickVersion(pres, lang)
+    : {
+        title: typeof pres?.title === 'string' ? pres.title : '',
+        slides: Array.isArray(pres?.slides) ? pres.slides : [],
+      };
+  const others = lang
+    ? existingVersionLangs(pres)
+        .filter((l) => l !== lang)
+        .map((l) => {
+          const version = pickVersion(pres, l);
+          const byId = new Map(
+            version.slides
+              .filter((s) => typeof s?.id === 'string' && s.id)
+              .map((s) => [s.id, s]),
+          );
+          return { lang: l, version, byId };
+        })
+    : [];
+
+  const slides = base.slides.map((s, index) => {
+    const entry = {
+      type: canonicalSlideType(s?.type),
+      content: s?.content || {},
+    };
+    const spec = textFieldSpecForType(s?.type);
+    const translations = {};
+    for (const { lang: l, version, byId } of others) {
+      const match = matchingSlide(s, index, version.slides, byId);
+      if (!match) continue;
+      const tr = contentTranslation(spec, s?.content, match.content);
+      if (typeof match.notes === 'string' && match.notes)
+        tr.notes = match.notes;
+      if (Object.keys(tr).length) translations[l] = tr;
+    }
+    if (Object.keys(translations).length) entry.translations = translations;
+    if (typeof s?.notes === 'string' && s.notes) entry.notes = s.notes;
+    const duration = portableDuration(s?.duration);
+    if (duration !== null) entry.duration = duration;
+    const visibility = portableVisibility(s?.visibility);
+    if (visibility) entry.visibility = visibility;
+    return entry;
+  });
+
+  const deck = {
     format: DECK_FORMAT_ID,
     version: 1,
-    title: pres?.title || 'Untitled presentation',
-    theme: pres?.theme || 'default',
-    slides,
+    title: base.title || pres?.title || 'Untitled presentation',
   };
+  if (lang) deck.lang = lang;
+  const titles = {};
+  for (const { lang: l, version } of others) {
+    if (version.title) titles[l] = { title: version.title };
+  }
+  if (Object.keys(titles).length) deck.translations = titles;
+  deck.theme = pres?.theme || 'default';
+  deck.slides = slides;
+  return deck;
+}
+
+/**
+ * The deck language an import writes, and whether the deck's own language
+ * claims can be honoured.
+ *
+ * The envelope `lang` is the language of `content`; a request that names a
+ * different one contradicts the deck, and a deck in a language this install
+ * does not author in cannot be stored as if it were another. Both are refused
+ * rather than repaired (beta doctrine: refuse over silently repair). A deck
+ * without `lang` takes the request's language, then the default.
+ *
+ * @param {Object|Array} input - a deck object, or a bare slides array
+ * @param {string|null} [requestLang] - the language the request names
+ * @returns {{ok: true, lang: string} | {ok: false, message: string}}
+ */
+export function deckImportLang(input, requestLang = null) {
+  const deck = isPlainObject(input) ? input : {};
+  const requested = normalizeLang(requestLang);
+  let lang = requested || DEFAULT_DECK_LANG;
+  if (deck.lang != null) {
+    const own = normalizeLang(deck.lang);
+    if (!own) {
+      return {
+        ok: false,
+        message: `Deck language ${JSON.stringify(deck.lang)} is not supported`,
+      };
+    }
+    if (requested && requested !== own) {
+      return {
+        ok: false,
+        message: `Deck language "${own}" contradicts the requested language "${requested}"`,
+      };
+    }
+    lang = own;
+  }
+  for (const tag of deckTranslationTags(deck)) {
+    const l = normalizeLang(tag);
+    if (!l) {
+      return {
+        ok: false,
+        message: `Translation language ${JSON.stringify(tag)} is not supported`,
+      };
+    }
+    if (l === lang) {
+      return {
+        ok: false,
+        message: `Translation "${tag}" repeats the deck language "${lang}"`,
+      };
+    }
+  }
+  return { ok: true, lang };
+}
+
+/** Every language tag a deck names under `translations`, envelope or slide. */
+function deckTranslationTags(deck) {
+  const tags = new Set();
+  const collect = (tr) => {
+    if (isPlainObject(tr)) for (const tag of Object.keys(tr)) tags.add(tag);
+  };
+  collect(deck?.translations);
+  for (const s of Array.isArray(deck?.slides) ? deck.slides : [])
+    collect(s?.translations);
+  return [...tags];
 }
 
 /**
@@ -93,6 +282,11 @@ export function deckThemeId(input) {
  *   and a theme's slide-background variants are on offer for `background`.
  * @param {string|null} [opts.lang] - the deck's language; a type declaring
  *   `defaultsByLang` composes from that variant, exactly as an editor insert.
+ *   It is also the base language `translations` are read against; without it
+ *   the deck's own `lang` is.
+ * @returns {{title: string, theme: string, slides: Object[], translations: Record<string, {title: string, slides: Object[]}>}}
+ *   `translations` holds one stored language version per translated language
+ *   (D89); `{}` for a deck in one language.
  */
 export function deckToPresentationParts(
   input,
@@ -121,7 +315,63 @@ export function deckToPresentationParts(
   const slides = slidesRaw.map((raw) =>
     normalizeDeckSlide(raw, { theme: themeConfig, lang }),
   );
-  return { title, theme, slides };
+  const baseLang = normalizeLang(lang) || normalizeLang(deck.lang) || null;
+  const translations = baseLang
+    ? deckTranslations(deck, slidesRaw, slides, baseLang)
+    : {};
+  return { title, theme, slides, translations };
+}
+
+/**
+ * The stored language versions a deck's `translations` describe, one per
+ * language: `{ [lang]: { title, slides } }`, the slides carrying the same ids,
+ * types and machine values as the base slides and the translation's text where
+ * it has some (`''` where it has none).
+ *
+ * A tag that does not normalize to a deck language, or that names the base
+ * language, is skipped here; the import routes refuse such a deck before it
+ * gets this far (`deckImportLang`). A slide that imported as the unknown-type
+ * placeholder has no type to read its translation against, so every version
+ * keeps the base placeholder.
+ */
+function deckTranslations(deck, slidesRaw, slides, baseLang) {
+  const langs = new Map(); // normalized lang -> raw tags that spell it
+  for (const tag of deckTranslationTags(deck)) {
+    const l = normalizeLang(tag);
+    if (!l || l === baseLang) continue;
+    if (!langs.has(l)) langs.set(l, []);
+    langs.get(l).push(tag);
+  }
+  const pick = (tr, tags) => {
+    if (!isPlainObject(tr)) return null;
+    for (const tag of tags) if (isPlainObject(tr[tag])) return tr[tag];
+    return null;
+  };
+
+  const out = {};
+  for (const [l, tags] of langs) {
+    const titleTr = pick(deck.translations, tags);
+    out[l] = {
+      title: typeof titleTr?.title === 'string' ? titleTr.title : '',
+      slides: slides.map((slide, i) => {
+        const raw = slidesRaw[i];
+        const def = getSlideType(typeof raw?.type === 'string' ? raw.type : '');
+        const { notes, ...contentTr } = pick(raw?.translations, tags) || {};
+        return {
+          ...slide,
+          content: def
+            ? applyContentTranslation(
+                textFieldSpec(def.fields),
+                slide.content,
+                contentTr,
+              )
+            : structuredClone(slide.content),
+          notes: typeof notes === 'string' ? notes : '',
+        };
+      }),
+    };
+  }
+  return out;
 }
 
 function normalizeDeckSlide(raw, { theme = null, lang = null } = {}) {
@@ -145,11 +395,14 @@ function normalizeDeckSlide(raw, { theme = null, lang = null } = {}) {
       type: localName,
       content: raw?.content,
     });
-    return {
-      id: cryptoUuid(),
-      type: 'content-slide',
-      content: { title, body, background: 'mist' },
-    };
+    return withSlideKeys(
+      {
+        id: cryptoUuid(),
+        type: 'content-slide',
+        content: { title, body, background: 'mist' },
+      },
+      raw,
+    );
   }
 
   // Import cleans; it does not compose. What this builds is a *patch* over the
@@ -237,5 +490,24 @@ function normalizeDeckSlide(raw, { theme = null, lang = null } = {}) {
     slideTypes: { [localName]: def },
   });
 
-  return { id: slide.id, type: localName, content: slide.content };
+  return withSlideKeys(
+    { id: slide.id, type: localName, content: slide.content },
+    raw,
+  );
+}
+
+/**
+ * The envelope-level slide keys an imported slide keeps: `notes`, `duration`
+ * and `visibility`, cleaned the way export writes them. Their meaning does not
+ * depend on the type, so a placeholder keeps them too.
+ */
+function withSlideKeys(slide, raw) {
+  const out = {
+    ...slide,
+    notes: typeof raw?.notes === 'string' ? raw.notes : '',
+    visibility: portableVisibility(raw?.visibility) || {},
+  };
+  const duration = portableDuration(raw?.duration);
+  if (duration !== null) out.duration = duration;
+  return out;
 }

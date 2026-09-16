@@ -136,6 +136,23 @@ export function validate(schema, value, path, errors, root = schema) {
       if (props[k]) validate(props[k], v, `${path}.${k}`, errors, root);
     }
   }
+  // Maps keyed by something other than a fixed name (`translations.<lang>`):
+  // the key is checked against `propertyNames`, every value not named under
+  // `properties` against a schema-valued `additionalProperties`.
+  if (typeOk(value, 'object')) {
+    const props = schema.properties || {};
+    const extra =
+      schema.additionalProperties &&
+      typeof schema.additionalProperties === 'object'
+        ? schema.additionalProperties
+        : null;
+    for (const [k, v] of Object.entries(value)) {
+      if (schema.propertyNames)
+        validate(schema.propertyNames, k, `${path}[${k}]`, errors, root);
+      if (extra && !props[k] && v != null)
+        validate(extra, v, `${path}.${k}`, errors, root);
+    }
+  }
   if (
     Array.isArray(value) &&
     (schema.items || schema.minItems != null || schema.maxItems != null)

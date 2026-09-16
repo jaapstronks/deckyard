@@ -28,13 +28,12 @@ import {
 import { readRequestBody, serveJson, badRequest } from '../../../utils/http.js';
 import { readDeckBundle } from '../../../export/deck-bundle.js';
 import { writeUploadedFile } from '../../../storage/uploads.js';
-import { deckToPresentationParts } from '../../../../shared/slide-types.js';
+import {
+  deckImportLang,
+  deckToPresentationParts,
+} from '../../../../shared/slide-types.js';
 import { rewriteBundleRefs } from '../../../../shared/slide-types/deck-assets.js';
 import { loadDeckTheme } from '../../../utils/themes.js';
-import {
-  DEFAULT_DECK_LANG,
-  normalizeLang,
-} from '../../../../shared/i18n-utils.js';
 
 export async function handlePresentationsImportDeck({
   repoRoot,
@@ -59,7 +58,13 @@ export async function handlePresentationsImportDeck({
   }
 
   const { manifest, deck, assets } = bundle;
-  const lang = normalizeLang(manifest?.lang) || DEFAULT_DECK_LANG;
+  // The deck names its own language (D89); the manifest has never carried one.
+  const resolved = deckImportLang(deck);
+  if (!resolved.ok) {
+    badRequest(res, `Invalid .deck bundle: ${resolved.message}`);
+    return true;
+  }
+  const { lang } = resolved;
 
   // Re-hydrate each asset into /uploads/ and build bundle-ref -> upload-url map.
   // The human name is recovered from the manifest's `sources` (the separate
@@ -105,11 +110,13 @@ export async function handlePresentationsImportDeck({
   });
 
   // Update i18n.versions[lang] with the imported slides, otherwise
-  // normalizeI18n overwrites them with defaults (mirrors import-json.js).
+  // normalizeI18n overwrites them with defaults (mirrors import-json.js). The
+  // deck's translations land as the other language versions (D89).
   const i18n = {
     dominant: lang,
     active: lang,
     versions: {
+      ...parts.translations,
       [lang]: {
         title: parts.title,
         slides: parts.slides,

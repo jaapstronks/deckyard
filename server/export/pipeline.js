@@ -50,6 +50,8 @@ function buildExportHeaders({
  * `storageScope` is the request's scope, passed down from the route context —
  * this module never builds one itself.
  * @param {Object} options - Context options
+ * @param {boolean} [options.allLanguages] - skip the `?lang=` projection, for
+ *   a format that carries every language version itself
  * @returns {Object} Export context or null if request should be rejected
  */
 export async function prepareExportContext({
@@ -60,8 +62,14 @@ export async function prepareExportContext({
   presentationId,
   storageScope,
   stripLiveOnly = true,
+  allLanguages = false,
 }) {
-  const exportLang = normalizeLang(url?.searchParams?.get('lang'));
+  // A format that carries every language version (the portable deck, D89)
+  // takes the stored deck as it is: projecting onto `?lang=` first is what
+  // used to drop the other versions.
+  const exportLang = allLanguages
+    ? null
+    : normalizeLang(url?.searchParams?.get('lang'));
 
   const pres = await getPresentation(storageScope, presentationId);
   if (!pres) {
@@ -183,6 +191,7 @@ export function createExportRoute(config) {
     contentType,
     extension,
     stripLiveOnly = true,
+    allLanguages = false,
     buildContent,
     getFilename = (ctx) => ctx.title,
   } = config;
@@ -207,6 +216,7 @@ export function createExportRoute(config) {
       presentationId,
       storageScope,
       stripLiveOnly,
+      allLanguages,
     });
 
     if (!ctx) return true; // Request was rejected, response already sent

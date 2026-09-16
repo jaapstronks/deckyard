@@ -8,7 +8,9 @@ the [`.deck` bundle](./deck-bundle-format.md) carries as its `deck.json`.
 
 A deck is **data, not a rendering.** The format is intentionally readable and
 stable: no server-internal UUIDs or timestamps are required, and slides are a
-flat array of `{ type, content }`.
+flat array of `{ type, content }` with a few optional slide keys. A deck carries
+**every language it is written in**: structure once, prose per language (see
+[Languages](#languages)).
 
 The canonical example lives at `tests/fixtures/example-deck.json` and is
 exercised by `tests/deck-format-spec.test.js` (the CI gate behind this spec).
@@ -20,23 +22,31 @@ exercised by `tests/deck-format-spec.test.js` (the CI gate behind this spec).
   "format": "deckyard.deck",
   "version": 1,
   "title": "My deck",
+  "lang": "nl",
+  "translations": { "en-GB": { "title": "My deck (EN)" } },
   "theme": "default",
   "slides": [
     {
       "type": "eu.deckyard.slide.title",
-      "content": { "title": "Hello", "background": "lime" }
+      "content": { "title": "Hallo", "background": "lime" },
+      "translations": { "en-GB": { "title": "Hello", "notes": "Welcome." } },
+      "notes": "Welkom.",
+      "duration": 45,
+      "visibility": { "hideInExport": true }
     }
   ]
 }
 ```
 
-| Field     | Type    | Notes                                                                                                                                                                                     |
-| --------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `format`  | string  | Always `"deckyard.deck"`. The magic sentinel that identifies the format. A conforming reader also accepts the historical `"slidecreator.deck"` (see [Legacy sentinel](#legacy-sentinel)). |
-| `version` | integer | Format version. `1` today. Bumped only on a breaking envelope change (see [Versioning](#versioning)).                                                                                     |
-| `title`   | string  | Human title of the deck.                                                                                                                                                                  |
-| `theme`   | string  | Theme id the deck was authored against (e.g. `"default"`). A reader that lacks the theme falls back to its own default; content is unaffected.                                            |
-| `slides`  | array   | Ordered list of slides, each `{ type, content }`.                                                                                                                                         |
+| Field          | Type    | Notes                                                                                                                                                                                     |
+| -------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `format`       | string  | Always `"deckyard.deck"`. The magic sentinel that identifies the format. A conforming reader also accepts the historical `"slidecreator.deck"` (see [Legacy sentinel](#legacy-sentinel)). |
+| `version`      | integer | Format version. `1` today. Bumped only on a breaking envelope change (see [Versioning](#versioning)).                                                                                     |
+| `title`        | string  | Human title of the deck, in `lang`.                                                                                                                                                       |
+| `lang`         | string  | Optional. BCP 47 tag of the language `title` and every slide's `content` and `notes` are in. A deck carries **one** base language; the others are `translations`.                         |
+| `translations` | object  | Optional. The deck title per other language: `{ "<lang>": { "title": "…" } }`. See [Languages](#languages).                                                                               |
+| `theme`        | string  | Theme id the deck was authored against (e.g. `"default"`). A reader that lacks the theme falls back to its own default; content is unaffected.                                            |
+| `slides`       | array   | Ordered list of slides, each `{ type, content }`.                                                                                                                                         |
 
 The envelope is **lenient**: unknown top-level keys are ignored by the importer,
 not rejected. This keeps forward-compatibility — a newer producer can add fields
@@ -79,8 +89,21 @@ namespace/authority/version model.
 Each slide is:
 
 ```json
-{ "type": "content-slide", "content": { "title": "Why", "body": "..." } }
+{
+  "type": "eu.deckyard.slide.content",
+  "content": { "title": "Why", "body": "..." }
+}
 ```
+
+plus four optional slide keys whose meaning does not depend on the type:
+
+- **`translations`** — the slide's text in the other languages (see
+  [Languages](#languages)).
+- **`notes`** — speaker notes, in `lang`.
+- **`duration`** — a per-slide duration override in whole seconds, 1–300.
+- **`visibility`** — where the slide is hidden: any of `hideInPresentation`,
+  `hideInExport`, `hideInPublished`, `hideFromViewers` set to `true`. An absent
+  flag means visible there; Deckyard writes only the flags that are set.
 
 - **`type`** — the slide-type id: canonical reverse-DNS
   (`eu.deckyard.slide.content`) or `namespace/name` for a declarant without an
@@ -93,7 +116,35 @@ Each slide is:
 
 Portable slides carry **no `id`** — ids are a storage concern and are
 (re)generated on import. A reader must not depend on slide identity across a
-round-trip.
+round-trip. For the same reason slide nesting (`parentId`, a reference to
+another slide's id) does not travel.
+
+### Languages
+
+A deck written in several languages carries its structure **once**. `content`,
+`title` and `notes` are in the envelope's `lang`; every other language is a
+`translations.<lang>` entry beside them:
+
+- On the **envelope**, `translations.<lang>.title` is the deck title.
+- On a **slide**, `translations.<lang>` holds exactly the keys of `content` that
+  are prose, plus `notes`. Which keys are prose is the type's answer: a field of
+  type `string`, `markdown` or `csv` (not declaring `mediaRef`), and, for a key
+  the type does not declare, a string value. An `items` array becomes an equally
+  long array holding only each item's text keys, at every nesting level.
+- **Machine values never appear in a translation** — an enum, an image, a
+  number, a colour is one value per deck and lives in `content` only. A reader
+  that composes a language takes `content` and replaces its prose keys with the
+  translation's; a prose key the translation lacks is untranslated (Deckyard
+  imports it as empty rather than copying the base language).
+- `notes` inside a slide translation is always the slide's notes; no type
+  declares a content field of that name.
+- Everything is optional. A reader that does not know `translations` gets a
+  complete deck in one language.
+
+Deckyard's importer takes `lang` as the deck's language and refuses a deck
+whose `lang`, or any `translations` tag, is not a language it authors in, and a
+request whose language contradicts the deck's own. That is the implementation's
+authoring axis, not a restriction of the format.
 
 ### Content schema (the single source)
 
@@ -108,9 +159,14 @@ source, no hand-synced copy. The schemas are served live and are versioned by
 
 Schemas are **lenient contracts, not gates**: `additionalProperties` is allowed
 so legacy and forward-compatible keys still validate. They document the known
-shape; they do not reject history. (Note the generated `deck.schema.json`
-describes the _stored_ deck, which additionally carries `id`/`schemaVersion`;
-the portable envelope here is the interchange projection of that model.)
+shape; they do not reject history.
+
+There is **one** published deck schema, and it describes this envelope — what
+the export writes, not what Deckyard's database stores. Storage fields (`id`,
+`schemaVersion`, `created`, `modified`, `settings`) are not part of it, and every
+Deckyard export validates against it (`tests/deck-translations.test.js`). Per
+type it discriminates `content` and each `translations` entry, both derived from
+the same `fields[]`.
 
 The same leniency applies to the two fields that used to close the schema:
 
@@ -154,13 +210,17 @@ those bundle refs. Import re-hydrates them back to `/uploads/`. Bundle refs
 For content-bearing slides, `export → import → export` is a **fixpoint**: after
 one normalization pass (defaults filled, ids regenerated) the portable
 projection is stable, and identical asset bytes hash to identical content
-addresses. `tests/deck-format-spec.test.js` proves this on the example fixture;
-`tests/import-deck.test.js` proves it end-to-end through the bundle importer.
+addresses, with notes, duration, visibility and every language version intact.
+`tests/deck-format-spec.test.js` proves this on the example fixture,
+`tests/deck-translations.test.js` for a deck in two languages, and
+`tests/import-deck.test.js` end-to-end through the bundle importer.
 
 Deliberate lossy edges (they degrade, they do not crash):
 
 - An **unknown slide type** imports as a `content-slide` placeholder (its
   original content is not preserved).
+  Its translations are not applied: every language version keeps the
+  placeholder.
 - A **missing local asset** keeps its `/uploads/…` ref and imports as a dangling
   reference.
 
@@ -262,7 +322,8 @@ before the dot, never in the filename.
 
 ## Producing and consuming a deck
 
-- **Export (portable):** `GET /api/presentations/:id/export/json` → this envelope.
+- **Export (portable):** `GET /api/presentations/:id/export/json` → this envelope,
+  with every language version (`?lang=` does not apply).
 - **Export (self-contained):** `GET /api/presentations/:id/export/deck.zip` →
   a `.deck` bundle.
 - **Import (portable):** `POST /api/presentations/import/json`.
@@ -271,7 +332,9 @@ before the dot, never in the filename.
 ## Code
 
 - Envelope build/parse: `shared/slide-types/deck.js`
-  (`presentationToDeck`, `deckToPresentationParts`).
+  (`presentationToDeck`, `deckToPresentationParts`, `deckImportLang`).
+- Prose per language, both directions: `contentTranslation` /
+  `applyContentTranslation` in `shared/slide-types/text-fields.js`.
 - Type-id projection: `canonicalSlideType` (export/read) and
   `resolveSlideTypeName` (import) in `shared/slide-types/registry.js`.
 - Content schema generation: `shared/slide-types/json-schema.js`.

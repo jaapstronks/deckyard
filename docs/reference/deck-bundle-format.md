@@ -73,7 +73,10 @@ assets/<sha256>.<ext>  The asset bytes, content-addressed by SHA-256 of the
 ## `deck.json`
 
 The portable deck (`presentationToDeck` output: `format`, `version`, `title`,
-`theme`, and `slides`, each slide's `type` in its canonical id). Asset refs in
+`lang`, `translations`, `theme`, and `slides`, each slide's `type` in its
+canonical id, with its `notes`, `duration`, `visibility` and `translations`).
+Every language version of the deck travels in it; see
+[Languages](./deck-format.md#languages). Asset refs in
 slide content are rewritten from `/uploads/x.png` to the bundle ref
 `assets/<hash>.<ext>`. External (`http(s)://`) image URLs are left untouched —
 they are already portable and are not fetched into the bundle.
@@ -94,13 +97,17 @@ presentation from it — the mirror of the export. The flow:
 
 1. `readDeckBundle(buffer)` — verify the mimetype sentinel and re-hash every
    asset (integrity), yielding `{ manifest, deck, assets }`.
+   The deck's own `lang` decides the language it imports in; a bundle whose
+   `lang` or `translations` name a language this install does not author in is
+   refused with 400 (`deckImportLang`).
 2. For each manifest asset, write its bytes back into `/uploads/` via
    `writeUploadedFile`, using the manifest `sources[0]` as the human basename.
    This builds a `assets/<hash>.<ext>` → `/uploads/<uuid>.<ext>` map.
 3. `rewriteBundleRefs(deck, mapFn)` — rewrite the deck's bundle refs to the new
    upload URLs (the inverse of the export's `rewriteAssetRefs`).
 4. `deckToPresentationParts` + `createPresentation`/`updatePresentation` —
-   the same normalization + creation path as the JSON import.
+   the same normalization + creation path as the JSON import. The deck's
+   translations become the presentation's other language versions.
 
 **Round-trip:** for content-bearing slides, `export → import → export` is a
 fixpoint (identical content-addressed refs, since identical bytes hash the same).

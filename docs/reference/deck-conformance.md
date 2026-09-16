@@ -114,8 +114,12 @@ A reader that does not recognise `slides[].type`:
    one — silently pretty output is how "we support Deckyard" becomes untrue
    without anyone noticing.
 5. **MUST honour the global slide keys it already knows** — `notes`,
-   `duration`, `visibility`, and the `a11y*` / `slideBg*` / `slideLogo` content
-   keys. Those are envelope-level and their meaning does not depend on the type.
+   `duration`, `visibility`, `translations`, and the `a11y*` / `slideBg*` /
+   `slideLogo` content keys. Those are envelope-level and their meaning does not
+   depend on the type. For an unknown type, a translation's keys follow rule 2:
+   its string-valued entries are that language's text of the same keys.
+   Deckyard's export writes all four slide keys ([deck-format.md
+   § Slides](./deck-format.md#slides)).
 6. **SHOULD render it in the deck's theme**, so an unknown type reads as a plain
    slide rather than as breakage.
 7. **MUST NOT invent content.** No synthesized headings, no filled-in blanks, no

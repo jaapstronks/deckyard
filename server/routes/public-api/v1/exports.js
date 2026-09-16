@@ -41,9 +41,17 @@ function getLangSuffix(exportLang) {
 /**
  * Prepare export context with presentation loading and language projection.
  */
-async function prepareExportContext(ctx, presentationId) {
+async function prepareExportContext(
+  ctx,
+  presentationId,
+  { allLanguages = false } = {},
+) {
   const { repoRoot, storageScope, url, apiKey } = ctx;
-  const exportLang = normalizeLang(url?.searchParams?.get('lang'));
+  // The JSON deck carries every language version (D89), so it skips the
+  // `?lang=` projection that would drop the others.
+  const exportLang = allLanguages
+    ? null
+    : normalizeLang(url?.searchParams?.get('lang'));
 
   const pres = await getPresentation(storageScope, presentationId);
   if (!pres) {
@@ -121,7 +129,9 @@ async function handleJsonExport(ctx, id) {
   // Check export limit
   if (!(await checkExportLimit(ctx))) return true;
 
-  const exportCtx = await prepareExportContext(ctx, id);
+  const exportCtx = await prepareExportContext(ctx, id, {
+    allLanguages: true,
+  });
   if (!exportCtx.ok) {
     await apiError(ctx, exportCtx.status, exportCtx.error);
     return true;

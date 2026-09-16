@@ -240,7 +240,6 @@ test('a canonical reverse-DNS type keeps its content contract', () => {
 
   for (const type of [id, 'core/title-slide', 'title', 'title-slide']) {
     const good = deckWith({
-      id: '9a0b1c2d-3e4f-4a5b-8c9d-0e1f2a3b4c5d',
       type,
       content: SLIDE_TYPES['title-slide'].defaults || {},
     });
@@ -251,7 +250,6 @@ test('a canonical reverse-DNS type keeps its content contract', () => {
     );
 
     const bad = deckWith({
-      id: '9a0b1c2d-3e4f-4a5b-8c9d-0e1f2a3b4c5d',
       type,
       content: { title: 123 },
     });
@@ -264,10 +262,11 @@ test('a canonical reverse-DNS type keeps its content contract', () => {
 
 // --- the schema is open, not a list of our own names -----------------------
 
-/** A deck as the schema describes it (the stored model), with one slide. */
+/** A deck as the schema describes it (the portable envelope), with one slide. */
 function deckWith(slide, extra = {}) {
   return {
-    id: '3f1b6a52-0f2a-4a1e-9c3e-2b7a4f5d6e70',
+    format: 'deckyard.deck',
+    version: 1,
     title: 'Open',
     slides: [slide],
     ...extra,
@@ -294,7 +293,6 @@ test('a deck carrying an unknown slide type validates', () => {
     'custom-org-thing',
   ]) {
     const deck = deckWith({
-      id: '9a0b1c2d-3e4f-4a5b-8c9d-0e1f2a3b4c5d',
       type,
       // Deliberately nothing like any core type's shape: an unknown type
       // matches no `if` branch, so no content contract applies to it.
@@ -331,7 +329,6 @@ test('a known type still gets its content contract, and a malformed id is still 
 
   for (const type of ['Title-Slide', 'a//b', 'acme/hero@', '-leading', '']) {
     const deck = deckWith({
-      id: '9a0b1c2d-3e4f-4a5b-8c9d-0e1f2a3b4c5d',
       type,
       content: {},
     });
@@ -411,7 +408,6 @@ test('lang accepts any BCP 47 tag, not just the two the editor authors in', () =
   }
   const deck = deckWith(
     {
-      id: '9a0b1c2d-3e4f-4a5b-8c9d-0e1f2a3b4c5d',
       type: 'end-slide',
       content: SLIDE_TYPES['end-slide'].defaults || {},
     },
