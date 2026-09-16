@@ -71,7 +71,7 @@ describe('buildDeckBundle', () => {
     const { mimetype, manifest, assets } = await readDeckBundle(buf);
     assert.equal(mimetype, DECK_MIMETYPE);
     assert.equal(manifest.format, 'deckyard.deck');
-    assert.equal(manifest.bundleVersion, 1);
+    assert.equal(manifest.bundleVersion, 2);
     // a.png (referenced twice) + b.png → 2 unique assets; gone.png is missing.
     assert.equal(manifest.assets.length, 2);
     assert.deepEqual(manifest.missingAssets, ['/uploads/gone.png']);

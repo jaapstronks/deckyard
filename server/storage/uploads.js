@@ -37,8 +37,9 @@ const STOCK_MAX_BYTES = 20 * 1024 * 1024; // 20MB for stock media (GIFs can be l
 
 /**
  * Save a buffer directly as an uploaded file.
- * Used for downloading external media (e.g., Unsplash, Giphy) and re-hydrating
- * deck-bundle assets. Routes the write through the LocalProvider so the actual
+ * Used for downloading external media (e.g., Unsplash, Giphy); a `.deck` bundle
+ * asset is written verbatim by `writeBundleAsset` (server/export/deck-bundle.js)
+ * instead. Routes the write through the LocalProvider so the actual
  * byte handling (sharp optimization, filename sanitization, UUID keying) has a
  * single implementation shared with the rest of the media pipeline. Stays on
  * local disk by design — object storage is a separate track — hence the explicit
