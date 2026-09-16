@@ -19,6 +19,7 @@ overlapping PDF entries and a duplicated "other language" section.
 | Slides        | HTML                    | `html`                                    | `buildStandaloneHtml` (download)                              |
 | Documents     | Text handout            | `pdf`                                     | `buildPrintHtml` (document layout, not slides)                |
 | Documents     | Notes (Markdown / Word) | `notes.md` / `notes.docx`                 | `buildNotesMarkdown` / `buildNotesDocxBuffer`                 |
+| Data & bundle | .deck                   | `deck.zip`                                | `buildDeckBundle` (download)                                  |
 | Data & bundle | JSON                    | `json`                                    | `presentationToDeck` (download)                               |
 | Data & bundle | Handoff ZIP             | `handoff.zip`                             | `buildHandoffZipBuffer`                                       |
 
@@ -27,20 +28,18 @@ The full server-side pipeline (routes, async queue, builders) is in
 
 ## Direct export routes (no menu row)
 
-`server/routes/api/export.js` registers three more export routes that the modal
+`server/routes/api/export.js` registers two more export routes that the modal
 does **not** surface — they are reachable by URL but have no button. Documented
 here so the route inventory is complete, not because they are user-facing today.
 
-| Format           | Route (`/api/presentations/:id/export/…`) | Builder                                                                                                                                                                     |
-| ---------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.deck` bundle   | `deck.zip`                                | `buildDeckBundle` (`server/export/deck-bundle.js`) — self-contained portable deck (deck.json + content-addressed assets + manifest); renders/round-trips without the server |
-| PNG ZIP          | `png.zip`                                 | `buildSlidesPngZipBuffer` (`server/export/png-zip.js`) — every slide as PNG in one ZIP; `?scale=` supported                                                                 |
-| Single-slide PNG | `png/:n.png` (1-based)                    | `renderSlideToPngBuffer` (`server/render/png.js`) — one slide as PNG; `?scale=` supported                                                                                   |
+| Format           | Route (`/api/presentations/:id/export/…`) | Builder                                                                                                     |
+| ---------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| PNG ZIP          | `png.zip`                                 | `buildSlidesPngZipBuffer` (`server/export/png-zip.js`) — every slide as PNG in one ZIP; `?scale=` supported |
+| Single-slide PNG | `png/:n.png` (1-based)                    | `renderSlideToPngBuffer` (`server/render/png.js`) — one slide as PNG; `?scale=` supported                   |
 
 Implementation status: the routes are live and covered by the export pipeline.
-Whether the `.deck` bundle and PNG-ZIP earn a menu row is an open product
-question, not a promise — treat their URLs as internal until the modal exposes
-them.
+Whether the PNG-ZIP earns a menu row is an open product question, not a
+promise — treat these URLs as internal until the modal exposes them.
 
 ## The single PDF entry
 
@@ -111,7 +110,10 @@ are the standalone handout, not a substitute for notes inside the deck.
 `export-modal.js` reads `pres.i18n.active` for the default language. When the
 deck carries more than one language version (`existingVersionLangs`), a
 segmented control appears with one segment per version — the active language
-first — and its value is appended as `?lang=` to every export URL. Single-
+first — and its value is appended as `?lang=` to every export URL except the
+two that carry every language version themselves: `.deck` and JSON
+(`allLanguages` on the format, D89). Their routes ignore `?lang=`, so the menu
+does not send it. Single-
 language decks show no control. This replaces the dropdown's second, duplicated
 "Export ({other lang})" section, and before B182 fase 2 it offered exactly two
 segments, so a deck with `nl`, `de` and `fr` could be exported in two of them.
@@ -120,7 +122,7 @@ segments, so a deck with `nl`, `de` and `fr` could be exported in two of them.
 
 Strings live under `editor.export.*` in `client/i18n/<locale>/editor.json`
 (group titles, per-format descriptions, the PDF busy/fallback copy, the
-language label). Format acronyms (PDF, PNG, PPTX, HTML, JSON) are hard-coded.
+language label). Format acronyms (PDF, PNG, PPTX, HTML, JSON, .deck) are hard-coded.
 Non-nl/en locales fall back to the English defaults passed to `t()`.
 
 ## See also

@@ -309,6 +309,7 @@
   "editor.descriptionModal.tooLong": "Too long ({n}/{max}). Please shorten.",
   "editor.descriptionModal.twoSentences": "Aim for exactly two sentences.",
   "editor.export.button": "Export",
+  "editor.export.descDeck": "Portable deck: every language, images, theme and slide types",
   "editor.export.descHandoff": "Everything bundled (PDF, PPTX, PNG, notes)",
   "editor.export.descHtml": "Self-contained web page",
   "editor.export.descJson": "Raw deck data",
