@@ -9,8 +9,10 @@
  * slide. This pass packs the images into rows greedily and picks each row's
  * height so its images span the full width — a "justified gallery".
  *
- * Purely a JS enhancement: without it (static / no-JS render) the CSS
- * shared-height fallback still looks correct, just less optimally filled.
+ * The server renders run it too: `server/utils/script-chain.js` inlines this
+ * file into every document with such a slide, so it must keep no imports and
+ * exactly one export. Without it the CSS shared-height fallback wraps a few
+ * landscape images into a grid that covers the title.
  * Background and rationale: docs/reference/team-cards-original-aspect.md.
  *
  * Skipped in thumbnail mode (tiny render sizes make measurement noisy). Re-runs

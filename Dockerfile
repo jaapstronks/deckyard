@@ -5,13 +5,16 @@ WORKDIR /app
 # PNG/PDF export (server-side): install chromium runtime for puppeteer-core.
 # `chromium-chromedriver` is not needed; `chromium` ships the sandbox helper so
 # the browser can run with its own sandbox enabled under a non-root user.
+# `font-noto-emoji`: without a colour emoji font an emoji in a slide exports as
+# tofu (or a stray glyph from a fallback face) in PNG, PDF and PPTX.
 RUN apk add --no-cache \
   chromium \
   nss \
   freetype \
   harfbuzz \
   ca-certificates \
-  ttf-freefont
+  ttf-freefont \
+  font-noto-emoji
 
 # App source first: `npm install` runs a `postinstall` (vendor-lucide +
 # download-google-fonts) that reads several source files, so the full tree

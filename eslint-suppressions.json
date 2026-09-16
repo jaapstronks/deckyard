@@ -943,7 +943,7 @@
   },
   "server/render/pdf.js": {
     "no-restricted-syntax": {
-      "count": 3
+      "count": 2
     },
     "preserve-caught-error": {
       "count": 1
@@ -951,7 +951,7 @@
   },
   "server/render/png.js": {
     "no-restricted-syntax": {
-      "count": 4
+      "count": 1
     }
   },
   "server/routes/api/activity.js": {

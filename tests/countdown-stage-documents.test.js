@@ -104,20 +104,16 @@ test('the stage chain inlines the countdown runtime and still parses', () => {
 test('a static document cannot ask for the countdown runtime', () => {
   assert.throws(
     () => buildScriptChain({ slideNeeds: { countdown: true } }),
-    /slide runtimes need the stage runtime/,
+    /the countdown runtime needs the stage runtime/,
   );
 });
 
 test('detection reads the rendered markup', () => {
-  assert.deepEqual(
-    detectSlideRuntimeNeeds('<div class="slide slide-countdown">'),
-    {
-      countdown: true,
-    },
+  assert.equal(
+    detectSlideRuntimeNeeds('<div class="slide slide-countdown">').countdown,
+    true,
   );
-  assert.deepEqual(detectSlideRuntimeNeeds('<div class="slide">'), {
-    countdown: false,
-  });
+  assert.equal(detectSlideRuntimeNeeds('<div class="slide">').countdown, false);
 });
 
 test('only stage documents with a countdown carry the runtime', async (t) => {

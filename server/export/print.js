@@ -10,7 +10,10 @@ import {
   buildPrismKatexTags,
   detectPrismKatexNeeds,
 } from '../utils/prism-katex.js';
-import { buildScriptChain } from '../utils/script-chain.js';
+import {
+  buildScriptChain,
+  detectSlideRuntimeNeeds,
+} from '../utils/script-chain.js';
 import { loadExportCssBundle } from './css-bundle.js';
 import { buildCssChain } from '../utils/css-chain.js';
 import { buildDocumentHead } from '../utils/head-chain.js';
@@ -365,7 +368,13 @@ export async function buildPrintHtml(
       ${wmText ? `<div class="print-watermark" style="margin: 0 0 14px;">${wmText}</div>` : ''}
       ${slidesHtml}
     </main>
-    ${buildScriptChain({ needs: highlightNeeds })}
+    ${buildScriptChain({
+      needs: highlightNeeds,
+      // A static sheet: the layout runtime only, never the countdown.
+      slideNeeds: {
+        teamCards: detectSlideRuntimeNeeds(slidesHtml).teamCards,
+      },
+    })}
   </body>
 </html>`;
 }

@@ -8,7 +8,10 @@ import {
   buildPrismKatexTags,
   detectPrismKatexNeeds,
 } from '../utils/prism-katex.js';
-import { buildScriptChain } from '../utils/script-chain.js';
+import {
+  buildScriptChain,
+  detectSlideRuntimeNeeds,
+} from '../utils/script-chain.js';
 import { getAppBaseUrl } from '../config/utils.js';
 import { resolveVideoThumbnailDataUrl } from './video-thumbnail.js';
 import { resolveVideoWatchUrl, videoPdfCopy } from './video-watch-url.js';
@@ -441,7 +444,13 @@ export async function buildSlidesPdfHtml(
       <div style="opacity:0.85; font-size:12px;">Tip: if colors look muted, enable “Background graphics” in the print dialog.</div>
     </div>
     ${pagesHtml}
-    ${buildScriptChain({ needs: highlightNeeds })}
+    ${buildScriptChain({
+      needs: highlightNeeds,
+      // A static sheet: the layout runtime only, never the countdown.
+      slideNeeds: {
+        teamCards: detectSlideRuntimeNeeds(pagesHtml).teamCards,
+      },
+    })}
   </body>
 </html>`;
 }
