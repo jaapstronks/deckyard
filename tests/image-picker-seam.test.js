@@ -194,7 +194,7 @@ function attachedRoot() {
 function cardsOf(chooser) {
   return [...chooser.querySelectorAll('.image-source-card')].map((b) => ({
     id: b.dataset.sourceId,
-    primary: b.classList.contains('is-primary'),
+    primary: b.classList.contains('btn-primary'),
     label: b.querySelector('.image-source-card-label')?.textContent,
     description: b.querySelector('.image-source-card-description')?.textContent,
   }));

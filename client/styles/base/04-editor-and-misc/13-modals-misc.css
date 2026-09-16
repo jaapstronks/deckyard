@@ -2,9 +2,9 @@
    Image source chooser (library, gradients, ImageKit)
    Shown only when >1 provider is enabled. One card per source: the label and
    one line saying what the source holds, so "Image library" is no longer
-   mistaken for the organisation's image bank. The primary source (`.is-primary`,
-   first in the list) carries the primary button colour; the rest are
-   secondary. Width capped so the cards read as a set of choices, not a list.
+   mistaken for the organisation's image bank. The primary source (first in
+   the list) is a `.btn-primary`, the rest `.btn-secondary`. Width capped so
+   the cards read as a set of choices, not a list.
    ============================================ */
 
 .image-source-hint {

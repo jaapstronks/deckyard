@@ -217,7 +217,7 @@ function openSourceChooser({ root, providers, hint, onChoose }) {
       h(
         'button',
         {
-          class: `btn ${p.primary ? 'btn-primary is-primary' : 'btn-secondary'} image-source-card`,
+          class: `btn ${p.primary ? 'btn-primary' : 'btn-secondary'} image-source-card`,
           type: 'button',
           'data-source-id': p.id,
           onclick: () => {
