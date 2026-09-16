@@ -200,6 +200,12 @@ serialized coordinate list — says so once, on the field, and travels through
 `/api/slide-types` like the declarations above. A reader that skipped such
 fields by key name would be guessing; this one follows the declaration.
 
+`semantic: true` is its counterpart on an `enum`: the value is meaning rather
+than layout (a callout's kind, a matrix cell's tone), so it is published as a
+`data-<key>` attribute on the section or item instead of being dropped. Every
+projected block also names its field with `data-field`, so a consumer of the
+HTML addresses content by the key the definition declares, not by position.
+
 **What the worked example produces is pinned.** Because the projection is
 derived from `fields[]`, a field added, renamed or re-typed moves what the
 reader calls the heading of a slide without anything saying so — and the same

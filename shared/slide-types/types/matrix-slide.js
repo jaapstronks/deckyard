@@ -110,6 +110,9 @@ export default {
           label: 'Tone',
           type: 'enum',
           required: false,
+          // Good news or bad news per quadrant: `data-tone` on the reader's
+          // <li>, and on `.matrix-cell` in cellHtml above (D130b).
+          semantic: true,
           options: [
             { value: 'default', label: 'Default' },
             { value: 'positive', label: 'Positive (green)' },

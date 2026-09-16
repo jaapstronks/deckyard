@@ -601,3 +601,44 @@ test('every core type declares at most one heading field', async () => {
     );
   }
 });
+
+test('`semantic` is a flag on an enum; anything else warns, and a DB row may not carry it', () => {
+  const findings = walkFieldDefinitions(
+    [
+      {
+        key: 'variant',
+        type: 'enum',
+        label: 'Variant',
+        options: ['a', 'b'],
+        semantic: true,
+      },
+      { key: 'title', type: 'string', label: 'Title', semantic: true },
+      {
+        key: 'tone',
+        type: 'enum',
+        label: 'Tone',
+        options: ['x'],
+        semantic: false,
+      },
+    ],
+    FILE_JS,
+  ).findings;
+  assert.deepEqual(
+    findings.map((f) => [f.key, f.code, f.severity]),
+    [
+      ['title', 'semantic_not_enum', 'warning'],
+      ['tone', 'semantic_not_true', 'warning'],
+    ],
+  );
+  for (const f of findings)
+    assert.notEqual(describeFieldFinding(f), 'Invalid field definitions.');
+
+  // The builder has no control for it, so a stored row refuses it (D84)
+  // rather than dropping it on Save.
+  const stored = validateCustomFieldDefinitions([
+    { key: 'v', type: 'enum', label: 'V', options: ['a'], semantic: true },
+  ]);
+  assert.equal(stored.ok, false);
+  assert.equal(stored.problem.code, 'unknown_property');
+  assert.equal(stored.problem.detail.property, 'semantic');
+});

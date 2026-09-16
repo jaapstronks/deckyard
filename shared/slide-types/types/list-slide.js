@@ -257,6 +257,9 @@ export default {
       label: 'Style',
       type: 'enum',
       required: false,
+      // Numbers say the order matters, so the style travels as `data-variant`
+      // (D130b); the reader's <ol> for it is B295's `orderedWhen`.
+      semantic: true,
       options: [
         { value: 'bullets', label: 'Bullets' },
         { value: 'numbers', label: 'Numbers' },

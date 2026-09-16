@@ -413,6 +413,18 @@ export function walkFieldDefinitions(fields, profile) {
           }
         }
       }
+
+      // `semantic: true` publishes an enum's value as `data-<key>` (D130b).
+      // Only an enum has a closed set of values that can mean something, and
+      // the declaration is a flag: `semantic: false` is not a second way to
+      // say "presentational", which every enum already is.
+      if (field.semantic !== undefined && field.semantic !== null) {
+        if (field.semantic !== true) {
+          at2('semantic_not_true', 'warning', { declared: field.semantic });
+        } else if (type !== 'enum') {
+          at2('semantic_not_enum', 'warning', { type });
+        }
+      }
     });
 
     // A `linkKey` names a field beside the one that declares it — a sibling at
@@ -515,6 +527,14 @@ const FINDING_MESSAGES = {
     `options (${(f?.detail?.offered || []).join(', ') || 'none'}), so it would ` +
     `fold one unoffered value into another — the fold is skipped and stored ` +
     `values are kept as they are.`,
+  semantic_not_true: (where, f) =>
+    `${where} declares \`semantic: ${JSON.stringify(f?.detail?.declared)}\`, ` +
+    `but the declaration is a flag: \`semantic: true\` or nothing — an enum ` +
+    `without it is already presentational, so it is ignored.`,
+  semantic_not_enum: (where, f) =>
+    `${where} declares \`semantic: true\` on a \`${f?.detail?.type}\` ` +
+    `field, but only an \`enum\` has a closed set of values to publish as a ` +
+    `\`data-*\` attribute, so it is ignored.`,
 };
 
 /**

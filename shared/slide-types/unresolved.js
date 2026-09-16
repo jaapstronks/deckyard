@@ -338,7 +338,11 @@ export function renderUnresolvedSlideSemanticHtml(
   const rows = unresolvedContentEntries(content)
     .filter((entry) => entry.key !== headingKey)
     .map(
-      (entry) => `<div class="reader-field">
+      // The stored key is all an unresolved slide has, and it is the same name
+      // `data-field` carries in a resolved projection (D132).
+      (
+        entry,
+      ) => `<div class="reader-field" data-field="${escapeHtml(entry.key)}">
           <dt>${escapeHtml(entry.label)}</dt>
           <dd>${entry.lines.map((line) => `<p>${escapeHtml(line)}</p>`).join('')}</dd>
         </div>`,
