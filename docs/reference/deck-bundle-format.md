@@ -32,8 +32,11 @@ mimetype               First entry, STORED (uncompressed). Content:
 manifest.json          Bundle metadata + the asset inventory (see below).
 deck.json              The portable deck (as from presentationToDeck), with
                        every asset ref rewritten to a bundle ref.
+theme.json             The deck's database theme, when it is on one (see
+                       Theme). Absent for a file theme.
 assets/<sha256>.<ext>  The asset bytes, content-addressed by SHA-256 of the
-                       content. Identical bytes are stored once (dedup).
+                       content: slide images, theme logos and curated font
+                       files. Identical bytes are stored once (dedup).
 ```
 
 ## `manifest.json`
@@ -41,9 +44,10 @@ assets/<sha256>.<ext>  The asset bytes, content-addressed by SHA-256 of the
 ```json
 {
   "format": "deckyard.deck",
-  "bundleVersion": 1,
+  "bundleVersion": 2,
   "mimetype": "application/vnd.deckyard.deck",
   "deck": "deck.json",
+  "theme": { "ref": "theme.json", "hash": "9c1f…07ab" },
   "assets": [
     {
       "ref": "assets/e2e9…445a.png",
@@ -52,23 +56,59 @@ assets/<sha256>.<ext>  The asset bytes, content-addressed by SHA-256 of the
       "mime": "image/png",
       "bytes": 1265204,
       "sources": ["/uploads/photo-1a2b.png"]
+    },
+    {
+      "ref": "assets/77d0…c3e1.woff2",
+      "id": "sha256-d9DK…",
+      "hash": "77d0…c3e1",
+      "mime": "font/woff2",
+      "bytes": 48212,
+      "fontFaces": [
+        { "family": "Inter", "weight": 400, "subset": "latin" },
+        { "family": "Inter", "weight": 700, "subset": "latin" }
+      ]
     }
   ],
-  "missingAssets": ["/uploads/gone.png"]
+  "missingAssets": ["/uploads/gone.png"],
+  "fontsNotIncluded": [
+    {
+      "family": "Brand Sans",
+      "role": "body",
+      "source": "adobe",
+      "reason": "licensed"
+    }
+  ]
 }
 ```
+
+- **`bundleVersion`** — `2` since the bundle carries a theme (B250, D90). A
+  reader reads the versions it knows (`1` and `2`: a version-1 bundle is a
+  version-2 bundle without a theme) and refuses any other, rather than
+  silently dropping parts it cannot see.
+- **`theme`** (optional) — where `theme.json` lives and the SHA-256 of its
+  bytes; the reader re-hashes it like an asset and rejects a mismatch.
 
 - **`ref`** — where the bytes live in the archive; also the value used inside
   `deck.json`.
 - **`id`** — an SRI-shaped integrity id (`sha256-<base64>`), the stable,
   algorithm-tagged identity of the asset.
 - **`hash`** — the hex SHA-256 (the content address; matches the `ref` name).
-- **`sources`** — the original `/uploads/…` name(s) that mapped to this asset.
+- **`sources`** — on a slide image or theme logo: the original `/uploads/…`
+  name(s) that mapped to this asset.
   This is the **separate name layer**: human names stay in the manifest so hash
   churn never leaks into the readable structure. Multiple sources means the
   same bytes were referenced from several places.
+- **`fontFaces`** — on a font file instead of `sources`: every face
+  (`family`, `weight`, `subset`) the file serves. A variable family pins one
+  file per subset for all its weights, so one asset names several faces.
 - **`missingAssets`** (optional) — local refs whose bytes could not be read at
-  export time; these keep their original ref in `deck.json`.
+  export time; these keep their original ref in `deck.json` (or `theme.json`).
+- **`fontsNotIncluded`** (optional) — the theme's fonts that travel by name
+  only, each with its `role` (`heading`/`body`), `source` (`upload`, `adobe`,
+  `monotype`, `google` for a managed family; `curated` for a pinned one) and a
+  `reason`: `licensed` (upload, Adobe or Monotype: licensed to the sending
+  organization, and a bundle installs elsewhere, which is redistribution) or
+  `not-vendored` (the sending instance holds no file for it).
 
 ## `deck.json`
 
@@ -81,9 +121,51 @@ slide content are rewritten from `/uploads/x.png` to the bundle ref
 `assets/<hash>.<ext>`. External (`http(s)://`) image URLs are left untouched —
 they are already portable and are not fetched into the bundle.
 
+## Theme
+
+A presentation on a **database theme** points at an organization record by id,
+and that id means nothing on another instance. The bundle therefore carries the
+record as `theme.json` — exactly the fields a theme is created from, with no
+id, organization, default flag, authorship or font-family id:
+
+```json
+{
+  "slug": "brand",
+  "label": "Brand",
+  "logoUrl": "assets/5a1b…e0.svg",
+  "logoSmallUrl": null,
+  "colors": {
+    "primary": "#ff0055",
+    "background": "#101010",
+    "textLight": "#ffffff",
+    "textDark": "#1f2937"
+  },
+  "fonts": { "heading": "Inter", "body": "Brand Sans" },
+  "config": { "version": 1, "logos": { "dark": "assets/5a1b…e0.svg" } }
+}
+```
+
+Its logos go through the same asset walk as slide images (a ref is a whole
+string; a `url()` inside a CSS value is not an asset ref). `deck.json` keeps the
+theme id it had.
+
+**Fonts** come in two classes. A **curated** family (the pinned, vendored
+Google Fonts under open licences) travels as bytes: its files are assets with
+`fontFaces`. A **managed** family (an organization's upload, Adobe or Monotype
+font, or a Google family the instance does not vendor) travels by name, listed
+in `fontsNotIncluded`. Standalone HTML embeds uploads too; the difference is
+deliberate — an HTML export is a rendered document, a bundle installs.
+
+A **file theme** (`themes/<id>.json`, a fork's `custom/themes/<id>/`) is not a
+record: it ships with an install, like a file-JS slide type, and travels by the
+id in `deck.json` alone.
+
 ## Guarantees
 
-- **Self-contained:** all local assets are embedded; the bundle renders offline.
+- **Self-contained:** all local slide assets are embedded, and so are a
+  database theme's logos and curated fonts. What is not: managed fonts
+  (`fontsNotIncluded`), a file theme, and assets referenced from inside CSS
+  values.
 - **Content-addressed + verifiable:** each asset's bytes hash to its `ref`/`hash`;
   the reader (`readDeckBundle`) re-hashes every asset and rejects a mismatch.
 - **Deduplicated:** identical bytes are stored once regardless of how many
@@ -92,25 +174,58 @@ they are already portable and are not fetched into the bundle.
 
 ## Import (re-hydrating a bundle)
 
-`POST /api/presentations/import/deck` takes a raw `.deck` body and creates a
-presentation from it — the mirror of the export. The flow:
+`POST /api/presentations/import/deck[?install=theme]` takes a raw `.deck` body
+and creates a presentation from it — the mirror of the export. `install` is a
+comma-separated list of what the importer asks to install; `theme` is the one
+value today (custom slide types join it with B251). A value the install does
+not know is refused with 400. The flow:
 
 1. `readDeckBundle(buffer)` — verify the mimetype sentinel and re-hash every
    asset (integrity), yielding `{ manifest, deck, assets }`.
    The deck's own `lang` decides the language it imports in; a bundle whose
    `lang` or `translations` name a language this install does not author in is
    refused with 400 (`deckImportLang`).
-2. For each manifest asset, write its bytes back into `/uploads/` via
-   `writeUploadedFile`, using the manifest `sources[0]` as the human basename.
-   This builds a `assets/<hash>.<ext>` → `/uploads/<uuid>.<ext>` map.
-3. `rewriteBundleRefs(deck, mapFn)` — rewrite the deck's bundle refs to the new
+2. **The carried theme is settled** before any bytes are written — see
+   [Installing a carried theme](#installing-a-carried-theme).
+3. For each manifest asset, write its bytes back into `/uploads/` via
+   `writeBundleAsset`, **verbatim** (a content-addressed file keeps its
+   address; the upload path's raster re-encoding would change it), using the
+   manifest `sources[0]` as the human basename. Font files are never written,
+   and a theme's logos only when the theme is installed. This builds a
+   `assets/<hash>.<ext>` → `/uploads/<uuid>.<ext>` map.
+4. `rewriteBundleRefs(deck, mapFn)` — rewrite the deck's bundle refs to the new
    upload URLs (the inverse of the export's `rewriteAssetRefs`).
-4. `deckToPresentationParts` + `createPresentation`/`updatePresentation` —
+5. `deckToPresentationParts` + `createPresentation`/`updatePresentation` —
    the same normalization + creation path as the JSON import. The deck's
    translations become the presentation's other language versions.
 
+### Installing a carried theme
+
+A bundled theme is recognised by its **content**, not its name: SHA-256 over
+the canonical JSON of `theme.json` without its slug, with this instance's fonts
+bound (below). Each of the organization's own themes is hashed the same way,
+its logos named by the hash of their bytes. Then one of three things happens,
+reported in the response as `bundledTheme` (`slug`, `label`, `status`, and
+`themeId`, `reason`, `fontsMissing` where they apply):
+
+| `status`        | When                                                                                           | The deck lands on                                                                                   |
+| --------------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `existing`      | the organization already has a theme with this content — whoever imports; nothing is installed | that theme                                                                                          |
+| `installed`     | a user who may manage themes (`canManage`) asked for `install=theme`                           | the new organization theme; a taken slug gets `-2`, `-3`, …; an existing theme is never overwritten |
+| `not-installed` | otherwise; `reason` is `install-not-requested` or `not-permitted`                              | the organization default theme; a theme manager can re-import with `install=theme`                  |
+
+**Fonts on the receiving side.** A curated family this instance vendors is used
+by name; its bytes in the bundle are not needed. A managed family is bound to
+the organization's font family of the same name when there is one. Anything
+else falls back to the default for its role — the theme renders on the font
+stack — and is listed in `fontsMissing`. The theme installs in that resolved
+form, so a second import of the same bundle resolves, hashes and dedups the
+same way; once the organization adds the family, the bundle installs as a
+different theme.
+
 **Round-trip:** for content-bearing slides, `export → import → export` is a
-fixpoint (identical content-addressed refs, since identical bytes hash the same).
+fixpoint (identical content-addressed refs, since identical bytes hash the same
+and bundle assets are written verbatim).
 
 **Graceful degradation:**
 
@@ -129,7 +244,9 @@ fixpoint (identical content-addressed refs, since identical bytes hash the same)
 ## Code
 
 - Build: `server/export/deck-bundle.js` → `buildDeckBundle(repoRoot, pres)`.
-- Read/validate: `readDeckBundle(buffer)` → `{ mimetype, manifest, deck, assets }`.
+- Theme, both directions: `server/export/deck-theme.js` (`portableThemeRecord`,
+  `bundleThemeFonts`, `settleBundledTheme`, `installBundledTheme`).
+- Read/validate: `readDeckBundle(buffer)` → `{ mimetype, manifest, deck, theme, assets }`.
 - Import: `server/routes/api/presentations/import-deck.js` →
   `handlePresentationsImportDeck` (route `POST /api/presentations/import/deck`).
 - Pure ref layer: `shared/slide-types/deck-assets.js`
@@ -143,5 +260,7 @@ fixpoint (identical content-addressed refs, since identical bytes hash the same)
 
 ## Not yet covered
 
-- Theme assets (logos referenced on the theme, not on slides) and external image
-  URLs are not embedded.
+- External image URLs are not embedded.
+- Custom slide types do not travel yet (B251, D91).
+- Assets named inside CSS values (a `url()` in a theme's `slideBackgrounds` or
+  `cssVarOverrides`) are not embedded.

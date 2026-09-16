@@ -134,6 +134,22 @@ function collectRefs(deck, isRef) {
 }
 
 /**
+ * Collect the unique local upload refs anywhere in a JSON value, in first-seen
+ * order. The same walk as {@link collectAssetRefs}, for a record that is not a
+ * deck: the theme a `.deck` bundle carries names its logos the way a slide
+ * names its images.
+ * @param {unknown} value
+ * @returns {string[]}
+ */
+export function collectUploadRefsIn(value) {
+  const seen = new Set();
+  walkStrings(value, (s) => {
+    if (isUploadRef(s)) seen.add(s);
+  });
+  return [...seen];
+}
+
+/**
  * Collect the unique local upload refs a deck (or presentation) references, in
  * first-seen order — the assets a `.deck` bundle owns and content-addresses.
  * @param {{ slides?: Array<{ content?: object }> }} deck
@@ -226,6 +242,42 @@ export function rewriteAssetRefs(deck, mapFn) {
  */
 export function rewriteBundleRefs(deck, mapFn) {
   return rewriteRefs(deck, isBundleRef, mapFn);
+}
+
+/**
+ * Deep-clone a JSON value with every upload ref rewritten via `mapFn` — the
+ * record-shaped twin of {@link rewriteAssetRefs}. Used for the theme a bundle
+ * carries.
+ * @param {unknown} value
+ * @param {(ref: string) => string|undefined|null} mapFn
+ * @returns {unknown}
+ */
+export function rewriteUploadRefsIn(value, mapFn) {
+  return mapValue(value, isUploadRef, mapFn);
+}
+
+/**
+ * Deep-clone a JSON value with every bundle ref rewritten via `mapFn` — the
+ * record-shaped twin of {@link rewriteBundleRefs}.
+ * @param {unknown} value
+ * @param {(ref: string) => string|undefined|null} mapFn
+ * @returns {unknown}
+ */
+export function rewriteBundleRefsIn(value, mapFn) {
+  return mapValue(value, isBundleRef, mapFn);
+}
+
+/**
+ * Collect the unique bundle refs anywhere in a JSON value, in first-seen order.
+ * @param {unknown} value
+ * @returns {string[]}
+ */
+export function collectBundleRefsIn(value) {
+  const seen = new Set();
+  walkStrings(value, (s) => {
+    if (isBundleRef(s)) seen.add(s);
+  });
+  return [...seen];
 }
 
 /**

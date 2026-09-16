@@ -50,6 +50,7 @@ export class LocalProvider extends MediaProvider {
     filename,
     contentType,
     maxBytes = MAX_FILE_SIZE,
+    optimize = true,
   }) {
     const ext = MIME_TO_EXT[contentType];
     if (!ext) {
@@ -64,6 +65,7 @@ export class LocalProvider extends MediaProvider {
     // Optimize raster images
     let finalBuffer = buffer;
     if (
+      optimize &&
       ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'].includes(
         contentType,
       )
