@@ -29,6 +29,7 @@ export {
   presentationToDeck,
   deckToPresentationParts,
   deckThemeId,
+  deckImportLang,
 } from './slide-types/deck.js';
 
 export {

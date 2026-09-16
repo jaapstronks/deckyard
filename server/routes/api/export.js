@@ -33,6 +33,7 @@ const exportRoutes = [
   // JSON export
   createExportRoute({
     pattern: /^\/api\/presentations\/([^/]+)\/export\/json$/,
+    allLanguages: true,
     contentType: 'application/json; charset=utf-8',
     extension: '.json',
     stripLiveOnly: false,
@@ -46,6 +47,7 @@ const exportRoutes = [
   // assets + manifest inventory). Renders/round-trips without the server.
   createExportRoute({
     pattern: /^\/api\/presentations\/([^/]+)\/export\/deck\.zip$/,
+    allLanguages: true,
     contentType: DECK_MIMETYPE,
     extension: '.deck',
     stripLiveOnly: false,

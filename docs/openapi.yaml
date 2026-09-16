@@ -1230,7 +1230,11 @@ paths:
       tags:
         - Exports
       summary: Export as JSON
-      description: Exports the presentation in portable JSON format.
+      description: >-
+        Exports the presentation as a portable `deckyard.deck` envelope. Every
+        language version travels in it: `content` holds the deck language
+        (`lang`), the others ride along as `translations`. The full schema is
+        served at `/api/v1/schema/deck.json`.
       parameters:
         - name: id
           in: path
@@ -1238,12 +1242,6 @@ paths:
           schema:
             type: string
             format: uuid
-        - name: lang
-          in: query
-          description: Export language version
-          schema:
-            type: string
-            enum: [nl, en-GB, de, fr, es, pt, it, pl, fi, da, sv, 'no']
       responses:
         '200':
           description: JSON export
@@ -2272,10 +2270,25 @@ components:
           type: integer
         title:
           type: string
+        lang:
+          type: string
+          description: BCP 47 tag of the language `content`, `title` and `notes` are in.
+        translations:
+          type: object
+          description: The deck title per other language, keyed by BCP 47 tag.
+          additionalProperties:
+            type: object
+            properties:
+              title:
+                type: string
         theme:
           type: string
         slides:
           type: array
+          description: >-
+            Each slide is `{ type, content }` plus the optional `translations`,
+            `notes`, `duration` and `visibility`; `/api/v1/schema/deck.json`
+            describes them per slide type.
           items:
             type: object
 

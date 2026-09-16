@@ -240,6 +240,74 @@ test('export→import→export is content-stable (round-trip fixpoint)', async (
   );
 });
 
+test('a two-language deck imports as two language versions (D89)', async () => {
+  const nl = [
+    {
+      id: 'a',
+      type: 'content-slide',
+      content: { title: 'Waarom', body: 'Eén bron.', background: 'lime' },
+      notes: 'Stilstaan.',
+      duration: 20,
+      visibility: { hideInPublished: true },
+    },
+  ];
+  const en = [
+    {
+      ...nl[0],
+      content: { title: 'Why', body: 'One source.', background: 'lime' },
+      notes: 'Pause.',
+    },
+  ];
+  const stored = {
+    title: 'Waarom',
+    theme: 'default',
+    lang: 'nl',
+    slides: nl,
+    i18n: {
+      dominant: 'nl',
+      active: 'nl',
+      versions: {
+        nl: { title: 'Waarom', slides: nl },
+        'en-GB': { title: 'Why', slides: en },
+      },
+    },
+  };
+  const { res, body } = await importBundle(
+    await buildDeckBundle(repoRoot, stored),
+  );
+  assert.equal(res.statusCode, 201);
+  assert.equal(body.i18n.dominant, 'nl');
+  const [slide] = body.slides;
+  assert.equal(slide.notes, 'Stilstaan.');
+  assert.equal(slide.duration, 20);
+  assert.deepEqual(slide.visibility, { hideInPublished: true });
+  const version = body.i18n.versions['en-GB'];
+  assert.equal(version.title, 'Why');
+  assert.equal(version.slides[0].id, slide.id);
+  assert.equal(version.slides[0].content.body, 'One source.');
+  assert.equal(version.slides[0].notes, 'Pause.');
+});
+
+test('rejects a bundle whose deck language is not supported', async () => {
+  const stored = {
+    title: 'x',
+    theme: 'default',
+    slides: [{ id: 'a', type: 'content-slide', content: { title: 'x' } }],
+  };
+  const bundle = await buildDeckBundle(repoRoot, stored);
+  const { deck, manifest } = await readDeckBundle(bundle);
+  deck.lang = 'pt-BR';
+  const JSZip = (await import('jszip')).default;
+  const zip = await JSZip.loadAsync(bundle);
+  zip.file('deck.json', JSON.stringify(deck));
+  zip.file('manifest.json', JSON.stringify(manifest));
+  const { res, body } = await importBundle(
+    await zip.generateAsync({ type: 'nodebuffer' }),
+  );
+  assert.equal(res.statusCode, 400);
+  assert.match(body.message, /pt-BR/);
+});
+
 test('rejects a non-bundle body with 400', async () => {
   const { res, body } = await importBundle(Buffer.from('not a zip'));
   assert.equal(res.statusCode, 400);

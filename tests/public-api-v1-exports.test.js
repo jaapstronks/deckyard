@@ -233,7 +233,7 @@ test('GET /export/json answers the portable deck as an attachment', async () => 
   );
 });
 
-test('GET /export/json?lang=en-GB projects that language and suffixes the filename', async () => {
+test('GET /export/json carries every language version, whatever ?lang= says (D89)', async () => {
   await installDb();
   const ctx = makeCtx(
     'GET',
@@ -243,9 +243,19 @@ test('GET /export/json?lang=en-GB projects that language and suffixes the filena
 
   assert.equal(ctx.res.statusCode, 200);
   const deck = parseJsonBody(ctx.res);
-  assert.equal(deck.title, 'Export Me (EN)');
-  assert.equal(deck.slides[0].content.title, 'Hello');
-  assert.match(ctx.res.headers['Content-Disposition'], /-EN\.json"$/);
+  // `content` is the dominant language; the other rides along as a translation.
+  assert.equal(deck.lang, 'nl');
+  assert.equal(deck.title, 'Export Me');
+  assert.equal(deck.slides[0].content.title, 'Hallo');
+  assert.deepEqual(deck.translations, { 'en-GB': { title: 'Export Me (EN)' } });
+  assert.deepEqual(deck.slides[0].translations, {
+    'en-GB': { title: 'Hello' },
+  });
+  // One document holds every language, so the filename names none.
+  assert.equal(
+    ctx.res.headers['Content-Disposition'],
+    'attachment; filename="Export-Me.json"',
+  );
 });
 
 test('GET /export/json tracks the export in the daily usage', async () => {

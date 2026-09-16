@@ -271,6 +271,99 @@ export function mapItemTexts(srcArr, spec, { resolve, base, path = [] } = {}) {
   });
 }
 
+function isPlainObject(v) {
+  return v !== null && typeof v === 'object' && !Array.isArray(v);
+}
+
+function carriesText(value) {
+  if (typeof value === 'string') return value !== '';
+  if (Array.isArray(value)) return value.some(carriesText);
+  if (isPlainObject(value)) return Object.values(value).some(carriesText);
+  return false;
+}
+
+/**
+ * The per-language part of one language version of a slide's content, read
+ * against the content of the deck's base language: every per-language key the
+ * version fills, and each `items` array as an equally long array holding only
+ * the text keys of each item, at every nesting level. Machine values never
+ * appear — they are one per deck and travel once, in the base content.
+ *
+ * This is what the portable deck writes as `slides[].translations.<lang>`
+ * (D89), and `applyContentTranslation` is its inverse: the two share the
+ * predicate (`perLanguageKeys`) and the walk (`mapItemTexts`), so export and
+ * import cannot disagree on which key is prose.
+ *
+ * An empty string is left out, like a key the version does not have: both mean
+ * "not translated", and the import reads them the same way.
+ *
+ * @param {{textKeys: Set<string>, declaredKeys: Set<string>, items: Map<string, Object>}} spec - Text spec for the slide's type
+ * @param {Object} base - The base-language content; decides item count and order
+ * @param {Object} version - The same slide's content in another language
+ * @returns {Object} Only per-language keys; `{}` when the version fills none
+ */
+export function contentTranslation(spec, base, version) {
+  const b = isPlainObject(base) ? base : {};
+  const v = isPlainObject(version) ? version : {};
+  const out = {};
+  for (const key of perLanguageKeys(spec, b, v)) {
+    if (typeof v[key] === 'string' && v[key] !== '') out[key] = v[key];
+  }
+  for (const [key, sub] of spec.items) {
+    if (!Array.isArray(b[key])) continue;
+    // `base: []` makes every rebuilt item start empty, so only the resolved
+    // text keys land in it: a text-only array exactly as long as the base's.
+    const texts = mapItemTexts(b[key], sub, {
+      path: [key],
+      base: [],
+      resolve: (path) => {
+        const t = valueAtPath(v, path);
+        return typeof t === 'string' && t !== '' ? t : undefined;
+      },
+    });
+    if (carriesText(texts)) out[key] = texts;
+  }
+  return out;
+}
+
+/**
+ * One language version of a slide's content, composed from the base-language
+ * content and a translation in the shape `contentTranslation` writes.
+ *
+ * Structure and machine values come from the base; every per-language key
+ * takes the translation's text, or `''` where the translation has none — a
+ * target version never inherits base-language prose, the rule the editor's
+ * structure sync and the blank fill-job target already follow. A key in the
+ * translation that the predicate reads as a machine value is ignored: a
+ * translation cannot re-colour a slide.
+ *
+ * @param {{textKeys: Set<string>, declaredKeys: Set<string>, items: Map<string, Object>}} spec - Text spec for the slide's type
+ * @param {Object} base - The base-language content
+ * @param {Object} [translation] - Per-language keys for the target language
+ * @returns {Object} A complete content object for the target language
+ */
+export function applyContentTranslation(spec, base, translation) {
+  const b = isPlainObject(base) ? base : {};
+  const tr = isPlainObject(translation) ? translation : {};
+  const out = structuredClone(b);
+  for (const key of perLanguageKeys(spec, b, tr)) {
+    if (typeof tr[key] === 'string') out[key] = tr[key];
+    else if (typeof b[key] === 'string') out[key] = '';
+  }
+  for (const [key, sub] of spec.items) {
+    if (!Array.isArray(b[key])) continue;
+    out[key] = mapItemTexts(b[key], sub, {
+      path: [key],
+      resolve: (path, srcValue) => {
+        const t = valueAtPath(tr, path);
+        if (typeof t === 'string') return t;
+        return typeof srcValue === 'string' ? '' : undefined;
+      },
+    });
+  }
+  return out;
+}
+
 function itemsFieldsJson(spec) {
   const out = [];
   for (const [key, sub] of spec.items) {

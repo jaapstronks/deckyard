@@ -18,6 +18,8 @@
  */
 
 import { FIELD_TYPES, enumOptionValues } from './field-types.js';
+import { DECK_FORMAT_ID } from './deck-format-id.js';
+import { isTextField } from './text-fields.js';
 import { CURRENT_SCHEMA_VERSION } from './schema-version.js';
 import {
   CORE_NAMESPACE,
@@ -221,6 +223,62 @@ export function slideTypeContentSchema(typeName, def, opts = {}) {
   return schema;
 }
 
+/** `$defs` key for a slide type's translation schema. */
+function translationDefKey(typeName) {
+  return `translation_${String(typeName).replace(/[^a-zA-Z0-9_]/g, '_')}`;
+}
+
+/**
+ * Translation properties for a list of fields: the published text fields, and
+ * each `items` field as an array of its items' text properties, at every
+ * nesting level. The same predicate (`isTextField`) that decides what the
+ * export writes into `slides[].translations.<lang>` (D89).
+ * @param {any[]} fields
+ * @returns {Record<string, object>}
+ */
+function translationProperties(fields) {
+  const properties = {};
+  for (const field of Array.isArray(fields) ? fields : []) {
+    if (!field || typeof field.key !== 'string') continue;
+    if (!isPublishedField(field)) continue;
+    if (isTextField(field)) {
+      properties[field.key] = fieldToJsonSchema(field);
+    } else if (field.type === 'items' && Array.isArray(field.itemFields)) {
+      const itemProperties = translationProperties(field.itemFields);
+      if (!Object.keys(itemProperties).length) continue;
+      properties[field.key] = {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: itemProperties,
+          additionalProperties: true,
+        },
+      };
+    }
+  }
+  return properties;
+}
+
+/**
+ * JSON Schema for one language of a slide type's `translations`: its text
+ * keys (items as text-only arrays) plus the slide's `notes`. Nothing is
+ * required, since an untranslated key is simply absent.
+ * @param {string} typeName
+ * @param {any} def - the slide-type definition (with `fields[]`)
+ * @returns {object}
+ */
+export function slideTypeTranslationSchema(typeName, def) {
+  return {
+    title: `${typeName} slide translation`,
+    type: 'object',
+    properties: {
+      ...translationProperties(def?.fields),
+      notes: { type: 'string' },
+    },
+    additionalProperties: true,
+  };
+}
+
 /**
  * Every spelling of a registered type that must select the same content schema.
  *
@@ -262,12 +320,20 @@ export function deckJsonSchema(slideTypes) {
   const $defs = {};
   for (const name of names) {
     $defs[contentDefKey(name)] = slideTypeContentSchema(name, slideTypes[name]);
+    $defs[translationDefKey(name)] = slideTypeTranslationSchema(
+      name,
+      slideTypes[name],
+    );
   }
+
+  const langTag = {
+    type: 'string',
+    pattern: BCP47_PATTERN,
+  };
 
   const slide = {
     type: 'object',
     properties: {
-      id: { type: 'string', format: 'uuid' },
       // Open by shape, not by list: a fork type, an org type or a third-party
       // type is a valid slide type, and enumerating this install's registry
       // keys made every such deck invalid against our own published schema.
@@ -283,54 +349,103 @@ export function deckJsonSchema(slideTypes) {
           'discriminated below in every spelling; an unknown type is valid and ' +
           'its content is unconstrained.',
       },
-      parentId: { type: ['string', 'null'], format: 'uuid' },
       content: { type: 'object' },
-      notes: { type: 'string' },
-      visibility: { type: 'object' },
-      duration: { type: 'number', minimum: 1, maximum: 300 },
+      translations: {
+        type: 'object',
+        description:
+          'The per-language keys of `content` plus `notes`, per other ' +
+          'language (BCP 47 tag). Items fields are text-only arrays as long ' +
+          'as the ones in `content`; machine values never appear here.',
+        propertyNames: langTag,
+        additionalProperties: {
+          type: 'object',
+          properties: { notes: { type: 'string' } },
+          additionalProperties: true,
+        },
+      },
+      notes: {
+        type: 'string',
+        description: 'Speaker notes, in the deck language.',
+      },
+      duration: {
+        type: 'integer',
+        minimum: 1,
+        maximum: 300,
+        description: 'Per-slide duration override, in seconds.',
+      },
+      visibility: {
+        type: 'object',
+        description:
+          'Where the slide is hidden. An absent flag means visible there.',
+        properties: {
+          hideInPresentation: { type: 'boolean' },
+          hideInExport: { type: 'boolean' },
+          hideInPublished: { type: 'boolean' },
+          hideFromViewers: { type: 'boolean' },
+        },
+        additionalProperties: true,
+      },
     },
-    required: ['id', 'type', 'content'],
+    required: ['type', 'content'],
     additionalProperties: true,
-    // Discriminate content by slide type: if type names X (in any of its
-    // spellings), content matches X.
+    // Discriminate content and translations by slide type: if type names X
+    // (in any of its spellings), content matches X and so does every
+    // translation.
     allOf: names.map((name) => ({
       if: {
         properties: { type: { enum: typeSpellings(name, slideTypes[name]) } },
       },
       then: {
-        properties: { content: { $ref: `#/$defs/${contentDefKey(name)}` } },
+        properties: {
+          content: { $ref: `#/$defs/${contentDefKey(name)}` },
+          translations: {
+            additionalProperties: {
+              $ref: `#/$defs/${translationDefKey(name)}`,
+            },
+          },
+        },
       },
     })),
   };
 
+  // The schema describes the portable envelope `presentationToDeck` writes,
+  // not the stored model: no `id`, `schemaVersion`, `created`, `modified`,
+  // `settings` or `description`, which are storage's and never exported. There
+  // is one published deck schema, and this is it (D94).
   return {
     $schema: JSON_SCHEMA_DIALECT,
     $id: `${SCHEMA_BASE_URI}/v${CURRENT_SCHEMA_VERSION}/deck.schema.json`,
     title: 'Deckyard deck',
     description:
-      'A Deckyard presentation (the durable deckyard.deck envelope). ' +
+      'A portable Deckyard deck (the deckyard.deck envelope). ' +
       'Generated from the slide-type field registry; do not edit by hand.',
     type: 'object',
     properties: {
-      id: { type: 'string', format: 'uuid' },
-      schemaVersion: { type: 'integer', minimum: 0 },
+      format: { const: DECK_FORMAT_ID },
+      version: { const: 1 },
       title: { type: 'string' },
-      description: { type: 'string', maxLength: 600 },
-      created: { type: 'string' },
-      modified: { type: 'string' },
-      theme: { type: 'string' },
       lang: {
-        type: 'string',
-        pattern: BCP47_PATTERN,
+        ...langTag,
         description:
-          'BCP 47 language tag (e.g. `nl`, `en-GB`, `pt-BR`). The format ' +
-          'places no restriction beyond well-formedness; which tags a given ' +
+          'BCP 47 language tag (e.g. `nl`, `en-GB`, `pt-BR`) of `title`, ' +
+          'every slide `content` and `notes`. The format places no ' +
+          'restriction beyond well-formedness; which tags a given ' +
           'implementation authors in is its own choice.',
       },
-      settings: { type: 'object' },
+      translations: {
+        type: 'object',
+        description: 'The deck title per other language (BCP 47 tag).',
+        propertyNames: langTag,
+        additionalProperties: {
+          type: 'object',
+          properties: { title: { type: 'string' } },
+          additionalProperties: true,
+        },
+      },
+      theme: { type: 'string' },
       slides: { type: 'array', items: { $ref: '#/$defs/slide' } },
     },
-    required: ['id', 'title', 'slides'],
+    required: ['format', 'version', 'title', 'slides'],
     additionalProperties: true,
     $defs: { slide, ...$defs },
   };

@@ -2,14 +2,13 @@ import {
   createPresentation,
   updatePresentation,
 } from '../../../storage/presentations/index.js';
-import { serveJson, requireJsonBody } from '../../../utils/http.js';
-import { deckToPresentationParts } from '../../../../shared/slide-types.js';
+import { badRequest, serveJson, requireJsonBody } from '../../../utils/http.js';
+import {
+  deckImportLang,
+  deckToPresentationParts,
+} from '../../../../shared/slide-types.js';
 import { loadDeckTheme } from '../../../utils/themes.js';
 import { createLogger } from '../../../utils/logger.js';
-import {
-  DEFAULT_DECK_LANG,
-  normalizeLang,
-} from '../../../../shared/i18n-utils.js';
 const log = createLogger('import-json');
 
 // Error handling lives in the `withErrorHandler` wrapper on the presentations
@@ -29,7 +28,12 @@ export async function handlePresentationsImportJson({
   const body = parsed.body;
 
   const deck = body?.deck || body;
-  const lang = normalizeLang(body?.lang) || DEFAULT_DECK_LANG;
+  const resolved = deckImportLang(deck, body?.lang);
+  if (!resolved.ok) {
+    badRequest(res, resolved.message);
+    return true;
+  }
+  const { lang } = resolved;
   log.info('[import-json] Language:', lang);
   log.info('[import-json] Deck title:', deck?.title);
   log.info(
@@ -62,10 +66,12 @@ export async function handlePresentationsImportJson({
   // Build the update payload with proper i18n structure.
   // We need to update i18n.versions[lang] with the imported slides,
   // otherwise normalizeI18n will overwrite our slides with the default ones.
+  // The deck's translations land as the other language versions (D89).
   const i18n = {
     dominant: lang,
     active: lang,
     versions: {
+      ...parts.translations,
       [lang]: {
         title: parts.title,
         slides: parts.slides,
