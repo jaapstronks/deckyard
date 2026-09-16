@@ -74,7 +74,8 @@ test('bundled gradients register as a third source when their opener is injected
   });
   assert.deepEqual(
     seam.providers.map((p) => p.id),
-    ['local-library', 'bundled', 'imagekit'],
+    // ImageKit is primary, so it leads; the others keep their declared order.
+    ['imagekit', 'local-library', 'bundled'],
   );
 });
 
@@ -177,4 +178,154 @@ test('the bundled adapter forwards its pick untouched — the manifest is alread
   assert.equal(picked.length, 1);
   assert.equal(picked[0].url, '/assets/gradients/brand-aurora.svg');
   assert.equal(picked[0].meta.source, 'bundled-gradient');
+});
+
+/** Resolve after the chooser's focus frame (rAF is a 0 ms timeout here). */
+const nextFrame = () => new Promise((resolve) => setTimeout(resolve, 5));
+
+/** @returns {HTMLElement} a root attached to the document, so focus works. */
+function attachedRoot() {
+  const root = document.createElement('div');
+  document.body.append(root);
+  return root;
+}
+
+/** @returns {{ id: string, primary: boolean, label: string, description: string }[]} */
+function cardsOf(chooser) {
+  return [...chooser.querySelectorAll('.image-source-card')].map((b) => ({
+    id: b.dataset.sourceId,
+    primary: b.classList.contains('is-primary'),
+    label: b.querySelector('.image-source-card-label')?.textContent,
+    description: b.querySelector('.image-source-card-description')?.textContent,
+  }));
+}
+
+test('a configured ImageKit is primary and ordered first; the rest keep their order', () => {
+  const seam = createImagePickerSeam({
+    root: document.createElement('div'),
+    features: { enableImageLibrary: true },
+    openImageLibrary: spyOpener().open,
+    openBundledGradients: spyOpener().open,
+    openImageKit: spyOpener().open,
+  });
+  assert.deepEqual(
+    seam.providers.map((p) => [p.id, p.primary === true]),
+    [
+      ['imagekit', true],
+      ['local-library', false],
+      ['bundled', false],
+    ],
+  );
+  for (const p of seam.providers) {
+    assert.equal(typeof p.description, 'string', `${p.id} has a description`);
+    assert.ok(p.description.length > 0);
+  }
+});
+
+test('library + ImageKit: two cards with a description, ImageKit on top, primary and focused', async () => {
+  const root = attachedRoot();
+  const seam = createImagePickerSeam({
+    root,
+    features: { enableImageLibrary: true },
+    openImageLibrary: spyOpener().open,
+    openImageKit: spyOpener().open,
+  });
+  seam({ onPick: noop });
+  const chooser = root.querySelector('.image-source-chooser');
+  const cards = cardsOf(chooser);
+  assert.deepEqual(
+    cards.map((c) => [c.id, c.primary]),
+    [
+      ['imagekit', true],
+      ['local-library', false],
+    ],
+  );
+  assert.ok(cards.every((c) => c.description));
+  const buttons = chooser.querySelectorAll('.image-source-card');
+  assert.ok(buttons[0].classList.contains('btn-primary'));
+  assert.ok(buttons[1].classList.contains('btn-secondary'));
+  await nextFrame();
+  assert.equal(document.activeElement, buttons[0]);
+  root.remove();
+});
+
+test('a fork sets label, description and primary on the providers without patching the chooser', async () => {
+  const root = attachedRoot();
+  const lib = spyOpener();
+  const seam = createImagePickerSeam({
+    root,
+    features: { enableImageLibrary: true },
+    openImageLibrary: lib.open,
+    openBundledGradients: spyOpener().open,
+    openImageKit: spyOpener().open,
+  });
+  // What a fork's image-pickers.js does after building the seam.
+  const dam = seam.providers.find((p) => p.id === 'imagekit');
+  dam.label = 'CIIIC Beeldbank';
+  dam.description = "Alle foto's van CIIIC-events, portretten en logo's";
+  dam.primary = false;
+  const library = seam.providers.find((p) => p.id === 'local-library');
+  library.primary = true;
+
+  seam({ onPick: noop });
+  const chooser = root.querySelector('.image-source-chooser');
+  assert.deepEqual(cardsOf(chooser), [
+    {
+      id: 'local-library',
+      primary: true,
+      label: library.label,
+      description: library.description,
+    },
+    {
+      id: 'imagekit',
+      primary: false,
+      label: 'CIIIC Beeldbank',
+      description: "Alle foto's van CIIIC-events, portretten en logo's",
+    },
+    {
+      id: 'bundled',
+      primary: false,
+      label: seam.providers[2].label,
+      description: seam.providers[2].description,
+    },
+  ]);
+  await nextFrame();
+  const first = chooser.querySelector('.image-source-card');
+  assert.equal(document.activeElement, first);
+  first.click();
+  assert.equal(lib.calls.length, 1);
+  root.remove();
+});
+
+test('two primary sources are refused, not silently ordered', () => {
+  const root = attachedRoot();
+  const seam = createImagePickerSeam({
+    root,
+    features: { enableImageLibrary: true },
+    openImageLibrary: spyOpener().open,
+    openImageKit: spyOpener().open,
+  });
+  seam.providers.find((p) => p.id === 'local-library').primary = true;
+  assert.throws(() => seam({ onPick: noop }), /at most one primary source/);
+  assert.equal(root.querySelector('.image-source-chooser'), null);
+  root.remove();
+});
+
+test("a call site's hint is shown under the chooser title, and only when given", () => {
+  const root = attachedRoot();
+  const seam = createImagePickerSeam({
+    root,
+    features: { enableImageLibrary: true },
+    openImageLibrary: spyOpener().open,
+    openBundledGradients: spyOpener().open,
+  });
+  seam({ hint: 'For the background of this slide', onPick: noop });
+  assert.equal(
+    root.querySelector('.image-source-chooser .image-source-hint')?.textContent,
+    'For the background of this slide',
+  );
+  root.replaceChildren();
+  seam({ onPick: noop });
+  assert.equal(root.querySelector('.image-source-hint'), null);
+  root.remove();
 });

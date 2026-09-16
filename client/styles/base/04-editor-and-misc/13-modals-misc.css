@@ -1,19 +1,41 @@
 /* ============================================
-   Image source chooser (library vs ImageKit)
-   Shown only when >1 provider is enabled. Buttons otherwise stretch edge to
-   edge, which reads as a heavy list; cap the width and centre so the two
-   sources read as a tidy pair of choices.
+   Image source chooser (library, gradients, ImageKit)
+   Shown only when >1 provider is enabled. One card per source: the label and
+   one line saying what the source holds, so "Image library" is no longer
+   mistaken for the organisation's image bank. The primary source (`.is-primary`,
+   first in the list) carries the primary button colour; the rest are
+   secondary. Width capped so the cards read as a set of choices, not a list.
    ============================================ */
+
+.image-source-hint {
+  max-width: 360px;
+  margin: 0 auto var(--ps-space-3);
+}
 
 .image-source-list {
   gap: var(--ps-space-2);
-  max-width: 320px;
+  max-width: 360px;
   margin: 0 auto;
 }
 
-.image-source-list .btn {
+.image-source-card {
   width: 100%;
-  justify-content: center;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ps-space-1);
+  padding: var(--ps-space-3) var(--ps-space-4);
+  text-align: left;
+  white-space: normal;
+}
+
+.image-source-card-label {
+  font-weight: 600;
+}
+
+.image-source-card-description {
+  font-size: var(--ps-text-xs);
+  font-weight: 400;
+  opacity: 0.8;
 }
 
 /* ============================================

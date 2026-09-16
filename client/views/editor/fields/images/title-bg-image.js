@@ -82,6 +82,10 @@ export function createFieldTitleBgImage(ctx) {
                 'editor.image.bgLibraryTitle',
                 'Library: choose a background image',
               ),
+              hint: t(
+                'editor.image.bgHint',
+                'For the background of this slide',
+              ),
               docId: pres?.id || '',
               allowCaptionCredit: false,
               context: {

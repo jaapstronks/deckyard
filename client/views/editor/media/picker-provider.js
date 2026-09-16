@@ -11,9 +11,12 @@
  * This module collapses the two into ONE `openImagePicker(opts)` seam. Call
  * sites pass a normalized `onPick(picked)` and never learn which provider backs
  * it. The seam resolves the enabled providers from feature flags: with exactly
- * one it opens directly; with more than one it shows a lightweight source
- * chooser first. A fork swaps the provider table once (register ImageKit,
- * disable the library) and inherits every current and future call site.
+ * one it opens directly; with more than one it shows a source chooser first,
+ * one card per provider with its label and description, the primary source on
+ * top. A fork swaps the provider table once (register ImageKit, disable the
+ * library), sets a provider's `label`/`description`/`primary` on
+ * `openImagePicker.providers`, and inherits every current and future call
+ * site without touching the chooser.
  *
  * The normalization also unifies the historical pick shapes (native library
  * item, ImageKit pick, Beeldbank pick) into one contract; `apply-pick.js`
@@ -41,12 +44,17 @@ import { h } from '../../../lib/dom.js';
  * @property {Object} [context]              Slide context forwarded to the underlying picker.
  * @property {string} [docId]               Presentation id (ImageKit tagging context).
  * @property {boolean} [allowCaptionCredit] Enable the library's "add photo credit" affordance.
+ * @property {string} [hint]                One line under the chooser's title saying what the
+ *                                          image is for; only shown when there is a chooser.
  */
 
 /**
  * @typedef {Object} PickerProvider
  * @property {string} id
  * @property {string} label                 Human label shown in the source chooser.
+ * @property {string} [description]         One line under the label: what this source holds.
+ * @property {boolean} [primary]            The source the deployment means as *the* source:
+ *                                          listed first, drawn as primary, focused. At most one.
  * @property {(opts: PickerOpts) => void} open
  */
 
@@ -59,6 +67,10 @@ function libraryProvider(openLibraryRaw) {
   return {
     id: 'local-library',
     label: t('editor.image.source.library', 'Image library'),
+    description: t(
+      'editor.image.source.library.description',
+      'Uploaded images and stock photos',
+    ),
     open(opts) {
       openLibraryRaw({
         title: opts.title,
@@ -102,6 +114,10 @@ function bundledGradientsProvider(openBundledRaw) {
   return {
     id: 'bundled',
     label: t('editor.image.source.bundled', 'Gradients'),
+    description: t(
+      'editor.image.source.bundled.description',
+      'Gradients that come with the app',
+    ),
     open(opts) {
       // Deliberately not forwarding `opts.title`: call sites name the *field*
       // ("Library: choose an image"), which is the wrong heading once the user
@@ -124,6 +140,13 @@ function imagekitProvider(openImageKitRaw) {
   return {
     id: 'imagekit',
     label: t('editor.image.source.imagekit', 'ImageKit'),
+    description: t(
+      'editor.image.source.imagekit.description',
+      "Your organisation's photo archive",
+    ),
+    // A deployment that connects a DAM means it as the source; the provider
+    // only exists once ImageKit is configured.
+    primary: true,
     open(opts) {
       openImageKitRaw({
         title: opts.title,
@@ -146,36 +169,79 @@ function imagekitProvider(openImageKitRaw) {
 }
 
 /**
- * Lightweight modal asking the user which source to pick from, shown only when
- * more than one provider is enabled.
+ * Put the primary provider first, keeping the declared order otherwise. Runs
+ * on the live table each time the picker opens, so a fork that sets `primary`
+ * after the seam is built gets its order without patching anything.
+ *
+ * @param {PickerProvider[]} providers - sorted in place
+ * @returns {PickerProvider[]} the same array
+ * @throws {Error} when more than one provider declares `primary`
+ */
+function orderProviders(providers) {
+  const primaries = providers.filter((p) => p.primary === true);
+  if (primaries.length > 1) {
+    throw new Error(
+      `image picker: at most one primary source, got ${primaries.map((p) => p.id).join(', ')}`,
+    );
+  }
+  // Array.prototype.sort is stable, so the other sources keep their order.
+  return providers.sort(
+    (a, b) => Number(b.primary === true) - Number(a.primary === true),
+  );
+}
+
+/**
+ * The modal asking which source to pick from, shown only when more than one
+ * provider is enabled: one card per source (label + description), the primary
+ * one drawn as primary and focused.
  * @param {Object} args
  * @param {HTMLElement} args.root
- * @param {PickerProvider[]} args.providers
+ * @param {PickerProvider[]} args.providers - already ordered
+ * @param {string} [args.hint]
  * @param {(p: PickerProvider) => void} args.onChoose
  */
-function openSourceChooser({ root, providers, onChoose }) {
+function openSourceChooser({ root, providers, hint, onChoose }) {
   const modal = createQuickModal({
     root: root || document.body,
     title: t('editor.image.source.title', 'Choose image source'),
     className: 'image-source-chooser',
   });
 
+  if (hint) {
+    modal.append(h('p', { class: 'help image-source-hint', text: hint }));
+  }
+
   const list = h('div', { class: 'stack image-source-list' });
   for (const p of providers) {
     list.append(
-      h('button', {
-        class: 'btn btn-secondary',
-        type: 'button',
-        text: p.label,
-        onclick: () => {
-          modal.close();
-          onChoose(p);
+      h(
+        'button',
+        {
+          class: `btn ${p.primary ? 'btn-primary is-primary' : 'btn-secondary'} image-source-card`,
+          type: 'button',
+          'data-source-id': p.id,
+          onclick: () => {
+            modal.close();
+            onChoose(p);
+          },
         },
-      }),
+        [
+          h('span', { class: 'image-source-card-label', text: p.label }),
+          p.description
+            ? h('span', {
+                class: 'image-source-card-description',
+                text: p.description,
+              })
+            : null,
+        ],
+      ),
     );
   }
   modal.append(list);
-  list.querySelector('button')?.focus();
+  // The overlay's focus trap focuses the first focusable (the close button)
+  // in a frame of its own; the top card claims focus after it.
+  const first = list.querySelector('button');
+  requestAnimationFrame(() => first?.focus());
 }
 
 /**
@@ -187,7 +253,10 @@ function openSourceChooser({ root, providers, onChoose }) {
  *   (which `IMAGEKIT_ONLY` already forces);
  * - the bundled gradients are enabled whenever their raw opener is provided
  *   (the caller resolves the `stockMedia.bundled.enabled` toggle);
- * - ImageKit is enabled whenever its raw opener is provided.
+ * - ImageKit is enabled whenever its raw opener is provided, and is primary.
+ *
+ * `providers` is the live table: its order is the chooser's order, with the
+ * primary source first.
  *
  * @param {Object} args
  * @param {HTMLElement} args.root
@@ -215,6 +284,7 @@ export function createImagePickerSeam({
   if (typeof openImageKit === 'function') {
     providers.push(imagekitProvider(openImageKit));
   }
+  orderProviders(providers);
 
   /** @param {PickerOpts} opts */
   function openImagePicker(opts = {}) {
@@ -223,7 +293,12 @@ export function createImagePickerSeam({
       providers[0].open(opts);
       return;
     }
-    openSourceChooser({ root, providers, onChoose: (p) => p.open(opts) });
+    openSourceChooser({
+      root,
+      providers: orderProviders(providers),
+      hint: opts.hint,
+      onChoose: (p) => p.open(opts),
+    });
   }
 
   openImagePicker.providers = providers;
