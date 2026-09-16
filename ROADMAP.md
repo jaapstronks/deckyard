@@ -59,6 +59,18 @@ documented under `docs/reference/` and `docs/developer/`._
 
 ## Next — planned features
 
+- **PowerPoint export as two intents** — two explicit export rows instead of
+  one: "PowerPoint" (pixel-perfect, every slide as an image, for handing a
+  deck to someone else to present or to paste into their own deck) and
+  "PowerPoint, editable" (text and images as editable objects on the theme's
+  layouts, native where a slide type can be, an image where it declares it
+  cannot, and the export says which). Each slide type declares its fidelity;
+  the editable export improves per type without the menu changing.
+- **Portable `.deck` bundles that carry everything** — translations, speaker
+  notes, the theme with its logo and open-licensed fonts, and the
+  organization's own slide-type definitions travel with the deck; an admin
+  installs a bundled theme or type explicitly on import, anyone else gets an
+  honest fallback.
 - **Live-session robustness** — survive presenter refresh, companion
   auto-recovery, persistent join QR, unified follow codes, linked Q&A
   moderation, poll-open affordance.
