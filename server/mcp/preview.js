@@ -15,7 +15,10 @@ import { themeVarsCssText } from '../utils/themes.js';
 import { embedSlideImages } from '../export/css-bundle.js';
 import { buildCssChain } from '../utils/css-chain.js';
 import { buildDocumentHead } from '../utils/head-chain.js';
-import { buildScriptChain } from '../utils/script-chain.js';
+import {
+  buildScriptChain,
+  detectSlideRuntimeNeeds,
+} from '../utils/script-chain.js';
 import {
   buildPrismKatexTags,
   detectPrismKatexNeeds,
@@ -255,7 +258,13 @@ export async function buildSlidePreviewHtml(
     <div class="preview-list">
       ${slideHtmls.join('\n')}
     </div>
-    ${buildScriptChain({ needs: highlightNeeds })}
+    ${buildScriptChain({
+      needs: highlightNeeds,
+      // A static sheet: the layout runtime only, never the countdown.
+      slideNeeds: {
+        teamCards: detectSlideRuntimeNeeds(slideHtmls.join('\n')).teamCards,
+      },
+    })}
   </body>
 </html>`;
 }
@@ -312,7 +321,13 @@ export async function buildSingleSlidePreviewHtml(
     <div class="frame">
       <div class="stage ps-theme">${html}</div>
     </div>
-    ${buildScriptChain({ needs: highlightNeeds })}
+    ${buildScriptChain({
+      needs: highlightNeeds,
+      // A static sheet: the layout runtime only, never the countdown.
+      slideNeeds: {
+        teamCards: detectSlideRuntimeNeeds(html).teamCards,
+      },
+    })}
   </body>
 </html>`;
 }

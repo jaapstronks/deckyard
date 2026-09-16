@@ -1,4 +1,3 @@
-/* global document */ // page.evaluate() callbacks below run in the browser context.
 import { renderSlideHtml } from '../utils/render-slide.js';
 import {
   getPuppeteerBrowser,
@@ -14,7 +13,11 @@ import {
   buildPrismKatexTags,
   detectPrismKatexNeeds,
 } from '../utils/prism-katex.js';
-import { buildScriptChain } from '../utils/script-chain.js';
+import {
+  buildScriptChain,
+  detectSlideRuntimeNeeds,
+} from '../utils/script-chain.js';
+import { settleRenderedPage } from '../utils/settle-rendered-page.js';
 import { renderVideoSlidePngHtml } from '../utils/video-slide-html.js';
 import { buildDocumentHead } from '../utils/head-chain.js';
 import {
@@ -100,7 +103,13 @@ export async function buildSlidePngHtml(
   })}
   <body>
     <div class="ps-theme">${css.wmHtml}${slideHtml}</div>
-    ${buildScriptChain({ needs: highlightNeeds })}
+    ${buildScriptChain({
+      needs: highlightNeeds,
+      // A static sheet: the layout runtime only, never the countdown.
+      slideNeeds: {
+        teamCards: detectSlideRuntimeNeeds(slideHtml).teamCards,
+      },
+    })}
   </body>
 </html>`;
 }
@@ -132,34 +141,7 @@ export async function renderSlideToPngBuffer(
       docLang,
     });
     await page.setContent(html, { waitUntil: 'networkidle0' });
-    try {
-      await page.evaluate(() => document.fonts?.ready);
-    } catch {
-      // ignore
-    }
-    // Wait for all images to load (or timeout)
-    try {
-      await page.evaluate(() => {
-        return Promise.all(
-          Array.from(document.querySelectorAll('img')).map((img) => {
-            if (img.complete && img.naturalWidth > 0) return Promise.resolve();
-            return new Promise((resolve) => {
-              img.onload = resolve;
-              img.onerror = resolve;
-              setTimeout(resolve, 5000); // 5s timeout per image
-            });
-          }),
-        );
-      });
-    } catch {
-      // ignore
-    }
-    // Wait for KaTeX to render (small delay to ensure scripts have executed)
-    try {
-      await page.evaluate(() => new Promise((r) => setTimeout(r, 100)));
-    } catch {
-      // ignore
-    }
+    await settleRenderedPage(page);
     const buf = await page.screenshot({
       type: 'png',
       fullPage: false,

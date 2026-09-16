@@ -224,6 +224,33 @@ initCountdownSlides(document);
 }
 
 /**
+ * The team-cards justify pass
+ * (`client/lib/slide-runtime/team-cards-justify.js`).
+ *
+ * Every document, stage or sheet. It is layout, not behaviour: without it an
+ * `imageAspect: original` slide falls back to one shared image height, and four
+ * landscape images wrap to a 2×2 grid that covers the title — which is what the
+ * PNG, PDF and PPTX exports showed while only the editor ran the pass.
+ */
+const TEAM_CARDS_MODULE = new URL(
+  '../../client/lib/slide-runtime/team-cards-justify.js',
+  import.meta.url,
+);
+
+function teamCardsRuntimeSource() {
+  return cachedModule(
+    'team-cards',
+    () => `${SLIDE_RUNTIME_BANNER}
+// Team-cards justify: client/lib/slide-runtime/team-cards-justify.js, inlined.
+{
+${inlineClientModule(TEAM_CARDS_MODULE, 'initTeamCardsJustify')}
+
+initTeamCardsJustify(document.body);
+}`,
+  );
+}
+
+/**
  * Client modules a path's body calls into, by name. A closed set, like
  * {@link SCRIPT_RUNTIMES}: a path that needs another one adds an entry here
  * instead of carrying a copy in its body. Each is inlined before the body and
@@ -273,11 +300,21 @@ ${inlineClientModule(entry.url, entry.exportName)}`,
 /**
  * Which client slide runtimes a rendered deck needs, from its markup.
  *
+ * `teamCards` is only the uncropped, non-split image-blocks layout — the one
+ * combination the justify pass acts on.
+ *
  * @param {string} slidesHtml
- * @returns {{countdown: boolean}}
+ * @returns {{countdown: boolean, teamCards: boolean}}
  */
 export function detectSlideRuntimeNeeds(slidesHtml) {
-  return { countdown: /\bslide-countdown\b/.test(String(slidesHtml || '')) };
+  const html = String(slidesHtml || '');
+  const teamCards = Array.from(
+    html.matchAll(/class="([^"]*\bslide-team-cards\b[^"]*)"/g),
+  ).some(
+    ([, cls]) =>
+      /\baspect-original\b/.test(cls) && !/\bhas-column-split\b/.test(cls),
+  );
+  return { countdown: /\bslide-countdown\b/.test(html), teamCards };
 }
 
 /**
@@ -296,9 +333,10 @@ export function detectSlideRuntimeNeeds(slidesHtml) {
  *   rendered slides actually contain, from `detectPrismKatexNeeds()`. Omitted
  *   means "assume both". `{prism: false, katex: false}` emits no initialiser,
  *   which is the point of detecting: a deck with neither runs nothing.
- * @param {{countdown: boolean}} [options.slideNeeds] - Client slide runtimes
- *   the slides need, from `detectSlideRuntimeNeeds()`. Stage runtime only;
- *   asking for one on a `none` document throws.
+ * @param {{countdown?: boolean, teamCards?: boolean}} [options.slideNeeds] -
+ *   Client slide runtimes the slides need, from `detectSlideRuntimeNeeds()`.
+ *   `countdown` is stage runtime only (asking for it on a `none` document
+ *   throws); `teamCards` is layout and goes in any document.
  * @param {string[]} [options.clientModules] - Client modules the body calls
  *   into, by name from {@link CLIENT_MODULE_NAMES}; inlined before the body.
  * @param {string} [options.body=''] - The path's own runtime.
@@ -323,7 +361,7 @@ export function buildScriptChain({
   }
   if (slideNeeds?.countdown && runtime !== 'stage') {
     throw new Error(
-      `slide runtimes need the stage runtime, not "${runtime}" — a static sheet has no active slide to run a timer on`,
+      `the countdown runtime needs the stage runtime, not "${runtime}" — a static sheet has no active slide to run a timer on`,
     );
   }
 
@@ -332,6 +370,7 @@ export function buildScriptChain({
   // Before the body: it only arms. Auto-start waits a microtask for the body
   // to mark the first slide `is-active`.
   if (slideNeeds?.countdown) parts.push(countdownRuntimeSource());
+  if (slideNeeds?.teamCards) parts.push(teamCardsRuntimeSource());
   for (const name of clientModules) parts.push(clientModuleSource(name));
   if (String(body || '').trim()) parts.push(dedent(String(body)));
 

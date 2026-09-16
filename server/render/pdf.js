@@ -1,9 +1,9 @@
-/* global document */ // page.evaluate() callbacks below run in the browser context.
 import { buildSlidesPdfHtml } from '../export/pdf-slides.js';
 import {
   getPuppeteerBrowser,
   toNodeBuffer,
 } from '../utils/puppeteer-browser.js';
+import { settleRenderedPage } from '../utils/settle-rendered-page.js';
 import { envInt } from '../config/utils.js';
 
 /** Puppeteer raises a TimeoutError (name === 'TimeoutError') on timeout. */
@@ -51,11 +51,7 @@ export async function renderSlidesToPdfBuffer(
       }
       throw err;
     }
-    try {
-      await page.evaluate(() => document.fonts?.ready);
-    } catch {
-      // ignore
-    }
+    await settleRenderedPage(page);
     try {
       await page.emulateMediaType('print');
     } catch {
