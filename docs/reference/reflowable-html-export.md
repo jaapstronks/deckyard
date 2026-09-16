@@ -31,6 +31,30 @@ document that stays readable with JavaScript — and author CSS — turned off.
   definitions:
   - `string` → `<p>`, `markdown` → semantic prose (headings, lists, blockquotes),
     `code` → `<pre><code>`, `csv` → a `<table>`.
+  - A text field's `role` decides its element (D128). The same declaration that
+    sets a field's style affordances (`text-alignment.md`) is its document
+    semantics, because both follow from what the text is. One table, applied to
+    the slide body and to every item alike:
+    - `quote` → `<blockquote data-field>` around the paragraph(s).
+    - `attribution` (a name, a role, a source, a byline) → a `<p data-field>`
+      inside the block's **one** `<footer>`, placed where the first attribution
+      field is declared and outside the `<blockquote>`. The footer holds several
+      fields, so it carries no `data-field` of its own; its lines do. No filled
+      attribution, no footer.
+    - `caption` → the `<figcaption data-field>` of the block's figure when the
+      block draws exactly one figure without a caption of its own; otherwise
+      `<p class="reader-caption">`.
+    - `label` → `<p class="reader-label">`, the eyebrow. A label declaring
+      `termWhen: { field, in }` (the one operator `visibleWhen` reads) wraps its
+      text in `<dfn>` while the predicate holds: the callout label on a
+      `definition`.
+    - `prose`, `list-item` and an unfilled `heading` → `<p>`.
+      A field whose role gives it its own element (`quote`, `caption`, `label`,
+      `attribution`) never becomes an item's `<h3>`.
+      Declared on core types: quote-slide `quote`, `authorName`, `authorTitle`
+      (also in `quotes[]`), callout `label` and `source`, title-slide `meta`,
+      team-cards `byline`, logo-wall `name`, cycle `centerLabel`, comparison
+      `verdict`.
   - `image`/`images` → `<figure>` with resolved `alt` (via `pickAltText`; a
     `decorative` `imageRole` yields `alt=""` + `aria-hidden`) and an optional
     `<figcaption>`. An image field's sibling `alt`/`caption` keys fold into the
@@ -38,7 +62,8 @@ document that stays readable with JavaScript — and author CSS — turned off.
   - `items` → a list. The item heading is the sub-field the field names in
     `itemLabelField` (the per-item mirror of `labelField`), and otherwise the
     item's first readable string — readable meaning not `hidden`, not
-    `presentational`, and not already folded into the item's own figure. A
+    `presentational`, not a role with its own element, and not already folded
+    into the item's own figure. A
     type whose first string is not its heading declares one:
     `kpi-metrics-slide` leads with `value`, so its `metrics` field names
     `label`. A declared field that is empty on one item falls back to the

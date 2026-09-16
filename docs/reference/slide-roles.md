@@ -161,6 +161,7 @@ size layer is finer-grained where the affordance layer does not need to be:
 | `quote`                        | type-scaled display (quote-slide's own scaling; allowlisted)                    |
 | `caption`                      | caption                                                                         |
 | `label`                        | label                                                                           |
+| `attribution`                  | caption or label (a byline, source or meta line)                                |
 
 ## The card pattern
 

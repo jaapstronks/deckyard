@@ -4,14 +4,14 @@
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"title-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" data-field=\"title\">Presentation Title</h2>",
       "<p data-field=\"subheading\">Your subtitle or tagline here</p>",
-      "<p data-field=\"meta\">Your Name · June 2026</p>",
+      "<footer><p data-field=\"meta\">Your Name · June 2026</p></footer>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"title-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" data-field=\"title\">Presentation Title</h2>",
       "<p data-field=\"subheading\">Your subtitle or tagline here</p>",
-      "<p data-field=\"meta\">Your Name · June 2026</p>",
+      "<footer><p data-field=\"meta\">Your Name · June 2026</p></footer>",
       "</section>"
     ]
   },
@@ -46,14 +46,14 @@
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"callout-slide\" data-variant=\"insight\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" class=\"reader-sr-only\">Callout</h2>",
       "<div data-field=\"body\"><p>Teams that ship weekly find integration bugs <strong>six times</strong> earlier than teams that ship quarterly.</p></div>",
-      "<p data-field=\"source\">DORA, State of DevOps 2024</p>",
+      "<footer><p data-field=\"source\">DORA, State of DevOps 2024</p></footer>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"callout-slide\" data-variant=\"insight\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" class=\"reader-sr-only\">Callout</h2>",
       "<div data-field=\"body\"><p>Teams that ship weekly find integration bugs <strong>six times</strong> earlier than teams that ship quarterly.</p></div>",
-      "<p data-field=\"source\">DORA, State of DevOps 2024</p>",
+      "<footer><p data-field=\"source\">DORA, State of DevOps 2024</p></footer>",
       "</section>"
     ]
   },
@@ -168,24 +168,18 @@
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"team-cards-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" data-field=\"title\">Meet the Team</h2>",
       "<ul class=\"reader-items\" data-field=\"members\"><li class=\"reader-item\"><h3 data-field=\"name\">Jane Doe</h3>",
-      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/slide-picker/800/600\" alt=\"Jane Doe\" loading=\"lazy\" /></figure>",
-      "<p data-field=\"byline\">CEO &amp; Founder</p></li><li class=\"reader-item\"><h3 data-field=\"name\">John Smith</h3>",
-      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/slide-picker-3/800/600\" alt=\"John Smith\" loading=\"lazy\" /></figure>",
-      "<p data-field=\"byline\">Head of Design</p></li><li class=\"reader-item\"><h3 data-field=\"name\">Alex Johnson</h3>",
-      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/slide-picker-4/800/600\" alt=\"Alex Johnson\" loading=\"lazy\" /></figure>",
-      "<p data-field=\"byline\">Lead Developer</p></li></ul>",
+      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/slide-picker/800/600\" alt=\"Jane Doe\" loading=\"lazy\" /><figcaption data-field=\"byline\">CEO &amp; Founder</figcaption></figure></li><li class=\"reader-item\"><h3 data-field=\"name\">John Smith</h3>",
+      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/slide-picker-3/800/600\" alt=\"John Smith\" loading=\"lazy\" /><figcaption data-field=\"byline\">Head of Design</figcaption></figure></li><li class=\"reader-item\"><h3 data-field=\"name\">Alex Johnson</h3>",
+      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/slide-picker-4/800/600\" alt=\"Alex Johnson\" loading=\"lazy\" /><figcaption data-field=\"byline\">Lead Developer</figcaption></figure></li></ul>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"team-cards-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" data-field=\"title\">Meet the Team</h2>",
       "<ul class=\"reader-items\" data-field=\"members\"><li class=\"reader-item\"><h3 data-field=\"name\">Jane Doe</h3>",
-      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/slide-picker/800/600\" alt=\"Jane Doe\" loading=\"lazy\" /></figure>",
-      "<p data-field=\"byline\">CEO &amp; Founder</p></li><li class=\"reader-item\"><h3 data-field=\"name\">John Smith</h3>",
-      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/slide-picker-3/800/600\" alt=\"John Smith\" loading=\"lazy\" /></figure>",
-      "<p data-field=\"byline\">Head of Design</p></li><li class=\"reader-item\"><h3 data-field=\"name\">Alex Johnson</h3>",
-      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/slide-picker-4/800/600\" alt=\"Alex Johnson\" loading=\"lazy\" /></figure>",
-      "<p data-field=\"byline\">Lead Developer</p></li></ul>",
+      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/slide-picker/800/600\" alt=\"Jane Doe\" loading=\"lazy\" /><figcaption data-field=\"byline\">CEO &amp; Founder</figcaption></figure></li><li class=\"reader-item\"><h3 data-field=\"name\">John Smith</h3>",
+      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/slide-picker-3/800/600\" alt=\"John Smith\" loading=\"lazy\" /><figcaption data-field=\"byline\">Head of Design</figcaption></figure></li><li class=\"reader-item\"><h3 data-field=\"name\">Alex Johnson</h3>",
+      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/slide-picker-4/800/600\" alt=\"Alex Johnson\" loading=\"lazy\" /><figcaption data-field=\"byline\">Lead Developer</figcaption></figure></li></ul>",
       "</section>"
     ]
   },
@@ -194,26 +188,14 @@
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"logo-wall-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" data-field=\"title\">Our Partners</h2>",
       "<p data-field=\"subheading\">Trusted by industry leaders</p>",
-      "<ul class=\"reader-items\" data-field=\"logos\"><li class=\"reader-item\"><h3 data-field=\"name\">Acme Corp</h3>",
-      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo1/200/80\" alt=\"Acme Corp logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3 data-field=\"name\">TechFlow</h3>",
-      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo2/200/80\" alt=\"TechFlow logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3 data-field=\"name\">Innovate Inc</h3>",
-      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo3/200/80\" alt=\"Innovate Inc logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3 data-field=\"name\">GlobalNet</h3>",
-      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo4/200/80\" alt=\"GlobalNet logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3 data-field=\"name\">Summit Co</h3>",
-      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo5/200/80\" alt=\"Summit Co logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3 data-field=\"name\">Bright Labs</h3>",
-      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo6/200/80\" alt=\"Bright Labs logo\" loading=\"lazy\" /></figure></li></ul>",
+      "<ul class=\"reader-items\" data-field=\"logos\"><li class=\"reader-item\"><figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo1/200/80\" alt=\"Acme Corp logo\" loading=\"lazy\" /><figcaption data-field=\"name\">Acme Corp</figcaption></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo2/200/80\" alt=\"TechFlow logo\" loading=\"lazy\" /><figcaption data-field=\"name\">TechFlow</figcaption></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo3/200/80\" alt=\"Innovate Inc logo\" loading=\"lazy\" /><figcaption data-field=\"name\">Innovate Inc</figcaption></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo4/200/80\" alt=\"GlobalNet logo\" loading=\"lazy\" /><figcaption data-field=\"name\">GlobalNet</figcaption></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo5/200/80\" alt=\"Summit Co logo\" loading=\"lazy\" /><figcaption data-field=\"name\">Summit Co</figcaption></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo6/200/80\" alt=\"Bright Labs logo\" loading=\"lazy\" /><figcaption data-field=\"name\">Bright Labs</figcaption></figure></li></ul>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"logo-wall-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" data-field=\"title\">Our Partners</h2>",
       "<p data-field=\"subheading\">Trusted by industry leaders</p>",
-      "<ul class=\"reader-items\" data-field=\"logos\"><li class=\"reader-item\"><h3 data-field=\"name\">Acme Corp</h3>",
-      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo1/200/80\" alt=\"Acme Corp logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3 data-field=\"name\">TechFlow</h3>",
-      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo2/200/80\" alt=\"TechFlow logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3 data-field=\"name\">Innovate Inc</h3>",
-      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo3/200/80\" alt=\"Innovate Inc logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3 data-field=\"name\">GlobalNet</h3>",
-      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo4/200/80\" alt=\"GlobalNet logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3 data-field=\"name\">Summit Co</h3>",
-      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo5/200/80\" alt=\"Summit Co logo\" loading=\"lazy\" /></figure></li><li class=\"reader-item\"><h3 data-field=\"name\">Bright Labs</h3>",
-      "<figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo6/200/80\" alt=\"Bright Labs logo\" loading=\"lazy\" /></figure></li></ul>",
+      "<ul class=\"reader-items\" data-field=\"logos\"><li class=\"reader-item\"><figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo1/200/80\" alt=\"Acme Corp logo\" loading=\"lazy\" /><figcaption data-field=\"name\">Acme Corp</figcaption></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo2/200/80\" alt=\"TechFlow logo\" loading=\"lazy\" /><figcaption data-field=\"name\">TechFlow</figcaption></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo3/200/80\" alt=\"Innovate Inc logo\" loading=\"lazy\" /><figcaption data-field=\"name\">Innovate Inc</figcaption></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo4/200/80\" alt=\"GlobalNet logo\" loading=\"lazy\" /><figcaption data-field=\"name\">GlobalNet</figcaption></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo5/200/80\" alt=\"Summit Co logo\" loading=\"lazy\" /><figcaption data-field=\"name\">Summit Co</figcaption></figure></li><li class=\"reader-item\"><figure class=\"reader-figure\" data-field=\"image\"><img src=\"https://picsum.photos/seed/logo6/200/80\" alt=\"Bright Labs logo\" loading=\"lazy\" /><figcaption data-field=\"name\">Bright Labs</figcaption></figure></li></ul>",
       "</section>"
     ]
   },
@@ -257,17 +239,17 @@
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"quote-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" class=\"reader-sr-only\">The best way to predict the future is to create it.</h2>",
-      "<p data-field=\"quote\">The best way to predict the future is to create it.</p>",
-      "<p data-field=\"authorName\">Peter Drucker</p>",
-      "<p data-field=\"authorTitle\">Management Consultant</p>",
+      "<blockquote data-field=\"quote\"><p>The best way to predict the future is to create it.</p></blockquote>",
+      "<footer><p data-field=\"authorName\">Peter Drucker</p>",
+      "<p data-field=\"authorTitle\">Management Consultant</p></footer>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"quote-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" class=\"reader-sr-only\">The best way to predict the future is to create it.</h2>",
-      "<p data-field=\"quote\">The best way to predict the future is to create it.</p>",
-      "<p data-field=\"authorName\">Peter Drucker</p>",
-      "<p data-field=\"authorTitle\">Management Consultant</p>",
+      "<blockquote data-field=\"quote\"><p>The best way to predict the future is to create it.</p></blockquote>",
+      "<footer><p data-field=\"authorName\">Peter Drucker</p>",
+      "<p data-field=\"authorTitle\">Management Consultant</p></footer>",
       "</section>"
     ]
   },
@@ -438,7 +420,7 @@
       "<div data-field=\"leftBody\"><ul><li>Fits our workflow exactly</li><li>Two engineers for six months</li><li>Every bug is ours</li></ul></div>",
       "<p data-field=\"rightTitle\">Buy off the shelf</p>",
       "<div data-field=\"rightBody\"><ul><li>Live within a month</li><li>Licence per seat, per year</li><li>Their roadmap, not ours</li></ul></div>",
-      "<p data-field=\"verdict\">Buy now, revisit when the team doubles</p>",
+      "<p class=\"reader-label\" data-field=\"verdict\">Buy now, revisit when the team doubles</p>",
       "</section>"
     ],
     "en-GB": [
@@ -449,7 +431,7 @@
       "<div data-field=\"leftBody\"><ul><li>Fits our workflow exactly</li><li>Two engineers for six months</li><li>Every bug is ours</li></ul></div>",
       "<p data-field=\"rightTitle\">Buy off the shelf</p>",
       "<div data-field=\"rightBody\"><ul><li>Live within a month</li><li>Licence per seat, per year</li><li>Their roadmap, not ours</li></ul></div>",
-      "<p data-field=\"verdict\">Buy now, revisit when the team doubles</p>",
+      "<p class=\"reader-label\" data-field=\"verdict\">Buy now, revisit when the team doubles</p>",
       "</section>"
     ]
   },
@@ -598,7 +580,7 @@
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"cycle-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" data-field=\"title\">Feedback Loop</h2>",
       "<p data-field=\"subheading\">Continuous improvement</p>",
-      "<p data-field=\"centerLabel\">Quality</p>",
+      "<p class=\"reader-label\" data-field=\"centerLabel\">Quality</p>",
       "<ol class=\"reader-items\" data-field=\"items\"><li class=\"reader-item\"><h3 data-field=\"label\">Plan</h3>",
       "<p data-field=\"text\">Set objectives</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Do</h3>",
       "<p data-field=\"text\">Implement changes</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Check</h3>",
@@ -610,7 +592,7 @@
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"cycle-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" data-field=\"title\">Feedback Loop</h2>",
       "<p data-field=\"subheading\">Continuous improvement</p>",
-      "<p data-field=\"centerLabel\">Quality</p>",
+      "<p class=\"reader-label\" data-field=\"centerLabel\">Quality</p>",
       "<ol class=\"reader-items\" data-field=\"items\"><li class=\"reader-item\"><h3 data-field=\"label\">Plan</h3>",
       "<p data-field=\"text\">Set objectives</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Do</h3>",
       "<p data-field=\"text\">Implement changes</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Check</h3>",

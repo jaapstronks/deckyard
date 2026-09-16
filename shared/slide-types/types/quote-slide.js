@@ -222,6 +222,7 @@ export default {
       type: 'string',
       required: true,
       maxLength: 80,
+      role: 'attribution',
       group: 'quote-block',
     },
     {
@@ -230,6 +231,7 @@ export default {
       type: 'string',
       required: true,
       maxLength: 120,
+      role: 'attribution',
       group: 'quote-block',
     },
     // Optional round portrait photos, shown next to the name/byline. Two
@@ -304,6 +306,7 @@ export default {
           type: 'string',
           required: true,
           maxLength: 400,
+          role: 'quote',
         },
         {
           key: 'authorName',
@@ -311,6 +314,7 @@ export default {
           type: 'string',
           required: false,
           maxLength: 80,
+          role: 'attribution',
         },
         {
           key: 'authorTitle',
@@ -318,6 +322,7 @@ export default {
           type: 'string',
           required: false,
           maxLength: 120,
+          role: 'attribution',
         },
         {
           key: 'authorImage',

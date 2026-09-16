@@ -54,6 +54,33 @@ export function visibilityDriverKeys(fields) {
 }
 
 /**
+ * Whether a `{ field, in }` predicate holds for a slide: the sibling field
+ * `field` currently holds one of `in`, read from content and falling back to
+ * the type's default when unset.
+ *
+ * `visibleWhen` is the first declaration in this shape, not the only one: a
+ * projection-side declaration that switches on a sibling enum (`termWhen` on a
+ * callout label) reads the same one operator, so "which value counts" has one
+ * answer everywhere.
+ *
+ * @param {unknown} cond - the declared predicate
+ * @param {Object} [content] - the content object the predicate reads
+ * @param {Object} [defaults] - the defaults for unset keys
+ * @returns {boolean|null} `null` when the declaration is malformed, so each
+ *   caller decides its own safe side
+ */
+export function predicateHolds(cond, content, defaults) {
+  if (!cond || typeof cond !== 'object') return null;
+  const key = typeof cond.field === 'string' ? cond.field.trim() : '';
+  const list = Array.isArray(cond.in) ? cond.in : null;
+  if (!key || !list) return null;
+  const raw = content?.[key];
+  const value =
+    raw == null || raw === '' ? String(defaults?.[key] ?? '') : String(raw);
+  return list.some((v) => String(v) === value);
+}
+
+/**
  * Whether a field is currently visible, per its `visibleWhen` declaration.
  *
  * @param {Object} field - one entry of a type's `fields[]`
@@ -62,14 +89,7 @@ export function visibilityDriverKeys(fields) {
  * @returns {boolean}
  */
 export function isFieldVisible(field, content, defaults) {
-  const cond = field?.visibleWhen;
-  if (!cond || typeof cond !== 'object') return true;
-  const key = typeof cond.field === 'string' ? cond.field.trim() : '';
-  const list = Array.isArray(cond.in) ? cond.in : null;
-  // Malformed declaration: degrade to visible, never orphan a field.
-  if (!key || !list) return true;
-  const raw = content?.[key];
-  const value =
-    raw == null || raw === '' ? String(defaults?.[key] ?? '') : String(raw);
-  return list.some((v) => String(v) === value);
+  // No declaration, or a malformed one: degrade to visible, never orphan a
+  // field.
+  return predicateHolds(field?.visibleWhen, content, defaults) ?? true;
 }

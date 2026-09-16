@@ -1073,3 +1073,164 @@ describe('mediaRef — a reference projects as a stand-in, never as an id (D82)'
     assert.ok(!html.includes('366590'), html);
   });
 });
+
+describe('role — the projection reads what a text field is (D128)', () => {
+  const quoteDef = SLIDE_TYPES['quote-slide'];
+  const calloutDef = SLIDE_TYPES['callout-slide'];
+
+  it('a quote is a <blockquote>, its name and role one <footer> beside it', () => {
+    const html = body(
+      {
+        content: {
+          quote: 'Ship it.',
+          authorName: 'Ada',
+          authorTitle: 'Engineer',
+        },
+      },
+      quoteDef,
+    );
+    assert.ok(
+      html.includes(
+        '<blockquote data-field="quote"><p>Ship it.</p></blockquote>\n<footer><p data-field="authorName">Ada</p>\n<p data-field="authorTitle">Engineer</p></footer>',
+      ),
+      html,
+    );
+    assert.ok(!/<blockquote[^]*<footer[^]*<\/blockquote>/.test(html), html);
+  });
+
+  it('an empty attribution leaves no <footer>, a half-filled one keeps its line', () => {
+    const none = body({ content: { quote: 'Ship it.' } }, quoteDef);
+    assert.ok(!none.includes('<footer'), none);
+    const half = body(
+      { content: { quote: 'Ship it.', authorTitle: 'Engineer' } },
+      quoteDef,
+    );
+    assert.ok(
+      half.includes(
+        '<footer><p data-field="authorTitle">Engineer</p></footer>',
+      ),
+      half,
+    );
+  });
+
+  it('extra quotes get the same table inside their item, and no <h3>', () => {
+    const html = body(
+      {
+        content: {
+          quote: 'One.',
+          quotes: [{ quote: 'Two.', authorName: 'Grace' }],
+        },
+      },
+      quoteDef,
+    );
+    assert.ok(
+      html.includes(
+        '<li class="reader-item"><blockquote data-field="quote"><p>Two.</p></blockquote>\n<footer><p data-field="authorName">Grace</p></footer></li>',
+      ),
+      html,
+    );
+    assert.ok(!html.includes('<h3'), 'a quote never heads its item');
+  });
+
+  it('a callout source is the footer, its label the eyebrow', () => {
+    const html = body(
+      {
+        content: {
+          variant: 'tip',
+          label: 'Pro tip',
+          body: 'Write tests.',
+          source: 'Folklore',
+        },
+      },
+      calloutDef,
+    );
+    assert.ok(
+      html.includes('<p class="reader-label" data-field="label">Pro tip</p>'),
+      html,
+    );
+    assert.ok(!html.includes('<dfn>'), 'only a definition defines a term');
+    assert.ok(
+      html.includes('<footer><p data-field="source">Folklore</p></footer>'),
+      html,
+    );
+  });
+
+  it('a definition wraps its label in <dfn>, read through termWhen', () => {
+    const html = body(
+      { content: { variant: 'definition', label: 'Latency', body: 'Delay.' } },
+      calloutDef,
+    );
+    assert.ok(
+      html.includes(
+        '<p class="reader-label" data-field="label"><dfn>Latency</dfn></p>',
+      ),
+      html,
+    );
+  });
+
+  it('a caption beside one figure is its <figcaption>, else a caption line', () => {
+    const def = {
+      fields: [
+        {
+          key: 'members',
+          type: 'items',
+          itemFields: [
+            { key: 'image', type: 'image' },
+            { key: 'name', type: 'string' },
+            { key: 'byline', type: 'string', role: 'caption' },
+          ],
+        },
+      ],
+    };
+    const html = body(
+      {
+        content: {
+          members: [
+            { image: 'https://example.com/a.png', name: 'Ada', byline: 'CEO' },
+            { name: 'Grace', byline: 'CTO' },
+          ],
+        },
+      },
+      def,
+    );
+    assert.ok(
+      html.includes(
+        '<img src="https://example.com/a.png" alt="Ada" loading="lazy" /><figcaption data-field="byline">CEO</figcaption></figure>',
+      ),
+      html,
+    );
+    assert.equal((html.match(/CEO/g) || []).length, 1, 'not repeated');
+    assert.ok(
+      html.includes('<p class="reader-caption" data-field="byline">CTO</p>'),
+      html,
+    );
+  });
+
+  it('a logo named only by its caption keeps that name as alt', () => {
+    const html = body(
+      {
+        content: {
+          logos: [{ image: 'https://example.com/acme-logo.png', name: 'Acme' }],
+        },
+      },
+      SLIDE_TYPES['logo-wall-slide'],
+    );
+    assert.ok(
+      html.includes(
+        'alt="Acme" loading="lazy" /><figcaption data-field="name">Acme</figcaption>',
+      ),
+      html,
+    );
+  });
+
+  it('a markdown quote wraps its own blocks, not a second paragraph', () => {
+    const html = body(
+      { content: { said: 'One.\n\nTwo.' } },
+      { fields: [{ key: 'said', type: 'markdown', role: 'quote' }] },
+    );
+    assert.match(
+      html,
+      /^<blockquote data-field="said"><p>One\.<\/p>\s*<p>Two\.<\/p>\s*<\/blockquote>$/,
+    );
+  });
+});

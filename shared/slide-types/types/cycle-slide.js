@@ -91,6 +91,7 @@ export default {
       required: false,
       maxLength: 60,
       placeholder: 'Optional center text',
+      role: 'label',
     },
     {
       key: 'items',

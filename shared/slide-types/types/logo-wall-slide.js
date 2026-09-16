@@ -112,7 +112,13 @@ export default {
       itemDefaults: { image: '', name: '', alt: '', link: '' },
       itemFields: [
         { key: 'image', type: 'image', label: 'Logo image' },
-        { key: 'name', type: 'string', label: 'Name', maxLength: 80 },
+        {
+          key: 'name',
+          type: 'string',
+          label: 'Name',
+          maxLength: 80,
+          role: 'caption',
+        },
         // Declared because the renderer reads it and itemDefaults seeds it —
         // it was only ever missing here (team-cards/gallery declare theirs).
         { key: 'alt', type: 'string', label: 'Alt text', maxLength: 180 },

@@ -57,6 +57,7 @@
  */
 
 import { enumOptionValues } from './field-types.js';
+import { DOCUMENT_ELEMENT_ROLES } from './text-roles.js';
 
 /**
  * @typedef {object} FieldProfile
@@ -142,8 +143,8 @@ function fieldName(field, index) {
 
 /**
  * The sub-field keys of an `items` field that could serve as an item heading:
- * the readable strings. Mirrors what `renderItemBlock` in semantic-projection
- * will actually pick from, so an `itemLabelField` naming anything else is a
+ * the readable strings that no role gives an element of their own (D128).
+ * Mirrors what `renderItemBlock` in semantic-projection will actually pick from, so an `itemLabelField` naming anything else is a
  * declaration that cannot be honoured.
  *
  * Exported because the builder's `itemLabelField` control offers exactly this
@@ -157,7 +158,11 @@ export function headableKeys(itemFields) {
   return new Set(
     (Array.isArray(itemFields) ? itemFields : [])
       .filter(
-        (sub) => sub?.type === 'string' && !sub.hidden && !sub.presentational,
+        (sub) =>
+          sub?.type === 'string' &&
+          !sub.hidden &&
+          !sub.presentational &&
+          !DOCUMENT_ELEMENT_ROLES.has(sub.role),
       )
       .map((sub) => sub.key)
       .filter(isNonEmpty),
@@ -425,6 +430,14 @@ export function walkFieldDefinitions(fields, profile) {
           at2('semantic_not_enum', 'warning', { type });
         }
       }
+
+      // `termWhen` marks a label as the term a definition defines (<dfn>). It
+      // is read on a `label`-role string only; anywhere else it says nothing.
+      if (field.termWhen !== undefined && field.termWhen !== null) {
+        if (type !== 'string' || field.role !== 'label') {
+          at2('term_when_not_label', 'warning', { type, role: field.role });
+        }
+      }
     });
 
     // A `linkKey` names a field beside the one that declares it — a sibling at
@@ -535,6 +548,9 @@ const FINDING_MESSAGES = {
     `${where} declares \`semantic: true\` on a \`${f?.detail?.type}\` ` +
     `field, but only an \`enum\` has a closed set of values to publish as a ` +
     `\`data-*\` attribute, so it is ignored.`,
+  term_when_not_label: (where, f) =>
+    `${where} declares \`termWhen\`, but only a \`string\` field with ` +
+    `\`role: 'label'\` names a defined term, so it is ignored.`,
 };
 
 /**
