@@ -18,6 +18,7 @@ export default {
   fields: [
     {
       key: 'question',
+      role: 'heading',
       label: 'Vraag / Question',
       type: 'string',
       required: true,

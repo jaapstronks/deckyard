@@ -28,6 +28,7 @@ export default {
   fields: [
     {
       key: 'question',
+      role: 'heading',
       label: 'Question',
       labelKey: 'editor.slideField.question.label',
       type: 'string',

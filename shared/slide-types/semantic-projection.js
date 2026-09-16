@@ -57,6 +57,10 @@ import {
 } from './helpers.js';
 import { slideStructure } from './structure.js';
 import { isFieldVisible } from './field-visibility.js';
+import {
+  renderUnresolvedSlideSemanticHtml,
+  unresolvedSlideHeading,
+} from './unresolved.js';
 
 // Content keys that are presentation config, not readable content: the global
 // per-slide background/logo/a11y-override fields. The a11y fields are surfaced
@@ -108,49 +112,59 @@ function isPresentationalField(field) {
   );
 }
 
-// Ordered fallback of common "title" content keys, mirroring the notes/label
-// resolvers, used when a type has no explicit labelField.
-const TITLE_CANDIDATE_KEYS = [
-  'title',
-  'heading',
-  'subheading',
-  'question',
-  'prompt',
-  'statement',
-  'quote',
-];
-
 function str(v) {
   return typeof v === 'string' ? v.trim() : '';
 }
 
 /**
- * The heading text for a slide's <section>, plus which content key it came
- * from (so the body projection can avoid repeating it).
+ * The heading of a slide's reader `<section>`, and whether a reader sees it.
  *
- * Order: an explicit a11yTitle override, then the type's labelField, then the
- * common title candidates, then the type label / bare type as a last resort.
+ * The heading is a declaration, not a guess (D129). A type names its title with
+ * `role: 'heading'` on exactly one field; when the slide fills that field, its
+ * text is the section's visible `<h2>` and the field is consumed (`key`), so
+ * the body does not repeat it.
+ *
+ * Everything else is a *name*, and a name is a hidden heading: every slide keeps
+ * one `<h2>` for navigation (the H key, the table of contents, a PPTX title),
+ * but a type label never shows as a document heading. The name is the slide's
+ * `a11yTitle`, else the value of the type's `labelField` (the same field that
+ * names the slide in the editor's slide list), else the type label as a last
+ * resort. A hidden heading consumes nothing: a quote or a callout label named
+ * this way still appears in the body, in its own role.
+ *
+ * `a11yTitle` is a name in both cases. On a hidden heading it is the text; on a
+ * visible one it becomes the section's `aria-label` (`ariaLabel`) and the
+ * author's title stays on screen.
+ *
+ * A slide whose type does not resolve has no declaration to read; it gets the
+ * archived-slide placeholder's heading instead (see `unresolved.js`).
  *
  * @param {object} slide
- * @param {object} def - the resolved slide-type definition
+ * @param {object|null|undefined} def - the resolved slide-type definition
  * @param {number} [index] - 0-based slide index, for the final fallback
- * @returns {{ text: string, key: string|null }}
+ * @returns {{ text: string, visible: boolean, key: string|null, ariaLabel: string }}
  */
 export function slideHeading(slide, def, index = 0) {
+  if (!def) return { ...unresolvedSlideHeading(slide), ariaLabel: '' };
   const content =
     slide?.content && typeof slide.content === 'object' ? slide.content : {};
   const a11y = str(content.a11yTitle);
-  if (a11y) return { text: a11y, key: null };
 
-  const labelField = str(def?.labelField);
-  if (labelField && str(content[labelField])) {
-    return { text: str(content[labelField]), key: labelField };
+  const field = (Array.isArray(def.fields) ? def.fields : []).find(
+    (f) => f?.role === 'heading' && !f.hidden,
+  );
+  const title = field ? str(content[field.key]) : '';
+  if (title) {
+    return { text: title, visible: true, key: field.key, ariaLabel: a11y };
   }
-  for (const key of TITLE_CANDIDATE_KEYS) {
-    if (str(content[key])) return { text: str(content[key]), key };
-  }
-  const label = str(def?.label);
-  return { text: label || str(slide?.type) || `Slide ${index + 1}`, key: null };
+
+  const text =
+    a11y ||
+    str(content[str(def.labelField)]) ||
+    str(def.label) ||
+    str(slide?.type) ||
+    `Slide ${index + 1}`;
+  return { text, visible: false, key: null, ariaLabel: '' };
 }
 
 /** Render one image as a <figure> with a resolved alt + optional caption. */
@@ -599,7 +613,7 @@ function renderFieldValue(field, content, headingText) {
 /**
  * Project a slide's readable content (everything UNDER its <section> heading)
  * to semantic HTML. The heading itself is produced by {@link slideHeading} and
- * emitted by the document wrapper.
+ * emitted by {@link renderSlideSectionHtml}.
  *
  * @param {object} slide
  * @param {object} def - the resolved slide-type definition
@@ -678,4 +692,52 @@ export function renderSlideBodySemanticHtml(
     parts.push(renderFieldValue(field, content, headingText));
   }
   return parts.filter(Boolean).join('\n');
+}
+
+/**
+ * One slide as a reader `<section>`: the heading from {@link slideHeading}, the
+ * body from {@link renderSlideBodySemanticHtml} (or the archived-slide
+ * projection when the type does not resolve).
+ *
+ * Emitted here rather than by the document wrapper because half of what the
+ * reader says about a slide lives in this element — whether its heading is
+ * visible, what names the section, which type it is — and the reader fixture
+ * has to pin all of it (`tests/fixtures/semantic-projection.json`).
+ *
+ * - A hidden heading is still an `<h2>`, visually hidden with
+ *   `reader-sr-only`, so every section is reachable by heading navigation.
+ * - The section is labelled by its `<h2>`, except when the author gave the
+ *   slide an `a11yTitle` beside a visible title: that name is the section's
+ *   `aria-label` and the title stays the heading.
+ * - The slide number is position, not text (D133): the document stylesheet
+ *   counts sections with CSS counters, so no number is part of the heading's
+ *   accessible name.
+ *
+ * @param {object} slide
+ * @param {object|null|undefined} def - the resolved slide-type definition
+ * @param {{ index?: number }} [opts] - 0-based position in the deck
+ * @returns {string}
+ */
+export function renderSlideSectionHtml(slide, def, { index = 0 } = {}) {
+  const n = index + 1;
+  const heading = slideHeading(slide, def, index);
+  const inner = def
+    ? renderSlideBodySemanticHtml(slide, def, {
+        headingKey: heading.key,
+        headingText: heading.text,
+      })
+    : renderUnresolvedSlideSemanticHtml(slide, { headingKey: heading.key });
+  const titleId = `slide-${n}-title`;
+  const label = heading.ariaLabel
+    ? `aria-label="${escapeHtml(heading.ariaLabel)}"`
+    : `aria-labelledby="${titleId}"`;
+  const hidden = heading.visible ? '' : ' class="reader-sr-only"';
+  return [
+    `<section id="slide-${n}" class="reader-slide" data-slide-type="${escapeHtml(str(slide?.type))}" ${label}>`,
+    `<h2 id="${titleId}"${hidden}>${escapeHtml(heading.text)}</h2>`,
+    inner,
+    '</section>',
+  ]
+    .filter(Boolean)
+    .join('\n');
 }

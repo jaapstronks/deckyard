@@ -13,6 +13,7 @@ export default {
   fields: [
     {
       key: 'question',
+      role: 'heading',
       label: 'Stelling / Statement',
       type: 'string',
       required: true,

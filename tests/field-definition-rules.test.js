@@ -563,3 +563,41 @@ test('the boot report renders every finding, errors and warnings apart', () => {
     `missing label warning, got:\n${report.warnings.join('\n')}`,
   );
 });
+
+// --- 6. one heading per type (D129) ----------------------------------------
+
+test('a second top-level `role: heading` is refused; item headings are not counted', () => {
+  const fields = [
+    { key: 'title', type: 'string', label: 'Title', role: 'heading' },
+    { key: 'kicker', type: 'string', label: 'Kicker', role: 'heading' },
+    {
+      key: 'items',
+      type: 'items',
+      label: 'Items',
+      itemFields: [
+        { key: 'title', type: 'string', label: 'Title', role: 'heading' },
+      ],
+    },
+  ];
+  const findings = walkFieldDefinitions(fields, FILE_JS).findings.filter(
+    (f) => f.code === 'duplicate_heading_role',
+  );
+  assert.equal(findings.length, 1);
+  assert.equal(findings[0].severity, 'error');
+  assert.equal(findings[0].key, 'kicker');
+  assert.match(describeFieldFinding(findings[0]), /`title` already does/);
+});
+
+test('every core type declares at most one heading field', async () => {
+  const { CORE_SLIDE_TYPE_DEFS } =
+    await import('../shared/slide-types/registry.js');
+  for (const [name, def] of Object.entries(CORE_SLIDE_TYPE_DEFS)) {
+    const headings = (def.fields || []).filter((f) => f?.role === 'heading');
+    assert.ok(
+      headings.length <= 1,
+      `${name} declares ${headings.length} heading fields: ${headings
+        .map((f) => f.key)
+        .join(', ')}`,
+    );
+  }
+});

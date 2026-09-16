@@ -87,15 +87,58 @@ describe('heading hierarchy', () => {
     assert.ok(html.indexOf('<h1') < html.indexOf('<h2'), 'h1 precedes h2');
   });
   it('has one <h2> per slide, each with a stable id + aria-labelledby section', () => {
-    assert.equal((html.match(/<h2 id="slide-\d+-title">/g) || []).length, 3);
+    assert.equal(
+      (
+        html.match(/<h2 id="slide-\d+-title"(?: class="reader-sr-only")?>/g) ||
+        []
+      ).length,
+      3,
+    );
+    const types = ['content-slide', 'image-slide', 'content-slide'];
     for (const n of [1, 2, 3]) {
       assert.ok(
         html.includes(
-          `<section id="slide-${n}" class="reader-slide" aria-labelledby="slide-${n}-title">`,
+          `<section id="slide-${n}" class="reader-slide" data-slide-type="${types[n - 1]}" aria-labelledby="slide-${n}-title">`,
         ),
         `section ${n}`,
       );
     }
+  });
+  it('shows the declared heading and hides a name (D129)', () => {
+    // content-slide declares `role: 'heading'` on `title`: visible.
+    assert.ok(html.includes('<h2 id="slide-1-title">Where we are</h2>'), html);
+    // image-slide without a title: hidden, named by its labelField (caption),
+    // and the caption is still the figure's <figcaption>.
+    assert.ok(
+      html.includes(
+        '<h2 id="slide-2-title" class="reader-sr-only">Q3 revenue</h2>',
+      ),
+      html,
+    );
+    assert.ok(html.includes('<figcaption>Q3 revenue</figcaption>'), html);
+  });
+  it('numbers sections with CSS counters, never as heading text (D133)', () => {
+    assert.ok(!html.includes('reader-num'), 'no number span in the markup');
+    assert.match(html, /counter-increment: reader-slide/);
+    assert.match(html, /h2::before/);
+  });
+  it('an a11yTitle beside a visible title names the section, not the heading', () => {
+    const doc = buildReaderHtml('/repo', {
+      title: 'T',
+      slides: [
+        {
+          type: 'content-slide',
+          content: { title: 'Visible title', a11yTitle: 'Spoken name' },
+        },
+      ],
+    });
+    assert.ok(
+      doc.includes(
+        '<section id="slide-1" class="reader-slide" data-slide-type="content-slide" aria-label="Spoken name">',
+      ),
+      doc,
+    );
+    assert.ok(doc.includes('<h2 id="slide-1-title">Visible title</h2>'), doc);
   });
   it('renders a navigable table of contents linking each slide', () => {
     for (const n of [1, 2, 3]) {

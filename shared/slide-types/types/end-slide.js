@@ -14,6 +14,7 @@ export default {
   fields: [
     {
       key: 'title',
+      role: 'heading',
       label: 'Title',
       labelKey: 'editor.slideField.title.label',
       type: 'string',

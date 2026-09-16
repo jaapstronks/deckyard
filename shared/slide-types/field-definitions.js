@@ -239,6 +239,8 @@ export function walkFieldDefinitions(fields, profile) {
     }
 
     const keys = new Set();
+    // The key of the first top-level field declaring `role: 'heading'`.
+    let headingKey = null;
     // Fields whose `mediaRef.linkKey` names a sibling: checked once this level
     // is fully known, since a declaration may point forwards.
     const linkRefs = [];
@@ -276,6 +278,19 @@ export function walkFieldDefinitions(fields, profile) {
       }
 
       if (!isNonEmpty(field.label)) at2('missing_label', labelSeverity);
+
+      // The slide's heading is ONE field (D129): the reader makes it the
+      // section's visible <h2> and consumes it. A second declaration would
+      // leave the projection choosing between them, so it is refused rather
+      // than resolved by position. Items have headings of their own
+      // (`itemLabelField`), so the rule is about the top level only.
+      if (at.depth === 0 && field.role === 'heading') {
+        if (headingKey !== null) {
+          at2('duplicate_heading_role', 'error', { first: headingKey });
+        } else {
+          headingKey = key;
+        }
+      }
 
       const type = typeof field.type === 'string' ? field.type.trim() : '';
       if (!type) {
@@ -446,6 +461,9 @@ const FINDING_MESSAGES = {
     `${where} has type ${JSON.stringify(f?.detail?.type)} — the field types ` +
     `accepted here are: ${(f?.detail?.offered || []).join(', ')}.`,
   duplicate_key: (where) => `${where} reuses a key another field already has.`,
+  duplicate_heading_role: (where, f) =>
+    `${where} declares \`role: 'heading'\`, but \`${f?.detail?.first}\` ` +
+    `already does — a slide has one heading, so exactly one field may say so.`,
   shadows_global: (where, f) =>
     `${where} shadows the global slide field \`${f?.detail?.key}\`, so this ` +
     `type does not get the injected one — rename it unless the override is ` +

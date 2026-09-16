@@ -18,9 +18,8 @@ import {
 } from '../../shared/slide-types/registry.js';
 import {
   slideHeading,
-  renderSlideBodySemanticHtml,
+  renderSlideSectionHtml,
 } from '../../shared/slide-types/semantic-projection.js';
-import { renderUnresolvedSlideSemanticHtml } from '../../shared/slide-types/unresolved.js';
 import { filterForExport, filterForPublished } from '../utils/public-output.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { escapeHtml } from '../utils/html-utils.js';
@@ -67,11 +66,21 @@ body {
 .reader-toc h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.6; margin: 0 0 0.4rem; }
 .reader-toc ol { margin: 0; padding-left: 1.4rem; }
 .reader-toc li { margin: 0.15rem 0; }
-.reader-main { padding-block: 1rem 2rem; }
-.reader-slide { padding-block: 1.25rem; border-top: 1px solid rgba(0,0,0,0.1); }
+.reader-main { padding-block: 1rem 2rem; counter-reset: reader-slide; }
+.reader-slide { padding-block: 1.25rem; border-top: 1px solid rgba(0,0,0,0.1); counter-increment: reader-slide; }
 .reader-slide:first-child { border-top: 0; }
 .reader-slide h2 { font-size: clamp(1.25rem, 3vw, 1.6rem); line-height: 1.2; margin: 0 0 0.6rem; scroll-margin-top: 1rem; }
-.reader-num { font-variant-numeric: tabular-nums; opacity: 0.5; margin-right: 0.4rem; font-size: 0.85em; }
+.reader-slide > h2::before {
+  content: counter(reader-slide) ". ";
+  content: counter(reader-slide) ". " / "";
+  font-variant-numeric: tabular-nums; opacity: 0.5; font-size: 0.85em;
+}
+/* Hidden headings stay in flow: a 1px box pulled back by its own margin, so the
+   reader keeps its no-absolute-positioning contract. */
+.reader-sr-only {
+  width: 1px; height: 1px; margin: -1px 0 0; padding: 0; border: 0;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
 .reader-slide h3 { font-size: 1.05rem; margin: 1rem 0 0.35rem; }
 .reader-slide p { margin: 0.5rem 0; }
 .reader-slide ul, .reader-slide ol { margin: 0.5rem 0; padding-left: 1.4rem; }
@@ -145,37 +154,28 @@ export function buildReaderHtml(
   const description = str(filtered?.description);
   const slides = Array.isArray(filtered?.slides) ? filtered.slides : [];
 
-  const headings = slides.map((slide, i) => {
-    const def = getSlideType(slide?.type, registry);
-    return { slide, def, index: i, ...slideHeading(slide, def || {}, i) };
-  });
+  const resolved = slides.map((slide) => ({
+    slide,
+    def: getSlideType(slide?.type, registry),
+  }));
 
-  const toc = headings
+  // The contents list names every slide by its section heading, hidden or not:
+  // a hidden heading is still the name a reader navigates by.
+  const toc = resolved
     .map(
-      ({ text, index }) =>
-        `<li><a href="#slide-${index + 1}">${escapeHtml(text)}</a></li>`,
+      ({ slide, def }, i) =>
+        `<li><a href="#slide-${i + 1}">${escapeHtml(slideHeading(slide, def, i).text)}</a></li>`,
     )
     .join('\n        ');
 
-  const sections = headings
-    .map(({ slide, def, index, text, key }) => {
-      const n = index + 1;
-      // A known content-light slide (title/divider) is a clean heading-only
-      // section — its <h2> IS the content. A slide whose type no longer
-      // resolves gets the archived-slide projection instead: the reader is the
-      // *complete* surface of that contract (no canvas size limit), so it is
-      // where an author recovers content the placeholder slide had to truncate.
-      const inner = def
-        ? renderSlideBodySemanticHtml(slide, def, {
-            headingKey: key,
-            headingText: text,
-          })
-        : renderUnresolvedSlideSemanticHtml(slide, { headingKey: key });
-      return `<section id="slide-${n}" class="reader-slide" aria-labelledby="slide-${n}-title">
-        <h2 id="slide-${n}-title"><span class="reader-num">${n}.</span>${escapeHtml(text)}</h2>
-        ${inner}
-      </section>`;
-    })
+  // A slide whose type no longer resolves gets the archived-slide projection:
+  // the reader is the *complete* surface of that contract (no canvas size
+  // limit), so it is where an author recovers content the placeholder slide
+  // had to truncate.
+  const sections = resolved
+    .map(({ slide, def }, i) =>
+      renderSlideSectionHtml(slide, def, { index: i }),
+    )
     .join('\n      ');
 
   const viewLink = canonicalUrl

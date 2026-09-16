@@ -37,7 +37,10 @@ types, a closed vocabulary of six (`heading`, `prose`, `list-item`, `quote`,
 item sits next to a bullet marker, so block alignment would detach the text from
 its marker — `list-item` therefore offers no alignment at all.
 
-A field declares `role` only when it differs from the safe default.
+A field declares `role` only when it differs from the safe default, with one
+exception: `heading` is declared on the one field that titles the slide, because
+the reader reads it too. That field is the section's visible `<h2>`, and a type
+without it gets a hidden name instead (D129, `reflowable-html-export.md`).
 
 ### `defaultAlign` — what is it aligned at right now?
 
