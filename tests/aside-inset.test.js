@@ -36,6 +36,7 @@ import { fileURLToPath } from 'node:url';
 import { initSanitizer } from '../shared/sanitize.js';
 import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 import { renderSlideHtml } from '../shared/slide-types/presentation.js';
+import { renderSlideBodySemanticHtml } from '../shared/slide-types/semantic-projection.js';
 import { SLIDE_COPY } from '../shared/slide-types/slide-copy.js';
 import {
   ADMONITION_META,
@@ -234,6 +235,80 @@ describe('the eyebrow word follows the deck language', () => {
       { lang: 'en-GB' },
     );
     assert.ok(html.includes('class="slide-eyebrow"'));
+  });
+});
+
+describe('the reader projects the inset as an <aside> that names its kind (B299)', () => {
+  // Every type that spreads the pair, read from the registry rather than
+  // listed: a fifth host gets the same projection without a line here.
+  const hosts = Object.entries(SLIDE_TYPES).filter(([, def]) =>
+    (def.fields || []).some((f) => f.key === 'asideText'),
+  );
+  const project = (type, content, lang = 'en-GB') =>
+    renderSlideBodySemanticHtml(
+      { type, content: { ...SLIDE_TYPES[type].defaults, ...content } },
+      SLIDE_TYPES[type],
+      { lang },
+    );
+
+  it('all four host types spread it', () => {
+    assert.deepEqual(hosts.map(([type]) => type).sort(), [
+      'content-slide',
+      'image-set-slide',
+      'image-text-slide',
+      'list-slide',
+    ]);
+  });
+
+  for (const [type] of hosts) {
+    it(`${type}: <aside data-kind> with the kind's word as its eyebrow`, () => {
+      const html = project(type, {
+        asideVariant: 'warning',
+        asideText: 'Mind **this**.',
+      });
+      const aside = html.match(/<aside[^>]*>[\s\S]*?<\/aside>/)?.[0];
+      assert.equal(
+        aside,
+        '<aside data-field="asideText" data-kind="warning">' +
+          `<p class="reader-label">${SLIDE_COPY['en-GB'].admonitionWarning}</p>` +
+          '<p>Mind <strong>this</strong>.</p></aside>',
+      );
+    });
+
+    it(`${type}: no kind, or a kind with nothing said, is no <aside>`, () => {
+      assert.ok(
+        !project(type, { asideVariant: 'none', asideText: 'x' }).includes(
+          '<aside',
+        ),
+      );
+      assert.ok(
+        !project(type, { asideVariant: 'tip', asideText: '' }).includes(
+          '<aside',
+        ),
+      );
+    });
+  }
+
+  it('the eyebrow is the canvas word, in the deck language', () => {
+    for (const kind of ASIDE_VARIANTS) {
+      const html = project(
+        'content-slide',
+        { asideVariant: kind, asideText: 'Said.' },
+        'nl',
+      );
+      const word = SLIDE_COPY.nl[ADMONITION_META[kind].copyKey];
+      assert.ok(
+        html.includes(`<p class="reader-label">${word}</p>`),
+        `${kind}: expected "${word}"`,
+      );
+      assert.ok(
+        renderAsideHtml(
+          { asideVariant: kind, asideText: 'Said.' },
+          { lang: 'nl' },
+        ).includes(word),
+        `${kind}: the canvas says "${word}" too`,
+      );
+    }
   });
 });
 

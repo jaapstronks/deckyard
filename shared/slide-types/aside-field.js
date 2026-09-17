@@ -68,6 +68,25 @@ export const ASIDE_NONE = 'none';
 export const ASIDE_VARIANTS = QUIET_ADMONITION_VARIANTS;
 
 /**
+ * An option naming a kind, carrying the `copyKey` of the word the inset shows
+ * for it. The key comes from {@link ADMONITION_META}, the one table the canvas
+ * eyebrow reads too, so the reader's kind label and the canvas's can never be
+ * two words for one kind.
+ *
+ * @param {string} key - the shared option's i18n key (literal, so the i18n
+ *   audit finds it)
+ * @param {string} kind - one of {@link ASIDE_VARIANTS}
+ * @param {string} label - the editor label (UI language)
+ * @returns {object}
+ */
+function kindOption(key, kind, label) {
+  return {
+    ...sharedOption(key, kind, label),
+    copyKey: ADMONITION_META[kind].copyKey,
+  };
+}
+
+/**
  * The kind of aside, or `none`.
  *
  * Type-independent copy, so its strings live under `editor.slideField.*` (D60)
@@ -82,9 +101,9 @@ export const ASIDE_VARIANT_FIELD = {
   required: false,
   options: [
     sharedOption('editor.slideField.asideVariant.option.none', 'none', 'None'),
-    sharedOption('editor.slideField.asideVariant.option.note', 'note', 'Note'),
-    sharedOption('editor.slideField.asideVariant.option.tip', 'tip', 'Tip'),
-    sharedOption(
+    kindOption('editor.slideField.asideVariant.option.note', 'note', 'Note'),
+    kindOption('editor.slideField.asideVariant.option.tip', 'tip', 'Tip'),
+    kindOption(
       'editor.slideField.asideVariant.option.warning',
       'warning',
       'Warning',
@@ -107,6 +126,8 @@ export const ASIDE_TEXT_FIELD = {
   type: 'markdown',
   required: false,
   maxLength: 300,
+  role: 'aside',
+  kindKey: 'asideVariant',
   visibleWhen: { field: 'asideVariant', in: [...ASIDE_VARIANTS] },
 };
 

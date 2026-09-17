@@ -66,13 +66,21 @@ document that stays readable with JavaScript — and author CSS — turned off.
       shows the chosen option's `copyKey` word in the deck language instead
       (a callout reads "Key insight" / "Kernpunt", as its canvas eyebrow does,
       and its hidden heading says the same); a stand-in is never a `<dfn>`.
+    - `aside` → `<aside data-field>` around the paragraph(s): text that
+      comments on the body beside it. A field declaring `kindKey: '<enum>'`
+      names the sibling enum whose chosen option is the aside's kind: the
+      option value travels as `data-kind` and its `copyKey` word opens the
+      aside as a `<p class="reader-label">`, in the deck language, the same
+      word the canvas eyebrow shows (`<aside data-field="asideText"
+data-kind="warning"><p class="reader-label">Warning</p><p>…</p></aside>`).
     - `prose`, `list-item` and an unfilled `heading` → `<p>`.
       A field whose role gives it its own element (`quote`, `caption`, `label`,
-      `attribution`) never becomes an item's `<h3>`.
+      `attribution`, `aside`) never becomes an item's `<h3>`.
       Declared on core types: quote-slide `quote`, `authorName`, `authorTitle`
       (also in `quotes[]`), callout `label` and `source`, title-slide `meta`,
       team-cards `byline`, logo-wall `name`, cycle `centerLabel`, comparison
-      `verdict`.
+      `verdict`, and `asideText` (with `kindKey: 'asideVariant'`) on the shared
+      aside field of content, list, image-text and image-set.
   - `image` → `<figure>` with an `alt` from the reader's own ladder (D135):
     the explicit alt (`<key>Alt`, else `alt`); else the name of what the
     picture shows — the sibling the field names with `nameKey` (logo-wall

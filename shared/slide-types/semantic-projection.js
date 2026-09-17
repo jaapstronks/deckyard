@@ -92,7 +92,7 @@ import {
 } from './text-roles.js';
 import { semanticEnumAttrs } from './semantic-enums.js';
 import { resolveItemDefaults } from './item-defaults.js';
-import { optionDefaultText } from './option-default.js';
+import { optionDefaultText, chosenOptionCopy } from './option-default.js';
 import {
   renderUnresolvedSlideSemanticHtml,
   unresolvedSlideHeading,
@@ -703,6 +703,9 @@ function isTextField(field) {
  *                text while its `termWhen` predicate holds
  *   attribution  a plain `<p>`, gathered into the block's one `<footer>` by
  *                {@link renderBlocks}
+ *   aside        `<aside data-field>` around the paragraph(s); with `kindKey`
+ *                it carries `data-kind` and opens with the kind's word as a
+ *                `<p class="reader-label">`, in the deck language
  *   prose, list-item, heading  a plain `<p>` (a filled heading field is the
  *                section's `<h2>` and never reaches this)
  *
@@ -718,7 +721,7 @@ function isTextField(field) {
  * @param {boolean} [opts.figcaption] - render a `caption` as the
  *   `<figcaption>` of the figure beside it
  * @param {Array<object>} [opts.siblings] - every field beside this one, for
- *   `defaultFromOption`
+ *   `defaultFromOption` and `kindKey`
  * @param {string} [opts.lang] - the deck language
  * @param {string[]} [opts.slideIds] - the document's slide ids, for jumps
  * @returns {string}
@@ -755,6 +758,23 @@ function renderTextField(
   }
   if (role === 'quote') {
     return `<blockquote${attrs}>${blocks ? html : `<p>${html}</p>`}</blockquote>`;
+  }
+  if (role === 'aside') {
+    // The kind is the sibling enum's chosen option (`kindKey`): its value
+    // travels as `data-kind`, its `copyKey` word is the eyebrow the canvas
+    // shows too.
+    const kind = chosenOptionCopy(
+      field.kindKey,
+      siblings,
+      content,
+      defaults,
+      lang,
+    );
+    const kindAttr = kind.value ? ` data-kind="${escapeHtml(kind.value)}"` : '';
+    const label = kind.word
+      ? `<p class="reader-label">${escapeHtml(kind.word)}</p>`
+      : '';
+    return `<aside${attrs}${kindAttr}>${label}${blocks ? html : `<p>${html}</p>`}</aside>`;
   }
   const cls = ROLE_CLASSES[role] ? ` class="${ROLE_CLASSES[role]}"` : '';
   if (blocks) return `<div${cls}${attrs}>${html}</div>`;

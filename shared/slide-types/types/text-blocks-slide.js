@@ -474,7 +474,7 @@ export default {
       const colorClass = row.color === 'black' ? 'is-black' : 'is-yellow';
 
       let rowTitleHtml = '';
-      if (rowIdx > 0 && row.title) {
+      if (row.title) {
         const rowTitlePath = useRows
           ? `rows.${rowIdx}.title`
           : `row${rowIdx + 1}Title`;

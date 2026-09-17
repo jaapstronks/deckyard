@@ -40,6 +40,42 @@ export function isSlideCopyKey(copyKey) {
 }
 
 /**
+ * The option a sibling enum holds, and its word in the deck language.
+ *
+ * One lookup for every declaration that reads an enum's chosen option as copy:
+ * `defaultFromOption` (a blank string stands in with the word) and `kindKey`
+ * (an aside names its kind). The value is the stored one, else the declared
+ * default, and only when the enum offers it as an option object; the word is
+ * that option's `copyKey` in the slide copy, else `''`.
+ *
+ * @param {string} enumKey - the sibling enum's key
+ * @param {Array<object>} siblings - the fields declared at that level
+ * @param {object} content - the object those fields describe
+ * @param {object} [defaults] - that object's declared defaults
+ * @param {string} [lang] - the deck language
+ * @returns {{value: string, word: string}} both `''` when nothing is chosen
+ */
+export function chosenOptionCopy(enumKey, siblings, content, defaults, lang) {
+  const none = { value: '', word: '' };
+  const key = str(enumKey);
+  if (!key) return none;
+  const target = (Array.isArray(siblings) ? siblings : []).find(
+    (f) => f?.key === key && f.type === 'enum',
+  );
+  if (!target) return none;
+  const value = str(content?.[key]) || str(defaults?.[key]);
+  const option = (Array.isArray(target.options) ? target.options : []).find(
+    (o) => o && typeof o === 'object' && String(o.value) === value,
+  );
+  if (!option) return none;
+  const copyKey = option.copyKey;
+  return {
+    value,
+    word: isSlideCopyKey(copyKey) ? str(getSlideCopy(lang)[copyKey]) : '',
+  };
+}
+
+/**
  * The text a blank `defaultFromOption` field stands in with, or `''`.
  *
  * @param {{defaultFromOption?: string}} field - the string field
@@ -53,16 +89,11 @@ export function optionDefaultText(field, siblings, content, defaults, lang) {
   // Only a `string` has a blank to fill; the field walk says so
   // (`default_from_option_not_string`) and the runtime agrees.
   if (field?.type !== 'string') return '';
-  const enumKey = str(field?.defaultFromOption);
-  if (!enumKey) return '';
-  const target = (Array.isArray(siblings) ? siblings : []).find(
-    (f) => f?.key === enumKey && f.type === 'enum',
-  );
-  if (!target) return '';
-  const value = str(content?.[enumKey]) || str(defaults?.[enumKey]);
-  const option = (Array.isArray(target.options) ? target.options : []).find(
-    (o) => o && typeof o === 'object' && String(o.value) === value,
-  );
-  if (!isSlideCopyKey(option?.copyKey)) return '';
-  return str(getSlideCopy(lang)[option.copyKey]);
+  return chosenOptionCopy(
+    field?.defaultFromOption,
+    siblings,
+    content,
+    defaults,
+    lang,
+  ).word;
 }

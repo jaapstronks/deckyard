@@ -885,6 +885,67 @@ test('`defaultFromOption` names a sibling enum whose options all carry slide cop
     assert.notEqual(describeFieldFinding(f), 'Invalid field definitions.');
 });
 
+test('`kindKey` names a sibling enum on an aside, and only options it shows need slide copy', () => {
+  const findings = walkFieldDefinitions(
+    [
+      {
+        key: 'kind',
+        type: 'enum',
+        label: 'Kind',
+        options: [
+          'none',
+          { value: 'note', label: 'Note', copyKey: 'admonitionNote' },
+          { value: 'odd', label: 'Odd' },
+        ],
+      },
+      {
+        key: 'aside',
+        type: 'markdown',
+        label: 'Aside',
+        role: 'aside',
+        kindKey: 'kind',
+        visibleWhen: { field: 'kind', in: ['note', 'odd'] },
+      },
+      {
+        key: 'prose',
+        type: 'string',
+        label: 'Prose',
+        kindKey: 'kind',
+      },
+      {
+        key: 'lost',
+        type: 'string',
+        label: 'Lost',
+        role: 'aside',
+        kindKey: 'nope',
+      },
+    ],
+    FILE_JS,
+  ).findings;
+  assert.deepEqual(
+    findings.map((f) => [f.key, f.code, f.severity]),
+    [
+      ['prose', 'kind_key_not_aside', 'warning'],
+      ['aside', 'kind_key_without_copy', 'warning'],
+      ['lost', 'kind_key_unknown', 'warning'],
+    ],
+  );
+  // `none` hides the aside, so it names no kind and needs no word.
+  assert.deepEqual(findings[1].detail.missing, ['odd']);
+  for (const f of findings)
+    assert.notEqual(describeFieldFinding(f), 'Invalid field definitions.');
+});
+
+test('a stored (DB) field cannot declare `kindKey`', () => {
+  const stored = validateCustomFieldDefinitions([
+    { key: 'v', type: 'enum', label: 'V', options: ['a'] },
+    { key: 'l', type: 'string', label: 'L', kindKey: 'v' },
+  ]);
+  assert.equal(stored.ok, false);
+  assert.equal(stored.problem.code, 'unknown_property');
+  assert.equal(stored.problem.detail.property, 'kindKey');
+});
+
 test('a stored (DB) field cannot declare `defaultFromOption`', () => {
   const stored = validateCustomFieldDefinitions([
     { key: 'v', type: 'enum', label: 'V', options: ['a'] },

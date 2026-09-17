@@ -299,6 +299,9 @@ export function walkFieldDefinitions(fields, profile) {
     // Fields declaring `defaultFromOption`: the enum they name is a sibling at
     // this level, so it too is checked once the level is fully known.
     const optionRefs = [];
+    // Fields declaring `kindKey`: the enum they name is a sibling at this
+    // level, checked once the level is fully known.
+    const kindRefs = [];
     // Fields declaring `orderedWhen`: the field it reads is a sibling enum at
     // this level, checked once the level is fully known.
     const orderRefs = [];
@@ -560,6 +563,17 @@ export function walkFieldDefinitions(fields, profile) {
           optionRefs.push({ where, declared: field.defaultFromOption });
         }
       }
+
+      // `kindKey` names the sibling enum whose chosen option is what kind of
+      // aside this text is. Only an `aside`-role text has a kind to
+      // name; the enum is checked once the level is fully known.
+      if (field.kindKey !== undefined && field.kindKey !== null) {
+        if (!['string', 'markdown'].includes(type) || field.role !== 'aside') {
+          at2('kind_key_not_aside', 'warning', { type, role: field.role });
+        } else {
+          kindRefs.push({ where, field, declared: field.kindKey });
+        }
+      }
     });
 
     // A `linkKey` names a field beside the one that declares it — a sibling at
@@ -616,6 +630,33 @@ export function walkFieldDefinitions(fields, profile) {
           declared,
           missing,
         });
+      }
+    }
+
+    // The kind's word comes from the option's `copyKey`, like a
+    // `defaultFromOption` word. An option under which the text itself is not
+    // visible (the aside's `none`) has no inset to name, so it needs none.
+    for (const { where, field, declared } of kindRefs) {
+      const target = isNonEmpty(declared) ? fieldsByKey.get(declared) : null;
+      if (!target || target.type !== 'enum') {
+        add('kind_key_unknown', 'warning', where, { declared });
+        continue;
+      }
+      const shownWith =
+        isPlainObject(field.visibleWhen) &&
+        field.visibleWhen.field === declared &&
+        Array.isArray(field.visibleWhen.in)
+          ? new Set(field.visibleWhen.in.map(String))
+          : null;
+      const missing = (Array.isArray(target.options) ? target.options : [])
+        .filter((o) => {
+          const value = isPlainObject(o) ? String(o.value) : String(o);
+          if (shownWith && !shownWith.has(value)) return false;
+          return !(isPlainObject(o) && isSlideCopyKey(o.copyKey));
+        })
+        .map((o) => (isPlainObject(o) ? String(o.value) : String(o)));
+      if (missing.length) {
+        add('kind_key_without_copy', 'warning', where, { declared, missing });
       }
     }
 
@@ -783,6 +824,19 @@ const FINDING_MESSAGES = {
     `${where} declares \`duration.secondsKey\` ` +
     `${JSON.stringify(f?.detail?.declared)}, which is not a \`number\` field ` +
     `beside it, so the length counts whole minutes only.`,
+  kind_key_not_aside: (where, f) =>
+    `${where} declares \`kindKey\`, but only a \`string\` or \`markdown\` ` +
+    `field with \`role: 'aside'\` is an inset with a kind to name, so it is ` +
+    `ignored.`,
+  kind_key_unknown: (where, f) =>
+    `${where} declares \`kindKey\` ${JSON.stringify(f?.detail?.declared)}, ` +
+    `which is not an \`enum\` field beside it, so the aside names no kind.`,
+  kind_key_without_copy: (where, f) =>
+    `${where} declares \`kindKey\` ${JSON.stringify(f?.detail?.declared)}, ` +
+    `but its options ${(f?.detail?.missing || []).join(', ')} carry no ` +
+    `\`copyKey\` the slide copy knows in every language, so on those the ` +
+    `aside has no kind label — the option \`label\` is editor copy and never ` +
+    `stands in.`,
   default_from_option_not_string: (where, f) =>
     `${where} declares \`defaultFromOption\` on a \`${f?.detail?.type}\` ` +
     `field, but only a \`string\` has a blank an option word can fill, so ` +

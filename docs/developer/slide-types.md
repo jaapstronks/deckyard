@@ -537,6 +537,19 @@ A callout with no label still announces its kind: the canvas eyebrow says "Key i
 
 When the field is blank, the reader shows the chosen option's `copyKey` word in the deck language, as the eyebrow and as the section's hidden heading. `copyKey` is the only source: the option's `label` is editor copy in the UI language and never stands in, and the field walk warns when an option carries no `copyKey` that every slide-copy language knows (`default_from_option_without_copy`), when the named field is not a sibling enum (`default_from_option_unknown`) or when the declaring field is not a `string`. A stand-in is not authored content, so `termWhen` does not wrap it in `<dfn>`. The canvas renderer reads the same copy key for its own eyebrow. A database slide type cannot declare it (no slide-copy keys of its own; `unknown_property`).
 
+### An inset that names its kind (`role: 'aside'` + `kindKey`)
+
+The aside inset (`shared/slide-types/aside-field.js`) is a note, tip or warning beside the body, and the canvas draws it as `<aside>` with the kind's word as an eyebrow. The reader gets the same from two declarations on the text field: `role: 'aside'` makes it an `<aside data-field>`, and `kindKey` names the sibling enum whose chosen option is its kind:
+
+```javascript
+{ key: 'asideVariant', type: 'enum',
+  options: [{ value: 'none', label: 'None' }, { value: 'note', label: 'Note', copyKey: 'admonitionNote' }, /* … */] },
+{ key: 'asideText', type: 'markdown', role: 'aside', kindKey: 'asideVariant',
+  visibleWhen: { field: 'asideVariant', in: ['note', 'tip', 'warning'] } }
+```
+
+The option value travels as `data-kind` on the `<aside>`, and its `copyKey` word opens it as `<p class="reader-label">` in the deck language. As with `defaultFromOption`, `copyKey` is the only source of the word; the walk warns when a shown option carries none (`kind_key_without_copy`; an option under which the field's own `visibleWhen` hides it needs none, which is why `none` is exempt), when the named field is not a sibling enum (`kind_key_unknown`) or when the declaring field is not an `aside`-role `string` or `markdown` (`kind_key_not_aside`). The four host types spread the pair as `ASIDE_FIELDS` and declare nothing themselves. A database slide type cannot declare `kindKey` (`unknown_property`).
+
 ---
 
 ## Theme-Specific Slide Types
