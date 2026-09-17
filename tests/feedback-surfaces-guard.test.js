@@ -165,11 +165,6 @@ const ERROR_CLASS_IDIOMS = [
     kind: 'state',
   },
   {
-    file: 'client/views/editor/slide-type-picker/library-strip.js',
-    hits: 2,
-    kind: 'state',
-  },
-  {
     file: 'client/views/editor/slide-type-picker/peek.js',
     hits: 1,
     kind: 'state',

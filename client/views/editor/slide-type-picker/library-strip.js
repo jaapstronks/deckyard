@@ -11,12 +11,8 @@
  * large organization library (and vice versa).
  */
 
-import {
-  RENDER_VIA_THEME,
-  renderSlideElement,
-} from '../../../lib/slide-runtime/slide-render.js';
 import { contentLang } from '../../../lib/slide-library/search.js';
-import { applyThumbScale } from './thumbnails.js';
+import { THUMB_SOURCE_LIBRARY } from './thumbnails.js';
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 
@@ -45,26 +41,26 @@ const splitLibraryBudget = (pCount, oCount) => {
  * off the async load and returns immediately.
  * @param {object} ctx
  * @param {HTMLElement} ctx.typesWrap - grid container to prepend the strip into
- * @param {object|null} ctx.theme - resolved theme for thumbnail rendering
  * @param {Function} ctx.labelFor - (type) => resolved label
  * @param {string} [ctx.afterSlideId] - insert anchor for a picked library item
  * @param {Function} [ctx.onPicked] - called after a library item is inserted
  * @param {Function} ctx.loadLibraryStripItems - async () => ({ personal, organization })
  * @param {Function} ctx.insertLibraryItem - (item, opts) => insert it
  * @param {Function} ctx.onSeeAllLibrary - (shelf) => open the full library
+ * @param {Function} ctx.hydrateThumb - (wrap, resizeObserver) => render a tile
  * @param {ResizeObserver|null} ctx.resizeObserver - keeps hydrated tiles scaled
  * @param {Function} ctx.applyFilter - re-apply the current search query
  */
 export function mountLibraryStrip(ctx) {
   const {
     typesWrap,
-    theme,
     labelFor,
     afterSlideId,
     onPicked,
     loadLibraryStripItems,
     insertLibraryItem,
     onSeeAllLibrary,
+    hydrateThumb,
     resizeObserver,
     applyFilter,
   } = ctx;
@@ -75,34 +71,16 @@ export function mountLibraryStrip(ctx) {
     const thumbWrap = h('div', {
       class: 'ps-type-thumb thumb',
       'data-thumb-type': type,
+      'data-thumb-source': THUMB_SOURCE_LIBRARY,
     });
-    try {
-      const el = renderSlideElement(
-        {
-          id: `lib-${item?.id || type}`,
-          type,
-          content:
-            item?.content && typeof item.content === 'object'
-              ? item.content
-              : {},
-          notes: '',
-        },
-        // The tile shows `item.content`, so it speaks the item's own
-        // language — not the deck the picker is about to insert it into.
-        {
-          mode: 'thumb',
-          theme,
-          renderVia: RENDER_VIA_THEME,
-          lang: contentLang(item),
-        },
-      );
-      thumbWrap.append(el);
-      applyThumbScale(thumbWrap);
-      resizeObserver?.observe(thumbWrap);
-    } catch {
-      thumbWrap.classList.add('is-error');
-      thumbWrap.append(h('div', { class: 'ps-type-thumb-error', text: '?' }));
-    }
+    // The tile shows `item.content`, so it speaks the item's own language —
+    // not the deck the picker is about to insert it into. Stashed on the wrap
+    // so the picker's one hydrate path renders it from there.
+    thumbWrap.__content =
+      item?.content && typeof item.content === 'object' ? item.content : {};
+    thumbWrap.__contentLang = contentLang(item);
+    thumbWrap.__slideId = `lib-${item?.id || type}`;
+    hydrateThumb(thumbWrap, resizeObserver);
     const labelWrap = h('div', { class: 'ps-type-labelwrap' }, [
       h('span', { class: 'ps-type-label', text: name }),
     ]);

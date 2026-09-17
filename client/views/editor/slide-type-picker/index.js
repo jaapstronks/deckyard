@@ -64,6 +64,9 @@ import {
   fillVideoThumb,
   fillEmbedThumb,
   fillSchematic,
+  THUMB_SOURCE_LIBRARY,
+  THUMB_SOURCE_TYPE,
+  TYPE_THUMB_SELECTOR,
 } from './thumbnails.js';
 import { openTypePeek } from './peek.js';
 import { mountLibraryStrip } from './library-strip.js';
@@ -181,33 +184,46 @@ export function createSlideTypePicker({
 
   // Build the real (or mock) thumbnail contents into a pending wrapper. Called
   // lazily when the tile scrolls into view (or when its section is expanded).
+  // The wrap's `data-thumb-source` says where its content comes from: a
+  // `library` tile renders the item it was built from (`__slideId`, `__content`,
+  // in the item's own `__contentLang`); a `type` tile renders its type's sample.
   const hydrateThumb = (thumbWrap, resizeObserver) => {
     const type = thumbWrap.dataset.thumbType;
+    const ownContent = thumbWrap.dataset.thumbSource === THUMB_SOURCE_LIBRARY;
     thumbWrap.classList.remove('is-pending');
 
-    if (type === 'video-slide') {
+    if (!ownContent && type === 'video-slide') {
       fillVideoThumb(thumbWrap);
       return;
     }
-    if (type === 'embed-slide') {
+    if (!ownContent && type === 'embed-slide') {
       fillEmbedThumb(thumbWrap);
       return;
     }
 
     try {
-      const slide = {
-        id: `sample-${type}`,
-        type,
-        // Preset overrides (item 15) are stashed on the wrap so lazy hydration
-        // and surface re-renders reapply them without re-reading the def.
-        content: sampleContentFor(type, thumbWrap.__presetContent || null),
-        notes: '',
-      };
+      const slide = ownContent
+        ? {
+            id: thumbWrap.__slideId,
+            type,
+            content: thumbWrap.__content,
+            notes: '',
+          }
+        : {
+            id: `sample-${type}`,
+            type,
+            // Preset overrides (item 15) are stashed on the wrap so lazy
+            // hydration and surface re-renders reapply them without
+            // re-reading the def.
+            content: sampleContentFor(type, thumbWrap.__presetContent || null),
+            notes: '',
+          };
       const el = renderSlideElement(slide, {
         mode: 'thumb',
         theme,
         renderVia: RENDER_VIA_THEME,
-        lang: NO_DECK_LANG,
+        // A library tile speaks the item's own language, not the deck's.
+        lang: ownContent ? thumbWrap.__contentLang : NO_DECK_LANG,
       });
       thumbWrap.append(el);
       // Scale to fill now (element is laid out), then keep it in sync on resize.
@@ -306,10 +322,12 @@ export function createSlideTypePicker({
     // Re-render already-hydrated thumbnails after the preview surface changes.
     // Pending tiles are left alone — they hydrate with the new surface when they
     // scroll into view. Tiles whose type has no background field never change,
-    // so they're skipped to avoid needless re-renders/flashes.
+    // so they're skipped to avoid needless re-renders/flashes. Library tiles
+    // show a real slide with its own background, so the surface never reaches
+    // them (TYPE_THUMB_SELECTOR).
     const restyleHydratedThumbs = () => {
       if (viewMode !== 'preview') return; // schematics don't render a surface
-      for (const wrap of typesWrap.querySelectorAll('.ps-type-thumb.thumb')) {
+      for (const wrap of typesWrap.querySelectorAll(TYPE_THUMB_SELECTOR)) {
         const type = wrap.dataset.thumbType;
         if (type === 'video-slide' || type === 'embed-slide') continue;
         if (wrap.classList.contains('is-pending')) continue;
@@ -334,6 +352,7 @@ export function createSlideTypePicker({
       const thumbWrap = h('div', {
         class: 'ps-type-thumb thumb is-pending',
         'data-thumb-type': type,
+        'data-thumb-source': THUMB_SOURCE_TYPE,
       });
       if (preset) {
         thumbWrap.__presetContent = previewOverridesFor(preset);
@@ -618,7 +637,9 @@ export function createSlideTypePicker({
 
     // Swap every tile's thumbnail between schematic and live-preview rendering,
     // persist the choice, and sync the toggle + surface control. Tiles are
-    // rebuilt in place so scroll position and search state survive.
+    // rebuilt in place so scroll position and search state survive. Only type
+    // tiles swap: a library tile is a slide, not a type, and keeps showing its
+    // own content in both views.
     const applyViewMode = (mode) => {
       if (!VIEW_MODES.has(mode) || mode === viewMode) return;
       viewMode = mode;
@@ -633,7 +654,7 @@ export function createSlideTypePicker({
       // The preview-background swatches only affect live renders.
       const surfaceEl = controls.querySelector('.ps-surface-toggle');
       if (surfaceEl) surfaceEl.hidden = mode !== 'preview';
-      for (const wrap of typesWrap.querySelectorAll('.ps-type-thumb.thumb')) {
+      for (const wrap of typesWrap.querySelectorAll(TYPE_THUMB_SELECTOR)) {
         cleanupSlideRuntimes(wrap);
         wrap.innerHTML = '';
         wrap.classList.remove(
@@ -1010,13 +1031,13 @@ export function createSlideTypePicker({
     ) {
       mountLibraryStrip({
         typesWrap,
-        theme,
         labelFor,
         afterSlideId,
         onPicked,
         loadLibraryStripItems,
         insertLibraryItem,
         onSeeAllLibrary,
+        hydrateThumb,
         resizeObserver,
         applyFilter,
       });
