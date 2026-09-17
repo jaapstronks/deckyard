@@ -117,3 +117,82 @@ describe('slideLinkUrl (serializer keeps http/https only)', () => {
     assert.equal(slideLinkUrl(null), null);
   });
 });
+
+describe('toolbar during an active rich edit', () => {
+  it('shows at the caret and an empty field, requires selection for links, and hides outside the field', async () => {
+    const { JSDOM } = await import('jsdom');
+    const dom = new JSDOM(
+      '<!doctype html><div id="thumb"><div id="edit" contenteditable="true">Words</div><div id="layer"></div></div><p id="outside">Other</p>',
+    );
+    const previous = {
+      document: globalThis.document,
+      ResizeObserver: globalThis.ResizeObserver,
+    };
+    globalThis.document = dom.window.document;
+    globalThis.ResizeObserver = class {
+      observe() {}
+      disconnect() {}
+    };
+    const { createSelectionToolbar } =
+      await import('../client/views/editor/inline-edit/selection-toolbar.js');
+    const doc = dom.window.document;
+    const editEl = doc.querySelector('#edit');
+    const thumb = doc.querySelector('#thumb');
+    thumb.getBoundingClientRect = () => host;
+    editEl.getBoundingClientRect = () => ({
+      left: 300,
+      top: 250,
+      width: 200,
+      height: 30,
+    });
+    dom.window.Range.prototype.getBoundingClientRect = () => ({
+      left: 300,
+      top: 250,
+      width: 0,
+      height: 0,
+    });
+    const toolbar = createSelectionToolbar({
+      layer: doc.querySelector('#layer'),
+      thumb,
+      editEl,
+    });
+    const select = (el, collapsed) => {
+      const range = doc.createRange();
+      range.selectNodeContents(el);
+      if (collapsed) range.collapse(false);
+      doc.getSelection().removeAllRanges();
+      doc.getSelection().addRange(range);
+      toolbar.update();
+    };
+    try {
+      select(editEl, true);
+      assert.ok(toolbar.el.classList.contains('is-visible'));
+      assert.equal(
+        toolbar.el.querySelector('[data-ie-tb="link"]').disabled,
+        true,
+      );
+      assert.equal(
+        toolbar.el.querySelector('[data-ie-tb="bold"]').disabled,
+        false,
+      );
+      select(editEl, false);
+      assert.equal(
+        toolbar.el.querySelector('[data-ie-tb="link"]').disabled,
+        false,
+      );
+      editEl.textContent = '';
+      select(editEl, true);
+      assert.ok(toolbar.el.classList.contains('is-visible'));
+      select(doc.querySelector('#outside'), false);
+      assert.equal(toolbar.el.classList.contains('is-visible'), false);
+    } finally {
+      toolbar.detach();
+      assert.equal(doc.querySelector('.ie-sel-toolbar'), null);
+      dom.window.close();
+      for (const [key, value] of Object.entries(previous)) {
+        if (value === undefined) delete globalThis[key];
+        else globalThis[key] = value;
+      }
+    }
+  });
+});

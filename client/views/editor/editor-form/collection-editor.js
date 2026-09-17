@@ -491,25 +491,36 @@ export function createCollectionEditor({
         // Unknown item-field type: degrade to nothing rather than break.
       }
 
-      const gridWidgets = widgets.filter((w) => !(w && w.fullWidth));
-      const fullWidgets = widgets
-        .filter((w) => w && w.fullWidth)
-        .map((w) => w.fullWidth);
+      // Nested collections break a grid run without moving past later fields.
+      const appendWidgets = (ordered) => {
+        let pending = [];
+        const flush = () => {
+          if (pending.length && typeof fieldGrid === 'function') {
+            const grid = fieldGrid(pending);
+            if (grid) body.append(grid);
+          }
+          pending = [];
+        };
+        for (const widget of ordered) {
+          if (!widget) continue;
+          if (widget.fullWidth) {
+            flush();
+            body.append(widget.fullWidth);
+          } else {
+            pending.push(widget);
+          }
+        }
+        flush();
+      };
       if (hasItemFormLayout && typeof fieldGrid === 'function') {
         // Declared rows (formLayout on item fields): a run of consecutive
         // `pair` fields shares one grid row, every other field gets its own.
         for (const row of fieldFormRows(itemFields)) {
-          const nodes = row.keys
-            .map((k2) => widgetByKey.get(k2))
-            .filter((w) => w && !w.fullWidth);
-          const grid = fieldGrid(nodes);
-          if (grid) body.append(grid);
+          appendWidgets(row.keys.map((k2) => widgetByKey.get(k2)));
         }
-      } else if (gridWidgets.length && typeof fieldGrid === 'function') {
-        const grid = fieldGrid(gridWidgets);
-        if (grid) body.append(grid);
+      } else {
+        appendWidgets(widgets);
       }
-      for (const el of fullWidgets) body.append(el);
 
       group.append(body);
       list.append(group);

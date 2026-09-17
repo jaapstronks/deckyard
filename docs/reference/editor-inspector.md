@@ -62,6 +62,8 @@ its canonical control, so the inspector no longer renders it for
 covers it on the canvas; the bulk modal keeps the enum (no chip there), so
 the parity invariant still holds.
 
+For text-blocks, each row has an optional heading above its blocks, including the first row. The form follows that order: row heading and colour, blocks, then the arrow to the next row. Up and down describe the direction of that same between-row arrow; the final row has no outgoing arrow control. An empty row heading can be added directly on the canvas. The slide’s bottom subheading follows the rows in the form as well.
+
 ## The inspector rail
 
 The editor is a 3-column grid, slides | canvas | inspector

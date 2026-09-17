@@ -240,3 +240,66 @@ test('team-cards and logo-wall run generic: collection renders from schema', () 
     );
   }
 });
+
+for (const declaredLayout of [false, true]) {
+  test(`text-blocks: row heading, blocks, then outgoing arrow (declared layout: ${declaredLayout})`, () => {
+    const fields = SLIDE_TYPES['text-blocks-slide'].fields.find(
+      (f) => f.key === 'rows',
+    ).itemFields;
+    const titleField = fields.find((f) => f.key === 'title');
+    const original = titleField.formLayout;
+    if (declaredLayout) titleField.formLayout = 'pair';
+    try {
+      const { editorMount, slide } = renderForm({
+        type: 'text-blocks-slide',
+        content: {
+          title: 'Order',
+          rows: [
+            {
+              title: 'First',
+              color: 'yellow',
+              arrow: 'up',
+              blocks: [{ title: 'Block', body: 'Body' }],
+            },
+            {
+              title: 'Second',
+              color: 'black',
+              arrow: 'down',
+              blocks: [{ title: 'Last', body: '' }],
+            },
+          ],
+        },
+      });
+      const allLabels = labelsOf(editorMount);
+      assert.ok(
+        allLabels.indexOf('Rows') < allLabels.indexOf('Bottom subheading'),
+      );
+      const firstRow = editorMount.querySelector(
+        '.items-reorder-list',
+      ).firstElementChild;
+      const heading = [...firstRow.querySelectorAll('input')].find(
+        (el) => el.value === 'First',
+      );
+      const blocks = firstRow.querySelector('.collection-editor');
+      const arrow = [...firstRow.querySelectorAll('button')].find((el) =>
+        el.textContent.includes('Down'),
+      );
+      assert.ok(
+        heading.compareDocumentPosition(blocks) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      );
+      assert.ok(
+        blocks.compareDocumentPosition(arrow) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      );
+      heading.value = 'Changed first heading';
+      heading.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
+      arrow.click();
+      assert.equal(slide.content.rows[0].title, 'Changed first heading');
+      assert.equal(slide.content.rows[0].arrow, 'down');
+    } finally {
+      if (original === undefined) delete titleField.formLayout;
+      else titleField.formLayout = original;
+    }
+  });
+}

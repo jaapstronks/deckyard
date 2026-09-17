@@ -1,9 +1,8 @@
 /**
  * Floating selection toolbar for in-place rich (markdown) edits.
  *
- * Shows bold / italic / link / bullet-list above a non-empty text selection
- * INSIDE the active rich edit — canvas-only, selection-bound actions per the
- * editing-surfaces plan (block-level controls go to the inspector, step 3).
+ * Shows bold / italic / link / bullet-list at the active rich edit's caret or
+ * selection. A link requires selected text; emphasis can also affect new text.
  * Plain-text fields never get one (they cannot store formatting).
  *
  * Lifecycle: created by beginRichEdit, destroyed by endTextEdit — so the
@@ -36,7 +35,7 @@ import { h } from '../../../lib/dom.js';
  * @param {HTMLElement} opts.editEl - the contenteditable field being edited
  * @param {Function} opts.onLinkRequest - () => void; the caller owns the
  *   link modal flow (selection snapshot, blur suspension, URL validation)
- * @returns {{update: Function, destroy: Function, el: HTMLElement}}
+ * @returns {{update: Function, detach: Function, el: HTMLElement}}
  */
 export function createSelectionToolbar({
   layer,
@@ -44,11 +43,10 @@ export function createSelectionToolbar({
   editEl,
   onLinkRequest,
 }) {
-  /** The selection's range, but only when it is non-empty and fully inside
-   *  the edited field. */
+  /** The caret or selection range, only when fully inside the edited field. */
   function editRange() {
     const sel = document.getSelection?.();
-    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return null;
+    if (!sel || sel.rangeCount === 0) return null;
     const range = sel.getRangeAt(0);
     if (
       !editEl.contains(range.startContainer) ||
@@ -147,14 +145,17 @@ export function createSelectionToolbar({
     });
     btnBold.disabled = disables.bold;
     btnItalic.disabled = disables.italic;
+    btnLink.disabled = range.collapsed;
     btnBold.classList.toggle('is-active', commandState('bold'));
     btnItalic.classList.toggle('is-active', commandState('italic'));
     btnList.classList.toggle('is-active', commandState('insertUnorderedList'));
 
     // Measure while still hidden (visibility, not display — offsetWidth works),
     // then place: centered above the selection, clamped, flipped when cramped.
+    const rect = range.getBoundingClientRect();
     const placement = computeToolbarPlacement({
-      sel: range.getBoundingClientRect(),
+      // A newly added empty field has no caret rect yet.
+      sel: rect.width || rect.height ? rect : editEl.getBoundingClientRect(),
       host: thumb.getBoundingClientRect(),
       size: { width: el.offsetWidth || 120, height: el.offsetHeight || 32 },
     });
