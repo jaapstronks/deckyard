@@ -1,18 +1,4 @@
-/**
- * Library tiles in the slide-type picker keep their own content (B311).
- *
- * The "From your library" strip builds its tiles from a saved slide's
- * `item.content`. The picker's two re-render loops — the Schematic/Preview
- * switch and the preview-background swatches — used to empty every
- * `.ps-type-thumb.thumb` and hydrate it from its type's sample, so after either
- * switch a library tile showed the type's sample instead of the saved slide.
- *
- * A tile now declares where its content comes from (`data-thumb-source`); the
- * loops re-render only `type` tiles, and a `library` tile renders its own
- * content through the same hydrate path.
- *
- * Run with: node --test tests/slide-type-picker-library-tiles.test.js
- */
+/** Library slides retain their content and background across picker controls. */
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -36,7 +22,7 @@ globalThis.getComputedStyle = dom.window.getComputedStyle;
 globalThis.requestAnimationFrame = () => 0;
 
 const { SLIDE_TYPES: ALL_TYPES } = await import('../shared/slide-types.js');
-// Two real types (the quote declares a background field) keep the picker small;
+// Two real types (the title declares a background field) keep the picker small;
 // jsdom cannot draw every schematic (SVG `className` is read-only there).
 const SLIDE_TYPES = {
   'quote-slide': ALL_TYPES['quote-slide'],
@@ -47,7 +33,7 @@ const prefs =
 const { createSlideTypePicker } =
   await import('../client/views/editor/slide-type-picker/index.js');
 
-const LIBRARY_QUOTE = 'Saved-in-the-library quote';
+const LIBRARY_TITLE = 'Saved-in-the-library title';
 
 // Two distinct surfaces, so the picker offers the preview-background swatches.
 const theme = {
@@ -61,21 +47,21 @@ const libraryTile = (mount) =>
   mount.querySelector('.ps-type-group-library .ps-type-thumb.thumb');
 const typeTile = (mount) =>
   mount.querySelector(
-    '.ps-type-group:not(.ps-type-group-library) .ps-type-thumb[data-thumb-type="quote-slide"]',
+    '.ps-type-group:not(.ps-type-group-library) .ps-type-thumb[data-thumb-type="title-slide"]',
   );
 
 const assertTiles = (mount, moment) => {
   const lib = libraryTile(mount);
   assert.ok(lib, `${moment}: the library tile is there`);
   assert.ok(
-    lib.textContent.includes(LIBRARY_QUOTE),
+    lib.textContent.includes(LIBRARY_TITLE),
     `${moment}: the library tile shows item.content`,
   );
   assert.ok(lib.querySelector('.slide'), `${moment}: as a rendered slide`);
   const type = typeTile(mount);
-  assert.ok(type, `${moment}: the quote type tile is there`);
+  assert.ok(type, `${moment}: the title type tile is there`);
   assert.ok(
-    !type.textContent.includes(LIBRARY_QUOTE),
+    !type.textContent.includes(LIBRARY_TITLE),
     `${moment}: the type tile shows its sample, not the library item`,
   );
 };
@@ -94,9 +80,9 @@ test('picker: a library tile keeps its own content across a view switch and a ba
       personal: [
         {
           id: 'lib-1',
-          name: 'Our quote',
-          slideType: 'quote-slide',
-          content: { quote: LIBRARY_QUOTE, author: 'A. Author' },
+          name: 'Our title',
+          slideType: 'title-slide',
+          content: { title: LIBRARY_TITLE, background: 'lime' },
           i18n: { dominant: 'nl' },
         },
       ],
@@ -108,18 +94,26 @@ test('picker: a library tile keeps its own content across a view switch and a ba
   await flush();
 
   const lib = libraryTile(mount);
-  assert.ok(lib?.textContent.includes(LIBRARY_QUOTE), 'mounted with content');
+  assert.ok(lib?.textContent.includes(LIBRARY_TITLE), 'mounted with content');
 
   // Schematic → Preview.
   mount.querySelector('.ps-view-toggle-btn[data-view="preview"]').click();
   assertTiles(mount, 'after Schematic → Preview');
   assert.equal(libraryTile(mount), lib, 'the library tile is not rebuilt');
 
+  const savedSlide = libraryTile(mount).querySelector('.slide');
+  assert.ok(savedSlide.classList.contains('slide-bg-lime'));
+
   // A background switch restyles the hydrated type tiles.
   const swatch = mount.querySelector('.ps-surface-swatch[data-surface="mist"]');
   assert.ok(swatch, 'the picker offers the mist background');
   swatch.click();
   assertTiles(mount, 'after the background switch');
+  assert.equal(libraryTile(mount).querySelector('.slide'), savedSlide);
+  assert.ok(savedSlide.classList.contains('slide-bg-lime'));
+  assert.ok(
+    typeTile(mount).querySelector('.slide').classList.contains('slide-bg-mist'),
+  );
 
   // And back to Schematic: the library tile is still the saved slide.
   mount.querySelector('.ps-view-toggle-btn[data-view="schematic"]').click();
