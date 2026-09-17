@@ -118,6 +118,11 @@ export default {
 because the three must agree — a hand-rolled trio could let the enum options
 drift from the group's offered values.
 
+The first value in `align` is the group's default, the one that emits no class.
+Most header blocks offer `['left', 'center']`; `text-blocks-slide` offers
+`['center', 'left']`, because its rows, row titles and arrows already sit on the
+centre line and a start-aligned heading above them is the mismatch (B317).
+
 The two are deliberately **not** one vocabulary. Folding group membership into
 `role` would multiply it (`heading-in-title-block` next to `heading-standalone`,
 per type) and destroy the reuse that makes the role table cheap.
@@ -230,14 +235,16 @@ Two CSS traps worth knowing:
 | `logo-wall-slide`     | `header-block` | title, subheading              |
 | `chart-slide`         | `header-block` | title, subheading              |
 | `kpi-metrics-slide`   | `header-block` | title, subheading              |
+| `text-blocks-slide`   | `header-block` | title, subheading              |
 | `quote-slide`         | `quote-block`  | quote, authorName, authorTitle |
 
-Types whose repeated cells each own their box — `text-blocks`, `comparison`,
+Types whose repeated cells each own their box — `comparison`,
 `matrix`, `process`, `timeline`, `funnel`,
 `cycle`, `pyramid`, `team-cards`, `poll`, `likert-slider` — are
 deliberately **not** grouped. There "centre this field" means "centre it within
 its cell", which is exactly right, and their sibling fields already share a
-centre.
+centre. `text-blocks` groups only its header; its
+blocks keep that per-cell alignment.
 
 The shape/node diagram types among these — `cycle`, `funnel`, `pyramid` — are a
 decided contract, not an accidental exception (option B, 2026-07-22; #226). Their

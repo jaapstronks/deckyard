@@ -16,9 +16,22 @@
 
 /* Reuse markdown table styles via .md-table-wrap / .md-table */
 .slide-table .md-table-wrap {
-  margin-top: var(--slide-space-3);
-  flex: 1;
+  flex: 0 1 auto;
   min-height: 0;
+}
+
+/* Vertical rhythm (B317): the heading stays at the top and the table, with its
+   caption when there is one, centres in the space left below it — the one rule
+   every collection under a heading follows. Auto margins rather than
+   `justify-content`, because the heading is a sibling in the same column and
+   must not move; they are safe by construction, since an auto margin never goes
+   negative: a table taller than the slide starts right under the heading and
+   the wrap shrinks and scrolls, it never rides up over the title. */
+.slide-table .slide-inner > .md-table-wrap {
+  margin-block-start: auto;
+}
+.slide-table .slide-inner > :last-child {
+  margin-block-end: auto;
 }
 
 /* Ensure table text is readable - use body font size */

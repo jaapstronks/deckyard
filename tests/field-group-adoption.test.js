@@ -195,6 +195,7 @@ describe('every adopting type behaves the same way', () => {
     ['logo-wall-slide', 'headerAlign', ['title', 'subheading']],
     ['chart-slide', 'headerAlign', ['title', 'subheading']],
     ['kpi-metrics-slide', 'headerAlign', ['title', 'subheading']],
+    ['text-blocks-slide', 'headerAlign', ['title', 'subheading']],
     ['quote-slide', 'quoteAlign', ['quote', 'authorName', 'authorTitle']],
   ];
 
@@ -216,13 +217,23 @@ describe('every adopting type behaves the same way', () => {
       }
     });
 
-    it(`${type}: the default emits no class and centre emits one`, () => {
+    it(`${type}: the default emits no class and the other value emits one`, () => {
+      const [defaultAlign, other] = def.fieldGroups[0].align;
       assert.doesNotMatch(
         draw({}),
         /is-align-/,
         `${type} default should be clean`,
       );
-      assert.match(draw({ [alignKey]: 'center' }), /is-align-center/, type);
+      assert.doesNotMatch(
+        draw({ [alignKey]: defaultAlign }),
+        /is-align-/,
+        type,
+      );
+      assert.match(
+        draw({ [alignKey]: other }),
+        new RegExp(`is-align-${other}`),
+        type,
+      );
     });
 
     it(`${type}: the align field is an enum matching the group's values`, () => {

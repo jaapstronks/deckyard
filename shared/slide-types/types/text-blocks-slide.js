@@ -5,6 +5,21 @@ import {
   hasBottomSubheading,
 } from '../helpers.js';
 import { markdownToSafeHtml } from '../../markdown.js';
+import { alignGroup, groupAlignClass } from '../field-groups.js';
+
+/**
+ * Title and subheading are one header block, centred by default: the rows,
+ * their titles and the arrows between them all sit on the slide's centre line,
+ * so a start-aligned heading above them is the odd one out (B317). Left stays
+ * on offer for a deck that wants its headings on one edge: `is-align-left` on
+ * the slide root, and the CSS moves the whole block.
+ */
+const HEADER_BLOCK = alignGroup('header-block', 'headerAlign', {
+  align: ['center', 'left'],
+  label: 'Header alignment',
+  labelKey: 'editor.slideField.headerAlign.label',
+  schematicKind: 'blocks',
+});
 
 /**
  * Resolve rows from content — supports both legacy numbered fields
@@ -134,6 +149,8 @@ export default {
   fallback: 'list-slide',
   runtime: 'static',
   fidelity: { pptx: 'raster' },
+  fieldGroups: [HEADER_BLOCK.group],
+  layoutVariants: HEADER_BLOCK.variants,
   label: 'Text blocks',
   fields: [
     // Header
@@ -145,6 +162,7 @@ export default {
       type: 'string',
       required: true,
       maxLength: 120,
+      group: 'header-block',
     },
     {
       key: 'subheading',
@@ -153,6 +171,7 @@ export default {
       type: 'string',
       required: false,
       maxLength: 200,
+      group: 'header-block',
     },
 
     // New rows[] format (preferred for AI generation)
@@ -426,18 +445,23 @@ export default {
       ],
     },
     ...generateBlockFields(3),
+    // Last, because it has no primary home in the form: the toolbar "Layout"
+    // chip owns the header block's alignment (see field-groups.js).
+    HEADER_BLOCK.field,
   ],
 
   // Defaults are array-canonical: new slides start in the rows[] shape.
   // Legacy numbered decks keep working via resolveRows()'s dual-read.
   defaultsByLang: {
     nl: {
+      headerAlign: 'center',
       title: 'Tekstblokken',
       subheading: '',
       bottomSubheading: '',
       rows: generateDefaultRows('nl'),
     },
     'en-GB': {
+      headerAlign: 'center',
       title: 'Text blocks',
       subheading: '',
       bottomSubheading: '',
@@ -448,6 +472,7 @@ export default {
   // The language-less seed: what every path with no deck language clones.
   // Key-identical to the maps above; see `defaults` in validate-definition.js.
   defaults: {
+    headerAlign: 'center',
     title: 'Text blocks',
     subheading: '',
     bottomSubheading: '',
@@ -460,6 +485,7 @@ export default {
     const bottomSubheading = renderBottomSubheadingHtml(content);
     const hasBottom = hasBottomSubheading(content);
 
+    const alignClass = groupAlignClass(HEADER_BLOCK.group, content);
     const rows = resolveRows(content);
     const rowCount = rows.length;
     // Inline-edit paths must point at the data source resolveRows() used.
@@ -529,7 +555,7 @@ export default {
     });
 
     return `
-      <div class="slide slide-text-blocks slide-bg-mist${hasBottom ? ' has-bottom-subheading' : ''}">
+      <div class="slide slide-text-blocks slide-bg-mist${hasBottom ? ' has-bottom-subheading' : ''}${alignClass ? ` ${alignClass}` : ''}">
         <div class="slide-inner">
           <div class="header">
             <h2 class="title" data-morph-role="title" data-inline-field="title" dir="auto">${title}</h2>
