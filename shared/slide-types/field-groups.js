@@ -40,10 +40,12 @@
  *
  * The renderer emits `<alignClass>-<value>` on the slide root for any
  * non-default value, and the type's CSS moves the whole block from that one
- * class. The composed name is deliberately not spelled out here: the dead-CSS
- * gate harvests backticked class names as evidence, and a selector kept alive
- * by a sentence dies when someone rewords it ({@link groupAlignClasses}). `quote-slide` already did exactly this by hand;
- * this module is that pattern made declarative.
+ * class. `quote-slide` already did exactly this by hand; this module is that
+ * pattern made declarative.
+ *
+ * The composed name is deliberately not spelled out here: the dead-CSS gate
+ * harvests backticked class names as evidence, and a selector kept alive by a
+ * sentence dies when someone rewords it ({@link groupAlignClasses}).
  */
 
 import { sharedOption } from '../ui-i18n-keys.js';

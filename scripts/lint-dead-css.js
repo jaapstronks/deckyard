@@ -40,8 +40,8 @@
 // A DECLARED CLASS IS EVIDENCE, NOT A COMMENT (B326)
 // Some classes exist only as two declarations meeting at render time:
 // `groupAlignClass()` builds `` `${prefix}-${value}` `` from a field group's
-// `alignClass` and its offered values, so neither appears anywhere as a
-// literal. They were counted alive on the strength of three JSDoc sentences
+// `alignClass` and its offered values, so neither is written as a literal
+// anywhere the harvester looks. They were counted alive on the strength of three JSDoc sentences
 // that name them inside backticks (`shared/slide-types/field-groups.js`,
 // `types/title-slide.js`, `types/text-blocks-slide.js`), which the
 // template-literal harvester reads as source. Stylesheet comments never
