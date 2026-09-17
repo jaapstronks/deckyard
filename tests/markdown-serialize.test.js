@@ -52,6 +52,8 @@ describe('canonical round trips (serialize(render(md)) === md)', () => {
     ['heading + body', '## Subheading\n\nBody text below'],
     ['flat unordered list', '- one\n- two\n- three'],
     ['ordered list', '1. first\n2. second\n3. third'],
+    ['ordered list starting past 1', '3. third\n4. fourth'],
+    ['bullets then numbers are two lists', '- a\n\n1. b'],
     ['nested list', '- Parent\n  - Child A\n  - Child B\n- Sibling'],
     ['mixed nesting', '1. First\n  - detail\n2. Second'],
     ['paragraph then list', 'Intro line:\n\n- item a\n- item b'],
@@ -89,11 +91,22 @@ describe('modal-only constructs still serialize faithfully', () => {
   }
 });
 
+describe('ordered list start survives the real sanitizer', () => {
+  it('keeps start="N" on the <ol>', () => {
+    const ol = domOf(markdownToSafeHtml('3. Drie\n4. Vier')).querySelector(
+      'ol',
+    );
+    assert.equal(ol?.getAttribute('start'), '3');
+  });
+});
+
 describe('render-equivalence for non-canonical input', () => {
   // Byte equality is too strict here (the dialect normalizes); the rendered
   // HTML must be identical instead.
   const cases = [
     ['repeated 1. markers renumber', '1. first\n1. second'],
+    ['loose list tightens', '1. Een\n\n2. Twee\n\n3. Drie'],
+    ['loose nested list tightens', '- a\n\n  - x\n\n- b'],
     ['extra internal spaces collapse', 'spaced    out   text'],
     ['multi-line paragraph joins', 'line one\nline two'],
     ['underscore italic canonicalizes to *', '_italic_ text'],
