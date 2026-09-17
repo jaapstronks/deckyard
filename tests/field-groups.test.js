@@ -17,6 +17,7 @@ import {
   groupAlignValues,
   resolveGroupAlign,
   groupAlignClass,
+  groupAlignClasses,
 } from '../shared/slide-types/field-groups.js';
 import { resolveFieldDef } from '../shared/slide-types/field-lookup.js';
 import {
@@ -150,6 +151,63 @@ describe('field-groups: alignment resolution', () => {
       defaultAlign: 'left',
     };
     assert.equal(resolveGroupAlign(odd, {}), 'center');
+  });
+});
+
+describe('field-groups: the classes a group can compose', () => {
+  // The dead-CSS gate has no literal of `is-align-center` to find — the class
+  // is built at render time — so it asks this function instead. The set has to
+  // be exactly what `groupAlignClass` can return: too wide and the gate
+  // absolves dead selectors, too narrow and it condemns live ones.
+
+  it('leaves out the default value, which composes no class', () => {
+    const group = { id: 'g', alignKey: 'k', align: ['left', 'center'] };
+    assert.deepEqual(groupAlignClasses(group), ['is-align-center']);
+  });
+
+  it('follows the default rather than the first value it is handed', () => {
+    const group = {
+      id: 'g',
+      alignKey: 'k',
+      align: ['left', 'center'],
+      defaultAlign: 'center',
+    };
+    assert.deepEqual(groupAlignClasses(group), ['is-align-left']);
+  });
+
+  it('names every other offered value', () => {
+    const group = {
+      id: 'g',
+      alignKey: 'k',
+      align: ['left', 'center', 'right'],
+      defaultAlign: 'left',
+    };
+    assert.deepEqual(groupAlignClasses(group), [
+      'is-align-center',
+      'is-align-right',
+    ]);
+  });
+
+  it('honours a custom class prefix', () => {
+    const group = {
+      id: 'g',
+      alignKey: 'k',
+      align: ['left', 'center'],
+      alignClass: 'is-caption-align',
+    };
+    assert.deepEqual(groupAlignClasses(group), ['is-caption-align-center']);
+  });
+
+  it('agrees with groupAlignClass for every offered value', () => {
+    const group = getFieldGroup(DEF, 'title-block');
+    const composed = groupAlignValues(group)
+      .map((value) => groupAlignClass(group, { [group.alignKey]: value }))
+      .filter(Boolean);
+    assert.deepEqual(groupAlignClasses(group), composed);
+  });
+
+  it('is empty without a group', () => {
+    assert.deepEqual(groupAlignClasses(null), []);
   });
 });
 

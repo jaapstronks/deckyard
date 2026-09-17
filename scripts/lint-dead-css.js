@@ -40,10 +40,14 @@
 // A DECLARED CLASS IS EVIDENCE, NOT A COMMENT (B326)
 // Some classes exist only as two declarations meeting at render time:
 // `groupAlignClass()` builds `` `${prefix}-${value}` `` from a field group's
-// `alignClass` and its offered values, so `.is-align-center` appears nowhere as
-// a literal. It was counted alive because four stylesheets happen to name it in
-// a backtick comment — prose keeping a gate green, which is exactly the kind of
-// evidence that rots without anyone noticing. `groupAlignClasses()` enumerates
+// `alignClass` and its offered values, so neither appears anywhere as a
+// literal. They were counted alive on the strength of three JSDoc sentences
+// that name them inside backticks (`shared/slide-types/field-groups.js`,
+// `types/title-slide.js`, `types/text-blocks-slide.js`), which the
+// template-literal harvester reads as source. Stylesheet comments never
+// counted — CSS is the accused corpus, not the evidence. Prose keeping a gate
+// green is exactly the kind of evidence that rots without anyone noticing:
+// reword those three sentences and two live selectors turn dead. `groupAlignClasses()` enumerates
 // the finite set from the same declarations the renderer composes from, and the
 // classes in it are alive because the source can produce them. Loosening
 // `SEPARATOR_INFIX` to a single hyphen would have been the alternative, and it
@@ -81,7 +85,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { groupAlignClasses } from '../shared/slide-types/field-groups.js';
+import {
+  getFieldGroups,
+  groupAlignClasses,
+} from '../shared/slide-types/field-groups.js';
 import { CORE_SLIDE_TYPE_DEFS } from '../shared/slide-types/registry.js';
 
 const REPO_ROOT = path.resolve(
@@ -108,6 +115,8 @@ const INDEX_VALUE = /^\d+$/;
  *   vocabulary of values a `${}` hole can evaluate to.
  * @property {Set<string>} prefixes - Static text directly before a hole.
  * @property {Set<string>} infixes - Separator-only static text between two holes.
+ * @property {Set<string>} declared - Whole class names the slide-type
+ *   declarations can compose, from {@link declaredClasses}.
  */
 
 /**
@@ -133,7 +142,7 @@ export const emptyEvidence = () => ({
 export function declaredClasses() {
   const names = new Set();
   for (const def of Object.values(CORE_SLIDE_TYPE_DEFS)) {
-    for (const group of def?.fieldGroups || []) {
+    for (const group of getFieldGroups(def)) {
       for (const name of groupAlignClasses(group)) names.add(name);
     }
   }
@@ -388,10 +397,11 @@ export function extractCssClasses(text, file) {
 /**
  * Decide whether a class name is accounted for by the harvested evidence.
  *
- * Four ways to be alive, in the order they are cheapest to check. The composed
- * ones (2 and 3) both demand that the interpolated part is a *value* the source
- * writes — a bare prefix match is not evidence, it is a wildcard, and that is
- * how `slide-` once absolved the whole slide layer.
+ * Five ways to be alive, in the order they are cheapest to check. Rule 0 is an
+ * exact set enumerated from declarations; the harvested composites (2 and 3)
+ * both demand that the interpolated part is a *value* the source writes — a
+ * bare prefix match is not evidence, it is a wildcard, and that is how
+ * `slide-` once absolved the whole slide layer.
  *
  * @param {string} name - CSS class name
  * @param {Evidence} evidence - From {@link harvestSource}
@@ -444,12 +454,19 @@ export function isAlive(name, evidence) {
  * @param {string[]} opts.sourceFiles - Repo-relative source paths
  * @param {string[]} opts.cssFiles - Repo-relative CSS paths
  * @param {(p: string) => string} [opts.read] - File reader (injectable for tests)
+ * @param {Iterable<string>} [opts.declared] - Composable class names; defaults
+ *   to {@link declaredClasses}, injectable so a fixture scan stays hermetic
  * @returns {{dead: Array<{name, file, line}>, byName: Map<string, {name, file, line}>,
  *   totalClasses: number, evidence: Evidence}}
  */
-export function scan({ sourceFiles, cssFiles, read = defaultRead }) {
+export function scan({
+  sourceFiles,
+  cssFiles,
+  read = defaultRead,
+  declared = declaredClasses(),
+}) {
   const evidence = emptyEvidence();
-  for (const name of declaredClasses()) evidence.declared.add(name);
+  for (const name of declared) evidence.declared.add(name);
   for (const file of sourceFiles) harvestSource(read(file), evidence);
 
   const byName = new Map();
