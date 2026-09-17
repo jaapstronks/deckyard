@@ -368,12 +368,6 @@ export const INVENTORY = {
       'types markdown can express appear. This is the module that kept minting ' +
       'the retired Dutch list alias until brief A step 1 stopped it.',
   },
-  'server/export/print.js': {
-    kind: sparse,
-    why:
-      'Print/PDF layout hints per type (which types break a page, which get a ' +
-      'quote treatment). Absence means the default treatment, which is fine.',
-  },
   'shared/data-source.js': {
     kind: sparse,
     why:

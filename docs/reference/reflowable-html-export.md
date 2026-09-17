@@ -20,11 +20,15 @@ document that stays readable with JavaScript — and author CSS — turned off.
   table of contents, and a `<main>` with one
   `<section data-slide-type="…" aria-labelledby="slide-N-title">` per slide
   (the full type name, the same marker every HTML surface puts on its slide
-  wrapper: `section.deck-slide` in presenter, export and embed, and
-  `section.print-slide`),
+  wrapper: `section.deck-slide` in presenter, export and embed),
   each led by an `<h2>`. The section is emitted by `renderSlideSectionHtml` in
   the projection, not by the document wrapper, so everything the reader says
   about a slide is in one place and one fixture.
+- The print handout (`server/export/print.js`, the editor's **Text handout**)
+  is the same projection in another shell: it emits these sections unchanged
+  and adds only its toolbar and a stylesheet for paper. There is one
+  reader; `tests/print-reads-projection.test.js` holds both documents to the
+  same section HTML per type.
 - Per-slide content is derived generically from the slide type's declared
   `fields` (see `field-types.js`), so **every** slide type — core or custom —
   projects without bespoke code and the output cannot drift from the type
