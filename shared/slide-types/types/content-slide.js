@@ -212,7 +212,7 @@ export default {
     // 'compact' takes the smaller body size; anything else is the default.
     const densityClass = content?.density === 'compact' ? ' is-compact' : '';
     const subheading = renderSubheadingHtml(content, 'subheading', 'subtitle');
-    const actionsHtml = renderActionsHtml(content?.actions);
+    const actionsHtml = renderActionsHtml(content?.actions, ctx?.mode);
     // Body-adjacent commentary, so it sits under the body and above the CTAs:
     // an aside annotates what was just said, a call to action closes the slide.
     const asideHtml = renderAsideHtml(content, ctx);

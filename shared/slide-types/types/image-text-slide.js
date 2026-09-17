@@ -368,7 +368,7 @@ export default {
           alt,
         )}" data-inline-photo="0"${ariaDecorative}${focusStyle} />`
       : imagePlaceholderHtml({ label: copy.imagePlaceholder, index: 0 });
-    const actionsHtml = renderActionsHtml(content?.actions);
+    const actionsHtml = renderActionsHtml(content?.actions, ctx?.mode);
     // In the copy column, not over the image: the aside annotates the text it
     // sits with, and every layout variant moves the picture around it.
     const asideHtml = renderAsideHtml(content, ctx);

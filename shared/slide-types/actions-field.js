@@ -62,20 +62,26 @@ export const ACTIONS_FIELD = {
 };
 
 /**
- * The anchor attributes for an action's `url`, or `''` when it is not a link.
+ * The anchor attributes for an action's `url`, or `null` when it is not a link.
  *
  * `url` is a `url` field, so the value is what the validator accepted: a web
  * link (`safeHref`) opens in a new tab, and a slide jump (`#slide:<id>`, `#N`)
  * carries the same `data-card-nav*` attribute a clickable card does, which the
- * presenter's one delegated listener follows. Nothing is repaired: a bare
- * domain is refused where it is typed, not completed here.
+ * presenter's one delegated listener follows. Outside the presenter nobody
+ * listens, so there the jump is a placeholder link (an `<a>` without `href`,
+ * the button as content), the way a card outside `present` mode draws no
+ * overlay. Nothing is repaired: a bare domain is refused where it is typed,
+ * not completed here.
  *
  * @param {unknown} raw
- * @returns {string}
+ * @param {string} [mode] - the render mode (`present`, `thumb`, `edit`, …)
+ * @returns {string|null} attribute text (`''` for a placeholder link), or
+ *   `null` when the value is no link at all
  */
-function actionLinkAttrs(raw) {
+function actionLinkAttrs(raw, mode) {
   const jump = slideJumpTarget(raw);
   if (jump) {
+    if (mode !== 'present') return '';
     return 'id' in jump
       ? `href="#" data-card-nav-id="${escapeHtml(jump.id)}"`
       : `href="#" data-card-nav="${jump.index}"`;
@@ -83,7 +89,7 @@ function actionLinkAttrs(raw) {
   const href = safeHref(raw);
   return href
     ? `href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer"`
-    : '';
+    : null;
 }
 
 function getActionStyleClass(style) {
@@ -96,16 +102,18 @@ function getActionStyleClass(style) {
 /**
  * Render actions HTML for a slide.
  * @param {Array} actions - Array of action objects with label, url, style
+ * @param {string} [mode] - the render mode; a slide jump is a live link in
+ *   `present` mode only
  * @returns {string} HTML string or empty string if no actions
  */
-export function renderActionsHtml(actions) {
+export function renderActionsHtml(actions, mode) {
   if (!Array.isArray(actions) || actions.length === 0) return '';
 
   const validActions = actions
     .filter((a) => {
       if (!a || typeof a !== 'object') return false;
       const label = String(a.label || '').trim();
-      return label && actionLinkAttrs(a.url);
+      return label && actionLinkAttrs(a.url, mode) !== null;
     })
     .slice(0, 3); // Max 3 actions
 
@@ -117,7 +125,7 @@ export function renderActionsHtml(actions) {
       const styleClass = getActionStyleClass(action.style);
       return `
         <a
-          ${actionLinkAttrs(action.url)}
+          ${actionLinkAttrs(action.url, mode)}
           class="slide-action ${styleClass}"
           data-action-track="${idx}"
           data-action-label="${escapeHtml(label)}"
