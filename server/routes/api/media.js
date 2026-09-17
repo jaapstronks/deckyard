@@ -21,6 +21,7 @@ import {
   getMediaProvider,
   isMediaProviderInitialized,
 } from '../../media/index.js';
+import { rehostRemoteImage } from '../../media/rehost.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { getString } from '../../utils/request-validators.js';
 
@@ -153,6 +154,89 @@ async function handleImageKitDetailsGet({ res }, fileId) {
   return true;
 }
 
+/**
+ * POST /api/media/imagekit/import - Copy an ImageKit asset into own media.
+ *
+ * B327/D162: picking a DAM image must not leave a live third-party URL on the
+ * slide, so the editor asks for a copy *before* it writes anything. The gates
+ * are the upload gates — this stores bytes, so it is an upload by another name
+ * — and the fetched URL is not the caller's to choose: the fileId is resolved
+ * against the configured ImageKit account and only its own URL (optionally
+ * carrying the picker's `?tr=` transformation) is accepted. That is what keeps
+ * this from being a generic URL proxy.
+ *
+ * `IMAGEKIT_ONLY` deliberately has no copy path: it turns uploads off, so there
+ * is no own media to copy into, and the refusal here is the same one the picker
+ * explains up front.
+ */
+async function handleImageKitImport({ req, res, authedUser }) {
+  if (!authedUser) return unauthorized(res);
+
+  const flags = getFeatureFlags();
+  if (flags.demoMode || flags.sandboxMode) {
+    return badRequest(res, 'Uploads disabled in demo/sandbox mode');
+  }
+  if (!flags.enableUploads) {
+    return jsonError(
+      res,
+      400,
+      'uploads_disabled',
+      'Copying an image into your own media needs uploads to be enabled',
+    );
+  }
+  if (!isMediaProviderInitialized()) {
+    return badRequest(res, 'Media provider not initialized');
+  }
+
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
+  const fileId = getString(body, 'fileId');
+  const requestedUrl = getString(body, 'url');
+  if (!fileId) return badRequest(res, 'fileId is required');
+
+  // Resolve the asset at the source: this both verifies the id belongs to the
+  // configured account and yields the canonical URL to copy from.
+  const details = await getImageKitFileDetails(fileId);
+  const canonicalUrl = String(details?.url || '').trim();
+  if (!canonicalUrl) {
+    return badRequest(res, 'ImageKit did not return a URL for this file');
+  }
+
+  // The picker may append a transformation (`?tr=…`); anything else is a
+  // different URL than the one this fileId names, and is refused rather than
+  // fetched.
+  let sourceUrl = canonicalUrl;
+  if (requestedUrl && requestedUrl !== canonicalUrl) {
+    if (!requestedUrl.startsWith(`${canonicalUrl}?`)) {
+      return badRequest(res, 'url does not belong to this ImageKit file');
+    }
+    sourceUrl = requestedUrl;
+  }
+
+  const baseName = String(details?.name || `imagekit-${fileId}`)
+    .replace(/\.[^.]+$/, '')
+    .trim();
+
+  try {
+    const stored = await rehostRemoteImage({
+      url: sourceUrl,
+      filename: baseName || `imagekit-${fileId}`,
+    });
+    serveJson(res, 201, {
+      url: stored.publicUrl,
+      mime: stored.contentType,
+      bytes: stored.size,
+      sourceUrl,
+    });
+  } catch (err) {
+    const status = err.statusCode || 400;
+    if (status >= 500) serverError(res, 'Import failed');
+    else jsonError(res, status, 'import_failed', err.message);
+  }
+  return true;
+}
+
 // PATCH /api/media/imagekit/files/:id/details - Update file details
 async function handleImageKitDetailsPatch({ req, res, authedUser }, fileId) {
   if (!authedUser) return unauthorized(res);
@@ -216,6 +300,15 @@ export const ROUTES = [
   {
     pattern: '/api/media/imagekit/files',
     handler: ({ res }) => methodNotAllowed(res, ['GET']),
+  },
+  {
+    method: 'POST',
+    pattern: '/api/media/imagekit/import',
+    handler: handleImageKitImport,
+  },
+  {
+    pattern: '/api/media/imagekit/import',
+    handler: ({ res }) => methodNotAllowed(res, ['POST']),
   },
   {
     method: 'GET',

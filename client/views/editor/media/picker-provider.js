@@ -133,10 +133,24 @@ function bundledGradientsProvider(openBundledRaw) {
 
 /**
  * Adapter: ImageKit DAM picker.
+ *
+ * Picking a DAM image copies it into this deployment's own media first (B327,
+ * D162): the slide gets a URL this installation serves, and the ImageKit file
+ * id stays on it only as provenance, never as a second live image source. The
+ * copy is the one place this happens, so the side-form fields, the collection
+ * images and the inline popover all inherit it without knowing about it.
+ *
+ * The copy runs *before* `opts.onPick`, and a failure is thrown rather than
+ * swallowed: the picker stays open on it and the slide is left alone. With no
+ * own media to copy into (`IMAGEKIT_ONLY`, uploads off) `importToOwnMedia` is
+ * absent — then the ImageKit URL is used as before, and the picker says why.
+ *
  * @param {Function} openImageKitRaw - bound `openImageKitPicker`
+ * @param {((pick: {fileId: string, url: string}) => Promise<{url: string}>)} [importToOwnMedia]
  * @returns {PickerProvider}
  */
-function imagekitProvider(openImageKitRaw) {
+function imagekitProvider(openImageKitRaw, importToOwnMedia) {
+  const canCopy = typeof importToOwnMedia === 'function';
   return {
     id: 'imagekit',
     label: t('editor.image.source.imagekit', 'ImageKit'),
@@ -152,15 +166,43 @@ function imagekitProvider(openImageKitRaw) {
         title: opts.title,
         docId: opts.docId,
         context: opts.context,
-        onPick: (picked) => {
+        // Shown under the confirm button when the image will stay on ImageKit,
+        // so the difference between deployments is visible where it is decided.
+        note: canCopy
+          ? ''
+          : t(
+              'editor.image.imagekit.noCopyNote',
+              'This image stays hosted on ImageKit: copying it into your own media needs image uploads to be enabled.',
+            ),
+        onPick: async (picked) => {
           const url = typeof picked?.url === 'string' ? picked.url.trim() : '';
           if (!url) return;
+          const fileId = picked?.fileId || undefined;
+
+          let finalUrl = url;
+          if (canCopy) {
+            // Throws on refusal or failure — the picker keeps the dialog open
+            // and nothing has been written to the slide yet.
+            const stored = await importToOwnMedia({ fileId, url });
+            const copied =
+              typeof stored?.url === 'string' ? stored.url.trim() : '';
+            if (!copied) {
+              throw new Error(
+                t(
+                  'editor.image.imagekit.copyFailed',
+                  'Copying this image into your own media did not return a URL.',
+                ),
+              );
+            }
+            finalUrl = copied;
+          }
+
           opts.onPick?.({
-            url,
+            url: finalUrl,
             alt:
               typeof picked?.altSeed === 'string' ? picked.altSeed : undefined,
             tags: Array.isArray(picked?.tags) ? picked.tags : undefined,
-            providerId: picked?.fileId || undefined,
+            providerId: fileId,
           });
         },
       });
@@ -264,6 +306,8 @@ function openSourceChooser({ root, providers, hint, onChoose }) {
  * @param {Function} [args.openImageLibrary]     - bound `openImageLibraryPicker`
  * @param {Function} [args.openBundledGradients] - bound `openBundledGradientPicker`
  * @param {Function} [args.openImageKit]         - bound `openImageKitPicker`
+ * @param {Function} [args.importImageKitToOwnMedia] - copies a picked ImageKit
+ *   asset into own media; absent when this deployment has no own media.
  * @returns {((opts: PickerOpts) => void) & { providers: PickerProvider[] }}
  */
 export function createImagePickerSeam({
@@ -272,6 +316,7 @@ export function createImagePickerSeam({
   openImageLibrary,
   openBundledGradients,
   openImageKit,
+  importImageKitToOwnMedia,
 } = {}) {
   const flags = features && typeof features === 'object' ? features : {};
   const providers = [];
@@ -282,7 +327,7 @@ export function createImagePickerSeam({
     providers.push(bundledGradientsProvider(openBundledGradients));
   }
   if (typeof openImageKit === 'function') {
-    providers.push(imagekitProvider(openImageKit));
+    providers.push(imagekitProvider(openImageKit, importImageKitToOwnMedia));
   }
   orderProviders(providers);
 

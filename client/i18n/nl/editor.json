@@ -374,6 +374,8 @@
   "editor.image.help.uploadsDisabled": "Kies uit de beeldbank (aanbevolen). Uploads zijn uitgeschakeld.",
   "editor.image.help.uploadsSandbox": "Uploaden staat uit in de sandbox. Kies uit de beeldbank, Unsplash of Giphy.",
   "editor.image.help.withUploads": "Kies uit de beeldbank (aanbevolen) of upload een eigen afbeelding.",
+  "editor.image.imagekit.copyFailed": "Het kopiëren van deze afbeelding naar je eigen media leverde geen URL op.",
+  "editor.image.imagekit.noCopyNote": "Deze afbeelding blijft op ImageKit staan: kopiëren naar je eigen media kan alleen als uploads aanstaan.",
   "editor.image.libraryTitle": "Beeldbank: kies een afbeelding",
   "editor.image.photoCredit": "Foto: {photographer}",
   "editor.image.presets": "Vooraf ingestelde afbeeldingen",

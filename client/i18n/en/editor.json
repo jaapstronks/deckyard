@@ -374,6 +374,8 @@
   "editor.image.help.uploadsDisabled": "Choose from the library (recommended). Uploads are disabled.",
   "editor.image.help.uploadsSandbox": "Uploads are off in the sandbox. Choose from the library, Unsplash or Giphy.",
   "editor.image.help.withUploads": "Choose from the library (recommended) or upload your own image.",
+  "editor.image.imagekit.copyFailed": "Copying this image into your own media did not return a URL.",
+  "editor.image.imagekit.noCopyNote": "This image stays hosted on ImageKit: copying it into your own media needs image uploads to be enabled.",
   "editor.image.libraryTitle": "Library: choose an image",
   "editor.image.photoCredit": "Photo: {photographer}",
   "editor.image.presets": "Preset images",

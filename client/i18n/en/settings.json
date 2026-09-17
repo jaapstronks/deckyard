@@ -168,6 +168,8 @@
   "imagekit.transform.original": "Original",
   "imagekit.url": "URL",
   "imagekit.use": "Use this image",
+  "imagekit.use.failed": "Could not use this image.",
+  "imagekit.use.working": "One moment…",
   "organization.members.changeRoleFor": "Role for {name}",
   "organization.members.empty": "No members found.",
   "organization.members.gone": "That member is no longer in this organization.",

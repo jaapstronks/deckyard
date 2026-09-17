@@ -32,7 +32,9 @@ Enabled providers, in chooser order:
   `openImageLibraryPicker` (local/S3 upload + Unsplash/Giphy).
 - **bundled gradients** (`bundled`) — enabled whenever its raw opener is
   injected. See [`bundled-gradients.md`](bundled-gradients.md).
-- **ImageKit** (`imagekit`) — enabled whenever its raw opener is injected.
+- **ImageKit** (`imagekit`) — enabled whenever its raw opener is injected. Its
+  pick is [copied into own media](#copy-on-pick-imagekit) before it reaches a
+  slide.
 
 Two different kinds of gate decide whether an opener is injected, and
 `createImagePickers` (`client/views/editor/image-pickers.js`) resolves both:
@@ -77,6 +79,42 @@ array, the inline popover mutates an item — and delegate the rest:
   a provider that supplies one sets it, any other pick clears it (so a native
   URL never carries a dangling ImageKit `imagekitFileId`).
 
+## Copy-on-pick (ImageKit)
+
+A DAM is a place to _find_ an image, not a place a deck should depend on. So
+picking an ImageKit image copies it into this installation's own media first,
+and the slide gets a URL this install serves; the ImageKit file id stays on the
+slide as `imagekitFileId`, saying where the image came from, and is no longer a
+live image source. Nothing about a deck already stored changes — this is the
+write path only.
+
+The copy lives in the **ImageKit adapter**, which is what makes it hold
+everywhere: the side-form fields, the collection images and the inline popover
+each own their URL write, and all three receive an already-copied URL. A new
+call site cannot forget it any more than it can forget the provider.
+
+```
+adapter.onPick(pick)
+  → POST /api/media/imagekit/import { fileId, url }   ← copies, server-side
+  → opts.onPick({ url: <own media URL>, alt, tags, providerId })
+```
+
+The order is the point: the copy runs _before_ the call site is told anything,
+so a failure leaves the slide exactly as it was.
+
+- **Failure** — the adapter throws, `openImageKitPicker` shows the sentence as
+  an inline refusal beside "Use this image" and keeps the dialog open, one
+  click from a retry. There is no fallback to the external URL: a silent
+  hot-link is the outcome the feature exists to prevent.
+- **No own media** (`IMAGEKIT_ONLY`, uploads off) — there is nowhere to copy
+  to, so `importImageKitToOwnMedia` is not injected at all, the ImageKit URL is
+  used as before, and the picker carries a line saying the image stays hosted
+  on ImageKit. A direct request to the endpoint is refused with
+  `uploads_disabled`: the flag is not worked around from either side.
+
+The server half (which URL it will fetch, and why that is not a proxy) is in
+[`media-library.md`](media-library.md) § _Flows_.
+
 ## Adding a provider (fork or upstream)
 
 1. Write an adapter that returns `{ id, label, open(opts) }` and maps your
@@ -89,6 +127,16 @@ array, the inline popover mutates an item — and delegate the rest:
 The bundled-gradients provider is the worked example: an adapter of eight
 lines, one opener injected behind a setting, and every image field plus the
 inline popover gained a source.
+
+**A fork that replaces an adapter takes its guarantees with it.** The
+copy-on-pick above is a property of the upstream ImageKit adapter, not of the
+seam: a fork that swaps that adapter for its own — or registers a second DAM —
+inherits the entry points but not the copy, and its picks will write a live
+third-party URL onto slides again unless it calls
+`/api/media/imagekit/import` (or its own equivalent) itself. Upstream cannot
+detect that, so a fork with its own adapter states in its own docs whether
+picks are copied. Nobody should have to read a diff to find out whether their
+decks depend on somebody else's CDN.
 
 The persisted slide shape stays backward compatible; a migration to a nested
 media object would be a separate, later decision.

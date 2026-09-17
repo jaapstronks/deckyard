@@ -1,6 +1,7 @@
 import { lockDocumentScroll } from './editor-utils.js';
 import { t } from '../../lib/ui-i18n.js';
 import { confirmModal, createModal } from '../../lib/dom/modal.js';
+import { createInlineError } from '../../lib/dom/inline-error.js';
 import {
   cleanStr,
   uniq,
@@ -18,6 +19,7 @@ export function openImageKitPicker({
   root,
   context = null,
   docId = '',
+  note = '',
   onPick,
 } = {}) {
   if (typeof api !== 'function')
@@ -410,11 +412,18 @@ export function openImageKitPicker({
     });
     updateAltCheckbox.checked = altKey && !existingAltSeed;
 
+    // Confirming can be refused (B327: the copy into own media has to succeed
+    // before the slide may change), and that refusal belongs to the dialog the
+    // user is in, not to a toast behind it — so it shows beside the button and
+    // the dialog stays open, one click from a retry.
+    const useError = createInlineError();
+
     const btnUse = h('button', {
       class: 'btn btn-primary',
       type: 'button',
       text: t('imagekit.use', 'Use this image'),
       onclick: async () => {
+        useError.clear();
         const seed = cleanStr(altTa.value);
         if (!seed) {
           const ok = await confirmModal(root, {
@@ -452,12 +461,33 @@ export function openImageKitPicker({
           }
         }
 
-        onPick?.({
-          url: cleanStr(urlOut.value) || cleanStr(selected?.url),
-          fileId: cleanStr(selected?.fileId),
-          altSeed: seed,
-          tags: uniq(selected?.tags),
-        });
+        // `onPick` may be async and may refuse (the seam copies the asset into
+        // own media first). Only a settled, unrefused pick closes the dialog.
+        let failure = null;
+        try {
+          setBusy(true);
+          statusLine.textContent = t('imagekit.use.working', 'One moment…');
+          await onPick?.({
+            url: cleanStr(urlOut.value) || cleanStr(selected?.url),
+            fileId: cleanStr(selected?.fileId),
+            altSeed: seed,
+            tags: uniq(selected?.tags),
+          });
+        } catch (e) {
+          failure = e;
+        } finally {
+          setBusy(false);
+          statusLine.textContent = '';
+        }
+        // After setBusy(false), so the button the refusal names can take focus.
+        if (failure) {
+          useError.show(
+            cleanStr(failure?.message) ||
+              t('imagekit.use.failed', 'Could not use this image.'),
+            { control: btnUse },
+          );
+          return;
+        }
         close();
       },
     });
@@ -524,7 +554,11 @@ export function openImageKitPicker({
               ),
             }),
       ]),
+    );
+    if (note) detail.append(h('div', { class: 'help', text: note }));
+    detail.append(
       h('div', { class: 'imagekit-detail-actions' }, [btnGenerateAlt, btnUse]),
+      useError.el,
     );
   };
 
