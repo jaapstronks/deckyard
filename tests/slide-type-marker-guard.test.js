@@ -9,8 +9,8 @@
  *
  *  - `section.deck-slide` — presenter (`deck-controller.js`), standalone and
  *    published export (`server/export/html.js`), embed;
- *  - `section.print-slide` — the print document;
- *  - `section.reader-slide` — the reader projection.
+ *  - `section.reader-slide` — the reader projection, which the print handout
+ *    emits unchanged (D134): one wrapper for both documents.
  *
  * Two halves. The builders we can run server-side are run, so the marker is
  * proven in the output. The presenter builds its wrapper in the browser, so a
@@ -66,8 +66,8 @@ test('embed: section.deck-slide carries data-slide-type', () => {
   assertMarked(buildEmbedHtml(repoRoot, deck()), 'deck-slide');
 });
 
-test('print: section.print-slide carries data-slide-type', async () => {
-  assertMarked(await buildPrintHtml(repoRoot, deck()), 'print-slide');
+test('print: section.reader-slide carries data-slide-type', async () => {
+  assertMarked(await buildPrintHtml(repoRoot, deck()), 'reader-slide');
 });
 
 test('reader: section.reader-slide carries data-slide-type', () => {
@@ -91,8 +91,7 @@ test('no source spells a slide wrapper without the type marker', () => {
 
   // A wrapper literal: an HTML attribute `class="deck-slide…"` or an h() prop
   // `class: 'deck-slide…'`. Selectors (`.deck-slide`) are not wrappers.
-  const literal =
-    /class(?:="|:\s*')(deck-slide|print-slide|reader-slide)(?=[\s"'$])/g;
+  const literal = /class(?:="|:\s*')(deck-slide|reader-slide)(?=[\s"'$])/g;
   const offenders = [];
   let seen = 0;
   for (const file of files) {
@@ -108,7 +107,7 @@ test('no source spells a slide wrapper without the type marker', () => {
     }
   }
   assert.ok(
-    seen >= 5,
+    seen >= 4,
     `only ${seen} wrapper literals found; the scan is blind`,
   );
   assert.deepEqual(offenders, []);

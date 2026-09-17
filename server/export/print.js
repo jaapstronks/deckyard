@@ -1,171 +1,37 @@
-import { SLIDE_TYPES } from '../../shared/slide-types.js';
+/**
+ * The print handout: the deck as a document to print or save as PDF.
+ *
+ * It is not a second reader. Every slide is the reader's own section
+ * (`renderSlideSectionHtml`, D134): the same heading, the same body, the same
+ * markers, so what the projection learns about a slide type the handout says
+ * too. This file owns only what makes it a handout: the document shell, the
+ * toolbar, and a stylesheet for paper that styles the reader's vocabulary.
+ */
+
+import {
+  getSlideType,
+  SLIDE_TYPES,
+} from '../../shared/slide-types/registry.js';
+import { renderSlideSectionHtml } from '../../shared/slide-types/semantic-projection.js';
 import { stripFontFacesFromCss } from '../utils/embed-fonts.js';
-import { markdownToSafeHtml } from '../utils/markdown.js';
-import { iconUrl } from '../../shared/icon-names.js';
 import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { sandboxWatermarkText } from '../config/sandbox.js';
-import { escapeHtml, isProbablyUrl } from '../utils/html-utils.js';
+import { escapeHtml } from '../utils/html-utils.js';
 import {
   buildPrismKatexTags,
   detectPrismKatexNeeds,
 } from '../utils/prism-katex.js';
-import {
-  buildScriptChain,
-  detectSlideRuntimeNeeds,
-} from '../utils/script-chain.js';
+import { buildScriptChain } from '../utils/script-chain.js';
 import { loadExportCssBundle } from './css-bundle.js';
 import { buildCssChain } from '../utils/css-chain.js';
 import { buildDocumentHead } from '../utils/head-chain.js';
 
-// Simple translations for server-side export
-const PRINT_I18N = {
-  nl: {
-    noCardContent: 'Geen kaarten-inhoud.',
-    noContent: 'Geen inhoud.',
-  },
-  en: {
-    noCardContent: 'No card content.',
-    noContent: 'No content.',
-  },
-};
-
-function getPrintTranslations(lang) {
-  const langKey = String(lang || '')
-    .toLowerCase()
-    .startsWith('nl')
-    ? 'nl'
-    : 'en';
-  return PRINT_I18N[langKey] || PRINT_I18N.en;
-}
-
-function linkify(s) {
-  const t = String(s || '').trim();
-  if (!t) return '';
-  if (isProbablyUrl(t)) {
-    const escUrl = escapeHtml(t);
-    return `<a href="${escUrl}" target="_blank" rel="noopener noreferrer">${escUrl}</a>`;
-  }
-  return escapeHtml(t);
-}
-
-function renderQuoteSlide(slide) {
-  const c = slide && typeof slide === 'object' ? slide.content : {};
-  const quote = String(c?.quote || '').trim();
-  const name = String(c?.authorName || '').trim();
-  const role = String(c?.authorTitle || '').trim();
-  const authorLine = [name, role].filter(Boolean).join(', ');
-  const footer = authorLine
-    ? `<footer class="print-quote-footer">- ${escapeHtml(authorLine)}</footer>`
-    : '';
-
-  return `<blockquote class="print-quote">
-    <p class="print-quote-text">&ldquo;${escapeHtml(quote)}&rdquo;</p>
-    ${footer}
-  </blockquote>`;
-}
-
-function renderIconCardGridSlide(slide, lang) {
-  const t = getPrintTranslations(lang);
-  const c = slide && typeof slide === 'object' ? slide.content : {};
-  const items = Array.isArray(c?.items) ? c.items.slice(0, 6) : [];
-  const cards = [];
-  for (const item of items) {
-    const iconName = String(item?.icon || '').trim();
-    const iconSrc = iconUrl(iconName);
-    const title = String(item?.title || '').trim();
-    const body = String(item?.body || '').trim();
-    if (!iconName && !title && !body) continue;
-    cards.push(`<section class="print-icon-card">
-      <div class="print-icon-card-head">
-        ${
-          iconSrc
-            ? `<img class="print-icon" src="${escapeHtml(iconSrc)}" alt="" />`
-            : ''
-        }
-        ${title ? `<h3>${escapeHtml(title)}</h3>` : ''}
-      </div>
-      ${body ? `<div class="md">${markdownToSafeHtml(body)}</div>` : ''}
-    </section>`);
-  }
-  return cards.length
-    ? `<div class="print-icon-cards">${cards.join('')}</div>`
-    : `<p class="print-muted">${escapeHtml(t.noCardContent)}</p>`;
-}
-
-function slideH2(slide, idx, slideTypes) {
-  const type = String(slide?.type || '');
-  const types =
-    slideTypes && typeof slideTypes === 'object' ? slideTypes : SLIDE_TYPES;
-  const def = types[type];
-  const c = slide && typeof slide === 'object' ? slide.content : {};
-  const title = String(c?.title || '').trim();
-  if (title) return title;
-  if (type === 'quote-slide') return 'Quote';
-  return def?.label || `Slide ${idx + 1}`;
-}
-
-function renderSlideReadableHtml(slide, lang) {
-  const type = String(slide?.type || '');
-  const c = slide && typeof slide === 'object' ? slide.content : {};
-
-  if (type === 'quote-slide') return renderQuoteSlide(slide);
-  if (type === 'icon-card-grid-slide')
-    return renderIconCardGridSlide(slide, lang);
-
-  if (type === 'title-slide' || type === 'chapter-title-slide') {
-    const subheading = String(c?.subheading || '').trim();
-    return subheading
-      ? `<p class="print-lead">${escapeHtml(subheading)}</p>`
-      : '';
-  }
-
-  if (
-    type === 'content-slide' ||
-    type === 'image-text-slide' ||
-    type === 'image-set-slide'
-  ) {
-    const body = String(c?.body || '').trim();
-    return body ? `<div class="md">${markdownToSafeHtml(body)}</div>` : '';
-  }
-
-  if (type === 'image-slide') {
-    const subheading = String(c?.subheading || '').trim();
-    const caption = String(c?.caption || '').trim();
-    const parts = [];
-    if (subheading)
-      parts.push(`<p class="print-lead">${escapeHtml(subheading)}</p>`);
-    if (caption) parts.push(`<p>${escapeHtml(caption)}</p>`);
-    return parts.join('\n');
-  }
-
-  if (type === 'video-slide') {
-    const source = String(c?.source || '').trim();
-    return source ? `<p>${linkify(source)}</p>` : '';
-  }
-
-  // Fallback: readable JSON
-  const json = escapeHtml(JSON.stringify(c || {}, null, 2));
-  return `<pre class="print-pre">${json}</pre>`;
-}
-
-function renderSlideTextHtml(slide, idx, lang, slideTypes) {
-  const t = getPrintTranslations(lang);
-  const type = String(slide?.type || '');
-  const h2 = slideH2(slide, idx, slideTypes);
-  const content = renderSlideReadableHtml(slide, lang);
-  return `<section class="print-slide" data-slide-type="${escapeHtml(type)}">
-    <h2 class="print-h2"><span class="print-slide-num">${
-      idx + 1
-    }.</span> ${escapeHtml(h2)}</h2>
-    ${content || `<p class="print-muted">${escapeHtml(t.noContent)}</p>`}
-  </section>`;
-}
-
 /**
  * The print/handout document itself: reflowed text layout, not slide canvas.
- * A layer of the same chain, so the fork seam still lands last
- * (server/utils/css-chain.js).
+ * It styles the reader's vocabulary (`.reader-*`, the projection's elements)
+ * for paper, in the theme's fonts. A layer of the same chain, so the fork seam
+ * still lands last (server/utils/css-chain.js).
  */
 const PRINT_DOC_CSS = `
       html, body {
@@ -196,113 +62,133 @@ const PRINT_DOC_CSS = `
         max-width: 55vw;
       }
 
-      /* Text-only layout */
       .print-doc {
         max-width: 920px;
         margin: 0 auto;
         padding: 22px 18px 40px;
+        counter-reset: print-slide;
+        font-size: 14px;
+        line-height: 1.6;
       }
-      .print-slide {
-        padding: 8px 0 18px;
-      }
-
-      h1, h2, h3 { color: #0b0b0b; }
-      .print-h1 {
+      .print-doc h1, .print-doc h2, .print-doc h3 {
+        color: #0b0b0b;
         font-family: var(--font-heading);
+        font-weight: 600;
+      }
+      .print-h1 {
         font-size: 30px;
         line-height: 1.15;
         margin: 10px 0 18px;
-        font-weight: 600;
       }
-      .print-h2 {
-        font-family: var(--font-heading);
+
+      /* One section per slide, from the projection. The number is position,
+         not text (D133): a counter, silent to assistive tech. */
+      .print-doc .reader-slide {
+        padding: 8px 0 18px;
+        border-top: 1px solid rgba(0,0,0,0.12);
+        counter-increment: print-slide;
+        break-inside: avoid-page;
+      }
+      .print-doc .reader-slide:first-of-type { border-top: 0; }
+      .print-doc .reader-slide > h2 {
         font-size: 20px;
         line-height: 1.2;
         margin: 18px 0 10px;
-        font-weight: 600;
+        break-after: avoid-page;
       }
-      .print-slide-num {
+      .print-doc .reader-slide > h2::before {
+        content: counter(print-slide) ". ";
+        content: counter(print-slide) ". " / "";
         font-family: var(--font-mono);
         font-size: 13px;
         opacity: 0.65;
-        margin-right: 6px;
       }
-      h3 {
-        font-family: var(--font-heading);
-        font-size: 15px;
-        margin: 14px 0 6px;
-        font-weight: 600;
+      /* A hidden heading is a name, not a title: visually hidden, still an
+         <h2> for heading navigation. */
+      .print-doc .reader-slide .reader-sr-only {
+        position: absolute;
+        width: 1px; height: 1px; margin: -1px; padding: 0; border: 0;
+        overflow: hidden; clip-path: inset(50%); white-space: nowrap;
       }
+      .print-doc h3 { font-size: 15px; margin: 14px 0 6px; }
+      .print-doc p { margin: 10px 0; }
+      .print-doc ul, .print-doc ol { margin: 10px 0; padding-left: 22px; }
+      .print-doc li { margin: 6px 0; }
+      .print-doc a { color: #0b57d0; text-decoration: underline; }
 
-      .md {
-        font-size: 14px;
-        line-height: 1.6;
-        color: #111;
-      }
-      .md a { color: #0b57d0; text-decoration: underline; }
-      .md img { display: none !important; }
-      .md p { margin: 10px 0; }
-      .md ul, .md ol { margin: 10px 0; padding-left: 22px; }
-      .md li { margin: 6px 0; }
-
-      .print-pre {
-        font-family: var(--font-mono);
-        font-size: 12px;
-        line-height: 1.45;
-        white-space: pre-wrap;
-        word-break: break-word;
-        background: rgba(0,0,0,0.04);
-        border: 1px solid rgba(0,0,0,0.08);
-        border-radius: 10px;
-        padding: 12px;
-      }
-
-      .help { opacity: 0.75; font-size: 13px; }
-      .print-muted { opacity: 0.7; }
-      .print-lead { font-size: 15px; line-height: 1.55; opacity: 0.85; margin: 10px 0; }
-
-      .print-break {
-        border: 0;
-        border-top: 1px solid rgba(0,0,0,0.12);
-        margin: 18px 0;
-      }
-
-      .print-quote {
+      .print-doc blockquote {
         margin: 12px 0;
-        padding: 10px 0 2px;
+        padding: 2px 0 2px 14px;
+        border-left: 3px solid rgba(0,0,0,0.2);
       }
-      .print-quote-text {
+      .print-doc blockquote p {
         font-family: var(--font-heading);
         font-size: 18px;
         line-height: 1.35;
-        margin: 0 0 10px;
       }
-      .print-quote-footer {
-        font-size: 13px;
-        opacity: 0.85;
-        margin: 0;
+      .print-doc .reader-slide > footer { font-size: 13px; opacity: 0.85; }
+      .print-doc .reader-slide > footer p { margin: 2px 0; }
+      .print-doc aside {
+        margin: 12px 0;
+        padding: 6px 12px;
+        border: 1px solid rgba(0,0,0,0.15);
+        border-radius: 8px;
+        break-inside: avoid;
       }
+      .reader-summary, .reader-caption { opacity: 0.8; }
+      .reader-summary { font-style: italic; }
+      .reader-label {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        opacity: 0.7;
+      }
+      .reader-label dfn { font-style: normal; }
+      .print-doc aside .reader-label { margin: 0 0 2px; }
 
-      .print-cards, .print-icon-cards {
-        display: grid;
-        gap: 10px;
+      ul.reader-items { list-style: none; padding-left: 0; }
+      ol.reader-items { list-style: decimal; padding-left: 22px; }
+      .reader-item, .reader-field {
+        margin: 10px 0;
+        padding-left: 12px;
+        border-left: 3px solid rgba(0,0,0,0.12);
+        break-inside: avoid;
       }
-      .print-card, .print-icon-card {
-        border: 1px solid rgba(0,0,0,0.10);
-        border-radius: 12px;
+      .reader-fields { margin: 10px 0; }
+      .reader-field dt { font-weight: 600; font-size: 13px; opacity: 0.75; }
+      .reader-field dd { margin: 2px 0 0; }
+
+      .reader-figure { margin: 12px 0; break-inside: avoid; }
+      .reader-figure img {
+        display: block;
+        max-width: 100%;
+        max-height: 60vh;
+        height: auto;
+        border-radius: 6px;
+      }
+      .reader-figure figcaption { font-size: 13px; opacity: 0.75; margin-top: 4px; }
+      .reader-gallery { display: flex; flex-wrap: wrap; gap: 8px; }
+      .reader-gallery .reader-figure { flex: 1 1 200px; margin: 0; }
+      .reader-gallery > figcaption { flex: 1 1 100%; font-size: 13px; opacity: 0.75; }
+
+      .reader-table { border-collapse: collapse; width: 100%; font-size: 13px; }
+      .reader-table th, .reader-table td {
+        border: 1px solid rgba(0,0,0,0.15);
+        padding: 4px 8px;
+        text-align: left;
+      }
+      .reader-table caption { text-align: left; font-size: 13px; opacity: 0.75; margin-bottom: 4px; }
+      .reader-code {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        white-space: pre-wrap;
+        word-break: break-word;
+        background: rgba(0,0,0,0.04);
+        border-radius: 8px;
         padding: 10px 12px;
-        background: rgba(0,0,0,0.02);
       }
-      .print-icon-card-head {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      .print-icon {
-        width: 18px;
-        height: 18px;
-        display: inline-block;
-      }
+      .reader-media { opacity: 0.85; }
+      .reader-archived { opacity: 0.75; font-style: italic; }
 
       @media print {
         .print-toolbar { display: none !important; }
@@ -311,6 +197,17 @@ const PRINT_DOC_CSS = `
       }
 `;
 
+/**
+ * Build the print handout for a presentation.
+ *
+ * @param {string} repoRoot - Repository root (CSS bundle and fork seam)
+ * @param {object} pres - the presentation, already filtered for its context
+ * @param {object} [opts]
+ * @param {object|null} [opts.theme=null] - the deck theme, for fonts and vars
+ * @param {object|null} [opts.watermark=null] - sandbox watermark settings
+ * @param {Record<string, object>|null} [opts.slideTypes=null] - merged registry
+ * @returns {Promise<string>} a complete HTML document
+ */
 export async function buildPrintHtml(
   repoRoot,
   pres,
@@ -319,18 +216,27 @@ export async function buildPrintHtml(
   pres = stripLiveOnlySlidesFromPresentation(pres);
   const docLang = resolveDocLangFromPresentation(pres);
   const css = await loadExportCssBundle(repoRoot, theme, watermark);
+  const registry =
+    slideTypes && typeof slideTypes === 'object' ? slideTypes : SLIDE_TYPES;
 
   const rawTitle = pres.title || 'Presentation';
   const title = escapeHtml(rawTitle);
   const wmOn = css.wmOn;
   const wmText = wmOn ? escapeHtml(sandboxWatermarkText()) : '';
   const slides = Array.isArray(pres?.slides) ? pres.slides : [];
+  // A link that jumps to a slide points at that slide's section, by its place
+  // in this document.
+  const slideIds = slides.map((slide) =>
+    typeof slide?.id === 'string' ? slide.id.trim() : '',
+  );
   const slidesHtml = slides
-    .map((s, idx) => {
-      const section = renderSlideTextHtml(s, idx, docLang, slideTypes);
-      const hr = idx < slides.length - 1 ? `<hr class="print-break" />` : '';
-      return `${section}\n${hr}`;
-    })
+    .map((slide, index) =>
+      renderSlideSectionHtml(slide, getSlideType(slide?.type, registry), {
+        index,
+        lang: docLang,
+        slideIds,
+      }),
+    )
     .join('\n');
 
   // Served as a `*-print.html` attachment by the public API as well as fed to
@@ -368,13 +274,7 @@ export async function buildPrintHtml(
       ${wmText ? `<div class="print-watermark" style="margin: 0 0 14px;">${wmText}</div>` : ''}
       ${slidesHtml}
     </main>
-    ${buildScriptChain({
-      needs: highlightNeeds,
-      // A static sheet: the layout runtime only, never the countdown.
-      slideNeeds: {
-        teamCards: detectSlideRuntimeNeeds(slidesHtml).teamCards,
-      },
-    })}
+    ${buildScriptChain({ needs: highlightNeeds })}
   </body>
 </html>`;
 }

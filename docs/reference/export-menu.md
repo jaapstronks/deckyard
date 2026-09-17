@@ -17,7 +17,7 @@ overlapping PDF entries and a duplicated "other language" section.
 | Slides        | PPTX                    | `pptx`                                    | `buildPptxBuffer`                                             |
 | Slides        | PPTX template           | `pptx-template`                           | `buildThemeTemplateBuffer` (download)                         |
 | Slides        | HTML                    | `html`                                    | `buildStandaloneHtml` (download)                              |
-| Documents     | Text handout            | `pdf`                                     | `buildPrintHtml` (document layout, not slides)                |
+| Documents     | Text handout            | `pdf`                                     | `buildPrintHtml` (the reader projection, laid out for paper)  |
 | Documents     | Notes (Markdown / Word) | `notes.md` / `notes.docx`                 | `buildNotesMarkdown` / `buildNotesDocxBuffer`                 |
 | Data & bundle | .deck                   | `deck.zip`                                | `buildDeckBundle` (download)                                  |
 | Data & bundle | JSON                    | `json`                                    | `presentationToDeck` (download)                               |
@@ -63,6 +63,14 @@ co-equal items ("PDF" and "PDF (print in browser)"), which conflated _which
 renderer runs_ (an implementation detail) with a genuine user choice. The
 genuinely distinct artifact is the **Text handout** (document layout), which
 stays its own row under Documents.
+
+The handout is not a reader of its own. Each slide is the section the reader
+projects (`renderSlideSectionHtml` in `shared/slide-types/semantic-projection.js`),
+with the same heading, body and `data-slide-type` marker; `buildPrintHtml`
+owns only the document shell, the print toolbar and the paper stylesheet, and
+numbers slides with a CSS counter rather than text in the heading (D133, D134).
+Whatever the projection says about a slide type, the handout says too. See
+[`reflowable-html-export.md`](./reflowable-html-export.md).
 
 ## What the PPTX hands back
 
