@@ -283,6 +283,23 @@ export async function writeBundleAsset(repoRoot, buffer, filename, mime) {
 }
 
 /**
+ * Parse one JSON entry of a bundle. A broken entry is refused in the format's
+ * own words (`manifest.json is not valid JSON`), never with V8's parser text.
+ * Every reason `readDeckBundle` throws is a bare reason: the import route owns
+ * the `Invalid .deck bundle:` prefix, so none of them names the bundle again.
+ * @param {string} text
+ * @param {string} name entry path inside the zip
+ * @returns {any}
+ */
+function entryJson(text, name) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`${name} is not valid JSON`);
+  }
+}
+
+/**
  * Read + validate a `.deck` bundle. Verifies the mimetype sentinel and each
  * asset's content hash (integrity), then returns the deck plus the asset bytes
  * keyed by their bundle ref.
@@ -312,15 +329,18 @@ export async function readDeckBundle(buffer) {
   const manifestEntry = zip.file('manifest.json');
   const deckEntry = zip.file('deck.json');
   if (!manifestEntry || !deckEntry) {
-    throw new Error('.deck bundle is missing manifest.json or deck.json');
+    throw new Error('manifest.json or deck.json is missing');
   }
-  const manifest = JSON.parse(await manifestEntry.async('string'));
+  const manifest = entryJson(
+    await manifestEntry.async('string'),
+    'manifest.json',
+  );
   if (!READABLE_BUNDLE_VERSIONS.includes(manifest?.bundleVersion)) {
     throw new Error(
-      `.deck bundleVersion ${JSON.stringify(manifest?.bundleVersion)} is not one this install reads (${READABLE_BUNDLE_VERSIONS.join(', ')})`,
+      `bundleVersion ${JSON.stringify(manifest?.bundleVersion)} is not one this install reads (${READABLE_BUNDLE_VERSIONS.join(', ')})`,
     );
   }
-  const deck = JSON.parse(await deckEntry.async('string'));
+  const deck = entryJson(await deckEntry.async('string'), 'deck.json');
 
   // The carried theme is verified like an asset: the manifest names its hash.
   let theme = null;
@@ -328,14 +348,14 @@ export async function readDeckBundle(buffer) {
     const themeEntry = zip.file(String(manifest.theme.ref || ''));
     if (!themeEntry) {
       throw new Error(
-        `.deck bundle manifest names a missing theme: ${manifest.theme.ref}`,
+        `the manifest names a missing theme: ${manifest.theme.ref}`,
       );
     }
     const buf = await themeEntry.async('nodebuffer');
     if (sha256Hex(buf) !== manifest.theme.hash) {
-      throw new Error('.deck theme failed integrity check');
+      throw new Error('the theme failed its integrity check');
     }
-    theme = JSON.parse(buf.toString('utf8'));
+    theme = entryJson(buf.toString('utf8'), manifest.theme.ref);
   }
 
   // Each carried slide type the same way. The entry's ref is derived from its
@@ -343,29 +363,27 @@ export async function readDeckBundle(buffer) {
   const slideTypes = [];
   const typeEntries = manifest.slideTypes ?? [];
   if (!Array.isArray(typeEntries)) {
-    throw new Error('.deck manifest slideTypes is not a list');
+    throw new Error('the manifest slideTypes is not a list');
   }
   for (const entry of typeEntries) {
     const slug = String(entry?.slug || '');
     if (!slug || entry.ref !== slideTypeEntryRef(slug)) {
       throw new Error(
-        `.deck manifest names a slide type at an unexpected path: ${entry?.ref}`,
+        `the manifest names a slide type at an unexpected path: ${entry?.ref}`,
       );
     }
     const typeEntry = zip.file(entry.ref);
     if (!typeEntry) {
-      throw new Error(
-        `.deck bundle manifest names a missing slide type: ${entry.ref}`,
-      );
+      throw new Error(`the manifest names a missing slide type: ${entry.ref}`);
     }
     const buf = await typeEntry.async('nodebuffer');
     if (sha256Hex(buf) !== entry.hash) {
-      throw new Error(`.deck slide type failed integrity check: ${entry.ref}`);
+      throw new Error(`slide type ${entry.ref} failed its integrity check`);
     }
-    const definition = JSON.parse(buf.toString('utf8'));
+    const definition = entryJson(buf.toString('utf8'), entry.ref);
     if (definition?.slug !== slug) {
       throw new Error(
-        `.deck slide type ${entry.ref} names another slug: ${definition?.slug}`,
+        `slide type ${entry.ref} names another slug: ${definition?.slug}`,
       );
     }
     slideTypes.push(definition);
@@ -375,11 +393,11 @@ export async function readDeckBundle(buffer) {
   for (const a of Array.isArray(manifest?.assets) ? manifest.assets : []) {
     const entry = zip.file(a.ref);
     if (!entry) {
-      throw new Error(`.deck bundle manifest lists a missing asset: ${a.ref}`);
+      throw new Error(`the manifest lists a missing asset: ${a.ref}`);
     }
     const buf = await entry.async('nodebuffer');
     if (sha256Hex(buf) !== a.hash) {
-      throw new Error(`.deck asset failed integrity check: ${a.ref}`);
+      throw new Error(`asset ${a.ref} failed its integrity check`);
     }
     assets.set(a.ref, buf);
   }

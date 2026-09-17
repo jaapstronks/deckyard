@@ -471,7 +471,7 @@ test('reading refuses an unknown bundleVersion and a tampered theme', async () =
   tampered.file('theme.json', JSON.stringify({ label: 'Evil' }));
   await assert.rejects(
     readDeckBundle(await tampered.generateAsync({ type: 'nodebuffer' })),
-    /theme failed integrity/,
+    /theme failed its integrity check/,
   );
 });
 

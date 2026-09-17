@@ -325,6 +325,29 @@ for (const [what, buf] of [
   });
 }
 
+// A real zip whose manifest is broken JSON is refused the same way: the entry
+// is named, V8's parser sentence ("Unexpected token …") is not (B310, review).
+test('rejects a bundle whose manifest is not JSON with the entry named', async () => {
+  const stored = {
+    title: 'x',
+    theme: 'default',
+    slides: [{ id: 'a', type: 'content-slide', content: { title: 'x' } }],
+  };
+  const bundle = await buildDeckBundle(repoRoot, stored);
+  const JSZip = (await import('jszip')).default;
+  const zip = await JSZip.loadAsync(bundle);
+  zip.file('manifest.json', '{ "bundleVersion": ');
+  const { res, body } = await importBundle(
+    await zip.generateAsync({ type: 'nodebuffer' }),
+  );
+  assert.equal(res.statusCode, 400);
+  assert.equal(body.error, 'bad_request');
+  assert.equal(
+    body.message,
+    'Invalid .deck bundle: manifest.json is not valid JSON',
+  );
+});
+
 test('rejects an empty body with 400', async () => {
   const { res, body } = await importBundle(Buffer.alloc(0));
   assert.equal(res.statusCode, 400);
