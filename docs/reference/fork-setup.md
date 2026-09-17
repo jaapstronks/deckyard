@@ -59,6 +59,20 @@ custom/fonts.js
 custom/google-fonts.lock.json
 ```
 
+### Where the fork root lives
+
+Everything above sits under one root, `custom/`, and the engine reads it as one
+unit: slide types, the stylesheets those types render against, themes, assets,
+fonts, AI copy and MCP tools. One declaration in `shared/custom-root.js` names
+that root and every loader derives its own path from it, so a type and its
+stylesheet can never come from two different places.
+
+`DECKYARD_CUSTOM_DIR` moves the whole root, which is how a deployment loads a
+fork that lives outside the checkout. It must be an absolute path: the loaders
+run from several working directories (server boot, the MCP stdio child, the
+test runner, `scripts/new-slide-type.js`), so a relative one would name a
+different directory per caller and is refused on startup.
+
 ### Step 3: Add Your Custom Content
 
 1. **Add your theme** as a self-contained folder

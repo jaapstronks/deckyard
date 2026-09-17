@@ -18,7 +18,7 @@
 import { readdirSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { CUSTOM_SLIDE_TYPES_DIR } from '../../../../shared/slide-types/custom-dir.js';
+import { CUSTOM_SLIDE_TYPES_DIR } from '../../../../shared/custom-root.js';
 import { clampUsage } from '../../../../shared/slide-types/usage.js';
 import { createLogger } from '../../logger.js';
 

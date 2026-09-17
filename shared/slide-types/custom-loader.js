@@ -17,7 +17,7 @@ import { readdirSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import { CUSTOM_SLIDE_TYPES_DIR } from './custom-dir.js';
+import { CUSTOM_SLIDE_TYPES_DIR } from '../custom-root.js';
 
 /**
  * Load all custom slide type definitions from /custom/slide-types/
@@ -25,9 +25,12 @@ import { CUSTOM_SLIDE_TYPES_DIR } from './custom-dir.js';
  * Every file is run through {@link validateSlideTypeDefinition} after import.
  * Warnings are logged and the type still registers; a definition with hard
  * errors is **skipped with its report**, because a type that cannot render is
- * worse in the deck than absent from the picker. The process is never taken
- * down: one bad file in a fork must not stop the engine from serving every
- * other deck.
+ * worse in the deck than absent from the picker. Fork *content* never takes
+ * the process down: one bad file in a fork must not stop the engine from
+ * serving every other deck. Fork *configuration* does — an unusable
+ * `DECKYARD_CUSTOM_DIR` fails on import in `../custom-root.js`, because a
+ * process that silently reads the wrong root is worse than one that refuses
+ * to start.
  *
  * @param {object} [options]
  * @param {string[]} [options.globalFieldKeys] - `GLOBAL_SLIDE_FIELD_KEYS`,

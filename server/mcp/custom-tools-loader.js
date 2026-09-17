@@ -20,14 +20,11 @@
  */
 
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { repoRoot } from '../config/paths.js';
+import { CUSTOM_MCP_TOOLS_FILE as CUSTOM_TOOLS_FILE } from '../../shared/custom-root.js';
 import { createLogger } from '../utils/logger.js';
 
 const log = createLogger('mcp');
-
-const CUSTOM_TOOLS_FILE = join(repoRoot, 'custom', 'mcp-tools.js');
 
 /**
  * Load the fork's custom-tools registrar, if any.

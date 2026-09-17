@@ -24,6 +24,7 @@
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
+import { customDirFor } from '../../shared/custom-root.js';
 import { createLogger } from './logger.js';
 
 const log = createLogger('css-chain');
@@ -46,16 +47,6 @@ export const CUSTOM_STYLES_BANNER =
 const cache = new Map();
 
 /**
- * Where the fork seam lives.
- *
- * @param {string} repoRoot - Repository root path
- * @returns {string} Absolute path to `custom/styles/`
- */
-function customStylesDir(repoRoot) {
-  return path.join(repoRoot, 'custom', 'styles');
-}
-
-/**
  * Read and concatenate `custom/styles/*.css`, in filename order.
  *
  * Synchronous on purpose: the chain builder is called from sync template
@@ -67,11 +58,11 @@ function customStylesDir(repoRoot) {
  * Never throws: an unreadable file is logged and skipped, so a typo in a fork's
  * stylesheet cannot take an export down.
  *
- * @param {string} repoRoot - Repository root path
+ * @param {string} [repoRoot] - Installation root; defaults to this checkout
  * @returns {string} Concatenated CSS ('' when the directory is absent or empty)
  */
 export function readCustomStylesCss(repoRoot) {
-  const dir = customStylesDir(repoRoot);
+  const dir = path.join(customDirFor(repoRoot), 'styles');
   const hit = cache.get(dir);
   if (hit !== undefined) return hit;
 
