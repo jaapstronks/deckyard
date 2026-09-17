@@ -237,26 +237,44 @@ const LIST_ITEM_RE = /^(\s*)([-*+]|\d+\.)\s+(.*)$/;
 const BLOCKQUOTE_LINE_RE = /^\s*>\s?/;
 
 /**
- * Build (possibly nested) list HTML from a run of consecutive list-item lines.
+ * Parse one list-item line into its indent, kind, start number and content.
+ * @param {string} line - A line matching LIST_ITEM_RE.
+ * @returns {{indent: number, ordered: boolean, number: number, content: string}}
+ */
+function parseListItem(line) {
+  const m = line.match(LIST_ITEM_RE);
+  const ordered = /^\d+\.$/.test(m[2]);
+  return {
+    // Treat tabs as two spaces so indentation compares consistently.
+    indent: m[1].replace(/\t/g, '  ').length,
+    ordered,
+    number: ordered ? parseInt(m[2], 10) : 1,
+    content: m[3],
+  };
+}
+
+/**
+ * Build (possibly nested) list HTML from a run of list-item lines.
  * Nesting is derived from each line's leading indentation: a more-indented item
  * opens a child list inside the previous <li>; a less-indented item closes back
- * out to the matching level. Ordered vs unordered is chosen per level from the
- * first item's marker at that level.
- * @param {string[]} itemLines - Consecutive lines each matching LIST_ITEM_RE.
+ * out to the matching level. A change of marker kind (bullet vs number) at the
+ * same level ends that list and starts a new one, as in CommonMark. An ordered
+ * list takes its first item's number as `start` when that isn't 1.
+ * @param {string[]} itemLines - Lines each matching LIST_ITEM_RE.
  * @param {{inlineCodes: string[], inlineMaths: string[]}} inlineOpts
  * @returns {string} Well-formed nested <ul>/<ol> HTML.
  */
 function buildList(itemLines, inlineOpts) {
-  const items = itemLines.map((line) => {
-    const m = line.match(LIST_ITEM_RE);
-    // Treat tabs as two spaces so indentation compares consistently.
-    const indent = m[1].replace(/\t/g, '  ').length;
-    return { indent, ordered: /^\d+\.$/.test(m[2]), content: m[3] };
-  });
+  const items = itemLines.map(parseListItem);
 
   let html = '';
   const stack = []; // { indent, tag } for each currently-open list level
   const top = () => stack[stack.length - 1];
+  const open = (it, tag) => {
+    const start = it.ordered && it.number !== 1 ? ` start="${it.number}"` : '';
+    html += `<${tag} dir="auto"${start}><li dir="auto">${inlineFormat(it.content, inlineOpts)}`;
+    stack.push({ indent: it.indent, tag });
+  };
 
   for (const it of items) {
     const tag = it.ordered ? 'ol' : 'ul';
@@ -267,12 +285,14 @@ function buildList(itemLines, inlineOpts) {
     }
     if (!stack.length || it.indent > top().indent) {
       // Open a new (possibly nested) list inside the current open <li>.
-      html += `<${tag} dir="auto"><li dir="auto">${inlineFormat(it.content, inlineOpts)}`;
-      stack.push({ indent: it.indent, tag });
+      open(it, tag);
+    } else if (tag !== top().tag) {
+      // Same level, other marker kind: this list ends, a new one begins.
+      html += `</li></${top().tag}>`;
+      stack.pop();
+      open(it, tag);
     } else {
-      // Same level: close the previous <li> and open a sibling. (The level's
-      // list tag is kept even if this marker differs, since a single level
-      // can't be both ordered and unordered.)
+      // Same level, same kind: close the previous <li> and open a sibling.
       html += `</li><li dir="auto">${inlineFormat(it.content, inlineOpts)}`;
     }
   }
@@ -446,11 +466,31 @@ export function markdownToSafeHtml(markdown) {
     // Lists (unordered "- foo" and ordered "1. foo"), with nesting driven by
     // leading indentation. Both kinds are collected into one run so a mixed /
     // nested list (e.g. bullets under a numbered item) builds correctly.
+    // Blank lines between items don't end the list (a loose list in
+    // CommonMark): the run continues when the next non-blank line is a nested
+    // item or a top-level item of the same kind. Anything else ends it.
     if (LIST_ITEM_RE.test(lines[i])) {
+      const first = parseListItem(lines[i]);
+      // The kind a top-level item after a blank line must match is that of
+      // the latest top-level item, so `1. a\n- b\n\n- c` joins the same
+      // way `1. a\n- b\n- c` does.
+      let base = first;
       const itemLines = [];
-      while (i < lines.length && LIST_ITEM_RE.test(lines[i])) {
-        itemLines.push(lines[i]);
-        i += 1;
+      while (i < lines.length) {
+        if (LIST_ITEM_RE.test(lines[i])) {
+          const it = parseListItem(lines[i]);
+          if (it.indent <= first.indent) base = it;
+          itemLines.push(lines[i]);
+          i += 1;
+          continue;
+        }
+        let next = i;
+        while (next < lines.length && !lines[next].trim()) next += 1;
+        if (next === i || next >= lines.length) break;
+        if (!LIST_ITEM_RE.test(lines[next])) break;
+        const it = parseListItem(lines[next]);
+        if (it.indent <= first.indent && it.ordered !== base.ordered) break;
+        i = next;
       }
       blocks.push(buildList(itemLines, inlineOpts));
       continue;

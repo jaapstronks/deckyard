@@ -113,6 +113,7 @@ const DEFAULT_ALLOWED_ATTR = [
   'colspan',
   'rowspan',
   'scope',
+  'start', // <ol start> for an ordered list that doesn't begin at 1
   'data-lang',
   'data-math', // Code highlighting and math rendering
 ];

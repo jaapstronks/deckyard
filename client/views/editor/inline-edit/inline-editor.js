@@ -53,6 +53,7 @@ import { promptModal } from '../../../lib/dom/modal.js';
 import { createSelectionToolbar } from './selection-toolbar.js';
 import { slideLinkUrl } from './selection-toolbar-logic.js';
 import { createFocusDrag } from './focus-drag.js';
+import { autoformatListOnEnter } from './list-autoformat.js';
 import { createMarkdownEditModal } from './markdown-modal.js';
 import { createReorderDrag } from './reorder-drag.js';
 import { h } from '../../../lib/dom.js';
@@ -219,9 +220,22 @@ export function createInlineEditor({
     if (!editing) return;
     if (editing.rich) {
       // Multi-line rich edit: Enter makes a new paragraph/list item (browser
-      // default), Cmd/Ctrl+Enter commits, Escape cancels, Cmd/Ctrl+B/I toggle
-      // the two inline styles the dialect can store.
-      if (e.key === 'Escape') {
+      // default; a line typed as `1. …` or `- …` becomes a list first),
+      // Cmd/Ctrl+Enter commits, Escape cancels, Cmd/Ctrl+B/I toggle the two
+      // inline styles the dialect can store.
+      if (
+        e.key === 'Enter' &&
+        !e.shiftKey &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        !e.isComposing &&
+        autoformatListOnEnter(editing.el, document.getSelection())
+      ) {
+        e.preventDefault();
+        editing.toolbar?.update();
+        overlay.reposition();
+      } else if (e.key === 'Escape') {
         e.preventDefault();
         editing.cancel = true;
         editing.el.blur();

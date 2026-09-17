@@ -88,6 +88,84 @@ describe('markdown nested lists', () => {
   });
 });
 
+describe('markdown loose lists and start numbers', () => {
+  // A numbered list written with blank lines between the items rendered as
+  // three one-item <ol>s, each showing "1." (ciiic-slides, 2026-09-17).
+  it('joins ordered items separated by blank lines into one <ol>', () => {
+    const html = skeleton(
+      markdownToSafeHtml('Intro.\n\n1. Een\n\n2. Twee\n\n3. Drie'),
+    );
+    assert.ok(
+      html.includes(
+        '<p>Intro.</p> <ol><li>Een</li><li>Twee</li><li>Drie</li></ol>',
+      ),
+      `unexpected structure: ${html}`,
+    );
+  });
+
+  it('joins unordered items separated by blank lines into one <ul>', () => {
+    const html = skeleton(markdownToSafeHtml('- a\n\n- b\n\n\n- c'));
+    assert.ok(
+      html.includes('<ul><li>a</li><li>b</li><li>c</li></ul>'),
+      `unexpected structure: ${html}`,
+    );
+  });
+
+  it('keeps a nested item after a blank line inside its parent', () => {
+    const html = skeleton(markdownToSafeHtml('1. a\n\n   - x\n\n2. b'));
+    assert.ok(
+      html.includes('<ol><li>a<ul><li>x</li></ul></li><li>b</li></ol>'),
+      `unexpected structure: ${html}`,
+    );
+  });
+
+  it('still ends the list at a paragraph between items', () => {
+    const html = skeleton(markdownToSafeHtml('- a\n\nBetween\n\n- b'));
+    assert.ok(
+      html.includes('<ul><li>a</li></ul> <p>Between</p> <ul><li>b</li></ul>'),
+      `unexpected structure: ${html}`,
+    );
+  });
+
+  it('starts a new list when the marker kind changes', () => {
+    for (const md of ['- a\n1. b', '- a\n\n1. b']) {
+      const html = skeleton(markdownToSafeHtml(md));
+      assert.match(
+        html,
+        /<ul><li>a<\/li><\/ul>\s?<ol><li>b<\/li><\/ol>/,
+        `unexpected structure for ${JSON.stringify(md)}: ${html}`,
+      );
+    }
+  });
+
+  it('joins after a blank line by the kind of the latest top-level item', () => {
+    // The run's first item is numbered, its latest top-level item a bullet:
+    // a bullet after a blank line continues that bullet list, as it does
+    // without the blank line.
+    for (const md of ['1. a\n- b\n- c', '1. a\n- b\n\n- c']) {
+      const html = skeleton(markdownToSafeHtml(md));
+      assert.match(
+        html,
+        /<ol><li>a<\/li><\/ol>\s?<ul><li>b<\/li><li>c<\/li><\/ul>/,
+        `unexpected structure for ${JSON.stringify(md)}: ${html}`,
+      );
+    }
+  });
+
+  it('carries the first number of an ordered list as start', () => {
+    const html = decode(markdownToSafeHtml('3. Drie\n4. Vier'));
+    assert.match(
+      html,
+      /<ol[^>]* start="3"[^>]*><li[^>]*>Drie<\/li><li[^>]*>Vier<\/li><\/ol>/,
+    );
+  });
+
+  it('omits start for a list that begins at 1', () => {
+    const html = decode(markdownToSafeHtml('1. Een\n2. Twee'));
+    assert.ok(!html.includes('start='), html);
+  });
+});
+
 describe('unsupported heading levels (#, ###)', () => {
   // Regression guard: these lines used to spin markdownToSafeHtml in an
   // infinite loop — the paragraph pass refused to consume `#{1,3}` lines but
