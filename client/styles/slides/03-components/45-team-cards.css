@@ -613,7 +613,8 @@
    Override the base text-split grid card back to a simple flex column. */
 .slide-team-cards.aspect-original:not(.has-column-split).text-split
   .team-cards-grid {
-  align-items: flex-end; /* baseline the images across a row */
+  /* The runtime shares title height per row; longer bylines hang below. */
+  align-items: flex-start;
 }
 
 .slide-team-cards.aspect-original:not(.has-column-split).text-split .team-card {

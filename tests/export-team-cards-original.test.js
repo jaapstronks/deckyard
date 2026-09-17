@@ -18,6 +18,7 @@
 import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
+import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
@@ -49,19 +50,22 @@ const chromePath = await resolveChromeExecutablePath();
 const isCi = /^(1|true|yes)$/i.test(String(process.env.CI || '').trim());
 const skip = !isCi && !chromePath ? 'no Chrome/Chromium found' : false;
 
-/** A pure-red 3:2 landscape image (the reported deck's photos are 3:2), so
- * the PNG can be read back by colour. */
-const landscape = async () => {
+/** A pure-red landscape image, so the PNG can be read back by colour. The
+ * reported deck's photos are 3:2; 16:9 is the other ratio a screenshot deck is
+ * full of, and it packs to a different row height. */
+const landscape = async ([w, h]) => {
   const buf = await sharp({
-    create: { width: 1200, height: 800, channels: 3, background: '#ff0000' },
+    create: { width: w, height: h, channels: 3, background: '#ff0000' },
   })
     .png()
     .toBuffer();
   return `data:image/png;base64,${buf.toString('base64')}`;
 };
 
-const slide = async () => {
-  const image = await landscape();
+const RATIOS = { '3:2': [1200, 800], '16:9': [1600, 900] };
+
+const slide = async (ratio = RATIOS['3:2']) => {
+  const image = await landscape(ratio);
   return {
     id: 'tc-original',
     type: 'team-cards-slide',
@@ -85,7 +89,8 @@ const slide = async () => {
 
 /**
  * The vertical bands (in px) that contain pure-red pixels. One row of images
- * is one band; the 2×2 fallback is two.
+ * is one band. Short captions can fit a full row plus a partial row; those
+ * images stay larger than they would if all four were forced onto one row.
  */
 async function redBands(png) {
   const { data, info } = await sharp(png)
@@ -107,49 +112,140 @@ async function redBands(png) {
   return bands;
 }
 
-test('PNG: four landscape images on one row', { skip }, async () => {
-  const png = await renderSlideToPngBuffer(repoRoot, await slide(), {
-    scale: 1,
-  });
-  const bands = await redBands(png);
-  assert.equal(
-    bands.length,
-    1,
-    `expected one row of images, got ${bands.length}: ${JSON.stringify(bands)}`,
+for (const [name, ratio] of Object.entries(RATIOS)) {
+  const expectedRows = name === '16:9' ? 2 : 1;
+  test(
+    `PNG: four ${name} images use the largest fitting packing`,
+    { skip },
+    async () => {
+      const png = await renderSlideToPngBuffer(repoRoot, await slide(ratio), {
+        scale: 1,
+      });
+      const bands = await redBands(png);
+      assert.equal(
+        bands.length,
+        expectedRows,
+        `expected ${expectedRows} image rows, got ${bands.length}: ${JSON.stringify(bands)}`,
+      );
+      assert.ok(bands.at(-1)[1] < 900, 'all image bands end inside the slide');
+    },
+  );
+
+  test(
+    `PDF slides document: four ${name} images fit at the largest ceiling`,
+    { skip },
+    async () => {
+      const html = await buildSlidesPdfHtml(repoRoot, {
+        id: 'deck',
+        title: 'Deck',
+        slides: [await slide(ratio)],
+      });
+      const browser = await getPuppeteerBrowser({ featureName: 'test' });
+      const page = await browser.newPage();
+      try {
+        await page.setViewport({ width: 1600, height: 900 });
+        await page.setContent(html, { waitUntil: 'load' });
+        await settleRenderedPage(page);
+        const m = await page.evaluate(() => {
+          const photos = Array.from(
+            document.querySelectorAll('.slide-team-cards .team-card-photo'),
+          );
+          const grid = document.querySelector(
+            '.slide-team-cards .team-cards-grid',
+          );
+          const inner = grid.parentElement;
+          const header = inner.querySelector(':scope > .header');
+          const cards = Array.from(
+            grid.querySelectorAll(':scope > .team-card'),
+          );
+          return {
+            cardTop: Math.min(
+              ...cards.map((el) => el.getBoundingClientRect().top),
+            ),
+            cardBottom: Math.max(
+              ...cards.map((el) => el.getBoundingClientRect().bottom),
+            ),
+            innerBottom: inner.getBoundingClientRect().bottom,
+            headerBottom: header.getBoundingClientRect().bottom,
+            alignContent: grid.style.alignContent,
+            tops: photos.map((el) =>
+              Math.round(el.getBoundingClientRect().top),
+            ),
+            heights: photos.map((el) =>
+              Math.round(el.getBoundingClientRect().height),
+            ),
+            ceiling: parseFloat(getComputedStyle(photos[0]).maxHeight),
+            gridWidth: grid.clientWidth,
+            gap: parseFloat(getComputedStyle(grid).columnGap) || 0,
+          };
+        });
+        assert.equal(m.tops.length, 4);
+        assert.equal(
+          new Set(m.tops).size,
+          expectedRows,
+          `expected ${expectedRows} rows, got photo tops ${JSON.stringify(m.tops)}`,
+        );
+        assert.ok(m.cardTop >= m.headerBottom, 'cards clear the heading');
+        assert.ok(
+          m.cardBottom <= m.innerBottom + 1,
+          `cards end at ${m.cardBottom}, content ends at ${m.innerBottom}`,
+        );
+        assert.equal(m.alignContent, '', 'the fitting packing stays centred');
+        // The export pins the same two bounds the editor packs against: the
+        // row is justified to the full width, and stays under the ceiling the
+        // stylesheet declares.
+        const firstRowSize = expectedRows === 2 ? 3 : 4;
+        const expected =
+          (m.gridWidth - 1 - m.gap * (firstRowSize - 1)) /
+          (firstRowSize * (ratio[0] / ratio[1]));
+        for (const h of m.heights.slice(0, firstRowSize)) {
+          assert.ok(
+            Math.abs(h - expected) <= 1,
+            `photo height ${h} should be the justified ${expected.toFixed(2)}`,
+          );
+        }
+        for (const h of m.heights) {
+          assert.ok(h > 0, 'every image stays visible');
+          assert.ok(
+            h <= Math.round(m.ceiling),
+            `photo height ${h} exceeds the declared ceiling ${m.ceiling}`,
+          );
+        }
+        if (expectedRows === 2) {
+          assert.deepEqual(m.tops.slice(0, 3), Array(3).fill(m.tops[0]));
+          assert.ok(
+            m.tops[3] > m.tops[0],
+            'the final image has its own partial row',
+          );
+          assert.ok(
+            m.heights[3] >= expected - 1,
+            'the partial row keeps a larger image than a single row of four',
+          );
+          assert.ok(
+            m.heights[3] < m.ceiling,
+            'the partial row shrinks within its unchanged row partition',
+          );
+        }
+      } finally {
+        await page.close();
+      }
+    },
+  );
+}
+
+test('every render surface runs the pass, thumbnails included', async () => {
+  const src = readFileSync(
+    path.join(repoRoot, 'client/lib/slide-runtime/slide-render.js'),
+    'utf8',
+  );
+  const call = src.match(/^.*initTeamCardsJustify\(el\).*$/m)?.[0];
+  assert.ok(call, 'slide-render should mount the justify pass');
+  assert.doesNotMatch(
+    call,
+    /\bmode\b/,
+    `the pass is layout, not behaviour: a thumbnail that skips it shows a different packing than the slide it stands for (got: ${call.trim()})`,
   );
 });
-
-test(
-  'PDF slides document: four landscape images on one row',
-  { skip },
-  async () => {
-    const html = await buildSlidesPdfHtml(repoRoot, {
-      id: 'deck',
-      title: 'Deck',
-      slides: [await slide()],
-    });
-    const browser = await getPuppeteerBrowser({ featureName: 'test' });
-    const page = await browser.newPage();
-    try {
-      await page.setViewport({ width: 1600, height: 900 });
-      await page.setContent(html, { waitUntil: 'load' });
-      await settleRenderedPage(page);
-      const tops = await page.evaluate(() =>
-        Array.from(
-          document.querySelectorAll('.slide-team-cards .team-card-photo'),
-        ).map((el) => Math.round(el.getBoundingClientRect().top)),
-      );
-      assert.equal(tops.length, 4);
-      assert.equal(
-        new Set(tops).size,
-        1,
-        `expected one row, got photo tops ${JSON.stringify(tops)}`,
-      );
-    } finally {
-      await page.close();
-    }
-  },
-);
 
 test('the runtime ships only for the layout it acts on, in any document', async () => {
   const original = renderSlideHtml(await slide(), { stripEditorAttrs: true });

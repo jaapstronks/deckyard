@@ -491,10 +491,8 @@ export function renderSlideElement(
   initCodeAndMath(el);
   if (mode === 'present' || mode === 'follow')
     cleanups.push(initKpiMetricsSlides(el));
-  // Uncropped image-blocks get justified rows. Skip in pure thumbnail mode:
-  // tiny render sizes make the measurement noisy and the CSS shared-height
-  // fallback reads fine at thumb scale.
-  if (mode !== 'thumb') cleanups.push(initTeamCardsJustify(el));
+  // Thumbnails use the same logical slide dimensions as full-size renders.
+  cleanups.push(initTeamCardsJustify(el));
   if (slide?.type === 'follow-invite-slide') {
     // Follow-invite slides look blank without QR rendering. For thumbnails we render once
     // without resize/copy handlers to avoid leaking listeners across many thumbnails.
