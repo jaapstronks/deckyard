@@ -284,6 +284,30 @@ export function createRenderField({
       );
     }
 
+    // A link target is one value in every language (not a text field), so it
+    // gets no translate action; the input kind follows the type.
+    if (field.type === 'url' || field.type === 'email') {
+      return fieldText(
+        t(field.labelKey || field.key, field.label || field.key),
+        slide.content[field.key] || '',
+        (v) => {
+          slide.content[field.key] = v;
+          markDirty?.();
+          scheduleUiRefresh?.();
+        },
+        {
+          maxLength: field.maxLength,
+          required: !!field.required,
+          placeholder: field.placeholder,
+          helpText:
+            typeof field.helpText === 'string' && field.helpText.trim()
+              ? t(field.helpTextKey || field.key + '.help', field.helpText)
+              : '',
+          fieldType: field.type,
+        },
+      );
+    }
+
     if (field.type === 'markdown') {
       const labelRightEl = translateLabelRightEl({
         pres,

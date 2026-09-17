@@ -1,9 +1,9 @@
 import {
   bgClassExtended,
   BACKGROUND_FIELD_EXTENDED,
-  clampInt,
   escapeHtml,
 } from '../helpers.js';
+import { durationSeconds } from '../duration.js';
 
 /**
  * Countdown timer slide.
@@ -20,13 +20,35 @@ import {
 
 const DEFAULT_MINUTES = 5;
 
-function totalSeconds(content) {
-  const mins = clampInt(content?.durationMinutes, 0, 60, DEFAULT_MINUTES);
-  const secs = clampInt(content?.durationSeconds, 0, 59, 0);
-  const total = mins * 60 + secs;
-  // Never allow a zero-length timer; fall back to the default.
-  return total > 0 ? total : DEFAULT_MINUTES * 60;
-}
+// The length is one declaration the canvas and the reader both read
+// (shared/slide-types/duration.js): the minutes field names its seconds.
+const MINUTES_FIELD = {
+  key: 'durationMinutes',
+  label: 'Minutes',
+  type: 'number',
+  required: false,
+  min: 0,
+  max: 60,
+  step: 1,
+  helpText: 'Countdown length in minutes (0–60). Default 5.',
+  duration: { secondsKey: 'durationSeconds' },
+};
+
+const SECONDS_FIELD = {
+  key: 'durationSeconds',
+  label: 'Seconds',
+  type: 'number',
+  required: false,
+  min: 0,
+  max: 59,
+  step: 1,
+  helpText: 'Extra seconds on top of the minutes (0–59).',
+};
+
+const DURATION_DEFAULTS = {
+  durationMinutes: DEFAULT_MINUTES,
+  durationSeconds: 0,
+};
 
 function formatMmSs(total) {
   const t = Math.max(0, Math.floor(total));
@@ -59,26 +81,8 @@ export default {
       required: false,
       maxLength: 120,
     },
-    {
-      key: 'durationMinutes',
-      label: 'Minutes',
-      type: 'number',
-      required: false,
-      min: 0,
-      max: 60,
-      step: 1,
-      helpText: 'Countdown length in minutes (0–60). Default 5.',
-    },
-    {
-      key: 'durationSeconds',
-      label: 'Seconds',
-      type: 'number',
-      required: false,
-      min: 0,
-      max: 59,
-      step: 1,
-      helpText: 'Extra seconds on top of the minutes (0–59).',
-    },
+    MINUTES_FIELD,
+    SECONDS_FIELD,
     {
       key: 'autoStart',
       label: 'Auto-start',
@@ -165,7 +169,12 @@ export default {
   // Signature must be (content, slide, ctx) – see `shared/slide-types/presentation.js`.
   renderHtml: (content, slide, _ctx = {}) => {
     const bg = bgClassExtended(content?.background || 'dark');
-    const seconds = totalSeconds(content);
+    const seconds = durationSeconds(
+      MINUTES_FIELD,
+      [SECONDS_FIELD],
+      content,
+      DURATION_DEFAULTS,
+    );
     const autoStart = isOn(content?.autoStart, false);
     const flash = isOn(content?.flashOnZero, true);
     const sound = isOn(content?.soundOnZero, false);

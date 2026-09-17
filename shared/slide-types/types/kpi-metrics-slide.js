@@ -152,6 +152,8 @@ export default {
           required: false,
           maxLength: 30,
           formLayout: 'pair',
+          // "98" and "%" are one reading; the canvas sets them side by side.
+          unitKey: 'unit',
         },
         {
           key: 'unit',

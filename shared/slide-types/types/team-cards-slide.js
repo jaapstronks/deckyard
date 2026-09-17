@@ -11,21 +11,13 @@ import {
   nonEmpty,
   objectPositionStyleAttrFromFocus,
   imagePlaceholderHtml,
+  safeHref,
 } from '../helpers.js';
 
 const MAX_CARDS = 25;
 
 const LINKEDIN_ICON_SVG =
   '<svg class="team-card-linkedin-icon" viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" aria-hidden="true" focusable="false"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>';
-
-/** Normalize a user-entered LinkedIn URL by adding a scheme if missing. */
-function normalizeLinkedinUrl(raw) {
-  const s = String(raw || '').trim();
-  if (!s) return '';
-  if (/^https?:\/\//i.test(s)) return s;
-  if (s.startsWith('//')) return `https:${s}`;
-  return `https://${s}`;
-}
 
 /**
  * Normalize `members[]` into the shape the renderer reads: every declared item
@@ -194,7 +186,7 @@ export default {
         },
         {
           key: 'linkedin',
-          type: 'string',
+          type: 'url',
           label: 'LinkedIn URL',
           maxLength: 300,
         },
@@ -368,7 +360,9 @@ export default {
         ? `<div class="team-card-byline" data-inline-field="${bylinePath}" dir="auto">${escapeHtml(byline)}</div>`
         : '';
 
-      const linkedinUrl = normalizeLinkedinUrl(member.linkedin);
+      // `linkedin` is a `url` field: the validator refuses what `safeHref`
+      // would not link, so nothing is repaired here.
+      const linkedinUrl = safeHref(member.linkedin);
       const linkedinHtml = linkedinUrl
         ? `<a class="team-card-linkedin" href="${escapeHtml(linkedinUrl)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(
             name ? `LinkedIn - ${name}` : 'LinkedIn',

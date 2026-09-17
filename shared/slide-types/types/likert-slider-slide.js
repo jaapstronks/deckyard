@@ -1,6 +1,25 @@
 import { bgClass, escapeHtml, nonEmpty, BACKGROUND_FIELD } from '../helpers.js';
 import { getSlideCopy } from '../slide-copy.js';
 
+/**
+ * The scale the audience rates on, declared once (D131): the canvas draws its
+ * ticks and end numbers from it and the reader names both ends with it, so the
+ * two cannot say different ranges.
+ */
+const SCALE = Object.freeze({
+  min: 1,
+  max: 10,
+  minLabelKey: 'minLabel',
+  maxLabelKey: 'maxLabel',
+});
+
+/** Fill `{min}` / `{max}` in a copy string from the scale. */
+function scaleCopy(text) {
+  return String(text || '')
+    .replace('{min}', String(SCALE.min))
+    .replace('{max}', String(SCALE.max));
+}
+
 export default {
   structure: 'singleton',
   fallback: 'content-slide',
@@ -10,6 +29,7 @@ export default {
   // scale. The slider is how it is drawn, not what it collects.
   interaction: 'likert',
   label: 'Likert slider (1–10)',
+  scale: SCALE,
   fields: [
     {
       key: 'question',
@@ -60,8 +80,8 @@ export default {
   renderHtml: (content, _slide, ctx = {}) => {
     const bg = bgClass(content?.background);
     const copy = getSlideCopy(ctx?.lang);
-    const n = 10;
-    const denom = 9;
+    const n = SCALE.max - SCALE.min + 1;
+    const denom = n - 1;
 
     const minLabel = nonEmpty(content?.minLabel);
     const maxLabel = nonEmpty(content?.maxLabel);
@@ -69,7 +89,7 @@ export default {
     const axisHtml = Array.from(
       { length: n },
       (_t, i) =>
-        `<div class="likert-axis-tick" aria-hidden="true" style="--i:${i};">${i + 1}</div>`,
+        `<div class="likert-axis-tick" aria-hidden="true" style="--i:${i};">${SCALE.min + i}</div>`,
     ).join('');
 
     return `
@@ -78,18 +98,18 @@ export default {
           <h2 class="heading" data-inline-field="question" dir="auto">${escapeHtml(content?.question)}</h2>
           <div class="poll-layout likert-layout">
             <div class="poll-left">
-              <div class="likert-slider-scale on-surface-light" aria-label="${escapeHtml(copy.likertSliderScaleLabel)}">
+              <div class="likert-slider-scale on-surface-light" aria-label="${escapeHtml(scaleCopy(copy.likertSliderScaleLabel))}">
                 <div class="likert-slider-labels">
                   <div class="likert-slider-label">
-                    <span class="likert-slider-num" aria-hidden="true">1</span>
+                    <span class="likert-slider-num" aria-hidden="true">${SCALE.min}</span>
                     <span class="likert-slider-text" data-inline-field="minLabel" dir="auto">${escapeHtml(minLabel || '')}</span>
                   </div>
                   <div class="likert-slider-label is-right">
-                    <span class="likert-slider-num" aria-hidden="true">10</span>
+                    <span class="likert-slider-num" aria-hidden="true">${SCALE.max}</span>
                     <span class="likert-slider-text" data-inline-field="maxLabel" dir="auto">${escapeHtml(maxLabel || '')}</span>
                   </div>
                 </div>
-                <div class="help likert-slider-help">${escapeHtml(copy.likertSliderHelp)}</div>
+                <div class="help likert-slider-help">${escapeHtml(scaleCopy(copy.likertSliderHelp))}</div>
               </div>
             </div>
             <div class="poll-right">

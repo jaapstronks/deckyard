@@ -99,6 +99,21 @@ function stringSchema(field) {
     s = s.refine((v) => v.trim().length > 0, {
       error: BLANK_MESSAGE,
     });
+  // A link type is only a string to JSON: its value becomes an `href`, so the
+  // shape the field-type validator refuses is refused here too, in its words.
+  if (field?.type === 'url' || field?.type === 'email') {
+    const linkProblem = (v) =>
+      v.trim() === ''
+        ? ''
+        : (FIELD_TYPES[field.type]
+            .validate(v, { ...field, required: false })
+            .find((e) => / must be /.test(e))
+            ?.replace(/^.* must be /, 'must be ') ?? '');
+    s = s.superRefine((v, ctx) => {
+      const message = linkProblem(v);
+      if (message) ctx.addIssue({ code: 'custom', message });
+    });
+  }
   return s;
 }
 

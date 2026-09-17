@@ -26,8 +26,8 @@ export const SLIDE_COPY = {
     likertResultsTitle: 'Live resultaten',
 
     // Likert slider slide
-    likertSliderScaleLabel: 'Schaal van 1 tot 10',
-    likertSliderHelp: 'Stem via de slider (1–10) op je telefoon.',
+    likertSliderScaleLabel: 'Schaal van {min} tot {max}',
+    likertSliderHelp: 'Stem via de slider ({min}–{max}) op je telefoon.',
 
     // Feedback slide
     feedbackHelp: 'Geef je feedback via je telefoon.',
@@ -50,6 +50,9 @@ export const SLIDE_COPY = {
     admonitionDefinition: 'Definitie',
     admonitionNote: 'Noot',
     admonitionTip: 'Tip',
+
+    // Reader: the text of a link that jumps to another slide of the deck.
+    readerSlideLink: 'Dia {n}',
 
     // Chart slide. The summary is the chart's text alternative: the canvas
     // puts it in its sr-only block, the reader in the data table's <caption>.
@@ -84,8 +87,8 @@ export const SLIDE_COPY = {
     likertResultsTitle: 'Live results',
 
     // Likert slider slide
-    likertSliderScaleLabel: 'Scale from 1 to 10',
-    likertSliderHelp: 'Vote via the slider (1–10) on your phone.',
+    likertSliderScaleLabel: 'Scale from {min} to {max}',
+    likertSliderHelp: 'Vote via the slider ({min}–{max}) on your phone.',
 
     // Feedback slide
     feedbackHelp: 'Give your feedback via your phone.',
@@ -104,6 +107,9 @@ export const SLIDE_COPY = {
     admonitionDefinition: 'Definition',
     admonitionNote: 'Note',
     admonitionTip: 'Tip',
+
+    // Reader: the text of a link that jumps to another slide of the deck.
+    readerSlideLink: 'Slide {n}',
 
     // Chart slide — see the note on the Dutch table above.
     chartLegendLabel: 'Legend',

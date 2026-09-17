@@ -999,8 +999,9 @@ describe('itemLabelField — an items field declares its own heading (D81)', () 
       headingText,
     });
     assert.ok(html.includes('<h3 data-field="label">Reach</h3>'), html);
-    assert.ok(!/<h3[^>]*>1\.2<\/h3>/.test(html), html);
-    assert.ok(html.includes('<p data-field="value">1.2</p>'), html);
+    assert.ok(!/<h3[^>]*>1\.2M?<\/h3>/.test(html), html);
+    // The value reads with its unit (D131).
+    assert.ok(html.includes('<p data-field="value">1.2M</p>'), html);
   });
 });
 
@@ -1475,5 +1476,178 @@ describe('list structure is a declaration (B295, D130a)', () => {
       assert.ok(!/<h3/.test(html), `${type}: ${html}`);
       assert.ok(/<li class="reader-item" data-field="text">/.test(html), html);
     }
+  });
+});
+
+describe('pairs stay pairs (D131)', () => {
+  it('a value and its unit are one block, with no space invented', () => {
+    const def = {
+      fields: [
+        {
+          key: 'metrics',
+          type: 'items',
+          itemLabelField: 'label',
+          itemFields: [
+            { key: 'value', type: 'string', unitKey: 'unit' },
+            { key: 'unit', type: 'string' },
+            { key: 'label', type: 'string' },
+          ],
+        },
+      ],
+    };
+    const html = body(
+      {
+        content: {
+          metrics: [
+            { value: '98', unit: '%', label: 'Satisfaction' },
+            { value: '3', unit: '', label: 'Offices' },
+          ],
+        },
+      },
+      def,
+    );
+    assert.ok(html.includes('<p data-field="value">98%</p>'), html);
+    assert.ok(html.includes('<p data-field="value">3</p>'), html);
+    assert.ok(!html.includes('data-field="unit"'), html);
+  });
+
+  it('a link text links to its target, and without one projects nothing', () => {
+    const def = {
+      fields: [
+        { key: 'social1Label', type: 'string', hrefKey: 'social1Url' },
+        { key: 'social1Url', type: 'url' },
+        { key: 'social2Label', type: 'string', hrefKey: 'social2Url' },
+        { key: 'social2Url', type: 'url' },
+      ],
+    };
+    const html = body(
+      {
+        content: {
+          social1Label: 'LinkedIn',
+          social1Url: 'https://www.linkedin.com/in/x',
+          social2Label: 'Mastodon',
+          social2Url: '',
+        },
+      },
+      def,
+    );
+    assert.equal(
+      html,
+      '<p data-field="social1Label"><a href="https://www.linkedin.com/in/x">LinkedIn</a></p>',
+    );
+  });
+
+  it('an action button label is the link, not a heading over it', () => {
+    const def = SLIDE_TYPES['content-slide'];
+    const html = body(
+      {
+        content: {
+          title: 'T',
+          actions: [{ label: 'Start', url: 'https://example.com/start' }],
+        },
+      },
+      def,
+      { headingKey: 'title' },
+    );
+    assert.ok(
+      html.includes(
+        '<li class="reader-item"><p data-field="label"><a href="https://example.com/start">Start</a></p></li>',
+      ),
+      html,
+    );
+  });
+
+  it('a slide jump links to that section of the reader, or not at all', () => {
+    const def = { fields: [{ key: 'link', type: 'url' }] };
+    const project = (link, opts) =>
+      body({ content: { link } }, def, { lang: 'en-GB', ...opts });
+    assert.equal(
+      project('#2'),
+      '<p data-field="link"><a href="#slide-2">Slide 2</a></p>',
+    );
+    assert.equal(
+      project('#slide:b', { slideIds: ['a', 'b', 'c'], lang: 'nl' }),
+      '<p data-field="link"><a href="#slide-2">Dia 2</a></p>',
+    );
+    // A jump past the end of the document, or to a slide it does not hold.
+    assert.equal(project('#4', { slideIds: ['a', 'b'] }), '');
+    assert.equal(project('#slide:gone', { slideIds: ['a'] }), '');
+    assert.equal(project('#slide:a'), '');
+    assert.equal(project('javascript:alert(1)'), '');
+  });
+
+  it('an email address is a mailto link; anything else is nothing', () => {
+    const def = { fields: [{ key: 'contactEmail', type: 'email' }] };
+    assert.equal(
+      body({ content: { contactEmail: 'robin@example.com' } }, def),
+      '<p data-field="contactEmail"><a href="mailto:robin@example.com">robin@example.com</a></p>',
+    );
+    assert.equal(body({ content: { contactEmail: 'robin' } }, def), '');
+  });
+
+  it('a block headed by a sibling gets that sibling as its <h3>', () => {
+    const def = SLIDE_TYPES['comparison-slide'];
+    const html = body(
+      {
+        content: {
+          leftTitle: 'Build',
+          leftBody: 'Own it',
+          rightTitle: 'Buy',
+          rightBody: '',
+        },
+      },
+      def,
+    );
+    assert.ok(
+      html.includes(
+        '<h3 data-field="leftTitle">Build</h3>\n<div data-field="leftBody"><p>Own it</p></div>',
+      ),
+      html,
+    );
+    // Nothing under it: the title is its own line, not a heading over nothing.
+    assert.ok(html.includes('<p data-field="rightTitle">Buy</p>'), html);
+    assert.ok(!html.includes('<h3 data-field="rightTitle">'), html);
+  });
+
+  it('a duration is one <time>, resolved by the rule the canvas counts down from', () => {
+    const def = SLIDE_TYPES['countdown-slide'];
+    const time = (content) =>
+      body({ content }, def).match(/<time[^>]*>[^<]*<\/time>/)?.[0];
+    assert.equal(
+      time({ durationMinutes: 1, durationSeconds: 30 }),
+      '<time datetime="PT1M30S">1:30</time>',
+    );
+    assert.equal(
+      time({ durationMinutes: 0, durationSeconds: 45 }),
+      '<time datetime="PT45S">0:45</time>',
+    );
+    // Clamped to the declared max; a zero length takes the declared defaults.
+    assert.equal(
+      time({ durationMinutes: 90, durationSeconds: 0 }),
+      '<time datetime="PT60M">60:00</time>',
+    );
+    assert.equal(
+      time({ durationMinutes: 0, durationSeconds: 0 }),
+      '<time datetime="PT5M">5:00</time>',
+    );
+    assert.ok(!body({ content: {} }, def).includes('durationSeconds'));
+  });
+
+  it('a type-level scale projects its two ends as a <dl>', () => {
+    const def = SLIDE_TYPES['likert-slider-slide'];
+    assert.equal(
+      body({ content: { minLabel: 'Low', maxLabel: '' } }, def),
+      '<dl class="reader-fields"><div class="reader-field"><dt>1</dt><dd data-field="minLabel">Low</dd></div></dl>',
+    );
+  });
+
+  it('the feedback placeholder is the input hint, not document text', () => {
+    const def = SLIDE_TYPES['feedback-slide'];
+    const html = body(
+      { content: { question: 'Q', placeholder: 'Type here' } },
+      def,
+      { headingKey: 'question' },
+    );
+    assert.equal(html, '');
   });
 });

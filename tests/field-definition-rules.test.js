@@ -898,3 +898,92 @@ test('`datasetSummary` is a function, read on a dataset type only', () => {
       .some((m) => m.includes('datasetSummary')),
   );
 });
+
+test('the pair declarations name a sibling of their kind; misplaced or dangling they warn (D131)', () => {
+  const findings = walkFieldDefinitions(
+    [
+      { key: 'value', type: 'string', label: 'Value', unitKey: 'unit' },
+      { key: 'unit', type: 'string', label: 'Unit' },
+      { key: 'social', type: 'string', label: 'Social', hrefKey: 'socialUrl' },
+      { key: 'socialUrl', type: 'url', label: 'Social URL' },
+      { key: 'leftTitle', type: 'string', label: 'Left title' },
+      {
+        key: 'left',
+        type: 'markdown',
+        label: 'Left',
+        headingKey: 'leftTitle',
+      },
+      {
+        key: 'minutes',
+        type: 'number',
+        label: 'Minutes',
+        duration: { secondsKey: 'seconds' },
+      },
+      { key: 'seconds', type: 'number', label: 'Seconds' },
+      // Misplaced: each on a field type it does not belong on.
+      { key: 'count', type: 'number', label: 'Count', unitKey: 'unit' },
+      { key: 'blurb', type: 'markdown', label: 'Blurb', hrefKey: 'socialUrl' },
+      {
+        key: 'kind',
+        type: 'enum',
+        label: 'Kind',
+        options: ['a'],
+        headingKey: 'unit',
+      },
+      {
+        key: 'title',
+        type: 'string',
+        label: 'Title',
+        duration: { secondsKey: 'seconds' },
+      },
+      // Dangling: the sibling is missing or of the wrong kind.
+      { key: 'price', type: 'string', label: 'Price', unitKey: 'minutes' },
+      { key: 'link', type: 'string', label: 'Link', hrefKey: 'unit' },
+      { key: 'right', type: 'markdown', label: 'Right', headingKey: 'nope' },
+      { key: 'length', type: 'number', label: 'Length', duration: 'PT5M' },
+    ],
+    { fieldTypes: ['string', 'markdown', 'number', 'url', 'enum'] },
+  ).findings;
+  assert.deepEqual(
+    findings.map((f) => [f.key, f.code, f.severity]),
+    [
+      ['count', 'unit_key_wrong_type', 'warning'],
+      ['blurb', 'href_key_wrong_type', 'warning'],
+      ['kind', 'heading_key_wrong_type', 'warning'],
+      ['title', 'duration_wrong_type', 'warning'],
+      ['price', 'unit_key_unknown', 'warning'],
+      ['link', 'href_key_unknown', 'warning'],
+      ['right', 'heading_key_unknown', 'warning'],
+      ['length', 'duration_unknown', 'warning'],
+    ],
+  );
+  for (const f of findings)
+    assert.notEqual(describeFieldFinding(f), 'Invalid field definitions.');
+
+  // A stored row has no control for any of them, so it refuses them (D84).
+  for (const extra of [
+    { unitKey: 'b' },
+    { hrefKey: 'b' },
+    { headingKey: 'b' },
+  ]) {
+    const stored = validateCustomFieldDefinitions([
+      { key: 'a', type: 'string', label: 'A', ...extra },
+      { key: 'b', type: 'string', label: 'B' },
+    ]);
+    assert.equal(stored.ok, false);
+    assert.equal(stored.problem.code, 'unknown_property');
+  }
+});
+
+test('a link text is not a heading an item can be named by (D131)', () => {
+  assert.deepEqual(
+    [
+      ...headableKeys([
+        { key: 'label', type: 'string', hrefKey: 'url' },
+        { key: 'url', type: 'url' },
+        { key: 'title', type: 'string' },
+      ]),
+    ],
+    ['title'],
+  );
+});

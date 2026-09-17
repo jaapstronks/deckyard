@@ -1,6 +1,7 @@
 import { icon } from '../../../lib/dom/icons.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { markFieldRequired } from './required.js';
+import { markLinkField } from './link-field.js';
 import { h } from '../../../lib/dom.js';
 
 export function createBasicFields() {
@@ -69,6 +70,7 @@ export function createBasicFields() {
       input,
       helpEl,
     ]);
+    markLinkField({ wrap, control: input, fieldType: opts?.fieldType });
     return opts?.required ? markFieldRequired({ wrap, control: input }) : wrap;
   };
 

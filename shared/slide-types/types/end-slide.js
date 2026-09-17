@@ -39,7 +39,7 @@ export default {
     {
       key: 'contactEmail',
       label: 'Email',
-      type: 'string',
+      type: 'email',
       required: false,
       maxLength: 120,
     },
@@ -53,7 +53,7 @@ export default {
     {
       key: 'contactUrl',
       label: 'Website',
-      type: 'string',
+      type: 'url',
       required: false,
       maxLength: 200,
     },
@@ -61,6 +61,8 @@ export default {
       key: 'social1Label',
       label: 'Social link 1 label',
       type: 'string',
+      // The label is the text of the link; the URL beside it is its target.
+      hrefKey: 'social1Url',
       required: false,
       maxLength: 40,
       placeholder: 'e.g. LinkedIn, Mastodon, Bluesky',
@@ -68,7 +70,7 @@ export default {
     {
       key: 'social1Url',
       label: 'Social link 1 URL',
-      type: 'string',
+      type: 'url',
       required: false,
       maxLength: 200,
     },
@@ -76,6 +78,7 @@ export default {
       key: 'social2Label',
       label: 'Social link 2 label',
       type: 'string',
+      hrefKey: 'social2Url',
       required: false,
       maxLength: 40,
       placeholder: 'e.g. LinkedIn, Mastodon, Bluesky',
@@ -83,7 +86,7 @@ export default {
     {
       key: 'social2Url',
       label: 'Social link 2 URL',
-      type: 'string',
+      type: 'url',
       required: false,
       maxLength: 200,
     },

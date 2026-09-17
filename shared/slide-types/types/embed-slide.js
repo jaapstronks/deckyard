@@ -59,6 +59,9 @@ export default {
       type: 'string',
       required: true,
       maxLength: 500,
+      // A document cannot show the frame, so it names what is missing and
+      // links to it (D82) instead of printing the address as prose.
+      mediaRef: { label: 'Embedded page' },
     },
     {
       key: 'aspectRatio',

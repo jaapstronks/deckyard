@@ -558,3 +558,40 @@ test('formatDefinitionReport labels errors and warnings', () => {
   });
   assert.deepEqual(lines, ['  ERROR    boom', '  WARNING  careful']);
 });
+
+test('a type-level `scale` is refused when malformed and warns on an end label that names nothing (D131)', () => {
+  const base = {
+    label: 'Rating',
+    structure: 'singleton',
+    fields: [
+      { key: 'question', type: 'string', label: 'Question' },
+      { key: 'low', type: 'string', label: 'Low' },
+    ],
+    defaults: { question: '', low: '' },
+    renderHtml: () => '<div class="slide slide-rating"></div>',
+  };
+  for (const scale of [{ min: 1 }, { min: 5, max: 5 }, { min: 1.5, max: 4 }]) {
+    const report = validateSlideTypeDefinition({ ...base, scale }, 'rating');
+    assert.ok(
+      report.errors.some((e) => e.includes('`scale`')),
+      JSON.stringify(scale),
+    );
+  }
+  const report = validateSlideTypeDefinition(
+    {
+      ...base,
+      scale: { min: 1, max: 5, minLabelKey: 'low', maxLabelKey: 'high' },
+    },
+    'rating',
+  );
+  assert.deepEqual(
+    report.errors.filter((e) => e.includes('scale')),
+    [],
+  );
+  assert.deepEqual(
+    report.warnings.filter((w) => w.includes('scale')),
+    [
+      'rating: `scale.maxLabelKey` "high" does not name a field of this type, so that end of the scale has no label',
+    ],
+  );
+});

@@ -110,6 +110,44 @@ function isPlainObject(v) {
   return Boolean(v) && typeof v === 'object' && !Array.isArray(v);
 }
 
+/**
+ * The pair declarations (D131): which property, on which field types, naming a
+ * sibling of which types. One table so the four read alike; the finding codes
+ * are `<code>_wrong_type` and `<code>_unknown`.
+ */
+const PAIR_DECLARATIONS = Object.freeze([
+  {
+    code: 'unit_key',
+    read: (f) => f.unitKey,
+    on: ['string'],
+    partner: ['string'],
+  },
+  {
+    code: 'href_key',
+    read: (f) => f.hrefKey,
+    on: ['string'],
+    partner: ['url'],
+  },
+  {
+    code: 'heading_key',
+    read: (f) => f.headingKey,
+    on: ['string', 'markdown'],
+    partner: ['string'],
+  },
+  {
+    code: 'duration',
+    // A malformed `duration` names no seconds; the reference check says so.
+    read: (f) =>
+      f.duration === undefined || f.duration === null
+        ? f.duration
+        : isPlainObject(f.duration)
+          ? f.duration.secondsKey
+          : '',
+    on: ['number'],
+    partner: ['number'],
+  },
+]);
+
 /** The shape of a `mediaRef`, wherever a surface closes its vocabulary. */
 const MEDIA_REF_PROPERTIES = new Set(['label', 'linkKey']);
 
@@ -144,7 +182,8 @@ function fieldName(field, index) {
 
 /**
  * The sub-field keys of an `items` field that could serve as an item heading:
- * the readable strings that no role gives an element of their own (D128).
+ * the readable strings that no role gives an element of their own (D128) and
+ * that are not the text of a link (`hrefKey`, D131).
  * Mirrors what `renderItemBlock` in semantic-projection will actually pick from, so an `itemLabelField` naming anything else is a
  * declaration that cannot be honoured.
  *
@@ -163,6 +202,7 @@ export function headableKeys(itemFields) {
           sub?.type === 'string' &&
           !sub.hidden &&
           !sub.presentational &&
+          !isNonEmpty(sub.hrefKey) &&
           !DOCUMENT_ELEMENT_ROLES.has(sub.role),
       )
       .map((sub) => sub.key)
@@ -256,6 +296,9 @@ export function walkFieldDefinitions(fields, profile) {
     // Fields declaring `orderedWhen`: the field it reads is a sibling enum at
     // this level, checked once the level is fully known.
     const orderRefs = [];
+    // Pair declarations (D131): each names a sibling of a given type at this
+    // level, checked once the level is fully known.
+    const pairRefs = [];
     const fieldsByKey = new Map();
 
     list.forEach((field, i) => {
@@ -473,6 +516,20 @@ export function walkFieldDefinitions(fields, profile) {
         }
       }
 
+      // The pair declarations (D131). Each belongs on one kind of field and
+      // names a sibling of one kind; the projection joins the two and consumes
+      // the sibling, so a declaration on the wrong field would consume a
+      // value nothing then shows.
+      for (const pair of PAIR_DECLARATIONS) {
+        const declared = pair.read(field);
+        if (declared === undefined || declared === null) continue;
+        if (!pair.on.includes(type)) {
+          at2(`${pair.code}_wrong_type`, 'warning', { type });
+        } else {
+          pairRefs.push({ where, pair, declared });
+        }
+      }
+
       // `defaultFromOption` lets a blank string stand in with its sibling
       // enum's option word, in the deck language (D130c). Only a string has a
       // blank to fill.
@@ -515,6 +572,13 @@ export function walkFieldDefinitions(fields, profile) {
         add('ordered_when_unknown', 'warning', where, {
           field: isPlainObject(declared) ? declared.field : undefined,
         });
+      }
+    }
+
+    for (const { where, pair, declared } of pairRefs) {
+      const target = isNonEmpty(declared) ? fieldsByKey.get(declared) : null;
+      if (!target || !pair.partner.includes(target.type)) {
+        add(`${pair.code}_unknown`, 'warning', where, { declared });
       }
     }
 
@@ -658,6 +722,34 @@ const FINDING_MESSAGES = {
     `${where} declares \`rowHeader: ${JSON.stringify(f?.detail?.declared)}\`, ` +
     `but the one value is \`'first'\` (the first column heads each row), so ` +
     `it is ignored.`,
+  unit_key_wrong_type: (where, f) =>
+    `${where} declares \`unitKey\` on a \`${f?.detail?.type}\` field, but ` +
+    `only a \`string\` value reads with a unit, so it is ignored.`,
+  unit_key_unknown: (where, f) =>
+    `${where} declares \`unitKey\` ${JSON.stringify(f?.detail?.declared)}, ` +
+    `which is not a \`string\` field beside it, so the value reads without ` +
+    `its unit.`,
+  href_key_wrong_type: (where, f) =>
+    `${where} declares \`hrefKey\` on a \`${f?.detail?.type}\` field, but ` +
+    `only a \`string\` is the text of a link, so it is ignored.`,
+  href_key_unknown: (where, f) =>
+    `${where} declares \`hrefKey\` ${JSON.stringify(f?.detail?.declared)}, ` +
+    `which is not a \`url\` field beside it, so the link text has no target ` +
+    `and the reader leaves it out.`,
+  heading_key_wrong_type: (where, f) =>
+    `${where} declares \`headingKey\` on a \`${f?.detail?.type}\` field, ` +
+    `but only a \`string\` or \`markdown\` block can be headed, so it is ` +
+    `ignored.`,
+  heading_key_unknown: (where, f) =>
+    `${where} declares \`headingKey\` ${JSON.stringify(f?.detail?.declared)}, ` +
+    `which is not a \`string\` field beside it, so the block has no heading.`,
+  duration_wrong_type: (where, f) =>
+    `${where} declares \`duration\` on a \`${f?.detail?.type}\` field, but ` +
+    `only a \`number\` holds the minutes of a length, so it is ignored.`,
+  duration_unknown: (where, f) =>
+    `${where} declares \`duration.secondsKey\` ` +
+    `${JSON.stringify(f?.detail?.declared)}, which is not a \`number\` field ` +
+    `beside it, so the length counts whole minutes only.`,
   default_from_option_not_string: (where, f) =>
     `${where} declares \`defaultFromOption\` on a \`${f?.detail?.type}\` ` +
     `field, but only a \`string\` has a blank an option word can fill, so ` +
