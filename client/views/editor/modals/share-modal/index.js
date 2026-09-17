@@ -42,6 +42,8 @@ import { h } from '../../../../lib/dom.js';
  * @param {Function} options.syncShareUi - Refresh topbar share button
  * @param {Function} options.openDescriptionModal - Opens the description modal
  * @param {Function} options.doPublish - Runs the publish flow
+ * @param {Record<string, Object>} [options.slideTypes] - The editor's
+ *   slide-type registry, to name the field a refused publish points at
  * @param {Function} options.buildPublishModalData - Builds publish URLs
  * @param {Function} options.openPublishModal - Opens the publish management modal
  * @param {Function} options.handleNotionPublish - Adds the embed to Notion
@@ -67,6 +69,7 @@ export function openShareModal({
   syncShareUi,
   openDescriptionModal,
   doPublish,
+  slideTypes,
   buildPublishModalData,
   openPublishModal,
   handleNotionPublish,
@@ -157,6 +160,7 @@ export function openShareModal({
         copyToClipboard,
         toast,
         doPublish,
+        slideTypes,
         buildPublishModalData,
         openPublishModal,
         handleNotionPublish,

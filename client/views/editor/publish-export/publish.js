@@ -3,7 +3,11 @@ import { t } from '../../../lib/ui-i18n.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
 import { openDescriptionModal } from '../modals/description-modal.js';
 import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
-import { existingVersionLangs } from '../../../../shared/i18n-progress.js';
+import {
+  existingVersionLangs,
+  pickVersion,
+} from '../../../../shared/i18n-progress.js';
+import { getSlideType } from '../../../../shared/slide-types/registry.js';
 
 /**
  * The public links, embed URL and two snippets for one language version.
@@ -100,6 +104,68 @@ export function buildPublishModalData({ pres, activeLang = null } = {}) {
   };
 }
 
+/**
+ * The sentence for a publish refused because a picture has no alt text
+ * (`missing_alt`, D137), in the UI language: which slide, which field (by the
+ * label the form shows it under) and how many pictures there are in all.
+ *
+ * The server's `details` name the picture by keys and position; the labels
+ * live in the slide-type definitions the editor already loaded. When the slide
+ * or field cannot be found there (the deck changed since), the server's own
+ * sentence is shown instead of a vaguer one.
+ *
+ * @param {{message?: string, details?: Object}} err - the refused request
+ * @param {Object} opts
+ * @param {Object} opts.pres - the deck
+ * @param {Record<string, Object>} [opts.slideTypes] - the editor's registry
+ * @returns {string}
+ */
+export function missingAltMessage(err, { pres, slideTypes } = {}) {
+  const d = err?.details || {};
+  const slide = pickVersion(pres, d.lang).slides?.[d.slideIndex];
+  const def = slide ? getSlideType(slide.type, slideTypes) : null;
+  const field = def?.fields?.find((f) => f?.key === d.field);
+  const sub =
+    typeof d.itemIndex === 'number'
+      ? field?.itemFields?.find((f) => f?.key === d.itemField)
+      : null;
+  const label = (f) => t(f.labelKey || f.key, f.label || f.key);
+  if (!field || (typeof d.itemIndex === 'number' && !sub)) {
+    return String(err?.message || '');
+  }
+  const vars = {
+    slide: d.slideIndex + 1,
+    field: label(field),
+    item: (d.itemIndex ?? 0) + 1,
+    itemField: sub ? label(sub) : '',
+    count: d.count,
+  };
+  const sentence = sub
+    ? t(
+        'editor.publish.missingAlt.item',
+        'Slide {slide}, {field} {item}: the image "{itemField}" has no alt text.',
+        vars,
+      )
+    : t(
+        'editor.publish.missingAlt.field',
+        'Slide {slide}: the image "{field}" has no alt text.',
+        vars,
+      );
+  const fix =
+    d.count > 1
+      ? t(
+          'editor.publish.missingAlt.fixMany',
+          'Add alt text or mark the image decorative, then publish again. {count} images in this deck need it.',
+          vars,
+        )
+      : t(
+          'editor.publish.missingAlt.fixOne',
+          'Add alt text or mark the image decorative, then publish again.',
+          vars,
+        );
+  return `${sentence} ${fix}`;
+}
+
 export async function doPublish({
   root,
   api,
@@ -148,36 +214,17 @@ export async function doPublish({
   if (!first)
     throw new Error(t('editor.publish.noSlides', 'No slides to publish'));
 
-  // Hint about missing alt text on image-based slides (non-blocking, but recommended).
-  const slides = Array.isArray(pres?.slides) ? pres.slides : [];
-  const missingAlt = [];
-  for (let i = 0; i < slides.length; i += 1) {
-    const s = slides[i];
-    if (!s || typeof s !== 'object') continue;
-    if (s.type !== 'image-slide' && s.type !== 'image-text-slide') continue;
-    const c = s.content && typeof s.content === 'object' ? s.content : {};
-    const img = typeof c.image === 'string' ? c.image.trim() : '';
-    if (!img) continue;
-    const alt = typeof c.alt === 'string' ? c.alt.trim() : '';
-    const altNl = typeof c.altNl === 'string' ? c.altNl.trim() : '';
-    const altEn = typeof c.altEn === 'string' ? c.altEn.trim() : '';
-    if (!alt && !altNl && !altEn) missingAlt.push(i + 1);
-  }
-  if (missingAlt.length) {
-    const msg = t(
-      'editor.publish.missingAltConfirm',
-      'Warning: these slides contain an image without alt text (NL/EN): {slides}\n\nPublish anyway?',
-      { slides: missingAlt.join(', ') },
-    );
-    const ok = await confirmModal(root, {
-      title: t('editor.publish.missingAltTitle', 'Missing alt text'),
-      message: msg,
-      confirmLabel: t('editor.publish.publishAnyway', 'Publish anyway'),
-    });
-    if (!ok) return null;
-  }
+  // Alt text is not checked here: the server refuses a picture without a
+  // name on every publish surface (`missing_alt`, D137), and the caller shows
+  // that refusal beside its Publish button ({@link missingAltMessage}).
 
-  // RSS feed notice (non-blocking info toast, first publish only)
+  const pub = await api(`/api/presentations/${id}/publish`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  });
+
+  // RSS feed notice (non-blocking info toast, first publish only). After the
+  // publish, not before: a refused publish puts nothing in the feed.
   if (!alreadyPublished) {
     try {
       const orgResp = await api('/api/settings/organization');
@@ -202,11 +249,6 @@ export async function doPublish({
       // Silently ignore — RSS notice is informational
     }
   }
-
-  const pub = await api(`/api/presentations/${id}/publish`, {
-    method: 'POST',
-    body: JSON.stringify({}),
-  });
 
   const currentLang =
     activeLang || normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG;

@@ -11,6 +11,8 @@
  *   - the **sandbox refusal** — a guest could otherwise mint an API key and
  *     publish through v1, so the internal route's 403 has to hold on every
  *     surface, not just the one that happened to spell it out;
+ *   - the **alt-text refusal** — a meaningful picture without a name
+ *     (`publish-alt-check.js`, D137);
  *   - the **OG preview image** (author overlay + the fallback ladder);
  *   - the **published-entry upsert** and its write-back onto the deck document;
  *   - the **deck-grid thumbnail warm**; and
@@ -33,6 +35,8 @@ import { sandboxEnabled } from '../config/sandbox.js';
 import { maybeFireWebhook } from '../utils/webhooks.js';
 import { warmDeckThumbnail } from '../render/deck-thumbnail-warm.js';
 import { ForbiddenError } from '../utils/errors.js';
+import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
+import { assertImagesNamed } from './publish-alt-check.js';
 import { createLogger } from '../utils/logger.js';
 
 const log = createLogger('publish');
@@ -151,6 +155,8 @@ export async function buildPublishOgImage({
  *   is the actor on the write and the webhook.
  * @returns {Promise<{publishId: string, slug: string, path: string, ogImageUrl: string}>}
  * @throws {ForbiddenError} When publishing is disabled (sandbox mode).
+ * @throws {import('../utils/errors.js').UnprocessableError} `missing_alt`, when
+ *   a picture that is not decorative has no alt text.
  */
 export async function publishPresentation({
   repoRoot,
@@ -162,6 +168,14 @@ export async function publishPresentation({
   // Backstop: the routes gate this early (before loading the deck), but re-check
   // here so no core caller can skip the policy.
   assertPublishingEnabled();
+
+  // Before anything is written: a refused publish leaves no entry, no preview
+  // and no webhook behind. The deck's own organisation types are checked by
+  // their own declarations.
+  assertImagesNamed(
+    pres,
+    await buildMergedSlideTypes({ organizationId: pres?.organizationId }),
+  );
 
   const actorEmail = actor?.email || null;
 

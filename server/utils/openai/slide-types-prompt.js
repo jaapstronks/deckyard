@@ -214,10 +214,26 @@ export const MANUAL_EXAMPLES = {
       subheading: 'Recent work',
       layout: 'grid',
       images: [
-        { src: placeholder, caption: 'Project Alpha', alt: '' },
-        { src: placeholder, caption: 'Project Beta', alt: '' },
-        { src: placeholder, caption: 'Project Gamma', alt: '' },
-        { src: placeholder, caption: 'Project Delta', alt: '' },
+        {
+          src: placeholder,
+          caption: 'Project Alpha',
+          alt: 'The Project Alpha team at the kickoff',
+        },
+        {
+          src: placeholder,
+          caption: 'Project Beta',
+          alt: 'A prototype of Project Beta on a desk',
+        },
+        {
+          src: placeholder,
+          caption: 'Project Gamma',
+          alt: 'The Project Gamma dashboard on a laptop',
+        },
+        {
+          src: placeholder,
+          caption: 'Project Delta',
+          alt: 'Project Delta volunteers planting trees',
+        },
       ],
       background: 'mist',
     },

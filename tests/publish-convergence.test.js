@@ -74,7 +74,11 @@ function deckRow({ id, owner }) {
       {
         id: 'slide-1',
         type: 'image-slide',
-        content: { title: 'Hoi', image: '/media/first-slide.jpg' },
+        content: {
+          title: 'Hoi',
+          image: '/media/first-slide.jpg',
+          alt: 'The harbour at first light',
+        },
         parentId: null,
       },
     ],
@@ -221,6 +225,54 @@ test('core: publishPresentation writes the entry, the deck column, and the descr
   );
 });
 
+test('core: a picture without alt text is refused before anything is written (D137)', async () => {
+  const db = await installDb();
+  const pres = storedDeck(db, DECK_ID);
+  pres.slides[0].content.alt = '';
+
+  await assert.rejects(
+    publishPresentation({
+      repoRoot: REPO_ROOT,
+      storageScope: testScope(REPO_ROOT, { actorEmail: KEY_OWNER }),
+      req: { headers: {} },
+      pres,
+      actor: { email: KEY_OWNER },
+    }),
+    (err) => {
+      assert.equal(getStatusCode(err), 422);
+      assert.equal(err.code, 'missing_alt');
+      assert.deepEqual(err.toJSON().details, {
+        lang: null,
+        slideIndex: 0,
+        slideId: 'slide-1',
+        field: 'image',
+        count: 1,
+      });
+      return true;
+    },
+  );
+  assert.equal(db.__tables.published_presentations.length, 0);
+  assert.equal(storedDeck(db, DECK_ID).published, null);
+});
+
+test('core: a decorative picture needs no alt text', async () => {
+  const db = await installDb();
+  const pres = storedDeck(db, DECK_ID);
+  pres.slides[0].content = {
+    title: 'Hoi',
+    image: '/media/first-slide.jpg',
+    imageRole: 'decorative',
+  };
+  const result = await publishPresentation({
+    repoRoot: REPO_ROOT,
+    storageScope: testScope(REPO_ROOT, { actorEmail: KEY_OWNER }),
+    req: { headers: {} },
+    pres,
+    actor: { email: KEY_OWNER },
+  });
+  assert.ok(result.publishId);
+});
+
 // ---------------------------------------------------------------------------
 // The v1 route, converged
 // ---------------------------------------------------------------------------
@@ -242,6 +294,19 @@ test('v1: POST /publish is refused with 403 in sandbox mode and does not publish
     null,
     'the deck stays unpublished',
   );
+  assert.equal(db.__tables.published_presentations.length, 0);
+});
+
+test('v1: POST /publish refuses a picture without alt text with 422 missing_alt', async () => {
+  const db = await installDb();
+  storedDeck(db, DECK_ID).slides[0].content.alt = '';
+  const ctx = makeV1Ctx('POST', DECK_ID);
+  assert.equal(await handlePublishing(ctx), true);
+  assert.equal(ctx.res.statusCode, 422);
+  assert.equal(ctx.res.body.error, 'missing_alt');
+  assert.equal(ctx.res.body.details.field, 'image');
+  assert.equal(ctx.res.body.details.slideIndex, 0);
+  assert.match(ctx.res.body.message, /Slide 1 has an image without alt text/);
   assert.equal(db.__tables.published_presentations.length, 0);
 });
 

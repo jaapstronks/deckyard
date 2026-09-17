@@ -113,7 +113,11 @@ function deckRow({ id, owner, published = null }) {
       {
         id: 'slide-1',
         type: 'image-slide',
-        content: { title: 'Hoi', image: '/media/first-slide.jpg' },
+        content: {
+          title: 'Hoi',
+          image: '/media/first-slide.jpg',
+          alt: 'The harbour at first light',
+        },
         parentId: null,
       },
     ],

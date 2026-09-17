@@ -18,6 +18,8 @@ import { isOrganizationAdmin } from '../../../shared/organization-role.js';
  * @param {object} options.saveManager - Save manager instance
  * @param {object} options.editorState - Editor state updater
  * @param {object} options.user - Current user
+ * @param {Record<string, object>} options.slideTypes - The editor's slide-type
+ *   registry (names a refused publish's field by its label)
  * @returns {object} Dropdown elements and cleanup
  */
 export function createEditorDropdowns({
@@ -29,6 +31,7 @@ export function createEditorDropdowns({
   saveManager,
   editorState,
   user,
+  slideTypes,
 }) {
   // Export dropdown (file downloads)
   const { exportEl: topbarExport, detach: detachExportDropdown } =
@@ -56,6 +59,7 @@ export function createEditorDropdowns({
     currentUser: user,
     currentUserEmail: user?.email,
     isAdmin: isOrganizationAdmin(user),
+    slideTypes,
   });
 
   const detach = () => {

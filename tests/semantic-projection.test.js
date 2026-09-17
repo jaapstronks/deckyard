@@ -210,21 +210,190 @@ describe('images and figures', () => {
     assert.ok(html.includes('alt="Chart alt"'), 'alt still used on the img');
   });
 
-  it('always emits an alt attribute even without explicit alt', () => {
+  it('always emits an alt attribute, and never guesses one from the filename', () => {
     const def = { fields: [{ key: 'image', type: 'image' }] };
     const html = body(
       { content: { image: '/uploads/quarterly-report.png' } },
       def,
     );
-    assert.ok(/<img[^>]*\balt="/.test(html), html);
+    assert.ok(/<img[^>]*\balt=""/.test(html), html);
+    assert.ok(!/Quarterly report/i.test(html), html);
   });
 
-  it('renders an images gallery, each with alt', () => {
+  it('renders an images array as one figure group, alt empty', () => {
     const def = { fields: [{ key: 'gallery', type: 'images' }] };
     const html = body({ content: { gallery: ['/a.png', '/b.png'] } }, def);
-    assert.ok(html.includes('reader-gallery'), html);
+    assert.ok(
+      html.startsWith(
+        '<figure class="reader-gallery" role="group" data-field="gallery">',
+      ),
+      html,
+    );
     assert.equal((html.match(/<img/g) || []).length, 2, html);
-    assert.ok(!/<img(?![^>]*\balt=)/.test(html), 'every img has alt');
+    assert.equal((html.match(/alt=""/g) || []).length, 2, html);
+  });
+
+  it('an images array folds its caption and role siblings into the group', () => {
+    const def = {
+      fields: [
+        { key: 'gallery', type: 'images' },
+        { key: 'caption', type: 'string' },
+        { key: 'imageRole', type: 'enum', options: ['content', 'decorative'] },
+      ],
+    };
+    const html = body(
+      {
+        content: {
+          gallery: ['/a.png', '/b.png'],
+          caption: 'Before and after',
+          imageRole: 'decorative',
+        },
+      },
+      def,
+    );
+    assert.equal((html.match(/Before and after/g) || []).length, 1, html);
+    assert.ok(
+      html.includes('<figcaption data-field="caption">Before and after'),
+      html,
+    );
+    assert.ok(!html.includes('<p data-field="caption">'), html);
+    assert.equal((html.match(/aria-hidden="true"/g) || []).length, 2, html);
+  });
+});
+
+describe('the reader alt ladder: explicit, a name, nothing (D135, B297)', () => {
+  it('a caption is never the alt', () => {
+    const def = {
+      fields: [
+        { key: 'image', type: 'image' },
+        { key: 'caption', type: 'string' },
+      ],
+    };
+    const html = body(
+      { content: { image: '/x.png', caption: 'Project Alpha' } },
+      def,
+    );
+    assert.ok(html.includes('alt=""'), html);
+    assert.equal((html.match(/Project Alpha/g) || []).length, 1, html);
+  });
+
+  it("a slide's own heading does not name a picture on it", () => {
+    const html = body(
+      { content: { title: 'Full image', image: '/x.png' } },
+      SLIDE_TYPES['image-slide'],
+      { headingKey: 'title' },
+    );
+    assert.ok(html.includes('alt=""'), html);
+  });
+
+  it('a declared nameKey names the picture before the item heading', () => {
+    const html = body(
+      {
+        content: {
+          quote: 'Ship it.',
+          authorName: 'Grace Hopper',
+          authorImage1: '/grace.png',
+        },
+      },
+      SLIDE_TYPES['quote-slide'],
+    );
+    assert.ok(html.includes('alt="Grace Hopper"'), html);
+  });
+
+  it('a byline is a caption, not a name: a card without a name gets no alt', () => {
+    const html = body(
+      {
+        content: {
+          members: [{ image: '/x.png', name: '', byline: 'CTO' }],
+        },
+      },
+      SLIDE_TYPES['team-cards-slide'],
+    );
+    assert.ok(html.includes('alt=""'), html);
+    assert.ok(
+      html.includes('<figcaption data-field="byline">CTO</figcaption>'),
+      html,
+    );
+  });
+
+  it('an item picture reads its role from the set when it has none of its own', () => {
+    const html = body(
+      {
+        content: {
+          images: [
+            { src: '/1.png', alt: 'One' },
+            { src: '/2.png', alt: 'Two' },
+          ],
+          imageRole: 'decorative',
+        },
+      },
+      SLIDE_TYPES['image-set-slide'],
+    );
+    assert.equal((html.match(/aria-hidden="true"/g) || []).length, 2, html);
+    assert.ok(!html.includes('One'), html);
+  });
+});
+
+describe('a set of pictures is one figure group (D135, B297)', () => {
+  it('an image set: one group, one figcaption, no list and no loose caption', () => {
+    const html = body(
+      {
+        content: {
+          images: [
+            { src: '/1.png', alt: 'One' },
+            { src: '/2.png', alt: 'Two' },
+          ],
+          caption: 'Before and after',
+        },
+      },
+      SLIDE_TYPES['image-set-slide'],
+    );
+    assert.ok(
+      html.includes(
+        '<figure class="reader-gallery" role="group" data-field="images"><figure class="reader-figure" data-field="src"><img src="/1.png" alt="One" loading="lazy" /></figure><figure class="reader-figure" data-field="src"><img src="/2.png" alt="Two" loading="lazy" /></figure><figcaption data-field="caption">Before and after</figcaption></figure>',
+      ),
+      html,
+    );
+    assert.ok(!html.includes('<ul'), html);
+    assert.equal((html.match(/Before and after/g) || []).length, 1, html);
+  });
+
+  it('a gallery keeps a caption per picture inside the group', () => {
+    const html = body(
+      {
+        content: {
+          images: [
+            { src: '/1.png', caption: 'Alpha', alt: 'A harbour' },
+            { src: '/2.png', caption: 'Beta', alt: '' },
+          ],
+        },
+      },
+      SLIDE_TYPES['gallery-slide'],
+    );
+    assert.ok(html.includes('role="group"'), html);
+    assert.ok(
+      html.includes(
+        'alt="A harbour" loading="lazy" /><figcaption>Alpha</figcaption>',
+      ),
+      html,
+    );
+    assert.ok(
+      html.includes('alt="" loading="lazy" /><figcaption>Beta</figcaption>'),
+      html,
+    );
+  });
+
+  it('cards with more than a picture stay a list', () => {
+    const html = body(
+      {
+        content: {
+          logos: [{ image: '/a.png', name: 'Acme', link: 'https://acme.test' }],
+        },
+      },
+      SLIDE_TYPES['logo-wall-slide'],
+    );
+    assert.ok(html.includes('<ul class="reader-items"'), html);
+    assert.ok(!html.includes('role="group"'), html);
   });
 });
 

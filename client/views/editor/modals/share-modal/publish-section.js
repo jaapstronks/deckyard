@@ -12,7 +12,11 @@
 import { t } from '../../../../lib/ui-i18n.js';
 import { confirmModal } from '../../../../lib/dom/modal.js';
 import { h } from '../../../../lib/dom.js';
-import { primaryLangLinks } from '../../publish-export/publish.js';
+import { createInlineError } from '../../../../lib/dom/inline-error.js';
+import {
+  primaryLangLinks,
+  missingAltMessage,
+} from '../../publish-export/publish.js';
 
 /**
  * Create the publish section.
@@ -24,6 +28,8 @@ import { primaryLangLinks } from '../../publish-export/publish.js';
  * @param {Function} options.copyToClipboard - Clipboard copy function
  * @param {Object} options.toast - Toast notification service
  * @param {Function} options.doPublish - Runs the full publish flow
+ * @param {Record<string, Object>} [options.slideTypes] - The editor's
+ *   slide-type registry, to name the field a refused publish points at
  * @param {Function} options.buildPublishModalData - Builds URLs from pres state
  * @param {Function} options.openPublishModal - Opens the publish management modal
  * @param {Function} options.handleNotionPublish - Adds the embed to Notion
@@ -41,6 +47,7 @@ export function createPublishSection({
   copyToClipboard,
   toast,
   doPublish,
+  slideTypes,
   buildPublishModalData,
   openPublishModal,
   handleNotionPublish,
@@ -50,12 +57,17 @@ export function createPublishSection({
   requestClose,
 }) {
   const section = h('div', { class: 'share-publish-section' });
+  // A refused publish is a state of this section, beside the button that was
+  // refused (docs/reference/feedback-surfaces.md), not a passing toast: the
+  // author has to go and fix a picture and try again.
+  const publishError = createInlineError({ callout: true });
 
   function isPublished() {
     return !!(typeof pres?.published?.id === 'string' && pres.published.id);
   }
 
   async function publishNow(button) {
+    publishError.clear();
     button.disabled = true;
     const original = button.textContent;
     button.textContent = t('share.publish.publishing', 'Publishing…');
@@ -68,7 +80,11 @@ export function createPublishSection({
         render();
       }
     } catch (e) {
-      toast?.error?.(e, { durationMs: 3000 });
+      if (e?.code === 'missing_alt') {
+        publishError.show(missingAltMessage(e, { pres, slideTypes }));
+      } else {
+        toast?.error?.(e, { durationMs: 3000 });
+      }
     } finally {
       button.disabled = false;
       button.textContent = original;
@@ -146,6 +162,7 @@ export function createPublishSection({
       });
       section.append(
         h('div', { class: 'share-publish-actions' }, [publishBtn]),
+        publishError.el,
         exportHint(),
       );
       return;

@@ -920,6 +920,7 @@ test('the pair declarations name a sibling of their kind; misplaced or dangling 
         duration: { secondsKey: 'seconds' },
       },
       { key: 'seconds', type: 'number', label: 'Seconds' },
+      { key: 'logo', type: 'image', label: 'Logo', nameKey: 'unit' },
       // Misplaced: each on a field type it does not belong on.
       { key: 'count', type: 'number', label: 'Count', unitKey: 'unit' },
       { key: 'blurb', type: 'markdown', label: 'Blurb', hrefKey: 'socialUrl' },
@@ -936,13 +937,15 @@ test('the pair declarations name a sibling of their kind; misplaced or dangling 
         label: 'Title',
         duration: { secondsKey: 'seconds' },
       },
+      { key: 'credit', type: 'string', label: 'Credit', nameKey: 'unit' },
       // Dangling: the sibling is missing or of the wrong kind.
       { key: 'price', type: 'string', label: 'Price', unitKey: 'minutes' },
       { key: 'link', type: 'string', label: 'Link', hrefKey: 'unit' },
       { key: 'right', type: 'markdown', label: 'Right', headingKey: 'nope' },
       { key: 'length', type: 'number', label: 'Length', duration: 'PT5M' },
+      { key: 'shot', type: 'image', label: 'Shot', nameKey: 'minutes' },
     ],
-    { fieldTypes: ['string', 'markdown', 'number', 'url', 'enum'] },
+    { fieldTypes: ['string', 'markdown', 'number', 'url', 'enum', 'image'] },
   ).findings;
   assert.deepEqual(
     findings.map((f) => [f.key, f.code, f.severity]),
@@ -951,10 +954,12 @@ test('the pair declarations name a sibling of their kind; misplaced or dangling 
       ['blurb', 'href_key_wrong_type', 'warning'],
       ['kind', 'heading_key_wrong_type', 'warning'],
       ['title', 'duration_wrong_type', 'warning'],
+      ['credit', 'name_key_wrong_type', 'warning'],
       ['price', 'unit_key_unknown', 'warning'],
       ['link', 'href_key_unknown', 'warning'],
       ['right', 'heading_key_unknown', 'warning'],
       ['length', 'duration_unknown', 'warning'],
+      ['shot', 'name_key_unknown', 'warning'],
     ],
   );
   for (const f of findings)
@@ -965,6 +970,7 @@ test('the pair declarations name a sibling of their kind; misplaced or dangling 
     { unitKey: 'b' },
     { hrefKey: 'b' },
     { headingKey: 'b' },
+    { nameKey: 'b' },
   ]) {
     const stored = validateCustomFieldDefinitions([
       { key: 'a', type: 'string', label: 'A', ...extra },

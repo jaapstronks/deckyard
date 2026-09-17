@@ -394,10 +394,11 @@ export const FIELD_TYPES = {
   },
   image: {
     label: 'Image',
-    description: 'Image picker (stores a URL/reference string)',
+    description:
+      "Image picker (stores a URL/reference string). Its a11y siblings follow one spelling: `<key>Alt` or `alt`, `<key>Caption` or `caption`, `<key>Role` or `imageRole` (`decorative` hides it). `nameKey` names a sibling string that says what the picture shows (a logo's organisation, the author beside a portrait): the reflowable projection uses it as the alt when the alt is empty, before an item's own heading and never a caption or a filename. Publishing refuses a picture that is not decorative and has no alt at the end of that ladder.",
     // `presetSource` only reads `'backgrounds'` here; the partner-logo preset
     // list belongs to the `images` field, which is the one that renders it.
-    docExtra: "`presetSource` (`'backgrounds'`), `required`",
+    docExtra: "`presetSource` (`'backgrounds'`), `required`, `nameKey`",
     valueKind: 'string',
     validate: validateImage,
   },
