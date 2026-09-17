@@ -10,18 +10,18 @@ overlapping PDF entries and a duplicated "other language" section.
 
 ## Layout
 
-| Group         | Format                  | Route (`/api/presentations/:id/export/…`) | Builder                                                       |
-| ------------- | ----------------------- | ----------------------------------------- | ------------------------------------------------------------- |
-| Slides        | PDF                     | `pdf-slides.pdf`                          | `renderSlidesToPdfBuffer` (`server/render/pdf.js`, Puppeteer) |
-| Slides        | PNG                     | `png`                                     | `buildSlidesPngExportHtml` (opens in a tab)                   |
-| Slides        | PPTX                    | `pptx`                                    | `buildPptxBuffer`                                             |
-| Slides        | PPTX template           | `pptx-template`                           | `buildThemeTemplateBuffer` (download)                         |
-| Slides        | HTML                    | `html`                                    | `buildStandaloneHtml` (download)                              |
-| Documents     | Text handout            | `pdf`                                     | `buildPrintHtml` (the reader projection, laid out for paper)  |
-| Documents     | Notes (Markdown / Word) | `notes.md` / `notes.docx`                 | `buildNotesMarkdown` / `buildNotesDocxBuffer`                 |
-| Data & bundle | .deck                   | `deck.zip`                                | `buildDeckBundle` (download)                                  |
-| Data & bundle | JSON                    | `json`                                    | `presentationToDeck` (download)                               |
-| Data & bundle | Handoff ZIP             | `handoff.zip`                             | `buildHandoffZipBuffer`                                       |
+| Group         | Format                  | Route (`/api/presentations/:id/export/…`) | Builder                                                                         |
+| ------------- | ----------------------- | ----------------------------------------- | ------------------------------------------------------------------------------- |
+| Slides        | PDF                     | `pdf-slides.pdf`                          | `renderSlidesToPdfBuffer` (`server/render/pdf.js`, Puppeteer)                   |
+| Slides        | PNG                     | `png`                                     | `buildSlidesPngExportHtml` (opens in a tab)                                     |
+| Slides        | PPTX                    | `pptx`                                    | `buildPptxBuffer` (each slide an image, [see below](#what-the-pptx-hands-back)) |
+| Slides        | PPTX template           | `pptx-template`                           | `buildThemeTemplateBuffer` (download)                                           |
+| Slides        | HTML                    | `html`                                    | `buildStandaloneHtml` (download)                                                |
+| Documents     | Text handout            | `pdf`                                     | `buildPrintHtml` (the reader projection, laid out for paper)                    |
+| Documents     | Notes (Markdown / Word) | `notes.md` / `notes.docx`                 | `buildNotesMarkdown` / `buildNotesDocxBuffer`                                   |
+| Data & bundle | .deck                   | `deck.zip`                                | `buildDeckBundle` (download)                                                    |
+| Data & bundle | JSON                    | `json`                                    | `presentationToDeck` (download)                                                 |
+| Data & bundle | Handoff ZIP             | `handoff.zip`                             | `buildHandoffZipBuffer`                                                         |
 
 The full server-side pipeline (routes, async queue, builders) is in
 `server/routes/api/export.js` and `server/export/`.
