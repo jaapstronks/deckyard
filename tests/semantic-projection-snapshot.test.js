@@ -33,7 +33,9 @@
  *   a theme only moves `background`, which is presentational and never
  *   projected, and leaving it out keeps the artifact deterministic.
  * - **Through `renderSlideSectionHtml()`**, the one function
- *   `server/export/reader.js` calls per slide, so the fixture pins the whole
+ *   `server/export/reader.js` calls per slide, with the deck language as the
+ *   reader passes it (copy a slide shows without storing it, like a blank
+ *   callout label or a chart summary, follows it), so the fixture pins the whole
  *   `<section>`: whether the heading is visible or a hidden name (D129), what
  *   labels the section, the type marker, and the body. Half of what the reader
  *   says about a slide lives in that wrapper, and a fixture of heading + body
@@ -103,7 +105,7 @@ function project(type, lang) {
     // depend on which deck the projection ran for.
     presentationId: 'fixture-deck',
   });
-  return renderSlideSectionHtml(slide, def, { index: 0 }).split('\n');
+  return renderSlideSectionHtml(slide, def, { index: 0, lang }).split('\n');
 }
 
 /** The whole registry projected, in registration order. */

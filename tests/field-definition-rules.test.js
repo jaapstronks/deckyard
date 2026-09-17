@@ -694,3 +694,101 @@ test('a sub-field whose role is its own element cannot head an item (D128)', () 
     ['title', 'text', 'plain'],
   );
 });
+
+test('`defaultFromOption` names a sibling enum whose options all carry slide copy', () => {
+  const findings = walkFieldDefinitions(
+    [
+      {
+        key: 'variant',
+        type: 'enum',
+        label: 'Kind',
+        options: [
+          {
+            value: 'insight',
+            label: 'Key insight',
+            copyKey: 'admonitionInsight',
+          },
+          { value: 'odd', label: 'Odd', copyKey: 'noSuchCopy' },
+          'bare',
+        ],
+      },
+      {
+        key: 'layout',
+        type: 'enum',
+        label: 'Layout',
+        options: [{ value: 'a', label: 'A', copyKey: 'admonitionTip' }],
+      },
+      {
+        key: 'label',
+        type: 'string',
+        label: 'Label',
+        defaultFromOption: 'variant',
+      },
+      { key: 'ok', type: 'string', label: 'Ok', defaultFromOption: 'layout' },
+      { key: 'lost', type: 'string', label: 'Lost', defaultFromOption: 'nope' },
+      {
+        key: 'text',
+        type: 'string',
+        label: 'Text',
+        defaultFromOption: 'label',
+      },
+      { key: 'md', type: 'markdown', label: 'Md', defaultFromOption: 'layout' },
+    ],
+    FILE_JS,
+  ).findings;
+  assert.deepEqual(
+    findings.map((f) => [f.key, f.code, f.severity]),
+    [
+      ['md', 'default_from_option_not_string', 'warning'],
+      ['label', 'default_from_option_without_copy', 'warning'],
+      ['lost', 'default_from_option_unknown', 'warning'],
+      ['text', 'default_from_option_unknown', 'warning'],
+    ],
+  );
+  assert.deepEqual(findings[1].detail.missing, ['odd', 'bare']);
+  for (const f of findings)
+    assert.notEqual(describeFieldFinding(f), 'Invalid field definitions.');
+});
+
+test('a stored (DB) field cannot declare `defaultFromOption`', () => {
+  const stored = validateCustomFieldDefinitions([
+    { key: 'v', type: 'enum', label: 'V', options: ['a'] },
+    { key: 'l', type: 'string', label: 'L', defaultFromOption: 'v' },
+  ]);
+  assert.equal(stored.ok, false);
+  assert.equal(stored.problem.code, 'unknown_property');
+  assert.equal(stored.problem.detail.property, 'defaultFromOption');
+});
+
+test('`datasetSummary` is a function, read on a dataset type only', () => {
+  const base = {
+    label: 'X',
+    fields: [{ key: 'data', type: 'csv', label: 'Data' }],
+    renderHtml: () => '<div class="slide slide-x"></div>',
+  };
+  const notFn = validateSlideTypeDefinition(
+    { ...base, structure: 'dataset', datasetSummary: 'nope' },
+    'x-slide',
+  );
+  assert.ok(
+    notFn.errors.some((e) => e.includes('datasetSummary')),
+    notFn.errors,
+  );
+  const offStructure = validateSlideTypeDefinition(
+    { ...base, structure: 'singleton', datasetSummary: () => '' },
+    'x-slide',
+  );
+  assert.ok(
+    offStructure.warnings.some((w) => w.includes('datasetSummary')),
+    offStructure.warnings,
+  );
+  const fine = validateSlideTypeDefinition(
+    { ...base, structure: 'dataset', datasetSummary: () => '' },
+    'x-slide',
+  );
+  assert.ok(
+    !fine.errors
+      .concat(fine.warnings)
+      .some((m) => m.includes('datasetSummary')),
+  );
+});

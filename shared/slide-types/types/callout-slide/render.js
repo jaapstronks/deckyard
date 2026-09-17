@@ -76,7 +76,10 @@ export default function renderHtml(content, _slide, ctx) {
   // wraps the TERM, not the explanation: `<dfn>` marks the word being defined
   // and its containing block is the definition (HTML §4.5.8). Putting it round
   // the body would assert the opposite of what the slide says.
-  const labelTag = variant === 'definition' ? 'dfn' : 'span';
+  // Only an authored label is a term: the fallback word "Definition" defines
+  // nothing, and the reader draws the same line (`termWhen` reads the authored
+  // value, never the `defaultFromOption` word).
+  const labelTag = variant === 'definition' && authored ? 'dfn' : 'span';
 
   // Tinted by the container `color` through a CSS mask rather than an <img>:
   // an <img>-loaded SVG is an isolated document and never inherits the host

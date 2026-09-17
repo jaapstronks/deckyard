@@ -16,6 +16,7 @@
 import { BACKGROUND_FIELD } from '../../helpers.js';
 import renderHtml from './render.js';
 import { DEFAULT_CALLOUT_VARIANT } from './variants.js';
+import { ADMONITION_META } from '../../admonitions.js';
 
 export default {
   structure: 'singleton',
@@ -42,12 +43,31 @@ export default {
       // copy only when it declares a label (shared/ui-i18n-keys.js), and these
       // five are words a reader picks from, not storage tokens. The pair is
       // pinned against the vocabulary in tests/callout-slide.test.js.
+      // `copyKey` names the same word in the deck's language (slide-copy.js),
+      // read from the admonition table the canvas eyebrow reads, so `label`
+      // below can fall back to it on every surface (`defaultFromOption`).
       options: [
-        { value: 'insight', label: 'Key insight' },
-        { value: 'warning', label: 'Warning' },
-        { value: 'definition', label: 'Definition' },
-        { value: 'note', label: 'Note' },
-        { value: 'tip', label: 'Tip' },
+        {
+          value: 'insight',
+          label: 'Key insight',
+          copyKey: ADMONITION_META.insight.copyKey,
+        },
+        {
+          value: 'warning',
+          label: 'Warning',
+          copyKey: ADMONITION_META.warning.copyKey,
+        },
+        {
+          value: 'definition',
+          label: 'Definition',
+          copyKey: ADMONITION_META.definition.copyKey,
+        },
+        {
+          value: 'note',
+          label: 'Note',
+          copyKey: ADMONITION_META.note.copyKey,
+        },
+        { value: 'tip', label: 'Tip', copyKey: ADMONITION_META.tip.copyKey },
       ],
     },
     {
@@ -61,8 +81,13 @@ export default {
       // an author gets the right word for free and overrides it when the
       // callout names something more specific — a definition's term, say.
       role: 'label',
+      // Blank means the kind's own word, in the deck's language: the reader
+      // eyebrow and the section's hidden heading say "Key insight" as the
+      // canvas does, read from the option's `copyKey` (D130c).
+      defaultFromOption: 'variant',
       // On a definition the label IS the term being defined, so the reader
       // wraps it in <dfn>; the sibling enum says when, not a branch on a name.
+      // Only an authored term: the fallback word "Definition" defines nothing.
       termWhen: { field: 'variant', in: ['definition'] },
     },
     {

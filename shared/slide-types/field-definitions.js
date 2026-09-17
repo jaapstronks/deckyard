@@ -58,6 +58,7 @@
 
 import { enumOptionValues } from './field-types.js';
 import { DOCUMENT_ELEMENT_ROLES } from './text-roles.js';
+import { isSlideCopyKey } from './option-default.js';
 
 /**
  * @typedef {object} FieldProfile
@@ -249,6 +250,10 @@ export function walkFieldDefinitions(fields, profile) {
     // Fields whose `mediaRef.linkKey` names a sibling: checked once this level
     // is fully known, since a declaration may point forwards.
     const linkRefs = [];
+    // Fields declaring `defaultFromOption`: the enum they name is a sibling at
+    // this level, so it too is checked once the level is fully known.
+    const optionRefs = [];
+    const fieldsByKey = new Map();
 
     list.forEach((field, i) => {
       const name = fieldName(field, i);
@@ -275,6 +280,7 @@ export function walkFieldDefinitions(fields, profile) {
       } else {
         if (keys.has(key)) at2('duplicate_key', 'error');
         keys.add(key);
+        if (!fieldsByKey.has(key)) fieldsByKey.set(key, field);
         if (at.depth === 0) {
           topKeys.push(key);
           if (globalFieldKeys.has(key))
@@ -438,6 +444,20 @@ export function walkFieldDefinitions(fields, profile) {
           at2('term_when_not_label', 'warning', { type, role: field.role });
         }
       }
+
+      // `defaultFromOption` lets a blank string stand in with its sibling
+      // enum's option word, in the deck language (D130c). Only a string has a
+      // blank to fill.
+      if (
+        field.defaultFromOption !== undefined &&
+        field.defaultFromOption !== null
+      ) {
+        if (type !== 'string') {
+          at2('default_from_option_not_string', 'warning', { type });
+        } else {
+          optionRefs.push({ where, declared: field.defaultFromOption });
+        }
+      }
     });
 
     // A `linkKey` names a field beside the one that declares it — a sibling at
@@ -448,6 +468,26 @@ export function walkFieldDefinitions(fields, profile) {
       if (!isNonEmpty(linkKey) || !reachable.has(linkKey)) {
         add('media_ref_link_key_unknown', 'warning', where, {
           declared: linkKey,
+        });
+      }
+    }
+
+    // The word comes from the option's `copyKey` and from nowhere else, so an
+    // enum whose options do not all carry one would leave some slides blank:
+    // said here, once, instead of a fallback to the editor-language label.
+    for (const { where, declared } of optionRefs) {
+      const target = isNonEmpty(declared) ? fieldsByKey.get(declared) : null;
+      if (!target || target.type !== 'enum') {
+        add('default_from_option_unknown', 'warning', where, { declared });
+        continue;
+      }
+      const missing = (Array.isArray(target.options) ? target.options : [])
+        .filter((o) => !(isPlainObject(o) && isSlideCopyKey(o.copyKey)))
+        .map((o) => (isPlainObject(o) ? String(o.value) : String(o)));
+      if (missing.length) {
+        add('default_from_option_without_copy', 'warning', where, {
+          declared,
+          missing,
         });
       }
     }
@@ -551,6 +591,20 @@ const FINDING_MESSAGES = {
   term_when_not_label: (where, f) =>
     `${where} declares \`termWhen\`, but only a \`string\` field with ` +
     `\`role: 'label'\` names a defined term, so it is ignored.`,
+  default_from_option_not_string: (where, f) =>
+    `${where} declares \`defaultFromOption\` on a \`${f?.detail?.type}\` ` +
+    `field, but only a \`string\` has a blank an option word can fill, so ` +
+    `it is ignored.`,
+  default_from_option_unknown: (where, f) =>
+    `${where} declares \`defaultFromOption\` ` +
+    `${JSON.stringify(f?.detail?.declared)}, which is not an \`enum\` field ` +
+    `beside it, so the field stays blank when it is blank.`,
+  default_from_option_without_copy: (where, f) =>
+    `${where} declares \`defaultFromOption\` ` +
+    `${JSON.stringify(f?.detail?.declared)}, but its options ` +
+    `${(f?.detail?.missing || []).join(', ')} carry no \`copyKey\` the slide ` +
+    `copy knows in every language, so on those the field stays blank — the ` +
+    `option \`label\` is editor copy and never stands in.`,
 };
 
 /**

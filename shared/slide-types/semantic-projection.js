@@ -50,6 +50,11 @@
  *    line are all `string`, and projecting on type alone made them three
  *    anonymous paragraphs. One table maps the role to its element (D128), see
  *    {@link renderTextField} and {@link renderBlocks}.
+ *  - **The deck language is a parameter.** Some of what a slide says is not
+ *    stored: a blank callout label reads as its kind ("Key insight"), a chart
+ *    carries a one-sentence summary. Both come from the slide copy in the
+ *    deck's language, so the caller passes `lang` (the reader resolves it once
+ *    per document) and nothing here reads a language from anywhere else.
  */
 
 import { markdownToSafeHtml, inlineMarkdownToSafeHtml } from '../markdown.js';
@@ -69,6 +74,7 @@ import {
 } from './text-roles.js';
 import { semanticEnumAttrs } from './semantic-enums.js';
 import { resolveItemDefaults } from './item-defaults.js';
+import { optionDefaultText } from './option-default.js';
 import {
   renderUnresolvedSlideSemanticHtml,
   unresolvedSlideHeading,
@@ -164,28 +170,35 @@ function fieldAttr(key) {
  * A slide whose type does not resolve has no declaration to read; it gets the
  * archived-slide placeholder's heading instead (see `unresolved.js`).
  *
+ * The `labelField` value may be a `defaultFromOption` word (D130c): a callout
+ * with no label is named by its kind, in the deck's language, not "Callout".
+ *
  * @param {object} slide
  * @param {object|null|undefined} def - the resolved slide-type definition
- * @param {number} [index] - 0-based slide index, for the final fallback
+ * @param {object} [opts]
+ * @param {number} [opts.index] - 0-based slide index, for the final fallback
+ * @param {string} [opts.lang] - the deck language
  * @returns {{ text: string, visible: boolean, key: string|null, ariaLabel: string }}
  */
-export function slideHeading(slide, def, index = 0) {
+export function slideHeading(slide, def, { index = 0, lang } = {}) {
   if (!def) return { ...unresolvedSlideHeading(slide), ariaLabel: '' };
   const content =
     slide?.content && typeof slide.content === 'object' ? slide.content : {};
   const a11y = str(content.a11yTitle);
 
-  const field = (Array.isArray(def.fields) ? def.fields : []).find(
-    (f) => f?.role === 'heading' && !f.hidden,
-  );
+  const fields = Array.isArray(def.fields) ? def.fields : [];
+  const field = fields.find((f) => f?.role === 'heading' && !f.hidden);
   const title = field ? str(content[field.key]) : '';
   if (title) {
     return { text: title, visible: true, key: field.key, ariaLabel: a11y };
   }
 
+  const labelKey = str(def.labelField);
+  const labelDef = labelKey ? fields.find((f) => f?.key === labelKey) : null;
   const text =
     a11y ||
-    str(content[str(def.labelField)]) ||
+    str(content[labelKey]) ||
+    optionDefaultText(labelDef, fields, content, def.defaults, lang) ||
     str(def.label) ||
     str(slide?.type) ||
     `Slide ${index + 1}`;
@@ -344,6 +357,22 @@ function encodingCaption(keys, visibleByKey, content) {
 }
 
 /**
+ * The sentence a `dataset` type says about its data, in the deck language: the
+ * definition's `datasetSummary(content, { lang })`, or `''` for a type that
+ * declares none. It is type code, like `renderHtml`, because what is worth
+ * saying about a payload depends on what the payload encodes; the projection
+ * only decides where it goes (the table's `<caption>`).
+ * @param {object} def
+ * @param {object} content
+ * @param {string} [lang]
+ * @returns {string}
+ */
+function datasetSummaryText(def, content, lang) {
+  if (typeof def?.datasetSummary !== 'function') return '';
+  return str(def.datasetSummary(content, { lang }));
+}
+
+/**
  * Project a `tabular` type's row array as a real <table> — the shape its
  * structure contract promises ("read the item array as rows and each item's
  * keys as columns").
@@ -486,22 +515,29 @@ function isTextField(field) {
  *
  * `termWhen` is a `{ field, in }` predicate, the same one operator
  * `visibleWhen` reads, so a definition's term is a declaration and not a
- * branch on a type name.
+ * branch on a type name. It marks an authored value only: a blank field that
+ * stands in with its `defaultFromOption` word ("Definition") names no term.
  *
  * @param {object} field
  * @param {object} content - the object the field lives in
  * @param {object} [defaults] - that object's declared defaults
- * @param {{ figcaption?: boolean }} [opts] - render a `caption` as the
+ * @param {object} [opts]
+ * @param {boolean} [opts.figcaption] - render a `caption` as the
  *   `<figcaption>` of the figure beside it
+ * @param {Array<object>} [opts.siblings] - every field beside this one, for
+ *   `defaultFromOption`
+ * @param {string} [opts.lang] - the deck language
  * @returns {string}
  */
 function renderTextField(
   field,
   content,
   defaults,
-  { figcaption = false } = {},
+  { figcaption = false, siblings, lang } = {},
 ) {
-  const v = str(content?.[field.key]);
+  const authored = str(content?.[field.key]);
+  const v =
+    authored || optionDefaultText(field, siblings, content, defaults, lang);
   if (!v) return '';
   const attrs = fieldAttr(field.key);
   const blocks = field.type === 'markdown';
@@ -516,7 +552,9 @@ function renderTextField(
   const cls = ROLE_CLASSES[role] ? ` class="${ROLE_CLASSES[role]}"` : '';
   if (blocks) return `<div${cls}${attrs}>${html}</div>`;
   const term =
-    role === 'label' && predicateHolds(field.termWhen, content, defaults);
+    !!authored &&
+    role === 'label' &&
+    predicateHolds(field.termWhen, content, defaults);
   return `<p${cls}${attrs}>${term ? `<dfn>${html}</dfn>` : html}</p>`;
 }
 
@@ -564,9 +602,16 @@ function soleUncaptionedFigureKey(fields, content) {
  * @param {object} [opts.defaults] - the block's declared defaults
  * @param {string} [opts.headingText] - alt fallback for a figure
  * @param {Map<string, string>} [opts.structured] - pre-rendered html by key
+ * @param {Array<object>} [opts.siblings] - every field the block declares, for
+ *   `defaultFromOption` (the `fields` list is already filtered)
+ * @param {string} [opts.lang] - the deck language
  * @returns {string[]}
  */
-function renderBlocks(fields, content, { defaults, headingText, structured }) {
+function renderBlocks(
+  fields,
+  content,
+  { defaults, headingText, structured, siblings, lang },
+) {
   const figureKey = soleUncaptionedFigureKey(fields, content);
   const captionField = figureKey
     ? fields.find(
@@ -578,7 +623,11 @@ function renderBlocks(fields, content, { defaults, headingText, structured }) {
       )
     : null;
   const figcaption = captionField
-    ? renderTextField(captionField, content, defaults, { figcaption: true })
+    ? renderTextField(captionField, content, defaults, {
+        figcaption: true,
+        siblings,
+        lang,
+      })
     : '';
   const parts = [];
   const footer = [];
@@ -591,6 +640,8 @@ function renderBlocks(fields, content, { defaults, headingText, structured }) {
     }
     const html = renderFieldValue(field, content, {
       defaults,
+      siblings,
+      lang,
       headingText,
       figcaption: field.key === figureKey ? figcaption : '',
       nameText:
@@ -634,8 +685,9 @@ function renderBlocks(fields, content, { defaults, headingText, structured }) {
  * @param {string} [itemLabelField] - declared heading sub-field, if any
  * @param {object} [itemDefaults] - the field's `itemDefaults` skeleton, the
  *   declared default an item's own `semantic` enum resolves through
+ * @param {string} [lang] - the deck language
  */
-function renderItemBlock(item, itemFields, itemLabelField, itemDefaults) {
+function renderItemBlock(item, itemFields, itemLabelField, itemDefaults, lang) {
   if (!item || typeof item !== 'object' || !Array.isArray(itemFields))
     return '';
   const consumed = imageConsumedKeys(itemFields, item);
@@ -668,7 +720,7 @@ function renderItemBlock(item, itemFields, itemLabelField, itemDefaults) {
         (f) => f && f.key !== headingKey && !f.hidden && !consumed.has(f.key),
       ),
       item,
-      { defaults: itemDefaults, headingText },
+      { defaults: itemDefaults, headingText, siblings: itemFields, lang },
     ),
   );
   const inner = parts.filter(Boolean).join('\n');
@@ -739,6 +791,8 @@ function renderMediaRef(field, content) {
  * @param {object} content
  * @param {object} [opts]
  * @param {object} [opts.defaults] - `content`'s declared defaults
+ * @param {Array<object>} [opts.siblings] - the fields beside this one
+ * @param {string} [opts.lang] - the deck language
  * @param {string} [opts.headingText] - alt fallback for an image
  * @param {string} [opts.figcaption] - a ready `<figcaption>` for an image
  * @param {string} [opts.nameText] - the caption text, a last alt fallback
@@ -746,7 +800,14 @@ function renderMediaRef(field, content) {
 function renderFieldValue(
   field,
   content,
-  { defaults, headingText = '', figcaption = '', nameText = '' } = {},
+  {
+    defaults,
+    siblings,
+    lang,
+    headingText = '',
+    figcaption = '',
+    nameText = '',
+  } = {},
 ) {
   if (!field || field.hidden) return '';
   if (NON_CONTENT_GLOBAL_KEYS.has(field.key)) return '';
@@ -763,7 +824,7 @@ function renderFieldValue(
       // Markdown may be several blocks, so the field is one wrapper around
       // them: one marked element per field, whatever the author wrote. The
       // role decides which element (D128).
-      return renderTextField(field, content, defaults);
+      return renderTextField(field, content, defaults, { siblings, lang });
     case 'code': {
       const v = str(value);
       return v
@@ -820,6 +881,7 @@ function renderFieldValue(
             field.itemFields,
             field.itemLabelField,
             resolveItemDefaults(field),
+            lang,
           );
           if (!li) return '';
           const rel = relationOf(item);
@@ -853,13 +915,14 @@ function renderFieldValue(
  *
  * @param {object} slide
  * @param {object} def - the resolved slide-type definition
- * @param {{ headingKey?: string|null, headingText?: string }} [opts]
+ * @param {{ headingKey?: string|null, headingText?: string, lang?: string }} [opts]
+ *   `lang` is the deck language, for the copy a slide shows without storing it
  * @returns {string} inner HTML for the slide section
  */
 export function renderSlideBodySemanticHtml(
   slide,
   def,
-  { headingKey = null, headingText = '' } = {},
+  { headingKey = null, headingText = '', lang } = {},
 ) {
   const content =
     slide?.content && typeof slide.content === 'object' ? slide.content : {};
@@ -907,15 +970,19 @@ export function renderSlideBodySemanticHtml(
       if (countKey) consumed.add(countKey);
       continue;
     }
-    // `dataset`: decode the payload to rows and name the encoding that is lost.
+    // `dataset`: decode the payload to rows, say what they show (the type's
+    // own `datasetSummary`, the sentence its canvas gives assistive tech) and
+    // name the encoding that is lost.
     if (field.type === 'csv' && Array.isArray(field.encodingKeys)) {
+      const caption = [
+        datasetSummaryText(def, content, lang),
+        encodingCaption(field.encodingKeys, visibleByKey, content),
+      ]
+        .filter(Boolean)
+        .join(' ');
       structuredHtmlByKey.set(
         field.key,
-        renderCsvTable(
-          content?.[field.key],
-          encodingCaption(field.encodingKeys, visibleByKey, content),
-          fieldAttr(field.key),
-        ),
+        renderCsvTable(content?.[field.key], caption, fieldAttr(field.key)),
       );
       for (const key of field.encodingKeys) consumed.add(key);
     }
@@ -930,7 +997,13 @@ export function renderSlideBodySemanticHtml(
           (structuredHtmlByKey.has(f.key) || !consumed.has(f.key)),
       ),
       content,
-      { defaults, headingText, structured: structuredHtmlByKey },
+      {
+        defaults,
+        headingText,
+        structured: structuredHtmlByKey,
+        siblings: def?.fields,
+        lang,
+      },
     ),
   );
   return parts.filter(Boolean).join('\n');
@@ -960,16 +1033,18 @@ export function renderSlideBodySemanticHtml(
  *
  * @param {object} slide
  * @param {object|null|undefined} def - the resolved slide-type definition
- * @param {{ index?: number }} [opts] - 0-based position in the deck
+ * @param {{ index?: number, lang?: string }} [opts] - 0-based position in the
+ *   deck, and the deck language
  * @returns {string}
  */
-export function renderSlideSectionHtml(slide, def, { index = 0 } = {}) {
+export function renderSlideSectionHtml(slide, def, { index = 0, lang } = {}) {
   const n = index + 1;
-  const heading = slideHeading(slide, def, index);
+  const heading = slideHeading(slide, def, { index, lang });
   const inner = def
     ? renderSlideBodySemanticHtml(slide, def, {
         headingKey: heading.key,
         headingText: heading.text,
+        lang,
       })
     : renderUnresolvedSlideSemanticHtml(slide, { headingKey: heading.key });
   const titleId = `slide-${n}-title`;

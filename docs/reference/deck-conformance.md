@@ -206,6 +206,8 @@ than layout (a callout's kind, a matrix cell's tone), so it is published as a
 projected block also names its field with `data-field`, so a consumer of the
 HTML addresses content by the key the definition declares, not by position.
 
+One part of the `dataset` caption is not a declaration: the sentence that sums the data up ("Line chart with 5 points. Min: 25. Max: 85."). What is worth saying about a payload depends on what it encodes, so it is the type's own `datasetSummary(content, { lang })` function, the same one its canvas reads into the chart's screen-reader text. A second reader that does not run type code captions with the encoding alone.
+
 **What the worked example produces is pinned.** Because the projection is
 derived from `fields[]`, a field added, renamed or re-typed moves what the
 reader calls the heading of a slide without anything saying so — and the same

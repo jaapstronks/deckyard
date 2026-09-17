@@ -26,6 +26,7 @@ import { initSanitizer } from '../shared/sanitize.js';
 import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 import { renderSlideHtml } from '../shared/slide-types/presentation.js';
 import { SLIDE_COPY } from '../shared/slide-types/slide-copy.js';
+import { ADMONITION_META } from '../shared/slide-types/admonitions.js';
 import {
   CALLOUT_VARIANTS,
   DEFAULT_CALLOUT_VARIANT,
@@ -65,6 +66,14 @@ describe('the variant vocabulary is one list', () => {
     // when it declares a label), so this is the seam where the two copies of
     // the vocabulary could drift apart.
     assert.deepEqual(variantOptionValues(), [...CALLOUT_VARIANTS]);
+  });
+
+  it('each option names the eyebrow copy the canvas reads (copyKey)', () => {
+    // The reader's blank-label word (`defaultFromOption`) reads `copyKey`; the
+    // canvas reads the admonition table. One source, pinned here.
+    for (const option of DEF.fields.find((f) => f.key === 'variant').options) {
+      assert.equal(option.copyKey, ADMONITION_META[option.value].copyKey);
+    }
   });
 
   it('the default variant is one of them, and is what defaults store', () => {
@@ -150,6 +159,19 @@ describe('the definition variant is real HTML semantics', () => {
     });
     assert.match(html, /<dfn class="callout-label"[^>]*>Lead time<\/dfn>/);
     assert.equal(html.match(/<dfn/g).length, 1);
+  });
+
+  it('a blank definition label is the kind word, not a term', () => {
+    // The fallback "Definition" names the kind; it defines nothing, and the
+    // reader draws the same line (termWhen reads the authored value only).
+    const html = render({ variant: 'definition', body: 'x' });
+    assert.ok(!html.includes('<dfn'), html);
+    assert.match(
+      html,
+      new RegExp(
+        `<span class="callout-label"[^>]*>${SLIDE_COPY['en-GB'].admonitionDefinition}</span>`,
+      ),
+    );
   });
 
   it('no other variant emits a <dfn>', () => {

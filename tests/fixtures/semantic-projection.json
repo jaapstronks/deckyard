@@ -44,14 +44,16 @@
   "callout-slide": {
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"callout-slide\" data-variant=\"insight\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\" class=\"reader-sr-only\">Callout</h2>",
+      "<h2 id=\"slide-1-title\" class=\"reader-sr-only\">Kernpunt</h2>",
+      "<p class=\"reader-label\" data-field=\"label\">Kernpunt</p>",
       "<div data-field=\"body\"><p>Teams that ship weekly find integration bugs <strong>six times</strong> earlier than teams that ship quarterly.</p></div>",
       "<footer><p data-field=\"source\">DORA, State of DevOps 2024</p></footer>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"callout-slide\" data-variant=\"insight\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\" class=\"reader-sr-only\">Callout</h2>",
+      "<h2 id=\"slide-1-title\" class=\"reader-sr-only\">Key insight</h2>",
+      "<p class=\"reader-label\" data-field=\"label\">Key insight</p>",
       "<div data-field=\"body\"><p>Teams that ship weekly find integration bugs <strong>six times</strong> earlier than teams that ship quarterly.</p></div>",
       "<footer><p data-field=\"source\">DORA, State of DevOps 2024</p></footer>",
       "</section>"
@@ -371,13 +373,13 @@
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"chart-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" data-field=\"title\">Growth Metrics</h2>",
-      "<table class=\"reader-table\" data-field=\"data\"><caption>Chart type: line.</caption><thead><tr><th scope=\"col\">Month</th><th scope=\"col\">Sales</th><th scope=\"col\">Target</th></tr></thead><tbody><tr><td>Jan</td><td>30</td><td>25</td></tr><tr><td>Feb</td><td>45</td><td>40</td></tr><tr><td>Mar</td><td>55</td><td>50</td></tr><tr><td>Apr</td><td>70</td><td>60</td></tr><tr><td>May</td><td>85</td><td>75</td></tr></tbody></table>",
+      "<table class=\"reader-table\" data-field=\"data\"><caption>Lijndiagram met 5 punten. Min: 25. Max: 85. Chart type: line.</caption><thead><tr><th scope=\"col\">Month</th><th scope=\"col\">Sales</th><th scope=\"col\">Target</th></tr></thead><tbody><tr><td>Jan</td><td>30</td><td>25</td></tr><tr><td>Feb</td><td>45</td><td>40</td></tr><tr><td>Mar</td><td>55</td><td>50</td></tr><tr><td>Apr</td><td>70</td><td>60</td></tr><tr><td>May</td><td>85</td><td>75</td></tr></tbody></table>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"chart-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" data-field=\"title\">Growth Metrics</h2>",
-      "<table class=\"reader-table\" data-field=\"data\"><caption>Chart type: line.</caption><thead><tr><th scope=\"col\">Month</th><th scope=\"col\">Sales</th><th scope=\"col\">Target</th></tr></thead><tbody><tr><td>Jan</td><td>30</td><td>25</td></tr><tr><td>Feb</td><td>45</td><td>40</td></tr><tr><td>Mar</td><td>55</td><td>50</td></tr><tr><td>Apr</td><td>70</td><td>60</td></tr><tr><td>May</td><td>85</td><td>75</td></tr></tbody></table>",
+      "<table class=\"reader-table\" data-field=\"data\"><caption>Line chart with 5 points. Min: 25. Max: 85. Chart type: line.</caption><thead><tr><th scope=\"col\">Month</th><th scope=\"col\">Sales</th><th scope=\"col\">Target</th></tr></thead><tbody><tr><td>Jan</td><td>30</td><td>25</td></tr><tr><td>Feb</td><td>45</td><td>40</td></tr><tr><td>Mar</td><td>55</td><td>50</td></tr><tr><td>Apr</td><td>70</td><td>60</td></tr><tr><td>May</td><td>85</td><td>75</td></tr></tbody></table>",
       "</section>"
     ]
   },

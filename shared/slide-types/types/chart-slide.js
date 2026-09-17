@@ -108,8 +108,14 @@ export default {
       // encoding is named. These siblings describe it; the projection captions
       // the decoded table with their declared labels instead of dropping them
       // in as anonymous paragraphs. `visibleWhen` still applies, so a pie chart
-      // names no axes.
-      encodingKeys: ['chartType', 'xLabel', 'yLabel'],
+      // names no axes and only a line chart names its series.
+      encodingKeys: [
+        'chartType',
+        'xLabel',
+        'yLabel',
+        'series1Label',
+        'series2Label',
+      ],
     },
     // The per-type display toggles, two-up where a chart type has two (see
     // form-layout.js).
@@ -256,6 +262,17 @@ export default {
     pieLabelMode: '%',
     background: 'lime',
   },
+  // The chart's text alternative, in the deck's language. The canvas reads it
+  // into its sr-only block below; the reader captions the decoded data table
+  // with it (semantic-projection.js), so both say the same sentence.
+  datasetSummary: (content, { lang } = {}) =>
+    chartSummary(
+      parseChartData({
+        chartType: String(content?.chartType || 'bar'),
+        data: content?.data || '',
+      }),
+      lang,
+    ),
   renderHtml: (content, slide, ctx) => {
     const bg = bgClass(content?.background);
     const copy = getSlideCopy(ctx?.lang);
@@ -395,7 +412,7 @@ export default {
       svg = chartErrorHtml(['Onbekend chart type.']);
     }
 
-    const desc = chartSummary(parsed) || '';
+    const desc = chartSummary(parsed, ctx?.lang);
     const a11yTitle = title || 'Chart';
 
     // Note: we keep SVG inline for export safety.

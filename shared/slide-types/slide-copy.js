@@ -51,8 +51,14 @@ export const SLIDE_COPY = {
     admonitionNote: 'Noot',
     admonitionTip: 'Tip',
 
-    // Chart slide
+    // Chart slide. The summary is the chart's text alternative: the canvas
+    // puts it in its sr-only block, the reader in the data table's <caption>.
     chartLegendLabel: 'Legenda',
+    chartKindBar: 'Staafdiagram',
+    chartKindPie: 'Cirkeldiagram',
+    chartKindLine: 'Lijndiagram',
+    chartSummaryTop: '{kind} met {count} punten. Hoogste: {label} ({value}).',
+    chartSummaryRange: '{kind} met {count} punten. Min: {min}. Max: {max}.',
 
     // Agenda/Timeline slide
     timelineLabel: 'Tijdlijn',
@@ -99,8 +105,13 @@ export const SLIDE_COPY = {
     admonitionNote: 'Note',
     admonitionTip: 'Tip',
 
-    // Chart slide
+    // Chart slide — see the note on the Dutch table above.
     chartLegendLabel: 'Legend',
+    chartKindBar: 'Bar chart',
+    chartKindPie: 'Pie chart',
+    chartKindLine: 'Line chart',
+    chartSummaryTop: '{kind} with {count} points. Highest: {label} ({value}).',
+    chartSummaryRange: '{kind} with {count} points. Min: {min}. Max: {max}.',
 
     // Agenda/Timeline slide
     timelineLabel: 'Timeline',
