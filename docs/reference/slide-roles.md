@@ -162,6 +162,7 @@ size layer is finer-grained where the affordance layer does not need to be:
 | `caption`                      | caption                                                                         |
 | `label`                        | label                                                                           |
 | `attribution`                  | caption or label (a byline, source or meta line)                                |
+| `aside`                        | body (the inset's own scale; its eyebrow is a label)                            |
 
 ## The card pattern
 

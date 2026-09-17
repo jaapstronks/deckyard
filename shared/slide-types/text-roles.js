@@ -22,7 +22,7 @@
  * field becomes in the reader document (D128) — `quote` a `<blockquote>`,
  * `attribution` (a name, a role, a source, a byline) a `<p>` in the block's
  * one `<footer>`, `caption` a `<figcaption>` beside a figure, `label` an
- * eyebrow. One declaration carries both, because the style affordance and the
+ * eyebrow, `aside` an `<aside>` that comments on the body beside it. One declaration carries both, because the style affordance and the
  * document element are both consequences of what the text means; a second
  * vocabulary for the reader would be two answers to one question.
  *
@@ -48,12 +48,13 @@ export const TEXT_ROLES = [
   'caption',
   'label',
   'attribution',
+  'aside',
 ];
 
 /**
  * Roles whose text is its own element in the reader document (D128): a
  * `<blockquote>`, a `<figcaption>` or caption line, an eyebrow, a line in the
- * `<footer>`. Such a field never heads an item — a quote or a byline promoted
+ * `<footer>`, an `<aside>`. Such a field never heads an item — a quote or a byline promoted
  * to the item's `<h3>` loses exactly the element its role asks for — so the
  * projection and the field walk's `headableKeys` read this one set.
  */
@@ -62,6 +63,7 @@ export const DOCUMENT_ELEMENT_ROLES = new Set([
   'caption',
   'label',
   'attribution',
+  'aside',
 ]);
 
 /**
@@ -109,6 +111,7 @@ export const ROLE_AFFORDANCES = {
   caption: { align: ALL_ALIGNS, color: true, size: true },
   label: { align: ALL_ALIGNS, color: true, size: true },
   attribution: { align: ALL_ALIGNS, color: true, size: true },
+  aside: { align: ALL_ALIGNS, color: true, size: true },
 };
 
 /**

@@ -32,8 +32,8 @@ paired with a `margin-inline` that follows the effective alignment.
 ### `role` — what kind of text is this?
 
 `shared/slide-types/text-roles.js`. Intrinsic to the text, reusable across
-types, a closed vocabulary of seven (`heading`, `prose`, `list-item`, `quote`,
-`caption`, `label`, `attribution`). It answers which style options are _meaningful_: a list
+types, a closed vocabulary of eight (`heading`, `prose`, `list-item`, `quote`,
+`caption`, `label`, `attribution`, `aside`). It answers which style options are _meaningful_: a list
 item sits next to a bullet marker, so block alignment would detach the text from
 its marker — `list-item` therefore offers no alignment at all.
 
@@ -45,9 +45,10 @@ without it gets a hidden name instead (D129, `reflowable-html-export.md`).
 That is the role's **second reader**, and it is not limited to the heading: the
 reader projection maps every role to an element (D128) — `quote` a
 `<blockquote>`, `attribution` a line in the block's `<footer>`, `caption` a
-`<figcaption>`, `label` an eyebrow. So a role is declared where the text _is_
+`<figcaption>`, `label` an eyebrow, `aside` an `<aside>`. So a role is declared where the text _is_
 one of those, even when its affordances equal the default: `attribution` offers
-exactly what `prose` offers, and exists because a byline is not body text.
+exactly what `prose` offers, and exists because a byline is not body text;
+`aside` likewise, because an inset comments on the body instead of being it.
 
 ### `defaultAlign` — what is it aligned at right now?
 

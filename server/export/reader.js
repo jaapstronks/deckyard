@@ -96,6 +96,11 @@ body {
 .reader-slide footer { font-size: 0.9rem; opacity: 0.8; }
 .reader-slide footer p { margin: 0.15rem 0; }
 .reader-slide blockquote p { margin: 0.25rem 0; }
+.reader-slide aside {
+  margin: 0.75rem 0; padding: 0.4rem 0.9rem;
+  border: 1px solid rgba(0,0,0,0.15); border-radius: 6px;
+}
+.reader-slide aside .reader-label { margin: 0 0 0.2rem; }
 ul.reader-items { list-style: none; padding-left: 0; }
 ol.reader-items { list-style: decimal; padding-left: 1.5rem; }
 .reader-item { margin: 0.75rem 0; padding-left: 0.9rem; border-left: 3px solid rgba(0,0,0,0.12); }

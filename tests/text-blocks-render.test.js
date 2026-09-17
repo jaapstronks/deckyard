@@ -326,3 +326,30 @@ describe('text-blocks legacy mirror stays frozen at 3 (A0.4)', () => {
     assert.doesNotMatch(html, /Ghost/);
   });
 });
+
+describe('text-blocks row headings (B299)', () => {
+  it('the first row draws its heading like every other row', () => {
+    const html = render({
+      ...ARRAY_CONTENT,
+      rows: [
+        { ...ARRAY_CONTENT.rows[0], title: 'First row' },
+        ARRAY_CONTENT.rows[1],
+      ],
+    });
+    assert.match(
+      html,
+      /<h3 class="text-blocks-row-title text-blocks-step" data-inline-field="rows\.0\.title" dir="auto">First row<\/h3>/,
+    );
+    assert.match(
+      html,
+      /data-inline-field="rows\.1\.title" dir="auto">Second row</,
+    );
+  });
+
+  it('a row without a heading draws none', () => {
+    assert.doesNotMatch(
+      render(ARRAY_CONTENT),
+      /data-inline-field="rows\.0\.title"/,
+    );
+  });
+});
