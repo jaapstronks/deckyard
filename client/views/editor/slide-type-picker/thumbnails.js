@@ -14,6 +14,15 @@ import { schematicFor } from '../slide-type-schematics.js';
 import { SLIDE_CANVAS_WIDTH } from './data.js';
 import { h } from '../../../lib/dom.js';
 
+// Where a tile's thumbnail content comes from, stamped on the wrap as
+// `data-thumb-source`. A `type` tile shows its type's sample (or a schematic,
+// per the view mode, on the preview surface); a `library` tile shows the saved
+// slide it was built from and follows neither control.
+export const THUMB_SOURCE_TYPE = 'type';
+export const THUMB_SOURCE_LIBRARY = 'library';
+// The tiles the view-mode and preview-surface controls re-render.
+export const TYPE_THUMB_SELECTOR = `.ps-type-thumb.thumb[data-thumb-source="${THUMB_SOURCE_TYPE}"]`;
+
 // Scale a rendered thumbnail's slide to exactly fill its (fluid) tile.
 export const applyThumbScale = (wrap) => {
   const w = wrap.clientWidth;
