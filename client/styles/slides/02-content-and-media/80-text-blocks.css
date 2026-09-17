@@ -22,7 +22,7 @@
   font-synthesis: none;
   margin: 0;
 }
-.slide-text-blocks .header .subtitle {
+.slide-text-blocks .header .subheading {
   margin: var(--slide-space-3) 0 0;
   font-size: var(--slide-text-md);
   line-height: var(--slide-leading-snug);
@@ -32,12 +32,12 @@
 /* Target the title directly to override the base h2 alignment; auto margins
    centre the subheading's capped box as well as its text. */
 .slide-text-blocks .header .title,
-.slide-text-blocks .header .subtitle {
+.slide-text-blocks .header .subheading {
   margin-inline: auto;
   text-align: center;
 }
 .slide-text-blocks.is-align-left .header .title,
-.slide-text-blocks.is-align-left .header .subtitle {
+.slide-text-blocks.is-align-left .header .subheading {
   margin-inline: 0;
   text-align: start;
 }
