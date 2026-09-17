@@ -44,11 +44,7 @@ belongs on the slide. If it is a discrete choice, it belongs in the inspector.
 
 ## Per surface, in short
 
-**Canvas** carries direct manipulation only: selection, dragging a crop-focus,
-`contenteditable` text in the slide itself, and a floating selection toolbar for
-what applies to the _selection_ (bold, italic, link, list). Nothing on the
-canvas covers the content the user is judging — replacement is a double-click on
-the element, not a button sitting over it.
+**Canvas** carries direct manipulation only: selection, dragging a crop-focus, `contenteditable` text in the slide itself, and a floating formatting toolbar for the caret or selection (bold, italic, link, list). The toolbar appears throughout a rich edit; linking requires selected text. Nothing on the canvas covers the content the user is judging: replacement is a double-click on the element, not a button sitting over it.
 
 **Inspector** carries discrete choices and unpointable metadata: fit mode,
 alignment, text-size scale, colour override, alt text, caption, source, delete.

@@ -154,14 +154,6 @@ export default {
       required: false,
       maxLength: 200,
     },
-    {
-      key: 'bottomSubheading',
-      label: 'Bottom subheading',
-      labelKey: 'editor.slideField.bottomSubheading.label',
-      type: 'string',
-      required: false,
-      maxLength: 200,
-    },
 
     // New rows[] format (preferred for AI generation)
     {
@@ -231,17 +223,6 @@ export default {
           ],
         },
         {
-          key: 'arrow',
-          label: 'Arrow after row',
-          type: 'enum',
-          required: false,
-          options: [
-            { value: 'none', label: 'None' },
-            { value: 'down', label: 'Down ↓' },
-            { value: 'up', label: 'Up ↑' },
-          ],
-        },
-        {
           key: 'blocks',
           label: 'Blocks',
           type: 'items',
@@ -270,7 +251,27 @@ export default {
             },
           ],
         },
+        {
+          key: 'arrow',
+          label: 'Arrow after row',
+          type: 'enum',
+          required: false,
+          options: [
+            { value: 'none', label: 'None' },
+            { value: 'down', label: 'Down ↓' },
+            { value: 'up', label: 'Up ↑' },
+          ],
+        },
       ],
+    },
+
+    {
+      key: 'bottomSubheading',
+      label: 'Bottom subheading',
+      labelKey: 'editor.slideField.bottomSubheading.label',
+      type: 'string',
+      required: false,
+      maxLength: 200,
     },
 
     // LEGACY: numbered row/block fields (row1Count, row1Block1Title, etc.)

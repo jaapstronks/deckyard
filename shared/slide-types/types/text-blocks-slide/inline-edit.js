@@ -14,14 +14,11 @@ import { HEADER_GHOSTS, HEADER_TEXT } from '../../inline-edit-common.js';
 /** @type {Object} InlineDescriptor for text-blocks-slide. */
 export const inlineEdit = {
   ghosts: HEADER_GHOSTS,
-  // Row titles render for rows 2+ only (row 1 never has one); the ghost chip
-  // sits at the row's top-left, where the spawned <h3> will appear.
   itemGhosts: [
     {
       list: 'rows',
       field: 'title',
       item: '.text-blocks-row',
-      minIndex: 1,
       chip: 'top-start',
     },
   ],

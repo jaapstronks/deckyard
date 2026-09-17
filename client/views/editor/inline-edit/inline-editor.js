@@ -412,8 +412,7 @@ export function createInlineEditor({
     el.addEventListener('input', onEditInput);
     el.addEventListener('paste', onRichPaste);
     el.addEventListener('blur', onEditBlur);
-    // Selection-bound formatting (bold/italic/link/list) above the selection.
-    // Rich edits only: plain-text fields cannot store formatting.
+    // Plain-text fields cannot store formatting.
     editing.toolbar = createSelectionToolbar({
       layer: overlay.layer,
       thumb,
@@ -555,7 +554,7 @@ export function createInlineEditor({
    * description) whose element the renderer omits when empty. For each rendered
    * item (identified by `data-inline-item-index`), if that item's subfield is
    * empty, a chip is anchored to the item element.
-   * Shape: `{ list, field, item, within?, pos?, chip?, minIndex? }` where
+   * Shape: `{ list, field, item, within?, pos?, chip? }` where
    * `list` is the primary collection key (aliases resolved via the cards
    * config), `item` the item-element selector, and `within` an optional inner
    * element to spawn into.
@@ -570,9 +569,6 @@ export function createInlineEditor({
       for (const itemEl of root.querySelectorAll(g.item)) {
         const idx = Number(itemEl.getAttribute('data-inline-item-index'));
         if (!Number.isInteger(idx) || !arr[idx]) continue;
-        // Some subfields only exist from a given index on (a text-blocks row
-        // title renders for rows 2+ only); `minIndex` skips the earlier items.
-        if (Number.isInteger(g.minIndex) && idx < g.minIndex) continue;
         const path = `${listKey}.${idx}.${g.field}`;
         if (!isEmptyValue(getByPath(slide.content, path))) continue;
         const meta = fieldMetaForPath(def, `${listKey}.0.${g.field}`);
