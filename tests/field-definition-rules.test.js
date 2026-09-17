@@ -31,6 +31,7 @@ import assert from 'node:assert/strict';
 
 import {
   describeFieldFinding,
+  headableKeys,
   walkFieldDefinitions,
 } from '../shared/slide-types/field-definitions.js';
 import {
@@ -641,4 +642,55 @@ test('`semantic` is a flag on an enum; anything else warns, and a DB row may not
   assert.equal(stored.ok, false);
   assert.equal(stored.problem.code, 'unknown_property');
   assert.equal(stored.problem.detail.property, 'semantic');
+});
+
+test('`termWhen` is read on a label string only; anywhere else it warns', () => {
+  const when = { field: 'variant', in: ['definition'] };
+  const findings = walkFieldDefinitions(
+    [
+      { key: 'variant', type: 'enum', label: 'Kind', options: ['definition'] },
+      {
+        key: 'label',
+        type: 'string',
+        label: 'Term',
+        role: 'label',
+        termWhen: when,
+      },
+      { key: 'body', type: 'string', label: 'Body', termWhen: when },
+      {
+        key: 'note',
+        type: 'markdown',
+        label: 'Note',
+        role: 'label',
+        termWhen: when,
+      },
+    ],
+    FILE_JS,
+  ).findings;
+  assert.deepEqual(
+    findings.map((f) => [f.key, f.code, f.severity]),
+    [
+      ['body', 'term_when_not_label', 'warning'],
+      ['note', 'term_when_not_label', 'warning'],
+    ],
+  );
+  for (const f of findings)
+    assert.notEqual(describeFieldFinding(f), 'Invalid field definitions.');
+});
+
+test('a sub-field whose role is its own element cannot head an item (D128)', () => {
+  assert.deepEqual(
+    [
+      ...headableKeys([
+        { key: 'quote', type: 'string', role: 'quote' },
+        { key: 'name', type: 'string', role: 'attribution' },
+        { key: 'byline', type: 'string', role: 'caption' },
+        { key: 'kicker', type: 'string', role: 'label' },
+        { key: 'title', type: 'string', role: 'heading' },
+        { key: 'text', type: 'string', role: 'list-item' },
+        { key: 'plain', type: 'string' },
+      ]),
+    ],
+    ['title', 'text', 'plain'],
+  );
 });

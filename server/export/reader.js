@@ -90,6 +90,12 @@ body {
   border-left: 3px solid rgba(0,0,0,0.2); opacity: 0.9;
 }
 .reader-summary { opacity: 0.85; font-style: italic; }
+.reader-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.7; }
+.reader-label dfn { font-style: normal; }
+.reader-caption { font-size: 0.9rem; opacity: 0.75; }
+.reader-slide footer { font-size: 0.9rem; opacity: 0.8; }
+.reader-slide footer p { margin: 0.15rem 0; }
+.reader-slide blockquote p { margin: 0.25rem 0; }
 .reader-items { list-style: none; padding-left: 0; }
 .reader-item { margin: 0.75rem 0; padding-left: 0.9rem; border-left: 3px solid rgba(0,0,0,0.12); }
 .reader-figure { margin: 0.75rem 0; }

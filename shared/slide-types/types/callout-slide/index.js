@@ -61,6 +61,9 @@ export default {
       // an author gets the right word for free and overrides it when the
       // callout names something more specific — a definition's term, say.
       role: 'label',
+      // On a definition the label IS the term being defined, so the reader
+      // wraps it in <dfn>; the sibling enum says when, not a branch on a name.
+      termWhen: { field: 'variant', in: ['definition'] },
     },
     {
       key: 'body',
@@ -78,7 +81,7 @@ export default {
       type: 'string',
       required: false,
       maxLength: 160,
-      role: 'caption',
+      role: 'attribution',
     },
     BACKGROUND_FIELD,
   ],

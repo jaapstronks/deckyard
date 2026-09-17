@@ -120,6 +120,7 @@ export default {
       required: false,
       maxLength: 100,
       placeholder: 'Optional badge text',
+      role: 'label',
     },
     {
       key: 'variant',

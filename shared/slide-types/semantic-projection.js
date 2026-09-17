@@ -45,6 +45,11 @@
  *    slide's whole content; printing it prints an id at the reader. So the
  *    field declares what it refers to and the projection renders a stand-in
  *    (D82). See {@link renderMediaRef}.
+ *  - **`role` is honoured.** The field vocabulary says what shape a value has;
+ *    the role says what the text *is*. A quote, the name under it and a source
+ *    line are all `string`, and projecting on type alone made them three
+ *    anonymous paragraphs. One table maps the role to its element (D128), see
+ *    {@link renderTextField} and {@link renderBlocks}.
  */
 
 import { markdownToSafeHtml, inlineMarkdownToSafeHtml } from '../markdown.js';
@@ -56,7 +61,12 @@ import {
   normalizeAuthoredUrl,
 } from './helpers.js';
 import { slideStructure } from './structure.js';
-import { isFieldVisible } from './field-visibility.js';
+import { isFieldVisible, predicateHolds } from './field-visibility.js';
+import {
+  TEXT_ROLES,
+  DEFAULT_TEXT_ROLE,
+  DOCUMENT_ELEMENT_ROLES,
+} from './text-roles.js';
 import { semanticEnumAttrs } from './semantic-enums.js';
 import { resolveItemDefaults } from './item-defaults.js';
 import {
@@ -185,13 +195,23 @@ export function slideHeading(slide, def, index = 0) {
 /**
  * Render one image as a <figure> with a resolved alt + optional caption.
  * `attrs` is spliced into the start tag (the `data-field` marker).
+ * `figcaption` is a ready `<figcaption>` from a `caption`-role field beside
+ * the figure (see {@link renderBlocks}); it replaces the sibling-key caption,
+ * which the block only hands over when there is none.
  */
-function renderFigure(src, { alt, decorative, caption }, attrs = '') {
+function renderFigure(
+  src,
+  { alt, decorative, caption },
+  attrs = '',
+  figcaption = '',
+) {
   const url = normalizeUrl(src);
   if (!url) return '';
   const altAttr = decorative ? '' : escapeHtml(alt || '');
   const ariaHidden = decorative ? ' aria-hidden="true"' : '';
-  const fig = caption ? `<figcaption>${escapeHtml(caption)}</figcaption>` : '';
+  const fig =
+    figcaption ||
+    (caption ? `<figcaption>${escapeHtml(caption)}</figcaption>` : '');
   return `<figure class="reader-figure"${attrs}><img src="${escapeHtml(url)}" alt="${altAttr}"${ariaHidden} loading="lazy" />${fig}</figure>`;
 }
 
@@ -240,8 +260,11 @@ function imageConsumedKeys(fields, obj) {
 /**
  * Resolve alt text / decorative state / caption for an image field, using the
  * sibling-key conventions (`alt`, `<key>Alt`, `imageRole`, `caption`).
+ * `nameText` is a last named fallback before the filename guess: the
+ * `caption`-role text that captions this figure, which on a logo is the only
+ * name the item has (B297 owns the ladder itself).
  */
-function resolveImageA11y(fieldKey, content, headingText) {
+function resolveImageA11y(fieldKey, content, headingText, nameText = '') {
   const explicit =
     str(content[`${fieldKey}Alt`]) ||
     str(content.alt) ||
@@ -254,7 +277,7 @@ function resolveImageA11y(fieldKey, content, headingText) {
     : pickAltText({
         explicit,
         src: content[fieldKey],
-        fallbacks: [caption, headingText],
+        fallbacks: [caption, headingText, nameText],
       });
   return { alt, decorative, caption };
 }
@@ -425,6 +448,170 @@ function renderItemList(blocks, ordered = false, attrs = '') {
 }
 
 /**
+ * The declared text role of a field, or the default (`prose`).
+ * @param {{role?: string}} field
+ * @returns {string}
+ */
+function textRole(field) {
+  return TEXT_ROLES.includes(field?.role) ? field.role : DEFAULT_TEXT_ROLE;
+}
+
+/** Style hooks for the roles that stay a plain block with a class. */
+const ROLE_CLASSES = { caption: 'reader-caption', label: 'reader-label' };
+
+/**
+ * Is this a text field the role table applies to?
+ * @param {{type?: string}} field
+ * @returns {boolean}
+ */
+function isTextField(field) {
+  return field?.type === 'string' || field?.type === 'markdown';
+}
+
+/**
+ * Project a `string` or `markdown` field through the role table (D128).
+ *
+ * One table, one element per role; a string is one `<p>`, a markdown value is
+ * its own blocks in one wrapper, and the role decides the wrapper:
+ *
+ *   quote        `<blockquote data-field>` around the paragraph(s)
+ *   caption      `<p class="reader-caption">` (or the figure's `<figcaption>`,
+ *                when the block has one figure: {@link renderBlocks})
+ *   label        `<p class="reader-label">`, the eyebrow; `<dfn>` around the
+ *                text while its `termWhen` predicate holds
+ *   attribution  a plain `<p>`, gathered into the block's one `<footer>` by
+ *                {@link renderBlocks}
+ *   prose, list-item, heading  a plain `<p>` (a filled heading field is the
+ *                section's `<h2>` and never reaches this)
+ *
+ * `termWhen` is a `{ field, in }` predicate, the same one operator
+ * `visibleWhen` reads, so a definition's term is a declaration and not a
+ * branch on a type name.
+ *
+ * @param {object} field
+ * @param {object} content - the object the field lives in
+ * @param {object} [defaults] - that object's declared defaults
+ * @param {{ figcaption?: boolean }} [opts] - render a `caption` as the
+ *   `<figcaption>` of the figure beside it
+ * @returns {string}
+ */
+function renderTextField(
+  field,
+  content,
+  defaults,
+  { figcaption = false } = {},
+) {
+  const v = str(content?.[field.key]);
+  if (!v) return '';
+  const attrs = fieldAttr(field.key);
+  const blocks = field.type === 'markdown';
+  const html = blocks ? markdownToSafeHtml(v) : escapeHtml(v);
+  const role = textRole(field);
+  if (figcaption && role === 'caption') {
+    return `<figcaption${attrs}>${html}</figcaption>`;
+  }
+  if (role === 'quote') {
+    return `<blockquote${attrs}>${blocks ? html : `<p>${html}</p>`}</blockquote>`;
+  }
+  const cls = ROLE_CLASSES[role] ? ` class="${ROLE_CLASSES[role]}"` : '';
+  if (blocks) return `<div${cls}${attrs}>${html}</div>`;
+  const term =
+    role === 'label' && predicateHolds(field.termWhen, content, defaults);
+  return `<p${cls}${attrs}>${term ? `<dfn>${html}</dfn>` : html}</p>`;
+}
+
+/**
+ * The key of the one `image` field in a block that draws a figure and has no
+ * caption of its own, or `''`. A `caption`-role field captions that figure; with
+ * none or several figures there is nothing unambiguous to caption.
+ * @param {Array<object>} fields
+ * @param {object} content
+ * @returns {string}
+ */
+function soleUncaptionedFigureKey(fields, content) {
+  const figures = fields.filter(
+    (f) =>
+      f?.type === 'image' &&
+      !f.hidden &&
+      !f.presentational &&
+      normalizeUrl(content?.[f.key]),
+  );
+  if (figures.length !== 1) return '';
+  const key = figures[0].key;
+  const captioned = str(content?.[`${key}Caption`]) || str(content?.caption);
+  return captioned ? '' : key;
+}
+
+/**
+ * Render a block's fields in declared order, applying the two role rules that
+ * reach past a single field (D128):
+ *
+ * - **attribution** — every filled `attribution` field of the block goes into
+ *   one `<footer>`, at the place of the first, one `<p data-field>` per field.
+ *   The footer sits beside the `<blockquote>`, never inside it, as WHATWG asks
+ *   of a quotation's source. It carries no `data-field` of its own: it holds
+ *   several fields, and the marker names one.
+ * - **caption** — when the block draws exactly one figure without a caption
+ *   of its own, the first filled `caption` field becomes that figure's
+ *   `<figcaption data-field>` and is not repeated; otherwise it stays a
+ *   `<p class="reader-caption">`.
+ *
+ * A "block" is one slide body or one item, so both run the same rules.
+ *
+ * @param {Array<object>} fields - the block's renderable fields, in order
+ * @param {object} content - the object those fields describe
+ * @param {object} opts
+ * @param {object} [opts.defaults] - the block's declared defaults
+ * @param {string} [opts.headingText] - alt fallback for a figure
+ * @param {Map<string, string>} [opts.structured] - pre-rendered html by key
+ * @returns {string[]}
+ */
+function renderBlocks(fields, content, { defaults, headingText, structured }) {
+  const figureKey = soleUncaptionedFigureKey(fields, content);
+  const captionField = figureKey
+    ? fields.find(
+        (f) =>
+          isTextField(f) &&
+          !f.hidden &&
+          textRole(f) === 'caption' &&
+          str(content?.[f.key]),
+      )
+    : null;
+  const figcaption = captionField
+    ? renderTextField(captionField, content, defaults, { figcaption: true })
+    : '';
+  const parts = [];
+  const footer = [];
+  let footerAt = -1;
+  for (const field of fields) {
+    if (!field || field === captionField) continue;
+    if (structured?.has(field.key)) {
+      parts.push(structured.get(field.key));
+      continue;
+    }
+    const html = renderFieldValue(field, content, {
+      defaults,
+      headingText,
+      figcaption: field.key === figureKey ? figcaption : '',
+      nameText:
+        field.key === figureKey ? str(content?.[captionField?.key]) : '',
+    });
+    if (!html) continue;
+    if (isTextField(field) && textRole(field) === 'attribution') {
+      if (footerAt < 0) {
+        footerAt = parts.length;
+        parts.push('');
+      }
+      footer.push(html);
+      continue;
+    }
+    parts.push(html);
+  }
+  if (footerAt >= 0) parts[footerAt] = `<footer>${footer.join('\n')}</footer>`;
+  return parts.filter(Boolean);
+}
+
+/**
  * Render one repeating-item (`items` field) as a small block: one of its
  * *readable* strings becomes an <h3>, the rest of its fields project by type.
  *
@@ -458,6 +645,7 @@ function renderItemBlock(item, itemFields, itemLabelField, itemDefaults) {
     f?.type === 'string' &&
     !f.hidden &&
     !f.presentational &&
+    !DOCUMENT_ELEMENT_ROLES.has(textRole(f)) &&
     !consumed.has(f.key) &&
     str(item[f.key]);
   // A declared heading that is empty on *this* item falls through to the
@@ -472,12 +660,17 @@ function renderItemBlock(item, itemFields, itemLabelField, itemDefaults) {
     headingText = str(item[headingField.key]);
     parts.push(`<h3${fieldAttr(headingKey)}>${escapeHtml(headingText)}</h3>`);
   }
-  for (const f of itemFields) {
-    if (!f || f.key === headingKey || f.hidden || consumed.has(f.key)) continue;
-    // The item's own heading is the alt fallback for its image — a card's name
-    // describes its portrait far better than the filename guess does.
-    parts.push(renderFieldValue(f, item, headingText));
-  }
+  // The item's own heading is the alt fallback for its image — a card's name
+  // describes its portrait far better than the filename guess does.
+  parts.push(
+    ...renderBlocks(
+      itemFields.filter(
+        (f) => f && f.key !== headingKey && !f.hidden && !consumed.has(f.key),
+      ),
+      item,
+      { defaults: itemDefaults, headingText },
+    ),
+  );
   const inner = parts.filter(Boolean).join('\n');
   // An item's own `semantic` enums (a matrix cell's tone) mark its <li>,
   // resolved through the items field's `itemDefaults` the way a top-level
@@ -541,8 +734,20 @@ function renderMediaRef(field, content) {
  * Project a single field's value to semantic HTML (no-op for empty or
  * presentational fields). `content` is the object the field lives in (slide
  * content, or one item object).
+ *
+ * @param {object} field
+ * @param {object} content
+ * @param {object} [opts]
+ * @param {object} [opts.defaults] - `content`'s declared defaults
+ * @param {string} [opts.headingText] - alt fallback for an image
+ * @param {string} [opts.figcaption] - a ready `<figcaption>` for an image
+ * @param {string} [opts.nameText] - the caption text, a last alt fallback
  */
-function renderFieldValue(field, content, headingText) {
+function renderFieldValue(
+  field,
+  content,
+  { defaults, headingText = '', figcaption = '', nameText = '' } = {},
+) {
   if (!field || field.hidden) return '';
   if (NON_CONTENT_GLOBAL_KEYS.has(field.key)) return '';
   if (isPresentationalField(field)) return '';
@@ -553,16 +758,12 @@ function renderFieldValue(field, content, headingText) {
   const value = content?.[field.key];
   const attrs = fieldAttr(field.key);
   switch (field.type) {
-    case 'string': {
-      const v = str(value);
-      return v ? `<p${attrs}>${escapeHtml(v)}</p>` : '';
-    }
-    case 'markdown': {
+    case 'string':
+    case 'markdown':
       // Markdown may be several blocks, so the field is one wrapper around
-      // them: one marked element per field, whatever the author wrote.
-      const v = str(value);
-      return v ? `<div${attrs}>${markdownToSafeHtml(v)}</div>` : '';
-    }
+      // them: one marked element per field, whatever the author wrote. The
+      // role decides which element (D128).
+      return renderTextField(field, content, defaults);
     case 'code': {
       const v = str(value);
       return v
@@ -574,8 +775,8 @@ function renderFieldValue(field, content, headingText) {
       return v ? renderCsvTable(v, '', attrs) : '';
     }
     case 'image': {
-      const a11y = resolveImageA11y(field.key, content, headingText);
-      return renderFigure(value, a11y, attrs);
+      const a11y = resolveImageA11y(field.key, content, headingText, nameText);
+      return renderFigure(value, a11y, attrs, figcaption);
     }
     case 'images': {
       if (!Array.isArray(value) || !value.length) return '';
@@ -720,15 +921,18 @@ export function renderSlideBodySemanticHtml(
     }
   }
 
-  for (const field of fields) {
-    if (!field || field.key === headingKey) continue;
-    if (structuredHtmlByKey.has(field.key)) {
-      parts.push(structuredHtmlByKey.get(field.key));
-      continue;
-    }
-    if (consumed.has(field.key)) continue;
-    parts.push(renderFieldValue(field, content, headingText));
-  }
+  parts.push(
+    ...renderBlocks(
+      fields.filter(
+        (f) =>
+          f &&
+          f.key !== headingKey &&
+          (structuredHtmlByKey.has(f.key) || !consumed.has(f.key)),
+      ),
+      content,
+      { defaults, headingText, structured: structuredHtmlByKey },
+    ),
+  );
   return parts.filter(Boolean).join('\n');
 }
 

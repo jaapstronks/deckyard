@@ -102,6 +102,8 @@ export default {
       type: 'string',
       required: false,
       maxLength: 160,
+      // Author, date, organisation: a byline, so the reader's <footer>.
+      role: 'attribution',
       group: 'title-block',
     },
     // Background image is the generic, type-agnostic `slideBgImage` field

@@ -32,8 +32,8 @@ paired with a `margin-inline` that follows the effective alignment.
 ### `role` — what kind of text is this?
 
 `shared/slide-types/text-roles.js`. Intrinsic to the text, reusable across
-types, a closed vocabulary of six (`heading`, `prose`, `list-item`, `quote`,
-`caption`, `label`). It answers which style options are _meaningful_: a list
+types, a closed vocabulary of seven (`heading`, `prose`, `list-item`, `quote`,
+`caption`, `label`, `attribution`). It answers which style options are _meaningful_: a list
 item sits next to a bullet marker, so block alignment would detach the text from
 its marker — `list-item` therefore offers no alignment at all.
 
@@ -41,6 +41,13 @@ A field declares `role` only when it differs from the safe default, with one
 exception: `heading` is declared on the one field that titles the slide, because
 the reader reads it too. That field is the section's visible `<h2>`, and a type
 without it gets a hidden name instead (D129, `reflowable-html-export.md`).
+
+That is the role's **second reader**, and it is not limited to the heading: the
+reader projection maps every role to an element (D128) — `quote` a
+`<blockquote>`, `attribution` a line in the block's `<footer>`, `caption` a
+`<figcaption>`, `label` an eyebrow. So a role is declared where the text _is_
+one of those, even when its affordances equal the default: `attribution` offers
+exactly what `prose` offers, and exists because a byline is not body text.
 
 ### `defaultAlign` — what is it aligned at right now?
 

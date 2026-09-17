@@ -185,7 +185,13 @@ export default {
           hidden: true,
         },
         { key: 'name', type: 'string', label: 'Title', maxLength: 80 },
-        { key: 'byline', type: 'string', label: 'Caption', maxLength: 120 },
+        {
+          key: 'byline',
+          type: 'string',
+          label: 'Caption',
+          maxLength: 120,
+          role: 'caption',
+        },
         {
           key: 'linkedin',
           type: 'string',
