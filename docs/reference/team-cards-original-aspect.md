@@ -40,28 +40,85 @@ included.
 
 ### JS justify pass (`client/lib/slide-runtime/team-cards-justify.js`, `justifyOriginal`)
 
-Runs in the editor and presenter (not in thumbnail mode), and in every document
-the script chain assembles: `server/utils/script-chain.js` inlines this same
-module when `detectSlideRuntimeNeeds()` finds an uncropped, non-split
-image-blocks slide — the standalone export and embed as well as the static
-sheets (PNG, and through it PPTX and the PNG zip; PDF slides; print; the MCP
-previews). The headless captures wait for it through
-`server/utils/settle-rendered-page.js` (fonts, images, then two animation
-frames) before they screenshot or print. It reads each image's intrinsic
-aspect ratio (so it re-runs on image `load`) and packs the images into rows
-greedily, picking each row's height so the row spans the full slide width — a
-classic "justified gallery". It then pins each card's width to its rendered
-image width, which:
+Runs on **every** surface — editor, presenter, thumbnails and library tiles
+included — and in every document the script chain assembles:
+`server/utils/script-chain.js` inlines this same module when
+`detectSlideRuntimeNeeds()` finds an uncropped, non-split image-blocks slide —
+the standalone export and embed as well as the static sheets (PNG, and through
+it PPTX and the PNG zip; PDF slides; print; the MCP previews). The headless
+captures wait for it through `server/utils/settle-rendered-page.js` (fonts,
+images, then two animation frames) before they screenshot or print. It reads
+each image's intrinsic aspect ratio (so it re-runs on image `load`) and packs
+the images into rows greedily, picking each row's height so the row spans the
+full slide width — a classic "justified gallery". It then pins each card's
+width to its rendered image width, which:
 
 - keeps a long caption wrapping to the image width instead of widening the card
   past its image (which would also desync the packing from where flexbox
   actually wraps), and
 - makes a handful of wide screenshots fill a single full-width row (gap 2).
 
-The last, partial row is left at the max height rather than stretched, so a
-lone trailing image stays a sensible size. A set that still overflows the slide
-after justifying clips at the slide edge — there is no shrink-to-fit pass
-(removed with the rest of the slide shrink layer).
+Thumbnails are not an exception, because there is nothing to except them from:
+every measurement is a layout value (`clientHeight`, `offsetHeight`) and a
+thumbnail is the same logical slide box under a transform. A thumbnail that fell
+back to the CSS shared height advertised a different packing than the slide it
+stands for.
+
+The last, partial row is left at the ceiling rather than stretched, so a lone
+trailing image stays a sensible size.
+
+### The two bounds (D167)
+
+A ceiling on one row is not a budget for the slide, and the pass needs both:
+
+1. **The declared CSS ceiling** bounds a row's photo height. It is read as the
+   resolved `max-height` of `.team-card-photo` — the stylesheet's own number.
+   Reading `--team-orig-photo-h` instead does not work: it is an unregistered
+   custom property, so `getPropertyValue` hands back the literal
+   `calc(var(--team-card-photo) * 1.2)` text and `parseFloat` of that is `NaN`.
+   The runtime used to fall back to `300` there, which made 300 the real
+   ceiling and the declaration decoration. There is no fallback constant now: a
+   slide that cannot be measured yet waits for a real measurement.
+2. **The available content height** bounds all rows together. It is the
+   `.slide-inner` box (which is `height: 100%` of the slide's content box) minus
+   the heading, the bottom subheading and the flex gaps between them —
+   deliberately _not_ `.team-cards-grid`'s own height, which its content can
+   push past the slide edge and which would hand the packing back the overflow
+   it exists to prevent.
+
+The pass enumerates every ceiling at which the greedy packing can change — the
+justified height of each contiguous run of cards, plus the declared ceiling —
+walks them from tallest to shortest, applies each distinct packing, measures the
+result and keeps the first that fits. That is a linear scan on purpose: a lower
+ceiling re-packs the rows and rewraps the captions, so the total height is not
+monotonic in the ceiling and a bisection could step over the answer.
+
+This is not shrink-to-fit: the rows are packed again at a smaller ceiling, not
+scaled down afterwards, and nothing touches the font size or a transform. It
+also explains why the old hidden `300` "worked" for four 3:2 images — it was
+simply a lower ceiling. Now four 3:2 images share one row because the available
+space says so.
+
+**When nothing fits** — the captions alone are taller than the slide — the pass
+keeps the packing that overflows least, and sets `align-content: flex-start` on
+the grid so the overflow runs off the **bottom**. The grid centres its rows by
+default, which would otherwise spill the excess upwards over the heading. No
+stored text is truncated and there is no shrink-to-fit pass (removed with the
+rest of the slide shrink layer).
+
+### Split titles line up per row
+
+With `textPosition: split` the title sits above the image, so an image only
+lines up with its neighbours if the titles above them do. The pass gives every
+title in a computed row the `min-height` of the tallest title in that row, after
+the card widths are pinned (titles wrap to the card width) and after clearing
+the previous run's values so a re-run cannot grow monotonically.
+
+The CSS aligns the row from the top (`align-items: flex-start`) rather than
+from the bottom. Aligning card _bottoms_ only looked level while the bylines
+happened to be the same length: a narrow card wraps its byline to more lines,
+grows taller, and pushes its image up past its neighbours'. Bylines now hang
+below their own card, which is where they belong.
 
 ## Why not route screenshots to the Gallery slide?
 
@@ -77,3 +134,10 @@ Changes are scoped to `.slide-team-cards.aspect-original:not(.has-column-split)`
 and the justify pass (which no-ops unless that combination is present). The
 default `square`/`circle` cropped grids and the column-split layout are
 unaffected.
+
+The contract above is pinned by two suites, both measuring a real browser:
+`tests/team-cards-original-layout.test.js` (both bounds, the per-row title and
+image alignment, the unavoidable overflow, the untouched neighbour layouts, and
+observer cleanup after repeated mounts) and
+`tests/export-team-cards-original.test.js` (the export surfaces carry the pass,
+and 3:2 and 16:9 pin the chosen height against both bounds).

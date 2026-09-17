@@ -18,6 +18,7 @@
 import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
+import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
@@ -49,19 +50,22 @@ const chromePath = await resolveChromeExecutablePath();
 const isCi = /^(1|true|yes)$/i.test(String(process.env.CI || '').trim());
 const skip = !isCi && !chromePath ? 'no Chrome/Chromium found' : false;
 
-/** A pure-red 3:2 landscape image (the reported deck's photos are 3:2), so
- * the PNG can be read back by colour. */
-const landscape = async () => {
+/** A pure-red landscape image, so the PNG can be read back by colour. The
+ * reported deck's photos are 3:2; 16:9 is the other ratio a screenshot deck is
+ * full of, and it packs to a different row height. */
+const landscape = async ([w, h]) => {
   const buf = await sharp({
-    create: { width: 1200, height: 800, channels: 3, background: '#ff0000' },
+    create: { width: w, height: h, channels: 3, background: '#ff0000' },
   })
     .png()
     .toBuffer();
   return `data:image/png;base64,${buf.toString('base64')}`;
 };
 
-const slide = async () => {
-  const image = await landscape();
+const RATIOS = { '3:2': [1200, 800], '16:9': [1600, 900] };
+
+const slide = async (ratio = RATIOS['3:2']) => {
+  const image = await landscape(ratio);
   return {
     id: 'tc-original',
     type: 'team-cards-slide',
@@ -107,49 +111,94 @@ async function redBands(png) {
   return bands;
 }
 
-test('PNG: four landscape images on one row', { skip }, async () => {
-  const png = await renderSlideToPngBuffer(repoRoot, await slide(), {
-    scale: 1,
+for (const [name, ratio] of Object.entries(RATIOS)) {
+  test(`PNG: four ${name} images on one row`, { skip }, async () => {
+    const png = await renderSlideToPngBuffer(repoRoot, await slide(ratio), {
+      scale: 1,
+    });
+    const bands = await redBands(png);
+    assert.equal(
+      bands.length,
+      1,
+      `expected one row of images, got ${bands.length}: ${JSON.stringify(bands)}`,
+    );
   });
-  const bands = await redBands(png);
-  assert.equal(
-    bands.length,
-    1,
-    `expected one row of images, got ${bands.length}: ${JSON.stringify(bands)}`,
+
+  test(
+    `PDF slides document: four ${name} images on one row, under the declared ceiling`,
+    { skip },
+    async () => {
+      const html = await buildSlidesPdfHtml(repoRoot, {
+        id: 'deck',
+        title: 'Deck',
+        slides: [await slide(ratio)],
+      });
+      const browser = await getPuppeteerBrowser({ featureName: 'test' });
+      const page = await browser.newPage();
+      try {
+        await page.setViewport({ width: 1600, height: 900 });
+        await page.setContent(html, { waitUntil: 'load' });
+        await settleRenderedPage(page);
+        const m = await page.evaluate(() => {
+          const photos = Array.from(
+            document.querySelectorAll('.slide-team-cards .team-card-photo'),
+          );
+          const grid = document.querySelector(
+            '.slide-team-cards .team-cards-grid',
+          );
+          return {
+            tops: photos.map((el) =>
+              Math.round(el.getBoundingClientRect().top),
+            ),
+            heights: photos.map((el) =>
+              Math.round(el.getBoundingClientRect().height),
+            ),
+            ceiling: parseFloat(getComputedStyle(photos[0]).maxHeight),
+            gridWidth: grid.clientWidth,
+            gap: parseFloat(getComputedStyle(grid).columnGap) || 0,
+          };
+        });
+        assert.equal(m.tops.length, 4);
+        assert.equal(
+          new Set(m.tops).size,
+          1,
+          `expected one row, got photo tops ${JSON.stringify(m.tops)}`,
+        );
+        // The export pins the same two bounds the editor packs against: the
+        // row is justified to the full width, and stays under the ceiling the
+        // stylesheet declares.
+        const expected =
+          (m.gridWidth - 1 - m.gap * 3) / (4 * (ratio[0] / ratio[1]));
+        for (const h of m.heights) {
+          assert.ok(
+            Math.abs(h - expected) <= 1,
+            `photo height ${h} should be the justified ${expected.toFixed(2)}`,
+          );
+          assert.ok(
+            h <= Math.round(m.ceiling),
+            `photo height ${h} exceeds the declared ceiling ${m.ceiling}`,
+          );
+        }
+      } finally {
+        await page.close();
+      }
+    },
+  );
+}
+
+test('every render surface runs the pass, thumbnails included', async () => {
+  const src = readFileSync(
+    path.join(repoRoot, 'client/lib/slide-runtime/slide-render.js'),
+    'utf8',
+  );
+  const call = src.match(/^.*initTeamCardsJustify\(el\).*$/m)?.[0];
+  assert.ok(call, 'slide-render should mount the justify pass');
+  assert.doesNotMatch(
+    call,
+    /\bmode\b/,
+    `the pass is layout, not behaviour: a thumbnail that skips it shows a different packing than the slide it stands for (got: ${call.trim()})`,
   );
 });
-
-test(
-  'PDF slides document: four landscape images on one row',
-  { skip },
-  async () => {
-    const html = await buildSlidesPdfHtml(repoRoot, {
-      id: 'deck',
-      title: 'Deck',
-      slides: [await slide()],
-    });
-    const browser = await getPuppeteerBrowser({ featureName: 'test' });
-    const page = await browser.newPage();
-    try {
-      await page.setViewport({ width: 1600, height: 900 });
-      await page.setContent(html, { waitUntil: 'load' });
-      await settleRenderedPage(page);
-      const tops = await page.evaluate(() =>
-        Array.from(
-          document.querySelectorAll('.slide-team-cards .team-card-photo'),
-        ).map((el) => Math.round(el.getBoundingClientRect().top)),
-      );
-      assert.equal(tops.length, 4);
-      assert.equal(
-        new Set(tops).size,
-        1,
-        `expected one row, got photo tops ${JSON.stringify(tops)}`,
-      );
-    } finally {
-      await page.close();
-    }
-  },
-);
 
 test('the runtime ships only for the layout it acts on, in any document', async () => {
   const original = renderSlideHtml(await slide(), { stripEditorAttrs: true });
