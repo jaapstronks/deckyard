@@ -34,7 +34,9 @@ document that stays readable with JavaScript — and author CSS — turned off.
     `<caption>` is the type's `datasetSummary` sentence in the deck language
     ("Lijndiagram met 5 punten. Min: 25. Max: 85.", the same sentence the
     canvas gives assistive tech) followed by its `encodingKeys` fields as
-    "<label>: <value>" (a line chart names its two series).
+    "<label>: <value>" (a line chart names its two series). A `tabular`
+    type's rows array is a `<table>` too; `rowHeader: 'first'` makes its first
+    column `<th scope="row">`, as the canvas styles that column the label.
   - A text field's `role` decides its element (D128). The same declaration that
     sets a field's style affordances (`text-alignment.md`) is its document
     semantics, because both follow from what the text is. One table, applied to
@@ -74,7 +76,12 @@ document that stays readable with JavaScript — and author CSS — turned off.
     type whose first string is not its heading declares one:
     `kpi-metrics-slide` leads with `value`, so its `metrics` field names
     `label`. A declared field that is empty on one item falls back to the
-    default for that item.
+    default for that item. A heading heads something: an item where nothing
+    projects below that string is the `<li>`'s own text (`data-field` on the
+    `<li>`), so a poll answer or a likert step is a line, not an `<h3>` over
+    nothing. The list is an `<ol>` when the field declares `ordered: true`, or
+    while its `orderedWhen: { field, in }` predicate holds (list-slide:
+    `variant: numbers`, as the canvas numbers it); otherwise a `<ul>`.
   - A `string` field declaring `mediaRef` is a **reference to media the document
     cannot embed**, not document text, and projects as a stand-in naming the
     medium — linked when a link resolves, plain text otherwise. It names the

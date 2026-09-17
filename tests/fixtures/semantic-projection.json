@@ -63,13 +63,13 @@
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"table-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" data-field=\"title\">Quarterly Results</h2>",
-      "<table class=\"reader-table\" data-field=\"rows\"><caption>All figures in thousands</caption><thead><tr><th scope=\"col\">Metric</th><th scope=\"col\">Q1</th><th scope=\"col\">Q2</th><th scope=\"col\">Q3</th></tr></thead><tbody><tr><td>Revenue</td><td>$120K</td><td>$185K</td><td>$240K</td></tr><tr><td>Users</td><td>2,400</td><td>3,800</td><td>5,200</td></tr><tr><td>Growth</td><td>+18%</td><td>+42%</td><td>+67%</td></tr></tbody></table>",
+      "<table class=\"reader-table\" data-field=\"rows\"><caption>All figures in thousands</caption><thead><tr><th scope=\"col\">Metric</th><th scope=\"col\">Q1</th><th scope=\"col\">Q2</th><th scope=\"col\">Q3</th></tr></thead><tbody><tr><th scope=\"row\">Revenue</th><td>$120K</td><td>$185K</td><td>$240K</td></tr><tr><th scope=\"row\">Users</th><td>2,400</td><td>3,800</td><td>5,200</td></tr><tr><th scope=\"row\">Growth</th><td>+18%</td><td>+42%</td><td>+67%</td></tr></tbody></table>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"table-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" data-field=\"title\">Quarterly Results</h2>",
-      "<table class=\"reader-table\" data-field=\"rows\"><caption>All figures in thousands</caption><thead><tr><th scope=\"col\">Metric</th><th scope=\"col\">Q1</th><th scope=\"col\">Q2</th><th scope=\"col\">Q3</th></tr></thead><tbody><tr><td>Revenue</td><td>$120K</td><td>$185K</td><td>$240K</td></tr><tr><td>Users</td><td>2,400</td><td>3,800</td><td>5,200</td></tr><tr><td>Growth</td><td>+18%</td><td>+42%</td><td>+67%</td></tr></tbody></table>",
+      "<table class=\"reader-table\" data-field=\"rows\"><caption>All figures in thousands</caption><thead><tr><th scope=\"col\">Metric</th><th scope=\"col\">Q1</th><th scope=\"col\">Q2</th><th scope=\"col\">Q3</th></tr></thead><tbody><tr><th scope=\"row\">Revenue</th><td>$120K</td><td>$185K</td><td>$240K</td></tr><tr><th scope=\"row\">Users</th><td>2,400</td><td>3,800</td><td>5,200</td></tr><tr><th scope=\"row\">Growth</th><td>+18%</td><td>+42%</td><td>+67%</td></tr></tbody></table>",
       "</section>"
     ]
   },
@@ -78,22 +78,22 @@
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"list-slide\" data-variant=\"numbers\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" data-field=\"title\">Our Process</h2>",
       "<p data-field=\"subheading\">How we approach every project</p>",
-      "<ul class=\"reader-items\" data-field=\"items\"><li class=\"reader-item\"><h3 data-field=\"title\">Discovery</h3>",
+      "<ol class=\"reader-items\" data-field=\"items\"><li class=\"reader-item\"><h3 data-field=\"title\">Discovery</h3>",
       "<p data-field=\"text\">Understanding your needs and goals</p></li><li class=\"reader-item\"><h3 data-field=\"title\">Strategy</h3>",
       "<p data-field=\"text\">Planning the optimal approach</p></li><li class=\"reader-item\"><h3 data-field=\"title\">Execution</h3>",
       "<p data-field=\"text\">Delivering exceptional results</p></li><li class=\"reader-item\"><h3 data-field=\"title\">Review</h3>",
-      "<p data-field=\"text\">Continuous improvement</p></li></ul>",
+      "<p data-field=\"text\">Continuous improvement</p></li></ol>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"list-slide\" data-variant=\"numbers\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" data-field=\"title\">Our Process</h2>",
       "<p data-field=\"subheading\">How we approach every project</p>",
-      "<ul class=\"reader-items\" data-field=\"items\"><li class=\"reader-item\"><h3 data-field=\"title\">Discovery</h3>",
+      "<ol class=\"reader-items\" data-field=\"items\"><li class=\"reader-item\"><h3 data-field=\"title\">Discovery</h3>",
       "<p data-field=\"text\">Understanding your needs and goals</p></li><li class=\"reader-item\"><h3 data-field=\"title\">Strategy</h3>",
       "<p data-field=\"text\">Planning the optimal approach</p></li><li class=\"reader-item\"><h3 data-field=\"title\">Execution</h3>",
       "<p data-field=\"text\">Delivering exceptional results</p></li><li class=\"reader-item\"><h3 data-field=\"title\">Review</h3>",
-      "<p data-field=\"text\">Continuous improvement</p></li></ul>",
+      "<p data-field=\"text\">Continuous improvement</p></li></ol>",
       "</section>"
     ]
   },
@@ -303,13 +303,13 @@
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"poll-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" data-field=\"question\">What do you think?</h2>",
-      "<ul class=\"reader-items\" data-field=\"options\"><li class=\"reader-item\"><h3 data-field=\"text\">Strongly agree</h3></li><li class=\"reader-item\"><h3 data-field=\"text\">Somewhat agree</h3></li><li class=\"reader-item\"><h3 data-field=\"text\">Neutral</h3></li><li class=\"reader-item\"><h3 data-field=\"text\">Disagree</h3></li></ul>",
+      "<ul class=\"reader-items\" data-field=\"options\"><li class=\"reader-item\" data-field=\"text\">Strongly agree</li><li class=\"reader-item\" data-field=\"text\">Somewhat agree</li><li class=\"reader-item\" data-field=\"text\">Neutral</li><li class=\"reader-item\" data-field=\"text\">Disagree</li></ul>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"poll-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" data-field=\"question\">What do you think?</h2>",
-      "<ul class=\"reader-items\" data-field=\"options\"><li class=\"reader-item\"><h3 data-field=\"text\">Strongly agree</h3></li><li class=\"reader-item\"><h3 data-field=\"text\">Somewhat agree</h3></li><li class=\"reader-item\"><h3 data-field=\"text\">Neutral</h3></li><li class=\"reader-item\"><h3 data-field=\"text\">Disagree</h3></li></ul>",
+      "<ul class=\"reader-items\" data-field=\"options\"><li class=\"reader-item\" data-field=\"text\">Strongly agree</li><li class=\"reader-item\" data-field=\"text\">Somewhat agree</li><li class=\"reader-item\" data-field=\"text\">Neutral</li><li class=\"reader-item\" data-field=\"text\">Disagree</li></ul>",
       "</section>"
     ]
   },
@@ -317,13 +317,13 @@
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"likert-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" data-field=\"question\">Rate your experience</h2>",
-      "<ol class=\"reader-items\" data-field=\"options\"><li class=\"reader-item\"><h3 data-field=\"text\">Poor</h3></li><li class=\"reader-item\"><h3 data-field=\"text\">Fair</h3></li><li class=\"reader-item\"><h3 data-field=\"text\">Good</h3></li><li class=\"reader-item\"><h3 data-field=\"text\">Very good</h3></li><li class=\"reader-item\"><h3 data-field=\"text\">Excellent</h3></li></ol>",
+      "<ol class=\"reader-items\" data-field=\"options\"><li class=\"reader-item\" data-field=\"text\">Poor</li><li class=\"reader-item\" data-field=\"text\">Fair</li><li class=\"reader-item\" data-field=\"text\">Good</li><li class=\"reader-item\" data-field=\"text\">Very good</li><li class=\"reader-item\" data-field=\"text\">Excellent</li></ol>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"likert-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" data-field=\"question\">Rate your experience</h2>",
-      "<ol class=\"reader-items\" data-field=\"options\"><li class=\"reader-item\"><h3 data-field=\"text\">Poor</h3></li><li class=\"reader-item\"><h3 data-field=\"text\">Fair</h3></li><li class=\"reader-item\"><h3 data-field=\"text\">Good</h3></li><li class=\"reader-item\"><h3 data-field=\"text\">Very good</h3></li><li class=\"reader-item\"><h3 data-field=\"text\">Excellent</h3></li></ol>",
+      "<ol class=\"reader-items\" data-field=\"options\"><li class=\"reader-item\" data-field=\"text\">Poor</li><li class=\"reader-item\" data-field=\"text\">Fair</li><li class=\"reader-item\" data-field=\"text\">Good</li><li class=\"reader-item\" data-field=\"text\">Very good</li><li class=\"reader-item\" data-field=\"text\">Excellent</li></ol>",
       "</section>"
     ]
   },

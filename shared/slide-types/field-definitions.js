@@ -253,6 +253,9 @@ export function walkFieldDefinitions(fields, profile) {
     // Fields declaring `defaultFromOption`: the enum they name is a sibling at
     // this level, so it too is checked once the level is fully known.
     const optionRefs = [];
+    // Fields declaring `orderedWhen`: the field it reads is a sibling enum at
+    // this level, checked once the level is fully known.
+    const orderRefs = [];
     const fieldsByKey = new Map();
 
     list.forEach((field, i) => {
@@ -445,6 +448,31 @@ export function walkFieldDefinitions(fields, profile) {
         }
       }
 
+      // `orderedWhen` makes an items list an <ol> while a sibling enum holds
+      // one of `in` (D130a). Order is either static (`ordered: true`) or
+      // conditional; both at once would be two answers to one question.
+      if (field.orderedWhen !== undefined && field.orderedWhen !== null) {
+        if (type !== 'items') {
+          at2('ordered_when_not_items', 'warning', { type });
+        } else if (field.ordered === true) {
+          at2('ordered_when_with_ordered', 'warning');
+        } else {
+          orderRefs.push({ where, declared: field.orderedWhen });
+        }
+      }
+
+      // `rowHeader: 'first'` makes a table's first column head its rows. It is
+      // a static declaration with one value, read on a `tabular` rows array.
+      if (field.rowHeader !== undefined && field.rowHeader !== null) {
+        if (type !== 'items') {
+          at2('row_header_not_items', 'warning', { type });
+        } else if (field.rowHeader !== 'first') {
+          at2('row_header_not_first', 'warning', {
+            declared: field.rowHeader,
+          });
+        }
+      }
+
       // `defaultFromOption` lets a blank string stand in with its sibling
       // enum's option word, in the deck language (D130c). Only a string has a
       // blank to fill.
@@ -468,6 +496,24 @@ export function walkFieldDefinitions(fields, profile) {
       if (!isNonEmpty(linkKey) || !reachable.has(linkKey)) {
         add('media_ref_link_key_unknown', 'warning', where, {
           declared: linkKey,
+        });
+      }
+    }
+
+    // The predicate is the `visibleWhen` one: a sibling enum and a list of its
+    // values. Anything else never holds, so the list would silently stay <ul>.
+    for (const { where, declared } of orderRefs) {
+      const target = isPlainObject(declared)
+        ? fieldsByKey.get(declared.field)
+        : null;
+      if (
+        !target ||
+        target.type !== 'enum' ||
+        !Array.isArray(declared.in) ||
+        declared.in.length === 0
+      ) {
+        add('ordered_when_unknown', 'warning', where, {
+          field: isPlainObject(declared) ? declared.field : undefined,
         });
       }
     }
@@ -591,6 +637,27 @@ const FINDING_MESSAGES = {
   term_when_not_label: (where, f) =>
     `${where} declares \`termWhen\`, but only a \`string\` field with ` +
     `\`role: 'label'\` names a defined term, so it is ignored.`,
+  ordered_when_not_items: (where, f) =>
+    `${where} declares \`orderedWhen\` on a \`${f?.detail?.type}\` field, ` +
+    `but only an \`items\` field projects as a list whose order can matter, ` +
+    `so it is ignored.`,
+  ordered_when_with_ordered: (where) =>
+    `${where} declares both \`ordered: true\` and \`orderedWhen\` — order is ` +
+    `either always part of the meaning or only while a sibling holds a value, ` +
+    `so \`orderedWhen\` is ignored; keep one.`,
+  ordered_when_unknown: (where, f) =>
+    `${where} declares \`orderedWhen\` on ` +
+    `${JSON.stringify(f?.detail?.field)}, which is not an \`enum\` field ` +
+    `beside it with a non-empty \`in\` list, so the list never becomes ` +
+    `ordered.`,
+  row_header_not_items: (where, f) =>
+    `${where} declares \`rowHeader\` on a \`${f?.detail?.type}\` field, ` +
+    `but only a table's \`items\` rows have a first column to head them, so ` +
+    `it is ignored.`,
+  row_header_not_first: (where, f) =>
+    `${where} declares \`rowHeader: ${JSON.stringify(f?.detail?.declared)}\`, ` +
+    `but the one value is \`'first'\` (the first column heads each row), so ` +
+    `it is ignored.`,
   default_from_option_not_string: (where, f) =>
     `${where} declares \`defaultFromOption\` on a \`${f?.detail?.type}\` ` +
     `field, but only a \`string\` has a blank an option word can fill, so ` +

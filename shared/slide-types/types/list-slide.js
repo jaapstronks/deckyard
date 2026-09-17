@@ -258,7 +258,7 @@ export default {
       type: 'enum',
       required: false,
       // Numbers say the order matters, so the style travels as `data-variant`
-      // (D130b); the reader's <ol> for it is B295's `orderedWhen`.
+      // (D130b), and `items` declares `orderedWhen` on it for the reader's <ol>.
       semantic: true,
       options: [
         { value: 'bullets', label: 'Bullets' },
@@ -297,6 +297,9 @@ export default {
       key: 'items',
       label: 'Items',
       type: 'items',
+      // The canvas numbers the items only in the `numbers` style (a native
+      // <ol>), so that is when the order is part of the meaning (D130a).
+      orderedWhen: { field: 'variant', in: ['numbers'] },
       required: true,
       minItems: 2,
       maxItems: 8,
