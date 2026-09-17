@@ -18,6 +18,7 @@
  * presenter and exports without opening each slide first.
  */
 
+import { customDirFor } from '../shared/custom-root.js';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -36,7 +37,7 @@ const THEMES = themesArg
 const DEMO_PREFIX = 'BG contrast demo';
 const repoRoot = path.resolve(fileURLToPath(import.meta.url), '../..');
 
-const IMG_DIR_FS = path.join(repoRoot, 'custom', 'assets', 'test-bg');
+const IMG_DIR_FS = path.join(customDirFor(repoRoot), 'assets', 'test-bg');
 const IMG_URL = {
   dark: '/custom/assets/test-bg/demo-dark.svg',
   light: '/custom/assets/test-bg/demo-light.svg',

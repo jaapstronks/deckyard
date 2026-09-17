@@ -29,15 +29,15 @@
 import { existsSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
-import { CUSTOM_FONTS_FILE } from './custom-root.js';
-
 /**
  * The two halves of the seam, re-exported here because this is where callers
  * reach for them: the declaration (`custom/fonts.js`) and the pin
  * (`custom/google-fonts.lock.json`, same shape as
  * `scripts/google-fonts.lock.json`).
  */
-export { CUSTOM_FONTS_FILE, CUSTOM_FONTS_LOCK_PATH } from './custom-root.js';
+import { CUSTOM_FONTS_FILE, CUSTOM_FONTS_LOCK_PATH } from './custom-root.js';
+
+export { CUSTOM_FONTS_FILE, CUSTOM_FONTS_LOCK_PATH };
 
 /** Repo-relative spellings, for messages that have to be pasteable. */
 export const CUSTOM_FONTS_FILE_REL = 'custom/fonts.js';
