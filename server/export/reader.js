@@ -96,7 +96,8 @@ body {
 .reader-slide footer { font-size: 0.9rem; opacity: 0.8; }
 .reader-slide footer p { margin: 0.15rem 0; }
 .reader-slide blockquote p { margin: 0.25rem 0; }
-.reader-items { list-style: none; padding-left: 0; }
+ul.reader-items { list-style: none; padding-left: 0; }
+ol.reader-items { list-style: decimal; padding-left: 1.5rem; }
 .reader-item { margin: 0.75rem 0; padding-left: 0.9rem; border-left: 3px solid rgba(0,0,0,0.12); }
 .reader-figure { margin: 0.75rem 0; }
 .reader-figure img { max-width: 100%; height: auto; border-radius: 6px; }
