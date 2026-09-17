@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { customDirFor } from '../../shared/custom-root.js';
 import { uploadsDir } from './storage-paths.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -14,7 +15,14 @@ export const SHARED_PUBLIC_DIRS = [
   { urlPrefix: '/shared/', dir: path.join(repoRoot, 'shared') },
   { urlPrefix: '/themes/', dir: path.join(repoRoot, 'themes') },
   { urlPrefix: '/uploads/', dir: uploadsDir(repoRoot) },
-  // Custom directories for fork-specific content
-  { urlPrefix: '/custom/assets/', dir: path.join(repoRoot, 'custom/assets') },
-  { urlPrefix: '/custom/themes/', dir: path.join(repoRoot, 'custom/themes') },
+  // Fork-specific content, served from the fork root so an installation that
+  // moved it serves the files its loaders and pickers actually list.
+  {
+    urlPrefix: '/custom/assets/',
+    dir: path.join(customDirFor(repoRoot), 'assets'),
+  },
+  {
+    urlPrefix: '/custom/themes/',
+    dir: path.join(customDirFor(repoRoot), 'themes'),
+  },
 ];

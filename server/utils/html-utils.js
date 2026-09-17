@@ -4,6 +4,7 @@
  * render-png.js, export-png-slides.js, and export-print.js
  */
 
+import { customDirFor } from '../../shared/custom-root.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { SLIDE_TYPES } from '../../shared/slide-types.js';
@@ -60,16 +61,18 @@ export function mimeFromExt(ext) {
 }
 
 /**
- * Map an allowed local-image prefix to its on-disk root directory.
- * Each entry is [urlPrefix, ...pathSegmentsUnderRepoRoot].
- * @type {Array<[string, ...string[]]>}
+ * Map an allowed local-image prefix to the function that gives its on-disk
+ * root for an installation root. The fork prefixes resolve through
+ * {@link customDirFor}, so an installation whose fork root is elsewhere
+ * inlines its own images rather than the checkout's.
+ * @type {Array<[string, (repoRoot: string) => string]>}
  */
 const LOCAL_IMAGE_ROOTS = [
-  ['/uploads/', 'server', 'uploads'],
-  ['/assets/', 'assets'],
-  ['/custom/assets/', 'custom', 'assets'],
-  ['/custom/themes/', 'custom', 'themes'],
-  ['/client/', 'client'],
+  ['/uploads/', (root) => path.join(root, 'server', 'uploads')],
+  ['/assets/', (root) => path.join(root, 'assets')],
+  ['/custom/assets/', (root) => path.join(customDirFor(root), 'assets')],
+  ['/custom/themes/', (root) => path.join(customDirFor(root), 'themes')],
+  ['/client/', (root) => path.join(root, 'client')],
 ];
 
 /**
@@ -91,8 +94,8 @@ function resolveContainedPath(repoRoot, s, isUpload) {
     : LOCAL_IMAGE_ROOTS.find(([prefix]) => s.startsWith(prefix));
   if (!entry) return null;
 
-  const [prefix, ...segments] = entry;
-  const rootAbs = path.resolve(repoRoot, ...segments);
+  const [prefix, rootFor] = entry;
+  const rootAbs = path.resolve(rootFor(repoRoot));
   const rel = s.slice(prefix.length).replace(/^\/+/, '');
   const abs = path.resolve(rootAbs, rel);
   if (abs !== rootAbs && !abs.startsWith(rootAbs + path.sep)) return null;

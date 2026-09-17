@@ -4,10 +4,18 @@
  * `custom/` is one unit, not a loose set of directories: a fork drops in slide
  * types, the CSS those types render against, themes, assets, fonts, AI copy
  * and MCP tools together, and `docs/reference/fork-setup.md` describes them
- * that way. So the location is declared here once, and every loader derives
- * its own path from it. A per-loader derivation could disagree with its
- * neighbours — a type loaded from one root with its stylesheet read from
- * another renders unstyled, with nothing to report.
+ * that way. So where it lives is decided here, once, and every reader asks
+ * this module rather than joining `'custom'` itself.
+ *
+ * Readers come in two kinds, and the difference is real rather than a second
+ * form. The render and serving paths (the CSS chain, themes, assets, image
+ * inlining, the static mounts) are handed an **installation root** and resolve
+ * through `customDirFor(root)`; that parameter is what lets a test render a
+ * whole document against a fixture tree. The loaders (slide types, AI copy,
+ * fonts, MCP tools) have no such root: they are imported once and read the
+ * same files for the life of the process, so they use the constants below.
+ * With `DECKYARD_CUSTOM_DIR` set both kinds resolve to the one root it names,
+ * which is the case that matters for a deployment.
  *
  * `DECKYARD_CUSTOM_DIR` moves the whole root, which is what lets a process
  * load a fork from outside the checkout: the MCP stdio test boots with a fork
@@ -62,32 +70,27 @@ export function customDirFor(repoRoot = REPO_ROOT) {
   return OVERRIDE ?? join(repoRoot, 'custom');
 }
 
-/** The fork root this process reads customizations from. */
-export const CUSTOM_DIR = customDirFor();
+/**
+ * The fork root of this process, for the loaders that have no installation
+ * root to resolve against: they are imported once and read the same files for
+ * the lifetime of the process.
+ */
+const PROCESS_CUSTOM_DIR = customDirFor();
 
 /** Slide type definitions (`custom/slide-types/*.js`). */
-export const CUSTOM_SLIDE_TYPES_DIR = join(CUSTOM_DIR, 'slide-types');
-
-/** Stylesheets shipped alongside those types (`custom/styles/*.css`). */
-export const CUSTOM_STYLES_DIR = join(CUSTOM_DIR, 'styles');
-
-/** Fork themes, either `<id>/theme.json` or the flat `<id>.json`. */
-export const CUSTOM_THEMES_DIR = join(CUSTOM_DIR, 'themes');
-
-/** Fork assets served under `/custom/assets/`. */
-export const CUSTOM_ASSETS_DIR = join(CUSTOM_DIR, 'assets');
+export const CUSTOM_SLIDE_TYPES_DIR = join(PROCESS_CUSTOM_DIR, 'slide-types');
 
 /** AI catalog and prompt overrides (`custom/ai/*.js`). */
-export const CUSTOM_AI_DIR = join(CUSTOM_DIR, 'ai');
+export const CUSTOM_AI_DIR = join(PROCESS_CUSTOM_DIR, 'ai');
 
 /** Fork font declarations. */
-export const CUSTOM_FONTS_FILE = join(CUSTOM_DIR, 'fonts.js');
+export const CUSTOM_FONTS_FILE = join(PROCESS_CUSTOM_DIR, 'fonts.js');
 
 /** Pinned font files, same shape as `scripts/google-fonts.lock.json`. */
 export const CUSTOM_FONTS_LOCK_PATH = join(
-  CUSTOM_DIR,
+  PROCESS_CUSTOM_DIR,
   'google-fonts.lock.json',
 );
 
 /** The fork's MCP tool registrar. */
-export const CUSTOM_MCP_TOOLS_FILE = join(CUSTOM_DIR, 'mcp-tools.js');
+export const CUSTOM_MCP_TOOLS_FILE = join(PROCESS_CUSTOM_DIR, 'mcp-tools.js');

@@ -63,15 +63,23 @@ custom/google-fonts.lock.json
 
 Everything above sits under one root, `custom/`, and the engine reads it as one
 unit: slide types, the stylesheets those types render against, themes, assets,
-fonts, AI copy and MCP tools. One declaration in `shared/custom-root.js` names
-that root and every loader derives its own path from it, so a type and its
-stylesheet can never come from two different places.
+fonts, AI copy and MCP tools. `shared/custom-root.js` decides where that root
+is, and every reader asks it rather than joining `custom` itself.
 
 `DECKYARD_CUSTOM_DIR` moves the whole root, which is how a deployment loads a
-fork that lives outside the checkout. It must be an absolute path: the loaders
+fork that lives outside the checkout. It must be an absolute path: the readers
 run from several working directories (server boot, the MCP stdio child, the
 test runner, `scripts/new-slide-type.js`), so a relative one would name a
 different directory per caller and is refused on startup.
+
+Two kinds of reader ask, and it is worth knowing which is which. The render and
+serving paths — the CSS chain, themes, assets, image inlining in exports, the
+static mounts — are handed an installation root and resolve against it, which
+is what lets the suite render a whole document against a fixture tree. The
+loaders — slide types, AI copy, fonts, MCP tools — have no such root: they are
+imported once and read the same files for the life of the process. With
+`DECKYARD_CUSTOM_DIR` set both resolve to the one root it names, which is the
+case a deployment cares about.
 
 ### Step 3: Add Your Custom Content
 
