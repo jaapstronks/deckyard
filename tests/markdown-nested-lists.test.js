@@ -138,6 +138,20 @@ describe('markdown loose lists and start numbers', () => {
     }
   });
 
+  it('joins after a blank line by the kind of the latest top-level item', () => {
+    // The run's first item is numbered, its latest top-level item a bullet:
+    // a bullet after a blank line continues that bullet list, as it does
+    // without the blank line.
+    for (const md of ['1. a\n- b\n- c', '1. a\n- b\n\n- c']) {
+      const html = skeleton(markdownToSafeHtml(md));
+      assert.match(
+        html,
+        /<ol><li>a<\/li><\/ol>\s?<ul><li>b<\/li><li>c<\/li><\/ul>/,
+        `unexpected structure for ${JSON.stringify(md)}: ${html}`,
+      );
+    }
+  });
+
   it('carries the first number of an ordered list as start', () => {
     const html = decode(markdownToSafeHtml('3. Drie\n4. Vier'));
     assert.match(

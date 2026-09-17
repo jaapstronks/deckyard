@@ -471,9 +471,15 @@ export function markdownToSafeHtml(markdown) {
     // item or a top-level item of the same kind. Anything else ends it.
     if (LIST_ITEM_RE.test(lines[i])) {
       const first = parseListItem(lines[i]);
+      // The kind a top-level item after a blank line must match is that of
+      // the latest top-level item, so `1. a\n- b\n\n- c` joins the same
+      // way `1. a\n- b\n- c` does.
+      let base = first;
       const itemLines = [];
       while (i < lines.length) {
         if (LIST_ITEM_RE.test(lines[i])) {
+          const it = parseListItem(lines[i]);
+          if (it.indent <= first.indent) base = it;
           itemLines.push(lines[i]);
           i += 1;
           continue;
@@ -483,7 +489,7 @@ export function markdownToSafeHtml(markdown) {
         if (next === i || next >= lines.length) break;
         if (!LIST_ITEM_RE.test(lines[next])) break;
         const it = parseListItem(lines[next]);
-        if (it.indent <= first.indent && it.ordered !== first.ordered) break;
+        if (it.indent <= first.indent && it.ordered !== base.ordered) break;
         i = next;
       }
       blocks.push(buildList(itemLines, inlineOpts));
