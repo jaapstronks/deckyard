@@ -64,10 +64,39 @@ document that stays readable with JavaScript — and author CSS — turned off.
       (also in `quotes[]`), callout `label` and `source`, title-slide `meta`,
       team-cards `byline`, logo-wall `name`, cycle `centerLabel`, comparison
       `verdict`.
-  - `image`/`images` → `<figure>` with resolved `alt` (via `pickAltText`; a
-    `decorative` `imageRole` yields `alt=""` + `aria-hidden`) and an optional
-    `<figcaption>`. An image field's sibling `alt`/`caption` keys fold into the
-    figure and are not repeated as paragraphs.
+  - `image` → `<figure>` with an `alt` from the reader's own ladder (D135):
+    the explicit alt (`<key>Alt`, else `alt`); else the name of what the
+    picture shows — the sibling the field names with `nameKey` (logo-wall
+    `name`, the quote portraits' `authorName`), else, for a picture inside an
+    item, that item's heading; else `alt=""`. A caption is never the alt (it is
+    the `<figcaption>`) and neither is a filename, and a slide's own heading
+    does not name a picture on it. This ladder is deliberately shorter than the
+    canvas's `pickAltText`, which may still fall back on a caption or guess from
+    the filename so a presenter never shows an unlabelled picture: the canvas
+    optimises for "something", the document for "true or nothing". A
+    `decorative` role yields `alt=""` + `aria-hidden`; an item's picture reads
+    the role from the object holding its field when it has none of its own, so
+    an image set that is decorative as a whole hides every picture in it. The
+    image's sibling `alt`/`caption`/role keys fold into the figure and are not
+    repeated as paragraphs.
+  - A **set of pictures** — an `items` field whose only readable sub-field is
+    one `image` plus its a11y siblings (image-set, gallery), or an `images`
+    URL array — is one `<figure class="reader-gallery" role="group">`: each
+    picture its own `<figure>` with its own caption, and the set's caption
+    (`<key>Caption`, else `caption`, beside the set) as the group's one
+    `<figcaption>`. Items with more than a picture (a logo with a link, a team
+    card) stay a list. An `images` array carries no alt per picture, so its
+    pictures read `alt=""`; a type whose pictures need a name declares
+    `items`.
+  - **Publishing refuses a picture without a name** (D137): a published deck
+    is this document too, so `POST /publish` (internal and v1) answers `422
+missing_alt` when a drawn `image` field, at slide or item level, is not
+    decorative and ends the ladder above empty — in any language version, on
+    any slide a published page shows. The check is the projection's own
+    (`imagesMissingAlt`), walked over the declarations of the deck's merged
+    registry, so it covers an organisation's own types and cannot disagree
+    with the document. The editor shows the refusal beside the Publish
+    button, naming the slide and the field.
   - `items` → a list. The item heading is the sub-field the field names in
     `itemLabelField` (the per-item mirror of `labelField`), and otherwise the
     item's first readable string — readable meaning not `hidden`, not

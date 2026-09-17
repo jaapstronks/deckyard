@@ -48,22 +48,22 @@ export default {
       {
         src: 'https://picsum.photos/seed/gallery1/800/600',
         caption: 'Project Alpha',
-        alt: '',
+        alt: 'Sample image',
       },
       {
         src: 'https://picsum.photos/seed/gallery2/800/600',
         caption: 'Project Beta',
-        alt: '',
+        alt: 'Sample image',
       },
       {
         src: 'https://picsum.photos/seed/gallery3/800/600',
         caption: 'Project Gamma',
-        alt: '',
+        alt: 'Sample image',
       },
       {
         src: 'https://picsum.photos/seed/gallery4/800/600',
         caption: 'Project Delta',
-        alt: '',
+        alt: 'Sample image',
       },
     ],
     background: 'mist',

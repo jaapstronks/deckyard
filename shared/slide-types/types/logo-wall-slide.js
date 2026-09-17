@@ -111,7 +111,13 @@ export default {
       collapsible: true, // item-rich: per-logo collapse in the editor
       itemDefaults: { image: '', name: '', alt: '', link: '' },
       itemFields: [
-        { key: 'image', type: 'image', label: 'Logo image' },
+        {
+          key: 'image',
+          type: 'image',
+          label: 'Logo image',
+          // A logo shows the organisation it names.
+          nameKey: 'name',
+        },
         {
           key: 'name',
           type: 'string',

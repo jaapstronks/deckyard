@@ -240,6 +240,7 @@ export default {
       key: 'authorImage1',
       label: 'Portrait photo 1 (optional)',
       type: 'image',
+      nameKey: 'authorName',
       required: false,
     },
     {
@@ -253,6 +254,7 @@ export default {
       key: 'authorImage2',
       label: 'Portrait photo 2 (optional)',
       type: 'image',
+      nameKey: 'authorName',
       required: false,
     },
     {
@@ -328,6 +330,7 @@ export default {
           key: 'authorImage',
           label: 'Portrait photo 1 (optional)',
           type: 'image',
+          nameKey: 'authorName',
           required: false,
         },
         {
@@ -341,6 +344,7 @@ export default {
           key: 'authorImage2',
           label: 'Portrait photo 2 (optional)',
           type: 'image',
+          nameKey: 'authorName',
           required: false,
         },
         {

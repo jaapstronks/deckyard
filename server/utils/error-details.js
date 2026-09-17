@@ -21,7 +21,9 @@
  *   `lockKind`, `holder`); `conversion_failed` the same `report` the 201 body
  *   and the SSE stream carry; `maintenance` the object `GET /api/maintenance`
  *   returns (`active`, `reason`, `retryAfter`); `sandbox_quota_exceeded` the
- *   quota that was hit (`resource`, `limit`, `used`).
+ *   quota that was hit (`resource`, `limit`, `used`); `missing_alt` the first
+ *   picture publishing refused (`lang`, `slideIndex`, `slideId`, `field`,
+ *   `itemIndex`, `itemField`) and how many there are (`count`).
  *
  * Enforcement sits at the two emission points that know the code —
  * `jsonError()` (`server/utils/http.js`) and `AppError.toJSON()`
@@ -72,6 +74,15 @@ export const PAYLOAD_KEYS = Object.freeze({
   conversion_failed: Object.freeze(['report']),
   maintenance: Object.freeze(['active', 'reason', 'retryAfter']),
   sandbox_quota_exceeded: Object.freeze(['resource', 'limit', 'used']),
+  missing_alt: Object.freeze([
+    'lang',
+    'slideIndex',
+    'slideId',
+    'field',
+    'itemIndex',
+    'itemField',
+    'count',
+  ]),
 });
 
 /** @returns {boolean} Whether a register violation should throw. */

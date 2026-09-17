@@ -65,7 +65,6 @@
 import { markdownToSafeHtml, inlineMarkdownToSafeHtml } from '../markdown.js';
 import {
   escapeHtml,
-  pickAltText,
   normalizeUrl,
   safeHref,
   normalizeAuthoredUrl,
@@ -271,12 +270,41 @@ function imageSiblingKeys(fieldKey) {
 function imageConsumedKeys(fields, obj) {
   const consumed = new Set();
   for (const field of Array.isArray(fields) ? fields : []) {
-    if (field?.type !== 'image') continue;
+    // A figure group reads its role and its one caption from the object that
+    // holds the set, under the same sibling spellings an image field uses.
+    if (field?.type !== 'image' && !figureGroupImageField(field)) continue;
     for (const key of imageSiblingKeys(field.key)) {
       if (obj && key in obj) consumed.add(key);
     }
   }
   return consumed;
+}
+
+/**
+ * The one `image` sub-field of an `items` field whose items are nothing but a
+ * picture, or `null`.
+ *
+ * Such a field is a set of figures (an image set, a gallery), not a list of
+ * cards: every readable sub-field is the image or one of its a11y siblings, so
+ * an item has nothing to say beside its figure. It projects as one
+ * `<figure role="group">` instead of a `<ul>` of one-figure items. Derived
+ * from the declared sub-fields, like the item heading, so a fork type with the
+ * same shape gets the same group without saying so.
+ *
+ * @param {object} field
+ * @returns {object|null}
+ */
+function figureGroupImageField(field) {
+  if (field?.type !== 'items' || !Array.isArray(field.itemFields)) return null;
+  const readable = field.itemFields.filter(
+    (f) => f && !f.hidden && !isPresentationalField(f),
+  );
+  const images = readable.filter((f) => f.type === 'image');
+  if (images.length !== 1) return null;
+  const siblings = new Set(imageSiblingKeys(images[0].key));
+  return readable.every((f) => f === images[0] || siblings.has(f.key))
+    ? images[0]
+    : null;
 }
 
 /**
@@ -341,27 +369,68 @@ function linkTarget(value, { slideIds, lang } = {}) {
 }
 
 /**
- * Resolve alt text / decorative state / caption for an image field, using the
- * sibling-key conventions (`alt`, `<key>Alt`, `imageRole`, `caption`).
- * `nameText` is a last named fallback before the filename guess: the
- * `caption`-role text that captions this figure, which on a logo is the only
- * name the item has (B297 owns the ladder itself).
+ * A sibling a11y value of `key` in `obj`: `<key><Suffix>`, else the bare
+ * `<suffix>` key (`imageAlt`, else `alt`).
+ * @param {object|null|undefined} obj
+ * @param {string} key
+ * @param {'Alt'|'Caption'|'Role'} suffix
+ * @param {string} bare
+ * @returns {string}
  */
-function resolveImageA11y(fieldKey, content, headingText, nameText = '') {
-  const explicit =
-    str(content[`${fieldKey}Alt`]) ||
-    str(content.alt) ||
-    str(content[`${fieldKey}Caption`]);
-  const role = str(content[`${fieldKey}Role`]) || str(content.imageRole);
-  const caption = str(content[`${fieldKey}Caption`]) || str(content.caption);
+function imageSibling(obj, key, suffix, bare) {
+  if (!obj || typeof obj !== 'object') return '';
+  return str(obj[`${key}${suffix}`]) || str(obj[bare]);
+}
+
+/**
+ * The reader's alt text, decorative state and caption for one image (D135).
+ *
+ * The alt ladder is the reader's own and shorter than the canvas's:
+ *
+ *   1. the explicit alt (`<key>Alt`, else `alt`);
+ *   2. the name of what the picture shows — the sibling the field names with
+ *      `nameKey` (a logo's organisation, the author beside a portrait), else,
+ *      for an image inside an item, that item's heading (a team member's name);
+ *   3. nothing.
+ *
+ * A caption is never the alt: it is the figure's `<figcaption>`, and using it
+ * twice is how a gallery read "Project Alpha, Project Alpha". A filename is
+ * never the alt either (conformance rule 7) — the canvas may still guess one,
+ * the document does not. The slide's own heading is no name for a picture on
+ * it; only an item's heading is.
+ *
+ * The role reads from the image's own object first and from `parent` — the
+ * object holding the items field this image sits in, `parentKey` — second, so
+ * an image set that is decorative as a whole hides every picture in it, as the
+ * canvas does. A caption does not inherit: the parent's caption captions the
+ * whole group ({@link renderFigureGroup}), never each picture again.
+ *
+ * `decorative` is the only way to an empty alt on purpose; an image that is not
+ * decorative and resolves to `''` is what the publish check refuses
+ * ({@link imagesMissingAlt}).
+ *
+ * @param {{key: string, nameKey?: string}} field - the `image` field
+ * @param {object} content - the object the field lives in
+ * @param {object} [opts]
+ * @param {string} [opts.itemHeading] - the heading of the item holding it
+ * @param {object} [opts.parent] - the object holding that item's field
+ * @param {string} [opts.parentKey] - the key of that items field
+ * @returns {{ alt: string, decorative: boolean, caption: string }}
+ */
+function resolveImageA11y(
+  field,
+  content,
+  { itemHeading = '', parent = null, parentKey = '' } = {},
+) {
+  const key = field.key;
+  const role =
+    imageSibling(content, key, 'Role', 'imageRole') ||
+    imageSibling(parent, parentKey, 'Role', 'imageRole');
   const decorative = role === 'decorative';
-  const alt = decorative
-    ? ''
-    : pickAltText({
-        explicit,
-        src: content[fieldKey],
-        fallbacks: [caption, headingText, nameText],
-      });
+  const caption = imageSibling(content, key, 'Caption', 'caption');
+  if (decorative) return { alt: '', decorative, caption };
+  const named = str(field.nameKey) ? str(content?.[field.nameKey]) : '';
+  const alt = imageSibling(content, key, 'Alt', 'alt') || named || itemHeading;
   return { alt, decorative, caption };
 }
 
@@ -702,7 +771,10 @@ function soleUncaptionedFigureKey(fields, content) {
  * @param {object} content - the object those fields describe
  * @param {object} opts
  * @param {object} [opts.defaults] - the block's declared defaults
- * @param {string} [opts.headingText] - alt fallback for a figure
+ * @param {string} [opts.itemHeading] - the heading of the item this block is,
+ *   a figure's alt fallback; none for a slide body
+ * @param {object} [opts.parent] - the object holding this item's field
+ * @param {string} [opts.parentKey] - the key of that items field
  * @param {Map<string, string>} [opts.structured] - pre-rendered html by key
  * @param {Array<object>} [opts.siblings] - every field the block declares, for
  *   `defaultFromOption` (the `fields` list is already filtered)
@@ -713,7 +785,16 @@ function soleUncaptionedFigureKey(fields, content) {
 function renderBlocks(
   fields,
   content,
-  { defaults, headingText, structured, siblings, lang, slideIds },
+  {
+    defaults,
+    itemHeading,
+    parent,
+    parentKey,
+    structured,
+    siblings,
+    lang,
+    slideIds,
+  },
 ) {
   const figureKey = soleUncaptionedFigureKey(fields, content);
   const captionField = figureKey
@@ -747,10 +828,10 @@ function renderBlocks(
       siblings,
       lang,
       slideIds,
-      headingText,
+      itemHeading,
+      parent,
+      parentKey,
       figcaption: field.key === figureKey ? figcaption : '',
-      nameText:
-        field.key === figureKey ? str(content?.[captionField?.key]) : '',
     });
     // A block headed by a sibling (`headingKey`) is that heading and the
     // block; a heading over nothing is just its text.
@@ -778,6 +859,56 @@ function renderBlocks(
   }
   if (footerAt >= 0) parts[footerAt] = `<footer>${footer.join('\n')}</footer>`;
   return parts.filter(Boolean);
+}
+
+/**
+ * The keys an item's own declarations consume: its images' a11y siblings and
+ * the partners its pair declarations name.
+ * @param {Array<object>} itemFields
+ * @param {object} item
+ * @returns {Set<string>}
+ */
+function itemConsumedKeys(itemFields, item) {
+  const consumed = imageConsumedKeys(itemFields, item);
+  for (const key of pairedKeys(itemFields)) consumed.add(key);
+  return consumed;
+}
+
+/**
+ * The heading of one item: the declared `itemLabelField` when this item fills
+ * it, else its first readable string (see {@link renderItemBlock} for why each
+ * exclusion is there). Shared with the publish check, which has to name a
+ * picture the way the reader does.
+ *
+ * @param {object} item
+ * @param {Array<object>} itemFields
+ * @param {string} [itemLabelField]
+ * @param {Set<string>} [consumed] - {@link itemConsumedKeys}, when known
+ * @returns {{ key: string|null, text: string }}
+ */
+function itemHeading(
+  item,
+  itemFields,
+  itemLabelField,
+  consumed = itemConsumedKeys(itemFields, item),
+) {
+  const headable = (f) =>
+    f?.type === 'string' &&
+    !f.hidden &&
+    !f.presentational &&
+    !str(f.hrefKey) &&
+    !DOCUMENT_ELEMENT_ROLES.has(textRole(f)) &&
+    !consumed.has(f.key) &&
+    str(item[f.key]);
+  // A declared heading that is empty on *this* item falls through to the
+  // default: an item with no label still deserves a heading, not a stray <p>.
+  const declared = str(itemLabelField);
+  const field =
+    (declared && itemFields.find((f) => f?.key === declared && headable(f))) ||
+    itemFields.find(headable);
+  return field
+    ? { key: field.key, text: str(item[field.key]) }
+    : { key: null, text: '' };
 }
 
 /**
@@ -813,40 +944,27 @@ function renderBlocks(
  * @param {object} [ctx]
  * @param {string} [ctx.lang] - the deck language
  * @param {string[]} [ctx.slideIds] - the document's slide ids, for jumps
+ * @param {object} [ctx.parent] - the object holding the items field
+ * @param {string} [ctx.parentKey] - the key of that items field
  */
 function renderItemBlock(
   item,
   itemFields,
   itemLabelField,
   itemDefaults,
-  { lang, slideIds } = {},
+  { lang, slideIds, parent, parentKey } = {},
 ) {
   if (!item || typeof item !== 'object' || !Array.isArray(itemFields))
     return '';
-  const consumed = imageConsumedKeys(itemFields, item);
-  for (const key of pairedKeys(itemFields)) consumed.add(key);
-  let headingKey = null;
-  let headingText = '';
-  const headable = (f) =>
-    f?.type === 'string' &&
-    !f.hidden &&
-    !f.presentational &&
-    !str(f.hrefKey) &&
-    !DOCUMENT_ELEMENT_ROLES.has(textRole(f)) &&
-    !consumed.has(f.key) &&
-    str(item[f.key]);
-  // A declared heading that is empty on *this* item falls through to the
-  // default: an item with no label still deserves a heading, not a stray <p>.
-  const declared = str(itemLabelField);
-  const headingField =
-    (declared && itemFields.find((f) => f?.key === declared && headable(f))) ||
-    itemFields.find(headable);
-  if (headingField) {
-    headingKey = headingField.key;
-    headingText = str(item[headingField.key]);
-  }
+  const consumed = itemConsumedKeys(itemFields, item);
+  const { key: headingKey, text: headingText } = itemHeading(
+    item,
+    itemFields,
+    itemLabelField,
+    consumed,
+  );
   // The item's own heading is the alt fallback for its image — a card's name
-  // describes its portrait far better than the filename guess does.
+  // describes its portrait when nothing names it more precisely.
   const below = renderBlocks(
     itemFields.filter(
       (f) => f && f.key !== headingKey && !f.hidden && !consumed.has(f.key),
@@ -854,7 +972,9 @@ function renderItemBlock(
     item,
     {
       defaults: itemDefaults,
-      headingText,
+      itemHeading: headingText,
+      parent,
+      parentKey,
       siblings: itemFields,
       lang,
       slideIds,
@@ -874,6 +994,35 @@ function renderItemBlock(
     : below;
   const inner = parts.join('\n');
   return inner ? `<li class="reader-item"${attrs}>${inner}</li>` : '';
+}
+
+/**
+ * Project a set of pictures as one `<figure role="group">` (D135): each picture
+ * its own `<figure>` with its own caption, and the set's caption — the
+ * `<key>Caption` / `caption` sibling of the set, in the object that holds it —
+ * as the group's one `<figcaption>`. A set is one thing on the canvas with one
+ * caption under it; a `<ul>` of one-picture items with a loose caption
+ * paragraph beside it said it was a list of unrelated things.
+ *
+ * @param {string} key - the set's field key, for `data-field`
+ * @param {Array<{src: unknown, a11y: {alt: string, decorative: boolean, caption: string}, attrs?: string}>} figures
+ *   `attrs` is the picture's own `data-field`, when it has a field of its own
+ * @param {object} content - the object holding the set
+ * @returns {string}
+ */
+function renderFigureGroup(key, figures, content) {
+  const figs = figures
+    .map(({ src, a11y, attrs }) => renderFigure(src, a11y, attrs))
+    .filter(Boolean);
+  if (!figs.length) return '';
+  const captionKey = str(content?.[`${key}Caption`])
+    ? `${key}Caption`
+    : 'caption';
+  const caption = str(content?.[captionKey]);
+  const figcaption = caption
+    ? `<figcaption${fieldAttr(captionKey)}>${escapeHtml(caption)}</figcaption>`
+    : '';
+  return `<figure class="reader-gallery" role="group"${fieldAttr(key)}>${figs.join('')}${figcaption}</figure>`;
 }
 
 /**
@@ -992,9 +1141,10 @@ function declaredScale(def) {
  * @param {Array<object>} [opts.siblings] - the fields beside this one
  * @param {string} [opts.lang] - the deck language
  * @param {string[]} [opts.slideIds] - the document's slide ids, for jumps
- * @param {string} [opts.headingText] - alt fallback for an image
+ * @param {string} [opts.itemHeading] - the heading of the item `content` is
+ * @param {object} [opts.parent] - the object holding that item's field
+ * @param {string} [opts.parentKey] - the key of that items field
  * @param {string} [opts.figcaption] - a ready `<figcaption>` for an image
- * @param {string} [opts.nameText] - the caption text, a last alt fallback
  */
 function renderFieldValue(
   field,
@@ -1004,9 +1154,10 @@ function renderFieldValue(
     siblings,
     lang,
     slideIds,
-    headingText = '',
+    itemHeading = '',
+    parent = null,
+    parentKey = '',
     figcaption = '',
-    nameText = '',
   } = {},
 ) {
   if (!field || field.hidden) return '';
@@ -1044,26 +1195,45 @@ function renderFieldValue(
       return v ? renderCsvTable(v, '', attrs) : '';
     }
     case 'image': {
-      const a11y = resolveImageA11y(field.key, content, headingText, nameText);
+      const a11y = resolveImageA11y(field, content, {
+        itemHeading,
+        parent,
+        parentKey,
+      });
       return renderFigure(value, a11y, attrs, figcaption);
     }
     case 'images': {
-      if (!Array.isArray(value) || !value.length) return '';
-      const figs = value
-        .map((src, i) =>
-          renderFigure(src, {
-            alt: pickAltText({ src, fallbacks: [headingText] }),
-            decorative: false,
-            caption: '',
-          }),
-        )
-        .filter(Boolean);
-      return figs.length
-        ? `<div class="reader-gallery"${attrs}>${figs.join('')}</div>`
-        : '';
+      // URLs only, so nothing names a picture: the alt is empty, and a type
+      // whose pictures need one declares `items` instead (field-types.js).
+      if (!Array.isArray(value)) return '';
+      const decorative =
+        imageSibling(content, field.key, 'Role', 'imageRole') === 'decorative';
+      return renderFigureGroup(
+        field.key,
+        value.map((src) => ({
+          src,
+          a11y: { alt: '', decorative, caption: '' },
+        })),
+        content,
+      );
     }
     case 'items': {
       if (!Array.isArray(value) || !value.length) return '';
+      const groupImage = figureGroupImageField(field);
+      if (groupImage) {
+        return renderFigureGroup(
+          field.key,
+          value.map((item) => ({
+            src: item?.[groupImage.key],
+            attrs: fieldAttr(groupImage.key),
+            a11y: resolveImageA11y(groupImage, item || {}, {
+              parent: content,
+              parentKey: field.key,
+            }),
+          })),
+          content,
+        );
+      }
       // A `relationField` names a per-item key holding a typed relation to the
       // NEXT item (e.g. text-blocks' `arrow`: "down" ≈ leads-to). When any item
       // carries a relation, the collection is a causal/ordered sequence → the
@@ -1089,7 +1259,7 @@ function renderFieldValue(
             field.itemFields,
             field.itemLabelField,
             resolveItemDefaults(field),
-            { lang, slideIds },
+            { lang, slideIds, parent: content, parentKey: field.key },
           );
           if (!li) return '';
           const rel = relationOf(item);
@@ -1128,7 +1298,7 @@ function renderFieldValue(
  *
  * @param {object} slide
  * @param {object} def - the resolved slide-type definition
- * @param {{ headingKey?: string|null, headingText?: string, lang?: string, slideIds?: string[] }} [opts]
+ * @param {{ headingKey?: string|null, lang?: string, slideIds?: string[] }} [opts]
  *   `lang` is the deck language, for the copy a slide shows without storing it;
  *   `slideIds` the document's slide ids in order, so a slide jump can link
  * @returns {string} inner HTML for the slide section
@@ -1136,7 +1306,7 @@ function renderFieldValue(
 export function renderSlideBodySemanticHtml(
   slide,
   def,
-  { headingKey = null, headingText = '', lang, slideIds } = {},
+  { headingKey = null, lang, slideIds } = {},
 ) {
   const content =
     slide?.content && typeof slide.content === 'object' ? slide.content : {};
@@ -1223,7 +1393,6 @@ export function renderSlideBodySemanticHtml(
       content,
       {
         defaults,
-        headingText,
         structured: structuredHtmlByKey,
         siblings: def?.fields,
         lang,
@@ -1232,6 +1401,66 @@ export function renderSlideBodySemanticHtml(
     ),
   );
   return parts.filter(Boolean).join('\n');
+}
+
+/**
+ * The pictures on a slide that mean something and that the reader could name
+ * with nothing: not decorative, and empty at the end of the alt ladder
+ * ({@link resolveImageA11y}). Publishing refuses a deck with any (D137).
+ *
+ * It walks the declarations, not a list of types: every `image` field the
+ * reader would draw, at the top of the slide and inside each item, the way the
+ * projection finds them — the same visibility, the same presentational and
+ * global-config exclusions, the same item heading as a name. A check that
+ * answered differently from the document it guards would refuse decks that
+ * read fine and publish decks that do not. `images` (a URL array) carries no
+ * alt per picture and is outside the check; a type whose pictures need a
+ * name declares `items`.
+ *
+ * @param {object} slide
+ * @param {object|null|undefined} def - the resolved slide-type definition
+ * @returns {Array<{ field: string, itemIndex?: number, itemField?: string }>}
+ *   `field` is the top-level key; for a picture in an item, `itemIndex` and
+ *   `itemField` say which one
+ */
+export function imagesMissingAlt(slide, def) {
+  if (!def) return [];
+  const content =
+    slide?.content && typeof slide.content === 'object' ? slide.content : {};
+  const defaults =
+    def.defaults && typeof def.defaults === 'object' ? def.defaults : {};
+  const drawn = (field) =>
+    !!field &&
+    !field.hidden &&
+    !isPresentationalField(field) &&
+    !NON_CONTENT_GLOBAL_KEYS.has(field.key);
+  const unnamed = (field, obj, opts) => {
+    if (field.type !== 'image' || !normalizeUrl(obj?.[field.key])) return false;
+    const { alt, decorative } = resolveImageA11y(field, obj, opts);
+    return !decorative && !alt;
+  };
+  const missing = [];
+  for (const field of Array.isArray(def.fields) ? def.fields : []) {
+    if (!drawn(field) || !isFieldVisible(field, content, defaults)) continue;
+    if (unnamed(field, content)) missing.push({ field: field.key });
+    const items = content[field.key];
+    if (field.type !== 'items' || !Array.isArray(items)) continue;
+    const itemFields = Array.isArray(field.itemFields) ? field.itemFields : [];
+    items.forEach((item, itemIndex) => {
+      if (!item || typeof item !== 'object') return;
+      const opts = {
+        itemHeading: itemHeading(item, itemFields, field.itemLabelField).text,
+        parent: content,
+        parentKey: field.key,
+      };
+      for (const sub of itemFields) {
+        if (drawn(sub) && unnamed(sub, item, opts)) {
+          missing.push({ field: field.key, itemIndex, itemField: sub.key });
+        }
+      }
+    });
+  }
+  return missing;
 }
 
 /**
@@ -1273,7 +1502,6 @@ export function renderSlideSectionHtml(
   const inner = def
     ? renderSlideBodySemanticHtml(slide, def, {
         headingKey: heading.key,
-        headingText: heading.text,
         lang,
         slideIds,
       })

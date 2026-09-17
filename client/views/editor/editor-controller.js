@@ -603,6 +603,7 @@ export async function createEditorController({
     saveManager,
     editorState,
     user,
+    slideTypes: SLIDE_TYPES,
   });
   cleanup.register('dropdowns', dropdowns.detach);
 

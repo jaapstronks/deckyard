@@ -135,6 +135,12 @@ const PAIR_DECLARATIONS = Object.freeze([
     partner: ['string'],
   },
   {
+    code: 'name_key',
+    read: (f) => f.nameKey,
+    on: ['image'],
+    partner: ['string'],
+  },
+  {
     code: 'duration',
     // A malformed `duration` names no seconds; the reference check says so.
     read: (f) =>
@@ -743,6 +749,14 @@ const FINDING_MESSAGES = {
   heading_key_unknown: (where, f) =>
     `${where} declares \`headingKey\` ${JSON.stringify(f?.detail?.declared)}, ` +
     `which is not a \`string\` field beside it, so the block has no heading.`,
+  name_key_wrong_type: (where, f) =>
+    `${where} declares \`nameKey\` on a \`${f?.detail?.type}\` field, but ` +
+    `only an \`image\` shows something a name can describe, so it is ` +
+    `ignored.`,
+  name_key_unknown: (where, f) =>
+    `${where} declares \`nameKey\` ${JSON.stringify(f?.detail?.declared)}, ` +
+    `which is not a \`string\` field beside it, so the picture has no name ` +
+    `to fall back on when its alt text is empty.`,
   duration_wrong_type: (where, f) =>
     `${where} declares \`duration\` on a \`${f?.detail?.type}\` field, but ` +
     `only a \`number\` holds the minutes of a length, so it is ignored.`,

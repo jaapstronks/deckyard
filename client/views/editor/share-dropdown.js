@@ -30,6 +30,7 @@ export function setupShareDropdown({
   currentUser,
   currentUserEmail,
   isAdmin,
+  slideTypes,
 } = {}) {
   let notionAvailable = false;
   let dialog = null;
@@ -112,6 +113,7 @@ export function setupShareDropdown({
       syncShareUi,
       openDescriptionModal,
       doPublish: doPublishBound,
+      slideTypes,
       buildPublishModalData,
       openPublishModal: openPublishModalBound,
       handleNotionPublish: () => handleNotionPublish({ api, toast, pres }),
