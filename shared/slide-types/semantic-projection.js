@@ -58,8 +58,9 @@
  *  - **`markup` is honoured.** A `code` field's value is source by default,
  *    and a reader shows source as source. A field that declares `markup: true`
  *    holds author HTML the canvas renders (custom-html), so the reader renders
- *    it too, through the same sanitizer the canvas uses, and names a slide
- *    without a title by its first `h1..h3`. See {@link markupHeadingText}.
+ *    it too, through the same sanitizer the canvas uses, minus the author's
+ *    `style` attributes (presentation, like the `css` field), and names a
+ *    slide without a title by its first `h1..h3`. See {@link markupHeadingText}.
  *  - **The deck language is a parameter.** Some of what a slide says is not
  *    stored: a blank callout label reads as its kind ("Key insight"), a chart
  *    carries a one-sentence summary. Both come from the slide copy in the
@@ -1227,9 +1228,11 @@ function renderFieldValue(
       if (!v) return '';
       // Author markup the canvas renders is content, not source: the reader
       // renders it through the canvas's own sanitizer, as one wrapper that
-      // names the field (D145: no surgery on sanitizer output).
+      // names the field (D145: no surgery on sanitizer output). Author CSS is
+      // presentation, in the `css` field and in a `style` attribute alike, so
+      // the projection asks for the tree without it (D151).
       if (field.markup === true) {
-        const html = sanitizeSlideHtmlSync(v);
+        const html = sanitizeSlideHtmlSync(v, { presentation: false });
         return html ? `<div${attrs}>${html}</div>` : '';
       }
       return `<pre class="reader-code"${attrs}><code>${escapeHtml(v)}</code></pre>`;

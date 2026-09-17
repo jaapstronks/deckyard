@@ -34,7 +34,10 @@ document that stays readable with JavaScript — and author CSS — turned off.
     `markup: true` holds author HTML the canvas renders (custom-html's `html`),
     so it projects as that HTML, sanitized by the canvas's own
     `sanitizeSlideHtmlSync`, in one `<div data-field>`; its stylesheet (`css`)
-    is `presentational`. The markup's first `h1..h3` names a slide that has no
+    is `presentational`, and so are the author's `style` attributes, which the
+    projection drops (`presentation: false`): a reflowable document reads
+    without author CSS wherever it sits (D151). `class` and `id` stay, they
+    are structure. The markup's first `h1..h3` names a slide that has no
     title, as a hidden heading (below), and stays in the body where the author
     put it. A `dataset` payload's
     `<caption>` is the type's `datasetSummary` sentence in the deck language

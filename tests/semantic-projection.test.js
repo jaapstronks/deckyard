@@ -1886,6 +1886,21 @@ describe('markup — author HTML projects as its content, not its source (B298)'
     assert.equal(body({ content: { html: '<script>x</script>' } }, def), '');
   });
 
+  it('author CSS is presentation: the reader drops `style`, the canvas keeps it; class and id stay (D151)', () => {
+    const html =
+      '<p id="intro" class="ch-note" style="color: white; position: absolute">Hi</p>';
+    assert.equal(
+      body({ content: { html } }, def),
+      '<div data-field="html"><p id="intro" class="ch-note">Hi</p></div>',
+    );
+    // Pinned next to the canvas: the same tree, only the presentation differs.
+    assert.ok(
+      def
+        .renderHtml({ html, css: '' }, { id: 's1', type: 'custom-html-slide' })
+        .includes('style="color: white; position: absolute"'),
+    );
+  });
+
   it('a code field without markup stays source', () => {
     const src = {
       fields: [{ key: 'snippet', type: 'code' }],
