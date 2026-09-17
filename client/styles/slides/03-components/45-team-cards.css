@@ -613,12 +613,7 @@
    Override the base text-split grid card back to a simple flex column. */
 .slide-team-cards.aspect-original:not(.has-column-split).text-split
   .team-cards-grid {
-  /* Line the row up from the top. The justify runtime gives every title in a
-     row the same height, so titles and the images under them start on one
-     line and a longer byline hangs below its own card. Aligning the card
-     *bottoms* instead (the earlier rule) only looked level while the bylines
-     happened to be the same length: a narrow card wraps its byline to more
-     lines, grows, and pushes its image up past its neighbours'. */
+  /* The runtime shares title height per row; longer bylines hang below. */
   align-items: flex-start;
 }
 

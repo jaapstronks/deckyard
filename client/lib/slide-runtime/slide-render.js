@@ -491,10 +491,7 @@ export function renderSlideElement(
   initCodeAndMath(el);
   if (mode === 'present' || mode === 'follow')
     cleanups.push(initKpiMetricsSlides(el));
-  // Uncropped image-blocks get justified rows, in every mode. A thumbnail that
-  // fell back to the CSS shared height showed a different packing than the
-  // slide it stands for: the pass measures the logical slide box, which a
-  // thumbnail scales rather than shrinks.
+  // Thumbnails use the same logical slide dimensions as full-size renders.
   cleanups.push(initTeamCardsJustify(el));
   if (slide?.type === 'follow-invite-slide') {
     // Follow-invite slides look blank without QR rendering. For thumbnails we render once

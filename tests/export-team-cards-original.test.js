@@ -89,7 +89,8 @@ const slide = async (ratio = RATIOS['3:2']) => {
 
 /**
  * The vertical bands (in px) that contain pure-red pixels. One row of images
- * is one band; the 2×2 fallback is two.
+ * is one band. Short captions can fit a full row plus a partial row; those
+ * images stay larger than they would if all four were forced onto one row.
  */
 async function redBands(png) {
   const { data, info } = await sharp(png)
@@ -112,20 +113,26 @@ async function redBands(png) {
 }
 
 for (const [name, ratio] of Object.entries(RATIOS)) {
-  test(`PNG: four ${name} images on one row`, { skip }, async () => {
-    const png = await renderSlideToPngBuffer(repoRoot, await slide(ratio), {
-      scale: 1,
-    });
-    const bands = await redBands(png);
-    assert.equal(
-      bands.length,
-      1,
-      `expected one row of images, got ${bands.length}: ${JSON.stringify(bands)}`,
-    );
-  });
+  const expectedRows = name === '16:9' ? 2 : 1;
+  test(
+    `PNG: four ${name} images use the largest fitting packing`,
+    { skip },
+    async () => {
+      const png = await renderSlideToPngBuffer(repoRoot, await slide(ratio), {
+        scale: 1,
+      });
+      const bands = await redBands(png);
+      assert.equal(
+        bands.length,
+        expectedRows,
+        `expected ${expectedRows} image rows, got ${bands.length}: ${JSON.stringify(bands)}`,
+      );
+      assert.ok(bands.at(-1)[1] < 900, 'all image bands end inside the slide');
+    },
+  );
 
   test(
-    `PDF slides document: four ${name} images on one row, under the declared ceiling`,
+    `PDF slides document: four ${name} images fit at the largest ceiling`,
     { skip },
     async () => {
       const html = await buildSlidesPdfHtml(repoRoot, {
@@ -146,7 +153,21 @@ for (const [name, ratio] of Object.entries(RATIOS)) {
           const grid = document.querySelector(
             '.slide-team-cards .team-cards-grid',
           );
+          const inner = grid.parentElement;
+          const header = inner.querySelector(':scope > .header');
+          const cards = Array.from(
+            grid.querySelectorAll(':scope > .team-card'),
+          );
           return {
+            cardTop: Math.min(
+              ...cards.map((el) => el.getBoundingClientRect().top),
+            ),
+            cardBottom: Math.max(
+              ...cards.map((el) => el.getBoundingClientRect().bottom),
+            ),
+            innerBottom: inner.getBoundingClientRect().bottom,
+            headerBottom: header.getBoundingClientRect().bottom,
+            alignContent: grid.style.alignContent,
             tops: photos.map((el) =>
               Math.round(el.getBoundingClientRect().top),
             ),
@@ -161,22 +182,48 @@ for (const [name, ratio] of Object.entries(RATIOS)) {
         assert.equal(m.tops.length, 4);
         assert.equal(
           new Set(m.tops).size,
-          1,
-          `expected one row, got photo tops ${JSON.stringify(m.tops)}`,
+          expectedRows,
+          `expected ${expectedRows} rows, got photo tops ${JSON.stringify(m.tops)}`,
         );
+        assert.ok(m.cardTop >= m.headerBottom, 'cards clear the heading');
+        assert.ok(
+          m.cardBottom <= m.innerBottom + 1,
+          `cards end at ${m.cardBottom}, content ends at ${m.innerBottom}`,
+        );
+        assert.equal(m.alignContent, '', 'the fitting packing stays centred');
         // The export pins the same two bounds the editor packs against: the
         // row is justified to the full width, and stays under the ceiling the
         // stylesheet declares.
+        const firstRowSize = expectedRows === 2 ? 3 : 4;
         const expected =
-          (m.gridWidth - 1 - m.gap * 3) / (4 * (ratio[0] / ratio[1]));
-        for (const h of m.heights) {
+          (m.gridWidth - 1 - m.gap * (firstRowSize - 1)) /
+          (firstRowSize * (ratio[0] / ratio[1]));
+        for (const h of m.heights.slice(0, firstRowSize)) {
           assert.ok(
             Math.abs(h - expected) <= 1,
             `photo height ${h} should be the justified ${expected.toFixed(2)}`,
           );
+        }
+        for (const h of m.heights) {
+          assert.ok(h > 0, 'every image stays visible');
           assert.ok(
             h <= Math.round(m.ceiling),
             `photo height ${h} exceeds the declared ceiling ${m.ceiling}`,
+          );
+        }
+        if (expectedRows === 2) {
+          assert.deepEqual(m.tops.slice(0, 3), Array(3).fill(m.tops[0]));
+          assert.ok(
+            m.tops[3] > m.tops[0],
+            'the final image has its own partial row',
+          );
+          assert.ok(
+            m.heights[3] >= expected - 1,
+            'the partial row keeps a larger image than a single row of four',
+          );
+          assert.ok(
+            m.heights[3] < m.ceiling,
+            'the partial row shrinks within its unchanged row partition',
           );
         }
       } finally {

@@ -152,11 +152,6 @@
       "count": 12
     }
   },
-  "client/lib/slide-runtime/team-cards-justify.js": {
-    "no-restricted-syntax": {
-      "count": 2
-    }
-  },
   "client/lib/slide-runtime/video-layer.js": {
     "no-restricted-syntax": {
       "count": 3

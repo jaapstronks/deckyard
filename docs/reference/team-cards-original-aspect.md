@@ -86,25 +86,13 @@ A ceiling on one row is not a budget for the slide, and the pass needs both:
    push past the slide edge and which would hand the packing back the overflow
    it exists to prevent.
 
-The pass enumerates every ceiling at which the greedy packing can change — the
-justified height of each contiguous run of cards, plus the declared ceiling —
-walks them from tallest to shortest, applies each distinct packing, measures the
-result and keeps the first that fits. That is a linear scan on purpose: a lower
-ceiling re-packs the rows and rewraps the captions, so the total height is not
-monotonic in the ceiling and a bisection could step over the answer.
+The search covers positive ceilings in increments of 0.01 logical pixels, matching the precision emitted to CSS. It visits intervals from largest to smallest. Each interval has a fixed row partition and fixed integer card widths. Its lower boundary is the next completed-row threshold or the next card-width change in the partial last row. A partial row can become shorter without changing its membership; looking only at row transitions misses those fitting layouts.
 
-This is not shrink-to-fit: the rows are packed again at a smaller ceiling, not
-scaled down afterwards, and nothing touches the font size or a transform. It
-also explains why the old hidden `300` "worked" for four 3:2 images — it was
-simply a lower ceiling. Now four 3:2 images share one row because the available
-space says so.
+Within one interval the text has the same width and wrapping, completed rows keep their justified heights, and only the partial last row's image height varies. The pass measures the upper and lower bounds. If the interval contains a fit, a bounded binary search finds its largest fitting ceiling. Across intervals it measures again: narrower captions can add lines, so the complete search is not monotone. Intervals whose row heights do not change are skipped after measurement.
 
-**When nothing fits** — the captions alone are taller than the slide — the pass
-keeps the packing that overflows least, and sets `align-content: flex-start` on
-the grid so the overflow runs off the **bottom**. The grid centres its rows by
-default, which would otherwise spill the excess upwards over the heading. No
-stored text is truncated and there is no shrink-to-fit pass (removed with the
-rest of the slide shrink layer).
+The result is the largest fitting ceiling at the runtime's CSS precision. Four landscape images may occupy one row or several rows depending on the text and available height; no row count is prescribed by image ratio alone. Images retain their aspect ratios, text retains its font size, and no transform scales the content to fit.
+
+**When no candidate fits**, the pass keeps the least-overflowing layout across all intervals, choosing the largest ceiling on a tie. It sets `align-content: flex-start` so overflow runs off the bottom and leaves the heading clear. No stored text is truncated. This conclusion is bounded by the stated layout precision; failure of a few row-transition candidates is not evidence of unavoidable overflow.
 
 ### Split titles line up per row
 

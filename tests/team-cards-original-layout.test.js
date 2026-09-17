@@ -111,12 +111,22 @@ const slide = async (ratios, opts = {}) => ({
  * Render one slide at 1600×900 and read back what the layout did.
  * @returns {Promise<object>} Rounded layout values, in logical slide pixels.
  */
-async function measure(content, viewport = { width: 1600, height: 900 }) {
-  const html = await buildSlidesPdfHtml(repoRoot, {
+async function measure(
+  content,
+  viewport = { width: 1600, height: 900 },
+  photoCeiling = null,
+) {
+  let html = await buildSlidesPdfHtml(repoRoot, {
     id: 'deck',
     title: 'Deck',
     slides: [content],
   });
+  if (photoCeiling !== null) {
+    html = html.replace(
+      '</head>',
+      `<style>.slide-team-cards .team-card-photo { max-height: ${photoCeiling}px !important; }</style></head>`,
+    );
+  }
   const browser = await getPuppeteerBrowser({ featureName: 'test' });
   const page = await browser.newPage();
   try {
@@ -193,6 +203,42 @@ const PORTRAIT = [900, 1400];
 const SQUARE = [1000, 1000];
 
 describe('image blocks, original aspect: the packing obeys both bounds', () => {
+  test('a single portrait shrinks to fit even when its row never changes', async (t) => {
+    if (skip) return t.skip(skip);
+    const s = await slide([PORTRAIT], {
+      title: () => 'Research and development',
+      byline: () => 'Caption words '.repeat(6),
+    });
+    s.content.title =
+      'An introduction to our international team and their work on research and development';
+    s.content.subheading =
+      'Our team works across disciplines to develop new ideas and practical solutions. Meet the people who turn these ideas into results.';
+    const m = await measure(s);
+    assert.deepEqual(rowsOf(m), [[0]]);
+    assert.ok(m.photoHeights[0] > 0, 'fitting keeps the portrait visible');
+    assert.ok(
+      m.photoHeights[0] < m.ceiling,
+      'the full-height portrait cannot fit under this heading',
+    );
+    assert.ok(
+      m.cardBottoms[0] <= m.innerBottom + 1,
+      `card ends at ${m.cardBottoms[0]}, content ends at ${m.innerBottom}`,
+    );
+    assert.ok(m.cardTops[0] >= m.headerBottom, 'the heading stays clear');
+    assert.equal(m.alignContent, '', 'a fitting portrait stays centred');
+
+    // Shrinking is not monotone: this narrower portrait forces extra caption
+    // lines. A search that discards all larger heights after a small failure
+    // misses the fitting interval above it.
+    const fitting = await measure(s, undefined, 275);
+    const narrower = await measure(s, undefined, 250);
+    assert.ok(fitting.cardBottoms[0] <= fitting.innerBottom + 1);
+    assert.ok(
+      narrower.cardBottoms[0] > narrower.innerBottom + 1,
+      'the smaller image has enough extra text lines to overflow again',
+    );
+  });
+
   test('four 3:2 images share one row at the justified height', async (t) => {
     if (skip) return t.skip(skip);
     const m = await measure(
@@ -374,6 +420,62 @@ describe('image blocks, original aspect: split titles line up per row', () => {
 });
 
 describe('image blocks, original aspect: the unavoidable overflow', () => {
+  test('a heading that consumes the content budget still aligns cards below it', async (t) => {
+    if (skip) return t.skip(skip);
+    const html = await buildSlidesPdfHtml(repoRoot, {
+      id: 'deck',
+      title: 'Deck',
+      slides: [await slide([PORTRAIT])],
+    });
+    const browser = await getPuppeteerBrowser({ featureName: 'test' });
+    const page = await browser.newPage();
+    try {
+      await page.setViewport({ width: 1600, height: 900 });
+      await page.setContent(html, { waitUntil: 'load' });
+      await settleRenderedPage(page);
+      const result = await page.evaluate(async () => {
+        const inner = document.querySelector(
+          '.slide-team-cards > .slide-inner',
+        );
+        const header = inner.querySelector(':scope > .header');
+        const grid = inner.querySelector(':scope > .team-cards-grid');
+        header.style.height = `${inner.clientHeight}px`;
+        header.style.flexShrink = '0';
+        for (let i = 0; i < 4; i += 1)
+          await new Promise((resolve) => requestAnimationFrame(resolve));
+        const card = grid.querySelector('.team-card');
+        return {
+          budget:
+            inner.clientHeight -
+            header.getBoundingClientRect().height -
+            (parseFloat(getComputedStyle(inner).rowGap) || 0),
+          headerBottom: header.getBoundingClientRect().bottom,
+          cardTop: card.getBoundingClientRect().top,
+          photoHeight: card
+            .querySelector('.team-card-photo')
+            .getBoundingClientRect().height,
+          alignContent: grid.style.alignContent,
+        };
+      });
+      assert.ok(
+        result.budget <= 0,
+        'the heading leaves no available content height',
+      );
+      assert.equal(
+        result.alignContent,
+        'flex-start',
+        'zero budget is overflow, not an unmeasurable slide',
+      );
+      assert.ok(
+        result.cardTop >= result.headerBottom,
+        'overflow never covers the heading',
+      );
+      assert.ok(result.photoHeight > 0, 'the overflowing photo stays visible');
+    } finally {
+      await page.close();
+    }
+  });
+
   test('content taller than the slide runs off the bottom, never over the heading', async (t) => {
     if (skip) return t.skip(skip);
     const m = await measure(
@@ -472,6 +574,110 @@ describe('image blocks, original aspect: the other layouts stay put', () => {
 });
 
 describe('image blocks, original aspect: the runtime cleans up after itself', () => {
+  test('caption-only font completion replans, and deferred font completion after detach stays idle', async (t) => {
+    if (skip) return t.skip(skip);
+    const html = await buildSlidesPdfHtml(repoRoot, {
+      id: 'deck',
+      title: 'Deck',
+      slides: [
+        await slide([PORTRAIT], { byline: () => 'Caption words '.repeat(6) }),
+      ],
+    });
+    const moduleSource = readFileSync(
+      path.join(repoRoot, 'client/lib/slide-runtime/team-cards-justify.js'),
+      'utf8',
+    ).replace('export function initTeamCardsJustify', 'function init');
+    const browser = await getPuppeteerBrowser({ featureName: 'test' });
+    const page = await browser.newPage();
+    try {
+      await page.setViewport({ width: 1600, height: 900 });
+      await page.setContent(html, { waitUntil: 'load' });
+      await settleRenderedPage(page);
+      const result = await page.evaluate(async (src) => {
+        // Clone away from the document's already-mounted runtime, so only the
+        // initializer under test can respond to this synthetic font lifecycle.
+        const original = document.querySelector('.slide-team-cards');
+        const slideEl = original.cloneNode(true);
+        original.replaceWith(slideEl);
+        let resolveReady;
+        const fonts = new EventTarget();
+        fonts.ready = new Promise((resolve) => {
+          resolveReady = resolve;
+        });
+        Object.defineProperty(document, 'fonts', {
+          configurable: true,
+          value: fonts,
+        });
+        // eslint-disable-next-line no-new-func
+        const init = new Function(`${src}; return init;`)();
+        const frames = async () => {
+          for (let i = 0; i < 3; i += 1)
+            await new Promise((resolve) => requestAnimationFrame(resolve));
+        };
+        const detach = init(slideEl);
+        await frames();
+        const heading = slideEl.querySelector('.header');
+        const byline = slideEl.querySelector('.team-card-byline');
+        const photo = slideEl.querySelector('.team-card-photo');
+        const before = {
+          heading: heading.getBoundingClientRect().height,
+          caption: byline.getBoundingClientRect().height,
+          photo: photo.getBoundingClientRect().height,
+        };
+        // A late caption font can change metrics without changing any observed
+        // heading/slide box. Simulate that metric change without network timing.
+        byline.style.fontSize = '64px';
+        await frames();
+        const beforeEvent = photo.getBoundingClientRect().height;
+        fonts.dispatchEvent(new Event('loadingdone'));
+        await frames();
+        const after = {
+          heading: heading.getBoundingClientRect().height,
+          caption: byline.getBoundingClientRect().height,
+          photo: photo.getBoundingClientRect().height,
+        };
+        detach();
+        let mutations = 0;
+        const observer = new MutationObserver((records) => {
+          mutations += records.length;
+        });
+        observer.observe(slideEl, { attributes: true, subtree: true });
+        resolveReady();
+        fonts.dispatchEvent(new Event('loadingdone'));
+        await frames();
+        observer.disconnect();
+        return { before, beforeEvent, after, mutations };
+      }, moduleSource);
+      assert.equal(
+        result.before.heading,
+        result.after.heading,
+        'the heading never resized',
+      );
+      assert.equal(
+        result.beforeEvent,
+        result.before.photo,
+        'caption metrics alone did not trigger a resize pass',
+      );
+      assert.notEqual(
+        result.before.caption,
+        result.after.caption,
+        'caption metrics changed',
+      );
+      assert.notEqual(
+        result.before.photo,
+        result.after.photo,
+        'font completion repacked the photo',
+      );
+      assert.equal(
+        result.mutations,
+        0,
+        'neither ready nor loadingdone can mutate a detached slide',
+      );
+    } finally {
+      await page.close();
+    }
+  });
+
   test('repeated mounts leave no observers behind', async (t) => {
     if (skip) return t.skip(skip);
     const s = await slide([RATIO_3_2, RATIO_3_2, RATIO_3_2, RATIO_3_2]);

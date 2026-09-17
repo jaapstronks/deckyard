@@ -1,36 +1,10 @@
 /**
- * Team-cards (image-blocks) justified-rows runtime.
+ * Justified rows for uncropped image blocks. One CSS ceiling bounds each row;
+ * the slide's available content height bounds the complete packing.
  *
- * For `imageAspect: original` (uncropped, non-split) slides the CSS lays the
- * images out as wrapping flex rows at one shared height (see 45-team-cards.css).
- * That already hugs captions to their image and keeps text uniformly magnified,
- * but a few wide screenshots at a fixed height overflow the row and wrap
- * awkwardly (one wide image alone on top, the rest below) instead of filling the
- * slide. This pass packs the images into rows greedily and picks each row's
- * height so its images span the full width — a "justified gallery".
- *
- * Two bounds decide the packing (D167):
- *
- *  1. The **declared CSS ceiling** bounds one row's photo height. It is read
- *     from the resolved `max-height` of the photo box, which is the stylesheet's
- *     own number — not a fallback constant maintaining a second ceiling.
- *  2. The **available content height** under the heading bounds all rows
- *     together. The pass picks the largest ceiling that still fits, re-packing
- *     the cards rather than scaling them down afterwards.
- *
- * The server renders run it too: `server/utils/script-chain.js` inlines this
- * file into every document with such a slide, so it must keep no imports and
- * exactly one export. Without it the CSS shared-height fallback wraps a few
- * landscape images into a grid that covers the title.
- * Background and rationale: docs/reference/team-cards-original-aspect.md.
- *
- * Runs in every mode, thumbnails included: a thumbnail is the same logical
- * slide box at a smaller scale, so a thumbnail that fell back to the CSS shared
- * height showed a different packing than the slide it stands for. Every
- * measurement below therefore reads layout values (`clientHeight`,
- * `offsetHeight`), which a thumbnail's transform leaves alone. Re-runs on
- * resize / content changes (e.g. while typing in the editor preview) and once
- * images decode (the pass needs their intrinsic aspect ratios).
+ * The script chain inlines this module into export documents, so it must keep
+ * no imports and exactly one export. All measurements use logical slide pixels
+ * so thumbnails and full-size slides share the same layout.
  */
 
 const SELECTOR = '.slide-team-cards';
@@ -82,17 +56,7 @@ const slideScale = (slide) => {
  */
 const logicalHeight = (el, scale) => el.getBoundingClientRect().height / scale;
 
-/**
- * The row ceiling, read from the CSS declaration itself: `max-height` on the
- * photo box resolves the `calc()` chain to pixels, so the runtime packs against
- * the height the stylesheet actually asks for. (`--team-orig-photo-h` is an
- * unregistered custom property: reading it hands back the literal `calc(...)`
- * text, which is not a number — which is how the old `|| 300` fallback became
- * the real, hidden ceiling.)
- *
- * @param {HTMLElement[]} cards
- * @returns {number|null} Pixels, or null when nothing is measurable yet.
- */
+// Read the resolved CSS length, not an unregistered custom property's calc().
 const rowCeiling = (cards) => {
   for (const card of cards) {
     const photo = cardPhoto(card);
@@ -103,37 +67,30 @@ const rowCeiling = (cards) => {
   return null;
 };
 
-/**
- * The content height the rows have to fit in: the slide's inner box minus
- * everything that is not the grid (heading, bottom subheading) and the flex
- * gaps between them.
- *
- * Deliberately *not* the grid's own height. `.team-cards-grid` is a flex item
- * that its content can push past the slide edge, so measuring it would hand the
- * packing back the very overflow it is meant to prevent (the reported grid ran
- * to y=947 in a 900px slide). `.slide-inner` is `height: 100%` of the slide's
- * content box, so it stays put whatever the cards do.
- *
- * @param {HTMLElement} grid
- * @returns {number|null} Pixels, or null when nothing is measurable yet.
- */
-const availableHeight = (grid) => {
+// The grid can grow past the slide edge, so only its parent's fixed content
+// box is a valid budget. Auto margins on the bottom subheading are free space.
+const availableHeight = (grid, scale) => {
   const inner = grid.parentElement;
   if (!inner) return null;
-  const box = inner.clientHeight;
+  const styles = getComputedStyle(inner);
+  const inset = [
+    'borderTopWidth',
+    'borderBottomWidth',
+    'paddingTop',
+    'paddingBottom',
+  ].reduce((sum, key) => sum + (parseFloat(styles[key]) || 0), 0);
+  const box = logicalHeight(inner, scale) - inset;
   if (!(box > 0)) return null;
-  const gap = parseFloat(getComputedStyle(inner).rowGap) || 0;
+  const gap = parseFloat(styles.rowGap) || 0;
   let taken = 0;
   let siblings = 0;
   for (const child of inner.children) {
     if (child === grid) continue;
-    // offsetHeight only: `.bottom-subheading` is pushed down by `margin-top:
-    // auto`, and that leftover is space the grid may use, not space it loses.
-    taken += child.offsetHeight;
+    taken += logicalHeight(child, scale);
     siblings += 1;
   }
   const avail = box - taken - gap * siblings;
-  return avail > 0 ? avail : null;
+  return Math.max(0, avail);
 };
 
 /**
@@ -167,37 +124,47 @@ const packRows = (aspects, cap, width, gap) => {
       start,
       end: aspects.length - 1,
       height: Math.min(cap, height),
+      partial: true,
     });
   }
   return rows;
 };
 
-/**
- * Every ceiling at which the packing above can change: the justified height of
- * each contiguous run of cards, plus the declared ceiling itself. Descending, so
- * a caller walking the list meets the largest photo height first.
- *
- * Enumerated rather than searched: a lower ceiling re-packs the rows and can
- * rewrap the captions, so the total height is not monotonic in the ceiling and
- * a bisection could step over the answer.
- *
- * @param {number[]} aspects
- * @param {number} maxH
- * @param {number} width
- * @param {number} gap
- * @returns {number[]}
- */
-const candidateCeilings = (aspects, maxH, width, gap) => {
-  const caps = new Set([maxH]);
-  for (let i = 0; i < aspects.length; i += 1) {
-    let sumAspect = 0;
-    for (let j = i; j < aspects.length; j += 1) {
-      sumAspect += aspects[j];
-      const height = (width - gap * (j - i)) / sumAspect;
-      if (height > 0 && height < maxH) caps.add(Math.round(height * 100) / 100);
+// Heights are emitted to CSS in hundredths of a logical pixel. Search that
+// same finite domain; screen/thumbnail scale never changes its precision.
+const HEIGHT_PRECISION = 100;
+const heightTicks = (height) => Math.ceil(height * HEIGHT_PRECISION - 1e-7);
+const cardWidth = (height, aspect) => Math.floor(height * aspect + 1e-7);
+
+// Between these boundaries the row membership and every integer card width
+// stay fixed. Only the partial last row's photo height changes; caption
+// wrapping and the heights of all completed rows remain unchanged.
+const intervalFloor = (rows, aspects, cap) => {
+  let floor = 1;
+  for (const row of rows) {
+    if (!row.partial) {
+      floor = Math.max(floor, heightTicks(row.height));
+      continue;
+    }
+    for (let i = row.start; i <= row.end; i += 1) {
+      floor = Math.max(
+        floor,
+        heightTicks(cardWidth(cap, aspects[i]) / aspects[i]),
+      );
     }
   }
-  return Array.from(caps).sort((a, b) => b - a);
+  return floor;
+};
+
+// The predicate is monotone only inside one fixed-width, fixed-partition
+// interval. Never carry a bisection across a text wrap or row boundary.
+const highestFit = (low, high, limit, measure) => {
+  while (low < high) {
+    const middle = Math.ceil((low + high) / 2);
+    if (measure(middle) <= limit) low = middle;
+    else high = middle - 1;
+  }
+  return low;
 };
 
 /**
@@ -244,7 +211,7 @@ const applyPacking = (cards, aspects, rows, isSplit, scale) => {
   }
   for (const r of rows) {
     for (let i = r.start; i <= r.end; i += 1) {
-      const width = Math.floor(r.height * aspects[i]);
+      const width = cardWidth(r.height, aspects[i]);
       const photo = cardPhoto(cards[i]);
       if (photo) {
         photo.style.height = `${r.height.toFixed(2)}px`;
@@ -308,45 +275,49 @@ const justifyOriginal = (slide) => {
   // which would make flexbox wrap it and desync from our packing.
   const width = grid.clientWidth - 1;
   if (width <= 0) return false;
-  const height = availableHeight(grid);
+  const scale = slideScale(slide);
+  const height = availableHeight(grid, scale);
   if (height === null) return false;
 
   const isSplit = slide.classList.contains('text-split');
-  const scale = slideScale(slide);
 
-  // Distinct packings, largest ceiling first. Two ceilings that pack the cards
-  // the same way are measured once.
-  const packings = [];
-  const seen = new Set();
-  for (const cap of candidateCeilings(aspects, maxH, width, gap)) {
-    const rows = packRows(aspects, cap, width, gap);
-    const key = rows.map((r) => `${r.end}:${r.height.toFixed(2)}`).join('|');
-    if (seen.has(key)) continue;
-    seen.add(key);
-    packings.push(rows);
-  }
+  const measure = (ticks) => {
+    const rows = packRows(aspects, ticks / HEIGHT_PRECISION, width, gap);
+    applyPacking(cards, aspects, rows, isSplit, scale);
+    return packedHeight(cards, rows, rowGap, scale);
+  };
 
-  // The largest photo height whose rows fit. Not a bisection: a lower ceiling
-  // re-packs the rows and can rewrap the captions, so a taller candidate that
-  // overflows says nothing about a shorter one.
   let fallback = null;
   let fits = false;
-  for (const rows of packings) {
-    applyPacking(cards, aspects, rows, isSplit, scale);
-    const total = packedHeight(cards, rows, rowGap, scale);
-    if (total <= height) {
+  let upper = Math.floor(maxH * HEIGHT_PRECISION);
+  while (upper >= 1) {
+    const cap = upper / HEIGHT_PRECISION;
+    const rows = packRows(aspects, cap, width, gap);
+    const lower = Math.min(upper, intervalFloor(rows, aspects, cap));
+    const top = measure(upper);
+    if (top <= height) {
       fits = true;
       break;
     }
-    if (!fallback || total < fallback.total) fallback = { rows, total };
+
+    const bottom = lower === upper ? top : measure(lower);
+    if (bottom <= height) {
+      measure(highestFit(lower, upper, height, measure));
+      fits = true;
+      break;
+    }
+    if (!fallback || bottom < fallback.total) {
+      fallback = { lower, upper, total: bottom };
+    }
+    upper = lower - 1;
   }
 
-  // Nothing fits: the text itself is taller than the slide. Keep the least
-  // overflowing packing and let it run off the bottom edge — the heading stays
-  // clear, because the grid centres its rows by default and would otherwise
-  // spill upwards over it.
+  // Every interval failed. Keep the least overflow, breaking ties toward the
+  // largest ceiling, and keep the heading clear by overflowing downward.
   if (!fits && fallback) {
-    applyPacking(cards, aspects, fallback.rows, isSplit, scale);
+    measure(
+      highestFit(fallback.lower, fallback.upper, fallback.total, measure),
+    );
   }
   grid.style.alignContent = fits ? '' : 'flex-start';
   return true;
@@ -396,8 +367,9 @@ export function initTeamCardsJustify(rootEl) {
     if (!grid) continue;
 
     let raf = 0;
+    let detached = false;
     const schedule = () => {
-      if (raf) return;
+      if (detached || raf) return;
       raf = requestAnimationFrame(() => {
         raf = 0;
         measureSlide(slide);
@@ -421,8 +393,15 @@ export function initTeamCardsJustify(rootEl) {
       }
     }
 
-    try {
-      const ro = new ResizeObserver(schedule);
+    // Card fonts may finish after the heading has already settled, so heading
+    // observation alone cannot detect a changed caption wrap.
+    const fonts = slide.ownerDocument.fonts;
+    fonts?.ready.then(schedule);
+    fonts?.addEventListener('loadingdone', schedule);
+
+    let ro;
+    if (typeof ResizeObserver === 'function') {
+      ro = new ResizeObserver(schedule);
       ro.observe(slide);
       // The grid is sized by this pass, so observing it would feed our own
       // output back in; the slide box and the heading above the grid are what
@@ -431,36 +410,30 @@ export function initTeamCardsJustify(rootEl) {
       for (const child of inner ? inner.children : []) {
         if (child !== grid) ro.observe(child);
       }
-      observers.push({
-        ro,
-        cancel: () => {
-          if (raf) cancelAnimationFrame(raf);
-          for (const { img, onLoad } of imgListeners) {
-            img.removeEventListener('load', onLoad);
-            img.removeEventListener('error', onLoad);
-          }
-        },
-      });
-    } catch {
-      // ResizeObserver unavailable — the one-shot pass still helps.
-      for (const { img, onLoad } of imgListeners) {
-        img.removeEventListener('load', onLoad);
-        img.removeEventListener('error', onLoad);
-      }
     }
+    observers.push({
+      ro,
+      cancel: () => {
+        detached = true;
+        if (raf) cancelAnimationFrame(raf);
+        fonts?.removeEventListener('loadingdone', schedule);
+        for (const { img, onLoad } of imgListeners) {
+          img.removeEventListener('load', onLoad);
+          img.removeEventListener('error', onLoad);
+        }
+      },
+    });
   }
 
   return () => {
     for (const entry of observers) {
-      try {
-        entry.ro.disconnect();
-      } catch {
-        // ignore
-      }
-      try {
-        entry.cancel?.();
-      } catch {
-        // ignore
+      // This export-inlined module cannot import the app's disposal helper.
+      for (const detach of [() => entry.ro?.disconnect(), entry.cancel]) {
+        try {
+          detach();
+        } catch (error) {
+          console.warn('[team-cards] Failed to detach layout observer', error);
+        }
       }
     }
     observers.length = 0;
