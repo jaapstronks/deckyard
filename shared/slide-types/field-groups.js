@@ -43,9 +43,7 @@
  * class. `quote-slide` already did exactly this by hand; this module is that
  * pattern made declarative.
  *
- * The composed name is deliberately not spelled out here: the dead-CSS gate
- * harvests backticked class names as evidence, and a selector kept alive by a
- * sentence dies when someone rewords it ({@link groupAlignClasses}).
+ * The dead-CSS gate reads {@link groupAlignClasses}, not class names in prose.
  */
 
 import { sharedOption } from '../ui-i18n-keys.js';
@@ -264,15 +262,8 @@ export function groupAlignClass(group, content) {
 }
 
 /**
- * Every root class this group can ever contribute — the finite set
- * {@link groupAlignClass} draws from, built from the same prefix and the same
- * offered values, minus the default (which contributes no class).
- *
- * This is the executable answer the dead-CSS gate asks for. Such a class is
- * composed from two declarations at render time, so no literal of it exists to
- * harvest and the gate would otherwise have to believe a sentence someone
- * wrote. A gate that reads prose goes stale the moment the prose is reworded,
- * which is why this function names no class of its own.
+ * Enumerate the classes {@link groupAlignClass} can emit for the dead-CSS gate.
+ * Uses the same prefix and offered values; the default emits no class.
  *
  * @param {Object} group
  * @returns {string[]} Class names, in the order the group offers its values

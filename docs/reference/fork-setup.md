@@ -61,25 +61,11 @@ custom/google-fonts.lock.json
 
 ### Where the fork root lives
 
-Everything above sits under one root, `custom/`, and the engine reads it as one
-unit: slide types, the stylesheets those types render against, themes, assets,
-fonts, AI copy and MCP tools. `shared/custom-root.js` decides where that root
-is, and every reader asks it rather than joining `custom` itself.
+Slide types, their stylesheets, themes, assets, fonts, AI copy and MCP tools share one fork root. `shared/custom-root.js` resolves it; the default is `custom/` in the checkout.
 
-`DECKYARD_CUSTOM_DIR` moves the whole root, which is how a deployment loads a
-fork that lives outside the checkout. It must be an absolute path: the readers
-run from several working directories (server boot, the MCP stdio child, the
-test runner, `scripts/new-slide-type.js`), so a relative one would name a
-different directory per caller and is refused on startup.
+Set `DECKYARD_CUSTOM_DIR` to move the whole root. It must be an absolute path; relative values fail startup. The HTTP and MCP entrypoints load the installation's `.env` before initializing the fork loaders. An exported environment variable takes precedence over `.env`. Standalone scripts take the variable from their process environment.
 
-Two kinds of reader ask, and it is worth knowing which is which. The render and
-serving paths — the CSS chain, themes, assets, image inlining in exports, the
-static mounts — are handed an installation root and resolve against it, which
-is what lets the suite render a whole document against a fixture tree. The
-loaders — slide types, AI copy, fonts, MCP tools — have no such root: they are
-imported once and read the same files for the life of the process. With
-`DECKYARD_CUSTOM_DIR` set both resolve to the one root it names, which is the
-case a deployment cares about.
+Render and serving paths accept an installation root so they can render against a fixture tree. Loaders are imported once and use the process installation root. With `DECKYARD_CUSTOM_DIR` set, both resolve to the configured fork root for the lifetime of the process.
 
 ### Step 3: Add Your Custom Content
 
