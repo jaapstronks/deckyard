@@ -139,6 +139,9 @@ export default {
       columnCountKey: 'colCount',
       headerRowKey: 'headerRow',
       captionKey: 'caption',
+      // The canvas styles column 1 as the label column on every table, with no
+      // switch, so its cells head their rows: <th scope="row"> (D130).
+      rowHeader: 'first',
       itemFields: Array.from({ length: MAX_COLS }, (_v, idx) => ({
         key: `c${idx + 1}`,
         label: `C${idx + 1}`,

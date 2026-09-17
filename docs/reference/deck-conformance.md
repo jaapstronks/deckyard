@@ -183,9 +183,9 @@ the item array, columns are the item keys) and captions a decoded `dataset` with
 the encoding it drops.
 
 What that needed is **declared on the field, not branched on by type name** —
-`columnCountKey`, `headerRowKey`, `captionKey` on the rows array, `encodingKeys`
-on the payload — so it travels through `/api/slide-types` and a second
-implementation can follow the same three facts. A `if (type === 'table-slide')`
+`columnCountKey`, `headerRowKey`, `captionKey` and `rowHeader: 'first'` on the
+rows array, `encodingKeys` on the payload — so it travels through
+`/api/slide-types` and a second implementation can follow the same facts. A `if (type === 'table-slide')`
 in the projection would have been a rule only we can obey, which is the opposite
 of what a structure contract is for.
 

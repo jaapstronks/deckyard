@@ -619,6 +619,37 @@ describe('the structure contract: tabular projects to a real <table>', () => {
     assert.ok(!/<td><p/.test(html), html);
   });
 
+  it('rowHeader: \'first\' makes the first column <th scope="row">; the corner stays a column header', () => {
+    const html = body(
+      { content: { title: 'T', rows } },
+      tabular({ headerRowKey: 'headerRow', rowHeader: 'first' }),
+      { headingKey: 'title' },
+    );
+    assert.ok(
+      html.includes(
+        '<thead><tr><th scope="col">Year</th><th scope="col">Revenue</th>',
+      ),
+      html,
+    );
+    assert.ok(
+      html.includes('<tbody><tr><th scope="row">2024</th><td>10</td>'),
+      html,
+    );
+  });
+
+  it('table-slide declares its first column the row header', () => {
+    const def = SLIDE_TYPES['table-slide'];
+    const html = body(
+      {
+        type: 'table-slide',
+        content: { ...structuredClone(def.defaults), title: 'T' },
+      },
+      def,
+      { headingKey: 'title' },
+    );
+    assert.ok(/<th scope="row">Row 1<\/th>/.test(html), html);
+  });
+
   it('falls back to every declared column with no header when nothing is declared', () => {
     const html = body({ content: { title: 'T', rows } }, tabular(), {
       headingKey: 'title',
@@ -946,12 +977,13 @@ describe('itemLabelField — an items field declares its own heading (D81)', () 
           itemFields: [
             { key: 'value', type: 'string' },
             { key: 'label', type: 'string' },
+            { key: 'note', type: 'string' },
           ],
         },
       ],
     };
     const html = body(
-      { content: { metrics: [{ value: '42', label: '' }] } },
+      { content: { metrics: [{ value: '42', label: '', note: 'Up' }] } },
       def,
     );
     assert.ok(html.includes('<h3 data-field="value">42</h3>'), html);
@@ -1373,5 +1405,75 @@ describe('the deck language reaches the projection (B294, D130c)', () => {
       /<caption>Bar chart with 2 points\. Highest: 2025 \(14\)\. Chart type: bar\.<\/caption>/,
     );
     assert.ok(!html.includes('Ignored'), html);
+  });
+});
+
+describe('list structure is a declaration (B295, D130a)', () => {
+  const listDef = {
+    defaults: { variant: 'bullets' },
+    fields: [
+      { key: 'variant', type: 'enum', options: ['bullets', 'numbers'] },
+      {
+        key: 'items',
+        type: 'items',
+        orderedWhen: { field: 'variant', in: ['numbers'] },
+        itemFields: [
+          { key: 'title', type: 'string' },
+          { key: 'text', type: 'string' },
+        ],
+      },
+    ],
+  };
+  const items = [
+    { title: 'One', text: 'First' },
+    { title: 'Two', text: 'Second' },
+  ];
+
+  it('orderedWhen: an <ol> while the predicate holds, a <ul> otherwise', () => {
+    const numbered = body({ content: { variant: 'numbers', items } }, listDef);
+    assert.ok(/<ol class="reader-items" data-field="items">/.test(numbered));
+    const bulleted = body({ content: { items } }, listDef);
+    assert.ok(/<ul class="reader-items" data-field="items">/.test(bulleted));
+  });
+
+  it('list-slide is numbered in the reader exactly where its canvas is', () => {
+    const def = SLIDE_TYPES['list-slide'];
+    for (const variant of ['bullets', 'numbers']) {
+      const content = { ...structuredClone(def.defaults), variant };
+      const canvas = def.renderHtml(content, { content }, {});
+      const reader = body({ type: 'list-slide', content }, def);
+      const tag = variant === 'numbers' ? 'ol' : 'ul';
+      assert.ok(new RegExp(`<${tag}[ >]`).test(canvas), canvas);
+      assert.ok(
+        new RegExp(`<${tag} class="reader-items"`).test(reader),
+        reader,
+      );
+    }
+  });
+
+  it('an item with nothing under its heading string is the <li> text', () => {
+    const html = body(
+      {
+        content: {
+          items: [{ title: 'Alone' }, { title: 'Head', text: 'Body' }],
+        },
+      },
+      listDef,
+    );
+    assert.ok(
+      html.includes('<li class="reader-item" data-field="title">Alone</li>'),
+      html,
+    );
+    assert.ok(html.includes('<h3 data-field="title">Head</h3>'), html);
+    assert.ok(!html.includes('<h3 data-field="title">Alone</h3>'), html);
+  });
+
+  it('poll and likert options are list lines, not headings', () => {
+    for (const type of ['poll-slide', 'likert-slide']) {
+      const def = SLIDE_TYPES[type];
+      const html = body({ type, content: structuredClone(def.defaults) }, def);
+      assert.ok(!/<h3/.test(html), `${type}: ${html}`);
+      assert.ok(/<li class="reader-item" data-field="text">/.test(html), html);
+    }
   });
 });

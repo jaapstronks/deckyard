@@ -389,6 +389,13 @@ function datasetSummaryText(def, content, lang) {
  *
  * Without any of the three: every declared column, no header row, no caption.
  *
+ * One static declaration says what the first column *is*: `rowHeader: 'first'`
+ * makes its body cells `<th scope="row">`. It is static because the canvas has
+ * no switch for it — the table CSS styles column 1 as the label column on every
+ * table — so a sibling enum would promise a choice no slide can make. The
+ * corner cell of a header row stays the `<th scope="col">` it already is: it
+ * heads that label column.
+ *
  * @param {object} field - the `items` field
  * @param {object} content
  * @param {object} defaults - the type's `defaults`, for unset sibling keys
@@ -416,11 +423,16 @@ function renderRowTable(field, content, defaults) {
     ? str(content?.[headerKey]) || str(defaults?.[headerKey]) || 'on'
     : '';
   const hasHeader = !!headerKey && headerValue !== 'off';
+  const firstIsRowHeader = field.rowHeader === 'first';
 
-  const cell = (row, col, tag) => {
-    const attr = tag === 'th' ? ' scope="col"' : '';
+  const cell = (row, col, tag, scope = 'col') => {
+    const attr = tag === 'th' ? ` scope="${scope}"` : '';
     return `<${tag}${attr}>${cellHtml(col, row)}</${tag}>`;
   };
+  const bodyCell = (row, col, i) =>
+    firstIsRowHeader && i === 0
+      ? cell(row, col, 'th', 'row')
+      : cell(row, col, 'td');
   const bodyRows = hasHeader ? rows.slice(1) : rows;
   const thead = hasHeader
     ? `<thead><tr>${columns
@@ -431,7 +443,7 @@ function renderRowTable(field, content, defaults) {
     ? `<tbody>${bodyRows
         .map(
           (row) =>
-            `<tr>${columns.map((col) => cell(row, col, 'td')).join('')}</tr>`,
+            `<tr>${columns.map((col, i) => bodyCell(row, col, i)).join('')}</tr>`,
         )
         .join('')}</tbody>`
     : '';
@@ -463,8 +475,11 @@ function cellHtml(col, row) {
  * Wrap projected item blocks in a list. A collection whose order carries
  * meaning (a sequence: timeline, process, steps) declares `ordered: true` on
  * its field and projects to an `<ol>`; a set whose order is incidental (cards,
- * columns) stays a `<ul>`. This is the count-/order-aware half of the
- * projection: the list element reflects what the type declares, never a guess.
+ * columns) stays a `<ul>`. A collection whose order means something only in
+ * one style declares `orderedWhen: { field, in }` instead — the `visibleWhen`
+ * operator — so a list slide is an `<ol>` exactly where its canvas numbers the
+ * items. This is the count-/order-aware half of the projection: the list
+ * element reflects what the type declares, never a guess.
  * @param {string[]} blocks - already-rendered `<li>` strings
  * @param {boolean} [ordered=false]
  * @param {string} [attrs] - spliced into the list start tag
@@ -666,6 +681,11 @@ function renderBlocks(
  * Render one repeating-item (`items` field) as a small block: one of its
  * *readable* strings becomes an <h3>, the rest of its fields project by type.
  *
+ * A heading heads something (D130): an item where nothing projects below that
+ * string is the string itself, as the `<li>`'s text. A poll answer or a likert
+ * step is one line, not a heading over nothing. It is derived per item, not
+ * declared — a list item with a title and no text reads the same way.
+ *
  * Which string is the heading is a declaration first and a default second. The
  * field may name it with `itemLabelField` — the mirror of the type's own
  * `labelField` — and a type whose first string is not its heading has to say
@@ -691,8 +711,8 @@ function renderItemBlock(item, itemFields, itemLabelField, itemDefaults, lang) {
   if (!item || typeof item !== 'object' || !Array.isArray(itemFields))
     return '';
   const consumed = imageConsumedKeys(itemFields, item);
-  const parts = [];
   let headingKey = null;
+  let headingText = '';
   const headable = (f) =>
     f?.type === 'string' &&
     !f.hidden &&
@@ -706,29 +726,32 @@ function renderItemBlock(item, itemFields, itemLabelField, itemDefaults, lang) {
   const headingField =
     (declared && itemFields.find((f) => f?.key === declared && headable(f))) ||
     itemFields.find(headable);
-  let headingText = '';
   if (headingField) {
     headingKey = headingField.key;
     headingText = str(item[headingField.key]);
-    parts.push(`<h3${fieldAttr(headingKey)}>${escapeHtml(headingText)}</h3>`);
   }
   // The item's own heading is the alt fallback for its image — a card's name
   // describes its portrait far better than the filename guess does.
-  parts.push(
-    ...renderBlocks(
-      itemFields.filter(
-        (f) => f && f.key !== headingKey && !f.hidden && !consumed.has(f.key),
-      ),
-      item,
-      { defaults: itemDefaults, headingText, siblings: itemFields, lang },
+  const below = renderBlocks(
+    itemFields.filter(
+      (f) => f && f.key !== headingKey && !f.hidden && !consumed.has(f.key),
     ),
-  );
-  const inner = parts.filter(Boolean).join('\n');
+    item,
+    { defaults: itemDefaults, headingText, siblings: itemFields, lang },
+  ).filter(Boolean);
   // An item's own `semantic` enums (a matrix cell's tone) mark its <li>,
   // resolved through the items field's `itemDefaults` the way a top-level
   // enum resolves through the type's `defaults`: one rule, and the canvas
   // (`.matrix-cell[data-tone]`) says the same for a cell without a tone.
   const attrs = semanticEnumAttrs(itemFields, item, itemDefaults);
+  if (headingKey && !below.length) {
+    // One field, one marker: the <li> is the block that emits it.
+    return `<li class="reader-item"${fieldAttr(headingKey)}${attrs}>${escapeHtml(headingText)}</li>`;
+  }
+  const parts = headingKey
+    ? [`<h3${fieldAttr(headingKey)}>${escapeHtml(headingText)}</h3>`, ...below]
+    : below;
+  const inner = parts.join('\n');
   return inner ? `<li class="reader-item"${attrs}>${inner}</li>` : '';
 }
 
@@ -892,11 +915,11 @@ function renderFieldValue(
           return li.replace(/<\/li>\s*$/, `${marker}</li>`);
         })
         .filter(Boolean);
-      return renderItemList(
-        blocks,
-        field.ordered === true || hasRelations,
-        attrs,
-      );
+      const ordered =
+        field.ordered === true ||
+        predicateHolds(field.orderedWhen, content, defaults) === true ||
+        hasRelations;
+      return renderItemList(blocks, ordered, attrs);
     }
     case 'url': {
       const href = safeHref(value);

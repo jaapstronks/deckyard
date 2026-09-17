@@ -678,6 +678,112 @@ test('`termWhen` is read on a label string only; anywhere else it warns', () => 
     assert.notEqual(describeFieldFinding(f), 'Invalid field definitions.');
 });
 
+test('`orderedWhen` reads a sibling enum on an items field; misplaced, doubled or dangling it warns', () => {
+  const item = [{ key: 'text', type: 'string', label: 'Text' }];
+  const findings = walkFieldDefinitions(
+    [
+      {
+        key: 'variant',
+        type: 'enum',
+        label: 'Style',
+        options: ['bullets', 'numbers'],
+      },
+      {
+        key: 'items',
+        type: 'items',
+        label: 'Items',
+        itemFields: item,
+        orderedWhen: { field: 'variant', in: ['numbers'] },
+      },
+      {
+        key: 'title',
+        type: 'string',
+        label: 'Title',
+        orderedWhen: { field: 'variant', in: ['numbers'] },
+      },
+      {
+        key: 'steps',
+        type: 'items',
+        label: 'Steps',
+        itemFields: item,
+        ordered: true,
+        orderedWhen: { field: 'variant', in: ['numbers'] },
+      },
+      {
+        key: 'rest',
+        type: 'items',
+        label: 'Rest',
+        itemFields: item,
+        orderedWhen: { field: 'title', in: ['x'] },
+      },
+      {
+        key: 'other',
+        type: 'items',
+        label: 'Other',
+        itemFields: item,
+        orderedWhen: { field: 'variant', in: [] },
+      },
+    ],
+    FILE_JS,
+  ).findings;
+  assert.deepEqual(
+    findings.map((f) => [f.key, f.code, f.severity]),
+    [
+      ['title', 'ordered_when_not_items', 'warning'],
+      ['steps', 'ordered_when_with_ordered', 'warning'],
+      ['rest', 'ordered_when_unknown', 'warning'],
+      ['other', 'ordered_when_unknown', 'warning'],
+    ],
+  );
+  for (const f of findings)
+    assert.notEqual(describeFieldFinding(f), 'Invalid field definitions.');
+});
+
+test("`rowHeader` is `'first'` on an items field; anything else warns", () => {
+  const item = [{ key: 'c1', type: 'string', label: 'C1' }];
+  const findings = walkFieldDefinitions(
+    [
+      {
+        key: 'rows',
+        type: 'items',
+        label: 'Rows',
+        itemFields: item,
+        rowHeader: 'first',
+      },
+      { key: 'title', type: 'string', label: 'Title', rowHeader: 'first' },
+      {
+        key: 'more',
+        type: 'items',
+        label: 'More',
+        itemFields: item,
+        rowHeader: true,
+      },
+    ],
+    FILE_JS,
+  ).findings;
+  assert.deepEqual(
+    findings.map((f) => [f.key, f.code, f.severity]),
+    [
+      ['title', 'row_header_not_items', 'warning'],
+      ['more', 'row_header_not_first', 'warning'],
+    ],
+  );
+  for (const f of findings)
+    assert.notEqual(describeFieldFinding(f), 'Invalid field definitions.');
+
+  // A stored row has no control for either, so it refuses them (D84).
+  for (const extra of [
+    { rowHeader: 'first' },
+    { orderedWhen: { field: 'v', in: ['a'] } },
+  ]) {
+    const stored = validateCustomFieldDefinitions([
+      { key: 'rows', type: 'items', label: 'Rows', itemFields: item, ...extra },
+    ]);
+    assert.equal(stored.ok, false);
+    assert.equal(stored.problem.code, 'unknown_property');
+  }
+});
+
 test('a sub-field whose role is its own element cannot head an item (D128)', () => {
   assert.deepEqual(
     [
