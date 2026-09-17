@@ -18,11 +18,12 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import {
   copyFileSync,
-  existsSync,
   mkdirSync,
+  mkdtempSync,
   readFileSync,
   rmSync,
 } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -32,7 +33,6 @@ const REPO_ROOT = path.resolve(
   '..',
 );
 const ENTRYPOINT = path.join(REPO_ROOT, 'server', 'mcp', 'index.js');
-const CUSTOM_DIR = path.join(REPO_ROOT, 'custom', 'slide-types');
 const FIXTURE = 'fork-alpha-slide.js';
 const FIXTURE_SRC = path.join(
   REPO_ROOT,
@@ -54,31 +54,44 @@ const INITIALIZE = {
 };
 
 /**
- * Install the fork fixture into custom/slide-types/ unless the tree already has
- * it (the `test-fork` CI job copies the whole fixture tree in beforehand).
- * @returns {() => void} cleanup that removes only what this call created
+ * Build a fork root of this test's own, outside the checkout.
+ *
+ * The fixture must not live in `custom/slide-types/`: a parallel worker walks
+ * `custom/` while it scans the source trees
+ * (`tests/no-escape-markdown-aliases.test.js`), so a file created and removed
+ * there is read mid-flight and fails a test that has nothing to do with this
+ * one. `shared/custom-root.js` declares where the fork root is, so the child
+ * is pointed at a temporary one instead.
+ *
+ * The fixture therefore has to stand on its own: it sits in a temp directory,
+ * not two levels below the repo root, so a fork fixture carrying a relative
+ * import into core (as `payoff-slide.js` deliberately does) cannot be used
+ * here.
+ *
+ * @returns {{ dir: string, cleanup: () => void }} the fork root to hand the
+ *   child, and disposal of the temporary tree
  */
 function installForkFixture() {
-  const target = path.join(CUSTOM_DIR, FIXTURE);
-  if (existsSync(target)) return () => {};
-  const createdDir = !existsSync(CUSTOM_DIR);
-  mkdirSync(CUSTOM_DIR, { recursive: true });
-  copyFileSync(FIXTURE_SRC, target);
-  return () => {
-    rmSync(target, { force: true });
-    if (createdDir) rmSync(CUSTOM_DIR, { recursive: true, force: true });
+  const root = mkdtempSync(path.join(tmpdir(), 'deckyard-mcp-fork-'));
+  mkdirSync(path.join(root, 'slide-types'));
+  copyFileSync(FIXTURE_SRC, path.join(root, 'slide-types', FIXTURE));
+  return {
+    dir: root,
+    cleanup: () => rmSync(root, { recursive: true, force: true }),
   };
 }
 
 /**
  * Boot the stdio server, send one initialize request, and collect both streams.
+ * @param {string} customDir - Fork root the child loads customizations from
  * @returns {Promise<{stdout: string, stderr: string}>}
  */
-function bootAndInitialize() {
+function bootAndInitialize(customDir) {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [ENTRYPOINT], {
       cwd: REPO_ROOT,
       stdio: ['pipe', 'pipe', 'pipe'],
+      env: { ...process.env, DECKYARD_CUSTOM_DIR: customDir },
     });
 
     let stdout = '';
@@ -114,12 +127,12 @@ function bootAndInitialize() {
 
 describe('MCP stdio transport — stdout carries protocol only', () => {
   it('boots with a fork slide type installed and writes only JSON to stdout', async () => {
-    const cleanup = installForkFixture();
+    const fixture = installForkFixture();
     let result;
     try {
-      result = await bootAndInitialize();
+      result = await bootAndInitialize(fixture.dir);
     } finally {
-      cleanup();
+      fixture.cleanup();
     }
 
     // Proof the noisy code path actually ran: without the guard this banner is

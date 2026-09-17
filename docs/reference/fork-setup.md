@@ -59,6 +59,14 @@ custom/fonts.js
 custom/google-fonts.lock.json
 ```
 
+### Where the fork root lives
+
+Slide types, their stylesheets, themes, assets, fonts, AI copy and MCP tools share one fork root. `shared/custom-root.js` resolves it; the default is `custom/` in the checkout.
+
+Set `DECKYARD_CUSTOM_DIR` to move the whole root. It must be an absolute path; relative values fail startup. The HTTP and MCP entrypoints load the installation's `.env` before initializing the fork loaders. An exported environment variable takes precedence over `.env`. Standalone scripts take the variable from their process environment.
+
+Render and serving paths accept an installation root so they can render against a fixture tree. Loaders are imported once and use the process installation root. With `DECKYARD_CUSTOM_DIR` set, both resolve to the configured fork root for the lifetime of the process.
+
 ### Step 3: Add Your Custom Content
 
 1. **Add your theme** as a self-contained folder

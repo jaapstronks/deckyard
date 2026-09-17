@@ -140,6 +140,7 @@ describe('isAlive', () => {
     used: new Set(['card', 'card-header', 'red', 'slide-badge', 'danger']),
     prefixes: new Set(['slide-bg-', 'chart-slice-']),
     infixes: new Set(['--']),
+    declared: new Set(),
   };
 
   it('is alive when used as a literal', () => {
@@ -164,6 +165,33 @@ describe('isAlive', () => {
     assert.equal(isAlive('login-panel', ev), false);
   });
 
+  // B326: a class the renderer composes from two declarations
+  // (`groupAlignClass()` joins a field group's `alignClass` to one of its
+  // offered values) exists as no literal anywhere. The finite declared set is
+  // the evidence — not a backtick in a stylesheet comment, and not a blanket
+  // rule that any two words joined by a hyphen are alive.
+  const declaredEv = {
+    used: new Set(['slide-quote']),
+    prefixes: new Set(),
+    infixes: new Set(),
+    declared: new Set(['is-align-center', 'is-align-left']),
+  };
+
+  it('is alive when the slide-type declarations can compose it', () => {
+    assert.equal(isAlive('is-align-center', declaredEv), true);
+  });
+  it('is dead when the value is not one the group offers', () => {
+    // `right` was retired from the offered set; the class must not survive on
+    // the strength of its prefix.
+    assert.equal(isAlive('is-align-right', declaredEv), false);
+  });
+  it('does not absolve two unrelated words joined by a hyphen', () => {
+    // The declared set is exact. Loosening the separator rule to a single
+    // hyphen instead would have rescued most of the stylesheet.
+    assert.equal(isAlive('is-align', declaredEv), false);
+    assert.equal(isAlive('login-panel', declaredEv), false);
+  });
+
   // The #1037 lesson: a prefix on its own is a wildcard, not evidence. When
   // `slideRootClass()` contributed `slide-` as a prefix, every `slide-*`
   // selector in the tree was absolved and the whole slide layer went unchecked.
@@ -178,6 +206,7 @@ describe('isAlive', () => {
       used: new Set(['image']),
       prefixes: new Set(['slide-']),
       infixes: new Set(),
+      declared: new Set(),
     };
     assert.equal(
       isAlive('slide-image', slideEv),
@@ -245,6 +274,9 @@ describe('scan (end to end, injected reader)', () => {
       sourceFiles: ['client/app.js'],
       cssFiles: ['client/styles/x.css'],
       read: (f) => files[f],
+      // Hermetic: the fixture states its own evidence, so the real slide-type
+      // declarations cannot decide the outcome of a unit test.
+      declared: [],
     });
     assert.equal(totalClasses, 3);
     assert.deepEqual(
@@ -286,6 +318,7 @@ describe('scan (end to end, injected reader)', () => {
       sourceFiles: Object.keys(files).filter((f) => f.endsWith('.js')),
       cssFiles: ['client/styles/slides/x.css'],
       read: (f) => files[f],
+      declared: [],
     });
     assert.deepEqual(
       dead.map((d) => d.name),

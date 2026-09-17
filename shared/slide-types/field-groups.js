@@ -39,9 +39,11 @@
  *   ],
  *
  * The renderer emits `<alignClass>-<value>` on the slide root for any
- * non-default value (`is-align-center`), and the type's CSS moves the whole
- * block from that one class. `quote-slide` already did exactly this by hand;
- * this module is that pattern made declarative.
+ * non-default value, and the type's CSS moves the whole block from that one
+ * class. `quote-slide` already did exactly this by hand; this module is that
+ * pattern made declarative.
+ *
+ * The dead-CSS gate reads {@link groupAlignClasses}, not class names in prose.
  */
 
 import { sharedOption } from '../ui-i18n-keys.js';
@@ -235,6 +237,17 @@ export function resolveGroupAlign(group, content) {
 }
 
 /**
+ * The class prefix a group aligns under, `is-align` unless it names its own.
+ * @param {Object} group
+ * @returns {string}
+ */
+function groupAlignPrefix(group) {
+  return typeof group?.alignClass === 'string' && group.alignClass.trim()
+    ? group.alignClass.trim()
+    : DEFAULT_ALIGN_CLASS;
+}
+
+/**
  * The root class a group's alignment contributes, or '' for the default value
  * (so an untouched slide's markup is byte-identical to before this model).
  * @param {Object} group
@@ -245,9 +258,21 @@ export function groupAlignClass(group, content) {
   if (!group) return '';
   const value = resolveGroupAlign(group, content);
   if (value === groupDefaultAlign(group)) return '';
-  const prefix =
-    typeof group.alignClass === 'string' && group.alignClass.trim()
-      ? group.alignClass.trim()
-      : DEFAULT_ALIGN_CLASS;
-  return `${prefix}-${value}`;
+  return `${groupAlignPrefix(group)}-${value}`;
+}
+
+/**
+ * Enumerate the classes {@link groupAlignClass} can emit for the dead-CSS gate.
+ * Uses the same prefix and offered values; the default emits no class.
+ *
+ * @param {Object} group
+ * @returns {string[]} Class names, in the order the group offers its values
+ */
+export function groupAlignClasses(group) {
+  if (!group) return [];
+  const prefix = groupAlignPrefix(group);
+  const fallback = groupDefaultAlign(group);
+  return groupAlignValues(group)
+    .filter((value) => value !== fallback)
+    .map((value) => `${prefix}-${value}`);
 }

@@ -33,25 +33,16 @@
  * silently seeding a phantom type into the prompt.
  */
 
+import { CUSTOM_AI_DIR } from '../../../../shared/custom-root.js';
 import { existsSync } from 'node:fs';
-import { join, resolve, dirname } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { clampUsage } from '../../../../shared/slide-types/usage.js';
 import { createLogger } from '../../logger.js';
 
 const log = createLogger('custom-ai-catalog');
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Resolve the repo root (five levels up from server/utils/ai/slide-catalog/).
-const REPO_ROOT = resolve(__dirname, '..', '..', '..', '..');
-const DEFAULT_CUSTOM_CATALOG_FILE = join(
-  REPO_ROOT,
-  'custom',
-  'ai',
-  'catalog.js',
-);
+const DEFAULT_CUSTOM_CATALOG_FILE = join(CUSTOM_AI_DIR, 'catalog.js');
 
 /**
  * The partial-override keys a fork may set on a core catalog entry.

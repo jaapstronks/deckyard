@@ -2,7 +2,7 @@
  * Guard: `.env.example` is the complete manifest of recognized environment
  * variables.
  *
- * Every env var the server reads — as a literal `process.env.SOME_VAR` or
+ * Every env var the engine reads — as a literal `process.env.SOME_VAR` or
  * through the accessor family (`envStr('SOME_VAR')` and friends) — must have
  * a declaration line in `.env.example` (`VAR=` or `# VAR=`), so the knobs a
  * self-hoster can turn — including the security limits — are discoverable in
@@ -10,6 +10,11 @@
  *
  * The manifest may only grow: renaming or removing a declared variable is a
  * breaking change per docs/reference/versioning.md.
+ *
+ * The walk covers every tree that runs on a server: `server/` and the
+ * server-side half of `shared/`. A knob is public surface wherever it is read
+ * from, so scoping this to one directory would let the next one in through
+ * whichever tree the gate does not walk.
  *
  * Run with: node --test tests/env-manifest.test.js
  */
@@ -25,6 +30,9 @@ const repoRoot = path.join(here, '..');
 
 // Not configuration: set by the runtime/test-runner, never by an operator.
 const EXEMPT = new Set(['NODE_ENV', 'NODE_TEST_CONTEXT']);
+
+// The trees whose env reads are operator-facing configuration.
+const SOURCE_TREES = ['server', 'shared'];
 
 // A literal read, or a read through the accessor family / the named-env
 // helpers — both count: the accessor form is the canonical one, so the gate
@@ -62,11 +70,13 @@ function declaredVars() {
   return declared;
 }
 
-test('every env var the server reads is declared in .env.example', () => {
+test('every env var the engine reads is declared in .env.example', () => {
   const declared = declaredVars();
   const undeclared = new Map(); // var -> first read site
 
-  for (const file of walk(path.join(repoRoot, 'server'))) {
+  for (const file of SOURCE_TREES.flatMap((tree) =>
+    walk(path.join(repoRoot, tree)),
+  )) {
     const rel = path.relative(repoRoot, file).split(path.sep).join('/');
     const src = fs.readFileSync(file, 'utf8');
     for (const m of envReads(src)) {
@@ -85,13 +95,15 @@ test('every env var the server reads is declared in .env.example', () => {
   assert.equal(
     report.length,
     0,
-    `Env vars read by server code but missing from .env.example:\n  ${report.join('\n  ')}`,
+    `Env vars read by engine code but missing from .env.example:\n  ${report.join('\n  ')}`,
   );
 });
 
-test('the exempt list only names vars the server actually reads', () => {
+test('the exempt list only names vars the engine actually reads', () => {
   const read = new Set();
-  for (const file of walk(path.join(repoRoot, 'server'))) {
+  for (const file of SOURCE_TREES.flatMap((tree) =>
+    walk(path.join(repoRoot, tree)),
+  )) {
     const src = fs.readFileSync(file, 'utf8');
     for (const m of envReads(src)) read.add(m[1]);
   }

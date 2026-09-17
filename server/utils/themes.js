@@ -1,3 +1,4 @@
+import { customDirFor } from '../../shared/custom-root.js';
 import fs from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
@@ -42,17 +43,12 @@ function findThemeFile(repoRoot, themeId) {
   // Custom (fork-specific) themes take precedence over core themes.
   // Preferred layout: a self-contained folder that co-locates the theme's own
   // assets (logo, fonts, background presets) under custom/themes/<id>/assets/.
-  const customFolder = path.join(
-    repoRoot,
-    'custom',
-    'themes',
-    themeId,
-    'theme.json',
-  );
+  const customThemes = path.join(customDirFor(repoRoot), 'themes');
+  const customFolder = path.join(customThemes, themeId, 'theme.json');
   if (existsSync(customFolder)) return customFolder;
 
   // Legacy flat layout: custom/themes/<id>.json (still supported).
-  const customFlat = path.join(repoRoot, 'custom', 'themes', `${themeId}.json`);
+  const customFlat = path.join(customThemes, `${themeId}.json`);
   if (existsSync(customFlat)) return customFlat;
 
   // Fall back to core themes/ (built-ins are always flat <id>.json).
@@ -300,7 +296,7 @@ export async function resolveThemeThumbBg(repoRoot, rawThemeId, ctx = null) {
 
 export async function listThemeIds(repoRoot) {
   const coreDir = path.join(repoRoot, 'themes');
-  const customDir = path.join(repoRoot, 'custom', 'themes');
+  const customDir = path.join(customDirFor(repoRoot), 'themes');
 
   // Core themes are always flat <id>.json files.
   const readFlatThemeDir = async (dir) => {

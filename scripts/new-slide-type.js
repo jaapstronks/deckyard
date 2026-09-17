@@ -49,13 +49,14 @@ import {
   slideRootClass,
   validateSlideTypeDefinition,
 } from '../shared/slide-types/validate-definition.js';
+import { CUSTOM_SLIDE_TYPES_DIR, customDirFor } from '../shared/custom-root.js';
 
 const REPO_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '..',
 );
-const SLIDE_TYPES_DIR = path.join(REPO_ROOT, 'custom', 'slide-types');
-const STYLES_DIR = path.join(REPO_ROOT, 'custom', 'styles');
+const SLIDE_TYPES_DIR = CUSTOM_SLIDE_TYPES_DIR;
+const STYLES_DIR = path.join(customDirFor(), 'styles');
 
 /** A registry key is one kebab segment — the same grammar as a type id's name. */
 const NAME_RE = /^[a-z0-9][a-z0-9-]*$/;

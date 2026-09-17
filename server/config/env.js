@@ -1,14 +1,14 @@
-import fs from 'node:fs/promises';
+import fs from 'node:fs';
 import path from 'node:path';
 
 // Minimal, dependency-free .env loader (server-side only).
 // - Only sets vars that are not already present in process.env
 // - Supports simple KEY=VALUE pairs, with optional quotes
-export async function loadDotEnv(repoRoot) {
+export function loadDotEnv(repoRoot) {
   const envPath = path.join(repoRoot, '.env');
   let raw = '';
   try {
-    raw = await fs.readFile(envPath, 'utf8');
+    raw = fs.readFileSync(envPath, 'utf8');
   } catch {
     return;
   }

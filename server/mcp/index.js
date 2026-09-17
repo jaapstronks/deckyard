@@ -25,13 +25,13 @@
 // stdout is protocol: this redirect must be installed before any other
 // import can log (see ./stdout-guard.js). Keep it the first import.
 import './stdout-guard.js';
+import '../config/bootstrap-env.js';
 
 import { McpServer, runStdio } from './protocol.js';
 import { registerTools } from './tools.js';
 import { loadCustomToolsRegistrar } from './custom-tools-loader.js';
 import { registerPrompts } from './prompts.js';
 import { helpText } from './help.js';
-import { loadDotEnv } from '../config/env.js';
 import { initializeStorage } from '../storage/lifecycle.js';
 import { initSanitizer } from '../../shared/sanitize.js';
 import { strandedFileDataError } from '../storage/boot-check.js';
@@ -64,9 +64,6 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
 
 // Initialize
 async function main() {
-  // Load environment
-  await loadDotEnv(repoRoot);
-
   // Same storage guards as the HTTP server (server/server.js): an unknown
   // STORAGE_MODE, or an empty database next to a populated file-storage data
   // directory, is a stop — an agent silently authoring into an empty organization

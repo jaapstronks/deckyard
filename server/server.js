@@ -1,8 +1,10 @@
+// Load configuration before any dependency snapshots process.env.
+import './config/bootstrap-env.js';
+
 import http from 'node:http';
 import fs from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { CLIENT_DIR, SHARED_PUBLIC_DIRS, repoRoot } from './config/paths.js';
-import { loadDotEnv } from './config/env.js';
 import { authConfigError, authConfigWarnings } from './auth/auth.js';
 import { deprecatedFlagWarnings } from './config/features.js';
 import { mediaConfigWarnings } from './media/config.js';
@@ -183,7 +185,7 @@ export function buildServer() {
 }
 
 /**
- * The full boot sequence: load env, run the fail-loud config guards, open
+ * The full boot sequence: run the fail-loud config guards, open
  * storage, start recurring jobs and queues, attach collab, and listen. Runs
  * only when server.js is executed as the entrypoint (see the guard at the
  * bottom); importing the module for {@link buildServer} does not trigger it.
@@ -191,8 +193,6 @@ export function buildServer() {
  */
 async function main() {
   const server = buildServer();
-
-  await loadDotEnv(repoRoot);
 
   // Security check: warn if AUTH_DEV_BYPASS is enabled in production
   if (process.env.NODE_ENV === 'production') {
