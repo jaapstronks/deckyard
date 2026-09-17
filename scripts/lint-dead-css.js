@@ -37,6 +37,26 @@
 // chunk sitting *between* two holes is harvested as an infix and the name is
 // alive when both sides of it are values.
 //
+// A DECLARED CLASS IS EVIDENCE, NOT A COMMENT (B326)
+// Some classes exist only as two declarations meeting at render time:
+// `groupAlignClass()` builds `` `${prefix}-${value}` `` from a field group's
+// `alignClass` and its offered values, so neither is written as a literal
+// anywhere the harvester looks. They were counted alive on the strength of three JSDoc sentences
+// that name them inside backticks (`shared/slide-types/field-groups.js`,
+// `types/title-slide.js`, `types/text-blocks-slide.js`), which the
+// template-literal harvester reads as source. Stylesheet comments never
+// counted — CSS is the accused corpus, not the evidence. Prose keeping a gate
+// green is exactly the kind of evidence that rots without anyone noticing:
+// reword such a sentence and a live selector turns dead. Those three now name
+// the group rather than the class, so this rule is the only thing holding the
+// selectors up — `tests/dead-css-gate.test.js` fails if a literal creeps back
+// in, because two sources for one answer means the declarations are decoration.
+// `groupAlignClasses()` enumerates the finite set from the same declarations
+// the renderer composes from, and the classes in it are alive because the
+// source can produce them. Loosening `SEPARATOR_INFIX` to a single hyphen
+// would have been the alternative, and it would have rescued nearly every
+// two-word class in the repo.
+//
 // VENDOR IS NOT SOURCE (the B191 decision)
 // `client/vendor/**` is excluded from the corpus. Those files are not our source,
 // and the harvester demonstrably desyncs on them: the quoted-string pass walks
@@ -69,6 +89,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import {
+  getFieldGroups,
+  groupAlignClasses,
+} from '../shared/slide-types/field-groups.js';
+import { CORE_SLIDE_TYPE_DEFS } from '../shared/slide-types/registry.js';
+
 const REPO_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '..',
@@ -93,6 +119,8 @@ const INDEX_VALUE = /^\d+$/;
  *   vocabulary of values a `${}` hole can evaluate to.
  * @property {Set<string>} prefixes - Static text directly before a hole.
  * @property {Set<string>} infixes - Separator-only static text between two holes.
+ * @property {Set<string>} declared - Whole class names the slide-type
+ *   declarations can compose, from {@link declaredClasses}.
  */
 
 /**
@@ -103,7 +131,27 @@ export const emptyEvidence = () => ({
   used: new Set(),
   prefixes: new Set(),
   infixes: new Set(),
+  declared: new Set(),
 });
+
+/**
+ * Class names the slide-type declarations can compose, gathered from the same
+ * helpers the renderers call. Core types only: a fork's own types live in a
+ * gitignored `custom/`, and their stylesheets are not in the corpus either, so
+ * reading them would make the gate's answer depend on which checkout it runs
+ * in.
+ *
+ * @returns {Set<string>}
+ */
+export function declaredClasses() {
+  const names = new Set();
+  for (const def of Object.values(CORE_SLIDE_TYPE_DEFS)) {
+    for (const group of getFieldGroups(def)) {
+      for (const name of groupAlignClasses(group)) names.add(name);
+    }
+  }
+  return names;
+}
 
 /**
  * Can a `${}` hole have produced this text? Either the source writes it as a
@@ -353,16 +401,21 @@ export function extractCssClasses(text, file) {
 /**
  * Decide whether a class name is accounted for by the harvested evidence.
  *
- * Four ways to be alive, in the order they are cheapest to check. The composed
- * ones (2 and 3) both demand that the interpolated part is a *value* the source
- * writes — a bare prefix match is not evidence, it is a wildcard, and that is
- * how `slide-` once absolved the whole slide layer.
+ * Five ways to be alive, in the order they are cheapest to check. Rule 0 is an
+ * exact set enumerated from declarations; the harvested composites (2 and 3)
+ * both demand that the interpolated part is a *value* the source writes — a
+ * bare prefix match is not evidence, it is a wildcard, and that is how
+ * `slide-` once absolved the whole slide layer.
  *
  * @param {string} name - CSS class name
  * @param {Evidence} evidence - From {@link harvestSource}
  * @returns {boolean}
  */
 export function isAlive(name, evidence) {
+  // 0. Composed from declarations the renderer reads: the exact set, not a
+  //    prefix that would rescue anything sharing its first word.
+  if (evidence.declared.has(name)) return true;
+
   // 1. Written as a literal.
   if (evidence.used.has(name)) return true;
 
@@ -405,11 +458,19 @@ export function isAlive(name, evidence) {
  * @param {string[]} opts.sourceFiles - Repo-relative source paths
  * @param {string[]} opts.cssFiles - Repo-relative CSS paths
  * @param {(p: string) => string} [opts.read] - File reader (injectable for tests)
+ * @param {Iterable<string>} [opts.declared] - Composable class names; defaults
+ *   to {@link declaredClasses}, injectable so a fixture scan stays hermetic
  * @returns {{dead: Array<{name, file, line}>, byName: Map<string, {name, file, line}>,
  *   totalClasses: number, evidence: Evidence}}
  */
-export function scan({ sourceFiles, cssFiles, read = defaultRead }) {
+export function scan({
+  sourceFiles,
+  cssFiles,
+  read = defaultRead,
+  declared = declaredClasses(),
+}) {
   const evidence = emptyEvidence();
+  for (const name of declared) evidence.declared.add(name);
   for (const file of sourceFiles) harvestSource(read(file), evidence);
 
   const byName = new Map();

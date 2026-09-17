@@ -39,9 +39,13 @@
  *   ],
  *
  * The renderer emits `<alignClass>-<value>` on the slide root for any
- * non-default value (`is-align-center`), and the type's CSS moves the whole
- * block from that one class. `quote-slide` already did exactly this by hand;
- * this module is that pattern made declarative.
+ * non-default value, and the type's CSS moves the whole block from that one
+ * class. `quote-slide` already did exactly this by hand; this module is that
+ * pattern made declarative.
+ *
+ * The composed name is deliberately not spelled out here: the dead-CSS gate
+ * harvests backticked class names as evidence, and a selector kept alive by a
+ * sentence dies when someone rewords it ({@link groupAlignClasses}).
  */
 
 import { sharedOption } from '../ui-i18n-keys.js';
@@ -235,6 +239,17 @@ export function resolveGroupAlign(group, content) {
 }
 
 /**
+ * The class prefix a group aligns under, `is-align` unless it names its own.
+ * @param {Object} group
+ * @returns {string}
+ */
+function groupAlignPrefix(group) {
+  return typeof group?.alignClass === 'string' && group.alignClass.trim()
+    ? group.alignClass.trim()
+    : DEFAULT_ALIGN_CLASS;
+}
+
+/**
  * The root class a group's alignment contributes, or '' for the default value
  * (so an untouched slide's markup is byte-identical to before this model).
  * @param {Object} group
@@ -245,9 +260,28 @@ export function groupAlignClass(group, content) {
   if (!group) return '';
   const value = resolveGroupAlign(group, content);
   if (value === groupDefaultAlign(group)) return '';
-  const prefix =
-    typeof group.alignClass === 'string' && group.alignClass.trim()
-      ? group.alignClass.trim()
-      : DEFAULT_ALIGN_CLASS;
-  return `${prefix}-${value}`;
+  return `${groupAlignPrefix(group)}-${value}`;
+}
+
+/**
+ * Every root class this group can ever contribute — the finite set
+ * {@link groupAlignClass} draws from, built from the same prefix and the same
+ * offered values, minus the default (which contributes no class).
+ *
+ * This is the executable answer the dead-CSS gate asks for. Such a class is
+ * composed from two declarations at render time, so no literal of it exists to
+ * harvest and the gate would otherwise have to believe a sentence someone
+ * wrote. A gate that reads prose goes stale the moment the prose is reworded,
+ * which is why this function names no class of its own.
+ *
+ * @param {Object} group
+ * @returns {string[]} Class names, in the order the group offers its values
+ */
+export function groupAlignClasses(group) {
+  if (!group) return [];
+  const prefix = groupAlignPrefix(group);
+  const fallback = groupDefaultAlign(group);
+  return groupAlignValues(group)
+    .filter((value) => value !== fallback)
+    .map((value) => `${prefix}-${value}`);
 }

@@ -7,8 +7,8 @@ import {
 import { markdownToSafeHtml } from '../../markdown.js';
 import { alignGroup, groupAlignClass } from '../field-groups.js';
 
-/** Header alignment moves title and subheading together; `is-align-left`
- * overrides the centred default. */
+/** Header alignment moves title and subheading together; the group's
+ * alignment class overrides the centred default. */
 const HEADER_BLOCK = alignGroup('header-block', 'headerAlign', {
   align: ['center', 'left'],
   label: 'Header alignment',

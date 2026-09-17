@@ -17,8 +17,8 @@ import { resolveThemeLogo } from '../../theme-logo.js';
  * read as a single unit, so their horizontal placement is a property of the
  * block and not of each field (see field-groups.js). The value lives in the
  * `titleBlockAlign` content field, which the toolbar "Layout" chip writes via
- * `layoutVariants` below; `renderHtml` turns a non-default value into
- * `is-align-center` on the slide root and the CSS moves the whole block.
+ * `layoutVariants` below; `renderHtml` turns a non-default value into the
+ * group's alignment class on the slide root and the CSS moves the whole block.
  *
  * Two values, not three: a right-aligned title block is not a layout we want
  * to offer, and it is the one value that produced a broken slide in the deck
