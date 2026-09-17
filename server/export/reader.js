@@ -180,9 +180,16 @@ export function buildReaderHtml(
   // the reader is the *complete* surface of that contract (no canvas size
   // limit), so it is where an author recovers content the placeholder slide
   // had to truncate.
+  // A link that jumps to a slide points at that slide's section, by its place
+  // in this document (hidden slides are already filtered out).
+  const slideIds = slides.map((slide) => str(slide?.id));
   const sections = resolved
     .map(({ slide, def }, i) =>
-      renderSlideSectionHtml(slide, def, { index: i, lang: docLang }),
+      renderSlideSectionHtml(slide, def, {
+        index: i,
+        lang: docLang,
+        slideIds,
+      }),
     )
     .join('\n      ');
 

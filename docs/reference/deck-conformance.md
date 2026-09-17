@@ -200,6 +200,13 @@ serialized coordinate list — says so once, on the field, and travels through
 `/api/slide-types` like the declarations above. A reader that skipped such
 fields by key name would be guessing; this one follows the declaration.
 
+Pairs are declared the same way (D131): `unitKey`, `hrefKey` and `headingKey`
+on a `string`, `headingKey` on a `markdown` block, `duration: { secondsKey }` on
+a `number`, and `scale` on a type. Each names the sibling that completes the
+value — a unit, a link target, a heading, the seconds of a length, the labels
+of a scale's ends — so a reader joins the two and does not print the sibling
+again, without knowing which type put them side by side.
+
 `semantic: true` is its counterpart on an `enum`: the value is meaning rather
 than layout (a callout's kind, a matrix cell's tone), so it is published as a
 `data-<key>` attribute on the section or item instead of being dropped. Every

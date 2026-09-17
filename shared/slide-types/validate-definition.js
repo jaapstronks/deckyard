@@ -295,6 +295,36 @@ export function validateSlideTypeDefinition(def, name, options = {}) {
     }
   }
 
+  // --- scale -----------------------------------------------------------------
+  // The rating scale a type declares (D131): canvas and reader both read it,
+  // so a malformed one is refused rather than drawn one way and read another.
+  if (def.scale !== undefined && def.scale !== null) {
+    const scale = def.scale;
+    if (
+      !scale ||
+      typeof scale !== 'object' ||
+      !Number.isInteger(scale.min) ||
+      !Number.isInteger(scale.max) ||
+      scale.min >= scale.max
+    ) {
+      errors.push(
+        `${who}: \`scale\` must be \`{ min, max, minLabelKey, maxLabelKey }\` ` +
+          `with integer \`min\` below \`max\``,
+      );
+    } else {
+      for (const prop of ['minLabelKey', 'maxLabelKey']) {
+        const key = scale[prop];
+        if (key === undefined || key === null) continue;
+        if (!isNonEmpty(key) || !known.has(key)) {
+          warnings.push(
+            `${who}: \`scale.${prop}\` ${JSON.stringify(key)} does not name a ` +
+              `field of this type, so that end of the scale has no label`,
+          );
+        }
+      }
+    }
+  }
+
   // --- namespace -------------------------------------------------------------
   if (def.namespace !== undefined && def.namespace !== null) {
     if (typeof def.namespace !== 'string' || !isValidNamespace(def.namespace)) {

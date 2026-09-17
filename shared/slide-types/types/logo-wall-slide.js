@@ -122,12 +122,13 @@ export default {
         // Declared because the renderer reads it and itemDefaults seeds it —
         // it was only ever missing here (team-cards/gallery declare theirs).
         { key: 'alt', type: 'string', label: 'Alt text', maxLength: 180 },
-        // Optional: makes the whole logo clickable. `#N` jumps to slide N in the
-        // deck (presenter only); an http(s)/mailto URL opens in a new tab.
+        // Optional: makes the whole logo clickable. `#slide:<id>` / `#N` jumps
+        // to a slide of the deck (presenter only; a link to that section in the
+        // reader); an http(s)/mailto URL opens in a new tab.
         // `editor:` marks the widget exception (step-4 vocabulary seed).
         {
           key: 'link',
-          type: 'string',
+          type: 'url',
           label: 'Link URL',
           maxLength: 500,
           editor: 'card-link',

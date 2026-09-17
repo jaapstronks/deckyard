@@ -45,9 +45,9 @@ export default {
     body: 'Questions are welcome — now, or in the hallway afterwards.',
     contactName: 'Robin Meyer',
     contactEmail: 'robin@example.com',
-    contactUrl: 'example.com/talks',
+    contactUrl: 'https://example.com/talks',
     social1Label: 'LinkedIn',
-    social1Url: 'linkedin.com/in/example',
+    social1Url: 'https://www.linkedin.com/in/example',
     background: 'lime',
   },
 };

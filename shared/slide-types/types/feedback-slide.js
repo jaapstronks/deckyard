@@ -29,6 +29,9 @@ export default {
       type: 'string',
       required: false,
       maxLength: 120,
+      // The hint inside the audience's input box, not something the slide
+      // says: no reader projects it.
+      presentational: true,
     },
     BACKGROUND_FIELD,
   ],

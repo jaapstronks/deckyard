@@ -1,4 +1,4 @@
-import { isNonEmptyString, safeHref } from './helpers.js';
+import { isNonEmptyString, safeHref, slideJumpTarget } from './helpers.js';
 import {
   SLIDE_BG_ID_RE,
   mergeBackgroundOptions,
@@ -139,14 +139,54 @@ function validateUrl(val, field) {
   ) {
     errors.push(`${path} exceeds max length (${field.maxLength})`);
   }
-  // A present value must be a link we would actually render: http(s)/mailto or
-  // a root-/protocol-relative path. Rejects javascript:/data: so a stored value
-  // can never become a live XSS sink when the projection emits <a href>.
-  if (typeof val === 'string' && val.trim() !== '' && !safeHref(val)) {
-    errors.push(`${path} must be an http(s), mailto, or root-relative URL`);
+  // A present value must be a link we would actually render: http(s)/mailto, a
+  // root-/protocol-relative path, or a jump to a slide of this deck. Rejects
+  // javascript:/data: so a stored value can never become a live XSS sink when
+  // the projection emits <a href>, and a bare domain, which a document cannot
+  // tell from a relative path.
+  if (
+    typeof val === 'string' &&
+    val.trim() !== '' &&
+    !safeHref(val) &&
+    !slideJumpTarget(val)
+  ) {
+    errors.push(
+      `${path} must be an http(s), mailto, or root-relative URL, or a slide jump (#slide:<id>, #N)`,
+    );
   }
   return errors;
 }
+
+/**
+ * The shape an `email` value must have: one `@` with something on both sides
+ * and a dot in the domain, no whitespace. Deliberately coarse: the point is a
+ * `mailto:` that goes somewhere, not RFC 5322.
+ */
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * Is this a usable e-mail address? The validator and the projection ask the
+ * same question, so a value the editor accepts is a value the reader links.
+ * @param {unknown} value
+ * @returns {boolean}
+ */
+export function isEmailAddress(value) {
+  return typeof value === 'string' && EMAIL_RE.test(value.trim());
+}
+
+function validateEmail(val, field) {
+  const errors = validateText(val, field);
+  if (typeof val === 'string' && val.trim() !== '' && !isEmailAddress(val)) {
+    errors.push(`${pathOf(field)} must be an email address`);
+  }
+  return errors;
+}
+
+/**
+ * Field types whose value is a link target, and therefore validated wherever
+ * it sits: a `url` inside an item is the same promise as one on the slide.
+ */
+const LINK_FIELD_TYPES = new Set(['url', 'email']);
 
 function validateColor(val, field) {
   const errors = [];
@@ -255,9 +295,19 @@ function validateItems(val, field) {
       if (f.required && !isNonEmptyString(iv)) {
         errors.push(`${path}[${i}].${f.key} is required`);
       }
-      // Nested item validation stays intentionally shallow (string only) for
-      // back-compat with existing decks; broader item-field validation is a
-      // later move.
+      // A link type validates in full at any depth: its value becomes an
+      // `href`, and a sub-field that skipped the check would be the one place
+      // a `javascript:` target could be stored. The rest of nested item
+      // validation stays shallow (string only).
+      if (LINK_FIELD_TYPES.has(f.type)) {
+        const prefix = pathOf(f);
+        for (const e of FIELD_TYPES[f.type].validate(iv, {
+          ...f,
+          required: false,
+        })) {
+          errors.push(`${path}[${i}].${f.key}${e.slice(prefix.length)}`);
+        }
+      }
       if (f.type === 'string') {
         if (iv != null && typeof iv !== 'string') {
           errors.push(`${path}[${i}].${f.key} must be a string`);
@@ -282,16 +332,17 @@ export const FIELD_TYPES = {
   string: {
     label: 'Single-line text',
     description:
-      'Single-line text. `mediaRef` marks the string as a reference to media the document cannot embed (a video source) rather than document text: the reflowable projection renders a named stand-in, linked where a link resolves, instead of printing the reference, and the field is not offered for translation — a video id is the same in every language.',
+      'Single-line text. `mediaRef` marks the string as a reference to media the document cannot embed (a video source) rather than document text: the reflowable projection renders a named stand-in, linked where a link resolves, instead of printing the reference, and the field is not offered for translation — a video id is the same in every language. Three declarations pair the string with a sibling, which the projection then consumes: `unitKey` (a value and its unit read as one block, no space added), `hrefKey` (the string is the text of a link to a sibling `url`; without a target nothing projects) and `headingKey` (a sibling string is the `<h3>` over this block).',
     docExtra:
-      '`maxLength`, `required`, `placeholder`, `helpText`, `mediaRef` (`{ label, linkKey }`)',
+      '`maxLength`, `required`, `placeholder`, `helpText`, `mediaRef` (`{ label, linkKey }`), `unitKey`, `hrefKey`, `headingKey`',
     valueKind: 'string',
     validate: validateText,
   },
   markdown: {
     label: 'Rich text',
-    description: 'Multi-line rich text (renders to HTML; **HTML is escaped**)',
-    docExtra: '`maxLength`, `required`',
+    description:
+      'Multi-line rich text (renders to HTML; **HTML is escaped**). `headingKey` names a sibling string that heads this block in the reflowable projection, as an `<h3>`, and is consumed there.',
+    docExtra: '`maxLength`, `required`, `headingKey`',
     valueKind: 'string',
     validate: validateText,
   },
@@ -313,8 +364,9 @@ export const FIELD_TYPES = {
   },
   number: {
     label: 'Number',
-    description: 'Numeric input',
-    docExtra: '`min`, `max`, `step`, `required`',
+    description:
+      "Numeric input. A number is configuration to the reflowable projection, unless it declares `duration: { secondsKey }`: then it is the minutes of a length whose seconds sit in the named sibling, clamped to both fields' `min`/`max` (a zero length takes the declared defaults), and it projects as one `<time datetime>`.",
+    docExtra: '`min`, `max`, `step`, `required`, `duration` (`{ secondsKey }`)',
     valueKind: 'number',
     validate: validateNumber,
   },
@@ -352,10 +404,18 @@ export const FIELD_TYPES = {
   url: {
     label: 'Link',
     description:
-      'A hyperlink target (http(s), mailto, or root-/protocol-relative). Validated + allowlisted (javascript:/data: rejected); projects as an `<a href>`. Not a translatable field, so link targets are never sent to translation.',
+      'A hyperlink target (http(s), mailto, root-/protocol-relative, or a slide jump `#slide:<id>` / `#N`). Validated + allowlisted (javascript:/data: and bare domains rejected), also inside an item; projects as an `<a href>`, a slide jump as a link to that slide in the reader. Not a translatable field, so link targets are never sent to translation.',
     docExtra: '`maxLength`, `required`, `placeholder`, `helpText`',
     valueKind: 'string',
     validate: validateUrl,
+  },
+  email: {
+    label: 'Email address',
+    description:
+      'An e-mail address. The editor offers an e-mail input; a present value must look like an address (also inside an item); projects as a `mailto:` link. Not a translatable field.',
+    docExtra: '`maxLength`, `required`, `placeholder`, `helpText`',
+    valueKind: 'string',
+    validate: validateEmail,
   },
   images: {
     label: 'Images',

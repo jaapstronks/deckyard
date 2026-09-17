@@ -156,3 +156,53 @@ test('unknown field types are lenient at runtime (guarded by the drift test inst
     [],
   );
 });
+
+test('a `url` accepts web links and slide jumps and refuses a bare domain, at any depth (D131)', () => {
+  const field = { key: 'link', type: 'url' };
+  for (const ok of [
+    'https://example.com',
+    'mailto:a@example.com',
+    '/p/1',
+    '#3',
+    '#slide:abc-123',
+  ]) {
+    assert.deepEqual(validateFieldValue(ok, field), [], ok);
+  }
+  for (const bad of ['example.com', 'javascript:alert(1)', '#0', '#slide:']) {
+    assert.equal(validateFieldValue(bad, field).length, 1, bad);
+  }
+  const items = {
+    key: 'actions',
+    type: 'items',
+    itemFields: [
+      { key: 'label', type: 'string' },
+      { key: 'url', type: 'url' },
+      { key: 'mail', type: 'email' },
+    ],
+  };
+  assert.deepEqual(
+    validateFieldValue(
+      [
+        { label: 'Go', url: 'https://example.com', mail: 'a@example.com' },
+        { label: 'Bare', url: 'example.com', mail: 'nobody' },
+      ],
+      items,
+    ),
+    [
+      'Slide.content.actions[1].url must be an http(s), mailto, or root-relative URL, or a slide jump (#slide:<id>, #N)',
+      'Slide.content.actions[1].mail must be an email address',
+    ],
+  );
+});
+
+test('an `email` must look like an address', () => {
+  const field = { key: 'contactEmail', type: 'email', maxLength: 40 };
+  assert.deepEqual(validateFieldValue('', field), []);
+  assert.deepEqual(validateFieldValue(' robin@example.com ', field), []);
+  assert.deepEqual(validateFieldValue('robin@example', field), [
+    'Slide.content.contactEmail must be an email address',
+  ]);
+  assert.deepEqual(validateFieldValue(42, field), [
+    'Slide.content.contactEmail must be a string',
+  ]);
+});

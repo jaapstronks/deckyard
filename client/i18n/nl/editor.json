@@ -338,6 +338,8 @@
   "editor.fields.copied": "Gekopieerd!",
   "editor.fields.copyExample": "Voorbeeld kopiëren",
   "editor.fields.copyExampleTitle": "Voorbeeld naar klembord kopiëren",
+  "editor.fields.emailInvalid": "Vul een e-mailadres in, zoals naam@voorbeeld.nl.",
+  "editor.fields.linkInvalid": "Vul een volledige link in (https://…), een mailto:-adres, een /pad of een sprong naar een dia (#3).",
   "editor.fields.required": "Dit veld is verplicht.",
   "editor.focusPicker.center": "Midden",
   "editor.focusPicker.reset": "Focus terug naar het midden",

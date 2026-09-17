@@ -109,12 +109,13 @@ export default {
           required: false,
           maxLength: 700,
         },
-        // Optional: makes the whole card clickable. `#N` jumps to slide N in the
-        // deck (presenter only); an http(s)/mailto URL opens in a new tab.
+        // Optional: makes the whole card clickable. `#slide:<id>` / `#N` jumps
+        // to a slide of the deck (presenter only; a link to that section in the
+        // reader); an http(s)/mailto URL opens in a new tab.
         {
           key: 'link',
           label: 'Link URL',
-          type: 'string',
+          type: 'url',
           required: false,
           maxLength: 500,
           editor: 'card-link',

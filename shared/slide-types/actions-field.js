@@ -1,4 +1,4 @@
-import { escapeHtml } from './helpers.js';
+import { escapeHtml, safeHref, slideJumpTarget } from './helpers.js';
 import { sharedOption } from '../ui-i18n-keys.js';
 
 /**
@@ -21,6 +21,8 @@ export const ACTIONS_FIELD = {
       label: 'Button label',
       labelKey: 'editor.slideField.actions.item.label.label',
       type: 'string',
+      // The button label is the text of the link `url` points at.
+      hrefKey: 'url',
       required: true,
       maxLength: 40,
     },
@@ -28,7 +30,7 @@ export const ACTIONS_FIELD = {
       key: 'url',
       label: 'URL',
       labelKey: 'editor.slideField.actions.item.url.label',
-      type: 'string',
+      type: 'url',
       required: true,
       maxLength: 500,
     },
@@ -59,17 +61,35 @@ export const ACTIONS_FIELD = {
   ],
 };
 
-function normalizeActionUrl(raw) {
-  const s = String(raw || '').trim();
-  if (!s) return '';
-  // Allow http, https, mailto, tel protocols
-  if (/^(https?:|mailto:|tel:)/i.test(s)) return s;
-  // If no protocol, assume https
-  if (s.includes('.') && !s.startsWith('/')) {
-    return `https://${s}`;
+/**
+ * The anchor attributes for an action's `url`, or `null` when it is not a link.
+ *
+ * `url` is a `url` field, so the value is what the validator accepted: a web
+ * link (`safeHref`) opens in a new tab, and a slide jump (`#slide:<id>`, `#N`)
+ * carries the same `data-card-nav*` attribute a clickable card does, which the
+ * presenter's one delegated listener follows. Outside the presenter nobody
+ * listens, so there the jump is a placeholder link (an `<a>` without `href`,
+ * the button as content), the way a card outside `present` mode draws no
+ * overlay. Nothing is repaired: a bare domain is refused where it is typed,
+ * not completed here.
+ *
+ * @param {unknown} raw
+ * @param {string} [mode] - the render mode (`present`, `thumb`, `edit`, …)
+ * @returns {string|null} attribute text (`''` for a placeholder link), or
+ *   `null` when the value is no link at all
+ */
+function actionLinkAttrs(raw, mode) {
+  const jump = slideJumpTarget(raw);
+  if (jump) {
+    if (mode !== 'present') return '';
+    return 'id' in jump
+      ? `href="#" data-card-nav-id="${escapeHtml(jump.id)}"`
+      : `href="#" data-card-nav="${jump.index}"`;
   }
-  // Allow relative paths
-  return s;
+  const href = safeHref(raw);
+  return href
+    ? `href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer"`
+    : null;
 }
 
 function getActionStyleClass(style) {
@@ -82,17 +102,18 @@ function getActionStyleClass(style) {
 /**
  * Render actions HTML for a slide.
  * @param {Array} actions - Array of action objects with label, url, style
+ * @param {string} [mode] - the render mode; a slide jump is a live link in
+ *   `present` mode only
  * @returns {string} HTML string or empty string if no actions
  */
-export function renderActionsHtml(actions) {
+export function renderActionsHtml(actions, mode) {
   if (!Array.isArray(actions) || actions.length === 0) return '';
 
   const validActions = actions
     .filter((a) => {
       if (!a || typeof a !== 'object') return false;
       const label = String(a.label || '').trim();
-      const url = normalizeActionUrl(a.url);
-      return label && url;
+      return label && actionLinkAttrs(a.url, mode) !== null;
     })
     .slice(0, 3); // Max 3 actions
 
@@ -101,14 +122,11 @@ export function renderActionsHtml(actions) {
   const buttonsHtml = validActions
     .map((action, idx) => {
       const label = String(action.label || '').trim();
-      const url = normalizeActionUrl(action.url);
       const styleClass = getActionStyleClass(action.style);
       return `
         <a
-          href="${escapeHtml(url)}"
+          ${actionLinkAttrs(action.url, mode)}
           class="slide-action ${styleClass}"
-          target="_blank"
-          rel="noopener noreferrer"
           data-action-track="${idx}"
           data-action-label="${escapeHtml(label)}"
         >${escapeHtml(label)}</a>

@@ -869,19 +869,34 @@ export function liveInteractionOptions(content) {
 function resolveCardLink(raw, mode) {
   const link = String(raw || '').trim();
   if (!link) return null;
-  const navId = /^#slide:(.+)$/.exec(link);
-  if (navId) {
+  const jump = slideJumpTarget(link);
+  if (jump) {
     if (mode !== 'present') return null;
-    return { kind: 'nav-id', id: navId[1].trim() };
-  }
-  const nav = /^#(\d{1,3})$/.exec(link);
-  if (nav) {
-    if (mode !== 'present') return null;
-    return { kind: 'nav', index: Number(nav[1]) };
+    return 'id' in jump
+      ? { kind: 'nav-id', id: jump.id }
+      : { kind: 'nav', index: jump.index };
   }
   if (mode === 'thumb' || mode === 'edit') return null;
   if (!/^(https?:|mailto:)/i.test(link)) return null;
   return { kind: 'external', href: link };
+}
+
+/**
+ * Parse an in-deck slide jump, the one link a `url` value may hold that is not
+ * a web address: `#slide:<id>` (what the editor's slide picker writes) or `#N`
+ * (a 1-based position). One parser, because the canvas, the validator and the
+ * reader all have to agree on what a jump is.
+ *
+ * @param {unknown} raw
+ * @returns {{ id: string } | { index: number } | null}
+ */
+export function slideJumpTarget(raw) {
+  const link = String(raw == null ? '' : raw).trim();
+  const byId = /^#slide:(.+)$/.exec(link);
+  if (byId && byId[1].trim()) return { id: byId[1].trim() };
+  const byIndex = /^#(\d{1,3})$/.exec(link);
+  if (byIndex && Number(byIndex[1]) > 0) return { index: Number(byIndex[1]) };
+  return null;
 }
 
 /**

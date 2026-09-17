@@ -4,6 +4,7 @@ import { attachPointerSortable } from '../../../lib/dom/pointer-sortable.js';
 import { createCollapsedState } from '../../../lib/slide-authoring/collapsed-state.js';
 import { collapseAllToggle } from '../fields/collapse-all-toggle.js';
 import { fieldCardLink } from '../fields/card-link-field.js';
+import { markLinkField } from '../fields/link-field.js';
 import { renderImageFitField } from '../fields/image-fit.js';
 import { getInlineDescriptor } from '../inline-edit/descriptors.js';
 import { fieldEditor } from '../../../../shared/slide-types/field-editors.js';
@@ -203,7 +204,7 @@ export function createCollectionEditor({
   const makeInput = (
     label,
     value,
-    { maxLength, multiline, number, placeholder } = {},
+    { maxLength, multiline, number, placeholder, fieldType } = {},
     onChange,
   ) => {
     if (number && fieldNumber) {
@@ -217,10 +218,13 @@ export function createCollectionEditor({
     if (typeof placeholder === 'string' && placeholder)
       input.placeholder = placeholder;
     input.addEventListener('input', () => onChange(input.value));
-    return h('div', { class: 'stack is-field' }, [
+    const wrap = h('div', { class: 'stack is-field' }, [
       h('div', { class: 'field-label', text: label }),
       input,
     ]);
+    return multiline
+      ? wrap
+      : markLinkField({ wrap, control: input, fieldType });
   };
 
   /** The collapsed-header preview: first non-empty string field's value. */
@@ -460,7 +464,9 @@ export function createCollectionEditor({
         if (
           f.type === 'string' ||
           f.type === 'markdown' ||
-          f.type === 'number'
+          f.type === 'number' ||
+          f.type === 'url' ||
+          f.type === 'email'
         ) {
           pushWidget(
             k,
@@ -471,6 +477,7 @@ export function createCollectionEditor({
                 maxLength: f.maxLength,
                 multiline: f.type === 'markdown' || !!f.multiline,
                 number: f.type === 'number',
+                fieldType: f.type,
                 placeholder:
                   typeof f.placeholder === 'string' && f.placeholderKey
                     ? t(f.placeholderKey, f.placeholder)

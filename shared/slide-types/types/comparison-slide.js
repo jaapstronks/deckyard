@@ -96,6 +96,8 @@ export default {
       key: 'leftBody',
       label: 'Left content',
       type: 'markdown',
+      // The column title heads its column: the pairing is the comparison.
+      headingKey: 'leftTitle',
       required: true,
       maxLength: 2000,
     },
@@ -110,6 +112,7 @@ export default {
       key: 'rightBody',
       label: 'Right content',
       type: 'markdown',
+      headingKey: 'rightTitle',
       required: true,
       maxLength: 2000,
     },

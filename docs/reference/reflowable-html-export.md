@@ -92,8 +92,40 @@ document that stays readable with JavaScript — and author CSS — turned off.
     into the stand-in rather than repeated as a loose paragraph. A video slide's
     `source` accepts a URL _or_ a bare provider id, so without this the reader
     printed `<p>3045cc09-605c-…</p>`; an id is never text (D82).
-  - Presentational field types (`enum`, `color`, `number`, `boolean`) and the
-    global background/logo fields carry no document text and are omitted.
+  - **Pairs stay pairs** (D131). A value that belongs to a sibling says so on
+    the field, the projection joins the two, and the sibling is consumed rather
+    than repeated as a loose paragraph:
+    - `unitKey` on a `string`: the value and its unit are one block
+      (`<p data-field="value">98%</p>`, kpi-metrics), with no space added, as
+      the canvas sets the two spans side by side.
+    - `hrefKey` on a `string`: the string is the text of a link to a sibling
+      `url` (end-slide `social1Label`, an action button's `label`). Without a
+      target the pair projects nothing, as it shows nothing on the canvas, and
+      a link text never heads an item.
+    - `headingKey` on a `string` or `markdown` block: the named sibling is the
+      `<h3 data-field>` over the block (comparison `leftTitle` over
+      `leftBody`); over an empty block it is a `<p>`.
+    - `duration: { secondsKey }` on a `number`: minutes plus the sibling's
+      seconds, one `<p data-field><time datetime="PT1M30S">1:30</time></p>`
+      (countdown). The length is resolved by `shared/slide-types/duration.js`,
+      which the canvas counts down from too: each part clamped to its field's
+      `min`/`max`, a blank part its default, a zero length the defaults.
+    - `scale: { min, max, minLabelKey, maxLabelKey }` on the **type**: the two
+      end labels are one `<dl class="reader-fields">`, each end's number the
+      `<dt>` and its label the `<dd data-field>` (likert-slider). The canvas
+      draws its ticks from the same declaration.
+  - `url` → `<p data-field><a href>`, through `safeHref`. A slide jump
+    (`#N`, or `#slide:<id>` resolved through the document's slide order) links
+    to that section, `#slide-N`, with the text "Slide N" in the deck language;
+    a jump to a slide the document does not hold is no link at all. `email` →
+    a `mailto:` link. Declared on core types: end-slide `contactUrl`,
+    `social1Url`/`social2Url` and `contactEmail`, the action buttons' `url`,
+    team-cards `linkedin`, the card `link` of icon-card-grid and logo-wall.
+  - Presentational field types (`enum`, `color`, `number` without `duration`,
+    `boolean`), fields declaring `presentational: true` (an icon name, the
+    feedback slide's input `placeholder`) and the global background/logo fields
+    carry no document text and are omitted. embed-slide's `embedUrl` is a
+    `mediaRef` ("Embedded page"): the reader cannot show the frame.
   - Every block the projection emits for a field carries `data-field="<key>"`
     (D132): the `<p>`, `<h3>`, `<figure>`, `<table>`, list, gallery and media
     stand-in, and the visible `<h2>` for its heading field. A `markdown` field

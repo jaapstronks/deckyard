@@ -338,6 +338,8 @@
   "editor.fields.copied": "Copied!",
   "editor.fields.copyExample": "Copy example",
   "editor.fields.copyExampleTitle": "Copy example to clipboard",
+  "editor.fields.emailInvalid": "Enter an e-mail address, like name@example.com.",
+  "editor.fields.linkInvalid": "Enter a full link (https://…), a mailto: address, a /path or a slide jump (#3).",
   "editor.fields.required": "This field is required.",
   "editor.focusPicker.center": "Center",
   "editor.focusPicker.reset": "Reset focus to center",

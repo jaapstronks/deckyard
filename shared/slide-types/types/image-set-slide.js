@@ -377,7 +377,7 @@ export default {
     const mediaCells = Array.from({ length: cells }, (_, i) =>
       cellHtml(i),
     ).join('');
-    const actionsHtml = renderActionsHtml(content?.actions);
+    const actionsHtml = renderActionsHtml(content?.actions, ctx?.mode);
     // In the copy column, not over the images: the aside annotates the text it
     // sits with, and every layout variant moves the pictures around it.
     const asideHtml = renderAsideHtml(content, ctx);

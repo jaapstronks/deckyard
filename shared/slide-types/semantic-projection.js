@@ -50,6 +50,11 @@
  *    line are all `string`, and projecting on type alone made them three
  *    anonymous paragraphs. One table maps the role to its element (D128), see
  *    {@link renderTextField} and {@link renderBlocks}.
+ *  - **Pairs stay pairs (D131).** A value that belongs to a sibling says so
+ *    on the field — `unitKey`, `hrefKey`, `headingKey`, `duration` — and the
+ *    projection joins the two and consumes the partner, the way an image
+ *    consumes its alt. A type-level `scale` does the same for the two ends of
+ *    a rating scale. See {@link pairedKeys}.
  *  - **The deck language is a parameter.** Some of what a slide says is not
  *    stored: a blank callout label reads as its kind ("Key insight"), a chart
  *    carries a one-sentence summary. Both come from the slide copy in the
@@ -64,7 +69,11 @@ import {
   normalizeUrl,
   safeHref,
   normalizeAuthoredUrl,
+  slideJumpTarget,
 } from './helpers.js';
+import { isEmailAddress } from './field-types.js';
+import { durationSeconds, isoDuration, clockDuration } from './duration.js';
+import { getSlideCopy } from './slide-copy.js';
 import { slideStructure } from './structure.js';
 import { isFieldVisible, predicateHolds } from './field-visibility.js';
 import {
@@ -268,6 +277,67 @@ function imageConsumedKeys(fields, obj) {
     }
   }
   return consumed;
+}
+
+/**
+ * The sibling keys a block's pair declarations consume (D131): the unit a
+ * value reads with (`unitKey`), the target a link text points at (`hrefKey`),
+ * the title that heads a block (`headingKey`) and the seconds of a length
+ * (`duration.secondsKey`). Each is said once, beside the field it belongs to,
+ * so the partner never projects a second time as loose text.
+ *
+ * @param {Array<object>} fields - `fields[]` / `itemFields[]`
+ * @returns {Set<string>}
+ */
+function pairedKeys(fields) {
+  const consumed = new Set();
+  for (const field of Array.isArray(fields) ? fields : []) {
+    for (const key of [
+      field?.unitKey,
+      field?.hrefKey,
+      field?.headingKey,
+      field?.duration?.secondsKey,
+    ]) {
+      if (str(key)) consumed.add(key);
+    }
+  }
+  return consumed;
+}
+
+/**
+ * The `href` a `url` value becomes in the reader, and the text a slide jump
+ * reads as.
+ *
+ * A web link goes through `safeHref`, the one allowlist every projected link
+ * uses. A slide jump points at the reader's own anchors (`#slide-N`): `#N`
+ * directly, `#slide:<id>` through the deck's slide order. A jump the document
+ * cannot follow — an id that is not in it, a position past its end — is no
+ * link at all.
+ *
+ * @param {unknown} value
+ * @param {object} ctx
+ * @param {string[]} [ctx.slideIds] - the ids of the document's slides, in order
+ * @param {string} [ctx.lang] - the deck language
+ * @returns {{ href: string, text: string }}
+ */
+function linkTarget(value, { slideIds, lang } = {}) {
+  const jump = slideJumpTarget(value);
+  if (!jump) {
+    const href = safeHref(value);
+    return { href, text: href };
+  }
+  const ids = Array.isArray(slideIds) ? slideIds : null;
+  const n =
+    'id' in jump
+      ? (ids ? ids.indexOf(jump.id) : -1) + 1
+      : !ids || jump.index <= ids.length
+        ? jump.index
+        : 0;
+  if (!n) return { href: '', text: '' };
+  return {
+    href: `#slide-${n}`,
+    text: getSlideCopy(lang).readerSlideLink.replace('{n}', String(n)),
+  };
 }
 
 /**
@@ -542,13 +612,14 @@ function isTextField(field) {
  * @param {Array<object>} [opts.siblings] - every field beside this one, for
  *   `defaultFromOption`
  * @param {string} [opts.lang] - the deck language
+ * @param {string[]} [opts.slideIds] - the document's slide ids, for jumps
  * @returns {string}
  */
 function renderTextField(
   field,
   content,
   defaults,
-  { figcaption = false, siblings, lang } = {},
+  { figcaption = false, siblings, lang, slideIds } = {},
 ) {
   const authored = str(content?.[field.key]);
   const v =
@@ -556,7 +627,20 @@ function renderTextField(
   if (!v) return '';
   const attrs = fieldAttr(field.key);
   const blocks = field.type === 'markdown';
-  const html = blocks ? markdownToSafeHtml(v) : escapeHtml(v);
+  let html = blocks ? markdownToSafeHtml(v) : escapeHtml(v);
+  if (!blocks) {
+    // A value and its unit are one reading ("98%"): the canvas sets the two
+    // spans side by side, so no space is invented here either.
+    const unit = str(field.unitKey) ? str(content?.[field.unitKey]) : '';
+    if (unit) html += escapeHtml(unit);
+    // A link text without a target says nothing a reader can use, so the pair
+    // projects as a link or not at all — as it does on the canvas.
+    if (str(field.hrefKey)) {
+      const { href } = linkTarget(content?.[field.hrefKey], { lang, slideIds });
+      if (!href) return '';
+      html = `<a href="${escapeHtml(href)}">${html}</a>`;
+    }
+  }
   const role = textRole(field);
   if (figcaption && role === 'caption') {
     return `<figcaption${attrs}>${html}</figcaption>`;
@@ -604,6 +688,9 @@ function soleUncaptionedFigureKey(fields, content) {
  *   The footer sits beside the `<blockquote>`, never inside it, as WHATWG asks
  *   of a quotation's source. It carries no `data-field` of its own: it holds
  *   several fields, and the marker names one.
+ * - **headingKey** — a field that names its heading sibling gets that text as
+ *   an `<h3 data-field>` directly above it (a `<p>` when the field itself is
+ *   empty); the sibling is consumed by the caller ({@link pairedKeys}).
  * - **caption** — when the block draws exactly one figure without a caption
  *   of its own, the first filled `caption` field becomes that figure's
  *   `<figcaption data-field>` and is not repeated; otherwise it stays a
@@ -620,12 +707,13 @@ function soleUncaptionedFigureKey(fields, content) {
  * @param {Array<object>} [opts.siblings] - every field the block declares, for
  *   `defaultFromOption` (the `fields` list is already filtered)
  * @param {string} [opts.lang] - the deck language
+ * @param {string[]} [opts.slideIds] - the document's slide ids, for jumps
  * @returns {string[]}
  */
 function renderBlocks(
   fields,
   content,
-  { defaults, headingText, structured, siblings, lang },
+  { defaults, headingText, structured, siblings, lang, slideIds },
 ) {
   const figureKey = soleUncaptionedFigureKey(fields, content);
   const captionField = figureKey
@@ -642,6 +730,7 @@ function renderBlocks(
         figcaption: true,
         siblings,
         lang,
+        slideIds,
       })
     : '';
   const parts = [];
@@ -657,11 +746,25 @@ function renderBlocks(
       defaults,
       siblings,
       lang,
+      slideIds,
       headingText,
       figcaption: field.key === figureKey ? figcaption : '',
       nameText:
         field.key === figureKey ? str(content?.[captionField?.key]) : '',
     });
+    // A block headed by a sibling (`headingKey`) is that heading and the
+    // block; a heading over nothing is just its text.
+    const heading = str(field.headingKey)
+      ? str(content?.[field.headingKey])
+      : '';
+    if (heading) {
+      const attr = fieldAttr(field.headingKey);
+      parts.push(
+        html
+          ? `<h3${attr}>${escapeHtml(heading)}</h3>`
+          : `<p${attr}>${escapeHtml(heading)}</p>`,
+      );
+    }
     if (!html) continue;
     if (isTextField(field) && textRole(field) === 'attribution') {
       if (footerAt < 0) {
@@ -698,25 +801,37 @@ function renderBlocks(
  * consumes (`alt`, `caption`) and a field the type declares `presentational`
  * (an icon name) are both strings, and taking the first one regardless is how
  * cards ended up headed "rocket" and team members headed by their own alt text.
- * Both exclusions are declarations, not a list of key names to skip.
+ * A link text (`hrefKey`) is no heading either: an action button's label is the
+ * link, not a title over it. All three exclusions are declarations, not a list
+ * of key names to skip.
  *
  * @param {object} item - one entry of the field's array
  * @param {Array<object>} itemFields - the field's `itemFields[]`
  * @param {string} [itemLabelField] - declared heading sub-field, if any
  * @param {object} [itemDefaults] - the field's `itemDefaults` skeleton, the
  *   declared default an item's own `semantic` enum resolves through
- * @param {string} [lang] - the deck language
+ * @param {object} [ctx]
+ * @param {string} [ctx.lang] - the deck language
+ * @param {string[]} [ctx.slideIds] - the document's slide ids, for jumps
  */
-function renderItemBlock(item, itemFields, itemLabelField, itemDefaults, lang) {
+function renderItemBlock(
+  item,
+  itemFields,
+  itemLabelField,
+  itemDefaults,
+  { lang, slideIds } = {},
+) {
   if (!item || typeof item !== 'object' || !Array.isArray(itemFields))
     return '';
   const consumed = imageConsumedKeys(itemFields, item);
+  for (const key of pairedKeys(itemFields)) consumed.add(key);
   let headingKey = null;
   let headingText = '';
   const headable = (f) =>
     f?.type === 'string' &&
     !f.hidden &&
     !f.presentational &&
+    !str(f.hrefKey) &&
     !DOCUMENT_ELEMENT_ROLES.has(textRole(f)) &&
     !consumed.has(f.key) &&
     str(item[f.key]);
@@ -737,7 +852,13 @@ function renderItemBlock(item, itemFields, itemLabelField, itemDefaults, lang) {
       (f) => f && f.key !== headingKey && !f.hidden && !consumed.has(f.key),
     ),
     item,
-    { defaults: itemDefaults, headingText, siblings: itemFields, lang },
+    {
+      defaults: itemDefaults,
+      headingText,
+      siblings: itemFields,
+      lang,
+      slideIds,
+    },
   ).filter(Boolean);
   // An item's own `semantic` enums (a matrix cell's tone) mark its <li>,
   // resolved through the items field's `itemDefaults` the way a top-level
@@ -806,6 +927,60 @@ function renderMediaRef(field, content) {
 }
 
 /**
+ * Project a `duration` field: the minutes it holds and the seconds its
+ * `secondsKey` sibling holds, as one `<time>` (D131). The length is resolved by
+ * the same rule the canvas counts down from (`duration.js`), so the reader
+ * states the timer the audience sees.
+ *
+ * @param {object} field - the minutes field, declaring `duration`
+ * @param {object} content
+ * @param {{defaults?: object, siblings?: Array<object>}} opts
+ * @returns {string}
+ */
+function renderDuration(field, content, { defaults, siblings }) {
+  const seconds = durationSeconds(field, siblings, content, defaults);
+  if (!seconds) return '';
+  return `<p${fieldAttr(field.key)}><time datetime="${isoDuration(seconds)}">${clockDuration(seconds)}</time></p>`;
+}
+
+/**
+ * Project a type's `scale`: the two ends of a rating scale as a `<dl>`, each
+ * end's number the term and its label the description. The scale is a
+ * declaration on the type because the canvas draws its ticks from the same
+ * `min`/`max`, so the numbers the reader names are the ones the slide shows.
+ *
+ * @param {{min: number, max: number, minLabelKey?: string, maxLabelKey?: string}} scale
+ * @param {object} content
+ * @returns {string}
+ */
+function renderScale(scale, content) {
+  const ends = [
+    [scale.min, scale.minLabelKey],
+    [scale.max, scale.maxLabelKey],
+  ]
+    .map(([n, key]) => {
+      const label = str(key) ? str(content?.[key]) : '';
+      return label
+        ? `<div class="reader-field"><dt>${escapeHtml(String(n))}</dt><dd${fieldAttr(key)}>${escapeHtml(label)}</dd></div>`
+        : '';
+    })
+    .join('');
+  return ends ? `<dl class="reader-fields">${ends}</dl>` : '';
+}
+
+/**
+ * The type's `scale`, when it declares a usable one.
+ * @param {object} def
+ * @returns {{min: number, max: number, minLabelKey?: string, maxLabelKey?: string}|null}
+ */
+function declaredScale(def) {
+  const scale = def?.scale;
+  if (!scale || typeof scale !== 'object') return null;
+  if (!Number.isFinite(scale.min) || !Number.isFinite(scale.max)) return null;
+  return scale;
+}
+
+/**
  * Project a single field's value to semantic HTML (no-op for empty or
  * presentational fields). `content` is the object the field lives in (slide
  * content, or one item object).
@@ -816,6 +991,7 @@ function renderMediaRef(field, content) {
  * @param {object} [opts.defaults] - `content`'s declared defaults
  * @param {Array<object>} [opts.siblings] - the fields beside this one
  * @param {string} [opts.lang] - the deck language
+ * @param {string[]} [opts.slideIds] - the document's slide ids, for jumps
  * @param {string} [opts.headingText] - alt fallback for an image
  * @param {string} [opts.figcaption] - a ready `<figcaption>` for an image
  * @param {string} [opts.nameText] - the caption text, a last alt fallback
@@ -827,6 +1003,7 @@ function renderFieldValue(
     defaults,
     siblings,
     lang,
+    slideIds,
     headingText = '',
     figcaption = '',
     nameText = '',
@@ -834,6 +1011,10 @@ function renderFieldValue(
 ) {
   if (!field || field.hidden) return '';
   if (NON_CONTENT_GLOBAL_KEYS.has(field.key)) return '';
+  // A number is configuration, unless it declares that it is a length.
+  if (field.duration && field.type === 'number' && !field.presentational) {
+    return renderDuration(field, content, { defaults, siblings });
+  }
   if (isPresentationalField(field)) return '';
   // Checked before the type switch: a `mediaRef` string never reaches the
   // plain-text branch, whatever the declaration around it looks like.
@@ -847,7 +1028,11 @@ function renderFieldValue(
       // Markdown may be several blocks, so the field is one wrapper around
       // them: one marked element per field, whatever the author wrote. The
       // role decides which element (D128).
-      return renderTextField(field, content, defaults, { siblings, lang });
+      return renderTextField(field, content, defaults, {
+        siblings,
+        lang,
+        slideIds,
+      });
     case 'code': {
       const v = str(value);
       return v
@@ -904,7 +1089,7 @@ function renderFieldValue(
             field.itemFields,
             field.itemLabelField,
             resolveItemDefaults(field),
-            lang,
+            { lang, slideIds },
           );
           if (!li) return '';
           const rel = relationOf(item);
@@ -922,9 +1107,14 @@ function renderFieldValue(
       return renderItemList(blocks, ordered, attrs);
     }
     case 'url': {
-      const href = safeHref(value);
+      const { href, text } = linkTarget(value, { slideIds, lang });
       if (!href) return '';
-      return `<p${attrs}><a href="${escapeHtml(href)}">${escapeHtml(href)}</a></p>`;
+      return `<p${attrs}><a href="${escapeHtml(href)}">${escapeHtml(text)}</a></p>`;
+    }
+    case 'email': {
+      const address = str(value);
+      if (!isEmailAddress(address)) return '';
+      return `<p${attrs}><a href="mailto:${escapeHtml(address)}">${escapeHtml(address)}</a></p>`;
     }
     default:
       return '';
@@ -938,14 +1128,15 @@ function renderFieldValue(
  *
  * @param {object} slide
  * @param {object} def - the resolved slide-type definition
- * @param {{ headingKey?: string|null, headingText?: string, lang?: string }} [opts]
- *   `lang` is the deck language, for the copy a slide shows without storing it
+ * @param {{ headingKey?: string|null, headingText?: string, lang?: string, slideIds?: string[] }} [opts]
+ *   `lang` is the deck language, for the copy a slide shows without storing it;
+ *   `slideIds` the document's slide ids in order, so a slide jump can link
  * @returns {string} inner HTML for the slide section
  */
 export function renderSlideBodySemanticHtml(
   slide,
   def,
-  { headingKey = null, headingText = '', lang } = {},
+  { headingKey = null, headingText = '', lang, slideIds } = {},
 ) {
   const content =
     slide?.content && typeof slide.content === 'object' ? slide.content : {};
@@ -969,12 +1160,22 @@ export function renderSlideBodySemanticHtml(
   // paragraphs. Pre-collect the keys an image field consumes (the same pass
   // runs per item inside renderItemBlock).
   const consumed = imageConsumedKeys(fields, content);
+  for (const key of pairedKeys(fields)) consumed.add(key);
 
   // The structure contract, where it asks for more than the field vocabulary
   // alone gives (structure.js / docs/reference/deck-conformance.md).
   const structure = slideStructure(def);
   const visibleByKey = new Map(fields.map((f) => [f.key, f]));
   const structuredHtmlByKey = new Map();
+  // `scale`: the two end labels are one `<dl>`, placed where the first of them
+  // is declared.
+  const scale = declaredScale(def);
+  if (scale) {
+    const ends = [scale.minLabelKey, scale.maxLabelKey].filter((k) => str(k));
+    const first = fields.find((f) => ends.includes(f?.key));
+    if (first) structuredHtmlByKey.set(first.key, renderScale(scale, content));
+    for (const key of ends) consumed.add(key);
+  }
   for (const field of fields) {
     if (!field) continue;
     // A media stand-in absorbs the author's own link, so that sibling field
@@ -1026,6 +1227,7 @@ export function renderSlideBodySemanticHtml(
         structured: structuredHtmlByKey,
         siblings: def?.fields,
         lang,
+        slideIds,
       },
     ),
   );
@@ -1056,11 +1258,16 @@ export function renderSlideBodySemanticHtml(
  *
  * @param {object} slide
  * @param {object|null|undefined} def - the resolved slide-type definition
- * @param {{ index?: number, lang?: string }} [opts] - 0-based position in the
- *   deck, and the deck language
+ * @param {{ index?: number, lang?: string, slideIds?: string[] }} [opts] -
+ *   0-based position in the deck, the deck language, and the ids of the
+ *   document's slides in order (for links that jump to a slide)
  * @returns {string}
  */
-export function renderSlideSectionHtml(slide, def, { index = 0, lang } = {}) {
+export function renderSlideSectionHtml(
+  slide,
+  def,
+  { index = 0, lang, slideIds } = {},
+) {
   const n = index + 1;
   const heading = slideHeading(slide, def, { index, lang });
   const inner = def
@@ -1068,6 +1275,7 @@ export function renderSlideSectionHtml(slide, def, { index = 0, lang } = {}) {
         headingKey: heading.key,
         headingText: heading.text,
         lang,
+        slideIds,
       })
     : renderUnresolvedSlideSemanticHtml(slide, { headingKey: heading.key });
   const titleId = `slide-${n}-title`;

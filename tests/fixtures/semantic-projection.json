@@ -102,10 +102,8 @@
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"kpi-metrics-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" data-field=\"title\">Key Metrics</h2>",
       "<ul class=\"reader-items\" data-field=\"metrics\"><li class=\"reader-item\"><h3 data-field=\"label\">Customer Satisfaction</h3>",
-      "<p data-field=\"value\">98</p>",
-      "<p data-field=\"unit\">%</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Projects Completed</h3>",
-      "<p data-field=\"value\">500</p>",
-      "<p data-field=\"unit\">+</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Support Available</h3>",
+      "<p data-field=\"value\">98%</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Projects Completed</h3>",
+      "<p data-field=\"value\">500+</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Support Available</h3>",
       "<p data-field=\"value\">24/7</p></li></ul>",
       "</section>"
     ],
@@ -113,10 +111,8 @@
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"kpi-metrics-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" data-field=\"title\">Key Metrics</h2>",
       "<ul class=\"reader-items\" data-field=\"metrics\"><li class=\"reader-item\"><h3 data-field=\"label\">Customer Satisfaction</h3>",
-      "<p data-field=\"value\">98</p>",
-      "<p data-field=\"unit\">%</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Projects Completed</h3>",
-      "<p data-field=\"value\">500</p>",
-      "<p data-field=\"unit\">+</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Support Available</h3>",
+      "<p data-field=\"value\">98%</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Projects Completed</h3>",
+      "<p data-field=\"value\">500+</p></li><li class=\"reader-item\"><h3 data-field=\"label\">Support Available</h3>",
       "<p data-field=\"value\">24/7</p></li></ul>",
       "</section>"
     ]
@@ -275,13 +271,13 @@
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"embed-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" class=\"reader-sr-only\">Embed</h2>",
-      "<p data-field=\"embedUrl\">https://example.com</p>",
+      "<p class=\"reader-media\" data-field=\"embedUrl\" data-media=\"Embedded page\"><a href=\"https://example.com\">Embedded page</a></p>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"embed-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" class=\"reader-sr-only\">Embed</h2>",
-      "<p data-field=\"embedUrl\">https://example.com</p>",
+      "<p class=\"reader-media\" data-field=\"embedUrl\" data-media=\"Embedded page\"><a href=\"https://example.com\">Embedded page</a></p>",
       "</section>"
     ]
   },
@@ -289,12 +285,14 @@
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"countdown-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" data-field=\"title\">Break</h2>",
+      "<p data-field=\"durationMinutes\"><time datetime=\"PT5M\">5:00</time></p>",
       "<p data-field=\"zeroText\">Tijd!</p>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"countdown-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" data-field=\"title\">Break</h2>",
+      "<p data-field=\"durationMinutes\"><time datetime=\"PT5M\">5:00</time></p>",
       "<p data-field=\"zeroText\">Time!</p>",
       "</section>"
     ]
@@ -331,15 +329,13 @@
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"likert-slider-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" data-field=\"question\">How satisfied are you?</h2>",
-      "<p data-field=\"minLabel\">Not at all</p>",
-      "<p data-field=\"maxLabel\">Completely</p>",
+      "<dl class=\"reader-fields\"><div class=\"reader-field\"><dt>1</dt><dd data-field=\"minLabel\">Not at all</dd></div><div class=\"reader-field\"><dt>10</dt><dd data-field=\"maxLabel\">Completely</dd></div></dl>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"likert-slider-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" data-field=\"question\">How satisfied are you?</h2>",
-      "<p data-field=\"minLabel\">Not at all</p>",
-      "<p data-field=\"maxLabel\">Completely</p>",
+      "<dl class=\"reader-fields\"><div class=\"reader-field\"><dt>1</dt><dd data-field=\"minLabel\">Not at all</dd></div><div class=\"reader-field\"><dt>10</dt><dd data-field=\"maxLabel\">Completely</dd></div></dl>",
       "</section>"
     ]
   },
@@ -347,13 +343,11 @@
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"feedback-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" data-field=\"question\">What would you improve?</h2>",
-      "<p data-field=\"placeholder\">Share your thoughts...</p>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"feedback-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" data-field=\"question\">What would you improve?</h2>",
-      "<p data-field=\"placeholder\">Share your thoughts...</p>",
       "</section>"
     ]
   },
@@ -418,9 +412,9 @@
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"comparison-slide\" data-variant=\"versus\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" data-field=\"title\">Build or Buy</h2>",
       "<p data-field=\"subheading\">Choosing the platform for next year</p>",
-      "<p data-field=\"leftTitle\">Build in-house</p>",
+      "<h3 data-field=\"leftTitle\">Build in-house</h3>",
       "<div data-field=\"leftBody\"><ul><li>Fits our workflow exactly</li><li>Two engineers for six months</li><li>Every bug is ours</li></ul></div>",
-      "<p data-field=\"rightTitle\">Buy off the shelf</p>",
+      "<h3 data-field=\"rightTitle\">Buy off the shelf</h3>",
       "<div data-field=\"rightBody\"><ul><li>Live within a month</li><li>Licence per seat, per year</li><li>Their roadmap, not ours</li></ul></div>",
       "<p class=\"reader-label\" data-field=\"verdict\">Buy now, revisit when the team doubles</p>",
       "</section>"
@@ -429,9 +423,9 @@
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"comparison-slide\" data-variant=\"versus\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" data-field=\"title\">Build or Buy</h2>",
       "<p data-field=\"subheading\">Choosing the platform for next year</p>",
-      "<p data-field=\"leftTitle\">Build in-house</p>",
+      "<h3 data-field=\"leftTitle\">Build in-house</h3>",
       "<div data-field=\"leftBody\"><ul><li>Fits our workflow exactly</li><li>Two engineers for six months</li><li>Every bug is ours</li></ul></div>",
-      "<p data-field=\"rightTitle\">Buy off the shelf</p>",
+      "<h3 data-field=\"rightTitle\">Buy off the shelf</h3>",
       "<div data-field=\"rightBody\"><ul><li>Live within a month</li><li>Licence per seat, per year</li><li>Their roadmap, not ours</li></ul></div>",
       "<p class=\"reader-label\" data-field=\"verdict\">Buy now, revisit when the team doubles</p>",
       "</section>"
@@ -671,10 +665,9 @@
       "<h2 id=\"slide-1-title\" data-field=\"title\">Thank you</h2>",
       "<div data-field=\"body\"><p>Questions are welcome — now, or in the hallway afterwards.</p></div>",
       "<p data-field=\"contactName\">Robin Meyer</p>",
-      "<p data-field=\"contactEmail\">robin@example.com</p>",
-      "<p data-field=\"contactUrl\">example.com/talks</p>",
-      "<p data-field=\"social1Label\">LinkedIn</p>",
-      "<p data-field=\"social1Url\">linkedin.com/in/example</p>",
+      "<p data-field=\"contactEmail\"><a href=\"mailto:robin@example.com\">robin@example.com</a></p>",
+      "<p data-field=\"contactUrl\"><a href=\"https://example.com/talks\">https://example.com/talks</a></p>",
+      "<p data-field=\"social1Label\"><a href=\"https://www.linkedin.com/in/example\">LinkedIn</a></p>",
       "</section>"
     ],
     "en-GB": [
@@ -682,10 +675,9 @@
       "<h2 id=\"slide-1-title\" data-field=\"title\">Thank you</h2>",
       "<div data-field=\"body\"><p>Questions are welcome — now, or in the hallway afterwards.</p></div>",
       "<p data-field=\"contactName\">Robin Meyer</p>",
-      "<p data-field=\"contactEmail\">robin@example.com</p>",
-      "<p data-field=\"contactUrl\">example.com/talks</p>",
-      "<p data-field=\"social1Label\">LinkedIn</p>",
-      "<p data-field=\"social1Url\">linkedin.com/in/example</p>",
+      "<p data-field=\"contactEmail\"><a href=\"mailto:robin@example.com\">robin@example.com</a></p>",
+      "<p data-field=\"contactUrl\"><a href=\"https://example.com/talks\">https://example.com/talks</a></p>",
+      "<p data-field=\"social1Label\"><a href=\"https://www.linkedin.com/in/example\">LinkedIn</a></p>",
       "</section>"
     ]
   }
