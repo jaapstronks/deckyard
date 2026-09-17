@@ -124,7 +124,10 @@ async function openShareTab(page, tab) {
  *   a state, so the recipe pauses and resets instead.
  * - **Windowed, not fullscreen.** The chrome auto-hide only runs in fullscreen
  *   (see `chrome-autohide.js`), so windowed mode keeps the presenter toolbar in
- *   frame instead of racing it.
+ *   frame instead of racing it. Windowed takes two things: the start gate's
+ *   window option, and a screen larger than the viewport, which `openPage()`
+ *   emulates (a viewport that fills the screen counts as fullscreen, and in
+ *   fullscreen the console is not shown at all).
  *
  * @param {'nl'|'en'} lang
  * @returns {import('../lib/recipe.js').Recipe}
