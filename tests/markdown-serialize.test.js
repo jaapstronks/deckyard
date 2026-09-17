@@ -91,6 +91,13 @@ describe('modal-only constructs still serialize faithfully', () => {
   }
 });
 
+describe('empty list items', () => {
+  it('drops an item left empty by Enter', () => {
+    const root = domOf('<ol start="2"><li>Twee</li><li><br></li></ol>');
+    assert.equal(serializeMarkdownDom(root), '2. Twee');
+  });
+});
+
 describe('ordered list start survives the real sanitizer', () => {
   it('keeps start="N" on the <ol>', () => {
     const ol = domOf(markdownToSafeHtml('3. Drie\n4. Vier')).querySelector(

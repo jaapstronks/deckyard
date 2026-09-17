@@ -145,7 +145,6 @@ function serializeList(listEl, depth, lines) {
   let n = (Number.isFinite(start) ? start : 1) - 1;
   for (const li of listEl.children) {
     if (li.tagName !== 'LI') continue;
-    n += 1;
     // The li's own text = its inline children minus any nested lists.
     let text = '';
     const nested = [];
@@ -162,6 +161,9 @@ function serializeList(listEl, depth, lines) {
         text += serializeInlineNode(child);
       }
     }
+    // An item left empty (Enter, then leaving the field) is not content.
+    if (!text.trim() && !nested.length) continue;
+    n += 1;
     const marker = ordered ? `${n}.` : '-';
     lines.push(`${'  '.repeat(depth)}${marker} ${text.trim()}`);
     for (const sub of nested) serializeList(sub, depth + 1, lines);
