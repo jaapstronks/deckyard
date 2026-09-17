@@ -4,6 +4,41 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.35.0](https://github.com/jaapstronks/deckyard/compare/v1.34.0...v1.35.0) (2026-09-17)
+
+
+### ⚠ BREAKING CHANGES
+
+* **deck:** /api/v1/schema/deck.json no longer describes the stored model (no id, schemaVersion, created, modified, settings, description; format, version and title are required; slides carry no id). The JSON and .deck exports ignore ?lang= and carry every language. Import refuses a deck whose lang or translation tag is not a supported deck language, or whose lang contradicts the request's.
+
+### Added
+
+* **deck:** export and import a .deck from the app ([#1154](https://github.com/jaapstronks/deckyard/issues/1154)) ([3e4cff2](https://github.com/jaapstronks/deckyard/commit/3e4cff2d0eeba273cb6a53057e21009b32701c09))
+* **deck:** the .deck bundle carries its database theme ([#1152](https://github.com/jaapstronks/deckyard/issues/1152)) ([a374ec7](https://github.com/jaapstronks/deckyard/commit/a374ec7055da3670fc6d765f40d313682ebbf7e4))
+* **deck:** the .deck bundle carries the database slide types it uses ([#1153](https://github.com/jaapstronks/deckyard/issues/1153)) ([b197674](https://github.com/jaapstronks/deckyard/commit/b197674a6078148e2418c667692f3ae0ba54e7bc))
+* **deck:** the portable deck carries every language, notes, duration and visibility ([#1151](https://github.com/jaapstronks/deckyard/issues/1151)) ([daf6323](https://github.com/jaapstronks/deckyard/commit/daf6323a3dd7dd40db55077ada1b983573bf8eb4))
+* **media:** the image source chooser shows cards with a primary source ([#1149](https://github.com/jaapstronks/deckyard/issues/1149)) ([089e2b8](https://github.com/jaapstronks/deckyard/commit/089e2b8904cb330c3b056edac2e064237ec7a51a))
+* **print:** the handout reads the reader's projection ([a1d9a7a](https://github.com/jaapstronks/deckyard/commit/a1d9a7af3a03043a386c23601bfd27b23da5a8a5))
+* **reader:** an aside projects as &lt;aside&gt; naming its kind; text-blocks draws the first row heading ([#1162](https://github.com/jaapstronks/deckyard/issues/1162)) ([2a360ab](https://github.com/jaapstronks/deckyard/commit/2a360ab1ad8401d9c2df59e98b9fcb5a3aefbef2))
+* **reader:** custom-html projects its content, not its source ([#1161](https://github.com/jaapstronks/deckyard/issues/1161)) ([8703036](https://github.com/jaapstronks/deckyard/commit/8703036eca882b38482eccad25a98b80ac4d0ef8))
+* **reader:** every surface names its slide type, field and semantic enums ([#1155](https://github.com/jaapstronks/deckyard/issues/1155)) ([75bc038](https://github.com/jaapstronks/deckyard/commit/75bc0381ab50e5c31f1723076e3ddac7c9848ddb))
+* **reader:** fields say what they are: unitKey, hrefKey, headingKey, duration, scale, url and email ([#1159](https://github.com/jaapstronks/deckyard/issues/1159)) ([904d23a](https://github.com/jaapstronks/deckyard/commit/904d23ae1dc1e2c751927b45b50fee33032bddff))
+* **reader:** list order, item headings and row headers are declarations ([#1158](https://github.com/jaapstronks/deckyard/issues/1158)) ([46f15fc](https://github.com/jaapstronks/deckyard/commit/46f15fc8e3cf7291fadf712d05daf996a3fe5642))
+* **reader:** pictures read true or nothing; publishing refuses a picture without alt text ([#1160](https://github.com/jaapstronks/deckyard/issues/1160)) ([1b6bf4b](https://github.com/jaapstronks/deckyard/commit/1b6bf4b92f39d7d71509161bece64128c67f1f8b))
+* **reader:** the projection knows its language; callout copy and chart labels reach the reader ([#1157](https://github.com/jaapstronks/deckyard/issues/1157)) ([7f74a14](https://github.com/jaapstronks/deckyard/commit/7f74a14fecc7b246e6918b60ce8e85607e451767))
+* **reader:** the projection reads role: blockquote, footer, eyebrow, figcaption ([#1156](https://github.com/jaapstronks/deckyard/issues/1156)) ([db26a89](https://github.com/jaapstronks/deckyard/commit/db26a89466f3d8bd958719881bdc4e73d871ecdb))
+
+
+### Fixed
+
+* **markdown:** typed numbered lists become one list, numbered from their start ([#1165](https://github.com/jaapstronks/deckyard/issues/1165)) ([d1f4169](https://github.com/jaapstronks/deckyard/commit/d1f4169bf8c199e93e7f1bff14dcc667c2697f78))
+* **mcp:** --help lists the tools and prompts the server registers ([#1164](https://github.com/jaapstronks/deckyard/issues/1164)) ([fc24207](https://github.com/jaapstronks/deckyard/commit/fc24207b8b87a3ce6204088aca828406a3ff99c9))
+
+
+### Changed
+
+* **release:** keep the beta line at 1.35.0 for [#1151](https://github.com/jaapstronks/deckyard/issues/1151) ([44649d5](https://github.com/jaapstronks/deckyard/commit/44649d52351d6dfa2d7ff587a293d6331b49edb7))
+
 ## [1.34.0](https://github.com/jaapstronks/deckyard/compare/v1.33.5...v1.34.0) (2026-09-16)
 
 
