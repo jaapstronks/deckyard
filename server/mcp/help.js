@@ -1,13 +1,4 @@
 /**
- * `--help` text for the MCP server, built from the registered server.
- *
- * The TOOLS and PROMPTS sections are read from `server.tools` and
- * `server.prompts`, so the help names exactly what a client sees on
- * `tools/list` and `prompts/list`. A hand-typed copy drifted (20 of 27 tools,
- * 6 of 7 prompts); there is no second list to keep in step.
- */
-
-/**
  * The first sentence of a description, as the one-line summary for help.
  * @param {string} description
  * @returns {string}
@@ -54,7 +45,7 @@ ${rows(server.prompts.values())}
 
 CONFIG:
   Reads .env from Deckyard root. Requires LLM vendor config for AI tools.
-  Storage adapter (SQLite/Postgres) is auto-detected from environment.
+  Storage uses PostgreSQL, configured through DATABASE_URL.
 
   DECKYARD_MCP_OWNER_EMAIL  Set to filter presentations by owner and
                             assign ownership to new presentations.

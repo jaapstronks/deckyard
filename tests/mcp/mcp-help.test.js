@@ -42,6 +42,23 @@ describe('MCP --help', () => {
     assert.deepStrictEqual(names(text, 'PROMPTS'), [...server.prompts.keys()]);
   });
 
+  it('includes tools added by a fork registrar', () => {
+    const server = new McpServer();
+    registerTools(server, {
+      registerCustom: (srv) => {
+        srv.tool(
+          'fork_probe',
+          'Inspect the fork. More detail.',
+          {},
+          async () => ({}),
+        );
+      },
+    });
+    const text = helpText(server, { repoRoot: '/repo' });
+    assert.deepStrictEqual(names(text, 'TOOLS'), [...server.tools.keys()]);
+    assert.match(text, /^ {2}fork_probe\s+Inspect the fork\.$/m);
+  });
+
   it('the CLI prints the help built from the running registry', () => {
     const run = spawnSync(process.execPath, [INDEX, '--help'], {
       encoding: 'utf8',
