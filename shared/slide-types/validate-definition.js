@@ -276,6 +276,25 @@ export function validateSlideTypeDefinition(def, name, options = {}) {
     }
   }
 
+  // --- datasetSummary --------------------------------------------------------
+  // Type code, like `renderHtml`: the sentence a `dataset` type says about its
+  // data, which the reader puts in the decoded table's caption. Only a dataset
+  // has a decoded table, so on any other structure it is read by nothing.
+  if (def.datasetSummary !== undefined && def.datasetSummary !== null) {
+    if (typeof def.datasetSummary !== 'function') {
+      errors.push(
+        `${who}: \`datasetSummary\` must be a function ` +
+          `\`(content, { lang }) => string\``,
+      );
+    } else if (def.structure !== 'dataset') {
+      warnings.push(
+        `${who}: \`datasetSummary\` is only read on a \`structure: ` +
+          `'dataset'\` type, so on ${JSON.stringify(def.structure)} it is ` +
+          `ignored`,
+      );
+    }
+  }
+
   // --- namespace -------------------------------------------------------------
   if (def.namespace !== undefined && def.namespace !== null) {
     if (typeof def.namespace !== 'string' || !isValidNamespace(def.namespace)) {

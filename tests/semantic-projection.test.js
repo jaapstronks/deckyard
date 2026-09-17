@@ -12,7 +12,7 @@ import assert from 'node:assert';
 import { initSanitizer } from '../shared/sanitize.js';
 await initSanitizer();
 
-const { slideHeading, renderSlideBodySemanticHtml } =
+const { slideHeading, renderSlideBodySemanticHtml, renderSlideSectionHtml } =
   await import('../shared/slide-types/semantic-projection.js');
 const { SLIDE_TYPES } = await import('../shared/slide-types.js');
 const { migratePresentation } =
@@ -86,7 +86,7 @@ describe('slideHeading resolution (D129)', () => {
     assert.equal(h.text, 'Quote');
     assert.equal(h.visible, false);
     assert.equal(
-      slideHeading({ type: '', content: {} }, {}, 4).text,
+      slideHeading({ type: '', content: {} }, {}, { index: 4 }).text,
       'Slide 5',
     );
   });
@@ -1232,5 +1232,129 @@ describe('role — the projection reads what a text field is (D128)', () => {
       html,
       /^<blockquote data-field="said"><p>One\.<\/p>\s*<p>Two\.<\/p>\s*<\/blockquote>$/,
     );
+  });
+});
+
+describe('the deck language reaches the projection (B294, D130c)', () => {
+  const callout = SLIDE_TYPES['callout-slide'];
+  const chart = SLIDE_TYPES['chart-slide'];
+  const section = (slide, def, lang) =>
+    renderSlideSectionHtml(slide, def, { index: 0, lang });
+
+  it('a blank callout label is the kind word, in eyebrow and hidden heading', () => {
+    const slide = {
+      type: 'callout-slide',
+      content: { variant: 'insight', label: '', body: 'One idea.' },
+    };
+    for (const [lang, word] of [
+      ['nl', 'Kernpunt'],
+      ['en-GB', 'Key insight'],
+    ]) {
+      const html = section(slide, callout, lang);
+      assert.ok(
+        html.includes(
+          `<h2 id="slide-1-title" class="reader-sr-only">${word}</h2>`,
+        ),
+        html,
+      );
+      assert.ok(
+        html.includes(`<p class="reader-label" data-field="label">${word}</p>`),
+        html,
+      );
+    }
+  });
+
+  it('the canvas and the reader say the same eyebrow word', () => {
+    for (const lang of ['nl', 'en-GB']) {
+      const content = { variant: 'warning', body: 'Careful.' };
+      const canvas = callout.renderHtml(content, null, { lang });
+      const word = canvas.match(/class="callout-label"[^>]*>([^<]*)</)[1];
+      assert.ok(
+        section({ type: 'callout-slide', content }, callout, lang).includes(
+          `data-field="label">${word}</p>`,
+        ),
+      );
+    }
+  });
+
+  it('an authored label wins, and only an authored definition is a <dfn>', () => {
+    const authored = section(
+      {
+        type: 'callout-slide',
+        content: { variant: 'definition', label: 'Latency', body: 'Delay.' },
+      },
+      callout,
+      'nl',
+    );
+    assert.ok(authored.includes('<dfn>Latency</dfn>'), authored);
+    assert.ok(!authored.includes('Definitie'), authored);
+    const blank = section(
+      { type: 'callout-slide', content: { variant: 'definition', body: 'x' } },
+      callout,
+      'nl',
+    );
+    assert.ok(
+      blank.includes(
+        '<p class="reader-label" data-field="label">Definitie</p>',
+      ),
+      blank,
+    );
+    assert.ok(!blank.includes('<dfn>'), blank);
+  });
+
+  it('without a copyKey on the option, a blank stays blank', () => {
+    const def = {
+      label: 'Kinds',
+      labelField: 'label',
+      fields: [
+        { key: 'kind', type: 'enum', options: [{ value: 'a', label: 'A' }] },
+        {
+          key: 'label',
+          type: 'string',
+          role: 'label',
+          defaultFromOption: 'kind',
+        },
+      ],
+    };
+    const html = section({ type: 'x', content: { kind: 'a' } }, def, 'nl');
+    assert.ok(html.includes('class="reader-sr-only">Kinds</h2>'), html);
+    assert.ok(!html.includes('reader-label'), html);
+  });
+
+  it('a line chart names its series and captions the data with its summary', () => {
+    const content = {
+      title: 'Growth',
+      chartType: 'line',
+      data: 'Month,Sales,Target\nJan,30,25\nFeb,45,40',
+      series1Label: 'Sales',
+      series2Label: 'Target',
+    };
+    const nl = section({ type: 'chart-slide', content }, chart, 'nl');
+    assert.match(
+      nl,
+      /<caption>Lijndiagram met 2 punten\. Min: 25\. Max: 45\. Chart type: line\. Series 1 label \(legend\): Sales\. Series 2 label \(legend\): Target\.<\/caption>/,
+    );
+    // Consumed by the caption, never loose paragraphs too.
+    assert.ok(!/<p[^>]*>Sales<\/p>/.test(nl), nl);
+    const en = section({ type: 'chart-slide', content }, chart, 'en-GB');
+    assert.match(en, /<caption>Line chart with 2 points\. Min: 25\. Max: 45\./);
+    // The canvas gives assistive tech the same sentence.
+    const canvas = chart.renderHtml(content, null, { lang: 'nl' });
+    assert.ok(canvas.includes('Lijndiagram met 2 punten. Min: 25. Max: 45.'));
+  });
+
+  it('a bar chart names no series, and its summary names the highest point', () => {
+    const content = {
+      title: 'Revenue',
+      chartType: 'bar',
+      data: 'Year,Revenue\n2024,10\n2025,14',
+      series1Label: 'Ignored',
+    };
+    const html = section({ type: 'chart-slide', content }, chart, 'en-GB');
+    assert.match(
+      html,
+      /<caption>Bar chart with 2 points\. Highest: 2025 \(14\)\. Chart type: bar\.<\/caption>/,
+    );
+    assert.ok(!html.includes('Ignored'), html);
   });
 });

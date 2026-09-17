@@ -30,7 +30,11 @@ document that stays readable with JavaScript — and author CSS — turned off.
   projects without bespoke code and the output cannot drift from the type
   definitions:
   - `string` → `<p>`, `markdown` → semantic prose (headings, lists, blockquotes),
-    `code` → `<pre><code>`, `csv` → a `<table>`.
+    `code` → `<pre><code>`, `csv` → a `<table>`. A `dataset` payload's
+    `<caption>` is the type's `datasetSummary` sentence in the deck language
+    ("Lijndiagram met 5 punten. Min: 25. Max: 85.", the same sentence the
+    canvas gives assistive tech) followed by its `encodingKeys` fields as
+    "<label>: <value>" (a line chart names its two series).
   - A text field's `role` decides its element (D128). The same declaration that
     sets a field's style affordances (`text-alignment.md`) is its document
     semantics, because both follow from what the text is. One table, applied to
@@ -47,7 +51,10 @@ document that stays readable with JavaScript — and author CSS — turned off.
     - `label` → `<p class="reader-label">`, the eyebrow. A label declaring
       `termWhen: { field, in }` (the one operator `visibleWhen` reads) wraps its
       text in `<dfn>` while the predicate holds: the callout label on a
-      `definition`.
+      `definition`. A blank label declaring `defaultFromOption: '<enum>'`
+      shows the chosen option's `copyKey` word in the deck language instead
+      (a callout reads "Key insight" / "Kernpunt", as its canvas eyebrow does,
+      and its hidden heading says the same); a stand-in is never a `<dfn>`.
     - `prose`, `list-item` and an unfilled `heading` → `<p>`.
       A field whose role gives it its own element (`quote`, `caption`, `label`,
       `attribution`) never becomes an item's `<h3>`.

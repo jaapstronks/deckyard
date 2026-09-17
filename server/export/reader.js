@@ -171,7 +171,7 @@ export function buildReaderHtml(
   const toc = resolved
     .map(
       ({ slide, def }, i) =>
-        `<li><a href="#slide-${i + 1}">${escapeHtml(slideHeading(slide, def, i).text)}</a></li>`,
+        `<li><a href="#slide-${i + 1}">${escapeHtml(slideHeading(slide, def, { index: i, lang: docLang }).text)}</a></li>`,
     )
     .join('\n        ');
 
@@ -181,7 +181,7 @@ export function buildReaderHtml(
   // had to truncate.
   const sections = resolved
     .map(({ slide, def }, i) =>
-      renderSlideSectionHtml(slide, def, { index: i }),
+      renderSlideSectionHtml(slide, def, { index: i, lang: docLang }),
     )
     .join('\n      ');
 

@@ -191,7 +191,9 @@ of what a structure contract is for.
 
 The projection also honours `visibleWhen`: a field the type declares inactive
 right now (a bar chart's legend labels, a pie chart's axis names) is not part of
-the slide's meaning. The editor and the canvas already skipped it; a third
+the slide's meaning.
+
+One part of the `dataset` caption is not a declaration: the sentence that sums the data up ("Line chart with 5 points. Min: 25. Max: 85."). What is worth saying about a payload depends on what it encodes, so it is the type's own `datasetSummary(content, { lang })` function, the same one its canvas reads into the chart's screen-reader text, and a second reader that does not run type code captions with the encoding alone. The editor and the canvas already skipped it; a third
 surface that disagreed was how dead values reached the reader as prose.
 
 The same goes for `presentational: true`: a `string` field whose value is

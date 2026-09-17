@@ -48,7 +48,9 @@ test('the reader marks the section with a top-level semantic enum, not as text',
     html,
     /<section id="slide-1" class="reader-slide" data-slide-type="callout-slide" data-variant="warning" /,
   );
-  assert.ok(!/>warning</i.test(html), html);
+  // The storage token never reads as text; the kind's own word does, as the
+  // blank label's `defaultFromOption` stand-in (D130c).
+  assert.ok(!/>warning</.test(html), html);
 });
 
 test('the reader marks each item <li> with its own semantic enum', () => {
