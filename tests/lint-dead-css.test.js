@@ -274,6 +274,9 @@ describe('scan (end to end, injected reader)', () => {
       sourceFiles: ['client/app.js'],
       cssFiles: ['client/styles/x.css'],
       read: (f) => files[f],
+      // Hermetic: the fixture states its own evidence, so the real slide-type
+      // declarations cannot decide the outcome of a unit test.
+      declared: [],
     });
     assert.equal(totalClasses, 3);
     assert.deepEqual(
@@ -315,6 +318,7 @@ describe('scan (end to end, injected reader)', () => {
       sourceFiles: Object.keys(files).filter((f) => f.endsWith('.js')),
       cssFiles: ['client/styles/slides/x.css'],
       read: (f) => files[f],
+      declared: [],
     });
     assert.deepEqual(
       dead.map((d) => d.name),

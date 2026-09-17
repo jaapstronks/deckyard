@@ -46,7 +46,10 @@ const {
 const all = trackedFiles();
 const sourceFiles = all.filter(isSourceFile);
 const cssFiles = all.filter(isCssFile);
-const { dead, byName, totalClasses } = scan({ sourceFiles, cssFiles });
+const { dead, byName, totalClasses, evidence } = scan({
+  sourceFiles,
+  cssFiles,
+});
 const allowlist = readAllowlist();
 const audit = auditAllowlist({ dead, byName, allowlist });
 
@@ -109,11 +112,8 @@ describe('dead CSS gate', () => {
 
   // B326: `.is-align-center` and `.is-align-left` are composed at render time
   // from a field group's `alignClass` and its offered values, so no literal of
-  // either exists. They were counted alive because JSDoc in `title-slide.js`
-  // and `text-blocks-slide.js` happens to name them inside backticks, which the
-  // template-literal harvester reads as source. Prose is not evidence: reword a
-  // comment and a live selector turns dead. The declared set is the evidence
-  // now, and this pins it so the gate cannot quietly fall back to the comments.
+  // either exists. They used to be counted alive because JSDoc named them
+  // inside backticks, which the template-literal harvester reads as source.
   it('derives the composed alignment classes from the slide-type declarations', () => {
     const declared = declaredClasses();
     assert.ok(
@@ -123,6 +123,25 @@ describe('dead CSS gate', () => {
     assert.ok(
       !declared.has('is-align-right'),
       'the declared set must be the offered values, not every value ever named',
+    );
+  });
+
+  // Two sources for one answer is one source too many. As long as a sentence
+  // somewhere also spells the class out, the declared set is decoration: retire
+  // `center` from a group and every `.is-align-center` selector would still
+  // read alive off that sentence, which is the rot B326 exists to remove. So
+  // the corpus must not hand these names to the harvester at all.
+  it('keeps the composed classes out of the harvested literals', () => {
+    const spelledOut = [...declaredClasses()].filter((name) =>
+      evidence.used.has(name),
+    );
+    assert.deepEqual(
+      spelledOut,
+      [],
+      'these composed classes are also written as literals somewhere in the ' +
+        'source corpus, so the gate is not relying on the declarations.\n' +
+        'Reword the comment (or name the value, not the whole class) — a ' +
+        'selector kept alive by prose dies when the prose is reworded.',
     );
   });
 

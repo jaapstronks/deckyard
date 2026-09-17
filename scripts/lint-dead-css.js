@@ -47,11 +47,15 @@
 // template-literal harvester reads as source. Stylesheet comments never
 // counted — CSS is the accused corpus, not the evidence. Prose keeping a gate
 // green is exactly the kind of evidence that rots without anyone noticing:
-// reword those three sentences and two live selectors turn dead. `groupAlignClasses()` enumerates
-// the finite set from the same declarations the renderer composes from, and the
-// classes in it are alive because the source can produce them. Loosening
-// `SEPARATOR_INFIX` to a single hyphen would have been the alternative, and it
-// would have rescued nearly every two-word class in the repo.
+// reword such a sentence and a live selector turns dead. Those three now name
+// the group rather than the class, so this rule is the only thing holding the
+// selectors up — `tests/dead-css-gate.test.js` fails if a literal creeps back
+// in, because two sources for one answer means the declarations are decoration.
+// `groupAlignClasses()` enumerates the finite set from the same declarations
+// the renderer composes from, and the classes in it are alive because the
+// source can produce them. Loosening `SEPARATOR_INFIX` to a single hyphen
+// would have been the alternative, and it would have rescued nearly every
+// two-word class in the repo.
 //
 // VENDOR IS NOT SOURCE (the B191 decision)
 // `client/vendor/**` is excluded from the corpus. Those files are not our source,
