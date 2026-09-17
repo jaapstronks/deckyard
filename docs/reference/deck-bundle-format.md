@@ -237,7 +237,13 @@ sentence.
 The flow:
 
 1. `readDeckBundle(buffer)` — verify the mimetype sentinel and re-hash every
-   asset (integrity), yielding `{ manifest, deck, assets }`.
+   asset (integrity), yielding `{ manifest, deck, assets }`. A body that is not
+   a zip at all is refused with 400 and the format's own sentence
+   (`Invalid .deck bundle: the file is not a zip archive`), never the zip
+   library's; a zip whose `manifest.json` or `deck.json` is broken JSON names
+   that entry (`… manifest.json is not valid JSON`), never the parser's text.
+   Every reason is a bare reason: the route owns the `Invalid .deck bundle:`
+   prefix, so no reason names the bundle a second time.
    The deck's own `lang` decides the language it imports in; a bundle whose
    `lang` or `translations` name a language this install does not author in is
    refused with 400 (`deckImportLang`).

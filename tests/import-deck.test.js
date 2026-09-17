@@ -308,11 +308,44 @@ test('rejects a bundle whose deck language is not supported', async () => {
   assert.match(body.message, /pt-BR/);
 });
 
-test('rejects a non-bundle body with 400', async () => {
-  const { res, body } = await importBundle(Buffer.from('not a zip'));
+// A non-zip gets the format's own sentence, never JSZip's ("Can't find end of
+// central directory … see https://stuk.github.io/…"): the dialog shows it (B310).
+for (const [what, buf] of [
+  ['a text file', Buffer.from('just some notes\n')],
+  ['a JSON deck', Buffer.from(JSON.stringify({ title: 'x', slides: [] }))],
+]) {
+  test(`rejects ${what} posing as a .deck with one sentence of its own`, async () => {
+    const { res, body } = await importBundle(buf);
+    assert.equal(res.statusCode, 400);
+    assert.equal(body.error, 'bad_request');
+    assert.equal(
+      body.message,
+      'Invalid .deck bundle: the file is not a zip archive',
+    );
+  });
+}
+
+// A real zip whose manifest is broken JSON is refused the same way: the entry
+// is named, V8's parser sentence ("Unexpected token …") is not (B310, review).
+test('rejects a bundle whose manifest is not JSON with the entry named', async () => {
+  const stored = {
+    title: 'x',
+    theme: 'default',
+    slides: [{ id: 'a', type: 'content-slide', content: { title: 'x' } }],
+  };
+  const bundle = await buildDeckBundle(repoRoot, stored);
+  const JSZip = (await import('jszip')).default;
+  const zip = await JSZip.loadAsync(bundle);
+  zip.file('manifest.json', '{ "bundleVersion": ');
+  const { res, body } = await importBundle(
+    await zip.generateAsync({ type: 'nodebuffer' }),
+  );
   assert.equal(res.statusCode, 400);
   assert.equal(body.error, 'bad_request');
-  assert.match(body.message, /Invalid \.deck bundle/);
+  assert.equal(
+    body.message,
+    'Invalid .deck bundle: manifest.json is not valid JSON',
+  );
 });
 
 test('rejects an empty body with 400', async () => {

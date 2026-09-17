@@ -392,7 +392,10 @@ test('reading refuses a tampered definition and a mismatched slug', async () => 
   const tampered = await rezip(bundle, (zip) => {
     zip.file(ref, JSON.stringify({ slug: type.slug, label: 'Evil' }));
   });
-  await assert.rejects(readDeckBundle(tampered), /slide type failed integrity/);
+  await assert.rejects(
+    readDeckBundle(tampered),
+    /slide type .* failed its integrity check/,
+  );
 
   const renamed = await rezip(bundle, async (zip) => {
     const json = JSON.stringify({ slug: 'other', label: 'Renamed' });
