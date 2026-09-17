@@ -37,6 +37,18 @@
 // chunk sitting *between* two holes is harvested as an infix and the name is
 // alive when both sides of it are values.
 //
+// A DECLARED CLASS IS EVIDENCE, NOT A COMMENT (B326)
+// Some classes exist only as two declarations meeting at render time:
+// `groupAlignClass()` builds `` `${prefix}-${value}` `` from a field group's
+// `alignClass` and its offered values, so `.is-align-center` appears nowhere as
+// a literal. It was counted alive because four stylesheets happen to name it in
+// a backtick comment — prose keeping a gate green, which is exactly the kind of
+// evidence that rots without anyone noticing. `groupAlignClasses()` enumerates
+// the finite set from the same declarations the renderer composes from, and the
+// classes in it are alive because the source can produce them. Loosening
+// `SEPARATOR_INFIX` to a single hyphen would have been the alternative, and it
+// would have rescued nearly every two-word class in the repo.
+//
 // VENDOR IS NOT SOURCE (the B191 decision)
 // `client/vendor/**` is excluded from the corpus. Those files are not our source,
 // and the harvester demonstrably desyncs on them: the quoted-string pass walks
@@ -68,6 +80,9 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import { groupAlignClasses } from '../shared/slide-types/field-groups.js';
+import { CORE_SLIDE_TYPE_DEFS } from '../shared/slide-types/registry.js';
 
 const REPO_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -103,7 +118,27 @@ export const emptyEvidence = () => ({
   used: new Set(),
   prefixes: new Set(),
   infixes: new Set(),
+  declared: new Set(),
 });
+
+/**
+ * Class names the slide-type declarations can compose, gathered from the same
+ * helpers the renderers call. Core types only: a fork's own types live in a
+ * gitignored `custom/`, and their stylesheets are not in the corpus either, so
+ * reading them would make the gate's answer depend on which checkout it runs
+ * in.
+ *
+ * @returns {Set<string>}
+ */
+export function declaredClasses() {
+  const names = new Set();
+  for (const def of Object.values(CORE_SLIDE_TYPE_DEFS)) {
+    for (const group of def?.fieldGroups || []) {
+      for (const name of groupAlignClasses(group)) names.add(name);
+    }
+  }
+  return names;
+}
 
 /**
  * Can a `${}` hole have produced this text? Either the source writes it as a
@@ -363,6 +398,10 @@ export function extractCssClasses(text, file) {
  * @returns {boolean}
  */
 export function isAlive(name, evidence) {
+  // 0. Composed from declarations the renderer reads: the exact set, not a
+  //    prefix that would rescue anything sharing its first word.
+  if (evidence.declared.has(name)) return true;
+
   // 1. Written as a literal.
   if (evidence.used.has(name)) return true;
 
@@ -410,6 +449,7 @@ export function isAlive(name, evidence) {
  */
 export function scan({ sourceFiles, cssFiles, read = defaultRead }) {
   const evidence = emptyEvidence();
+  for (const name of declaredClasses()) evidence.declared.add(name);
   for (const file of sourceFiles) harvestSource(read(file), evidence);
 
   const byName = new Map();

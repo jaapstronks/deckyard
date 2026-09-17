@@ -37,6 +37,7 @@ const {
   auditAllowlist,
   isCssFile,
   isSourceFile,
+  declaredClasses,
   readAllowlist,
   scan,
   trackedFiles,
@@ -103,6 +104,25 @@ describe('dead CSS gate', () => {
       [],
       `${ALLOWLIST_FILE} describes selectors that no longer need excusing.\n` +
         'Delete those entries — the gate stays green without them.',
+    );
+  });
+
+  // B326: `.is-align-center` and `.is-align-left` are composed at render time
+  // from a field group's `alignClass` and its offered values, so no literal of
+  // either exists. They were counted alive because JSDoc in `title-slide.js`
+  // and `text-blocks-slide.js` happens to name them inside backticks, which the
+  // template-literal harvester reads as source. Prose is not evidence: reword a
+  // comment and a live selector turns dead. The declared set is the evidence
+  // now, and this pins it so the gate cannot quietly fall back to the comments.
+  it('derives the composed alignment classes from the slide-type declarations', () => {
+    const declared = declaredClasses();
+    assert.ok(
+      declared.has('is-align-center') && declared.has('is-align-left'),
+      `expected the offered alignment classes, got ${[...declared].join(', ') || '(none)'}`,
+    );
+    assert.ok(
+      !declared.has('is-align-right'),
+      'the declared set must be the offered values, not every value ever named',
     );
   });
 
