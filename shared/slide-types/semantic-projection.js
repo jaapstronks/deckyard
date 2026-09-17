@@ -270,9 +270,15 @@ function imageSiblingKeys(fieldKey) {
 function imageConsumedKeys(fields, obj) {
   const consumed = new Set();
   for (const field of Array.isArray(fields) ? fields : []) {
-    // A figure group reads its role and its one caption from the object that
-    // holds the set, under the same sibling spellings an image field uses.
-    if (field?.type !== 'image' && !figureGroupImageField(field)) continue;
+    // A figure group — an `images` array or an items field of bare pictures —
+    // reads its role and its one caption from the object that holds the set,
+    // under the same sibling spellings an image field uses.
+    if (
+      field?.type !== 'image' &&
+      field?.type !== 'images' &&
+      !figureGroupImageField(field)
+    )
+      continue;
     for (const key of imageSiblingKeys(field.key)) {
       if (obj && key in obj) consumed.add(key);
     }

@@ -232,6 +232,33 @@ describe('images and figures', () => {
     assert.equal((html.match(/<img/g) || []).length, 2, html);
     assert.equal((html.match(/alt=""/g) || []).length, 2, html);
   });
+
+  it('an images array folds its caption and role siblings into the group', () => {
+    const def = {
+      fields: [
+        { key: 'gallery', type: 'images' },
+        { key: 'caption', type: 'string' },
+        { key: 'imageRole', type: 'enum', options: ['content', 'decorative'] },
+      ],
+    };
+    const html = body(
+      {
+        content: {
+          gallery: ['/a.png', '/b.png'],
+          caption: 'Before and after',
+          imageRole: 'decorative',
+        },
+      },
+      def,
+    );
+    assert.equal((html.match(/Before and after/g) || []).length, 1, html);
+    assert.ok(
+      html.includes('<figcaption data-field="caption">Before and after'),
+      html,
+    );
+    assert.ok(!html.includes('<p data-field="caption">'), html);
+    assert.equal((html.match(/aria-hidden="true"/g) || []).length, 2, html);
+  });
 });
 
 describe('the reader alt ladder: explicit, a name, nothing (D135, B297)', () => {
