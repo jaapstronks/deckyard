@@ -1,3 +1,4 @@
+import { customDirFor } from '../../../shared/custom-root.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { serveJson, withErrorHandler } from '../../utils/http.js';
@@ -12,7 +13,7 @@ async function listAssetDir(repoRoot, subdir, allowedExts) {
       prefix: `/assets/images/${subdir}`,
     },
     {
-      dir: path.join(repoRoot, 'custom', 'assets', 'images', subdir),
+      dir: path.join(customDirFor(repoRoot), 'assets', 'images', subdir),
       prefix: `/custom/assets/images/${subdir}`,
     },
   ];

@@ -27,20 +27,17 @@
  */
 
 import { existsSync } from 'node:fs';
-import { join, resolve, dirname } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { pathToFileURL } from 'node:url';
 
-const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+import { CUSTOM_FONTS_FILE } from './custom-root.js';
 
-/** The declaration half of the seam. */
-export const CUSTOM_FONTS_FILE = join(REPO_ROOT, 'custom', 'fonts.js');
-
-/** The pin half. Same shape as `scripts/google-fonts.lock.json`. */
-export const CUSTOM_FONTS_LOCK_PATH = join(
-  REPO_ROOT,
-  'custom',
-  'google-fonts.lock.json',
-);
+/**
+ * The two halves of the seam, re-exported here because this is where callers
+ * reach for them: the declaration (`custom/fonts.js`) and the pin
+ * (`custom/google-fonts.lock.json`, same shape as
+ * `scripts/google-fonts.lock.json`).
+ */
+export { CUSTOM_FONTS_FILE, CUSTOM_FONTS_LOCK_PATH } from './custom-root.js';
 
 /** Repo-relative spellings, for messages that have to be pasteable. */
 export const CUSTOM_FONTS_FILE_REL = 'custom/fonts.js';

@@ -16,20 +16,13 @@
  */
 
 import { readdirSync, existsSync, statSync } from 'node:fs';
-import { join, resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { CUSTOM_SLIDE_TYPES_DIR } from '../../../../shared/custom-root.js';
 import { clampUsage } from '../../../../shared/slide-types/usage.js';
 import { createLogger } from '../../logger.js';
 
 const log = createLogger('custom-ai-loader');
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Resolve the repo root (four levels up from server/utils/ai/slide-catalog/)
-const REPO_ROOT = resolve(__dirname, '..', '..', '..', '..');
-const CUSTOM_SLIDE_TYPES_DIR = join(REPO_ROOT, 'custom', 'slide-types');
 
 // Cache for loaded custom AI definitions
 let customAiCatalogCache = null;
