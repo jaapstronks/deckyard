@@ -21,6 +21,42 @@ export const DEFAULT_VIEWPORT = {
 };
 
 /**
+ * Height of the browser's own chrome (tabs, address bar) above the page, in
+ * CSS pixels: what separates a window from a screen.
+ */
+const WINDOW_CHROME_HEIGHT = 88;
+
+/**
+ * Put the viewport in a window on a screen that holds it.
+ *
+ * Headless Chrome reports an 800×600 screen whatever the viewport, so every
+ * capture viewport is a window larger than its own screen, a state no real
+ * browser is in. The presenter reads a viewport that fills the screen as
+ * fullscreen (`client/views/presenter/fullscreen.js`), so without this every
+ * presenter capture shot the fullscreen layout: console gone, chrome hidden.
+ *
+ * The screen is as wide as the viewport and taller by the browser chrome: a
+ * maximised window, which is what a presenter who did not pick fullscreen has.
+ * Set over CDP because `page.setViewport()` has no screen size; it is the same
+ * override, so it keeps the viewport and scale that call just set.
+ *
+ * @param {import('puppeteer-core').Page} page
+ * @param {Viewport} viewport
+ * @returns {Promise<void>}
+ */
+async function emulateWindowScreen(page, viewport) {
+  const cdp = await page.createCDPSession();
+  await cdp.send('Emulation.setDeviceMetricsOverride', {
+    width: viewport.width,
+    height: viewport.height,
+    deviceScaleFactor: viewport.deviceScaleFactor ?? 2,
+    mobile: false,
+    screenWidth: viewport.width,
+    screenHeight: viewport.height + WINDOW_CHROME_HEIGHT,
+  });
+}
+
+/**
  * A second browser, launched only for recordings, at a forced device scale.
  *
  * Why a screenshot and a recording cannot share one browser: `page.screenshot()`
@@ -113,6 +149,7 @@ export async function openPage(
     height: viewport.height,
     deviceScaleFactor: viewport.deviceScaleFactor ?? 2,
   });
+  await emulateWindowScreen(page, viewport);
   // Force light-scheme rendering unless a recipe overrides it, so captures are
   // stable regardless of the host OS appearance.
   await page.emulateMediaFeatures([
