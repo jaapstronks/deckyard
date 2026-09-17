@@ -20,13 +20,8 @@
   min-height: 0;
 }
 
-/* Vertical rhythm (B317): the heading stays at the top and the table, with its
-   caption when there is one, centres in the space left below it — the one rule
-   every collection under a heading follows. Auto margins rather than
-   `justify-content`, because the heading is a sibling in the same column and
-   must not move; they are safe by construction, since an auto margin never goes
-   negative: a table taller than the slide starts right under the heading and
-   the wrap shrinks and scrolls, it never rides up over the title. */
+/* Auto margins centre the table and caption without moving their sibling
+   heading. They resolve to zero on overflow, keeping the heading clear. */
 .slide-table .slide-inner > .md-table-wrap {
   margin-block-start: auto;
 }

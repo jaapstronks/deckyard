@@ -29,12 +29,8 @@
   color: color-mix(in srgb, var(--slide-on-surface, #0b0b0b) 75%, transparent);
   max-width: 70ch;
 }
-/* Header-block alignment (author-driven, horizontal axis). The block centres
-   by default, on the centre line the rows, row titles and arrows already share;
-   `is-align-left` comes from the type's `headerAlign` and moves the heading +
-   subheading as one. The heading is addressed directly because 00-base.css
-   resets `.slide h2` to `text-align: start`; the subheading's 70ch cap needs
-   `margin-inline: auto` to share the centre. */
+/* Target the title directly to override the base h2 alignment; auto margins
+   centre the subheading's capped box as well as its text. */
 .slide-text-blocks .header .title,
 .slide-text-blocks .header .subtitle {
   margin-inline: auto;
@@ -266,8 +262,7 @@
    the 3-row one, a notch tighter, so four rows fit at 1600×900. The column
    centres like every other tier, but `safe`: if an author still overloads the
    rows, the overflow falls back to the start and clips at the bottom instead
-   of riding up over the title (B317; top-aligning bought that with a quarter of
-   the slide left empty under normal content). */
+   of riding up over the title. */
 .slide-text-blocks .text-blocks-content[data-rows='4'] {
   justify-content: safe center;
 }

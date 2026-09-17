@@ -7,13 +7,8 @@ import {
 import { markdownToSafeHtml } from '../../markdown.js';
 import { alignGroup, groupAlignClass } from '../field-groups.js';
 
-/**
- * Title and subheading are one header block, centred by default: the rows,
- * their titles and the arrows between them all sit on the slide's centre line,
- * so a start-aligned heading above them is the odd one out (B317). Left stays
- * on offer for a deck that wants its headings on one edge: `is-align-left` on
- * the slide root, and the CSS moves the whole block.
- */
+/** Header alignment moves title and subheading together; `is-align-left`
+ * overrides the centred default. */
 const HEADER_BLOCK = alignGroup('header-block', 'headerAlign', {
   align: ['center', 'left'],
   label: 'Header alignment',
