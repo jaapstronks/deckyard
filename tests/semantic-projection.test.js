@@ -15,6 +15,8 @@ await initSanitizer();
 const { slideHeading, renderSlideBodySemanticHtml, renderSlideSectionHtml } =
   await import('../shared/slide-types/semantic-projection.js');
 const { SLIDE_TYPES } = await import('../shared/slide-types.js');
+const { slideTypeSample } =
+  await import('../shared/slide-types/authoring-companions.js');
 const { migratePresentation } =
   await import('../shared/slide-types/schema-version.js');
 
@@ -1818,5 +1820,98 @@ describe('pairs stay pairs (D131)', () => {
       { headingKey: 'question' },
     );
     assert.equal(html, '');
+  });
+});
+
+describe('markup — author HTML projects as its content, not its source (B298)', () => {
+  const def = SLIDE_TYPES['custom-html-slide'];
+  it('the sample reads as its sanitized HTML; the CSS is presentational', () => {
+    const sample = slideTypeSample('custom-html-slide', def);
+    const html = renderSlideSectionHtml(
+      { type: 'custom-html-slide', content: sample },
+      def,
+    );
+    assert.ok(html.includes('<div data-field="html"><div class="ch-card">'));
+    assert.ok(html.includes('<p class="ch-figure">99.98%</p>'));
+    assert.ok(!html.includes('<pre'), 'no source block');
+    assert.ok(!html.includes('ch-kicker {'), 'the stylesheet is not text');
+    assert.ok(!html.includes('data-field="css"'));
+    // No h1..h3 in the sample: the hidden heading falls back to the type label.
+    assert.ok(
+      html.includes(
+        '<h2 id="slide-1-title" class="reader-sr-only">Custom HTML</h2>',
+      ),
+    );
+  });
+
+  it('the first h1..h3 of the sanitized HTML names the slide, as a hidden heading', () => {
+    const slide = {
+      type: 'custom-html-slide',
+      content: {
+        html: '<p>Kicker</p><h3>  Org <em>chart</em>\n</h3><h1>Later</h1>',
+      },
+    };
+    assert.deepEqual(slideHeading(slide, def), {
+      text: 'Org chart',
+      visible: false,
+      key: null,
+      ariaLabel: '',
+    });
+    // The heading stays in the markup where the author put it.
+    assert.ok(body(slide, def).includes('<h3>  Org <em>chart</em>\n</h3>'));
+    // A heading the sanitizer strips names nothing.
+    const stripped = {
+      content: { html: '<template><h2>Gone</h2></template><p>Body</p>' },
+    };
+    assert.equal(slideHeading(stripped, def).text, 'Custom HTML');
+    // An a11yTitle still names the slide first.
+    assert.equal(
+      slideHeading({ content: { ...slide.content, a11yTitle: 'Named' } }, def)
+        .text,
+      'Named',
+    );
+  });
+
+  it('the markup is sanitized exactly as the canvas sanitizes it', () => {
+    const html = body(
+      {
+        content: {
+          html: '<p onclick="alert(1)">Hi</p><script>alert(2)</script><iframe src="https://x"></iframe>',
+        },
+      },
+      def,
+    );
+    assert.equal(html, '<div data-field="html"><p>Hi</p></div>');
+    // Markup that sanitizes to nothing projects nothing.
+    assert.equal(body({ content: { html: '<script>x</script>' } }, def), '');
+  });
+
+  it('author CSS is presentation: the reader drops `style`, the canvas keeps it; class and id stay (D151)', () => {
+    const html =
+      '<p id="intro" class="ch-note" style="color: white; position: absolute">Hi</p>';
+    assert.equal(
+      body({ content: { html } }, def),
+      '<div data-field="html"><p id="intro" class="ch-note">Hi</p></div>',
+    );
+    // Pinned next to the canvas: the same tree, only the presentation differs.
+    assert.ok(
+      def
+        .renderHtml({ html, css: '' }, { id: 's1', type: 'custom-html-slide' })
+        .includes('style="color: white; position: absolute"'),
+    );
+  });
+
+  it('a code field without markup stays source', () => {
+    const src = {
+      fields: [{ key: 'snippet', type: 'code' }],
+    };
+    assert.equal(
+      body({ content: { snippet: '<h1>x</h1>' } }, src),
+      '<pre class="reader-code" data-field="snippet"><code>&lt;h1&gt;x&lt;/h1&gt;</code></pre>',
+    );
+    assert.equal(
+      slideHeading({ content: { snippet: '<h1>x</h1>' } }, src).text,
+      'Slide 1',
+    );
   });
 });

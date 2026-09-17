@@ -349,8 +349,8 @@ export const FIELD_TYPES = {
   code: {
     label: 'Code',
     description:
-      'Monospace textarea storing the raw string verbatim (no markdown, no escaping on input)',
-    docExtra: '`maxLength`, `required`, `capability`',
+      'Monospace textarea storing the raw string verbatim (no markdown, no escaping on input). The reflowable projection shows it as source (`<pre><code>`), unless the field declares `markup: true`: then it is author HTML the canvas renders, and the reader renders it too, through the same sanitizer (minus `style` attributes: author CSS is presentation), and names an untitled slide by its first `h1..h3`.',
+    docExtra: '`maxLength`, `required`, `capability`, `markup`',
     valueKind: 'string',
     validate: validateText,
   },

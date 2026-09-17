@@ -30,7 +30,16 @@ document that stays readable with JavaScript — and author CSS — turned off.
   projects without bespoke code and the output cannot drift from the type
   definitions:
   - `string` → `<p>`, `markdown` → semantic prose (headings, lists, blockquotes),
-    `code` → `<pre><code>`, `csv` → a `<table>`. A `dataset` payload's
+    `code` → `<pre><code>`, `csv` → a `<table>`. A `code` field declaring
+    `markup: true` holds author HTML the canvas renders (custom-html's `html`),
+    so it projects as that HTML, sanitized by the canvas's own
+    `sanitizeSlideHtmlSync`, in one `<div data-field>`; its stylesheet (`css`)
+    is `presentational`, and so are the author's `style` attributes, which the
+    projection drops (`presentation: false`): a reflowable document reads
+    without author CSS wherever it sits (D151). `class` and `id` stay, they
+    are structure. The markup's first `h1..h3` names a slide that has no
+    title, as a hidden heading (below), and stays in the body where the author
+    put it. A `dataset` payload's
     `<caption>` is the type's `datasetSummary` sentence in the deck language
     ("Lijndiagram met 5 punten. Min: 25. Max: 85.", the same sentence the
     canvas gives assistive tech) followed by its `encodingKeys` fields as
@@ -171,7 +180,8 @@ missing_alt` when a drawn `image` field, at slide or item level, is not
   in the body. Otherwise the `<h2>` carries a **name** and is visually hidden
   (`class="reader-sr-only"`), so every section stays reachable by heading
   navigation and in the table of contents: the slide's `a11yTitle`, else the
-  value of the type's `labelField`, else the type label. A hidden heading
+  value of the type's `labelField`, else the first `h1..h3` of a `markup`
+  field, else the type label. A hidden heading
   consumes nothing, so a quote named by its own text still appears in the body.
   No title is guessed from a key name: a type (or fork type) without the
   declaration always gets a hidden name.

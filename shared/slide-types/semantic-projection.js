@@ -55,6 +55,12 @@
  *    projection joins the two and consumes the partner, the way an image
  *    consumes its alt. A type-level `scale` does the same for the two ends of
  *    a rating scale. See {@link pairedKeys}.
+ *  - **`markup` is honoured.** A `code` field's value is source by default,
+ *    and a reader shows source as source. A field that declares `markup: true`
+ *    holds author HTML the canvas renders (custom-html), so the reader renders
+ *    it too, through the same sanitizer the canvas uses, minus the author's
+ *    `style` attributes (presentation, like the `css` field), and names a
+ *    slide without a title by its first `h1..h3`. See {@link markupHeadingText}.
  *  - **The deck language is a parameter.** Some of what a slide says is not
  *    stored: a blank callout label reads as its kind ("Key insight"), a chart
  *    carries a one-sentence summary. Both come from the slide copy in the
@@ -63,6 +69,10 @@
  */
 
 import { markdownToSafeHtml, inlineMarkdownToSafeHtml } from '../markdown.js';
+import {
+  sanitizeSlideHtmlSync,
+  slideHtmlHeadingTextSync,
+} from '../sanitize.js';
 import {
   escapeHtml,
   normalizeUrl,
@@ -180,6 +190,8 @@ function fieldAttr(key) {
  *
  * The `labelField` value may be a `defaultFromOption` word (D130c): a callout
  * with no label is named by its kind, in the deck's language, not "Callout".
+ * A slide whose content is author markup is named by that markup's first
+ * `h1..h3` before the type label (see {@link markupHeadingText}).
  *
  * @param {object} slide
  * @param {object|null|undefined} def - the resolved slide-type definition
@@ -207,10 +219,31 @@ export function slideHeading(slide, def, { index = 0, lang } = {}) {
     a11y ||
     str(content[labelKey]) ||
     optionDefaultText(labelDef, fields, content, def.defaults, lang) ||
+    markupHeadingText(fields, content) ||
     str(def.label) ||
     str(slide?.type) ||
     `Slide ${index + 1}`;
   return { text, visible: false, key: null, ariaLabel: '' };
+}
+
+/**
+ * The name author markup gives itself: the text of the first `h1..h3` in the
+ * first `markup: true` field that has one, read from the sanitized tree. It is
+ * a name, not a title: the heading stays inside the markup where the author
+ * put it, so the section's `<h2>` that carries this text is a hidden one.
+ *
+ * @param {Array<object>} fields - the type's declared fields
+ * @param {object} content - the slide content
+ * @returns {string}
+ */
+function markupHeadingText(fields, content) {
+  for (const field of fields) {
+    if (field?.type !== 'code' || field.markup !== true || field.hidden)
+      continue;
+    const text = slideHtmlHeadingTextSync(str(content?.[field.key]));
+    if (text) return text;
+  }
+  return '';
 }
 
 /**
@@ -1192,9 +1225,17 @@ function renderFieldValue(
       });
     case 'code': {
       const v = str(value);
-      return v
-        ? `<pre class="reader-code"${attrs}><code>${escapeHtml(v)}</code></pre>`
-        : '';
+      if (!v) return '';
+      // Author markup the canvas renders is content, not source: the reader
+      // renders it through the canvas's own sanitizer, as one wrapper that
+      // names the field (D145: no surgery on sanitizer output). Author CSS is
+      // presentation, in the `css` field and in a `style` attribute alike, so
+      // the projection asks for the tree without it (D151).
+      if (field.markup === true) {
+        const html = sanitizeSlideHtmlSync(v, { presentation: false });
+        return html ? `<div${attrs}>${html}</div>` : '';
+      }
+      return `<pre class="reader-code"${attrs}><code>${escapeHtml(v)}</code></pre>`;
     }
     case 'csv': {
       const v = str(value);

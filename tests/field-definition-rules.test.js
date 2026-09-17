@@ -644,6 +644,35 @@ test('`semantic` is a flag on an enum; anything else warns, and a DB row may not
   assert.equal(stored.problem.detail.property, 'semantic');
 });
 
+test('`markup` is a flag on a code field; anything else warns, and a DB row may not carry it', () => {
+  const findings = walkFieldDefinitions(
+    [
+      { key: 'html', type: 'code', label: 'HTML', markup: true },
+      { key: 'title', type: 'string', label: 'Title', markup: true },
+      { key: 'css', type: 'code', label: 'CSS', markup: 'yes' },
+    ],
+    FILE_JS,
+  ).findings;
+  assert.deepEqual(
+    findings.map((f) => [f.key, f.code, f.severity]),
+    [
+      ['title', 'markup_not_code', 'warning'],
+      ['css', 'markup_not_true', 'warning'],
+    ],
+  );
+  for (const f of findings)
+    assert.notEqual(describeFieldFinding(f), 'Invalid field definitions.');
+
+  // A DB type has no `code` field and no control for it: a stored row refuses
+  // the property (D84) rather than dropping it on Save.
+  const stored = validateCustomFieldDefinitions([
+    { key: 'body', type: 'markdown', label: 'Body', markup: true },
+  ]);
+  assert.equal(stored.ok, false);
+  assert.equal(stored.problem.code, 'unknown_property');
+  assert.equal(stored.problem.detail.property, 'markup');
+});
+
 test('`termWhen` is read on a label string only; anywhere else it warns', () => {
   const when = { field: 'variant', in: ['definition'] };
   const findings = walkFieldDefinitions(

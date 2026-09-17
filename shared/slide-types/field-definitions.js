@@ -489,6 +489,17 @@ export function walkFieldDefinitions(fields, profile) {
         }
       }
 
+      // `markup: true` says a `code` field holds author HTML the canvas
+      // renders, so the reader renders it (sanitized) instead of showing its
+      // source. Only `code` stores raw markup, and the declaration is a flag.
+      if (field.markup !== undefined && field.markup !== null) {
+        if (field.markup !== true) {
+          at2('markup_not_true', 'warning', { declared: field.markup });
+        } else if (type !== 'code') {
+          at2('markup_not_code', 'warning', { type });
+        }
+      }
+
       // `termWhen` marks a label as the term a definition defines (<dfn>). It
       // is read on a `label`-role string only; anywhere else it says nothing.
       if (field.termWhen !== undefined && field.termWhen !== null) {
@@ -704,6 +715,14 @@ const FINDING_MESSAGES = {
     `${where} declares \`semantic: true\` on a \`${f?.detail?.type}\` ` +
     `field, but only an \`enum\` has a closed set of values to publish as a ` +
     `\`data-*\` attribute, so it is ignored.`,
+  markup_not_true: (where, f) =>
+    `${where} declares \`markup: ${JSON.stringify(f?.detail?.declared)}\`, ` +
+    `but the declaration is a flag: \`markup: true\` or nothing — a \`code\` ` +
+    `field without it is already source, so it is ignored.`,
+  markup_not_code: (where, f) =>
+    `${where} declares \`markup: true\` on a \`${f?.detail?.type}\` field, ` +
+    `but only a \`code\` field stores raw HTML for the reader to render, so ` +
+    `it is ignored.`,
   term_when_not_label: (where, f) =>
     `${where} declares \`termWhen\`, but only a \`string\` field with ` +
     `\`role: 'label'\` names a defined term, so it is ignored.`,

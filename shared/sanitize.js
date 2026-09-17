@@ -340,30 +340,83 @@ const SLIDE_FORBID_ATTR = ['srcdoc', 'ping', 'formaction', 'action'];
  * If neither is present it falls back to escaping the markup, which renders the
  * source as visible text rather than silently injecting unsafe HTML.
  *
+ * What is safe is one answer, given here once. What a caller does with the
+ * author's presentation is a second question: the canvas keeps it, the
+ * reflowable projection has no use for author CSS, whether it sits in the
+ * slide's `css` field or in a `style` attribute, and passes
+ * `presentation: false` to drop the attribute. Same tree, same safety.
+ *
  * @param {string} html - Raw author HTML
+ * @param {{ presentation?: boolean }} [opts]
+ * @param {boolean} [opts.presentation=true] - `false` also drops `style`
+ *   attributes (author CSS is presentation)
  * @returns {string} Sanitized HTML safe to inject via innerHTML
  */
-export function sanitizeSlideHtmlSync(html) {
+export function sanitizeSlideHtmlSync(html, { presentation = true } = {}) {
   if (!html || typeof html !== 'string') return '';
 
-  const config = {
-    USE_PROFILES: { html: true, svg: true, svgFilters: true, mathMl: true },
-    ADD_ATTR: ['target'],
-    FORBID_TAGS: SLIDE_FORBID_TAGS,
-    FORBID_ATTR: SLIDE_FORBID_ATTR,
-    ALLOW_DATA_ATTR: true,
-  };
-
-  const dp =
-    purify ||
-    (typeof window !== 'undefined'
-      ? globalThis.DOMPurify || window.DOMPurify
-      : null);
-
-  if (dp) return dp.sanitize(html, config);
+  const dp = slidePurify();
+  if (dp)
+    return dp.sanitize(
+      html,
+      presentation ? SLIDE_HTML_CONFIG : SLIDE_HTML_CONFIG_NO_PRESENTATION,
+    );
 
   // Fallback: escape so the source shows as text instead of injecting unsafe HTML.
   return escapeFallback(html);
+}
+
+/**
+ * The text of the first `h1`, `h2` or `h3` in author HTML, as
+ * {@link sanitizeSlideHtmlSync} keeps it: whitespace collapsed, `''` when
+ * there is none. It reads the sanitized tree, never the raw string, so a
+ * heading the sanitizer strips (inside a `<template>`, say) names nothing.
+ *
+ * Without DOMPurify there is no tree to read and the answer is `''`: the
+ * markup itself then renders escaped, and escaped source has no headings.
+ *
+ * @param {string} html - Raw author HTML
+ * @returns {string}
+ */
+export function slideHtmlHeadingTextSync(html) {
+  if (!html || typeof html !== 'string') return '';
+  const dp = slidePurify();
+  if (!dp) return '';
+  const fragment = dp.sanitize(html, {
+    ...SLIDE_HTML_CONFIG,
+    RETURN_DOM_FRAGMENT: true,
+  });
+  const heading = fragment.querySelector('h1, h2, h3');
+  return heading ? heading.textContent.replace(/\s+/g, ' ').trim() : '';
+}
+
+/** The slide sanitizer's DOMPurify configuration, shared by both readers of it. */
+const SLIDE_HTML_CONFIG = Object.freeze({
+  USE_PROFILES: { html: true, svg: true, svgFilters: true, mathMl: true },
+  ADD_ATTR: ['target'],
+  FORBID_TAGS: SLIDE_FORBID_TAGS,
+  FORBID_ATTR: SLIDE_FORBID_ATTR,
+  ALLOW_DATA_ATTR: true,
+});
+
+/**
+ * The same safety, minus the author's presentation: `style` is author CSS,
+ * and a reflowable document reads without it (D151). Derived, not a second
+ * answer to what is safe.
+ */
+const SLIDE_HTML_CONFIG_NO_PRESENTATION = Object.freeze({
+  ...SLIDE_HTML_CONFIG,
+  FORBID_ATTR: [...SLIDE_FORBID_ATTR, 'style'],
+});
+
+/** The pre-initialized DOMPurify (server) or the global one (browser), if any. */
+function slidePurify() {
+  return (
+    purify ||
+    (typeof window !== 'undefined'
+      ? globalThis.DOMPurify || window.DOMPurify
+      : null)
+  );
 }
 
 /**
