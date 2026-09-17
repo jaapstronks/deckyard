@@ -565,7 +565,7 @@ export function walkFieldDefinitions(fields, profile) {
       }
 
       // `kindKey` names the sibling enum whose chosen option is what kind of
-      // aside this text is (B299). Only an `aside`-role text has a kind to
+      // aside this text is. Only an `aside`-role text has a kind to
       // name; the enum is checked once the level is fully known.
       if (field.kindKey !== undefined && field.kindKey !== null) {
         if (!['string', 'markdown'].includes(type) || field.role !== 'aside') {

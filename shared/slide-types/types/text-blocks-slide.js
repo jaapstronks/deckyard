@@ -473,8 +473,6 @@ export default {
     function renderRow(row, rowIdx) {
       const colorClass = row.color === 'black' ? 'is-black' : 'is-yellow';
 
-      // Every row draws its heading, the first one too: the editor offers the
-      // field on each row and the reader projects it on each row.
       let rowTitleHtml = '';
       if (row.title) {
         const rowTitlePath = useRows

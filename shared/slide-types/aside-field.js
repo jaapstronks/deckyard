@@ -114,11 +114,6 @@ export const ASIDE_VARIANT_FIELD = {
 /**
  * What the inset says.
  *
- * `role: 'aside'` and `kindKey` are what the reader projection reads (B299):
- * the text is an `<aside data-kind>` with its kind's word as the eyebrow, in
- * the deck language. Declared here, on the one shared field, so every host
- * type projects the inset the same way without a line of its own.
- *
  * Capped well below `callout-slide`'s 600: an inset that runs longer than a
  * short paragraph is competing with the body it annotates, and at that length
  * the idea has outgrown the margin and wants its own slide. The cap is the
