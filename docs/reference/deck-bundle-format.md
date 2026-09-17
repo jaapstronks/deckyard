@@ -237,7 +237,10 @@ sentence.
 The flow:
 
 1. `readDeckBundle(buffer)` — verify the mimetype sentinel and re-hash every
-   asset (integrity), yielding `{ manifest, deck, assets }`.
+   asset (integrity), yielding `{ manifest, deck, assets }`. A body that is not
+   a zip at all is refused with 400 and the format's own sentence
+   (`Invalid .deck bundle: the file is not a zip archive`), never the zip
+   library's.
    The deck's own `lang` decides the language it imports in; a bundle whose
    `lang` or `translations` name a language this install does not author in is
    refused with 400 (`deckImportLang`).

@@ -308,12 +308,22 @@ test('rejects a bundle whose deck language is not supported', async () => {
   assert.match(body.message, /pt-BR/);
 });
 
-test('rejects a non-bundle body with 400', async () => {
-  const { res, body } = await importBundle(Buffer.from('not a zip'));
-  assert.equal(res.statusCode, 400);
-  assert.equal(body.error, 'bad_request');
-  assert.match(body.message, /Invalid \.deck bundle/);
-});
+// A non-zip gets the format's own sentence, never JSZip's ("Can't find end of
+// central directory … see https://stuk.github.io/…"): the dialog shows it (B310).
+for (const [what, buf] of [
+  ['a text file', Buffer.from('just some notes\n')],
+  ['a JSON deck', Buffer.from(JSON.stringify({ title: 'x', slides: [] }))],
+]) {
+  test(`rejects ${what} posing as a .deck with one sentence of its own`, async () => {
+    const { res, body } = await importBundle(buf);
+    assert.equal(res.statusCode, 400);
+    assert.equal(body.error, 'bad_request');
+    assert.equal(
+      body.message,
+      'Invalid .deck bundle: the file is not a zip archive',
+    );
+  });
+}
 
 test('rejects an empty body with 400', async () => {
   const { res, body } = await importBundle(Buffer.alloc(0));

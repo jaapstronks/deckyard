@@ -291,16 +291,22 @@ export async function writeBundleAsset(repoRoot, buffer, filename, mime) {
  * @returns {Promise<{ mimetype: string, manifest: object, deck: object, theme: object|null, slideTypes: object[], assets: Map<string, Buffer> }>}
  */
 export async function readDeckBundle(buffer) {
-  const zip = await JSZip.loadAsync(buffer);
+  // A `.deck` is a zip first. Whatever JSZip refuses is refused here in the
+  // format's own words: its message and its docs URL are the library talking,
+  // and the route hands this sentence straight to the user.
+  let zip;
+  try {
+    zip = await JSZip.loadAsync(buffer);
+  } catch {
+    throw new Error('the file is not a zip archive');
+  }
 
   const mtEntry = zip.file('mimetype');
   const mimetype = mtEntry ? (await mtEntry.async('string')).trim() : '';
   // Accepts the historical `vnd.slidecreator.deck` too: bundles already in the
   // wild carry it, and a published format does not stop reading its own past.
   if (!isDeckMimetype(mimetype)) {
-    throw new Error(
-      'Not a .deck bundle: mimetype sentinel missing or mismatched',
-    );
+    throw new Error('mimetype sentinel missing or mismatched');
   }
 
   const manifestEntry = zip.file('manifest.json');
