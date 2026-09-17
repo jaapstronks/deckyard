@@ -191,9 +191,7 @@ of what a structure contract is for.
 
 The projection also honours `visibleWhen`: a field the type declares inactive
 right now (a bar chart's legend labels, a pie chart's axis names) is not part of
-the slide's meaning.
-
-One part of the `dataset` caption is not a declaration: the sentence that sums the data up ("Line chart with 5 points. Min: 25. Max: 85."). What is worth saying about a payload depends on what it encodes, so it is the type's own `datasetSummary(content, { lang })` function, the same one its canvas reads into the chart's screen-reader text, and a second reader that does not run type code captions with the encoding alone. The editor and the canvas already skipped it; a third
+the slide's meaning. The editor and the canvas already skipped it; a third
 surface that disagreed was how dead values reached the reader as prose.
 
 The same goes for `presentational: true`: a `string` field whose value is
@@ -207,6 +205,8 @@ than layout (a callout's kind, a matrix cell's tone), so it is published as a
 `data-<key>` attribute on the section or item instead of being dropped. Every
 projected block also names its field with `data-field`, so a consumer of the
 HTML addresses content by the key the definition declares, not by position.
+
+One part of the `dataset` caption is not a declaration: the sentence that sums the data up ("Line chart with 5 points. Min: 25. Max: 85."). What is worth saying about a payload depends on what it encodes, so it is the type's own `datasetSummary(content, { lang })` function, the same one its canvas reads into the chart's screen-reader text. A second reader that does not run type code captions with the encoding alone.
 
 **What the worked example produces is pinned.** Because the projection is
 derived from `fields[]`, a field added, renamed or re-typed moves what the

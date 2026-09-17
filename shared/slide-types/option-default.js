@@ -50,6 +50,9 @@ export function isSlideCopyKey(copyKey) {
  * @returns {string}
  */
 export function optionDefaultText(field, siblings, content, defaults, lang) {
+  // Only a `string` has a blank to fill; the field walk says so
+  // (`default_from_option_not_string`) and the runtime agrees.
+  if (field?.type !== 'string') return '';
   const enumKey = str(field?.defaultFromOption);
   if (!enumKey) return '';
   const target = (Array.isArray(siblings) ? siblings : []).find(

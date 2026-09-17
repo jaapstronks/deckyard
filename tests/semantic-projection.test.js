@@ -1321,6 +1321,23 @@ describe('the deck language reaches the projection (B294, D130c)', () => {
     assert.ok(!html.includes('reader-label'), html);
   });
 
+  it('on a markdown field the declaration is ignored, as the walk says', () => {
+    const def = {
+      label: 'Kinds',
+      fields: [
+        {
+          key: 'kind',
+          type: 'enum',
+          options: [{ value: 'a', label: 'A', copyKey: 'admonitionTip' }],
+        },
+        { key: 'body', type: 'markdown', defaultFromOption: 'kind' },
+      ],
+    };
+    const html = section({ type: 'x', content: { kind: 'a' } }, def, 'nl');
+    assert.ok(!html.includes('Tip'), html);
+    assert.ok(!html.includes('data-field="body"'), html);
+  });
+
   it('a line chart names its series and captions the data with its summary', () => {
     const content = {
       title: 'Growth',
