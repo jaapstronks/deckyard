@@ -22,12 +22,24 @@
   font-synthesis: none;
   margin: 0;
 }
-.slide-text-blocks .header .subtitle {
+.slide-text-blocks .header .subheading {
   margin: var(--slide-space-3) 0 0;
   font-size: var(--slide-text-md);
   line-height: var(--slide-leading-snug);
   color: color-mix(in srgb, var(--slide-on-surface, #0b0b0b) 75%, transparent);
   max-width: 70ch;
+}
+/* Target the title directly to override the base h2 alignment; auto margins
+   centre the subheading's capped box as well as its text. */
+.slide-text-blocks .header .title,
+.slide-text-blocks .header .subheading {
+  margin-inline: auto;
+  text-align: center;
+}
+.slide-text-blocks.is-align-left .header .title,
+.slide-text-blocks.is-align-left .header .subheading {
+  margin-inline: 0;
+  text-align: start;
 }
 .slide-text-blocks .text-blocks-content {
   display: flex;
@@ -247,11 +259,12 @@
    The layout tightens in discrete tiers per row count, not fluidly — without a
    4-row tier a fourth row falls back to the roomy base sizes and overflows the
    slide (spilling over the header and clipping at the bottom). This tier mirrors
-   the 3-row one, a notch tighter, so four rows fit at 1600×900. Top-align the
-   column too: if an author still overloads the rows, the overflow clips at the
-   bottom instead of riding up over the title. */
+   the 3-row one, a notch tighter, so four rows fit at 1600×900. The column
+   centres like every other tier, but `safe`: if an author still overloads the
+   rows, the overflow falls back to the start and clips at the bottom instead
+   of riding up over the title. */
 .slide-text-blocks .text-blocks-content[data-rows='4'] {
-  justify-content: flex-start;
+  justify-content: safe center;
 }
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-arrow {
   margin: var(--slide-space-1) 0;

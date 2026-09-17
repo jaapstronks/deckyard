@@ -16,9 +16,17 @@
 
 /* Reuse markdown table styles via .md-table-wrap / .md-table */
 .slide-table .md-table-wrap {
-  margin-top: var(--slide-space-3);
-  flex: 1;
+  flex: 0 1 auto;
   min-height: 0;
+}
+
+/* Auto margins centre the table and caption without moving their sibling
+   heading. They resolve to zero on overflow, keeping the heading clear. */
+.slide-table .slide-inner > .md-table-wrap {
+  margin-block-start: auto;
+}
+.slide-table .slide-inner > :last-child {
+  margin-block-end: auto;
 }
 
 /* Ensure table text is readable - use body font size */
