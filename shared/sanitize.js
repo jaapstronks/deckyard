@@ -346,24 +346,54 @@ const SLIDE_FORBID_ATTR = ['srcdoc', 'ping', 'formaction', 'action'];
 export function sanitizeSlideHtmlSync(html) {
   if (!html || typeof html !== 'string') return '';
 
-  const config = {
-    USE_PROFILES: { html: true, svg: true, svgFilters: true, mathMl: true },
-    ADD_ATTR: ['target'],
-    FORBID_TAGS: SLIDE_FORBID_TAGS,
-    FORBID_ATTR: SLIDE_FORBID_ATTR,
-    ALLOW_DATA_ATTR: true,
-  };
-
-  const dp =
-    purify ||
-    (typeof window !== 'undefined'
-      ? globalThis.DOMPurify || window.DOMPurify
-      : null);
-
-  if (dp) return dp.sanitize(html, config);
+  const dp = slidePurify();
+  if (dp) return dp.sanitize(html, SLIDE_HTML_CONFIG);
 
   // Fallback: escape so the source shows as text instead of injecting unsafe HTML.
   return escapeFallback(html);
+}
+
+/**
+ * The text of the first `h1`, `h2` or `h3` in author HTML, as
+ * {@link sanitizeSlideHtmlSync} keeps it: whitespace collapsed, `''` when
+ * there is none. It reads the sanitized tree, never the raw string, so a
+ * heading the sanitizer strips (inside a `<template>`, say) names nothing.
+ *
+ * Without DOMPurify there is no tree to read and the answer is `''`: the
+ * markup itself then renders escaped, and escaped source has no headings.
+ *
+ * @param {string} html - Raw author HTML
+ * @returns {string}
+ */
+export function slideHtmlHeadingTextSync(html) {
+  if (!html || typeof html !== 'string') return '';
+  const dp = slidePurify();
+  if (!dp) return '';
+  const fragment = dp.sanitize(html, {
+    ...SLIDE_HTML_CONFIG,
+    RETURN_DOM_FRAGMENT: true,
+  });
+  const heading = fragment.querySelector('h1, h2, h3');
+  return heading ? heading.textContent.replace(/\s+/g, ' ').trim() : '';
+}
+
+/** The slide sanitizer's DOMPurify configuration, shared by both readers of it. */
+const SLIDE_HTML_CONFIG = Object.freeze({
+  USE_PROFILES: { html: true, svg: true, svgFilters: true, mathMl: true },
+  ADD_ATTR: ['target'],
+  FORBID_TAGS: SLIDE_FORBID_TAGS,
+  FORBID_ATTR: SLIDE_FORBID_ATTR,
+  ALLOW_DATA_ATTR: true,
+});
+
+/** The pre-initialized DOMPurify (server) or the global one (browser), if any. */
+function slidePurify() {
+  return (
+    purify ||
+    (typeof window !== 'undefined'
+      ? globalThis.DOMPurify || window.DOMPurify
+      : null)
+  );
 }
 
 /**

@@ -65,6 +65,8 @@ export default {
       required: false,
       maxLength: HTML_MAX,
       capability: 'customHtml',
+      // The reader renders this HTML (sanitized), not its source.
+      markup: true,
       helpText:
         'Raw HTML for this slide. Scripts, iframes and forms are removed; structural HTML and SVG are kept. Theme tokens (var(--t-color-accent), …) are available.',
     },
@@ -75,6 +77,8 @@ export default {
       required: false,
       maxLength: CSS_MAX,
       capability: 'customHtml',
+      // Styling for the canvas; a reflowable document has no use for it.
+      presentational: true,
       helpText:
         'CSS for this slide. Automatically scoped to the slide so it cannot affect the rest of the deck.',
     },
