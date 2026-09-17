@@ -179,9 +179,12 @@ test('on a bucket install the copy lands in the bucket and the slide gets its UR
     res.body.url.startsWith('https://cdn.example.test/uploads/'),
     `expected a bucket/CDN URL, got ${res.body.url}`,
   );
-  assert.ok(
-    !res.body.url.includes('imagekit.io'),
-    'the slide must not keep pointing at the DAM',
+  // The host, not a substring of the URL: `…/uploads/imagekit.io-x.jpg` would
+  // pass a `includes()` check while still being the wrong kind of assertion.
+  assert.equal(
+    new URL(res.body.url).hostname,
+    'cdn.example.test',
+    'the slide must be served by this install, not by the DAM',
   );
   assert.equal(res.body.sourceUrl, CANONICAL_URL);
 
