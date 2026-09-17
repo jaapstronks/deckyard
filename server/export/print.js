@@ -1,12 +1,4 @@
-/**
- * The print handout: the deck as a document to print or save as PDF.
- *
- * It is not a second reader. Every slide is the reader's own section
- * (`renderSlideSectionHtml`, D134): the same heading, the same body, the same
- * markers, so what the projection learns about a slide type the handout says
- * too. This file owns only what makes it a handout: the document shell, the
- * toolbar, and a stylesheet for paper that styles the reader's vocabulary.
- */
+/** Print handout shell and paper styles for the shared reader projection. */
 
 import {
   getSlideType,
@@ -81,8 +73,7 @@ const PRINT_DOC_CSS = `
         margin: 10px 0 18px;
       }
 
-      /* One section per slide, from the projection. The number is position,
-         not text (D133): a counter, silent to assistive tech. */
+      /* Empty counter alt text keeps numbering out of accessible names. */
       .print-doc .reader-slide {
         padding: 8px 0 18px;
         border-top: 1px solid rgba(0,0,0,0.12);

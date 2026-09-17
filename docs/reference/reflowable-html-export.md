@@ -26,7 +26,7 @@ document that stays readable with JavaScript — and author CSS — turned off.
   about a slide is in one place and one fixture.
 - The print handout (`server/export/print.js`, the editor's **Text handout**)
   is the same projection in another shell: it emits these sections unchanged
-  and adds only its toolbar and a stylesheet for paper (D134). There is one
+  and adds only its toolbar and a stylesheet for paper. There is one
   reader; `tests/print-reads-projection.test.js` holds both documents to the
   same section HTML per type.
 - Per-slide content is derived generically from the slide type's declared

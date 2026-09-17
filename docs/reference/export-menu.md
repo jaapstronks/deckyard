@@ -68,7 +68,7 @@ The handout is not a reader of its own. Each slide is the section the reader
 projects (`renderSlideSectionHtml` in `shared/slide-types/semantic-projection.js`),
 with the same heading, body and `data-slide-type` marker; `buildPrintHtml`
 owns only the document shell, the print toolbar and the paper stylesheet, and
-numbers slides with a CSS counter rather than text in the heading (D133, D134).
+numbers slides with a CSS counter rather than text in the heading.
 Whatever the projection says about a slide type, the handout says too. See
 [`reflowable-html-export.md`](./reflowable-html-export.md).
 

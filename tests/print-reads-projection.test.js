@@ -1,16 +1,4 @@
-/**
- * The print handout reads the reader's projection (D134, B300).
- *
- * The handout used to be a second reader: its own heading resolver with a
- * name-branch on `quote-slide`, seven per-type renderers and a JSON dump for
- * every other type. Whatever the projection learned about a slide type, the
- * handout missed. Now both documents call `renderSlideSectionHtml` per slide,
- * and this test holds them to it: for every core type, in both deck languages,
- * the `<section>` the handout prints is byte for byte the one the reader
- * serves. The two documents differ only in their shell and their stylesheet.
- *
- * Run with: node --test tests/print-reads-projection.test.js
- */
+/** Print and reader must emit identical sections for every core type. */
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
