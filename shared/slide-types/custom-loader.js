@@ -14,16 +14,10 @@ import {
 } from './validate-definition.js';
 
 import { readdirSync, existsSync, statSync } from 'node:fs';
-import { join, resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Resolve the repo root (two levels up from shared/slide-types/)
-const REPO_ROOT = resolve(__dirname, '..', '..');
-const CUSTOM_SLIDE_TYPES_DIR = join(REPO_ROOT, 'custom', 'slide-types');
+import { CUSTOM_SLIDE_TYPES_DIR } from './custom-dir.js';
 
 /**
  * Load all custom slide type definitions from /custom/slide-types/
